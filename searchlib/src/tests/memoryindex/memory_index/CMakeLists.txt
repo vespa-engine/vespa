@@ -3,7 +3,7 @@ vespa_add_executable(searchlib_memory_index_test_app TEST
     SOURCES
     memory_index_test.cpp
     DEPENDS
-    searchlib
+    searchlib_test
     GTest::GTest
 )
 vespa_add_test(NAME searchlib_memory_index_test_app COMMAND searchlib_memory_index_test_app)

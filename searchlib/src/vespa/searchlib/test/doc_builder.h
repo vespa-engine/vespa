@@ -20,21 +20,21 @@ class WeightedSetFieldValue;
 namespace document::config::internal { class InternalDocumenttypesType; }
 namespace document::config_builder { struct Struct; }
 
-namespace search::index {
+namespace search::test {
 
 /*
  * Class used to make empty search documents.
  */
-class EmptyDocBuilder {
+class DocBuilder {
     using DocumenttypesConfig = const document::config::internal::InternalDocumenttypesType;
     std::shared_ptr<const DocumenttypesConfig>        _document_types_config;
     std::shared_ptr<const document::DocumentTypeRepo> _repo;
     const document::DocumentType*                     _document_type;
 public:
     using AddFieldsType = std::function<void(document::config_builder::Struct&)>;
-    EmptyDocBuilder();
-    explicit EmptyDocBuilder(AddFieldsType add_fields);
-    ~EmptyDocBuilder();
+    DocBuilder();
+    explicit DocBuilder(AddFieldsType add_fields);
+    ~DocBuilder();
     const document::DocumentTypeRepo& get_repo() const noexcept { return *_repo; }
     std::shared_ptr<const document::DocumentTypeRepo> get_repo_sp() const noexcept { return _repo; }
     const document::DocumentType& get_document_type() const noexcept { return *_document_type; }

@@ -51,8 +51,8 @@
 #include <vespa/searchlib/attribute/interlock.h>
 #include <vespa/searchlib/engine/docsumapi.h>
 #include <vespa/searchlib/index/dummyfileheadercontext.h>
-#include <vespa/searchlib/index/empty_doc_builder.h>
 #include <vespa/searchlib/tensor/tensor_attribute.h>
+#include <vespa/searchlib/test/doc_builder.h>
 #include <vespa/searchlib/transactionlog/nosyncproxy.h>
 #include <vespa/searchlib/transactionlog/translogserver.h>
 #include <vespa/searchsummary/docsummary/i_docsum_field_writer_factory.h>
@@ -91,6 +91,7 @@ using search::TuneFileDocumentDB;
 using search::index::DummyFileHeaderContext;
 using search::linguistics::SPANTREE_NAME;
 using search::linguistics::TERM;
+using search::test::DocBuilder;
 using storage::spi::Timestamp;
 using vespa::config::search::core::ProtonConfig;
 using vespa::config::content::core::BucketspacesConfig;
@@ -128,7 +129,7 @@ private:
     vespalib::string _dir;
 };
 
-class BuildContext : public EmptyDocBuilder
+class BuildContext : public DocBuilder
 {
 public:
     DirMaker _dmk;
@@ -155,7 +156,7 @@ public:
 };
 
 BuildContext::BuildContext(AddFieldsType add_fields)
-    : EmptyDocBuilder(add_fields),
+    : DocBuilder(add_fields),
       _dmk("summary"),
       _fixed_repo(get_repo(), get_document_type()),
       _summaryExecutor(4, 128_Ki),

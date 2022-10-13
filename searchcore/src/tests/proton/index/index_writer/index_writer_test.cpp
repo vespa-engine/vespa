@@ -3,7 +3,7 @@
 #include <vespa/searchcore/proton/index/index_writer.h>
 #include <vespa/document/fieldvalue/document.h>
 #include <vespa/searchcore/proton/test/mock_index_manager.h>
-#include <vespa/searchlib/index/empty_doc_builder.h>
+#include <vespa/searchlib/test/doc_builder.h>
 #include <vespa/vespalib/testkit/testapp.h>
 #include <vespa/vespalib/util/stringfmt.h>
 
@@ -14,6 +14,7 @@ using namespace proton;
 using namespace search;
 using namespace search::index;
 using namespace searchcorespi;
+using search::test::DocBuilder;
 using vespalib::IDestructorCallback;
 
 using document::Document;
@@ -29,7 +30,7 @@ toString(const std::vector<SerialNum> &vec)
     return oss.str();
 }
 
-struct MyIndexManager : public test::MockIndexManager
+struct MyIndexManager : public proton::test::MockIndexManager
 {
     typedef std::map<uint32_t, std::vector<SerialNum> > LidMap;
     LidMap puts;
@@ -82,7 +83,7 @@ struct Fixture
     IIndexManager::SP iim;
     MyIndexManager   &mim;
     IndexWriter      iw;
-    EmptyDocBuilder   builder;
+    DocBuilder   builder;
     Document::UP      dummyDoc;
     Fixture()
         : iim(new MyIndexManager()),

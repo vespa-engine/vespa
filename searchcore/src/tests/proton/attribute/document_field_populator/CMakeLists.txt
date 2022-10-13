@@ -5,5 +5,6 @@ vespa_add_executable(searchcore_document_field_populator_test_app TEST
     DEPENDS
     searchcore_attribute
     searchcore_pcommon
+    searchlib_test
 )
 vespa_add_test(NAME searchcore_document_field_populator_test_app COMMAND searchcore_document_field_populator_test_app)

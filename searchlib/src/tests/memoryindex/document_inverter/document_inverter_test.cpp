@@ -5,9 +5,9 @@
 #include <vespa/document/fieldvalue/document.h>
 #include <vespa/document/fieldvalue/stringfieldvalue.h>
 #include <vespa/document/repo/configbuilder.h>
-#include <vespa/searchlib/index/empty_doc_builder.h>
 #include <vespa/searchlib/index/field_length_calculator.h>
-#include <vespa/searchlib/index/string_field_builder.h>
+#include <vespa/searchlib/test/doc_builder.h>
+#include <vespa/searchlib/test/string_field_builder.h>
 #include <vespa/searchlib/memoryindex/document_inverter_context.h>
 #include <vespa/searchlib/memoryindex/field_index_remover.h>
 #include <vespa/searchlib/memoryindex/field_inverter.h>
@@ -24,18 +24,18 @@
 namespace search::memoryindex {
 
 using document::Document;
-using index::EmptyDocBuilder;
 using index::FieldLengthCalculator;
 using index::Schema;
-using index::StringFieldBuilder;
 using index::schema::CollectionType;
 using index::schema::DataType;
+using search::test::DocBuilder;
+using search::test::StringFieldBuilder;
 using vespalib::SequencedTaskExecutor;
 using vespalib::ISequencedTaskExecutor;
 
 namespace {
 
-EmptyDocBuilder::AddFieldsType
+DocBuilder::AddFieldsType
 make_add_fields()
 {
     return [](auto& header) { using namespace document::config_builder;
@@ -48,7 +48,7 @@ make_add_fields()
 }
 
 Document::UP
-makeDoc10(EmptyDocBuilder &b)
+makeDoc10(DocBuilder &b)
 {
     StringFieldBuilder sfb(b);
     auto doc = b.make_document("id:ns:searchdocument::10");
@@ -57,7 +57,7 @@ makeDoc10(EmptyDocBuilder &b)
 }
 
 Document::UP
-makeDoc11(EmptyDocBuilder &b)
+makeDoc11(DocBuilder &b)
 {
     StringFieldBuilder sfb(b);
     auto doc = b.make_document("id:ns:searchdocument::11");
@@ -67,7 +67,7 @@ makeDoc11(EmptyDocBuilder &b)
 }
 
 Document::UP
-makeDoc12(EmptyDocBuilder &b)
+makeDoc12(DocBuilder &b)
 {
     StringFieldBuilder sfb(b);
     auto doc = b.make_document("id:ns:searchdocument::12");
@@ -76,7 +76,7 @@ makeDoc12(EmptyDocBuilder &b)
 }
 
 Document::UP
-makeDoc13(EmptyDocBuilder &b)
+makeDoc13(DocBuilder &b)
 {
     StringFieldBuilder sfb(b);
     auto doc = b.make_document("id:ns:searchdocument::13");
@@ -85,7 +85,7 @@ makeDoc13(EmptyDocBuilder &b)
 }
 
 Document::UP
-makeDoc14(EmptyDocBuilder &b)
+makeDoc14(DocBuilder &b)
 {
     StringFieldBuilder sfb(b);
     auto doc = b.make_document("id:ns:searchdocument::14");
@@ -94,7 +94,7 @@ makeDoc14(EmptyDocBuilder &b)
 }
 
 Document::UP
-makeDoc15(EmptyDocBuilder &b)
+makeDoc15(DocBuilder &b)
 {
     return b.make_document("id:ns:searchdocument::15");
 }
@@ -106,7 +106,7 @@ VESPA_THREAD_STACK_TAG(push_executor)
 
 struct DocumentInverterTest : public ::testing::Test {
     Schema _schema;
-    EmptyDocBuilder _b;
+    DocBuilder _b;
     std::unique_ptr<ISequencedTaskExecutor> _invertThreads;
     std::unique_ptr<ISequencedTaskExecutor> _pushThreads;
     WordStore                       _word_store;

@@ -12,10 +12,10 @@
 #include <vespa/searchlib/diskindex/fusion.h>
 #include <vespa/searchlib/diskindex/indexbuilder.h>
 #include <vespa/searchlib/fef/fef.h>
-#include <vespa/searchlib/index/empty_doc_builder.h>
 #include <vespa/searchlib/index/dummyfileheadercontext.h>
-#include <vespa/searchlib/index/string_field_builder.h>
 #include <vespa/searchlib/memoryindex/memory_index.h>
+#include <vespa/searchlib/test/doc_builder.h>
+#include <vespa/searchlib/test/string_field_builder.h>
 #include <vespa/searchlib/test/index/mock_field_length_inspector.h>
 #include <vespa/searchlib/query/base.h>
 #include <vespa/searchlib/query/tree/simplequery.h>
@@ -48,10 +48,8 @@ using search::fef::MatchData;
 using search::fef::MatchDataLayout;
 using search::fef::TermFieldHandle;
 using search::fef::TermFieldMatchData;
-using search::index::EmptyDocBuilder;
 using search::index::DummyFileHeaderContext;
 using search::index::Schema;
-using search::index::StringFieldBuilder;
 using search::index::test::MockFieldLengthInspector;
 using search::memoryindex::MemoryIndex;
 using search::query::SimpleStringTerm;
@@ -61,6 +59,8 @@ using search::queryeval::FieldSpec;
 using search::queryeval::FieldSpecList;
 using search::queryeval::SearchIterator;
 using search::queryeval::Searchable;
+using search::test::DocBuilder;
+using search::test::StringFieldBuilder;
 using std::ostringstream;
 using vespalib::string;
 
@@ -118,7 +118,7 @@ Schema getSchema() {
     return schema;
 }
 
-Document::UP buildDocument(EmptyDocBuilder & doc_builder, int id,
+Document::UP buildDocument(DocBuilder & doc_builder, int id,
                            const string &word) {
     ostringstream ost;
     ost << "id:ns:searchdocument::" << id;
@@ -169,7 +169,7 @@ void Test::requireThatMemoryIndexCanBeDumpedAndSearched() {
     auto indexFieldInverter = vespalib::SequencedTaskExecutor::create(invert_executor, 2);
     auto indexFieldWriter = vespalib::SequencedTaskExecutor::create(write_executor, 2);
     MemoryIndex memory_index(schema, MockFieldLengthInspector(), *indexFieldInverter, *indexFieldWriter);
-    EmptyDocBuilder doc_builder([](auto& header) { header.addField(field_name, DataType::T_STRING); });
+    DocBuilder doc_builder([](auto& header) { header.addField(field_name, DataType::T_STRING); });
 
     Document::UP doc = buildDocument(doc_builder, doc_id1, word1);
     memory_index.insertDocument(doc_id1, *doc, {});

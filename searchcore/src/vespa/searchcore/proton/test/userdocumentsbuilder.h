@@ -2,7 +2,7 @@
 #pragma once
 
 #include "userdocuments.h"
-#include <vespa/searchlib/index/empty_doc_builder.h>
+#include <vespa/searchlib/test/doc_builder.h>
 #include <vespa/vespalib/util/stringfmt.h>
 
 namespace proton::test {
@@ -13,7 +13,7 @@ namespace proton::test {
 class UserDocumentsBuilder
 {
 private:
-    search::index::EmptyDocBuilder _builder;
+    search::test::DocBuilder _builder;
     UserDocuments             _docs;
 public:
     UserDocumentsBuilder();

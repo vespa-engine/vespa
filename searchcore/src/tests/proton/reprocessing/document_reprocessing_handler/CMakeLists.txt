@@ -4,5 +4,6 @@ vespa_add_executable(searchcore_document_reprocessing_handler_test_app TEST
     document_reprocessing_handler_test.cpp
     DEPENDS
     searchcore_reprocessing
+    searchlib_test
 )
 vespa_add_test(NAME searchcore_document_reprocessing_handler_test_app COMMAND searchcore_document_reprocessing_handler_test_app)

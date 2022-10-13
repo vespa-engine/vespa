@@ -7,9 +7,9 @@
 #include <vespa/searchlib/fef/matchdata.h>
 #include <vespa/searchlib/fef/matchdatalayout.h>
 #include <vespa/searchlib/fef/termfieldmatchdata.h>
-#include <vespa/searchlib/index/empty_doc_builder.h>
 #include <vespa/searchlib/index/i_field_length_inspector.h>
-#include <vespa/searchlib/index/string_field_builder.h>
+#include <vespa/searchlib/test/doc_builder.h>
+#include <vespa/searchlib/test/string_field_builder.h>
 #include <vespa/searchlib/memoryindex/memory_index.h>
 #include <vespa/searchlib/query/tree/simplequery.h>
 #include <vespa/searchlib/queryeval/booleanmatchiteratorwrapper.h>
@@ -36,6 +36,8 @@ using vespalib::makeLambdaTask;
 using search::query::Node;
 using search::query::SimplePhrase;
 using search::query::SimpleStringTerm;
+using search::test::DocBuilder;
+using search::test::StringFieldBuilder;
 using vespalib::ISequencedTaskExecutor;
 using vespalib::SequencedTaskExecutor;
 using namespace search::fef;
@@ -80,7 +82,7 @@ struct Index {
     std::unique_ptr<ISequencedTaskExecutor> _invertThreads;
     std::unique_ptr<ISequencedTaskExecutor> _pushThreads;
     MemoryIndex  index;
-    EmptyDocBuilder builder;
+    DocBuilder builder;
     StringFieldBuilder sfb;
     std::unique_ptr<Document> builder_doc;
     uint32_t     docid;

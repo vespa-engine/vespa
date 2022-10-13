@@ -5,7 +5,7 @@
 #include <vespa/vespalib/gtest/gtest.h>
 
 struct HandlerTest : public ::testing::Test {
-    EmptyDocBuilder _docBuilder;
+    DocBuilder _docBuilder;
     std::shared_ptr<bucketdb::BucketDBOwner> _bucketDB;
     MyDocumentStore _docStore;
     MySubDb _subDb;

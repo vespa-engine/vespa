@@ -13,9 +13,9 @@
 #include <vespa/vespalib/util/sequencedtaskexecutor.h>
 #include <vespa/searchlib/common/flush_token.h>
 #include <vespa/searchlib/common/serialnum.h>
-#include <vespa/searchlib/index/empty_doc_builder.h>
 #include <vespa/searchlib/index/dummyfileheadercontext.h>
-#include <vespa/searchlib/index/string_field_builder.h>
+#include <vespa/searchlib/test/doc_builder.h>
+#include <vespa/searchlib/test/string_field_builder.h>
 #include <vespa/searchlib/memoryindex/compact_words_store.h>
 #include <vespa/searchlib/memoryindex/document_inverter.h>
 #include <vespa/searchlib/memoryindex/document_inverter_context.h>
@@ -48,16 +48,16 @@ using search::TuneFileAttributes;
 using search::TuneFileIndexManager;
 using search::TuneFileIndexing;
 using vespalib::datastore::EntryRef;
-using search::index::EmptyDocBuilder;
 using search::index::DummyFileHeaderContext;
 using search::index::FieldLengthInfo;
 using search::index::Schema;
-using search::index::StringFieldBuilder;
 using search::index::schema::DataType;
 using search::index::test::MockFieldLengthInspector;
 using search::memoryindex::CompactWordsStore;
 using search::memoryindex::FieldIndexCollection;
 using search::queryeval::Source;
+using search::test::DocBuilder;
+using search::test::StringFieldBuilder;
 using std::set;
 using std::string;
 using vespalib::makeLambdaTask;
@@ -95,7 +95,7 @@ void removeTestData() {
     std::filesystem::remove_all(std::filesystem::path(index_dir));
 }
 
-Document::UP buildDocument(EmptyDocBuilder &doc_builder, int id,
+Document::UP buildDocument(DocBuilder &doc_builder, int id,
                            const string &word) {
     vespalib::asciistream ost;
     ost << "id:ns:searchdocument::" << id;
@@ -117,7 +117,7 @@ struct IndexManagerTest : public ::testing::Test {
     TransportAndExecutorService _service;
     std::unique_ptr<IndexManager> _index_manager;
     Schema _schema;
-    EmptyDocBuilder _builder;
+    DocBuilder _builder;
 
     IndexManagerTest()
         : _serial_num(0),

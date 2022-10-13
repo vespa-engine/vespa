@@ -1,7 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "string_field_builder.h"
-#include "empty_doc_builder.h"
+#include "doc_builder.h"
 #include <vespa/document/annotation/annotation.h>
 #include <vespa/document/annotation/span.h>
 #include <vespa/document/annotation/spanlist.h>
@@ -23,7 +23,7 @@ using document::SpanTree;
 using vespalib::Utf8Reader;
 using vespalib::Utf8Writer;
 
-namespace search::index {
+namespace search::test {
 
 namespace {
 
@@ -31,14 +31,14 @@ const vespalib::string SPANTREE_NAME("linguistics");
 
 }
 
-StringFieldBuilder::StringFieldBuilder(const EmptyDocBuilder& empty_doc_builder)
+StringFieldBuilder::StringFieldBuilder(const DocBuilder& doc_builder)
     : _value(),
       _span_start(0u),
       _span_list(nullptr),
       _span_tree(),
       _last_span(nullptr),
       _url_mode(false),
-      _repo(empty_doc_builder.get_repo(), empty_doc_builder.get_document_type())
+      _repo(doc_builder.get_repo(), doc_builder.get_document_type())
 {
 }
 

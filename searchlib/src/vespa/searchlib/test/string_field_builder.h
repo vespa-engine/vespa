@@ -13,9 +13,9 @@ class SpanTree;
 class StringFieldValue;
 }
 
-namespace search::index {
+namespace search::test {
 
-class EmptyDocBuilder;
+class DocBuilder;
 
 /*
  * Helper class to build annotated string field.
@@ -31,7 +31,7 @@ class StringFieldBuilder {
     void start_annotate();
     void add_span();
 public:
-    StringFieldBuilder(const EmptyDocBuilder& empty_doc_builder);
+    StringFieldBuilder(const DocBuilder& doc_builder);
     ~StringFieldBuilder();
     StringFieldBuilder& url_mode(bool url_mode_) noexcept { _url_mode = url_mode_; return *this; }
     StringFieldBuilder& token(const vespalib::string& val, bool is_word);

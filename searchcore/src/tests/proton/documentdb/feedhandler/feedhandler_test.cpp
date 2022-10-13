@@ -33,8 +33,8 @@
 #include <vespa/searchcore/proton/server/ireplayconfig.h>
 #include <vespa/searchcore/proton/test/dummy_feed_view.h>
 #include <vespa/searchcore/proton/test/transport_helper.h>
-#include <vespa/searchlib/index/empty_doc_builder.h>
 #include <vespa/searchlib/index/dummyfileheadercontext.h>
+#include <vespa/searchlib/test/doc_builder.h>
 #include <vespa/searchlib/transactionlog/translogserver.h>
 #include <vespa/vespalib/testkit/testapp.h>
 #include <vespa/vespalib/util/lambdatask.h>
@@ -59,6 +59,7 @@ using search::SerialNum;
 using search::index::schema::CollectionType;
 using search::index::schema::DataType;
 using vespalib::makeLambdaTask;
+using search::test::DocBuilder;
 using search::transactionlog::TransLogServer;
 using search::transactionlog::DomainConfig;
 using storage::spi::RemoveResult;
@@ -276,7 +277,7 @@ MyFeedView::~MyFeedView() = default;
 
 struct SchemaContext {
     Schema::SP      schema;
-    EmptyDocBuilder builder;
+    DocBuilder builder;
     SchemaContext();
     SchemaContext(bool has_i2);
     ~SchemaContext();
@@ -320,7 +321,7 @@ SchemaContext::addField(vespalib::stringref fieldName)
 struct DocumentContext {
     Document::SP  doc;
     BucketId      bucketId;
-    DocumentContext(const vespalib::string &docId, EmptyDocBuilder &builder) :
+    DocumentContext(const vespalib::string &docId, DocBuilder &builder) :
         doc(builder.make_document(docId)),
         bucketId(BucketFactory::getBucketId(doc->getId()))
     {
@@ -340,7 +341,7 @@ TensorDataType tensor1DType(ValueType::from_spec("tensor(x{})"));
 struct UpdateContext {
     DocumentUpdate::SP update;
     BucketId           bucketId;
-    UpdateContext(const vespalib::string &docId, EmptyDocBuilder &builder) :
+    UpdateContext(const vespalib::string &docId, DocBuilder &builder) :
         update(std::make_shared<DocumentUpdate>(builder.get_repo(), builder.get_document_type(), DocumentId(docId))),
         bucketId(BucketFactory::getBucketId(update->getId()))
     {
