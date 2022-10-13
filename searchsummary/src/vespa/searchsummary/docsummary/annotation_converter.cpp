@@ -7,6 +7,7 @@
 #include <vespa/document/annotation/annotation.h>
 #include <vespa/document/annotation/spantree.h>
 #include <vespa/document/annotation/spantreevisitor.h>
+#include <vespa/document/datatype/annotationtype.h>
 #include <vespa/document/fieldvalue/stringfieldvalue.h>
 #include <vespa/juniper/juniper_separators.h>
 #include <vespa/vespalib/stllike/asciistream.h>
@@ -15,6 +16,7 @@
 
 using document::AlternateSpanList;
 using document::Annotation;
+using document::AnnotationType;
 using document::FieldValue;
 using document::SimpleSpanList;
 using document::Span;
@@ -139,7 +141,7 @@ AnnotationConverter::handleIndexingTerms(const StringFieldValue& value)
         // For now, skip any composite spans.
         const auto *span = dynamic_cast<const Span*>(annotation.getSpanNode());
         if ((span != nullptr) && annotation.valid() &&
-            (annotation.getType() == *linguistics::TERM)) {
+            (annotation.getType() == *AnnotationType::TERM)) {
             terms.push_back(std::make_pair(getSpan(*span),
                                            annotation.getFieldValue()));
         }

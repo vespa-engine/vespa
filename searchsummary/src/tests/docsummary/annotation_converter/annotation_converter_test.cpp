@@ -4,6 +4,7 @@
 #include <vespa/document/annotation/span.h>
 #include <vespa/document/annotation/spanlist.h>
 #include <vespa/document/annotation/spantree.h>
+#include <vespa/document/datatype/annotationtype.h>
 #include <vespa/document/fieldvalue/stringfieldvalue.h>
 #include <vespa/document/repo/configbuilder.h>
 #include <vespa/document/repo/fixedtyperepo.h>
@@ -16,6 +17,7 @@
 #include <vespa/vespalib/stllike/asciistream.h>
 
 using document::Annotation;
+using document::AnnotationType;
 using document::DocumentType;
 using document::DocumentTypeRepo;
 using document::Span;
@@ -25,7 +27,6 @@ using document::StringFieldValue;
 using search::docsummary::AnnotationConverter;
 using search::docsummary::IJuniperConverter;
 using search::linguistics::SPANTREE_NAME;
-using search::linguistics::TERM;
 using vespalib::Slime;
 using vespalib::slime::SlimeInserter;
 
@@ -95,9 +96,9 @@ AnnotationConverterTest::make_annotated_string()
     auto span_list_up = std::make_unique<SpanList>();
     auto span_list = span_list_up.get();
     auto tree = std::make_unique<SpanTree>(SPANTREE_NAME, std::move(span_list_up));
-    tree->annotate(span_list->add(std::make_unique<Span>(0, 3)), *TERM);
+    tree->annotate(span_list->add(std::make_unique<Span>(0, 3)), *AnnotationType::TERM);
     tree->annotate(span_list->add(std::make_unique<Span>(4, 3)),
-                   Annotation(*TERM, std::make_unique<StringFieldValue>("baz")));
+                   Annotation(*AnnotationType::TERM, std::make_unique<StringFieldValue>("baz")));
     StringFieldValue value("foo bar");
     set_span_tree(value, std::move(tree));
     return value;
@@ -110,8 +111,8 @@ AnnotationConverterTest::make_annotated_chinese_string()
     auto span_list = span_list_up.get();
     auto tree = std::make_unique<SpanTree>(SPANTREE_NAME, std::move(span_list_up));
     // These chinese characters each use 3 bytes in their UTF8 encoding.
-    tree->annotate(span_list->add(std::make_unique<Span>(0, 15)), *TERM);
-    tree->annotate(span_list->add(std::make_unique<Span>(15, 9)), *TERM);
+    tree->annotate(span_list->add(std::make_unique<Span>(0, 15)), *AnnotationType::TERM);
+    tree->annotate(span_list->add(std::make_unique<Span>(15, 9)), *AnnotationType::TERM);
     StringFieldValue value("我就是那个大灰狼");
     set_span_tree(value, std::move(tree));
     return value;
