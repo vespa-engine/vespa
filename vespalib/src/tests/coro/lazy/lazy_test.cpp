@@ -11,8 +11,25 @@
 using vespalib::coro::Lazy;
 using vespalib::coro::sync_wait;
 
+#if __cpp_lib_jthread
+using MyThread = std::jthread;
+#else
+struct MyThread : std::thread
+{
+    using std::thread::thread;
+    MyThread(MyThread&&) = default;
+    ~MyThread()
+    {
+        if (joinable()) {
+            join();
+        }
+    }
+};
+#endif
+
+
 std::mutex thread_lock;
-std::vector<std::jthread> threads;
+std::vector<MyThread> threads;
 struct JoinThreads {
     ~JoinThreads() {
         threads.clear();
@@ -24,7 +41,7 @@ auto run_in_other_thread() {
         bool await_ready() const noexcept { return false; }
         void await_suspend(std::coroutine_handle<> handle) const {
             auto guard = std::lock_guard(thread_lock);
-            threads.push_back(std::jthread(handle));
+            threads.push_back(MyThread(handle));
         }
         void await_resume() const noexcept {}
     };
