@@ -4,6 +4,7 @@ package com.yahoo.prelude.fastsearch;
 import com.yahoo.data.access.ObjectTraverser;
 import com.yahoo.document.GlobalId;
 import com.yahoo.net.URI;
+import com.yahoo.search.dispatch.LeanHit;
 import com.yahoo.search.query.Sorting;
 import com.yahoo.search.result.FeatureData;
 import com.yahoo.search.result.Hit;
@@ -11,7 +12,6 @@ import com.yahoo.search.result.Relevance;
 import com.yahoo.data.access.Inspector;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
@@ -36,7 +36,7 @@ public class FastHit extends Hit {
     private int distributionKey;
 
     /** The local identifier of the content store for this hit on the node it originated at */
-    private int partId;
+    private final int partId;
 
     /** The global id of this document in the backend node which produced it */
     private byte[] globalId;
@@ -129,16 +129,6 @@ public class FastHit extends Hit {
 
     public int getPartId() { return partId; }
 
-    /**
-     * Sets the part id number, which specifies the node where this hit is
-     * found. The row count is used to decode the part id into a column and a
-     * row number: the number of n least significant bits required to hold the
-     * highest row number are the row bits, the rest are column bits.
-     *
-     * Note: Remove partId when all dispatching happens from the container dispatcher, not fdispatch
-     */
-    public void setPartId(int partId) { this.partId = partId; }
-
     /** Returns the index of the node this hit originated at */
     public int getDistributionKey() { return distributionKey; }
 
@@ -167,17 +157,7 @@ public class FastHit extends Hit {
         if (!left.hasSortData(sorting) || !right.hasSortData(sorting)) {
             return 0; // cannot sort
         }
-        int i = Arrays.mismatch(left.sortData, right.sortData);
-        if (i < 0) {
-            return 0;
-        }
-        int max = Integer.min(left.sortData.length, right.sortData.length);
-        if (i >= max) {
-            return left.sortData.length - right.sortData.length;
-        }
-        int vl = (int) left.sortData[i] & 0xFF;
-        int vr = (int) right.sortData[i] & 0xFF;
-        return vl - vr;
+        return LeanHit.compareData(left.sortData, right.sortData);
     }
 
     /** For internal use */
@@ -186,11 +166,6 @@ public class FastHit extends Hit {
             removedFields.removeAll(docsumDef.fields().keySet());
         if ( ! (summaries instanceof ArrayList) ) summaries = new ArrayList<>(8);
         summaries.add(0, new SummaryData(this, docsumDef, value, 1 + summaries.size()));
-    }
-
-    /** Returns the raw summary data available in this as an unmodifiable list */
-    public List<SummaryData> summaryData() {
-        return Collections.unmodifiableList(summaries);
     }
 
     /**

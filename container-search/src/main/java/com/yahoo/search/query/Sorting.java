@@ -6,7 +6,6 @@ import com.ibm.icu.util.ULocale;
 import com.yahoo.prelude.IndexFacts;
 import com.yahoo.processing.IllegalInputException;
 import com.yahoo.search.Query;
-import com.yahoo.search.searchchain.Execution;
 import com.yahoo.text.Utf8;
 
 import java.nio.ByteBuffer;
@@ -181,7 +180,6 @@ public class Sorting implements Cloneable {
     public int encode(ByteBuffer buffer) {
         int usedBytes = 0;
         byte[] nameBuffer;
-        buffer.position();
         byte space = '.';
         for (FieldOrder fieldOrder : fieldOrders) {
             if (space == ' ')   {
@@ -230,10 +228,10 @@ public class Sorting implements Cloneable {
 
         @Override
         public boolean equals(Object other) {
-            if (!(other instanceof AttributeSorter)) {
+            if (!(other instanceof AttributeSorter sorter)) {
                 return false;
             }
-            return ((AttributeSorter) other).fieldName.equals(fieldName);
+            return sorter.fieldName.equals(fieldName);
         }
 
         @Override
