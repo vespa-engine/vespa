@@ -958,7 +958,6 @@ LogDataStore::incGeneration()
 {
     _lidInfo.setGeneration(_genHandler.getNextGeneration());
     _genHandler.incGeneration();
-    _genHandler.update_oldest_used_generation();
     _lidInfo.reclaim_memory(_genHandler.get_oldest_used_generation());
 }
 

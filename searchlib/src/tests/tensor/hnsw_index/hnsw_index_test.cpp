@@ -101,7 +101,6 @@ public:
     void commit() {
         index->assign_generation(gen_handler.getCurrentGeneration());
         gen_handler.incGeneration();
-        gen_handler.update_oldest_used_generation();
         index->reclaim_memory(gen_handler.get_oldest_used_generation());
     }
     void set_filter(std::vector<uint32_t> docids) {

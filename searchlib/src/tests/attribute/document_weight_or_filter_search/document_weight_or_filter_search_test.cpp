@@ -145,7 +145,6 @@ DocumentWeightOrFilterSearchTest::inc_generation()
     _postings.freeze();
     _postings.assign_generation(_gens.getCurrentGeneration());
     _gens.incGeneration();
-    _gens.update_oldest_used_generation();
     _postings.reclaim_memory(_gens.get_oldest_used_generation());
 }
 
