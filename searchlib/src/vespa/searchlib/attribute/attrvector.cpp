@@ -203,4 +203,7 @@ bool StringDirectAttribute::addDoc(DocId & doc)
     return false;
 }
 
+template class NumericDirectAttribute<IntegerAttributeTemplate<int64_t>>;
+template class NumericDirectAttribute<FloatingPointAttributeTemplate<double>>;
+
 }  // namespace search
