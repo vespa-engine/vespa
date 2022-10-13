@@ -18,15 +18,14 @@ public class SortDataHitSorter {
             return;
         }
         var fallbackComparator = fallbackOrderer.getComparator();
-        Collections.sort(hits, getComparator(sorting, fallbackComparator));
+        hits.sort(getComparator(sorting, fallbackComparator));
     }
 
     public static boolean isSortable(Hit hit, Sorting sorting) {
         if (sorting == null) {
             return false;
         }
-        if (hit instanceof FastHit) {
-            var fhit = (FastHit) hit;
+        if (hit instanceof FastHit fhit) {
             return fhit.hasSortData(sorting);
         } else {
             return false;
@@ -42,20 +41,14 @@ public class SortDataHitSorter {
     }
 
     private static int compareTwo(Hit left, Hit right, Sorting sorting) {
-        if (left == null || right == null || !(left instanceof FastHit) || !(right instanceof FastHit)) {
-            return 0;
-        }
-        FastHit fl = (FastHit) left;
-        FastHit fr = (FastHit) right;
+        if (!(left instanceof FastHit fl) || !(right instanceof FastHit fr)) return 0;
         return FastHit.compareSortData(fl, fr, sorting);
     }
 
     private static int compareWithFallback(Hit left, Hit right, Sorting sorting, Comparator<Hit> fallback) {
-        if (left == null || right == null || !(left instanceof FastHit) || !(right instanceof FastHit)) {
+        if (!(left instanceof FastHit fl) || !(right instanceof FastHit fr)) {
             return fallback.compare(left, right);
         }
-        FastHit fl = (FastHit) left;
-        FastHit fr = (FastHit) right;
         if (fl.hasSortData(sorting) && fr.hasSortData(sorting)) {
             return FastHit.compareSortData(fl, fr, sorting);
         } else {
