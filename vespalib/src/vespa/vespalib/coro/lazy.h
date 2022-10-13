@@ -14,11 +14,11 @@ namespace vespalib::coro {
  * coroutine return type
  *
  * The coroutine is lazy (will suspend in initial_suspend) and
- * destroyed form the outside (will suspend in final_suspend). Waiting
+ * destroyed from the outside (will suspend in final_suspend). Waiting
  * for a Lazy<T> using co_await will use symmetric transfer to suspend
- * the waiting coroutine and resuming this one. The waiting coroutine
+ * the waiting coroutine and resume this one. The waiting coroutine
  * is registered as a continuation and will be resumed again once the
- * result is avalable (also using symmetric transfer). The result is
+ * result is available (also using symmetric transfer). The result is
  * assumed to be produced asynchronously. If you need to access it
  * from the outside (in that specific thread); use sync_wait.
  **/
