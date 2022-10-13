@@ -6,11 +6,12 @@
 #include "entry_comparator.h"
 #include <vespa/vespalib/util/array.h>
 #include <vespa/vespalib/util/arrayref.h>
+#include <vespa/vespalib/util/generation_hold_list.h>
 #include <vespa/vespalib/util/generationhandler.h>
-#include <limits>
 #include <atomic>
 #include <deque>
 #include <functional>
+#include <limits>
 
 namespace vespalib {
 class GenerationHolder;
@@ -65,7 +66,6 @@ public:
     static constexpr uint32_t no_node_idx = std::numeric_limits<uint32_t>::max();
     using KvType = std::pair<AtomicEntryRef, AtomicEntryRef>;
     using generation_t = GenerationHandler::generation_t;
-    using sgeneration_t = GenerationHandler::sgeneration_t;
 private:
     class ChainHead {
         std::atomic<uint32_t> _node_idx;
@@ -103,6 +103,8 @@ private:
         const KvType& get_kv() const noexcept { return _kv; }
     };
 
+    using NodeIdxHoldList = GenerationHoldList<uint32_t, false, true>;
+
     Array<ChainHead>  _chain_heads;
     Array<Node>       _nodes;
     uint32_t          _modulo;
@@ -110,12 +112,9 @@ private:
     uint32_t          _free_head;
     uint32_t          _free_count;
     uint32_t          _hold_count;
-    Array<uint32_t>   _hold_1_list;
-    std::deque<std::pair<generation_t, uint32_t>> _hold_2_list;
+    NodeIdxHoldList   _hold_list;
     uint32_t          _num_shards;
 
-    void assign_generation_slow(generation_t current_gen);
-    void reclaim_memory_slow(generation_t oldest_used_gen);
     void force_add(const EntryComparator& comp, const KvType& kv);
 public:
     FixedSizeHashMap(uint32_t module, uint32_t capacity, uint32_t num_shards);
@@ -144,16 +143,10 @@ public:
     }
 
     void assign_generation(generation_t current_gen) {
-        if (!_hold_1_list.empty()) {
-            assign_generation_slow(current_gen);
-        }
+        _hold_list.assign_generation(current_gen);
     }
 
-    void reclaim_memory(generation_t oldest_used_gen) {
-        if (!_hold_2_list.empty() && static_cast<sgeneration_t>(_hold_2_list.front().first - oldest_used_gen) < 0) {
-            reclaim_memory_slow(oldest_used_gen);
-        }
-    }
+    void reclaim_memory(generation_t oldest_used_gen);
 
     bool full() const noexcept { return _nodes.size() == _nodes.capacity() && _free_count == 0u; }
     size_t size() const noexcept { return _count; }
@@ -181,4 +174,8 @@ public:
     void foreach_value(const std::function<void(const std::vector<EntryRef>&)>& callback, const EntryRefFilter& filter);
 };
 
+}
+
+namespace vespalib {
+extern template class GenerationHoldList<uint32_t, false, true>;
 }
