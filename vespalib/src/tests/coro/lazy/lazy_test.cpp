@@ -4,18 +4,17 @@
 #include <vespa/vespalib/coro/sync_wait.h>
 #include <vespa/vespalib/util/require.h>
 #include <vespa/vespalib/gtest/gtest.h>
+#include <mutex>
 
 #include <thread>
 
 using vespalib::coro::Lazy;
 using vespalib::coro::sync_wait;
 
-std::vector<std::thread> threads;
+std::mutex thread_lock;
+std::vector<std::jthread> threads;
 struct JoinThreads {
     ~JoinThreads() {
-        for (auto &thread: threads) {
-            thread.join();
-        }
         threads.clear();
     }
 };
@@ -24,7 +23,8 @@ auto run_in_other_thread() {
     struct awaiter {
         bool await_ready() const noexcept { return false; }
         void await_suspend(std::coroutine_handle<> handle) const {
-            threads.push_back(std::thread(handle));
+            auto guard = std::lock_guard(thread_lock);
+            threads.push_back(std::jthread(handle));
         }
         void await_resume() const noexcept {}
     };
