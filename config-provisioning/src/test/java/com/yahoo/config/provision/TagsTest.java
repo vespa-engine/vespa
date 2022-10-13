@@ -20,6 +20,11 @@ public class TagsTest {
         assertEquals(Tags.empty(), Tags.fromString(""));
         assertEquals(Tags.empty(), Tags.fromString(" "));
     }
+    
+    @Test
+    public void testDeserialization() {
+        assertEquals(new Tags(Set.of("tag1", "tag2")), Tags.fromString("  tag1     tag2  "));
+    }
 
     @Test
     public void testSerialization() {
