@@ -133,6 +133,11 @@ public class ZmsClientMock implements ZmsClient {
         return new ArrayList<>(athenz.domains.keySet());
     }
 
+    public List<AthenzDomain> getDomainListByAccount(String id) {
+        log("getDomainListById()");
+        return new ArrayList<>();
+    }
+
     @Override
     public boolean hasAccess(AthenzResourceName resource, String action, AthenzIdentity identity) {
         log("hasAccess(resource=%s, action=%s, identity=%s)", resource, action, identity);

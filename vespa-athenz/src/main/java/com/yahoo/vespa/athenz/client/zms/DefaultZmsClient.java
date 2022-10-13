@@ -205,6 +205,18 @@ public class DefaultZmsClient extends ClientBase implements ZmsClient {
     }
 
     @Override
+    public List<AthenzDomain> getDomainListByAccount(String account) {
+        HttpUriRequest request = RequestBuilder.get()
+                .setUri(zmsUrl.resolve("domain"))
+                .addParameter("account", account)
+                .build();
+        return execute(request, response -> {
+            DomainListResponseEntity result = readEntity(response, DomainListResponseEntity.class);
+            return result.domains.stream().map(AthenzDomain::new).collect(toList());
+        });
+    }
+
+    @Override
     public boolean hasAccess(AthenzResourceName resource, String action, AthenzIdentity identity) {
         URI uri = zmsUrl.resolve(String.format("access/%s/%s?principal=%s",
                                                action, resource.toResourceNameString(), identity.getFullName()));

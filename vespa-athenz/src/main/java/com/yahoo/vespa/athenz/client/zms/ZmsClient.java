@@ -50,6 +50,8 @@ public interface ZmsClient extends Closeable {
 
     List<AthenzDomain> getDomainList(String prefix);
 
+    List<AthenzDomain> getDomainListByAccount(String id);
+
     boolean hasAccess(AthenzResourceName resource, String action, AthenzIdentity identity);
 
     void createPolicy(AthenzDomain athenzDomain, String athenzPolicy);
