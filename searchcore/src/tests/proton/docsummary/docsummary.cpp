@@ -8,6 +8,7 @@
 #include <vespa/document/annotation/spanlist.h>
 #include <vespa/document/annotation/spantree.h>
 #include <vespa/document/config/documenttypes_config_fwd.h>
+#include <vespa/document/datatype/annotationtype.h>
 #include <vespa/document/datatype/documenttype.h>
 #include <vespa/document/datatype/tensor_data_type.h>
 #include <vespa/document/datatype/urldatatype.h>
@@ -90,7 +91,6 @@ using document::test::makeBucketSpace;
 using search::TuneFileDocumentDB;
 using search::index::DummyFileHeaderContext;
 using search::linguistics::SPANTREE_NAME;
-using search::linguistics::TERM;
 using search::test::DocBuilder;
 using storage::spi::Timestamp;
 using vespa::config::search::core::ProtonConfig;
@@ -182,9 +182,9 @@ BuildContext::make_annotated_string()
     auto span_list_up = std::make_unique<SpanList>();
     auto span_list = span_list_up.get();
     auto tree = std::make_unique<SpanTree>(SPANTREE_NAME, std::move(span_list_up));
-    tree->annotate(span_list->add(std::make_unique<Span>(0, 3)), *TERM);
+    tree->annotate(span_list->add(std::make_unique<Span>(0, 3)), *AnnotationType::TERM);
     tree->annotate(span_list->add(std::make_unique<Span>(4, 3)),
-                   Annotation(*TERM, std::make_unique<StringFieldValue>("baz")));
+                   Annotation(*AnnotationType::TERM, std::make_unique<StringFieldValue>("baz")));
     StringFieldValue value("foo bar");
     StringFieldValue::SpanTrees trees;
     trees.push_back(std::move(tree));
