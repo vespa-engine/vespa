@@ -125,11 +125,11 @@ make_doc10(EmptyDocBuilder &b)
     StringFieldBuilder sfb(b);
     doc->setValue("f0", sfb.tokenize("a b c d e f z").build());
     doc->setValue("f1", sfb.tokenize("w x y z").build());
-    ArrayFieldValue string_array(b.get_data_type("Array<String>"));
+    auto string_array = b.make_array("f2");
     string_array.add(sfb.tokenize("ax ay z").build());
     string_array.add(sfb.tokenize("ax").build());
     doc->setValue("f2", string_array);
-    WeightedSetFieldValue string_wset(b.get_data_type("WeightedSet<String>"));
+    auto string_wset = b.make_wset("f3");
     string_wset.add(sfb.tokenize("wx z").build(), 4);
     doc->setValue("f3", string_wset);
     return doc;
@@ -356,7 +356,7 @@ FusionTest::requireThatFusionIsWorking(const vespalib::string &prefix, bool dire
 
     doc = b.make_document("id:ns:searchdocument::11");
     {
-        WeightedSetFieldValue string_wset(b.get_data_type("WeightedSet<String>"));
+        auto string_wset = b.make_wset("f3");
         string_wset.add(sfb.word("zz").build(), -27);
         doc->setValue("f3", string_wset);
     }
@@ -365,7 +365,7 @@ FusionTest::requireThatFusionIsWorking(const vespalib::string &prefix, bool dire
 
     doc = b.make_document("id:ns:searchdocument::12");
     {
-        WeightedSetFieldValue string_wset(b.get_data_type("WeightedSet<String>"));
+        auto string_wset = b.make_wset("f3");
         string_wset.add(sfb.word("zz0").build(), 0);
         doc->setValue("f3", string_wset);
     }

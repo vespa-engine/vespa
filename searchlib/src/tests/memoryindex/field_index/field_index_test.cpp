@@ -992,13 +992,13 @@ TEST_F(BasicInverterTest, require_that_inversion_is_working)
     doc->setValue("f1", sfb.word("\nw2").tokenize(" w x ").
                   word("\nw3").tokenize(" y z").build());
     {
-        ArrayFieldValue string_array(_b.get_data_type("Array<String>"));
+        auto string_array = _b.make_array("f2");
         string_array.add(sfb.tokenize("w x").build());
         string_array.add(sfb.tokenize("y z").build());
         doc->setValue("f2", string_array);
     }
     {
-        WeightedSetFieldValue string_wset(_b.get_data_type("WeightedSet<String>"));
+        auto string_wset = _b.make_wset("f3");
         string_wset.add(sfb.tokenize("w x").build(), 6);
         string_wset.add(sfb.tokenize("y z").build(), 7);
         doc->setValue("f3", string_wset);
@@ -1017,12 +1017,12 @@ TEST_F(BasicInverterTest, require_that_inversion_is_working)
                   word("__a__").tokenize(" few words present in some of the fields").build());
     doc->setValue("f1", sfb.tokenize("the other field also has some content").build());
     {
-        ArrayFieldValue string_array(_b.get_data_type("Array<String>"));
+        auto string_array = _b.make_array("f2");
         string_array.add(sfb.tokenize("strange things here has some content").build());
         doc->setValue("f2", string_array);
     }
     {
-        WeightedSetFieldValue string_wset(_b.get_data_type("WeightedSet<String>"));
+        auto string_wset = _b.make_wset("f3");
         string_wset.add(sfb.tokenize("not a weighty argument").build(), 3);
         doc->setValue("f3", string_wset);
     }
@@ -1193,7 +1193,7 @@ TEST_F(UriInverterTest, require_that_uri_indexing_is_working)
     Document::UP doc;
     StringFieldBuilder sfb(_b);
     sfb.url_mode(true);
-    StructFieldValue url_value(_b.get_data_type("url"));
+    auto url_value = _b.make_url();
 
     doc = _b.make_document("id:ns:searchdocument::10");
     url_value.setValue("all", sfb.tokenize("http://www.example.com:81/fluke?ab=2#4").build());
@@ -1204,7 +1204,7 @@ TEST_F(UriInverterTest, require_that_uri_indexing_is_working)
     url_value.setValue("query", sfb.tokenize("ab=2").build());
     url_value.setValue("fragment", sfb.tokenize("4").build());
     doc->setValue("iu", url_value);
-    ArrayFieldValue url_array(_b.get_data_type("Array<url>"));
+    auto url_array = _b.make_array("iau");
     url_value.setValue("all", sfb.tokenize("http://www.example.com:82/fluke?ab=2#8").build());
     url_value.setValue("scheme", sfb.tokenize("http").build());
     url_value.setValue("host", sfb.tokenize("www.example.com").build());
@@ -1220,7 +1220,7 @@ TEST_F(UriInverterTest, require_that_uri_indexing_is_working)
     url_value.setValue("fragment", sfb.tokenize("9").build());
     url_array.add(url_value);
     doc->setValue("iau", url_array);
-    WeightedSetFieldValue url_wset(_b.get_data_type("WeightedSet<url>"));
+    auto url_wset = _b.make_wset("iwu");
     url_value.setValue("all", sfb.tokenize("http://www.example.com:83/fluke?ab=2#12").build());
     url_value.setValue("scheme", sfb.tokenize("http").build());
     url_value.setValue("host", sfb.tokenize("www.example.com").build());
