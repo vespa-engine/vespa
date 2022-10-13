@@ -155,8 +155,7 @@ public class ValidateSortingSearcher extends Searcher {
                             }
                         }
                     }
-                    if (f.getSorter() instanceof Sorting.UcaSorter) {
-                        Sorting.UcaSorter sorter = (Sorting.UcaSorter) f.getSorter();
+                    if (f.getSorter() instanceof Sorting.UcaSorter sorter) {
                         String locale = sorter.getLocale();
 
                         if (locale == null || locale.isEmpty()) {

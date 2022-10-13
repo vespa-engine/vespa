@@ -5,7 +5,6 @@ import com.yahoo.search.query.Sorting;
 import com.yahoo.search.result.Hit;
 import com.yahoo.search.result.HitGroup;
 
-import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 

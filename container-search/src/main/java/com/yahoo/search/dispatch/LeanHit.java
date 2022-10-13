@@ -51,7 +51,7 @@ public class LeanHit implements Comparable<LeanHit> {
         return (res != 0) ? res : compareData(gid, o.gid);
     }
 
-    private static int compareData(byte[] left, byte[] right) {
+    public static int compareData(byte[] left, byte[] right) {
         int i = Arrays.mismatch(left, right);
         if (i < 0) {
             return 0;
