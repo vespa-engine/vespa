@@ -90,11 +90,9 @@ import com.yahoo.search.query.parser.ParserFactory;
 /**
  * The YQL query language.
  *
- * <p>
  * This class <em>must</em> be kept in lockstep with {@link VespaSerializer}.
  * Adding anything here will usually require a corresponding addition in
  * VespaSerializer.
- * </p>
  *
  * @author Steinar Knutsen
  * @author Stian Kristoffersen
