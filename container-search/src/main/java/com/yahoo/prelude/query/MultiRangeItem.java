@@ -39,7 +39,7 @@ import static java.util.Objects.requireNonNull;
  * possible to achieve any matching by choosing inclusiveness for the query ranges properly.
  * For the case where document ranges are to be treated as exclusive, and the query has single points, this
  * becomes weird, since the ranges [1, 1), (1, 1] and (1, 1) are all logically empty, but this still works :)
- *
+ * <p>
  * Unless ranges are added in ascending start order, the implementation lazily sorts and merges ranges,
  * when a representation of the item is required. This is typically when the query is serialized and sent
  * to the backend, or when trace information is written, or {@link #toString()} is called on the item.
