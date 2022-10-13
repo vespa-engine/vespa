@@ -130,8 +130,9 @@ public class YqlParser implements Parser {
     private static final String USER_INPUT_DEFAULT_INDEX = "defaultIndex";
     private static final String USER_INPUT_GRAMMAR = "grammar";
     public static final String USER_INPUT_LANGUAGE = "language";
-    private static final String USER_INPUT_RAW = "raw";
-    private static final String USER_INPUT_SEGMENT = "segment";
+    private static final String USER_INPUT_GRAMMAR_RAW = "raw";
+    private static final String USER_INPUT_GRAMMAR_SEGMENT = "segment";
+    private static final String USER_INPUT_GRAMMAR_WEAKAND = "weakAnd";
     private static final String USER_INPUT = "userInput";
     private static final String USER_QUERY = "userQuery";
     private static final String NON_EMPTY = "nonEmpty";
@@ -720,13 +721,18 @@ public class YqlParser implements Parser {
                                             String.class, "default", "default index for user input terms");
         Language language = decideParsingLanguage(ast, wordData);
         Item item;
-        if (USER_INPUT_RAW.equals(grammar)) {
+        if (USER_INPUT_GRAMMAR_RAW.equals(grammar)) {
             item = instantiateWordItem(defaultIndex, wordData, ast, null, SegmentWhen.NEVER, true, language);
-        } else if (USER_INPUT_SEGMENT.equals(grammar)) {
+        } else if (USER_INPUT_GRAMMAR_SEGMENT.equals(grammar)) {
             item = instantiateWordItem(defaultIndex, wordData, ast, null, SegmentWhen.ALWAYS, false, language);
         } else {
             item = parseUserInput(grammar, defaultIndex, wordData, language, allowEmpty);
             propagateUserInputAnnotations(ast, item);
+        }
+
+        // Set grammar-specific annotations
+        if (USER_INPUT_GRAMMAR_WEAKAND.equals(grammar) && item instanceof WeakAndItem weakAndItem) {
+            weakAndItem.setN(getAnnotation(ast, TARGET_HITS, Integer.class, WeakAndItem.defaultN, "'targetHits' (N) for weak and"));
         }
         return item;
     }
@@ -1426,7 +1432,7 @@ public class YqlParser implements Parser {
                     wordItem = new WordItem(wordData, fromQuery);
                     break;
                 case POSSIBLY:
-                    if (shouldSegment(field, fromQuery) && ! grammar.equals(USER_INPUT_RAW)) {
+                    if (shouldSegment(field, fromQuery) && ! grammar.equals(USER_INPUT_GRAMMAR_RAW)) {
                         wordItem = segment(field, ast, wordData, fromQuery, parent, language);
                     } else {
                         wordItem = new WordItem(wordData, fromQuery);
