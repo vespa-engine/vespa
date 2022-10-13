@@ -122,7 +122,6 @@ public:
     void copySortData(uint32_t offset, uint32_t n, uint32_t *idx, char *buf);
     void freeSortData();
     void initWithoutSorting(const search::RankedHit * hits, uint32_t hitCnt);
-    //static int Compare(const FastS_SortSpec *self, const SortData &a, const SortData &b);
 };
 
 //-----------------------------------------------------------------------------
