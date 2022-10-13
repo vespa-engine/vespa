@@ -74,6 +74,8 @@ import static org.junit.Assert.assertTrue;
  */
 public class ProvisioningTester {
 
+    public static final ApplicationId tenantHostApp = ApplicationId.from("hosted-vespa", "tenant-host", "default");
+
     private final Curator curator;
     private final NodeFlavors nodeFlavors;
     private final ManualClock clock;
@@ -543,7 +545,7 @@ public class ProvisioningTester {
     }
 
     public void activateTenantHosts() {
-        prepareAndActivateInfraApplication(applicationId(), NodeType.host);
+        prepareAndActivateInfraApplication(tenantHostApp, NodeType.host);
     }
 
     public static ClusterSpec containerClusterSpec() {

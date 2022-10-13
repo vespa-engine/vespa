@@ -5,7 +5,6 @@ import com.yahoo.component.AbstractComponent;
 import com.yahoo.component.annotation.Inject;
 import com.yahoo.concurrent.maintenance.Maintainer;
 import com.yahoo.config.provision.Deployer;
-import com.yahoo.config.provision.HostLivenessTracker;
 import com.yahoo.config.provision.InfraDeployer;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.config.provision.Zone;
@@ -33,7 +32,7 @@ public class NodeRepositoryMaintenance extends AbstractComponent {
     @SuppressWarnings("unused")
     @Inject
     public NodeRepositoryMaintenance(NodeRepository nodeRepository, Deployer deployer, InfraDeployer infraDeployer,
-                                     HostLivenessTracker hostLivenessTracker, ServiceMonitor serviceMonitor,
+                                     ServiceMonitor serviceMonitor,
                                      Zone zone, Metric metric,
                                      ProvisionServiceProvider provisionServiceProvider, FlagSource flagSource,
                                      MetricsFetcher metricsFetcher) {
@@ -46,7 +45,7 @@ public class NodeRepositoryMaintenance extends AbstractComponent {
         maintainers.add(infrastructureProvisioner);
 
         maintainers.add(new NodeFailer(deployer, nodeRepository, defaults.failGrace, defaults.nodeFailerInterval, defaults.throttlePolicy, metric));
-        maintainers.add(new NodeHealthTracker(hostLivenessTracker, serviceMonitor, nodeRepository, defaults.nodeFailureStatusUpdateInterval, metric));
+        maintainers.add(new NodeHealthTracker(serviceMonitor, nodeRepository, defaults.nodeFailureStatusUpdateInterval, metric));
         maintainers.add(new ExpeditedChangeApplicationMaintainer(deployer, metric, nodeRepository, defaults.expeditedChangeRedeployInterval));
         maintainers.add(new ReservationExpirer(nodeRepository, defaults.reservationExpiry, metric));
         maintainers.add(new RetiredExpirer(nodeRepository, deployer, metric, defaults.retiredInterval, defaults.retiredExpiry));
