@@ -10,7 +10,7 @@
 #include <vespa/searchlib/common/serialnum.h>
 #include <vespa/config-attributes.h>
 
-namespace searchcorespi { namespace index { struct IThreadService; } }
+namespace searchcorespi::index { struct IThreadService; }
 
 namespace proton {
 
@@ -36,7 +36,7 @@ public:
     AttributeManagerInitializer(search::SerialNum configSerialNum,
                                 initializer::InitializerTask::SP documentMetaStoreInitTask,
                                 DocumentMetaStore::SP documentMetaStore,
-                                AttributeManager::SP baseAttrMgr,
+                                const AttributeManager & baseAttrMgr,
                                 const vespa::config::search::AttributesConfig &attrCfg,
                                 const AllocStrategy& alloc_strategy,
                                 bool fastAccessAttributesOnly,

@@ -8,7 +8,7 @@ namespace search::common {
 ThreadedCompactableLidSpace::ThreadedCompactableLidSpace(std::shared_ptr<ICompactableLidSpace> target,
                                                          ISequencedTaskExecutor &executor,
                                                          ISequencedTaskExecutor::ExecutorId id)
-    : _target(target),
+    : _target(std::move(target)),
       _executor(executor),
       _executorId(id)
 {
