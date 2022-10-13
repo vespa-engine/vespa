@@ -30,6 +30,7 @@ import com.yahoo.vespa.config.server.configchange.ConfigChangeActions;
 import com.yahoo.vespa.config.server.deploy.TenantFileSystemDirs;
 import com.yahoo.vespa.config.server.filedistribution.FileDirectory;
 import com.yahoo.vespa.config.server.filedistribution.FileDistributionFactory;
+import com.yahoo.vespa.config.server.http.InvalidApplicationException;
 import com.yahoo.vespa.config.server.http.UnknownVespaVersionException;
 import com.yahoo.vespa.config.server.modelfactory.ActivatedModelsBuilder;
 import com.yahoo.vespa.config.server.modelfactory.AllocatedHostsFromAllModels;
@@ -727,7 +728,7 @@ public class SessionRepository {
                 UnboundStringFlag flag = PermanentFlags.APPLICATION_FILES_WITH_UNKNOWN_EXTENSION;
                 String value = flag.bindTo(flagSource).with(APPLICATION_ID, applicationId.serializedForm()).value();
                 switch (value) {
-                    case "FAIL" -> throw e;
+                    case "FAIL" -> throw new InvalidApplicationException(e);
                     case "LOG" -> deployLogger.ifPresent(logger -> logger.logApplicationPackage(Level.WARNING, e.getMessage()));
                     default -> log.log(Level.WARNING, "Unknown value for flag " + flag.id() + ": " + value);
                 }
@@ -754,7 +755,7 @@ public class SessionRepository {
             waiter.awaitCompletion(Duration.ofSeconds(Math.min(120, timeoutBudget.timeLeft().getSeconds())));
             addLocalSession(session);
             return session;
-        } catch (Exception e) {
+        } catch (IOException e) {
             throw new RuntimeException("Error creating session " + sessionId, e);
         }
     }

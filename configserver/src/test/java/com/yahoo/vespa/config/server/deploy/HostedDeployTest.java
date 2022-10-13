@@ -1,6 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.config.server.deploy;
 
+import com.yahoo.cloud.config.ConfigserverConfig;
 import com.yahoo.component.Version;
 import com.yahoo.config.application.api.ValidationId;
 import com.yahoo.config.model.api.ConfigChangeAction;
@@ -36,6 +37,7 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 
+import java.nio.file.Files;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
@@ -49,6 +51,7 @@ import java.util.stream.IntStream;
 import static com.yahoo.vespa.config.server.deploy.DeployTester.CountingModelFactory;
 import static com.yahoo.vespa.config.server.deploy.DeployTester.createFailingModelFactory;
 import static com.yahoo.vespa.config.server.deploy.DeployTester.createHostedModelFactory;
+import static com.yahoo.yolean.Exceptions.uncheck;
 import static java.util.stream.Collectors.toList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -486,6 +489,25 @@ public class HostedDeployTest {
         assertEquals(Optional.of(ApplicationReindexing.empty()
                                                       .withPending("cluster", "music", prepareResult.sessionId())),
                      tester.tenant().getApplicationRepo().database().readReindexingStatus(tester.applicationId()));
+    }
+
+    @Test
+    public void testThatAppWithFilesWithInvalidFileExtensionFails() {
+        DeployTester tester = new DeployTester.Builder(temporaryFolder)
+                .configserverConfig(new ConfigserverConfig(new ConfigserverConfig.Builder()
+                                                                   .hostedVespa(true)
+                                                                   .configServerDBDir(uncheck(() -> Files.createTempDirectory("serverdb")).toString())
+                                                                   .configDefinitionsDir(uncheck(() -> Files.createTempDirectory("configdefinitions")).toString())
+                                                                   .fileReferencesDir(uncheck(() -> Files.createTempDirectory("configdefinitions")).toString())))
+                .modelFactory(createHostedModelFactory(Version.fromString("8.7.6"), Clock.systemUTC()))
+                .build();
+        try {
+            tester.deployApp("src/test/apps/hosted-invalid-file-extension/", "8.7.6");
+            fail();
+        } catch (InvalidApplicationException e) {
+            assertEquals("java.lang.IllegalArgumentException: File in application package with unknown extension: schemas/file-with-invalid.extension, please delete or move file to another directory.",
+                         e.getMessage());
+        }
     }
 
     @Test
