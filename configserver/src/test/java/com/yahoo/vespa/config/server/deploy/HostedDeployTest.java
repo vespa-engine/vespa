@@ -501,7 +501,6 @@ public class HostedDeployTest {
                                                                    .fileReferencesDir(uncheck(() -> Files.createTempDirectory("configdefinitions")).toString())))
                 .modelFactory(createHostedModelFactory(Version.fromString("8.7.6"), Clock.systemUTC()))
                 .build();
-        System.out.println("hostedvespa=" + tester.applicationRepository().configserverConfig().hostedVespa());
         try {
             tester.deployApp("src/test/apps/hosted-invalid-file-extension/", "8.7.6");
             fail();
