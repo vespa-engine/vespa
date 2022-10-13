@@ -38,11 +38,10 @@ public:
             };
             return awaiter();
         }
-        void return_value(const T &ret_value) noexcept(std::is_nothrow_move_constructible_v<T>) requires(std::copy_constructible<T>) {
-            value = ret_value;
-        }
-        void return_value(T &&ret_value) noexcept(std::is_nothrow_move_constructible_v<T>) {
-            value = std::move(ret_value);
+        template <typename RET>
+        requires std::is_convertible_v<RET&&,T>
+        void return_value(RET &&ret_value) noexcept(std::is_nothrow_constructible_v<T,RET&&>) {
+            value = std::forward<RET>(ret_value);
         }
         void unhandled_exception() noexcept {
             exception = std::current_exception();
@@ -52,7 +51,7 @@ public:
         std::coroutine_handle<> waiter;
         promise_type(promise_type &&) = delete;
         promise_type(const promise_type &) = delete;
-        promise_type() : value(std::nullopt), exception(), waiter(std::noop_coroutine()) {}
+        promise_type() noexcept : value(std::nullopt), exception(), waiter(std::noop_coroutine()) {}
         T &result() & {
             if (exception) {
                 std::rethrow_exception(exception);
