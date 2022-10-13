@@ -10,6 +10,7 @@
 #include "entryref.h"
 #include "atomic_entry_ref.h"
 #include "i_compaction_context.h"
+#include "i_compactable.h"
 #include "large_array_buffer_type.h"
 #include "small_array_buffer_type.h"
 #include <vespa/vespalib/util/array.h>
@@ -28,7 +29,7 @@ namespace vespalib::datastore {
  * The max value of maxSmallArrayTypeId is (2^bufferBits - 1).
  */
 template <typename EntryT, typename RefT = EntryRefT<19>, typename TypeMapperT = ArrayStoreTypeMapper<EntryT> >
-class ArrayStore
+class ArrayStore : public ICompactable
 {
 public:
     using AllocSpec = ArrayStoreConfig::AllocSpec;
@@ -66,7 +67,7 @@ private:
 public:
     ArrayStore(const ArrayStoreConfig &cfg, std::shared_ptr<alloc::MemoryAllocator> memory_allocator);
     ArrayStore(const ArrayStoreConfig &cfg, std::shared_ptr<alloc::MemoryAllocator> memory_allocator, TypeMapper&& mapper);
-    ~ArrayStore();
+    ~ArrayStore() override;
     EntryRef add(const ConstArrayRef &array);
     ConstArrayRef get(EntryRef ref) const {
         if (!ref.valid()) {
@@ -104,6 +105,7 @@ public:
     }
 
     void remove(EntryRef ref);
+    EntryRef move_on_compact(EntryRef ref) override;
     ICompactionContext::UP compactWorst(CompactionSpec compaction_spec, const CompactionStrategy& compaction_strategy);
     vespalib::MemoryUsage getMemoryUsage() const { return _store.getMemoryUsage(); }
 

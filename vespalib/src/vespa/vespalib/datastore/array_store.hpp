@@ -4,13 +4,14 @@
 
 #include "array_store.h"
 #include "compacting_buffers.h"
+#include "compaction_context.h"
 #include "compaction_spec.h"
-#include "entry_ref_filter.h"
 #include "datastore.hpp"
+#include "entry_ref_filter.h"
 #include "large_array_buffer_type.hpp"
 #include "small_array_buffer_type.hpp"
-#include <atomic>
 #include <algorithm>
+#include <atomic>
 
 namespace vespalib::datastore {
 
@@ -145,38 +146,11 @@ ArrayStore<EntryT, RefT, TypeMapperT>::remove(EntryRef ref)
     }
 }
 
-namespace arraystore {
-
 template <typename EntryT, typename RefT, typename TypeMapperT>
-class CompactionContext : public ICompactionContext {
-private:
-    using ArrayStoreType = ArrayStore<EntryT, RefT, TypeMapperT>;
-    ArrayStoreType &_store;
-    std::unique_ptr<vespalib::datastore::CompactingBuffers> _compacting_buffers;
-    EntryRefFilter _filter;
-
-public:
-    CompactionContext(ArrayStoreType &store,
-                      std::unique_ptr<vespalib::datastore::CompactingBuffers> compacting_buffers)
-        : _store(store),
-          _compacting_buffers(std::move(compacting_buffers)),
-          _filter(_compacting_buffers->make_entry_ref_filter())
-    {
-    }
-    ~CompactionContext() override {
-        _compacting_buffers->finish();
-    }
-    void compact(vespalib::ArrayRef<AtomicEntryRef> refs) override {
-        for (auto &atomic_entry_ref : refs) {
-            auto ref = atomic_entry_ref.load_relaxed();
-            if (ref.valid() && _filter.has(ref)) {
-                EntryRef newRef = _store.add(_store.get(ref));
-                atomic_entry_ref.store_release(newRef);
-            }
-        }
-    }
-};
-
+EntryRef
+ArrayStore<EntryT, RefT, TypeMapperT>::move_on_compact(EntryRef ref)
+{
+    return add(get(ref));
 }
 
 template <typename EntryT, typename RefT, typename TypeMapperT>
@@ -184,8 +158,7 @@ ICompactionContext::UP
 ArrayStore<EntryT, RefT, TypeMapperT>::compactWorst(CompactionSpec compaction_spec, const CompactionStrategy &compaction_strategy)
 {
     auto compacting_buffers = _store.start_compact_worst_buffers(compaction_spec, compaction_strategy);
-    return std::make_unique<arraystore::CompactionContext<EntryT, RefT, TypeMapperT>>
-        (*this, std::move(compacting_buffers));
+    return std::make_unique<CompactionContext>(*this, std::move(compacting_buffers));
 }
 
 template <typename EntryT, typename RefT, typename TypeMapperT>
