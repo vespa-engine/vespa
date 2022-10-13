@@ -8,10 +8,14 @@
 #include <memory>
 
 namespace document {
+class ArrayFieldValue;
 class DataType;
 class Document;
 class DocumentType;
 class DocumentTypeRepo;
+class MapFieldValue;
+class StructFieldValue;
+class WeightedSetFieldValue;
 }
 namespace document::config::internal { class InternalDocumenttypesType; }
 namespace document::config_builder { struct Struct; }
@@ -37,6 +41,11 @@ public:
     std::unique_ptr<document::Document> make_document(vespalib::string document_id);
     const document::DataType &get_data_type(const vespalib::string &name) const;
     const DocumenttypesConfig& get_documenttypes_config() const noexcept { return *_document_types_config; }
+    document::ArrayFieldValue make_array(vespalib::stringref field_name);
+    document::MapFieldValue make_map(vespalib::stringref field_name);
+    document::WeightedSetFieldValue make_wset(vespalib::stringref field_name);
+    document::StructFieldValue make_struct(vespalib::stringref field_name);
+    document::StructFieldValue make_url();
 };
 
 }

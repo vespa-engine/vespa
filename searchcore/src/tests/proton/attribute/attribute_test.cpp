@@ -262,7 +262,7 @@ TEST_F(AttributeWriterTest, handles_put)
     { // document with single value & multi value attribute
         auto doc = edb.make_document("id:ns:searchdocument::2");
         doc->setValue("a1", IntFieldValue(10));
-        ArrayFieldValue int_array(edb.get_data_type("Array<Int>"));
+        auto int_array = edb.make_array("a2");
         int_array.add(IntFieldValue(20));
         int_array.add(IntFieldValue(30));
         doc->setValue("a2",int_array);
@@ -284,7 +284,7 @@ TEST_F(AttributeWriterTest, handles_put)
     { // replace existing document
         auto doc = edb.make_document("id:ns:searchdocument::2");
         doc->setValue("a1", IntFieldValue(100));
-        ArrayFieldValue int_array(edb.get_data_type("Array<Int>"));
+        auto int_array = edb.make_array("a2");
         int_array.add(IntFieldValue(200));
         int_array.add(IntFieldValue(300));
         int_array.add(IntFieldValue(400));

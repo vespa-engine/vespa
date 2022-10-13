@@ -101,11 +101,11 @@ makeDoc17(EmptyDocBuilder &b)
     StringFieldBuilder sfb(b);
     auto doc = b.make_document("id:ns:searchdocument::17");
     doc->setValue("f1", sfb.tokenize("foo0 bar0").build());
-    ArrayFieldValue string_array(b.get_data_type("Array<String>"));
+    auto string_array = b.make_array("f2");
     string_array.add(sfb.tokenize("foo bar").build());
     string_array.add(sfb.tokenize("bar").build());
     doc->setValue("f2", string_array);
-    WeightedSetFieldValue string_wset(b.get_data_type("WeightedSet<String>"));
+    auto string_wset = b.make_wset("f3");
     string_wset.add(sfb.tokenize("foo2 bar2").build(), 3);
     string_wset.add(sfb.tokenize("bar2").build(), 4);
     doc->setValue("f3", string_wset);

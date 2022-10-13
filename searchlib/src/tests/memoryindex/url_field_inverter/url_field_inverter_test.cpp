@@ -43,7 +43,7 @@ Document::UP
 makeDoc10Single(EmptyDocBuilder &b)
 {
     auto doc = b.make_document("id:ns:searchdocument::10");
-    StructFieldValue url_value(b.get_data_type("url"));
+    auto url_value = b.make_struct("url");
     StringFieldBuilder sfb(b);
     sfb.url_mode(true);
     url_value.setValue("all", sfb.tokenize("http://www.example.com:81/fluke?ab=2#4").build());
@@ -63,8 +63,8 @@ makeDoc10Array(EmptyDocBuilder &b)
     auto doc = b.make_document("id:ns:searchdocument::10");
     StringFieldBuilder sfb(b);
     sfb.url_mode(true);
-    ArrayFieldValue url_array(b.get_data_type("Array<url>"));
-    StructFieldValue url_value(b.get_data_type("url"));
+    auto url_array = b.make_array("url");
+    auto url_value = b.make_url();
     url_value.setValue("all", sfb.tokenize("http://www.example.com:82/fluke?ab=2#8").build());
     url_value.setValue("scheme", sfb.tokenize("http").build());
     url_value.setValue("host", sfb.tokenize("www.example.com").build());
@@ -89,8 +89,8 @@ makeDoc10WeightedSet(EmptyDocBuilder &b)
     auto doc = b.make_document("id:ns:searchdocument::10");
     StringFieldBuilder sfb(b);
     sfb.url_mode(true);
-    WeightedSetFieldValue url_wset(b.get_data_type("WeightedSet<url>"));
-    StructFieldValue url_value(b.get_data_type("url"));
+    auto url_wset = b.make_wset("url");
+    auto url_value = b.make_url();
     url_value.setValue("all", sfb.tokenize("http://www.example.com:83/fluke?ab=2#12").build());
     url_value.setValue("scheme", sfb.tokenize("http").build());
     url_value.setValue("host", sfb.tokenize("www.example.com").build());

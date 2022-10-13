@@ -2,17 +2,25 @@
 
 #include "empty_doc_builder.h"
 #include <vespa/document/datatype/documenttype.h>
+#include <vespa/document/fieldvalue/arrayfieldvalue.h>
 #include <vespa/document/fieldvalue/document.h>
+#include <vespa/document/fieldvalue/mapfieldvalue.h>
+#include <vespa/document/fieldvalue/structfieldvalue.h>
+#include <vespa/document/fieldvalue/weightedsetfieldvalue.h>
 #include <vespa/document/repo/documenttyperepo.h>
 #include <vespa/document/repo/document_type_repo_factory.h>
 #include <vespa/document/repo/configbuilder.h>
 #include <cassert>
 
+using document::ArrayFieldValue;
 using document::DataType;
 using document::Document;
 using document::DocumentId;
 using document::DocumentTypeRepo;
 using document::DocumentTypeRepoFactory;
+using document::MapFieldValue;
+using document::StructFieldValue;
+using document::WeightedSetFieldValue;
 
 namespace search::index {
 
@@ -62,6 +70,48 @@ EmptyDocBuilder::get_data_type(const vespalib::string &name) const
     const DataType *type = _repo->getDataType(*_document_type, name);
     assert(type);
     return *type;
+}
+
+ArrayFieldValue
+EmptyDocBuilder::make_array(vespalib::stringref field_name)
+{
+    auto& field = _document_type->getField(field_name);
+    auto& field_type = field.getDataType();
+    assert(field_type.isArray());
+    return {field_type};
+}
+MapFieldValue
+EmptyDocBuilder::make_map(vespalib::stringref field_name)
+{
+    auto& field = _document_type->getField(field_name);
+    auto& field_type = field.getDataType();
+    assert(field_type.isMap());
+    return {field_type};
+
+}
+
+WeightedSetFieldValue
+EmptyDocBuilder::make_wset(vespalib::stringref field_name)
+{
+    auto& field = _document_type->getField(field_name);
+    auto& field_type = field.getDataType();
+    assert(field_type.isWeightedSet());
+    return {field_type};
+}
+
+StructFieldValue
+EmptyDocBuilder::make_struct(vespalib::stringref field_name)
+{
+    auto& field = _document_type->getField(field_name);
+    auto& field_type = field.getDataType();
+    assert(field_type.isStructured());
+    return {field_type};
+}
+
+StructFieldValue
+EmptyDocBuilder::make_url()
+{
+    return {get_data_type("url")};
 }
 
 }
