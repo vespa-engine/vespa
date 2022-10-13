@@ -208,7 +208,7 @@ TEST_P(NumberStoreTest, control_static_sizes) {
     EXPECT_EQ(464u, sizeof(store));
     EXPECT_EQ(304u, sizeof(NumberStoreTest::ArrayStoreType::DataStoreType));
 #else
-    EXPECT_EQ(496u, sizeof(store));
+    EXPECT_EQ(504u, sizeof(store));
     EXPECT_EQ(336u, sizeof(NumberStoreTest::ArrayStoreType::DataStoreType));
 #endif
     EXPECT_EQ(112u, sizeof(NumberStoreTest::ArrayStoreType::SmallBufferType));
