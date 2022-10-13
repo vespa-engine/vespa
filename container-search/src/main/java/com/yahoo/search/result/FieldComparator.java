@@ -17,7 +17,7 @@ import java.util.Comparator;
 public class FieldComparator extends ChainableComparator {
 
     /** The definition of sorting order */
-    private Sorting sorting;
+    private final Sorting sorting;
 
     /** Creates a field comparator using a sort order and having no chained comparator */
     public FieldComparator(Sorting sorting) {
@@ -32,7 +32,7 @@ public class FieldComparator extends ChainableComparator {
 
     /** Creates a comparator given a sorting, or returns null if the given sorting is null */
     public static FieldComparator create(Sorting sorting) {
-        if (sorting==null) return null;
+        if (sorting == null) return null;
         return new FieldComparator(sorting);
     }
 
@@ -41,7 +41,7 @@ public class FieldComparator extends ChainableComparator {
      * stored in hit fields.0
      * <p>
      * When one of the hits has the requested property and the other
-     * has not, the the hit containing the property precedes the one
+     * has not, the hit containing the property precedes the one
      * that does not.
      * <p>
      * There is no locale based sorting here, as the backend does
@@ -78,19 +78,14 @@ public class FieldComparator extends ChainableComparator {
             }
             Inspector sub = top.field(key);
             if (sub.valid()) {
-                switch (sub.type()) {
-                case EMPTY:
-                    return null;
-                case BOOL:
-                    return (sub.asBool() ? Boolean.TRUE : Boolean.FALSE);
-                case LONG:
-                    return sub.asLong();
-                case DOUBLE:
-                    return sub.asDouble();
-                case STRING:
-                    return sub.asString();
-                }
-                return sub.toString();
+                return switch (sub.type()) {
+                    case EMPTY -> null;
+                    case BOOL -> (sub.asBool() ? Boolean.TRUE : Boolean.FALSE);
+                    case LONG -> sub.asLong();
+                    case DOUBLE -> sub.asDouble();
+                    case STRING -> sub.asString();
+                    default -> sub.toString();
+                };
             }
         }
         // fallback value
@@ -115,15 +110,14 @@ public class FieldComparator extends ChainableComparator {
 
     @SuppressWarnings("rawtypes")
     private int compareValues(Object first, Object second, Sorting.AttributeSorter s) {
-        if (first == null) {
-            if (second == null) return 0;
-            return -1;
-        } else if (second == null) {
+        if (first == null)
+            return second == null ? 0 : -1;
+        else if (second == null)
             return 1;
-        }
+
         if (first.getClass().isInstance(second) && first instanceof Comparable) {
             // We now know:
-            // second is of a type which is a subclass of first's type
+            // Second is of a type which is a subclass of first's type
             // They both implement Comparable
             return s.compare((Comparable)first, (Comparable)second);
         } else {
@@ -133,14 +127,7 @@ public class FieldComparator extends ChainableComparator {
 
     @Override
     public String toString() {
-        StringBuilder b = new StringBuilder();
-        b.append("FieldComparator:");
-        if (sorting == null) {
-            b.append(" null");
-        } else {
-            b.append(sorting.toString());
-        }
-        return b.toString();
+        return "FieldComparator:" + (sorting == null ? " null" : sorting.toString());
     }
 
 }

@@ -31,18 +31,18 @@ import java.util.function.BiConsumer;
  */
 public class FastHit extends Hit {
 
-    private static final byte [] emptyGID = new byte[GlobalId.LENGTH];
+    private static final byte[] emptyGID = new byte[GlobalId.LENGTH];
     /** The index of the content node this hit originated at */
-    private int distributionKey = 0;
+    private int distributionKey;
 
     /** The local identifier of the content store for this hit on the node it originated at */
     private int partId;
 
     /** The global id of this document in the backend node which produced it */
-    private byte [] globalId;
+    private byte[] globalId;
 
     private transient byte[] sortData = null;
-    // TODO I suspect this one can be dropped.
+    // TODO: I suspect this one can be dropped.
     private transient Sorting sortDataSorting = null;
 
     /**

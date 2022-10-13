@@ -161,6 +161,7 @@ public class Sorting implements Cloneable {
      */
     public List<FieldOrder> fieldOrders() { return fieldOrders; }
 
+    @Override
     public Sorting clone() {
         return new Sorting(this.fieldOrders);
     }
@@ -173,9 +174,7 @@ public class Sorting implements Cloneable {
     @Override
     public boolean equals(Object o) {
         if (o == this) return true;
-        if( ! (o instanceof Sorting)) return false;
-
-        Sorting ss = (Sorting) o;
+        if( ! (o instanceof Sorting ss)) return false;
         return fieldOrders.equals(ss.fieldOrders);
     }
 
@@ -305,15 +304,14 @@ public class Sorting implements Cloneable {
         public UcaSorter(String fieldName) { super(fieldName); }
 
         static private int strength2Collator(Strength strength) {
-            switch (strength) {
-                case PRIMARY: return Collator.PRIMARY;
-                case SECONDARY: return Collator.SECONDARY;
-                case TERTIARY: return Collator.TERTIARY;
-                case QUATERNARY: return Collator.QUATERNARY;
-                case IDENTICAL: return Collator.IDENTICAL;
-                case UNDEFINED: return Collator.PRIMARY;
-            }
-            return Collator.PRIMARY;
+            return switch (strength) {
+                case PRIMARY -> Collator.PRIMARY;
+                case SECONDARY -> Collator.SECONDARY;
+                case TERTIARY -> Collator.TERTIARY;
+                case QUATERNARY -> Collator.QUATERNARY;
+                case IDENTICAL -> Collator.IDENTICAL;
+                case UNDEFINED -> Collator.PRIMARY;
+            };
         }
 
         public void setLocale(String locale, Strength strength) {
@@ -323,15 +321,15 @@ public class Sorting implements Cloneable {
             try {
                 uloc = new ULocale(locale);
             } catch (Throwable e) {
-                throw new RuntimeException("ULocale("+locale+") failed with exception " + e.toString());
+                throw new IllegalArgumentException("ULocale '" + locale + "' failed", e);
             }
             try {
                 collator = Collator.getInstance(uloc);
                 if (collator == null) {
-                    throw new RuntimeException("No collator available for: " + locale);
+                    throw new IllegalArgumentException("No collator available for locale '" + locale + "'");
                 }
             } catch (Throwable e) {
-                throw new RuntimeException("Collator.getInstance(ULocale("+locale+")) failed with exception " + e.toString());
+                throw new RuntimeException("Collator.getInstance(ULocale(" + locale + ")) failed", e);
             }
             collator.setStrength(strength2Collator(strength));
             // collator.setDecomposition(Collator.CANONICAL_DECOMPOSITION);
@@ -343,19 +341,22 @@ public class Sorting implements Cloneable {
         public String getDecomposition() { return (collator.getDecomposition() == Collator.CANONICAL_DECOMPOSITION) ? "CANONICAL_DECOMPOSITION" : "NO_DECOMPOSITION"; }
 
         @Override
-        public String toSerialForm() { return "uca(" + getName() + ',' + locale + ',' + ((strength != Strength.UNDEFINED) ? strength.toString() : "PRIMARY") + ')'; }
+        public String toSerialForm() {
+            return "uca(" + getName() + ',' + locale + ',' +
+                   ((strength != Strength.UNDEFINED) ? strength.toString() : "PRIMARY") + ')';
+        }
 
         @Override
         public int hashCode() { return 1 + 3*locale.hashCode() + 5*strength.hashCode() + 7*super.hashCode(); }
 
         @Override
         public boolean equals(Object other) {
-            if (!(other instanceof UcaSorter)) {
-                return false;
-            }
+            if (this == other) return true;
+            if (!(other instanceof UcaSorter)) return false;
             return super.equals(other) && locale.equals(((UcaSorter)other).locale) && (strength == ((UcaSorter)other).strength);
         }
 
+        @Override
         public UcaSorter clone() {
             UcaSorter clone = (UcaSorter)super.clone();
             if (locale != null) {
@@ -365,6 +366,7 @@ public class Sorting implements Cloneable {
         }
 
         @SuppressWarnings({ "rawtypes", "unchecked" })
+        @Override
         public int compare(Comparable a, Comparable b) {
             if ((a instanceof String) && (b instanceof String)) {
                 return collator.compare((String)a, (String) b);
