@@ -10,6 +10,7 @@ import com.yahoo.config.application.api.UnparsedConfigDefinition;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ApplicationName;
 import com.yahoo.config.provision.InstanceName;
+import com.yahoo.config.provision.Tags;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.io.IOUtils;
 import com.yahoo.io.reader.NamedReader;
@@ -85,6 +86,7 @@ public class MockApplicationPackage implements ApplicationPackage {
                                                       ApplicationId.from(TenantName.defaultName(),
                                                                          ApplicationName.from(APPLICATION_NAME),
                                                                          InstanceName.defaultName()),
+                                                      Tags.empty(),
                                                       "checksum",
                                                       APPLICATION_GENERATION,
                                                       0L);

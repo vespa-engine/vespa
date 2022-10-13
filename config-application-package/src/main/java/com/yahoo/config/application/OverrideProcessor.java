@@ -4,6 +4,7 @@ package com.yahoo.config.application;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.InstanceName;
 import com.yahoo.config.provision.RegionName;
+import com.yahoo.config.provision.Tags;
 import com.yahoo.text.XML;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
@@ -23,7 +24,7 @@ import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
 /**
- * Handles overrides in a XML document according to the rules defined for multi environment application packages.
+ * Handles overrides in a XML document according to the rules defined for multi-environment application packages.
  *
  * Rules:
  *
@@ -41,16 +42,19 @@ class OverrideProcessor implements PreProcessor {
     private final InstanceName instance;
     private final Environment environment;
     private final RegionName region;
+    private final Tags tags;
 
     private static final String ID_ATTRIBUTE = "id";
     private static final String INSTANCE_ATTRIBUTE = "instance";
     private static final String ENVIRONMENT_ATTRIBUTE = "environment";
     private static final String REGION_ATTRIBUTE = "region";
+    private static final String TAGS_ATTRIBUTE = "tags";
 
-    public OverrideProcessor(InstanceName instance, Environment environment, RegionName region) {
+    public OverrideProcessor(InstanceName instance, Environment environment, RegionName region, Tags tags) {
         this.instance = instance;
         this.environment = environment;
         this.region = region;
+        this.tags = tags;
     }
 
     public Document process(Document input) throws TransformerException {
@@ -80,6 +84,7 @@ class OverrideProcessor implements PreProcessor {
             child.removeAttributeNS(XmlPreProcessor.deployNamespaceUri, INSTANCE_ATTRIBUTE);
             child.removeAttributeNS(XmlPreProcessor.deployNamespaceUri, ENVIRONMENT_ATTRIBUTE);
             child.removeAttributeNS(XmlPreProcessor.deployNamespaceUri, REGION_ATTRIBUTE);
+            child.removeAttributeNS(XmlPreProcessor.deployNamespaceUri, TAGS_ATTRIBUTE);
         }
     }
 
@@ -87,13 +92,16 @@ class OverrideProcessor implements PreProcessor {
         Set<InstanceName> instances = context.instances;
         Set<Environment> environments = context.environments;
         Set<RegionName> regions = context.regions;
+        Tags tags = context.tags;
         if (instances.isEmpty())
             instances = getInstances(parent);
         if (environments.isEmpty())
             environments = getEnvironments(parent);
         if (regions.isEmpty())
             regions = getRegions(parent);
-        return Context.create(instances, environments, regions);
+        if (tags.isEmpty())
+            tags = getTags(parent);
+        return Context.create(instances, environments, regions, tags);
     }
 
     /**
@@ -128,17 +136,21 @@ class OverrideProcessor implements PreProcessor {
                 throw new IllegalArgumentException("Regions in child (" + regions +
                                                    ") are not a subset of those of the parent (" + context.regions + ") at " + child);
             }
+
+            Tags tags = getTags(child);
+            if ( ! tags.isEmpty() &&  ! context.tags.isEmpty() && ! context.tags.containsAll(tags)) {
+                throw new IllegalArgumentException("Tags in child (" + environments +
+                                                   ") are not a subset of those of the parent (" + context.tags + ") at " + child);
+            }
         }
     }
 
-    /**
-     * Prune elements that are not matching our environment and region
-     */
+    /** Prune elements that are not matching our environment and region. */
     private void pruneNonMatching(Element parent, List<Element> children) {
         Iterator<Element> elemIt = children.iterator();
         while (elemIt.hasNext()) {
             Element child = elemIt.next();
-            if ( ! matches(getInstances(child), getEnvironments(child), getRegions(child))) {
+            if ( ! matches(getInstances(child), getEnvironments(child), getRegions(child), getTags(child))) {
                 parent.removeChild(child);
                 elemIt.remove();
             }
@@ -147,7 +159,8 @@ class OverrideProcessor implements PreProcessor {
     
     private boolean matches(Set<InstanceName> elementInstances,
                             Set<Environment> elementEnvironments,
-                            Set<RegionName> elementRegions) {
+                            Set<RegionName> elementRegions,
+                            Tags elementTags) {
         if ( ! elementInstances.isEmpty()) { // match instance
             if ( ! elementInstances.contains(instance)) return false;
         }
@@ -164,12 +177,14 @@ class OverrideProcessor implements PreProcessor {
             if ( ! environment.isMultiRegion() && elementEnvironments.isEmpty() ) return false;
         }
 
+        if ( ! elementTags.isEmpty()) { // match tags
+            if ( ! elementTags.intersects(tags)) return false;
+        }
+
         return true;
     }
 
-    /**
-     * Find the most specific element and remove all others.
-     */
+    /** Find the most specific element and remove all others. */
     private void retainMostSpecific(Element parent, List<Element> children, Context context) {
         // Keep track of elements with highest number of matches (might be more than one element with same tag, need a list)
         List<Element> bestMatches = new ArrayList<>();
@@ -205,11 +220,14 @@ class OverrideProcessor implements PreProcessor {
         Set<InstanceName> elementInstances = hasInstance(child) ? getInstances(child) : context.instances;
         Set<Environment> elementEnvironments = hasEnvironment(child) ? getEnvironments(child) : context.environments;
         Set<RegionName> elementRegions = hasRegion(child) ? getRegions(child) : context.regions;
+        Tags elementTags = hasTag(child) ? getTags(child) : context.tags;
         if ( ! elementInstances.isEmpty() && elementInstances.contains(instance))
             currentMatch++;
         if ( ! elementEnvironments.isEmpty() && elementEnvironments.contains(environment))
             currentMatch++;
         if ( ! elementRegions.isEmpty() && elementRegions.contains(region))
+            currentMatch++;
+        if ( elementTags.intersects(tags))
             currentMatch++;
         return currentMatch;
     }
@@ -233,16 +251,14 @@ class OverrideProcessor implements PreProcessor {
         return false;
     }
 
-    /**
-     * Retains all elements where at least one element is overridden. Removes non-overridden elements from map.
-     */
+    /** Retains all elements where at least one element is overridden. Removes non-overridden elements from map. */
     private void retainOverriddenElements(Map<String, List<Element>> elementsByTagName) {
         Iterator<Map.Entry<String, List<Element>>> it = elementsByTagName.entrySet().iterator();
         while (it.hasNext()) {
             List<Element> elements = it.next().getValue();
             boolean hasOverrides = false;
             for (Element element : elements) {
-                if (hasEnvironment(element) || hasRegion(element)) {
+                if (hasInstance(element) || hasEnvironment(element) || hasRegion(element) || hasTag(element)) {
                     hasOverrides = true;
                 }
             }
@@ -264,22 +280,32 @@ class OverrideProcessor implements PreProcessor {
         return element.hasAttributeNS(XmlPreProcessor.deployNamespaceUri, ENVIRONMENT_ATTRIBUTE);
     }
 
+    private boolean hasTag(Element element) {
+        return element.hasAttributeNS(XmlPreProcessor.deployNamespaceUri, TAGS_ATTRIBUTE);
+    }
+
     private Set<InstanceName> getInstances(Element element) {
         String instance = element.getAttributeNS(XmlPreProcessor.deployNamespaceUri, INSTANCE_ATTRIBUTE);
-        if (instance == null || instance.isEmpty()) return Collections.emptySet();
+        if (instance == null || instance.isEmpty()) return  Set.of();
         return Arrays.stream(instance.split(" ")).map(InstanceName::from).collect(Collectors.toSet());
     }
 
     private Set<Environment> getEnvironments(Element element) {
         String env = element.getAttributeNS(XmlPreProcessor.deployNamespaceUri, ENVIRONMENT_ATTRIBUTE);
-        if (env == null || env.isEmpty()) return Collections.emptySet();
+        if (env == null || env.isEmpty()) return Set.of();
         return Arrays.stream(env.split(" ")).map(Environment::from).collect(Collectors.toSet());
     }
 
     private Set<RegionName> getRegions(Element element) {
         String reg = element.getAttributeNS(XmlPreProcessor.deployNamespaceUri, REGION_ATTRIBUTE);
-        if (reg == null || reg.isEmpty()) return Collections.emptySet();
+        if (reg == null || reg.isEmpty()) return Set.of();
         return Arrays.stream(reg.split(" ")).map(RegionName::from).collect(Collectors.toSet());
+    }
+
+    private Tags getTags(Element element) {
+        String env = element.getAttributeNS(XmlPreProcessor.deployNamespaceUri, TAGS_ATTRIBUTE);
+        if (env == null || env.isEmpty()) return Tags.empty();
+        return Tags.fromString(env);
     }
 
     private Map<String, List<Element>> elementsByTagNameAndId(List<Element> children) {
@@ -336,21 +362,27 @@ class OverrideProcessor implements PreProcessor {
         final Set<InstanceName> instances;
         final Set<Environment> environments;
         final Set<RegionName> regions;
+        final Tags tags;
 
-        private Context(Set<InstanceName> instances, Set<Environment> environments, Set<RegionName> regions) {
+        private Context(Set<InstanceName> instances,
+                        Set<Environment> environments,
+                        Set<RegionName> regions,
+                        Tags tags) {
             this.instances = Set.copyOf(instances);
             this.environments = Set.copyOf(environments);
             this.regions = Set.copyOf(regions);
+            this.tags = tags;
         }
 
         static Context empty() {
-            return new Context(Set.of(), Set.of(), Set.of());
+            return new Context(Set.of(), Set.of(), Set.of(), Tags.empty());
         }
 
         public static Context create(Set<InstanceName> instances,
                                      Set<Environment> environments,
-                                     Set<RegionName> regions) {
-            return new Context(instances, environments, regions);
+                                     Set<RegionName> regions,
+                                     Tags tags) {
+            return new Context(instances, environments, regions, tags);
         }
 
     }

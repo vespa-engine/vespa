@@ -5,6 +5,7 @@ import com.yahoo.component.Version;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.CloudAccount;
 import com.yahoo.config.provision.DockerImage;
+import com.yahoo.config.provision.Tags;
 import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.vespa.athenz.api.AthenzDomain;
 import com.yahoo.vespa.hosted.controller.api.integration.billing.Quota;
@@ -22,12 +23,14 @@ import static java.util.Objects.requireNonNull;
 
 /**
  * Data pertaining to a deployment to be done on a config server.
+ * Accessor names must match the names in com.yahoo.vespa.config.server.session.PrepareParams.
  *
  * @author jonmv
  */
 public class DeploymentData {
 
     private final ApplicationId instance;
+    private final Tags tags;
     private final ZoneId zone;
     private final byte[] applicationPackage;
     private final Version platform;
@@ -41,7 +44,7 @@ public class DeploymentData {
     private final Optional<CloudAccount> cloudAccount;
     private final boolean dryRun;
 
-    public DeploymentData(ApplicationId instance, ZoneId zone, byte[] applicationPackage, Version platform,
+    public DeploymentData(ApplicationId instance, Tags tags, ZoneId zone, byte[] applicationPackage, Version platform,
                           Set<ContainerEndpoint> containerEndpoints,
                           Optional<EndpointCertificateMetadata> endpointCertificateMetadata,
                           Optional<DockerImage> dockerImageRepo,
@@ -51,6 +54,7 @@ public class DeploymentData {
                           List<X509Certificate> operatorCertificates,
                           Optional<CloudAccount> cloudAccount, boolean dryRun) {
         this.instance = requireNonNull(instance);
+        this.tags = requireNonNull(tags);
         this.zone = requireNonNull(zone);
         this.applicationPackage = requireNonNull(applicationPackage);
         this.platform = requireNonNull(platform);
@@ -68,6 +72,8 @@ public class DeploymentData {
     public ApplicationId instance() {
         return instance;
     }
+
+    public Tags tags() { return tags; }
 
     public ZoneId zone() {
         return zone;

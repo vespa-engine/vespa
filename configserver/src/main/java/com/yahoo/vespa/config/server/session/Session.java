@@ -12,6 +12,7 @@ import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.AthenzDomain;
 import com.yahoo.config.provision.CloudAccount;
 import com.yahoo.config.provision.DockerImage;
+import com.yahoo.config.provision.Tags;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.path.Path;
 import com.yahoo.transaction.Transaction;
@@ -119,6 +120,10 @@ public abstract class Session implements Comparable<Session>  {
         sessionZooKeeperClient.writeApplicationId(applicationId);
     }
 
+    public void setTags(Tags tags) {
+        sessionZooKeeperClient.writeTags(tags);
+    }
+
     void setApplicationPackageReference(FileReference applicationPackageReference) {
         sessionZooKeeperClient.writeApplicationPackageReference(Optional.ofNullable(applicationPackageReference));
     }
@@ -151,6 +156,10 @@ public abstract class Session implements Comparable<Session>  {
     public ApplicationId getApplicationId() {
         return sessionZooKeeperClient.readApplicationId()
                 .orElseThrow(() -> new RuntimeException("Unable to read application id for session " + sessionId));
+    }
+
+    public Tags getTags() {
+        return sessionZooKeeperClient.readTags();
     }
 
     /** Returns application id read from ZooKeeper. Will return Optional.empty() if not found */

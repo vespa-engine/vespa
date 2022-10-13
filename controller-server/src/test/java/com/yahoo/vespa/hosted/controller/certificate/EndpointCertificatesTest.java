@@ -8,6 +8,7 @@ import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.InstanceName;
 import com.yahoo.config.provision.RegionName;
 import com.yahoo.config.provision.SystemName;
+import com.yahoo.config.provision.Tags;
 import com.yahoo.config.provision.zone.RoutingMethod;
 import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.security.KeyAlgorithm;
@@ -100,7 +101,7 @@ public class EndpointCertificatesTest {
         return x509CertificateBuilder.build();
     }
 
-    private final Instance testInstance = new Instance(ApplicationId.defaultId());
+    private final Instance testInstance = new Instance(ApplicationId.defaultId(), Tags.empty());
     private final String testKeyName = "testKeyName";
     private final String testCertName = "testCertName";
     private ZoneId testZone;
@@ -234,7 +235,7 @@ public class EndpointCertificatesTest {
 
     @Test
     void includes_application_endpoint_when_declared() {
-        Instance instance = new Instance(ApplicationId.from("t1", "a1", "default"));
+        Instance instance = new Instance(ApplicationId.from("t1", "a1", "default"), Tags.empty());
         ZoneId zone1 = ZoneId.from(Environment.prod, RegionName.from("aws-us-east-1c"));
         ZoneId zone2 = ZoneId.from(Environment.prod, RegionName.from("aws-us-west-2a"));
         ApplicationPackage applicationPackage = new ApplicationPackageBuilder()

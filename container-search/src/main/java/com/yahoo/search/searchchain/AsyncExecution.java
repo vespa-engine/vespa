@@ -67,7 +67,7 @@ public class AsyncExecution {
      * Creates an async execution.
      *
      * @param chain the chain to execute
-     * @param context the the context of this
+     * @param context the context of this
      */
     public AsyncExecution(Chain<? extends Searcher> chain, Execution.Context context) {
         this(context, chain);

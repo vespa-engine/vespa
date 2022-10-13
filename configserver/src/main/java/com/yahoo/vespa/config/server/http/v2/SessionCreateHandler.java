@@ -6,6 +6,7 @@ import com.yahoo.cloud.config.ConfigserverConfig;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ApplicationName;
 import com.yahoo.config.provision.InstanceName;
+import com.yahoo.config.provision.Tags;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.container.jdisc.HttpResponse;
@@ -46,7 +47,7 @@ public class SessionCreateHandler extends SessionHandler {
 
     @Override
     protected HttpResponse handlePOST(HttpRequest request) {
-        final TenantName tenantName = Utils.getTenantNameFromSessionRequest(request);
+        TenantName tenantName = Utils.getTenantNameFromSessionRequest(request);
         Utils.checkThatTenantExists(applicationRepository.tenantRepository(), tenantName);
         TimeoutBudget timeoutBudget = SessionHandler.getTimeoutBudget(request, zookeeperBarrierTimeout);
         boolean verbose = request.getBooleanProperty("verbose");
@@ -62,8 +63,12 @@ public class SessionCreateHandler extends SessionHandler {
             logger = DeployHandlerLogger.forTenant(tenantName, verbose);
             // TODO: Avoid using application id here at all
             ApplicationId applicationId = ApplicationId.from(tenantName, ApplicationName.defaultName(), InstanceName.defaultName());
-            sessionId = applicationRepository.createSession(applicationId, timeoutBudget, request.getData(),
-                                                            request.getHeader(ApplicationApiHandler.contentTypeHeader), logger);
+            sessionId = applicationRepository.createSession(applicationId,
+                                                            Tags.empty(),
+                                                            timeoutBudget,
+                                                            request.getData(),
+                                                            request.getHeader(ApplicationApiHandler.contentTypeHeader),
+                                                            logger);
         }
         return new SessionCreateResponse(logger.slime(), tenantName, request.getHost(), request.getPort(), sessionId);
     }

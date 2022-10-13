@@ -3,6 +3,7 @@ package com.yahoo.vespa.hosted.controller.restapi.athenz;
 
 import com.yahoo.application.container.handler.Request;
 import com.yahoo.config.provision.ApplicationId;
+import com.yahoo.config.provision.Tags;
 import com.yahoo.vespa.athenz.api.AthenzDomain;
 import com.yahoo.vespa.hosted.controller.ControllerTester;
 import com.yahoo.vespa.hosted.controller.restapi.ContainerTester;
@@ -25,8 +26,8 @@ public class AthenzApiTest extends ControllerContainerTest {
 
         controllerTester.createTenant("sandbox", AthenzApiHandler.sandboxDomainIn(tester.controller().system()), 123L);
         controllerTester.createApplication("sandbox", "app", "default");
-        tester.controller().applications().createInstance(ApplicationId.from("sandbox", "app", hostedOperator.getName()));
-        tester.controller().applications().createInstance(ApplicationId.from("sandbox", "app", defaultUser.getName()));
+        tester.controller().applications().createInstance(ApplicationId.from("sandbox", "app", hostedOperator.getName()), Tags.empty());
+        tester.controller().applications().createInstance(ApplicationId.from("sandbox", "app", defaultUser.getName()), Tags.empty());
         controllerTester.createApplication("sandbox", "opp", "default");
 
         controllerTester.createTenant("tenant1", "domain1", 123L);

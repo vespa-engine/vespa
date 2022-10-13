@@ -13,6 +13,7 @@ import com.yahoo.config.model.application.provider.MockFileRegistry;
 import com.yahoo.config.provision.AllocatedHosts;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.HostSpec;
+import com.yahoo.config.provision.Tags;
 import com.yahoo.path.Path;
 import com.yahoo.text.Utf8;
 import com.yahoo.vespa.config.server.zookeeper.ZKApplicationPackage;
@@ -59,6 +60,7 @@ public class ZooKeeperClientTest {
         ApplicationPackage app = FilesApplicationPackage.fromFileWithDeployData(new File("src/test/apps/zkfeed"),
                                                                                 new DeployData("/bar/baz",
                                                                                                ApplicationId.from("default", "appName", "default"),
+                                                                                               Tags.fromString("tag1 tag2"),
                                                                                                1345L,
                                                                                                true,
                                                                                                3L,
@@ -121,6 +123,7 @@ public class ZooKeeperClientTest {
         assertTrue(metaData.getChecksum().length() > 0);
         assertTrue(metaData.isInternalRedeploy());
         assertEquals("/bar/baz", metaData.getDeployPath());
+        assertEquals(Tags.fromString("tag1 tag2"), metaData.getTags());
         assertEquals(1345, metaData.getDeployTimestamp().longValue());
         assertEquals(3, metaData.getGeneration().longValue());
         assertEquals(2, metaData.getPreviousActiveGeneration());

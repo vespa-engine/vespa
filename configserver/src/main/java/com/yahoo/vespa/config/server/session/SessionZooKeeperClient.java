@@ -14,6 +14,7 @@ import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.AthenzDomain;
 import com.yahoo.config.provision.CloudAccount;
 import com.yahoo.config.provision.DockerImage;
+import com.yahoo.config.provision.Tags;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.path.Path;
 import com.yahoo.slime.SlimeUtils;
@@ -57,6 +58,7 @@ public class SessionZooKeeperClient {
     // NOTE: Any state added here MUST also be propagated in com.yahoo.vespa.config.server.deploy.Deployment.prepare()
 
     static final String APPLICATION_ID_PATH = "applicationId";
+    static final String TAGS_PATH = "tags";
     static final String APPLICATION_PACKAGE_REFERENCE_PATH = "applicationPackageReference";
     private static final String VERSION_PATH = "version";
     private static final String CREATE_TIME_PATH = "createTime";
@@ -169,6 +171,20 @@ public class SessionZooKeeperClient {
 
     public Optional<ApplicationId> readApplicationId() {
         return curator.getData(applicationIdPath()).map(d -> ApplicationId.fromSerializedForm(Utf8.toString(d)));
+    }
+
+    private Path tagsPath() {
+        return sessionPath.append(TAGS_PATH);
+    }
+
+    public void writeTags(Tags tags) {
+        curator.set(tagsPath(), Utf8.toBytes(tags.asString()));
+    }
+
+    public Tags readTags() {
+        Optional<byte[]> data = curator.getData(tagsPath());
+        if (data.isEmpty()) return Tags.empty();
+        return Tags.fromString(Utf8.toString(data.get()));
     }
 
     void writeApplicationPackageReference(Optional<FileReference> applicationPackageReference) {

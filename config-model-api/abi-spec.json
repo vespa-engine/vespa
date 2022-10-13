@@ -71,11 +71,13 @@
       "public"
     ],
     "methods": [
+      "public void <init>(java.lang.String, java.lang.Long, boolean, com.yahoo.config.provision.ApplicationId, com.yahoo.config.provision.Tags, java.lang.String, java.lang.Long, long)",
       "public void <init>(java.lang.String, java.lang.Long, boolean, com.yahoo.config.provision.ApplicationId, java.lang.String, java.lang.Long, long)",
       "public void <init>(java.lang.String, java.lang.String, java.lang.Long, boolean, com.yahoo.config.provision.ApplicationId, java.lang.String, java.lang.Long, long)",
       "public java.lang.String getDeployedByUser()",
       "public java.lang.String getDeployPath()",
       "public com.yahoo.config.provision.ApplicationId getApplicationId()",
+      "public com.yahoo.config.provision.Tags getTags()",
       "public java.lang.Long getDeployTimestamp()",
       "public java.lang.Long getGeneration()",
       "public boolean isInternalRedeploy()",
@@ -194,8 +196,9 @@
       "public"
     ],
     "methods": [
-      "public void <init>(com.yahoo.config.provision.InstanceName, java.util.List, com.yahoo.config.application.api.DeploymentSpec$UpgradePolicy, com.yahoo.config.application.api.DeploymentSpec$RevisionTarget, com.yahoo.config.application.api.DeploymentSpec$RevisionChange, com.yahoo.config.application.api.DeploymentSpec$UpgradeRollout, int, int, int, java.util.List, java.util.Optional, java.util.Optional, java.util.Optional, com.yahoo.config.application.api.Notifications, java.util.List, java.time.Instant)",
+      "public void <init>(com.yahoo.config.provision.InstanceName, com.yahoo.config.provision.Tags, java.util.List, com.yahoo.config.application.api.DeploymentSpec$UpgradePolicy, com.yahoo.config.application.api.DeploymentSpec$RevisionTarget, com.yahoo.config.application.api.DeploymentSpec$RevisionChange, com.yahoo.config.application.api.DeploymentSpec$UpgradeRollout, int, int, int, java.util.List, java.util.Optional, java.util.Optional, java.util.Optional, com.yahoo.config.application.api.Notifications, java.util.List, java.time.Instant)",
       "public com.yahoo.config.provision.InstanceName name()",
+      "public com.yahoo.config.provision.Tags tags()",
       "public com.yahoo.config.application.api.DeploymentSpec$UpgradePolicy upgradePolicy()",
       "public com.yahoo.config.application.api.DeploymentSpec$RevisionTarget revisionTarget()",
       "public com.yahoo.config.application.api.DeploymentSpec$RevisionChange revisionChange()",

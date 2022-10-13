@@ -8,6 +8,7 @@ import com.yahoo.config.application.api.ValidationOverrides;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.RegionName;
+import com.yahoo.config.provision.Tags;
 import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.Instance;
@@ -63,8 +64,8 @@ public class DeploymentQuotaCalculatorTest {
 
         var existing_dev_deployment = new Application(TenantAndApplicationId.from(ApplicationId.defaultId()), Instant.EPOCH, DeploymentSpec.empty, ValidationOverrides.empty, Optional.empty(),
                 Optional.empty(), Optional.empty(), OptionalInt.empty(), new ApplicationMetrics(1, 1), Set.of(), OptionalLong.empty(), RevisionHistory.empty(),
-                List.of(new Instance(ApplicationId.defaultId()).withNewDeployment(ZoneId.from(Environment.dev, RegionName.defaultName()),
-                        RevisionId.forProduction(1), Version.emptyVersion, Instant.EPOCH, Map.of(), QuotaUsage.create(0.53d))));
+                List.of(new Instance(ApplicationId.defaultId(), Tags.empty()).withNewDeployment(ZoneId.from(Environment.dev, RegionName.defaultName()),
+                                                                                         RevisionId.forProduction(1), Version.emptyVersion, Instant.EPOCH, Map.of(), QuotaUsage.create(0.53d))));
 
         Quota calculated = DeploymentQuotaCalculator.calculate(Quota.unlimited().withBudget(2), List.of(existing_dev_deployment), ApplicationId.defaultId(), ZoneId.defaultId(),
                 DeploymentSpec.fromXml(

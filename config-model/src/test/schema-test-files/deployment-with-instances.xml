@@ -35,7 +35,7 @@
     <delay hours='2'/>
 
     <parallel>
-        <instance id="three">
+        <instance id="three" tags="a b">
             <test/>
             <staging/>
         </instance>

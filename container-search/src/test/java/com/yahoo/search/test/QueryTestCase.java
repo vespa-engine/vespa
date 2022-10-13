@@ -65,7 +65,7 @@ import static org.junit.jupiter.api.Assertions.*;
 public class QueryTestCase {
 
     @Test
-    void testIt() throws Exception {
+    void testIt() {
         JSONObject newroot = new JSONObject("{\"key\": 3}");
         var hit = new FastHit();
         hit.setField("data", (JsonProducer) s -> s.append(newroot));

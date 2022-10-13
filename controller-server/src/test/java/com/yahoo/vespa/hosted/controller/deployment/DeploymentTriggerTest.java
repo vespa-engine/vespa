@@ -8,6 +8,7 @@ import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.InstanceName;
 import com.yahoo.config.provision.RegionName;
 import com.yahoo.config.provision.SystemName;
+import com.yahoo.config.provision.Tags;
 import com.yahoo.config.provision.zone.RoutingMethod;
 import com.yahoo.config.provision.zone.ZoneApi;
 import com.yahoo.config.provision.zone.ZoneId;
@@ -996,7 +997,7 @@ public class DeploymentTriggerTest {
     @Test
     void testUserInstancesNotInDeploymentSpec() {
         var app = tester.newDeploymentContext();
-        tester.controller().applications().createInstance(app.application().id().instance("user"));
+        tester.controller().applications().createInstance(app.application().id().instance("user"), Tags.empty());
         app.submit().deploy();
     }
 
