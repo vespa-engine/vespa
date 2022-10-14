@@ -4,15 +4,12 @@
 
 #include <vespa/eval/eval/cell_type.h>
 #include <vespa/vespalib/datastore/aligner.h>
+#include <vespa/vespalib/util/arrayref.h>
 #include <vespa/vespalib/util/string_id.h>
 #include <cstddef>
 #include <memory>
 
-namespace vespalib {
-template <typename T> class ArrayRef;
-template <typename T> class ConstArrayRef;
-class nbostream;
-}
+namespace vespalib { class nbostream; }
 
 namespace vespalib::eval {
 struct Value;
@@ -27,7 +24,10 @@ namespace search::tensor {
  *
  * Layout of buffer is:
  *
- * num_subspaces                                     - number of subspaces
+ *  num_subspaces_and_flag
+ *   31 least significant bits is num_subspaces      - number of subspaces
+ *    1 bit to signal that reclaim_labels should be a noop (i.e. buffer has been copied
+ *      as part of compaction or fallback copy (due to datastore buffer fallback resize)).
  * labels[num_subspaces * _num_mapped_dimensions]    - array of labels for sparse dimensions
  * padding                                           - to align start of cells
  * cells[num_subspaces * _dense_subspaces_size]      - array of tensor cell values
@@ -50,6 +50,8 @@ class TensorBufferOperations
 
     static constexpr size_t CELLS_ALIGNMENT = 16;
     static constexpr size_t CELLS_ALIGNMENT_MEM_SIZE_MIN = 32;
+    static constexpr uint32_t num_subspaces_mask = ((1u << 31) - 1);
+    static constexpr uint32_t skip_reclaim_labels_mask = (1u << 31);
 
     static constexpr size_t get_num_subspaces_size() noexcept { return sizeof(uint32_t); }
     static constexpr size_t get_labels_offset() noexcept { return get_num_subspaces_size(); }
@@ -65,7 +67,17 @@ class TensorBufferOperations
     size_t get_cells_offset(uint32_t num_subspaces, auto aligner) const noexcept {
         return aligner.align(get_labels_offset() + get_labels_mem_size(num_subspaces));
     }
-    uint32_t get_num_subspaces(vespalib::ConstArrayRef<char> buf) const noexcept;
+    uint32_t get_num_subspaces_and_flag(vespalib::ConstArrayRef<char> buf) const noexcept;
+    void set_skip_reclaim_labels(vespalib::ArrayRef<char> buf, uint32_t num_subspaces_and_flag) const noexcept;
+    static uint32_t get_num_subspaces(uint32_t num_subspaces_and_flag) noexcept {
+        return num_subspaces_and_flag & num_subspaces_mask;
+    }
+    static bool get_skip_reclaim_labels(uint32_t num_subspaces_and_flag) noexcept {
+        return (num_subspaces_and_flag & skip_reclaim_labels_mask) != 0;
+    }
+    uint32_t get_num_subspaces(vespalib::ConstArrayRef<char> buf) const noexcept {
+        return get_num_subspaces(get_num_subspaces_and_flag(buf));
+    }
 public:
     size_t get_array_size(uint32_t num_subspaces) const noexcept {
         auto cells_mem_size = get_cells_mem_size(num_subspaces);
@@ -81,9 +93,9 @@ public:
     void store_tensor(vespalib::ArrayRef<char> buf, const vespalib::eval::Value& tensor);
     std::unique_ptr<vespalib::eval::Value> make_fast_view(vespalib::ConstArrayRef<char> buf, const vespalib::eval::ValueType& tensor_type) const;
 
-    // Increase reference counts for labels after copying tensor buffer
-    void copied_labels(vespalib::ConstArrayRef<char> buf) const;
-    // Decrease reference counts for labels and invalidate them
+    // Mark that reclaim_labels should be skipped for old buffer after copying tensor buffer
+    void copied_labels(vespalib::ArrayRef<char> buf) const;
+    // Decrease reference counts for labels and set skip flag unless skip flag is set.
     void reclaim_labels(vespalib::ArrayRef<char> buf) const;
     // Serialize stored tensor to target (used when saving attribute)
     void encode_stored_tensor(vespalib::ConstArrayRef<char> buf, const vespalib::eval::ValueType& type, vespalib::nbostream& target) const;

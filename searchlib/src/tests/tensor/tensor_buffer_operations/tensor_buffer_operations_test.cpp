@@ -137,10 +137,9 @@ TensorBufferOperationsTest::assert_store_copy_load(const TensorSpec& tensor_spec
 {
     auto buf = store_tensor(tensor_spec);
     auto buf2 = buf;
-    _ops.copied_labels(buf2);
-    EXPECT_EQ(buf, buf2);
-    _ops.reclaim_labels(buf);
+    _ops.copied_labels(buf);
     EXPECT_NE(buf, buf2);
+    _ops.reclaim_labels(buf);
     buf.clear();
     auto loaded_spec = load_tensor_spec(buf2);
     _ops.reclaim_labels(buf2);
