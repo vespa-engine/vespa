@@ -231,18 +231,8 @@ public class JettyHttpServer extends AbstractServerProvider {
         return h;
     }
 
-    private static ContextHandler newConnectorContextHandler(JDiscServerConnector connector) {
-        ContextHandler ctxHandler = new ContextHandler();
-        List<String> allowedServerNames = connector.connectorConfig().serverName().allowed();
-        if (allowedServerNames.isEmpty()) {
-            ctxHandler.setVirtualHosts(new String[]{"@%s".formatted(connector.getName())});
-        } else {
-            String[] virtualHosts = allowedServerNames.stream()
-                    .map(name -> "%s@%s".formatted(name, connector.getName()))
-                    .toArray(String[]::new);
-            ctxHandler.setVirtualHosts(virtualHosts);
-        }
-        return ctxHandler;
+    private static ContextHandler newConnectorContextHandler(JDiscServerConnector c) {
+        return new ConnectorSpecificContextHandler(c);
     }
 
     private static HealthCheckProxyHandler newHealthCheckProxyHandler(List<JDiscServerConnector> connectors) {
