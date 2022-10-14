@@ -1989,7 +1989,7 @@ TEST(DocumentMetaStoreTest, serialize_for_sort)
     EXPECT_EQ(SZ, dms.serializeForAscendingSort(2, asc_dest, sizeof(asc_dest), nullptr));
     EXPECT_TRUE(dms.getGid(2, gid));
     EXPECT_EQ(0, memcmp(asc_dest, gid.get(), SZ));
-    
+
     uint8_t desc_dest[SZ];
     EXPECT_EQ(SZ, dms.serializeForDescendingSort(2, desc_dest, sizeof(desc_dest), nullptr));
     for (size_t i(0); i < SZ; i++) {

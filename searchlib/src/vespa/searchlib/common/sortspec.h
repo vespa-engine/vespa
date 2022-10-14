@@ -11,7 +11,7 @@
 namespace search::common {
 
 struct SortInfo {
-    SortInfo(const vespalib::string & field, bool ascending, BlobConverter::SP converter);
+    SortInfo(vespalib::stringref field, bool ascending, BlobConverter::SP converter) noexcept;
     ~SortInfo();
     vespalib::string      _field;
     bool                  _ascending;

@@ -3,9 +3,9 @@
 #include "sortresults.h"
 #include "sort.h"
 #include <vespa/searchcommon/attribute/iattributecontext.h>
-#include <vespa/vespalib/util/array.hpp>
-
+#include <vespa/vespalib/util/array.h>
 #include <vespa/vespalib/util/issue.h>
+
 using vespalib::Issue;
 
 #include <vespa/log/log.h>
@@ -174,6 +174,7 @@ FastS_SortSpec::Add(IAttributeContext & vecMan, const SortInfo & sInfo)
         type = (sInfo._ascending) ? ASC_RANK : DESC_RANK;
     } else if ((sInfo._field.size() == 7) && (sInfo._field == "[docid]")) {
         type = (sInfo._ascending) ? ASC_DOCID : DESC_DOCID;
+        vector = vecMan.getAttribute(_documentmetastore);
     } else {
         type = (sInfo._ascending) ? ASC_VECTOR : DESC_VECTOR;
         vector = vecMan.getAttribute(sInfo._field);
@@ -217,7 +218,9 @@ FastS_SortSpec::initSortData(const RankedHit *hits, uint32_t n)
     size_t variableWidth = 0;
     for (const auto & vec : _vectors) {
         if (vec._type >= ASC_DOCID) { // doc id
-            fixedWidth += sizeof(uint32_t) + sizeof(uint16_t);
+            fixedWidth = (vec._vector != nullptr)
+                    ? vec._vector->getFixedWidth()
+                    : sizeof(uint32_t) + sizeof(uint16_t);
         } else if (vec._type >= ASC_RANK) { // rank value
             fixedWidth += sizeof(search::HitRank);
         } else {
@@ -239,21 +242,29 @@ FastS_SortSpec::initSortData(const RankedHit *hits, uint32_t n)
     for (uint32_t i(0), idx(0); (i < n) && !_doom.hard_doom(); ++i) {
         uint32_t len = 0;
         for (const auto & vec : _vectors) {
-            int written(0);
+            long written(0);
             if (available < std::max(sizeof(hits->_docId) + sizeof(_partitionId), sizeof(hits->_rankValue))) {
                 mySortData = realloc(n, variableWidth, available, dataSize, mySortData);
             }
             do {
                 switch (vec._type) {
                 case ASC_DOCID:
-                    serializeForSort<convertForSort<uint32_t, true> >(hits[i].getDocId(), mySortData);
-                    serializeForSort<convertForSort<uint16_t, true> >(_partitionId, mySortData + sizeof(hits->_docId));
-                    written = sizeof(hits->_docId) + sizeof(_partitionId);
+                    if (vec._vector != nullptr) {
+                        written = vec._vector->serializeForAscendingSort(hits[i].getDocId(), mySortData, available, vec._converter);
+                    } else {
+                        serializeForSort<convertForSort<uint32_t, true> >(hits[i].getDocId(), mySortData);
+                        serializeForSort<convertForSort<uint16_t, true> >(_partitionId, mySortData + sizeof(hits->_docId));
+                        written = sizeof(hits->_docId) + sizeof(_partitionId);
+                    }
                     break;
                 case DESC_DOCID:
-                    serializeForSort<convertForSort<uint32_t, false> >(hits[i].getDocId(), mySortData);
-                    serializeForSort<convertForSort<uint16_t, false> >(_partitionId, mySortData + sizeof(hits->_docId));
-                    written = sizeof(hits->_docId) + sizeof(_partitionId);
+                    if (vec._vector != nullptr) {
+                        written = vec._vector->serializeForDescendingSort(hits[i].getDocId(), mySortData, available, vec._converter);
+                    } else {
+                        serializeForSort<convertForSort<uint32_t, false> >(hits[i].getDocId(), mySortData);
+                        serializeForSort<convertForSort<uint16_t, false> >(_partitionId, mySortData + sizeof(hits->_docId));
+                        written = sizeof(hits->_docId) + sizeof(_partitionId);
+                    }
                     break;
                 case ASC_RANK:
                     serializeForSort<convertForSort<search::HitRank, true> >(hits[i].getRank(), mySortData);
@@ -288,12 +299,13 @@ FastS_SortSpec::initSortData(const RankedHit *hits, uint32_t n)
     }
 }
 
-FastS_SortSpec::FastS_SortSpec(uint32_t partitionId, const Doom & doom, const ConverterFactory & ucaFactory) :
-    _partitionId(partitionId),
-    _doom(doom),
-    _ucaFactory(ucaFactory),
-    _sortSpec(),
-    _vectors()
+FastS_SortSpec::FastS_SortSpec(vespalib::stringref documentmetastore, uint32_t partitionId, const Doom & doom, const ConverterFactory & ucaFactory)
+    : _documentmetastore(documentmetastore),
+      _partitionId(partitionId),
+      _doom(doom),
+      _ucaFactory(ucaFactory),
+      _sortSpec(),
+      _vectors()
 { }
 
 

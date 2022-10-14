@@ -4,7 +4,7 @@
 
 #include "rankedhit.h"
 #include "sortspec.h"
-#include <vespa/vespalib/util/array.h>
+#include <vespa/vespalib/stllike/allocator.h>
 #include <vespa/vespalib/util/doom.h>
 
 #define INSERT_SORT_LEVEL 80
@@ -72,7 +72,7 @@ public:
 
     struct VectorRef
     {
-        VectorRef(uint32_t type, const search::attribute::IAttributeVector * vector, const search::common::BlobConverter *converter)
+        VectorRef(uint32_t type, const search::attribute::IAttributeVector * vector, const search::common::BlobConverter *converter) noexcept
             : _type(type),
               _vector(vector),
               _converter(converter)
@@ -84,17 +84,18 @@ public:
 
     struct SortData : public search::RankedHit
     {
-        SortData() : RankedHit(), _idx(0u), _len(0u), _pos(0u) {}
+        SortData() noexcept : RankedHit(), _idx(0u), _len(0u), _pos(0u) {}
         uint32_t _idx;
         uint32_t _len;
         uint32_t _pos;
     };
 
 private:
-    typedef std::vector<VectorRef> VectorRefList;
-    typedef vespalib::Array<uint8_t> BinarySortData;
-    typedef vespalib::Array<SortData> SortDataArray;
+    using VectorRefList = std::vector<VectorRef>;
+    using BinarySortData = std::vector<uint8_t, vespalib::allocator_large<uint8_t>>;
+    using SortDataArray = std::vector<SortData, vespalib::allocator_large<SortData>>;
     using ConverterFactory = search::common::ConverterFactory;
+    vespalib::string         _documentmetastore;
     uint16_t                 _partitionId;
     vespalib::Doom           _doom;
     const ConverterFactory & _ucaFactory;
@@ -110,7 +111,7 @@ private:
 public:
     FastS_SortSpec(const FastS_SortSpec &) = delete;
     FastS_SortSpec & operator = (const FastS_SortSpec &) = delete;
-    FastS_SortSpec(uint32_t partitionId, const vespalib::Doom & doom, const ConverterFactory & ucaFactory);
+    FastS_SortSpec(vespalib::stringref documentmetastore, uint32_t partitionId, const vespalib::Doom & doom, const ConverterFactory & ucaFactory);
     ~FastS_SortSpec() override;
 
     std::pair<const char *, size_t> getSortRef(size_t i) const {
