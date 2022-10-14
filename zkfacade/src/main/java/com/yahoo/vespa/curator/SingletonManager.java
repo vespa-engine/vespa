@@ -153,7 +153,7 @@ class SingletonManager {
         public void unlock() {
             doom.set(null);
             if (lock != null) try {
-                logger.log(INFO, "Releasing lease for " + id);
+                logger.log(INFO, "Relinquishing lease for " + id);
                 lock.close();
                 lock = null;
             }
@@ -198,7 +198,6 @@ class SingletonManager {
                         doUnregister(task.singleton);
                         task.future.complete(null);
                     }
-                    default -> throw new AssertionError("unknown task type '" + task.type + "'");
                 }
             }
             catch (RuntimeException e) {
@@ -257,10 +256,10 @@ class SingletonManager {
                     if (e == null) e = f;
                     else e.addSuppressed(f);
                 }
-            }
-            if (singletons.isEmpty()) {
-                logger.log(INFO, "No registered singletons, invalidating lease");
-                invalidate();
+                if (singletons.isEmpty()) {
+                    logger.log(INFO, "No registered singletons, invalidating lease");
+                    invalidate();
+                }
             }
             if (e != null) throw e;
         }
@@ -283,7 +282,7 @@ class SingletonManager {
                 logger.log(INFO, "Acquired lock for ID: " + id);
             }
             catch (RuntimeException e) {
-                logger.log(FINE, "Failed acquiring lock for '" + path + "' within " + tickTimeout, e);
+                logger.log(FINE, e, () -> "Failed acquiring lock for '" + path + "' within " + tickTimeout);
                 return;
             }
             try {
@@ -306,7 +305,7 @@ class SingletonManager {
             Instant ourDoom = doom.get();
             boolean shouldBeActive = ourDoom != null && ourDoom != INVALID && ! clock.instant().isAfter(ourDoom);
             if ( ! active && shouldBeActive) {
-                logger.log(INFO, "Activating singletons for ID :" + id);
+                logger.log(INFO, "Activating singleton for ID: " + id);
                 try {
                     active = true;
                     if ( ! singletons.isEmpty()) metrics.activation(singletons.peek()::activate);
@@ -317,7 +316,8 @@ class SingletonManager {
                 }
             }
             if (active && ! shouldBeActive) {
-                logger.log(INFO, "Deactivating singletons due to doom value of '" + ourDoom + "', for ID :" + id);
+                logger.log(INFO, "Deactivating singleton for ID: " + id);
+                logger.log(FINE, () -> "Doom value is " + doom);
                 try  {
                     if ( ! singletons.isEmpty()) metrics.deactivation(singletons.peek()::deactivate);
                     active = false;
