@@ -1426,7 +1426,7 @@ public class DeploymentSpecTest {
                                             </deployment>""").deployableHashCode(),
                      DeploymentSpec.fromXml("""
                                             <deployment>
-                                              <instance id='default'>
+                                              <instance id='default' tags='  '>
                                                 <test />
                                                 <staging tester-flavor='2-8-50' />
                                                 <block-change days='mon' />
@@ -1447,7 +1447,8 @@ public class DeploymentSpecTest {
                                                     <region>name</region>
                                                   </prod>
                                                 </instance>
-                                                <instance id='two' />  </parallel>
+                                                <instance id='two' />
+                                              </parallel>
                                             </deployment>""").deployableHashCode(),
                      DeploymentSpec.fromXml("""
                                             <deployment>
@@ -1478,6 +1479,16 @@ public class DeploymentSpecTest {
                         DeploymentSpec.fromXml("""
                                                <deployment>
                                                  <instance id='default' />
+                                               </deployment>""").deployableHashCode());
+
+        assertNotEquals(DeploymentSpec.fromXml(referenceSpec).deployableHashCode(),
+                        DeploymentSpec.fromXml("""
+                                               <deployment>
+                                                 <instance id='default' tags='tag1'>
+                                                   <prod>
+                                                     <region>name</region>
+                                                   </prod>
+                                                 </instance>
                                                </deployment>""").deployableHashCode());
 
         assertNotEquals(DeploymentSpec.fromXml(referenceSpec).deployableHashCode(),
