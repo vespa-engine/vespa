@@ -273,12 +273,13 @@ public class DeploymentInstanceSpec extends DeploymentSpec.Steps {
     }
 
     int deployableHashCode() {
-        List<DeploymentSpec.DeclaredZone> zones = zones().stream().filter(zone -> zone.concerns(prod)).collect(toList());
-        Object[] toHash = new Object[zones.size() + 3];
+        List<DeploymentSpec.DeclaredZone> zones = zones().stream().filter(zone -> zone.concerns(prod)).toList();
+        Object[] toHash = new Object[zones.size() + 4];
         int i = 0;
         toHash[i++] = name;
         toHash[i++] = endpoints;
         toHash[i++] = globalServiceId;
+        toHash[i++] = tags;
         for (DeploymentSpec.DeclaredZone zone : zones)
             toHash[i++] = Objects.hash(zone, zone.athenzService());
 
