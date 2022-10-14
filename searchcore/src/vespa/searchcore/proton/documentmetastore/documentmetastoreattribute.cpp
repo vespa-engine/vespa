@@ -7,14 +7,14 @@ namespace proton {
 
 namespace {
 
-const vespalib::string _G_documentMetaStoreName("[documentmetastore]");
+const vespalib::string documentMetaStoreName("[documentmetastore]");
 
 }
 
 const vespalib::string &
 DocumentMetaStoreAttribute::getFixedName()
 {
-    return _G_documentMetaStoreName;
+    return documentMetaStoreName;
 }
 
 DocumentMetaStoreAttribute::DocumentMetaStoreAttribute(const vespalib::string &name)

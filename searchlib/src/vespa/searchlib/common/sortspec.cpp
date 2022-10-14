@@ -36,8 +36,8 @@ LowercaseConverter::onConvert(const ConstBufferRef & src) const
     return {_buffer.begin(), _buffer.size()};
 }
 
-SortInfo::SortInfo(const vespalib::string & field, bool ascending, const BlobConverter::SP & converter)
-    : _field(field), _ascending(ascending), _converter(converter)
+SortInfo::SortInfo(const vespalib::string & field, bool ascending, BlobConverter::SP converter)
+    : _field(field), _ascending(ascending), _converter(std::move(converter))
 { }
 SortInfo::~SortInfo() = default;
 
@@ -72,13 +72,13 @@ SortSpec::SortSpec(const vespalib::string & spec, const ConverterFactory & ucaFa
                             for(; (p < e) && (*p != ')'); p++);
                             if (*p == ')') {
                                 vespalib::string strength(strengthName, p - strengthName);
-                                push_back(SortInfo(attr, ascending, BlobConverter::SP(ucaFactory.create(locale, strength))));
+                                push_back(SortInfo(attr, ascending, ucaFactory.create(locale, strength)));
                             } else {
                                 throw std::runtime_error(make_string("Missing ')' at %s attr=%s locale=%s strength=%s", p, attr.c_str(), localeName, strengthName));
                             }
                         } else if (*p == ')') {
                             vespalib::string locale(localeName, p-localeName);
-                            push_back(SortInfo(attr, ascending, BlobConverter::SP(ucaFactory.create(locale, ""))));
+                            push_back(SortInfo(attr, ascending, ucaFactory.create(locale, "")));
                         } else {
                             throw std::runtime_error(make_string("Missing ')' or ',' at %s attr=%s locale=%s", p, attr.c_str(), localeName));
                         }
@@ -91,7 +91,7 @@ SortSpec::SortSpec(const vespalib::string & spec, const ConverterFactory & ucaFa
                     for(; (p < e) && (*p != ')'); p++);
                     if (*p == ')') {
                         vespalib::string attr(attrName, p-attrName);
-                        push_back(SortInfo(attr, ascending, BlobConverter::SP(new LowercaseConverter())));
+                        push_back(SortInfo(attr, ascending, std::make_shared<LowercaseConverter>()));
                     } else {
                         throw std::runtime_error("Missing ')'");
                     }
@@ -99,7 +99,7 @@ SortSpec::SortSpec(const vespalib::string & spec, const ConverterFactory & ucaFa
                     throw std::runtime_error("Unknown func " + vespalib::string(func, p-func));
                 }
             } else {
-                push_back(SortInfo(funcSpec, ascending, BlobConverter::SP()));
+                push_back(SortInfo(funcSpec, ascending, {}));
             }
         }
     }
