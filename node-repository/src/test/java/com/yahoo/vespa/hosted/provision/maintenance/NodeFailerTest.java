@@ -149,6 +149,7 @@ public class NodeFailerTest {
         tester.suspend(activeChild2);
         tester.clock.advance(Duration.ofHours(25));
         tester.runMaintainers();
+        tester.runMaintainers(); // hosts are typically failed in the 2. maintain()
         assertEquals(Node.State.failed, tester.nodeRepository.nodes().node(hostWithFailureReports).get().state());
         assertEquals(Node.State.failed, tester.nodeRepository.nodes().node(activeChild1).get().state());
         assertEquals(Node.State.failed, tester.nodeRepository.nodes().node(activeChild2).get().state());
