@@ -53,9 +53,9 @@ TensorBufferStore::move_on_compact(EntryRef ref)
     if (!ref.valid()) {
         return EntryRef();
     }
-    auto buf = _array_store.get(ref);
+    auto buf = _array_store.get_writable(ref);
     auto new_ref = _array_store.add(buf);
-    _ops.copied_labels(unconstify(buf));
+    _ops.copied_labels(buf);
     return new_ref;
 }
 
