@@ -68,7 +68,7 @@ class TensorBufferOperations
         return aligner.align(get_labels_offset() + get_labels_mem_size(num_subspaces));
     }
     uint32_t get_num_subspaces_and_flag(vespalib::ConstArrayRef<char> buf) const noexcept;
-    uint32_t get_num_subspaces_and_flag_and_set_flag(vespalib::ArrayRef<char> buf) const noexcept;
+    void set_skip_reclaim_labels(vespalib::ArrayRef<char> buf, uint32_t num_subspaces_and_flag) const noexcept;
     static uint32_t get_num_subspaces(uint32_t num_subspaces_and_flag) noexcept {
         return num_subspaces_and_flag & num_subspaces_mask;
     }

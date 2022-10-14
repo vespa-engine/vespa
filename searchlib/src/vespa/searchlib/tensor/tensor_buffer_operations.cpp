@@ -92,15 +92,11 @@ TensorBufferOperations::get_num_subspaces_and_flag(ConstArrayRef<char> buf) cons
     return vespalib::atomic::load_ref_relaxed(num_subspaces_and_flag_ref);
 }
 
-uint32_t
-TensorBufferOperations::get_num_subspaces_and_flag_and_set_flag(ArrayRef<char> buf) const noexcept
+void
+TensorBufferOperations::set_skip_reclaim_labels(ArrayRef<char> buf, uint32_t num_subspaces_and_flag) const noexcept
 {
     uint32_t& num_subspaces_and_flag_ref = *reinterpret_cast<uint32_t*>(buf.data());
-    auto num_subspaces_and_flag = vespalib::atomic::load_ref_relaxed(num_subspaces_and_flag_ref);
-    if (!get_skip_reclaim_labels(num_subspaces_and_flag)) {
-        vespalib::atomic::store_ref_relaxed(num_subspaces_and_flag_ref, (num_subspaces_and_flag | skip_reclaim_labels_mask));
-    }
-    return num_subspaces_and_flag;
+    vespalib::atomic::store_ref_relaxed(num_subspaces_and_flag_ref, (num_subspaces_and_flag | skip_reclaim_labels_mask));
 }
 
 void
@@ -163,16 +159,20 @@ TensorBufferOperations::make_fast_view(ConstArrayRef<char> buf, const vespalib::
 void
 TensorBufferOperations::copied_labels(ArrayRef<char> buf) const
 {
-    (void) get_num_subspaces_and_flag_and_set_flag(buf);
+    auto num_subspaces_and_flag = get_num_subspaces_and_flag(buf);
+    if (!get_skip_reclaim_labels(num_subspaces_and_flag)) {
+        set_skip_reclaim_labels(buf, num_subspaces_and_flag);
+    }
 }
 
 void
 TensorBufferOperations::reclaim_labels(ArrayRef<char> buf) const
 {
-    auto num_subspaces_and_flag = get_num_subspaces_and_flag_and_set_flag(buf);
+    auto num_subspaces_and_flag = get_num_subspaces_and_flag(buf);
     if (get_skip_reclaim_labels(num_subspaces_and_flag)) {
         return;
     }
+    set_skip_reclaim_labels(buf, num_subspaces_and_flag);
     auto num_subspaces = get_num_subspaces(num_subspaces_and_flag);
     ArrayRef<string_id> labels(reinterpret_cast<string_id*>(buf.data() + get_labels_offset()), num_subspaces * _num_mapped_dimensions);
     for (auto& label : labels) {
