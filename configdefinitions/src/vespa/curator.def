@@ -7,3 +7,6 @@ server[].port int default=2181
 
 # if true, only connect to server on localhost (must be in one of the servers above)
 zookeeperLocalhostAffinity bool default=false
+
+# session timeout, the high default is used by config servers
+zookeeperSessionTimeoutSeconds int default=120

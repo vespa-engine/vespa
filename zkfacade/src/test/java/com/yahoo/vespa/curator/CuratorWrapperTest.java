@@ -11,7 +11,6 @@ import com.yahoo.vespa.curator.mock.MockCuratorFramework;
 import org.apache.curator.framework.state.ConnectionState;
 import org.junit.Test;
 
-import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
@@ -112,7 +111,7 @@ public class CuratorWrapperTest {
             stunning.arriveAndAwaitAdvance(); // Wait for next renewLease.
             stunning.arriveAndAwaitAdvance(); // Let next renewLease complete.
             stunning.arriveAndAwaitAdvance(); // Wait for next updateStatus.
-            clock.advance(Curator.ZK_SESSION_TIMEOUT);
+            clock.advance(wrapped.sessionTimeout());
             singleton.phaser.register();      // Set up so we can synchronise with deactivation.
             stunning.forceTermination();      // Let lease expire, and ensure further ticks complete if we lose the race to unregister.
 
