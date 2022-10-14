@@ -100,7 +100,7 @@ public:
      * The given entry ref is put on the free list (if enabled).
      * Hold cleaning of elements is executed on the buffer type.
      */
-    void free_elems(EntryRef ref, size_t num_elems, bool was_held, size_t ref_offset);
+    void free_elems(EntryRef ref, size_t num_elems, size_t ref_offset);
 
     BufferStats& stats() { return _stats; }
     const BufferStats& stats() const { return _stats; }
