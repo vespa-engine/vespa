@@ -28,7 +28,7 @@ ResultProcessor::Result::~Result() = default;
 ResultProcessor::Sort::Sort(uint32_t partitionId, const vespalib::Doom & doom, IAttributeContext &ac, const vespalib::string &ss)
     : sorter(FastS_DefaultResultSorter::instance()),
       _ucaFactory(std::make_unique<search::uca::UcaConverterFactory>()),
-      sortSpec(partitionId, doom, *_ucaFactory)
+      sortSpec("[no-metastore]", partitionId, doom, *_ucaFactory)
 {
     if (!ss.empty() && sortSpec.Init(ss.c_str(), ac)) {
         sorter = &sortSpec;
@@ -46,9 +46,9 @@ ResultProcessor::Context::~Context() = default;
 
 void
 ResultProcessor::GroupingSource::merge(Source &s) {
-    GroupingSource &rhs = static_cast<GroupingSource&>(s);
-    assert((ctx == 0) == (rhs.ctx == 0));
-    if (ctx != 0) {
+    auto &rhs = dynamic_cast<GroupingSource&>(s);
+    assert((ctx == nullptr) == (rhs.ctx == nullptr));
+    if (ctx != nullptr) {
         search::grouping::GroupingManager man(*ctx);
         man.merge(*rhs.ctx);
     }
@@ -112,7 +112,7 @@ ResultProcessor::extract_docid_ordering(const PartialResult &result) const
     }
     std::sort(list.begin(), list.end(), [](const auto &a, const auto &b){ return (a.first < b.first); });
     return list;
-};
+}
 
 ResultProcessor::Result::UP
 ResultProcessor::makeReply(PartialResultUP full_result)

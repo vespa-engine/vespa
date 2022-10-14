@@ -1965,6 +1965,38 @@ TEST(DocumentMetaStoreTest, multiple_lids_can_be_removed_with_removeBatch)
     dms.removes_complete({1, 3});
 }
 
+TEST(DocumentMetaStoreTest, serialize_for_sort)
+{
+    DocumentMetaStore dms(createBucketDB());
+    dms.constructFreeList();
+    addLid(dms, 1);
+    addLid(dms, 2);
+    assertLidGidFound(1, dms);
+    assertLidGidFound(2, dms);
+
+    constexpr size_t SZ = document::GlobalId::LENGTH;
+    EXPECT_EQ(12u, SZ);
+    EXPECT_EQ(SZ, dms.getFixedWidth());
+    uint8_t asc_dest[SZ];
+    EXPECT_EQ(0, dms.serializeForAscendingSort(3, asc_dest, sizeof(asc_dest), nullptr));
+    EXPECT_EQ(-1, dms.serializeForAscendingSort(1, asc_dest, sizeof(asc_dest) - 1, nullptr));
+    document::GlobalId gid;
+
+    EXPECT_EQ(SZ, dms.serializeForAscendingSort(1, asc_dest, sizeof(asc_dest), nullptr));
+    EXPECT_TRUE(dms.getGid(1, gid));
+    EXPECT_EQ(0, memcmp(asc_dest, gid.get(), SZ));
+
+    EXPECT_EQ(SZ, dms.serializeForAscendingSort(2, asc_dest, sizeof(asc_dest), nullptr));
+    EXPECT_TRUE(dms.getGid(2, gid));
+    EXPECT_EQ(0, memcmp(asc_dest, gid.get(), SZ));
+
+    uint8_t desc_dest[SZ];
+    EXPECT_EQ(SZ, dms.serializeForDescendingSort(2, desc_dest, sizeof(desc_dest), nullptr));
+    for (size_t i(0); i < SZ; i++) {
+        EXPECT_EQ(0xff - asc_dest[i], desc_dest[i]);
+    }
+}
+
 class MockOperationListener : public documentmetastore::OperationListener {
 public:
     size_t remove_batch_cnt;

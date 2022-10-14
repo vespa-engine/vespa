@@ -13,7 +13,7 @@ public:
     using SP = std::shared_ptr<BlobConverter>;
     using UP = std::unique_ptr<BlobConverter>;
     using ConstBufferRef = vespalib::ConstBufferRef;
-    virtual ~BlobConverter() { }
+    virtual ~BlobConverter() = default;
     ConstBufferRef convert(const ConstBufferRef & src) const { return onConvert(src); }
 private:
     virtual ConstBufferRef onConvert(const ConstBufferRef & src) const = 0;

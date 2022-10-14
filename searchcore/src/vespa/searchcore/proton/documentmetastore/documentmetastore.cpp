@@ -72,17 +72,8 @@ private:
     uint32_t _version;
 
 public:
-    Reader(std::unique_ptr<FastOS_FileInterface> datFile)
-        : _datFile(std::move(datFile)),
-          _lidReader(&_datFile.file()),
-          _gidReader(&_datFile.file()),
-          _bucketUsedBitsReader(&_datFile.file()),
-          _timestampReader(&_datFile.file()),
-          _docIdLimit(0)
-    {
-        _docIdLimit = _datFile.header().getTag(DOCID_LIMIT).asInteger();
-        _version = _datFile.header().getTag(VERSION).asInteger();
-    }
+    explicit Reader(std::unique_ptr<FastOS_FileInterface> datFile);
+    ~Reader();
 
     uint32_t getDocIdLimit() const { return _docIdLimit; }
 
@@ -126,6 +117,19 @@ public:
     }
 };
 
+Reader::Reader(std::unique_ptr<FastOS_FileInterface> datFile)
+    : _datFile(std::move(datFile)),
+      _lidReader(&_datFile.file()),
+      _gidReader(&_datFile.file()),
+      _bucketUsedBitsReader(&_datFile.file()),
+      _timestampReader(&_datFile.file()),
+      _docIdLimit(0)
+{
+    _docIdLimit = _datFile.header().getTag(DOCID_LIMIT).asInteger();
+    _version = _datFile.header().getTag(VERSION).asInteger();
+}
+Reader::~Reader() = default;
+
 }
 
 namespace {
@@ -134,12 +138,12 @@ class ShrinkBlockHeld : public GenerationHeldBase
     DocumentMetaStore &_dms;
 
 public:
-    ShrinkBlockHeld(DocumentMetaStore &dms)
+    explicit ShrinkBlockHeld(DocumentMetaStore &dms)
         : GenerationHeldBase(0),
           _dms(dms)
     { }
 
-    ~ShrinkBlockHeld() {
+    ~ShrinkBlockHeld() override {
         _dms.unblockShrinkLidSpace();
     }
 };
@@ -748,12 +752,12 @@ DocumentMetaStore::getMetaData(const GlobalId &gid) const
 {
     DocId lid = 0;
     if (!getLid(gid, lid) || !validLid(lid)) {
-        return search::DocumentMetaData();
+        return {};
     }
     const RawDocumentMetaData &raw = getRawMetaData(lid);
     Timestamp timestamp(raw.getTimestamp());
     std::atomic_thread_fence(std::memory_order_acquire);
-    return search::DocumentMetaData(lid, timestamp, raw.getBucketId(), raw.getGid(), _subDbType == SubDbType::REMOVED);
+    return {lid, timestamp, raw.getBucketId(), raw.getGid(), _subDbType == SubDbType::REMOVED};
 }
 
 void
@@ -779,14 +783,7 @@ DocumentMetaStore::getMetaData(const BucketId &bucketId,
 LidUsageStats
 DocumentMetaStore::getLidUsageStats() const
 {
-    uint32_t docIdLimit = getCommittedDocIdLimit();
-    uint32_t numDocs = getNumUsedLids();
-    uint32_t lowestFreeLid = _lidAlloc.getLowestFreeLid();
-    uint32_t highestUsedLid = _lidAlloc.getHighestUsedLid();
-    return LidUsageStats(docIdLimit,
-                         numDocs,
-                         lowestFreeLid,
-                         highestUsedLid);
+    return {getCommittedDocIdLimit(), getNumUsedLids(), _lidAlloc.getLowestFreeLid(), _lidAlloc.getHighestUsedLid()};
 }
 
 Blueprint::UP
@@ -1064,7 +1061,7 @@ DocumentMetaStore::getBucketOf(const vespalib::GenerationHandler::Guard &, uint3
     if (__builtin_expect(validLidFast(lid, getCommittedDocIdLimit()), true)) {
         return getRawMetaData(lid).getBucketId();
     }
-    return BucketId();
+    return {};
 }
 
 vespalib::GenerationHandler::Guard
@@ -1092,6 +1089,26 @@ DocumentMetaStore::foreach(const search::IGidToLidMapperVisitor &visitor) const
 {
     beginFrozen().foreach_key([this,&visitor](GidToLidMapKey key)
                               { visitor.visit(getRawMetaData(key.get_lid()).getGid(), key.get_lid()); });
+}
+
+long
+DocumentMetaStore::onSerializeForAscendingSort(DocId lid, void * serTo, long available, const search::common::BlobConverter *) const {
+    if ( ! validLid(lid)) return 0;
+    if (available < document::GlobalId::LENGTH) return -1;
+    memcpy(serTo, getRawMetaData(lid).getGid().get(), document::GlobalId::LENGTH);
+    return document::GlobalId::LENGTH;
+}
+
+long
+DocumentMetaStore::onSerializeForDescendingSort(DocId lid, void * serTo, long available, const search::common::BlobConverter *) const {
+    if ( ! validLid(lid)) return 0;
+    if (available < document::GlobalId::LENGTH) return -1;
+    const auto * src(static_cast<const uint8_t *>(getRawMetaData(lid).getGid().get()));
+    auto * dst = static_cast<uint8_t *>(serTo);
+    for (size_t i(0); i < document::GlobalId::LENGTH; ++i) {
+        dst[i] = 0xff - src[i];
+    }
+    return document::GlobalId::LENGTH;
 }
 
 }  // namespace proton

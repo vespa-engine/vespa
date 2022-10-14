@@ -16,11 +16,6 @@ LOG_SETUP("multilevelsort_test");
 
 using namespace search;
 
-typedef FastS_SortSpec::VectorRef VectorRef;
-typedef IntegerAttributeTemplate<int8_t>   Int8;
-typedef IntegerAttributeTemplate<int16_t>  Int16;
-typedef IntegerAttributeTemplate<int32_t>  Int32;
-typedef IntegerAttributeTemplate<int64_t>  Int64;
 typedef FloatingPointAttributeTemplate<float>  Float;
 typedef FloatingPointAttributeTemplate<double> Double;
 typedef std::map<std::string, AttributeVector::SP > VectorMap;
@@ -53,16 +48,16 @@ public:
     };
 private:
     template<typename T>
-    T getRandomValue() {
+    static T getRandomValue() {
         T min = std::numeric_limits<T>::min();
         T max = std::numeric_limits<T>::max();
         return static_cast<T>(double(min) + (double(max) - double(min)) * (double(rand()) / double(RAND_MAX)));
     }
     template<typename T>
-    void fill(IntegerAttribute *attr, uint32_t size, uint32_t unique = 0);
+    static void fill(IntegerAttribute *attr, uint32_t size, uint32_t unique = 0);
     template<typename T>
-    void fill(FloatingPointAttribute *attr, uint32_t size, uint32_t unique = 0);
-    void fill(StringAttribute *attr, uint32_t size, const std::vector<std::string> &values);
+    static void fill(FloatingPointAttribute *attr, uint32_t size, uint32_t unique = 0);
+    static void fill(StringAttribute *attr, uint32_t size, const std::vector<std::string> &values);
     template <typename V>
     int compareTemplate(AttributeVector *vector, uint32_t a, uint32_t b);
     int compare(AttributeVector *vector, AttrType type, uint32_t a, uint32_t b);
@@ -181,7 +176,7 @@ MultilevelSortTest::compare(AttributeVector *vector, AttrType type, uint32_t a, 
     } else if (type == DOUBLE) {
         return compareTemplate<double>(vector, a, b);
     } else if (type == STRING) {
-        StringAttribute *vString = static_cast<StringAttribute*>(vector);
+        StringAttribute *vString = dynamic_cast<StringAttribute*>(vector);
         const char *va = vString->get(a);
         const char *vb = vString->get(b);
         std::string sa(va);
@@ -199,106 +194,99 @@ MultilevelSortTest::compare(AttributeVector *vector, AttrType type, uint32_t a, 
 }
 
 void
-MultilevelSortTest::sortAndCheck(const std::vector<Spec> &spec, uint32_t num,
+MultilevelSortTest::sortAndCheck(const std::vector<Spec> &specs, uint32_t num,
                                  uint32_t unique, const std::vector<std::string> &strValues)
 {
     VectorMap vec;
     // generate attribute vectors
-    for (uint32_t i = 0; i < spec.size(); ++i) {
-        std::string name = spec[i]._name;
-        AttrType type = spec[i]._type;
+    for (const auto & spec : specs) {
+        std::string name = spec._name;
+        AttrType type = spec._type;
         if (type == INT8) {
             Config cfg(BasicType::INT8, CollectionType::SINGLE);
             vec[name] = AttributeFactory::createAttribute(name, cfg);
-            fill<int8_t>(static_cast<IntegerAttribute *>(vec[name].get()), num, unique);
+            fill<int8_t>(dynamic_cast<IntegerAttribute *>(vec[name].get()), num, unique);
         } else if (type == INT16) {
             Config cfg(BasicType::INT16, CollectionType::SINGLE);
             vec[name] = AttributeFactory::createAttribute(name, cfg);
-            fill<int16_t>(static_cast<IntegerAttribute *>(vec[name].get()), num, unique);
+            fill<int16_t>(dynamic_cast<IntegerAttribute *>(vec[name].get()), num, unique);
         } else if (type == INT32) {
             Config cfg(BasicType::INT32, CollectionType::SINGLE);
             vec[name] = AttributeFactory::createAttribute(name, cfg);
-            fill<int32_t>(static_cast<IntegerAttribute *>(vec[name].get()), num, unique);
+            fill<int32_t>(dynamic_cast<IntegerAttribute *>(vec[name].get()), num, unique);
         } else if (type == INT64) {
             Config cfg(BasicType::INT64, CollectionType::SINGLE);
             vec[name] = AttributeFactory::createAttribute(name, cfg);
-            fill<int64_t>(static_cast<IntegerAttribute *>(vec[name].get()), num, unique);
+            fill<int64_t>(dynamic_cast<IntegerAttribute *>(vec[name].get()), num, unique);
         } else if (type == FLOAT) {
             Config cfg(BasicType::FLOAT, CollectionType::SINGLE);
             vec[name] = AttributeFactory::createAttribute(name, cfg);
-            fill<float>(static_cast<FloatingPointAttribute *>(vec[name].get()), num, unique);
+            fill<float>(dynamic_cast<FloatingPointAttribute *>(vec[name].get()), num, unique);
         } else if (type == DOUBLE) {
             Config cfg(BasicType::DOUBLE, CollectionType::SINGLE);
             vec[name] = AttributeFactory::createAttribute(name, cfg);
-            fill<double>(static_cast<FloatingPointAttribute *>(vec[name].get()), num, unique);
+            fill<double>(dynamic_cast<FloatingPointAttribute *>(vec[name].get()), num, unique);
         } else if (type == STRING) {
             Config cfg(BasicType::STRING, CollectionType::SINGLE);
             vec[name] = AttributeFactory::createAttribute(name, cfg);
-            fill(static_cast<StringAttribute *>(vec[name].get()), num, strValues);
+            fill(dynamic_cast<StringAttribute *>(vec[name].get()), num, strValues);
         }
         if (vec[name])
             vec[name]->commit();
     }
 
-    RankedHit *hits = new RankedHit[num];
+    std::vector<RankedHit> hits;
+    hits.reserve(num);
     for (uint32_t i = 0; i < num; ++i) {
-        hits[i]._docId = i;
-        hits[i]._rankValue = getRandomValue<uint32_t>();
+        hits.emplace_back(i,  getRandomValue<uint32_t>());
     }
 
     vespalib::TestClock clock;
     vespalib::Doom doom(clock.clock(), vespalib::steady_time::max());
     search::uca::UcaConverterFactory ucaFactory;
-    FastS_SortSpec sorter(7, doom, ucaFactory);
+    FastS_SortSpec sorter("no-metastore", 7, doom, ucaFactory);
     // init sorter with sort data
-    for(uint32_t i = 0; i < spec.size(); ++i) {
+    for (const auto & spec : specs) {
         AttributeGuard ag;
-        if (spec[i]._type == RANK) {
-            sorter._vectors.push_back
-                (VectorRef(spec[i]._asc ? FastS_SortSpec::ASC_RANK :
-                           FastS_SortSpec::DESC_RANK, nullptr, nullptr));
-        } else if (spec[i]._type == DOCID) {
-            sorter._vectors.push_back
-                (VectorRef(spec[i]._asc ? FastS_SortSpec::ASC_DOCID :
-                           FastS_SortSpec::DESC_DOCID, nullptr, nullptr));
+        if (spec._type == RANK) {
+            sorter._vectors.emplace_back(spec._asc ? FastS_SortSpec::ASC_RANK : FastS_SortSpec::DESC_RANK, nullptr, nullptr);
+        } else if (spec._type == DOCID) {
+            sorter._vectors.emplace_back(spec._asc ? FastS_SortSpec::ASC_DOCID : FastS_SortSpec::DESC_DOCID, nullptr, nullptr);
         } else {
-            const search::attribute::IAttributeVector * v = vec[spec[i]._name].get();
-            sorter._vectors.push_back
-                (VectorRef(spec[i]._asc ? FastS_SortSpec::ASC_VECTOR :
-                           FastS_SortSpec::DESC_VECTOR, v, nullptr));
+            const search::attribute::IAttributeVector * v = vec[spec._name].get();
+            sorter._vectors.emplace_back(spec._asc ? FastS_SortSpec::ASC_VECTOR : FastS_SortSpec::DESC_VECTOR, v, nullptr);
         }
     }
 
     vespalib::Timer timer;
-    sorter.sortResults(hits, num, num);
+    sorter.sortResults(&hits[0], num, num);
     LOG(info, "sort time = %" PRId64 " ms", vespalib::count_ms(timer.elapsed()));
 
-    uint32_t *offsets = new uint32_t[num + 1];
-    char *buf = new char[sorter.getSortDataSize(0, num)];
-    sorter.copySortData(0, num, offsets, buf);
+    std::vector<uint32_t> offsets(num + 1, 0);
+    auto buf = std::make_unique<char []>(sorter.getSortDataSize(0, num));
+    sorter.copySortData(0, num, &offsets[0], buf.get());
 
     // check results
     for (uint32_t i = 0; i < num - 1; ++i) {
-        for (uint32_t j = 0; j < spec.size(); ++j) {
+        for (const Spec & spec : specs) {
             int cmp = 0;
-            if (spec[j]._type == RANK) {
+            if (spec._type == RANK) {
                 if (hits[i].getRank() < hits[i+1].getRank()) {
                     cmp = -1;
                 } else if (hits[i].getRank() > hits[i+1].getRank()) {
                     cmp = 1;
                 }
-            } else if (spec[j]._type == DOCID) {
+            } else if (spec._type == DOCID) {
                 if (hits[i].getDocId() < hits[i+1].getDocId()) {
                     cmp = -1;
                 } else if (hits[i].getDocId() > hits[i+1].getDocId()) {
                     cmp = 1;
                 }
             } else {
-                AttributeVector *av = vec[spec[j]._name].get();
-                cmp = compare(av, spec[j]._type,
-                              hits[i].getDocId(), hits[i+1].getDocId());
+                AttributeVector *av = vec[spec._name].get();
+                cmp = compare(av, spec._type, hits[i].getDocId(), hits[i+1].getDocId());
             }
-            if (spec[j]._asc) {
+            if (spec._asc) {
                 EXPECT_TRUE(cmp <= 0);
                 if (cmp < 0) {
                     break;
@@ -311,56 +299,51 @@ MultilevelSortTest::sortAndCheck(const std::vector<Spec> &spec, uint32_t num,
             }
         }
         // check binary sort data
-        uint32_t minLen = std::min(sorter._sortDataArray[i]._len,
-                          sorter._sortDataArray[i+1]._len);
+        uint32_t minLen = std::min(sorter._sortDataArray[i]._len, sorter._sortDataArray[i+1]._len);
         int cmp = memcmp(&sorter._binarySortData[0] + sorter._sortDataArray[i]._idx,
                          &sorter._binarySortData[0] + sorter._sortDataArray[i+1]._idx,
                          minLen);
         EXPECT_TRUE(cmp <= 0);
         EXPECT_TRUE(sorter._sortDataArray[i]._len == (offsets[i+1] - offsets[i]));
         cmp = memcmp(&sorter._binarySortData[0] + sorter._sortDataArray[i]._idx,
-                     buf + offsets[i], sorter._sortDataArray[i]._len);
+                     buf.get() + offsets[i], sorter._sortDataArray[i]._len);
         EXPECT_TRUE(cmp == 0);
     }
     EXPECT_TRUE(sorter._sortDataArray[num-1]._len == (offsets[num] - offsets[num-1]));
     int cmp = memcmp(&sorter._binarySortData[0] + sorter._sortDataArray[num-1]._idx,
-                 buf + offsets[num-1], sorter._sortDataArray[num-1]._len);
+                 buf.get() + offsets[num-1], sorter._sortDataArray[num-1]._len);
     EXPECT_TRUE(cmp == 0);
-
-    delete [] hits;
-    delete [] offsets;
-    delete [] buf;
 }
 
 void MultilevelSortTest::testSort()
 {
     {
         std::vector<Spec> spec;
-        spec.push_back(Spec("int8", INT8));
-        spec.push_back(Spec("int16", INT16));
-        spec.push_back(Spec("int32", INT32));
-        spec.push_back(Spec("int64", INT64));
-        spec.push_back(Spec("float", FLOAT));
-        spec.push_back(Spec("double", DOUBLE));
-        spec.push_back(Spec("string", STRING));
-        spec.push_back(Spec("rank", RANK));
-        spec.push_back(Spec("docid", DOCID));
+        spec.emplace_back("int8", INT8);
+        spec.emplace_back("int16", INT16);
+        spec.emplace_back("int32", INT32);
+        spec.emplace_back("int64", INT64);
+        spec.emplace_back("float", FLOAT);
+        spec.emplace_back("double", DOUBLE);
+        spec.emplace_back("string", STRING);
+        spec.emplace_back("rank", RANK);
+        spec.emplace_back("docid", DOCID);
 
         std::vector<std::string> strValues;
-        strValues.push_back("applications");
-        strValues.push_back("places");
-        strValues.push_back("system");
-        strValues.push_back("vespa search core");
+        strValues.emplace_back("applications");
+        strValues.emplace_back("places");
+        strValues.emplace_back("system");
+        strValues.emplace_back("vespa search core");
 
         srand(12345);
         sortAndCheck(spec, 5000, 4, strValues);
         srand(time(nullptr));
         sortAndCheck(spec, 5000, 4, strValues);
 
-        strValues.push_back("multilevelsort");
-        strValues.push_back("trondheim");
-        strValues.push_back("ubuntu");
-        strValues.push_back("fastserver4");
+        strValues.emplace_back("multilevelsort");
+        strValues.emplace_back("trondheim");
+        strValues.emplace_back("ubuntu");
+        strValues.emplace_back("fastserver4");
 
         srand(56789);
         sortAndCheck(spec, 5000, 8, strValues);
@@ -403,7 +386,7 @@ TEST("test that [docid] translates to [lid][paritionid]") {
     vespalib::TestClock clock;
     vespalib::Doom doom(clock.clock(), vespalib::steady_time::max());
     search::uca::UcaConverterFactory ucaFactory;
-    FastS_SortSpec asc(7, doom, ucaFactory);
+    FastS_SortSpec asc("no-metastore", 7, doom, ucaFactory);
     RankedHit hits[2] = {RankedHit(91, 0.0), RankedHit(3, 2.0)};
     search::AttributeManager mgr;
     search::AttributeContext ac(mgr);
@@ -420,7 +403,7 @@ TEST("test that [docid] translates to [lid][paritionid]") {
     EXPECT_EQUAL(6u, sr2.second);
     EXPECT_EQUAL(0, memcmp(SECOND_ASC, sr2.first, 6));
 
-    FastS_SortSpec desc(7, doom, ucaFactory);
+    FastS_SortSpec desc("no-metastore", 7, doom, ucaFactory);
     desc.Init("-[docid]", ac);
     desc.initWithoutSorting(hits, 2);
     sr1 = desc.getSortRef(0);
@@ -429,6 +412,47 @@ TEST("test that [docid] translates to [lid][paritionid]") {
     sr2 = desc.getSortRef(1);
     EXPECT_EQUAL(6u, sr2.second);
     EXPECT_EQUAL(0, memcmp(SECOND_DESC, sr2.first, 6));
+}
+
+TEST("test that [docid] uses attribute when one exists") {
+    vespalib::TestClock clock;
+    vespalib::Doom doom(clock.clock(), vespalib::steady_time::max());
+    search::uca::UcaConverterFactory ucaFactory;
+    FastS_SortSpec asc("metastore", 7, doom, ucaFactory);
+    RankedHit hits[2] = {RankedHit(91, 0.0), RankedHit(3, 2.0)};
+    Config cfg(BasicType::INT64, CollectionType::SINGLE);
+    auto metastore = AttributeFactory::createAttribute("metastore", cfg);
+    ASSERT_TRUE(metastore->addDocs(100));
+    auto * iattr = dynamic_cast<IntegerAttribute *>(metastore.get());
+    for (uint32_t lid(0); lid < 100; lid++) {
+        iattr->update(lid, lid);
+    }
+    metastore->commit();
+    search::AttributeManager mgr;
+    mgr.add(metastore);
+    search::AttributeContext ac(mgr);
+    EXPECT_TRUE(asc.Init("+[docid]", ac));
+    asc.initWithoutSorting(hits, 2);
+    constexpr uint8_t FIRST_ASC[8] = {0x80,0,0,0,0,0,0,91};
+    constexpr uint8_t SECOND_ASC[8] = {0x80,0,0,0,0,0,0,3};
+    constexpr uint8_t FIRST_DESC[8] = {0x7f,0xff,0xff,0xff,0xff,0xff,0xff,0xff - 91};
+    constexpr uint8_t SECOND_DESC[8] = {0x7f,0xff,0xff,0xff,0xff,0xff,0xff,0xff - 3};
+    auto sr1 = asc.getSortRef(0);
+    EXPECT_EQUAL(8u, sr1.second);
+    EXPECT_EQUAL(0, memcmp(FIRST_ASC, sr1.first, 8));
+    auto sr2 = asc.getSortRef(1);
+    EXPECT_EQUAL(8u, sr2.second);
+    EXPECT_EQUAL(0, memcmp(SECOND_ASC, sr2.first, 8));
+
+    FastS_SortSpec desc("metastore", 7, doom, ucaFactory);
+    desc.Init("-[docid]", ac);
+    desc.initWithoutSorting(hits, 2);
+    sr1 = desc.getSortRef(0);
+    EXPECT_EQUAL(8u, sr1.second);
+    EXPECT_EQUAL(0, memcmp(FIRST_DESC, sr1.first, 8));
+    sr2 = desc.getSortRef(1);
+    EXPECT_EQUAL(8u, sr2.second);
+    EXPECT_EQUAL(0, memcmp(SECOND_DESC, sr2.first, 8));
 }
 
 TEST_MAIN() { TEST_RUN_ALL(); }
