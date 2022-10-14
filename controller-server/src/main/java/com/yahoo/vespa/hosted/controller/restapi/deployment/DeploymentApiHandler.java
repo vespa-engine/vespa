@@ -22,6 +22,7 @@ import com.yahoo.vespa.hosted.controller.application.Change;
 import com.yahoo.vespa.hosted.controller.application.TenantAndApplicationId;
 import com.yahoo.vespa.hosted.controller.deployment.DeploymentStatus;
 import com.yahoo.vespa.hosted.controller.deployment.Run;
+import com.yahoo.vespa.hosted.controller.deployment.RunStatus;
 import com.yahoo.vespa.hosted.controller.deployment.Versions;
 import com.yahoo.vespa.hosted.controller.restapi.ErrorResponses;
 import com.yahoo.vespa.hosted.controller.restapi.application.EmptyResponse;
@@ -121,7 +122,7 @@ public class DeploymentApiHandler extends ThreadedHttpRequestHandler {
                 Cursor applicationObject = failingArray.addObject();
                 toSlime(applicationObject, run.id().application(), request);
                 applicationObject.setString("failing", run.id().type().jobName());
-                applicationObject.setString("status", run.status().name());
+                applicationObject.setString("status", nameOf(run.status()));
             }
 
             var statusByInstance = deploymentStatuses.asList().stream()
@@ -224,7 +225,7 @@ public class DeploymentApiHandler extends ThreadedHttpRequestHandler {
         runObject.setLong("number", run.id().number());
         runObject.setLong("start", run.start().toEpochMilli());
         run.end().ifPresent(end -> runObject.setLong("end", end.toEpochMilli()));
-        runObject.setString("status", run.status().name());
+        runObject.setString("status", nameOf(run.status()));
     }
 
     private void toSlime(Cursor object, ApplicationId id, HttpRequest request) {
@@ -245,6 +246,21 @@ public class DeploymentApiHandler extends ThreadedHttpRequestHandler {
             return "default";
         }
         return upgradePolicy.name();
+    }
+
+    public static String nameOf(RunStatus status) {
+        return switch (status) {
+            case reset, running                       -> "running";
+            case aborted                              -> "aborted";
+            case error                                -> "error";
+            case testFailure                          -> "testFailure";
+            case noTests                              -> "noTests";
+            case endpointCertificateTimeout           -> "endpointCertificateTimeout";
+            case nodeAllocationFailure                -> "nodeAllocationFailure";
+            case installationFailed                   -> "installationFailed";
+            case invalidApplication, deploymentFailed -> "deploymentFailed";
+            case success                              -> "success";
+        };
     }
 
     private static class RunInfo {
