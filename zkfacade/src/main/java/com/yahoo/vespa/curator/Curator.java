@@ -354,13 +354,16 @@ public class Curator extends AbstractComponent implements AutoCloseable {
         }
     }
 
-    /** Create and acquire a re-entrant lock in given path */
-    public Lock lock(Path path, Duration timeout) {
-        create(path);
+    /** Create and acquire a re-entrant lock in given path with a TTL */
+    public Lock lock(Path path, Duration timeout, Duration ttl) {
+        create(path, ttl);
         Lock lock = locks.computeIfAbsent(path, (pathArg) -> new Lock(pathArg.getAbsolute(), this));
         lock.acquire(timeout);
         return lock;
     }
+
+    /** Create and acquire a re-entrant lock in given path */
+    public Lock lock(Path path, Duration timeout) { return lock(path, timeout, null); }
 
     /** Returns the curator framework API */
     public CuratorFramework framework() {
