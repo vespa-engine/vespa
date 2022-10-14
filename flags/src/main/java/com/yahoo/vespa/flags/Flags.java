@@ -399,7 +399,7 @@ public class Flags {
             List.of("andreer", "gjoranv"), "2022-09-28", "2023-04-01",
             "Set up a WireGuard endpoint on config servers",
             "Takes effect on configserver restart",
-            ZONE_ID, NODE_TYPE);
+            HOSTNAME);
 
     public static final UnboundBooleanFlag USE_WIREGUARD_ON_TENANT_HOSTS = defineFeatureFlag(
             "use-wireguard-on-tenant-hosts", false,
