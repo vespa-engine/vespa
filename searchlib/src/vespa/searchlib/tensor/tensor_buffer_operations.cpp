@@ -6,7 +6,7 @@
 #include <vespa/eval/eval/value_codec.h>
 #include <vespa/eval/eval/value_type.h>
 #include <vespa/eval/streamed/streamed_value_view.h>
-#include <vespa/vespalib/util/arrayref.h>
+#include <vespa/vespalib/util/atomic.h>
 #include <vespa/vespalib/util/shared_string_repo.h>
 #include <algorithm>
 
@@ -85,16 +85,29 @@ TensorBufferOperations::TensorBufferOperations(const vespalib::eval::ValueType& 
 TensorBufferOperations::~TensorBufferOperations() = default;
 
 uint32_t
-TensorBufferOperations::get_num_subspaces(ConstArrayRef<char> buf) const noexcept
+TensorBufferOperations::get_num_subspaces_and_flag(ConstArrayRef<char> buf) const noexcept
 {
     assert(buf.size() >= get_num_subspaces_size());
-    return *reinterpret_cast<const uint32_t*>(buf.data());
+    const uint32_t& num_subspaces_and_flag_ref = *reinterpret_cast<const uint32_t*>(buf.data());
+    return vespalib::atomic::load_ref_relaxed(num_subspaces_and_flag_ref);
+}
+
+uint32_t
+TensorBufferOperations::get_num_subspaces_and_flag_and_set_flag(ArrayRef<char> buf) const noexcept
+{
+    uint32_t& num_subspaces_and_flag_ref = *reinterpret_cast<uint32_t*>(buf.data());
+    auto num_subspaces_and_flag = vespalib::atomic::load_ref_relaxed(num_subspaces_and_flag_ref);
+    if (!get_skip_reclaim_labels(num_subspaces_and_flag)) {
+        vespalib::atomic::store_ref_relaxed(num_subspaces_and_flag_ref, (num_subspaces_and_flag | skip_reclaim_labels_mask));
+    }
+    return num_subspaces_and_flag;
 }
 
 void
 TensorBufferOperations::store_tensor(ArrayRef<char> buf, const vespalib::eval::Value& tensor)
 {
     uint32_t num_subspaces = tensor.index().size();
+    assert(num_subspaces <= num_subspaces_mask);
     auto labels_end_offset = get_labels_offset() + get_labels_mem_size(num_subspaces);
     auto cells_size = num_subspaces * _dense_subspace_size;
     auto cells_mem_size = cells_size * _cell_mem_size; // Size measured in bytes
@@ -148,23 +161,22 @@ TensorBufferOperations::make_fast_view(ConstArrayRef<char> buf, const vespalib::
 }
 
 void
-TensorBufferOperations::copied_labels(ConstArrayRef<char> buf) const
+TensorBufferOperations::copied_labels(ArrayRef<char> buf) const
 {
-    auto num_subspaces = get_num_subspaces(buf);
-    ConstArrayRef<string_id> labels(reinterpret_cast<const string_id*>(buf.data() + get_labels_offset()), num_subspaces * _num_mapped_dimensions);
-    for (auto& label : labels) {
-        SharedStringRepo::unsafe_copy(label); // Source buffer has an existing ref
-    }
+    (void) get_num_subspaces_and_flag_and_set_flag(buf);
 }
 
 void
 TensorBufferOperations::reclaim_labels(ArrayRef<char> buf) const
 {
-    auto num_subspaces = get_num_subspaces(buf);
+    auto num_subspaces_and_flag = get_num_subspaces_and_flag_and_set_flag(buf);
+    if (get_skip_reclaim_labels(num_subspaces_and_flag)) {
+        return;
+    }
+    auto num_subspaces = get_num_subspaces(num_subspaces_and_flag);
     ArrayRef<string_id> labels(reinterpret_cast<string_id*>(buf.data() + get_labels_offset()), num_subspaces * _num_mapped_dimensions);
     for (auto& label : labels) {
         SharedStringRepo::unsafe_reclaim(label);
-        label = string_id(); // Clear label to avoid double reclaim
     }
 }
 

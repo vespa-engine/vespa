@@ -55,7 +55,7 @@ TensorBufferStore::move_on_compact(EntryRef ref)
     }
     auto buf = _array_store.get(ref);
     auto new_ref = _array_store.add(buf);
-    _ops.copied_labels(buf);
+    _ops.copied_labels(unconstify(buf));
     return new_ref;
 }
 
