@@ -1,6 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model.container.xml;
 
+import com.yahoo.cloud.config.CuratorConfig;
 import com.yahoo.cloud.config.ZookeeperServerConfig;
 import com.yahoo.component.ComponentId;
 import com.yahoo.config.application.api.ApplicationPackage;
@@ -561,7 +562,7 @@ public class ContainerModelBuilderTest extends ContainerModelBuilderTestBase {
     void cluster_with_zookeeper() {
         Function<Integer, String> servicesXml = (nodeCount) -> "<container version='1.0' id='default'>" +
                 "<nodes count='" + nodeCount + "'/>" +
-                "<zookeeper/>" +
+                "<zookeeper session-timeout-seconds='30'/>" +
                 "</container>";
         VespaModelTester tester = new VespaModelTester();
         tester.addHosts(3);
@@ -571,6 +572,7 @@ public class ContainerModelBuilderTest extends ContainerModelBuilderTestBase {
             assertNotNull(cluster);
             assertComponentConfigured(cluster, "com.yahoo.vespa.curator.Curator");
             assertComponentConfigured(cluster, "com.yahoo.vespa.curator.CuratorWrapper");
+            assertEquals(30, model.getConfig(CuratorConfig.class, cluster.getConfigId()).zookeeperSessionTimeoutSeconds());
             cluster.getContainers().forEach(container -> {
                 assertComponentConfigured(container, "com.yahoo.vespa.zookeeper.ReconfigurableVespaZooKeeperServer");
                 assertComponentConfigured(container, "com.yahoo.vespa.zookeeper.Reconfigurer");
