@@ -235,7 +235,7 @@ freeze()
             InternalNodeType *inode = mapInternalRef(i);
             (void) inode;
             assert(inode->getFrozen());
-            _nodeStore.freeElem(i);
+            _nodeStore.holdElem(i);
         }
         _internalHoldUntilFreeze.clear();
     }
@@ -245,7 +245,7 @@ freeze()
             LeafNodeType *lnode = mapLeafRef(i);
             (void) lnode;
             assert(lnode->getFrozen());
-            _nodeStore.freeElem(i);
+            _nodeStore.holdElem(i);
         }
         _leafHoldUntilFreeze.clear();
     }

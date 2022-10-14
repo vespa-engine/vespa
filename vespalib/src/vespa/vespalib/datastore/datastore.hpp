@@ -22,11 +22,11 @@ DataStoreT<RefT>::~DataStoreT() = default;
 
 template <typename RefT>
 void
-DataStoreT<RefT>::free_elem_internal(EntryRef ref, size_t numElems, bool was_held)
+DataStoreT<RefT>::free_elem_internal(EntryRef ref, size_t numElems)
 {
     RefType intRef(ref);
     BufferState &state = getBufferState(intRef.bufferId());
-    state.free_elems(ref, numElems, was_held, intRef.offset());
+    state.free_elems(ref, numElems, intRef.offset());
 }
 
 template <typename RefT>
@@ -45,7 +45,7 @@ void
 DataStoreT<RefT>::reclaim_entry_refs(generation_t oldest_used_gen)
 {
     _entry_ref_hold_list.reclaim(oldest_used_gen, [this](const auto& elem) {
-        free_elem_internal(elem.ref, elem.num_elems, true);
+        free_elem_internal(elem.ref, elem.num_elems);
     });
 }
 
@@ -54,7 +54,7 @@ void
 DataStoreT<RefT>::reclaim_all_entry_refs()
 {
     _entry_ref_hold_list.reclaim_all([this](const auto& elem) {
-        free_elem_internal(elem.ref, elem.num_elems, true);
+        free_elem_internal(elem.ref, elem.num_elems);
     });
 }
 

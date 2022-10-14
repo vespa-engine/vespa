@@ -156,10 +156,6 @@ public:
         _store.holdElem(ref, 1);
     }
 
-    void freeElem(EntryRef ref) {
-        _store.freeElem(ref, 1);
-    }
-
     std::unique_ptr<vespalib::datastore::CompactingBuffers> start_compact_worst(const CompactionStrategy& compaction_strategy);
 
     void assign_generation(generation_t current_gen) {
