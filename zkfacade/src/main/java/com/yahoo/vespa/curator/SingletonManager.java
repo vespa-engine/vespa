@@ -293,7 +293,7 @@ class SingletonManager {
                 logger.log(FINE, "Failed pinging ZK cluster", e);
                 return;
             }
-            if ( ! doom.compareAndSet(ourDoom, start.plus(Curator.ZK_SESSION_TIMEOUT.multipliedBy(9).dividedBy(10)))) {
+            if ( ! doom.compareAndSet(ourDoom, start.plus(curator.sessionTimeout().multipliedBy(9).dividedBy(10)))) {
                 logger.log(FINE, "Deadline changed, current lease renewal is void");
             }
         }

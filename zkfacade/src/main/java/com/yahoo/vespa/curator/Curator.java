@@ -63,8 +63,8 @@ public class Curator extends AbstractComponent implements AutoCloseable {
     private static final Logger LOG = Logger.getLogger(Curator.class.getName());
     private static final File ZK_CLIENT_CONFIG_FILE = new File(Defaults.getDefaults().underVespaHome("conf/zookeeper/zookeeper-client.cfg"));
 
-    // Note that session timeout has min and max values are related to tickTime defined by server, see configserver.def
-    static final Duration ZK_SESSION_TIMEOUT = Duration.ofSeconds(120);
+    // Note that session timeout has min and max values are related to tickTime defined by server, see zookeeper-server.def
+    static final Duration DEFAULT_ZK_SESSION_TIMEOUT = Duration.ofSeconds(120);
 
     private static final Duration ZK_CONNECTION_TIMEOUT = Duration.ofSeconds(30);
     private static final Duration BASE_SLEEP_TIME = Duration.ofSeconds(1);
@@ -76,18 +76,21 @@ public class Curator extends AbstractComponent implements AutoCloseable {
     private final CuratorFramework curatorFramework;
     private final ConnectionSpec connectionSpec;
     private final long juteMaxBuffer;
+    private final Duration sessionTimeout;
 
     // All lock keys, to allow re-entrancy. This will grow forever, but this should be too slow to be a problem
     private final ConcurrentHashMap<Path, Lock> locks = new ConcurrentHashMap<>();
 
     /** Creates a curator instance from a comma-separated string of ZooKeeper host:port strings */
     public static Curator create(String connectionSpec) {
-        return new Curator(ConnectionSpec.create(connectionSpec), Optional.of(ZK_CLIENT_CONFIG_FILE), defaultJuteMaxBuffer);
+        return new Curator(ConnectionSpec.create(connectionSpec), Optional.of(ZK_CLIENT_CONFIG_FILE),
+                           defaultJuteMaxBuffer, DEFAULT_ZK_SESSION_TIMEOUT);
     }
 
     // For testing only, use Optional.empty for clientConfigFile parameter to create default zookeeper client config
     public static Curator create(String connectionSpec, Optional<File> clientConfigFile) {
-        return new Curator(ConnectionSpec.create(connectionSpec), clientConfigFile, defaultJuteMaxBuffer);
+        return new Curator(ConnectionSpec.create(connectionSpec), clientConfigFile,
+                           defaultJuteMaxBuffer, DEFAULT_ZK_SESSION_TIMEOUT);
     }
 
     @Inject
@@ -98,31 +101,35 @@ public class Curator extends AbstractComponent implements AutoCloseable {
                                    CuratorConfig.Server::port,
                                    curatorConfig.zookeeperLocalhostAffinity()),
              Optional.of(ZK_CLIENT_CONFIG_FILE),
-             defaultJuteMaxBuffer);
+             defaultJuteMaxBuffer,
+             Duration.ofSeconds(curatorConfig.zookeeperSessionTimeoutSeconds()));
     }
 
     protected Curator(String connectionSpec, String zooKeeperEnsembleConnectionSpec, Function<RetryPolicy, CuratorFramework> curatorFactory) {
-        this(ConnectionSpec.create(connectionSpec, zooKeeperEnsembleConnectionSpec), curatorFactory.apply(DEFAULT_RETRY_POLICY), defaultJuteMaxBuffer);
+        this(ConnectionSpec.create(connectionSpec, zooKeeperEnsembleConnectionSpec), curatorFactory.apply(DEFAULT_RETRY_POLICY),
+             defaultJuteMaxBuffer, DEFAULT_ZK_SESSION_TIMEOUT);
     }
 
-    Curator(ConnectionSpec connectionSpec, Optional<File> clientConfigFile, long juteMaxBuffer) {
+    Curator(ConnectionSpec connectionSpec, Optional<File> clientConfigFile, long juteMaxBuffer, Duration sessionTimeout) {
         this(connectionSpec,
              CuratorFrameworkFactory
                      .builder()
                      .retryPolicy(DEFAULT_RETRY_POLICY)
-                     .sessionTimeoutMs((int) ZK_SESSION_TIMEOUT.toMillis())
+                     .sessionTimeoutMs((int) sessionTimeout.toMillis())
                      .connectionTimeoutMs((int) ZK_CONNECTION_TIMEOUT.toMillis())
                      .connectString(connectionSpec.local())
                      .zookeeperFactory(new VespaZooKeeperFactory(createClientConfig(clientConfigFile)))
                      .dontUseContainerParents() // TODO: Consider changing this in Vespa 9
                      .build(),
-             juteMaxBuffer);
+             juteMaxBuffer,
+             sessionTimeout);
     }
 
-    private Curator(ConnectionSpec connectionSpec, CuratorFramework curatorFramework, long juteMaxBuffer) {
+    private Curator(ConnectionSpec connectionSpec, CuratorFramework curatorFramework, long juteMaxBuffer, Duration sessionTimeout) {
         this.connectionSpec = Objects.requireNonNull(connectionSpec);
         this.curatorFramework = Objects.requireNonNull(curatorFramework);
         this.juteMaxBuffer = juteMaxBuffer;
+        this.sessionTimeout = sessionTimeout;
         addLoggingListener();
         curatorFramework.start();
     }
@@ -139,6 +146,10 @@ public class Curator extends AbstractComponent implements AutoCloseable {
         } else {
             return new ZKClientConfig();
         }
+    }
+
+    public Duration sessionTimeout() {
+        return sessionTimeout;
     }
 
     /** For internal use; prefer creating a {@link CuratorCounter} */

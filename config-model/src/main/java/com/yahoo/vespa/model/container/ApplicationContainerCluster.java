@@ -2,6 +2,7 @@
 package com.yahoo.vespa.model.container;
 
 import ai.vespa.metricsproxy.http.application.ApplicationMetricsHandler;
+import com.yahoo.cloud.config.CuratorConfig;
 import com.yahoo.cloud.config.ZookeeperServerConfig;
 import com.yahoo.component.ComponentId;
 import com.yahoo.component.ComponentSpecification;
@@ -303,6 +304,15 @@ public final class ApplicationContainerCluster extends ContainerCluster<Applicat
             builder.server(serverBuilder);
             builder.dynamicReconfiguration(true);
         }
+    }
+
+    @Override
+    public void getConfig(CuratorConfig.Builder builder) {
+        if (getParent() instanceof ConfigserverCluster) return; // Produces its own config
+        super.getConfig(builder);
+
+        // 12s is 2x the current ZookeeperServerConfig.tickTime() of 6s, and the default minimum the server will accept.
+        builder.zookeeperSessionTimeoutSeconds(12); // TODO jonmv: make configurable
     }
 
     public Optional<String> getTlsClientAuthority() {
