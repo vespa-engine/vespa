@@ -4,6 +4,10 @@ package com.yahoo.security;
 import org.bouncycastle.util.encoders.Hex;
 import org.junit.jupiter.api.Test;
 
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
+import java.util.List;
+
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
@@ -25,6 +29,19 @@ public class HKDFTest {
 
     private static String toHex(byte[] bytes) {
         return Hex.toHexString(bytes);
+    }
+
+    private static byte[] sha256DigestOf(byte[]... buffers) {
+        try {
+            MessageDigest digest = MessageDigest.getInstance("SHA-256");
+            for (byte[] buf : buffers) {
+                digest.update(buf);
+            }
+            return digest.digest();
+        } catch (NoSuchAlgorithmException e) {
+            // SHA-256 should always be present, so this should never be reached in practice
+            throw new RuntimeException(e);
+        }
     }
 
     /*
@@ -52,10 +69,10 @@ public class HKDFTest {
 
         var hkdf = HKDF.extractedFrom(salt, ikm);
         var okm = hkdf.expand(42, info);
-        assertEquals(toHex(okm),
-                     "3cb25f25faacd57a90434f64d0362f2a" +
+        assertEquals("3cb25f25faacd57a90434f64d0362f2a" +
                      "2d2d0a90cf1a5a4c5db02d56ecc4c5bf" +
-                     "34007208d5b887185865");
+                     "34007208d5b887185865",
+                     toHex(okm));
     }
 
     @Test
@@ -66,20 +83,20 @@ public class HKDFTest {
 
         var hkdf = HKDF.extractedFrom(salt, ikm);
         var okm = hkdf.expand(31, info); // One less than block size
-        assertEquals(toHex(okm),
-                     "3cb25f25faacd57a90434f64d0362f2a" +
-                     "2d2d0a90cf1a5a4c5db02d56ecc4c5");
+        assertEquals("3cb25f25faacd57a90434f64d0362f2a" +
+                     "2d2d0a90cf1a5a4c5db02d56ecc4c5",
+                     toHex(okm));
 
         okm = hkdf.expand(32, info); // Exactly equal to block size
-        assertEquals(toHex(okm),
-                     "3cb25f25faacd57a90434f64d0362f2a" +
-                     "2d2d0a90cf1a5a4c5db02d56ecc4c5bf");
+        assertEquals("3cb25f25faacd57a90434f64d0362f2a" +
+                     "2d2d0a90cf1a5a4c5db02d56ecc4c5bf",
+                     toHex(okm));
 
         okm = hkdf.expand(33, info); // One more than block size
-        assertEquals(toHex(okm),
-                     "3cb25f25faacd57a90434f64d0362f2a" +
+        assertEquals("3cb25f25faacd57a90434f64d0362f2a" +
                      "2d2d0a90cf1a5a4c5db02d56ecc4c5bf" +
-                     "34");
+                     "34",
+                     toHex(okm));
     }
 
     /*
@@ -134,13 +151,13 @@ public class HKDFTest {
 
         var hkdf = HKDF.extractedFrom(salt, ikm);
         var okm = hkdf.expand(82, info);
-        assertEquals(toHex(okm),
-                     "b11e398dc80327a1c8e7f78c596a4934" +
+        assertEquals("b11e398dc80327a1c8e7f78c596a4934" +
                      "4f012eda2d4efad8a050cc4c19afa97c" +
                      "59045a99cac7827271cb41c65e590e09" +
                      "da3275600c2f09b8367793a9aca3db71" +
                      "cc30c58179ec3e87c14c01d5c1f3434f" +
-                     "1d87");
+                     "1d87",
+                     toHex(okm));
     }
 
     /*
@@ -168,14 +185,14 @@ public class HKDFTest {
         // We don't allow empty salt to the salted factory function, so this is equivalent.
         var hkdf = HKDF.unsaltedExtractedFrom(ikm);
         var okm = hkdf.expand(42, info);
-        var expectedKey = "8da4e775a563c18f715f802a063c5a31" +
+        var expectedOkm = "8da4e775a563c18f715f802a063c5a31" +
                           "b8a11f5c5ee1879ec3454e5f3c738d2d" +
                           "9d201395faa4b61a96c8";
-        assertEquals(toHex(okm), expectedKey);
+        assertEquals(expectedOkm, toHex(okm));
 
         // expand() without explicit context should return as if an empty context array was passed
         okm = hkdf.expand(42);
-        assertEquals(toHex(okm), expectedKey);
+        assertEquals(expectedOkm, toHex(okm));
     }
 
     @Test
@@ -189,10 +206,6 @@ public class HKDFTest {
         assertThrows(IllegalArgumentException.class, () -> hkdf.expand(0)); // Need at least 1 key byte
 
         assertThrows(IllegalArgumentException.class, () -> hkdf.expand(HKDF.MAX_OUTPUT_SIZE + 1)); // 1 too large
-
-        // However, exactly max should work (though a strange size to request in practice)
-        var okm = hkdf.expand(HKDF.MAX_OUTPUT_SIZE);
-        assertEquals(okm.length, HKDF.MAX_OUTPUT_SIZE);
     }
 
     @Test
@@ -209,6 +222,77 @@ public class HKDFTest {
         assertThrows(IllegalArgumentException.class, () -> HKDF.extractedFrom(salt, new byte[0]));
         assertThrows(NullPointerException.class, () -> HKDF.unsaltedExtractedFrom(null));
         assertThrows(IllegalArgumentException.class, () -> HKDF.unsaltedExtractedFrom(new byte[0]));
+    }
+
+    //
+    // Subset of Wycheproof test vectors for specific named edge cases
+    // From https://github.com/google/wycheproof/blob/master/testvectors/hkdf_sha256_test.json
+    //
+
+    @Test
+    void maximal_output_size() {
+        var ikm  = fromHex("bdd9c30b5fab7f22d859db774779b41cc124daf3ce872f6e80951c0edd8f8214");
+        var salt = fromHex("90983ed74912c6173d0f7cf8164b525361b89bda04d085341a057bde9083b5af");
+        var info = fromHex("e6483e923d37e4ba");
+
+        var hkdf = HKDF.extractedFrom(salt, ikm);
+        assertEquals(8160, HKDF.MAX_OUTPUT_SIZE);
+        var okm = hkdf.expand(HKDF.MAX_OUTPUT_SIZE, info);
+        // To avoid shoving an 8K sized hex string into the source code, check against the pre-hashed
+        // value of the expected OKM output. It's hashes all the way down!
+        var expectedOkmSha256Digest = "c17ce0403e133570191dd1d2ca46f6b62623d62e4f0def8de23a51d65d40a009";
+        var okmDigest = sha256DigestOf(okm);
+        assertEquals(expectedOkmSha256Digest, toHex(okmDigest));
+    }
+
+    @Test
+    void output_collision_for_different_salts() {
+        var ikm  = fromHex("5943c65bc33bf05a205b04be8ae0ab2e");
+        var info = fromHex("be082f301a03f87787a80fbea88941214d50c42b");
+        var hkdf = HKDF.unsaltedExtractedFrom(ikm);
+
+        var okm = hkdf.expand(32, info);
+        var expectedOkm = "e7f384df2eae32addabd068a758dec84ed7fcfd87a5fcceb37b70c51422d7387";
+        assertEquals(expectedOkm, toHex(okm));
+
+        var salt = fromHex("0000000000000000000000000000000000000000000000000000000000000000");
+        hkdf = HKDF.extractedFrom(salt, ikm);
+        okm = hkdf.expand(32, info);
+        assertEquals(expectedOkm, toHex(okm));
+    }
+
+    @Test
+    void salt_longer_than_block_size_is_equivalent_to_hash_of_the_salt() {
+        var ikm  = fromHex("624a5b59c2be55cbe29ea90c0020a7e8c60f2501");
+        var info = fromHex("5447e595250d02165aae3e61fa90313e25509a7b");
+        var salts = List.of("c737d7278df1ec7c0a549ce964abd51c3df1d3584d49e77208cd3f9f5bbfb32e",
+                            "1a08959149f4b073bcd902c9bc4ed0324c21c95590773afc77037d610b9584806aeeeda8b5" +
+                                    "d588d0cd79e7c12211b8e394067516ce12946d61111a52042b539353");
+        var expectedOkm = "d45c3909269f4b5f9de1fb2eeb0593a7cb9175c8835aba37e0ee0c4cb3bd87c4";
+        for (var salt : salts) {
+            var hkdf = HKDF.extractedFrom(fromHex(salt), ikm);
+            var okm = hkdf.expand(32, info);
+            assertEquals(expectedOkm, toHex(okm));
+        }
+    }
+
+    @Test
+    void salt_shorter_than_the_block_size_is_padded_with_zeros() {
+        var ikm  = fromHex("5943c65bc33bf05a205b04be8ae0ab2e");
+        var info = fromHex("be082f301a03f87787a80fbea88941214d50c42b");
+        var expectedOkm = "43e371354001617abb70454751059625ef1a64e0f818469c2f886b27140a0166";
+        var salts = List.of("e69dcaad55fb0536",
+                            "e69dcaad55fb05360000000000000000",
+                            "e69dcaad55fb053600000000000000000000000000000000",
+                            "e69dcaad55fb0536000000000000000000000000000000000000000000000000",
+                            "e69dcaad55fb05360000000000000000000000000000000000000000000000000000000000000000",
+                            "e69dcaad55fb053600000000000000000000000000000000000000000000000000000000000000000000000000000000",
+                            "e69dcaad55fb0536000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000");
+        for (var salt : salts) {
+            var hkdf = HKDF.extractedFrom(fromHex(salt), ikm);
+            var okm = hkdf.expand(32, info);
+            assertEquals(expectedOkm, toHex(okm), "Failed for salt %s".formatted(salt));
+        }
     }
 
 }
