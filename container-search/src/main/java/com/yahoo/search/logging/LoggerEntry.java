@@ -8,6 +8,7 @@ import com.fasterxml.jackson.core.JsonGenerator;
 import com.yahoo.search.Query;
 import com.yahoo.slime.JsonDecoder;
 import com.yahoo.slime.Slime;
+import com.yahoo.text.Utf8;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.UncheckedIOException;
@@ -76,13 +77,13 @@ public class LoggerEntry {
 
     // TODO: Rename method here and above? (serialize/deserialize)
     // TODO: Use Slime or Jackson for both
-    public static LoggerEntry fromJson(byte[] content) throws IOException {
+    public static LoggerEntry fromJson(String content) throws IOException {
         var decoder = new JsonDecoder();
-        var slime = decoder.decode(new Slime(), content);
+        var slime = decoder.decode(new Slime(), Utf8.toBytes(content));
 
         var timestamp = slime.get().field("timestamp").asLong();
         var query = new Query(slime.get().field("query").asString());
-        var blob = slime.get().field("blob").asData();
+        var blob = slime.get().field("blob").asString();
 
         return new LoggerEntry(new Builder().timestamp(timestamp).query(query).blob(blob));
     }
@@ -115,6 +116,13 @@ public class LoggerEntry {
         public Builder blob(byte[] bytes) {
             blob = ByteBuffer.allocate(bytes.length);
             blob.put(bytes).limit(blob.position()).position(0);
+            return this;
+        }
+
+        public Builder blob(String blob) {
+            byte[] bytes = Utf8.toBytes(blob);
+            this.blob = ByteBuffer.allocate(bytes.length);
+            this.blob.put(bytes);
             return this;
         }
 

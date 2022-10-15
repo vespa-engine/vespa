@@ -24,7 +24,8 @@ public class SpoolerTest {
     public void testSpoolingLogger() throws IOException {
         Path spoolDir = tempDir.resolve("spool");
 
-        Spooler spooler = new Spooler(spoolDir);
+        int maxEntriesPerFile = 1;
+        Spooler spooler = new Spooler(spoolDir, maxEntriesPerFile);
 
         TestLogger logger = new TestLogger(spooler);
         assertTrue(sendEntry(logger, "Yo entry"));
@@ -45,16 +46,61 @@ public class SpoolerTest {
         assertEquals(2, logger.entriesSent());
 
         // No files in processing or ready, 2 files in successes
-        assertEquals(0, spooler.listFilesInPath(spooler.processingPath()).size());
-        assertEquals(0, spooler.listFilesInPath(readyPath).size());
-        assertEquals(2, spooler.listFilesInPath(spooler.successesPath()).size());
-        assertEquals(0, spooler.listFilesInPath(spooler.failuresPath()).size());
+        assertProcessedFiles(spooler, 0);
+        assertReadyFiles(spooler, 0);
+        assertSuccessFiles(spooler, 2);
+        assertFailureFiles(spooler, 0);
+    }
+
+    @Test
+    public void testSpoolingManyEntriesPerFile() throws IOException {
+        Path spoolDir = tempDir.resolve("spool");
+
+        int maxEntriesPerFile = 2;
+        Spooler spooler = new Spooler(spoolDir, maxEntriesPerFile);
+
+        TestLogger logger = new TestLogger(spooler);
+        assertTrue(sendEntry(logger, "Yo entry"));
+        assertTrue(sendEntry(logger, "Yo entry 2"));
+
+        Path readyPath = spooler.readyPath();
+        Path readyFile1 = readyPath.resolve("1");
+        waitUntilFileExists(readyFile1);
+
+        // Check content after being moved to ready path
+        assertContent(readyFile1, "Yo entry");
+
+        // Process files (read, transport files)
+        logger.manualRun();
+        assertEquals(2, logger.entriesSent());
+
+        // No files in processing or ready, 1 file in successes
+        assertProcessedFiles(spooler, 0);
+        assertReadyFiles(spooler, 0);
+        assertSuccessFiles(spooler, 1);
+        assertFailureFiles(spooler, 0);
+    }
+
+    private void assertProcessedFiles(Spooler spooler, int expected) throws IOException {
+        assertEquals(expected, spooler.listFilesInPath(spooler.processingPath()).size());
+    }
+
+    private void assertReadyFiles(Spooler spooler, int expected) throws IOException {
+        assertEquals(expected, spooler.listFilesInPath(spooler.readyPath()).size());
+    }
+
+    private void assertSuccessFiles(Spooler spooler, int expected) throws IOException {
+        assertEquals(expected, spooler.listFilesInPath(spooler.successesPath()).size());
+    }
+
+    private void assertFailureFiles(Spooler spooler, int expected) throws IOException {
+        assertEquals(expected, spooler.listFilesInPath(spooler.failuresPath()).size());
     }
 
     @Test
     public void failingToTransportIsRetried() throws IOException {
         Path spoolDir = tempDir.resolve("spool");
-        Spooler spooler = new Spooler(spoolDir);
+        Spooler spooler = new Spooler(spoolDir, 1);
         FailingToTransportSecondEntryLogger logger = new FailingToTransportSecondEntryLogger(spooler);
 
         assertTrue(sendEntry(logger, "Yo entry"));
@@ -85,7 +131,7 @@ public class SpoolerTest {
             }
         }
 
-        assertTrue(path.toFile().exists());
+        assertTrue(path.toFile().exists(), path.toFile() + " does not exits");
     }
 
     private void assertContent(Path file, String expectedContent) throws IOException {
