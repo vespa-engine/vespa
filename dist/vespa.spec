@@ -492,12 +492,6 @@ nearest neighbor search used for low-level benchmarking.
 %endif
 %else
 %setup -q
-%if 0%{?el8} && %{?_vespa_llvm_version}%{!?_vespa_llvm_version:13} < 13
-if grep -qs 'result_pair<R>(' /usr/include/llvm/ADT/STLExtras.h
-then
-  patch /usr/include/llvm/ADT/STLExtras.h < dist/STLExtras.h.diff
-fi
-%endif
 echo '%{version}' > VERSION
 case '%{version}' in
     *.0)
