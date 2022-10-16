@@ -3,6 +3,7 @@
 #include "result_processor.h"
 #include "partial_result.h"
 #include "sessionmanager.h"
+#include <vespa/searchcore/proton/documentmetastore/documentmetastoreattribute.h>
 #include <vespa/searchcore/grouping/groupingmanager.h>
 #include <vespa/searchcore/grouping/groupingcontext.h>
 #include <vespa/searchlib/uca/ucaconverter.h>
@@ -28,7 +29,7 @@ ResultProcessor::Result::~Result() = default;
 ResultProcessor::Sort::Sort(uint32_t partitionId, const vespalib::Doom & doom, IAttributeContext &ac, const vespalib::string &ss)
     : sorter(FastS_DefaultResultSorter::instance()),
       _ucaFactory(std::make_unique<search::uca::UcaConverterFactory>()),
-      sortSpec("[no-metastore]", partitionId, doom, *_ucaFactory)
+      sortSpec(DocumentMetaStoreAttribute::getFixedName(), partitionId, doom, *_ucaFactory)
 {
     if (!ss.empty() && sortSpec.Init(ss.c_str(), ac)) {
         sorter = &sortSpec;
