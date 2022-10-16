@@ -90,7 +90,7 @@ BuildRequires: (llvm-devel >= 14.0.0 and llvm-devel < 15)
 BuildRequires: (llvm-devel >= 13.0.1 and llvm-devel < 14)
 %endif
 %else
-BuildRequires: (llvm-devel >= 12.0.1 and llvm-devel < 13)
+BuildRequires: (llvm-devel >= 13.0.1 and llvm-devel < 14)
 %endif
 BuildRequires: vespa-boost-devel >= 1.76.0-1
 BuildRequires: vespa-openssl-devel >= 1.1.1o-1
@@ -238,7 +238,7 @@ Requires: zstd
 %define _vespa_llvm_version 13
 %endif
 %else
-%define _vespa_llvm_version 12
+%define _vespa_llvm_version 13
 %endif
 Requires: vespa-gtest = 1.11.0
 %define _extra_link_directory %{_vespa_deps_prefix}/lib64
@@ -360,7 +360,7 @@ Requires: (llvm-libs >= 14.0.0 and llvm-libs < 15)
 Requires: (llvm-libs >= 13.0.1 and llvm-libs < 14)
 %endif
 %else
-Requires: (llvm-libs >= 12.0.1 and llvm-libs < 13)
+Requires: (llvm-libs >= 13.0.1 and llvm-libs < 14)
 %endif
 Requires: vespa-protobuf = 3.19.1
 %endif
@@ -492,12 +492,6 @@ nearest neighbor search used for low-level benchmarking.
 %endif
 %else
 %setup -q
-%if 0%{?el8} && %{?_vespa_llvm_version}%{!?_vespa_llvm_version:13} < 13
-if grep -qs 'result_pair<R>(' /usr/include/llvm/ADT/STLExtras.h
-then
-  patch /usr/include/llvm/ADT/STLExtras.h < dist/STLExtras.h.diff
-fi
-%endif
 echo '%{version}' > VERSION
 case '%{version}' in
     *.0)
