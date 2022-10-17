@@ -99,7 +99,7 @@ BuildRequires: vespa-gtest = 1.11.0
 %define _use_vespa_gtest 1
 BuildRequires: vespa-lz4-devel >= 1.9.2-2
 BuildRequires: vespa-onnxruntime-devel = 1.12.1
-BuildRequires: vespa-protobuf-devel = 3.19.1
+BuildRequires: vespa-protobuf-devel = 3.21.7
 BuildRequires: vespa-libzstd-devel >= 1.5.2-1
 %endif
 %if 0%{?el9}
@@ -362,7 +362,7 @@ Requires: (llvm-libs >= 13.0.1 and llvm-libs < 14)
 %else
 Requires: (llvm-libs >= 13.0.1 and llvm-libs < 14)
 %endif
-Requires: vespa-protobuf = 3.19.1
+Requires: vespa-protobuf = 3.21.7
 %endif
 %if 0%{?el9}
 %if 0%{?_centos_stream}
