@@ -2,6 +2,9 @@
 package com.yahoo.jdisc.http.server.jetty;
 
 import com.yahoo.jdisc.http.server.jetty.HttpResponseStatisticsCollector.StatisticsEntry;
+import jakarta.servlet.ServletException;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import org.eclipse.jetty.http.HttpFields;
 import org.eclipse.jetty.http.HttpURI;
 import org.eclipse.jetty.http.HttpVersion;
@@ -10,6 +13,7 @@ import org.eclipse.jetty.http.MetaData.Response;
 import org.eclipse.jetty.server.AbstractConnector;
 import org.eclipse.jetty.server.Connector;
 import org.eclipse.jetty.server.HttpChannel;
+import org.eclipse.jetty.server.HttpChannelOverHttp;
 import org.eclipse.jetty.server.HttpConfiguration;
 import org.eclipse.jetty.server.HttpTransport;
 import org.eclipse.jetty.server.Request;
@@ -19,9 +23,6 @@ import org.eclipse.jetty.util.Callback;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import javax.servlet.ServletException;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.List;
@@ -164,8 +165,8 @@ public class HttpResponseStatisticsCollectorTest {
     }
     private Request testRequest(String scheme, int responseCode, String httpMethod, String path,
                                 com.yahoo.jdisc.Request.RequestType explicitRequestType) {
-        HttpChannel channel = new HttpChannel(connector, new HttpConfiguration(), null, new DummyTransport());
-        MetaData.Request metaData = new MetaData.Request(httpMethod, new HttpURI(scheme + "://" + path), HttpVersion.HTTP_1_1, new HttpFields());
+        HttpChannel channel = new HttpChannelOverHttp(null, connector, new HttpConfiguration(), null, new DummyTransport());
+        MetaData.Request metaData = new MetaData.Request(httpMethod, HttpURI.build(scheme + "://" + path), HttpVersion.HTTP_1_1, HttpFields.build());
         Request req = channel.getRequest();
         if (explicitRequestType != null)
             req.setAttribute("requestType", explicitRequestType);
@@ -192,17 +193,12 @@ public class HttpResponseStatisticsCollectorTest {
 
     private final class DummyTransport implements HttpTransport {
         @Override
-        public void send(Response info, boolean head, ByteBuffer content, boolean lastContent, Callback callback) {
+        public void send(MetaData.Request request, Response response, ByteBuffer byteBuffer, boolean b, Callback callback) {
             callback.succeeded();
         }
 
         @Override
         public boolean isPushSupported() {
-            return false;
-        }
-
-        @Override
-        public boolean isOptimizedForDirectBuffers() {
             return false;
         }
 
