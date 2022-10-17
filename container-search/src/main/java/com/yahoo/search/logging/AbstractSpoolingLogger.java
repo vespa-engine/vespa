@@ -15,7 +15,7 @@ import java.util.logging.Level;
  *
  * @author hmusum
  */
-abstract class AbstractSpoolingLogger extends AbstractThreadedLogger implements Runnable {
+public abstract class AbstractSpoolingLogger extends AbstractThreadedLogger implements Runnable {
 
     protected static final java.util.logging.Logger log = java.util.logging.Logger.getLogger(Spooler.class.getName());
 
