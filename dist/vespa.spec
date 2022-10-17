@@ -174,7 +174,12 @@ BuildRequires: gtest-devel
 BuildRequires: gmock-devel
 %endif
 %endif
+%if 0%{?amzn2022}
+BuildRequires: vespa-xxhash-devel >= 0.8.1
+%define _use_vespa_xxhash 1
+%else
 BuildRequires: xxhash-devel >= 0.8.1
+%endif
 %if 0%{?el8}
 BuildRequires: vespa-openblas-devel = 0.3.21
 %define _use_vespa_openblas 1
@@ -230,8 +235,12 @@ BuildRequires: perl-Pod-Usage
 BuildRequires: perl-URI
 BuildRequires: valgrind
 BuildRequires: perf
+%if 0%{?amzn2022}
+Requires: vespa-xxhash >= 0.8.1
+%else
 Requires: xxhash
 Requires: xxhash-libs >= 0.8.1
+%endif
 Requires: gdb
 Requires: hostname
 Requires: nc
@@ -293,7 +302,11 @@ Summary: Vespa - The open big data serving engine - base C++ libraries
 %if 0%{?centos} || 0%{?rocky} || 0%{?oraclelinux}
 Requires: epel-release
 %endif
+%if 0%{?amzn2022}
+Requires: vespa-xxhash >= 0.8.1
+%else
 Requires: xxhash-libs >= 0.8.1
+%endif
 %if 0%{?el8}
 Requires: vespa-openssl >= 1.1.1o-1
 %else
