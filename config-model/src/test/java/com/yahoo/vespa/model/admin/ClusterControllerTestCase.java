@@ -413,6 +413,11 @@ public class ClusterControllerTestCase extends DomBuilderTest {
         assertEquals(0, qrStartConfig.jvm().directMemorySizeCache());
         assertEquals(16, qrStartConfig.jvm().baseMaxDirectMemorySize());
 
+        CuratorConfig.Builder curatorBuilder = new CuratorConfig.Builder();
+        model.getConfig(curatorBuilder, "foo");
+        CuratorConfig curatorConfig = curatorBuilder.build();
+        assertEquals(120, curatorConfig.zookeeperSessionTimeoutSeconds());
+
         assertReindexingConfigPresent(model);
         assertReindexingConfiguredOnAdminCluster(model);
     }

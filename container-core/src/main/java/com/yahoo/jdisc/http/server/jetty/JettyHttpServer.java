@@ -18,7 +18,10 @@ import org.eclipse.jetty.server.Handler;
 import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.server.ServerConnector;
 import org.eclipse.jetty.server.SslConnectionFactory;
+import org.eclipse.jetty.server.handler.ContextHandler;
+import org.eclipse.jetty.server.handler.ContextHandlerCollection;
 import org.eclipse.jetty.server.handler.HandlerCollection;
+import org.eclipse.jetty.server.handler.HandlerWrapper;
 import org.eclipse.jetty.server.handler.StatisticsHandler;
 import org.eclipse.jetty.server.handler.gzip.GzipHandler;
 import org.eclipse.jetty.server.handler.gzip.GzipHttpOutputInterceptor;
@@ -83,20 +86,13 @@ public class JettyHttpServer extends AbstractServerProvider {
             listenedPorts.add(connectorConfig.listenPort());
         }
 
-        JDiscContext jDiscContext = new JDiscContext(filterBindings,
-                                                     container,
-                                                     janitor,
-                                                     metric,
-                                                     serverConfig);
+        JDiscContext jDiscContext = new JDiscContext(filterBindings, container, janitor, metric, serverConfig);
 
         ServletHolder jdiscServlet = new ServletHolder(new JDiscHttpServlet(jDiscContext));
         List<JDiscServerConnector> connectors = Arrays.stream(server.getConnectors())
                                                       .map(JDiscServerConnector.class::cast)
                                                       .collect(toList());
-
-        server.setHandler(getHandlerCollection(serverConfig,
-                                               connectors,
-                                               jdiscServlet));
+        server.setHandler(createRootHandler(serverConfig, connectors, jdiscServlet));
         this.metricsReporter = new ServerMetricReporter(metric, server);
     }
 
@@ -136,46 +132,36 @@ public class JettyHttpServer extends AbstractServerProvider {
         }
     }
 
-    private HandlerCollection getHandlerCollection(ServerConfig serverConfig,
-                                                   List<JDiscServerConnector> connectors,
-                                                   ServletHolder jdiscServlet) {
-        ServletContextHandler servletContextHandler = createServletContextHandler();
-        servletContextHandler.addServlet(jdiscServlet, "/*");
-
-        List<ConnectorConfig> connectorConfigs = connectors.stream().map(JDiscServerConnector::connectorConfig).collect(toList());
-        var secureRedirectHandler = new SecuredRedirectHandler(connectorConfigs);
-        secureRedirectHandler.setHandler(servletContextHandler);
-
-        var proxyHandler = new HealthCheckProxyHandler(connectors);
-        proxyHandler.setHandler(secureRedirectHandler);
-
-        var authEnforcer = new TlsClientAuthenticationEnforcer(connectorConfigs);
-        authEnforcer.setHandler(proxyHandler);
-
-        GzipHandler gzipHandler = newGzipHandler(serverConfig);
-        gzipHandler.setHandler(authEnforcer);
-
-        HttpResponseStatisticsCollector statisticsCollector =
-                new HttpResponseStatisticsCollector(serverConfig.metric().monitoringHandlerPaths(),
-                                                    serverConfig.metric().searchHandlerPaths());
-        statisticsCollector.setHandler(gzipHandler);
-        for (String agent : serverConfig.metric().ignoredUserAgents()) {
-            statisticsCollector.ignoreUserAgent(agent);
+    private Handler createRootHandler(
+            ServerConfig serverCfg, List<JDiscServerConnector> connectors, ServletHolder jdiscServlet) {
+        HandlerCollection perConnectorHandlers = new ContextHandlerCollection();
+        for (JDiscServerConnector connector : connectors) {
+            ConnectorConfig connectorCfg = connector.connectorConfig();
+            List<Handler> connectorChain = new ArrayList<>();
+            if (connectorCfg.tlsClientAuthEnforcer().enable()) {
+                connectorChain.add(newTlsClientAuthEnforcerHandler(connectorCfg));
+            }
+            if (connectorCfg.healthCheckProxy().enable()) {
+                connectorChain.add(newHealthCheckProxyHandler(connectors));
+            } else {
+                connectorChain.add(newServletHandler(jdiscServlet));
+            }
+            ContextHandler connectorRoot = newConnectorContextHandler(connector);
+            addChainToRoot(connectorRoot, connectorChain);
+            perConnectorHandlers.addHandler(connectorRoot);
         }
-
-        StatisticsHandler statisticsHandler = newStatisticsHandler();
-        statisticsHandler.setHandler(statisticsCollector);
-
-        HandlerCollection handlerCollection = new HandlerCollection();
-        handlerCollection.setHandlers(new Handler[] { statisticsHandler });
-        return handlerCollection;
+        StatisticsHandler root = newGenericStatisticsHandler();
+        addChainToRoot(root, List.of(
+                newResponseStatisticsHandler(serverCfg), newGzipHandler(serverCfg), perConnectorHandlers));
+        return root;
     }
 
-    private ServletContextHandler createServletContextHandler() {
-        ServletContextHandler servletContextHandler = new ServletContextHandler(ServletContextHandler.NO_SECURITY | ServletContextHandler.NO_SESSIONS);
-        servletContextHandler.setContextPath("/");
-        servletContextHandler.setDisplayName(getDisplayName(listenedPorts));
-        return servletContextHandler;
+    private static void addChainToRoot(Handler root, List<Handler> chain) {
+        Handler parent = root;
+        for (Handler h : chain) {
+            ((HandlerWrapper)parent).setHandler(h);
+            parent = h;
+        }
     }
 
     private static String getDisplayName(List<Integer> ports) {
@@ -237,13 +223,37 @@ public class JettyHttpServer extends AbstractServerProvider {
 
     Server server() { return server; }
 
-    private StatisticsHandler newStatisticsHandler() {
+    private ServletContextHandler newServletHandler(ServletHolder servlet) {
+        var h = new ServletContextHandler(ServletContextHandler.NO_SECURITY | ServletContextHandler.NO_SESSIONS);
+        h.setContextPath("/");
+        h.setDisplayName(getDisplayName(listenedPorts));
+        h.addServlet(servlet, "/*");
+        return h;
+    }
+
+    private static ContextHandler newConnectorContextHandler(JDiscServerConnector c) {
+        return new ConnectorSpecificContextHandler(c);
+    }
+
+    private static HealthCheckProxyHandler newHealthCheckProxyHandler(List<JDiscServerConnector> connectors) {
+        return new HealthCheckProxyHandler(connectors);
+    }
+
+    private static TlsClientAuthenticationEnforcer newTlsClientAuthEnforcerHandler(ConnectorConfig cfg) {
+        return new TlsClientAuthenticationEnforcer(cfg.tlsClientAuthEnforcer());
+    }
+
+    private static HttpResponseStatisticsCollector newResponseStatisticsHandler(ServerConfig cfg) {
+        return new HttpResponseStatisticsCollector(cfg.metric());
+    }
+
+    private static StatisticsHandler newGenericStatisticsHandler() {
         StatisticsHandler statisticsHandler = new StatisticsHandler();
         statisticsHandler.statsReset();
         return statisticsHandler;
     }
 
-    private GzipHandler newGzipHandler(ServerConfig serverConfig) {
+    private static GzipHandler newGzipHandler(ServerConfig serverConfig) {
         GzipHandler gzipHandler = new GzipHandlerWithVaryHeaderFixed();
         gzipHandler.setCompressionLevel(serverConfig.responseCompressionLevel());
         gzipHandler.setInflateBufferSize(8 * 1024);

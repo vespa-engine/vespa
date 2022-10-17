@@ -2,7 +2,7 @@
 #pragma once
 
 #include "userdocuments.h"
-#include <vespa/searchlib/index/docbuilder.h>
+#include <vespa/searchlib/test/doc_builder.h>
 #include <vespa/vespalib/util/stringfmt.h>
 
 namespace proton::test {
@@ -13,14 +13,13 @@ namespace proton::test {
 class UserDocumentsBuilder
 {
 private:
-    search::index::Schema     _schema;
-    search::index::DocBuilder _builder;
+    search::test::DocBuilder _builder;
     UserDocuments             _docs;
 public:
     UserDocumentsBuilder();
     ~UserDocumentsBuilder();
-    const std::shared_ptr<const document::DocumentTypeRepo> &getRepo() const {
-        return _builder.getDocumentTypeRepo();
+    std::shared_ptr<const document::DocumentTypeRepo> getRepo() const {
+        return _builder.get_repo_sp();
     }
     UserDocumentsBuilder &createDoc(uint32_t userId, search::DocumentIdT lid);
     UserDocumentsBuilder &createDocs(uint32_t userId, search::DocumentIdT begin,

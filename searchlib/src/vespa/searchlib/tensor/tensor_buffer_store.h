@@ -27,13 +27,13 @@ public:
     TensorBufferStore(const vespalib::eval::ValueType& tensor_type, std::shared_ptr<vespalib::alloc::MemoryAllocator> allocator, uint32_t max_small_subspaces_type_id);
     ~TensorBufferStore();
     void holdTensor(EntryRef ref) override;
-    EntryRef move(EntryRef ref) override;
+    EntryRef move_on_compact(EntryRef ref) override;
     vespalib::MemoryUsage update_stat(const vespalib::datastore::CompactionStrategy& compaction_strategy) override;
     std::unique_ptr<vespalib::datastore::ICompactionContext> start_compact(const vespalib::datastore::CompactionStrategy& compaction_strategy) override;
-    EntryRef store_tensor(const vespalib::eval::Value &tensor);
-    EntryRef store_encoded_tensor(vespalib::nbostream &encoded);
-    std::unique_ptr<vespalib::eval::Value> get_tensor(EntryRef ref) const;
-    bool encode_stored_tensor(EntryRef ref, vespalib::nbostream &target) const;
+    EntryRef store_tensor(const vespalib::eval::Value& tensor) override;
+    EntryRef store_encoded_tensor(vespalib::nbostream& encoded) override;
+    std::unique_ptr<vespalib::eval::Value> get_tensor(EntryRef ref) const override;
+    bool encode_stored_tensor(EntryRef ref, vespalib::nbostream& target) const override;
 };
 
 }

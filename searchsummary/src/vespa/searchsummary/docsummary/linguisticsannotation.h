@@ -2,11 +2,10 @@
 
 #pragma once
 
-#include <vespa/document/datatype/annotationtype.h>
+#include <vespa/vespalib/stllike/string.h>
 
 namespace search::linguistics {
 
 extern const vespalib::string SPANTREE_NAME;
-extern const document::AnnotationType *const TERM;
 
 }

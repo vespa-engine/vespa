@@ -1,11 +1,15 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
+#include <vespa/document/fieldvalue/document.h>
+#include <vespa/document/fieldvalue/stringfieldvalue.h>
+#include <vespa/document/repo/configbuilder.h>
 #include <vespa/searchlib/common/scheduletaskcallback.h>
 #include <vespa/searchlib/fef/matchdata.h>
 #include <vespa/searchlib/fef/matchdatalayout.h>
 #include <vespa/searchlib/fef/termfieldmatchdata.h>
-#include <vespa/searchlib/index/docbuilder.h>
 #include <vespa/searchlib/index/i_field_length_inspector.h>
+#include <vespa/searchlib/test/doc_builder.h>
+#include <vespa/searchlib/test/string_field_builder.h>
 #include <vespa/searchlib/memoryindex/memory_index.h>
 #include <vespa/searchlib/query/tree/simplequery.h>
 #include <vespa/searchlib/queryeval/booleanmatchiteratorwrapper.h>
@@ -32,6 +36,8 @@ using vespalib::makeLambdaTask;
 using search::query::Node;
 using search::query::SimplePhrase;
 using search::query::SimpleStringTerm;
+using search::test::DocBuilder;
+using search::test::StringFieldBuilder;
 using vespalib::ISequencedTaskExecutor;
 using vespalib::SequencedTaskExecutor;
 using namespace search::fef;
@@ -59,6 +65,12 @@ struct MySetup : public IFieldLengthInspector {
         }
         return FieldLengthInfo();
     }
+    void add_fields(document::config_builder::Struct& header) const {
+        for (uint32_t i = 0; i < schema.getNumIndexFields(); ++i) {
+            auto& field = schema.getIndexField(i);
+            header.addField(field.getName(), document::DataType::T_STRING);
+        }
+    }
 
 };
 
@@ -71,30 +83,37 @@ struct Index {
     std::unique_ptr<ISequencedTaskExecutor> _pushThreads;
     MemoryIndex  index;
     DocBuilder builder;
+    StringFieldBuilder sfb;
+    std::unique_ptr<Document> builder_doc;
     uint32_t     docid;
     std::string  currentField;
+    bool         add_space;
 
     Index(const MySetup &setup);
     ~Index();
     void closeField() {
         if (!currentField.empty()) {
-            builder.endField();
+            builder_doc->setValue(currentField, sfb.build());
             currentField.clear();
         }
     }
     Index &doc(uint32_t id) {
         docid = id;
-        builder.startDocument(vespalib::make_string("id:ns:searchdocument::%u", id));
+        builder_doc = builder.make_document(vespalib::make_string("id:ns:searchdocument::%u", id));
         return *this;
     }
     Index &field(const std::string &name) {
         closeField();
-        builder.startIndexField(name);
         currentField = name;
+        add_space = false;
         return *this;
     }
     Index &add(const std::string &token) {
-        builder.addStr(token);
+        if (add_space) {
+            sfb.space();
+        }
+        add_space = true;
+        sfb.word(token);
         return *this;
     }
     void internalSyncCommit() {
@@ -106,7 +125,7 @@ struct Index {
     }
     Document::UP commit() {
         closeField();
-        Document::UP d = builder.endDocument();
+        Document::UP d = std::move(builder_doc);
         index.insertDocument(docid, *d, {});
         internalSyncCommit();
         return d;
@@ -133,9 +152,12 @@ Index::Index(const MySetup &setup)
       _invertThreads(SequencedTaskExecutor::create(invert_executor, 2)),
       _pushThreads(SequencedTaskExecutor::create(push_executor, 2)),
       index(schema, setup, *_invertThreads, *_pushThreads),
-      builder(schema),
+      builder([&setup](auto& header) { setup.add_fields(header); }),
+      sfb(builder),
+      builder_doc(),
       docid(1),
-      currentField()
+      currentField(),
+      add_space(false)
 {
 }
 Index::~Index() = default;

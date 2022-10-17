@@ -72,7 +72,7 @@ bool
 GrowableBitVector::hold(GenerationHeldBase::UP v)
 {
     if (v) {
-        _generationHolder.hold(std::move(v));
+        _generationHolder.insert(std::move(v));
         return true;
     }
     return false;

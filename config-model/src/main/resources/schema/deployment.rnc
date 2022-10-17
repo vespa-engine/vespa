@@ -35,6 +35,7 @@ PrimitiveStep =
 
 Instance = element instance {
    attribute id { xsd:string } &
+   attribute tags { xsd:string }? &
    attribute athenz-service { xsd:string }? &
    attribute cloud-account { xsd:string }? &
    StepExceptInstance

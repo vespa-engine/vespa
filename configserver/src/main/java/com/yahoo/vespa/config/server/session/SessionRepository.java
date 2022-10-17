@@ -13,6 +13,7 @@ import com.yahoo.config.model.api.ConfigDefinitionRepo;
 import com.yahoo.config.model.application.provider.DeployData;
 import com.yahoo.config.model.application.provider.FilesApplicationPackage;
 import com.yahoo.config.provision.ApplicationId;
+import com.yahoo.config.provision.Tags;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.container.jdisc.secretstore.SecretStore;
@@ -30,6 +31,7 @@ import com.yahoo.vespa.config.server.configchange.ConfigChangeActions;
 import com.yahoo.vespa.config.server.deploy.TenantFileSystemDirs;
 import com.yahoo.vespa.config.server.filedistribution.FileDirectory;
 import com.yahoo.vespa.config.server.filedistribution.FileDistributionFactory;
+import com.yahoo.vespa.config.server.http.InvalidApplicationException;
 import com.yahoo.vespa.config.server.http.UnknownVespaVersionException;
 import com.yahoo.vespa.config.server.modelfactory.ActivatedModelsBuilder;
 import com.yahoo.vespa.config.server.modelfactory.AllocatedHostsFromAllModels;
@@ -282,10 +284,17 @@ public class SessionRepository {
                                                   TimeoutBudget timeoutBudget,
                                                   DeployLogger deployLogger) {
         ApplicationId existingApplicationId = existingSession.getApplicationId();
+        Tags existingTags = existingSession.getTags();
         File existingApp = getSessionAppDir(existingSession.getSessionId());
-        LocalSession session = createSessionFromApplication(existingApp, existingApplicationId, internalRedeploy, timeoutBudget, deployLogger);
+        LocalSession session = createSessionFromApplication(existingApp,
+                                                            existingApplicationId,
+                                                            existingTags,
+                                                            internalRedeploy,
+                                                            timeoutBudget,
+                                                            deployLogger);
         // Note: Setters below need to be kept in sync with calls in SessionPreparer.writeStateToZooKeeper()
         session.setApplicationId(existingApplicationId);
+        session.setTags(existingTags);
         session.setApplicationPackageReference(existingSession.getApplicationPackageReference());
         session.setVespaVersion(existingSession.getVespaVersion());
         session.setDockerImageRepository(existingSession.getDockerImageRepository());
@@ -306,19 +315,20 @@ public class SessionRepository {
      */
     public LocalSession createSessionFromApplicationPackage(File applicationDirectory,
                                                             ApplicationId applicationId,
+                                                            Tags tags,
                                                             TimeoutBudget timeoutBudget,
                                                             DeployLogger deployLogger) {
         applicationRepo.createApplication(applicationId);
-        return createSessionFromApplication(applicationDirectory, applicationId, false, timeoutBudget, deployLogger);
+        return createSessionFromApplication(applicationDirectory, applicationId, tags, false, timeoutBudget, deployLogger);
     }
 
     /**
      * Creates a local session based on a remote session and the distributed application package.
      * Does not wait for session being created on other servers.
      */
-    private void createLocalSession(File applicationFile, ApplicationId applicationId, long sessionId) {
+    private void createLocalSession(File applicationFile, ApplicationId applicationId, Tags tags, long sessionId) {
         try {
-            ApplicationPackage applicationPackage = createApplicationPackage(applicationFile, applicationId, sessionId, false, Optional.empty());
+            ApplicationPackage applicationPackage = createApplicationPackage(applicationFile, applicationId, tags, sessionId, false, Optional.empty());
             createLocalSession(sessionId, applicationPackage);
         } catch (Exception e) {
             throw new RuntimeException("Error creating session " + sessionId, e);
@@ -706,12 +716,13 @@ public class SessionRepository {
     private ApplicationPackage createApplication(File userDir,
                                                  File configApplicationDir,
                                                  ApplicationId applicationId,
+                                                 Tags tags,
                                                  long sessionId,
                                                  Optional<Long> currentlyActiveSessionId,
                                                  boolean internalRedeploy,
                                                  Optional<DeployLogger> deployLogger) {
         long deployTimestamp = System.currentTimeMillis();
-        DeployData deployData = new DeployData(userDir.getAbsolutePath(), applicationId, deployTimestamp, internalRedeploy,
+        DeployData deployData = new DeployData(userDir.getAbsolutePath(), applicationId, tags, deployTimestamp, internalRedeploy,
                                                sessionId, currentlyActiveSessionId.orElse(nonExistingActiveSessionId));
         FilesApplicationPackage app = FilesApplicationPackage.fromFileWithDeployData(configApplicationDir, deployData);
         validateFileExtensions(applicationId, deployLogger, app);
@@ -727,7 +738,7 @@ public class SessionRepository {
                 UnboundStringFlag flag = PermanentFlags.APPLICATION_FILES_WITH_UNKNOWN_EXTENSION;
                 String value = flag.bindTo(flagSource).with(APPLICATION_ID, applicationId.serializedForm()).value();
                 switch (value) {
-                    case "FAIL" -> throw e;
+                    case "FAIL" -> throw new InvalidApplicationException(e);
                     case "LOG" -> deployLogger.ifPresent(logger -> logger.logApplicationPackage(Level.WARNING, e.getMessage()));
                     default -> log.log(Level.WARNING, "Unknown value for flag " + flag.id() + ": " + value);
                 }
@@ -739,13 +750,14 @@ public class SessionRepository {
 
     private LocalSession createSessionFromApplication(File applicationDirectory,
                                                       ApplicationId applicationId,
+                                                      Tags tags,
                                                       boolean internalRedeploy,
                                                       TimeoutBudget timeoutBudget,
                                                       DeployLogger deployLogger) {
         long sessionId = getNextSessionId();
         try {
             ensureSessionPathDoesNotExist(sessionId);
-            ApplicationPackage app = createApplicationPackage(applicationDirectory, applicationId, sessionId, internalRedeploy, Optional.of(deployLogger));
+            ApplicationPackage app = createApplicationPackage(applicationDirectory, applicationId, tags, sessionId, internalRedeploy, Optional.of(deployLogger));
             log.log(Level.FINE, () -> TenantRepository.logPre(tenantName) + "Creating session " + sessionId + " in ZooKeeper");
             SessionZooKeeperClient sessionZKClient = createSessionZooKeeperClient(sessionId);
             sessionZKClient.createNewSession(clock.instant());
@@ -754,13 +766,14 @@ public class SessionRepository {
             waiter.awaitCompletion(Duration.ofSeconds(Math.min(120, timeoutBudget.timeLeft().getSeconds())));
             addLocalSession(session);
             return session;
-        } catch (Exception e) {
+        } catch (IOException e) {
             throw new RuntimeException("Error creating session " + sessionId, e);
         }
     }
 
     private ApplicationPackage createApplicationPackage(File applicationDirectory,
                                                         ApplicationId applicationId,
+                                                        Tags tags,
                                                         long sessionId,
                                                         boolean internalRedeploy,
                                                         Optional<DeployLogger> deployLogger) throws IOException {
@@ -773,6 +786,7 @@ public class SessionRepository {
             ApplicationPackage applicationPackage = createApplication(applicationDirectory,
                                                                       userApplicationDir,
                                                                       applicationId,
+                                                                      tags,
                                                                       sessionId,
                                                                       activeSessionId,
                                                                       internalRedeploy,
@@ -884,7 +898,7 @@ public class SessionRepository {
             ApplicationId applicationId = sessionZKClient.readApplicationId()
                     .orElseThrow(() -> new RuntimeException("Could not find application id for session " + sessionId));
             log.log(Level.FINE, () -> "Creating local session for tenant '" + tenantName + "' with session id " + sessionId);
-            createLocalSession(sessionDir, applicationId, sessionId);
+            createLocalSession(sessionDir, applicationId, sessionZKClient.readTags(), sessionId);
         }
     }
 

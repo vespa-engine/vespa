@@ -25,6 +25,7 @@ import org.apache.commons.cli.Options;
 
 import java.io.*;
 import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.util.Map;
 import java.util.stream.Collectors;
 
@@ -649,7 +650,7 @@ public class VdsVisit {
             out.println("Adding the following library specific parameters:");
             for (Map.Entry<String, byte[]> entry : params.getLibraryParameters().entrySet()) {
                 out.println("  " + entry.getKey() + " = " +
-                        new String(entry.getValue(), Charset.forName("utf-8")));
+                            new String(entry.getValue(), StandardCharsets.UTF_8));
             }
         }
         if (params.getPriority() != DocumentProtocol.Priority.NORMAL_3) {

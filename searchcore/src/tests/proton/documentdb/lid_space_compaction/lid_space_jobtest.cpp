@@ -116,7 +116,7 @@ JobTestBase::compact() {
 
 void
 JobTestBase::notifyNodeRetired(bool nodeRetired) {
-    test::BucketStateCalculator::SP calc = std::make_shared<test::BucketStateCalculator>();
+    proton::test::BucketStateCalculator::SP calc = std::make_shared<proton::test::BucketStateCalculator>();
     calc->setNodeRetired(nodeRetired);
     _clusterStateHandler.notifyClusterStateChanged(calc);
 }

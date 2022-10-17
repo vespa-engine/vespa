@@ -6,6 +6,17 @@
 # Only strip debug info
 %global _find_debuginfo_opts -g
 
+# Don't enable LTO
+%global _lto_cflags %{nil}
+
+# Disable hardened package build.
+%global _preprocessor_defines %{nil}
+%undefine _hardened_build
+
+# Libraries and binaries use shared libraries in /opt/vespa/lib64 and
+# /opt/vespa-deps/lib64
+%global __brp_check_rpaths %{nil}
+
 # Go binaries' build-ids are not recognized by RPMs yet, see
 # https://github.com/rpm-software-management/rpm/issues/367 and
 # https://github.com/tpokorra/lbs-mono-fedora/issues/3#issuecomment-219857688.
@@ -13,7 +24,6 @@
 
 # Force special prefix for Vespa
 %define _prefix /opt/vespa
-%define _vespa_deps_prefix /opt/vespa-deps
 %define _vespa_user vespa
 %define _vespa_group vespa
 %undefine _vespa_user_uid
@@ -32,7 +42,7 @@ License:        Commercial
 URL:            http://vespa.ai
 Source0:        vespa-%{version}.tar.gz
 
-%if 0%{?centos} || 0%{?rocky}
+%if 0%{?centos} || 0%{?rocky} || 0%{?oraclelinux}
 BuildRequires: epel-release
 %endif
 %if 0%{?el8}
@@ -78,7 +88,7 @@ BuildRequires: glibc-langpack-en
 %endif
 %if 0%{?el8}
 BuildRequires: cmake >= 3.11.4-3
-%if 0%{?centos} || 0%{?rocky}
+%if 0%{?centos} || 0%{?rocky} || 0%{?oraclelinux}
 %if 0%{?centos}
 # Current cmake on CentOS 8 is broken and manually requires libarchive install
 BuildRequires: libarchive
@@ -90,26 +100,26 @@ BuildRequires: (llvm-devel >= 14.0.0 and llvm-devel < 15)
 BuildRequires: (llvm-devel >= 13.0.1 and llvm-devel < 14)
 %endif
 %else
-BuildRequires: (llvm-devel >= 12.0.1 and llvm-devel < 13)
+BuildRequires: (llvm-devel >= 13.0.1 and llvm-devel < 14)
 %endif
 BuildRequires: vespa-boost-devel >= 1.76.0-1
 BuildRequires: vespa-openssl-devel >= 1.1.1o-1
 %define _use_vespa_openssl 1
 BuildRequires: vespa-gtest = 1.11.0
 %define _use_vespa_gtest 1
-BuildRequires: vespa-lz4-devel >= 1.9.2-2
+BuildRequires: vespa-lz4-devel >= 1.9.4-1
 BuildRequires: vespa-onnxruntime-devel = 1.12.1
-BuildRequires: vespa-protobuf-devel = 3.19.1
-BuildRequires: vespa-libzstd-devel >= 1.4.5-2
+BuildRequires: vespa-protobuf-devel = 3.21.7
+BuildRequires: vespa-libzstd-devel >= 1.5.2-1
 %endif
 %if 0%{?el9}
 BuildRequires: cmake >= 3.20.2
 BuildRequires: maven
 BuildRequires: maven-openjdk17
 BuildRequires: openssl-devel
-BuildRequires: vespa-lz4-devel >= 1.9.2-2
+BuildRequires: vespa-lz4-devel >= 1.9.4-1
 BuildRequires: vespa-onnxruntime-devel = 1.12.1
-BuildRequires: vespa-libzstd-devel >= 1.4.5-2
+BuildRequires: vespa-libzstd-devel >= 1.5.2-1
 BuildRequires: protobuf-devel
 %if 0%{?_centos_stream}
 BuildRequires: (llvm-devel >= 14.0.0 and llvm-devel < 15)
@@ -132,9 +142,9 @@ BuildRequires: maven-openjdk17
 %endif
 %endif
 BuildRequires: openssl-devel
-BuildRequires: vespa-lz4-devel >= 1.9.2-2
+BuildRequires: vespa-lz4-devel >= 1.9.4-1
 BuildRequires: vespa-onnxruntime-devel = 1.12.1
-BuildRequires: vespa-libzstd-devel >= 1.4.5-2
+BuildRequires: vespa-libzstd-devel >= 1.5.2-1
 %if 0%{?amzn2022}
 BuildRequires: protobuf-devel
 BuildRequires: llvm-devel >= 14.0.5
@@ -164,9 +174,14 @@ BuildRequires: gtest-devel
 BuildRequires: gmock-devel
 %endif
 %endif
-BuildRequires: xxhash-devel >= 0.8.0
+%if 0%{?amzn2022}
+BuildRequires: vespa-xxhash-devel >= 0.8.1
+%define _use_vespa_xxhash 1
+%else
+BuildRequires: xxhash-devel >= 0.8.1
+%endif
 %if 0%{?el8}
-BuildRequires: vespa-openblas-devel = 0.3.18
+BuildRequires: vespa-openblas-devel = 0.3.21
 %define _use_vespa_openblas 1
 %else
 BuildRequires: openblas-devel
@@ -220,8 +235,12 @@ BuildRequires: perl-Pod-Usage
 BuildRequires: perl-URI
 BuildRequires: valgrind
 BuildRequires: perf
+%if 0%{?amzn2022}
+Requires: vespa-xxhash >= 0.8.1
+%else
 Requires: xxhash
-Requires: xxhash-libs >= 0.8.0
+Requires: xxhash-libs >= 0.8.1
+%endif
 Requires: gdb
 Requires: hostname
 Requires: nc
@@ -231,45 +250,13 @@ Requires: unzip
 Requires: zlib
 Requires: zstd
 %if 0%{?el8}
-%if 0%{?centos} || 0%{?rocky}
-%if 0%{?_centos_stream}
-%define _vespa_llvm_version 14
-%else
-%define _vespa_llvm_version 13
-%endif
-%else
-%define _vespa_llvm_version 12
-%endif
 Requires: vespa-gtest = 1.11.0
-%define _extra_link_directory %{_vespa_deps_prefix}/lib64
-%define _extra_include_directory %{_vespa_deps_prefix}/include
 %endif
 %if 0%{?el9}
-%if 0%{?_centos_stream}
-%define _vespa_llvm_version 14
-%else
-%define _vespa_llvm_version 13
-%endif
 Requires: gtest
-%define _extra_link_directory %{_vespa_deps_prefix}/lib64
-%define _extra_include_directory %{_vespa_deps_prefix}/include;/usr/include/openblas
 %endif
 %if 0%{?fedora}
 Requires: gtest
-%if 0%{?amzn2022}
-%define _vespa_llvm_version 14
-%endif
-%if 0%{?fc36}
-%define _vespa_llvm_version 14
-%endif
-%if 0%{?fc37}
-%define _vespa_llvm_version 15
-%endif
-%if 0%{?fc38}
-%define _vespa_llvm_version 15
-%endif
-%define _extra_link_directory %{_vespa_deps_prefix}/lib64
-%define _extra_include_directory %{_vespa_deps_prefix}/include;/usr/include/openblas
 %endif
 Requires: %{name}-base = %{version}-%{release}
 Requires: %{name}-base-libs = %{version}-%{release}
@@ -312,19 +299,23 @@ Vespa - The open big data serving engine - base
 
 Summary: Vespa - The open big data serving engine - base C++ libraries
 
-%if 0%{?centos} || 0%{?rocky}
+%if 0%{?centos} || 0%{?rocky} || 0%{?oraclelinux}
 Requires: epel-release
 %endif
-Requires: xxhash-libs >= 0.8.0
+%if 0%{?amzn2022}
+Requires: vespa-xxhash >= 0.8.1
+%else
+Requires: xxhash-libs >= 0.8.1
+%endif
 %if 0%{?el8}
 Requires: vespa-openssl >= 1.1.1o-1
 %else
 Requires: openssl-libs
 %endif
-Requires: vespa-lz4 >= 1.9.2-2
-Requires: vespa-libzstd >= 1.4.5-2
+Requires: vespa-lz4 >= 1.9.4-1
+Requires: vespa-libzstd >= 1.5.2-1
 %if 0%{?el8}
-Requires: vespa-openblas = 0.3.18
+Requires: vespa-openblas = 0.3.21
 %else
 Requires: openblas-serial
 %endif
@@ -353,16 +344,16 @@ Requires: vespa-openssl >= 1.1.1o-1
 Requires: openssl-libs
 %endif
 %if 0%{?el8}
-%if 0%{?centos} || 0%{?rocky}
+%if 0%{?centos} || 0%{?rocky} || 0%{?oraclelinux}
 %if 0%{?_centos_stream}
 Requires: (llvm-libs >= 14.0.0 and llvm-libs < 15)
 %else
 Requires: (llvm-libs >= 13.0.1 and llvm-libs < 14)
 %endif
 %else
-Requires: (llvm-libs >= 12.0.1 and llvm-libs < 13)
+Requires: (llvm-libs >= 13.0.1 and llvm-libs < 14)
 %endif
-Requires: vespa-protobuf = 3.19.1
+Requires: vespa-protobuf = 3.21.7
 %endif
 %if 0%{?el9}
 %if 0%{?_centos_stream}
@@ -492,12 +483,6 @@ nearest neighbor search used for low-level benchmarking.
 %endif
 %else
 %setup -q
-%if 0%{?el8} && %{?_vespa_llvm_version}%{!?_vespa_llvm_version:13} < 13
-if grep -qs 'result_pair<R>(' /usr/include/llvm/ADT/STLExtras.h
-then
-  patch /usr/include/llvm/ADT/STLExtras.h < dist/STLExtras.h.diff
-fi
-%endif
 echo '%{version}' > VERSION
 case '%{version}' in
     *.0)
@@ -536,11 +521,6 @@ mvn --batch-mode -e -N io.takari:maven:wrapper -Dmaven=3.6.3
 %{?_use_mvn_wrapper:./mvnw}%{!?_use_mvn_wrapper:mvn} --batch-mode -nsu -T 1C  install -Dmaven.test.skip=true -Dmaven.javadoc.skip=true
 %{_command_cmake} -DCMAKE_INSTALL_PREFIX=%{_prefix} \
        -DJAVA_HOME=$JAVA_HOME \
-       -DCMAKE_PREFIX_PATH=%{_vespa_deps_prefix} \
-       -DEXTRA_LINK_DIRECTORY="%{_extra_link_directory}" \
-       -DEXTRA_INCLUDE_DIRECTORY="%{_extra_include_directory}" \
-       -DCMAKE_INSTALL_RPATH="%{_prefix}/lib64%{?_extra_link_directory:;%{_extra_link_directory}}" \
-       %{?_vespa_llvm_version:-DVESPA_LLVM_VERSION="%{_vespa_llvm_version}"} \
        -DVESPA_USER=%{_vespa_user} \
        -DVESPA_UNPRIVILEGED=no \
        .
@@ -719,6 +699,7 @@ fi
 %dir %attr(-,%{_vespa_user},%{_vespa_group}) %{_prefix}/var/db/vespa/config_server
 %dir %attr(-,%{_vespa_user},%{_vespa_group}) %{_prefix}/var/db/vespa/config_server/serverdb
 %dir %attr(-,%{_vespa_user},%{_vespa_group}) %{_prefix}/var/db/vespa/config_server/serverdb/tenants
+%dir %attr(-,%{_vespa_user},%{_vespa_group}) %{_prefix}/var/db/vespa/download
 %dir %attr(-,%{_vespa_user},%{_vespa_group}) %{_prefix}/var/db/vespa/filedistribution
 %dir %attr(-,%{_vespa_user},%{_vespa_group}) %{_prefix}/var/db/vespa/index
 %dir %attr(-,%{_vespa_user},%{_vespa_group}) %{_prefix}/var/db/vespa/logcontrol
@@ -839,8 +820,7 @@ fi
 %dir %{_prefix}/lib
 %dir %{_prefix}/lib/jars
 %{_prefix}/lib/jars/application-model-jar-with-dependencies.jar
-%{_prefix}/lib/jars/bcpkix-jdk15on-*.jar
-%{_prefix}/lib/jars/bcprov-jdk15on-*.jar
+%{_prefix}/lib/jars/bc*-jdk18on-*.jar
 %{_prefix}/lib/jars/config-bundle-jar-with-dependencies.jar
 %{_prefix}/lib/jars/configdefinitions-jar-with-dependencies.jar
 %{_prefix}/lib/jars/config-model-api-jar-with-dependencies.jar

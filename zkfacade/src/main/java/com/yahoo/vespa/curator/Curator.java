@@ -6,7 +6,6 @@ import com.yahoo.component.AbstractComponent;
 import com.yahoo.component.annotation.Inject;
 import com.yahoo.concurrent.DaemonThreadFactory;
 import com.yahoo.path.Path;
-import com.yahoo.vespa.curator.api.VespaCurator;
 import com.yahoo.vespa.curator.recipes.CuratorCounter;
 import com.yahoo.vespa.defaults.Defaults;
 import com.yahoo.vespa.zookeeper.VespaZooKeeperServer;
@@ -59,13 +58,13 @@ import java.util.logging.Logger;
  * @author vegardh
  * @author bratseth
  */
-public class Curator extends AbstractComponent implements VespaCurator, AutoCloseable {
+public class Curator extends AbstractComponent implements AutoCloseable {
 
     private static final Logger LOG = Logger.getLogger(Curator.class.getName());
     private static final File ZK_CLIENT_CONFIG_FILE = new File(Defaults.getDefaults().underVespaHome("conf/zookeeper/zookeeper-client.cfg"));
 
-    // Note that session timeout has min and max values are related to tickTime defined by server, see configserver.def
-    private static final Duration ZK_SESSION_TIMEOUT = Duration.ofSeconds(120);
+    // Note that session timeout has min and max values are related to tickTime defined by server, see zookeeper-server.def
+    static final Duration DEFAULT_ZK_SESSION_TIMEOUT = Duration.ofSeconds(120);
 
     private static final Duration ZK_CONNECTION_TIMEOUT = Duration.ofSeconds(30);
     private static final Duration BASE_SLEEP_TIME = Duration.ofSeconds(1);
@@ -77,18 +76,21 @@ public class Curator extends AbstractComponent implements VespaCurator, AutoClos
     private final CuratorFramework curatorFramework;
     private final ConnectionSpec connectionSpec;
     private final long juteMaxBuffer;
+    private final Duration sessionTimeout;
 
     // All lock keys, to allow re-entrancy. This will grow forever, but this should be too slow to be a problem
     private final ConcurrentHashMap<Path, Lock> locks = new ConcurrentHashMap<>();
 
     /** Creates a curator instance from a comma-separated string of ZooKeeper host:port strings */
     public static Curator create(String connectionSpec) {
-        return new Curator(ConnectionSpec.create(connectionSpec), Optional.of(ZK_CLIENT_CONFIG_FILE), defaultJuteMaxBuffer);
+        return new Curator(ConnectionSpec.create(connectionSpec), Optional.of(ZK_CLIENT_CONFIG_FILE),
+                           defaultJuteMaxBuffer, DEFAULT_ZK_SESSION_TIMEOUT);
     }
 
     // For testing only, use Optional.empty for clientConfigFile parameter to create default zookeeper client config
     public static Curator create(String connectionSpec, Optional<File> clientConfigFile) {
-        return new Curator(ConnectionSpec.create(connectionSpec), clientConfigFile, defaultJuteMaxBuffer);
+        return new Curator(ConnectionSpec.create(connectionSpec), clientConfigFile,
+                           defaultJuteMaxBuffer, DEFAULT_ZK_SESSION_TIMEOUT);
     }
 
     @Inject
@@ -99,31 +101,35 @@ public class Curator extends AbstractComponent implements VespaCurator, AutoClos
                                    CuratorConfig.Server::port,
                                    curatorConfig.zookeeperLocalhostAffinity()),
              Optional.of(ZK_CLIENT_CONFIG_FILE),
-             defaultJuteMaxBuffer);
+             defaultJuteMaxBuffer,
+             Duration.ofSeconds(curatorConfig.zookeeperSessionTimeoutSeconds()));
     }
 
     protected Curator(String connectionSpec, String zooKeeperEnsembleConnectionSpec, Function<RetryPolicy, CuratorFramework> curatorFactory) {
-        this(ConnectionSpec.create(connectionSpec, zooKeeperEnsembleConnectionSpec), curatorFactory.apply(DEFAULT_RETRY_POLICY), defaultJuteMaxBuffer);
+        this(ConnectionSpec.create(connectionSpec, zooKeeperEnsembleConnectionSpec), curatorFactory.apply(DEFAULT_RETRY_POLICY),
+             defaultJuteMaxBuffer, DEFAULT_ZK_SESSION_TIMEOUT);
     }
 
-    Curator(ConnectionSpec connectionSpec, Optional<File> clientConfigFile, long juteMaxBuffer) {
+    Curator(ConnectionSpec connectionSpec, Optional<File> clientConfigFile, long juteMaxBuffer, Duration sessionTimeout) {
         this(connectionSpec,
              CuratorFrameworkFactory
                      .builder()
                      .retryPolicy(DEFAULT_RETRY_POLICY)
-                     .sessionTimeoutMs((int) ZK_SESSION_TIMEOUT.toMillis())
+                     .sessionTimeoutMs((int) sessionTimeout.toMillis())
                      .connectionTimeoutMs((int) ZK_CONNECTION_TIMEOUT.toMillis())
                      .connectString(connectionSpec.local())
                      .zookeeperFactory(new VespaZooKeeperFactory(createClientConfig(clientConfigFile)))
                      .dontUseContainerParents() // TODO: Consider changing this in Vespa 9
                      .build(),
-             juteMaxBuffer);
+             juteMaxBuffer,
+             sessionTimeout);
     }
 
-    private Curator(ConnectionSpec connectionSpec, CuratorFramework curatorFramework, long juteMaxBuffer) {
+    private Curator(ConnectionSpec connectionSpec, CuratorFramework curatorFramework, long juteMaxBuffer, Duration sessionTimeout) {
         this.connectionSpec = Objects.requireNonNull(connectionSpec);
         this.curatorFramework = Objects.requireNonNull(curatorFramework);
         this.juteMaxBuffer = juteMaxBuffer;
+        this.sessionTimeout = sessionTimeout;
         addLoggingListener();
         curatorFramework.start();
     }
@@ -140,6 +146,10 @@ public class Curator extends AbstractComponent implements VespaCurator, AutoClos
         } else {
             return new ZKClientConfig();
         }
+    }
+
+    public Duration sessionTimeout() {
+        return sessionTimeout;
     }
 
     /** For internal use; prefer creating a {@link CuratorCounter} */
@@ -195,7 +205,11 @@ public class Curator extends AbstractComponent implements VespaCurator, AutoClos
      * If the path and any of its parents does not exists they are created.
      */
     // TODO: Use create().orSetData() in Curator 4 and later
-    public void set(Path path, byte[] data) {
+    public Stat set(Path path, byte[] data) {
+        return set(path, data, -1);
+    }
+
+    public Stat set(Path path, byte[] data, int expectedVersion) {
         if (data.length > juteMaxBuffer)
             throw new IllegalArgumentException("Cannot not set data at " + path.getAbsolute() + ", " +
                                                data.length + " bytes is too much, max number of bytes allowed per node is " + juteMaxBuffer);
@@ -205,11 +219,12 @@ public class Curator extends AbstractComponent implements VespaCurator, AutoClos
 
         String absolutePath = path.getAbsolute();
         try {
-            framework().setData().forPath(absolutePath, data);
+            return framework().setData().withVersion(expectedVersion).forPath(absolutePath, data);
         } catch (Exception e) {
             throw new RuntimeException("Could not set data at " + absolutePath, e);
         }
     }
+
 
     /** @see #create(Path, Duration) */
     public boolean create(Path path) { return create(path, null); }
@@ -220,6 +235,9 @@ public class Curator extends AbstractComponent implements VespaCurator, AutoClos
      * Returns whether a change was attempted.
      */
     public boolean create(Path path, Duration ttl) {
+        return create(path, ttl, null);
+    }
+    private boolean create(Path path, Duration ttl, Stat stat) {
         if (exists(path)) return false;
 
         String absolutePath = path.getAbsolute();
@@ -231,7 +249,8 @@ public class Curator extends AbstractComponent implements VespaCurator, AutoClos
                     throw new IllegalArgumentException(ttl.toString());
                 b.withTtl(millis).withMode(CreateMode.PERSISTENT_WITH_TTL);
             }
-            b.creatingParentsIfNeeded().forPath(absolutePath, new byte[0]);
+            if (stat == null) b.creatingParentsIfNeeded()                    .forPath(absolutePath, new byte[0]);
+            else              b.creatingParentsIfNeeded().storingStatIn(stat).forPath(absolutePath, new byte[0]);
         } catch (org.apache.zookeeper.KeeperException.NodeExistsException e) {
             // Path created between exists() and create() call, do nothing
         } catch (Exception e) {
@@ -258,12 +277,25 @@ public class Curator extends AbstractComponent implements VespaCurator, AutoClos
     }
 
     /**
-     * Deletes the given path and any children it may have.
-     * If the path does not exists nothing is done.
+     * Deletes the path and any children it may have.
+     * If the path does not exist, nothing is done.
      */
     public void delete(Path path) {
+        delete(path, true);
+    }
+
+    /**
+     * Deletes the path and any children it may have.
+     * If the path does not exist, nothing is done.
+     */
+    public void delete(Path path, boolean recursive) {
+        delete(path, -1, recursive);
+    }
+
+    public void delete(Path path, int expectedVersion, boolean recursive) {
         try {
-            framework().delete().guaranteed().deletingChildrenIfNeeded().forPath(path.getAbsolute());
+            if (recursive) framework().delete().guaranteed().deletingChildrenIfNeeded().withVersion(expectedVersion).forPath(path.getAbsolute());
+            else           framework().delete().guaranteed()                           .withVersion(expectedVersion).forPath(path.getAbsolute());
         } catch (KeeperException.NoNodeException e) {
             // Do nothing
         } catch (Exception e) {
@@ -290,8 +322,13 @@ public class Curator extends AbstractComponent implements VespaCurator, AutoClos
      * Empty is returned if the path does not exist.
      */
     public Optional<byte[]> getData(Path path) {
+        return getData(path, null);
+    }
+
+    Optional<byte[]> getData(Path path, Stat stat) {
         try {
-            return Optional.of(framework().getData().forPath(path.getAbsolute()));
+            return stat == null ? Optional.of(framework().getData()                    .forPath(path.getAbsolute()))
+                                : Optional.of(framework().getData().storingStatIn(stat).forPath(path.getAbsolute()));
         }
         catch (KeeperException.NoNodeException e) {
             return Optional.empty();
@@ -317,13 +354,16 @@ public class Curator extends AbstractComponent implements VespaCurator, AutoClos
         }
     }
 
-    /** Create and acquire a re-entrant lock in given path */
-    public Lock lock(Path path, Duration timeout) {
-        create(path);
+    /** Create and acquire a re-entrant lock in given path with a TTL */
+    public Lock lock(Path path, Duration timeout, Duration ttl) {
+        create(path, ttl);
         Lock lock = locks.computeIfAbsent(path, (pathArg) -> new Lock(pathArg.getAbsolute(), this));
         lock.acquire(timeout);
         return lock;
     }
+
+    /** Create and acquire a re-entrant lock in given path */
+    public Lock lock(Path path, Duration timeout) { return lock(path, timeout, null); }
 
     /** Returns the curator framework API */
     public CuratorFramework framework() {

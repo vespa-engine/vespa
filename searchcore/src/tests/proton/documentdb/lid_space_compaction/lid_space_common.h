@@ -17,11 +17,14 @@
 #include <vespa/searchcore/proton/test/test.h>
 #include <vespa/searchcore/proton/test/dummy_document_store.h>
 #include <vespa/vespalib/util/idestructorcallback.h>
-#include <vespa/searchlib/index/docbuilder.h>
 
-using namespace document;
+using document::BucketId;
+using document::GlobalId;
+using document::Document;
+using document::DocumentId;
+using document::DocumentTypeRepo;
 using namespace proton;
-using namespace search::index;
+using search::test::DocBuilder;
 using namespace search;
 using namespace vespalib;
 using vespalib::IDestructorCallback;
@@ -60,6 +63,7 @@ struct MyScanIterator : public IDocumentScanIterator {
 };
 
 struct MyHandler : public ILidSpaceCompactionHandler {
+    DocBuilder _builder;
     std::vector<LidUsageStats> _stats;
     std::vector<LidVector> _lids;
     mutable uint32_t _moveFromLid;
@@ -103,14 +107,14 @@ struct MyStorer : public IOperationStorer {
     CommitResult startCommit(DoneCallback) override;
 };
 
-struct MyFeedView : public test::DummyFeedView {
+struct MyFeedView : public proton::test::DummyFeedView {
     explicit MyFeedView(std::shared_ptr<const DocumentTypeRepo> repo)
-        : test::DummyFeedView(std::move(repo))
+        : proton::test::DummyFeedView(std::move(repo))
     {
     }
 };
 
-struct MyDocumentStore : public test::DummyDocumentStore {
+struct MyDocumentStore : public proton::test::DummyDocumentStore {
     Document::SP _readDoc;
     mutable uint32_t _readLid;
     MyDocumentStore();

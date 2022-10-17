@@ -11,6 +11,7 @@
 using vespalib::datastore::CompactionContext;
 using vespalib::datastore::CompactionSpec;
 using vespalib::datastore::CompactionStrategy;
+using vespalib::datastore::EntryRef;
 using vespalib::datastore::Handle;
 using vespalib::datastore::ICompactionContext;
 using vespalib::eval::CellType;
@@ -120,7 +121,7 @@ DenseTensorStore::holdTensor(EntryRef ref)
 }
 
 TensorStore::EntryRef
-DenseTensorStore::move(EntryRef ref)
+DenseTensorStore::move_on_compact(EntryRef ref)
 {
     if (!ref.valid()) {
         return RefType();
@@ -128,7 +129,6 @@ DenseTensorStore::move(EntryRef ref)
     auto oldraw = getRawBuffer(ref);
     auto newraw = allocRawBuffer();
     memcpy(newraw.data, static_cast<const char *>(oldraw), getBufSize());
-    _concreteStore.holdElem(ref, _tensorSizeCalc.alignedSize());
     return newraw.ref;
 }
 
@@ -147,19 +147,8 @@ DenseTensorStore::start_compact(const CompactionStrategy& compaction_strategy)
     return std::make_unique<CompactionContext>(*this, std::move(compacting_buffers));
 }
 
-std::unique_ptr<Value>
-DenseTensorStore::getTensor(EntryRef ref) const
-{
-    if (!ref.valid()) {
-        return {};
-    }
-    vespalib::eval::TypedCells cells_ref(getRawBuffer(ref), _type.cell_type(), getNumCells());
-    return std::make_unique<vespalib::eval::DenseValueView>(_type, cells_ref);
-}
-
-template <class TensorType>
-TensorStore::EntryRef
-DenseTensorStore::setDenseTensor(const TensorType &tensor)
+EntryRef
+DenseTensorStore::store_tensor(const Value& tensor)
 {
     assert(tensor.type() == _type);
     auto cells = tensor.cells();
@@ -170,10 +159,29 @@ DenseTensorStore::setDenseTensor(const TensorType &tensor)
     return raw.ref;
 }
 
-TensorStore::EntryRef
-DenseTensorStore::setTensor(const vespalib::eval::Value &tensor)
+EntryRef
+DenseTensorStore::store_encoded_tensor(vespalib::nbostream& encoded)
 {
-    return setDenseTensor(tensor);
+    (void) encoded;
+    abort();
+}
+
+std::unique_ptr<Value>
+DenseTensorStore::get_tensor(EntryRef ref) const
+{
+    if (!ref.valid()) {
+        return {};
+    }
+    vespalib::eval::TypedCells cells_ref(getRawBuffer(ref), _type.cell_type(), getNumCells());
+    return std::make_unique<vespalib::eval::DenseValueView>(_type, cells_ref);
+}
+
+bool
+DenseTensorStore::encode_stored_tensor(EntryRef ref, vespalib::nbostream& target) const
+{
+    (void) ref;
+    (void) target;
+    abort();
 }
 
 }

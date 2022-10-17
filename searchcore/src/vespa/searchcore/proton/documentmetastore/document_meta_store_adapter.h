@@ -24,7 +24,7 @@ public:
     DocId getCommittedDocIdLimit() const override {
         return doGetCommittedDocIdLimit();
     }
-    void removeAllOldGenerations() override {
+    void reclaim_unused_memory() override {
         doRemoveAllOldGenerations();
     }
     uint64_t getCurrentGeneration() const override {

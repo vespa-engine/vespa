@@ -32,15 +32,15 @@ struct Fixture
     {}
     void assertSetAndGetTensor(const TensorSpec &tensorSpec) {
         Value::UP expTensor = makeTensor(tensorSpec);
-        EntryRef ref = store.setTensor(*expTensor);
-        Value::UP actTensor = store.getTensor(ref);
+        EntryRef ref = store.store_tensor(*expTensor);
+        Value::UP actTensor = store.get_tensor(ref);
         EXPECT_EQUAL(*expTensor, *actTensor);
         assertTensorView(ref, *expTensor);
     }
     void assertEmptyTensor(const TensorSpec &tensorSpec) {
         Value::UP expTensor = makeTensor(tensorSpec);
         EntryRef ref;
-        Value::UP actTensor = store.getTensor(ref);
+        Value::UP actTensor = store.get_tensor(ref);
         EXPECT_TRUE(actTensor.get() == nullptr);
         assertTensorView(ref, *expTensor);
     }

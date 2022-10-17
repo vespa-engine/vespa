@@ -29,7 +29,7 @@ SingleBoolAttribute(const vespalib::string &baseFileName, const GrowStrategy & g
 
 SingleBoolAttribute::~SingleBoolAttribute()
 {
-    getGenerationHolder().clearHoldLists();
+    getGenerationHolder().reclaim_all();
 }
 
 void
@@ -53,7 +53,7 @@ SingleBoolAttribute::addDoc(DocId & doc) {
     incNumDocs();
     doc = getNumDocs() - 1;
     updateUncommittedDocIdLimit(doc);
-    removeAllOldGenerations();
+    reclaim_unused_memory();
     return true;
 }
 
@@ -80,7 +80,7 @@ SingleBoolAttribute::onCommit() {
     }
 
     std::atomic_thread_fence(std::memory_order_release);
-    removeAllOldGenerations();
+    reclaim_unused_memory();
 
     _changes.clear();
 }
@@ -95,7 +95,7 @@ SingleBoolAttribute::onUpdateStat() {
     vespalib::MemoryUsage usage;
     usage.setAllocatedBytes(_bv.writer().extraByteSize());
     usage.setUsedBytes(_bv.writer().sizeBytes());
-    usage.mergeGenerationHeldBytes(getGenerationHolder().getHeldBytes());
+    usage.mergeGenerationHeldBytes(getGenerationHolder().get_held_bytes());
     usage.merge(this->getChangeVectorMemoryUsage());
     this->updateStatistics(_bv.writer().size(), _bv.writer().size(), usage.allocatedBytes(), usage.usedBytes(),
                            usage.deadBytes(), usage.allocatedBytesOnHold());
@@ -191,7 +191,7 @@ SingleBoolAttribute::onLoad(vespalib::Executor *)
     bool ok(attrReader.hasData());
     if (ok) {
         setCreateSerialNum(attrReader.getCreateSerialNum());
-        getGenerationHolder().clearHoldLists();
+        getGenerationHolder().reclaim_all();
         _bv.writer().clear();
         uint32_t numDocs = attrReader.getNextData();
         _bv.extend(numDocs);
@@ -257,13 +257,13 @@ SingleBoolAttribute::getEstimatedSaveByteSize() const
 }
 
 void
-SingleBoolAttribute::removeOldGenerations(generation_t firstUsed) {
-    getGenerationHolder().trimHoldLists(firstUsed);
+SingleBoolAttribute::reclaim_memory(generation_t oldest_used_gen) {
+    getGenerationHolder().reclaim(oldest_used_gen);
 }
 
 void
-SingleBoolAttribute::onGenerationChange(generation_t generation) {
-    getGenerationHolder().transferHoldLists(generation - 1);
+SingleBoolAttribute::before_inc_generation(generation_t current_gen) {
+    getGenerationHolder().assign_generation(current_gen);
 }
 
 }

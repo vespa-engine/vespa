@@ -71,9 +71,9 @@ public:
      */
     void remove(vespalib::datastore::EntryRef ref);
 
-    void trimHoldLists(generation_t used_generation);
+    void reclaim_memory(generation_t oldest_used_gen);
 
-    void transferHoldLists(generation_t generation);
+    void assign_generation(generation_t current_gen);
 
     /**
      * Return memory usage (only the data store is included)

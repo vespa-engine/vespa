@@ -64,7 +64,7 @@ allow_paged(const search::attribute::Config& config)
         return false;
     }
     if (config.basicType() == Type::TENSOR) {
-        return (!config.tensorType().is_error() && config.tensorType().is_dense());
+        return (!config.tensorType().is_error() && (config.tensorType().is_dense() || !config.fastSearch()));
     }
     return true;
 }
@@ -184,10 +184,10 @@ void
 AttributeVector::incGeneration()
 {
     // Freeze trees etc, to stop new readers from accessing currently held data
-    onGenerationChange(_genHandler.getNextGeneration());
+    before_inc_generation(_genHandler.getCurrentGeneration());
     _genHandler.incGeneration();
     // Remove old data on hold lists that can no longer be reached by readers
-    removeAllOldGenerations();
+    reclaim_unused_memory();
 }
 
 void
@@ -237,8 +237,8 @@ AttributeVector::headerTypeOK(const vespalib::GenericHeader &header) const
         getConfig().collectionType().asString();
 }
 
-void AttributeVector::removeOldGenerations(generation_t firstUsed) { (void) firstUsed; }
-void AttributeVector::onGenerationChange(generation_t generation) { (void) generation; }
+void AttributeVector::reclaim_memory(generation_t oldest_used_gen) { (void) oldest_used_gen; }
+void AttributeVector::before_inc_generation(generation_t current_gen) { (void) current_gen; }
 const IEnumStore* AttributeVector::getEnumStoreBase() const { return nullptr; }
 IEnumStore* AttributeVector::getEnumStoreBase() { return nullptr; }
 const attribute::MultiValueMappingBase * AttributeVector::getMultiValueBase() const { return nullptr; }
@@ -408,9 +408,9 @@ bool AttributeVector::applyWeight(DocId, const FieldValue &, const ArithmeticVal
 bool AttributeVector::applyWeight(DocId, const FieldValue&, const AssignValueUpdate&) { return false; }
 
 void
-AttributeVector::removeAllOldGenerations() {
-    _genHandler.updateFirstUsedGeneration();
-    removeOldGenerations(_genHandler.getFirstUsedGeneration());
+AttributeVector::reclaim_unused_memory() {
+    _genHandler.update_oldest_used_generation();
+    reclaim_memory(_genHandler.get_oldest_used_generation());
 }
 
 
@@ -483,19 +483,17 @@ AttributeVector::compactLidSpace(uint32_t wantedLidLimit) {
     incGeneration();
 }
 
-
 bool
 AttributeVector::canShrinkLidSpace() const {
     return wantShrinkLidSpace() &&
-        _compactLidSpaceGeneration.load(std::memory_order_relaxed) < getFirstUsedGeneration();
+        _compactLidSpaceGeneration.load(std::memory_order_relaxed) < get_oldest_used_generation();
 }
-
 
 void
 AttributeVector::shrinkLidSpace()
 {
     commit();
-    removeAllOldGenerations();
+    reclaim_unused_memory();
     if (!canShrinkLidSpace()) {
         return;
     }
@@ -717,7 +715,7 @@ AttributeVector::drain_hold(uint64_t hold_limit)
 {
     incGeneration();
     for (int retry = 0; retry < 40; ++retry) {
-        removeAllOldGenerations();
+        reclaim_unused_memory();
         updateStat(true);
         if (_status.getOnHold() <= hold_limit) {
             return;

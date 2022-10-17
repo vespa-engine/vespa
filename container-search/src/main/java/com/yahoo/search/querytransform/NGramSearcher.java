@@ -69,8 +69,7 @@ public class NGramSearcher extends Searcher {
 
     private boolean rewriteToNGramMatching(Item item, int indexInParent, IndexFacts.Session indexFacts, Query query) {
         boolean rewritten = false;
-        if (item instanceof SegmentItem) { // handle CJK segmented terms which should be grams instead
-            SegmentItem segments = (SegmentItem)item;
+        if (item instanceof SegmentItem segments) { // handle CJK segmented terms which should be grams instead
             Index index = indexFacts.getIndex(segments.getIndexName());
             if (index.isNGram()) {
                 Item grams = splitToGrams(segments, toLowerCase(segments.getRawWord()), index.getGramSize(), query);
@@ -78,13 +77,11 @@ public class NGramSearcher extends Searcher {
                 rewritten = true;
             }
         }
-        else if (item instanceof CompositeItem) {
-            CompositeItem composite = (CompositeItem)item;
+        else if (item instanceof CompositeItem composite) {
             for (int i=0; i<composite.getItemCount(); i++)
                 rewritten = rewriteToNGramMatching(composite.getItem(i), i, indexFacts, query) || rewritten;
         }
-        else if (item instanceof TermItem) {
-            TermItem term = (TermItem)item;
+        else if (item instanceof TermItem term) {
             Index index = indexFacts.getIndex(term.getIndexName());
             if (index.isNGram()) {
                 Item grams = splitToGrams(term,term.stringValue(), index.getGramSize(), query);
@@ -149,11 +146,10 @@ public class NGramSearcher extends Searcher {
     }
 
     private void replaceItemByGrams(Item item, Item grams, int indexInParent) {
-        if (!(grams instanceof CompositeItem) || !(item.getParent() instanceof PhraseItem)) { // usually, simply replace
+        if (!(grams instanceof CompositeItem) || !(item.getParent() instanceof PhraseItem phraseParent)) { // usually, simply replace
             item.getParent().setItem(indexInParent, grams);
         }
         else { // but if the parent is a phrase, we cannot add the AND to it, so add each gram to the phrase
-            PhraseItem phraseParent = (PhraseItem)item.getParent();
             phraseParent.removeItem(indexInParent);
             int addedTerms = 0;
             for (Iterator<Item> i = ((CompositeItem)grams).getItemIterator(); i.hasNext(); ) {

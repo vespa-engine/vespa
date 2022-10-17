@@ -1002,10 +1002,21 @@ public class YqlParserTestCase {
 
     @Test
     void testRegexp() {
-        QueryTree x = parse("select * from sources * where foo matches \"a b\"");
-        Item root = x.getRoot();
-        assertSame(RegExpItem.class, root.getClass());
-        assertEquals("a b", ((RegExpItem) root).stringValue());
+        {
+            QueryTree x = parse("select * from sources * where foo matches \"a b\"");
+            Item root = x.getRoot();
+            assertSame(RegExpItem.class, root.getClass());
+            assertEquals("a b", ((RegExpItem) root).stringValue());
+        }
+
+        {
+            String expression = "a\\\\.b\\\\.c";
+            QueryTree query = parse("select * from sources * where foo matches \"" + expression + "\"");
+            var regExpItem = (RegExpItem) query.getRoot();
+            assertEquals("a\\.b\\.c", regExpItem.stringValue());
+            assertTrue(regExpItem.getRegexp().matcher("a.b.c").matches(), "a.b.c is matched");
+            assertFalse(regExpItem.getRegexp().matcher("a,b,c").matches(), "a,b,c is matched?");
+        }
     }
 
     @Test

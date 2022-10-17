@@ -24,7 +24,7 @@ public:
     }
 
     static GrowStrategy make(uint32_t docsInitialCapacity, float docsGrowFactor, uint32_t docsGrowDelta) {
-        return GrowStrategy(docsInitialCapacity, docsGrowFactor, docsGrowDelta, 0, 0.2);
+        return {docsInitialCapacity, docsGrowFactor, docsGrowDelta, 0, 0.2};
     }
 
     float getMultiValueAllocGrowFactor() const { return _multiValueAllocGrowFactor; }

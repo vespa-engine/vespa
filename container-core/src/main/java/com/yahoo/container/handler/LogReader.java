@@ -29,6 +29,7 @@ import java.util.Comparator;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Optional;
+import java.util.PriorityQueue;
 import java.util.TreeMap;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -43,12 +44,12 @@ import static java.nio.charset.StandardCharsets.UTF_8;
  * @author jonmv
  */
 class LogReader {
+
     static final Pattern logArchivePathPattern = Pattern.compile("(\\d{4})/(\\d{2})/(\\d{2})/(\\d{2})-\\d+(\\.gz|\\.zst)?");
     static final Pattern vespaLogPathPattern = Pattern.compile("vespa\\.log(?:-(\\d{4})-(\\d{2})-(\\d{2})\\.(\\d{2})-(\\d{2})-(\\d{2})(?:\\.gz|\\.zst)?)?");
 
     private final Path logDirectory;
     private final Pattern logFilePattern;
-
 
     LogReader(String logDirectory, String logFilePattern) {
         this(Paths.get(Defaults.getDefaults().underVespaHome(logDirectory)), Pattern.compile(logFilePattern));
@@ -73,10 +74,18 @@ class LogReader {
 
                 Iterator<LineWithTimestamp> lines = Iterators.mergeSorted(logLineIterators,
                                                                           Comparator.comparingDouble(LineWithTimestamp::timestamp));
+                PriorityQueue<LineWithTimestamp> heap = new PriorityQueue<>(Comparator.comparingDouble(LineWithTimestamp::timestamp));
                 while (lines.hasNext()) {
+                    heap.offer(lines.next());
+                    if (heap.size() > 1000) {
+                        if (linesWritten++ >= maxLines) return;
+                        writer.write(heap.poll().line);
+                        writer.newLine();
+                    }
+                }
+                while ( ! heap.isEmpty()) {
                     if (linesWritten++ >= maxLines) return;
-                    String line = lines.next().line();
-                    writer.write(line);
+                    writer.write(heap.poll().line);
                     writer.newLine();
                 }
             }
@@ -170,7 +179,7 @@ class LogReader {
                     if (parts.length != 7)
                         continue;
 
-                    if (hostname.map(host -> !host.equals(parts[1])).orElse(false))
+                    if (hostname.map(host -> ! host.equals(parts[1])).orElse(false))
                         continue;
 
                     double timestamp = Double.parseDouble(parts[0]);

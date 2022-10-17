@@ -13,8 +13,8 @@ public class FeatureRange extends PredicateValue {
     private String key;
     private Long from;
     private Long to;
-    private List<RangePartition> partitions;
-    private List<RangeEdgePartition> edgePartitions;
+    private final List<RangePartition> partitions;
+    private final List<RangeEdgePartition> edgePartitions;
 
     public FeatureRange(String key) {
         this(key, null, null);
@@ -98,10 +98,9 @@ public class FeatureRange extends PredicateValue {
         if (obj == this) {
             return true;
         }
-        if (!(obj instanceof FeatureRange)) {
+        if (!(obj instanceof FeatureRange rhs)) {
             return false;
         }
-        FeatureRange rhs = (FeatureRange)obj;
         if (!key.equals(rhs.key)) {
             return false;
         }

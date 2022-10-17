@@ -51,7 +51,7 @@ public:
     // the ones with the same signature in proton::IDocumentMetaStore.
     using DocumentMetaStoreAttribute::commit;
     using DocumentMetaStoreAttribute::getCommittedDocIdLimit;
-    using DocumentMetaStoreAttribute::removeAllOldGenerations;
+    using DocumentMetaStoreAttribute::reclaim_unused_memory;
     using DocumentMetaStoreAttribute::getCurrentGeneration;
 
 private:
@@ -93,8 +93,8 @@ private:
     void onUpdateStat() override;
 
     // Implements AttributeVector
-    void onGenerationChange(generation_t generation) override;
-    void removeOldGenerations(generation_t firstUsed) override;
+    void before_inc_generation(generation_t current_gen) override;
+    void reclaim_memory(generation_t oldest_used_gen) override;
     std::unique_ptr<search::AttributeSaver> onInitSave(vespalib::stringref fileName) override;
     bool onLoad(vespalib::Executor *executor) override;
 
@@ -122,7 +122,7 @@ private:
         return getCommittedDocIdLimit();
     }
     void doRemoveAllOldGenerations() override {
-        removeAllOldGenerations();
+        reclaim_unused_memory();
     }
     uint64_t doGetCurrentGeneration() const override {
         return getCurrentGeneration();
@@ -272,6 +272,8 @@ public:
     uint32_t getVersion() const override;
     void setTrackDocumentSizes(bool trackDocumentSizes) { _trackDocumentSizes = trackDocumentSizes; }
     void foreach(const search::IGidToLidMapperVisitor &visitor) const override;
+    long onSerializeForAscendingSort(DocId, void *, long, const search::common::BlobConverter *) const override;
+    long onSerializeForDescendingSort(DocId, void *, long, const search::common::BlobConverter *) const override;
 };
 
 }

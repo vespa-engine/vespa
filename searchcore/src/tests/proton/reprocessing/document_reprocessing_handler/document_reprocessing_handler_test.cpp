@@ -3,12 +3,12 @@
 LOG_SETUP("document_reprocessing_handler_test");
 
 #include <vespa/searchcore/proton/reprocessing/document_reprocessing_handler.h>
-#include <vespa/searchlib/index/docbuilder.h>
+#include <vespa/searchlib/test/doc_builder.h>
 #include <vespa/vespalib/testkit/testapp.h>
 
 using namespace document;
 using namespace proton;
-using namespace search::index;
+using search::test::DocBuilder;
 
 template <typename ReprocessingType>
 struct MyProcessor : public ReprocessingType
@@ -36,13 +36,13 @@ struct FixtureBase
     FixtureBase(uint32_t docIdLimit);
     ~FixtureBase();
     std::shared_ptr<Document> createDoc() {
-        return _docBuilder.startDocument(DOC_ID).endDocument();
+        return _docBuilder.make_document(DOC_ID);
     }
 };
 
 FixtureBase::FixtureBase(uint32_t docIdLimit)
     : _handler(docIdLimit),
-      _docBuilder(Schema())
+      _docBuilder()
 { }
 FixtureBase::~FixtureBase() {}
 

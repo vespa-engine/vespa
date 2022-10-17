@@ -8,6 +8,7 @@
 #include <vespa/document/annotation/spanlist.h>
 #include <vespa/document/annotation/spantree.h>
 #include <vespa/document/config/documenttypes_config_fwd.h>
+#include <vespa/document/datatype/annotationtype.h>
 #include <vespa/document/datatype/documenttype.h>
 #include <vespa/document/datatype/tensor_data_type.h>
 #include <vespa/document/datatype/urldatatype.h>
@@ -51,8 +52,8 @@
 #include <vespa/searchlib/attribute/interlock.h>
 #include <vespa/searchlib/engine/docsumapi.h>
 #include <vespa/searchlib/index/dummyfileheadercontext.h>
-#include <vespa/searchlib/index/empty_doc_builder.h>
 #include <vespa/searchlib/tensor/tensor_attribute.h>
+#include <vespa/searchlib/test/doc_builder.h>
 #include <vespa/searchlib/transactionlog/nosyncproxy.h>
 #include <vespa/searchlib/transactionlog/translogserver.h>
 #include <vespa/searchsummary/docsummary/i_docsum_field_writer_factory.h>
@@ -90,7 +91,7 @@ using document::test::makeBucketSpace;
 using search::TuneFileDocumentDB;
 using search::index::DummyFileHeaderContext;
 using search::linguistics::SPANTREE_NAME;
-using search::linguistics::TERM;
+using search::test::DocBuilder;
 using storage::spi::Timestamp;
 using vespa::config::search::core::ProtonConfig;
 using vespa::config::content::core::BucketspacesConfig;
@@ -128,7 +129,7 @@ private:
     vespalib::string _dir;
 };
 
-class BuildContext : public EmptyDocBuilder
+class BuildContext : public DocBuilder
 {
 public:
     DirMaker _dmk;
@@ -155,7 +156,7 @@ public:
 };
 
 BuildContext::BuildContext(AddFieldsType add_fields)
-    : EmptyDocBuilder(add_fields),
+    : DocBuilder(add_fields),
       _dmk("summary"),
       _fixed_repo(get_repo(), get_document_type()),
       _summaryExecutor(4, 128_Ki),
@@ -181,9 +182,9 @@ BuildContext::make_annotated_string()
     auto span_list_up = std::make_unique<SpanList>();
     auto span_list = span_list_up.get();
     auto tree = std::make_unique<SpanTree>(SPANTREE_NAME, std::move(span_list_up));
-    tree->annotate(span_list->add(std::make_unique<Span>(0, 3)), *TERM);
+    tree->annotate(span_list->add(std::make_unique<Span>(0, 3)), *AnnotationType::TERM);
     tree->annotate(span_list->add(std::make_unique<Span>(4, 3)),
-                   Annotation(*TERM, std::make_unique<StringFieldValue>("baz")));
+                   Annotation(*AnnotationType::TERM, std::make_unique<StringFieldValue>("baz")));
     StringFieldValue value("foo bar");
     StringFieldValue::SpanTrees trees;
     trees.push_back(std::move(tree));
@@ -627,27 +628,27 @@ TEST("requireThatAttributesAreUsed")
     doc->setValue("ba", IntFieldValue(10));
     doc->setValue("bb", FloatFieldValue(10.1250));
     doc->setValue("bc", StringFieldValue("foo"));
-    ArrayFieldValue int_array(bc.get_data_type("Array<Int>"));
+    auto int_array = bc.make_array("bd");
     int_array.add(IntFieldValue(20));
     int_array.add(IntFieldValue(30));
     doc->setValue("bd", int_array);
-    ArrayFieldValue float_array(bc.get_data_type("Array<Float>"));
+    auto float_array = bc.make_array("be");
     float_array.add(FloatFieldValue(20.25000));
     float_array.add(FloatFieldValue(30.31250));
     doc->setValue("be", float_array);
-    ArrayFieldValue string_array(bc.get_data_type("Array<String>"));
+    auto string_array = bc.make_array("bf");
     string_array.add(StringFieldValue("bar"));
     string_array.add(StringFieldValue("baz"));
     doc->setValue("bf", string_array);
-    WeightedSetFieldValue int_wset(bc.get_data_type("WeightedSet<Int>"));
+    auto int_wset = bc.make_wset("bg");
     int_wset.add(IntFieldValue(40), 2);
     int_wset.add(IntFieldValue(50), 3);
     doc->setValue("bg", int_wset);
-    WeightedSetFieldValue float_wset(bc.get_data_type("WeightedSet<Float>"));
+    auto float_wset = bc.make_wset("bh");
     float_wset.add(FloatFieldValue(40.4375), 4);
     float_wset.add(FloatFieldValue(50.5625), 5);
     doc->setValue("bh", float_wset);
-    WeightedSetFieldValue string_wset(bc.get_data_type("WeightedSet<String>"));
+    auto string_wset = bc.make_wset("bi");
     string_wset.add(StringFieldValue("quux"), 7);
     string_wset.add(StringFieldValue("qux"), 6);
     doc->setValue("bi", string_wset);
@@ -774,7 +775,7 @@ TEST_F("requireThatUrisAreUsed", Fixture)
                             .addField("uriwset", Wset(UrlDataType::getInstance().getId())); });
     DBContext dc(bc.get_repo_sp(), getDocTypeName());
     auto exp = bc.make_document("id:ns:searchdocument::0");
-    StructFieldValue uri(bc.get_data_type("url"));
+    auto uri = bc.make_url();
     uri.setValue("all", StringFieldValue("http://www.example.com:81/fluke?ab=2#4"));
     uri.setValue("scheme", StringFieldValue("http"));
     uri.setValue("host", StringFieldValue("www.example.com"));
@@ -783,7 +784,7 @@ TEST_F("requireThatUrisAreUsed", Fixture)
     uri.setValue("query", StringFieldValue("ab=2"));
     uri.setValue("fragment", StringFieldValue("4"));
     exp->setValue("urisingle", uri);
-    ArrayFieldValue uri_array(bc.get_data_type("Array<url>"));
+    auto uri_array = bc.make_array("uriarray");
     uri.setValue("all", StringFieldValue("http://www.example.com:82/fluke?ab=2#8"));
     uri.setValue("scheme", StringFieldValue("http"));
     uri.setValue("host", StringFieldValue("www.example.com"));
@@ -801,7 +802,7 @@ TEST_F("requireThatUrisAreUsed", Fixture)
     uri.setValue("fragment", StringFieldValue("9"));
     uri_array.add(uri);
     exp->setValue("uriarray", uri_array);
-    WeightedSetFieldValue uri_wset(bc.get_data_type("WeightedSet<url>"));
+    auto uri_wset = bc.make_wset("uriwset");
     uri.setValue("all", StringFieldValue("http://www.example.com:83/fluke?ab=2#12"));
     uri.setValue("scheme", StringFieldValue("http"));
     uri.setValue("host", StringFieldValue("www.example.com"));
@@ -867,11 +868,11 @@ TEST("requireThatPositionsAreUsed")
     DBContext dc(bc.get_repo_sp(), getDocTypeName());
     auto exp = bc.make_document("id:ns:searchdocument::1");
     exp->setValue("sp2", LongFieldValue(ZCurve::encode(1002, 1003)));
-    ArrayFieldValue pos_array(bc.get_data_type("Array<Long>"));
+    auto pos_array = bc.make_array("ap2");
     pos_array.add(LongFieldValue(ZCurve::encode(1006, 1007)));
     pos_array.add(LongFieldValue(ZCurve::encode(1008, 1009)));
     exp->setValue("ap2", pos_array);
-    WeightedSetFieldValue pos_wset(bc.get_data_type("WeightedSet<Long>"));
+    auto pos_wset = bc.make_wset("wp2");
     pos_wset.add(LongFieldValue(ZCurve::encode(1012, 1013)), 43);
     pos_wset.add(LongFieldValue(ZCurve::encode(1014, 1015)), 44);
     exp->setValue("wp2", pos_wset);
@@ -928,11 +929,11 @@ TEST_F("requireThatRawFieldsWorks", Fixture)
     DBContext dc(bc.get_repo_sp(), getDocTypeName());
     auto exp = bc.make_document("id:ns:searchdocument::0");
     exp->setValue("i", RawFieldValue(raw1s));
-    ArrayFieldValue raw_array(bc.get_data_type("Array<Raw>"));
+    auto raw_array = bc.make_array("araw");
     raw_array.add(RawFieldValue(raw1a0));
     raw_array.add(RawFieldValue(raw1a1));
     exp->setValue("araw", raw_array);
-    WeightedSetFieldValue raw_wset(bc.get_data_type("WeightedSet<Raw>"));
+    auto raw_wset = bc.make_wset("wraw");
     raw_wset.add(RawFieldValue(raw1w1), 46);
     raw_wset.add(RawFieldValue(raw1w0), 45);
     exp->setValue("wraw", raw_wset);

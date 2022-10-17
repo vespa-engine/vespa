@@ -113,7 +113,8 @@ public class DocumentV1ApiTest {
             .maxThrottled(2)
             .resendDelayMillis(1 << 30)
             .build();
-    final DocumentmanagerConfig docConfig = Deriver.getDocumentManagerConfig("src/test/cfg/music.sd").build();
+    final DocumentmanagerConfig docConfig = Deriver.getDocumentManagerConfig("src/test/cfg/music.sd")
+                                                   .ignoreundefinedfields(true).build();
     final DocumentTypeManager manager = new DocumentTypeManager(docConfig);
     final Document doc1 = new Document(manager.getDocumentType("music"), "id:space:music::one");
     final Document doc2 = new Document(manager.getDocumentType("music"), "id:space:music:n=1:two");
@@ -207,6 +208,12 @@ public class DocumentV1ApiTest {
 
         // GET at root is a visit. Numeric parameters have an upper bound.
         access.expect(tokens);
+        Trace visitorTrace = new Trace(9);
+        visitorTrace.trace(7, "Tracy Chapman", false);
+        visitorTrace.getRoot().addChild(new TraceNode().setStrict(false)
+                                                .addChild("Fast Car")
+                                                .addChild("Baby Can I Hold You"));
+        access.visitorTrace = visitorTrace;
         access.expect(parameters -> {
             assertEquals("content", parameters.getRoute().toString());
             assertEquals("default", parameters.getBucketSpace());
@@ -215,6 +222,7 @@ public class DocumentV1ApiTest {
             assertEquals("[id]", parameters.getFieldSet());
             assertEquals("(all the things)", parameters.getDocumentSelection());
             assertEquals(6000, parameters.getSessionTimeoutMs());
+            assertEquals(9, parameters.getTraceLevel());
             // Put some documents in the response
             parameters.getLocalDataHandler().onMessage(new PutDocumentMessage(new DocumentPut(doc1)), tokens.get(0));
             parameters.getLocalDataHandler().onMessage(new PutDocumentMessage(new DocumentPut(doc2)), tokens.get(1));
@@ -226,32 +234,43 @@ public class DocumentV1ApiTest {
             parameters.getControlHandler().onDone(VisitorControlHandler.CompletionCode.TIMEOUT, "timeout is OK");
         });
         response = driver.sendRequest("http://localhost/document/v1?cluster=content&bucketSpace=default&wantedDocumentCount=1025&concurrency=123" +
-                                      "&selection=all%20the%20things&fieldSet=[id]&timeout=6");
-        assertSameJson("{" +
-                       "  \"pathId\": \"/document/v1\"," +
-                       "  \"documents\": [" +
-                       "    {" +
-                       "      \"id\": \"id:space:music::one\"," +
-                       "      \"fields\": {" +
-                       "        \"artist\": \"Tom Waits\", " +
-                       "        \"embedding\": { \"type\": \"tensor(x[3])\", \"values\": [1.0,2.0,3.0] } " +
-                       "      }" +
-                       "    }," +
-                       "    {" +
-                       "      \"id\": \"id:space:music:n=1:two\"," +
-                       "      \"fields\": {" +
-                       "        \"artist\": \"Asa-Chan & Jun-Ray\", " +
-                       "        \"embedding\": { \"type\": \"tensor(x[3])\", \"values\": [4.0,5.0,6.0] } " +
-                       "      }" +
-                       "    }," +
-                       "    {" +
-                       "     \"id\": \"id:space:music:g=a:three\"," +
-                       "     \"fields\": {}" +
-                       "    }" +
-                       "  ]," +
-                       "  \"documentCount\": 3" +
-                       "}", response.readAll());
+                                      "&selection=all%20the%20things&fieldSet=[id]&timeout=6&tracelevel=9");
+        assertSameJson("""
+                       {
+                         "pathId": "/document/v1",
+                         "documents": [
+                           {
+                             "id": "id:space:music::one",
+                             "fields": {
+                               "artist": "Tom Waits",\s
+                               "embedding": { "type": "tensor(x[3])", "values": [1.0,2.0,3.0] }\s
+                             }
+                           },
+                           {
+                             "id": "id:space:music:n=1:two",
+                             "fields": {
+                               "artist": "Asa-Chan & Jun-Ray",\s
+                               "embedding": { "type": "tensor(x[3])", "values": [4.0,5.0,6.0] }\s
+                             }
+                           },
+                           {
+                            "id": "id:space:music:g=a:three",
+                            "fields": {}
+                           }
+                         ],
+                         "documentCount": 3,
+                         "trace": [
+                           { "message": "Tracy Chapman" },
+                           {
+                             "fork": [
+                               { "message": "Fast Car" },
+                               { "message": "Baby Can I Hold You" }
+                             ]
+                           }
+                         ]
+                       }""", response.readAll());
         assertEquals(200, response.getStatus());
+        access.visitorTrace = null;
 
         // GET at root is a visit. Streaming mode can be specified with &stream=true
         access.expect(tokens);
@@ -330,6 +349,7 @@ public class DocumentV1ApiTest {
                        "  \"message\": \"failure?\"" +
                        "}", response.readAll());
         assertEquals(200, response.getStatus());
+        assertNull(response.getResponse().headers().get("X-Vespa-Ignored-Fields"));
 
         // POST with namespace and document type is a restricted visit with a required destination cluster ("destinationCluster")
         access.expect(parameters -> {
@@ -376,13 +396,15 @@ public class DocumentV1ApiTest {
         response = driver.sendRequest("http://localhost/document/v1/space/music/docid?selection=true&cluster=content&timeChunk=10", PUT,
                                       "{" +
                                       "  \"fields\": {" +
-                                      "    \"artist\": { \"assign\": \"Lisa Ekdahl\" }" +
+                                      "    \"artist\": { \"assign\": \"Lisa Ekdahl\" }, " +
+                                      "    \"nonexisting\": { \"assign\": \"Ignored\" }" +
                                       "  }" +
                                       "}");
         assertSameJson("{" +
                        "  \"pathId\": \"/document/v1/space/music/docid\"" +
                        "}", response.readAll());
         assertEquals(200, response.getStatus());
+        assertEquals("true", response.getResponse().headers().get("X-Vespa-Ignored-Fields").get(0).toString());
 
         // PUT with namespace, document type and group is also a restricted visit which requires a cluster.
         access.expect(parameters -> {
@@ -907,6 +929,7 @@ public class DocumentV1ApiTest {
         private final AtomicReference<Consumer<VisitorParameters>> expectations = new AtomicReference<>();
         private final Set<AckToken> outstanding = new CopyOnWriteArraySet<>();
         private final MockAsyncSession session = new MockAsyncSession();
+        private Trace visitorTrace;
 
         MockDocumentAccess(DocumentmanagerConfig config) {
             super(new DocumentAccessParams().setDocumentmanagerConfig(config));
@@ -932,7 +955,7 @@ public class DocumentV1ApiTest {
                 }
                 @Override public boolean isDone() { return false; }
                 @Override public ProgressToken getProgress() { return null; }
-                @Override public Trace getTrace() { return null; }
+                @Override public Trace getTrace() { return visitorTrace; }
                 @Override public boolean waitUntilDone(long timeoutMs) { return false; }
                 @Override public void ack(AckToken token) { assertTrue(outstanding.remove(token)); }
                 @Override public void abort() { }

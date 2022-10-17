@@ -22,7 +22,7 @@ protected:
 
     ~LidStateVectorTest()
     {
-        _gen_hold.clearHoldLists();
+        _gen_hold.reclaim_all();
     }
 
 };
@@ -47,7 +47,7 @@ TEST_F(LidStateVectorTest, basic_free_list_is_working)
     EXPECT_EQ(0u, freeLids.count());
     EXPECT_EQ(3u, list.size());
 
-    list.trimHoldLists(20, freeLids);
+    list.reclaim_memory(20, freeLids);
     EXPECT_FALSE(freeLids.empty());
     EXPECT_EQ(1u, freeLids.count());
 
@@ -57,7 +57,7 @@ TEST_F(LidStateVectorTest, basic_free_list_is_working)
     EXPECT_EQ(0u, freeLids.count());
     EXPECT_EQ(2u, list.size());
 
-    list.trimHoldLists(31, freeLids);
+    list.reclaim_memory(31, freeLids);
     EXPECT_FALSE(freeLids.empty());
     EXPECT_EQ(2u, freeLids.count());
 

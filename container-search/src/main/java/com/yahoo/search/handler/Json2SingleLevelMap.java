@@ -22,9 +22,11 @@ import java.util.Map;
  * @author baldersheim
  */
 class Json2SingleLevelMap {
+
     private static final ObjectMapper jsonMapper = new ObjectMapper().configure(JsonParser.Feature.ALLOW_SINGLE_QUOTES, true);
     private final byte [] buf;
     private final JsonParser parser;
+
     Json2SingleLevelMap(InputStream data) {
         try {
             buf = data.readAllBytes();
@@ -33,6 +35,7 @@ class Json2SingleLevelMap {
             throw new RuntimeException("Problem reading POSTed data", e);
         }
     }
+
     Map<String, String> parse() {
         try {
             Map<String, String> map = new HashMap<>();
@@ -47,16 +50,17 @@ class Json2SingleLevelMap {
             throw new RuntimeException("Problem reading POSTed data", e);
         }
     }
+
     void parse(Map<String, String> map, String parent) throws IOException {
         for (parser.nextToken(); parser.getCurrentToken() != JsonToken.END_OBJECT; parser.nextToken()) {
             String fieldName = parent + parser.getCurrentName();
             JsonToken token = parser.nextToken();
             if ((token == JsonToken.VALUE_STRING) ||
-                    (token == JsonToken.VALUE_NUMBER_FLOAT) ||
-                    (token == JsonToken.VALUE_NUMBER_INT) ||
-                    (token == JsonToken.VALUE_TRUE) ||
-                    (token == JsonToken.VALUE_FALSE) ||
-                    (token == JsonToken.VALUE_NULL)) {
+                (token == JsonToken.VALUE_NUMBER_FLOAT) ||
+                (token == JsonToken.VALUE_NUMBER_INT) ||
+                (token == JsonToken.VALUE_TRUE) ||
+                (token == JsonToken.VALUE_FALSE) ||
+                (token == JsonToken.VALUE_NULL)) {
                 map.put(fieldName, parser.getText());
             } else if (token == JsonToken.START_ARRAY) {
                 map.put(fieldName, skipChildren(parser, buf));
@@ -71,6 +75,7 @@ class Json2SingleLevelMap {
             }
         }
     }
+
     private String skipChildren(JsonParser parser, byte [] input) throws IOException {
         JsonLocation start = parser.getCurrentLocation();
         parser.skipChildren();
@@ -78,4 +83,5 @@ class Json2SingleLevelMap {
         int offset = (int)start.getByteOffset() - 1;
         return new String(input, offset, (int)(end.getByteOffset() - offset), StandardCharsets.UTF_8);
     }
+
 }

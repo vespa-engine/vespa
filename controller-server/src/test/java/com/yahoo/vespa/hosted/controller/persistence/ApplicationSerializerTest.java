@@ -6,6 +6,7 @@ import com.yahoo.config.application.api.DeploymentSpec;
 import com.yahoo.config.application.api.ValidationOverrides;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.SystemName;
+import com.yahoo.config.provision.Tags;
 import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.security.KeyUtils;
 import com.yahoo.slime.SlimeUtils;
@@ -127,18 +128,21 @@ public class ApplicationSerializerTest {
 
         RevisionHistory revisions = RevisionHistory.ofRevisions(List.of(applicationVersion1),
                 Map.of(new JobId(id1, DeploymentContext.productionUsEast3), List.of(applicationVersion2)));
-        List<Instance> instances = List.of(new Instance(id1,
-                        deployments,
-                        Map.of(DeploymentContext.systemTest, Instant.ofEpochMilli(333)),
-                        List.of(AssignedRotation.fromStrings("foo", "default", "my-rotation", Set.of("us-west-1"))),
-                        rotationStatus,
-                        Change.of(new Version("6.1"))),
-                new Instance(id3,
-                        List.of(),
-                        Map.of(),
-                        List.of(),
-                        RotationStatus.EMPTY,
-                        Change.of(Version.fromString("6.7")).withPin()));
+        List<Instance> instances =
+                List.of(new Instance(id1,
+                                     Tags.fromString("tag1 tag2"),
+                                     deployments,
+                                     Map.of(DeploymentContext.systemTest, Instant.ofEpochMilli(333)),
+                                     List.of(AssignedRotation.fromStrings("foo", "default", "my-rotation", Set.of("us-west-1"))),
+                                     rotationStatus,
+                                     Change.of(new Version("6.1"))),
+                        new Instance(id3,
+                                     Tags.empty(),
+                                     List.of(),
+                                     Map.of(),
+                                     List.of(),
+                                     RotationStatus.EMPTY,
+                                     Change.of(Version.fromString("6.7")).withPin()));
 
         Application original = new Application(TenantAndApplicationId.from(id1),
                 Instant.now().truncatedTo(ChronoUnit.MILLIS),
@@ -176,6 +180,9 @@ public class ApplicationSerializerTest {
         assertEquals(original.revisions().withPackage(), serialized.revisions().withPackage());
         assertEquals(original.revisions().production(), serialized.revisions().production());
         assertEquals(original.revisions().development(), serialized.revisions().development());
+
+        assertEquals(original.require(id1.instance()).tags(), serialized.require(id1.instance()).tags());
+        assertEquals(original.require(id3.instance()).tags(), serialized.require(id3.instance()).tags());
 
         assertEquals(original.deploymentSpec().xmlForm(), serialized.deploymentSpec().xmlForm());
         assertEquals(original.validationOverrides().xmlForm(), serialized.validationOverrides().xmlForm());

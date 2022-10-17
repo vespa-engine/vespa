@@ -47,7 +47,7 @@ convertStatusToSlime(const Status &status, Cursor &object)
 void
 convertGenerationToSlime(const AttributeVector &attr, Cursor &object)
 {
-    object.setLong("firstUsed", attr.getFirstUsedGeneration());
+    object.setLong("oldest_used", attr.get_oldest_used_generation());
     object.setLong("current", attr.getCurrentGeneration());
 }
 

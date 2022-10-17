@@ -35,7 +35,6 @@
 #include <vespa/searchcore/proton/test/test.h>
 #include <vespa/searchcore/proton/test/transport_helper.h>
 #include <vespa/searchlib/common/idocumentmetastore.h>
-#include <vespa/searchlib/index/docbuilder.h>
 #include <vespa/vespalib/data/slime/slime.h>
 #include <vespa/vespalib/testkit/testapp.h>
 #include <vespa/vespalib/util/destructor_callbacks.h>
@@ -99,11 +98,11 @@ class MyDocumentSubDB
     uint32_t _subDBId;
     DocumentMetaStore::SP _metaStoreSP;
     DocumentMetaStore & _metaStore;
-    const std::shared_ptr<const document::DocumentTypeRepo> &_repo;
+    std::shared_ptr<const document::DocumentTypeRepo> _repo;
     const DocTypeName &_docTypeName;
 
 public:
-    MyDocumentSubDB(uint32_t subDBId, SubDbType subDbType, const std::shared_ptr<const document::DocumentTypeRepo> &repo,
+    MyDocumentSubDB(uint32_t subDBId, SubDbType subDbType, std::shared_ptr<const document::DocumentTypeRepo> repo,
                     std::shared_ptr<bucketdb::BucketDBOwner> bucketDB, const DocTypeName &docTypeName);
     ~MyDocumentSubDB();
 
@@ -136,7 +135,7 @@ public:
     const IDocumentMetaStore &getMetaStore() const { return _metaStore; }
 };
 
-MyDocumentSubDB::MyDocumentSubDB(uint32_t subDBId, SubDbType subDbType, const std::shared_ptr<const document::DocumentTypeRepo> &repo,
+MyDocumentSubDB::MyDocumentSubDB(uint32_t subDBId, SubDbType subDbType, std::shared_ptr<const document::DocumentTypeRepo> repo,
                                  std::shared_ptr<bucketdb::BucketDBOwner> bucketDB, const DocTypeName &docTypeName)
     : _docs(),
       _subDBId(subDBId),
@@ -144,7 +143,7 @@ MyDocumentSubDB::MyDocumentSubDB(uint32_t subDBId, SubDbType subDbType, const st
               std::move(bucketDB), DocumentMetaStore::getFixedName(), search::GrowStrategy(),
               subDbType)),
       _metaStore(*_metaStoreSP),
-      _repo(repo),
+      _repo(std::move(repo)),
       _docTypeName(docTypeName)
 {
     _metaStore.constructFreeList();

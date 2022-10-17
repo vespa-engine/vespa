@@ -102,22 +102,14 @@ public class StateHandler extends AbstractRequestHandler {
 
     private ByteBuffer buildContent(URI requestUri) {
         String suffix = resolvePath(requestUri);
-        switch (suffix) {
-            case "":
-                return ByteBuffer.wrap(apiLinks(requestUri));
-            case CONFIG_GENERATION_PATH:
-                return ByteBuffer.wrap(config);
-            case HISTOGRAMS_PATH:
-                return ByteBuffer.wrap(buildHistogramsOutput());
-            case HEALTH_PATH:
-            case METRICS_PATH:
-                return ByteBuffer.wrap(buildMetricOutput(suffix));
-            case VERSION_PATH:
-                return ByteBuffer.wrap(buildVersionOutput());
-            default:
-                // XXX should possibly do something else here
-                return ByteBuffer.wrap(buildMetricOutput(suffix));
-        }
+        return switch (suffix) {
+            case "" -> ByteBuffer.wrap(apiLinks(requestUri));
+            case CONFIG_GENERATION_PATH -> ByteBuffer.wrap(config);
+            case HISTOGRAMS_PATH -> ByteBuffer.wrap(buildHistogramsOutput());
+            case HEALTH_PATH, METRICS_PATH -> ByteBuffer.wrap(buildMetricOutput(suffix));
+            case VERSION_PATH -> ByteBuffer.wrap(buildVersionOutput());
+            default -> ByteBuffer.wrap(buildMetricOutput(suffix)); // XXX should possibly do something else here
+        };
     }
 
     private byte[] apiLinks(URI requestUri) {
@@ -228,13 +220,11 @@ public class StateHandler extends AbstractRequestHandler {
         for (Tuple tuple : collapseMetrics(metricSnapshot, consumer)) {
             ObjectNode jsonTuple = jsonMapper.createObjectNode();
             jsonTuple.put("name", tuple.key);
-            if (tuple.val instanceof CountMetric) {
-                CountMetric count = (CountMetric)tuple.val;
+            if (tuple.val instanceof CountMetric count) {
                 jsonTuple.set("values", jsonMapper.createObjectNode()
                         .put("count", count.getCount())
                         .put("rate", sanitizeDouble(count.getCount() * 1000.0) / periodInMillis));
-            } else if (tuple.val instanceof GaugeMetric) {
-                GaugeMetric gauge = (GaugeMetric) tuple.val;
+            } else if (tuple.val instanceof GaugeMetric gauge) {
                 ObjectNode valueFields = jsonMapper.createObjectNode();
                 valueFields.put("average", sanitizeDouble(gauge.getAverage()))
                         .put("sum", sanitizeDouble(gauge.getSum()))
@@ -274,15 +264,11 @@ public class StateHandler extends AbstractRequestHandler {
     }
 
     private static List<Tuple> collapseMetrics(MetricSnapshot snapshot, String consumer) {
-        switch (consumer) {
-            case HEALTH_PATH:
-                return collapseHealthMetrics(snapshot);
-            case "all": // deprecated name
-            case METRICS_PATH:
-                return flattenAllMetrics(snapshot);
-            default:
-                throw new IllegalArgumentException("Unknown consumer '" + consumer + "'.");
-        }
+        return switch (consumer) {
+            case HEALTH_PATH -> collapseHealthMetrics(snapshot);
+            case "all", METRICS_PATH -> flattenAllMetrics(snapshot);  // TODO: Remove "all" on Vespa 9
+            default -> throw new IllegalArgumentException("Unknown consumer '" + consumer + "'.");
+        };
     }
 
     private static List<Tuple> collapseHealthMetrics(MetricSnapshot snapshot) {
@@ -291,8 +277,7 @@ public class StateHandler extends AbstractRequestHandler {
         for (Map.Entry<MetricDimensions, MetricSet> entry : snapshot) {
             MetricSet metricSet = entry.getValue();
             MetricValue val = metricSet.get("serverTotalSuccessfulResponseLatency");
-            if (val instanceof GaugeMetric) {
-                GaugeMetric gauge = (GaugeMetric)val;
+            if (val instanceof GaugeMetric gauge) {
                 latencySeconds.add(GaugeMetric.newInstance(gauge.getLast() / 1000,
                                                            gauge.getMax() / 1000,
                                                            gauge.getMin() / 1000,

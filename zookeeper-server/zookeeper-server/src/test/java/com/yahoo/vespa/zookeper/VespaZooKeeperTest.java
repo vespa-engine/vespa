@@ -38,6 +38,9 @@ import static java.util.concurrent.TimeUnit.SECONDS;
 import static java.util.stream.Collectors.toList;
 import static org.junit.Assert.assertEquals;
 
+/**
+ * @author jonmv
+ */
 public class VespaZooKeeperTest {
 
     static final Path tempDirRoot = getTmpDir();
@@ -45,18 +48,17 @@ public class VespaZooKeeperTest {
 
     /**
      * Performs dynamic reconfiguration of ZooKeeper servers.
-     *
+     * <p>
      * First, a cluster of 3 servers is set up, and some data is written to it.
      * Then, 3 new servers are added, and the first 3 marked for retirement;
      * this should force the quorum to move the 3 new servers, but not disconnect the old ones.
      * Next, the old servers are removed.
      * Then, the cluster is reduced to size 1.
      * Finally, the cluster grows to size 3 again.
-     *
+     * <p>
      * Throughout all of this, quorum should remain, and the data should remain the same.
      */
     @Test(timeout = 120_000)
-    @Ignore // Unstable, some ZK server keeps resetting connections sometimes.
     public void testReconfiguration() throws ExecutionException, InterruptedException, IOException, KeeperException, TimeoutException {
         List<ZooKeeper> keepers = new ArrayList<>();
         for (int i = 0; i < 8; i++) keepers.add(new ZooKeeper());
@@ -126,7 +128,7 @@ public class VespaZooKeeperTest {
     static String writeData(ZookeeperServerConfig config) throws IOException, InterruptedException, KeeperException {
         try (ZooKeeperAdmin admin = createAdmin(config)) {
             List<ACL> acl = ZooDefs.Ids.OPEN_ACL_UNSAFE;
-            String node = admin.create("/test-node", "hi".getBytes(UTF_8), acl, CreateMode.EPHEMERAL_SEQUENTIAL);
+            String node = admin.create("/test-node", "hi".getBytes(UTF_8), acl, CreateMode.PERSISTENT_SEQUENTIAL);
             String read = new String(admin.getData(node, false, new Stat()), UTF_8);
             assertEquals("hi", read);
             return node;

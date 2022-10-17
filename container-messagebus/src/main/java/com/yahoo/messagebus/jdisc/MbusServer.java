@@ -60,6 +60,11 @@ public final class MbusServer extends AbstractResource implements ServerProvider
     }
 
     @Override
+    public boolean isMultiplexed() {
+        return true;
+    }
+
+    @Override
     protected void destroy() {
         log.log(Level.FINE, "Destroying message bus server.");
         runState.set(State.STOPPED);

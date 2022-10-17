@@ -146,7 +146,7 @@ FlushableAttribute::Flusher::run()
     }
 }
 
-FlushableAttribute::FlushableAttribute(const AttributeVectorSP attr,
+FlushableAttribute::FlushableAttribute(AttributeVectorSP attr,
                                        const std::shared_ptr<AttributeDirectory> &attrDir,
                                        const TuneFileAttributes &
                                        tuneFileAttributes,
@@ -207,7 +207,7 @@ IFlushTarget::Task::UP
 FlushableAttribute::internalInitFlush(SerialNum currentSerial)
 {
     // Called by attribute field writer thread while document db executor waits
-    _attr->removeAllOldGenerations();
+    _attr->reclaim_unused_memory();
     SerialNum syncToken = std::max(currentSerial, _attr->getStatus().getLastSyncToken());
     auto writer = _attrDir->tryGetWriter();
     if (!writer) {

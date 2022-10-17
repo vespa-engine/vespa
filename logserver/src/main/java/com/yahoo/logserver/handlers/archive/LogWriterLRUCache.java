@@ -10,7 +10,6 @@ import java.util.Map;
 /**
  * @author Bjorn Borud
  */
-@SuppressWarnings("serial")
 public class LogWriterLRUCache extends LinkedHashMap<Integer, LogWriter> {
     private static final Logger log = Logger.getLogger(LogWriterLRUCache.class.getName());
 

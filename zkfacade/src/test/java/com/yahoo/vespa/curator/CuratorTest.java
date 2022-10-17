@@ -82,7 +82,8 @@ public class CuratorTest {
                                                  CuratorConfig.Server::port,
                                                  curatorConfig.zookeeperLocalhostAffinity()),
                            Optional.empty(),
-                           juteMaxBuffer);
+                           juteMaxBuffer,
+                           Curator.DEFAULT_ZK_SESSION_TIMEOUT);
     }
 
 }

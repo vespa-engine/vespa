@@ -34,7 +34,7 @@ BTreeNodeAllocator<KeyT, DataT, AggrT, INTERNAL_SLOTS, LEAF_SLOTS>::
     assert(_treeToFreeze.empty());
     assert(_internalHoldUntilFreeze.empty());
     assert(_leafHoldUntilFreeze.empty());
-    DataStoreBase::MemStats stats = _nodeStore.getMemStats();
+    auto stats = _nodeStore.getMemStats();
     assert(stats._usedBytes == stats._deadBytes);
     assert(stats._holdBytes == 0);
     (void) stats;
@@ -235,7 +235,7 @@ freeze()
             InternalNodeType *inode = mapInternalRef(i);
             (void) inode;
             assert(inode->getFrozen());
-            _nodeStore.freeElem(i);
+            _nodeStore.holdElem(i);
         }
         _internalHoldUntilFreeze.clear();
     }
@@ -245,7 +245,7 @@ freeze()
             LeafNodeType *lnode = mapLeafRef(i);
             (void) lnode;
             assert(lnode->getFrozen());
-            _nodeStore.freeElem(i);
+            _nodeStore.holdElem(i);
         }
         _leafHoldUntilFreeze.clear();
     }
@@ -266,18 +266,18 @@ template <typename KeyT, typename DataT, typename AggrT,
           size_t INTERNAL_SLOTS, size_t LEAF_SLOTS>
 void
 BTreeNodeAllocator<KeyT, DataT, AggrT, INTERNAL_SLOTS, LEAF_SLOTS>::
-trimHoldLists(generation_t usedGen)
+reclaim_memory(generation_t oldest_used_gen)
 {
-    _nodeStore.trimHoldLists(usedGen);
+    _nodeStore.reclaim_memory(oldest_used_gen);
 }
 
 template <typename KeyT, typename DataT, typename AggrT,
           size_t INTERNAL_SLOTS, size_t LEAF_SLOTS>
 void
 BTreeNodeAllocator<KeyT, DataT, AggrT, INTERNAL_SLOTS, LEAF_SLOTS>::
-transferHoldLists(generation_t generation)
+assign_generation(generation_t current_gen)
 {
-    _nodeStore.transferHoldLists(generation);
+    _nodeStore.assign_generation(current_gen);
 }
 
 
@@ -285,9 +285,9 @@ template <typename KeyT, typename DataT, typename AggrT,
           size_t INTERNAL_SLOTS, size_t LEAF_SLOTS>
 void
 BTreeNodeAllocator<KeyT, DataT, AggrT, INTERNAL_SLOTS, LEAF_SLOTS>::
-clearHoldLists()
+reclaim_all_memory()
 {
-    _nodeStore.clearHoldLists();
+    _nodeStore.reclaim_all_memory();
 }
 
 

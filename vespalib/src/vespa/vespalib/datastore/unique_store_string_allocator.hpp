@@ -30,7 +30,7 @@ UniqueStoreStringAllocator<RefT>::UniqueStoreStringAllocator(std::shared_ptr<all
 template <typename RefT>
 UniqueStoreStringAllocator<RefT>::~UniqueStoreStringAllocator()
 {
-    _store.clearHoldLists();
+    _store.reclaim_all_memory();
     _store.dropBuffers();
 }
 
@@ -49,7 +49,7 @@ UniqueStoreStringAllocator<RefT>::allocate(const char *value)
         auto handle = _store.template freeListAllocator<WrappedExternalEntryType, UniqueStoreEntryReclaimer<WrappedExternalEntryType>>(0).alloc(std::string(value));
         RefT iRef(handle.ref);
         auto &state = _store.getBufferState(iRef.bufferId());
-        state.incExtraUsedBytes(value_len + 1);
+        state.stats().inc_extra_used_bytes(value_len + 1);
         return handle.ref;
     }
 }
@@ -71,7 +71,7 @@ UniqueStoreStringAllocator<RefT>::hold(EntryRef ref)
 
 template <typename RefT>
 EntryRef
-UniqueStoreStringAllocator<RefT>::move(EntryRef ref)
+UniqueStoreStringAllocator<RefT>::move_on_compact(EntryRef ref)
 {
     RefT iRef(ref);
     uint32_t type_id = _store.getTypeId(iRef.bufferId());
@@ -87,7 +87,7 @@ UniqueStoreStringAllocator<RefT>::move(EntryRef ref)
         auto handle = _store.template allocator<WrappedExternalEntryType>(0).alloc(*_store.template getEntry<WrappedExternalEntryType>(iRef));
         auto &state = _store.getBufferState(RefT(handle.ref).bufferId());
         auto &value = static_cast<const WrappedExternalEntryType *>(handle.data)->value();
-        state.incExtraUsedBytes(value.size() + 1);
+        state.stats().inc_extra_used_bytes(value.size() + 1);
         return handle.ref;
     }
 }

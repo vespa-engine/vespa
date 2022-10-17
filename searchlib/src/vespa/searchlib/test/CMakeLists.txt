@@ -2,12 +2,14 @@
 vespa_add_library(searchlib_test
     SOURCES
     document_weight_attribute_helper.cpp
+    doc_builder.cpp
     imported_attribute_fixture.cpp
     initrange.cpp
     make_attribute_map_lookup_node.cpp
     mock_attribute_context.cpp
     mock_attribute_manager.cpp
     searchiteratorverifier.cpp
+    string_field_builder.cpp
     $<TARGET_OBJECTS:searchlib_test_fakedata>
     $<TARGET_OBJECTS:searchlib_searchlib_test_diskindex>
     $<TARGET_OBJECTS:searchlib_test_gtest_migration>

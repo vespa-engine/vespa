@@ -20,7 +20,6 @@ import java.util.Map;
 
 import static com.yahoo.prelude.querytransform.NormalizingSearcher.ACCENT_REMOVAL;
 
-
 /**
  * Check sorting specification makes sense to the search cluster before
  * passing it on to the backend.
@@ -34,6 +33,13 @@ public class ValidateSortingSearcher extends Searcher {
     private Map<String, AttributesConfig.Attribute> attributeNames = null;
     private String clusterName = "";
     private final QrSearchersConfig.Searchcluster.Indexingmode.Enum indexingMode;
+
+    public ValidateSortingSearcher(QrSearchersConfig qrsConfig, ClusterConfig clusterConfig,
+                                   AttributesConfig attributesConfig) {
+        initAttributeNames(attributesConfig);
+        setClusterName(qrsConfig.searchcluster(clusterConfig.clusterId()).name());
+        indexingMode = qrsConfig.searchcluster(clusterConfig.clusterId()).indexingmode();
+    }
 
     public String getClusterName() {
         return clusterName;
@@ -61,14 +67,6 @@ public class ValidateSortingSearcher extends Searcher {
             attributes.put(attr.name(), attr);
         }
         setAttributeNames(attributes);
-    }
-
-    public ValidateSortingSearcher(QrSearchersConfig qrsConfig, ClusterConfig clusterConfig,
-                                   AttributesConfig attributesConfig)
-    {
-        initAttributeNames(attributesConfig);
-        setClusterName(qrsConfig.searchcluster(clusterConfig.clusterId()).name());
-        indexingMode = qrsConfig.searchcluster(clusterConfig.clusterId()).indexingmode();
     }
 
     @Override
@@ -157,8 +155,7 @@ public class ValidateSortingSearcher extends Searcher {
                             }
                         }
                     }
-                    if (f.getSorter() instanceof Sorting.UcaSorter) {
-                        Sorting.UcaSorter sorter = (Sorting.UcaSorter) f.getSorter();
+                    if (f.getSorter() instanceof Sorting.UcaSorter sorter) {
                         String locale = sorter.getLocale();
 
                         if (locale == null || locale.isEmpty()) {

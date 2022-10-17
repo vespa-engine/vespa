@@ -1,16 +1,8 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "direct_tensor_attribute.h"
-#include "direct_tensor_saver.h"
-
 #include <vespa/eval/eval/fast_value.h>
 #include <vespa/eval/eval/value.h>
-#include <vespa/searchlib/attribute/readerbase.h>
-#include <vespa/searchlib/util/fileutil.h>
-#include <vespa/vespalib/util/array.h>
-
-#include "blob_sequence_reader.h"
-#include "tensor_deserialize.h"
 
 using vespalib::eval::FastValueBuilderFactory;
 
@@ -23,41 +15,8 @@ DirectTensorAttribute::DirectTensorAttribute(stringref name, const Config &cfg)
 
 DirectTensorAttribute::~DirectTensorAttribute()
 {
-    getGenerationHolder().clearHoldLists();
-    _tensorStore.clearHoldLists();
-}
-
-bool
-DirectTensorAttribute::onLoad(vespalib::Executor *)
-{
-    BlobSequenceReader tensorReader(*this);
-    if (!tensorReader.hasData()) {
-        return false;
-    }
-    setCreateSerialNum(tensorReader.getCreateSerialNum());
-    assert(tensorReader.getVersion() == getVersion());
-    uint32_t numDocs = tensorReader.getDocIdLimit();
-    _refVector.reset();
-    _refVector.unsafe_reserve(numDocs);
-    vespalib::Array<char> buffer(1024);
-    for (uint32_t lid = 0; lid < numDocs; ++lid) {
-        uint32_t tensorSize = tensorReader.getNextSize();
-        if (tensorSize != 0) {
-            if (tensorSize > buffer.size()) {
-                buffer.resize(tensorSize + 1024);
-            }
-            tensorReader.readBlob(&buffer[0], tensorSize);
-            auto tensor = deserialize_tensor(&buffer[0], tensorSize);
-            EntryRef ref = _direct_store.store_tensor(std::move(tensor));
-            _refVector.push_back(AtomicEntryRef(ref));
-        } else {
-            EntryRef invalid;
-            _refVector.push_back(AtomicEntryRef(invalid));
-        }
-    }
-    setNumDocs(numDocs);
-    setCommittedDocIdLimit(numDocs);
-    return true;
+    getGenerationHolder().reclaim_all();
+    _tensorStore.reclaim_all_memory();
 }
 
 void
@@ -84,7 +43,7 @@ DirectTensorAttribute::update_tensor(DocId docId,
         ref = _refVector[docId].load_relaxed();
     }
     if (ref.valid()) {
-        auto ptr = _direct_store.get_tensor(ref);
+        auto ptr = _direct_store.get_tensor_ptr(ref);
         if (ptr) {
             auto new_value = update.apply_to(*ptr, FastValueBuilderFactory::get());
             if (new_value) {
@@ -109,7 +68,7 @@ DirectTensorAttribute::getTensor(DocId docId) const
         ref = acquire_entry_ref(docId);
     }
     if (ref.valid()) {
-        auto ptr = _direct_store.get_tensor(ref);
+        auto ptr = _direct_store.get_tensor_ptr(ref);
         if (ptr) {
             return FastValueBuilderFactory::get().copy(*ptr);
         }
@@ -123,21 +82,10 @@ DirectTensorAttribute::get_tensor_ref(DocId docId) const
 {
     if (docId >= getCommittedDocIdLimit()) { return *_emptyTensor; }
 
-    auto ptr = _direct_store.get_tensor(acquire_entry_ref(docId));
+    auto ptr = _direct_store.get_tensor_ptr(acquire_entry_ref(docId));
     if ( ptr == nullptr) { return *_emptyTensor; }
 
     return *ptr;
-}
-
-std::unique_ptr<AttributeSaver>
-DirectTensorAttribute::onInitSave(vespalib::stringref fileName)
-{
-    vespalib::GenerationHandler::Guard guard(getGenerationHandler().takeGuard());
-    return std::make_unique<DirectTensorAttributeSaver>
-        (std::move(guard),
-         this->createAttributeHeader(fileName),
-         getRefCopy(),
-         _direct_store);
 }
 
 } // namespace

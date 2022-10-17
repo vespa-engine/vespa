@@ -2,8 +2,8 @@
 
 #pragma once
 
+#include "generation_hold_list.h"
 #include "generationhandler.h"
-#include <vector>
 #include <memory>
 
 namespace vespalib {
@@ -11,79 +11,31 @@ namespace vespalib {
 class GenerationHeldBase
 {
 public:
-    typedef GenerationHandler::generation_t generation_t;
-    typedef std::unique_ptr<GenerationHeldBase> UP;
-    typedef std::shared_ptr<GenerationHeldBase> SP;
+    using generation_t = GenerationHandler::generation_t;
+    using UP = std::unique_ptr<GenerationHeldBase>;
+    using SP = std::shared_ptr<GenerationHeldBase>;
 
-    generation_t _generation;
 private:
-    size_t	 _size;
+    size_t	 _byte_size;
 
 public:
-    GenerationHeldBase(size_t size)
-        : _generation(0u),
-          _size(size)
+    GenerationHeldBase(size_t byte_size_in)
+        : _byte_size(byte_size_in)
     { }
 
     virtual ~GenerationHeldBase();
-    size_t getSize() const { return _size; }
+    size_t byte_size() const { return _byte_size; }
 };
+
+using GenerationHolderParent = GenerationHoldList<GenerationHeldBase::UP, true, false>;
 
 /*
  * GenerationHolder is meant to hold large elements until readers can
  * no longer access them.
  */
-class GenerationHolder
-{
-private:
-    typedef GenerationHandler::generation_t generation_t;
-    typedef GenerationHandler::sgeneration_t sgeneration_t;
-
-    typedef std::vector<GenerationHeldBase::SP> HoldList;
-
-    HoldList _hold1List;
-    HoldList _hold2List;
-    std::atomic<size_t>   _heldBytes;
-
-    /**
-     * Transfer holds from hold1 to hold2 lists, assigning generation.
-     */
-    void transferHoldListsSlow(generation_t generation);
-
-    /**
-     * Remove all data elements from this holder where generation < usedGen.
-     **/
-    void trimHoldListsSlow(generation_t usedGen);
-
+class GenerationHolder : public GenerationHolderParent {
 public:
     GenerationHolder();
-    ~GenerationHolder();
-
-    /**
-     * Add the given data pointer to this holder.
-     **/
-    void hold(GenerationHeldBase::UP data);
-
-    /**
-     * Transfer holds from hold1 to hold2 lists, assigning generation.
-     */
-    void transferHoldLists(generation_t generation) {
-        if (!_hold1List.empty()) {
-            transferHoldListsSlow(generation);
-        }
-    }
-
-    /**
-     * Remove all data elements from this holder where generation < usedGen.
-     **/
-    void trimHoldLists(generation_t usedGen) {
-        if (!_hold2List.empty() && static_cast<sgeneration_t>(_hold2List.front()->_generation - usedGen) < 0) {
-            trimHoldListsSlow(usedGen);
-        }
-    }
-
-    void clearHoldLists();
-    size_t getHeldBytes() const { return _heldBytes.load(std::memory_order_relaxed); }
 };
 
 }

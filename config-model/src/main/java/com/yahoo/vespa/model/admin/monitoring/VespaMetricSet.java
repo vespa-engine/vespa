@@ -202,6 +202,14 @@ public class VespaMetricSet {
         metrics.add(new Metric("jdisc.deactivated_containers.total.last"));
         metrics.add(new Metric("jdisc.deactivated_containers.with_retained_refs.last"));
 
+        metrics.add(new Metric("jdisc.singleton.is_active.last"));
+        metrics.add(new Metric("jdisc.singleton.activation.count.last"));
+        metrics.add(new Metric("jdisc.singleton.activation.failure.count.last"));
+        metrics.add(new Metric("jdisc.singleton.activation.millis.last"));
+        metrics.add(new Metric("jdisc.singleton.deactivation.count.last"));
+        metrics.add(new Metric("jdisc.singleton.deactivation.failure.count.last"));
+        metrics.add(new Metric("jdisc.singleton.deactivation.millis.last"));
+
         metrics.add(new Metric("athenz-tenant-cert.expiry.seconds.last"));
         metrics.add(new Metric("container-iam-role.expiry.seconds"));
 

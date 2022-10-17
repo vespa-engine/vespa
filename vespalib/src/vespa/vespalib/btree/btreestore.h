@@ -332,25 +332,25 @@ public:
 
     // Inherit doc from DataStoreBase
     void
-    trimHoldLists(generation_t usedGen)
+    reclaim_memory(generation_t oldest_used_gen)
     {
-        _allocator.trimHoldLists(usedGen);
-        _store.trimHoldLists(usedGen);
+        _allocator.reclaim_memory(oldest_used_gen);
+        _store.reclaim_memory(oldest_used_gen);
     }
 
     // Inherit doc from DataStoreBase
     void
-    transferHoldLists(generation_t generation)
+    assign_generation(generation_t current_gen)
     {
-        _allocator.transferHoldLists(generation);
-        _store.transferHoldLists(generation);
+        _allocator.assign_generation(current_gen);
+        _store.assign_generation(current_gen);
     }
 
     void
-    clearHoldLists()
+    reclaim_all_memory()
     {
-        _allocator.clearHoldLists();
-        _store.clearHoldLists();
+        _allocator.reclaim_all_memory();
+        _store.reclaim_all_memory();
     }
 
 

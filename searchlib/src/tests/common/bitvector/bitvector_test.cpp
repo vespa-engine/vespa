@@ -654,8 +654,8 @@ TEST("requireThatGrowWorks")
     EXPECT_EQUAL(4095u, v.writer().capacity());
     EXPECT_EQUAL(3u, v.writer().countTrueBits());
 
-    g.transferHoldLists(1);
-    g.trimHoldLists(2);
+    g.assign_generation(1);
+    g.reclaim(2);
 }
 
 TEST("require that growable bit vectors keeps memory allocator")
@@ -676,8 +676,8 @@ TEST("require that growable bit vectors keeps memory allocator")
     EXPECT_EQUAL(AllocStats(4, 1), stats);
     v.writer().resize(1); // DO NOT TRY THIS AT HOME
     EXPECT_EQUAL(AllocStats(5, 2), stats);
-    g.transferHoldLists(1);
-    g.trimHoldLists(2);
+    g.assign_generation(1);
+    g.reclaim(2);
 }
 
 TEST_MAIN() { TEST_RUN_ALL(); }

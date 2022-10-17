@@ -7,6 +7,7 @@ import com.yahoo.prelude.Index;
 import com.yahoo.prelude.IndexFacts;
 import com.yahoo.prelude.IndexModel;
 import com.yahoo.prelude.SearchDefinition;
+import com.yahoo.prelude.query.WeakAndItem;
 import org.apache.http.client.utils.URIBuilder;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -86,6 +87,17 @@ public class UserInputTestCase {
                 "select * from sources * where {grammar: \"segment\"}userInput(\"nal le\")");
         Query query = searchAndAssertNoErrors(builder);
         assertEquals("select * from sources * where default contains ({origin: {original: \"nal le\", offset: 0, length: 6}}phrase(\"nal\", \"le\"))", query.yqlRepresentation());
+    }
+
+    @Test
+    void testUserInputSettingTargetHits() {
+        URIBuilder builder = searchUri();
+        builder.setParameter("yql",
+                             "select * from sources * where {grammar: \"weakAnd\", targetHits: 17, defaultIndex: \"f\"}userInput(\"a test\")");
+        Query query = searchAndAssertNoErrors(builder);
+        assertEquals("select * from sources * where ({targetNumHits: 17}weakAnd(f contains \"a\", f contains \"test\"))", query.yqlRepresentation());
+        WeakAndItem weakAnd = (WeakAndItem)query.getModel().getQueryTree().getRoot();
+        assertEquals(17, weakAnd.getN());
     }
 
     @Test

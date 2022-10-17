@@ -511,21 +511,21 @@ HnswIndex::remove_document(uint32_t docid)
 }
 
 void
-HnswIndex::transfer_hold_lists(generation_t current_gen)
+HnswIndex::assign_generation(generation_t current_gen)
 {
     // Note: RcuVector transfers hold lists as part of reallocation based on current generation.
     //       We need to set the next generation here, as it is incremented on a higher level right after this call.
     _graph.node_refs.setGeneration(current_gen + 1);
-    _graph.nodes.transferHoldLists(current_gen);
-    _graph.links.transferHoldLists(current_gen);
+    _graph.nodes.assign_generation(current_gen);
+    _graph.links.assign_generation(current_gen);
 }
 
 void
-HnswIndex::trim_hold_lists(generation_t first_used_gen)
+HnswIndex::reclaim_memory(generation_t oldest_used_gen)
 {
-    _graph.node_refs.removeOldGenerations(first_used_gen);
-    _graph.nodes.trimHoldLists(first_used_gen);
-    _graph.links.trimHoldLists(first_used_gen);
+    _graph.node_refs.reclaim_memory(oldest_used_gen);
+    _graph.nodes.reclaim_memory(oldest_used_gen);
+    _graph.links.reclaim_memory(oldest_used_gen);
 }
 
 void

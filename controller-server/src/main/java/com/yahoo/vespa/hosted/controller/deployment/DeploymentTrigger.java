@@ -91,8 +91,29 @@ public class DeploymentTrigger {
                                                                                status,
                                                                                false));
             }
+
+            // If app has been broken since it was first submitted, and not fixed for a long time, we stop managing it until a new submission comes in.
+            if (applicationWasAlwaysBroken(status))
+                application = application.withProjectId(OptionalLong.empty());
+
             applications().store(application);
         });
+    }
+
+    private boolean applicationWasAlwaysBroken(DeploymentStatus status) {
+        // If application has a production deployment, we cannot forget it.
+        if (status.application().instances().values().stream().anyMatch(instance -> ! instance.productionDeployments().isEmpty()))
+            return false;
+
+        // Then, we need a job that always failed, and failed on the last revision for at least 30 days.
+        RevisionId last = status.application().revisions().last().get().id();
+        Instant threshold = clock.instant().minus(Duration.ofDays(30));
+        for (JobStatus job : status.jobs().asList())
+            for (Run run : job.runs().descendingMap().values())
+                if (run.hasEnded() && ! run.hasFailed() || ! run.versions().targetRevision().equals(last)) break;
+                else if (run.start().isBefore(threshold)) return true;
+
+        return false;
     }
 
     /**
@@ -339,8 +360,8 @@ public class DeploymentTrigger {
     /** Returns the set of all jobs which have changes to propagate from the upstream steps. */
     private List<Job> computeReadyJobs() {
         return jobs.deploymentStatuses(ApplicationList.from(applications().readable())
-                                                      .withProjectId() // Need to keep this, as we have applications with deployment spec that shouldn't be orchestrated. // Maybe not any longer?
-                                                      .withDeploymentSpec())
+                                                      .withProjectId() // Need to keep this, as we have applications with deployment spec that shouldn't be orchestrated.
+                                                      .withJobs())
                    .withChanges()
                    .asList().stream()
                    .filter(status -> ! hasExceededQuota(status.application().id().tenant()))

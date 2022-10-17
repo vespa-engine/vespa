@@ -45,12 +45,16 @@ private:
     private:
         AttributeVectorSP _attr;
         bool _isExtra;
-        AttributeWrap(const AttributeVectorSP & a, bool isExtra_);
+        AttributeWrap(AttributeVectorSP a, bool isExtra_);
     public:
         AttributeWrap();
+        AttributeWrap(const AttributeWrap &) = default;
+        AttributeWrap & operator=(const AttributeWrap &) = delete;
+        AttributeWrap(AttributeWrap &&) noexcept = default;
+        AttributeWrap & operator=(AttributeWrap &&) noexcept = default;
         ~AttributeWrap();
-        static AttributeWrap extraAttribute(const AttributeVectorSP &a);
-        static AttributeWrap normalAttribute(const AttributeVectorSP &a);
+        static AttributeWrap extraAttribute(AttributeVectorSP a);
+        static AttributeWrap normalAttribute(AttributeVectorSP a);
         bool isExtra() const { return _isExtra; }
         const AttributeVectorSP & getAttribute() const { return _attr; }
     };
@@ -85,20 +89,12 @@ private:
     std::unique_ptr<ImportedAttributesRepo> _importedAttributes;
 
     AttributeVectorSP internalAddAttribute(AttributeSpec && spec, uint64_t serialNum, const IAttributeFactory &factory);
-
-    void addAttribute(const AttributeWrap &attribute, const ShrinkerSP &shrinker);
-
+    void addAttribute(AttributeWrap attribute, const ShrinkerSP &shrinker);
     AttributeVectorSP findAttribute(const vespalib::string &name) const;
-
     const FlushableWrap *findFlushable(const vespalib::string &name) const;
-
     Spec::AttributeList transferExistingAttributes(const AttributeManager &currMgr, Spec::AttributeList && newAttributes);
-
-    void addNewAttributes(const Spec &newSpec, Spec::AttributeList && toBeAdded,
-                          IAttributeInitializerRegistry &initializerRegistry);
-
+    void addNewAttributes(const Spec &newSpec, Spec::AttributeList && toBeAdded, IAttributeInitializerRegistry &initializerRegistry);
     void transferExtraAttributes(const AttributeManager &currMgr);
-
 public:
     using SP = std::shared_ptr<AttributeManager>;
 
@@ -118,7 +114,7 @@ public:
                      std::shared_ptr<search::attribute::Interlock> interlock,
                      vespalib::ISequencedTaskExecutor &attributeFieldWriter,
                      vespalib::Executor& shared_executor,
-                     const IAttributeFactory::SP &factory,
+                     IAttributeFactory::SP factory,
                      const HwInfo &hwInfo);
 
     AttributeManager(const AttributeManager &currMgr, Spec && newSpec,

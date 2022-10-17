@@ -9,7 +9,6 @@ vespa_add_library(searchlib_tensor OBJECT
     dense_tensor_attribute_saver.cpp
     dense_tensor_store.cpp
     direct_tensor_attribute.cpp
-    direct_tensor_saver.cpp
     direct_tensor_store.cpp
     distance_calculator.cpp
     distance_function_factory.cpp
@@ -29,14 +28,13 @@ vespa_add_library(searchlib_tensor OBJECT
     nearest_neighbor_index_saver.cpp
     serialized_fast_value_attribute.cpp
     small_subspaces_buffer_type.cpp
-    streamed_value_saver.cpp
-    streamed_value_store.cpp
     tensor_attribute.cpp
     tensor_buffer_operations.cpp
     tensor_buffer_store.cpp
     tensor_buffer_type_mapper.cpp
     tensor_deserialize.cpp
     tensor_store.cpp
+    tensor_store_saver.cpp
     reusable_set_visited_tracker.cpp
     DEPENDS
 )

@@ -8,12 +8,15 @@ import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.InstanceName;
 import com.yahoo.config.provision.RegionName;
 import com.yahoo.config.provision.SystemName;
+import com.yahoo.config.provision.Tags;
 import com.yahoo.config.provision.zone.RoutingMethod;
 import com.yahoo.config.provision.zone.ZoneApi;
 import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.vespa.flags.PermanentFlags;
 import com.yahoo.vespa.hosted.controller.ControllerTester;
 import com.yahoo.vespa.hosted.controller.Instance;
+import com.yahoo.vespa.hosted.controller.api.integration.configserver.ConfigServerException;
+import com.yahoo.vespa.hosted.controller.api.integration.configserver.ConfigServerException.ErrorCode;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobId;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.RevisionId;
@@ -118,9 +121,17 @@ public class DeploymentTriggerTest {
         tester.triggerJobs();
         app.assertRunning(productionUsWest1);
 
+        tester.configServer().throwOnNextPrepare(new ConfigServerException(ErrorCode.INVALID_APPLICATION_PACKAGE, "nope", "bah"));
+        tester.runner().run();
+        assertEquals(RunStatus.invalidApplication, tester.jobs().last(app.instanceId(), productionUsWest1).get().status());
+        tester.triggerJobs();
+        app.assertNotRunning(productionUsWest1);
+
         // production-us-west-1 fails, but the app loses its projectId, and the job isn't retried.
+        app.submit(applicationPackage).runJob(systemTest).runJob(stagingTest).triggerJobs();
         tester.applications().lockApplicationOrThrow(app.application().id(), locked ->
                 tester.applications().store(locked.withProjectId(OptionalLong.empty())));
+
         app.timeOutConvergence(productionUsWest1);
         tester.triggerJobs();
         assertEquals(0, tester.jobs().active().size(), "Job is not triggered when no projectId is present");
@@ -986,7 +997,7 @@ public class DeploymentTriggerTest {
     @Test
     void testUserInstancesNotInDeploymentSpec() {
         var app = tester.newDeploymentContext();
-        tester.controller().applications().createInstance(app.application().id().instance("user"));
+        tester.controller().applications().createInstance(app.application().id().instance("user"), Tags.empty());
         app.submit().deploy();
     }
 
@@ -2697,6 +2708,54 @@ public class DeploymentTriggerTest {
         assertFalse(tester.jobs().last(app.instanceId(), systemTest).get().hasSucceeded());
         app.failTests(stagingTest, true);
         assertTrue(tester.jobs().last(app.instanceId(), stagingTest).get().hasSucceeded());
+    }
+
+    @Test
+    void testBrokenApplication() {
+        DeploymentContext app = tester.newDeploymentContext();
+        app.submit().runJob(systemTest).failDeployment(stagingTest).failDeployment(stagingTest);
+        tester.clock().advance(Duration.ofDays(31));
+        tester.outstandingChangeDeployer().run();
+        assertEquals(OptionalLong.empty(), app.application().projectId());
+
+        app.assertNotRunning(stagingTest);
+        tester.triggerJobs();
+        app.assertNotRunning(stagingTest);
+        assertEquals(4, app.deploymentStatus().jobsToRun().size());
+
+        app.submit().runJob(systemTest).failDeployment(stagingTest);
+        tester.clock().advance(Duration.ofDays(20));
+        app.submit().runJob(systemTest).failDeployment(stagingTest);
+        tester.clock().advance(Duration.ofDays(20));
+        tester.outstandingChangeDeployer().run();
+        assertEquals(OptionalLong.of(1000), app.application().projectId());
+        tester.clock().advance(Duration.ofDays(20));
+        tester.outstandingChangeDeployer().run();
+        assertEquals(OptionalLong.empty(), app.application().projectId());
+
+        app.assertNotRunning(stagingTest);
+        tester.triggerJobs();
+        app.assertNotRunning(stagingTest);
+        assertEquals(4, app.deploymentStatus().jobsToRun().size());
+
+        app.submit().runJob(systemTest).runJob(stagingTest).failDeployment(productionUsCentral1);
+        tester.clock().advance(Duration.ofDays(31));
+        tester.outstandingChangeDeployer().run();
+        assertEquals(OptionalLong.empty(), app.application().projectId());
+
+        app.assertNotRunning(productionUsCentral1);
+        tester.triggerJobs();
+        app.assertNotRunning(productionUsCentral1);
+        assertEquals(3, app.deploymentStatus().jobsToRun().size());
+
+        app.submit().runJob(systemTest).runJob(stagingTest).timeOutConvergence(productionUsCentral1);
+        tester.clock().advance(Duration.ofDays(31));
+        tester.outstandingChangeDeployer().run();
+        assertEquals(OptionalLong.of(1000), app.application().projectId());
+
+        app.assertNotRunning(productionUsCentral1);
+        tester.triggerJobs();
+        app.assertRunning(productionUsCentral1);
     }
 
     @Test

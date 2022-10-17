@@ -59,15 +59,13 @@ public:
     AtomicEntryRef add_relaxed(uint32_t value) { return AtomicEntryRef(add(value)); }
     void hold(const AtomicEntryRef& ref) { _store.holdElem(ref.load_relaxed(), 1); }
     EntryRef move(EntryRef ref);
-    void transfer_hold_lists(generation_t gen) { _store.transferHoldLists(gen); }
-    void trim_hold_lists(generation_t gen) { _store.trimHoldLists(gen); }
+    void assign_generation(generation_t current_gen) { _store.assign_generation(current_gen); }
+    void reclaim_memory(generation_t gen) { _store.reclaim_memory(gen); }
     uint32_t get(EntryRef ref) const { return _store.getEntry(ref); }
     uint32_t get_acquire(const AtomicEntryRef& ref) const { return get(ref.load_acquire()); }
     uint32_t get_relaxed(const AtomicEntryRef& ref) const { return get(ref.load_relaxed()); }
     std::unique_ptr<vespalib::datastore::CompactingBuffers> start_compact();
     static constexpr bool is_indirect = true;
-    static uint32_t get_offset_bits() { return StoreRefType::offset_bits; }
-    static uint32_t get_num_buffers() { return StoreRefType::numBuffers(); }
     bool has_held_buffers() const noexcept { return _store.has_held_buffers(); }
 };
 
@@ -82,7 +80,7 @@ std::unique_ptr<vespalib::datastore::CompactingBuffers>
 RealIntStore::start_compact()
 {
     // Use a compaction strategy that will compact all active buffers
-    CompactionStrategy compaction_strategy(0.0, 0.0, get_num_buffers(), 1.0);
+    auto compaction_strategy = CompactionStrategy::make_compact_all_active_buffers_strategy();
     CompactionSpec compaction_spec(true, false);
     return _store.start_compact_worst_buffers(compaction_spec, compaction_strategy);
 }
@@ -120,8 +118,8 @@ public:
     static uint32_t add(uint32_t value) noexcept { return value; }
     static uint32_t add_relaxed(uint32_t value) noexcept { return value; }
     static void hold(uint32_t) noexcept { }
-    static void transfer_hold_lists(generation_t) noexcept { }
-    static void trim_hold_lists(generation_t) noexcept { }
+    static void assign_generation(generation_t) noexcept { }
+    static void reclaim_memory(generation_t) noexcept { }
     static uint32_t get(uint32_t value) noexcept { return value; }
     static uint32_t get_acquire(uint32_t value) noexcept { return value; }
     static uint32_t get_relaxed(uint32_t value) noexcept { return value; }
@@ -276,15 +274,15 @@ Fixture<Params>::commit()
     auto &allocator = _tree.getAllocator();
     allocator.freeze();
     auto current_gen = _generationHandler.getCurrentGeneration();
-    allocator.transferHoldLists(current_gen);
-    _keys.transfer_hold_lists(current_gen);
-    _values.transfer_hold_lists(current_gen);
-    allocator.transferHoldLists(_generationHandler.getCurrentGeneration());
+    allocator.assign_generation(current_gen);
+    _keys.assign_generation(current_gen);
+    _values.assign_generation(current_gen);
+    allocator.assign_generation(_generationHandler.getCurrentGeneration());
     _generationHandler.incGeneration();
-    auto first_used_gen = _generationHandler.getFirstUsedGeneration();
-    allocator.trimHoldLists(first_used_gen);
-    _keys.trim_hold_lists(first_used_gen);
-    _values.trim_hold_lists(first_used_gen);
+    auto oldest_used_gen = _generationHandler.get_oldest_used_generation();
+    allocator.reclaim_memory(oldest_used_gen);
+    _keys.reclaim_memory(oldest_used_gen);
+    _values.reclaim_memory(oldest_used_gen);
 }
 
 template <typename Params>
@@ -329,7 +327,7 @@ void
 Fixture<Params>::compact_tree()
 {
     // Use a compaction strategy that will compact all active buffers
-    CompactionStrategy compaction_strategy(0.0, 0.0, RefType::numBuffers(), 1.0);
+    auto compaction_strategy = CompactionStrategy::make_compact_all_active_buffers_strategy();
     _tree.compact_worst(compaction_strategy);
     _writeItr = _tree.begin();
     _compact_tree.track_compacted();

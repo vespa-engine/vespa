@@ -132,9 +132,9 @@ public class GroupPreparer {
             }
 
             if (! allocation.fulfilled() && requestedNodes.canFail())
-                throw new NodeAllocationException((cluster.group().isPresent() ? "Node allocation failure on " +
-                                                                                 cluster.group().get() : "") +
-                                                  allocation.allocationFailureDetails());
+                throw new NodeAllocationException((cluster.group().isPresent() ? "Node allocation failure on " + cluster.group().get()
+                                                                               : "") + allocation.allocationFailureDetails(),
+                                                  true);
 
             // Carry out and return allocation
             nodeRepository.nodes().reserve(allocation.reservableNodes());

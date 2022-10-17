@@ -73,7 +73,7 @@ public:
 
 private:
     std::atomic<generation_t>     _generation;
-    std::atomic<generation_t>     _firstUsedGeneration;
+    std::atomic<generation_t>     _oldest_used_generation;
     std::atomic<GenerationHold *> _last;      // Points to "current generation" entry
     GenerationHold *_first;     // Points to "firstUsedGeneration" entry
     GenerationHold *_free;      // List of free entries
@@ -101,17 +101,17 @@ public:
     void incGeneration();
 
     /**
-     * Update first used generation.
+     * Update the oldest used generation.
      * Should be called by the writer thread.
      */
-    void updateFirstUsedGeneration();
+    void update_oldest_used_generation();
 
     /**
-     * Returns the first generation guarded by a reader.  It might be too low
-     * if writer hasn't updated first used generation after last reader left.
+     * Returns the oldest generation guarded by a reader.
+     * It might be too low if writer hasn't updated oldest used generation after last reader left.
      */
-    generation_t getFirstUsedGeneration() const noexcept {
-        return _firstUsedGeneration.load(std::memory_order_relaxed);
+    generation_t get_oldest_used_generation() const noexcept {
+        return _oldest_used_generation.load(std::memory_order_relaxed);
     }
 
     /**

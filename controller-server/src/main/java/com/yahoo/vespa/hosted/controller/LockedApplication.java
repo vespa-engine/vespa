@@ -4,6 +4,7 @@ package com.yahoo.vespa.hosted.controller;
 import com.yahoo.config.application.api.DeploymentSpec;
 import com.yahoo.config.application.api.ValidationOverrides;
 import com.yahoo.config.provision.InstanceName;
+import com.yahoo.config.provision.Tags;
 import com.yahoo.transaction.Mutex;
 import com.yahoo.vespa.curator.Lock;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.IssueId;
@@ -88,9 +89,9 @@ public class LockedApplication {
                                projectId, revisions, instances.values());
     }
 
-    LockedApplication withNewInstance(InstanceName instance) {
+    LockedApplication withNewInstance(InstanceName instance, Tags tags) {
         var instances = new HashMap<>(this.instances);
-        instances.put(instance, new Instance(id.instance(instance)));
+        instances.put(instance, new Instance(id.instance(instance), tags));
         return new LockedApplication(lock, id, createdAt, deploymentSpec, validationOverrides,
                                      deploymentIssueId, ownershipIssueId, owner, majorVersion, metrics, deployKeys,
                                      projectId, instances, revisions);

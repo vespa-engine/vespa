@@ -13,12 +13,13 @@ import java.io.File;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -35,9 +36,7 @@ public class QuestMetricsDbTest {
 
     @Test
     public void testNodeMetricsReadWrite() {
-        String dataDir = "data/QuestMetricsDbReadWrite";
-        IOUtils.recursiveDeleteDir(new File(dataDir));
-        IOUtils.createDirectory(dataDir + "/metrics");
+        String dataDir = createEmptyDataDir("QuestMetricsDbReadWrite", "metrics");
         ManualClock clock = new ManualClock("2020-10-01T00:00:00");
         QuestMetricsDb db = new QuestMetricsDb(dataDir, clock);
         Instant startTime = clock.instant();
@@ -81,9 +80,7 @@ public class QuestMetricsDbTest {
 
     @Test
     public void testClusterMetricsReadWrite() {
-        String dataDir = "data/QuestMetricsDbReadWrite";
-        IOUtils.recursiveDeleteDir(new File(dataDir));
-        IOUtils.createDirectory(dataDir + "/clusterMetrics");
+        String dataDir = createEmptyDataDir("QuestMetricsDbReadWrite", "clusterMetrics");
         ManualClock clock = new ManualClock("2020-10-01T00:00:00");
         QuestMetricsDb db = new QuestMetricsDb(dataDir, clock);
         Instant startTime = clock.instant();
@@ -134,9 +131,7 @@ public class QuestMetricsDbTest {
 
     @Test
     public void testWriteOldData() {
-        String dataDir = "data/QuestMetricsDbWriteOldData";
-        IOUtils.recursiveDeleteDir(new File(dataDir));
-        IOUtils.createDirectory(dataDir + "/metrics");
+        String dataDir = createEmptyDataDir("QuestMetricsDbWriteOldData", "metrics");
         ManualClock clock = new ManualClock("2020-10-01T00:00:00");
         QuestMetricsDb db = new QuestMetricsDb(dataDir, clock);
         Instant startTime = clock.instant();
@@ -161,9 +156,7 @@ public class QuestMetricsDbTest {
 
     @Test
     public void testGc() {
-        String dataDir = "data/QuestMetricsDbGc";
-        IOUtils.recursiveDeleteDir(new File(dataDir));
-        IOUtils.createDirectory(dataDir + "/metrics");
+        String dataDir = createEmptyDataDir("QuestMetricsDbGc", "metrics");
         ManualClock clock = new ManualClock();
         int days = 10; // The first metrics are this many days in the past
         clock.retreat(Duration.ofDays(10));
@@ -189,7 +182,7 @@ public class QuestMetricsDbTest {
     @Ignore
     @Test
     public void testReadingAndAppendingToExistingData() {
-        String dataDir = "data/QuestMetricsDbExistingData";
+        String dataDir = dataDir("QuestMetricsDbExistingData");
         if ( ! new File(dataDir).exists()) {
             System.out.println("No existing data to check");
             return;
@@ -219,9 +212,7 @@ public class QuestMetricsDbTest {
     @Ignore
     @Test
     public void updateExistingData() {
-        String dataDir = "data/QuestMetricsDbExistingData";
-        IOUtils.recursiveDeleteDir(new File(dataDir));
-        IOUtils.createDirectory(dataDir + "/metrics");
+        String dataDir = createEmptyDataDir("QuestMetricsDbExistingData", "metrics");
         ManualClock clock = new ManualClock("2020-10-01T00:00:00");
         QuestMetricsDb db = new QuestMetricsDb(dataDir, clock);
         Instant startTime = clock.instant();
@@ -249,16 +240,6 @@ public class QuestMetricsDbTest {
         return timeseries;
     }
 
-    private List<ClusterMetricSnapshot> clusterTimeseries(int count, Duration sampleRate, ManualClock clock,
-                                                          ClusterSpec.Id cluster) {
-        List<ClusterMetricSnapshot> timeseries = new ArrayList<>();
-        for (int i = 1; i <= count; i++) {
-            timeseries.add(new ClusterMetricSnapshot(clock.instant(), 30.0, 0.0));
-            clock.advance(sampleRate);
-        }
-        return timeseries;
-    }
-
     private Collection<Pair<String, NodeMetricSnapshot>> timeseriesAt(int countPerHost, Instant at, String ... hosts) {
         Collection<Pair<String, NodeMetricSnapshot>> timeseries = new ArrayList<>();
         for (int i = 1; i <= countPerHost; i++) {
@@ -270,6 +251,19 @@ public class QuestMetricsDbTest {
                                                                        0.0)));
         }
         return timeseries;
+    }
+
+    private static String dataDir(String name) {
+        return "target/questdb/" + name;
+    }
+
+    private static String createEmptyDataDir(String name, String... subPath) {
+        String dataDir = dataDir(name);
+        IOUtils.recursiveDeleteDir(new File(dataDir));
+        String path = Stream.concat(Stream.of(dataDir), Arrays.stream(subPath))
+                            .collect(Collectors.joining("/"));
+        IOUtils.createDirectory(path);
+        return dataDir;
     }
 
 }

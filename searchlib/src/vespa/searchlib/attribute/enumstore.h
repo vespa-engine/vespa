@@ -96,8 +96,8 @@ public:
 
     vespalib::AddressSpace get_values_address_space_usage() const override;
 
-    void transfer_hold_lists(generation_t generation);
-    void trim_hold_lists(generation_t first_used);
+    void assign_generation(generation_t current_gen);
+    void reclaim_memory(generation_t first_used);
 
     ssize_t load_unique_values(const void* src, size_t available, IndexVector& idx) override;
 

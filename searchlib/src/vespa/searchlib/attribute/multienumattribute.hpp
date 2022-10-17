@@ -147,7 +147,7 @@ MultiValueEnumAttribute<B, M>::onCommit()
     updater.commit();
     this->freezeEnumDictionary();
     std::atomic_thread_fence(std::memory_order_release);
-    this->removeAllOldGenerations();
+    this->reclaim_unused_memory();
     if (this->_mvMapping.considerCompact(this->getConfig().getCompactionStrategy())) {
         this->incGeneration();
         this->updateStat(true);
@@ -194,15 +194,15 @@ MultiValueEnumAttribute<B, M>::onUpdateStat()
 
 template <typename B, typename M>
 void
-MultiValueEnumAttribute<B, M>::removeOldGenerations(generation_t firstUsed)
+MultiValueEnumAttribute<B, M>::reclaim_memory(generation_t oldest_used_gen)
 {
-    this->_enumStore.trim_hold_lists(firstUsed);
-    this->_mvMapping.trimHoldLists(firstUsed);
+    this->_enumStore.reclaim_memory(oldest_used_gen);
+    this->_mvMapping.reclaim_memory(oldest_used_gen);
 }
 
 template <typename B, typename M>
 void
-MultiValueEnumAttribute<B, M>::onGenerationChange(generation_t generation)
+MultiValueEnumAttribute<B, M>::before_inc_generation(generation_t current_gen)
 {
     /*
      * Freeze tree before generation is increased in attribute vector
@@ -211,8 +211,8 @@ MultiValueEnumAttribute<B, M>::onGenerationChange(generation_t generation)
      * sufficiently new frozen tree.
      */
     freezeEnumDictionary();
-    this->_mvMapping.transferHoldLists(generation - 1);
-    this->_enumStore.transfer_hold_lists(generation - 1);
+    this->_mvMapping.assign_generation(current_gen);
+    this->_enumStore.assign_generation(current_gen);
 }
 
 template <typename B, typename M>

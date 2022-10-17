@@ -63,7 +63,7 @@ MultiValueNumericAttribute<B, M>::onCommit()
     }
 
     std::atomic_thread_fence(std::memory_order_release);
-    this->removeAllOldGenerations();
+    this->reclaim_unused_memory();
 
     this->_changes.clear();
     if (this->_mvMapping.considerCompact(this->getConfig().getCompactionStrategy())) {
@@ -96,16 +96,16 @@ void MultiValueNumericAttribute<B, M>::setNewValues(DocId doc, const std::vector
 }
 
 template <typename B, typename M>
-void MultiValueNumericAttribute<B, M>::removeOldGenerations(generation_t firstUsed)
+void MultiValueNumericAttribute<B, M>::reclaim_memory(generation_t oldest_used_gen)
 {
-    this->_mvMapping.trimHoldLists(firstUsed);
+    this->_mvMapping.reclaim_memory(oldest_used_gen);
 }
 
 
 template <typename B, typename M>
-void MultiValueNumericAttribute<B, M>::onGenerationChange(generation_t generation)
+void MultiValueNumericAttribute<B, M>::before_inc_generation(generation_t current_gen)
 {
-    this->_mvMapping.transferHoldLists(generation - 1);
+    this->_mvMapping.assign_generation(current_gen);
 }
 
 template <typename B, typename M>

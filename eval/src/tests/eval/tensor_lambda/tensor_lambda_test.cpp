@@ -31,7 +31,7 @@ EvalFixture::ParamRepo make_params() {
         .add("x3_float", GenSpec().idx("x", 3).cells(CellType::FLOAT))
         .add("x3_bfloat16", GenSpec().idx("x", 3).cells(CellType::BFLOAT16))
         .add("x3_int8", GenSpec().idx("x", 3).cells(CellType::INT8))
-        .add("x3m", GenSpec().map("x", 3))
+        .add("x3m", GenSpec().map("x", {"0", "1", "2"}))
         .add("x3y5", GenSpec().idx("x", 3).idx("y", 5))
         .add("x3y5_float", GenSpec().idx("x", 3).idx("y", 5).cells(CellType::FLOAT))
         .add("x3y5_bfloat16", GenSpec().idx("x", 3).idx("y", 5).cells(CellType::BFLOAT16))

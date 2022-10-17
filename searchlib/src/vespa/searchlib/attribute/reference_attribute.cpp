@@ -87,7 +87,7 @@ ReferenceAttribute::addDoc(DocId &doc)
     if (incGen) {
         incGeneration();
     } else {
-        removeAllOldGenerations();
+        reclaim_unused_memory();
     }
     return true;
 }
@@ -161,21 +161,21 @@ ReferenceAttribute::clearDoc(DocId doc)
 }
 
 void
-ReferenceAttribute::removeOldGenerations(generation_t firstUsed)
+ReferenceAttribute::reclaim_memory(generation_t oldest_used_gen)
 {
-    _referenceMappings.trimHoldLists(firstUsed);
-    _store.trimHoldLists(firstUsed);
-    getGenerationHolder().trimHoldLists(firstUsed);
+    _referenceMappings.reclaim_memory(oldest_used_gen);
+    _store.reclaim_memory(oldest_used_gen);
+    getGenerationHolder().reclaim(oldest_used_gen);
 }
 
 void
-ReferenceAttribute::onGenerationChange(generation_t generation)
+ReferenceAttribute::before_inc_generation(generation_t current_gen)
 {
     _referenceMappings.freeze();
     _store.freeze();
-    _referenceMappings.transferHoldLists(generation - 1);
-    _store.transferHoldLists(generation - 1);
-    getGenerationHolder().transferHoldLists(generation - 1);
+    _referenceMappings.assign_generation(current_gen);
+    _store.assign_generation(current_gen);
+    getGenerationHolder().assign_generation(current_gen);
 }
 
 void
@@ -203,7 +203,7 @@ ReferenceAttribute::onUpdateStat()
     _compaction_spec = ReferenceAttributeCompactionSpec(compaction_strategy.should_compact_memory(total),
                                                         compaction_strategy.should_compact_memory(dictionary_memory_usage));
     total.merge(dictionary_memory_usage);
-    total.mergeGenerationHeldBytes(getGenerationHolder().getHeldBytes());
+    total.mergeGenerationHeldBytes(getGenerationHolder().get_held_bytes());
     total.merge(_indices.getMemoryUsage());
     total.merge(_referenceMappings.getMemoryUsage());
     updateStatistics(getTotalValueCount(), getUniqueValueCount(),

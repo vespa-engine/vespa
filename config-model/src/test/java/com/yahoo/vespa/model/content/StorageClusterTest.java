@@ -120,9 +120,7 @@ public class StorageClusterTest {
         parse(cluster("foofighters", joinLines(
                 "<tuning>",
                 "  <merges max-per-node=\"1K\" max-queue-size=\"10K\"/>",
-                "</tuning>")),
-                new TestProperties().setMaxMergeQueueSize(1919).setMaxConcurrentMergesPerNode(37)
-        ).getConfig(builder);
+                "</tuning>"))).getConfig(builder);
 
         StorServerConfig config = new StorServerConfig(builder);
         assertEquals(1024, config.max_merges_per_node());
@@ -174,27 +172,14 @@ public class StorageClusterTest {
 
     @Test
     void testMergeFeatureFlags() {
-        var config = configFromProperties(new TestProperties().setMaxMergeQueueSize(1919).setMaxConcurrentMergesPerNode(37));
-        assertEquals(37, config.max_merges_per_node());
-        assertEquals(1919, config.max_merge_queue_size());
+        var config = configFromProperties(new TestProperties());
+        assertEquals(16, config.max_merges_per_node());
+        assertEquals(100, config.max_merge_queue_size());
     }
 
     @Test
     void merge_throttling_policy_config_defaults_to_static() {
         var config = configFromProperties(new TestProperties());
-        assertEquals(StorServerConfig.Merge_throttling_policy.Type.STATIC, config.merge_throttling_policy().type());
-    }
-
-    @Test
-    void merge_throttling_policy_config_is_derived_from_flag() {
-        var config = configFromProperties(new TestProperties().setMergeThrottlingPolicy("STATIC"));
-        assertEquals(StorServerConfig.Merge_throttling_policy.Type.STATIC, config.merge_throttling_policy().type());
-
-        config = configFromProperties(new TestProperties().setMergeThrottlingPolicy("DYNAMIC"));
-        assertEquals(StorServerConfig.Merge_throttling_policy.Type.DYNAMIC, config.merge_throttling_policy().type());
-
-        // Invalid enum values fall back to the default
-        config = configFromProperties(new TestProperties().setMergeThrottlingPolicy("UKULELE"));
         assertEquals(StorServerConfig.Merge_throttling_policy.Type.STATIC, config.merge_throttling_policy().type());
     }
 
@@ -337,23 +322,6 @@ public class StorageClusterTest {
         assertEquals(-1, config.async_operation_throttler().max_window_size()); // <=0 implies +inf
         assertEquals(3.0, config.async_operation_throttler().resize_rate(), 0.0001);
         assertTrue(config.async_operation_throttler().throttle_individual_merge_feed_ops());
-    }
-
-    @Test
-    void persistence_dynamic_throttling_parameters_can_be_set_through_feature_flags() {
-        var config = filestorConfigFromProducer(simpleCluster(new TestProperties()
-                .setPersistenceThrottlingWsDecrementFactor(1.5)
-                .setPersistenceThrottlingWsBackoff(0.8)
-                .setPersistenceThrottlingWindowSize(42)
-                .setPersistenceThrottlingWsResizeRate(2.5)
-                .setPersistenceThrottlingOfMergeFeedOps(false)));
-        assertEquals(1.5, config.async_operation_throttler().window_size_decrement_factor(), 0.0001);
-        assertEquals(0.8, config.async_operation_throttler().window_size_backoff(), 0.0001);
-        // If window size is set, min and max are locked to the same value
-        assertEquals(42, config.async_operation_throttler().min_window_size());
-        assertEquals(42, config.async_operation_throttler().max_window_size());
-        assertEquals(2.5, config.async_operation_throttler().resize_rate(), 0.0001);
-        assertFalse(config.async_operation_throttler().throttle_individual_merge_feed_ops());
     }
 
     @Test

@@ -275,7 +275,7 @@
                                 <goal>run</goal>
                             </goals>
                             <configuration>
-                                <protocVersion>3.21.2</protocVersion>
+                                <protocVersion>${protobuf.version}</protocVersion>
                                 <addSources>main</addSources>
                                 <outputDirectory>${project.build.directory}/generated-sources/protobuf</outputDirectory>
                                 <inputDirectories>
@@ -400,7 +400,7 @@
                             <failOnError>${javadoc.failOnError}</failOnError>
                             <quiet>true</quiet>
                             <show>protected</show>
-                            <header>&lt;a href="https://docs.vespa.ai"&gt;&lt;img src="https://docs.vespa.ai/img/vespa-logo.png" width="100" height="28" style="padding-top:7px"/&gt;&lt;/a&gt;</header>
+                            <header>&lt;a href="https://docs.vespa.ai"&gt;&lt;img src="https://docs.vespa.ai/assets/logos/vespa-logo-full-white.svg" width="100" height="28" style="padding-top:7px"/&gt;&lt;/a&gt;</header>
                         </configuration>
                     </plugin>
                 </plugins>
@@ -791,12 +791,17 @@
             </dependency>
             <dependency>
                 <groupId>org.bouncycastle</groupId>
-                <artifactId>bcpkix-jdk15on</artifactId>
+                <artifactId>bcpkix-jdk18on</artifactId>
                 <version>${bouncycastle.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.bouncycastle</groupId>
-                <artifactId>bcprov-jdk15on</artifactId>
+                <artifactId>bcprov-jdk18on</artifactId>
+                <version>${bouncycastle.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.bouncycastle</groupId>
+                <artifactId>bcutil-jdk18on</artifactId>
                 <version>${bouncycastle.version}</version>
             </dependency>
             <dependency>
@@ -1024,7 +1029,7 @@
                  find zkfacade/src/main/java/org/apache/curator -name package-info.java | \
                      xargs perl -pi -e 's/major = [0-9]+, minor = [0-9]+, micro = [0-9]+/major = 5, minor = 3, micro = 0/g'
         -->
-        <bouncycastle.version>1.68</bouncycastle.version>
+        <bouncycastle.version>1.72</bouncycastle.version>
         <curator.version>5.3.0</curator.version>
         <commons.codec.version>1.15</commons.codec.version>
         <commons.math3.version>3.6.1</commons.math3.version>

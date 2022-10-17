@@ -205,13 +205,12 @@ public:
 
     const std::vector<PosOccFieldsParams> &getFieldsParams() const { return _fieldsParams; }
 
-    void trimHoldLists(generation_t usedGen) { _store.trimHoldLists(usedGen); }
-    void transferHoldLists(generation_t generation) { _store.transferHoldLists(generation); }
-    void clearHoldLists() { _store.clearHoldLists();}
-    std::vector<uint32_t> startCompact() { return _store.startCompact(_typeId); }
-    void finishCompact(const std::vector<uint32_t> & toHold) { _store.finishCompact(toHold); }
+    void reclaim_memory(generation_t oldest_used_gen) { _store.reclaim_memory(oldest_used_gen); }
+    void assign_generation(generation_t current_gen) { _store.assign_generation(current_gen); }
+    void reclaim_all_memory() { _store.reclaim_all_memory();}
+    std::unique_ptr<vespalib::datastore::CompactingBuffers> start_compact();
     vespalib::MemoryUsage getMemoryUsage() const { return _store.getMemoryUsage(); }
-    vespalib::datastore::DataStoreBase::MemStats getMemStats() const { return _store.getMemStats(); }
+    vespalib::datastore::MemoryStats getMemStats() const { return _store.getMemStats(); }
 };
 
 }

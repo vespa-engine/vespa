@@ -14,8 +14,6 @@ import com.yahoo.vespaxmlparser.FeedOperation;
 /**
  * Keeps an operation with its message.
  *
- * This implementation is based on V2, but the code is restructured.
- *
  * @author dybis
  */
 class DocumentOperationMessageV3 {
@@ -66,13 +64,13 @@ class DocumentOperationMessageV3 {
     static DocumentOperationMessageV3 create(FeedOperation operation, String operationId, Metric metric) {
         switch (operation.getType()) {
             case DOCUMENT:
-                metric.add(MetricNames.NUM_PUTS, 1, null /*metricContext*/);
+                metric.add(MetricNames.NUM_PUTS, 1, null);
                 return newPutMessage(operation, operationId);
             case REMOVE:
-                metric.add(MetricNames.NUM_REMOVES, 1, null /*metricContext*/);
+                metric.add(MetricNames.NUM_REMOVES, 1, null);
                 return newRemoveMessage(operation, operationId);
             case UPDATE:
-                metric.add(MetricNames.NUM_UPDATES, 1, null /*metricContext*/);
+                metric.add(MetricNames.NUM_UPDATES, 1, null);
                 return newUpdateMessage(operation, operationId);
             default:
                 // typical end of feed

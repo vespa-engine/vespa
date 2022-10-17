@@ -25,6 +25,7 @@ import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.List;
+import java.util.Set;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
@@ -38,7 +39,7 @@ public class HttpResponseStatisticsCollectorTest {
     private Connector connector;
     private List<String> monitoringPaths = List.of("/status.html");
     private List<String> searchPaths = List.of("/search");
-    private HttpResponseStatisticsCollector collector = new HttpResponseStatisticsCollector(monitoringPaths, searchPaths);
+    private HttpResponseStatisticsCollector collector = new HttpResponseStatisticsCollector(monitoringPaths, searchPaths, Set.of());
     private int httpResponseCode = 500;
 
     @Test

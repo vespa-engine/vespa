@@ -36,6 +36,8 @@ protected:
     void populate_state(vespalib::slime::Cursor& object) const;
     void populate_address_space_usage(AddressSpaceUsage& usage) const override;
     EntryRef acquire_entry_ref(DocId doc_id) const noexcept { return _refVector.acquire_elem_ref(doc_id).load_acquire(); }
+    bool onLoad(vespalib::Executor *executor) override;
+    std::unique_ptr<AttributeSaver> onInitSave(vespalib::stringref fileName) override;
 
 public:
     using RefCopyVector = vespalib::Array<EntryRef>;
@@ -46,8 +48,8 @@ public:
     uint32_t clearDoc(DocId docId) override;
     void onCommit() override;
     void onUpdateStat() override;
-    void removeOldGenerations(generation_t firstUsed) override;
-    void onGenerationChange(generation_t generation) override;
+    void reclaim_memory(generation_t oldest_used_gen) override;
+    void before_inc_generation(generation_t current_gen) override;
     bool addDoc(DocId &docId) override;
     std::unique_ptr<vespalib::eval::Value> getEmptyTensor() const override;
     vespalib::eval::TypedCells extract_cells_ref(uint32_t docid) const override;

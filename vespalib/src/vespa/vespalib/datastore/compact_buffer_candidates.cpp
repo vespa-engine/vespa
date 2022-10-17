@@ -13,7 +13,7 @@ CompactBufferCandidates::CompactBufferCandidates(uint32_t num_buffers, uint32_t 
       _max_buffers(std::max(max_buffers, 1u)),
       _active_buffers_ratio(std::min(1.0, std::max(0.0001, active_buffers_ratio))),
       _ratio(ratio),
-      _slack(slack),
+      _slack(_ratio == 0.0 ? 0u : slack),
       _free_buffers(0)
 {
     _candidates.reserve(num_buffers);

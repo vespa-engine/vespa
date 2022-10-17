@@ -2,6 +2,9 @@
 
 #include "feature_store.h"
 #include <vespa/searchlib/index/schemautil.h>
+#include <vespa/vespalib/datastore/compacting_buffers.h>
+#include <vespa/vespalib/datastore/compaction_spec.h>
+#include <vespa/vespalib/datastore/compaction_strategy.h>
 #include <vespa/vespalib/datastore/datastore.hpp>
 
 namespace search::memoryindex {
@@ -9,6 +12,8 @@ namespace search::memoryindex {
 constexpr size_t MIN_BUFFER_ARRAYS = 1024u;
 
 using index::SchemaUtil;
+using vespalib::datastore::CompactionSpec;
+using vespalib::datastore::CompactionStrategy;
 using vespalib::datastore::EntryRef;
 
 uint64_t
@@ -63,8 +68,6 @@ FeatureStore::moveFeatures(EntryRef ref, uint64_t bitLen)
     const uint8_t *src = getBits(ref);
     uint64_t byteLen = (bitLen + 7) / 8;
     EntryRef newRef = addFeatures(src, byteLen);
-    // Mark old features as dead
-    _store.incDead(ref, byteLen + Aligner::pad(byteLen));
     return newRef;
 }
 
@@ -112,7 +115,6 @@ FeatureStore::add_features_guard_bytes()
     uint32_t pad = Aligner::pad(len);
     auto result = _store.rawAllocator<uint8_t>(_typeId).alloc(len + pad);
     memset(result.data, 0, len + pad);
-    _store.incDead(result.ref, len + pad);
 }
 
 void
@@ -141,6 +143,15 @@ FeatureStore::moveFeatures(uint32_t packedIndex, EntryRef ref)
 {
     uint64_t bitLen = bitSize(packedIndex, ref);
     return moveFeatures(ref, bitLen);
+}
+
+std::unique_ptr<vespalib::datastore::CompactingBuffers>
+FeatureStore::start_compact()
+{
+    // Use a compaction strategy that will compact all active buffers
+    auto compaction_strategy = CompactionStrategy::make_compact_all_active_buffers_strategy();
+    CompactionSpec compaction_spec(true, false);
+    return _store.start_compact_worst_buffers(compaction_spec, compaction_strategy);
 }
 
 }

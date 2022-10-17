@@ -73,10 +73,12 @@ import static com.yahoo.vespa.hosted.controller.api.integration.configserver.Nod
 import static com.yahoo.vespa.hosted.controller.deployment.RunStatus.deploymentFailed;
 import static com.yahoo.vespa.hosted.controller.deployment.RunStatus.error;
 import static com.yahoo.vespa.hosted.controller.deployment.RunStatus.installationFailed;
+import static com.yahoo.vespa.hosted.controller.deployment.RunStatus.invalidApplication;
 import static com.yahoo.vespa.hosted.controller.deployment.RunStatus.noTests;
 import static com.yahoo.vespa.hosted.controller.deployment.RunStatus.nodeAllocationFailure;
 import static com.yahoo.vespa.hosted.controller.deployment.RunStatus.reset;
 import static com.yahoo.vespa.hosted.controller.deployment.RunStatus.running;
+import static com.yahoo.vespa.hosted.controller.deployment.RunStatus.success;
 import static com.yahoo.vespa.hosted.controller.deployment.RunStatus.testFailure;
 import static com.yahoo.vespa.hosted.controller.deployment.Step.Status.succeeded;
 import static com.yahoo.vespa.hosted.controller.deployment.Step.copyVespaLogs;
@@ -242,6 +244,10 @@ public class InternalStepRunner implements StepRunner {
                     logger.log("Deployment failed with possibly transient error " + e.code() +
                                ", will retry: " + e.getMessage());
                     return result;
+                case INTERNAL_SERVER_ERROR:
+                    // Log only error code, to avoid exposing internal data in error message
+                    logger.log("Deployment failed with possibly transient error " + e.code() + ", will retry");
+                    return result;
                 case LOAD_BALANCER_NOT_READY:
                 case PARENT_HOST_NOT_READY:
                     logger.log(e.message()); // Consider splitting these messages in summary and details, on config server.
@@ -252,6 +258,8 @@ public class InternalStepRunner implements StepRunner {
                            ? result
                            : Optional.of(nodeAllocationFailure);
                 case INVALID_APPLICATION_PACKAGE:
+                    logger.log(WARNING, e.getMessage());
+                    return Optional.of(invalidApplication);
                 case BAD_REQUEST:
                     logger.log(WARNING, e.getMessage());
                     return Optional.of(deploymentFailed);
@@ -759,14 +767,18 @@ public class InternalStepRunner implements StepRunner {
 
     private Optional<RunStatus> report(RunId id, DualLogger logger) {
         try {
+            boolean isRemoved =    ! id.type().environment().isManuallyDeployed()
+                                && ! controller.jobController().deploymentStatus(controller.applications().requireApplication(TenantAndApplicationId.from(id.application())))
+                                               .jobSteps().containsKey(id.job());
+
             controller.jobController().active(id).ifPresent(run -> {
                 if (run.status() == reset)
                     return;
 
-                if (run.hasFailed())
+                if (run.hasFailed() && ! isRemoved)
                     sendEmailNotification(run, logger);
 
-                updateConsoleNotification(run);
+                updateConsoleNotification(run, isRemoved);
             });
         }
         catch (IllegalStateException e) {
@@ -816,10 +828,10 @@ public class InternalStepRunner implements StepRunner {
                          .orElse(true);
     }
 
-    private void updateConsoleNotification(Run run) {
+    private void updateConsoleNotification(Run run, boolean isRemoved) {
         NotificationSource source = NotificationSource.from(run.id());
         Consumer<String> updater = msg -> controller.notificationsDb().setNotification(source, Notification.Type.deployment, Notification.Level.error, msg);
-        switch (run.status()) {
+        switch (isRemoved ? success : run.status()) {
             case aborted: return; // wait and see how the next run goes.
             case noTests:
             case running:
@@ -829,8 +841,11 @@ public class InternalStepRunner implements StepRunner {
             case nodeAllocationFailure:
                 if ( ! run.id().type().environment().isTest()) updater.accept("could not allocate the requested capacity to your tenant. Please contact Vespa Cloud support.");
                 return;
-            case deploymentFailed:
+            case invalidApplication:
                 updater.accept("invalid application configuration. Please review warnings and errors in the deployment job log.");
+                return;
+            case deploymentFailed:
+                updater.accept("failure processing application configuration. Please review warnings and errors in the deployment job log.");
                 return;
             case installationFailed:
                 updater.accept("nodes were not able to deploy to the new configuration. Please check the Vespa log for errors, and contact Vespa Cloud support if unable to resolve these.");
@@ -858,6 +873,7 @@ public class InternalStepRunner implements StepRunner {
             case nodeAllocationFailure:
                 return run.id().type().isProduction() ? Optional.of(mails.nodeAllocationFailure(run.id(), recipients)) : Optional.empty();
             case deploymentFailed:
+            case invalidApplication:
                 return Optional.of(mails.deploymentFailure(run.id(), recipients));
             case installationFailed:
                 return Optional.of(mails.installationFailure(run.id(), recipients));

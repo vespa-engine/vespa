@@ -17,7 +17,6 @@ using vespalib::alloc::MemoryAllocator;
 class MyStore : public DataStore<int, EntryRefT<3, 2> > {
 private:
     using ParentType = DataStore<int, EntryRefT<3, 2> >;
-    using ParentType::_primary_buffer_ids;
 public:
     MyStore() {}
     explicit MyStore(std::unique_ptr<BufferType<int>> type)
@@ -29,14 +28,11 @@ public:
     void holdElem(EntryRef ref, uint64_t len) {
         ParentType::holdElem(ref, len);
     }
-    void transferHoldLists(generation_t generation) {
-        ParentType::transferHoldLists(generation);
+    void assign_generation(generation_t current_gen) {
+        ParentType::assign_generation(current_gen);
     }
-    void trimElemHoldList(generation_t usedGen) override {
-        ParentType::trimElemHoldList(usedGen);
-    }
-    void incDead(EntryRef ref, uint64_t dead) {
-        ParentType::incDead(ref, dead);
+    void reclaim_entry_refs(generation_t oldest_used_gen) override {
+        ParentType::reclaim_entry_refs(oldest_used_gen);
     }
     void ensureBufferCapacity(size_t sizeNeeded) {
         ParentType::ensureBufferCapacity(0, sizeNeeded);
@@ -47,7 +43,7 @@ public:
     void switch_primary_buffer() {
         ParentType::switch_primary_buffer(0, 0u);
     }
-    size_t primary_buffer_id() const { return _primary_buffer_ids[0]; }
+    size_t primary_buffer_id() const { return get_primary_buffer_id(0); }
     BufferState& get_active_buffer_state() {
         return ParentType::getBufferState(primary_buffer_id());
     }
@@ -55,7 +51,7 @@ public:
 
 
 using GrowthStats = std::vector<int>;
-using BufferStats = std::vector<int>;
+using BufferIds = std::vector<int>;
 
 constexpr float ALLOC_GROW_FACTOR = 0.4;
 constexpr size_t HUGE_PAGE_ARRAY_SIZE = (MemoryAllocator::HUGEPAGE_SIZE / sizeof(int));
@@ -124,8 +120,8 @@ public:
             ++i;
         }
     }
-    BufferStats getBuffers(size_t bufs) {
-        BufferStats buffers;
+    BufferIds getBuffers(size_t bufs) {
+        BufferIds buffers;
         while (buffers.size() < bufs) {
             RefType iRef = (_type.getArraySize() == 1) ?
                            (_store.template allocator<DataType>(_typeId).alloc().ref) :
@@ -143,8 +139,8 @@ public:
 using MyRef = MyStore::RefType;
 
 void
-assertMemStats(const DataStoreBase::MemStats &exp,
-               const DataStoreBase::MemStats &act)
+assertMemStats(const MemoryStats &exp,
+               const MemoryStats &act)
 {
     EXPECT_EQ(exp._allocElems, act._allocElems);
     EXPECT_EQ(exp._usedElems, act._usedElems);
@@ -265,29 +261,29 @@ TEST(DataStoreTest, require_that_we_can_hold_and_trim_buffers)
     s.switch_primary_buffer();
     EXPECT_EQ(1u, s.primary_buffer_id());
     s.holdBuffer(0); // hold last buffer
-    s.transferHoldLists(10);
+    s.assign_generation(10);
 
     EXPECT_EQ(1u, MyRef(s.addEntry(2)).bufferId());
     s.switch_primary_buffer();
     EXPECT_EQ(2u, s.primary_buffer_id());
     s.holdBuffer(1); // hold last buffer
-    s.transferHoldLists(20);
+    s.assign_generation(20);
 
     EXPECT_EQ(2u, MyRef(s.addEntry(3)).bufferId());
     s.switch_primary_buffer();
     EXPECT_EQ(3u, s.primary_buffer_id());
     s.holdBuffer(2); // hold last buffer
-    s.transferHoldLists(30);
+    s.assign_generation(30);
 
     EXPECT_EQ(3u, MyRef(s.addEntry(4)).bufferId());
     s.holdBuffer(3); // hold current buffer
-    s.transferHoldLists(40);
+    s.assign_generation(40);
 
     EXPECT_TRUE(s.getBufferState(0).size() != 0);
     EXPECT_TRUE(s.getBufferState(1).size() != 0);
     EXPECT_TRUE(s.getBufferState(2).size() != 0);
     EXPECT_TRUE(s.getBufferState(3).size() != 0);
-    s.trimHoldLists(11);
+    s.reclaim_memory(11);
     EXPECT_TRUE(s.getBufferState(0).size() == 0);
     EXPECT_TRUE(s.getBufferState(1).size() != 0);
     EXPECT_TRUE(s.getBufferState(2).size() != 0);
@@ -296,7 +292,7 @@ TEST(DataStoreTest, require_that_we_can_hold_and_trim_buffers)
     s.switch_primary_buffer();
     EXPECT_EQ(0u, s.primary_buffer_id());
     EXPECT_EQ(0u, MyRef(s.addEntry(5)).bufferId());
-    s.trimHoldLists(41);
+    s.reclaim_memory(41);
     EXPECT_TRUE(s.getBufferState(0).size() != 0);
     EXPECT_TRUE(s.getBufferState(1).size() == 0);
     EXPECT_TRUE(s.getBufferState(2).size() == 0);
@@ -308,21 +304,21 @@ TEST(DataStoreTest, require_that_we_can_hold_and_trim_elements)
     MyStore s;
     MyRef r1 = s.addEntry(1);
     s.holdElem(r1, 1);
-    s.transferHoldLists(10);
+    s.assign_generation(10);
     MyRef r2 = s.addEntry(2);
     s.holdElem(r2, 1);
-    s.transferHoldLists(20);
+    s.assign_generation(20);
     MyRef r3 = s.addEntry(3);
     s.holdElem(r3, 1);
-    s.transferHoldLists(30);
+    s.assign_generation(30);
     EXPECT_EQ(1, s.getEntry(r1));
     EXPECT_EQ(2, s.getEntry(r2));
     EXPECT_EQ(3, s.getEntry(r3));
-    s.trimElemHoldList(11);
+    s.reclaim_entry_refs(11);
     EXPECT_EQ(0, s.getEntry(r1));
     EXPECT_EQ(2, s.getEntry(r2));
     EXPECT_EQ(3, s.getEntry(r3));
-    s.trimElemHoldList(31);
+    s.reclaim_entry_refs(31);
     EXPECT_EQ(0, s.getEntry(r1));
     EXPECT_EQ(0, s.getEntry(r2));
     EXPECT_EQ(0, s.getEntry(r3));
@@ -362,17 +358,17 @@ TEST(DataStoreTest, require_that_we_can_use_free_lists)
     s.enableFreeLists();
     auto r1 = s.addEntry(1);
     s.holdElem(r1, 1);
-    s.transferHoldLists(10);
+    s.assign_generation(10);
     auto r2 = s.addEntry(2);
     expect_successive_refs(r1, r2);
     s.holdElem(r2, 1);
-    s.transferHoldLists(20);
-    s.trimElemHoldList(11);
+    s.assign_generation(20);
+    s.reclaim_entry_refs(11);
     auto r3 = s.addEntry(3); // reuse r1
     EXPECT_EQ(r1, r3);
     auto r4 = s.addEntry(4);
     expect_successive_refs(r2, r4);
-    s.trimElemHoldList(21);
+    s.reclaim_entry_refs(21);
     auto r5 = s.addEntry(5); // reuse r2
     EXPECT_EQ(r2, r5);
     auto r6 = s.addEntry(6);
@@ -397,8 +393,8 @@ TEST(DataStoreTest, require_that_we_can_use_free_lists_with_raw_allocator)
     expect_successive_handles(h1, h2);
     s.holdElem(h1.ref, 3);
     s.holdElem(h2.ref, 3);
-    s.transferHoldLists(10);
-    s.trimElemHoldList(11);
+    s.assign_generation(10);
+    s.reclaim_entry_refs(11);
 
     auto h3 = allocator.alloc(3); // reuse h2.ref from free list
     EXPECT_EQ(h2, h3);
@@ -414,7 +410,7 @@ TEST(DataStoreTest, require_that_we_can_use_free_lists_with_raw_allocator)
 TEST(DataStoreTest, require_that_memory_stats_are_calculated)
 {
     MyStore s;
-    DataStoreBase::MemStats m;
+    MemoryStats m;
     m._allocElems = MyRef::offsetSize();
     m._usedElems = 1; // ref = 0 is reserved
     m._deadElems = 1; // ref = 0 is reserved
@@ -429,16 +425,11 @@ TEST(DataStoreTest, require_that_memory_stats_are_calculated)
     m._usedElems++;
     assertMemStats(m, s.getMemStats());
 
-    // inc dead
-    s.incDead(r, 1);
-    m._deadElems++;
-    assertMemStats(m, s.getMemStats());
-
     // hold buffer
     s.addEntry(20);
     s.addEntry(30);
     s.holdBuffer(r.bufferId());
-    s.transferHoldLists(100);
+    s.assign_generation(100);
     m._usedElems += 2;
     m._holdElems = m._usedElems;
     m._deadElems = 0;
@@ -455,7 +446,7 @@ TEST(DataStoreTest, require_that_memory_stats_are_calculated)
     m._freeBuffers--;
 
     // trim hold buffer
-    s.trimHoldLists(101);
+    s.reclaim_memory(101);
     m._allocElems -= MyRef::offsetSize();
     m._usedElems = 1;
     m._deadElems = 0;
@@ -466,7 +457,7 @@ TEST(DataStoreTest, require_that_memory_stats_are_calculated)
 
     { // increase extra used bytes
         auto prev_stats = s.getMemStats();
-        s.get_active_buffer_state().incExtraUsedBytes(50);
+        s.get_active_buffer_state().stats().inc_extra_used_bytes(50);
         auto curr_stats = s.getMemStats();
         EXPECT_EQ(prev_stats._allocBytes + 50, curr_stats._allocBytes);
         EXPECT_EQ(prev_stats._usedBytes + 50, curr_stats._usedBytes);
@@ -474,7 +465,7 @@ TEST(DataStoreTest, require_that_memory_stats_are_calculated)
 
     { // increase extra hold bytes
         auto prev_stats = s.getMemStats();
-        s.get_active_buffer_state().incExtraHoldBytes(30);
+        s.get_active_buffer_state().hold_elems(0, 30);
         auto curr_stats = s.getMemStats();
         EXPECT_EQ(prev_stats._holdBytes + 30, curr_stats._holdBytes);
     }
@@ -487,15 +478,14 @@ TEST(DataStoreTest, require_that_memory_usage_is_calculated)
     s.addEntry(20);
     s.addEntry(30);
     s.addEntry(40);
-    s.incDead(r, 1);
     s.holdBuffer(r.bufferId());
-    s.transferHoldLists(100);
+    s.assign_generation(100);
     vespalib::MemoryUsage m = s.getMemoryUsage();
     EXPECT_EQ(MyRef::offsetSize() * sizeof(int), m.allocatedBytes());
     EXPECT_EQ(5 * sizeof(int), m.usedBytes());
     EXPECT_EQ(0 * sizeof(int), m.deadBytes());
     EXPECT_EQ(5 * sizeof(int), m.allocatedBytesOnHold());
-    s.trimHoldLists(101);
+    s.reclaim_memory(101);
 }
 
 TEST(DataStoreTest, require_that_we_can_disable_elemement_hold_list)
@@ -523,8 +513,8 @@ TEST(DataStoreTest, require_that_we_can_disable_elemement_hold_list)
     EXPECT_EQ(4 * sizeof(int), m.usedBytes());
     EXPECT_EQ(2 * sizeof(int), m.deadBytes());
     EXPECT_EQ(1 * sizeof(int), m.allocatedBytesOnHold());
-    s.transferHoldLists(100);
-    s.trimHoldLists(101);
+    s.assign_generation(100);
+    s.reclaim_memory(101);
 }
 
 using IntGrowStore = GrowStore<int, EntryRefT<24>>;
@@ -644,9 +634,9 @@ TEST(DataStoreTest, can_set_memory_allocator)
         s.switch_primary_buffer();
         EXPECT_EQ(AllocStats(3, 0), stats);
         s.holdBuffer(0);
-        s.transferHoldLists(10);
+        s.assign_generation(10);
         EXPECT_EQ(AllocStats(3, 0), stats);
-        s.trimHoldLists(11);
+        s.reclaim_memory(11);
         EXPECT_EQ(AllocStats(3, 2), stats);
     }
     EXPECT_EQ(AllocStats(3, 3), stats);
@@ -655,7 +645,7 @@ TEST(DataStoreTest, can_set_memory_allocator)
 namespace {
 
 void
-assertBuffers(BufferStats exp_buffers, size_t num_arrays_for_new_buffer)
+assertBuffers(BufferIds exp_buffers, size_t num_arrays_for_new_buffer)
 {
     EXPECT_EQ(exp_buffers, IntGrowStore(1, 1, 1024, num_arrays_for_new_buffer).getBuffers(exp_buffers.size()));
 }
@@ -680,7 +670,7 @@ TEST(DataStoreTest, control_static_sizes) {
 
 namespace {
 
-void test_free_element_to_held_buffer(bool direct, bool before_hold_buffer)
+void test_free_element_to_held_buffer(bool before_hold_buffer)
 {
     MyStore s;
     auto ref = s.addEntry(1);
@@ -689,45 +679,27 @@ void test_free_element_to_held_buffer(bool direct, bool before_hold_buffer)
     EXPECT_EQ(1u, s.primary_buffer_id());
     
     if (before_hold_buffer) {
-        if (direct) {
-            s.freeElem(ref, 1);
-        } else {
-            s.holdElem(ref, 1);
-        }
+        s.holdElem(ref, 1);
     }
     s.holdBuffer(0); // hold last buffer
     if (!before_hold_buffer) {
-        if (direct) {
-            ASSERT_DEATH({ s.freeElem(ref, 1); }, "state.isOnHold\\(\\) && was_held");
-        } else {
-            ASSERT_DEATH({ s.holdElem(ref, 1); }, "state.isActive\\(\\)");
-        }
+        ASSERT_DEATH({ s.holdElem(ref, 1); }, "isActive\\(\\)");
     }
-    s.transferHoldLists(100);
-    s.trimHoldLists(101);
+    s.assign_generation(100);
+    s.reclaim_memory(101);
 }
 
-}
-
-TEST(DataStoreTest, free_to_active_then_held_buffer_is_ok)
-{
-    test_free_element_to_held_buffer(true, true);
 }
 
 TEST(DataStoreTest, hold_to_active_then_held_buffer_is_ok)
 {
-    test_free_element_to_held_buffer(false, true);
+    test_free_element_to_held_buffer(true);
 }
 
 #ifndef NDEBUG
-TEST(DataStoreDeathTest, free_to_held_buffer_is_not_ok)
-{
-    test_free_element_to_held_buffer(true, false);
-}
-
 TEST(DataStoreDeathTest, hold_to_held_buffer_is_not_ok)
 {
-    test_free_element_to_held_buffer(false, false);
+    test_free_element_to_held_buffer(false);
 }
 #endif
 

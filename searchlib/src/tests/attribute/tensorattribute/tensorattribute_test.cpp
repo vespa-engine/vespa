@@ -221,11 +221,11 @@ public:
         auto vector = _vectors.get_vector(docid).typify<double>();
         _removes.emplace_back(docid, DoubleVector(vector.begin(), vector.end()));
     }
-    void transfer_hold_lists(generation_t current_gen) override {
+    void assign_generation(generation_t current_gen) override {
         _transfer_gen = current_gen;
     }
-    void trim_hold_lists(generation_t first_used_gen) override {
-        _trim_gen = first_used_gen;
+    void reclaim_memory(generation_t oldest_used_gen) override {
+        _trim_gen = oldest_used_gen;
     }
     bool consider_compact(const CompactionStrategy&) override {
         return false;
@@ -350,28 +350,11 @@ struct Fixture {
     vespalib::ThreadStackExecutor _executor;
     bool _denseTensors;
     FixtureTraits _traits;
+    vespalib::string _mmap_allocator_base_dir;
 
-    Fixture(const vespalib::string &typeSpec,
-            FixtureTraits traits = FixtureTraits())
-        : _dir_handler(test_dir),
-          _cfg(BasicType::TENSOR, CollectionType::SINGLE),
-          _name(attr_name),
-          _typeSpec(typeSpec),
-          _index_factory(),
-          _tensorAttr(),
-          _attr(),
-          _executor(1, 0x10000),
-          _denseTensors(false),
-          _traits(traits)
-    {
-        if (traits.enable_hnsw_index) {
-            _cfg.set_distance_metric(DistanceMetric::Euclidean);
-            _cfg.set_hnsw_index_params(HnswIndexParams(4, 20, DistanceMetric::Euclidean));
-        }
-        setup();
-    }
+    Fixture(const vespalib::string &typeSpec, FixtureTraits traits = FixtureTraits());
 
-    ~Fixture() {}
+    ~Fixture();
 
     void setup() {
         _cfg.setTensorType(ValueType::from_spec(_typeSpec));
@@ -545,8 +528,35 @@ struct Fixture {
     void testEmptyTensor();
     void testOnHoldAccounting();
     void test_populate_address_space_usage();
+    void test_mmap_file_allocator();
 };
 
+Fixture::Fixture(const vespalib::string &typeSpec, FixtureTraits traits)
+    : _dir_handler(test_dir),
+      _cfg(BasicType::TENSOR, CollectionType::SINGLE),
+      _name(attr_name),
+      _typeSpec(typeSpec),
+      _index_factory(),
+      _tensorAttr(),
+      _attr(),
+      _executor(1, 0x10000),
+      _denseTensors(false),
+      _traits(traits),
+      _mmap_allocator_base_dir("mmap-file-allocator-factory-dir")
+{
+    if (traits.enable_hnsw_index) {
+        _cfg.set_distance_metric(DistanceMetric::Euclidean);
+        _cfg.set_hnsw_index_params(HnswIndexParams(4, 20, DistanceMetric::Euclidean));
+    }
+    vespalib::alloc::MmapFileAllocatorFactory::instance().setup(_mmap_allocator_base_dir);
+    setup();
+}
+
+Fixture::~Fixture()
+{
+    vespalib::alloc::MmapFileAllocatorFactory::instance().setup("");
+    std::filesystem::remove_all(std::filesystem::path(_mmap_allocator_base_dir));
+}
 
 void
 Fixture::set_example_tensors()
@@ -750,6 +760,23 @@ Fixture::test_populate_address_space_usage()
     }
 }
 
+void
+Fixture::test_mmap_file_allocator()
+{
+    std::filesystem::path allocator_dir(_mmap_allocator_base_dir + "/0.my_attr");
+    if (!_traits.use_mmap_file_allocator) {
+        EXPECT_FALSE(std::filesystem::is_directory(allocator_dir));
+    } else {
+        EXPECT_TRUE(std::filesystem::is_directory(allocator_dir));
+        int entry_cnt = 0;
+        for (auto& entry : std::filesystem::directory_iterator(allocator_dir)) {
+            EXPECT_LESS(0u, entry.file_size());
+            ++entry_cnt;
+        }
+        EXPECT_LESS(0, entry_cnt);
+    }
+}
+
 template <class MakeFixture>
 void testAll(MakeFixture &&f)
 {
@@ -761,11 +788,17 @@ void testAll(MakeFixture &&f)
     TEST_DO(f()->testEmptyTensor());
     TEST_DO(f()->testOnHoldAccounting());
     TEST_DO(f()->test_populate_address_space_usage());
+    TEST_DO(f()->test_mmap_file_allocator());
 }
 
 TEST("Test sparse tensors with generic tensor attribute")
 {
     testAll([]() { return std::make_shared<Fixture>(sparseSpec); });
+}
+
+TEST("Test sparse tensors with generic tensor attribute, paged")
+{
+    testAll([]() { return std::make_shared<Fixture>(sparseSpec, FixtureTraits().mmap_file_allocator()); });
 }
 
 TEST("Test sparse tensors with direct tensor attribute")
@@ -778,9 +811,19 @@ TEST("Test dense tensors with generic tensor attribute")
     testAll([]() { return std::make_shared<Fixture>(denseSpec); });
 }
 
+TEST("Test dense tensors with generic tensor attribute, paged")
+{
+    testAll([]() { return std::make_shared<Fixture>(denseSpec, FixtureTraits().mmap_file_allocator()); });
+}
+
 TEST("Test dense tensors with dense tensor attribute")
 {
     testAll([]() { return std::make_shared<Fixture>(denseSpec, FixtureTraits().dense()); });
+}
+
+TEST("Test dense tensors with dense tensor attribute, paged")
+{
+    testAll([]() { return std::make_shared<Fixture>(denseSpec, FixtureTraits().dense().mmap_file_allocator()); });
 }
 
 TEST_F("Hnsw index is NOT instantiated in dense tensor attribute by default",
@@ -1174,19 +1217,6 @@ TEST_F("NN blueprint do NOT want global filter when NOT having index (implicit b
 {
     auto bp = f.make_blueprint();
     EXPECT_FALSE(bp->getState().want_global_filter());
-}
-
-TEST("Dense tensor attribute with paged flag uses mmap file allocator")
-{
-    vespalib::string basedir("mmap-file-allocator-factory-dir");
-    vespalib::alloc::MmapFileAllocatorFactory::instance().setup(basedir);
-    {
-        Fixture f(vec_2d_spec, FixtureTraits().dense().mmap_file_allocator());
-        vespalib::string allocator_dir(basedir + "/0.my_attr");
-        EXPECT_TRUE(std::filesystem::is_directory(std::filesystem::path(allocator_dir)));
-    }
-    vespalib::alloc::MmapFileAllocatorFactory::instance().setup("");
-    std::filesystem::remove_all(std::filesystem::path(basedir));
 }
 
 TEST_MAIN() { TEST_RUN_ALL(); }

@@ -1,6 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.application.preprocessor;
 
+import com.yahoo.config.provision.Tags;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import org.xml.sax.SAXException;
@@ -18,11 +19,13 @@ public class ApplicationPreprocessorTest {
 
     // Basic test just to check that instantiation and run() works. Unit testing is in config-application-package
     @Test
-    void basic() throws ParserConfigurationException, TransformerException, SAXException, IOException {
+    void basic() throws IOException {
         ApplicationPreprocessor preprocessor = new ApplicationPreprocessor(new File("src/test/resources/simple"),
-            Optional.of(newFolder(outputDir, "basic")),
-            Optional.empty(),
-            Optional.empty());
+                                                                           Optional.of(newFolder(outputDir, "basic")),
+                                                                           Optional.empty(),
+                                                                           Optional.empty(),
+                                                                           Optional.empty(),
+                                                                           Tags.empty());
         preprocessor.run();
     }
 

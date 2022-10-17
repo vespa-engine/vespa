@@ -28,7 +28,7 @@ Allocator<EntryT, RefT>::alloc(Args && ... args)
     RefT ref(oldBufferSize, buffer_id);
     EntryT *entry = _store.getEntry<EntryT>(ref);
     new (static_cast<void *>(entry)) EntryT(std::forward<Args>(args)...);
-    state.pushed_back(1);
+    state.stats().pushed_back(1);
     return HandleType(ref, entry);
 }
 
@@ -48,7 +48,7 @@ Allocator<EntryT, RefT>::allocArray(ConstArrayRef array)
     for (size_t i = 0; i < array.size(); ++i) {
         new (static_cast<void *>(buf + i)) EntryT(array[i]);
     }
-    state.pushed_back(array.size());
+    state.stats().pushed_back(array.size());
     return HandleType(ref, buf);
 }
 
@@ -68,7 +68,7 @@ Allocator<EntryT, RefT>::allocArray(size_t size)
     for (size_t i = 0; i < size; ++i) {
         new (static_cast<void *>(buf + i)) EntryT();
     }
-    state.pushed_back(size);
+    state.stats().pushed_back(size);
     return HandleType(ref, buf);
 }
 

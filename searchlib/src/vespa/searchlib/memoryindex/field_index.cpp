@@ -69,12 +69,12 @@ FieldIndex<interleaved_features>::~FieldIndex()
     }
     _postingListStore.clearBuilder();
     freeze();   // Flush all pending posting list tree freezes
-    transferHoldLists();
+    assign_generation();
     _dict.clear();  // Clear dictionary
     freeze();   // Flush pending freeze for dictionary tree.
-    transferHoldLists();
+    assign_generation();
     incGeneration();
-    trimHoldLists();
+    reclaim_memory();
 }
 
 template <bool interleaved_features>
@@ -103,9 +103,7 @@ template <bool interleaved_features>
 void
 FieldIndex<interleaved_features>::compactFeatures()
 {
-    std::vector<uint32_t> toHold;
-
-    toHold = _featureStore.startCompact();
+    auto compacting_buffers = _featureStore.start_compact();
     auto itr = _dict.begin();
     uint32_t packedIndex = _fieldId;
     for (; itr.valid(); ++itr) {
@@ -143,9 +141,9 @@ FieldIndex<interleaved_features>::compactFeatures()
         }
     }
     using generation_t = GenerationHandler::generation_t;
-    _featureStore.finishCompact(toHold);
+    compacting_buffers->finish();
     generation_t generation = _generationHandler.getCurrentGeneration();
-    _featureStore.transferHoldLists(generation);
+    _featureStore.assign_generation(generation);
 }
 
 template <bool interleaved_features>

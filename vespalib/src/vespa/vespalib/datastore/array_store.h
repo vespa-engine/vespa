@@ -10,6 +10,7 @@
 #include "entryref.h"
 #include "atomic_entry_ref.h"
 #include "i_compaction_context.h"
+#include "i_compactable.h"
 #include "large_array_buffer_type.h"
 #include "small_array_buffer_type.h"
 #include <vespa/vespalib/util/array.h>
@@ -28,7 +29,7 @@ namespace vespalib::datastore {
  * The max value of maxSmallArrayTypeId is (2^bufferBits - 1).
  */
 template <typename EntryT, typename RefT = EntryRefT<19>, typename TypeMapperT = ArrayStoreTypeMapper<EntryT> >
-class ArrayStore
+class ArrayStore : public ICompactable
 {
 public:
     using AllocSpec = ArrayStoreConfig::AllocSpec;
@@ -66,7 +67,7 @@ private:
 public:
     ArrayStore(const ArrayStoreConfig &cfg, std::shared_ptr<alloc::MemoryAllocator> memory_allocator);
     ArrayStore(const ArrayStoreConfig &cfg, std::shared_ptr<alloc::MemoryAllocator> memory_allocator, TypeMapper&& mapper);
-    ~ArrayStore();
+    ~ArrayStore() override;
     EntryRef add(const ConstArrayRef &array);
     ConstArrayRef get(EntryRef ref) const {
         if (!ref.valid()) {
@@ -104,6 +105,7 @@ public:
     }
 
     void remove(EntryRef ref);
+    EntryRef move_on_compact(EntryRef ref) override;
     ICompactionContext::UP compactWorst(CompactionSpec compaction_spec, const CompactionStrategy& compaction_strategy);
     vespalib::MemoryUsage getMemoryUsage() const { return _store.getMemoryUsage(); }
 
@@ -114,8 +116,8 @@ public:
     vespalib::AddressSpace addressSpaceUsage() const;
 
     // Pass on hold list management to underlying store
-    void transferHoldLists(generation_t generation) { _store.transferHoldLists(generation); }
-    void trimHoldLists(generation_t firstUsed) { _store.trimHoldLists(firstUsed); }
+    void assign_generation(generation_t current_gen) { _store.assign_generation(current_gen); }
+    void reclaim_memory(generation_t oldest_used_gen) { _store.reclaim_memory(oldest_used_gen); }
     vespalib::GenerationHolder &getGenerationHolder() { return _store.getGenerationHolder(); }
     void setInitializing(bool initializing) { _store.setInitializing(initializing); }
 

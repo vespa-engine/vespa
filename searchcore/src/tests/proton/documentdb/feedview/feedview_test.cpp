@@ -26,7 +26,7 @@
 #include <vespa/searchcore/proton/test/threading_service_observer.h>
 #include <vespa/searchcore/proton/test/transport_helper.h>
 #include <vespa/searchlib/attribute/attributefactory.h>
-#include <vespa/searchlib/index/empty_doc_builder.h>
+#include <vespa/searchlib/test/doc_builder.h>
 #include <vespa/searchcommon/attribute/config.h>
 #include <vespa/vespalib/util/destructor_callbacks.h>
 #include <vespa/vespalib/stllike/asciistream.h>
@@ -49,6 +49,7 @@ using vespalib::GateCallback;
 using search::SearchableStats;
 using search::index::schema::CollectionType;
 using search::index::schema::DataType;
+using search::test::DocBuilder;
 using searchcorespi::IndexSearchable;
 using storage::spi::BucketChecksum;
 using storage::spi::BucketInfo;
@@ -436,7 +437,7 @@ MyTransport::~MyTransport() = default;
 struct SchemaContext
 {
     Schema::SP      _schema;
-    EmptyDocBuilder _builder;
+    DocBuilder _builder;
     SchemaContext();
     ~SchemaContext();
     std::shared_ptr<const document::DocumentTypeRepo> getRepo() const { return _builder.get_repo_sp(); }
@@ -466,16 +467,16 @@ struct DocumentContext
     BucketId           bid;
     Timestamp          ts;
     typedef std::vector<DocumentContext> List;
-    DocumentContext(const vespalib::string &docId, uint64_t timestamp, EmptyDocBuilder &builder);
+    DocumentContext(const vespalib::string &docId, uint64_t timestamp, DocBuilder &builder);
     ~DocumentContext();
-    void addFieldUpdate(EmptyDocBuilder &builder, const vespalib::string &fieldName) {
+    void addFieldUpdate(DocBuilder &builder, const vespalib::string &fieldName) {
         const document::Field &field = builder.get_document_type().getField(fieldName);
         upd->addUpdate(document::FieldUpdate(field));
     }
     document::GlobalId gid() const { return doc->getId().getGlobalId(); }
 };
 
-DocumentContext::DocumentContext(const vespalib::string &docId, uint64_t timestamp, EmptyDocBuilder& builder)
+DocumentContext::DocumentContext(const vespalib::string &docId, uint64_t timestamp, DocBuilder& builder)
     : doc(builder.make_document(docId)),
       upd(std::make_shared<DocumentUpdate>(builder.get_repo(), builder.get_document_type(), doc->getId())),
       bid(BucketFactory::getNumBucketBits(), doc->getId().getGlobalId().convertToBucketId().getRawId()),
@@ -555,7 +556,7 @@ struct FixtureBase
         return getMetaStore().getMetaData(doc_.doc->getId().getGlobalId());
     }
 
-    EmptyDocBuilder &getBuilder() { return sc._builder; }
+    DocBuilder &getBuilder() { return sc._builder; }
 
     DocumentContext doc(const vespalib::string &docId, uint64_t timestamp) {
         return DocumentContext(docId, timestamp, getBuilder());

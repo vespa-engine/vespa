@@ -6,6 +6,7 @@ import com.yahoo.config.provision.CloudAccount;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.InstanceName;
 import com.yahoo.config.provision.RegionName;
+import com.yahoo.config.provision.Tags;
 
 import java.time.Duration;
 import java.time.Instant;
@@ -40,6 +41,7 @@ public class DeploymentInstanceSpec extends DeploymentSpec.Steps {
     /** The name of the instance this step deploys */
     private final InstanceName name;
 
+    private final Tags tags;
     private final DeploymentSpec.UpgradePolicy upgradePolicy;
     private final DeploymentSpec.RevisionTarget revisionTarget;
     private final DeploymentSpec.RevisionChange revisionChange;
@@ -55,6 +57,7 @@ public class DeploymentInstanceSpec extends DeploymentSpec.Steps {
     private final List<Endpoint> endpoints;
 
     public DeploymentInstanceSpec(InstanceName name,
+                                  Tags tags,
                                   List<DeploymentSpec.Step> steps,
                                   DeploymentSpec.UpgradePolicy upgradePolicy,
                                   DeploymentSpec.RevisionTarget revisionTarget,
@@ -70,6 +73,7 @@ public class DeploymentInstanceSpec extends DeploymentSpec.Steps {
                                   Instant now) {
         super(steps);
         this.name = Objects.requireNonNull(name);
+        this.tags = Objects.requireNonNull(tags);
         this.upgradePolicy = Objects.requireNonNull(upgradePolicy);
         Objects.requireNonNull(revisionTarget);
         Objects.requireNonNull(revisionChange);
@@ -93,6 +97,8 @@ public class DeploymentInstanceSpec extends DeploymentSpec.Steps {
     }
 
     public InstanceName name() { return name; }
+
+    public Tags tags() { return tags; }
 
     /**
      * Throws an IllegalArgumentException if any production deployment or test is declared multiple times,
@@ -267,12 +273,13 @@ public class DeploymentInstanceSpec extends DeploymentSpec.Steps {
     }
 
     int deployableHashCode() {
-        List<DeploymentSpec.DeclaredZone> zones = zones().stream().filter(zone -> zone.concerns(prod)).collect(toList());
-        Object[] toHash = new Object[zones.size() + 3];
+        List<DeploymentSpec.DeclaredZone> zones = zones().stream().filter(zone -> zone.concerns(prod)).toList();
+        Object[] toHash = new Object[zones.size() + 4];
         int i = 0;
         toHash[i++] = name;
         toHash[i++] = endpoints;
         toHash[i++] = globalServiceId;
+        toHash[i++] = tags;
         for (DeploymentSpec.DeclaredZone zone : zones)
             toHash[i++] = Objects.hash(zone, zone.athenzService());
 

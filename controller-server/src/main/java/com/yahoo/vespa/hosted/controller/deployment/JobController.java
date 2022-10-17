@@ -5,9 +5,9 @@ import com.google.common.collect.ImmutableSortedMap;
 import com.yahoo.component.Version;
 import com.yahoo.component.VersionCompatibility;
 import com.yahoo.concurrent.UncheckedTimeoutException;
-import com.yahoo.config.application.api.DeploymentSpec.UpgradePolicy;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.SystemName;
+import com.yahoo.config.provision.Tags;
 import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.transaction.Mutex;
 import com.yahoo.vespa.hosted.controller.Application;
@@ -52,6 +52,7 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.Deque;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.NavigableMap;
@@ -126,7 +127,7 @@ public class JobController {
         this.curator = controller.curator();
         this.logs = new BufferedLogStore(curator, controller.serviceRegistry().runDataStore());
         this.cloud = controller.serviceRegistry().testerCloud();
-        this.metric = new JobMetrics(controller.metric(), controller::system);
+        this.metric = new JobMetrics(controller.metric());
     }
 
     public TesterCloud cloud() { return cloud; }
@@ -320,15 +321,13 @@ public class JobController {
     public List<ApplicationId> instances() {
         return controller.applications().readable().stream()
                          .flatMap(application -> application.instances().values().stream())
-                         .map(Instance::id)
-                         .collect(toUnmodifiableList());
+                         .map(Instance::id).toList();
     }
 
     /** Returns all job types which have been run for the given application. */
     private List<JobType> jobs(ApplicationId id) {
         return JobType.allIn(controller.zoneRegistry()).stream()
-                      .filter(type -> last(id, type).isPresent())
-                      .collect(toUnmodifiableList());
+                      .filter(type -> last(id, type).isPresent()).toList();
     }
 
     /** Returns an immutable map of all known runs for the given application and job type. */
@@ -339,9 +338,8 @@ public class JobController {
     /** Lists the start time of non-redeployment runs of the given job, in order of increasing age. */
     public List<Instant> jobStarts(JobId id) {
         return runs(id).descendingMap().values().stream()
-                       .filter(run -> ! run.isRedeployment())
-                       .map(Run::start)
-                       .collect(toUnmodifiableList());
+                       .filter(run -> !run.isRedeployment())
+                       .map(Run::start).toList();
     }
 
     /** Returns when given deployment last started deploying, falling back to time of deployment if it cannot be determined from job runs */
@@ -697,7 +695,7 @@ public class JobController {
 
         controller.applications().lockApplicationOrThrow(TenantAndApplicationId.from(id), application -> {
             if ( ! application.get().instances().containsKey(id.instance()))
-                application = controller.applications().withNewInstance(application, id);
+                application = controller.applications().withNewInstance(application, id, Tags.empty());
             // TODO(mpolden): Enable for public CD once all tests have been updated
             if (controller.system() != SystemName.PublicCd) {
                 controller.applications().validatePackage(applicationPackage, application.get());
@@ -767,8 +765,16 @@ public class JobController {
                 .filter(versions::contains) // Don't deploy versions that are no longer known.
                 .ifPresent(versions::add);
 
-        if (versions.isEmpty())
-            throw new IllegalStateException("no deployable platform version found in the system");
+        // Remove all versions that are older than the compile version.
+        versions.removeIf(version -> applicationPackage.compileVersion().map(version::isBefore).orElse(false));
+        if (versions.isEmpty()) {
+            // Fall back to the newest deployable version, if all the ones with normal confidence were too old.
+            Iterator<VespaVersion> descending = reversed(versionStatus.deployableVersions()).iterator();
+            if ( ! descending.hasNext())
+                throw new IllegalStateException("no deployable platform version found in the system");
+            else
+                versions.add(descending.next().versionNumber());
+        }
 
         VersionCompatibility compatibility = controller.applications().versionCompatibility(id.applicationId());
         List<Version> compatibleVersions = new ArrayList<>();

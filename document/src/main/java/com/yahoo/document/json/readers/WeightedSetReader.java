@@ -10,12 +10,14 @@ import static com.yahoo.document.json.readers.JsonParserHelpers.expectObjectStar
 
 
 public class WeightedSetReader {
+
     public static void fillWeightedSet(TokenBuffer buffer, DataType valueType, @SuppressWarnings("rawtypes") WeightedSet weightedSet) {
         int initNesting = buffer.nesting();
         expectObjectStart(buffer.currentToken());
         buffer.next();
         iterateThroughWeightedSet(buffer, initNesting, valueType, weightedSet);
     }
+
     public static void fillWeightedSetUpdate(TokenBuffer buffer, int initNesting, DataType valueType, @SuppressWarnings("rawtypes") WeightedSet weightedSet) {
         iterateThroughWeightedSet(buffer, initNesting, valueType, weightedSet);
     }
@@ -29,4 +31,5 @@ public class WeightedSetReader {
             buffer.next();
         }
     }
+
 }

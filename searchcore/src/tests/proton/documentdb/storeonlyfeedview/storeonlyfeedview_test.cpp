@@ -2,6 +2,7 @@
 
 #include <vespa/document/base/documentid.h>
 #include <vespa/document/datatype/datatype.h>
+#include <vespa/document/fieldvalue/document.h>
 #include <vespa/searchcommon/common/schema.h>
 #include <vespa/searchcore/proton/server/putdonecontext.h>
 #include <vespa/searchcore/proton/server/removedonecontext.h>
@@ -13,7 +14,7 @@
 #include <vespa/searchcore/proton/test/mock_summary_adapter.h>
 #include <vespa/searchcore/proton/test/transport_helper.h>
 #include <vespa/searchcore/proton/test/thread_utils.h>
-#include <vespa/searchlib/index/docbuilder.h>
+#include <vespa/searchlib/test/doc_builder.h>
 #include <vespa/vespalib/util/destructor_callbacks.h>
 #include <vespa/vespalib/util/size_literals.h>
 #include <vespa/vespalib/testkit/testapp.h>
@@ -32,8 +33,8 @@ using namespace proton;
 using search::DocumentIdT;
 using vespalib::IDestructorCallback;
 using search::SerialNum;
-using search::index::DocBuilder;
 using search::index::Schema;
+using search::test::DocBuilder;
 using storage::spi::Timestamp;
 using vespalib::make_string;
 
@@ -59,9 +60,8 @@ public:
 };
 
 std::shared_ptr<const DocumentTypeRepo> myGetDocumentTypeRepo() {
-    Schema schema;
-    DocBuilder builder(schema);
-    std::shared_ptr<const DocumentTypeRepo> repo = builder.getDocumentTypeRepo();
+    DocBuilder builder;
+    std::shared_ptr<const DocumentTypeRepo> repo = builder.get_repo_sp();
     ASSERT_TRUE(repo.get());
     return repo;
 }

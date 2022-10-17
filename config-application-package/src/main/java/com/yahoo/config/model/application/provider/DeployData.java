@@ -2,6 +2,9 @@
 package com.yahoo.config.model.application.provider;
 
 import com.yahoo.config.provision.ApplicationId;
+import com.yahoo.config.provision.Tags;
+
+import java.util.Set;
 
 /**
  * Data generated or computed during deployment
@@ -11,6 +14,8 @@ import com.yahoo.config.provision.ApplicationId;
 public class DeployData {
 
     private final ApplicationId applicationId;
+
+    private final Tags tags;
 
     /** The absolute path to the directory holding the application */
     private final String deployedFromDir;
@@ -25,25 +30,16 @@ public class DeployData {
     private final long generation;
     private final long currentlyActiveGeneration;
 
-    // TODO: Remove when oldest version in use is 8.13
-    public DeployData(String ignored,
-                      String deployedFromDir,
-                      ApplicationId applicationId,
-                      Long deployTimestamp,
-                      boolean internalRedeploy,
-                      Long generation,
-                      long currentlyActiveGeneration) {
-        this(deployedFromDir, applicationId, deployTimestamp, internalRedeploy, generation, currentlyActiveGeneration);
-    }
-
     public DeployData(String deployedFromDir,
                       ApplicationId applicationId,
+                      Tags tags,
                       Long deployTimestamp,
                       boolean internalRedeploy,
                       Long generation,
                       long currentlyActiveGeneration) {
         this.deployedFromDir = deployedFromDir;
         this.applicationId = applicationId;
+        this.tags = tags;
         this.deployTimestamp = deployTimestamp;
         this.internalRedeploy = internalRedeploy;
         this.generation = generation;
@@ -61,5 +57,7 @@ public class DeployData {
     public long getCurrentlyActiveGeneration() { return currentlyActiveGeneration; }
 
     public ApplicationId getApplicationId() { return applicationId; }
+
+    public Tags getTags() { return tags; }
 
 }

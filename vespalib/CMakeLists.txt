@@ -42,6 +42,8 @@ vespa_define_module(
     src/tests/component
     src/tests/compress
     src/tests/compression
+    src/tests/coro/detached
+    src/tests/coro/lazy
     src/tests/cpu_usage
     src/tests/crc
     src/tests/crypto
@@ -54,6 +56,7 @@ vespa_define_module(
     src/tests/data/smart_buffer
     src/tests/datastore/array_store
     src/tests/datastore/array_store_config
+    src/tests/datastore/buffer_stats
     src/tests/datastore/buffer_type
     src/tests/datastore/compact_buffer_candidates
     src/tests/datastore/datastore
@@ -180,9 +183,9 @@ vespa_define_module(
     src/tests/util/bfloat16
     src/tests/util/cgroup_resource_limits
     src/tests/util/file_area_freelist
+    src/tests/util/generation_hold_list
     src/tests/util/generationhandler
     src/tests/util/generationhandler_stress
-    src/tests/util/generation_holder
     src/tests/util/hamming
     src/tests/util/md5
     src/tests/util/mmap_file_allocator
@@ -201,9 +204,13 @@ vespa_define_module(
     src/tests/fastlib/text
 
     LIBS
+    src/vespa/fastlib/io
+    src/vespa/fastlib/text
+    src/vespa/fastlib/text/apps
     src/vespa/vespalib
     src/vespa/vespalib/btree
     src/vespa/vespalib/component
+    src/vespa/vespalib/coro
     src/vespa/vespalib/crypto
     src/vespa/vespalib/data
     src/vespa/vespalib/data/slime
@@ -230,7 +237,4 @@ vespa_define_module(
     src/vespa/vespalib/time
     src/vespa/vespalib/trace
     src/vespa/vespalib/util
-    src/vespa/fastlib/io
-    src/vespa/fastlib/text
-    src/vespa/fastlib/text/apps
 )

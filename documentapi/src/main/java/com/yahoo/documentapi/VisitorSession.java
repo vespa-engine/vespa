@@ -4,10 +4,9 @@ package com.yahoo.documentapi;
 import com.yahoo.messagebus.Trace;
 
 /**
- * A session for tracking progress for and potentially receiving data from a
- * visitor.
+ * A session for tracking progress for and potentially receiving data from a visitor.
  *
- * @author <a href="mailto:thomasg@yahoo-inc.com">Thomas Gundersen</a>
+ * @author Thomas Gundersen
  */
 public interface VisitorSession extends VisitorControlSession {
     /**
@@ -15,21 +14,21 @@ public interface VisitorSession extends VisitorControlSession {
      *
      * @return True if visiting is done (either by error or success).
      */
-    public boolean isDone();
+    boolean isDone();
 
     /**
      * Retrieves the last progress token gotten for this visitor.
      *
      * @return The progress token.
      */
-    public ProgressToken getProgress();
+    ProgressToken getProgress();
 
     /**
      * Returns the tracing information so far about the visitor.
      *
      * @return Returns the trace.
      */
-    public Trace getTrace();
+    Trace getTrace();
 
     /**
      * Waits until visiting is done, or the given timeout (in ms) expires.
@@ -39,5 +38,5 @@ public interface VisitorSession extends VisitorControlSession {
      * @return True if visiting is done (either by error or success).
      * @throws InterruptedException If an interrupt signal was received while waiting.
      */
-    public boolean waitUntilDone(long timeoutMs) throws InterruptedException;
+    boolean waitUntilDone(long timeoutMs) throws InterruptedException;
 }

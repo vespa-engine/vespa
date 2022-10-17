@@ -5,6 +5,7 @@
 #include <vespa/eval/eval/fast_value.h>
 #include <vespa/eval/eval/value_codec.h>
 #include <vespa/eval/eval/value.h>
+#include <vespa/vespalib/objects/nbostream.h>
 
 using document::DeserializeException;
 using vespalib::eval::FastValueBuilderFactory;
@@ -23,12 +24,6 @@ std::unique_ptr<Value> deserialize_tensor(vespalib::nbostream &buffer)
     } catch (const vespalib::eval::DecodeValueException &e) {
         throw DeserializeException("tensor value decode failed", e, VESPA_STRLOC);
     }
-}
-
-std::unique_ptr<Value> deserialize_tensor(const void *data, size_t size)
-{
-    vespalib::nbostream wrapStream(data, size);
-    return deserialize_tensor(wrapStream);
 }
 
 } // namespace

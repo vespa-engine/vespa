@@ -28,7 +28,7 @@ RawAllocator<EntryT, RefT>::alloc(size_t numElems, size_t extraElems)
     assert((numElems % arraySize) == 0u);
     RefT ref((oldBufferSize / arraySize), buffer_id);
     EntryT *buffer = _store.getEntryArray<EntryT>(ref, arraySize);
-    state.pushed_back(numElems);
+    state.stats().pushed_back(numElems);
     return HandleType(ref, buffer);
 }
 

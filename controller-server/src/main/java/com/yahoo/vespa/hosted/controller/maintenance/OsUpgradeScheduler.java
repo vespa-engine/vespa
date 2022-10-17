@@ -55,6 +55,7 @@ public class OsUpgradeScheduler extends ControllerMaintainer {
 
     private boolean upgradingToNewMajor(CloudName cloud) {
         return controller().osVersionStatus().versionsIn(cloud).stream()
+                           .filter(version -> !version.isEmpty()) // Ignore empty/unknown versions
                            .map(Version::getMajor)
                            .distinct()
                            .count() > 1;

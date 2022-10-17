@@ -5,9 +5,14 @@
 #include "entry_ref_filter.h"
 #include "i_compactable.h"
 #include <vespa/vespalib/util/array.hpp>
+#include <vespa/vespalib/util/generation_hold_list.hpp>
 #include <vespa/vespalib/util/memoryusage.h>
 #include <cassert>
 #include <stdexcept>
+
+namespace vespalib {
+template class GenerationHoldList<uint32_t, false, true>;
+}
 
 namespace vespalib::datastore {
 
@@ -30,8 +35,7 @@ FixedSizeHashMap::FixedSizeHashMap(uint32_t modulo, uint32_t capacity, uint32_t 
       _free_head(no_node_idx),
       _free_count(0u),
       _hold_count(0u),
-      _hold_1_list(),
-      _hold_2_list(),
+      _hold_list(),
       _num_shards(num_shards)
 {
     _nodes.reserve(capacity);
@@ -49,7 +53,10 @@ FixedSizeHashMap::FixedSizeHashMap(uint32_t modulo, uint32_t capacity, uint32_t 
     }
 }
 
-FixedSizeHashMap::~FixedSizeHashMap() = default;
+FixedSizeHashMap::~FixedSizeHashMap()
+{
+    _hold_list.reclaim_all();
+}
 
 void
 FixedSizeHashMap::force_add(const EntryComparator& comp, const KvType& kv)
@@ -96,37 +103,6 @@ FixedSizeHashMap::add(const ShardedHashComparator & comp, std::function<EntryRef
     return _nodes[node_idx].get_kv();
 }
 
-void
-FixedSizeHashMap::transfer_hold_lists_slow(generation_t generation)
-{
-    auto &hold_2_list = _hold_2_list;
-    for (uint32_t node_idx : _hold_1_list) {
-        hold_2_list.push_back(std::make_pair(generation, node_idx));
-    }
-    _hold_1_list.clear();
-
-}
-
-
-void
-FixedSizeHashMap::trim_hold_lists_slow(generation_t first_used)
-{
-    while (!_hold_2_list.empty()) {
-        auto& first = _hold_2_list.front();
-        if (static_cast<sgeneration_t>(first.first - first_used) >= 0) {
-            break;
-        }
-        uint32_t node_idx = first.second;
-        auto& node = _nodes[node_idx];
-        node.get_next_node_idx().store(_free_head, std::memory_order_relaxed);
-        _free_head = node_idx;
-        ++_free_count;
-        --_hold_count;
-        node.on_free();
-        _hold_2_list.erase(_hold_2_list.begin());
-    }
-}
-
 FixedSizeHashMap::KvType*
 FixedSizeHashMap::remove(const ShardedHashComparator & comp)
 {
@@ -145,13 +121,26 @@ FixedSizeHashMap::remove(const ShardedHashComparator & comp)
             }
             --_count;
             ++_hold_count;
-            _hold_1_list.push_back(node_idx);
+            _hold_list.insert(node_idx);
             return &_nodes[node_idx].get_kv();
         }
         prev_node_idx = node_idx;
         node_idx = next_node_idx;
     }
     return nullptr;
+}
+
+void
+FixedSizeHashMap::reclaim_memory(generation_t oldest_used_gen)
+{
+    _hold_list.reclaim(oldest_used_gen, [this](uint32_t node_idx) {
+        auto& node = _nodes[node_idx];
+        node.get_next_node_idx().store(_free_head, std::memory_order_relaxed);
+        _free_head = node_idx;
+        ++_free_count;
+        --_hold_count;
+        node.on_free();
+    });
 }
 
 MemoryUsage
@@ -183,7 +172,7 @@ FixedSizeHashMap::foreach_key(const std::function<void(EntryRef)>& callback) con
 }
 
 void
-FixedSizeHashMap::move_keys(ICompactable& compactable, const EntryRefFilter &compacting_buffers)
+FixedSizeHashMap::move_keys_on_compact(ICompactable& compactable, const EntryRefFilter &compacting_buffers)
 {
     for (auto& chain_head : _chain_heads) {
         uint32_t node_idx = chain_head.load_relaxed();
@@ -192,7 +181,7 @@ FixedSizeHashMap::move_keys(ICompactable& compactable, const EntryRefFilter &com
             EntryRef old_ref = node.get_kv().first.load_relaxed();
             assert(old_ref.valid());
             if (compacting_buffers.has(old_ref)) {
-                EntryRef new_ref = compactable.move(old_ref);
+                EntryRef new_ref = compactable.move_on_compact(old_ref);
                 node.get_kv().first.store_release(new_ref);
             }
             node_idx = node.get_next_node_idx().load(std::memory_order_relaxed);

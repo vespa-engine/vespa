@@ -2,6 +2,7 @@
 package com.yahoo.vespa.hosted.controller.dns;
 
 import com.yahoo.vespa.hosted.controller.api.integration.dns.AliasTarget;
+import com.yahoo.vespa.hosted.controller.api.integration.dns.DirectTarget;
 import com.yahoo.vespa.hosted.controller.api.integration.dns.NameService;
 import com.yahoo.vespa.hosted.controller.api.integration.dns.Record;
 import com.yahoo.vespa.hosted.controller.api.integration.dns.RecordName;
@@ -28,8 +29,8 @@ public class CreateRecords implements NameServiceRequest {
         this.name = requireOneOf(Record::name, records);
         this.type = requireOneOf(Record::type, records);
         this.records = List.copyOf(Objects.requireNonNull(records, "records must be non-null"));
-        if (type != Record.Type.ALIAS && type != Record.Type.TXT) {
-            throw new IllegalArgumentException("Records of type " + type + "are not supported: " + records);
+        if (type != Record.Type.ALIAS && type != Record.Type.TXT && type != Record.Type.DIRECT) {
+            throw new IllegalArgumentException("Records of type " + type + " are not supported: " + records);
         }
     }
 
@@ -40,14 +41,18 @@ public class CreateRecords implements NameServiceRequest {
     @Override
     public void dispatchTo(NameService nameService) {
         switch (type) {
-            case ALIAS:
+            case ALIAS -> {
                 var targets = records.stream().map(Record::data).map(AliasTarget::unpack).collect(Collectors.toSet());
                 nameService.createAlias(name, targets);
-                break;
-            case TXT:
+            }
+            case DIRECT -> {
+                var targets = records.stream().map(Record::data).map(DirectTarget::unpack).collect(Collectors.toSet());
+                nameService.createDirect(name, targets);
+            }
+            case TXT -> {
                 var dataFields = records.stream().map(Record::data).collect(Collectors.toList());
                 nameService.createTxtRecords(name, dataFields);
-                break;
+            }
         }
     }
 

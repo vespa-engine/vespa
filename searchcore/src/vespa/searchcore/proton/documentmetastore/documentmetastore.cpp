@@ -72,17 +72,8 @@ private:
     uint32_t _version;
 
 public:
-    Reader(std::unique_ptr<FastOS_FileInterface> datFile)
-        : _datFile(std::move(datFile)),
-          _lidReader(&_datFile.file()),
-          _gidReader(&_datFile.file()),
-          _bucketUsedBitsReader(&_datFile.file()),
-          _timestampReader(&_datFile.file()),
-          _docIdLimit(0)
-    {
-        _docIdLimit = _datFile.header().getTag(DOCID_LIMIT).asInteger();
-        _version = _datFile.header().getTag(VERSION).asInteger();
-    }
+    explicit Reader(std::unique_ptr<FastOS_FileInterface> datFile);
+    ~Reader();
 
     uint32_t getDocIdLimit() const { return _docIdLimit; }
 
@@ -126,6 +117,19 @@ public:
     }
 };
 
+Reader::Reader(std::unique_ptr<FastOS_FileInterface> datFile)
+    : _datFile(std::move(datFile)),
+      _lidReader(&_datFile.file()),
+      _gidReader(&_datFile.file()),
+      _bucketUsedBitsReader(&_datFile.file()),
+      _timestampReader(&_datFile.file()),
+      _docIdLimit(0)
+{
+    _docIdLimit = _datFile.header().getTag(DOCID_LIMIT).asInteger();
+    _version = _datFile.header().getTag(VERSION).asInteger();
+}
+Reader::~Reader() = default;
+
 }
 
 namespace {
@@ -134,12 +138,12 @@ class ShrinkBlockHeld : public GenerationHeldBase
     DocumentMetaStore &_dms;
 
 public:
-    ShrinkBlockHeld(DocumentMetaStore &dms)
+    explicit ShrinkBlockHeld(DocumentMetaStore &dms)
         : GenerationHeldBase(0),
           _dms(dms)
     { }
 
-    ~ShrinkBlockHeld() {
+    ~ShrinkBlockHeld() override {
         _dms.unblockShrinkLidSpace();
     }
 };
@@ -224,7 +228,7 @@ DocumentMetaStore::onUpdateStat()
 {
     auto &compaction_strategy = getConfig().getCompactionStrategy();
     vespalib::MemoryUsage usage = _metaDataStore.getMemoryUsage();
-    usage.incAllocatedBytesOnHold(getGenerationHolder().getHeldBytes());
+    usage.incAllocatedBytesOnHold(getGenerationHolder().get_held_bytes());
     size_t bvSize = _lidAlloc.getUsedLidsSize();
     usage.incAllocatedBytes(bvSize);
     usage.incUsedBytes(bvSize);
@@ -241,20 +245,20 @@ DocumentMetaStore::onUpdateStat()
 }
 
 void
-DocumentMetaStore::onGenerationChange(generation_t generation)
+DocumentMetaStore::before_inc_generation(generation_t current_gen)
 {
     _gidToLidMap.getAllocator().freeze();
-    _gidToLidMap.getAllocator().transferHoldLists(generation - 1);
-    getGenerationHolder().transferHoldLists(generation - 1);
+    _gidToLidMap.getAllocator().assign_generation(current_gen);
+    getGenerationHolder().assign_generation(current_gen);
     updateStat(false);
 }
 
 void
-DocumentMetaStore::removeOldGenerations(generation_t firstUsed)
+DocumentMetaStore::reclaim_memory(generation_t oldest_used_gen)
 {
-    _gidToLidMap.getAllocator().trimHoldLists(firstUsed);
-    _lidAlloc.trimHoldLists(firstUsed);
-    getGenerationHolder().trimHoldLists(firstUsed);
+    _gidToLidMap.getAllocator().reclaim_memory(oldest_used_gen);
+    _lidAlloc.reclaim_memory(oldest_used_gen);
+    getGenerationHolder().reclaim(oldest_used_gen);
 }
 
 std::unique_ptr<search::AttributeSaver>
@@ -318,7 +322,7 @@ DocumentMetaStore::onLoad(vespalib::Executor *)
     _gidToLidMap.assign(treeBuilder);
     _gidToLidMap.getAllocator().freeze(); // create initial frozen tree
     generation_t generation = getGenerationHandler().getCurrentGeneration();
-    _gidToLidMap.getAllocator().transferHoldLists(generation);
+    _gidToLidMap.getAllocator().assign_generation(generation);
 
     setNumDocs(_metaDataStore.size());
     setCommittedDocIdLimit(_metaDataStore.size());
@@ -433,7 +437,7 @@ DocumentMetaStore::DocumentMetaStore(BucketDBOwnerSP bucketDB,
     setCommittedDocIdLimit(1u);         // lid 0 is reserved
     _gidToLidMap.getAllocator().freeze(); // create initial frozen tree
     generation_t generation = getGenerationHandler().getCurrentGeneration();
-    _gidToLidMap.getAllocator().transferHoldLists(generation);
+    _gidToLidMap.getAllocator().assign_generation(generation);
     updateStat(true);
 }
 
@@ -442,7 +446,7 @@ DocumentMetaStore::~DocumentMetaStore()
     // TODO: Properly notify about modified buckets when using shared bucket db
     // between document types
     unload();
-    getGenerationHolder().clearHoldLists();
+    getGenerationHolder().reclaim_all();
     assert(get_shrink_lid_space_blockers() == 0);
 }
 
@@ -748,12 +752,12 @@ DocumentMetaStore::getMetaData(const GlobalId &gid) const
 {
     DocId lid = 0;
     if (!getLid(gid, lid) || !validLid(lid)) {
-        return search::DocumentMetaData();
+        return {};
     }
     const RawDocumentMetaData &raw = getRawMetaData(lid);
     Timestamp timestamp(raw.getTimestamp());
     std::atomic_thread_fence(std::memory_order_acquire);
-    return search::DocumentMetaData(lid, timestamp, raw.getBucketId(), raw.getGid(), _subDbType == SubDbType::REMOVED);
+    return {lid, timestamp, raw.getBucketId(), raw.getGid(), _subDbType == SubDbType::REMOVED};
 }
 
 void
@@ -779,14 +783,7 @@ DocumentMetaStore::getMetaData(const BucketId &bucketId,
 LidUsageStats
 DocumentMetaStore::getLidUsageStats() const
 {
-    uint32_t docIdLimit = getCommittedDocIdLimit();
-    uint32_t numDocs = getNumUsedLids();
-    uint32_t lowestFreeLid = _lidAlloc.getLowestFreeLid();
-    uint32_t highestUsedLid = _lidAlloc.getHighestUsedLid();
-    return LidUsageStats(docIdLimit,
-                         numDocs,
-                         lowestFreeLid,
-                         highestUsedLid);
+    return {getCommittedDocIdLimit(), getNumUsedLids(), _lidAlloc.getLowestFreeLid(), _lidAlloc.getHighestUsedLid()};
 }
 
 Blueprint::UP
@@ -1009,7 +1006,7 @@ DocumentMetaStore::holdUnblockShrinkLidSpace()
 {
     assert(get_shrink_lid_space_blockers() > 0);
     auto hold = std::make_unique<ShrinkBlockHeld>(*this);
-    getGenerationHolder().hold(std::move(hold));
+    getGenerationHolder().insert(std::move(hold));
     incGeneration();
 }
 
@@ -1064,7 +1061,7 @@ DocumentMetaStore::getBucketOf(const vespalib::GenerationHandler::Guard &, uint3
     if (__builtin_expect(validLidFast(lid, getCommittedDocIdLimit()), true)) {
         return getRawMetaData(lid).getBucketId();
     }
-    return BucketId();
+    return {};
 }
 
 vespalib::GenerationHandler::Guard
@@ -1092,6 +1089,26 @@ DocumentMetaStore::foreach(const search::IGidToLidMapperVisitor &visitor) const
 {
     beginFrozen().foreach_key([this,&visitor](GidToLidMapKey key)
                               { visitor.visit(getRawMetaData(key.get_lid()).getGid(), key.get_lid()); });
+}
+
+long
+DocumentMetaStore::onSerializeForAscendingSort(DocId lid, void * serTo, long available, const search::common::BlobConverter *) const {
+    if ( ! validLid(lid)) return 0;
+    if (available < document::GlobalId::LENGTH) return -1;
+    memcpy(serTo, getRawMetaData(lid).getGid().get(), document::GlobalId::LENGTH);
+    return document::GlobalId::LENGTH;
+}
+
+long
+DocumentMetaStore::onSerializeForDescendingSort(DocId lid, void * serTo, long available, const search::common::BlobConverter *) const {
+    if ( ! validLid(lid)) return 0;
+    if (available < document::GlobalId::LENGTH) return -1;
+    const auto * src(static_cast<const uint8_t *>(getRawMetaData(lid).getGid().get()));
+    auto * dst = static_cast<uint8_t *>(serTo);
+    for (size_t i(0); i < document::GlobalId::LENGTH; ++i) {
+        dst[i] = 0xff - src[i];
+    }
+    return document::GlobalId::LENGTH;
 }
 
 }  // namespace proton

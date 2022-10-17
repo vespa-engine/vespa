@@ -40,7 +40,7 @@ public:
     ~DirectTensorStore() override;
     using RefType = TensorStoreType::RefType;
 
-    const vespalib::eval::Value * get_tensor(EntryRef ref) const {
+    const vespalib::eval::Value * get_tensor_ptr(EntryRef ref) const {
         if (!ref.valid()) {
             return nullptr;
         }
@@ -49,9 +49,13 @@ public:
     EntryRef store_tensor(std::unique_ptr<vespalib::eval::Value> tensor);
 
     void holdTensor(EntryRef ref) override;
-    EntryRef move(EntryRef ref) override;
+    EntryRef move_on_compact(EntryRef ref) override;
     vespalib::MemoryUsage update_stat(const vespalib::datastore::CompactionStrategy& compaction_strategy) override;
     std::unique_ptr<vespalib::datastore::ICompactionContext> start_compact(const vespalib::datastore::CompactionStrategy& compaction_strategy) override;
+    EntryRef store_tensor(const vespalib::eval::Value& tensor) override;
+    EntryRef store_encoded_tensor(vespalib::nbostream& encoded) override;
+    std::unique_ptr<vespalib::eval::Value> get_tensor(EntryRef ref) const override;
+    bool encode_stored_tensor(EntryRef ref, vespalib::nbostream& target) const override;
 };
 
 }

@@ -18,7 +18,7 @@ public class SystemInfoTest {
         ApplicationId application = new ApplicationId("tenant1", "application1", "instance1");
         Zone zone = new Zone(Environment.dev, "us-west-1");
         Cloud cloud = new Cloud("aws");
-        Cluster cluster = new Cluster(1, List.of());
+        Cluster cluster = new Cluster("clusterId", 1, List.of());
         Node node = new Node(0);
 
         SystemInfo info = new SystemInfo(application, zone, cloud, cluster, node);
@@ -59,9 +59,11 @@ public class SystemInfoTest {
 
     @Test
     void testCluster() {
+        String id = "clusterId";
         int size = 1;
         var indices = List.of(1);
-        Cluster cluster = new Cluster(size, indices);
+        Cluster cluster = new Cluster("clusterId", size, indices);
+        assertEquals(id, cluster.id());
         assertEquals(size, cluster.size());
         assertEquals(indices, cluster.indices());
     }

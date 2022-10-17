@@ -3,6 +3,7 @@ package com.yahoo.jdisc.http.server.jetty;
 
 import com.yahoo.jdisc.Metric;
 import com.yahoo.jdisc.http.ConnectorConfig;
+import org.eclipse.jetty.http.HttpCompliance;
 import org.eclipse.jetty.io.ConnectionStatistics;
 import org.eclipse.jetty.server.ConnectionFactory;
 import org.eclipse.jetty.server.Server;
@@ -50,6 +51,12 @@ class JDiscServerConnector extends ServerConnector {
         }
         addBean(connectionLogger);
         addBean(connectionMetricAggregator);
+        setPort(config.listenPort());
+        setName(config.name());
+        setAcceptQueueSize(config.acceptQueueSize());
+        setReuseAddress(config.reuseAddress());
+        setIdleTimeout((long) (config.idleTimeout() * 1000));
+        addBean(HttpCompliance.RFC7230);
     }
 
     @Override

@@ -3,6 +3,8 @@ package com.yahoo.vespa.hosted.provision.os;
 
 import com.yahoo.component.Version;
 import com.yahoo.config.provision.ApplicationId;
+import com.yahoo.config.provision.Cloud;
+import com.yahoo.config.provision.CloudName;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.HostSpec;
 import com.yahoo.config.provision.NodeResources;
@@ -96,7 +98,7 @@ public class OsVersionsTest {
     public void max_active_upgrades() {
         int totalNodes = 20;
         int maxActiveUpgrades = 5;
-        var versions = new OsVersions(tester.nodeRepository(), false, maxActiveUpgrades);
+        var versions = new OsVersions(tester.nodeRepository(), Cloud.defaultCloud(), maxActiveUpgrades);
         provisionInfraApplication(totalNodes);
         Supplier<NodeList> hostNodes = () -> tester.nodeRepository().nodes().list().state(Node.State.active).hosts();
 
@@ -161,7 +163,7 @@ public class OsVersionsTest {
 
     @Test
     public void upgrade_by_retiring() {
-        var versions = new OsVersions(tester.nodeRepository(), true, Integer.MAX_VALUE);
+        var versions = new OsVersions(tester.nodeRepository(), Cloud.builder().dynamicProvisioning(true).build(), Integer.MAX_VALUE);
         var clock = (ManualClock) tester.nodeRepository().clock();
         int hostCount = 10;
         // Provision hosts and children
@@ -229,7 +231,7 @@ public class OsVersionsTest {
 
     @Test
     public void upgrade_by_retiring_everything_at_once() {
-        var versions = new OsVersions(tester.nodeRepository(), true, Integer.MAX_VALUE);
+        var versions = new OsVersions(tester.nodeRepository(), Cloud.builder().dynamicProvisioning(true).build(), Integer.MAX_VALUE);
         int hostCount = 3;
         provisionInfraApplication(hostCount, infraApplication, NodeType.confighost);
         Supplier<NodeList> hostNodes = () -> tester.nodeRepository().nodes().list()
@@ -254,7 +256,7 @@ public class OsVersionsTest {
     @Test
     public void upgrade_by_rebuilding() {
         tester.flagSource().withIntFlag(PermanentFlags.MAX_REBUILDS.id(), 1);
-        var versions = new OsVersions(tester.nodeRepository(), false, Integer.MAX_VALUE);
+        var versions = new OsVersions(tester.nodeRepository(), Cloud.defaultCloud(), Integer.MAX_VALUE);
         int hostCount = 10;
         provisionInfraApplication(hostCount + 1);
         Supplier<NodeList> hostNodes = () -> tester.nodeRepository().nodes().list().nodeType(NodeType.host);
@@ -333,7 +335,7 @@ public class OsVersionsTest {
 
         tester.flagSource().withIntFlag(PermanentFlags.MAX_REBUILDS.id(), maxRebuilds);
         tester.flagSource().withBooleanFlag(Flags.SOFT_REBUILD.id(), softRebuild);
-        var versions = new OsVersions(tester.nodeRepository(), true, Integer.MAX_VALUE);
+        var versions = new OsVersions(tester.nodeRepository(), Cloud.builder().dynamicProvisioning(true).name(CloudName.AWS).build(), Integer.MAX_VALUE);
 
         provisionInfraApplication(hostCount, infraApplication, NodeType.host, NodeResources.StorageType.remote);
         Supplier<NodeList> hostNodes = () -> tester.nodeRepository().nodes().list().nodeType(NodeType.host);
@@ -378,7 +380,7 @@ public class OsVersionsTest {
     @Test
     public void upgrade_by_rebuilding_multiple_host_types() {
         tester.flagSource().withIntFlag(PermanentFlags.MAX_REBUILDS.id(), 1);
-        var versions = new OsVersions(tester.nodeRepository(), false, Integer.MAX_VALUE);
+        var versions = new OsVersions(tester.nodeRepository(), Cloud.defaultCloud(), Integer.MAX_VALUE);
         int hostCount = 3;
         provisionInfraApplication(hostCount, infraApplication, NodeType.host);
         provisionInfraApplication(hostCount, ApplicationId.from("hosted-vespa", "confighost", "default"), NodeType.confighost);
@@ -411,7 +413,7 @@ public class OsVersionsTest {
     @Test
     public void upgrade_by_rebuilding_is_limited_by_stateful_clusters() {
         tester.flagSource().withIntFlag(PermanentFlags.MAX_REBUILDS.id(), 3);
-        var versions = new OsVersions(tester.nodeRepository(), false, Integer.MAX_VALUE);
+        var versions = new OsVersions(tester.nodeRepository(), Cloud.defaultCloud(), Integer.MAX_VALUE);
         int hostCount = 5;
         ApplicationId app1 = ApplicationId.from("t1", "a1", "i1");
         ApplicationId app2 = ApplicationId.from("t2", "a2", "i2");
@@ -489,7 +491,7 @@ public class OsVersionsTest {
     public void upgrade_by_rebuilding_limits_infrastructure_host() {
         int hostCount = 3;
         tester.flagSource().withIntFlag(PermanentFlags.MAX_REBUILDS.id(), hostCount);
-        var versions = new OsVersions(tester.nodeRepository(), false, Integer.MAX_VALUE);
+        var versions = new OsVersions(tester.nodeRepository(), Cloud.defaultCloud(), Integer.MAX_VALUE);
         provisionInfraApplication(hostCount, infraApplication, NodeType.proxyhost);
         Supplier<NodeList> hosts = () -> tester.nodeRepository().nodes().list().nodeType(NodeType.proxyhost);
 

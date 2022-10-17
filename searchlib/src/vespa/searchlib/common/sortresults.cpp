@@ -3,9 +3,9 @@
 #include "sortresults.h"
 #include "sort.h"
 #include <vespa/searchcommon/attribute/iattributecontext.h>
-#include <vespa/vespalib/util/array.hpp>
-
+#include <vespa/vespalib/util/array.h>
 #include <vespa/vespalib/util/issue.h>
+
 using vespalib::Issue;
 
 #include <vespa/log/log.h>
@@ -34,28 +34,25 @@ public:
     }
 };
 
-} // namespace <unnamed>
-
-
-inline void
-FastS_insertion_sort(RankedHit a[], uint32_t n)
-{
+void
+insertion_sort(RankedHit a[], uint32_t n) {
     uint32_t i, j;
     RankedHit swap;
     typedef RadixHelper<search::HitRank> RT;
     RT R;
 
-    for (i=1; i<n ; i++) {
+    for (i = 1; i < n; i++) {
         swap = a[i];
         j = i;
-        while (R(swap.getRank()) > R(a[j-1].getRank())) {
-            a[j] = a[j-1];
-            if (!(--j)) break;;
+        while (R(swap.getRank()) > R(a[j - 1].getRank())) {
+            a[j] = a[j - 1];
+            if (!(--j)) break;
         }
         a[j] = swap;
     }
 }
 
+}
 
 template<int SHIFT>
 void
@@ -133,14 +130,12 @@ FastS_radixsort(RankedHit a[], uint32_t n, uint32_t ntop)
             if ((last[i]-cnt[i])<ntop) {
                 if (cnt[i]>INSERT_SORT_LEVEL) {
                     if (last[i]<ntop) {
-                        FastS_radixsort<SHIFT - 8>(&a[last[i]-cnt[i]], cnt[i],
-                                cnt[i]);
+                        FastS_radixsort<SHIFT - 8>(&a[last[i]-cnt[i]], cnt[i], cnt[i]);
                     } else {
-                        FastS_radixsort<SHIFT - 8>(&a[last[i]-cnt[i]], cnt[i],
-                                cnt[i]+ntop-last[i]);
+                        FastS_radixsort<SHIFT - 8>(&a[last[i]-cnt[i]], cnt[i], cnt[i]+ntop-last[i]);
                     }
                 } else if (cnt[i]>1) {
-                        FastS_insertion_sort(&a[last[i]-cnt[i]], cnt[i]);
+                    insertion_sort(&a[last[i]-cnt[i]], cnt[i]);
                 }
             }
         }
@@ -156,13 +151,13 @@ FastS_SortResults(RankedHit a[], uint32_t n, uint32_t ntop)
     if (n > INSERT_SORT_LEVEL) {
         FastS_radixsort<sizeof(search::HitRank)*8 - 8>(a, n, ntop);
     } else {
-        FastS_insertion_sort(a, n);
+        insertion_sort(a, n);
     }
 }
 
 //-----------------------------------------------------------------------------
 
-FastS_DefaultResultSorter FastS_DefaultResultSorter::__instance;
+FastS_DefaultResultSorter FastS_DefaultResultSorter::_instance;
 
 //-----------------------------------------------------------------------------
 
@@ -173,12 +168,13 @@ FastS_SortSpec::Add(IAttributeContext & vecMan, const SortInfo & sInfo)
         return false;
 
     uint32_t          type   = ASC_VECTOR;
-    const IAttributeVector * vector(NULL);
+    const IAttributeVector * vector(nullptr);
 
     if ((sInfo._field.size() == 6) && (sInfo._field == "[rank]")) {
         type = (sInfo._ascending) ? ASC_RANK : DESC_RANK;
     } else if ((sInfo._field.size() == 7) && (sInfo._field == "[docid]")) {
         type = (sInfo._ascending) ? ASC_DOCID : DESC_DOCID;
+        vector = vecMan.getAttribute(_documentmetastore);
     } else {
         type = (sInfo._ascending) ? ASC_VECTOR : DESC_VECTOR;
         vector = vecMan.getAttribute(sInfo._field);
@@ -220,16 +216,18 @@ FastS_SortSpec::initSortData(const RankedHit *hits, uint32_t n)
     freeSortData();
     size_t fixedWidth = 0;
     size_t variableWidth = 0;
-    for (auto iter = _vectors.begin(); iter != _vectors.end(); ++iter) {
-        if (iter->_type >= ASC_DOCID) { // doc id
-            fixedWidth += sizeof(uint32_t) + sizeof(uint16_t);
-        }else if (iter->_type >= ASC_RANK) { // rank value
+    for (const auto & vec : _vectors) {
+        if (vec._type >= ASC_DOCID) { // doc id
+            fixedWidth = (vec._vector != nullptr)
+                    ? vec._vector->getFixedWidth()
+                    : sizeof(uint32_t) + sizeof(uint16_t);
+        } else if (vec._type >= ASC_RANK) { // rank value
             fixedWidth += sizeof(search::HitRank);
         } else {
-            size_t numBytes = iter->_vector->getFixedWidth();
+            size_t numBytes = vec._vector->getFixedWidth();
             if (numBytes == 0) { // string
                 variableWidth += 11;
-            } else if (!iter->_vector->hasMultiValue()) {
+            } else if (!vec._vector->hasMultiValue()) {
                 fixedWidth += numBytes;
             }
         }
@@ -243,22 +241,30 @@ FastS_SortSpec::initSortData(const RankedHit *hits, uint32_t n)
 
     for (uint32_t i(0), idx(0); (i < n) && !_doom.hard_doom(); ++i) {
         uint32_t len = 0;
-        for (auto iter = _vectors.begin(); iter != _vectors.end(); ++iter) {
-            int written(0);
+        for (const auto & vec : _vectors) {
+            long written(0);
             if (available < std::max(sizeof(hits->_docId) + sizeof(_partitionId), sizeof(hits->_rankValue))) {
                 mySortData = realloc(n, variableWidth, available, dataSize, mySortData);
             }
             do {
-                switch (iter->_type) {
+                switch (vec._type) {
                 case ASC_DOCID:
-                    serializeForSort<convertForSort<uint32_t, true> >(hits[i].getDocId(), mySortData);
-                    serializeForSort<convertForSort<uint16_t, true> >(_partitionId, mySortData + sizeof(hits->_docId));
-                    written = sizeof(hits->_docId) + sizeof(_partitionId);
+                    if (vec._vector != nullptr) {
+                        written = vec._vector->serializeForAscendingSort(hits[i].getDocId(), mySortData, available, vec._converter);
+                    } else {
+                        serializeForSort<convertForSort<uint32_t, true> >(hits[i].getDocId(), mySortData);
+                        serializeForSort<convertForSort<uint16_t, true> >(_partitionId, mySortData + sizeof(hits->_docId));
+                        written = sizeof(hits->_docId) + sizeof(_partitionId);
+                    }
                     break;
                 case DESC_DOCID:
-                    serializeForSort<convertForSort<uint32_t, false> >(hits[i].getDocId(), mySortData);
-                    serializeForSort<convertForSort<uint16_t, false> >(_partitionId, mySortData + sizeof(hits->_docId));
-                    written = sizeof(hits->_docId) + sizeof(_partitionId);
+                    if (vec._vector != nullptr) {
+                        written = vec._vector->serializeForDescendingSort(hits[i].getDocId(), mySortData, available, vec._converter);
+                    } else {
+                        serializeForSort<convertForSort<uint32_t, false> >(hits[i].getDocId(), mySortData);
+                        serializeForSort<convertForSort<uint16_t, false> >(_partitionId, mySortData + sizeof(hits->_docId));
+                        written = sizeof(hits->_docId) + sizeof(_partitionId);
+                    }
                     break;
                 case ASC_RANK:
                     serializeForSort<convertForSort<search::HitRank, true> >(hits[i].getRank(), mySortData);
@@ -269,10 +275,10 @@ FastS_SortSpec::initSortData(const RankedHit *hits, uint32_t n)
                     written = sizeof(hits->_rankValue);
                     break;
                 case ASC_VECTOR:
-                    written = iter->_vector->serializeForAscendingSort(hits[i].getDocId(), mySortData, available, iter->_converter);
+                    written = vec._vector->serializeForAscendingSort(hits[i].getDocId(), mySortData, available, vec._converter);
                     break;
                 case DESC_VECTOR:
-                    written = iter->_vector->serializeForDescendingSort(hits[i].getDocId(), mySortData, available, iter->_converter);
+                    written = vec._vector->serializeForDescendingSort(hits[i].getDocId(), mySortData, available, vec._converter);
                     break;
                 }
                 if (written == -1) {
@@ -293,13 +299,13 @@ FastS_SortSpec::initSortData(const RankedHit *hits, uint32_t n)
     }
 }
 
-
-FastS_SortSpec::FastS_SortSpec(uint32_t partitionId, const Doom & doom, const ConverterFactory & ucaFactory) :
-    _partitionId(partitionId),
-    _doom(doom),
-    _ucaFactory(ucaFactory),
-    _sortSpec(),
-    _vectors()
+FastS_SortSpec::FastS_SortSpec(vespalib::stringref documentmetastore, uint32_t partitionId, const Doom & doom, const ConverterFactory & ucaFactory)
+    : _documentmetastore(documentmetastore),
+      _partitionId(partitionId),
+      _doom(doom),
+      _ucaFactory(ucaFactory),
+      _sortSpec(),
+      _vectors()
 { }
 
 
@@ -308,7 +314,6 @@ FastS_SortSpec::~FastS_SortSpec()
     freeSortData();
 }
 
-
 bool
 FastS_SortSpec::Init(const string & sortStr, IAttributeContext & vecMan)
 {
@@ -316,7 +321,7 @@ FastS_SortSpec::Init(const string & sortStr, IAttributeContext & vecMan)
     bool retval(true);
     try {
         _sortSpec = SortSpec(sortStr, _ucaFactory);
-        for (SortSpec::const_iterator it(_sortSpec.begin()), mt(_sortSpec.end()); retval && (it < mt); it++) {
+        for (auto it(_sortSpec.begin()); retval && (it != _sortSpec.end()); it++) {
             retval = Add(vecMan, *it);
         }
     } catch (const std::exception & e) {
@@ -374,26 +379,11 @@ FastS_SortSpec::initWithoutSorting(const RankedHit * hits, uint32_t hitCnt)
     initSortData(hits, hitCnt);
 }
 
-inline int
-FastS_SortSpec::Compare(const FastS_SortSpec *self, const SortData &a,
-                        const SortData &b)
-{
-    const uint8_t * ref = self->_binarySortData.data();
-    uint32_t len = a._len < b._len ? a._len : b._len;
-    int retval = memcmp(ref + a._idx,
-                        ref + b._idx, len);
-    if (retval < 0) {
-        return -1;
-    } else if (retval > 0) {
-        return 1;
-    }
-    return 0;
-}
 
 class StdSortDataCompare
 {
 public:
-    StdSortDataCompare(const uint8_t * s) : _sortSpec(s) { }
+    explicit StdSortDataCompare(const uint8_t * s) : _sortSpec(s) { }
     bool operator() (const FastS_SortSpec::SortData & x, const FastS_SortSpec::SortData & y) const {
         return cmp(x, y) < 0;
     }
@@ -409,7 +399,7 @@ private:
 class SortDataRadix
 {
 public:
-    SortDataRadix(const uint8_t * s) : _data(s) { }
+    explicit SortDataRadix(const uint8_t * s) : _data(s) { }
     uint32_t operator () (FastS_SortSpec::SortData & a) const {
         uint32_t r(0);
         uint32_t left(a._len - a._pos);
@@ -448,10 +438,11 @@ void
 FastS_SortSpec::sortResults(RankedHit a[], uint32_t n, uint32_t topn)
 {
     initSortData(a, n);
-    SortData * sortData = _sortDataArray.data();
     {
+        SortData * sortData = _sortDataArray.data();
+        const uint8_t * binary = _binarySortData.data();
         Array<uint32_t> radixScratchPad(n, Alloc::alloc(0, MMAP_LIMIT));
-        search::radix_sort(SortDataRadix(_binarySortData.data()), StdSortDataCompare(_binarySortData.data()), SortDataEof(), 1, sortData, n, radixScratchPad.data(), 0, 96, topn);
+        search::radix_sort(SortDataRadix(binary), StdSortDataCompare(binary), SortDataEof(), 1, sortData, n, radixScratchPad.data(), 0, 96, topn);
     }
     for (uint32_t i(0), m(_sortDataArray.size()); i < m; ++i) {
         a[i]._rankValue = _sortDataArray[i]._rankValue;

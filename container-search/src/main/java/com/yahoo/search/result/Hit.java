@@ -16,6 +16,7 @@ import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.function.BiConsumer;
@@ -50,7 +51,7 @@ public class Hit extends ListenableFreezableClass implements Data, Comparable<Hi
     private Map<String, Object> fields = null;
     private Map<String, Object> unmodifiableFieldMap = null;
 
-    /** Meta data describing how a given searcher should treat this hit. */
+    /** Metadata describing how a given searcher should treat this hit. */
     // TODO: The case for this is to allow multiple levels of federation searcher routing.
     //       Replace this by a cleaner specific solution to that problem.
     private Map<Searcher, Object> searcherSpecificMetaData;
@@ -289,7 +290,8 @@ public class Hit extends ListenableFreezableClass implements Data, Comparable<Hi
      * Returns the id to display, or null to not display (render) the id.
      * This is useful to avoid displaying ids when they are not assigned explicitly
      * but are just generated values for internal use.
-     * This default implementation returns {@link #getId()}.toString()
+     * This default implementation returns the field DOCUMENT_ID if set,
+     * and {@link #getId()}.toString() otherwise.
      */
     public String getDisplayId() {
         String id = null;
@@ -304,8 +306,7 @@ public class Hit extends ListenableFreezableClass implements Data, Comparable<Hi
 
     /** Sets the relevance of this hit */
     public void setRelevance(Relevance relevance) {
-        if (relevance == null) throw new NullPointerException("Cannot assign null as relevance");
-        this.relevance = relevance;
+        this.relevance = Objects.requireNonNull(relevance);
     }
 
     /** Does setRelevance(new Relevance(relevance) */
@@ -330,7 +331,7 @@ public class Hit extends ListenableFreezableClass implements Data, Comparable<Hi
      * have been used for filling so far. Invoking this method
      * multiple times is allowed and will have no addition
      * effect. Note that a fillable hit may not be made unfillable.
-     **/
+     */
     public void setFillable() {
         if (filled == null) {
             filled = Collections.emptySet();
@@ -344,7 +345,7 @@ public class Hit extends ListenableFreezableClass implements Data, Comparable<Hi
      * tag this hit as fillable if it is currently not.
      *
      * @param summaryClass summary class used for filling
-     **/
+     */
     public void setFilled(String summaryClass) {
         if (filled == null || filled.isEmpty()) {
             filled = Collections.singleton(summaryClass);

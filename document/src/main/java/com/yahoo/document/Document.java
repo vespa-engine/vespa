@@ -242,8 +242,7 @@ public class Document extends StructuredFieldValue {
     @Override
     public boolean equals(Object o) {
         if (o == this) return true;
-        if (!(o instanceof Document)) return false;
-        Document other = (Document) o;
+        if (!(o instanceof Document other)) return false;
         return (super.equals(o) && docId.equals(other.docId) &&
                 header.equals(other.header));
     }

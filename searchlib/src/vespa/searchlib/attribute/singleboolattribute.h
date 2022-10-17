@@ -28,8 +28,8 @@ public:
     void onSave(IAttributeSaveTarget &saveTarget) override;
     void clearDocs(DocId lidLow, DocId lidLimit, bool in_shrink_lid_space) override;
     void onShrinkLidSpace() override;
-    void removeOldGenerations(generation_t firstUsed) override;
-    void onGenerationChange(generation_t generation) override;
+    void reclaim_memory(generation_t oldest_used_gen) override;
+    void before_inc_generation(generation_t current_gen) override;
     uint64_t getEstimatedSaveByteSize() const override;
 
     std::unique_ptr<attribute::SearchContext>

@@ -79,8 +79,8 @@ allocShrinker(const AttributeVector::SP &attr, vespalib::ISequencedTaskExecutor 
 
 }
 
-AttributeManager::AttributeWrap::AttributeWrap(const AttributeVectorSP & a, bool isExtra_)
-    : _attr(a),
+AttributeManager::AttributeWrap::AttributeWrap(AttributeVectorSP a, bool isExtra_)
+    : _attr(std::move(a)),
       _isExtra(isExtra_)
 {
 }
@@ -94,15 +94,15 @@ AttributeManager::AttributeWrap::AttributeWrap()
 AttributeManager::AttributeWrap::~AttributeWrap() = default;
 
 AttributeManager::AttributeWrap
-AttributeManager::AttributeWrap::extraAttribute(const AttributeVectorSP &a)
+AttributeManager::AttributeWrap::extraAttribute(AttributeVectorSP a)
 {
-    return AttributeWrap(a, true);
+    return {std::move(a), true};
 }
 
 AttributeManager::AttributeWrap
-AttributeManager::AttributeWrap::normalAttribute(const AttributeVectorSP &a)
+AttributeManager::AttributeWrap::normalAttribute(AttributeVectorSP a)
 {
-    return AttributeWrap(a, false);
+    return {std::move(a), false};
 }
 
 AttributeManager::FlushableWrap::FlushableWrap()
@@ -136,18 +136,20 @@ AttributeManager::internalAddAttribute(AttributeSpec && spec,
 }
 
 void
-AttributeManager::addAttribute(const AttributeWrap &attribute, const ShrinkerSP &shrinker)
+AttributeManager::addAttribute(AttributeWrap attributeWrap, const ShrinkerSP &shrinker)
 {
-    LOG(debug, "Adding attribute vector '%s'", attribute.getAttribute()->getName().c_str());
-    _attributes[attribute.getAttribute()->getName()] = attribute;
-    assert(attribute.getAttribute()->getInterlock() == _interlock);
-    if ( ! attribute.isExtra() ) {
+    AttributeVector::SP attribute = attributeWrap.getAttribute();
+    bool isExtra = attributeWrap.isExtra();
+    const vespalib::string &name = attribute->getName();
+    LOG(debug, "Adding attribute vector '%s'", name.c_str());
+    _attributes[name] = std::move(attributeWrap);
+    assert(attribute->getInterlock() == _interlock);
+    if ( ! isExtra ) {
         // Flushing of extra attributes is handled elsewhere
-        auto attr = attribute.getAttribute();
-        const vespalib::string &name = attr->getName();
-        auto flusher = std::make_shared<FlushableAttribute>(attr, _diskLayout->createAttributeDir(name), _tuneFileAttributes, _fileHeaderContext, _attributeFieldWriter, _hwInfo);
-        _flushables[attribute.getAttribute()->getName()] = FlushableWrap(flusher, shrinker);
-        _writableAttributes.push_back(attribute.getAttribute().get());
+        AttributeVector * attributeP = attribute.get();
+        auto flusher = std::make_shared<FlushableAttribute>(std::move(attribute), _diskLayout->createAttributeDir(name), _tuneFileAttributes, _fileHeaderContext, _attributeFieldWriter, _hwInfo);
+        _flushables[name] = FlushableWrap(flusher, shrinker);
+        _writableAttributes.push_back(attributeP);
     }
 }
 
@@ -234,7 +236,7 @@ AttributeManager::transferExtraAttributes(const AttributeManager &currMgr)
 {
     for (const auto &kv : currMgr._attributes) {
         if (kv.second.isExtra()) {
-            addAttribute(kv.second, 0);
+            addAttribute(kv.second, nullptr);
         }
     }
 }
@@ -271,7 +273,7 @@ AttributeManager::AttributeManager(const vespalib::string &baseDir,
                                    std::shared_ptr<search::attribute::Interlock> interlock,
                                    vespalib::ISequencedTaskExecutor &attributeFieldWriter,
                                    vespalib::Executor& shared_executor,
-                                   const IAttributeFactory::SP &factory,
+                                   IAttributeFactory::SP factory,
                                    const HwInfo &hwInfo)
     : proton::IAttributeManager(),
       _attributes(),
@@ -281,7 +283,7 @@ AttributeManager::AttributeManager(const vespalib::string &baseDir,
       _documentSubDbName(documentSubDbName),
       _tuneFileAttributes(tuneFileAttributes),
       _fileHeaderContext(fileHeaderContext),
-      _factory(factory),
+      _factory(std::move(factory)),
       _interlock(std::move(interlock)),
       _attributeFieldWriter(attributeFieldWriter),
       _shared_executor(shared_executor),
@@ -329,7 +331,7 @@ AttributeManager::addInitializedAttributes(const std::vector<AttributeInitialize
         auto attr = result.getAttribute();
         attr->setInterlock(_interlock);
         auto shrinker = allocShrinker(attr, _attributeFieldWriter, *_diskLayout);
-        addAttribute(AttributeWrap::normalAttribute(attr), shrinker);
+        addAttribute(AttributeWrap::normalAttribute(std::move(attr)), shrinker);
     }
 }
 
@@ -414,7 +416,7 @@ AttributeManager::getAttributeReadGuard(const string &name, bool stableEnumGuard
     if (attribute) {
         return attribute->makeReadGuard(stableEnumGuard);
     } else {
-        return std::unique_ptr<search::attribute::AttributeReadGuard>();
+        return {};
     }
 }
 
@@ -424,7 +426,7 @@ AttributeManager::getAttributeList(std::vector<AttributeGuard> &list) const
     list.reserve(_attributes.size());
     for (const auto &kv : _attributes) {
         if (!kv.second.isExtra()) {
-            list.push_back(AttributeGuard(kv.second.getAttribute()));
+            list.emplace_back(kv.second.getAttribute());
         }
     }
 }
@@ -541,7 +543,7 @@ AttributeManager::getAttributeListAll(std::vector<AttributeGuard> &list) const
 {
     list.reserve(_attributes.size());
     for (const auto &kv : _attributes) {
-        list.push_back(AttributeGuard(kv.second.getAttribute()));
+        list.emplace_back(kv.second.getAttribute());
     }
 }
 
@@ -629,7 +631,7 @@ AttributeManager::getExclusiveReadAccessor(const vespalib::string &name) const
     if (attribute) {
         return std::make_unique<ExclusiveAttributeReadAccessor>(attribute, _attributeFieldWriter);
     }
-    return ExclusiveAttributeReadAccessor::UP();
+    return {};
 }
 
 void

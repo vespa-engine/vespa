@@ -43,7 +43,8 @@ class Preparer {
         catch (NodeAllocationException e) {
             throw new NodeAllocationException("Could not satisfy " + requestedNodes +
                                               ( wantedGroups > 1 ? " (in " + wantedGroups + " groups)" : "") +
-                                              " in " + application + " " + cluster + ": " + e.getMessage());
+                                              " in " + application + " " + cluster + ": " + e.getMessage(),
+                                              e.retryable());
         }
     }
 

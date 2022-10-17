@@ -25,7 +25,7 @@ SingleValueEnumAttribute(const vespalib::string &baseFileName,
 template <typename B>
 SingleValueEnumAttribute<B>::~SingleValueEnumAttribute()
 {
-    getGenerationHolder().clearHoldLists();
+    getGenerationHolder().reclaim_all();
 }
 
 template <typename B>
@@ -66,7 +66,7 @@ SingleValueEnumAttribute<B>::addDoc(DocId & doc)
     if (incGen) {
         this->incGeneration();
     } else
-        this->removeAllOldGenerations();
+        this->reclaim_unused_memory();
     return true;
 }
 
@@ -95,7 +95,7 @@ SingleValueEnumAttribute<B>::onCommit()
     updater.commit();
     freezeEnumDictionary();
     std::atomic_thread_fence(std::memory_order_release);
-    this->removeAllOldGenerations();
+    this->reclaim_unused_memory();
     auto remapper = this->_enumStore.consider_compact_values(this->getConfig().getCompactionStrategy());
     if (remapper) {
         remap_enum_store_refs(*remapper, *this);
@@ -128,7 +128,7 @@ SingleValueEnumAttribute<B>::onUpdateStat()
     // update statistics
     vespalib::MemoryUsage total = _enumIndices.getMemoryUsage();
     auto& compaction_strategy = this->getConfig().getCompactionStrategy();
-    total.mergeGenerationHeldBytes(getGenerationHolder().getHeldBytes());
+    total.mergeGenerationHeldBytes(getGenerationHolder().get_held_bytes());
     total.merge(this->_enumStore.update_stat(compaction_strategy));
     total.merge(this->getChangeVectorMemoryUsage());
     mergeMemoryStats(total);
@@ -218,7 +218,7 @@ SingleValueEnumAttribute<B>::fillValues(LoadedVector & loaded)
 {
     if constexpr (!std::is_same_v<LoadedVector, NoLoadedVector>) {
         uint32_t numDocs = this->getNumDocs();
-        getGenerationHolder().clearHoldLists();
+        getGenerationHolder().reclaim_all();
         _enumIndices.reset();
         _enumIndices.unsafe_reserve(numDocs);
         for (DocId doc = 0; doc < numDocs; ++doc, loaded.next()) {
@@ -264,15 +264,15 @@ SingleValueEnumAttribute<B>::load_enumerated_data(ReaderBase& attrReader,
 
 template <typename B>
 void
-SingleValueEnumAttribute<B>::removeOldGenerations(generation_t firstUsed)
+SingleValueEnumAttribute<B>::reclaim_memory(generation_t oldest_used_gen)
 {
-    this->_enumStore.trim_hold_lists(firstUsed);
-    getGenerationHolder().trimHoldLists(firstUsed);
+    this->_enumStore.reclaim_memory(oldest_used_gen);
+    getGenerationHolder().reclaim(oldest_used_gen);
 }
 
 template <typename B>
 void
-SingleValueEnumAttribute<B>::onGenerationChange(generation_t generation)
+SingleValueEnumAttribute<B>::before_inc_generation(generation_t current_gen)
 {
     /*
      * Freeze tree before generation is increased in attribute vector
@@ -281,8 +281,8 @@ SingleValueEnumAttribute<B>::onGenerationChange(generation_t generation)
      * sufficiently new frozen tree.
      */
     freezeEnumDictionary();
-    getGenerationHolder().transferHoldLists(generation - 1);
-    this->_enumStore.transfer_hold_lists(generation - 1);
+    getGenerationHolder().assign_generation(current_gen);
+    this->_enumStore.assign_generation(current_gen);
 }
 
 

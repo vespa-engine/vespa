@@ -1,6 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "tensor_buffer_store.h"
+#include <vespa/document/util/serializableexceptions.h>
 #include <vespa/eval/eval/value_codec.h>
 #include <vespa/eval/streamed/streamed_value_builder_factory.h>
 #include <vespa/vespalib/datastore/array_store.hpp>
@@ -10,6 +11,7 @@
 #include <vespa/vespalib/datastore/datastore.hpp>
 #include <vespa/vespalib/util/size_literals.h>
 
+using document::DeserializeException;
 using vespalib::alloc::MemoryAllocator;
 using vespalib::datastore::CompactionContext;
 using vespalib::datastore::CompactionStrategy;
@@ -46,15 +48,14 @@ TensorBufferStore::holdTensor(EntryRef ref)
 }
 
 EntryRef
-TensorBufferStore::move(EntryRef ref)
+TensorBufferStore::move_on_compact(EntryRef ref)
 {
     if (!ref.valid()) {
         return EntryRef();
     }
-    auto buf = _array_store.get(ref);
+    auto buf = _array_store.get_writable(ref);
     auto new_ref = _array_store.add(buf);
     _ops.copied_labels(buf);
-    _array_store.remove(ref);
     return new_ref;
 }
 
@@ -90,6 +91,9 @@ TensorBufferStore::store_encoded_tensor(vespalib::nbostream &encoded)
 {
     const auto &factory = StreamedValueBuilderFactory::get();
     auto val = vespalib::eval::decode_value(encoded, factory);
+    if (!encoded.empty()) {
+        throw DeserializeException("Leftover bytes deserializing tensor attribute value.", VESPA_STRLOC);
+    }
     return store_tensor(*val);
 }
 

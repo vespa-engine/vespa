@@ -43,6 +43,9 @@ public abstract class AbstractVespaMojo extends AbstractMojo {
     @Parameter(property = "instance")
     protected String instance;
 
+    @Parameter(property = "tags")
+    protected String tags;
+
     @Parameter(property = "apiKey")
     protected String apiKey;
 

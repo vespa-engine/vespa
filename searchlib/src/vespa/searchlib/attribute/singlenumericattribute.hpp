@@ -32,7 +32,7 @@ SingleValueNumericAttribute(const vespalib::string & baseFileName, const Attribu
 template <typename B>
 SingleValueNumericAttribute<B>::~SingleValueNumericAttribute()
 {
-    getGenerationHolder().clearHoldLists();
+    getGenerationHolder().reclaim_all();
 }
 
 template <typename B>
@@ -55,7 +55,7 @@ SingleValueNumericAttribute<B>::onCommit()
         }
     }
 
-    this->removeAllOldGenerations();
+    this->reclaim_unused_memory();
 
     this->_changes.clear();
 }
@@ -65,7 +65,7 @@ void
 SingleValueNumericAttribute<B>::onUpdateStat()
 {
     vespalib::MemoryUsage usage = _data.getMemoryUsage();
-    usage.mergeGenerationHeldBytes(getGenerationHolder().getHeldBytes());
+    usage.mergeGenerationHeldBytes(getGenerationHolder().get_held_bytes());
     usage.merge(this->getChangeVectorMemoryUsage());
     this->updateStatistics(_data.size(), _data.size(),
                            usage.allocatedBytes(), usage.usedBytes(), usage.deadBytes(), usage.allocatedBytesOnHold());
@@ -89,22 +89,22 @@ SingleValueNumericAttribute<B>::addDoc(DocId & doc) {
     if (incGen) {
         this->incGeneration();
     } else
-        this->removeAllOldGenerations();
+        this->reclaim_unused_memory();
     return true;
 }
 
 template <typename B>
 void
-SingleValueNumericAttribute<B>::removeOldGenerations(generation_t firstUsed)
+SingleValueNumericAttribute<B>::reclaim_memory(generation_t oldest_used_gen)
 {
-    getGenerationHolder().trimHoldLists(firstUsed);
+    getGenerationHolder().reclaim(oldest_used_gen);
 }
 
 template <typename B>
 void
-SingleValueNumericAttribute<B>::onGenerationChange(generation_t generation)
+SingleValueNumericAttribute<B>::before_inc_generation(generation_t current_gen)
 {
-    getGenerationHolder().transferHoldLists(generation - 1);
+    getGenerationHolder().assign_generation(current_gen);
 }
 
 template <typename B>
@@ -143,7 +143,7 @@ SingleValueNumericAttribute<B>::onLoad(vespalib::Executor *)
         return onLoadEnumerated(attrReader);
     
     const size_t sz(attrReader.getDataCount());
-    getGenerationHolder().clearHoldLists();
+    getGenerationHolder().reclaim_all();
     _data.reset();
     _data.unsafe_reserve(sz);
     for (uint32_t i = 0; i < sz; ++i) {

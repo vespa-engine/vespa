@@ -23,6 +23,7 @@ import com.yahoo.config.provision.InfraDeployer;
 import com.yahoo.config.provision.Provisioner;
 import com.yahoo.config.provision.RegionName;
 import com.yahoo.config.provision.SystemName;
+import com.yahoo.config.provision.Tags;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.config.provision.exception.ActivationConflictException;
@@ -361,8 +362,11 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
     }
 
     private PrepareResult deploy(File applicationDir, PrepareParams prepareParams, DeployHandlerLogger logger) {
-        ApplicationId applicationId = prepareParams.getApplicationId();
-        long sessionId = createSession(applicationId, prepareParams.getTimeoutBudget(), applicationDir, logger);
+        long sessionId = createSession(prepareParams.getApplicationId(),
+                                       prepareParams.tags(),
+                                       prepareParams.getTimeoutBudget(),
+                                       applicationDir,
+                                       logger);
         Deployment deployment = prepare(sessionId, prepareParams, logger);
 
         if ( ! prepareParams.isDryRun())
@@ -870,21 +874,21 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
         return sessionRepository.createSessionFromExisting(fromSession, internalRedeploy, timeoutBudget, deployLogger).getSessionId();
     }
 
-    public long createSession(ApplicationId applicationId, TimeoutBudget timeoutBudget, InputStream in,
+    public long createSession(ApplicationId applicationId, Tags tags, TimeoutBudget timeoutBudget, InputStream in,
                               String contentType, DeployLogger logger) {
         File tempDir = uncheck(() -> Files.createTempDirectory("deploy")).toFile();
         long sessionId;
         try {
-            sessionId = createSession(applicationId, timeoutBudget, decompressApplication(in, contentType, tempDir), logger);
+            sessionId = createSession(applicationId, tags, timeoutBudget, decompressApplication(in, contentType, tempDir), logger);
         } finally {
             cleanupTempDirectory(tempDir, logger);
         }
         return sessionId;
     }
 
-    public long createSession(ApplicationId applicationId, TimeoutBudget timeoutBudget, File applicationDirectory, DeployLogger deployLogger) {
+    public long createSession(ApplicationId applicationId, Tags tags, TimeoutBudget timeoutBudget, File applicationDirectory, DeployLogger deployLogger) {
         SessionRepository sessionRepository = getTenant(applicationId).getSessionRepository();
-        Session session = sessionRepository.createSessionFromApplicationPackage(applicationDirectory, applicationId, timeoutBudget, deployLogger);
+        Session session = sessionRepository.createSessionFromApplicationPackage(applicationDirectory, applicationId, tags, timeoutBudget, deployLogger);
         return session.getSessionId();
     }
 

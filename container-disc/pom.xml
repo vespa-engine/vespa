@@ -195,10 +195,10 @@
                 hosted-zone-api-jar-with-dependencies.jar,
                 container-apache-http-client-bundle-jar-with-dependencies.jar,
                 security-utils.jar,
-                bcprov-jdk15on-${bouncycastle.version}.jar, <!-- Used by security-utils -->
+                bcprov-jdk18on-${bouncycastle.version}.jar, <!-- Used by security-utils -->
+                bcpkix-jdk18on-${bouncycastle.version}.jar, <!-- Used by security-utils -->
+                bcutil-jdk18on-${bouncycastle.version}.jar, <!-- Used by security-utils -->
                 <!-- END Bundles needed to retrieve config, or used by container-disc -->
-
-                bcpkix-jdk15on-${bouncycastle.version}.jar, <!-- Used by security-utils -->
 
                 jackson-annotations-${jackson2.version}.jar,
                 jackson-core-${jackson2.version}.jar,

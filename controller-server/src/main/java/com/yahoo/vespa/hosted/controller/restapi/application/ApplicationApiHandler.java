@@ -22,6 +22,7 @@ import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.HostName;
 import com.yahoo.config.provision.InstanceName;
 import com.yahoo.config.provision.NodeResources;
+import com.yahoo.config.provision.Tags;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.config.provision.zone.RoutingMethod;
 import com.yahoo.config.provision.zone.ZoneId;
@@ -2035,7 +2036,7 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
         if (controller.applications().getApplication(applicationId).isEmpty())
             createApplication(tenantName, applicationName, request);
 
-        controller.applications().createInstance(applicationId.instance(instanceName));
+        controller.applications().createInstance(applicationId.instance(instanceName), Tags.empty());
 
         Slime slime = new Slime();
         toSlime(applicationId.instance(instanceName), slime.setObject(), request);

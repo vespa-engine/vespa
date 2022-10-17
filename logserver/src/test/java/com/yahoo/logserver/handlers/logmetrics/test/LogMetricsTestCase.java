@@ -17,6 +17,7 @@ import static org.junit.Assert.*;
  * @author hmusum
  */
 public class LogMetricsTestCase {
+
     // Some of the tests depend upon the number of messages for a
     // host, log level etc. to succeed, so you may have update the
     // tests if you change something in mStrings. config, debug and
@@ -72,7 +73,7 @@ public class LogMetricsTestCase {
      * each level).
      */
     @Test
-    public void testLevelCountAggregated() throws java.io.IOException, InvalidLogFormatException {
+    public void testLevelCountAggregated() {
         LogMetricsHandler a = new LogMetricsHandler();
 
         for (LogMessage aMsg : msg) {
@@ -84,28 +85,13 @@ public class LogMetricsTestCase {
         for (Map.Entry<String, Long> entry : levelCount.entrySet()) {
             String key = entry.getKey();
             switch (key) {
-                case "config":
-                    assertEquals(entry.getValue(), Long.valueOf(1));
-                    break;
-                case "info":
-                    assertEquals(entry.getValue(), Long.valueOf(4));
-                    break;
-                case "warning":
-                    assertEquals(entry.getValue(), Long.valueOf(1));
-                    break;
-                case "severe":
-                    assertEquals(entry.getValue(), Long.valueOf(0));
-                    break;
-                case "error":
-                    assertEquals(entry.getValue(), Long.valueOf(1));
-                    break;
-                case "fatal":
-                    assertEquals(entry.getValue(), Long.valueOf(1));
-                    break;
-                case "debug":
-                    assertEquals(entry.getValue(), Long.valueOf(0));  // always 0
-
-                    break;
+                case "config" -> assertEquals(entry.getValue(), Long.valueOf(1));
+                case "info" -> assertEquals(entry.getValue(), Long.valueOf(4));
+                case "warning" -> assertEquals(entry.getValue(), Long.valueOf(1));
+                case "severe" -> assertEquals(entry.getValue(), Long.valueOf(0));
+                case "error" -> assertEquals(entry.getValue(), Long.valueOf(1));
+                case "fatal" -> assertEquals(entry.getValue(), Long.valueOf(1));
+                case "debug" -> assertEquals(entry.getValue(), Long.valueOf(0));  // always 0
             }
         }
         a.close();

@@ -21,8 +21,6 @@ public:
                        const document::TensorUpdate &update,
                        bool create_empty_if_non_existing) override;
     std::unique_ptr<vespalib::eval::Value> getTensor(DocId docId) const override;
-    bool onLoad(vespalib::Executor *executor) override;
-    std::unique_ptr<AttributeSaver> onInitSave(vespalib::stringref fileName) override;
     void set_tensor(DocId docId, std::unique_ptr<vespalib::eval::Value> tensor);
     const vespalib::eval::Value &get_tensor_ref(DocId docId) const override;
     bool supports_get_tensor_ref() const override { return true; }

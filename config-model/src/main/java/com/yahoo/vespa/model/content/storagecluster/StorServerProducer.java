@@ -1,7 +1,6 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model.content.storagecluster;
 
-import com.yahoo.config.model.api.ModelContext;
 import com.yahoo.vespa.config.content.core.StorServerConfig;
 import com.yahoo.vespa.model.builder.xml.dom.ModelElement;
 import com.yahoo.vespa.model.content.cluster.ContentCluster;
@@ -11,10 +10,10 @@ import com.yahoo.vespa.model.content.cluster.ContentCluster;
  */
 public class StorServerProducer implements StorServerConfig.Producer {
     public static class Builder {
-        StorServerProducer build(ModelContext.Properties properties, ModelElement element) {
+        StorServerProducer build(ModelElement element) {
             ModelElement tuning = element.child("tuning");
 
-            StorServerProducer producer = new StorServerProducer(ContentCluster.getClusterId(element), properties.featureFlags());
+            StorServerProducer producer = new StorServerProducer(ContentCluster.getClusterId(element));
             if (tuning == null) return producer;
 
             ModelElement merges = tuning.child("merges");
@@ -29,7 +28,6 @@ public class StorServerProducer implements StorServerConfig.Producer {
     private final String clusterName;
     private Integer maxMergesPerNode;
     private Integer queueSize;
-    private final StorServerConfig.Merge_throttling_policy.Type.Enum mergeThrottlingPolicyType;
 
     private StorServerProducer setMaxMergesPerNode(Integer value) {
         if (value != null) {
@@ -44,19 +42,8 @@ public class StorServerProducer implements StorServerConfig.Producer {
         return this;
     }
 
-    private static StorServerConfig.Merge_throttling_policy.Type.Enum toThrottlePolicyType(String policyType) {
-        try {
-            return StorServerConfig.Merge_throttling_policy.Type.Enum.valueOf(policyType);
-        } catch (Throwable t) {
-            return StorServerConfig.Merge_throttling_policy.Type.STATIC;
-        }
-    }
-
-    StorServerProducer(String clusterName, ModelContext.FeatureFlags featureFlags) {
+    StorServerProducer(String clusterName) {
         this.clusterName = clusterName;
-        maxMergesPerNode = featureFlags.maxConcurrentMergesPerNode();
-        queueSize = featureFlags.maxMergeQueueSize();
-        mergeThrottlingPolicyType = toThrottlePolicyType(featureFlags.mergeThrottlingPolicy());
     }
 
     @Override
@@ -73,7 +60,5 @@ public class StorServerProducer implements StorServerConfig.Producer {
         if (queueSize != null) {
             builder.max_merge_queue_size(queueSize);
         }
-        // TODO set throttle policy params based on existing or separate flags
-        builder.merge_throttling_policy(new StorServerConfig.Merge_throttling_policy.Builder().type(mergeThrottlingPolicyType));
     }
 }

@@ -6,11 +6,9 @@
 #include "readerbase.h"
 #include "enum_store_loaders.h"
 #include <vespa/searchlib/common/sort.h>
-#include <vespa/document/fieldvalue/fieldvalue.h>
 #include <vespa/searchlib/query/query_term_ucs4.h>
 #include <vespa/searchcommon/attribute/config.h>
 #include <vespa/vespalib/locale/c.h>
-#include <vespa/vespalib/util/array.hpp>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".searchlib.attribute.stringbase");
@@ -61,7 +59,7 @@ StringAttribute::~StringAttribute() = default;
 uint32_t
 StringAttribute::get(DocId doc, WeightedInt * v, uint32_t sz) const
 {
-    WeightedConstChar * s = new WeightedConstChar[sz];
+    auto * s = new WeightedConstChar[sz];
     uint32_t n = static_cast<const AttributeVector *>(this)->get(doc, s, sz);
     for(uint32_t i(0),m(std::min(n,sz)); i<m; i++) {
         v[i] = WeightedInt(strtoll(s[i].getValue(), nullptr, 0), s[i].getWeight());
@@ -73,7 +71,7 @@ StringAttribute::get(DocId doc, WeightedInt * v, uint32_t sz) const
 uint32_t
 StringAttribute::get(DocId doc, WeightedFloat * v, uint32_t sz) const
 {
-    WeightedConstChar * s = new WeightedConstChar[sz];
+    auto * s = new WeightedConstChar[sz];
     uint32_t n = static_cast<const AttributeVector *>(this)->get(doc, s, sz);
     for(uint32_t i(0),m(std::min(n,sz)); i<m; i++) {
         v[i] = WeightedFloat(vespalib::locale::c::strtod(s[i].getValue(), nullptr), s[i].getWeight());
@@ -114,11 +112,11 @@ StringAttribute::get(DocId doc, largeint_t * v, uint32_t sz) const
 long
 StringAttribute::onSerializeForAscendingSort(DocId doc, void * serTo, long available, const common::BlobConverter * bc) const
 {
-    unsigned char *dst = static_cast<unsigned char *>(serTo);
+    auto *dst = static_cast<unsigned char *>(serTo);
     const char *value(get(doc));
     int size = strlen(value) + 1;
     vespalib::ConstBufferRef buf(value, size);
-    if (bc != 0) {
+    if (bc != nullptr) {
         buf = bc->convert(buf);
     }
     if (available >= (long)buf.size()) {
@@ -133,15 +131,15 @@ long
 StringAttribute::onSerializeForDescendingSort(DocId doc, void * serTo, long available, const common::BlobConverter * bc) const
 {
     (void) bc;
-    unsigned char *dst = static_cast<unsigned char *>(serTo);
+    auto *dst = static_cast<unsigned char *>(serTo);
     const char *value(get(doc));
     int size = strlen(value) + 1;
     vespalib::ConstBufferRef buf(value, size);
-    if (bc != 0) {
+    if (bc != nullptr) {
         buf = bc->convert(buf);
     }
     if (available >= (long)buf.size()) {
-        const uint8_t * src(static_cast<const uint8_t *>(buf.data()));
+        const auto * src(static_cast<const uint8_t *>(buf.data()));
         for (size_t i(0), m(buf.size()); i < m; ++i) {
             dst[i] = 0xff - src[i];
         }

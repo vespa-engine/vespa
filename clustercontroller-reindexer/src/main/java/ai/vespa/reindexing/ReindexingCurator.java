@@ -15,7 +15,6 @@ import com.yahoo.vespa.curator.Lock;
 import com.yahoo.yolean.Exceptions;
 
 import java.io.Closeable;
-import java.io.IOException;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.List;

@@ -227,20 +227,18 @@ class JobControllerApiHandlerHelper {
     }
 
     private static String nameOf(RunStatus status) {
-        switch (status) {
-            case reset:                      // This means the run will reset and keep running.
-            case running:                    return "running";
-            case aborted:                    return "aborted";
-            case error:                      return "error";
-            case testFailure:                return "testFailure";
-            case noTests:                    return "noTests";
-            case endpointCertificateTimeout: return "endpointCertificateTimeout";
-            case nodeAllocationFailure:      return "nodeAllocationFailure";
-            case installationFailed:         return "installationFailed";
-            case deploymentFailed:           return "deploymentFailed";
-            case success:                    return "success";
-            default:                         throw new IllegalArgumentException("Unexpected status '" + status + "'");
-        }
+        return switch (status) {
+            case reset, running                       -> "running";
+            case aborted                              -> "aborted";
+            case error                                -> "error";
+            case testFailure                          -> "testFailure";
+            case noTests                              -> "noTests";
+            case endpointCertificateTimeout           -> "endpointCertificateTimeout";
+            case nodeAllocationFailure                -> "nodeAllocationFailure";
+            case installationFailed                   -> "installationFailed";
+            case invalidApplication, deploymentFailed -> "deploymentFailed";
+            case success                              -> "success";
+        };
     }
 
     /**
@@ -440,7 +438,7 @@ class JobControllerApiHandlerHelper {
             runObject.setString("url", baseUriForJob.resolve(baseUriForJob.getPath() + "/run/" + run.id().number()).toString());
             runObject.setLong("start", run.start().toEpochMilli());
             run.end().ifPresent(end -> runObject.setLong("end", end.toEpochMilli()));
-            runObject.setString("status", run.status().name());
+            runObject.setString("status", nameOf(run.status()));
             run.reason().ifPresent(reason -> runObject.setString("reason", reason));
             toSlime(runObject.setObject("versions"), run.versions(), application);
             Cursor runStepsArray = runObject.setArray("steps");

@@ -56,7 +56,7 @@ LargeSubspacesBufferType::fallbackCopy(void *newBuffer, const void *oldBuffer, E
         auto& old_elem = old_elems[i];
         new (new_elems + i) ArrayType(old_elem);
         if (!old_elem.empty()) {
-            _ops.copied_labels({old_elem.data(), old_elem.size()});
+            _ops.copied_labels(unconstify(vespalib::ConstArrayRef<char>(old_elem.data(), old_elem.size())));
         }
     }
 }

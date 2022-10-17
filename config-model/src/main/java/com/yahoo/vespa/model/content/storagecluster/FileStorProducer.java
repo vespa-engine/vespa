@@ -46,11 +46,6 @@ public class FileStorProducer implements StorFilestorConfig.Producer {
     private final ContentCluster cluster;
     private final int responseNumThreads;
     private final StorFilestorConfig.Response_sequencer_type.Enum responseSequencerType;
-    private final double persistenceThrottlingWsDecrementFactor;
-    private final double persistenceThrottlingWsBackoff;
-    private final int persistenceThrottlingWindowSize;
-    private final double persistenceThrottlingWsResizeRate;
-    private final boolean persistenceThrottlingOfMergeFeedOps;
     private final boolean useAsyncMessageHandlingOnSchedule;
 
     private static StorFilestorConfig.Response_sequencer_type.Enum convertResponseSequencerType(String sequencerType) {
@@ -66,11 +61,6 @@ public class FileStorProducer implements StorFilestorConfig.Producer {
         this.cluster = parent;
         this.responseNumThreads = featureFlags.defaultNumResponseThreads();
         this.responseSequencerType = convertResponseSequencerType(featureFlags.responseSequencerType());
-        this.persistenceThrottlingWsDecrementFactor = featureFlags.persistenceThrottlingWsDecrementFactor();
-        this.persistenceThrottlingWsBackoff = featureFlags.persistenceThrottlingWsBackoff();
-        this.persistenceThrottlingWindowSize = featureFlags.persistenceThrottlingWindowSize();
-        this.persistenceThrottlingWsResizeRate = featureFlags.persistenceThrottlingWsResizeRate();
-        this.persistenceThrottlingOfMergeFeedOps = featureFlags.persistenceThrottlingOfMergeFeedOps();
         this.useAsyncMessageHandlingOnSchedule = featureFlags.useAsyncMessageHandlingOnSchedule();
     }
 
@@ -84,14 +74,6 @@ public class FileStorProducer implements StorFilestorConfig.Producer {
         builder.response_sequencer_type(responseSequencerType);
         builder.use_async_message_handling_on_schedule(useAsyncMessageHandlingOnSchedule);
         var throttleBuilder = new StorFilestorConfig.Async_operation_throttler.Builder();
-        throttleBuilder.window_size_decrement_factor(persistenceThrottlingWsDecrementFactor);
-        throttleBuilder.window_size_backoff(persistenceThrottlingWsBackoff);
-        if (persistenceThrottlingWindowSize > 0) {
-            throttleBuilder.min_window_size(persistenceThrottlingWindowSize);
-            throttleBuilder.max_window_size(persistenceThrottlingWindowSize);
-        }
-        throttleBuilder.resize_rate(persistenceThrottlingWsResizeRate);
-        throttleBuilder.throttle_individual_merge_feed_ops(persistenceThrottlingOfMergeFeedOps);
         builder.async_operation_throttler(throttleBuilder);
     }
 

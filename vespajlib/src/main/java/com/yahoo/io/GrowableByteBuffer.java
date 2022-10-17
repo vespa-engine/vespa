@@ -90,7 +90,7 @@ public class GrowableByteBuffer implements Comparable<GrowableByteBuffer> {
     //ByteBuffers and keep track of global position etc., much like
     //GrowableBufferOutputStream does it.
 
-    protected void grow(int newSize) {
+    public void grow(int newSize) {
         //create new buffer:
         ByteBuffer newByteBuf;
         if (buffer.isDirect()) {
@@ -104,7 +104,7 @@ public class GrowableByteBuffer implements Comparable<GrowableByteBuffer> {
         //copy old contents and set correct position:
         int oldPos = buffer.position();
         newByteBuf.position(0);
-        buffer.position(0);
+        buffer.flip();
         newByteBuf.put(buffer);
         newByteBuf.position(oldPos);
 

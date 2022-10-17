@@ -89,7 +89,7 @@ PredicateAttribute::PredicateAttribute(const vespalib::string &base_file_name, c
 
 PredicateAttribute::~PredicateAttribute()
 {
-    getGenerationHolder().clearHoldLists();
+    getGenerationHolder().reclaim_all();
 }
 
 void PredicateAttribute::populateIfNeeded() {
@@ -118,24 +118,24 @@ PredicateAttribute::onUpdateStat()
     combined.merge(_min_feature.getMemoryUsage());
     combined.merge(_interval_range_vector.getMemoryUsage());
     combined.merge(_index->getMemoryUsage());
-    combined.mergeGenerationHeldBytes(getGenerationHolder().getHeldBytes());
+    combined.mergeGenerationHeldBytes(getGenerationHolder().get_held_bytes());
     this->updateStatistics(_min_feature.size(), _min_feature.size(),
                            combined.allocatedBytes(), combined.usedBytes(),
                            combined.deadBytes(), combined.allocatedBytesOnHold());
 }
 
 void
-PredicateAttribute::removeOldGenerations(generation_t firstUsed)
+PredicateAttribute::reclaim_memory(generation_t oldest_used_gen)
 {
-    getGenerationHolder().trimHoldLists(firstUsed);
-    _index->trimHoldLists(firstUsed);
+    getGenerationHolder().reclaim(oldest_used_gen);
+    _index->reclaim_memory(oldest_used_gen);
 }
 
 void
-PredicateAttribute::onGenerationChange(generation_t generation)
+PredicateAttribute::before_inc_generation(generation_t current_gen)
 {
-    getGenerationHolder().transferHoldLists(generation - 1);
-    _index->transferHoldLists(generation - 1);
+    getGenerationHolder().assign_generation(current_gen);
+    _index->assign_generation(current_gen);
 }
 
 void

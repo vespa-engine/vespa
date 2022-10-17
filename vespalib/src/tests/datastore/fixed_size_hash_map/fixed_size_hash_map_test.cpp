@@ -88,13 +88,13 @@ DataStoreFixedSizeHashTest::~DataStoreFixedSizeHashTest()
 void
 DataStoreFixedSizeHashTest::commit()
 {
-    _store.transferHoldLists(_generation_handler.getCurrentGeneration());
-    _hash_map->transfer_hold_lists(_generation_handler.getCurrentGeneration());
-    _generation_holder.transferHoldLists(_generation_handler.getCurrentGeneration());
+    _store.assign_generation(_generation_handler.getCurrentGeneration());
+    _hash_map->assign_generation(_generation_handler.getCurrentGeneration());
+    _generation_holder.assign_generation(_generation_handler.getCurrentGeneration());
     _generation_handler.incGeneration();
-    _store.trimHoldLists(_generation_handler.getFirstUsedGeneration());
-    _hash_map->trim_hold_lists(_generation_handler.getFirstUsedGeneration());
-    _generation_holder.trimHoldLists(_generation_handler.getFirstUsedGeneration());
+    _store.reclaim_memory(_generation_handler.get_oldest_used_generation());
+    _hash_map->reclaim_memory(_generation_handler.get_oldest_used_generation());
+    _generation_holder.reclaim(_generation_handler.get_oldest_used_generation());
 }
 
 size_t

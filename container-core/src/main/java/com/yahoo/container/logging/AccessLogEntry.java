@@ -65,16 +65,14 @@ public class AccessLogEntry {
                 return null;
             }
 
-            final Map<String, List<String>> newMapWithImmutableValues = mapValues(
+            Map<String, List<String>> newMapWithImmutableValues = mapValues(
                     keyValues.entrySet(),
                     valueList -> Collections.unmodifiableList(new ArrayList<>(valueList)));
             return Collections.unmodifiableMap(newMapWithImmutableValues);
         }
     }
 
-    private static <K, V1, V2> Map<K, V2> mapValues(
-            final Set<Map.Entry<K, V1>> entrySet,
-            final Function<V1, V2> valueConverter) {
+    private static <K, V1, V2> Map<K, V2> mapValues(Set<Map.Entry<K, V1>> entrySet, Function<V1, V2> valueConverter) {
         return entrySet.stream()
                 .collect(toMap(
                         entry -> entry.getKey(),

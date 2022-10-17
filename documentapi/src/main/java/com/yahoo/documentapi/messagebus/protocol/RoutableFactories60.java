@@ -202,10 +202,10 @@ public abstract class RoutableFactories60 {
             buf.putInt(null, msg.getBuckets().size());
             for (BucketId id : msg.getBuckets()) {
                 long rawid = id.getRawId();
-                long reversed = ((rawid >>> 56) & 0x00000000000000FFl) | ((rawid >>> 40) & 0x000000000000FF00l) |
-                        ((rawid >>> 24) & 0x0000000000FF0000l) | ((rawid >>> 8) & 0x00000000FF000000l) |
-                        ((rawid << 8) & 0x000000FF00000000l) | ((rawid << 24) & 0x0000FF0000000000l) |
-                        ((rawid << 40) & 0x00FF000000000000l) | ((rawid << 56) & 0xFF00000000000000l);
+                long reversed = ((rawid >>> 56) & 0x00000000000000FFL) | ((rawid >>> 40) & 0x000000000000FF00L) |
+                                ((rawid >>> 24) & 0x0000000000FF0000L) | ((rawid >>> 8) & 0x00000000FF000000L) |
+                                ((rawid << 8) & 0x000000FF00000000L) | ((rawid << 24) & 0x0000FF0000000000L) |
+                                ((rawid << 40) & 0x00FF000000000000L) | ((rawid << 56) & 0xFF00000000000000L);
                 buf.putLong(null, reversed);
             }
 

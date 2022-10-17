@@ -4,6 +4,7 @@ package com.yahoo.config.application;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.InstanceName;
 import com.yahoo.config.provision.RegionName;
+import com.yahoo.config.provision.Tags;
 import org.custommonkey.xmlunit.XMLUnit;
 import org.junit.Test;
 import org.w3c.dom.Document;
@@ -332,7 +333,10 @@ public class OverrideProcessorTest {
                     "  </admin>" +
                     "</services>";
         Document inputDoc = Xml.getDocument(new StringReader(in));
-        new OverrideProcessor(InstanceName.from("default"), Environment.from("prod"), RegionName.from("us-west")).process(inputDoc);
+        new OverrideProcessor(InstanceName.from("default"),
+                              Environment.from("prod"),
+                              RegionName.from("us-west"),
+                              Tags.empty()).process(inputDoc);
     }
 
     @Test(expected = IllegalArgumentException.class)
@@ -344,7 +348,10 @@ public class OverrideProcessorTest {
                 "  </admin>" +
                 "</services>";
         Document inputDoc = Xml.getDocument(new StringReader(in));
-        new OverrideProcessor(InstanceName.from("default"), Environment.defaultEnvironment(), RegionName.from("us-west")).process(inputDoc);
+        new OverrideProcessor(InstanceName.from("default"),
+                              Environment.defaultEnvironment(),
+                              RegionName.from("us-west"),
+                              Tags.empty()).process(inputDoc);
     }
 
     @Test
@@ -399,7 +406,7 @@ public class OverrideProcessorTest {
 
     private void assertOverride(String input, Environment environment, RegionName region, String expected) throws TransformerException {
         Document inputDoc = Xml.getDocument(new StringReader(input));
-        Document newDoc = new OverrideProcessor(InstanceName.from("default"), environment, region).process(inputDoc);
+        Document newDoc = new OverrideProcessor(InstanceName.from("default"), environment, region, Tags.empty()).process(inputDoc);
         TestBase.assertDocument(expected, newDoc);
     }
 

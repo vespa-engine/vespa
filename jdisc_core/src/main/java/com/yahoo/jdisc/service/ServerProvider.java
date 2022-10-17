@@ -49,4 +49,12 @@ public interface ServerProvider extends SharedResource {
      * Application} shutdown code.</p>
      */
     void close();
+
+    /**
+     * Whether multiple instances of this can coexist, by means of a multiplexer on top of any exclusive resource.
+     * If this is true, new instances to replace old ones, during a graph generation switch, will be started before
+     * the obsolete ones are stopped; otherwise, the old will be stopped, and then the new ones started.
+     */
+    default boolean isMultiplexed() { return false; }
+
 }
