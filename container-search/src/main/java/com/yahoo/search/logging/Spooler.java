@@ -89,7 +89,7 @@ public class Spooler {
             try {
                 List<String> lines = Files.readAllLines(f.toPath());
                 for (String line : lines) {
-                    LoggerEntry entry = LoggerEntry.fromJson(line);
+                    LoggerEntry entry = LoggerEntry.deserialize(line);
                     log.log(Level.FINE, "Read entry " + entry + " from " + f);
                     succcess = transport.apply(entry);
                     if (! succcess) {
@@ -142,8 +142,8 @@ public class Spooler {
         String fileName = String.valueOf(fileCounter);
         Path file = spoolPath.resolve(processingPath).resolve(fileName);
         try {
-            log.log(Level.INFO, "Writing entry " + entryCounter.get() + " (" + entry.toJson() + ") to " + fileName);
-            Files.writeString(file, entry.toJson() + "\n", StandardOpenOption.WRITE, StandardOpenOption.APPEND, StandardOpenOption.CREATE);
+            log.log(Level.FINE, "Writing entry " + entryCounter.get() + " (" + entry.serialize() + ") to file " + fileName);
+            Files.writeString(file, entry.serialize() + "\n", StandardOpenOption.WRITE, StandardOpenOption.APPEND, StandardOpenOption.CREATE);
             Path target = spoolPath.resolve(readyPath).resolve(file.relativize(file)).resolve(fileName);
 
             if (entryCounter.incrementAndGet() > maxEntriesPerFile) {

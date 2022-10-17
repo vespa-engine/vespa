@@ -2,14 +2,11 @@
 
 package com.yahoo.search.logging;
 
-import com.fasterxml.jackson.core.JsonEncoding;
-import com.fasterxml.jackson.core.JsonFactory;
-import com.fasterxml.jackson.core.JsonGenerator;
 import com.yahoo.search.Query;
-import com.yahoo.slime.JsonDecoder;
+import com.yahoo.slime.Cursor;
 import com.yahoo.slime.Slime;
+import com.yahoo.slime.SlimeUtils;
 import com.yahoo.text.Utf8;
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.nio.ByteBuffer;
@@ -53,33 +50,26 @@ public class LoggerEntry {
     }
 
     public String toString() {
-        return toJson();
+        return serialize();
     }
 
-    public String toJson() {
+    public String serialize() {
         try {
-            ByteArrayOutputStream out = new ByteArrayOutputStream();
-            JsonGenerator g = new JsonFactory().createGenerator(out, JsonEncoding.UTF8);
-            g.writeStartObject();
+            Slime slime = new Slime();
+            Cursor root = slime.setObject();
 
-            g.writeNumberField("timestamp", timestamp == null ? 0 : timestamp);
-            g.writeStringField("query", queryString());
-            g.writeStringField("blob", Base64.getEncoder().encodeToString(blob.array()));
+            root.setLong("timestamp", timestamp == null ? 0 : timestamp);
+            root.setString("query", queryString());
+            root.setString("blob", Base64.getEncoder().encodeToString(blob.array()));
 
-            g.writeEndObject();
-            g.close();
-            return out.toString();
-
+            return Utf8.toString(SlimeUtils.toJsonBytes(slime));  // TODO
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }
     }
 
-    // TODO: Rename method here and above? (serialize/deserialize)
-    // TODO: Use Slime or Jackson for both
-    public static LoggerEntry fromJson(String content) throws IOException {
-        var decoder = new JsonDecoder();
-        var slime = decoder.decode(new Slime(), Utf8.toBytes(content));
+    public static LoggerEntry deserialize(String content) throws IOException {
+        var slime = SlimeUtils.jsonToSlime(content);
 
         var timestamp = slime.get().field("timestamp").asLong();
         var query = new Query(slime.get().field("query").asString());
