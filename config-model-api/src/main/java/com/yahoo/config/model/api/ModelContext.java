@@ -108,7 +108,6 @@ public interface ModelContext {
         @ModelFeatureFlag(owners = {"arnej"}) default String logFileCompressionAlgorithm(String defVal) { return defVal; }
         @ModelFeatureFlag(owners = {"vekterli"}) default boolean useTwoPhaseDocumentGc() { return false; }
         @ModelFeatureFlag(owners = {"tokle"}) default boolean useRestrictedDataPlaneBindings() { return false; }
-        @ModelFeatureFlag(owners = {"baldersheim", "vekterli"}, removeAfter="8.61") default boolean computeCoverageFromTargetActiveDocs() { return true; }
 
         //Below are all flags that must be kept until 7 is out of the door
         @ModelFeatureFlag(owners = {"vekterli"}, removeAfter="7.last") default boolean useThreePhaseUpdates() { return true; }
