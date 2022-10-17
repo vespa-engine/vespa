@@ -10,7 +10,7 @@
 
 using V = vespalib::ConstArrayRef<float>;
 class AnnoyLikeNns;
-struct Node;
+inline namespace xpannoynns { struct Node; }
 
 static size_t plane_dist_cnt = 0;
 static size_t w_cen_dist_cnt = 0;
@@ -21,6 +21,8 @@ static size_t find_cand_cnt = 0;
 using QueueNode = std::pair<double, Node *>;
 using NodeQueue = std::priority_queue<QueueNode>;
 
+namespace xpannoynns {
+
 struct Node {
     Node() {}
     virtual ~Node() {}
@@ -30,6 +32,8 @@ struct Node {
     virtual void filterCandidates(std::set<uint32_t> &cands, V vector, NodeQueue &queue, double minDist, const BitVector &skipDocIds) const = 0;
     virtual void stats(std::vector<uint32_t> &depths) = 0;
 };
+
+}
 
 struct LeafNode : public Node {
     std::vector<uint32_t> docids;
