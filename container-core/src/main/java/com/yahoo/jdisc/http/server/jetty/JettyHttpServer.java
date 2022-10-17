@@ -27,8 +27,6 @@ import org.eclipse.jetty.server.handler.gzip.GzipHandler;
 import org.eclipse.jetty.server.handler.gzip.GzipHttpOutputInterceptor;
 import org.eclipse.jetty.servlet.ServletContextHandler;
 import org.eclipse.jetty.servlet.ServletHolder;
-import org.eclipse.jetty.util.log.JavaUtilLog;
-import org.eclipse.jetty.util.log.Log;
 import org.eclipse.jetty.util.thread.QueuedThreadPool;
 
 import javax.management.remote.JMXServiceURL;
@@ -70,8 +68,6 @@ public class JettyHttpServer extends AbstractServerProvider {
         if (connectorFactories.allComponents().isEmpty())
             throw new IllegalArgumentException("No connectors configured.");
 
-        initializeJettyLogging();
-
         server = new Server();
         server.setStopTimeout((long)(serverConfig.stopTimeout() * 1000.0));
         server.setRequestLog(new AccessLogRequestLog(requestLog, serverConfig.accessLog()));
@@ -94,15 +90,6 @@ public class JettyHttpServer extends AbstractServerProvider {
                                                       .collect(toList());
         server.setHandler(createRootHandler(serverConfig, connectors, jdiscServlet));
         this.metricsReporter = new ServerMetricReporter(metric, server);
-    }
-
-    private static void initializeJettyLogging() {
-        // Note: Jetty is logging stderr if no logger is explicitly configured
-        try {
-            Log.setLog(new JavaUtilLog());
-        } catch (Exception e) {
-            throw new RuntimeException("Unable to initialize logging framework for Jetty");
-        }
     }
 
     private static void setupJmx(Server server, ServerConfig serverConfig) {
@@ -152,7 +139,7 @@ public class JettyHttpServer extends AbstractServerProvider {
         }
         StatisticsHandler root = newGenericStatisticsHandler();
         addChainToRoot(root, List.of(
-                newResponseStatisticsHandler(serverCfg), newGzipHandler(serverCfg), perConnectorHandlers));
+                newResponseStatisticsHandler(serverCfg), newGzipHandler(), perConnectorHandlers));
         return root;
     }
 
@@ -253,21 +240,17 @@ public class JettyHttpServer extends AbstractServerProvider {
         return statisticsHandler;
     }
 
-    private static GzipHandler newGzipHandler(ServerConfig serverConfig) {
-        GzipHandler gzipHandler = new GzipHandlerWithVaryHeaderFixed();
-        gzipHandler.setCompressionLevel(serverConfig.responseCompressionLevel());
-        gzipHandler.setInflateBufferSize(8 * 1024);
-        gzipHandler.setIncludedMethods("GET", "POST", "PUT", "PATCH");
-        return gzipHandler;
-    }
+    private static GzipHandler newGzipHandler() { return new GzipHandlerWithVaryHeaderFixed(); }
 
     /** A subclass which overrides Jetty's default behavior of including user-agent in the vary field */
     private static class GzipHandlerWithVaryHeaderFixed extends GzipHandler {
 
-        @Override
-        public HttpField getVaryField() {
-            return GzipHttpOutputInterceptor.VARY_ACCEPT_ENCODING;
+        GzipHandlerWithVaryHeaderFixed() {
+            setInflateBufferSize(8 * 1024);
+            setIncludedMethods("GET", "POST", "PUT", "PATCH");
         }
+
+        @Override public HttpField getVaryField() { return GzipHttpOutputInterceptor.VARY_ACCEPT_ENCODING; }
 
     }
 
