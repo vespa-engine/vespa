@@ -4,8 +4,8 @@
 
 #include <vespa/fastlib/text/unicodeutil.h>
 #include <vespa/vespalib/regex/regex.h>
-#include <vespa/vespalib/fuzzy/fuzzy_matcher.h>
 
+namespace vespalib { class FuzzyMatcher; }
 namespace search { class QueryTermUCS4; }
 
 namespace search::attribute {
@@ -18,17 +18,19 @@ class StringSearchHelper {
 public:
     StringSearchHelper(QueryTermUCS4 & qTerm, bool cased);
     StringSearchHelper(StringSearchHelper&&) noexcept;
+    StringSearchHelper(const StringSearchHelper &) = delete;
+    StringSearchHelper & operator =(const StringSearchHelper &) = delete;
     ~StringSearchHelper();
     bool isMatch(const char *src) const;
-    bool isPrefix() const { return _isPrefix; }
-    bool isRegex() const { return _isRegex; }
-    bool isCased() const { return _isCased; }
-    bool isFuzzy() const { return _isFuzzy; }
-    const vespalib::Regex & getRegex() const { return _regex; }
-    const vespalib::FuzzyMatcher & getFuzzyMatcher() const { return _fuzzyMatcher; }
+    bool isPrefix() const noexcept { return _isPrefix; }
+    bool isRegex() const noexcept { return _isRegex; }
+    bool isCased() const noexcept { return _isCased; }
+    bool isFuzzy() const noexcept { return _isFuzzy; }
+    const vespalib::Regex & getRegex() const noexcept { return _regex; }
+    const vespalib::FuzzyMatcher & getFuzzyMatcher() const noexcept { return *_fuzzyMatcher; }
 private:
     vespalib::Regex                _regex;
-    vespalib::FuzzyMatcher         _fuzzyMatcher;
+    std::unique_ptr<vespalib::FuzzyMatcher> _fuzzyMatcher;
     union {
         const ucs4_t *_ucs4;
         const char   *_char;

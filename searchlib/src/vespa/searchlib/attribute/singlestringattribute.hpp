@@ -3,7 +3,6 @@
 #pragma once
 
 #include "singlestringattribute.h"
-#include "stringattribute.h"
 #include "singleenumattribute.hpp"
 #include "attributevector.hpp"
 #include "single_string_enum_hint_search_context.h"

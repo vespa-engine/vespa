@@ -38,6 +38,8 @@ vespalib::FuzzyMatcher::FuzzyMatcher(std::string_view term, uint32_t max_edit_di
         _folded_term_codepoints_suffix(get_suffix(_folded_term_codepoints, _prefix_size))
 {}
 
+vespalib::FuzzyMatcher::~FuzzyMatcher() = default;
+
 std::span<const uint32_t> vespalib::FuzzyMatcher::get_prefix(const std::vector<uint32_t>& termCodepoints, uint32_t prefixLength) {
     if (prefixLength == 0 || termCodepoints.empty()) {
         return {};

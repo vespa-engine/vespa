@@ -4,7 +4,6 @@
 
 #include "search_context.h"
 #include "enumstore.h"
-#include "multi_value_mapping.h"
 
 namespace search::attribute {
 
@@ -21,11 +20,11 @@ protected:
     const vespalib::datastore::AtomicEntryRef* _enum_indices;
     const EnumStoreT<T>&        _enum_store;
 
-    int32_t onFind(DocId docId, int32_t elemId, int32_t & weight) const override final {
+    int32_t onFind(DocId docId, int32_t elemId, int32_t & weight) const final {
         return find(docId, elemId, weight);
     }
 
-    int32_t onFind(DocId docId, int32_t elemId) const override final {
+    int32_t onFind(DocId docId, int32_t elemId) const final {
         return find(docId, elemId);
     }
 
