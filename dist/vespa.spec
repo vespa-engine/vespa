@@ -6,6 +6,17 @@
 # Only strip debug info
 %global _find_debuginfo_opts -g
 
+# Don't enable LTO
+%global _lto_cflags %{nil}
+
+# Disable hardened package build.
+%global _preprocessor_defines %{nil}
+%undefine _hardened_build
+
+# Libraries and binaries use shared libraries in /opt/vespa/lib64 and
+# /opt/vespa-deps/lib64
+%global __brp_check_rpaths %{nil}
+
 # Go binaries' build-ids are not recognized by RPMs yet, see
 # https://github.com/rpm-software-management/rpm/issues/367 and
 # https://github.com/tpokorra/lbs-mono-fedora/issues/3#issuecomment-219857688.
@@ -13,7 +24,6 @@
 
 # Force special prefix for Vespa
 %define _prefix /opt/vespa
-%define _vespa_deps_prefix /opt/vespa-deps
 %define _vespa_user vespa
 %define _vespa_group vespa
 %undefine _vespa_user_uid
@@ -231,45 +241,13 @@ Requires: unzip
 Requires: zlib
 Requires: zstd
 %if 0%{?el8}
-%if 0%{?centos} || 0%{?rocky} || 0%{?oraclelinux}
-%if 0%{?_centos_stream}
-%define _vespa_llvm_version 14
-%else
-%define _vespa_llvm_version 13
-%endif
-%else
-%define _vespa_llvm_version 13
-%endif
 Requires: vespa-gtest = 1.11.0
-%define _extra_link_directory %{_vespa_deps_prefix}/lib64
-%define _extra_include_directory %{_vespa_deps_prefix}/include
 %endif
 %if 0%{?el9}
-%if 0%{?_centos_stream}
-%define _vespa_llvm_version 14
-%else
-%define _vespa_llvm_version 13
-%endif
 Requires: gtest
-%define _extra_link_directory %{_vespa_deps_prefix}/lib64
-%define _extra_include_directory %{_vespa_deps_prefix}/include;/usr/include/openblas
 %endif
 %if 0%{?fedora}
 Requires: gtest
-%if 0%{?amzn2022}
-%define _vespa_llvm_version 14
-%endif
-%if 0%{?fc36}
-%define _vespa_llvm_version 14
-%endif
-%if 0%{?fc37}
-%define _vespa_llvm_version 15
-%endif
-%if 0%{?fc38}
-%define _vespa_llvm_version 15
-%endif
-%define _extra_link_directory %{_vespa_deps_prefix}/lib64
-%define _extra_include_directory %{_vespa_deps_prefix}/include;/usr/include/openblas
 %endif
 Requires: %{name}-base = %{version}-%{release}
 Requires: %{name}-base-libs = %{version}-%{release}
@@ -530,11 +508,6 @@ mvn --batch-mode -e -N io.takari:maven:wrapper -Dmaven=3.6.3
 %{?_use_mvn_wrapper:./mvnw}%{!?_use_mvn_wrapper:mvn} --batch-mode -nsu -T 1C  install -Dmaven.test.skip=true -Dmaven.javadoc.skip=true
 %{_command_cmake} -DCMAKE_INSTALL_PREFIX=%{_prefix} \
        -DJAVA_HOME=$JAVA_HOME \
-       -DCMAKE_PREFIX_PATH=%{_vespa_deps_prefix} \
-       -DEXTRA_LINK_DIRECTORY="%{_extra_link_directory}" \
-       -DEXTRA_INCLUDE_DIRECTORY="%{_extra_include_directory}" \
-       -DCMAKE_INSTALL_RPATH="%{_prefix}/lib64%{?_extra_link_directory:;%{_extra_link_directory}}" \
-       %{?_vespa_llvm_version:-DVESPA_LLVM_VERSION="%{_vespa_llvm_version}"} \
        -DVESPA_USER=%{_vespa_user} \
        -DVESPA_UNPRIVILEGED=no \
        .
