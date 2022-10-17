@@ -8,15 +8,14 @@ import com.yahoo.jdisc.handler.ContentChannel;
 import com.yahoo.jdisc.handler.RequestHandler;
 import com.yahoo.jdisc.handler.ResponseHandler;
 import com.yahoo.jdisc.service.CurrentContainer;
-import org.eclipse.jetty.http.HttpURI;
 import org.eclipse.jetty.util.MultiMap;
+import org.eclipse.jetty.util.UrlEncoded;
 
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
 import java.net.URI;
 import java.security.Principal;
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedList;
@@ -116,15 +115,10 @@ public class HttpRequest extends Request {
     }
 
     private static Map<String, List<String>> getUriQueryParameters(URI uri) {
-        MultiMap<String> queryParameters = new MultiMap<>();
-        new HttpURI(uri).decodeQueryTo(queryParameters);
-
-        // Do a deep copy so we do not leak Jetty classes outside
-        Map<String, List<String>> deepCopiedQueryParameters = new HashMap<>();
-        for (Map.Entry<String, List<String>> entry : queryParameters.entrySet()) {
-            deepCopiedQueryParameters.put(entry.getKey(), new ArrayList<>(entry.getValue()));
-        }
-        return deepCopiedQueryParameters;
+        if (uri.getRawQuery() == null) return Map.of();
+        MultiMap<String> params = new MultiMap<>();
+        UrlEncoded.decodeUtf8To(uri.getRawQuery(), params);
+        return Map.copyOf(params);
     }
 
     public Method getMethod() {

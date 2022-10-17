@@ -3,16 +3,13 @@ package com.yahoo.jdisc.http.server.jetty;
 
 import com.yahoo.jdisc.Metric;
 import com.yahoo.jdisc.http.ConnectorConfig;
-import org.eclipse.jetty.http.HttpCompliance;
+import jakarta.servlet.ServletRequest;
+import jakarta.servlet.http.HttpServletRequest;
 import org.eclipse.jetty.io.ConnectionStatistics;
 import org.eclipse.jetty.server.ConnectionFactory;
 import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.server.ServerConnector;
 
-import javax.servlet.ServletRequest;
-import javax.servlet.http.HttpServletRequest;
-import java.net.Socket;
-import java.net.SocketException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
@@ -26,8 +23,6 @@ class JDiscServerConnector extends ServerConnector {
     private final Metric.Context metricCtx;
     private final ConnectionStatistics statistics;
     private final ConnectorConfig config;
-    private final boolean tcpKeepAlive;
-    private final boolean tcpNoDelay;
     private final Metric metric;
     private final String connectorName;
     private final int listenPort;
@@ -36,14 +31,13 @@ class JDiscServerConnector extends ServerConnector {
                          ConnectionMetricAggregator connectionMetricAggregator, ConnectionFactory... factories) {
         super(server, factories);
         this.config = config;
-        this.tcpKeepAlive = config.tcpKeepAliveEnabled();
-        this.tcpNoDelay = config.tcpNoDelay();
         this.metric = metric;
         this.connectorName = config.name();
         this.listenPort = config.listenPort();
         this.metricCtx = metric.createContext(createConnectorDimensions(listenPort, connectorName, 0));
 
         this.statistics = new ConnectionStatistics();
+        setAcceptedTcpNoDelay(config.tcpNoDelay());
         addBean(statistics);
         ConnectorConfig.Throttling throttlingConfig = config.throttling();
         if (throttlingConfig.enabled()) {
@@ -56,17 +50,6 @@ class JDiscServerConnector extends ServerConnector {
         setAcceptQueueSize(config.acceptQueueSize());
         setReuseAddress(config.reuseAddress());
         setIdleTimeout((long) (config.idleTimeout() * 1000));
-        addBean(HttpCompliance.RFC7230);
-    }
-
-    @Override
-    protected void configure(final Socket socket) {
-        super.configure(socket);
-        try {
-            socket.setKeepAlive(tcpKeepAlive);
-            socket.setTcpNoDelay(tcpNoDelay);
-        } catch (SocketException ignored) {
-        }
     }
 
     public ConnectionStatistics getStatistics() {

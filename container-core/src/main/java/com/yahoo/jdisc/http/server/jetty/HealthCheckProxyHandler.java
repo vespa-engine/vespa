@@ -4,14 +4,24 @@ package com.yahoo.jdisc.http.server.jetty;
 import com.yahoo.concurrent.DaemonThreadFactory;
 import com.yahoo.jdisc.http.ConnectorConfig;
 import com.yahoo.security.SslContextBuilder;
+import com.yahoo.security.TrustAllX509TrustManager;
 import com.yahoo.security.tls.TransportSecurityOptions;
 import com.yahoo.security.tls.TransportSecurityUtils;
-import com.yahoo.security.TrustAllX509TrustManager;
+import jakarta.servlet.AsyncContext;
+import jakarta.servlet.AsyncEvent;
+import jakarta.servlet.AsyncListener;
+import jakarta.servlet.ServletException;
+import jakarta.servlet.ServletOutputStream;
+import jakarta.servlet.WriteListener;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import org.eclipse.jetty.client.HttpClient;
 import org.eclipse.jetty.client.ProxyProtocolClientConnectionFactory;
 import org.eclipse.jetty.client.api.ContentResponse;
+import org.eclipse.jetty.client.http.HttpClientTransportOverHTTP;
 import org.eclipse.jetty.http.HttpField;
 import org.eclipse.jetty.http.HttpHeader;
+import org.eclipse.jetty.io.ClientConnector;
 import org.eclipse.jetty.server.DetectorConnectionFactory;
 import org.eclipse.jetty.server.Request;
 import org.eclipse.jetty.server.SslConnectionFactory;
@@ -19,14 +29,6 @@ import org.eclipse.jetty.server.handler.HandlerWrapper;
 import org.eclipse.jetty.util.ssl.SslContextFactory;
 
 import javax.net.ssl.SSLContext;
-import javax.servlet.AsyncContext;
-import javax.servlet.AsyncEvent;
-import javax.servlet.AsyncListener;
-import javax.servlet.ServletException;
-import javax.servlet.ServletOutputStream;
-import javax.servlet.WriteListener;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.time.Duration;
 import java.util.HashMap;
@@ -89,7 +91,7 @@ class HealthCheckProxyHandler extends HandlerWrapper {
                 Optional.ofNullable(targetConnector.getConnectionFactory(SslConnectionFactory.class))
                         .or(() -> Optional.ofNullable(targetConnector.getConnectionFactory(DetectorConnectionFactory.class))
                                 .map(detectorConnFactory -> detectorConnFactory.getBean(SslConnectionFactory.class)))
-                        .map(connFactory -> (SslContextFactory.Server) connFactory.getSslContextFactory())
+                        .map(SslConnectionFactory::getSslContextFactory)
                         .orElseThrow(() -> new IllegalArgumentException("Health check proxy can only target https port"));
         boolean proxyProtocol = targetConnector.connectorConfig().proxyProtocol().enabled();
         return new ProxyTarget(targetPort, clientTimeout,handlerTimeout, cacheExpiry, sslContextFactory, proxyProtocol);
@@ -269,13 +271,14 @@ class HealthCheckProxyHandler extends HandlerWrapper {
                 synchronized (this) {
                     if (client == null) {
                         int timeoutMillis = (int) clientTimeout.toMillis();
-                        SslContextFactory.Client clientSsl = new SslContextFactory.Client();
+                        var clientSsl = new SslContextFactory.Client();
                         clientSsl.setHostnameVerifier((__, ___) -> true);
                         clientSsl.setSslContext(getSslContext(serverSsl));
-                        HttpClient client = new HttpClient(clientSsl);
+                        var connector = new ClientConnector();
+                        connector.setSslContextFactory(clientSsl);
+                        HttpClient client = new HttpClient(new HttpClientTransportOverHTTP(connector));
                         client.setMaxConnectionsPerDestination(4);
                         client.setConnectTimeout(timeoutMillis);
-                        client.setStopTimeout(timeoutMillis);
                         client.setIdleTimeout(timeoutMillis);
                         client.setUserAgentField(new HttpField(HttpHeader.USER_AGENT, "health-check-proxy-client"));
                         client.start();

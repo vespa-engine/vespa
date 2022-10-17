@@ -105,8 +105,8 @@
 
         <!-- START JETTY embedded jars -->
         <exclusion>
-          <groupId>org.eclipse.jetty.alpn</groupId>
-          <artifactId>alpn-api</artifactId>
+          <groupId>org.eclipse.jetty.http2</groupId>
+          <artifactId>http2-common</artifactId>
         </exclusion>
         <exclusion>
           <groupId>org.eclipse.jetty.http2</groupId>
@@ -118,11 +118,19 @@
         </exclusion>
         <exclusion>
           <groupId>org.eclipse.jetty</groupId>
+          <artifactId>jetty-alpn-server</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>org.eclipse.jetty</groupId>
           <artifactId>jetty-client</artifactId>
         </exclusion>
         <exclusion>
           <groupId>org.eclipse.jetty</groupId>
-          <artifactId>jetty-continuation</artifactId>
+          <artifactId>jetty-http</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>org.eclipse.jetty</groupId>
+          <artifactId>jetty-io</artifactId>
         </exclusion>
         <exclusion>
           <groupId>org.eclipse.jetty</groupId>
@@ -138,7 +146,11 @@
         </exclusion>
         <exclusion>
           <groupId>org.eclipse.jetty</groupId>
-          <artifactId>jetty-servlets</artifactId>
+          <artifactId>jetty-util</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>org.eclipse.jetty.toolchain</groupId>
+          <artifactId>jetty-jakarta-servlet-api</artifactId>
         </exclusion>
         <!-- END JETTY embedded jars -->
       </exclusions>

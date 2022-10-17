@@ -4,7 +4,8 @@ namespace=jdisc.http
 # Whether to enable developer mode, where stack traces etc are visible in response bodies.
 developerMode                         bool   default=false
 
-# The gzip compression level to use, if compression is enabled in a request.
+# TODO Vespa 9 Remove
+# Has no effect since Jetty 11 upgrade
 responseCompressionLevel              int    default=6
 
 # Whether the request body of POSTed forms should be removed (form parameters are available as request parameters).

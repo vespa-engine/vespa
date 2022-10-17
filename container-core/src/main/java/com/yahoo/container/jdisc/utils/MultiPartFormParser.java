@@ -3,9 +3,9 @@ package com.yahoo.container.jdisc.utils;
 
 import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.yolean.Exceptions;
-import org.eclipse.jetty.http.MultiPartFormInputStream;
+import jakarta.servlet.http.Part;
+import org.eclipse.jetty.server.MultiPartFormInputStream;
 
-import javax.servlet.http.Part;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Map;
