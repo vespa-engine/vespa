@@ -21,6 +21,8 @@ using document::BucketSpace;
 
 namespace storage::distributor {
 
+SplitBucketStateChecker::~SplitBucketStateChecker() = default;
+
 bool
 SplitBucketStateChecker::validForSplit(StateChecker::Context& c)
 {
@@ -205,6 +207,8 @@ inconsistentJoinIsAllowed(const StateChecker::Context& context)
 }
 
 } // anon ns
+
+JoinBucketsStateChecker::~JoinBucketsStateChecker() = default;
 
 bool
 JoinBucketsStateChecker::siblingsAreInSync(const Context& context) const
@@ -489,6 +493,8 @@ JoinBucketsStateChecker::check(StateChecker::Context& c)
 
     return Result::createStoredResult(std::move(op), MaintenancePriority::VERY_LOW);
 }
+
+SplitInconsistentStateChecker::~SplitInconsistentStateChecker() = default;
 
 bool
 SplitInconsistentStateChecker::isLeastSplitBucket(
@@ -843,6 +849,8 @@ merging_effectively_disabled_for_state_checker(const StateChecker::Context& c) n
 
 }
 
+SynchronizeAndMoveStateChecker::~SynchronizeAndMoveStateChecker() = default;
+
 StateChecker::Result
 SynchronizeAndMoveStateChecker::check(StateChecker::Context& c)
 {
@@ -897,6 +905,8 @@ SynchronizeAndMoveStateChecker::check(StateChecker::Context& c)
         return Result::noMaintenanceNeeded();
     }
 }
+
+DeleteExtraCopiesStateChecker::~DeleteExtraCopiesStateChecker() = default;
 
 bool
 DeleteExtraCopiesStateChecker::bucketHasNoData(const StateChecker::Context& c)
@@ -1033,6 +1043,8 @@ DeleteExtraCopiesStateChecker::check(StateChecker::Context& c)
     return Result::noMaintenanceNeeded();
 }
 
+BucketStateStateChecker::~BucketStateStateChecker() = default;
+
 bool
 BucketStateStateChecker::shouldSkipActivationDueToMaintenance(
         const ActiveList& activeNodes,
@@ -1141,6 +1153,8 @@ BucketStateStateChecker::check(StateChecker::Context& c)
     op->setDetailedReason(reason.str());
     return Result::createStoredResult(std::move(op), MaintenancePriority::HIGHEST);
 }
+
+GarbageCollectionStateChecker::~GarbageCollectionStateChecker() = default;
 
 bool
 GarbageCollectionStateChecker::garbage_collection_disabled(const Context& c) const noexcept

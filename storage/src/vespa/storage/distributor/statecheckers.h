@@ -8,6 +8,7 @@ namespace storage::distributor {
 class SynchronizeAndMoveStateChecker : public StateChecker
 {
 public:
+    ~SynchronizeAndMoveStateChecker() override;
     std::string getStatusText() const override { return "Synchronization and moving"; }
     Result check(Context& c) override;
     const char* getName() const override { return "SynchronizeAndMove"; }
@@ -16,6 +17,7 @@ public:
 class DeleteExtraCopiesStateChecker : public StateChecker
 {
 public:
+    ~DeleteExtraCopiesStateChecker() override;
     std::string getStatusText() const override { return "Delete extra copies"; }
     Result check(Context& c) override;
     const char* getName() const override { return "DeleteExtraCopies"; }
@@ -42,6 +44,7 @@ private:
 class JoinBucketsStateChecker : public StateChecker
 {
 public:
+    ~JoinBucketsStateChecker() override;
     std::string getStatusText() const override { return "Join buckets"; }
     Result check(Context& c) override;
     const char* getName() const override { return "JoinBuckets"; }
@@ -60,6 +63,7 @@ private:
 class SplitBucketStateChecker : public StateChecker
 {
 public:
+    ~SplitBucketStateChecker() override;
     std::string getStatusText() const override { return "Split buckets"; }
     Result check(Context& c) override;
     const char* getName() const override { return "SplitBucket"; }
@@ -74,6 +78,7 @@ private:
 class SplitInconsistentStateChecker : public StateChecker
 {
 public:
+    ~SplitInconsistentStateChecker() override;
     std::string getStatusText() const override { return "Fix inconsistently split buckets"; }
     Result check(Context& c) override;
     const char* getName() const override { return "SplitInconsistentBuckets"; }
@@ -99,6 +104,7 @@ class BucketStateStateChecker : public StateChecker
             const ActiveList& activeList,
             const StateChecker::Context& c) const;
 public:
+    ~BucketStateStateChecker() override;
     std::string getStatusText() const override { return "Set bucket copy state"; }
     Result check(Context& c) override;
     const char* getName() const override { return "SetBucketState"; }
@@ -107,6 +113,7 @@ public:
 class GarbageCollectionStateChecker : public StateChecker
 {
 public:
+    ~GarbageCollectionStateChecker() override;
     std::string getStatusText() const override { return "Garbage collection"; }
     Result check(Context& c) override;
     const char* getName() const override { return "GarbageCollection"; }
