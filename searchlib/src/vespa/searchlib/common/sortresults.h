@@ -106,7 +106,7 @@ private:
 
     bool Add(search::attribute::IAttributeContext & vecMan, const search::common::SortInfo & sInfo);
     void initSortData(const search::RankedHit *a, uint32_t n);
-    uint8_t * realloc(uint32_t n, size_t & variableWidth, uint32_t & available, uint32_t & dataSize, uint8_t *mySortData);
+    int initSortData(const VectorRef & vec, const search::RankedHit & hit, size_t offset);
 
 public:
     FastS_SortSpec(const FastS_SortSpec &) = delete;

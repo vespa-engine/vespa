@@ -50,28 +50,16 @@ FloatingPointAttributeTemplate<T>::findFoldedEnums(const char *value) const
 
 template<typename T>
 long
-FloatingPointAttributeTemplate<T>::onSerializeForAscendingSort(DocId doc, void * serTo, long available, const common::BlobConverter * bc) const {
-    (void) bc;
-    if (available >= long(sizeof(T))) {
-        T origValue(get(doc));
-        vespalib::serializeForSort< vespalib::convertForSort<T, true> >(origValue, serTo);
-    } else {
-        return -1;
-    }
-    return sizeof(T);
+FloatingPointAttributeTemplate<T>::onSerializeForAscendingSort(DocId doc, void * serTo, long available, const common::BlobConverter *) const {
+    T origValue(get(doc));
+    return vespalib::serializeForSort< vespalib::convertForSort<T, true> >(origValue, serTo, available);
 }
 
 template<typename T>
 long
-FloatingPointAttributeTemplate<T>::onSerializeForDescendingSort(DocId doc, void * serTo, long available, const common::BlobConverter * bc) const {
-    (void) bc;
-    if (available >= long(sizeof(T))) {
-        T origValue(get(doc));
-        vespalib::serializeForSort< vespalib::convertForSort<T, false> >(origValue, serTo);
-    } else {
-        return -1;
-    }
-    return sizeof(T);
+FloatingPointAttributeTemplate<T>::onSerializeForDescendingSort(DocId doc, void * serTo, long available, const common::BlobConverter *) const {
+    T origValue(get(doc));
+    return vespalib::serializeForSort< vespalib::convertForSort<T, false> >(origValue, serTo, available);
 }
 
 }
