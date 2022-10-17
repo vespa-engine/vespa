@@ -22,13 +22,61 @@ struct MFT : public test::DummyFlushTarget
     MFT(FTT type, FTC component) : test::DummyFlushTarget("", type, component) {}
 };
 
-struct AttributeFlush : public MFT { AttributeFlush() : MFT(FTT::SYNC, FTC::ATTRIBUTE) {} };
-struct AttributeShrink : public MFT { AttributeShrink() : MFT(FTT::GC, FTC::ATTRIBUTE) {} };
-struct MemoryIndexFlush : public MFT { MemoryIndexFlush() : MFT(FTT::FLUSH, FTC::INDEX) {} };
-struct DiskIndexFusion : public MFT { DiskIndexFusion() : MFT(FTT::GC, FTC::INDEX) {} };
-struct DocStoreFlush : public MFT { DocStoreFlush() : MFT(FTT::SYNC, FTC::DOCUMENT_STORE) {} };
-struct DocStoreCompaction : public MFT { DocStoreCompaction() : MFT(FTT::GC, FTC::DOCUMENT_STORE) {} };
-struct OtherFlush : public MFT { OtherFlush() : MFT(FTT::FLUSH, FTC::OTHER) {} };
+struct AttributeFlush : public MFT
+{
+    AttributeFlush() : MFT(FTT::SYNC, FTC::ATTRIBUTE) {}
+    ~AttributeFlush() override;
+};
+
+AttributeFlush::~AttributeFlush() = default;
+
+struct AttributeShrink : public MFT
+{
+    AttributeShrink() : MFT(FTT::GC, FTC::ATTRIBUTE) {}
+    ~AttributeShrink() override;
+};
+
+AttributeShrink::~AttributeShrink() = default;
+
+struct MemoryIndexFlush : public MFT
+{
+    MemoryIndexFlush() : MFT(FTT::FLUSH, FTC::INDEX) {}
+    ~MemoryIndexFlush() override;
+};
+
+MemoryIndexFlush::~MemoryIndexFlush() = default;
+
+struct DiskIndexFusion : public MFT
+{
+    DiskIndexFusion() : MFT(FTT::GC, FTC::INDEX) {}
+    ~DiskIndexFusion() override;
+};
+
+DiskIndexFusion::~DiskIndexFusion() = default;
+
+struct DocStoreFlush : public MFT
+{
+    DocStoreFlush() : MFT(FTT::SYNC, FTC::DOCUMENT_STORE) {}
+    ~DocStoreFlush() override;
+};
+
+DocStoreFlush::~DocStoreFlush() = default;
+
+struct DocStoreCompaction : public MFT
+{
+    DocStoreCompaction() : MFT(FTT::GC, FTC::DOCUMENT_STORE) {}
+    ~DocStoreCompaction() override;
+};
+
+DocStoreCompaction::~DocStoreCompaction() = default;
+
+struct OtherFlush : public MFT
+{
+    OtherFlush() : MFT(FTT::FLUSH, FTC::OTHER) {}
+    ~OtherFlush() override;
+};
+
+OtherFlush::~OtherFlush() = default;
 
 struct Fixture
 {
