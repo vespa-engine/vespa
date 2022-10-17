@@ -271,8 +271,9 @@ public:
 };
 
 template<typename C>
-uint32_t serializeForSort(typename C::InputType v, void * dst) {
+int32_t serializeForSort(typename C::InputType v, void * dst, uint32_t available) {
     typename C::UIntType nbo(vespalib::nbo::n2h(C::convert(v)));
+    if (available < sizeof(nbo)) return -1;
     memcpy(dst, &nbo, sizeof(nbo));
     return sizeof(nbo);
 }

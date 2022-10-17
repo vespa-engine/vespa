@@ -140,7 +140,7 @@ StringAttribute::onSerializeForDescendingSort(DocId doc, void * serTo, long avai
     }
     if (available >= (long)buf.size()) {
         const auto * src(static_cast<const uint8_t *>(buf.data()));
-        for (size_t i(0), m(buf.size()); i < m; ++i) {
+        for (size_t i(0); i < buf.size(); ++i) {
             dst[i] = 0xff - src[i];
         }
     } else {
