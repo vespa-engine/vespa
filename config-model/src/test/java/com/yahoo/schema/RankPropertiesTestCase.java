@@ -82,7 +82,7 @@ public class RankPropertiesTestCase extends AbstractSchemaTestCase {
     @Test
     public void testDefaultRankProperties() throws ParseException {
         RankProfileRegistry rankProfileRegistry = new RankProfileRegistry();
-        ApplicationBuilder builder = new ApplicationBuilder(rankProfileRegistry, new QueryProfileRegistry(), new TestProperties().setPhraseOptimization("split"));
+        ApplicationBuilder builder = new ApplicationBuilder(rankProfileRegistry, new QueryProfileRegistry());
         builder.addSchema(joinLines(
                 "search test {",
                 "    document test {",
