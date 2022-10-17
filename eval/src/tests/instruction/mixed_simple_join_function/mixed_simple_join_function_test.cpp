@@ -161,7 +161,10 @@ struct LhsRhs {
             factor = (rhs_size / lhs_size);
         }
     }
+    ~LhsRhs();
 };
+
+LhsRhs::~LhsRhs() = default;
 
 TEST("require that various parameter combinations work") {
     for (CellType lct : CellTypeUtils::list_types()) {
