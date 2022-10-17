@@ -12,6 +12,8 @@ RouteDirective::RouteDirective(vespalib::stringref name) :
     // empty
 }
 
+RouteDirective::~RouteDirective() = default;
+
 bool
 RouteDirective::matches(const IHopDirective &dir) const
 {

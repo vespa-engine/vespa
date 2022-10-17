@@ -164,6 +164,7 @@ private:
 public:
     ReuseReplyPolicyFactory(bool selectOnRetry,
                             const std::vector<uint32_t> &errorMask);
+    ~ReuseReplyPolicyFactory() override;
     IRoutingPolicy::UP create(const string &param) override;
 };
 
@@ -174,6 +175,8 @@ ReuseReplyPolicyFactory::ReuseReplyPolicyFactory(bool selectOnRetry,
 {
     // empty
 }
+
+ReuseReplyPolicyFactory::~ReuseReplyPolicyFactory() = default;
 
 IRoutingPolicy::UP
 ReuseReplyPolicyFactory::create(const string &param)

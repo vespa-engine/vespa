@@ -10,6 +10,8 @@ VerbatimDirective::VerbatimDirective(vespalib::stringref image) :
     // empty
 }
 
+VerbatimDirective::~VerbatimDirective() = default;
+
 bool
 VerbatimDirective::matches(const IHopDirective &dir) const
 {

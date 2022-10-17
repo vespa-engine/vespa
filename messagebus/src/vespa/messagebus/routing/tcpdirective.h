@@ -28,6 +28,8 @@ public:
      */
     TcpDirective(vespalib::stringref host, uint32_t port, vespalib::stringref session);
 
+    ~TcpDirective() override;
+
     /**
      * Returns the host to connect to. This may be an ip address or a name.
      *
