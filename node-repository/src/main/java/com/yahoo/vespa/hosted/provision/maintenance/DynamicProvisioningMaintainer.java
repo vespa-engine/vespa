@@ -168,7 +168,7 @@ public class DynamicProvisioningMaintainer extends NodeRepositoryMaintainer {
                     nodeRepository().nodes().write(updatedNode, mutex);
                 }
             } catch (RuntimeException e) {
-                log.log(Level.WARNING, "Failed to rebuild " + host.hostname() + ": " + Exceptions.toMessageString(e) + ", will retry in " + interval());
+                log.log(Level.WARNING, "Failed to rebuild " + host.hostname() + ", will retry in " + interval(), e);
             }
         }
     }
