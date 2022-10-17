@@ -176,7 +176,7 @@ BuildRequires: gmock-devel
 %endif
 BuildRequires: xxhash-devel >= 0.8.0
 %if 0%{?el8}
-BuildRequires: vespa-openblas-devel = 0.3.18
+BuildRequires: vespa-openblas-devel = 0.3.21
 %define _use_vespa_openblas 1
 %else
 BuildRequires: openblas-devel
@@ -302,7 +302,7 @@ Requires: openssl-libs
 Requires: vespa-lz4 >= 1.9.4-1
 Requires: vespa-libzstd >= 1.5.2-1
 %if 0%{?el8}
-Requires: vespa-openblas = 0.3.18
+Requires: vespa-openblas = 0.3.21
 %else
 Requires: openblas-serial
 %endif
