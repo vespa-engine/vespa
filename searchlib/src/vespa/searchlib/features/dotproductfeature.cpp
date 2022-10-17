@@ -370,10 +370,7 @@ ArrayParam<T>::~ArrayParam() = default;
 // Explicit instantiation since these are inspected by unit tests.
 // FIXME this feels a bit dirty, consider breaking up ArrayParam to remove dependencies
 // on templated vector parsing. This is why it's defined in this translation unit as it is.
-template ArrayParam<int64_t>::ArrayParam(const Property & prop);
-#ifdef __clang__
-template ArrayParam<int64_t>::~ArrayParam();
-#endif
+template struct ArrayParam<int64_t>;
 template struct ArrayParam<int32_t>;
 template struct ArrayParam<double>;
 template struct ArrayParam<float>;
