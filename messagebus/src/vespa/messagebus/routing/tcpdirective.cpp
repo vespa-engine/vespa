@@ -13,6 +13,8 @@ TcpDirective::TcpDirective(vespalib::stringref host, uint32_t port, vespalib::st
     // empty
 }
 
+TcpDirective::~TcpDirective() = default;
+
 bool
 TcpDirective::matches(const IHopDirective &dir) const
 {

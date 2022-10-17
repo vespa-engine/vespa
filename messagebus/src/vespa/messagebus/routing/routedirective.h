@@ -24,6 +24,7 @@ public:
      * @param name The name of the route to insert.
      */
     RouteDirective(vespalib::stringref name);
+    ~RouteDirective() override;
 
     /**
      * Returns the name of the route to insert.

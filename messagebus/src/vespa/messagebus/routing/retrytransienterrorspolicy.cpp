@@ -10,6 +10,8 @@ RetryTransientErrorsPolicy::RetryTransientErrorsPolicy() :
     _baseDelay(0.001)
 {}
 
+RetryTransientErrorsPolicy::~RetryTransientErrorsPolicy() = default;
+
 RetryTransientErrorsPolicy &
 RetryTransientErrorsPolicy::setEnabled(bool enabled) {
     _enabled = enabled;

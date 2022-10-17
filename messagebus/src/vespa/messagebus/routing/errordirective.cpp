@@ -10,6 +10,8 @@ ErrorDirective::ErrorDirective(vespalib::stringref msg) :
     _msg(msg)
 { }
 
+ErrorDirective::~ErrorDirective() = default;
+
 string
 ErrorDirective::toString() const
 {

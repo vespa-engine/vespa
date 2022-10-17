@@ -23,6 +23,7 @@ public:
      * @param image The image to assign to this.
      */
     VerbatimDirective(vespalib::stringref image);
+    ~VerbatimDirective() override;
 
     /**
      * Returns the image to which this is a verbatim match.

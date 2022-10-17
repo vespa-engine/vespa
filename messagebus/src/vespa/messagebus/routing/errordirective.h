@@ -23,6 +23,7 @@ public:
      * @param msg The error message.
      */
     ErrorDirective(vespalib::stringref msg);
+    ~ErrorDirective() override;
 
     /**
      * Returns the error string that is to be assigned to the reply.

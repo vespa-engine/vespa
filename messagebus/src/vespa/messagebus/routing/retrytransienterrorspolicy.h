@@ -22,6 +22,7 @@ public:
      * Constructs a new instance of this policy. By default retries are enabled with a 1.0 second base delay.
      */
     RetryTransientErrorsPolicy();
+    ~RetryTransientErrorsPolicy() override;
 
     /**
      * Sets whether or not this policy should allow retries or not.
