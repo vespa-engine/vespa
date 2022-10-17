@@ -793,7 +793,11 @@ public:
                                        (bigEndian ? ".zc4skipposoccbe.cf" : ".zc4skipposoccle.cf"))
     {
     }
+    ~FakeZc4SkipPosOccCf() override;
 };
+
+template <bool bigEndian>
+FakeZc4SkipPosOccCf<bigEndian>::~FakeZc4SkipPosOccCf() = default;
 
 class FakeZc4SkipPosOccCfNoNormalUnpack : public FakeZc4SkipPosOcc<true>
 {
@@ -804,7 +808,10 @@ public:
     {
         _unpack_normal_features = false;
     }
+    ~FakeZc4SkipPosOccCfNoNormalUnpack() override;
 };
+
+FakeZc4SkipPosOccCfNoNormalUnpack::~FakeZc4SkipPosOccCfNoNormalUnpack() = default;
 
 class FakeZc4SkipPosOccCfNoCheapUnpack : public FakeZc4SkipPosOcc<true>
 {
@@ -815,7 +822,10 @@ public:
     {
         _unpack_interleaved_features = false;
     }
+    ~FakeZc4SkipPosOccCfNoCheapUnpack() override;
 };
+
+FakeZc4SkipPosOccCfNoCheapUnpack::~FakeZc4SkipPosOccCfNoCheapUnpack() = default;
 
 template <bool bigEndian>
 class FakeZc4NoSkipPosOccCf : public FakeZc4SkipPosOcc<bigEndian>
@@ -826,7 +836,11 @@ public:
                                        (bigEndian ? ".zc4noskipposoccbe.cf" : "zc4noskipposoccle.cf"))
     {
     }
+    ~FakeZc4NoSkipPosOccCf() override;
 };
+
+template <bool bigEndian>
+FakeZc4NoSkipPosOccCf<bigEndian>::~FakeZc4NoSkipPosOccCf() = default;
 
 class FakeZc4NoSkipPosOccCfNoNormalUnpack : public FakeZc4SkipPosOcc<true>
 {
@@ -837,7 +851,10 @@ public:
     {
         _unpack_normal_features = false;
     }
+    ~FakeZc4NoSkipPosOccCfNoNormalUnpack() override;
 };
+
+FakeZc4NoSkipPosOccCfNoNormalUnpack::~FakeZc4NoSkipPosOccCfNoNormalUnpack() = default;
 
 class FakeZc4NoSkipPosOccCfNoCheapUnpack : public FakeZc4SkipPosOcc<true>
 {
@@ -848,7 +865,10 @@ public:
     {
         _unpack_interleaved_features = false;
     }
+    ~FakeZc4NoSkipPosOccCfNoCheapUnpack() override;
 };
+
+FakeZc4NoSkipPosOccCfNoCheapUnpack::~FakeZc4NoSkipPosOccCfNoCheapUnpack() = default;
 
 template <bool bigEndian>
 class FakeZc5NoSkipPosOccCf : public FakeZc4SkipPosOcc<bigEndian>
@@ -859,7 +879,11 @@ public:
                                        (bigEndian ? ".zc5noskipposoccbe.cf" : ".zc5noskipposoccle.cf"))
     {
     }
+    ~FakeZc5NoSkipPosOccCf() override;
 };
+
+template <bool bigEndian>
+FakeZc5NoSkipPosOccCf<bigEndian>::~FakeZc5NoSkipPosOccCf() = default;
 
 static FPFactoryInit
 initPosbe(std::make_pair("EGCompr64PosOccBE",
