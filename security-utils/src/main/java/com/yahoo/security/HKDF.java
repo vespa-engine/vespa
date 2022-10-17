@@ -27,7 +27,7 @@ import java.util.Objects;
  *
  * @author vekterli
  */
-public class HKDF {
+public final class HKDF {
 
     private static final int    HASH_LEN        = 32; // Fixed output size of HMAC-SHA256. Corresponds to HashLen in the spec
     private static final byte[] EMPTY_BYTES     = new byte[0];
@@ -46,6 +46,20 @@ public class HKDF {
         } catch (NoSuchAlgorithmException e) {
             throw new RuntimeException(e);
         }
+    }
+
+    /**
+     * @return the computed pseudo-random key (PRK) used as input for each <code>expand()</code> call.
+     */
+    public byte[] pseudoRandomKey() {
+        return this.pseudoRandomKey;
+    }
+
+    /**
+     * @return a new HKDF instance initially keyed with the given PRK
+     */
+    public static HKDF ofPseudoRandomKey(byte[] prk) {
+        return new HKDF(prk);
     }
 
     private static SecretKeySpec hmacKeyFrom(byte[] rawKey) {
