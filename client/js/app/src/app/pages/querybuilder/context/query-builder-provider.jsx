@@ -115,7 +115,7 @@ function inputUpdate(params, { id, type, value }) {
       node.value = newType.children ? [] : '';
     node.type = newType;
   }
-  if (value) node.value = value;
+  if (value != null) node.value = value;
 
   return cloned;
 }
