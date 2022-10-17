@@ -1042,7 +1042,7 @@ public class DocumentV1ApiHandler extends AbstractRequestHandler {
         }
 
         private ParsedDocumentOperation parse(InputStream inputStream, String docId, DocumentOperationType operation) {
-            return new JsonReader(manager, inputStream, jsonFactory).readSingleDocument(operation, docId);
+            return new JsonReader(manager, inputStream, jsonFactory).readOperation(operation, docId);
         }
 
     }

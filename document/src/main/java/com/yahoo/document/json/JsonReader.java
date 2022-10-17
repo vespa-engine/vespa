@@ -52,7 +52,7 @@ public class JsonReader {
         DocumentParser documentParser = new DocumentParser(parser);
         return documentParser.parse(Optional.empty());
     }
-    java.lang.NoSuchMethodError: 'com.yahoo.document.DocumentOperation com.yahoo.document.json.JsonReader.readSingleDocument(com.yahoo.document.json.DocumentOperationType, java.lang.String)'
+
     /**
      * Reads a single operation. The operation is not expected to be part of an array.
      *
@@ -60,7 +60,7 @@ public class JsonReader {
      * @param docIdString document ID
      * @return the parsed document operation
      */
-    public ParsedDocumentOperation readSingleDocument(DocumentOperationType operationType, String docIdString) {
+    public ParsedDocumentOperation readOperation(DocumentOperationType operationType, String docIdString) {
         DocumentId docId = new DocumentId(docIdString);
         DocumentParseInfo documentParseInfo;
         try {
@@ -76,6 +76,11 @@ public class JsonReader {
                 getDocumentTypeFromString(documentParseInfo.documentId.getDocType(), typeManager), documentParseInfo);
         operation.operation().setCondition(TestAndSetCondition.fromConditionString(documentParseInfo.condition));
         return operation;
+    }
+
+    @Deprecated // Use readOperation instead
+    public DocumentOperation readSingleDocument(DocumentOperationType operationType, String docIdString) {
+        return readOperation(operationType, docIdString).operation();
     }
 
     /** Returns the next document operation, or null if we have reached the end */
