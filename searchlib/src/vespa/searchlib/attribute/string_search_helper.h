@@ -22,10 +22,10 @@ public:
     StringSearchHelper & operator =(const StringSearchHelper &) = delete;
     ~StringSearchHelper();
     bool isMatch(const char *src) const;
-    bool isPrefix() const noexcept{ return _isPrefix; }
-    bool isRegex() const noexcept{ return _isRegex; }
-    bool isCased() const noexcept{ return _isCased; }
-    bool isFuzzy() const noexcept{ return _isFuzzy; }
+    bool isPrefix() const noexcept { return _isPrefix; }
+    bool isRegex() const noexcept { return _isRegex; }
+    bool isCased() const noexcept { return _isCased; }
+    bool isFuzzy() const noexcept { return _isFuzzy; }
     const vespalib::Regex & getRegex() const noexcept { return _regex; }
     const vespalib::FuzzyMatcher & getFuzzyMatcher() const noexcept { return *_fuzzyMatcher; }
 private:
