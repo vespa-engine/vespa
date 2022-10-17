@@ -10,6 +10,7 @@
 #include <vespa/searchcommon/attribute/search_context_params.h>
 #include <vespa/searchcommon/common/range.h>
 #include <vespa/vespalib/util/regexp.h>
+#include <vespa/vespalib/fuzzy/fuzzy_matcher.h>
 #include <regex>
 
 namespace search::attribute {
@@ -52,7 +53,7 @@ protected:
     PostingListSearchContext(const IEnumStoreDictionary& dictionary, uint32_t docIdLimit, uint64_t numValues, bool hasWeight,
                              uint32_t minBvDocFreq, bool useBitVector, const ISearchContext &baseSearchCtx);
 
-    ~PostingListSearchContext();
+    ~PostingListSearchContext() override;
 
     void lookupTerm(const vespalib::datastore::EntryComparator &comp);
     void lookupRange(const vespalib::datastore::EntryComparator &low, const vespalib::datastore::EntryComparator &high);

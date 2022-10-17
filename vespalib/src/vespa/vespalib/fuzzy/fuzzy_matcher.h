@@ -1,11 +1,9 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
-#include <string_view>
+#include <vespa/vespalib/stllike/string.h>
 #include <vector>
 #include <span>
-
-#include <vespa/vespalib/stllike/string.h>
 
 namespace vespalib {
 
@@ -34,17 +32,16 @@ private:
 
 public:
     FuzzyMatcher();
-
+    FuzzyMatcher(const FuzzyMatcher &) = delete;
+    FuzzyMatcher & operator = (const FuzzyMatcher &) = delete;
     FuzzyMatcher(std::string_view term, uint32_t max_edit_distance, uint32_t prefix_size, bool is_cased);
+    ~FuzzyMatcher();
 
     [[nodiscard]] bool isMatch(std::string_view target) const;
-
     [[nodiscard]] vespalib::string getPrefix() const;
 
     static std::span<const uint32_t> get_prefix(const std::vector<uint32_t>& termCodepoints, uint32_t prefixLength);
-
     static std::span<const uint32_t> get_suffix(const std::vector<uint32_t>& termCodepoints, uint32_t prefixLength);
-
 };
 
 }

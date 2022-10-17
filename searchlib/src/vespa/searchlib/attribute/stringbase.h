@@ -4,11 +4,8 @@
 
 #include "no_loaded_vector.h"
 #include "attributevector.h"
-#include "changevector.h"
 #include "i_enum_store.h"
 #include "loadedenumvalue.h"
-#include "search_context.h"
-#include "string_matcher.h"
 #include "string_search_context.h"
 
 namespace search {

@@ -3,8 +3,9 @@
 #include "string_search_context.h"
 #include "enumhintsearchcontext.h"
 #include "enumstore.h"
-#include <vespa/vespalib/util/regexp.h>
 #include <vespa/searchlib/query/query_term_ucs4.h>
+#include <vespa/vespalib/util/regexp.h>
+#include <vespa/vespalib/fuzzy/fuzzy_matcher.h>
 
 namespace search::attribute {
 

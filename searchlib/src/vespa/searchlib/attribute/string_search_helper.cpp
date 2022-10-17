@@ -4,6 +4,8 @@
 #include <vespa/searchlib/query/query_term_ucs4.h>
 #include <vespa/vespalib/text/lowercase.h>
 #include <vespa/vespalib/text/utf8.h>
+#include <vespa/vespalib/fuzzy/fuzzy_matcher.h>
+
 
 namespace search::attribute {
 
@@ -18,17 +20,14 @@ StringSearchHelper::StringSearchHelper(QueryTermUCS4 & term, bool cased)
       _isFuzzy(term.isFuzzy())
 {
     if (isRegex()) {
-        if (isCased()) {
-            _regex = vespalib::Regex::from_pattern(term.getTerm(), vespalib::Regex::Options::None);
-        } else {
-            _regex = vespalib::Regex::from_pattern(term.getTerm(), vespalib::Regex::Options::IgnoreCase);
-        }
+        _regex = (isCased())
+                ? vespalib::Regex::from_pattern(term.getTerm(), vespalib::Regex::Options::None)
+                : vespalib::Regex::from_pattern(term.getTerm(), vespalib::Regex::Options::IgnoreCase);
     } else if (isFuzzy()) {
-        _fuzzyMatcher = vespalib::FuzzyMatcher(
-                term.getTerm(),
-                term.getFuzzyMaxEditDistance(),
-                term.getFuzzyPrefixLength(),
-                isCased());
+        _fuzzyMatcher = std::make_unique<vespalib::FuzzyMatcher>(term.getTerm(),
+                                                                 term.getFuzzyMaxEditDistance(),
+                                                                 term.getFuzzyPrefixLength(),
+                                                                 isCased());
     } else if (isCased()) {
         _term._char = term.getTerm();
         _termLen = term.getTermLen();
@@ -44,7 +43,7 @@ StringSearchHelper::~StringSearchHelper() = default;
 bool
 StringSearchHelper::isMatch(const char *src) const {
     if (__builtin_expect(isRegex(), false)) {
-        return getRegex().valid() ? getRegex().partial_match(std::string_view(src)) : false;
+        return getRegex().valid() && getRegex().partial_match(std::string_view(src));
     }
     if (__builtin_expect(isFuzzy(), false)) {
         return getFuzzyMatcher().isMatch(src);
