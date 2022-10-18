@@ -38,7 +38,7 @@ public class HandlerMetricContextUtil {
         String name = matched.toString();
         String endpoint = request.headers().containsKey("Host") ? request.headers().get("Host").get(0) : null;
 
-        Map<String, String> dimensions = new HashMap<>();
+        Map<String, String> dimensions = new HashMap<>(extraDimensions.size() + 5);
         dimensions.put("handler", name);
         if (endpoint != null) {
             dimensions.put("endpoint", endpoint);
