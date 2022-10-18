@@ -33,17 +33,16 @@ public final class SlimeAdapter implements com.yahoo.data.access.Inspector {
     public boolean valid() { return inspector.valid(); }
 
     public com.yahoo.data.access.Type type() {
-        switch(inspector.type()) {
-        case NIX:    return com.yahoo.data.access.Type.EMPTY;
-        case BOOL:   return com.yahoo.data.access.Type.BOOL;
-        case LONG:   return com.yahoo.data.access.Type.LONG;
-        case DOUBLE: return com.yahoo.data.access.Type.DOUBLE;
-        case STRING: return com.yahoo.data.access.Type.STRING;
-        case DATA:   return com.yahoo.data.access.Type.DATA;
-        case ARRAY:  return com.yahoo.data.access.Type.ARRAY;
-        case OBJECT: return com.yahoo.data.access.Type.OBJECT;
-        }
-        return com.yahoo.data.access.Type.EMPTY;
+        return switch (inspector.type()) {
+            case NIX -> com.yahoo.data.access.Type.EMPTY;
+            case BOOL -> com.yahoo.data.access.Type.BOOL;
+            case LONG -> com.yahoo.data.access.Type.LONG;
+            case DOUBLE -> com.yahoo.data.access.Type.DOUBLE;
+            case STRING -> com.yahoo.data.access.Type.STRING;
+            case DATA -> com.yahoo.data.access.Type.DATA;
+            case ARRAY -> com.yahoo.data.access.Type.ARRAY;
+            case OBJECT -> com.yahoo.data.access.Type.OBJECT;
+        };
     }
 
     private boolean verify(Type okTypeA) {
