@@ -67,20 +67,16 @@ public:
     /**
      * Convenience typedefs.
      */
-    typedef std::shared_ptr<IFlushTarget> SP;
-    typedef std::vector<SP> List;
-    typedef FlushTask Task;
+    using SP = std::shared_ptr<IFlushTarget>;
+    using List = std::vector<SP>;
+    using Task = FlushTask;
 
     /**
      * Constructs a new instance of this class.
      *
      * @param name The handler-wide unique name of this target.
      */
-    IFlushTarget(const vespalib::string &name) noexcept
-        : _name(name),
-          _type(Type::OTHER),
-          _component(Component::OTHER)
-    { }
+    IFlushTarget(const vespalib::string &name) noexcept;
 
     /**
      * Constructs a new instance of this class.
@@ -91,16 +87,12 @@ public:
      */
     IFlushTarget(const vespalib::string &name,
                  const Type &type,
-                 const Component &component) noexcept
-        : _name(name),
-          _type(type),
-          _component(component)
-    { }
+                 const Component &component) noexcept;
 
     /**
      * Virtual destructor required for inheritance.
      */
-    virtual ~IFlushTarget() = default;
+    virtual ~IFlushTarget();
 
     /**
      * Returns the handler-wide unique name of this target.

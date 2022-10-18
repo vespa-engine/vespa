@@ -2,5 +2,6 @@
 vespa_add_library(searchcorespi_flush STATIC OBJECT
     SOURCES
     flushstats.cpp
+    iflushtarget.cpp
     DEPENDS
 )
