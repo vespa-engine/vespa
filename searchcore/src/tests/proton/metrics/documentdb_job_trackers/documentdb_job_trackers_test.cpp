@@ -19,16 +19,16 @@ typedef IFlushTarget::Component FTC;
 
 struct MFT : public test::DummyFlushTarget
 {
-    MFT(FTT type, FTC component) : test::DummyFlushTarget("", type, component) {}
+    MFT(FTT type, FTC component) noexcept : test::DummyFlushTarget("", type, component) {}
 };
 
-struct AttributeFlush : public MFT { AttributeFlush() : MFT(FTT::SYNC, FTC::ATTRIBUTE) {} };
-struct AttributeShrink : public MFT { AttributeShrink() : MFT(FTT::GC, FTC::ATTRIBUTE) {} };
-struct MemoryIndexFlush : public MFT { MemoryIndexFlush() : MFT(FTT::FLUSH, FTC::INDEX) {} };
-struct DiskIndexFusion : public MFT { DiskIndexFusion() : MFT(FTT::GC, FTC::INDEX) {} };
-struct DocStoreFlush : public MFT { DocStoreFlush() : MFT(FTT::SYNC, FTC::DOCUMENT_STORE) {} };
-struct DocStoreCompaction : public MFT { DocStoreCompaction() : MFT(FTT::GC, FTC::DOCUMENT_STORE) {} };
-struct OtherFlush : public MFT { OtherFlush() : MFT(FTT::FLUSH, FTC::OTHER) {} };
+struct AttributeFlush : public MFT { AttributeFlush() noexcept : MFT(FTT::SYNC, FTC::ATTRIBUTE) {} };
+struct AttributeShrink : public MFT { AttributeShrink() noexcept : MFT(FTT::GC, FTC::ATTRIBUTE) {} };
+struct MemoryIndexFlush : public MFT { MemoryIndexFlush() noexcept : MFT(FTT::FLUSH, FTC::INDEX) {} };
+struct DiskIndexFusion : public MFT { DiskIndexFusion() noexcept : MFT(FTT::GC, FTC::INDEX) {} };
+struct DocStoreFlush : public MFT { DocStoreFlush() noexcept : MFT(FTT::SYNC, FTC::DOCUMENT_STORE) {} };
+struct DocStoreCompaction : public MFT { DocStoreCompaction() noexcept : MFT(FTT::GC, FTC::DOCUMENT_STORE) {} };
+struct OtherFlush : public MFT { OtherFlush() noexcept : MFT(FTT::FLUSH, FTC::OTHER) {} };
 
 struct Fixture
 {
@@ -80,8 +80,7 @@ TEST_F("require that job metrics are updated", Fixture)
 bool
 assertFlushTarget(const IJobTracker &tracker, const IFlushTarget &target)
 {
-    const JobTrackedFlushTarget *tracked =
-            dynamic_cast<const JobTrackedFlushTarget *>(&target);
+    const auto *tracked = dynamic_cast<const JobTrackedFlushTarget *>(&target);
     if (!EXPECT_TRUE(tracked != nullptr)) return false;
     if (!EXPECT_EQUAL(&tracker, &tracked->getTracker())) return false;
     return true;
@@ -90,12 +89,12 @@ assertFlushTarget(const IJobTracker &tracker, const IFlushTarget &target)
 TEST_F("require that known flush targets are tracked", Fixture)
 {
     IFlushTarget::List input;
-    input.push_back(IFlushTarget::SP(new AttributeFlush()));
-    input.push_back(IFlushTarget::SP(new MemoryIndexFlush()));
-    input.push_back(IFlushTarget::SP(new DiskIndexFusion()));
-    input.push_back(IFlushTarget::SP(new DocStoreFlush()));
-    input.push_back(IFlushTarget::SP(new DocStoreCompaction()));
-    input.push_back(IFlushTarget::SP(new AttributeShrink()));
+    input.emplace_back(std::make_shared<AttributeFlush>());
+    input.emplace_back(std::make_shared<MemoryIndexFlush>());
+    input.emplace_back(std::make_shared<DiskIndexFusion>());
+    input.emplace_back(std::make_shared<DocStoreFlush>());
+    input.emplace_back(std::make_shared<DocStoreCompaction>());
+    input.emplace_back(std::make_shared<AttributeShrink>());
 
     IFlushTarget::List output = f._trackers.trackFlushTargets(input);
     EXPECT_EQUAL(6u, output.size());
@@ -110,7 +109,7 @@ TEST_F("require that known flush targets are tracked", Fixture)
 TEST_F("require that un-known flush targets are not tracked", Fixture)
 {
     IFlushTarget::List input;
-    input.push_back(IFlushTarget::SP(new OtherFlush()));
+    input.emplace_back(std::make_shared<OtherFlush>());
 
     IFlushTarget::List output = f._trackers.trackFlushTargets(input);
     EXPECT_EQUAL(1u, output.size());
