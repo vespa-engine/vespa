@@ -137,7 +137,7 @@ public:
         {}
     };
 
-    StateChecker() = default;
+    StateChecker() noexcept = default;
     virtual ~StateChecker() = default;
 
     /**

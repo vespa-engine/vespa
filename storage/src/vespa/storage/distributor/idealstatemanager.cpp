@@ -4,15 +4,14 @@
 #include "statecheckers.h"
 #include "top_level_distributor.h"
 #include "idealstatemetricsset.h"
+#include "distributor_bucket_space_repo.h"
+#include "distributor_bucket_space.h"
 #include <vespa/vespalib/stllike/asciistream.h>
-#include <vespa/storage/storageserver/storagemetricsset.h>
 #include <vespa/storageapi/message/persistence.h>
 #include <vespa/storage/common/bucketmessages.h>
 #include <vespa/document/bucket/fixed_bucket_spaces.h>
 #include <vespa/vespalib/util/assert.h>
 #include <vespa/vespalib/stllike/hash_map.hpp>
-#include "distributor_bucket_space_repo.h"
-#include "distributor_bucket_space.h"
 
 #include <vespa/log/log.h>
 LOG_SETUP(".distributor.operation.queue");
@@ -33,22 +32,22 @@ IdealStateManager::IdealStateManager(
       _has_logged_phantom_replica_warning(false)
 {
     LOG(debug, "Adding BucketStateStateChecker to state checkers");
-    _stateCheckers.push_back(std::make_shared<BucketStateStateChecker>());
+    _stateCheckers.emplace_back(std::make_shared<BucketStateStateChecker>());
 
-    _stateCheckers.push_back(std::make_shared<SplitBucketStateChecker>());
+    _stateCheckers.emplace_back(std::make_shared<SplitBucketStateChecker>());
     _splitBucketStateChecker = dynamic_cast<SplitBucketStateChecker *>(_stateCheckers.back().get());
-    _stateCheckers.push_back(std::make_shared<SplitInconsistentStateChecker>());
-    _stateCheckers.push_back(std::make_shared<SynchronizeAndMoveStateChecker>());
-    _stateCheckers.push_back(std::make_shared<JoinBucketsStateChecker>());
-    _stateCheckers.push_back(std::make_shared<DeleteExtraCopiesStateChecker>());
-    _stateCheckers.push_back(std::make_shared<GarbageCollectionStateChecker>());
+
+    _stateCheckers.emplace_back(std::make_shared<SplitInconsistentStateChecker>());
+    _stateCheckers.emplace_back(std::make_shared<SynchronizeAndMoveStateChecker>());
+    _stateCheckers.emplace_back(std::make_shared<JoinBucketsStateChecker>());
+    _stateCheckers.emplace_back(std::make_shared<DeleteExtraCopiesStateChecker>());
+    _stateCheckers.emplace_back(std::make_shared<GarbageCollectionStateChecker>());
 }
 
 IdealStateManager::~IdealStateManager() = default;
 
 void
-IdealStateManager::print(std::ostream& out, bool verbose,
-                         const std::string& indent)
+IdealStateManager::print(std::ostream& out, bool verbose, const std::string& indent)
 {
     (void) verbose; (void) indent;
     out << "IdealStateManager";

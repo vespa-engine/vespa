@@ -5,7 +5,6 @@
 #include "statechecker.h"
 #include <vespa/storage/distributor/maintenance/maintenanceprioritygenerator.h>
 #include <vespa/storage/distributor/maintenance/maintenanceoperationgenerator.h>
-#include <vespa/storageframework/generic/status/htmlstatusreporter.h>
 
 namespace storage::distributor {
 
