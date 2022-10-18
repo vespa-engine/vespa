@@ -408,6 +408,12 @@ public class Flags {
             "Takes effect on host admin restart",
             HOSTNAME);
 
+    public static final UnboundStringFlag AUTH0_SESSION_LOGOUT = defineStringFlag(
+            "auth0-session-logout", "disabled",
+            List.of("bjorncs", "tokle"), "2022-10-17", "2023-06-01",
+            "Set mode for Auth0 session logout ('disabled', 'log_only', 'enabled')",
+            "Takes effect on controller restart/redeployment");
+
     /** WARNING: public for testing: All flags should be defined in {@link Flags}. */
     public static UnboundBooleanFlag defineFeatureFlag(String flagId, boolean defaultValue, List<String> owners,
                                                        String createdAt, String expiresAt, String description,
