@@ -70,7 +70,7 @@ public:
     ~ArrayStore() override;
     EntryRef add(const ConstArrayRef &array);
     ConstArrayRef get(EntryRef ref) const {
-        if (!ref.valid()) {
+        if (!ref.valid()) [[unlikely]] {
             return ConstArrayRef();
         }
         RefT internalRef(ref);
