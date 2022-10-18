@@ -5,7 +5,6 @@ import com.yahoo.jdisc.Metric;
 import com.yahoo.jdisc.Request;
 import com.yahoo.jdisc.application.BindingMatch;
 import com.yahoo.jdisc.application.UriPattern;
-import com.yahoo.jdisc.handler.ResponseHandler;
 
 import java.net.URI;
 import java.util.HashMap;

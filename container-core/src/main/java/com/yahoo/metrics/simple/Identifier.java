@@ -12,19 +12,17 @@ public class Identifier {
 
     private final String name;
     private final Point location;
+    private final int hashCode;
 
     public Identifier(String name, Point location) {
         this.name = (name == null ? "" : name);
         this.location = (location == null ? Point.emptyPoint() : location);
+        this.hashCode = this.location.hashCode() * 31 + this.name.hashCode();
     }
 
     @Override
     public int hashCode() {
-        final int prime = 31;
-        int result = 1;
-        result = prime * result + location.hashCode();
-        result = prime * result + name.hashCode();
-        return result;
+        return hashCode;
     }
 
     @Override
@@ -34,13 +32,7 @@ public class Identifier {
         if (getClass() != obj.getClass()) return false;
 
         Identifier other = (Identifier) obj;
-        if (!location.equals(other.location)) {
-            return false;
-        }
-        if (!name.equals(other.name)) {
-            return false;
-        }
-        return true;
+        return location.equals(other.location) && name.equals(other.name);
     }
 
     @Override
