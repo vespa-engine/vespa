@@ -75,7 +75,7 @@ public:
         }
         RefT internalRef(ref);
         uint32_t typeId = _store.getTypeId(internalRef.bufferId());
-        if (typeId != _largeArrayTypeId) {
+        if (typeId != _largeArrayTypeId) [[likely]] {
             size_t arraySize = _mapper.get_array_size(typeId);
             return getSmallArray(internalRef, arraySize);
         } else {
