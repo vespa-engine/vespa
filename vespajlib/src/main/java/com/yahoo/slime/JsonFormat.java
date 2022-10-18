@@ -1,15 +1,16 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.slime;
 
-import ai.vespa.validation.Validation;
 import com.yahoo.io.AbstractByteWriter;
 import com.yahoo.io.ByteWriter;
 import com.yahoo.text.AbstractUtf8Array;
 import com.yahoo.text.Utf8;
 import com.yahoo.text.Utf8String;
 
-import java.io.*;
-import java.nio.charset.StandardCharsets;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.OutputStream;
+import java.io.UncheckedIOException;
 
 import static ai.vespa.validation.Validation.requireInRange;
 import static java.nio.charset.StandardCharsets.UTF_8;

@@ -418,8 +418,7 @@ public class JsonRenderer extends AsynchronousSectionedRenderer<Result> {
     protected void renderGroupMetadata(GroupId id) throws IOException {
         if (!(id instanceof ValueGroupId || id instanceof BucketGroupId)) return;
 
-        if (id instanceof ValueGroupId) {
-            ValueGroupId<?> valueId = (ValueGroupId<?>) id;
+        if (id instanceof ValueGroupId valueId) {
             generator.writeStringField(GROUPING_VALUE, getIdValue(valueId));
         } else {
             BucketGroupId<?> bucketId = (BucketGroupId<?>) id;
@@ -663,7 +662,7 @@ public class JsonRenderer extends AsynchronousSectionedRenderer<Result> {
                 if (key.type() == Type.STRING) {
                     map.put(key.asString(), value);
                 } else {
-                    map.put(key.toString(), value);
+                    map.put(JsonRender.render(key, new StringBuilder(), true).toString(), value);
                 }
             }
             return map;
@@ -685,7 +684,7 @@ public class JsonRenderer extends AsynchronousSectionedRenderer<Result> {
                 if (item.type() == Type.STRING) {
                     wset.put(item.asString(), weight.asLong());
                 } else if (settings.jsonWsetsAll) {
-                    wset.put(item.toString(), weight.asLong());
+                    wset.put(JsonRender.render(item, new StringBuilder(), true).toString(), weight.asLong());
                 } else {
                     return null;
                 }
@@ -753,9 +752,7 @@ public class JsonRenderer extends AsynchronousSectionedRenderer<Result> {
         }
 
         private void renderInspectorDirect(Inspector data) throws IOException {
-            StringBuilder intermediate = new StringBuilder();
-            JsonRender.render(data, intermediate, true);
-            generator().writeRawValue(intermediate.toString());
+            generator().writeRawValue(JsonRender.render(data, new StringBuilder(), true).toString());
         }
 
         protected void renderFieldContents(Object field) throws IOException {
