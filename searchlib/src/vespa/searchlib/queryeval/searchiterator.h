@@ -355,6 +355,12 @@ public:
 
     virtual Trinary is_strict() const { return Trinary::Undefined; }
 
+    // will this iterator match any document?
+    // (True -> all documents match)
+    // (False -> no documents match)
+    // (Undefined -> use seek to find out)
+    // number of matches: (False <= Undefined <= True)
+    virtual Trinary matches_any() const { return Trinary::Undefined; }
 };
 
 }

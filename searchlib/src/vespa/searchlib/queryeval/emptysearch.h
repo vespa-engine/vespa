@@ -21,6 +21,7 @@ protected:
         setAtEnd();
     }
     virtual Trinary is_strict() const override;
+    Trinary matches_any() const override { return Trinary::False; }
 
 public:
     EmptySearch();

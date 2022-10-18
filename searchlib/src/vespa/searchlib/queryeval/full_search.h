@@ -21,6 +21,7 @@ private:
     void or_hits_into(BitVector &result, uint32_t begin_id) override;
     void and_hits_into(BitVector &result, uint32_t begin_id) override;
     BitVector::UP get_hits(uint32_t begin_id) override;
+    Trinary matches_any() const override { return Trinary::True; }
 
 public:
     FullSearch();
