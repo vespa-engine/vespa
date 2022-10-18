@@ -45,7 +45,7 @@ public class SimpleMetricConsumer implements MetricConsumer {
 
     @Override
     public Context createContext(Map<String, ?> properties) {
-        if (properties == null)
+        if ((properties == null) || properties.isEmpty())
             return Point.emptyPoint();
         return new Point(properties);
     }
