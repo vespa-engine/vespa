@@ -103,7 +103,4 @@ StateChecker::Context::toString() const
     return ss.str();
 }
 
-StateChecker::StateChecker()  = default;
-StateChecker::~StateChecker() = default;
-
 }

@@ -4,15 +4,14 @@
 #include "statecheckers.h"
 #include "top_level_distributor.h"
 #include "idealstatemetricsset.h"
+#include "distributor_bucket_space_repo.h"
+#include "distributor_bucket_space.h"
 #include <vespa/vespalib/stllike/asciistream.h>
-#include <vespa/storage/storageserver/storagemetricsset.h>
 #include <vespa/storageapi/message/persistence.h>
 #include <vespa/storage/common/bucketmessages.h>
 #include <vespa/document/bucket/fixed_bucket_spaces.h>
 #include <vespa/vespalib/util/assert.h>
 #include <vespa/vespalib/stllike/hash_map.hpp>
-#include "distributor_bucket_space_repo.h"
-#include "distributor_bucket_space.h"
 
 #include <vespa/log/log.h>
 LOG_SETUP(".distributor.operation.queue");
@@ -33,41 +32,29 @@ IdealStateManager::IdealStateManager(
       _has_logged_phantom_replica_warning(false)
 {
     LOG(debug, "Adding BucketStateStateChecker to state checkers");
-    _stateCheckers.push_back(StateChecker::SP(new BucketStateStateChecker()));
+    _stateCheckers.emplace_back(std::make_shared<BucketStateStateChecker>());
 
-    _splitBucketStateChecker = new SplitBucketStateChecker();
-    _stateCheckers.push_back(StateChecker::SP(_splitBucketStateChecker));
-    _stateCheckers.push_back(StateChecker::SP(new SplitInconsistentStateChecker()));
-    _stateCheckers.push_back(StateChecker::SP(new SynchronizeAndMoveStateChecker()));
-    _stateCheckers.push_back(StateChecker::SP(new JoinBucketsStateChecker()));
-    _stateCheckers.push_back(StateChecker::SP(new DeleteExtraCopiesStateChecker()));
-    _stateCheckers.push_back(StateChecker::SP(new GarbageCollectionStateChecker()));
+    _stateCheckers.emplace_back(std::make_shared<SplitBucketStateChecker>());
+    _splitBucketStateChecker = dynamic_cast<SplitBucketStateChecker *>(_stateCheckers.back().get());
+
+    _stateCheckers.emplace_back(std::make_shared<SplitInconsistentStateChecker>());
+    _stateCheckers.emplace_back(std::make_shared<SynchronizeAndMoveStateChecker>());
+    _stateCheckers.emplace_back(std::make_shared<JoinBucketsStateChecker>());
+    _stateCheckers.emplace_back(std::make_shared<DeleteExtraCopiesStateChecker>());
+    _stateCheckers.emplace_back(std::make_shared<GarbageCollectionStateChecker>());
 }
 
 IdealStateManager::~IdealStateManager() = default;
 
 void
-IdealStateManager::print(std::ostream& out, bool verbose,
-                         const std::string& indent) const
+IdealStateManager::print(std::ostream& out, bool verbose, const std::string& indent)
 {
     (void) verbose; (void) indent;
     out << "IdealStateManager";
 }
 
-bool
-IdealStateManager::iAmUp() const
-{
-    Node node(NodeType::DISTRIBUTOR, node_context().node_index());
-    // Assume that derived cluster states agree on distributor node being up
-    const auto &state = *operation_context().cluster_state_bundle().getBaselineClusterState();
-    const lib::State &nodeState = state.getNodeState(node).getState();
-    const lib::State &clusterState = state.getClusterState();
-
-    return (nodeState == lib::State::UP && clusterState == lib::State::UP);
-}
-
 void
-IdealStateManager::fillParentAndChildBuckets(StateChecker::Context& c) const
+IdealStateManager::fillParentAndChildBuckets(StateChecker::Context& c)
 {
     c.db.getAll(c.getBucketId(), c.entries);
     if (c.entries.empty()) {
@@ -77,21 +64,20 @@ IdealStateManager::fillParentAndChildBuckets(StateChecker::Context& c) const
     }
 }
 void
-IdealStateManager::fillSiblingBucket(StateChecker::Context& c) const
+IdealStateManager::fillSiblingBucket(StateChecker::Context& c)
 {
     c.siblingEntry = c.db.get(c.siblingBucket);
 }
 
 BucketDatabase::Entry*
-IdealStateManager::getEntryForPrimaryBucket(StateChecker::Context& c) const
+IdealStateManager::getEntryForPrimaryBucket(StateChecker::Context& c)
 {
-    for (uint32_t j = 0; j < c.entries.size(); ++j) {
-        BucketDatabase::Entry& e = c.entries[j];
+    for (auto & e : c.entries) {
         if (e.getBucketId() == c.getBucketId() && ! e->getNodes().empty()) {
             return &e;
         }
     }
-    return 0;
+    return nullptr;
 }
 
 namespace {
@@ -116,16 +102,15 @@ IdealStateManager::runStateCheckers(StateChecker::Context& c) const
     auto highestPri = StateChecker::Result::noMaintenanceNeeded();
     // We go through _all_ active state checkers so that statistics can be
     // collected across all checkers, not just the ones that are highest pri.
-    for (uint32_t i = 0; i < _stateCheckers.size(); i++) {
+    for (const auto & checker : _stateCheckers) {
         if (!operation_context().distributor_config().stateCheckerIsActive(
-                _stateCheckers[i]->getName()))
+                checker->getName()))
         {
-            LOG(spam, "Skipping state checker %s",
-                _stateCheckers[i]->getName());
+            LOG(spam, "Skipping state checker %s", checker->getName());
             continue;
         }
 
-        auto result = _stateCheckers[i]->check(c);
+        auto result = checker->check(c);
         if (canOverwriteResult(highestPri, result)) {
             highestPri = std::move(result);
         }
@@ -180,13 +165,12 @@ IdealStateManager::prioritize(
         const document::Bucket &bucket,
         NodeMaintenanceStatsTracker& statsTracker) const
 {
-    StateChecker::Result generated(
-            generateHighestPriority(bucket, statsTracker));
+    StateChecker::Result generated(generateHighestPriority(bucket, statsTracker));
     MaintenancePriority priority(generated.getPriority());
     MaintenanceOperation::Type type(priority.requiresMaintenance()
                                     ? generated.getType()
                                     : MaintenanceOperation::OPERATION_COUNT);
-    return MaintenancePriorityAndType(priority, type);
+    return {priority, type};
 }
 
 IdealStateOperation::SP
@@ -201,17 +185,16 @@ IdealStateManager::generateInterceptingSplit(BucketSpace bucketSpace,
     if (e.valid()) {
         c.entry = e;
 
-        IdealStateOperation::UP operation(
-                _splitBucketStateChecker->check(c).createOperation());
+        IdealStateOperation::UP operation(_splitBucketStateChecker->check(c).createOperation());
         if (operation.get()) {
             operation->setPriority(pri);
             operation->setIdealStateManager(this);
         }
 
-        return IdealStateOperation::SP(operation.release());
+        return operation;
     }
 
-    return IdealStateOperation::SP();
+    return {};
 }
 
 MaintenanceOperation::SP
@@ -243,11 +226,10 @@ IdealStateManager::generateAll(const document::Bucket &bucket,
         return operations;
     }
 
-    for (uint32_t i = 0; i < _stateCheckers.size(); i++) {
-        IdealStateOperation::UP op(
-                _stateCheckers[i]->check(c).createOperation());
-        if (op.get()) {
-            operations.push_back(IdealStateOperation::SP(op.release()));
+    for (const auto & checker : _stateCheckers) {
+        IdealStateOperation::UP op(checker->check(c).createOperation());
+        if (op) {
+            operations.emplace_back(std::move(op));
         }
     }
     return operations;

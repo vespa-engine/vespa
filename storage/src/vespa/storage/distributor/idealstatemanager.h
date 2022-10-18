@@ -5,7 +5,6 @@
 #include "statechecker.h"
 #include <vespa/storage/distributor/maintenance/maintenanceprioritygenerator.h>
 #include <vespa/storage/distributor/maintenance/maintenanceoperationgenerator.h>
-#include <vespa/storageframework/generic/status/htmlstatusreporter.h>
 
 namespace storage::distributor {
 
@@ -39,8 +38,7 @@ public:
 
     ~IdealStateManager() override;
 
-    void print(std::ostream& out, bool verbose,
-                       const std::string& indent) const;
+    static void print(std::ostream& out, bool verbose, const std::string& indent);
 
     // MaintenancePriorityGenerator interface
     MaintenancePriorityAndType prioritize(
@@ -79,14 +77,14 @@ public:
 
 private:
     void verify_only_live_nodes_in_context(const StateChecker::Context& c) const;
-    void fillParentAndChildBuckets(StateChecker::Context& c) const;
-    void fillSiblingBucket(StateChecker::Context& c) const;
+    static void fillParentAndChildBuckets(StateChecker::Context& c);
+    static void fillSiblingBucket(StateChecker::Context& c);
     StateChecker::Result generateHighestPriority(
             const document::Bucket &bucket,
             NodeMaintenanceStatsTracker& statsTracker) const;
     StateChecker::Result runStateCheckers(StateChecker::Context& c) const;
 
-    BucketDatabase::Entry* getEntryForPrimaryBucket(StateChecker::Context& c) const;
+    static BucketDatabase::Entry* getEntryForPrimaryBucket(StateChecker::Context& c);
 
     IdealStateMetricSet& _metrics;
     document::BucketId _lastPrioritizedBucket;
@@ -99,8 +97,6 @@ private:
     const DistributorNodeContext& _node_ctx;
     DistributorStripeOperationContext& _op_ctx;
     mutable bool _has_logged_phantom_replica_warning;
-
-    bool iAmUp() const;
 
     class StatusBucketVisitor : public BucketDatabase::EntryProcessor {
         // Stats tracker to use for all generateAll() calls to avoid having
