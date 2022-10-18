@@ -22,7 +22,7 @@ vespalib::ConstArrayRef<MultiValueType>
 EnumeratedMultiValueReadView<MultiValueType, RawMultiValueType, EnumEntryType>::get_values(uint32_t docid) const
 {
     auto raw = _mv_mapping_read_view.get(docid);
-    if (_copy.size() < raw.size()) {
+    if (_copy.size() < raw.size()) [[unlikely]] {
         _copy.resize(raw.size());
     }
     auto dst = _copy.data();
