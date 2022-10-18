@@ -368,7 +368,7 @@ public class Flags {
             "Takes effect on controller restart/redeployment");
 
     public static final UnboundBooleanFlag SOFT_REBUILD = defineFeatureFlag(
-            "soft-rebuild", false,
+            "soft-rebuild", true,
             List.of("mpolden"), "2022-09-27", "2022-12-01",
             "Whether soft rebuild can be used to rebuild hosts with remote disk",
             "Takes effect on next run of OsUpgradeActivator"
