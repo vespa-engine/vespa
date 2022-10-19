@@ -26,14 +26,12 @@ class StringFieldBuilder {
     document::SpanList* _span_list;  // owned by _span_tree
     std::unique_ptr<document::SpanTree> _span_tree;
     const document::SpanNode* _last_span;
-    bool                      _url_mode;
     const document::FixedTypeRepo _repo;
     void start_annotate();
     void add_span();
 public:
     StringFieldBuilder(const DocBuilder& doc_builder);
     ~StringFieldBuilder();
-    StringFieldBuilder& url_mode(bool url_mode_) noexcept { _url_mode = url_mode_; return *this; }
     StringFieldBuilder& token(const vespalib::string& val, bool is_word);
     StringFieldBuilder& word(const vespalib::string& val) { return token(val, true); }
     StringFieldBuilder& space() { return token(" ", false); }

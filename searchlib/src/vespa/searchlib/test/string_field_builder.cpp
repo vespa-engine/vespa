@@ -37,7 +37,6 @@ StringFieldBuilder::StringFieldBuilder(const DocBuilder& doc_builder)
       _span_list(nullptr),
       _span_tree(),
       _last_span(nullptr),
-      _url_mode(false),
       _repo(doc_builder.get_repo(), doc_builder.get_document_type())
 {
 }
@@ -100,8 +99,7 @@ StringFieldBuilder::tokenize(const vespalib::string& val)
 
     while (reader.hasMore()) {
         c = reader.getChar();
-        bool new_word = Fast_UnicodeUtil::IsWordChar(c) ||
-                        (_url_mode && (c == '-' || c == '_'));
+        bool new_word = Fast_UnicodeUtil::IsWordChar(c);
         if (old_word != new_word) {
             if (!token_buffer.empty()) {
                 token(token_buffer, old_word);
