@@ -14,7 +14,7 @@ public class LocalDiskLogger extends AbstractThreadedLogger {
     }
 
     @Override
-    boolean transport(LoggerEntry entry) {
+    public boolean transport(LoggerEntry entry) {
         String json = entry.serialize();
         try (FileWriter fw = new FileWriter(logFilePath, true)) {
             fw.write(json);
