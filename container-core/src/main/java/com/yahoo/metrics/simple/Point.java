@@ -6,7 +6,6 @@ import java.util.List;
 import java.util.Map;
 
 import com.yahoo.api.annotations.Beta;
-import com.google.common.collect.ImmutableList;
 import com.yahoo.collections.Tuple2;
 import com.yahoo.jdisc.Metric.Context;
 
@@ -20,6 +19,7 @@ public final class Point implements Context {
 
     private final Value[] location;
     private final String[] dimensions;
+    private final int hashCode;
 
     public Point(Map<String, ?> properties) {
         this(buildParameters(properties));
@@ -38,6 +38,7 @@ public final class Point implements Context {
     Point(String[] dimensions, Value[] location) {
         this.dimensions = dimensions;
         this.location = location;
+        this.hashCode = Arrays.hashCode(location) * 31 + Arrays.hashCode(dimensions);
     }
 
     private static final Point theEmptyPoint = new Point(new String[0], new Value[0]);
@@ -58,32 +59,16 @@ public final class Point implements Context {
 
     @Override
     public boolean equals(Object obj) {
-        if (this == obj) {
-            return true;
-        }
-        if (obj == null) {
-            return false;
-        }
-        if (getClass() != obj.getClass()) {
-            return false;
-        }
+        if (this == obj) return true;
+        if (obj == null) return false;
+        if (getClass() != obj.getClass()) return false;
         Point other = (Point) obj;
-        if (!Arrays.equals(dimensions, other.dimensions)) {
-            return false;
-        }
-        if (!Arrays.equals(location, other.location)) {
-            return false;
-        }
-        return true;
+        return Arrays.equals(dimensions, other.dimensions) && Arrays.equals(location, other.location);
     }
 
     @Override
     public int hashCode() {
-        final int prime = 31;
-        int result = 1;
-        result = prime * result + Arrays.hashCode(dimensions);
-        result = prime * result + Arrays.hashCode(location);
-        return result;
+        return hashCode;
     }
 
     @Override
@@ -102,14 +87,14 @@ public final class Point implements Context {
      * Get an immutable list view of the values for each dimension.
      */
     public List<Value> location() {
-        return ImmutableList.copyOf(location);
+        return List.of(location);
     }
 
     /**
      * Get an immutable list view of the names of each dimension.
      */
     public List<String> dimensions() {
-        return ImmutableList.copyOf(dimensions);
+        return List.of(dimensions);
     }
 
     /**

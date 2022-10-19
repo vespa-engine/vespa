@@ -1,7 +1,6 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.metrics.simple.jdisc;
 
-import java.util.HashMap;
 import java.util.Map;
 
 import com.yahoo.jdisc.Metric.Context;
@@ -46,8 +45,8 @@ public class SimpleMetricConsumer implements MetricConsumer {
 
     @Override
     public Context createContext(Map<String, ?> properties) {
-        if (properties == null)
-            properties = new HashMap<>();
+        if ((properties == null) || properties.isEmpty())
+            return Point.emptyPoint();
         return new Point(properties);
     }
 

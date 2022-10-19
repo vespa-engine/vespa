@@ -27,18 +27,12 @@ public final class PointBuilder {
     }
 
     PointBuilder(Point p) {
-        dimensions = new ArrayList<>();
-        location = new ArrayList<>();
         if (p != null) {
             int size = p.dimensionality();
             dimensions = new ArrayList<>(size+2);
             location = new ArrayList<>(size+2);
-            for (String dimensionName : p.getDimensions()) {
-                dimensions.add(dimensionName);
-            }
-            for (Value dimensionValue : p.getLocation()) {
-                location.add(dimensionValue);
-            }
+            Collections.addAll(dimensions, p.getDimensions());
+            Collections.addAll(location, p.getLocation());
         } else {
             dimensions = new ArrayList<>(4);
             location = new ArrayList<>(4);
