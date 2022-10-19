@@ -77,7 +77,7 @@ Value::set(vespalib::DataBuffer &&buf, ssize_t len, const CompressionConfig &com
 
 Value::Result
 Value::decompressed() const {
-    vespalib::DataBuffer uncompressed(_buf.get(), (size_t) 0);
+    vespalib::DataBuffer uncompressed(0, 1, Alloc::alloc(0, 16 * vespalib::alloc::MemoryAllocator::HUGEPAGE_SIZE));
     decompress(getCompression(), getUncompressedSize(), vespalib::ConstBufferRef(*this, size()), uncompressed, true);
     uint64_t crc = XXH64(uncompressed.getData(), uncompressed.getDataLen(), 0);
     return std::make_pair<vespalib::DataBuffer, bool>(std::move(uncompressed), crc == _uncompressedCrc);
