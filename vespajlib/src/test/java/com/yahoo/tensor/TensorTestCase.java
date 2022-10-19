@@ -63,9 +63,11 @@ public class TensorTestCase {
     }
 
     @Test
-    public void testToShortString() {
+    public void testToAbbreviatedString() {
         assertEquals("tensor(x[10]):[0.0, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0]",
                      Tensor.from("tensor(x[10]):[0, 1, 2, 3, 4, 5, 6, 7, 8, 9]").toAbbreviatedString());
+        assertEquals("[0.0, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0]",
+                     Tensor.from("tensor(x[10]):[0, 1, 2, 3, 4, 5, 6, 7, 8, 9]").toAbbreviatedString(false, true));
         assertEquals("tensor(x[14]):[0.0, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, ...]",
                      Tensor.from("tensor(x[14]):[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13]").toAbbreviatedString());
         assertEquals("tensor(d1{},d2{}):{{d1:l1,d2:l1}:6.0, {d1:l1,d2:l2}:6.0, {d1:l1,d2:l3}:6.0, ...}",
@@ -83,6 +85,10 @@ public class TensorTestCase {
                                  " {m:k3,n:k1,x:0}:0, {m:k3,n:k1,x:1}:1, {m:k3,n:k1,x:2}:2}").toAbbreviatedString());
         assertEquals("tensor(m{},x[2],y[2]):{k1:[[0.0, 1.0], [2.0, 3.0]], k2:[[0.0, ...}",
                      Tensor.from("tensor(m{},x[2],y[2]):{k1:[[0,1],[2,3]], k2:[[0,1],[2,3]], k3:[[0,1],[2,3]]}").toAbbreviatedString());
+        assertEquals("{k1:[[0.0, 1.0], [2.0, 3.0]], k2:[[0.0, ...}",
+                     Tensor.from("tensor(m{},x[2],y[2]):{k1:[[0,1],[2,3]], k2:[[0,1],[2,3]], k3:[[0,1],[2,3]]}").toAbbreviatedString(false, true));
+        assertEquals("{{m:k1,x:0,y:0}:0.0, {m:k1,x:0,y:1}:1.0, {m:k1,x:1,y:0}:2.0, {m:k1,x:1,y:1}:3.0, {m:k2,x:0,y:0}:0.0, ...}",
+                     Tensor.from("tensor(m{},x[2],y[2]):{k1:[[0,1],[2,3]], k2:[[0,1],[2,3]], k3:[[0,1],[2,3]]}").toAbbreviatedString(false, false));
     }
 
     @Test

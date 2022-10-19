@@ -783,12 +783,13 @@ public class RankProfile implements Cloneable {
 
         // Combine
         Map<Reference, Input> allInputs = new LinkedHashMap<>();
+
         for (var inheritedProfile : inherited()) {
             for (var input : inheritedProfile.inputs().entrySet()) {
                 Input existing = allInputs.get(input.getKey());
                 if (existing != null && ! existing.equals(input.getValue()))
                     throw new IllegalArgumentException(this + " inherits " + inheritedProfile + " which contains " +
-                                                       input.getValue() + ", but this input is already defined as " +
+                                                       input.getValue() + ", but this is already defined as " +
                                                        existing + " in another profile this inherits");
                 allInputs.put(input.getKey(), input.getValue());
             }
@@ -1403,8 +1404,7 @@ public class RankProfile implements Cloneable {
         @Override
         public boolean equals(Object o) {
             if (o == this) return true;
-            if ( ! (o instanceof Input)) return false;
-            Input other = (Input)o;
+            if ( ! (o instanceof Input other)) return false;
             if ( ! other.name().equals(this.name())) return false;
             if ( ! other.type().equals(this.type())) return false;
             if ( ! other.defaultValue().equals(this.defaultValue())) return false;
@@ -1418,8 +1418,8 @@ public class RankProfile implements Cloneable {
 
         @Override
         public String toString() {
-            return "input '" + name + "' " + type +
-                   (defaultValue().isPresent() ? ":" + defaultValue.get().toAbbreviatedString() : "");
+            return "input " + name + " " + type +
+                   (defaultValue().isPresent() ? ":" + defaultValue.get().toAbbreviatedString(false, true) : "");
         }
 
     }

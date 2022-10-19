@@ -24,11 +24,13 @@ import ai.vespa.rankingexpression.importer.configmodelview.ImportedMlModels;
 
 import static com.yahoo.config.model.test.TestUtil.joinLines;
 
+import com.yahoo.searchlib.rankingexpression.Reference;
 import org.junit.jupiter.api.Test;
 
 import java.util.Iterator;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -164,6 +166,74 @@ public class RankProfileTestCase extends AbstractSchemaTestCase {
             fail("Sideways inheritance should have been enforced");
         } catch (IllegalArgumentException e) {
             assertEquals("rank-profile 'child' inherits 'parent', but this is not found in schema 'child1'", e.getMessage());
+        }
+    }
+
+    @Test
+    void inputsAreInheritedAndValuesAreOverridable() throws ParseException {
+        RankProfileRegistry registry = new RankProfileRegistry();
+        ApplicationBuilder builder = new ApplicationBuilder(registry, new QueryProfileRegistry());
+        builder.addSchema(joinLines(
+                "schema test {",
+                "  document test { } ",
+                "  rank-profile parent1 {",
+                "    inputs {",
+                "      input1 double: 1",
+                "      input2 double: 2",
+                "    }",
+                "  }",
+                "  rank-profile parent2 {",
+                "    inputs {",
+                "      input4 double: 4",
+                "    }",
+                "  }",
+                "  rank-profile child inherits parent1, parent2 {",
+                "    inputs {",
+                "      input2 double: 2.5",
+                "      input3 double: 3",
+                "    }" +
+                "  }",
+                "}"));
+        var application = builder.build(true);
+        RankProfile child = registry.get(application.schemas().get("test"), "child");
+        assertEquals(4, child.inputs().size());
+        assertEquals(Set.of(Reference.simple("query", "input1"),
+                            Reference.simple("query", "input2"),
+                            Reference.simple("query", "input3"),
+                            Reference.simple("query", "input4")),
+                            child.inputs().keySet());
+        var input2 = child.inputs().get(Reference.simple("query", "input2"));
+        assertEquals(2.5, input2.defaultValue().get().asDouble(), 0.000000001);
+    }
+
+    @Test
+    void inputConflictsAreDetected() throws ParseException {
+        try {
+            RankProfileRegistry registry = new RankProfileRegistry();
+            ApplicationBuilder builder = new ApplicationBuilder(registry, new QueryProfileRegistry());
+            builder.addSchema(joinLines(
+                    "schema test {",
+                    "  document test { } ",
+                    "  rank-profile parent1 {",
+                    "    inputs {",
+                    "      input1 double: 1",
+                    "    }",
+                    "  }",
+                    "  rank-profile parent2 {",
+                    "    inputs {",
+                    "      input1 tensor(x[100])",
+                    "    }",
+                    "  }",
+                    "  rank-profile child inherits parent1, parent2 {",
+                    "  }",
+                    "}"));
+            builder.build(true);
+            fail("Should have failed");
+        }
+        catch (IllegalArgumentException e) {
+            assertEquals("rank profile 'child' inherits rank profile 'parent2' which contains input query(input1) tensor(x[100])" +
+                         ", but this is already defined as input query(input1) tensor():{1.0} in another profile this inherits",
+                         e.getCause().getMessage());
         }
     }
 
