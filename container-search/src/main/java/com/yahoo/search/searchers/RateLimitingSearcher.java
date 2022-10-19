@@ -18,7 +18,6 @@ import com.yahoo.search.searchchain.Execution;
 import com.yahoo.yolean.chain.Provides;
 
 import java.time.Clock;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ThreadLocalRandom;

@@ -43,7 +43,7 @@ public class Gauge {
      *            position/dimension values for the sample
      */
     public void sample(double x, Point p) {
-        receiver.update(new Sample(new Measurement(Double.valueOf(x)), new Identifier(name, p), AssumedType.GAUGE));
+        receiver.update(new Sample(new Measurement(x), new Identifier(name, p), AssumedType.GAUGE));
     }
 
     /**

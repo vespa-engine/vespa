@@ -4,7 +4,6 @@ package com.yahoo.search.searchers;
 import com.yahoo.component.chain.dependencies.After;
 import com.yahoo.metrics.simple.Gauge;
 import com.yahoo.metrics.simple.Point;
-import com.yahoo.metrics.simple.PointBuilder;
 import com.yahoo.metrics.simple.MetricReceiver;
 import com.yahoo.search.Query;
 import com.yahoo.search.Result;
