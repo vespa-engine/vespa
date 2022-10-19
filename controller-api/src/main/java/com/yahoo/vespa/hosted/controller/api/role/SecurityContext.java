@@ -48,6 +48,10 @@ public class SecurityContext {
     /** @return credential expiration or {@link Instant#MAX} is not available */
     public Instant expiresAt() { return expiresAt; }
 
+    public SecurityContext withRoles(Set<Role> roles) {
+        return new SecurityContext(this.principal, roles, this.issuedAt, this.expiresAt);
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
