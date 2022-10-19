@@ -9,6 +9,7 @@ import com.yahoo.security.hpke.Kem;
 import org.junit.jupiter.api.Test;
 
 import java.security.KeyPair;
+import java.security.interfaces.XECPrivateKey;
 import java.security.interfaces.XECPublicKey;
 
 import static com.yahoo.security.ArrayUtils.hex;
@@ -35,6 +36,14 @@ public class HpkeTest {
         return new KeyPair(pub, priv);
     }
 
+    private static XECPublicKey pk(KeyPair kp) {
+        return (XECPublicKey) kp.getPublic();
+    }
+
+    private static XECPrivateKey sk(KeyPair kp) {
+        return (XECPrivateKey) kp.getPrivate();
+    }
+
     /**
      * https://www.rfc-editor.org/rfc/rfc9180.html test vector
      *
@@ -55,7 +64,7 @@ public class HpkeTest {
         var ciphersuite = Ciphersuite.of(kem, Kdf.hkdfSha256(), Aead.aesGcm128());
 
         var hpke = Hpke.of(ciphersuite);
-        var s = hpke.sealBase((XECPublicKey) kpR.getPublic(), info, aad, pt);
+        var s = hpke.sealBase(pk(kpR), info, aad, pt);
 
         // The "enc" output is the ephemeral public key
         var expectedEnc = "37fda3567bdbd628e88668c3c8d7e97d1d1253b6d4ea6d44c150f741f1bf4431";
@@ -65,7 +74,7 @@ public class HpkeTest {
                                  "6d8770ac83d07bea87e13c512a";
         assertEquals(expectedCiphertext, hex(s.ciphertext()));
 
-        byte[] openedPt = hpke.openBase(s.enc(), kpR, info, aad, s.ciphertext());
+        byte[] openedPt = hpke.openBase(s.enc(), sk(kpR), info, aad, s.ciphertext());
         assertEquals(hex(pt), hex(openedPt));
     }
 
@@ -78,12 +87,12 @@ public class HpkeTest {
 
         var hpke = Hpke.of(Ciphersuite.defaultSuite());
 
-        var s1 = hpke.sealBase((XECPublicKey) kpR.getPublic(), info, aad, pt);
-        byte[] openedPt = hpke.openBase(s1.enc(), kpR, info, aad, s1.ciphertext());
+        var s1 = hpke.sealBase(pk(kpR), info, aad, pt);
+        byte[] openedPt = hpke.openBase(s1.enc(), sk(kpR), info, aad, s1.ciphertext());
         assertEquals(hex(pt), hex(openedPt));
 
-        var s2 = hpke.sealBase((XECPublicKey) kpR.getPublic(), info, aad, pt);
-        openedPt = hpke.openBase(s2.enc(), kpR, info, aad, s2.ciphertext());
+        var s2 = hpke.sealBase(pk(kpR), info, aad, pt);
+        openedPt = hpke.openBase(s2.enc(), sk(kpR), info, aad, s2.ciphertext());
         assertEquals(hex(pt), hex(openedPt));
 
         assertNotEquals(hex(s1.enc()), hex(s2.enc())); // This is the ephemeral public key
@@ -97,13 +106,13 @@ public class HpkeTest {
         var kpR     = receiverRrfc9180TestVectorKeyPair();
 
         var hpke = Hpke.of(Ciphersuite.defaultSuite());
-        var s = hpke.sealBase((XECPublicKey) kpR.getPublic(), info, aad, pt);
+        var s = hpke.sealBase(pk(kpR), info, aad, pt);
 
         byte[] badInfo = toUtf8Bytes("lesser info");
         // TODO better exception classes! Triggers AEAD auth tag mismatch behind the scenes
-        assertThrows(RuntimeException.class, () -> hpke.openBase(s.enc(), kpR, badInfo, aad, s.ciphertext()));
+        assertThrows(RuntimeException.class, () -> hpke.openBase(s.enc(), sk(kpR), badInfo, aad, s.ciphertext()));
         byte[] badAad = toUtf8Bytes("non-groovy AAD");
-        assertThrows(RuntimeException.class, () -> hpke.openBase(s.enc(), kpR, info, badAad, s.ciphertext()));
+        assertThrows(RuntimeException.class, () -> hpke.openBase(s.enc(), sk(kpR), info, badAad, s.ciphertext()));
     }
 
 }

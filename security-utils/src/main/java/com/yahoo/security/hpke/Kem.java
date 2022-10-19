@@ -4,6 +4,7 @@ package com.yahoo.security.hpke;
 import com.yahoo.security.KeyUtils;
 
 import java.security.KeyPair;
+import java.security.interfaces.XECPrivateKey;
 import java.security.interfaces.XECPublicKey;
 
 /**
@@ -30,10 +31,8 @@ public interface Kem {
      * "Deterministic algorithm using the private key <code>skR</code> to recover the
      * ephemeral symmetric key (the KEM shared secret) from its encapsulated
      * representation <code>enc</code>."
-     *
-     * TODO just take skR instead of entire key pair
      */
-    byte[] decap(byte[] enc, KeyPair kpR);
+    byte[] decap(byte[] enc, XECPrivateKey skR);
 
     /** The length in bytes of a KEM shared secret produced by this KEM. */
     short nSecret();
