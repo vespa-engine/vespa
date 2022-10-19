@@ -5,11 +5,13 @@ import com.yahoo.component.Version;
 import com.yahoo.config.application.api.DeploymentInstanceSpec;
 import com.yahoo.config.application.api.DeploymentSpec;
 import com.yahoo.config.application.api.Endpoint;
+import com.yahoo.config.application.api.Endpoint.Level;
 import com.yahoo.config.application.api.ValidationId;
 import com.yahoo.config.application.api.ValidationOverrides;
 import com.yahoo.config.provision.CloudName;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.InstanceName;
+import com.yahoo.config.provision.RegionName;
 import com.yahoo.config.provision.zone.ZoneApi;
 import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.vespa.hosted.controller.Application;
@@ -19,6 +21,7 @@ import com.yahoo.vespa.hosted.controller.versions.VespaVersion;
 
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -90,21 +93,39 @@ public class ApplicationPackageValidator {
         }
     }
 
-    /** Verify that no single endpoint contains regions in different clouds */
+    /** Verify that:
+     * <ul>
+     *     <li>no single endpoint contains regions in different clouds</li>
+     *     <li>application endpoints with different regions must be contained in CGP and AWS</li>
+     * </ul>
+     */
     private void validateEndpointRegions(DeploymentSpec deploymentSpec) {
         for (var instance : deploymentSpec.instances()) {
-            for (var endpoint : instance.endpoints()) {
-                var clouds = new HashSet<CloudName>();
-                for (var region : endpoint.regions()) {
-                    for (ZoneApi zone : controller.zoneRegistry().zones().all().in(Environment.prod).in(region).zones()) {
-                        clouds.add(zone.getCloudName());
-                    }
-                }
-                if (clouds.size() != 1 && !clouds.equals(Set.of(CloudName.GCP, CloudName.AWS))) {
-                    throw new IllegalArgumentException("Endpoint '" + endpoint.endpointId() + "' in " + instance +
-                                                       " cannot contain regions in different clouds: " +
+            validateEndpointRegions(instance.endpoints(), instance);
+        }
+        validateEndpointRegions(deploymentSpec.endpoints(), null);
+    }
+
+    private void validateEndpointRegions(List<Endpoint> endpoints, DeploymentInstanceSpec instance) {
+        for (var endpoint : endpoints) {
+            RegionName[] regions = new HashSet<>(endpoint.regions()).toArray(RegionName[]::new);
+            Set<CloudName> clouds = controller.zoneRegistry().zones().all().in(Environment.prod)
+                                              .in(regions)
+                                              .zones().stream()
+                                              .map(ZoneApi::getCloudName)
+                                              .collect(Collectors.toSet());
+            String endpointString = instance == null ? "Application endpoint '" + endpoint.endpointId() + "'"
+                                                     : "Endpoint '" + endpoint.endpointId() + "' in " + instance;
+            if (Set.of(CloudName.GCP, CloudName.AWS).containsAll(clouds)) { } // Everything is fine!
+            else if (Set.of(CloudName.DEFAULT).containsAll(clouds)) {
+                if (endpoint.level() == Level.application && regions.length != 1) {
+                    throw new IllegalArgumentException(endpointString + " cannot contain different regions: " +
                                                        endpoint.regions().stream().sorted().toList());
                 }
+            }
+            else {
+                throw new IllegalArgumentException(endpointString + " cannot contain regions in different clouds: " +
+                                                   endpoint.regions().stream().sorted().toList());
             }
         }
     }

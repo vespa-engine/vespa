@@ -9,7 +9,7 @@ import java.util.Objects;
 /**
  * An implementation of {@link AliasTarget} where is requests are answered based on the weight assigned to the
  * record, as a proportion of the total weight for all records having the same DNS name.
- *
+ * <p>
  * The portion of received traffic is calculated as follows: (record weight / sum of the weights of all records).
  *
  * @author mpolden

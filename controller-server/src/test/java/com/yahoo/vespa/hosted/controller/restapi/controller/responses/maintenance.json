@@ -16,6 +16,9 @@
       "name": "ArtifactExpirer"
     },
     {
+      "name": "AwsOsUpgrader"
+    },
+    {
       "name": "BillingDatabaseMaintainer"
     },
     {

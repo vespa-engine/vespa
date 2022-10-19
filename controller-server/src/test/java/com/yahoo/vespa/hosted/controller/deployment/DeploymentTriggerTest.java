@@ -1305,11 +1305,11 @@ public class DeploymentTriggerTest {
                                     </steps>
                                     <steps>
                                         <delay hours='3' />
-                                        <region active='true'>aws-us-east-1a</region>
+                                        <region active='true'>us-central-1</region>
                                         <parallel>
                                             <region active='true' athenz-service='no-service'>ap-northeast-1</region>
                                             <region active='true'>ap-northeast-2</region>
-                                            <test>aws-us-east-1a</test>
+                                            <test>us-central-1</test>
                                         </parallel>
                                     </steps>
                                     <delay hours='3' minutes='30' />
@@ -1388,10 +1388,10 @@ public class DeploymentTriggerTest {
         assertEquals(List.of(), tester.jobs().active());
 
         tester.clock().advance(Duration.ofHours(1));
-        app1.runJob(productionAwsUsEast1a);
+        app1.runJob(productionUsCentral1);
         tester.triggerJobs();
         assertEquals(3, tester.jobs().active().size());
-        app1.runJob(testAwsUsEast1a);
+        app1.runJob(testUsCentral1);
         tester.triggerJobs();
         assertEquals(2, tester.jobs().active().size());
         app1.runJob(productionApNortheast2);
@@ -1448,11 +1448,11 @@ public class DeploymentTriggerTest {
         tester.clock().advance(Duration.ofHours(2));
         app1.runJob(productionEuWest1);
         tester.clock().advance(Duration.ofHours(1));
-        app1.runJob(productionAwsUsEast1a);
-        app1.runJob(testAwsUsEast1a);
+        app1.runJob(productionUsCentral1);
+        app1.runJob(testUsCentral1);
         tester.clock().advance(Duration.ofSeconds(1));
-        app1.runJob(productionAwsUsEast1a); // R
-        app1.runJob(testAwsUsEast1a);       // R
+        app1.runJob(productionUsCentral1); // R
+        app1.runJob(testUsCentral1);       // R
         app1.runJob(productionApNortheast2);
         app1.runJob(productionApNortheast1);
         tester.clock().advance(Duration.ofHours(1));
@@ -1996,8 +1996,8 @@ public class DeploymentTriggerTest {
     @Test
     void mixedDirectAndPipelineJobsInProduction() {
         ApplicationPackage cdPackage = new ApplicationPackageBuilder().region("us-east-3")
-                .region("aws-us-east-1a")
-                .build();
+                                                                      .region("aws-us-east-1a")
+                                                                      .build();
         ControllerTester wrapped = new ControllerTester(cd);
         wrapped.upgradeSystem(Version.fromString("6.1"));
         wrapped.computeVersionStatus();

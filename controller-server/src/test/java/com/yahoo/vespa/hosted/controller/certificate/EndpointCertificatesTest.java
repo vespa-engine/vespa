@@ -191,7 +191,7 @@ public class EndpointCertificatesTest {
 
     @Test
     void reprovisions_certificate_with_added_sans_when_deploying_to_new_zone() {
-        ZoneId testZone = tester.zoneRegistry().zones().all().routingMethod(RoutingMethod.exclusive).in(Environment.prod).zones().stream().skip(1).findFirst().orElseThrow().getId();
+        ZoneId testZone = ZoneId.from("prod.ap-northeast-1");
 
         mockCuratorDb.writeEndpointCertificateMetadata(testInstance.id(), new EndpointCertificateMetadata(testKeyName, testCertName, -1, 0, "original-request-uuid", Optional.of("leaf-request-uuid"), expectedSans, "mockCa", Optional.empty(), Optional.empty()));
         secretStore.setSecret("vespa.tls.default.default.default-key", KeyUtils.toPem(testKeyPair.getPrivate()), -1);
@@ -243,14 +243,13 @@ public class EndpointCertificatesTest {
                 .region(zone1.region())
                 .region(zone2.region())
                 .applicationEndpoint("a", "qrs", zone2.region().value(),
-                        Map.of(InstanceName.from("beta"), 2,
-                                InstanceName.from("main"), 8))
+                                     Map.of(InstanceName.from("beta"), 2))
                 .applicationEndpoint("b", "qrs", zone2.region().value(),
-                        Map.of(InstanceName.from("beta"), 1,
-                                InstanceName.from("main"), 1))
-                .applicationEndpoint("c", "qrs", zone1.region().value(),
-                        Map.of(InstanceName.from("beta"), 4,
-                                InstanceName.from("main"), 6))
+                                     Map.of(InstanceName.from("beta"), 1))
+                .applicationEndpoint("c", "qrs",
+                                     Map.of(zone1.region().value(), Map.of(InstanceName.from("beta"), 4,
+                                                                           InstanceName.from("main"), 6),
+                                            zone2.region().value(), Map.of(InstanceName.from("main"), 2)))
                 .build();
         ControllerTester tester = new ControllerTester(SystemName.Public);
         EndpointCertificateValidatorImpl endpointCertificateValidator = new EndpointCertificateValidatorImpl(secretStore, clock);

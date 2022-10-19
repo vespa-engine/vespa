@@ -44,9 +44,20 @@ public class OsVersionStatusUpdaterTest {
         statusUpdater.maintain();
 
         var osVersions = tester.controller().osVersionStatus().versions();
-        assertEquals(2, osVersions.size());
+        assertEquals(3, osVersions.size());
         assertFalse(osVersions.get(new OsVersion(Version.emptyVersion, cloud)).isEmpty(), "All nodes on unknown version");
         assertTrue(osVersions.get(new OsVersion(version1, cloud)).isEmpty(), "No nodes on current target");
+
+        CloudName otherCloud = CloudName.AWS;
+        tester.controller().upgradeOsIn(otherCloud, version1, Duration.ZERO, false);
+        statusUpdater.maintain();
+
+        osVersions = tester.controller().osVersionStatus().versions();
+        assertEquals(4, osVersions.size()); // 2 in cloud, 2 in otherCloud.
+        assertFalse(osVersions.get(new OsVersion(Version.emptyVersion, cloud)).isEmpty(), "All nodes on unknown version");
+        assertTrue(osVersions.get(new OsVersion(version1, cloud)).isEmpty(), "No nodes on current target");
+        assertFalse(osVersions.get(new OsVersion(Version.emptyVersion, otherCloud)).isEmpty(), "All nodes on unknown version");
+        assertTrue(osVersions.get(new OsVersion(version1, otherCloud)).isEmpty(), "No nodes on current target");
     }
 
 }

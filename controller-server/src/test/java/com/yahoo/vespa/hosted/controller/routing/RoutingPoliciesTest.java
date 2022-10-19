@@ -26,6 +26,7 @@ import com.yahoo.vespa.hosted.controller.api.integration.dns.RecordName;
 import com.yahoo.vespa.hosted.controller.application.Endpoint;
 import com.yahoo.vespa.hosted.controller.application.EndpointId;
 import com.yahoo.vespa.hosted.controller.application.EndpointList;
+import com.yahoo.vespa.hosted.controller.application.SystemApplication;
 import com.yahoo.vespa.hosted.controller.application.TenantAndApplicationId;
 import com.yahoo.vespa.hosted.controller.application.pkg.ApplicationPackage;
 import com.yahoo.vespa.hosted.controller.deployment.ApplicationPackageBuilder;
@@ -62,6 +63,8 @@ public class RoutingPoliciesTest {
     private static final ZoneId zone2 = ZoneId.from("prod", "us-central-1");
     private static final ZoneId zone3 = ZoneId.from("prod", "aws-us-east-1a");
     private static final ZoneId zone4 = ZoneId.from("prod", "aws-us-east-1b");
+    private static final ZoneId zone5 = ZoneId.from("prod", "north");
+    private static final ZoneId zone6 = ZoneId.from("prod", "south");
 
     private static final ApplicationPackage applicationPackage = applicationPackageBuilder().region(zone1.region())
                                                                                             .region(zone2.region())
@@ -399,15 +402,15 @@ public class RoutingPoliciesTest {
         context.submit(applicationPackage).deploy();
 
         tester.assertTargets(context.instanceId(), EndpointId.defaultId(),
-                ClusterSpec.Id.from("default"), 0,
-                Map.of(zone1, 1L, zone2, 1L));
+                             ClusterSpec.Id.from("default"), 0,
+                             Map.of(zone1, 1L, zone2, 1L));
         assertEquals(Set.of("app1.tenant1.aws-eu-west-1.w.vespa-app.cloud",
-                        "app1.tenant1.aws-eu-west-1a.z.vespa-app.cloud",
-                        "app1.tenant1.aws-us-east-1.w.vespa-app.cloud",
-                        "app1.tenant1.aws-us-east-1c.z.vespa-app.cloud",
-                        "app1.tenant1.g.vespa-app.cloud"),
-                tester.recordNames(),
-                "Registers expected DNS names");
+                            "app1.tenant1.aws-eu-west-1a.z.vespa-app.cloud",
+                            "app1.tenant1.aws-us-east-1.w.vespa-app.cloud",
+                            "app1.tenant1.aws-us-east-1c.z.vespa-app.cloud",
+                            "app1.tenant1.g.vespa-app.cloud"),
+                     tester.recordNames(),
+                     "Registers expected DNS names");
     }
 
     @Test
@@ -419,8 +422,8 @@ public class RoutingPoliciesTest {
         var zone = ZoneId.from("dev", "us-east-1");
         var zoneApi = ZoneApiMock.from(zone.environment(), zone.region());
         tester.controllerTester().serviceRegistry().zoneRegistry()
-                .setZones(zoneApi)
-                .exclusiveRoutingIn(zoneApi);
+              .setZones(zoneApi)
+              .exclusiveRoutingIn(zoneApi);
 
         // Deploy to dev
         context.runJob(zone, emptyApplicationPackage);
@@ -735,16 +738,17 @@ public class RoutingPoliciesTest {
         DeploymentContext mainContext = tester.newDeploymentContext(mainInstance);
         var applicationPackage = applicationPackageBuilder()
                 .instances("beta,main")
-                .region(zone1.region())
-                .region(zone2.region())
-                .applicationEndpoint("a0", "c0", "us-west-1",
-                        Map.of(betaInstance.instance(), 2,
-                                mainInstance.instance(), 8))
-                .applicationEndpoint("a1", "c1", "us-central-1",
-                        Map.of(betaInstance.instance(), 4,
-                                mainInstance.instance(), 6))
+                .region(zone5.region())
+                .region(zone6.region())
+                .applicationEndpoint("a0", "c0",
+                                     Map.of(zone5.region().value(), Map.of(betaInstance.instance(), 2,
+                                                                           mainInstance.instance(), 8),
+                                            zone6.region().value(), Map.of(mainInstance.instance(), 7)))
+                .applicationEndpoint("a1", "c1", zone6.region().value(),
+                                     Map.of(betaInstance.instance(), 4,
+                                            mainInstance.instance(), 6))
                 .build();
-        for (var zone : List.of(zone1, zone2)) {
+        for (var zone : List.of(zone5, zone6)) {
             tester.provisionLoadBalancers(2, betaInstance, zone);
             tester.provisionLoadBalancers(2, mainInstance, zone);
         }
@@ -753,50 +757,53 @@ public class RoutingPoliciesTest {
         betaContext.submit(applicationPackage).deploy();
 
         // Application endpoint points to both instances with correct weights
-        DeploymentId betaZone1 = betaContext.deploymentIdIn(zone1);
-        DeploymentId mainZone1 = mainContext.deploymentIdIn(zone1);
-        DeploymentId betaZone2 = betaContext.deploymentIdIn(zone2);
-        DeploymentId mainZone2 = mainContext.deploymentIdIn(zone2);
+        DeploymentId betaZone5 = betaContext.deploymentIdIn(zone5);
+        DeploymentId mainZone5 = mainContext.deploymentIdIn(zone5);
+        DeploymentId betaZone6 = betaContext.deploymentIdIn(zone6);
+        DeploymentId mainZone6 = mainContext.deploymentIdIn(zone6);
         tester.assertTargets(application, EndpointId.of("a0"), ClusterSpec.Id.from("c0"), 0,
-                Map.of(betaZone1, 2,
-                        mainZone1, 8));
+                             Map.of(betaZone5, 2,
+                                    mainZone5, 8,
+                                    mainZone6, 7));
         tester.assertTargets(application, EndpointId.of("a1"), ClusterSpec.Id.from("c1"), 1,
-                Map.of(betaZone2, 4,
-                        mainZone2, 6));
+                             Map.of(betaZone6, 4,
+                                    mainZone6, 6));
 
         // Weights are updated
         applicationPackage = applicationPackageBuilder()
                 .instances("beta,main")
-                .region(zone1.region())
-                .region(zone2.region())
-                .applicationEndpoint("a0", "c0", "us-west-1",
-                        Map.of(betaInstance.instance(), 3,
-                                mainInstance.instance(), 7))
-                .applicationEndpoint("a1", "c1", "us-central-1",
-                        Map.of(betaInstance.instance(), 1,
-                                mainInstance.instance(), 9))
+                .region(zone5.region())
+                .region(zone6.region())
+                .applicationEndpoint("a0", "c0",
+                                     Map.of(zone5.region().value(), Map.of(betaInstance.instance(), 3,
+                                                                           mainInstance.instance(), 7),
+                                            zone6.region().value(), Map.of(mainInstance.instance(), 2)))
+                .applicationEndpoint("a1", "c1", zone6.region().value(),
+                                     Map.of(betaInstance.instance(), 1,
+                                            mainInstance.instance(), 9))
                 .build();
         betaContext.submit(applicationPackage).deploy();
         tester.assertTargets(application, EndpointId.of("a0"), ClusterSpec.Id.from("c0"), 0,
-                Map.of(betaZone1, 3,
-                        mainZone1, 7));
+                             Map.of(betaZone5, 3,
+                                    mainZone5, 7,
+                                    mainZone6, 2));
         tester.assertTargets(application, EndpointId.of("a1"), ClusterSpec.Id.from("c1"), 1,
-                Map.of(betaZone2, 1,
-                        mainZone2, 9));
+                             Map.of(betaZone6, 1,
+                                    mainZone6, 9));
 
         // An endpoint is removed
         applicationPackage = applicationPackageBuilder()
                 .instances("beta,main")
-                .region(zone1.region())
-                .region(zone2.region())
-                .applicationEndpoint("a0", "c0", "us-west-1",
-                        Map.of(betaInstance.instance(), 1))
+                .region(zone5.region())
+                .region(zone6.region())
+                .applicationEndpoint("a0", "c0", zone5.region().value(),
+                                     Map.of(betaInstance.instance(), 1))
                 .build();
         betaContext.submit(applicationPackage).deploy();
 
         // Application endpoints now point to a single instance
         tester.assertTargets(application, EndpointId.of("a0"), ClusterSpec.Id.from("c0"), 0,
-                Map.of(betaZone1, 1));
+                             Map.of(betaZone5, 1));
         assertTrue(tester.controllerTester().controller().routing()
                         .readDeclaredEndpointsOf(application)
                         .named(EndpointId.of("a1")).isEmpty(),
@@ -814,50 +821,59 @@ public class RoutingPoliciesTest {
         DeploymentContext mainContext = tester.newDeploymentContext(mainInstance);
         var applicationPackage = applicationPackageBuilder()
                 .instances("beta,main")
-                .region(zone1.region())
-                .applicationEndpoint("a0", "c0", "us-west-1",
-                        Map.of(betaInstance.instance(), 2,
-                                mainInstance.instance(), 8))
+                .region(zone5.region())
+                .region(zone6.region())
+                .applicationEndpoint("a0", "c0", Map.of(zone5.region().value(), Map.of(betaInstance.instance(), 2,
+                                                                                       mainInstance.instance(), 8),
+                                                        zone6.region().value(), Map.of(mainInstance.instance(), 9)))
                 .build();
-        tester.provisionLoadBalancers(1, betaInstance, zone1);
-        tester.provisionLoadBalancers(1, mainInstance, zone1);
+        tester.provisionLoadBalancers(1, betaInstance, zone5);
+        tester.provisionLoadBalancers(1, mainInstance, zone5);
+        tester.provisionLoadBalancers(1, mainInstance, zone6);
 
         // Deploy both instances
         betaContext.submit(applicationPackage).deploy();
 
         // Application endpoint points to both instances with correct weights
-        DeploymentId betaZone1 = betaContext.deploymentIdIn(zone1);
-        DeploymentId mainZone1 = mainContext.deploymentIdIn(zone1);
+        DeploymentId betaZone1 = betaContext.deploymentIdIn(zone5);
+        DeploymentId mainZone1 = mainContext.deploymentIdIn(zone5);
+        DeploymentId mainZone2 = mainContext.deploymentIdIn(zone6);
         tester.assertTargets(application, EndpointId.of("a0"), ClusterSpec.Id.from("c0"), 0,
-                Map.of(betaZone1, 2,
-                        mainZone1, 8));
+                             Map.of(betaZone1, 2,
+                                    mainZone1, 8,
+                                    mainZone2, 9));
 
         // Changing routing status removes deployment from DNS
         tester.routingPolicies().setRoutingStatus(mainZone1, RoutingStatus.Value.out, RoutingStatus.Agent.tenant);
         betaContext.flushDnsUpdates();
         tester.assertTargets(application, EndpointId.of("a0"), ClusterSpec.Id.from("c0"), 0,
-                Map.of(betaZone1, 2));
+                             Map.of(betaZone1, 2,
+                                    mainZone2, 9));
 
-        // Changing routing status for remaining deployment adds back all deployments, because removing all deployments
+        // Changing routing status for remaining deployments adds back all deployments, because removing all deployments
         // puts all IN
         tester.routingPolicies().setRoutingStatus(betaZone1, RoutingStatus.Value.out, RoutingStatus.Agent.tenant);
+        tester.routingPolicies().setRoutingStatus(mainZone2, RoutingStatus.Value.out, RoutingStatus.Agent.tenant);
         betaContext.flushDnsUpdates();
         tester.assertTargets(application, EndpointId.of("a0"), ClusterSpec.Id.from("c0"), 0,
-                Map.of(betaZone1, 2,
-                        mainZone1, 8));
+                             Map.of(betaZone1, 2,
+                                    mainZone1, 8,
+                                    mainZone2, 9));
 
         // Activating main deployment allows us to deactivate the beta deployment
         tester.routingPolicies().setRoutingStatus(mainZone1, RoutingStatus.Value.in, RoutingStatus.Agent.tenant);
         betaContext.flushDnsUpdates();
         tester.assertTargets(application, EndpointId.of("a0"), ClusterSpec.Id.from("c0"), 0,
-                Map.of(mainZone1, 8));
+                             Map.of(mainZone1, 8));
 
         // Activate all deployments again
         tester.routingPolicies().setRoutingStatus(betaZone1, RoutingStatus.Value.in, RoutingStatus.Agent.tenant);
+        tester.routingPolicies().setRoutingStatus(mainZone2, RoutingStatus.Value.in, RoutingStatus.Agent.tenant);
         betaContext.flushDnsUpdates();
         tester.assertTargets(application, EndpointId.of("a0"), ClusterSpec.Id.from("c0"), 0,
                 Map.of(betaZone1, 2,
-                        mainZone1, 8));
+                       mainZone1, 8,
+                       mainZone2, 9));
     }
 
     /** Returns an application package builder that satisfies requirements for a directly routed endpoint */
@@ -919,11 +935,17 @@ public class RoutingPoliciesTest {
             List<ZoneId> zones;
             if (tester.controller().system().isPublic()) {
                 zones = publicZones();
+                tester.controllerTester().setZones(zones);
             } else {
                 zones = new ArrayList<>(tester.controllerTester().zoneRegistry().zones().all().ids()); // Default zones
                 zones.add(zone4); // Missing from default ZoneRegistryMock zones
+                tester.controllerTester().setZones(zones);
+                tester.controllerTester().zoneRegistry().addZones(ZoneApiMock.newBuilder().withId(zone5.value()).withCloud("aws").build());
+                tester.controllerTester().zoneRegistry().addZones(ZoneApiMock.newBuilder().withId(zone6.value()).withCloud("gcp").build());
+                zones.add(zone5);
+                zones.add(zone6);
+                tester.configServer().bootstrap(zones, SystemApplication.notController());
             }
-            tester.controllerTester().setZones(zones);
             if (exclusiveRouting) {
                 tester.controllerTester().setRoutingMethod(zones, RoutingMethod.exclusive);
             }
@@ -997,7 +1019,7 @@ public class RoutingPoliciesTest {
                 deploymentsByDnsName.computeIfAbsent(dnsName, (k) -> new ArrayList<>())
                                     .add(deployment);
             }
-            assertEquals(1, deploymentsByDnsName.size(), "Found " + endpointId + " for " + application);
+            assertTrue(1 <= deploymentsByDnsName.size(), "Found " + endpointId + " for " + application);
             deploymentsByDnsName.forEach((dnsName, deployments) -> {
                 Set<String> weightedTargets = deployments.stream()
                                                            .map(d -> "weighted/lb-" + loadBalancerId + "--" +
