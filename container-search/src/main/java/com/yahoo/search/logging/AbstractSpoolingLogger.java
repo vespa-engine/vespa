@@ -3,6 +3,7 @@ package com.yahoo.search.logging;
 
 import com.yahoo.concurrent.DaemonThreadFactory;
 import java.io.IOException;
+import java.time.Clock;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
@@ -25,7 +26,7 @@ public abstract class AbstractSpoolingLogger extends AbstractThreadedLogger impl
     protected final Spooler spooler;
 
     public AbstractSpoolingLogger() {
-        this(new Spooler());
+        this(new Spooler(Clock.systemUTC()));
     }
 
     public AbstractSpoolingLogger(Spooler spooler) {
@@ -35,6 +36,7 @@ public abstract class AbstractSpoolingLogger extends AbstractThreadedLogger impl
 
     public void run() {
         try {
+            spooler.switchFileIfNeeded();
             spooler.processFiles(this::transport);
         } catch (IOException e) {
             e.printStackTrace();

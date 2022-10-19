@@ -1,6 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.search.logging;
 
+import com.yahoo.test.ManualClock;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import java.io.IOException;
@@ -17,6 +18,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class SpoolerTest {
 
+    private static final ManualClock clock = new ManualClock();
+
     @TempDir
     Path tempDir;
 
@@ -25,7 +28,7 @@ public class SpoolerTest {
         Path spoolDir = tempDir.resolve("spool");
 
         int maxEntriesPerFile = 1;
-        Spooler spooler = new Spooler(spoolDir, maxEntriesPerFile);
+        Spooler spooler = new Spooler(spoolDir, maxEntriesPerFile, clock);
 
         TestLogger logger = new TestLogger(spooler);
         assertTrue(sendEntry(logger, "Yo entry"));
@@ -57,7 +60,7 @@ public class SpoolerTest {
         Path spoolDir = tempDir.resolve("spool");
 
         int maxEntriesPerFile = 2;
-        Spooler spooler = new Spooler(spoolDir, maxEntriesPerFile);
+        Spooler spooler = new Spooler(spoolDir, maxEntriesPerFile, clock);
 
         TestLogger logger = new TestLogger(spooler);
         assertTrue(sendEntry(logger, "Yo entry"));
@@ -79,6 +82,14 @@ public class SpoolerTest {
         assertReadyFiles(spooler, 0);
         assertSuccessFiles(spooler, 1);
         assertFailureFiles(spooler, 0);
+
+        // Write 1 entry and advance time, so that file will be processed even if
+        // maxEntriesPerFile is 2 and there is only 1 entry in file
+        assertTrue(sendEntry(logger, "Yo entry 3"));
+        clock.advance(Duration.ofMinutes(1));
+        logger.manualRun();
+        assertEquals(3, logger.entriesSent());
+        assertSuccessFiles(spooler, 2);
     }
 
     private void assertProcessedFiles(Spooler spooler, int expected) throws IOException {
@@ -100,7 +111,7 @@ public class SpoolerTest {
     @Test
     public void failingToTransportIsRetried() throws IOException {
         Path spoolDir = tempDir.resolve("spool");
-        Spooler spooler = new Spooler(spoolDir, 1);
+        Spooler spooler = new Spooler(spoolDir, 1, clock);
         FailingToTransportSecondEntryLogger logger = new FailingToTransportSecondEntryLogger(spooler);
 
         assertTrue(sendEntry(logger, "Yo entry"));
