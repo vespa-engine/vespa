@@ -159,7 +159,7 @@ public class SpoolerTest {
         }
 
         @Override
-        boolean transport(LoggerEntry entry) {
+        public boolean transport(LoggerEntry entry) {
             entriesSent.add(entry);
             return true;
         }
@@ -200,7 +200,7 @@ public class SpoolerTest {
         }
 
         @Override
-        boolean transport(LoggerEntry entry) {
+        public boolean transport(LoggerEntry entry) {
             transportCount++;
             return transportCount != 2;
         }
