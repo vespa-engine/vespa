@@ -97,7 +97,7 @@ class JDiscHttpServlet extends HttpServlet {
             super.service(request, response);
         } else if (method.equals(Method.PATCH.name())) {
             // PATCH method is not handled by the Servlet spec
-            dispatchHttpRequest(request, response);
+            dispatchHttpRequest(request, response, metricContext);
         } else {
             // Divergence from HTTP / Servlet spec: JDisc returns 405 for both unknown and known (but unsupported) methods.
             response.sendError(HttpServletResponse.SC_METHOD_NOT_ALLOWED);
@@ -105,12 +105,16 @@ class JDiscHttpServlet extends HttpServlet {
     }
 
     private void dispatchHttpRequest(HttpServletRequest request, HttpServletResponse response) throws IOException {
+        dispatchHttpRequest(request, response, getMetricContext(request));
+    }
+
+    private void dispatchHttpRequest(HttpServletRequest request, HttpServletResponse response, Metric.Context metricContext) throws IOException {
         AccessLogEntry accessLogEntry = new AccessLogEntry();
         request.setAttribute(ATTRIBUTE_NAME_ACCESS_LOG_ENTRY, accessLogEntry);
         try {
             switch (request.getDispatcherType()) {
                 case REQUEST:
-                    new HttpRequestDispatch(context, accessLogEntry, getMetricContext(request), request, response).dispatchRequest();
+                    new HttpRequestDispatch(context, accessLogEntry, metricContext, request, response).dispatchRequest();
                     break;
                 default:
                     if (log.isLoggable(Level.INFO)) {
