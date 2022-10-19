@@ -11,7 +11,6 @@
 #include <vespa/document/datatype/annotationtype.h>
 #include <vespa/document/datatype/documenttype.h>
 #include <vespa/document/datatype/tensor_data_type.h>
-#include <vespa/document/datatype/urldatatype.h>
 #include <vespa/document/fieldvalue/document.h>
 #include <vespa/document/fieldvalue/arrayfieldvalue.h>
 #include <vespa/document/fieldvalue/bytefieldvalue.h>
@@ -770,55 +769,19 @@ TEST_F("requireThatUrisAreUsed", Fixture)
 {
     BuildContext bc([](auto& header)
                     { using namespace document::config_builder;
-                        header.addField("urisingle", UrlDataType::getInstance().getId())
-                            .addField("uriarray", Array(UrlDataType::getInstance().getId()))
-                            .addField("uriwset", Wset(UrlDataType::getInstance().getId())); });
+                        header.addField("urisingle", DataType::T_URI)
+                            .addField("uriarray", Array(DataType::T_URI))
+                            .addField("uriwset", Wset(DataType::T_URI)); });
     DBContext dc(bc.get_repo_sp(), getDocTypeName());
     auto exp = bc.make_document("id:ns:searchdocument::0");
-    auto uri = bc.make_url();
-    uri.setValue("all", StringFieldValue("http://www.example.com:81/fluke?ab=2#4"));
-    uri.setValue("scheme", StringFieldValue("http"));
-    uri.setValue("host", StringFieldValue("www.example.com"));
-    uri.setValue("port", StringFieldValue("81"));
-    uri.setValue("path", StringFieldValue("/fluke"));
-    uri.setValue("query", StringFieldValue("ab=2"));
-    uri.setValue("fragment", StringFieldValue("4"));
-    exp->setValue("urisingle", uri);
+    exp->setValue("urisingle", StringFieldValue("http://www.example.com:81/fluke?ab=2#4"));
     auto uri_array = bc.make_array("uriarray");
-    uri.setValue("all", StringFieldValue("http://www.example.com:82/fluke?ab=2#8"));
-    uri.setValue("scheme", StringFieldValue("http"));
-    uri.setValue("host", StringFieldValue("www.example.com"));
-    uri.setValue("port", StringFieldValue("82"));
-    uri.setValue("path", StringFieldValue("/fluke"));
-    uri.setValue("query", StringFieldValue("ab=2"));
-    uri.setValue("fragment", StringFieldValue("8"));
-    uri_array.add(uri);
-    uri.setValue("all", StringFieldValue("http://www.flickr.com:82/fluke?ab=2#9"));
-    uri.setValue("scheme", StringFieldValue("http"));
-    uri.setValue("host", StringFieldValue("www.flickr.com"));
-    uri.setValue("port", StringFieldValue("82"));
-    uri.setValue("path", StringFieldValue("/fluke"));
-    uri.setValue("query", StringFieldValue("ab=2"));
-    uri.setValue("fragment", StringFieldValue("9"));
-    uri_array.add(uri);
+    uri_array.add(StringFieldValue("http://www.example.com:82/fluke?ab=2#8"));
+    uri_array.add(StringFieldValue("http://www.flickr.com:82/fluke?ab=2#9"));
     exp->setValue("uriarray", uri_array);
     auto uri_wset = bc.make_wset("uriwset");
-    uri.setValue("all", StringFieldValue("http://www.example.com:83/fluke?ab=2#12"));
-    uri.setValue("scheme", StringFieldValue("http"));
-    uri.setValue("host", StringFieldValue("www.example.com"));
-    uri.setValue("port", StringFieldValue("83"));
-    uri.setValue("path", StringFieldValue("/fluke"));
-    uri.setValue("query", StringFieldValue("ab=2"));
-    uri.setValue("fragment", StringFieldValue("12"));
-    uri_wset.add(uri, 4);
-    uri.setValue("all", StringFieldValue("http://www.flickr.com:85/fluke?ab=2#13"));
-    uri.setValue("scheme", StringFieldValue("http"));
-    uri.setValue("host", StringFieldValue("www.flickr.com"));
-    uri.setValue("port", StringFieldValue("85"));
-    uri.setValue("path", StringFieldValue("/fluke"));
-    uri.setValue("query", StringFieldValue("ab=2"));
-    uri.setValue("fragment", StringFieldValue("13"));
-    uri_wset.add(uri, 7);
+    uri_wset.add(StringFieldValue("http://www.example.com:83/fluke?ab=2#12"), 4);
+    uri_wset.add(StringFieldValue("http://www.flickr.com:85/fluke?ab=2#13"), 7);
     exp->setValue("uriwset", uri_wset);
     dc._sa->put(1, 1, *exp);
 

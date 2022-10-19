@@ -45,7 +45,6 @@ public:
     document::MapFieldValue make_map(vespalib::stringref field_name);
     document::WeightedSetFieldValue make_wset(vespalib::stringref field_name);
     document::StructFieldValue make_struct(vespalib::stringref field_name);
-    document::StructFieldValue make_url();
 };
 
 }

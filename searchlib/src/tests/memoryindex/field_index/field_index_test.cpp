@@ -1,11 +1,9 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include <vespa/document/datatype/datatype.h>
-#include <vespa/document/datatype/urldatatype.h>
 #include <vespa/document/fieldvalue/arrayfieldvalue.h>
 #include <vespa/document/fieldvalue/document.h>
 #include <vespa/document/fieldvalue/stringfieldvalue.h>
-#include <vespa/document/fieldvalue/structfieldvalue.h>
 #include <vespa/document/fieldvalue/weightedsetfieldvalue.h>
 #include <vespa/document/repo/configbuilder.h>
 #include <vespa/searchlib/diskindex/fusion.h>
@@ -48,8 +46,7 @@ using namespace index;
 
 using document::ArrayFieldValue;
 using document::Document;
-using document::StructFieldValue;
-using document::UrlDataType;
+using document::StringFieldValue;
 using document::WeightedSetFieldValue;
 using queryeval::RankedSearchIteratorBase;
 using queryeval::SearchIterator;
@@ -1179,9 +1176,9 @@ DocBuilder::AddFieldsType
 make_uri_add_fields()
 {
     return [](auto& header) { using namespace document::config_builder;
-        header.addField("iu", UrlDataType::getInstance().getId())
-            .addField("iau", Array(UrlDataType::getInstance().getId()))
-            .addField("iwu", Wset(UrlDataType::getInstance().getId()));
+        header.addField("iu", document::DataType::T_URI)
+            .addField("iau", Array(document::DataType::T_URI))
+            .addField("iwu", Wset(document::DataType::T_URI));
            };
 }
 
@@ -1194,51 +1191,16 @@ TEST_F(UriInverterTest, require_that_uri_indexing_is_working)
 {
     Document::UP doc;
     StringFieldBuilder sfb(_b);
-    sfb.url_mode(true);
-    auto url_value = _b.make_url();
 
     doc = _b.make_document("id:ns:searchdocument::10");
-    url_value.setValue("all", sfb.tokenize("http://www.example.com:81/fluke?ab=2#4").build());
-    url_value.setValue("scheme", sfb.tokenize("http").build());
-    url_value.setValue("host", sfb.tokenize("www.example.com").build());
-    url_value.setValue("port", sfb.tokenize("81").build());
-    url_value.setValue("path", sfb.tokenize("/fluke").build());
-    url_value.setValue("query", sfb.tokenize("ab=2").build());
-    url_value.setValue("fragment", sfb.tokenize("4").build());
-    doc->setValue("iu", url_value);
+    doc->setValue("iu", StringFieldValue("http://www.example.com:81/fluke?ab=2#4"));
     auto url_array = _b.make_array("iau");
-    url_value.setValue("all", sfb.tokenize("http://www.example.com:82/fluke?ab=2#8").build());
-    url_value.setValue("scheme", sfb.tokenize("http").build());
-    url_value.setValue("host", sfb.tokenize("www.example.com").build());
-    url_value.setValue("port", sfb.tokenize("82").build());
-    url_value.setValue("path", sfb.tokenize("/fluke").build());
-    url_value.setValue("query", sfb.tokenize("ab=2").build());
-    url_value.setValue("fragment", sfb.tokenize("8").build());
-    url_array.add(url_value);
-    url_value.setValue("all", sfb.tokenize("http://www.flickr.com:82/fluke?ab=2#9").build());
-    url_value.setValue("scheme", sfb.tokenize("http").build());
-    url_value.setValue("host", sfb.tokenize("www.flickr.com").build());
-    url_value.setValue("path", sfb.tokenize("/fluke").build());
-    url_value.setValue("fragment", sfb.tokenize("9").build());
-    url_array.add(url_value);
+    url_array.add(StringFieldValue("http://www.example.com:82/fluke?ab=2#8"));
+    url_array.add(StringFieldValue("http://www.flickr.com:82/fluke?ab=2#9"));
     doc->setValue("iau", url_array);
     auto url_wset = _b.make_wset("iwu");
-    url_value.setValue("all", sfb.tokenize("http://www.example.com:83/fluke?ab=2#12").build());
-    url_value.setValue("scheme", sfb.tokenize("http").build());
-    url_value.setValue("host", sfb.tokenize("www.example.com").build());
-    url_value.setValue("port", sfb.tokenize("83").build());
-    url_value.setValue("path", sfb.tokenize("/fluke").alt_word("altfluke").build());
-    url_value.setValue("query", sfb.tokenize("ab=2").build());
-    url_value.setValue("fragment", sfb.tokenize("12").build());
-    url_wset.add(url_value, 4);
-    url_value.setValue("all", sfb.tokenize("http://www.flickr.com:85/fluke?ab=2#13").build());
-    url_value.setValue("scheme", sfb.tokenize("http").build());
-    url_value.setValue("host", sfb.tokenize("www.flickr.com").build());
-    url_value.setValue("port", sfb.tokenize("85").build());
-    url_value.setValue("path", sfb.tokenize("/fluke").build());
-    url_value.setValue("query", sfb.tokenize("ab=2").build());
-    url_value.setValue("fragment", sfb.tokenize("13").build());
-    url_wset.add(url_value, 7);
+    url_wset.add(StringFieldValue("http://www.example.com:83/fluke?ab=2#12"), 4);
+    url_wset.add(StringFieldValue("http://www.flickr.com:85/fluke?ab=2#13"), 7);
     doc->setValue("iwu", url_wset);
     _inv.invertDocument(10, *doc, {});
     myPushDocument(_inv);
