@@ -36,7 +36,7 @@ public class Spooler {
     private static final Comparator<File> ordering = new TimestampCompare();
     private static final int defaultMaxEntriesPerFile = 100;
     // Maximum delay between first write to a file and when we should close file and move it for further processing
-    static final Duration maxDelayAfterFirstWrite = Duration.ofSeconds(10);
+    static final Duration maxDelayAfterFirstWrite = Duration.ofSeconds(5);
 
     private Path processingPath;
     private Path readyPath;
@@ -44,9 +44,9 @@ public class Spooler {
     private Path successesPath;
 
     // Number of next entry to be written to the current file
-    AtomicInteger entryCounter = new AtomicInteger(1);
-    AtomicLong fileNameBase = new AtomicLong(1);
-    AtomicInteger fileCounter = new AtomicInteger(1);
+    AtomicInteger entryCounter = new AtomicInteger(0);
+    AtomicLong fileNameBase = new AtomicLong(0);
+    AtomicInteger fileCounter = new AtomicInteger(0);
 
     private final Path spoolPath;
     private final int maxEntriesPerFile;
@@ -172,20 +172,20 @@ public class Spooler {
         switchFileIfNeeded(file, fileName);
     }
 
-    private void switchFileIfNeeded(Path file, String fileName) throws IOException {
+    private synchronized void switchFileIfNeeded(Path file, String fileName) throws IOException {
         if (file.toFile().exists()
-                && (entryCounter.get() > maxEntriesPerFile || firstWriteTimestamp.get().plus(maxDelayAfterFirstWrite).isBefore(clock.instant()))) {
+                && (entryCounter.get() >= maxEntriesPerFile || firstWriteTimestamp.get().plus(maxDelayAfterFirstWrite).isBefore(clock.instant()))) {
             Path target = spoolPath.resolve(readyPath).resolve(file.relativize(file)).resolve(fileName);
-            log.log(Level.INFO, "Finished writing file " + file + " with " + entryCounter.get() + "entries, moving it to " + target);
+            log.log(Level.INFO, "Finished writing file " + file + " with " + entryCounter.get() + " entries, moving it to " + target);
             Files.move(file, target);
             entryCounter.set(1);
-            fileNameBase.set(newFileNameBase(clock));
             fileCounter.incrementAndGet();
+            fileNameBase.set(newFileNameBase(clock));
             firstWriteTimestamp.set(Instant.EPOCH);
         }
     }
 
-    String currentFileName() {
+    synchronized String currentFileName() {
         return fileNameBase.get() + "-" + fileCounter;
     }
 
