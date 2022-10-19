@@ -16,13 +16,17 @@ import org.bouncycastle.math.ec.FixedPointCombMultiplier;
 import org.bouncycastle.openssl.PEMKeyPair;
 import org.bouncycastle.openssl.PEMParser;
 import org.bouncycastle.openssl.jcajce.JcaPEMWriter;
+import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.io.pem.PemObject;
 
+import javax.crypto.KeyAgreement;
 import java.io.IOException;
 import java.io.StringReader;
 import java.io.StringWriter;
 import java.io.UncheckedIOException;
+import java.math.BigInteger;
 import java.security.GeneralSecurityException;
+import java.security.InvalidKeyException;
 import java.security.KeyFactory;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
@@ -30,10 +34,17 @@ import java.security.NoSuchAlgorithmException;
 import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.security.interfaces.RSAPrivateCrtKey;
+import java.security.interfaces.XECPrivateKey;
+import java.security.interfaces.XECPublicKey;
+import java.security.spec.InvalidKeySpecException;
+import java.security.spec.NamedParameterSpec;
 import java.security.spec.PKCS8EncodedKeySpec;
 import java.security.spec.RSAPublicKeySpec;
 import java.security.spec.X509EncodedKeySpec;
+import java.security.spec.XECPrivateKeySpec;
+import java.security.spec.XECPublicKeySpec;
 import java.util.ArrayList;
+import java.util.Base64;
 import java.util.List;
 
 import static com.yahoo.security.KeyAlgorithm.EC;
@@ -225,6 +236,135 @@ public class KeyUtils {
 
     private static KeyFactory createKeyFactory(KeyAlgorithm algorithm) throws NoSuchAlgorithmException {
         return KeyFactory.getInstance(algorithm.getAlgorithmName(), BouncyCastleProviderHolder.getInstance());
+    }
+
+    public static XECPublicKey fromRawX25519PublicKey(byte[] rawKeyBytes) {
+        try {
+            NamedParameterSpec paramSpec = new NamedParameterSpec("X25519");
+            KeyFactory keyFactory        = KeyFactory.getInstance("XDH");
+            // X25519 public key byte representations are in little-endian (RFC 7748).
+            // Since BigInteger expects byte buffers in big-endian order, we reverse the byte ordering.
+            byte[] asBigEndian = Arrays.reverse(rawKeyBytes);
+            // https://datatracker.ietf.org/doc/html/rfc7748#section-5
+            // "The u-coordinates are elements of the underlying field GF(2^255 - 19)
+            //   or GF(2^448 - 2^224 - 1) and are encoded as an array of bytes, u, in
+            //   little-endian order such that u[0] + 256*u[1] + 256^2*u[2] + ... +
+            //   256^(n-1)*u[n-1] is congruent to the value modulo p and u[n-1] is
+            //   minimal.  When receiving such an array, implementations of X25519
+            //   (but not X448) MUST mask the most significant bit in the final byte.
+            //   This is done to preserve compatibility with point formats that
+            //   reserve the sign bit for use in other protocols and to increase
+            //   resistance to implementation fingerprinting."
+            asBigEndian[0] &= 0x7f; // MSBit of MSByte clear. TODO do we always want this? Are "we" the "implementation" here?
+            BigInteger pubU = new BigInteger(asBigEndian);
+            return (XECPublicKey) keyFactory.generatePublic(new XECPublicKeySpec(paramSpec, pubU));
+        } catch (NoSuchAlgorithmException | InvalidKeySpecException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    /** Returns the bytes representing the BigInteger of the X25519 public key EC point U coordinate */
+    public static byte[] toRawX25519PublicKeyBytes(XECPublicKey publicKey) {
+        // Raw byte representation is in little-endian, while BigInteger representation is
+        // big-endian. Basically undoes what we do on the input path in fromRawX25519PublicKey().
+        return Arrays.reverse(publicKey.getU().toByteArray());
+    }
+
+    public static XECPublicKey fromBase64EncodedX25519PublicKey(String base64pk) {
+        byte[] rawKeyBytes = Base64.getUrlDecoder().decode(base64pk);
+        return fromRawX25519PublicKey(rawKeyBytes);
+    }
+
+    public static String toBase64EncodedX25519PublicKey(XECPublicKey publicKey) {
+        return Base64.getUrlEncoder().withoutPadding().encodeToString(toRawX25519PublicKeyBytes(publicKey));
+    }
+
+    public static XECPrivateKey fromRawX25519PrivateKey(byte[] rawScalarBytes) {
+        try {
+            NamedParameterSpec paramSpec = new NamedParameterSpec("X25519");
+            KeyFactory keyFactory        = KeyFactory.getInstance("XDH");
+            return (XECPrivateKey) keyFactory.generatePrivate(new XECPrivateKeySpec(paramSpec, rawScalarBytes));
+        } catch (NoSuchAlgorithmException | InvalidKeySpecException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    // TODO ensure output is clamped?
+    public static byte[] toRawX25519PrivateKeyBytes(XECPrivateKey privateKey) {
+        var maybeScalar = privateKey.getScalar();
+        if (maybeScalar.isPresent()) {
+            return maybeScalar.get();
+        }
+        throw new IllegalArgumentException("Could not extract scalar representation of X25519 private key. " +
+                                           "It might be a hardware-protected private key.");
+    }
+
+    public static XECPrivateKey fromBase64EncodedX25519PrivateKey(String base64pk) {
+        byte[] rawKeyBytes = Base64.getUrlDecoder().decode(base64pk);
+        return fromRawX25519PrivateKey(rawKeyBytes);
+    }
+
+    public static String toBase64EncodedX25519PrivateKey(XECPrivateKey privateKey) {
+        return Base64.getUrlEncoder().withoutPadding().encodeToString(toRawX25519PrivateKeyBytes(privateKey));
+    }
+
+    // TODO unify with generateKeypair()?
+    public static KeyPair generateX25519KeyPair() {
+        try {
+            return KeyPairGenerator.getInstance("X25519").generateKeyPair();
+        } catch (NoSuchAlgorithmException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    /**
+     * Computes a shared secret using the Elliptic Curve Diffie-Hellman (ECDH) protocol for X25519 curves.
+     * <p>
+     * Let Bob have private (secret) key <code>skB</code> and public key <code>pkB</code>.
+     * Let Alice have private key <code>skA</code> and public key <code>pkA</code>.
+     * ECDH lets both parties separately compute their own side of:
+     * </p>
+     * <pre>
+     *   ecdh(skB, pkA) == ecdh(skA, pkB)
+     * </pre>
+     * <p>
+     * This arrives at the same shared secret without needing to know the secret key of
+     * the other party, but both parties must know their own secret to derive the correct
+     * shared secret. Third party Eve sneaking around in the bushes cannot compute the
+     * shared secret without knowing at least one of the secrets.
+     * </p>
+     * <p>
+     * Performs RFC 7748-recommended (and RFC 9180-mandated) check for "non-contributory"
+     * private keys by checking if the resulting shared secret comprises all zero bytes.
+     * </p>
+     *
+     * @param privateKey X25519 private key
+     * @param publicKey X25519 public key
+     * @return shared Diffie-Hellman secret. Security note: this value should never be
+     *         used <em>directly</em> as a key; use a key derivation function (KDF).
+     *
+     * @see <a href="https://www.rfc-editor.org/rfc/rfc7748">RFC 7748 Elliptic Curves for Security</a>
+     * @see <a href="https://www.rfc-editor.org/rfc/rfc9180.html">RFC 9180 Hybrid Public Key Encryption</a>
+     * @see <a href="https://en.wikipedia.org/wiki/Elliptic-curve_Diffie%E2%80%93Hellman">ECDH on wiki</a>
+     */
+    public static byte[] ecdh(XECPrivateKey privateKey, XECPublicKey publicKey) {
+        try {
+            var keyAgreement = KeyAgreement.getInstance("XDH");
+            keyAgreement.init(privateKey);
+            keyAgreement.doPhase(publicKey, true);
+            byte[] sharedSecret = keyAgreement.generateSecret();
+            // RFC 7748 recommends checking that the shared secret is not all zero bytes.
+            // Furthermore, RFC 9180 states "For X25519 and X448, public keys and Diffie-Hellman
+            // outputs MUST be validated as described in [RFC7748]".
+            // Usually we won't get here at all since Java will throw an InvalidKeyException
+            // from detecting a key with a low order point. But in case we _do_ get here, fail fast.
+            if (SideChannelSafe.allZeros(sharedSecret)) {
+                throw new IllegalArgumentException("Computed shared secret is all zeroes");
+            }
+            return sharedSecret;
+        } catch (NoSuchAlgorithmException | InvalidKeyException e) {
+            throw new RuntimeException(e);
+        }
     }
 
 }
