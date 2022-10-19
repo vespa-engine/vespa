@@ -52,12 +52,10 @@ public class Endpoint {
                 Target a = targets.get(i);
                 Target b = targets.get(j);
                 if (level == Level.application) {
-                    // - All instance names must be distinct
-                    // - All region names must be equal
-                    if (a.instance().equals(b.instance())) throw new IllegalArgumentException("Instance '" + a.instance +
-                                                                                              "' declared multiple times, but allowed at most once");
-                    if (!a.region().equals(b.region())) throw new IllegalArgumentException("Instance '" + a.instance + "' declares a region different from instance '" +
-                                                                                           b.instance() + "': '" + a.region() + "'");
+                    // - All instance name and region combinations must be distinct
+                    if (a.instance().equals(b.instance()) && a.region.equals(b.region))
+                        throw new IllegalArgumentException("Instance '" + a.instance + "' declared multiple times " +
+                                                           "with region '" + a.region + "', but allowed at most once");
                 }
                 if (level == Level.instance && a.region.equals(b.region)) {
                     // - Instance name is implicit
@@ -78,9 +76,9 @@ public class Endpoint {
         return containerId;
     }
 
-    /** The regions of this points to */
+    /** The regions this points to */
     public List<RegionName> regions() {
-        return targets.stream().map(Target::region).collect(Collectors.toUnmodifiableList());
+        return targets.stream().map(Target::region).toList();
     }
 
     /** The level of targets in this */

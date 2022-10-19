@@ -2,6 +2,8 @@
 package com.yahoo.config.application.api;
 
 import com.google.common.collect.ImmutableSet;
+import com.yahoo.config.application.api.Endpoint.Level;
+import com.yahoo.config.application.api.Endpoint.Target;
 import com.yahoo.config.application.api.xml.DeploymentSpecXmlReader;
 import com.yahoo.config.provision.CloudAccount;
 import com.yahoo.config.provision.Environment;
@@ -1328,18 +1330,19 @@ public class DeploymentSpecTest {
                            </instance>
                            <endpoints>
                              <endpoint id="foo" container-id="qrs" %s>
-                               <instance %s>%s</instance>
+                               <instance %s %s>%s</instance>
                          %s    </endpoint>
                            </endpoints>
                          </deployment>
                          """;
-        assertInvalid(String.format(xmlForm, "", "", "", ""), "Missing required attribute 'region' in 'endpoint'");
-        assertInvalid(String.format(xmlForm, "region='us-west-1'", "", "main", ""), "Missing required attribute 'weight' in 'instance");
-        assertInvalid(String.format(xmlForm, "region='us-west-1'", "weight='1'", "", ""), "Application-level endpoint 'foo': empty 'instance' element");
-        assertInvalid(String.format(xmlForm, "region='invalid'", "weight='1'", "main", ""), "Application-level endpoint 'foo': targets undeclared region 'invalid' in instance 'main'");
-        assertInvalid(String.format(xmlForm, "region='us-west-1'", "weight='foo'", "main", ""), "Application-level endpoint 'foo': invalid weight value 'foo'");
-        assertInvalid(String.format(xmlForm, "region='us-west-1'", "weight='1'", "main", "<region>us-east-3</region>"), "Application-level endpoint 'foo': invalid element 'region'");
-        assertInvalid(String.format(xmlForm, "region='us-west-1'", "weight='0'", "main", ""), "Application-level endpoint 'foo': sum of all weights must be positive, got 0");
+        assertInvalid(String.format(xmlForm, "", "weight='1'", "", "main", ""), "'region' attribute must be declared on either <endpoint> or <instance> tag");
+        assertInvalid(String.format(xmlForm, "region='us-west-1'", "weight='1'", "region='us-west-1'", "main", ""), "'region' attribute must be declared on either <endpoint> or <instance> tag");
+        assertInvalid(String.format(xmlForm, "region='us-west-1'", "", "", "main", ""), "Missing required attribute 'weight' in 'instance");
+        assertInvalid(String.format(xmlForm, "region='us-west-1'", "weight='1'", "", "", ""), "Application-level endpoint 'foo': empty 'instance' element");
+        assertInvalid(String.format(xmlForm, "region='invalid'", "weight='1'", "", "main", ""), "Application-level endpoint 'foo': targets undeclared region 'invalid' in instance 'main'");
+        assertInvalid(String.format(xmlForm, "region='us-west-1'", "weight='foo'", "", "main", ""), "Application-level endpoint 'foo': invalid weight value 'foo'");
+        assertInvalid(String.format(xmlForm, "region='us-west-1'", "weight='1'", "", "main", "<region>us-east-3</region>"), "Application-level endpoint 'foo': invalid element 'region'");
+        assertInvalid(String.format(xmlForm, "region='us-west-1'", "weight='0'", "", "main", ""), "Application-level endpoint 'foo': sum of all weights must be positive, got 0");
     }
 
     @Test
@@ -1369,18 +1372,27 @@ public class DeploymentSpecTest {
                                                          <endpoint id="bar" container-id="music" region='us-east-3'>
                                                            <instance weight="10">main</instance>
                                                          </endpoint>
+                                                         <endpoint id="baz" container-id="moose">
+                                                           <instance weight="1" region='us-west-1'>main</instance>
+                                                           <instance weight="2" region='us-east-3'>main</instance>
+                                                           <instance weight="3" region='us-west-1'>beta</instance>
+                                                         </endpoint>
                                                        </endpoints>
                                                      </deployment>
                                                      """);
-        assertEquals(List.of(new Endpoint("foo", "movies", Endpoint.Level.application,
-                                          List.of(new Endpoint.Target(RegionName.from("us-west-1"), InstanceName.from("beta"), 2),
-                                                  new Endpoint.Target(RegionName.from("us-west-1"), InstanceName.from("main"), 8))),
-                             new Endpoint("bar", "music", Endpoint.Level.application,
-                                          List.of(new Endpoint.Target(RegionName.from("us-east-3"), InstanceName.from("main"), 10)))),
+        assertEquals(List.of(new Endpoint("foo", "movies", Level.application,
+                                          List.of(new Target(RegionName.from("us-west-1"), InstanceName.from("beta"), 2),
+                                                  new Target(RegionName.from("us-west-1"), InstanceName.from("main"), 8))),
+                             new Endpoint("bar", "music", Level.application,
+                                          List.of(new Target(RegionName.from("us-east-3"), InstanceName.from("main"), 10))),
+                             new Endpoint("baz", "moose", Level.application,
+                                          List.of(new Target(RegionName.from("us-west-1"), InstanceName.from("main"), 1),
+                                                  new Target(RegionName.from("us-east-3"), InstanceName.from("main"), 2),
+                                                  new Target(RegionName.from("us-west-1"), InstanceName.from("beta"), 3)))),
                              spec.endpoints());
-        assertEquals(List.of(new Endpoint("glob", "music", Endpoint.Level.instance,
-                                          List.of(new Endpoint.Target(RegionName.from("us-west-1"), InstanceName.from("main"), 1),
-                                                  new Endpoint.Target(RegionName.from("us-east-3"), InstanceName.from("main"), 1)))),
+        assertEquals(List.of(new Endpoint("glob", "music", Level.instance,
+                                          List.of(new Target(RegionName.from("us-west-1"), InstanceName.from("main"), 1),
+                                                  new Target(RegionName.from("us-east-3"), InstanceName.from("main"), 1)))),
                      spec.requireInstance("main").endpoints());
     }
 
