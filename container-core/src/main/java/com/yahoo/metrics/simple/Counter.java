@@ -57,7 +57,7 @@ public class Counter {
      *            the point in the metric space at which to add to the metric
      */
     public void add(long n, Point p) {
-        metricReceiver.update(new Sample(new Measurement(Long.valueOf(n)), new Identifier(name, p), AssumedType.COUNTER));
+        metricReceiver.update(new Sample(new Measurement(n), new Identifier(name, p), AssumedType.COUNTER));
     }
 
     /**
