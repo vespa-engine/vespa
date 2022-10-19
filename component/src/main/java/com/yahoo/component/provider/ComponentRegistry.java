@@ -1,8 +1,6 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.component.provider;
 
-import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableMap;
 import com.yahoo.component.ComponentId;
 import com.yahoo.component.ComponentSpecification;
 import com.yahoo.component.Version;
@@ -55,18 +53,8 @@ public class ComponentRegistry<COMPONENT> {
     public void register(ComponentId id, COMPONENT component) {
         if (frozen) throw new IllegalStateException("Cannot modify a frozen component registry");
 
-        Map<String, Map<Version, COMPONENT>> componentVersionsByName =
-                componentsByNameByNamespace.get(id.getNamespace());
-        if (componentVersionsByName == null) {
-            componentVersionsByName = new LinkedHashMap<>();
-            componentsByNameByNamespace.put(id.getNamespace(), componentVersionsByName);
-        }
-
-        Map<Version, COMPONENT> componentVersions = componentVersionsByName.get(id.getName());
-        if (componentVersions == null) {
-            componentVersions = new LinkedHashMap<>();
-            componentVersionsByName.put(id.getName(), componentVersions);
-        }
+        var componentVersionsByName = componentsByNameByNamespace.computeIfAbsent(id.getNamespace(),(key) -> new LinkedHashMap<>());
+        Map<Version, COMPONENT> componentVersions = componentVersionsByName.computeIfAbsent(id.getName(), k -> new LinkedHashMap<>());
         componentVersions.put(id.getVersion(), component);
 
         componentsById.put(id, component);
@@ -162,14 +150,14 @@ public class ComponentRegistry<COMPONENT> {
      * Returns an unmodifiable snapshot of all components present in this registry.
      */
     public List<COMPONENT> allComponents() {
-        return ImmutableList.copyOf(componentsById.values());
+        return List.copyOf(componentsById.values());
     }
 
     /**
      * Returns an unmodifiable snapshot of all components present in this registry, by id.
      */
     public Map<ComponentId, COMPONENT> allComponentsById() {
-        return ImmutableMap.copyOf(componentsById);
+        return Map.copyOf(componentsById);
     }
 
     /** Returns the number of components in this */
