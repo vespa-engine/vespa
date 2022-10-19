@@ -2,7 +2,6 @@
 
 #include "url_field_inverter.h"
 #include "field_inverter.h"
-#include <vespa/document/datatype/urldatatype.h>
 #include <vespa/document/fieldvalue/arrayfieldvalue.h>
 #include <vespa/document/fieldvalue/stringfieldvalue.h>
 #include <vespa/document/fieldvalue/weightedsetfieldvalue.h>
@@ -21,7 +20,6 @@ namespace {
 
 static vespalib::string HOSTNAME_BEGIN("StArThOsT");
 static vespalib::string HOSTNAME_END("EnDhOsT");
-const vespalib::string SPANTREE_NAME("linguistics");
 
 static size_t
 lowercaseToken(vespalib::string &dest, const char *src, size_t srcSize)
@@ -52,7 +50,6 @@ using document::IntFieldValue;
 using document::SpanTree;
 using document::StringFieldValue;
 using document::StructFieldValue;
-using document::UrlDataType;
 using document::WeightedSetFieldValue;
 using search::index::Schema;
 using search::index::schema::CollectionType;
@@ -112,90 +109,13 @@ UrlFieldInverter::endElement()
 }
 
 void
-UrlFieldInverter::processUrlSubField(FieldInverter *inverter,
-                                     const StructFieldValue &field,
-                                     vespalib::stringref subField,
-                                     bool addAnchors)
-{
-    const FieldValue::UP sfv = field.getValue(subField);
-    if (!sfv) {
-        return;
-    }
-    if (!sfv->isA(FieldValue::Type::STRING)) {
-        LOG(error,
-            "Illegal field type %s for URL subfield %s, expected string",
-            sfv->getDataType()->getName().c_str(),
-            vespalib::string(subField).data());
-        return;
-    }
-    const auto &value = static_cast<const StringFieldValue &>(*sfv);
-    if (addAnchors) {
-        inverter->addWord(HOSTNAME_BEGIN);
-    }
-    inverter->processAnnotations(value);
-    if (addAnchors) {
-        inverter->addWord(HOSTNAME_END);
-    }
-}
-
-void
-UrlFieldInverter::processAnnotatedUrlField(const StructFieldValue & field)
-{
-    processUrlSubField(_all, field, UrlDataType::FIELD_ALL, false);
-    processUrlSubField(_scheme, field, UrlDataType::FIELD_SCHEME, false);
-    processUrlSubField(_host, field, UrlDataType::FIELD_HOST, false);
-    processUrlSubField(_port, field, UrlDataType::FIELD_PORT, false);
-    processUrlSubField(_path, field, UrlDataType::FIELD_PATH, false);
-    processUrlSubField(_query, field, UrlDataType::FIELD_QUERY, false);
-    processUrlSubField(_fragment, field, UrlDataType::FIELD_FRAGMENT, false);
-    processUrlSubField(_hostname, field, UrlDataType::FIELD_HOST, true);
-}
-
-void
 UrlFieldInverter::processUrlField(const FieldValue &url_field)
 {
-    if (url_field.isA(FieldValue::Type::STRING)) {
-        const vespalib::string &url_str =
-            static_cast<const StringFieldValue &>(url_field).getValue();
-        processUrlOldStyle(url_str);
-        return;
-    }
-    assert(url_field.isA(FieldValue::Type::STRUCT));
-    const auto &field = static_cast<const StructFieldValue &>(url_field);
-
-    const FieldValue::UP all_val = field.getValue("all");
-    if (all_val.get() == nullptr) {
-        if (_useAnnotations) {
-            // New style, use annotations
-            processAnnotatedUrlField(field);
-        }
-        return;
-    }
-
-    if (!all_val->isA(FieldValue::Type::STRING)) {
-        LOG(error,
-            "Illegal field type %s for URL subfield all, expected string",
-            all_val->getDataType()->getName().c_str());
-        return;
-    }
-    const auto &all_sfv = static_cast<const StringFieldValue &>(*all_val);
-    if (_useAnnotations) {
-        StringFieldValue::SpanTrees trees = all_sfv.getSpanTrees();
-        const SpanTree *tree = StringFieldValue::findTree(trees, SPANTREE_NAME);
-        if (tree != nullptr) {
-            // New style, use annotations
-            processAnnotatedUrlField(field);
-            return;
-        }
-    }
-
-    if (_useAnnotations) {
-        return;
-    }
-
-    // Old style, tokenize in backend
-    const vespalib::string &s = all_sfv.getValue();
-    processUrlOldStyle(s);
+    assert(url_field.isA(FieldValue::Type::STRING));
+    const vespalib::string &url_str =
+        static_cast<const StringFieldValue &>(url_field).getValue();
+    processUrlOldStyle(url_str);
+    return;
 }
 
 void
@@ -287,9 +207,7 @@ namespace {
 bool
 isUriType(const DataType &type)
 {
-    return type == UrlDataType::getInstance()
-           || type == *DataType::STRING
-           || type == *DataType::URI;
+    return type == *DataType::STRING || type == *DataType::URI;
 }
 
 }
@@ -304,7 +222,7 @@ UrlFieldInverter::invertUrlField(const FieldValue &val)
             processUrlField(val);
             endElement();
         } else {
-            throw std::runtime_error(make_string("Expected URI struct, got '%s'", val.getDataType()->getName().c_str()));
+            throw std::runtime_error(make_string("Expected URI field, got '%s'", val.getDataType()->getName().c_str()));
         }
         break;
     case CollectionType::WEIGHTEDSET: {
@@ -403,10 +321,8 @@ UrlFieldInverter::UrlFieldInverter(index::schema::CollectionType collectionType,
       _query(query),
       _fragment(fragment),
       _hostname(hostname),
-      _useAnnotations(false),
       _collectionType(collectionType)
 {
 }
 
 }
-

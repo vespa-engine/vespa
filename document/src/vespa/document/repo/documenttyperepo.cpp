@@ -8,7 +8,6 @@
 #include <vespa/document/datatype/documenttype.h>
 #include <vespa/document/datatype/mapdatatype.h>
 #include <vespa/document/datatype/positiondatatype.h>
-#include <vespa/document/datatype/urldatatype.h>
 #include <vespa/document/datatype/weightedsetdatatype.h>
 #include <vespa/document/datatype/referencedatatype.h>
 #include <vespa/document/datatype/tensor_data_type.h>
@@ -369,7 +368,6 @@ addDefaultDocument(DocumentTypeMap &type_map) {
     for (size_t i = 0; i < default_types.size(); ++i) {
         data_types->repo.addDataType(*default_types[i]);
     }
-    data_types->repo.addDataType(UrlDataType::getInstance());
     data_types->repo.addDataType(PositionDataType::getInstance());
     data_types->doc_type = std::make_unique<DocumentType>("document", typeId);
 

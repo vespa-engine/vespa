@@ -31,7 +31,6 @@ vespa_add_library(searchsummary_docsummary OBJECT
     res_config_entry.cpp
     resultclass.cpp
     resultconfig.cpp
-    searchdatatype.cpp
     simple_dfw.cpp
     slime_filler.cpp
     slime_filler_filter.cpp

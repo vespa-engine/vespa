@@ -19,7 +19,6 @@ class UrlFieldInverter {
     FieldInverter *_fragment;
     FieldInverter *_hostname;
 
-    bool _useAnnotations;
     index::schema::CollectionType _collectionType;
 
     void startDoc(uint32_t docId);
@@ -29,13 +28,6 @@ class UrlFieldInverter {
     void startElement(int32_t weight);
 
     void endElement();
-
-    void processUrlSubField(FieldInverter *inverter,
-                            const document::StructFieldValue &field,
-                            vespalib::stringref subField,
-                            bool addAnchors);
-
-    void processAnnotatedUrlField(const document::StructFieldValue &field);
 
     void processUrlField(const document::FieldValue &url_field);
 
@@ -60,9 +52,6 @@ public:
     void invertField(uint32_t docId, const document::FieldValue::UP &field);
     void removeDocument(uint32_t docId);
 
-    void setUseAnnotations(bool useAnnotations) {
-        _useAnnotations = useAnnotations;
-    }
     void applyRemoves();
     void pushDocuments();
 };

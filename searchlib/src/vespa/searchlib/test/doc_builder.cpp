@@ -108,10 +108,4 @@ DocBuilder::make_struct(vespalib::stringref field_name)
     return {field_type};
 }
 
-StructFieldValue
-DocBuilder::make_url()
-{
-    return {get_data_type("url")};
-}
-
 }

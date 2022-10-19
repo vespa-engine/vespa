@@ -29,7 +29,6 @@ vespa_add_executable(document_gtest_runner_app TEST
     testdocmantest.cpp
     teststringutil.cpp
     testxml.cpp
-    urltypetest.cpp
     weightedsetfieldvaluetest.cpp
     DEPENDS
     document
