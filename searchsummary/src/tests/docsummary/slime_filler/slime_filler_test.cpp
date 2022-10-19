@@ -452,19 +452,6 @@ TEST_F(SlimeFillerTest, insert_position)
     }
 }
 
-TEST_F(SlimeFillerTest, insert_uri)
-{
-    StructFieldValue uri(get_data_type("url"));
-    uri.setValue("all", StringFieldValue("http://www.example.com:42/foobar?q#frag"));
-    uri.setValue("scheme", StringFieldValue("http"));
-    uri.setValue("host", StringFieldValue("www.example.com"));
-    uri.setValue("port", StringFieldValue("42"));
-    uri.setValue("path", StringFieldValue("foobar"));
-    uri.setValue("query", StringFieldValue("q"));
-    uri.setValue("fragment", StringFieldValue("frag"));
-    expect_insert(R"("http://www.example.com:42/foobar?q#frag")", uri);
-}
-
 TEST_F(SlimeFillerTest, insert_predicate)
 {
     auto input = std::make_unique<Slime>();

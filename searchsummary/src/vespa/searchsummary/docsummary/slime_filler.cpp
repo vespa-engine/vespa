@@ -5,7 +5,6 @@
 #include "i_juniper_converter.h"
 #include "i_string_field_converter.h"
 #include "resultconfig.h"
-#include "searchdatatype.h"
 #include "slime_filler_filter.h"
 #include <vespa/document/datatype/positiondatatype.h>
 #include <vespa/document/fieldvalue/arrayfieldvalue.h>
@@ -263,13 +262,6 @@ SlimeFiller::visit(const StructFieldValue& value)
             Cursor& c = _inserter.insertObject();
             c.setDouble("lat", double(yv->getAsInt()) / 1.0e6);
             c.setDouble("lng", double(xv->getAsInt()) / 1.0e6);
-            return;
-        }
-    }
-    if (*value.getDataType() == *SearchDataType::URI) {
-        FieldValue::UP uriAllValue = value.getValue("all");
-        if (uriAllValue && uriAllValue->isA(FieldValue::Type::STRING)) {
-            uriAllValue->accept(*this);
             return;
         }
     }
