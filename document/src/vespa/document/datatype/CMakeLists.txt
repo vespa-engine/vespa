@@ -14,7 +14,6 @@ vespa_add_library(document_datatypes OBJECT
     structdatatype.cpp
     structureddatatype.cpp
     tensor_data_type.cpp
-    urldatatype.cpp
     weightedsetdatatype.cpp
     referencedatatype.cpp
     DEPENDS
