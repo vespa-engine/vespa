@@ -17,6 +17,7 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
 import java.util.logging.Level;
@@ -34,7 +35,7 @@ public class Spooler {
     private static final Path defaultSpoolPath = Path.of(Defaults.getDefaults().underVespaHome("var/spool/vespa/events"));
     private static final Comparator<File> ordering = new TimestampCompare();
     private static final int defaultMaxEntriesPerFile = 100;
-    // Max delay between first write to a file and when we should close file and move it for further processing
+    // Maximum delay between first write to a file and when we should close file and move it for further processing
     static final Duration maxDelayAfterFirstWrite = Duration.ofSeconds(10);
 
     private Path processingPath;
@@ -42,8 +43,9 @@ public class Spooler {
     private Path failuresPath;
     private Path successesPath;
 
-    // Count of entries for the file that is currently being written to
+    // Number of next entry to be written to the current file
     AtomicInteger entryCounter = new AtomicInteger(1);
+    AtomicLong fileNameBase = new AtomicLong(1);
     AtomicInteger fileCounter = new AtomicInteger(1);
 
     private final Path spoolPath;
@@ -59,6 +61,7 @@ public class Spooler {
         this.spoolPath = spoolPath;
         this.maxEntriesPerFile = maxEntriesPerFile;
         this.clock = clock;
+        this.fileNameBase.set(newFileNameBase(clock));
         firstWriteTimestamp.set(Instant.EPOCH);
         createDirs(spoolPath);
     }
@@ -70,7 +73,7 @@ public class Spooler {
     public void processFiles(Function<LoggerEntry, Boolean> transport) throws IOException {
         List<Path> files = listFilesInPath(readyPath);
         if (files.size() == 0) {
-            log.log(Level.INFO, "No files in ready path " + readyPath.toFile().getAbsolutePath());
+            log.log(Level.FINEST, "No files in ready path " + readyPath.toFile().getAbsolutePath());
             return;
         }
         log.log(Level.FINE, "Files in ready path: " + files.size());
@@ -117,7 +120,7 @@ public class Spooler {
                     try {
                         Files.move(file, target);
                     } catch (IOException e) {
-                        log.log(Level.SEVERE, "Unable to move processed file " + file + " to " + target);
+                        log.log(Level.SEVERE, "Unable to move processed file " + file + " to " + target, e);
                     }
                 }
             }
@@ -150,7 +153,7 @@ public class Spooler {
     }
 
     private void writeEntry(LoggerEntry entry) {
-        String fileName = String.valueOf(fileCounter);
+        String fileName = currentFileName();
         Path file = spoolPath.resolve(processingPath).resolve(fileName);
         try {
             log.log(Level.FINE, "Writing entry " + entryCounter.get() + " (" + entry.serialize() + ") to file " + fileName);
@@ -164,7 +167,7 @@ public class Spooler {
     }
 
     void switchFileIfNeeded() throws IOException {
-        String fileName = String.valueOf(fileCounter);
+        String fileName = currentFileName();
         Path file = spoolPath.resolve(processingPath).resolve(fileName);
         switchFileIfNeeded(file, fileName);
     }
@@ -173,12 +176,22 @@ public class Spooler {
         if (file.toFile().exists()
                 && (entryCounter.get() > maxEntriesPerFile || firstWriteTimestamp.get().plus(maxDelayAfterFirstWrite).isBefore(clock.instant()))) {
             Path target = spoolPath.resolve(readyPath).resolve(file.relativize(file)).resolve(fileName);
-            log.log(Level.INFO, "Finished writing file " + file + " moving it to " + target);
+            log.log(Level.INFO, "Finished writing file " + file + " with " + entryCounter.get() + "entries, moving it to " + target);
             Files.move(file, target);
             entryCounter.set(1);
+            fileNameBase.set(newFileNameBase(clock));
             fileCounter.incrementAndGet();
             firstWriteTimestamp.set(Instant.EPOCH);
         }
+    }
+
+    String currentFileName() {
+        return fileNameBase.get() + "-" + fileCounter;
+    }
+
+    // Need to use a unique file name, see also currentFileName()
+    private static long newFileNameBase(Clock clock) {
+        return clock.instant().getEpochSecond();
     }
 
     private void createDirs(Path spoolerPath) {

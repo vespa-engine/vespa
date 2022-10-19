@@ -63,6 +63,7 @@ public abstract class AbstractSpoolingLogger extends AbstractThreadedLogger impl
         } catch (InterruptedException e) {
             log.log(Level.WARNING, "Failure when waiting for termination: " + e.getMessage());
         }
+        run();  // Run a last time to make sure all data is written to file
     }
 
 }
