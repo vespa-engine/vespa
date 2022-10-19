@@ -6,7 +6,6 @@ import java.util.List;
 import java.util.Map;
 
 import com.yahoo.api.annotations.Beta;
-import com.google.common.collect.ImmutableList;
 import com.yahoo.collections.Tuple2;
 import com.yahoo.jdisc.Metric.Context;
 
@@ -88,14 +87,14 @@ public final class Point implements Context {
      * Get an immutable list view of the values for each dimension.
      */
     public List<Value> location() {
-        return ImmutableList.copyOf(location);
+        return List.of(location);
     }
 
     /**
      * Get an immutable list view of the names of each dimension.
      */
     public List<String> dimensions() {
-        return ImmutableList.copyOf(dimensions);
+        return List.of(dimensions);
     }
 
     /**
