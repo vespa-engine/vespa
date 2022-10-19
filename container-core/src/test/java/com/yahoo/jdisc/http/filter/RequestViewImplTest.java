@@ -1,11 +1,12 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.jdisc.http.filter;
 
-import com.google.common.collect.Lists;
 import com.yahoo.jdisc.HeaderFields;
 import com.yahoo.jdisc.Request;
 import com.yahoo.jdisc.http.filter.SecurityResponseFilterChain.RequestViewImpl;
 import org.junit.jupiter.api.Test;
+
+import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.mock;
@@ -17,7 +18,7 @@ import static org.mockito.Mockito.when;
 public class RequestViewImplTest {
 
     @Test
-    void header_from_the_parent_request_is_available() throws Exception {
+    void header_from_the_parent_request_is_available() {
         final String HEADER = "single-header";
 
         HeaderFields parentHeaders = new HeaderFields();
@@ -32,11 +33,11 @@ public class RequestViewImplTest {
 
 
     @Test
-    void multi_value_header_from_the_parent_request_is_available() throws Exception {
+    void multi_value_header_from_the_parent_request_is_available() {
         final String HEADER = "list-header";
 
         HeaderFields parentHeaders = new HeaderFields();
-        parentHeaders.add(HEADER, Lists.newArrayList("one", "two"));
+        parentHeaders.add(HEADER, List.of("one", "two"));
 
         RequestView requestView = newRequestView(parentHeaders);
 

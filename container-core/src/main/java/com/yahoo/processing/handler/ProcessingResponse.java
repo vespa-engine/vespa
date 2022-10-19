@@ -1,7 +1,6 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.processing.handler;
 
-import com.google.common.collect.ImmutableList;
 import com.yahoo.container.jdisc.AsyncHttpResponse;
 import com.yahoo.container.jdisc.VespaHeaders;
 import com.yahoo.jdisc.handler.CompletionHandler;
@@ -18,7 +17,6 @@ import com.yahoo.processing.response.DataList;
 
 import java.io.IOException;
 import java.io.OutputStream;
-import java.util.Collections;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
@@ -110,13 +108,13 @@ public class ProcessingResponse extends AsyncHttpResponse {
 
     private List<ErrorMessage> flattenErrors(Response processingResponse) {
         Set<ErrorMessage> errors = flattenErrors(null, processingResponse.data());
-        if (errors == null) return Collections.emptyList();
-        return ImmutableList.copyOf(errors);
+        if (errors == null) return List.of();
+        return List.copyOf(errors);
     }
 
     @SuppressWarnings("unchecked")
     private Set<ErrorMessage> flattenErrors(Set<ErrorMessage> errors, Data data) {
-        if (data.request() == null) return Collections.EMPTY_SET; // Not allowed, but handle anyway
+        if (data.request() == null) return Set.of(); // Not allowed, but handle anyway
         errors = addTo(errors, data.request().errors());
 
         if (data instanceof DataList) {

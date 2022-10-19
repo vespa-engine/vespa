@@ -1,7 +1,6 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.component.chain.model;
 
-import com.google.common.collect.ImmutableSet;
 import com.yahoo.component.ComponentId;
 import com.yahoo.component.ComponentSpecification;
 import com.yahoo.component.chain.Phase;
@@ -61,7 +60,7 @@ public class ChainSpecification {
         this.componentId = componentId;
         this.inheritance = inheritance;
         this.phases = copyPhasesImmutable(phases);
-        this.componentReferences = ImmutableSet.copyOf(
+        this.componentReferences = Set.copyOf(
                 filterByComponentSpecification(componentReferences, inheritance.excludedComponents));
     }
 
@@ -122,8 +121,8 @@ public class ChainSpecification {
     }
 
     private static <T> Set<T> immutableCopy(Set<T> set) {
-        if (set == null) return ImmutableSet.of();
-        return ImmutableSet.copyOf(set);
+        if (set == null) return Set.of();
+        return Set.copyOf(set);
     }
 
     private static Map<String, Phase> copyPhasesImmutable(Collection<Phase> phases) {

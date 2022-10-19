@@ -1,11 +1,9 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.processing.handler;
 
-import com.google.common.collect.ImmutableMap;
 import com.yahoo.processing.Request;
 import com.yahoo.processing.response.AbstractData;
 
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
@@ -26,7 +24,7 @@ public class ResponseHeaders extends AbstractData {
      */
     public ResponseHeaders(Map<String,List<String>> headers, Request request) {
         super(request);
-        this.headers = ImmutableMap.copyOf(headers);
+        this.headers = Map.copyOf(headers);
     }
 
     /** Returns an unmodifiable map of the response headers of this */

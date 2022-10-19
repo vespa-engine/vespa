@@ -1,9 +1,9 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.component.chain.dependencies;
 
-import java.util.*;
-
-import com.google.common.collect.ImmutableSet;
+import java.util.Collection;
+import java.util.LinkedHashSet;
+import java.util.Set;
 
 /**
  * Constraints for ordering ChainedComponents in chains. Immutable.
@@ -37,8 +37,8 @@ public class Dependencies {
     }
 
     private Set<String> immutableSet(Collection<String> set) {
-        if (set == null) return ImmutableSet.of();
-        return ImmutableSet.copyOf(set);
+        if (set == null) return Set.of();
+        return Set.copyOf(set);
     }
 
     private Set<String> union(Set<String> s1, Set<String> s2) {

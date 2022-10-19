@@ -7,7 +7,6 @@ import java.util.Optional;
 import java.util.concurrent.atomic.AtomicReference;
 
 import com.yahoo.api.annotations.Beta;
-import com.google.common.collect.ImmutableMap;
 import com.yahoo.concurrent.ThreadLocalDirectory;
 
 /**
@@ -165,7 +164,7 @@ public class MetricReceiver {
     public MetricReceiver(ThreadLocalDirectory<Bucket, Sample> metricsCollection, AtomicReference<Bucket> currentSnapshot) {
         this.metricsCollection = metricsCollection;
         this.currentSnapshot = currentSnapshot;
-        metricSettings = new ImmutableMap.Builder<String, MetricSettings>().build();
+        metricSettings = Map.of();
     }
 
     /**
@@ -284,7 +283,7 @@ public class MetricReceiver {
             Map<String, MetricSettings> builderMap = new HashMap<>(oldMetricDefinitions.size() + 1);
             builderMap.putAll(oldMetricDefinitions);
             builderMap.put(metricName, definition);
-            metricSettings = ImmutableMap.copyOf(builderMap);
+            metricSettings = Map.copyOf(builderMap);
         }
     }
 

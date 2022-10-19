@@ -16,7 +16,6 @@ import java.util.Set;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import com.google.common.collect.ImmutableMap;
 import com.yahoo.metrics.simple.UntypedMetric.AssumedType;
 
 /**
@@ -47,9 +46,7 @@ public class BucketTest {
         }
         assertEquals(4, bucket.entrySet().size());
         for (int i = 0; i < 4; ++i) {
-            bucket.put(new Sample(new Measurement(i), new Identifier("nalle",
-                            new Point(new ImmutableMap.Builder<String, Integer>().put("dim", Integer.valueOf(i)).build())),
-                    AssumedType.GAUGE));
+            bucket.put(new Sample(new Measurement(i), new Identifier("nalle", new Point(Map.of("dim", i))), AssumedType.GAUGE));
         }
         assertEquals(8, bucket.entrySet().size());
         int nalle = 0, nalle0 = 0, nalle1 = 0, nalle2 = 0, nalle3 = 0;
@@ -98,13 +95,10 @@ public class BucketTest {
     @Test
     final void testHasIdentifier() {
         for (int i = 0; i < 4; ++i) {
-            bucket.put(new Sample(new Measurement(i), new Identifier("nalle_" + i, new Point(
-                            new ImmutableMap.Builder<String, Integer>().put(String.valueOf(i), Integer.valueOf(i)).build())),
-                    AssumedType.GAUGE));
+            bucket.put(new Sample(new Measurement(i), new Identifier("nalle_" + i, new Point(Map.of(String.valueOf(i), i))), AssumedType.GAUGE));
         }
         for (int i = 0; i < 4; ++i) {
-            assertTrue(bucket.hasIdentifier(new Identifier("nalle_" + i, new Point(new ImmutableMap.Builder<String, Integer>().put(
-                    String.valueOf(i), Integer.valueOf(i)).build()))));
+            assertTrue(bucket.hasIdentifier(new Identifier("nalle_" + i, new Point(Map.of(String.valueOf(i), i)))));
         }
     }
 
@@ -212,11 +206,8 @@ public class BucketTest {
 
     private void twoMetricsUniqueDimensions() {
         for (int i = 0; i < 4; ++i) {
-            bucket.put(new Sample(new Measurement(i), new Identifier("nalle", new Point(new ImmutableMap.Builder<String, Integer>()
-                    .put(String.valueOf(i), Integer.valueOf(i)).build())), AssumedType.GAUGE));
-            bucket.put(new Sample(new Measurement(i), new Identifier("nalle2", new Point(
-                    new ImmutableMap.Builder<String, Integer>().put(String.valueOf(i), Integer.valueOf(i)).build())),
-                    AssumedType.GAUGE));
+            bucket.put(new Sample(new Measurement(i), new Identifier("nalle", new Point(Map.of(String.valueOf(i), i))), AssumedType.GAUGE));
+            bucket.put(new Sample(new Measurement(i), new Identifier("nalle2", new Point(Map.of(String.valueOf(i), i))), AssumedType.GAUGE));
         }
     }
 
