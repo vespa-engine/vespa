@@ -43,6 +43,8 @@ import com.yahoo.search.query.Sorting.Order;
 import com.yahoo.search.query.Sorting.UcaSorter;
 import com.yahoo.search.query.parser.Parsable;
 import com.yahoo.search.query.parser.ParserEnvironment;
+import com.yahoo.search.query.parser.ParserFactory;
+
 import com.yahoo.search.searchchain.Execution;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.Timeout;
@@ -69,6 +71,12 @@ public class YqlParserTestCase {
     void failsGracefullyOnMissingQuoteEscapingAndSubsequentUnicodeCharacter() {
         assertParseFail("select * from bar where rank(ids contains 'http://en.wikipedia.org/wiki/Hors_d'œuvre') limit 10",
                 new IllegalInputException("com.yahoo.search.yql.ProgramCompileException: query:L1:79 token recognition error at: 'œ'"));
+    }
+
+    @Test
+    void backslashCanBeEscaped() {
+        // Java escaping on top of YQL escaping, to produce a regexp with a single backslash
+        assertParse("select * from sources * where artist matches 'a\\\\.'", "RegExpItem [expression=a\\.]");
     }
 
     @Test
