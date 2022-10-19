@@ -906,7 +906,7 @@
       "public com.yahoo.tensor.Tensor remove(java.util.Set)",
       "public java.lang.String toString()",
       "public java.lang.String toString(boolean, boolean)",
-      "public java.lang.String toAbbreviatedString()",
+      "public java.lang.String toAbbreviatedString(boolean, boolean)",
       "public boolean equals(java.lang.Object)",
       "public bridge synthetic com.yahoo.tensor.Tensor withType(com.yahoo.tensor.TensorType)"
     ],
@@ -958,7 +958,7 @@
       "public int hashCode()",
       "public java.lang.String toString()",
       "public java.lang.String toString(boolean, boolean)",
-      "public java.lang.String toAbbreviatedString()",
+      "public java.lang.String toAbbreviatedString(boolean, boolean)",
       "public boolean equals(java.lang.Object)"
     ],
     "fields": []
@@ -1051,7 +1051,7 @@
       "public int hashCode()",
       "public java.lang.String toString()",
       "public java.lang.String toString(boolean, boolean)",
-      "public java.lang.String toAbbreviatedString()",
+      "public java.lang.String toAbbreviatedString(boolean, boolean)",
       "public boolean equals(java.lang.Object)",
       "public long denseSubspaceSize()",
       "public static com.yahoo.tensor.TensorType createPartialType(com.yahoo.tensor.TensorType$Value, java.util.List)"
@@ -1240,7 +1240,8 @@
       "public java.util.List smallest()",
       "public abstract java.lang.String toString()",
       "public abstract java.lang.String toString(boolean, boolean)",
-      "public abstract java.lang.String toAbbreviatedString()",
+      "public java.lang.String toAbbreviatedString()",
+      "public abstract java.lang.String toAbbreviatedString(boolean, boolean)",
       "public static java.lang.String toStandardString(com.yahoo.tensor.Tensor, boolean, boolean, long)",
       "public static java.lang.String valueToString(com.yahoo.tensor.Tensor, boolean, long)",
       "public abstract boolean equals(java.lang.Object)",

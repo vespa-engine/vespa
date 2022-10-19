@@ -325,7 +325,17 @@ public interface Tensor {
     String toString(boolean withType, boolean shortForms);
 
     /** Returns an abbreviated string representation of this tensor suitable for human-readable messages */
-    String toAbbreviatedString();
+    default String toAbbreviatedString() {
+        return toAbbreviatedString(true, true);
+    }
+
+    /**
+     * Returns an abbreviated string representation of this tensor suitable for human-readable messages
+     *
+     * @param withType whether to prefix the value by the type of this
+     * @param shortForms whether to use short forms where applicable, or always using the verbose form
+     */
+    String toAbbreviatedString(boolean withType, boolean shortForms);
 
     /**
      * Call this from toString in implementations to return this tensor on the

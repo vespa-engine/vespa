@@ -78,8 +78,8 @@ public class MappedTensor implements Tensor {
     public String toString(boolean withType, boolean shortForms) { return toString(withType, shortForms, Long.MAX_VALUE); }
 
     @Override
-    public String toAbbreviatedString() {
-        return toString(true, true, Math.max(2, 10 / (type().dimensions().stream().filter(d -> d.isMapped()).count() + 1)));
+    public String toAbbreviatedString(boolean withType, boolean shortForms) {
+        return toString(withType, shortForms, Math.max(2, 10 / (type().dimensions().stream().filter(d -> d.isMapped()).count() + 1)));
     }
 
     private String toString(boolean withType, boolean shortForms, long maxCells) {
