@@ -118,18 +118,13 @@ final class DHKemX25519HkdfSha256 implements Kem {
      *   shared_secret = ExtractAndExpand(dh, kem_context)
      *   return shared_secret
      * </pre>
-     *
-     * Implementation note: we take in the key pair to avoid needing to compute the public key (TODO!)
      */
     @Override
-    public byte[] decap(byte[] enc, KeyPair kpR) {
+    public byte[] decap(byte[] enc, XECPrivateKey skR) {
         var pkE = deserializePublicKey(enc);
-
-        var skR = (XECPrivateKey)kpR.getPrivate();
-        var pkR = (XECPublicKey)kpR.getPublic();
         byte[] dh = KeyUtils.ecdh(skR, pkE);
 
-        byte[] pkRm = serializePublicKey(pkR);
+        byte[] pkRm = serializePublicKey(KeyUtils.extractX25519PublicKey(skR));
         byte[] kemContext = concat(enc, pkRm);
 
         return extractAndExpand(dh, kemContext);

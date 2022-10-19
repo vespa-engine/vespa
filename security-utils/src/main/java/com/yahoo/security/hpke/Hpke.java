@@ -2,6 +2,7 @@
 package com.yahoo.security.hpke;
 
 import java.security.KeyPair;
+import java.security.interfaces.XECPrivateKey;
 import java.security.interfaces.XECPublicKey;
 import java.util.Arrays;
 
@@ -246,11 +247,9 @@ public final class Hpke {
      *   return KeyScheduleR(mode_base, shared_secret, info,
      *                       default_psk, default_psk_id)
      * </pre>
-     *
-     * TODO only take private key, not key pair. Need functionality for X25519 priv -> pub extraction first.
      */
-    ContextR setupBaseR(byte[] enc, KeyPair kpR, byte[] info) {
-        byte[] sharedSecret = kem.decap(enc, kpR);
+    ContextR setupBaseR(byte[] enc, XECPrivateKey skR, byte[] info) {
+        byte[] sharedSecret = kem.decap(enc, skR);
         return new ContextR(keySchedule(MODE_BASE, sharedSecret, info, DEFAULT_PSK, DEFAULT_PSK_ID));
     }
 
@@ -310,8 +309,8 @@ public final class Hpke {
      *   return pt
      * </pre>
      */
-    public byte[] openBase(byte[] enc, KeyPair kpR, byte[] info, byte[] aad, byte[] ct) {
-        var ctx = setupBaseR(enc, kpR, info);
+    public byte[] openBase(byte[] enc, XECPrivateKey skR, byte[] info, byte[] aad, byte[] ct) {
+        var ctx = setupBaseR(enc, skR, info);
         var base = ctx.base;
         // TODO wrap any exceptions in OpenError et al?
         return aead.open(base.key(), base.nonce(), aad, ct);

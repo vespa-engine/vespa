@@ -13,6 +13,7 @@ import org.bouncycastle.jce.spec.ECParameterSpec;
 import org.bouncycastle.jce.spec.ECPublicKeySpec;
 import org.bouncycastle.math.ec.ECPoint;
 import org.bouncycastle.math.ec.FixedPointCombMultiplier;
+import org.bouncycastle.math.ec.rfc7748.X25519;
 import org.bouncycastle.openssl.PEMKeyPair;
 import org.bouncycastle.openssl.PEMParser;
 import org.bouncycastle.openssl.jcajce.JcaPEMWriter;
@@ -315,6 +316,14 @@ public class KeyUtils {
         } catch (NoSuchAlgorithmException e) {
             throw new RuntimeException(e);
         }
+    }
+
+    // TODO unify with extractPublicKey()
+    public static XECPublicKey extractX25519PublicKey(XECPrivateKey privateKey) {
+        byte[] privScalar = toRawX25519PrivateKeyBytes(privateKey);
+        byte[] pubPoint = new byte[X25519.POINT_SIZE];
+        X25519.generatePublicKey(privScalar, 0, pubPoint, 0); // scalarMultBase => public key point
+        return fromRawX25519PublicKey(pubPoint);
     }
 
     /**
