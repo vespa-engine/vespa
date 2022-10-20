@@ -207,26 +207,45 @@ consider_fallback VESPA_USE_NO_VESPAMALLOC  "vespa-rpc-invoke vespa-get-config v
 
 
 fixlimits () {
-    # Cannot bump limits when not root (for testing)
-    if [ "${VESPA_UNPRIVILEGED}" = yes ]; then
-	return 0
-    fi
-    # number of open files:
-    if varhasvalue file_descriptor_limit; then
-       ulimit -n ${file_descriptor_limit} || exit 1
-    elif [ `ulimit -n` -lt 262144 ]; then
-        ulimit -n 262144 || exit 1
+    max_processes_limit=409600
+    if ! varhasvalue file_descriptor_limit; then
+        file_descriptor_limit=262144
     fi
 
-    # core file size
-    if [ `ulimit -c` != "unlimited" ]; then
-        ulimit -c unlimited
-    fi
+    max_processes=$(ulimit -u)
+    core_size=$(ulimit -c)
+    file_descriptor=$(ulimit -n)
+    # Warn if we Cannot bump limits when not root
+    if [ "$(id -u)" -ne 0 ]; then
+        # number of open files:
+        if [ $file_descriptor -lt $file_descriptor_limit ]; then
+            echo "Expected file descriptor limit to be at least $file_descriptor_limit, was $file_descriptor"
+        fi
 
-    # number of processes/threads
-    max_processes=`ulimit -u`
-    if [ "$max_processes" != "unlimited" ] && [ "$max_processes" -lt 409600 ]; then
-        ulimit -u 409600
+        # core file size
+        if [ "$core_size" != "unlimited" ]; then
+            echo "Expected core file size to be unlimited, was $core_size"
+        fi
+
+        # number of processes/threads
+        if [ "$max_processes" != "unlimited" ] && [ "$max_processes" -lt "$max_processes_limit" ]; then
+            echo "Expected max processes to be at least $max_processes_limit, was $max_processes"
+        fi
+    else
+        # number of open files:
+        if [ $file_descriptor -lt $file_descriptor_limit ]; then
+            ulimit -n files || exit 1
+        fi
+
+        # core file size
+        if [ "$core_size" != "unlimited" ]; then
+            ulimit -c unlimited
+        fi
+
+        # number of processes/threads
+        if [ "$max_processes" != "unlimited" ] && [ "$max_processes" -lt "$max_processes_limit" ]; then
+            ulimit -u "$max_processes_limit"
+        fi
     fi
 }
 
