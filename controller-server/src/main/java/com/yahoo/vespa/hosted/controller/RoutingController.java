@@ -55,6 +55,9 @@ import java.util.Set;
 import java.util.TreeMap;
 import java.util.stream.Collectors;
 
+import static java.util.stream.Collectors.groupingBy;
+import static java.util.stream.Collectors.toMap;
+
 /**
  * The routing controller encapsulates state and methods for inspecting and manipulating deployment endpoints in a
  * hosted Vespa system.
@@ -155,21 +158,23 @@ public class RoutingController {
         }
         // Add application endpoints
         for (var declaredEndpoint : deploymentSpec.endpoints()) {
-            Map<DeploymentId, Integer> deployments = declaredEndpoint.targets().stream()
-                                                                     .collect(Collectors.toMap(t -> new DeploymentId(application.id().instance(t.instance()),
-                                                                                                                     ZoneId.from(Environment.prod, t.region())),
-                                                                                               t -> t.weight()));
-            // An application endpoint can only target a single zone, so we just pick the zone of any deployment target
-            ZoneId zone = deployments.keySet().iterator().next().zoneId();
-            // Application endpoints are only supported when using direct routing methods
-            RoutingMethod routingMethod = usesSharedRouting(zone) ? RoutingMethod.sharedLayer4 : RoutingMethod.exclusive;
-            endpoints.add(Endpoint.of(application.id())
-                                  .targetApplication(EndpointId.of(declaredEndpoint.endpointId()),
-                                                     ClusterSpec.Id.from(declaredEndpoint.containerId()),
-                                                     deployments)
-                                  .routingMethod(routingMethod)
-                                  .on(Port.fromRoutingMethod(routingMethod))
-                                  .in(controller.system()));
+            Map<ZoneId, Map<DeploymentId, Integer>> deployments = declaredEndpoint.targets().stream()
+                                                                                  .collect(groupingBy(t -> ZoneId.from(Environment.prod, t.region()),
+                                                                                                      toMap(t -> new DeploymentId(application.id().instance(t.instance()),
+                                                                                                                                  ZoneId.from(Environment.prod, t.region())),
+                                                                                                            t -> t.weight())));
+
+            deployments.forEach((zone, weightedInstances) -> {
+                // Application endpoints are only supported when using direct routing methods
+                RoutingMethod routingMethod = usesSharedRouting(zone) ? RoutingMethod.sharedLayer4 : RoutingMethod.exclusive;
+                endpoints.add(Endpoint.of(application.id())
+                                      .targetApplication(EndpointId.of(declaredEndpoint.endpointId()),
+                                                         ClusterSpec.Id.from(declaredEndpoint.containerId()),
+                                                         weightedInstances)
+                                      .routingMethod(routingMethod)
+                                      .on(Port.fromRoutingMethod(routingMethod))
+                                      .in(controller.system()));
+            });
         }
         return EndpointList.copyOf(endpoints);
     }

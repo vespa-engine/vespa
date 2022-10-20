@@ -365,6 +365,8 @@
     "test-ap-southeast-1",
     "production-aws-us-east-1a",
     "test-aws-us-east-1a",
+    "production-aws-us-east-1b",
+    "test-aws-us-east-1b",
     "production-eu-west-1",
     "test-eu-west-1",
     "production-us-central-1",

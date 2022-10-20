@@ -62,6 +62,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.OptionalInt;
 import java.util.Set;
+import java.util.TreeSet;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -72,6 +73,7 @@ import static com.yahoo.vespa.hosted.controller.deployment.DeploymentContext.pro
 import static com.yahoo.vespa.hosted.controller.deployment.DeploymentContext.productionUsWest1;
 import static com.yahoo.vespa.hosted.controller.deployment.DeploymentContext.stagingTest;
 import static com.yahoo.vespa.hosted.controller.deployment.DeploymentContext.systemTest;
+import static java.util.Comparator.comparing;
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -344,7 +346,7 @@ public class ControllerTest {
 
         List<String> globalDnsNames = tester.controller().routing().readDeclaredEndpointsOf(context.instanceId())
                 .scope(Endpoint.Scope.global)
-                .sortedBy(Comparator.comparing(Endpoint::dnsName))
+                .sortedBy(comparing(Endpoint::dnsName))
                 .mapToList(Endpoint::dnsName);
         assertEquals(List.of("app1.tenant1.global.vespa.oath.cloud"),
                 globalDnsNames);
@@ -636,63 +638,107 @@ public class ControllerTest {
         var context = tester.newDeploymentContext(beta);
         ApplicationPackage applicationPackage = new ApplicationPackageBuilder()
                 .instances("beta,main")
-                .region("us-west-1")
                 .region("us-east-3")
-                .applicationEndpoint("a", "default", "us-west-1",
-                        Map.of(beta.instance(), 2,
-                                main.instance(), 8))
-                .applicationEndpoint("b", "default", "us-west-1",
-                        Map.of(beta.instance(), 1,
-                                main.instance(), 1))
-                .applicationEndpoint("c", "default", "us-east-3",
-                        Map.of(beta.instance(), 4,
-                                main.instance(), 6))
+                .region("us-west-1")
+                .region("aws-us-east-1a")
+                .region("aws-us-east-1b")
+                .applicationEndpoint("a", "default",
+                                     Map.of("aws-us-east-1a", Map.of(beta.instance(), 2,
+                                                                     main.instance(), 8),
+                                            "aws-us-east-1b", Map.of(main.instance(), 1)))
+                .applicationEndpoint("b", "default", "aws-us-east-1a",
+                                     Map.of(beta.instance(), 1,
+                                            main.instance(), 1))
+                .applicationEndpoint("c", "default", "aws-us-east-1b",
+                                     Map.of(beta.instance(), 4))
+                .applicationEndpoint("d", "default", "us-west-1",
+                                     Map.of(main.instance(), 7,
+                                            beta.instance(), 3))
+                .applicationEndpoint("e", "default", "us-east-3",
+                                     Map.of(main.instance(), 3))
                 .build();
         context.submit(applicationPackage).deploy();
 
-        ZoneId usWest = ZoneId.from("prod", "us-west-1");
-        ZoneId usEast = ZoneId.from("prod", "us-east-3");
+        ZoneId east3 = ZoneId.from("prod", "us-east-3");
+        ZoneId west1 = ZoneId.from("prod", "us-west-1");
+        ZoneId east1a = ZoneId.from("prod", "aws-us-east-1a");
+        ZoneId east1b = ZoneId.from("prod", "aws-us-east-1b");
         // Expected container endpoints are passed to each deployment
         Map<DeploymentId, Map<String, Integer>> deploymentEndpoints = Map.of(
-                new DeploymentId(beta, usWest), Map.of("a.app1.tenant1.us-west-1-r.vespa.oath.cloud", 2,
-                        "b.app1.tenant1.us-west-1-r.vespa.oath.cloud", 1),
-                new DeploymentId(main, usWest), Map.of("a.app1.tenant1.us-west-1-r.vespa.oath.cloud", 8,
-                        "b.app1.tenant1.us-west-1-r.vespa.oath.cloud", 1),
-                new DeploymentId(beta, usEast), Map.of("c.app1.tenant1.us-east-3-r.vespa.oath.cloud", 4),
-                new DeploymentId(main, usEast), Map.of("c.app1.tenant1.us-east-3-r.vespa.oath.cloud", 6)
+                new DeploymentId(beta, east3), Map.of(),
+                new DeploymentId(main, east3), Map.of("e.app1.tenant1.us-east-3-r.vespa.oath.cloud", 3),
+                new DeploymentId(beta, west1), Map.of("d.app1.tenant1.us-west-1-r.vespa.oath.cloud", 3),
+                new DeploymentId(main, west1), Map.of("d.app1.tenant1.us-west-1-r.vespa.oath.cloud", 7),
+                new DeploymentId(beta, east1a), Map.of("a.app1.tenant1.aws-us-east-1a-r.vespa.oath.cloud", 2,
+                                                       "b.app1.tenant1.aws-us-east-1a-r.vespa.oath.cloud", 1),
+                new DeploymentId(main, east1a), Map.of("a.app1.tenant1.aws-us-east-1a-r.vespa.oath.cloud", 8,
+                                                       "b.app1.tenant1.aws-us-east-1a-r.vespa.oath.cloud", 1),
+                new DeploymentId(beta, east1b), Map.of("c.app1.tenant1.aws-us-east-1b-r.vespa.oath.cloud", 4),
+                new DeploymentId(main, east1b), Map.of("a.app1.tenant1.aws-us-east-1b-r.vespa.oath.cloud", 1)
         );
         deploymentEndpoints.forEach((deployment, endpoints) -> {
             Set<ContainerEndpoint> expected = endpoints.entrySet().stream()
-                    .map(kv -> new ContainerEndpoint("default", "application",
-                            List.of(kv.getKey()),
-                            OptionalInt.of(kv.getValue()),
-                            RoutingMethod.sharedLayer4))
-                    .collect(Collectors.toSet());
+                                                       .map(kv -> new ContainerEndpoint("default", "application",
+                                                                                        List.of(kv.getKey()),
+                                                                                        OptionalInt.of(kv.getValue()),
+                                                                                        tester.controller().zoneRegistry().routingMethod(deployment.zoneId())))
+                                                       .collect(Collectors.toSet());
             assertEquals(expected,
-                    tester.configServer().containerEndpoints().get(deployment),
-                    "Endpoint names for " + deployment + " are passed to config server");
+                         tester.configServer().containerEndpoints().get(deployment),
+                         "Endpoint names for " + deployment + " are passed to config server");
         });
         context.flushDnsUpdates();
 
         // DNS records are created for each endpoint
         Set<Record> records = tester.controllerTester().nameService().records();
-        assertEquals(Set.of(new Record(Record.Type.CNAME,
-                                RecordName.from("a.app1.tenant1.us-west-1-r.vespa.oath.cloud"),
-                                RecordData.from("vip.prod.us-west-1.")),
-                        new Record(Record.Type.CNAME,
-                                RecordName.from("b.app1.tenant1.us-west-1-r.vespa.oath.cloud"),
-                                RecordData.from("vip.prod.us-west-1.")),
-                        new Record(Record.Type.CNAME,
-                                RecordName.from("c.app1.tenant1.us-east-3-r.vespa.oath.cloud"),
-                                RecordData.from("vip.prod.us-east-3."))),
-                records);
+        assertEquals(new TreeSet<>(Set.of(new Record(Record.Type.CNAME,
+                                                     RecordName.from("beta.app1.tenant1.aws-us-east-1a.vespa.oath.cloud"),
+                                                     RecordData.from("lb-0--tenant1.app1.beta--prod.aws-us-east-1a.")),
+                                          new Record(Record.Type.CNAME,
+                                                     RecordName.from("beta.app1.tenant1.aws-us-east-1b.vespa.oath.cloud"),
+                                                     RecordData.from("lb-0--tenant1.app1.beta--prod.aws-us-east-1b.")),
+                                          new Record(Record.Type.CNAME,
+                                                     RecordName.from("main.app1.tenant1.aws-us-east-1a.vespa.oath.cloud"),
+                                                     RecordData.from("lb-0--tenant1.app1.main--prod.aws-us-east-1a.")),
+                                          new Record(Record.Type.CNAME,
+                                                     RecordName.from("main.app1.tenant1.aws-us-east-1b.vespa.oath.cloud"),
+                                                     RecordData.from("lb-0--tenant1.app1.main--prod.aws-us-east-1b.")),
+                                          new Record(Record.Type.ALIAS,
+                                                     RecordName.from("a.app1.tenant1.aws-us-east-1a-r.vespa.oath.cloud"),
+                                                     RecordData.from("weighted/lb-0--tenant1.app1.beta--prod.aws-us-east-1a/dns-zone-1/prod.aws-us-east-1a/2")),
+                                          new Record(Record.Type.ALIAS,
+                                                     RecordName.from("a.app1.tenant1.aws-us-east-1a-r.vespa.oath.cloud"),
+                                                     RecordData.from("weighted/lb-0--tenant1.app1.main--prod.aws-us-east-1a/dns-zone-1/prod.aws-us-east-1a/8")),
+                                          new Record(Record.Type.ALIAS,
+                                                     RecordName.from("a.app1.tenant1.aws-us-east-1b-r.vespa.oath.cloud"),
+                                                     RecordData.from("weighted/lb-0--tenant1.app1.main--prod.aws-us-east-1b/dns-zone-1/prod.aws-us-east-1b/1")),
+                                          new Record(Record.Type.ALIAS,
+                                                     RecordName.from("b.app1.tenant1.aws-us-east-1a-r.vespa.oath.cloud"),
+                                                     RecordData.from("weighted/lb-0--tenant1.app1.beta--prod.aws-us-east-1a/dns-zone-1/prod.aws-us-east-1a/1")),
+                                          new Record(Record.Type.ALIAS,
+                                                     RecordName.from("b.app1.tenant1.aws-us-east-1a-r.vespa.oath.cloud"),
+                                                     RecordData.from("weighted/lb-0--tenant1.app1.main--prod.aws-us-east-1a/dns-zone-1/prod.aws-us-east-1a/1")),
+                                          new Record(Record.Type.ALIAS,
+                                                     RecordName.from("c.app1.tenant1.aws-us-east-1b-r.vespa.oath.cloud"),
+                                                     RecordData.from("weighted/lb-0--tenant1.app1.beta--prod.aws-us-east-1b/dns-zone-1/prod.aws-us-east-1b/4")),
+                                          new Record(Record.Type.CNAME,
+                                                     RecordName.from("d.app1.tenant1.us-west-1-r.vespa.oath.cloud"),
+                                                     RecordData.from("vip.prod.us-west-1.")),
+                                          new Record(Record.Type.CNAME,
+                                                     RecordName.from("e.app1.tenant1.us-east-3-r.vespa.oath.cloud"),
+                                                     RecordData.from("vip.prod.us-east-3.")))),
+                     new TreeSet<>(records));
         List<String> endpointDnsNames = tester.controller().routing().declaredEndpointsOf(context.application())
-                .scope(Endpoint.Scope.application)
-                .mapToList(Endpoint::dnsName);
-        assertEquals(List.of("a.app1.tenant1.us-west-1-r.vespa.oath.cloud",
-                        "b.app1.tenant1.us-west-1-r.vespa.oath.cloud",
-                        "c.app1.tenant1.us-east-3-r.vespa.oath.cloud"),
-                endpointDnsNames);
+                                              .scope(Endpoint.Scope.application)
+                                              .sortedBy(comparing(Endpoint::dnsName))
+                                              .mapToList(Endpoint::dnsName);
+        assertEquals(List.of("a.app1.tenant1.aws-us-east-1a-r.vespa.oath.cloud",
+                             "a.app1.tenant1.aws-us-east-1b-r.vespa.oath.cloud",
+                             "b.app1.tenant1.aws-us-east-1a-r.vespa.oath.cloud",
+                             "c.app1.tenant1.aws-us-east-1b-r.vespa.oath.cloud",
+                             "d.app1.tenant1.us-west-1-r.vespa.oath.cloud",
+                             "e.app1.tenant1.us-east-3-r.vespa.oath.cloud"),
+                     endpointDnsNames);
     }
 
     @Test

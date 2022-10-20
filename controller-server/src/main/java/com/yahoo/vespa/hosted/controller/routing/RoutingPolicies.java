@@ -256,24 +256,22 @@ public class RoutingPolicies {
             EndpointList endpoints = controller.routing().declaredEndpointsOf(application)
                                                .scope(Endpoint.Scope.application)
                                                .named(routingId.endpointId());
-            if (endpoints.isEmpty()) continue;
-            if (endpoints.size() > 1) {
-                throw new IllegalArgumentException("Expected at most 1 endpoint with ID '" + routingId.endpointId() +
-                                                   ", got " + endpoints.size());
-            }
-            Endpoint endpoint = endpoints.asList().get(0);
-            for (var policy : routeEntry.getValue()) {
-                for (var target : endpoint.targets()) {
-                    if (!policy.appliesTo(target.deployment())) continue;
-                    if (policy.dnsZone().isEmpty() && policy.canonicalName().isPresent()) continue; // Does not support ALIAS records
-                    ZoneRoutingPolicy zonePolicy = db.readZoneRoutingPolicy(policy.id().zone());
+            for (Endpoint endpoint : endpoints) {
+                for (var policy : routeEntry.getValue()) {
+                    for (var target : endpoint.targets()) {
+                        if (!policy.appliesTo(target.deployment())) continue;
+                        if (policy.dnsZone().isEmpty() && policy.canonicalName().isPresent())
+                            continue; // Does not support ALIAS records
+                        ZoneRoutingPolicy zonePolicy = db.readZoneRoutingPolicy(policy.id().zone());
 
-                    Set<Target> activeTargets = targetsByEndpoint.computeIfAbsent(endpoint, (k) -> new LinkedHashSet<>());
-                    Set<Target> inactiveTargets = inactiveTargetsByEndpoint.computeIfAbsent(endpoint, (k) -> new LinkedHashSet<>());
-                    if (isConfiguredOut(zonePolicy, policy, inactiveZones)) {
-                        inactiveTargets.add(Target.weighted(policy, target));
-                    } else {
-                        activeTargets.add(Target.weighted(policy, target));
+                        Set<Target> activeTargets = targetsByEndpoint.computeIfAbsent(endpoint, (k) -> new LinkedHashSet<>());
+                        Set<Target> inactiveTargets = inactiveTargetsByEndpoint.computeIfAbsent(endpoint, (k) -> new LinkedHashSet<>());
+                        if (isConfiguredOut(zonePolicy, policy, inactiveZones)) {
+                            inactiveTargets.add(Target.weighted(policy, target));
+                        }
+                        else {
+                            activeTargets.add(Target.weighted(policy, target));
+                        }
                     }
                 }
             }

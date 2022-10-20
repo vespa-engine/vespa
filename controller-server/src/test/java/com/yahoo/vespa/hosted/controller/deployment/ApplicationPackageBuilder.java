@@ -120,17 +120,24 @@ public class ApplicationPackageBuilder {
 
     public ApplicationPackageBuilder applicationEndpoint(String id, String containerId, String region,
                                                          Map<InstanceName, Integer> instanceWeights) {
+        return applicationEndpoint(id, containerId, Map.of(region, instanceWeights));
+    }
+
+    public ApplicationPackageBuilder applicationEndpoint(String id, String containerId,
+                                                         Map<String, Map<InstanceName, Integer>> instanceWeights) {
         if (instanceWeights.isEmpty()) throw new IllegalArgumentException("At least one instance must be given");
         applicationEndpointsBody.append("    <endpoint");
         applicationEndpointsBody.append(" id='").append(id).append("'");
         applicationEndpointsBody.append(" container-id='").append(containerId).append("'");
-        applicationEndpointsBody.append(" region='").append(region).append("'");
         applicationEndpointsBody.append(">\n");
-        for (var kv : new TreeMap<>(instanceWeights).entrySet()) {
-            applicationEndpointsBody.append("      <instance weight='").append(kv.getValue().toString()).append("'>")
-                                    .append(kv.getKey().value())
-                                    .append("</instance>\n");
-        }
+        new TreeMap<>(instanceWeights).forEach((region, instances) -> {
+            new TreeMap<>(instances).forEach((instance, weight) -> {
+                applicationEndpointsBody.append("      <instance weight='").append(weight.toString()).append("' region='").append(region).append("'>")
+                                        .append(instance)
+                                        .append("</instance>\n");
+
+            });
+        });
         applicationEndpointsBody.append("    </endpoint>\n");
         return this;
     }

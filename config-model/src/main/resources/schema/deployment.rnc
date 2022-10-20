@@ -146,6 +146,7 @@ EndpointRegion = element region {
 
 EndpointInstance = element instance {
     attribute weight { xsd:long } &
+    attribute region { xsd:string }? &
     text
 }
 

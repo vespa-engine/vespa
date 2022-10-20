@@ -71,7 +71,8 @@ public class ZoneRegistryMock extends AbstractComponent implements ZoneRegistry 
                                  ZoneApiMock.fromId("dev.us-east-1"),
                                  ZoneApiMock.fromId("dev.aws-us-east-2a"),
                                  ZoneApiMock.fromId("perf.us-east-3"),
-                                 ZoneApiMock.fromId("prod.aws-us-east-1a"),
+                                 ZoneApiMock.newBuilder().withId("prod.aws-us-east-1a").withCloud("aws").build(),
+                                 ZoneApiMock.newBuilder().withId("prod.aws-us-east-1b").withCloud("aws").build(),
                                  ZoneApiMock.fromId("prod.ap-northeast-1"),
                                  ZoneApiMock.fromId("prod.ap-northeast-2"),
                                  ZoneApiMock.fromId("prod.ap-southeast-1"),
@@ -79,7 +80,8 @@ public class ZoneRegistryMock extends AbstractComponent implements ZoneRegistry 
                                  ZoneApiMock.fromId("prod.us-west-1"),
                                  ZoneApiMock.fromId("prod.us-central-1"),
                                  ZoneApiMock.fromId("prod.eu-west-1"));
-            setRoutingMethod(this.zones, RoutingMethod.sharedLayer4);
+            for (ZoneApi zone : this.zones)
+                setRoutingMethod(zone, zone.getCloudName().equals(CloudName.DEFAULT) ? RoutingMethod.sharedLayer4 : RoutingMethod.exclusive);
         }
     }
 

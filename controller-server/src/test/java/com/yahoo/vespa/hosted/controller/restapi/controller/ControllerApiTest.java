@@ -51,7 +51,7 @@ public class ControllerApiTest extends ControllerContainerTest {
 
         // GET a list of all maintenance jobs
         tester.assertResponse(authenticatedRequest("http://localhost:8080/controller/v1/maintenance/", "", Request.Method.GET),
-                new File("maintenance.json"));
+                              new File("maintenance.json"));
     }
 
     @Test

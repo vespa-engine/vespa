@@ -22,6 +22,9 @@
       "url": "http://localhost:8080/routing/v1/status/environment/prod/region/aws-us-east-1a/"
     },
     {
+      "url": "http://localhost:8080/routing/v1/status/environment/prod/region/aws-us-east-1b/"
+    },
+    {
       "url": "http://localhost:8080/routing/v1/status/environment/prod/region/eu-west-1/"
     },
     {
