@@ -60,7 +60,7 @@ public class JsonReader {
      * @param docIdString document ID
      * @return the parsed document operation
      */
-    public ParsedDocumentOperation readOperation(DocumentOperationType operationType, String docIdString) {
+    public ParsedDocumentOperation readSingleDocument(DocumentOperationType operationType, String docIdString) {
         DocumentId docId = new DocumentId(docIdString);
         DocumentParseInfo documentParseInfo;
         try {
@@ -76,11 +76,6 @@ public class JsonReader {
                 getDocumentTypeFromString(documentParseInfo.documentId.getDocType(), typeManager), documentParseInfo);
         operation.operation().setCondition(TestAndSetCondition.fromConditionString(documentParseInfo.condition));
         return operation;
-    }
-
-    @Deprecated // Use readOperation instead
-    public DocumentOperation readSingleDocument(DocumentOperationType operationType, String docIdString) {
-        return readOperation(operationType, docIdString).operation();
     }
 
     /** Returns the next document operation, or null if we have reached the end */
