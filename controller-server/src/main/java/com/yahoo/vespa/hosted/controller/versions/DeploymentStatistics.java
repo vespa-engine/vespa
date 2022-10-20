@@ -71,7 +71,7 @@ public record DeploymentStatistics(Version version,
             JobList failing = status.jobs().failingHard();
 
             // Add all unsuccessful runs for failing production jobs as any run may have resulted in an incomplete deployment
-            // where a subset of nodes have upgraded.
+            // where a subset of nodes has upgraded.
             failing.not().failingApplicationChange()
                    .production()
                    .mapToList(JobStatus::runs)
