@@ -117,11 +117,14 @@ public class ApplicationPackageValidator {
             String endpointString = instance == null ? "Application endpoint '" + endpoint.endpointId() + "'"
                                                      : "Endpoint '" + endpoint.endpointId() + "' in " + instance;
             if (Set.of(CloudName.GCP, CloudName.AWS).containsAll(clouds)) { } // Everything is fine!
-            else if (Set.of(CloudName.DEFAULT).containsAll(clouds)) {
+            else if (Set.of(CloudName.YAHOO).containsAll(clouds) || Set.of(CloudName.DEFAULT).containsAll(clouds)) {
                 if (endpoint.level() == Level.application && regions.length != 1) {
                     throw new IllegalArgumentException(endpointString + " cannot contain different regions: " +
                                                        endpoint.regions().stream().sorted().toList());
                 }
+            }
+            else if (clouds.size() == 1) {
+                throw new IllegalArgumentException("unknown cloud '" + clouds.iterator().next() + "'");
             }
             else {
                 throw new IllegalArgumentException(endpointString + " cannot contain regions in different clouds: " +
