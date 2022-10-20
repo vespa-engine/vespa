@@ -27,11 +27,11 @@ public class ContentTypeRemovalValidatorTest {
         VespaModel previous = tester.deploy(null, getServices("music"), Environment.prod, null).getFirst();
         try {
             tester.deploy(previous, getServices("book"), Environment.prod, null);
-            fail("Expected exception due to removal of context type 'music");
+            fail("Expected exception due to removal of schema 'music");
         }
         catch (IllegalArgumentException expected) {
-            assertEquals("content-type-removal: Type 'music' is removed  in content cluster 'test'. " +
-                    "This will cause loss of all data of this type. " +
+            assertEquals("schema-removal: Schema 'music' is removed in content cluster 'test'. " +
+                    "This will cause loss of all data in this schema. " +
                     ValidationOverrides.toAllowMessage(ValidationId.contentTypeRemoval),
                     Exceptions.toMessageString(expected));
         }
