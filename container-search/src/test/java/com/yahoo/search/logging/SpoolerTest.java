@@ -35,9 +35,9 @@ public class SpoolerTest {
         assertTrue(sendEntry(logger, "Yo entry 2"));
 
         Path readyPath = spooler.readyPath();
-        Path readyFile1 = readyPath.resolve(spooler.fileNameBase.get() + "-1");
+        Path readyFile1 = readyPath.resolve(spooler.fileNameBase.get() + "-0");
         waitUntilFileExists(readyFile1);
-        Path readyFile2 = readyPath.resolve(spooler.fileNameBase.get() + "-2");
+        Path readyFile2 = readyPath.resolve(spooler.fileNameBase.get() + "-1");
         waitUntilFileExists(readyFile2);
 
         // Check content after being moved to ready path
@@ -67,7 +67,7 @@ public class SpoolerTest {
         assertTrue(sendEntry(logger, "Yo entry 2"));
 
         Path readyPath = spooler.readyPath();
-        Path readyFile1 = readyPath.resolve(spooler.fileNameBase.get() + "-1");
+        Path readyFile1 = readyPath.resolve(spooler.fileNameBase.get() + "-0");
         waitUntilFileExists(readyFile1);
 
         // Check content after being moved to ready path
