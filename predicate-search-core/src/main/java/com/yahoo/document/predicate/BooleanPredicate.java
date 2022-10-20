@@ -36,9 +36,10 @@ public class BooleanPredicate extends PredicateValue {
         if (obj == this) {
             return true;
         }
-        if (!(obj instanceof BooleanPredicate rhs)) {
+        if (!(obj instanceof BooleanPredicate)) {
             return false;
         }
+        BooleanPredicate rhs = (BooleanPredicate)obj;
         if (value != rhs.value) {
             return false;
         }
