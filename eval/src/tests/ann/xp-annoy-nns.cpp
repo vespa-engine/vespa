@@ -21,7 +21,7 @@ static size_t find_cand_cnt = 0;
 using QueueNode = std::pair<double, Node *>;
 using NodeQueue = std::priority_queue<QueueNode>;
 
-namespace xpannoynns {
+inline namespace xpannoynns {
 
 struct Node {
     Node() {}
