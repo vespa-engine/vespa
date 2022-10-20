@@ -325,7 +325,7 @@ public class Curator extends AbstractComponent implements AutoCloseable {
         return getData(path, null);
     }
 
-    Optional<byte[]> getData(Path path, Stat stat) {
+    public Optional<byte[]> getData(Path path, Stat stat) {
         try {
             return stat == null ? Optional.of(framework().getData()                    .forPath(path.getAbsolute()))
                                 : Optional.of(framework().getData().storingStatIn(stat).forPath(path.getAbsolute()));
