@@ -7,6 +7,7 @@
 #include <vespa/document/repo/configbuilder.h>
 #include <vespa/searchlib/index/field_length_calculator.h>
 #include <vespa/searchlib/test/doc_builder.h>
+#include <vespa/searchlib/test/schema_builder.h>
 #include <vespa/searchlib/test/string_field_builder.h>
 #include <vespa/searchlib/memoryindex/document_inverter_context.h>
 #include <vespa/searchlib/memoryindex/field_index_remover.h>
@@ -23,12 +24,12 @@
 
 namespace search::memoryindex {
 
+using document::DataType;
 using document::Document;
 using index::FieldLengthCalculator;
 using index::Schema;
-using index::schema::CollectionType;
-using index::schema::DataType;
 using search::test::DocBuilder;
+using search::test::SchemaBuilder;
 using search::test::StringFieldBuilder;
 using vespalib::SequencedTaskExecutor;
 using vespalib::ISequencedTaskExecutor;
@@ -39,7 +40,6 @@ DocBuilder::AddFieldsType
 make_add_fields()
 {
     return [](auto& header) { using namespace document::config_builder;
-        using DataType = document::DataType;
         header.addField("f0", DataType::T_STRING)
             .addField("f1", DataType::T_STRING)
             .addField("f2", Array(DataType::T_STRING))
@@ -105,8 +105,8 @@ VESPA_THREAD_STACK_TAG(invert_executor)
 VESPA_THREAD_STACK_TAG(push_executor)
 
 struct DocumentInverterTest : public ::testing::Test {
-    Schema _schema;
     DocBuilder _b;
+    Schema _schema;
     std::unique_ptr<ISequencedTaskExecutor> _invertThreads;
     std::unique_ptr<ISequencedTaskExecutor> _pushThreads;
     WordStore                       _word_store;
@@ -117,18 +117,9 @@ struct DocumentInverterTest : public ::testing::Test {
     DocumentInverterContext         _inv_context;
     DocumentInverter                _inv;
 
-    static Schema makeSchema() {
-        Schema schema;
-        schema.addIndexField(Schema::IndexField("f0", DataType::STRING));
-        schema.addIndexField(Schema::IndexField("f1", DataType::STRING));
-        schema.addIndexField(Schema::IndexField("f2", DataType::STRING, CollectionType::ARRAY));
-        schema.addIndexField(Schema::IndexField("f3", DataType::STRING, CollectionType::WEIGHTEDSET));
-        return schema;
-    }
-
     DocumentInverterTest()
-        : _schema(makeSchema()),
-          _b(make_add_fields()),
+        : _b(make_add_fields()),
+          _schema(*SchemaBuilder(_b).add_all_indexes().build()),
           _invertThreads(SequencedTaskExecutor::create(invert_executor, 1)),
           _pushThreads(SequencedTaskExecutor::create(push_executor, 1)),
           _word_store(),

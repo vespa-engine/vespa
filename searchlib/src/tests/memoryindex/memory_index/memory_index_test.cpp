@@ -9,6 +9,7 @@
 #include <vespa/searchlib/fef/termfieldmatchdata.h>
 #include <vespa/searchlib/index/i_field_length_inspector.h>
 #include <vespa/searchlib/test/doc_builder.h>
+#include <vespa/searchlib/test/schema_builder.h>
 #include <vespa/searchlib/test/string_field_builder.h>
 #include <vespa/searchlib/memoryindex/memory_index.h>
 #include <vespa/searchlib/query/tree/simplequery.h>
@@ -26,10 +27,10 @@
 #include <vespa/log/log.h>
 LOG_SETUP("memory_index_test");
 
+using document::DataType;
 using document::Document;
 using document::FieldValue;
 using search::ScheduleTaskCallback;
-using search::index::schema::DataType;
 using search::index::FieldLengthInfo;
 using search::index::IFieldLengthInspector;
 using vespalib::makeLambdaTask;
@@ -37,6 +38,7 @@ using search::query::Node;
 using search::query::SimplePhrase;
 using search::query::SimpleStringTerm;
 using search::test::DocBuilder;
+using search::test::SchemaBuilder;
 using search::test::StringFieldBuilder;
 using vespalib::ISequencedTaskExecutor;
 using vespalib::SequencedTaskExecutor;
@@ -48,10 +50,10 @@ using namespace search::queryeval;
 //-----------------------------------------------------------------------------
 
 struct MySetup : public IFieldLengthInspector {
-    Schema schema;
+    std::vector<vespalib::string> fields;
     std::map<vespalib::string, FieldLengthInfo> field_lengths;
     MySetup &field(const std::string &name) {
-        schema.addIndexField(Schema::IndexField(name, DataType::STRING));
+        fields.emplace_back(name);
         return *this;
     }
     MySetup& field_length(const vespalib::string& field_name, const FieldLengthInfo& info) {
@@ -65,11 +67,16 @@ struct MySetup : public IFieldLengthInspector {
         }
         return FieldLengthInfo();
     }
+
     void add_fields(document::config_builder::Struct& header) const {
-        for (uint32_t i = 0; i < schema.getNumIndexFields(); ++i) {
-            auto& field = schema.getIndexField(i);
-            header.addField(field.getName(), document::DataType::T_STRING);
+        for (auto& field : fields) {
+            header.addField(field, DataType::T_STRING);
         }
+    }
+
+    Schema make_all_index_schema() const {
+        DocBuilder db([this](auto& header) { add_fields(header); });
+        return *SchemaBuilder(db).add_all_indexes().build();
     }
 
 };
@@ -77,7 +84,6 @@ struct MySetup : public IFieldLengthInspector {
 //-----------------------------------------------------------------------------
 
 struct Index {
-    Schema       schema;
     vespalib::ThreadStackExecutor _executor;
     std::unique_ptr<ISequencedTaskExecutor> _invertThreads;
     std::unique_ptr<ISequencedTaskExecutor> _pushThreads;
@@ -147,11 +153,10 @@ VESPA_THREAD_STACK_TAG(invert_executor)
 VESPA_THREAD_STACK_TAG(push_executor)
 
 Index::Index(const MySetup &setup)
-    : schema(setup.schema),
-      _executor(1, 128_Ki),
+    : _executor(1, 128_Ki),
       _invertThreads(SequencedTaskExecutor::create(invert_executor, 2)),
       _pushThreads(SequencedTaskExecutor::create(push_executor, 2)),
-      index(schema, setup, *_invertThreads, *_pushThreads),
+      index(setup.make_all_index_schema(), setup, *_invertThreads, *_pushThreads),
       builder([&setup](auto& header) { setup.add_fields(header); }),
       sfb(builder),
       builder_doc(),

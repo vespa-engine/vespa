@@ -8,6 +8,7 @@
 #include <vespa/searchcommon/common/schema.h>
 #include <vespa/searchlib/index/field_length_calculator.h>
 #include <vespa/searchlib/test/doc_builder.h>
+#include <vespa/searchlib/test/schema_builder.h>
 #include <vespa/searchlib/test/string_field_builder.h>
 #include <vespa/searchlib/memoryindex/field_index_remover.h>
 #include <vespa/searchlib/memoryindex/field_inverter.h>
@@ -20,12 +21,13 @@
 namespace search {
 
 using document::ArrayFieldValue;
+using document::DataType;
 using document::Document;
 using document::WeightedSetFieldValue;
 using index::Schema;
 using index::schema::CollectionType;
-using index::schema::DataType;
 using search::test::DocBuilder;
+using search::test::SchemaBuilder;
 using search::test::StringFieldBuilder;
 
 using namespace index;
@@ -140,8 +142,8 @@ makeCorruptDocument(DocBuilder &b, size_t wordOffset)
 }
 
 struct FieldInverterTest : public ::testing::Test {
-    Schema _schema;
     DocBuilder _b;
+    Schema _schema;
     WordStore                       _word_store;
     FieldIndexRemover               _remover;
     test::OrderedFieldIndexInserterBackend _inserter_backend;
@@ -149,20 +151,10 @@ struct FieldInverterTest : public ::testing::Test {
     std::vector<std::unique_ptr<IOrderedFieldIndexInserter>> _inserters;
     std::vector<std::unique_ptr<FieldInverter> > _inverters;
 
-    static Schema makeSchema() {
-        Schema schema;
-        schema.addIndexField(Schema::IndexField("f0", DataType::STRING));
-        schema.addIndexField(Schema::IndexField("f1", DataType::STRING));
-        schema.addIndexField(Schema::IndexField("f2", DataType::STRING, CollectionType::ARRAY));
-        schema.addIndexField(Schema::IndexField("f3", DataType::STRING, CollectionType::WEIGHTEDSET));
-        return schema;
-    }
-
     static DocBuilder::AddFieldsType
     make_add_fields()
     {
         return [](auto& header) { using namespace document::config_builder;
-            using DataType = document::DataType;
             header.addField("f0", DataType::T_STRING)
                 .addField("f1", DataType::T_STRING)
                 .addField("f2", Array(DataType::T_STRING))
@@ -171,8 +163,8 @@ struct FieldInverterTest : public ::testing::Test {
     }
 
     FieldInverterTest()
-        : _schema(makeSchema()),
-          _b(make_add_fields()),
+        : _b(make_add_fields()),
+          _schema(*SchemaBuilder(_b).add_all_indexes().build()),
           _word_store(),
           _remover(_word_store),
           _inserter_backend(),

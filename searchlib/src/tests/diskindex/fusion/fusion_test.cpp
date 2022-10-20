@@ -14,6 +14,7 @@
 #include <vespa/searchlib/fef/termfieldmatchdata.h>
 #include <vespa/searchlib/index/dummyfileheadercontext.h>
 #include <vespa/searchlib/test/doc_builder.h>
+#include <vespa/searchlib/test/schema_builder.h>
 #include <vespa/searchlib/test/string_field_builder.h>
 #include <vespa/searchlib/index/schemautil.h>
 #include <vespa/searchlib/memoryindex/document_inverter.h>
@@ -38,6 +39,7 @@ LOG_SETUP("fusion_test");
 namespace search {
 
 using document::ArrayFieldValue;
+using document::DataType;
 using document::Document;
 using document::StringFieldValue;
 using document::WeightedSetFieldValue;
@@ -50,9 +52,9 @@ using memoryindex::FieldIndexCollection;
 using queryeval::SearchIterator;
 using search::common::FileHeaderContext;
 using search::index::schema::CollectionType;
-using search::index::schema::DataType;
 using search::index::test::MockFieldLengthInspector;
 using search::test::DocBuilder;
+using search::test::SchemaBuilder;
 using search::test::StringFieldBuilder;
 using vespalib::SequencedTaskExecutor;
 
@@ -137,35 +139,22 @@ make_doc10(DocBuilder &b)
     return doc;
 }
 
-Schema::IndexField
-make_index_field(vespalib::stringref name, CollectionType collection_type, bool interleaved_features)
-{
-    Schema::IndexField index_field(name, DataType::STRING, collection_type);
-    index_field.set_interleaved_features(interleaved_features);
-    return index_field;
-}
-
-Schema
-make_schema(bool interleaved_features)
-{
-    Schema schema;
-    schema.addIndexField(make_index_field("f0", CollectionType::SINGLE, interleaved_features));
-    schema.addIndexField(make_index_field("f1", CollectionType::SINGLE, interleaved_features));
-    schema.addIndexField(make_index_field("f2", CollectionType::ARRAY, interleaved_features));
-    schema.addIndexField(make_index_field("f3", CollectionType::WEIGHTEDSET, interleaved_features));
-    return schema;
-}
-
 DocBuilder::AddFieldsType
 make_add_fields()
 {
     return [](auto& header) { using namespace document::config_builder;
-        using DataType = document::DataType;
         header.addField("f0", DataType::T_STRING)
             .addField("f1", DataType::T_STRING)
             .addField("f2", Array(DataType::T_STRING))
             .addField("f3", Wset(DataType::T_STRING));
             };
+}
+
+Schema
+make_schema(bool interleaved_features)
+{
+    DocBuilder db(make_add_fields());
+    return *SchemaBuilder(db).add_all_indexes(interleaved_features).build();
 }
 
 void
@@ -334,7 +323,7 @@ FusionTest::requireThatFusionIsWorking(const vespalib::string &prefix, bool dire
                                       iField.getDataType(),
                                       CollectionType::SINGLE));
     }
-    schema3.addIndexField(Schema::IndexField("f4", DataType::STRING));
+    schema3.addIndexField(Schema::IndexField("f4", search::index::schema::DataType::STRING));
     schema.addFieldSet(Schema::FieldSet("nc0").
                               addField("f0").addField("f1"));
     schema2.addFieldSet(Schema::FieldSet("nc0").

@@ -9,6 +9,7 @@ vespa_add_library(searchlib_test
     mock_attribute_context.cpp
     mock_attribute_manager.cpp
     searchiteratorverifier.cpp
+    schema_builder.cpp
     string_field_builder.cpp
     $<TARGET_OBJECTS:searchlib_test_fakedata>
     $<TARGET_OBJECTS:searchlib_searchlib_test_diskindex>
