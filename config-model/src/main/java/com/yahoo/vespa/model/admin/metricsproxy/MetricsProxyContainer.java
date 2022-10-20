@@ -14,8 +14,10 @@ import ai.vespa.metricsproxy.service.VespaServicesConfig;
 import com.yahoo.config.model.api.ModelContext;
 import com.yahoo.config.model.api.container.ContainerServiceType;
 import com.yahoo.config.model.deploy.DeployState;
+import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ClusterMembership;
 import com.yahoo.config.provision.ClusterSpec;
+import com.yahoo.config.provision.Zone;
 import com.yahoo.search.config.QrStartConfig;
 import com.yahoo.vespa.model.HostResource;
 import com.yahoo.vespa.model.PortAllocBridge;
@@ -47,6 +49,8 @@ public class MetricsProxyContainer extends Container implements
     final boolean isHostedVespa;
     private final Optional<ClusterMembership> clusterMembership;
     private final MetricsProxyContainerCluster cluster;
+    private final ApplicationId applicationId;
+    private final Zone zone;
     private final String jvmGCOptions;
 
     public MetricsProxyContainer(MetricsProxyContainerCluster cluster, HostResource host, int index, DeployState deployState) {
@@ -54,6 +58,8 @@ public class MetricsProxyContainer extends Container implements
         this.isHostedVespa = deployState.isHosted();
         this.clusterMembership = host.spec().membership();
         this.cluster = cluster;
+        this.applicationId = deployState.getApplicationPackage().getApplicationId();
+        this.zone = deployState.zone();
         this.jvmGCOptions = deployState.getProperties().jvmGCOptions(clusterMembership.map(membership -> membership.cluster().type()));
         setProp("clustertype", "admin");
         setProp("index", String.valueOf(index));
@@ -139,6 +145,7 @@ public class MetricsProxyContainer extends Container implements
         Map<String, String> dimensions = new LinkedHashMap<>();
         if (isHostedVespa) {
             getHostResource().spec().membership().map(ClusterMembership::cluster).ifPresent(cluster -> {
+                dimensions.put(PublicDimensions.DEPLOYMENT_CLUSTER, getDeploymentCluster(cluster));
                 dimensions.put(PublicDimensions.INTERNAL_CLUSTER_TYPE, cluster.type().name());
                 dimensions.put(PublicDimensions.INTERNAL_CLUSTER_ID, cluster.id().value());
                 cluster.group().ifPresent(group -> dimensions.put(PublicDimensions.GROUP_ID, group.toString()));
@@ -178,6 +185,10 @@ public class MetricsProxyContainer extends Container implements
 
     private void addMetricsProxyComponent(Class<?> componentClass) {
         addSimpleComponent(componentClass.getName(), null, METRICS_PROXY_BUNDLE_NAME);
+    }
+
+    private String getDeploymentCluster(ClusterSpec cluster) {
+        return String.join(".", applicationId.toFullString(), zone.environment().value(), zone.region().value(), cluster.id().value());
     }
 
     @Override
