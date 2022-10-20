@@ -15,12 +15,12 @@ import java.util.Base64;
  * This token representation is expected to be used as a convenient serialization
  * form when communicating shared keys.
  */
-public record SealedSharedKey(int keyId, byte[] eciesPayload, byte[] iv) {
+public record SealedSharedKey(int keyId, byte[] enc, byte[] ciphertext) {
 
     /** Current encoding version of opaque sealed key tokens. Must be less than 256. */
     public static final int CURRENT_TOKEN_VERSION = 1;
 
-    private static final int ECIES_AES_IV_LENGTH = SharedKeyGenerator.ECIES_AES_CBC_IV_BITS / 8;
+    private static final int MAX_ENC_CONTEXT_LENGTH = Short.MAX_VALUE;
 
     /**
      * Creates an opaque URL-safe string token that contains enough information to losslessly
@@ -30,14 +30,16 @@ public record SealedSharedKey(int keyId, byte[] eciesPayload, byte[] iv) {
         if (keyId >= (1 << 24)) {
             throw new IllegalArgumentException("Key id is too large to be encoded");
         }
-        if (iv.length != ECIES_AES_IV_LENGTH) {
-            throw new IllegalStateException("Expected a %d byte IV, got %d bytes".formatted(ECIES_AES_IV_LENGTH, iv.length));
+        if (enc.length > MAX_ENC_CONTEXT_LENGTH) {
+            throw new IllegalArgumentException("Encryption context is too large to be encoded");
         }
 
-        ByteBuffer encoded = ByteBuffer.allocate(4 + ECIES_AES_IV_LENGTH + eciesPayload.length);
+        // i32 header || i16 length(enc) || enc || ciphertext
+        ByteBuffer encoded = ByteBuffer.allocate(4 + 2 + enc.length + ciphertext.length);
         encoded.putInt((CURRENT_TOKEN_VERSION << 24) | keyId);
-        encoded.put(iv);
-        encoded.put(eciesPayload);
+        encoded.putShort((short)enc.length);
+        encoded.put(enc);
+        encoded.put(ciphertext);
         encoded.flip();
 
         byte[] encBytes = new byte[encoded.remaining()];
@@ -61,13 +63,17 @@ public record SealedSharedKey(int keyId, byte[] eciesPayload, byte[] iv) {
             throw new IllegalArgumentException("Token had unexpected version. Expected %d, was %d"
                                                .formatted(CURRENT_TOKEN_VERSION, version));
         }
-        byte[] iv = new byte[ECIES_AES_IV_LENGTH];
-        decoded.get(iv);
-        byte[] eciesPayload = new byte[decoded.remaining()];
-        decoded.get(eciesPayload);
+        short encLen = decoded.getShort();
+        if (encLen <= 0) {
+            throw new IllegalArgumentException("Token encryption context does not have a valid length");
+        }
+        byte[] enc = new byte[encLen];
+        decoded.get(enc);
+        byte[] ciphertext = new byte[decoded.remaining()];
+        decoded.get(ciphertext);
 
         int keyId = versionAndKeyId & 0xffffff;
-        return new SealedSharedKey(keyId, eciesPayload, iv);
+        return new SealedSharedKey(keyId, enc, ciphertext);
     }
 
 }

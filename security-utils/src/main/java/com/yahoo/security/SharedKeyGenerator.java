@@ -1,14 +1,16 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.security;
 
-import org.bouncycastle.jcajce.provider.util.BadBlockException;
-import org.bouncycastle.jce.spec.IESParameterSpec;
+import com.yahoo.security.hpke.Aead;
+import com.yahoo.security.hpke.Ciphersuite;
+import com.yahoo.security.hpke.Hpke;
+import com.yahoo.security.hpke.Kdf;
+import com.yahoo.security.hpke.Kem;
 
-import javax.crypto.BadPaddingException;
 import javax.crypto.Cipher;
-import javax.crypto.IllegalBlockSizeException;
 import javax.crypto.KeyGenerator;
 import javax.crypto.NoSuchPaddingException;
+import javax.crypto.SecretKey;
 import javax.crypto.spec.GCMParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
 import java.security.InvalidAlgorithmParameterException;
@@ -17,10 +19,12 @@ import java.security.NoSuchAlgorithmException;
 import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.security.SecureRandom;
+import java.security.interfaces.XECPrivateKey;
+import java.security.interfaces.XECPublicKey;
 
 /**
  * Implements both the sender and receiver sides of a secure, anonymous one-way
- * key generation and exchange protocol implemented using ECIES; a hybrid crypto
+ * key generation and exchange protocol implemented using HPKE; a hybrid crypto
  * scheme built around elliptic curves.
  *
  * A shared key, once generated, may have its sealed component sent over a public
@@ -37,52 +41,38 @@ import java.security.SecureRandom;
  */
 public class SharedKeyGenerator {
 
-    private static final int    AES_GCM_KEY_BITS      = 256;
+    private static final int    AES_GCM_KEY_BITS      = 128;
     private static final int    AES_GCM_AUTH_TAG_BITS = 128;
     private static final String AES_GCM_ALGO_SPEC     = "AES/GCM/NoPadding";
-    private static final String ECIES_CIPHER_NAME     = "ECIESwithSHA256andAES-CBC";
-    protected static final int  ECIES_AES_CBC_IV_BITS = 128;
-    private static final int    ECIES_HMAC_BITS       = 256;
-    private static final int    ECIES_AES_KEY_BITS    = 256;
+    private static final byte[] EMPTY_BYTES           = new byte[0];
     private static final SecureRandom SHARED_CSPRNG   = new SecureRandom();
+    // Since the HPKE ciphersuite is not provided in the token, we must be very explicit about what it always is
+    private static final Ciphersuite HPKE_CIPHERSUITE = Ciphersuite.of(Kem.dHKemX25519HkdfSha256(), Kdf.hkdfSha256(), Aead.aesGcm128());
+    private static final Hpke HPKE = Hpke.of(HPKE_CIPHERSUITE);
 
-    public static SecretSharedKey generateForReceiverPublicKey(PublicKey receiverPublicKey, int keyId) {
+    private static SecretKey generateRandomSecretAesKey() {
         try {
             var keyGen = KeyGenerator.getInstance("AES");
             keyGen.init(AES_GCM_KEY_BITS, SHARED_CSPRNG);
-            var secretKey = keyGen.generateKey();
-
-            var cipher = Cipher.getInstance(ECIES_CIPHER_NAME, BouncyCastleProviderHolder.getInstance());
-            byte[] iv = new byte[ECIES_AES_CBC_IV_BITS / 8];
-            SHARED_CSPRNG.nextBytes(iv);
-            var iesParamSpec = new IESParameterSpec(null, null, ECIES_HMAC_BITS, ECIES_AES_KEY_BITS, iv);
-
-            cipher.init(Cipher.ENCRYPT_MODE, receiverPublicKey, iesParamSpec);
-            byte[] eciesPayload = cipher.doFinal(secretKey.getEncoded());
-
-            var sealedSharedKey = new SealedSharedKey(keyId, eciesPayload, iv);
-            return new SecretSharedKey(secretKey, sealedSharedKey);
-        } catch (NoSuchAlgorithmException | InvalidKeyException | NoSuchPaddingException
-                | IllegalBlockSizeException | BadPaddingException | InvalidAlgorithmParameterException e) {
+            return keyGen.generateKey();
+        } catch (NoSuchAlgorithmException e) {
             throw new RuntimeException(e);
         }
     }
 
-    public static SecretSharedKey fromSealedKey(SealedSharedKey sealedKey, PrivateKey receiverPrivateKey) {
-        try {
-            var cipher = Cipher.getInstance(ECIES_CIPHER_NAME, BouncyCastleProviderHolder.getInstance());
-            var iesParamSpec = new IESParameterSpec(null, null, ECIES_HMAC_BITS, ECIES_AES_KEY_BITS, sealedKey.iv());
-            cipher.init(Cipher.DECRYPT_MODE, receiverPrivateKey, iesParamSpec);
-            byte[] secretKey = cipher.doFinal(sealedKey.eciesPayload());
+    public static SecretSharedKey generateForReceiverPublicKey(PublicKey receiverPublicKey, int keyId) {
+        var secretKey = generateRandomSecretAesKey();
+        // TODO do we want to tie the key ID to the sealing via AAD?
+        var sealed = HPKE.sealBase((XECPublicKey) receiverPublicKey, EMPTY_BYTES, EMPTY_BYTES, secretKey.getEncoded());
+        var sealedSharedKey = new SealedSharedKey(keyId, sealed.enc(), sealed.ciphertext());
+        return new SecretSharedKey(secretKey, sealedSharedKey);
+    }
 
-            return new SecretSharedKey(new SecretKeySpec(secretKey, "AES"), sealedKey);
-        } catch (BadBlockException e) {
-            throw new IllegalArgumentException("Token integrity check failed; token is either corrupt or was " +
-                                               "generated for a different public key");
-        } catch (NoSuchAlgorithmException | InvalidKeyException | NoSuchPaddingException
-                | IllegalBlockSizeException | BadPaddingException | InvalidAlgorithmParameterException e) {
-            throw new RuntimeException(e);
-        }
+    public static SecretSharedKey fromSealedKey(SealedSharedKey sealedKey, PrivateKey receiverPrivateKey) {
+        // TODO do we want to tie the key ID to the opening via AAD?
+        byte[] secretKeyBytes = HPKE.openBase(sealedKey.enc(), (XECPrivateKey) receiverPrivateKey,
+                                              EMPTY_BYTES, EMPTY_BYTES, sealedKey.ciphertext());
+        return new SecretSharedKey(new SecretKeySpec(secretKeyBytes, "AES"), sealedKey);
     }
 
     // A given key+IV pair can only be used for one single encryption session, ever.
@@ -92,15 +82,14 @@ public class SharedKeyGenerator {
     // token recipient (which would be the case if the IV were deterministically derived
     // from the recipient key and ephemeral ECDH public key), as that would preclude
     // support for delegated key forwarding.
-    private static byte[] fixed96BitIvForSingleUseKey() {
-        // Nothing up my sleeve!
-        return new byte[] { 'h', 'e', 'r', 'e', 'B', 'd', 'r', 'a', 'g', 'o', 'n', 's' };
-    }
+    private static final byte[] FIXED_96BIT_IV_FOR_SINGLE_USE_KEY = new byte[] {
+            'h','e','r','e','B','d','r','a','g','o','n','s' // Nothing up my sleeve!
+    };
 
     private static Cipher makeAesGcmCipher(SecretSharedKey secretSharedKey, int cipherMode) {
         try {
             var cipher  = Cipher.getInstance(AES_GCM_ALGO_SPEC);
-            var gcmSpec = new GCMParameterSpec(AES_GCM_AUTH_TAG_BITS, fixed96BitIvForSingleUseKey());
+            var gcmSpec = new GCMParameterSpec(AES_GCM_AUTH_TAG_BITS, FIXED_96BIT_IV_FOR_SINGLE_USE_KEY);
             cipher.init(cipherMode, secretSharedKey.secretKey(), gcmSpec);
             return cipher;
         } catch (NoSuchAlgorithmException | NoSuchPaddingException
