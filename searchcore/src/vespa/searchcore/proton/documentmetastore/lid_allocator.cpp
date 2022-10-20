@@ -4,6 +4,7 @@
 #include <vespa/searchlib/common/bitvectoriterator.h>
 #include <vespa/searchlib/fef/termfieldmatchdataarray.h>
 #include <vespa/searchlib/fef/matchdata.h>
+#include <vespa/searchlib/queryeval/full_search.h>
 #include <mutex>
 
 #include <vespa/log/log.h>
@@ -12,6 +13,7 @@ LOG_SETUP(".proton.documentmetastore.lid_allocator");
 using search::fef::TermFieldMatchDataArray;
 using search::queryeval::Blueprint;
 using search::queryeval::FieldSpecBaseList;
+using search::queryeval::FullSearch;
 using search::queryeval::SearchIterator;
 using search::queryeval::SimpleLeafBlueprint;
 using vespalib::GenerationHolder;
@@ -182,6 +184,7 @@ class WhiteListBlueprint : public SimpleLeafBlueprint
 {
 private:
     const search::BitVector &_activeLids;
+    bool _all_lids_active;
     mutable std::mutex _lock;
     mutable std::vector<search::fef::TermFieldMatchData *> _matchDataVector;
 
@@ -193,9 +196,11 @@ private:
         return createFilterSearch(strict, FilterConstraint::UPPER_BOUND);
     }
 public:
-    WhiteListBlueprint(const search::BitVector &activeLids)
+    WhiteListBlueprint(const search::BitVector &activeLids, bool all_lids_active)
         : SimpleLeafBlueprint(FieldSpecBaseList()),
           _activeLids(activeLids),
+          _all_lids_active(all_lids_active),
+          _lock(),
           _matchDataVector()
     {
         setEstimate(HitEstimate(_activeLids.size(), false));
@@ -204,6 +209,9 @@ public:
     bool isWhiteList() const override { return true; }
 
     SearchIterator::UP createFilterSearch(bool strict, FilterConstraint) const override {
+        if (_all_lids_active) {
+            return std::make_unique<FullSearch>();
+        }
         auto tfmd = new search::fef::TermFieldMatchData;
         {
             std::lock_guard<std::mutex> lock(_lock);
@@ -224,7 +232,8 @@ public:
 Blueprint::UP
 LidAllocator::createWhiteListBlueprint() const
 {
-    return std::make_unique<WhiteListBlueprint>(_activeLids.getBitVector());
+    return std::make_unique<WhiteListBlueprint>(_activeLids.getBitVector(),
+                                                (getNumUsedLids() == getNumActiveLids()));
 }
 
 void

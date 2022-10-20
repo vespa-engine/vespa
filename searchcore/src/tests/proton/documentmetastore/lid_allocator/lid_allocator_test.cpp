@@ -1,13 +1,18 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include <vespa/searchcore/proton/documentmetastore/lid_allocator.h>
+#include <vespa/searchlib/queryeval/searchiterator.h>
+#include <vespa/searchlib/queryeval/simpleresult.h>
 #include <vespa/vespalib/util/generationholder.h>
 #include <vespa/vespalib/util/time.h>
 #include <vespa/vespalib/gtest/gtest.h>
 #include <iostream>
 
+using search::queryeval::Blueprint;
+using search::queryeval::SimpleResult;
 using vespalib::GenerationHolder;
 using vespalib::Timer;
+using vespalib::Trinary;
 
 namespace proton {
 
@@ -94,6 +99,22 @@ protected:
         return result;
     }
 
+    SimpleResult get_active_lids_in_search_iterator(uint32_t docid_limit) {
+        auto blueprint = _allocator.createWhiteListBlueprint();
+        blueprint->setDocIdLimit(docid_limit);
+        auto iterator = blueprint->createFilterSearch(true, search::queryeval::Blueprint::FilterConstraint::UPPER_BOUND);
+        SimpleResult res;
+        res.search(*iterator, docid_limit);
+        return res;
+    }
+
+    Trinary search_iterator_matches_any(uint32_t docid_limit) {
+        auto blueprint = _allocator.createWhiteListBlueprint();
+        blueprint->setDocIdLimit(docid_limit);
+        auto iterator = blueprint->createFilterSearch(true, search::queryeval::Blueprint::FilterConstraint::UPPER_BOUND);
+        return iterator->matches_any();
+    }
+
     void
     assert_valid_lids(const std::vector<uint32_t>& exp_lids) {
         EXPECT_EQ(exp_lids, get_valid_lids());
@@ -119,6 +140,22 @@ TEST_F(LidAllocatorTest, unregister_lids)
     hold_lids({1, 3, 5});
     reclaim_memory();
     EXPECT_EQ((std::vector<uint32_t>{1, 3, 5, 7, 8}), alloc_lids(5));
+}
+
+TEST_F(LidAllocatorTest, active_lids_are_available_in_search_iterator)
+{
+    register_lids({ 1, 2, 3, 4 });
+    activate_lids({ 1, 2, 4 }, true);
+    EXPECT_EQ(Trinary::Undefined, search_iterator_matches_any(5));
+    EXPECT_EQ(SimpleResult({1, 2, 4}), get_active_lids_in_search_iterator(5));
+}
+
+TEST_F(LidAllocatorTest, search_iterator_matches_all_when_all_lids_are_active)
+{
+    register_lids({ 1, 2, 3, 4 });
+    activate_lids({ 1, 2, 3, 4 }, true);
+    EXPECT_EQ(Trinary::True, search_iterator_matches_any(5));
+    EXPECT_EQ(SimpleResult({1, 2, 3, 4}), get_active_lids_in_search_iterator(5));
 }
 
 class LidAllocatorPerformanceTest : public LidAllocatorTest,
