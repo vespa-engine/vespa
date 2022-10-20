@@ -12,6 +12,7 @@ import java.time.format.DateTimeFormatter;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
+import java.util.function.Function;
 
 /**
  * @author freva
@@ -22,12 +23,12 @@ public class SyncFileInfo {
             .ofPattern("yyyy-MM-dd.HH-mm-ss").withZone(ZoneOffset.UTC);
 
     private final Path source;
-    private final URI destination;
+    private final Function<String, URI> destination;
     private final Compression uploadCompression;
     private final Map<String, String> tags;
     private final Optional<Duration> minDurationBetweenSync;
 
-    private SyncFileInfo(Path source, URI destination, Compression uploadCompression,
+    private SyncFileInfo(Path source, Function<String, URI> destination, Compression uploadCompression,
                          Map<String, String> tags, Duration minDurationBetweenSyncOrNull) {
         this.source = source;
         this.destination = destination;
@@ -43,7 +44,12 @@ public class SyncFileInfo {
 
     /** Remote URI to store the file at */
     public URI destination() {
-        return destination;
+        return destination.apply("");
+    }
+
+    /** Returns a destination URI after adding a suffix to the base name of the filename. */
+    public URI destinationWithBasenameSuffix(String suffix) {
+        return destination.apply(suffix);
     }
 
     /** Compression algorithm to use when uploading the file */
@@ -58,7 +64,7 @@ public class SyncFileInfo {
     public static Optional<SyncFileInfo> forLogFile(URI uri, Path logFile, boolean rotatedOnly, ApplicationId owner) {
         String filename = logFile.getFileName().toString();
         Compression compression;
-        String dir = null;
+        final String dir;
         String remoteFilename = logFile.getFileName().toString();
         Duration minDurationBetweenSync = null;
 
@@ -80,18 +86,20 @@ public class SyncFileInfo {
                 dir = "logs/access/";
             else if (filename.startsWith("ConnectionLog."))
                 dir = "logs/connection/";
+            else
+                return Optional.empty();
         }
 
         if (dir == null) return Optional.empty();
-        return Optional.of(new SyncFileInfo(
-                logFile, uri.resolve(dir + remoteFilename + compression.extension), compression, defaultTags(owner),
-                minDurationBetweenSync));
+        String finalRemoteFilename = remoteFilename;
+        Function<String, URI> destination = suffix -> uri.resolve(dir + finalRemoteFilename + suffix + compression.extension);
+        return Optional.of(new SyncFileInfo(logFile, destination, compression, defaultTags(owner), minDurationBetweenSync));
     }
 
     public static SyncFileInfo forServiceDump(URI destinationDir, Path file, Compression compression,
                                               ApplicationId owner, String assetClassification) {
         String filename = file.getFileName().toString();
-        URI location = destinationDir.resolve(filename + compression.extension);
+        Function<String, URI> location = suffix -> destinationDir.resolve(filename + suffix + compression.extension);
         Map<String, String> tags = defaultTags(owner);
         if (assetClassification != null) {
             tags.put("vespa:AssetClassification", assetClassification);
@@ -103,6 +111,10 @@ public class SyncFileInfo {
         var tags = new HashMap<String, String>();
         tags.put("corp:Application", owner.toFullString());
         return tags;
+    }
+
+    public boolean overwriteIfExists() {
+        return minDurationBetweenSync.isPresent();
     }
 
     public enum Compression {
