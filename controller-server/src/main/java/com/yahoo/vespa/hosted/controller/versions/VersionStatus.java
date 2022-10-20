@@ -233,16 +233,17 @@ public record VersionStatus(List<VespaVersion> versions) {
 
         // Compute confidence
         if (!confidenceIsOverridden) {
-            // Always compute confidence for system and controller
-            if (isSystemVersion || isControllerVersion) {
-                confidence = VespaVersion.confidenceFrom(statistics, controller, versionStatus);
+            Confidence newConfidence = VespaVersion.confidenceFrom(statistics, controller, versionStatus);
+            Confidence oldConfidence = Optional.ofNullable(versionStatus.version(statistics.version()))
+                                               .map(VespaVersion::confidence)
+                                               .orElse(newConfidence);
+            // Always update confidence for system and controller
+            // Also allow older versions to transition from normal to high confidence
+            if (isSystemVersion || isControllerVersion || oldConfidence == Confidence.normal && newConfidence == Confidence.high) {
+                confidence = newConfidence;
             } else {
-                // This is an older version, so we preserve the existing confidence, if any
-                confidence = versionStatus.versions().stream()
-                                          .filter(v -> statistics.version().equals(v.versionNumber()))
-                                          .map(VespaVersion::confidence)
-                                          .findFirst()
-                                          .orElseGet(() -> VespaVersion.confidenceFrom(statistics, controller, versionStatus));
+                // Otherwise, this is an older version, so we preserve the existing confidence, if any
+                confidence = oldConfidence;
             }
         }
 
