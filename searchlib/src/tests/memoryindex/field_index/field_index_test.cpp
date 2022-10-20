@@ -21,6 +21,7 @@
 #include <vespa/searchlib/memoryindex/posting_iterator.h>
 #include <vespa/searchlib/queryeval/iterators.h>
 #include <vespa/searchlib/test/doc_builder.h>
+#include <vespa/searchlib/test/schema_builder.h>
 #include <vespa/searchlib/test/string_field_builder.h>
 #include <vespa/searchlib/test/index/mock_field_length_inspector.h>
 #include <vespa/searchlib/test/memoryindex/wrap_inserter.h>
@@ -45,15 +46,16 @@ using namespace fef;
 using namespace index;
 
 using document::ArrayFieldValue;
+using document::DataType;
 using document::Document;
 using document::StringFieldValue;
 using document::WeightedSetFieldValue;
 using queryeval::RankedSearchIteratorBase;
 using queryeval::SearchIterator;
 using search::index::schema::CollectionType;
-using search::index::schema::DataType;
 using search::index::test::MockFieldLengthInspector;
 using search::test::DocBuilder;
+using search::test::SchemaBuilder;
 using search::test::StringFieldBuilder;
 using vespalib::GenerationHandler;
 using vespalib::ISequencedTaskExecutor;
@@ -510,17 +512,16 @@ myCompactFeatures(FieldIndexCollection &fieldIndexes, ISequencedTaskExecutor &pu
 }
 
 Schema
-make_single_field_schema()
+make_all_index_schema(DocBuilder::AddFieldsType add_fields)
 {
-    Schema result;
-    result.addIndexField(Schema::IndexField("f0", DataType::STRING));
-    return result;
+    DocBuilder db(add_fields);
+    return *SchemaBuilder(db).add_all_indexes().build();
 }
 
 DocBuilder::AddFieldsType
 make_single_add_fields()
 {
-    return [](auto& header) { header.addField("f0", document::DataType::T_STRING); };
+    return [](auto& header) { header.addField("f0", DataType::T_STRING); };
 }
 
 template <typename FieldIndexType>
@@ -528,7 +529,7 @@ struct FieldIndexTest : public ::testing::Test {
     Schema schema;
     FieldIndexType idx;
     FieldIndexTest()
-        : schema(make_single_field_schema()),
+        : schema(make_all_index_schema(make_single_add_fields())),
           idx(schema, 0)
     {
     }
@@ -713,22 +714,10 @@ TEST_F(FieldIndexInterleavedFeaturesTest, interleaved_features_are_capped)
     EXPECT_EQ(std::numeric_limits<uint16_t>::max(), entry.get_field_length());
 }
 
-Schema
-make_multi_field_schema()
-{
-    Schema result;
-    result.addIndexField(Schema::IndexField("f0", DataType::STRING));
-    result.addIndexField(Schema::IndexField("f1", DataType::STRING));
-    result.addIndexField(Schema::IndexField("f2", DataType::STRING, CollectionType::ARRAY));
-    result.addIndexField(Schema::IndexField("f3", DataType::STRING, CollectionType::WEIGHTEDSET));
-    return result;
-}
-
 DocBuilder::AddFieldsType
 make_multi_field_add_fields()
 {
     return [](auto& header) { using namespace document::config_builder;
-        using DataType = document::DataType;
         header.addField("f0", DataType::T_STRING)
             .addField("f1", DataType::T_STRING)
             .addField("f2", Array(DataType::T_STRING))
@@ -740,7 +729,7 @@ struct FieldIndexCollectionTest : public ::testing::Test {
     Schema schema;
     FieldIndexCollection fic;
     FieldIndexCollectionTest()
-        : schema(make_multi_field_schema()),
+        : schema(make_all_index_schema(make_multi_field_add_fields())),
           fic(schema, MockFieldLengthInspector())
     {
     }
@@ -908,6 +897,7 @@ struct FieldIndexCollectionTypeTest : public ::testing::Test {
     }
     static Schema make_schema() {
         Schema result;
+        using DataType = search::index::schema::DataType;
         result.addIndexField(Schema::IndexField("normal", DataType::STRING));
         Schema::IndexField interleaved("interleaved", DataType::STRING);
         interleaved.set_interleaved_features(true);
@@ -935,18 +925,18 @@ VESPA_THREAD_STACK_TAG(push_executor)
 
 class InverterTest : public ::testing::Test {
 public:
+    DocBuilder _b;
     Schema _schema;
     FieldIndexCollection _fic;
-    DocBuilder _b;
     std::unique_ptr<ISequencedTaskExecutor> _invertThreads;
     std::unique_ptr<ISequencedTaskExecutor> _pushThreads;
     DocumentInverterContext _inv_context;
     DocumentInverter _inv;
 
-    InverterTest(const Schema& schema, DocBuilder::AddFieldsType add_fields)
-        : _schema(schema),
+    InverterTest(DocBuilder::AddFieldsType add_fields)
+        : _b(add_fields),
+          _schema(*SchemaBuilder(_b).add_all_indexes().build()),
           _fic(_schema, MockFieldLengthInspector()),
-          _b(add_fields),
           _invertThreads(SequencedTaskExecutor::create(invert_executor, 2)),
           _pushThreads(SequencedTaskExecutor::create(push_executor, 2)),
           _inv_context(_schema, *_invertThreads, *_pushThreads, _fic),
@@ -968,7 +958,7 @@ public:
 
 class BasicInverterTest : public InverterTest {
 public:
-    BasicInverterTest() : InverterTest(make_multi_field_schema(), make_multi_field_add_fields()) {}
+    BasicInverterTest() : InverterTest(make_multi_field_add_fields()) {}
 };
 
 TEST_F(BasicInverterTest, require_that_inversion_is_working)
@@ -1162,29 +1152,19 @@ TEST_F(BasicInverterTest, require_that_inverter_handles_remove_via_document_remo
     EXPECT_TRUE(assertPostingList("[]", find("c", 1)));
 }
 
-Schema
-make_uri_schema()
-{
-    Schema result;
-    result.addUriIndexFields(Schema::IndexField("iu", DataType::STRING));
-    result.addUriIndexFields(Schema::IndexField("iau", DataType::STRING, CollectionType::ARRAY));
-    result.addUriIndexFields(Schema::IndexField("iwu", DataType::STRING, CollectionType::WEIGHTEDSET));
-    return result;
-}
-
 DocBuilder::AddFieldsType
 make_uri_add_fields()
 {
     return [](auto& header) { using namespace document::config_builder;
-        header.addField("iu", document::DataType::T_URI)
-            .addField("iau", Array(document::DataType::T_URI))
-            .addField("iwu", Wset(document::DataType::T_URI));
+        header.addField("iu", DataType::T_URI)
+            .addField("iau", Array(DataType::T_URI))
+            .addField("iwu", Wset(DataType::T_URI));
            };
 }
 
 class UriInverterTest : public InverterTest {
 public:
-    UriInverterTest() : InverterTest(make_uri_schema(), make_uri_add_fields()) {}
+    UriInverterTest() : InverterTest(make_uri_add_fields()) {}
 };
 
 TEST_F(UriInverterTest, require_that_uri_indexing_is_working)
@@ -1260,7 +1240,7 @@ TEST_F(UriInverterTest, require_that_uri_indexing_is_working)
 
 class CjkInverterTest : public InverterTest {
 public:
-    CjkInverterTest() : InverterTest(make_single_field_schema(), make_single_add_fields()) {}
+    CjkInverterTest() : InverterTest(make_single_add_fields()) {}
 };
 
 TEST_F(CjkInverterTest, require_that_cjk_indexing_is_working)

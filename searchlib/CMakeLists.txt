@@ -224,6 +224,7 @@ vespa_define_module(
     src/tests/tensor/tensor_buffer_operations
     src/tests/tensor/tensor_buffer_store
     src/tests/tensor/tensor_buffer_type_mapper
+    src/tests/test/schema_builder
     src/tests/test/string_field_builder
     src/tests/transactionlog
     src/tests/transactionlogstress
