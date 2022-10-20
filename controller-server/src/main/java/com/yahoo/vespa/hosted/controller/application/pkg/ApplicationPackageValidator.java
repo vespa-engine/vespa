@@ -123,7 +123,10 @@ public class ApplicationPackageValidator {
                                                        endpoint.regions().stream().sorted().toList());
                 }
             }
-            else { // Also covers unknown, future clouds. Expand above clauses when needed.
+            else if (clouds.size() == 1) {
+                throw new IllegalArgumentException("unknown cloud '" + clouds.iterator().next() + "'");
+            }
+            else {
                 throw new IllegalArgumentException(endpointString + " cannot contain regions in different clouds: " +
                                                    endpoint.regions().stream().sorted().toList());
             }
