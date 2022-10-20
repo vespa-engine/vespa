@@ -24,6 +24,7 @@ public final class PublicDimensions {
     public static final String INTERNAL_CLUSTER_TYPE = "clustertype";
     public static final String INTERNAL_CLUSTER_ID = "clusterid";
     public static final String CLUSTER_ID = "clusterId";
+    public static final String DEPLOYMENT_CLUSTER = "deploymentCluster";
 
     // This dimension is not currently (March 2021) added to the 'commonDimensions' allow-list below, due to the
     // limit of 10 total dimensions in public http apis. See e.g. MetricsV2Handler#MAX_DIMENSIONS.

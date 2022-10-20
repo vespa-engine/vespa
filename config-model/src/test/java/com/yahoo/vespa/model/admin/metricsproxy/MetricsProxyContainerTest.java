@@ -119,6 +119,7 @@ public class MetricsProxyContainerTest {
 
         assertEquals("content", config.dimensions(PublicDimensions.INTERNAL_CLUSTER_TYPE));
         assertEquals("my-content", config.dimensions(PublicDimensions.INTERNAL_CLUSTER_ID));
+        assertEquals("default.mock-application.default.prod.default.my-content", config.dimensions(PublicDimensions.DEPLOYMENT_CLUSTER));
     }
 
     @Test
