@@ -17,6 +17,7 @@ public class CloudName extends PatternedStringWrapper<CloudName> {
     public static final CloudName AWS = from("aws");
     public static final CloudName GCP = from("gcp");
     public static final CloudName DEFAULT = from("default");
+    public static final CloudName YAHOO = from("yahoo");
 
     private CloudName(String cloud) {
         super(cloud, pattern, "cloud name");

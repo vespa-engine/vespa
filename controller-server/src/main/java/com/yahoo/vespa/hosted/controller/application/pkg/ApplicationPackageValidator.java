@@ -117,7 +117,7 @@ public class ApplicationPackageValidator {
             String endpointString = instance == null ? "Application endpoint '" + endpoint.endpointId() + "'"
                                                      : "Endpoint '" + endpoint.endpointId() + "' in " + instance;
             if (Set.of(CloudName.GCP, CloudName.AWS).containsAll(clouds)) { } // Everything is fine!
-            else if (Set.of(CloudName.from("yahoo")).containsAll(clouds)) {
+            else if (Set.of(CloudName.YAHOO).containsAll(clouds)) {
                 if (endpoint.level() == Level.application && regions.length != 1) {
                     throw new IllegalArgumentException(endpointString + " cannot contain different regions: " +
                                                        endpoint.regions().stream().sorted().toList());
