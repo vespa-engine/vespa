@@ -88,15 +88,45 @@ fi
 
 cd $VESPA_HOME || { echo "Cannot cd to $VESPA_HOME" 1>&2; exit 1; }
 
+uid_name () {
+    name=$(id -un -- $1)
+    if [ $? -ne 0 ]; then
+        echo "uid: $1"
+        return
+    fi
+    echo $name
+}
+
+gid_name () {
+    name=$(getent group $1)
+    if [ $? -ne 0]; then
+        echo "gid: $1"
+    fi
+    echo $name
+}
+
 fixdir () {
     if [ $# != 4 ]; then
         echo "fixdir: Expected 4 params, got:" "$@"
         exit 1
     fi
     mkdir -p "$4"
-    if [ "${VESPA_UNPRIVILEGED}" != yes ]; then
-      chown $1 "$4"
-      chgrp $2 "$4"
+    if [ "$(id -u)" -ne 0 ]; then
+        local owner_expected="$(id -u $1)"
+        local owner_actual="$(stat -c %u $4)"
+        if [ "$owner_expected" -ne "$owner_actual" ]; then
+            echo "Wrong directory owner for /opt/vespa/$4, expected $(uid_name $owner_expected), was $(uid_name $owner_actual)"
+            exit 1
+        fi
+        local group_expected="$(getent group $2 | cut -d: -f3)"
+        local group_actual="$(stat -c %g $4)"
+        if [ "$group_expected" -ne "$group_actual" ]; then
+            echo "Wrong directory group for /opt/vespa/$4, expected $(gid_name $group_expected), was $(gid_name $group_actual)"
+            exit 1
+        fi
+    else
+        chown $1 "$4"
+        chgrp $2 "$4"
     fi
     chmod $3 "$4"
 }
@@ -130,9 +160,9 @@ fixdir ${VESPA_USER} ${VESPA_GROUP}   755  var/vespa/bundlecache
 fixdir ${VESPA_USER} ${VESPA_GROUP}   755  var/vespa/bundlecache/configserver
 fixdir ${VESPA_USER} ${VESPA_GROUP}   755  var/vespa/cache/config
 
-if [ "${VESPA_UNPRIVILEGED}" != yes ]; then
-  chown -hR ${VESPA_USER} logs/vespa
-  chown -hR ${VESPA_USER} var/db/vespa
+if [ "$(id -u)" -eq 0 ]; then
+    chown -hR ${VESPA_USER} logs/vespa
+    chown -hR ${VESPA_USER} var/db/vespa
 fi
 
 # END directory fixups

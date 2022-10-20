@@ -207,10 +207,22 @@ consider_fallback VESPA_USE_NO_VESPAMALLOC  "vespa-rpc-invoke vespa-get-config v
 
 
 fixlimits () {
-    # Cannot bump limits when not root (for testing)
-    if [ "${VESPA_UNPRIVILEGED}" = yes ]; then
-	return 0
+    max_processes=$(ulimit -u)
+    # Warn if we Cannot bump limits when not root
+    if [ "$(id -u)" -ne 0 ]; then
+        if ! varhasvalue file_descriptor_limit; then
+            file_descriptor_limit=262144
+        elif [ `ulimit -n` -lt $file_descriptor_limit ]; then
+            echo "Expected file descriptor limit to be at least $file_descriptor_limit"
+        fi
+
+        # number of processes/threads
+        if [ "$max_processes" != "unlimited" ] && [ "$max_processes" -lt 409600 ]; then
+            echo "Expected max processes to be at least 409600"
+        fi
+        return
     fi
+
     # number of open files:
     if varhasvalue file_descriptor_limit; then
        ulimit -n ${file_descriptor_limit} || exit 1
@@ -224,7 +236,6 @@ fixlimits () {
     fi
 
     # number of processes/threads
-    max_processes=`ulimit -u`
     if [ "$max_processes" != "unlimited" ] && [ "$max_processes" -lt 409600 ]; then
         ulimit -u 409600
     fi
