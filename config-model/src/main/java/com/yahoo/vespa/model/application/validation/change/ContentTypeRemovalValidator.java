@@ -28,9 +28,9 @@ public class ContentTypeRemovalValidator implements ChangeValidator {
             for (NewDocumentType type : currentCluster.getDocumentDefinitions().values()) {
                 if ( ! nextCluster.getDocumentDefinitions().containsKey(type.getName())) {
                     overrides.invalid(ValidationId.contentTypeRemoval,
-                                      "Type '" + type.getName() + "' is removed " +
-                                      " in content cluster '" + currentCluster.getName() + "'. " +
-                                      "This will cause loss of all data of this type",
+                                      "Schema '" + type.getName() + "' is removed " +
+                                      "in content cluster '" + currentCluster.getName() + "'. " +
+                                      "This will cause loss of all data in this schema",
                                       now);
                 }
             }

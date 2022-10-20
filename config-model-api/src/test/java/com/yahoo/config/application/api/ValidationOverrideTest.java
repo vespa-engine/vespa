@@ -89,5 +89,26 @@ public class ValidationOverrideTest {
         catch (ValidationOverrides.ValidationException expected) {
         }
     }
-    
+
+    @Test
+    public void testSchemaRemovalAliasForContentTypeRemoval() {
+        String validationOverridesContentType =
+                "<validation-overrides>" +
+                "  <allow until='2000-02-02'>content-type-removal</allow>" +
+                "</validation-overrides>";
+        ValidationOverrides overrideContentTypeRemoval = ValidationOverrides
+                .fromXml(new StringReader(validationOverridesContentType));
+
+        String validationOverridesSchema =
+                "<validation-overrides>" +
+                        "  <allow until='2000-02-02'>schema-removal</allow>" +
+                        "</validation-overrides>";
+        ValidationOverrides overrideSchemaRemoval = ValidationOverrides
+                .fromXml(new StringReader(validationOverridesSchema));
+
+
+        Instant now = ManualClock.at("2000-01-01T23:59:00");
+        assertOverridden("content-type-removal", overrideContentTypeRemoval, now);
+        assertOverridden("schema-removal", overrideSchemaRemoval, now);
+    }
 }

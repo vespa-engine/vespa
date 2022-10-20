@@ -16,7 +16,7 @@ public enum ValidationId {
     clusterSizeReduction("cluster-size-reduction"), // Large reductions in cluster size
     tensorTypeChange("tensor-type-change"), // Tensor type change
     resourcesReduction("resources-reduction"), // Large reductions in node resources
-    contentTypeRemoval("content-type-removal"), // Removal of a data type (causes deletion of all data)
+    contentTypeRemoval("schema-removal"), // Removal of a schema (causes deletion of all documents)
     contentClusterRemoval("content-cluster-removal"), // Removal (or id change) of content clusters
     deploymentRemoval("deployment-removal"), // Removal of production zones from deployment.xml
     globalDocumentChange("global-document-change"), // Changing global attribute for document types in content clusters
@@ -44,6 +44,9 @@ public enum ValidationId {
      * @return the matching validation id or empty if none
      */
     public static Optional<ValidationId> from(String id) {
+        // ToDo: Vespa 9 remove support for content-type-removal
+        if ("content-type-removal".equals(id)) return from("schema-removal");
+
         for (ValidationId candidate : ValidationId.values())
             if (id.equals(candidate.toString())) return Optional.of(candidate);
         return Optional.empty();
