@@ -1,22 +1,22 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.clustercontroller.core;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.Sets;
 import com.yahoo.vdslib.state.ClusterState;
 import com.yahoo.vespa.clustercontroller.core.hostinfo.HostInfo;
 import com.yahoo.vespa.clustercontroller.core.status.statuspage.VdsClusterHtmlRenderer;
-import org.codehaus.jettison.json.JSONException;
-import org.codehaus.jettison.json.JSONWriter;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import java.io.IOException;
 import java.io.StringWriter;
 import java.io.Writer;
 import java.util.Collections;
+import java.util.Map;
 import java.util.TreeMap;
 
-import static org.hamcrest.core.Is.is;
-import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.mock;
 
 public class ContentClusterHtmlRendererTest {
@@ -28,7 +28,7 @@ public class ContentClusterHtmlRendererTest {
     private String result;
 
     @BeforeEach
-    public void before() throws JSONException {
+    public void before() throws IOException {
         final ClusterStateBundle stateBundle = ClusterStateBundle.ofBaselineOnly(
                 AnnotatedClusterState.withoutAnnotations(
                         ClusterState.stateFromString("version:34633 bits:24 distributor:211 storage:211")));
@@ -40,14 +40,8 @@ public class ContentClusterHtmlRendererTest {
 
         for (int x = 0; x < 10; x++) {
             NodeInfo nodeInfo = new DistributorNodeInfo(contentCluster, x, "dist " + x, null);
-            final Writer writer = new StringWriter();
-            new JSONWriter(writer)
-                    .object().key("vtag")
-                    // Let one node have a different release tag.
-                    .object().key("version").value("release1" + (x == 2 ? "bad" : ""))
-                    .endObject()
-                    .endObject();
-            nodeInfo.setHostInfo(HostInfo.createHostInfo(writer.toString()));
+            String json = new ObjectMapper().writeValueAsString(Map.of("vtag", Map.of("version", "release1" + (x == 2 ? "bad" : ""))));
+            nodeInfo.setHostInfo(HostInfo.createHostInfo(json));
             distributorNodeInfoByIndex.put(x, nodeInfo);
         }
         storageNodeInfoByIndex.put(2, new StorageNodeInfo(contentCluster, 2, false, "storage" + 2, null));
@@ -73,10 +67,11 @@ public class ContentClusterHtmlRendererTest {
     @Test
     void testVtagRendering() {
         // 9 distribution nodes should have green tag on release1.
-        assertThat(result.split("<td bgcolor=\"#c0ffc0\" align=\"right\"><nobr>release1</nobr></td>").length, is(10));
+        assertEquals(10, result.split("<td bgcolor=\"#c0ffc0\" align=\"right\"><nobr>release1</nobr></td>").length);
         // 1 distribution node should have warning on release1bad.
-        assertThat(result.split("<td bgcolor=\"#ffffc0\" align=\"right\"><nobr>release1bad</nobr></td>").length, is(2));
+        assertEquals(2, result.split("<td bgcolor=\"#ffffc0\" align=\"right\"><nobr>release1bad</nobr></td>").length);
         // 1 storage node should should have warning on release "not set".
-        assertThat(result.split("<td bgcolor=\"#ffffc0\" align=\"right\"><nobr>not set</nobr></td>").length, is(2));
+        assertEquals(2, result.split("<td bgcolor=\"#ffffc0\" align=\"right\"><nobr>not set</nobr></td>").length);
     }
+
 }

@@ -59,7 +59,7 @@ public class TestTransport {
     }
     private final Map<Socket, List<Handler>> handlers = new HashMap<>();
     private final LinkedList<Request> requests = new LinkedList<>();
-    private final AsyncHttpClient<HttpResult> client = new AsyncHttpClient<HttpResult>() {
+    private final AsyncHttpClient<HttpResult> client = new AsyncHttpClient<>() {
         @Override
         public AsyncOperation<HttpResult> execute(HttpRequest r) {
             log.fine("Queueing request " + r);
@@ -74,6 +74,7 @@ public class TestTransport {
             }
             return op;
         }
+
         @Override
         public void close() { TestTransport.this.close(); }
     };
@@ -149,7 +150,7 @@ public class TestTransport {
             }
             log.fine("Socket found");
             for (Handler h : handlers.get(socket)) {
-                if (r.getPath().length() >= h.pathPrefix.length() && r.getPath().substring(0, h.pathPrefix.length()).equals(h.pathPrefix)) {
+                if (r.getPath().length() >= h.pathPrefix.length() && r.getPath().startsWith(h.pathPrefix)) {
                     return h.handler;
                 }
             }

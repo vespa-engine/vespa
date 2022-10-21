@@ -1,13 +1,16 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.clustercontroller.utils.communication.http;
 
-import com.yahoo.vespa.clustercontroller.utils.util.JSONObjectWrapper;
-import org.codehaus.jettison.json.JSONException;
-import org.codehaus.jettison.json.JSONObject;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 
 public class JsonHttpResult extends HttpResult {
 
-    private JSONObject json;
+    private static final ObjectMapper mapper = new ObjectMapper();
+
+    private JsonNode json;
     private boolean failedParsing = false;
 
 
@@ -19,56 +22,51 @@ public class JsonHttpResult extends HttpResult {
         super(other);
 
         if (other.getContent() == null) {
-            setParsedJson(new JSONObject());
+            setParsedJson(new ObjectNode(mapper.getNodeFactory()));
             return;
         }
         try{
-            if (other.getContent() instanceof JSONObject) {
-                setParsedJson((JSONObject) other.getContent());
+            if (other.getContent() instanceof JsonNode jsonContent) {
+                setParsedJson(jsonContent);
             } else {
-                setParsedJson(new JSONObject(other.getContent().toString()));
+                setParsedJson(mapper.readTree(other.getContent().toString()));
             }
-        } catch (JSONException e) {
+        }
+        catch (JsonProcessingException e) {
             failedParsing = true;
             setParsedJson(createErrorJson(e.getMessage(), other));
         }
     }
 
-    private JSONObject createErrorJson(String error, HttpResult other) {
-        return new JSONObjectWrapper()
-                .put("error", "Invalid JSON in output: " + error)
-                .put("output", other.getContent().toString());
+    private JsonNode createErrorJson(String error, HttpResult other) {
+        ObjectNode root = new ObjectNode(mapper.getNodeFactory());
+        root.put("error", "Invalid JSON in output: " + error);
+        root.put("output", other.getContent().toString());
+        return root;
     }
 
-    public JsonHttpResult setJson(JSONObject o) {
+    public JsonHttpResult setJson(JsonNode o) {
         setContent(o);
         json = o;
         return this;
     }
 
-    private void setParsedJson(JSONObject o) {
+    private void setParsedJson(JsonNode o) {
         json = o;
     }
 
-    public JSONObject getJson() {
+    public JsonNode getJson() {
         return json;
     }
 
     @Override
     public void printContent(StringBuilder sb) {
-        if (failedParsing) {
+        if (failedParsing || json == null) {
             super.printContent(sb);
-            return;
         }
-        if (json != null) {
+        else {
             sb.append("JSON: ");
-            try{
-                sb.append(json.toString(2));
-            } catch (JSONException e) {
-                sb.append(json.toString());
-            }
-        } else {
-            super.printContent(sb);
+            sb.append(json.toPrettyString());
         }
     }
 

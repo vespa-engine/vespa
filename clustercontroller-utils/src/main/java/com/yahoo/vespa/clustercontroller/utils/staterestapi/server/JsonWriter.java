@@ -1,19 +1,29 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.clustercontroller.utils.staterestapi.server;
 
-import com.yahoo.vespa.clustercontroller.utils.staterestapi.response.*;
-import org.codehaus.jettison.json.JSONArray;
-import org.codehaus.jettison.json.JSONException;
-import org.codehaus.jettison.json.JSONObject;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.yahoo.vespa.clustercontroller.utils.staterestapi.response.CurrentUnitState;
+import com.yahoo.vespa.clustercontroller.utils.staterestapi.response.DistributionState;
+import com.yahoo.vespa.clustercontroller.utils.staterestapi.response.DistributionStates;
+import com.yahoo.vespa.clustercontroller.utils.staterestapi.response.SetResponse;
+import com.yahoo.vespa.clustercontroller.utils.staterestapi.response.SubUnitList;
+import com.yahoo.vespa.clustercontroller.utils.staterestapi.response.UnitAttributes;
+import com.yahoo.vespa.clustercontroller.utils.staterestapi.response.UnitMetrics;
+import com.yahoo.vespa.clustercontroller.utils.staterestapi.response.UnitResponse;
+import com.yahoo.vespa.clustercontroller.utils.staterestapi.response.UnitState;
 
 import java.util.Map;
 
 public class JsonWriter {
 
+    private static final ObjectMapper mapper = new ObjectMapper();
+
     private String pathPrefix = "/";
 
-    public JsonWriter() {
-    }
+    public JsonWriter() { }
 
     public void setDefaultPathPrefix(String defaultPathPrefix) {
         if (defaultPathPrefix.isEmpty() || defaultPathPrefix.charAt(0) != '/') {
@@ -22,16 +32,16 @@ public class JsonWriter {
         this.pathPrefix = defaultPathPrefix;
     }
 
-    public JSONObject createJson(UnitResponse data) throws Exception {
-        JSONObject json = new JSONObject();
+    public JsonNode createJson(UnitResponse data) {
+        ObjectNode json = new ObjectNode(mapper.getNodeFactory());
         fillInJson(data, json);
         return json;
     }
 
-    public void fillInJson(UnitResponse data, JSONObject json) throws Exception {
+    public void fillInJson(UnitResponse data, ObjectNode json) {
         UnitAttributes attributes = data.getAttributes();
         if (attributes != null) {
-            fillInJson(attributes, json);
+            json.putPOJO("attributes", attributes.getAttributeValues());
         }
         CurrentUnitState stateData = data.getCurrentState();
         if (stateData != null) {
@@ -39,7 +49,7 @@ public class JsonWriter {
         }
         UnitMetrics metrics = data.getMetrics();
         if (metrics != null) {
-            fillInJson(metrics, json);
+            json.putPOJO("metrics", metrics.getMetricMap());
         }
         Map<String, SubUnitList> subUnits = data.getSubUnits();
         if (subUnits != null) {
@@ -51,88 +61,45 @@ public class JsonWriter {
         }
     }
 
-    public void fillInJson(CurrentUnitState stateData, JSONObject json) throws Exception {
-        JSONObject stateJson = new JSONObject();
-        json.put("state", stateJson);
+    public void fillInJson(CurrentUnitState stateData, ObjectNode json) {
+        ObjectNode stateJson = json.putObject("state");
         Map<String, UnitState> state = stateData.getStatePerType();
-        for (Map.Entry<String, UnitState> e : state.entrySet()) {
-            String stateType = e.getKey();
-            UnitState unitState = e.getValue();
-            JSONObject stateTypeJson = new JSONObject()
-                    .put("state", unitState.getId())
-                    .put("reason", unitState.getReason());
-            stateJson.put(stateType, stateTypeJson);
-        }
+        state.forEach((stateType, unitState) -> stateJson.putObject(stateType)
+                                                         .put("state", unitState.getId())
+                                                         .put("reason", unitState.getReason()));
     }
 
-    public void fillInJson(UnitMetrics metrics, JSONObject json) throws Exception {
-        JSONObject metricsJson = new JSONObject();
-        for (Map.Entry<String, Number> e : metrics.getMetricMap().entrySet()) {
-            metricsJson.put(e.getKey(), e.getValue());
-        }
-        json.put("metrics", metricsJson);
-    }
-    public void fillInJson(UnitAttributes attributes, JSONObject json) throws Exception {
-        JSONObject attributesJson = new JSONObject();
-        for (Map.Entry<String, String> e : attributes.getAttributeValues().entrySet()) {
-            attributesJson.put(e.getKey(), e.getValue());
-        }
-        json.put("attributes", attributesJson);
+    public void fillInJson(Map<String, SubUnitList> subUnitMap, ObjectNode json) {
+        subUnitMap.forEach((subUnitType, units) -> {
+            ObjectNode typeJson = json.putObject(subUnitType);
+            units.getSubUnitLinks().forEach((key, value) -> typeJson.putObject(key).put("link", pathPrefix + "/" + value));
+            units.getSubUnits().forEach((key, value) -> fillInJson(value, typeJson.putObject(key)));
+        });
     }
 
-    public void fillInJson(Map<String, SubUnitList> subUnitMap, JSONObject json) throws Exception {
-        for(Map.Entry<String, SubUnitList> e : subUnitMap.entrySet()) {
-            String subUnitType = e.getKey();
-            JSONObject typeJson = new JSONObject();
-            for (Map.Entry<String, String> f : e.getValue().getSubUnitLinks().entrySet()) {
-                JSONObject linkJson = new JSONObject();
-                linkJson.put("link", pathPrefix + "/" + f.getValue());
-                typeJson.put(f.getKey(), linkJson);
-            }
-            for (Map.Entry<String, UnitResponse> f : e.getValue().getSubUnits().entrySet()) {
-                JSONObject subJson = new JSONObject();
-                fillInJson(f.getValue(), subJson);
-                typeJson.put(f.getKey(), subJson);
-            }
-            json.put(subUnitType, typeJson);
-        }
+    private static void fillInJson(DistributionStates states, ObjectNode json) {
+        fillDistributionState(states.getPublishedState(),
+                              json.putObject("distribution-states")
+                                  .putObject("published"));
     }
 
-    private static void fillInJson(DistributionStates states, JSONObject json) throws Exception {
-        JSONObject statesJson = new JSONObject();
-        statesJson.put("published", distributionStateToJson(states.getPublishedState()));
-        json.put("distribution-states", statesJson);
-    }
-
-    private static JSONObject distributionStateToJson(DistributionState state) throws Exception {
-        JSONObject result = new JSONObject();
+    private static void fillDistributionState(DistributionState state, ObjectNode result) {
         result.put("baseline", state.getBaselineState());
-        JSONArray bucketSpacesJson = new JSONArray();
-        for (Map.Entry<String, String> entry : state.getBucketSpaceStates().entrySet()) {
-            JSONObject bucketSpaceJson = new JSONObject();
-            bucketSpaceJson.put("name", entry.getKey());
-            bucketSpaceJson.put("state", entry.getValue());
-            bucketSpacesJson.put(bucketSpaceJson);
-        }
-        result.put("bucket-spaces", bucketSpacesJson);
-        return result;
+        ArrayNode bucketSpacesJson = result.putArray("bucket-spaces");
+        state.getBucketSpaceStates().forEach((key, value) -> {
+            ObjectNode bucketSpaceJson = bucketSpacesJson.addObject();
+            bucketSpaceJson.put("name", key);
+            bucketSpaceJson.put("state", value);
+        });
     }
 
-    public JSONObject createErrorJson(String description) {
-        JSONObject o = new JSONObject();
-        try{
-            o.put("message", description);
-        } catch (JSONException e) {
-            // Can't really do anything if we get an error trying to report an error.
-        }
-        return o;
+    public JsonNode createErrorJson(String description) {
+        return new ObjectNode(mapper.getNodeFactory()).put("message", description);
     }
 
-    public JSONObject createJson(SetResponse setResponse) throws JSONException {
-        JSONObject jsonObject = new JSONObject();
-        jsonObject.put("wasModified", setResponse.getWasModified());
-        jsonObject.put("reason", setResponse.getReason());
-        return jsonObject;
+    public JsonNode createJson(SetResponse setResponse) {
+        return new ObjectNode(mapper.getNodeFactory()).put("wasModified", setResponse.getWasModified())
+                                                      .put("reason", setResponse.getReason());
     }
 
 }

@@ -1,510 +1,409 @@
 {
-  "cluster-state": "bits:0 distributor:10",
-  "distribution": "redundancy 3\ninitial_redundancy 0\nensure_primary_persisted true\nready_copies 0\nactive_per_leaf_group false\ndistributor_auto_ownership_transfer_on_whole_group_down true\ngroup[0].index \"invalid\"\ngroup[0].name \"invalid\"\ngroup[0].capacity 1.0\ngroup[0].partitions \"*\"\ngroup[0].nodes[0].index 0\ngroup[0].nodes[0].retired false\ngroup[0].nodes[1].index 1\ngroup[0].nodes[1].retired false\ngroup[0].nodes[2].index 2\ngroup[0].nodes[2].retired false\ngroup[0].nodes[3].index 3\ngroup[0].nodes[3].retired false\ngroup[0].nodes[4].index 4\ngroup[0].nodes[4].retired false\ngroup[0].nodes[5].index 5\ngroup[0].nodes[5].retired false\ngroup[0].nodes[6].index 6\ngroup[0].nodes[6].retired false\ngroup[0].nodes[7].index 7\ngroup[0].nodes[7].retired false\ngroup[0].nodes[8].index 8\ngroup[0].nodes[8].retired false\ngroup[0].nodes[9].index 9\ngroup[0].nodes[9].retired false\ndisk_distribution MODULO_BID",
-  "node-type": "distributor",
-  "redundancy": 3,
-  "node-count": 10,
-  "up-states": "uim",
-  "result": [
-    {
-      "bucket": "0",
-      "nodes": [6],
-      "failure": "NONE"
-    },
-    {
-      "bucket": "1",
-      "nodes": [6],
-      "failure": "NONE"
-    },
-    {
-      "bucket": "2",
-      "nodes": [6],
-      "failure": "NONE"
-    },
-    {
-      "bucket": "3",
-      "nodes": [6],
-      "failure": "NONE"
-    },
-    {
-      "bucket": "4",
-      "nodes": [6],
-      "failure": "NONE"
-    },
-    {
-      "bucket": "5",
-      "nodes": [6],
-      "failure": "NONE"
-    },
-    {
-      "bucket": "6",
-      "nodes": [6],
-      "failure": "NONE"
-    },
-    {
-      "bucket": "7",
-      "nodes": [6],
-      "failure": "NONE"
-    },
-    {
-      "bucket": "8",
-      "nodes": [6],
-      "failure": "NONE"
-    },
-    {
-      "bucket": "9",
-      "nodes": [6],
-      "failure": "NONE"
-    },
-    {
-      "bucket": "a",
-      "nodes": [6],
-      "failure": "NONE"
-    },
-    {
-      "bucket": "b",
-      "nodes": [6],
-      "failure": "NONE"
-    },
-    {
-      "bucket": "c",
-      "nodes": [6],
-      "failure": "NONE"
-    },
-    {
-      "bucket": "d",
-      "nodes": [6],
-      "failure": "NONE"
-    },
-    {
-      "bucket": "e",
-      "nodes": [6],
-      "failure": "NONE"
-    },
-    {
-      "bucket": "f",
-      "nodes": [6],
-      "failure": "NONE"
-    },
-    {
-      "bucket": "10",
-      "nodes": [6],
-      "failure": "NONE"
-    },
-    {
-      "bucket": "11",
-      "nodes": [6],
-      "failure": "NONE"
-    },
-    {
-      "bucket": "12",
-      "nodes": [6],
-      "failure": "NONE"
-    },
-    {
-      "bucket": "13",
-      "nodes": [6],
-      "failure": "NONE"
-    },
-    {
-      "bucket": "14",
-      "nodes": [6],
-      "failure": "NONE"
-    },
-    {
-      "bucket": "15",
-      "nodes": [6],
-      "failure": "NONE"
-    },
-    {
-      "bucket": "16",
-      "nodes": [6],
-      "failure": "NONE"
-    },
-    {
-      "bucket": "17",
-      "nodes": [6],
-      "failure": "NONE"
-    },
-    {
-      "bucket": "18",
-      "nodes": [6],
-      "failure": "NONE"
-    },
-    {
-      "bucket": "19",
-      "nodes": [6],
-      "failure": "NONE"
-    },
-    {
-      "bucket": "1a",
-      "nodes": [6],
-      "failure": "NONE"
-    },
-    {
-      "bucket": "1b",
-      "nodes": [6],
-      "failure": "NONE"
-    },
-    {
-      "bucket": "1c",
-      "nodes": [6],
-      "failure": "NONE"
-    },
-    {
-      "bucket": "1d",
-      "nodes": [6],
-      "failure": "NONE"
-    },
-    {
-      "bucket": "1e",
-      "nodes": [6],
-      "failure": "NONE"
-    },
-    {
-      "bucket": "1f",
-      "nodes": [6],
-      "failure": "NONE"
-    },
-    {
-      "bucket": "20",
-      "nodes": [6],
-      "failure": "NONE"
-    },
-    {
-      "bucket": "21",
-      "nodes": [6],
-      "failure": "NONE"
-    },
-    {
-      "bucket": "22",
-      "nodes": [6],
-      "failure": "NONE"
-    },
-    {
-      "bucket": "23",
-      "nodes": [6],
-      "failure": "NONE"
-    },
-    {
-      "bucket": "24",
-      "nodes": [6],
-      "failure": "NONE"
-    },
-    {
-      "bucket": "25",
-      "nodes": [6],
-      "failure": "NONE"
-    },
-    {
-      "bucket": "26",
-      "nodes": [6],
-      "failure": "NONE"
-    },
-    {
-      "bucket": "27",
-      "nodes": [6],
-      "failure": "NONE"
-    },
-    {
-      "bucket": "28",
-      "nodes": [6],
-      "failure": "NONE"
-    },
-    {
-      "bucket": "29",
-      "nodes": [6],
-      "failure": "NONE"
-    },
-    {
-      "bucket": "2a",
-      "nodes": [6],
-      "failure": "NONE"
-    },
-    {
-      "bucket": "2b",
-      "nodes": [6],
-      "failure": "NONE"
-    },
-    {
-      "bucket": "2c",
-      "nodes": [6],
-      "failure": "NONE"
-    },
-    {
-      "bucket": "2d",
-      "nodes": [6],
-      "failure": "NONE"
-    },
-    {
-      "bucket": "2e",
-      "nodes": [6],
-      "failure": "NONE"
-    },
-    {
-      "bucket": "2f",
-      "nodes": [6],
-      "failure": "NONE"
-    },
-    {
-      "bucket": "30",
-      "nodes": [6],
-      "failure": "NONE"
-    },
-    {
-      "bucket": "31",
-      "nodes": [6],
-      "failure": "NONE"
-    },
-    {
-      "bucket": "32",
-      "nodes": [6],
-      "failure": "NONE"
-    },
-    {
-      "bucket": "33",
-      "nodes": [6],
-      "failure": "NONE"
-    },
-    {
-      "bucket": "34",
-      "nodes": [6],
-      "failure": "NONE"
-    },
-    {
-      "bucket": "35",
-      "nodes": [6],
-      "failure": "NONE"
-    },
-    {
-      "bucket": "36",
-      "nodes": [6],
-      "failure": "NONE"
-    },
-    {
-      "bucket": "37",
-      "nodes": [6],
-      "failure": "NONE"
-    },
-    {
-      "bucket": "38",
-      "nodes": [6],
-      "failure": "NONE"
-    },
-    {
-      "bucket": "39",
-      "nodes": [6],
-      "failure": "NONE"
-    },
-    {
-      "bucket": "3a",
-      "nodes": [6],
-      "failure": "NONE"
-    },
-    {
-      "bucket": "3b",
-      "nodes": [6],
-      "failure": "NONE"
-    },
-    {
-      "bucket": "3c",
-      "nodes": [6],
-      "failure": "NONE"
-    },
-    {
-      "bucket": "3d",
-      "nodes": [6],
-      "failure": "NONE"
-    },
-    {
-      "bucket": "3e",
-      "nodes": [6],
-      "failure": "NONE"
-    },
-    {
-      "bucket": "3f",
-      "nodes": [6],
-      "failure": "NONE"
-    },
-    {
-      "bucket": "40",
-      "nodes": [6],
-      "failure": "NONE"
-    },
-    {
-      "bucket": "41",
-      "nodes": [6],
-      "failure": "NONE"
-    },
-    {
-      "bucket": "42",
-      "nodes": [6],
-      "failure": "NONE"
-    },
-    {
-      "bucket": "43",
-      "nodes": [6],
-      "failure": "NONE"
-    },
-    {
-      "bucket": "44",
-      "nodes": [6],
-      "failure": "NONE"
-    },
-    {
-      "bucket": "45",
-      "nodes": [6],
-      "failure": "NONE"
-    },
-    {
-      "bucket": "46",
-      "nodes": [6],
-      "failure": "NONE"
-    },
-    {
-      "bucket": "47",
-      "nodes": [6],
-      "failure": "NONE"
-    },
-    {
-      "bucket": "48",
-      "nodes": [6],
-      "failure": "NONE"
-    },
-    {
-      "bucket": "49",
-      "nodes": [6],
-      "failure": "NONE"
-    },
-    {
-      "bucket": "4a",
-      "nodes": [6],
-      "failure": "NONE"
-    },
-    {
-      "bucket": "4b",
-      "nodes": [6],
-      "failure": "NONE"
-    },
-    {
-      "bucket": "4c",
-      "nodes": [6],
-      "failure": "NONE"
-    },
-    {
-      "bucket": "4d",
-      "nodes": [6],
-      "failure": "NONE"
-    },
-    {
-      "bucket": "4e",
-      "nodes": [6],
-      "failure": "NONE"
-    },
-    {
-      "bucket": "4f",
-      "nodes": [6],
-      "failure": "NONE"
-    },
-    {
-      "bucket": "50",
-      "nodes": [6],
-      "failure": "NONE"
-    },
-    {
-      "bucket": "51",
-      "nodes": [6],
-      "failure": "NONE"
-    },
-    {
-      "bucket": "52",
-      "nodes": [6],
-      "failure": "NONE"
-    },
-    {
-      "bucket": "53",
-      "nodes": [6],
-      "failure": "NONE"
-    },
-    {
-      "bucket": "54",
-      "nodes": [6],
-      "failure": "NONE"
-    },
-    {
-      "bucket": "55",
-      "nodes": [6],
-      "failure": "NONE"
-    },
-    {
-      "bucket": "56",
-      "nodes": [6],
-      "failure": "NONE"
-    },
-    {
-      "bucket": "57",
-      "nodes": [6],
-      "failure": "NONE"
-    },
-    {
-      "bucket": "58",
-      "nodes": [6],
-      "failure": "NONE"
-    },
-    {
-      "bucket": "59",
-      "nodes": [6],
-      "failure": "NONE"
-    },
-    {
-      "bucket": "5a",
-      "nodes": [6],
-      "failure": "NONE"
-    },
-    {
-      "bucket": "5b",
-      "nodes": [6],
-      "failure": "NONE"
-    },
-    {
-      "bucket": "5c",
-      "nodes": [6],
-      "failure": "NONE"
-    },
-    {
-      "bucket": "5d",
-      "nodes": [6],
-      "failure": "NONE"
-    },
-    {
-      "bucket": "5e",
-      "nodes": [6],
-      "failure": "NONE"
-    },
-    {
-      "bucket": "5f",
-      "nodes": [6],
-      "failure": "NONE"
-    },
-    {
-      "bucket": "60",
-      "nodes": [6],
-      "failure": "NONE"
-    },
-    {
-      "bucket": "61",
-      "nodes": [6],
-      "failure": "NONE"
-    },
-    {
-      "bucket": "62",
-      "nodes": [6],
-      "failure": "NONE"
-    },
-    {
-      "bucket": "63",
-      "nodes": [6],
-      "failure": "NONE"
-    }
-  ]
+  "cluster-state" : "bits:0 distributor:10",
+  "distribution" : "redundancy 3\ninitial_redundancy 0\nensure_primary_persisted true\nready_copies 0\nactive_per_leaf_group false\ndistributor_auto_ownership_transfer_on_whole_group_down true\ngroup[0].index \"invalid\"\ngroup[0].name \"invalid\"\ngroup[0].capacity 1.0\ngroup[0].partitions \"*\"\ngroup[0].nodes[0].index 0\ngroup[0].nodes[0].retired false\ngroup[0].nodes[1].index 1\ngroup[0].nodes[1].retired false\ngroup[0].nodes[2].index 2\ngroup[0].nodes[2].retired false\ngroup[0].nodes[3].index 3\ngroup[0].nodes[3].retired false\ngroup[0].nodes[4].index 4\ngroup[0].nodes[4].retired false\ngroup[0].nodes[5].index 5\ngroup[0].nodes[5].retired false\ngroup[0].nodes[6].index 6\ngroup[0].nodes[6].retired false\ngroup[0].nodes[7].index 7\ngroup[0].nodes[7].retired false\ngroup[0].nodes[8].index 8\ngroup[0].nodes[8].retired false\ngroup[0].nodes[9].index 9\ngroup[0].nodes[9].retired false\ndisk_distribution MODULO_BID",
+  "node-type" : "distributor",
+  "redundancy" : 3,
+  "node-count" : 10,
+  "up-states" : "uim",
+  "result" : [ {
+    "nodes" : [ 6 ],
+    "bucket" : "0",
+    "failure" : "NONE"
+  }, {
+    "nodes" : [ 6 ],
+    "bucket" : "1",
+    "failure" : "NONE"
+  }, {
+    "nodes" : [ 6 ],
+    "bucket" : "2",
+    "failure" : "NONE"
+  }, {
+    "nodes" : [ 6 ],
+    "bucket" : "3",
+    "failure" : "NONE"
+  }, {
+    "nodes" : [ 6 ],
+    "bucket" : "4",
+    "failure" : "NONE"
+  }, {
+    "nodes" : [ 6 ],
+    "bucket" : "5",
+    "failure" : "NONE"
+  }, {
+    "nodes" : [ 6 ],
+    "bucket" : "6",
+    "failure" : "NONE"
+  }, {
+    "nodes" : [ 6 ],
+    "bucket" : "7",
+    "failure" : "NONE"
+  }, {
+    "nodes" : [ 6 ],
+    "bucket" : "8",
+    "failure" : "NONE"
+  }, {
+    "nodes" : [ 6 ],
+    "bucket" : "9",
+    "failure" : "NONE"
+  }, {
+    "nodes" : [ 6 ],
+    "bucket" : "a",
+    "failure" : "NONE"
+  }, {
+    "nodes" : [ 6 ],
+    "bucket" : "b",
+    "failure" : "NONE"
+  }, {
+    "nodes" : [ 6 ],
+    "bucket" : "c",
+    "failure" : "NONE"
+  }, {
+    "nodes" : [ 6 ],
+    "bucket" : "d",
+    "failure" : "NONE"
+  }, {
+    "nodes" : [ 6 ],
+    "bucket" : "e",
+    "failure" : "NONE"
+  }, {
+    "nodes" : [ 6 ],
+    "bucket" : "f",
+    "failure" : "NONE"
+  }, {
+    "nodes" : [ 6 ],
+    "bucket" : "10",
+    "failure" : "NONE"
+  }, {
+    "nodes" : [ 6 ],
+    "bucket" : "11",
+    "failure" : "NONE"
+  }, {
+    "nodes" : [ 6 ],
+    "bucket" : "12",
+    "failure" : "NONE"
+  }, {
+    "nodes" : [ 6 ],
+    "bucket" : "13",
+    "failure" : "NONE"
+  }, {
+    "nodes" : [ 6 ],
+    "bucket" : "14",
+    "failure" : "NONE"
+  }, {
+    "nodes" : [ 6 ],
+    "bucket" : "15",
+    "failure" : "NONE"
+  }, {
+    "nodes" : [ 6 ],
+    "bucket" : "16",
+    "failure" : "NONE"
+  }, {
+    "nodes" : [ 6 ],
+    "bucket" : "17",
+    "failure" : "NONE"
+  }, {
+    "nodes" : [ 6 ],
+    "bucket" : "18",
+    "failure" : "NONE"
+  }, {
+    "nodes" : [ 6 ],
+    "bucket" : "19",
+    "failure" : "NONE"
+  }, {
+    "nodes" : [ 6 ],
+    "bucket" : "1a",
+    "failure" : "NONE"
+  }, {
+    "nodes" : [ 6 ],
+    "bucket" : "1b",
+    "failure" : "NONE"
+  }, {
+    "nodes" : [ 6 ],
+    "bucket" : "1c",
+    "failure" : "NONE"
+  }, {
+    "nodes" : [ 6 ],
+    "bucket" : "1d",
+    "failure" : "NONE"
+  }, {
+    "nodes" : [ 6 ],
+    "bucket" : "1e",
+    "failure" : "NONE"
+  }, {
+    "nodes" : [ 6 ],
+    "bucket" : "1f",
+    "failure" : "NONE"
+  }, {
+    "nodes" : [ 6 ],
+    "bucket" : "20",
+    "failure" : "NONE"
+  }, {
+    "nodes" : [ 6 ],
+    "bucket" : "21",
+    "failure" : "NONE"
+  }, {
+    "nodes" : [ 6 ],
+    "bucket" : "22",
+    "failure" : "NONE"
+  }, {
+    "nodes" : [ 6 ],
+    "bucket" : "23",
+    "failure" : "NONE"
+  }, {
+    "nodes" : [ 6 ],
+    "bucket" : "24",
+    "failure" : "NONE"
+  }, {
+    "nodes" : [ 6 ],
+    "bucket" : "25",
+    "failure" : "NONE"
+  }, {
+    "nodes" : [ 6 ],
+    "bucket" : "26",
+    "failure" : "NONE"
+  }, {
+    "nodes" : [ 6 ],
+    "bucket" : "27",
+    "failure" : "NONE"
+  }, {
+    "nodes" : [ 6 ],
+    "bucket" : "28",
+    "failure" : "NONE"
+  }, {
+    "nodes" : [ 6 ],
+    "bucket" : "29",
+    "failure" : "NONE"
+  }, {
+    "nodes" : [ 6 ],
+    "bucket" : "2a",
+    "failure" : "NONE"
+  }, {
+    "nodes" : [ 6 ],
+    "bucket" : "2b",
+    "failure" : "NONE"
+  }, {
+    "nodes" : [ 6 ],
+    "bucket" : "2c",
+    "failure" : "NONE"
+  }, {
+    "nodes" : [ 6 ],
+    "bucket" : "2d",
+    "failure" : "NONE"
+  }, {
+    "nodes" : [ 6 ],
+    "bucket" : "2e",
+    "failure" : "NONE"
+  }, {
+    "nodes" : [ 6 ],
+    "bucket" : "2f",
+    "failure" : "NONE"
+  }, {
+    "nodes" : [ 6 ],
+    "bucket" : "30",
+    "failure" : "NONE"
+  }, {
+    "nodes" : [ 6 ],
+    "bucket" : "31",
+    "failure" : "NONE"
+  }, {
+    "nodes" : [ 6 ],
+    "bucket" : "32",
+    "failure" : "NONE"
+  }, {
+    "nodes" : [ 6 ],
+    "bucket" : "33",
+    "failure" : "NONE"
+  }, {
+    "nodes" : [ 6 ],
+    "bucket" : "34",
+    "failure" : "NONE"
+  }, {
+    "nodes" : [ 6 ],
+    "bucket" : "35",
+    "failure" : "NONE"
+  }, {
+    "nodes" : [ 6 ],
+    "bucket" : "36",
+    "failure" : "NONE"
+  }, {
+    "nodes" : [ 6 ],
+    "bucket" : "37",
+    "failure" : "NONE"
+  }, {
+    "nodes" : [ 6 ],
+    "bucket" : "38",
+    "failure" : "NONE"
+  }, {
+    "nodes" : [ 6 ],
+    "bucket" : "39",
+    "failure" : "NONE"
+  }, {
+    "nodes" : [ 6 ],
+    "bucket" : "3a",
+    "failure" : "NONE"
+  }, {
+    "nodes" : [ 6 ],
+    "bucket" : "3b",
+    "failure" : "NONE"
+  }, {
+    "nodes" : [ 6 ],
+    "bucket" : "3c",
+    "failure" : "NONE"
+  }, {
+    "nodes" : [ 6 ],
+    "bucket" : "3d",
+    "failure" : "NONE"
+  }, {
+    "nodes" : [ 6 ],
+    "bucket" : "3e",
+    "failure" : "NONE"
+  }, {
+    "nodes" : [ 6 ],
+    "bucket" : "3f",
+    "failure" : "NONE"
+  }, {
+    "nodes" : [ 6 ],
+    "bucket" : "40",
+    "failure" : "NONE"
+  }, {
+    "nodes" : [ 6 ],
+    "bucket" : "41",
+    "failure" : "NONE"
+  }, {
+    "nodes" : [ 6 ],
+    "bucket" : "42",
+    "failure" : "NONE"
+  }, {
+    "nodes" : [ 6 ],
+    "bucket" : "43",
+    "failure" : "NONE"
+  }, {
+    "nodes" : [ 6 ],
+    "bucket" : "44",
+    "failure" : "NONE"
+  }, {
+    "nodes" : [ 6 ],
+    "bucket" : "45",
+    "failure" : "NONE"
+  }, {
+    "nodes" : [ 6 ],
+    "bucket" : "46",
+    "failure" : "NONE"
+  }, {
+    "nodes" : [ 6 ],
+    "bucket" : "47",
+    "failure" : "NONE"
+  }, {
+    "nodes" : [ 6 ],
+    "bucket" : "48",
+    "failure" : "NONE"
+  }, {
+    "nodes" : [ 6 ],
+    "bucket" : "49",
+    "failure" : "NONE"
+  }, {
+    "nodes" : [ 6 ],
+    "bucket" : "4a",
+    "failure" : "NONE"
+  }, {
+    "nodes" : [ 6 ],
+    "bucket" : "4b",
+    "failure" : "NONE"
+  }, {
+    "nodes" : [ 6 ],
+    "bucket" : "4c",
+    "failure" : "NONE"
+  }, {
+    "nodes" : [ 6 ],
+    "bucket" : "4d",
+    "failure" : "NONE"
+  }, {
+    "nodes" : [ 6 ],
+    "bucket" : "4e",
+    "failure" : "NONE"
+  }, {
+    "nodes" : [ 6 ],
+    "bucket" : "4f",
+    "failure" : "NONE"
+  }, {
+    "nodes" : [ 6 ],
+    "bucket" : "50",
+    "failure" : "NONE"
+  }, {
+    "nodes" : [ 6 ],
+    "bucket" : "51",
+    "failure" : "NONE"
+  }, {
+    "nodes" : [ 6 ],
+    "bucket" : "52",
+    "failure" : "NONE"
+  }, {
+    "nodes" : [ 6 ],
+    "bucket" : "53",
+    "failure" : "NONE"
+  }, {
+    "nodes" : [ 6 ],
+    "bucket" : "54",
+    "failure" : "NONE"
+  }, {
+    "nodes" : [ 6 ],
+    "bucket" : "55",
+    "failure" : "NONE"
+  }, {
+    "nodes" : [ 6 ],
+    "bucket" : "56",
+    "failure" : "NONE"
+  }, {
+    "nodes" : [ 6 ],
+    "bucket" : "57",
+    "failure" : "NONE"
+  }, {
+    "nodes" : [ 6 ],
+    "bucket" : "58",
+    "failure" : "NONE"
+  }, {
+    "nodes" : [ 6 ],
+    "bucket" : "59",
+    "failure" : "NONE"
+  }, {
+    "nodes" : [ 6 ],
+    "bucket" : "5a",
+    "failure" : "NONE"
+  }, {
+    "nodes" : [ 6 ],
+    "bucket" : "5b",
+    "failure" : "NONE"
+  }, {
+    "nodes" : [ 6 ],
+    "bucket" : "5c",
+    "failure" : "NONE"
+  }, {
+    "nodes" : [ 6 ],
+    "bucket" : "5d",
+    "failure" : "NONE"
+  }, {
+    "nodes" : [ 6 ],
+    "bucket" : "5e",
+    "failure" : "NONE"
+  }, {
+    "nodes" : [ 6 ],
+    "bucket" : "5f",
+    "failure" : "NONE"
+  }, {
+    "nodes" : [ 6 ],
+    "bucket" : "60",
+    "failure" : "NONE"
+  }, {
+    "nodes" : [ 6 ],
+    "bucket" : "61",
+    "failure" : "NONE"
+  }, {
+    "nodes" : [ 6 ],
+    "bucket" : "62",
+    "failure" : "NONE"
+  }, {
+    "nodes" : [ 6 ],
+    "bucket" : "63",
+    "failure" : "NONE"
+  } ]
 }

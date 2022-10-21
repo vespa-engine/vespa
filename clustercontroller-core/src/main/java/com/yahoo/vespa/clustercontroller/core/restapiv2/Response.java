@@ -74,7 +74,7 @@ public class Response {
     {
         protected final Map<String, String> attributes = new LinkedHashMap<>();
         protected final Map<String, SubUnitList> subUnits = new LinkedHashMap<>();
-        protected final Map<String, Number> metrics = new LinkedHashMap<>();
+        protected final Map<String, Long> metrics = new LinkedHashMap<>();
         protected final Map<String, UnitState> stateMap = new LinkedHashMap<>();
         protected DistributionState publishedState = null;
 
@@ -92,7 +92,7 @@ public class Response {
         }
 
         @Override
-        public Map<String, Number> getMetricMap() { return metrics; }
+        public Map<String, Long> getMetricMap() { return metrics; }
         @Override
         public Map<String, UnitState> getStatePerType() { return stateMap; }
         @Override
@@ -120,7 +120,7 @@ public class Response {
             list.addUnit(unit, response);
             return this;
         }
-        public EmptyResponse<T> addMetric(String name, Number value) {
+        public EmptyResponse<T> addMetric(String name, Long value) {
             metrics.put(name, value);
             return this;
         }

@@ -1,510 +1,409 @@
 {
-  "cluster-state": "bits:3 distributor:10",
-  "distribution": "redundancy 3\ninitial_redundancy 0\nensure_primary_persisted true\nready_copies 0\nactive_per_leaf_group false\ndistributor_auto_ownership_transfer_on_whole_group_down true\ngroup[0].index \"invalid\"\ngroup[0].name \"invalid\"\ngroup[0].capacity 1.0\ngroup[0].partitions \"*\"\ngroup[0].nodes[0].index 0\ngroup[0].nodes[0].retired false\ngroup[0].nodes[1].index 1\ngroup[0].nodes[1].retired false\ngroup[0].nodes[2].index 2\ngroup[0].nodes[2].retired false\ngroup[0].nodes[3].index 3\ngroup[0].nodes[3].retired false\ngroup[0].nodes[4].index 4\ngroup[0].nodes[4].retired false\ngroup[0].nodes[5].index 5\ngroup[0].nodes[5].retired false\ngroup[0].nodes[6].index 6\ngroup[0].nodes[6].retired false\ngroup[0].nodes[7].index 7\ngroup[0].nodes[7].retired false\ngroup[0].nodes[8].index 8\ngroup[0].nodes[8].retired false\ngroup[0].nodes[9].index 9\ngroup[0].nodes[9].retired false\ndisk_distribution MODULO_BID",
-  "node-type": "distributor",
-  "redundancy": 3,
-  "node-count": 10,
-  "up-states": "uim",
-  "result": [
-    {
-      "bucket": "c00000000000000",
-      "nodes": [6],
-      "failure": "NONE"
-    },
-    {
-      "bucket": "c00000000000001",
-      "nodes": [3],
-      "failure": "NONE"
-    },
-    {
-      "bucket": "c00000000000002",
-      "nodes": [4],
-      "failure": "NONE"
-    },
-    {
-      "bucket": "c00000000000003",
-      "nodes": [8],
-      "failure": "NONE"
-    },
-    {
-      "bucket": "c00000000000004",
-      "nodes": [8],
-      "failure": "NONE"
-    },
-    {
-      "bucket": "c00000000000005",
-      "nodes": [8],
-      "failure": "NONE"
-    },
-    {
-      "bucket": "c00000000000006",
-      "nodes": [8],
-      "failure": "NONE"
-    },
-    {
-      "bucket": "c00000000000007",
-      "nodes": [8],
-      "failure": "NONE"
-    },
-    {
-      "bucket": "c00000000000000",
-      "nodes": [6],
-      "failure": "NONE"
-    },
-    {
-      "bucket": "c00000000000001",
-      "nodes": [3],
-      "failure": "NONE"
-    },
-    {
-      "bucket": "c00000000000002",
-      "nodes": [4],
-      "failure": "NONE"
-    },
-    {
-      "bucket": "c00000000000003",
-      "nodes": [8],
-      "failure": "NONE"
-    },
-    {
-      "bucket": "c00000000000004",
-      "nodes": [8],
-      "failure": "NONE"
-    },
-    {
-      "bucket": "c00000000000005",
-      "nodes": [8],
-      "failure": "NONE"
-    },
-    {
-      "bucket": "c00000000000006",
-      "nodes": [8],
-      "failure": "NONE"
-    },
-    {
-      "bucket": "c00000000000007",
-      "nodes": [8],
-      "failure": "NONE"
-    },
-    {
-      "bucket": "c00000000000000",
-      "nodes": [6],
-      "failure": "NONE"
-    },
-    {
-      "bucket": "c00000000000001",
-      "nodes": [3],
-      "failure": "NONE"
-    },
-    {
-      "bucket": "c00000000000002",
-      "nodes": [4],
-      "failure": "NONE"
-    },
-    {
-      "bucket": "c00000000000003",
-      "nodes": [8],
-      "failure": "NONE"
-    },
-    {
-      "bucket": "c00000000000004",
-      "nodes": [8],
-      "failure": "NONE"
-    },
-    {
-      "bucket": "c00000000000005",
-      "nodes": [8],
-      "failure": "NONE"
-    },
-    {
-      "bucket": "c00000000000006",
-      "nodes": [8],
-      "failure": "NONE"
-    },
-    {
-      "bucket": "c00000000000007",
-      "nodes": [8],
-      "failure": "NONE"
-    },
-    {
-      "bucket": "c00000000000000",
-      "nodes": [6],
-      "failure": "NONE"
-    },
-    {
-      "bucket": "c00000000000001",
-      "nodes": [3],
-      "failure": "NONE"
-    },
-    {
-      "bucket": "c00000000000002",
-      "nodes": [4],
-      "failure": "NONE"
-    },
-    {
-      "bucket": "c00000000000003",
-      "nodes": [8],
-      "failure": "NONE"
-    },
-    {
-      "bucket": "c00000000000004",
-      "nodes": [8],
-      "failure": "NONE"
-    },
-    {
-      "bucket": "c00000000000005",
-      "nodes": [8],
-      "failure": "NONE"
-    },
-    {
-      "bucket": "c00000000000006",
-      "nodes": [8],
-      "failure": "NONE"
-    },
-    {
-      "bucket": "c00000000000007",
-      "nodes": [8],
-      "failure": "NONE"
-    },
-    {
-      "bucket": "c00000000000000",
-      "nodes": [6],
-      "failure": "NONE"
-    },
-    {
-      "bucket": "c00000000000001",
-      "nodes": [3],
-      "failure": "NONE"
-    },
-    {
-      "bucket": "c00000000000002",
-      "nodes": [4],
-      "failure": "NONE"
-    },
-    {
-      "bucket": "c00000000000003",
-      "nodes": [8],
-      "failure": "NONE"
-    },
-    {
-      "bucket": "c00000000000004",
-      "nodes": [8],
-      "failure": "NONE"
-    },
-    {
-      "bucket": "c00000000000005",
-      "nodes": [8],
-      "failure": "NONE"
-    },
-    {
-      "bucket": "c00000000000006",
-      "nodes": [8],
-      "failure": "NONE"
-    },
-    {
-      "bucket": "c00000000000007",
-      "nodes": [8],
-      "failure": "NONE"
-    },
-    {
-      "bucket": "c00000000000000",
-      "nodes": [6],
-      "failure": "NONE"
-    },
-    {
-      "bucket": "c00000000000001",
-      "nodes": [3],
-      "failure": "NONE"
-    },
-    {
-      "bucket": "c00000000000002",
-      "nodes": [4],
-      "failure": "NONE"
-    },
-    {
-      "bucket": "c00000000000003",
-      "nodes": [8],
-      "failure": "NONE"
-    },
-    {
-      "bucket": "c00000000000004",
-      "nodes": [8],
-      "failure": "NONE"
-    },
-    {
-      "bucket": "c00000000000005",
-      "nodes": [8],
-      "failure": "NONE"
-    },
-    {
-      "bucket": "c00000000000006",
-      "nodes": [8],
-      "failure": "NONE"
-    },
-    {
-      "bucket": "c00000000000007",
-      "nodes": [8],
-      "failure": "NONE"
-    },
-    {
-      "bucket": "c00000000000000",
-      "nodes": [6],
-      "failure": "NONE"
-    },
-    {
-      "bucket": "c00000000000001",
-      "nodes": [3],
-      "failure": "NONE"
-    },
-    {
-      "bucket": "c00000000000002",
-      "nodes": [4],
-      "failure": "NONE"
-    },
-    {
-      "bucket": "c00000000000003",
-      "nodes": [8],
-      "failure": "NONE"
-    },
-    {
-      "bucket": "c00000000000004",
-      "nodes": [8],
-      "failure": "NONE"
-    },
-    {
-      "bucket": "c00000000000005",
-      "nodes": [8],
-      "failure": "NONE"
-    },
-    {
-      "bucket": "c00000000000006",
-      "nodes": [8],
-      "failure": "NONE"
-    },
-    {
-      "bucket": "c00000000000007",
-      "nodes": [8],
-      "failure": "NONE"
-    },
-    {
-      "bucket": "c00000000000000",
-      "nodes": [6],
-      "failure": "NONE"
-    },
-    {
-      "bucket": "c00000000000001",
-      "nodes": [3],
-      "failure": "NONE"
-    },
-    {
-      "bucket": "c00000000000002",
-      "nodes": [4],
-      "failure": "NONE"
-    },
-    {
-      "bucket": "c00000000000003",
-      "nodes": [8],
-      "failure": "NONE"
-    },
-    {
-      "bucket": "c00000000000004",
-      "nodes": [8],
-      "failure": "NONE"
-    },
-    {
-      "bucket": "c00000000000005",
-      "nodes": [8],
-      "failure": "NONE"
-    },
-    {
-      "bucket": "c00000000000006",
-      "nodes": [8],
-      "failure": "NONE"
-    },
-    {
-      "bucket": "c00000000000007",
-      "nodes": [8],
-      "failure": "NONE"
-    },
-    {
-      "bucket": "c00000000000000",
-      "nodes": [6],
-      "failure": "NONE"
-    },
-    {
-      "bucket": "c00000000000001",
-      "nodes": [3],
-      "failure": "NONE"
-    },
-    {
-      "bucket": "c00000000000002",
-      "nodes": [4],
-      "failure": "NONE"
-    },
-    {
-      "bucket": "c00000000000003",
-      "nodes": [8],
-      "failure": "NONE"
-    },
-    {
-      "bucket": "c00000000000004",
-      "nodes": [8],
-      "failure": "NONE"
-    },
-    {
-      "bucket": "c00000000000005",
-      "nodes": [8],
-      "failure": "NONE"
-    },
-    {
-      "bucket": "c00000000000006",
-      "nodes": [8],
-      "failure": "NONE"
-    },
-    {
-      "bucket": "c00000000000007",
-      "nodes": [8],
-      "failure": "NONE"
-    },
-    {
-      "bucket": "c00000000000000",
-      "nodes": [6],
-      "failure": "NONE"
-    },
-    {
-      "bucket": "c00000000000001",
-      "nodes": [3],
-      "failure": "NONE"
-    },
-    {
-      "bucket": "c00000000000002",
-      "nodes": [4],
-      "failure": "NONE"
-    },
-    {
-      "bucket": "c00000000000003",
-      "nodes": [8],
-      "failure": "NONE"
-    },
-    {
-      "bucket": "c00000000000004",
-      "nodes": [8],
-      "failure": "NONE"
-    },
-    {
-      "bucket": "c00000000000005",
-      "nodes": [8],
-      "failure": "NONE"
-    },
-    {
-      "bucket": "c00000000000006",
-      "nodes": [8],
-      "failure": "NONE"
-    },
-    {
-      "bucket": "c00000000000007",
-      "nodes": [8],
-      "failure": "NONE"
-    },
-    {
-      "bucket": "c00000000000000",
-      "nodes": [6],
-      "failure": "NONE"
-    },
-    {
-      "bucket": "c00000000000001",
-      "nodes": [3],
-      "failure": "NONE"
-    },
-    {
-      "bucket": "c00000000000002",
-      "nodes": [4],
-      "failure": "NONE"
-    },
-    {
-      "bucket": "c00000000000003",
-      "nodes": [8],
-      "failure": "NONE"
-    },
-    {
-      "bucket": "c00000000000004",
-      "nodes": [8],
-      "failure": "NONE"
-    },
-    {
-      "bucket": "c00000000000005",
-      "nodes": [8],
-      "failure": "NONE"
-    },
-    {
-      "bucket": "c00000000000006",
-      "nodes": [8],
-      "failure": "NONE"
-    },
-    {
-      "bucket": "c00000000000007",
-      "nodes": [8],
-      "failure": "NONE"
-    },
-    {
-      "bucket": "c00000000000000",
-      "nodes": [6],
-      "failure": "NONE"
-    },
-    {
-      "bucket": "c00000000000001",
-      "nodes": [3],
-      "failure": "NONE"
-    },
-    {
-      "bucket": "c00000000000002",
-      "nodes": [4],
-      "failure": "NONE"
-    },
-    {
-      "bucket": "c00000000000003",
-      "nodes": [8],
-      "failure": "NONE"
-    },
-    {
-      "bucket": "c00000000000004",
-      "nodes": [8],
-      "failure": "NONE"
-    },
-    {
-      "bucket": "c00000000000005",
-      "nodes": [8],
-      "failure": "NONE"
-    },
-    {
-      "bucket": "c00000000000006",
-      "nodes": [8],
-      "failure": "NONE"
-    },
-    {
-      "bucket": "c00000000000007",
-      "nodes": [8],
-      "failure": "NONE"
-    },
-    {
-      "bucket": "c00000000000000",
-      "nodes": [6],
-      "failure": "NONE"
-    },
-    {
-      "bucket": "c00000000000001",
-      "nodes": [3],
-      "failure": "NONE"
-    },
-    {
-      "bucket": "c00000000000002",
-      "nodes": [4],
-      "failure": "NONE"
-    },
-    {
-      "bucket": "c00000000000003",
-      "nodes": [8],
-      "failure": "NONE"
-    }
-  ]
+  "cluster-state" : "bits:3 distributor:10",
+  "distribution" : "redundancy 3\ninitial_redundancy 0\nensure_primary_persisted true\nready_copies 0\nactive_per_leaf_group false\ndistributor_auto_ownership_transfer_on_whole_group_down true\ngroup[0].index \"invalid\"\ngroup[0].name \"invalid\"\ngroup[0].capacity 1.0\ngroup[0].partitions \"*\"\ngroup[0].nodes[0].index 0\ngroup[0].nodes[0].retired false\ngroup[0].nodes[1].index 1\ngroup[0].nodes[1].retired false\ngroup[0].nodes[2].index 2\ngroup[0].nodes[2].retired false\ngroup[0].nodes[3].index 3\ngroup[0].nodes[3].retired false\ngroup[0].nodes[4].index 4\ngroup[0].nodes[4].retired false\ngroup[0].nodes[5].index 5\ngroup[0].nodes[5].retired false\ngroup[0].nodes[6].index 6\ngroup[0].nodes[6].retired false\ngroup[0].nodes[7].index 7\ngroup[0].nodes[7].retired false\ngroup[0].nodes[8].index 8\ngroup[0].nodes[8].retired false\ngroup[0].nodes[9].index 9\ngroup[0].nodes[9].retired false\ndisk_distribution MODULO_BID",
+  "node-type" : "distributor",
+  "redundancy" : 3,
+  "node-count" : 10,
+  "up-states" : "uim",
+  "result" : [ {
+    "nodes" : [ 6 ],
+    "bucket" : "c00000000000000",
+    "failure" : "NONE"
+  }, {
+    "nodes" : [ 3 ],
+    "bucket" : "c00000000000001",
+    "failure" : "NONE"
+  }, {
+    "nodes" : [ 4 ],
+    "bucket" : "c00000000000002",
+    "failure" : "NONE"
+  }, {
+    "nodes" : [ 8 ],
+    "bucket" : "c00000000000003",
+    "failure" : "NONE"
+  }, {
+    "nodes" : [ 8 ],
+    "bucket" : "c00000000000004",
+    "failure" : "NONE"
+  }, {
+    "nodes" : [ 8 ],
+    "bucket" : "c00000000000005",
+    "failure" : "NONE"
+  }, {
+    "nodes" : [ 8 ],
+    "bucket" : "c00000000000006",
+    "failure" : "NONE"
+  }, {
+    "nodes" : [ 8 ],
+    "bucket" : "c00000000000007",
+    "failure" : "NONE"
+  }, {
+    "nodes" : [ 6 ],
+    "bucket" : "c00000000000000",
+    "failure" : "NONE"
+  }, {
+    "nodes" : [ 3 ],
+    "bucket" : "c00000000000001",
+    "failure" : "NONE"
+  }, {
+    "nodes" : [ 4 ],
+    "bucket" : "c00000000000002",
+    "failure" : "NONE"
+  }, {
+    "nodes" : [ 8 ],
+    "bucket" : "c00000000000003",
+    "failure" : "NONE"
+  }, {
+    "nodes" : [ 8 ],
+    "bucket" : "c00000000000004",
+    "failure" : "NONE"
+  }, {
+    "nodes" : [ 8 ],
+    "bucket" : "c00000000000005",
+    "failure" : "NONE"
+  }, {
+    "nodes" : [ 8 ],
+    "bucket" : "c00000000000006",
+    "failure" : "NONE"
+  }, {
+    "nodes" : [ 8 ],
+    "bucket" : "c00000000000007",
+    "failure" : "NONE"
+  }, {
+    "nodes" : [ 6 ],
+    "bucket" : "c00000000000000",
+    "failure" : "NONE"
+  }, {
+    "nodes" : [ 3 ],
+    "bucket" : "c00000000000001",
+    "failure" : "NONE"
+  }, {
+    "nodes" : [ 4 ],
+    "bucket" : "c00000000000002",
+    "failure" : "NONE"
+  }, {
+    "nodes" : [ 8 ],
+    "bucket" : "c00000000000003",
+    "failure" : "NONE"
+  }, {
+    "nodes" : [ 8 ],
+    "bucket" : "c00000000000004",
+    "failure" : "NONE"
+  }, {
+    "nodes" : [ 8 ],
+    "bucket" : "c00000000000005",
+    "failure" : "NONE"
+  }, {
+    "nodes" : [ 8 ],
+    "bucket" : "c00000000000006",
+    "failure" : "NONE"
+  }, {
+    "nodes" : [ 8 ],
+    "bucket" : "c00000000000007",
+    "failure" : "NONE"
+  }, {
+    "nodes" : [ 6 ],
+    "bucket" : "c00000000000000",
+    "failure" : "NONE"
+  }, {
+    "nodes" : [ 3 ],
+    "bucket" : "c00000000000001",
+    "failure" : "NONE"
+  }, {
+    "nodes" : [ 4 ],
+    "bucket" : "c00000000000002",
+    "failure" : "NONE"
+  }, {
+    "nodes" : [ 8 ],
+    "bucket" : "c00000000000003",
+    "failure" : "NONE"
+  }, {
+    "nodes" : [ 8 ],
+    "bucket" : "c00000000000004",
+    "failure" : "NONE"
+  }, {
+    "nodes" : [ 8 ],
+    "bucket" : "c00000000000005",
+    "failure" : "NONE"
+  }, {
+    "nodes" : [ 8 ],
+    "bucket" : "c00000000000006",
+    "failure" : "NONE"
+  }, {
+    "nodes" : [ 8 ],
+    "bucket" : "c00000000000007",
+    "failure" : "NONE"
+  }, {
+    "nodes" : [ 6 ],
+    "bucket" : "c00000000000000",
+    "failure" : "NONE"
+  }, {
+    "nodes" : [ 3 ],
+    "bucket" : "c00000000000001",
+    "failure" : "NONE"
+  }, {
+    "nodes" : [ 4 ],
+    "bucket" : "c00000000000002",
+    "failure" : "NONE"
+  }, {
+    "nodes" : [ 8 ],
+    "bucket" : "c00000000000003",
+    "failure" : "NONE"
+  }, {
+    "nodes" : [ 8 ],
+    "bucket" : "c00000000000004",
+    "failure" : "NONE"
+  }, {
+    "nodes" : [ 8 ],
+    "bucket" : "c00000000000005",
+    "failure" : "NONE"
+  }, {
+    "nodes" : [ 8 ],
+    "bucket" : "c00000000000006",
+    "failure" : "NONE"
+  }, {
+    "nodes" : [ 8 ],
+    "bucket" : "c00000000000007",
+    "failure" : "NONE"
+  }, {
+    "nodes" : [ 6 ],
+    "bucket" : "c00000000000000",
+    "failure" : "NONE"
+  }, {
+    "nodes" : [ 3 ],
+    "bucket" : "c00000000000001",
+    "failure" : "NONE"
+  }, {
+    "nodes" : [ 4 ],
+    "bucket" : "c00000000000002",
+    "failure" : "NONE"
+  }, {
+    "nodes" : [ 8 ],
+    "bucket" : "c00000000000003",
+    "failure" : "NONE"
+  }, {
+    "nodes" : [ 8 ],
+    "bucket" : "c00000000000004",
+    "failure" : "NONE"
+  }, {
+    "nodes" : [ 8 ],
+    "bucket" : "c00000000000005",
+    "failure" : "NONE"
+  }, {
+    "nodes" : [ 8 ],
+    "bucket" : "c00000000000006",
+    "failure" : "NONE"
+  }, {
+    "nodes" : [ 8 ],
+    "bucket" : "c00000000000007",
+    "failure" : "NONE"
+  }, {
+    "nodes" : [ 6 ],
+    "bucket" : "c00000000000000",
+    "failure" : "NONE"
+  }, {
+    "nodes" : [ 3 ],
+    "bucket" : "c00000000000001",
+    "failure" : "NONE"
+  }, {
+    "nodes" : [ 4 ],
+    "bucket" : "c00000000000002",
+    "failure" : "NONE"
+  }, {
+    "nodes" : [ 8 ],
+    "bucket" : "c00000000000003",
+    "failure" : "NONE"
+  }, {
+    "nodes" : [ 8 ],
+    "bucket" : "c00000000000004",
+    "failure" : "NONE"
+  }, {
+    "nodes" : [ 8 ],
+    "bucket" : "c00000000000005",
+    "failure" : "NONE"
+  }, {
+    "nodes" : [ 8 ],
+    "bucket" : "c00000000000006",
+    "failure" : "NONE"
+  }, {
+    "nodes" : [ 8 ],
+    "bucket" : "c00000000000007",
+    "failure" : "NONE"
+  }, {
+    "nodes" : [ 6 ],
+    "bucket" : "c00000000000000",
+    "failure" : "NONE"
+  }, {
+    "nodes" : [ 3 ],
+    "bucket" : "c00000000000001",
+    "failure" : "NONE"
+  }, {
+    "nodes" : [ 4 ],
+    "bucket" : "c00000000000002",
+    "failure" : "NONE"
+  }, {
+    "nodes" : [ 8 ],
+    "bucket" : "c00000000000003",
+    "failure" : "NONE"
+  }, {
+    "nodes" : [ 8 ],
+    "bucket" : "c00000000000004",
+    "failure" : "NONE"
+  }, {
+    "nodes" : [ 8 ],
+    "bucket" : "c00000000000005",
+    "failure" : "NONE"
+  }, {
+    "nodes" : [ 8 ],
+    "bucket" : "c00000000000006",
+    "failure" : "NONE"
+  }, {
+    "nodes" : [ 8 ],
+    "bucket" : "c00000000000007",
+    "failure" : "NONE"
+  }, {
+    "nodes" : [ 6 ],
+    "bucket" : "c00000000000000",
+    "failure" : "NONE"
+  }, {
+    "nodes" : [ 3 ],
+    "bucket" : "c00000000000001",
+    "failure" : "NONE"
+  }, {
+    "nodes" : [ 4 ],
+    "bucket" : "c00000000000002",
+    "failure" : "NONE"
+  }, {
+    "nodes" : [ 8 ],
+    "bucket" : "c00000000000003",
+    "failure" : "NONE"
+  }, {
+    "nodes" : [ 8 ],
+    "bucket" : "c00000000000004",
+    "failure" : "NONE"
+  }, {
+    "nodes" : [ 8 ],
+    "bucket" : "c00000000000005",
+    "failure" : "NONE"
+  }, {
+    "nodes" : [ 8 ],
+    "bucket" : "c00000000000006",
+    "failure" : "NONE"
+  }, {
+    "nodes" : [ 8 ],
+    "bucket" : "c00000000000007",
+    "failure" : "NONE"
+  }, {
+    "nodes" : [ 6 ],
+    "bucket" : "c00000000000000",
+    "failure" : "NONE"
+  }, {
+    "nodes" : [ 3 ],
+    "bucket" : "c00000000000001",
+    "failure" : "NONE"
+  }, {
+    "nodes" : [ 4 ],
+    "bucket" : "c00000000000002",
+    "failure" : "NONE"
+  }, {
+    "nodes" : [ 8 ],
+    "bucket" : "c00000000000003",
+    "failure" : "NONE"
+  }, {
+    "nodes" : [ 8 ],
+    "bucket" : "c00000000000004",
+    "failure" : "NONE"
+  }, {
+    "nodes" : [ 8 ],
+    "bucket" : "c00000000000005",
+    "failure" : "NONE"
+  }, {
+    "nodes" : [ 8 ],
+    "bucket" : "c00000000000006",
+    "failure" : "NONE"
+  }, {
+    "nodes" : [ 8 ],
+    "bucket" : "c00000000000007",
+    "failure" : "NONE"
+  }, {
+    "nodes" : [ 6 ],
+    "bucket" : "c00000000000000",
+    "failure" : "NONE"
+  }, {
+    "nodes" : [ 3 ],
+    "bucket" : "c00000000000001",
+    "failure" : "NONE"
+  }, {
+    "nodes" : [ 4 ],
+    "bucket" : "c00000000000002",
+    "failure" : "NONE"
+  }, {
+    "nodes" : [ 8 ],
+    "bucket" : "c00000000000003",
+    "failure" : "NONE"
+  }, {
+    "nodes" : [ 8 ],
+    "bucket" : "c00000000000004",
+    "failure" : "NONE"
+  }, {
+    "nodes" : [ 8 ],
+    "bucket" : "c00000000000005",
+    "failure" : "NONE"
+  }, {
+    "nodes" : [ 8 ],
+    "bucket" : "c00000000000006",
+    "failure" : "NONE"
+  }, {
+    "nodes" : [ 8 ],
+    "bucket" : "c00000000000007",
+    "failure" : "NONE"
+  }, {
+    "nodes" : [ 6 ],
+    "bucket" : "c00000000000000",
+    "failure" : "NONE"
+  }, {
+    "nodes" : [ 3 ],
+    "bucket" : "c00000000000001",
+    "failure" : "NONE"
+  }, {
+    "nodes" : [ 4 ],
+    "bucket" : "c00000000000002",
+    "failure" : "NONE"
+  }, {
+    "nodes" : [ 8 ],
+    "bucket" : "c00000000000003",
+    "failure" : "NONE"
+  }, {
+    "nodes" : [ 8 ],
+    "bucket" : "c00000000000004",
+    "failure" : "NONE"
+  }, {
+    "nodes" : [ 8 ],
+    "bucket" : "c00000000000005",
+    "failure" : "NONE"
+  }, {
+    "nodes" : [ 8 ],
+    "bucket" : "c00000000000006",
+    "failure" : "NONE"
+  }, {
+    "nodes" : [ 8 ],
+    "bucket" : "c00000000000007",
+    "failure" : "NONE"
+  }, {
+    "nodes" : [ 6 ],
+    "bucket" : "c00000000000000",
+    "failure" : "NONE"
+  }, {
+    "nodes" : [ 3 ],
+    "bucket" : "c00000000000001",
+    "failure" : "NONE"
+  }, {
+    "nodes" : [ 4 ],
+    "bucket" : "c00000000000002",
+    "failure" : "NONE"
+  }, {
+    "nodes" : [ 8 ],
+    "bucket" : "c00000000000003",
+    "failure" : "NONE"
+  } ]
 }
