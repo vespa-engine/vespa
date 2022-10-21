@@ -89,7 +89,7 @@ public final class ApplicationContainerCluster extends ContainerCluster<Applicat
 
     private MbusParams mbusParams;
     private boolean messageBusEnabled = true;
-    private int zookeeperSessionTimeoutSeconds = -1;
+    private int zookeeperSessionTimeoutSeconds = 12;
     private final int transport_events_before_wakeup;
     private final int transport_connections_per_target;
     private final int heapSizePercentageOfTotalNodeMemory;
