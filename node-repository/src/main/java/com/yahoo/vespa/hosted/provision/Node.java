@@ -468,6 +468,9 @@ public final class Node implements Nodelike {
 
     /** Returns a copy of this node with the current reboot generation set to the given number at the given instant */
     public Node withCurrentRebootGeneration(long generation, Instant instant) {
+        // Unlike other fields, an unchanged generation cannot be short-circuited because the client can report the same
+        // generation multiple times, e.g. if a reboot happens locally on the host without a change to wanted
+        // generation. The client expects the "rebooted" event to be updated on every call to this.
         if (generation < status.reboot().current())
             throw new IllegalArgumentException("Cannot set reboot generation to " + generation +
                     ": lower than current generation: " + status.reboot().current());
