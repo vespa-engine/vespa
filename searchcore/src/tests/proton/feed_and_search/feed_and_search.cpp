@@ -15,6 +15,7 @@
 #include <vespa/searchlib/index/dummyfileheadercontext.h>
 #include <vespa/searchlib/memoryindex/memory_index.h>
 #include <vespa/searchlib/test/doc_builder.h>
+#include <vespa/searchlib/test/schema_builder.h>
 #include <vespa/searchlib/test/string_field_builder.h>
 #include <vespa/searchlib/test/index/mock_field_length_inspector.h>
 #include <vespa/searchlib/query/base.h>
@@ -60,6 +61,7 @@ using search::queryeval::FieldSpecList;
 using search::queryeval::SearchIterator;
 using search::queryeval::Searchable;
 using search::test::DocBuilder;
+using search::test::SchemaBuilder;
 using search::test::StringFieldBuilder;
 using std::ostringstream;
 using vespalib::string;
@@ -112,12 +114,6 @@ const string word2 = "bar";
 const DocumentIdT doc_id1 = 1;
 const DocumentIdT doc_id2 = 2;
 
-Schema getSchema() {
-    Schema schema;
-    schema.addIndexField(Schema::IndexField(field_name, search::index::schema::DataType::STRING));
-    return schema;
-}
-
 Document::UP buildDocument(DocBuilder & doc_builder, int id,
                            const string &word) {
     ostringstream ost;
@@ -164,12 +160,12 @@ VESPA_THREAD_STACK_TAG(write_executor)
 // searches, dumps the index to disk, and performs the searches
 // again.
 void Test::requireThatMemoryIndexCanBeDumpedAndSearched() {
-    Schema schema = getSchema();
     vespalib::ThreadStackExecutor sharedExecutor(2, 0x10000);
     auto indexFieldInverter = vespalib::SequencedTaskExecutor::create(invert_executor, 2);
     auto indexFieldWriter = vespalib::SequencedTaskExecutor::create(write_executor, 2);
-    MemoryIndex memory_index(schema, MockFieldLengthInspector(), *indexFieldInverter, *indexFieldWriter);
     DocBuilder doc_builder([](auto& header) { header.addField(field_name, DataType::T_STRING); });
+    auto schema = SchemaBuilder(doc_builder).add_all_indexes().build();
+    MemoryIndex memory_index(schema, MockFieldLengthInspector(), *indexFieldInverter, *indexFieldWriter);
 
     Document::UP doc = buildDocument(doc_builder, doc_id1, word1);
     memory_index.insertDocument(doc_id1, *doc, {});

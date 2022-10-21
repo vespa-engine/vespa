@@ -24,7 +24,6 @@ using document::select::Visitor;
 using search::AttributeVector;
 using search::attribute::AttributeContent;
 using search::attribute::BasicType;
-using search::attribute::CollectionType;
 using search::attribute::IAttributeVector;
 using vespalib::IllegalArgumentException;
 using vespalib::IllegalStateException;

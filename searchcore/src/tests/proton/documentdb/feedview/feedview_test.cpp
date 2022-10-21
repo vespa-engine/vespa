@@ -27,6 +27,7 @@
 #include <vespa/searchcore/proton/test/transport_helper.h>
 #include <vespa/searchlib/attribute/attributefactory.h>
 #include <vespa/searchlib/test/doc_builder.h>
+#include <vespa/searchlib/test/schema_builder.h>
 #include <vespa/searchcommon/attribute/config.h>
 #include <vespa/vespalib/util/destructor_callbacks.h>
 #include <vespa/vespalib/stllike/asciistream.h>
@@ -35,6 +36,7 @@
 LOG_SETUP("feedview_test");
 
 using document::BucketId;
+using document::DataType;
 using document::Document;
 using document::DocumentId;
 using document::DocumentUpdate;
@@ -47,9 +49,8 @@ using vespalib::IDestructorCallback;
 using vespalib::Gate;
 using vespalib::GateCallback;
 using search::SearchableStats;
-using search::index::schema::CollectionType;
-using search::index::schema::DataType;
 using search::test::DocBuilder;
+using search::test::SchemaBuilder;
 using searchcorespi::IndexSearchable;
 using storage::spi::BucketChecksum;
 using storage::spi::BucketInfo;
@@ -436,26 +437,21 @@ MyTransport::~MyTransport() = default;
 
 struct SchemaContext
 {
-    Schema::SP      _schema;
-    DocBuilder _builder;
+    DocBuilder  _builder;
+    Schema::SP  _schema;
     SchemaContext();
     ~SchemaContext();
     std::shared_ptr<const document::DocumentTypeRepo> getRepo() const { return _builder.get_repo_sp(); }
 };
 
 SchemaContext::SchemaContext() :
-    _schema(std::make_shared<Schema>()),
-    _builder([](auto &header) { using document::DataType;
-                                   header.addField("i1", DataType::T_STRING)
+    _builder([](auto &header) { header.addField("i1", DataType::T_STRING)
                                        .addField("a1", DataType::T_STRING)
                                        .addField("a2", DataType::T_PREDICATE)
                                        .addTensorField("a3", "")
-                                       .addField("s1", DataType::T_STRING); })
+                                       .addField("s1", DataType::T_STRING); }),
+    _schema(std::make_shared<Schema>(SchemaBuilder(_builder).add_indexes({"i1"}).add_attributes({"a1", "a2", "a3"}).build()))
 {
-    _schema->addIndexField(Schema::IndexField("i1", DataType::STRING, CollectionType::SINGLE));
-    _schema->addAttributeField(Schema::AttributeField("a1", DataType::STRING, CollectionType::SINGLE));
-    _schema->addAttributeField(Schema::AttributeField("a2", DataType::BOOLEANTREE, CollectionType::SINGLE));
-    _schema->addAttributeField(Schema::AttributeField("a3", DataType::TENSOR, CollectionType::SINGLE));
 }
 
 SchemaContext::~SchemaContext() = default;

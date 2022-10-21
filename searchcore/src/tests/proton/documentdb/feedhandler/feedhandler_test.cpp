@@ -46,6 +46,7 @@
 LOG_SETUP("feedhandler_test");
 
 using document::BucketId;
+using document::DataType;
 using document::Document;
 using document::DocumentId;
 using document::DocumentType;
@@ -56,8 +57,6 @@ using document::TensorDataType;
 using document::TensorFieldValue;
 using vespalib::IDestructorCallback;
 using search::SerialNum;
-using search::index::schema::CollectionType;
-using search::index::schema::DataType;
 using vespalib::makeLambdaTask;
 using search::test::DocBuilder;
 using search::transactionlog::TransLogServer;
@@ -276,7 +275,6 @@ MyFeedView::~MyFeedView() = default;
 
 
 struct SchemaContext {
-    Schema::SP      schema;
     DocBuilder builder;
     SchemaContext();
     SchemaContext(bool has_i2);
@@ -285,7 +283,6 @@ struct SchemaContext {
         return DocTypeName(builder.get_document_type().getName());
     }
     std::shared_ptr<const document::DocumentTypeRepo> getRepo() const { return builder.get_repo_sp(); }
-    void addField(vespalib::stringref fieldName);
 };
 
 SchemaContext::SchemaContext()
@@ -294,29 +291,18 @@ SchemaContext::SchemaContext()
 }
 
 SchemaContext::SchemaContext(bool has_i2)
-    : schema(std::make_shared<Schema>()),
-      builder([has_i2](auto& header) {
+    : builder([has_i2](auto& header) {
                   header.addTensorField("tensor", "tensor(x{},y{})")
                       .addTensorField("tensor2", "tensor(x{},y{})")
-                      .addField("i1", document::DataType::T_STRING);
+                      .addField("i1", DataType::T_STRING);
                   if (has_i2) {
-                      header.addField("i2", document::DataType::T_STRING);
+                      header.addField("i2", DataType::T_STRING);
                   }
               })
 {
-    schema->addAttributeField(Schema::AttributeField("tensor", DataType::TENSOR, CollectionType::SINGLE, "tensor(x{},y{})"));
-    schema->addAttributeField(Schema::AttributeField("tensor2", DataType::TENSOR, CollectionType::SINGLE, "tensor(x{},y{})"));
-    addField("i1");
 }
-
 
 SchemaContext::~SchemaContext() = default;
-
-void
-SchemaContext::addField(vespalib::stringref fieldName)
-{
-    schema->addIndexField(Schema::IndexField(fieldName, DataType::STRING, CollectionType::SINGLE));
-}
 
 struct DocumentContext {
     Document::SP  doc;
@@ -332,7 +318,6 @@ struct TwoFieldsSchemaContext : public SchemaContext {
     TwoFieldsSchemaContext()
         : SchemaContext(true)
     {
-        addField("i2");
     }
 };
 

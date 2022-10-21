@@ -17,7 +17,7 @@ namespace search::docsummary::test {
 template <typename AttributeType, typename ValueType>
 void
 MockAttributeManager::build_attribute(const vespalib::string& name, BasicType type,
-                                      search::attribute::CollectionType col_type,
+                                      CollectionType col_type,
                                       const std::vector<std::vector<ValueType>>& values)
 {
     Config cfg(type, col_type);

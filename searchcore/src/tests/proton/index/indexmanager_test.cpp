@@ -15,6 +15,7 @@
 #include <vespa/searchlib/common/serialnum.h>
 #include <vespa/searchlib/index/dummyfileheadercontext.h>
 #include <vespa/searchlib/test/doc_builder.h>
+#include <vespa/searchlib/test/schema_builder.h>
 #include <vespa/searchlib/test/string_field_builder.h>
 #include <vespa/searchlib/memoryindex/compact_words_store.h>
 #include <vespa/searchlib/memoryindex/document_inverter.h>
@@ -51,12 +52,12 @@ using vespalib::datastore::EntryRef;
 using search::index::DummyFileHeaderContext;
 using search::index::FieldLengthInfo;
 using search::index::Schema;
-using search::index::schema::DataType;
 using search::index::test::MockFieldLengthInspector;
 using search::memoryindex::CompactWordsStore;
 using search::memoryindex::FieldIndexCollection;
 using search::queryeval::Source;
 using search::test::DocBuilder;
+using search::test::SchemaBuilder;
 using search::test::StringFieldBuilder;
 using std::set;
 using std::string;
@@ -85,10 +86,11 @@ const string index_dir = "test_data";
 const string field_name = "field";
 const uint32_t docid = 1;
 
+auto add_fields = [](auto& header) { header.addField(field_name, document::DataType::T_STRING); };
+
 Schema getSchema() {
-    Schema schema;
-    schema.addIndexField(Schema::IndexField(field_name, DataType::STRING));
-    return schema;
+    DocBuilder db(add_fields);
+    return SchemaBuilder(db).add_all_indexes().build();
 }
 
 void removeTestData() {
@@ -126,7 +128,7 @@ struct IndexManagerTest : public ::testing::Test {
           _service(1),
           _index_manager(),
           _schema(getSchema()),
-          _builder([](auto& header) { header.addField(field_name, document::DataType::T_STRING); })
+          _builder(add_fields)
     {
         removeTestData();
         std::filesystem::create_directory(std::filesystem::path(index_dir));
