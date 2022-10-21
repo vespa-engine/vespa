@@ -38,7 +38,7 @@ auto add_all_fields = [](auto& header)
 class SchemaBuilderTest : public testing::Test
 {
 protected:
-    std::unique_ptr<Schema> schema;
+    Schema schema;
 
     SchemaBuilderTest();
     ~SchemaBuilderTest();
@@ -58,9 +58,9 @@ SchemaBuilderTest::~SchemaBuilderTest() = default;
 void
 SchemaBuilderTest::assert_index(vespalib::stringref name, search::index::schema::DataType exp_dt, CollectionType exp_ct)
 {
-    auto field_id = schema->getIndexFieldId(name);
+    auto field_id = schema.getIndexFieldId(name);
     ASSERT_NE(Schema::UNKNOWN_FIELD_ID, field_id);
-    auto& field = schema->getIndexField(field_id);
+    auto& field = schema.getIndexField(field_id);
     EXPECT_EQ(exp_dt, field.getDataType());
     EXPECT_EQ(exp_ct, field.getCollectionType());
 }
@@ -69,7 +69,7 @@ void
 SchemaBuilderTest::assert_all_indexes()
 {
     using DataType = search::index::schema::DataType;
-    EXPECT_EQ(25u, schema->getNumIndexFields()); // string and url*, 1 + 3 * 8
+    EXPECT_EQ(25u, schema.getNumIndexFields()); // string and url*, 1 + 3 * 8
     assert_index("string", DataType::STRING, CollectionType::SINGLE);
     assert_index("url", DataType::STRING, CollectionType::SINGLE);
     assert_index("url.scheme", DataType::STRING, CollectionType::SINGLE);
@@ -80,9 +80,9 @@ SchemaBuilderTest::assert_all_indexes()
 void
 SchemaBuilderTest::assert_attribute(vespalib::stringref name, search::index::schema::DataType exp_dt, CollectionType exp_ct, const vespalib::string exp_tensor_spec)
 {
-    auto field_id = schema->getAttributeFieldId(name);
+    auto field_id = schema.getAttributeFieldId(name);
     ASSERT_NE(Schema::UNKNOWN_FIELD_ID, field_id);
-    auto& field = schema->getAttributeField(field_id);
+    auto& field = schema.getAttributeField(field_id);
     EXPECT_EQ(exp_dt, field.getDataType());
     EXPECT_EQ(exp_ct, field.getCollectionType());
     EXPECT_EQ(exp_tensor_spec, field.get_tensor_spec());
@@ -92,7 +92,7 @@ void
 SchemaBuilderTest::assert_all_attributes()
 {
     using DataType = search::index::schema::DataType;
-    EXPECT_EQ(11u, schema->getNumAttributeFields()); // all but url*, 14 - 3
+    EXPECT_EQ(11u, schema.getNumAttributeFields()); // all but url*, 14 - 3
     assert_attribute("int8", DataType::INT8, CollectionType::SINGLE);
     assert_attribute("int16", DataType::INT16, CollectionType::SINGLE);
     assert_attribute("int32", DataType::INT32, CollectionType::SINGLE);

@@ -27,7 +27,7 @@ public:
     SchemaBuilder& add_all_indexes(std::optional<bool> interleaved_features = std::nullopt);
     SchemaBuilder& add_attributes(std::vector<vespalib::stringref> field_names);
     SchemaBuilder& add_all_attributes();
-    std::unique_ptr<search::index::Schema> build();
+    search::index::Schema build();
 };
 
 }

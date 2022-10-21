@@ -119,7 +119,7 @@ struct DocumentInverterTest : public ::testing::Test {
 
     DocumentInverterTest()
         : _b(make_add_fields()),
-          _schema(*SchemaBuilder(_b).add_all_indexes().build()),
+          _schema(SchemaBuilder(_b).add_all_indexes().build()),
           _invertThreads(SequencedTaskExecutor::create(invert_executor, 1)),
           _pushThreads(SequencedTaskExecutor::create(push_executor, 1)),
           _word_store(),
