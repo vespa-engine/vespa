@@ -533,7 +533,7 @@ public final class VespaModel extends AbstractConfigProducerRoot implements Mode
      */
     private Pair<String, ClassLoader> getClassLoaderForProducer(ConfigDefinitionKey key, String shortClassName) {
         // TODO: Stop supporting fullClassNameWithComYahoo below, should not be used
-        String fullClassNameWithComYahoo = "com.yahoo" + key.getNamespace() + "." + shortClassName;
+        String fullClassNameWithComYahoo = "com.yahoo." + key.getNamespace() + "." + shortClassName;
         String fullClassNameWithoutPrefix = key.getNamespace() + "." + shortClassName;
         String producerSuffix = "$Producer";
 
