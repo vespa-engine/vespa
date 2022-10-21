@@ -43,6 +43,7 @@ vespa_define_module(
     src/tests/compress
     src/tests/compression
     src/tests/coro/detached
+    src/tests/coro/generator
     src/tests/coro/lazy
     src/tests/cpu_usage
     src/tests/crc
