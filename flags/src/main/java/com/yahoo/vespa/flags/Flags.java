@@ -299,14 +299,14 @@ public class Flags {
 
     public static final UnboundListFlag<String> FILE_DISTRIBUTION_ACCEPTED_COMPRESSION_TYPES = defineListFlag(
             "file-distribution-accepted-compression-types", List.of("gzip", "lz4"), String.class,
-            List.of("hmusum"), "2022-07-05", "2022-11-01",
+            List.of("hmusum"), "2022-07-05", "2022-12-01",
             "´List of accepted compression types used when asking for a file reference. Valid values: gzip, lz4",
             "Takes effect on restart of service",
             APPLICATION_ID);
 
     public static final UnboundListFlag<String> FILE_DISTRIBUTION_COMPRESSION_TYPES_TO_SERVE = defineListFlag(
             "file-distribution-compression-types-to-use", List.of("lz4", "gzip"), String.class,
-            List.of("hmusum"), "2022-07-05", "2022-11-01",
+            List.of("hmusum"), "2022-07-05", "2022-12-01",
             "List of compression types to use (in preferred order), matched with accepted compression types when serving file references. Valid values: gzip, lz4",
             "Takes effect on restart of service",
             APPLICATION_ID);
