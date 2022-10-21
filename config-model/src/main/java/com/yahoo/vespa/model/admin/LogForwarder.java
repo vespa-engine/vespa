@@ -66,7 +66,8 @@ public class LogForwarder extends AbstractService implements LogforwarderConfig.
     /**
      * @return The command used to start LogForwarder
      */
-    public String getStartupCommand() { return "exec $ROOT/bin/vespa-logforwarder-start -c " + getConfigId(); }
+    @Override
+    public Optional<String> getStartupCommand() { return Optional.of("exec $ROOT/bin/vespa-logforwarder-start -c " + getConfigId()); }
 
     @Override
     public void getConfig(LogforwarderConfig.Builder builder) {

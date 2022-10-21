@@ -240,12 +240,12 @@ public class SearchNode extends AbstractService implements
     }
 
     @Override
-    public String getStartupCommand() {
+    public Optional<String> getStartupCommand() {
         String startup = "exec $ROOT/sbin/vespa-proton --identity " + getConfigId();
         if (serviceLayerService != null) {
             startup = startup + " --serviceidentity " + serviceLayerService.getConfigId();
         }
-        return startup;
+        return Optional.of(startup);
     }
 
     @Override

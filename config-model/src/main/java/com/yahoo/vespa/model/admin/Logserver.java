@@ -5,6 +5,7 @@ import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.model.producer.AbstractConfigProducer;
 import com.yahoo.vespa.model.AbstractService;
 import com.yahoo.vespa.model.PortAllocBridge;
+import java.util.Optional;
 
 /**
  * Represents the Logserver. There is exactly one logserver in a Vespa system.
@@ -37,8 +38,9 @@ public class Logserver extends AbstractService {
     /**
      * @return the startup command for the logserver
      */
-    public String getStartupCommand() {
-        return "exec $ROOT/bin/vespa-logserver-start " + getMyJVMArgs() + " " + getJvmOptions();
+    @Override
+    public Optional<String> getStartupCommand() {
+        return Optional.of("exec $ROOT/bin/vespa-logserver-start " + getMyJVMArgs() + " " + getJvmOptions());
     }
 
     /** Returns the jvm args to be used by the logserver. */

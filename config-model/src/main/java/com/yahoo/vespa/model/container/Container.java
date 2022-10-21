@@ -298,8 +298,8 @@ public abstract class Container extends AbstractService implements
         }
     }
 
-    public String getStartupCommand() {
-        return "PRELOAD=" + getPreLoad() + " exec vespa-start-container-daemon " + getJvmOptions() + " ";
+    public Optional<String> getStartupCommand() {
+        return Optional.of("PRELOAD=" + getPreLoad() + " exec vespa-start-container-daemon " + getJvmOptions() + " ");
     }
 
     @Override

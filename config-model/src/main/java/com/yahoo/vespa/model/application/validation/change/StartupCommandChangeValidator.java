@@ -39,8 +39,8 @@ public class StartupCommandChangeValidator implements ChangeValidator {
     }
 
     private Optional<ConfigChangeAction> compareStartupCommand(Service currentService, Service nextService) {
-        String currentCommand = currentService.getStartupCommand();
-        String nextCommand = nextService.getStartupCommand();
+        String currentCommand = currentService.getStartupCommand().orElse("");
+        String nextCommand = nextService.getStartupCommand().orElse("");
 
         if (Objects.equals(currentCommand, nextCommand)) return Optional.empty();
 
