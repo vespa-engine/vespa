@@ -1,13 +1,11 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package ai.vespa.client.dsl;
 
-import java.util.stream.Collectors;
-
 public class NearestNeighbor extends QueryChain {
 
+    private final String docVectorName;
+    private final String queryVectorName;
     private Annotation annotation;
-    private String docVectorName;
-    private String queryVectorName;
 
 
     public NearestNeighbor(String docVectorName, String queryVectorName) {
@@ -50,4 +48,5 @@ public class NearestNeighbor extends QueryChain {
         String s = Text.format("nearestNeighbor(%s, %s)", docVectorName, queryVectorName);
         return Text.format("([%s]%s)", annotation, s);
     }
+
 }

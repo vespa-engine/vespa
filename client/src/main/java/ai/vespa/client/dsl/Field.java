@@ -10,7 +10,7 @@ import java.util.stream.Stream;
 
 public class Field extends QueryChain {
 
-    private String fieldName;
+    private final String fieldName;
     private List<Object> values = new ArrayList<>();
     private Annotation annotation = A.empty();
     private String relation;
@@ -597,9 +597,7 @@ public class Field extends QueryChain {
         this.relation = relation;
         this.values = Stream.concat(Stream.of(value), Stream.of(others)).collect(Collectors.toList());
         this.nonEmpty = true;
-        return query != null
-               ? query
-               : new Query(sources, this);
+        return query != null ? query : new Query(sources, this);
     }
 
     @Override
@@ -609,7 +607,7 @@ public class Field extends QueryChain {
         switch (relation) {
             case "range":
                 valuesStr = values.stream()
-                    .map(i -> i instanceof Long ? i.toString() + "L" : i.toString())
+                    .map(i -> i instanceof Long ? i + "L" : i.toString())
                     .collect(Collectors.joining(", "));
 
                 return hasAnnotation
@@ -635,7 +633,7 @@ public class Field extends QueryChain {
                     : Text.format("nearestNeighbor(%s, %s)", fieldName, valuesStr);
             default:
                 Object value = values.get(0);
-                valuesStr = value instanceof Long ? value.toString() + "L" : value.toString();
+                valuesStr = value instanceof Long ? value + "L" : value.toString();
                 return hasAnnotation
                        ? Text.format("%s %s ([%s]%s)", fieldName, relation, annotation, valuesStr)
                        : Text.format("%s %s %s", fieldName, relation, valuesStr);

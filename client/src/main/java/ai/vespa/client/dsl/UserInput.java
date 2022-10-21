@@ -7,11 +7,11 @@ import java.util.UUID;
 
 public class UserInput extends QueryChain {
 
-    Annotation annotation; // accept only defaultIndex annotation
-    String value;
-    String indexField;
-    String placeholder; // for generating unique param
-    boolean setDefaultIndex;
+    private final Annotation annotation; // accept only defaultIndex annotation
+    private final String value;
+    private final String indexField;
+    private String placeholder; // for generating unique param
+    private boolean setDefaultIndex;
 
     UserInput(Sources sources, String value) {
         this(sources, A.empty(), value);
@@ -23,9 +23,9 @@ public class UserInput extends QueryChain {
         this.value = value;
         this.nonEmpty = true;
 
-        if (annotation.annotations.containsKey("defaultIndex")) {
+        if (annotation.contains("defaultIndex")) {
             setDefaultIndex = true;
-            indexField = (String) annotation.annotations.get("defaultIndex");
+            indexField = (String) annotation.get("defaultIndex");
         } else {
             indexField = UUID.randomUUID().toString().substring(0, 5);
         }
@@ -77,4 +77,5 @@ public class UserInput extends QueryChain {
     boolean hasNegativeSearchField(String fieldName, Object value) {
         return hasNegativeSearchField(fieldName) && this.value.equals(value);
     }
+
 }

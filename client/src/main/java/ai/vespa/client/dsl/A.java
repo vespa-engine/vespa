@@ -10,7 +10,9 @@ import java.util.stream.Stream;
  * Helper class for generating Annotation
  * https://docs.vespa.ai/en/reference/query-language-reference.html#annotations
  */
-public final class A {
+public class A {
+
+    private A() { }
 
     private final static Annotation EMPTY = new Annotation();
 
@@ -97,4 +99,5 @@ public final class A {
     static boolean hasAnnotation(Annotation annotation) {
         return annotation != null && !EMPTY.equals(annotation);
     }
+
 }

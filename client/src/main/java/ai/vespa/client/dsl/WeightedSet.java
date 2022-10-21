@@ -5,8 +5,8 @@ import java.util.Map;
 
 public class WeightedSet extends QueryChain {
 
-    private String fieldName;
-    private Map<String, Integer> weightedSet;
+    private final String fieldName;
+    private final Map<String, Integer> weightedSet;
 
     WeightedSet(String fieldName, Map<String, Integer> weightedSet) {
         this.fieldName = fieldName;
@@ -47,4 +47,5 @@ public class WeightedSet extends QueryChain {
         // TODO: implementation
         throw new UnsupportedOperationException("method not implemented");
     }
+
 }

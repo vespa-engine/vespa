@@ -7,9 +7,9 @@ import java.util.stream.Stream;
 
 public class GroupOperation implements IGroupOperation {
 
-    String type;
-    Object value;
-    Aggregator[] aggregators;
+    private final String type;
+    private Object value;
+    private Aggregator[] aggregators;
 
     public GroupOperation(String type, Object value) {
         this.type = type;

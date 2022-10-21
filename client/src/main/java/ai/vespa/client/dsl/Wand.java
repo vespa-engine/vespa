@@ -6,9 +6,9 @@ import java.util.Map;
 
 public class Wand extends QueryChain {
 
-    private String fieldName;
+    private final String fieldName;
+    private final Object value;
     private Annotation annotation;
-    private Object value;
 
 
     Wand(String fieldName, Map<String, Integer> weightedSet) {

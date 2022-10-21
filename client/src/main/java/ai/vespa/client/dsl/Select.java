@@ -8,7 +8,7 @@ import java.util.stream.Stream;
 
 public class Select {
 
-    private List<String> selectedFields = new ArrayList<>();
+    private final List<String> selectedFields = new ArrayList<>();
 
     Select(String fieldName) {
         selectedFields.add(fieldName);
@@ -20,7 +20,7 @@ public class Select {
     }
 
     Select(List<String> fieldNames) {
-        selectedFields = new ArrayList<>(fieldNames);
+        selectedFields.addAll(fieldNames);
     }
 
     public Sources from(String sd) {
@@ -35,4 +35,5 @@ public class Select {
     public String toString() {
         return selectedFields.isEmpty() ? "*" : String.join(", ", selectedFields);
     }
+
 }

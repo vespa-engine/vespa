@@ -5,8 +5,8 @@ import java.util.Map;
 
 public class DotProduct extends QueryChain {
 
-    private String fieldName;
-    private Map<String, Integer> weightedSet;
+    private final String fieldName;
+    private final Map<String, Integer> weightedSet;
 
     DotProduct(String fieldName, Map<String, Integer> weightedSet) {
         this.fieldName = fieldName;
@@ -47,4 +47,5 @@ public class DotProduct extends QueryChain {
         // TODO: implementation
         throw new UnsupportedOperationException("method not implemented");
     }
+
 }

@@ -3,11 +3,11 @@ package ai.vespa.client.dsl;
 
 public class Aggregator {
 
-    String type;
-    Object value = "";
+    private final String type;
+    private final Object value;
 
     Aggregator(String type) {
-        this.type = type;
+        this(type, "");
     }
 
     Aggregator(String type, Object value) {
@@ -19,4 +19,5 @@ public class Aggregator {
     public String toString() {
         return Text.format("%s(%s)", type, value);
     }
+
 }

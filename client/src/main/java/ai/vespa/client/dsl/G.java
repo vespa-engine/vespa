@@ -1,7 +1,6 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package ai.vespa.client.dsl;
 
-
 /**
  * Helper class for generating group syntax
  * https://docs.vespa.ai/en/reference/grouping-syntax.html
@@ -10,7 +9,9 @@ package ai.vespa.client.dsl;
  * The only exception "max" in the Vespa group syntax which represents 'max returned documents',
  * is replaced by "maxRtn" in the dsl lib.
  */
-public final class G {
+public class G {
+
+    private G() { }
 
     public static Group all(IGroupOperation... ops) {
         return new Group("all", ops);
@@ -51,4 +52,5 @@ public final class G {
     public static Aggregator summary(String summaryClass) {
         return new Aggregator("summary", summaryClass);
     }
+
 }

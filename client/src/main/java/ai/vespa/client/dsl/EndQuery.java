@@ -13,10 +13,10 @@ import java.util.stream.Collectors;
  */
 public class EndQuery {
 
-    QueryChain queryChain;
-    Map<String, Integer> map = new LinkedHashMap<>();
-    List<Object[]> order = new ArrayList<>();
-    String groupQueryStr;
+    final QueryChain queryChain;
+    final Map<String, Integer> map = new LinkedHashMap<>();
+    final List<Object[]> order = new ArrayList<>();
+    private String groupQueryStr;
 
     EndQuery(QueryChain queryChain) {
         this.queryChain = queryChain;
@@ -93,8 +93,7 @@ public class EndQuery {
      * @return the end query
      */
     public EndQuery group(Group group) {
-        this.groupQueryStr = group.toString();
-        return this;
+        return group(group.toString());
     }
 
     /**
@@ -186,4 +185,5 @@ public class EndQuery {
 
         return sb.toString();
     }
+
 }

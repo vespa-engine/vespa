@@ -11,14 +11,14 @@ import java.util.stream.Collectors;
  */
 public class Query extends QueryChain {
 
-    Annotation annotation;
-    Sources sources;
-    List<QueryChain> queries = new ArrayList<>();
+    final List<QueryChain> queries = new ArrayList<>();
+    private Annotation annotation;
+    private Sources sources;
 
     Query(Sources sources, QueryChain queryChain) {
         this.sources = sources;
-        queries.add(queryChain);
-        nonEmpty = queryChain.nonEmpty;
+        this.queries.add(queryChain);
+        this.nonEmpty = queryChain.nonEmpty;
     }
 
     Query(Sources sources) {
@@ -355,4 +355,5 @@ public class Query extends QueryChain {
                && (!"andnot".equals(this.op) && hasNegativeInSubqueries)
                || ("andnot".equals(this.op) && hasPositiveInSubqueries);
     }
+
 }

@@ -3,7 +3,7 @@ package ai.vespa.client.dsl;
 
 public class NonEmpty extends QueryChain {
 
-    private Query query;
+    private final Query query;
 
     NonEmpty(Query query) {
         this.query = query;
@@ -43,4 +43,5 @@ public class NonEmpty extends QueryChain {
         // TODO: implementation
         throw new UnsupportedOperationException("method not implemented");
     }
+
 }

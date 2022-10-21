@@ -5,10 +5,10 @@ import org.apache.commons.text.StringEscapeUtils;
 
 public class GeoLocation extends QueryChain {
 
-    private String fieldName;
-    private Double longitude;
-    private Double latitude;
-    private String radius;
+    private final String fieldName;
+    private final Double longitude;
+    private final Double latitude;
+    private final String radius;
 
     public GeoLocation(String fieldName, Double longitude, Double latitude, String radius) {
         this.fieldName = fieldName;
