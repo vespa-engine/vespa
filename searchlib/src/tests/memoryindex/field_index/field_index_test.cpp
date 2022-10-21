@@ -52,7 +52,6 @@ using document::StringFieldValue;
 using document::WeightedSetFieldValue;
 using queryeval::RankedSearchIteratorBase;
 using queryeval::SearchIterator;
-using search::index::schema::CollectionType;
 using search::index::test::MockFieldLengthInspector;
 using search::test::DocBuilder;
 using search::test::SchemaBuilder;

@@ -121,7 +121,6 @@ unregister(const AVConfig & cfg)
 
 const string test_dir = "test_output";
 const AVConfig INT32_SINGLE = unregister(AVConfig(AVBasicType::INT32));
-const AVConfig INT32_ARRAY = unregister(AVConfig(AVBasicType::INT32, AVCollectionType::ARRAY));
 
 void
 fillAttribute(const AttributeVector::SP &attr, uint32_t numDocs, int64_t value, uint64_t lastSyncToken)

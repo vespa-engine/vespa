@@ -25,7 +25,6 @@ using document::DataType;
 using document::Document;
 using document::WeightedSetFieldValue;
 using index::Schema;
-using index::schema::CollectionType;
 using search::test::DocBuilder;
 using search::test::SchemaBuilder;
 using search::test::StringFieldBuilder;
