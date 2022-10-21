@@ -77,9 +77,7 @@ public class ConfigSentinel extends AbstractService implements SentinelConfig.Pr
         builder.application(getApplicationConfig());
         builder.ignoreRequestedStackSizes(ignoreRequestedStackSizes);
         for (Service s : getHostResource().getServices()) {
-            if (s.getStartupCommand() != null) {
-                builder.service(getServiceConfig(s));
-            }
+            s.getStartupCommand().ifPresent(command -> builder.service(getServiceConfig(s, command)));
         }
     }
 
@@ -93,9 +91,9 @@ public class ConfigSentinel extends AbstractService implements SentinelConfig.Pr
         return builder;
     }
 
-    private SentinelConfig.Service.Builder getServiceConfig(Service s) {
+    private SentinelConfig.Service.Builder getServiceConfig(Service s, String startupCommand) {
         SentinelConfig.Service.Builder serviceBuilder = new SentinelConfig.Service.Builder();
-        serviceBuilder.command(s.getStartupCommand());
+        serviceBuilder.command(startupCommand);
         serviceBuilder.name(s.getServiceName());
         serviceBuilder.id(s.getConfigId());
         serviceBuilder.affinity(getServiceAffinity(s));

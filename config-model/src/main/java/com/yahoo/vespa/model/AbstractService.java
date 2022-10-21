@@ -222,13 +222,11 @@ public abstract class AbstractService extends AbstractConfigProducer<AbstractCon
     /**
      * Must be overridden by services that should be started by
      * config-sentinel. The returned value will be used in
-     * config-sentinel configuration. Returns null by default.
+     * config-sentinel configuration. Returns empty by default.
      *
-     * @return null by default.
+     * @return empty by default.
      */
-    public String getStartupCommand() {
-        return null;
-    }
+    public Optional<String> getStartupCommand() { return Optional.empty(); }
 
     public Optional<String> getPreShutdownCommand() {
         return Optional.empty();

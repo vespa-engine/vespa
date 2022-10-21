@@ -38,7 +38,6 @@ import com.yahoo.vespa.config.ConfigDefinitionKey;
 import com.yahoo.vespa.config.ConfigKey;
 import com.yahoo.vespa.config.ConfigPayloadBuilder;
 import com.yahoo.vespa.config.GenericConfig.GenericConfigBuilder;
-import com.yahoo.vespa.model.InstanceResolver.PackagePrefix;
 import com.yahoo.vespa.model.admin.Admin;
 import com.yahoo.vespa.model.builder.VespaModelBuilder;
 import com.yahoo.vespa.model.builder.xml.dom.VespaDomBuilder;
@@ -512,9 +511,6 @@ public final class VespaModel extends AbstractConfigProducerRoot implements Mode
             clazz = classLoader.loadClass(builderName);
         } catch (ClassNotFoundException e) {
             log.log(Level.FINE, () -> "Tried to load " + builderName + ", not found, trying with generic builder");
-            // TODO: Enable config compiler when configserver is using new API.
-            // ConfigCompiler compiler = new LazyConfigCompiler(Files.createTempDir());
-            // return compiler.compile(targetDef.generateClass()).newInstance();
             return new GenericConfigBuilder(key, new ConfigPayloadBuilder());
         }
         Object i;
@@ -536,8 +532,9 @@ public final class VespaModel extends AbstractConfigProducerRoot implements Mode
      * returns the full class name with prefix, and null for the class loader.
      */
     private Pair<String, ClassLoader> getClassLoaderForProducer(ConfigDefinitionKey key, String shortClassName) {
-        String fullClassNameWithComYahoo = InstanceResolver.packageName(key, PackagePrefix.COM_YAHOO) + "." + shortClassName;
-        String fullClassNameWithoutPrefix = InstanceResolver.packageName(key, PackagePrefix.NONE) + "." + shortClassName;
+        // TODO: Stop supporting fullClassNameWithComYahoo below, should not be used
+        String fullClassNameWithComYahoo = "com.yahoo." + key.getNamespace() + "." + shortClassName;
+        String fullClassNameWithoutPrefix = key.getNamespace() + "." + shortClassName;
         String producerSuffix = "$Producer";
 
         ClassLoader loader = getConfigClassLoader(fullClassNameWithoutPrefix + producerSuffix);

@@ -24,9 +24,6 @@ import java.util.TreeMap;
  */
 public class ContainerModel extends ConfigModel {
 
-    // TODO: Move to referer
-    public static final String DOCPROC_RESERVED_NAME = "docproc";
-
     private ContainerCluster<? extends Container> containerCluster;
 
     public ContainerModel(ConfigModelContext context) {

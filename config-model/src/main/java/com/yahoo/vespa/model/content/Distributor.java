@@ -10,6 +10,7 @@ import com.yahoo.vespa.model.builder.xml.dom.ModelElement;
 import com.yahoo.vespa.model.builder.xml.dom.VespaDomBuilder;
 import com.yahoo.vespa.model.content.engines.PersistenceEngine;
 import org.w3c.dom.Element;
+import java.util.Optional;
 
 /**
  * Represents specific configuration for a given distributor node.
@@ -75,8 +76,8 @@ public class Distributor extends ContentNode implements StorDistributormanagerCo
     }
 
     @Override
-    public String getStartupCommand() {
-        return "exec sbin/vespa-distributord -c $VESPA_CONFIG_ID";
+    public Optional<String> getStartupCommand() {
+        return Optional.of("exec sbin/vespa-distributord -c $VESPA_CONFIG_ID");
     }
 
 }

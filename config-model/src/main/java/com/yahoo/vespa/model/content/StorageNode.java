@@ -15,6 +15,7 @@ import com.yahoo.vespa.model.content.engines.PersistenceEngine;
 import com.yahoo.vespa.model.content.engines.ProtonProvider;
 import com.yahoo.vespa.model.content.storagecluster.StorageCluster;
 import org.w3c.dom.Element;
+import java.util.Optional;
 
 /**
  * Class to provide config related to a specific storage node.
@@ -48,10 +49,10 @@ public class StorageNode extends ContentNode implements StorServerConfig.Produce
     }
 
     @Override
-    public String getStartupCommand() {
+    public Optional<String> getStartupCommand() {
         return isProviderProton()
-                ? null
-                : "exec sbin/vespa-storaged -c $VESPA_CONFIG_ID";
+                ? Optional.empty()
+                : Optional.of("exec sbin/vespa-storaged -c $VESPA_CONFIG_ID");
     }
 
     public double getCapacity() {
@@ -66,7 +67,7 @@ public class StorageNode extends ContentNode implements StorServerConfig.Produce
     public boolean isRetired() { return retired; }
 
     private boolean isProviderProton() {
-        for (AbstractConfigProducer producer : getChildren().values()) {
+        for (AbstractConfigProducer<?> producer : getChildren().values()) {
             if (producer instanceof ProtonProvider) {
                 return true;
             }
@@ -80,7 +81,7 @@ public class StorageNode extends ContentNode implements StorServerConfig.Produce
 
         builder.node_capacity(getCapacity());
 
-        for (AbstractConfigProducer producer : getChildren().values()) {
+        for (AbstractConfigProducer<?> producer : getChildren().values()) {
             ((PersistenceEngine)producer).getConfig(builder);
         }
     }

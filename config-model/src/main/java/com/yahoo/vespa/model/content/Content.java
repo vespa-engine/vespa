@@ -48,6 +48,8 @@ import java.util.Set;
  */
 public class Content extends ConfigModel {
 
+    private static final String DOCPROC_RESERVED_NAME = "docproc";
+
     private ContentCluster cluster;
     private Optional<ApplicationContainerCluster> ownedIndexingCluster = Optional.empty();
 
@@ -288,9 +290,9 @@ public class Content extends ConfigModel {
                                                    ConfigModelContext modelContext,
                                                    ApplicationConfigProducerRoot root) {
             String indexerName = cluster.getIndexingClusterName();
-            AbstractConfigProducer<?> parent = root.getChildren().get(ContainerModel.DOCPROC_RESERVED_NAME);
+            AbstractConfigProducer<?> parent = root.getChildren().get(DOCPROC_RESERVED_NAME);
             if (parent == null)
-                parent = new SimpleConfigProducer(root, ContainerModel.DOCPROC_RESERVED_NAME);
+                parent = new SimpleConfigProducer(root, DOCPROC_RESERVED_NAME);
             ApplicationContainerCluster indexingCluster = new ApplicationContainerCluster(parent, "cluster." + indexerName, indexerName, modelContext.getDeployState());
             ContainerModel indexingClusterModel = new ContainerModel(modelContext.withParent(parent).withId(indexingCluster.getSubId()));
             indexingClusterModel.setCluster(indexingCluster);

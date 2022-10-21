@@ -6,6 +6,7 @@ import com.yahoo.config.model.producer.AbstractConfigProducer;
 import com.yahoo.vespa.config.core.StateserverConfig;
 import com.yahoo.vespa.model.AbstractService;
 import com.yahoo.vespa.model.PortAllocBridge;
+import java.util.Optional;
 
 /**
  * Represents a Slobrok service.
@@ -47,8 +48,8 @@ public class Slobrok extends AbstractService implements StateserverConfig.Produc
         }
     }
 
-    public String getStartupCommand() {
-        return "exec $ROOT/sbin/vespa-slobrok -N -p " + getRpcPort() + " -c " + getConfigId();
+    public Optional<String> getStartupCommand() {
+        return Optional.of("exec $ROOT/sbin/vespa-slobrok -N -p " + getRpcPort() + " -c " + getConfigId());
     }
 
     @Override

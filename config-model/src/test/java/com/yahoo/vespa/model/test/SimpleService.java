@@ -7,6 +7,7 @@ import com.yahoo.vespa.model.AbstractService;
 import com.yahoo.vespa.model.PortAllocBridge;
 
 import java.util.HashMap;
+import java.util.Optional;
 
 /**
  * This service has a desired default port and returns the actual
@@ -50,7 +51,7 @@ public class SimpleService extends AbstractService implements com.yahoo.test.Sta
     }
 
     // Make sure this service is listed in the sentinel config
-    public String getStartupCommand()   { return "sleep 0"; }
+    public Optional<String> getStartupCommand()   { return Optional.of("sleep 0"); }
 
     @Override
        public HashMap<String,String> getDefaultMetricDimensions(){

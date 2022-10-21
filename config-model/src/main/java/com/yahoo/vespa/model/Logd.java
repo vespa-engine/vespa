@@ -2,6 +2,7 @@
 package com.yahoo.vespa.model;
 
 import com.yahoo.cloud.config.log.LogdConfig;
+import java.util.Optional;
 
 /**
  * There is one logd running on each Vespa host, and one instance of
@@ -45,7 +46,8 @@ public class Logd
     /**
      * @return The command used to start logd
      */
-    public String getStartupCommand() { return "exec sbin/vespa-logd"; }
+    @Override
+    public Optional<String> getStartupCommand() { return Optional.of("exec sbin/vespa-logd"); }
 
     @Override
     public int getHealthPort() { return getRelativePort(0); }
