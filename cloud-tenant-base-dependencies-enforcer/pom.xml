@@ -169,6 +169,7 @@
                                         <include>com.yahoo.vespa:vsm:*:jar:test</include>
 
                                         <!-- 3rd party test dependencies -->
+                                        <include>com.google.code.findbugs:jsr305:3.0.2:jar:test</include>
                                         <include>com.google.protobuf:protobuf-java:3.7.0:jar:test</include>
                                         <include>com.ibm.icu:icu4j:57.1:jar:test</include>
                                         <include>com.microsoft.onnxruntime:onnxruntime:[${onnxruntime.version}]:jar:test</include>
