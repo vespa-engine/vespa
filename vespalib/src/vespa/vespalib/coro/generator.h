@@ -76,6 +76,7 @@ public:
                     ptr = std::addressof(value_cpy);
                 }
                 awaiter(awaiter&&) = delete;
+                awaiter(const awaiter&) = delete;
                 T value_cpy;
             };
             return awaiter(value, _ptr);
