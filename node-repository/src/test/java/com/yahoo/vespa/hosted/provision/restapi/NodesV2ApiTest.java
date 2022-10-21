@@ -179,6 +179,10 @@ public class NodesV2ApiTest {
         assertResponse(new Request("http://localhost:8080/nodes/v2/node/host4.yahoo.com",
                                    Utf8.toBytes("{\"currentRebootGeneration\": 1}"), Request.Method.PATCH),
                        "{\"message\":\"Updated host4.yahoo.com\"}");
+        // Patching currentRebootGeneration twice adds another rebooted event
+        assertResponse(new Request("http://localhost:8080/nodes/v2/node/host4.yahoo.com",
+                                   Utf8.toBytes("{\"currentRebootGeneration\": 1}"), Request.Method.PATCH),
+                       "{\"message\":\"Updated host4.yahoo.com\"}");
         assertResponse(new Request("http://localhost:8080/nodes/v2/node/host4.yahoo.com",
                                    Utf8.toBytes("{\"flavor\": \"d-2-8-100\"}"), Request.Method.PATCH),
                        "{\"message\":\"Updated host4.yahoo.com\"}");

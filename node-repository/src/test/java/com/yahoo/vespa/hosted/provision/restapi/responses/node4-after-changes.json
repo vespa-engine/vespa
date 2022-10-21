@@ -83,11 +83,6 @@
   ],
   "log": [
     {
-      "event": "provisioned",
-      "at": 123,
-      "agent": "system"
-    },
-    {
       "event": "deallocated",
       "at": 123,
       "agent": "system"
@@ -116,6 +111,11 @@
       "event": "wantToFail",
       "at": 123,
       "agent": "operator"
+    },
+    {
+      "event": "rebooted",
+      "at": 123,
+      "agent": "system"
     },
     {
       "event": "rebooted",
