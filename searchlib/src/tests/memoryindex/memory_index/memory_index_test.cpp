@@ -76,7 +76,7 @@ struct MySetup : public IFieldLengthInspector {
 
     Schema make_all_index_schema() const {
         DocBuilder db([this](auto& header) { add_fields(header); });
-        return *SchemaBuilder(db).add_all_indexes().build();
+        return SchemaBuilder(db).add_all_indexes().build();
     }
 
 };

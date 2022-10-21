@@ -164,7 +164,7 @@ struct FieldInverterTest : public ::testing::Test {
 
     FieldInverterTest()
         : _b(make_add_fields()),
-          _schema(*SchemaBuilder(_b).add_all_indexes().build()),
+          _schema(SchemaBuilder(_b).add_all_indexes().build()),
           _word_store(),
           _remover(_word_store),
           _inserter_backend(),

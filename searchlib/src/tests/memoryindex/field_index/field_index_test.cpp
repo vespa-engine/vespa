@@ -515,7 +515,7 @@ Schema
 make_all_index_schema(DocBuilder::AddFieldsType add_fields)
 {
     DocBuilder db(add_fields);
-    return *SchemaBuilder(db).add_all_indexes().build();
+    return SchemaBuilder(db).add_all_indexes().build();
 }
 
 DocBuilder::AddFieldsType
@@ -935,7 +935,7 @@ public:
 
     InverterTest(DocBuilder::AddFieldsType add_fields)
         : _b(add_fields),
-          _schema(*SchemaBuilder(_b).add_all_indexes().build()),
+          _schema(SchemaBuilder(_b).add_all_indexes().build()),
           _fic(_schema, MockFieldLengthInspector()),
           _invertThreads(SequencedTaskExecutor::create(invert_executor, 2)),
           _pushThreads(SequencedTaskExecutor::create(push_executor, 2)),

@@ -154,7 +154,7 @@ Schema
 make_schema(bool interleaved_features)
 {
     DocBuilder db(make_add_fields());
-    return *SchemaBuilder(db).add_all_indexes(interleaved_features).build();
+    return SchemaBuilder(db).add_all_indexes(interleaved_features).build();
 }
 
 void

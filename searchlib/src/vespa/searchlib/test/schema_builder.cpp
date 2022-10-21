@@ -166,10 +166,10 @@ SchemaBuilder::add_all_attributes()
     return *this;
 }
 
-std::unique_ptr<search::index::Schema>
+search::index::Schema
 SchemaBuilder::build()
 {
-    return std::move(_schema);
+    return std::move(*_schema);
 }
 
 }
