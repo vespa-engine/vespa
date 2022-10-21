@@ -31,7 +31,7 @@ public class Annotation {
 
     @Override
     public String toString() {
-        return annotations == null || annotations.isEmpty() ? "" : Q.gson.toJson(annotations);
+        return annotations == null || annotations.isEmpty() ? "" : Q.toJson(annotations);
     }
 
 }

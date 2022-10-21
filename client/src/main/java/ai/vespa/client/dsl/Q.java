@@ -1,7 +1,8 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package ai.vespa.client.dsl;
 
-import com.google.gson.Gson;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 import java.util.List;
 import java.util.Map;
@@ -12,7 +13,15 @@ import java.util.Map;
  */
 public final class Q {
 
-    static Gson gson = new Gson();
+    private static final ObjectMapper mapper = new ObjectMapper();
+    static String toJson(Object o) {
+        try {
+            return mapper.writeValueAsString(o);
+        }
+        catch (JsonProcessingException e) {
+            throw new RuntimeException(e);
+        }
+    }
     private static Sources SELECT_ALL_FROM_SOURCES_ALL = new Sources(new Select("*"), "*");
 
     public static Select select(String fieldName) { return new Select(fieldName);

@@ -21,7 +21,7 @@ public class WeightedSet extends QueryChain {
 
     @Override
     public String toString() {
-        return "weightedSet(" + fieldName + ", " + Q.gson.toJson(weightedSet) + ")";
+        return "weightedSet(" + fieldName + ", " + Q.toJson(weightedSet) + ")";
     }
 
     @Override

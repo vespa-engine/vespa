@@ -21,7 +21,7 @@ public class DotProduct extends QueryChain {
 
     @Override
     public String toString() {
-        return "dotProduct(" + fieldName + ", " + Q.gson.toJson(weightedSet) + ")";
+        return "dotProduct(" + fieldName + ", " + Q.toJson(weightedSet) + ")";
     }
 
     @Override

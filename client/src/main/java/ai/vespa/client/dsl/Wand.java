@@ -65,7 +65,8 @@ public class Wand extends QueryChain {
     @Override
     public String toString() {
         boolean hasAnnotation = A.hasAnnotation(annotation);
-        String s = Text.format("wand(%s, %s)", fieldName, Q.gson.toJson(value));
+        String s = Text.format("wand(%s, %s)", fieldName, Q.toJson(value));
         return hasAnnotation ? Text.format("([%s]%s)", annotation, s) : s;
     }
+
 }
