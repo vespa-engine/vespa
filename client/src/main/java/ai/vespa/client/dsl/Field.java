@@ -1,8 +1,6 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package ai.vespa.client.dsl;
 
-import org.apache.commons.text.StringEscapeUtils;
-
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -578,7 +576,7 @@ public class Field extends QueryChain {
     }
 
     private Query common(String relation, Annotation annotation, String value) {
-        Object v = "\"" + StringEscapeUtils.escapeJava(value) + "\"";
+        Object v = Q.toJson(value);
         return common(relation, annotation, v, values.toArray());
     }
 
@@ -587,8 +585,8 @@ public class Field extends QueryChain {
     }
 
     private Query common(String relation, Annotation annotation, String value, String[] others) {
-        Object v = "\"" + StringEscapeUtils.escapeJava(value) + "\"";
-        Object[] o = Stream.of(others).map(s -> "\"" + StringEscapeUtils.escapeJava(s) + "\"").toArray();
+        Object v = Q.toJson(value);
+        Object[] o = Stream.of(others).map(Q::toJson).toArray();
         return common(relation, annotation, v, o);
     }
 

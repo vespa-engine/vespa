@@ -1,8 +1,6 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package ai.vespa.client.dsl;
 
-import org.apache.commons.text.StringEscapeUtils;
-
 public class GeoLocation extends QueryChain {
 
     private final String fieldName;
@@ -40,6 +38,6 @@ public class GeoLocation extends QueryChain {
 
     @Override
     public String toString() {
-        return Text.format("geoLocation(%s, %f, %f, \"%s\")", fieldName, longitude, latitude, StringEscapeUtils.escapeJava(radius));
+        return Text.format("geoLocation(%s, %f, %f, %s)", fieldName, longitude, latitude, Q.toJson(radius));
     }
 }
