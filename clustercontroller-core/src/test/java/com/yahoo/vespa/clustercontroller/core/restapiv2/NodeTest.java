@@ -17,88 +17,91 @@ public class NodeTest extends StateRestApiTest {
     void testDistributor() throws Exception {
         setUp(true);
         UnitResponse response = restAPI.getState(new StateRequest("music/distributor/1", 0));
-        String expected =
-                """
-                {
-                  "attributes": {"hierarchical-group": "east.g2"},
-                  "state": {
-                    "generated": {
-                      "state": "up",
-                      "reason": ""
-                    },
-                    "unit": {
-                      "state": "up",
-                      "reason": ""
-                    },
-                    "user": {
-                      "state": "up",
-                      "reason": ""
-                    }
-                  }
-                }""";
-        assertEquals(expected, jsonWriter.createJson(response).toString(2));
+        assertEquals("""
+                     {
+                       "attributes" : {
+                         "hierarchical-group" : "east.g2"
+                       },
+                       "state" : {
+                         "generated" : {
+                           "state" : "up",
+                           "reason" : ""
+                         },
+                         "unit" : {
+                           "state" : "up",
+                           "reason" : ""
+                         },
+                         "user" : {
+                           "state" : "up",
+                           "reason" : ""
+                         }
+                       }
+                     }""",
+                     jsonWriter.createJson(response).toPrettyString());
     }
 
     @Test
     void testStorage() throws Exception {
         setUp(true);
         UnitResponse response = restAPI.getState(new StateRequest("music/storage/1", 0));
-        String expected =
-                """
-                {
-                  "attributes": {"hierarchical-group": "east.g2"},
-                  "state": {
-                    "generated": {
-                      "state": "up",
-                      "reason": ""
-                    },
-                    "unit": {
-                      "state": "up",
-                      "reason": ""
-                    },
-                    "user": {
-                      "state": "up",
-                      "reason": ""
-                    }
-                  },
-                  "metrics": {
-                    "bucket-count": 1,
-                    "unique-document-count": 2,
-                    "unique-document-total-size": 3
-                  }
-                }""";
-        assertEquals(expected, jsonWriter.createJson(response).toString(2));
+        assertEquals("""
+                     {
+                       "attributes" : {
+                         "hierarchical-group" : "east.g2"
+                       },
+                       "state" : {
+                         "generated" : {
+                           "state" : "up",
+                           "reason" : ""
+                         },
+                         "unit" : {
+                           "state" : "up",
+                           "reason" : ""
+                         },
+                         "user" : {
+                           "state" : "up",
+                           "reason" : ""
+                         }
+                       },
+                       "metrics" : {
+                         "bucket-count" : 1,
+                         "unique-document-count" : 2,
+                         "unique-document-total-size" : 3
+                       }
+                     }""",
+                     jsonWriter.createJson(response).toPrettyString());
     }
 
     @Test
     void testRecursiveNode() throws Exception {
         setUp(true);
         UnitResponse response = restAPI.getState(new StateRequest("music/storage/1", 1));
-        String expected =
-                """
-                {
-                  "attributes": {"hierarchical-group": "east.g2"},
-                  "state": {
-                    "generated": {
-                      "state": "up",
-                      "reason": ""
-                    },
-                    "unit": {
-                      "state": "up",
-                      "reason": ""
-                    },
-                    "user": {
-                      "state": "up",
-                      "reason": ""
-                    }
-                  },
-                  "metrics": {
-                    "bucket-count": 1,
-                    "unique-document-count": 2,
-                    "unique-document-total-size": 3
-                  }
-                }""";
-        assertEquals(expected, jsonWriter.createJson(response).toString(2));
+        assertEquals("""
+                     {
+                       "attributes" : {
+                         "hierarchical-group" : "east.g2"
+                       },
+                       "state" : {
+                         "generated" : {
+                           "state" : "up",
+                           "reason" : ""
+                         },
+                         "unit" : {
+                           "state" : "up",
+                           "reason" : ""
+                         },
+                         "user" : {
+                           "state" : "up",
+                           "reason" : ""
+                         }
+                       },
+                       "metrics" : {
+                         "bucket-count" : 1,
+                         "unique-document-count" : 2,
+                         "unique-document-total-size" : 3
+                       }
+                     }""",
+                     jsonWriter.createJson(response).toPrettyString());
     }
 
     @Test
@@ -110,26 +113,26 @@ public class NodeTest extends StateRestApiTest {
         currentState.setDescription("Not seen");
         music.context.currentConsolidatedState.setNodeState(new Node(NodeType.STORAGE, 1), currentState);
         UnitResponse response = restAPI.getState(new StateRequest("music/storage/1", 0));
-        String expected =
-                """
-                {
-                  "attributes": {"hierarchical-group": "east.g2"},
-                  "state": {
-                    "generated": {
-                      "state": "down",
-                      "reason": "Not seen"
-                    },
-                    "unit": {
-                      "state": "down",
-                      "reason": "Node not seen in slobrok."
-                    },
-                    "user": {
-                      "state": "up",
-                      "reason": ""
-                    }
-                  }
-                }""";
-        assertEquals(expected, jsonWriter.createJson(response).toString(2));
+        assertEquals("""
+                     {
+                       "attributes" : {
+                         "hierarchical-group" : "east.g2"
+                       },
+                       "state" : {
+                         "generated" : {
+                           "state" : "down",
+                           "reason" : "Not seen"
+                         },
+                         "unit" : {
+                           "state" : "down",
+                           "reason" : "Node not seen in slobrok."
+                         },
+                         "user" : {
+                           "state" : "up",
+                           "reason" : ""
+                         }
+                       }
+                     }""", jsonWriter.createJson(response).toPrettyString());
     }
 
 }

@@ -12,58 +12,80 @@ public class ClusterListTest extends StateRestApiTest {
     void testClusterList() throws Exception {
         setUp(true);
         UnitResponse response = restAPI.getState(new StateRequest("", 0));
-        String expected =
-                "{\"cluster\": {\n" +
-                        "  \"books\": {\"link\": \"\\/cluster\\/v2\\/books\"},\n" +
-                        "  \"music\": {\"link\": \"\\/cluster\\/v2\\/music\"}\n" +
-                        "}}";
-        assertEquals(expected, jsonWriter.createJson(response).toString(2));
+        assertEquals("""
+                     {
+                       "cluster" : {
+                         "books" : {
+                           "link" : "/cluster/v2/books"
+                         },
+                         "music" : {
+                           "link" : "/cluster/v2/music"
+                         }
+                       }
+                     }""",
+                     jsonWriter.createJson(response).toPrettyString());
     }
 
     @Test
     void testRecursiveClusterList() throws Exception {
         setUp(true);
         UnitResponse response = restAPI.getState(new StateRequest("", 1));
-        String expected =
-                "{\"cluster\": {\n" +
-                        "  \"books\": {\n" +
-                        "    \"state\": {\"generated\": {\n" +
-                        "      \"state\": \"up\",\n" +
-                        "      \"reason\": \"\"\n" +
-                        "    }},\n" +
-                        "    \"service\": {\n" +
-                        "      \"storage\": {\"link\": \"\\/cluster\\/v2\\/books\\/storage\"},\n" +
-                        "      \"distributor\": {\"link\": \"\\/cluster\\/v2\\/books\\/distributor\"}\n" +
-                        "    },\n" +
-                        "    \"distribution-states\": {\"published\": {\n" +
-                        "      \"baseline\": \"distributor:4 storage:4\",\n" +
-                        "      \"bucket-spaces\": [\n" +
-                        "        {\n" +
-                        "          \"name\": \"default\",\n" +
-                        "          \"state\": \"distributor:4 storage:4 .3.s:m\"\n" +
-                        "        },\n" +
-                        "        {\n" +
-                        "          \"name\": \"global\",\n" +
-                        "          \"state\": \"distributor:4 storage:4\"\n" +
-                        "        }\n" +
-                        "      ]\n" +
-                        "    }}\n" +
-                        "  },\n" +
-                        "  \"music\": {\n" +
-                        "    \"state\": {\"generated\": {\n" +
-                        "      \"state\": \"up\",\n" +
-                        "      \"reason\": \"\"\n" +
-                        "    }},\n" +
-                        "    \"service\": {\n" +
-                        "      \"storage\": {\"link\": \"\\/cluster\\/v2\\/music\\/storage\"},\n" +
-                        "      \"distributor\": {\"link\": \"\\/cluster\\/v2\\/music\\/distributor\"}\n" +
-                        "    },\n" +
-                        "    \"distribution-states\": {\"published\": {\n" +
-                        "      \"baseline\": \"distributor:8 .0.s:d .2.s:d .4.s:d .6.s:d storage:8 .0.s:d .2.s:d .4.s:d .6.s:d\",\n" +
-                        "      \"bucket-spaces\": []\n" +
-                        "    }}\n" +
-                        "  }\n" +
-                        "}}";
-        assertEquals(expected, jsonWriter.createJson(response).toString(2));
+        assertEquals("""
+                     {
+                       "cluster" : {
+                         "books" : {
+                           "state" : {
+                             "generated" : {
+                               "state" : "up",
+                               "reason" : ""
+                             }
+                           },
+                           "service" : {
+                             "storage" : {
+                               "link" : "/cluster/v2/books/storage"
+                             },
+                             "distributor" : {
+                               "link" : "/cluster/v2/books/distributor"
+                             }
+                           },
+                           "distribution-states" : {
+                             "published" : {
+                               "baseline" : "distributor:4 storage:4",
+                               "bucket-spaces" : [ {
+                                 "name" : "default",
+                                 "state" : "distributor:4 storage:4 .3.s:m"
+                               }, {
+                                 "name" : "global",
+                                 "state" : "distributor:4 storage:4"
+                               } ]
+                             }
+                           }
+                         },
+                         "music" : {
+                           "state" : {
+                             "generated" : {
+                               "state" : "up",
+                               "reason" : ""
+                             }
+                           },
+                           "service" : {
+                             "storage" : {
+                               "link" : "/cluster/v2/music/storage"
+                             },
+                             "distributor" : {
+                               "link" : "/cluster/v2/music/distributor"
+                             }
+                           },
+                           "distribution-states" : {
+                             "published" : {
+                               "baseline" : "distributor:8 .0.s:d .2.s:d .4.s:d .6.s:d storage:8 .0.s:d .2.s:d .4.s:d .6.s:d",
+                               "bucket-spaces" : [ ]
+                             }
+                           }
+                         }
+                       }
+                     }""",
+                     jsonWriter.createJson(response).toPrettyString());
     }
+
 }

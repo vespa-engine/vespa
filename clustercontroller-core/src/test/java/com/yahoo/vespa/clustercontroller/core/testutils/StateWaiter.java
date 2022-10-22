@@ -14,6 +14,7 @@ import java.util.regex.Pattern;
  * Deprecated.. Use the Waiter class instead
  */
 public class StateWaiter implements SystemStateListener {
+
     private final FakeTimer timer;
     protected ClusterState current;
 
