@@ -26,7 +26,7 @@ set(AUTORUN_UNIT_TESTS FALSE CACHE BOOL "If TRUE, tests will be run immediately 
 
 # Warnings
 set(C_WARN_OPTS "-Wuninitialized -Werror -Wall -W -Wchar-subscripts -Wcomment -Wformat -Wparentheses -Wreturn-type -Wswitch -Wtrigraphs -Wunused -Wshadow -Wpointer-arith -Wcast-qual -Wcast-align -Wwrite-strings")
-if (VESPA_USE_SANITIZER)
+if (VESPA_USE_SANITIZER OR VESPA_DISABLE_INLINE_WARNINGS)
     # Instrumenting code changes binary size, which triggers inlining warnings that
     # don't happen during normal, non-instrumented compilation.
 else()
@@ -71,6 +71,11 @@ else()
   set(VESPA_XXHASH_DEFINE "-DXXH_INLINE_ALL")
 endif()
 
+if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU" AND VESPA_USE_LTO)
+  # Enable lto
+  set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -flto=auto -ffat-lto-objects")
+endif()
+
 # C and C++ compiler flags
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -g -O3 -fno-omit-frame-pointer ${C_WARN_OPTS} -fPIC ${VESPA_CXX_ABI_FLAGS} ${VESPA_XXHASH_DEFINE} -DBOOST_DISABLE_ASSERTS ${VESPA_CPU_ARCH_FLAGS} ${EXTRA_C_FLAGS}")
 # AddressSanitizer/ThreadSanitizer work for both GCC and Clang
@@ -91,6 +96,11 @@ if(CMAKE_HOST_SYSTEM_NAME STREQUAL "Darwin")
   if(CMAKE_CXX_COMPILER_ID STREQUAL "Clang" AND CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL 15.0)
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DBOOST_NO_CXX98_FUNCTION_BASE")
   endif()
+endif()
+
+# Hardening
+if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU" AND VESPA_USE_HARDENING)
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wp,-D_FORTIFY_SOURCE=2 -Wp,-D_GLIBCXX_ASSERTIONS -fstack-protector-strong -fasynchronous-unwind-tables -fstack-clash-protection -fcf-protection")
 endif()
 
 # Linker flags
