@@ -11,7 +11,7 @@ import java.util.Locale;
 final class Text {
 
     public static String format(String format, Object... args) {
-	return String.format(Locale.US, format, args);
+        return String.format(Locale.US, format, args);
     }
 
 }

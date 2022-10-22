@@ -9,7 +9,7 @@ import java.util.stream.Stream;
 
 public class Rank extends QueryChain {
 
-    private List<Query> queries = new ArrayList<>();
+    private final List<Query> queries = new ArrayList<>();
 
     Rank(Query query, Query... ranks) {
         this.query = query;
@@ -47,4 +47,5 @@ public class Rank extends QueryChain {
     boolean hasNegativeSearchField(String fieldName, Object value) {
         return queries.get(0).hasNegativeSearchField(fieldName, value);
     }
+
 }

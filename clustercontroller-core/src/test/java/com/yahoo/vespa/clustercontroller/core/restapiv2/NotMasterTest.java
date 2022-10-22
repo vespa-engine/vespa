@@ -20,12 +20,17 @@ public class NotMasterTest extends StateRestApiTest {
         // Non-recursive cluster list works, as it doesn't touches into fleetcontrollers
         {
             UnitResponse response = restAPI.getState(new StateRequest("", 0));
-            String expected =
-                    "{\"cluster\": {\n" +
-                            "  \"books\": {\"link\": \"\\/cluster\\/v2\\/books\"},\n" +
-                            "  \"music\": {\"link\": \"\\/cluster\\/v2\\/music\"}\n" +
-                            "}}";
-            assertEquals(expected, jsonWriter.createJson(response).toString(2));
+            assertEquals("""
+                         {
+                           "cluster" : {
+                             "books" : {
+                               "link" : "/cluster/v2/books"
+                             },
+                             "music" : {
+                               "link" : "/cluster/v2/music"
+                             }
+                           }
+                         }""", jsonWriter.createJson(response).toPrettyString());
         }
         // Recursive cluster list does not work
         try {
@@ -70,12 +75,18 @@ public class NotMasterTest extends StateRestApiTest {
         // Non-recursive cluster list works, as it doesn't touches into fleetcontrollers
         {
             UnitResponse response = restAPI.getState(new StateRequest("", 0));
-            String expected =
-                    "{\"cluster\": {\n" +
-                            "  \"books\": {\"link\": \"\\/cluster\\/v2\\/books\"},\n" +
-                            "  \"music\": {\"link\": \"\\/cluster\\/v2\\/music\"}\n" +
-                            "}}";
-            assertEquals(expected, jsonWriter.createJson(response).toString(2));
+            assertEquals("""
+                         {
+                           "cluster" : {
+                             "books" : {
+                               "link" : "/cluster/v2/books"
+                             },
+                             "music" : {
+                               "link" : "/cluster/v2/music"
+                             }
+                           }
+                         }""",
+                         jsonWriter.createJson(response).toPrettyString());
         }
         // Recursive cluster list does not work
         try {

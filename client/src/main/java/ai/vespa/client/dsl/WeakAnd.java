@@ -5,8 +5,8 @@ import java.util.stream.Collectors;
 
 public class WeakAnd extends QueryChain {
 
-    private Annotation annotation;
     private final Query value;
+    private Annotation annotation;
 
     WeakAnd(Query value) {
         this.value = value;
@@ -56,5 +56,5 @@ public class WeakAnd extends QueryChain {
                         value.queries.stream().map(Object::toString).collect(Collectors.joining(", ")));
         return hasAnnotation ? Text.format("([%s]%s)", annotation, s) : s;
     }
-}
 
+}

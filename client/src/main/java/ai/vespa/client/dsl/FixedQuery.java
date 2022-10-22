@@ -15,9 +15,9 @@ import java.util.stream.Collectors;
  */
 public class FixedQuery {
 
-    final EndQuery endQuery;
-    Map<String, String> others = new HashMap<>();
-    Map<String, String> queryMap;
+    private final EndQuery endQuery;
+    private final Map<String, String> others = new HashMap<>();
+    private Map<String, String> queryMap;
 
     FixedQuery(EndQuery endQuery) {
         this.endQuery = endQuery;
@@ -423,4 +423,5 @@ public class FixedQuery {
     public boolean hasNegativeSearchField(String fieldName, Object value) {
         return endQuery.queryChain.hasNegativeSearchField(fieldName, value);
     }
+
 }

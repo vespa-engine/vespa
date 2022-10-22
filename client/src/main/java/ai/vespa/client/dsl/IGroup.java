@@ -5,6 +5,4 @@ package ai.vespa.client.dsl;
  * interface for group syntax
  */
 
-public interface IGroup {
-
-}
+public interface IGroup { }

@@ -14,8 +14,8 @@
     <packaging>container-plugin</packaging>
     <dependencies>
         <dependency>
-            <groupId>org.codehaus.jettison</groupId>
-            <artifactId>jettison</artifactId>
+            <groupId>com.fasterxml.jackson.core</groupId>
+            <artifactId>jackson-databind</artifactId>
         </dependency>
         <dependency>
             <groupId>com.yahoo.vespa</groupId>

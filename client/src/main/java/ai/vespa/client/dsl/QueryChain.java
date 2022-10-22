@@ -49,4 +49,5 @@ public abstract class QueryChain {
     abstract boolean hasNegativeSearchField(String fieldName);
 
     abstract boolean hasNegativeSearchField(String fieldName, Object value);
+
 }

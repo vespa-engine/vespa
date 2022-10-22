@@ -1,13 +1,15 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vdslib.distribution;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.yahoo.config.subscription.ConfigGetter;
 import com.yahoo.document.BucketId;
 import com.yahoo.vdslib.state.ClusterState;
 import com.yahoo.vdslib.state.NodeType;
 import com.yahoo.vespa.config.content.StorDistributionConfig;
-import org.codehaus.jettison.json.JSONArray;
-import org.codehaus.jettison.json.JSONObject;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -18,6 +20,8 @@ import static org.junit.Assert.assertTrue;
 
 // TODO: Use config builder instead of ConfigGetter to create test config.
 public class DistributionTestFactory extends CrossPlatformTestFactory {
+
+    ObjectMapper mapper = new ObjectMapper();
 
     private static final String testDirectory = "src/tests/distribution/testdata";
     private int redundancy;
@@ -181,49 +185,35 @@ public class DistributionTestFactory extends CrossPlatformTestFactory {
     }
 
     public String serialize() throws Exception {
-        JSONObject test = new JSONObject()
+        ObjectNode test = new ObjectNode(mapper.getNodeFactory())
                 .put("cluster-state", state.toString())
                 .put("distribution", new StorDistributionConfig(distributionConfig).toString())
                 .put("node-type", nodeType.toString())
                 .put("redundancy", redundancy)
                 .put("node-count", nodeCount)
                 .put("up-states", upStates);
-        JSONArray results = new JSONArray();
-        for(Test t : this.results) {
-            JSONArray nodes = new JSONArray();
-            for (int i : t.nodes) {
-                nodes.put(i);
-            }
-
-            JSONObject testResult = new JSONObject()
+        ArrayNode results = test.putArray("result");
+        for (Test t : this.results) {
+             results.addObject()
+                    .putPOJO("nodes", t.nodes)
                     .put("bucket", Long.toHexString(t.bucket.getId()))
-                    .put("nodes", nodes)
                     .put("failure", t.failure.toString());
-            results.put(testResult);
         }
-        test.put("result", results);
-        return test.toString(2);
+        return test.toPrettyString();
     }
 
     public void parse(String serialized) throws Exception {
-        JSONObject json = new JSONObject(serialized);
-        upStates = json.getString("up-states");
-        nodeCount = json.getInt("redundancy");
-        redundancy = json.getInt("redundancy");
-        state = new ClusterState(json.getString("cluster-state"));
-        distributionConfig = deserializeConfig(json.getString("distribution"));
-        nodeType = NodeType.get(json.getString("node-type"));
-        JSONArray results = json.getJSONArray("result");
-        for (int i=0; i<results.length(); ++i) {
-            JSONObject result = results.getJSONObject(i);
-            Test t = new Test(new BucketId(Long.parseLong(result.getString("bucket"), 16)));
-            {
-                JSONArray nodes = result.getJSONArray("nodes");
-                for (int j=0; j<nodes.length(); ++j) {
-                    t.nodes.add(nodes.getInt(j));
-                }
-            }
-            t.failure = Failure.valueOf(result.getString("failure"));
+        JsonNode json = mapper.readTree(serialized);
+        upStates = json.get("up-states").textValue();
+        nodeCount = json.get("redundancy").intValue();
+        redundancy = json.get("redundancy").intValue();
+        state = new ClusterState(json.get("cluster-state").textValue());
+        distributionConfig = deserializeConfig(json.get("distribution").textValue());
+        nodeType = NodeType.get(json.get("node-type").textValue());
+        for (JsonNode result : json.get("result")) {
+            Test t = new Test(new BucketId(Long.parseLong(result.get("bucket").textValue(), 16)));
+            for (JsonNode node : result.get("nodes")) t.nodes.add(node.intValue());
+            t.failure = Failure.valueOf(result.get("failure").textValue());
             this.results.add(t);
         }
     }

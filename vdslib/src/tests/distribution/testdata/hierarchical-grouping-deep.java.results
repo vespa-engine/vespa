@@ -1,730 +1,585 @@
 {
-  "cluster-state": "distributor:500",
-  "distribution": "redundancy 8\ninitial_redundancy 0\nensure_primary_persisted true\nready_copies 0\nactive_per_leaf_group false\ndistributor_auto_ownership_transfer_on_whole_group_down true\ngroup[0].index \"invalid\"\ngroup[0].name \"invalid\"\ngroup[0].capacity 1.0\ngroup[0].partitions \"*|*\"\ngroup[1].index \"0\"\ngroup[1].name \"top.0\"\ngroup[1].capacity 1.0\ngroup[1].partitions \"*|*\"\ngroup[2].index \"0.0\"\ngroup[2].name \"top.0.0\"\ngroup[2].capacity 1.0\ngroup[2].partitions \"*|*\"\ngroup[3].index \"0.0.0\"\ngroup[3].name \"top.0.0.0\"\ngroup[3].capacity 1.0\ngroup[3].partitions \"\"\ngroup[3].nodes[0].index 32\ngroup[3].nodes[0].retired false\ngroup[3].nodes[1].index 64\ngroup[3].nodes[1].retired false\ngroup[3].nodes[2].index 286\ngroup[3].nodes[2].retired false\ngroup[4].index \"0.0.1\"\ngroup[4].name \"top.0.0.1\"\ngroup[4].capacity 1.0\ngroup[4].partitions \"\"\ngroup[4].nodes[0].index 317\ngroup[4].nodes[0].retired false\ngroup[4].nodes[1].index 374\ngroup[4].nodes[1].retired false\ngroup[4].nodes[2].index 47\ngroup[4].nodes[2].retired false\ngroup[5].index \"0.0.2\"\ngroup[5].name \"top.0.0.2\"\ngroup[5].capacity 1.0\ngroup[5].partitions \"\"\ngroup[5].nodes[0].index 63\ngroup[5].nodes[0].retired false\ngroup[5].nodes[1].index 349\ngroup[5].nodes[1].retired false\ngroup[5].nodes[2].index 149\ngroup[5].nodes[2].retired false\ngroup[6].index \"0.0.3\"\ngroup[6].name \"top.0.0.3\"\ngroup[6].capacity 1.0\ngroup[6].partitions \"\"\ngroup[6].nodes[0].index 31\ngroup[6].nodes[0].retired false\ngroup[6].nodes[1].index 314\ngroup[6].nodes[1].retired false\ngroup[6].nodes[2].index 22\ngroup[6].nodes[2].retired false\ngroup[7].index \"0.0.4\"\ngroup[7].name \"top.0.0.4\"\ngroup[7].capacity 1.0\ngroup[7].partitions \"\"\ngroup[7].nodes[0].index 350\ngroup[7].nodes[0].retired false\ngroup[7].nodes[1].index 69\ngroup[7].nodes[1].retired false\ngroup[7].nodes[2].index 144\ngroup[7].nodes[2].retired false\ngroup[8].index \"0.1\"\ngroup[8].name \"top.0.1\"\ngroup[8].capacity 1.0\ngroup[8].partitions \"*|*\"\ngroup[9].index \"0.1.0\"\ngroup[9].name \"top.0.1.0\"\ngroup[9].capacity 1.0\ngroup[9].partitions \"\"\ngroup[9].nodes[0].index 189\ngroup[9].nodes[0].retired false\ngroup[9].nodes[1].index 212\ngroup[9].nodes[1].retired false\ngroup[9].nodes[2].index 55\ngroup[9].nodes[2].retired false\ngroup[10].index \"0.1.1\"\ngroup[10].name \"top.0.1.1\"\ngroup[10].capacity 1.0\ngroup[10].partitions \"\"\ngroup[10].nodes[0].index 324\ngroup[10].nodes[0].retired false\ngroup[10].nodes[1].index 236\ngroup[10].nodes[1].retired false\ngroup[10].nodes[2].index 232\ngroup[10].nodes[2].retired false\ngroup[11].index \"0.1.2\"\ngroup[11].name \"top.0.1.2\"\ngroup[11].capacity 1.0\ngroup[11].partitions \"\"\ngroup[11].nodes[0].index 359\ngroup[11].nodes[0].retired false\ngroup[11].nodes[1].index 111\ngroup[11].nodes[1].retired false\ngroup[11].nodes[2].index 170\ngroup[11].nodes[2].retired false\ngroup[12].index \"0.1.3\"\ngroup[12].name \"top.0.1.3\"\ngroup[12].capacity 1.0\ngroup[12].partitions \"\"\ngroup[12].nodes[0].index 251\ngroup[12].nodes[0].retired false\ngroup[12].nodes[1].index 153\ngroup[12].nodes[1].retired false\ngroup[12].nodes[2].index 355\ngroup[12].nodes[2].retired false\ngroup[13].index \"0.1.4\"\ngroup[13].name \"top.0.1.4\"\ngroup[13].capacity 1.0\ngroup[13].partitions \"\"\ngroup[13].nodes[0].index 88\ngroup[13].nodes[0].retired false\ngroup[13].nodes[1].index 99\ngroup[13].nodes[1].retired false\ngroup[13].nodes[2].index 94\ngroup[13].nodes[2].retired false\ngroup[14].index \"0.2\"\ngroup[14].name \"top.0.2\"\ngroup[14].capacity 1.0\ngroup[14].partitions \"*|*\"\ngroup[15].index \"0.2.0\"\ngroup[15].name \"top.0.2.0\"\ngroup[15].capacity 1.0\ngroup[15].partitions \"\"\ngroup[15].nodes[0].index 372\ngroup[15].nodes[0].retired false\ngroup[15].nodes[1].index 228\ngroup[15].nodes[1].retired false\ngroup[15].nodes[2].index 139\ngroup[15].nodes[2].retired false\ngroup[16].index \"0.2.1\"\ngroup[16].name \"top.0.2.1\"\ngroup[16].capacity 1.0\ngroup[16].partitions \"\"\ngroup[16].nodes[0].index 33\ngroup[16].nodes[0].retired false\ngroup[16].nodes[1].index 82\ngroup[16].nodes[1].retired false\ngroup[16].nodes[2].index 255\ngroup[16].nodes[2].retired false\ngroup[17].index \"0.2.2\"\ngroup[17].name \"top.0.2.2\"\ngroup[17].capacity 1.0\ngroup[17].partitions \"\"\ngroup[17].nodes[0].index 337\ngroup[17].nodes[0].retired false\ngroup[17].nodes[1].index 30\ngroup[17].nodes[1].retired false\ngroup[17].nodes[2].index 269\ngroup[17].nodes[2].retired false\ngroup[18].index \"0.2.3\"\ngroup[18].name \"top.0.2.3\"\ngroup[18].capacity 1.0\ngroup[18].partitions \"\"\ngroup[18].nodes[0].index 340\ngroup[18].nodes[0].retired false\ngroup[18].nodes[1].index 243\ngroup[18].nodes[1].retired false\ngroup[18].nodes[2].index 274\ngroup[18].nodes[2].retired false\ngroup[19].index \"0.2.4\"\ngroup[19].name \"top.0.2.4\"\ngroup[19].capacity 1.0\ngroup[19].partitions \"\"\ngroup[19].nodes[0].index 90\ngroup[19].nodes[0].retired false\ngroup[19].nodes[1].index 70\ngroup[19].nodes[1].retired false\ngroup[19].nodes[2].index 160\ngroup[19].nodes[2].retired false\ngroup[20].index \"0.3\"\ngroup[20].name \"top.0.3\"\ngroup[20].capacity 1.0\ngroup[20].partitions \"*|*\"\ngroup[21].index \"0.3.0\"\ngroup[21].name \"top.0.3.0\"\ngroup[21].capacity 1.0\ngroup[21].partitions \"\"\ngroup[21].nodes[0].index 76\ngroup[21].nodes[0].retired false\ngroup[21].nodes[1].index 112\ngroup[21].nodes[1].retired false\ngroup[21].nodes[2].index 74\ngroup[21].nodes[2].retired false\ngroup[22].index \"0.3.1\"\ngroup[22].name \"top.0.3.1\"\ngroup[22].capacity 1.0\ngroup[22].partitions \"\"\ngroup[22].nodes[0].index 43\ngroup[22].nodes[0].retired false\ngroup[22].nodes[1].index 60\ngroup[22].nodes[1].retired false\ngroup[22].nodes[2].index 131\ngroup[22].nodes[2].retired false\ngroup[23].index \"0.3.2\"\ngroup[23].name \"top.0.3.2\"\ngroup[23].capacity 1.0\ngroup[23].partitions \"\"\ngroup[23].nodes[0].index 214\ngroup[23].nodes[0].retired false\ngroup[23].nodes[1].index 321\ngroup[23].nodes[1].retired false\ngroup[23].nodes[2].index 86\ngroup[23].nodes[2].retired false\ngroup[24].index \"0.3.3\"\ngroup[24].name \"top.0.3.3\"\ngroup[24].capacity 1.0\ngroup[24].partitions \"\"\ngroup[24].nodes[0].index 261\ngroup[24].nodes[0].retired false\ngroup[24].nodes[1].index 181\ngroup[24].nodes[1].retired false\ngroup[24].nodes[2].index 48\ngroup[24].nodes[2].retired false\ngroup[25].index \"0.3.4\"\ngroup[25].name \"top.0.3.4\"\ngroup[25].capacity 1.0\ngroup[25].partitions \"\"\ngroup[25].nodes[0].index 56\ngroup[25].nodes[0].retired false\ngroup[25].nodes[1].index 84\ngroup[25].nodes[1].retired false\ngroup[25].nodes[2].index 173\ngroup[25].nodes[2].retired false\ngroup[26].index \"0.4\"\ngroup[26].name \"top.0.4\"\ngroup[26].capacity 1.0\ngroup[26].partitions \"*|*\"\ngroup[27].index \"0.4.0\"\ngroup[27].name \"top.0.4.0\"\ngroup[27].capacity 1.0\ngroup[27].partitions \"\"\ngroup[27].nodes[0].index 289\ngroup[27].nodes[0].retired false\ngroup[27].nodes[1].index 17\ngroup[27].nodes[1].retired false\ngroup[27].nodes[2].index 164\ngroup[27].nodes[2].retired false\ngroup[28].index \"0.4.1\"\ngroup[28].name \"top.0.4.1\"\ngroup[28].capacity 1.0\ngroup[28].partitions \"\"\ngroup[28].nodes[0].index 24\ngroup[28].nodes[0].retired false\ngroup[28].nodes[1].index 345\ngroup[28].nodes[1].retired false\ngroup[28].nodes[2].index 8\ngroup[28].nodes[2].retired false\ngroup[29].index \"0.4.2\"\ngroup[29].name \"top.0.4.2\"\ngroup[29].capacity 1.0\ngroup[29].partitions \"\"\ngroup[29].nodes[0].index 306\ngroup[29].nodes[0].retired false\ngroup[29].nodes[1].index 369\ngroup[29].nodes[1].retired false\ngroup[29].nodes[2].index 184\ngroup[29].nodes[2].retired false\ngroup[30].index \"0.4.3\"\ngroup[30].name \"top.0.4.3\"\ngroup[30].capacity 1.0\ngroup[30].partitions \"\"\ngroup[30].nodes[0].index 284\ngroup[30].nodes[0].retired false\ngroup[30].nodes[1].index 83\ngroup[30].nodes[1].retired false\ngroup[30].nodes[2].index 366\ngroup[30].nodes[2].retired false\ngroup[31].index \"0.4.4\"\ngroup[31].name \"top.0.4.4\"\ngroup[31].capacity 1.0\ngroup[31].partitions \"\"\ngroup[31].nodes[0].index 234\ngroup[31].nodes[0].retired false\ngroup[31].nodes[1].index 253\ngroup[31].nodes[1].retired false\ngroup[31].nodes[2].index 244\ngroup[31].nodes[2].retired false\ngroup[32].index \"1\"\ngroup[32].name \"top.1\"\ngroup[32].capacity 1.0\ngroup[32].partitions \"*|*\"\ngroup[33].index \"1.0\"\ngroup[33].name \"top.1.0\"\ngroup[33].capacity 1.0\ngroup[33].partitions \"*|*\"\ngroup[34].index \"1.0.0\"\ngroup[34].name \"top.1.0.0\"\ngroup[34].capacity 1.0\ngroup[34].partitions \"\"\ngroup[34].nodes[0].index 93\ngroup[34].nodes[0].retired false\ngroup[34].nodes[1].index 225\ngroup[34].nodes[1].retired false\ngroup[34].nodes[2].index 331\ngroup[34].nodes[2].retired false\ngroup[35].index \"1.0.1\"\ngroup[35].name \"top.1.0.1\"\ngroup[35].capacity 1.0\ngroup[35].partitions \"\"\ngroup[35].nodes[0].index 223\ngroup[35].nodes[0].retired false\ngroup[35].nodes[1].index 322\ngroup[35].nodes[1].retired false\ngroup[35].nodes[2].index 245\ngroup[35].nodes[2].retired false\ngroup[36].index \"1.0.2\"\ngroup[36].name \"top.1.0.2\"\ngroup[36].capacity 1.0\ngroup[36].partitions \"\"\ngroup[36].nodes[0].index 221\ngroup[36].nodes[0].retired false\ngroup[36].nodes[1].index 230\ngroup[36].nodes[1].retired false\ngroup[36].nodes[2].index 169\ngroup[36].nodes[2].retired false\ngroup[37].index \"1.0.3\"\ngroup[37].name \"top.1.0.3\"\ngroup[37].capacity 1.0\ngroup[37].partitions \"\"\ngroup[37].nodes[0].index 346\ngroup[37].nodes[0].retired false\ngroup[37].nodes[1].index 368\ngroup[37].nodes[1].retired false\ngroup[37].nodes[2].index 257\ngroup[37].nodes[2].retired false\ngroup[38].index \"1.0.4\"\ngroup[38].name \"top.1.0.4\"\ngroup[38].capacity 1.0\ngroup[38].partitions \"\"\ngroup[38].nodes[0].index 178\ngroup[38].nodes[0].retired false\ngroup[38].nodes[1].index 161\ngroup[38].nodes[1].retired false\ngroup[38].nodes[2].index 142\ngroup[38].nodes[2].retired false\ngroup[39].index \"1.1\"\ngroup[39].name \"top.1.1\"\ngroup[39].capacity 1.0\ngroup[39].partitions \"*|*\"\ngroup[40].index \"1.1.0\"\ngroup[40].name \"top.1.1.0\"\ngroup[40].capacity 1.0\ngroup[40].partitions \"\"\ngroup[40].nodes[0].index 105\ngroup[40].nodes[0].retired false\ngroup[40].nodes[1].index 152\ngroup[40].nodes[1].retired false\ngroup[40].nodes[2].index 371\ngroup[40].nodes[2].retired false\ngroup[41].index \"1.1.1\"\ngroup[41].name \"top.1.1.1\"\ngroup[41].capacity 1.0\ngroup[41].partitions \"\"\ngroup[41].nodes[0].index 330\ngroup[41].nodes[0].retired false\ngroup[41].nodes[1].index 13\ngroup[41].nodes[1].retired false\ngroup[41].nodes[2].index 125\ngroup[41].nodes[2].retired false\ngroup[42].index \"1.1.2\"\ngroup[42].name \"top.1.1.2\"\ngroup[42].capacity 1.0\ngroup[42].partitions \"\"\ngroup[42].nodes[0].index 10\ngroup[42].nodes[0].retired false\ngroup[42].nodes[1].index 356\ngroup[42].nodes[1].retired false\ngroup[42].nodes[2].index 45\ngroup[42].nodes[2].retired false\ngroup[43].index \"1.1.3\"\ngroup[43].name \"top.1.1.3\"\ngroup[43].capacity 1.0\ngroup[43].partitions \"\"\ngroup[43].nodes[0].index 241\ngroup[43].nodes[0].retired false\ngroup[43].nodes[1].index 145\ngroup[43].nodes[1].retired false\ngroup[43].nodes[2].index 246\ngroup[43].nodes[2].retired false\ngroup[44].index \"1.1.4\"\ngroup[44].name \"top.1.1.4\"\ngroup[44].capacity 1.0\ngroup[44].partitions \"\"\ngroup[44].nodes[0].index 37\ngroup[44].nodes[0].retired false\ngroup[44].nodes[1].index 204\ngroup[44].nodes[1].retired false\ngroup[44].nodes[2].index 110\ngroup[44].nodes[2].retired false\ngroup[45].index \"1.2\"\ngroup[45].name \"top.1.2\"\ngroup[45].capacity 1.0\ngroup[45].partitions \"*|*\"\ngroup[46].index \"1.2.0\"\ngroup[46].name \"top.1.2.0\"\ngroup[46].capacity 1.0\ngroup[46].partitions \"\"\ngroup[46].nodes[0].index 288\ngroup[46].nodes[0].retired false\ngroup[46].nodes[1].index 254\ngroup[46].nodes[1].retired false\ngroup[46].nodes[2].index 0\ngroup[46].nodes[2].retired false\ngroup[47].index \"1.2.1\"\ngroup[47].name \"top.1.2.1\"\ngroup[47].capacity 1.0\ngroup[47].partitions \"\"\ngroup[47].nodes[0].index 72\ngroup[47].nodes[0].retired false\ngroup[47].nodes[1].index 124\ngroup[47].nodes[1].retired false\ngroup[47].nodes[2].index 267\ngroup[47].nodes[2].retired false\ngroup[48].index \"1.2.2\"\ngroup[48].name \"top.1.2.2\"\ngroup[48].capacity 1.0\ngroup[48].partitions \"\"\ngroup[48].nodes[0].index 102\ngroup[48].nodes[0].retired false\ngroup[48].nodes[1].index 219\ngroup[48].nodes[1].retired false\ngroup[48].nodes[2].index 150\ngroup[48].nodes[2].retired false\ngroup[49].index \"1.2.3\"\ngroup[49].name \"top.1.2.3\"\ngroup[49].capacity 1.0\ngroup[49].partitions \"\"\ngroup[49].nodes[0].index 68\ngroup[49].nodes[0].retired false\ngroup[49].nodes[1].index 347\ngroup[49].nodes[1].retired false\ngroup[49].nodes[2].index 135\ngroup[49].nodes[2].retired false\ngroup[50].index \"1.2.4\"\ngroup[50].name \"top.1.2.4\"\ngroup[50].capacity 1.0\ngroup[50].partitions \"\"\ngroup[50].nodes[0].index 207\ngroup[50].nodes[0].retired false\ngroup[50].nodes[1].index 15\ngroup[50].nodes[1].retired false\ngroup[50].nodes[2].index 201\ngroup[50].nodes[2].retired false\ngroup[51].index \"1.3\"\ngroup[51].name \"top.1.3\"\ngroup[51].capacity 1.0\ngroup[51].partitions \"*|*\"\ngroup[52].index \"1.3.0\"\ngroup[52].name \"top.1.3.0\"\ngroup[52].capacity 1.0\ngroup[52].partitions \"\"\ngroup[52].nodes[0].index 134\ngroup[52].nodes[0].retired false\ngroup[52].nodes[1].index 293\ngroup[52].nodes[1].retired false\ngroup[52].nodes[2].index 167\ngroup[52].nodes[2].retired false\ngroup[53].index \"1.3.1\"\ngroup[53].name \"top.1.3.1\"\ngroup[53].capacity 1.0\ngroup[53].partitions \"\"\ngroup[53].nodes[0].index 199\ngroup[53].nodes[0].retired false\ngroup[53].nodes[1].index 123\ngroup[53].nodes[1].retired false\ngroup[53].nodes[2].index 277\ngroup[53].nodes[2].retired false\ngroup[54].index \"1.3.2\"\ngroup[54].name \"top.1.3.2\"\ngroup[54].capacity 1.0\ngroup[54].partitions \"\"\ngroup[54].nodes[0].index 127\ngroup[54].nodes[0].retired false\ngroup[54].nodes[1].index 309\ngroup[54].nodes[1].retired false\ngroup[54].nodes[2].index 266\ngroup[54].nodes[2].retired false\ngroup[55].index \"1.3.3\"\ngroup[55].name \"top.1.3.3\"\ngroup[55].capacity 1.0\ngroup[55].partitions \"\"\ngroup[55].nodes[0].index 198\ngroup[55].nodes[0].retired false\ngroup[55].nodes[1].index 294\ngroup[55].nodes[1].retired false\ngroup[55].nodes[2].index 263\ngroup[55].nodes[2].retired false\ngroup[56].index \"1.3.4\"\ngroup[56].name \"top.1.3.4\"\ngroup[56].capacity 1.0\ngroup[56].partitions \"\"\ngroup[56].nodes[0].index 71\ngroup[56].nodes[0].retired false\ngroup[56].nodes[1].index 65\ngroup[56].nodes[1].retired false\ngroup[56].nodes[2].index 220\ngroup[56].nodes[2].retired false\ngroup[57].index \"1.4\"\ngroup[57].name \"top.1.4\"\ngroup[57].capacity 1.0\ngroup[57].partitions \"*|*\"\ngroup[58].index \"1.4.0\"\ngroup[58].name \"top.1.4.0\"\ngroup[58].capacity 1.0\ngroup[58].partitions \"\"\ngroup[58].nodes[0].index 121\ngroup[58].nodes[0].retired false\ngroup[58].nodes[1].index 4\ngroup[58].nodes[1].retired false\ngroup[58].nodes[2].index 265\ngroup[58].nodes[2].retired false\ngroup[59].index \"1.4.1\"\ngroup[59].name \"top.1.4.1\"\ngroup[59].capacity 1.0\ngroup[59].partitions \"\"\ngroup[59].nodes[0].index 58\ngroup[59].nodes[0].retired false\ngroup[59].nodes[1].index 210\ngroup[59].nodes[1].retired false\ngroup[59].nodes[2].index 53\ngroup[59].nodes[2].retired false\ngroup[60].index \"1.4.2\"\ngroup[60].name \"top.1.4.2\"\ngroup[60].capacity 1.0\ngroup[60].partitions \"\"\ngroup[60].nodes[0].index 19\ngroup[60].nodes[0].retired false\ngroup[60].nodes[1].index 367\ngroup[60].nodes[1].retired false\ngroup[60].nodes[2].index 101\ngroup[60].nodes[2].retired false\ngroup[61].index \"1.4.3\"\ngroup[61].name \"top.1.4.3\"\ngroup[61].capacity 1.0\ngroup[61].partitions \"\"\ngroup[61].nodes[0].index 20\ngroup[61].nodes[0].retired false\ngroup[61].nodes[1].index 242\ngroup[61].nodes[1].retired false\ngroup[61].nodes[2].index 268\ngroup[61].nodes[2].retired false\ngroup[62].index \"1.4.4\"\ngroup[62].name \"top.1.4.4\"\ngroup[62].capacity 1.0\ngroup[62].partitions \"\"\ngroup[62].nodes[0].index 200\ngroup[62].nodes[0].retired false\ngroup[62].nodes[1].index 21\ngroup[62].nodes[1].retired false\ngroup[62].nodes[2].index 279\ngroup[62].nodes[2].retired false\ngroup[63].index \"2\"\ngroup[63].name \"top.2\"\ngroup[63].capacity 1.0\ngroup[63].partitions \"*|*\"\ngroup[64].index \"2.0\"\ngroup[64].name \"top.2.0\"\ngroup[64].capacity 1.0\ngroup[64].partitions \"*|*\"\ngroup[65].index \"2.0.0\"\ngroup[65].name \"top.2.0.0\"\ngroup[65].capacity 1.0\ngroup[65].partitions \"\"\ngroup[65].nodes[0].index 182\ngroup[65].nodes[0].retired false\ngroup[65].nodes[1].index 78\ngroup[65].nodes[1].retired false\ngroup[65].nodes[2].index 158\ngroup[65].nodes[2].retired false\ngroup[66].index \"2.0.1\"\ngroup[66].name \"top.2.0.1\"\ngroup[66].capacity 1.0\ngroup[66].partitions \"\"\ngroup[66].nodes[0].index 27\ngroup[66].nodes[0].retired false\ngroup[66].nodes[1].index 50\ngroup[66].nodes[1].retired false\ngroup[66].nodes[2].index 217\ngroup[66].nodes[2].retired false\ngroup[67].index \"2.0.2\"\ngroup[67].name \"top.2.0.2\"\ngroup[67].capacity 1.0\ngroup[67].partitions \"\"\ngroup[67].nodes[0].index 248\ngroup[67].nodes[0].retired false\ngroup[67].nodes[1].index 319\ngroup[67].nodes[1].retired false\ngroup[67].nodes[2].index 116\ngroup[67].nodes[2].retired false\ngroup[68].index \"2.0.3\"\ngroup[68].name \"top.2.0.3\"\ngroup[68].capacity 1.0\ngroup[68].partitions \"\"\ngroup[68].nodes[0].index 29\ngroup[68].nodes[0].retired false\ngroup[68].nodes[1].index 211\ngroup[68].nodes[1].retired false\ngroup[68].nodes[2].index 365\ngroup[68].nodes[2].retired false\ngroup[69].index \"2.0.4\"\ngroup[69].name \"top.2.0.4\"\ngroup[69].capacity 1.0\ngroup[69].partitions \"\"\ngroup[69].nodes[0].index 300\ngroup[69].nodes[0].retired false\ngroup[69].nodes[1].index 81\ngroup[69].nodes[1].retired false\ngroup[69].nodes[2].index 192\ngroup[69].nodes[2].retired false\ngroup[70].index \"2.1\"\ngroup[70].name \"top.2.1\"\ngroup[70].capacity 1.0\ngroup[70].partitions \"*|*\"\ngroup[71].index \"2.1.0\"\ngroup[71].name \"top.2.1.0\"\ngroup[71].capacity 1.0\ngroup[71].partitions \"\"\ngroup[71].nodes[0].index 151\ngroup[71].nodes[0].retired false\ngroup[71].nodes[1].index 133\ngroup[71].nodes[1].retired false\ngroup[71].nodes[2].index 344\ngroup[71].nodes[2].retired false\ngroup[72].index \"2.1.1\"\ngroup[72].name \"top.2.1.1\"\ngroup[72].capacity 1.0\ngroup[72].partitions \"\"\ngroup[72].nodes[0].index 120\ngroup[72].nodes[0].retired false\ngroup[72].nodes[1].index 195\ngroup[72].nodes[1].retired false\ngroup[72].nodes[2].index 215\ngroup[72].nodes[2].retired false\ngroup[73].index \"2.1.2\"\ngroup[73].name \"top.2.1.2\"\ngroup[73].capacity 1.0\ngroup[73].partitions \"\"\ngroup[73].nodes[0].index 250\ngroup[73].nodes[0].retired false\ngroup[73].nodes[1].index 143\ngroup[73].nodes[1].retired false\ngroup[73].nodes[2].index 183\ngroup[73].nodes[2].retired false\ngroup[74].index \"2.1.3\"\ngroup[74].name \"top.2.1.3\"\ngroup[74].capacity 1.0\ngroup[74].partitions \"\"\ngroup[74].nodes[0].index 301\ngroup[74].nodes[0].retired false\ngroup[74].nodes[1].index 291\ngroup[74].nodes[1].retired false\ngroup[74].nodes[2].index 333\ngroup[74].nodes[2].retired false\ngroup[75].index \"2.1.4\"\ngroup[75].name \"top.2.1.4\"\ngroup[75].capacity 1.0\ngroup[75].partitions \"\"\ngroup[75].nodes[0].index 315\ngroup[75].nodes[0].retired false\ngroup[75].nodes[1].index 26\ngroup[75].nodes[1].retired false\ngroup[75].nodes[2].index 249\ngroup[75].nodes[2].retired false\ngroup[76].index \"2.2\"\ngroup[76].name \"top.2.2\"\ngroup[76].capacity 1.0\ngroup[76].partitions \"*|*\"\ngroup[77].index \"2.2.0\"\ngroup[77].name \"top.2.2.0\"\ngroup[77].capacity 1.0\ngroup[77].partitions \"\"\ngroup[77].nodes[0].index 360\ngroup[77].nodes[0].retired false\ngroup[77].nodes[1].index 172\ngroup[77].nodes[1].retired false\ngroup[77].nodes[2].index 326\ngroup[77].nodes[2].retired false\ngroup[78].index \"2.2.1\"\ngroup[78].name \"top.2.2.1\"\ngroup[78].capacity 1.0\ngroup[78].partitions \"\"\ngroup[78].nodes[0].index 262\ngroup[78].nodes[0].retired false\ngroup[78].nodes[1].index 115\ngroup[78].nodes[1].retired false\ngroup[78].nodes[2].index 310\ngroup[78].nodes[2].retired false\ngroup[79].index \"2.2.2\"\ngroup[79].name \"top.2.2.2\"\ngroup[79].capacity 1.0\ngroup[79].partitions \"\"\ngroup[79].nodes[0].index 303\ngroup[79].nodes[0].retired false\ngroup[79].nodes[1].index 307\ngroup[79].nodes[1].retired false\ngroup[79].nodes[2].index 348\ngroup[79].nodes[2].retired false\ngroup[80].index \"2.2.3\"\ngroup[80].name \"top.2.2.3\"\ngroup[80].capacity 1.0\ngroup[80].partitions \"\"\ngroup[80].nodes[0].index 227\ngroup[80].nodes[0].retired false\ngroup[80].nodes[1].index 91\ngroup[80].nodes[1].retired false\ngroup[80].nodes[2].index 282\ngroup[80].nodes[2].retired false\ngroup[81].index \"2.2.4\"\ngroup[81].name \"top.2.2.4\"\ngroup[81].capacity 1.0\ngroup[81].partitions \"\"\ngroup[81].nodes[0].index 354\ngroup[81].nodes[0].retired false\ngroup[81].nodes[1].index 190\ngroup[81].nodes[1].retired false\ngroup[81].nodes[2].index 238\ngroup[81].nodes[2].retired false\ngroup[82].index \"2.3\"\ngroup[82].name \"top.2.3\"\ngroup[82].capacity 1.0\ngroup[82].partitions \"*|*\"\ngroup[83].index \"2.3.0\"\ngroup[83].name \"top.2.3.0\"\ngroup[83].capacity 1.0\ngroup[83].partitions \"\"\ngroup[83].nodes[0].index 185\ngroup[83].nodes[0].retired false\ngroup[83].nodes[1].index 264\ngroup[83].nodes[1].retired false\ngroup[83].nodes[2].index 39\ngroup[83].nodes[2].retired false\ngroup[84].index \"2.3.1\"\ngroup[84].name \"top.2.3.1\"\ngroup[84].capacity 1.0\ngroup[84].partitions \"\"\ngroup[84].nodes[0].index 235\ngroup[84].nodes[0].retired false\ngroup[84].nodes[1].index 339\ngroup[84].nodes[1].retired false\ngroup[84].nodes[2].index 327\ngroup[84].nodes[2].retired false\ngroup[85].index \"2.3.2\"\ngroup[85].name \"top.2.3.2\"\ngroup[85].capacity 1.0\ngroup[85].partitions \"\"\ngroup[85].nodes[0].index 299\ngroup[85].nodes[0].retired false\ngroup[85].nodes[1].index 180\ngroup[85].nodes[1].retired false\ngroup[85].nodes[2].index 194\ngroup[85].nodes[2].retired false\ngroup[86].index \"2.3.3\"\ngroup[86].name \"top.2.3.3\"\ngroup[86].capacity 1.0\ngroup[86].partitions \"\"\ngroup[86].nodes[0].index 6\ngroup[86].nodes[0].retired false\ngroup[86].nodes[1].index 57\ngroup[86].nodes[1].retired false\ngroup[86].nodes[2].index 260\ngroup[86].nodes[2].retired false\ngroup[87].index \"2.3.4\"\ngroup[87].name \"top.2.3.4\"\ngroup[87].capacity 1.0\ngroup[87].partitions \"\"\ngroup[87].nodes[0].index 216\ngroup[87].nodes[0].retired false\ngroup[87].nodes[1].index 193\ngroup[87].nodes[1].retired false\ngroup[87].nodes[2].index 290\ngroup[87].nodes[2].retired false\ngroup[88].index \"2.4\"\ngroup[88].name \"top.2.4\"\ngroup[88].capacity 1.0\ngroup[88].partitions \"*|*\"\ngroup[89].index \"2.4.0\"\ngroup[89].name \"top.2.4.0\"\ngroup[89].capacity 1.0\ngroup[89].partitions \"\"\ngroup[89].nodes[0].index 332\ngroup[89].nodes[0].retired false\ngroup[89].nodes[1].index 107\ngroup[89].nodes[1].retired false\ngroup[89].nodes[2].index 176\ngroup[89].nodes[2].retired false\ngroup[90].index \"2.4.1\"\ngroup[90].name \"top.2.4.1\"\ngroup[90].capacity 1.0\ngroup[90].partitions \"\"\ngroup[90].nodes[0].index 233\ngroup[90].nodes[0].retired false\ngroup[90].nodes[1].index 196\ngroup[90].nodes[1].retired false\ngroup[90].nodes[2].index 157\ngroup[90].nodes[2].retired false\ngroup[91].index \"2.4.2\"\ngroup[91].name \"top.2.4.2\"\ngroup[91].capacity 1.0\ngroup[91].partitions \"\"\ngroup[91].nodes[0].index 285\ngroup[91].nodes[0].retired false\ngroup[91].nodes[1].index 98\ngroup[91].nodes[1].retired false\ngroup[91].nodes[2].index 44\ngroup[91].nodes[2].retired false\ngroup[92].index \"2.4.3\"\ngroup[92].name \"top.2.4.3\"\ngroup[92].capacity 1.0\ngroup[92].partitions \"\"\ngroup[92].nodes[0].index 155\ngroup[92].nodes[0].retired false\ngroup[92].nodes[1].index 370\ngroup[92].nodes[1].retired false\ngroup[92].nodes[2].index 218\ngroup[92].nodes[2].retired false\ngroup[93].index \"2.4.4\"\ngroup[93].name \"top.2.4.4\"\ngroup[93].capacity 1.0\ngroup[93].partitions \"\"\ngroup[93].nodes[0].index 162\ngroup[93].nodes[0].retired false\ngroup[93].nodes[1].index 231\ngroup[93].nodes[1].retired false\ngroup[93].nodes[2].index 191\ngroup[93].nodes[2].retired false\ngroup[94].index \"3\"\ngroup[94].name \"top.3\"\ngroup[94].capacity 1.0\ngroup[94].partitions \"*|*\"\ngroup[95].index \"3.0\"\ngroup[95].name \"top.3.0\"\ngroup[95].capacity 1.0\ngroup[95].partitions \"*|*\"\ngroup[96].index \"3.0.0\"\ngroup[96].name \"top.3.0.0\"\ngroup[96].capacity 1.0\ngroup[96].partitions \"\"\ngroup[96].nodes[0].index 213\ngroup[96].nodes[0].retired false\ngroup[96].nodes[1].index 148\ngroup[96].nodes[1].retired false\ngroup[96].nodes[2].index 42\ngroup[96].nodes[2].retired false\ngroup[97].index \"3.0.1\"\ngroup[97].name \"top.3.0.1\"\ngroup[97].capacity 1.0\ngroup[97].partitions \"\"\ngroup[97].nodes[0].index 247\ngroup[97].nodes[0].retired false\ngroup[97].nodes[1].index 11\ngroup[97].nodes[1].retired false\ngroup[97].nodes[2].index 352\ngroup[97].nodes[2].retired false\ngroup[98].index \"3.0.2\"\ngroup[98].name \"top.3.0.2\"\ngroup[98].capacity 1.0\ngroup[98].partitions \"\"\ngroup[98].nodes[0].index 66\ngroup[98].nodes[0].retired false\ngroup[98].nodes[1].index 208\ngroup[98].nodes[1].retired false\ngroup[98].nodes[2].index 316\ngroup[98].nodes[2].retired false\ngroup[99].index \"3.0.3\"\ngroup[99].name \"top.3.0.3\"\ngroup[99].capacity 1.0\ngroup[99].partitions \"\"\ngroup[99].nodes[0].index 205\ngroup[99].nodes[0].retired false\ngroup[99].nodes[1].index 292\ngroup[99].nodes[1].retired false\ngroup[99].nodes[2].index 80\ngroup[99].nodes[2].retired false\ngroup[100].index \"3.0.4\"\ngroup[100].name \"top.3.0.4\"\ngroup[100].capacity 1.0\ngroup[100].partitions \"\"\ngroup[100].nodes[0].index 106\ngroup[100].nodes[0].retired false\ngroup[100].nodes[1].index 302\ngroup[100].nodes[1].retired false\ngroup[100].nodes[2].index 308\ngroup[100].nodes[2].retired false\ngroup[101].index \"3.1\"\ngroup[101].name \"top.3.1\"\ngroup[101].capacity 1.0\ngroup[101].partitions \"*|*\"\ngroup[102].index \"3.1.0\"\ngroup[102].name \"top.3.1.0\"\ngroup[102].capacity 1.0\ngroup[102].partitions \"\"\ngroup[102].nodes[0].index 312\ngroup[102].nodes[0].retired false\ngroup[102].nodes[1].index 323\ngroup[102].nodes[1].retired false\ngroup[102].nodes[2].index 278\ngroup[102].nodes[2].retired false\ngroup[103].index \"3.1.1\"\ngroup[103].name \"top.3.1.1\"\ngroup[103].capacity 1.0\ngroup[103].partitions \"\"\ngroup[103].nodes[0].index 146\ngroup[103].nodes[0].retired false\ngroup[103].nodes[1].index 197\ngroup[103].nodes[1].retired false\ngroup[103].nodes[2].index 358\ngroup[103].nodes[2].retired false\ngroup[104].index \"3.1.2\"\ngroup[104].name \"top.3.1.2\"\ngroup[104].capacity 1.0\ngroup[104].partitions \"\"\ngroup[104].nodes[0].index 239\ngroup[104].nodes[0].retired false\ngroup[104].nodes[1].index 305\ngroup[104].nodes[1].retired false\ngroup[104].nodes[2].index 165\ngroup[104].nodes[2].retired false\ngroup[105].index \"3.1.3\"\ngroup[105].name \"top.3.1.3\"\ngroup[105].capacity 1.0\ngroup[105].partitions \"\"\ngroup[105].nodes[0].index 49\ngroup[105].nodes[0].retired false\ngroup[105].nodes[1].index 25\ngroup[105].nodes[1].retired false\ngroup[105].nodes[2].index 36\ngroup[105].nodes[2].retired false\ngroup[106].index \"3.1.4\"\ngroup[106].name \"top.3.1.4\"\ngroup[106].capacity 1.0\ngroup[106].partitions \"\"\ngroup[106].nodes[0].index 229\ngroup[106].nodes[0].retired false\ngroup[106].nodes[1].index 73\ngroup[106].nodes[1].retired false\ngroup[106].nodes[2].index 311\ngroup[106].nodes[2].retired false\ngroup[107].index \"3.2\"\ngroup[107].name \"top.3.2\"\ngroup[107].capacity 1.0\ngroup[107].partitions \"*|*\"\ngroup[108].index \"3.2.0\"\ngroup[108].name \"top.3.2.0\"\ngroup[108].capacity 1.0\ngroup[108].partitions \"\"\ngroup[108].nodes[0].index 103\ngroup[108].nodes[0].retired false\ngroup[108].nodes[1].index 163\ngroup[108].nodes[1].retired false\ngroup[108].nodes[2].index 51\ngroup[108].nodes[2].retired false\ngroup[109].index \"3.2.1\"\ngroup[109].name \"top.3.2.1\"\ngroup[109].capacity 1.0\ngroup[109].partitions \"\"\ngroup[109].nodes[0].index 12\ngroup[109].nodes[0].retired false\ngroup[109].nodes[1].index 52\ngroup[109].nodes[1].retired false\ngroup[109].nodes[2].index 203\ngroup[109].nodes[2].retired false\ngroup[110].index \"3.2.2\"\ngroup[110].name \"top.3.2.2\"\ngroup[110].capacity 1.0\ngroup[110].partitions \"\"\ngroup[110].nodes[0].index 59\ngroup[110].nodes[0].retired false\ngroup[110].nodes[1].index 361\ngroup[110].nodes[1].retired false\ngroup[110].nodes[2].index 35\ngroup[110].nodes[2].retired false\ngroup[111].index \"3.2.3\"\ngroup[111].name \"top.3.2.3\"\ngroup[111].capacity 1.0\ngroup[111].partitions \"\"\ngroup[111].nodes[0].index 136\ngroup[111].nodes[0].retired false\ngroup[111].nodes[1].index 9\ngroup[111].nodes[1].retired false\ngroup[111].nodes[2].index 258\ngroup[111].nodes[2].retired false\ngroup[112].index \"3.2.4\"\ngroup[112].name \"top.3.2.4\"\ngroup[112].capacity 1.0\ngroup[112].partitions \"\"\ngroup[112].nodes[0].index 95\ngroup[112].nodes[0].retired false\ngroup[112].nodes[1].index 177\ngroup[112].nodes[1].retired false\ngroup[112].nodes[2].index 5\ngroup[112].nodes[2].retired false\ngroup[113].index \"3.3\"\ngroup[113].name \"top.3.3\"\ngroup[113].capacity 1.0\ngroup[113].partitions \"*|*\"\ngroup[114].index \"3.3.0\"\ngroup[114].name \"top.3.3.0\"\ngroup[114].capacity 1.0\ngroup[114].partitions \"\"\ngroup[114].nodes[0].index 77\ngroup[114].nodes[0].retired false\ngroup[114].nodes[1].index 202\ngroup[114].nodes[1].retired false\ngroup[114].nodes[2].index 67\ngroup[114].nodes[2].retired false\ngroup[115].index \"3.3.1\"\ngroup[115].name \"top.3.3.1\"\ngroup[115].capacity 1.0\ngroup[115].partitions \"\"\ngroup[115].nodes[0].index 259\ngroup[115].nodes[0].retired false\ngroup[115].nodes[1].index 28\ngroup[115].nodes[1].retired false\ngroup[115].nodes[2].index 40\ngroup[115].nodes[2].retired false\ngroup[116].index \"3.3.2\"\ngroup[116].name \"top.3.3.2\"\ngroup[116].capacity 1.0\ngroup[116].partitions \"\"\ngroup[116].nodes[0].index 89\ngroup[116].nodes[0].retired false\ngroup[116].nodes[1].index 46\ngroup[116].nodes[1].retired false\ngroup[116].nodes[2].index 341\ngroup[116].nodes[2].retired false\ngroup[117].index \"3.3.3\"\ngroup[117].name \"top.3.3.3\"\ngroup[117].capacity 1.0\ngroup[117].partitions \"\"\ngroup[117].nodes[0].index 118\ngroup[117].nodes[0].retired false\ngroup[117].nodes[1].index 335\ngroup[117].nodes[1].retired false\ngroup[117].nodes[2].index 1\ngroup[117].nodes[2].retired false\ngroup[118].index \"3.3.4\"\ngroup[118].name \"top.3.3.4\"\ngroup[118].capacity 1.0\ngroup[118].partitions \"\"\ngroup[118].nodes[0].index 87\ngroup[118].nodes[0].retired false\ngroup[118].nodes[1].index 147\ngroup[118].nodes[1].retired false\ngroup[118].nodes[2].index 336\ngroup[118].nodes[2].retired false\ngroup[119].index \"3.4\"\ngroup[119].name \"top.3.4\"\ngroup[119].capacity 1.0\ngroup[119].partitions \"*|*\"\ngroup[120].index \"3.4.0\"\ngroup[120].name \"top.3.4.0\"\ngroup[120].capacity 1.0\ngroup[120].partitions \"\"\ngroup[120].nodes[0].index 353\ngroup[120].nodes[0].retired false\ngroup[120].nodes[1].index 168\ngroup[120].nodes[1].retired false\ngroup[120].nodes[2].index 114\ngroup[120].nodes[2].retired false\ngroup[121].index \"3.4.1\"\ngroup[121].name \"top.3.4.1\"\ngroup[121].capacity 1.0\ngroup[121].partitions \"\"\ngroup[121].nodes[0].index 104\ngroup[121].nodes[0].retired false\ngroup[121].nodes[1].index 287\ngroup[121].nodes[1].retired false\ngroup[121].nodes[2].index 222\ngroup[121].nodes[2].retired false\ngroup[122].index \"3.4.2\"\ngroup[122].name \"top.3.4.2\"\ngroup[122].capacity 1.0\ngroup[122].partitions \"\"\ngroup[122].nodes[0].index 325\ngroup[122].nodes[0].retired false\ngroup[122].nodes[1].index 240\ngroup[122].nodes[1].retired false\ngroup[122].nodes[2].index 296\ngroup[122].nodes[2].retired false\ngroup[123].index \"3.4.3\"\ngroup[123].name \"top.3.4.3\"\ngroup[123].capacity 1.0\ngroup[123].partitions \"\"\ngroup[123].nodes[0].index 166\ngroup[123].nodes[0].retired false\ngroup[123].nodes[1].index 141\ngroup[123].nodes[1].retired false\ngroup[123].nodes[2].index 23\ngroup[123].nodes[2].retired false\ngroup[124].index \"3.4.4\"\ngroup[124].name \"top.3.4.4\"\ngroup[124].capacity 1.0\ngroup[124].partitions \"\"\ngroup[124].nodes[0].index 100\ngroup[124].nodes[0].retired false\ngroup[124].nodes[1].index 320\ngroup[124].nodes[1].retired false\ngroup[124].nodes[2].index 96\ngroup[124].nodes[2].retired false\ngroup[125].index \"4\"\ngroup[125].name \"top.4\"\ngroup[125].capacity 1.0\ngroup[125].partitions \"*|*\"\ngroup[126].index \"4.0\"\ngroup[126].name \"top.4.0\"\ngroup[126].capacity 1.0\ngroup[126].partitions \"*|*\"\ngroup[127].index \"4.0.0\"\ngroup[127].name \"top.4.0.0\"\ngroup[127].capacity 1.0\ngroup[127].partitions \"\"\ngroup[127].nodes[0].index 18\ngroup[127].nodes[0].retired false\ngroup[127].nodes[1].index 75\ngroup[127].nodes[1].retired false\ngroup[127].nodes[2].index 79\ngroup[127].nodes[2].retired false\ngroup[128].index \"4.0.1\"\ngroup[128].name \"top.4.0.1\"\ngroup[128].capacity 1.0\ngroup[128].partitions \"\"\ngroup[128].nodes[0].index 328\ngroup[128].nodes[0].retired false\ngroup[128].nodes[1].index 61\ngroup[128].nodes[1].retired false\ngroup[128].nodes[2].index 334\ngroup[128].nodes[2].retired false\ngroup[129].index \"4.0.2\"\ngroup[129].name \"top.4.0.2\"\ngroup[129].capacity 1.0\ngroup[129].partitions \"\"\ngroup[129].nodes[0].index 363\ngroup[129].nodes[0].retired false\ngroup[129].nodes[1].index 275\ngroup[129].nodes[1].retired false\ngroup[129].nodes[2].index 343\ngroup[129].nodes[2].retired false\ngroup[130].index \"4.0.3\"\ngroup[130].name \"top.4.0.3\"\ngroup[130].capacity 1.0\ngroup[130].partitions \"\"\ngroup[130].nodes[0].index 252\ngroup[130].nodes[0].retired false\ngroup[130].nodes[1].index 297\ngroup[130].nodes[1].retired false\ngroup[130].nodes[2].index 34\ngroup[130].nodes[2].retired false\ngroup[131].index \"4.0.4\"\ngroup[131].name \"top.4.0.4\"\ngroup[131].capacity 1.0\ngroup[131].partitions \"\"\ngroup[131].nodes[0].index 280\ngroup[131].nodes[0].retired false\ngroup[131].nodes[1].index 174\ngroup[131].nodes[1].retired false\ngroup[131].nodes[2].index 272\ngroup[131].nodes[2].retired false\ngroup[132].index \"4.1\"\ngroup[132].name \"top.4.1\"\ngroup[132].capacity 1.0\ngroup[132].partitions \"*|*\"\ngroup[133].index \"4.1.0\"\ngroup[133].name \"top.4.1.0\"\ngroup[133].capacity 1.0\ngroup[133].partitions \"\"\ngroup[133].nodes[0].index 128\ngroup[133].nodes[0].retired false\ngroup[133].nodes[1].index 187\ngroup[133].nodes[1].retired false\ngroup[133].nodes[2].index 313\ngroup[133].nodes[2].retired false\ngroup[134].index \"4.1.1\"\ngroup[134].name \"top.4.1.1\"\ngroup[134].capacity 1.0\ngroup[134].partitions \"\"\ngroup[134].nodes[0].index 92\ngroup[134].nodes[0].retired false\ngroup[134].nodes[1].index 351\ngroup[134].nodes[1].retired false\ngroup[134].nodes[2].index 122\ngroup[134].nodes[2].retired false\ngroup[135].index \"4.1.2\"\ngroup[135].name \"top.4.1.2\"\ngroup[135].capacity 1.0\ngroup[135].partitions \"\"\ngroup[135].nodes[0].index 362\ngroup[135].nodes[0].retired false\ngroup[135].nodes[1].index 156\ngroup[135].nodes[1].retired false\ngroup[135].nodes[2].index 186\ngroup[135].nodes[2].retired false\ngroup[136].index \"4.1.3\"\ngroup[136].name \"top.4.1.3\"\ngroup[136].capacity 1.0\ngroup[136].partitions \"\"\ngroup[136].nodes[0].index 129\ngroup[136].nodes[0].retired false\ngroup[136].nodes[1].index 159\ngroup[136].nodes[1].retired false\ngroup[136].nodes[2].index 357\ngroup[136].nodes[2].retired false\ngroup[137].index \"4.1.4\"\ngroup[137].name \"top.4.1.4\"\ngroup[137].capacity 1.0\ngroup[137].partitions \"\"\ngroup[137].nodes[0].index 140\ngroup[137].nodes[0].retired false\ngroup[137].nodes[1].index 2\ngroup[137].nodes[1].retired false\ngroup[137].nodes[2].index 7\ngroup[137].nodes[2].retired false\ngroup[138].index \"4.2\"\ngroup[138].name \"top.4.2\"\ngroup[138].capacity 1.0\ngroup[138].partitions \"*|*\"\ngroup[139].index \"4.2.0\"\ngroup[139].name \"top.4.2.0\"\ngroup[139].capacity 1.0\ngroup[139].partitions \"\"\ngroup[139].nodes[0].index 108\ngroup[139].nodes[0].retired false\ngroup[139].nodes[1].index 276\ngroup[139].nodes[1].retired false\ngroup[139].nodes[2].index 126\ngroup[139].nodes[2].retired false\ngroup[140].index \"4.2.1\"\ngroup[140].name \"top.4.2.1\"\ngroup[140].capacity 1.0\ngroup[140].partitions \"\"\ngroup[140].nodes[0].index 188\ngroup[140].nodes[0].retired false\ngroup[140].nodes[1].index 281\ngroup[140].nodes[1].retired false\ngroup[140].nodes[2].index 137\ngroup[140].nodes[2].retired false\ngroup[141].index \"4.2.2\"\ngroup[141].name \"top.4.2.2\"\ngroup[141].capacity 1.0\ngroup[141].partitions \"\"\ngroup[141].nodes[0].index 175\ngroup[141].nodes[0].retired false\ngroup[141].nodes[1].index 364\ngroup[141].nodes[1].retired false\ngroup[141].nodes[2].index 117\ngroup[141].nodes[2].retired false\ngroup[142].index \"4.2.3\"\ngroup[142].name \"top.4.2.3\"\ngroup[142].capacity 1.0\ngroup[142].partitions \"\"\ngroup[142].nodes[0].index 14\ngroup[142].nodes[0].retired false\ngroup[142].nodes[1].index 373\ngroup[142].nodes[1].retired false\ngroup[142].nodes[2].index 132\ngroup[142].nodes[2].retired false\ngroup[143].index \"4.2.4\"\ngroup[143].name \"top.4.2.4\"\ngroup[143].capacity 1.0\ngroup[143].partitions \"\"\ngroup[143].nodes[0].index 338\ngroup[143].nodes[0].retired false\ngroup[143].nodes[1].index 54\ngroup[143].nodes[1].retired false\ngroup[143].nodes[2].index 209\ngroup[143].nodes[2].retired false\ngroup[144].index \"4.3\"\ngroup[144].name \"top.4.3\"\ngroup[144].capacity 1.0\ngroup[144].partitions \"*|*\"\ngroup[145].index \"4.3.0\"\ngroup[145].name \"top.4.3.0\"\ngroup[145].capacity 1.0\ngroup[145].partitions \"\"\ngroup[145].nodes[0].index 226\ngroup[145].nodes[0].retired false\ngroup[145].nodes[1].index 38\ngroup[145].nodes[1].retired false\ngroup[145].nodes[2].index 318\ngroup[145].nodes[2].retired false\ngroup[146].index \"4.3.1\"\ngroup[146].name \"top.4.3.1\"\ngroup[146].capacity 1.0\ngroup[146].partitions \"\"\ngroup[146].nodes[0].index 283\ngroup[146].nodes[0].retired false\ngroup[146].nodes[1].index 109\ngroup[146].nodes[1].retired false\ngroup[146].nodes[2].index 171\ngroup[146].nodes[2].retired false\ngroup[147].index \"4.3.2\"\ngroup[147].name \"top.4.3.2\"\ngroup[147].capacity 1.0\ngroup[147].partitions \"\"\ngroup[147].nodes[0].index 130\ngroup[147].nodes[0].retired false\ngroup[147].nodes[1].index 119\ngroup[147].nodes[1].retired false\ngroup[147].nodes[2].index 206\ngroup[147].nodes[2].retired false\ngroup[148].index \"4.3.3\"\ngroup[148].name \"top.4.3.3\"\ngroup[148].capacity 1.0\ngroup[148].partitions \"\"\ngroup[148].nodes[0].index 295\ngroup[148].nodes[0].retired false\ngroup[148].nodes[1].index 154\ngroup[148].nodes[1].retired false\ngroup[148].nodes[2].index 298\ngroup[148].nodes[2].retired false\ngroup[149].index \"4.3.4\"\ngroup[149].name \"top.4.3.4\"\ngroup[149].capacity 1.0\ngroup[149].partitions \"\"\ngroup[149].nodes[0].index 273\ngroup[149].nodes[0].retired false\ngroup[149].nodes[1].index 16\ngroup[149].nodes[1].retired false\ngroup[149].nodes[2].index 329\ngroup[149].nodes[2].retired false\ngroup[150].index \"4.4\"\ngroup[150].name \"top.4.4\"\ngroup[150].capacity 1.0\ngroup[150].partitions \"*|*\"\ngroup[151].index \"4.4.0\"\ngroup[151].name \"top.4.4.0\"\ngroup[151].capacity 1.0\ngroup[151].partitions \"\"\ngroup[151].nodes[0].index 237\ngroup[151].nodes[0].retired false\ngroup[151].nodes[1].index 85\ngroup[151].nodes[1].retired false\ngroup[151].nodes[2].index 3\ngroup[151].nodes[2].retired false\ngroup[152].index \"4.4.1\"\ngroup[152].name \"top.4.4.1\"\ngroup[152].capacity 1.0\ngroup[152].partitions \"\"\ngroup[152].nodes[0].index 62\ngroup[152].nodes[0].retired false\ngroup[152].nodes[1].index 224\ngroup[152].nodes[1].retired false\ngroup[152].nodes[2].index 113\ngroup[152].nodes[2].retired false\ngroup[153].index \"4.4.2\"\ngroup[153].name \"top.4.4.2\"\ngroup[153].capacity 1.0\ngroup[153].partitions \"\"\ngroup[153].nodes[0].index 179\ngroup[153].nodes[0].retired false\ngroup[153].nodes[1].index 41\ngroup[153].nodes[1].retired false\ngroup[153].nodes[2].index 342\ngroup[153].nodes[2].retired false\ngroup[154].index \"4.4.3\"\ngroup[154].name \"top.4.4.3\"\ngroup[154].capacity 1.0\ngroup[154].partitions \"\"\ngroup[154].nodes[0].index 304\ngroup[154].nodes[0].retired false\ngroup[154].nodes[1].index 138\ngroup[154].nodes[1].retired false\ngroup[154].nodes[2].index 97\ngroup[154].nodes[2].retired false\ngroup[155].index \"4.4.4\"\ngroup[155].name \"top.4.4.4\"\ngroup[155].capacity 1.0\ngroup[155].partitions \"\"\ngroup[155].nodes[0].index 270\ngroup[155].nodes[0].retired false\ngroup[155].nodes[1].index 256\ngroup[155].nodes[1].retired false\ngroup[155].nodes[2].index 271\ngroup[155].nodes[2].retired false\ndisk_distribution MODULO_BID",
-  "node-type": "distributor",
-  "redundancy": 3,
-  "node-count": 500,
-  "up-states": "uim",
-  "result": [
-    {
-      "bucket": "4000000000000000",
-      "nodes": [279],
-      "failure": "NONE"
-    },
-    {
-      "bucket": "4000000000000001",
-      "nodes": [229],
-      "failure": "NONE"
-    },
-    {
-      "bucket": "4000000000000002",
-      "nodes": [276],
-      "failure": "NONE"
-    },
-    {
-      "bucket": "4000000000000003",
-      "nodes": [365],
-      "failure": "NONE"
-    },
-    {
-      "bucket": "4000000000000004",
-      "nodes": [13],
-      "failure": "NONE"
-    },
-    {
-      "bucket": "4000000000000005",
-      "nodes": [92],
-      "failure": "NONE"
-    },
-    {
-      "bucket": "4000000000000006",
-      "nodes": [49],
-      "failure": "NONE"
-    },
-    {
-      "bucket": "4000000000000007",
-      "nodes": [8],
-      "failure": "NONE"
-    },
-    {
-      "bucket": "4000000000000008",
-      "nodes": [329],
-      "failure": "NONE"
-    },
-    {
-      "bucket": "4000000000000009",
-      "nodes": [1],
-      "failure": "NONE"
-    },
-    {
-      "bucket": "400000000000000a",
-      "nodes": [210],
-      "failure": "NONE"
-    },
-    {
-      "bucket": "400000000000000b",
-      "nodes": [15],
-      "failure": "NONE"
-    },
-    {
-      "bucket": "400000000000000c",
-      "nodes": [291],
-      "failure": "NONE"
-    },
-    {
-      "bucket": "400000000000000d",
-      "nodes": [27],
-      "failure": "NONE"
-    },
-    {
-      "bucket": "400000000000000e",
-      "nodes": [357],
-      "failure": "NONE"
-    },
-    {
-      "bucket": "400000000000000f",
-      "nodes": [270],
-      "failure": "NONE"
-    },
-    {
-      "bucket": "4000000000000010",
-      "nodes": [293],
-      "failure": "NONE"
-    },
-    {
-      "bucket": "4000000000000011",
-      "nodes": [108],
-      "failure": "NONE"
-    },
-    {
-      "bucket": "4000000000000012",
-      "nodes": [288],
-      "failure": "NONE"
-    },
-    {
-      "bucket": "4000000000000013",
-      "nodes": [340],
-      "failure": "NONE"
-    },
-    {
-      "bucket": "4400000000000000",
-      "nodes": [279],
-      "failure": "NONE"
-    },
-    {
-      "bucket": "4400000000000001",
-      "nodes": [229],
-      "failure": "NONE"
-    },
-    {
-      "bucket": "4400000000000002",
-      "nodes": [276],
-      "failure": "NONE"
-    },
-    {
-      "bucket": "4400000000000003",
-      "nodes": [365],
-      "failure": "NONE"
-    },
-    {
-      "bucket": "4400000000000004",
-      "nodes": [13],
-      "failure": "NONE"
-    },
-    {
-      "bucket": "4400000000000005",
-      "nodes": [92],
-      "failure": "NONE"
-    },
-    {
-      "bucket": "4400000000000006",
-      "nodes": [49],
-      "failure": "NONE"
-    },
-    {
-      "bucket": "4400000000000007",
-      "nodes": [8],
-      "failure": "NONE"
-    },
-    {
-      "bucket": "4400000000000008",
-      "nodes": [329],
-      "failure": "NONE"
-    },
-    {
-      "bucket": "4400000000000009",
-      "nodes": [1],
-      "failure": "NONE"
-    },
-    {
-      "bucket": "440000000000000a",
-      "nodes": [210],
-      "failure": "NONE"
-    },
-    {
-      "bucket": "440000000000000b",
-      "nodes": [15],
-      "failure": "NONE"
-    },
-    {
-      "bucket": "440000000000000c",
-      "nodes": [291],
-      "failure": "NONE"
-    },
-    {
-      "bucket": "440000000000000d",
-      "nodes": [27],
-      "failure": "NONE"
-    },
-    {
-      "bucket": "440000000000000e",
-      "nodes": [357],
-      "failure": "NONE"
-    },
-    {
-      "bucket": "440000000000000f",
-      "nodes": [270],
-      "failure": "NONE"
-    },
-    {
-      "bucket": "4400000000000010",
-      "nodes": [293],
-      "failure": "NONE"
-    },
-    {
-      "bucket": "4400000000000011",
-      "nodes": [108],
-      "failure": "NONE"
-    },
-    {
-      "bucket": "4400000000000012",
-      "nodes": [288],
-      "failure": "NONE"
-    },
-    {
-      "bucket": "4400000000000013",
-      "nodes": [340],
-      "failure": "NONE"
-    },
-    {
-      "bucket": "4800000000000000",
-      "nodes": [279],
-      "failure": "NONE"
-    },
-    {
-      "bucket": "4800000000000001",
-      "nodes": [229],
-      "failure": "NONE"
-    },
-    {
-      "bucket": "4800000000000002",
-      "nodes": [276],
-      "failure": "NONE"
-    },
-    {
-      "bucket": "4800000000000003",
-      "nodes": [365],
-      "failure": "NONE"
-    },
-    {
-      "bucket": "4800000000000004",
-      "nodes": [13],
-      "failure": "NONE"
-    },
-    {
-      "bucket": "4800000000000005",
-      "nodes": [92],
-      "failure": "NONE"
-    },
-    {
-      "bucket": "4800000000000006",
-      "nodes": [49],
-      "failure": "NONE"
-    },
-    {
-      "bucket": "4800000000000007",
-      "nodes": [8],
-      "failure": "NONE"
-    },
-    {
-      "bucket": "4800000000000008",
-      "nodes": [329],
-      "failure": "NONE"
-    },
-    {
-      "bucket": "4800000000000009",
-      "nodes": [1],
-      "failure": "NONE"
-    },
-    {
-      "bucket": "480000000000000a",
-      "nodes": [210],
-      "failure": "NONE"
-    },
-    {
-      "bucket": "480000000000000b",
-      "nodes": [15],
-      "failure": "NONE"
-    },
-    {
-      "bucket": "480000000000000c",
-      "nodes": [291],
-      "failure": "NONE"
-    },
-    {
-      "bucket": "480000000000000d",
-      "nodes": [27],
-      "failure": "NONE"
-    },
-    {
-      "bucket": "480000000000000e",
-      "nodes": [357],
-      "failure": "NONE"
-    },
-    {
-      "bucket": "480000000000000f",
-      "nodes": [270],
-      "failure": "NONE"
-    },
-    {
-      "bucket": "4800000000000010",
-      "nodes": [293],
-      "failure": "NONE"
-    },
-    {
-      "bucket": "4800000000000011",
-      "nodes": [108],
-      "failure": "NONE"
-    },
-    {
-      "bucket": "4800000000000012",
-      "nodes": [288],
-      "failure": "NONE"
-    },
-    {
-      "bucket": "4800000000000013",
-      "nodes": [340],
-      "failure": "NONE"
-    },
-    {
-      "bucket": "400000000000fe68",
-      "nodes": [253],
-      "failure": "NONE"
-    },
-    {
-      "bucket": "440000000001fe68",
-      "nodes": [253],
-      "failure": "NONE"
-    },
-    {
-      "bucket": "480000000001fe68",
-      "nodes": [253],
-      "failure": "NONE"
-    },
-    {
-      "bucket": "4c0000000001fe68",
-      "nodes": [253],
-      "failure": "NONE"
-    },
-    {
-      "bucket": "500000000009fe68",
-      "nodes": [253],
-      "failure": "NONE"
-    },
-    {
-      "bucket": "540000000009fe68",
-      "nodes": [253],
-      "failure": "NONE"
-    },
-    {
-      "bucket": "580000000009fe68",
-      "nodes": [253],
-      "failure": "NONE"
-    },
-    {
-      "bucket": "5c0000000049fe68",
-      "nodes": [253],
-      "failure": "NONE"
-    },
-    {
-      "bucket": "600000000049fe68",
-      "nodes": [253],
-      "failure": "NONE"
-    },
-    {
-      "bucket": "640000000149fe68",
-      "nodes": [253],
-      "failure": "NONE"
-    },
-    {
-      "bucket": "680000000349fe68",
-      "nodes": [253],
-      "failure": "NONE"
-    },
-    {
-      "bucket": "6c0000000749fe68",
-      "nodes": [253],
-      "failure": "NONE"
-    },
-    {
-      "bucket": "700000000749fe68",
-      "nodes": [253],
-      "failure": "NONE"
-    },
-    {
-      "bucket": "740000001749fe68",
-      "nodes": [253],
-      "failure": "NONE"
-    },
-    {
-      "bucket": "780000003749fe68",
-      "nodes": [253],
-      "failure": "NONE"
-    },
-    {
-      "bucket": "7c0000003749fe68",
-      "nodes": [253],
-      "failure": "NONE"
-    },
-    {
-      "bucket": "80000000b749fe68",
-      "nodes": [253],
-      "failure": "NONE"
-    },
-    {
-      "bucket": "84000001b749fe68",
-      "nodes": [253],
-      "failure": "NONE"
-    },
-    {
-      "bucket": "88000003b749fe68",
-      "nodes": [253],
-      "failure": "NONE"
-    },
-    {
-      "bucket": "8c000007b749fe68",
-      "nodes": [253],
-      "failure": "NONE"
-    },
-    {
-      "bucket": "9000000fb749fe68",
-      "nodes": [253],
-      "failure": "NONE"
-    },
-    {
-      "bucket": "9400001fb749fe68",
-      "nodes": [253],
-      "failure": "NONE"
-    },
-    {
-      "bucket": "9800003fb749fe68",
-      "nodes": [253],
-      "failure": "NONE"
-    },
-    {
-      "bucket": "9c00007fb749fe68",
-      "nodes": [253],
-      "failure": "NONE"
-    },
-    {
-      "bucket": "a000007fb749fe68",
-      "nodes": [253],
-      "failure": "NONE"
-    },
-    {
-      "bucket": "a400007fb749fe68",
-      "nodes": [253],
-      "failure": "NONE"
-    },
-    {
-      "bucket": "a800007fb749fe68",
-      "nodes": [253],
-      "failure": "NONE"
-    },
-    {
-      "bucket": "ac00047fb749fe68",
-      "nodes": [253],
-      "failure": "NONE"
-    },
-    {
-      "bucket": "b000047fb749fe68",
-      "nodes": [253],
-      "failure": "NONE"
-    },
-    {
-      "bucket": "b400147fb749fe68",
-      "nodes": [253],
-      "failure": "NONE"
-    },
-    {
-      "bucket": "b800347fb749fe68",
-      "nodes": [253],
-      "failure": "NONE"
-    },
-    {
-      "bucket": "bc00347fb749fe68",
-      "nodes": [253],
-      "failure": "NONE"
-    },
-    {
-      "bucket": "c000b47fb749fe68",
-      "nodes": [253],
-      "failure": "NONE"
-    },
-    {
-      "bucket": "c400b47fb749fe68",
-      "nodes": [253],
-      "failure": "NONE"
-    },
-    {
-      "bucket": "c800b47fb749fe68",
-      "nodes": [253],
-      "failure": "NONE"
-    },
-    {
-      "bucket": "cc00b47fb749fe68",
-      "nodes": [253],
-      "failure": "NONE"
-    },
-    {
-      "bucket": "d000b47fb749fe68",
-      "nodes": [253],
-      "failure": "NONE"
-    },
-    {
-      "bucket": "d400b47fb749fe68",
-      "nodes": [253],
-      "failure": "NONE"
-    },
-    {
-      "bucket": "d800b47fb749fe68",
-      "nodes": [253],
-      "failure": "NONE"
-    },
-    {
-      "bucket": "dc00b47fb749fe68",
-      "nodes": [253],
-      "failure": "NONE"
-    },
-    {
-      "bucket": "e000b47fb749fe68",
-      "nodes": [253],
-      "failure": "NONE"
-    },
-    {
-      "bucket": "e400b47fb749fe68",
-      "nodes": [253],
-      "failure": "NONE"
-    },
-    {
-      "bucket": "40000000000098d2",
-      "nodes": [84],
-      "failure": "NONE"
-    },
-    {
-      "bucket": "44000000000098d2",
-      "nodes": [84],
-      "failure": "NONE"
-    },
-    {
-      "bucket": "48000000000298d2",
-      "nodes": [84],
-      "failure": "NONE"
-    },
-    {
-      "bucket": "4c000000000698d2",
-      "nodes": [84],
-      "failure": "NONE"
-    },
-    {
-      "bucket": "50000000000e98d2",
-      "nodes": [84],
-      "failure": "NONE"
-    },
-    {
-      "bucket": "54000000000e98d2",
-      "nodes": [84],
-      "failure": "NONE"
-    },
-    {
-      "bucket": "58000000002e98d2",
-      "nodes": [84],
-      "failure": "NONE"
-    },
-    {
-      "bucket": "5c000000002e98d2",
-      "nodes": [84],
-      "failure": "NONE"
-    },
-    {
-      "bucket": "60000000002e98d2",
-      "nodes": [84],
-      "failure": "NONE"
-    },
-    {
-      "bucket": "64000000012e98d2",
-      "nodes": [84],
-      "failure": "NONE"
-    },
-    {
-      "bucket": "68000000012e98d2",
-      "nodes": [84],
-      "failure": "NONE"
-    },
-    {
-      "bucket": "6c000000052e98d2",
-      "nodes": [84],
-      "failure": "NONE"
-    },
-    {
-      "bucket": "70000000052e98d2",
-      "nodes": [84],
-      "failure": "NONE"
-    },
-    {
-      "bucket": "74000000152e98d2",
-      "nodes": [84],
-      "failure": "NONE"
-    },
-    {
-      "bucket": "78000000152e98d2",
-      "nodes": [84],
-      "failure": "NONE"
-    },
-    {
-      "bucket": "7c000000152e98d2",
-      "nodes": [84],
-      "failure": "NONE"
-    },
-    {
-      "bucket": "80000000952e98d2",
-      "nodes": [84],
-      "failure": "NONE"
-    },
-    {
-      "bucket": "84000001952e98d2",
-      "nodes": [84],
-      "failure": "NONE"
-    },
-    {
-      "bucket": "88000001952e98d2",
-      "nodes": [84],
-      "failure": "NONE"
-    },
-    {
-      "bucket": "8c000001952e98d2",
-      "nodes": [84],
-      "failure": "NONE"
-    },
-    {
-      "bucket": "90000001952e98d2",
-      "nodes": [84],
-      "failure": "NONE"
-    },
-    {
-      "bucket": "94000001952e98d2",
-      "nodes": [84],
-      "failure": "NONE"
-    },
-    {
-      "bucket": "98000001952e98d2",
-      "nodes": [84],
-      "failure": "NONE"
-    },
-    {
-      "bucket": "9c000041952e98d2",
-      "nodes": [84],
-      "failure": "NONE"
-    },
-    {
-      "bucket": "a00000c1952e98d2",
-      "nodes": [84],
-      "failure": "NONE"
-    },
-    {
-      "bucket": "a40000c1952e98d2",
-      "nodes": [84],
-      "failure": "NONE"
-    },
-    {
-      "bucket": "a80002c1952e98d2",
-      "nodes": [84],
-      "failure": "NONE"
-    },
-    {
-      "bucket": "ac0002c1952e98d2",
-      "nodes": [84],
-      "failure": "NONE"
-    },
-    {
-      "bucket": "b00002c1952e98d2",
-      "nodes": [84],
-      "failure": "NONE"
-    },
-    {
-      "bucket": "b40012c1952e98d2",
-      "nodes": [84],
-      "failure": "NONE"
-    },
-    {
-      "bucket": "b80012c1952e98d2",
-      "nodes": [84],
-      "failure": "NONE"
-    },
-    {
-      "bucket": "bc0012c1952e98d2",
-      "nodes": [84],
-      "failure": "NONE"
-    },
-    {
-      "bucket": "c00092c1952e98d2",
-      "nodes": [84],
-      "failure": "NONE"
-    },
-    {
-      "bucket": "c40192c1952e98d2",
-      "nodes": [84],
-      "failure": "NONE"
-    },
-    {
-      "bucket": "c80192c1952e98d2",
-      "nodes": [84],
-      "failure": "NONE"
-    },
-    {
-      "bucket": "cc0192c1952e98d2",
-      "nodes": [84],
-      "failure": "NONE"
-    },
-    {
-      "bucket": "d00992c1952e98d2",
-      "nodes": [84],
-      "failure": "NONE"
-    },
-    {
-      "bucket": "d41992c1952e98d2",
-      "nodes": [84],
-      "failure": "NONE"
-    },
-    {
-      "bucket": "d83992c1952e98d2",
-      "nodes": [84],
-      "failure": "NONE"
-    },
-    {
-      "bucket": "dc7992c1952e98d2",
-      "nodes": [84],
-      "failure": "NONE"
-    },
-    {
-      "bucket": "e07992c1952e98d2",
-      "nodes": [84],
-      "failure": "NONE"
-    },
-    {
-      "bucket": "e47992c1952e98d2",
-      "nodes": [84],
-      "failure": "NONE"
-    }
-  ]
+  "cluster-state" : "distributor:500",
+  "distribution" : "redundancy 8\ninitial_redundancy 0\nensure_primary_persisted true\nready_copies 0\nactive_per_leaf_group false\ndistributor_auto_ownership_transfer_on_whole_group_down true\ngroup[0].index \"invalid\"\ngroup[0].name \"invalid\"\ngroup[0].capacity 1.0\ngroup[0].partitions \"*|*\"\ngroup[1].index \"0\"\ngroup[1].name \"top.0\"\ngroup[1].capacity 1.0\ngroup[1].partitions \"*|*\"\ngroup[2].index \"0.0\"\ngroup[2].name \"top.0.0\"\ngroup[2].capacity 1.0\ngroup[2].partitions \"*|*\"\ngroup[3].index \"0.0.0\"\ngroup[3].name \"top.0.0.0\"\ngroup[3].capacity 1.0\ngroup[3].partitions \"\"\ngroup[3].nodes[0].index 32\ngroup[3].nodes[0].retired false\ngroup[3].nodes[1].index 64\ngroup[3].nodes[1].retired false\ngroup[3].nodes[2].index 286\ngroup[3].nodes[2].retired false\ngroup[4].index \"0.0.1\"\ngroup[4].name \"top.0.0.1\"\ngroup[4].capacity 1.0\ngroup[4].partitions \"\"\ngroup[4].nodes[0].index 317\ngroup[4].nodes[0].retired false\ngroup[4].nodes[1].index 374\ngroup[4].nodes[1].retired false\ngroup[4].nodes[2].index 47\ngroup[4].nodes[2].retired false\ngroup[5].index \"0.0.2\"\ngroup[5].name \"top.0.0.2\"\ngroup[5].capacity 1.0\ngroup[5].partitions \"\"\ngroup[5].nodes[0].index 63\ngroup[5].nodes[0].retired false\ngroup[5].nodes[1].index 349\ngroup[5].nodes[1].retired false\ngroup[5].nodes[2].index 149\ngroup[5].nodes[2].retired false\ngroup[6].index \"0.0.3\"\ngroup[6].name \"top.0.0.3\"\ngroup[6].capacity 1.0\ngroup[6].partitions \"\"\ngroup[6].nodes[0].index 31\ngroup[6].nodes[0].retired false\ngroup[6].nodes[1].index 314\ngroup[6].nodes[1].retired false\ngroup[6].nodes[2].index 22\ngroup[6].nodes[2].retired false\ngroup[7].index \"0.0.4\"\ngroup[7].name \"top.0.0.4\"\ngroup[7].capacity 1.0\ngroup[7].partitions \"\"\ngroup[7].nodes[0].index 350\ngroup[7].nodes[0].retired false\ngroup[7].nodes[1].index 69\ngroup[7].nodes[1].retired false\ngroup[7].nodes[2].index 144\ngroup[7].nodes[2].retired false\ngroup[8].index \"0.1\"\ngroup[8].name \"top.0.1\"\ngroup[8].capacity 1.0\ngroup[8].partitions \"*|*\"\ngroup[9].index \"0.1.0\"\ngroup[9].name \"top.0.1.0\"\ngroup[9].capacity 1.0\ngroup[9].partitions \"\"\ngroup[9].nodes[0].index 189\ngroup[9].nodes[0].retired false\ngroup[9].nodes[1].index 212\ngroup[9].nodes[1].retired false\ngroup[9].nodes[2].index 55\ngroup[9].nodes[2].retired false\ngroup[10].index \"0.1.1\"\ngroup[10].name \"top.0.1.1\"\ngroup[10].capacity 1.0\ngroup[10].partitions \"\"\ngroup[10].nodes[0].index 324\ngroup[10].nodes[0].retired false\ngroup[10].nodes[1].index 236\ngroup[10].nodes[1].retired false\ngroup[10].nodes[2].index 232\ngroup[10].nodes[2].retired false\ngroup[11].index \"0.1.2\"\ngroup[11].name \"top.0.1.2\"\ngroup[11].capacity 1.0\ngroup[11].partitions \"\"\ngroup[11].nodes[0].index 359\ngroup[11].nodes[0].retired false\ngroup[11].nodes[1].index 111\ngroup[11].nodes[1].retired false\ngroup[11].nodes[2].index 170\ngroup[11].nodes[2].retired false\ngroup[12].index \"0.1.3\"\ngroup[12].name \"top.0.1.3\"\ngroup[12].capacity 1.0\ngroup[12].partitions \"\"\ngroup[12].nodes[0].index 251\ngroup[12].nodes[0].retired false\ngroup[12].nodes[1].index 153\ngroup[12].nodes[1].retired false\ngroup[12].nodes[2].index 355\ngroup[12].nodes[2].retired false\ngroup[13].index \"0.1.4\"\ngroup[13].name \"top.0.1.4\"\ngroup[13].capacity 1.0\ngroup[13].partitions \"\"\ngroup[13].nodes[0].index 88\ngroup[13].nodes[0].retired false\ngroup[13].nodes[1].index 99\ngroup[13].nodes[1].retired false\ngroup[13].nodes[2].index 94\ngroup[13].nodes[2].retired false\ngroup[14].index \"0.2\"\ngroup[14].name \"top.0.2\"\ngroup[14].capacity 1.0\ngroup[14].partitions \"*|*\"\ngroup[15].index \"0.2.0\"\ngroup[15].name \"top.0.2.0\"\ngroup[15].capacity 1.0\ngroup[15].partitions \"\"\ngroup[15].nodes[0].index 372\ngroup[15].nodes[0].retired false\ngroup[15].nodes[1].index 228\ngroup[15].nodes[1].retired false\ngroup[15].nodes[2].index 139\ngroup[15].nodes[2].retired false\ngroup[16].index \"0.2.1\"\ngroup[16].name \"top.0.2.1\"\ngroup[16].capacity 1.0\ngroup[16].partitions \"\"\ngroup[16].nodes[0].index 33\ngroup[16].nodes[0].retired false\ngroup[16].nodes[1].index 82\ngroup[16].nodes[1].retired false\ngroup[16].nodes[2].index 255\ngroup[16].nodes[2].retired false\ngroup[17].index \"0.2.2\"\ngroup[17].name \"top.0.2.2\"\ngroup[17].capacity 1.0\ngroup[17].partitions \"\"\ngroup[17].nodes[0].index 337\ngroup[17].nodes[0].retired false\ngroup[17].nodes[1].index 30\ngroup[17].nodes[1].retired false\ngroup[17].nodes[2].index 269\ngroup[17].nodes[2].retired false\ngroup[18].index \"0.2.3\"\ngroup[18].name \"top.0.2.3\"\ngroup[18].capacity 1.0\ngroup[18].partitions \"\"\ngroup[18].nodes[0].index 340\ngroup[18].nodes[0].retired false\ngroup[18].nodes[1].index 243\ngroup[18].nodes[1].retired false\ngroup[18].nodes[2].index 274\ngroup[18].nodes[2].retired false\ngroup[19].index \"0.2.4\"\ngroup[19].name \"top.0.2.4\"\ngroup[19].capacity 1.0\ngroup[19].partitions \"\"\ngroup[19].nodes[0].index 90\ngroup[19].nodes[0].retired false\ngroup[19].nodes[1].index 70\ngroup[19].nodes[1].retired false\ngroup[19].nodes[2].index 160\ngroup[19].nodes[2].retired false\ngroup[20].index \"0.3\"\ngroup[20].name \"top.0.3\"\ngroup[20].capacity 1.0\ngroup[20].partitions \"*|*\"\ngroup[21].index \"0.3.0\"\ngroup[21].name \"top.0.3.0\"\ngroup[21].capacity 1.0\ngroup[21].partitions \"\"\ngroup[21].nodes[0].index 76\ngroup[21].nodes[0].retired false\ngroup[21].nodes[1].index 112\ngroup[21].nodes[1].retired false\ngroup[21].nodes[2].index 74\ngroup[21].nodes[2].retired false\ngroup[22].index \"0.3.1\"\ngroup[22].name \"top.0.3.1\"\ngroup[22].capacity 1.0\ngroup[22].partitions \"\"\ngroup[22].nodes[0].index 43\ngroup[22].nodes[0].retired false\ngroup[22].nodes[1].index 60\ngroup[22].nodes[1].retired false\ngroup[22].nodes[2].index 131\ngroup[22].nodes[2].retired false\ngroup[23].index \"0.3.2\"\ngroup[23].name \"top.0.3.2\"\ngroup[23].capacity 1.0\ngroup[23].partitions \"\"\ngroup[23].nodes[0].index 214\ngroup[23].nodes[0].retired false\ngroup[23].nodes[1].index 321\ngroup[23].nodes[1].retired false\ngroup[23].nodes[2].index 86\ngroup[23].nodes[2].retired false\ngroup[24].index \"0.3.3\"\ngroup[24].name \"top.0.3.3\"\ngroup[24].capacity 1.0\ngroup[24].partitions \"\"\ngroup[24].nodes[0].index 261\ngroup[24].nodes[0].retired false\ngroup[24].nodes[1].index 181\ngroup[24].nodes[1].retired false\ngroup[24].nodes[2].index 48\ngroup[24].nodes[2].retired false\ngroup[25].index \"0.3.4\"\ngroup[25].name \"top.0.3.4\"\ngroup[25].capacity 1.0\ngroup[25].partitions \"\"\ngroup[25].nodes[0].index 56\ngroup[25].nodes[0].retired false\ngroup[25].nodes[1].index 84\ngroup[25].nodes[1].retired false\ngroup[25].nodes[2].index 173\ngroup[25].nodes[2].retired false\ngroup[26].index \"0.4\"\ngroup[26].name \"top.0.4\"\ngroup[26].capacity 1.0\ngroup[26].partitions \"*|*\"\ngroup[27].index \"0.4.0\"\ngroup[27].name \"top.0.4.0\"\ngroup[27].capacity 1.0\ngroup[27].partitions \"\"\ngroup[27].nodes[0].index 289\ngroup[27].nodes[0].retired false\ngroup[27].nodes[1].index 17\ngroup[27].nodes[1].retired false\ngroup[27].nodes[2].index 164\ngroup[27].nodes[2].retired false\ngroup[28].index \"0.4.1\"\ngroup[28].name \"top.0.4.1\"\ngroup[28].capacity 1.0\ngroup[28].partitions \"\"\ngroup[28].nodes[0].index 24\ngroup[28].nodes[0].retired false\ngroup[28].nodes[1].index 345\ngroup[28].nodes[1].retired false\ngroup[28].nodes[2].index 8\ngroup[28].nodes[2].retired false\ngroup[29].index \"0.4.2\"\ngroup[29].name \"top.0.4.2\"\ngroup[29].capacity 1.0\ngroup[29].partitions \"\"\ngroup[29].nodes[0].index 306\ngroup[29].nodes[0].retired false\ngroup[29].nodes[1].index 369\ngroup[29].nodes[1].retired false\ngroup[29].nodes[2].index 184\ngroup[29].nodes[2].retired false\ngroup[30].index \"0.4.3\"\ngroup[30].name \"top.0.4.3\"\ngroup[30].capacity 1.0\ngroup[30].partitions \"\"\ngroup[30].nodes[0].index 284\ngroup[30].nodes[0].retired false\ngroup[30].nodes[1].index 83\ngroup[30].nodes[1].retired false\ngroup[30].nodes[2].index 366\ngroup[30].nodes[2].retired false\ngroup[31].index \"0.4.4\"\ngroup[31].name \"top.0.4.4\"\ngroup[31].capacity 1.0\ngroup[31].partitions \"\"\ngroup[31].nodes[0].index 234\ngroup[31].nodes[0].retired false\ngroup[31].nodes[1].index 253\ngroup[31].nodes[1].retired false\ngroup[31].nodes[2].index 244\ngroup[31].nodes[2].retired false\ngroup[32].index \"1\"\ngroup[32].name \"top.1\"\ngroup[32].capacity 1.0\ngroup[32].partitions \"*|*\"\ngroup[33].index \"1.0\"\ngroup[33].name \"top.1.0\"\ngroup[33].capacity 1.0\ngroup[33].partitions \"*|*\"\ngroup[34].index \"1.0.0\"\ngroup[34].name \"top.1.0.0\"\ngroup[34].capacity 1.0\ngroup[34].partitions \"\"\ngroup[34].nodes[0].index 93\ngroup[34].nodes[0].retired false\ngroup[34].nodes[1].index 225\ngroup[34].nodes[1].retired false\ngroup[34].nodes[2].index 331\ngroup[34].nodes[2].retired false\ngroup[35].index \"1.0.1\"\ngroup[35].name \"top.1.0.1\"\ngroup[35].capacity 1.0\ngroup[35].partitions \"\"\ngroup[35].nodes[0].index 223\ngroup[35].nodes[0].retired false\ngroup[35].nodes[1].index 322\ngroup[35].nodes[1].retired false\ngroup[35].nodes[2].index 245\ngroup[35].nodes[2].retired false\ngroup[36].index \"1.0.2\"\ngroup[36].name \"top.1.0.2\"\ngroup[36].capacity 1.0\ngroup[36].partitions \"\"\ngroup[36].nodes[0].index 221\ngroup[36].nodes[0].retired false\ngroup[36].nodes[1].index 230\ngroup[36].nodes[1].retired false\ngroup[36].nodes[2].index 169\ngroup[36].nodes[2].retired false\ngroup[37].index \"1.0.3\"\ngroup[37].name \"top.1.0.3\"\ngroup[37].capacity 1.0\ngroup[37].partitions \"\"\ngroup[37].nodes[0].index 346\ngroup[37].nodes[0].retired false\ngroup[37].nodes[1].index 368\ngroup[37].nodes[1].retired false\ngroup[37].nodes[2].index 257\ngroup[37].nodes[2].retired false\ngroup[38].index \"1.0.4\"\ngroup[38].name \"top.1.0.4\"\ngroup[38].capacity 1.0\ngroup[38].partitions \"\"\ngroup[38].nodes[0].index 178\ngroup[38].nodes[0].retired false\ngroup[38].nodes[1].index 161\ngroup[38].nodes[1].retired false\ngroup[38].nodes[2].index 142\ngroup[38].nodes[2].retired false\ngroup[39].index \"1.1\"\ngroup[39].name \"top.1.1\"\ngroup[39].capacity 1.0\ngroup[39].partitions \"*|*\"\ngroup[40].index \"1.1.0\"\ngroup[40].name \"top.1.1.0\"\ngroup[40].capacity 1.0\ngroup[40].partitions \"\"\ngroup[40].nodes[0].index 105\ngroup[40].nodes[0].retired false\ngroup[40].nodes[1].index 152\ngroup[40].nodes[1].retired false\ngroup[40].nodes[2].index 371\ngroup[40].nodes[2].retired false\ngroup[41].index \"1.1.1\"\ngroup[41].name \"top.1.1.1\"\ngroup[41].capacity 1.0\ngroup[41].partitions \"\"\ngroup[41].nodes[0].index 330\ngroup[41].nodes[0].retired false\ngroup[41].nodes[1].index 13\ngroup[41].nodes[1].retired false\ngroup[41].nodes[2].index 125\ngroup[41].nodes[2].retired false\ngroup[42].index \"1.1.2\"\ngroup[42].name \"top.1.1.2\"\ngroup[42].capacity 1.0\ngroup[42].partitions \"\"\ngroup[42].nodes[0].index 10\ngroup[42].nodes[0].retired false\ngroup[42].nodes[1].index 356\ngroup[42].nodes[1].retired false\ngroup[42].nodes[2].index 45\ngroup[42].nodes[2].retired false\ngroup[43].index \"1.1.3\"\ngroup[43].name \"top.1.1.3\"\ngroup[43].capacity 1.0\ngroup[43].partitions \"\"\ngroup[43].nodes[0].index 241\ngroup[43].nodes[0].retired false\ngroup[43].nodes[1].index 145\ngroup[43].nodes[1].retired false\ngroup[43].nodes[2].index 246\ngroup[43].nodes[2].retired false\ngroup[44].index \"1.1.4\"\ngroup[44].name \"top.1.1.4\"\ngroup[44].capacity 1.0\ngroup[44].partitions \"\"\ngroup[44].nodes[0].index 37\ngroup[44].nodes[0].retired false\ngroup[44].nodes[1].index 204\ngroup[44].nodes[1].retired false\ngroup[44].nodes[2].index 110\ngroup[44].nodes[2].retired false\ngroup[45].index \"1.2\"\ngroup[45].name \"top.1.2\"\ngroup[45].capacity 1.0\ngroup[45].partitions \"*|*\"\ngroup[46].index \"1.2.0\"\ngroup[46].name \"top.1.2.0\"\ngroup[46].capacity 1.0\ngroup[46].partitions \"\"\ngroup[46].nodes[0].index 288\ngroup[46].nodes[0].retired false\ngroup[46].nodes[1].index 254\ngroup[46].nodes[1].retired false\ngroup[46].nodes[2].index 0\ngroup[46].nodes[2].retired false\ngroup[47].index \"1.2.1\"\ngroup[47].name \"top.1.2.1\"\ngroup[47].capacity 1.0\ngroup[47].partitions \"\"\ngroup[47].nodes[0].index 72\ngroup[47].nodes[0].retired false\ngroup[47].nodes[1].index 124\ngroup[47].nodes[1].retired false\ngroup[47].nodes[2].index 267\ngroup[47].nodes[2].retired false\ngroup[48].index \"1.2.2\"\ngroup[48].name \"top.1.2.2\"\ngroup[48].capacity 1.0\ngroup[48].partitions \"\"\ngroup[48].nodes[0].index 102\ngroup[48].nodes[0].retired false\ngroup[48].nodes[1].index 219\ngroup[48].nodes[1].retired false\ngroup[48].nodes[2].index 150\ngroup[48].nodes[2].retired false\ngroup[49].index \"1.2.3\"\ngroup[49].name \"top.1.2.3\"\ngroup[49].capacity 1.0\ngroup[49].partitions \"\"\ngroup[49].nodes[0].index 68\ngroup[49].nodes[0].retired false\ngroup[49].nodes[1].index 347\ngroup[49].nodes[1].retired false\ngroup[49].nodes[2].index 135\ngroup[49].nodes[2].retired false\ngroup[50].index \"1.2.4\"\ngroup[50].name \"top.1.2.4\"\ngroup[50].capacity 1.0\ngroup[50].partitions \"\"\ngroup[50].nodes[0].index 207\ngroup[50].nodes[0].retired false\ngroup[50].nodes[1].index 15\ngroup[50].nodes[1].retired false\ngroup[50].nodes[2].index 201\ngroup[50].nodes[2].retired false\ngroup[51].index \"1.3\"\ngroup[51].name \"top.1.3\"\ngroup[51].capacity 1.0\ngroup[51].partitions \"*|*\"\ngroup[52].index \"1.3.0\"\ngroup[52].name \"top.1.3.0\"\ngroup[52].capacity 1.0\ngroup[52].partitions \"\"\ngroup[52].nodes[0].index 134\ngroup[52].nodes[0].retired false\ngroup[52].nodes[1].index 293\ngroup[52].nodes[1].retired false\ngroup[52].nodes[2].index 167\ngroup[52].nodes[2].retired false\ngroup[53].index \"1.3.1\"\ngroup[53].name \"top.1.3.1\"\ngroup[53].capacity 1.0\ngroup[53].partitions \"\"\ngroup[53].nodes[0].index 199\ngroup[53].nodes[0].retired false\ngroup[53].nodes[1].index 123\ngroup[53].nodes[1].retired false\ngroup[53].nodes[2].index 277\ngroup[53].nodes[2].retired false\ngroup[54].index \"1.3.2\"\ngroup[54].name \"top.1.3.2\"\ngroup[54].capacity 1.0\ngroup[54].partitions \"\"\ngroup[54].nodes[0].index 127\ngroup[54].nodes[0].retired false\ngroup[54].nodes[1].index 309\ngroup[54].nodes[1].retired false\ngroup[54].nodes[2].index 266\ngroup[54].nodes[2].retired false\ngroup[55].index \"1.3.3\"\ngroup[55].name \"top.1.3.3\"\ngroup[55].capacity 1.0\ngroup[55].partitions \"\"\ngroup[55].nodes[0].index 198\ngroup[55].nodes[0].retired false\ngroup[55].nodes[1].index 294\ngroup[55].nodes[1].retired false\ngroup[55].nodes[2].index 263\ngroup[55].nodes[2].retired false\ngroup[56].index \"1.3.4\"\ngroup[56].name \"top.1.3.4\"\ngroup[56].capacity 1.0\ngroup[56].partitions \"\"\ngroup[56].nodes[0].index 71\ngroup[56].nodes[0].retired false\ngroup[56].nodes[1].index 65\ngroup[56].nodes[1].retired false\ngroup[56].nodes[2].index 220\ngroup[56].nodes[2].retired false\ngroup[57].index \"1.4\"\ngroup[57].name \"top.1.4\"\ngroup[57].capacity 1.0\ngroup[57].partitions \"*|*\"\ngroup[58].index \"1.4.0\"\ngroup[58].name \"top.1.4.0\"\ngroup[58].capacity 1.0\ngroup[58].partitions \"\"\ngroup[58].nodes[0].index 121\ngroup[58].nodes[0].retired false\ngroup[58].nodes[1].index 4\ngroup[58].nodes[1].retired false\ngroup[58].nodes[2].index 265\ngroup[58].nodes[2].retired false\ngroup[59].index \"1.4.1\"\ngroup[59].name \"top.1.4.1\"\ngroup[59].capacity 1.0\ngroup[59].partitions \"\"\ngroup[59].nodes[0].index 58\ngroup[59].nodes[0].retired false\ngroup[59].nodes[1].index 210\ngroup[59].nodes[1].retired false\ngroup[59].nodes[2].index 53\ngroup[59].nodes[2].retired false\ngroup[60].index \"1.4.2\"\ngroup[60].name \"top.1.4.2\"\ngroup[60].capacity 1.0\ngroup[60].partitions \"\"\ngroup[60].nodes[0].index 19\ngroup[60].nodes[0].retired false\ngroup[60].nodes[1].index 367\ngroup[60].nodes[1].retired false\ngroup[60].nodes[2].index 101\ngroup[60].nodes[2].retired false\ngroup[61].index \"1.4.3\"\ngroup[61].name \"top.1.4.3\"\ngroup[61].capacity 1.0\ngroup[61].partitions \"\"\ngroup[61].nodes[0].index 20\ngroup[61].nodes[0].retired false\ngroup[61].nodes[1].index 242\ngroup[61].nodes[1].retired false\ngroup[61].nodes[2].index 268\ngroup[61].nodes[2].retired false\ngroup[62].index \"1.4.4\"\ngroup[62].name \"top.1.4.4\"\ngroup[62].capacity 1.0\ngroup[62].partitions \"\"\ngroup[62].nodes[0].index 200\ngroup[62].nodes[0].retired false\ngroup[62].nodes[1].index 21\ngroup[62].nodes[1].retired false\ngroup[62].nodes[2].index 279\ngroup[62].nodes[2].retired false\ngroup[63].index \"2\"\ngroup[63].name \"top.2\"\ngroup[63].capacity 1.0\ngroup[63].partitions \"*|*\"\ngroup[64].index \"2.0\"\ngroup[64].name \"top.2.0\"\ngroup[64].capacity 1.0\ngroup[64].partitions \"*|*\"\ngroup[65].index \"2.0.0\"\ngroup[65].name \"top.2.0.0\"\ngroup[65].capacity 1.0\ngroup[65].partitions \"\"\ngroup[65].nodes[0].index 182\ngroup[65].nodes[0].retired false\ngroup[65].nodes[1].index 78\ngroup[65].nodes[1].retired false\ngroup[65].nodes[2].index 158\ngroup[65].nodes[2].retired false\ngroup[66].index \"2.0.1\"\ngroup[66].name \"top.2.0.1\"\ngroup[66].capacity 1.0\ngroup[66].partitions \"\"\ngroup[66].nodes[0].index 27\ngroup[66].nodes[0].retired false\ngroup[66].nodes[1].index 50\ngroup[66].nodes[1].retired false\ngroup[66].nodes[2].index 217\ngroup[66].nodes[2].retired false\ngroup[67].index \"2.0.2\"\ngroup[67].name \"top.2.0.2\"\ngroup[67].capacity 1.0\ngroup[67].partitions \"\"\ngroup[67].nodes[0].index 248\ngroup[67].nodes[0].retired false\ngroup[67].nodes[1].index 319\ngroup[67].nodes[1].retired false\ngroup[67].nodes[2].index 116\ngroup[67].nodes[2].retired false\ngroup[68].index \"2.0.3\"\ngroup[68].name \"top.2.0.3\"\ngroup[68].capacity 1.0\ngroup[68].partitions \"\"\ngroup[68].nodes[0].index 29\ngroup[68].nodes[0].retired false\ngroup[68].nodes[1].index 211\ngroup[68].nodes[1].retired false\ngroup[68].nodes[2].index 365\ngroup[68].nodes[2].retired false\ngroup[69].index \"2.0.4\"\ngroup[69].name \"top.2.0.4\"\ngroup[69].capacity 1.0\ngroup[69].partitions \"\"\ngroup[69].nodes[0].index 300\ngroup[69].nodes[0].retired false\ngroup[69].nodes[1].index 81\ngroup[69].nodes[1].retired false\ngroup[69].nodes[2].index 192\ngroup[69].nodes[2].retired false\ngroup[70].index \"2.1\"\ngroup[70].name \"top.2.1\"\ngroup[70].capacity 1.0\ngroup[70].partitions \"*|*\"\ngroup[71].index \"2.1.0\"\ngroup[71].name \"top.2.1.0\"\ngroup[71].capacity 1.0\ngroup[71].partitions \"\"\ngroup[71].nodes[0].index 151\ngroup[71].nodes[0].retired false\ngroup[71].nodes[1].index 133\ngroup[71].nodes[1].retired false\ngroup[71].nodes[2].index 344\ngroup[71].nodes[2].retired false\ngroup[72].index \"2.1.1\"\ngroup[72].name \"top.2.1.1\"\ngroup[72].capacity 1.0\ngroup[72].partitions \"\"\ngroup[72].nodes[0].index 120\ngroup[72].nodes[0].retired false\ngroup[72].nodes[1].index 195\ngroup[72].nodes[1].retired false\ngroup[72].nodes[2].index 215\ngroup[72].nodes[2].retired false\ngroup[73].index \"2.1.2\"\ngroup[73].name \"top.2.1.2\"\ngroup[73].capacity 1.0\ngroup[73].partitions \"\"\ngroup[73].nodes[0].index 250\ngroup[73].nodes[0].retired false\ngroup[73].nodes[1].index 143\ngroup[73].nodes[1].retired false\ngroup[73].nodes[2].index 183\ngroup[73].nodes[2].retired false\ngroup[74].index \"2.1.3\"\ngroup[74].name \"top.2.1.3\"\ngroup[74].capacity 1.0\ngroup[74].partitions \"\"\ngroup[74].nodes[0].index 301\ngroup[74].nodes[0].retired false\ngroup[74].nodes[1].index 291\ngroup[74].nodes[1].retired false\ngroup[74].nodes[2].index 333\ngroup[74].nodes[2].retired false\ngroup[75].index \"2.1.4\"\ngroup[75].name \"top.2.1.4\"\ngroup[75].capacity 1.0\ngroup[75].partitions \"\"\ngroup[75].nodes[0].index 315\ngroup[75].nodes[0].retired false\ngroup[75].nodes[1].index 26\ngroup[75].nodes[1].retired false\ngroup[75].nodes[2].index 249\ngroup[75].nodes[2].retired false\ngroup[76].index \"2.2\"\ngroup[76].name \"top.2.2\"\ngroup[76].capacity 1.0\ngroup[76].partitions \"*|*\"\ngroup[77].index \"2.2.0\"\ngroup[77].name \"top.2.2.0\"\ngroup[77].capacity 1.0\ngroup[77].partitions \"\"\ngroup[77].nodes[0].index 360\ngroup[77].nodes[0].retired false\ngroup[77].nodes[1].index 172\ngroup[77].nodes[1].retired false\ngroup[77].nodes[2].index 326\ngroup[77].nodes[2].retired false\ngroup[78].index \"2.2.1\"\ngroup[78].name \"top.2.2.1\"\ngroup[78].capacity 1.0\ngroup[78].partitions \"\"\ngroup[78].nodes[0].index 262\ngroup[78].nodes[0].retired false\ngroup[78].nodes[1].index 115\ngroup[78].nodes[1].retired false\ngroup[78].nodes[2].index 310\ngroup[78].nodes[2].retired false\ngroup[79].index \"2.2.2\"\ngroup[79].name \"top.2.2.2\"\ngroup[79].capacity 1.0\ngroup[79].partitions \"\"\ngroup[79].nodes[0].index 303\ngroup[79].nodes[0].retired false\ngroup[79].nodes[1].index 307\ngroup[79].nodes[1].retired false\ngroup[79].nodes[2].index 348\ngroup[79].nodes[2].retired false\ngroup[80].index \"2.2.3\"\ngroup[80].name \"top.2.2.3\"\ngroup[80].capacity 1.0\ngroup[80].partitions \"\"\ngroup[80].nodes[0].index 227\ngroup[80].nodes[0].retired false\ngroup[80].nodes[1].index 91\ngroup[80].nodes[1].retired false\ngroup[80].nodes[2].index 282\ngroup[80].nodes[2].retired false\ngroup[81].index \"2.2.4\"\ngroup[81].name \"top.2.2.4\"\ngroup[81].capacity 1.0\ngroup[81].partitions \"\"\ngroup[81].nodes[0].index 354\ngroup[81].nodes[0].retired false\ngroup[81].nodes[1].index 190\ngroup[81].nodes[1].retired false\ngroup[81].nodes[2].index 238\ngroup[81].nodes[2].retired false\ngroup[82].index \"2.3\"\ngroup[82].name \"top.2.3\"\ngroup[82].capacity 1.0\ngroup[82].partitions \"*|*\"\ngroup[83].index \"2.3.0\"\ngroup[83].name \"top.2.3.0\"\ngroup[83].capacity 1.0\ngroup[83].partitions \"\"\ngroup[83].nodes[0].index 185\ngroup[83].nodes[0].retired false\ngroup[83].nodes[1].index 264\ngroup[83].nodes[1].retired false\ngroup[83].nodes[2].index 39\ngroup[83].nodes[2].retired false\ngroup[84].index \"2.3.1\"\ngroup[84].name \"top.2.3.1\"\ngroup[84].capacity 1.0\ngroup[84].partitions \"\"\ngroup[84].nodes[0].index 235\ngroup[84].nodes[0].retired false\ngroup[84].nodes[1].index 339\ngroup[84].nodes[1].retired false\ngroup[84].nodes[2].index 327\ngroup[84].nodes[2].retired false\ngroup[85].index \"2.3.2\"\ngroup[85].name \"top.2.3.2\"\ngroup[85].capacity 1.0\ngroup[85].partitions \"\"\ngroup[85].nodes[0].index 299\ngroup[85].nodes[0].retired false\ngroup[85].nodes[1].index 180\ngroup[85].nodes[1].retired false\ngroup[85].nodes[2].index 194\ngroup[85].nodes[2].retired false\ngroup[86].index \"2.3.3\"\ngroup[86].name \"top.2.3.3\"\ngroup[86].capacity 1.0\ngroup[86].partitions \"\"\ngroup[86].nodes[0].index 6\ngroup[86].nodes[0].retired false\ngroup[86].nodes[1].index 57\ngroup[86].nodes[1].retired false\ngroup[86].nodes[2].index 260\ngroup[86].nodes[2].retired false\ngroup[87].index \"2.3.4\"\ngroup[87].name \"top.2.3.4\"\ngroup[87].capacity 1.0\ngroup[87].partitions \"\"\ngroup[87].nodes[0].index 216\ngroup[87].nodes[0].retired false\ngroup[87].nodes[1].index 193\ngroup[87].nodes[1].retired false\ngroup[87].nodes[2].index 290\ngroup[87].nodes[2].retired false\ngroup[88].index \"2.4\"\ngroup[88].name \"top.2.4\"\ngroup[88].capacity 1.0\ngroup[88].partitions \"*|*\"\ngroup[89].index \"2.4.0\"\ngroup[89].name \"top.2.4.0\"\ngroup[89].capacity 1.0\ngroup[89].partitions \"\"\ngroup[89].nodes[0].index 332\ngroup[89].nodes[0].retired false\ngroup[89].nodes[1].index 107\ngroup[89].nodes[1].retired false\ngroup[89].nodes[2].index 176\ngroup[89].nodes[2].retired false\ngroup[90].index \"2.4.1\"\ngroup[90].name \"top.2.4.1\"\ngroup[90].capacity 1.0\ngroup[90].partitions \"\"\ngroup[90].nodes[0].index 233\ngroup[90].nodes[0].retired false\ngroup[90].nodes[1].index 196\ngroup[90].nodes[1].retired false\ngroup[90].nodes[2].index 157\ngroup[90].nodes[2].retired false\ngroup[91].index \"2.4.2\"\ngroup[91].name \"top.2.4.2\"\ngroup[91].capacity 1.0\ngroup[91].partitions \"\"\ngroup[91].nodes[0].index 285\ngroup[91].nodes[0].retired false\ngroup[91].nodes[1].index 98\ngroup[91].nodes[1].retired false\ngroup[91].nodes[2].index 44\ngroup[91].nodes[2].retired false\ngroup[92].index \"2.4.3\"\ngroup[92].name \"top.2.4.3\"\ngroup[92].capacity 1.0\ngroup[92].partitions \"\"\ngroup[92].nodes[0].index 155\ngroup[92].nodes[0].retired false\ngroup[92].nodes[1].index 370\ngroup[92].nodes[1].retired false\ngroup[92].nodes[2].index 218\ngroup[92].nodes[2].retired false\ngroup[93].index \"2.4.4\"\ngroup[93].name \"top.2.4.4\"\ngroup[93].capacity 1.0\ngroup[93].partitions \"\"\ngroup[93].nodes[0].index 162\ngroup[93].nodes[0].retired false\ngroup[93].nodes[1].index 231\ngroup[93].nodes[1].retired false\ngroup[93].nodes[2].index 191\ngroup[93].nodes[2].retired false\ngroup[94].index \"3\"\ngroup[94].name \"top.3\"\ngroup[94].capacity 1.0\ngroup[94].partitions \"*|*\"\ngroup[95].index \"3.0\"\ngroup[95].name \"top.3.0\"\ngroup[95].capacity 1.0\ngroup[95].partitions \"*|*\"\ngroup[96].index \"3.0.0\"\ngroup[96].name \"top.3.0.0\"\ngroup[96].capacity 1.0\ngroup[96].partitions \"\"\ngroup[96].nodes[0].index 213\ngroup[96].nodes[0].retired false\ngroup[96].nodes[1].index 148\ngroup[96].nodes[1].retired false\ngroup[96].nodes[2].index 42\ngroup[96].nodes[2].retired false\ngroup[97].index \"3.0.1\"\ngroup[97].name \"top.3.0.1\"\ngroup[97].capacity 1.0\ngroup[97].partitions \"\"\ngroup[97].nodes[0].index 247\ngroup[97].nodes[0].retired false\ngroup[97].nodes[1].index 11\ngroup[97].nodes[1].retired false\ngroup[97].nodes[2].index 352\ngroup[97].nodes[2].retired false\ngroup[98].index \"3.0.2\"\ngroup[98].name \"top.3.0.2\"\ngroup[98].capacity 1.0\ngroup[98].partitions \"\"\ngroup[98].nodes[0].index 66\ngroup[98].nodes[0].retired false\ngroup[98].nodes[1].index 208\ngroup[98].nodes[1].retired false\ngroup[98].nodes[2].index 316\ngroup[98].nodes[2].retired false\ngroup[99].index \"3.0.3\"\ngroup[99].name \"top.3.0.3\"\ngroup[99].capacity 1.0\ngroup[99].partitions \"\"\ngroup[99].nodes[0].index 205\ngroup[99].nodes[0].retired false\ngroup[99].nodes[1].index 292\ngroup[99].nodes[1].retired false\ngroup[99].nodes[2].index 80\ngroup[99].nodes[2].retired false\ngroup[100].index \"3.0.4\"\ngroup[100].name \"top.3.0.4\"\ngroup[100].capacity 1.0\ngroup[100].partitions \"\"\ngroup[100].nodes[0].index 106\ngroup[100].nodes[0].retired false\ngroup[100].nodes[1].index 302\ngroup[100].nodes[1].retired false\ngroup[100].nodes[2].index 308\ngroup[100].nodes[2].retired false\ngroup[101].index \"3.1\"\ngroup[101].name \"top.3.1\"\ngroup[101].capacity 1.0\ngroup[101].partitions \"*|*\"\ngroup[102].index \"3.1.0\"\ngroup[102].name \"top.3.1.0\"\ngroup[102].capacity 1.0\ngroup[102].partitions \"\"\ngroup[102].nodes[0].index 312\ngroup[102].nodes[0].retired false\ngroup[102].nodes[1].index 323\ngroup[102].nodes[1].retired false\ngroup[102].nodes[2].index 278\ngroup[102].nodes[2].retired false\ngroup[103].index \"3.1.1\"\ngroup[103].name \"top.3.1.1\"\ngroup[103].capacity 1.0\ngroup[103].partitions \"\"\ngroup[103].nodes[0].index 146\ngroup[103].nodes[0].retired false\ngroup[103].nodes[1].index 197\ngroup[103].nodes[1].retired false\ngroup[103].nodes[2].index 358\ngroup[103].nodes[2].retired false\ngroup[104].index \"3.1.2\"\ngroup[104].name \"top.3.1.2\"\ngroup[104].capacity 1.0\ngroup[104].partitions \"\"\ngroup[104].nodes[0].index 239\ngroup[104].nodes[0].retired false\ngroup[104].nodes[1].index 305\ngroup[104].nodes[1].retired false\ngroup[104].nodes[2].index 165\ngroup[104].nodes[2].retired false\ngroup[105].index \"3.1.3\"\ngroup[105].name \"top.3.1.3\"\ngroup[105].capacity 1.0\ngroup[105].partitions \"\"\ngroup[105].nodes[0].index 49\ngroup[105].nodes[0].retired false\ngroup[105].nodes[1].index 25\ngroup[105].nodes[1].retired false\ngroup[105].nodes[2].index 36\ngroup[105].nodes[2].retired false\ngroup[106].index \"3.1.4\"\ngroup[106].name \"top.3.1.4\"\ngroup[106].capacity 1.0\ngroup[106].partitions \"\"\ngroup[106].nodes[0].index 229\ngroup[106].nodes[0].retired false\ngroup[106].nodes[1].index 73\ngroup[106].nodes[1].retired false\ngroup[106].nodes[2].index 311\ngroup[106].nodes[2].retired false\ngroup[107].index \"3.2\"\ngroup[107].name \"top.3.2\"\ngroup[107].capacity 1.0\ngroup[107].partitions \"*|*\"\ngroup[108].index \"3.2.0\"\ngroup[108].name \"top.3.2.0\"\ngroup[108].capacity 1.0\ngroup[108].partitions \"\"\ngroup[108].nodes[0].index 103\ngroup[108].nodes[0].retired false\ngroup[108].nodes[1].index 163\ngroup[108].nodes[1].retired false\ngroup[108].nodes[2].index 51\ngroup[108].nodes[2].retired false\ngroup[109].index \"3.2.1\"\ngroup[109].name \"top.3.2.1\"\ngroup[109].capacity 1.0\ngroup[109].partitions \"\"\ngroup[109].nodes[0].index 12\ngroup[109].nodes[0].retired false\ngroup[109].nodes[1].index 52\ngroup[109].nodes[1].retired false\ngroup[109].nodes[2].index 203\ngroup[109].nodes[2].retired false\ngroup[110].index \"3.2.2\"\ngroup[110].name \"top.3.2.2\"\ngroup[110].capacity 1.0\ngroup[110].partitions \"\"\ngroup[110].nodes[0].index 59\ngroup[110].nodes[0].retired false\ngroup[110].nodes[1].index 361\ngroup[110].nodes[1].retired false\ngroup[110].nodes[2].index 35\ngroup[110].nodes[2].retired false\ngroup[111].index \"3.2.3\"\ngroup[111].name \"top.3.2.3\"\ngroup[111].capacity 1.0\ngroup[111].partitions \"\"\ngroup[111].nodes[0].index 136\ngroup[111].nodes[0].retired false\ngroup[111].nodes[1].index 9\ngroup[111].nodes[1].retired false\ngroup[111].nodes[2].index 258\ngroup[111].nodes[2].retired false\ngroup[112].index \"3.2.4\"\ngroup[112].name \"top.3.2.4\"\ngroup[112].capacity 1.0\ngroup[112].partitions \"\"\ngroup[112].nodes[0].index 95\ngroup[112].nodes[0].retired false\ngroup[112].nodes[1].index 177\ngroup[112].nodes[1].retired false\ngroup[112].nodes[2].index 5\ngroup[112].nodes[2].retired false\ngroup[113].index \"3.3\"\ngroup[113].name \"top.3.3\"\ngroup[113].capacity 1.0\ngroup[113].partitions \"*|*\"\ngroup[114].index \"3.3.0\"\ngroup[114].name \"top.3.3.0\"\ngroup[114].capacity 1.0\ngroup[114].partitions \"\"\ngroup[114].nodes[0].index 77\ngroup[114].nodes[0].retired false\ngroup[114].nodes[1].index 202\ngroup[114].nodes[1].retired false\ngroup[114].nodes[2].index 67\ngroup[114].nodes[2].retired false\ngroup[115].index \"3.3.1\"\ngroup[115].name \"top.3.3.1\"\ngroup[115].capacity 1.0\ngroup[115].partitions \"\"\ngroup[115].nodes[0].index 259\ngroup[115].nodes[0].retired false\ngroup[115].nodes[1].index 28\ngroup[115].nodes[1].retired false\ngroup[115].nodes[2].index 40\ngroup[115].nodes[2].retired false\ngroup[116].index \"3.3.2\"\ngroup[116].name \"top.3.3.2\"\ngroup[116].capacity 1.0\ngroup[116].partitions \"\"\ngroup[116].nodes[0].index 89\ngroup[116].nodes[0].retired false\ngroup[116].nodes[1].index 46\ngroup[116].nodes[1].retired false\ngroup[116].nodes[2].index 341\ngroup[116].nodes[2].retired false\ngroup[117].index \"3.3.3\"\ngroup[117].name \"top.3.3.3\"\ngroup[117].capacity 1.0\ngroup[117].partitions \"\"\ngroup[117].nodes[0].index 118\ngroup[117].nodes[0].retired false\ngroup[117].nodes[1].index 335\ngroup[117].nodes[1].retired false\ngroup[117].nodes[2].index 1\ngroup[117].nodes[2].retired false\ngroup[118].index \"3.3.4\"\ngroup[118].name \"top.3.3.4\"\ngroup[118].capacity 1.0\ngroup[118].partitions \"\"\ngroup[118].nodes[0].index 87\ngroup[118].nodes[0].retired false\ngroup[118].nodes[1].index 147\ngroup[118].nodes[1].retired false\ngroup[118].nodes[2].index 336\ngroup[118].nodes[2].retired false\ngroup[119].index \"3.4\"\ngroup[119].name \"top.3.4\"\ngroup[119].capacity 1.0\ngroup[119].partitions \"*|*\"\ngroup[120].index \"3.4.0\"\ngroup[120].name \"top.3.4.0\"\ngroup[120].capacity 1.0\ngroup[120].partitions \"\"\ngroup[120].nodes[0].index 353\ngroup[120].nodes[0].retired false\ngroup[120].nodes[1].index 168\ngroup[120].nodes[1].retired false\ngroup[120].nodes[2].index 114\ngroup[120].nodes[2].retired false\ngroup[121].index \"3.4.1\"\ngroup[121].name \"top.3.4.1\"\ngroup[121].capacity 1.0\ngroup[121].partitions \"\"\ngroup[121].nodes[0].index 104\ngroup[121].nodes[0].retired false\ngroup[121].nodes[1].index 287\ngroup[121].nodes[1].retired false\ngroup[121].nodes[2].index 222\ngroup[121].nodes[2].retired false\ngroup[122].index \"3.4.2\"\ngroup[122].name \"top.3.4.2\"\ngroup[122].capacity 1.0\ngroup[122].partitions \"\"\ngroup[122].nodes[0].index 325\ngroup[122].nodes[0].retired false\ngroup[122].nodes[1].index 240\ngroup[122].nodes[1].retired false\ngroup[122].nodes[2].index 296\ngroup[122].nodes[2].retired false\ngroup[123].index \"3.4.3\"\ngroup[123].name \"top.3.4.3\"\ngroup[123].capacity 1.0\ngroup[123].partitions \"\"\ngroup[123].nodes[0].index 166\ngroup[123].nodes[0].retired false\ngroup[123].nodes[1].index 141\ngroup[123].nodes[1].retired false\ngroup[123].nodes[2].index 23\ngroup[123].nodes[2].retired false\ngroup[124].index \"3.4.4\"\ngroup[124].name \"top.3.4.4\"\ngroup[124].capacity 1.0\ngroup[124].partitions \"\"\ngroup[124].nodes[0].index 100\ngroup[124].nodes[0].retired false\ngroup[124].nodes[1].index 320\ngroup[124].nodes[1].retired false\ngroup[124].nodes[2].index 96\ngroup[124].nodes[2].retired false\ngroup[125].index \"4\"\ngroup[125].name \"top.4\"\ngroup[125].capacity 1.0\ngroup[125].partitions \"*|*\"\ngroup[126].index \"4.0\"\ngroup[126].name \"top.4.0\"\ngroup[126].capacity 1.0\ngroup[126].partitions \"*|*\"\ngroup[127].index \"4.0.0\"\ngroup[127].name \"top.4.0.0\"\ngroup[127].capacity 1.0\ngroup[127].partitions \"\"\ngroup[127].nodes[0].index 18\ngroup[127].nodes[0].retired false\ngroup[127].nodes[1].index 75\ngroup[127].nodes[1].retired false\ngroup[127].nodes[2].index 79\ngroup[127].nodes[2].retired false\ngroup[128].index \"4.0.1\"\ngroup[128].name \"top.4.0.1\"\ngroup[128].capacity 1.0\ngroup[128].partitions \"\"\ngroup[128].nodes[0].index 328\ngroup[128].nodes[0].retired false\ngroup[128].nodes[1].index 61\ngroup[128].nodes[1].retired false\ngroup[128].nodes[2].index 334\ngroup[128].nodes[2].retired false\ngroup[129].index \"4.0.2\"\ngroup[129].name \"top.4.0.2\"\ngroup[129].capacity 1.0\ngroup[129].partitions \"\"\ngroup[129].nodes[0].index 363\ngroup[129].nodes[0].retired false\ngroup[129].nodes[1].index 275\ngroup[129].nodes[1].retired false\ngroup[129].nodes[2].index 343\ngroup[129].nodes[2].retired false\ngroup[130].index \"4.0.3\"\ngroup[130].name \"top.4.0.3\"\ngroup[130].capacity 1.0\ngroup[130].partitions \"\"\ngroup[130].nodes[0].index 252\ngroup[130].nodes[0].retired false\ngroup[130].nodes[1].index 297\ngroup[130].nodes[1].retired false\ngroup[130].nodes[2].index 34\ngroup[130].nodes[2].retired false\ngroup[131].index \"4.0.4\"\ngroup[131].name \"top.4.0.4\"\ngroup[131].capacity 1.0\ngroup[131].partitions \"\"\ngroup[131].nodes[0].index 280\ngroup[131].nodes[0].retired false\ngroup[131].nodes[1].index 174\ngroup[131].nodes[1].retired false\ngroup[131].nodes[2].index 272\ngroup[131].nodes[2].retired false\ngroup[132].index \"4.1\"\ngroup[132].name \"top.4.1\"\ngroup[132].capacity 1.0\ngroup[132].partitions \"*|*\"\ngroup[133].index \"4.1.0\"\ngroup[133].name \"top.4.1.0\"\ngroup[133].capacity 1.0\ngroup[133].partitions \"\"\ngroup[133].nodes[0].index 128\ngroup[133].nodes[0].retired false\ngroup[133].nodes[1].index 187\ngroup[133].nodes[1].retired false\ngroup[133].nodes[2].index 313\ngroup[133].nodes[2].retired false\ngroup[134].index \"4.1.1\"\ngroup[134].name \"top.4.1.1\"\ngroup[134].capacity 1.0\ngroup[134].partitions \"\"\ngroup[134].nodes[0].index 92\ngroup[134].nodes[0].retired false\ngroup[134].nodes[1].index 351\ngroup[134].nodes[1].retired false\ngroup[134].nodes[2].index 122\ngroup[134].nodes[2].retired false\ngroup[135].index \"4.1.2\"\ngroup[135].name \"top.4.1.2\"\ngroup[135].capacity 1.0\ngroup[135].partitions \"\"\ngroup[135].nodes[0].index 362\ngroup[135].nodes[0].retired false\ngroup[135].nodes[1].index 156\ngroup[135].nodes[1].retired false\ngroup[135].nodes[2].index 186\ngroup[135].nodes[2].retired false\ngroup[136].index \"4.1.3\"\ngroup[136].name \"top.4.1.3\"\ngroup[136].capacity 1.0\ngroup[136].partitions \"\"\ngroup[136].nodes[0].index 129\ngroup[136].nodes[0].retired false\ngroup[136].nodes[1].index 159\ngroup[136].nodes[1].retired false\ngroup[136].nodes[2].index 357\ngroup[136].nodes[2].retired false\ngroup[137].index \"4.1.4\"\ngroup[137].name \"top.4.1.4\"\ngroup[137].capacity 1.0\ngroup[137].partitions \"\"\ngroup[137].nodes[0].index 140\ngroup[137].nodes[0].retired false\ngroup[137].nodes[1].index 2\ngroup[137].nodes[1].retired false\ngroup[137].nodes[2].index 7\ngroup[137].nodes[2].retired false\ngroup[138].index \"4.2\"\ngroup[138].name \"top.4.2\"\ngroup[138].capacity 1.0\ngroup[138].partitions \"*|*\"\ngroup[139].index \"4.2.0\"\ngroup[139].name \"top.4.2.0\"\ngroup[139].capacity 1.0\ngroup[139].partitions \"\"\ngroup[139].nodes[0].index 108\ngroup[139].nodes[0].retired false\ngroup[139].nodes[1].index 276\ngroup[139].nodes[1].retired false\ngroup[139].nodes[2].index 126\ngroup[139].nodes[2].retired false\ngroup[140].index \"4.2.1\"\ngroup[140].name \"top.4.2.1\"\ngroup[140].capacity 1.0\ngroup[140].partitions \"\"\ngroup[140].nodes[0].index 188\ngroup[140].nodes[0].retired false\ngroup[140].nodes[1].index 281\ngroup[140].nodes[1].retired false\ngroup[140].nodes[2].index 137\ngroup[140].nodes[2].retired false\ngroup[141].index \"4.2.2\"\ngroup[141].name \"top.4.2.2\"\ngroup[141].capacity 1.0\ngroup[141].partitions \"\"\ngroup[141].nodes[0].index 175\ngroup[141].nodes[0].retired false\ngroup[141].nodes[1].index 364\ngroup[141].nodes[1].retired false\ngroup[141].nodes[2].index 117\ngroup[141].nodes[2].retired false\ngroup[142].index \"4.2.3\"\ngroup[142].name \"top.4.2.3\"\ngroup[142].capacity 1.0\ngroup[142].partitions \"\"\ngroup[142].nodes[0].index 14\ngroup[142].nodes[0].retired false\ngroup[142].nodes[1].index 373\ngroup[142].nodes[1].retired false\ngroup[142].nodes[2].index 132\ngroup[142].nodes[2].retired false\ngroup[143].index \"4.2.4\"\ngroup[143].name \"top.4.2.4\"\ngroup[143].capacity 1.0\ngroup[143].partitions \"\"\ngroup[143].nodes[0].index 338\ngroup[143].nodes[0].retired false\ngroup[143].nodes[1].index 54\ngroup[143].nodes[1].retired false\ngroup[143].nodes[2].index 209\ngroup[143].nodes[2].retired false\ngroup[144].index \"4.3\"\ngroup[144].name \"top.4.3\"\ngroup[144].capacity 1.0\ngroup[144].partitions \"*|*\"\ngroup[145].index \"4.3.0\"\ngroup[145].name \"top.4.3.0\"\ngroup[145].capacity 1.0\ngroup[145].partitions \"\"\ngroup[145].nodes[0].index 226\ngroup[145].nodes[0].retired false\ngroup[145].nodes[1].index 38\ngroup[145].nodes[1].retired false\ngroup[145].nodes[2].index 318\ngroup[145].nodes[2].retired false\ngroup[146].index \"4.3.1\"\ngroup[146].name \"top.4.3.1\"\ngroup[146].capacity 1.0\ngroup[146].partitions \"\"\ngroup[146].nodes[0].index 283\ngroup[146].nodes[0].retired false\ngroup[146].nodes[1].index 109\ngroup[146].nodes[1].retired false\ngroup[146].nodes[2].index 171\ngroup[146].nodes[2].retired false\ngroup[147].index \"4.3.2\"\ngroup[147].name \"top.4.3.2\"\ngroup[147].capacity 1.0\ngroup[147].partitions \"\"\ngroup[147].nodes[0].index 130\ngroup[147].nodes[0].retired false\ngroup[147].nodes[1].index 119\ngroup[147].nodes[1].retired false\ngroup[147].nodes[2].index 206\ngroup[147].nodes[2].retired false\ngroup[148].index \"4.3.3\"\ngroup[148].name \"top.4.3.3\"\ngroup[148].capacity 1.0\ngroup[148].partitions \"\"\ngroup[148].nodes[0].index 295\ngroup[148].nodes[0].retired false\ngroup[148].nodes[1].index 154\ngroup[148].nodes[1].retired false\ngroup[148].nodes[2].index 298\ngroup[148].nodes[2].retired false\ngroup[149].index \"4.3.4\"\ngroup[149].name \"top.4.3.4\"\ngroup[149].capacity 1.0\ngroup[149].partitions \"\"\ngroup[149].nodes[0].index 273\ngroup[149].nodes[0].retired false\ngroup[149].nodes[1].index 16\ngroup[149].nodes[1].retired false\ngroup[149].nodes[2].index 329\ngroup[149].nodes[2].retired false\ngroup[150].index \"4.4\"\ngroup[150].name \"top.4.4\"\ngroup[150].capacity 1.0\ngroup[150].partitions \"*|*\"\ngroup[151].index \"4.4.0\"\ngroup[151].name \"top.4.4.0\"\ngroup[151].capacity 1.0\ngroup[151].partitions \"\"\ngroup[151].nodes[0].index 237\ngroup[151].nodes[0].retired false\ngroup[151].nodes[1].index 85\ngroup[151].nodes[1].retired false\ngroup[151].nodes[2].index 3\ngroup[151].nodes[2].retired false\ngroup[152].index \"4.4.1\"\ngroup[152].name \"top.4.4.1\"\ngroup[152].capacity 1.0\ngroup[152].partitions \"\"\ngroup[152].nodes[0].index 62\ngroup[152].nodes[0].retired false\ngroup[152].nodes[1].index 224\ngroup[152].nodes[1].retired false\ngroup[152].nodes[2].index 113\ngroup[152].nodes[2].retired false\ngroup[153].index \"4.4.2\"\ngroup[153].name \"top.4.4.2\"\ngroup[153].capacity 1.0\ngroup[153].partitions \"\"\ngroup[153].nodes[0].index 179\ngroup[153].nodes[0].retired false\ngroup[153].nodes[1].index 41\ngroup[153].nodes[1].retired false\ngroup[153].nodes[2].index 342\ngroup[153].nodes[2].retired false\ngroup[154].index \"4.4.3\"\ngroup[154].name \"top.4.4.3\"\ngroup[154].capacity 1.0\ngroup[154].partitions \"\"\ngroup[154].nodes[0].index 304\ngroup[154].nodes[0].retired false\ngroup[154].nodes[1].index 138\ngroup[154].nodes[1].retired false\ngroup[154].nodes[2].index 97\ngroup[154].nodes[2].retired false\ngroup[155].index \"4.4.4\"\ngroup[155].name \"top.4.4.4\"\ngroup[155].capacity 1.0\ngroup[155].partitions \"\"\ngroup[155].nodes[0].index 270\ngroup[155].nodes[0].retired false\ngroup[155].nodes[1].index 256\ngroup[155].nodes[1].retired false\ngroup[155].nodes[2].index 271\ngroup[155].nodes[2].retired false\ndisk_distribution MODULO_BID",
+  "node-type" : "distributor",
+  "redundancy" : 3,
+  "node-count" : 500,
+  "up-states" : "uim",
+  "result" : [ {
+    "nodes" : [ 279 ],
+    "bucket" : "4000000000000000",
+    "failure" : "NONE"
+  }, {
+    "nodes" : [ 229 ],
+    "bucket" : "4000000000000001",
+    "failure" : "NONE"
+  }, {
+    "nodes" : [ 276 ],
+    "bucket" : "4000000000000002",
+    "failure" : "NONE"
+  }, {
+    "nodes" : [ 365 ],
+    "bucket" : "4000000000000003",
+    "failure" : "NONE"
+  }, {
+    "nodes" : [ 13 ],
+    "bucket" : "4000000000000004",
+    "failure" : "NONE"
+  }, {
+    "nodes" : [ 92 ],
+    "bucket" : "4000000000000005",
+    "failure" : "NONE"
+  }, {
+    "nodes" : [ 49 ],
+    "bucket" : "4000000000000006",
+    "failure" : "NONE"
+  }, {
+    "nodes" : [ 8 ],
+    "bucket" : "4000000000000007",
+    "failure" : "NONE"
+  }, {
+    "nodes" : [ 329 ],
+    "bucket" : "4000000000000008",
+    "failure" : "NONE"
+  }, {
+    "nodes" : [ 1 ],
+    "bucket" : "4000000000000009",
+    "failure" : "NONE"
+  }, {
+    "nodes" : [ 210 ],
+    "bucket" : "400000000000000a",
+    "failure" : "NONE"
+  }, {
+    "nodes" : [ 15 ],
+    "bucket" : "400000000000000b",
+    "failure" : "NONE"
+  }, {
+    "nodes" : [ 291 ],
+    "bucket" : "400000000000000c",
+    "failure" : "NONE"
+  }, {
+    "nodes" : [ 27 ],
+    "bucket" : "400000000000000d",
+    "failure" : "NONE"
+  }, {
+    "nodes" : [ 357 ],
+    "bucket" : "400000000000000e",
+    "failure" : "NONE"
+  }, {
+    "nodes" : [ 270 ],
+    "bucket" : "400000000000000f",
+    "failure" : "NONE"
+  }, {
+    "nodes" : [ 293 ],
+    "bucket" : "4000000000000010",
+    "failure" : "NONE"
+  }, {
+    "nodes" : [ 108 ],
+    "bucket" : "4000000000000011",
+    "failure" : "NONE"
+  }, {
+    "nodes" : [ 288 ],
+    "bucket" : "4000000000000012",
+    "failure" : "NONE"
+  }, {
+    "nodes" : [ 340 ],
+    "bucket" : "4000000000000013",
+    "failure" : "NONE"
+  }, {
+    "nodes" : [ 279 ],
+    "bucket" : "4400000000000000",
+    "failure" : "NONE"
+  }, {
+    "nodes" : [ 229 ],
+    "bucket" : "4400000000000001",
+    "failure" : "NONE"
+  }, {
+    "nodes" : [ 276 ],
+    "bucket" : "4400000000000002",
+    "failure" : "NONE"
+  }, {
+    "nodes" : [ 365 ],
+    "bucket" : "4400000000000003",
+    "failure" : "NONE"
+  }, {
+    "nodes" : [ 13 ],
+    "bucket" : "4400000000000004",
+    "failure" : "NONE"
+  }, {
+    "nodes" : [ 92 ],
+    "bucket" : "4400000000000005",
+    "failure" : "NONE"
+  }, {
+    "nodes" : [ 49 ],
+    "bucket" : "4400000000000006",
+    "failure" : "NONE"
+  }, {
+    "nodes" : [ 8 ],
+    "bucket" : "4400000000000007",
+    "failure" : "NONE"
+  }, {
+    "nodes" : [ 329 ],
+    "bucket" : "4400000000000008",
+    "failure" : "NONE"
+  }, {
+    "nodes" : [ 1 ],
+    "bucket" : "4400000000000009",
+    "failure" : "NONE"
+  }, {
+    "nodes" : [ 210 ],
+    "bucket" : "440000000000000a",
+    "failure" : "NONE"
+  }, {
+    "nodes" : [ 15 ],
+    "bucket" : "440000000000000b",
+    "failure" : "NONE"
+  }, {
+    "nodes" : [ 291 ],
+    "bucket" : "440000000000000c",
+    "failure" : "NONE"
+  }, {
+    "nodes" : [ 27 ],
+    "bucket" : "440000000000000d",
+    "failure" : "NONE"
+  }, {
+    "nodes" : [ 357 ],
+    "bucket" : "440000000000000e",
+    "failure" : "NONE"
+  }, {
+    "nodes" : [ 270 ],
+    "bucket" : "440000000000000f",
+    "failure" : "NONE"
+  }, {
+    "nodes" : [ 293 ],
+    "bucket" : "4400000000000010",
+    "failure" : "NONE"
+  }, {
+    "nodes" : [ 108 ],
+    "bucket" : "4400000000000011",
+    "failure" : "NONE"
+  }, {
+    "nodes" : [ 288 ],
+    "bucket" : "4400000000000012",
+    "failure" : "NONE"
+  }, {
+    "nodes" : [ 340 ],
+    "bucket" : "4400000000000013",
+    "failure" : "NONE"
+  }, {
+    "nodes" : [ 279 ],
+    "bucket" : "4800000000000000",
+    "failure" : "NONE"
+  }, {
+    "nodes" : [ 229 ],
+    "bucket" : "4800000000000001",
+    "failure" : "NONE"
+  }, {
+    "nodes" : [ 276 ],
+    "bucket" : "4800000000000002",
+    "failure" : "NONE"
+  }, {
+    "nodes" : [ 365 ],
+    "bucket" : "4800000000000003",
+    "failure" : "NONE"
+  }, {
+    "nodes" : [ 13 ],
+    "bucket" : "4800000000000004",
+    "failure" : "NONE"
+  }, {
+    "nodes" : [ 92 ],
+    "bucket" : "4800000000000005",
+    "failure" : "NONE"
+  }, {
+    "nodes" : [ 49 ],
+    "bucket" : "4800000000000006",
+    "failure" : "NONE"
+  }, {
+    "nodes" : [ 8 ],
+    "bucket" : "4800000000000007",
+    "failure" : "NONE"
+  }, {
+    "nodes" : [ 329 ],
+    "bucket" : "4800000000000008",
+    "failure" : "NONE"
+  }, {
+    "nodes" : [ 1 ],
+    "bucket" : "4800000000000009",
+    "failure" : "NONE"
+  }, {
+    "nodes" : [ 210 ],
+    "bucket" : "480000000000000a",
+    "failure" : "NONE"
+  }, {
+    "nodes" : [ 15 ],
+    "bucket" : "480000000000000b",
+    "failure" : "NONE"
+  }, {
+    "nodes" : [ 291 ],
+    "bucket" : "480000000000000c",
+    "failure" : "NONE"
+  }, {
+    "nodes" : [ 27 ],
+    "bucket" : "480000000000000d",
+    "failure" : "NONE"
+  }, {
+    "nodes" : [ 357 ],
+    "bucket" : "480000000000000e",
+    "failure" : "NONE"
+  }, {
+    "nodes" : [ 270 ],
+    "bucket" : "480000000000000f",
+    "failure" : "NONE"
+  }, {
+    "nodes" : [ 293 ],
+    "bucket" : "4800000000000010",
+    "failure" : "NONE"
+  }, {
+    "nodes" : [ 108 ],
+    "bucket" : "4800000000000011",
+    "failure" : "NONE"
+  }, {
+    "nodes" : [ 288 ],
+    "bucket" : "4800000000000012",
+    "failure" : "NONE"
+  }, {
+    "nodes" : [ 340 ],
+    "bucket" : "4800000000000013",
+    "failure" : "NONE"
+  }, {
+    "nodes" : [ 253 ],
+    "bucket" : "400000000000fe68",
+    "failure" : "NONE"
+  }, {
+    "nodes" : [ 253 ],
+    "bucket" : "440000000001fe68",
+    "failure" : "NONE"
+  }, {
+    "nodes" : [ 253 ],
+    "bucket" : "480000000001fe68",
+    "failure" : "NONE"
+  }, {
+    "nodes" : [ 253 ],
+    "bucket" : "4c0000000001fe68",
+    "failure" : "NONE"
+  }, {
+    "nodes" : [ 253 ],
+    "bucket" : "500000000009fe68",
+    "failure" : "NONE"
+  }, {
+    "nodes" : [ 253 ],
+    "bucket" : "540000000009fe68",
+    "failure" : "NONE"
+  }, {
+    "nodes" : [ 253 ],
+    "bucket" : "580000000009fe68",
+    "failure" : "NONE"
+  }, {
+    "nodes" : [ 253 ],
+    "bucket" : "5c0000000049fe68",
+    "failure" : "NONE"
+  }, {
+    "nodes" : [ 253 ],
+    "bucket" : "600000000049fe68",
+    "failure" : "NONE"
+  }, {
+    "nodes" : [ 253 ],
+    "bucket" : "640000000149fe68",
+    "failure" : "NONE"
+  }, {
+    "nodes" : [ 253 ],
+    "bucket" : "680000000349fe68",
+    "failure" : "NONE"
+  }, {
+    "nodes" : [ 253 ],
+    "bucket" : "6c0000000749fe68",
+    "failure" : "NONE"
+  }, {
+    "nodes" : [ 253 ],
+    "bucket" : "700000000749fe68",
+    "failure" : "NONE"
+  }, {
+    "nodes" : [ 253 ],
+    "bucket" : "740000001749fe68",
+    "failure" : "NONE"
+  }, {
+    "nodes" : [ 253 ],
+    "bucket" : "780000003749fe68",
+    "failure" : "NONE"
+  }, {
+    "nodes" : [ 253 ],
+    "bucket" : "7c0000003749fe68",
+    "failure" : "NONE"
+  }, {
+    "nodes" : [ 253 ],
+    "bucket" : "80000000b749fe68",
+    "failure" : "NONE"
+  }, {
+    "nodes" : [ 253 ],
+    "bucket" : "84000001b749fe68",
+    "failure" : "NONE"
+  }, {
+    "nodes" : [ 253 ],
+    "bucket" : "88000003b749fe68",
+    "failure" : "NONE"
+  }, {
+    "nodes" : [ 253 ],
+    "bucket" : "8c000007b749fe68",
+    "failure" : "NONE"
+  }, {
+    "nodes" : [ 253 ],
+    "bucket" : "9000000fb749fe68",
+    "failure" : "NONE"
+  }, {
+    "nodes" : [ 253 ],
+    "bucket" : "9400001fb749fe68",
+    "failure" : "NONE"
+  }, {
+    "nodes" : [ 253 ],
+    "bucket" : "9800003fb749fe68",
+    "failure" : "NONE"
+  }, {
+    "nodes" : [ 253 ],
+    "bucket" : "9c00007fb749fe68",
+    "failure" : "NONE"
+  }, {
+    "nodes" : [ 253 ],
+    "bucket" : "a000007fb749fe68",
+    "failure" : "NONE"
+  }, {
+    "nodes" : [ 253 ],
+    "bucket" : "a400007fb749fe68",
+    "failure" : "NONE"
+  }, {
+    "nodes" : [ 253 ],
+    "bucket" : "a800007fb749fe68",
+    "failure" : "NONE"
+  }, {
+    "nodes" : [ 253 ],
+    "bucket" : "ac00047fb749fe68",
+    "failure" : "NONE"
+  }, {
+    "nodes" : [ 253 ],
+    "bucket" : "b000047fb749fe68",
+    "failure" : "NONE"
+  }, {
+    "nodes" : [ 253 ],
+    "bucket" : "b400147fb749fe68",
+    "failure" : "NONE"
+  }, {
+    "nodes" : [ 253 ],
+    "bucket" : "b800347fb749fe68",
+    "failure" : "NONE"
+  }, {
+    "nodes" : [ 253 ],
+    "bucket" : "bc00347fb749fe68",
+    "failure" : "NONE"
+  }, {
+    "nodes" : [ 253 ],
+    "bucket" : "c000b47fb749fe68",
+    "failure" : "NONE"
+  }, {
+    "nodes" : [ 253 ],
+    "bucket" : "c400b47fb749fe68",
+    "failure" : "NONE"
+  }, {
+    "nodes" : [ 253 ],
+    "bucket" : "c800b47fb749fe68",
+    "failure" : "NONE"
+  }, {
+    "nodes" : [ 253 ],
+    "bucket" : "cc00b47fb749fe68",
+    "failure" : "NONE"
+  }, {
+    "nodes" : [ 253 ],
+    "bucket" : "d000b47fb749fe68",
+    "failure" : "NONE"
+  }, {
+    "nodes" : [ 253 ],
+    "bucket" : "d400b47fb749fe68",
+    "failure" : "NONE"
+  }, {
+    "nodes" : [ 253 ],
+    "bucket" : "d800b47fb749fe68",
+    "failure" : "NONE"
+  }, {
+    "nodes" : [ 253 ],
+    "bucket" : "dc00b47fb749fe68",
+    "failure" : "NONE"
+  }, {
+    "nodes" : [ 253 ],
+    "bucket" : "e000b47fb749fe68",
+    "failure" : "NONE"
+  }, {
+    "nodes" : [ 253 ],
+    "bucket" : "e400b47fb749fe68",
+    "failure" : "NONE"
+  }, {
+    "nodes" : [ 84 ],
+    "bucket" : "40000000000098d2",
+    "failure" : "NONE"
+  }, {
+    "nodes" : [ 84 ],
+    "bucket" : "44000000000098d2",
+    "failure" : "NONE"
+  }, {
+    "nodes" : [ 84 ],
+    "bucket" : "48000000000298d2",
+    "failure" : "NONE"
+  }, {
+    "nodes" : [ 84 ],
+    "bucket" : "4c000000000698d2",
+    "failure" : "NONE"
+  }, {
+    "nodes" : [ 84 ],
+    "bucket" : "50000000000e98d2",
+    "failure" : "NONE"
+  }, {
+    "nodes" : [ 84 ],
+    "bucket" : "54000000000e98d2",
+    "failure" : "NONE"
+  }, {
+    "nodes" : [ 84 ],
+    "bucket" : "58000000002e98d2",
+    "failure" : "NONE"
+  }, {
+    "nodes" : [ 84 ],
+    "bucket" : "5c000000002e98d2",
+    "failure" : "NONE"
+  }, {
+    "nodes" : [ 84 ],
+    "bucket" : "60000000002e98d2",
+    "failure" : "NONE"
+  }, {
+    "nodes" : [ 84 ],
+    "bucket" : "64000000012e98d2",
+    "failure" : "NONE"
+  }, {
+    "nodes" : [ 84 ],
+    "bucket" : "68000000012e98d2",
+    "failure" : "NONE"
+  }, {
+    "nodes" : [ 84 ],
+    "bucket" : "6c000000052e98d2",
+    "failure" : "NONE"
+  }, {
+    "nodes" : [ 84 ],
+    "bucket" : "70000000052e98d2",
+    "failure" : "NONE"
+  }, {
+    "nodes" : [ 84 ],
+    "bucket" : "74000000152e98d2",
+    "failure" : "NONE"
+  }, {
+    "nodes" : [ 84 ],
+    "bucket" : "78000000152e98d2",
+    "failure" : "NONE"
+  }, {
+    "nodes" : [ 84 ],
+    "bucket" : "7c000000152e98d2",
+    "failure" : "NONE"
+  }, {
+    "nodes" : [ 84 ],
+    "bucket" : "80000000952e98d2",
+    "failure" : "NONE"
+  }, {
+    "nodes" : [ 84 ],
+    "bucket" : "84000001952e98d2",
+    "failure" : "NONE"
+  }, {
+    "nodes" : [ 84 ],
+    "bucket" : "88000001952e98d2",
+    "failure" : "NONE"
+  }, {
+    "nodes" : [ 84 ],
+    "bucket" : "8c000001952e98d2",
+    "failure" : "NONE"
+  }, {
+    "nodes" : [ 84 ],
+    "bucket" : "90000001952e98d2",
+    "failure" : "NONE"
+  }, {
+    "nodes" : [ 84 ],
+    "bucket" : "94000001952e98d2",
+    "failure" : "NONE"
+  }, {
+    "nodes" : [ 84 ],
+    "bucket" : "98000001952e98d2",
+    "failure" : "NONE"
+  }, {
+    "nodes" : [ 84 ],
+    "bucket" : "9c000041952e98d2",
+    "failure" : "NONE"
+  }, {
+    "nodes" : [ 84 ],
+    "bucket" : "a00000c1952e98d2",
+    "failure" : "NONE"
+  }, {
+    "nodes" : [ 84 ],
+    "bucket" : "a40000c1952e98d2",
+    "failure" : "NONE"
+  }, {
+    "nodes" : [ 84 ],
+    "bucket" : "a80002c1952e98d2",
+    "failure" : "NONE"
+  }, {
+    "nodes" : [ 84 ],
+    "bucket" : "ac0002c1952e98d2",
+    "failure" : "NONE"
+  }, {
+    "nodes" : [ 84 ],
+    "bucket" : "b00002c1952e98d2",
+    "failure" : "NONE"
+  }, {
+    "nodes" : [ 84 ],
+    "bucket" : "b40012c1952e98d2",
+    "failure" : "NONE"
+  }, {
+    "nodes" : [ 84 ],
+    "bucket" : "b80012c1952e98d2",
+    "failure" : "NONE"
+  }, {
+    "nodes" : [ 84 ],
+    "bucket" : "bc0012c1952e98d2",
+    "failure" : "NONE"
+  }, {
+    "nodes" : [ 84 ],
+    "bucket" : "c00092c1952e98d2",
+    "failure" : "NONE"
+  }, {
+    "nodes" : [ 84 ],
+    "bucket" : "c40192c1952e98d2",
+    "failure" : "NONE"
+  }, {
+    "nodes" : [ 84 ],
+    "bucket" : "c80192c1952e98d2",
+    "failure" : "NONE"
+  }, {
+    "nodes" : [ 84 ],
+    "bucket" : "cc0192c1952e98d2",
+    "failure" : "NONE"
+  }, {
+    "nodes" : [ 84 ],
+    "bucket" : "d00992c1952e98d2",
+    "failure" : "NONE"
+  }, {
+    "nodes" : [ 84 ],
+    "bucket" : "d41992c1952e98d2",
+    "failure" : "NONE"
+  }, {
+    "nodes" : [ 84 ],
+    "bucket" : "d83992c1952e98d2",
+    "failure" : "NONE"
+  }, {
+    "nodes" : [ 84 ],
+    "bucket" : "dc7992c1952e98d2",
+    "failure" : "NONE"
+  }, {
+    "nodes" : [ 84 ],
+    "bucket" : "e07992c1952e98d2",
+    "failure" : "NONE"
+  }, {
+    "nodes" : [ 84 ],
+    "bucket" : "e47992c1952e98d2",
+    "failure" : "NONE"
+  } ]
 }

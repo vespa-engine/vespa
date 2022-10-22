@@ -1,225 +1,181 @@
 {
-  "cluster-state": "distributor:10",
-  "distribution": "redundancy 3\ninitial_redundancy 0\nensure_primary_persisted true\nready_copies 0\nactive_per_leaf_group false\ndistributor_auto_ownership_transfer_on_whole_group_down true\ngroup[0].index \"invalid\"\ngroup[0].name \"invalid\"\ngroup[0].capacity 1.0\ngroup[0].partitions \"*\"\ngroup[0].nodes[0].index 0\ngroup[0].nodes[0].retired false\ngroup[0].nodes[1].index 1\ngroup[0].nodes[1].retired false\ngroup[0].nodes[2].index 2\ngroup[0].nodes[2].retired false\ngroup[0].nodes[3].index 3\ngroup[0].nodes[3].retired false\ngroup[0].nodes[4].index 4\ngroup[0].nodes[4].retired false\ngroup[0].nodes[5].index 5\ngroup[0].nodes[5].retired false\ngroup[0].nodes[6].index 6\ngroup[0].nodes[6].retired false\ngroup[0].nodes[7].index 7\ngroup[0].nodes[7].retired false\ngroup[0].nodes[8].index 8\ngroup[0].nodes[8].retired false\ngroup[0].nodes[9].index 9\ngroup[0].nodes[9].retired false\ndisk_distribution MODULO_BID",
-  "node-type": "distributor",
-  "redundancy": 3,
-  "node-count": 10,
-  "up-states": "uim",
-  "result": [
-    {
-      "bucket": "400000000000edb4",
-      "nodes": [2],
-      "failure": "NONE"
-    },
-    {
-      "bucket": "440000000000edb4",
-      "nodes": [2],
-      "failure": "NONE"
-    },
-    {
-      "bucket": "480000000000edb4",
-      "nodes": [2],
-      "failure": "NONE"
-    },
-    {
-      "bucket": "4c0000000000edb4",
-      "nodes": [2],
-      "failure": "NONE"
-    },
-    {
-      "bucket": "500000000000edb4",
-      "nodes": [2],
-      "failure": "NONE"
-    },
-    {
-      "bucket": "540000000010edb4",
-      "nodes": [2],
-      "failure": "NONE"
-    },
-    {
-      "bucket": "580000000030edb4",
-      "nodes": [2],
-      "failure": "NONE"
-    },
-    {
-      "bucket": "5c0000000070edb4",
-      "nodes": [2],
-      "failure": "NONE"
-    },
-    {
-      "bucket": "6000000000f0edb4",
-      "nodes": [2],
-      "failure": "NONE"
-    },
-    {
-      "bucket": "6400000000f0edb4",
-      "nodes": [2],
-      "failure": "NONE"
-    },
-    {
-      "bucket": "6800000000f0edb4",
-      "nodes": [2],
-      "failure": "NONE"
-    },
-    {
-      "bucket": "6c00000004f0edb4",
-      "nodes": [2],
-      "failure": "NONE"
-    },
-    {
-      "bucket": "700000000cf0edb4",
-      "nodes": [2],
-      "failure": "NONE"
-    },
-    {
-      "bucket": "740000001cf0edb4",
-      "nodes": [2],
-      "failure": "NONE"
-    },
-    {
-      "bucket": "780000003cf0edb4",
-      "nodes": [2],
-      "failure": "NONE"
-    },
-    {
-      "bucket": "7c0000003cf0edb4",
-      "nodes": [2],
-      "failure": "NONE"
-    },
-    {
-      "bucket": "800000003cf0edb4",
-      "nodes": [2],
-      "failure": "NONE"
-    },
-    {
-      "bucket": "840000003cf0edb4",
-      "nodes": [2],
-      "failure": "NONE"
-    },
-    {
-      "bucket": "880000023cf0edb4",
-      "nodes": [2],
-      "failure": "NONE"
-    },
-    {
-      "bucket": "8c0000023cf0edb4",
-      "nodes": [2],
-      "failure": "NONE"
-    },
-    {
-      "bucket": "9000000a3cf0edb4",
-      "nodes": [2],
-      "failure": "NONE"
-    },
-    {
-      "bucket": "9400001a3cf0edb4",
-      "nodes": [2],
-      "failure": "NONE"
-    },
-    {
-      "bucket": "9800003a3cf0edb4",
-      "nodes": [2],
-      "failure": "NONE"
-    },
-    {
-      "bucket": "9c00007a3cf0edb4",
-      "nodes": [2],
-      "failure": "NONE"
-    },
-    {
-      "bucket": "a000007a3cf0edb4",
-      "nodes": [2],
-      "failure": "NONE"
-    },
-    {
-      "bucket": "a400007a3cf0edb4",
-      "nodes": [2],
-      "failure": "NONE"
-    },
-    {
-      "bucket": "a800007a3cf0edb4",
-      "nodes": [2],
-      "failure": "NONE"
-    },
-    {
-      "bucket": "ac00007a3cf0edb4",
-      "nodes": [2],
-      "failure": "NONE"
-    },
-    {
-      "bucket": "b000007a3cf0edb4",
-      "nodes": [2],
-      "failure": "NONE"
-    },
-    {
-      "bucket": "b400107a3cf0edb4",
-      "nodes": [2],
-      "failure": "NONE"
-    },
-    {
-      "bucket": "b800107a3cf0edb4",
-      "nodes": [2],
-      "failure": "NONE"
-    },
-    {
-      "bucket": "bc00107a3cf0edb4",
-      "nodes": [2],
-      "failure": "NONE"
-    },
-    {
-      "bucket": "c000107a3cf0edb4",
-      "nodes": [2],
-      "failure": "NONE"
-    },
-    {
-      "bucket": "c401107a3cf0edb4",
-      "nodes": [2],
-      "failure": "NONE"
-    },
-    {
-      "bucket": "c803107a3cf0edb4",
-      "nodes": [2],
-      "failure": "NONE"
-    },
-    {
-      "bucket": "cc03107a3cf0edb4",
-      "nodes": [2],
-      "failure": "NONE"
-    },
-    {
-      "bucket": "d00b107a3cf0edb4",
-      "nodes": [2],
-      "failure": "NONE"
-    },
-    {
-      "bucket": "d40b107a3cf0edb4",
-      "nodes": [2],
-      "failure": "NONE"
-    },
-    {
-      "bucket": "d82b107a3cf0edb4",
-      "nodes": [2],
-      "failure": "NONE"
-    },
-    {
-      "bucket": "dc6b107a3cf0edb4",
-      "nodes": [2],
-      "failure": "NONE"
-    },
-    {
-      "bucket": "e06b107a3cf0edb4",
-      "nodes": [2],
-      "failure": "NONE"
-    },
-    {
-      "bucket": "e56b107a3cf0edb4",
-      "nodes": [2],
-      "failure": "NONE"
-    },
-    {
-      "bucket": "eb6b107a3cf0edb4",
-      "nodes": [2],
-      "failure": "NONE"
-    }
-  ]
+  "cluster-state" : "distributor:10",
+  "distribution" : "redundancy 3\ninitial_redundancy 0\nensure_primary_persisted true\nready_copies 0\nactive_per_leaf_group false\ndistributor_auto_ownership_transfer_on_whole_group_down true\ngroup[0].index \"invalid\"\ngroup[0].name \"invalid\"\ngroup[0].capacity 1.0\ngroup[0].partitions \"*\"\ngroup[0].nodes[0].index 0\ngroup[0].nodes[0].retired false\ngroup[0].nodes[1].index 1\ngroup[0].nodes[1].retired false\ngroup[0].nodes[2].index 2\ngroup[0].nodes[2].retired false\ngroup[0].nodes[3].index 3\ngroup[0].nodes[3].retired false\ngroup[0].nodes[4].index 4\ngroup[0].nodes[4].retired false\ngroup[0].nodes[5].index 5\ngroup[0].nodes[5].retired false\ngroup[0].nodes[6].index 6\ngroup[0].nodes[6].retired false\ngroup[0].nodes[7].index 7\ngroup[0].nodes[7].retired false\ngroup[0].nodes[8].index 8\ngroup[0].nodes[8].retired false\ngroup[0].nodes[9].index 9\ngroup[0].nodes[9].retired false\ndisk_distribution MODULO_BID",
+  "node-type" : "distributor",
+  "redundancy" : 3,
+  "node-count" : 10,
+  "up-states" : "uim",
+  "result" : [ {
+    "nodes" : [ 2 ],
+    "bucket" : "400000000000edb4",
+    "failure" : "NONE"
+  }, {
+    "nodes" : [ 2 ],
+    "bucket" : "440000000000edb4",
+    "failure" : "NONE"
+  }, {
+    "nodes" : [ 2 ],
+    "bucket" : "480000000000edb4",
+    "failure" : "NONE"
+  }, {
+    "nodes" : [ 2 ],
+    "bucket" : "4c0000000000edb4",
+    "failure" : "NONE"
+  }, {
+    "nodes" : [ 2 ],
+    "bucket" : "500000000000edb4",
+    "failure" : "NONE"
+  }, {
+    "nodes" : [ 2 ],
+    "bucket" : "540000000010edb4",
+    "failure" : "NONE"
+  }, {
+    "nodes" : [ 2 ],
+    "bucket" : "580000000030edb4",
+    "failure" : "NONE"
+  }, {
+    "nodes" : [ 2 ],
+    "bucket" : "5c0000000070edb4",
+    "failure" : "NONE"
+  }, {
+    "nodes" : [ 2 ],
+    "bucket" : "6000000000f0edb4",
+    "failure" : "NONE"
+  }, {
+    "nodes" : [ 2 ],
+    "bucket" : "6400000000f0edb4",
+    "failure" : "NONE"
+  }, {
+    "nodes" : [ 2 ],
+    "bucket" : "6800000000f0edb4",
+    "failure" : "NONE"
+  }, {
+    "nodes" : [ 2 ],
+    "bucket" : "6c00000004f0edb4",
+    "failure" : "NONE"
+  }, {
+    "nodes" : [ 2 ],
+    "bucket" : "700000000cf0edb4",
+    "failure" : "NONE"
+  }, {
+    "nodes" : [ 2 ],
+    "bucket" : "740000001cf0edb4",
+    "failure" : "NONE"
+  }, {
+    "nodes" : [ 2 ],
+    "bucket" : "780000003cf0edb4",
+    "failure" : "NONE"
+  }, {
+    "nodes" : [ 2 ],
+    "bucket" : "7c0000003cf0edb4",
+    "failure" : "NONE"
+  }, {
+    "nodes" : [ 2 ],
+    "bucket" : "800000003cf0edb4",
+    "failure" : "NONE"
+  }, {
+    "nodes" : [ 2 ],
+    "bucket" : "840000003cf0edb4",
+    "failure" : "NONE"
+  }, {
+    "nodes" : [ 2 ],
+    "bucket" : "880000023cf0edb4",
+    "failure" : "NONE"
+  }, {
+    "nodes" : [ 2 ],
+    "bucket" : "8c0000023cf0edb4",
+    "failure" : "NONE"
+  }, {
+    "nodes" : [ 2 ],
+    "bucket" : "9000000a3cf0edb4",
+    "failure" : "NONE"
+  }, {
+    "nodes" : [ 2 ],
+    "bucket" : "9400001a3cf0edb4",
+    "failure" : "NONE"
+  }, {
+    "nodes" : [ 2 ],
+    "bucket" : "9800003a3cf0edb4",
+    "failure" : "NONE"
+  }, {
+    "nodes" : [ 2 ],
+    "bucket" : "9c00007a3cf0edb4",
+    "failure" : "NONE"
+  }, {
+    "nodes" : [ 2 ],
+    "bucket" : "a000007a3cf0edb4",
+    "failure" : "NONE"
+  }, {
+    "nodes" : [ 2 ],
+    "bucket" : "a400007a3cf0edb4",
+    "failure" : "NONE"
+  }, {
+    "nodes" : [ 2 ],
+    "bucket" : "a800007a3cf0edb4",
+    "failure" : "NONE"
+  }, {
+    "nodes" : [ 2 ],
+    "bucket" : "ac00007a3cf0edb4",
+    "failure" : "NONE"
+  }, {
+    "nodes" : [ 2 ],
+    "bucket" : "b000007a3cf0edb4",
+    "failure" : "NONE"
+  }, {
+    "nodes" : [ 2 ],
+    "bucket" : "b400107a3cf0edb4",
+    "failure" : "NONE"
+  }, {
+    "nodes" : [ 2 ],
+    "bucket" : "b800107a3cf0edb4",
+    "failure" : "NONE"
+  }, {
+    "nodes" : [ 2 ],
+    "bucket" : "bc00107a3cf0edb4",
+    "failure" : "NONE"
+  }, {
+    "nodes" : [ 2 ],
+    "bucket" : "c000107a3cf0edb4",
+    "failure" : "NONE"
+  }, {
+    "nodes" : [ 2 ],
+    "bucket" : "c401107a3cf0edb4",
+    "failure" : "NONE"
+  }, {
+    "nodes" : [ 2 ],
+    "bucket" : "c803107a3cf0edb4",
+    "failure" : "NONE"
+  }, {
+    "nodes" : [ 2 ],
+    "bucket" : "cc03107a3cf0edb4",
+    "failure" : "NONE"
+  }, {
+    "nodes" : [ 2 ],
+    "bucket" : "d00b107a3cf0edb4",
+    "failure" : "NONE"
+  }, {
+    "nodes" : [ 2 ],
+    "bucket" : "d40b107a3cf0edb4",
+    "failure" : "NONE"
+  }, {
+    "nodes" : [ 2 ],
+    "bucket" : "d82b107a3cf0edb4",
+    "failure" : "NONE"
+  }, {
+    "nodes" : [ 2 ],
+    "bucket" : "dc6b107a3cf0edb4",
+    "failure" : "NONE"
+  }, {
+    "nodes" : [ 2 ],
+    "bucket" : "e06b107a3cf0edb4",
+    "failure" : "NONE"
+  }, {
+    "nodes" : [ 2 ],
+    "bucket" : "e56b107a3cf0edb4",
+    "failure" : "NONE"
+  }, {
+    "nodes" : [ 2 ],
+    "bucket" : "eb6b107a3cf0edb4",
+    "failure" : "NONE"
+  } ]
 }

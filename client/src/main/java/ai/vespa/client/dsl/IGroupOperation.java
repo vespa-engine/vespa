@@ -5,6 +5,4 @@ package ai.vespa.client.dsl;
  * interface for group operation
  */
 
-public interface IGroupOperation {
-
-}
+public interface IGroupOperation { }

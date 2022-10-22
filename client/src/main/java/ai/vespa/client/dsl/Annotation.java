@@ -1,14 +1,15 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package ai.vespa.client.dsl;
 
-import java.util.Collections;
+import java.util.HashMap;
 import java.util.Map;
 
 public class Annotation {
 
-    Map<String, Object> annotations = Collections.emptyMap();
+    private final Map<String, Object> annotations;
 
     Annotation() {
+        this(new HashMap<>());
     }
 
     Annotation(Map<String, Object> annotations) {
@@ -24,10 +25,13 @@ public class Annotation {
         return annotations.containsKey(key);
     }
 
+    public Object get(String key) {
+        return annotations.get(key);
+    }
+
     @Override
     public String toString() {
-        return annotations == null || annotations.isEmpty()
-               ? ""
-               : Q.gson.toJson(annotations);
+        return annotations == null || annotations.isEmpty() ? "" : Q.toJson(annotations);
     }
+
 }

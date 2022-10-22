@@ -1,6 +1,8 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.clustercontroller.utils.communication.http;
 
+import com.fasterxml.jackson.databind.JsonNode;
+
 import java.util.Collection;
 import java.util.LinkedList;
 import java.util.List;
@@ -83,7 +85,7 @@ public class HttpResult {
         return sb.toString();
     }
     public void printContent(StringBuilder sb) {
-        sb.append(content.toString());
+        sb.append(content instanceof JsonNode ? ((JsonNode) content).toPrettyString() : content.toString());
     }
 
 }

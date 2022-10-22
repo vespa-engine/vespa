@@ -5,6 +5,6 @@ import java.util.Map;
 
 public interface UnitMetrics {
 
-    Map<String, Number> getMetricMap();
+    Map<String, Long> getMetricMap();
 
 }

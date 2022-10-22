@@ -7,8 +7,8 @@ import java.util.stream.Stream;
 
 public class Group implements IGroup, IGroupOperation {
 
-    String type;
-    IGroupOperation[] operations;
+    private final String type;
+    private final IGroupOperation[] operations;
 
     Group(String type, IGroupOperation[] operations) {
         this.type = type;

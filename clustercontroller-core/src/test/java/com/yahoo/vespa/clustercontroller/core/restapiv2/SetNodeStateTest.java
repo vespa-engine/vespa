@@ -107,7 +107,7 @@ public class SetNodeStateTest extends StateRestApiTest {
                 "music/distributor/1").setNewState("user", state, reason));
         UnitResponse response = restAPI.getState(new StateRequest("music/distributor/1", 0));
         String expected = musicClusterExpectedUserStateString("east.g2", "up", "up", state.toLowerCase(), reason);
-        assertEquals(expected, jsonWriter.createJson(response).toString(2));
+        assertEquals(expected, jsonWriter.createJson(response).toPrettyString());
     }
 
     private void verifyClusterSet(String state, String reason) throws Exception {
@@ -121,48 +121,29 @@ public class SetNodeStateTest extends StateRestApiTest {
         }
     }
 
-    private String musicClusterExpectedUserStateStringWithUninitializedNode(String groupName,
-                                                                            String generatedState, String unitState,
-                                                                            String userState, String userReason) {
-        return "{\n" +
-        "  \"attributes\": {\"hierarchical-group\": \"" + groupName + "\"},\n" +
-        "  \"state\": {\n" +
-        "    \"generated\": {\n" +
-        "      \"state\": \"" + generatedState + "\",\n" +
-        "      \"reason\": \"\"\n" +
-        "    },\n" +
-        "    \"unit\": {\n" +
-        "      \"state\": \"" + unitState + "\",\n" +
-        "      \"reason\": \"Node not seen in slobrok.\"\n" +
-        "    },\n" +
-        "    \"user\": {\n" +
-        "      \"state\": \"" + userState + "\",\n" +
-        "      \"reason\": \"" + userReason + "\"\n" +
-        "    }\n" +
-        "  }\n" +
-        "}";
-    }
-
     private String musicClusterExpectedUserStateString(String groupName,
                                                        String generatedState, String unitState,
                                                        String userState, String userReason) {
-        return "{\n" +
-        "  \"attributes\": {\"hierarchical-group\": \"" + groupName + "\"},\n" +
-        "  \"state\": {\n" +
-        "    \"generated\": {\n" +
-        "      \"state\": \"" + generatedState + "\",\n" +
-        "      \"reason\": \"\"\n" +
-        "    },\n" +
-        "    \"unit\": {\n" +
-        "      \"state\": \"" + unitState + "\",\n" +
-        "      \"reason\": \"\"\n" +
-        "    },\n" +
-        "    \"user\": {\n" +
-        "      \"state\": \"" + userState + "\",\n" +
-        "      \"reason\": \"" + userReason + "\"\n" +
-        "    }\n" +
-        "  }\n" +
-        "}";
+        return """
+               {
+                 "attributes" : {
+                   "hierarchical-group" : "%s"
+                 },
+                 "state" : {
+                   "generated" : {
+                     "state" : "%s",
+                     "reason" : ""
+                   },
+                   "unit" : {
+                     "state" : "%s",
+                     "reason" : ""
+                   },
+                   "user" : {
+                     "state" : "%s",
+                     "reason" : "%s"
+                   }
+                 }
+               }""".formatted(groupName, generatedState, unitState, userState, userReason);
     }
 
     @Test
@@ -332,8 +313,27 @@ public class SetNodeStateTest extends StateRestApiTest {
         setUp(true);
         restAPI.setUnitState(new SetUnitStateRequestImpl("music/distributor/2").setNewState("user", "down", "borked node"));
         UnitResponse response = restAPI.getState(new StateRequest("music/distributor/2", 0));
-        String expected = musicClusterExpectedUserStateStringWithUninitializedNode("east.g1", "down", "down", "down", "borked node");
-        assertEquals(expected, jsonWriter.createJson(response).toString(2));
+        assertEquals("""
+                     {
+                       "attributes" : {
+                         "hierarchical-group" : "east.g1"
+                       },
+                       "state" : {
+                         "generated" : {
+                           "state" : "down",
+                           "reason" : ""
+                         },
+                         "unit" : {
+                           "state" : "down",
+                           "reason" : "Node not seen in slobrok."
+                         },
+                         "user" : {
+                           "state" : "down",
+                           "reason" : "borked node"
+                         }
+                       }
+                     }""",
+                     jsonWriter.createJson(response).toPrettyString());
     }
 
     @Test
@@ -467,7 +467,7 @@ public class SetNodeStateTest extends StateRestApiTest {
                 "music/distributor/1").setNewState("user", "down", "testing more"));
         UnitResponse response = restAPI.getState(new StateRequest("music/distributor/1", 0));
         String expected = musicClusterExpectedUserStateString("east.g2", "up", "up", "down", "testing more");
-        assertEquals(expected, jsonWriter.createJson(response).toString(2));
+        assertEquals(expected, jsonWriter.createJson(response).toPrettyString());
     }
 
     private Id.Node createDummyId() {
