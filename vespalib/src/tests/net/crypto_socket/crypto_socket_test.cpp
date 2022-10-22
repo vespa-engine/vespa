@@ -209,7 +209,7 @@ void verify_crypto_socket(SocketPair &sockets, CryptoEngine &engine, bool is_ser
     SmartBuffer read_buffer(4_Ki);
     CryptoSocket::UP my_socket = is_server
                                  ? engine.create_server_crypto_socket(std::move(my_handle))
-                                 : engine.create_client_crypto_socket(std::move(my_handle), local_spec);
+                                 : engine.create_client_crypto_socket(std::move(my_handle), make_local_spec());
     TEST_DO(verify_handshake(*my_socket));
     drain(*my_socket, read_buffer);
     TEST_DO(verify_socket_io(*my_socket, read_buffer, is_server));

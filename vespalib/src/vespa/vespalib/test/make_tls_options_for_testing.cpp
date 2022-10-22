@@ -79,7 +79,9 @@ const TransientCryptoCredentials& TransientCryptoCredentials::instance() {
 
 namespace vespalib::test {
 
-SocketSpec local_spec("tcp/localhost:123");
+SocketSpec make_local_spec() {
+    return SocketSpec("tcp/localhost:123");
+}
 
 vespalib::net::tls::TransportSecurityOptions make_tls_options_for_testing() {
     return TransientCryptoCredentials::instance().cached_transport_options;

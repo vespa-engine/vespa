@@ -8,11 +8,11 @@
 namespace vespalib::test {
 
 /**
- * A socket spec representing "tcp/localhost:123". Used by unit tests
+ * Make a socket spec representing "tcp/localhost:123". Used by unit tests
  * performing hostname verification against the tls options created
  * below.
  **/
-extern SocketSpec local_spec;
+SocketSpec make_local_spec();
 
 /**
  * Make security options allowing you to talk to yourself using
