@@ -93,11 +93,6 @@ public:
     };
 
 private:
-    FieldInverter(const FieldInverter &) = delete;
-    FieldInverter(const FieldInverter &&) = delete;
-    FieldInverter &operator=(const FieldInverter &) = delete;
-    FieldInverter &operator=(const FieldInverter &&) = delete;
-
     using WordBuffer = std::vector<char, vespalib::allocator_large<char>>;
 
     class ElemInfo {
@@ -287,6 +282,11 @@ public:
                   FieldIndexRemover &remover,
                   IOrderedFieldIndexInserter &inserter,
                   index::FieldLengthCalculator &calculator);
+    FieldInverter(const FieldInverter &) = delete;
+    FieldInverter(const FieldInverter &&) = delete;
+    FieldInverter &operator=(const FieldInverter &) = delete;
+    FieldInverter &operator=(const FieldInverter &&) = delete;
+    ~FieldInverter() override;
 
     /**
      * Apply pending removes using the given remover.

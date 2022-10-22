@@ -372,6 +372,8 @@ FieldInverter::FieldInverter(const Schema &schema, uint32_t fieldId,
 {
 }
 
+FieldInverter::~FieldInverter() = default;
+
 void
 FieldInverter::abortPendingDoc(uint32_t docId)
 {
