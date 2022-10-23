@@ -239,7 +239,7 @@ Logger::doLog(LogLevel level, const char *file, int line, const char *fmt, ...)
         actualSize = tryLog(sizeofPayload, level, file, line, fmt, args);
         va_end(args);
     } while (sizeofPayload < actualSize);
-    ns_log::BufferedLogger::logger.trimCache();
+    ns_log::BufferedLogger::instance().trimCache();
 }
 
 void Logger::doLogCore(uint64_t timestamp, LogLevel level,

@@ -112,9 +112,9 @@ void testThatEntriesWithHighCountsAreEventuallyRemoved(
         // Should eventually throw out the entries with high count
     timer = 10 * 1000000 + 4;
         // Make sure we don't remove due to age.
-    ns_log::BufferedLogger::logger.setMaxEntryAge(1000000);
+    ns_log::BufferedLogger::instance().setMaxEntryAge(1000000);
         // Let each count, count for 5 seconds.
-    ns_log::BufferedLogger::logger.setCountFactor(5);
+    ns_log::BufferedLogger::instance().setCountFactor(5);
 
     LOGBM(info, "Starting up, using logfile %s", file.c_str());
     timer = 100 * 1000000 + 4;
@@ -147,9 +147,9 @@ void testThatEntriesExpire(
         // Test that we don't keep entries longer than max age
     timer = 10 * 1000000 + 4;
         // Time out after 120 seconds
-    ns_log::BufferedLogger::logger.setMaxEntryAge(120);
+    ns_log::BufferedLogger::instance().setMaxEntryAge(120);
         // Let counts count much, so they expire due to time instead
-    ns_log::BufferedLogger::logger.setCountFactor(100000);
+    ns_log::BufferedLogger::instance().setCountFactor(100000);
 
     LOGBM(info, "Starting up, using logfile %s", file.c_str());
     timer = 100 * 1000000 + 4;
@@ -217,9 +217,9 @@ void testThatHighCountEntriesDontStarveOthers(
     std::cerr << "testThatHighCountEntriesDontStarveOthers ...\n";
     timer = 10 * 1000000 + 4;
         // Long time out, we don't want to rely on timeout to prevent starvation
-    ns_log::BufferedLogger::logger.setMaxEntryAge(12000000);
+    ns_log::BufferedLogger::instance().setMaxEntryAge(12000000);
         // Let counts count much, so they score high
-    ns_log::BufferedLogger::logger.setCountFactor(100000);
+    ns_log::BufferedLogger::instance().setCountFactor(100000);
 
     LOGBM(info, "Starting up, using logfile %s", file.c_str());
     timer = 100 * 1000000;
@@ -372,8 +372,8 @@ void testNonBufferedLoggerTriggersBufferedLogTrim(const std::string& file,
 
 void reset(uint64_t& timer) {
     timer = 0;
-    ns_log::BufferedLogger::logger.setMaxEntryAge(300);
-    ns_log::BufferedLogger::logger.setCountFactor(5);
+    ns_log::BufferedLogger::instance().setMaxEntryAge(300);
+    ns_log::BufferedLogger::instance().setCountFactor(5);
 }
 
 int
@@ -384,10 +384,10 @@ main(int argc, char **argv)
         return EXIT_FAILURE;
     }
     ns_log::Logger::fakePid = true;
-    ns_log::BufferedLogger::logger.setMaxCacheSize(10);
+    ns_log::BufferedLogger::instance().setMaxCacheSize(10);
     uint64_t timer;
     logger.setTimer(std::unique_ptr<ns_log::Timer>(new ns_log::TestTimer(timer)));
-    ns_log::BufferedLogger::logger.setTimer(std::unique_ptr<ns_log::Timer>(new ns_log::TestTimer(timer)));
+    ns_log::BufferedLogger::instance().setTimer(std::unique_ptr<ns_log::Timer>(new ns_log::TestTimer(timer)));
 
     reset(timer);
     testThatEntriesWithHighCountIsKept(argv[1], timer);
