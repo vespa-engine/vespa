@@ -37,10 +37,8 @@ const (
 	ENV_WEB_SERVICE_PORT     = "VESPA_WEB_SERVICE_PORT"
 )
 
-/**
- * Compute the path prefix where Vespa files will live;
- * note: does not end with "/"
- **/
+// Compute the path prefix where Vespa files will live.
+// Note: does not end with "/"
 func VespaHome() string {
 	if env := os.Getenv(ENV_VESPA_HOME); env != "" {
 		return env
@@ -55,9 +53,7 @@ func UnderVespaHome(p string) string {
 	return fmt.Sprintf("%s/%s", VespaHome(), p)
 }
 
-/**
- * Compute the user name to own directories and run processes.
- **/
+// Compute the user name to own directories and run processes.
 func VespaUser() string {
 	if env := os.Getenv(ENV_VESPA_USER); env != "" {
 		return env
@@ -65,12 +61,10 @@ func VespaUser() string {
 	return DEFAULT_VESPA_USER
 }
 
-/**
- * Compute the host name that identifies myself.
- * Detection of the hostname is now done before starting any Vespa
- * programs and provided in the environment variable VESPA_HOSTNAME;
- * if that variable isn't set a default of "localhost" is always returned.
- **/
+// Compute the host name that identifies myself.
+// Detection of the hostname is now done before starting any Vespa
+// programs and provided in the environment variable VESPA_HOSTNAME;
+// if that variable isn't set a default of "localhost" is always returned.
 func VespaHostname() string {
 	if env := os.Getenv(ENV_VESPA_HOST); env != "" {
 		return env
@@ -78,10 +72,8 @@ func VespaHostname() string {
 	return DEFAULT_VESPA_HOST
 }
 
-/**
- * Compute the port number where the Vespa webservice
- * container should be available.
- **/
+// Compute the port number where the Vespa webservice
+// container should be available.
 func VespaContainerWebServicePort() int {
 	p := getNumFromEnv(ENV_WEB_SERVICE_PORT)
 	if p > 0 {
@@ -91,10 +83,7 @@ func VespaContainerWebServicePort() int {
 	return DEFAULT_WEB_SERVICE_PORT
 }
 
-/**
- * Compute the base for port numbers where the Vespa services
- * should listen.
- **/
+// Compute the base for port numbers where the Vespa services should listen.
 func VespaPortBase() int {
 	p := getNumFromEnv(ENV_VESPA_PORT_BASE)
 	if p > 0 {
@@ -104,9 +93,7 @@ func VespaPortBase() int {
 	return DEFAULT_VESPA_PORT_BASE
 }
 
-/**
- * Find the hostnames of configservers that are configured
- **/
+// Find the hostnames of configservers that are configured.
 func VespaConfigserverHosts() []string {
 	parts := splitVespaConfigservers()
 	rv := make([]string, len(parts))
@@ -121,17 +108,12 @@ func VespaConfigserverHosts() []string {
 	return rv
 }
 
-/**
- * Find the HTTP port for talking to configservers
- **/
 func findConfigserverHttpPort() int {
 	return findConfigserverRpcPort() + 1
 }
 
-/**
- * Find the RPC addresses to configservers that are configured
- * @return a list of RPC specs in the format tcp/{hostname}:{portnumber}
- **/
+// Find the RPC addresses to configservers that are configured.
+// Returns a list of RPC specs in the format tcp/{hostname}:{portnumber}
 func VespaConfigserverRpcAddrs() []string {
 	parts := splitVespaConfigservers()
 	rv := make([]string, len(parts))
@@ -146,10 +128,8 @@ func VespaConfigserverRpcAddrs() []string {
 	return rv
 }
 
-/**
- * Find the URLs to the REST api on configservers
- * @return a list of URLS in the format http://{hostname}:{portnumber}/
- **/
+// Find the URLs to the REST api on configservers
+// Returns a list of URLS in the format http://{hostname}:{portnumber}/
 func VespaConfigserverRestUrls() []string {
 	parts := splitVespaConfigservers()
 	rv := make([]string, len(parts))
@@ -168,18 +148,14 @@ func VespaConfigserverRestUrls() []string {
 	return rv
 }
 
-/**
- * Find the RPC address to the local config proxy
- * @return one RPC spec in the format tcp/{hostname}:{portnumber}
- **/
+// Find the RPC address to the local config proxy
+// Returns one RPC spec in the format tcp/{hostname}:{portnumber}
 func VespaConfigProxyRpcAddr() string {
 	return fmt.Sprintf("tcp/localhost:%d", findConfigproxyRpcPort())
 }
 
-/**
- * Get the RPC addresses to all known config sources
- * @return same as vespaConfigProxyRpcAddr + vespaConfigserverRpcAddrs
- **/
+// Get the RPC addresses to all known config sources
+// Returns same as vespaConfigProxyRpcAddr + vespaConfigserverRpcAddrs
 func VespaConfigSourcesRpcAddrs() []string {
 	cs := VespaConfigserverRpcAddrs()
 	rv := make([]string, 0, len(cs)+1)
@@ -215,9 +191,6 @@ func splitVespaConfigservers() []string {
 	return parts
 }
 
-/**
- * Find the RPC port for talking to config proxy
- **/
 func findConfigproxyRpcPort() int {
 	p := getNumFromEnv(ENV_CONFIGPROXY_RPC_PORT)
 	if p > 0 {
@@ -226,9 +199,6 @@ func findConfigproxyRpcPort() int {
 	return VespaPortBase() + CONFIGPROXY_RPC_PORT_OFFSET
 }
 
-/**
- * Find the RPC port for talking to configservers
- **/
 func findConfigserverRpcPort() int {
 	p := getNumFromEnv(ENV_CONFIGSERVER_RPC_PORT)
 	if p > 0 {
