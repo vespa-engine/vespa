@@ -158,7 +158,7 @@ test('set query', () => {
   error('POST', '{"yql":"test}', 'Unexpected end of JSON input');
 
   msg =
-    "Property 'ranking' cannot have a value, supported children: features,freshness,listFeatures,location,matchPhase,profile,properties,queryCache,sorting";
+    "Property 'ranking' cannot have a value, supported children: features,freshness,listFeatures,location,matchPhase,matching,profile,properties,queryCache,rerankCount,sorting";
   error('POST', '{"ranking":123}', msg);
   error('GET', 'ranking=123', msg);
 
