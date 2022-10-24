@@ -125,6 +125,7 @@ fixdir ${VESPA_USER} ${VESPA_GROUP}   755  tmp
 fixdir ${VESPA_USER} ${VESPA_GROUP}   755  tmp/vespa
 fixdir ${VESPA_USER} ${VESPA_GROUP}   755  var
 fixdir ${VESPA_USER} ${VESPA_GROUP}   755  var/crash
+fixdir ${VESPA_USER} ${VESPA_GROUP}   755  var/db
 fixdir ${VESPA_USER} ${VESPA_GROUP}   755  var/db/vespa
 fixdir ${VESPA_USER} ${VESPA_GROUP}   755  var/db/vespa/config_server
 fixdir ${VESPA_USER} ${VESPA_GROUP}   755  var/db/vespa/config_server/serverdb
@@ -141,6 +142,7 @@ fixdir ${VESPA_USER} ${VESPA_GROUP}   755  var/vespa
 fixdir ${VESPA_USER} ${VESPA_GROUP}   755  var/vespa/application
 fixdir ${VESPA_USER} ${VESPA_GROUP}   755  var/vespa/bundlecache
 fixdir ${VESPA_USER} ${VESPA_GROUP}   755  var/vespa/bundlecache/configserver
+fixdir ${VESPA_USER} ${VESPA_GROUP}   755  var/vespa/cache
 fixdir ${VESPA_USER} ${VESPA_GROUP}   755  var/vespa/cache/config
 
 if [ "$(id -u)" -eq 0 ]; then
