@@ -6,6 +6,15 @@
 
 #include "tests.h"
 
+#ifndef noinline__
+#ifdef __GNUC__
+#define noinline__ __attribute__((noinline))
+#endif
+#ifndef noinline__
+#define noinline__
+#endif
+#endif
+
 #if (defined(__x86_64__) || defined(__aarch64__)) && defined(__linux__)
 class Tracker
 {
@@ -18,26 +27,26 @@ private:
     void deepFill();
 
 protected:
-    virtual void deepFill20();
-    virtual void deepFill19();
-    virtual void deepFill18();
-    virtual void deepFill17();
-    virtual void deepFill16();
-    virtual void deepFill15();
-    virtual void deepFill14();
-    virtual void deepFill13();
-    virtual void deepFill12();
-    virtual void deepFill11();
-    virtual void deepFill10();
-    virtual void deepFill9();
-    virtual void deepFill8();
-    virtual void deepFill7();
-    virtual void deepFill6();
-    virtual void deepFill5();
-    virtual void deepFill4();
-    virtual void deepFill3();
-    virtual void deepFill2();
-    virtual void deepFill1();
+    virtual void deepFill20() noinline__;
+    virtual void deepFill19() noinline__;
+    virtual void deepFill18() noinline__;
+    virtual void deepFill17() noinline__;
+    virtual void deepFill16() noinline__;
+    virtual void deepFill15() noinline__;
+    virtual void deepFill14() noinline__;
+    virtual void deepFill13() noinline__;
+    virtual void deepFill12() noinline__;
+    virtual void deepFill11() noinline__;
+    virtual void deepFill10() noinline__;
+    virtual void deepFill9() noinline__;
+    virtual void deepFill8() noinline__;
+    virtual void deepFill7() noinline__;
+    virtual void deepFill6() noinline__;
+    virtual void deepFill5() noinline__;
+    virtual void deepFill4() noinline__;
+    virtual void deepFill3() noinline__;
+    virtual void deepFill2() noinline__;
+    virtual void deepFill1() noinline__;
 
     virtual void deepFill0();
 
@@ -63,16 +72,16 @@ public:
 class Tracker2: public Tracker
 {
 protected:
-    void deepFill20() override;
-    void deepFill18() override;
-    void deepFill16() override;
-    void deepFill14() override;
-    void deepFill12() override;
-    void deepFill10() override;
-    void deepFill8() override;
-    void deepFill6() override;
-    void deepFill4() override;
-    void deepFill2() override;
+    void deepFill20() override noinline__;
+    void deepFill18() override noinline__;
+    void deepFill16() override noinline__;
+    void deepFill14() override noinline__;
+    void deepFill12() override noinline__;
+    void deepFill10() override noinline__;
+    void deepFill8() override noinline__;
+    void deepFill6() override noinline__;
+    void deepFill4() override noinline__;
+    void deepFill2() override noinline__;
 };
 
 
