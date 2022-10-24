@@ -15,8 +15,10 @@ import com.yahoo.vespa.hosted.provision.NodesAndHosts;
 import com.yahoo.vespa.hosted.provision.node.Agent;
 import com.yahoo.vespa.hosted.provision.provisioning.HostProvisioner.HostSharing;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.function.Consumer;
 import java.util.function.Supplier;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -102,33 +104,35 @@ public class GroupPreparer {
             NodeAllocation allocation = prepareAllocation(application, cluster, requestedNodes, surplusActiveNodes,
                                                           indices::next, wantedGroups, allNodesAndHosts);
             NodeType hostType = allocation.nodeType().hostType();
-            if (canProvisionDynamically(hostType)) {
+            if (canProvisionDynamically(hostType) && allocation.hostDeficit().isPresent()) {
                 HostSharing sharing = hostSharing(requestedNodes, hostType);
                 Version osVersion = nodeRepository.osVersions().targetFor(hostType).orElse(Version.emptyVersion);
-                List<ProvisionedHost> provisionedHosts = allocation.hostDeficit()
-                                                                   .map(deficit -> hostProvisioner.get().provisionHosts(allocation.provisionIndices(deficit.count()),
-                                                                                                                        hostType,
-                                                                                                                        deficit.resources(),
-                                                                                                                        application,
-                                                                                                                        osVersion,
-                                                                                                                        sharing,
-                                                                                                                        Optional.of(cluster.type()),
-                                                                                                                        requestedNodes.cloudAccount()))
-                                                                   .orElseGet(List::of);
+                NodeAllocation.HostDeficit deficit = allocation.hostDeficit().get();
 
-                // At this point we have started provisioning of the hosts, the first priority is to make sure that
-                // the returned hosts are added to the node-repo so that they are tracked by the provision maintainers
-                List<Node> hosts = provisionedHosts.stream()
-                                                   .map(ProvisionedHost::generateHost)
-                                                   .collect(Collectors.toList());
-                nodeRepository.nodes().addNodes(hosts, Agent.application);
+                List<Node> hosts = new ArrayList<>();
+                Consumer<List<ProvisionedHost>> provisionedHostsConsumer = provisionedHosts -> {
+                    hosts.addAll(provisionedHosts.stream().map(ProvisionedHost::generateHost).toList());
+                    nodeRepository.nodes().addNodes(hosts, Agent.application);
 
-                // Offer the nodes on the newly provisioned hosts, this should be enough to cover the deficit
-                List<NodeCandidate> candidates = provisionedHosts.stream()
-                                                                 .map(host -> NodeCandidate.createNewExclusiveChild(host.generateNode(),
-                                                                                                                    host.generateHost()))
-                                                                 .collect(Collectors.toList());
-                allocation.offer(candidates);
+                    // Offer the nodes on the newly provisioned hosts, this should be enough to cover the deficit
+                    List<NodeCandidate> candidates = provisionedHosts.stream()
+                            .map(host -> NodeCandidate.createNewExclusiveChild(host.generateNode(),
+                                    host.generateHost()))
+                            .collect(Collectors.toList());
+                    allocation.offer(candidates);
+                };
+
+                try {
+                    hostProvisioner.get().provisionHosts(
+                            allocation.provisionIndices(deficit.count()), hostType, deficit.resources(), application,
+                            osVersion, sharing, Optional.of(cluster.type()), requestedNodes.cloudAccount(), provisionedHostsConsumer);
+                } catch (NodeAllocationException e) {
+                    // Mark the nodes that were written to ZK in the consumer for deprovisioning. While these hosts do
+                    // not exist, we cannot remove them from ZK here because other nodes may already have been
+                    // allocated on them, so let DynamicProvisioningMaintainer deal with it
+                    hosts.forEach(host -> nodeRepository.nodes().deprovision(host.hostname(), Agent.system, nodeRepository.clock().instant()));
+                    throw e;
+                }
             }
 
             if (! allocation.fulfilled() && requestedNodes.canFail())

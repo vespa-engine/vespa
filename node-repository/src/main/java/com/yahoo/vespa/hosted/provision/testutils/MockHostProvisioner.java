@@ -26,6 +26,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
+import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
@@ -60,10 +61,10 @@ public class MockHostProvisioner implements HostProvisioner {
     }
 
     @Override
-    public List<ProvisionedHost> provisionHosts(List<Integer> provisionIndices, NodeType hostType, NodeResources resources,
-                                                ApplicationId applicationId, Version osVersion, HostSharing sharing,
-                                                Optional<ClusterSpec.Type> clusterType,
-                                                Optional<CloudAccount> cloudAccount) {
+    public void provisionHosts(List<Integer> provisionIndices, NodeType hostType, NodeResources resources,
+                               ApplicationId applicationId, Version osVersion, HostSharing sharing,
+                               Optional<ClusterSpec.Type> clusterType, Optional<CloudAccount> cloudAccount,
+                               Consumer<List<ProvisionedHost>> provisionedHostsConsumer) {
         Flavor hostFlavor = this.hostFlavor.orElseGet(() -> flavors.stream().filter(f -> compatible(f, resources))
                                                                    .findFirst()
                                                                    .orElseThrow(() -> new NodeAllocationException("No host flavor matches " + resources, true)));
@@ -82,7 +83,7 @@ public class MockHostProvisioner implements HostProvisioner {
                                           cloudAccount));
         }
         provisionedHosts.addAll(hosts);
-        return hosts;
+        provisionedHostsConsumer.accept(hosts);
     }
 
     @Override
