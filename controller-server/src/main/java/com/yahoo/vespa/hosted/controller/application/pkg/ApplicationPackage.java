@@ -72,7 +72,6 @@ public class ApplicationPackage {
     private static final String validationOverridesFile = "validation-overrides.xml";
     static final String servicesFile = "services.xml";
 
-    private final String contentHash;
     private final String bundleHash;
     private final byte[] zippedContent;
     private final DeploymentSpec deploymentSpec;
@@ -98,10 +97,8 @@ public class ApplicationPackage {
      * it must not be further changed by the caller.
      * If 'requireFiles' is true, files needed by deployment orchestration must be present.
      */
-    @SuppressWarnings("deprecation") // for Hashing.sha1()
     public ApplicationPackage(byte[] zippedContent, boolean requireFiles) {
         this.zippedContent = Objects.requireNonNull(zippedContent, "The application package content cannot be null");
-        this.contentHash = Hashing.sha1().hashBytes(zippedContent).toString();
         this.files = new ZipArchiveCache(zippedContent, Set.of(deploymentFile, validationOverridesFile, servicesFile, buildMetaFile, trustedCertificatesFile));
 
         Optional<DeploymentSpec> deploymentSpec = files.get(deploymentFile).map(bytes -> new String(bytes, UTF_8)).map(DeploymentSpec::fromXml);
@@ -133,9 +130,6 @@ public class ApplicationPackage {
         ZipEntries.transferAndWrite(modified, new ByteArrayInputStream(zippedContent), trustedCertificatesFile, certificatesBytes);
         return new ApplicationPackage(modified.toByteArray());
     }
-
-    /** Returns a hash of the content of this package */
-    public String hash() { return contentHash; }
 
     /** Hash of all files and settings that influence what is deployed to config servers. */
     public String bundleHash() {

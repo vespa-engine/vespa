@@ -3,15 +3,12 @@ package com.yahoo.vespa.hosted.controller.api.integration.configserver;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 
-import java.util.List;
-
 /**
- * @author Tony Vaagenes
+ * @author ogronnesby
  */
 @JsonIgnoreProperties(ignoreUnknown = true)
-public class PrepareResponse {
+public class QuotaUsageResponse {
+    public static final QuotaUsageResponse zero = new QuotaUsageResponse() {{ this.rate = 0; }};
 
-    public String message;
-    public List<Log> log;
-
+    public double rate;
 }
