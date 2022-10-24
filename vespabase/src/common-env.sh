@@ -234,7 +234,7 @@ fixlimits () {
     else
         # number of open files:
         if [ $file_descriptor -lt $file_descriptor_limit ]; then
-            ulimit -n "$file_descriptor_limit" || exit 1
+            ulimit -n files || exit 1
         fi
 
         # core file size
