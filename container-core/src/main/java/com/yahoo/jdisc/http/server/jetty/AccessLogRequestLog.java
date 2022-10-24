@@ -76,7 +76,7 @@ class AccessLogRequestLog extends AbstractLifeCycle implements org.eclipse.jetty
             addNonNullValue(builder, request.getProtocol(), RequestLogEntry.Builder::httpVersion);
             addNonNullValue(builder, request.getScheme(), RequestLogEntry.Builder::scheme);
             addNonNullValue(builder, request.getHeader("User-Agent"), RequestLogEntry.Builder::userAgent);
-            addNonNullValue(builder, request.getServerName(), RequestLogEntry.Builder::hostString);
+            addNonNullValue(builder, getServerName(request), RequestLogEntry.Builder::hostString);
             addNonNullValue(builder, request.getHeader("Referer"), RequestLogEntry.Builder::referer);
             addNonNullValue(builder, request.getQueryString(), RequestLogEntry.Builder::rawQuery);
 
@@ -128,6 +128,19 @@ class AccessLogRequestLog extends AbstractLifeCycle implements org.eclipse.jetty
         } catch (Exception e) {
             // Catching any exceptions here as it is unclear how Jetty handles exceptions from a RequestLog.
             logger.log(Level.SEVERE, "Failed to log access log entry: " + e.getMessage(), e);
+        }
+    }
+
+    private static String getServerName(Request request) {
+        try {
+            return request.getServerName();
+        } catch (IllegalArgumentException e) {
+            /*
+             * getServerName() may throw IllegalArgumentException for invalid requests where request line contains a URI with relative path.
+             * Jetty correctly responds with '400 Bad Request' prior to invoking our request log implementation.
+             */
+            logger.log(Level.FINE, e, () -> "Fallback to 'Host' header");
+            return request.getHeader("Host");
         }
     }
 
