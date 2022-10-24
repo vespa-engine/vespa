@@ -2,6 +2,7 @@
 package com.yahoo.vespa.hosted.controller.application.pkg;
 
 import com.google.common.hash.Funnel;
+import com.google.common.hash.Hasher;
 import com.google.common.hash.Hashing;
 import com.yahoo.component.Version;
 import com.yahoo.compress.ArchiveStreamReader;
@@ -71,8 +72,8 @@ public class ApplicationPackage {
     static final String deploymentFile = "deployment.xml";
     private static final String validationOverridesFile = "validation-overrides.xml";
     static final String servicesFile = "services.xml";
+    private static Hasher hasher() { return Hashing.murmur3_128().newHasher(); }
 
-    private final String contentHash;
     private final String bundleHash;
     private final byte[] zippedContent;
     private final DeploymentSpec deploymentSpec;
@@ -98,10 +99,8 @@ public class ApplicationPackage {
      * it must not be further changed by the caller.
      * If 'requireFiles' is true, files needed by deployment orchestration must be present.
      */
-    @SuppressWarnings("deprecation") // for Hashing.sha1()
     public ApplicationPackage(byte[] zippedContent, boolean requireFiles) {
         this.zippedContent = Objects.requireNonNull(zippedContent, "The application package content cannot be null");
-        this.contentHash = Hashing.sha1().hashBytes(zippedContent).toString();
         this.files = new ZipArchiveCache(zippedContent, Set.of(deploymentFile, validationOverridesFile, servicesFile, buildMetaFile, trustedCertificatesFile));
 
         Optional<DeploymentSpec> deploymentSpec = files.get(deploymentFile).map(bytes -> new String(bytes, UTF_8)).map(DeploymentSpec::fromXml);
@@ -133,9 +132,6 @@ public class ApplicationPackage {
         ZipEntries.transferAndWrite(modified, new ByteArrayInputStream(zippedContent), trustedCertificatesFile, certificatesBytes);
         return new ApplicationPackage(modified.toByteArray());
     }
-
-    /** Returns a hash of the content of this package */
-    public String hash() { return contentHash; }
 
     /** Hash of all files and settings that influence what is deployed to config servers. */
     public String bundleHash() {
@@ -242,7 +238,6 @@ public class ApplicationPackage {
     }
 
     // Hashes all files and settings that require a deployment to be forwarded to configservers
-    @SuppressWarnings("deprecation") // for Hashing.sha1()
     private String calculateBundleHash(byte[] zippedContent) {
         Predicate<String> entryMatcher = name -> ! name.endsWith(deploymentFile) && ! name.endsWith(buildMetaFile);
         SortedMap<String, Long> crcByEntry = new TreeMap<>();
@@ -258,17 +253,14 @@ public class ApplicationPackage {
             into.putBytes(key.getBytes());
             into.putLong(value);
         });
-        return Hashing.sha1().newHasher()
-                      .putObject(crcByEntry, funnel)
-                      .putInt(deploymentSpec.deployableHashCode())
-                      .hash().toString();
+        return hasher().putObject(crcByEntry, funnel)
+                       .putInt(deploymentSpec.deployableHashCode())
+                       .hash().toString();
     }
 
-    @SuppressWarnings("deprecation") // for Hashing.sha1()
     public static String calculateHash(byte[] bytes) {
-        return Hashing.sha1().newHasher()
-                      .putBytes(bytes)
-                      .hash().toString();
+        return hasher().putBytes(bytes)
+                       .hash().toString();
     }
 
 

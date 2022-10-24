@@ -54,16 +54,14 @@ import com.yahoo.vespa.hosted.controller.LockedTenant;
 import com.yahoo.vespa.hosted.controller.NotExistsException;
 import com.yahoo.vespa.hosted.controller.api.application.v4.EnvironmentResource;
 import com.yahoo.vespa.hosted.controller.api.application.v4.model.ProtonMetrics;
-import com.yahoo.vespa.hosted.controller.api.application.v4.model.configserverbindings.RefeedAction;
-import com.yahoo.vespa.hosted.controller.api.application.v4.model.configserverbindings.RestartAction;
-import com.yahoo.vespa.hosted.controller.api.application.v4.model.configserverbindings.ServiceInfo;
 import com.yahoo.vespa.hosted.controller.api.identifiers.DeploymentId;
 import com.yahoo.vespa.hosted.controller.api.identifiers.TenantId;
 import com.yahoo.vespa.hosted.controller.api.integration.aws.TenantRoles;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.ApplicationReindexing;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.Cluster;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.ConfigServerException;
-import com.yahoo.vespa.hosted.controller.api.integration.configserver.Log;
+import com.yahoo.vespa.hosted.controller.api.integration.configserver.DeploymentResult;
+import com.yahoo.vespa.hosted.controller.api.integration.configserver.DeploymentResult.LogEntry;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.Node;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.NodeFilter;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.NodeRepository;
@@ -75,11 +73,9 @@ import com.yahoo.vespa.hosted.controller.api.integration.deployment.RunId;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.SourceRevision;
 import com.yahoo.vespa.hosted.controller.api.integration.noderepository.RestartFilter;
 import com.yahoo.vespa.hosted.controller.api.integration.secrets.TenantSecretStore;
-import com.yahoo.vespa.hosted.controller.api.integration.zone.ZoneRegistry;
 import com.yahoo.vespa.hosted.controller.api.role.Role;
 import com.yahoo.vespa.hosted.controller.api.role.RoleDefinition;
 import com.yahoo.vespa.hosted.controller.api.role.SecurityContext;
-import com.yahoo.vespa.hosted.controller.application.ActivateResult;
 import com.yahoo.vespa.hosted.controller.application.AssignedRotation;
 import com.yahoo.vespa.hosted.controller.application.Change;
 import com.yahoo.vespa.hosted.controller.application.Deployment;
@@ -331,16 +327,16 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}/instance/{instance}/submit")) return submit(path.get("tenant"), path.get("application"), request);
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}/instance/{instance}/job/{jobtype}")) return trigger(appIdFromPath(path), jobTypeFromPath(path), request);
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}/instance/{instance}/job/{jobtype}/pause")) return pause(appIdFromPath(path), jobTypeFromPath(path));
-        if (path.matches("/application/v4/tenant/{tenant}/application/{application}/instance/{instance}/environment/{environment}/region/{region}")) return deploy(path.get("tenant"), path.get("application"), path.get("instance"), path.get("environment"), path.get("region"), request);
-        if (path.matches("/application/v4/tenant/{tenant}/application/{application}/instance/{instance}/environment/{environment}/region/{region}/deploy")) return deploy(path.get("tenant"), path.get("application"), path.get("instance"), path.get("environment"), path.get("region"), request); // legacy synonym of the above
+        if (path.matches("/application/v4/tenant/{tenant}/application/{application}/instance/{instance}/environment/{environment}/region/{region}")) return deploySystemApplication(path.get("tenant"), path.get("application"), path.get("instance"), path.get("environment"), path.get("region"), request);
+        if (path.matches("/application/v4/tenant/{tenant}/application/{application}/instance/{instance}/environment/{environment}/region/{region}/deploy")) return deploySystemApplication(path.get("tenant"), path.get("application"), path.get("instance"), path.get("environment"), path.get("region"), request); // legacy synonym of the above
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}/instance/{instance}/environment/{environment}/region/{region}/reindex")) return reindex(path.get("tenant"), path.get("application"), path.get("instance"), path.get("environment"), path.get("region"), request);
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}/instance/{instance}/environment/{environment}/region/{region}/reindexing")) return enableReindexing(path.get("tenant"), path.get("application"), path.get("instance"), path.get("environment"), path.get("region"), request);
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}/instance/{instance}/environment/{environment}/region/{region}/restart")) return restart(path.get("tenant"), path.get("application"), path.get("instance"), path.get("environment"), path.get("region"), request);
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}/instance/{instance}/environment/{environment}/region/{region}/suspend")) return suspend(path.get("tenant"), path.get("application"), path.get("instance"), path.get("environment"), path.get("region"), true);
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}/instance/{instance}/environment/{environment}/region/{region}/access/support")) return allowSupportAccess(path.get("tenant"), path.get("application"), path.get("instance"), path.get("environment"), path.get("region"), request);
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}/instance/{instance}/environment/{environment}/region/{region}/node/{node}/service-dump")) return requestServiceDump(path.get("tenant"), path.get("application"), path.get("instance"), path.get("environment"), path.get("region"), path.get("node"), request);
-        if (path.matches("/application/v4/tenant/{tenant}/application/{application}/environment/{environment}/region/{region}/instance/{instance}")) return deploy(path.get("tenant"), path.get("application"), path.get("instance"), path.get("environment"), path.get("region"), request);
-        if (path.matches("/application/v4/tenant/{tenant}/application/{application}/environment/{environment}/region/{region}/instance/{instance}/deploy")) return deploy(path.get("tenant"), path.get("application"), path.get("instance"), path.get("environment"), path.get("region"), request); // legacy synonym of the above
+        if (path.matches("/application/v4/tenant/{tenant}/application/{application}/environment/{environment}/region/{region}/instance/{instance}")) return deploySystemApplication(path.get("tenant"), path.get("application"), path.get("instance"), path.get("environment"), path.get("region"), request);
+        if (path.matches("/application/v4/tenant/{tenant}/application/{application}/environment/{environment}/region/{region}/instance/{instance}/deploy")) return deploySystemApplication(path.get("tenant"), path.get("application"), path.get("instance"), path.get("environment"), path.get("region"), request); // legacy synonym of the above
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}/environment/{environment}/region/{region}/instance/{instance}/restart")) return restart(path.get("tenant"), path.get("application"), path.get("instance"), path.get("environment"), path.get("region"), request);
         return ErrorResponse.notFoundError("Nothing at " + path);
     }
@@ -2283,7 +2279,7 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
         return new SlimeJsonResponse(slime);
     }
 
-    private HttpResponse deploy(String tenantName, String applicationName, String instanceName, String environment, String region, HttpRequest request) {
+    private HttpResponse deploySystemApplication(String tenantName, String applicationName, String instanceName, String environment, String region, HttpRequest request) {
         ApplicationId applicationId = ApplicationId.from(tenantName, applicationName, instanceName);
         ZoneId zone = requireZone(environment, region);
 
@@ -2295,18 +2291,18 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
 
         // Resolve system application
         Optional<SystemApplication> systemApplication = SystemApplication.matching(applicationId);
-        if (systemApplication.isEmpty() || !systemApplication.get().hasApplicationPackage()) {
+        if (systemApplication.isEmpty() || ! systemApplication.get().hasApplicationPackage()) {
             return ErrorResponse.badRequest("Deployment of " + applicationId + " is not supported through this API");
         }
 
         // Make it explicit that version is not yet supported here
         String vespaVersion = deployOptions.field("vespaVersion").asString();
-        if (!vespaVersion.isEmpty() && !vespaVersion.equals("null")) {
+        if ( ! vespaVersion.isEmpty()) {
             return ErrorResponse.badRequest("Specifying version for " + applicationId + " is not permitted");
         }
 
-        // To avoid second guessing the orchestrated upgrades of system applications
-        // we don't allow to deploy these during an system upgrade (i.e when new vespa is being rolled out)
+        // To avoid second guessing the orchestrated upgrades of system applications we don't allow
+        // deploying these during a system upgrade, i.e., when a new Vespa version is being rolled out
         VersionStatus versionStatus = controller.readVersionStatus();
         if (versionStatus.isUpgrading()) {
             throw new IllegalArgumentException("Deployment of system applications during a system upgrade is not allowed");
@@ -2315,14 +2311,26 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
         if (systemVersion.isEmpty()) {
             throw new IllegalArgumentException("Deployment of system applications is not permitted until system version is determined");
         }
-        ActivateResult result = controller.applications()
-                                          .deploySystemApplicationPackage(systemApplication.get(), zone, systemVersion.get().versionNumber());
-        return new SlimeJsonResponse(toSlime(result));
+        DeploymentResult result = controller.applications()
+                                            .deploySystemApplicationPackage(systemApplication.get(), zone, systemVersion.get().versionNumber());
+        Slime slime = new Slime();
+        Cursor root = slime.setObject();
+        root.setString("message", "Deployed " + systemApplication.get() + " in " + zone + " on " + systemVersion.get().versionNumber());
+
+        Cursor logArray = root.setArray("prepareMessages");
+        for (LogEntry logMessage : result.log()) {
+            Cursor logObject = logArray.addObject();
+            logObject.setLong("time", logMessage.epochMillis());
+            logObject.setString("level", logMessage.level().getName());
+            logObject.setString("message", logMessage.message());
+        }
+
+        return new SlimeJsonResponse(slime);
     }
 
     private HttpResponse deleteTenant(String tenantName, HttpRequest request) {
         boolean forget = request.getBooleanProperty("forget");
-        if (forget && !isOperator(request))
+        if (forget && ! isOperator(request))
             return ErrorResponse.forbidden("Only operators can forget a tenant");
 
         controller.tenants().delete(TenantName.from(tenantName),
@@ -2775,55 +2783,6 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
                                          "/application/" + id.application().value() +
                                          "/instance/" + id.instance().value(),
                                          request.getUri()).toString());
-    }
-
-    private Slime toSlime(ActivateResult result) {
-        Slime slime = new Slime();
-        Cursor object = slime.setObject();
-        object.setString("revisionId", result.revisionId().id());
-        object.setLong("applicationZipSize", result.applicationZipSizeBytes());
-        Cursor logArray = object.setArray("prepareMessages");
-        if (result.prepareResponse().log != null) {
-            for (Log logMessage : result.prepareResponse().log) {
-                Cursor logObject = logArray.addObject();
-                logObject.setLong("time", logMessage.time);
-                logObject.setString("level", logMessage.level);
-                logObject.setString("message", logMessage.message);
-            }
-        }
-
-        Cursor changeObject = object.setObject("configChangeActions");
-
-        Cursor restartActionsArray = changeObject.setArray("restart");
-        for (RestartAction restartAction : result.prepareResponse().configChangeActions.restartActions) {
-            Cursor restartActionObject = restartActionsArray.addObject();
-            restartActionObject.setString("clusterName", restartAction.clusterName);
-            restartActionObject.setString("clusterType", restartAction.clusterType);
-            restartActionObject.setString("serviceType", restartAction.serviceType);
-            serviceInfosToSlime(restartAction.services, restartActionObject.setArray("services"));
-            stringsToSlime(restartAction.messages, restartActionObject.setArray("messages"));
-        }
-
-        Cursor refeedActionsArray = changeObject.setArray("refeed");
-        for (RefeedAction refeedAction : result.prepareResponse().configChangeActions.refeedActions) {
-            Cursor refeedActionObject = refeedActionsArray.addObject();
-            refeedActionObject.setString("name", refeedAction.name);
-            refeedActionObject.setString("documentType", refeedAction.documentType);
-            refeedActionObject.setString("clusterName", refeedAction.clusterName);
-            serviceInfosToSlime(refeedAction.services, refeedActionObject.setArray("services"));
-            stringsToSlime(refeedAction.messages, refeedActionObject.setArray("messages"));
-        }
-        return slime;
-    }
-
-    private void serviceInfosToSlime(List<ServiceInfo> serviceInfoList, Cursor array) {
-        for (ServiceInfo serviceInfo : serviceInfoList) {
-            Cursor serviceInfoObject = array.addObject();
-            serviceInfoObject.setString("serviceName", serviceInfo.serviceName);
-            serviceInfoObject.setString("serviceType", serviceInfo.serviceType);
-            serviceInfoObject.setString("configId", serviceInfo.configId);
-            serviceInfoObject.setString("hostName", serviceInfo.hostName);
-        }
     }
 
     private void stringsToSlime(List<String> strings, Cursor array) {

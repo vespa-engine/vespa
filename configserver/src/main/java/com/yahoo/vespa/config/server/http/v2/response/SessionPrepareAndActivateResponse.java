@@ -11,7 +11,7 @@ import com.yahoo.vespa.config.server.configchange.ConfigChangeActionsSlimeConver
 import com.yahoo.vespa.config.server.http.v2.PrepareResult;
 
 /**
- * Creates a response for SessionPrepareHandler.
+ * Creates a response for ApplicationApiHandler.
  *
  * @author hmusum
  */

@@ -1,9 +1,4 @@
 {
-  "revisionId": "da39a3ee5e6b4b0d3255bfef95601890afd80709",
-  "applicationZipSize": 0,
-  "prepareMessages": [ ],
-  "configChangeActions": {
-    "restart": [ ],
-    "refeed": [ ]
-  }
+  "message": "Deployed system application hosted-vespa.routing of type proxy in prod.us-central-1 on 6.2",
+  "prepareMessages": [ ]
 }

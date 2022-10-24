@@ -15,7 +15,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
- * A {@link DeployLogger} which persists messages as a {@link Slime} tree, and holds a tenant and application name.
+ * A {@link DeployLogger} which stores messages in a {@link Slime} tree, and holds a tenant and application name.
  * 
  * @author Ulf Lilleengen
  */

@@ -33,7 +33,7 @@ import java.util.Optional;
 public interface ConfigServer {
 
     interface PreparedApplication {
-        PrepareResponse prepareResponse();
+        DeploymentResult deploymentResult();
     }
 
     PreparedApplication deploy(DeploymentData deployment);

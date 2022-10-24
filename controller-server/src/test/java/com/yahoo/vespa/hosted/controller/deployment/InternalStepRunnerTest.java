@@ -412,8 +412,6 @@ public class InternalStepRunnerTest {
         tester.runner().run(); // Job run order determined by JobType enum order per application.
         tester.configServer().convergeServices(app.instanceId(), zone);
         assertEquals(unfinished, tester.jobs().run(id).stepStatuses().get(Step.installReal));
-        assertEquals(applicationPackage().hash(), tester.configServer().application(app.instanceId(), zone).get().applicationPackage().hash());
-        assertEquals(otherPackage.hash(), tester.configServer().application(app.instanceId(), DeploymentContext.perfUsEast3.zone()).get().applicationPackage().hash());
 
         tester.configServer().setVersion(version, app.instanceId(), zone);
         tester.runner().run();
