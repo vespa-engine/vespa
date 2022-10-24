@@ -145,7 +145,7 @@ fixdir ${VESPA_USER} ${VESPA_GROUP}   755  var/vespa/bundlecache/configserver
 fixdir ${VESPA_USER} ${VESPA_GROUP}   755  var/vespa/cache
 fixdir ${VESPA_USER} ${VESPA_GROUP}   755  var/vespa/cache/config
 
-if [ "$(id -u)" -eq 0 ]; then
+if $IS_ROOT; then
     chown -hR ${VESPA_USER} logs/vespa
     chown -hR ${VESPA_USER} var/db/vespa
 fi
