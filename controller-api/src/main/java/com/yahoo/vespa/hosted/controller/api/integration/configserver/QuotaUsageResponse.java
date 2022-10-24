@@ -8,7 +8,5 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
  */
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class QuotaUsageResponse {
-    public static final QuotaUsageResponse zero = new QuotaUsageResponse() {{ this.rate = 0; }};
-
     public double rate;
 }
