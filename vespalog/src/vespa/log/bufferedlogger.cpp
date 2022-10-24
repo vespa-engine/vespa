@@ -181,8 +181,6 @@ BackingBuffer::Entry::getAgeFactor() const
     return _timestamp + _countFactor * _count;
 }
 
-BufferedLogger BufferedLogger::logger;
-
 BackingBuffer::BackingBuffer()
     : _timer(new Timer),
       _mutex(),
@@ -381,6 +379,13 @@ void
 BufferedLogger::setTimer(std::unique_ptr<Timer> timer)
 {
     _backing->_timer = std::move(timer);
+}
+
+BufferedLogger&
+BufferedLogger::instance()
+{
+    static BufferedLogger logger;
+    return logger;
 }
 
 } // ns_log

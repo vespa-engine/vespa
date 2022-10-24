@@ -95,9 +95,9 @@
             if (logger.wants(ns_log::Logger::debug)) {             \
                 logger.doLog(ns_log::Logger::level,                \
                              __FILE__, __LINE__, __VA_ARGS__);     \
-                ns_log::BufferedLogger::logger.trimCache();        \
+                ns_log::BufferedLogger::instance().trimCache();    \
             } else {                                               \
-                ns_log::BufferedLogger::logger.doLog(logger,       \
+                ns_log::BufferedLogger::instance().doLog(logger,   \
                         ns_log::Logger::level, __FILE__, __LINE__, \
                         "", __VA_ARGS__);                          \
             }                                                      \
@@ -108,15 +108,15 @@
 // Define LOGBM macro for logging buffered, using the message itself as a
 // token. This is the same as LOG defined above if
 // VESPA_LOG_USELOGBUFFERFORREGULARLOG is defined.
-#define LOGBM(level, ...)                                                      \
-    do {                                                                       \
+#define LOGBM(level, ...)                                          \
+    do {                                                           \
         if (logger.wants(ns_log::Logger::level)) {                 \
             if (logger.wants(ns_log::Logger::debug)) {             \
                 logger.doLog(ns_log::Logger::level,                \
                              __FILE__, __LINE__, __VA_ARGS__);     \
-                ns_log::BufferedLogger::logger.trimCache();        \
+                ns_log::BufferedLogger::instance().trimCache();    \
             } else {                                               \
-                ns_log::BufferedLogger::logger.doLog(logger,       \
+                ns_log::BufferedLogger::instance().doLog(logger,   \
                         ns_log::Logger::level, __FILE__, __LINE__, \
                         "", __VA_ARGS__);                          \
             }                                                      \
@@ -131,11 +131,11 @@
             if (logger.wants(ns_log::Logger::debug)) {             \
                 logger.doLog(ns_log::Logger::level,                \
                              __FILE__, __LINE__, ##ARGS);          \
-                ns_log::BufferedLogger::logger.trimCache();        \
+                ns_log::BufferedLogger::instance().trimCache();    \
             } else {                                               \
                 std::ostringstream ost123;                         \
                 ost123 << __FILE__ << ":" << __LINE__;             \
-                ns_log::BufferedLogger::logger.doLog(logger,       \
+                ns_log::BufferedLogger::instance().doLog(logger,   \
                         ns_log::Logger::level,                     \
                         __FILE__, __LINE__, ost123.str(), ##ARGS); \
             }                                                      \
@@ -149,9 +149,9 @@
             if (logger.wants(ns_log::Logger::debug)) {           \
                 logger.doLog(ns_log::Logger::level,              \
                              __FILE__, __LINE__, __VA_ARGS__);   \
-                ns_log::BufferedLogger::logger.trimCache();      \
+                ns_log::BufferedLogger::instance().trimCache();  \
             } else {                                             \
-                ns_log::BufferedLogger::logger.doLog(logger,     \
+                ns_log::BufferedLogger::instance().doLog(logger, \
                         ns_log::Logger::level,                   \
                         __FILE__, __LINE__, token, __VA_ARGS__); \
             }                                                    \
@@ -159,7 +159,7 @@
     } while (false)
 
 #define LOGB_FLUSH() \
-    ns_log::BufferedLogger::logger.flush()
+    ns_log::BufferedLogger::instance().flush()
 
 namespace ns_log {
 
@@ -171,8 +171,6 @@ class BufferedLogger {
     BufferedLogger & operator = (const BufferedLogger & buf);
 
 public:
-    static BufferedLogger logger;
-
     BufferedLogger();
     ~BufferedLogger();
 
@@ -198,6 +196,8 @@ public:
 
     /** Trim the buffer. Removing old messages if wanted. */
     void trimCache();
+
+    static BufferedLogger& instance();
 };
 
 } // ns_log

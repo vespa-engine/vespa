@@ -61,9 +61,9 @@ void testSkipBufferOnDebug(const std::string& file, uint64_t & timer)
 
 void reset(uint64_t & timer) {
     timer = 0;
-    ns_log::BufferedLogger::logger.setMaxCacheSize(10);
-    ns_log::BufferedLogger::logger.setMaxEntryAge(300);
-    ns_log::BufferedLogger::logger.setCountFactor(5);
+    ns_log::BufferedLogger::instance().setMaxCacheSize(10);
+    ns_log::BufferedLogger::instance().setMaxEntryAge(300);
+    ns_log::BufferedLogger::instance().setCountFactor(5);
 }
 
 int
@@ -76,7 +76,7 @@ main(int argc, char **argv)
     ns_log::Logger::fakePid = true;
     uint64_t timer;
     logger.setTimer(std::unique_ptr<ns_log::Timer>(new ns_log::TestTimer(timer)));
-    ns_log::BufferedLogger::logger.setTimer(std::unique_ptr<ns_log::Timer>(new ns_log::TestTimer(timer)));
+    ns_log::BufferedLogger::instance().setTimer(std::unique_ptr<ns_log::Timer>(new ns_log::TestTimer(timer)));
 
     reset(timer);
     testSkipBufferOnDebug(argv[1], timer);
