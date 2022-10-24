@@ -72,6 +72,9 @@ findhost () {
 findroot
 findhost
 
+ROOT=${VESPA_HOME%/}
+export ROOT
+
 # END environment bootstrap section
 
 bname=`basename $0`
@@ -99,7 +102,7 @@ configure_valgrind () {
     if which valgrind >/dev/null 2>&1; then
         if check_bname_in_value "$VESPA_USE_VALGRIND"; then
             no_valgrind=false
-            valgrind_log=$VESPA_HOME/tmp/valgrind.$bname.log.$$
+            valgrind_log=${VESPA_HOME}/tmp/valgrind.$bname.log.$$
             case $VESPA_VALGRIND_OPT in
                 *callgrind*) use_callgrind=true;;
             esac

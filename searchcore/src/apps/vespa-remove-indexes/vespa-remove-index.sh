@@ -72,10 +72,12 @@ findhost () {
 findroot
 findhost
 
+ROOT=${VESPA_HOME%/}
+export ROOT
+
 # END environment bootstrap section
 
-ROOT=${VESPA_HOME%/}
-cd $ROOT || { echo "Cannot cd to $ROOT" 1>&2; exit 1; }
+cd ${VESPA_HOME} || { echo "Cannot cd to ${VESPA_HOME}" 1>&2; exit 1; }
 
 usage() {
     (

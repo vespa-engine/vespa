@@ -72,23 +72,21 @@ findhost () {
 findroot
 findhost
 
-# END environment bootstrap section
-
 ROOT=${VESPA_HOME%/}
 export ROOT
-cd $ROOT || { echo "Cannot cd to $ROOT" 1>&2; exit 1; }
 
-# get common PATH etc:
-. $ROOT/libexec/vespa/common-env.sh
+# END environment bootstrap section
+
+cd ${VESPA_HOME} || { echo "Cannot cd to ${VESPA_HOME}" 1>&2; exit 1; }
 
 fixlimits
 
 # runserver takes care of making sure that we're not running several
 # instances and saving its pid in this file:
-PIDFILE_CONFIGSERVER=${ROOT}/var/run/configserver.pid
+PIDFILE_CONFIGSERVER=${VESPA_HOME}/var/run/configserver.pid
 PIDFILE_LOGD=var/run/logd.pid
 
-VESPA_LOG_TARGET="file:${ROOT}/logs/vespa/vespa.log"
+VESPA_LOG_TARGET="file:${VESPA_HOME}/logs/vespa/vespa.log"
 export VESPA_LOG_TARGET
 
 if [ "$cloudconfig_server__multitenant" = "true" ] || [ "$VESPA_CONFIGSERVER_MULTITENANT" = "true" ]; then

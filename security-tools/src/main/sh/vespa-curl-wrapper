@@ -75,11 +75,14 @@ findhost () {
 findroot
 findhost
 
+ROOT=${VESPA_HOME%/}
+export ROOT
+
 # END environment bootstrap section
 
 set -e
 
-eval $($VESPA_HOME/libexec/vespa/script-utils security-env)
+eval $(${VESPA_HOME}/libexec/vespa/script-utils security-env)
 
 CURL_PARAMETERS=("$@")
 

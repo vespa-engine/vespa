@@ -72,6 +72,9 @@ findhost () {
 findroot
 findhost
 
+ROOT=${VESPA_HOME%/}
+export ROOT
+
 # END environment bootstrap section
 
 [ "$VESPA_HOME" ] || { echo "Missing VESPA_HOME variable" 1>&2; exit 1; }
@@ -87,7 +90,7 @@ if [ "$VESPA_GROUP" = "" ]; then
 fi
 IS_ROOT=$([ "$(id -ru)" == "0" ] && echo true || echo false)
 
-cd $VESPA_HOME || { echo "Cannot cd to $VESPA_HOME" 1>&2; exit 1; }
+cd ${VESPA_HOME} || { echo "Cannot cd to ${VESPA_HOME}" 1>&2; exit 1; }
 
 fixdir () {
     if [ $# != 4 ]; then
@@ -100,11 +103,11 @@ fixdir () {
         local user=${stat% *}
         local group=${stat#* }
         if [ "$1" != "$user" ]; then
-            echo "Wrong owner for $VESPA_HOME/$4, expected $1, was $user"
+            echo "Wrong owner for ${VESPA_HOME}/$4, expected $1, was $user"
             exit 1
         fi
         if [ "$2" != "$group" ]; then
-            echo "Wrong group for $VESPA_HOME/$4, expected $2, was $group"
+            echo "Wrong group for ${VESPA_HOME}/$4, expected $2, was $group"
             exit 1
         fi
     else

@@ -72,7 +72,10 @@ findhost () {
 findroot
 findhost
 
+ROOT=${VESPA_HOME%/}
+export ROOT
+
 # END environment bootstrap section
 
 # Get rid of the interactive zkcli prompt by running it in a subshell
-(echo "$@" | $VESPA_HOME/bin/vespa-zkcli)
+(echo "$@" | ${VESPA_HOME}/bin/vespa-zkcli)
