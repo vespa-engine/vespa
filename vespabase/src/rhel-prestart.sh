@@ -85,7 +85,6 @@ fi
 if [ "$VESPA_GROUP" = "" ]; then
     VESPA_GROUP=$(id -rgn)
 fi
-IS_ROOT=$([ "$(id -ru)" == "0" ] && echo true || echo false)
 
 cd $VESPA_HOME || { echo "Cannot cd to $VESPA_HOME" 1>&2; exit 1; }
 
@@ -95,21 +94,9 @@ fixdir () {
         exit 1
     fi
     mkdir -p "$4"
-    if ! $IS_ROOT; then
-        local stat="$(stat -c "%U %G" $4)"
-        local user=${stat% *}
-        local group=${stat#* }
-        if [ "$1" != "$user" ]; then
-            echo "Wrong owner for $VESPA_HOME/$4, expected $1, was $user"
-            exit 1
-        fi
-        if [ "$2" != "$group" ]; then
-            echo "Wrong group for $VESPA_HOME/$4, expected $2, was $group"
-            exit 1
-        fi
-    else
-        chown $1 "$4"
-        chgrp $2 "$4"
+    if [ "${VESPA_UNPRIVILEGED}" != yes ]; then
+      chown $1 "$4"
+      chgrp $2 "$4"
     fi
     chmod $3 "$4"
 }
@@ -143,9 +130,9 @@ fixdir ${VESPA_USER} ${VESPA_GROUP}   755  var/vespa/bundlecache
 fixdir ${VESPA_USER} ${VESPA_GROUP}   755  var/vespa/bundlecache/configserver
 fixdir ${VESPA_USER} ${VESPA_GROUP}   755  var/vespa/cache/config
 
-if [ "$(id -u)" -eq 0 ]; then
-    chown -hR ${VESPA_USER} logs/vespa
-    chown -hR ${VESPA_USER} var/db/vespa
+if [ "${VESPA_UNPRIVILEGED}" != yes ]; then
+  chown -hR ${VESPA_USER} logs/vespa
+  chown -hR ${VESPA_USER} var/db/vespa
 fi
 
 # END directory fixups
