@@ -21,6 +21,7 @@ import com.yahoo.vespa.hosted.controller.tenant.ArchiveAccess;
 import com.yahoo.vespa.hosted.controller.tenant.AthenzTenant;
 import com.yahoo.vespa.hosted.controller.tenant.CloudTenant;
 import com.yahoo.vespa.hosted.controller.tenant.DeletedTenant;
+import com.yahoo.vespa.hosted.controller.tenant.Email;
 import com.yahoo.vespa.hosted.controller.tenant.LastLoginInfo;
 import com.yahoo.vespa.hosted.controller.tenant.Tenant;
 import com.yahoo.vespa.hosted.controller.tenant.TenantAddress;
@@ -234,7 +235,7 @@ public class TenantSerializer {
                 .withWebsite(infoObject.field("website").asString())
                 .withContact(TenantContact.from(
                         infoObject.field("contactName").asString(),
-                        infoObject.field("contactEmail").asString()))
+                        new Email(infoObject.field("contactEmail").asString(), asBoolOrTrue(infoObject.field("contactEmailVerified")))))
                 .withAddress(tenantInfoAddressFromSlime(infoObject.field("address")))
                 .withBilling(tenantInfoBillingContactFromSlime(infoObject.field("billingContact")))
                 .withContacts(tenantContactsFrom(infoObject.field("contacts")));
@@ -253,7 +254,7 @@ public class TenantSerializer {
         return TenantBilling.empty()
                 .withContact(TenantContact.from(
                         billingObject.field("name").asString(),
-                        billingObject.field("email").asString(),
+                        new Email(billingObject.field("email").asString(), true),
                         billingObject.field("phone").asString()))
                 .withAddress(tenantInfoAddressFromSlime(billingObject.field("address")));
     }
@@ -283,7 +284,8 @@ public class TenantSerializer {
         infoCursor.setString("email", info.email());
         infoCursor.setString("website", info.website());
         infoCursor.setString("contactName", info.contact().name());
-        infoCursor.setString("contactEmail", info.contact().email());
+        infoCursor.setString("contactEmail", info.contact().email().getEmailAddress());
+        infoCursor.setBool("contactEmailVerified", info.contact().email().isVerified());
         toSlime(info.address(), infoCursor);
         toSlime(info.billingContact(), infoCursor);
         toSlime(info.contacts(), infoCursor);
@@ -305,7 +307,7 @@ public class TenantSerializer {
 
         Cursor addressCursor = parentCursor.setObject("billingContact");
         addressCursor.setString("name", billingContact.contact().name());
-        addressCursor.setString("email", billingContact.contact().email());
+        addressCursor.setString("email", billingContact.contact().email().getEmailAddress());
         addressCursor.setString("phone", billingContact.contact().phone());
         toSlime(billingContact.address(), addressCursor);
     }
@@ -386,7 +388,8 @@ public class TenantSerializer {
         switch (contact.type()) {
             case EMAIL:
                 var email = (TenantContacts.EmailContact) contact;
-                data.setString("email", email.email());
+                data.setString("email", email.email().getEmailAddress());
+                data.setBool("emailVerified", email.email().isVerified());
                 return;
             default:
                 throw new IllegalArgumentException("Serialization for contact type not implemented: " + contact.type());
@@ -401,7 +404,8 @@ public class TenantSerializer {
                 .collect(Collectors.toUnmodifiableList());
         switch (type) {
             case EMAIL:
-                return new TenantContacts.EmailContact(audiences, inspector.field("data").field("email").asString());
+                var isVerified = asBoolOrTrue(inspector.field("data").field("emailVerified"));
+                return new TenantContacts.EmailContact(audiences, new Email(inspector.field("data").field("email").asString(), isVerified));
             default:
                 throw new IllegalArgumentException("Serialization for contact type not implemented: " + type);
         }
@@ -458,6 +462,10 @@ public class TenantSerializer {
             case NOTIFICATIONS: return "notifications";
             default: throw new IllegalArgumentException("Unexpected contact audience '" + audience + "'.");
         }
+    }
+
+    private boolean asBoolOrTrue(Inspector inspector) {
+        return !inspector.valid() || inspector.asBool();
     }
 
 }

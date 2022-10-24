@@ -17,6 +17,7 @@ import com.yahoo.vespa.hosted.controller.tenant.ArchiveAccess;
 import com.yahoo.vespa.hosted.controller.tenant.AthenzTenant;
 import com.yahoo.vespa.hosted.controller.tenant.CloudTenant;
 import com.yahoo.vespa.hosted.controller.tenant.DeletedTenant;
+import com.yahoo.vespa.hosted.controller.tenant.Email;
 import com.yahoo.vespa.hosted.controller.tenant.LastLoginInfo;
 import com.yahoo.vespa.hosted.controller.tenant.TenantAddress;
 import com.yahoo.vespa.hosted.controller.tenant.TenantBilling;
@@ -190,7 +191,7 @@ public class TenantSerializerTest {
         Slime slime = new Slime();
         Cursor parentObject = slime.setObject();
         serializer.toSlime(partialInfo, parentObject);
-        assertEquals("{\"info\":{\"name\":\"\",\"email\":\"\",\"website\":\"\",\"contactName\":\"\",\"contactEmail\":\"\",\"address\":{\"addressLines\":\"\",\"postalCodeOrZip\":\"\",\"city\":\"Hønefoss\",\"stateRegionProvince\":\"\",\"country\":\"\"}}}", slime.toString());
+        assertEquals("{\"info\":{\"name\":\"\",\"email\":\"\",\"website\":\"\",\"contactName\":\"\",\"contactEmail\":\"\",\"contactEmailVerified\":true,\"address\":{\"addressLines\":\"\",\"postalCodeOrZip\":\"\",\"city\":\"Hønefoss\",\"stateRegionProvince\":\"\",\"country\":\"\"}}}", slime.toString());
     }
 
     @Test
@@ -199,7 +200,7 @@ public class TenantSerializerTest {
                 .withName("My Company")
                 .withEmail("email@mycomp.any")
                 .withWebsite("http://mycomp.any")
-                .withContact(TenantContact.from("My Name", "ceo@mycomp.any"))
+                .withContact(TenantContact.from("My Name", new Email("ceo@mycomp.any", true)))
                 .withAddress(TenantAddress.empty()
                         .withCity("Hønefoss")
                         .withAddress("Riperbakken 2")
@@ -207,7 +208,7 @@ public class TenantSerializerTest {
                         .withCode("3510")
                         .withRegion("Viken"))
                 .withBilling(TenantBilling.empty()
-                        .withContact(TenantContact.from("Thomas The Tank Engine", "thomas@sodor.com", "NA"))
+                        .withContact(TenantContact.from("Thomas The Tank Engine", new Email("ceo@mycomp.any", true), "NA"))
                         .withAddress(TenantAddress.empty()
                                 .withCity("Suddery")
                                 .withCountry("Sodor")
@@ -226,8 +227,8 @@ public class TenantSerializerTest {
     void cloud_tenant_with_tenant_info_contacts() {
         TenantInfo tenantInfo = TenantInfo.empty()
                 .withContacts(new TenantContacts(List.of(
-                        new TenantContacts.EmailContact(List.of(TenantContacts.Audience.TENANT), "email1@email.com"),
-                        new TenantContacts.EmailContact(List.of(TenantContacts.Audience.TENANT, TenantContacts.Audience.NOTIFICATIONS), "email2@email.com"))));
+                        new TenantContacts.EmailContact(List.of(TenantContacts.Audience.TENANT), new Email("email1@email.com", true)),
+                        new TenantContacts.EmailContact(List.of(TenantContacts.Audience.TENANT, TenantContacts.Audience.NOTIFICATIONS), new Email("email2@email.com", true)))));
         Slime slime = new Slime();
         Cursor parentCursor = slime.setObject();
         serializer.toSlime(tenantInfo, parentCursor);

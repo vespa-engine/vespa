@@ -23,7 +23,7 @@ public class TenantInfo {
     private final TenantBilling billingContact;
     private final TenantContacts contacts;
 
-    TenantInfo(String name, String email, String website, String contactName, String contactEmail,
+    TenantInfo(String name, String email, String website, String contactName, Email contactEmail,
                TenantAddress address, TenantBilling billingContact, TenantContacts contacts) {
         this(name, email, website, TenantContact.from(contactName, contactEmail), address, billingContact, contacts);
     }
@@ -39,7 +39,7 @@ public class TenantInfo {
     }
 
     public static TenantInfo empty() {
-        return new TenantInfo("", "", "", "", "", TenantAddress.empty(), TenantBilling.empty(), TenantContacts.empty());
+        return new TenantInfo("", "", "", "", Email.empty(), TenantAddress.empty(), TenantBilling.empty(), TenantContacts.empty());
     }
 
     public String name() {

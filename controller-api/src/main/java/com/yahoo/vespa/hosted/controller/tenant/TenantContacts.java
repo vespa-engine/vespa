@@ -5,6 +5,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 /**
  * Tenant contacts are targets of the notification system.  Sometimes they
@@ -33,6 +34,13 @@ public class TenantContacts {
 
     public List<? extends Contact> all() {
         return contacts;
+    }
+
+    public <T extends Contact> List<T> ofType(Class<T> type) {
+        return contacts.stream()
+                .filter(type::isInstance)
+                .map(type::cast)
+                .collect(Collectors.toList());
     }
 
     public boolean isEmpty() {
@@ -77,14 +85,18 @@ public class TenantContacts {
     }
 
     public static class EmailContact extends Contact {
-        private final String email;
+        private final Email email;
 
-        public EmailContact(List<Audience> audiences, String email) {
+        public EmailContact(List<Audience> audiences, Email email) {
             super(audiences);
             this.email = email;
         }
 
-        public String email() { return email; }
+        public Email email() { return email; }
+
+        public EmailContact withEmail(Email email) {
+            return new EmailContact(audiences(), email);
+        }
 
         @Override
         public Type type() {

@@ -110,7 +110,10 @@ public class Notifier {
     private void dispatch(Notification notification, Collection<TenantContacts.EmailContact> contacts) {
         try {
             var content = formatter.format(notification);
-            mailer.send(mailOf(content, contacts.stream().map(c -> c.email()).collect(Collectors.toList())));
+            mailer.send(mailOf(content, contacts.stream()
+                    .filter(c -> c.email().isVerified())
+                    .map(c -> c.email().getEmailAddress())
+                    .collect(Collectors.toList())));
         } catch (MailerException e) {
             log.log(Level.SEVERE, "Failed sending email", e);
         } catch (MissingOptionalException e) {

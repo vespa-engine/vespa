@@ -86,6 +86,7 @@ public class Controller extends AbstractComponent {
     private final NotificationsDb notificationsDb;
     private final SupportAccessControl supportAccessControl;
     private final Notifier notifier;
+    private final MailVerifier mailVerifier;
 
     /**
      * Creates a controller 
@@ -126,6 +127,7 @@ public class Controller extends AbstractComponent {
         notifier = new Notifier(curator, serviceRegistry.zoneRegistry(), serviceRegistry.mailer(), flagSource);
         notificationsDb = new NotificationsDb(this);
         supportAccessControl = new SupportAccessControl(this);
+        mailVerifier = new MailVerifier(tenantController, serviceRegistry.mailer(), curator, clock);
 
         // Record the version of this controller
         curator().writeControllerVersion(this.hostname(), serviceRegistry.controllerVersion());
@@ -338,5 +340,9 @@ public class Controller extends AbstractComponent {
 
     public Notifier notifier() {
         return notifier;
+    }
+
+    public MailVerifier mailVerifier() {
+        return mailVerifier;
     }
 }

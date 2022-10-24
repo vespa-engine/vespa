@@ -28,7 +28,8 @@ public enum RoleDefinition {
     everyone(Policy.classifiedRead,
              Policy.publicRead,
              Policy.user,
-             Policy.tenantCreate),
+             Policy.tenantCreate,
+             Policy.emailVerification),
 
     /** Build service which may submit new applications for continuous deployment. */
     buildService(everyone,
