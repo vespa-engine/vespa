@@ -44,7 +44,7 @@ func getThpSizeMb() int {
 
 func (spec *ProgSpec) configureTuning() {
 	spec.optionallyReduceBaseFrequency()
-	setResourceLimit(RLIMIT_CORE, NO_RLIMIT)
-	setResourceLimit(RLIMIT_NOFILE, 262144)
-	setResourceLimit(RLIMIT_NPROC, 409600)
+	util.SetResourceLimit(util.RLIMIT_CORE, util.NO_RLIMIT)
+	util.SetResourceLimit(util.RLIMIT_NOFILE, 262144)
+	util.SetResourceLimit(util.RLIMIT_NPROC, 409600)
 }

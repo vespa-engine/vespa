@@ -2,7 +2,7 @@
 
 //go:build !windows
 
-package startcbinary
+package util
 
 import (
 	"github.com/vespa-engine/vespa/client/go/trace"
@@ -31,7 +31,7 @@ func (rid ResourceId) String() string {
 	return "unknown resource id"
 }
 
-func setResourceLimit(resource ResourceId, newVal uint64) {
+func SetResourceLimit(resource ResourceId, newVal uint64) {
 	var current unix.Rlimit
 	err := unix.Getrlimit(int(resource), &current)
 	if err != nil {
@@ -42,7 +42,11 @@ func setResourceLimit(resource ResourceId, newVal uint64) {
 	if current.Max < newVal {
 		if os.Getuid() == 0 {
 			wanted.Max = newVal
-		} else {
+		} else if newVal > current.Max {
+			trace.Warning(
+				"Wanted", newVal,
+				"as limit for", resource.String(),
+				"but cannot exceed current hard limit:", current.Max)
 			newVal = current.Max
 		}
 	}
