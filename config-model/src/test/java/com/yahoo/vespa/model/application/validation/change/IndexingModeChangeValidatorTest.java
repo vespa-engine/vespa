@@ -12,7 +12,6 @@ import org.junit.jupiter.api.Test;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import static java.util.stream.Collectors.joining;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**

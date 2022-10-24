@@ -5,7 +5,6 @@ import com.yahoo.component.chain.model.ChainSpecification;
 import com.yahoo.search.searchchain.model.federation.FederationOptions;
 import com.yahoo.vespa.model.container.component.ConfigProducerGroup;
 
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 

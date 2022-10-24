@@ -57,7 +57,6 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ExecutorService;
-import java.util.logging.Level;
 
 /**
  * Contains various state during deploy that should be available in all builders of a {@link com.yahoo.config.model.ConfigModel}

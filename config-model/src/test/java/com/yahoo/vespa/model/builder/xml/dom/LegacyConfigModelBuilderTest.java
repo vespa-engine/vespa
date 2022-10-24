@@ -10,10 +10,8 @@ import com.yahoo.config.model.test.MockRoot;
 import com.yahoo.text.XML;
 import org.junit.jupiter.api.Test;
 import org.w3c.dom.Element;
-
 import java.util.List;
 
-import static org.hamcrest.CoreMatchers.is;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**

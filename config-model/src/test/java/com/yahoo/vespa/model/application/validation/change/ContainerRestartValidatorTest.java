@@ -2,7 +2,6 @@
 package com.yahoo.vespa.model.application.validation.change;
 
 import com.yahoo.config.model.api.ConfigChangeAction;
-import com.yahoo.container.QrConfig;
 import com.yahoo.vespa.defaults.Defaults;
 import com.yahoo.vespa.model.VespaModel;
 import com.yahoo.config.application.api.ValidationOverrides;

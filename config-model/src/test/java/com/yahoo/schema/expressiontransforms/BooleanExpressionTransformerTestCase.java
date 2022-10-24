@@ -8,9 +8,7 @@ import com.yahoo.searchlib.rankingexpression.evaluation.MapTypeContext;
 import com.yahoo.searchlib.rankingexpression.rule.OperationNode;
 import com.yahoo.searchlib.rankingexpression.transform.TransformContext;
 import com.yahoo.tensor.TensorType;
-import com.yahoo.tensor.evaluation.TypeContext;
 import org.junit.jupiter.api.Test;
-
 import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;

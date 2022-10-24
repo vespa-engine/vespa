@@ -4,7 +4,6 @@ package com.yahoo.vespa.model.builder.xml.dom;
 import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.text.XML;
 import com.yahoo.config.model.producer.AbstractConfigProducer;
-import com.yahoo.vespa.model.content.DispatchTuning;
 import com.yahoo.vespa.model.search.Tuning;
 import org.w3c.dom.Element;
 

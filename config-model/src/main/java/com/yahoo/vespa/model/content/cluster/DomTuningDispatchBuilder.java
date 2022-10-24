@@ -5,8 +5,6 @@ import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.vespa.model.content.DispatchTuning;
 import com.yahoo.vespa.model.builder.xml.dom.ModelElement;
 
-import java.util.logging.Level;
-
 /**
  * @author Simon Thoresen Hult
  */

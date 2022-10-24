@@ -6,7 +6,6 @@ import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.vespa.model.VespaModel;
 
 import java.io.Reader;
-import java.time.Duration;
 import java.util.Optional;
 
 /**
