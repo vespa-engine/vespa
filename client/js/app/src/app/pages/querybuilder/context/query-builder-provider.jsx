@@ -60,7 +60,10 @@ function jsonToInputs(json, parent = root) {
   return Object.entries(json).map(([key, value], i) => {
     const node = {
       id: parent.id ? `${parent.id}.${i}` : i.toString(),
-      type: parent.type.children[key],
+      type:
+        typeof parent.type.children === 'string'
+          ? { name: key, type: parent.type.children }
+          : parent.type.children[key],
     };
     if (!node.type) {
       const location = parent.type.name
@@ -86,7 +89,7 @@ function jsonToInputs(json, parent = root) {
 }
 
 function parseInput(value, type) {
-  if (type === 'Integer' || type === 'Long') return parseInt(value);
+  if (type === 'Integer') return parseInt(value);
   if (type === 'Float') return parseFloat(value);
   if (type === 'Boolean') return value.toLowerCase() === 'true';
   return value;
@@ -98,7 +101,10 @@ function inputAdd(params, { id: parentId, type: typeName }) {
 
   const nextId = parseInt(last(last(parent.value)?.id?.split('.')) ?? -1) + 1;
   const id = parentId ? `${parentId}.${nextId}` : nextId.toString();
-  const type = parent.type.children[typeName];
+  const type =
+    typeof parent.type.children === 'string'
+      ? { name: typeName, type: parent.type.children }
+      : parent.type.children[typeName];
 
   parent.value.push({ id, value: type.children ? [] : '', type });
 
@@ -110,7 +116,10 @@ function inputUpdate(params, { id, type, value }) {
   const node = findInput(cloned, id);
   if (type) {
     const parent = findInput(cloned, id.substring(0, id.lastIndexOf('.')));
-    const newType = parent.type.children[type];
+    const newType =
+      typeof parent.type.children === 'string'
+        ? { name: type, type: parent.type.children }
+        : parent.type.children[type];
     if ((node.type.children != null) !== (newType.children != null))
       node.value = newType.children ? [] : '';
     node.type = newType;

@@ -35,7 +35,7 @@ export default {
     type: 'Parent',
     children: {
       location: { name: 'location', type: 'String' },
-      features: { name: 'features', type: 'String' },
+      features: { name: 'features', type: 'Parent', children: 'String' },
       listFeatures: { name: 'listFeatures', type: 'Boolean' },
       profile: { name: 'profile', type: 'String' },
       properties: { name: 'properties', type: 'String' },

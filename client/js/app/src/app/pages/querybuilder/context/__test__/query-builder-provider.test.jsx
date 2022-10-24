@@ -52,11 +52,20 @@ test('manipulates inputs', () => {
     [ACTION.INPUT_ADD, { id: '2', type: 'location' }],
     [ACTION.INPUT_ADD, { id: '2', type: 'matchPhase' }],
     [ACTION.INPUT_UPDATE, { id: '2.0', value: 'us' }],
+    [ACTION.INPUT_ADD, { id: '2', type: 'features' }],
+    [ACTION.INPUT_ADD, { id: '2.2', type: '' }],
+    [ACTION.INPUT_UPDATE, { id: '2.2.0', type: 'abc' }],
+    [ACTION.INPUT_UPDATE, { id: '2.2.0', value: '123' }],
   ]);
   assert(
     s2,
-    { input: { offset: 12, ranking: { location: 'us', matchPhase: {} } } },
-    { input: 'offset=12&ranking.location=us' },
+    {
+      input: {
+        offset: 12,
+        ranking: { location: 'us', matchPhase: {}, features: { abc: '123' } },
+      },
+    },
+    { input: 'offset=12&ranking.location=us&ranking.features.abc=123' },
     [
       { id: '1', value: '12', type: 'offset' },
       {
@@ -65,6 +74,11 @@ test('manipulates inputs', () => {
         value: [
           { id: '2.0', value: 'us', type: 'location' },
           { id: '2.1', type: 'matchPhase', value: [] },
+          {
+            id: '2.2',
+            type: 'features',
+            value: [{ id: '2.2.0', type: 'abc', value: '123' }],
+          },
         ],
       },
     ]
@@ -146,6 +160,27 @@ test('set query', () => {
       value: [{ id: '0.0', type: 'matchPhase', value: [] }],
     },
   ]);
+
+  assert(
+    '{"ranking":{"features":{"abc":"123","def":"456"}}}',
+    'ranking.features.abc=123&ranking.features.def=456',
+    [
+      {
+        id: '0',
+        type: 'ranking',
+        value: [
+          {
+            id: '0.0',
+            type: 'features',
+            value: [
+              { id: '0.0.0', type: 'abc', value: '123' },
+              { id: '0.0.1', type: 'def', value: '456' },
+            ],
+          },
+        ],
+      },
+    ]
+  );
 
   let msg = "Unknown property 'asd' on root level";
   error('POST', '{"asd":123}', msg);
