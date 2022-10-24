@@ -6,6 +6,7 @@ import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.CloudAccount;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.HostEvent;
+import com.yahoo.config.provision.NodeAllocationException;
 import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.vespa.hosted.provision.Node;
@@ -13,6 +14,7 @@ import com.yahoo.vespa.hosted.provision.Node;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
+import java.util.function.Consumer;
 
 /**
  * A service which supports provisioning container hosts dynamically.
@@ -45,16 +47,21 @@ public interface HostProvisioner {
      * @param sharing puts requirements on sharing or exclusivity of the host to be provisioned.
      * @param clusterType provision host exclusively for this cluster type
      * @param cloudAccount the cloud account to use
-     * @return list of {@link ProvisionedHost} describing the provisioned nodes
+     * @param provisionedHostConsumer consumer of {@link ProvisionedHost}s describing the provisioned nodes,
+     *                                the {@link Node} returned from {@link ProvisionedHost#generateHost()} must be
+     *                                written to ZK immediately in case the config server goes down while waiting
+     *                                for the provisioning to finish.
+     * @throws NodeAllocationException if the cloud provider cannot satisfy the request
      */
-    List<ProvisionedHost> provisionHosts(List<Integer> provisionIndices,
-                                         NodeType hostType,
-                                         NodeResources resources,
-                                         ApplicationId applicationId,
-                                         Version osVersion,
-                                         HostSharing sharing,
-                                         Optional<ClusterSpec.Type> clusterType,
-                                         Optional<CloudAccount> cloudAccount);
+    void provisionHosts(List<Integer> provisionIndices,
+                        NodeType hostType,
+                        NodeResources resources,
+                        ApplicationId applicationId,
+                        Version osVersion,
+                        HostSharing sharing,
+                        Optional<ClusterSpec.Type> clusterType,
+                        Optional<CloudAccount> cloudAccount,
+                        Consumer<List<ProvisionedHost>> provisionedHostConsumer) throws NodeAllocationException;
 
     /**
      * Continue provisioning of given list of Nodes.

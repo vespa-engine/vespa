@@ -30,6 +30,7 @@ import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
+import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -41,6 +42,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
@@ -72,8 +74,8 @@ public class DynamicProvisioningTest {
 
         mockHostProvisioner(hostProvisioner, "large", 3, null); // Provision shared hosts
         prepareAndActivate(application1, clusterSpec("mycluster"), 4, 1, resources);
-        verify(hostProvisioner).provisionHosts(List.of(100, 101, 102, 103), NodeType.host, resources, application1,
-                Version.emptyVersion, HostSharing.any, Optional.of(ClusterSpec.Type.content), Optional.empty());
+        verify(hostProvisioner).provisionHosts(eq(List.of(100, 101, 102, 103)), eq(NodeType.host), eq(resources), eq(application1),
+                eq(Version.emptyVersion), eq(HostSharing.any), eq(Optional.of(ClusterSpec.Type.content)), eq(Optional.empty()), any());
 
         // Total of 8 nodes should now be in node-repo, 4 active hosts and 4 active nodes
         assertEquals(8, tester.nodeRepository().nodes().list().size());
@@ -96,8 +98,8 @@ public class DynamicProvisioningTest {
         ApplicationId application3 = ProvisioningTester.applicationId();
         mockHostProvisioner(hostProvisioner, "large", 3, application3);
         prepareAndActivate(application3, clusterSpec("mycluster", true), 4, 1, resources);
-        verify(hostProvisioner).provisionHosts(List.of(104, 105, 106, 107), NodeType.host, resources, application3,
-                Version.emptyVersion, HostSharing.exclusive, Optional.of(ClusterSpec.Type.content), Optional.empty());
+        verify(hostProvisioner).provisionHosts(eq(List.of(104, 105, 106, 107)), eq(NodeType.host), eq(resources), eq(application3),
+                eq(Version.emptyVersion), eq(HostSharing.exclusive), eq(Optional.of(ClusterSpec.Type.content)), eq(Optional.empty()), any());
 
         // Total of 20 nodes should now be in node-repo, 8 active hosts and 12 active nodes
         assertEquals(20, tester.nodeRepository().nodes().list().size());
@@ -450,14 +452,14 @@ public class DynamicProvisioningTest {
         return new ClusterResources(nodes, groups, new NodeResources(vcpu, memory, disk, 0.1, diskSpeed, storageType));
     }
 
-    @SuppressWarnings("unchecked")
     private void mockHostProvisioner(HostProvisioner hostProvisioner, String hostFlavorName, int numIps, ApplicationId exclusiveTo) {
         doAnswer(invocation -> {
             Flavor hostFlavor = tester.nodeRepository().flavors().getFlavorOrThrow(hostFlavorName);
-            List<Integer> provisionIndexes = (List<Integer>) invocation.getArguments()[0];
-            NodeResources nodeResources = (NodeResources) invocation.getArguments()[2];
+            List<Integer> provisionIndexes = invocation.getArgument(0);
+            NodeResources nodeResources = invocation.getArgument(2);
+            Consumer<List<ProvisionedHost>> provisionedHostConsumer = invocation.getArgument(8);
 
-            return provisionIndexes.stream()
+            List<ProvisionedHost> provisionedHosts = provisionIndexes.stream()
                     .map(hostIndex -> {
                         String hostHostname = "host-" + hostIndex;
                         String hostIp = "::" + hostIndex + ":0";
@@ -475,9 +477,10 @@ public class DynamicProvisioningTest {
                         when(provisionedHost.generateHost()).thenReturn(parent);
                         when(provisionedHost.generateNode()).thenReturn(child);
                         return provisionedHost;
-                    })
-                    .collect(Collectors.toList());
-        }).when(hostProvisioner).provisionHosts(any(), any(), any(), any(), any(), any(), any(), any());
+                    }).toList();
+            provisionedHostConsumer.accept(provisionedHosts);
+            return null;
+        }).when(hostProvisioner).provisionHosts(any(), any(), any(), any(), any(), any(), any(), any(), any());
     }
 
 }

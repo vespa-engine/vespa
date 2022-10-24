@@ -284,13 +284,13 @@ public class DynamicProvisioningMaintainer extends NodeRepositoryMaintainer {
         try {
             Version osVersion = nodeRepository().osVersions().targetFor(NodeType.host).orElse(Version.emptyVersion);
             List<Integer> provisionIndices = nodeRepository().database().readProvisionIndices(count);
-            List<Node> hosts = hostProvisioner.provisionHosts(provisionIndices, NodeType.host, nodeResources,
-                                                              ApplicationId.defaultId(), osVersion, HostSharing.shared,
-                                                              Optional.empty(), Optional.empty())
-                                              .stream()
-                                              .map(ProvisionedHost::generateHost)
-                                              .collect(Collectors.toList());
-            nodeRepository().nodes().addNodes(hosts, Agent.DynamicProvisioningMaintainer);
+            List<Node> hosts = new ArrayList<>();
+            hostProvisioner.provisionHosts(provisionIndices, NodeType.host, nodeResources, ApplicationId.defaultId(),
+                                           osVersion, HostSharing.shared, Optional.empty(), Optional.empty(),
+                                           provisionedHosts -> {
+                                               hosts.addAll(provisionedHosts.stream().map(ProvisionedHost::generateHost).toList());
+                                               nodeRepository().nodes().addNodes(hosts, Agent.DynamicProvisioningMaintainer);
+                                           });
             return hosts;
         } catch (NodeAllocationException | IllegalArgumentException | IllegalStateException e) {
             throw new NodeAllocationException("Failed to provision " + count + " " + nodeResources + ": " + e.getMessage(),

@@ -46,10 +46,8 @@ public class History {
 
     private static ImmutableMap<Event.Type, Event> toImmutableMap(Collection<Event> events) {
         ImmutableMap.Builder<Event.Type, Event> builder = new ImmutableMap.Builder<>();
-        for (Event event : events) {
-            if (event.type() == Event.Type.requested) continue; // TODO (freva): Remove requested event after 8.70
+        for (Event event : events)
             builder.put(event.type(), event);
-        }
         return builder.build();
     }
 
@@ -182,8 +180,6 @@ public class History {
             down,
             // The active node came up according to the service monitor
             up,
-            // The node made a config request, indicating it is live
-            requested,
             // The node resources/flavor were changed
             resized(false),
             // The node was rebooted
