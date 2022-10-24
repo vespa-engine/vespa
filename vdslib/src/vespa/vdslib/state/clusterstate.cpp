@@ -1,5 +1,6 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include "clusterstate.h"
+#include "globals.h"
 
 #include <vespa/vespalib/text/stringtokenizer.h>
 #include <vespa/document/util/stringutil.h>
@@ -12,6 +13,11 @@
 LOG_SETUP(".vdslib.state.cluster");
 
 using vespalib::IllegalArgumentException;
+
+using storage::lib::clusterstate::_G_defaultSDState;
+using storage::lib::clusterstate::_G_defaultDDState;
+using storage::lib::clusterstate::_G_defaultSUState;
+using storage::lib::clusterstate::_G_defaultDUState;
 
 namespace storage::lib {
 
@@ -266,10 +272,6 @@ ClusterState::getNodeCount(const NodeType& type) const
 }
 
 namespace {
-    NodeState _G_defaultSDState(NodeType::STORAGE, State::DOWN);
-    NodeState _G_defaultDDState(NodeType::DISTRIBUTOR, State::DOWN);
-    NodeState _G_defaultSUState(NodeType::STORAGE, State::UP);
-    NodeState _G_defaultDUState(NodeType::DISTRIBUTOR, State::UP);
     [[noreturn]] void throwUnknownType(const Node & node) __attribute__((noinline));
     void throwUnknownType(const Node & node) {
         throw vespalib::IllegalStateException("Unknown node type " + node.getType().toString(), VESPA_STRLOC);
