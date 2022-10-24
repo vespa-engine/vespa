@@ -2,6 +2,7 @@
 package com.yahoo.vespa.hosted.controller.application.pkg;
 
 import com.google.common.hash.Funnel;
+import com.google.common.hash.Hasher;
 import com.google.common.hash.Hashing;
 import com.yahoo.component.Version;
 import com.yahoo.compress.ArchiveStreamReader;
@@ -71,6 +72,7 @@ public class ApplicationPackage {
     static final String deploymentFile = "deployment.xml";
     private static final String validationOverridesFile = "validation-overrides.xml";
     static final String servicesFile = "services.xml";
+    private static Hasher hasher() { return Hashing.murmur3_128().newHasher(); }
 
     private final String bundleHash;
     private final byte[] zippedContent;
@@ -236,7 +238,6 @@ public class ApplicationPackage {
     }
 
     // Hashes all files and settings that require a deployment to be forwarded to configservers
-    @SuppressWarnings("deprecation") // for Hashing.sha1()
     private String calculateBundleHash(byte[] zippedContent) {
         Predicate<String> entryMatcher = name -> ! name.endsWith(deploymentFile) && ! name.endsWith(buildMetaFile);
         SortedMap<String, Long> crcByEntry = new TreeMap<>();
@@ -252,17 +253,14 @@ public class ApplicationPackage {
             into.putBytes(key.getBytes());
             into.putLong(value);
         });
-        return Hashing.sha1().newHasher()
-                      .putObject(crcByEntry, funnel)
-                      .putInt(deploymentSpec.deployableHashCode())
-                      .hash().toString();
+        return hasher().putObject(crcByEntry, funnel)
+                       .putInt(deploymentSpec.deployableHashCode())
+                       .hash().toString();
     }
 
-    @SuppressWarnings("deprecation") // for Hashing.sha1()
     public static String calculateHash(byte[] bytes) {
-        return Hashing.sha1().newHasher()
-                      .putBytes(bytes)
-                      .hash().toString();
+        return hasher().putBytes(bytes)
+                       .hash().toString();
     }
 
 
