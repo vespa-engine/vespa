@@ -324,7 +324,7 @@ public class MultiRangeItem<Type extends Number> extends MultiTermItem {
     }
 
     @Override
-    protected Item asCompositeItem() {
+    Item asCompositeItem() {
         OrItem root = new OrItem();
         if (startIndex.equals(endIndex)) {
             for (Range<Type> range : sortedRanges()) {

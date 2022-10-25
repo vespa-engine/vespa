@@ -48,7 +48,7 @@ abstract class MultiTermItem extends SimpleTaggableItem {
     /** Encode all wrapped terms to the buffer. */
     abstract void encodeTerms(ByteBuffer buffer);
 
-    abstract protected Item asCompositeItem();
+    abstract Item asCompositeItem();
 
     @Override
     public final ItemType getItemType() {
