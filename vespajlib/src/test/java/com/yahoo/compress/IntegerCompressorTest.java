@@ -7,7 +7,7 @@ import java.nio.ByteBuffer;
 
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.assertThrows;
 
 /**
  * Test that integers compresses correctly.
@@ -15,6 +15,7 @@ import static org.junit.Assert.assertTrue;
  * @author baldersheim
  */
 public class IntegerCompressorTest {
+
     private void verifyPositiveNumber(int n, byte [] expected) {
         ByteBuffer buf = ByteBuffer.allocate(expected.length);
         IntegerCompressor.putCompressedPositiveNumber(n, buf);
@@ -43,18 +44,10 @@ public class IntegerCompressorTest {
         byte [] x3fffffff = {(byte)0xff, (byte)0xff, (byte)0xff, (byte)0xff};
         verifyPositiveNumber(0x3fffffff, x3fffffff);
         byte [] x40000000 = {0,0,0,0};
-        try {
-            verifyPositiveNumber(0x40000000, x40000000);
-            assertTrue(false);
-        } catch (IllegalArgumentException e)  {
-            assertEquals("Number '1073741824' too big, must extend encoding", e.getMessage());
-        }
-        try {
-            verifyPositiveNumber(-1, x40000000);
-            assertTrue(false);
-        } catch (IllegalArgumentException e)  {
-            assertEquals("Number '-1' must be positive", e.getMessage());
-        }
+        assertEquals("Number '1073741824' too big, must extend encoding",
+                     assertThrows(IllegalArgumentException.class, () -> verifyPositiveNumber(0x40000000, x40000000)).getMessage());
+        assertEquals("Number '-1' must be positive",
+                     assertThrows(IllegalArgumentException.class, () -> verifyPositiveNumber(-1, x40000000)).getMessage());
     }
 
     @Test
@@ -74,12 +67,8 @@ public class IntegerCompressorTest {
         byte [] x1fffffff = {0x7f, (byte)0xff, (byte)0xff, (byte)0xff};
         verifyNumber(0x1fffffff, x1fffffff);
         byte [] x20000000 = {0,0,0,0};
-        try {
-            verifyNumber(0x20000000, x20000000);
-            assertTrue(false);
-        } catch (IllegalArgumentException e)  {
-            assertEquals("Number '536870912' too big, must extend encoding", e.getMessage());
-        }
+        assertEquals("Number '536870912' too big, must extend encoding",
+                     assertThrows(IllegalArgumentException.class, () -> verifyNumber(0x20000000, x20000000)).getMessage());
         byte [] mzero = {(byte)0x81};
         verifyNumber(-1, mzero);
         byte [] mone = {(byte)0x82};
@@ -95,12 +84,12 @@ public class IntegerCompressorTest {
         byte [] mx1fffffff = {(byte)0xff, (byte)0xff, (byte)0xff, (byte)0xff};
         verifyNumber(-0x1fffffff, mx1fffffff);
         byte [] mx20000000 = {0,0,0,0};
-        try {
-            verifyNumber(-0x20000000, mx20000000);
-            assertTrue(false);
-        } catch (IllegalArgumentException e)  {
-            assertEquals("Number '-536870912' too big, must extend encoding", e.getMessage());
-        }
+        assertEquals("Number '-536870912' too big, must extend encoding",
+                     assertThrows(IllegalArgumentException.class, () -> verifyNumber(-0x20000000, mx20000000)).getMessage());
+        byte [] mx80000000 = {0,0,0,0};
+        assertEquals("Number '-2147483647' too big, must extend encoding",
+                     assertThrows(IllegalArgumentException.class, () -> verifyNumber(-0x80000000, mx80000000)).getMessage());
+    }
 
     }
 

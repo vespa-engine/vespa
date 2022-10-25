@@ -14,6 +14,7 @@ public class IntegerCompressor {
         int negative = n < 0 ? 0x80 : 0x0;
         if (negative != 0) {
             n = -n;
+            if (n == -n) --n; // underflow, caught as "too big" later.
         }
         if (n < (0x1 << 5)) {
             byte b = (byte)(n | negative);
