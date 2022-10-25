@@ -20,10 +20,13 @@ import com.yahoo.vespa.hosted.provision.NodeList;
 import com.yahoo.vespa.hosted.provision.lb.LoadBalancer;
 import com.yahoo.vespa.hosted.provision.lb.LoadBalancerList;
 import com.yahoo.vespa.hosted.provision.lb.Real;
+import com.yahoo.vespa.hosted.provision.maintenance.LoadBalancerExpirer;
+import com.yahoo.vespa.hosted.provision.maintenance.TestMetric;
 import com.yahoo.vespa.hosted.provision.node.Agent;
 import com.yahoo.vespa.hosted.provision.node.IP;
 import org.junit.Test;
 
+import java.time.Duration;
 import java.util.Collections;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -313,12 +316,41 @@ public class LoadBalancerProvisionerTest {
     @Test
     public void load_balancer_with_custom_cloud_account() {
         ClusterResources resources = new ClusterResources(3, 1, nodeResources);
-        CloudAccount cloudAccount = new CloudAccount("012345678912");
-        Capacity capacity = Capacity.from(resources, resources, false, true, Optional.of(cloudAccount));
-        tester.activate(app1, prepare(app1, capacity, clusterRequest(ClusterSpec.Type.container, ClusterSpec.Id.from("c1"))));
+        CloudAccount cloudAccount0 = new CloudAccount("000000000000");
+        {
+            Capacity capacity = Capacity.from(resources, resources, false, true, Optional.of(cloudAccount0));
+            tester.activate(app1, prepare(app1, capacity, clusterRequest(ClusterSpec.Type.container, ClusterSpec.Id.from("c1"))));
+        }
         LoadBalancerList loadBalancers = tester.nodeRepository().loadBalancers().list();
         assertEquals(1, loadBalancers.size());
-        assertEquals(cloudAccount, loadBalancers.first().get().instance().get().cloudAccount().get());
+        assertEquals(cloudAccount0, loadBalancers.first().get().instance().get().cloudAccount().get());
+
+        // Changing account fails if there is an existing LB in the previous account.
+        CloudAccount cloudAccount1 = new CloudAccount("111111111111");
+        Capacity capacity = Capacity.from(resources, resources, false, true, Optional.of(cloudAccount1));
+        try {
+            prepare(app1, capacity, clusterRequest(ClusterSpec.Type.container, ClusterSpec.Id.from("c1")));
+            fail("Expected exception");
+        } catch (LoadBalancerServiceException e) {
+            assertTrue(e.getMessage().contains("due to change in cloud account"));
+        }
+
+        // Existing LB is removed
+        loadBalancers = tester.nodeRepository().loadBalancers().list();
+        assertEquals(1, loadBalancers.size());
+        assertSame(LoadBalancer.State.removable, loadBalancers.first().get().state());
+        LoadBalancerExpirer expirer = new LoadBalancerExpirer(tester.nodeRepository(),
+                                                              Duration.ofDays(1),
+                                                              tester.loadBalancerService(),
+                                                              new TestMetric());
+        expirer.run();
+        assertEquals(0, tester.nodeRepository().loadBalancers().list().in(LoadBalancer.State.removable).size());
+
+        // Next deployment provisions a new LB
+        tester.activate(app1, prepare(app1, capacity, clusterRequest(ClusterSpec.Type.container, ClusterSpec.Id.from("c1"))));
+        loadBalancers = tester.nodeRepository().loadBalancers().list();
+        assertEquals(1, loadBalancers.size());
+        assertEquals(cloudAccount1, loadBalancers.first().get().instance().get().cloudAccount().get());
     }
 
     private void assertReals(ApplicationId application, ClusterSpec.Id cluster, Node.State... states) {
