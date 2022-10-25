@@ -31,20 +31,20 @@ func (j *JustExitError) Error() string {
 	return j.String()
 }
 
-func JustExit(message string) *JustExitError {
+func JustExitMsg(message string) {
 	trace.Trace("just exit with message")
 	j := JustExitError{
 		err: nil,
 		msg: message,
 	}
-	return &j
+	panic(&j)
 }
 
-func JustExitWith(e error) *JustExitError {
+func JustExitWith(e error) {
 	trace.Trace("just exit with error")
 	j := JustExitError{
 		err: e,
 		msg: "",
 	}
-	return &j
+	panic(&j)
 }
