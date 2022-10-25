@@ -10,7 +10,16 @@ import com.yahoo.prelude.IndexFacts;
 import com.yahoo.prelude.hitfield.AnnotateStringFieldPart;
 import com.yahoo.prelude.hitfield.JSONString;
 import com.yahoo.prelude.hitfield.XMLString;
-import com.yahoo.prelude.query.*;
+import com.yahoo.prelude.query.AndItem;
+import com.yahoo.prelude.query.BlockItem;
+import com.yahoo.prelude.query.CompositeItem;
+import com.yahoo.prelude.query.HasIndexItem;
+import com.yahoo.prelude.query.Item;
+import com.yahoo.prelude.query.PhraseItem;
+import com.yahoo.prelude.query.SegmentItem;
+import com.yahoo.prelude.query.Substring;
+import com.yahoo.prelude.query.TermItem;
+import com.yahoo.prelude.query.WordItem;
 import com.yahoo.search.Query;
 import com.yahoo.search.Result;
 import com.yahoo.search.Searcher;
@@ -52,7 +61,7 @@ public class NGramSearcher extends Searcher {
         IndexFacts.Session session = indexFacts.newSession(query);
         boolean rewritten = rewriteToNGramMatching(query.getModel().getQueryTree().getRoot(), 0, session, query);
         if (rewritten)
-            query.trace("Rewritten to n-gram matching",true,2);
+            query.trace("Rewritten to n-gram matching", true, 2);
 
         Result result = execution.search(query);
         recombineNGrams(result.hits().deepIterator(), session);
@@ -78,7 +87,7 @@ public class NGramSearcher extends Searcher {
             }
         }
         else if (item instanceof CompositeItem composite) {
-            for (int i=0; i<composite.getItemCount(); i++)
+            for (int i = 0; i < composite.getItemCount(); i++)
                 rewritten = rewriteToNGramMatching(composite.getItem(i), i, indexFacts, query) || rewritten;
         }
         else if (item instanceof TermItem term) {
@@ -107,14 +116,14 @@ public class NGramSearcher extends Searcher {
         CompositeItem gramsItem = createGramRoot((HasIndexItem)term, query);
         gramsItem.setIndexName(index);
         Substring origin = ((BlockItem)term).getOrigin();
-        for (Iterator<GramSplitter.Gram> i = getGramSplitter().split(text,gramSize); i.hasNext(); ) {
+        for (Iterator<GramSplitter.Gram> i = getGramSplitter().split(text, gramSize); i.hasNext(); ) {
             GramSplitter.Gram gram = i.next();
             WordItem gramWord = new WordItem(gram.extractFrom(text), index, false, origin);
             gramWord.setWeight(term.getWeight());
             gramWord.setProtected(true);
             gramsItem.addItem(gramWord);
         }
-        return gramsItem.getItemCount()==1 ? gramsItem.getItem(0) : gramsItem; // return the AndItem, or just the single gram if not multiple
+        return gramsItem.getItemCount() == 1 ? gramsItem.getItem(0) : gramsItem; // return the AndItem, or just the single gram if not multiple
     }
 
     /**
@@ -175,7 +184,7 @@ public class NGramSearcher extends Searcher {
     }
 
     private Object recombineNGramsField(Object fieldValue,int gramSize) {
-        String recombined=recombineNGrams(fieldValue.toString(),gramSize);
+        String recombined = recombineNGrams(fieldValue.toString(),gramSize);
         if (fieldValue instanceof JSONString)
             return new JSONString(recombined);
         else if (fieldValue instanceof XMLString)
@@ -190,25 +199,25 @@ public class NGramSearcher extends Searcher {
      * Example (gram size 3): <code>blulue rededs</code> becomes <code>blue reds</code>
      */
     private String recombineNGrams(final String string,final int gramSize) {
-        StringBuilder b=new StringBuilder();
-        int consecutiveWordChars=0;
-        boolean inBolding=false;
-        MatchTokenStrippingCharacterIterator characters=new MatchTokenStrippingCharacterIterator(string);
+        StringBuilder b = new StringBuilder();
+        int consecutiveWordChars = 0;
+        boolean inBolding = false;
+        MatchTokenStrippingCharacterIterator characters = new MatchTokenStrippingCharacterIterator(string);
         while (characters.hasNext()) {
-            char c=characters.next();
-            boolean atBoldingSeparator = (c=='\u001f');
+            char c = characters.next();
+            boolean atBoldingSeparator = (c == '\u001f');
 
-            if (atBoldingSeparator && characters.peek()=='\u001f') {
+            if (atBoldingSeparator && characters.peek() == '\u001f') {
                 characters.next();
             }
             else if ( ! characterClasses.isLetterOrDigit(c)) {
                 if (atBoldingSeparator)
-                    inBolding=!inBolding;
+                    inBolding =! inBolding;
                 if ( ! (atBoldingSeparator && nextIsLetterOrDigit(characters)))
-                    consecutiveWordChars=0;
-                if (inBolding && atBoldingSeparator && areWordCharactersBackwards(gramSize-1,b)) {
+                    consecutiveWordChars = 0;
+                if (inBolding && atBoldingSeparator && areWordCharactersBackwards(gramSize - 1, b)) {
                     // we are going to skip characters from a gram, so move bolding start earlier
-                    b.insert(b.length()-(gramSize-1),c);
+                    b.insert(b.length() - (gramSize-1), c);
                 }
                 else {
                     b.append(c);
@@ -216,7 +225,7 @@ public class NGramSearcher extends Searcher {
             }
             else {
                 consecutiveWordChars++;
-                if (consecutiveWordChars<gramSize || (consecutiveWordChars % gramSize)==0)
+                if (consecutiveWordChars < gramSize || (consecutiveWordChars % gramSize) == 0)
                     b.append(c);
             }
         }
@@ -224,9 +233,9 @@ public class NGramSearcher extends Searcher {
     }
 
     private boolean areWordCharactersBackwards(int count,StringBuilder b) {
-        for (int i=0; i<count; i++) {
-            int checkIndex=b.length()-1-i;
-            if (checkIndex<0) return false;
+        for (int i = 0; i < count; i++) {
+            int checkIndex = b.length()-1-i;
+            if (checkIndex < 0) return false;
             if ( ! characterClasses.isLetterOrDigit(b.charAt(checkIndex))) return false;
         }
         return true;
@@ -243,15 +252,15 @@ public class NGramSearcher extends Searcher {
     private static class MatchTokenStrippingCharacterIterator {
 
         private final String s;
-        private int current =0;
+        private int current = 0;
 
         public MatchTokenStrippingCharacterIterator(String s) {
-            this.s=s;
+            this.s = s;
         }
 
         public boolean hasNext() {
             skipMarkup();
-            return current <s.length();
+            return current < s.length();
         }
 
         public char next() {
@@ -262,22 +271,22 @@ public class NGramSearcher extends Searcher {
         /** Returns the next character without moving to it. Returns \uFFFF if there is no next */
         public char peek() {
             skipMarkup();
-            if (s.length()< current +1)
+            if (s.length() < current +1)
                 return '\uFFFF';
             else
                 return s.charAt(current);
         }
 
         private void skipMarkup() {
-            if (current>=s.length()) return;
-            char c=s.charAt(current);
-            if (c== AnnotateStringFieldPart.RAW_ANNOTATE_BEGIN_CHAR) { // skip it
+            if (current >= s.length()) return;
+            char c = s.charAt(current);
+            if (c == AnnotateStringFieldPart.RAW_ANNOTATE_BEGIN_CHAR) { // skip it
                 current++;
             }
             else if (c==AnnotateStringFieldPart.RAW_ANNOTATE_SEPARATOR_CHAR) { // skip to RAW_ANNOTATE_END_CHAR
                 do {
                     current++;
-                } while (current<s.length() && s.charAt(current)!=AnnotateStringFieldPart.RAW_ANNOTATE_END_CHAR);
+                } while (current < s.length() && s.charAt(current) != AnnotateStringFieldPart.RAW_ANNOTATE_END_CHAR);
                 current++; // also skip the RAW_ANNOTATE_END_CHAR
                 skipMarkup(); // skip any immediately following markup
             }
