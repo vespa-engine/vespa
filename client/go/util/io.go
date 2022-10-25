@@ -16,20 +16,20 @@ import (
 
 // Returns true if the given path exists
 func PathExists(path string) bool {
-	_, err := os.Stat(path)
-	return !errors.Is(err, os.ErrNotExist)
+	info, err := os.Stat(path)
+	return !errors.Is(err, os.ErrNotExist) && info != nil
 }
 
 // Returns true if the given path points to an existing directory
 func IsDirectory(path string) bool {
 	info, err := os.Stat(path)
-	return !errors.Is(err, os.ErrNotExist) && info.IsDir()
+	return !errors.Is(err, os.ErrNotExist) && info != nil && info.IsDir()
 }
 
 // Returns true if the given path points to an existing file
 func IsRegularFile(path string) bool {
 	info, err := os.Stat(path)
-	return !errors.Is(err, os.ErrNotExist) && info.Mode().IsRegular()
+	return !errors.Is(err, os.ErrNotExist) && info != nil && info.Mode().IsRegular()
 }
 
 // Returns the content of a reader as a string
