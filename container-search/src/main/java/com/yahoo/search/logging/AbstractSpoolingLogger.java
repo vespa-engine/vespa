@@ -20,9 +20,7 @@ public abstract class AbstractSpoolingLogger extends AbstractThreadedLogger impl
 
     protected static final java.util.logging.Logger log = java.util.logging.Logger.getLogger(Spooler.class.getName());
 
-    private static final ScheduledExecutorService executorService =
-            new ScheduledThreadPoolExecutor(1, new DaemonThreadFactory("AbstractSpoolingLogger-send-"));
-
+    private final ScheduledExecutorService executorService;
     protected final Spooler spooler;
 
     public AbstractSpoolingLogger() {
@@ -31,6 +29,7 @@ public abstract class AbstractSpoolingLogger extends AbstractThreadedLogger impl
 
     public AbstractSpoolingLogger(Spooler spooler) {
         this.spooler = spooler;
+        this.executorService = new ScheduledThreadPoolExecutor(1, new DaemonThreadFactory("AbstractSpoolingLogger-send-"));
         executorService.scheduleWithFixedDelay(this, 0, 10L, TimeUnit.MILLISECONDS);
     }
 
