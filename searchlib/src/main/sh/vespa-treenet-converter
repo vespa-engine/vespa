@@ -72,6 +72,9 @@ findhost () {
 findroot
 findhost
 
+ROOT=${VESPA_HOME%/}
+export ROOT
+
 # END environment bootstrap section
 
 exec java -cp $VESPA_HOME/lib/jars/searchlib.jar:$VESPA_HOME/lib/jars/document.jar:$VESPA_HOME/lib/jars/vespajlib.jar com.yahoo.searchlib.treenet.TreeNetConverter "$@"

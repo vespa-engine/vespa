@@ -72,6 +72,9 @@ findhost () {
 findroot
 findhost
 
+ROOT=${VESPA_HOME%/}
+export ROOT
+
 # END environment bootstrap section
 
 willrun=${VESPA_HOME}/libexec/vespa/stop-vespa-base.sh

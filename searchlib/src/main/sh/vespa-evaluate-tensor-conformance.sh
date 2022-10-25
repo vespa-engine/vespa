@@ -72,6 +72,9 @@ findhost () {
 findroot
 findhost
 
+ROOT=${VESPA_HOME%/}
+export ROOT
+
 # END environment bootstrap section
 
 LJ=${VESPA_HOME}/lib/jars

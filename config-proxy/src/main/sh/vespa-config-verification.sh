@@ -72,11 +72,11 @@ findhost () {
 findroot
 findhost
 
-# END environment bootstrap section
-
 ROOT=${VESPA_HOME%/}
 export ROOT
 
+# END environment bootstrap section
+
 echo "# Using CLASSPATH=$CLASSPATH, args=$@"
 
-java -cp $CLASSPATH:$ROOT/lib/jars/config-proxy-jar-with-dependencies.jar com.yahoo.vespa.config.proxy.ConfigVerification "$@"
+java -cp $CLASSPATH:${VESPA_HOME}/lib/jars/config-proxy-jar-with-dependencies.jar com.yahoo.vespa.config.proxy.ConfigVerification "$@"

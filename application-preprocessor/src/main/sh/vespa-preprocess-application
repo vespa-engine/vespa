@@ -72,13 +72,14 @@ findhost () {
 findroot
 findhost
 
-# END environment bootstrap section
-
 ROOT=${VESPA_HOME%/}
 export ROOT
-cd $ROOT || { echo "Cannot cd to $ROOT" 1>&2; exit 1; }
+
+# END environment bootstrap section
+
+cd ${VESPA_HOME} || { echo "Cannot cd to ${VESPA_HOME}" 1>&2; exit 1; }
 
 # get common PATH:
-. $ROOT/libexec/vespa/common-env.sh
+. ${VESPA_HOME}/libexec/vespa/common-env.sh
 
-java -cp $ROOT/lib/jars/application-preprocessor-jar-with-dependencies.jar com.yahoo.application.preprocessor.ApplicationPreprocessor "$@"
+java -cp ${VESPA_HOME}/lib/jars/application-preprocessor-jar-with-dependencies.jar com.yahoo.application.preprocessor.ApplicationPreprocessor "$@"

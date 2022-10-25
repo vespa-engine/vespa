@@ -72,6 +72,9 @@ findhost () {
 findroot
 findhost
 
+ROOT=${VESPA_HOME%/}
+export ROOT
+
 # END environment bootstrap section
 
 set -euo pipefail
@@ -89,7 +92,7 @@ if ! [ -d "${output_directory}" -a -w "${output_directory}" ]; then
   echo "Directory '${output_directory}' is not writable"
   exit 1
 fi
-jvm_pid=$($VESPA_HOME/libexec/vespa/find-pid "$service")
+jvm_pid=$(${VESPA_HOME}/libexec/vespa/find-pid "$service")
 echo "Pid for '${service}' is '${jvm_pid}'"
 
 echo "Creating heap dump"
