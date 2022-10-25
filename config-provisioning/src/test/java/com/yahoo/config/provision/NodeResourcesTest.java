@@ -14,6 +14,11 @@ import static org.junit.jupiter.api.Assertions.fail;
 public class NodeResourcesTest {
 
     @Test
+    public void testCost() {
+        assertEquals(5.408, new NodeResources(32, 128, 1200, 1).cost(), 0.0001);
+    }
+
+    @Test
     void testToString() {
         assertEquals("[vcpu: 1.0, memory: 10.0 Gb, disk 100.0 Gb, architecture: x86_64]",
                                new NodeResources(1., 10., 100., 0).toString());
