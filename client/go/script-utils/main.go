@@ -6,6 +6,7 @@ package main
 import (
 	"fmt"
 	"os"
+	"runtime"
 	"strings"
 
 	"github.com/vespa-engine/vespa/client/go/cmd/clusterstate"
@@ -68,7 +69,9 @@ func main() {
 
 func handleSimplePanic() {
 	if r := recover(); r != nil {
-		if je, ok := r.(error); ok {
+		if rte, ok := r.(runtime.Error); ok {
+			panic(rte)
+		} else if je, ok := r.(error); ok {
 			fmt.Fprintln(os.Stderr, je)
 			os.Exit(1)
 		} else {
