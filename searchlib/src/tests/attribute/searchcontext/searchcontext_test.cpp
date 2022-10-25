@@ -21,6 +21,7 @@
 #include <vespa/vespalib/util/compress.h>
 #include <vespa/vespalib/util/stringfmt.h>
 #include <vespa/vespalib/stllike/asciistream.h>
+#include <initializer_list>
 #include <set>
 
 #include <vespa/log/log.h>
@@ -71,6 +72,7 @@ class DocSet : public std::set<uint32_t>
 public:
     DocSet() noexcept;
     ~DocSet();
+    DocSet(std::initializer_list<uint32_t> l) : std::set<uint32_t>(l) { }
     DocSet(const uint32_t *b, const uint32_t *e) : std::set<uint32_t>(b, e) {}
     DocSet & put(const uint32_t &v) {
         insert(v);
@@ -1398,7 +1400,7 @@ SearchContextTest::testRegexSearch(const AttributePtr & ptr)
     addDocs(*ptr.get(), numDocs);
 
     const char * strings [] = {"abc1def", "abc2Def", "abc2def", "abc4def", "abc5def", "abc6def"};
-    std::vector<const char *> terms = { "abc", "bc2de" };
+    std::vector<const char *> terms = { "abc", "bc2de", "^abc1def.*bar" };
 
     for (uint32_t doc = 1; doc < numDocs + 1; ++doc) {
         ASSERT_TRUE(doc < vec.getNumDocs());
@@ -1409,14 +1411,9 @@ SearchContextTest::testRegexSearch(const AttributePtr & ptr)
 
     std::vector<DocSet> expected;
     DocSet empty;
-    {
-        uint32_t docs[] = {1, 2, 3, 4, 5, 6};
-        expected.emplace_back(docs, docs + 6); // "abc"
-    }
-    {
-        uint32_t docs[] = {2, 3};
-        expected.emplace_back(docs, docs + 2); // "bc2de"
-    }
+    expected.emplace_back(DocSet{1, 2, 3, 4, 5, 6}); // "abc"
+    expected.emplace_back(DocSet{2, 3});             // "bc2de"
+    expected.emplace_back(empty);                    // "^abc1def.*bar"
 
     for (uint32_t i = 0; i < terms.size(); ++i) {
         performSearch(vec, terms[i], expected[i], TermType::REGEXP);

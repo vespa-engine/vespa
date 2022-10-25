@@ -287,7 +287,15 @@ StringPostingSearchContext(BaseSC&& base_sc, bool useBitVector, const AttrT &toB
             this->lookupTerm(comp);
         }
         if (this->_uniqueValues == 1u) {
-            this->lookupSingle();
+            /*
+             * A single dictionary entry from lookupRange() might not be
+             * a match if this is a regex search or a fuzzy search.
+             */
+            if (!this->_lowerDictItr.valid() || useThis(this->_lowerDictItr)) {
+                this->lookupSingle();
+            } else {
+                this->_uniqueValues = 0;
+            }
         }
     }
 }
