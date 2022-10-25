@@ -36,7 +36,7 @@ public final class MethodCache {
     public Method get(Object object, Consumer<String> onPut) {
         Method m = cache.get(object.getClass().getName());
         if ( ! m.getDeclaringClass().isAssignableFrom(object.getClass())) {
-            cache.remove(object.getClass().getName());
+            cache.clear();
             m = null;
         }
         if (m == null) {
