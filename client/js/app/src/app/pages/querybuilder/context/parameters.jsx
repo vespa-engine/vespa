@@ -1,200 +1,118 @@
+function param(name, type, props = {}) {
+  let children;
+  if (Array.isArray(type)) {
+    children = Object.fromEntries(type.map((child) => [child.name, child]));
+    type = 'Parent';
+  }
+  return Object.assign({ name, type }, children && { children }, props);
+}
+
 // https://docs.vespa.ai/en/reference/query-api-reference.html
-export default {
-  yql: { name: 'yql', type: 'String' },
+export default param('root', [
+  param('yql', 'String'),
 
   // Native Execution Parameters
-  hits: { name: 'hits', type: 'Integer' },
-  offset: { name: 'offset', type: 'Integer' },
-  queryProfile: { name: 'queryProfile', type: 'String' },
-  groupingSessionCache: { name: 'groupingSessionCache', type: 'Boolean' },
-  searchChain: { name: 'searchChain', type: 'String' },
-  timeout: { name: 'timeout', type: 'Double' },
-  noCache: { name: 'noCache', type: 'Boolean' },
+  param('hits', 'Integer'),
+  param('offset', 'Integer'),
+  param('queryProfile', 'String'),
+  param('groupingSessionCache', 'Boolean'),
+  param('searchChain', 'String'),
+  param('timeout', 'Double'),
+  param('noCache', 'Boolean'),
 
   // Query Model
-  model: {
-    name: 'model',
-    type: 'Parent',
-    children: {
-      defaultIndex: { name: 'defaultIndex', type: 'String' },
-      encoding: { name: 'encoding', type: 'String' },
-      filter: { name: 'filter', type: 'String' },
-      locale: { name: 'locale', type: 'String' },
-      language: { name: 'language', type: 'String' },
-      queryString: { name: 'queryString', type: 'String' },
-      restrict: { name: 'restrict', type: 'String' },
-      searchPath: { name: 'searchPath', type: 'String' },
-      sources: { name: 'sources', type: 'String' },
-      type: { name: 'type', type: 'String' },
-    },
-  },
+  param('model', [
+    param('defaultIndex', 'String'),
+    param('encoding', 'String'),
+    param('filter', 'String'),
+    param('locale', 'String'),
+    param('language', 'String'),
+    param('queryString', 'String'),
+    param('restrict', 'String'),
+    param('searchPath', 'String'),
+    param('sources', 'String'),
+    param('type', 'String'),
+  ]),
 
   // Ranking
-  ranking: {
-    name: 'ranking',
-    type: 'Parent',
-    children: {
-      location: { name: 'location', type: 'String' },
-      features: { name: 'features', type: 'Parent', children: 'String' },
-      listFeatures: { name: 'listFeatures', type: 'Boolean' },
-      profile: { name: 'profile', type: 'String' },
-      properties: { name: 'properties', type: 'String' },
-      sorting: { name: 'sorting', type: 'String' },
-      freshness: { name: 'freshness', type: 'String' },
-      queryCache: { name: 'queryCache', type: 'Boolean' },
-      rerankCount: { name: 'rerankCount', type: 'Integer' },
-      matching: {
-        name: 'matching',
-        type: 'Parent',
-        children: {
-          numThreadsPerSearch: { name: 'numThreadsPerSearch', type: 'Integer' },
-          minHitsPerThread: { name: 'minHitsPerThread', type: 'Integer' },
-          numSearchPartitions: { name: 'numSearchPartitions', type: 'Integer' },
-          termwiseLimit: { name: 'termwiseLimit', type: 'Float' },
-          postFilterThreshold: { name: 'postFilterThreshold', type: 'Float' },
-          approximateThreshold: {
-            name: 'approximateThreshold',
-            type: 'Float',
-          },
-        },
-      },
-      matchPhase: {
-        name: 'matchPhase',
-        type: 'Parent',
-        children: {
-          attribute: { name: 'attribute', type: 'String' },
-          maxHits: { name: 'maxHits', type: 'Integer' },
-          ascending: { name: 'ascending', type: 'Boolean' },
-          diversity: {
-            name: 'diversity',
-            type: 'Parent',
-            children: {
-              attribute: { name: 'attribute', type: 'String' },
-              minGroups: { name: 'minGroups', type: 'Integer' },
-            },
-          },
-        },
-      },
-    },
-  },
+  param('ranking', [
+    param('location', 'String'),
+    param('features', 'Parent', { children: 'String' }),
+    param('listFeatures', 'Boolean'),
+    param('profile', 'String'),
+    param('properties', 'String'),
+    param('sorting', 'String'),
+    param('freshness', 'String'),
+    param('queryCache', 'Boolean'),
+    param('rerankCount', 'Integer'),
+    param('matching', [
+      param('numThreadsPerSearch', 'Integer'),
+      param('minHitsPerThread', 'Integer'),
+      param('numSearchPartitions', 'Integer'),
+      param('termwiseLimit', 'Float'),
+      param('postFilterThreshold', 'Float'),
+      param('approximateThreshold', 'Float'),
+    ]),
+    param('matchPhase', [
+      param('attribute', 'String'),
+      param('maxHits', 'Integer'),
+      param('ascending', 'Boolean'),
+      param('diversity', [
+        param('attribute', 'String'),
+        param('minGroups', 'Integer'),
+      ]),
+    ]),
+  ]),
 
   // Grouping
-  collapsesize: { name: 'collapsesize', type: 'Integer' },
-  collapsefield: { name: 'collapsefield', type: 'String' },
-  collapse: {
-    name: 'collapse',
-    type: 'Parent',
-    children: {
-      summary: { name: 'summary', type: 'String' },
-    },
-  },
-  grouping: {
-    name: 'grouping',
-    type: 'Parent',
-    children: {
-      defaultMaxGroups: { name: 'defaultMaxGroups', type: 'Integer' },
-      defaultMaxHits: { name: 'defaultMaxHits', type: 'Integer' },
-      globalMaxGroups: { name: 'globalMaxGroups', type: 'Integer' },
-      defaultPrecisionFactor: {
-        name: 'defaultPrecisionFactor',
-        type: 'Float',
-      },
-    },
-  },
+  param('collapsesize', 'Integer'),
+  param('collapsefield', 'String'),
+  param('collapse', [param('summary', 'String')]),
+  param('grouping', [
+    param('defaultMaxGroups', 'Integer'),
+    param('defaultMaxHits', 'Integer'),
+    param('globalMaxGroups', 'Integer'),
+    param('defaultPrecisionFactor', 'Float'),
+  ]),
 
   // Presentation
-  presentation: {
-    name: 'presentation',
-    type: 'Parent',
-    children: {
-      bolding: { name: 'bolding', type: 'Boolean' },
-      format: {
-        name: 'format',
-        type: 'Parent',
-        children: {
-          tensors: { name: 'tensors', type: 'String' },
-        },
-      },
-      template: { name: 'template', type: 'String' },
-      summary: { name: 'summary', type: 'String' },
-      timing: { name: 'timing', type: 'Boolean' },
-    },
-  },
+  param('presentation', [
+    param('bolding', 'Boolean'),
+    param('format', [param('tensors', 'String')]),
+    param('template', 'String'),
+    param('summary', 'String'),
+    param('timing', 'Boolean'),
+  ]),
 
   // Tracing
-  trace: {
-    name: 'trace',
-    type: 'Parent',
-    children: {
-      level: { name: 'level', type: 'Integer' },
-      explainLevel: { name: 'explainLevel', type: 'Integer' },
-      profileDepth: { name: 'profileDepth', type: 'Integer' },
-      timestamps: { name: 'timestamps', type: 'Boolean' },
-      query: { name: 'query', type: 'Boolean' },
-    },
-  },
+  param('trace', [
+    param('level', 'Integer'),
+    param('explainLevel', 'Integer'),
+    param('profileDepth', 'Integer'),
+    param('timestamps', 'Boolean'),
+    param('query', 'Boolean'),
+  ]),
 
   // Semantic Rules
-  rules: {
-    name: 'rules',
-    type: 'Parent',
-    children: {
-      off: { name: 'off', type: 'Boolean' },
-      rulebase: { name: 'rulebase', type: 'String' },
-    },
-  },
-  tracelevel: {
-    name: 'tracelevel',
-    type: 'Parent',
-    children: {
-      rules: { name: 'rules', type: 'Integer' },
-    },
-  },
+  param('rules', [param('off', 'Boolean'), param('rulebase', 'String')]),
+  param('tracelevel', [param('rules', 'Integer')]),
 
   // Dispatch
-  dispatch: {
-    name: 'dispatch',
-    type: 'Parent',
-    children: {
-      topKProbability: { name: 'topKProbability', type: 'Float' },
-    },
-  },
+  param('dispatch', [param('topKProbability', 'Float')]),
 
   // Other
-  recall: { name: 'recall', type: 'String' },
-  user: { name: 'user', type: 'String' },
-  hitcountestimate: { name: 'hitcountestimate', type: 'Boolean' },
-  metrics: {
-    name: 'metrics',
-    type: 'Parent',
-    children: {
-      ignore: { name: 'ignore', type: 'Boolean' },
-    },
-  },
-  weakAnd: {
-    name: 'weakAnd',
-    type: 'Parent',
-    children: {
-      replace: { name: 'replace', type: 'Boolean' },
-    },
-  },
-  wand: {
-    name: 'wand',
-    type: 'Parent',
-    children: {
-      hits: { name: 'hits', type: 'Integer' },
-    },
-  },
+  param('recall', 'String'),
+  param('user', 'String'),
+  param('hitcountestimate', 'Boolean'),
+  param('metrics', [param('ignore', 'Boolean')]),
+  param('weakAnd', [param('replace', 'Boolean')]),
+  param('wand', [param('hits', 'Integer')]),
 
-  streaming: {
-    name: 'streaming',
-    type: 'Parent',
-    children: {
-      userid: { name: 'userid', type: 'Integer' },
-      groupname: { name: 'groupname', type: 'String' },
-      selection: { name: 'selection', type: 'String' },
-      priority: { name: 'priority', type: 'String' },
-      maxbucketspervisitor: { name: 'maxbucketspervisitor', type: 'Integer' },
-    },
-  },
-};
+  param('streaming', [
+    param('userid', 'Integer'),
+    param('groupname', 'String'),
+    param('selection', 'String'),
+    param('priority', 'String'),
+    param('maxbucketspervisitor', 'Integer'),
+  ]),
+]).children;
