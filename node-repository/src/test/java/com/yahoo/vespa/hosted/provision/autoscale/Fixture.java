@@ -1,6 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.provision.autoscale;
 
+import com.yahoo.component.Version;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.Capacity;
 import com.yahoo.config.provision.Cloud;
@@ -148,7 +149,12 @@ public class Fixture {
         }
 
         public Fixture.Builder clusterType(ClusterSpec.Type type) {
-            cluster = ClusterSpec.request(type, cluster.id()).vespaVersion("7").build();
+            cluster = ClusterSpec.request(type, cluster.id()).vespaVersion(cluster.vespaVersion()).build();
+            return this;
+        }
+
+        public Fixture.Builder vespaVersion(Version version) {
+            cluster = ClusterSpec.request(cluster.type(), cluster.id()).vespaVersion(version).build();
             return this;
         }
 

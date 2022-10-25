@@ -90,23 +90,33 @@ public class CapacityPolicies {
             }
 
             return (requiresExclusiveHost(clusterSpec.type(), exclusive)
-                    ? versioned(clusterSpec, Map.of(new Version("0"), smallestExclusiveResources()))
-                    : versioned(clusterSpec, Map.of(new Version("0"), smallestSharedResources())))
+                    ? versioned(clusterSpec, Map.of(new Version(0), smallestExclusiveResources()))
+                    : versioned(clusterSpec, Map.of(new Version(0), smallestSharedResources())))
                     .with(architecture);
         }
 
-        return zone.getCloud().dynamicProvisioning()
-               ? versioned(clusterSpec, Map.of(new Version("0"), new NodeResources(2.0, 8, 50, 0.3)))
-               : versioned(clusterSpec, Map.of(new Version("0"), new NodeResources(1.5, 8, 50, 0.3)));
+        if (clusterSpec.type() == ClusterSpec.Type.content) {
+            // TODO: Simplify when no application is on an older version than 8.75
+            return zone.getCloud().dynamicProvisioning()
+                   ? versioned(clusterSpec, Map.of(new Version(0), new NodeResources(2.0, 8, 50, 0.3),
+                                                   new Version(8, 75), new NodeResources(2, 16, 300, 0.3)))
+                   : versioned(clusterSpec, Map.of(new Version(0), new NodeResources(1.5, 8, 50, 0.3),
+                                                   new Version(8, 75), new NodeResources(2, 16, 300, 0.3)));
+        }
+        else {
+            return zone.getCloud().dynamicProvisioning()
+                   ? versioned(clusterSpec, Map.of(new Version(0), new NodeResources(2.0, 8, 50, 0.3)))
+                   : versioned(clusterSpec, Map.of(new Version(0), new NodeResources(1.5, 8, 50, 0.3)));
+        }
     }
 
     private NodeResources clusterControllerResources(ClusterSpec clusterSpec, boolean exclusive) {
         if (requiresExclusiveHost(clusterSpec.type(), exclusive)) {
-            return versioned(clusterSpec, Map.of(new Version("0"), smallestExclusiveResources()));
+            return versioned(clusterSpec, Map.of(new Version(0), smallestExclusiveResources()));
         }
-        return versioned(clusterSpec, Map.of(new Version("0"), new NodeResources(0.25, 1.14, 10, 0.3),
-                                             new Version("7.586.50"), new NodeResources(0.25, 1.333, 10, 0.3),
-                                             new Version("7.586.54"), new NodeResources(0.25, 1.14, 10, 0.3)));
+        return versioned(clusterSpec, Map.of(new Version(0), new NodeResources(0.25, 1.14, 10, 0.3),
+                                             new Version(7, 586, 50), new NodeResources(0.25, 1.333, 10, 0.3),
+                                             new Version(7, 586, 54), new NodeResources(0.25, 1.14, 10, 0.3)));
     }
 
     private Architecture adminClusterArchitecture(ApplicationId instance) {
