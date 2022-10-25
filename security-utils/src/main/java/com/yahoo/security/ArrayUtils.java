@@ -1,9 +1,8 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.security;
 
-import org.bouncycastle.util.encoders.Hex;
-
 import java.nio.charset.StandardCharsets;
+import java.util.HexFormat;
 
 /**
  * A small collection of utils for working on arrays of bytes.
@@ -32,11 +31,11 @@ public class ArrayUtils {
     }
 
     public static byte[] unhex(String hexStr) {
-        return Hex.decode(hexStr);
+        return HexFormat.of().parseHex(hexStr);
     }
 
     public static String hex(byte[] bytes) {
-        return Hex.toHexString(bytes);
+        return HexFormat.of().formatHex(bytes);
     }
 
     public static byte[] toUtf8Bytes(String str) {
