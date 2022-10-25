@@ -47,13 +47,7 @@ ParallelWeakAndBlueprint::ParallelWeakAndBlueprint(const FieldSpec &field,
 {
 }
 
-ParallelWeakAndBlueprint::~ParallelWeakAndBlueprint()
-{
-    while (!_terms.empty()) {
-        delete _terms.back();
-        _terms.pop_back();
-    }
-}
+ParallelWeakAndBlueprint::~ParallelWeakAndBlueprint() = default;
 
 FieldSpec
 ParallelWeakAndBlueprint::getNextChildField(const FieldSpec &outer)
@@ -74,8 +68,7 @@ ParallelWeakAndBlueprint::addTerm(Blueprint::UP term, int32_t weight)
         setEstimate(_estimate);
     }
     _weights.push_back(weight);
-    _terms.push_back(term.get());
-    term.release();
+    _terms.push_back(std::move(term));
     set_tree_size(_terms.size() + 1);
 }
 
@@ -107,11 +100,7 @@ ParallelWeakAndBlueprint::createLeafSearch(const search::fef::TermFieldMatchData
 std::unique_ptr<SearchIterator>
 ParallelWeakAndBlueprint::createFilterSearch(bool strict, FilterConstraint constraint) const
 {
-    if (constraint == Blueprint::FilterConstraint::UPPER_BOUND) {
-        return create_or_filter(_terms, strict, constraint);
-    } else {
-        return std::make_unique<EmptySearch>();
-    }
+    return create_atmost_or_filter(_terms, strict, constraint);
 }
 
 void

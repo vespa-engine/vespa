@@ -8,6 +8,7 @@
 #include "field_spec.hpp"
 #include "andsearch.h"
 #include "orsearch.h"
+#include "andnotsearch.h"
 #include "matching_elements_search.h"
 #include <vespa/searchlib/fef/termfieldmatchdataarray.h>
 #include <vespa/vespalib/objects/visit.hpp>
@@ -159,9 +160,19 @@ Blueprint::create_matching_elements_search(const MatchingElementsFields &fields)
 
 namespace {
 
+Blueprint::FilterConstraint invert(Blueprint::FilterConstraint constraint) {
+    if (constraint == Blueprint::FilterConstraint::UPPER_BOUND) {
+        return Blueprint::FilterConstraint::LOWER_BOUND;
+    }
+    if (constraint == Blueprint::FilterConstraint::LOWER_BOUND) {
+        return Blueprint::FilterConstraint::UPPER_BOUND;
+    }
+    abort();
+}
+
 template <typename Op>
 std::unique_ptr<SearchIterator>
-create_op_filter(const std::vector<Blueprint *>& children, bool strict, Blueprint::FilterConstraint constraint)
+create_op_filter(const Blueprint::Children &children, bool strict, Blueprint::FilterConstraint constraint)
 {
     MultiSearch::Children sub_searches;
     sub_searches.reserve(children.size());
@@ -178,15 +189,56 @@ create_op_filter(const std::vector<Blueprint *>& children, bool strict, Blueprin
 }
 
 std::unique_ptr<SearchIterator>
-Blueprint::create_and_filter(const std::vector<Blueprint *>& children, bool strict, Blueprint::FilterConstraint constraint)
+Blueprint::create_and_filter(const Children &children, bool strict, Blueprint::FilterConstraint constraint)
 {
     return create_op_filter<AndSearch>(children, strict, constraint);
 }
 
 std::unique_ptr<SearchIterator>
-Blueprint::create_or_filter(const std::vector<Blueprint *>& children, bool strict, Blueprint::FilterConstraint constraint)
+Blueprint::create_or_filter(const Children &children, bool strict, Blueprint::FilterConstraint constraint)
 {
     return create_op_filter<OrSearch>(children, strict, constraint);
+}
+
+std::unique_ptr<SearchIterator>
+Blueprint::create_atmost_and_filter(const Children &children, bool strict, Blueprint::FilterConstraint constraint)
+{
+    if (constraint == FilterConstraint::UPPER_BOUND) {
+        return create_and_filter(children, strict, constraint);
+    } else {
+        return std::make_unique<EmptySearch>();
+    }
+}
+
+std::unique_ptr<SearchIterator>
+Blueprint::create_atmost_or_filter(const Children &children, bool strict, Blueprint::FilterConstraint constraint)
+{
+    if (constraint == FilterConstraint::UPPER_BOUND) {
+        return create_or_filter(children, strict, constraint);
+    } else {
+        return std::make_unique<EmptySearch>();
+    }
+}
+
+std::unique_ptr<SearchIterator>
+Blueprint::create_andnot_filter(const Children &children, bool strict, Blueprint::FilterConstraint constraint)
+{
+    MultiSearch::Children sub_searches;
+    sub_searches.reserve(children.size());
+    for (size_t i = 0; i < children.size(); ++i) {
+        auto search = (i == 0)
+            ? children[i]->createFilterSearch(strict, constraint)
+            : children[i]->createFilterSearch(false, invert(constraint));
+        sub_searches.push_back(std::move(search));
+    }
+    return AndNotSearch::create(std::move(sub_searches), strict);
+}
+
+std::unique_ptr<SearchIterator>
+Blueprint::create_first_child_filter(const Children &children, bool strict, Blueprint::FilterConstraint constraint)
+{
+    assert(children.size() > 0);
+    return children[0]->createFilterSearch(strict, constraint);
 }
 
 vespalib::string
@@ -263,19 +315,13 @@ StateCache::notifyChange() {
 
 //-----------------------------------------------------------------------------
 
-IntermediateBlueprint::~IntermediateBlueprint()
-{
-    while (!_children.empty()) {
-        delete _children.back();
-        _children.pop_back();
-    }
-}
+IntermediateBlueprint::~IntermediateBlueprint() = default;
 
 void
 IntermediateBlueprint::setDocIdLimit(uint32_t limit)
 {
     Blueprint::setDocIdLimit(limit);
-    for (Blueprint * child : _children) {
+    for (Blueprint::UP &child : _children) {
         child->setDocIdLimit(limit);
     }
 }
@@ -285,7 +331,7 @@ IntermediateBlueprint::calculateEstimate() const
 {
     std::vector<HitEstimate> estimates;
     estimates.reserve(_children.size());
-    for (const Blueprint * child : _children) {
+    for (const Blueprint::UP &child : _children) {
         estimates.push_back(child->getState().estimate());
     }
     return combine(estimates);
@@ -295,7 +341,7 @@ uint32_t
 IntermediateBlueprint::calculate_cost_tier() const
 {
     uint32_t cost_tier = State::COST_TIER_MAX;
-    for (const Blueprint * child : _children) {
+    for (const Blueprint::UP &child : _children) {
         cost_tier = std::min(cost_tier, child->getState().cost_tier());
     }
     return cost_tier;
@@ -305,7 +351,7 @@ uint32_t
 IntermediateBlueprint::calculate_tree_size() const
 {
     uint32_t nodes = 1;
-    for (const Blueprint * child : _children) {
+    for (const Blueprint::UP &child : _children) {
         nodes += child->getState().tree_size();
     }
     return nodes;
@@ -317,7 +363,7 @@ IntermediateBlueprint::infer_allow_termwise_eval() const
     if (!supports_termwise_children()) {
         return false;
     }
-    for (const Blueprint * child : _children) {
+    for (const Blueprint::UP &child : _children) {
         if (!child->getState().allow_termwise_eval()) {
             return false;
         }
@@ -328,7 +374,7 @@ IntermediateBlueprint::infer_allow_termwise_eval() const
 bool
 IntermediateBlueprint::infer_want_global_filter() const
 {
-    for (const Blueprint * child : _children) {
+    for (const Blueprint::UP &child : _children) {
         if (child->getState().want_global_filter()) {
             return true;
         }
@@ -371,7 +417,7 @@ IntermediateBlueprint::mixChildrenFields() const
 
     Map fieldMap;
     FieldSpecBaseList fieldList;
-    for (const Blueprint * child : _children) {
+    for (const Blueprint::UP &child : _children) {
         const State &childState = child->getState();
         if (!childState.isTermLike()) {
             return fieldList; // empty: non-term-like child
@@ -431,8 +477,10 @@ IntermediateBlueprint::optimize(Blueprint* &self)
 {
     assert(self == this);
     if (should_optimize_children()) {
-        for (auto & child : _children) {
-            child->optimize(child);
+        for (auto &child : _children) {
+            auto *child_ptr = child.release();
+            child_ptr->optimize(child_ptr);
+            child.reset(child_ptr);
         }
     }
     optimize_self();
@@ -467,8 +515,8 @@ IntermediateBlueprint::IntermediateBlueprint() = default;
 IntermediateBlueprint &
 IntermediateBlueprint::addChild(Blueprint::UP child)
 {
-    _children.push_back(child.get());
-    child.release()->setParent(this);
+    child->setParent(this);
+    _children.push_back(std::move(child));
     notifyChange();
     return *this;
 }
@@ -477,9 +525,9 @@ Blueprint::UP
 IntermediateBlueprint::removeChild(size_t n)
 {
     assert(n < _children.size());
-    Blueprint::UP ret(_children[n]);
+    Blueprint::UP ret = std::move(_children[n]);
     _children.erase(_children.begin() + n);
-    ret->setParent(0);
+    ret->setParent(nullptr);
     notifyChange();
     return ret;
 }
@@ -488,8 +536,8 @@ IntermediateBlueprint &
 IntermediateBlueprint::insertChild(size_t n, Blueprint::UP child)
 {
     assert(n <= _children.size());
-    _children.insert(_children.begin() + n, child.get());
-    child.release()->setParent(this);
+    child->setParent(this);
+    _children.insert(_children.begin() + n, std::move(child));
     notifyChange();
     return *this;
 }
@@ -515,7 +563,7 @@ IntermediateBlueprint::fetchPostings(const ExecuteInfo &execInfo)
 void
 IntermediateBlueprint::freeze()
 {
-    for (Blueprint * child : _children) {
+    for (Blueprint::UP &child: _children) {
         child->freeze();
     }
     freeze_self();

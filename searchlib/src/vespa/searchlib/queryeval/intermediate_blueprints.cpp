@@ -83,16 +83,6 @@ need_normal_features_for_children(const IntermediateBlueprint &blueprint, fef::M
     }
 }
 
-/** utility for operators that degrade to AND when creating filter */
-SearchIterator::UP createAndFilter(const IntermediateBlueprint &self,
-                                   const std::vector<Blueprint *>& children,
-                                   bool strict, Blueprint::FilterConstraint constraint)
-{
-    auto search = Blueprint::create_and_filter(children, strict, constraint);
-    static_cast<AndSearch &>(*search).estimate(self.getState().estimate().estHits);
-    return search;
-}
-
 } // namespace search::queryeval::<unnamed>
 
 //-----------------------------------------------------------------------------
@@ -146,7 +136,7 @@ AndNotBlueprint::get_replacement()
 }
 
 void
-AndNotBlueprint::sort(std::vector<Blueprint*> &children) const
+AndNotBlueprint::sort(Children &children) const
 {
     if (children.size() > 2) {
         std::sort(children.begin() + 1, children.end(), TieredGreaterEstimate());
@@ -180,31 +170,10 @@ AndNotBlueprint::createIntermediateSearch(MultiSearch::Children sub_searches,
     return AndNotSearch::create(std::move(sub_searches), strict);
 }
 
-namespace {
-Blueprint::FilterConstraint invert(Blueprint::FilterConstraint constraint) {
-    if (constraint == Blueprint::FilterConstraint::UPPER_BOUND) {
-        return Blueprint::FilterConstraint::LOWER_BOUND;
-    }
-    if (constraint == Blueprint::FilterConstraint::LOWER_BOUND) {
-        return Blueprint::FilterConstraint::UPPER_BOUND;
-    }
-    abort();
-}
-} // namespace <unnamed>
-
 SearchIterator::UP
 AndNotBlueprint::createFilterSearch(bool strict, FilterConstraint constraint) const
 {
-    MultiSearch::Children sub_searches;
-    sub_searches.reserve(childCnt());
-    for (size_t i = 0; i < childCnt(); ++i) {
-        bool child_strict = strict && inheritStrict(i);
-        auto search = (i == 0)
-                ? getChild(i).createFilterSearch(child_strict, constraint)
-                : getChild(i).createFilterSearch(child_strict, invert(constraint));
-        sub_searches.push_back(std::move(search));
-    }
-    return AndNotSearch::create(std::move(sub_searches), strict);
+    return create_andnot_filter(get_children(), strict, constraint);
 }
 
 //-----------------------------------------------------------------------------
@@ -248,7 +217,7 @@ AndBlueprint::get_replacement()
 }
 
 void
-AndBlueprint::sort(std::vector<Blueprint*> &children) const
+AndBlueprint::sort(Children &children) const
 {
     std::sort(children.begin(), children.end(), TieredLessEstimate());
 }
@@ -286,7 +255,7 @@ AndBlueprint::createIntermediateSearch(MultiSearch::Children sub_searches,
 SearchIterator::UP
 AndBlueprint::createFilterSearch(bool strict, FilterConstraint constraint) const
 {
-    return createAndFilter(*this, get_children(), strict, constraint);
+    return create_and_filter(get_children(), strict, constraint);
 }
 
 double
@@ -339,7 +308,7 @@ OrBlueprint::get_replacement()
 }
 
 void
-OrBlueprint::sort(std::vector<Blueprint*> &children) const
+OrBlueprint::sort(Children &children) const
 {
     std::sort(children.begin(), children.end(), TieredGreaterEstimate());
 }
@@ -372,15 +341,7 @@ OrBlueprint::createIntermediateSearch(MultiSearch::Children sub_searches,
 SearchIterator::UP
 OrBlueprint::createFilterSearch(bool strict, FilterConstraint constraint) const
 {
-    MultiSearch::Children sub_searches;
-    sub_searches.reserve(childCnt());
-    for (size_t i = 0; i < childCnt(); ++i) {
-        bool child_strict = strict && inheritStrict(i);
-        auto search = getChild(i).createFilterSearch(child_strict, constraint);
-        sub_searches.push_back(std::move(search));
-    }
-    UnpackInfo unpack_info;
-    return OrSearch::create(std::move(sub_searches), strict, unpack_info);
+    return create_or_filter(get_children(), strict, constraint);
 }
 
 //-----------------------------------------------------------------------------
@@ -404,7 +365,7 @@ WeakAndBlueprint::exposeFields() const
 }
 
 void
-WeakAndBlueprint::sort(std::vector<Blueprint*> &) const
+WeakAndBlueprint::sort(Children &) const
 {
     // order needs to stay the same as _weights
 }
@@ -440,11 +401,7 @@ WeakAndBlueprint::createIntermediateSearch(MultiSearch::Children sub_searches,
 SearchIterator::UP
 WeakAndBlueprint::createFilterSearch(bool strict, FilterConstraint constraint) const
 {
-    if (constraint == Blueprint::FilterConstraint::UPPER_BOUND) {
-        return create_or_filter(get_children(), strict, constraint);
-    } else {
-        return std::make_unique<EmptySearch>();
-    }
+    return create_atmost_or_filter(get_children(), strict, constraint);
 }
 
 //-----------------------------------------------------------------------------
@@ -462,7 +419,7 @@ NearBlueprint::exposeFields() const
 }
 
 void
-NearBlueprint::sort(std::vector<Blueprint*> &children) const
+NearBlueprint::sort(Children &children) const
 {
     std::sort(children.begin(), children.end(), TieredLessEstimate());
 }
@@ -497,11 +454,7 @@ NearBlueprint::createIntermediateSearch(MultiSearch::Children sub_searches,
 SearchIterator::UP
 NearBlueprint::createFilterSearch(bool strict, FilterConstraint constraint) const
 {
-    if (constraint == Blueprint::FilterConstraint::UPPER_BOUND) {
-        return createAndFilter(*this, get_children(), strict, constraint);
-    } else {
-        return std::make_unique<EmptySearch>();
-    }
+    return create_atmost_and_filter(get_children(), strict, constraint);
 }
 
 //-----------------------------------------------------------------------------
@@ -519,7 +472,7 @@ ONearBlueprint::exposeFields() const
 }
 
 void
-ONearBlueprint::sort(std::vector<Blueprint*> &children) const
+ONearBlueprint::sort(Children &children) const
 {
     // ordered near cannot sort children here
     (void)children;
@@ -557,11 +510,7 @@ ONearBlueprint::createIntermediateSearch(MultiSearch::Children sub_searches,
 SearchIterator::UP
 ONearBlueprint::createFilterSearch(bool strict, FilterConstraint constraint) const
 {
-    if (constraint == Blueprint::FilterConstraint::UPPER_BOUND) {
-        return createAndFilter(*this, get_children(), strict, constraint);
-    } else {
-        return std::make_unique<EmptySearch>();
-    }
+    return create_atmost_and_filter(get_children(), strict, constraint);
 }
 
 //-----------------------------------------------------------------------------
@@ -602,7 +551,7 @@ RankBlueprint::get_replacement()
 }
 
 void
-RankBlueprint::sort(std::vector<Blueprint*> &children) const
+RankBlueprint::sort(Children &children) const
 {
     (void)children;
 }
@@ -642,8 +591,7 @@ RankBlueprint::createIntermediateSearch(MultiSearch::Children sub_searches,
 SearchIterator::UP
 RankBlueprint::createFilterSearch(bool strict, FilterConstraint constraint) const
 {
-    assert(childCnt() > 0);
-    return getChild(0).createFilterSearch(strict, constraint);
+    return create_first_child_filter(get_children(), strict, constraint);
 }
 
 //-----------------------------------------------------------------------------
@@ -666,7 +614,7 @@ SourceBlenderBlueprint::exposeFields() const
 }
 
 void
-SourceBlenderBlueprint::sort(std::vector<Blueprint*> &) const
+SourceBlenderBlueprint::sort(Children &) const
 {
 }
 
@@ -716,19 +664,7 @@ SourceBlenderBlueprint::createIntermediateSearch(MultiSearch::Children sub_searc
 SearchIterator::UP
 SourceBlenderBlueprint::createFilterSearch(bool strict, FilterConstraint constraint) const
 {
-    if (constraint == FilterConstraint::UPPER_BOUND) {
-        MultiSearch::Children sub_searches;
-        sub_searches.reserve(childCnt());
-        for (size_t i = 0; i < childCnt(); ++i) {
-            bool child_strict = strict && inheritStrict(i);
-            auto search = getChild(i).createFilterSearch(child_strict, constraint);
-            sub_searches.push_back(std::move(search));
-        }
-        UnpackInfo unpack_info;
-        return OrSearch::create(std::move(sub_searches), strict, unpack_info);
-    } else {
-        return std::make_unique<EmptySearch>();
-    }
+    return create_atmost_or_filter(get_children(), strict, constraint);
 }
 
 bool

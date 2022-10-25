@@ -11,10 +11,10 @@ namespace search::queryeval {
 
 class DotProductBlueprint : public ComplexLeafBlueprint
 {
-    HitEstimate             _estimate;
-    fef::MatchDataLayout    _layout;
-    std::vector<int32_t>    _weights;
-    std::vector<Blueprint*> _terms;
+    HitEstimate                _estimate;
+    fef::MatchDataLayout       _layout;
+    std::vector<int32_t>       _weights;
+    std::vector<Blueprint::UP> _terms;
 
 public:
     explicit DotProductBlueprint(const FieldSpec &field);

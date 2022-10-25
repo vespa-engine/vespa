@@ -50,7 +50,7 @@ private:
     void seek_child(ref_t child, uint32_t docId) {
         _termPos[child] = _children.seek(child, docId);
     }
-    void get_matching_elements_child(ref_t child, uint32_t docId, const std::vector<Blueprint *> &child_blueprints, std::vector<uint32_t> &dst) {
+    void get_matching_elements_child(ref_t child, uint32_t docId, const std::vector<Blueprint::UP> &child_blueprints, std::vector<uint32_t> &dst) {
         auto *sc = child_blueprints[child]->get_attribute_search_context();
         if (sc != nullptr) {
             int32_t weight(0);
@@ -151,7 +151,7 @@ public:
     void and_hits_into(BitVector &result, uint32_t begin_id) override {
         result.andWith(*get_hits(begin_id));
     }
-    void find_matching_elements(uint32_t docId, const std::vector<Blueprint *>& child_blueprints, std::vector<uint32_t> &dst) override {
+    void find_matching_elements(uint32_t docId, const std::vector<Blueprint::UP> &child_blueprints, std::vector<uint32_t> &dst) override {
         pop_matching_children(docId);
         for (ref_t *ptr = _data_stash; ptr < _data_end; ++ptr) {
             get_matching_elements_child(*ptr, docId, child_blueprints, dst);

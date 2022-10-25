@@ -79,13 +79,7 @@ EquivBlueprint::createLeafSearch(const fef::TermFieldMatchDataArray &outputs, bo
 SearchIterator::UP
 EquivBlueprint::createFilterSearch(bool strict, FilterConstraint constraint) const
 {
-    MultiSearch::Children children;
-    children.reserve(_terms.size());
-    for (size_t i = 0; i < _terms.size(); ++i) {
-        children.push_back(_terms[i]->createFilterSearch(strict, constraint));
-    }
-    UnpackInfo unpack_info;
-    return OrSearch::create(std::move(children), strict, unpack_info);
+    return create_or_filter(_terms, strict, constraint);
 }
 
 void
