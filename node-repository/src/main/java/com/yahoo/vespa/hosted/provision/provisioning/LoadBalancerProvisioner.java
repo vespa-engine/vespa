@@ -161,7 +161,7 @@ public class LoadBalancerProvisioner {
         return db.readLoadBalancerIds().stream()
                  .filter(id -> id.application().tenant().equals(tenant) &&
                                id.application().application().equals(application))
-                 .collect(Collectors.toUnmodifiableList());
+                 .toList();
     }
 
     /** Require that load balancer IDs do not clash. This prevents name clashing when compacting endpoint DNS names */
@@ -293,12 +293,8 @@ public class LoadBalancerProvisioner {
         Set<String> reachable = new LinkedHashSet<>(node.ipConfig().primary());
         // Remove addresses unreachable by the load balancer service
         switch (service.protocol()) {
-            case ipv4:
-                reachable.removeIf(IP::isV6);
-                break;
-            case ipv6:
-                reachable.removeIf(IP::isV4);
-                break;
+            case ipv4 -> reachable.removeIf(IP::isV6);
+            case ipv6 -> reachable.removeIf(IP::isV4);
         }
         return reachable;
     }
