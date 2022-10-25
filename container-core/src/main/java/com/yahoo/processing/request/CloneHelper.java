@@ -8,6 +8,7 @@ import com.yahoo.lang.PublicCloneable;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.HashSet;
+import java.util.Objects;
 import java.util.logging.Logger;
 import java.util.LinkedList;
 import java.util.ArrayList;
@@ -98,7 +99,8 @@ public class CloneHelper {
         try {
             return cloneByReflection(object);
         } catch (IllegalArgumentException e) {
-            if ( ! (e.getCause() instanceof ClassCastException))
+            if ( ! (   e.getCause() instanceof ClassCastException
+                    || Objects.requireNonNullElse(e.getMessage(), "").startsWith("java.lang.ClassCastException")))
                 throw e;
 
             // When changing bundles you might end up having cached the old method pointing to old bundle,
