@@ -301,7 +301,7 @@ func (t *cloudTarget) waitForRun(runID int64, timeout time.Duration) error {
 		q.Set("after", strconv.FormatInt(lastID, 10))
 		req.URL.RawQuery = q.Encode()
 		if err := t.SignRequest(req, t.deploymentOptions.Deployment.Application.SerializedForm()); err != nil {
-			panic(err)
+			util.JustExitWith(err)
 		}
 		return req
 	}

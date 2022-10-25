@@ -6,13 +6,13 @@ package main
 import (
 	"fmt"
 	"os"
-	"runtime"
 	"strings"
 
 	"github.com/vespa-engine/vespa/client/go/cmd/clusterstate"
 	"github.com/vespa-engine/vespa/client/go/cmd/deploy"
 	"github.com/vespa-engine/vespa/client/go/cmd/logfmt"
 	"github.com/vespa-engine/vespa/client/go/script-utils/startcbinary"
+	"github.com/vespa-engine/vespa/client/go/util"
 	"github.com/vespa-engine/vespa/client/go/vespa"
 )
 
@@ -69,10 +69,8 @@ func main() {
 
 func handleSimplePanic() {
 	if r := recover(); r != nil {
-		if rte, ok := r.(runtime.Error); ok {
-			panic(rte)
-		} else if je, ok := r.(error); ok {
-			fmt.Fprintln(os.Stderr, je)
+		if jee, ok := r.(*util.JustExitError); ok {
+			fmt.Fprintln(os.Stderr, jee)
 			os.Exit(1)
 		} else {
 			panic(r)

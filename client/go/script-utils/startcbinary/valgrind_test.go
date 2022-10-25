@@ -10,6 +10,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/vespa-engine/vespa/client/go/trace"
+	"github.com/vespa-engine/vespa/client/go/util"
 )
 
 var tmpBin string
@@ -21,7 +22,7 @@ func useMock(prog, target string) {
 	os.Remove(symlink)
 	err := os.Symlink(mock, symlink)
 	if err != nil {
-		panic(err)
+		util.JustExitWith(err)
 	}
 }
 

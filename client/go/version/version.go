@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"strconv"
 	"strings"
+
+	"github.com/vespa-engine/vespa/client/go/util"
 )
 
 // Version represents a semantic version number.
@@ -72,7 +74,7 @@ func (v1 Version) Less(v2 Version) bool { return v1.Compare(v2) < 0 }
 func MustParse(s string) Version {
 	v, err := Parse(s)
 	if err != nil {
-		panic(err)
+		util.JustExitWith(err)
 	}
 	return v
 }

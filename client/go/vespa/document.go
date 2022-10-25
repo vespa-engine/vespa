@@ -138,7 +138,8 @@ func operationToHTTPMethod(operation string) string {
 	case "remove":
 		return "DELETE"
 	}
-	panic("Unexpected document operation ''" + operation + "'")
+	util.JustExitMsg("Unexpected document operation ''" + operation + "'")
+	panic("unreachable")
 }
 
 func serviceDo(service *Service, request *http.Request, filename string, options OperationOptions) (*http.Response, error) {

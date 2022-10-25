@@ -11,6 +11,8 @@ import (
 	"os"
 	"strconv"
 	"strings"
+
+	"github.com/vespa-engine/vespa/client/go/util"
 )
 
 // main entry point for vespa-deploy fetch
@@ -87,8 +89,8 @@ func getPartAfterSlash(path string) string {
 	if idx > 1 && parts[idx] == "" {
 		return parts[idx-1]
 	}
-	if idx > 0 {
-		return parts[idx]
+	if idx == 0 {
+		util.JustExitMsg("cannot find part after slash: " + path)
 	}
-	panic("cannot find part after slash: " + path)
+	return parts[idx]
 }

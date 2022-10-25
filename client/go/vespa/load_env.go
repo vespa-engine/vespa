@@ -9,6 +9,8 @@ import (
 	"fmt"
 	"os"
 	"strings"
+
+	"github.com/vespa-engine/vespa/client/go/util"
 )
 
 // backwards-compatible parsing of default-env.txt
@@ -217,7 +219,7 @@ func shellQuote(s string) string {
 	}
 	if i != l {
 		err := fmt.Errorf("expected length %d but was %d", l, i)
-		panic(err)
+		util.JustExitWith(err)
 	}
 	return string(res)
 }
