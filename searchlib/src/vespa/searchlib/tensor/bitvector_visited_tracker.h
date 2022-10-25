@@ -16,14 +16,14 @@ class BitVectorVisitedTracker
 {
     search::AllocatedBitVector _visited;
 public:
-    BitVectorVisitedTracker(const HnswIndex&, uint32_t doc_id_limit, uint32_t);
+    BitVectorVisitedTracker(const HnswIndex&, uint32_t nodeid_limit, uint32_t);
     ~BitVectorVisitedTracker();
-    void mark(uint32_t doc_id) { _visited.setBit(doc_id); }
-    bool try_mark(uint32_t doc_id) {
-        if (_visited.testBit(doc_id)) {
+    void mark(uint32_t nodeid) { _visited.setBit(nodeid); }
+    bool try_mark(uint32_t nodeid) {
+        if (_visited.testBit(nodeid)) {
             return false;
         } else {
-            _visited.setBit(doc_id);
+            _visited.setBit(nodeid);
             return true;
         }
     }

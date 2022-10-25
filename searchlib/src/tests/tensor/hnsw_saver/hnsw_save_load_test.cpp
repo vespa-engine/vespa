@@ -88,24 +88,24 @@ public:
     HnswGraph original;
     HnswGraph copy;
 
-    void expect_empty_d(uint32_t docid) const {
-        EXPECT_FALSE(copy.acquire_node_ref(docid).valid());
+    void expect_empty_d(uint32_t nodeid) const {
+        EXPECT_FALSE(copy.acquire_node_ref(nodeid).valid());
     }
 
-    void expect_level_0(uint32_t docid, const V& exp_links) const {
-        auto levels = copy.acquire_level_array(docid);
+    void expect_level_0(uint32_t nodeid, const V& exp_links) const {
+        auto levels = copy.acquire_level_array(nodeid);
         EXPECT_GE(levels.size(), 1);
-        auto links = copy.acquire_link_array(docid, 0);
+        auto links = copy.acquire_link_array(nodeid, 0);
         EXPECT_EQ(exp_links.size(), links.size());
         for (size_t i = 0; i < exp_links.size() && i < links.size(); ++i) {
             EXPECT_EQ(exp_links[i], links[i]);
         }
     }
 
-    void expect_level_1(uint32_t docid, const V& exp_links) const {
-        auto levels = copy.acquire_level_array(docid);
+    void expect_level_1(uint32_t nodeid, const V& exp_links) const {
+        auto levels = copy.acquire_level_array(nodeid);
         EXPECT_EQ(2, levels.size());
-        auto links = copy.acquire_link_array(docid, 1);
+        auto links = copy.acquire_link_array(nodeid, 1);
         EXPECT_EQ(exp_links.size(), links.size());
         for (size_t i = 0; i < exp_links.size() && i < links.size(); ++i) {
             EXPECT_EQ(exp_links[i], links[i]);
@@ -126,7 +126,7 @@ public:
     void expect_copy_as_populated() const {
         EXPECT_EQ(copy.size(), 7);
         auto entry = copy.get_entry_node();
-        EXPECT_EQ(entry.docid, 2);
+        EXPECT_EQ(entry.nodeid, 2);
         EXPECT_EQ(entry.level, 1);
 
         expect_empty_d(0);

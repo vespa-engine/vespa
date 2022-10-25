@@ -118,21 +118,21 @@ public:
         CompactionStrategy compaction_strategy;
         return index->update_stat(compaction_strategy);
     }
-    void expect_entry_point(uint32_t exp_docid, uint32_t exp_level) {
-        EXPECT_EQ(exp_docid, index->get_entry_docid());
+    void expect_entry_point(uint32_t exp_nodeid, uint32_t exp_level) {
+        EXPECT_EQ(exp_nodeid, index->get_entry_nodeid());
         EXPECT_EQ(exp_level, index->get_entry_level());
     }
-    void expect_level_0(uint32_t docid, const HnswNode::LinkArray& exp_links) {
-        auto node = index->get_node(docid);
+    void expect_level_0(uint32_t nodeid, const HnswNode::LinkArray& exp_links) {
+        auto node = index->get_node(nodeid);
         ASSERT_EQ(1, node.size());
         EXPECT_EQ(exp_links, node.level(0));
     }
-    void expect_empty_level_0(uint32_t docid) {
-        auto node = index->get_node(docid);
+    void expect_empty_level_0(uint32_t nodeid) {
+        auto node = index->get_node(nodeid);
         EXPECT_TRUE(node.empty());
     }
-    void expect_levels(uint32_t docid, const HnswNode::LevelArray& exp_levels) {
-        auto act_node = index->get_node(docid);
+    void expect_levels(uint32_t nodeid, const HnswNode::LevelArray& exp_levels) {
+        auto act_node = index->get_node(nodeid);
         ASSERT_EQ(exp_levels.size(), act_node.size());
         EXPECT_EQ(exp_levels, act_node.levels());
     }
@@ -144,7 +144,7 @@ public:
         size_t idx = 0;
         for (const auto & hit : rv) {
             if (idx < exp_hits.size()) {
-                EXPECT_EQ(hit.docid, exp_hits[idx++]);
+                EXPECT_EQ(index->get_docid(hit.nodeid), exp_hits[idx++]);
             }
         }
         if (exp_hits.size() == k) {
@@ -169,7 +169,7 @@ public:
             ? index->find_top_k_with_filter(k, qv, *global_filter, k, thr)
             : index->find_top_k(k, qv, k, thr);
         EXPECT_EQ(got_by_docid.size(), 1);
-        EXPECT_EQ(got_by_docid[0].docid, rv[0].docid);
+        EXPECT_EQ(got_by_docid[0].docid, index->get_docid(rv[0].nodeid));
         for (const auto & hit : got_by_docid) {
             LOG(debug, "from docid=%u found docid=%u dist=%g (threshold %g)\n",
                 docid, hit.docid, hit.distance, thr);

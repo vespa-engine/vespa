@@ -25,7 +25,7 @@ public:
 private:
     struct MetaData {
         using EntryRef = vespalib::datastore::EntryRef;
-        uint32_t entry_docid;
+        uint32_t entry_nodeid;
         int32_t  entry_level;
         std::vector<EntryRef, vespalib::allocator_large<EntryRef>> refs;
         std::vector<uint32_t, vespalib::allocator_large<uint32_t>> nodes;
