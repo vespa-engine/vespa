@@ -1,62 +1,62 @@
 {
-  "com.yahoo.filedistribution.fileacquirer.FileAcquirer": {
-    "superClass": "java.lang.Object",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.filedistribution.fileacquirer.FileAcquirer" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [ ],
+    "attributes" : [
       "public",
       "interface",
       "abstract"
     ],
-    "methods": [
+    "methods" : [
       "public abstract java.io.File waitFor(com.yahoo.config.FileReference, long, java.util.concurrent.TimeUnit)",
       "public abstract void shutdown()"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.filedistribution.fileacquirer.FileAcquirerFactory": {
-    "superClass": "java.lang.Object",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.filedistribution.fileacquirer.FileAcquirerFactory" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [ ],
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>()",
       "public static com.yahoo.filedistribution.fileacquirer.FileAcquirer create(java.lang.String)"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.filedistribution.fileacquirer.FileReferenceDoesNotExistException": {
-    "superClass": "java.lang.RuntimeException",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.filedistribution.fileacquirer.FileReferenceDoesNotExistException" : {
+    "superClass" : "java.lang.RuntimeException",
+    "interfaces" : [ ],
+    "attributes" : [
       "public"
     ],
-    "methods": [],
-    "fields": [
+    "methods" : [ ],
+    "fields" : [
       "public final java.lang.String fileReference"
     ]
   },
-  "com.yahoo.filedistribution.fileacquirer.FileReferenceRemovedException": {
-    "superClass": "java.lang.RuntimeException",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.filedistribution.fileacquirer.FileReferenceRemovedException" : {
+    "superClass" : "java.lang.RuntimeException",
+    "interfaces" : [ ],
+    "attributes" : [
       "public"
     ],
-    "methods": [],
-    "fields": [
+    "methods" : [ ],
+    "fields" : [
       "public final java.lang.String fileReference"
     ]
   },
-  "com.yahoo.filedistribution.fileacquirer.MockFileAcquirer": {
-    "superClass": "java.lang.Object",
-    "interfaces": [
+  "com.yahoo.filedistribution.fileacquirer.MockFileAcquirer" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [
       "com.yahoo.filedistribution.fileacquirer.FileAcquirer"
     ],
-    "attributes": [
+    "attributes" : [
       "public",
       "abstract"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>()",
       "public static com.yahoo.filedistribution.fileacquirer.FileAcquirer returnFile(java.io.File)",
       "public static com.yahoo.filedistribution.fileacquirer.FileAcquirer returnFiles(java.util.Map)",
@@ -64,19 +64,19 @@
       "public static com.yahoo.filedistribution.fileacquirer.FileAcquirer throwFileReferenceDoesNotExistException()",
       "public void shutdown()"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.filedistribution.fileacquirer.TimeoutException": {
-    "superClass": "java.lang.RuntimeException",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.filedistribution.fileacquirer.TimeoutException" : {
+    "superClass" : "java.lang.RuntimeException",
+    "interfaces" : [ ],
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>()",
       "public void <init>(java.lang.String)",
       "public void <init>(java.lang.String, java.lang.Throwable)"
     ],
-    "fields": []
+    "fields" : [ ]
   }
 }

@@ -1,8 +1,11 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.abicheck.mojo;
 
+import com.fasterxml.jackson.core.util.DefaultIndenter;
+import com.fasterxml.jackson.core.util.DefaultPrettyPrinter;
 import com.fasterxml.jackson.databind.JavaType;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
 import com.yahoo.abicheck.classtree.ClassFileTree;
 import com.yahoo.abicheck.classtree.ClassFileTree.ClassFile;
 import com.yahoo.abicheck.classtree.ClassFileTree.Package;
@@ -76,7 +79,8 @@ public class AbiCheck extends AbstractMojo {
   private static void writeSpec(Map<String, JavaClassSignature> signatures, File file)
       throws IOException {
     try (FileWriter writer = new FileWriter(file)) {
-      new ObjectMapper().writeValue(writer, signatures);
+      new ObjectMapper().writer(new DefaultPrettyPrinter().withArrayIndenter(DefaultIndenter.SYSTEM_LINEFEED_INSTANCE))
+                        .writeValue(writer, signatures);
     }
   }
   // CLOVER:ON

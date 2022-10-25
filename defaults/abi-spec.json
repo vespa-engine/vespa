@@ -1,11 +1,11 @@
 {
-  "com.yahoo.vespa.defaults.Defaults": {
-    "superClass": "java.lang.Object",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.vespa.defaults.Defaults" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [ ],
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public java.lang.String vespaUser()",
       "public java.lang.String vespaHostname()",
       "public java.lang.String temporaryApplicationStorage()",
@@ -18,6 +18,6 @@
       "public int vespaConfigProxyRpcPort()",
       "public static com.yahoo.vespa.defaults.Defaults getDefaults()"
     ],
-    "fields": []
+    "fields" : [ ]
   }
 }

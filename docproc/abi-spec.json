@@ -1,12 +1,12 @@
 {
-  "com.yahoo.docproc.AbstractConcreteDocumentFactory": {
-    "superClass": "com.yahoo.component.AbstractComponent",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.docproc.AbstractConcreteDocumentFactory" : {
+    "superClass" : "com.yahoo.component.AbstractComponent",
+    "interfaces" : [ ],
+    "attributes" : [
       "public",
       "abstract"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>()",
       "public abstract java.util.Map documentTypes()",
       "public abstract java.util.Map structTypes()",
@@ -14,70 +14,70 @@
       "public abstract com.yahoo.document.Document getDocumentCopy(java.lang.String, com.yahoo.document.datatypes.StructuredFieldValue, com.yahoo.document.DocumentId)",
       "public com.yahoo.document.datatypes.FieldValue optionallyUpgrade(com.yahoo.document.Field, com.yahoo.document.datatypes.FieldValue)"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.docproc.Accesses$Field$Tree": {
-    "superClass": "java.lang.Object",
-    "interfaces": [
+  "com.yahoo.docproc.Accesses$Field$Tree" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [
       "java.lang.annotation.Annotation"
     ],
-    "attributes": [
+    "attributes" : [
       "public",
       "interface",
       "abstract",
       "annotation"
     ],
-    "methods": [
+    "methods" : [
       "public abstract java.lang.String name()",
       "public abstract java.lang.String[] produces()",
       "public abstract java.lang.String[] consumes()"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.docproc.Accesses$Field": {
-    "superClass": "java.lang.Object",
-    "interfaces": [
+  "com.yahoo.docproc.Accesses$Field" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [
       "java.lang.annotation.Annotation"
     ],
-    "attributes": [
+    "attributes" : [
       "public",
       "interface",
       "abstract",
       "annotation"
     ],
-    "methods": [
+    "methods" : [
       "public abstract java.lang.String name()",
       "public abstract java.lang.String dataType()",
       "public abstract com.yahoo.docproc.Accesses$Field$Tree[] annotations()",
       "public abstract java.lang.String description()"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.docproc.Accesses": {
-    "superClass": "java.lang.Object",
-    "interfaces": [
+  "com.yahoo.docproc.Accesses" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [
       "java.lang.annotation.Annotation"
     ],
-    "attributes": [
+    "attributes" : [
       "public",
       "interface",
       "abstract",
       "annotation"
     ],
-    "methods": [
+    "methods" : [
       "public abstract com.yahoo.docproc.Accesses$Field[] value()"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.docproc.Call": {
-    "superClass": "java.lang.Object",
-    "interfaces": [
+  "com.yahoo.docproc.Call" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [
       "java.lang.Cloneable"
     ],
-    "attributes": [
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>(com.yahoo.docproc.DocumentProcessor)",
       "public void <init>(com.yahoo.docproc.DocumentProcessor, com.yahoo.jdisc.Metric)",
       "public void <init>(com.yahoo.docproc.DocumentProcessor, java.lang.String, com.yahoo.jdisc.Metric)",
@@ -88,15 +88,15 @@
       "public com.yahoo.docproc.DocumentProcessor$Progress call(com.yahoo.docproc.Processing)",
       "public java.lang.String toString()"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.docproc.CallStack": {
-    "superClass": "java.lang.Object",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.docproc.CallStack" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [ ],
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>()",
       "public void <init>(java.lang.String)",
       "public void <init>(com.yahoo.jdisc.Metric)",
@@ -130,29 +130,29 @@
       "public java.lang.String toString()",
       "public com.yahoo.jdisc.Metric getMetric()"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.docproc.DocumentProcessor$LaterProgress": {
-    "superClass": "com.yahoo.docproc.DocumentProcessor$Progress",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.docproc.DocumentProcessor$LaterProgress" : {
+    "superClass" : "com.yahoo.docproc.DocumentProcessor$Progress",
+    "interfaces" : [ ],
+    "attributes" : [
       "public",
       "final"
     ],
-    "methods": [
+    "methods" : [
       "public long getDelay()"
     ],
-    "fields": [
+    "fields" : [
       "public static final long DEFAULT_LATER_DELAY"
     ]
   },
-  "com.yahoo.docproc.DocumentProcessor$Progress": {
-    "superClass": "java.lang.Object",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.docproc.DocumentProcessor$Progress" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [ ],
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "protected void <init>(java.lang.String)",
       "protected void <init>(java.lang.String, java.lang.String)",
       "public static com.yahoo.docproc.DocumentProcessor$Progress later(long)",
@@ -162,21 +162,21 @@
       "public boolean equals(java.lang.Object)",
       "public int hashCode()"
     ],
-    "fields": [
+    "fields" : [
       "public static final com.yahoo.docproc.DocumentProcessor$Progress DONE",
       "public static final com.yahoo.docproc.DocumentProcessor$Progress LATER",
       "public static final com.yahoo.docproc.DocumentProcessor$Progress FAILED",
       "public static final com.yahoo.docproc.DocumentProcessor$Progress PERMANENT_FAILURE"
     ]
   },
-  "com.yahoo.docproc.DocumentProcessor": {
-    "superClass": "com.yahoo.component.chain.ChainedComponent",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.docproc.DocumentProcessor" : {
+    "superClass" : "com.yahoo.component.chain.ChainedComponent",
+    "interfaces" : [ ],
+    "attributes" : [
       "public",
       "abstract"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>()",
       "public abstract com.yahoo.docproc.DocumentProcessor$Progress process(com.yahoo.docproc.Processing)",
       "public void setFieldMap(java.util.Map)",
@@ -184,16 +184,16 @@
       "public java.util.Map getDocMap(java.lang.String)",
       "public java.lang.String toString()"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.docproc.Processing": {
-    "superClass": "com.yahoo.docproc.impl.ProcessingAccess",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.docproc.Processing" : {
+    "superClass" : "com.yahoo.docproc.impl.ProcessingAccess",
+    "interfaces" : [ ],
+    "attributes" : [
       "public",
       "final"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>()",
       "public static com.yahoo.docproc.Processing of(com.yahoo.document.DocumentOperation)",
       "public void <init>(java.lang.String, com.yahoo.document.DocumentOperation, com.yahoo.docproc.CallStack)",
@@ -211,21 +211,21 @@
       "public com.yahoo.docproc.CallStack callStack()",
       "public java.lang.String toString()"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.docproc.SimpleDocumentProcessor": {
-    "superClass": "com.yahoo.docproc.DocumentProcessor",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.docproc.SimpleDocumentProcessor" : {
+    "superClass" : "com.yahoo.docproc.DocumentProcessor",
+    "interfaces" : [ ],
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>()",
       "public void process(com.yahoo.document.DocumentPut)",
       "public void process(com.yahoo.document.DocumentUpdate)",
       "public void process(com.yahoo.document.DocumentRemove)",
       "public final com.yahoo.docproc.DocumentProcessor$Progress process(com.yahoo.docproc.Processing)"
     ],
-    "fields": []
+    "fields" : [ ]
   }
 }

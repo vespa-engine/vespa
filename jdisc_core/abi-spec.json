@@ -1,14 +1,14 @@
 {
-  "com.yahoo.jdisc.AbstractResource": {
-    "superClass": "java.lang.Object",
-    "interfaces": [
+  "com.yahoo.jdisc.AbstractResource" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [
       "com.yahoo.jdisc.SharedResource"
     ],
-    "attributes": [
+    "attributes" : [
       "public",
       "abstract"
     ],
-    "methods": [
+    "methods" : [
       "protected void <init>()",
       "public final com.yahoo.jdisc.ResourceReference refer()",
       "public final com.yahoo.jdisc.ResourceReference refer(java.lang.Object)",
@@ -17,34 +17,34 @@
       "protected void destroy()",
       "public java.lang.String currentState()"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.jdisc.Container": {
-    "superClass": "java.lang.Object",
-    "interfaces": [
+  "com.yahoo.jdisc.Container" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [
       "com.yahoo.jdisc.SharedResource",
       "com.yahoo.jdisc.Timer"
     ],
-    "attributes": [
+    "attributes" : [
       "public",
       "interface",
       "abstract"
     ],
-    "methods": [
+    "methods" : [
       "public abstract com.yahoo.jdisc.handler.RequestHandler resolveHandler(com.yahoo.jdisc.Request)",
       "public abstract java.lang.Object getInstance(java.lang.Class)"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.jdisc.HeaderFields": {
-    "superClass": "java.lang.Object",
-    "interfaces": [
+  "com.yahoo.jdisc.HeaderFields" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [
       "java.util.Map"
     ],
-    "attributes": [
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>()",
       "public int size()",
       "public boolean isEmpty()",
@@ -75,104 +75,104 @@
       "public bridge synthetic java.lang.Object put(java.lang.Object, java.lang.Object)",
       "public bridge synthetic java.lang.Object get(java.lang.Object)"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.jdisc.Metric$Context": {
-    "superClass": "java.lang.Object",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.jdisc.Metric$Context" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [ ],
+    "attributes" : [
       "public",
       "interface",
       "abstract"
     ],
-    "methods": [],
-    "fields": []
+    "methods" : [ ],
+    "fields" : [ ]
   },
-  "com.yahoo.jdisc.Metric": {
-    "superClass": "java.lang.Object",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.jdisc.Metric" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [ ],
+    "attributes" : [
       "public",
       "interface",
       "abstract"
     ],
-    "methods": [
+    "methods" : [
       "public abstract void set(java.lang.String, java.lang.Number, com.yahoo.jdisc.Metric$Context)",
       "public abstract void add(java.lang.String, java.lang.Number, com.yahoo.jdisc.Metric$Context)",
       "public abstract com.yahoo.jdisc.Metric$Context createContext(java.util.Map)"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.jdisc.NoopSharedResource": {
-    "superClass": "java.lang.Object",
-    "interfaces": [
+  "com.yahoo.jdisc.NoopSharedResource" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [
       "com.yahoo.jdisc.SharedResource"
     ],
-    "attributes": [
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>()",
       "public final com.yahoo.jdisc.ResourceReference refer()",
       "public final com.yahoo.jdisc.ResourceReference refer(java.lang.Object)",
       "public final void release()"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.jdisc.ReferencedResource": {
-    "superClass": "java.lang.Object",
-    "interfaces": [
+  "com.yahoo.jdisc.ReferencedResource" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [
       "java.lang.AutoCloseable"
     ],
-    "attributes": [
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>(com.yahoo.jdisc.SharedResource, com.yahoo.jdisc.ResourceReference)",
       "public com.yahoo.jdisc.SharedResource getResource()",
       "public com.yahoo.jdisc.ResourceReference getReference()",
       "public void close()"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.jdisc.References": {
-    "superClass": "java.lang.Object",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.jdisc.References" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [ ],
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public static com.yahoo.jdisc.ResourceReference fromResource(com.yahoo.jdisc.SharedResource)"
     ],
-    "fields": [
+    "fields" : [
       "public static final com.yahoo.jdisc.ResourceReference NOOP_REFERENCE"
     ]
   },
-  "com.yahoo.jdisc.Request$RequestType": {
-    "superClass": "java.lang.Enum",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.jdisc.Request$RequestType" : {
+    "superClass" : "java.lang.Enum",
+    "interfaces" : [ ],
+    "attributes" : [
       "public",
       "final",
       "enum"
     ],
-    "methods": [
+    "methods" : [
       "public static com.yahoo.jdisc.Request$RequestType[] values()",
       "public static com.yahoo.jdisc.Request$RequestType valueOf(java.lang.String)"
     ],
-    "fields": [
+    "fields" : [
       "public static final enum com.yahoo.jdisc.Request$RequestType READ",
       "public static final enum com.yahoo.jdisc.Request$RequestType WRITE",
       "public static final enum com.yahoo.jdisc.Request$RequestType MONITORING"
     ]
   },
-  "com.yahoo.jdisc.Request": {
-    "superClass": "com.yahoo.jdisc.AbstractResource",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.jdisc.Request" : {
+    "superClass" : "com.yahoo.jdisc.AbstractResource",
+    "interfaces" : [ ],
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>(com.yahoo.jdisc.service.CurrentContainer, java.net.URI)",
       "public void <init>(com.yahoo.jdisc.service.CurrentContainer, java.net.URI, boolean)",
       "public void <init>(com.yahoo.jdisc.Request, java.net.URI)",
@@ -195,33 +195,33 @@
       "public com.yahoo.jdisc.handler.ContentChannel connect(com.yahoo.jdisc.handler.ResponseHandler)",
       "protected void destroy()"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.jdisc.ResourceReference": {
-    "superClass": "java.lang.Object",
-    "interfaces": [
+  "com.yahoo.jdisc.ResourceReference" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [
       "java.lang.AutoCloseable"
     ],
-    "attributes": [
+    "attributes" : [
       "public",
       "interface",
       "abstract"
     ],
-    "methods": [
+    "methods" : [
       "public abstract void close()"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.jdisc.Response$Status": {
-    "superClass": "java.lang.Object",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.jdisc.Response$Status" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [ ],
+    "attributes" : [
       "public",
       "interface",
       "abstract"
     ],
-    "methods": [],
-    "fields": [
+    "methods" : [ ],
+    "fields" : [
       "public static final int CONTINUE",
       "public static final int SWITCHING_PROTOCOLS",
       "public static final int PROCESSING",
@@ -273,13 +273,13 @@
       "public static final int INSUFFICIENT_STORAGE"
     ]
   },
-  "com.yahoo.jdisc.Response": {
-    "superClass": "java.lang.Object",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.jdisc.Response" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [ ],
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>(int)",
       "public void <init>(int, java.lang.Throwable)",
       "public java.util.Map context()",
@@ -292,139 +292,139 @@
       "public com.yahoo.jdisc.Request$RequestType getRequestType()",
       "public static void dispatchTimeout(com.yahoo.jdisc.handler.ResponseHandler)"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.jdisc.SharedResource$Debug": {
-    "superClass": "java.lang.Enum",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.jdisc.SharedResource$Debug" : {
+    "superClass" : "java.lang.Enum",
+    "interfaces" : [ ],
+    "attributes" : [
       "public",
       "final",
       "enum"
     ],
-    "methods": [
+    "methods" : [
       "public static com.yahoo.jdisc.SharedResource$Debug[] values()",
       "public static com.yahoo.jdisc.SharedResource$Debug valueOf(java.lang.String)"
     ],
-    "fields": [
+    "fields" : [
       "public static final enum com.yahoo.jdisc.SharedResource$Debug NO",
       "public static final enum com.yahoo.jdisc.SharedResource$Debug SIMPLE",
       "public static final enum com.yahoo.jdisc.SharedResource$Debug STACK"
     ]
   },
-  "com.yahoo.jdisc.SharedResource": {
-    "superClass": "java.lang.Object",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.jdisc.SharedResource" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [ ],
+    "attributes" : [
       "public",
       "interface",
       "abstract"
     ],
-    "methods": [
+    "methods" : [
       "public com.yahoo.jdisc.ResourceReference refer()",
       "public com.yahoo.jdisc.ResourceReference refer(java.lang.Object)",
       "public abstract void release()"
     ],
-    "fields": [
+    "fields" : [
       "public static final java.lang.String SYSTEM_PROPERTY_NAME_DEBUG",
       "public static final com.yahoo.jdisc.SharedResource$Debug DEBUG"
     ]
   },
-  "com.yahoo.jdisc.TimeoutManager": {
-    "superClass": "java.lang.Object",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.jdisc.TimeoutManager" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [ ],
+    "attributes" : [
       "public",
       "interface",
       "abstract"
     ],
-    "methods": [
+    "methods" : [
       "public abstract void scheduleTimeout(com.yahoo.jdisc.Request)",
       "public void unscheduleTimeout(com.yahoo.jdisc.Request)"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.jdisc.Timer$ClockAdapter": {
-    "superClass": "java.time.Clock",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.jdisc.Timer$ClockAdapter" : {
+    "superClass" : "java.time.Clock",
+    "interfaces" : [ ],
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public java.time.ZoneId getZone()",
       "public java.time.Clock withZone(java.time.ZoneId)",
       "public java.time.Instant instant()"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.jdisc.Timer": {
-    "superClass": "java.lang.Object",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.jdisc.Timer" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [ ],
+    "attributes" : [
       "public",
       "interface",
       "abstract"
     ],
-    "methods": [
+    "methods" : [
       "public abstract long currentTimeMillis()",
       "public java.time.Instant currentTime()",
       "public java.time.Clock toUtcClock()",
       "public static com.yahoo.jdisc.Timer fromClock(java.time.Clock)"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.jdisc.handler.AbstractRequestHandler": {
-    "superClass": "com.yahoo.jdisc.AbstractResource",
-    "interfaces": [
+  "com.yahoo.jdisc.handler.AbstractRequestHandler" : {
+    "superClass" : "com.yahoo.jdisc.AbstractResource",
+    "interfaces" : [
       "com.yahoo.jdisc.handler.RequestHandler"
     ],
-    "attributes": [
+    "attributes" : [
       "public",
       "abstract"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>()",
       "public void handleTimeout(com.yahoo.jdisc.Request, com.yahoo.jdisc.handler.ResponseHandler)"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.jdisc.handler.BindingNotFoundException": {
-    "superClass": "java.lang.RuntimeException",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.jdisc.handler.BindingNotFoundException" : {
+    "superClass" : "java.lang.RuntimeException",
+    "interfaces" : [ ],
+    "attributes" : [
       "public",
       "final"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>(java.net.URI)",
       "public java.net.URI uri()"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.jdisc.handler.BlockingContentWriter": {
-    "superClass": "java.lang.Object",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.jdisc.handler.BlockingContentWriter" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [ ],
+    "attributes" : [
       "public",
       "final"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>(com.yahoo.jdisc.handler.ContentChannel)",
       "public void write(java.nio.ByteBuffer)",
       "public void close()"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.jdisc.handler.BufferedContentChannel": {
-    "superClass": "java.lang.Object",
-    "interfaces": [
+  "com.yahoo.jdisc.handler.BufferedContentChannel" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [
       "com.yahoo.jdisc.handler.ContentChannel"
     ],
-    "attributes": [
+    "attributes" : [
       "public",
       "final"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>()",
       "public void connectTo(com.yahoo.jdisc.handler.ContentChannel)",
       "public boolean isConnected()",
@@ -433,107 +433,107 @@
       "public void write(java.nio.ByteBuffer, com.yahoo.jdisc.handler.CompletionHandler)",
       "public void close(com.yahoo.jdisc.handler.CompletionHandler)"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.jdisc.handler.CallableRequestDispatch": {
-    "superClass": "com.yahoo.jdisc.handler.RequestDispatch",
-    "interfaces": [
+  "com.yahoo.jdisc.handler.CallableRequestDispatch" : {
+    "superClass" : "com.yahoo.jdisc.handler.RequestDispatch",
+    "interfaces" : [
       "java.util.concurrent.Callable"
     ],
-    "attributes": [
+    "attributes" : [
       "public",
       "abstract"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>()",
       "public final com.yahoo.jdisc.Response call()",
       "public bridge synthetic java.lang.Object call()"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.jdisc.handler.CallableResponseDispatch": {
-    "superClass": "com.yahoo.jdisc.handler.ResponseDispatch",
-    "interfaces": [
+  "com.yahoo.jdisc.handler.CallableResponseDispatch" : {
+    "superClass" : "com.yahoo.jdisc.handler.ResponseDispatch",
+    "interfaces" : [
       "java.util.concurrent.Callable"
     ],
-    "attributes": [
+    "attributes" : [
       "public",
       "abstract"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>(com.yahoo.jdisc.handler.ResponseHandler)",
       "public final java.lang.Boolean call()",
       "public bridge synthetic java.lang.Object call()"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.jdisc.handler.CompletionHandler": {
-    "superClass": "java.lang.Object",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.jdisc.handler.CompletionHandler" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [ ],
+    "attributes" : [
       "public",
       "interface",
       "abstract"
     ],
-    "methods": [
+    "methods" : [
       "public abstract void completed()",
       "public abstract void failed(java.lang.Throwable)"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.jdisc.handler.ContentChannel": {
-    "superClass": "java.lang.Object",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.jdisc.handler.ContentChannel" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [ ],
+    "attributes" : [
       "public",
       "interface",
       "abstract"
     ],
-    "methods": [
+    "methods" : [
       "public abstract void write(java.nio.ByteBuffer, com.yahoo.jdisc.handler.CompletionHandler)",
       "public abstract void close(com.yahoo.jdisc.handler.CompletionHandler)",
       "public void onError(java.lang.Throwable)"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.jdisc.handler.ContentInputStream": {
-    "superClass": "com.yahoo.jdisc.handler.UnsafeContentInputStream",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.jdisc.handler.ContentInputStream" : {
+    "superClass" : "com.yahoo.jdisc.handler.UnsafeContentInputStream",
+    "interfaces" : [ ],
+    "attributes" : [
       "public",
       "final"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>(com.yahoo.jdisc.handler.ReadableContentChannel)",
       "public void finalize()"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.jdisc.handler.DelegatedRequestHandler": {
-    "superClass": "java.lang.Object",
-    "interfaces": [
+  "com.yahoo.jdisc.handler.DelegatedRequestHandler" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [
       "com.yahoo.jdisc.handler.RequestHandler"
     ],
-    "attributes": [
+    "attributes" : [
       "public",
       "interface",
       "abstract"
     ],
-    "methods": [
+    "methods" : [
       "public abstract com.yahoo.jdisc.handler.RequestHandler getDelegate()",
       "public com.yahoo.jdisc.handler.RequestHandler getDelegateRecursive()"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.jdisc.handler.FastContentOutputStream": {
-    "superClass": "com.yahoo.jdisc.handler.AbstractContentOutputStream",
-    "interfaces": [
+  "com.yahoo.jdisc.handler.FastContentOutputStream" : {
+    "superClass" : "com.yahoo.jdisc.handler.AbstractContentOutputStream",
+    "interfaces" : [
       "java.util.concurrent.Future"
     ],
-    "attributes": [
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>(com.yahoo.jdisc.handler.ContentChannel)",
       "public void <init>(com.yahoo.jdisc.handler.FastContentWriter)",
       "protected void doFlush(java.nio.ByteBuffer)",
@@ -547,17 +547,17 @@
       "public bridge synthetic java.lang.Object get(long, java.util.concurrent.TimeUnit)",
       "public bridge synthetic java.lang.Object get()"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.jdisc.handler.FastContentWriter": {
-    "superClass": "java.util.concurrent.CompletableFuture",
-    "interfaces": [
+  "com.yahoo.jdisc.handler.FastContentWriter" : {
+    "superClass" : "java.util.concurrent.CompletableFuture",
+    "interfaces" : [
       "java.lang.AutoCloseable"
     ],
-    "attributes": [
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>(com.yahoo.jdisc.handler.ContentChannel)",
       "public void write(java.lang.String)",
       "public void write(byte[])",
@@ -568,18 +568,18 @@
       "public boolean cancel(boolean)",
       "public boolean isCancelled()"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.jdisc.handler.FutureCompletion": {
-    "superClass": "java.util.concurrent.CompletableFuture",
-    "interfaces": [
+  "com.yahoo.jdisc.handler.FutureCompletion" : {
+    "superClass" : "java.util.concurrent.CompletableFuture",
+    "interfaces" : [
       "com.yahoo.jdisc.handler.CompletionHandler"
     ],
-    "attributes": [
+    "attributes" : [
       "public",
       "final"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>()",
       "public void completed()",
       "public void failed(java.lang.Throwable)",
@@ -587,18 +587,18 @@
       "public final boolean isCancelled()",
       "public void addListener(java.lang.Runnable, java.util.concurrent.Executor)"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.jdisc.handler.FutureResponse": {
-    "superClass": "java.util.concurrent.CompletableFuture",
-    "interfaces": [
+  "com.yahoo.jdisc.handler.FutureResponse" : {
+    "superClass" : "java.util.concurrent.CompletableFuture",
+    "interfaces" : [
       "com.yahoo.jdisc.handler.ResponseHandler"
     ],
-    "attributes": [
+    "attributes" : [
       "public",
       "final"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>()",
       "public void <init>(com.yahoo.jdisc.handler.ContentChannel)",
       "public void addListener(java.lang.Runnable, java.util.concurrent.Executor)",
@@ -607,47 +607,47 @@
       "public final boolean cancel(boolean)",
       "public final boolean isCancelled()"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.jdisc.handler.NullContent": {
-    "superClass": "java.lang.Object",
-    "interfaces": [
+  "com.yahoo.jdisc.handler.NullContent" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [
       "com.yahoo.jdisc.handler.ContentChannel"
     ],
-    "attributes": [
+    "attributes" : [
       "public",
       "final"
     ],
-    "methods": [
+    "methods" : [
       "public void write(java.nio.ByteBuffer, com.yahoo.jdisc.handler.CompletionHandler)",
       "public void close(com.yahoo.jdisc.handler.CompletionHandler)"
     ],
-    "fields": [
+    "fields" : [
       "public static final com.yahoo.jdisc.handler.NullContent INSTANCE"
     ]
   },
-  "com.yahoo.jdisc.handler.OverloadException": {
-    "superClass": "java.lang.RuntimeException",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.jdisc.handler.OverloadException" : {
+    "superClass" : "java.lang.RuntimeException",
+    "interfaces" : [ ],
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>(java.lang.String, java.lang.Throwable)"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.jdisc.handler.ReadableContentChannel": {
-    "superClass": "java.lang.Object",
-    "interfaces": [
+  "com.yahoo.jdisc.handler.ReadableContentChannel" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [
       "com.yahoo.jdisc.handler.ContentChannel",
       "java.lang.Iterable"
     ],
-    "attributes": [
+    "attributes" : [
       "public",
       "final"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>()",
       "public void write(java.nio.ByteBuffer, com.yahoo.jdisc.handler.CompletionHandler)",
       "public void close(com.yahoo.jdisc.handler.CompletionHandler)",
@@ -657,32 +657,32 @@
       "public void failed(java.lang.Throwable)",
       "public com.yahoo.jdisc.handler.ContentInputStream toStream()"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.jdisc.handler.RequestDeniedException": {
-    "superClass": "java.lang.RuntimeException",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.jdisc.handler.RequestDeniedException" : {
+    "superClass" : "java.lang.RuntimeException",
+    "interfaces" : [ ],
+    "attributes" : [
       "public",
       "final"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>(com.yahoo.jdisc.Request)",
       "public com.yahoo.jdisc.Request request()"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.jdisc.handler.RequestDispatch": {
-    "superClass": "java.lang.Object",
-    "interfaces": [
+  "com.yahoo.jdisc.handler.RequestDispatch" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [
       "java.util.concurrent.Future",
       "com.yahoo.jdisc.handler.ResponseHandler"
     ],
-    "attributes": [
+    "attributes" : [
       "public",
       "abstract"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>()",
       "protected abstract com.yahoo.jdisc.Request newRequest()",
       "protected java.lang.Iterable requestContent()",
@@ -699,34 +699,34 @@
       "public bridge synthetic java.lang.Object get(long, java.util.concurrent.TimeUnit)",
       "public bridge synthetic java.lang.Object get()"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.jdisc.handler.RequestHandler": {
-    "superClass": "java.lang.Object",
-    "interfaces": [
+  "com.yahoo.jdisc.handler.RequestHandler" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [
       "com.yahoo.jdisc.SharedResource"
     ],
-    "attributes": [
+    "attributes" : [
       "public",
       "interface",
       "abstract"
     ],
-    "methods": [
+    "methods" : [
       "public abstract com.yahoo.jdisc.handler.ContentChannel handleRequest(com.yahoo.jdisc.Request, com.yahoo.jdisc.handler.ResponseHandler)",
       "public abstract void handleTimeout(com.yahoo.jdisc.Request, com.yahoo.jdisc.handler.ResponseHandler)"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.jdisc.handler.ResponseDispatch": {
-    "superClass": "java.lang.Object",
-    "interfaces": [
+  "com.yahoo.jdisc.handler.ResponseDispatch" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [
       "java.util.concurrent.Future"
     ],
-    "attributes": [
+    "attributes" : [
       "public",
       "abstract"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>()",
       "protected abstract com.yahoo.jdisc.Response newResponse()",
       "protected java.lang.Iterable responseContent()",
@@ -745,29 +745,29 @@
       "public bridge synthetic java.lang.Object get(long, java.util.concurrent.TimeUnit)",
       "public bridge synthetic java.lang.Object get()"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.jdisc.handler.ResponseHandler": {
-    "superClass": "java.lang.Object",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.jdisc.handler.ResponseHandler" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [ ],
+    "attributes" : [
       "public",
       "interface",
       "abstract"
     ],
-    "methods": [
+    "methods" : [
       "public abstract com.yahoo.jdisc.handler.ContentChannel handleResponse(com.yahoo.jdisc.Response)"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.jdisc.handler.ThreadedRequestHandler": {
-    "superClass": "com.yahoo.jdisc.handler.AbstractRequestHandler",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.jdisc.handler.ThreadedRequestHandler" : {
+    "superClass" : "com.yahoo.jdisc.handler.AbstractRequestHandler",
+    "interfaces" : [ ],
+    "attributes" : [
       "public",
       "abstract"
     ],
-    "methods": [
+    "methods" : [
       "protected void <init>(java.util.concurrent.Executor)",
       "public final void setTimeout(long, java.util.concurrent.TimeUnit)",
       "public final long getTimeout(java.util.concurrent.TimeUnit)",
@@ -776,15 +776,15 @@
       "protected void handleRequest(com.yahoo.jdisc.Request, com.yahoo.jdisc.handler.ReadableContentChannel, com.yahoo.jdisc.handler.ResponseHandler)",
       "protected void handleRequest(com.yahoo.jdisc.Request, com.yahoo.jdisc.handler.ContentInputStream, com.yahoo.jdisc.handler.ResponseHandler)"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.jdisc.handler.UnsafeContentInputStream": {
-    "superClass": "java.io.InputStream",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.jdisc.handler.UnsafeContentInputStream" : {
+    "superClass" : "java.io.InputStream",
+    "interfaces" : [ ],
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>(com.yahoo.jdisc.handler.ReadableContentChannel)",
       "public int read()",
       "public int read(byte[], int, int)",
@@ -794,120 +794,120 @@
       "public synchronized void reset()",
       "public boolean markSupported()"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.jdisc.service.AbstractClientProvider": {
-    "superClass": "com.yahoo.jdisc.handler.AbstractRequestHandler",
-    "interfaces": [
+  "com.yahoo.jdisc.service.AbstractClientProvider" : {
+    "superClass" : "com.yahoo.jdisc.handler.AbstractRequestHandler",
+    "interfaces" : [
       "com.yahoo.jdisc.service.ClientProvider"
     ],
-    "attributes": [
+    "attributes" : [
       "public",
       "abstract"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>()",
       "public void start()"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.jdisc.service.AbstractServerProvider": {
-    "superClass": "com.yahoo.jdisc.AbstractResource",
-    "interfaces": [
+  "com.yahoo.jdisc.service.AbstractServerProvider" : {
+    "superClass" : "com.yahoo.jdisc.AbstractResource",
+    "interfaces" : [
       "com.yahoo.jdisc.service.ServerProvider"
     ],
-    "attributes": [
+    "attributes" : [
       "public",
       "abstract"
     ],
-    "methods": [
+    "methods" : [
       "protected void <init>(com.yahoo.jdisc.service.CurrentContainer)",
       "public final com.yahoo.jdisc.service.CurrentContainer container()"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.jdisc.service.BindingSetNotFoundException": {
-    "superClass": "java.lang.RuntimeException",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.jdisc.service.BindingSetNotFoundException" : {
+    "superClass" : "java.lang.RuntimeException",
+    "interfaces" : [ ],
+    "attributes" : [
       "public",
       "final"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>(java.lang.String)",
       "public java.lang.String bindingSet()"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.jdisc.service.ClientProvider": {
-    "superClass": "java.lang.Object",
-    "interfaces": [
+  "com.yahoo.jdisc.service.ClientProvider" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [
       "com.yahoo.jdisc.handler.RequestHandler"
     ],
-    "attributes": [
+    "attributes" : [
       "public",
       "interface",
       "abstract"
     ],
-    "methods": [
+    "methods" : [
       "public abstract void start()"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.jdisc.service.ContainerNotReadyException": {
-    "superClass": "java.lang.RuntimeException",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.jdisc.service.ContainerNotReadyException" : {
+    "superClass" : "java.lang.RuntimeException",
+    "interfaces" : [ ],
+    "attributes" : [
       "public",
       "final"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>()"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.jdisc.service.CurrentContainer": {
-    "superClass": "java.lang.Object",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.jdisc.service.CurrentContainer" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [ ],
+    "attributes" : [
       "public",
       "interface",
       "abstract"
     ],
-    "methods": [
+    "methods" : [
       "public com.yahoo.jdisc.Container newReference(java.net.URI, java.lang.Object)",
       "public com.yahoo.jdisc.Container newReference(java.net.URI)"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.jdisc.service.NoBindingSetSelectedException": {
-    "superClass": "java.lang.RuntimeException",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.jdisc.service.NoBindingSetSelectedException" : {
+    "superClass" : "java.lang.RuntimeException",
+    "interfaces" : [ ],
+    "attributes" : [
       "public",
       "final"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>(java.net.URI)",
       "public java.net.URI uri()"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.jdisc.service.ServerProvider": {
-    "superClass": "java.lang.Object",
-    "interfaces": [
+  "com.yahoo.jdisc.service.ServerProvider" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [
       "com.yahoo.jdisc.SharedResource"
     ],
-    "attributes": [
+    "attributes" : [
       "public",
       "interface",
       "abstract"
     ],
-    "methods": [
+    "methods" : [
       "public abstract void start()",
       "public abstract void close()",
       "public boolean isMultiplexed()"
     ],
-    "fields": []
+    "fields" : [ ]
   }
 }

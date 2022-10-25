@@ -1,41 +1,41 @@
 {
-  "com.yahoo.data.access.ArrayTraverser": {
-    "superClass": "java.lang.Object",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.data.access.ArrayTraverser" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [ ],
+    "attributes" : [
       "public",
       "interface",
       "abstract"
     ],
-    "methods": [
+    "methods" : [
       "public abstract void entry(int, com.yahoo.data.access.Inspector)"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.data.access.Inspectable": {
-    "superClass": "java.lang.Object",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.data.access.Inspectable" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [ ],
+    "attributes" : [
       "public",
       "interface",
       "abstract"
     ],
-    "methods": [
+    "methods" : [
       "public abstract com.yahoo.data.access.Inspector inspect()"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.data.access.Inspector": {
-    "superClass": "java.lang.Object",
-    "interfaces": [
+  "com.yahoo.data.access.Inspector" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [
       "com.yahoo.data.access.Inspectable"
     ],
-    "attributes": [
+    "attributes" : [
       "public",
       "interface",
       "abstract"
     ],
-    "methods": [
+    "methods" : [
       "public abstract boolean valid()",
       "public abstract com.yahoo.data.access.Type type()",
       "public abstract int entryCount()",
@@ -59,34 +59,34 @@
       "public abstract java.lang.Iterable entries()",
       "public abstract java.lang.Iterable fields()"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.data.access.ObjectTraverser": {
-    "superClass": "java.lang.Object",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.data.access.ObjectTraverser" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [ ],
+    "attributes" : [
       "public",
       "interface",
       "abstract"
     ],
-    "methods": [
+    "methods" : [
       "public abstract void field(java.lang.String, com.yahoo.data.access.Inspector)"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.data.access.Type": {
-    "superClass": "java.lang.Enum",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.data.access.Type" : {
+    "superClass" : "java.lang.Enum",
+    "interfaces" : [ ],
+    "attributes" : [
       "public",
       "final",
       "enum"
     ],
-    "methods": [
+    "methods" : [
       "public static com.yahoo.data.access.Type[] values()",
       "public static com.yahoo.data.access.Type valueOf(java.lang.String)"
     ],
-    "fields": [
+    "fields" : [
       "public static final enum com.yahoo.data.access.Type EMPTY",
       "public static final enum com.yahoo.data.access.Type BOOL",
       "public static final enum com.yahoo.data.access.Type LONG",
@@ -97,16 +97,16 @@
       "public static final enum com.yahoo.data.access.Type OBJECT"
     ]
   },
-  "com.yahoo.data.access.simple.JsonRender$StringEncoder": {
-    "superClass": "java.lang.Object",
-    "interfaces": [
+  "com.yahoo.data.access.simple.JsonRender$StringEncoder" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [
       "com.yahoo.data.access.ArrayTraverser",
       "com.yahoo.data.access.ObjectTraverser"
     ],
-    "attributes": [
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>(java.lang.StringBuilder, boolean)",
       "public void encode(com.yahoo.data.access.Inspector)",
       "protected void encodeEMPTY()",
@@ -121,29 +121,29 @@
       "public void field(java.lang.String, com.yahoo.data.access.Inspector)",
       "public java.lang.StringBuilder target()"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.data.access.simple.JsonRender": {
-    "superClass": "java.lang.Object",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.data.access.simple.JsonRender" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [ ],
+    "attributes" : [
       "public",
       "final"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>()",
       "public static java.lang.StringBuilder render(com.yahoo.data.access.Inspectable, java.lang.StringBuilder, boolean)",
       "public static java.lang.StringBuilder render(com.yahoo.data.access.Inspectable, com.yahoo.data.access.simple.JsonRender$StringEncoder)"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.data.access.simple.Value$ArrayValue": {
-    "superClass": "com.yahoo.data.access.simple.Value",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.data.access.simple.Value$ArrayValue" : {
+    "superClass" : "com.yahoo.data.access.simple.Value",
+    "interfaces" : [ ],
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>()",
       "public boolean valid()",
       "public com.yahoo.data.access.Type type()",
@@ -157,45 +157,45 @@
       "public com.yahoo.data.access.simple.Value$ArrayValue add(int)",
       "public com.yahoo.data.access.simple.Value$ArrayValue add(double)"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.data.access.simple.Value$BoolValue": {
-    "superClass": "com.yahoo.data.access.simple.Value",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.data.access.simple.Value$BoolValue" : {
+    "superClass" : "com.yahoo.data.access.simple.Value",
+    "interfaces" : [ ],
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>(boolean)",
       "public boolean valid()",
       "public com.yahoo.data.access.Type type()",
       "public boolean asBool()",
       "public boolean asBool(boolean)"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.data.access.simple.Value$DataValue": {
-    "superClass": "com.yahoo.data.access.simple.Value",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.data.access.simple.Value$DataValue" : {
+    "superClass" : "com.yahoo.data.access.simple.Value",
+    "interfaces" : [ ],
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>(byte[])",
       "public boolean valid()",
       "public com.yahoo.data.access.Type type()",
       "public byte[] asData()",
       "public byte[] asData(byte[])"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.data.access.simple.Value$DoubleValue": {
-    "superClass": "com.yahoo.data.access.simple.Value",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.data.access.simple.Value$DoubleValue" : {
+    "superClass" : "com.yahoo.data.access.simple.Value",
+    "interfaces" : [ ],
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>(double)",
       "public boolean valid()",
       "public com.yahoo.data.access.Type type()",
@@ -204,15 +204,15 @@
       "public double asDouble(double)",
       "public long asLong(long)"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.data.access.simple.Value$EmptyValue": {
-    "superClass": "com.yahoo.data.access.simple.Value",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.data.access.simple.Value$EmptyValue" : {
+    "superClass" : "com.yahoo.data.access.simple.Value",
+    "interfaces" : [ ],
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>()",
       "public boolean valid()",
       "public boolean asBool()",
@@ -222,15 +222,15 @@
       "public byte[] asUtf8()",
       "public byte[] asData()"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.data.access.simple.Value$LongValue": {
-    "superClass": "com.yahoo.data.access.simple.Value",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.data.access.simple.Value$LongValue" : {
+    "superClass" : "com.yahoo.data.access.simple.Value",
+    "interfaces" : [ ],
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>(long)",
       "public boolean valid()",
       "public com.yahoo.data.access.Type type()",
@@ -239,15 +239,15 @@
       "public long asLong(long)",
       "public double asDouble(double)"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.data.access.simple.Value$ObjectValue": {
-    "superClass": "com.yahoo.data.access.simple.Value",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.data.access.simple.Value$ObjectValue" : {
+    "superClass" : "com.yahoo.data.access.simple.Value",
+    "interfaces" : [ ],
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>()",
       "public boolean valid()",
       "public com.yahoo.data.access.Type type()",
@@ -261,15 +261,15 @@
       "public com.yahoo.data.access.simple.Value$ObjectValue put(java.lang.String, int)",
       "public com.yahoo.data.access.simple.Value$ObjectValue put(java.lang.String, double)"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.data.access.simple.Value$StringValue": {
-    "superClass": "com.yahoo.data.access.simple.Value",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.data.access.simple.Value$StringValue" : {
+    "superClass" : "com.yahoo.data.access.simple.Value",
+    "interfaces" : [ ],
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>(java.lang.String)",
       "public void <init>(byte[])",
       "public boolean valid()",
@@ -279,17 +279,17 @@
       "public byte[] asUtf8()",
       "public byte[] asUtf8(byte[])"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.data.access.simple.Value": {
-    "superClass": "java.lang.Object",
-    "interfaces": [
+  "com.yahoo.data.access.simple.Value" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [
       "com.yahoo.data.access.Inspector"
     ],
-    "attributes": [
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>()",
       "public static com.yahoo.data.access.Inspector empty()",
       "public static com.yahoo.data.access.Inspector invalid()",
@@ -320,15 +320,15 @@
       "public java.lang.String toJson()",
       "public java.lang.String toString()"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.io.reader.NamedReader": {
-    "superClass": "java.io.Reader",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.io.reader.NamedReader" : {
+    "superClass" : "java.io.Reader",
+    "interfaces" : [ ],
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>(java.lang.String, java.io.Reader)",
       "public java.lang.String getName()",
       "public java.io.Reader getReader()",
@@ -347,46 +347,46 @@
       "public long transferTo(java.io.Writer)",
       "public static void closeAll(java.util.List)"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.net.HostName": {
-    "superClass": "java.lang.Object",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.net.HostName" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [ ],
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>()",
       "public static synchronized java.lang.String getLocalhost()",
       "public static void setHostNameForTestingOnly(java.lang.String)"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.net.URI$Token": {
-    "superClass": "java.lang.Object",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.net.URI$Token" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [ ],
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public com.yahoo.net.URI$URLContext getContext()",
       "public java.lang.String getToken()"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.net.URI$URLContext": {
-    "superClass": "java.lang.Enum",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.net.URI$URLContext" : {
+    "superClass" : "java.lang.Enum",
+    "interfaces" : [ ],
+    "attributes" : [
       "public",
       "final",
       "enum"
     ],
-    "methods": [
+    "methods" : [
       "public static com.yahoo.net.URI$URLContext[] values()",
       "public static com.yahoo.net.URI$URLContext valueOf(java.lang.String)"
     ],
-    "fields": [
+    "fields" : [
       "public static final enum com.yahoo.net.URI$URLContext URL_SCHEME",
       "public static final enum com.yahoo.net.URI$URLContext URL_HOST",
       "public static final enum com.yahoo.net.URI$URLContext URL_DOMAIN",
@@ -402,16 +402,16 @@
       "public final java.lang.String name"
     ]
   },
-  "com.yahoo.net.URI": {
-    "superClass": "java.lang.Object",
-    "interfaces": [
+  "com.yahoo.net.URI" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [
       "java.lang.Cloneable",
       "java.lang.Comparable"
     ],
-    "attributes": [
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>(java.lang.String)",
       "public void <init>(java.lang.String, boolean)",
       "public void <init>(java.lang.String, boolean, boolean)",
@@ -447,27 +447,27 @@
       "public int getDepth()",
       "public bridge synthetic int compareTo(java.lang.Object)"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.net.UriTools": {
-    "superClass": "java.lang.Object",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.net.UriTools" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [ ],
+    "attributes" : [
       "public",
       "final"
     ],
-    "methods": [
+    "methods" : [
       "public static java.lang.String rawRequest(java.net.URI)"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.net.Url": {
-    "superClass": "java.lang.Object",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.net.Url" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [ ],
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>(java.lang.String, java.lang.String, java.lang.String, java.lang.String, java.lang.Integer, java.lang.String, java.lang.String, java.lang.String)",
       "public static com.yahoo.net.Url fromString(java.lang.String)",
       "public int getSchemeBegin()",
@@ -499,21 +499,21 @@
       "public boolean equals(java.lang.Object)",
       "public java.lang.String toString()"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.net.UrlToken$Type": {
-    "superClass": "java.lang.Enum",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.net.UrlToken$Type" : {
+    "superClass" : "java.lang.Enum",
+    "interfaces" : [ ],
+    "attributes" : [
       "public",
       "final",
       "enum"
     ],
-    "methods": [
+    "methods" : [
       "public static com.yahoo.net.UrlToken$Type[] values()",
       "public static com.yahoo.net.UrlToken$Type valueOf(java.lang.String)"
     ],
-    "fields": [
+    "fields" : [
       "public static final enum com.yahoo.net.UrlToken$Type SCHEME",
       "public static final enum com.yahoo.net.UrlToken$Type USERINFO",
       "public static final enum com.yahoo.net.UrlToken$Type PASSWORD",
@@ -524,13 +524,13 @@
       "public static final enum com.yahoo.net.UrlToken$Type FRAGMENT"
     ]
   },
-  "com.yahoo.net.UrlToken": {
-    "superClass": "java.lang.Object",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.net.UrlToken" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [ ],
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>(com.yahoo.net.UrlToken$Type, int, java.lang.String, java.lang.String)",
       "public com.yahoo.net.UrlToken$Type getType()",
       "public int getOffset()",
@@ -541,33 +541,33 @@
       "public int hashCode()",
       "public java.lang.String toString()"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.net.UrlTokenizer": {
-    "superClass": "java.lang.Object",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.net.UrlTokenizer" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [ ],
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>(java.lang.String)",
       "public void <init>(com.yahoo.net.Url)",
       "public java.util.List tokenize()",
       "public static void addTokens(java.util.List, com.yahoo.net.UrlToken$Type, int, java.lang.String, boolean)"
     ],
-    "fields": [
+    "fields" : [
       "public static final java.lang.String TERM_STARTHOST",
       "public static final java.lang.String TERM_ENDHOST"
     ]
   },
-  "com.yahoo.path.Path": {
-    "superClass": "java.lang.Object",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.path.Path" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [ ],
+    "attributes" : [
       "public",
       "final"
     ],
-    "methods": [
+    "methods" : [
       "public static com.yahoo.path.Path from(java.util.List)",
       "public boolean isChildOf(com.yahoo.path.Path)",
       "public com.yahoo.path.Path append(java.lang.String)",
@@ -591,29 +591,29 @@
       "public int hashCode()",
       "public boolean equals(java.lang.Object)"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.protect.ClassValidator": {
-    "superClass": "java.lang.Object",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.protect.ClassValidator" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [ ],
+    "attributes" : [
       "public",
       "final"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>()",
       "public static java.util.List unmaskedMethods(java.lang.Class, java.lang.Class)",
       "public static java.util.List unmaskedMethodsFromSuperclass(java.lang.Class)"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.protect.ErrorMessage": {
-    "superClass": "java.lang.Object",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.protect.ErrorMessage" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [ ],
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>()",
       "public void <init>(int, java.lang.String)",
       "public void <init>(int, java.lang.String, java.lang.String)",
@@ -627,32 +627,32 @@
       "public boolean equals(java.lang.Object)",
       "public java.lang.String toString()"
     ],
-    "fields": [
+    "fields" : [
       "protected int code",
       "protected java.lang.String message",
       "protected java.lang.String detailedMessage",
       "protected java.lang.Throwable cause"
     ]
   },
-  "com.yahoo.protect.Process$ShutdownError": {
-    "superClass": "java.lang.Error",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.protect.Process$ShutdownError" : {
+    "superClass" : "java.lang.Error",
+    "interfaces" : [ ],
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>(java.lang.String)"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.protect.Process": {
-    "superClass": "java.lang.Object",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.protect.Process" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [ ],
+    "attributes" : [
       "public",
       "final"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>()",
       "public static void logAndDie(java.lang.String)",
       "public static void logAndDie(java.lang.String, boolean)",
@@ -661,16 +661,16 @@
       "public static void dumpHeap(java.lang.String, boolean)",
       "public static void dumpThreads()"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.protect.Validator": {
-    "superClass": "java.lang.Object",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.protect.Validator" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [ ],
+    "attributes" : [
       "public",
       "abstract"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>()",
       "public static void ensureNotNull(java.lang.String, java.lang.Object)",
       "public static void ensureNonEmpty(java.lang.String, java.lang.String)",
@@ -683,16 +683,16 @@
       "public static void ensureInstanceOf(java.lang.String, java.lang.Object, java.lang.Class)",
       "public static void ensureNotInstanceOf(java.lang.String, java.lang.Object, java.lang.Class)"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.tensor.DimensionSizes$Builder": {
-    "superClass": "java.lang.Object",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.tensor.DimensionSizes$Builder" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [ ],
+    "attributes" : [
       "public",
       "final"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>(int)",
       "public com.yahoo.tensor.DimensionSizes$Builder set(int, long)",
       "public com.yahoo.tensor.DimensionSizes$Builder add(long)",
@@ -700,16 +700,16 @@
       "public int dimensions()",
       "public com.yahoo.tensor.DimensionSizes build()"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.tensor.DimensionSizes": {
-    "superClass": "java.lang.Object",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.tensor.DimensionSizes" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [ ],
+    "attributes" : [
       "public",
       "final"
     ],
-    "methods": [
+    "methods" : [
       "public static com.yahoo.tensor.DimensionSizes of(com.yahoo.tensor.TensorType)",
       "public long size(int)",
       "public int dimensions()",
@@ -717,15 +717,15 @@
       "public boolean equals(java.lang.Object)",
       "public int hashCode()"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.tensor.IndexedDoubleTensor$BoundDoubleBuilder": {
-    "superClass": "com.yahoo.tensor.IndexedTensor$BoundBuilder",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.tensor.IndexedDoubleTensor$BoundDoubleBuilder" : {
+    "superClass" : "com.yahoo.tensor.IndexedTensor$BoundBuilder",
+    "interfaces" : [ ],
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public varargs com.yahoo.tensor.IndexedTensor$BoundBuilder cell(float, long[])",
       "public varargs com.yahoo.tensor.IndexedTensor$BoundBuilder cell(double, long[])",
       "public com.yahoo.tensor.Tensor$Builder$CellBuilder cell()",
@@ -746,15 +746,15 @@
       "public bridge synthetic com.yahoo.tensor.Tensor$Builder cell(com.yahoo.tensor.TensorAddress, float)",
       "public bridge synthetic com.yahoo.tensor.Tensor$Builder cell(com.yahoo.tensor.TensorAddress, double)"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.tensor.IndexedFloatTensor$BoundFloatBuilder": {
-    "superClass": "com.yahoo.tensor.IndexedTensor$BoundBuilder",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.tensor.IndexedFloatTensor$BoundFloatBuilder" : {
+    "superClass" : "com.yahoo.tensor.IndexedTensor$BoundBuilder",
+    "interfaces" : [ ],
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public varargs com.yahoo.tensor.IndexedTensor$BoundBuilder cell(double, long[])",
       "public varargs com.yahoo.tensor.IndexedTensor$BoundBuilder cell(float, long[])",
       "public com.yahoo.tensor.Tensor$Builder$CellBuilder cell()",
@@ -775,33 +775,33 @@
       "public bridge synthetic com.yahoo.tensor.Tensor$Builder cell(com.yahoo.tensor.TensorAddress, float)",
       "public bridge synthetic com.yahoo.tensor.Tensor$Builder cell(com.yahoo.tensor.TensorAddress, double)"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.tensor.IndexedTensor$BoundBuilder": {
-    "superClass": "com.yahoo.tensor.IndexedTensor$Builder",
-    "interfaces": [
+  "com.yahoo.tensor.IndexedTensor$BoundBuilder" : {
+    "superClass" : "com.yahoo.tensor.IndexedTensor$Builder",
+    "interfaces" : [
       "com.yahoo.tensor.IndexedTensor$DirectIndexBuilder"
     ],
-    "attributes": [
+    "attributes" : [
       "public",
       "abstract"
     ],
-    "methods": [
+    "methods" : [
       "public com.yahoo.tensor.IndexedTensor$BoundBuilder fill(float[])",
       "public com.yahoo.tensor.IndexedTensor$BoundBuilder fill(double[])"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.tensor.IndexedTensor$Builder": {
-    "superClass": "java.lang.Object",
-    "interfaces": [
+  "com.yahoo.tensor.IndexedTensor$Builder" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [
       "com.yahoo.tensor.Tensor$Builder"
     ],
-    "attributes": [
+    "attributes" : [
       "public",
       "abstract"
     ],
-    "methods": [
+    "methods" : [
       "public static com.yahoo.tensor.IndexedTensor$Builder of(com.yahoo.tensor.TensorType)",
       "public static com.yahoo.tensor.IndexedTensor$Builder of(com.yahoo.tensor.TensorType, float[])",
       "public static com.yahoo.tensor.IndexedTensor$Builder of(com.yahoo.tensor.TensorType, double[])",
@@ -816,31 +816,31 @@
       "public bridge synthetic com.yahoo.tensor.Tensor$Builder cell(float, long[])",
       "public bridge synthetic com.yahoo.tensor.Tensor$Builder cell(double, long[])"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.tensor.IndexedTensor$DirectIndexBuilder": {
-    "superClass": "java.lang.Object",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.tensor.IndexedTensor$DirectIndexBuilder" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [ ],
+    "attributes" : [
       "public",
       "interface",
       "abstract"
     ],
-    "methods": [
+    "methods" : [
       "public abstract com.yahoo.tensor.TensorType type()",
       "public abstract void cellByDirectIndex(long, double)",
       "public abstract void cellByDirectIndex(long, float)"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.tensor.IndexedTensor$Indexes": {
-    "superClass": "java.lang.Object",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.tensor.IndexedTensor$Indexes" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [ ],
+    "attributes" : [
       "public",
       "abstract"
     ],
-    "methods": [
+    "methods" : [
       "public static com.yahoo.tensor.IndexedTensor$Indexes of(com.yahoo.tensor.TensorType)",
       "public static com.yahoo.tensor.IndexedTensor$Indexes of(com.yahoo.tensor.TensorType, java.util.List)",
       "public static com.yahoo.tensor.IndexedTensor$Indexes of(com.yahoo.tensor.DimensionSizes)",
@@ -854,20 +854,20 @@
       "public abstract void next()",
       "public abstract boolean hasNext()"
     ],
-    "fields": [
+    "fields" : [
       "protected final long[] indexes"
     ]
   },
-  "com.yahoo.tensor.IndexedTensor$SubspaceIterator": {
-    "superClass": "java.lang.Object",
-    "interfaces": [
+  "com.yahoo.tensor.IndexedTensor$SubspaceIterator" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [
       "java.util.Iterator"
     ],
-    "attributes": [
+    "attributes" : [
       "public",
       "final"
     ],
-    "methods": [
+    "methods" : [
       "public long size()",
       "public com.yahoo.tensor.TensorAddress address()",
       "public void reset()",
@@ -875,18 +875,18 @@
       "public com.yahoo.tensor.Tensor$Cell next()",
       "public bridge synthetic java.lang.Object next()"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.tensor.IndexedTensor": {
-    "superClass": "java.lang.Object",
-    "interfaces": [
+  "com.yahoo.tensor.IndexedTensor" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [
       "com.yahoo.tensor.Tensor"
     ],
-    "attributes": [
+    "attributes" : [
       "public",
       "abstract"
     ],
-    "methods": [
+    "methods" : [
       "public java.util.Iterator cellIterator()",
       "public com.yahoo.tensor.IndexedTensor$SubspaceIterator cellIterator(com.yahoo.tensor.PartialAddress, com.yahoo.tensor.DimensionSizes)",
       "public java.util.Iterator valueIterator()",
@@ -910,17 +910,17 @@
       "public boolean equals(java.lang.Object)",
       "public bridge synthetic com.yahoo.tensor.Tensor withType(com.yahoo.tensor.TensorType)"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.tensor.MappedTensor$Builder": {
-    "superClass": "java.lang.Object",
-    "interfaces": [
+  "com.yahoo.tensor.MappedTensor$Builder" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [
       "com.yahoo.tensor.Tensor$Builder"
     ],
-    "attributes": [
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public static com.yahoo.tensor.MappedTensor$Builder of(com.yahoo.tensor.TensorType)",
       "public com.yahoo.tensor.Tensor$Builder$CellBuilder cell()",
       "public com.yahoo.tensor.TensorType type()",
@@ -935,17 +935,17 @@
       "public bridge synthetic com.yahoo.tensor.Tensor$Builder cell(com.yahoo.tensor.TensorAddress, float)",
       "public bridge synthetic com.yahoo.tensor.Tensor$Builder cell(com.yahoo.tensor.TensorAddress, double)"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.tensor.MappedTensor": {
-    "superClass": "java.lang.Object",
-    "interfaces": [
+  "com.yahoo.tensor.MappedTensor" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [
       "com.yahoo.tensor.Tensor"
     ],
-    "attributes": [
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public com.yahoo.tensor.TensorType type()",
       "public long size()",
       "public double get(com.yahoo.tensor.TensorAddress)",
@@ -961,15 +961,15 @@
       "public java.lang.String toAbbreviatedString(boolean, boolean)",
       "public boolean equals(java.lang.Object)"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.tensor.MixedTensor$BoundBuilder": {
-    "superClass": "com.yahoo.tensor.MixedTensor$Builder",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.tensor.MixedTensor$BoundBuilder" : {
+    "superClass" : "com.yahoo.tensor.MixedTensor$Builder",
+    "interfaces" : [ ],
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public long denseSubspaceSize()",
       "public com.yahoo.tensor.IndexedTensor$DirectIndexBuilder denseSubspaceBuilder(com.yahoo.tensor.TensorAddress)",
       "public com.yahoo.tensor.Tensor$Builder cell(com.yahoo.tensor.TensorAddress, float)",
@@ -978,18 +978,18 @@
       "public com.yahoo.tensor.MixedTensor build()",
       "public bridge synthetic com.yahoo.tensor.Tensor build()"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.tensor.MixedTensor$Builder": {
-    "superClass": "java.lang.Object",
-    "interfaces": [
+  "com.yahoo.tensor.MixedTensor$Builder" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [
       "com.yahoo.tensor.Tensor$Builder"
     ],
-    "attributes": [
+    "attributes" : [
       "public",
       "abstract"
     ],
-    "methods": [
+    "methods" : [
       "public static com.yahoo.tensor.MixedTensor$Builder of(com.yahoo.tensor.TensorType)",
       "public com.yahoo.tensor.TensorType type()",
       "public varargs com.yahoo.tensor.Tensor$Builder cell(float, long[])",
@@ -998,29 +998,29 @@
       "public abstract com.yahoo.tensor.MixedTensor build()",
       "public bridge synthetic com.yahoo.tensor.Tensor build()"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.tensor.MixedTensor$Index$Builder": {
-    "superClass": "java.lang.Object",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.tensor.MixedTensor$Index$Builder" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [ ],
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>(com.yahoo.tensor.TensorType)",
       "public void put(com.yahoo.tensor.TensorAddress, long)",
       "public com.yahoo.tensor.MixedTensor$Index build()",
       "public com.yahoo.tensor.MixedTensor$Index index()"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.tensor.MixedTensor$UnboundBuilder": {
-    "superClass": "com.yahoo.tensor.MixedTensor$Builder",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.tensor.MixedTensor$UnboundBuilder" : {
+    "superClass" : "com.yahoo.tensor.MixedTensor$Builder",
+    "interfaces" : [ ],
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public com.yahoo.tensor.Tensor$Builder cell(com.yahoo.tensor.TensorAddress, float)",
       "public com.yahoo.tensor.Tensor$Builder cell(com.yahoo.tensor.TensorAddress, double)",
       "public com.yahoo.tensor.MixedTensor build()",
@@ -1028,17 +1028,17 @@
       "public com.yahoo.tensor.TensorType createBoundType()",
       "public bridge synthetic com.yahoo.tensor.Tensor build()"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.tensor.MixedTensor": {
-    "superClass": "java.lang.Object",
-    "interfaces": [
+  "com.yahoo.tensor.MixedTensor" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [
       "com.yahoo.tensor.Tensor"
     ],
-    "attributes": [
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public com.yahoo.tensor.TensorType type()",
       "public long size()",
       "public double get(com.yahoo.tensor.TensorAddress)",
@@ -1056,29 +1056,29 @@
       "public long denseSubspaceSize()",
       "public static com.yahoo.tensor.TensorType createPartialType(com.yahoo.tensor.TensorType$Value, java.util.List)"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.tensor.PartialAddress$Builder": {
-    "superClass": "java.lang.Object",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.tensor.PartialAddress$Builder" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [ ],
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>(int)",
       "public com.yahoo.tensor.PartialAddress$Builder add(java.lang.String, long)",
       "public com.yahoo.tensor.PartialAddress$Builder add(java.lang.String, java.lang.String)",
       "public com.yahoo.tensor.PartialAddress build()"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.tensor.PartialAddress": {
-    "superClass": "java.lang.Object",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.tensor.PartialAddress" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [ ],
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public java.lang.String dimension(int)",
       "public long numericLabel(java.lang.String)",
       "public java.lang.String label(java.lang.String)",
@@ -1087,32 +1087,32 @@
       "public com.yahoo.tensor.TensorAddress asAddress(com.yahoo.tensor.TensorType)",
       "public java.lang.String toString()"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.tensor.Tensor$Builder$CellBuilder": {
-    "superClass": "java.lang.Object",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.tensor.Tensor$Builder$CellBuilder" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [ ],
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public com.yahoo.tensor.Tensor$Builder$CellBuilder label(java.lang.String, java.lang.String)",
       "public com.yahoo.tensor.TensorType type()",
       "public com.yahoo.tensor.Tensor$Builder$CellBuilder label(java.lang.String, long)",
       "public com.yahoo.tensor.Tensor$Builder value(double)",
       "public com.yahoo.tensor.Tensor$Builder value(float)"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.tensor.Tensor$Builder": {
-    "superClass": "java.lang.Object",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.tensor.Tensor$Builder" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [ ],
+    "attributes" : [
       "public",
       "interface",
       "abstract"
     ],
-    "methods": [
+    "methods" : [
       "public static com.yahoo.tensor.Tensor$Builder of(java.lang.String)",
       "public static com.yahoo.tensor.Tensor$Builder of(com.yahoo.tensor.TensorType)",
       "public static com.yahoo.tensor.Tensor$Builder of(com.yahoo.tensor.TensorType, com.yahoo.tensor.DimensionSizes)",
@@ -1127,17 +1127,17 @@
       "public com.yahoo.tensor.Tensor$Builder cell(com.yahoo.tensor.Tensor$Cell)",
       "public abstract com.yahoo.tensor.Tensor build()"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.tensor.Tensor$Cell": {
-    "superClass": "java.lang.Object",
-    "interfaces": [
+  "com.yahoo.tensor.Tensor$Cell" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [
       "java.util.Map$Entry"
     ],
-    "attributes": [
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public com.yahoo.tensor.TensorAddress getKey()",
       "public java.lang.Double getValue()",
       "public float getFloatValue()",
@@ -1151,17 +1151,17 @@
       "public bridge synthetic java.lang.Object getValue()",
       "public bridge synthetic java.lang.Object getKey()"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.tensor.Tensor": {
-    "superClass": "java.lang.Object",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.tensor.Tensor" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [ ],
+    "attributes" : [
       "public",
       "interface",
       "abstract"
     ],
-    "methods": [
+    "methods" : [
       "public abstract com.yahoo.tensor.TensorType type()",
       "public boolean isEmpty()",
       "public abstract long size()",
@@ -1254,15 +1254,15 @@
       "public static com.yahoo.tensor.Tensor from(java.lang.String)",
       "public static com.yahoo.tensor.Tensor from(double)"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.tensor.TensorAddress$Builder": {
-    "superClass": "java.lang.Object",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.tensor.TensorAddress$Builder" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [ ],
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>(com.yahoo.tensor.TensorType)",
       "public com.yahoo.tensor.TensorAddress$Builder add(java.lang.String)",
       "public com.yahoo.tensor.TensorAddress$Builder add(java.lang.String, java.lang.String)",
@@ -1270,30 +1270,30 @@
       "public com.yahoo.tensor.TensorType type()",
       "public com.yahoo.tensor.TensorAddress build()"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.tensor.TensorAddress$PartialBuilder": {
-    "superClass": "com.yahoo.tensor.TensorAddress$Builder",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.tensor.TensorAddress$PartialBuilder" : {
+    "superClass" : "com.yahoo.tensor.TensorAddress$Builder",
+    "interfaces" : [ ],
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>(com.yahoo.tensor.TensorType)",
       "public com.yahoo.tensor.TensorAddress$Builder copy()"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.tensor.TensorAddress": {
-    "superClass": "java.lang.Object",
-    "interfaces": [
+  "com.yahoo.tensor.TensorAddress" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [
       "java.lang.Comparable"
     ],
-    "attributes": [
+    "attributes" : [
       "public",
       "abstract"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>()",
       "public static com.yahoo.tensor.TensorAddress of(java.lang.String[])",
       "public static varargs com.yahoo.tensor.TensorAddress ofLabels(java.lang.String[])",
@@ -1310,15 +1310,15 @@
       "public static java.lang.String labelToString(java.lang.String)",
       "public bridge synthetic int compareTo(java.lang.Object)"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.tensor.TensorType$Builder": {
-    "superClass": "java.lang.Object",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.tensor.TensorType$Builder" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [ ],
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>()",
       "public void <init>(com.yahoo.tensor.TensorType$Value)",
       "public varargs void <init>(com.yahoo.tensor.TensorType[])",
@@ -1335,36 +1335,36 @@
       "public com.yahoo.tensor.TensorType$Builder dimension(java.lang.String, com.yahoo.tensor.TensorType$Dimension$Type)",
       "public com.yahoo.tensor.TensorType build()"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.tensor.TensorType$Dimension$Type": {
-    "superClass": "java.lang.Enum",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.tensor.TensorType$Dimension$Type" : {
+    "superClass" : "java.lang.Enum",
+    "interfaces" : [ ],
+    "attributes" : [
       "public",
       "final",
       "enum"
     ],
-    "methods": [
+    "methods" : [
       "public static com.yahoo.tensor.TensorType$Dimension$Type[] values()",
       "public static com.yahoo.tensor.TensorType$Dimension$Type valueOf(java.lang.String)"
     ],
-    "fields": [
+    "fields" : [
       "public static final enum com.yahoo.tensor.TensorType$Dimension$Type indexedBound",
       "public static final enum com.yahoo.tensor.TensorType$Dimension$Type indexedUnbound",
       "public static final enum com.yahoo.tensor.TensorType$Dimension$Type mapped"
     ]
   },
-  "com.yahoo.tensor.TensorType$Dimension": {
-    "superClass": "java.lang.Object",
-    "interfaces": [
+  "com.yahoo.tensor.TensorType$Dimension" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [
       "java.lang.Comparable"
     ],
-    "attributes": [
+    "attributes" : [
       "public",
       "abstract"
     ],
-    "methods": [
+    "methods" : [
       "public final java.lang.String name()",
       "public abstract java.util.Optional size()",
       "public abstract com.yahoo.tensor.TensorType$Dimension$Type type()",
@@ -1380,15 +1380,15 @@
       "public static com.yahoo.tensor.TensorType$Dimension mapped(java.lang.String)",
       "public bridge synthetic int compareTo(java.lang.Object)"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.tensor.TensorType$IndexedBoundDimension": {
-    "superClass": "com.yahoo.tensor.TensorType$Dimension",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.tensor.TensorType$IndexedBoundDimension" : {
+    "superClass" : "com.yahoo.tensor.TensorType$Dimension",
+    "interfaces" : [ ],
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public java.util.Optional size()",
       "public com.yahoo.tensor.TensorType$Dimension$Type type()",
       "public com.yahoo.tensor.TensorType$IndexedBoundDimension withName(java.lang.String)",
@@ -1397,47 +1397,47 @@
       "public int hashCode()",
       "public bridge synthetic com.yahoo.tensor.TensorType$Dimension withName(java.lang.String)"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.tensor.TensorType$IndexedUnboundDimension": {
-    "superClass": "com.yahoo.tensor.TensorType$Dimension",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.tensor.TensorType$IndexedUnboundDimension" : {
+    "superClass" : "com.yahoo.tensor.TensorType$Dimension",
+    "interfaces" : [ ],
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public java.util.Optional size()",
       "public com.yahoo.tensor.TensorType$Dimension$Type type()",
       "public com.yahoo.tensor.TensorType$IndexedUnboundDimension withName(java.lang.String)",
       "public java.lang.String toString()",
       "public bridge synthetic com.yahoo.tensor.TensorType$Dimension withName(java.lang.String)"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.tensor.TensorType$MappedDimension": {
-    "superClass": "com.yahoo.tensor.TensorType$Dimension",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.tensor.TensorType$MappedDimension" : {
+    "superClass" : "com.yahoo.tensor.TensorType$Dimension",
+    "interfaces" : [ ],
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public java.util.Optional size()",
       "public com.yahoo.tensor.TensorType$Dimension$Type type()",
       "public com.yahoo.tensor.TensorType$MappedDimension withName(java.lang.String)",
       "public java.lang.String toString()",
       "public bridge synthetic com.yahoo.tensor.TensorType$Dimension withName(java.lang.String)"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.tensor.TensorType$Value": {
-    "superClass": "java.lang.Enum",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.tensor.TensorType$Value" : {
+    "superClass" : "java.lang.Enum",
+    "interfaces" : [ ],
+    "attributes" : [
       "public",
       "final",
       "enum"
     ],
-    "methods": [
+    "methods" : [
       "public static com.yahoo.tensor.TensorType$Value[] values()",
       "public static com.yahoo.tensor.TensorType$Value valueOf(java.lang.String)",
       "public java.lang.String id()",
@@ -1447,20 +1447,20 @@
       "public java.lang.String toString()",
       "public static com.yahoo.tensor.TensorType$Value fromId(java.lang.String)"
     ],
-    "fields": [
+    "fields" : [
       "public static final enum com.yahoo.tensor.TensorType$Value DOUBLE",
       "public static final enum com.yahoo.tensor.TensorType$Value FLOAT",
       "public static final enum com.yahoo.tensor.TensorType$Value BFLOAT16",
       "public static final enum com.yahoo.tensor.TensorType$Value INT8"
     ]
   },
-  "com.yahoo.tensor.TensorType": {
-    "superClass": "java.lang.Object",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.tensor.TensorType" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [ ],
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>(com.yahoo.tensor.TensorType$Value, java.util.Collection)",
       "public static varargs com.yahoo.tensor.TensorType$Value combinedValueType(com.yahoo.tensor.TensorType[])",
       "public static com.yahoo.tensor.TensorType fromSpec(java.lang.String)",
@@ -1481,29 +1481,29 @@
       "public java.util.Optional dimensionwiseGeneralizationWith(com.yahoo.tensor.TensorType)",
       "public int hashCode()"
     ],
-    "fields": [
+    "fields" : [
       "public static final com.yahoo.tensor.TensorType empty"
     ]
   },
-  "com.yahoo.tensor.TensorTypeParser": {
-    "superClass": "java.lang.Object",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.tensor.TensorTypeParser" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [ ],
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>()",
       "public static com.yahoo.tensor.TensorType fromSpec(java.lang.String)"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.tensor.TypeResolver": {
-    "superClass": "java.lang.Object",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.tensor.TypeResolver" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [ ],
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>()",
       "public static com.yahoo.tensor.TensorType map(com.yahoo.tensor.TensorType)",
       "public static com.yahoo.tensor.TensorType reduce(com.yahoo.tensor.TensorType, java.util.List)",
@@ -1514,76 +1514,76 @@
       "public static com.yahoo.tensor.TensorType merge(com.yahoo.tensor.TensorType, com.yahoo.tensor.TensorType)",
       "public static com.yahoo.tensor.TensorType concat(com.yahoo.tensor.TensorType, com.yahoo.tensor.TensorType, java.lang.String)"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.tensor.evaluation.EvaluationContext": {
-    "superClass": "java.lang.Object",
-    "interfaces": [
+  "com.yahoo.tensor.evaluation.EvaluationContext" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [
       "com.yahoo.tensor.evaluation.TypeContext"
     ],
-    "attributes": [
+    "attributes" : [
       "public",
       "interface",
       "abstract"
     ],
-    "methods": [
+    "methods" : [
       "public abstract com.yahoo.tensor.Tensor getTensor(java.lang.String)"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.tensor.evaluation.MapEvaluationContext": {
-    "superClass": "java.lang.Object",
-    "interfaces": [
+  "com.yahoo.tensor.evaluation.MapEvaluationContext" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [
       "com.yahoo.tensor.evaluation.EvaluationContext"
     ],
-    "attributes": [
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>()",
       "public void put(java.lang.String, com.yahoo.tensor.Tensor)",
       "public com.yahoo.tensor.TensorType getType(java.lang.String)",
       "public com.yahoo.tensor.TensorType getType(com.yahoo.tensor.evaluation.Name)",
       "public com.yahoo.tensor.Tensor getTensor(java.lang.String)"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.tensor.evaluation.Name": {
-    "superClass": "java.lang.Object",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.tensor.evaluation.Name" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [ ],
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>(java.lang.String)",
       "public java.lang.String name()",
       "public java.lang.String toString()",
       "public int hashCode()",
       "public boolean equals(java.lang.Object)"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.tensor.evaluation.TypeContext": {
-    "superClass": "java.lang.Object",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.tensor.evaluation.TypeContext" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [ ],
+    "attributes" : [
       "public",
       "interface",
       "abstract"
     ],
-    "methods": [
+    "methods" : [
       "public abstract com.yahoo.tensor.TensorType getType(com.yahoo.tensor.evaluation.Name)",
       "public abstract com.yahoo.tensor.TensorType getType(java.lang.String)"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.tensor.evaluation.VariableTensor": {
-    "superClass": "com.yahoo.tensor.functions.PrimitiveTensorFunction",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.tensor.evaluation.VariableTensor" : {
+    "superClass" : "com.yahoo.tensor.functions.PrimitiveTensorFunction",
+    "interfaces" : [ ],
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>(java.lang.String)",
       "public void <init>(java.lang.String, com.yahoo.tensor.TensorType)",
       "public java.util.List arguments()",
@@ -1594,15 +1594,15 @@
       "public java.lang.String toString(com.yahoo.tensor.functions.ToStringContext)",
       "public int hashCode()"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.tensor.functions.Argmax": {
-    "superClass": "com.yahoo.tensor.functions.CompositeTensorFunction",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.tensor.functions.Argmax" : {
+    "superClass" : "com.yahoo.tensor.functions.CompositeTensorFunction",
+    "interfaces" : [ ],
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>(com.yahoo.tensor.functions.TensorFunction)",
       "public void <init>(com.yahoo.tensor.functions.TensorFunction, java.lang.String)",
       "public void <init>(com.yahoo.tensor.functions.TensorFunction, java.util.List)",
@@ -1612,15 +1612,15 @@
       "public java.lang.String toString(com.yahoo.tensor.functions.ToStringContext)",
       "public int hashCode()"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.tensor.functions.Argmin": {
-    "superClass": "com.yahoo.tensor.functions.CompositeTensorFunction",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.tensor.functions.Argmin" : {
+    "superClass" : "com.yahoo.tensor.functions.CompositeTensorFunction",
+    "interfaces" : [ ],
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>(com.yahoo.tensor.functions.TensorFunction)",
       "public void <init>(com.yahoo.tensor.functions.TensorFunction, java.lang.String)",
       "public void <init>(com.yahoo.tensor.functions.TensorFunction, java.util.List)",
@@ -1630,15 +1630,15 @@
       "public java.lang.String toString(com.yahoo.tensor.functions.ToStringContext)",
       "public int hashCode()"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.tensor.functions.CellCast": {
-    "superClass": "com.yahoo.tensor.functions.PrimitiveTensorFunction",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.tensor.functions.CellCast" : {
+    "superClass" : "com.yahoo.tensor.functions.PrimitiveTensorFunction",
+    "interfaces" : [ ],
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>(com.yahoo.tensor.functions.TensorFunction, com.yahoo.tensor.TensorType$Value)",
       "public java.util.List arguments()",
       "public com.yahoo.tensor.functions.TensorFunction withArguments(java.util.List)",
@@ -1648,29 +1648,29 @@
       "public java.lang.String toString(com.yahoo.tensor.functions.ToStringContext)",
       "public int hashCode()"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.tensor.functions.CompositeTensorFunction": {
-    "superClass": "com.yahoo.tensor.functions.TensorFunction",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.tensor.functions.CompositeTensorFunction" : {
+    "superClass" : "com.yahoo.tensor.functions.TensorFunction",
+    "interfaces" : [ ],
+    "attributes" : [
       "public",
       "abstract"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>()",
       "public final com.yahoo.tensor.TensorType type(com.yahoo.tensor.evaluation.TypeContext)",
       "public com.yahoo.tensor.Tensor evaluate(com.yahoo.tensor.evaluation.EvaluationContext)"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.tensor.functions.Concat": {
-    "superClass": "com.yahoo.tensor.functions.PrimitiveTensorFunction",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.tensor.functions.Concat" : {
+    "superClass" : "com.yahoo.tensor.functions.PrimitiveTensorFunction",
+    "interfaces" : [ ],
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>(com.yahoo.tensor.functions.TensorFunction, com.yahoo.tensor.functions.TensorFunction, java.lang.String)",
       "public java.util.List arguments()",
       "public com.yahoo.tensor.functions.TensorFunction withArguments(java.util.List)",
@@ -1680,15 +1680,15 @@
       "public com.yahoo.tensor.TensorType type(com.yahoo.tensor.evaluation.TypeContext)",
       "public com.yahoo.tensor.Tensor evaluate(com.yahoo.tensor.evaluation.EvaluationContext)"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.tensor.functions.ConstantTensor": {
-    "superClass": "com.yahoo.tensor.functions.PrimitiveTensorFunction",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.tensor.functions.ConstantTensor" : {
+    "superClass" : "com.yahoo.tensor.functions.PrimitiveTensorFunction",
+    "interfaces" : [ ],
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>(java.lang.String)",
       "public void <init>(com.yahoo.tensor.Tensor)",
       "public java.util.List arguments()",
@@ -1699,15 +1699,15 @@
       "public java.lang.String toString(com.yahoo.tensor.functions.ToStringContext)",
       "public int hashCode()"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.tensor.functions.Diag": {
-    "superClass": "com.yahoo.tensor.functions.CompositeTensorFunction",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.tensor.functions.Diag" : {
+    "superClass" : "com.yahoo.tensor.functions.CompositeTensorFunction",
+    "interfaces" : [ ],
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>(com.yahoo.tensor.TensorType)",
       "public java.util.List arguments()",
       "public com.yahoo.tensor.functions.TensorFunction withArguments(java.util.List)",
@@ -1715,16 +1715,16 @@
       "public java.lang.String toString(com.yahoo.tensor.functions.ToStringContext)",
       "public int hashCode()"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.tensor.functions.DynamicTensor": {
-    "superClass": "com.yahoo.tensor.functions.PrimitiveTensorFunction",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.tensor.functions.DynamicTensor" : {
+    "superClass" : "com.yahoo.tensor.functions.PrimitiveTensorFunction",
+    "interfaces" : [ ],
+    "attributes" : [
       "public",
       "abstract"
     ],
-    "methods": [
+    "methods" : [
       "public com.yahoo.tensor.TensorType type(com.yahoo.tensor.evaluation.TypeContext)",
       "public java.util.List arguments()",
       "public com.yahoo.tensor.functions.TensorFunction withArguments(java.util.List)",
@@ -1733,15 +1733,15 @@
       "public static com.yahoo.tensor.functions.DynamicTensor from(com.yahoo.tensor.TensorType, java.util.Map)",
       "public static com.yahoo.tensor.functions.DynamicTensor from(com.yahoo.tensor.TensorType, java.util.List)"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.tensor.functions.Expand": {
-    "superClass": "com.yahoo.tensor.functions.CompositeTensorFunction",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.tensor.functions.Expand" : {
+    "superClass" : "com.yahoo.tensor.functions.CompositeTensorFunction",
+    "interfaces" : [ ],
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>(com.yahoo.tensor.functions.TensorFunction, java.lang.String)",
       "public java.util.List arguments()",
       "public com.yahoo.tensor.functions.TensorFunction withArguments(java.util.List)",
@@ -1749,15 +1749,15 @@
       "public java.lang.String toString(com.yahoo.tensor.functions.ToStringContext)",
       "public int hashCode()"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.tensor.functions.Generate": {
-    "superClass": "com.yahoo.tensor.functions.PrimitiveTensorFunction",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.tensor.functions.Generate" : {
+    "superClass" : "com.yahoo.tensor.functions.PrimitiveTensorFunction",
+    "interfaces" : [ ],
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>(com.yahoo.tensor.TensorType, java.util.function.Function)",
       "public static com.yahoo.tensor.functions.Generate free(com.yahoo.tensor.TensorType, java.util.function.Function)",
       "public static com.yahoo.tensor.functions.Generate bound(com.yahoo.tensor.TensorType, com.yahoo.tensor.functions.ScalarFunction)",
@@ -1769,15 +1769,15 @@
       "public java.lang.String toString(com.yahoo.tensor.functions.ToStringContext)",
       "public int hashCode()"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.tensor.functions.Join": {
-    "superClass": "com.yahoo.tensor.functions.PrimitiveTensorFunction",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.tensor.functions.Join" : {
+    "superClass" : "com.yahoo.tensor.functions.PrimitiveTensorFunction",
+    "interfaces" : [ ],
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>(com.yahoo.tensor.functions.TensorFunction, com.yahoo.tensor.functions.TensorFunction, java.util.function.DoubleBinaryOperator)",
       "public static com.yahoo.tensor.TensorType outputType(com.yahoo.tensor.TensorType, com.yahoo.tensor.TensorType)",
       "public java.util.function.DoubleBinaryOperator combinator()",
@@ -1789,15 +1789,15 @@
       "public com.yahoo.tensor.TensorType type(com.yahoo.tensor.evaluation.TypeContext)",
       "public com.yahoo.tensor.Tensor evaluate(com.yahoo.tensor.evaluation.EvaluationContext)"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.tensor.functions.L1Normalize": {
-    "superClass": "com.yahoo.tensor.functions.CompositeTensorFunction",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.tensor.functions.L1Normalize" : {
+    "superClass" : "com.yahoo.tensor.functions.CompositeTensorFunction",
+    "interfaces" : [ ],
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>(com.yahoo.tensor.functions.TensorFunction, java.lang.String)",
       "public java.util.List arguments()",
       "public com.yahoo.tensor.functions.TensorFunction withArguments(java.util.List)",
@@ -1805,15 +1805,15 @@
       "public java.lang.String toString(com.yahoo.tensor.functions.ToStringContext)",
       "public int hashCode()"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.tensor.functions.L2Normalize": {
-    "superClass": "com.yahoo.tensor.functions.CompositeTensorFunction",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.tensor.functions.L2Normalize" : {
+    "superClass" : "com.yahoo.tensor.functions.CompositeTensorFunction",
+    "interfaces" : [ ],
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>(com.yahoo.tensor.functions.TensorFunction, java.lang.String)",
       "public java.util.List arguments()",
       "public com.yahoo.tensor.functions.TensorFunction withArguments(java.util.List)",
@@ -1821,15 +1821,15 @@
       "public java.lang.String toString(com.yahoo.tensor.functions.ToStringContext)",
       "public int hashCode()"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.tensor.functions.Map": {
-    "superClass": "com.yahoo.tensor.functions.PrimitiveTensorFunction",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.tensor.functions.Map" : {
+    "superClass" : "com.yahoo.tensor.functions.PrimitiveTensorFunction",
+    "interfaces" : [ ],
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>(com.yahoo.tensor.functions.TensorFunction, java.util.function.DoubleUnaryOperator)",
       "public static com.yahoo.tensor.TensorType outputType(com.yahoo.tensor.TensorType)",
       "public com.yahoo.tensor.functions.TensorFunction argument()",
@@ -1842,15 +1842,15 @@
       "public java.lang.String toString(com.yahoo.tensor.functions.ToStringContext)",
       "public int hashCode()"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.tensor.functions.Matmul": {
-    "superClass": "com.yahoo.tensor.functions.CompositeTensorFunction",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.tensor.functions.Matmul" : {
+    "superClass" : "com.yahoo.tensor.functions.CompositeTensorFunction",
+    "interfaces" : [ ],
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>(com.yahoo.tensor.functions.TensorFunction, com.yahoo.tensor.functions.TensorFunction, java.lang.String)",
       "public static com.yahoo.tensor.TensorType outputType(com.yahoo.tensor.TensorType, com.yahoo.tensor.TensorType, java.lang.String)",
       "public java.util.List arguments()",
@@ -1859,15 +1859,15 @@
       "public java.lang.String toString(com.yahoo.tensor.functions.ToStringContext)",
       "public int hashCode()"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.tensor.functions.Merge": {
-    "superClass": "com.yahoo.tensor.functions.PrimitiveTensorFunction",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.tensor.functions.Merge" : {
+    "superClass" : "com.yahoo.tensor.functions.PrimitiveTensorFunction",
+    "interfaces" : [ ],
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>(com.yahoo.tensor.functions.TensorFunction, com.yahoo.tensor.functions.TensorFunction, java.util.function.DoubleBinaryOperator)",
       "public static com.yahoo.tensor.TensorType outputType(com.yahoo.tensor.TensorType, com.yahoo.tensor.TensorType)",
       "public java.util.function.DoubleBinaryOperator merger()",
@@ -1879,27 +1879,27 @@
       "public java.lang.String toString(com.yahoo.tensor.functions.ToStringContext)",
       "public int hashCode()"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.tensor.functions.PrimitiveTensorFunction": {
-    "superClass": "com.yahoo.tensor.functions.TensorFunction",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.tensor.functions.PrimitiveTensorFunction" : {
+    "superClass" : "com.yahoo.tensor.functions.TensorFunction",
+    "interfaces" : [ ],
+    "attributes" : [
       "public",
       "abstract"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>()"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.tensor.functions.Random": {
-    "superClass": "com.yahoo.tensor.functions.CompositeTensorFunction",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.tensor.functions.Random" : {
+    "superClass" : "com.yahoo.tensor.functions.CompositeTensorFunction",
+    "interfaces" : [ ],
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>(com.yahoo.tensor.TensorType)",
       "public java.util.List arguments()",
       "public com.yahoo.tensor.functions.TensorFunction withArguments(java.util.List)",
@@ -1907,15 +1907,15 @@
       "public java.lang.String toString(com.yahoo.tensor.functions.ToStringContext)",
       "public int hashCode()"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.tensor.functions.Range": {
-    "superClass": "com.yahoo.tensor.functions.CompositeTensorFunction",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.tensor.functions.Range" : {
+    "superClass" : "com.yahoo.tensor.functions.CompositeTensorFunction",
+    "interfaces" : [ ],
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>(com.yahoo.tensor.TensorType)",
       "public java.util.List arguments()",
       "public com.yahoo.tensor.functions.TensorFunction withArguments(java.util.List)",
@@ -1923,21 +1923,21 @@
       "public java.lang.String toString(com.yahoo.tensor.functions.ToStringContext)",
       "public int hashCode()"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.tensor.functions.Reduce$Aggregator": {
-    "superClass": "java.lang.Enum",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.tensor.functions.Reduce$Aggregator" : {
+    "superClass" : "java.lang.Enum",
+    "interfaces" : [ ],
+    "attributes" : [
       "public",
       "final",
       "enum"
     ],
-    "methods": [
+    "methods" : [
       "public static com.yahoo.tensor.functions.Reduce$Aggregator[] values()",
       "public static com.yahoo.tensor.functions.Reduce$Aggregator valueOf(java.lang.String)"
     ],
-    "fields": [
+    "fields" : [
       "public static final enum com.yahoo.tensor.functions.Reduce$Aggregator avg",
       "public static final enum com.yahoo.tensor.functions.Reduce$Aggregator count",
       "public static final enum com.yahoo.tensor.functions.Reduce$Aggregator max",
@@ -1947,13 +1947,13 @@
       "public static final enum com.yahoo.tensor.functions.Reduce$Aggregator sum"
     ]
   },
-  "com.yahoo.tensor.functions.Reduce": {
-    "superClass": "com.yahoo.tensor.functions.PrimitiveTensorFunction",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.tensor.functions.Reduce" : {
+    "superClass" : "com.yahoo.tensor.functions.PrimitiveTensorFunction",
+    "interfaces" : [ ],
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>(com.yahoo.tensor.functions.TensorFunction, com.yahoo.tensor.functions.Reduce$Aggregator)",
       "public void <init>(com.yahoo.tensor.functions.TensorFunction, com.yahoo.tensor.functions.Reduce$Aggregator, java.lang.String)",
       "public void <init>(com.yahoo.tensor.functions.TensorFunction, com.yahoo.tensor.functions.Reduce$Aggregator, java.util.List)",
@@ -1967,15 +1967,15 @@
       "public com.yahoo.tensor.Tensor evaluate(com.yahoo.tensor.evaluation.EvaluationContext)",
       "public int hashCode()"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.tensor.functions.ReduceJoin": {
-    "superClass": "com.yahoo.tensor.functions.CompositeTensorFunction",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.tensor.functions.ReduceJoin" : {
+    "superClass" : "com.yahoo.tensor.functions.CompositeTensorFunction",
+    "interfaces" : [ ],
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>(com.yahoo.tensor.functions.Reduce, com.yahoo.tensor.functions.Join)",
       "public void <init>(com.yahoo.tensor.functions.TensorFunction, com.yahoo.tensor.functions.TensorFunction, java.util.function.DoubleBinaryOperator, com.yahoo.tensor.functions.Reduce$Aggregator, java.util.List)",
       "public java.util.List arguments()",
@@ -1986,15 +1986,15 @@
       "public java.lang.String toString(com.yahoo.tensor.functions.ToStringContext)",
       "public int hashCode()"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.tensor.functions.Rename": {
-    "superClass": "com.yahoo.tensor.functions.PrimitiveTensorFunction",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.tensor.functions.Rename" : {
+    "superClass" : "com.yahoo.tensor.functions.PrimitiveTensorFunction",
+    "interfaces" : [ ],
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>(com.yahoo.tensor.functions.TensorFunction, java.lang.String, java.lang.String)",
       "public void <init>(com.yahoo.tensor.functions.TensorFunction, java.util.List, java.util.List)",
       "public java.util.List fromDimensions()",
@@ -2007,680 +2007,680 @@
       "public java.lang.String toString(com.yahoo.tensor.functions.ToStringContext)",
       "public int hashCode()"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.tensor.functions.ScalarFunction": {
-    "superClass": "java.lang.Object",
-    "interfaces": [
+  "com.yahoo.tensor.functions.ScalarFunction" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [
       "java.util.function.Function"
     ],
-    "attributes": [
+    "attributes" : [
       "public",
       "interface",
       "abstract"
     ],
-    "methods": [
+    "methods" : [
       "public abstract java.lang.Double apply(com.yahoo.tensor.evaluation.EvaluationContext)",
       "public java.util.Optional asTensorFunction()",
       "public java.lang.String toString(com.yahoo.tensor.functions.ToStringContext)",
       "public bridge synthetic java.lang.Object apply(java.lang.Object)"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.tensor.functions.ScalarFunctions$Abs": {
-    "superClass": "java.lang.Object",
-    "interfaces": [
+  "com.yahoo.tensor.functions.ScalarFunctions$Abs" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [
       "java.util.function.DoubleUnaryOperator"
     ],
-    "attributes": [
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>()",
       "public double applyAsDouble(double)",
       "public java.lang.String toString()",
       "public int hashCode()"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.tensor.functions.ScalarFunctions$Acos": {
-    "superClass": "java.lang.Object",
-    "interfaces": [
+  "com.yahoo.tensor.functions.ScalarFunctions$Acos" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [
       "java.util.function.DoubleUnaryOperator"
     ],
-    "attributes": [
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>()",
       "public double applyAsDouble(double)",
       "public java.lang.String toString()",
       "public int hashCode()"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.tensor.functions.ScalarFunctions$Add": {
-    "superClass": "java.lang.Object",
-    "interfaces": [
+  "com.yahoo.tensor.functions.ScalarFunctions$Add" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [
       "java.util.function.DoubleBinaryOperator"
     ],
-    "attributes": [
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>()",
       "public double applyAsDouble(double, double)",
       "public java.lang.String toString()",
       "public int hashCode()"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.tensor.functions.ScalarFunctions$Asin": {
-    "superClass": "java.lang.Object",
-    "interfaces": [
+  "com.yahoo.tensor.functions.ScalarFunctions$Asin" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [
       "java.util.function.DoubleUnaryOperator"
     ],
-    "attributes": [
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>()",
       "public double applyAsDouble(double)",
       "public java.lang.String toString()",
       "public int hashCode()"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.tensor.functions.ScalarFunctions$Atan": {
-    "superClass": "java.lang.Object",
-    "interfaces": [
+  "com.yahoo.tensor.functions.ScalarFunctions$Atan" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [
       "java.util.function.DoubleUnaryOperator"
     ],
-    "attributes": [
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>()",
       "public double applyAsDouble(double)",
       "public java.lang.String toString()",
       "public int hashCode()"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.tensor.functions.ScalarFunctions$Ceil": {
-    "superClass": "java.lang.Object",
-    "interfaces": [
+  "com.yahoo.tensor.functions.ScalarFunctions$Ceil" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [
       "java.util.function.DoubleUnaryOperator"
     ],
-    "attributes": [
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>()",
       "public double applyAsDouble(double)",
       "public java.lang.String toString()",
       "public int hashCode()"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.tensor.functions.ScalarFunctions$Constant": {
-    "superClass": "java.lang.Object",
-    "interfaces": [
+  "com.yahoo.tensor.functions.ScalarFunctions$Constant" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [
       "java.util.function.Function"
     ],
-    "attributes": [
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>(double)",
       "public java.lang.Double apply(java.util.List)",
       "public java.lang.String toString()",
       "public int hashCode()",
       "public bridge synthetic java.lang.Object apply(java.lang.Object)"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.tensor.functions.ScalarFunctions$Cos": {
-    "superClass": "java.lang.Object",
-    "interfaces": [
+  "com.yahoo.tensor.functions.ScalarFunctions$Cos" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [
       "java.util.function.DoubleUnaryOperator"
     ],
-    "attributes": [
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>()",
       "public double applyAsDouble(double)",
       "public java.lang.String toString()",
       "public int hashCode()"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.tensor.functions.ScalarFunctions$Divide": {
-    "superClass": "java.lang.Object",
-    "interfaces": [
+  "com.yahoo.tensor.functions.ScalarFunctions$Divide" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [
       "java.util.function.DoubleBinaryOperator"
     ],
-    "attributes": [
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>()",
       "public double applyAsDouble(double, double)",
       "public java.lang.String toString()",
       "public int hashCode()"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.tensor.functions.ScalarFunctions$Elu": {
-    "superClass": "java.lang.Object",
-    "interfaces": [
+  "com.yahoo.tensor.functions.ScalarFunctions$Elu" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [
       "java.util.function.DoubleUnaryOperator"
     ],
-    "attributes": [
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>()",
       "public void <init>(double)",
       "public double applyAsDouble(double)",
       "public java.lang.String toString()",
       "public int hashCode()"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.tensor.functions.ScalarFunctions$Equal": {
-    "superClass": "java.lang.Object",
-    "interfaces": [
+  "com.yahoo.tensor.functions.ScalarFunctions$Equal" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [
       "java.util.function.DoubleBinaryOperator"
     ],
-    "attributes": [
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>()",
       "public double applyAsDouble(double, double)",
       "public java.lang.String toString()",
       "public int hashCode()"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.tensor.functions.ScalarFunctions$EqualElements": {
-    "superClass": "java.lang.Object",
-    "interfaces": [
+  "com.yahoo.tensor.functions.ScalarFunctions$EqualElements" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [
       "java.util.function.Function"
     ],
-    "attributes": [
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public java.lang.Double apply(java.util.List)",
       "public java.lang.String toString()",
       "public int hashCode()",
       "public bridge synthetic java.lang.Object apply(java.lang.Object)"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.tensor.functions.ScalarFunctions$Erf": {
-    "superClass": "java.lang.Object",
-    "interfaces": [
+  "com.yahoo.tensor.functions.ScalarFunctions$Erf" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [
       "java.util.function.DoubleUnaryOperator"
     ],
-    "attributes": [
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>()",
       "public double applyAsDouble(double)",
       "public java.lang.String toString()",
       "public int hashCode()",
       "public static double erf(double)"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.tensor.functions.ScalarFunctions$Exp": {
-    "superClass": "java.lang.Object",
-    "interfaces": [
+  "com.yahoo.tensor.functions.ScalarFunctions$Exp" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [
       "java.util.function.DoubleUnaryOperator"
     ],
-    "attributes": [
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>()",
       "public double applyAsDouble(double)",
       "public java.lang.String toString()",
       "public int hashCode()"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.tensor.functions.ScalarFunctions$Floor": {
-    "superClass": "java.lang.Object",
-    "interfaces": [
+  "com.yahoo.tensor.functions.ScalarFunctions$Floor" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [
       "java.util.function.DoubleUnaryOperator"
     ],
-    "attributes": [
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>()",
       "public double applyAsDouble(double)",
       "public java.lang.String toString()",
       "public int hashCode()"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.tensor.functions.ScalarFunctions$Greater": {
-    "superClass": "java.lang.Object",
-    "interfaces": [
+  "com.yahoo.tensor.functions.ScalarFunctions$Greater" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [
       "java.util.function.DoubleBinaryOperator"
     ],
-    "attributes": [
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>()",
       "public double applyAsDouble(double, double)",
       "public java.lang.String toString()",
       "public int hashCode()"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.tensor.functions.ScalarFunctions$Hamming": {
-    "superClass": "java.lang.Object",
-    "interfaces": [
+  "com.yahoo.tensor.functions.ScalarFunctions$Hamming" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [
       "java.util.function.DoubleBinaryOperator"
     ],
-    "attributes": [
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>()",
       "public static double hamming(double, double)",
       "public double applyAsDouble(double, double)",
       "public java.lang.String toString()",
       "public int hashCode()"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.tensor.functions.ScalarFunctions$LeakyRelu": {
-    "superClass": "java.lang.Object",
-    "interfaces": [
+  "com.yahoo.tensor.functions.ScalarFunctions$LeakyRelu" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [
       "java.util.function.DoubleUnaryOperator"
     ],
-    "attributes": [
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>()",
       "public void <init>(double)",
       "public double applyAsDouble(double)",
       "public java.lang.String toString()",
       "public int hashCode()"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.tensor.functions.ScalarFunctions$Less": {
-    "superClass": "java.lang.Object",
-    "interfaces": [
+  "com.yahoo.tensor.functions.ScalarFunctions$Less" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [
       "java.util.function.DoubleBinaryOperator"
     ],
-    "attributes": [
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>()",
       "public double applyAsDouble(double, double)",
       "public java.lang.String toString()",
       "public int hashCode()"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.tensor.functions.ScalarFunctions$Log": {
-    "superClass": "java.lang.Object",
-    "interfaces": [
+  "com.yahoo.tensor.functions.ScalarFunctions$Log" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [
       "java.util.function.DoubleUnaryOperator"
     ],
-    "attributes": [
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>()",
       "public double applyAsDouble(double)",
       "public java.lang.String toString()",
       "public int hashCode()"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.tensor.functions.ScalarFunctions$Max": {
-    "superClass": "java.lang.Object",
-    "interfaces": [
+  "com.yahoo.tensor.functions.ScalarFunctions$Max" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [
       "java.util.function.DoubleBinaryOperator"
     ],
-    "attributes": [
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>()",
       "public double applyAsDouble(double, double)",
       "public java.lang.String toString()",
       "public int hashCode()"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.tensor.functions.ScalarFunctions$Mean": {
-    "superClass": "java.lang.Object",
-    "interfaces": [
+  "com.yahoo.tensor.functions.ScalarFunctions$Mean" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [
       "java.util.function.DoubleBinaryOperator"
     ],
-    "attributes": [
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>()",
       "public double applyAsDouble(double, double)",
       "public java.lang.String toString()",
       "public int hashCode()"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.tensor.functions.ScalarFunctions$Min": {
-    "superClass": "java.lang.Object",
-    "interfaces": [
+  "com.yahoo.tensor.functions.ScalarFunctions$Min" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [
       "java.util.function.DoubleBinaryOperator"
     ],
-    "attributes": [
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>()",
       "public double applyAsDouble(double, double)",
       "public java.lang.String toString()",
       "public int hashCode()"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.tensor.functions.ScalarFunctions$Multiply": {
-    "superClass": "java.lang.Object",
-    "interfaces": [
+  "com.yahoo.tensor.functions.ScalarFunctions$Multiply" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [
       "java.util.function.DoubleBinaryOperator"
     ],
-    "attributes": [
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>()",
       "public double applyAsDouble(double, double)",
       "public java.lang.String toString()",
       "public int hashCode()"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.tensor.functions.ScalarFunctions$Neg": {
-    "superClass": "java.lang.Object",
-    "interfaces": [
+  "com.yahoo.tensor.functions.ScalarFunctions$Neg" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [
       "java.util.function.DoubleUnaryOperator"
     ],
-    "attributes": [
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>()",
       "public double applyAsDouble(double)",
       "public java.lang.String toString()",
       "public int hashCode()"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.tensor.functions.ScalarFunctions$Pow": {
-    "superClass": "java.lang.Object",
-    "interfaces": [
+  "com.yahoo.tensor.functions.ScalarFunctions$Pow" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [
       "java.util.function.DoubleBinaryOperator"
     ],
-    "attributes": [
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>()",
       "public double applyAsDouble(double, double)",
       "public java.lang.String toString()",
       "public int hashCode()"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.tensor.functions.ScalarFunctions$Random": {
-    "superClass": "java.lang.Object",
-    "interfaces": [
+  "com.yahoo.tensor.functions.ScalarFunctions$Random" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [
       "java.util.function.Function"
     ],
-    "attributes": [
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>()",
       "public java.lang.Double apply(java.util.List)",
       "public java.lang.String toString()",
       "public int hashCode()",
       "public bridge synthetic java.lang.Object apply(java.lang.Object)"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.tensor.functions.ScalarFunctions$Reciprocal": {
-    "superClass": "java.lang.Object",
-    "interfaces": [
+  "com.yahoo.tensor.functions.ScalarFunctions$Reciprocal" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [
       "java.util.function.DoubleUnaryOperator"
     ],
-    "attributes": [
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>()",
       "public double applyAsDouble(double)",
       "public java.lang.String toString()",
       "public int hashCode()"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.tensor.functions.ScalarFunctions$Relu": {
-    "superClass": "java.lang.Object",
-    "interfaces": [
+  "com.yahoo.tensor.functions.ScalarFunctions$Relu" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [
       "java.util.function.DoubleUnaryOperator"
     ],
-    "attributes": [
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>()",
       "public double applyAsDouble(double)",
       "public java.lang.String toString()",
       "public int hashCode()"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.tensor.functions.ScalarFunctions$Rsqrt": {
-    "superClass": "java.lang.Object",
-    "interfaces": [
+  "com.yahoo.tensor.functions.ScalarFunctions$Rsqrt" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [
       "java.util.function.DoubleUnaryOperator"
     ],
-    "attributes": [
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>()",
       "public double applyAsDouble(double)",
       "public java.lang.String toString()",
       "public int hashCode()"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.tensor.functions.ScalarFunctions$Selu": {
-    "superClass": "java.lang.Object",
-    "interfaces": [
+  "com.yahoo.tensor.functions.ScalarFunctions$Selu" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [
       "java.util.function.DoubleUnaryOperator"
     ],
-    "attributes": [
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>()",
       "public void <init>(double, double)",
       "public double applyAsDouble(double)",
       "public java.lang.String toString()",
       "public int hashCode()"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.tensor.functions.ScalarFunctions$Sigmoid": {
-    "superClass": "java.lang.Object",
-    "interfaces": [
+  "com.yahoo.tensor.functions.ScalarFunctions$Sigmoid" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [
       "java.util.function.DoubleUnaryOperator"
     ],
-    "attributes": [
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>()",
       "public double applyAsDouble(double)",
       "public java.lang.String toString()",
       "public int hashCode()"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.tensor.functions.ScalarFunctions$Sin": {
-    "superClass": "java.lang.Object",
-    "interfaces": [
+  "com.yahoo.tensor.functions.ScalarFunctions$Sin" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [
       "java.util.function.DoubleUnaryOperator"
     ],
-    "attributes": [
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>()",
       "public double applyAsDouble(double)",
       "public java.lang.String toString()",
       "public int hashCode()"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.tensor.functions.ScalarFunctions$Sqrt": {
-    "superClass": "java.lang.Object",
-    "interfaces": [
+  "com.yahoo.tensor.functions.ScalarFunctions$Sqrt" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [
       "java.util.function.DoubleUnaryOperator"
     ],
-    "attributes": [
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>()",
       "public double applyAsDouble(double)",
       "public java.lang.String toString()",
       "public int hashCode()"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.tensor.functions.ScalarFunctions$Square": {
-    "superClass": "java.lang.Object",
-    "interfaces": [
+  "com.yahoo.tensor.functions.ScalarFunctions$Square" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [
       "java.util.function.DoubleUnaryOperator"
     ],
-    "attributes": [
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>()",
       "public double applyAsDouble(double)",
       "public java.lang.String toString()",
       "public int hashCode()"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.tensor.functions.ScalarFunctions$SquaredDifference": {
-    "superClass": "java.lang.Object",
-    "interfaces": [
+  "com.yahoo.tensor.functions.ScalarFunctions$SquaredDifference" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [
       "java.util.function.DoubleBinaryOperator"
     ],
-    "attributes": [
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>()",
       "public double applyAsDouble(double, double)",
       "public java.lang.String toString()",
       "public int hashCode()"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.tensor.functions.ScalarFunctions$Subtract": {
-    "superClass": "java.lang.Object",
-    "interfaces": [
+  "com.yahoo.tensor.functions.ScalarFunctions$Subtract" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [
       "java.util.function.DoubleBinaryOperator"
     ],
-    "attributes": [
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>()",
       "public double applyAsDouble(double, double)",
       "public java.lang.String toString()",
       "public int hashCode()"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.tensor.functions.ScalarFunctions$SumElements": {
-    "superClass": "java.lang.Object",
-    "interfaces": [
+  "com.yahoo.tensor.functions.ScalarFunctions$SumElements" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [
       "java.util.function.Function"
     ],
-    "attributes": [
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public java.lang.Double apply(java.util.List)",
       "public java.lang.String toString()",
       "public int hashCode()",
       "public bridge synthetic java.lang.Object apply(java.lang.Object)"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.tensor.functions.ScalarFunctions$Tan": {
-    "superClass": "java.lang.Object",
-    "interfaces": [
+  "com.yahoo.tensor.functions.ScalarFunctions$Tan" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [
       "java.util.function.DoubleUnaryOperator"
     ],
-    "attributes": [
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>()",
       "public double applyAsDouble(double)",
       "public java.lang.String toString()",
       "public int hashCode()"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.tensor.functions.ScalarFunctions$Tanh": {
-    "superClass": "java.lang.Object",
-    "interfaces": [
+  "com.yahoo.tensor.functions.ScalarFunctions$Tanh" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [
       "java.util.function.DoubleUnaryOperator"
     ],
-    "attributes": [
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>()",
       "public double applyAsDouble(double)",
       "public java.lang.String toString()",
       "public int hashCode()"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.tensor.functions.ScalarFunctions": {
-    "superClass": "java.lang.Object",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.tensor.functions.ScalarFunctions" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [ ],
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>()",
       "public static java.util.function.DoubleBinaryOperator add()",
       "public static java.util.function.DoubleBinaryOperator divide()",
@@ -2726,15 +2726,15 @@
       "public static java.util.function.Function sum(java.util.List)",
       "public static java.util.function.Function constant(double)"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.tensor.functions.Slice$DimensionValue": {
-    "superClass": "java.lang.Object",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.tensor.functions.Slice$DimensionValue" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [ ],
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>(java.lang.String, java.lang.String)",
       "public void <init>(java.lang.String, int)",
       "public void <init>(int)",
@@ -2749,15 +2749,15 @@
       "public java.lang.String toString()",
       "public int hashCode()"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.tensor.functions.Slice": {
-    "superClass": "com.yahoo.tensor.functions.PrimitiveTensorFunction",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.tensor.functions.Slice" : {
+    "superClass" : "com.yahoo.tensor.functions.PrimitiveTensorFunction",
+    "interfaces" : [ ],
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>(com.yahoo.tensor.functions.TensorFunction, java.util.List)",
       "public java.util.List arguments()",
       "public com.yahoo.tensor.functions.Slice withArguments(java.util.List)",
@@ -2768,15 +2768,15 @@
       "public int hashCode()",
       "public bridge synthetic com.yahoo.tensor.functions.TensorFunction withArguments(java.util.List)"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.tensor.functions.Softmax": {
-    "superClass": "com.yahoo.tensor.functions.CompositeTensorFunction",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.tensor.functions.Softmax" : {
+    "superClass" : "com.yahoo.tensor.functions.CompositeTensorFunction",
+    "interfaces" : [ ],
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>(com.yahoo.tensor.functions.TensorFunction, java.lang.String)",
       "public static com.yahoo.tensor.TensorType outputType(com.yahoo.tensor.TensorType, java.lang.String)",
       "public java.util.List arguments()",
@@ -2785,16 +2785,16 @@
       "public java.lang.String toString(com.yahoo.tensor.functions.ToStringContext)",
       "public int hashCode()"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.tensor.functions.TensorFunction": {
-    "superClass": "java.lang.Object",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.tensor.functions.TensorFunction" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [ ],
+    "attributes" : [
       "public",
       "abstract"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>()",
       "public abstract java.util.List arguments()",
       "public abstract com.yahoo.tensor.functions.TensorFunction withArguments(java.util.List)",
@@ -2807,46 +2807,46 @@
       "public java.lang.String toString()",
       "public abstract int hashCode()"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.tensor.functions.ToStringContext$EmptyStringContext": {
-    "superClass": "java.lang.Object",
-    "interfaces": [
+  "com.yahoo.tensor.functions.ToStringContext$EmptyStringContext" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [
       "com.yahoo.tensor.functions.ToStringContext"
     ],
-    "attributes": [
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>()",
       "public java.lang.String getBinding(java.lang.String)",
       "public com.yahoo.tensor.functions.ToStringContext parent()"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.tensor.functions.ToStringContext": {
-    "superClass": "java.lang.Object",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.tensor.functions.ToStringContext" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [ ],
+    "attributes" : [
       "public",
       "interface",
       "abstract"
     ],
-    "methods": [
+    "methods" : [
       "public static com.yahoo.tensor.functions.ToStringContext empty()",
       "public abstract java.lang.String getBinding(java.lang.String)",
       "public java.util.Optional typeContext()",
       "public abstract com.yahoo.tensor.functions.ToStringContext parent()"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.tensor.functions.XwPlusB": {
-    "superClass": "com.yahoo.tensor.functions.CompositeTensorFunction",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.tensor.functions.XwPlusB" : {
+    "superClass" : "com.yahoo.tensor.functions.CompositeTensorFunction",
+    "interfaces" : [ ],
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>(com.yahoo.tensor.functions.TensorFunction, com.yahoo.tensor.functions.TensorFunction, com.yahoo.tensor.functions.TensorFunction, java.lang.String)",
       "public java.util.List arguments()",
       "public com.yahoo.tensor.functions.TensorFunction withArguments(java.util.List)",
@@ -2854,18 +2854,18 @@
       "public java.lang.String toString(com.yahoo.tensor.functions.ToStringContext)",
       "public int hashCode()"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.text.AbstractUtf8Array": {
-    "superClass": "java.lang.Object",
-    "interfaces": [
+  "com.yahoo.text.AbstractUtf8Array" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [
       "java.lang.Comparable"
     ],
-    "attributes": [
+    "attributes" : [
       "public",
       "abstract"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>()",
       "public final void writeTo(java.nio.ByteBuffer)",
       "public byte getByte(int)",
@@ -2881,94 +2881,94 @@
       "public com.yahoo.text.Utf8Array ascii7BitLowerCase()",
       "public bridge synthetic int compareTo(java.lang.Object)"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.text.Ascii$Decoder": {
-    "superClass": "java.lang.Object",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.text.Ascii$Decoder" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [ ],
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public java.lang.String decode(java.lang.String)"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.text.Ascii$Encoder": {
-    "superClass": "java.lang.Object",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.text.Ascii$Encoder" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [ ],
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public java.lang.String encode(java.lang.String)"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.text.Ascii": {
-    "superClass": "java.lang.Object",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.text.Ascii" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [ ],
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>()",
       "public static varargs java.lang.String encode(java.lang.String, java.nio.charset.Charset, int[])",
       "public static java.lang.String decode(java.lang.String, java.nio.charset.Charset)",
       "public static varargs com.yahoo.text.Ascii$Encoder newEncoder(java.nio.charset.Charset, int[])",
       "public static com.yahoo.text.Ascii$Decoder newDecoder(java.nio.charset.Charset)"
     ],
-    "fields": [
+    "fields" : [
       "public static final char ESCAPE_CHAR"
     ]
   },
-  "com.yahoo.text.Ascii7BitMatcher": {
-    "superClass": "java.lang.Object",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.text.Ascii7BitMatcher" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [ ],
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>(java.lang.String)",
       "public void <init>(java.lang.String, java.lang.String)",
       "public boolean matches(java.lang.String)",
       "public static java.lang.String charsAndNumbers()"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.text.BooleanParser": {
-    "superClass": "java.lang.Object",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.text.BooleanParser" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [ ],
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>()",
       "public static boolean parseBoolean(java.lang.String)"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.text.CaseInsensitiveIdentifier": {
-    "superClass": "com.yahoo.text.Identifier",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.text.CaseInsensitiveIdentifier" : {
+    "superClass" : "com.yahoo.text.Identifier",
+    "interfaces" : [ ],
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>(java.lang.String)",
       "public void <init>(byte[])",
       "public void <init>(com.yahoo.text.AbstractUtf8Array)",
       "public java.lang.String toString()"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.text.DataTypeIdentifier": {
-    "superClass": "java.lang.Object",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.text.DataTypeIdentifier" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [ ],
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>(java.lang.String)",
       "public void <init>(com.yahoo.text.AbstractUtf8Array)",
       "public void <init>(byte[])",
@@ -2981,29 +2981,29 @@
       "public java.lang.String toString()",
       "public final com.yahoo.text.Utf8String getUtf8()"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.text.ExpressionFormatter": {
-    "superClass": "java.lang.Object",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.text.ExpressionFormatter" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [ ],
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public java.lang.String format(java.lang.String)",
       "public static java.lang.String on(java.lang.String)",
       "public static com.yahoo.text.ExpressionFormatter withLineLength(int)",
       "public static com.yahoo.text.ExpressionFormatter inTwoColumnMode(int, int)"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.text.ForwardWriter": {
-    "superClass": "com.yahoo.text.GenericWriter",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.text.ForwardWriter" : {
+    "superClass" : "com.yahoo.text.GenericWriter",
+    "interfaces" : [ ],
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>(com.yahoo.text.GenericWriter)",
       "public void write(char[], int, int)",
       "public com.yahoo.text.GenericWriter write(com.yahoo.text.AbstractUtf8Array)",
@@ -3021,16 +3021,16 @@
       "public void close()",
       "public com.yahoo.text.GenericWriter getWriter()"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.text.GenericWriter": {
-    "superClass": "java.io.Writer",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.text.GenericWriter" : {
+    "superClass" : "java.io.Writer",
+    "interfaces" : [ ],
+    "attributes" : [
       "public",
       "abstract"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>()",
       "public com.yahoo.text.GenericWriter write(char)",
       "public com.yahoo.text.GenericWriter write(java.lang.CharSequence)",
@@ -3042,55 +3042,55 @@
       "public com.yahoo.text.GenericWriter write(boolean)",
       "public com.yahoo.text.GenericWriter write(com.yahoo.text.AbstractUtf8Array)"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.text.HTML": {
-    "superClass": "java.lang.Object",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.text.HTML" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [ ],
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>()",
       "public static java.lang.String htmlescape(java.lang.String)"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.text.Identifier": {
-    "superClass": "com.yahoo.text.Utf8Array",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.text.Identifier" : {
+    "superClass" : "com.yahoo.text.Utf8Array",
+    "interfaces" : [ ],
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>(java.lang.String)",
       "public void <init>(com.yahoo.text.AbstractUtf8Array)",
       "public void <init>(byte[])"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.text.JSON": {
-    "superClass": "java.lang.Object",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.text.JSON" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [ ],
+    "attributes" : [
       "public",
       "final"
     ],
-    "methods": [
+    "methods" : [
       "public static java.lang.String encode(java.util.Map)",
       "public static java.lang.String escape(java.lang.String)",
       "public static boolean equals(java.lang.String, java.lang.String)"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.text.JSONWriter": {
-    "superClass": "java.lang.Object",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.text.JSONWriter" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [ ],
+    "attributes" : [
       "public",
       "final"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>(java.io.OutputStream)",
       "public com.yahoo.text.JSONWriter beginField(java.lang.String)",
       "public com.yahoo.text.JSONWriter endField()",
@@ -3105,74 +3105,74 @@
       "public com.yahoo.text.JSONWriter value(boolean)",
       "public com.yahoo.text.JSONWriter value()"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.text.JavaWriterWriter": {
-    "superClass": "com.yahoo.text.GenericWriter",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.text.JavaWriterWriter" : {
+    "superClass" : "com.yahoo.text.GenericWriter",
+    "interfaces" : [ ],
+    "attributes" : [
       "public",
       "final"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>(java.io.Writer)",
       "public void write(char[], int, int)",
       "public void flush()",
       "public void close()",
       "public java.io.Writer getWriter()"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.text.Lowercase": {
-    "superClass": "java.lang.Object",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.text.Lowercase" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [ ],
+    "attributes" : [
       "public",
       "final"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>()",
       "public static java.lang.String toLowerCase(java.lang.String)",
       "public static java.lang.String toUpperCase(java.lang.String)"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.text.LowercaseIdentifier": {
-    "superClass": "com.yahoo.text.Identifier",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.text.LowercaseIdentifier" : {
+    "superClass" : "com.yahoo.text.Identifier",
+    "interfaces" : [ ],
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>(java.lang.String)",
       "public void <init>(com.yahoo.text.AbstractUtf8Array)",
       "public void <init>(byte[])"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.text.MapParser": {
-    "superClass": "com.yahoo.text.SimpleMapParser",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.text.MapParser" : {
+    "superClass" : "com.yahoo.text.SimpleMapParser",
+    "interfaces" : [ ],
+    "attributes" : [
       "public",
       "abstract"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>()",
       "public java.util.Map parseToMap(java.lang.String)",
       "public java.util.Map parse(java.lang.String, java.util.Map)",
       "protected void handleKeyValue(java.lang.String, java.lang.String)",
       "protected abstract java.lang.Object parseValue(java.lang.String)"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.text.PositionedString": {
-    "superClass": "java.lang.Object",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.text.PositionedString" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [ ],
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>(java.lang.String)",
       "public java.lang.String string()",
       "public int position()",
@@ -3191,16 +3191,16 @@
       "public java.lang.String at(int)",
       "public java.lang.String toString()"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.text.SimpleMapParser": {
-    "superClass": "java.lang.Object",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.text.SimpleMapParser" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [ ],
+    "attributes" : [
       "public",
       "abstract"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>()",
       "public void parse(java.lang.String)",
       "protected int findEndOfKey()",
@@ -3209,15 +3209,15 @@
       "public com.yahoo.text.PositionedString string()",
       "protected abstract void handleKeyValue(java.lang.String, java.lang.String)"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.text.StringUtilities": {
-    "superClass": "java.lang.Object",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.text.StringUtilities" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [ ],
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>()",
       "public static java.lang.String escape(java.lang.String)",
       "public static java.lang.String escape(java.lang.String, char)",
@@ -3229,16 +3229,16 @@
       "public static java.lang.String quote(java.lang.Object)",
       "public static java.util.Set split(java.lang.String)"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.text.Text": {
-    "superClass": "java.lang.Object",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.text.Text" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [ ],
+    "attributes" : [
       "public",
       "final"
     ],
-    "methods": [
+    "methods" : [
       "public static boolean isTextCharacter(int)",
       "public static java.util.OptionalInt validateTextString(java.lang.String)",
       "public static boolean isValidTextString(java.lang.String)",
@@ -3247,16 +3247,16 @@
       "public static java.lang.String truncate(java.lang.String, int)",
       "public static varargs java.lang.String format(java.lang.String, java.lang.Object[])"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.text.Utf8": {
-    "superClass": "java.lang.Object",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.text.Utf8" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [ ],
+    "attributes" : [
       "public",
       "final"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>()",
       "public static java.nio.charset.Charset getCharset()",
       "public static java.lang.String toStringStd(byte[])",
@@ -3285,15 +3285,15 @@
       "public static int encode(int, java.io.OutputStream)",
       "public static int codePointAsUtf8Length(int)"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.text.Utf8Array": {
-    "superClass": "com.yahoo.text.AbstractUtf8Array",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.text.Utf8Array" : {
+    "superClass" : "com.yahoo.text.AbstractUtf8Array",
+    "interfaces" : [ ],
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>(byte[])",
       "public void <init>(byte[], int, int)",
       "public void <init>(java.nio.ByteBuffer, int)",
@@ -3301,33 +3301,33 @@
       "public int getByteLength()",
       "protected int getByteOffset()"
     ],
-    "fields": [
+    "fields" : [
       "protected final byte[] utf8"
     ]
   },
-  "com.yahoo.text.Utf8PartialArray": {
-    "superClass": "com.yahoo.text.Utf8Array",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.text.Utf8PartialArray" : {
+    "superClass" : "com.yahoo.text.Utf8Array",
+    "interfaces" : [ ],
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>(byte[], int, int)",
       "public int getByteLength()",
       "protected int getByteOffset()"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.text.Utf8String": {
-    "superClass": "com.yahoo.text.Utf8Array",
-    "interfaces": [
+  "com.yahoo.text.Utf8String" : {
+    "superClass" : "com.yahoo.text.Utf8Array",
+    "interfaces" : [
       "java.lang.CharSequence"
     ],
-    "attributes": [
+    "attributes" : [
       "public",
       "final"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>(java.lang.String)",
       "public void <init>(com.yahoo.text.AbstractUtf8Array)",
       "public char charAt(int)",
@@ -3336,15 +3336,15 @@
       "public boolean equals(java.lang.Object)",
       "public java.lang.String toString()"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.text.XML": {
-    "superClass": "java.lang.Object",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.text.XML" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [ ],
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>()",
       "public static java.lang.String xmlEscape(java.lang.String)",
       "public static java.lang.String xmlEscape(java.lang.String, boolean)",
@@ -3369,15 +3369,15 @@
       "public static java.lang.String getNodePath(org.w3c.dom.Node, java.lang.String)",
       "public static boolean isName(java.lang.CharSequence)"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.text.XMLWriter": {
-    "superClass": "com.yahoo.text.ForwardWriter",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.text.XMLWriter" : {
+    "superClass" : "com.yahoo.text.ForwardWriter",
+    "interfaces" : [ ],
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>(java.io.Writer)",
       "public void <init>(java.io.Writer, boolean)",
       "public void <init>(java.io.Writer, int)",
@@ -3408,18 +3408,18 @@
       "public boolean isIn(com.yahoo.text.Utf8String)",
       "public boolean isIn(java.lang.String)"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.vespa.objects.BufferSerializer": {
-    "superClass": "java.lang.Object",
-    "interfaces": [
+  "com.yahoo.vespa.objects.BufferSerializer" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [
       "com.yahoo.vespa.objects.Serializer",
       "com.yahoo.vespa.objects.Deserializer"
     ],
-    "attributes": [
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>(com.yahoo.io.GrowableByteBuffer)",
       "public void <init>(java.nio.ByteBuffer)",
       "public void <init>(byte[])",
@@ -3457,19 +3457,19 @@
       "public int remaining()",
       "public static byte[] createUTF8CharArray(java.lang.String)"
     ],
-    "fields": [
+    "fields" : [
       "protected com.yahoo.io.GrowableByteBuffer buf"
     ]
   },
-  "com.yahoo.vespa.objects.Deserializer": {
-    "superClass": "java.lang.Object",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.vespa.objects.Deserializer" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [ ],
+    "attributes" : [
       "public",
       "interface",
       "abstract"
     ],
-    "methods": [
+    "methods" : [
       "public abstract byte getByte(com.yahoo.vespa.objects.FieldBase)",
       "public abstract short getShort(com.yahoo.vespa.objects.FieldBase)",
       "public abstract int getInt(com.yahoo.vespa.objects.FieldBase)",
@@ -3479,32 +3479,32 @@
       "public abstract byte[] getBytes(com.yahoo.vespa.objects.FieldBase, int)",
       "public abstract java.lang.String getString(com.yahoo.vespa.objects.FieldBase)"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.vespa.objects.FieldBase": {
-    "superClass": "java.lang.Object",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.vespa.objects.FieldBase" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [ ],
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>(java.lang.String)",
       "public final java.lang.String getName()",
       "public boolean equals(java.lang.Object)",
       "public int hashCode()",
       "public java.lang.String toString()"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.vespa.objects.Identifiable": {
-    "superClass": "com.yahoo.vespa.objects.Selectable",
-    "interfaces": [
+  "com.yahoo.vespa.objects.Identifiable" : {
+    "superClass" : "com.yahoo.vespa.objects.Selectable",
+    "interfaces" : [
       "java.lang.Cloneable"
     ],
-    "attributes": [
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>()",
       "public final int getClassId()",
       "protected int onGetClassId()",
@@ -3530,33 +3530,33 @@
       "protected void putUtf8(com.yahoo.vespa.objects.Serializer, java.lang.String)",
       "public bridge synthetic java.lang.Object clone()"
     ],
-    "fields": [
+    "fields" : [
       "public static int classId"
     ]
   },
-  "com.yahoo.vespa.objects.Ids": {
-    "superClass": "java.lang.Object",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.vespa.objects.Ids" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [ ],
+    "attributes" : [
       "public",
       "interface",
       "abstract"
     ],
-    "methods": [],
-    "fields": [
+    "methods" : [ ],
+    "fields" : [
       "public static final int document",
       "public static final int searchlib",
       "public static final int vespa_configmodel",
       "public static final int annotation"
     ]
   },
-  "com.yahoo.vespa.objects.ObjectDumper": {
-    "superClass": "com.yahoo.vespa.objects.ObjectVisitor",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.vespa.objects.ObjectDumper" : {
+    "superClass" : "com.yahoo.vespa.objects.ObjectVisitor",
+    "interfaces" : [ ],
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>()",
       "public void <init>(int)",
       "public java.lang.String toString()",
@@ -3564,72 +3564,72 @@
       "public void closeStruct()",
       "public void visit(java.lang.String, java.lang.Object)"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.vespa.objects.ObjectOperation": {
-    "superClass": "java.lang.Object",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.vespa.objects.ObjectOperation" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [ ],
+    "attributes" : [
       "public",
       "interface",
       "abstract"
     ],
-    "methods": [
+    "methods" : [
       "public abstract void execute(java.lang.Object)"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.vespa.objects.ObjectPredicate": {
-    "superClass": "java.lang.Object",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.vespa.objects.ObjectPredicate" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [ ],
+    "attributes" : [
       "public",
       "interface",
       "abstract"
     ],
-    "methods": [
+    "methods" : [
       "public abstract boolean check(java.lang.Object)"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.vespa.objects.ObjectVisitor": {
-    "superClass": "java.lang.Object",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.vespa.objects.ObjectVisitor" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [ ],
+    "attributes" : [
       "public",
       "abstract"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>()",
       "public abstract void openStruct(java.lang.String, java.lang.String)",
       "public abstract void closeStruct()",
       "public abstract void visit(java.lang.String, java.lang.Object)"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.vespa.objects.Selectable": {
-    "superClass": "java.lang.Object",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.vespa.objects.Selectable" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [ ],
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>()",
       "public final void select(com.yahoo.vespa.objects.ObjectPredicate, com.yahoo.vespa.objects.ObjectOperation)",
       "public void selectMembers(com.yahoo.vespa.objects.ObjectPredicate, com.yahoo.vespa.objects.ObjectOperation)",
       "public static void select(com.yahoo.vespa.objects.Selectable, com.yahoo.vespa.objects.ObjectPredicate, com.yahoo.vespa.objects.ObjectOperation)"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.vespa.objects.Serializer": {
-    "superClass": "java.lang.Object",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.vespa.objects.Serializer" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [ ],
+    "attributes" : [
       "public",
       "interface",
       "abstract"
     ],
-    "methods": [
+    "methods" : [
       "public abstract com.yahoo.vespa.objects.Serializer putByte(com.yahoo.vespa.objects.FieldBase, byte)",
       "public abstract com.yahoo.vespa.objects.Serializer putShort(com.yahoo.vespa.objects.FieldBase, short)",
       "public abstract com.yahoo.vespa.objects.Serializer putInt(com.yahoo.vespa.objects.FieldBase, int)",
@@ -3640,54 +3640,54 @@
       "public abstract com.yahoo.vespa.objects.Serializer put(com.yahoo.vespa.objects.FieldBase, java.nio.ByteBuffer)",
       "public abstract com.yahoo.vespa.objects.Serializer put(com.yahoo.vespa.objects.FieldBase, java.lang.String)"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.yolean.Exceptions$RunnableThrowingIOException": {
-    "superClass": "java.lang.Object",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.yolean.Exceptions$RunnableThrowingIOException" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [ ],
+    "attributes" : [
       "public",
       "interface",
       "abstract"
     ],
-    "methods": [
+    "methods" : [
       "public abstract void run()"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.yolean.Exceptions$RunnableThrowingInterruptedException": {
-    "superClass": "java.lang.Object",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.yolean.Exceptions$RunnableThrowingInterruptedException" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [ ],
+    "attributes" : [
       "public",
       "interface",
       "abstract"
     ],
-    "methods": [
+    "methods" : [
       "public abstract void run()"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.yolean.Exceptions$SupplierThrowingIOException": {
-    "superClass": "java.lang.Object",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.yolean.Exceptions$SupplierThrowingIOException" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [ ],
+    "attributes" : [
       "public",
       "interface",
       "abstract"
     ],
-    "methods": [
+    "methods" : [
       "public abstract java.lang.Object get()"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.yolean.Exceptions": {
-    "superClass": "java.lang.Object",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.yolean.Exceptions" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [ ],
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>()",
       "public static java.lang.String toMessageString(java.lang.Throwable)",
       "public static java.util.Optional findCause(java.lang.Throwable, java.lang.Class)",
@@ -3701,15 +3701,15 @@
       "public static java.lang.Object uncheckAndIgnore(com.yahoo.yolean.Exceptions$SupplierThrowingIOException, java.lang.Class)",
       "public static java.lang.RuntimeException throwUnchecked(java.lang.Throwable)"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.yolean.UncheckedInterruptedException": {
-    "superClass": "java.lang.RuntimeException",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.yolean.UncheckedInterruptedException" : {
+    "superClass" : "java.lang.RuntimeException",
+    "interfaces" : [ ],
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>(java.lang.String, java.lang.InterruptedException, boolean)",
       "public void <init>(java.lang.InterruptedException, boolean)",
       "public void <init>(java.lang.String, boolean)",
@@ -3718,82 +3718,82 @@
       "public java.lang.InterruptedException getCause()",
       "public bridge synthetic java.lang.Throwable getCause()"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.yolean.chain.After": {
-    "superClass": "java.lang.Object",
-    "interfaces": [
+  "com.yahoo.yolean.chain.After" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [
       "java.lang.annotation.Annotation"
     ],
-    "attributes": [
+    "attributes" : [
       "public",
       "interface",
       "abstract",
       "annotation"
     ],
-    "methods": [
+    "methods" : [
       "public abstract java.lang.String[] value()"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.yolean.chain.Before": {
-    "superClass": "java.lang.Object",
-    "interfaces": [
+  "com.yahoo.yolean.chain.Before" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [
       "java.lang.annotation.Annotation"
     ],
-    "attributes": [
+    "attributes" : [
       "public",
       "interface",
       "abstract",
       "annotation"
     ],
-    "methods": [
+    "methods" : [
       "public abstract java.lang.String[] value()"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.yolean.chain.Provides": {
-    "superClass": "java.lang.Object",
-    "interfaces": [
+  "com.yahoo.yolean.chain.Provides" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [
       "java.lang.annotation.Annotation"
     ],
-    "attributes": [
+    "attributes" : [
       "public",
       "interface",
       "abstract",
       "annotation"
     ],
-    "methods": [
+    "methods" : [
       "public abstract java.lang.String[] value()"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.yolean.concurrent.ConcurrentResourcePool": {
-    "superClass": "java.lang.Object",
-    "interfaces": [
+  "com.yahoo.yolean.concurrent.ConcurrentResourcePool" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [
       "java.lang.Iterable"
     ],
-    "attributes": [
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>(java.util.function.Supplier)",
       "public void preallocate(int)",
       "public final java.lang.Object alloc()",
       "public final void free(java.lang.Object)",
       "public java.util.Iterator iterator()"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.yolean.concurrent.CopyOnWriteHashMap": {
-    "superClass": "java.lang.Object",
-    "interfaces": [
+  "com.yahoo.yolean.concurrent.CopyOnWriteHashMap" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [
       "java.util.Map"
     ],
-    "attributes": [
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>()",
       "public int size()",
       "public boolean isEmpty()",
@@ -3808,141 +3808,141 @@
       "public java.util.Collection values()",
       "public java.util.Set entrySet()"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.yolean.concurrent.Memoized$Closer": {
-    "superClass": "java.lang.Object",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.yolean.concurrent.Memoized$Closer" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [ ],
+    "attributes" : [
       "public",
       "interface",
       "abstract"
     ],
-    "methods": [
+    "methods" : [
       "public abstract void close(java.lang.Object)"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.yolean.concurrent.Memoized": {
-    "superClass": "java.lang.Object",
-    "interfaces": [
+  "com.yahoo.yolean.concurrent.Memoized" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [
       "java.util.function.Supplier",
       "java.lang.AutoCloseable"
     ],
-    "attributes": [
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>(java.util.function.Supplier, com.yahoo.yolean.concurrent.Memoized$Closer)",
       "public static com.yahoo.yolean.concurrent.Memoized of(java.util.function.Supplier)",
       "public static com.yahoo.yolean.concurrent.Memoized combine(com.yahoo.yolean.concurrent.Memoized, java.util.function.Function, com.yahoo.yolean.concurrent.Memoized$Closer)",
       "public java.lang.Object get()",
       "public void close()"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.yolean.concurrent.ResourcePool": {
-    "superClass": "java.lang.Object",
-    "interfaces": [
+  "com.yahoo.yolean.concurrent.ResourcePool" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [
       "java.lang.Iterable"
     ],
-    "attributes": [
+    "attributes" : [
       "public",
       "final"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>(java.util.function.Supplier)",
       "public java.lang.Object alloc()",
       "public void free(java.lang.Object)",
       "public java.util.Iterator iterator()"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.yolean.concurrent.Sleeper": {
-    "superClass": "java.lang.Object",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.yolean.concurrent.Sleeper" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [ ],
+    "attributes" : [
       "public",
       "interface",
       "abstract"
     ],
-    "methods": [
+    "methods" : [
       "public void sleep(java.time.Duration)",
       "public void sleepChecked(java.time.Duration)",
       "public void sleep(long)",
       "public abstract void sleepChecked(long)"
     ],
-    "fields": [
+    "fields" : [
       "public static final com.yahoo.yolean.concurrent.Sleeper DEFAULT",
       "public static final com.yahoo.yolean.concurrent.Sleeper NOOP"
     ]
   },
-  "com.yahoo.yolean.concurrent.ThreadRobustList": {
-    "superClass": "java.lang.Object",
-    "interfaces": [
+  "com.yahoo.yolean.concurrent.ThreadRobustList" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [
       "java.lang.Iterable"
     ],
-    "attributes": [
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>()",
       "public void <init>(int)",
       "public boolean isEmpty()",
       "public void add(java.lang.Object)",
       "public java.util.Iterator iterator()"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.yolean.function.ThrowingConsumer": {
-    "superClass": "java.lang.Object",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.yolean.function.ThrowingConsumer" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [ ],
+    "attributes" : [
       "public",
       "interface",
       "abstract"
     ],
-    "methods": [
+    "methods" : [
       "public abstract void accept(java.lang.Object)",
       "public com.yahoo.yolean.function.ThrowingConsumer andThen(com.yahoo.yolean.function.ThrowingConsumer)"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.yolean.function.ThrowingFunction": {
-    "superClass": "java.lang.Object",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.yolean.function.ThrowingFunction" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [ ],
+    "attributes" : [
       "public",
       "interface",
       "abstract"
     ],
-    "methods": [
+    "methods" : [
       "public abstract java.lang.Object apply(java.lang.Object)",
       "public com.yahoo.yolean.function.ThrowingFunction andThen(com.yahoo.yolean.function.ThrowingFunction)",
       "public com.yahoo.yolean.function.ThrowingFunction compose(com.yahoo.yolean.function.ThrowingFunction)"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.yolean.function.ThrowingSupplier": {
-    "superClass": "java.lang.Object",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.yolean.function.ThrowingSupplier" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [ ],
+    "attributes" : [
       "public",
       "interface",
       "abstract"
     ],
-    "methods": [
+    "methods" : [
       "public abstract java.lang.Object get()"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.yolean.trace.TraceNode": {
-    "superClass": "java.lang.Object",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.yolean.trace.TraceNode" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [ ],
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>(java.lang.Object, long)",
       "public com.yahoo.yolean.trace.TraceNode add(com.yahoo.yolean.trace.TraceNode)",
       "public java.lang.Iterable descendants(java.lang.Class)",
@@ -3955,21 +3955,21 @@
       "public com.yahoo.yolean.trace.TraceVisitor accept(com.yahoo.yolean.trace.TraceVisitor)",
       "public java.lang.String toString()"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.yolean.trace.TraceVisitor": {
-    "superClass": "java.lang.Object",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.yolean.trace.TraceVisitor" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [ ],
+    "attributes" : [
       "public",
       "abstract"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>()",
       "public abstract void visit(com.yahoo.yolean.trace.TraceNode)",
       "public void entering(com.yahoo.yolean.trace.TraceNode)",
       "public void leaving(com.yahoo.yolean.trace.TraceNode)"
     ],
-    "fields": []
+    "fields" : [ ]
   }
 }

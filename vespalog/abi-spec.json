@@ -1,41 +1,41 @@
 {
-  "com.yahoo.log.InvalidLogFormatException": {
-    "superClass": "java.lang.Exception",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.log.InvalidLogFormatException" : {
+    "superClass" : "java.lang.Exception",
+    "interfaces" : [ ],
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>(java.lang.String)",
       "public void <init>(java.lang.String, java.lang.Throwable)",
       "public void <init>()"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.log.LogFileDb": {
-    "superClass": "java.lang.Object",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.log.LogFileDb" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [ ],
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>()",
       "public static boolean nowLoggingTo(java.lang.String)"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.log.LogLevel": {
-    "superClass": "java.util.logging.Level",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.log.LogLevel" : {
+    "superClass" : "java.util.logging.Level",
+    "interfaces" : [ ],
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public static java.util.logging.Level parse(java.lang.String)",
       "public static java.util.logging.Level getVespaLogLevel(java.util.logging.Level)",
       "public static java.util.Map getLevels()"
     ],
-    "fields": [
+    "fields" : [
       "public static final int IntValEVENT",
       "public static final int IntValFATAL",
       "public static final int IntValERROR",
@@ -66,13 +66,13 @@
       "public static com.yahoo.log.LogLevel SPAM"
     ]
   },
-  "com.yahoo.log.LogMessage": {
-    "superClass": "java.lang.Object",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.log.LogMessage" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [ ],
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public static com.yahoo.log.LogMessage of(java.time.Instant, java.lang.String, long, long, java.lang.String, java.lang.String, java.util.logging.Level, java.lang.String)",
       "public java.time.Instant getTimestamp()",
       "public java.lang.String getHost()",
@@ -88,37 +88,37 @@
       "public boolean equals(java.lang.Object)",
       "public int hashCode()"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.log.LogMessageTimeComparator": {
-    "superClass": "java.lang.Object",
-    "interfaces": [
+  "com.yahoo.log.LogMessageTimeComparator" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [
       "java.util.Comparator",
       "java.io.Serializable"
     ],
-    "attributes": [
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>()",
       "public void <init>(boolean)",
       "public int compare(com.yahoo.log.LogMessage, com.yahoo.log.LogMessage)",
       "public bridge synthetic int compare(java.lang.Object, java.lang.Object)"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.log.LogSetup": {
-    "superClass": "java.lang.Object",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.log.LogSetup" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [ ],
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>()",
       "public static void clearHandlers()",
       "public static void initVespaLogging(java.lang.String)",
       "public static void cleanup()"
     ],
-    "fields": []
+    "fields" : [ ]
   }
 }

@@ -1,11 +1,11 @@
 {
-  "ai.vespa.feed.client.DocumentId": {
-    "superClass": "java.lang.Object",
-    "interfaces": [],
-    "attributes": [
+  "ai.vespa.feed.client.DocumentId" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [ ],
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public static ai.vespa.feed.client.DocumentId of(java.lang.String, java.lang.String, java.lang.String)",
       "public static ai.vespa.feed.client.DocumentId of(java.lang.String, java.lang.String, long, java.lang.String)",
       "public static ai.vespa.feed.client.DocumentId of(java.lang.String, java.lang.String, java.lang.String, java.lang.String)",
@@ -19,87 +19,87 @@
       "public int hashCode()",
       "public java.lang.String toString()"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "ai.vespa.feed.client.FeedClient$CircuitBreaker$State": {
-    "superClass": "java.lang.Enum",
-    "interfaces": [],
-    "attributes": [
+  "ai.vespa.feed.client.FeedClient$CircuitBreaker$State" : {
+    "superClass" : "java.lang.Enum",
+    "interfaces" : [ ],
+    "attributes" : [
       "public",
       "final",
       "enum"
     ],
-    "methods": [
+    "methods" : [
       "public static ai.vespa.feed.client.FeedClient$CircuitBreaker$State[] values()",
       "public static ai.vespa.feed.client.FeedClient$CircuitBreaker$State valueOf(java.lang.String)"
     ],
-    "fields": [
+    "fields" : [
       "public static final enum ai.vespa.feed.client.FeedClient$CircuitBreaker$State CLOSED",
       "public static final enum ai.vespa.feed.client.FeedClient$CircuitBreaker$State HALF_OPEN",
       "public static final enum ai.vespa.feed.client.FeedClient$CircuitBreaker$State OPEN"
     ]
   },
-  "ai.vespa.feed.client.FeedClient$CircuitBreaker": {
-    "superClass": "java.lang.Object",
-    "interfaces": [],
-    "attributes": [
+  "ai.vespa.feed.client.FeedClient$CircuitBreaker" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [ ],
+    "attributes" : [
       "public",
       "interface",
       "abstract"
     ],
-    "methods": [
+    "methods" : [
       "public void success()",
       "public void failure(ai.vespa.feed.client.HttpResponse)",
       "public void failure(java.lang.Throwable)",
       "public abstract ai.vespa.feed.client.FeedClient$CircuitBreaker$State state()"
     ],
-    "fields": [
+    "fields" : [
       "public static final ai.vespa.feed.client.FeedClient$CircuitBreaker FUSED"
     ]
   },
-  "ai.vespa.feed.client.FeedClient$OperationType": {
-    "superClass": "java.lang.Enum",
-    "interfaces": [],
-    "attributes": [
+  "ai.vespa.feed.client.FeedClient$OperationType" : {
+    "superClass" : "java.lang.Enum",
+    "interfaces" : [ ],
+    "attributes" : [
       "public",
       "final",
       "enum"
     ],
-    "methods": [
+    "methods" : [
       "public static ai.vespa.feed.client.FeedClient$OperationType[] values()",
       "public static ai.vespa.feed.client.FeedClient$OperationType valueOf(java.lang.String)"
     ],
-    "fields": [
+    "fields" : [
       "public static final enum ai.vespa.feed.client.FeedClient$OperationType PUT",
       "public static final enum ai.vespa.feed.client.FeedClient$OperationType UPDATE",
       "public static final enum ai.vespa.feed.client.FeedClient$OperationType REMOVE"
     ]
   },
-  "ai.vespa.feed.client.FeedClient$RetryStrategy": {
-    "superClass": "java.lang.Object",
-    "interfaces": [],
-    "attributes": [
+  "ai.vespa.feed.client.FeedClient$RetryStrategy" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [ ],
+    "attributes" : [
       "public",
       "interface",
       "abstract"
     ],
-    "methods": [
+    "methods" : [
       "public boolean retry(ai.vespa.feed.client.FeedClient$OperationType)",
       "public int retries()"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "ai.vespa.feed.client.FeedClient": {
-    "superClass": "java.lang.Object",
-    "interfaces": [
+  "ai.vespa.feed.client.FeedClient" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [
       "java.io.Closeable"
     ],
-    "attributes": [
+    "attributes" : [
       "public",
       "interface",
       "abstract"
     ],
-    "methods": [
+    "methods" : [
       "public abstract java.util.concurrent.CompletableFuture put(ai.vespa.feed.client.DocumentId, java.lang.String, ai.vespa.feed.client.OperationParameters)",
       "public abstract java.util.concurrent.CompletableFuture update(ai.vespa.feed.client.DocumentId, java.lang.String, ai.vespa.feed.client.OperationParameters)",
       "public abstract java.util.concurrent.CompletableFuture remove(ai.vespa.feed.client.DocumentId, ai.vespa.feed.client.OperationParameters)",
@@ -110,17 +110,17 @@
       "public abstract void close(boolean)",
       "public void close()"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "ai.vespa.feed.client.FeedClientBuilder": {
-    "superClass": "java.lang.Object",
-    "interfaces": [],
-    "attributes": [
+  "ai.vespa.feed.client.FeedClientBuilder" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [ ],
+    "attributes" : [
       "public",
       "interface",
       "abstract"
     ],
-    "methods": [
+    "methods" : [
       "public static ai.vespa.feed.client.FeedClientBuilder create(java.net.URI)",
       "public static ai.vespa.feed.client.FeedClientBuilder create(java.util.List)",
       "public static void setFeedClientBuilderSupplier(java.util.function.Supplier)",
@@ -144,17 +144,17 @@
       "public abstract ai.vespa.feed.client.FeedClientBuilder setProxy(java.net.URI)",
       "public abstract ai.vespa.feed.client.FeedClient build()"
     ],
-    "fields": [
+    "fields" : [
       "public static final java.lang.String PREFERRED_IMPLEMENTATION_PROPERTY"
     ]
   },
-  "ai.vespa.feed.client.FeedException": {
-    "superClass": "java.lang.RuntimeException",
-    "interfaces": [],
-    "attributes": [
+  "ai.vespa.feed.client.FeedException" : {
+    "superClass" : "java.lang.RuntimeException",
+    "interfaces" : [ ],
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>(java.lang.String)",
       "public void <init>(ai.vespa.feed.client.DocumentId, java.lang.String)",
       "public void <init>(java.lang.String, java.lang.Throwable)",
@@ -163,89 +163,89 @@
       "public void <init>(ai.vespa.feed.client.DocumentId, java.lang.String, java.lang.Throwable)",
       "public java.util.Optional documentId()"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "ai.vespa.feed.client.HttpResponse": {
-    "superClass": "java.lang.Object",
-    "interfaces": [],
-    "attributes": [
+  "ai.vespa.feed.client.HttpResponse" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [ ],
+    "attributes" : [
       "public",
       "interface",
       "abstract"
     ],
-    "methods": [
+    "methods" : [
       "public abstract int code()",
       "public abstract byte[] body()",
       "public static ai.vespa.feed.client.HttpResponse of(int, byte[])"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "ai.vespa.feed.client.JsonFeeder$Builder": {
-    "superClass": "java.lang.Object",
-    "interfaces": [],
-    "attributes": [
+  "ai.vespa.feed.client.JsonFeeder$Builder" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [ ],
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public ai.vespa.feed.client.JsonFeeder$Builder withTimeout(java.time.Duration)",
       "public ai.vespa.feed.client.JsonFeeder$Builder withRoute(java.lang.String)",
       "public ai.vespa.feed.client.JsonFeeder$Builder withTracelevel(int)",
       "public ai.vespa.feed.client.JsonFeeder build()"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "ai.vespa.feed.client.JsonFeeder$ResultCallback": {
-    "superClass": "java.lang.Object",
-    "interfaces": [],
-    "attributes": [
+  "ai.vespa.feed.client.JsonFeeder$ResultCallback" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [ ],
+    "attributes" : [
       "public",
       "interface",
       "abstract"
     ],
-    "methods": [
+    "methods" : [
       "public void onNextResult(ai.vespa.feed.client.Result, ai.vespa.feed.client.FeedException)",
       "public void onError(ai.vespa.feed.client.FeedException)",
       "public void onComplete()"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "ai.vespa.feed.client.JsonFeeder": {
-    "superClass": "java.lang.Object",
-    "interfaces": [
+  "ai.vespa.feed.client.JsonFeeder" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [
       "java.io.Closeable"
     ],
-    "attributes": [
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public static ai.vespa.feed.client.JsonFeeder$Builder builder(ai.vespa.feed.client.FeedClient)",
       "public java.util.concurrent.CompletableFuture feedSingle(java.lang.String)",
       "public java.util.concurrent.CompletableFuture feedMany(java.io.InputStream, ai.vespa.feed.client.JsonFeeder$ResultCallback)",
       "public java.util.concurrent.CompletableFuture feedMany(java.io.InputStream)",
       "public void close()"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "ai.vespa.feed.client.MultiFeedException": {
-    "superClass": "java.lang.RuntimeException",
-    "interfaces": [],
-    "attributes": [
+  "ai.vespa.feed.client.MultiFeedException" : {
+    "superClass" : "java.lang.RuntimeException",
+    "interfaces" : [ ],
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>(java.util.Collection)",
       "public java.util.Collection feedExceptions()",
       "public java.util.Set documentIds()"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "ai.vespa.feed.client.OperationParameters": {
-    "superClass": "java.lang.Object",
-    "interfaces": [],
-    "attributes": [
+  "ai.vespa.feed.client.OperationParameters" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [ ],
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public static ai.vespa.feed.client.OperationParameters empty()",
       "public ai.vespa.feed.client.OperationParameters createIfNonExistent(boolean)",
       "public ai.vespa.feed.client.OperationParameters testAndSetCondition(java.lang.String)",
@@ -261,27 +261,27 @@
       "public int hashCode()",
       "public java.lang.String toString()"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "ai.vespa.feed.client.OperationParseException": {
-    "superClass": "ai.vespa.feed.client.FeedException",
-    "interfaces": [],
-    "attributes": [
+  "ai.vespa.feed.client.OperationParseException" : {
+    "superClass" : "ai.vespa.feed.client.FeedException",
+    "interfaces" : [ ],
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>(java.lang.String)",
       "public void <init>(java.lang.String, java.lang.Throwable)"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "ai.vespa.feed.client.OperationStats": {
-    "superClass": "java.lang.Object",
-    "interfaces": [],
-    "attributes": [
+  "ai.vespa.feed.client.OperationStats" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [ ],
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>(long, java.util.Map, long, long, long, long, long, long, long)",
       "public ai.vespa.feed.client.OperationStats since(ai.vespa.feed.client.OperationStats)",
       "public long requests()",
@@ -299,63 +299,63 @@
       "public int hashCode()",
       "public java.lang.String toString()"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "ai.vespa.feed.client.Result$Type": {
-    "superClass": "java.lang.Enum",
-    "interfaces": [],
-    "attributes": [
+  "ai.vespa.feed.client.Result$Type" : {
+    "superClass" : "java.lang.Enum",
+    "interfaces" : [ ],
+    "attributes" : [
       "public",
       "final",
       "enum"
     ],
-    "methods": [
+    "methods" : [
       "public static ai.vespa.feed.client.Result$Type[] values()",
       "public static ai.vespa.feed.client.Result$Type valueOf(java.lang.String)"
     ],
-    "fields": [
+    "fields" : [
       "public static final enum ai.vespa.feed.client.Result$Type success",
       "public static final enum ai.vespa.feed.client.Result$Type conditionNotMet"
     ]
   },
-  "ai.vespa.feed.client.Result": {
-    "superClass": "java.lang.Object",
-    "interfaces": [],
-    "attributes": [
+  "ai.vespa.feed.client.Result" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [ ],
+    "attributes" : [
       "public",
       "interface",
       "abstract"
     ],
-    "methods": [
+    "methods" : [
       "public abstract ai.vespa.feed.client.Result$Type type()",
       "public abstract ai.vespa.feed.client.DocumentId documentId()",
       "public abstract java.util.Optional resultMessage()",
       "public abstract java.util.Optional traceMessage()"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "ai.vespa.feed.client.ResultException": {
-    "superClass": "ai.vespa.feed.client.FeedException",
-    "interfaces": [],
-    "attributes": [
+  "ai.vespa.feed.client.ResultException" : {
+    "superClass" : "ai.vespa.feed.client.FeedException",
+    "interfaces" : [ ],
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>(ai.vespa.feed.client.DocumentId, java.lang.String, java.lang.String)",
       "public java.util.Optional getTrace()"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "ai.vespa.feed.client.ResultParseException": {
-    "superClass": "ai.vespa.feed.client.FeedException",
-    "interfaces": [],
-    "attributes": [
+  "ai.vespa.feed.client.ResultParseException" : {
+    "superClass" : "ai.vespa.feed.client.FeedException",
+    "interfaces" : [ ],
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>(ai.vespa.feed.client.DocumentId, java.lang.String)",
       "public void <init>(ai.vespa.feed.client.DocumentId, java.lang.Throwable)"
     ],
-    "fields": []
+    "fields" : [ ]
   }
 }

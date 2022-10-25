@@ -1,41 +1,41 @@
 {
-  "com.yahoo.documentapi.AckToken": {
-    "superClass": "java.lang.Object",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.documentapi.AckToken" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [ ],
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>(java.lang.Object)"
     ],
-    "fields": [
+    "fields" : [
       "public java.lang.Object ackObject"
     ]
   },
-  "com.yahoo.documentapi.AsyncParameters": {
-    "superClass": "com.yahoo.documentapi.Parameters",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.documentapi.AsyncParameters" : {
+    "superClass" : "com.yahoo.documentapi.Parameters",
+    "interfaces" : [ ],
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>()",
       "public com.yahoo.documentapi.ResponseHandler getResponseHandler()",
       "public com.yahoo.documentapi.AsyncParameters setResponseHandler(com.yahoo.documentapi.ResponseHandler)"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.documentapi.AsyncSession": {
-    "superClass": "java.lang.Object",
-    "interfaces": [
+  "com.yahoo.documentapi.AsyncSession" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [
       "com.yahoo.documentapi.Session"
     ],
-    "attributes": [
+    "attributes" : [
       "public",
       "interface",
       "abstract"
     ],
-    "methods": [
+    "methods" : [
       "public abstract com.yahoo.documentapi.Result put(com.yahoo.document.Document)",
       "public com.yahoo.documentapi.Result put(com.yahoo.document.DocumentPut)",
       "public com.yahoo.documentapi.Result put(com.yahoo.document.DocumentPut, com.yahoo.documentapi.DocumentOperationParameters)",
@@ -48,29 +48,29 @@
       "public com.yahoo.documentapi.Result update(com.yahoo.document.DocumentUpdate, com.yahoo.documentapi.DocumentOperationParameters)",
       "public abstract double getCurrentWindowSize()"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.documentapi.BucketListVisitorResponse": {
-    "superClass": "com.yahoo.documentapi.VisitorResponse",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.documentapi.BucketListVisitorResponse" : {
+    "superClass" : "com.yahoo.documentapi.VisitorResponse",
+    "interfaces" : [ ],
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>(com.yahoo.document.BucketId, java.util.List, com.yahoo.documentapi.AckToken)",
       "public com.yahoo.document.BucketId getBucketId()",
       "public java.util.List getDocuments()"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.documentapi.DocumentAccess": {
-    "superClass": "java.lang.Object",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.documentapi.DocumentAccess" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [ ],
+    "attributes" : [
       "public",
       "abstract"
     ],
-    "methods": [
+    "methods" : [
       "public static com.yahoo.documentapi.DocumentAccess createForNonContainer()",
       "protected void <init>(com.yahoo.documentapi.DocumentAccessParams)",
       "public abstract com.yahoo.documentapi.SyncSession createSyncSession(com.yahoo.documentapi.SyncParameters)",
@@ -82,15 +82,15 @@
       "public void shutdown()",
       "public com.yahoo.document.DocumentTypeManager getDocumentTypeManager()"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.documentapi.DocumentAccessException": {
-    "superClass": "java.lang.RuntimeException",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.documentapi.DocumentAccessException" : {
+    "superClass" : "java.lang.RuntimeException",
+    "interfaces" : [ ],
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public java.util.Set getErrorCodes()",
       "public void <init>()",
       "public void <init>(java.lang.String)",
@@ -99,30 +99,30 @@
       "public void <init>(java.lang.String, java.lang.Throwable)",
       "public void <init>(java.lang.Throwable)"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.documentapi.DocumentAccessParams": {
-    "superClass": "java.lang.Object",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.documentapi.DocumentAccessParams" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [ ],
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>()",
       "public java.lang.String getDocumentManagerConfigId()",
       "public java.util.Optional documentmanagerConfig()",
       "public com.yahoo.documentapi.DocumentAccessParams setDocumentManagerConfigId(java.lang.String)",
       "public com.yahoo.documentapi.DocumentAccessParams setDocumentmanagerConfig(com.yahoo.document.config.DocumentmanagerConfig)"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.documentapi.DocumentIdResponse": {
-    "superClass": "com.yahoo.documentapi.Response",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.documentapi.DocumentIdResponse" : {
+    "superClass" : "com.yahoo.documentapi.Response",
+    "interfaces" : [ ],
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>(long)",
       "public void <init>(long, com.yahoo.document.DocumentId)",
       "public void <init>(long, com.yahoo.document.DocumentId, java.lang.String, com.yahoo.documentapi.Response$Outcome)",
@@ -132,27 +132,27 @@
       "public boolean equals(java.lang.Object)",
       "public java.lang.String toString()"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.documentapi.DocumentOpVisitorResponse": {
-    "superClass": "com.yahoo.documentapi.VisitorResponse",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.documentapi.DocumentOpVisitorResponse" : {
+    "superClass" : "com.yahoo.documentapi.VisitorResponse",
+    "interfaces" : [ ],
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>(com.yahoo.document.DocumentOperation, com.yahoo.documentapi.AckToken)",
       "public com.yahoo.document.DocumentOperation getDocumentOperation()"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.documentapi.DocumentOperationParameters": {
-    "superClass": "java.lang.Object",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.documentapi.DocumentOperationParameters" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [ ],
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public static com.yahoo.documentapi.DocumentOperationParameters parameters()",
       "public com.yahoo.documentapi.DocumentOperationParameters withFieldSet(com.yahoo.document.fieldset.FieldSet)",
       "public com.yahoo.documentapi.DocumentOperationParameters withFieldSet(java.lang.String)",
@@ -169,15 +169,15 @@
       "public int hashCode()",
       "public java.lang.String toString()"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.documentapi.DocumentResponse": {
-    "superClass": "com.yahoo.documentapi.Response",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.documentapi.DocumentResponse" : {
+    "superClass" : "com.yahoo.documentapi.Response",
+    "interfaces" : [ ],
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>(long)",
       "public void <init>(long, com.yahoo.document.Document)",
       "public void <init>(long, com.yahoo.document.Document, com.yahoo.messagebus.Trace)",
@@ -189,15 +189,15 @@
       "public boolean equals(java.lang.Object)",
       "public java.lang.String toString()"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.documentapi.DocumentUpdateResponse": {
-    "superClass": "com.yahoo.documentapi.Response",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.documentapi.DocumentUpdateResponse" : {
+    "superClass" : "com.yahoo.documentapi.Response",
+    "interfaces" : [ ],
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>(long)",
       "public void <init>(long, com.yahoo.document.DocumentUpdate)",
       "public void <init>(long, java.lang.String, com.yahoo.documentapi.Response$Outcome)",
@@ -208,83 +208,83 @@
       "public boolean equals(java.lang.Object)",
       "public java.lang.String toString()"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.documentapi.DocumentVisitor": {
-    "superClass": "com.yahoo.documentapi.VisitorParameters",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.documentapi.DocumentVisitor" : {
+    "superClass" : "com.yahoo.documentapi.VisitorParameters",
+    "interfaces" : [ ],
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>(java.lang.String)",
       "public java.lang.String getVisitorLibrary()"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.documentapi.DumpVisitorDataHandler": {
-    "superClass": "com.yahoo.documentapi.VisitorDataHandler",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.documentapi.DumpVisitorDataHandler" : {
+    "superClass" : "com.yahoo.documentapi.VisitorDataHandler",
+    "interfaces" : [ ],
+    "attributes" : [
       "public",
       "abstract"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>()",
       "public void onMessage(com.yahoo.messagebus.Message, com.yahoo.documentapi.AckToken)",
       "public abstract void onDocument(com.yahoo.document.Document, long)",
       "public abstract void onRemove(com.yahoo.document.DocumentId)"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.documentapi.EmptyBucketsVisitorResponse": {
-    "superClass": "com.yahoo.documentapi.VisitorResponse",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.documentapi.EmptyBucketsVisitorResponse" : {
+    "superClass" : "com.yahoo.documentapi.VisitorResponse",
+    "interfaces" : [ ],
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>(java.util.List, com.yahoo.documentapi.AckToken)",
       "public java.util.List getBucketIds()"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.documentapi.Parameters": {
-    "superClass": "java.lang.Object",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.documentapi.Parameters" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [ ],
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>()",
       "public void setThrottlePolicy(com.yahoo.messagebus.ThrottlePolicy)",
       "public com.yahoo.messagebus.ThrottlePolicy getThrottlePolicy()"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.documentapi.ProgressToken$BucketEntry": {
-    "superClass": "java.lang.Object",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.documentapi.ProgressToken$BucketEntry" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [ ],
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public com.yahoo.document.BucketId getProgress()",
       "public void setProgress(com.yahoo.document.BucketId)",
       "public com.yahoo.documentapi.ProgressToken$BucketState getState()",
       "public void setState(com.yahoo.documentapi.ProgressToken$BucketState)"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.documentapi.ProgressToken$BucketKeyWrapper": {
-    "superClass": "java.lang.Object",
-    "interfaces": [
+  "com.yahoo.documentapi.ProgressToken$BucketKeyWrapper" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [
       "java.lang.Comparable"
     ],
-    "attributes": [
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>(long)",
       "public int compareTo(com.yahoo.documentapi.ProgressToken$BucketKeyWrapper)",
       "public long getKey()",
@@ -294,32 +294,32 @@
       "public int hashCode()",
       "public bridge synthetic int compareTo(java.lang.Object)"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.documentapi.ProgressToken$BucketState": {
-    "superClass": "java.lang.Enum",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.documentapi.ProgressToken$BucketState" : {
+    "superClass" : "java.lang.Enum",
+    "interfaces" : [ ],
+    "attributes" : [
       "public",
       "final",
       "enum"
     ],
-    "methods": [
+    "methods" : [
       "public static com.yahoo.documentapi.ProgressToken$BucketState[] values()",
       "public static com.yahoo.documentapi.ProgressToken$BucketState valueOf(java.lang.String)"
     ],
-    "fields": [
+    "fields" : [
       "public static final enum com.yahoo.documentapi.ProgressToken$BucketState BUCKET_PENDING",
       "public static final enum com.yahoo.documentapi.ProgressToken$BucketState BUCKET_ACTIVE"
     ]
   },
-  "com.yahoo.documentapi.ProgressToken": {
-    "superClass": "java.lang.Object",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.documentapi.ProgressToken" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [ ],
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>()",
       "public void <init>(int)",
       "public void <init>(java.lang.String)",
@@ -364,18 +364,18 @@
       "protected void setAllBucketsToState(com.yahoo.documentapi.ProgressToken$BucketState)",
       "protected void clearAllBuckets()"
     ],
-    "fields": [
+    "fields" : [
       "public static final com.yahoo.document.BucketId NULL_BUCKET",
       "public static final com.yahoo.document.BucketId FINISHED_BUCKET"
     ]
   },
-  "com.yahoo.documentapi.RemoveResponse": {
-    "superClass": "com.yahoo.documentapi.Response",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.documentapi.RemoveResponse" : {
+    "superClass" : "com.yahoo.documentapi.Response",
+    "interfaces" : [ ],
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>(long, boolean)",
       "public void <init>(long, boolean, com.yahoo.messagebus.Trace)",
       "public boolean wasFound()",
@@ -384,21 +384,21 @@
       "public boolean equals(java.lang.Object)",
       "public java.lang.String toString()"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.documentapi.Response$Outcome": {
-    "superClass": "java.lang.Enum",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.documentapi.Response$Outcome" : {
+    "superClass" : "java.lang.Enum",
+    "interfaces" : [ ],
+    "attributes" : [
       "public",
       "final",
       "enum"
     ],
-    "methods": [
+    "methods" : [
       "public static com.yahoo.documentapi.Response$Outcome[] values()",
       "public static com.yahoo.documentapi.Response$Outcome valueOf(java.lang.String)"
     ],
-    "fields": [
+    "fields" : [
       "public static final enum com.yahoo.documentapi.Response$Outcome SUCCESS",
       "public static final enum com.yahoo.documentapi.Response$Outcome CONDITION_FAILED",
       "public static final enum com.yahoo.documentapi.Response$Outcome NOT_FOUND",
@@ -407,13 +407,13 @@
       "public static final enum com.yahoo.documentapi.Response$Outcome ERROR"
     ]
   },
-  "com.yahoo.documentapi.Response": {
-    "superClass": "java.lang.Object",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.documentapi.Response" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [ ],
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>(long)",
       "public void <init>(long, java.lang.String)",
       "public void <init>(long, java.lang.String, com.yahoo.documentapi.Response$Outcome)",
@@ -427,46 +427,46 @@
       "public int hashCode()",
       "public java.lang.String toString()"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.documentapi.ResponseHandler": {
-    "superClass": "java.lang.Object",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.documentapi.ResponseHandler" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [ ],
+    "attributes" : [
       "public",
       "interface",
       "abstract"
     ],
-    "methods": [
+    "methods" : [
       "public abstract void handleResponse(com.yahoo.documentapi.Response)"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.documentapi.Result$ResultType": {
-    "superClass": "java.lang.Enum",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.documentapi.Result$ResultType" : {
+    "superClass" : "java.lang.Enum",
+    "interfaces" : [ ],
+    "attributes" : [
       "public",
       "final",
       "enum"
     ],
-    "methods": [
+    "methods" : [
       "public static com.yahoo.documentapi.Result$ResultType[] values()",
       "public static com.yahoo.documentapi.Result$ResultType valueOf(java.lang.String)"
     ],
-    "fields": [
+    "fields" : [
       "public static final enum com.yahoo.documentapi.Result$ResultType SUCCESS",
       "public static final enum com.yahoo.documentapi.Result$ResultType TRANSIENT_ERROR",
       "public static final enum com.yahoo.documentapi.Result$ResultType FATAL_ERROR"
     ]
   },
-  "com.yahoo.documentapi.Result": {
-    "superClass": "java.lang.Object",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.documentapi.Result" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [ ],
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>()",
       "public void <init>(long)",
       "public void <init>(com.yahoo.documentapi.Result$ResultType, com.yahoo.messagebus.Error)",
@@ -476,99 +476,99 @@
       "public com.yahoo.documentapi.Result$ResultType type()",
       "public static com.yahoo.messagebus.Error toError(com.yahoo.documentapi.Result$ResultType)"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.documentapi.Session": {
-    "superClass": "java.lang.Object",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.documentapi.Session" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [ ],
+    "attributes" : [
       "public",
       "interface",
       "abstract"
     ],
-    "methods": [
+    "methods" : [
       "public abstract com.yahoo.documentapi.Response getNext()",
       "public abstract com.yahoo.documentapi.Response getNext(int)",
       "public abstract void destroy()"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.documentapi.SimpleVisitorDocumentQueue": {
-    "superClass": "com.yahoo.documentapi.DumpVisitorDataHandler",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.documentapi.SimpleVisitorDocumentQueue" : {
+    "superClass" : "com.yahoo.documentapi.DumpVisitorDataHandler",
+    "interfaces" : [ ],
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>()",
       "public void reset()",
       "public void onDocument(com.yahoo.document.Document, long)",
       "public void onRemove(com.yahoo.document.DocumentId)",
       "public java.util.List getDocuments()"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.documentapi.SubscriptionParameters": {
-    "superClass": "com.yahoo.documentapi.Parameters",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.documentapi.SubscriptionParameters" : {
+    "superClass" : "com.yahoo.documentapi.Parameters",
+    "interfaces" : [ ],
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>()"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.documentapi.SubscriptionSession": {
-    "superClass": "java.lang.Object",
-    "interfaces": [
+  "com.yahoo.documentapi.SubscriptionSession" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [
       "com.yahoo.documentapi.Session"
     ],
-    "attributes": [
+    "attributes" : [
       "public",
       "interface",
       "abstract"
     ],
-    "methods": [
+    "methods" : [
       "public abstract void close()"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.documentapi.SyncParameters$Builder": {
-    "superClass": "java.lang.Object",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.documentapi.SyncParameters$Builder" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [ ],
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>()",
       "public void setDefaultTimeout(java.time.Duration)",
       "public com.yahoo.documentapi.SyncParameters build()"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.documentapi.SyncParameters": {
-    "superClass": "com.yahoo.documentapi.Parameters",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.documentapi.SyncParameters" : {
+    "superClass" : "com.yahoo.documentapi.Parameters",
+    "interfaces" : [ ],
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public java.util.Optional defaultTimeout()"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.documentapi.SyncSession": {
-    "superClass": "java.lang.Object",
-    "interfaces": [
+  "com.yahoo.documentapi.SyncSession" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [
       "com.yahoo.documentapi.Session"
     ],
-    "attributes": [
+    "attributes" : [
       "public",
       "interface",
       "abstract"
     ],
-    "methods": [
+    "methods" : [
       "public abstract void put(com.yahoo.document.DocumentPut)",
       "public void put(com.yahoo.document.DocumentPut, com.yahoo.documentapi.DocumentOperationParameters)",
       "public com.yahoo.document.Document get(com.yahoo.document.DocumentId)",
@@ -579,15 +579,15 @@
       "public abstract boolean update(com.yahoo.document.DocumentUpdate)",
       "public boolean update(com.yahoo.document.DocumentUpdate, com.yahoo.documentapi.DocumentOperationParameters)"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.documentapi.UpdateResponse": {
-    "superClass": "com.yahoo.documentapi.Response",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.documentapi.UpdateResponse" : {
+    "superClass" : "com.yahoo.documentapi.Response",
+    "interfaces" : [ ],
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>(long, boolean)",
       "public void <init>(long, boolean, com.yahoo.messagebus.Trace)",
       "public boolean wasFound()",
@@ -596,51 +596,51 @@
       "public boolean equals(java.lang.Object)",
       "public java.lang.String toString()"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.documentapi.VisitorControlHandler$CompletionCode": {
-    "superClass": "java.lang.Enum",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.documentapi.VisitorControlHandler$CompletionCode" : {
+    "superClass" : "java.lang.Enum",
+    "interfaces" : [ ],
+    "attributes" : [
       "public",
       "final",
       "enum"
     ],
-    "methods": [
+    "methods" : [
       "public static com.yahoo.documentapi.VisitorControlHandler$CompletionCode[] values()",
       "public static com.yahoo.documentapi.VisitorControlHandler$CompletionCode valueOf(java.lang.String)"
     ],
-    "fields": [
+    "fields" : [
       "public static final enum com.yahoo.documentapi.VisitorControlHandler$CompletionCode SUCCESS",
       "public static final enum com.yahoo.documentapi.VisitorControlHandler$CompletionCode ABORTED",
       "public static final enum com.yahoo.documentapi.VisitorControlHandler$CompletionCode FAILURE",
       "public static final enum com.yahoo.documentapi.VisitorControlHandler$CompletionCode TIMEOUT"
     ]
   },
-  "com.yahoo.documentapi.VisitorControlHandler$Result": {
-    "superClass": "java.lang.Object",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.documentapi.VisitorControlHandler$Result" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [ ],
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>(com.yahoo.documentapi.VisitorControlHandler)",
       "public java.lang.String toString()",
       "public com.yahoo.documentapi.VisitorControlHandler$CompletionCode getCode()",
       "public java.lang.String getMessage()"
     ],
-    "fields": [
+    "fields" : [
       "public com.yahoo.documentapi.VisitorControlHandler$CompletionCode code",
       "public java.lang.String message"
     ]
   },
-  "com.yahoo.documentapi.VisitorControlHandler": {
-    "superClass": "java.lang.Object",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.documentapi.VisitorControlHandler" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [ ],
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>()",
       "public void reset()",
       "public void onProgress(com.yahoo.documentapi.ProgressToken)",
@@ -658,33 +658,33 @@
       "public void abort()",
       "public com.yahoo.documentapi.VisitorControlHandler$Result getResult()"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.documentapi.VisitorControlSession": {
-    "superClass": "java.lang.Object",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.documentapi.VisitorControlSession" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [ ],
+    "attributes" : [
       "public",
       "interface",
       "abstract"
     ],
-    "methods": [
+    "methods" : [
       "public abstract void ack(com.yahoo.documentapi.AckToken)",
       "public abstract void abort()",
       "public abstract com.yahoo.documentapi.VisitorResponse getNext()",
       "public abstract com.yahoo.documentapi.VisitorResponse getNext(int)",
       "public abstract void destroy()"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.documentapi.VisitorDataHandler": {
-    "superClass": "java.lang.Object",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.documentapi.VisitorDataHandler" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [ ],
+    "attributes" : [
       "public",
       "abstract"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>()",
       "public void reset()",
       "public void setSession(com.yahoo.documentapi.VisitorControlSession)",
@@ -694,73 +694,73 @@
       "public abstract void onMessage(com.yahoo.messagebus.Message, com.yahoo.documentapi.AckToken)",
       "public void ack(com.yahoo.documentapi.AckToken)"
     ],
-    "fields": [
+    "fields" : [
       "protected com.yahoo.documentapi.VisitorControlSession session"
     ]
   },
-  "com.yahoo.documentapi.VisitorDataQueue": {
-    "superClass": "com.yahoo.documentapi.VisitorDataHandler",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.documentapi.VisitorDataQueue" : {
+    "superClass" : "com.yahoo.documentapi.VisitorDataHandler",
+    "interfaces" : [ ],
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>()",
       "public void reset()",
       "public void onMessage(com.yahoo.messagebus.Message, com.yahoo.documentapi.AckToken)",
       "public com.yahoo.documentapi.VisitorResponse getNext()",
       "public com.yahoo.documentapi.VisitorResponse getNext(int)"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.documentapi.VisitorDestinationParameters": {
-    "superClass": "com.yahoo.documentapi.Parameters",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.documentapi.VisitorDestinationParameters" : {
+    "superClass" : "com.yahoo.documentapi.Parameters",
+    "interfaces" : [ ],
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>(java.lang.String, com.yahoo.documentapi.VisitorDataHandler)",
       "public java.lang.String getSessionName()",
       "public com.yahoo.documentapi.VisitorDataHandler getDataHandler()"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.documentapi.VisitorDestinationSession": {
-    "superClass": "java.lang.Object",
-    "interfaces": [
+  "com.yahoo.documentapi.VisitorDestinationSession" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [
       "com.yahoo.documentapi.VisitorControlSession"
     ],
-    "attributes": [
+    "attributes" : [
       "public",
       "interface",
       "abstract"
     ],
-    "methods": [],
-    "fields": []
+    "methods" : [ ],
+    "fields" : [ ]
   },
-  "com.yahoo.documentapi.VisitorIterator$BucketProgress": {
-    "superClass": "java.lang.Object",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.documentapi.VisitorIterator$BucketProgress" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [ ],
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>(com.yahoo.document.BucketId, com.yahoo.document.BucketId)",
       "public com.yahoo.document.BucketId getProgress()",
       "public com.yahoo.document.BucketId getSuperbucket()"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.documentapi.VisitorIterator$BucketSource": {
-    "superClass": "java.lang.Object",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.documentapi.VisitorIterator$BucketSource" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [ ],
+    "attributes" : [
       "public",
       "interface",
       "abstract"
     ],
-    "methods": [
+    "methods" : [
       "public abstract boolean hasNext()",
       "public abstract boolean shouldYield()",
       "public abstract boolean visitsAllBuckets()",
@@ -770,17 +770,17 @@
       "public abstract void setDistributionBitCount(int, com.yahoo.documentapi.ProgressToken)",
       "public abstract void update(com.yahoo.document.BucketId, com.yahoo.document.BucketId, com.yahoo.documentapi.ProgressToken)"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.documentapi.VisitorIterator$DistributionRangeBucketSource": {
-    "superClass": "java.lang.Object",
-    "interfaces": [
+  "com.yahoo.documentapi.VisitorIterator$DistributionRangeBucketSource" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [
       "com.yahoo.documentapi.VisitorIterator$BucketSource"
     ],
-    "attributes": [
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>(int, com.yahoo.documentapi.ProgressToken, int, int)",
       "protected boolean isLosslessResetPossible()",
       "public boolean hasNext()",
@@ -792,17 +792,17 @@
       "public void setDistributionBitCount(int, com.yahoo.documentapi.ProgressToken)",
       "public void update(com.yahoo.document.BucketId, com.yahoo.document.BucketId, com.yahoo.documentapi.ProgressToken)"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.documentapi.VisitorIterator$ExplicitBucketSource": {
-    "superClass": "java.lang.Object",
-    "interfaces": [
+  "com.yahoo.documentapi.VisitorIterator$ExplicitBucketSource" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [
       "com.yahoo.documentapi.VisitorIterator$BucketSource"
     ],
-    "attributes": [
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>(java.util.Set, int, com.yahoo.documentapi.ProgressToken)",
       "public boolean hasNext()",
       "public boolean shouldYield()",
@@ -813,15 +813,15 @@
       "public void setDistributionBitCount(int, com.yahoo.documentapi.ProgressToken)",
       "public void update(com.yahoo.document.BucketId, com.yahoo.document.BucketId, com.yahoo.documentapi.ProgressToken)"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.documentapi.VisitorIterator": {
-    "superClass": "java.lang.Object",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.documentapi.VisitorIterator" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [ ],
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public com.yahoo.documentapi.VisitorIterator$BucketProgress getNext()",
       "public boolean hasNext()",
       "public boolean isDone()",
@@ -836,15 +836,15 @@
       "public static com.yahoo.documentapi.VisitorIterator createFromDocumentSelection(java.lang.String, com.yahoo.document.BucketIdFactory, int, com.yahoo.documentapi.ProgressToken, int, int)",
       "public static com.yahoo.documentapi.VisitorIterator createFromExplicitBucketSet(java.util.Set, int, com.yahoo.documentapi.ProgressToken)"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.documentapi.VisitorParameters": {
-    "superClass": "com.yahoo.documentapi.Parameters",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.documentapi.VisitorParameters" : {
+    "superClass" : "com.yahoo.documentapi.Parameters",
+    "interfaces" : [ ],
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>(java.lang.String)",
       "public void <init>(com.yahoo.documentapi.VisitorParameters)",
       "public java.lang.String getDocumentSelection()",
@@ -909,47 +909,47 @@
       "public int getSliceId()",
       "public java.lang.String toString()"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.documentapi.VisitorResponse": {
-    "superClass": "java.lang.Object",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.documentapi.VisitorResponse" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [ ],
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>(com.yahoo.documentapi.AckToken)",
       "public com.yahoo.documentapi.AckToken getAckToken()"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.documentapi.VisitorSession": {
-    "superClass": "java.lang.Object",
-    "interfaces": [
+  "com.yahoo.documentapi.VisitorSession" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [
       "com.yahoo.documentapi.VisitorControlSession"
     ],
-    "attributes": [
+    "attributes" : [
       "public",
       "interface",
       "abstract"
     ],
-    "methods": [
+    "methods" : [
       "public abstract boolean isDone()",
       "public abstract com.yahoo.documentapi.ProgressToken getProgress()",
       "public abstract com.yahoo.messagebus.Trace getTrace()",
       "public abstract boolean waitUntilDone(long)"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.documentapi.local.LocalAsyncSession": {
-    "superClass": "java.lang.Object",
-    "interfaces": [
+  "com.yahoo.documentapi.local.LocalAsyncSession" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [
       "com.yahoo.documentapi.AsyncSession"
     ],
-    "attributes": [
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>(com.yahoo.documentapi.AsyncParameters, com.yahoo.documentapi.local.LocalDocumentAccess)",
       "public double getCurrentWindowSize()",
       "public com.yahoo.documentapi.Result put(com.yahoo.document.Document)",
@@ -965,15 +965,15 @@
       "public void destroy()",
       "public void setResultType(com.yahoo.documentapi.Result$ResultType)"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.documentapi.local.LocalDocumentAccess": {
-    "superClass": "com.yahoo.documentapi.DocumentAccess",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.documentapi.local.LocalDocumentAccess" : {
+    "superClass" : "com.yahoo.documentapi.DocumentAccess",
+    "interfaces" : [ ],
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>(com.yahoo.documentapi.DocumentAccessParams)",
       "public com.yahoo.documentapi.local.LocalSyncSession createSyncSession(com.yahoo.documentapi.SyncParameters)",
       "public com.yahoo.documentapi.local.LocalAsyncSession createAsyncSession(com.yahoo.documentapi.AsyncParameters)",
@@ -986,17 +986,17 @@
       "public bridge synthetic com.yahoo.documentapi.AsyncSession createAsyncSession(com.yahoo.documentapi.AsyncParameters)",
       "public bridge synthetic com.yahoo.documentapi.SyncSession createSyncSession(com.yahoo.documentapi.SyncParameters)"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.documentapi.local.LocalSyncSession": {
-    "superClass": "java.lang.Object",
-    "interfaces": [
+  "com.yahoo.documentapi.local.LocalSyncSession" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [
       "com.yahoo.documentapi.SyncSession"
     ],
-    "attributes": [
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>(com.yahoo.documentapi.local.LocalDocumentAccess)",
       "public void put(com.yahoo.document.DocumentPut)",
       "public com.yahoo.document.Document get(com.yahoo.document.DocumentId, java.time.Duration)",
@@ -1006,17 +1006,17 @@
       "public com.yahoo.documentapi.Response getNext(int)",
       "public void destroy()"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.documentapi.local.LocalVisitorSession": {
-    "superClass": "java.lang.Object",
-    "interfaces": [
+  "com.yahoo.documentapi.local.LocalVisitorSession" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [
       "com.yahoo.documentapi.VisitorSession"
     ],
-    "attributes": [
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>(com.yahoo.documentapi.local.LocalDocumentAccess, com.yahoo.documentapi.VisitorParameters)",
       "public boolean isDone()",
       "public com.yahoo.documentapi.ProgressToken getProgress()",
@@ -1028,18 +1028,18 @@
       "public com.yahoo.documentapi.VisitorResponse getNext(int)",
       "public void destroy()"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.documentapi.messagebus.MessageBusAsyncSession": {
-    "superClass": "java.lang.Object",
-    "interfaces": [
+  "com.yahoo.documentapi.messagebus.MessageBusAsyncSession" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [
       "com.yahoo.documentapi.messagebus.MessageBusSession",
       "com.yahoo.documentapi.AsyncSession"
     ],
-    "attributes": [
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public com.yahoo.documentapi.Result put(com.yahoo.document.Document)",
       "public com.yahoo.documentapi.Result put(com.yahoo.document.DocumentPut, com.yahoo.documentapi.DocumentOperationParameters)",
       "public com.yahoo.documentapi.Result get(com.yahoo.document.DocumentId)",
@@ -1058,15 +1058,15 @@
       "public void setTraceLevel(int)",
       "public double getCurrentWindowSize()"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.documentapi.messagebus.MessageBusDocumentAccess": {
-    "superClass": "com.yahoo.documentapi.DocumentAccess",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.documentapi.messagebus.MessageBusDocumentAccess" : {
+    "superClass" : "com.yahoo.documentapi.DocumentAccess",
+    "interfaces" : [ ],
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>()",
       "public void <init>(com.yahoo.documentapi.messagebus.MessageBusParams)",
       "public void shutdown()",
@@ -1084,15 +1084,15 @@
       "public bridge synthetic com.yahoo.documentapi.AsyncSession createAsyncSession(com.yahoo.documentapi.AsyncParameters)",
       "public bridge synthetic com.yahoo.documentapi.SyncSession createSyncSession(com.yahoo.documentapi.SyncParameters)"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.documentapi.messagebus.MessageBusParams": {
-    "superClass": "com.yahoo.documentapi.DocumentAccessParams",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.documentapi.messagebus.MessageBusParams" : {
+    "superClass" : "com.yahoo.documentapi.DocumentAccessParams",
+    "interfaces" : [ ],
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>()",
       "public java.lang.String getRoutingConfigId()",
       "public com.yahoo.documentapi.messagebus.MessageBusParams setRoutingConfigId(java.lang.String)",
@@ -1114,35 +1114,35 @@
       "public com.yahoo.messagebus.SourceSessionParams getSourceSessionParams()",
       "public com.yahoo.documentapi.messagebus.MessageBusParams setSourceSessionParams(com.yahoo.messagebus.SourceSessionParams)"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.documentapi.messagebus.MessageBusSession": {
-    "superClass": "java.lang.Object",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.documentapi.messagebus.MessageBusSession" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [ ],
+    "attributes" : [
       "public",
       "interface",
       "abstract"
     ],
-    "methods": [
+    "methods" : [
       "public abstract java.lang.String getRoute()",
       "public abstract void setRoute(java.lang.String)",
       "public abstract int getTraceLevel()",
       "public abstract void setTraceLevel(int)"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.documentapi.messagebus.MessageBusSyncSession": {
-    "superClass": "java.lang.Object",
-    "interfaces": [
+  "com.yahoo.documentapi.messagebus.MessageBusSyncSession" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [
       "com.yahoo.documentapi.messagebus.MessageBusSession",
       "com.yahoo.documentapi.SyncSession",
       "com.yahoo.messagebus.ReplyHandler"
     ],
-    "attributes": [
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void handleReply(com.yahoo.messagebus.Reply)",
       "public com.yahoo.documentapi.Response getNext()",
       "public com.yahoo.documentapi.Response getNext(int)",
@@ -1161,18 +1161,18 @@
       "public int getTraceLevel()",
       "public void setTraceLevel(int)"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.documentapi.messagebus.MessageBusVisitorDestinationSession": {
-    "superClass": "java.lang.Object",
-    "interfaces": [
+  "com.yahoo.documentapi.messagebus.MessageBusVisitorDestinationSession" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [
       "com.yahoo.documentapi.VisitorDestinationSession",
       "com.yahoo.messagebus.MessageHandler"
     ],
-    "attributes": [
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>(com.yahoo.documentapi.VisitorDestinationParameters, com.yahoo.messagebus.MessageBus)",
       "public void handleMessage(com.yahoo.messagebus.Message)",
       "public void ack(com.yahoo.documentapi.AckToken)",
@@ -1181,179 +1181,179 @@
       "public com.yahoo.documentapi.VisitorResponse getNext()",
       "public com.yahoo.documentapi.VisitorResponse getNext(int)"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.documentapi.messagebus.MessageBusVisitorSession$AsyncTaskExecutor": {
-    "superClass": "java.lang.Object",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.documentapi.messagebus.MessageBusVisitorSession$AsyncTaskExecutor" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [ ],
+    "attributes" : [
       "public",
       "interface",
       "abstract"
     ],
-    "methods": [
+    "methods" : [
       "public abstract void submitTask(java.lang.Runnable)",
       "public abstract void scheduleTask(java.lang.Runnable, long, java.util.concurrent.TimeUnit)"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.documentapi.messagebus.MessageBusVisitorSession$Clock": {
-    "superClass": "java.lang.Object",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.documentapi.messagebus.MessageBusVisitorSession$Clock" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [ ],
+    "attributes" : [
       "public",
       "interface",
       "abstract"
     ],
-    "methods": [
+    "methods" : [
       "public abstract long monotonicNanoTime()"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.documentapi.messagebus.MessageBusVisitorSession$MessageBusReceiver": {
-    "superClass": "java.lang.Object",
-    "interfaces": [
+  "com.yahoo.documentapi.messagebus.MessageBusVisitorSession$MessageBusReceiver" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [
       "com.yahoo.documentapi.messagebus.MessageBusVisitorSession$Receiver"
     ],
-    "attributes": [
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>(com.yahoo.messagebus.DestinationSession)",
       "public void reply(com.yahoo.messagebus.Reply)",
       "public void destroy()",
       "public java.lang.String getConnectionSpec()"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.documentapi.messagebus.MessageBusVisitorSession$MessageBusReceiverFactory": {
-    "superClass": "java.lang.Object",
-    "interfaces": [
+  "com.yahoo.documentapi.messagebus.MessageBusVisitorSession$MessageBusReceiverFactory" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [
       "com.yahoo.documentapi.messagebus.MessageBusVisitorSession$ReceiverFactory"
     ],
-    "attributes": [
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>(com.yahoo.messagebus.MessageBus)",
       "public com.yahoo.documentapi.messagebus.MessageBusVisitorSession$Receiver createReceiver(com.yahoo.messagebus.MessageHandler, java.lang.String)"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.documentapi.messagebus.MessageBusVisitorSession$MessageBusSender": {
-    "superClass": "java.lang.Object",
-    "interfaces": [
+  "com.yahoo.documentapi.messagebus.MessageBusVisitorSession$MessageBusSender" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [
       "com.yahoo.documentapi.messagebus.MessageBusVisitorSession$Sender"
     ],
-    "attributes": [
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>(com.yahoo.messagebus.SourceSession)",
       "public com.yahoo.messagebus.Result send(com.yahoo.messagebus.Message)",
       "public int getPendingCount()",
       "public void destroy()"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.documentapi.messagebus.MessageBusVisitorSession$MessageBusSenderFactory": {
-    "superClass": "java.lang.Object",
-    "interfaces": [
+  "com.yahoo.documentapi.messagebus.MessageBusVisitorSession$MessageBusSenderFactory" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [
       "com.yahoo.documentapi.messagebus.MessageBusVisitorSession$SenderFactory"
     ],
-    "attributes": [
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>(com.yahoo.messagebus.MessageBus)",
       "public com.yahoo.documentapi.messagebus.MessageBusVisitorSession$Sender createSender(com.yahoo.messagebus.ReplyHandler, com.yahoo.documentapi.VisitorParameters)"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.documentapi.messagebus.MessageBusVisitorSession$RealClock": {
-    "superClass": "java.lang.Object",
-    "interfaces": [
+  "com.yahoo.documentapi.messagebus.MessageBusVisitorSession$RealClock" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [
       "com.yahoo.documentapi.messagebus.MessageBusVisitorSession$Clock"
     ],
-    "attributes": [
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>()",
       "public long monotonicNanoTime()"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.documentapi.messagebus.MessageBusVisitorSession$Receiver": {
-    "superClass": "java.lang.Object",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.documentapi.messagebus.MessageBusVisitorSession$Receiver" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [ ],
+    "attributes" : [
       "public",
       "interface",
       "abstract"
     ],
-    "methods": [
+    "methods" : [
       "public abstract void reply(com.yahoo.messagebus.Reply)",
       "public abstract void destroy()",
       "public abstract java.lang.String getConnectionSpec()"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.documentapi.messagebus.MessageBusVisitorSession$ReceiverFactory": {
-    "superClass": "java.lang.Object",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.documentapi.messagebus.MessageBusVisitorSession$ReceiverFactory" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [ ],
+    "attributes" : [
       "public",
       "interface",
       "abstract"
     ],
-    "methods": [
+    "methods" : [
       "public abstract com.yahoo.documentapi.messagebus.MessageBusVisitorSession$Receiver createReceiver(com.yahoo.messagebus.MessageHandler, java.lang.String)"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.documentapi.messagebus.MessageBusVisitorSession$Sender": {
-    "superClass": "java.lang.Object",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.documentapi.messagebus.MessageBusVisitorSession$Sender" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [ ],
+    "attributes" : [
       "public",
       "interface",
       "abstract"
     ],
-    "methods": [
+    "methods" : [
       "public abstract com.yahoo.messagebus.Result send(com.yahoo.messagebus.Message)",
       "public abstract int getPendingCount()",
       "public abstract void destroy()"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.documentapi.messagebus.MessageBusVisitorSession$SenderFactory": {
-    "superClass": "java.lang.Object",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.documentapi.messagebus.MessageBusVisitorSession$SenderFactory" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [ ],
+    "attributes" : [
       "public",
       "interface",
       "abstract"
     ],
-    "methods": [
+    "methods" : [
       "public abstract com.yahoo.documentapi.messagebus.MessageBusVisitorSession$Sender createSender(com.yahoo.messagebus.ReplyHandler, com.yahoo.documentapi.VisitorParameters)"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.documentapi.messagebus.MessageBusVisitorSession$State": {
-    "superClass": "java.lang.Enum",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.documentapi.messagebus.MessageBusVisitorSession$State" : {
+    "superClass" : "java.lang.Enum",
+    "interfaces" : [ ],
+    "attributes" : [
       "public",
       "final",
       "enum"
     ],
-    "methods": [
+    "methods" : [
       "public static com.yahoo.documentapi.messagebus.MessageBusVisitorSession$State[] values()",
       "public static com.yahoo.documentapi.messagebus.MessageBusVisitorSession$State valueOf(java.lang.String)",
       "public boolean isFailure()"
     ],
-    "fields": [
+    "fields" : [
       "public static final enum com.yahoo.documentapi.messagebus.MessageBusVisitorSession$State NOT_STARTED",
       "public static final enum com.yahoo.documentapi.messagebus.MessageBusVisitorSession$State WORKING",
       "public static final enum com.yahoo.documentapi.messagebus.MessageBusVisitorSession$State COMPLETED",
@@ -1362,13 +1362,13 @@
       "public static final enum com.yahoo.documentapi.messagebus.MessageBusVisitorSession$State TIMED_OUT"
     ]
   },
-  "com.yahoo.documentapi.messagebus.MessageBusVisitorSession$StateDescription": {
-    "superClass": "java.lang.Object",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.documentapi.messagebus.MessageBusVisitorSession$StateDescription" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [ ],
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>(com.yahoo.documentapi.messagebus.MessageBusVisitorSession, com.yahoo.documentapi.messagebus.MessageBusVisitorSession$State, java.lang.String)",
       "public void <init>(com.yahoo.documentapi.messagebus.MessageBusVisitorSession, com.yahoo.documentapi.messagebus.MessageBusVisitorSession$State)",
       "public com.yahoo.documentapi.messagebus.MessageBusVisitorSession$State getState()",
@@ -1376,45 +1376,45 @@
       "public boolean failed()",
       "public java.lang.String toString()"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.documentapi.messagebus.MessageBusVisitorSession$ThreadAsyncTaskExecutor": {
-    "superClass": "java.lang.Object",
-    "interfaces": [
+  "com.yahoo.documentapi.messagebus.MessageBusVisitorSession$ThreadAsyncTaskExecutor" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [
       "com.yahoo.documentapi.messagebus.MessageBusVisitorSession$AsyncTaskExecutor"
     ],
-    "attributes": [
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>(java.util.concurrent.ScheduledExecutorService)",
       "public void submitTask(java.lang.Runnable)",
       "public void scheduleTask(java.lang.Runnable, long, java.util.concurrent.TimeUnit)"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.documentapi.messagebus.MessageBusVisitorSession$VisitingProgress": {
-    "superClass": "java.lang.Object",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.documentapi.messagebus.MessageBusVisitorSession$VisitingProgress" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [ ],
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>(com.yahoo.documentapi.VisitorIterator, com.yahoo.documentapi.ProgressToken)",
       "public com.yahoo.documentapi.VisitorIterator getIterator()",
       "public com.yahoo.documentapi.ProgressToken getToken()"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.documentapi.messagebus.MessageBusVisitorSession": {
-    "superClass": "java.lang.Object",
-    "interfaces": [
+  "com.yahoo.documentapi.messagebus.MessageBusVisitorSession" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [
       "com.yahoo.documentapi.VisitorSession"
     ],
-    "attributes": [
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>(com.yahoo.documentapi.VisitorParameters, com.yahoo.documentapi.messagebus.MessageBusVisitorSession$AsyncTaskExecutor, com.yahoo.documentapi.messagebus.MessageBusVisitorSession$SenderFactory, com.yahoo.documentapi.messagebus.MessageBusVisitorSession$ReceiverFactory, com.yahoo.messagebus.routing.RoutingTable)",
       "public void <init>(com.yahoo.documentapi.VisitorParameters, com.yahoo.documentapi.messagebus.MessageBusVisitorSession$AsyncTaskExecutor, com.yahoo.documentapi.messagebus.MessageBusVisitorSession$SenderFactory, com.yahoo.documentapi.messagebus.MessageBusVisitorSession$ReceiverFactory, com.yahoo.messagebus.routing.RoutingTable, com.yahoo.documentapi.messagebus.MessageBusVisitorSession$Clock)",
       "public static com.yahoo.documentapi.messagebus.MessageBusVisitorSession createForMessageBus(com.yahoo.messagebus.MessageBus, java.util.concurrent.ScheduledExecutorService, com.yahoo.documentapi.VisitorParameters)",
@@ -1431,15 +1431,15 @@
       "public boolean isDestroying()",
       "public void destroy()"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.documentapi.messagebus.ScheduledEventQueue": {
-    "superClass": "java.lang.Object",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.documentapi.messagebus.ScheduledEventQueue" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [ ],
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>()",
       "public void <init>(com.yahoo.concurrent.Timer)",
       "public void pushTask(java.lang.Runnable)",
@@ -1452,99 +1452,99 @@
       "public boolean isShutdown()",
       "public long size()"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.documentapi.messagebus.protocol.ANDPolicy": {
-    "superClass": "java.lang.Object",
-    "interfaces": [
+  "com.yahoo.documentapi.messagebus.protocol.ANDPolicy" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [
       "com.yahoo.documentapi.messagebus.protocol.DocumentProtocolRoutingPolicy"
     ],
-    "attributes": [
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>(java.lang.String)",
       "public void select(com.yahoo.messagebus.routing.RoutingContext)",
       "public void merge(com.yahoo.messagebus.routing.RoutingContext)",
       "public void destroy()"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.documentapi.messagebus.protocol.AbstractRoutableFactory": {
-    "superClass": "java.lang.Object",
-    "interfaces": [
+  "com.yahoo.documentapi.messagebus.protocol.AbstractRoutableFactory" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [
       "com.yahoo.documentapi.messagebus.protocol.RoutableFactory"
     ],
-    "attributes": [
+    "attributes" : [
       "public",
       "abstract"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>()",
       "public static java.lang.String decodeString(com.yahoo.vespa.objects.Deserializer)",
       "public static void encodeString(java.lang.String, com.yahoo.vespa.objects.Serializer)"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.documentapi.messagebus.protocol.ContentPolicy$BucketIdCalculator": {
-    "superClass": "java.lang.Object",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.documentapi.messagebus.protocol.ContentPolicy$BucketIdCalculator" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [ ],
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>()"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.documentapi.messagebus.protocol.ContentPolicy$DistributorSelectionLogic": {
-    "superClass": "java.lang.Object",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.documentapi.messagebus.protocol.ContentPolicy$DistributorSelectionLogic" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [ ],
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void destroy()"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.documentapi.messagebus.protocol.ContentPolicy$HostFetcher": {
-    "superClass": "java.lang.Object",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.documentapi.messagebus.protocol.ContentPolicy$HostFetcher" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [ ],
+    "attributes" : [
       "public",
       "abstract"
     ],
-    "methods": [
+    "methods" : [
       "protected void <init>(int)",
       "public abstract java.lang.String getTargetSpec(java.lang.Integer, com.yahoo.messagebus.routing.RoutingContext)",
       "public void close()"
     ],
-    "fields": [
+    "fields" : [
       "protected final java.util.Random randomizer"
     ]
   },
-  "com.yahoo.documentapi.messagebus.protocol.ContentPolicy$InstabilityChecker": {
-    "superClass": "java.lang.Object",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.documentapi.messagebus.protocol.ContentPolicy$InstabilityChecker" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [ ],
+    "attributes" : [
       "public",
       "interface",
       "abstract"
     ],
-    "methods": [
+    "methods" : [
       "public abstract boolean tooManyFailures(int)",
       "public abstract void addFailure(java.lang.Integer)"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.documentapi.messagebus.protocol.ContentPolicy$Parameters": {
-    "superClass": "java.lang.Object",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.documentapi.messagebus.protocol.ContentPolicy$Parameters" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [ ],
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>(java.util.Map)",
       "public java.lang.String getClusterName()",
       "public com.yahoo.documentapi.messagebus.protocol.ContentPolicy$SlobrokHostPatternGenerator createPatternGenerator()",
@@ -1552,64 +1552,64 @@
       "public com.yahoo.vdslib.distribution.Distribution createDistribution(com.yahoo.documentapi.messagebus.protocol.SlobrokPolicy)",
       "public com.yahoo.documentapi.messagebus.protocol.ContentPolicy$InstabilityChecker createInstabilityChecker()"
     ],
-    "fields": [
+    "fields" : [
       "protected final java.lang.String clusterName",
       "protected final java.lang.String distributionConfigId",
       "protected final com.yahoo.vespa.config.content.DistributionConfig distributionConfig",
       "protected final com.yahoo.documentapi.messagebus.protocol.ContentPolicy$SlobrokHostPatternGenerator slobrokHostPatternGenerator"
     ]
   },
-  "com.yahoo.documentapi.messagebus.protocol.ContentPolicy$PerNodeCountingInstabilityChecker": {
-    "superClass": "java.lang.Object",
-    "interfaces": [
+  "com.yahoo.documentapi.messagebus.protocol.ContentPolicy$PerNodeCountingInstabilityChecker" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [
       "com.yahoo.documentapi.messagebus.protocol.ContentPolicy$InstabilityChecker"
     ],
-    "attributes": [
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>(int)",
       "public boolean tooManyFailures(int)",
       "public void addFailure(java.lang.Integer)"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.documentapi.messagebus.protocol.ContentPolicy$SlobrokHostFetcher": {
-    "superClass": "com.yahoo.documentapi.messagebus.protocol.ContentPolicy$HostFetcher",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.documentapi.messagebus.protocol.ContentPolicy$SlobrokHostFetcher" : {
+    "superClass" : "com.yahoo.documentapi.messagebus.protocol.ContentPolicy$HostFetcher",
+    "interfaces" : [ ],
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public com.yahoo.jrt.slobrok.api.IMirror getMirror(com.yahoo.messagebus.routing.RoutingContext)",
       "public java.lang.String getTargetSpec(java.lang.Integer, com.yahoo.messagebus.routing.RoutingContext)"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.documentapi.messagebus.protocol.ContentPolicy": {
-    "superClass": "com.yahoo.documentapi.messagebus.protocol.SlobrokPolicy",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.documentapi.messagebus.protocol.ContentPolicy" : {
+    "superClass" : "com.yahoo.documentapi.messagebus.protocol.SlobrokPolicy",
+    "interfaces" : [ ],
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>(java.lang.String, com.yahoo.vespa.config.content.DistributionConfig)",
       "public void <init>(com.yahoo.documentapi.messagebus.protocol.ContentPolicy$Parameters)",
       "public void select(com.yahoo.messagebus.routing.RoutingContext)",
       "public void merge(com.yahoo.messagebus.routing.RoutingContext)",
       "public void destroy()"
     ],
-    "fields": [
+    "fields" : [
       "public static final java.lang.String owningBucketStates"
     ]
   },
-  "com.yahoo.documentapi.messagebus.protocol.CreateVisitorMessage": {
-    "superClass": "com.yahoo.documentapi.messagebus.protocol.DocumentMessage",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.documentapi.messagebus.protocol.CreateVisitorMessage" : {
+    "superClass" : "com.yahoo.documentapi.messagebus.protocol.DocumentMessage",
+    "interfaces" : [ ],
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>(java.lang.String, java.lang.String, java.lang.String, java.lang.String)",
       "public java.lang.String getLibraryName()",
       "public void setLibraryName(java.lang.String)",
@@ -1646,30 +1646,30 @@
       "public int getType()",
       "public java.lang.String toString()"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.documentapi.messagebus.protocol.CreateVisitorReply": {
-    "superClass": "com.yahoo.documentapi.messagebus.protocol.DocumentReply",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.documentapi.messagebus.protocol.CreateVisitorReply" : {
+    "superClass" : "com.yahoo.documentapi.messagebus.protocol.DocumentReply",
+    "interfaces" : [ ],
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>(int)",
       "public void setLastBucket(com.yahoo.document.BucketId)",
       "public com.yahoo.document.BucketId getLastBucket()",
       "public void setVisitorStatistics(com.yahoo.vdslib.VisitorStatistics)",
       "public com.yahoo.vdslib.VisitorStatistics getVisitorStatistics()"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.documentapi.messagebus.protocol.DestroyVisitorMessage": {
-    "superClass": "com.yahoo.documentapi.messagebus.protocol.DocumentMessage",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.documentapi.messagebus.protocol.DestroyVisitorMessage" : {
+    "superClass" : "com.yahoo.documentapi.messagebus.protocol.DocumentMessage",
+    "interfaces" : [ ],
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>(java.lang.String)",
       "public void <init>(com.yahoo.documentapi.messagebus.protocol.DestroyVisitorMessage)",
       "public java.lang.String getInstanceId()",
@@ -1677,38 +1677,38 @@
       "public com.yahoo.documentapi.messagebus.protocol.DocumentReply createReply()",
       "public int getType()"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.documentapi.messagebus.protocol.DocumentAcceptedReply": {
-    "superClass": "com.yahoo.documentapi.messagebus.protocol.DocumentReply",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.documentapi.messagebus.protocol.DocumentAcceptedReply" : {
+    "superClass" : "com.yahoo.documentapi.messagebus.protocol.DocumentReply",
+    "interfaces" : [ ],
+    "attributes" : [
       "public",
       "abstract"
     ],
-    "methods": [
+    "methods" : [
       "protected void <init>(int)"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.documentapi.messagebus.protocol.DocumentIgnoredReply": {
-    "superClass": "com.yahoo.documentapi.messagebus.protocol.DocumentReply",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.documentapi.messagebus.protocol.DocumentIgnoredReply" : {
+    "superClass" : "com.yahoo.documentapi.messagebus.protocol.DocumentReply",
+    "interfaces" : [ ],
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>()"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.documentapi.messagebus.protocol.DocumentListEntry": {
-    "superClass": "java.lang.Object",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.documentapi.messagebus.protocol.DocumentListEntry" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [ ],
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>(com.yahoo.document.Document, long, boolean)",
       "public void serialize(com.yahoo.vespa.objects.Serializer)",
       "public static int getApproxSize()",
@@ -1717,15 +1717,15 @@
       "public long getTimestamp()",
       "public boolean isRemoveEntry()"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.documentapi.messagebus.protocol.DocumentListMessage": {
-    "superClass": "com.yahoo.documentapi.messagebus.protocol.VisitorMessage",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.documentapi.messagebus.protocol.DocumentListMessage" : {
+    "superClass" : "com.yahoo.documentapi.messagebus.protocol.VisitorMessage",
+    "interfaces" : [ ],
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>()",
       "public void <init>(com.yahoo.documentapi.messagebus.protocol.DocumentListMessage)",
       "public com.yahoo.document.BucketId getBucketId()",
@@ -1736,16 +1736,16 @@
       "public int getApproxSize()",
       "public java.lang.String toString()"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.documentapi.messagebus.protocol.DocumentMessage": {
-    "superClass": "com.yahoo.messagebus.Message",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.documentapi.messagebus.protocol.DocumentMessage" : {
+    "superClass" : "com.yahoo.messagebus.Message",
+    "interfaces" : [ ],
+    "attributes" : [
       "public",
       "abstract"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>()",
       "public abstract com.yahoo.documentapi.messagebus.protocol.DocumentReply createReply()",
       "public void swapState(com.yahoo.messagebus.Routable)",
@@ -1754,22 +1754,22 @@
       "public int getApproxSize()",
       "public com.yahoo.text.Utf8String getProtocol()"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.documentapi.messagebus.protocol.DocumentProtocol$Priority": {
-    "superClass": "java.lang.Enum",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.documentapi.messagebus.protocol.DocumentProtocol$Priority" : {
+    "superClass" : "java.lang.Enum",
+    "interfaces" : [ ],
+    "attributes" : [
       "public",
       "final",
       "enum"
     ],
-    "methods": [
+    "methods" : [
       "public static com.yahoo.documentapi.messagebus.protocol.DocumentProtocol$Priority[] values()",
       "public static com.yahoo.documentapi.messagebus.protocol.DocumentProtocol$Priority valueOf(java.lang.String)",
       "public int getValue()"
     ],
-    "fields": [
+    "fields" : [
       "public static final enum com.yahoo.documentapi.messagebus.protocol.DocumentProtocol$Priority HIGHEST",
       "public static final enum com.yahoo.documentapi.messagebus.protocol.DocumentProtocol$Priority VERY_HIGH",
       "public static final enum com.yahoo.documentapi.messagebus.protocol.DocumentProtocol$Priority HIGH_1",
@@ -1788,15 +1788,15 @@
       "public static final enum com.yahoo.documentapi.messagebus.protocol.DocumentProtocol$Priority LOWEST"
     ]
   },
-  "com.yahoo.documentapi.messagebus.protocol.DocumentProtocol": {
-    "superClass": "java.lang.Object",
-    "interfaces": [
+  "com.yahoo.documentapi.messagebus.protocol.DocumentProtocol" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [
       "com.yahoo.messagebus.Protocol"
     ],
-    "attributes": [
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public static com.yahoo.documentapi.messagebus.protocol.DocumentProtocol$Priority getPriority(int)",
       "public static com.yahoo.documentapi.messagebus.protocol.DocumentProtocol$Priority getPriorityByName(java.lang.String)",
       "public void <init>(com.yahoo.document.DocumentTypeManager)",
@@ -1817,7 +1817,7 @@
       "public java.util.List getRoutableTypes(com.yahoo.component.Version)",
       "public final com.yahoo.document.DocumentTypeManager getDocumentTypeManager()"
     ],
-    "fields": [
+    "fields" : [
       "public static final com.yahoo.text.Utf8String NAME",
       "public static final int DOCUMENT_MESSAGE",
       "public static final int MESSAGE_GETDOCUMENT",
@@ -1885,15 +1885,15 @@
       "public static final int ERROR_SUSPENDED"
     ]
   },
-  "com.yahoo.documentapi.messagebus.protocol.DocumentProtocolPoliciesConfig$Builder": {
-    "superClass": "java.lang.Object",
-    "interfaces": [
+  "com.yahoo.documentapi.messagebus.protocol.DocumentProtocolPoliciesConfig$Builder" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [
       "com.yahoo.config.ConfigInstance$Builder"
     ],
-    "attributes": [
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>()",
       "public void <init>(com.yahoo.documentapi.messagebus.protocol.DocumentProtocolPoliciesConfig)",
       "public com.yahoo.documentapi.messagebus.protocol.DocumentProtocolPoliciesConfig$Builder cluster(java.lang.String, com.yahoo.documentapi.messagebus.protocol.DocumentProtocolPoliciesConfig$Cluster$Builder)",
@@ -1907,19 +1907,19 @@
       "public final void setApplyOnRestart(boolean)",
       "public com.yahoo.documentapi.messagebus.protocol.DocumentProtocolPoliciesConfig build()"
     ],
-    "fields": [
+    "fields" : [
       "public java.util.Map cluster"
     ]
   },
-  "com.yahoo.documentapi.messagebus.protocol.DocumentProtocolPoliciesConfig$Cluster$Builder": {
-    "superClass": "java.lang.Object",
-    "interfaces": [
+  "com.yahoo.documentapi.messagebus.protocol.DocumentProtocolPoliciesConfig$Cluster$Builder" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [
       "com.yahoo.config.ConfigBuilder"
     ],
-    "attributes": [
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>()",
       "public void <init>(com.yahoo.documentapi.messagebus.protocol.DocumentProtocolPoliciesConfig$Cluster)",
       "public com.yahoo.documentapi.messagebus.protocol.DocumentProtocolPoliciesConfig$Cluster$Builder defaultRoute(java.lang.String)",
@@ -1929,80 +1929,80 @@
       "public com.yahoo.documentapi.messagebus.protocol.DocumentProtocolPoliciesConfig$Cluster$Builder selector(java.lang.String)",
       "public com.yahoo.documentapi.messagebus.protocol.DocumentProtocolPoliciesConfig$Cluster build()"
     ],
-    "fields": [
+    "fields" : [
       "public java.util.List route"
     ]
   },
-  "com.yahoo.documentapi.messagebus.protocol.DocumentProtocolPoliciesConfig$Cluster$Route$Builder": {
-    "superClass": "java.lang.Object",
-    "interfaces": [
+  "com.yahoo.documentapi.messagebus.protocol.DocumentProtocolPoliciesConfig$Cluster$Route$Builder" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [
       "com.yahoo.config.ConfigBuilder"
     ],
-    "attributes": [
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>()",
       "public void <init>(com.yahoo.documentapi.messagebus.protocol.DocumentProtocolPoliciesConfig$Cluster$Route)",
       "public com.yahoo.documentapi.messagebus.protocol.DocumentProtocolPoliciesConfig$Cluster$Route$Builder name(java.lang.String)",
       "public com.yahoo.documentapi.messagebus.protocol.DocumentProtocolPoliciesConfig$Cluster$Route$Builder messageType(int)",
       "public com.yahoo.documentapi.messagebus.protocol.DocumentProtocolPoliciesConfig$Cluster$Route build()"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.documentapi.messagebus.protocol.DocumentProtocolPoliciesConfig$Cluster$Route": {
-    "superClass": "com.yahoo.config.InnerNode",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.documentapi.messagebus.protocol.DocumentProtocolPoliciesConfig$Cluster$Route" : {
+    "superClass" : "com.yahoo.config.InnerNode",
+    "interfaces" : [ ],
+    "attributes" : [
       "public",
       "final"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>(com.yahoo.documentapi.messagebus.protocol.DocumentProtocolPoliciesConfig$Cluster$Route$Builder)",
       "public java.lang.String name()",
       "public int messageType()"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.documentapi.messagebus.protocol.DocumentProtocolPoliciesConfig$Cluster": {
-    "superClass": "com.yahoo.config.InnerNode",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.documentapi.messagebus.protocol.DocumentProtocolPoliciesConfig$Cluster" : {
+    "superClass" : "com.yahoo.config.InnerNode",
+    "interfaces" : [ ],
+    "attributes" : [
       "public",
       "final"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>(com.yahoo.documentapi.messagebus.protocol.DocumentProtocolPoliciesConfig$Cluster$Builder)",
       "public java.lang.String defaultRoute()",
       "public java.util.List route()",
       "public com.yahoo.documentapi.messagebus.protocol.DocumentProtocolPoliciesConfig$Cluster$Route route(int)",
       "public java.lang.String selector()"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.documentapi.messagebus.protocol.DocumentProtocolPoliciesConfig$Producer": {
-    "superClass": "java.lang.Object",
-    "interfaces": [
+  "com.yahoo.documentapi.messagebus.protocol.DocumentProtocolPoliciesConfig$Producer" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [
       "com.yahoo.config.ConfigInstance$Producer"
     ],
-    "attributes": [
+    "attributes" : [
       "public",
       "interface",
       "abstract"
     ],
-    "methods": [
+    "methods" : [
       "public abstract void getConfig(com.yahoo.documentapi.messagebus.protocol.DocumentProtocolPoliciesConfig$Builder)"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.documentapi.messagebus.protocol.DocumentProtocolPoliciesConfig": {
-    "superClass": "com.yahoo.config.ConfigInstance",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.documentapi.messagebus.protocol.DocumentProtocolPoliciesConfig" : {
+    "superClass" : "com.yahoo.config.ConfigInstance",
+    "interfaces" : [ ],
+    "attributes" : [
       "public",
       "final"
     ],
-    "methods": [
+    "methods" : [
       "public static java.lang.String getDefMd5()",
       "public static java.lang.String getDefName()",
       "public static java.lang.String getDefNamespace()",
@@ -2010,51 +2010,51 @@
       "public java.util.Map cluster()",
       "public com.yahoo.documentapi.messagebus.protocol.DocumentProtocolPoliciesConfig$Cluster cluster(java.lang.String)"
     ],
-    "fields": [
+    "fields" : [
       "public static final java.lang.String CONFIG_DEF_MD5",
       "public static final java.lang.String CONFIG_DEF_NAME",
       "public static final java.lang.String CONFIG_DEF_NAMESPACE",
       "public static final java.lang.String[] CONFIG_DEF_SCHEMA"
     ]
   },
-  "com.yahoo.documentapi.messagebus.protocol.DocumentProtocolRoutingPolicy": {
-    "superClass": "java.lang.Object",
-    "interfaces": [
+  "com.yahoo.documentapi.messagebus.protocol.DocumentProtocolRoutingPolicy" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [
       "com.yahoo.messagebus.routing.RoutingPolicy"
     ],
-    "attributes": [
+    "attributes" : [
       "public",
       "interface",
       "abstract"
     ],
-    "methods": [],
-    "fields": []
+    "methods" : [ ],
+    "fields" : [ ]
   },
-  "com.yahoo.documentapi.messagebus.protocol.DocumentReply": {
-    "superClass": "com.yahoo.messagebus.Reply",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.documentapi.messagebus.protocol.DocumentReply" : {
+    "superClass" : "com.yahoo.messagebus.Reply",
+    "interfaces" : [ ],
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>(int)",
       "public com.yahoo.documentapi.messagebus.protocol.DocumentProtocol$Priority getPriority()",
       "public void setPriority(com.yahoo.documentapi.messagebus.protocol.DocumentProtocol$Priority)",
       "public com.yahoo.text.Utf8String getProtocol()",
       "public final int getType()"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.documentapi.messagebus.protocol.DocumentRouteSelectorPolicy": {
-    "superClass": "java.lang.Object",
-    "interfaces": [
+  "com.yahoo.documentapi.messagebus.protocol.DocumentRouteSelectorPolicy" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [
       "com.yahoo.documentapi.messagebus.protocol.DocumentProtocolRoutingPolicy",
       "com.yahoo.config.subscription.ConfigSubscriber$SingleSubscriber"
     ],
-    "attributes": [
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>(com.yahoo.documentapi.messagebus.protocol.DocumentProtocolPoliciesConfig)",
       "public void <init>(java.lang.String)",
       "public synchronized java.lang.String getError()",
@@ -2064,17 +2064,17 @@
       "public void destroy()",
       "public bridge synthetic void configure(com.yahoo.config.ConfigInstance)"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.documentapi.messagebus.protocol.DocumentState": {
-    "superClass": "java.lang.Object",
-    "interfaces": [
+  "com.yahoo.documentapi.messagebus.protocol.DocumentState" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [
       "java.lang.Comparable"
     ],
-    "attributes": [
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>(com.yahoo.document.DocumentId, long, boolean)",
       "public void <init>(com.yahoo.document.GlobalId, long, boolean)",
       "public void <init>(com.yahoo.vespa.objects.Deserializer)",
@@ -2090,32 +2090,32 @@
       "public java.lang.String toString()",
       "public bridge synthetic int compareTo(java.lang.Object)"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.documentapi.messagebus.protocol.DocumentSummaryMessage": {
-    "superClass": "com.yahoo.documentapi.messagebus.protocol.VisitorMessage",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.documentapi.messagebus.protocol.DocumentSummaryMessage" : {
+    "superClass" : "com.yahoo.documentapi.messagebus.protocol.VisitorMessage",
+    "interfaces" : [ ],
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>()",
       "public void setDocumentSummary(com.yahoo.vdslib.DocumentSummary)",
       "public com.yahoo.vdslib.DocumentSummary getResult()",
       "public com.yahoo.documentapi.messagebus.protocol.DocumentReply createReply()",
       "public int getType()"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.documentapi.messagebus.protocol.DocumentrouteselectorpolicyConfig$Builder": {
-    "superClass": "java.lang.Object",
-    "interfaces": [
+  "com.yahoo.documentapi.messagebus.protocol.DocumentrouteselectorpolicyConfig$Builder" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [
       "com.yahoo.config.ConfigInstance$Builder"
     ],
-    "attributes": [
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>()",
       "public void <init>(com.yahoo.documentapi.messagebus.protocol.DocumentrouteselectorpolicyConfig)",
       "public com.yahoo.documentapi.messagebus.protocol.DocumentrouteselectorpolicyConfig$Builder route(com.yahoo.documentapi.messagebus.protocol.DocumentrouteselectorpolicyConfig$Route$Builder)",
@@ -2129,34 +2129,34 @@
       "public final void setApplyOnRestart(boolean)",
       "public com.yahoo.documentapi.messagebus.protocol.DocumentrouteselectorpolicyConfig build()"
     ],
-    "fields": [
+    "fields" : [
       "public java.util.List route"
     ]
   },
-  "com.yahoo.documentapi.messagebus.protocol.DocumentrouteselectorpolicyConfig$Producer": {
-    "superClass": "java.lang.Object",
-    "interfaces": [
+  "com.yahoo.documentapi.messagebus.protocol.DocumentrouteselectorpolicyConfig$Producer" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [
       "com.yahoo.config.ConfigInstance$Producer"
     ],
-    "attributes": [
+    "attributes" : [
       "public",
       "interface",
       "abstract"
     ],
-    "methods": [
+    "methods" : [
       "public abstract void getConfig(com.yahoo.documentapi.messagebus.protocol.DocumentrouteselectorpolicyConfig$Builder)"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.documentapi.messagebus.protocol.DocumentrouteselectorpolicyConfig$Route$Builder": {
-    "superClass": "java.lang.Object",
-    "interfaces": [
+  "com.yahoo.documentapi.messagebus.protocol.DocumentrouteselectorpolicyConfig$Route$Builder" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [
       "com.yahoo.config.ConfigBuilder"
     ],
-    "attributes": [
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>()",
       "public void <init>(com.yahoo.documentapi.messagebus.protocol.DocumentrouteselectorpolicyConfig$Route)",
       "public com.yahoo.documentapi.messagebus.protocol.DocumentrouteselectorpolicyConfig$Route$Builder name(java.lang.String)",
@@ -2164,31 +2164,31 @@
       "public com.yahoo.documentapi.messagebus.protocol.DocumentrouteselectorpolicyConfig$Route$Builder feed(java.lang.String)",
       "public com.yahoo.documentapi.messagebus.protocol.DocumentrouteselectorpolicyConfig$Route build()"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.documentapi.messagebus.protocol.DocumentrouteselectorpolicyConfig$Route": {
-    "superClass": "com.yahoo.config.InnerNode",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.documentapi.messagebus.protocol.DocumentrouteselectorpolicyConfig$Route" : {
+    "superClass" : "com.yahoo.config.InnerNode",
+    "interfaces" : [ ],
+    "attributes" : [
       "public",
       "final"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>(com.yahoo.documentapi.messagebus.protocol.DocumentrouteselectorpolicyConfig$Route$Builder)",
       "public java.lang.String name()",
       "public java.lang.String selector()",
       "public java.lang.String feed()"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.documentapi.messagebus.protocol.DocumentrouteselectorpolicyConfig": {
-    "superClass": "com.yahoo.config.ConfigInstance",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.documentapi.messagebus.protocol.DocumentrouteselectorpolicyConfig" : {
+    "superClass" : "com.yahoo.config.ConfigInstance",
+    "interfaces" : [ ],
+    "attributes" : [
       "public",
       "final"
     ],
-    "methods": [
+    "methods" : [
       "public static java.lang.String getDefMd5()",
       "public static java.lang.String getDefName()",
       "public static java.lang.String getDefNamespace()",
@@ -2196,53 +2196,53 @@
       "public java.util.List route()",
       "public com.yahoo.documentapi.messagebus.protocol.DocumentrouteselectorpolicyConfig$Route route(int)"
     ],
-    "fields": [
+    "fields" : [
       "public static final java.lang.String CONFIG_DEF_MD5",
       "public static final java.lang.String CONFIG_DEF_NAME",
       "public static final java.lang.String CONFIG_DEF_NAMESPACE",
       "public static final java.lang.String[] CONFIG_DEF_SCHEMA"
     ]
   },
-  "com.yahoo.documentapi.messagebus.protocol.EmptyBucketsMessage": {
-    "superClass": "com.yahoo.documentapi.messagebus.protocol.VisitorMessage",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.documentapi.messagebus.protocol.EmptyBucketsMessage" : {
+    "superClass" : "com.yahoo.documentapi.messagebus.protocol.VisitorMessage",
+    "interfaces" : [ ],
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>(java.util.List)",
       "public java.util.List getBucketIds()",
       "public void setBucketIds(java.util.List)",
       "public com.yahoo.documentapi.messagebus.protocol.DocumentReply createReply()",
       "public int getType()"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.documentapi.messagebus.protocol.ErrorPolicy": {
-    "superClass": "java.lang.Object",
-    "interfaces": [
+  "com.yahoo.documentapi.messagebus.protocol.ErrorPolicy" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [
       "com.yahoo.documentapi.messagebus.protocol.DocumentProtocolRoutingPolicy"
     ],
-    "attributes": [
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>(java.lang.String)",
       "public void select(com.yahoo.messagebus.routing.RoutingContext)",
       "public void merge(com.yahoo.messagebus.routing.RoutingContext)",
       "public void destroy()"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.documentapi.messagebus.protocol.ExternPolicy": {
-    "superClass": "java.lang.Object",
-    "interfaces": [
+  "com.yahoo.documentapi.messagebus.protocol.ExternPolicy" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [
       "com.yahoo.documentapi.messagebus.protocol.DocumentProtocolRoutingPolicy"
     ],
-    "attributes": [
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>(java.lang.String)",
       "public java.lang.String getError()",
       "public com.yahoo.jrt.slobrok.api.Mirror getMirror()",
@@ -2250,15 +2250,15 @@
       "public void merge(com.yahoo.messagebus.routing.RoutingContext)",
       "public void destroy()"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.documentapi.messagebus.protocol.GetBucketListMessage": {
-    "superClass": "com.yahoo.documentapi.messagebus.protocol.DocumentMessage",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.documentapi.messagebus.protocol.GetBucketListMessage" : {
+    "superClass" : "com.yahoo.documentapi.messagebus.protocol.DocumentMessage",
+    "interfaces" : [ ],
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>(com.yahoo.document.BucketId)",
       "public void <init>(com.yahoo.document.BucketId, java.lang.String)",
       "public com.yahoo.document.BucketId getBucketId()",
@@ -2268,15 +2268,15 @@
       "public int getApproxSize()",
       "public int getType()"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.documentapi.messagebus.protocol.GetBucketListReply$BucketInfo": {
-    "superClass": "java.lang.Object",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.documentapi.messagebus.protocol.GetBucketListReply$BucketInfo" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [ ],
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>(com.yahoo.document.BucketId, java.lang.String)",
       "public com.yahoo.document.BucketId getBucketId()",
       "public java.lang.String getBucketInformation()",
@@ -2284,27 +2284,27 @@
       "public int hashCode()",
       "public java.lang.String toString()"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.documentapi.messagebus.protocol.GetBucketListReply": {
-    "superClass": "com.yahoo.documentapi.messagebus.protocol.DocumentReply",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.documentapi.messagebus.protocol.GetBucketListReply" : {
+    "superClass" : "com.yahoo.documentapi.messagebus.protocol.DocumentReply",
+    "interfaces" : [ ],
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>()",
       "public java.util.List getBuckets()"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.documentapi.messagebus.protocol.GetBucketStateMessage": {
-    "superClass": "com.yahoo.documentapi.messagebus.protocol.DocumentMessage",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.documentapi.messagebus.protocol.GetBucketStateMessage" : {
+    "superClass" : "com.yahoo.documentapi.messagebus.protocol.DocumentMessage",
+    "interfaces" : [ ],
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>(com.yahoo.document.BucketId)",
       "public com.yahoo.document.BucketId getBucketId()",
       "public void setBucketId(com.yahoo.document.BucketId)",
@@ -2313,29 +2313,29 @@
       "public int getApproxSize()",
       "public int getType()"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.documentapi.messagebus.protocol.GetBucketStateReply": {
-    "superClass": "com.yahoo.documentapi.messagebus.protocol.DocumentReply",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.documentapi.messagebus.protocol.GetBucketStateReply" : {
+    "superClass" : "com.yahoo.documentapi.messagebus.protocol.DocumentReply",
+    "interfaces" : [ ],
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>()",
       "public void <init>(java.util.List)",
       "public void setBucketState(java.util.List)",
       "public java.util.List getBucketState()"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.documentapi.messagebus.protocol.GetDocumentMessage": {
-    "superClass": "com.yahoo.documentapi.messagebus.protocol.DocumentMessage",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.documentapi.messagebus.protocol.GetDocumentMessage" : {
+    "superClass" : "com.yahoo.documentapi.messagebus.protocol.DocumentMessage",
+    "interfaces" : [ ],
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>(com.yahoo.document.DocumentId)",
       "public void <init>(com.yahoo.document.DocumentId, java.lang.String)",
       "public com.yahoo.document.DocumentId getDocumentId()",
@@ -2345,71 +2345,71 @@
       "public int getApproxSize()",
       "public int getType()"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.documentapi.messagebus.protocol.GetDocumentReply": {
-    "superClass": "com.yahoo.documentapi.messagebus.protocol.DocumentAcceptedReply",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.documentapi.messagebus.protocol.GetDocumentReply" : {
+    "superClass" : "com.yahoo.documentapi.messagebus.protocol.DocumentAcceptedReply",
+    "interfaces" : [ ],
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>(com.yahoo.document.Document)",
       "public com.yahoo.document.Document getDocument()",
       "public void setDocument(com.yahoo.document.Document)",
       "public long getLastModified()",
       "public java.nio.ByteBuffer getSerializedBuffer()"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.documentapi.messagebus.protocol.LazyDecoder": {
-    "superClass": "java.lang.Object",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.documentapi.messagebus.protocol.LazyDecoder" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [ ],
+    "attributes" : [
       "public",
       "interface",
       "abstract"
     ],
-    "methods": [
+    "methods" : [
       "public abstract void decode(com.yahoo.messagebus.Routable, com.yahoo.document.serialization.DocumentDeserializer)"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.documentapi.messagebus.protocol.LoadBalancerPolicy": {
-    "superClass": "com.yahoo.documentapi.messagebus.protocol.SlobrokPolicy",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.documentapi.messagebus.protocol.LoadBalancerPolicy" : {
+    "superClass" : "com.yahoo.documentapi.messagebus.protocol.SlobrokPolicy",
+    "interfaces" : [ ],
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void select(com.yahoo.messagebus.routing.RoutingContext)",
       "public void merge(com.yahoo.messagebus.routing.RoutingContext)",
       "public void destroy()"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.documentapi.messagebus.protocol.LocalServicePolicy": {
-    "superClass": "java.lang.Object",
-    "interfaces": [
+  "com.yahoo.documentapi.messagebus.protocol.LocalServicePolicy" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [
       "com.yahoo.documentapi.messagebus.protocol.DocumentProtocolRoutingPolicy"
     ],
-    "attributes": [
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void select(com.yahoo.messagebus.routing.RoutingContext)",
       "public void merge(com.yahoo.messagebus.routing.RoutingContext)",
       "public void destroy()"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.documentapi.messagebus.protocol.MapVisitorMessage": {
-    "superClass": "com.yahoo.documentapi.messagebus.protocol.VisitorMessage",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.documentapi.messagebus.protocol.MapVisitorMessage" : {
+    "superClass" : "com.yahoo.documentapi.messagebus.protocol.VisitorMessage",
+    "interfaces" : [ ],
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>(com.yahoo.documentapi.messagebus.protocol.MapVisitorMessage)",
       "public java.util.Map getData()",
       "public com.yahoo.documentapi.messagebus.protocol.DocumentReply createReply()",
@@ -2417,33 +2417,33 @@
       "public int getApproxSize()",
       "public java.lang.String toString()"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.documentapi.messagebus.protocol.MessageTypePolicy": {
-    "superClass": "java.lang.Object",
-    "interfaces": [
+  "com.yahoo.documentapi.messagebus.protocol.MessageTypePolicy" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [
       "com.yahoo.documentapi.messagebus.protocol.DocumentProtocolRoutingPolicy",
       "com.yahoo.config.subscription.ConfigSubscriber$SingleSubscriber"
     ],
-    "attributes": [
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void select(com.yahoo.messagebus.routing.RoutingContext)",
       "public void merge(com.yahoo.messagebus.routing.RoutingContext)",
       "public void destroy()",
       "public void configure(com.yahoo.vespa.config.content.MessagetyperouteselectorpolicyConfig)",
       "public bridge synthetic void configure(com.yahoo.config.ConfigInstance)"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.documentapi.messagebus.protocol.PutDocumentMessage": {
-    "superClass": "com.yahoo.documentapi.messagebus.protocol.TestAndSetMessage",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.documentapi.messagebus.protocol.PutDocumentMessage" : {
+    "superClass" : "com.yahoo.documentapi.messagebus.protocol.TestAndSetMessage",
+    "interfaces" : [ ],
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>(com.yahoo.documentapi.messagebus.protocol.LazyDecoder, com.yahoo.document.serialization.DocumentDeserializer)",
       "public void <init>(com.yahoo.document.DocumentPut)",
       "public static com.yahoo.documentapi.messagebus.protocol.PutDocumentMessage createEmpty()",
@@ -2459,15 +2459,15 @@
       "public com.yahoo.document.TestAndSetCondition getCondition()",
       "public void setCondition(com.yahoo.document.TestAndSetCondition)"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.documentapi.messagebus.protocol.QueryResultMessage": {
-    "superClass": "com.yahoo.documentapi.messagebus.protocol.VisitorMessage",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.documentapi.messagebus.protocol.QueryResultMessage" : {
+    "superClass" : "com.yahoo.documentapi.messagebus.protocol.VisitorMessage",
+    "interfaces" : [ ],
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>()",
       "public com.yahoo.vdslib.SearchResult getResult()",
       "public com.yahoo.vdslib.DocumentSummary getSummary()",
@@ -2476,15 +2476,15 @@
       "public com.yahoo.documentapi.messagebus.protocol.DocumentReply createReply()",
       "public int getType()"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.documentapi.messagebus.protocol.RemoveDocumentMessage": {
-    "superClass": "com.yahoo.documentapi.messagebus.protocol.TestAndSetMessage",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.documentapi.messagebus.protocol.RemoveDocumentMessage" : {
+    "superClass" : "com.yahoo.documentapi.messagebus.protocol.TestAndSetMessage",
+    "interfaces" : [ ],
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>(com.yahoo.document.DocumentId)",
       "public void <init>(com.yahoo.document.DocumentRemove)",
       "public com.yahoo.document.DocumentId getDocumentId()",
@@ -2498,638 +2498,638 @@
       "public com.yahoo.document.TestAndSetCondition getCondition()",
       "public com.yahoo.document.DocumentRemove getDocumentRemove()"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.documentapi.messagebus.protocol.RemoveDocumentReply": {
-    "superClass": "com.yahoo.documentapi.messagebus.protocol.WriteDocumentReply",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.documentapi.messagebus.protocol.RemoveDocumentReply" : {
+    "superClass" : "com.yahoo.documentapi.messagebus.protocol.WriteDocumentReply",
+    "interfaces" : [ ],
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>()",
       "public boolean wasFound()",
       "public void setWasFound(boolean)"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.documentapi.messagebus.protocol.RemoveLocationMessage": {
-    "superClass": "com.yahoo.documentapi.messagebus.protocol.DocumentMessage",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.documentapi.messagebus.protocol.RemoveLocationMessage" : {
+    "superClass" : "com.yahoo.documentapi.messagebus.protocol.DocumentMessage",
+    "interfaces" : [ ],
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>(java.lang.String)",
       "public java.lang.String getDocumentSelection()",
       "public com.yahoo.documentapi.messagebus.protocol.DocumentReply createReply()",
       "public int getType()",
       "public com.yahoo.document.BucketId getBucketId()"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.documentapi.messagebus.protocol.RoundRobinPolicy": {
-    "superClass": "java.lang.Object",
-    "interfaces": [
+  "com.yahoo.documentapi.messagebus.protocol.RoundRobinPolicy" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [
       "com.yahoo.documentapi.messagebus.protocol.DocumentProtocolRoutingPolicy"
     ],
-    "attributes": [
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>()",
       "public void select(com.yahoo.messagebus.routing.RoutingContext)",
       "public void merge(com.yahoo.messagebus.routing.RoutingContext)",
       "public void destroy()"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.documentapi.messagebus.protocol.RoutableFactories60$CreateVisitorMessageFactory": {
-    "superClass": "com.yahoo.documentapi.messagebus.protocol.RoutableFactories60$DocumentMessageFactory",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.documentapi.messagebus.protocol.RoutableFactories60$CreateVisitorMessageFactory" : {
+    "superClass" : "com.yahoo.documentapi.messagebus.protocol.RoutableFactories60$DocumentMessageFactory",
+    "interfaces" : [ ],
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>()",
       "protected java.lang.String decodeBucketSpace(com.yahoo.vespa.objects.Deserializer)",
       "protected com.yahoo.documentapi.messagebus.protocol.DocumentMessage doDecode(com.yahoo.document.serialization.DocumentDeserializer)",
       "protected boolean encodeBucketSpace(java.lang.String, com.yahoo.document.serialization.DocumentSerializer)",
       "protected boolean doEncode(com.yahoo.documentapi.messagebus.protocol.DocumentMessage, com.yahoo.document.serialization.DocumentSerializer)"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.documentapi.messagebus.protocol.RoutableFactories60$CreateVisitorReplyFactory": {
-    "superClass": "com.yahoo.documentapi.messagebus.protocol.RoutableFactories60$DocumentReplyFactory",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.documentapi.messagebus.protocol.RoutableFactories60$CreateVisitorReplyFactory" : {
+    "superClass" : "com.yahoo.documentapi.messagebus.protocol.RoutableFactories60$DocumentReplyFactory",
+    "interfaces" : [ ],
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>()",
       "protected com.yahoo.documentapi.messagebus.protocol.DocumentReply doDecode(com.yahoo.document.serialization.DocumentDeserializer)",
       "protected boolean doEncode(com.yahoo.documentapi.messagebus.protocol.DocumentReply, com.yahoo.document.serialization.DocumentSerializer)"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.documentapi.messagebus.protocol.RoutableFactories60$DestroyVisitorMessageFactory": {
-    "superClass": "com.yahoo.documentapi.messagebus.protocol.RoutableFactories60$DocumentMessageFactory",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.documentapi.messagebus.protocol.RoutableFactories60$DestroyVisitorMessageFactory" : {
+    "superClass" : "com.yahoo.documentapi.messagebus.protocol.RoutableFactories60$DocumentMessageFactory",
+    "interfaces" : [ ],
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>()",
       "protected com.yahoo.documentapi.messagebus.protocol.DocumentMessage doDecode(com.yahoo.document.serialization.DocumentDeserializer)",
       "protected boolean doEncode(com.yahoo.documentapi.messagebus.protocol.DocumentMessage, com.yahoo.document.serialization.DocumentSerializer)"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.documentapi.messagebus.protocol.RoutableFactories60$DestroyVisitorReplyFactory": {
-    "superClass": "com.yahoo.documentapi.messagebus.protocol.RoutableFactories60$DocumentReplyFactory",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.documentapi.messagebus.protocol.RoutableFactories60$DestroyVisitorReplyFactory" : {
+    "superClass" : "com.yahoo.documentapi.messagebus.protocol.RoutableFactories60$DocumentReplyFactory",
+    "interfaces" : [ ],
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>()",
       "protected com.yahoo.documentapi.messagebus.protocol.DocumentReply doDecode(com.yahoo.document.serialization.DocumentDeserializer)",
       "protected boolean doEncode(com.yahoo.documentapi.messagebus.protocol.DocumentReply, com.yahoo.document.serialization.DocumentSerializer)"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.documentapi.messagebus.protocol.RoutableFactories60$DocumentIgnoredReplyFactory": {
-    "superClass": "com.yahoo.documentapi.messagebus.protocol.RoutableFactories60$DocumentReplyFactory",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.documentapi.messagebus.protocol.RoutableFactories60$DocumentIgnoredReplyFactory" : {
+    "superClass" : "com.yahoo.documentapi.messagebus.protocol.RoutableFactories60$DocumentReplyFactory",
+    "interfaces" : [ ],
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>()",
       "protected com.yahoo.documentapi.messagebus.protocol.DocumentReply doDecode(com.yahoo.document.serialization.DocumentDeserializer)",
       "protected boolean doEncode(com.yahoo.documentapi.messagebus.protocol.DocumentReply, com.yahoo.document.serialization.DocumentSerializer)"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.documentapi.messagebus.protocol.RoutableFactories60$DocumentListMessageFactory": {
-    "superClass": "com.yahoo.documentapi.messagebus.protocol.RoutableFactories60$DocumentMessageFactory",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.documentapi.messagebus.protocol.RoutableFactories60$DocumentListMessageFactory" : {
+    "superClass" : "com.yahoo.documentapi.messagebus.protocol.RoutableFactories60$DocumentMessageFactory",
+    "interfaces" : [ ],
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>()",
       "protected com.yahoo.documentapi.messagebus.protocol.DocumentMessage doDecode(com.yahoo.document.serialization.DocumentDeserializer)",
       "protected boolean doEncode(com.yahoo.documentapi.messagebus.protocol.DocumentMessage, com.yahoo.document.serialization.DocumentSerializer)"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.documentapi.messagebus.protocol.RoutableFactories60$DocumentListReplyFactory": {
-    "superClass": "com.yahoo.documentapi.messagebus.protocol.RoutableFactories60$DocumentReplyFactory",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.documentapi.messagebus.protocol.RoutableFactories60$DocumentListReplyFactory" : {
+    "superClass" : "com.yahoo.documentapi.messagebus.protocol.RoutableFactories60$DocumentReplyFactory",
+    "interfaces" : [ ],
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>()",
       "protected com.yahoo.documentapi.messagebus.protocol.DocumentReply doDecode(com.yahoo.document.serialization.DocumentDeserializer)",
       "protected boolean doEncode(com.yahoo.documentapi.messagebus.protocol.DocumentReply, com.yahoo.document.serialization.DocumentSerializer)"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.documentapi.messagebus.protocol.RoutableFactories60$DocumentMessageFactory": {
-    "superClass": "com.yahoo.documentapi.messagebus.protocol.AbstractRoutableFactory",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.documentapi.messagebus.protocol.RoutableFactories60$DocumentMessageFactory" : {
+    "superClass" : "com.yahoo.documentapi.messagebus.protocol.AbstractRoutableFactory",
+    "interfaces" : [ ],
+    "attributes" : [
       "public",
       "abstract"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>()",
       "protected abstract boolean doEncode(com.yahoo.documentapi.messagebus.protocol.DocumentMessage, com.yahoo.document.serialization.DocumentSerializer)",
       "protected abstract com.yahoo.documentapi.messagebus.protocol.DocumentMessage doDecode(com.yahoo.document.serialization.DocumentDeserializer)",
       "public boolean encode(com.yahoo.messagebus.Routable, com.yahoo.document.serialization.DocumentSerializer)",
       "public com.yahoo.messagebus.Routable decode(com.yahoo.document.serialization.DocumentDeserializer)"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.documentapi.messagebus.protocol.RoutableFactories60$DocumentReplyFactory": {
-    "superClass": "com.yahoo.documentapi.messagebus.protocol.AbstractRoutableFactory",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.documentapi.messagebus.protocol.RoutableFactories60$DocumentReplyFactory" : {
+    "superClass" : "com.yahoo.documentapi.messagebus.protocol.AbstractRoutableFactory",
+    "interfaces" : [ ],
+    "attributes" : [
       "public",
       "abstract"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>()",
       "protected abstract boolean doEncode(com.yahoo.documentapi.messagebus.protocol.DocumentReply, com.yahoo.document.serialization.DocumentSerializer)",
       "protected abstract com.yahoo.documentapi.messagebus.protocol.DocumentReply doDecode(com.yahoo.document.serialization.DocumentDeserializer)",
       "public boolean encode(com.yahoo.messagebus.Routable, com.yahoo.document.serialization.DocumentSerializer)",
       "public com.yahoo.messagebus.Routable decode(com.yahoo.document.serialization.DocumentDeserializer)"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.documentapi.messagebus.protocol.RoutableFactories60$DocumentSummaryMessageFactory": {
-    "superClass": "com.yahoo.documentapi.messagebus.protocol.RoutableFactories60$DocumentMessageFactory",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.documentapi.messagebus.protocol.RoutableFactories60$DocumentSummaryMessageFactory" : {
+    "superClass" : "com.yahoo.documentapi.messagebus.protocol.RoutableFactories60$DocumentMessageFactory",
+    "interfaces" : [ ],
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>()",
       "protected com.yahoo.documentapi.messagebus.protocol.DocumentMessage doDecode(com.yahoo.document.serialization.DocumentDeserializer)",
       "protected boolean doEncode(com.yahoo.documentapi.messagebus.protocol.DocumentMessage, com.yahoo.document.serialization.DocumentSerializer)"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.documentapi.messagebus.protocol.RoutableFactories60$DocumentSummaryReplyFactory": {
-    "superClass": "com.yahoo.documentapi.messagebus.protocol.RoutableFactories60$DocumentReplyFactory",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.documentapi.messagebus.protocol.RoutableFactories60$DocumentSummaryReplyFactory" : {
+    "superClass" : "com.yahoo.documentapi.messagebus.protocol.RoutableFactories60$DocumentReplyFactory",
+    "interfaces" : [ ],
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>()",
       "protected com.yahoo.documentapi.messagebus.protocol.DocumentReply doDecode(com.yahoo.document.serialization.DocumentDeserializer)",
       "protected boolean doEncode(com.yahoo.documentapi.messagebus.protocol.DocumentReply, com.yahoo.document.serialization.DocumentSerializer)"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.documentapi.messagebus.protocol.RoutableFactories60$EmptyBucketsMessageFactory": {
-    "superClass": "com.yahoo.documentapi.messagebus.protocol.RoutableFactories60$DocumentMessageFactory",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.documentapi.messagebus.protocol.RoutableFactories60$EmptyBucketsMessageFactory" : {
+    "superClass" : "com.yahoo.documentapi.messagebus.protocol.RoutableFactories60$DocumentMessageFactory",
+    "interfaces" : [ ],
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>()",
       "protected com.yahoo.documentapi.messagebus.protocol.DocumentMessage doDecode(com.yahoo.document.serialization.DocumentDeserializer)",
       "protected boolean doEncode(com.yahoo.documentapi.messagebus.protocol.DocumentMessage, com.yahoo.document.serialization.DocumentSerializer)"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.documentapi.messagebus.protocol.RoutableFactories60$EmptyBucketsReplyFactory": {
-    "superClass": "com.yahoo.documentapi.messagebus.protocol.RoutableFactories60$DocumentReplyFactory",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.documentapi.messagebus.protocol.RoutableFactories60$EmptyBucketsReplyFactory" : {
+    "superClass" : "com.yahoo.documentapi.messagebus.protocol.RoutableFactories60$DocumentReplyFactory",
+    "interfaces" : [ ],
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>()",
       "protected com.yahoo.documentapi.messagebus.protocol.DocumentReply doDecode(com.yahoo.document.serialization.DocumentDeserializer)",
       "protected boolean doEncode(com.yahoo.documentapi.messagebus.protocol.DocumentReply, com.yahoo.document.serialization.DocumentSerializer)"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.documentapi.messagebus.protocol.RoutableFactories60$GetBucketListMessageFactory": {
-    "superClass": "com.yahoo.documentapi.messagebus.protocol.RoutableFactories60$DocumentMessageFactory",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.documentapi.messagebus.protocol.RoutableFactories60$GetBucketListMessageFactory" : {
+    "superClass" : "com.yahoo.documentapi.messagebus.protocol.RoutableFactories60$DocumentMessageFactory",
+    "interfaces" : [ ],
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>()",
       "protected java.lang.String decodeBucketSpace(com.yahoo.vespa.objects.Deserializer)",
       "protected com.yahoo.documentapi.messagebus.protocol.DocumentMessage doDecode(com.yahoo.document.serialization.DocumentDeserializer)",
       "protected boolean encodeBucketSpace(java.lang.String, com.yahoo.document.serialization.DocumentSerializer)",
       "protected boolean doEncode(com.yahoo.documentapi.messagebus.protocol.DocumentMessage, com.yahoo.document.serialization.DocumentSerializer)"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.documentapi.messagebus.protocol.RoutableFactories60$GetBucketListReplyFactory": {
-    "superClass": "com.yahoo.documentapi.messagebus.protocol.RoutableFactories60$DocumentReplyFactory",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.documentapi.messagebus.protocol.RoutableFactories60$GetBucketListReplyFactory" : {
+    "superClass" : "com.yahoo.documentapi.messagebus.protocol.RoutableFactories60$DocumentReplyFactory",
+    "interfaces" : [ ],
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>()",
       "protected com.yahoo.documentapi.messagebus.protocol.DocumentReply doDecode(com.yahoo.document.serialization.DocumentDeserializer)",
       "protected boolean doEncode(com.yahoo.documentapi.messagebus.protocol.DocumentReply, com.yahoo.document.serialization.DocumentSerializer)"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.documentapi.messagebus.protocol.RoutableFactories60$GetBucketStateMessageFactory": {
-    "superClass": "com.yahoo.documentapi.messagebus.protocol.RoutableFactories60$DocumentMessageFactory",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.documentapi.messagebus.protocol.RoutableFactories60$GetBucketStateMessageFactory" : {
+    "superClass" : "com.yahoo.documentapi.messagebus.protocol.RoutableFactories60$DocumentMessageFactory",
+    "interfaces" : [ ],
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>()",
       "protected com.yahoo.documentapi.messagebus.protocol.DocumentMessage doDecode(com.yahoo.document.serialization.DocumentDeserializer)",
       "protected boolean doEncode(com.yahoo.documentapi.messagebus.protocol.DocumentMessage, com.yahoo.document.serialization.DocumentSerializer)"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.documentapi.messagebus.protocol.RoutableFactories60$GetBucketStateReplyFactory": {
-    "superClass": "com.yahoo.documentapi.messagebus.protocol.RoutableFactories60$DocumentReplyFactory",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.documentapi.messagebus.protocol.RoutableFactories60$GetBucketStateReplyFactory" : {
+    "superClass" : "com.yahoo.documentapi.messagebus.protocol.RoutableFactories60$DocumentReplyFactory",
+    "interfaces" : [ ],
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>()",
       "protected com.yahoo.documentapi.messagebus.protocol.DocumentReply doDecode(com.yahoo.document.serialization.DocumentDeserializer)",
       "protected boolean doEncode(com.yahoo.documentapi.messagebus.protocol.DocumentReply, com.yahoo.document.serialization.DocumentSerializer)"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.documentapi.messagebus.protocol.RoutableFactories60$GetDocumentMessageFactory": {
-    "superClass": "com.yahoo.documentapi.messagebus.protocol.RoutableFactories60$DocumentMessageFactory",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.documentapi.messagebus.protocol.RoutableFactories60$GetDocumentMessageFactory" : {
+    "superClass" : "com.yahoo.documentapi.messagebus.protocol.RoutableFactories60$DocumentMessageFactory",
+    "interfaces" : [ ],
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>()",
       "protected com.yahoo.documentapi.messagebus.protocol.DocumentMessage doDecode(com.yahoo.document.serialization.DocumentDeserializer)",
       "protected boolean doEncode(com.yahoo.documentapi.messagebus.protocol.DocumentMessage, com.yahoo.document.serialization.DocumentSerializer)"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.documentapi.messagebus.protocol.RoutableFactories60$GetDocumentReplyFactory": {
-    "superClass": "com.yahoo.documentapi.messagebus.protocol.RoutableFactories60$DocumentReplyFactory",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.documentapi.messagebus.protocol.RoutableFactories60$GetDocumentReplyFactory" : {
+    "superClass" : "com.yahoo.documentapi.messagebus.protocol.RoutableFactories60$DocumentReplyFactory",
+    "interfaces" : [ ],
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>()",
       "protected com.yahoo.documentapi.messagebus.protocol.DocumentReply doDecode(com.yahoo.document.serialization.DocumentDeserializer)",
       "protected boolean doEncode(com.yahoo.documentapi.messagebus.protocol.DocumentReply, com.yahoo.document.serialization.DocumentSerializer)"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.documentapi.messagebus.protocol.RoutableFactories60$MapVisitorMessageFactory": {
-    "superClass": "com.yahoo.documentapi.messagebus.protocol.RoutableFactories60$DocumentMessageFactory",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.documentapi.messagebus.protocol.RoutableFactories60$MapVisitorMessageFactory" : {
+    "superClass" : "com.yahoo.documentapi.messagebus.protocol.RoutableFactories60$DocumentMessageFactory",
+    "interfaces" : [ ],
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>()",
       "protected com.yahoo.documentapi.messagebus.protocol.DocumentMessage doDecode(com.yahoo.document.serialization.DocumentDeserializer)",
       "protected boolean doEncode(com.yahoo.documentapi.messagebus.protocol.DocumentMessage, com.yahoo.document.serialization.DocumentSerializer)"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.documentapi.messagebus.protocol.RoutableFactories60$MapVisitorReplyFactory": {
-    "superClass": "com.yahoo.documentapi.messagebus.protocol.RoutableFactories60$DocumentReplyFactory",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.documentapi.messagebus.protocol.RoutableFactories60$MapVisitorReplyFactory" : {
+    "superClass" : "com.yahoo.documentapi.messagebus.protocol.RoutableFactories60$DocumentReplyFactory",
+    "interfaces" : [ ],
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>()",
       "protected com.yahoo.documentapi.messagebus.protocol.DocumentReply doDecode(com.yahoo.document.serialization.DocumentDeserializer)",
       "protected boolean doEncode(com.yahoo.documentapi.messagebus.protocol.DocumentReply, com.yahoo.document.serialization.DocumentSerializer)"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.documentapi.messagebus.protocol.RoutableFactories60$PutDocumentMessageFactory": {
-    "superClass": "com.yahoo.documentapi.messagebus.protocol.RoutableFactories60$DocumentMessageFactory",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.documentapi.messagebus.protocol.RoutableFactories60$PutDocumentMessageFactory" : {
+    "superClass" : "com.yahoo.documentapi.messagebus.protocol.RoutableFactories60$DocumentMessageFactory",
+    "interfaces" : [ ],
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>()",
       "protected void decodeInto(com.yahoo.documentapi.messagebus.protocol.PutDocumentMessage, com.yahoo.document.serialization.DocumentDeserializer)",
       "protected com.yahoo.documentapi.messagebus.protocol.DocumentMessage doDecode(com.yahoo.document.serialization.DocumentDeserializer)",
       "protected boolean doEncode(com.yahoo.documentapi.messagebus.protocol.DocumentMessage, com.yahoo.document.serialization.DocumentSerializer)"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.documentapi.messagebus.protocol.RoutableFactories60$PutDocumentReplyFactory": {
-    "superClass": "com.yahoo.documentapi.messagebus.protocol.RoutableFactories60$DocumentReplyFactory",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.documentapi.messagebus.protocol.RoutableFactories60$PutDocumentReplyFactory" : {
+    "superClass" : "com.yahoo.documentapi.messagebus.protocol.RoutableFactories60$DocumentReplyFactory",
+    "interfaces" : [ ],
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>()",
       "protected com.yahoo.documentapi.messagebus.protocol.DocumentReply doDecode(com.yahoo.document.serialization.DocumentDeserializer)",
       "protected boolean doEncode(com.yahoo.documentapi.messagebus.protocol.DocumentReply, com.yahoo.document.serialization.DocumentSerializer)"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.documentapi.messagebus.protocol.RoutableFactories60$QueryResultMessageFactory": {
-    "superClass": "com.yahoo.documentapi.messagebus.protocol.RoutableFactories60$DocumentMessageFactory",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.documentapi.messagebus.protocol.RoutableFactories60$QueryResultMessageFactory" : {
+    "superClass" : "com.yahoo.documentapi.messagebus.protocol.RoutableFactories60$DocumentMessageFactory",
+    "interfaces" : [ ],
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>()",
       "protected com.yahoo.documentapi.messagebus.protocol.DocumentMessage doDecode(com.yahoo.document.serialization.DocumentDeserializer)",
       "protected boolean doEncode(com.yahoo.documentapi.messagebus.protocol.DocumentMessage, com.yahoo.document.serialization.DocumentSerializer)"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.documentapi.messagebus.protocol.RoutableFactories60$QueryResultReplyFactory": {
-    "superClass": "com.yahoo.documentapi.messagebus.protocol.RoutableFactories60$DocumentReplyFactory",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.documentapi.messagebus.protocol.RoutableFactories60$QueryResultReplyFactory" : {
+    "superClass" : "com.yahoo.documentapi.messagebus.protocol.RoutableFactories60$DocumentReplyFactory",
+    "interfaces" : [ ],
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>()",
       "protected com.yahoo.documentapi.messagebus.protocol.DocumentReply doDecode(com.yahoo.document.serialization.DocumentDeserializer)",
       "protected boolean doEncode(com.yahoo.documentapi.messagebus.protocol.DocumentReply, com.yahoo.document.serialization.DocumentSerializer)"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.documentapi.messagebus.protocol.RoutableFactories60$RemoveDocumentMessageFactory": {
-    "superClass": "com.yahoo.documentapi.messagebus.protocol.RoutableFactories60$DocumentMessageFactory",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.documentapi.messagebus.protocol.RoutableFactories60$RemoveDocumentMessageFactory" : {
+    "superClass" : "com.yahoo.documentapi.messagebus.protocol.RoutableFactories60$DocumentMessageFactory",
+    "interfaces" : [ ],
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>()",
       "protected void decodeInto(com.yahoo.documentapi.messagebus.protocol.RemoveDocumentMessage, com.yahoo.document.serialization.DocumentDeserializer)",
       "protected com.yahoo.documentapi.messagebus.protocol.DocumentMessage doDecode(com.yahoo.document.serialization.DocumentDeserializer)",
       "protected boolean doEncode(com.yahoo.documentapi.messagebus.protocol.DocumentMessage, com.yahoo.document.serialization.DocumentSerializer)"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.documentapi.messagebus.protocol.RoutableFactories60$RemoveDocumentReplyFactory": {
-    "superClass": "com.yahoo.documentapi.messagebus.protocol.RoutableFactories60$DocumentReplyFactory",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.documentapi.messagebus.protocol.RoutableFactories60$RemoveDocumentReplyFactory" : {
+    "superClass" : "com.yahoo.documentapi.messagebus.protocol.RoutableFactories60$DocumentReplyFactory",
+    "interfaces" : [ ],
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>()",
       "protected com.yahoo.documentapi.messagebus.protocol.DocumentReply doDecode(com.yahoo.document.serialization.DocumentDeserializer)",
       "protected boolean doEncode(com.yahoo.documentapi.messagebus.protocol.DocumentReply, com.yahoo.document.serialization.DocumentSerializer)"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.documentapi.messagebus.protocol.RoutableFactories60$RemoveLocationMessageFactory": {
-    "superClass": "com.yahoo.documentapi.messagebus.protocol.RoutableFactories60$DocumentMessageFactory",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.documentapi.messagebus.protocol.RoutableFactories60$RemoveLocationMessageFactory" : {
+    "superClass" : "com.yahoo.documentapi.messagebus.protocol.RoutableFactories60$DocumentMessageFactory",
+    "interfaces" : [ ],
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>()",
       "protected com.yahoo.documentapi.messagebus.protocol.DocumentMessage doDecode(com.yahoo.document.serialization.DocumentDeserializer)",
       "protected boolean doEncode(com.yahoo.documentapi.messagebus.protocol.DocumentMessage, com.yahoo.document.serialization.DocumentSerializer)"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.documentapi.messagebus.protocol.RoutableFactories60$RemoveLocationReplyFactory": {
-    "superClass": "com.yahoo.documentapi.messagebus.protocol.RoutableFactories60$DocumentReplyFactory",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.documentapi.messagebus.protocol.RoutableFactories60$RemoveLocationReplyFactory" : {
+    "superClass" : "com.yahoo.documentapi.messagebus.protocol.RoutableFactories60$DocumentReplyFactory",
+    "interfaces" : [ ],
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>()",
       "protected com.yahoo.documentapi.messagebus.protocol.DocumentReply doDecode(com.yahoo.document.serialization.DocumentDeserializer)",
       "protected boolean doEncode(com.yahoo.documentapi.messagebus.protocol.DocumentReply, com.yahoo.document.serialization.DocumentSerializer)"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.documentapi.messagebus.protocol.RoutableFactories60$SearchResultMessageFactory": {
-    "superClass": "com.yahoo.documentapi.messagebus.protocol.RoutableFactories60$DocumentMessageFactory",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.documentapi.messagebus.protocol.RoutableFactories60$SearchResultMessageFactory" : {
+    "superClass" : "com.yahoo.documentapi.messagebus.protocol.RoutableFactories60$DocumentMessageFactory",
+    "interfaces" : [ ],
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>()",
       "protected com.yahoo.documentapi.messagebus.protocol.DocumentMessage doDecode(com.yahoo.document.serialization.DocumentDeserializer)",
       "protected boolean doEncode(com.yahoo.documentapi.messagebus.protocol.DocumentMessage, com.yahoo.document.serialization.DocumentSerializer)"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.documentapi.messagebus.protocol.RoutableFactories60$SearchResultReplyFactory": {
-    "superClass": "com.yahoo.documentapi.messagebus.protocol.RoutableFactories60$DocumentReplyFactory",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.documentapi.messagebus.protocol.RoutableFactories60$SearchResultReplyFactory" : {
+    "superClass" : "com.yahoo.documentapi.messagebus.protocol.RoutableFactories60$DocumentReplyFactory",
+    "interfaces" : [ ],
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>()",
       "protected com.yahoo.documentapi.messagebus.protocol.DocumentReply doDecode(com.yahoo.document.serialization.DocumentDeserializer)",
       "protected boolean doEncode(com.yahoo.documentapi.messagebus.protocol.DocumentReply, com.yahoo.document.serialization.DocumentSerializer)"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.documentapi.messagebus.protocol.RoutableFactories60$StatBucketMessageFactory": {
-    "superClass": "com.yahoo.documentapi.messagebus.protocol.RoutableFactories60$DocumentMessageFactory",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.documentapi.messagebus.protocol.RoutableFactories60$StatBucketMessageFactory" : {
+    "superClass" : "com.yahoo.documentapi.messagebus.protocol.RoutableFactories60$DocumentMessageFactory",
+    "interfaces" : [ ],
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>()",
       "protected java.lang.String decodeBucketSpace(com.yahoo.vespa.objects.Deserializer)",
       "protected com.yahoo.documentapi.messagebus.protocol.DocumentMessage doDecode(com.yahoo.document.serialization.DocumentDeserializer)",
       "protected boolean encodeBucketSpace(java.lang.String, com.yahoo.document.serialization.DocumentSerializer)",
       "protected boolean doEncode(com.yahoo.documentapi.messagebus.protocol.DocumentMessage, com.yahoo.document.serialization.DocumentSerializer)"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.documentapi.messagebus.protocol.RoutableFactories60$StatBucketReplyFactory": {
-    "superClass": "com.yahoo.documentapi.messagebus.protocol.RoutableFactories60$DocumentReplyFactory",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.documentapi.messagebus.protocol.RoutableFactories60$StatBucketReplyFactory" : {
+    "superClass" : "com.yahoo.documentapi.messagebus.protocol.RoutableFactories60$DocumentReplyFactory",
+    "interfaces" : [ ],
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>()",
       "protected com.yahoo.documentapi.messagebus.protocol.DocumentReply doDecode(com.yahoo.document.serialization.DocumentDeserializer)",
       "protected boolean doEncode(com.yahoo.documentapi.messagebus.protocol.DocumentReply, com.yahoo.document.serialization.DocumentSerializer)"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.documentapi.messagebus.protocol.RoutableFactories60$UpdateDocumentMessageFactory": {
-    "superClass": "com.yahoo.documentapi.messagebus.protocol.RoutableFactories60$DocumentMessageFactory",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.documentapi.messagebus.protocol.RoutableFactories60$UpdateDocumentMessageFactory" : {
+    "superClass" : "com.yahoo.documentapi.messagebus.protocol.RoutableFactories60$DocumentMessageFactory",
+    "interfaces" : [ ],
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>()",
       "protected void decodeInto(com.yahoo.documentapi.messagebus.protocol.UpdateDocumentMessage, com.yahoo.document.serialization.DocumentDeserializer)",
       "protected com.yahoo.documentapi.messagebus.protocol.DocumentMessage doDecode(com.yahoo.document.serialization.DocumentDeserializer)",
       "protected boolean doEncode(com.yahoo.documentapi.messagebus.protocol.DocumentMessage, com.yahoo.document.serialization.DocumentSerializer)"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.documentapi.messagebus.protocol.RoutableFactories60$UpdateDocumentReplyFactory": {
-    "superClass": "com.yahoo.documentapi.messagebus.protocol.RoutableFactories60$DocumentReplyFactory",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.documentapi.messagebus.protocol.RoutableFactories60$UpdateDocumentReplyFactory" : {
+    "superClass" : "com.yahoo.documentapi.messagebus.protocol.RoutableFactories60$DocumentReplyFactory",
+    "interfaces" : [ ],
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>()",
       "protected com.yahoo.documentapi.messagebus.protocol.DocumentReply doDecode(com.yahoo.document.serialization.DocumentDeserializer)",
       "protected boolean doEncode(com.yahoo.documentapi.messagebus.protocol.DocumentReply, com.yahoo.document.serialization.DocumentSerializer)"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.documentapi.messagebus.protocol.RoutableFactories60$VisitorInfoMessageFactory": {
-    "superClass": "com.yahoo.documentapi.messagebus.protocol.RoutableFactories60$DocumentMessageFactory",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.documentapi.messagebus.protocol.RoutableFactories60$VisitorInfoMessageFactory" : {
+    "superClass" : "com.yahoo.documentapi.messagebus.protocol.RoutableFactories60$DocumentMessageFactory",
+    "interfaces" : [ ],
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>()",
       "protected com.yahoo.documentapi.messagebus.protocol.DocumentMessage doDecode(com.yahoo.document.serialization.DocumentDeserializer)",
       "protected boolean doEncode(com.yahoo.documentapi.messagebus.protocol.DocumentMessage, com.yahoo.document.serialization.DocumentSerializer)"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.documentapi.messagebus.protocol.RoutableFactories60$VisitorInfoReplyFactory": {
-    "superClass": "com.yahoo.documentapi.messagebus.protocol.RoutableFactories60$DocumentReplyFactory",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.documentapi.messagebus.protocol.RoutableFactories60$VisitorInfoReplyFactory" : {
+    "superClass" : "com.yahoo.documentapi.messagebus.protocol.RoutableFactories60$DocumentReplyFactory",
+    "interfaces" : [ ],
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>()",
       "protected com.yahoo.documentapi.messagebus.protocol.DocumentReply doDecode(com.yahoo.document.serialization.DocumentDeserializer)",
       "protected boolean doEncode(com.yahoo.documentapi.messagebus.protocol.DocumentReply, com.yahoo.document.serialization.DocumentSerializer)"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.documentapi.messagebus.protocol.RoutableFactories60$WrongDistributionReplyFactory": {
-    "superClass": "com.yahoo.documentapi.messagebus.protocol.RoutableFactories60$DocumentReplyFactory",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.documentapi.messagebus.protocol.RoutableFactories60$WrongDistributionReplyFactory" : {
+    "superClass" : "com.yahoo.documentapi.messagebus.protocol.RoutableFactories60$DocumentReplyFactory",
+    "interfaces" : [ ],
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>()",
       "protected com.yahoo.documentapi.messagebus.protocol.DocumentReply doDecode(com.yahoo.document.serialization.DocumentDeserializer)",
       "protected boolean doEncode(com.yahoo.documentapi.messagebus.protocol.DocumentReply, com.yahoo.document.serialization.DocumentSerializer)"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.documentapi.messagebus.protocol.RoutableFactories60": {
-    "superClass": "java.lang.Object",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.documentapi.messagebus.protocol.RoutableFactories60" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [ ],
+    "attributes" : [
       "public",
       "abstract"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>()"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.documentapi.messagebus.protocol.RoutableFactory": {
-    "superClass": "java.lang.Object",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.documentapi.messagebus.protocol.RoutableFactory" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [ ],
+    "attributes" : [
       "public",
       "interface",
       "abstract"
     ],
-    "methods": [
+    "methods" : [
       "public abstract boolean encode(com.yahoo.messagebus.Routable, com.yahoo.document.serialization.DocumentSerializer)",
       "public abstract com.yahoo.messagebus.Routable decode(com.yahoo.document.serialization.DocumentDeserializer)"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.documentapi.messagebus.protocol.RoutingPolicyFactory": {
-    "superClass": "java.lang.Object",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.documentapi.messagebus.protocol.RoutingPolicyFactory" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [ ],
+    "attributes" : [
       "public",
       "interface",
       "abstract"
     ],
-    "methods": [
+    "methods" : [
       "public abstract com.yahoo.documentapi.messagebus.protocol.DocumentProtocolRoutingPolicy createPolicy(java.lang.String)"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.documentapi.messagebus.protocol.SearchResultMessage": {
-    "superClass": "com.yahoo.documentapi.messagebus.protocol.VisitorMessage",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.documentapi.messagebus.protocol.SearchResultMessage" : {
+    "superClass" : "com.yahoo.documentapi.messagebus.protocol.VisitorMessage",
+    "interfaces" : [ ],
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>()",
       "public com.yahoo.vdslib.SearchResult getResult()",
       "public void setSearchResult(com.yahoo.vdslib.SearchResult)",
       "public com.yahoo.documentapi.messagebus.protocol.DocumentReply createReply()",
       "public int getType()"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.documentapi.messagebus.protocol.SlobrokPolicy": {
-    "superClass": "java.lang.Object",
-    "interfaces": [
+  "com.yahoo.documentapi.messagebus.protocol.SlobrokPolicy" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [
       "com.yahoo.documentapi.messagebus.protocol.DocumentProtocolRoutingPolicy"
     ],
-    "attributes": [
+    "attributes" : [
       "public",
       "abstract"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>()",
       "protected java.util.List lookup(com.yahoo.messagebus.routing.RoutingContext, java.lang.String)",
       "public static java.util.Map parse(java.lang.String)"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.documentapi.messagebus.protocol.StatBucketMessage": {
-    "superClass": "com.yahoo.documentapi.messagebus.protocol.DocumentMessage",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.documentapi.messagebus.protocol.StatBucketMessage" : {
+    "superClass" : "com.yahoo.documentapi.messagebus.protocol.DocumentMessage",
+    "interfaces" : [ ],
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>(com.yahoo.document.BucketId, java.lang.String)",
       "public void <init>(com.yahoo.document.BucketId, java.lang.String, java.lang.String)",
       "public com.yahoo.document.BucketId getBucketId()",
@@ -3140,57 +3140,57 @@
       "public int getApproxSize()",
       "public int getType()"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.documentapi.messagebus.protocol.StatBucketReply": {
-    "superClass": "com.yahoo.documentapi.messagebus.protocol.DocumentReply",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.documentapi.messagebus.protocol.StatBucketReply" : {
+    "superClass" : "com.yahoo.documentapi.messagebus.protocol.DocumentReply",
+    "interfaces" : [ ],
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>()",
       "public java.lang.String getResults()",
       "public void setResults(java.lang.String)"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.documentapi.messagebus.protocol.SubsetServicePolicy": {
-    "superClass": "java.lang.Object",
-    "interfaces": [
+  "com.yahoo.documentapi.messagebus.protocol.SubsetServicePolicy" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [
       "com.yahoo.documentapi.messagebus.protocol.DocumentProtocolRoutingPolicy"
     ],
-    "attributes": [
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void select(com.yahoo.messagebus.routing.RoutingContext)",
       "public void merge(com.yahoo.messagebus.routing.RoutingContext)",
       "public void destroy()"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.documentapi.messagebus.protocol.TestAndSetMessage": {
-    "superClass": "com.yahoo.documentapi.messagebus.protocol.DocumentMessage",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.documentapi.messagebus.protocol.TestAndSetMessage" : {
+    "superClass" : "com.yahoo.documentapi.messagebus.protocol.DocumentMessage",
+    "interfaces" : [ ],
+    "attributes" : [
       "public",
       "abstract"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>()",
       "public abstract void setCondition(com.yahoo.document.TestAndSetCondition)",
       "public abstract com.yahoo.document.TestAndSetCondition getCondition()"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.documentapi.messagebus.protocol.UpdateDocumentMessage": {
-    "superClass": "com.yahoo.documentapi.messagebus.protocol.TestAndSetMessage",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.documentapi.messagebus.protocol.UpdateDocumentMessage" : {
+    "superClass" : "com.yahoo.documentapi.messagebus.protocol.TestAndSetMessage",
+    "interfaces" : [ ],
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>(com.yahoo.documentapi.messagebus.protocol.LazyDecoder, com.yahoo.document.serialization.DocumentDeserializer)",
       "public void <init>(com.yahoo.document.DocumentUpdate)",
       "public static com.yahoo.documentapi.messagebus.protocol.UpdateDocumentMessage createEmpty()",
@@ -3207,28 +3207,28 @@
       "public com.yahoo.document.TestAndSetCondition getCondition()",
       "public void setCondition(com.yahoo.document.TestAndSetCondition)"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.documentapi.messagebus.protocol.UpdateDocumentReply": {
-    "superClass": "com.yahoo.documentapi.messagebus.protocol.WriteDocumentReply",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.documentapi.messagebus.protocol.UpdateDocumentReply" : {
+    "superClass" : "com.yahoo.documentapi.messagebus.protocol.WriteDocumentReply",
+    "interfaces" : [ ],
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>()",
       "public boolean wasFound()",
       "public void setWasFound(boolean)"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.documentapi.messagebus.protocol.VisitorInfoMessage": {
-    "superClass": "com.yahoo.documentapi.messagebus.protocol.VisitorMessage",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.documentapi.messagebus.protocol.VisitorInfoMessage" : {
+    "superClass" : "com.yahoo.documentapi.messagebus.protocol.VisitorMessage",
+    "interfaces" : [ ],
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>()",
       "public java.lang.String getErrorMessage()",
       "public void setErrorMessage(java.lang.String)",
@@ -3238,56 +3238,56 @@
       "public int getType()",
       "public java.lang.String toString()"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.documentapi.messagebus.protocol.VisitorMessage": {
-    "superClass": "com.yahoo.documentapi.messagebus.protocol.DocumentMessage",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.documentapi.messagebus.protocol.VisitorMessage" : {
+    "superClass" : "com.yahoo.documentapi.messagebus.protocol.DocumentMessage",
+    "interfaces" : [ ],
+    "attributes" : [
       "public",
       "abstract"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>()"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.documentapi.messagebus.protocol.VisitorReply": {
-    "superClass": "com.yahoo.documentapi.messagebus.protocol.WriteDocumentReply",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.documentapi.messagebus.protocol.VisitorReply" : {
+    "superClass" : "com.yahoo.documentapi.messagebus.protocol.WriteDocumentReply",
+    "interfaces" : [ ],
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>(int)"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.documentapi.messagebus.protocol.WriteDocumentReply": {
-    "superClass": "com.yahoo.documentapi.messagebus.protocol.DocumentAcceptedReply",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.documentapi.messagebus.protocol.WriteDocumentReply" : {
+    "superClass" : "com.yahoo.documentapi.messagebus.protocol.DocumentAcceptedReply",
+    "interfaces" : [ ],
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>(int)",
       "public long getHighestModificationTimestamp()",
       "public void setHighestModificationTimestamp(long)"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.documentapi.messagebus.protocol.WrongDistributionReply": {
-    "superClass": "com.yahoo.documentapi.messagebus.protocol.DocumentReply",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.documentapi.messagebus.protocol.WrongDistributionReply" : {
+    "superClass" : "com.yahoo.documentapi.messagebus.protocol.DocumentReply",
+    "interfaces" : [ ],
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>()",
       "public void <init>(java.lang.String)",
       "public java.lang.String getSystemState()",
       "public void setSystemState(java.lang.String)"
     ],
-    "fields": []
+    "fields" : [ ]
   }
 }

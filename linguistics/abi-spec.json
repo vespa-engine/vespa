@@ -1,13 +1,13 @@
 {
-  "com.yahoo.language.Language": {
-    "superClass": "java.lang.Enum",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.language.Language" : {
+    "superClass" : "java.lang.Enum",
+    "interfaces" : [ ],
+    "attributes" : [
       "public",
       "final",
       "enum"
     ],
-    "methods": [
+    "methods" : [
       "public static com.yahoo.language.Language[] values()",
       "public static com.yahoo.language.Language valueOf(java.lang.String)",
       "public java.lang.String languageCode()",
@@ -17,7 +17,7 @@
       "public static com.yahoo.language.Language fromLocale(java.util.Locale)",
       "public static com.yahoo.language.Language fromEncoding(java.lang.String)"
     ],
-    "fields": [
+    "fields" : [
       "public static final enum com.yahoo.language.Language UNKNOWN",
       "public static final enum com.yahoo.language.Language ABKHAZIAN",
       "public static final enum com.yahoo.language.Language AFAR",
@@ -172,19 +172,19 @@
       "public static final enum com.yahoo.language.Language ZULU"
     ]
   },
-  "com.yahoo.language.Linguistics$Component": {
-    "superClass": "java.lang.Enum",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.language.Linguistics$Component" : {
+    "superClass" : "java.lang.Enum",
+    "interfaces" : [ ],
+    "attributes" : [
       "public",
       "final",
       "enum"
     ],
-    "methods": [
+    "methods" : [
       "public static com.yahoo.language.Linguistics$Component[] values()",
       "public static com.yahoo.language.Linguistics$Component valueOf(java.lang.String)"
     ],
-    "fields": [
+    "fields" : [
       "public static final enum com.yahoo.language.Linguistics$Component STEMMER",
       "public static final enum com.yahoo.language.Linguistics$Component TOKENIZER",
       "public static final enum com.yahoo.language.Linguistics$Component NORMALIZER",
@@ -195,15 +195,15 @@
       "public static final enum com.yahoo.language.Linguistics$Component CHARACTER_CLASSES"
     ]
   },
-  "com.yahoo.language.Linguistics": {
-    "superClass": "java.lang.Object",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.language.Linguistics" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [ ],
+    "attributes" : [
       "public",
       "interface",
       "abstract"
     ],
-    "methods": [
+    "methods" : [
       "public abstract com.yahoo.language.process.Stemmer getStemmer()",
       "public abstract com.yahoo.language.process.Tokenizer getTokenizer()",
       "public abstract com.yahoo.language.process.Normalizer getNormalizer()",
@@ -214,112 +214,112 @@
       "public abstract com.yahoo.language.process.CharacterClasses getCharacterClasses()",
       "public abstract boolean equals(com.yahoo.language.Linguistics)"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.language.LinguisticsCase": {
-    "superClass": "java.lang.Object",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.language.LinguisticsCase" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [ ],
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>()",
       "public static java.lang.String toLowerCase(java.lang.String)"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.language.LocaleFactory": {
-    "superClass": "java.lang.Object",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.language.LocaleFactory" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [ ],
+    "attributes" : [
       "public",
       "final"
     ],
-    "methods": [
+    "methods" : [
       "public static java.util.Locale fromLanguageTag(java.lang.String)"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.language.detect.AbstractDetector": {
-    "superClass": "java.lang.Object",
-    "interfaces": [
+  "com.yahoo.language.detect.AbstractDetector" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [
       "com.yahoo.language.detect.Detector"
     ],
-    "attributes": [
+    "attributes" : [
       "public",
       "abstract"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>()",
       "public final com.yahoo.language.detect.Detection detect(java.lang.String, com.yahoo.language.detect.Hint)",
       "public final com.yahoo.language.detect.Detection detect(java.nio.ByteBuffer, com.yahoo.language.detect.Hint)"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.language.detect.Detection": {
-    "superClass": "java.lang.Object",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.language.detect.Detection" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [ ],
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>(com.yahoo.language.Language, java.lang.String, boolean)",
       "public com.yahoo.language.Language getLanguage()",
       "public java.nio.charset.Charset getEncoding()",
       "public java.lang.String getEncodingName()",
       "public boolean isLocal()"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.language.detect.DetectionException": {
-    "superClass": "java.lang.RuntimeException",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.language.detect.DetectionException" : {
+    "superClass" : "java.lang.RuntimeException",
+    "interfaces" : [ ],
+    "attributes" : [
       "public",
       "final"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>(java.lang.String)"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.language.detect.Detector": {
-    "superClass": "java.lang.Object",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.language.detect.Detector" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [ ],
+    "attributes" : [
       "public",
       "interface",
       "abstract"
     ],
-    "methods": [
+    "methods" : [
       "public abstract com.yahoo.language.detect.Detection detect(byte[], int, int, com.yahoo.language.detect.Hint)",
       "public abstract com.yahoo.language.detect.Detection detect(java.nio.ByteBuffer, com.yahoo.language.detect.Hint)",
       "public abstract com.yahoo.language.detect.Detection detect(java.lang.String, com.yahoo.language.detect.Hint)"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.language.detect.Hint": {
-    "superClass": "java.lang.Object",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.language.detect.Hint" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [ ],
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public java.lang.String getMarket()",
       "public java.lang.String getCountry()",
       "public static com.yahoo.language.detect.Hint newMarketHint(java.lang.String)",
       "public static com.yahoo.language.detect.Hint newCountryHint(java.lang.String)",
       "public static com.yahoo.language.detect.Hint newInstance(java.lang.String, java.lang.String)"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.language.process.CharacterClasses": {
-    "superClass": "java.lang.Object",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.language.process.CharacterClasses" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [ ],
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>()",
       "public boolean isLetter(int)",
       "public boolean isDigit(int)",
@@ -327,66 +327,66 @@
       "public boolean isLatin(int)",
       "public boolean isLetterOrDigit(int)"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.language.process.Embedder$Context": {
-    "superClass": "java.lang.Object",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.language.process.Embedder$Context" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [ ],
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>(java.lang.String)",
       "public com.yahoo.language.Language getLanguage()",
       "public com.yahoo.language.process.Embedder$Context setLanguage(com.yahoo.language.Language)",
       "public java.lang.String getDestination()",
       "public com.yahoo.language.process.Embedder$Context setDestination(java.lang.String)"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.language.process.Embedder$FailingEmbedder": {
-    "superClass": "java.lang.Object",
-    "interfaces": [
+  "com.yahoo.language.process.Embedder$FailingEmbedder" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [
       "com.yahoo.language.process.Embedder"
     ],
-    "attributes": [
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>()",
       "public void <init>(java.lang.String)",
       "public java.util.List embed(java.lang.String, com.yahoo.language.process.Embedder$Context)",
       "public com.yahoo.tensor.Tensor embed(java.lang.String, com.yahoo.language.process.Embedder$Context, com.yahoo.tensor.TensorType)"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.language.process.Embedder": {
-    "superClass": "java.lang.Object",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.language.process.Embedder" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [ ],
+    "attributes" : [
       "public",
       "interface",
       "abstract"
     ],
-    "methods": [
+    "methods" : [
       "public java.util.Map asMap()",
       "public java.util.Map asMap(java.lang.String)",
       "public abstract java.util.List embed(java.lang.String, com.yahoo.language.process.Embedder$Context)",
       "public abstract com.yahoo.tensor.Tensor embed(java.lang.String, com.yahoo.language.process.Embedder$Context, com.yahoo.tensor.TensorType)"
     ],
-    "fields": [
+    "fields" : [
       "public static final java.lang.String defaultEmbedderId",
       "public static final com.yahoo.language.process.Embedder throwsOnUse"
     ]
   },
-  "com.yahoo.language.process.GramSplitter$Gram": {
-    "superClass": "java.lang.Object",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.language.process.GramSplitter$Gram" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [ ],
+    "attributes" : [
       "public",
       "final"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>(int, int)",
       "public int getStart()",
       "public int getCodePointCount()",
@@ -395,17 +395,17 @@
       "public boolean equals(java.lang.Object)",
       "public int hashCode()"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.language.process.GramSplitter$GramSplitterIterator": {
-    "superClass": "java.lang.Object",
-    "interfaces": [
+  "com.yahoo.language.process.GramSplitter$GramSplitterIterator" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [
       "java.util.Iterator"
     ],
-    "attributes": [
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>(java.lang.String, int, com.yahoo.language.process.CharacterClasses)",
       "public boolean hasNext()",
       "public com.yahoo.language.process.GramSplitter$Gram next()",
@@ -413,96 +413,96 @@
       "public java.util.List toExtractedList()",
       "public bridge synthetic java.lang.Object next()"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.language.process.GramSplitter": {
-    "superClass": "java.lang.Object",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.language.process.GramSplitter" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [ ],
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>(com.yahoo.language.process.CharacterClasses)",
       "public com.yahoo.language.process.GramSplitter$GramSplitterIterator split(java.lang.String, int)"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.language.process.Normalizer": {
-    "superClass": "java.lang.Object",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.language.process.Normalizer" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [ ],
+    "attributes" : [
       "public",
       "interface",
       "abstract"
     ],
-    "methods": [
+    "methods" : [
       "public abstract java.lang.String normalize(java.lang.String)"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.language.process.ProcessingException": {
-    "superClass": "java.lang.RuntimeException",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.language.process.ProcessingException" : {
+    "superClass" : "java.lang.RuntimeException",
+    "interfaces" : [ ],
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>(java.lang.String)",
       "public void <init>(java.lang.String, java.lang.Throwable)"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.language.process.Segmenter": {
-    "superClass": "java.lang.Object",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.language.process.Segmenter" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [ ],
+    "attributes" : [
       "public",
       "interface",
       "abstract"
     ],
-    "methods": [
+    "methods" : [
       "public abstract java.util.List segment(java.lang.String, com.yahoo.language.Language)"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.language.process.SegmenterImpl": {
-    "superClass": "java.lang.Object",
-    "interfaces": [
+  "com.yahoo.language.process.SegmenterImpl" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [
       "com.yahoo.language.process.Segmenter"
     ],
-    "attributes": [
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>(com.yahoo.language.process.Tokenizer)",
       "public java.util.List segment(java.lang.String, com.yahoo.language.Language)"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.language.process.SpecialTokenRegistry": {
-    "superClass": "java.lang.Object",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.language.process.SpecialTokenRegistry" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [ ],
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>()",
       "public void <init>(com.yahoo.vespa.configdefinition.SpecialtokensConfig)",
       "public void <init>(java.util.List)",
       "public com.yahoo.language.process.SpecialTokens getSpecialTokens(java.lang.String)"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.language.process.SpecialTokens$Token": {
-    "superClass": "java.lang.Object",
-    "interfaces": [
+  "com.yahoo.language.process.SpecialTokens$Token" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [
       "java.lang.Comparable"
     ],
-    "attributes": [
+    "attributes" : [
       "public",
       "final"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>(java.lang.String)",
       "public void <init>(java.lang.String, java.lang.String)",
       "public java.lang.String token()",
@@ -513,30 +513,30 @@
       "public java.lang.String toString()",
       "public bridge synthetic int compareTo(java.lang.Object)"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.language.process.SpecialTokens": {
-    "superClass": "java.lang.Object",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.language.process.SpecialTokens" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [ ],
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>(java.lang.String, java.util.List)",
       "public java.lang.String name()",
       "public java.util.Map asMap()",
       "public com.yahoo.language.process.SpecialTokens$Token tokenize(java.lang.String, boolean)",
       "public static com.yahoo.language.process.SpecialTokens empty()"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.language.process.StemList": {
-    "superClass": "java.util.AbstractList",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.language.process.StemList" : {
+    "superClass" : "java.util.AbstractList",
+    "interfaces" : [ ],
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>()",
       "public varargs void <init>(java.lang.String[])",
       "public java.lang.String get(int)",
@@ -549,21 +549,21 @@
       "public bridge synthetic java.lang.Object set(int, java.lang.Object)",
       "public bridge synthetic java.lang.Object get(int)"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.language.process.StemMode": {
-    "superClass": "java.lang.Enum",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.language.process.StemMode" : {
+    "superClass" : "java.lang.Enum",
+    "interfaces" : [ ],
+    "attributes" : [
       "public",
       "final",
       "enum"
     ],
-    "methods": [
+    "methods" : [
       "public static com.yahoo.language.process.StemMode[] values()",
       "public static com.yahoo.language.process.StemMode valueOf(java.lang.String)"
     ],
-    "fields": [
+    "fields" : [
       "public static final enum com.yahoo.language.process.StemMode NONE",
       "public static final enum com.yahoo.language.process.StemMode DEFAULT",
       "public static final enum com.yahoo.language.process.StemMode ALL",
@@ -571,42 +571,42 @@
       "public static final enum com.yahoo.language.process.StemMode BEST"
     ]
   },
-  "com.yahoo.language.process.Stemmer": {
-    "superClass": "java.lang.Object",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.language.process.Stemmer" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [ ],
+    "attributes" : [
       "public",
       "interface",
       "abstract"
     ],
-    "methods": [
+    "methods" : [
       "public abstract java.util.List stem(java.lang.String, com.yahoo.language.process.StemMode, com.yahoo.language.Language)"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.language.process.StemmerImpl": {
-    "superClass": "java.lang.Object",
-    "interfaces": [
+  "com.yahoo.language.process.StemmerImpl" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [
       "com.yahoo.language.process.Stemmer"
     ],
-    "attributes": [
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>(com.yahoo.language.process.Tokenizer)",
       "public java.util.List stem(java.lang.String, com.yahoo.language.process.StemMode, com.yahoo.language.Language)"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.language.process.Token": {
-    "superClass": "java.lang.Object",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.language.process.Token" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [ ],
+    "attributes" : [
       "public",
       "interface",
       "abstract"
     ],
-    "methods": [
+    "methods" : [
       "public abstract com.yahoo.language.process.TokenType getType()",
       "public abstract java.lang.String getOrig()",
       "public abstract int getNumStems()",
@@ -619,21 +619,21 @@
       "public abstract boolean isSpecialToken()",
       "public abstract boolean isIndexable()"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.language.process.TokenScript": {
-    "superClass": "java.lang.Enum",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.language.process.TokenScript" : {
+    "superClass" : "java.lang.Enum",
+    "interfaces" : [ ],
+    "attributes" : [
       "public",
       "final",
       "enum"
     ],
-    "methods": [
+    "methods" : [
       "public static com.yahoo.language.process.TokenScript[] values()",
       "public static com.yahoo.language.process.TokenScript valueOf(java.lang.String)"
     ],
-    "fields": [
+    "fields" : [
       "public static final enum com.yahoo.language.process.TokenScript COMMON",
       "public static final enum com.yahoo.language.process.TokenScript LATIN",
       "public static final enum com.yahoo.language.process.TokenScript GREEK",
@@ -700,22 +700,22 @@
       "public static final enum com.yahoo.language.process.TokenScript UNKNOWN"
     ]
   },
-  "com.yahoo.language.process.TokenType": {
-    "superClass": "java.lang.Enum",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.language.process.TokenType" : {
+    "superClass" : "java.lang.Enum",
+    "interfaces" : [ ],
+    "attributes" : [
       "public",
       "final",
       "enum"
     ],
-    "methods": [
+    "methods" : [
       "public static com.yahoo.language.process.TokenType[] values()",
       "public static com.yahoo.language.process.TokenType valueOf(java.lang.String)",
       "public int getValue()",
       "public boolean isIndexable()",
       "public static com.yahoo.language.process.TokenType valueOf(int)"
     ],
-    "fields": [
+    "fields" : [
       "public static final enum com.yahoo.language.process.TokenType UNKNOWN",
       "public static final enum com.yahoo.language.process.TokenType SPACE",
       "public static final enum com.yahoo.language.process.TokenType PUNCTUATION",
@@ -725,30 +725,30 @@
       "public static final enum com.yahoo.language.process.TokenType MARKER"
     ]
   },
-  "com.yahoo.language.process.Tokenizer": {
-    "superClass": "java.lang.Object",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.language.process.Tokenizer" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [ ],
+    "attributes" : [
       "public",
       "interface",
       "abstract"
     ],
-    "methods": [
+    "methods" : [
       "public abstract java.lang.Iterable tokenize(java.lang.String, com.yahoo.language.Language, com.yahoo.language.process.StemMode, boolean)"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.language.process.Transformer": {
-    "superClass": "java.lang.Object",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.language.process.Transformer" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [ ],
+    "attributes" : [
       "public",
       "interface",
       "abstract"
     ],
-    "methods": [
+    "methods" : [
       "public abstract java.lang.String accentDrop(java.lang.String, com.yahoo.language.Language)"
     ],
-    "fields": []
+    "fields" : [ ]
   }
 }

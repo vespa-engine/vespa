@@ -1,14 +1,14 @@
 {
-  "com.yahoo.component.AbstractComponent": {
-    "superClass": "java.lang.Object",
-    "interfaces": [
+  "com.yahoo.component.AbstractComponent" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [
       "com.yahoo.component.Component",
       "com.yahoo.component.Deconstructable"
     ],
-    "attributes": [
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "protected void <init>()",
       "protected void <init>(com.yahoo.component.ComponentId)",
       "public final void initId(com.yahoo.component.ComponentId)",
@@ -25,36 +25,36 @@
       "public bridge synthetic java.lang.Object clone()",
       "public bridge synthetic int compareTo(java.lang.Object)"
     ],
-    "fields": [
+    "fields" : [
       "protected final boolean isDeconstructable"
     ]
   },
-  "com.yahoo.component.Component": {
-    "superClass": "java.lang.Object",
-    "interfaces": [
+  "com.yahoo.component.Component" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [
       "java.lang.Comparable"
     ],
-    "attributes": [
+    "attributes" : [
       "public",
       "interface",
       "abstract"
     ],
-    "methods": [
+    "methods" : [
       "public abstract void initId(com.yahoo.component.ComponentId)",
       "public abstract com.yahoo.component.ComponentId getId()"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.component.ComponentId": {
-    "superClass": "java.lang.Object",
-    "interfaces": [
+  "com.yahoo.component.ComponentId" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [
       "java.lang.Comparable"
     ],
-    "attributes": [
+    "attributes" : [
       "public",
       "final"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>(java.lang.String)",
       "public void <init>(java.lang.String, com.yahoo.component.Version, com.yahoo.component.ComponentId)",
       "public void <init>(java.lang.String, com.yahoo.component.Version)",
@@ -78,16 +78,16 @@
       "public static com.yahoo.component.ComponentId newAnonymous(java.lang.String)",
       "public bridge synthetic int compareTo(java.lang.Object)"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.component.ComponentSpecification": {
-    "superClass": "java.lang.Object",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.component.ComponentSpecification" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [ ],
+    "attributes" : [
       "public",
       "final"
     ],
-    "methods": [
+    "methods" : [
       "public static com.yahoo.component.ComponentSpecification fromString(java.lang.String)",
       "public void <init>(java.lang.String, com.yahoo.component.VersionSpecification, com.yahoo.component.ComponentId)",
       "public void <init>(java.lang.String, com.yahoo.component.VersionSpecification)",
@@ -105,31 +105,31 @@
       "public com.yahoo.component.ComponentSpecification intersect(com.yahoo.component.ComponentSpecification)",
       "public com.yahoo.component.ComponentSpecification withoutNamespace()"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.component.Deconstructable": {
-    "superClass": "java.lang.Object",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.component.Deconstructable" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [ ],
+    "attributes" : [
       "public",
       "interface",
       "abstract"
     ],
-    "methods": [
+    "methods" : [
       "public abstract void deconstruct()"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.component.Version": {
-    "superClass": "java.lang.Object",
-    "interfaces": [
+  "com.yahoo.component.Version" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [
       "java.lang.Comparable"
     ],
-    "attributes": [
+    "attributes" : [
       "public",
       "final"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>()",
       "public void <init>(int)",
       "public void <init>(int, int)",
@@ -155,33 +155,33 @@
       "public com.yahoo.component.VersionSpecification toSpecification()",
       "public bridge synthetic int compareTo(java.lang.Object)"
     ],
-    "fields": [
+    "fields" : [
       "public static final com.yahoo.component.Version emptyVersion"
     ]
   },
-  "com.yahoo.component.VersionCompatibility": {
-    "superClass": "java.lang.Object",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.component.VersionCompatibility" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [ ],
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public static com.yahoo.component.VersionCompatibility fromVersionList(java.util.List)",
       "public boolean accept(com.yahoo.component.Version, com.yahoo.component.Version)",
       "public boolean refuse(com.yahoo.component.Version, com.yahoo.component.Version)"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.component.VersionSpecification": {
-    "superClass": "java.lang.Object",
-    "interfaces": [
+  "com.yahoo.component.VersionSpecification" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [
       "java.lang.Comparable"
     ],
-    "attributes": [
+    "attributes" : [
       "public",
       "final"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>()",
       "public void <init>(java.lang.Integer)",
       "public void <init>(java.lang.Integer, java.lang.Integer)",
@@ -207,20 +207,20 @@
       "public com.yahoo.component.VersionSpecification intersect(com.yahoo.component.VersionSpecification)",
       "public bridge synthetic int compareTo(java.lang.Object)"
     ],
-    "fields": [
+    "fields" : [
       "public static final com.yahoo.component.VersionSpecification emptyVersionSpecification"
     ]
   },
-  "com.yahoo.component.Vtag": {
-    "superClass": "java.lang.Object",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.component.Vtag" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [ ],
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>()"
     ],
-    "fields": [
+    "fields" : [
       "public static final java.lang.String V_TAG_SYSTEM",
       "public static final java.lang.String V_TAG_PKG",
       "public static final java.lang.String V_TAG_DATE",
@@ -236,13 +236,13 @@
       "public static final java.time.Instant commitDate"
     ]
   },
-  "com.yahoo.component.provider.ComponentRegistry": {
-    "superClass": "java.lang.Object",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.component.provider.ComponentRegistry" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [ ],
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>()",
       "public synchronized void freeze()",
       "public final boolean isFrozen()",
@@ -257,31 +257,31 @@
       "public int getComponentCount()",
       "public static com.yahoo.component.provider.ComponentRegistry singleton(com.yahoo.component.ComponentId, java.lang.Object)"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.component.provider.Freezable": {
-    "superClass": "java.lang.Object",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.component.provider.Freezable" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [ ],
+    "attributes" : [
       "public",
       "interface",
       "abstract"
     ],
-    "methods": [
+    "methods" : [
       "public abstract void freeze()",
       "public abstract boolean isFrozen()"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.component.provider.FreezableClass": {
-    "superClass": "java.lang.Object",
-    "interfaces": [
+  "com.yahoo.component.provider.FreezableClass" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [
       "com.yahoo.component.provider.Freezable"
     ],
-    "attributes": [
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>()",
       "public synchronized void freeze()",
       "public final boolean isFrozen()",
@@ -289,17 +289,17 @@
       "public com.yahoo.component.provider.FreezableClass clone()",
       "public bridge synthetic java.lang.Object clone()"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.component.provider.FreezableComponent": {
-    "superClass": "com.yahoo.component.AbstractComponent",
-    "interfaces": [
+  "com.yahoo.component.provider.FreezableComponent" : {
+    "superClass" : "com.yahoo.component.AbstractComponent",
+    "interfaces" : [
       "com.yahoo.component.provider.Freezable"
     ],
-    "attributes": [
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "protected void <init>(com.yahoo.component.ComponentId)",
       "protected void <init>()",
       "public synchronized void freeze()",
@@ -309,17 +309,17 @@
       "public bridge synthetic com.yahoo.component.AbstractComponent clone()",
       "public bridge synthetic java.lang.Object clone()"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.component.provider.FreezableSimpleComponent": {
-    "superClass": "com.yahoo.component.AbstractComponent",
-    "interfaces": [
+  "com.yahoo.component.provider.FreezableSimpleComponent" : {
+    "superClass" : "com.yahoo.component.AbstractComponent",
+    "interfaces" : [
       "com.yahoo.component.provider.Freezable"
     ],
-    "attributes": [
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "protected void <init>(com.yahoo.component.ComponentId)",
       "protected void <init>()",
       "public synchronized void freeze()",
@@ -329,32 +329,32 @@
       "public bridge synthetic com.yahoo.component.AbstractComponent clone()",
       "public bridge synthetic java.lang.Object clone()"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.component.provider.ListenableFreezable": {
-    "superClass": "java.lang.Object",
-    "interfaces": [
+  "com.yahoo.component.provider.ListenableFreezable" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [
       "com.yahoo.component.provider.Freezable"
     ],
-    "attributes": [
+    "attributes" : [
       "public",
       "interface",
       "abstract"
     ],
-    "methods": [
+    "methods" : [
       "public abstract void addFreezeListener(java.lang.Runnable, java.util.concurrent.Executor)"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.component.provider.ListenableFreezableClass": {
-    "superClass": "com.yahoo.component.provider.FreezableClass",
-    "interfaces": [
+  "com.yahoo.component.provider.ListenableFreezableClass" : {
+    "superClass" : "com.yahoo.component.provider.FreezableClass",
+    "interfaces" : [
       "com.yahoo.component.provider.ListenableFreezable"
     ],
-    "attributes": [
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>()",
       "public synchronized void freeze()",
       "public void addFreezeListener(java.lang.Runnable, java.util.concurrent.Executor)",
@@ -362,21 +362,21 @@
       "public bridge synthetic com.yahoo.component.provider.FreezableClass clone()",
       "public bridge synthetic java.lang.Object clone()"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.container.di.componentgraph.Provider": {
-    "superClass": "java.lang.Object",
-    "interfaces": [
+  "com.yahoo.container.di.componentgraph.Provider" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [
       "com.yahoo.component.Deconstructable"
     ],
-    "attributes": [
+    "attributes" : [
       "public",
       "interface",
       "abstract"
     ],
-    "methods": [
+    "methods" : [
       "public abstract java.lang.Object get()"
     ],
-    "fields": []
+    "fields" : [ ]
   }
 }
