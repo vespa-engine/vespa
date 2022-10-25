@@ -113,6 +113,9 @@ public class AccessControl {
                 .setDefaultRequestFilterChain(DEFAULT_CONNECTOR_HOSTED_REQUEST_CHAIN_ID);
     }
 
+    /** returns the excluded bindings as specified in 'access-control' in services.xml **/
+    public Set<BindingPattern> excludedBindings() { return excludedBindings; }
+
     /** all handlers (that are known by the access control components) **/
     public Collection<Handler> handlers() { return handlers; }
 
