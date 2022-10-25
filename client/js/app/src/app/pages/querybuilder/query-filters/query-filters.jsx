@@ -26,17 +26,32 @@ function AddProperty(props) {
 }
 
 function Input({ id, value, types, type }) {
-  const options = { [type.name]: type, ...types };
   return (
     <>
       <Box sx={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
-        <Select
-          sx={{ flex: 1 }}
-          data={Object.values(options).map(({ name }) => name)}
-          onChange={(type) => dispatch(ACTION.INPUT_UPDATE, { id, type })}
-          value={type.name}
-          searchable
-        />
+        {types ? (
+          <Select
+            sx={{ flex: 1 }}
+            data={Object.values({ [type.name]: type, ...types }).map(
+              ({ name }) => name
+            )}
+            onChange={(type) => dispatch(ACTION.INPUT_UPDATE, { id, type })}
+            value={type.name}
+            searchable
+          />
+        ) : (
+          <TextInput
+            sx={{ flex: 1 }}
+            onChange={(event) =>
+              dispatch(ACTION.INPUT_UPDATE, {
+                id,
+                type: event.currentTarget.value,
+              })
+            }
+            placeholder="String"
+            value={type.name}
+          />
+        )}
         {!type.children && (
           <TextInput
             sx={{ flex: 1 }}
@@ -75,16 +90,20 @@ function Input({ id, value, types, type }) {
 
 function Inputs({ id, type, inputs }) {
   const usedTypes = inputs.map(({ type }) => type.name);
-  const remainingTypes = Object.fromEntries(
-    Object.entries(type).filter(([name]) => !usedTypes.includes(name))
-  );
-  const firstRemaining = Object.keys(remainingTypes)[0];
+  const remainingTypes =
+    typeof type === 'string'
+      ? null
+      : Object.fromEntries(
+          Object.entries(type).filter(([name]) => !usedTypes.includes(name))
+        );
+  const firstRemaining = remainingTypes ? Object.keys(remainingTypes)[0] : '';
+
   return (
     <Container sx={{ rowGap: '5px' }}>
       {inputs.map(({ id, value, type }) => (
         <Input key={id} types={remainingTypes} {...{ id, value, type }} />
       ))}
-      {firstRemaining && (
+      {firstRemaining != null && (
         <>
           {id != null ? (
             <Container sx={{ justifyContent: 'start' }}>
