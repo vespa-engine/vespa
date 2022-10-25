@@ -1,12 +1,9 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model.application.validation.change.search;
 
-import com.yahoo.config.application.api.ValidationOverrides;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.vespa.model.application.validation.change.VespaConfigChangeAction;
 import org.junit.jupiter.api.Test;
-
-import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 

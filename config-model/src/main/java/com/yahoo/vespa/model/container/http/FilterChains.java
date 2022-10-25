@@ -3,14 +3,12 @@ package com.yahoo.vespa.model.container.http;
 
 import com.yahoo.component.ComponentId;
 import com.yahoo.component.ComponentSpecification;
-import com.yahoo.component.chain.Phase;
 import com.yahoo.component.chain.model.ChainSpecification;
 import com.yahoo.config.model.producer.AbstractConfigProducer;
 import com.yahoo.vespa.model.container.component.SimpleComponent;
 import com.yahoo.vespa.model.container.component.chain.Chain;
 import com.yahoo.vespa.model.container.component.chain.Chains;
 
-import java.util.Collections;
 import java.util.Set;
 
 /**

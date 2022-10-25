@@ -4,10 +4,10 @@ package com.yahoo.vespa.model.builder.xml.dom.chains;
 import com.yahoo.component.ComponentSpecification;
 import com.yahoo.component.chain.model.ChainSpecification;
 import com.yahoo.config.model.builder.xml.XmlHelper;
-import com.yahoo.text.XML;
 import org.w3c.dom.Element;
-
-import java.util.*;
+import java.util.Collection;
+import java.util.LinkedHashSet;
+import java.util.Set;
 
 /**
  * Build an Inheritance object from an inheritance section.

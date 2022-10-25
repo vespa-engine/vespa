@@ -5,14 +5,15 @@ import com.google.common.collect.ImmutableMap;
 import com.yahoo.config.model.builder.xml.XmlHelper;
 import com.yahoo.net.HostName;
 import com.yahoo.text.XML;
-import com.yahoo.vespa.model.builder.xml.dom.VespaDomBuilder;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
-
+import org.w3c.dom.Node;
+import org.w3c.dom.NodeList;
 import java.io.Reader;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
 import java.util.logging.Logger;
@@ -73,7 +74,7 @@ public class Hosts {
             if ("localhost".equals(name)) {
                 name = HostName.getLocalhost();
             }
-            List<String> hostAliases = VespaDomBuilder.getHostAliases(hostE.getChildNodes());
+            List<String> hostAliases = getHostAliases(hostE.getChildNodes());
             if (hostAliases.isEmpty()) {
                 throw new IllegalArgumentException("No host aliases defined for host '" + name + "'");
             }
@@ -88,6 +89,33 @@ public class Hosts {
     @Override
     public String toString() {
         return "Hosts: " + hosts.keySet();
+    }
+
+    /**
+     * Get all aliases for one host from a list of 'alias' xml nodes.
+     *
+     * @param hostAliases  List of xml nodes, each representing one hostalias
+     * @return a list of alias strings.
+     */
+    private static List<String> getHostAliases(NodeList hostAliases) {
+        List<String> aliases = new LinkedList<>();
+        for (int i = 0; i < hostAliases.getLength(); i++) {
+            Node n = hostAliases.item(i);
+            if (! (n instanceof Element e)) {
+                continue;
+            }
+            if (! e.getNodeName().equals("alias")) {
+                throw new IllegalArgumentException("Unexpected tag: '" + e.getNodeName() + "' at node " +
+                                                           XML.getNodePath(e, " > ") + ", expected 'alias'.");
+            }
+            String alias = e.getFirstChild().getNodeValue();
+            if ((alias == null) || (alias.equals(""))) {
+                throw new IllegalArgumentException("Missing value for the alias tag at node " +
+                                                           XML.getNodePath(e, " > ") + "'.");
+            }
+            aliases.add(alias);
+        }
+        return aliases;
     }
 
 }

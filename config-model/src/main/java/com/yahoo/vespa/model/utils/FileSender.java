@@ -9,7 +9,6 @@ import com.yahoo.config.model.producer.AbstractConfigProducer;
 import com.yahoo.config.model.producer.UserConfigRepo;
 import com.yahoo.path.Path;
 import com.yahoo.vespa.config.ConfigDefinition;
-import com.yahoo.vespa.config.ConfigDefinition.DefaultValued;
 import com.yahoo.vespa.config.ConfigDefinitionKey;
 import com.yahoo.vespa.config.ConfigPayloadBuilder;
 import com.yahoo.vespa.model.AbstractService;

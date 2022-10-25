@@ -28,8 +28,6 @@ import java.util.Set;
  */
 public class AccessControl {
 
-
-
     public enum ClientAuthentication { want, need;}
     public static final ComponentId ACCESS_CONTROL_CHAIN_ID = ComponentId.fromString("access-control-chain");
 
@@ -114,9 +112,6 @@ public class AccessControl {
                 .orElseThrow(() -> new RuntimeException("Could not find default connector"))
                 .setDefaultRequestFilterChain(DEFAULT_CONNECTOR_HOSTED_REQUEST_CHAIN_ID);
     }
-
-    /** returns the excluded bindings as specified in 'access-control' in services.xml **/
-    public Set<BindingPattern> excludedBindings() { return excludedBindings; }
 
     /** all handlers (that are known by the access control components) **/
     public Collection<Handler> handlers() { return handlers; }

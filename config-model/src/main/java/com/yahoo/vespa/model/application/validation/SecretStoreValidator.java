@@ -7,10 +7,7 @@ import com.yahoo.vespa.model.VespaModel;
 import com.yahoo.vespa.model.container.Container;
 import com.yahoo.vespa.model.container.ContainerCluster;
 import com.yahoo.vespa.model.container.IdentityProvider;
-import com.yahoo.vespa.model.container.SecretStore;
 import com.yahoo.vespa.model.container.component.Component;
-
-import java.util.List;
 
 /**
  * Validates the requirements for setting up a secret store.

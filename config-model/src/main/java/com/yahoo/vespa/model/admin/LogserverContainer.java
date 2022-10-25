@@ -9,8 +9,6 @@ import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.vespa.model.container.Container;
 import com.yahoo.vespa.model.container.component.AccessLogComponent;
 import com.yahoo.vespa.model.container.component.AccessLogComponent.AccessLogType;
-import com.yahoo.vespa.model.container.component.AccessLogComponent.CompressionType;
-
 import java.util.Optional;
 
 /**

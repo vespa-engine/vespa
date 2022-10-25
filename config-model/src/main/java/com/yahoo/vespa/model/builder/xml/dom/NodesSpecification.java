@@ -18,13 +18,10 @@ import com.yahoo.vespa.model.HostSystem;
 import com.yahoo.vespa.model.container.xml.ContainerModelBuilder;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
-
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.function.Function;
-
-import static java.util.stream.Collectors.toList;
 
 /**
  * A common utility class to represent a requirement for nodes during model building.

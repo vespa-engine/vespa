@@ -12,7 +12,6 @@ import com.yahoo.vespa.model.container.search.searchchain.SearchChains;
 
 import java.util.List;
 import java.util.Optional;
-import java.util.OptionalInt;
 
 import static com.yahoo.container.bundle.BundleInstantiationSpecification.fromSearchAndDocproc;
 

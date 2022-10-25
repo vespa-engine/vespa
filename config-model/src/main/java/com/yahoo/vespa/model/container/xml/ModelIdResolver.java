@@ -1,10 +1,8 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model.container.xml;
 
-import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.text.XML;
 import org.w3c.dom.Element;
-
 import java.util.Map;
 import java.util.stream.Collectors;
 

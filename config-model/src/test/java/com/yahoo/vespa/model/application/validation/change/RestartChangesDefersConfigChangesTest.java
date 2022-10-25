@@ -1,12 +1,10 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model.application.validation.change;
 
-import com.yahoo.cloud.config.log.LogdConfig;
 import com.yahoo.config.model.provision.InMemoryProvisioner;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.NodeResources;
 import com.yahoo.container.ComponentsConfig;
-import com.yahoo.container.QrConfig;
 import com.yahoo.vespa.model.VespaModel;
 import com.yahoo.vespa.model.application.validation.ValidationTester;
 import org.junit.jupiter.api.Test;

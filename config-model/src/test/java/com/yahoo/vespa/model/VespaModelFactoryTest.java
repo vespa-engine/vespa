@@ -3,7 +3,6 @@ package com.yahoo.vespa.model;
 
 import com.yahoo.config.application.api.ApplicationPackage;
 import com.yahoo.config.model.MockModelContext;
-import com.yahoo.config.model.NullConfigModelRegistry;
 import com.yahoo.config.model.api.HostInfo;
 import com.yahoo.config.model.api.HostProvisioner;
 import com.yahoo.config.model.api.Model;

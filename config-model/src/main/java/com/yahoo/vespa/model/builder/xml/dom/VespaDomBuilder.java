@@ -22,11 +22,6 @@ import com.yahoo.vespa.model.container.docproc.ContainerDocproc;
 import com.yahoo.vespa.model.content.Content;
 import com.yahoo.vespa.model.search.SearchCluster;
 import org.w3c.dom.Element;
-import org.w3c.dom.Node;
-import org.w3c.dom.NodeList;
-
-import java.util.LinkedList;
-import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -53,35 +48,6 @@ public class VespaDomBuilder extends VespaModelBuilder {
     public static final String Allocated_MEMORY_ATTRIB_NAME = "allocated-memory";
 
     public static final Logger log = Logger.getLogger(VespaDomBuilder.class.getPackage().toString());
-
-    /**
-     * Get all aliases for one host from a list of 'alias' xml nodes.
-     *
-     * @param hostAliases  List of xml nodes, each representing one hostalias
-     * @return a list of alias strings.
-     */
-    // TODO Move and change scope
-    public static List<String> getHostAliases(NodeList hostAliases) {
-        List<String> aliases = new LinkedList<>();
-        for (int i = 0; i < hostAliases.getLength(); i++) {
-            Node n = hostAliases.item(i);
-            if (! (n instanceof Element)) {
-                continue;
-            }
-            Element e = (Element)n;
-            if (! e.getNodeName().equals("alias")) {
-                throw new IllegalArgumentException("Unexpected tag: '" + e.getNodeName() + "' at node " +
-                                                   XML.getNodePath(e, " > ") + ", expected 'alias'.");
-            }
-            String alias = e.getFirstChild().getNodeValue();
-            if ((alias == null) || (alias.equals(""))) {
-                throw new IllegalArgumentException("Missing value for the alias tag at node " +
-                                                   XML.getNodePath(e, " > ") + "'.");
-            }
-            aliases.add(alias);
-        }
-        return aliases;
-    }
 
 
     @Override

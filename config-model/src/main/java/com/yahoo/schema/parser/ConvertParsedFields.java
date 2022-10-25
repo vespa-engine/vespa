@@ -2,7 +2,6 @@
 package com.yahoo.schema.parser;
 
 import com.yahoo.document.DataType;
-import com.yahoo.document.DataTypeName;
 import com.yahoo.schema.parser.ConvertParsedTypes.TypeResolver;
 import com.yahoo.schema.Index;
 import com.yahoo.schema.Schema;

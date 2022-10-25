@@ -4,11 +4,8 @@ package com.yahoo.vespa.model.application.validation.change;
 import com.yahoo.config.application.api.ValidationId;
 import com.yahoo.config.application.api.ValidationOverrides;
 import com.yahoo.config.model.api.ConfigChangeAction;
-import com.yahoo.config.provision.Capacity;
-import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.vespa.model.VespaModel;
 import com.yahoo.vespa.model.content.cluster.ContentCluster;
-
 import java.time.Instant;
 import java.util.List;
 
