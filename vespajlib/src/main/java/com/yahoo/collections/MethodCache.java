@@ -4,6 +4,7 @@ package com.yahoo.collections;
 import com.yahoo.concurrent.CopyOnWriteHashMap;
 
 import java.lang.reflect.Method;
+import java.util.function.Consumer;
 
 /**
  * This will cache methods solved by reflection as reflection is expensive.
@@ -28,11 +29,17 @@ public final class MethodCache {
     public void clear() {
         cache.clear();
     }
+
     public Method get(Object object) {
+        return get(object, null);
+    }
+    public Method get(Object object, Consumer<String> onPut) {
         Method m = cache.get(object.getClass().getName());
         if (m == null) {
             m = lookupMethod(object);
             if (m != null) {
+                if (onPut != null)
+                    onPut.accept(object.getClass().getName());
                 cache.put(object.getClass().getName(), m);
             }
         }

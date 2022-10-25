@@ -114,7 +114,7 @@ public class CloneHelper {
 
     private Object cloneByReflection(Object object) {
         try {
-            Method cloneMethod = cloneMethodCache.get(object);
+            Method cloneMethod = cloneMethodCache.get(object, name -> log.warning("Caching the clone method of '" + name + "'. Let it implement com.yahoo.lang.PublicCloneable instead"));
             if (cloneMethod == null) {
                 log.warning("'" + object + "' of class " + object.getClass() +
                             " is Cloneable, but has no clone method - will use the same instance in all requests");
