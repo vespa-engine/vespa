@@ -707,7 +707,7 @@ public class YqlParser implements Parser {
     }
 
     private Item buildUserInput(OperatorNode<ExpressionOperator> ast) {
-        // TODO add support for default arguments if property results in nothing
+        // TODO: Add support for default arguments if property results in nothing
         List<OperatorNode<ExpressionOperator>> args = ast.getArgument(1);
         String wordData = getStringContents(args.get(0));
 
@@ -727,7 +727,7 @@ public class YqlParser implements Parser {
             item = instantiateWordItem(defaultIndex, wordData, ast, null, SegmentWhen.ALWAYS, false, language);
         } else {
             item = parseUserInput(grammar, defaultIndex, wordData, language, allowEmpty);
-            propagateUserInputAnnotations(ast, item);
+            propagateUserInputAnnotationsRecursively(ast, item);
         }
 
         // Set grammar-specific annotations
@@ -767,7 +767,7 @@ public class YqlParser implements Parser {
         }
     }
 
-    private void propagateUserInputAnnotations(OperatorNode<ExpressionOperator> ast, Item item) {
+    private void propagateUserInputAnnotationsRecursively(OperatorNode<ExpressionOperator> ast, Item item) {
         ToolBox.visit(new AnnotationPropagator(ast), item);
     }
 
