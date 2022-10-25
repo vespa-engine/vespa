@@ -16,7 +16,7 @@ import java.util.function.Consumer;
 public final class MethodCache {
 
     private final String methodName;
-    private final CopyOnWriteHashMap<String, Method> cache = new CopyOnWriteHashMap<>();
+    private final CopyOnWriteHashMap<Class<?>, Method> cache = new CopyOnWriteHashMap<>();
 
     public MethodCache(String methodName) {
         this.methodName = methodName;
@@ -34,13 +34,13 @@ public final class MethodCache {
         return get(object, null);
     }
     public Method get(Object object, Consumer<String> onPut) {
-        Method m = cache.get(object.getClass().getName());
+        Method m = cache.get(object.getClass());
         if (m == null) {
             m = lookupMethod(object);
             if (m != null) {
                 if (onPut != null)
                     onPut.accept(object.getClass().getName());
-                cache.put(object.getClass().getName(), m);
+                cache.put(object.getClass(), m);
             }
         }
         return m;
