@@ -1,11 +1,11 @@
 {
-  "com.yahoo.fsa.FSA$Iterator$Item": {
-    "superClass": "java.lang.Object",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.fsa.FSA$Iterator$Item" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [ ],
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>(com.yahoo.fsa.FSA, int)",
       "public void <init>(com.yahoo.fsa.FSA$Iterator$Item)",
       "public java.lang.String getString()",
@@ -13,32 +13,32 @@
       "public java.lang.String getDataString()",
       "public java.lang.String toString()"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.fsa.FSA$Iterator": {
-    "superClass": "java.lang.Object",
-    "interfaces": [
+  "com.yahoo.fsa.FSA$Iterator" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [
       "java.util.Iterator"
     ],
-    "attributes": [
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>(com.yahoo.fsa.FSA$State)",
       "public boolean hasNext()",
       "public com.yahoo.fsa.FSA$Iterator$Item next()",
       "public void remove()",
       "public bridge synthetic java.lang.Object next()"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.fsa.FSA$State": {
-    "superClass": "java.lang.Object",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.fsa.FSA$State" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [ ],
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void start()",
       "public void delta(byte)",
       "public boolean peekDelta(byte)",
@@ -57,17 +57,17 @@
       "public java.nio.ByteBuffer lookup(java.lang.String)",
       "public boolean hasPerfectHash()"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.fsa.FSA": {
-    "superClass": "java.lang.Object",
-    "interfaces": [
+  "com.yahoo.fsa.FSA" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [
       "java.io.Closeable"
     ],
-    "attributes": [
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public com.yahoo.fsa.FSA$State getState()",
       "public com.yahoo.fsa.FSA$Iterator iterator()",
       "public com.yahoo.fsa.FSA$Iterator iterator(com.yahoo.fsa.FSA$State)",
@@ -90,15 +90,15 @@
       "public java.lang.String lookup(java.lang.String)",
       "public static void main(java.lang.String[])"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.fsa.MetaData": {
-    "superClass": "java.lang.Object",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.fsa.MetaData" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [ ],
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>(java.lang.String)",
       "public void <init>(java.lang.String, java.lang.String)",
       "public boolean isOk()",
@@ -111,6 +111,6 @@
       "public java.lang.String[] getStringArrayEntry(int, int)",
       "public static void main(java.lang.String[])"
     ],
-    "fields": []
+    "fields" : [ ]
   }
 }

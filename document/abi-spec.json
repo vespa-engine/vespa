@@ -1,11 +1,11 @@
 {
-  "com.yahoo.document.ArrayDataType": {
-    "superClass": "com.yahoo.document.CollectionDataType",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.document.ArrayDataType" : {
+    "superClass" : "com.yahoo.document.CollectionDataType",
+    "interfaces" : [ ],
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>(com.yahoo.document.DataType)",
       "public void <init>(com.yahoo.document.DataType, int)",
       "public com.yahoo.document.ArrayDataType clone()",
@@ -19,18 +19,18 @@
       "public bridge synthetic com.yahoo.vespa.objects.Identifiable clone()",
       "public bridge synthetic java.lang.Object clone()"
     ],
-    "fields": [
+    "fields" : [
       "public static int classId"
     ]
   },
-  "com.yahoo.document.BaseStructDataType": {
-    "superClass": "com.yahoo.document.StructuredDataType",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.document.BaseStructDataType" : {
+    "superClass" : "com.yahoo.document.StructuredDataType",
+    "interfaces" : [ ],
+    "attributes" : [
       "public",
       "abstract"
     ],
-    "methods": [
+    "methods" : [
       "protected void assign(com.yahoo.document.BaseStructDataType)",
       "public com.yahoo.document.BaseStructDataType clone()",
       "public void addField(com.yahoo.document.Field)",
@@ -46,18 +46,18 @@
       "public bridge synthetic com.yahoo.vespa.objects.Identifiable clone()",
       "public bridge synthetic java.lang.Object clone()"
     ],
-    "fields": [
+    "fields" : [
       "protected java.util.Map fieldIds",
       "protected java.util.Map fields"
     ]
   },
-  "com.yahoo.document.BucketDistribution": {
-    "superClass": "java.lang.Object",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.document.BucketDistribution" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [ ],
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>(int, int)",
       "public void <init>(com.yahoo.document.BucketDistribution)",
       "public void reset()",
@@ -68,17 +68,17 @@
       "public int getNumBuckets()",
       "public int getColumn(com.yahoo.document.BucketId)"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.document.BucketId": {
-    "superClass": "java.lang.Object",
-    "interfaces": [
+  "com.yahoo.document.BucketId" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [
       "java.lang.Comparable"
     ],
-    "attributes": [
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>()",
       "public void <init>(long)",
       "public void <init>(int, long)",
@@ -95,17 +95,17 @@
       "public boolean contains(com.yahoo.document.DocumentId, com.yahoo.document.BucketIdFactory)",
       "public bridge synthetic int compareTo(java.lang.Object)"
     ],
-    "fields": [
+    "fields" : [
       "public static final int COUNT_BITS"
     ]
   },
-  "com.yahoo.document.BucketIdFactory": {
-    "superClass": "java.lang.Object",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.document.BucketIdFactory" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [ ],
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>()",
       "public void <init>(int, int, int)",
       "public void <init>(java.lang.String)",
@@ -114,16 +114,16 @@
       "public int getCountBitCount()",
       "public com.yahoo.document.BucketId getBucketId(com.yahoo.document.DocumentId)"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.document.CollectionDataType": {
-    "superClass": "com.yahoo.document.DataType",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.document.CollectionDataType" : {
+    "superClass" : "com.yahoo.document.DataType",
+    "interfaces" : [ ],
+    "attributes" : [
       "public",
       "abstract"
     ],
-    "methods": [
+    "methods" : [
       "protected void <init>(java.lang.String, int, com.yahoo.document.DataType)",
       "public abstract com.yahoo.document.datatypes.CollectionFieldValue createFieldValue()",
       "public com.yahoo.document.CollectionDataType clone()",
@@ -139,40 +139,40 @@
       "public bridge synthetic com.yahoo.vespa.objects.Identifiable clone()",
       "public bridge synthetic java.lang.Object clone()"
     ],
-    "fields": [
+    "fields" : [
       "public static int classId"
     ]
   },
-  "com.yahoo.document.CompressionConfig": {
-    "superClass": "java.lang.Object",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.document.CompressionConfig" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [ ],
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>(com.yahoo.compress.CompressionType, int, float, long)",
       "public void <init>()",
       "public void <init>(com.yahoo.compress.CompressionType)",
       "public void <init>(com.yahoo.compress.CompressionType, int, float)",
       "public float thresholdFactor()"
     ],
-    "fields": [
+    "fields" : [
       "public final com.yahoo.compress.CompressionType type",
       "public int compressionLevel",
       "public float threshold",
       "public final long minsize"
     ]
   },
-  "com.yahoo.document.DataType": {
-    "superClass": "com.yahoo.vespa.objects.Identifiable",
-    "interfaces": [
+  "com.yahoo.document.DataType" : {
+    "superClass" : "com.yahoo.vespa.objects.Identifiable",
+    "interfaces" : [
       "java.lang.Comparable"
     ],
-    "attributes": [
+    "attributes" : [
       "public",
       "abstract"
     ],
-    "methods": [
+    "methods" : [
       "public static int lastPredefinedDataTypeId()",
       "protected void <init>(java.lang.String, int)",
       "public com.yahoo.document.DataType clone()",
@@ -207,7 +207,7 @@
       "public bridge synthetic java.lang.Object clone()",
       "public bridge synthetic int compareTo(java.lang.Object)"
     ],
-    "fields": [
+    "fields" : [
       "public static final int classId",
       "public static final com.yahoo.document.NumericDataType NONE",
       "public static final com.yahoo.document.NumericDataType INT",
@@ -226,14 +226,14 @@
       "public static final com.yahoo.document.WeightedSetDataType TAG"
     ]
   },
-  "com.yahoo.document.DataTypeName": {
-    "superClass": "java.lang.Object",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.document.DataTypeName" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [ ],
+    "attributes" : [
       "public",
       "final"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>(java.lang.String)",
       "public void <init>(com.yahoo.text.Utf8Array)",
       "public void <init>(com.yahoo.text.Utf8String)",
@@ -242,15 +242,15 @@
       "public int hashCode()",
       "public boolean equals(java.lang.Object)"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.document.Document": {
-    "superClass": "com.yahoo.document.datatypes.StructuredFieldValue",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.document.Document" : {
+    "superClass" : "com.yahoo.document.datatypes.StructuredFieldValue",
+    "interfaces" : [ ],
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>(com.yahoo.document.DocumentType, java.lang.String)",
       "public void <init>(com.yahoo.document.DocumentType, com.yahoo.document.DocumentId)",
       "public void <init>(com.yahoo.document.Document)",
@@ -294,30 +294,30 @@
       "public bridge synthetic com.yahoo.vespa.objects.Identifiable clone()",
       "public bridge synthetic java.lang.Object clone()"
     ],
-    "fields": [
+    "fields" : [
       "public static final int classId",
       "public static final short SERIALIZED_VERSION"
     ]
   },
-  "com.yahoo.document.DocumentCalculator": {
-    "superClass": "java.lang.Object",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.document.DocumentCalculator" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [ ],
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>(java.lang.String)",
       "public java.lang.Number evaluate(com.yahoo.document.Document, java.util.Map)"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.document.DocumentGet": {
-    "superClass": "com.yahoo.document.DocumentOperation",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.document.DocumentGet" : {
+    "superClass" : "com.yahoo.document.DocumentOperation",
+    "interfaces" : [ ],
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>(com.yahoo.document.DocumentId)",
       "public com.yahoo.document.DocumentId getId()",
       "public void setCondition(com.yahoo.document.TestAndSetCondition)",
@@ -325,15 +325,15 @@
       "public boolean equals(java.lang.Object)",
       "public int hashCode()"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.document.DocumentId": {
-    "superClass": "com.yahoo.vespa.objects.Identifiable",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.document.DocumentId" : {
+    "superClass" : "com.yahoo.vespa.objects.Identifiable",
+    "interfaces" : [ ],
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>(com.yahoo.vespa.objects.Deserializer)",
       "public void <init>(java.lang.String)",
       "public void <init>(com.yahoo.document.idstring.IdString)",
@@ -353,31 +353,31 @@
       "public bridge synthetic com.yahoo.vespa.objects.Identifiable clone()",
       "public bridge synthetic java.lang.Object clone()"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.document.DocumentOperation": {
-    "superClass": "java.lang.Object",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.document.DocumentOperation" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [ ],
+    "attributes" : [
       "public",
       "abstract"
     ],
-    "methods": [
+    "methods" : [
       "public abstract com.yahoo.document.DocumentId getId()",
       "public void setCondition(com.yahoo.document.TestAndSetCondition)",
       "public com.yahoo.document.TestAndSetCondition getCondition()",
       "protected void <init>()",
       "protected void <init>(com.yahoo.document.DocumentOperation)"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.document.DocumentPut": {
-    "superClass": "com.yahoo.document.DocumentOperation",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.document.DocumentPut" : {
+    "superClass" : "com.yahoo.document.DocumentOperation",
+    "interfaces" : [ ],
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>(com.yahoo.document.Document)",
       "public void <init>(com.yahoo.document.DocumentType, com.yahoo.document.DocumentId)",
       "public void <init>(com.yahoo.document.DocumentType, java.lang.String)",
@@ -389,30 +389,30 @@
       "public int hashCode()",
       "public java.lang.String toString()"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.document.DocumentRemove": {
-    "superClass": "com.yahoo.document.DocumentOperation",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.document.DocumentRemove" : {
+    "superClass" : "com.yahoo.document.DocumentOperation",
+    "interfaces" : [ ],
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>(com.yahoo.document.DocumentId)",
       "public com.yahoo.document.DocumentId getId()",
       "public java.lang.String toString()",
       "public boolean equals(java.lang.Object)",
       "public int hashCode()"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.document.DocumentType": {
-    "superClass": "com.yahoo.document.StructuredDataType",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.document.DocumentType" : {
+    "superClass" : "com.yahoo.document.StructuredDataType",
+    "interfaces" : [ ],
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>(java.lang.String)",
       "public void <init>(java.lang.String, com.yahoo.document.StructDataType)",
       "public void <init>(java.lang.String, com.yahoo.document.StructDataType, java.util.Set)",
@@ -455,33 +455,33 @@
       "public bridge synthetic com.yahoo.vespa.objects.Identifiable clone()",
       "public bridge synthetic java.lang.Object clone()"
     ],
-    "fields": [
+    "fields" : [
       "public static final java.lang.String DOCUMENT",
       "public static final int classId"
     ]
   },
-  "com.yahoo.document.DocumentTypeId": {
-    "superClass": "java.lang.Object",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.document.DocumentTypeId" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [ ],
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>(int)",
       "public int getId()",
       "public boolean equals(java.lang.Object)",
       "public int hashCode()",
       "public java.lang.String toString()"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.document.DocumentTypeManager": {
-    "superClass": "java.lang.Object",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.document.DocumentTypeManager" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [ ],
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>()",
       "public void <init>(com.yahoo.document.config.DocumentmanagerConfig)",
       "public static com.yahoo.document.DocumentTypeManager fromFile(java.lang.String)",
@@ -499,17 +499,17 @@
       "public java.util.Iterator documentTypeIterator()",
       "public com.yahoo.document.annotation.AnnotationTypeRegistry getAnnotationTypeRegistry()"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.document.DocumentTypeManagerConfigurer": {
-    "superClass": "java.lang.Object",
-    "interfaces": [
+  "com.yahoo.document.DocumentTypeManagerConfigurer" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [
       "com.yahoo.config.subscription.ConfigSubscriber$SingleSubscriber"
     ],
-    "attributes": [
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>(com.yahoo.document.DocumentTypeManager)",
       "public static com.yahoo.config.subscription.ConfigSubscriber configure(com.yahoo.document.DocumentTypeManager, java.lang.String)",
       "public com.yahoo.config.subscription.ConfigSubscriber configure(java.lang.String)",
@@ -517,17 +517,17 @@
       "public void configure(com.yahoo.document.config.DocumentmanagerConfig)",
       "public bridge synthetic void configure(com.yahoo.config.ConfigInstance)"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.document.DocumentUpdate": {
-    "superClass": "com.yahoo.document.DocumentOperation",
-    "interfaces": [
+  "com.yahoo.document.DocumentUpdate" : {
+    "superClass" : "com.yahoo.document.DocumentOperation",
+    "interfaces" : [
       "java.lang.Iterable"
     ],
-    "attributes": [
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>(com.yahoo.document.DocumentType, com.yahoo.document.DocumentId)",
       "public void <init>(com.yahoo.document.serialization.DocumentUpdateReader)",
       "public void <init>(com.yahoo.document.DocumentUpdate)",
@@ -564,86 +564,86 @@
       "public boolean getCreateIfNonExistent()",
       "public java.util.Optional getOptionalCreateIfNonExistent()"
     ],
-    "fields": [
+    "fields" : [
       "public static final int CLASSID"
     ]
   },
-  "com.yahoo.document.DocumentUtil": {
-    "superClass": "java.lang.Object",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.document.DocumentUtil" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [ ],
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>()",
       "public static int calculateMaxPendingSize(double, double, int)"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.document.ExtendedField$Extract": {
-    "superClass": "java.lang.Object",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.document.ExtendedField$Extract" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [ ],
+    "attributes" : [
       "public",
       "interface",
       "abstract"
     ],
-    "methods": [
+    "methods" : [
       "public abstract java.lang.Object get(com.yahoo.document.datatypes.StructuredFieldValue)",
       "public abstract void set(com.yahoo.document.datatypes.StructuredFieldValue, java.lang.Object)"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.document.ExtendedField": {
-    "superClass": "com.yahoo.document.Field",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.document.ExtendedField" : {
+    "superClass" : "com.yahoo.document.Field",
+    "interfaces" : [ ],
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>(java.lang.String, com.yahoo.document.DataType, com.yahoo.document.ExtendedField$Extract)",
       "public com.yahoo.document.datatypes.FieldValue getFieldValue(com.yahoo.document.datatypes.StructuredFieldValue)",
       "public com.yahoo.document.datatypes.FieldValue setFieldValue(com.yahoo.document.datatypes.StructuredFieldValue, com.yahoo.document.datatypes.FieldValue)"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.document.ExtendedStringField$ExtractSpanTrees": {
-    "superClass": "java.lang.Object",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.document.ExtendedStringField$ExtractSpanTrees" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [ ],
+    "attributes" : [
       "public",
       "interface",
       "abstract"
     ],
-    "methods": [
+    "methods" : [
       "public abstract java.util.Map get(com.yahoo.document.datatypes.StructuredFieldValue)",
       "public abstract void set(com.yahoo.document.datatypes.StructuredFieldValue, java.util.Map)"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.document.ExtendedStringField": {
-    "superClass": "com.yahoo.document.ExtendedField",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.document.ExtendedStringField" : {
+    "superClass" : "com.yahoo.document.ExtendedField",
+    "interfaces" : [ ],
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>(java.lang.String, com.yahoo.document.DataType, com.yahoo.document.ExtendedField$Extract, com.yahoo.document.ExtendedStringField$ExtractSpanTrees)",
       "public com.yahoo.document.datatypes.FieldValue getFieldValue(com.yahoo.document.datatypes.StructuredFieldValue)",
       "public com.yahoo.document.datatypes.FieldValue setFieldValue(com.yahoo.document.datatypes.StructuredFieldValue, com.yahoo.document.datatypes.FieldValue)"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.document.Field": {
-    "superClass": "com.yahoo.vespa.objects.FieldBase",
-    "interfaces": [
+  "com.yahoo.document.Field" : {
+    "superClass" : "com.yahoo.vespa.objects.FieldBase",
+    "interfaces" : [
       "com.yahoo.document.fieldset.FieldSet",
       "java.lang.Comparable"
     ],
-    "attributes": [
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>(java.lang.String, int, com.yahoo.document.DataType)",
       "public void <init>(java.lang.String)",
       "public void <init>(java.lang.String, com.yahoo.document.DataType, com.yahoo.document.DocumentType)",
@@ -664,20 +664,20 @@
       "public bridge synthetic java.lang.Object clone()",
       "public bridge synthetic int compareTo(java.lang.Object)"
     ],
-    "fields": [
+    "fields" : [
       "protected com.yahoo.document.DataType dataType",
       "protected int fieldId"
     ]
   },
-  "com.yahoo.document.FieldPath": {
-    "superClass": "java.lang.Object",
-    "interfaces": [
+  "com.yahoo.document.FieldPath" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [
       "java.lang.Iterable"
     ],
-    "attributes": [
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>()",
       "public void <init>(com.yahoo.document.FieldPath)",
       "public void <init>(java.util.List)",
@@ -693,38 +693,38 @@
       "public int hashCode()",
       "public java.lang.String toString()"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.document.FieldPathEntry$KeyParseResult": {
-    "superClass": "java.lang.Object",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.document.FieldPathEntry$KeyParseResult" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [ ],
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>(java.lang.String, int)",
       "public boolean equals(java.lang.Object)",
       "public int hashCode()",
       "public java.lang.String toString()"
     ],
-    "fields": [
+    "fields" : [
       "public java.lang.String parsed",
       "public int consumedChars"
     ]
   },
-  "com.yahoo.document.FieldPathEntry$Type": {
-    "superClass": "java.lang.Enum",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.document.FieldPathEntry$Type" : {
+    "superClass" : "java.lang.Enum",
+    "interfaces" : [ ],
+    "attributes" : [
       "public",
       "final",
       "enum"
     ],
-    "methods": [
+    "methods" : [
       "public static com.yahoo.document.FieldPathEntry$Type[] values()",
       "public static com.yahoo.document.FieldPathEntry$Type valueOf(java.lang.String)"
     ],
-    "fields": [
+    "fields" : [
       "public static final enum com.yahoo.document.FieldPathEntry$Type STRUCT_FIELD",
       "public static final enum com.yahoo.document.FieldPathEntry$Type ARRAY_INDEX",
       "public static final enum com.yahoo.document.FieldPathEntry$Type MAP_KEY",
@@ -733,13 +733,13 @@
       "public static final enum com.yahoo.document.FieldPathEntry$Type VARIABLE"
     ]
   },
-  "com.yahoo.document.FieldPathEntry": {
-    "superClass": "java.lang.Object",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.document.FieldPathEntry" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [ ],
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public com.yahoo.document.DataType getResultingDataType()",
       "public com.yahoo.document.FieldPathEntry$Type getType()",
       "public com.yahoo.document.Field getFieldRef()",
@@ -757,44 +757,44 @@
       "public int hashCode()",
       "public static com.yahoo.document.FieldPathEntry$KeyParseResult parseKey(java.lang.String)"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.document.FixedBucketSpaces": {
-    "superClass": "java.lang.Object",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.document.FixedBucketSpaces" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [ ],
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>()",
       "public static java.lang.String defaultSpace()",
       "public static java.lang.String globalSpace()"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.document.Generated": {
-    "superClass": "java.lang.Object",
-    "interfaces": [
+  "com.yahoo.document.Generated" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [
       "java.lang.annotation.Annotation"
     ],
-    "attributes": [
+    "attributes" : [
       "public",
       "interface",
       "abstract",
       "annotation"
     ],
-    "methods": [],
-    "fields": []
+    "methods" : [ ],
+    "fields" : [ ]
   },
-  "com.yahoo.document.GlobalId": {
-    "superClass": "java.lang.Object",
-    "interfaces": [
+  "com.yahoo.document.GlobalId" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [
       "java.lang.Comparable"
     ],
-    "attributes": [
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>(byte[])",
       "public void <init>(com.yahoo.document.idstring.IdString)",
       "public void <init>(com.yahoo.vespa.objects.Deserializer)",
@@ -807,17 +807,17 @@
       "public java.lang.String toString()",
       "public bridge synthetic int compareTo(java.lang.Object)"
     ],
-    "fields": [
+    "fields" : [
       "public static final int LENGTH"
     ]
   },
-  "com.yahoo.document.MapDataType": {
-    "superClass": "com.yahoo.document.DataType",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.document.MapDataType" : {
+    "superClass" : "com.yahoo.document.DataType",
+    "interfaces" : [ ],
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>(com.yahoo.document.DataType, com.yahoo.document.DataType, int)",
       "public void <init>(com.yahoo.document.DataType, com.yahoo.document.DataType)",
       "public com.yahoo.document.MapDataType clone()",
@@ -836,15 +836,15 @@
       "public bridge synthetic com.yahoo.vespa.objects.Identifiable clone()",
       "public bridge synthetic java.lang.Object clone()"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.document.NumericDataType": {
-    "superClass": "com.yahoo.document.PrimitiveDataType",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.document.NumericDataType" : {
+    "superClass" : "com.yahoo.document.PrimitiveDataType",
+    "interfaces" : [ ],
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "protected void <init>(java.lang.String, int, java.lang.Class, com.yahoo.document.PrimitiveDataType$Factory)",
       "public com.yahoo.document.NumericDataType clone()",
       "public bridge synthetic com.yahoo.document.PrimitiveDataType clone()",
@@ -852,18 +852,18 @@
       "public bridge synthetic com.yahoo.vespa.objects.Identifiable clone()",
       "public bridge synthetic java.lang.Object clone()"
     ],
-    "fields": [
+    "fields" : [
       "public static int classId"
     ]
   },
-  "com.yahoo.document.PositionDataType": {
-    "superClass": "java.lang.Object",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.document.PositionDataType" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [ ],
+    "attributes" : [
       "public",
       "final"
     ],
-    "methods": [
+    "methods" : [
       "public static java.lang.String renderAsString(com.yahoo.document.datatypes.Struct)",
       "public static void renderXml(com.yahoo.document.datatypes.Struct, com.yahoo.document.serialization.XmlStream)",
       "public static com.yahoo.document.datatypes.Struct valueOf(java.lang.Integer, java.lang.Integer)",
@@ -873,34 +873,34 @@
       "public static com.yahoo.document.datatypes.IntegerFieldValue getYValue(com.yahoo.document.datatypes.FieldValue)",
       "public static java.lang.String getZCurveFieldName(java.lang.String)"
     ],
-    "fields": [
+    "fields" : [
       "public static final com.yahoo.document.StructDataType INSTANCE",
       "public static final java.lang.String STRUCT_NAME",
       "public static final java.lang.String FIELD_X",
       "public static final java.lang.String FIELD_Y"
     ]
   },
-  "com.yahoo.document.PrimitiveDataType$Factory": {
-    "superClass": "java.lang.Object",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.document.PrimitiveDataType$Factory" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [ ],
+    "attributes" : [
       "public",
       "abstract"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>()",
       "public abstract com.yahoo.document.datatypes.FieldValue create()",
       "public abstract com.yahoo.document.datatypes.FieldValue create(java.lang.String)"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.document.PrimitiveDataType": {
-    "superClass": "com.yahoo.document.DataType",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.document.PrimitiveDataType" : {
+    "superClass" : "com.yahoo.document.DataType",
+    "interfaces" : [ ],
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "protected void <init>(java.lang.String, int, java.lang.Class, com.yahoo.document.PrimitiveDataType$Factory)",
       "public com.yahoo.document.PrimitiveDataType clone()",
       "public com.yahoo.document.datatypes.FieldValue createFieldValue()",
@@ -913,17 +913,17 @@
       "public bridge synthetic com.yahoo.vespa.objects.Identifiable clone()",
       "public bridge synthetic java.lang.Object clone()"
     ],
-    "fields": [
+    "fields" : [
       "public static final int classId"
     ]
   },
-  "com.yahoo.document.ReferenceDataType": {
-    "superClass": "com.yahoo.document.DataType",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.document.ReferenceDataType" : {
+    "superClass" : "com.yahoo.document.DataType",
+    "interfaces" : [ ],
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>(com.yahoo.document.DocumentType, int)",
       "public static com.yahoo.document.ReferenceDataType createWithInferredId(com.yahoo.document.DocumentType)",
       "public com.yahoo.document.StructuredDataType getTargetType()",
@@ -935,17 +935,17 @@
       "public bridge synthetic com.yahoo.document.datatypes.FieldValue createFieldValue()",
       "public bridge synthetic int compareTo(java.lang.Object)"
     ],
-    "fields": [
+    "fields" : [
       "public static final int classId"
     ]
   },
-  "com.yahoo.document.SimpleDocument": {
-    "superClass": "java.lang.Object",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.document.SimpleDocument" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [ ],
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>(com.yahoo.document.Document)",
       "public final java.lang.Object get(com.yahoo.document.Field)",
       "public final java.lang.Object get(java.lang.String)",
@@ -957,15 +957,15 @@
       "public static java.lang.Object set(com.yahoo.document.datatypes.StructuredFieldValue, com.yahoo.document.Field, java.lang.Object)",
       "public static java.lang.Object remove(com.yahoo.document.datatypes.StructuredFieldValue, com.yahoo.document.Field)"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.document.StructDataType": {
-    "superClass": "com.yahoo.document.BaseStructDataType",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.document.StructDataType" : {
+    "superClass" : "com.yahoo.document.BaseStructDataType",
+    "interfaces" : [ ],
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>(java.lang.String)",
       "public void <init>(int, java.lang.String)",
       "public com.yahoo.document.datatypes.Struct createFieldValue()",
@@ -992,18 +992,18 @@
       "public bridge synthetic com.yahoo.vespa.objects.Identifiable clone()",
       "public bridge synthetic java.lang.Object clone()"
     ],
-    "fields": [
+    "fields" : [
       "public static final int classId"
     ]
   },
-  "com.yahoo.document.StructuredDataType": {
-    "superClass": "com.yahoo.document.DataType",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.document.StructuredDataType" : {
+    "superClass" : "com.yahoo.document.DataType",
+    "interfaces" : [ ],
+    "attributes" : [
       "public",
       "abstract"
     ],
-    "methods": [
+    "methods" : [
       "protected static int createId(java.lang.String)",
       "public void <init>(java.lang.String)",
       "public void <init>(int, java.lang.String)",
@@ -1019,17 +1019,17 @@
       "public com.yahoo.document.FieldPath buildFieldPath(java.lang.String)",
       "public bridge synthetic com.yahoo.document.datatypes.FieldValue createFieldValue()"
     ],
-    "fields": [
+    "fields" : [
       "public static final int classId"
     ]
   },
-  "com.yahoo.document.TensorDataType": {
-    "superClass": "com.yahoo.document.DataType",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.document.TensorDataType" : {
+    "superClass" : "com.yahoo.document.DataType",
+    "interfaces" : [ ],
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>(com.yahoo.tensor.TensorType)",
       "public com.yahoo.document.TensorDataType clone()",
       "public com.yahoo.document.datatypes.FieldValue createFieldValue()",
@@ -1042,17 +1042,17 @@
       "public bridge synthetic com.yahoo.vespa.objects.Identifiable clone()",
       "public bridge synthetic java.lang.Object clone()"
     ],
-    "fields": [
+    "fields" : [
       "public static int classId"
     ]
   },
-  "com.yahoo.document.TestAndSetCondition": {
-    "superClass": "java.lang.Object",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.document.TestAndSetCondition" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [ ],
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>()",
       "public void <init>(java.lang.String)",
       "public java.lang.String getSelection()",
@@ -1062,17 +1062,17 @@
       "public int hashCode()",
       "public java.lang.String toString()"
     ],
-    "fields": [
+    "fields" : [
       "public static final com.yahoo.document.TestAndSetCondition NOT_PRESENT_CONDITION"
     ]
   },
-  "com.yahoo.document.WeightedSetDataType": {
-    "superClass": "com.yahoo.document.CollectionDataType",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.document.WeightedSetDataType" : {
+    "superClass" : "com.yahoo.document.CollectionDataType",
+    "interfaces" : [ ],
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>(com.yahoo.document.DataType, boolean, boolean)",
       "public void <init>(com.yahoo.document.DataType, boolean, boolean, int)",
       "public com.yahoo.document.WeightedSetDataType clone()",
@@ -1091,17 +1091,17 @@
       "public bridge synthetic com.yahoo.vespa.objects.Identifiable clone()",
       "public bridge synthetic java.lang.Object clone()"
     ],
-    "fields": [
+    "fields" : [
       "public static int classId"
     ]
   },
-  "com.yahoo.document.annotation.AlternateSpanList": {
-    "superClass": "com.yahoo.document.annotation.SpanList",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.document.annotation.AlternateSpanList" : {
+    "superClass" : "com.yahoo.document.annotation.SpanList",
+    "interfaces" : [ ],
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>()",
       "public void <init>(com.yahoo.document.annotation.AlternateSpanList)",
       "public void <init>(com.yahoo.document.serialization.SpanNodeReader)",
@@ -1143,19 +1143,19 @@
       "public java.lang.String toString()",
       "public bridge synthetic com.yahoo.document.annotation.SpanList add(com.yahoo.document.annotation.SpanNode)"
     ],
-    "fields": [
+    "fields" : [
       "public static final byte ID"
     ]
   },
-  "com.yahoo.document.annotation.Annotation": {
-    "superClass": "java.lang.Object",
-    "interfaces": [
+  "com.yahoo.document.annotation.Annotation" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [
       "java.lang.Comparable"
     ],
-    "attributes": [
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void setScratchId(int)",
       "public int getScratchId()",
       "public void <init>()",
@@ -1179,15 +1179,15 @@
       "public int compareTo(com.yahoo.document.annotation.Annotation)",
       "public bridge synthetic int compareTo(java.lang.Object)"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.document.annotation.AnnotationReference": {
-    "superClass": "com.yahoo.document.datatypes.FieldValue",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.document.annotation.AnnotationReference" : {
+    "superClass" : "com.yahoo.document.datatypes.FieldValue",
+    "interfaces" : [ ],
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>(com.yahoo.document.annotation.AnnotationReferenceDataType, com.yahoo.document.annotation.Annotation)",
       "public void <init>(com.yahoo.document.annotation.AnnotationReferenceDataType)",
       "public com.yahoo.document.annotation.AnnotationReference clone()",
@@ -1211,17 +1211,17 @@
       "public bridge synthetic com.yahoo.vespa.objects.Identifiable clone()",
       "public bridge synthetic java.lang.Object clone()"
     ],
-    "fields": [
+    "fields" : [
       "public static int classId"
     ]
   },
-  "com.yahoo.document.annotation.AnnotationReferenceDataType": {
-    "superClass": "com.yahoo.document.DataType",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.document.annotation.AnnotationReferenceDataType" : {
+    "superClass" : "com.yahoo.document.DataType",
+    "interfaces" : [ ],
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>(com.yahoo.document.annotation.AnnotationType)",
       "public void <init>(com.yahoo.document.annotation.AnnotationType, int)",
       "protected void <init>()",
@@ -1231,17 +1231,17 @@
       "public com.yahoo.document.annotation.AnnotationType getAnnotationType()",
       "protected void setAnnotationType(com.yahoo.document.annotation.AnnotationType)"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.document.annotation.AnnotationType": {
-    "superClass": "java.lang.Object",
-    "interfaces": [
+  "com.yahoo.document.annotation.AnnotationType" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [
       "java.lang.Comparable"
     ],
-    "attributes": [
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>(java.lang.String)",
       "public void <init>(java.lang.String, com.yahoo.document.DataType)",
       "public void <init>(java.lang.String, com.yahoo.document.DataType, int)",
@@ -1260,28 +1260,28 @@
       "public int compareTo(com.yahoo.document.annotation.AnnotationType)",
       "public bridge synthetic int compareTo(java.lang.Object)"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.document.annotation.AnnotationType2AnnotationContainer": {
-    "superClass": "com.yahoo.document.annotation.IteratingAnnotationContainer",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.document.annotation.AnnotationType2AnnotationContainer" : {
+    "superClass" : "com.yahoo.document.annotation.IteratingAnnotationContainer",
+    "interfaces" : [ ],
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>()",
       "public boolean equals(java.lang.Object)",
       "public int hashCode()"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.document.annotation.AnnotationTypeRegistry": {
-    "superClass": "java.lang.Object",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.document.annotation.AnnotationTypeRegistry" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [ ],
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>()",
       "public void register(com.yahoo.document.annotation.AnnotationType)",
       "public boolean unregister(java.lang.String)",
@@ -1292,17 +1292,17 @@
       "public java.util.Map getTypes()",
       "public void clear()"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.document.annotation.AnnotationTypes": {
-    "superClass": "java.lang.Object",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.document.annotation.AnnotationTypes" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [ ],
+    "attributes" : [
       "public",
       "final"
     ],
-    "methods": [],
-    "fields": [
+    "methods" : [ ],
+    "fields" : [
       "public static final com.yahoo.document.annotation.AnnotationType TERM",
       "public static final com.yahoo.document.annotation.AnnotationType TOKEN_TYPE",
       "public static final com.yahoo.document.annotation.AnnotationType CANONICAL",
@@ -1315,26 +1315,26 @@
       "public static final java.util.List ALL_TYPES"
     ]
   },
-  "com.yahoo.document.annotation.ListAnnotationContainer": {
-    "superClass": "com.yahoo.document.annotation.IteratingAnnotationContainer",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.document.annotation.ListAnnotationContainer" : {
+    "superClass" : "com.yahoo.document.annotation.IteratingAnnotationContainer",
+    "interfaces" : [ ],
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>()",
       "public boolean equals(java.lang.Object)",
       "public int hashCode()"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.document.annotation.SerialIterator": {
-    "superClass": "com.yahoo.document.annotation.RecursiveNodeIterator",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.document.annotation.SerialIterator" : {
+    "superClass" : "com.yahoo.document.annotation.RecursiveNodeIterator",
+    "interfaces" : [ ],
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public boolean hasNext()",
       "public bridge synthetic void add(com.yahoo.document.annotation.SpanNode)",
       "public bridge synthetic void set(com.yahoo.document.annotation.SpanNode)",
@@ -1345,15 +1345,15 @@
       "public bridge synthetic boolean hasPrevious()",
       "public bridge synthetic com.yahoo.document.annotation.SpanNode next()"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.document.annotation.Span": {
-    "superClass": "com.yahoo.document.annotation.SpanNode",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.document.annotation.Span" : {
+    "superClass" : "com.yahoo.document.annotation.SpanNode",
+    "interfaces" : [ ],
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>(int, int)",
       "public void <init>(com.yahoo.document.serialization.SpanNodeReader)",
       "public void <init>()",
@@ -1369,17 +1369,17 @@
       "public java.util.ListIterator childIterator()",
       "public java.util.ListIterator childIteratorRecursive()"
     ],
-    "fields": [
+    "fields" : [
       "public static final byte ID"
     ]
   },
-  "com.yahoo.document.annotation.SpanList": {
-    "superClass": "com.yahoo.document.annotation.SpanNode",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.document.annotation.SpanList" : {
+    "superClass" : "com.yahoo.document.annotation.SpanNode",
+    "interfaces" : [ ],
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>()",
       "public void <init>(com.yahoo.document.serialization.SpanNodeReader)",
       "protected void <init>(java.util.List)",
@@ -1408,21 +1408,21 @@
       "public int hashCode()",
       "public java.lang.String toString()"
     ],
-    "fields": [
+    "fields" : [
       "public static final byte ID"
     ]
   },
-  "com.yahoo.document.annotation.SpanNode": {
-    "superClass": "java.lang.Object",
-    "interfaces": [
+  "com.yahoo.document.annotation.SpanNode" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [
       "java.lang.Comparable",
       "com.yahoo.document.annotation.SpanNodeParent"
     ],
-    "attributes": [
+    "attributes" : [
       "public",
       "abstract"
     ],
-    "methods": [
+    "methods" : [
       "protected void <init>()",
       "public boolean isValid()",
       "public void setScratchId(int)",
@@ -1449,50 +1449,50 @@
       "public int compareTo(com.yahoo.document.annotation.SpanNode)",
       "public bridge synthetic int compareTo(java.lang.Object)"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.document.annotation.SpanNodeParent": {
-    "superClass": "java.lang.Object",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.document.annotation.SpanNodeParent" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [ ],
+    "attributes" : [
       "public",
       "interface",
       "abstract"
     ],
-    "methods": [
+    "methods" : [
       "public abstract com.yahoo.document.annotation.SpanTree getSpanTree()",
       "public abstract com.yahoo.document.datatypes.StringFieldValue getStringFieldValue()"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.document.annotation.SpanTree$IndexKey": {
-    "superClass": "java.lang.Enum",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.document.annotation.SpanTree$IndexKey" : {
+    "superClass" : "java.lang.Enum",
+    "interfaces" : [ ],
+    "attributes" : [
       "public",
       "final",
       "enum"
     ],
-    "methods": [
+    "methods" : [
       "public static com.yahoo.document.annotation.SpanTree$IndexKey[] values()",
       "public static com.yahoo.document.annotation.SpanTree$IndexKey valueOf(java.lang.String)"
     ],
-    "fields": [
+    "fields" : [
       "public static final enum com.yahoo.document.annotation.SpanTree$IndexKey SPAN_NODE",
       "public static final enum com.yahoo.document.annotation.SpanTree$IndexKey ANNOTATION_TYPE"
     ]
   },
-  "com.yahoo.document.annotation.SpanTree": {
-    "superClass": "java.lang.Object",
-    "interfaces": [
+  "com.yahoo.document.annotation.SpanTree" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [
       "java.lang.Iterable",
       "com.yahoo.document.annotation.SpanNodeParent",
       "java.lang.Comparable"
     ],
-    "attributes": [
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>()",
       "public void <init>(java.lang.String, com.yahoo.document.annotation.SpanNode)",
       "public void <init>(java.lang.String)",
@@ -1528,30 +1528,30 @@
       "public int compareTo(com.yahoo.document.annotation.SpanTree)",
       "public bridge synthetic int compareTo(java.lang.Object)"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.document.annotation.SpanTrees": {
-    "superClass": "java.lang.Object",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.document.annotation.SpanTrees" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [ ],
+    "attributes" : [
       "public",
       "final"
     ],
-    "methods": [],
-    "fields": [
+    "methods" : [ ],
+    "fields" : [
       "public static final java.lang.String LINGUISTICS"
     ]
   },
-  "com.yahoo.document.datatypes.Array": {
-    "superClass": "com.yahoo.document.datatypes.CollectionFieldValue",
-    "interfaces": [
+  "com.yahoo.document.datatypes.Array" : {
+    "superClass" : "com.yahoo.document.datatypes.CollectionFieldValue",
+    "interfaces" : [
       "java.util.List"
     ],
-    "attributes": [
+    "attributes" : [
       "public",
       "final"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>(com.yahoo.document.DataType)",
       "public void <init>(com.yahoo.document.DataType, int)",
       "public void <init>(com.yahoo.document.DataType, java.util.List)",
@@ -1605,15 +1605,15 @@
       "public bridge synthetic java.lang.Object get(int)",
       "public bridge synthetic boolean add(java.lang.Object)"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.document.datatypes.BoolFieldValue": {
-    "superClass": "com.yahoo.document.datatypes.FieldValue",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.document.datatypes.BoolFieldValue" : {
+    "superClass" : "com.yahoo.document.datatypes.FieldValue",
+    "interfaces" : [ ],
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public static com.yahoo.document.PrimitiveDataType$Factory getFactory()",
       "public void <init>()",
       "public void <init>(boolean)",
@@ -1637,17 +1637,17 @@
       "public bridge synthetic com.yahoo.vespa.objects.Identifiable clone()",
       "public bridge synthetic java.lang.Object clone()"
     ],
-    "fields": [
+    "fields" : [
       "public static final int classId"
     ]
   },
-  "com.yahoo.document.datatypes.ByteFieldValue": {
-    "superClass": "com.yahoo.document.datatypes.NumericFieldValue",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.document.datatypes.ByteFieldValue" : {
+    "superClass" : "com.yahoo.document.datatypes.NumericFieldValue",
+    "interfaces" : [ ],
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public static com.yahoo.document.PrimitiveDataType$Factory getFactory()",
       "public void <init>()",
       "public void <init>(byte)",
@@ -1673,18 +1673,18 @@
       "public bridge synthetic com.yahoo.vespa.objects.Identifiable clone()",
       "public bridge synthetic java.lang.Object clone()"
     ],
-    "fields": [
+    "fields" : [
       "public static final int classId"
     ]
   },
-  "com.yahoo.document.datatypes.CollectionFieldValue": {
-    "superClass": "com.yahoo.document.datatypes.CompositeFieldValue",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.document.datatypes.CollectionFieldValue" : {
+    "superClass" : "com.yahoo.document.datatypes.CompositeFieldValue",
+    "interfaces" : [ ],
+    "attributes" : [
       "public",
       "abstract"
     ],
-    "methods": [
+    "methods" : [
       "public com.yahoo.document.CollectionDataType getDataType()",
       "protected com.yahoo.document.datatypes.FieldValue createFieldValue(java.lang.Object)",
       "public void verifyElementCompatibility(com.yahoo.document.datatypes.FieldValue)",
@@ -1699,32 +1699,32 @@
       "public abstract int size()",
       "public bridge synthetic com.yahoo.document.DataType getDataType()"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.document.datatypes.CompositeFieldValue": {
-    "superClass": "com.yahoo.document.datatypes.FieldValue",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.document.datatypes.CompositeFieldValue" : {
+    "superClass" : "com.yahoo.document.datatypes.FieldValue",
+    "interfaces" : [ ],
+    "attributes" : [
       "public",
       "abstract"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>(com.yahoo.document.DataType)",
       "public com.yahoo.document.DataType getDataType()",
       "public void setDataType(com.yahoo.document.DataType)",
       "public boolean equals(java.lang.Object)",
       "public int hashCode()"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.document.datatypes.DoubleFieldValue": {
-    "superClass": "com.yahoo.document.datatypes.NumericFieldValue",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.document.datatypes.DoubleFieldValue" : {
+    "superClass" : "com.yahoo.document.datatypes.NumericFieldValue",
+    "interfaces" : [ ],
+    "attributes" : [
       "public",
       "final"
     ],
-    "methods": [
+    "methods" : [
       "public static com.yahoo.document.PrimitiveDataType$Factory getFactory()",
       "public void <init>()",
       "public void <init>(double)",
@@ -1749,17 +1749,17 @@
       "public bridge synthetic com.yahoo.vespa.objects.Identifiable clone()",
       "public bridge synthetic java.lang.Object clone()"
     ],
-    "fields": [
+    "fields" : [
       "public static final int classId"
     ]
   },
-  "com.yahoo.document.datatypes.FieldPathIteratorHandler$IndexValue": {
-    "superClass": "java.lang.Object",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.document.datatypes.FieldPathIteratorHandler$IndexValue" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [ ],
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public int getIndex()",
       "public com.yahoo.document.datatypes.FieldValue getKey()",
       "public void <init>()",
@@ -1769,46 +1769,46 @@
       "public int hashCode()",
       "public boolean equals(java.lang.Object)"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.document.datatypes.FieldPathIteratorHandler$ModificationStatus": {
-    "superClass": "java.lang.Enum",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.document.datatypes.FieldPathIteratorHandler$ModificationStatus" : {
+    "superClass" : "java.lang.Enum",
+    "interfaces" : [ ],
+    "attributes" : [
       "public",
       "final",
       "enum"
     ],
-    "methods": [
+    "methods" : [
       "public static com.yahoo.document.datatypes.FieldPathIteratorHandler$ModificationStatus[] values()",
       "public static com.yahoo.document.datatypes.FieldPathIteratorHandler$ModificationStatus valueOf(java.lang.String)"
     ],
-    "fields": [
+    "fields" : [
       "public static final enum com.yahoo.document.datatypes.FieldPathIteratorHandler$ModificationStatus MODIFIED",
       "public static final enum com.yahoo.document.datatypes.FieldPathIteratorHandler$ModificationStatus REMOVED",
       "public static final enum com.yahoo.document.datatypes.FieldPathIteratorHandler$ModificationStatus NOT_MODIFIED"
     ]
   },
-  "com.yahoo.document.datatypes.FieldPathIteratorHandler$VariableMap": {
-    "superClass": "java.util.TreeMap",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.document.datatypes.FieldPathIteratorHandler$VariableMap" : {
+    "superClass" : "java.util.TreeMap",
+    "interfaces" : [ ],
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>()",
       "public java.lang.Object clone()"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.document.datatypes.FieldPathIteratorHandler": {
-    "superClass": "java.lang.Object",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.document.datatypes.FieldPathIteratorHandler" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [ ],
+    "attributes" : [
       "public",
       "abstract"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>()",
       "public void onPrimitive(com.yahoo.document.datatypes.FieldValue)",
       "public boolean onComplex(com.yahoo.document.datatypes.FieldValue)",
@@ -1817,18 +1817,18 @@
       "public boolean createMissingPath()",
       "public com.yahoo.document.datatypes.FieldPathIteratorHandler$VariableMap getVariables()"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.document.datatypes.FieldValue": {
-    "superClass": "com.yahoo.vespa.objects.Identifiable",
-    "interfaces": [
+  "com.yahoo.document.datatypes.FieldValue" : {
+    "superClass" : "com.yahoo.vespa.objects.Identifiable",
+    "interfaces" : [
       "java.lang.Comparable"
     ],
-    "attributes": [
+    "attributes" : [
       "public",
       "abstract"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>()",
       "public abstract com.yahoo.document.DataType getDataType()",
       "public static com.yahoo.document.datatypes.FieldValue create(com.yahoo.document.serialization.FieldReader, com.yahoo.document.DataType)",
@@ -1851,18 +1851,18 @@
       "public bridge synthetic java.lang.Object clone()",
       "public bridge synthetic int compareTo(java.lang.Object)"
     ],
-    "fields": [
+    "fields" : [
       "public static final int classId"
     ]
   },
-  "com.yahoo.document.datatypes.Float16FieldValue": {
-    "superClass": "com.yahoo.document.datatypes.NumericFieldValue",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.document.datatypes.Float16FieldValue" : {
+    "superClass" : "com.yahoo.document.datatypes.NumericFieldValue",
+    "interfaces" : [ ],
+    "attributes" : [
       "public",
       "final"
     ],
-    "methods": [
+    "methods" : [
       "public static com.yahoo.document.PrimitiveDataType$Factory getFactory()",
       "public void <init>()",
       "public void <init>(float)",
@@ -1887,18 +1887,18 @@
       "public bridge synthetic com.yahoo.vespa.objects.Identifiable clone()",
       "public bridge synthetic java.lang.Object clone()"
     ],
-    "fields": [
+    "fields" : [
       "public static final int classId"
     ]
   },
-  "com.yahoo.document.datatypes.FloatFieldValue": {
-    "superClass": "com.yahoo.document.datatypes.NumericFieldValue",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.document.datatypes.FloatFieldValue" : {
+    "superClass" : "com.yahoo.document.datatypes.NumericFieldValue",
+    "interfaces" : [ ],
+    "attributes" : [
       "public",
       "final"
     ],
-    "methods": [
+    "methods" : [
       "public static com.yahoo.document.PrimitiveDataType$Factory getFactory()",
       "public void <init>()",
       "public void <init>(float)",
@@ -1923,18 +1923,18 @@
       "public bridge synthetic com.yahoo.vespa.objects.Identifiable clone()",
       "public bridge synthetic java.lang.Object clone()"
     ],
-    "fields": [
+    "fields" : [
       "public static final int classId"
     ]
   },
-  "com.yahoo.document.datatypes.IntegerFieldValue": {
-    "superClass": "com.yahoo.document.datatypes.NumericFieldValue",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.document.datatypes.IntegerFieldValue" : {
+    "superClass" : "com.yahoo.document.datatypes.NumericFieldValue",
+    "interfaces" : [ ],
+    "attributes" : [
       "public",
       "final"
     ],
-    "methods": [
+    "methods" : [
       "public static com.yahoo.document.PrimitiveDataType$Factory getFactory()",
       "public void <init>()",
       "public void <init>(int)",
@@ -1959,18 +1959,18 @@
       "public bridge synthetic com.yahoo.vespa.objects.Identifiable clone()",
       "public bridge synthetic java.lang.Object clone()"
     ],
-    "fields": [
+    "fields" : [
       "public static final int classId"
     ]
   },
-  "com.yahoo.document.datatypes.LongFieldValue": {
-    "superClass": "com.yahoo.document.datatypes.NumericFieldValue",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.document.datatypes.LongFieldValue" : {
+    "superClass" : "com.yahoo.document.datatypes.NumericFieldValue",
+    "interfaces" : [ ],
+    "attributes" : [
       "public",
       "final"
     ],
-    "methods": [
+    "methods" : [
       "public static com.yahoo.document.PrimitiveDataType$Factory getFactory()",
       "public void <init>()",
       "public void <init>(long)",
@@ -1995,19 +1995,19 @@
       "public bridge synthetic com.yahoo.vespa.objects.Identifiable clone()",
       "public bridge synthetic java.lang.Object clone()"
     ],
-    "fields": [
+    "fields" : [
       "public static final int classId"
     ]
   },
-  "com.yahoo.document.datatypes.MapFieldValue": {
-    "superClass": "com.yahoo.document.datatypes.CompositeFieldValue",
-    "interfaces": [
+  "com.yahoo.document.datatypes.MapFieldValue" : {
+    "superClass" : "com.yahoo.document.datatypes.CompositeFieldValue",
+    "interfaces" : [
       "java.util.Map"
     ],
-    "attributes": [
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>(com.yahoo.document.MapDataType)",
       "public void <init>(com.yahoo.document.MapDataType, int)",
       "public com.yahoo.document.MapDataType getDataType()",
@@ -2041,28 +2041,28 @@
       "public bridge synthetic java.lang.Object put(java.lang.Object, java.lang.Object)",
       "public bridge synthetic java.lang.Object get(java.lang.Object)"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.document.datatypes.NumericFieldValue": {
-    "superClass": "com.yahoo.document.datatypes.FieldValue",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.document.datatypes.NumericFieldValue" : {
+    "superClass" : "com.yahoo.document.datatypes.FieldValue",
+    "interfaces" : [ ],
+    "attributes" : [
       "public",
       "abstract"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>()",
       "public abstract java.lang.Number getNumber()"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.document.datatypes.PredicateFieldValue": {
-    "superClass": "com.yahoo.document.datatypes.FieldValue",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.document.datatypes.PredicateFieldValue" : {
+    "superClass" : "com.yahoo.document.datatypes.FieldValue",
+    "interfaces" : [ ],
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>()",
       "public void <init>(com.yahoo.document.predicate.Predicate)",
       "public void <init>(java.lang.String)",
@@ -2084,16 +2084,16 @@
       "public bridge synthetic com.yahoo.vespa.objects.Identifiable clone()",
       "public bridge synthetic java.lang.Object clone()"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.document.datatypes.Raw": {
-    "superClass": "com.yahoo.document.datatypes.FieldValue",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.document.datatypes.Raw" : {
+    "superClass" : "com.yahoo.document.datatypes.FieldValue",
+    "interfaces" : [ ],
+    "attributes" : [
       "public",
       "final"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>()",
       "public void <init>(java.nio.ByteBuffer)",
       "public void <init>(byte[])",
@@ -2114,17 +2114,17 @@
       "public bridge synthetic com.yahoo.vespa.objects.Identifiable clone()",
       "public bridge synthetic java.lang.Object clone()"
     ],
-    "fields": [
+    "fields" : [
       "public static final int classId"
     ]
   },
-  "com.yahoo.document.datatypes.ReferenceFieldValue": {
-    "superClass": "com.yahoo.document.datatypes.FieldValue",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.document.datatypes.ReferenceFieldValue" : {
+    "superClass" : "com.yahoo.document.datatypes.FieldValue",
+    "interfaces" : [ ],
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>(com.yahoo.document.ReferenceDataType)",
       "public void <init>(com.yahoo.document.ReferenceDataType, com.yahoo.document.DocumentId)",
       "public static com.yahoo.document.datatypes.ReferenceFieldValue createEmptyWithType(com.yahoo.document.ReferenceDataType)",
@@ -2142,17 +2142,17 @@
       "public java.lang.String toString()",
       "public bridge synthetic java.lang.Object getWrappedValue()"
     ],
-    "fields": [
+    "fields" : [
       "public static final int classId"
     ]
   },
-  "com.yahoo.document.datatypes.StringFieldValue": {
-    "superClass": "com.yahoo.document.datatypes.FieldValue",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.document.datatypes.StringFieldValue" : {
+    "superClass" : "com.yahoo.document.datatypes.FieldValue",
+    "interfaces" : [ ],
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public static com.yahoo.document.PrimitiveDataType$Factory getFactory()",
       "public void <init>()",
       "public void <init>(java.lang.String)",
@@ -2180,17 +2180,17 @@
       "public bridge synthetic com.yahoo.vespa.objects.Identifiable clone()",
       "public bridge synthetic java.lang.Object clone()"
     ],
-    "fields": [
+    "fields" : [
       "public static final int classId"
     ]
   },
-  "com.yahoo.document.datatypes.Struct": {
-    "superClass": "com.yahoo.document.datatypes.StructuredFieldValue",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.document.datatypes.Struct" : {
+    "superClass" : "com.yahoo.document.datatypes.StructuredFieldValue",
+    "interfaces" : [ ],
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>(com.yahoo.document.DataType)",
       "public com.yahoo.document.StructDataType getDataType()",
       "public void setVersion(int)",
@@ -2222,18 +2222,18 @@
       "public bridge synthetic com.yahoo.vespa.objects.Identifiable clone()",
       "public bridge synthetic java.lang.Object clone()"
     ],
-    "fields": [
+    "fields" : [
       "public static final int classId"
     ]
   },
-  "com.yahoo.document.datatypes.StructuredFieldValue": {
-    "superClass": "com.yahoo.document.datatypes.CompositeFieldValue",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.document.datatypes.StructuredFieldValue" : {
+    "superClass" : "com.yahoo.document.datatypes.CompositeFieldValue",
+    "interfaces" : [ ],
+    "attributes" : [
       "public",
       "abstract"
     ],
-    "methods": [
+    "methods" : [
       "protected void <init>(com.yahoo.document.StructuredDataType)",
       "public com.yahoo.document.StructuredDataType getDataType()",
       "public abstract com.yahoo.document.Field getField(java.lang.String)",
@@ -2262,17 +2262,17 @@
       "protected boolean isGenerated()",
       "public bridge synthetic com.yahoo.document.DataType getDataType()"
     ],
-    "fields": [
+    "fields" : [
       "public static final int classId"
     ]
   },
-  "com.yahoo.document.datatypes.TensorFieldValue": {
-    "superClass": "com.yahoo.document.datatypes.FieldValue",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.document.datatypes.TensorFieldValue" : {
+    "superClass" : "com.yahoo.document.datatypes.FieldValue",
+    "interfaces" : [ ],
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>()",
       "public void <init>(com.yahoo.tensor.TensorType)",
       "public void <init>(com.yahoo.tensor.Tensor)",
@@ -2292,15 +2292,15 @@
       "public java.lang.Object getWrappedValue()",
       "public bridge synthetic com.yahoo.document.DataType getDataType()"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.document.datatypes.UriFieldValue": {
-    "superClass": "com.yahoo.document.datatypes.StringFieldValue",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.document.datatypes.UriFieldValue" : {
+    "superClass" : "com.yahoo.document.datatypes.StringFieldValue",
+    "interfaces" : [ ],
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public static com.yahoo.document.datatypes.UriFieldValue$Factory getFactory()",
       "public void <init>()",
       "public void <init>(java.lang.String)",
@@ -2308,18 +2308,18 @@
       "public com.yahoo.document.DataType getDataType()",
       "public void deserialize(com.yahoo.document.Field, com.yahoo.document.serialization.FieldReader)"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.document.datatypes.WeightedSet": {
-    "superClass": "com.yahoo.document.datatypes.CollectionFieldValue",
-    "interfaces": [
+  "com.yahoo.document.datatypes.WeightedSet" : {
+    "superClass" : "com.yahoo.document.datatypes.CollectionFieldValue",
+    "interfaces" : [
       "java.util.Map"
     ],
-    "attributes": [
+    "attributes" : [
       "public",
       "final"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>(com.yahoo.document.DataType)",
       "public void <init>(com.yahoo.document.DataType, int)",
       "public com.yahoo.document.WeightedSetDataType getDataType()",
@@ -2362,15 +2362,15 @@
       "public bridge synthetic java.lang.Object put(java.lang.Object, java.lang.Object)",
       "public bridge synthetic java.lang.Object get(java.lang.Object)"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.document.fieldpathupdate.AddFieldPathUpdate": {
-    "superClass": "com.yahoo.document.fieldpathupdate.FieldPathUpdate",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.document.fieldpathupdate.AddFieldPathUpdate" : {
+    "superClass" : "com.yahoo.document.fieldpathupdate.FieldPathUpdate",
+    "interfaces" : [ ],
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>(com.yahoo.document.DocumentType, java.lang.String, java.lang.String, com.yahoo.document.datatypes.Array)",
       "public void <init>(com.yahoo.document.DocumentType, java.lang.String, com.yahoo.document.datatypes.Array)",
       "public void <init>(com.yahoo.document.DocumentType, com.yahoo.document.serialization.DocumentUpdateReader)",
@@ -2383,15 +2383,15 @@
       "public int hashCode()",
       "public java.lang.String toString()"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.document.fieldpathupdate.AssignFieldPathUpdate": {
-    "superClass": "com.yahoo.document.fieldpathupdate.FieldPathUpdate",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.document.fieldpathupdate.AssignFieldPathUpdate" : {
+    "superClass" : "com.yahoo.document.fieldpathupdate.FieldPathUpdate",
+    "interfaces" : [ ],
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>(com.yahoo.document.DocumentType, java.lang.String, java.lang.String, com.yahoo.document.datatypes.FieldValue)",
       "public void <init>(com.yahoo.document.DocumentType, java.lang.String, com.yahoo.document.datatypes.FieldValue)",
       "public void <init>(com.yahoo.document.DocumentType, java.lang.String, java.lang.String, java.lang.String)",
@@ -2412,40 +2412,40 @@
       "public boolean getRemoveIfZero()",
       "public com.yahoo.document.datatypes.FieldValue getFieldValue()"
     ],
-    "fields": [
+    "fields" : [
       "public static final int ARITHMETIC_EXPRESSION",
       "public static final int REMOVE_IF_ZERO",
       "public static final int CREATE_MISSING_PATH"
     ]
   },
-  "com.yahoo.document.fieldpathupdate.FieldPathUpdate$Type": {
-    "superClass": "java.lang.Enum",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.document.fieldpathupdate.FieldPathUpdate$Type" : {
+    "superClass" : "java.lang.Enum",
+    "interfaces" : [ ],
+    "attributes" : [
       "public",
       "final",
       "enum"
     ],
-    "methods": [
+    "methods" : [
       "public static com.yahoo.document.fieldpathupdate.FieldPathUpdate$Type[] values()",
       "public static com.yahoo.document.fieldpathupdate.FieldPathUpdate$Type valueOf(java.lang.String)",
       "public static com.yahoo.document.fieldpathupdate.FieldPathUpdate$Type valueOf(int)",
       "public int getCode()"
     ],
-    "fields": [
+    "fields" : [
       "public static final enum com.yahoo.document.fieldpathupdate.FieldPathUpdate$Type ASSIGN",
       "public static final enum com.yahoo.document.fieldpathupdate.FieldPathUpdate$Type REMOVE",
       "public static final enum com.yahoo.document.fieldpathupdate.FieldPathUpdate$Type ADD"
     ]
   },
-  "com.yahoo.document.fieldpathupdate.FieldPathUpdate": {
-    "superClass": "java.lang.Object",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.document.fieldpathupdate.FieldPathUpdate" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [ ],
+    "attributes" : [
       "public",
       "abstract"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>(com.yahoo.document.fieldpathupdate.FieldPathUpdate$Type, com.yahoo.document.DocumentType, java.lang.String, java.lang.String)",
       "public void <init>(com.yahoo.document.fieldpathupdate.FieldPathUpdate$Type, com.yahoo.document.DocumentType, com.yahoo.document.serialization.DocumentUpdateReader)",
       "public void <init>(com.yahoo.document.fieldpathupdate.FieldPathUpdate$Type, com.yahoo.document.DocumentType)",
@@ -2464,147 +2464,147 @@
       "public int hashCode()",
       "public java.lang.String toString()"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.document.fieldpathupdate.RemoveFieldPathUpdate": {
-    "superClass": "com.yahoo.document.fieldpathupdate.FieldPathUpdate",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.document.fieldpathupdate.RemoveFieldPathUpdate" : {
+    "superClass" : "com.yahoo.document.fieldpathupdate.FieldPathUpdate",
+    "interfaces" : [ ],
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>(com.yahoo.document.DocumentType, java.lang.String, java.lang.String)",
       "public void <init>(com.yahoo.document.DocumentType, java.lang.String)",
       "public void <init>(com.yahoo.document.DocumentType, com.yahoo.document.serialization.DocumentUpdateReader)",
       "public java.lang.String toString()"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.document.fieldset.AllFields": {
-    "superClass": "java.lang.Object",
-    "interfaces": [
+  "com.yahoo.document.fieldset.AllFields" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [
       "com.yahoo.document.fieldset.FieldSet"
     ],
-    "attributes": [
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>()",
       "public boolean contains(com.yahoo.document.fieldset.FieldSet)",
       "public com.yahoo.document.fieldset.FieldSet clone()",
       "public bridge synthetic java.lang.Object clone()"
     ],
-    "fields": [
+    "fields" : [
       "public static final java.lang.String NAME"
     ]
   },
-  "com.yahoo.document.fieldset.DocIdOnly": {
-    "superClass": "java.lang.Object",
-    "interfaces": [
+  "com.yahoo.document.fieldset.DocIdOnly" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [
       "com.yahoo.document.fieldset.FieldSet"
     ],
-    "attributes": [
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>()",
       "public boolean contains(com.yahoo.document.fieldset.FieldSet)",
       "public com.yahoo.document.fieldset.FieldSet clone()",
       "public bridge synthetic java.lang.Object clone()"
     ],
-    "fields": [
+    "fields" : [
       "public static final java.lang.String NAME"
     ]
   },
-  "com.yahoo.document.fieldset.DocumentOnly": {
-    "superClass": "java.lang.Object",
-    "interfaces": [
+  "com.yahoo.document.fieldset.DocumentOnly" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [
       "com.yahoo.document.fieldset.FieldSet"
     ],
-    "attributes": [
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>()",
       "public boolean contains(com.yahoo.document.fieldset.FieldSet)",
       "public com.yahoo.document.fieldset.FieldSet clone()",
       "public bridge synthetic java.lang.Object clone()"
     ],
-    "fields": [
+    "fields" : [
       "public static final java.lang.String NAME"
     ]
   },
-  "com.yahoo.document.fieldset.FieldCollection": {
-    "superClass": "java.util.ArrayList",
-    "interfaces": [
+  "com.yahoo.document.fieldset.FieldCollection" : {
+    "superClass" : "java.util.ArrayList",
+    "interfaces" : [
       "com.yahoo.document.fieldset.FieldSet"
     ],
-    "attributes": [
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>(com.yahoo.document.DocumentType)",
       "public com.yahoo.document.DocumentType getDocumentType()",
       "public boolean contains(com.yahoo.document.fieldset.FieldSet)",
       "public com.yahoo.document.fieldset.FieldSet clone()",
       "public bridge synthetic java.lang.Object clone()"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.document.fieldset.FieldSet": {
-    "superClass": "java.lang.Object",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.document.fieldset.FieldSet" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [ ],
+    "attributes" : [
       "public",
       "interface",
       "abstract"
     ],
-    "methods": [
+    "methods" : [
       "public abstract boolean contains(com.yahoo.document.fieldset.FieldSet)",
       "public abstract com.yahoo.document.fieldset.FieldSet clone()"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.document.fieldset.FieldSetRepo": {
-    "superClass": "java.lang.Object",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.document.fieldset.FieldSetRepo" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [ ],
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>()",
       "public com.yahoo.document.fieldset.FieldSet parse(com.yahoo.document.DocumentTypeManager, java.lang.String)",
       "public java.lang.String serialize(com.yahoo.document.fieldset.FieldSet)",
       "public void copyFields(com.yahoo.document.Document, com.yahoo.document.Document, com.yahoo.document.fieldset.FieldSet)",
       "public void stripFields(com.yahoo.document.Document, com.yahoo.document.fieldset.FieldSet)"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.document.fieldset.NoFields": {
-    "superClass": "java.lang.Object",
-    "interfaces": [
+  "com.yahoo.document.fieldset.NoFields" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [
       "com.yahoo.document.fieldset.FieldSet"
     ],
-    "attributes": [
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>()",
       "public boolean contains(com.yahoo.document.fieldset.FieldSet)",
       "public com.yahoo.document.fieldset.FieldSet clone()",
       "public bridge synthetic java.lang.Object clone()"
     ],
-    "fields": [
+    "fields" : [
       "public static final java.lang.String NAME"
     ]
   },
-  "com.yahoo.document.idstring.IdIdString": {
-    "superClass": "com.yahoo.document.idstring.IdString",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.document.idstring.IdIdString" : {
+    "superClass" : "com.yahoo.document.idstring.IdString",
+    "interfaces" : [ ],
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public static long makeLocation(java.lang.String)",
       "public void <init>(java.lang.String, java.lang.String, java.lang.String, java.lang.String)",
       "public long getLocation()",
@@ -2616,32 +2616,32 @@
       "public boolean hasNumber()",
       "public long getNumber()"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.document.idstring.IdString$Scheme": {
-    "superClass": "java.lang.Enum",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.document.idstring.IdString$Scheme" : {
+    "superClass" : "java.lang.Enum",
+    "interfaces" : [ ],
+    "attributes" : [
       "public",
       "final",
       "enum"
     ],
-    "methods": [
+    "methods" : [
       "public static com.yahoo.document.idstring.IdString$Scheme[] values()",
       "public static com.yahoo.document.idstring.IdString$Scheme valueOf(java.lang.String)"
     ],
-    "fields": [
+    "fields" : [
       "public static final enum com.yahoo.document.idstring.IdString$Scheme id"
     ]
   },
-  "com.yahoo.document.idstring.IdString": {
-    "superClass": "java.lang.Object",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.document.idstring.IdString" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [ ],
+    "attributes" : [
       "public",
       "abstract"
     ],
-    "methods": [
+    "methods" : [
       "public boolean hasDocType()",
       "public java.lang.String getDocType()",
       "public boolean hasGroup()",
@@ -2663,52 +2663,52 @@
       "public java.lang.String toString()",
       "public com.yahoo.text.Utf8String toUtf8()"
     ],
-    "fields": [
+    "fields" : [
       "public static final int MAX_LENGTH"
     ]
   },
-  "com.yahoo.document.serialization.AnnotationReader": {
-    "superClass": "java.lang.Object",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.document.serialization.AnnotationReader" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [ ],
+    "attributes" : [
       "public",
       "interface",
       "abstract"
     ],
-    "methods": [
+    "methods" : [
       "public abstract void read(com.yahoo.document.annotation.Annotation)"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.document.serialization.AnnotationWriter": {
-    "superClass": "java.lang.Object",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.document.serialization.AnnotationWriter" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [ ],
+    "attributes" : [
       "public",
       "interface",
       "abstract"
     ],
-    "methods": [
+    "methods" : [
       "public abstract void write(com.yahoo.document.annotation.Annotation)"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.document.serialization.DeserializationException": {
-    "superClass": "java.lang.RuntimeException",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.document.serialization.DeserializationException" : {
+    "superClass" : "java.lang.RuntimeException",
+    "interfaces" : [ ],
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>(java.lang.String)",
       "public void <init>(java.lang.String, java.lang.Throwable)",
       "public void <init>(java.lang.Throwable)"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.document.serialization.DocumentDeserializer": {
-    "superClass": "java.lang.Object",
-    "interfaces": [
+  "com.yahoo.document.serialization.DocumentDeserializer" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [
       "com.yahoo.document.serialization.DocumentReader",
       "com.yahoo.document.serialization.DocumentUpdateReader",
       "com.yahoo.document.serialization.FieldReader",
@@ -2716,84 +2716,84 @@
       "com.yahoo.document.serialization.SpanNodeReader",
       "com.yahoo.document.serialization.SpanTreeReader"
     ],
-    "attributes": [
+    "attributes" : [
       "public",
       "interface",
       "abstract"
     ],
-    "methods": [
+    "methods" : [
       "public abstract com.yahoo.io.GrowableByteBuffer getBuf()"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.document.serialization.DocumentDeserializerFactory": {
-    "superClass": "java.lang.Object",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.document.serialization.DocumentDeserializerFactory" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [ ],
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>()",
       "public static com.yahoo.document.serialization.DocumentDeserializer createHead(com.yahoo.document.DocumentTypeManager, com.yahoo.io.GrowableByteBuffer)",
       "public static com.yahoo.document.serialization.DocumentDeserializer create6(com.yahoo.document.DocumentTypeManager, com.yahoo.io.GrowableByteBuffer)"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.document.serialization.DocumentReader": {
-    "superClass": "java.lang.Object",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.document.serialization.DocumentReader" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [ ],
+    "attributes" : [
       "public",
       "interface",
       "abstract"
     ],
-    "methods": [
+    "methods" : [
       "public abstract void read(com.yahoo.document.Document)",
       "public abstract com.yahoo.document.DocumentId readDocumentId()",
       "public abstract com.yahoo.document.DocumentType readDocumentType()"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.document.serialization.DocumentSerializer": {
-    "superClass": "java.lang.Object",
-    "interfaces": [
+  "com.yahoo.document.serialization.DocumentSerializer" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [
       "com.yahoo.document.serialization.DocumentWriter",
       "com.yahoo.document.serialization.SpanNodeWriter",
       "com.yahoo.document.serialization.AnnotationWriter",
       "com.yahoo.document.serialization.SpanTreeWriter",
       "com.yahoo.document.serialization.DocumentUpdateWriter"
     ],
-    "attributes": [
+    "attributes" : [
       "public",
       "interface",
       "abstract"
     ],
-    "methods": [
+    "methods" : [
       "public abstract com.yahoo.io.GrowableByteBuffer getBuf()"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.document.serialization.DocumentSerializerFactory": {
-    "superClass": "java.lang.Object",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.document.serialization.DocumentSerializerFactory" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [ ],
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>()",
       "public static com.yahoo.document.serialization.DocumentSerializer createHead(com.yahoo.io.GrowableByteBuffer)",
       "public static com.yahoo.document.serialization.DocumentSerializer create6(com.yahoo.io.GrowableByteBuffer)",
       "public static com.yahoo.document.serialization.DocumentSerializer create6()"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.document.serialization.DocumentUpdateFlags": {
-    "superClass": "java.lang.Object",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.document.serialization.DocumentUpdateFlags" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [ ],
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>()",
       "public boolean getCreateIfNonExistent()",
       "public void setCreateIfNonExistent(boolean)",
@@ -2801,17 +2801,17 @@
       "public static com.yahoo.document.serialization.DocumentUpdateFlags extractFlags(int)",
       "public static int extractValue(int)"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.document.serialization.DocumentUpdateReader": {
-    "superClass": "java.lang.Object",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.document.serialization.DocumentUpdateReader" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [ ],
+    "attributes" : [
       "public",
       "interface",
       "abstract"
     ],
-    "methods": [
+    "methods" : [
       "public abstract void read(com.yahoo.document.DocumentUpdate)",
       "public abstract void read(com.yahoo.document.update.FieldUpdate)",
       "public abstract void read(com.yahoo.document.fieldpathupdate.FieldPathUpdate)",
@@ -2821,17 +2821,17 @@
       "public abstract com.yahoo.document.DocumentId readDocumentId()",
       "public abstract com.yahoo.document.DocumentType readDocumentType()"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.document.serialization.DocumentUpdateWriter": {
-    "superClass": "java.lang.Object",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.document.serialization.DocumentUpdateWriter" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [ ],
+    "attributes" : [
       "public",
       "interface",
       "abstract"
     ],
-    "methods": [
+    "methods" : [
       "public abstract void write(com.yahoo.document.DocumentUpdate)",
       "public abstract void write(com.yahoo.document.update.FieldUpdate)",
       "public abstract void write(com.yahoo.document.update.AddValueUpdate, com.yahoo.document.DataType)",
@@ -2844,36 +2844,36 @@
       "public abstract void write(com.yahoo.document.update.TensorAddUpdate)",
       "public abstract void write(com.yahoo.document.update.TensorRemoveUpdate)"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.document.serialization.DocumentWriter": {
-    "superClass": "java.lang.Object",
-    "interfaces": [
+  "com.yahoo.document.serialization.DocumentWriter" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [
       "com.yahoo.document.serialization.FieldWriter"
     ],
-    "attributes": [
+    "attributes" : [
       "public",
       "interface",
       "abstract"
     ],
-    "methods": [
+    "methods" : [
       "public abstract void write(com.yahoo.document.Document)",
       "public abstract void write(com.yahoo.document.DocumentId)",
       "public abstract void write(com.yahoo.document.DocumentType)"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.document.serialization.FieldReader": {
-    "superClass": "java.lang.Object",
-    "interfaces": [
+  "com.yahoo.document.serialization.FieldReader" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [
       "com.yahoo.vespa.objects.Deserializer"
     ],
-    "attributes": [
+    "attributes" : [
       "public",
       "interface",
       "abstract"
     ],
-    "methods": [
+    "methods" : [
       "public abstract void read(com.yahoo.vespa.objects.FieldBase, com.yahoo.document.Document)",
       "public abstract void read(com.yahoo.vespa.objects.FieldBase, com.yahoo.document.datatypes.FieldValue)",
       "public abstract void read(com.yahoo.vespa.objects.FieldBase, com.yahoo.document.datatypes.Array)",
@@ -2895,19 +2895,19 @@
       "public abstract void read(com.yahoo.vespa.objects.FieldBase, com.yahoo.document.datatypes.WeightedSet)",
       "public abstract void read(com.yahoo.vespa.objects.FieldBase, com.yahoo.document.annotation.AnnotationReference)"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.document.serialization.FieldWriter": {
-    "superClass": "java.lang.Object",
-    "interfaces": [
+  "com.yahoo.document.serialization.FieldWriter" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [
       "com.yahoo.vespa.objects.Serializer"
     ],
-    "attributes": [
+    "attributes" : [
       "public",
       "interface",
       "abstract"
     ],
-    "methods": [
+    "methods" : [
       "public abstract void write(com.yahoo.vespa.objects.FieldBase, com.yahoo.document.datatypes.FieldValue)",
       "public abstract void write(com.yahoo.vespa.objects.FieldBase, com.yahoo.document.Document)",
       "public abstract void write(com.yahoo.vespa.objects.FieldBase, com.yahoo.document.datatypes.Array)",
@@ -2929,89 +2929,89 @@
       "public abstract void write(com.yahoo.vespa.objects.FieldBase, com.yahoo.document.datatypes.WeightedSet)",
       "public abstract void write(com.yahoo.vespa.objects.FieldBase, com.yahoo.document.annotation.AnnotationReference)"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.document.serialization.SerializationException": {
-    "superClass": "java.lang.RuntimeException",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.document.serialization.SerializationException" : {
+    "superClass" : "java.lang.RuntimeException",
+    "interfaces" : [ ],
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>(java.lang.String)",
       "public void <init>(java.lang.String, java.lang.Throwable)",
       "public void <init>(java.lang.Throwable)"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.document.serialization.SpanNodeReader": {
-    "superClass": "java.lang.Object",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.document.serialization.SpanNodeReader" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [ ],
+    "attributes" : [
       "public",
       "interface",
       "abstract"
     ],
-    "methods": [
+    "methods" : [
       "public abstract void read(com.yahoo.document.annotation.Span)",
       "public abstract void read(com.yahoo.document.annotation.SpanList)",
       "public abstract void read(com.yahoo.document.annotation.AlternateSpanList)"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.document.serialization.SpanNodeWriter": {
-    "superClass": "java.lang.Object",
-    "interfaces": [
+  "com.yahoo.document.serialization.SpanNodeWriter" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [
       "com.yahoo.vespa.objects.Serializer"
     ],
-    "attributes": [
+    "attributes" : [
       "public",
       "interface",
       "abstract"
     ],
-    "methods": [
+    "methods" : [
       "public abstract void write(com.yahoo.document.annotation.SpanNode)",
       "public abstract void write(com.yahoo.document.annotation.Span)",
       "public abstract void write(com.yahoo.document.annotation.SpanList)",
       "public abstract void write(com.yahoo.document.annotation.AlternateSpanList)"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.document.serialization.SpanTreeReader": {
-    "superClass": "java.lang.Object",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.document.serialization.SpanTreeReader" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [ ],
+    "attributes" : [
       "public",
       "interface",
       "abstract"
     ],
-    "methods": [
+    "methods" : [
       "public abstract void read(com.yahoo.document.annotation.SpanTree)"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.document.serialization.SpanTreeWriter": {
-    "superClass": "java.lang.Object",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.document.serialization.SpanTreeWriter" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [ ],
+    "attributes" : [
       "public",
       "interface",
       "abstract"
     ],
-    "methods": [
+    "methods" : [
       "public abstract void write(com.yahoo.document.annotation.SpanTree)"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.document.serialization.VespaDocumentDeserializer6": {
-    "superClass": "com.yahoo.vespa.objects.BufferSerializer",
-    "interfaces": [
+  "com.yahoo.document.serialization.VespaDocumentDeserializer6" : {
+    "superClass" : "com.yahoo.vespa.objects.BufferSerializer",
+    "interfaces" : [
       "com.yahoo.document.serialization.DocumentDeserializer"
     ],
-    "attributes": [
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public final com.yahoo.document.DocumentTypeManager getDocumentTypeManager()",
       "public void read(com.yahoo.document.Document)",
       "public void read(com.yahoo.vespa.objects.FieldBase, com.yahoo.document.Document)",
@@ -3052,31 +3052,31 @@
       "protected com.yahoo.document.update.ValueUpdate readTensorAddUpdate(com.yahoo.document.DataType)",
       "protected com.yahoo.document.update.ValueUpdate readTensorRemoveUpdate(com.yahoo.document.DataType)"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.document.serialization.VespaDocumentDeserializerHead": {
-    "superClass": "com.yahoo.document.serialization.VespaDocumentDeserializer6",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.document.serialization.VespaDocumentDeserializerHead" : {
+    "superClass" : "com.yahoo.document.serialization.VespaDocumentDeserializer6",
+    "interfaces" : [ ],
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>(com.yahoo.document.DocumentTypeManager, com.yahoo.io.GrowableByteBuffer)",
       "protected com.yahoo.document.update.ValueUpdate readTensorModifyUpdate(com.yahoo.document.DataType)",
       "protected com.yahoo.document.update.ValueUpdate readTensorAddUpdate(com.yahoo.document.DataType)",
       "protected com.yahoo.document.update.ValueUpdate readTensorRemoveUpdate(com.yahoo.document.DataType)"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.document.serialization.VespaDocumentSerializer6": {
-    "superClass": "com.yahoo.vespa.objects.BufferSerializer",
-    "interfaces": [
+  "com.yahoo.document.serialization.VespaDocumentSerializer6" : {
+    "superClass" : "com.yahoo.vespa.objects.BufferSerializer",
+    "interfaces" : [
       "com.yahoo.document.serialization.DocumentSerializer"
     ],
-    "attributes": [
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void write(com.yahoo.document.Document)",
       "public void write(com.yahoo.vespa.objects.FieldBase, com.yahoo.document.Document)",
       "public void write(com.yahoo.vespa.objects.FieldBase, com.yahoo.document.datatypes.FieldValue)",
@@ -3122,32 +3122,32 @@
       "public void write(com.yahoo.document.update.TensorRemoveUpdate)",
       "public static long getSerializedSize(com.yahoo.document.Document)"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.document.serialization.VespaDocumentSerializerHead": {
-    "superClass": "com.yahoo.document.serialization.VespaDocumentSerializer6",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.document.serialization.VespaDocumentSerializerHead" : {
+    "superClass" : "com.yahoo.document.serialization.VespaDocumentSerializer6",
+    "interfaces" : [ ],
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>(com.yahoo.io.GrowableByteBuffer)",
       "public void write(com.yahoo.document.update.TensorModifyUpdate)",
       "public void write(com.yahoo.document.update.TensorAddUpdate)",
       "public void write(com.yahoo.document.update.TensorRemoveUpdate)"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.document.serialization.XmlDocumentWriter": {
-    "superClass": "java.lang.Object",
-    "interfaces": [
+  "com.yahoo.document.serialization.XmlDocumentWriter" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [
       "com.yahoo.document.serialization.DocumentWriter"
     ],
-    "attributes": [
+    "attributes" : [
       "public",
       "final"
     ],
-    "methods": [
+    "methods" : [
       "public static com.yahoo.document.serialization.XmlDocumentWriter createWriter(java.lang.String)",
       "public void <init>()",
       "public void write(com.yahoo.vespa.objects.FieldBase, com.yahoo.document.datatypes.FieldValue)",
@@ -3184,15 +3184,15 @@
       "public void write(com.yahoo.document.DocumentType)",
       "public java.lang.String lastRendered()"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.document.serialization.XmlSerializationHelper": {
-    "superClass": "java.lang.Object",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.document.serialization.XmlSerializationHelper" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [ ],
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>()",
       "public static void printArrayXml(com.yahoo.document.datatypes.Array, com.yahoo.document.serialization.XmlStream)",
       "public static void printMapXml(com.yahoo.document.datatypes.MapFieldValue, com.yahoo.document.serialization.XmlStream)",
@@ -3209,15 +3209,15 @@
       "public static void printStructXml(com.yahoo.document.datatypes.Struct, com.yahoo.document.serialization.XmlStream)",
       "public static void printWeightedSetXml(com.yahoo.document.datatypes.WeightedSet, com.yahoo.document.serialization.XmlStream)"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.document.serialization.XmlStream": {
-    "superClass": "java.lang.Object",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.document.serialization.XmlStream" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [ ],
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>()",
       "public void setIndent(java.lang.String)",
       "public boolean isFinalized()",
@@ -3227,15 +3227,15 @@
       "public void addContent(java.lang.String)",
       "public void endTag()"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.document.update.AddValueUpdate": {
-    "superClass": "com.yahoo.document.update.ValueUpdate",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.document.update.AddValueUpdate" : {
+    "superClass" : "com.yahoo.document.update.ValueUpdate",
+    "interfaces" : [ ],
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>(com.yahoo.document.datatypes.FieldValue, int)",
       "public com.yahoo.document.datatypes.FieldValue getValue()",
       "public void setValue(com.yahoo.document.datatypes.FieldValue)",
@@ -3247,25 +3247,25 @@
       "public int hashCode()",
       "public java.lang.String toString()"
     ],
-    "fields": [
+    "fields" : [
       "protected com.yahoo.document.datatypes.FieldValue value",
       "protected java.lang.Integer weight"
     ]
   },
-  "com.yahoo.document.update.ArithmeticValueUpdate$Operator": {
-    "superClass": "java.lang.Enum",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.document.update.ArithmeticValueUpdate$Operator" : {
+    "superClass" : "java.lang.Enum",
+    "interfaces" : [ ],
+    "attributes" : [
       "public",
       "final",
       "enum"
     ],
-    "methods": [
+    "methods" : [
       "public static com.yahoo.document.update.ArithmeticValueUpdate$Operator[] values()",
       "public static com.yahoo.document.update.ArithmeticValueUpdate$Operator valueOf(java.lang.String)",
       "public static com.yahoo.document.update.ArithmeticValueUpdate$Operator getID(int)"
     ],
-    "fields": [
+    "fields" : [
       "public static final enum com.yahoo.document.update.ArithmeticValueUpdate$Operator ADD",
       "public static final enum com.yahoo.document.update.ArithmeticValueUpdate$Operator DIV",
       "public static final enum com.yahoo.document.update.ArithmeticValueUpdate$Operator MUL",
@@ -3274,13 +3274,13 @@
       "public final java.lang.String name"
     ]
   },
-  "com.yahoo.document.update.ArithmeticValueUpdate": {
-    "superClass": "com.yahoo.document.update.ValueUpdate",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.document.update.ArithmeticValueUpdate" : {
+    "superClass" : "com.yahoo.document.update.ValueUpdate",
+    "interfaces" : [ ],
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>(com.yahoo.document.update.ArithmeticValueUpdate$Operator, com.yahoo.document.datatypes.DoubleFieldValue)",
       "public void <init>(com.yahoo.document.update.ArithmeticValueUpdate$Operator, java.lang.Number)",
       "public com.yahoo.document.update.ArithmeticValueUpdate$Operator getOperator()",
@@ -3296,18 +3296,18 @@
       "public bridge synthetic void setValue(com.yahoo.document.datatypes.FieldValue)",
       "public bridge synthetic com.yahoo.document.datatypes.FieldValue getValue()"
     ],
-    "fields": [
+    "fields" : [
       "protected com.yahoo.document.update.ArithmeticValueUpdate$Operator operator",
       "protected com.yahoo.document.datatypes.DoubleFieldValue operand"
     ]
   },
-  "com.yahoo.document.update.AssignValueUpdate": {
-    "superClass": "com.yahoo.document.update.ValueUpdate",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.document.update.AssignValueUpdate" : {
+    "superClass" : "com.yahoo.document.update.ValueUpdate",
+    "interfaces" : [ ],
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>(com.yahoo.document.datatypes.FieldValue)",
       "public com.yahoo.document.datatypes.FieldValue getValue()",
       "public void setValue(com.yahoo.document.datatypes.FieldValue)",
@@ -3318,17 +3318,17 @@
       "public int hashCode()",
       "public java.lang.String toString()"
     ],
-    "fields": [
+    "fields" : [
       "protected com.yahoo.document.datatypes.FieldValue value"
     ]
   },
-  "com.yahoo.document.update.ClearValueUpdate": {
-    "superClass": "com.yahoo.document.update.ValueUpdate",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.document.update.ClearValueUpdate" : {
+    "superClass" : "com.yahoo.document.update.ValueUpdate",
+    "interfaces" : [ ],
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>()",
       "public com.yahoo.document.datatypes.FieldValue applyTo(com.yahoo.document.datatypes.FieldValue)",
       "protected void checkCompatibility(com.yahoo.document.DataType)",
@@ -3336,15 +3336,15 @@
       "public void setValue(com.yahoo.document.datatypes.FieldValue)",
       "public void serialize(com.yahoo.document.serialization.DocumentUpdateWriter, com.yahoo.document.DataType)"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.document.update.FieldUpdate": {
-    "superClass": "java.lang.Object",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.document.update.FieldUpdate" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [ ],
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>(com.yahoo.document.serialization.DocumentUpdateReader, com.yahoo.document.DocumentType)",
       "public com.yahoo.document.DocumentType getDocumentType()",
       "public com.yahoo.document.Field getField()",
@@ -3389,18 +3389,18 @@
       "public static com.yahoo.document.update.FieldUpdate createRemoveAll(com.yahoo.document.Field, java.util.List)",
       "public static com.yahoo.document.update.FieldUpdate createRemoveAll(com.yahoo.document.Field, com.yahoo.document.datatypes.WeightedSet)"
     ],
-    "fields": [
+    "fields" : [
       "protected com.yahoo.document.Field field",
       "protected java.util.List valueUpdates"
     ]
   },
-  "com.yahoo.document.update.MapValueUpdate": {
-    "superClass": "com.yahoo.document.update.ValueUpdate",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.document.update.MapValueUpdate" : {
+    "superClass" : "com.yahoo.document.update.ValueUpdate",
+    "interfaces" : [ ],
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>(com.yahoo.document.datatypes.FieldValue, com.yahoo.document.update.ValueUpdate)",
       "public com.yahoo.document.datatypes.FieldValue getValue()",
       "public void setValue(com.yahoo.document.datatypes.FieldValue)",
@@ -3412,18 +3412,18 @@
       "public int hashCode()",
       "public java.lang.String toString()"
     ],
-    "fields": [
+    "fields" : [
       "protected com.yahoo.document.datatypes.FieldValue value",
       "protected com.yahoo.document.update.ValueUpdate update"
     ]
   },
-  "com.yahoo.document.update.RemoveValueUpdate": {
-    "superClass": "com.yahoo.document.update.ValueUpdate",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.document.update.RemoveValueUpdate" : {
+    "superClass" : "com.yahoo.document.update.ValueUpdate",
+    "interfaces" : [ ],
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>(com.yahoo.document.datatypes.FieldValue)",
       "public com.yahoo.document.datatypes.FieldValue getValue()",
       "public void setValue(com.yahoo.document.datatypes.FieldValue)",
@@ -3434,17 +3434,17 @@
       "public int hashCode()",
       "public java.lang.String toString()"
     ],
-    "fields": [
+    "fields" : [
       "protected com.yahoo.document.datatypes.FieldValue value"
     ]
   },
-  "com.yahoo.document.update.TensorAddUpdate": {
-    "superClass": "com.yahoo.document.update.ValueUpdate",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.document.update.TensorAddUpdate" : {
+    "superClass" : "com.yahoo.document.update.ValueUpdate",
+    "interfaces" : [ ],
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>(com.yahoo.document.datatypes.TensorFieldValue)",
       "protected void checkCompatibility(com.yahoo.document.DataType)",
       "public void serialize(com.yahoo.document.serialization.DocumentUpdateWriter, com.yahoo.document.DataType)",
@@ -3457,22 +3457,22 @@
       "public bridge synthetic void setValue(com.yahoo.document.datatypes.FieldValue)",
       "public bridge synthetic com.yahoo.document.datatypes.FieldValue getValue()"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.document.update.TensorModifyUpdate$Operation": {
-    "superClass": "java.lang.Enum",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.document.update.TensorModifyUpdate$Operation" : {
+    "superClass" : "java.lang.Enum",
+    "interfaces" : [ ],
+    "attributes" : [
       "public",
       "final",
       "enum"
     ],
-    "methods": [
+    "methods" : [
       "public static com.yahoo.document.update.TensorModifyUpdate$Operation[] values()",
       "public static com.yahoo.document.update.TensorModifyUpdate$Operation valueOf(java.lang.String)",
       "public static com.yahoo.document.update.TensorModifyUpdate$Operation getOperation(int)"
     ],
-    "fields": [
+    "fields" : [
       "public static final enum com.yahoo.document.update.TensorModifyUpdate$Operation REPLACE",
       "public static final enum com.yahoo.document.update.TensorModifyUpdate$Operation ADD",
       "public static final enum com.yahoo.document.update.TensorModifyUpdate$Operation MULTIPLY",
@@ -3480,13 +3480,13 @@
       "public final java.lang.String name"
     ]
   },
-  "com.yahoo.document.update.TensorModifyUpdate": {
-    "superClass": "com.yahoo.document.update.ValueUpdate",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.document.update.TensorModifyUpdate" : {
+    "superClass" : "com.yahoo.document.update.ValueUpdate",
+    "interfaces" : [ ],
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>(com.yahoo.document.update.TensorModifyUpdate$Operation, com.yahoo.document.datatypes.TensorFieldValue)",
       "public static com.yahoo.tensor.TensorType convertDimensionsToMapped(com.yahoo.tensor.TensorType)",
       "public com.yahoo.document.update.TensorModifyUpdate$Operation getOperation()",
@@ -3501,18 +3501,18 @@
       "public bridge synthetic void setValue(com.yahoo.document.datatypes.FieldValue)",
       "public bridge synthetic com.yahoo.document.datatypes.FieldValue getValue()"
     ],
-    "fields": [
+    "fields" : [
       "protected com.yahoo.document.update.TensorModifyUpdate$Operation operation",
       "protected com.yahoo.document.datatypes.TensorFieldValue tensor"
     ]
   },
-  "com.yahoo.document.update.TensorRemoveUpdate": {
-    "superClass": "com.yahoo.document.update.ValueUpdate",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.document.update.TensorRemoveUpdate" : {
+    "superClass" : "com.yahoo.document.update.ValueUpdate",
+    "interfaces" : [ ],
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>(com.yahoo.document.datatypes.TensorFieldValue)",
       "public void verifyCompatibleType(com.yahoo.tensor.TensorType)",
       "protected void checkCompatibility(com.yahoo.document.DataType)",
@@ -3527,22 +3527,22 @@
       "public bridge synthetic void setValue(com.yahoo.document.datatypes.FieldValue)",
       "public bridge synthetic com.yahoo.document.datatypes.FieldValue getValue()"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.document.update.ValueUpdate$ValueUpdateClassID": {
-    "superClass": "java.lang.Enum",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.document.update.ValueUpdate$ValueUpdateClassID" : {
+    "superClass" : "java.lang.Enum",
+    "interfaces" : [ ],
+    "attributes" : [
       "public",
       "final",
       "enum"
     ],
-    "methods": [
+    "methods" : [
       "public static com.yahoo.document.update.ValueUpdate$ValueUpdateClassID[] values()",
       "public static com.yahoo.document.update.ValueUpdate$ValueUpdateClassID valueOf(java.lang.String)",
       "public static com.yahoo.document.update.ValueUpdate$ValueUpdateClassID getID(int)"
     ],
-    "fields": [
+    "fields" : [
       "public static final enum com.yahoo.document.update.ValueUpdate$ValueUpdateClassID ADD",
       "public static final enum com.yahoo.document.update.ValueUpdate$ValueUpdateClassID ARITHMETIC",
       "public static final enum com.yahoo.document.update.ValueUpdate$ValueUpdateClassID ASSIGN",
@@ -3556,14 +3556,14 @@
       "public final java.lang.String name"
     ]
   },
-  "com.yahoo.document.update.ValueUpdate": {
-    "superClass": "java.lang.Object",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.document.update.ValueUpdate" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [ ],
+    "attributes" : [
       "public",
       "abstract"
     ],
-    "methods": [
+    "methods" : [
       "protected void <init>(com.yahoo.document.update.ValueUpdate$ValueUpdateClassID)",
       "public com.yahoo.document.update.ValueUpdate$ValueUpdateClassID getValueUpdateClassID()",
       "protected abstract void checkCompatibility(com.yahoo.document.DataType)",
@@ -3593,7 +3593,7 @@
       "public abstract com.yahoo.document.datatypes.FieldValue getValue()",
       "public abstract void setValue(com.yahoo.document.datatypes.FieldValue)"
     ],
-    "fields": [
+    "fields" : [
       "protected com.yahoo.document.update.ValueUpdate$ValueUpdateClassID valueUpdateClassID"
     ]
   }

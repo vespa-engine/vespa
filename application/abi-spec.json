@@ -1,11 +1,11 @@
 {
-  "com.yahoo.application.Application$Builder$Container": {
-    "superClass": "java.lang.Object",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.application.Application$Builder$Container" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [ ],
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>()",
       "public com.yahoo.application.Application$Builder$Container documentProcessor(java.lang.Class)",
       "public varargs com.yahoo.application.Application$Builder$Container documentProcessor(java.lang.String, java.lang.Class, com.yahoo.config.ConfigInstance[])",
@@ -22,15 +22,15 @@
       "public varargs com.yahoo.application.Application$Builder$Container component(java.lang.String, java.lang.Class, com.yahoo.config.ConfigInstance[])",
       "public com.yahoo.application.Application$Builder$Container config(com.yahoo.config.ConfigInstance)"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.application.Application$Builder": {
-    "superClass": "java.lang.Object",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.application.Application$Builder" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [ ],
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>()",
       "public com.yahoo.application.Application$Builder container(java.lang.String, com.yahoo.application.Application$Builder$Container)",
       "public com.yahoo.application.Application$Builder documentType(java.lang.String, java.lang.String)",
@@ -40,18 +40,18 @@
       "public com.yahoo.application.Application$Builder queryProfileType(java.lang.String, java.lang.String)",
       "public com.yahoo.application.Application$Builder networking(com.yahoo.application.Networking)"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.application.Application": {
-    "superClass": "java.lang.Object",
-    "interfaces": [
+  "com.yahoo.application.Application" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [
       "java.lang.AutoCloseable"
     ],
-    "attributes": [
+    "attributes" : [
       "public",
       "final"
     ],
-    "methods": [
+    "methods" : [
       "public static com.yahoo.application.Application fromBuilder(com.yahoo.application.Application$Builder)",
       "public static com.yahoo.application.Application fromServicesXml(java.lang.String, com.yahoo.application.Networking)",
       "public static com.yahoo.application.Application fromApplicationPackage(java.nio.file.Path, com.yahoo.application.Networking)",
@@ -60,17 +60,17 @@
       "public com.yahoo.search.query.profile.compiled.CompiledQueryProfileRegistry getCompiledQueryProfileRegistry()",
       "public void close()"
     ],
-    "fields": [
+    "fields" : [
       "public static final java.lang.String vespaLocalProperty"
     ]
   },
-  "com.yahoo.application.ApplicationBuilder": {
-    "superClass": "java.lang.Object",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.application.ApplicationBuilder" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [ ],
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>()",
       "public com.yahoo.application.ApplicationBuilder servicesXml(java.lang.String)",
       "public com.yahoo.application.ApplicationBuilder documentType(java.lang.String, java.lang.String)",
@@ -80,17 +80,17 @@
       "public com.yahoo.application.ApplicationBuilder networking(com.yahoo.application.Networking)",
       "public com.yahoo.application.Application build()"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.application.MockApplicationConfig$Builder": {
-    "superClass": "java.lang.Object",
-    "interfaces": [
+  "com.yahoo.application.MockApplicationConfig$Builder" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [
       "com.yahoo.config.ConfigInstance$Builder"
     ],
-    "attributes": [
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>()",
       "public void <init>(com.yahoo.application.MockApplicationConfig)",
       "public com.yahoo.application.MockApplicationConfig$Builder mystruct(com.yahoo.application.MockApplicationConfig$Mystruct$Builder)",
@@ -113,7 +113,7 @@
       "public final void setApplyOnRestart(boolean)",
       "public com.yahoo.application.MockApplicationConfig build()"
     ],
-    "fields": [
+    "fields" : [
       "public com.yahoo.application.MockApplicationConfig$Mystruct$Builder mystruct",
       "public java.util.List mystructlist",
       "public java.util.List mylist",
@@ -121,122 +121,122 @@
       "public java.util.Map mymapstruct"
     ]
   },
-  "com.yahoo.application.MockApplicationConfig$Mymapstruct$Builder": {
-    "superClass": "java.lang.Object",
-    "interfaces": [
+  "com.yahoo.application.MockApplicationConfig$Mymapstruct$Builder" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [
       "com.yahoo.config.ConfigBuilder"
     ],
-    "attributes": [
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>()",
       "public void <init>(com.yahoo.application.MockApplicationConfig$Mymapstruct)",
       "public com.yahoo.application.MockApplicationConfig$Mymapstruct$Builder id(java.lang.String)",
       "public com.yahoo.application.MockApplicationConfig$Mymapstruct$Builder value(java.lang.String)",
       "public com.yahoo.application.MockApplicationConfig$Mymapstruct build()"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.application.MockApplicationConfig$Mymapstruct": {
-    "superClass": "com.yahoo.config.InnerNode",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.application.MockApplicationConfig$Mymapstruct" : {
+    "superClass" : "com.yahoo.config.InnerNode",
+    "interfaces" : [ ],
+    "attributes" : [
       "public",
       "final"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>(com.yahoo.application.MockApplicationConfig$Mymapstruct$Builder)",
       "public java.lang.String id()",
       "public java.lang.String value()"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.application.MockApplicationConfig$Mystruct$Builder": {
-    "superClass": "java.lang.Object",
-    "interfaces": [
+  "com.yahoo.application.MockApplicationConfig$Mystruct$Builder" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [
       "com.yahoo.config.ConfigBuilder"
     ],
-    "attributes": [
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>()",
       "public void <init>(com.yahoo.application.MockApplicationConfig$Mystruct)",
       "public com.yahoo.application.MockApplicationConfig$Mystruct$Builder id(java.lang.String)",
       "public com.yahoo.application.MockApplicationConfig$Mystruct$Builder value(java.lang.String)",
       "public com.yahoo.application.MockApplicationConfig$Mystruct build()"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.application.MockApplicationConfig$Mystruct": {
-    "superClass": "com.yahoo.config.InnerNode",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.application.MockApplicationConfig$Mystruct" : {
+    "superClass" : "com.yahoo.config.InnerNode",
+    "interfaces" : [ ],
+    "attributes" : [
       "public",
       "final"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>(com.yahoo.application.MockApplicationConfig$Mystruct$Builder)",
       "public java.lang.String id()",
       "public java.lang.String value()"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.application.MockApplicationConfig$Mystructlist$Builder": {
-    "superClass": "java.lang.Object",
-    "interfaces": [
+  "com.yahoo.application.MockApplicationConfig$Mystructlist$Builder" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [
       "com.yahoo.config.ConfigBuilder"
     ],
-    "attributes": [
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>()",
       "public void <init>(com.yahoo.application.MockApplicationConfig$Mystructlist)",
       "public com.yahoo.application.MockApplicationConfig$Mystructlist$Builder id(java.lang.String)",
       "public com.yahoo.application.MockApplicationConfig$Mystructlist$Builder value(java.lang.String)",
       "public com.yahoo.application.MockApplicationConfig$Mystructlist build()"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.application.MockApplicationConfig$Mystructlist": {
-    "superClass": "com.yahoo.config.InnerNode",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.application.MockApplicationConfig$Mystructlist" : {
+    "superClass" : "com.yahoo.config.InnerNode",
+    "interfaces" : [ ],
+    "attributes" : [
       "public",
       "final"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>(com.yahoo.application.MockApplicationConfig$Mystructlist$Builder)",
       "public java.lang.String id()",
       "public java.lang.String value()"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.application.MockApplicationConfig$Producer": {
-    "superClass": "java.lang.Object",
-    "interfaces": [
+  "com.yahoo.application.MockApplicationConfig$Producer" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [
       "com.yahoo.config.ConfigInstance$Producer"
     ],
-    "attributes": [
+    "attributes" : [
       "public",
       "interface",
       "abstract"
     ],
-    "methods": [
+    "methods" : [
       "public abstract void getConfig(com.yahoo.application.MockApplicationConfig$Builder)"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.application.MockApplicationConfig": {
-    "superClass": "com.yahoo.config.ConfigInstance",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.application.MockApplicationConfig" : {
+    "superClass" : "com.yahoo.config.ConfigInstance",
+    "interfaces" : [ ],
+    "attributes" : [
       "public",
       "final"
     ],
-    "methods": [
+    "methods" : [
       "public static java.lang.String getDefMd5()",
       "public static java.lang.String getDefName()",
       "public static java.lang.String getDefNamespace()",
@@ -251,67 +251,67 @@
       "public java.util.Map mymapstruct()",
       "public com.yahoo.application.MockApplicationConfig$Mymapstruct mymapstruct(java.lang.String)"
     ],
-    "fields": [
+    "fields" : [
       "public static final java.lang.String CONFIG_DEF_MD5",
       "public static final java.lang.String CONFIG_DEF_NAME",
       "public static final java.lang.String CONFIG_DEF_NAMESPACE",
       "public static final java.lang.String[] CONFIG_DEF_SCHEMA"
     ]
   },
-  "com.yahoo.application.Networking": {
-    "superClass": "java.lang.Enum",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.application.Networking" : {
+    "superClass" : "java.lang.Enum",
+    "interfaces" : [ ],
+    "attributes" : [
       "public",
       "final",
       "enum"
     ],
-    "methods": [
+    "methods" : [
       "public static com.yahoo.application.Networking[] values()",
       "public static com.yahoo.application.Networking valueOf(java.lang.String)"
     ],
-    "fields": [
+    "fields" : [
       "public static final enum com.yahoo.application.Networking enable",
       "public static final enum com.yahoo.application.Networking disable"
     ]
   },
-  "com.yahoo.application.container.DocumentAccesses": {
-    "superClass": "java.lang.Object",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.application.container.DocumentAccesses" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [ ],
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public static com.yahoo.documentapi.local.LocalDocumentAccess createFromSchemas(java.lang.String)"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.application.container.DocumentProcessing": {
-    "superClass": "java.lang.Object",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.application.container.DocumentProcessing" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [ ],
+    "attributes" : [
       "public",
       "final"
     ],
-    "methods": [
+    "methods" : [
       "public com.yahoo.docproc.DocumentProcessor$Progress process(com.yahoo.component.ComponentSpecification, com.yahoo.docproc.Processing)",
       "public com.yahoo.docproc.DocumentProcessor$Progress processOnce(com.yahoo.component.ComponentSpecification, com.yahoo.docproc.Processing)",
       "public com.yahoo.processing.execution.chain.ChainRegistry getChains()",
       "public java.util.Map getDocumentTypes()",
       "public java.util.Map getAnnotationTypes()"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.application.container.JDisc": {
-    "superClass": "java.lang.Object",
-    "interfaces": [
+  "com.yahoo.application.container.JDisc" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [
       "java.lang.AutoCloseable"
     ],
-    "attributes": [
+    "attributes" : [
       "public",
       "final"
     ],
-    "methods": [
+    "methods" : [
       "public static com.yahoo.application.container.JDisc fromServicesXml(java.lang.String, com.yahoo.application.Networking)",
       "public static com.yahoo.application.container.JDisc fromPath(java.nio.file.Path, com.yahoo.application.Networking)",
       "public static com.yahoo.application.container.JDisc fromPath(java.nio.file.Path, com.yahoo.application.Networking, com.yahoo.config.model.ConfigModelRepo)",
@@ -322,28 +322,28 @@
       "public com.yahoo.application.container.handler.Response handleRequest(com.yahoo.application.container.handler.Request)",
       "public void close()"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.application.container.Processing": {
-    "superClass": "com.yahoo.application.container.ProcessingBase",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.application.container.Processing" : {
+    "superClass" : "com.yahoo.application.container.ProcessingBase",
+    "interfaces" : [ ],
+    "attributes" : [
       "public",
       "final"
     ],
-    "methods": [
+    "methods" : [
       "public com.yahoo.processing.execution.chain.ChainRegistry getChains()"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.application.container.ProcessingBase": {
-    "superClass": "java.lang.Object",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.application.container.ProcessingBase" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [ ],
+    "attributes" : [
       "public",
       "abstract"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>()",
       "public abstract com.yahoo.processing.execution.chain.ChainRegistry getChains()",
       "public final com.yahoo.processing.Response process(com.yahoo.component.ComponentSpecification, com.yahoo.processing.Request)",
@@ -354,29 +354,29 @@
       "protected final com.yahoo.processing.rendering.Renderer getRenderer(com.yahoo.component.ComponentSpecification)",
       "protected abstract com.yahoo.processing.rendering.Renderer doGetRenderer(com.yahoo.component.ComponentSpecification)"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.application.container.Search": {
-    "superClass": "com.yahoo.application.container.ProcessingBase",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.application.container.Search" : {
+    "superClass" : "com.yahoo.application.container.ProcessingBase",
+    "interfaces" : [ ],
+    "attributes" : [
       "public",
       "final"
     ],
-    "methods": [
+    "methods" : [
       "public com.yahoo.processing.execution.chain.ChainRegistry getChains()"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.application.container.handler.Headers": {
-    "superClass": "java.lang.Object",
-    "interfaces": [
+  "com.yahoo.application.container.handler.Headers" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [
       "java.util.Map"
     ],
-    "attributes": [
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>()",
       "public int size()",
       "public boolean isEmpty()",
@@ -407,21 +407,21 @@
       "public bridge synthetic java.lang.Object put(java.lang.Object, java.lang.Object)",
       "public bridge synthetic java.lang.Object get(java.lang.Object)"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.application.container.handler.Request$Method": {
-    "superClass": "java.lang.Enum",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.application.container.handler.Request$Method" : {
+    "superClass" : "java.lang.Enum",
+    "interfaces" : [ ],
+    "attributes" : [
       "public",
       "final",
       "enum"
     ],
-    "methods": [
+    "methods" : [
       "public static com.yahoo.application.container.handler.Request$Method[] values()",
       "public static com.yahoo.application.container.handler.Request$Method valueOf(java.lang.String)"
     ],
-    "fields": [
+    "fields" : [
       "public static final enum com.yahoo.application.container.handler.Request$Method OPTIONS",
       "public static final enum com.yahoo.application.container.handler.Request$Method GET",
       "public static final enum com.yahoo.application.container.handler.Request$Method HEAD",
@@ -433,13 +433,13 @@
       "public static final enum com.yahoo.application.container.handler.Request$Method CONNECT"
     ]
   },
-  "com.yahoo.application.container.handler.Request": {
-    "superClass": "java.lang.Object",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.application.container.handler.Request" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [ ],
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>(java.lang.String)",
       "public void <init>(java.lang.String, byte[])",
       "public void <init>(java.lang.String, java.lang.String)",
@@ -454,15 +454,15 @@
       "public com.yahoo.application.container.handler.Request$Method getMethod()",
       "public java.util.Optional getUserPrincipal()"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.application.container.handler.Response": {
-    "superClass": "java.lang.Object",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.application.container.handler.Response" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [ ],
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>()",
       "public void <init>(byte[])",
       "public void <init>(int, byte[])",
@@ -472,6 +472,6 @@
       "public com.yahoo.application.container.handler.Headers getHeaders()",
       "public java.lang.String toString()"
     ],
-    "fields": []
+    "fields" : [ ]
   }
 }

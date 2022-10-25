@@ -1,11 +1,11 @@
 {
-  "com.yahoo.component.chain.Chain": {
-    "superClass": "java.lang.Object",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.component.chain.Chain" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [ ],
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>(java.lang.String, java.util.List)",
       "public void <init>(com.yahoo.component.ComponentId, java.util.List)",
       "public void <init>(java.util.List)",
@@ -19,16 +19,16 @@
       "public boolean equals(java.lang.Object)",
       "public int hashCode()"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.component.chain.ChainedComponent": {
-    "superClass": "com.yahoo.component.AbstractComponent",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.component.chain.ChainedComponent" : {
+    "superClass" : "com.yahoo.component.AbstractComponent",
+    "interfaces" : [ ],
+    "attributes" : [
       "public",
       "abstract"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>(com.yahoo.component.ComponentId)",
       "protected void <init>()",
       "public void initDependencies(com.yahoo.component.chain.dependencies.Dependencies)",
@@ -36,27 +36,27 @@
       "protected com.yahoo.component.chain.dependencies.Dependencies getDefaultAnnotatedDependencies()",
       "protected com.yahoo.component.chain.dependencies.Dependencies getAnnotatedDependencies(java.lang.Class, java.lang.Class, java.lang.Class)"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.component.chain.ChainsConfigurer": {
-    "superClass": "java.lang.Object",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.component.chain.ChainsConfigurer" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [ ],
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>()",
       "public static void prepareChainRegistry(com.yahoo.component.provider.ComponentRegistry, com.yahoo.component.chain.model.ChainsModel, com.yahoo.component.provider.ComponentRegistry)"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.component.chain.Phase": {
-    "superClass": "java.lang.Object",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.component.chain.Phase" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [ ],
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>(java.lang.String, java.util.Set, java.util.Set)",
       "public void <init>(java.lang.String, com.yahoo.component.chain.dependencies.Dependencies)",
       "public java.lang.String getName()",
@@ -64,49 +64,49 @@
       "public java.util.Set after()",
       "public com.yahoo.component.chain.Phase union(com.yahoo.component.chain.Phase)"
     ],
-    "fields": [
+    "fields" : [
       "public final com.yahoo.component.chain.dependencies.Dependencies dependencies"
     ]
   },
-  "com.yahoo.component.chain.dependencies.After": {
-    "superClass": "java.lang.Object",
-    "interfaces": [
+  "com.yahoo.component.chain.dependencies.After" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [
       "java.lang.annotation.Annotation"
     ],
-    "attributes": [
+    "attributes" : [
       "public",
       "interface",
       "abstract",
       "annotation"
     ],
-    "methods": [
+    "methods" : [
       "public abstract java.lang.String[] value()"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.component.chain.dependencies.Before": {
-    "superClass": "java.lang.Object",
-    "interfaces": [
+  "com.yahoo.component.chain.dependencies.Before" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [
       "java.lang.annotation.Annotation"
     ],
-    "attributes": [
+    "attributes" : [
       "public",
       "interface",
       "abstract",
       "annotation"
     ],
-    "methods": [
+    "methods" : [
       "public abstract java.lang.String[] value()"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.component.chain.dependencies.Dependencies": {
-    "superClass": "java.lang.Object",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.component.chain.dependencies.Dependencies" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [ ],
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>(java.util.Collection, java.util.Collection, java.util.Collection)",
       "public static com.yahoo.component.chain.dependencies.Dependencies emptyDependencies()",
       "public com.yahoo.component.chain.dependencies.Dependencies union(com.yahoo.component.chain.dependencies.Dependencies)",
@@ -115,91 +115,91 @@
       "public java.util.Set before()",
       "public java.util.Set after()"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.component.chain.dependencies.Provides": {
-    "superClass": "java.lang.Object",
-    "interfaces": [
+  "com.yahoo.component.chain.dependencies.Provides" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [
       "java.lang.annotation.Annotation"
     ],
-    "attributes": [
+    "attributes" : [
       "public",
       "interface",
       "abstract",
       "annotation"
     ],
-    "methods": [
+    "methods" : [
       "public abstract java.lang.String[] value()"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.container.handler.AccessLogRequestHandler": {
-    "superClass": "com.yahoo.container.jdisc.ThreadedHttpRequestHandler",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.container.handler.AccessLogRequestHandler" : {
+    "superClass" : "com.yahoo.container.jdisc.ThreadedHttpRequestHandler",
+    "interfaces" : [ ],
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>(java.util.concurrent.Executor, com.yahoo.jdisc.Metric, com.yahoo.container.logging.CircularArrayAccessLogKeeper)",
       "public com.yahoo.container.jdisc.HttpResponse handle(com.yahoo.container.jdisc.HttpRequest)"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.container.handler.ClustersStatus$Require": {
-    "superClass": "java.lang.Enum",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.container.handler.ClustersStatus$Require" : {
+    "superClass" : "java.lang.Enum",
+    "interfaces" : [ ],
+    "attributes" : [
       "public",
       "final",
       "enum"
     ],
-    "methods": [
+    "methods" : [
       "public static com.yahoo.container.handler.ClustersStatus$Require[] values()",
       "public static com.yahoo.container.handler.ClustersStatus$Require valueOf(java.lang.String)"
     ],
-    "fields": [
+    "fields" : [
       "public static final enum com.yahoo.container.handler.ClustersStatus$Require ONE",
       "public static final enum com.yahoo.container.handler.ClustersStatus$Require ALL"
     ]
   },
-  "com.yahoo.container.handler.ClustersStatus": {
-    "superClass": "com.yahoo.component.AbstractComponent",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.container.handler.ClustersStatus" : {
+    "superClass" : "com.yahoo.component.AbstractComponent",
+    "interfaces" : [ ],
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>()",
       "public void setClusters(java.util.Set)",
       "public boolean containerShouldReceiveTraffic(com.yahoo.container.handler.ClustersStatus$Require)"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.container.handler.Coverage$FullCoverageDefinition": {
-    "superClass": "java.lang.Enum",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.container.handler.Coverage$FullCoverageDefinition" : {
+    "superClass" : "java.lang.Enum",
+    "interfaces" : [ ],
+    "attributes" : [
       "public",
       "final",
       "enum"
     ],
-    "methods": [
+    "methods" : [
       "public static com.yahoo.container.handler.Coverage$FullCoverageDefinition[] values()",
       "public static com.yahoo.container.handler.Coverage$FullCoverageDefinition valueOf(java.lang.String)"
     ],
-    "fields": [
+    "fields" : [
       "public static final enum com.yahoo.container.handler.Coverage$FullCoverageDefinition EXPLICITLY_FULL",
       "public static final enum com.yahoo.container.handler.Coverage$FullCoverageDefinition EXPLICITLY_INCOMPLETE",
       "public static final enum com.yahoo.container.handler.Coverage$FullCoverageDefinition DOCUMENT_COUNT"
     ]
   },
-  "com.yahoo.container.handler.Coverage": {
-    "superClass": "java.lang.Object",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.container.handler.Coverage" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [ ],
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "protected void <init>(long, long, int, int)",
       "public void <init>(long, int, boolean)",
       "protected void <init>(long, int, boolean, int)",
@@ -221,7 +221,7 @@
       "public int getResultPercentage()",
       "public com.yahoo.container.logging.Coverage toLoggingCoverage()"
     ],
-    "fields": [
+    "fields" : [
       "protected long docs",
       "protected long active",
       "protected long targetActive",
@@ -235,41 +235,41 @@
       "public static final int DEGRADED_BY_ADAPTIVE_TIMEOUT"
     ]
   },
-  "com.yahoo.container.handler.FilterBackingRequestHandler": {
-    "superClass": "com.yahoo.container.jdisc.ThreadedHttpRequestHandler",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.container.handler.FilterBackingRequestHandler" : {
+    "superClass" : "com.yahoo.container.jdisc.ThreadedHttpRequestHandler",
+    "interfaces" : [ ],
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>(java.util.concurrent.Executor)",
       "public com.yahoo.container.jdisc.HttpResponse handle(com.yahoo.container.jdisc.HttpRequest)"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.container.handler.LogHandler": {
-    "superClass": "com.yahoo.container.jdisc.ThreadedHttpRequestHandler",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.container.handler.LogHandler" : {
+    "superClass" : "com.yahoo.container.jdisc.ThreadedHttpRequestHandler",
+    "interfaces" : [ ],
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>(java.util.concurrent.Executor, com.yahoo.container.core.LogHandlerConfig)",
       "public com.yahoo.container.jdisc.AsyncHttpResponse handle(com.yahoo.container.jdisc.HttpRequest)",
       "public bridge synthetic com.yahoo.container.jdisc.HttpResponse handle(com.yahoo.container.jdisc.HttpRequest)"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.container.handler.Prefix": {
-    "superClass": "java.lang.Object",
-    "interfaces": [
+  "com.yahoo.container.handler.Prefix" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [
       "java.lang.Comparable"
     ],
-    "attributes": [
+    "attributes" : [
       "public",
       "final"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>(java.lang.String, java.lang.String)",
       "public void <init>(java.lang.String)",
       "public boolean hasAnyCommonPrefix(java.lang.String)",
@@ -278,38 +278,38 @@
       "public java.lang.String toString()",
       "public bridge synthetic int compareTo(java.lang.Object)"
     ],
-    "fields": [
+    "fields" : [
       "public final java.lang.String prefix",
       "public final java.lang.String[] elements",
       "public final java.lang.String handler"
     ]
   },
-  "com.yahoo.container.handler.ThreadPoolProvider": {
-    "superClass": "com.yahoo.component.AbstractComponent",
-    "interfaces": [
+  "com.yahoo.container.handler.ThreadPoolProvider" : {
+    "superClass" : "com.yahoo.component.AbstractComponent",
+    "interfaces" : [
       "com.yahoo.container.di.componentgraph.Provider"
     ],
-    "attributes": [
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>(com.yahoo.container.handler.ThreadpoolConfig, com.yahoo.jdisc.Metric)",
       "public void <init>(com.yahoo.container.handler.ThreadpoolConfig, com.yahoo.jdisc.Metric, com.yahoo.container.protect.ProcessTerminator)",
       "public java.util.concurrent.Executor get()",
       "public void deconstruct()",
       "public bridge synthetic java.lang.Object get()"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.container.handler.ThreadpoolConfig$Builder": {
-    "superClass": "java.lang.Object",
-    "interfaces": [
+  "com.yahoo.container.handler.ThreadpoolConfig$Builder" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [
       "com.yahoo.config.ConfigInstance$Builder"
     ],
-    "attributes": [
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>()",
       "public void <init>(com.yahoo.container.handler.ThreadpoolConfig)",
       "public com.yahoo.container.handler.ThreadpoolConfig$Builder maxthreads(int)",
@@ -326,31 +326,31 @@
       "public final void setApplyOnRestart(boolean)",
       "public com.yahoo.container.handler.ThreadpoolConfig build()"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.container.handler.ThreadpoolConfig$Producer": {
-    "superClass": "java.lang.Object",
-    "interfaces": [
+  "com.yahoo.container.handler.ThreadpoolConfig$Producer" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [
       "com.yahoo.config.ConfigInstance$Producer"
     ],
-    "attributes": [
+    "attributes" : [
       "public",
       "interface",
       "abstract"
     ],
-    "methods": [
+    "methods" : [
       "public abstract void getConfig(com.yahoo.container.handler.ThreadpoolConfig$Builder)"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.container.handler.ThreadpoolConfig": {
-    "superClass": "com.yahoo.config.ConfigInstance",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.container.handler.ThreadpoolConfig" : {
+    "superClass" : "com.yahoo.config.ConfigInstance",
+    "interfaces" : [ ],
+    "attributes" : [
       "public",
       "final"
     ],
-    "methods": [
+    "methods" : [
       "public static java.lang.String getDefMd5()",
       "public static java.lang.String getDefName()",
       "public static java.lang.String getDefNamespace()",
@@ -362,34 +362,34 @@
       "public int maxThreadExecutionTimeSeconds()",
       "public java.lang.String name()"
     ],
-    "fields": [
+    "fields" : [
       "public static final java.lang.String CONFIG_DEF_MD5",
       "public static final java.lang.String CONFIG_DEF_NAME",
       "public static final java.lang.String CONFIG_DEF_NAMESPACE",
       "public static final java.lang.String[] CONFIG_DEF_SCHEMA"
     ]
   },
-  "com.yahoo.container.handler.Timing": {
-    "superClass": "java.lang.Object",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.container.handler.Timing" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [ ],
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>(long, long, long, long)",
       "public long getSummaryStartTime()",
       "public long getQueryStartTime()",
       "public long getTimeout()"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.container.handler.VipStatus": {
-    "superClass": "java.lang.Object",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.container.handler.VipStatus" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [ ],
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>()",
       "public void <init>(com.yahoo.container.QrSearchersConfig)",
       "public void <init>(com.yahoo.container.handler.ClustersStatus)",
@@ -400,30 +400,30 @@
       "public void removeFromRotation(java.lang.String)",
       "public boolean isInRotation()"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.container.handler.VipStatusHandler": {
-    "superClass": "com.yahoo.container.jdisc.ThreadedHttpRequestHandler",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.container.handler.VipStatusHandler" : {
+    "superClass" : "com.yahoo.container.jdisc.ThreadedHttpRequestHandler",
+    "interfaces" : [ ],
+    "attributes" : [
       "public",
       "final"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>(com.yahoo.container.core.VipStatusConfig, com.yahoo.jdisc.Metric, com.yahoo.container.handler.VipStatus)",
       "public void <init>(java.util.concurrent.Executor, com.yahoo.container.core.VipStatusConfig, com.yahoo.jdisc.Metric)",
       "public void <init>(java.util.concurrent.Executor, com.yahoo.container.core.VipStatusConfig, com.yahoo.jdisc.Metric, com.yahoo.container.handler.VipStatus)",
       "public com.yahoo.container.jdisc.HttpResponse handle(com.yahoo.container.jdisc.HttpRequest)"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.container.http.AccessLogUtil": {
-    "superClass": "java.lang.Object",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.container.http.AccessLogUtil" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [ ],
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>()",
       "public static java.lang.String getHttpMethod(com.yahoo.jdisc.http.HttpRequest)",
       "public static java.net.URI getUri(com.yahoo.jdisc.http.HttpRequest)",
@@ -432,18 +432,18 @@
       "public static java.lang.String getUserAgentHeader(com.yahoo.jdisc.http.HttpRequest)",
       "public static java.net.InetSocketAddress getRemoteAddress(com.yahoo.jdisc.http.HttpRequest)"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.container.http.BenchmarkingHeaders": {
-    "superClass": "java.lang.Object",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.container.http.BenchmarkingHeaders" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [ ],
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>()"
     ],
-    "fields": [
+    "fields" : [
       "public static final java.lang.String REQUEST",
       "public static final java.lang.String REQUEST_COVERAGE",
       "public static final java.lang.String NUM_HITS",
@@ -462,60 +462,60 @@
       "public static final java.lang.String FULL_COVERAGE"
     ]
   },
-  "com.yahoo.container.jdisc.AclMapping$Action": {
-    "superClass": "java.lang.Object",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.container.jdisc.AclMapping$Action" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [ ],
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public static com.yahoo.container.jdisc.AclMapping$Action custom(java.lang.String)",
       "public java.lang.String name()",
       "public boolean equals(java.lang.Object)",
       "public int hashCode()",
       "public java.lang.String toString()"
     ],
-    "fields": [
+    "fields" : [
       "public static final com.yahoo.container.jdisc.AclMapping$Action READ",
       "public static final com.yahoo.container.jdisc.AclMapping$Action WRITE"
     ]
   },
-  "com.yahoo.container.jdisc.AclMapping": {
-    "superClass": "java.lang.Object",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.container.jdisc.AclMapping" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [ ],
+    "attributes" : [
       "public",
       "interface",
       "abstract"
     ],
-    "methods": [
+    "methods" : [
       "public abstract com.yahoo.container.jdisc.AclMapping$Action get(com.yahoo.container.jdisc.RequestView)"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.container.jdisc.AsyncHttpResponse": {
-    "superClass": "com.yahoo.container.jdisc.HttpResponse",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.container.jdisc.AsyncHttpResponse" : {
+    "superClass" : "com.yahoo.container.jdisc.HttpResponse",
+    "interfaces" : [ ],
+    "attributes" : [
       "public",
       "abstract"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>(int)",
       "public abstract void render(java.io.OutputStream, com.yahoo.jdisc.handler.ContentChannel, com.yahoo.jdisc.handler.CompletionHandler)",
       "public final void render(java.io.OutputStream)"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.container.jdisc.ContentChannelOutputStream": {
-    "superClass": "java.io.OutputStream",
-    "interfaces": [
+  "com.yahoo.container.jdisc.ContentChannelOutputStream" : {
+    "superClass" : "java.io.OutputStream",
+    "interfaces" : [
       "com.yahoo.io.WritableByteTransmitter"
     ],
-    "attributes": [
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>(com.yahoo.jdisc.handler.ContentChannel)",
       "public void write(int)",
       "public void close()",
@@ -528,28 +528,28 @@
       "protected void send(java.nio.ByteBuffer, com.yahoo.jdisc.handler.CompletionHandler)",
       "public long written()"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.container.jdisc.EmptyResponse": {
-    "superClass": "com.yahoo.container.jdisc.HttpResponse",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.container.jdisc.EmptyResponse" : {
+    "superClass" : "com.yahoo.container.jdisc.HttpResponse",
+    "interfaces" : [ ],
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>(int)",
       "public void render(java.io.OutputStream)"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.container.jdisc.ExtendedResponse": {
-    "superClass": "com.yahoo.container.jdisc.AsyncHttpResponse",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.container.jdisc.ExtendedResponse" : {
+    "superClass" : "com.yahoo.container.jdisc.AsyncHttpResponse",
+    "interfaces" : [ ],
+    "attributes" : [
       "public",
       "abstract"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>(int)",
       "public abstract void render(java.io.OutputStream, com.yahoo.jdisc.handler.ContentChannel, com.yahoo.jdisc.handler.CompletionHandler)",
       "public java.lang.String getUser()",
@@ -558,42 +558,42 @@
       "public com.yahoo.container.handler.Coverage getCoverage()",
       "public com.yahoo.container.logging.HitCounts getHitCounts()"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.container.jdisc.HttpMethodAclMapping$Builder": {
-    "superClass": "java.lang.Object",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.container.jdisc.HttpMethodAclMapping$Builder" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [ ],
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>()",
       "public com.yahoo.container.jdisc.HttpMethodAclMapping$Builder override(com.yahoo.jdisc.http.HttpRequest$Method, com.yahoo.container.jdisc.AclMapping$Action)",
       "public com.yahoo.container.jdisc.HttpMethodAclMapping build()"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.container.jdisc.HttpMethodAclMapping": {
-    "superClass": "java.lang.Object",
-    "interfaces": [
+  "com.yahoo.container.jdisc.HttpMethodAclMapping" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [
       "com.yahoo.container.jdisc.AclMapping"
     ],
-    "attributes": [
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public com.yahoo.container.jdisc.AclMapping$Action get(com.yahoo.container.jdisc.RequestView)",
       "public static com.yahoo.container.jdisc.HttpMethodAclMapping$Builder standard()"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.container.jdisc.HttpRequest$Builder": {
-    "superClass": "java.lang.Object",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.container.jdisc.HttpRequest$Builder" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [ ],
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>(com.yahoo.container.jdisc.HttpRequest)",
       "public void <init>(com.yahoo.jdisc.http.HttpRequest)",
       "public com.yahoo.container.jdisc.HttpRequest$Builder put(java.lang.String, java.lang.String)",
@@ -606,15 +606,15 @@
       "public com.yahoo.container.jdisc.HttpRequest createClientRequest()",
       "public com.yahoo.container.jdisc.HttpRequest createServerRequest()"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.container.jdisc.HttpRequest": {
-    "superClass": "java.lang.Object",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.container.jdisc.HttpRequest" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [ ],
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>(com.yahoo.jdisc.http.HttpRequest, java.io.InputStream)",
       "public void <init>(com.yahoo.jdisc.http.HttpRequest, java.io.InputStream, java.util.Map)",
       "public static com.yahoo.container.jdisc.HttpRequest createRequest(com.yahoo.jdisc.service.CurrentContainer, java.net.URI, com.yahoo.jdisc.http.HttpRequest$Method, java.io.InputStream)",
@@ -636,15 +636,15 @@
       "public int getPort()",
       "public java.io.InputStream getData()"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.container.jdisc.HttpRequestBuilder": {
-    "superClass": "java.lang.Object",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.container.jdisc.HttpRequestBuilder" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [ ],
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public static com.yahoo.container.jdisc.HttpRequestBuilder create(com.yahoo.jdisc.http.HttpRequest$Method, java.lang.String)",
       "public com.yahoo.container.jdisc.HttpRequestBuilder withQueryParameter(java.lang.String, java.lang.String)",
       "public com.yahoo.container.jdisc.HttpRequestBuilder withHeader(java.lang.String, java.lang.String)",
@@ -653,31 +653,31 @@
       "public com.yahoo.container.jdisc.HttpRequestBuilder withHostname(java.lang.String)",
       "public com.yahoo.container.jdisc.HttpRequest build()"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.container.jdisc.HttpRequestHandler": {
-    "superClass": "java.lang.Object",
-    "interfaces": [
+  "com.yahoo.container.jdisc.HttpRequestHandler" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [
       "com.yahoo.jdisc.handler.RequestHandler"
     ],
-    "attributes": [
+    "attributes" : [
       "public",
       "interface",
       "abstract"
     ],
-    "methods": [
+    "methods" : [
       "public com.yahoo.container.jdisc.RequestHandlerSpec requestHandlerSpec()"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.container.jdisc.HttpResponse": {
-    "superClass": "java.lang.Object",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.container.jdisc.HttpResponse" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [ ],
+    "attributes" : [
       "public",
       "abstract"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>(int)",
       "public abstract void render(java.io.OutputStream)",
       "public long maxPendingBytes()",
@@ -693,48 +693,48 @@
       "public void setRequestType(com.yahoo.jdisc.Request$RequestType)",
       "public com.yahoo.jdisc.Request$RequestType getRequestType()"
     ],
-    "fields": [
+    "fields" : [
       "public static final java.lang.String DEFAULT_MIME_TYPE",
       "public static final java.lang.String DEFAULT_CHARACTER_ENCODING"
     ]
   },
-  "com.yahoo.container.jdisc.LoggingCompletionHandler": {
-    "superClass": "java.lang.Object",
-    "interfaces": [
+  "com.yahoo.container.jdisc.LoggingCompletionHandler" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [
       "com.yahoo.jdisc.handler.CompletionHandler"
     ],
-    "attributes": [
+    "attributes" : [
       "public",
       "interface",
       "abstract"
     ],
-    "methods": [
+    "methods" : [
       "public abstract void markCommitStart()"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.container.jdisc.LoggingRequestHandler$Context": {
-    "superClass": "java.lang.Object",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.container.jdisc.LoggingRequestHandler$Context" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [ ],
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>(java.util.concurrent.Executor, com.yahoo.jdisc.Metric)",
       "public void <init>(com.yahoo.container.jdisc.LoggingRequestHandler$Context)",
       "public java.util.concurrent.Executor getExecutor()",
       "public com.yahoo.jdisc.Metric getMetric()"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.container.jdisc.LoggingRequestHandler": {
-    "superClass": "com.yahoo.container.jdisc.ThreadedHttpRequestHandler",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.container.jdisc.LoggingRequestHandler" : {
+    "superClass" : "com.yahoo.container.jdisc.ThreadedHttpRequestHandler",
+    "interfaces" : [ ],
+    "attributes" : [
       "public",
       "abstract"
     ],
-    "methods": [
+    "methods" : [
       "public static com.yahoo.container.jdisc.LoggingRequestHandler$Context testOnlyContext()",
       "public void <init>(com.yahoo.container.jdisc.LoggingRequestHandler$Context)",
       "public void <init>(java.util.concurrent.Executor)",
@@ -743,71 +743,71 @@
       "public void <init>(java.util.concurrent.Executor, com.yahoo.jdisc.Metric, boolean)",
       "protected com.yahoo.container.jdisc.LoggingCompletionHandler createLoggingCompletionHandler(long, long, com.yahoo.container.jdisc.HttpResponse, com.yahoo.container.jdisc.HttpRequest, com.yahoo.container.jdisc.ContentChannelOutputStream)"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.container.jdisc.MaxPendingContentChannelOutputStream": {
-    "superClass": "com.yahoo.container.jdisc.ContentChannelOutputStream",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.container.jdisc.MaxPendingContentChannelOutputStream" : {
+    "superClass" : "com.yahoo.container.jdisc.ContentChannelOutputStream",
+    "interfaces" : [ ],
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>(com.yahoo.jdisc.handler.ContentChannel, long)",
       "public void send(java.nio.ByteBuffer)",
       "public void flush()"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.container.jdisc.MetricConsumerFactory": {
-    "superClass": "java.lang.Object",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.container.jdisc.MetricConsumerFactory" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [ ],
+    "attributes" : [
       "public",
       "interface",
       "abstract"
     ],
-    "methods": [
+    "methods" : [
       "public abstract com.yahoo.jdisc.application.MetricConsumer newInstance()"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.container.jdisc.RequestHandlerSpec$Builder": {
-    "superClass": "java.lang.Object",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.container.jdisc.RequestHandlerSpec$Builder" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [ ],
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>()",
       "public com.yahoo.container.jdisc.RequestHandlerSpec$Builder withAclMapping(com.yahoo.container.jdisc.AclMapping)",
       "public com.yahoo.container.jdisc.RequestHandlerSpec build()"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.container.jdisc.RequestHandlerSpec": {
-    "superClass": "java.lang.Object",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.container.jdisc.RequestHandlerSpec" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [ ],
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public com.yahoo.container.jdisc.AclMapping aclMapping()",
       "public static com.yahoo.container.jdisc.RequestHandlerSpec$Builder builder()"
     ],
-    "fields": [
+    "fields" : [
       "public static final java.lang.String ATTRIBUTE_NAME",
       "public static final com.yahoo.container.jdisc.RequestHandlerSpec DEFAULT_INSTANCE"
     ]
   },
-  "com.yahoo.container.jdisc.RequestHandlerTestDriver$MockResponseHandler": {
-    "superClass": "java.lang.Object",
-    "interfaces": [
+  "com.yahoo.container.jdisc.RequestHandlerTestDriver$MockResponseHandler" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [
       "com.yahoo.jdisc.handler.ResponseHandler"
     ],
-    "attributes": [
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>()",
       "public com.yahoo.container.jdisc.RequestHandlerTestDriver$MockResponseHandler awaitResponse()",
       "public java.lang.String read()",
@@ -819,17 +819,17 @@
       "public int getStatus()",
       "public com.yahoo.jdisc.Response getResponse()"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.container.jdisc.RequestHandlerTestDriver": {
-    "superClass": "java.lang.Object",
-    "interfaces": [
+  "com.yahoo.container.jdisc.RequestHandlerTestDriver" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [
       "java.lang.AutoCloseable"
     ],
-    "attributes": [
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>(com.yahoo.jdisc.handler.RequestHandler)",
       "public void <init>(java.lang.String, com.yahoo.jdisc.handler.RequestHandler)",
       "public void close()",
@@ -842,62 +842,62 @@
       "public com.yahoo.container.jdisc.RequestHandlerTestDriver$MockResponseHandler sendRequest(java.lang.String, com.yahoo.jdisc.http.HttpRequest$Method, java.nio.ByteBuffer, java.lang.String)",
       "public java.lang.String censorDigits(java.lang.String)"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.container.jdisc.RequestView": {
-    "superClass": "java.lang.Object",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.container.jdisc.RequestView" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [ ],
+    "attributes" : [
       "public",
       "interface",
       "abstract"
     ],
-    "methods": [
+    "methods" : [
       "public abstract com.yahoo.jdisc.http.HttpRequest$Method method()",
       "public abstract java.net.URI uri()"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.container.jdisc.ThreadedHttpRequestHandler$Context": {
-    "superClass": "java.lang.Object",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.container.jdisc.ThreadedHttpRequestHandler$Context" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [ ],
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>(java.util.concurrent.Executor, com.yahoo.jdisc.Metric)",
       "public void <init>(com.yahoo.container.jdisc.ThreadedHttpRequestHandler$Context)",
       "public java.util.concurrent.Executor getExecutor()",
       "public com.yahoo.jdisc.Metric getMetric()"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.container.jdisc.ThreadedHttpRequestHandler$LazyContentChannel": {
-    "superClass": "java.lang.Object",
-    "interfaces": [
+  "com.yahoo.container.jdisc.ThreadedHttpRequestHandler$LazyContentChannel" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [
       "com.yahoo.jdisc.handler.ContentChannel"
     ],
-    "attributes": [
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>(com.yahoo.container.jdisc.HttpRequest, com.yahoo.jdisc.handler.ResponseHandler, com.yahoo.jdisc.Metric, java.util.logging.Logger)",
       "public void setHttpResponse(com.yahoo.container.jdisc.HttpResponse)",
       "public void write(java.nio.ByteBuffer, com.yahoo.jdisc.handler.CompletionHandler)",
       "public void close(com.yahoo.jdisc.handler.CompletionHandler)"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.container.jdisc.ThreadedHttpRequestHandler": {
-    "superClass": "com.yahoo.container.jdisc.ThreadedRequestHandler",
-    "interfaces": [
+  "com.yahoo.container.jdisc.ThreadedHttpRequestHandler" : {
+    "superClass" : "com.yahoo.container.jdisc.ThreadedRequestHandler",
+    "interfaces" : [
       "com.yahoo.container.jdisc.HttpRequestHandler"
     ],
-    "attributes": [
+    "attributes" : [
       "public",
       "abstract"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>(java.util.concurrent.Executor)",
       "public void <init>(java.util.concurrent.Executor, com.yahoo.jdisc.Metric)",
       "public void <init>(com.yahoo.container.jdisc.ThreadedHttpRequestHandler$Context)",
@@ -910,19 +910,19 @@
       "protected com.yahoo.jdisc.http.HttpRequest asHttpRequest(com.yahoo.jdisc.Request)",
       "public static com.yahoo.container.jdisc.ThreadedHttpRequestHandler$Context testContext()"
     ],
-    "fields": [
+    "fields" : [
       "public static final java.lang.String CONTENT_TYPE",
       "protected final java.util.logging.Logger log"
     ]
   },
-  "com.yahoo.container.jdisc.ThreadedRequestHandler": {
-    "superClass": "com.yahoo.jdisc.handler.AbstractRequestHandler",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.container.jdisc.ThreadedRequestHandler" : {
+    "superClass" : "com.yahoo.jdisc.handler.AbstractRequestHandler",
+    "interfaces" : [ ],
+    "attributes" : [
       "public",
       "abstract"
     ],
-    "methods": [
+    "methods" : [
       "protected void <init>(java.util.concurrent.Executor)",
       "protected void <init>(java.util.concurrent.Executor, com.yahoo.jdisc.Metric)",
       "protected void <init>(java.util.concurrent.Executor, com.yahoo.jdisc.Metric, boolean)",
@@ -933,18 +933,18 @@
       "protected abstract void handleRequest(com.yahoo.jdisc.Request, com.yahoo.jdisc.handler.BufferedContentChannel, com.yahoo.jdisc.handler.ResponseHandler)",
       "protected void writeErrorResponseOnOverload(com.yahoo.jdisc.Request, com.yahoo.jdisc.handler.ResponseHandler)"
     ],
-    "fields": [
+    "fields" : [
       "protected final com.yahoo.jdisc.Metric metric"
     ]
   },
-  "com.yahoo.container.jdisc.VespaHeaders": {
-    "superClass": "java.lang.Object",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.container.jdisc.VespaHeaders" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [ ],
+    "attributes" : [
       "public",
       "final"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>()",
       "public static boolean benchmarkCoverage(boolean, com.yahoo.jdisc.HeaderFields)",
       "public static boolean benchmarkOutput(com.yahoo.container.jdisc.HttpRequest)",
@@ -952,21 +952,21 @@
       "public static int getStatus(boolean, com.yahoo.processing.request.ErrorMessage, java.util.Iterator)",
       "public static int getEagerErrorStatus(com.yahoo.processing.request.ErrorMessage, java.util.Iterator)"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.container.protect.Error": {
-    "superClass": "java.lang.Enum",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.container.protect.Error" : {
+    "superClass" : "java.lang.Enum",
+    "interfaces" : [ ],
+    "attributes" : [
       "public",
       "final",
       "enum"
     ],
-    "methods": [
+    "methods" : [
       "public static com.yahoo.container.protect.Error[] values()",
       "public static com.yahoo.container.protect.Error valueOf(java.lang.String)"
     ],
-    "fields": [
+    "fields" : [
       "public static final enum com.yahoo.container.protect.Error NO_BACKENDS_IN_SERVICE",
       "public static final enum com.yahoo.container.protect.Error NULL_QUERY",
       "public static final enum com.yahoo.container.protect.Error REQUEST_TOO_LARGE",
@@ -990,43 +990,43 @@
       "public final int code"
     ]
   },
-  "com.yahoo.container.protect.ProcessTerminator": {
-    "superClass": "java.lang.Object",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.container.protect.ProcessTerminator" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [ ],
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>()",
       "public void logAndDie(java.lang.String)",
       "public void logAndDie(java.lang.String, boolean)"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.jdisc.http.CertificateStore": {
-    "superClass": "java.lang.Object",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.jdisc.http.CertificateStore" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [ ],
+    "attributes" : [
       "public",
       "interface",
       "abstract"
     ],
-    "methods": [
+    "methods" : [
       "public java.lang.String getCertificate(java.lang.String)",
       "public java.lang.String getCertificate(java.lang.String, long)",
       "public abstract java.lang.String getCertificate(java.lang.String, long, long)"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.jdisc.http.ConnectorConfig$Builder": {
-    "superClass": "java.lang.Object",
-    "interfaces": [
+  "com.yahoo.jdisc.http.ConnectorConfig$Builder" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [
       "com.yahoo.config.ConfigInstance$Builder"
     ],
-    "attributes": [
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>()",
       "public void <init>(com.yahoo.jdisc.http.ConnectorConfig)",
       "public com.yahoo.jdisc.http.ConnectorConfig$Builder listenPort(int)",
@@ -1066,7 +1066,7 @@
       "public final void setApplyOnRestart(boolean)",
       "public com.yahoo.jdisc.http.ConnectorConfig build()"
     ],
-    "fields": [
+    "fields" : [
       "public com.yahoo.jdisc.http.ConnectorConfig$Throttling$Builder throttling",
       "public com.yahoo.jdisc.http.ConnectorConfig$Ssl$Builder ssl",
       "public com.yahoo.jdisc.http.ConnectorConfig$TlsClientAuthEnforcer$Builder tlsClientAuthEnforcer",
@@ -1076,15 +1076,15 @@
       "public com.yahoo.jdisc.http.ConnectorConfig$ServerName$Builder serverName"
     ]
   },
-  "com.yahoo.jdisc.http.ConnectorConfig$HealthCheckProxy$Builder": {
-    "superClass": "java.lang.Object",
-    "interfaces": [
+  "com.yahoo.jdisc.http.ConnectorConfig$HealthCheckProxy$Builder" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [
       "com.yahoo.config.ConfigBuilder"
     ],
-    "attributes": [
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>()",
       "public void <init>(com.yahoo.jdisc.http.ConnectorConfig$HealthCheckProxy)",
       "public com.yahoo.jdisc.http.ConnectorConfig$HealthCheckProxy$Builder enable(boolean)",
@@ -1094,16 +1094,16 @@
       "public com.yahoo.jdisc.http.ConnectorConfig$HealthCheckProxy$Builder cacheExpiry(double)",
       "public com.yahoo.jdisc.http.ConnectorConfig$HealthCheckProxy build()"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.jdisc.http.ConnectorConfig$HealthCheckProxy": {
-    "superClass": "com.yahoo.config.InnerNode",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.jdisc.http.ConnectorConfig$HealthCheckProxy" : {
+    "superClass" : "com.yahoo.config.InnerNode",
+    "interfaces" : [ ],
+    "attributes" : [
       "public",
       "final"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>(com.yahoo.jdisc.http.ConnectorConfig$HealthCheckProxy$Builder)",
       "public boolean enable()",
       "public int port()",
@@ -1111,94 +1111,94 @@
       "public double handlerTimeout()",
       "public double cacheExpiry()"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.jdisc.http.ConnectorConfig$Http2$Builder": {
-    "superClass": "java.lang.Object",
-    "interfaces": [
+  "com.yahoo.jdisc.http.ConnectorConfig$Http2$Builder" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [
       "com.yahoo.config.ConfigBuilder"
     ],
-    "attributes": [
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>()",
       "public void <init>(com.yahoo.jdisc.http.ConnectorConfig$Http2)",
       "public com.yahoo.jdisc.http.ConnectorConfig$Http2$Builder streamIdleTimeout(double)",
       "public com.yahoo.jdisc.http.ConnectorConfig$Http2$Builder maxConcurrentStreams(int)",
       "public com.yahoo.jdisc.http.ConnectorConfig$Http2 build()"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.jdisc.http.ConnectorConfig$Http2": {
-    "superClass": "com.yahoo.config.InnerNode",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.jdisc.http.ConnectorConfig$Http2" : {
+    "superClass" : "com.yahoo.config.InnerNode",
+    "interfaces" : [ ],
+    "attributes" : [
       "public",
       "final"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>(com.yahoo.jdisc.http.ConnectorConfig$Http2$Builder)",
       "public double streamIdleTimeout()",
       "public int maxConcurrentStreams()"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.jdisc.http.ConnectorConfig$Producer": {
-    "superClass": "java.lang.Object",
-    "interfaces": [
+  "com.yahoo.jdisc.http.ConnectorConfig$Producer" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [
       "com.yahoo.config.ConfigInstance$Producer"
     ],
-    "attributes": [
+    "attributes" : [
       "public",
       "interface",
       "abstract"
     ],
-    "methods": [
+    "methods" : [
       "public abstract void getConfig(com.yahoo.jdisc.http.ConnectorConfig$Builder)"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.jdisc.http.ConnectorConfig$ProxyProtocol$Builder": {
-    "superClass": "java.lang.Object",
-    "interfaces": [
+  "com.yahoo.jdisc.http.ConnectorConfig$ProxyProtocol$Builder" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [
       "com.yahoo.config.ConfigBuilder"
     ],
-    "attributes": [
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>()",
       "public void <init>(com.yahoo.jdisc.http.ConnectorConfig$ProxyProtocol)",
       "public com.yahoo.jdisc.http.ConnectorConfig$ProxyProtocol$Builder enabled(boolean)",
       "public com.yahoo.jdisc.http.ConnectorConfig$ProxyProtocol$Builder mixedMode(boolean)",
       "public com.yahoo.jdisc.http.ConnectorConfig$ProxyProtocol build()"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.jdisc.http.ConnectorConfig$ProxyProtocol": {
-    "superClass": "com.yahoo.config.InnerNode",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.jdisc.http.ConnectorConfig$ProxyProtocol" : {
+    "superClass" : "com.yahoo.config.InnerNode",
+    "interfaces" : [ ],
+    "attributes" : [
       "public",
       "final"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>(com.yahoo.jdisc.http.ConnectorConfig$ProxyProtocol$Builder)",
       "public boolean enabled()",
       "public boolean mixedMode()"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.jdisc.http.ConnectorConfig$ServerName$Builder": {
-    "superClass": "java.lang.Object",
-    "interfaces": [
+  "com.yahoo.jdisc.http.ConnectorConfig$ServerName$Builder" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [
       "com.yahoo.config.ConfigBuilder"
     ],
-    "attributes": [
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>()",
       "public void <init>(com.yahoo.jdisc.http.ConnectorConfig$ServerName)",
       "public com.yahoo.jdisc.http.ConnectorConfig$ServerName$Builder fallback(java.lang.String)",
@@ -1206,34 +1206,34 @@
       "public com.yahoo.jdisc.http.ConnectorConfig$ServerName$Builder allowed(java.util.Collection)",
       "public com.yahoo.jdisc.http.ConnectorConfig$ServerName build()"
     ],
-    "fields": [
+    "fields" : [
       "public java.util.List allowed"
     ]
   },
-  "com.yahoo.jdisc.http.ConnectorConfig$ServerName": {
-    "superClass": "com.yahoo.config.InnerNode",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.jdisc.http.ConnectorConfig$ServerName" : {
+    "superClass" : "com.yahoo.config.InnerNode",
+    "interfaces" : [ ],
+    "attributes" : [
       "public",
       "final"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>(com.yahoo.jdisc.http.ConnectorConfig$ServerName$Builder)",
       "public java.lang.String fallback()",
       "public java.util.List allowed()",
       "public java.lang.String allowed(int)"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.jdisc.http.ConnectorConfig$Ssl$Builder": {
-    "superClass": "java.lang.Object",
-    "interfaces": [
+  "com.yahoo.jdisc.http.ConnectorConfig$Ssl$Builder" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [
       "com.yahoo.config.ConfigBuilder"
     ],
-    "attributes": [
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>()",
       "public void <init>(com.yahoo.jdisc.http.ConnectorConfig$Ssl)",
       "public com.yahoo.jdisc.http.ConnectorConfig$Ssl$Builder enabled(boolean)",
@@ -1250,54 +1250,54 @@
       "public com.yahoo.jdisc.http.ConnectorConfig$Ssl$Builder enabledProtocols(java.util.Collection)",
       "public com.yahoo.jdisc.http.ConnectorConfig$Ssl build()"
     ],
-    "fields": [
+    "fields" : [
       "public java.util.List enabledCipherSuites",
       "public java.util.List enabledProtocols"
     ]
   },
-  "com.yahoo.jdisc.http.ConnectorConfig$Ssl$ClientAuth$Enum": {
-    "superClass": "java.lang.Enum",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.jdisc.http.ConnectorConfig$Ssl$ClientAuth$Enum" : {
+    "superClass" : "java.lang.Enum",
+    "interfaces" : [ ],
+    "attributes" : [
       "public",
       "final",
       "enum"
     ],
-    "methods": [
+    "methods" : [
       "public static com.yahoo.jdisc.http.ConnectorConfig$Ssl$ClientAuth$Enum[] values()",
       "public static com.yahoo.jdisc.http.ConnectorConfig$Ssl$ClientAuth$Enum valueOf(java.lang.String)"
     ],
-    "fields": [
+    "fields" : [
       "public static final enum com.yahoo.jdisc.http.ConnectorConfig$Ssl$ClientAuth$Enum DISABLED",
       "public static final enum com.yahoo.jdisc.http.ConnectorConfig$Ssl$ClientAuth$Enum WANT_AUTH",
       "public static final enum com.yahoo.jdisc.http.ConnectorConfig$Ssl$ClientAuth$Enum NEED_AUTH"
     ]
   },
-  "com.yahoo.jdisc.http.ConnectorConfig$Ssl$ClientAuth": {
-    "superClass": "com.yahoo.config.EnumNode",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.jdisc.http.ConnectorConfig$Ssl$ClientAuth" : {
+    "superClass" : "com.yahoo.config.EnumNode",
+    "interfaces" : [ ],
+    "attributes" : [
       "public",
       "final"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>()",
       "public void <init>(com.yahoo.jdisc.http.ConnectorConfig$Ssl$ClientAuth$Enum)"
     ],
-    "fields": [
+    "fields" : [
       "public static final com.yahoo.jdisc.http.ConnectorConfig$Ssl$ClientAuth$Enum DISABLED",
       "public static final com.yahoo.jdisc.http.ConnectorConfig$Ssl$ClientAuth$Enum WANT_AUTH",
       "public static final com.yahoo.jdisc.http.ConnectorConfig$Ssl$ClientAuth$Enum NEED_AUTH"
     ]
   },
-  "com.yahoo.jdisc.http.ConnectorConfig$Ssl": {
-    "superClass": "com.yahoo.config.InnerNode",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.jdisc.http.ConnectorConfig$Ssl" : {
+    "superClass" : "com.yahoo.config.InnerNode",
+    "interfaces" : [ ],
+    "attributes" : [
       "public",
       "final"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>(com.yahoo.jdisc.http.ConnectorConfig$Ssl$Builder)",
       "public boolean enabled()",
       "public java.lang.String privateKeyFile()",
@@ -1312,17 +1312,17 @@
       "public java.util.List enabledProtocols()",
       "public java.lang.String enabledProtocols(int)"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.jdisc.http.ConnectorConfig$Throttling$Builder": {
-    "superClass": "java.lang.Object",
-    "interfaces": [
+  "com.yahoo.jdisc.http.ConnectorConfig$Throttling$Builder" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [
       "com.yahoo.config.ConfigBuilder"
     ],
-    "attributes": [
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>()",
       "public void <init>(com.yahoo.jdisc.http.ConnectorConfig$Throttling)",
       "public com.yahoo.jdisc.http.ConnectorConfig$Throttling$Builder enabled(boolean)",
@@ -1332,16 +1332,16 @@
       "public com.yahoo.jdisc.http.ConnectorConfig$Throttling$Builder idleTimeout(double)",
       "public com.yahoo.jdisc.http.ConnectorConfig$Throttling build()"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.jdisc.http.ConnectorConfig$Throttling": {
-    "superClass": "com.yahoo.config.InnerNode",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.jdisc.http.ConnectorConfig$Throttling" : {
+    "superClass" : "com.yahoo.config.InnerNode",
+    "interfaces" : [ ],
+    "attributes" : [
       "public",
       "final"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>(com.yahoo.jdisc.http.ConnectorConfig$Throttling$Builder)",
       "public boolean enabled()",
       "public int maxConnections()",
@@ -1349,17 +1349,17 @@
       "public int maxAcceptRate()",
       "public double idleTimeout()"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.jdisc.http.ConnectorConfig$TlsClientAuthEnforcer$Builder": {
-    "superClass": "java.lang.Object",
-    "interfaces": [
+  "com.yahoo.jdisc.http.ConnectorConfig$TlsClientAuthEnforcer$Builder" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [
       "com.yahoo.config.ConfigBuilder"
     ],
-    "attributes": [
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>()",
       "public void <init>(com.yahoo.jdisc.http.ConnectorConfig$TlsClientAuthEnforcer)",
       "public com.yahoo.jdisc.http.ConnectorConfig$TlsClientAuthEnforcer$Builder enable(boolean)",
@@ -1367,33 +1367,33 @@
       "public com.yahoo.jdisc.http.ConnectorConfig$TlsClientAuthEnforcer$Builder pathWhitelist(java.util.Collection)",
       "public com.yahoo.jdisc.http.ConnectorConfig$TlsClientAuthEnforcer build()"
     ],
-    "fields": [
+    "fields" : [
       "public java.util.List pathWhitelist"
     ]
   },
-  "com.yahoo.jdisc.http.ConnectorConfig$TlsClientAuthEnforcer": {
-    "superClass": "com.yahoo.config.InnerNode",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.jdisc.http.ConnectorConfig$TlsClientAuthEnforcer" : {
+    "superClass" : "com.yahoo.config.InnerNode",
+    "interfaces" : [ ],
+    "attributes" : [
       "public",
       "final"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>(com.yahoo.jdisc.http.ConnectorConfig$TlsClientAuthEnforcer$Builder)",
       "public boolean enable()",
       "public java.util.List pathWhitelist()",
       "public java.lang.String pathWhitelist(int)"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.jdisc.http.ConnectorConfig": {
-    "superClass": "com.yahoo.config.ConfigInstance",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.jdisc.http.ConnectorConfig" : {
+    "superClass" : "com.yahoo.config.ConfigInstance",
+    "interfaces" : [ ],
+    "attributes" : [
       "public",
       "final"
     ],
-    "methods": [
+    "methods" : [
       "public static java.lang.String getDefMd5()",
       "public static java.lang.String getDefName()",
       "public static java.lang.String getDefNamespace()",
@@ -1421,38 +1421,38 @@
       "public com.yahoo.jdisc.http.ConnectorConfig$Http2 http2()",
       "public com.yahoo.jdisc.http.ConnectorConfig$ServerName serverName()"
     ],
-    "fields": [
+    "fields" : [
       "public static final java.lang.String CONFIG_DEF_MD5",
       "public static final java.lang.String CONFIG_DEF_NAME",
       "public static final java.lang.String CONFIG_DEF_NAMESPACE",
       "public static final java.lang.String[] CONFIG_DEF_SCHEMA"
     ]
   },
-  "com.yahoo.jdisc.http.Cookie$SameSite": {
-    "superClass": "java.lang.Enum",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.jdisc.http.Cookie$SameSite" : {
+    "superClass" : "java.lang.Enum",
+    "interfaces" : [ ],
+    "attributes" : [
       "public",
       "final",
       "enum"
     ],
-    "methods": [
+    "methods" : [
       "public static com.yahoo.jdisc.http.Cookie$SameSite[] values()",
       "public static com.yahoo.jdisc.http.Cookie$SameSite valueOf(java.lang.String)"
     ],
-    "fields": [
+    "fields" : [
       "public static final enum com.yahoo.jdisc.http.Cookie$SameSite NONE",
       "public static final enum com.yahoo.jdisc.http.Cookie$SameSite STRICT",
       "public static final enum com.yahoo.jdisc.http.Cookie$SameSite LAX"
     ]
   },
-  "com.yahoo.jdisc.http.Cookie": {
-    "superClass": "java.lang.Object",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.jdisc.http.Cookie" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [ ],
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>()",
       "public void <init>(com.yahoo.jdisc.http.Cookie)",
       "public void <init>(java.lang.String, java.lang.String)",
@@ -1480,29 +1480,29 @@
       "public static java.util.List toSetCookieHeaders(java.lang.Iterable)",
       "public static com.yahoo.jdisc.http.Cookie fromSetCookieHeader(java.lang.String)"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.jdisc.http.CookieHelper": {
-    "superClass": "java.lang.Object",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.jdisc.http.CookieHelper" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [ ],
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public static java.util.List decodeSetCookieHeader(com.yahoo.jdisc.HeaderFields)",
       "public static void encodeSetCookieHeader(com.yahoo.jdisc.HeaderFields, java.util.List)"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.jdisc.http.HttpHeaders$Names": {
-    "superClass": "java.lang.Object",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.jdisc.http.HttpHeaders$Names" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [ ],
+    "attributes" : [
       "public",
       "final"
     ],
-    "methods": [],
-    "fields": [
+    "methods" : [ ],
+    "fields" : [
       "public static final java.lang.String ACCEPT",
       "public static final java.lang.String ACCEPT_CHARSET",
       "public static final java.lang.String ACCEPT_ENCODING",
@@ -1572,15 +1572,15 @@
       "public static final java.lang.String X_YAHOO_SERVING_HOST"
     ]
   },
-  "com.yahoo.jdisc.http.HttpHeaders$Values": {
-    "superClass": "java.lang.Object",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.jdisc.http.HttpHeaders$Values" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [ ],
+    "attributes" : [
       "public",
       "final"
     ],
-    "methods": [],
-    "fields": [
+    "methods" : [ ],
+    "fields" : [
       "public static final java.lang.String APPLICATION_X_WWW_FORM_URLENCODED",
       "public static final java.lang.String BASE64",
       "public static final java.lang.String BINARY",
@@ -1613,30 +1613,30 @@
       "public static final java.lang.String WEBSOCKET"
     ]
   },
-  "com.yahoo.jdisc.http.HttpHeaders": {
-    "superClass": "java.lang.Object",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.jdisc.http.HttpHeaders" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [ ],
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>()"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.jdisc.http.HttpRequest$Method": {
-    "superClass": "java.lang.Enum",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.jdisc.http.HttpRequest$Method" : {
+    "superClass" : "java.lang.Enum",
+    "interfaces" : [ ],
+    "attributes" : [
       "public",
       "final",
       "enum"
     ],
-    "methods": [
+    "methods" : [
       "public static com.yahoo.jdisc.http.HttpRequest$Method[] values()",
       "public static com.yahoo.jdisc.http.HttpRequest$Method valueOf(java.lang.String)"
     ],
-    "fields": [
+    "fields" : [
       "public static final enum com.yahoo.jdisc.http.HttpRequest$Method OPTIONS",
       "public static final enum com.yahoo.jdisc.http.HttpRequest$Method GET",
       "public static final enum com.yahoo.jdisc.http.HttpRequest$Method HEAD",
@@ -1648,33 +1648,33 @@
       "public static final enum com.yahoo.jdisc.http.HttpRequest$Method CONNECT"
     ]
   },
-  "com.yahoo.jdisc.http.HttpRequest$Version": {
-    "superClass": "java.lang.Enum",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.jdisc.http.HttpRequest$Version" : {
+    "superClass" : "java.lang.Enum",
+    "interfaces" : [ ],
+    "attributes" : [
       "public",
       "final",
       "enum"
     ],
-    "methods": [
+    "methods" : [
       "public static com.yahoo.jdisc.http.HttpRequest$Version[] values()",
       "public static com.yahoo.jdisc.http.HttpRequest$Version valueOf(java.lang.String)",
       "public java.lang.String toString()",
       "public static com.yahoo.jdisc.http.HttpRequest$Version fromString(java.lang.String)"
     ],
-    "fields": [
+    "fields" : [
       "public static final enum com.yahoo.jdisc.http.HttpRequest$Version HTTP_1_0",
       "public static final enum com.yahoo.jdisc.http.HttpRequest$Version HTTP_1_1",
       "public static final enum com.yahoo.jdisc.http.HttpRequest$Version HTTP_2_0"
     ]
   },
-  "com.yahoo.jdisc.http.HttpRequest": {
-    "superClass": "com.yahoo.jdisc.Request",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.jdisc.http.HttpRequest" : {
+    "superClass" : "com.yahoo.jdisc.Request",
+    "interfaces" : [ ],
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "protected void <init>(com.yahoo.jdisc.service.CurrentContainer, java.net.URI, com.yahoo.jdisc.http.HttpRequest$Method, com.yahoo.jdisc.http.HttpRequest$Version, java.net.SocketAddress, java.lang.Long)",
       "public com.yahoo.jdisc.http.HttpRequest$Method getMethod()",
       "public void setMethod(com.yahoo.jdisc.http.HttpRequest$Method)",
@@ -1710,31 +1710,31 @@
       "public static com.yahoo.jdisc.http.HttpRequest newClientRequest(com.yahoo.jdisc.Request, java.net.URI, com.yahoo.jdisc.http.HttpRequest$Method)",
       "public static com.yahoo.jdisc.http.HttpRequest newClientRequest(com.yahoo.jdisc.Request, java.net.URI, com.yahoo.jdisc.http.HttpRequest$Method, com.yahoo.jdisc.http.HttpRequest$Version)"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.jdisc.http.HttpResponse$Status": {
-    "superClass": "java.lang.Object",
-    "interfaces": [
+  "com.yahoo.jdisc.http.HttpResponse$Status" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [
       "com.yahoo.jdisc.Response$Status"
     ],
-    "attributes": [
+    "attributes" : [
       "public",
       "interface",
       "abstract"
     ],
-    "methods": [],
-    "fields": [
+    "methods" : [ ],
+    "fields" : [
       "public static final int REQUEST_ENTITY_TOO_LARGE",
       "public static final int REQUEST_RANGE_NOT_SATISFIABLE"
     ]
   },
-  "com.yahoo.jdisc.http.HttpResponse": {
-    "superClass": "com.yahoo.jdisc.Response",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.jdisc.http.HttpResponse" : {
+    "superClass" : "com.yahoo.jdisc.Response",
+    "interfaces" : [ ],
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "protected void <init>(com.yahoo.jdisc.Request, int, java.lang.String, java.lang.Throwable)",
       "public boolean isChunkedEncodingEnabled()",
       "public void setChunkedEncodingEnabled(boolean)",
@@ -1750,17 +1750,17 @@
       "public static com.yahoo.jdisc.http.HttpResponse newError(com.yahoo.jdisc.Request, int, java.lang.Throwable)",
       "public static com.yahoo.jdisc.http.HttpResponse newInternalServerError(com.yahoo.jdisc.Request, java.lang.Throwable)"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.jdisc.http.ServerConfig$AccessLog$Builder": {
-    "superClass": "java.lang.Object",
-    "interfaces": [
+  "com.yahoo.jdisc.http.ServerConfig$AccessLog$Builder" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [
       "com.yahoo.config.ConfigBuilder"
     ],
-    "attributes": [
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>()",
       "public void <init>(com.yahoo.jdisc.http.ServerConfig$AccessLog)",
       "public com.yahoo.jdisc.http.ServerConfig$AccessLog$Builder remoteAddressHeaders(java.lang.String)",
@@ -1769,36 +1769,36 @@
       "public com.yahoo.jdisc.http.ServerConfig$AccessLog$Builder remotePortHeaders(java.util.Collection)",
       "public com.yahoo.jdisc.http.ServerConfig$AccessLog build()"
     ],
-    "fields": [
+    "fields" : [
       "public java.util.List remoteAddressHeaders",
       "public java.util.List remotePortHeaders"
     ]
   },
-  "com.yahoo.jdisc.http.ServerConfig$AccessLog": {
-    "superClass": "com.yahoo.config.InnerNode",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.jdisc.http.ServerConfig$AccessLog" : {
+    "superClass" : "com.yahoo.config.InnerNode",
+    "interfaces" : [ ],
+    "attributes" : [
       "public",
       "final"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>(com.yahoo.jdisc.http.ServerConfig$AccessLog$Builder)",
       "public java.util.List remoteAddressHeaders()",
       "public java.lang.String remoteAddressHeaders(int)",
       "public java.util.List remotePortHeaders()",
       "public java.lang.String remotePortHeaders(int)"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.jdisc.http.ServerConfig$Builder": {
-    "superClass": "java.lang.Object",
-    "interfaces": [
+  "com.yahoo.jdisc.http.ServerConfig$Builder" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [
       "com.yahoo.config.ConfigInstance$Builder"
     ],
-    "attributes": [
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>()",
       "public void <init>(com.yahoo.jdisc.http.ServerConfig)",
       "public com.yahoo.jdisc.http.ServerConfig$Builder developerMode(boolean)",
@@ -1830,7 +1830,7 @@
       "public final void setApplyOnRestart(boolean)",
       "public com.yahoo.jdisc.http.ServerConfig build()"
     ],
-    "fields": [
+    "fields" : [
       "public java.util.List filter",
       "public java.util.List defaultFilters",
       "public com.yahoo.jdisc.http.ServerConfig$Jmx$Builder jmx",
@@ -1839,137 +1839,137 @@
       "public com.yahoo.jdisc.http.ServerConfig$ConnectionLog$Builder connectionLog"
     ]
   },
-  "com.yahoo.jdisc.http.ServerConfig$ConnectionLog$Builder": {
-    "superClass": "java.lang.Object",
-    "interfaces": [
+  "com.yahoo.jdisc.http.ServerConfig$ConnectionLog$Builder" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [
       "com.yahoo.config.ConfigBuilder"
     ],
-    "attributes": [
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>()",
       "public void <init>(com.yahoo.jdisc.http.ServerConfig$ConnectionLog)",
       "public com.yahoo.jdisc.http.ServerConfig$ConnectionLog$Builder enabled(boolean)",
       "public com.yahoo.jdisc.http.ServerConfig$ConnectionLog build()"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.jdisc.http.ServerConfig$ConnectionLog": {
-    "superClass": "com.yahoo.config.InnerNode",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.jdisc.http.ServerConfig$ConnectionLog" : {
+    "superClass" : "com.yahoo.config.InnerNode",
+    "interfaces" : [ ],
+    "attributes" : [
       "public",
       "final"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>(com.yahoo.jdisc.http.ServerConfig$ConnectionLog$Builder)",
       "public boolean enabled()"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.jdisc.http.ServerConfig$DefaultFilters$Builder": {
-    "superClass": "java.lang.Object",
-    "interfaces": [
+  "com.yahoo.jdisc.http.ServerConfig$DefaultFilters$Builder" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [
       "com.yahoo.config.ConfigBuilder"
     ],
-    "attributes": [
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>()",
       "public void <init>(com.yahoo.jdisc.http.ServerConfig$DefaultFilters)",
       "public com.yahoo.jdisc.http.ServerConfig$DefaultFilters$Builder filterId(java.lang.String)",
       "public com.yahoo.jdisc.http.ServerConfig$DefaultFilters$Builder localPort(int)",
       "public com.yahoo.jdisc.http.ServerConfig$DefaultFilters build()"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.jdisc.http.ServerConfig$DefaultFilters": {
-    "superClass": "com.yahoo.config.InnerNode",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.jdisc.http.ServerConfig$DefaultFilters" : {
+    "superClass" : "com.yahoo.config.InnerNode",
+    "interfaces" : [ ],
+    "attributes" : [
       "public",
       "final"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>(com.yahoo.jdisc.http.ServerConfig$DefaultFilters$Builder)",
       "public java.lang.String filterId()",
       "public int localPort()"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.jdisc.http.ServerConfig$Filter$Builder": {
-    "superClass": "java.lang.Object",
-    "interfaces": [
+  "com.yahoo.jdisc.http.ServerConfig$Filter$Builder" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [
       "com.yahoo.config.ConfigBuilder"
     ],
-    "attributes": [
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>()",
       "public void <init>(com.yahoo.jdisc.http.ServerConfig$Filter)",
       "public com.yahoo.jdisc.http.ServerConfig$Filter$Builder id(java.lang.String)",
       "public com.yahoo.jdisc.http.ServerConfig$Filter$Builder binding(java.lang.String)",
       "public com.yahoo.jdisc.http.ServerConfig$Filter build()"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.jdisc.http.ServerConfig$Filter": {
-    "superClass": "com.yahoo.config.InnerNode",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.jdisc.http.ServerConfig$Filter" : {
+    "superClass" : "com.yahoo.config.InnerNode",
+    "interfaces" : [ ],
+    "attributes" : [
       "public",
       "final"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>(com.yahoo.jdisc.http.ServerConfig$Filter$Builder)",
       "public java.lang.String id()",
       "public java.lang.String binding()"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.jdisc.http.ServerConfig$Jmx$Builder": {
-    "superClass": "java.lang.Object",
-    "interfaces": [
+  "com.yahoo.jdisc.http.ServerConfig$Jmx$Builder" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [
       "com.yahoo.config.ConfigBuilder"
     ],
-    "attributes": [
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>()",
       "public void <init>(com.yahoo.jdisc.http.ServerConfig$Jmx)",
       "public com.yahoo.jdisc.http.ServerConfig$Jmx$Builder enabled(boolean)",
       "public com.yahoo.jdisc.http.ServerConfig$Jmx$Builder listenPort(int)",
       "public com.yahoo.jdisc.http.ServerConfig$Jmx build()"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.jdisc.http.ServerConfig$Jmx": {
-    "superClass": "com.yahoo.config.InnerNode",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.jdisc.http.ServerConfig$Jmx" : {
+    "superClass" : "com.yahoo.config.InnerNode",
+    "interfaces" : [ ],
+    "attributes" : [
       "public",
       "final"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>(com.yahoo.jdisc.http.ServerConfig$Jmx$Builder)",
       "public boolean enabled()",
       "public int listenPort()"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.jdisc.http.ServerConfig$Metric$Builder": {
-    "superClass": "java.lang.Object",
-    "interfaces": [
+  "com.yahoo.jdisc.http.ServerConfig$Metric$Builder" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [
       "com.yahoo.config.ConfigBuilder"
     ],
-    "attributes": [
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>()",
       "public void <init>(com.yahoo.jdisc.http.ServerConfig$Metric)",
       "public com.yahoo.jdisc.http.ServerConfig$Metric$Builder monitoringHandlerPaths(java.lang.String)",
@@ -1980,20 +1980,20 @@
       "public com.yahoo.jdisc.http.ServerConfig$Metric$Builder ignoredUserAgents(java.util.Collection)",
       "public com.yahoo.jdisc.http.ServerConfig$Metric build()"
     ],
-    "fields": [
+    "fields" : [
       "public java.util.List monitoringHandlerPaths",
       "public java.util.List searchHandlerPaths",
       "public java.util.List ignoredUserAgents"
     ]
   },
-  "com.yahoo.jdisc.http.ServerConfig$Metric": {
-    "superClass": "com.yahoo.config.InnerNode",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.jdisc.http.ServerConfig$Metric" : {
+    "superClass" : "com.yahoo.config.InnerNode",
+    "interfaces" : [ ],
+    "attributes" : [
       "public",
       "final"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>(com.yahoo.jdisc.http.ServerConfig$Metric$Builder)",
       "public java.util.List monitoringHandlerPaths()",
       "public java.lang.String monitoringHandlerPaths(int)",
@@ -2002,31 +2002,31 @@
       "public java.util.List ignoredUserAgents()",
       "public java.lang.String ignoredUserAgents(int)"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.jdisc.http.ServerConfig$Producer": {
-    "superClass": "java.lang.Object",
-    "interfaces": [
+  "com.yahoo.jdisc.http.ServerConfig$Producer" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [
       "com.yahoo.config.ConfigInstance$Producer"
     ],
-    "attributes": [
+    "attributes" : [
       "public",
       "interface",
       "abstract"
     ],
-    "methods": [
+    "methods" : [
       "public abstract void getConfig(com.yahoo.jdisc.http.ServerConfig$Builder)"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.jdisc.http.ServerConfig": {
-    "superClass": "com.yahoo.config.ConfigInstance",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.jdisc.http.ServerConfig" : {
+    "superClass" : "com.yahoo.config.ConfigInstance",
+    "interfaces" : [ ],
+    "attributes" : [
       "public",
       "final"
     ],
-    "methods": [
+    "methods" : [
       "public static java.lang.String getDefMd5()",
       "public static java.lang.String getDefName()",
       "public static java.lang.String getDefNamespace()",
@@ -2047,40 +2047,40 @@
       "public com.yahoo.jdisc.http.ServerConfig$AccessLog accessLog()",
       "public com.yahoo.jdisc.http.ServerConfig$ConnectionLog connectionLog()"
     ],
-    "fields": [
+    "fields" : [
       "public static final java.lang.String CONFIG_DEF_MD5",
       "public static final java.lang.String CONFIG_DEF_NAME",
       "public static final java.lang.String CONFIG_DEF_NAMESPACE",
       "public static final java.lang.String[] CONFIG_DEF_SCHEMA"
     ]
   },
-  "com.yahoo.jdisc.http.SslProvider$ConnectorSsl$ClientAuth": {
-    "superClass": "java.lang.Enum",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.jdisc.http.SslProvider$ConnectorSsl$ClientAuth" : {
+    "superClass" : "java.lang.Enum",
+    "interfaces" : [ ],
+    "attributes" : [
       "public",
       "final",
       "enum"
     ],
-    "methods": [
+    "methods" : [
       "public static com.yahoo.jdisc.http.SslProvider$ConnectorSsl$ClientAuth[] values()",
       "public static com.yahoo.jdisc.http.SslProvider$ConnectorSsl$ClientAuth valueOf(java.lang.String)"
     ],
-    "fields": [
+    "fields" : [
       "public static final enum com.yahoo.jdisc.http.SslProvider$ConnectorSsl$ClientAuth DISABLED",
       "public static final enum com.yahoo.jdisc.http.SslProvider$ConnectorSsl$ClientAuth WANT",
       "public static final enum com.yahoo.jdisc.http.SslProvider$ConnectorSsl$ClientAuth NEED"
     ]
   },
-  "com.yahoo.jdisc.http.SslProvider$ConnectorSsl": {
-    "superClass": "java.lang.Object",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.jdisc.http.SslProvider$ConnectorSsl" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [ ],
+    "attributes" : [
       "public",
       "interface",
       "abstract"
     ],
-    "methods": [
+    "methods" : [
       "public abstract com.yahoo.jdisc.http.SslProvider$ConnectorSsl setSslContext(javax.net.ssl.SSLContext)",
       "public abstract com.yahoo.jdisc.http.SslProvider$ConnectorSsl setClientAuth(com.yahoo.jdisc.http.SslProvider$ConnectorSsl$ClientAuth)",
       "public abstract com.yahoo.jdisc.http.SslProvider$ConnectorSsl setEnabledCipherSuites(java.util.List)",
@@ -2090,44 +2090,44 @@
       "public abstract com.yahoo.jdisc.http.SslProvider$ConnectorSsl setTruststore(java.security.KeyStore, char[])",
       "public abstract com.yahoo.jdisc.http.SslProvider$ConnectorSsl setTruststore(java.security.KeyStore)"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.jdisc.http.SslProvider": {
-    "superClass": "java.lang.Object",
-    "interfaces": [
+  "com.yahoo.jdisc.http.SslProvider" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [
       "java.lang.AutoCloseable"
     ],
-    "attributes": [
+    "attributes" : [
       "public",
       "interface",
       "abstract"
     ],
-    "methods": [
+    "methods" : [
       "public abstract void configureSsl(com.yahoo.jdisc.http.SslProvider$ConnectorSsl, java.lang.String, int)",
       "public void close()"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.jdisc.http.filter.DiscFilterRequest$ThreadLocalSimpleDateFormat": {
-    "superClass": "java.lang.ThreadLocal",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.jdisc.http.filter.DiscFilterRequest$ThreadLocalSimpleDateFormat" : {
+    "superClass" : "java.lang.ThreadLocal",
+    "interfaces" : [ ],
+    "attributes" : [
       "public",
       "final"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>(java.lang.String, java.util.Locale)",
       "public java.util.Date parse(java.lang.String)"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.jdisc.http.filter.DiscFilterRequest": {
-    "superClass": "java.lang.Object",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.jdisc.http.filter.DiscFilterRequest" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [ ],
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>(com.yahoo.jdisc.http.HttpRequest)",
       "public java.lang.String getMethod()",
       "public com.yahoo.jdisc.http.HttpRequest$Version getVersion()",
@@ -2192,7 +2192,7 @@
       "public com.yahoo.jdisc.http.filter.JDiscCookieWrapper[] getWrappedCookies()",
       "public static boolean isMultipart(com.yahoo.jdisc.http.filter.DiscFilterRequest)"
     ],
-    "fields": [
+    "fields" : [
       "protected static final java.lang.String HTTPS_PREFIX",
       "protected static final int DEFAULT_HTTP_PORT",
       "protected static final int DEFAULT_HTTPS_PORT",
@@ -2200,13 +2200,13 @@
       "protected static com.yahoo.jdisc.http.filter.DiscFilterRequest$ThreadLocalSimpleDateFormat[] formats"
     ]
   },
-  "com.yahoo.jdisc.http.filter.DiscFilterResponse": {
-    "superClass": "java.lang.Object",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.jdisc.http.filter.DiscFilterResponse" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [ ],
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>(com.yahoo.jdisc.http.HttpResponse)",
       "public java.util.Enumeration getAttributeNames()",
       "public java.lang.Object getAttribute(java.lang.String)",
@@ -2228,32 +2228,32 @@
       "public void sendError(int)",
       "public void setCookie(java.lang.String, java.lang.String)"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.jdisc.http.filter.FilterConfig": {
-    "superClass": "java.lang.Object",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.jdisc.http.filter.FilterConfig" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [ ],
+    "attributes" : [
       "public",
       "interface",
       "abstract"
     ],
-    "methods": [
+    "methods" : [
       "public abstract java.lang.String getFilterName()",
       "public abstract java.lang.String getFilterClass()",
       "public abstract java.lang.String getInitParameter(java.lang.String)",
       "public abstract boolean getBooleanInitParameter(java.lang.String, boolean)",
       "public abstract java.util.Collection getInitParameterNames()"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.jdisc.http.filter.JDiscCookieWrapper": {
-    "superClass": "java.lang.Object",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.jdisc.http.filter.JDiscCookieWrapper" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [ ],
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "protected void <init>(com.yahoo.jdisc.http.Cookie)",
       "public static com.yahoo.jdisc.http.filter.JDiscCookieWrapper wrap(com.yahoo.jdisc.http.Cookie)",
       "public java.lang.String getDomain()",
@@ -2269,151 +2269,151 @@
       "public void setValue(java.lang.String)",
       "public com.yahoo.jdisc.http.Cookie getCookie()"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.jdisc.http.filter.RequestFilter": {
-    "superClass": "java.lang.Object",
-    "interfaces": [
+  "com.yahoo.jdisc.http.filter.RequestFilter" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [
       "com.yahoo.jdisc.SharedResource",
       "com.yahoo.jdisc.http.filter.RequestFilterBase"
     ],
-    "attributes": [
+    "attributes" : [
       "public",
       "interface",
       "abstract"
     ],
-    "methods": [
+    "methods" : [
       "public abstract void filter(com.yahoo.jdisc.http.HttpRequest, com.yahoo.jdisc.handler.ResponseHandler)"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.jdisc.http.filter.RequestFilterBase": {
-    "superClass": "java.lang.Object",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.jdisc.http.filter.RequestFilterBase" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [ ],
+    "attributes" : [
       "public",
       "interface",
       "abstract"
     ],
-    "methods": [],
-    "fields": []
+    "methods" : [ ],
+    "fields" : [ ]
   },
-  "com.yahoo.jdisc.http.filter.RequestView": {
-    "superClass": "java.lang.Object",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.jdisc.http.filter.RequestView" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [ ],
+    "attributes" : [
       "public",
       "interface",
       "abstract"
     ],
-    "methods": [
+    "methods" : [
       "public abstract java.lang.Object getAttribute(java.lang.String)",
       "public abstract java.util.List getHeaders(java.lang.String)",
       "public abstract java.util.Optional getFirstHeader(java.lang.String)",
       "public abstract java.util.Optional getMethod()",
       "public abstract java.net.URI getUri()"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.jdisc.http.filter.ResponseFilter": {
-    "superClass": "java.lang.Object",
-    "interfaces": [
+  "com.yahoo.jdisc.http.filter.ResponseFilter" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [
       "com.yahoo.jdisc.SharedResource",
       "com.yahoo.jdisc.http.filter.ResponseFilterBase"
     ],
-    "attributes": [
+    "attributes" : [
       "public",
       "interface",
       "abstract"
     ],
-    "methods": [
+    "methods" : [
       "public abstract void filter(com.yahoo.jdisc.Response, com.yahoo.jdisc.Request)"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.jdisc.http.filter.ResponseFilterBase": {
-    "superClass": "java.lang.Object",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.jdisc.http.filter.ResponseFilterBase" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [ ],
+    "attributes" : [
       "public",
       "interface",
       "abstract"
     ],
-    "methods": [],
-    "fields": []
+    "methods" : [ ],
+    "fields" : [ ]
   },
-  "com.yahoo.jdisc.http.filter.SecurityRequestFilter": {
-    "superClass": "java.lang.Object",
-    "interfaces": [
+  "com.yahoo.jdisc.http.filter.SecurityRequestFilter" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [
       "com.yahoo.jdisc.http.filter.RequestFilterBase"
     ],
-    "attributes": [
+    "attributes" : [
       "public",
       "interface",
       "abstract"
     ],
-    "methods": [
+    "methods" : [
       "public abstract void filter(com.yahoo.jdisc.http.filter.DiscFilterRequest, com.yahoo.jdisc.handler.ResponseHandler)"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.jdisc.http.filter.SecurityRequestFilterChain": {
-    "superClass": "com.yahoo.jdisc.AbstractResource",
-    "interfaces": [
+  "com.yahoo.jdisc.http.filter.SecurityRequestFilterChain" : {
+    "superClass" : "com.yahoo.jdisc.AbstractResource",
+    "interfaces" : [
       "com.yahoo.jdisc.http.filter.RequestFilter"
     ],
-    "attributes": [
+    "attributes" : [
       "public",
       "final"
     ],
-    "methods": [
+    "methods" : [
       "public void filter(com.yahoo.jdisc.http.HttpRequest, com.yahoo.jdisc.handler.ResponseHandler)",
       "public void filter(com.yahoo.jdisc.http.filter.DiscFilterRequest, com.yahoo.jdisc.handler.ResponseHandler)",
       "public static varargs com.yahoo.jdisc.http.filter.RequestFilter newInstance(com.yahoo.jdisc.http.filter.SecurityRequestFilter[])",
       "public static com.yahoo.jdisc.http.filter.RequestFilter newInstance(java.util.List)",
       "public java.util.List getFilters()"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.jdisc.http.filter.SecurityResponseFilter": {
-    "superClass": "java.lang.Object",
-    "interfaces": [
+  "com.yahoo.jdisc.http.filter.SecurityResponseFilter" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [
       "com.yahoo.jdisc.http.filter.ResponseFilterBase"
     ],
-    "attributes": [
+    "attributes" : [
       "public",
       "interface",
       "abstract"
     ],
-    "methods": [
+    "methods" : [
       "public abstract void filter(com.yahoo.jdisc.http.filter.DiscFilterResponse, com.yahoo.jdisc.http.filter.RequestView)"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.jdisc.http.filter.SecurityResponseFilterChain": {
-    "superClass": "com.yahoo.jdisc.AbstractResource",
-    "interfaces": [
+  "com.yahoo.jdisc.http.filter.SecurityResponseFilterChain" : {
+    "superClass" : "com.yahoo.jdisc.AbstractResource",
+    "interfaces" : [
       "com.yahoo.jdisc.http.filter.ResponseFilter"
     ],
-    "attributes": [
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void filter(com.yahoo.jdisc.Response, com.yahoo.jdisc.Request)",
       "public void filter(com.yahoo.jdisc.http.filter.RequestView, com.yahoo.jdisc.http.filter.DiscFilterResponse)",
       "public static varargs com.yahoo.jdisc.http.filter.ResponseFilter newInstance(com.yahoo.jdisc.http.filter.SecurityResponseFilter[])",
       "public static com.yahoo.jdisc.http.filter.ResponseFilter newInstance(java.util.List)",
       "public java.util.List getFilters()"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.metrics.simple.Bucket": {
-    "superClass": "java.lang.Object",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.metrics.simple.Bucket" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [ ],
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>()",
       "public void <init>(long, long)",
       "public java.util.Set entrySet()",
@@ -2425,43 +2425,43 @@
       "public long getFromMillis()",
       "public long getToMillis()"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.metrics.simple.Counter": {
-    "superClass": "java.lang.Object",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.metrics.simple.Counter" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [ ],
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void add()",
       "public void add(long)",
       "public void add(com.yahoo.metrics.simple.Point)",
       "public void add(long, com.yahoo.metrics.simple.Point)",
       "public com.yahoo.metrics.simple.PointBuilder builder()"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.metrics.simple.Gauge": {
-    "superClass": "java.lang.Object",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.metrics.simple.Gauge" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [ ],
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void sample(double)",
       "public void sample(double, com.yahoo.metrics.simple.Point)",
       "public com.yahoo.metrics.simple.PointBuilder builder()"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.metrics.simple.Identifier": {
-    "superClass": "java.lang.Object",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.metrics.simple.Identifier" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [ ],
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>(java.lang.String, com.yahoo.metrics.simple.Point)",
       "public int hashCode()",
       "public boolean equals(java.lang.Object)",
@@ -2469,56 +2469,56 @@
       "public java.lang.String getName()",
       "public com.yahoo.metrics.simple.Point getLocation()"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.metrics.simple.Measurement": {
-    "superClass": "java.lang.Object",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.metrics.simple.Measurement" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [ ],
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>(java.lang.Number)"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.metrics.simple.MetricManager": {
-    "superClass": "com.yahoo.component.AbstractComponent",
-    "interfaces": [
+  "com.yahoo.metrics.simple.MetricManager" : {
+    "superClass" : "com.yahoo.component.AbstractComponent",
+    "interfaces" : [
       "com.yahoo.container.di.componentgraph.Provider"
     ],
-    "attributes": [
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>(com.yahoo.metrics.ManagerConfig)",
       "public void deconstruct()",
       "public com.yahoo.metrics.simple.MetricReceiver get()",
       "public bridge synthetic java.lang.Object get()"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.metrics.simple.MetricReceiver$MockReceiver": {
-    "superClass": "com.yahoo.metrics.simple.MetricReceiver",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.metrics.simple.MetricReceiver$MockReceiver" : {
+    "superClass" : "com.yahoo.metrics.simple.MetricReceiver",
+    "interfaces" : [ ],
+    "attributes" : [
       "public",
       "final"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>()",
       "public com.yahoo.metrics.simple.Bucket getSnapshot()",
       "public com.yahoo.metrics.simple.Point point(java.lang.String, java.lang.String)"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.metrics.simple.MetricReceiver": {
-    "superClass": "java.lang.Object",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.metrics.simple.MetricReceiver" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [ ],
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>(com.yahoo.concurrent.ThreadLocalDirectory, java.util.concurrent.atomic.AtomicReference)",
       "public void update(com.yahoo.metrics.simple.Sample)",
       "public com.yahoo.metrics.simple.Counter declareCounter(java.lang.String)",
@@ -2529,44 +2529,44 @@
       "public com.yahoo.metrics.simple.PointBuilder pointBuilder()",
       "public com.yahoo.metrics.simple.Bucket getSnapshot()"
     ],
-    "fields": [
+    "fields" : [
       "public static final com.yahoo.metrics.simple.MetricReceiver nullImplementation"
     ]
   },
-  "com.yahoo.metrics.simple.MetricSettings$Builder": {
-    "superClass": "java.lang.Object",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.metrics.simple.MetricSettings$Builder" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [ ],
+    "attributes" : [
       "public",
       "final"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>()",
       "public com.yahoo.metrics.simple.MetricSettings$Builder histogram(boolean)",
       "public com.yahoo.metrics.simple.MetricSettings build()"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.metrics.simple.MetricSettings": {
-    "superClass": "java.lang.Object",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.metrics.simple.MetricSettings" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [ ],
+    "attributes" : [
       "public",
       "final"
     ],
-    "methods": [],
-    "fields": []
+    "methods" : [ ],
+    "fields" : [ ]
   },
-  "com.yahoo.metrics.simple.Point": {
-    "superClass": "java.lang.Object",
-    "interfaces": [
+  "com.yahoo.metrics.simple.Point" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [
       "com.yahoo.jdisc.Metric$Context"
     ],
-    "attributes": [
+    "attributes" : [
       "public",
       "final"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>(java.util.Map)",
       "public static com.yahoo.metrics.simple.Point emptyPoint()",
       "public boolean equals(java.lang.Object)",
@@ -2576,103 +2576,103 @@
       "public java.util.List dimensions()",
       "public int dimensionality()"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.metrics.simple.PointBuilder$Discriminator": {
-    "superClass": "java.lang.Enum",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.metrics.simple.PointBuilder$Discriminator" : {
+    "superClass" : "java.lang.Enum",
+    "interfaces" : [ ],
+    "attributes" : [
       "public",
       "final",
       "enum"
     ],
-    "methods": [
+    "methods" : [
       "public static com.yahoo.metrics.simple.PointBuilder$Discriminator[] values()",
       "public static com.yahoo.metrics.simple.PointBuilder$Discriminator valueOf(java.lang.String)"
     ],
-    "fields": [
+    "fields" : [
       "public static final enum com.yahoo.metrics.simple.PointBuilder$Discriminator LONG",
       "public static final enum com.yahoo.metrics.simple.PointBuilder$Discriminator DOUBLE",
       "public static final enum com.yahoo.metrics.simple.PointBuilder$Discriminator STRING"
     ]
   },
-  "com.yahoo.metrics.simple.PointBuilder": {
-    "superClass": "java.lang.Object",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.metrics.simple.PointBuilder" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [ ],
+    "attributes" : [
       "public",
       "final"
     ],
-    "methods": [
+    "methods" : [
       "public com.yahoo.metrics.simple.PointBuilder set(java.lang.String, long)",
       "public com.yahoo.metrics.simple.PointBuilder set(java.lang.String, double)",
       "public com.yahoo.metrics.simple.PointBuilder set(java.lang.String, java.lang.String)",
       "public com.yahoo.metrics.simple.Point build()",
       "public java.lang.String toString()"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.metrics.simple.Sample": {
-    "superClass": "java.lang.Object",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.metrics.simple.Sample" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [ ],
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>(com.yahoo.metrics.simple.Measurement, com.yahoo.metrics.simple.Identifier, com.yahoo.metrics.simple.UntypedMetric$AssumedType)"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.metrics.simple.UnitTestSetup": {
-    "superClass": "java.lang.Object",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.metrics.simple.UnitTestSetup" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [ ],
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>()",
       "public com.yahoo.metrics.simple.Bucket getUpdatedSnapshot()",
       "public com.yahoo.metrics.simple.MetricReceiver getReceiver()"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.metrics.simple.UntypedMetric$AssumedType": {
-    "superClass": "java.lang.Enum",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.metrics.simple.UntypedMetric$AssumedType" : {
+    "superClass" : "java.lang.Enum",
+    "interfaces" : [ ],
+    "attributes" : [
       "public",
       "final",
       "enum"
     ],
-    "methods": [
+    "methods" : [
       "public static com.yahoo.metrics.simple.UntypedMetric$AssumedType[] values()",
       "public static com.yahoo.metrics.simple.UntypedMetric$AssumedType valueOf(java.lang.String)"
     ],
-    "fields": [
+    "fields" : [
       "public static final enum com.yahoo.metrics.simple.UntypedMetric$AssumedType NONE",
       "public static final enum com.yahoo.metrics.simple.UntypedMetric$AssumedType GAUGE",
       "public static final enum com.yahoo.metrics.simple.UntypedMetric$AssumedType COUNTER"
     ]
   },
-  "com.yahoo.metrics.simple.UntypedMetric$Histogram": {
-    "superClass": "java.lang.Object",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.metrics.simple.UntypedMetric$Histogram" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [ ],
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public double getValueAtPercentile(double)",
       "public void outputPercentileDistribution(java.io.PrintStream, int, java.lang.Double, boolean)"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.metrics.simple.UntypedMetric": {
-    "superClass": "java.lang.Object",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.metrics.simple.UntypedMetric" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [ ],
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public boolean isCounter()",
       "public long getCount()",
       "public double getLast()",
@@ -2682,34 +2682,34 @@
       "public com.yahoo.metrics.simple.UntypedMetric$Histogram getHistogram()",
       "public java.lang.String toString()"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.metrics.simple.Value$Discriminator": {
-    "superClass": "java.lang.Enum",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.metrics.simple.Value$Discriminator" : {
+    "superClass" : "java.lang.Enum",
+    "interfaces" : [ ],
+    "attributes" : [
       "public",
       "final",
       "enum"
     ],
-    "methods": [
+    "methods" : [
       "public static com.yahoo.metrics.simple.Value$Discriminator[] values()",
       "public static com.yahoo.metrics.simple.Value$Discriminator valueOf(java.lang.String)"
     ],
-    "fields": [
+    "fields" : [
       "public static final enum com.yahoo.metrics.simple.Value$Discriminator LONG",
       "public static final enum com.yahoo.metrics.simple.Value$Discriminator DOUBLE",
       "public static final enum com.yahoo.metrics.simple.Value$Discriminator STRING"
     ]
   },
-  "com.yahoo.metrics.simple.Value": {
-    "superClass": "java.lang.Object",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.metrics.simple.Value" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [ ],
+    "attributes" : [
       "public",
       "abstract"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>()",
       "public long longValue()",
       "public double doubleValue()",
@@ -2719,43 +2719,43 @@
       "public static com.yahoo.metrics.simple.Value of(double)",
       "public static com.yahoo.metrics.simple.Value of(java.lang.String)"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.processing.IllegalInputException": {
-    "superClass": "java.lang.IllegalArgumentException",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.processing.IllegalInputException" : {
+    "superClass" : "java.lang.IllegalArgumentException",
+    "interfaces" : [ ],
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>(java.lang.String)",
       "public void <init>(java.lang.Throwable)",
       "public void <init>(java.lang.String, java.lang.Throwable)"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.processing.Processor": {
-    "superClass": "com.yahoo.component.chain.ChainedComponent",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.processing.Processor" : {
+    "superClass" : "com.yahoo.component.chain.ChainedComponent",
+    "interfaces" : [ ],
+    "attributes" : [
       "public",
       "abstract"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>()",
       "public abstract com.yahoo.processing.Response process(com.yahoo.processing.Request, com.yahoo.processing.execution.Execution)"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.processing.Request": {
-    "superClass": "com.yahoo.component.provider.FreezableClass",
-    "interfaces": [
+  "com.yahoo.processing.Request" : {
+    "superClass" : "com.yahoo.component.provider.FreezableClass",
+    "interfaces" : [
       "java.lang.Cloneable"
     ],
-    "attributes": [
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>()",
       "public void <init>(com.yahoo.processing.request.Properties)",
       "public com.yahoo.processing.request.Properties properties()",
@@ -2764,18 +2764,18 @@
       "public bridge synthetic com.yahoo.component.provider.FreezableClass clone()",
       "public bridge synthetic java.lang.Object clone()"
     ],
-    "fields": [
+    "fields" : [
       "public static final com.yahoo.processing.request.CompoundName CHAIN",
       "public static final com.yahoo.processing.request.CompoundName JDISC_REQUEST"
     ]
   },
-  "com.yahoo.processing.Response": {
-    "superClass": "com.yahoo.component.provider.ListenableFreezableClass",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.processing.Response" : {
+    "superClass" : "com.yahoo.component.provider.ListenableFreezableClass",
+    "interfaces" : [ ],
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>(com.yahoo.processing.Request)",
       "public void <init>(com.yahoo.processing.response.DataList)",
       "public void <init>(com.yahoo.processing.Request, com.yahoo.processing.request.ErrorMessage)",
@@ -2783,78 +2783,78 @@
       "public com.yahoo.processing.response.DataList data()",
       "public static java.util.concurrent.CompletableFuture recursiveFuture(com.yahoo.processing.response.DataList)"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.processing.execution.AsyncExecution": {
-    "superClass": "java.lang.Object",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.processing.execution.AsyncExecution" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [ ],
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>(com.yahoo.processing.Processor, com.yahoo.processing.execution.Execution)",
       "public void <init>(com.yahoo.component.chain.Chain, com.yahoo.processing.execution.Execution)",
       "public void <init>(com.yahoo.processing.execution.Execution)",
       "public com.yahoo.processing.response.FutureResponse process(com.yahoo.processing.Request)",
       "public static java.util.List waitForAll(java.util.Collection, long)"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.processing.execution.Execution$Environment": {
-    "superClass": "java.lang.Object",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.processing.execution.Execution$Environment" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [ ],
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public static com.yahoo.processing.execution.Execution$Environment createEmpty()",
       "public com.yahoo.processing.execution.Execution$Environment nested()",
       "public void <init>(com.yahoo.processing.execution.chain.ChainRegistry)",
       "public com.yahoo.processing.execution.chain.ChainRegistry chainRegistry()"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.processing.execution.Execution$Trace$Level": {
-    "superClass": "java.lang.Enum",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.processing.execution.Execution$Trace$Level" : {
+    "superClass" : "java.lang.Enum",
+    "interfaces" : [ ],
+    "attributes" : [
       "public",
       "final",
       "enum"
     ],
-    "methods": [
+    "methods" : [
       "public static com.yahoo.processing.execution.Execution$Trace$Level[] values()",
       "public static com.yahoo.processing.execution.Execution$Trace$Level valueOf(java.lang.String)",
       "public int value()",
       "public boolean includes(int)"
     ],
-    "fields": [
+    "fields" : [
       "public static final enum com.yahoo.processing.execution.Execution$Trace$Level Step",
       "public static final enum com.yahoo.processing.execution.Execution$Trace$Level Timestamp",
       "public static final enum com.yahoo.processing.execution.Execution$Trace$Level Dependencies"
     ]
   },
-  "com.yahoo.processing.execution.Execution$Trace$LogValue": {
-    "superClass": "java.lang.Object",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.processing.execution.Execution$Trace$LogValue" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [ ],
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>(java.lang.String, java.lang.String)",
       "public java.lang.String getKey()",
       "public java.lang.String getValue()",
       "public java.lang.String toString()"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.processing.execution.Execution$Trace": {
-    "superClass": "java.lang.Object",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.processing.execution.Execution$Trace" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [ ],
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public static com.yahoo.processing.execution.Execution$Trace createRoot(int)",
       "public com.yahoo.processing.execution.Execution$Trace createChild()",
       "public int getTraceLevel()",
@@ -2871,15 +2871,15 @@
       "public com.yahoo.yolean.trace.TraceNode traceNode()",
       "public java.lang.String toString()"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.processing.execution.Execution": {
-    "superClass": "java.lang.Object",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.processing.execution.Execution" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [ ],
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>(com.yahoo.processing.Processor, com.yahoo.processing.execution.Execution)",
       "public static com.yahoo.processing.execution.Execution createRoot(com.yahoo.processing.Processor, int, com.yahoo.processing.execution.Execution$Environment)",
       "public static com.yahoo.processing.execution.Execution createRoot(com.yahoo.component.chain.Chain, int, com.yahoo.processing.execution.Execution$Environment)",
@@ -2899,68 +2899,68 @@
       "public com.yahoo.processing.execution.Execution$Trace trace()",
       "public com.yahoo.processing.execution.Execution$Environment environment()"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.processing.execution.ExecutionWithResponse": {
-    "superClass": "com.yahoo.processing.execution.Execution",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.processing.execution.ExecutionWithResponse" : {
+    "superClass" : "com.yahoo.processing.execution.Execution",
+    "interfaces" : [ ],
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>(com.yahoo.component.chain.Chain, com.yahoo.processing.Response, com.yahoo.processing.execution.Execution)",
       "protected com.yahoo.processing.Response defaultResponse(com.yahoo.processing.Request)"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.processing.execution.ResponseReceiver": {
-    "superClass": "java.lang.Object",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.processing.execution.ResponseReceiver" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [ ],
+    "attributes" : [
       "public",
       "interface",
       "abstract"
     ],
-    "methods": [
+    "methods" : [
       "public abstract void setResponse(com.yahoo.processing.Response)"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.processing.execution.RunnableExecution": {
-    "superClass": "java.lang.Object",
-    "interfaces": [
+  "com.yahoo.processing.execution.RunnableExecution" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [
       "java.lang.Runnable"
     ],
-    "attributes": [
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>(com.yahoo.processing.Request, com.yahoo.processing.execution.Execution)",
       "public void run()",
       "public com.yahoo.processing.Response getResponse()",
       "public java.lang.Throwable getException()"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.processing.execution.chain.ChainRegistry": {
-    "superClass": "com.yahoo.component.provider.ComponentRegistry",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.processing.execution.chain.ChainRegistry" : {
+    "superClass" : "com.yahoo.component.provider.ComponentRegistry",
+    "interfaces" : [ ],
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>()"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.processing.handler.AbstractProcessingHandler": {
-    "superClass": "com.yahoo.container.jdisc.LoggingRequestHandler",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.processing.handler.AbstractProcessingHandler" : {
+    "superClass" : "com.yahoo.container.jdisc.LoggingRequestHandler",
+    "interfaces" : [ ],
+    "attributes" : [
       "public",
       "abstract"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>(com.yahoo.processing.execution.chain.ChainRegistry, com.yahoo.component.provider.ComponentRegistry, java.util.concurrent.Executor, com.yahoo.container.logging.AccessLog, com.yahoo.jdisc.Metric)",
       "public void <init>(com.yahoo.processing.execution.chain.ChainRegistry, com.yahoo.component.provider.ComponentRegistry, java.util.concurrent.Executor, com.yahoo.container.logging.AccessLog)",
       "public void <init>(com.yahoo.container.core.ChainsConfig, com.yahoo.component.provider.ComponentRegistry, com.yahoo.component.provider.ComponentRegistry, java.util.concurrent.Executor, com.yahoo.container.logging.AccessLog)",
@@ -2972,31 +2972,31 @@
       "public com.yahoo.component.provider.ComponentRegistry getRenderers()",
       "public com.yahoo.processing.rendering.Renderer getRendererCopy(com.yahoo.component.ComponentSpecification)"
     ],
-    "fields": [
+    "fields" : [
       "public static final java.lang.String DEFAULT_RENDERER_ID"
     ]
   },
-  "com.yahoo.processing.handler.ProcessingHandler": {
-    "superClass": "com.yahoo.processing.handler.AbstractProcessingHandler",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.processing.handler.ProcessingHandler" : {
+    "superClass" : "com.yahoo.processing.handler.AbstractProcessingHandler",
+    "interfaces" : [ ],
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>(com.yahoo.processing.execution.chain.ChainRegistry, com.yahoo.component.provider.ComponentRegistry, java.util.concurrent.Executor, com.yahoo.container.logging.AccessLog, com.yahoo.jdisc.Metric)",
       "public void <init>(com.yahoo.processing.execution.chain.ChainRegistry, com.yahoo.component.provider.ComponentRegistry, java.util.concurrent.Executor, com.yahoo.container.logging.AccessLog)",
       "public void <init>(com.yahoo.container.core.ChainsConfig, com.yahoo.component.provider.ComponentRegistry, com.yahoo.component.provider.ComponentRegistry, java.util.concurrent.Executor, com.yahoo.container.logging.AccessLog)",
       "public void <init>(com.yahoo.container.core.ChainsConfig, com.yahoo.component.provider.ComponentRegistry, com.yahoo.component.provider.ComponentRegistry, java.util.concurrent.Executor, com.yahoo.container.logging.AccessLog, com.yahoo.jdisc.Metric)"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.processing.handler.ProcessingResponse": {
-    "superClass": "com.yahoo.container.jdisc.AsyncHttpResponse",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.processing.handler.ProcessingResponse" : {
+    "superClass" : "com.yahoo.container.jdisc.AsyncHttpResponse",
+    "interfaces" : [ ],
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>(int, com.yahoo.processing.Request, com.yahoo.processing.Response, com.yahoo.processing.rendering.Renderer, java.util.concurrent.Executor, com.yahoo.processing.execution.Execution)",
       "public void render(java.io.OutputStream, com.yahoo.jdisc.handler.ContentChannel, com.yahoo.jdisc.handler.CompletionHandler)",
       "public java.lang.String getContentType()",
@@ -3004,15 +3004,15 @@
       "public void complete()",
       "public java.lang.Iterable getLogValues()"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.processing.handler.ProcessingTestDriver": {
-    "superClass": "com.yahoo.container.jdisc.RequestHandlerTestDriver",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.processing.handler.ProcessingTestDriver" : {
+    "superClass" : "com.yahoo.container.jdisc.RequestHandlerTestDriver",
+    "interfaces" : [ ],
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>(java.util.Collection)",
       "public void <init>(java.lang.String, java.util.Collection)",
       "public varargs void <init>(com.yahoo.component.chain.Chain[])",
@@ -3024,54 +3024,54 @@
       "public void <init>(com.yahoo.component.chain.Chain, com.yahoo.container.logging.RequestLogHandler)",
       "public com.yahoo.processing.handler.ProcessingHandler processingHandler()"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.processing.handler.ResponseHeaders": {
-    "superClass": "com.yahoo.processing.response.AbstractData",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.processing.handler.ResponseHeaders" : {
+    "superClass" : "com.yahoo.processing.response.AbstractData",
+    "interfaces" : [ ],
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>(java.util.Map, com.yahoo.processing.Request)",
       "public java.util.Map headers()"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.processing.handler.ResponseStatus": {
-    "superClass": "com.yahoo.processing.response.AbstractData",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.processing.handler.ResponseStatus" : {
+    "superClass" : "com.yahoo.processing.response.AbstractData",
+    "interfaces" : [ ],
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>(int, com.yahoo.processing.Request)",
       "public int code()",
       "public java.lang.String toString()"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.processing.rendering.AsynchronousRenderer": {
-    "superClass": "com.yahoo.processing.rendering.Renderer",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.processing.rendering.AsynchronousRenderer" : {
+    "superClass" : "com.yahoo.processing.rendering.Renderer",
+    "interfaces" : [ ],
+    "attributes" : [
       "public",
       "abstract"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>()",
       "public abstract void setNetworkWiring(com.yahoo.jdisc.handler.ContentChannel, com.yahoo.jdisc.handler.CompletionHandler)"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.processing.rendering.AsynchronousSectionedRenderer": {
-    "superClass": "com.yahoo.processing.rendering.AsynchronousRenderer",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.processing.rendering.AsynchronousSectionedRenderer" : {
+    "superClass" : "com.yahoo.processing.rendering.AsynchronousRenderer",
+    "interfaces" : [ ],
+    "attributes" : [
       "public",
       "abstract"
     ],
-    "methods": [
+    "methods" : [
       "public abstract void beginResponse(java.io.OutputStream)",
       "public abstract void beginList(com.yahoo.processing.response.DataList)",
       "public abstract void data(com.yahoo.processing.response.Data)",
@@ -3090,15 +3090,15 @@
       "public final void setNetworkWiring(com.yahoo.jdisc.handler.ContentChannel, com.yahoo.jdisc.handler.CompletionHandler)",
       "public void init()"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.processing.rendering.ProcessingRenderer": {
-    "superClass": "com.yahoo.processing.rendering.AsynchronousSectionedRenderer",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.processing.rendering.ProcessingRenderer" : {
+    "superClass" : "com.yahoo.processing.rendering.AsynchronousSectionedRenderer",
+    "interfaces" : [ ],
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>()",
       "public void init()",
       "public final void beginResponse(java.io.OutputStream)",
@@ -3111,18 +3111,18 @@
       "public final java.lang.String getEncoding()",
       "public final java.lang.String getMimeType()"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.processing.rendering.Renderer": {
-    "superClass": "com.yahoo.component.AbstractComponent",
-    "interfaces": [
+  "com.yahoo.processing.rendering.Renderer" : {
+    "superClass" : "com.yahoo.component.AbstractComponent",
+    "interfaces" : [
       "java.lang.Cloneable"
     ],
-    "attributes": [
+    "attributes" : [
       "public",
       "abstract"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>()",
       "public com.yahoo.processing.rendering.Renderer clone()",
       "public void init()",
@@ -3132,30 +3132,30 @@
       "public bridge synthetic com.yahoo.component.AbstractComponent clone()",
       "public bridge synthetic java.lang.Object clone()"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.processing.request.CloneHelper": {
-    "superClass": "java.lang.Object",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.processing.request.CloneHelper" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [ ],
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>()",
       "public final java.lang.Object clone(java.lang.Object)",
       "protected java.lang.Object objectClone(java.lang.Object)",
       "public java.util.Map cloneMap(java.util.Map)"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.processing.request.CompoundName": {
-    "superClass": "java.lang.Object",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.processing.request.CompoundName" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [ ],
+    "attributes" : [
       "public",
       "final"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>(java.lang.String)",
       "public static varargs com.yahoo.processing.request.CompoundName fromComponents(java.lang.String[])",
       "public void <init>(java.util.List)",
@@ -3180,19 +3180,19 @@
       "public java.lang.String getLowerCasedName()",
       "public static com.yahoo.processing.request.CompoundName from(java.lang.String)"
     ],
-    "fields": [
+    "fields" : [
       "public static final com.yahoo.processing.request.CompoundName empty"
     ]
   },
-  "com.yahoo.processing.request.ErrorMessage": {
-    "superClass": "java.lang.Object",
-    "interfaces": [
+  "com.yahoo.processing.request.ErrorMessage" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [
       "java.lang.Cloneable"
     ],
-    "attributes": [
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>(java.lang.String)",
       "public void <init>(int, java.lang.String)",
       "public void <init>(java.lang.String, java.lang.String)",
@@ -3211,17 +3211,17 @@
       "public com.yahoo.processing.request.ErrorMessage clone()",
       "public bridge synthetic java.lang.Object clone()"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.processing.request.Properties": {
-    "superClass": "java.lang.Object",
-    "interfaces": [
+  "com.yahoo.processing.request.Properties" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [
       "java.lang.Cloneable"
     ],
-    "attributes": [
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>()",
       "public com.yahoo.processing.request.Properties chain(com.yahoo.processing.request.Properties)",
       "public com.yahoo.processing.request.Properties chained()",
@@ -3280,15 +3280,15 @@
       "public static java.lang.Object clone(java.lang.Object)",
       "public bridge synthetic java.lang.Object clone()"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.processing.request.properties.PropertyMap": {
-    "superClass": "com.yahoo.processing.request.Properties",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.processing.request.properties.PropertyMap" : {
+    "superClass" : "com.yahoo.processing.request.Properties",
+    "interfaces" : [ ],
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>()",
       "public void set(com.yahoo.processing.request.CompoundName, java.lang.Object, java.util.Map)",
       "protected boolean shouldSet(com.yahoo.processing.request.CompoundName, java.lang.Object)",
@@ -3298,46 +3298,46 @@
       "public bridge synthetic com.yahoo.processing.request.Properties clone()",
       "public bridge synthetic java.lang.Object clone()"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.processing.request.properties.PublicCloneable": {
-    "superClass": "java.lang.Object",
-    "interfaces": [
+  "com.yahoo.processing.request.properties.PublicCloneable" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [
       "java.lang.Cloneable"
     ],
-    "attributes": [
+    "attributes" : [
       "public",
       "interface",
       "abstract"
     ],
-    "methods": [
+    "methods" : [
       "public abstract java.lang.Object clone()"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.processing.response.AbstractData": {
-    "superClass": "com.yahoo.component.provider.ListenableFreezableClass",
-    "interfaces": [
+  "com.yahoo.processing.response.AbstractData" : {
+    "superClass" : "com.yahoo.component.provider.ListenableFreezableClass",
+    "interfaces" : [
       "com.yahoo.processing.response.Data"
     ],
-    "attributes": [
+    "attributes" : [
       "public",
       "abstract"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>(com.yahoo.processing.Request)",
       "public com.yahoo.processing.Request request()"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.processing.response.AbstractDataList$DrainOnGetFuture": {
-    "superClass": "com.yahoo.processing.impl.ProcessingFuture",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.processing.response.AbstractDataList$DrainOnGetFuture" : {
+    "superClass" : "com.yahoo.processing.impl.ProcessingFuture",
+    "interfaces" : [ ],
+    "attributes" : [
       "public",
       "final"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>(com.yahoo.processing.response.DataList)",
       "public boolean cancel(boolean)",
       "public boolean isCancelled()",
@@ -3346,20 +3346,20 @@
       "public bridge synthetic java.lang.Object get(long, java.util.concurrent.TimeUnit)",
       "public bridge synthetic java.lang.Object get()"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.processing.response.AbstractDataList": {
-    "superClass": "com.yahoo.component.provider.ListenableFreezableClass",
-    "interfaces": [
+  "com.yahoo.processing.response.AbstractDataList" : {
+    "superClass" : "com.yahoo.component.provider.ListenableFreezableClass",
+    "interfaces" : [
       "com.yahoo.processing.response.DataList",
       "com.yahoo.processing.response.Streamed",
       "com.yahoo.processing.response.Ordered"
     ],
-    "attributes": [
+    "attributes" : [
       "public",
       "abstract"
     ],
-    "methods": [
+    "methods" : [
       "protected void <init>(com.yahoo.processing.Request)",
       "protected void <init>(com.yahoo.processing.Request, com.yahoo.processing.response.IncomingData)",
       "protected void <init>(com.yahoo.processing.Request, com.yahoo.processing.response.IncomingData, boolean, boolean)",
@@ -3370,15 +3370,15 @@
       "public boolean isStreamed()",
       "public java.lang.String toString()"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.processing.response.ArrayDataList": {
-    "superClass": "com.yahoo.processing.response.AbstractDataList",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.processing.response.ArrayDataList" : {
+    "superClass" : "com.yahoo.processing.response.AbstractDataList",
+    "interfaces" : [ ],
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "protected void <init>(com.yahoo.processing.Request)",
       "protected void <init>(com.yahoo.processing.Request, com.yahoo.processing.response.IncomingData)",
       "protected void <init>(com.yahoo.processing.Request, com.yahoo.processing.response.IncomingData, boolean, boolean)",
@@ -3392,34 +3392,34 @@
       "public void addDataListener(java.lang.Runnable)",
       "public void freeze()"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.processing.response.Data": {
-    "superClass": "java.lang.Object",
-    "interfaces": [
+  "com.yahoo.processing.response.Data" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [
       "com.yahoo.component.provider.ListenableFreezable"
     ],
-    "attributes": [
+    "attributes" : [
       "public",
       "interface",
       "abstract"
     ],
-    "methods": [
+    "methods" : [
       "public abstract com.yahoo.processing.Request request()"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.processing.response.DataList": {
-    "superClass": "java.lang.Object",
-    "interfaces": [
+  "com.yahoo.processing.response.DataList" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [
       "com.yahoo.processing.response.Data"
     ],
-    "attributes": [
+    "attributes" : [
       "public",
       "interface",
       "abstract"
     ],
-    "methods": [
+    "methods" : [
       "public abstract com.yahoo.processing.response.Data add(com.yahoo.processing.response.Data)",
       "public abstract com.yahoo.processing.response.Data get(int)",
       "public abstract java.util.List asList()",
@@ -3428,17 +3428,17 @@
       "public abstract void addDataListener(java.lang.Runnable)",
       "public void close()"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.processing.response.DefaultIncomingData": {
-    "superClass": "java.lang.Object",
-    "interfaces": [
+  "com.yahoo.processing.response.DefaultIncomingData" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [
       "com.yahoo.processing.response.IncomingData"
     ],
-    "attributes": [
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>()",
       "public void <init>(com.yahoo.processing.response.DataList)",
       "public final void assignOwner(com.yahoo.processing.response.DataList)",
@@ -3454,17 +3454,17 @@
       "public void addNewDataListener(java.lang.Runnable, java.util.concurrent.Executor)",
       "public java.lang.String toString()"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.processing.response.FutureResponse": {
-    "superClass": "java.lang.Object",
-    "interfaces": [
+  "com.yahoo.processing.response.FutureResponse" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [
       "java.util.concurrent.Future"
     ],
-    "attributes": [
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>(java.util.concurrent.Callable, com.yahoo.processing.execution.Execution, com.yahoo.processing.Request)",
       "public java.util.concurrent.FutureTask delegate()",
       "public boolean cancel(boolean)",
@@ -3476,15 +3476,15 @@
       "public bridge synthetic java.lang.Object get(long, java.util.concurrent.TimeUnit)",
       "public bridge synthetic java.lang.Object get()"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.processing.response.IncomingData$NullIncomingData$ImmediateFuture": {
-    "superClass": "com.yahoo.processing.impl.ProcessingFuture",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.processing.response.IncomingData$NullIncomingData$ImmediateFuture" : {
+    "superClass" : "com.yahoo.processing.impl.ProcessingFuture",
+    "interfaces" : [ ],
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>(com.yahoo.processing.response.DataList)",
       "public boolean cancel(boolean)",
       "public boolean isCancelled()",
@@ -3494,18 +3494,18 @@
       "public bridge synthetic java.lang.Object get(long, java.util.concurrent.TimeUnit)",
       "public bridge synthetic java.lang.Object get()"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.processing.response.IncomingData$NullIncomingData": {
-    "superClass": "java.lang.Object",
-    "interfaces": [
+  "com.yahoo.processing.response.IncomingData$NullIncomingData" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [
       "com.yahoo.processing.response.IncomingData"
     ],
-    "attributes": [
+    "attributes" : [
       "public",
       "final"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>(com.yahoo.processing.response.DataList)",
       "public java.util.concurrent.CompletableFuture completedFuture()",
       "public com.yahoo.processing.response.DataList getOwner()",
@@ -3519,17 +3519,17 @@
       "public void addNewDataListener(java.lang.Runnable, java.util.concurrent.Executor)",
       "public java.lang.String toString()"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.processing.response.IncomingData": {
-    "superClass": "java.lang.Object",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.processing.response.IncomingData" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [ ],
+    "attributes" : [
       "public",
       "interface",
       "abstract"
     ],
-    "methods": [
+    "methods" : [
       "public abstract com.yahoo.processing.response.DataList getOwner()",
       "public abstract java.util.concurrent.CompletableFuture completedFuture()",
       "public abstract boolean isComplete()",
@@ -3541,32 +3541,32 @@
       "public abstract java.util.List drain()",
       "public abstract void addNewDataListener(java.lang.Runnable, java.util.concurrent.Executor)"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.processing.response.Ordered": {
-    "superClass": "java.lang.Object",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.processing.response.Ordered" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [ ],
+    "attributes" : [
       "public",
       "interface",
       "abstract"
     ],
-    "methods": [
+    "methods" : [
       "public abstract boolean isOrdered()"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.processing.response.Streamed": {
-    "superClass": "java.lang.Object",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.processing.response.Streamed" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [ ],
+    "attributes" : [
       "public",
       "interface",
       "abstract"
     ],
-    "methods": [
+    "methods" : [
       "public abstract boolean isStreamed()"
     ],
-    "fields": []
+    "fields" : [ ]
   }
 }

@@ -1,27 +1,27 @@
 {
-  "com.yahoo.messagebus.AllPassThrottlePolicy": {
-    "superClass": "java.lang.Object",
-    "interfaces": [
+  "com.yahoo.messagebus.AllPassThrottlePolicy" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [
       "com.yahoo.messagebus.ThrottlePolicy"
     ],
-    "attributes": [
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>()",
       "public boolean canSend(com.yahoo.messagebus.Message, int)",
       "public void processMessage(com.yahoo.messagebus.Message)",
       "public void processReply(com.yahoo.messagebus.Reply)"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.messagebus.CallStack": {
-    "superClass": "java.lang.Object",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.messagebus.CallStack" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [ ],
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>()",
       "public void push(com.yahoo.messagebus.ReplyHandler, java.lang.Object)",
       "public com.yahoo.messagebus.ReplyHandler pop(com.yahoo.messagebus.Routable)",
@@ -29,17 +29,17 @@
       "public void clear()",
       "public int size()"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.messagebus.ConfigAgent": {
-    "superClass": "java.lang.Object",
-    "interfaces": [
+  "com.yahoo.messagebus.ConfigAgent" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [
       "com.yahoo.config.subscription.ConfigSubscriber$SingleSubscriber"
     ],
-    "attributes": [
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>(java.lang.String, com.yahoo.messagebus.ConfigHandler)",
       "public void <init>(com.yahoo.config.subscription.ConfigURI, com.yahoo.messagebus.ConfigHandler)",
       "public void <init>(com.yahoo.messagebus.MessagebusConfig, com.yahoo.messagebus.ConfigHandler)",
@@ -49,46 +49,46 @@
       "public void shutdown()",
       "public bridge synthetic void configure(com.yahoo.config.ConfigInstance)"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.messagebus.ConfigHandler": {
-    "superClass": "java.lang.Object",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.messagebus.ConfigHandler" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [ ],
+    "attributes" : [
       "public",
       "interface",
       "abstract"
     ],
-    "methods": [
+    "methods" : [
       "public abstract void setupRouting(com.yahoo.messagebus.routing.RoutingSpec)"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.messagebus.Connectable": {
-    "superClass": "java.lang.Object",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.messagebus.Connectable" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [ ],
+    "attributes" : [
       "public",
       "interface",
       "abstract"
     ],
-    "methods": [
+    "methods" : [
       "public abstract void connect()",
       "public abstract void disconnect()"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.messagebus.DestinationSession": {
-    "superClass": "java.lang.Object",
-    "interfaces": [
+  "com.yahoo.messagebus.DestinationSession" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [
       "com.yahoo.messagebus.Connectable",
       "com.yahoo.messagebus.MessageHandler"
     ],
-    "attributes": [
+    "attributes" : [
       "public",
       "final"
     ],
-    "methods": [
+    "methods" : [
       "public boolean destroy()",
       "public void close()",
       "public void acknowledge(com.yahoo.messagebus.Message)",
@@ -100,15 +100,15 @@
       "public void connect()",
       "public void disconnect()"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.messagebus.DestinationSessionParams": {
-    "superClass": "java.lang.Object",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.messagebus.DestinationSessionParams" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [ ],
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>()",
       "public void <init>(com.yahoo.messagebus.DestinationSessionParams)",
       "public java.lang.String getName()",
@@ -118,15 +118,15 @@
       "public com.yahoo.messagebus.MessageHandler getMessageHandler()",
       "public com.yahoo.messagebus.DestinationSessionParams setMessageHandler(com.yahoo.messagebus.MessageHandler)"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.messagebus.DynamicThrottlePolicy": {
-    "superClass": "com.yahoo.messagebus.StaticThrottlePolicy",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.messagebus.DynamicThrottlePolicy" : {
+    "superClass" : "com.yahoo.messagebus.StaticThrottlePolicy",
+    "interfaces" : [ ],
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>()",
       "public void <init>(com.yahoo.concurrent.Timer)",
       "public double getWindowSizeIncrement()",
@@ -149,30 +149,30 @@
       "public int getMaxPendingCount()",
       "public bridge synthetic com.yahoo.messagebus.StaticThrottlePolicy setMaxPendingCount(int)"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.messagebus.EmptyReply": {
-    "superClass": "com.yahoo.messagebus.Reply",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.messagebus.EmptyReply" : {
+    "superClass" : "com.yahoo.messagebus.Reply",
+    "interfaces" : [ ],
+    "attributes" : [
       "public",
       "final"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>()",
       "public int getType()",
       "public com.yahoo.text.Utf8String getProtocol()"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.messagebus.Error": {
-    "superClass": "java.lang.Object",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.messagebus.Error" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [ ],
+    "attributes" : [
       "public",
       "final"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>(int, java.lang.String)",
       "public void <init>(int, java.lang.String, java.lang.String)",
       "public int getCode()",
@@ -181,23 +181,23 @@
       "public boolean isFatal()",
       "public java.lang.String toString()"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.messagebus.ErrorCode": {
-    "superClass": "java.lang.Object",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.messagebus.ErrorCode" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [ ],
+    "attributes" : [
       "public",
       "final"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>()",
       "public static java.lang.String getName(int)",
       "public static boolean isFatal(int)",
       "public static boolean isTransient(int)",
       "public static boolean isMBusError(int)"
     ],
-    "fields": [
+    "fields" : [
       "public static final int NONE",
       "public static final int TRANSIENT_ERROR",
       "public static final int SEND_QUEUE_FULL",
@@ -226,18 +226,18 @@
       "public static final int ERROR_LIMIT"
     ]
   },
-  "com.yahoo.messagebus.IntermediateSession": {
-    "superClass": "java.lang.Object",
-    "interfaces": [
+  "com.yahoo.messagebus.IntermediateSession" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [
       "com.yahoo.messagebus.MessageHandler",
       "com.yahoo.messagebus.ReplyHandler",
       "com.yahoo.messagebus.Connectable"
     ],
-    "attributes": [
+    "attributes" : [
       "public",
       "final"
     ],
-    "methods": [
+    "methods" : [
       "public boolean destroy()",
       "public void close()",
       "public void forward(com.yahoo.messagebus.Routable)",
@@ -250,15 +250,15 @@
       "public void connect()",
       "public void disconnect()"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.messagebus.IntermediateSessionParams": {
-    "superClass": "java.lang.Object",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.messagebus.IntermediateSessionParams" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [ ],
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>()",
       "public void <init>(com.yahoo.messagebus.IntermediateSessionParams)",
       "public java.lang.String getName()",
@@ -270,16 +270,16 @@
       "public com.yahoo.messagebus.IntermediateSessionParams setMessageHandler(com.yahoo.messagebus.MessageHandler)",
       "public com.yahoo.messagebus.IntermediateSessionParams setBroadcastName(boolean)"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.messagebus.Message": {
-    "superClass": "com.yahoo.messagebus.Routable",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.messagebus.Message" : {
+    "superClass" : "com.yahoo.messagebus.Routable",
+    "interfaces" : [ ],
+    "attributes" : [
       "public",
       "abstract"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>()",
       "public void swapState(com.yahoo.messagebus.Routable)",
       "public com.yahoo.messagebus.routing.Route getRoute()",
@@ -301,33 +301,33 @@
       "public int getRetry()",
       "public com.yahoo.messagebus.Message setRetry(int)"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.messagebus.MessageBus$SendBlockedMessages": {
-    "superClass": "java.lang.Object",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.messagebus.MessageBus$SendBlockedMessages" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [ ],
+    "attributes" : [
       "public",
       "interface",
       "abstract"
     ],
-    "methods": [
+    "methods" : [
       "public abstract boolean trySend()"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.messagebus.MessageBus": {
-    "superClass": "java.lang.Object",
-    "interfaces": [
+  "com.yahoo.messagebus.MessageBus" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [
       "com.yahoo.messagebus.ConfigHandler",
       "com.yahoo.messagebus.network.NetworkOwner",
       "com.yahoo.messagebus.MessageHandler",
       "com.yahoo.messagebus.ReplyHandler"
     ],
-    "attributes": [
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void register(com.yahoo.messagebus.MessageBus$SendBlockedMessages)",
       "public void <init>(com.yahoo.messagebus.network.Network, java.util.List)",
       "public void <init>(com.yahoo.messagebus.network.Network, com.yahoo.messagebus.MessageBusParams)",
@@ -365,15 +365,15 @@
       "public com.yahoo.messagebus.routing.RoutingPolicy getRoutingPolicy(com.yahoo.text.Utf8String, java.lang.String, java.lang.String)",
       "public java.lang.String getConnectionSpec()"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.messagebus.MessageBusParams": {
-    "superClass": "java.lang.Object",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.messagebus.MessageBusParams" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [ ],
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>()",
       "public void <init>(com.yahoo.messagebus.MessageBusParams)",
       "public com.yahoo.messagebus.routing.RetryPolicy getRetryPolicy()",
@@ -389,30 +389,30 @@
       "public com.yahoo.messagebus.MessagebusConfig getMessageBusConfig()",
       "public com.yahoo.messagebus.MessageBusParams setMessageBusConfig(com.yahoo.messagebus.MessagebusConfig)"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.messagebus.MessageHandler": {
-    "superClass": "java.lang.Object",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.messagebus.MessageHandler" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [ ],
+    "attributes" : [
       "public",
       "interface",
       "abstract"
     ],
-    "methods": [
+    "methods" : [
       "public abstract void handleMessage(com.yahoo.messagebus.Message)"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.messagebus.MessagebusConfig$Builder": {
-    "superClass": "java.lang.Object",
-    "interfaces": [
+  "com.yahoo.messagebus.MessagebusConfig$Builder" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [
       "com.yahoo.config.ConfigInstance$Builder"
     ],
-    "attributes": [
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>()",
       "public void <init>(com.yahoo.messagebus.MessagebusConfig)",
       "public com.yahoo.messagebus.MessagebusConfig$Builder routingtable(com.yahoo.messagebus.MessagebusConfig$Routingtable$Builder)",
@@ -426,34 +426,34 @@
       "public final void setApplyOnRestart(boolean)",
       "public com.yahoo.messagebus.MessagebusConfig build()"
     ],
-    "fields": [
+    "fields" : [
       "public java.util.List routingtable"
     ]
   },
-  "com.yahoo.messagebus.MessagebusConfig$Producer": {
-    "superClass": "java.lang.Object",
-    "interfaces": [
+  "com.yahoo.messagebus.MessagebusConfig$Producer" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [
       "com.yahoo.config.ConfigInstance$Producer"
     ],
-    "attributes": [
+    "attributes" : [
       "public",
       "interface",
       "abstract"
     ],
-    "methods": [
+    "methods" : [
       "public abstract void getConfig(com.yahoo.messagebus.MessagebusConfig$Builder)"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.messagebus.MessagebusConfig$Routingtable$Builder": {
-    "superClass": "java.lang.Object",
-    "interfaces": [
+  "com.yahoo.messagebus.MessagebusConfig$Routingtable$Builder" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [
       "com.yahoo.config.ConfigBuilder"
     ],
-    "attributes": [
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>()",
       "public void <init>(com.yahoo.messagebus.MessagebusConfig$Routingtable)",
       "public com.yahoo.messagebus.MessagebusConfig$Routingtable$Builder protocol(java.lang.String)",
@@ -465,20 +465,20 @@
       "public com.yahoo.messagebus.MessagebusConfig$Routingtable$Builder route(java.util.List)",
       "public com.yahoo.messagebus.MessagebusConfig$Routingtable build()"
     ],
-    "fields": [
+    "fields" : [
       "public java.util.List hop",
       "public java.util.List route"
     ]
   },
-  "com.yahoo.messagebus.MessagebusConfig$Routingtable$Hop$Builder": {
-    "superClass": "java.lang.Object",
-    "interfaces": [
+  "com.yahoo.messagebus.MessagebusConfig$Routingtable$Hop$Builder" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [
       "com.yahoo.config.ConfigBuilder"
     ],
-    "attributes": [
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>()",
       "public void <init>(com.yahoo.messagebus.MessagebusConfig$Routingtable$Hop)",
       "public com.yahoo.messagebus.MessagebusConfig$Routingtable$Hop$Builder name(java.lang.String)",
@@ -488,18 +488,18 @@
       "public com.yahoo.messagebus.MessagebusConfig$Routingtable$Hop$Builder ignoreresult(boolean)",
       "public com.yahoo.messagebus.MessagebusConfig$Routingtable$Hop build()"
     ],
-    "fields": [
+    "fields" : [
       "public java.util.List recipient"
     ]
   },
-  "com.yahoo.messagebus.MessagebusConfig$Routingtable$Hop": {
-    "superClass": "com.yahoo.config.InnerNode",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.messagebus.MessagebusConfig$Routingtable$Hop" : {
+    "superClass" : "com.yahoo.config.InnerNode",
+    "interfaces" : [ ],
+    "attributes" : [
       "public",
       "final"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>(com.yahoo.messagebus.MessagebusConfig$Routingtable$Hop$Builder)",
       "public java.lang.String name()",
       "public java.lang.String selector()",
@@ -507,17 +507,17 @@
       "public java.lang.String recipient(int)",
       "public boolean ignoreresult()"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.messagebus.MessagebusConfig$Routingtable$Route$Builder": {
-    "superClass": "java.lang.Object",
-    "interfaces": [
+  "com.yahoo.messagebus.MessagebusConfig$Routingtable$Route$Builder" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [
       "com.yahoo.config.ConfigBuilder"
     ],
-    "attributes": [
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>()",
       "public void <init>(com.yahoo.messagebus.MessagebusConfig$Routingtable$Route)",
       "public com.yahoo.messagebus.MessagebusConfig$Routingtable$Route$Builder name(java.lang.String)",
@@ -525,33 +525,33 @@
       "public com.yahoo.messagebus.MessagebusConfig$Routingtable$Route$Builder hop(java.util.Collection)",
       "public com.yahoo.messagebus.MessagebusConfig$Routingtable$Route build()"
     ],
-    "fields": [
+    "fields" : [
       "public java.util.List hop"
     ]
   },
-  "com.yahoo.messagebus.MessagebusConfig$Routingtable$Route": {
-    "superClass": "com.yahoo.config.InnerNode",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.messagebus.MessagebusConfig$Routingtable$Route" : {
+    "superClass" : "com.yahoo.config.InnerNode",
+    "interfaces" : [ ],
+    "attributes" : [
       "public",
       "final"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>(com.yahoo.messagebus.MessagebusConfig$Routingtable$Route$Builder)",
       "public java.lang.String name()",
       "public java.util.List hop()",
       "public java.lang.String hop(int)"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.messagebus.MessagebusConfig$Routingtable": {
-    "superClass": "com.yahoo.config.InnerNode",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.messagebus.MessagebusConfig$Routingtable" : {
+    "superClass" : "com.yahoo.config.InnerNode",
+    "interfaces" : [ ],
+    "attributes" : [
       "public",
       "final"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>(com.yahoo.messagebus.MessagebusConfig$Routingtable$Builder)",
       "public java.lang.String protocol()",
       "public java.util.List hop()",
@@ -559,16 +559,16 @@
       "public java.util.List route()",
       "public com.yahoo.messagebus.MessagebusConfig$Routingtable$Route route(int)"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.messagebus.MessagebusConfig": {
-    "superClass": "com.yahoo.config.ConfigInstance",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.messagebus.MessagebusConfig" : {
+    "superClass" : "com.yahoo.config.ConfigInstance",
+    "interfaces" : [ ],
+    "attributes" : [
       "public",
       "final"
     ],
-    "methods": [
+    "methods" : [
       "public static java.lang.String getDefMd5()",
       "public static java.lang.String getDefName()",
       "public static java.lang.String getDefNamespace()",
@@ -576,36 +576,36 @@
       "public java.util.List routingtable()",
       "public com.yahoo.messagebus.MessagebusConfig$Routingtable routingtable(int)"
     ],
-    "fields": [
+    "fields" : [
       "public static final java.lang.String CONFIG_DEF_MD5",
       "public static final java.lang.String CONFIG_DEF_NAME",
       "public static final java.lang.String CONFIG_DEF_NAMESPACE",
       "public static final java.lang.String[] CONFIG_DEF_SCHEMA"
     ]
   },
-  "com.yahoo.messagebus.Messenger$Task": {
-    "superClass": "java.lang.Object",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.messagebus.Messenger$Task" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [ ],
+    "attributes" : [
       "public",
       "interface",
       "abstract"
     ],
-    "methods": [
+    "methods" : [
       "public abstract void run()",
       "public abstract void destroy()"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.messagebus.Messenger": {
-    "superClass": "java.lang.Object",
-    "interfaces": [
+  "com.yahoo.messagebus.Messenger" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [
       "java.lang.Runnable"
     ],
-    "attributes": [
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>()",
       "public void start()",
       "public void deliverMessage(com.yahoo.messagebus.Message, com.yahoo.messagebus.MessageHandler)",
@@ -615,45 +615,45 @@
       "public boolean destroy()",
       "public void run()"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.messagebus.NetworkMessageBus": {
-    "superClass": "java.lang.Object",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.messagebus.NetworkMessageBus" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [ ],
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>(com.yahoo.messagebus.network.Network, com.yahoo.messagebus.MessageBus)",
       "public com.yahoo.messagebus.MessageBus getMessageBus()",
       "public com.yahoo.messagebus.network.Network getNetwork()",
       "public boolean destroy()"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.messagebus.Protocol": {
-    "superClass": "java.lang.Object",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.messagebus.Protocol" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [ ],
+    "attributes" : [
       "public",
       "interface",
       "abstract"
     ],
-    "methods": [
+    "methods" : [
       "public abstract java.lang.String getName()",
       "public abstract byte[] encode(com.yahoo.component.Version, com.yahoo.messagebus.Routable)",
       "public abstract com.yahoo.messagebus.Routable decode(com.yahoo.component.Version, byte[])",
       "public abstract com.yahoo.messagebus.routing.RoutingPolicy createPolicy(java.lang.String, java.lang.String)"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.messagebus.ProtocolRepository": {
-    "superClass": "java.lang.Object",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.messagebus.ProtocolRepository" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [ ],
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>()",
       "public void putProtocol(com.yahoo.messagebus.Protocol)",
       "public boolean hasProtocol(java.lang.String)",
@@ -662,15 +662,15 @@
       "public final com.yahoo.messagebus.routing.RoutingPolicy getRoutingPolicy(com.yahoo.text.Utf8String, java.lang.String, java.lang.String)",
       "public synchronized void clearPolicyCache()"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.messagebus.RPCMessageBus": {
-    "superClass": "com.yahoo.messagebus.NetworkMessageBus",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.messagebus.RPCMessageBus" : {
+    "superClass" : "com.yahoo.messagebus.NetworkMessageBus",
+    "interfaces" : [ ],
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>(com.yahoo.messagebus.MessageBusParams, com.yahoo.messagebus.network.rpc.RPCNetworkParams)",
       "public void <init>(com.yahoo.messagebus.MessageBusParams, com.yahoo.messagebus.network.rpc.RPCNetworkParams, java.lang.String)",
       "public void <init>(java.util.List, com.yahoo.messagebus.network.rpc.RPCNetworkParams, java.lang.String)",
@@ -678,31 +678,31 @@
       "public boolean destroy()",
       "public com.yahoo.messagebus.network.rpc.RPCNetwork getRPCNetwork()"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.messagebus.RateThrottlingPolicy": {
-    "superClass": "com.yahoo.messagebus.StaticThrottlePolicy",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.messagebus.RateThrottlingPolicy" : {
+    "superClass" : "com.yahoo.messagebus.StaticThrottlePolicy",
+    "interfaces" : [ ],
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>(double)",
       "public void <init>(double, com.yahoo.concurrent.Timer)",
       "public boolean canSend(com.yahoo.messagebus.Message, int)"
     ],
-    "fields": [
+    "fields" : [
       "public static final java.util.logging.Logger log"
     ]
   },
-  "com.yahoo.messagebus.Reply": {
-    "superClass": "com.yahoo.messagebus.Routable",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.messagebus.Reply" : {
+    "superClass" : "com.yahoo.messagebus.Routable",
+    "interfaces" : [ ],
+    "attributes" : [
       "public",
       "abstract"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>()",
       "public void swapState(com.yahoo.messagebus.Routable)",
       "public com.yahoo.messagebus.Message getMessage()",
@@ -717,45 +717,45 @@
       "public java.util.stream.Stream getErrors()",
       "public java.util.Set getErrorCodes()"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.messagebus.ReplyHandler": {
-    "superClass": "java.lang.Object",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.messagebus.ReplyHandler" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [ ],
+    "attributes" : [
       "public",
       "interface",
       "abstract"
     ],
-    "methods": [
+    "methods" : [
       "public abstract void handleReply(com.yahoo.messagebus.Reply)"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.messagebus.Result": {
-    "superClass": "java.lang.Object",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.messagebus.Result" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [ ],
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>(com.yahoo.messagebus.Error)",
       "public void <init>(int, java.lang.String)",
       "public boolean isAccepted()",
       "public com.yahoo.messagebus.Error getError()"
     ],
-    "fields": [
+    "fields" : [
       "public static final com.yahoo.messagebus.Result ACCEPTED"
     ]
   },
-  "com.yahoo.messagebus.Routable": {
-    "superClass": "java.lang.Object",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.messagebus.Routable" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [ ],
+    "attributes" : [
       "public",
       "abstract"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>()",
       "public void discard()",
       "public void swapState(com.yahoo.messagebus.Routable)",
@@ -768,52 +768,52 @@
       "public abstract com.yahoo.text.Utf8String getProtocol()",
       "public abstract int getType()"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.messagebus.SendProxy": {
-    "superClass": "java.lang.Object",
-    "interfaces": [
+  "com.yahoo.messagebus.SendProxy" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [
       "com.yahoo.messagebus.MessageHandler",
       "com.yahoo.messagebus.ReplyHandler"
     ],
-    "attributes": [
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>(com.yahoo.messagebus.MessageBus, com.yahoo.messagebus.network.Network, com.yahoo.messagebus.routing.Resender)",
       "public void handleMessage(com.yahoo.messagebus.Message)",
       "public void handleReply(com.yahoo.messagebus.Reply)"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.messagebus.Sequencer": {
-    "superClass": "java.lang.Object",
-    "interfaces": [
+  "com.yahoo.messagebus.Sequencer" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [
       "com.yahoo.messagebus.MessageHandler",
       "com.yahoo.messagebus.ReplyHandler"
     ],
-    "attributes": [
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>(com.yahoo.messagebus.MessageHandler)",
       "public boolean destroy()",
       "public void handleMessage(com.yahoo.messagebus.Message)",
       "public void handleReply(com.yahoo.messagebus.Reply)"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.messagebus.SourceSession": {
-    "superClass": "java.lang.Object",
-    "interfaces": [
+  "com.yahoo.messagebus.SourceSession" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [
       "com.yahoo.messagebus.ReplyHandler",
       "com.yahoo.messagebus.MessageBus$SendBlockedMessages"
     ],
-    "attributes": [
+    "attributes" : [
       "public",
       "final"
     ],
-    "methods": [
+    "methods" : [
       "public boolean destroy()",
       "public void close()",
       "public com.yahoo.messagebus.Result send(com.yahoo.messagebus.Message)",
@@ -828,15 +828,15 @@
       "public com.yahoo.messagebus.SourceSession setTimeout(double)",
       "public com.yahoo.messagebus.ThrottlePolicy getThrottlePolicy()"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.messagebus.SourceSessionParams": {
-    "superClass": "java.lang.Object",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.messagebus.SourceSessionParams" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [ ],
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>()",
       "public void <init>(com.yahoo.messagebus.SourceSessionParams)",
       "public com.yahoo.messagebus.ThrottlePolicy getThrottlePolicy()",
@@ -846,17 +846,17 @@
       "public com.yahoo.messagebus.ReplyHandler getReplyHandler()",
       "public com.yahoo.messagebus.SourceSessionParams setReplyHandler(com.yahoo.messagebus.ReplyHandler)"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.messagebus.StaticThrottlePolicy": {
-    "superClass": "java.lang.Object",
-    "interfaces": [
+  "com.yahoo.messagebus.StaticThrottlePolicy" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [
       "com.yahoo.messagebus.ThrottlePolicy"
     ],
-    "attributes": [
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>()",
       "public boolean canSend(com.yahoo.messagebus.Message, int)",
       "public void processMessage(com.yahoo.messagebus.Message)",
@@ -867,30 +867,30 @@
       "public com.yahoo.messagebus.StaticThrottlePolicy setMaxPendingSize(long)",
       "public long getPendingSize()"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.messagebus.ThrottlePolicy": {
-    "superClass": "java.lang.Object",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.messagebus.ThrottlePolicy" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [ ],
+    "attributes" : [
       "public",
       "interface",
       "abstract"
     ],
-    "methods": [
+    "methods" : [
       "public abstract boolean canSend(com.yahoo.messagebus.Message, int)",
       "public abstract void processMessage(com.yahoo.messagebus.Message)",
       "public abstract void processReply(com.yahoo.messagebus.Reply)"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.messagebus.Trace": {
-    "superClass": "java.lang.Object",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.messagebus.Trace" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [ ],
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>()",
       "public void <init>(int)",
       "public com.yahoo.messagebus.Trace clear()",
@@ -903,34 +903,34 @@
       "public com.yahoo.messagebus.TraceNode getRoot()",
       "public java.lang.String toString()"
     ],
-    "fields": []
+    "fields" : [ ]
   },
-  "com.yahoo.messagebus.TraceLevel": {
-    "superClass": "java.lang.Object",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.messagebus.TraceLevel" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [ ],
+    "attributes" : [
       "public",
       "final"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>()"
     ],
-    "fields": [
+    "fields" : [
       "public static final int ERROR",
       "public static final int SEND_RECEIVE",
       "public static final int SPLIT_MERGE",
       "public static final int COMPONENT"
     ]
   },
-  "com.yahoo.messagebus.TraceNode": {
-    "superClass": "java.lang.Object",
-    "interfaces": [
+  "com.yahoo.messagebus.TraceNode" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [
       "java.lang.Comparable"
     ],
-    "attributes": [
+    "attributes" : [
       "public"
     ],
-    "methods": [
+    "methods" : [
       "public void <init>()",
       "public com.yahoo.messagebus.TraceNode swap(com.yahoo.messagebus.TraceNode)",
       "public com.yahoo.messagebus.TraceNode clear()",
@@ -956,6 +956,6 @@
       "public static com.yahoo.messagebus.TraceNode decode(java.lang.String)",
       "public bridge synthetic int compareTo(java.lang.Object)"
     ],
-    "fields": []
+    "fields" : [ ]
   }
 }
