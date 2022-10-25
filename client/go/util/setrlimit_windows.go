@@ -2,7 +2,7 @@
 
 //go:build windows
 
-package startcbinary
+package util
 
 type ResourceId int
 
@@ -13,6 +13,6 @@ const (
 	NO_RLIMIT uint64 = ^uint64(0)
 )
 
-func setResourceLimit(resource ResourceId, max uint64) {
+func SetResourceLimit(resource ResourceId, max uint64) {
 	// nop
 }
