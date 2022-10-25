@@ -22,7 +22,7 @@ class CorsLogic {
                     "Okta-Access-Token,Okta-Refresh-Token,Vespa-Csrf-Token",
             "Access-Control-Allow-Methods", "OPTIONS,GET,PUT,DELETE,POST,PATCH",
             "Access-Control-Allow-Credentials", "true",
-            "Vary", "Origin"
+            "Vary", "*"
     );
 
     static Map<String, String> createCorsResponseHeaders(String requestOriginHeader,

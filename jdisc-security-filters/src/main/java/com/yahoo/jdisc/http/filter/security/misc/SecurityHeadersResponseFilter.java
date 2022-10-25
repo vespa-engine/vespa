@@ -20,6 +20,5 @@ public class SecurityHeadersResponseFilter implements SecurityResponseFilter {
         response.setHeader("X-Content-Type-Options", "nosniff");
         response.setHeader("X-Frame-Options", "DENY");
         response.setHeader("Referrer-Policy", "strict-origin-when-cross-origin");
-        response.setHeader("Vary", "*");
     }
 }
