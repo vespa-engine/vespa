@@ -9,12 +9,14 @@ import com.yahoo.vespa.hosted.controller.tenant.Email;
 import com.yahoo.vespa.hosted.controller.tenant.PendingMailVerification;
 import com.yahoo.vespa.hosted.controller.tenant.Tenant;
 import com.yahoo.vespa.hosted.controller.tenant.TenantContacts;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.time.Duration;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 
@@ -31,8 +33,8 @@ class MailVerifierTest {
     private static final String mail = "unverified@bar.com";
     private static final List<TenantContacts.Audience> audiences = List.of(TenantContacts.Audience.NOTIFICATIONS, TenantContacts.Audience.TENANT);
 
-    @Test
-    public void test_new_mail_verification() {
+    @BeforeEach
+    public void setup() {
         tester.createTenant(tenantName.value(), Tenant.Type.cloud);
 
         tester.controller().tenants().lockOrThrow(tenantName, LockedTenant.Cloud.class, lockedTenant -> {
@@ -44,7 +46,10 @@ class MailVerifierTest {
             lockedTenant = lockedTenant.withInfo(lockedTenant.get().info().withContacts(new TenantContacts(contacts)));
             tester.controller().tenants().store(lockedTenant);
         });
+    }
 
+    @Test
+    public void test_new_mail_verification() {
         mailVerifier.sendMailVerification(tenantName, mail, PendingMailVerification.MailType.NOTIFICATIONS);
 
         // Verify mail is sent
@@ -59,7 +64,13 @@ class MailVerifierTest {
         assertEquals(tester.clock().instant().plus(Duration.ofDays(7)), writtenMailVerification.getVerificationDeadline());
         assertEquals(mail, writtenMailVerification.getMailAddress());
 
+        // Mail verification is no-op if deadline has passed
+        tester.clock().advance(Duration.ofDays(14));
+        assertFalse(mailVerifier.verifyMail(writtenMailVerification.getVerificationCode()));
+        assertFalse(tester.curator().listPendingMailVerifications().isEmpty());
+
         // Mail is verified
+        tester.clock().retreat(Duration.ofDays(14));
         mailVerifier.verifyMail(writtenMailVerification.getVerificationCode());
         assertTrue(tester.curator().listPendingMailVerifications().isEmpty());
         var tenant = tester.controller().tenants().require(tenantName, CloudTenant.class);
@@ -69,6 +80,23 @@ class MailVerifierTest {
                 new TenantContacts.EmailContact(audiences, new Email("another-unverified@bar.com", false))
         );
         assertEquals(expectedContacts, tenant.info().contacts().all());
+    }
+
+    @Test
+    public void resending_verification_deletes_old_one() {
+        var pendingMailVerification = mailVerifier.sendMailVerification(tenantName, mail, PendingMailVerification.MailType.NOTIFICATIONS);
+        var tenant = tester.controller().tenants().require(tenantName, CloudTenant.class);
+
+        // Unknown mail is no-op
+        var resentVerification = mailVerifier.resendMailVerification(tenantName, "unknown-mail", PendingMailVerification.MailType.NOTIFICATIONS);
+        assertTrue(resentVerification.isEmpty());
+        assertTrue(tester.curator().getPendingMailVerification(pendingMailVerification.getVerificationCode()).isPresent());
+
+        // Verification mail is re-sent, old data is replaced
+        resentVerification = mailVerifier.resendMailVerification(tenantName, mail, PendingMailVerification.MailType.NOTIFICATIONS);
+        assertTrue(resentVerification.isPresent());
+        assertTrue(tester.curator().getPendingMailVerification(pendingMailVerification.getVerificationCode()).isEmpty());
+        assertTrue(tester.curator().getPendingMailVerification(resentVerification.get().getVerificationCode()).isPresent());
     }
 
 }

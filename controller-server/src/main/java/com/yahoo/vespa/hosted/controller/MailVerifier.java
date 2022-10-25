@@ -12,6 +12,7 @@ import com.yahoo.vespa.hosted.controller.tenant.PendingMailVerification;
 
 import java.time.Clock;
 import java.time.Duration;
+import java.util.Optional;
 import java.util.UUID;
 
 
@@ -42,26 +43,47 @@ public class MailVerifier {
         return pendingMailVerification;
     }
 
+    public Optional<PendingMailVerification> resendMailVerification(TenantName tenantName, String email, PendingMailVerification.MailType mailType) {
+        var oldPendingVerification = curatorDb.listPendingMailVerifications()
+                .stream()
+                .filter(pendingMailVerification ->
+                                pendingMailVerification.getMailAddress().equals(email) &&
+                                        pendingMailVerification.getMailType().equals(mailType) &&
+                                        pendingMailVerification.getTenantName().equals(tenantName)
+                ).findFirst();
+
+        if (oldPendingVerification.isEmpty())
+            return Optional.empty();
+
+        try (var lock = curatorDb.lockPendingMailVerification(oldPendingVerification.get().getVerificationCode())) {
+            curatorDb.deletePendingMailVerification(oldPendingVerification.get());
+        }
+
+        return Optional.of(sendMailVerification(tenantName, email, mailType));
+    }
+
     public boolean verifyMail(String verificationCode) {
-        return curatorDb.getPendingMailVerification(verificationCode).map(pendingMailVerification -> {
-            var tenant = requireCloudTenant(pendingMailVerification.getTenantName());
-            var oldTenantInfo = tenant.info();
-            var updatedTenantInfo = switch (pendingMailVerification.getMailType()) {
-                case NOTIFICATIONS -> withTenantContacts(oldTenantInfo, pendingMailVerification);
-                case TENANT_CONTACT -> oldTenantInfo.withContact(oldTenantInfo.contact()
-                        .withEmail(oldTenantInfo.contact().email().withVerification(true)));
-            };
+        return curatorDb.getPendingMailVerification(verificationCode)
+                .filter(pendingMailVerification -> pendingMailVerification.getVerificationDeadline().isAfter(clock.instant()))
+                .map(pendingMailVerification -> {
+                    var tenant = requireCloudTenant(pendingMailVerification.getTenantName());
+                    var oldTenantInfo = tenant.info();
+                    var updatedTenantInfo = switch (pendingMailVerification.getMailType()) {
+                        case NOTIFICATIONS -> withTenantContacts(oldTenantInfo, pendingMailVerification);
+                        case TENANT_CONTACT -> oldTenantInfo.withContact(oldTenantInfo.contact()
+                                .withEmail(oldTenantInfo.contact().email().withVerification(true)));
+                    };
 
-            tenantController.lockOrThrow(tenant.name(), LockedTenant.Cloud.class, lockedTenant -> {
-                lockedTenant = lockedTenant.withInfo(updatedTenantInfo);
-                tenantController.store(lockedTenant);
-            });
+                    tenantController.lockOrThrow(tenant.name(), LockedTenant.Cloud.class, lockedTenant -> {
+                        lockedTenant = lockedTenant.withInfo(updatedTenantInfo);
+                        tenantController.store(lockedTenant);
+                    });
 
-            try (var lock = curatorDb.lockPendingMailVerification(pendingMailVerification.getVerificationCode())) {
-                curatorDb.deletePendingMailVerification(pendingMailVerification);
-            }
-            return true;
-        }).orElse(false);
+                    try (var lock = curatorDb.lockPendingMailVerification(pendingMailVerification.getVerificationCode())) {
+                        curatorDb.deletePendingMailVerification(pendingMailVerification);
+                    }
+                    return true;
+                }).orElse(false);
     }
 
     private TenantInfo withTenantContacts(TenantInfo oldInfo, PendingMailVerification pendingMailVerification) {

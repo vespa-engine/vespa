@@ -306,6 +306,7 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
         if (path.matches("/application/v4/tenant/{tenant}/info/profile")) return withCloudTenant(path.get("tenant"), request, this::putTenantInfoProfile);
         if (path.matches("/application/v4/tenant/{tenant}/info/billing")) return withCloudTenant(path.get("tenant"), request, this::putTenantInfoBilling);
         if (path.matches("/application/v4/tenant/{tenant}/info/contacts")) return withCloudTenant(path.get("tenant"), request, this::putTenantInfoContacts);
+        if (path.matches("/application/v4/tenant/{tenant}/info/resend-mail-verification")) return withCloudTenant(path.get("tenant"), request, this::resendEmailVerification);
         if (path.matches("/application/v4/tenant/{tenant}/archive-access")) return allowAwsArchiveAccess(path.get("tenant"), request); // TODO(enygaard, 2022-05-25) Remove when no longer used by console
         if (path.matches("/application/v4/tenant/{tenant}/archive-access/aws")) return allowAwsArchiveAccess(path.get("tenant"), request);
         if (path.matches("/application/v4/tenant/{tenant}/archive-access/gcp")) return allowGcpArchiveAccess(path.get("tenant"), request);
@@ -1538,6 +1539,21 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
     private HttpResponse resume(ApplicationId id, JobType type) {
         controller.applications().deploymentTrigger().resumeJob(id, type);
         return new MessageResponse(type.jobName() + " for " + id + " resumed");
+    }
+
+    private SlimeJsonResponse resendEmailVerification(CloudTenant tenant, Inspector inspector) {
+        var mail = mandatory("mail", inspector).asString();
+        var type = mandatory("mailType", inspector).asString();
+
+        var mailType = switch (type) {
+            case "contact" -> PendingMailVerification.MailType.TENANT_CONTACT;
+            case "notifications" -> PendingMailVerification.MailType.NOTIFICATIONS;
+            default -> throw new IllegalArgumentException("Unknown mail type " + type);
+        };
+
+        var pendingVerification = controller.mailVerifier().resendMailVerification(tenant.name(), mail, mailType);
+        return pendingVerification.isPresent() ? new MessageResponse("Re-sent verification mail to " + mail) :
+                ErrorResponse.notFoundError("No pending mail verification found for " + mail);
     }
 
     private void toSlime(Cursor object, Application application, HttpRequest request) {

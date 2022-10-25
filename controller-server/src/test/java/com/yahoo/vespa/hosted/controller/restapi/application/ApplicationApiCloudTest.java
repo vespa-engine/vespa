@@ -163,6 +163,20 @@ public class ApplicationApiCloudTest extends ControllerContainerCloudTest {
 
         // Now compare the updated info with the full info we sent
         tester.assertResponse(infoRequest, fullInfo, 200);
+
+        var invalidBody = "{\"mail\":\"contact1@example.com\", \"mailType\":\"blurb\"}";
+        var resendMailRequest =
+                request("/application/v4/tenant/scoober/info/resend-mail-verification", PUT)
+                        .data(invalidBody)
+                        .roles(Set.of(Role.administrator(tenantName)));
+        tester.assertResponse(resendMailRequest, "{\"error-code\":\"BAD_REQUEST\",\"message\":\"Unknown mail type blurb\"}", 400);
+
+        var resendMailBody = "{\"mail\":\"contact1@example.com\", \"mailType\":\"notifications\"}";
+        resendMailRequest =
+                request("/application/v4/tenant/scoober/info/resend-mail-verification", PUT)
+                        .data(resendMailBody)
+                        .roles(Set.of(Role.administrator(tenantName)));
+        tester.assertResponse(resendMailRequest, "{\"message\":\"Re-sent verification mail to contact1@example.com\"}", 200);
     }
 
     @Test
