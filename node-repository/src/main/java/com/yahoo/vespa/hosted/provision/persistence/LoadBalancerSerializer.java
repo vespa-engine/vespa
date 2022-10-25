@@ -124,6 +124,7 @@ public class LoadBalancerSerializer {
             case active -> "active";
             case inactive -> "inactive";
             case reserved -> "reserved";
+            case removable -> "removable";
         };
     }
 
@@ -132,7 +133,7 @@ public class LoadBalancerSerializer {
             case "active" -> LoadBalancer.State.active;
             case "inactive" -> LoadBalancer.State.inactive;
             case "reserved" -> LoadBalancer.State.reserved;
-            case "removable" -> LoadBalancer.State.inactive; // Read future value
+            case "removable" -> LoadBalancer.State.removable;
             default -> throw new IllegalArgumentException("No serialization defined for state string '" + state + "'");
         };
     }
