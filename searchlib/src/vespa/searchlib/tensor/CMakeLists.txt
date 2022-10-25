@@ -35,6 +35,5 @@ vespa_add_library(searchlib_tensor OBJECT
     tensor_deserialize.cpp
     tensor_store.cpp
     tensor_store_saver.cpp
-    reusable_set_visited_tracker.cpp
     DEPENDS
 )

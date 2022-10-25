@@ -23,8 +23,6 @@
 
 LOG_SETUP(".searchlib.tensor.hnsw_index");
 
-#define USE_OLD_VISITED_TRACKER 0
-
 namespace search::tensor {
 
 using search::AddressSpaceComponents;
@@ -319,15 +317,11 @@ HnswIndex::search_layer(const TypedCells& input, uint32_t neighbors_to_find,
         doc_id_limit = std::min(filter->size(), doc_id_limit);
     }
     uint32_t estimated_visited_nodes = estimate_visited_nodes(level, doc_id_limit, neighbors_to_find, filter);
-#if ! USE_OLD_VISITED_TRACKER
     if (estimated_visited_nodes >= doc_id_limit / 128) {
         search_layer_helper<BitVectorVisitedTracker>(input, neighbors_to_find, best_neighbors, level, filter, doc_id_limit, estimated_visited_nodes);
     } else {
         search_layer_helper<HashSetVisitedTracker>(input, neighbors_to_find, best_neighbors, level, filter, doc_id_limit, estimated_visited_nodes);
     }
-#else
-    search_layer_helper<ReusableSetVisitedTracker>(input, neighbors_to_find, best_neighbors, level, filter, doc_id_limit, estimated_visited_nodes);
-#endif
 }
 
 HnswIndex::HnswIndex(const DocVectorAccess& vectors, DistanceFunction::UP distance_func,
@@ -337,7 +331,6 @@ HnswIndex::HnswIndex(const DocVectorAccess& vectors, DistanceFunction::UP distan
       _distance_func(std::move(distance_func)),
       _level_generator(std::move(level_generator)),
       _cfg(cfg),
-      _visited_set_pool(),
       _compaction_spec()
 {
     assert(_distance_func);
@@ -597,7 +590,6 @@ HnswIndex::update_stat(const CompactionStrategy& compaction_strategy)
     _compaction_spec = HnswIndexCompactionSpec(compaction_strategy.should_compact(level_arrays_memory_usage, level_arrays_address_space_usage),
                                                compaction_strategy.should_compact(link_arrays_memory_usage, link_arrays_address_space_usage));
     result.merge(link_arrays_memory_usage);
-    result.merge(_visited_set_pool.memory_usage());
     return result;
 }
 
@@ -608,7 +600,6 @@ HnswIndex::memory_usage() const
     result.merge(_graph.node_refs.getMemoryUsage());
     result.merge(_graph.nodes.getMemoryUsage());
     result.merge(_graph.links.getMemoryUsage());
-    result.merge(_visited_set_pool.memory_usage());
     return result;
 }
 
@@ -628,10 +619,6 @@ HnswIndex::get_state(const vespalib::slime::Inserter& inserter) const
     StateExplorerUtils::memory_usage_to_slime(_graph.node_refs.getMemoryUsage(), memUsageObj.setObject("node_refs"));
     StateExplorerUtils::memory_usage_to_slime(_graph.nodes.getMemoryUsage(), memUsageObj.setObject("nodes"));
     StateExplorerUtils::memory_usage_to_slime(_graph.links.getMemoryUsage(), memUsageObj.setObject("links"));
-    StateExplorerUtils::memory_usage_to_slime(_visited_set_pool.memory_usage(), memUsageObj.setObject("visited_set_pool"));
-    auto& visitedObj = object.setObject("visited_set");
-    visitedObj.setLong("create_count", _visited_set_pool.create_count());
-    visitedObj.setLong("reuse_count", _visited_set_pool.reuse_count());
     object.setLong("nodes", _graph.size());
     auto& histogram_array = object.setArray("level_histogram");
     auto& links_hst_array = object.setArray("level_0_links_histogram");

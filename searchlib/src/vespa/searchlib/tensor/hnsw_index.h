@@ -15,7 +15,6 @@
 #include <vespa/vespalib/datastore/atomic_entry_ref.h>
 #include <vespa/vespalib/datastore/compaction_spec.h>
 #include <vespa/vespalib/datastore/entryref.h>
-#include <vespa/vespalib/util/reusable_set_pool.h>
 #include <vespa/vespalib/stllike/allocator.h>
 
 namespace search::tensor {
@@ -98,7 +97,6 @@ protected:
     DistanceFunction::UP _distance_func;
     RandomLevelGenerator::UP _level_generator;
     Config _cfg;
-    mutable vespalib::ReusableSetPool _visited_set_pool;
     HnswIndexCompactionSpec _compaction_spec;
 
     uint32_t max_links_for_level(uint32_t level) const;
@@ -221,7 +219,6 @@ public:
     bool check_link_symmetry() const;
     std::pair<uint32_t, bool> count_reachable_nodes() const;
     HnswGraph& get_graph() { return _graph; }
-    vespalib::ReusableSetPool& get_visited_set_pool() const noexcept { return _visited_set_pool; }
 
     static vespalib::datastore::ArrayStoreConfig make_default_node_store_config();
     static vespalib::datastore::ArrayStoreConfig make_default_link_store_config();
