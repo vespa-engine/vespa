@@ -1,6 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.compress;
 
+import com.yahoo.compress.IntegerCompressor.Mode;
 import org.junit.Test;
 
 import java.nio.ByteBuffer;
@@ -91,6 +92,18 @@ public class IntegerCompressorTest {
                      assertThrows(IllegalArgumentException.class, () -> verifyNumber(-0x80000000, mx80000000)).getMessage());
     }
 
+    @Test
+    public void testMode() {
+        assertEquals(Mode.NONE,                IntegerCompressor.compressionMode(-0x80000000,  0x00000000));
+        assertEquals(Mode.NONE,                IntegerCompressor.compressionMode(-0x20000000,  0x00000000));
+        assertEquals(Mode.NONE,                IntegerCompressor.compressionMode(-0x00000001,  0x3fffffff));
+        assertEquals(Mode.COMPRESSED,          IntegerCompressor.compressionMode(-0x1fffffff,  0x1fffffff));
+        assertEquals(Mode.COMPRESSED,          IntegerCompressor.compressionMode(-0x1fffffff, -0x1fffffff));
+        assertEquals(Mode.COMPRESSED,          IntegerCompressor.compressionMode(-0x1fffffff,  0x00000000));
+        assertEquals(Mode.COMPRESSED,          IntegerCompressor.compressionMode(-0x00000001,  0x1fffffff));
+        assertEquals(Mode.COMPRESSED_POSITIVE, IntegerCompressor.compressionMode( 0x00000000,  0x00000000));
+        assertEquals(Mode.COMPRESSED_POSITIVE, IntegerCompressor.compressionMode( 0x00000000,  0x3fffffff));
+        assertEquals(Mode.COMPRESSED_POSITIVE, IntegerCompressor.compressionMode( 0x3fffffff,  0x3fffffff));
     }
 
 }
