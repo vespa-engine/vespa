@@ -1,13 +1,11 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.prelude.query;
 
-import com.yahoo.prelude.query.textualrepresentation.Discloser;
-
 import java.nio.ByteBuffer;
 
 /**
  * A term which wraps a set of similar simple terms, all joined with {@code AND} or {@code OR}.
- *
+ * <p>
  * This class exists to encompass similarities in the serialization of such multi-term constructs.
  *
  * @author jonmv
