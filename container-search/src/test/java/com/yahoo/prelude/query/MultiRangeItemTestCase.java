@@ -135,7 +135,8 @@ public class MultiRangeItemTestCase {
                      item.sortedRanges());
 
         item.addRange(0.0, POSITIVE_INFINITY);
-        assertEquals(List.of(new Range<>(NEGATIVE_INFINITY, POSITIVE_INFINITY)),
+        assertEquals(List.of(new Range<>(NEGATIVE_INFINITY, 0.0),
+                             new Range<>(0.0, POSITIVE_INFINITY)),
                      item.sortedRanges());
 
         try {

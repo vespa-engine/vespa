@@ -179,12 +179,12 @@ public class MultiRangeItem<Type extends Number> extends MultiTermItem {
         if (sorted && ! ranges.isEmpty()) {
             // If the new range is not completely before the current last range, we can prune, and keep a sorted list.
             Range<Type> last = ranges.get(ranges.size() - 1);
-            sorted = overlap(range.end, last.start);
+            sorted = overlap(range, last);
             if (sorted) {
                 // Pop all ranges that overlap with the new range ...
                 Range<Type> popped = range;
                 for (int i = ranges.size(); i-- > 0; )
-                    if (overlap(ranges.get(i).end, range.start))
+                    if (overlap(ranges.get(i), range))
                         popped = ranges.remove(i);
                     else
                         break;
@@ -197,9 +197,18 @@ public class MultiRangeItem<Type extends Number> extends MultiTermItem {
         return this;
     }
 
-    private boolean overlap(Number endOfFirst, Number startOfSecond) {
-        int comparison = comparator.compare(endOfFirst, startOfSecond);
-        return comparison > 0 || comparison == 0 && startInclusive | endInclusive;
+    /**
+     * Assumption: first.start <= second.start
+     * Then there is overlap if
+     * first.end  > second.start
+     * first.end == second.start AND either of
+     *   ranges are inclusive at either end, OR
+     *   either range is a (logically empty) point (a, a), since this dominated by (or equal to) the other range.
+     */
+    private boolean overlap(Range<Type> first, Range<Type> second) {
+        int comparison = type.comparator.compare(first.end, second.start);
+        return   comparison  > 0
+              || comparison == 0 && (startInclusive || endInclusive || first.start.equals(first.end) || second.start.equals(second.end));
     }
 
     private Type min(Type a, Type b) {
@@ -220,7 +229,7 @@ public class MultiRangeItem<Type extends Number> extends MultiTermItem {
         Range<Type> start = ranges.get(0), end = start;
         for (int i = 1; i < ranges.size(); i++) {
             Range<Type> range = ranges.get(i);
-            if (overlap(end.end, range.start)) {
+            if (overlap(end, range)) {
                 end = type.comparator.compare(end.end, range.end) < 0 ? range : end;
             }
             else {
