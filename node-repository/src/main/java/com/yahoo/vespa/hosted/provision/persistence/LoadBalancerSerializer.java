@@ -117,21 +117,20 @@ public class LoadBalancerSerializer {
     }
 
     private static String asString(LoadBalancer.State state) {
-        switch (state) {
-            case active: return "active";
-            case inactive: return "inactive";
-            case reserved: return "reserved";
-            default: throw new IllegalArgumentException("No serialization defined for state enum '" + state + "'");
-        }
+        return switch (state) {
+            case active -> "active";
+            case inactive -> "inactive";
+            case reserved -> "reserved";
+        };
     }
 
     private static LoadBalancer.State stateFromString(String state) {
-        switch (state) {
-            case "active": return LoadBalancer.State.active;
-            case "inactive": return LoadBalancer.State.inactive;
-            case "reserved": return LoadBalancer.State.reserved;
-            default: throw new IllegalArgumentException("No serialization defined for state string '" + state + "'");
-        }
+        return switch (state) {
+            case "active" -> LoadBalancer.State.active;
+            case "inactive" -> LoadBalancer.State.inactive;
+            case "reserved" -> LoadBalancer.State.reserved;
+            default -> throw new IllegalArgumentException("No serialization defined for state string '" + state + "'");
+        };
     }
 
 }
