@@ -1,7 +1,6 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.security;
 
-import org.bouncycastle.util.encoders.Hex;
 import org.junit.jupiter.api.Test;
 
 import javax.crypto.CipherInputStream;
@@ -12,6 +11,7 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 
+import static com.yahoo.security.ArrayUtils.hex;
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -52,7 +52,7 @@ public class SharedKeyTest {
         var theirSealed = SealedSharedKey.fromTokenString(publicToken);
         var theirShared = SharedKeyGenerator.fromSealedKey(theirSealed, receiverPrivate);
 
-        assertEquals(expectedSharedSecret, Hex.toHexString(theirShared.secretKey().getEncoded()));
+        assertEquals(expectedSharedSecret, hex(theirShared.secretKey().getEncoded()));
     }
 
     @Test
