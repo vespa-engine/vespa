@@ -98,7 +98,7 @@ public class CloneHelper {
         try {
             return cloneByReflection(object);
         } catch (IllegalArgumentException e) {
-            if ( ! (e.getCause() instanceof ClassCastException))
+            if ( ! (e.getCause() != null && ClassCastException.class.getName().equals(e.getCause().getClass().getName())))
                 throw e;
 
             // When changing bundles you might end up having cached the old method pointing to old bundle,
