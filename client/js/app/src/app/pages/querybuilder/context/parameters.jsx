@@ -41,6 +41,10 @@ export default param('root', [
     param('listFeatures', 'Boolean'),
     param('profile', 'String'),
     param('properties', 'String'),
+    param('softtimeout', [
+      param('enable', 'Boolean'),
+      param('factor', 'Float'),
+    ]),
     param('sorting', 'String'),
     param('freshness', 'String'),
     param('queryCache', 'Boolean'),
