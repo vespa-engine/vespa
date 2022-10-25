@@ -7,7 +7,6 @@ import com.yahoo.prelude.query.textualrepresentation.Discloser;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Comparator;
-import java.util.ConcurrentModificationException;
 import java.util.List;
 import java.util.Objects;
 import java.util.function.BiConsumer;
@@ -324,7 +323,8 @@ public class MultiRangeItem<Type extends Number> extends MultiTermItem {
         return Objects.hash(super.hashCode(), type, startIndex, endIndex, startInclusive, endInclusive, sortedRanges());
     }
 
-    Item asCompositeItem() {
+    @Override
+    protected Item asCompositeItem() {
         OrItem root = new OrItem();
         if (startIndex.equals(endIndex)) {
             for (Range<Type> range : sortedRanges()) {

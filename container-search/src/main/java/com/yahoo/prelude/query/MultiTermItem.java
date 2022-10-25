@@ -48,6 +48,8 @@ abstract class MultiTermItem extends SimpleTaggableItem {
     /** Encode all wrapped terms to the buffer. */
     abstract void encodeTerms(ByteBuffer buffer);
 
+    abstract protected Item asCompositeItem();
+
     @Override
     public final ItemType getItemType() {
         return ItemType.MULTI_TERM;
@@ -60,6 +62,9 @@ abstract class MultiTermItem extends SimpleTaggableItem {
 
     @Override
     public final int encode(ByteBuffer buffer) {
+        // TODO: Remove once backend support deserialisation of this type.
+        if (getClass() == MultiRangeItem.class) return asCompositeItem().encode(buffer);
+
         super.encodeThis(buffer);
         byte metadata = 0;
         metadata |= (operatorType().code << 5) & 0b11100000;
