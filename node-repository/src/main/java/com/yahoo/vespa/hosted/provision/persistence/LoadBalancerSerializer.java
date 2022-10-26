@@ -130,6 +130,7 @@ public class LoadBalancerSerializer {
             case "active": return LoadBalancer.State.active;
             case "inactive": return LoadBalancer.State.inactive;
             case "reserved": return LoadBalancer.State.reserved;
+            case "removable": return LoadBalancer.State.inactive; // Read future value
             default: throw new IllegalArgumentException("No serialization defined for state string '" + state + "'");
         }
     }
