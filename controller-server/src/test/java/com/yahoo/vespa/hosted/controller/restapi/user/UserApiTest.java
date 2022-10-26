@@ -10,11 +10,11 @@ import com.yahoo.vespa.flags.PermanentFlags;
 import com.yahoo.vespa.hosted.controller.ControllerTester;
 import com.yahoo.vespa.hosted.controller.api.integration.billing.PlanId;
 import com.yahoo.jdisc.http.filter.security.misc.User;
-import com.yahoo.vespa.hosted.controller.api.integration.stubs.MockUserManagement;
 import com.yahoo.vespa.hosted.controller.api.integration.user.UserId;
 import com.yahoo.vespa.hosted.controller.api.role.Role;
 import com.yahoo.vespa.hosted.controller.restapi.ContainerTester;
 import com.yahoo.vespa.hosted.controller.restapi.ControllerContainerCloudTest;
+import com.yahoo.vespa.hosted.controller.tenant.PendingMailVerification;
 import com.yahoo.vespa.hosted.controller.tenant.Tenant;
 import org.junit.jupiter.api.Test;
 
@@ -320,5 +320,21 @@ public class UserApiTest extends ControllerContainerCloudTest {
                     new File("user-with-supported-tenant.json"));
         }
 
+    }
+
+    @Test
+    public void verifyMail() {
+        var tester = new ContainerTester(container, responseFiles);
+        var controller = new ControllerTester(tester);
+        controller.createTenant("tenant1", Tenant.Type.cloud);
+        var pendingMailVerification = tester.controller().mailVerifier().sendMailVerification(TenantName.from("tenant1"), "foo@bar.com", PendingMailVerification.MailType.NOTIFICATIONS);
+
+        tester.assertResponse(request("/user/v1/email/verify", POST)
+                        .data("{\"verificationCode\":\"blurb\"}"),
+                "{\"error-code\":\"NOT_FOUND\",\"message\":\"No pending email verification with code blurb found\"}", 404);
+
+        tester.assertResponse(request("/user/v1/email/verify", POST)
+                        .data("{\"verificationCode\":\"" + pendingMailVerification.getVerificationCode() + "\"}"),
+                "{\"message\":\"Email with verification code " + pendingMailVerification.getVerificationCode() + " has been verified\"}", 200);
     }
 }

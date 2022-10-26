@@ -259,7 +259,7 @@ enum PathGroup {
             "/application/v4/tenant/{tenant}/access/managed/operator"),
 
     /** Path used for email verification */
-    emailVerification("/user/v1/email-verification");
+    emailVerification("/user/v1/email/verify");
 
     final List<String> pathSpecs;
     final List<Matcher> matchers;

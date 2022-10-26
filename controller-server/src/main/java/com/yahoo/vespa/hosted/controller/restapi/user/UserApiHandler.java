@@ -112,7 +112,7 @@ public class UserApiHandler extends ThreadedHttpRequestHandler {
 
     private HttpResponse handlePOST(Path path, HttpRequest request) {
         if (path.matches("/user/v1/tenant/{tenant}")) return addTenantRoleMember(path.get("tenant"), request);
-        if (path.matches("/user/v1/email-verification")) return verifyEmail(request);
+        if (path.matches("/user/v1/email/verify")) return verifyEmail(request);
 
         return ErrorResponse.notFoundError(Text.format("No '%s' handler at '%s'", request.getMethod(),
                                                          request.getUri().getPath()));

@@ -38,8 +38,8 @@ public class MailVerifier {
         var verificationCode = UUID.randomUUID().toString();
         var verificationDeadline = clock.instant().plus(VERIFICATION_DEADLINE);
         var pendingMailVerification = new PendingMailVerification(tenantName, email, verificationCode, verificationDeadline, mailType);
-        mailer.sendVerificationMail(pendingMailVerification);
         writePendingVerification(pendingMailVerification);
+        mailer.sendVerificationMail(pendingMailVerification);
         return pendingMailVerification;
     }
 
@@ -98,8 +98,6 @@ public class MailVerifier {
     }
 
     private void writePendingVerification(PendingMailVerification pendingMailVerification) {
-        var tenant = requireCloudTenant(pendingMailVerification.getTenantName());
-
         try (var lock = curatorDb.lockPendingMailVerification(pendingMailVerification.getVerificationCode())) {
             curatorDb.writePendingMailVerification(pendingMailVerification);
         }
