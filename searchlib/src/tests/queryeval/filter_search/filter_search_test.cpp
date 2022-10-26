@@ -5,14 +5,25 @@
 #include <vespa/searchlib/queryeval/intermediate_blueprints.h>
 #include <vespa/searchlib/queryeval/leaf_blueprints.h>
 #include <vespa/searchlib/queryeval/isourceselector.h>
+#include <vespa/searchlib/queryeval/simple_phrase_blueprint.h>
+#include <vespa/searchlib/queryeval/equiv_blueprint.h>
+#include <vespa/searchlib/queryeval/weighted_set_term_blueprint.h>
+#include <vespa/searchlib/queryeval/dot_product_blueprint.h>
+#include <vespa/searchlib/queryeval/same_element_blueprint.h>
+#include <vespa/searchlib/queryeval/wand/parallel_weak_and_blueprint.h>
+#include <vespa/searchlib/fef/matchdatalayout.h>
 #include <vespa/vespalib/util/trinary.h>
 #include <vespa/vespalib/util/require.h>
 #include <vespa/vespalib/gtest/gtest.h>
 #include <functional>
 
+namespace search::fef { class TermFieldMatchDataArray; }
 namespace search::fef { class MatchData; }
 
 using namespace search::queryeval;
+using search::fef::MatchData;
+using search::fef::MatchDataLayout;
+using search::fef::TermFieldMatchDataArray;
 using vespalib::Trinary;
 
 using Constraint = Blueprint::FilterConstraint;
@@ -28,7 +39,12 @@ concept FilterFactory = requires(const T &a, bool strict, Constraint upper_or_lo
 
 template <typename T>
 concept FilterFactoryBuilder = requires(T a, std::unique_ptr<Blueprint> bp) {
-    { std::move(a).add(std::move(bp)) } -> std::same_as<T&&>;
+    { a.add(std::move(bp)) } -> std::same_as<T&>;
+};
+
+template <typename T>
+concept ChildCollector = requires(T a, std::unique_ptr<Blueprint> bp) {
+    a.addChild(std::move(bp));
 };
 
 // inherit Blueprint to capture the default filter factory
@@ -37,7 +53,22 @@ struct DefaultBlueprint : Blueprint {
     const State &getState() const override { abort(); }
     void fetchPostings(const ExecuteInfo &) override { abort(); }
     void freeze() override { abort(); }
-    SearchIteratorUP createSearch(search::fef::MatchData &, bool) const override { abort(); }
+    SearchIteratorUP createSearch(MatchData &, bool) const override { abort(); }
+};
+
+// add the use of a field to a leaf blueprint (SimplePhraseBlueprint asserts on this)
+struct FakeFieldProxy : SimpleLeafBlueprint {
+    std::unique_ptr<Blueprint> child;
+    FakeFieldProxy(const FieldSpec &field, std::unique_ptr<Blueprint> child_in)
+      : SimpleLeafBlueprint(field), child(std::move(child_in))
+    {
+        setParent(child->getParent());
+        child->setParent(this);
+    }
+    SearchIteratorUP createLeafSearch(const TermFieldMatchDataArray &, bool) const override { abort(); }
+    SearchIteratorUP createFilterSearch(bool strict, Constraint upper_or_lower) const override {
+        return child->createFilterSearch(strict, upper_or_lower);
+    }
 };
 
 // need one of these to be able to create a SourceBlender
@@ -48,7 +79,6 @@ struct NullSelector : ISourceSelector {
     void compactLidSpace(uint32_t) override { abort(); }
     std::unique_ptr<sourceselector::Iterator> createIterator() const override { abort(); }
 };
-NullSelector null_selector;
 
 // make a simple result containing the given documents
 SimpleResult make_result(const std::vector<uint32_t> &docs) {
@@ -84,7 +114,7 @@ std::unique_ptr<Blueprint> full() {
 }
 
 // create a leaf blueprint with the specified hits
-std::unique_ptr<Blueprint> leaf(const std::vector<uint32_t> &docs) {
+std::unique_ptr<Blueprint> hits(const std::vector<uint32_t> &docs) {
     return std::make_unique<SimpleBlueprint>(make_result(docs));
 }
 
@@ -95,24 +125,24 @@ struct Children {
     std::vector<Factory> list;
     Children() : list() {}
     size_t size() const { return list.size(); }
-    Children &&leaf(const std::vector<uint32_t> &docs) && {
-        list.push_back([docs](){ return ::leaf(docs); });
-        return std::move(*this);
+    Children &hits(const std::vector<uint32_t> &docs) {
+        list.push_back([docs](){ return ::hits(docs); });
+        return *this;
     }
-    Children &&full() && {
+    Children &full() {
         list.push_back([](){ return ::full(); });
-        return std::move(*this);
+        return *this;
     }
-    Children &&empty() && {
+    Children &empty() {
         list.push_back([](){ return ::empty(); });
-        return std::move(*this);
+        return *this;
     }
     template <FilterFactoryBuilder Builder>
-    Builder &&apply(Builder &&builder) const {
+    Builder &apply(Builder &builder) const {
         for (const Factory &make_child: list) {
-            std::move(builder).add(make_child());
+            builder.add(make_child());
         }
-        return std::move(builder);
+        return builder;
     }
 };
 
@@ -123,12 +153,12 @@ struct Combine {
     factory_fun fun;
     Blueprint::Children list;
     Combine(factory_fun fun_in) noexcept : fun(fun_in), list() {}
-    Combine &&add(std::unique_ptr<Blueprint> child) && {
+    Combine &add(std::unique_ptr<Blueprint> child) {
         list.push_back(std::move(child));
-        return std::move(*this);
+        return *this;
     }
-    Combine &&add(const Children &children) && {
-        return children.apply(std::move(*this));
+    Combine &add(const Children &children) {
+        return children.apply(*this);
     }
     auto createFilterSearch(bool strict, Constraint upper_or_lower) const {
         return fun(list, strict, upper_or_lower);
@@ -137,19 +167,118 @@ struct Combine {
 };
 Combine::~Combine() = default;
 
-// Make a specific (intermediate) blueprint that you can add children
-// to. Satisfies the FilterFactory concept.
+// enable Make-ing source blender
+struct SourceBlenderAdapter {
+    NullSelector selector;
+    SourceBlenderBlueprint blueprint;
+    SourceBlenderAdapter() : selector(), blueprint(selector) {}
+    void addChild(std::unique_ptr<Blueprint> child) {
+        blueprint.addChild(std::move(child));
+    }
+    auto createFilterSearch(bool strict, Constraint upper_or_lower) const {
+        return blueprint.createFilterSearch(strict, upper_or_lower);
+    }
+};
+
+// enable Make-ing simple phrase
+struct SimplePhraseAdapter {
+    FieldSpec field;
+    SimplePhraseBlueprint blueprint;
+    SimplePhraseAdapter() : field("foo", 3, 7), blueprint(field, false) {}
+    void addChild(std::unique_ptr<Blueprint> child) {
+        auto child_field = blueprint.getNextChildField(field);
+        auto term = std::make_unique<FakeFieldProxy>(child_field, std::move(child));
+        blueprint.addTerm(std::move(term));
+    }
+    auto createFilterSearch(bool strict, Constraint upper_or_lower) const {
+        return blueprint.createFilterSearch(strict, upper_or_lower);
+    }
+};
+
+//enable Make-ing equiv
+struct EquivAdapter {
+    FieldSpecBaseList fields;
+    EquivBlueprint blueprint;
+    EquivAdapter() : fields(), blueprint(fields, MatchDataLayout()) {}
+    void addChild(std::unique_ptr<Blueprint> child) {
+        blueprint.addTerm(std::move(child), 1.0);
+    }
+    auto createFilterSearch(bool strict, Constraint upper_or_lower) const {
+        return blueprint.createFilterSearch(strict, upper_or_lower);
+    }
+};
+
+// enable Make-ing weighted set
+struct WeightedSetTermAdapter {
+    FieldSpec field;
+    WeightedSetTermBlueprint blueprint;
+    WeightedSetTermAdapter() : field("foo", 3, 7), blueprint(field) {}
+    void addChild(std::unique_ptr<Blueprint> child) {
+        blueprint.addTerm(std::move(child), 100);
+    }
+    auto createFilterSearch(bool strict, Constraint upper_or_lower) const {
+        return blueprint.createFilterSearch(strict, upper_or_lower);
+    }
+};
+
+// enable Make-ing dot product
+struct DotProductAdapter {
+    FieldSpec field;
+    DotProductBlueprint blueprint;
+    DotProductAdapter() : field("foo", 3, 7), blueprint(field) {}
+    void addChild(std::unique_ptr<Blueprint> child) {
+        auto child_field = blueprint.getNextChildField(field);
+        auto term = std::make_unique<FakeFieldProxy>(child_field, std::move(child));
+        blueprint.addTerm(std::move(term), 100);
+    }
+    auto createFilterSearch(bool strict, Constraint upper_or_lower) const {
+        return blueprint.createFilterSearch(strict, upper_or_lower);
+    }
+};
+
+// enable Make-ing parallel weak and
+struct ParallelWeakAndAdapter {
+    FieldSpec field;
+    ParallelWeakAndBlueprint blueprint;
+    ParallelWeakAndAdapter() : field("foo", 3, 7), blueprint(field, 100, 0.0, 1.0) {}
+    void addChild(std::unique_ptr<Blueprint> child) {
+        auto child_field = blueprint.getNextChildField(field);
+        auto term = std::make_unique<FakeFieldProxy>(child_field, std::move(child));
+        blueprint.addTerm(std::move(term), 100);
+    }
+    auto createFilterSearch(bool strict, Constraint upper_or_lower) const {
+        return blueprint.createFilterSearch(strict, upper_or_lower);
+    }
+};
+
+// enable Make-ing same element
+struct SameElementAdapter {
+    SameElementBlueprint blueprint;
+    SameElementAdapter() : blueprint("foo", false) {}
+    void addChild(std::unique_ptr<Blueprint> child) {
+        auto child_field = blueprint.getNextChildField("foo", 3);
+        auto term = std::make_unique<FakeFieldProxy>(child_field, std::move(child));
+        blueprint.addTerm(std::move(term));
+    }
+    auto createFilterSearch(bool strict, Constraint upper_or_lower) const {
+        return blueprint.createFilterSearch(strict, upper_or_lower);
+    }
+};
+
+// Make a specific intermediate-ish blueprint that you can add
+// children to. Satisfies the FilterFactory concept.
 template <FilterFactory T>
+requires ChildCollector<T>
 struct Make {
     T blueprint;
     template <typename ... Args>
     Make(Args && ... args) : blueprint(std::forward<Args>(args)...) {}
-    Make &&add(std::unique_ptr<Blueprint> child) && {
+    Make &add(std::unique_ptr<Blueprint> child) {
         blueprint.addChild(std::move(child));
-        return std::move(*this);
+        return *this;
     }
-    Make &&add(const Children &children) && {
-        return children.apply(std::move(*this));
+    Make &add(const Children &children) {
+        return children.apply(*this);
     }
     auto createFilterSearch(bool strict, Constraint upper_or_lower) const {
         return blueprint.createFilterSearch(strict, upper_or_lower);
@@ -159,19 +288,20 @@ struct Make {
 // what kind of results are we expecting from a filter search?
 struct Expect {
     Trinary matches_any;
-    SimpleResult hits;
-    Expect(const std::vector<uint32_t> &hits_in)
-      : matches_any(Trinary::Undefined), hits(make_result(hits_in)) {}
-    Expect(Trinary matches_any_in) : matches_any(matches_any_in), hits() {
+    SimpleResult docs;
+    Expect(const std::vector<uint32_t> &docs_in)
+      : matches_any(Trinary::Undefined), docs(make_result(docs_in)) {}
+    Expect(Trinary matches_any_in) : matches_any(matches_any_in), docs() {
         REQUIRE(matches_any != Trinary::Undefined);
         if (matches_any == Trinary::True) {
-            hits = make_full_result();
+            docs = make_full_result();
         } else {
-            hits = make_empty_result();
+            docs = make_empty_result();
         }
     }
     static Expect empty() { return Expect(Trinary::False); }
     static Expect full() { return Expect(Trinary::True); }
+    static Expect hits(const std::vector<uint32_t> &docs) { return Expect(docs); }
 };
 
 template <FilterFactory Blueprint>
@@ -187,7 +317,7 @@ void verify(const Blueprint &blueprint, const Expect &upper, const Expect &lower
             } else {
                 actual.search(*filter, docid_limit);
             }
-            EXPECT_EQ(actual, expect.hits);
+            EXPECT_EQ(actual, expect.docs);
         }
     }
 }
@@ -206,7 +336,7 @@ TEST(FilterSearchTest, full_leaf) {
 }
 
 TEST(FilterSearchTest, custom_leaf) {
-    verify(*leaf({5,10,20}), Expect({5,10,20}));
+    verify(*hits({5,10,20}), Expect::hits({5,10,20}));
 }
 
 TEST(FilterSearchTest, default_blueprint) {
@@ -215,48 +345,54 @@ TEST(FilterSearchTest, default_blueprint) {
 
 TEST(FilterSearchTest, simple_or) {
     auto child_list = Children()
-        .leaf({5, 10})
-        .leaf({7})
-        .leaf({3, 11});
-    auto expected = Expect({3, 5, 7, 10, 11});
+        .hits({5, 10})
+        .hits({7})
+        .hits({3, 11});
+    auto expected = Expect::hits({3, 5, 7, 10, 11});
     verify(Combine(Blueprint::create_or_filter).add(child_list), expected);
     verify(Make<OrBlueprint>().add(child_list), expected);
+    verify(Make<EquivAdapter>().add(child_list), expected);
+    verify(Make<WeightedSetTermAdapter>().add(child_list), expected);
+    verify(Make<DotProductAdapter>().add(child_list), expected);
     verify(Combine(Blueprint::create_atmost_or_filter).add(child_list), expected, Expect::empty());
-    verify(Make<WeakAndBlueprint>(child_list.size()).add(child_list), expected, Expect::empty());
-    verify(Make<SourceBlenderBlueprint>(null_selector).add(child_list), expected, Expect::empty());
+    verify(Make<WeakAndBlueprint>(100).add(child_list), expected, Expect::empty());
+    verify(Make<SourceBlenderAdapter>().add(child_list), expected, Expect::empty());
+    verify(Make<ParallelWeakAndAdapter>().add(child_list), expected, Expect::empty());
 }
 
 TEST(FilterSearchTest, simple_and) {
     auto child_list = Children()
-        .leaf({1, 2, 3, 4, 5, 6})
-        .leaf({2, 4, 6, 7})
-        .leaf({1, 4, 6, 7, 10});
-    auto expected = Expect({4, 6});
+        .hits({1, 2, 3, 4, 5, 6})
+        .hits({2, 4, 6, 7})
+        .hits({1, 4, 6, 7, 10});
+    auto expected = Expect::hits({4, 6});
     verify(Combine(Blueprint::create_and_filter).add(child_list), expected);
     verify(Make<AndBlueprint>().add(child_list), expected);
     verify(Combine(Blueprint::create_atmost_and_filter).add(child_list), expected, Expect::empty());
     verify(Make<NearBlueprint>(3).add(child_list), expected, Expect::empty());
     verify(Make<ONearBlueprint>(3).add(child_list), expected, Expect::empty());
+    verify(Make<SimplePhraseAdapter>().add(child_list), expected, Expect::empty());
+    verify(Make<SameElementAdapter>().add(child_list), expected, Expect::empty());
 }
 
 TEST(FilterSearchTest, simple_andnot) {
     auto child_list = Children()
-        .leaf({1, 2, 3, 4, 5, 6})
-        .leaf({2, 4, 6})
-        .leaf({4, 6, 7});
-    auto expected = Expect({1, 3, 5});
+        .hits({1, 2, 3, 4, 5, 6})
+        .hits({2, 4, 6})
+        .hits({4, 6, 7});
+    auto expected = Expect::hits({1, 3, 5});
     verify(Combine(Blueprint::create_andnot_filter).add(child_list), expected);
     verify(Make<AndNotBlueprint>().add(child_list), expected);
 }
 
 TEST(FilterSearchTest, rank_filter) {
-    auto child_list1 = Children().leaf({1,2,3}).empty().full();
-    auto child_list2 = Children().empty().leaf({1,2,3}).full();
-    auto child_list3 = Children().full().leaf({1,2,3}).empty();
-    verify(Combine(Blueprint::create_first_child_filter).add(child_list1), Expect({1,2,3}));
+    auto child_list1 = Children().hits({1,2,3}).empty().full();
+    auto child_list2 = Children().empty().hits({1,2,3}).full();
+    auto child_list3 = Children().full().hits({1,2,3}).empty();
+    verify(Combine(Blueprint::create_first_child_filter).add(child_list1), Expect::hits({1,2,3}));
     verify(Combine(Blueprint::create_first_child_filter).add(child_list2), Expect::empty());
     verify(Combine(Blueprint::create_first_child_filter).add(child_list3), Expect::full());
-    verify(Make<RankBlueprint>().add(child_list1), Expect({1,2,3}));
+    verify(Make<RankBlueprint>().add(child_list1), Expect::hits({1,2,3}));
     verify(Make<RankBlueprint>().add(child_list2), Expect::empty());
     verify(Make<RankBlueprint>().add(child_list3), Expect::full());
 }
