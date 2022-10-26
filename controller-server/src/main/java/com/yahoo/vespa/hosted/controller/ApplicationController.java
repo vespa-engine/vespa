@@ -670,7 +670,7 @@ public class ApplicationController {
         }
     }
 
-    private Optional<CloudAccount> decideCloudAccountOf(DeploymentId deployment, DeploymentSpec spec) {
+    public Optional<CloudAccount> decideCloudAccountOf(DeploymentId deployment, DeploymentSpec spec) {
         ZoneId zoneId = deployment.zoneId();
         Optional<CloudAccount> requestedAccount = spec.instance(deployment.applicationId().instance())
                                                       .flatMap(instanceSpec -> instanceSpec.cloudAccount(zoneId.environment(),
