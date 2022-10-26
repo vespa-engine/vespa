@@ -50,7 +50,6 @@
         <module>config-proxy</module>
         <module>configserver</module>
         <module>configserver-flags</module>
-        <module>config_test</module>
         <module>container</module>
         <module>container-apache-http-client-bundle</module>
         <module>container-core</module>
