@@ -378,7 +378,8 @@ public class DeploymentStatus {
 
     /** The set of jobs that need to run for the given changes to be considered complete. */
     public boolean hasCompleted(InstanceName instance, Change change) {
-        if ( ! application.deploymentSpec().requireInstance(instance).concerns(prod)) {
+        DeploymentInstanceSpec spec = application.deploymentSpec().requireInstance(instance);
+        if ((spec.concerns(test) || spec.concerns(staging)) && ! spec.concerns(prod)) {
             if (newestTested(instance, run -> run.versions().targetRevision()).map(change::downgrades).orElse(false)) return true;
             if (newestTested(instance, run -> run.versions().targetPlatform()).map(change::downgrades).orElse(false)) return true;
         }

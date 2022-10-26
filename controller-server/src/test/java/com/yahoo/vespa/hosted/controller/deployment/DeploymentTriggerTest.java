@@ -1291,6 +1291,9 @@ public class DeploymentTriggerTest {
         String complicatedDeploymentSpec =
                 """
                 <deployment version='1.0' athenz-domain='domain' athenz-service='service'>
+                    <instance id='dev'>
+                      <dev />
+                    </instance>
                     <parallel>
                         <instance id='instance' athenz-service='in-service'>
                             <staging />
