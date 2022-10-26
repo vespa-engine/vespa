@@ -34,7 +34,7 @@ func main() {
 		os.Exit(startcbinary.Run(os.Args[1:]))
 	case "export-env":
 		vespa.ExportDefaultEnvToSh()
-	case "security-env":
+	case "security-env", "vespa-security-env":
 		vespa.ExportSecurityEnvToSh()
 	case "ipv6-only":
 		if vespa.HasOnlyIpV6() {
