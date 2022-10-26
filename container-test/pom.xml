@@ -101,6 +101,11 @@
       <scope>compile</scope>
     </dependency>
     <dependency>
+      <!-- not used by Vespa, but was historically on test classpath -->
+      <groupId>org.json</groupId>
+      <artifactId>json</artifactId>
+    </dependency>
+    <dependency>
       <!-- TODO: this, and probably others, could be removed from here if we make the fat jar the default artifact for jdisc_core -->
       <groupId>org.lz4</groupId>
       <artifactId>lz4-java</artifactId>
