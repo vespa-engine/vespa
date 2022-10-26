@@ -69,6 +69,12 @@ public class PermanentFlags {
                     "node resources of the host, the maximum number of containers, etc.",
             "Takes effect on next iteration of DynamicProvisioningMaintainer.");
 
+    public static final UnboundStringFlag HOST_FLAVOR = defineStringFlag(
+            "host-flavor", "",
+            "Specifies the Vespa flavor name that the hosts of the matching nodes should have.",
+            "Takes effect on next deployment (including internal redeployment).",
+            APPLICATION_ID, CLUSTER_TYPE);
+
     public static final UnboundBooleanFlag SKIP_MAINTENANCE_DEPLOYMENT = defineFeatureFlag(
             "node-repository-skip-maintenance-deployment", false,
             "Whether PeriodicApplicationMaintainer should skip deployment for an application",
