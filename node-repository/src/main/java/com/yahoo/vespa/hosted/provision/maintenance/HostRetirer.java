@@ -37,7 +37,7 @@ public class HostRetirer extends NodeRepositoryMaintainer {
 
     @Override
     protected double maintain() {
-        if (!nodeRepository().zone().getCloud().dynamicProvisioning()) return 1.0;
+        if (!nodeRepository().zone().cloud().dynamicProvisioning()) return 1.0;
 
         NodeList candidates = nodeRepository().nodes().list()
                                               .parents()

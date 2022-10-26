@@ -595,7 +595,7 @@ public abstract class ContainerCluster<CONTAINER extends Container>
         builder.system(zone.system().value());
         builder.environment(zone.environment().value());
         builder.region(zone.region().value());
-        builder.cloud(zone.getCloud().name().value());
+        builder.cloud(zone.cloud().name().value());
     }
 
     @Override

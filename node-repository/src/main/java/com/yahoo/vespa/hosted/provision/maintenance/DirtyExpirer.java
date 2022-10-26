@@ -28,7 +28,7 @@ public class DirtyExpirer extends Expirer {
     DirtyExpirer(NodeRepository nodeRepository, Duration dirtyTimeout, Metric metric) {
         super(Node.State.dirty, History.Event.Type.deallocated, nodeRepository, dirtyTimeout, metric);
         // Do not keep allocation in dynamically provisioned zones so that the hosts can be deprovisioned
-        this.keepAllocationOnExpiry = ! nodeRepository.zone().getCloud().dynamicProvisioning();
+        this.keepAllocationOnExpiry = ! nodeRepository.zone().cloud().dynamicProvisioning();
     }
 
     @Override

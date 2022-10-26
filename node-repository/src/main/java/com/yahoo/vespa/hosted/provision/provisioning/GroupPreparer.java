@@ -159,7 +159,7 @@ public class GroupPreparer {
                                                           cluster,
                                                           requestedNodes,
                                                           wantedGroups,
-                                                          nodeRepository.zone().getCloud().dynamicProvisioning(),
+                                                          nodeRepository.zone().cloud().dynamicProvisioning(),
                                                           nodeRepository.nameResolver(),
                                                           nodeRepository.nodes(),
                                                           nodeRepository.resourcesCalculator(),
@@ -169,7 +169,7 @@ public class GroupPreparer {
     }
 
     private boolean canProvisionDynamically(NodeType hostType) {
-        return nodeRepository.zone().getCloud().dynamicProvisioning() &&
+        return nodeRepository.zone().cloud().dynamicProvisioning() &&
                (hostType == NodeType.host || hostType.isConfigServerHostLike());
     }
 

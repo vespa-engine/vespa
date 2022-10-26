@@ -37,7 +37,7 @@ public class Rebalancer extends NodeMover<Rebalancer.Move> {
     protected double maintain() {
         if ( ! nodeRepository().nodes().isWorking()) return 0.0;
 
-        if (nodeRepository().zone().getCloud().dynamicProvisioning()) return 1.0; // Rebalancing not necessary
+        if (nodeRepository().zone().cloud().dynamicProvisioning()) return 1.0; // Rebalancing not necessary
         if (nodeRepository().zone().environment().isTest()) return 1.0; // Short lived deployments; no need to rebalance
         if (nodeRepository().zone().system().isCd()) return 1.0; // CD tests assert on # of nodes, avoid rebalnacing as it make tests unstable
 

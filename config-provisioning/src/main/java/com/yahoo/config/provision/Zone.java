@@ -52,8 +52,13 @@ public class Zone {
         this.region = region;
     }
 
+    // TODO(mpolden): For compatibility with older config models. Remove when versions < 8.76 are gone
+    public Cloud getCloud() {
+        return cloud();
+    }
+
     /** Returns the current cloud */
-    public Cloud getCloud() { return cloud; }
+    public Cloud cloud() { return cloud; }
 
     /** Returns the current system */
     public SystemName system() { return systemName; }
