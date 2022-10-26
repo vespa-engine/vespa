@@ -85,8 +85,8 @@ public interface NodeSpec {
         return new CountNodeSpec(nodeCount, resources, exclusive, canFail, cloudAccount);
     }
 
-    static NodeSpec from(NodeType type) {
-        return new TypeNodeSpec(type);
+    static NodeSpec from(NodeType type, Optional<CloudAccount> cloudAccount) {
+        return new TypeNodeSpec(type, cloudAccount);
     }
 
     /** A node spec specifying a node count and a flavor */
@@ -200,9 +200,11 @@ public interface NodeSpec {
                                                                                NodeType.controller, 3);
 
         private final NodeType type;
+        private final Optional<CloudAccount> cloudAccount;
 
-        public TypeNodeSpec(NodeType type) {
+        public TypeNodeSpec(NodeType type, Optional<CloudAccount> cloudAccount) {
             this.type = type;
+            this.cloudAccount = cloudAccount;
         }
 
         @Override
@@ -258,7 +260,7 @@ public interface NodeSpec {
 
         @Override
         public Optional<CloudAccount> cloudAccount() {
-            return Optional.empty(); // Type spec does not support custom cloud accounts
+            return cloudAccount;
         }
 
         @Override

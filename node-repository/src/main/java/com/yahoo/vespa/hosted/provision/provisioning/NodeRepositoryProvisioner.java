@@ -103,12 +103,13 @@ public class NodeRepositoryProvisioner implements Provisioner {
 
             groups = target.groups();
             resources = getNodeResources(cluster, target.nodeResources(), application, exclusive);
-            nodeSpec = NodeSpec.from(target.nodes(), resources, exclusive, actual.canFail(), requested.cloudAccount());
+            nodeSpec = NodeSpec.from(target.nodes(), resources, exclusive, actual.canFail(),
+                                     requested.cloudAccount().or(() -> nodeRepository.zone().getCloud().account()));
         }
         else {
             groups = 1; // type request with multiple groups is not supported
             resources = getNodeResources(cluster, requested.minResources().nodeResources(), application, true);
-            nodeSpec = NodeSpec.from(requested.type());
+            nodeSpec = NodeSpec.from(requested.type(), nodeRepository.zone().cloud().account());
         }
         return asSortedHosts(preparer.prepare(application, cluster, nodeSpec, groups), resources);
     }
