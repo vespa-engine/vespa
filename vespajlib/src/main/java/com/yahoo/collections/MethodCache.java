@@ -3,7 +3,6 @@ package com.yahoo.collections;
 
 import com.yahoo.concurrent.CopyOnWriteHashMap;
 
-import java.lang.ref.WeakReference;
 import java.lang.reflect.Method;
 import java.util.function.Consumer;
 
@@ -17,7 +16,7 @@ import java.util.function.Consumer;
 public final class MethodCache {
 
     private final String methodName;
-    private final CopyOnWriteHashMap<String, WeakReference<Pair<Class<?>, Method>>> cache = new CopyOnWriteHashMap<>();
+    private final CopyOnWriteHashMap<String, Pair<Class<?>, Method>> cache = new CopyOnWriteHashMap<>();
 
     public MethodCache(String methodName) {
         this.methodName = methodName;
@@ -36,8 +35,7 @@ public final class MethodCache {
     }
 
     public Method get(Object object, Consumer<String> onPut) {
-        WeakReference<Pair<Class<?>, Method>> value = cache.get(object.getClass().getName());
-        Pair<Class<?>, Method> pair = value == null ? null : value.get();
+        Pair<Class<?>, Method> pair = cache.get(object.getClass().getName());
         if (pair != null && pair.getFirst() != object.getClass()) {
             cache.clear();
             pair = null;
@@ -45,8 +43,7 @@ public final class MethodCache {
         Method method = pair == null ? null : pair.getSecond();
         if (pair == null) {
             method = lookupMethod(object);
-            pair = new Pair<>(object.getClass(), method);
-            cache.put(object.getClass().getName(), new WeakReference<>(pair));
+            cache.put(object.getClass().getName(), new Pair<>(object.getClass(), method));
             if (onPut != null)
                 onPut.accept(object.getClass().getName());
         }
