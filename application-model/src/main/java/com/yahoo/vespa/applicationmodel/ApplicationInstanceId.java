@@ -12,7 +12,8 @@ import java.util.Objects;
 public class ApplicationInstanceId {
 
     public static final ApplicationInstanceId CONFIG_SERVER = new ApplicationInstanceId(InfrastructureApplication.CONFIG_SERVER.applicationName());
-    public static final ApplicationInstanceId CONTROLLER = new ApplicationInstanceId(InfrastructureApplication.CONTROLLER.applicationName());
+    public static final ApplicationInstanceId CONTROLLER = new ApplicationInstanceId(InfrastructureApplication.CONTROLLER.applicationName() +
+                                                                                     ":prod:default:default");
     // Unfortunately, for config server host the ApplicationInstanceId is: configserver-host:prod:cd-us-central-1:default
     public boolean isConfigServerHost() { return id.startsWith(InfrastructureApplication.CONFIG_SERVER_HOST.applicationName() + ":"); }
     public static final ApplicationInstanceId CONTROLLER_HOST = new ApplicationInstanceId(InfrastructureApplication.CONTROLLER_HOST.applicationName() +
