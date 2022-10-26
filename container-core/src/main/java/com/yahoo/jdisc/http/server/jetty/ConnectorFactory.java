@@ -143,7 +143,8 @@ public class ConnectorFactory {
         // TODO Vespa 9 Use default URI compliance (LEGACY == old Jetty 9.4 compliance)
         httpConfig.setUriCompliance(UriCompliance.LEGACY);
         if (isSslEffectivelyEnabled(connectorConfig)) {
-            httpConfig.addCustomizer(new SecureRequestCustomizer());
+            // Explicitly disable SNI checking as Jetty's SNI checking trust manager is not part of our SSLContext trust manager chain
+            httpConfig.addCustomizer(new SecureRequestCustomizer(false, false, -1, false));
         }
         String serverNameFallback = connectorConfig.serverName().fallback();
         if (!serverNameFallback.isBlank()) httpConfig.setServerAuthority(new HostPort(serverNameFallback));
