@@ -208,10 +208,6 @@
           <artifactId>commons-math3</artifactId>
         </exclusion>
         <exclusion>
-          <groupId>org.json</groupId>
-          <artifactId>json</artifactId>
-        </exclusion>
-        <exclusion>
           <groupId>org.lz4</groupId>
           <artifactId>lz4-java</artifactId>
         </exclusion>

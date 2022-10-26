@@ -101,7 +101,7 @@
       <scope>compile</scope>
     </dependency>
     <dependency>
-      <!-- required for container-search code using org.json -->
+      <!-- not used by Vespa, but was historically on test classpath -->
       <groupId>org.json</groupId>
       <artifactId>json</artifactId>
       <scope>compile</scope>
