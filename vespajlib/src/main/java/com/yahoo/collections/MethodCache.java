@@ -3,6 +3,7 @@ package com.yahoo.collections;
 
 import com.yahoo.concurrent.CopyOnWriteHashMap;
 
+import java.lang.ref.WeakReference;
 import java.lang.reflect.Method;
 import java.util.function.Consumer;
 
@@ -16,7 +17,7 @@ import java.util.function.Consumer;
 public final class MethodCache {
 
     private final String methodName;
-    private final CopyOnWriteHashMap<String, Method> cache = new CopyOnWriteHashMap<>();
+    private final CopyOnWriteHashMap<String, WeakReference<Pair<Class<?>, Method>>> cache = new CopyOnWriteHashMap<>();
 
     public MethodCache(String methodName) {
         this.methodName = methodName;
@@ -33,22 +34,27 @@ public final class MethodCache {
     public Method get(Object object) {
         return get(object, null);
     }
+
     public Method get(Object object, Consumer<String> onPut) {
-        Method m = cache.get(object.getClass().getName());
-        if ( ! m.getDeclaringClass().isAssignableFrom(object.getClass())) {
+        WeakReference<Pair<Class<?>, Method>> value = cache.get(object.getClass().getName());
+        Pair<Class<?>, Method> pair = value == null ? null : value.get();
+        if (pair == null || pair.getFirst() != object.getClass()) {
             cache.clear();
-            m = null;
+            pair = null;
         }
-        if (m == null) {
-            m = lookupMethod(object);
-            if (m != null) {
+        Method method = pair == null ? null : pair.getSecond();
+        if (method == null) {
+            method = lookupMethod(object);
+            if (method != null) {
+                pair = new Pair<>(object.getClass(), method);
                 if (onPut != null)
                     onPut.accept(object.getClass().getName());
-                cache.put(object.getClass().getName(), m);
+                cache.put(object.getClass().getName(), new WeakReference<>(pair));
             }
         }
-        return m;
+        return method;
     }
+
     private Method lookupMethod(Object object)  {
         try {
             return object.getClass().getMethod(methodName);

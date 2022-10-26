@@ -83,6 +83,7 @@ public class AbiCheck extends AbstractMojo {
                         .writeValue(writer, signatures);
     }
   }
+
   // CLOVER:ON
 
   private static boolean matchingClasses(String className, JavaClassSignature expected,
