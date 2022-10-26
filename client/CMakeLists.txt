@@ -15,6 +15,7 @@ install(PROGRAMS ${GODIR}/bin/script-utils DESTINATION libexec/vespa)
 
 install_symlink(libexec/vespa/script-utils bin/vespa-logfmt)
 install_symlink(libexec/vespa/script-utils bin/vespa-deploy)
+install_symlink(libexec/vespa/script-utils bin/vespa-security-env)
 install_symlink(libexec/vespa/script-utils bin/vespa-get-cluster-state)
 install_symlink(libexec/vespa/script-utils bin/vespa-get-node-state)
 install_symlink(libexec/vespa/script-utils bin/vespa-set-node-state)
