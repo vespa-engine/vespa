@@ -48,9 +48,9 @@ struct HnswGraph {
     HnswGraph();
     ~HnswGraph();
 
-    NodeRef make_node_for_document(uint32_t nodeid, uint32_t num_levels);
+    NodeRef make_node(uint32_t nodeid, uint32_t num_levels);
 
-    void remove_node_for_document(uint32_t nodeid);
+    void remove_node(uint32_t nodeid);
 
     void trim_node_refs_size();
 

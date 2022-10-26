@@ -21,7 +21,7 @@ HnswGraph::HnswGraph()
 HnswGraph::~HnswGraph() = default;
 
 HnswGraph::NodeRef
-HnswGraph::make_node_for_document(uint32_t nodeid, uint32_t num_levels)
+HnswGraph::make_node(uint32_t nodeid, uint32_t num_levels)
 {
     node_refs.ensure_size(nodeid + 1, AtomicEntryRef());
     // A document cannot be added twice.
@@ -37,7 +37,7 @@ HnswGraph::make_node_for_document(uint32_t nodeid, uint32_t num_levels)
 }
 
 void
-HnswGraph::remove_node_for_document(uint32_t nodeid)
+HnswGraph::remove_node(uint32_t nodeid)
 {
     auto node_ref = get_node_ref(nodeid);
     assert(node_ref.valid());

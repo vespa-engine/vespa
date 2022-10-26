@@ -412,7 +412,7 @@ void
 HnswIndex::internal_complete_add(uint32_t docid, PreparedAddDoc &op)
 {
     auto nodeid = get_nodeid(docid);
-    auto node_ref = _graph.make_node_for_document(nodeid, op.max_level + 1);
+    auto node_ref = _graph.make_node(nodeid, op.max_level + 1);
     for (int level = 0; level <= op.max_level; ++level) {
         auto neighbors = filter_valid_nodeids(level, op.connections[level], nodeid);
         connect_new_node(nodeid, neighbors, level);
@@ -501,7 +501,7 @@ HnswIndex::remove_node(uint32_t nodeid)
         HnswGraph::EntryNode entry;
         _graph.set_entry_node(entry);
     }
-    _graph.remove_node_for_document(nodeid);
+    _graph.remove_node(nodeid);
 }
 
 void
@@ -771,7 +771,7 @@ HnswIndex::set_node(uint32_t nodeid, const HnswNode &node)
 {
     size_t num_levels = node.size();
     assert(num_levels > 0);
-    auto node_ref = _graph.make_node_for_document(nodeid, num_levels);
+    auto node_ref = _graph.make_node(nodeid, num_levels);
     for (size_t level = 0; level < num_levels; ++level) {
         connect_new_node(nodeid, node.level(level), level);
     }
