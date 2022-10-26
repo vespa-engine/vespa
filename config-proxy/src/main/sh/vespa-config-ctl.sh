@@ -88,7 +88,7 @@ LOGDIR="${VESPA_HOME}/logs/vespa"
 LOGFILE="$LOGDIR/vespa.log"
 VESPA_LOG_TARGET="file:$LOGFILE"
 VESPA_LOG_CONTROL_DIR="${VESPA_HOME}/var/db/vespa/logcontrol"
-cp="libexec/vespa/patches/configproxy:lib/jars/config-proxy-jar-with-dependencies.jar"
+cp="lib/jars/config-proxy-jar-with-dependencies.jar"
 
 VESPA_LOG_LEVEL="all -debug -spam"
 
