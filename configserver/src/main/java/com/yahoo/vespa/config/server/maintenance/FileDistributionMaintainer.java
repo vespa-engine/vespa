@@ -20,7 +20,7 @@ import java.time.Duration;
  */
 public class FileDistributionMaintainer extends ConfigServerMaintainer {
 
-    private static final int numberToAlwaysKeep = 20;
+    private static final int numberToAlwaysKeep = 10; // TODO: Reduce to 0 / remove
 
     private final ApplicationRepository applicationRepository;
     private final File fileReferencesDir;

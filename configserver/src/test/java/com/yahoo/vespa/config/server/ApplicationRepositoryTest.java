@@ -61,7 +61,6 @@ import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
-import java.nio.file.attribute.FileTime;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
@@ -298,10 +297,13 @@ public class ApplicationRepositoryTest {
                                                                                                 keepFileReferencesDuration,
                                                                                                 2);
         Collections.sort(toBeDeleted);
-        assertEquals(List.of("bar0", "foo"), toBeDeleted);
-        // bar0 and foo are the only ones that will be deleted (keeps 2 newest no matter how old they are)
+        List<String> expected = new ArrayList<>(List.of("foo", "bar0", "bar1"));
+        Collections.sort(expected);
+        assertEquals(expected, toBeDeleted);
+        // foo, bar0 and bar1 will be deleted, 2 newest ones (bar2 and baz) will be kept no matter how old they are
         assertFalse(filereferenceDirOldest.exists());
         assertFalse(new File(fileReferencesDir, "bar0").exists());
+        assertFalse(new File(fileReferencesDir, "bar1").exists());
         assertTrue(filereferenceDirNewest.exists());
     }
 
@@ -309,7 +311,7 @@ public class ApplicationRepositoryTest {
         assertTrue(filereferenceDir.mkdir());
         File file = new File(filereferenceDir, "bar");
         IOUtils.writeFile(file, Utf8.toBytes("test"));
-        Files.setAttribute(filereferenceDir.toPath(), "lastAccessTime", FileTime.from(clock.instant()));
+        file.setLastModified(clock.instant().toEpochMilli());
         return filereferenceDir;
     }
 
