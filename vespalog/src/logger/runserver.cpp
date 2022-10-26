@@ -342,6 +342,7 @@ int usage(char *prog, int es)
 int main(int argc, char *argv[])
 {
     bool doStop = false;
+    bool checkWouldRun = false;
     int restart = 0;
     const char *service = "runserver";
     const char *pidfile = "vespa-runserver.pid"; // XXX bad default?
@@ -350,7 +351,7 @@ int main(int argc, char *argv[])
     signal(SIGQUIT, SIG_IGN);
 
     int ch;
-    while ((ch = getopt(argc, argv, "k:s:r:p:Sh")) != -1) {
+    while ((ch = getopt(argc, argv, "k:s:r:p:ShW")) != -1) {
         switch (ch) {
         case 's':
             service = optarg;
@@ -366,6 +367,9 @@ int main(int argc, char *argv[])
             break;
         case 'k':
             killcmd = optarg;
+            break;
+        case 'W':
+            checkWouldRun = true;
             break;
         default:
             return usage(argv[0], ch != 'h');
@@ -383,6 +387,14 @@ int main(int argc, char *argv[])
     }
 
     PidFile mypf(pidfile);
+    if (checkWouldRun) {
+        if (mypf.anotherRunning()) {
+            fprintf(stderr, "%s already running with pid %d\n", service, mypf.readPid());
+            return 1;
+        } else {
+            return 0;
+        }
+    }
     if (doStop) {
         if (mypf.anotherRunning()) {
             int pid = mypf.readPid();
