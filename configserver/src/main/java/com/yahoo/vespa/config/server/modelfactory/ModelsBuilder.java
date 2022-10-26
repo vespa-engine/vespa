@@ -3,6 +3,7 @@ package com.yahoo.vespa.config.server.modelfactory;
 
 import com.yahoo.cloud.config.ConfigserverConfig;
 import com.yahoo.component.Version;
+import com.yahoo.config.ConfigurationRuntimeException;
 import com.yahoo.config.application.api.ApplicationPackage;
 import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.config.model.api.HostProvisioner;
@@ -133,7 +134,7 @@ public abstract class ModelsBuilder<MODELRESULT extends ModelResult> {
                     log.log(Level.FINE, applicationId + ": Skipping major version " + majorVersion, e);
                 }
                 else {
-                    if (e instanceof IllegalArgumentException) {
+                    if (e instanceof IllegalArgumentException || e instanceof ConfigurationRuntimeException) {
                         var wrapped = new InvalidApplicationException("Error loading " + applicationId, e);
                         deployLogger.logApplicationPackage(Level.SEVERE, Exceptions.toMessageString(wrapped));
                         throw wrapped;
