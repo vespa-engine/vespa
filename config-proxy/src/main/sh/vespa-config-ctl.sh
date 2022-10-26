@@ -120,12 +120,12 @@ case $1 in
         echo "Starting config proxy using $configsources as config source(s)"
         vespa-runserver -r 10 -s configproxy -p $P_CONFIG_PROXY -- \
             java ${jvmopts} \
-                 -XX:+ExitOnOutOfMemoryError $(getJavaOptionsIPV46) \
-                 -Dproxyconfigsources="${configsources}" \
-		 -Djava.io.tmpdir=${VESPA_HOME}/tmp \
-		 ${userargs} \
-                 -XX:ActiveProcessorCount=2 \
-                 -cp $cp com.yahoo.vespa.config.proxy.ProxyServer 19090
+                -XX:+ExitOnOutOfMemoryError $(getJavaOptionsIPV46) \
+                -Dproxyconfigsources="${configsources}" \
+                -Djava.io.tmpdir=${VESPA_HOME}/tmp \
+                ${userargs} \
+                -XX:ActiveProcessorCount=2 \
+                -cp $cp com.yahoo.vespa.config.proxy.ProxyServer 19090
 
         echo "Waiting for config proxy to start"
         fail=true
