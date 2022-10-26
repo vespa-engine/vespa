@@ -179,6 +179,7 @@ public class InternalStepRunner implements StepRunner {
                       controller.jobController().run(id)
                                 .stepInfo(setTheStage ? deployInitialReal : deployReal).get()
                                 .startTime().get(),
+                      id,
                       logger)
                 .filter(result -> {
                     // If no tester cert, or deployment failed, propagate original result.
@@ -200,10 +201,11 @@ public class InternalStepRunner implements StepRunner {
                       controller.jobController().run(id)
                                 .stepInfo(deployTester).get()
                                 .startTime().get(),
+                      id,
                       logger);
     }
 
-    private Optional<RunStatus> deploy(Supplier<DeploymentResult> deployment, Instant startTime, DualLogger logger) {
+    private Optional<RunStatus> deploy(Supplier<DeploymentResult> deployment, Instant startTime, RunId id, DualLogger logger) {
         try {
             DeploymentResult result = deployment.get();
                 logger.logAll(result.log().stream()
@@ -246,6 +248,7 @@ public class InternalStepRunner implements StepRunner {
                 }
                 case LOAD_BALANCER_NOT_READY, PARENT_HOST_NOT_READY -> {
                     logger.log(e.message()); // Consider splitting these messages in summary and details, on config server.
+                    controller.jobController().locked(id, run -> run.sleepingUntil(startTime.plusSeconds(300)));
                     return result;
                 }
                 case NODE_ALLOCATION_FAILURE -> {
