@@ -101,6 +101,12 @@
       <scope>compile</scope>
     </dependency>
     <dependency>
+      <!-- required for container-search code using org.json -->
+      <groupId>org.json</groupId>
+      <artifactId>json</artifactId>
+      <scope>compile</scope>
+    </dependency>
+    <dependency>
       <!-- TODO: this, and probably others, could be removed from here if we make the fat jar the default artifact for jdisc_core -->
       <groupId>org.lz4</groupId>
       <artifactId>lz4-java</artifactId>
