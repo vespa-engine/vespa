@@ -2,9 +2,10 @@
 package com.yahoo.config.provision;
 
 import java.util.Objects;
+import java.util.Optional;
 
 /**
- * Represents a cloud service and its supported features.
+ * Properties of the cloud service where the zone is deployed.
  *
  * @author mpolden
  */
@@ -14,11 +15,16 @@ public class Cloud {
 
     private final boolean dynamicProvisioning;
     private final boolean requireAccessControl;
+    private final Optional<CloudAccount> account;
 
-    private Cloud(CloudName name, boolean dynamicProvisioning, boolean requireAccessControl) {
+    private Cloud(CloudName name, boolean dynamicProvisioning, boolean requireAccessControl, Optional<CloudAccount> account) {
         this.name = Objects.requireNonNull(name);
         this.dynamicProvisioning = dynamicProvisioning;
         this.requireAccessControl = requireAccessControl;
+        this.account = Objects.requireNonNull(account);
+        if (name.equals(CloudName.AWS) && account.isEmpty()) {
+            throw new IllegalArgumentException("Account must be set in cloud '" + name + "'");
+        }
     }
 
     /** The name of this */
@@ -36,6 +42,11 @@ public class Cloud {
         return requireAccessControl;
     }
 
+    /** Returns the default account of this cloud, if any */
+    public Optional<CloudAccount> account() {
+        return account;
+    }
+
     /** For testing purposes only */
     public static Cloud defaultCloud() {
         return new Builder().build();
@@ -50,6 +61,7 @@ public class Cloud {
         private CloudName name = CloudName.DEFAULT;
         private boolean dynamicProvisioning = false;
         private boolean requireAccessControl = false;
+        private CloudAccount account = null;
 
         public Builder() {}
 
@@ -68,8 +80,13 @@ public class Cloud {
             return this;
         }
 
+        public Builder account(CloudAccount account) {
+            this.account = account;
+            return this;
+        }
+
         public Cloud build() {
-            return new Cloud(name, dynamicProvisioning, requireAccessControl);
+            return new Cloud(name, dynamicProvisioning, requireAccessControl, Optional.ofNullable(account));
         }
 
     }
