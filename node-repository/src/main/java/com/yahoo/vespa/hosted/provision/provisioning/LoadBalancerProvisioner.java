@@ -48,8 +48,6 @@ import java.util.stream.Collectors;
 // 1) (new) -> reserved -> active
 // 2) active | reserved -> inactive
 // 3) inactive -> active | (removed)
-// 4) active | reserved | inactive -> removable
-// 5) removable -> (removed)
 public class LoadBalancerProvisioner {
 
     private static final Logger log = Logger.getLogger(LoadBalancerProvisioner.class.getName());
@@ -163,7 +161,7 @@ public class LoadBalancerProvisioner {
         return db.readLoadBalancerIds().stream()
                  .filter(id -> id.application().tenant().equals(tenant) &&
                                id.application().application().equals(application))
-                 .toList();
+                 .collect(Collectors.toUnmodifiableList());
     }
 
     /** Require that load balancer IDs do not clash. This prevents name clashing when compacting endpoint DNS names */
@@ -192,14 +190,9 @@ public class LoadBalancerProvisioner {
             newLoadBalancer = loadBalancer.get().with(instance);
             fromState = newLoadBalancer.state();
         }
-        if (!inAccount(cloudAccount, newLoadBalancer)) {
-            // We have a load balancer, but in the wrong account. Load balancer must be removed before we can
-            // provision a new one in the wanted account
-            newLoadBalancer = newLoadBalancer.with(LoadBalancer.State.removable, now);
-        }
-        // Always store the load balancer. LoadBalancerExpirer will remove unwanted ones
+        // Always store load balancer so that LoadBalancerExpirer can expire partially provisioned load balancers
         db.writeLoadBalancer(newLoadBalancer, fromState);
-        requireInstance(id, instance, cloudAccount);
+        requireInstance(id, instance);
     }
 
     private void activate(ApplicationTransaction transaction, ClusterSpec.Id cluster, NodeList nodes) {
@@ -213,7 +206,7 @@ public class LoadBalancerProvisioner {
         LoadBalancer.State state = instance.isPresent() ? LoadBalancer.State.active : loadBalancer.get().state();
         LoadBalancer newLoadBalancer = loadBalancer.get().with(instance).with(state, now);
         db.writeLoadBalancers(List.of(newLoadBalancer), loadBalancer.get().state(), transaction.nested());
-        requireInstance(id, instance, loadBalancer.get().instance().get().cloudAccount());
+        requireInstance(id, instance);
     }
 
     /** Provision or reconfigure a load balancer instance, if necessary */
@@ -283,11 +276,6 @@ public class LoadBalancerProvisioner {
         return ids;
     }
 
-    /** Returns whether load balancer is provisioned in given account */
-    private static boolean inAccount(Optional<CloudAccount> cloudAccount, LoadBalancer loadBalancer) {
-        return loadBalancer.instance().isEmpty() || loadBalancer.instance().get().cloudAccount().equals(cloudAccount);
-    }
-
     /** Returns whether load balancer has given reals */
     private static boolean hasReals(Optional<LoadBalancer> loadBalancer, Set<Real> reals) {
         if (loadBalancer.isEmpty()) return false;
@@ -305,19 +293,21 @@ public class LoadBalancerProvisioner {
         Set<String> reachable = new LinkedHashSet<>(node.ipConfig().primary());
         // Remove addresses unreachable by the load balancer service
         switch (service.protocol()) {
-            case ipv4 -> reachable.removeIf(IP::isV6);
-            case ipv6 -> reachable.removeIf(IP::isV4);
+            case ipv4:
+                reachable.removeIf(IP::isV6);
+                break;
+            case ipv6:
+                reachable.removeIf(IP::isV4);
+                break;
         }
         return reachable;
     }
 
-    private static void requireInstance(LoadBalancerId id, Optional<LoadBalancerInstance> instance, Optional<CloudAccount> cloudAccount) {
+    private static void requireInstance(LoadBalancerId id, Optional<LoadBalancerInstance> instance) {
         if (instance.isEmpty()) {
             // Signal that load balancer is not ready yet
-            throw new LoadBalancerServiceException("Could not (re)configure " + id + ". The operation will be retried on next deployment");
-        }
-        if (!instance.get().cloudAccount().equals(cloudAccount)) {
-            throw new LoadBalancerServiceException("Could not (re)configure " + id + " due to change in cloud account. The operation will be retried on next deployment");
+            throw new LoadBalancerServiceException("Could not (re)configure " + id + ". The operation will be retried on next deployment",
+                                                   null);
         }
     }
 

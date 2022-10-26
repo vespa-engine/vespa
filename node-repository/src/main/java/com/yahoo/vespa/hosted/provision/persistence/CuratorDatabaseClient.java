@@ -87,7 +87,7 @@ public class CuratorDatabaseClient {
     }
 
     public List<String> cluster() {
-        return db.cluster().stream().map(HostName::value).toList();
+        return db.cluster().stream().map(HostName::value).collect(Collectors.toUnmodifiableList());
     }
 
     private void initZK() {
@@ -162,7 +162,7 @@ public class CuratorDatabaseClient {
     }
 
     /**
-     * Writes the given nodes to the given state (whether they are already in this state or another),
+     * Writes the given nodes to the given state (whether or not they are already in this state or another),
      * and returns a copy of the incoming nodes in their persisted state.
      *
      * @param  toState the state to write the nodes to
@@ -305,18 +305,19 @@ public class CuratorDatabaseClient {
     }
 
     private String toDir(Node.State state) {
-        return switch (state) {
-            case active -> "allocated"; // legacy name
-            case dirty -> "dirty";
-            case failed -> "failed";
-            case inactive -> "deallocated"; // legacy name
-            case parked -> "parked";
-            case provisioned -> "provisioned";
-            case ready -> "ready";
-            case reserved -> "reserved";
-            case deprovisioned -> "deprovisioned";
-            case breakfixed -> "breakfixed";
-        };
+        switch (state) {
+            case active: return "allocated"; // legacy name
+            case dirty: return "dirty";
+            case failed: return "failed";
+            case inactive: return "deallocated"; // legacy name
+            case parked : return "parked";
+            case provisioned: return "provisioned";
+            case ready: return "ready";
+            case reserved: return "reserved";
+            case deprovisioned: return "deprovisioned";
+            case breakfixed: return "breakfixed";
+            default: throw new RuntimeException("Node state " + state + " does not map to a directory name");
+        }
     }
 
     /** Acquires the single cluster-global, reentrant lock for all non-active nodes */
@@ -512,7 +513,7 @@ public class CuratorDatabaseClient {
         return db.getChildren(loadBalancersPath).stream()
                  .map(LoadBalancerId::fromSerializedForm)
                  .filter(predicate)
-                 .toList();
+                 .collect(Collectors.toUnmodifiableList());
     }
 
     /** Returns a given number of unique provision indices */
@@ -523,7 +524,7 @@ public class CuratorDatabaseClient {
         int firstIndex = (int) provisionIndexCounter.add(count) - count;
         return IntStream.range(0, count)
                         .mapToObj(i -> firstIndex + i)
-                        .toList();
+                        .collect(Collectors.toList());
     }
 
     public CacheStats cacheStats() {
