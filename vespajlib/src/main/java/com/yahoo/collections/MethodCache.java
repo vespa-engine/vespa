@@ -38,19 +38,17 @@ public final class MethodCache {
     public Method get(Object object, Consumer<String> onPut) {
         WeakReference<Pair<Class<?>, Method>> value = cache.get(object.getClass().getName());
         Pair<Class<?>, Method> pair = value == null ? null : value.get();
-        if (pair == null || pair.getFirst() != object.getClass()) {
+        if (pair != null && pair.getFirst() != object.getClass()) {
             cache.clear();
             pair = null;
         }
         Method method = pair == null ? null : pair.getSecond();
-        if (method == null) {
+        if (pair == null) {
             method = lookupMethod(object);
-            if (method != null) {
-                pair = new Pair<>(object.getClass(), method);
-                if (onPut != null)
-                    onPut.accept(object.getClass().getName());
-                cache.put(object.getClass().getName(), new WeakReference<>(pair));
-            }
+            pair = new Pair<>(object.getClass(), method);
+            cache.put(object.getClass().getName(), new WeakReference<>(pair));
+            if (method != null && onPut != null)
+                onPut.accept(object.getClass().getName());
         }
         return method;
     }
