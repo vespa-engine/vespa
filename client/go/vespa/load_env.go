@@ -20,6 +20,8 @@ func LoadDefaultEnv() error {
 func ExportDefaultEnvToSh() error {
 	holder := newShellEnvExporter()
 	err := loadDefaultEnvTo(holder)
+	holder.fallbackVar("VESPA_HOME", FindHome())
+	holder.fallbackVar("VESPA_USER", FindVespaUser())
 	holder.dump()
 	return err
 }
@@ -151,9 +153,10 @@ func newShellEnvExporter() *shellEnvExporter {
 	}
 }
 func (p *shellEnvExporter) fallbackVar(varName, varVal string) {
-	if os.Getenv(varName) == "" || p.unsetVars[varName] != "" {
-		delete(p.unsetVars, varName)
-		p.exportVars[varName] = shellQuote(varVal)
+	if p.exportVars[varName] == "" {
+		if os.Getenv(varName) == "" || os.Getenv(varName) == varVal || p.unsetVars[varName] != "" {
+			p.overrideVar(varName, varVal)
+		}
 	}
 }
 func (p *shellEnvExporter) overrideVar(varName, varVal string) {
