@@ -12,10 +12,10 @@ namespace search::queryeval {
 class SimplePhraseBlueprint : public ComplexLeafBlueprint
 {
 private:
-    FieldSpec               _field;
-    HitEstimate             _estimate;
-    fef::MatchDataLayout    _layout;
-    std::vector<Blueprint*> _terms;
+    FieldSpec                  _field;
+    HitEstimate                _estimate;
+    fef::MatchDataLayout       _layout;
+    std::vector<Blueprint::UP> _terms;
 
 public:
     SimplePhraseBlueprint(const FieldSpec &field, bool expensive);

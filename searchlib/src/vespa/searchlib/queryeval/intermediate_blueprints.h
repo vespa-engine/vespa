@@ -20,7 +20,7 @@ public:
     void optimize_self() override;
     bool isAndNot() const override { return true; }
     Blueprint::UP get_replacement() override;
-    void sort(std::vector<Blueprint*> &children) const override;
+    void sort(Children &children) const override;
     bool inheritStrict(size_t i) const override;
     SearchIterator::UP
     createIntermediateSearch(MultiSearch::Children subSearches,
@@ -43,7 +43,7 @@ public:
     void optimize_self() override;
     bool isAnd() const override { return true; }
     Blueprint::UP get_replacement() override;
-    void sort(std::vector<Blueprint*> &children) const override;
+    void sort(Children &children) const override;
     bool inheritStrict(size_t i) const override;
     SearchIterator::UP
     createIntermediateSearch(MultiSearch::Children subSearches,
@@ -67,7 +67,7 @@ public:
     void optimize_self() override;
     bool isOr() const override { return true; }
     Blueprint::UP get_replacement() override;
-    void sort(std::vector<Blueprint*> &children) const override;
+    void sort(Children &children) const override;
     bool inheritStrict(size_t i) const override;
     SearchIterator::UP
     createIntermediateSearch(MultiSearch::Children subSearches,
@@ -87,7 +87,7 @@ private:
 public:
     HitEstimate combine(const std::vector<HitEstimate> &data) const override;
     FieldSpecBaseList exposeFields() const override;
-    void sort(std::vector<Blueprint*> &children) const override;
+    void sort(Children &children) const override;
     bool inheritStrict(size_t i) const override;
     bool always_needs_unpack() const override;
     SearchIterator::UP
@@ -116,7 +116,7 @@ public:
     HitEstimate combine(const std::vector<HitEstimate> &data) const override;
     FieldSpecBaseList exposeFields() const override;
     bool should_optimize_children() const override { return false; }
-    void sort(std::vector<Blueprint*> &children) const override;
+    void sort(Children &children) const override;
     bool inheritStrict(size_t i) const override;
     SearchIteratorUP createSearch(fef::MatchData &md, bool strict) const override;
     SearchIterator::UP
@@ -138,7 +138,7 @@ public:
     HitEstimate combine(const std::vector<HitEstimate> &data) const override;
     FieldSpecBaseList exposeFields() const override;
     bool should_optimize_children() const override { return false; }
-    void sort(std::vector<Blueprint*> &children) const override;
+    void sort(Children &children) const override;
     bool inheritStrict(size_t i) const override;
     SearchIteratorUP createSearch(fef::MatchData &md, bool strict) const override;
     SearchIterator::UP
@@ -158,7 +158,7 @@ public:
     FieldSpecBaseList exposeFields() const override;
     void optimize_self() override;
     Blueprint::UP get_replacement() override;
-    void sort(std::vector<Blueprint*> &children) const override;
+    void sort(Children &children) const override;
     bool inheritStrict(size_t i) const override;
     bool isRank() const override { return true; }
     SearchIterator::UP
@@ -179,7 +179,7 @@ public:
     SourceBlenderBlueprint(const ISourceSelector &selector);
     HitEstimate combine(const std::vector<HitEstimate> &data) const override;
     FieldSpecBaseList exposeFields() const override;
-    void sort(std::vector<Blueprint*> &children) const override;
+    void sort(Children &children) const override;
     bool inheritStrict(size_t i) const override;
     /**
      * Will return the index matching the given sourceId.

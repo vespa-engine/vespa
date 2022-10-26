@@ -30,7 +30,7 @@ public:
         return mixChildrenFields();
     }
 
-    virtual void sort(std::vector<Blueprint*> &children) const override {
+    virtual void sort(Children &children) const override {
         std::sort(children.begin(), children.end(), TieredGreaterEstimate());
     }
 

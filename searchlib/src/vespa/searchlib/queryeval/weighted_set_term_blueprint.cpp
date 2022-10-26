@@ -15,17 +15,17 @@ class WeightedSetTermMatchingElementsSearch : public MatchingElementsSearch
     fef::TermFieldMatchData                _tfmd;
     fef::TermFieldMatchDataArray           _tfmda;
     vespalib::string                       _field_name;
-    const std::vector<Blueprint*>&         _terms;
+    const std::vector<Blueprint::UP>      &_terms;
     std::unique_ptr<WeightedSetTermSearch> _search;
     
 public:
-    WeightedSetTermMatchingElementsSearch(const WeightedSetTermBlueprint& bp, const vespalib::string& field_name, const std::vector<Blueprint*>& terms);
+    WeightedSetTermMatchingElementsSearch(const WeightedSetTermBlueprint& bp, const vespalib::string& field_name, const std::vector<Blueprint::UP> &terms);
     ~WeightedSetTermMatchingElementsSearch() override;
     void find_matching_elements(uint32_t docid, MatchingElements& result) override;
     void initRange(uint32_t begin_id, uint32_t end_id) override;
 };
 
-WeightedSetTermMatchingElementsSearch::WeightedSetTermMatchingElementsSearch(const WeightedSetTermBlueprint& bp, const vespalib::string& field_name, const std::vector<Blueprint*>& terms)
+WeightedSetTermMatchingElementsSearch::WeightedSetTermMatchingElementsSearch(const WeightedSetTermBlueprint& bp, const vespalib::string& field_name, const std::vector<Blueprint::UP> &terms)
     : _tfmd(),
       _tfmda(),
       _field_name(field_name),
@@ -71,13 +71,7 @@ WeightedSetTermBlueprint::WeightedSetTermBlueprint(const FieldSpec &field)
     set_allow_termwise_eval(true);
 }
 
-WeightedSetTermBlueprint::~WeightedSetTermBlueprint()
-{
-    while (!_terms.empty()) {
-        delete _terms.back();
-        _terms.pop_back();
-    }
-}
+WeightedSetTermBlueprint::~WeightedSetTermBlueprint() = default;
 
 void
 WeightedSetTermBlueprint::addTerm(Blueprint::UP term, int32_t weight)
@@ -92,8 +86,7 @@ WeightedSetTermBlueprint::addTerm(Blueprint::UP term, int32_t weight)
         setEstimate(_estimate);
     }
     _weights.push_back(weight);
-    _terms.push_back(term.get());
-    term.release();
+    _terms.push_back(std::move(term));
 }
 
 

@@ -56,6 +56,18 @@ bool got_global_filter(Blueprint &b) {
     return (static_cast<MyLeaf &>(b)).got_global_filter();
 }
 
+void check_sort_order(IntermediateBlueprint &self, std::vector<Blueprint*> unordered, std::vector<size_t> order) {
+    ASSERT_EQUAL(unordered.size(), order.size());
+    std::vector<Blueprint::UP> children;
+    for (auto *child: unordered) {
+        children.push_back(std::unique_ptr<Blueprint>(child));
+    }
+    self.sort(children);
+    for (size_t i = 0; i < children.size(); ++i) {
+        EXPECT_EQUAL(children[i].get(), unordered[order[i]]);
+    }
+}
+
 TEST("test AndNot Blueprint") {
     AndNotBlueprint b;
     { // combine
@@ -86,20 +98,12 @@ TEST("test AndNot Blueprint") {
         EXPECT_EQUAL(true,  got_global_filter(a.getChild(1)));
     }
     {
-        std::vector<Blueprint *> children;
-        Blueprint::UP c1 = ap(MyLeafSpec(10).create());
-        Blueprint::UP c2 = ap(MyLeafSpec(20).create());
-        Blueprint::UP c3 = ap(MyLeafSpec(40).create());
-        Blueprint::UP c4 = ap(MyLeafSpec(30).create());
-        children.push_back(c1.get());
-        children.push_back(c2.get());
-        children.push_back(c3.get());
-        children.push_back(c4.get());
-        b.sort(children);
-        EXPECT_EQUAL(c1.get(), children[0]);
-        EXPECT_EQUAL(c3.get(), children[1]);
-        EXPECT_EQUAL(c4.get(), children[2]);
-        EXPECT_EQUAL(c2.get(), children[3]);
+        check_sort_order(b,
+                         {MyLeafSpec(10).create(),
+                          MyLeafSpec(20).create(),
+                          MyLeafSpec(40).create(),
+                          MyLeafSpec(30).create()},
+                         {0, 2, 3, 1});
     }
     {
         EXPECT_EQUAL(true, b.inheritStrict(0));
@@ -161,20 +165,12 @@ TEST("test And Blueprint") {
         EXPECT_EQUAL(true,  got_global_filter(a.getChild(1)));
     }
     {
-        std::vector<Blueprint *> children;
-        Blueprint::UP c1 = ap(MyLeafSpec(20).create());
-        Blueprint::UP c2 = ap(MyLeafSpec(40).create());
-        Blueprint::UP c3 = ap(MyLeafSpec(10).create());
-        Blueprint::UP c4 = ap(MyLeafSpec(30).create());
-        children.push_back(c1.get());
-        children.push_back(c2.get());
-        children.push_back(c3.get());
-        children.push_back(c4.get());
-        b.sort(children);
-        EXPECT_EQUAL(c3.get(), children[0]);
-        EXPECT_EQUAL(c1.get(), children[1]);
-        EXPECT_EQUAL(c4.get(), children[2]);
-        EXPECT_EQUAL(c2.get(), children[3]);
+        check_sort_order(b,
+                         {MyLeafSpec(20).create(),
+                          MyLeafSpec(40).create(),
+                          MyLeafSpec(10).create(),
+                          MyLeafSpec(30).create()},
+                         {2, 0, 3, 1});
     }
     {
         EXPECT_EQUAL(true, b.inheritStrict(0));
@@ -241,20 +237,12 @@ TEST("test Or Blueprint") {
         EXPECT_EQUAL(true,  got_global_filter(o.getChild(o.childCnt() - 1)));
     }
     {
-        std::vector<Blueprint *> children;
-        Blueprint::UP c1 = ap(MyLeafSpec(10).create());
-        Blueprint::UP c2 = ap(MyLeafSpec(20).create());
-        Blueprint::UP c3 = ap(MyLeafSpec(40).create());
-        Blueprint::UP c4 = ap(MyLeafSpec(30).create());
-        children.push_back(c1.get());
-        children.push_back(c2.get());
-        children.push_back(c3.get());
-        children.push_back(c4.get());
-        b.sort(children);
-        EXPECT_EQUAL(c3.get(), children[0]);
-        EXPECT_EQUAL(c4.get(), children[1]);
-        EXPECT_EQUAL(c2.get(), children[2]);
-        EXPECT_EQUAL(c1.get(), children[3]);
+        check_sort_order(b,
+                         {MyLeafSpec(10).create(),
+                          MyLeafSpec(20).create(),
+                          MyLeafSpec(40).create(),
+                          MyLeafSpec(30).create()},
+                         {2, 3, 1, 0});
     }
     {
         EXPECT_EQUAL(true, b.inheritStrict(0));
@@ -290,20 +278,12 @@ TEST("test Near Blueprint") {
         EXPECT_EQUAL(0u, a.exposeFields().size());
     }
     {
-        std::vector<Blueprint *> children;
-        Blueprint::UP c1 = ap(MyLeafSpec(40).create());
-        Blueprint::UP c2 = ap(MyLeafSpec(10).create());
-        Blueprint::UP c3 = ap(MyLeafSpec(30).create());
-        Blueprint::UP c4 = ap(MyLeafSpec(20).create());
-        children.push_back(c1.get());
-        children.push_back(c2.get());
-        children.push_back(c3.get());
-        children.push_back(c4.get());
-        b.sort(children);
-        EXPECT_EQUAL(c2.get(), children[0]);
-        EXPECT_EQUAL(c4.get(), children[1]);
-        EXPECT_EQUAL(c3.get(), children[2]);
-        EXPECT_EQUAL(c1.get(), children[3]);
+        check_sort_order(b,
+                         {MyLeafSpec(40).create(),
+                          MyLeafSpec(10).create(),
+                          MyLeafSpec(30).create(),
+                          MyLeafSpec(20).create()},
+                         {1, 3, 2, 0});
     }
     {
         EXPECT_EQUAL(true, b.inheritStrict(0));
@@ -339,20 +319,12 @@ TEST("test ONear Blueprint") {
         EXPECT_EQUAL(0u, a.exposeFields().size());
     }
     {
-        std::vector<Blueprint *> children;
-        Blueprint::UP c1 = ap(MyLeafSpec(20).create());
-        Blueprint::UP c2 = ap(MyLeafSpec(10).create());
-        Blueprint::UP c3 = ap(MyLeafSpec(40).create());
-        Blueprint::UP c4 = ap(MyLeafSpec(30).create());
-        children.push_back(c1.get());
-        children.push_back(c2.get());
-        children.push_back(c3.get());
-        children.push_back(c4.get());
-        b.sort(children);
-        EXPECT_EQUAL(c1.get(), children[0]);
-        EXPECT_EQUAL(c2.get(), children[1]);
-        EXPECT_EQUAL(c3.get(), children[2]);
-        EXPECT_EQUAL(c4.get(), children[3]);
+        check_sort_order(b,
+                         {MyLeafSpec(20).create(),
+                          MyLeafSpec(10).create(),
+                          MyLeafSpec(40).create(),
+                          MyLeafSpec(30).create()},
+                         {0, 1, 2, 3});
     }
     {
         EXPECT_EQUAL(true, b.inheritStrict(0));
@@ -396,20 +368,12 @@ TEST("test Rank Blueprint") {
         EXPECT_EQUAL(true,  got_global_filter(a.getChild(1)));
     }
     {
-        std::vector<Blueprint *> children;
-        Blueprint::UP c1 = ap(MyLeafSpec(20).create());
-        Blueprint::UP c2 = ap(MyLeafSpec(10).create());
-        Blueprint::UP c3 = ap(MyLeafSpec(40).create());
-        Blueprint::UP c4 = ap(MyLeafSpec(30).create());
-        children.push_back(c1.get());
-        children.push_back(c2.get());
-        children.push_back(c3.get());
-        children.push_back(c4.get());
-        b.sort(children);
-        EXPECT_EQUAL(c1.get(), children[0]);
-        EXPECT_EQUAL(c2.get(), children[1]);
-        EXPECT_EQUAL(c3.get(), children[2]);
-        EXPECT_EQUAL(c4.get(), children[3]);
+        check_sort_order(b,
+                         {MyLeafSpec(20).create(),
+                          MyLeafSpec(10).create(),
+                          MyLeafSpec(40).create(),
+                          MyLeafSpec(30).create()},
+                         {0, 1, 2, 3});
     }
     {
         EXPECT_EQUAL(true, b.inheritStrict(0));
@@ -469,20 +433,12 @@ TEST("test SourceBlender Blueprint") {
         EXPECT_EQUAL(0u, a->getState().numFields());
     }
     {
-        std::vector<Blueprint *> children;
-        Blueprint::UP c1 = ap(MyLeafSpec(20).create());
-        Blueprint::UP c2 = ap(MyLeafSpec(10).create());
-        Blueprint::UP c3 = ap(MyLeafSpec(40).create());
-        Blueprint::UP c4 = ap(MyLeafSpec(30).create());
-        children.push_back(c1.get());
-        children.push_back(c2.get());
-        children.push_back(c3.get());
-        children.push_back(c4.get());
-        b.sort(children);
-        EXPECT_EQUAL(c1.get(), children[0]);
-        EXPECT_EQUAL(c2.get(), children[1]);
-        EXPECT_EQUAL(c3.get(), children[2]);
-        EXPECT_EQUAL(c4.get(), children[3]);
+        check_sort_order(b,
+                         {MyLeafSpec(20).create(),
+                          MyLeafSpec(10).create(),
+                          MyLeafSpec(40).create(),
+                          MyLeafSpec(30).create()},
+                         {0, 1, 2, 3});
     }
     {
         EXPECT_EQUAL(true, b.inheritStrict(0));
@@ -1080,20 +1036,12 @@ TEST("test WeakAnd Blueprint") {
         EXPECT_EQUAL(0u, a.exposeFields().size());
     }
     {
-        std::vector<Blueprint *> children;
-        Blueprint::UP c1 = ap(MyLeafSpec(10).create());
-        Blueprint::UP c2 = ap(MyLeafSpec(20).create());
-        Blueprint::UP c3 = ap(MyLeafSpec(40).create());
-        Blueprint::UP c4 = ap(MyLeafSpec(30).create());
-        children.push_back(c1.get());
-        children.push_back(c2.get());
-        children.push_back(c3.get());
-        children.push_back(c4.get());
-        b.sort(children);
-        EXPECT_EQUAL(c1.get(), children[0]);
-        EXPECT_EQUAL(c2.get(), children[1]);
-        EXPECT_EQUAL(c3.get(), children[2]);
-        EXPECT_EQUAL(c4.get(), children[3]);
+        check_sort_order(b,
+                         {MyLeafSpec(20).create(),
+                          MyLeafSpec(10).create(),
+                          MyLeafSpec(40).create(),
+                          MyLeafSpec(30).create()},
+                         {0, 1, 2, 3});
     }
     {
         EXPECT_EQUAL(true, b.inheritStrict(0));

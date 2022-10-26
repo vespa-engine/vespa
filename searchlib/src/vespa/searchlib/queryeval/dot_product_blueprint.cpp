@@ -16,13 +16,7 @@ DotProductBlueprint::DotProductBlueprint(const FieldSpec &field)
 {
 }
 
-DotProductBlueprint::~DotProductBlueprint()
-{
-    while (!_terms.empty()) {
-        delete _terms.back();
-        _terms.pop_back();
-    }
-}
+DotProductBlueprint::~DotProductBlueprint() = default;
 
 FieldSpec
 DotProductBlueprint::getNextChildField(const FieldSpec &outer)
@@ -43,8 +37,7 @@ DotProductBlueprint::addTerm(Blueprint::UP term, int32_t weight)
         setEstimate(_estimate);
     }
     _weights.push_back(weight);
-    _terms.push_back(term.get());
-    term.release();
+    _terms.push_back(std::move(term));
 }
 
 SearchIterator::UP

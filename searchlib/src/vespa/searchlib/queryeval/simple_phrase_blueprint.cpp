@@ -23,13 +23,7 @@ SimplePhraseBlueprint::SimplePhraseBlueprint(const FieldSpec &field, bool expens
     }
 }
 
-SimplePhraseBlueprint::~SimplePhraseBlueprint()
-{
-    while (!_terms.empty()) {
-        delete _terms.back();
-        _terms.pop_back();
-    }
-}
+SimplePhraseBlueprint::~SimplePhraseBlueprint() = default;
 
 FieldSpec
 SimplePhraseBlueprint::getNextChildField(const FieldSpec &outer)
@@ -51,7 +45,7 @@ SimplePhraseBlueprint::addTerm(Blueprint::UP term)
         _estimate = childEst;
     }
     setEstimate(_estimate);
-    _terms.push_back(term.release());
+    _terms.push_back(std::move(term));
 }
 
 SearchIterator::UP
@@ -87,18 +81,7 @@ SimplePhraseBlueprint::createLeafSearch(const fef::TermFieldMatchDataArray &tfmd
 SearchIterator::UP
 SimplePhraseBlueprint::createFilterSearch(bool strict, FilterConstraint constraint) const
 {
-    if (constraint == FilterConstraint::UPPER_BOUND) {
-        MultiSearch::Children children;
-        children.reserve(_terms.size());
-        for (size_t i = 0; i < _terms.size(); ++i) {
-            bool child_strict = strict && (i == 0);
-            children.push_back(_terms[i]->createFilterSearch(child_strict, constraint));
-        }
-        UnpackInfo unpack_info;
-        return AndSearch::create(std::move(children), strict, unpack_info);
-    } else {
-        return std::make_unique<EmptySearch>();
-    }
+    return create_atmost_and_filter(_terms, strict, constraint);
 }
 
 void

@@ -40,8 +40,9 @@ class MatchingElementsSearch;
 class Blueprint
 {
 public:
-    typedef std::unique_ptr<Blueprint> UP;
-    typedef std::unique_ptr<SearchIterator> SearchIteratorUP;
+    using UP = std::unique_ptr<Blueprint>;
+    using Children = std::vector<Blueprint::UP>;
+    using SearchIteratorUP = std::unique_ptr<SearchIterator>;
 
     struct HitEstimate {
         uint32_t estHits;
@@ -127,7 +128,7 @@ public:
 
     // utility to get the greater estimate to sort first, higher tiers last
     struct TieredGreaterEstimate {
-        bool operator () (Blueprint * const &a, Blueprint * const &b) const {
+        bool operator () (const auto &a, const auto &b) const {
             const auto &lhs = a->getState();
             const auto &rhs = b->getState();
             if (lhs.cost_tier() != rhs.cost_tier()) {
@@ -139,7 +140,7 @@ public:
 
     // utility to get the lesser estimate to sort first, higher tiers last
     struct TieredLessEstimate {
-        bool operator () (Blueprint * const &a, const Blueprint * const &b) const {
+        bool operator () (const auto &a, const auto &b) const {
             const auto &lhs = a->getState();
             const auto &rhs = b->getState();
             if (lhs.cost_tier() != rhs.cost_tier()) {
@@ -225,8 +226,12 @@ public:
 
     virtual SearchIteratorUP createSearch(fef::MatchData &md, bool strict) const = 0;
     virtual SearchIteratorUP createFilterSearch(bool strict, FilterConstraint constraint) const;
-    static std::unique_ptr<SearchIterator> create_and_filter(const std::vector<Blueprint *>& children, bool strict, FilterConstraint constraint);
-    static std::unique_ptr<SearchIterator> create_or_filter(const std::vector<Blueprint *>& children, bool strict, FilterConstraint constraint);
+    static SearchIteratorUP create_and_filter(const Children &children, bool strict, FilterConstraint constraint);
+    static SearchIteratorUP create_or_filter(const Children &children, bool strict, FilterConstraint constraint);
+    static SearchIteratorUP create_atmost_and_filter(const Children &children, bool strict, FilterConstraint constraint);
+    static SearchIteratorUP create_atmost_or_filter(const Children &children, bool strict, FilterConstraint constraint);
+    static SearchIteratorUP create_andnot_filter(const Children &children, bool strict, FilterConstraint constraint);
+    static SearchIteratorUP create_first_child_filter(const Children &children, bool strict, FilterConstraint constraint);
 
     // for debug dumping
     vespalib::string asString() const;
@@ -278,8 +283,6 @@ public:
 
 class IntermediateBlueprint : public blueprint::StateCache
 {
-public:
-    typedef std::vector<Blueprint*> Children;
 private:
     Children _children;
     HitEstimate calculateEstimate() const;
@@ -325,7 +328,7 @@ public:
 
     virtual HitEstimate combine(const std::vector<HitEstimate> &data) const = 0;
     virtual FieldSpecBaseList exposeFields() const = 0;
-    virtual void sort(std::vector<Blueprint*> &children) const = 0;
+    virtual void sort(Children &children) const = 0;
     virtual bool inheritStrict(size_t i) const = 0;
     virtual SearchIteratorUP
     createIntermediateSearch(MultiSearch::Children subSearches,

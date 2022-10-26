@@ -29,7 +29,7 @@ private:
     HitEstimate                        _estimate;
     fef::MatchDataLayout               _layout;
     std::vector<int32_t>               _weights;
-    std::vector<Blueprint*>            _terms;
+    std::vector<Blueprint::UP>         _terms;
 
     ParallelWeakAndBlueprint(const ParallelWeakAndBlueprint &);
     ParallelWeakAndBlueprint &operator=(const ParallelWeakAndBlueprint &);

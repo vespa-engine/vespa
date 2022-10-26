@@ -44,7 +44,7 @@ public:
     // used during docsum fetching to identify matching elements
     // initRange must be called before use.
     // doSeek/doUnpack must not be called.
-    virtual void find_matching_elements(uint32_t docid, const std::vector<Blueprint *>& child_blueprints, std::vector<uint32_t> &dst) = 0;
+    virtual void find_matching_elements(uint32_t docid, const std::vector<std::unique_ptr<Blueprint>> &child_blueprints, std::vector<uint32_t> &dst) = 0;
 };
 
 }  // namespace search::queryeval
