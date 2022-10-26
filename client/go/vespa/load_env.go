@@ -20,8 +20,6 @@ func LoadDefaultEnv() error {
 func ExportDefaultEnvToSh() error {
 	holder := newShellEnvExporter()
 	err := loadDefaultEnvTo(holder)
-	holder.overrideVar("VESPA_HOME", FindHome())
-	holder.overrideVar("VESPA_USER", FindVespaUser())
 	holder.dump()
 	return err
 }
