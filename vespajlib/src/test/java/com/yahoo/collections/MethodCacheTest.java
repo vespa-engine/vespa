@@ -9,6 +9,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotSame;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -60,11 +61,21 @@ class MethodCacheTest {
             cachedCustomMethod.invoke(customDummy);
             assertThrows(IllegalArgumentException.class, () -> applicationMethod.invoke(customDummy));
             assertThrows(IllegalArgumentException.class, () -> customMethod.invoke(applicationDummy));
+
+            Object noDummy = new NoDummy();
+            Method noMethod = methods.get(noDummy, __ -> updatedCache.set(true));
+            assertTrue(updatedCache.getAndSet(false), "cache was updated");
+            assertNull(noMethod);
+
+            Method cachedNoMethod = methods.get(noDummy, __ -> updatedCache.set(true));
+            assertFalse(updatedCache.getAndSet(false), "cache was updated");
+            assertNull(cachedNoMethod);
         }
     }
 
+    public static class NoDummy implements Cloneable { }
+
     public static class Dummy implements Cloneable {
-        public Dummy() { }
         public Object clone() throws CloneNotSupportedException { return super.clone(); }
     }
 

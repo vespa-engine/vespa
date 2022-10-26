@@ -47,7 +47,7 @@ public final class MethodCache {
             method = lookupMethod(object);
             pair = new Pair<>(object.getClass(), method);
             cache.put(object.getClass().getName(), new WeakReference<>(pair));
-            if (method != null && onPut != null)
+            if (onPut != null)
                 onPut.accept(object.getClass().getName());
         }
         return method;
