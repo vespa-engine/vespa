@@ -32,6 +32,7 @@ override VESPA_FOO "new foo"
 
 fallback VESPA_BAR "new bar"
 fallback VESPA_QUUX "new quux"
+fallback VESPA_QUUX "bad quux"
 
 unset VESPA_FOOBAR
 `)
@@ -120,14 +121,18 @@ func TestExportEnv(t *testing.T) {
 	t.Setenv("VESPA_FOO", "was foo")
 	t.Setenv("VESPA_BAR", "was bar")
 	t.Setenv("VESPA_FOOBAR", "foobar")
+	t.Setenv("VESPA_ALREADY", "already")
 	t.Setenv("VESPA_BARFOO", "was barfoo")
 	os.Unsetenv("VESPA_QUUX")
 	setup(t, `
 # vespa env vars file
 override VESPA_FOO "newFoo1"
 
+fallback VESPA_FOO "bad foo"
 fallback VESPA_BAR "new bar"
 fallback VESPA_QUUX "new quux"
+fallback VESPA_QUUX "bad quux"
+fallback VESPA_ALREADY "already"
 
 unset VESPA_FOOBAR
 unset VESPA_BARFOO
@@ -143,13 +148,14 @@ unset XYZ
 	assert.Equal(t, "", holder.exportVars["VESPA_BAR"])
 	assert.Equal(t, "'new quux'", holder.exportVars["VESPA_QUUX"])
 	assert.Equal(t, `'new'\''b<a>r'\''foo'`, holder.exportVars["VESPA_BARFOO"])
+	assert.Equal(t, "already", holder.exportVars["VESPA_ALREADY"])
 	// unsets:
 	assert.Equal(t, "", holder.exportVars["VESPA_FOOBAR"])
 	assert.Equal(t, "unset", holder.unsetVars["VESPA_FOOBAR"])
 	assert.Equal(t, "", holder.exportVars["XYZ"])
 	assert.Equal(t, "unset", holder.unsetVars["XYZ"])
 	// nothing extra allowed:
-	assert.Equal(t, 3, len(holder.exportVars))
+	assert.Equal(t, 4, len(holder.exportVars))
 	assert.Equal(t, 2, len(holder.unsetVars))
 	// run it
 	err = ExportDefaultEnvToSh()
