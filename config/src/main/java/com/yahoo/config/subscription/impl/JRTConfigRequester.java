@@ -98,7 +98,8 @@ public class JRTConfigRequester implements RequestWaiter {
         Connection connection = connectionPool.getCurrent();
         Request request = req.getRequest();
         request.setContext(new RequestContext(sub, req, connection));
-        if (!req.validateParameters()) throw new ConfigurationRuntimeException("Error in parameters for config request: " + req);
+        if (!req.validateParameters())
+            throw new ConfigurationRuntimeException("Error in parameters for config request: " + req);
 
         Duration jrtClientTimeout = getClientTimeout(req);
         log.log(FINE, () -> "Requesting config for " + sub + " on connection " + connection

@@ -51,7 +51,8 @@ public class DefContent {
     }
 
     /**
-     * The def file payload of the actual class of the given config
+     * The def file payload of the actual class of the given config.
+     *
      * @param configClass the class of a generated config instance
      * @return a String array with the config definition (one line per element)
      */

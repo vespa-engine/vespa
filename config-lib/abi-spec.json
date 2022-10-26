@@ -1,11 +1,11 @@
 {
-  "com.yahoo.config.BooleanNode" : {
-    "superClass" : "com.yahoo.config.LeafNode",
-    "interfaces" : [ ],
-    "attributes" : [
+  "com.yahoo.config.BooleanNode": {
+    "superClass": "com.yahoo.config.LeafNode",
+    "interfaces": [],
+    "attributes": [
       "public"
     ],
-    "methods" : [
+    "methods": [
       "public void <init>()",
       "public void <init>(boolean)",
       "public java.lang.Boolean value()",
@@ -14,28 +14,28 @@
       "protected boolean doSetValue(java.lang.String)",
       "public bridge synthetic java.lang.Object value()"
     ],
-    "fields" : [ ]
+    "fields": []
   },
-  "com.yahoo.config.ChangesRequiringRestart$CompareFunc" : {
-    "superClass" : "java.lang.Object",
-    "interfaces" : [ ],
-    "attributes" : [
+  "com.yahoo.config.ChangesRequiringRestart$CompareFunc": {
+    "superClass": "java.lang.Object",
+    "interfaces": [],
+    "attributes": [
       "public",
       "interface",
       "abstract"
     ],
-    "methods" : [
+    "methods": [
       "public abstract com.yahoo.config.ChangesRequiringRestart getChangesRequiringRestart(com.yahoo.config.Node, com.yahoo.config.Node)"
     ],
-    "fields" : [ ]
+    "fields": []
   },
-  "com.yahoo.config.ChangesRequiringRestart" : {
-    "superClass" : "java.lang.Object",
-    "interfaces" : [ ],
-    "attributes" : [
+  "com.yahoo.config.ChangesRequiringRestart": {
+    "superClass": "java.lang.Object",
+    "interfaces": [],
+    "attributes": [
       "public"
     ],
-    "methods" : [
+    "methods": [
       "public void <init>(java.lang.String)",
       "public java.lang.String getName()",
       "public com.yahoo.config.ChangesRequiringRestart compare(com.yahoo.config.Node, com.yahoo.config.Node, java.lang.String, java.lang.String)",
@@ -46,30 +46,30 @@
       "public java.lang.String toString(java.lang.String)",
       "public boolean needsRestart()"
     ],
-    "fields" : [ ]
+    "fields": []
   },
-  "com.yahoo.config.ConfigBuilder" : {
-    "superClass" : "java.lang.Object",
-    "interfaces" : [ ],
-    "attributes" : [
+  "com.yahoo.config.ConfigBuilder": {
+    "superClass": "java.lang.Object",
+    "interfaces": [],
+    "attributes": [
       "public",
       "interface",
       "abstract"
     ],
-    "methods" : [ ],
-    "fields" : [ ]
+    "methods": [],
+    "fields": []
   },
-  "com.yahoo.config.ConfigInstance$Builder" : {
-    "superClass" : "java.lang.Object",
-    "interfaces" : [
+  "com.yahoo.config.ConfigInstance$Builder": {
+    "superClass": "java.lang.Object",
+    "interfaces": [
       "com.yahoo.config.ConfigBuilder"
     ],
-    "attributes" : [
+    "attributes": [
       "public",
       "interface",
       "abstract"
     ],
-    "methods" : [
+    "methods": [
       "public abstract boolean dispatchGetConfig(com.yahoo.config.ConfigInstance$Producer)",
       "public abstract java.lang.String getDefName()",
       "public abstract java.lang.String getDefNamespace()",
@@ -77,55 +77,55 @@
       "public boolean getApplyOnRestart()",
       "public void setApplyOnRestart(boolean)"
     ],
-    "fields" : [ ]
+    "fields": []
   },
-  "com.yahoo.config.ConfigInstance$Producer" : {
-    "superClass" : "java.lang.Object",
-    "interfaces" : [ ],
-    "attributes" : [
+  "com.yahoo.config.ConfigInstance$Producer": {
+    "superClass": "java.lang.Object",
+    "interfaces": [],
+    "attributes": [
       "public",
       "interface",
       "abstract"
     ],
-    "methods" : [ ],
-    "fields" : [ ]
+    "methods": [],
+    "fields": []
   },
-  "com.yahoo.config.ConfigInstance" : {
-    "superClass" : "com.yahoo.config.InnerNode",
-    "interfaces" : [ ],
-    "attributes" : [
+  "com.yahoo.config.ConfigInstance": {
+    "superClass": "com.yahoo.config.InnerNode",
+    "interfaces": [],
+    "attributes": [
       "public",
       "abstract"
     ],
-    "methods" : [
+    "methods": [
       "public void <init>()",
       "public static java.lang.String getDefName(java.lang.Class)",
       "public static java.lang.String getDefNamespace(java.lang.Class)",
       "public static java.util.List serialize(com.yahoo.config.InnerNode)",
       "public static void serialize(com.yahoo.config.InnerNode, com.yahoo.config.Serializer)"
     ],
-    "fields" : [ ]
+    "fields": []
   },
-  "com.yahoo.config.ConfigurationRuntimeException" : {
-    "superClass" : "java.lang.RuntimeException",
-    "interfaces" : [ ],
-    "attributes" : [
+  "com.yahoo.config.ConfigurationRuntimeException": {
+    "superClass": "java.lang.RuntimeException",
+    "interfaces": [],
+    "attributes": [
       "public"
     ],
-    "methods" : [
+    "methods": [
       "public void <init>(java.lang.String)",
       "public void <init>(java.lang.String, java.lang.Throwable)",
       "public void <init>(java.lang.Throwable)"
     ],
-    "fields" : [ ]
+    "fields": []
   },
-  "com.yahoo.config.DoubleNode" : {
-    "superClass" : "com.yahoo.config.LeafNode",
-    "interfaces" : [ ],
-    "attributes" : [
+  "com.yahoo.config.DoubleNode": {
+    "superClass": "com.yahoo.config.LeafNode",
+    "interfaces": [],
+    "attributes": [
       "public"
     ],
-    "methods" : [
+    "methods": [
       "public void <init>()",
       "public void <init>(double)",
       "public java.lang.Double value()",
@@ -134,30 +134,30 @@
       "protected boolean doSetValue(java.lang.String)",
       "public bridge synthetic java.lang.Object value()"
     ],
-    "fields" : [ ]
+    "fields": []
   },
-  "com.yahoo.config.EnumNode" : {
-    "superClass" : "com.yahoo.config.LeafNode",
-    "interfaces" : [ ],
-    "attributes" : [
+  "com.yahoo.config.EnumNode": {
+    "superClass": "com.yahoo.config.LeafNode",
+    "interfaces": [],
+    "attributes": [
       "public",
       "abstract"
     ],
-    "methods" : [
+    "methods": [
       "public void <init>()",
       "public void <init>(boolean)",
       "public java.lang.String toString()",
       "public java.lang.String getValue()"
     ],
-    "fields" : [ ]
+    "fields": []
   },
-  "com.yahoo.config.FileNode" : {
-    "superClass" : "com.yahoo.config.LeafNode",
-    "interfaces" : [ ],
-    "attributes" : [
+  "com.yahoo.config.FileNode": {
+    "superClass": "com.yahoo.config.LeafNode",
+    "interfaces": [],
+    "attributes": [
       "public"
     ],
-    "methods" : [
+    "methods": [
       "public void <init>()",
       "public void <init>(java.lang.String)",
       "public com.yahoo.config.FileReference value()",
@@ -166,16 +166,16 @@
       "protected boolean doSetValue(java.lang.String)",
       "public bridge synthetic java.lang.Object value()"
     ],
-    "fields" : [ ]
+    "fields": []
   },
-  "com.yahoo.config.FileReference" : {
-    "superClass" : "java.lang.Object",
-    "interfaces" : [ ],
-    "attributes" : [
+  "com.yahoo.config.FileReference": {
+    "superClass": "java.lang.Object",
+    "interfaces": [],
+    "attributes": [
       "public",
       "final"
     ],
-    "methods" : [
+    "methods": [
       "public void <init>(java.lang.String)",
       "public java.lang.String value()",
       "public boolean equals(java.lang.Object)",
@@ -185,16 +185,16 @@
       "public static java.util.Map toValueMap(java.util.Map)",
       "public static com.yahoo.config.FileReference mockFileReferenceForUnitTesting(java.io.File)"
     ],
-    "fields" : [ ]
+    "fields": []
   },
-  "com.yahoo.config.InnerNode" : {
-    "superClass" : "com.yahoo.config.Node",
-    "interfaces" : [ ],
-    "attributes" : [
+  "com.yahoo.config.InnerNode": {
+    "superClass": "com.yahoo.config.Node",
+    "interfaces": [],
+    "attributes": [
       "public",
       "abstract"
     ],
-    "methods" : [
+    "methods": [
       "public void <init>()",
       "public java.lang.String toString()",
       "public void postInitialize(java.lang.String)",
@@ -204,26 +204,26 @@
       "protected final java.util.Map getChildrenWithVectorsFlattened()",
       "protected static java.util.Map getAllDescendantLeafNodes(com.yahoo.config.InnerNode)"
     ],
-    "fields" : [ ]
+    "fields": []
   },
-  "com.yahoo.config.InnerNodeVector" : {
-    "superClass" : "com.yahoo.config.NodeVector",
-    "interfaces" : [ ],
-    "attributes" : [
+  "com.yahoo.config.InnerNodeVector": {
+    "superClass": "com.yahoo.config.NodeVector",
+    "interfaces": [],
+    "attributes": [
       "public"
     ],
-    "methods" : [
+    "methods": [
       "public void <init>(java.util.List)"
     ],
-    "fields" : [ ]
+    "fields": []
   },
-  "com.yahoo.config.IntegerNode" : {
-    "superClass" : "com.yahoo.config.LeafNode",
-    "interfaces" : [ ],
-    "attributes" : [
+  "com.yahoo.config.IntegerNode": {
+    "superClass": "com.yahoo.config.LeafNode",
+    "interfaces": [],
+    "attributes": [
       "public"
     ],
-    "methods" : [
+    "methods": [
       "public void <init>()",
       "public void <init>(int)",
       "public java.lang.Integer value()",
@@ -232,18 +232,18 @@
       "protected boolean doSetValue(java.lang.String)",
       "public bridge synthetic java.lang.Object value()"
     ],
-    "fields" : [ ]
+    "fields": []
   },
-  "com.yahoo.config.LeafNode" : {
-    "superClass" : "com.yahoo.config.Node",
-    "interfaces" : [
+  "com.yahoo.config.LeafNode": {
+    "superClass": "com.yahoo.config.Node",
+    "interfaces": [
       "java.lang.Cloneable"
     ],
-    "attributes" : [
+    "attributes": [
       "public",
       "abstract"
     ],
-    "methods" : [
+    "methods": [
       "protected void <init>()",
       "protected void <init>(boolean)",
       "public java.lang.Object value()",
@@ -251,22 +251,23 @@
       "public abstract java.lang.String getValue()",
       "protected final boolean setValue(java.lang.String)",
       "protected abstract boolean doSetValue(java.lang.String)",
-      "protected java.lang.Object clone()",
+      "protected com.yahoo.config.LeafNode clone()",
       "public boolean equals(java.lang.Object)",
-      "public int hashCode()"
+      "public int hashCode()",
+      "protected bridge synthetic java.lang.Object clone()"
     ],
-    "fields" : [
+    "fields": [
       "protected boolean initialized",
       "protected java.lang.Object value"
     ]
   },
-  "com.yahoo.config.LeafNodeMaps" : {
-    "superClass" : "java.lang.Object",
-    "interfaces" : [ ],
-    "attributes" : [
+  "com.yahoo.config.LeafNodeMaps": {
+    "superClass": "java.lang.Object",
+    "interfaces": [],
+    "attributes": [
       "public"
     ],
-    "methods" : [
+    "methods": [
       "public void <init>()",
       "public static java.util.Map asValueMap(java.util.Map)",
       "public static java.util.Map asNodeMap(java.util.Map, com.yahoo.config.LeafNode)",
@@ -275,15 +276,15 @@
       "public static java.util.Map asUrlNodeMap(java.util.Map)",
       "public static java.util.Map asModelNodeMap(java.util.Map)"
     ],
-    "fields" : [ ]
+    "fields": []
   },
-  "com.yahoo.config.LeafNodeVector" : {
-    "superClass" : "com.yahoo.config.NodeVector",
-    "interfaces" : [ ],
-    "attributes" : [
+  "com.yahoo.config.LeafNodeVector": {
+    "superClass": "com.yahoo.config.NodeVector",
+    "interfaces": [],
+    "attributes": [
       "public"
     ],
-    "methods" : [
+    "methods": [
       "public void <init>(java.util.List, com.yahoo.config.LeafNode)",
       "public java.util.List asList()",
       "public static com.yahoo.config.LeafNodeVector createFileNodeVector(java.util.Collection)",
@@ -291,15 +292,15 @@
       "public static com.yahoo.config.LeafNodeVector createUrlNodeVector(java.util.Collection)",
       "public static com.yahoo.config.LeafNodeVector createModelNodeVector(java.util.Collection)"
     ],
-    "fields" : [ ]
+    "fields": []
   },
-  "com.yahoo.config.LongNode" : {
-    "superClass" : "com.yahoo.config.LeafNode",
-    "interfaces" : [ ],
-    "attributes" : [
+  "com.yahoo.config.LongNode": {
+    "superClass": "com.yahoo.config.LeafNode",
+    "interfaces": [],
+    "attributes": [
       "public"
     ],
-    "methods" : [
+    "methods": [
       "public void <init>()",
       "public void <init>(long)",
       "public java.lang.Long value()",
@@ -308,15 +309,15 @@
       "protected boolean doSetValue(java.lang.String)",
       "public bridge synthetic java.lang.Object value()"
     ],
-    "fields" : [ ]
+    "fields": []
   },
-  "com.yahoo.config.ModelNode" : {
-    "superClass" : "com.yahoo.config.LeafNode",
-    "interfaces" : [ ],
-    "attributes" : [
+  "com.yahoo.config.ModelNode": {
+    "superClass": "com.yahoo.config.LeafNode",
+    "interfaces": [],
+    "attributes": [
       "public"
     ],
-    "methods" : [
+    "methods": [
       "public void <init>()",
       "public void <init>(com.yahoo.config.ModelReference)",
       "public java.lang.String getValue()",
@@ -326,15 +327,15 @@
       "public static java.util.List toModelReferences(java.util.List)",
       "public static java.util.Map toModelReferenceMap(java.util.Map)"
     ],
-    "fields" : [ ]
+    "fields": []
   },
-  "com.yahoo.config.ModelReference" : {
-    "superClass" : "java.lang.Object",
-    "interfaces" : [ ],
-    "attributes" : [
+  "com.yahoo.config.ModelReference": {
+    "superClass": "java.lang.Object",
+    "interfaces": [],
+    "attributes": [
       "public"
     ],
-    "methods" : [
+    "methods": [
       "public java.util.Optional modelId()",
       "public java.util.Optional url()",
       "public java.util.Optional path()",
@@ -349,43 +350,43 @@
       "public static com.yahoo.config.ModelReference unresolved(java.util.Optional, java.util.Optional, java.util.Optional)",
       "public static com.yahoo.config.ModelReference resolved(java.nio.file.Path)"
     ],
-    "fields" : [ ]
+    "fields": []
   },
-  "com.yahoo.config.Node" : {
-    "superClass" : "java.lang.Object",
-    "interfaces" : [ ],
-    "attributes" : [
+  "com.yahoo.config.Node": {
+    "superClass": "java.lang.Object",
+    "interfaces": [],
+    "attributes": [
       "public",
       "abstract"
     ],
-    "methods" : [
+    "methods": [
       "public void <init>()",
       "public void postInitialize(java.lang.String)",
       "protected java.lang.Object clone()"
     ],
-    "fields" : [ ]
+    "fields": []
   },
-  "com.yahoo.config.NodeVector$ReadOnlyException" : {
-    "superClass" : "java.lang.RuntimeException",
-    "interfaces" : [ ],
-    "attributes" : [
+  "com.yahoo.config.NodeVector$ReadOnlyException": {
+    "superClass": "java.lang.RuntimeException",
+    "interfaces": [],
+    "attributes": [
       "public"
     ],
-    "methods" : [
+    "methods": [
       "public void <init>()"
     ],
-    "fields" : [ ]
+    "fields": []
   },
-  "com.yahoo.config.NodeVector" : {
-    "superClass" : "java.lang.Object",
-    "interfaces" : [
+  "com.yahoo.config.NodeVector": {
+    "superClass": "java.lang.Object",
+    "interfaces": [
       "java.util.List"
     ],
-    "attributes" : [
+    "attributes": [
       "public",
       "abstract"
     ],
-    "methods" : [
+    "methods": [
       "public void <init>()",
       "public int length()",
       "public void add(int, java.lang.Object)",
@@ -414,17 +415,17 @@
       "public java.lang.Object[] toArray()",
       "public java.lang.Object[] toArray(java.lang.Object[])"
     ],
-    "fields" : [
+    "fields": [
       "protected final java.util.ArrayList vector"
     ]
   },
-  "com.yahoo.config.PathNode" : {
-    "superClass" : "com.yahoo.config.LeafNode",
-    "interfaces" : [ ],
-    "attributes" : [
+  "com.yahoo.config.PathNode": {
+    "superClass": "com.yahoo.config.LeafNode",
+    "interfaces": [],
+    "attributes": [
       "public"
     ],
-    "methods" : [
+    "methods": [
       "public void <init>()",
       "public void <init>(com.yahoo.config.FileReference)",
       "public java.nio.file.Path value()",
@@ -436,15 +437,15 @@
       "public static java.util.Map toFileReferenceMap(java.util.Map)",
       "public bridge synthetic java.lang.Object value()"
     ],
-    "fields" : [ ]
+    "fields": []
   },
-  "com.yahoo.config.ReferenceNode" : {
-    "superClass" : "com.yahoo.config.LeafNode",
-    "interfaces" : [ ],
-    "attributes" : [
+  "com.yahoo.config.ReferenceNode": {
+    "superClass": "com.yahoo.config.LeafNode",
+    "interfaces": [],
+    "attributes": [
       "public"
     ],
-    "methods" : [
+    "methods": [
       "public void <init>()",
       "public void <init>(java.lang.String)",
       "public java.lang.String value()",
@@ -454,17 +455,17 @@
       "public void postInitialize(java.lang.String)",
       "public bridge synthetic java.lang.Object value()"
     ],
-    "fields" : [ ]
+    "fields": []
   },
-  "com.yahoo.config.Serializer" : {
-    "superClass" : "java.lang.Object",
-    "interfaces" : [ ],
-    "attributes" : [
+  "com.yahoo.config.Serializer": {
+    "superClass": "java.lang.Object",
+    "interfaces": [],
+    "attributes": [
       "public",
       "interface",
       "abstract"
     ],
-    "methods" : [
+    "methods": [
       "public abstract com.yahoo.config.Serializer createInner(java.lang.String)",
       "public abstract com.yahoo.config.Serializer createArray(java.lang.String)",
       "public abstract com.yahoo.config.Serializer createInner()",
@@ -480,15 +481,15 @@
       "public abstract void serialize(int)",
       "public abstract void serialize(java.lang.String)"
     ],
-    "fields" : [ ]
+    "fields": []
   },
-  "com.yahoo.config.StringNode" : {
-    "superClass" : "com.yahoo.config.LeafNode",
-    "interfaces" : [ ],
-    "attributes" : [
+  "com.yahoo.config.StringNode": {
+    "superClass": "com.yahoo.config.LeafNode",
+    "interfaces": [],
+    "attributes": [
       "public"
     ],
-    "methods" : [
+    "methods": [
       "public void <init>()",
       "public void <init>(java.lang.String)",
       "public java.lang.String value()",
@@ -498,15 +499,15 @@
       "protected boolean doSetValue(java.lang.String)",
       "public bridge synthetic java.lang.Object value()"
     ],
-    "fields" : [ ]
+    "fields": []
   },
-  "com.yahoo.config.UrlNode" : {
-    "superClass" : "com.yahoo.config.LeafNode",
-    "interfaces" : [ ],
-    "attributes" : [
+  "com.yahoo.config.UrlNode": {
+    "superClass": "com.yahoo.config.LeafNode",
+    "interfaces": [],
+    "attributes": [
       "public"
     ],
-    "methods" : [
+    "methods": [
       "public void <init>()",
       "public void <init>(com.yahoo.config.UrlReference)",
       "public void <init>(java.lang.String)",
@@ -519,16 +520,16 @@
       "public static java.util.Map toUrlReferenceMap(java.util.Map)",
       "public bridge synthetic java.lang.Object value()"
     ],
-    "fields" : [ ]
+    "fields": []
   },
-  "com.yahoo.config.UrlReference" : {
-    "superClass" : "java.lang.Object",
-    "interfaces" : [ ],
-    "attributes" : [
+  "com.yahoo.config.UrlReference": {
+    "superClass": "java.lang.Object",
+    "interfaces": [],
+    "attributes": [
       "public",
       "final"
     ],
-    "methods" : [
+    "methods": [
       "public void <init>(java.lang.String)",
       "public java.lang.String value()",
       "public static com.yahoo.config.UrlReference valueOf(java.lang.String)",
@@ -536,6 +537,6 @@
       "public boolean equals(java.lang.Object)",
       "public java.lang.String toString()"
     ],
-    "fields" : [ ]
+    "fields": []
   }
 }

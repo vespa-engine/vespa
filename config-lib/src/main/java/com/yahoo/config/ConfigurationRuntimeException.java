@@ -4,8 +4,8 @@ package com.yahoo.config;
 /**
  * This exception is thrown on internal errors in the configuration system.
  */
-@SuppressWarnings("serial")
 public class ConfigurationRuntimeException extends RuntimeException {
+
     public ConfigurationRuntimeException(String message) {
         super(message);
     }

@@ -109,7 +109,8 @@ class ConfigInstanceBuilder {
     private static Class<? extends ConfigInstance> getConfigClass(Class<? extends ConfigInstance.Builder> builderClass) {
         Class<?> configClass = builderClass.getEnclosingClass();
         if (configClass == null || ! ConfigInstance.class.isAssignableFrom(configClass)) {
-            throw new ConfigurationRuntimeException("Builder class " + builderClass + " has enclosing class " + configClass + ", which is not a ConfigInstance");
+            throw new ConfigurationRuntimeException("Builder class " + builderClass + " has enclosing class " +
+                                                    configClass + ", which is not a ConfigInstance");
         }
         return (Class<? extends ConfigInstance>) configClass;
     }
