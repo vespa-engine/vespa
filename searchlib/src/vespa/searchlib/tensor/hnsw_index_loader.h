@@ -22,10 +22,10 @@ class HnswIndexLoader : public NearestNeighborIndexLoader {
 private:
     HnswGraph& _graph;
     std::unique_ptr<ReaderType> _reader;
-    uint32_t _entry_docid;
+    uint32_t _entry_nodeid;
     int32_t _entry_level;
     uint32_t _num_nodes;
-    uint32_t _docid;
+    uint32_t _nodeid;
     std::vector<uint32_t> _link_array;
     bool _complete;
 

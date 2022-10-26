@@ -86,7 +86,7 @@ bool
 HnswIndex::have_closer_distance(HnswCandidate candidate, const HnswCandidateVector& result) const
 {
     for (const auto & neighbor : result) {
-        double dist = calc_distance(candidate.docid, neighbor.docid);
+        double dist = calc_distance(candidate.nodeid, neighbor.nodeid);
         if (dist < candidate.distance) {
             return true;
         }
@@ -104,7 +104,7 @@ HnswIndex::select_neighbors_simple(const HnswCandidateVector& neighbors, uint32_
         if (result.used.size() < max_links) {
             result.used.push_back(candidate);
         } else {
-            result.unused.push_back(candidate.docid);
+            result.unused.push_back(candidate.nodeid);
         }
     }
     return result;
@@ -122,7 +122,7 @@ HnswIndex::select_neighbors_heuristic(const HnswCandidateVector& neighbors, uint
         auto candidate = nearest.top();
         nearest.pop();
         if (have_closer_distance(candidate, result.used)) {
-            result.unused.push_back(candidate.docid);
+            result.unused.push_back(candidate.nodeid);
             continue;
         }
         result.used.push_back(candidate);
@@ -130,7 +130,7 @@ HnswIndex::select_neighbors_heuristic(const HnswCandidateVector& neighbors, uint
             while (!nearest.empty()) {
                 candidate = nearest.top();
                 nearest.pop();
-                result.unused.push_back(candidate.docid);
+                result.unused.push_back(candidate.nodeid);
             }
         }
     }
@@ -148,40 +148,40 @@ HnswIndex::select_neighbors(const HnswCandidateVector& neighbors, uint32_t max_l
 }
 
 void
-HnswIndex::shrink_if_needed(uint32_t docid, uint32_t level)
+HnswIndex::shrink_if_needed(uint32_t nodeid, uint32_t level)
 {
-    auto old_links = _graph.get_link_array(docid, level);
+    auto old_links = _graph.get_link_array(nodeid, level);
     uint32_t max_links = max_links_for_level(level);
     if (old_links.size() > max_links) {
         HnswCandidateVector neighbors;
         neighbors.reserve(old_links.size());
-        for (uint32_t neighbor_docid : old_links) {
-            double dist = calc_distance(docid, neighbor_docid);
-            neighbors.emplace_back(neighbor_docid, dist);
+        for (uint32_t neighbor_nodeid : old_links) {
+            double dist = calc_distance(nodeid, neighbor_nodeid);
+            neighbors.emplace_back(neighbor_nodeid, dist);
         }
         auto split = select_neighbors(neighbors, max_links);
         LinkArray new_links;
         new_links.reserve(split.used.size());
         for (const auto & neighbor : split.used) {
-            new_links.push_back(neighbor.docid);
+            new_links.push_back(neighbor.nodeid);
         }
-        _graph.set_link_array(docid, level, new_links);
-        for (uint32_t removed_docid : split.unused) {
-            remove_link_to(removed_docid, docid, level);
+        _graph.set_link_array(nodeid, level, new_links);
+        for (uint32_t removed_nodeid : split.unused) {
+            remove_link_to(removed_nodeid, nodeid, level);
         }
     }
 }
 
 void
-HnswIndex::connect_new_node(uint32_t docid, const LinkArrayRef &neighbors, uint32_t level)
+HnswIndex::connect_new_node(uint32_t nodeid, const LinkArrayRef &neighbors, uint32_t level)
 {
-    _graph.set_link_array(docid, level, neighbors);
-    for (uint32_t neighbor_docid : neighbors) {
-        auto old_links = _graph.get_link_array(neighbor_docid, level);
-        add_link_to(neighbor_docid, level, old_links, docid);
+    _graph.set_link_array(nodeid, level, neighbors);
+    for (uint32_t neighbor_nodeid : neighbors) {
+        auto old_links = _graph.get_link_array(neighbor_nodeid, level);
+        add_link_to(neighbor_nodeid, level, old_links, nodeid);
     }
-    for (uint32_t neighbor_docid : neighbors) {
-        shrink_if_needed(neighbor_docid, level);
+    for (uint32_t neighbor_nodeid : neighbors) {
+        shrink_if_needed(neighbor_nodeid, level);
     }
 }
 
@@ -199,38 +199,38 @@ HnswIndex::remove_link_to(uint32_t remove_from, uint32_t remove_id, uint32_t lev
 
 
 double
-HnswIndex::calc_distance(uint32_t lhs_docid, uint32_t rhs_docid) const
+HnswIndex::calc_distance(uint32_t lhs_nodeid, uint32_t rhs_nodeid) const
 {
-    auto lhs = get_vector(lhs_docid);
-    return calc_distance(lhs, rhs_docid);
+    auto lhs = get_vector(lhs_nodeid);
+    return calc_distance(lhs, rhs_nodeid);
 }
 
 double
-HnswIndex::calc_distance(const TypedCells& lhs, uint32_t rhs_docid) const
+HnswIndex::calc_distance(const TypedCells& lhs, uint32_t rhs_nodeid) const
 {
-    auto rhs = get_vector(rhs_docid);
+    auto rhs = get_vector(rhs_nodeid);
     return _distance_func->calc(lhs, rhs);
 }
 
 uint32_t
-HnswIndex::estimate_visited_nodes(uint32_t level, uint32_t doc_id_limit, uint32_t neighbors_to_find, const GlobalFilter* filter) const
+HnswIndex::estimate_visited_nodes(uint32_t level, uint32_t nodeid_limit, uint32_t neighbors_to_find, const GlobalFilter* filter) const
 {
     uint32_t m_for_level = max_links_for_level(level);
     uint64_t base_estimate = uint64_t(m_for_level) * neighbors_to_find + 100;
-    if (base_estimate >= doc_id_limit) {
-        return doc_id_limit;
+    if (base_estimate >= nodeid_limit) {
+        return nodeid_limit;
     }
     if (!filter) {
         return base_estimate;
     }
     uint32_t true_bits = filter->count();
     if (true_bits == 0) {
-        return doc_id_limit;
+        return nodeid_limit;
     }
     double scaler = double(filter->size()) / true_bits;
     double scaled_estimate = scaler * base_estimate;
-    if (scaled_estimate >= doc_id_limit) {
-        return doc_id_limit;
+    if (scaled_estimate >= nodeid_limit) {
+        return nodeid_limit;
     }
     return scaled_estimate;
 }
@@ -242,13 +242,13 @@ HnswIndex::find_nearest_in_layer(const TypedCells& input, const HnswCandidate& e
     bool keep_searching = true;
     while (keep_searching) {
         keep_searching = false;
-        for (uint32_t neighbor_docid : _graph.get_link_array(nearest.node_ref, level)) {
-            auto neighbor_ref = _graph.acquire_node_ref(neighbor_docid);
-            double dist = calc_distance(input, neighbor_docid);
-            if (_graph.still_valid(neighbor_docid, neighbor_ref)
+        for (uint32_t neighbor_nodeid : _graph.get_link_array(nearest.node_ref, level)) {
+            auto neighbor_ref = _graph.acquire_node_ref(neighbor_nodeid);
+            double dist = calc_distance(input, neighbor_nodeid);
+            if (_graph.still_valid(neighbor_nodeid, neighbor_ref)
                 && dist < nearest.distance)
             {
-                nearest = HnswCandidate(neighbor_docid, neighbor_ref, dist);
+                nearest = HnswCandidate(neighbor_nodeid, neighbor_ref, dist);
                 keep_searching = true;
             }
         }
@@ -260,17 +260,17 @@ template <class VisitedTracker>
 void
 HnswIndex::search_layer_helper(const TypedCells& input, uint32_t neighbors_to_find,
                                FurthestPriQ& best_neighbors, uint32_t level, const GlobalFilter *filter,
-                               uint32_t doc_id_limit, uint32_t estimated_visited_nodes) const
+                               uint32_t nodeid_limit, uint32_t estimated_visited_nodes) const
 {
     NearestPriQ candidates;
-    VisitedTracker visited(*this, doc_id_limit, estimated_visited_nodes);
+    VisitedTracker visited(*this, nodeid_limit, estimated_visited_nodes);
     for (const auto &entry : best_neighbors.peek()) {
-        if (entry.docid >= doc_id_limit) {
+        if (entry.nodeid >= nodeid_limit) {
             continue;
         }
         candidates.push(entry);
-        visited.mark(entry.docid);
-        if (filter && !filter->check(entry.docid)) {
+        visited.mark(entry.nodeid);
+        if (filter && !filter->check(entry.nodeid)) {
             assert(best_neighbors.size() == 1);
             best_neighbors.pop();
         }
@@ -283,21 +283,21 @@ HnswIndex::search_layer_helper(const TypedCells& input, uint32_t neighbors_to_fi
             break;
         }
         candidates.pop();
-        for (uint32_t neighbor_docid : _graph.get_link_array(cand.node_ref, level)) {
-            if (neighbor_docid >= doc_id_limit) {
+        for (uint32_t neighbor_nodeid : _graph.get_link_array(cand.node_ref, level)) {
+            if (neighbor_nodeid >= nodeid_limit) {
                 continue;
             }
-            auto neighbor_ref = _graph.acquire_node_ref(neighbor_docid);
+            auto neighbor_ref = _graph.acquire_node_ref(neighbor_nodeid);
             if ((! neighbor_ref.valid())
-                || ! visited.try_mark(neighbor_docid))
+                || ! visited.try_mark(neighbor_nodeid))
             {
                 continue;
             }
-            double dist_to_input = calc_distance(input, neighbor_docid);
+            double dist_to_input = calc_distance(input, neighbor_nodeid);
             if (dist_to_input < limit_dist) {
-                candidates.emplace(neighbor_docid, neighbor_ref, dist_to_input);
-                if ((!filter) || filter->check(neighbor_docid)) {
-                    best_neighbors.emplace(neighbor_docid, neighbor_ref, dist_to_input);
+                candidates.emplace(neighbor_nodeid, neighbor_ref, dist_to_input);
+                if ((!filter) || filter->check(neighbor_nodeid)) {
+                    best_neighbors.emplace(neighbor_nodeid, neighbor_ref, dist_to_input);
                     if (best_neighbors.size() > neighbors_to_find) {
                         best_neighbors.pop();
                         limit_dist = best_neighbors.top().distance;
@@ -312,15 +312,15 @@ void
 HnswIndex::search_layer(const TypedCells& input, uint32_t neighbors_to_find,
                         FurthestPriQ& best_neighbors, uint32_t level, const GlobalFilter *filter) const
 {
-    uint32_t doc_id_limit = _graph.node_refs_size.load(std::memory_order_acquire);
+    uint32_t nodeid_limit = _graph.node_refs_size.load(std::memory_order_acquire);
     if (filter) {
-        doc_id_limit = std::min(filter->size(), doc_id_limit);
+        nodeid_limit = std::min(filter->size(), nodeid_limit);
     }
-    uint32_t estimated_visited_nodes = estimate_visited_nodes(level, doc_id_limit, neighbors_to_find, filter);
-    if (estimated_visited_nodes >= doc_id_limit / 128) {
-        search_layer_helper<BitVectorVisitedTracker>(input, neighbors_to_find, best_neighbors, level, filter, doc_id_limit, estimated_visited_nodes);
+    uint32_t estimated_visited_nodes = estimate_visited_nodes(level, nodeid_limit, neighbors_to_find, filter);
+    if (estimated_visited_nodes >= nodeid_limit / 128) {
+        search_layer_helper<BitVectorVisitedTracker>(input, neighbors_to_find, best_neighbors, level, filter, nodeid_limit, estimated_visited_nodes);
     } else {
-        search_layer_helper<HashSetVisitedTracker>(input, neighbors_to_find, best_neighbors, level, filter, doc_id_limit, estimated_visited_nodes);
+        search_layer_helper<HashSetVisitedTracker>(input, neighbors_to_find, best_neighbors, level, filter, nodeid_limit, estimated_visited_nodes);
     }
 }
 
@@ -342,7 +342,7 @@ void
 HnswIndex::add_document(uint32_t docid)
 {
     vespalib::GenerationHandler::Guard no_guard_needed;
-    PreparedAddDoc op = internal_prepare_add(docid, get_vector(docid), no_guard_needed);
+    PreparedAddDoc op = internal_prepare_add(docid, get_vector_by_docid(docid), no_guard_needed);
     internal_complete_add(docid, op);
 }
 
@@ -353,14 +353,14 @@ HnswIndex::internal_prepare_add(uint32_t docid, TypedCells input_vector, vespali
     int level = _level_generator->max_level();
     PreparedAddDoc op(docid, level, std::move(read_guard));
     auto entry = _graph.get_entry_node();
-    if (entry.docid == 0) {
+    if (entry.nodeid == 0) {
         // graph has no entry point
         return op;
     }
     int search_level = entry.level;
-    double entry_dist = calc_distance(input_vector, entry.docid);
-    // TODO: check if entry docid/node_ref is still valid here
-    HnswCandidate entry_point(entry.docid, entry.node_ref, entry_dist);
+    double entry_dist = calc_distance(input_vector, entry.nodeid);
+    // TODO: check if entry nodeid/node_ref is still valid here
+    HnswCandidate entry_point(entry.nodeid, entry.node_ref, entry_dist);
     while (search_level > op.max_level) {
         entry_point = find_nearest_in_layer(input_vector, entry_point, search_level);
         --search_level;
@@ -378,10 +378,10 @@ HnswIndex::internal_prepare_add(uint32_t docid, TypedCells input_vector, vespali
         for (const auto & neighbor : neighbors.used) {
             auto neighbor_levels = _graph.get_level_array(neighbor.node_ref);
             if (size_t(search_level) < neighbor_levels.size()) {
-                op.connections[search_level].emplace_back(neighbor.docid, neighbor.node_ref);
+                op.connections[search_level].emplace_back(neighbor.nodeid, neighbor.node_ref);
             } else {
                 LOG(warning, "in prepare_add(%u), selected neighbor %u is missing level %d (has %zu levels)",
-                    docid, neighbor.docid, search_level, neighbor_levels.size());
+                    docid, neighbor.nodeid, search_level, neighbor_levels.size());
             }
         }
         --search_level;
@@ -390,18 +390,18 @@ HnswIndex::internal_prepare_add(uint32_t docid, TypedCells input_vector, vespali
 }
 
 HnswIndex::LinkArray 
-HnswIndex::filter_valid_docids(uint32_t level, const PreparedAddDoc::Links &neighbors, uint32_t self_docid)
+HnswIndex::filter_valid_nodeids(uint32_t level, const PreparedAddDoc::Links &neighbors, uint32_t self_nodeid)
 {
     LinkArray valid;
     valid.reserve(neighbors.size());
     for (const auto & neighbor : neighbors) {
-        uint32_t docid = neighbor.first;
+        uint32_t nodeid = neighbor.first;
         HnswGraph::NodeRef node_ref = neighbor.second;
-        if (_graph.still_valid(docid, node_ref)) {
-            assert(docid != self_docid);
+        if (_graph.still_valid(nodeid, node_ref)) {
+            assert(nodeid != self_nodeid);
             auto levels = _graph.get_level_array(node_ref);
             if (level < levels.size()) {
-                valid.push_back(docid);     
+                valid.push_back(nodeid);
             }
         }
     }
@@ -411,13 +411,14 @@ HnswIndex::filter_valid_docids(uint32_t level, const PreparedAddDoc::Links &neig
 void
 HnswIndex::internal_complete_add(uint32_t docid, PreparedAddDoc &op)
 {
-    auto node_ref = _graph.make_node_for_document(docid, op.max_level + 1);
+    auto nodeid = get_nodeid(docid);
+    auto node_ref = _graph.make_node(nodeid, op.max_level + 1);
     for (int level = 0; level <= op.max_level; ++level) {
-        auto neighbors = filter_valid_docids(level, op.connections[level], docid);
-        connect_new_node(docid, neighbors, level);
+        auto neighbors = filter_valid_nodeids(level, op.connections[level], nodeid);
+        connect_new_node(nodeid, neighbors, level);
     }
     if (op.max_level > get_entry_level()) {
-        _graph.set_entry_node({docid, node_ref, op.max_level});
+        _graph.set_entry_node({nodeid, node_ref, op.max_level});
     }
 }
 
@@ -480,19 +481,19 @@ HnswIndex::mutual_reconnect(const LinkArrayRef &cluster, uint32_t level)
 }
 
 void
-HnswIndex::remove_document(uint32_t docid)
+HnswIndex::remove_node(uint32_t nodeid)
 {
-    bool need_new_entrypoint = (docid == get_entry_docid());
-    LevelArrayRef node_levels = _graph.get_level_array(docid);
+    bool need_new_entrypoint = (nodeid == get_entry_nodeid());
+    LevelArrayRef node_levels = _graph.get_level_array(nodeid);
     for (int level = node_levels.size(); level-- > 0; ) {
-        LinkArrayRef my_links = _graph.get_link_array(docid, level);
+        LinkArrayRef my_links = _graph.get_link_array(nodeid, level);
         for (uint32_t neighbor_id : my_links) {
             if (need_new_entrypoint) {
                 auto entry_node_ref = _graph.get_node_ref(neighbor_id);
                 _graph.set_entry_node({neighbor_id, entry_node_ref, level});
                 need_new_entrypoint = false;
             }
-            remove_link_to(neighbor_id, docid, level);
+            remove_link_to(neighbor_id, nodeid, level);
         }
         mutual_reconnect(my_links, level);
     }
@@ -500,7 +501,14 @@ HnswIndex::remove_document(uint32_t docid)
         HnswGraph::EntryNode entry;
         _graph.set_entry_node(entry);
     }
-    _graph.remove_node_for_document(docid);
+    _graph.remove_node(nodeid);
+}
+
+void
+HnswIndex::remove_document(uint32_t docid)
+{
+    auto nodeid = get_nodeid(docid);
+    remove_node(nodeid);
 }
 
 void
@@ -525,8 +533,8 @@ void
 HnswIndex::compact_level_arrays(CompactionSpec compaction_spec, const CompactionStrategy& compaction_strategy)
 {
     auto context = _graph.nodes.compactWorst(compaction_spec, compaction_strategy);
-    uint32_t doc_id_limit = _graph.node_refs.size();
-    vespalib::ArrayRef<AtomicEntryRef> refs(&_graph.node_refs[0], doc_id_limit);
+    uint32_t nodeid_limit = _graph.node_refs.size();
+    vespalib::ArrayRef<AtomicEntryRef> refs(&_graph.node_refs[0], nodeid_limit);
     context->compact(refs);
 }
 
@@ -534,9 +542,9 @@ void
 HnswIndex::compact_link_arrays(CompactionSpec compaction_spec, const CompactionStrategy& compaction_strategy)
 {
     auto context = _graph.links.compactWorst(compaction_spec, compaction_strategy);
-    uint32_t doc_id_limit = _graph.node_refs.size();
-    for (uint32_t doc_id = 1; doc_id < doc_id_limit; ++doc_id) {
-        EntryRef level_ref = _graph.get_node_ref(doc_id);
+    uint32_t nodeid_limit = _graph.node_refs.size();
+    for (uint32_t nodeid = 1; nodeid < nodeid_limit; ++nodeid) {
+        EntryRef level_ref = _graph.get_node_ref(nodeid);
         if (level_ref.valid()) {
             vespalib::ArrayRef<AtomicEntryRef> refs(_graph.nodes.get_writable(level_ref));
             context->compact(refs);
@@ -640,7 +648,7 @@ HnswIndex::get_state(const vespalib::slime::Inserter& inserter) const
         object.setLong("unreachable_nodes_incomplete_count", unreachable);
     }
     auto entry_node = _graph.get_entry_node();
-    object.setLong("entry_docid", entry_node.docid);
+    object.setLong("entry_nodeid", entry_node.nodeid);
     object.setLong("entry_level", entry_node.level);
     auto& cfgObj = object.setObject("cfg");
     cfgObj.setLong("max_links_at_level_0", _cfg.max_links_at_level_0());
@@ -670,7 +678,7 @@ HnswIndex::make_saver() const
 std::unique_ptr<NearestNeighborIndexLoader>
 HnswIndex::make_loader(FastOS_FileInterface& file)
 {
-    assert(get_entry_docid() == 0); // cannot load after index has data
+    assert(get_entry_nodeid() == 0); // cannot load after index has data
     using ReaderType = FileReader<uint32_t>;
     using LoaderType = HnswIndexLoader<ReaderType>;
     return std::make_unique<LoaderType>(_graph, std::make_unique<ReaderType>(&file));
@@ -697,7 +705,7 @@ HnswIndex::top_k_by_docid(uint32_t k, TypedCells vector,
     result.reserve(candidates.size());
     for (const HnswCandidate & hit : candidates.peek()) {
         if (hit.distance > distance_threshold) continue;
-        result.emplace_back(hit.docid, hit.distance);
+        result.emplace_back(get_docid(hit.nodeid), hit.distance);
     }
     std::sort(result.begin(), result.end(), NeighborsByDocId());
     return result;
@@ -723,14 +731,14 @@ HnswIndex::top_k_candidates(const TypedCells &vector, uint32_t k, const GlobalFi
 {
     FurthestPriQ best_neighbors;
     auto entry = _graph.get_entry_node();
-    if (entry.docid == 0) {
+    if (entry.nodeid == 0) {
         // graph has no entry point
         return best_neighbors;
     }
     int search_level = entry.level;
-    double entry_dist = calc_distance(vector, entry.docid);
+    double entry_dist = calc_distance(vector, entry.nodeid);
     // TODO: check if entry docid/node_ref is still valid here
-    HnswCandidate entry_point(entry.docid, entry.node_ref, entry_dist);
+    HnswCandidate entry_point(entry.nodeid, entry.node_ref, entry_dist);
     while (search_level > 0) {
         entry_point = find_nearest_in_layer(vector, entry_point, search_level);
         --search_level;
@@ -741,9 +749,9 @@ HnswIndex::top_k_candidates(const TypedCells &vector, uint32_t k, const GlobalFi
 }
 
 HnswNode
-HnswIndex::get_node(uint32_t docid) const
+HnswIndex::get_node(uint32_t nodeid) const
 {
-    auto node_ref = _graph.acquire_node_ref(docid);
+    auto node_ref = _graph.acquire_node_ref(nodeid);
     if (!node_ref.valid()) {
         return HnswNode();
     }
@@ -759,17 +767,17 @@ HnswIndex::get_node(uint32_t docid) const
 }
 
 void
-HnswIndex::set_node(uint32_t docid, const HnswNode &node)
+HnswIndex::set_node(uint32_t nodeid, const HnswNode &node)
 {
     size_t num_levels = node.size();
     assert(num_levels > 0);
-    auto node_ref = _graph.make_node_for_document(docid, num_levels);
+    auto node_ref = _graph.make_node(nodeid, num_levels);
     for (size_t level = 0; level < num_levels; ++level) {
-        connect_new_node(docid, node.level(level), level);
+        connect_new_node(nodeid, node.level(level), level);
     }
     int max_level = num_levels - 1;
     if (get_entry_level() < max_level) {
-        _graph.set_entry_node({docid, node_ref, max_level});
+        _graph.set_entry_node({nodeid, node_ref, max_level});
     }
 }
 
@@ -777,20 +785,20 @@ bool
 HnswIndex::check_link_symmetry() const
 {
     bool all_sym = true;
-    size_t doc_id_limit = _graph.size();
-    for (size_t docid = 0; docid < doc_id_limit; ++docid) {
-        auto node_ref = _graph.acquire_node_ref(docid);
+    size_t nodeid_limit = _graph.size();
+    for (size_t nodeid = 0; nodeid < nodeid_limit; ++nodeid) {
+        auto node_ref = _graph.acquire_node_ref(nodeid);
         if (node_ref.valid()) {
             auto levels = _graph.nodes.get(node_ref);
             uint32_t level = 0;
             for (const auto& links_ref : levels) {
                 auto links = _graph.links.get(links_ref.load_acquire());
-                for (auto neighbor_docid : links) {
-                    auto neighbor_links = _graph.acquire_link_array(neighbor_docid, level);
-                    if (! has_link_to(neighbor_links, docid)) {
+                for (auto neighbor_nodeid : links) {
+                    auto neighbor_links = _graph.acquire_link_array(neighbor_nodeid, level);
+                    if (! has_link_to(neighbor_links, nodeid)) {
                         all_sym = false;
-                        LOG(warning, "check_link_symmetry: docid %zu links to %u on level %u, but no backlink",
-                            docid, neighbor_docid, level);
+                        LOG(warning, "check_link_symmetry: nodeid %zu links to %u on level %u, but no backlink",
+                            nodeid, neighbor_nodeid, level);
                     }
                 }
                 ++level;
@@ -810,9 +818,9 @@ HnswIndex::count_reachable_nodes() const
     }
     std::vector<bool> visited(_graph.size());
     LinkArray found_links;
-    if (entry.docid < visited.size()) {
-        found_links.push_back(entry.docid);
-        visited[entry.docid] = true;
+    if (entry.nodeid < visited.size()) {
+        found_links.push_back(entry.nodeid);
+        visited[entry.nodeid] = true;
     }
     vespalib::steady_time doom = vespalib::steady_clock::now() + MAX_COUNT_DURATION;
     while (search_level >= 0) {
@@ -820,9 +828,9 @@ HnswIndex::count_reachable_nodes() const
             if (vespalib::steady_clock::now() > doom) {
                 return {found_links.size(), false};
             }
-            uint32_t docid = found_links[idx];
-            if (docid < visited.size()) {
-                auto neighbors = _graph.acquire_link_array(docid, search_level);
+            uint32_t nodeid = found_links[idx];
+            if (nodeid < visited.size()) {
+                auto neighbors = _graph.acquire_link_array(nodeid, search_level);
                 for (uint32_t neighbor : neighbors) {
                     if (neighbor >= visited.size() || visited[neighbor]) {
                         continue;

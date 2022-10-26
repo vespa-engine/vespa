@@ -26,7 +26,7 @@ count_valid_link_arrays(const HnswGraph & graph) {
 }
 
 HnswIndexSaver::MetaData::MetaData()
-    : entry_docid(0),
+    : entry_nodeid(0),
       entry_level(-1),
       refs(),
       nodes()
@@ -38,7 +38,7 @@ HnswIndexSaver::HnswIndexSaver(const HnswGraph &graph)
     : _graph_links(graph.links), _meta_data()
 {
     auto entry = graph.get_entry_node();
-    _meta_data.entry_docid = entry.docid;
+    _meta_data.entry_nodeid = entry.nodeid;
     _meta_data.entry_level = entry.level;
     size_t num_nodes = graph.node_refs.get_size(); // Called from writer only
     assert (num_nodes <= (std::numeric_limits<uint32_t>::max() - 1));
@@ -62,7 +62,7 @@ HnswIndexSaver::HnswIndexSaver(const HnswGraph &graph)
 void
 HnswIndexSaver::save(BufferWriter& writer) const
 {
-    writer.write(&_meta_data.entry_docid, sizeof(uint32_t));
+    writer.write(&_meta_data.entry_nodeid, sizeof(uint32_t));
     writer.write(&_meta_data.entry_level, sizeof(int32_t));
     uint32_t num_nodes = _meta_data.nodes.size() - 1;
     writer.write(&num_nodes, sizeof(uint32_t));

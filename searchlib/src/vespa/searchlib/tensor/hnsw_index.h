@@ -80,6 +80,9 @@ public:
         CompactionSpec link_arrays() const noexcept { return _link_arrays; }
     };
 
+    // Stubs for mapping between docid and nodeid.
+    static uint32_t get_docid(uint32_t nodeid) { return nodeid; }
+    static uint32_t get_nodeid(uint32_t docid) { return docid; }
 protected:
     using AtomicEntryRef = HnswGraph::AtomicEntryRef;
     using NodeStore = HnswGraph::NodeStore;
@@ -100,10 +103,10 @@ protected:
     HnswIndexCompactionSpec _compaction_spec;
 
     uint32_t max_links_for_level(uint32_t level) const;
-    void add_link_to(uint32_t docid, uint32_t level, const LinkArrayRef& old_links, uint32_t new_link) {
+    void add_link_to(uint32_t nodeid, uint32_t level, const LinkArrayRef& old_links, uint32_t new_link) {
         LinkArray new_links(old_links.begin(), old_links.end());
         new_links.push_back(new_link);
-        _graph.set_link_array(docid, level, new_links);
+        _graph.set_link_array(nodeid, level, new_links);
     }
 
     /**
@@ -122,18 +125,22 @@ protected:
     SelectResult select_neighbors_heuristic(const HnswCandidateVector& neighbors, uint32_t max_links) const;
     SelectResult select_neighbors_simple(const HnswCandidateVector& neighbors, uint32_t max_links) const;
     SelectResult select_neighbors(const HnswCandidateVector& neighbors, uint32_t max_links) const;
-    void shrink_if_needed(uint32_t docid, uint32_t level);
-    void connect_new_node(uint32_t docid, const LinkArrayRef &neighbors, uint32_t level);
+    void shrink_if_needed(uint32_t nodeid, uint32_t level);
+    void connect_new_node(uint32_t nodeid, const LinkArrayRef &neighbors, uint32_t level);
     void mutual_reconnect(const LinkArrayRef &cluster, uint32_t level);
     void remove_link_to(uint32_t remove_from, uint32_t remove_id, uint32_t level);
 
-    inline TypedCells get_vector(uint32_t docid) const {
+    inline TypedCells get_vector(uint32_t nodeid) const {
+        uint32_t docid = get_docid(nodeid);
+        return _vectors.get_vector(docid);
+    }
+    inline TypedCells get_vector_by_docid(uint32_t docid) const {
         return _vectors.get_vector(docid);
     }
 
-    double calc_distance(uint32_t lhs_docid, uint32_t rhs_docid) const;
-    double calc_distance(const TypedCells& lhs, uint32_t rhs_docid) const;
-    uint32_t estimate_visited_nodes(uint32_t level, uint32_t doc_id_limit, uint32_t neighbors_to_find, const GlobalFilter* filter) const;
+    double calc_distance(uint32_t lhs_nodeid, uint32_t rhs_nodeid) const;
+    double calc_distance(const TypedCells& lhs, uint32_t rhs_nodeid) const;
+    uint32_t estimate_visited_nodes(uint32_t level, uint32_t nodeid_limit, uint32_t neighbors_to_find, const GlobalFilter* filter) const;
 
     /**
      * Performs a greedy search in the given layer to find the candidate that is nearest the input vector.
@@ -142,7 +149,7 @@ protected:
     template <class VisitedTracker>
     void search_layer_helper(const TypedCells& input, uint32_t neighbors_to_find, FurthestPriQ& found_neighbors,
                              uint32_t level, const GlobalFilter *filter,
-                             uint32_t doc_id_limit,
+                             uint32_t nodeid_limit,
                              uint32_t estimated_visited_nodes) const;
     void search_layer(const TypedCells& input, uint32_t neighbors_to_find, FurthestPriQ& found_neighbors,
                       uint32_t level, const GlobalFilter *filter = nullptr) const;
@@ -169,7 +176,7 @@ protected:
     };
     PreparedAddDoc internal_prepare_add(uint32_t docid, TypedCells input_vector,
                                         vespalib::GenerationHandler::Guard read_guard) const;
-    LinkArray filter_valid_docids(uint32_t level, const PreparedAddDoc::Links &neighbors, uint32_t me);
+    LinkArray filter_valid_nodeids(uint32_t level, const PreparedAddDoc::Links &neighbors, uint32_t self_nodeid);
     void internal_complete_add(uint32_t docid, PreparedAddDoc &op);
 public:
     HnswIndex(const DocVectorAccess& vectors, DistanceFunction::UP distance_func,
@@ -184,6 +191,7 @@ public:
             TypedCells vector,
             vespalib::GenerationHandler::Guard read_guard) const override;
     void complete_add_document(uint32_t docid, std::unique_ptr<PrepareResult> prepare_result) override;
+    void remove_node(uint32_t nodeid);
     void remove_document(uint32_t docid) override;
     void assign_generation(generation_t current_gen) override;
     void reclaim_memory(generation_t oldest_used_gen) override;
@@ -210,12 +218,12 @@ public:
 
     FurthestPriQ top_k_candidates(const TypedCells &vector, uint32_t k, const GlobalFilter *filter) const;
 
-    uint32_t get_entry_docid() const { return _graph.get_entry_node().docid; }
+    uint32_t get_entry_nodeid() const { return _graph.get_entry_node().nodeid; }
     int32_t get_entry_level() const { return _graph.get_entry_node().level; }
 
     // Should only be used by unit tests.
-    HnswNode get_node(uint32_t docid) const;
-    void set_node(uint32_t docid, const HnswNode &node);
+    HnswNode get_node(uint32_t nodeid) const;
+    void set_node(uint32_t nodeid, const HnswNode &node);
     bool check_link_symmetry() const;
     std::pair<uint32_t, bool> count_reachable_nodes() const;
     HnswGraph& get_graph() { return _graph; }

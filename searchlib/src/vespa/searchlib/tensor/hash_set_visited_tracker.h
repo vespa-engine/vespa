@@ -18,9 +18,9 @@ class HashSetVisitedTracker
 public:
     HashSetVisitedTracker(const HnswIndex&, uint32_t, uint32_t estimated_visited_nodes);
     ~HashSetVisitedTracker();
-    void mark(uint32_t doc_id) { _visited.insert(doc_id); }
-    bool try_mark(uint32_t doc_id) {
-        return _visited.insert(doc_id).second;
+    void mark(uint32_t nodeid) { _visited.insert(nodeid); }
+    bool try_mark(uint32_t nodeid) {
+        return _visited.insert(nodeid).second;
     }
 };
 
