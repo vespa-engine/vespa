@@ -61,7 +61,6 @@ import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
-import java.nio.file.attribute.FileTime;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
@@ -266,13 +265,13 @@ public class ApplicationRepositoryTest {
         Duration keepFileReferencesDuration = Duration.ofSeconds(4);
 
         // Add file reference that is not in use and should be deleted (older than 'keepFileReferencesDuration')
-        File filereferenceDirOldest = createFilereferenceOnDisk(new File(fileReferencesDir, "foo"));
+        File filereferenceDirOldest = createFileReferenceOnDisk(new File(fileReferencesDir, "bar"));
         clock.advance(Duration.ofSeconds(1));
 
         // Add file references that are not in use and could be deleted
         IntStream.range(0, 3).forEach(i -> {
             try {
-                createFilereferenceOnDisk(new File(fileReferencesDir, "bar" + i));
+                createFileReferenceOnDisk(new File(fileReferencesDir, "baz" + i));
             } catch (IOException e) {
                 fail(e.getMessage());
             }
@@ -281,7 +280,7 @@ public class ApplicationRepositoryTest {
         clock.advance(keepFileReferencesDuration);
 
         // Add file reference that is not in use, but should not be deleted (newer than 'keepFileReferencesDuration')
-        File filereferenceDirNewest = createFilereferenceOnDisk(new File(fileReferencesDir, "baz"));
+        File filereferenceDirNewest = createFileReferenceOnDisk(new File(fileReferencesDir, "foo"));
 
         applicationRepository = new ApplicationRepository.Builder()
                 .withTenantRepository(tenantRepository)
@@ -294,23 +293,25 @@ public class ApplicationRepositoryTest {
         PrepareParams prepareParams = new PrepareParams.Builder().applicationId(applicationId()).ignoreValidationErrors(true).build();
         deployApp(new File("src/test/apps/app"), prepareParams);
 
-        List<String> toBeDeleted = applicationRepository.deleteUnusedFileDistributionReferences(fileReferencesDir,
+        List<String> deleted = applicationRepository.deleteUnusedFileDistributionReferences(fileReferencesDir,
                                                                                                 keepFileReferencesDuration,
                                                                                                 2);
-        Collections.sort(toBeDeleted);
-        assertEquals(List.of("bar0", "foo"), toBeDeleted);
-        // bar0 and foo are the only ones that will be deleted (keeps 2 newest no matter how old they are)
+        Collections.sort(deleted);
+        List<String> expected = new ArrayList<>(List.of("bar", "baz0"));
+        Collections.sort(expected);
+        assertEquals(expected, deleted);
+        // bar and baz0 will be deleted, 2 of the old ones (baz1 and baz2) will be kept and foo is not old enough to be considered
         assertFalse(filereferenceDirOldest.exists());
-        assertFalse(new File(fileReferencesDir, "bar0").exists());
+        assertFalse(new File(fileReferencesDir, "baz0").exists());
         assertTrue(filereferenceDirNewest.exists());
     }
 
-    private File createFilereferenceOnDisk(File filereferenceDir) throws IOException {
-        assertTrue(filereferenceDir.mkdir());
-        File file = new File(filereferenceDir, "bar");
-        IOUtils.writeFile(file, Utf8.toBytes("test"));
-        Files.setAttribute(filereferenceDir.toPath(), "lastAccessTime", FileTime.from(clock.instant()));
-        return filereferenceDir;
+    private File createFileReferenceOnDisk(File filereference) throws IOException {
+        File fileReferenceDir = filereference.getParentFile();
+        fileReferenceDir.mkdir();
+        IOUtils.writeFile(filereference, Utf8.toBytes("test"));
+        filereference.setLastModified(clock.instant().toEpochMilli());
+        return filereference;
     }
 
     @Test

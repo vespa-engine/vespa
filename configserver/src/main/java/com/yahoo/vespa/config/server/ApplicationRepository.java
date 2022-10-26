@@ -597,14 +597,15 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
     public List<String> deleteUnusedFileDistributionReferences(File fileReferencesPath,
                                                                Duration keepFileReferencesDuration,
                                                                int numberToAlwaysKeep) {
-        log.log(Level.FINE, () -> "Keep unused file references for " + keepFileReferencesDuration);
         if (!fileReferencesPath.isDirectory()) throw new RuntimeException(fileReferencesPath + " is not a directory");
 
         Set<String> fileReferencesInUse = getFileReferencesInUse();
         log.log(Level.FINE, () -> "File references in use : " + fileReferencesInUse);
+        Instant instant = clock.instant().minus(keepFileReferencesDuration);
+        log.log(Level.FINE, () -> "Remove unused file references last modified before " + instant +
+                " (but keep " + numberToAlwaysKeep + " of those)");
 
-        List<String> candidates = sortedUnusedFileReferences(fileReferencesPath, fileReferencesInUse, keepFileReferencesDuration);
-        // Do not delete the newest ones
+        List<String> candidates = sortedUnusedFileReferences(fileReferencesPath, fileReferencesInUse, instant);
         List<String> fileReferencesToDelete = candidates.subList(0, Math.max(0, candidates.size() - numberToAlwaysKeep));
         if (fileReferencesToDelete.size() > 0) {
             log.log(Level.FINE, () -> "Will delete file references not in use: " + fileReferencesToDelete);
@@ -628,15 +629,14 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
         return fileReferencesInUse;
     }
 
-    private List<String> sortedUnusedFileReferences(File fileReferencesPath, Set<String> fileReferencesInUse, Duration keepFileReferences) {
+    private List<String> sortedUnusedFileReferences(File fileReferencesPath, Set<String> fileReferencesInUse, Instant instant) {
         Set<String> fileReferencesOnDisk = getFileReferencesOnDisk(fileReferencesPath);
         log.log(Level.FINE, () -> "File references on disk (in " + fileReferencesPath + "): " + fileReferencesOnDisk);
-        Instant instant = clock.instant().minus(keepFileReferences);
         return fileReferencesOnDisk
                 .stream()
                 .filter(fileReference -> ! fileReferencesInUse.contains(fileReference))
-                .filter(fileReference -> isLastFileAccessBefore(new File(fileReferencesPath, fileReference), instant))
-                .sorted(Comparator.comparing(a -> lastAccessed(new File(fileReferencesPath, a))))
+                .filter(fileReference -> isLastModifiedBefore(new File(fileReferencesPath, fileReference), instant))
+                .sorted(Comparator.comparing(a -> lastModified(new File(fileReferencesPath, a))))
                 .collect(Collectors.toList());
     }
 
@@ -690,15 +690,15 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
                 .collect(Collectors.toList());
     }
 
-    private boolean isLastFileAccessBefore(File fileReference, Instant instant) {
-        return lastAccessed(fileReference).isBefore(instant);
+    private boolean isLastModifiedBefore(File fileReference, Instant instant) {
+        return lastModified(fileReference).isBefore(instant);
     }
 
-    private Instant lastAccessed(File fileReference) {
+    private Instant lastModified(File fileReference) {
         BasicFileAttributes fileAttributes;
         try {
             fileAttributes = readAttributes(fileReference.toPath(), BasicFileAttributes.class);
-            return fileAttributes.lastAccessTime().toInstant();
+            return fileAttributes.lastModifiedTime().toInstant();
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }
