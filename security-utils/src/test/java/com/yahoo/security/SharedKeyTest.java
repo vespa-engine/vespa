@@ -52,6 +52,7 @@ public class SharedKeyTest {
         var theirSealed = SealedSharedKey.fromTokenString(publicToken);
         var theirShared = SharedKeyGenerator.fromSealedKey(theirSealed, receiverPrivate);
 
+        assertEquals(1, theirSealed.keyId());
         assertEquals(expectedSharedSecret, hex(theirShared.secretKey().getEncoded()));
     }
 
