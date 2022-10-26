@@ -8,7 +8,6 @@ import (
 	"bufio"
 	"fmt"
 	"os"
-	"os/user"
 	"strings"
 )
 
@@ -23,38 +22,6 @@ func ExportDefaultEnvToSh() error {
 	err := loadDefaultEnvTo(holder)
 	holder.dump()
 	return err
-}
-
-// Which user should vespa services run as?  If current user is root,
-// we want to change to some non-privileged user.
-// Should be run after LoadDefaultEnv() which possibly loads VESPA_USER
-func FindVespaUser() string {
-	uName := os.Getenv("VESPA_USER")
-	if uName != "" {
-		// no check here, assume valid
-		return uName
-	}
-	if os.Getuid() == 0 {
-		u, err := user.Lookup("vespa")
-		if err == nil {
-			uName = u.Username
-		} else {
-			u, err = user.Lookup("nobody")
-			if err == nil {
-				uName = u.Username
-			}
-		}
-	}
-	if uName == "" {
-		u, err := user.Current()
-		if err == nil {
-			uName = u.Username
-		}
-	}
-	if uName != "" {
-		os.Setenv("VESPA_USER", uName)
-	}
-	return uName
 }
 
 type loadEnvReceiver interface {
