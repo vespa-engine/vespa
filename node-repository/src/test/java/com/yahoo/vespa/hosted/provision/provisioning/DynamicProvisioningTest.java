@@ -11,12 +11,15 @@ import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.Flavor;
 import com.yahoo.config.provision.HostSpec;
 import com.yahoo.config.provision.NodeResources;
+import com.yahoo.config.provision.NodeResources.Architecture;
 import com.yahoo.config.provision.NodeResources.DiskSpeed;
 import com.yahoo.config.provision.NodeResources.StorageType;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.config.provision.RegionName;
 import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.Zone;
+import com.yahoo.vespa.flags.InMemoryFlagSource;
+import com.yahoo.vespa.flags.PermanentFlags;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeList;
 import com.yahoo.vespa.hosted.provision.node.Agent;
@@ -257,6 +260,49 @@ public class DynamicProvisioningTest {
         tester.assertNodes("Allocation specifies memory in the advertised amount",
                            2, 1, 2, 20, 40,
                            app1, cluster1);
+    }
+
+    @Test
+    public void migrates_nodes_on_host_flavor_flag_change() {
+        InMemoryFlagSource flagSource = new InMemoryFlagSource();
+        List<Flavor> flavors = List.of(new Flavor("x86", new NodeResources(1, 4, 50, 0.1, fast, local, Architecture.x86_64)),
+                                       new Flavor("arm", new NodeResources(1, 4, 50, 0.1, fast, local, Architecture.arm64)));
+        MockHostProvisioner hostProvisioner = new MockHostProvisioner(flavors);
+        ProvisioningTester tester = new ProvisioningTester.Builder().zone(zone)
+                .flavors(flavors)
+                .hostProvisioner(hostProvisioner)
+                .resourcesCalculator(0, 0)
+                .nameResolver(nameResolver)
+                .flagSource(flagSource)
+                .build();
+
+        ApplicationId app = ProvisioningTester.applicationId();
+        ClusterSpec cluster = ClusterSpec.request(ClusterSpec.Type.content, new ClusterSpec.Id("cluster1")).vespaVersion("8").build();
+        Capacity capacity = Capacity.from(new ClusterResources(4, 2, new NodeResources(1, 4, 50, 0.1, DiskSpeed.any, StorageType.any, Architecture.any)));
+
+        hostProvisioner.overrideHostFlavor("x86");
+        tester.activate(app, cluster, capacity);
+        NodeList nodes = tester.nodeRepository().nodes().list();
+        nodes.forEach(n -> System.out.println(n.hostname() + " " + n.flavor().name()));
+        assertEquals(4, nodes.owner(app).state(Node.State.active).size());
+        assertEquals(Set.of("x86"), nodes.parentsOf(nodes.owner(app).state(Node.State.active)).stream().map(n -> n.flavor().name()).collect(Collectors.toSet()));
+
+        hostProvisioner.overrideHostFlavor("arm");
+        flagSource.withStringFlag(PermanentFlags.HOST_FLAVOR.id(), "arm");
+        tester.activate(app, cluster, capacity);
+        nodes = tester.nodeRepository().nodes().list();
+        assertEquals(4, nodes.owner(app).state(Node.State.inactive).size());
+        assertEquals(4, nodes.owner(app).state(Node.State.active).size());
+        assertEquals(Set.of("x86"), nodes.parentsOf(tester.getNodes(app, Node.State.inactive)).stream().map(n -> n.flavor().name()).collect(Collectors.toSet()));
+        assertEquals(Set.of("arm"), nodes.parentsOf(tester.getNodes(app, Node.State.active)).stream().map(n -> n.flavor().name()).collect(Collectors.toSet()));
+
+        flagSource.removeFlag(PermanentFlags.HOST_FLAVOR.id()); // Resetting flag does not moves the nodes back
+        tester.activate(app, cluster, capacity);
+        nodes = tester.nodeRepository().nodes().list();
+        assertEquals(4, nodes.owner(app).state(Node.State.inactive).size());
+        assertEquals(4, nodes.owner(app).state(Node.State.active).size());
+        assertEquals(Set.of("x86"), nodes.parentsOf(tester.getNodes(app, Node.State.inactive)).stream().map(n -> n.flavor().name()).collect(Collectors.toSet()));
+        assertEquals(Set.of("arm"), nodes.parentsOf(tester.getNodes(app, Node.State.active)).stream().map(n -> n.flavor().name()).collect(Collectors.toSet()));
     }
 
     @Test

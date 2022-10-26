@@ -9,6 +9,8 @@ import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.config.provision.SystemName;
 import com.yahoo.net.HostName;
+import com.yahoo.vespa.flags.FetchVector;
+import com.yahoo.vespa.flags.PermanentFlags;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeList;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
@@ -81,6 +83,7 @@ class NodeAllocation {
 
     private final NodeRepository nodeRepository;
     private final NodeResourceLimits nodeResourceLimits;
+    private final Optional<String> requiredHostFlavor;
 
     NodeAllocation(NodesAndHosts<? extends NodeList> allNodesAndHosts, ApplicationId application, ClusterSpec cluster, NodeSpec requestedNodes,
                    Supplier<Integer> nextIndex, NodeRepository nodeRepository) {
@@ -90,7 +93,12 @@ class NodeAllocation {
         this.requestedNodes = requestedNodes;
         this.nextIndex = nextIndex;
         this.nodeRepository = nodeRepository;
-        nodeResourceLimits = new NodeResourceLimits(nodeRepository);
+        this.nodeResourceLimits = new NodeResourceLimits(nodeRepository);
+        this.requiredHostFlavor = Optional.of(PermanentFlags.HOST_FLAVOR.bindTo(nodeRepository.flagSource())
+                        .with(FetchVector.Dimension.APPLICATION_ID, application.serializedForm())
+                        .with(FetchVector.Dimension.CLUSTER_TYPE, cluster.type().name())
+                        .value())
+                .filter(s -> !s.isBlank());
     }
 
     /**
@@ -115,6 +123,7 @@ class NodeAllocation {
                 if ( candidate.state() == Node.State.active && allocation.removable()) continue; // don't accept; causes removal
                 if ( candidate.state() == Node.State.active && candidate.wantToFail()) continue; // don't accept; causes failing
                 if ( indexes.contains(membership.index())) continue; // duplicate index (just to be sure)
+                if ( requiredHostFlavor.isPresent() && ! candidate.parent.map(node -> node.flavor().name()).equals(requiredHostFlavor)) continue;
 
                 boolean resizeable = requestedNodes.considerRetiring() && candidate.isResizable;
                 boolean acceptToRetire = acceptToRetire(candidate);
