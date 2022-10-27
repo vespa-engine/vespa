@@ -36,10 +36,10 @@ fill_helper(AttributeVector& attr, const std::vector<ValueType>& values)
 {
     assert(attr.getConfig().collectionType() == CollectionType::SINGLE);
     add_docs(attr, values.size());
-    auto* real = dynamic_cast<AttrType*>(&attr);
+    auto& real = dynamic_cast<AttrType&>(attr);
     for (size_t i = 0; i < values.size(); ++i) {
         uint32_t docid = (i + 1);
-        real->update(docid, values[i]);
+        real.update(docid, values[i]);
     }
     attr.commit(true);
 }
@@ -51,11 +51,11 @@ fill_array_helper(AttributeVector& attr, const std::vector<std::vector<ValueType
     assert((attr.getConfig().collectionType() == CollectionType::ARRAY) ||
            (attr.getConfig().collectionType() == CollectionType::WSET));
     add_docs(attr, values.size());
-    auto* real = dynamic_cast<AttrType*>(&attr);
+    auto& real = dynamic_cast<AttrType&>(attr);
     for (size_t i = 0; i < values.size(); ++i) {
         uint32_t docid = (i + 1);
         for (auto value : values[i]) {
-            real->append(docid, value, 1);
+            real.append(docid, value, 1);
         }
     }
     attr.commit(true);
@@ -67,11 +67,11 @@ fill_wset_helper(AttributeVector& attr, const std::vector<std::vector<std::pair<
 {
     assert(attr.getConfig().collectionType() == CollectionType::WSET);
     add_docs(attr, values.size());
-    auto* real = dynamic_cast<AttrType*>(&attr);
+    auto& real = dynamic_cast<AttrType&>(attr);
     for (size_t i = 0; i < values.size(); ++i) {
         uint32_t docid = (i + 1);
         for (auto value : values[i]) {
-            real->append(docid, value.first, value.second);
+            real.append(docid, value.first, value.second);
         }
     }
     attr.commit(true);
@@ -82,7 +82,6 @@ fill_wset_helper(AttributeVector& attr, const std::vector<std::vector<std::pair<
 AttributeBuilder&
 AttributeBuilder::fill(const std::vector<int64_t>& values)
 {
-    assert(_attr.isIntegerType());
     fill_helper<IntegerAttribute, int64_t>(_attr, values);
     return *this;
 }
@@ -90,7 +89,6 @@ AttributeBuilder::fill(const std::vector<int64_t>& values)
 AttributeBuilder&
 AttributeBuilder::fill_array(const std::vector<std::vector<int64_t>>& values)
 {
-    assert(_attr.isIntegerType());
     fill_array_helper<IntegerAttribute, int64_t>(_attr, values);
     return *this;
 }
@@ -98,7 +96,6 @@ AttributeBuilder::fill_array(const std::vector<std::vector<int64_t>>& values)
 AttributeBuilder&
 AttributeBuilder::fill_wset(const std::vector<std::vector<std::pair<int64_t, int32_t>>>& values)
 {
-    assert(_attr.isIntegerType());
     fill_wset_helper<IntegerAttribute, int64_t>(_attr, values);
     return *this;
 }
@@ -106,7 +103,6 @@ AttributeBuilder::fill_wset(const std::vector<std::vector<std::pair<int64_t, int
 AttributeBuilder&
 AttributeBuilder::fill(const std::vector<vespalib::string>& values)
 {
-    assert(_attr.isStringType());
     fill_helper<StringAttribute, vespalib::string>(_attr, values);
     return *this;
 }
@@ -114,7 +110,6 @@ AttributeBuilder::fill(const std::vector<vespalib::string>& values)
 AttributeBuilder&
 AttributeBuilder::fill_array(const std::vector<std::vector<vespalib::string>>& values)
 {
-    assert(_attr.isStringType());
     fill_array_helper<StringAttribute, vespalib::string>(_attr, values);
     return *this;
 }
@@ -122,7 +117,6 @@ AttributeBuilder::fill_array(const std::vector<std::vector<vespalib::string>>& v
 AttributeBuilder&
 AttributeBuilder::fill_wset(const std::vector<std::vector<std::pair<vespalib::string, int32_t>>>& values)
 {
-    assert(_attr.isStringType());
     fill_wset_helper<StringAttribute, vespalib::string>(_attr, values);
     return *this;
 }
