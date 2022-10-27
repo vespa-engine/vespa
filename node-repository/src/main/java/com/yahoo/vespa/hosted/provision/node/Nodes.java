@@ -11,6 +11,7 @@ import com.yahoo.config.provision.Zone;
 import com.yahoo.transaction.Mutex;
 import com.yahoo.transaction.NestedTransaction;
 import com.yahoo.vespa.applicationmodel.HostName;
+import com.yahoo.vespa.applicationmodel.InfrastructureApplication;
 import com.yahoo.vespa.hosted.provision.LockedNodeList;
 import com.yahoo.vespa.hosted.provision.NoSuchNodeException;
 import com.yahoo.vespa.hosted.provision.Node;
@@ -773,15 +774,12 @@ public class Nodes {
     public Mutex lockUnallocated() { return db.lockInactive(); }
 
     /** Returns the unallocated/application lock, and the node acquired under that lock. */
-    public Optional<NodeMutex> lockAndGet(Node node) { return lockAndGet(node, Optional.empty()); }
-
-    /** Returns the unallocated/application lock, and the node acquired under that lock. */
-    public Optional<NodeMutex> lockAndGet(Node node, Optional<Duration> timeout) {
+    private Optional<NodeMutex> lockAndGet(Node node, Optional<Duration> timeout) {
         Node staleNode = node;
 
         final int maxRetries = 4;
         for (int i = 0; i < maxRetries; ++i) {
-            Mutex lockToClose = timeout.isPresent() ? lock(staleNode, timeout.get()) : lock(staleNode);
+            Mutex lockToClose = lock(staleNode, timeout);
             try {
                 // As an optimization we first try finding the node in the same state
                 Optional<Node> freshNode = node(staleNode.hostname(), staleNode.state());
@@ -792,8 +790,9 @@ public class Nodes {
                     }
                 }
 
-                if (Objects.equals(freshNode.get().allocation().map(Allocation::owner),
-                                   staleNode.allocation().map(Allocation::owner))) {
+                if (node.type() != NodeType.tenant ||
+                        Objects.equals(freshNode.get().allocation().map(Allocation::owner),
+                                       staleNode.allocation().map(Allocation::owner))) {
                     NodeMutex nodeMutex = new NodeMutex(freshNode.get(), lockToClose);
                     lockToClose = null;
                     return Optional.of(nodeMutex);
@@ -821,6 +820,12 @@ public class Nodes {
     }
 
     /** Returns the unallocated/application lock, and the node acquired under that lock. */
+    public Optional<NodeMutex> lockAndGet(Node node) { return lockAndGet(node, Optional.empty()); }
+
+    /** Returns the unallocated/application lock, and the node acquired under that lock. */
+    public Optional<NodeMutex> lockAndGet(Node node, Duration timeout) { return lockAndGet(node, Optional.of(timeout)); }
+
+    /** Returns the unallocated/application lock, and the node acquired under that lock. */
     public NodeMutex lockAndGetRequired(Node node) {
         return lockAndGet(node).orElseThrow(() -> new NoSuchNodeException("No node with hostname '" + node.hostname() + "'"));
     }
@@ -835,12 +840,21 @@ public class Nodes {
         return lockAndGet(hostname, timeout).orElseThrow(() -> new NoSuchNodeException("No node with hostname '" + hostname + "'"));
     }
 
-    private Mutex lock(Node node) {
-        return node.allocation().isPresent() ? lock(node.allocation().get().owner()) : lockUnallocated();
-    }
-
-    private Mutex lock(Node node, Duration timeout) {
-        return node.allocation().isPresent() ? lock(node.allocation().get().owner(), timeout) : lockUnallocated();
+    private Mutex lock(Node node, Optional<Duration> timeout) {
+        Optional<ApplicationId> application = switch (node.type()) {
+            case tenant -> node.allocation().map(Allocation::owner);
+            case host -> Optional.of(InfrastructureApplication.TENANT_HOST.id());
+            case config -> Optional.of(InfrastructureApplication.CONFIG_SERVER.id());
+            case confighost -> Optional.of(InfrastructureApplication.CONFIG_SERVER_HOST.id());
+            case controller -> Optional.of(InfrastructureApplication.CONTROLLER.id());
+            case controllerhost -> Optional.of(InfrastructureApplication.CONTROLLER_HOST.id());
+            case proxy -> Optional.of(InfrastructureApplication.PROXY.id());
+            case proxyhost -> Optional.of(InfrastructureApplication.PROXY_HOST.id());
+        };
+        if (application.isPresent())
+            return timeout.map(t -> lock(application.get(), t)).orElseGet(() -> lock(application.get()));
+        else
+            return timeout.map(db::lockInactive).orElseGet(db::lockInactive);
     }
 
     private Node requireNode(String hostname) {
