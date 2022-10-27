@@ -1,0 +1,13 @@
+usage: vespa-security keygen <options>
+Generates an X25519 key pair and stores its private/public parts in
+separate files in Base64 encoded form.
+ -h,--help                     Show help
+ -k,--private-out-file <arg>   Output file for private (secret) key. Will
+                               be created with restrictive file
+                               permissions.
+    --overwrite-existing       Overwrite existing key files instead of
+                               failing key generation if any files already
+                               exist. Use with great caution!
+ -p,--public-out-file <arg>    Output file for public key
+Note: this is a BETA tool version; its interface may be changed at any
+time

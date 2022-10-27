@@ -1,0 +1,16 @@
+usage: vespa-security decrypt <encrypted file> <options>
+Decrypts a file using a provided token and a secret private key. The file
+must previously have been encrypted using the public key component of the
+given private key.
+ -h,--help                               Show help
+ -i,--key-id <arg>                       Numeric ID of recipient key. If
+                                         this is not provided, the key ID
+                                         stored as part of the token is
+                                         not verified.
+ -k,--recipient-private-key-file <arg>   Recipient private key file
+ -o,--output-file <arg>                  Output file for decrypted
+                                         plaintext
+ -t,--token <arg>                        Token generated when the input
+                                         file was encrypted
+Note: this is a BETA tool version; its interface may be changed at any
+time
