@@ -209,7 +209,11 @@ enum Policy {
 
     horizonProxyOperations(Privilege.grant(Action.all())
             .on(PathGroup.horizonProxy)
-            .in(SystemName.PublicCd, SystemName.Public));
+            .in(SystemName.PublicCd, SystemName.Public)),
+
+    emailVerification(Privilege.grant(Action.create)
+                        .on(PathGroup.emailVerification)
+                        .in(SystemName.PublicCd, SystemName.Public));
 
     private final Set<Privilege> privileges;
 

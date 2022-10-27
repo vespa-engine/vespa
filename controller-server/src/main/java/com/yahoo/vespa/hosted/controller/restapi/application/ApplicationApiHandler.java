@@ -111,7 +111,9 @@ import com.yahoo.vespa.hosted.controller.tenant.ArchiveAccess;
 import com.yahoo.vespa.hosted.controller.tenant.AthenzTenant;
 import com.yahoo.vespa.hosted.controller.tenant.CloudTenant;
 import com.yahoo.vespa.hosted.controller.tenant.DeletedTenant;
+import com.yahoo.vespa.hosted.controller.tenant.Email;
 import com.yahoo.vespa.hosted.controller.tenant.LastLoginInfo;
+import com.yahoo.vespa.hosted.controller.tenant.PendingMailVerification;
 import com.yahoo.vespa.hosted.controller.tenant.Tenant;
 import com.yahoo.vespa.hosted.controller.tenant.TenantAddress;
 import com.yahoo.vespa.hosted.controller.tenant.TenantBilling;
@@ -301,6 +303,7 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
         if (path.matches("/application/v4/tenant/{tenant}/info/profile")) return withCloudTenant(path.get("tenant"), request, this::putTenantInfoProfile);
         if (path.matches("/application/v4/tenant/{tenant}/info/billing")) return withCloudTenant(path.get("tenant"), request, this::putTenantInfoBilling);
         if (path.matches("/application/v4/tenant/{tenant}/info/contacts")) return withCloudTenant(path.get("tenant"), request, this::putTenantInfoContacts);
+        if (path.matches("/application/v4/tenant/{tenant}/info/resend-mail-verification")) return withCloudTenant(path.get("tenant"), request, this::resendEmailVerification);
         if (path.matches("/application/v4/tenant/{tenant}/archive-access")) return allowAwsArchiveAccess(path.get("tenant"), request); // TODO(enygaard, 2022-05-25) Remove when no longer used by console
         if (path.matches("/application/v4/tenant/{tenant}/archive-access/aws")) return allowAwsArchiveAccess(path.get("tenant"), request);
         if (path.matches("/application/v4/tenant/{tenant}/archive-access/gcp")) return allowGcpArchiveAccess(path.get("tenant"), request);
@@ -522,7 +525,8 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
             infoCursor.setString("email", info.email());
             infoCursor.setString("website", info.website());
             infoCursor.setString("contactName", info.contact().name());
-            infoCursor.setString("contactEmail", info.contact().email());
+            infoCursor.setString("contactEmail", info.contact().email().getEmailAddress());
+            infoCursor.setBool("contactEmailVerified", info.contact().email().isVerified());
             toSlime(info.address(), infoCursor);
             toSlime(info.billingContact(), infoCursor);
             toSlime(info.contacts(), infoCursor);
@@ -539,7 +543,8 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
         if (!info.isEmpty()) {
             var contact = root.setObject("contact");
             contact.setString("name", info.contact().name());
-            contact.setString("email", info.contact().email());
+            contact.setString("email", info.contact().email().getEmailAddress());
+            contact.setBool("emailVerified", info.contact().email().isVerified());
 
             var tenant = root.setObject("tenant");
             tenant.setString("company", info.name());
@@ -560,9 +565,17 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
     private SlimeJsonResponse putTenantInfoProfile(CloudTenant cloudTenant, Inspector inspector) {
         var info = cloudTenant.info();
 
+        var mergedEmail = optional("email", inspector.field("contact"))
+                .filter(address -> !address.equals(info.contact().email().getEmailAddress()))
+                .map(address -> {
+                    controller.mailVerifier().sendMailVerification(cloudTenant.name(), address, PendingMailVerification.MailType.TENANT_CONTACT);
+                    return new Email(address, false);
+                })
+                .orElse(info.contact().email());
+
         var mergedContact = TenantContact.empty()
                 .withName(getString(inspector.field("contact").field("name"), info.contact().name()))
-                .withEmail(getString(inspector.field("contact").field("email"), info.contact().email()));
+                .withEmail(mergedEmail);
 
         var mergedAddress = updateTenantInfoAddress(inspector.field("address"), info.address());
 
@@ -592,7 +605,7 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
 
             var contact = root.setObject("contact");
             contact.setString("name", billingContact.contact().name());
-            contact.setString("email", billingContact.contact().email());
+            contact.setString("email", billingContact.contact().email().getEmailAddress());
             contact.setString("phone", billingContact.contact().phone());
 
             toSlime(billingContact.address(), root); // will create "address" on the parent
@@ -606,7 +619,7 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
         var contact = info.billingContact().contact();
         var address = info.billingContact().address();
 
-        var mergedContact = updateTenantInfoContact(inspector.field("contact"), contact);
+        var mergedContact = updateTenantInfoContact(inspector.field("contact"), cloudTenant.name(), contact, false);
         var mergedAddress = updateTenantInfoAddress(inspector.field("address"), info.billingContact().address());
 
         var mergedBilling = info.billingContact()
@@ -633,7 +646,7 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
 
     private SlimeJsonResponse putTenantInfoContacts(CloudTenant cloudTenant, Inspector inspector) {
         var mergedInfo = cloudTenant.info()
-                .withContacts(updateTenantInfoContacts(inspector.field("contacts"), cloudTenant.info().contacts()));
+                .withContacts(updateTenantInfoContacts(inspector.field("contacts"), cloudTenant.name(), cloudTenant.info().contacts()));
 
         // Store changes
         controller.tenants().lockOrThrow(cloudTenant.name(), LockedTenant.Cloud.class, lockedTenant -> {
@@ -649,10 +662,10 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
         if (mergedInfo.contact().name().isBlank()) {
             throw new IllegalArgumentException("'contactName' cannot be empty");
         }
-        if (mergedInfo.contact().email().isBlank()) {
+        if (mergedInfo.contact().email().getEmailAddress().isBlank()) {
             throw new IllegalArgumentException("'contactEmail' cannot be empty");
         }
-        if (! mergedInfo.contact().email().contains("@")) {
+        if (! mergedInfo.contact().email().getEmailAddress().contains("@")) {
             // email address validation is notoriously hard - we should probably just try to send a
             // verification email to this address.  checking for @ is a simple best-effort.
             throw new IllegalArgumentException("'contactEmail' needs to be an email address");
@@ -682,7 +695,7 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
 
         Cursor addressCursor = parentCursor.setObject("billingContact");
         addressCursor.setString("name", billingContact.contact().name());
-        addressCursor.setString("email", billingContact.contact().email());
+        addressCursor.setString("email", billingContact.contact().email().getEmailAddress());
         addressCursor.setString("phone", billingContact.contact().phone());
         toSlime(billingContact.address(), addressCursor);
     }
@@ -696,7 +709,8 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
             switch (contact.type()) {
                 case EMAIL:
                     var email = (TenantContacts.EmailContact) contact;
-                    contactCursor.setString("email", email.email());
+                    contactCursor.setString("email", email.email().getEmailAddress());
+                    contactCursor.setBool("emailVerified", email.email().isVerified());
                     return;
                 default:
                     throw new IllegalArgumentException("Serialization for contact type not implemented: " + contact.type());
@@ -737,9 +751,17 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
         // Merge info from request with the existing info
         Inspector insp = toSlime(request.getData()).get();
 
+        var mergedEmail = optional("contactEmail", insp)
+                .filter(address -> !address.equals(oldInfo.contact().email().getEmailAddress()))
+                .map(address -> {
+                    controller.mailVerifier().sendMailVerification(tenant.name(), address, PendingMailVerification.MailType.TENANT_CONTACT);
+                    return new Email(address, false);
+                })
+                .orElse(oldInfo.contact().email());
+
         TenantContact mergedContact = TenantContact.empty()
                 .withName(getString(insp.field("contactName"), oldInfo.contact().name()))
-                .withEmail(getString(insp.field("contactEmail"), oldInfo.contact().email()));
+                .withEmail(mergedEmail);
 
         TenantInfo mergedInfo = TenantInfo.empty()
                 .withName(getString(insp.field("name"), oldInfo.name()))
@@ -747,8 +769,8 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
                 .withWebsite(getString(insp.field("website"), oldInfo.website()))
                 .withContact(mergedContact)
                 .withAddress(updateTenantInfoAddress(insp.field("address"), oldInfo.address()))
-                .withBilling(updateTenantInfoBillingContact(insp.field("billingContact"), oldInfo.billingContact()))
-                .withContacts(updateTenantInfoContacts(insp.field("contacts"), oldInfo.contacts()));
+                .withBilling(updateTenantInfoBillingContact(insp.field("billingContact"), tenant.name(), oldInfo.billingContact()))
+                .withContacts(updateTenantInfoContacts(insp.field("contacts"), tenant.name(), oldInfo.contacts()));
 
         validateMergedTenantInfo(mergedInfo);
 
@@ -782,32 +804,34 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
         throw new IllegalArgumentException("All address fields must be set");
     }
 
-    private TenantContact updateTenantInfoContact(Inspector insp, TenantContact oldContact) {
+    private TenantContact updateTenantInfoContact(Inspector insp, TenantName tenantName, TenantContact oldContact, boolean isBillingContact) {
         if (!insp.valid()) return oldContact;
 
-        String email = getString(insp.field("email"), oldContact.email());
-
-        if (!email.isBlank() && !email.contains("@")) {
-            // email address validation is notoriously hard - we should probably just try to send a
-            // verification email to this address.  checking for @ is a simple best-effort.
-            throw new IllegalArgumentException("'email' needs to be an email address");
-        }
+        var mergedEmail = optional("email", insp)
+                .filter(address -> !address.equals(oldContact.email().getEmailAddress()))
+                .map(address -> {
+                    if (isBillingContact)
+                        return new Email(address, true);
+                    controller.mailVerifier().sendMailVerification(tenantName, address, PendingMailVerification.MailType.TENANT_CONTACT);
+                    return new Email(address, false);
+                })
+                .orElse(oldContact.email());
 
         return TenantContact.empty()
                 .withName(getString(insp.field("name"), oldContact.name()))
-                .withEmail(getString(insp.field("email"), oldContact.email()))
+                .withEmail(mergedEmail)
                 .withPhone(getString(insp.field("phone"), oldContact.phone()));
     }
 
-    private TenantBilling updateTenantInfoBillingContact(Inspector insp, TenantBilling oldContact) {
+    private TenantBilling updateTenantInfoBillingContact(Inspector insp, TenantName tenantName, TenantBilling oldContact) {
         if (!insp.valid()) return oldContact;
 
         return TenantBilling.empty()
-                .withContact(updateTenantInfoContact(insp, oldContact.contact()))
+                .withContact(updateTenantInfoContact(insp, tenantName, oldContact.contact(), true))
                 .withAddress(updateTenantInfoAddress(insp.field("address"), oldContact.address()));
     }
 
-    private TenantContacts updateTenantInfoContacts(Inspector insp, TenantContacts oldContacts) {
+    private TenantContacts updateTenantInfoContacts(Inspector insp, TenantName tenantName, TenantContacts oldContacts) {
         if (!insp.valid()) return oldContacts;
 
         List<TenantContacts.EmailContact> contacts = SlimeUtils.entriesStream(insp).map(inspector -> {
@@ -816,11 +840,16 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
                             .map(audience -> fromAudience(audience.asString()))
                             .toList();
 
-                if (!email.contains("@")) {
-                    throw new IllegalArgumentException("'email' needs to be an email address");
-                }
-
-                return new TenantContacts.EmailContact(audiences, email);
+                // If contact exists, update audience. Otherwise, create new unverified contact
+                return oldContacts.ofType(TenantContacts.EmailContact.class)
+                        .stream()
+                        .filter(contact -> contact.email().getEmailAddress().equals(email))
+                        .findAny()
+                        .map(emailContact -> new TenantContacts.EmailContact(audiences, emailContact.email()))
+                        .orElseGet(() -> {
+                            controller.mailVerifier().sendMailVerification(tenantName, email, PendingMailVerification.MailType.NOTIFICATIONS);
+                            return new TenantContacts.EmailContact(audiences, new Email(email, false));
+                        });
             }).toList();
 
         return new TenantContacts(contacts);
@@ -1499,6 +1528,21 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
         return new MessageResponse(type.jobName() + " for " + id + " resumed");
     }
 
+    private SlimeJsonResponse resendEmailVerification(CloudTenant tenant, Inspector inspector) {
+        var mail = mandatory("mail", inspector).asString();
+        var type = mandatory("mailType", inspector).asString();
+
+        var mailType = switch (type) {
+            case "contact" -> PendingMailVerification.MailType.TENANT_CONTACT;
+            case "notifications" -> PendingMailVerification.MailType.NOTIFICATIONS;
+            default -> throw new IllegalArgumentException("Unknown mail type " + type);
+        };
+
+        var pendingVerification = controller.mailVerifier().resendMailVerification(tenant.name(), mail, mailType);
+        return pendingVerification.isPresent() ? new MessageResponse("Re-sent verification mail to " + mail) :
+                ErrorResponse.notFoundError("No pending mail verification found for " + mail);
+    }
+
     private void toSlime(Cursor object, Application application, HttpRequest request) {
         object.setString("tenant", application.id().tenant().value());
         object.setString("application", application.id().application().value());
@@ -2012,7 +2056,7 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
             User user = getAttribute(request, User.ATTRIBUTE_NAME, User.class);
             TenantInfo info = controller.tenants().require(tenant, CloudTenant.class)
                     .info()
-                    .withContact(TenantContact.from(user.name(), user.email()));
+                    .withContact(TenantContact.from(user.name(), new Email(user.email(), true)));
             // Store changes
             controller.tenants().lockOrThrow(tenant, LockedTenant.Cloud.class, lockedTenant -> {
                 lockedTenant = lockedTenant.withInfo(info);

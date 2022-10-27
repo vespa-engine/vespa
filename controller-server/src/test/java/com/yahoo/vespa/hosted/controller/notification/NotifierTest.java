@@ -13,6 +13,7 @@ import com.yahoo.vespa.hosted.controller.integration.ZoneRegistryMock;
 import com.yahoo.vespa.hosted.controller.persistence.MockCuratorDb;
 import com.yahoo.vespa.hosted.controller.tenant.ArchiveAccess;
 import com.yahoo.vespa.hosted.controller.tenant.CloudTenant;
+import com.yahoo.vespa.hosted.controller.tenant.Email;
 import com.yahoo.vespa.hosted.controller.tenant.LastLoginInfo;
 import com.yahoo.vespa.hosted.controller.tenant.TenantContacts;
 import com.yahoo.vespa.hosted.controller.tenant.TenantInfo;
@@ -28,7 +29,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class NotifierTest {
     private static final TenantName tenant = TenantName.from("tenant1");
-    private static final String email = "user1@example.com";
+    private static final Email email = new Email("user1@example.com", true);
 
     private static final CloudTenant cloudTenant = new CloudTenant(tenant,
             Instant.now(),
@@ -63,8 +64,8 @@ public class NotifierTest {
                 List.of("test package has production tests, but no production tests are declared in deployment.xml",
                         "see https://docs.vespa.ai/en/testing.html for details on how to write system tests for Vespa"));
         notifier.dispatch(notification);
-        assertEquals(1, mailer.inbox(email).size());
-        var mail = mailer.inbox(email).get(0);
+        assertEquals(1, mailer.inbox(email.getEmailAddress()).size());
+        var mail = mailer.inbox(email.getEmailAddress()).get(0);
 
         assertEquals("[WARNING] Test package Vespa Notification for tenant1.default.default", mail.subject());
         assertEquals("""

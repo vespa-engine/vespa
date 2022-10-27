@@ -58,6 +58,7 @@ enum PathGroup {
                "/application/v4/tenant/{tenant}/info/profile",
                "/application/v4/tenant/{tenant}/info/billing",
                "/application/v4/tenant/{tenant}/info/contacts",
+               "/application/v4/tenant/{tenant}/info/resend-mail-verification",
                "/application/v4/tenant/{tenant}/notifications",
                "/routing/v1/status/tenant/{tenant}/{*}"),
 
@@ -255,7 +256,10 @@ enum PathGroup {
 
     /** Paths used to approve requests to access tenant resources */
     accessRequestApproval(Matcher.tenant, "/application/v4/tenant/{tenant}/access/approve/operator",
-            "/application/v4/tenant/{tenant}/access/managed/operator");
+            "/application/v4/tenant/{tenant}/access/managed/operator"),
+
+    /** Path used for email verification */
+    emailVerification("/user/v1/email/verify");
 
     final List<String> pathSpecs;
     final List<Matcher> matchers;

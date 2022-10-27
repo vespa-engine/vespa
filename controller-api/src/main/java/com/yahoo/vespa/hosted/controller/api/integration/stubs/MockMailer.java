@@ -3,6 +3,7 @@ package com.yahoo.vespa.hosted.controller.api.integration.stubs;
 
 import com.yahoo.vespa.hosted.controller.api.integration.organization.Mail;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.Mailer;
+import com.yahoo.vespa.hosted.controller.tenant.PendingMailVerification;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -45,6 +46,11 @@ public class MockMailer implements Mailer {
     @Override
     public String domain() {
         return "domain";
+    }
+
+    @Override
+    public void sendVerificationMail(PendingMailVerification pendingMailVerification) {
+        send(new Mail(List.of(pendingMailVerification.getMailAddress()), "subject", "message"));
     }
 
     /** Returns the list of mails sent to the given recipient. Modifications affect the set of mails stored in this. */

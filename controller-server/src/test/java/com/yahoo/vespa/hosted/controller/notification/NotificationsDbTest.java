@@ -22,6 +22,7 @@ import com.yahoo.vespa.hosted.controller.integration.ZoneRegistryMock;
 import com.yahoo.vespa.hosted.controller.persistence.MockCuratorDb;
 import com.yahoo.vespa.hosted.controller.tenant.ArchiveAccess;
 import com.yahoo.vespa.hosted.controller.tenant.CloudTenant;
+import com.yahoo.vespa.hosted.controller.tenant.Email;
 import com.yahoo.vespa.hosted.controller.tenant.LastLoginInfo;
 import com.yahoo.vespa.hosted.controller.tenant.TenantContacts;
 import com.yahoo.vespa.hosted.controller.tenant.TenantInfo;
@@ -49,7 +50,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 public class NotificationsDbTest {
 
     private static final TenantName tenant = TenantName.from("tenant1");
-    private static final String email = "user1@example.com";
+    private static final Email email = new Email("user1@example.com", true);
     private static final CloudTenant cloudTenant = new CloudTenant(tenant,
             Instant.now(),
             LastLoginInfo.EMPTY,
@@ -111,19 +112,19 @@ public class NotificationsDbTest {
         ;
         var a = notifications.get(0);
         notificationsDb.setNotification(a.source(), a.type(), a.level(), a.messages());
-        assertEquals(0, mailer.inbox(email).size());
+        assertEquals(0, mailer.inbox(email.getEmailAddress()).size());
 
         // Replace the 3rd notification. but don't change source or type
         notificationsDb.setNotification(notification1.source(), notification1.type(), notification1.level(), notification1.messages());
-        assertEquals(0, mailer.inbox(email).size());
+        assertEquals(0, mailer.inbox(email.getEmailAddress()).size());
 
         // Notification for a new app, add without replacement
         notificationsDb.setNotification(notification2.source(), notification2.type(), notification2.level(), notification2.messages());
-        assertEquals(1, mailer.inbox(email).size());
+        assertEquals(1, mailer.inbox(email.getEmailAddress()).size());
 
         // Notification for new type on existing app
         notificationsDb.setNotification(notification3.source(), notification3.type(), notification3.level(), notification3.messages());
-        assertEquals(2, mailer.inbox(email).size());
+        assertEquals(2, mailer.inbox(email.getEmailAddress()).size());
     }
 
     @Test
@@ -157,19 +158,19 @@ public class NotificationsDbTest {
 
         // No metrics, no new notification
         notificationsDb.setDeploymentMetricsNotifications(deploymentId, List.of());
-        assertEquals(0, mailer.inbox(email).size());
+        assertEquals(0, mailer.inbox(email.getEmailAddress()).size());
 
         // Metrics that contain none of the feed block metrics does not create new notification
         notificationsDb.setDeploymentMetricsNotifications(deploymentId, List.of(clusterMetrics("cluster1", null, null, null, null, Map.of())));
-        assertEquals(0, mailer.inbox(email).size());
+        assertEquals(0, mailer.inbox(email.getEmailAddress()).size());
 
         // One resource is at warning
         notificationsDb.setDeploymentMetricsNotifications(deploymentId, List.of(clusterMetrics("cluster1", 0.88, 0.9, 0.3, 0.5, Map.of())));
-        assertEquals(1, mailer.inbox(email).size());
+        assertEquals(1, mailer.inbox(email.getEmailAddress()).size());
 
         // One resource over the limit
         notificationsDb.setDeploymentMetricsNotifications(deploymentId, List.of(clusterMetrics("cluster1", 0.95, 0.9, 0.3, 0.5, Map.of())));
-        assertEquals(2, mailer.inbox(email).size());
+        assertEquals(2, mailer.inbox(email.getEmailAddress()).size());
     }
 
     @Test

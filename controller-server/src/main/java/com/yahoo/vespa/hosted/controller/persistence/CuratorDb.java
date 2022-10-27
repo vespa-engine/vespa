@@ -34,6 +34,7 @@ import com.yahoo.vespa.hosted.controller.routing.RoutingPolicy;
 import com.yahoo.vespa.hosted.controller.routing.RoutingStatus;
 import com.yahoo.vespa.hosted.controller.routing.ZoneRoutingPolicy;
 import com.yahoo.vespa.hosted.controller.support.access.SupportAccess;
+import com.yahoo.vespa.hosted.controller.tenant.PendingMailVerification;
 import com.yahoo.vespa.hosted.controller.tenant.Tenant;
 import com.yahoo.vespa.hosted.controller.versions.OsVersionStatus;
 import com.yahoo.vespa.hosted.controller.versions.OsVersionTarget;
@@ -94,6 +95,7 @@ public class CuratorDb {
     private static final Path changeRequestsRoot = root.append("changeRequests");
     private static final Path notificationsRoot = root.append("notifications");
     private static final Path supportAccessRoot = root.append("supportAccess");
+    private static final Path mailVerificationRoot = root.append("mailVerification");
 
     private final NodeVersionSerializer nodeVersionSerializer = new NodeVersionSerializer();
     private final VersionStatusSerializer versionStatusSerializer = new VersionStatusSerializer(nodeVersionSerializer);
@@ -229,6 +231,10 @@ public class CuratorDb {
 
     public Mutex lockDeploymentRetriggerQueue() {
         return curator.lock(lockRoot.append("deploymentRetriggerQueue"), defaultLockTimeout);
+    }
+
+    public Mutex lockPendingMailVerification(String verificationCode) {
+        return curator.lock(lockRoot.append("pendingMailVerification").append(verificationCode), defaultLockTimeout);
     }
 
     // -------------- Helpers ------------------------------------------
@@ -655,6 +661,28 @@ public class CuratorDb {
         curator.set(deploymentRetriggerPath(), asJson(retriggerEntrySerializer.toSlime(retriggerEntries)));
     }
 
+    // -------------- Pending mail verification -------------------------------
+
+    public Optional<PendingMailVerification> getPendingMailVerification(String verificationCode) {
+        return readSlime(mailVerificationPath(verificationCode)).map(MailVerificationSerializer::fromSlime);
+    }
+
+    public List<PendingMailVerification> listPendingMailVerifications() {
+        return curator.getChildren(mailVerificationRoot)
+                .stream()
+                .map(this::getPendingMailVerification)
+                .flatMap(Optional::stream)
+                .collect(Collectors.toList());
+    }
+
+    public void writePendingMailVerification(PendingMailVerification pendingMailVerification) {
+        curator.set(mailVerificationPath(pendingMailVerification.getVerificationCode()), asJson(MailVerificationSerializer.toSlime(pendingMailVerification)));
+    }
+
+    public void deletePendingMailVerification(PendingMailVerification pendingMailVerification) {
+        curator.delete(mailVerificationPath(pendingMailVerification.getVerificationCode()));
+    }
+
     // -------------- Paths ---------------------------------------------------
 
     private static Path upgradesPerMinutePath() {
@@ -753,6 +781,10 @@ public class CuratorDb {
 
     private static Path deploymentRetriggerPath() {
         return root.append("deploymentRetriggerQueue");
+    }
+
+    private static Path mailVerificationPath(String verificationCode) {
+        return mailVerificationRoot.append(verificationCode);
     }
 
 }

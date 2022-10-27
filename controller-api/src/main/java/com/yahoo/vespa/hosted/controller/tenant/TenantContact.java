@@ -8,36 +8,36 @@ import java.util.Objects;
  */
 public class TenantContact {
     private final String name;
-    private final String email;
+    private final Email email;
     private final String phone;
 
-    private TenantContact(String name, String email, String phone) {
+    private TenantContact(String name, Email email, String phone) {
         this.name = Objects.requireNonNull(name);
         this.email = Objects.requireNonNull(email);
         this.phone = Objects.requireNonNull(phone);
     }
 
-    public static TenantContact from(String name, String email, String phone) {
+    public static TenantContact from(String name, Email email, String phone) {
         return new TenantContact(name, email, phone);
     }
 
-    public static TenantContact from(String name, String email) {
+    public static TenantContact from(String name, Email email) {
         return TenantContact.from(name, email, "");
     }
 
     public static TenantContact empty() {
-        return new TenantContact("", "", "");
+        return new TenantContact("", Email.empty(), "");
     }
 
     public String name() { return name; }
-    public String email() { return email; }
+    public Email email() { return email; }
     public String phone() { return phone; }
 
     public TenantContact withName(String name) {
         return new TenantContact(name, email, phone);
     }
 
-    public TenantContact withEmail(String email) {
+    public TenantContact withEmail(Email email) {
         return new TenantContact(name, email, phone);
     }
 

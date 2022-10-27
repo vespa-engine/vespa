@@ -112,6 +112,7 @@ public class UserApiHandler extends ThreadedHttpRequestHandler {
 
     private HttpResponse handlePOST(Path path, HttpRequest request) {
         if (path.matches("/user/v1/tenant/{tenant}")) return addTenantRoleMember(path.get("tenant"), request);
+        if (path.matches("/user/v1/email/verify")) return verifyEmail(request);
 
         return ErrorResponse.notFoundError(Text.format("No '%s' handler at '%s'", request.getMethod(),
                                                          request.getUri().getPath()));
@@ -309,6 +310,16 @@ public class UserApiHandler extends ThreadedHttpRequestHandler {
 
         users.addToRoles(user, roles);
         return new MessageResponse(user + " is now a member of " + roles.stream().map(Role::toString).collect(Collectors.joining(", ")));
+    }
+
+    private HttpResponse verifyEmail(HttpRequest request) {
+        var inspector = bodyInspector(request);
+        var verificationCode = require("verificationCode", Inspector::asString, inspector);
+        var verified = controller.mailVerifier().verifyMail(verificationCode);
+
+        if (verified)
+            return new MessageResponse("Email with verification code " + verificationCode + " has been verified");
+        return ErrorResponse.notFoundError("No pending email verification with code " + verificationCode + " found");
     }
 
     private HttpResponse removeTenantRoleMember(String tenantName, HttpRequest request) {
