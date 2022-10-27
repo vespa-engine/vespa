@@ -3,7 +3,6 @@ vespa_add_executable(searchlib_diskindex_test_app TEST
     SOURCES
     diskindex_test.cpp
     DEPENDS
-    searchlib
     searchlib_test
 )
 vespa_add_test(NAME searchlib_diskindex_test_app COMMAND searchlib_diskindex_test_app)
