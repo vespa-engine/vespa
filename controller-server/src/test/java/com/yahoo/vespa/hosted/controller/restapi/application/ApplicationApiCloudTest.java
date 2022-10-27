@@ -331,7 +331,6 @@ public class ApplicationApiCloudTest extends ControllerContainerCloudTest {
                 "\"error-code\":\"BAD_REQUEST\"," +
                 "\"message\":\"Invalid application id\"" +
                 "}", 400);
-
     }
 
     @Test

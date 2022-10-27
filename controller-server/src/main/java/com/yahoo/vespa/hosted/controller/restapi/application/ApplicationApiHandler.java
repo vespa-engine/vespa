@@ -1814,6 +1814,12 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
 
         application.projectId().ifPresent(i -> response.setString("screwdriverId", String.valueOf(i)));
 
+        controller.applications().decideCloudAccountOf(deploymentId, application.deploymentSpec()).ifPresent(cloudAccount -> {
+            Cursor enclave = response.setObject("enclave");
+            enclave.setString("cloudAccount", cloudAccount.value());
+            enclave.setString("athensDomain", controller.zoneRegistry().cloudAccountAthenzDomain(cloudAccount).value());
+        });
+
         var instance = application.instances().get(deploymentId.applicationId().instance());
         if (instance != null) {
             if (!instance.rotations().isEmpty() && deployment.zone().environment() == Environment.prod)
