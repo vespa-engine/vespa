@@ -9,8 +9,6 @@ import com.yahoo.jdisc.http.ssl.impl.DefaultConnectorSsl;
 import com.yahoo.security.tls.MixedMode;
 import com.yahoo.security.tls.TransportSecurityUtils;
 import org.eclipse.jetty.alpn.server.ALPNServerConnectionFactory;
-import org.eclipse.jetty.http.HttpCompliance;
-import org.eclipse.jetty.http.UriCompliance;
 import org.eclipse.jetty.http2.server.AbstractHTTP2ServerConnectionFactory;
 import org.eclipse.jetty.http2.server.HTTP2CServerConnectionFactory;
 import org.eclipse.jetty.http2.server.HTTP2ServerConnectionFactory;
@@ -139,12 +137,8 @@ public class ConnectorFactory {
         httpConfig.setOutputBufferSize(connectorConfig.outputBufferSize());
         httpConfig.setRequestHeaderSize(connectorConfig.requestHeaderSize());
         httpConfig.setResponseHeaderSize(connectorConfig.responseHeaderSize());
-        httpConfig.setHttpCompliance(HttpCompliance.RFC7230);
-        // TODO Vespa 9 Use default URI compliance (LEGACY == old Jetty 9.4 compliance)
-        httpConfig.setUriCompliance(UriCompliance.LEGACY);
         if (isSslEffectivelyEnabled(connectorConfig)) {
-            // Explicitly disable SNI checking as Jetty's SNI checking trust manager is not part of our SSLContext trust manager chain
-            httpConfig.addCustomizer(new SecureRequestCustomizer(false, false, -1, false));
+            httpConfig.addCustomizer(new SecureRequestCustomizer());
         }
         String serverNameFallback = connectorConfig.serverName().fallback();
         if (!serverNameFallback.isBlank()) httpConfig.setServerAuthority(new HostPort(serverNameFallback));
@@ -180,7 +174,7 @@ public class ConnectorFactory {
         return connectionFactory;
     }
 
-    private SslContextFactory.Server createSslContextFactory() {
+    private SslContextFactory createSslContextFactory() {
         DefaultConnectorSsl ssl = new DefaultConnectorSsl();
         sslProvider.configureSsl(ssl, connectorConfig.name(), connectorConfig.listenPort());
         return ssl.createSslContextFactory();
