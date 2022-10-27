@@ -123,7 +123,7 @@ public class ContainerModelBuilderTest extends ContainerModelBuilderTestBase {
                 "</container>");
         createModel(root, clusterElem);
         AbstractService container = (AbstractService) root.getProducer("container/container.0");
-        assertEquals(Defaults.getDefaults().vespaWebServicePort(), container.getRelativePort(0));
+        assertEquals(getDefaults().vespaWebServicePort(), container.getRelativePort(0));
     }
 
     @Test
@@ -153,7 +153,7 @@ public class ContainerModelBuilderTest extends ContainerModelBuilderTestBase {
         }
         catch (IllegalArgumentException e) {
             // Success
-            assertEquals("Illegal port 9000 in http server 'foo': Port must be set to " + Defaults.getDefaults().vespaWebServicePort(),
+            assertEquals("Illegal port 9000 in http server 'foo': Port must be set to " + getDefaults().vespaWebServicePort(),
                     e.getMessage());
         }
     }

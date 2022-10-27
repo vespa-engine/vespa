@@ -42,6 +42,8 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
+import static com.yahoo.vespa.defaults.Defaults.getDefaults;
+
 /**
  * An implementation of the metrics Db backed by Quest:
  * This provides local persistent storage of metrics with fast, multi-threaded lookup and write,
@@ -65,14 +67,14 @@ public class QuestMetricsDb extends AbstractComponent implements MetricsDb {
 
     @Inject
     public QuestMetricsDb() {
-        this(Defaults.getDefaults().underVespaHome("var/db/vespa/autoscaling"), Clock.systemUTC());
+        this(getDefaults().underVespaHome("var/db/vespa/autoscaling"), Clock.systemUTC());
     }
 
     public QuestMetricsDb(String dataDir, Clock clock) {
         this.clock = clock;
 
-        if (dataDir.startsWith(Defaults.getDefaults().vespaHome())
-            && ! new File(Defaults.getDefaults().vespaHome()).exists())
+        if (dataDir.startsWith(getDefaults().vespaHome())
+            && ! new File(getDefaults().vespaHome()).exists())
             dataDir = "data"; // We're injected, but not on a node with Vespa installed
 
         // silence Questdb's custom logging system
