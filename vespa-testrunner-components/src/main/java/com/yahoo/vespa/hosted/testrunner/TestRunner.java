@@ -90,7 +90,7 @@ public class TestRunner implements com.yahoo.vespa.testrunner.TestRunner {
         command.add("-DfailIfNoTests=" + profile.failIfNoTests());
         command.add("-Dvespa.test.config=" + vespaHome.resolve("tmp/config.json"));
         if (config.useAthenzCredentials())
-            command.add("-Dvespa.test.credentials.root=" + Defaults.getDefaults().vespaHome() + "/var/vespa/sia");
+            command.add("-Dvespa.test.credentials.root=" + Defaults.getDefaults().underVespaHome("var/vespa/sia"));
         else if (config.useTesterCertificate())
             command.add("-Dvespa.test.credentials.root=" + config.artifactsPath());
         command.add(String.format("-DargLine=-Xms%1$dm -Xmx%1$dm", config.surefireMemoryMb()));
