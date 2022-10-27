@@ -592,7 +592,7 @@ public class OsVersionsTest {
             Optional<Version> wantedOsVersion = node.status().osVersion().wanted();
             if (node.status().wantToDeprovision()) {
                 ApplicationId application = node.allocation().get().owner();
-                tester.nodeRepository().nodes().park(node.hostname(), false, Agent.system,
+                tester.nodeRepository().nodes().park(node.hostname(), true, Agent.system,
                                                      getClass().getSimpleName());
                 tester.nodeRepository().nodes().removeRecursively(node.hostname());
                 node = provisionInfraApplication(1, application, nodeType).get(0);
@@ -607,7 +607,7 @@ public class OsVersionsTest {
             Optional<Version> wantedOsVersion = node.status().osVersion().wanted();
             if (node.status().wantToRebuild()) {
                 ApplicationId application = node.allocation().get().owner();
-                tester.nodeRepository().nodes().park(node.hostname(), false, Agent.system,
+                tester.nodeRepository().nodes().park(node.hostname(), true, Agent.system,
                                                      getClass().getSimpleName());
                 tester.nodeRepository().nodes().removeRecursively(node.hostname());
                 Node newNode = Node.create(node.id(), node.ipConfig(), node.hostname(), node.flavor(), node.type())

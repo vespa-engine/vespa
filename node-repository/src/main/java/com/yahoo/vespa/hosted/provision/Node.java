@@ -402,15 +402,6 @@ public final class Node implements Nodelike {
                         exclusiveToClusterType, switchHostname, trustStoreItems, cloudAccount);
     }
 
-    /** Returns a new Node without an allocation. */
-    public Node withoutAllocation() {
-        return new Node(id, ipConfig, hostname, parentHostname, flavor, status, state,
-                        Optional.empty(), history, type, reports, modelName, reservedTo,
-                        exclusiveToApplicationId, exclusiveToClusterType, switchHostname, trustStoreItems,
-                        cloudAccount);
-    }
-
-
     /** Returns a copy of this node with IP config set to the given value. */
     public Node with(IP.Config ipConfig) {
         return new Node(id, ipConfig, hostname, parentHostname, flavor, status, state,
