@@ -12,6 +12,7 @@
 #include <vespa/searchlib/queryeval/leaf_blueprints.h>
 #include <vespa/searchlib/queryeval/emptysearch.h>
 #include <vespa/searchlib/queryeval/fake_requestcontext.h>
+#include <vespa/searchlib/queryeval/simpleresult.h>
 #include <vespa/searchlib/index/dummyfileheadercontext.h>
 #include <vespa/searchlib/test/fakedata/fpfactory.h>
 #include <vespa/vespalib/gtest/gtest.h>
@@ -39,6 +40,7 @@ using search::queryeval::FakeRequestContext;
 using search::queryeval::FieldSpec;
 using search::queryeval::LeafBlueprint;
 using search::queryeval::SearchIterator;
+using search::queryeval::SimpleResult;
 using search::test::SearchIteratorVerifier;
 using search::fakedata::FPFactory;
 using search::fakedata::FakePosting;
@@ -47,19 +49,6 @@ using search::fakedata::getFPFactory;
 using LookupResult = DiskIndex::LookupResult;
 
 namespace {
-
-std::string
-toString(SearchIterator & sb)
-{
-    std::ostringstream oss;
-    bool first = true;
-    for (sb.seek(1u); ! sb.isAtEnd(); sb.seek(sb.getDocId() + 1)) {
-        if (!first) oss << ",";
-        oss << sb.getDocId();
-        first = false;
-    }
-    return oss.str();
-}
 
 SimpleStringTerm
 makeTerm(const std::string & term)
@@ -240,8 +229,7 @@ DiskIndexTest::requireThatWeCanReadPostingList()
         LookupResult::UP r = _index->lookup(0, "w1");
         PostingListHandle::UP h = _index->readPostingList(*r);
         SearchIterator * sb = h->createIterator(r->counts, mda);
-        sb->initFullRange();
-        EXPECT_EQ("1,3", toString(*sb));
+        EXPECT_EQ(SimpleResult({1,3}), SimpleResult().search(*sb));
         delete sb;
     }
 }
@@ -320,39 +308,55 @@ DiskIndexTest::requireThatBlueprintCanCreateSearchIterators()
     mda.add(&md);
     Blueprint::UP b;
     SearchIterator::UP s;
+    SimpleResult result_f1_w1({1,3});
+    SimpleResult result_f1_w2;
+    SimpleResult result_f2_w2({1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17});
+    auto upper_bound = Blueprint::FilterConstraint::UPPER_BOUND;
     { // bit vector due to isFilter
         b = _index->createBlueprint(_requestContext, FieldSpec("f2", 0, 0, true), makeTerm("w2"));
         b->fetchPostings(search::queryeval::ExecuteInfo::TRUE);
-        s = (dynamic_cast<LeafBlueprint *>(b.get()))->createLeafSearch(mda, true);
+        auto& leaf_b = dynamic_cast<LeafBlueprint&>(*b);
+        s = leaf_b.createLeafSearch(mda, true);
         EXPECT_TRUE(dynamic_cast<BitVectorIterator *>(s.get()) != NULL);
+        EXPECT_EQ(result_f2_w2, SimpleResult().search(*s));
+        EXPECT_EQ(result_f2_w2, SimpleResult().search(*leaf_b.createFilterSearch(true, upper_bound)));
     }
     { // bit vector due to no ranking needed
         b = _index->createBlueprint(_requestContext, FieldSpec("f2", 0, 0, false), makeTerm("w2"));
         b->fetchPostings(ExecuteInfo::TRUE);
-        s = (dynamic_cast<LeafBlueprint *>(b.get()))->createLeafSearch(mda, true);
+        auto& leaf_b = dynamic_cast<LeafBlueprint&>(*b);
+        s = leaf_b.createLeafSearch(mda, true);
         EXPECT_FALSE(dynamic_cast<BitVectorIterator *>(s.get()) != NULL);
         TermFieldMatchData md2;
         md2.tagAsNotNeeded();
         TermFieldMatchDataArray mda2;
         mda2.add(&md2);
         EXPECT_TRUE(mda2[0]->isNotNeeded());
-        s = (dynamic_cast<LeafBlueprint *>(b.get()))->createLeafSearch(mda2, false);
+        s = (dynamic_cast<LeafBlueprint *>(b.get()))->createLeafSearch(mda2, true);
         EXPECT_TRUE(dynamic_cast<BitVectorIterator *>(s.get()) != NULL);
+        EXPECT_EQ(result_f2_w2, SimpleResult().search(*s));
+        EXPECT_EQ(result_f2_w2, SimpleResult().search(*leaf_b.createFilterSearch(true, upper_bound)));
     }
     { // fake bit vector
         b = _index->createBlueprint(_requestContext, FieldSpec("f1", 0, 0, true), makeTerm("w2"));
 //        std::cerr << "BP = " << typeid(*b).name() << std::endl;
         b->fetchPostings(ExecuteInfo::TRUE);
-        s = (dynamic_cast<LeafBlueprint *>(b.get()))->createLeafSearch(mda, true);
+        auto& leaf_b = dynamic_cast<LeafBlueprint&>(*b);
+        s = leaf_b.createLeafSearch(mda, true);
 //        std::cerr << "SI = " << typeid(*s).name() << std::endl;
         EXPECT_TRUE((dynamic_cast<BooleanMatchIteratorWrapper *>(s.get()) != NULL) ||
                     dynamic_cast<EmptySearch *>(s.get()));
+        EXPECT_EQ(result_f1_w2, SimpleResult().search(*s));
+        EXPECT_EQ(result_f1_w2, SimpleResult().search(*leaf_b.createFilterSearch(true, upper_bound)));
     }
     { // posting list iterator
         b = _index->createBlueprint(_requestContext, FieldSpec("f1", 0, 0), makeTerm("w1"));
         b->fetchPostings(ExecuteInfo::TRUE);
-        s = (dynamic_cast<LeafBlueprint *>(b.get()))->createLeafSearch(mda, true);
+        auto& leaf_b = dynamic_cast<LeafBlueprint&>(*b);
+        s = leaf_b.createLeafSearch(mda, true);
         ASSERT_TRUE((dynamic_cast<ZcRareWordPosOccIterator<true, false> *>(s.get()) != NULL));
+        EXPECT_EQ(result_f1_w1, SimpleResult().search(*s));
+        EXPECT_EQ(result_f1_w1, SimpleResult().search(*leaf_b.createFilterSearch(true, upper_bound)));
     }
 }
 
