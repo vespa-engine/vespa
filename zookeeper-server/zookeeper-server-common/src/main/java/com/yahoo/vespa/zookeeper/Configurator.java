@@ -164,7 +164,7 @@ public class Configurator {
         if (path.isAbsolute())
             return path;
         else
-            return Paths.get(Defaults.getDefaults().underVespaHome(filename));
+            return Paths.get(getDefaults().underVespaHome(filename));
     }
 
     private interface TlsConfig {

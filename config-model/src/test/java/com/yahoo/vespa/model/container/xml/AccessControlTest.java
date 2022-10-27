@@ -328,7 +328,7 @@ public class AccessControlTest extends ContainerModelBuilderTestBase {
         assertTrue(actualBindings.isEmpty());
 
         ConnectorFactory connectorFactory = http.getHttpServer().get().getConnectorFactories().stream()
-                .filter(cf -> cf.getListenPort() == Defaults.getDefaults().vespaWebServicePort())
+                .filter(cf -> cf.getListenPort() == getDefaults().vespaWebServicePort())
                 .findAny()
                 .get();
 
