@@ -402,30 +402,28 @@ public class ConfigServerMock extends AbstractComponent implements ConfigServer 
                                                                    Optional.of("dns-zone-1"))));
         }
 
-        // TODO jonmv: compute on deploy, not when getting the result.
-        return () -> {
-            Application application = applications.get(id);
-            application.activate();
-            List<Node> nodes = nodeRepository.list(id.zoneId(), NodeFilter.all().applications(id.applicationId()));
-            for (Node node : nodes) {
-                nodeRepository.putNodes(id.zoneId(), Node.builder(node)
-                                                         .state(Node.State.active)
-                                                         .wantedVersion(application.version().get())
-                                                         .build());
-            }
-            serviceStatus.put(id, new ServiceConvergence(id.applicationId(),
-                                                         id.zoneId(),
-                                                         false,
-                                                         2,
-                                                         nodes.stream()
-                                                                      .map(node -> new ServiceConvergence.Status(node.hostname(),
-                                                                                                                 43,
-                                                                                                                 "container",
-                                                                                                                 1))
-                                                                      .collect(Collectors.toList())));
+        Application application = applications.get(id);
+        application.activate();
+        List<Node> nodes = nodeRepository.list(id.zoneId(), NodeFilter.all().applications(id.applicationId()));
+        for (Node node : nodes) {
+            nodeRepository.putNodes(id.zoneId(), Node.builder(node)
+                                                     .state(Node.State.active)
+                                                     .wantedVersion(application.version().get())
+                                                     .build());
+        }
+        serviceStatus.put(id, new ServiceConvergence(id.applicationId(),
+                                                     id.zoneId(),
+                                                     false,
+                                                     2,
+                                                     nodes.stream()
+                                                          .map(node -> new ServiceConvergence.Status(node.hostname(),
+                                                                                                     43,
+                                                                                                     "container",
+                                                                                                     1))
+                                                          .collect(Collectors.toList())));
 
-            return new DeploymentResult("foo", warnings.getOrDefault(id, List.of()));
-        };
+        DeploymentResult result = new DeploymentResult("foo", warnings.getOrDefault(id, List.of()));
+        return () -> result;
     }
 
     @Override

@@ -59,7 +59,6 @@ import static com.yahoo.vespa.hosted.controller.deployment.DeploymentContext.sta
 import static com.yahoo.vespa.hosted.controller.deployment.DeploymentContext.systemTest;
 import static com.yahoo.vespa.hosted.controller.deployment.DeploymentContext.testApNortheast1;
 import static com.yahoo.vespa.hosted.controller.deployment.DeploymentContext.testApNortheast2;
-import static com.yahoo.vespa.hosted.controller.deployment.DeploymentContext.testAwsUsEast1a;
 import static com.yahoo.vespa.hosted.controller.deployment.DeploymentContext.testEuWest1;
 import static com.yahoo.vespa.hosted.controller.deployment.DeploymentContext.testUsCentral1;
 import static com.yahoo.vespa.hosted.controller.deployment.DeploymentContext.testUsEast3;
@@ -70,7 +69,6 @@ import static java.util.Collections.emptyList;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;

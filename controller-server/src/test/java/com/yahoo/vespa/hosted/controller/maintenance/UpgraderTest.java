@@ -747,13 +747,13 @@ public class UpgraderTest {
 
         // Application change recorded together with ongoing upgrade
         assertTrue(app.instance().change().platform().get().equals(version) &&
-                app.instance().change().revision().get().equals(revision),
-                "Change contains both upgrade and application change");
+                   app.instance().change().revision().get().equals(revision),
+                   "Change contains both upgrade and application change");
 
         // Deployment completes
         app.runJob(systemTest).runJob(stagingTest)
-                .runJob(productionUsWest1)
-                .runJob(productionUsEast3);
+           .runJob(productionUsWest1)
+           .runJob(productionUsEast3);
         assertEquals(List.of(), tester.jobs().active(), "All jobs consumed");
 
         for (Deployment deployment : app.instance().deployments().values()) {
