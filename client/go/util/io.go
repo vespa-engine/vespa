@@ -32,6 +32,15 @@ func IsRegularFile(path string) bool {
 	return !errors.Is(err, os.ErrNotExist) && info != nil && info.Mode().IsRegular()
 }
 
+// Returns true if the given path points to an executable
+func IsExecutableFile(path string) bool {
+	info, err := os.Stat(path)
+	return !errors.Is(err, os.ErrNotExist) &&
+		info != nil &&
+		info.Mode().IsRegular() &&
+		((info.Mode() & 0111) == 0111)
+}
+
 // Returns the content of a reader as a string
 func ReaderToString(reader io.Reader) string {
 	var buffer strings.Builder
