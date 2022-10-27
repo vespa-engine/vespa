@@ -7,7 +7,6 @@ import com.yahoo.config.provision.CloudAccount;
 import com.yahoo.config.provision.ClusterSpec;
 
 import java.util.Objects;
-import java.util.Optional;
 import java.util.Set;
 
 /**
@@ -20,10 +19,10 @@ public class LoadBalancerSpec {
     private final ApplicationId application;
     private final ClusterSpec.Id cluster;
     private final Set<Real> reals;
-    private final Optional<CloudAccount> cloudAccount;
+    private final CloudAccount cloudAccount;
 
     public LoadBalancerSpec(ApplicationId application, ClusterSpec.Id cluster, Set<Real> reals,
-                            Optional<CloudAccount> cloudAccount) {
+                            CloudAccount cloudAccount) {
         this.application = Objects.requireNonNull(application);
         this.cluster = Objects.requireNonNull(cluster);
         this.reals = ImmutableSortedSet.copyOf(Objects.requireNonNull(reals));
@@ -46,7 +45,8 @@ public class LoadBalancerSpec {
     }
 
     /** Cloud account to use when satisfying this */
-    public Optional<CloudAccount> cloudAccount() {
+    public CloudAccount cloudAccount() {
         return cloudAccount;
     }
+
 }

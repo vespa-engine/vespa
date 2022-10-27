@@ -104,7 +104,7 @@ public class NodeRepositoryProvisioner implements Provisioner {
             groups = target.groups();
             resources = getNodeResources(cluster, target.nodeResources(), application, exclusive);
             nodeSpec = NodeSpec.from(target.nodes(), resources, exclusive, actual.canFail(),
-                                     requested.cloudAccount().or(() -> nodeRepository.zone().cloud().account()));
+                                     requested.cloudAccount().orElse(nodeRepository.zone().cloud().account()));
         }
         else {
             groups = 1; // type request with multiple groups is not supported

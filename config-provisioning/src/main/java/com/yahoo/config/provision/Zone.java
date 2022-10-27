@@ -27,7 +27,7 @@ public class Zone {
                   .name(CloudName.from(configserverConfig.cloud()))
                   .dynamicProvisioning(cloudConfig.dynamicProvisioning())
                   .requireAccessControl(cloudConfig.requireAccessControl())
-                  .account(cloudConfig.account().isEmpty() ? null : new CloudAccount(cloudConfig.account()))
+                  .account(cloudConfig.account().isEmpty() ? CloudAccount.empty : new CloudAccount(cloudConfig.account()))
                   .build(),
              SystemName.from(configserverConfig.system()),
              Environment.from(configserverConfig.environment()),

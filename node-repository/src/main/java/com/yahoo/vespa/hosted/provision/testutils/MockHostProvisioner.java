@@ -63,7 +63,7 @@ public class MockHostProvisioner implements HostProvisioner {
     @Override
     public void provisionHosts(List<Integer> provisionIndices, NodeType hostType, NodeResources resources,
                                ApplicationId applicationId, Version osVersion, HostSharing sharing,
-                               Optional<ClusterSpec.Type> clusterType, Optional<CloudAccount> cloudAccount,
+                               Optional<ClusterSpec.Type> clusterType, CloudAccount cloudAccount,
                                Consumer<List<ProvisionedHost>> provisionedHostsConsumer) {
         Flavor hostFlavor = this.hostFlavor.orElseGet(() -> flavors.stream().filter(f -> compatible(f, resources))
                                                                    .findFirst()

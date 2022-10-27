@@ -4,6 +4,7 @@ package com.yahoo.vespa.hosted.provision.maintenance;
 import com.yahoo.config.provision.CloudAccount;
 import com.yahoo.config.provision.HostEvent;
 import com.yahoo.jdisc.Metric;
+import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeList;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
 import com.yahoo.vespa.hosted.provision.node.Agent;
@@ -42,7 +43,9 @@ public class HostRetirer extends NodeRepositoryMaintainer {
         NodeList candidates = nodeRepository().nodes().list()
                                               .parents()
                                               .not().deprovisioning();
-        List<CloudAccount> cloudAccounts = candidates.stream().flatMap(c -> c.cloudAccount().stream())
+        List<CloudAccount> cloudAccounts = candidates.stream()
+                                                     .map(Node::cloudAccount)
+                                                     .filter(cloudAccount -> !cloudAccount.isEmpty())
                                                      .distinct()
                                                      .collect(Collectors.toList());
         Map<String, List<HostEvent>> eventsByHostId = hostProvisioner.hostEventsIn(cloudAccounts).stream()

@@ -192,7 +192,9 @@ class NodesResponse extends SlimeJsonResponse {
         node.switchHostname().ifPresent(switchHostname -> object.setString("switchHostname", switchHostname));
         nodeRepository.archiveUris().archiveUriFor(node).ifPresent(uri -> object.setString("archiveUri", uri));
         trustedCertsToSlime(node.trustedCertificates(), object);
-        node.cloudAccount().ifPresent(cloudAccount -> object.setString("cloudAccount", cloudAccount.value()));
+        if (!node.cloudAccount().isEmpty()) {
+            object.setString("cloudAccount", node.cloudAccount().value());
+        }
     }
 
     private Version resolveVersionFlag(StringFlag flag, Node node, Allocation allocation) {

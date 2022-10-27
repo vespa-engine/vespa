@@ -498,7 +498,7 @@ public class NodeSerializerTest {
                         .exclusiveToApplicationId(ApplicationId.defaultId())
                         .build();
         node = nodeSerializer.fromJson(State.provisioned, nodeSerializer.toJson(node));
-        assertEquals(account, node.cloudAccount().get());
+        assertEquals(account, node.cloudAccount());
     }
 
     private byte[] createNodeJson(String hostname, String... ipAddress) {

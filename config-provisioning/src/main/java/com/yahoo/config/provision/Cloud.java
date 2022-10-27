@@ -2,7 +2,6 @@
 package com.yahoo.config.provision;
 
 import java.util.Objects;
-import java.util.Optional;
 
 /**
  * Properties of the cloud service where the zone is deployed.
@@ -15,15 +14,15 @@ public class Cloud {
 
     private final boolean dynamicProvisioning;
     private final boolean requireAccessControl;
-    private final Optional<CloudAccount> account;
+    private final CloudAccount account;
 
-    private Cloud(CloudName name, boolean dynamicProvisioning, boolean requireAccessControl, Optional<CloudAccount> account) {
+    private Cloud(CloudName name, boolean dynamicProvisioning, boolean requireAccessControl, CloudAccount account) {
         this.name = Objects.requireNonNull(name);
         this.dynamicProvisioning = dynamicProvisioning;
         this.requireAccessControl = requireAccessControl;
         this.account = Objects.requireNonNull(account);
         if (name.equals(CloudName.AWS) && account.isEmpty()) {
-            throw new IllegalArgumentException("Account must be set in cloud '" + name + "'");
+            throw new IllegalArgumentException("Account must be non-empty in cloud '" + name + "'");
         }
     }
 
@@ -42,8 +41,8 @@ public class Cloud {
         return requireAccessControl;
     }
 
-    /** Returns the default account of this cloud, if any */
-    public Optional<CloudAccount> account() {
+    /** Returns the default account of this cloud */
+    public CloudAccount account() {
         return account;
     }
 
@@ -61,7 +60,7 @@ public class Cloud {
         private CloudName name = CloudName.DEFAULT;
         private boolean dynamicProvisioning = false;
         private boolean requireAccessControl = false;
-        private CloudAccount account = null;
+        private CloudAccount account = CloudAccount.empty;
 
         public Builder() {}
 
@@ -86,7 +85,7 @@ public class Cloud {
         }
 
         public Cloud build() {
-            return new Cloud(name, dynamicProvisioning, requireAccessControl, Optional.ofNullable(account));
+            return new Cloud(name, dynamicProvisioning, requireAccessControl, account);
         }
 
     }
