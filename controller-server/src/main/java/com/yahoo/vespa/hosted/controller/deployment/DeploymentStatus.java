@@ -625,20 +625,18 @@ public class DeploymentStatus {
 
         // If neither change is ready, we guess based on the specified rollout.
         if (platformReadyAt.isEmpty() && revisionReadyAt.isEmpty()) {
-            switch (rollout) {
-                case separate: return List.of(change.withoutApplication(), change);  // Platform should stay ahead.
-                case leading: return List.of(change);                                // They should eventually join.
-                case simultaneous: return List.of(change.withoutPlatform(), change); // Revision should get ahead.
-            }
+            return switch (rollout) {
+                case separate -> List.of(change.withoutApplication(), change);  // Platform should stay ahead.
+                case leading -> List.of(change);                                // They should eventually join.
+                case simultaneous -> List.of(change.withoutPlatform(), change); // Revision should get ahead.
+            };
         }
 
         // If only the revision is ready, we run that first.
         if (platformReadyAt.isEmpty()) return List.of(change.withoutPlatform(), change);
 
         // If only the platform is ready, we run that first.
-        if (revisionReadyAt.isEmpty()) {
-            return List.of(change.withoutApplication(), change);
-        }
+        if (revisionReadyAt.isEmpty()) return List.of(change.withoutApplication(), change);
 
         // Both changes are ready for this step, and we look to the specified rollout to decide.
         boolean platformReadyFirst = platformReadyAt.get().isBefore(revisionReadyAt.get());
@@ -646,21 +644,20 @@ public class DeploymentStatus {
         boolean failingUpgradeOnlyTests = ! jobs().type(systemTest(job.type()), stagingTest(job.type()))
                                                   .failingHardOn(Versions.from(change.withoutApplication(), application, deploymentFor(job), () -> systemVersion))
                                                   .isEmpty();
-        switch (rollout) {
-            case separate:      // Let whichever change rolled out first, keep rolling first, unless upgrade alone is failing.
-                return (platformReadyFirst || platformReadyAt.get().equals(Instant.EPOCH)) // Assume platform was first if no jobs have run yet.
-                       ? step.job().flatMap(jobs()::get).flatMap(JobStatus::firstFailing).isPresent() || failingUpgradeOnlyTests
-                         ? List.of(change)                                 // Platform was first, but is failing.
-                         : List.of(change.withoutApplication(), change)    // Platform was first, and is OK.
-                       : revisionReadyFirst
-                         ? List.of(change.withoutPlatform(), change)       // Revision was first.
-                         : List.of(change);                                // Both ready at the same time, probably due to earlier failure.
-            case leading:      // When one change catches up, they fuse and continue together.
-                return List.of(change);
-            case simultaneous: // Revisions are allowed to run ahead, but the job where it caught up should have both changes.
-                return platformReadyFirst ? List.of(change) : List.of(change.withoutPlatform(), change);
-            default: throw new IllegalStateException("Unknown upgrade rollout policy");
-        }
+        return switch (rollout) {
+            case separate ->      // Let whichever change rolled out first, keep rolling first, unless upgrade alone is failing.
+                    (platformReadyFirst || platformReadyAt.get().equals(Instant.EPOCH)) // Assume platform was first if no jobs have run yet.
+                    ? step.job().flatMap(jobs()::get).flatMap(JobStatus::firstFailing).isPresent() || failingUpgradeOnlyTests
+                      ? List.of(change)                                 // Platform was first, but is failing.
+                      : List.of(change.withoutApplication(), change)    // Platform was first, and is OK.
+                    : revisionReadyFirst
+                      ? List.of(change.withoutPlatform(), change)       // Revision was first.
+                      : List.of(change);                                // Both ready at the same time, probably due to earlier failure.
+            case leading ->      // When one change catches up, they fuse and continue together.
+                    List.of(change);
+            case simultaneous -> // Revisions are allowed to run ahead, but the job where it caught up should have both changes.
+                    platformReadyFirst ? List.of(change) : List.of(change.withoutPlatform(), change);
+        };
     }
 
     /** The test jobs that need to run prior to the given production deployment jobs. */
