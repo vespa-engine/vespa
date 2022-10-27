@@ -3,6 +3,7 @@ package com.yahoo.slime;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.time.Instant;
@@ -15,6 +16,8 @@ import java.util.Spliterator;
 import java.util.Spliterators;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
+
+import static com.yahoo.yolean.Exceptions.uncheck;
 
 /**
  * Extra utilities/operations on slime trees.
@@ -31,34 +34,16 @@ public class SlimeUtils {
 
     }
 
-    private static void setObjectEntry(Inspector from, String name, Cursor to) {
+    public static void setObjectEntry(Inspector from, String name, Cursor to) {
         switch (from.type()) {
-            case NIX:
-                to.setNix(name);
-                break;
-            case BOOL:
-                to.setBool(name, from.asBool());
-                break;
-            case LONG:
-                to.setLong(name, from.asLong());
-                break;
-            case DOUBLE:
-                to.setDouble(name, from.asDouble());
-                break;
-            case STRING:
-                to.setString(name, from.asString());
-                break;
-            case DATA:
-                to.setData(name, from.asData());
-                break;
-            case ARRAY:
-                Cursor array = to.setArray(name);
-                copyArray(from, array);
-                break;
-            case OBJECT:
-                Cursor object = to.setObject(name);
-                copyObject(from, object);
-                break;
+            case NIX -> to.setNix(name);
+            case BOOL -> to.setBool(name, from.asBool());
+            case LONG -> to.setLong(name, from.asLong());
+            case DOUBLE -> to.setDouble(name, from.asDouble());
+            case STRING -> to.setString(name, from.asString());
+            case DATA -> to.setData(name, from.asData());
+            case ARRAY -> copyArray(from, to.setArray(name));
+            case OBJECT -> copyObject(from, to.setObject(name));
         }
     }
 
@@ -71,32 +56,14 @@ public class SlimeUtils {
 
     private static void addValue(Inspector from, Cursor to) {
         switch (from.type()) {
-            case NIX:
-                to.addNix();
-                break;
-            case BOOL:
-                to.addBool(from.asBool());
-                break;
-            case LONG:
-                to.addLong(from.asLong());
-                break;
-            case DOUBLE:
-                to.addDouble(from.asDouble());
-                break;
-            case STRING:
-                to.addString(from.asString());
-                break;
-            case DATA:
-                to.addData(from.asData());
-                break;
-            case ARRAY:
-                Cursor array = to.addArray();
-                copyArray(from, array);
-                break;
-            case OBJECT:
-                Cursor object = to.addObject();
-                copyObject(from, object);
-                break;
+            case NIX -> to.addNix();
+            case BOOL -> to.addBool(from.asBool());
+            case LONG -> to.addLong(from.asLong());
+            case DOUBLE -> to.addDouble(from.asDouble());
+            case STRING -> to.addString(from.asString());
+            case DATA -> to.addData(from.asData());
+            case ARRAY -> copyArray(from, to.addArray());
+            case OBJECT -> copyObject(from, to.addObject());
         }
 
     }
@@ -113,6 +80,25 @@ public class SlimeUtils {
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         new JsonFormat(compact ? 0 : 2).encode(baos, inspector);
         return baos.toByteArray();
+    }
+
+    public static String toJson(Slime slime) throws UncheckedIOException {
+        return toJson(slime.get());
+    }
+
+    public static String toJson(Inspector inspector) {
+        return toJson(inspector, true);
+    }
+
+    public static String toJson(Inspector inspector, boolean compact) {
+        var outputStream = new ByteArrayOutputStream();
+        var jsonFormat = new JsonFormat(compact ? 0 : 2);
+        uncheck(() -> jsonFormat.encode(outputStream, inspector));
+        return outputStream.toString(StandardCharsets.UTF_8);
+    }
+
+    public static String toPrettyJson(String json) {
+        return toJson(jsonToSlimeOrThrow(json).get(), false);
     }
 
     public static Slime jsonToSlime(byte[] json) {

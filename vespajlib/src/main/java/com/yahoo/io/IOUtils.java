@@ -413,7 +413,7 @@ public abstract class IOUtils {
 
     /** Read an input stream completely into a string */
     public static String readAll(InputStream stream, Charset charset) throws IOException {
-        return readAll(new InputStreamReader(stream, charset));
+        return new String(stream.readAllBytes(), charset);
     }
 
     /** Convenience method for closing a list of readers. Does nothing if the given reader list is null. */
