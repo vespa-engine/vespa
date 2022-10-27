@@ -75,7 +75,7 @@ public class JobRunner extends ControllerMaintainer {
     }
 
     public void advance(Run run) {
-        advance(run.id());
+        if ( ! jobs.isDisabled(run.id().job())) advance(run.id());
     }
 
     /** Advances each of the ready steps for the given run, or marks it as finished, and stashes it. Public for testing. */
