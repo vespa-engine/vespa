@@ -1,10 +1,15 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
+#include <vespa/eval/eval/tensor_spec.h>
+#include <vespa/eval/eval/value.h>
+#include <vespa/eval/eval/value_codec.h>
+#include <vespa/searchcommon/attribute/config.h>
+#include <vespa/searchcommon/attribute/iattributecontext.h>
+#include <vespa/searchlib/attribute/attribute.h>
 #include <vespa/searchlib/attribute/attribute_blueprint_factory.h>
 #include <vespa/searchlib/attribute/attribute_read_guard.h>
 #include <vespa/searchlib/attribute/attributecontext.h>
 #include <vespa/searchlib/attribute/attributefactory.h>
-#include <vespa/searchlib/attribute/attribute.h>
 #include <vespa/searchlib/fef/matchdata.h>
 #include <vespa/searchlib/query/tree/location.h>
 #include <vespa/searchlib/query/tree/point.h>
@@ -14,11 +19,7 @@
 #include <vespa/searchlib/queryeval/leaf_blueprints.h>
 #include <vespa/searchlib/queryeval/nearest_neighbor_blueprint.h>
 #include <vespa/searchlib/tensor/dense_tensor_attribute.h>
-#include <vespa/searchcommon/attribute/iattributecontext.h>
-#include <vespa/searchcommon/attribute/config.h>
-#include <vespa/eval/eval/tensor_spec.h>
-#include <vespa/eval/eval/value.h>
-#include <vespa/eval/eval/value_codec.h>
+#include <vespa/searchlib/test/attribute_builder.h>
 #include <vespa/vespalib/gtest/gtest.h>
 
 #include <vespa/log/log.h>
@@ -28,6 +29,7 @@ using search::AttributeGuard;
 using search::AttributeVector;
 using search::IAttributeManager;
 using search::attribute::IAttributeContext;
+using search::attribute::test::AttributeBuilder;
 using search::fef::MatchData;
 using search::fef::TermFieldMatchData;
 using search::query::Location;
@@ -144,53 +146,11 @@ downcast(ParentType& parent)
     return *result;
 }
 
-struct StringAttributeFiller {
-    using ValueType = vespalib::string;
-    static void add(AttributeVector& attr, const vespalib::string& value) {
-        auto& real = downcast<StringAttribute>(attr);
-        real.update(attr.getNumDocs() - 1, value);
-        real.commit();
-    }
-};
-
-struct WsetStringAttributeFiller {
-    using ValueType = vespalib::string;
-    static void add(AttributeVector& attr, const vespalib::string& value) {
-        auto& real = downcast<StringAttribute>(attr);
-        uint32_t docid = attr.getNumDocs() - 1;
-        real.append(docid, value, 1);
-        real.commit();
-    }
-};
-
-struct IntegerAttributeFiller {
-    using ValueType = int64_t;
-    static void add(AttributeVector& attr, int64_t value) {
-        auto& real = downcast<IntegerAttribute>(attr);
-        real.update(attr.getNumDocs() - 1, value);
-        real.commit();
-    }
-};
-
-template <typename FillerType>
-void
-fill(AttributeVector& attr, typename FillerType::ValueType value)
-{
-    AttributeVector::DocId docid;
-    attr.addDoc(docid);
-    attr.addDoc(docid);
-    attr.addDoc(docid);
-    assert(DOCID_LIMIT-1 == docid);
-    FillerType::add(attr, value);
-}
-
 AttributeVector::SP
 make_string_attribute(const std::string& value)
 {
     Config cfg(BasicType::STRING, CollectionType::SINGLE);
-    auto attr = AttributeFactory::createAttribute(field, cfg);
-    fill<StringAttributeFiller>(*attr, value);
-    return attr;
+    return AttributeBuilder(field, cfg).fill({"", value}).get();
 }
 
 AttributeVector::SP
@@ -199,18 +159,14 @@ make_wset_string_attribute(const std::string& value)
     Config cfg(BasicType::STRING, CollectionType::WSET);
     // fast-search is needed to trigger use of DirectAttributeBlueprint.
     cfg.setFastSearch(true);
-    auto attr = AttributeFactory::createAttribute(field, cfg);
-    fill<WsetStringAttributeFiller>(*attr, value);
-    return attr;
+    return AttributeBuilder(field, cfg).fill_array({{}, {value}}).get();
 }
 
 AttributeVector::SP
 make_int_attribute(int64_t value)
 {
     Config cfg(BasicType::INT32, CollectionType::SINGLE);
-    auto attr = AttributeFactory::createAttribute(field, cfg);
-    fill<IntegerAttributeFiller>(*attr, value);
-    return attr;
+    return AttributeBuilder(field, cfg).fill({-1, value}).get();
 }
 
 AttributeVector::SP
@@ -218,9 +174,7 @@ make_fast_search_long_attribute(int64_t value)
 {
     Config cfg(BasicType::fromType(int64_t()), CollectionType::SINGLE);
     cfg.setFastSearch(true);
-    auto attr = AttributeFactory::createAttribute(field, cfg);
-    fill<IntegerAttributeFiller>(*attr, value);
-    return attr;
+    return AttributeBuilder(field, cfg).fill({-1, value}).get();
 }
 
 MyAttributeManager
