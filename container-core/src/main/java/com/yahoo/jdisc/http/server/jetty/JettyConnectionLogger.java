@@ -30,6 +30,7 @@ import javax.net.ssl.SSLPeerUnverifiedException;
 import javax.net.ssl.SSLSession;
 import javax.net.ssl.StandardConstants;
 import java.net.InetSocketAddress;
+import java.net.SocketAddress;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.security.cert.CertificateEncodingException;
@@ -113,7 +114,7 @@ class JettyConnectionLogger extends AbstractLifeCycle implements Connection.List
                 info.setProxyProtocolVersion("v2");
             }
             if (connection.getEndPoint() instanceof ProxyConnectionFactory.ProxyEndPoint) {
-                InetSocketAddress remoteAddress = connection.getEndPoint().getRemoteAddress();
+                var remoteAddress = connection.getEndPoint().getRemoteSocketAddress();
                 info.setRemoteAddress(remoteAddress);
             }
         });
@@ -243,7 +244,7 @@ class JettyConnectionLogger extends AbstractLifeCycle implements Connection.List
         private long httpBytesSent = 0;
         private long requests = 0;
         private long responses = 0;
-        private InetSocketAddress remoteAddress;
+        private SocketAddress remoteAddress;
         private byte[] sslSessionId;
         private String sslProtocol;
         private String sslCipherSuite;
@@ -290,7 +291,7 @@ class JettyConnectionLogger extends AbstractLifeCycle implements Connection.List
 
         synchronized ConnectionInfo incrementResponses() { ++this.responses; return this; }
 
-        synchronized ConnectionInfo setRemoteAddress(InetSocketAddress remoteAddress) {
+        synchronized ConnectionInfo setRemoteAddress(SocketAddress remoteAddress) {
             this.remoteAddress = remoteAddress;
             return this;
         }
@@ -354,9 +355,9 @@ class JettyConnectionLogger extends AbstractLifeCycle implements Connection.List
                 builder.withLocalAddress(localAddress.getHostString())
                         .withLocalPort(localAddress.getPort());
             }
-            if (remoteAddress != null) {
-                builder.withRemoteAddress(remoteAddress.getHostString())
-                        .withRemotePort(remoteAddress.getPort());
+            if (remoteAddress instanceof InetSocketAddress isa) {
+                builder.withRemoteAddress(isa.getHostString())
+                        .withRemotePort(isa.getPort());
             }
             if (sslProtocol != null && sslCipherSuite != null && sslSessionId != null) {
                 builder.withSslProtocol(sslProtocol)
