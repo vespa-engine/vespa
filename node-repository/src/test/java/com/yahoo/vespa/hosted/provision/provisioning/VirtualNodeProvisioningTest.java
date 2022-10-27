@@ -599,7 +599,7 @@ public class VirtualNodeProvisioningTest {
         tester.activate(app1, cluster1, Capacity.from(new ClusterResources(5, 1, r)));
         tester.activate(app1, cluster1, Capacity.from(new ClusterResources(2, 1, r)));
 
-        var tx = new ApplicationTransaction(new ProvisionLock(app1, tester.nodeRepository().nodes().lock(app1)), new NestedTransaction());
+        var tx = new ApplicationTransaction(new ProvisionLock(app1, tester.nodeRepository().applications().lock(app1)), new NestedTransaction());
         tester.nodeRepository().nodes().deactivate(tester.nodeRepository().nodes().list(Node.State.active).owner(app1).retired().asList(), tx);
         tx.nested().commit();
 

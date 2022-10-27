@@ -111,7 +111,7 @@ class AutoscalingTester {
     }
 
     public void deactivateRetired(ApplicationId application, ClusterSpec cluster, Capacity capacity) {
-        try (Mutex lock = nodeRepository().nodes().lock(application)) {
+        try (Mutex lock = nodeRepository().applications().lock(application)) {
             for (Node node : nodeRepository().nodes().list(Node.State.active).owner(application)) {
                 if (node.allocation().get().membership().retired())
                     nodeRepository().nodes().write(node.with(node.allocation().get().removable(true, true)), lock);
@@ -137,14 +137,14 @@ class AutoscalingTester {
                                                    0,
                                                    clock().instant().minus(Duration.ofDays(1).minus(duration))).withCompletion(clock().instant().minus(Duration.ofDays(1))));
         application = application.with(cluster);
-        nodeRepository().applications().put(application, nodeRepository().nodes().lock(applicationId));
+        nodeRepository().applications().put(application, nodeRepository().applications().lock(applicationId));
     }
 
     public Autoscaler.Advice autoscale(ApplicationId applicationId, ClusterSpec cluster, Capacity capacity) {
         capacity = capacityPolicies.applyOn(capacity, applicationId, capacityPolicies.decideExclusivity(capacity, cluster.isExclusive()));
         Application application = nodeRepository().applications().get(applicationId).orElse(Application.empty(applicationId))
                                                   .withCluster(cluster.id(), false, capacity);
-        try (Mutex lock = nodeRepository().nodes().lock(applicationId)) {
+        try (Mutex lock = nodeRepository().applications().lock(applicationId)) {
             nodeRepository().applications().put(application, lock);
         }
         return autoscaler.autoscale(application, application.clusters().get(cluster.id()),
@@ -155,7 +155,7 @@ class AutoscalingTester {
                                      ClusterResources min, ClusterResources max) {
         Application application = nodeRepository().applications().get(applicationId).orElse(Application.empty(applicationId))
                                                   .withCluster(clusterId, false, Capacity.from(min, max));
-        try (Mutex lock = nodeRepository().nodes().lock(applicationId)) {
+        try (Mutex lock = nodeRepository().applications().lock(applicationId)) {
             nodeRepository().applications().put(application, lock);
         }
         return autoscaler.suggest(application, application.clusters().get(clusterId),

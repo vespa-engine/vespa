@@ -107,7 +107,7 @@ class MaintenanceDeployment implements Closeable {
         Duration timeout = Duration.ofSeconds(3);
         try {
             // Use a short lock to avoid interfering with change deployments
-            return Optional.of(nodeRepository.nodes().lock(application, timeout));
+            return Optional.of(nodeRepository.applications().lock(application, timeout));
         }
         catch (ApplicationLockException e) {
             log.log(Level.INFO, () -> "Could not lock " + application + " for maintenance deployment within " + timeout);

@@ -17,6 +17,7 @@ import com.yahoo.vespa.hosted.provision.NoSuchNodeException;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeList;
 import com.yahoo.vespa.hosted.provision.NodeMutex;
+import com.yahoo.vespa.hosted.provision.applications.Applications;
 import com.yahoo.vespa.hosted.provision.maintenance.NodeFailer;
 import com.yahoo.vespa.hosted.provision.node.filter.NodeFilter;
 import com.yahoo.vespa.hosted.provision.persistence.CuratorDatabaseClient;
@@ -61,12 +62,14 @@ public class Nodes {
     private final Zone zone;
     private final Clock clock;
     private final Orchestrator orchestrator;
+    private final Applications applications;
 
-    public Nodes(CuratorDatabaseClient db, Zone zone, Clock clock, Orchestrator orchestrator) {
+    public Nodes(CuratorDatabaseClient db, Zone zone, Clock clock, Orchestrator orchestrator, Applications applications) {
         this.zone = zone;
         this.clock = clock;
         this.db = db;
         this.orchestrator = orchestrator;
+        this.applications = applications;
     }
 
     /** Read and write all nodes to make sure they are stored in the latest version of the serialized format */
@@ -229,7 +232,7 @@ public class Nodes {
      * @param reusable move the node directly to {@link Node.State#dirty} after removal
      */
     public void setRemovable(ApplicationId application, List<Node> nodes, boolean reusable) {
-        try (Mutex lock = lock(application)) {
+        try (Mutex lock = applications.lock(application)) {
             List<Node> removableNodes = nodes.stream()
                                              .map(node -> node.with(node.allocation().get().removable(true, reusable)))
                                              .toList();
@@ -723,7 +726,7 @@ public class Nodes {
             }
         }
         for (Map.Entry<ApplicationId, List<Node>> applicationNodes : allocatedNodes.entrySet()) {
-            try (Mutex lock = lock(applicationNodes.getKey())) {
+            try (Mutex lock = applications.lock(applicationNodes.getKey())) {
                 for (Node node : applicationNodes.getValue()) {
                     Optional<Node> currentNode = db.readNode(node.hostname());  // Re-read while holding lock
                     if (currentNode.isEmpty()) continue;
@@ -757,17 +760,6 @@ public class Nodes {
             // Treat it as not suspended
             return false;
         }
-    }
-
-    /** Create a lock which provides exclusive rights to making changes to the given application */
-    // TODO: Move to Applications
-    public Mutex lock(ApplicationId application) {
-        return db.lock(application);
-    }
-
-    /** Create a lock with a timeout which provides exclusive rights to making changes to the given application */
-    public Mutex lock(ApplicationId application, Duration timeout) {
-        return db.lock(application, timeout);
     }
 
     /** Create a lock which provides exclusive rights to modifying unallocated nodes */
@@ -852,7 +844,8 @@ public class Nodes {
             case proxyhost -> Optional.of(InfrastructureApplication.PROXY_HOST.id());
         };
         if (application.isPresent())
-            return timeout.map(t -> lock(application.get(), t)).orElseGet(() -> lock(application.get()));
+            return timeout.map(t -> applications.lock(application.get(), t))
+                          .orElseGet(() -> applications.lock(application.get()));
         else
             return timeout.map(db::lockInactive).orElseGet(db::lockInactive);
     }

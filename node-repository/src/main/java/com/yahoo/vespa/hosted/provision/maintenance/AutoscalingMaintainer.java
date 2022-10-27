@@ -73,7 +73,7 @@ public class AutoscalingMaintainer extends NodeRepositoryMaintainer {
         // Lock and write if there are state updates and/or we should autoscale now
         if (advice.isPresent() && !cluster.get().targetResources().equals(advice.target()) ||
             (updatedCluster != cluster.get() || !advice.reason().equals(cluster.get().autoscalingStatus()))) {
-            try (var lock = nodeRepository().nodes().lock(applicationId)) {
+            try (var lock = nodeRepository().applications().lock(applicationId)) {
                 application = nodeRepository().applications().get(applicationId);
                 if (application.isEmpty()) return;
                 cluster = application.get().cluster(clusterId);

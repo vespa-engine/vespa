@@ -20,7 +20,7 @@ public class ApplicationPatcherTest {
     public void testPatching() {
         NodeRepositoryTester tester = new NodeRepositoryTester();
         Application application = Application.empty(ApplicationId.from("t1", "a1", "i1"));
-        tester.nodeRepository().applications().put(application, tester.nodeRepository().nodes().lock(application.id()));
+        tester.nodeRepository().applications().put(application, tester.nodeRepository().applications().lock(application.id()));
         String patch = "{ \"currentReadShare\" :0.4, \"maxReadShare\": 1.0 }";
         ApplicationPatcher patcher = new ApplicationPatcher(new ByteArrayInputStream(patch.getBytes()),
                                                             application.id(),

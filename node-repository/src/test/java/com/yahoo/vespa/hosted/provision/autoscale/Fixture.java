@@ -113,7 +113,7 @@ public class Fixture {
         var application = application();
         application = application.with(application.status().withCurrentReadShare(currentReadShare)
                                                   .withMaxReadShare(maxReadShare));
-        tester.nodeRepository().applications().put(application, tester.nodeRepository().nodes().lock(applicationId));
+        tester.nodeRepository().applications().put(application, tester.nodeRepository().applications().lock(applicationId));
     }
 
     public static class Builder {

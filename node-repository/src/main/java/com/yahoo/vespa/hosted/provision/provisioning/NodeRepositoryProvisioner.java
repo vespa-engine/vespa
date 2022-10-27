@@ -139,7 +139,7 @@ public class NodeRepositoryProvisioner implements Provisioner {
 
     @Override
     public ProvisionLock lock(ApplicationId application) {
-        return new ProvisionLock(application, nodeRepository.nodes().lock(application));
+        return new ProvisionLock(application, nodeRepository.applications().lock(application));
     }
 
     /**
@@ -147,7 +147,7 @@ public class NodeRepositoryProvisioner implements Provisioner {
      * and updates the application store with the received min and max.
      */
     private ClusterResources decideTargetResources(ApplicationId applicationId, ClusterSpec clusterSpec, Capacity requested) {
-        try (Mutex lock = nodeRepository.nodes().lock(applicationId)) {
+        try (Mutex lock = nodeRepository.applications().lock(applicationId)) {
             var application = nodeRepository.applications().get(applicationId).orElse(Application.empty(applicationId))
                               .withCluster(clusterSpec.id(), clusterSpec.isExclusive(), requested);
             nodeRepository.applications().put(application, lock);
