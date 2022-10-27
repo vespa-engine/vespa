@@ -5,7 +5,6 @@ import com.yahoo.component.Version;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.HostName;
 import com.yahoo.config.provision.zone.ZoneApi;
-import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.ControllerTester;
 import com.yahoo.vespa.hosted.controller.api.identifiers.ControllerVersion;
@@ -84,7 +83,7 @@ public class VersionStatusTest {
     }
 
     @Test
-    public void testControllerVersionIsVersionOfOldestController() {
+    public void testControllerVersion() {
         HostName controller1 = HostName.of("controller-1");
         HostName controller2 = HostName.of("controller-2");
         HostName controller3 = HostName.of("controller-3");
@@ -93,13 +92,12 @@ public class VersionStatusTest {
                                                    .collect(Collectors.joining(",")));
         ControllerTester tester = new ControllerTester(db);
 
+        // Upgrade in progress
         writeControllerVersion(controller1, Version.fromString("6.2"), db);
         writeControllerVersion(controller2, Version.fromString("6.1"), db);
         writeControllerVersion(controller3, Version.fromString("6.2"), db);
-
         VersionStatus versionStatus = VersionStatus.compute(tester.controller());
-        assertEquals(Version.fromString("6.1"),
-                     versionStatus.controllerVersion().get().versionNumber(), "Controller version is oldest version");
+        assertTrue(versionStatus.controllerVersion().isEmpty(), "Controller version is unknown during upgrade");
 
         // Last controller upgrades
         writeControllerVersion(controller2, Version.fromString("6.2"), db);
