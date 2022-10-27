@@ -17,11 +17,11 @@ public:
     static void bootstrap(const char *argv0);
 
     /**
-     * Compute the path prefix where Vespa files will live;
-     * the return value ends with a "/" so you can just append
-     * the relative pathname to the file(s) you want.
+     * Compute the path prefix where Vespa files will live.
+     * Note the return value won't end with a "/" - use
+     * underVespaHome() to construct sub-directory paths.
      *
-     * @return the vespa home directory, ending by "/"
+     * @return the vespa home directory
      **/
     static const char *vespaHome();
 
