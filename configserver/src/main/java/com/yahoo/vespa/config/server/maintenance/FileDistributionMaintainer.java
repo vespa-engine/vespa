@@ -20,8 +20,6 @@ import java.time.Duration;
  */
 public class FileDistributionMaintainer extends ConfigServerMaintainer {
 
-    private static final int numberToAlwaysKeep = 10; // TODO: Reduce to 0 / remove
-
     private final ApplicationRepository applicationRepository;
     private final File fileReferencesDir;
     private final Duration maxUnusedFileReferenceAge;
@@ -39,7 +37,7 @@ public class FileDistributionMaintainer extends ConfigServerMaintainer {
 
     @Override
     protected double maintain() {
-        applicationRepository.deleteUnusedFileDistributionReferences(fileReferencesDir, maxUnusedFileReferenceAge, numberToAlwaysKeep);
+        applicationRepository.deleteUnusedFileDistributionReferences(fileReferencesDir, maxUnusedFileReferenceAge);
         return 1.0;
     }
 

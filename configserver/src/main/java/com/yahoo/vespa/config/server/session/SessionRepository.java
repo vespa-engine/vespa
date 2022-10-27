@@ -898,7 +898,13 @@ public class SessionRepository {
             ApplicationId applicationId = sessionZKClient.readApplicationId()
                     .orElseThrow(() -> new RuntimeException("Could not find application id for session " + sessionId));
             log.log(Level.FINE, () -> "Creating local session for tenant '" + tenantName + "' with session id " + sessionId);
-            createLocalSession(sessionDir, applicationId, sessionZKClient.readTags(), sessionId);
+            try {
+                createLocalSession(sessionDir, applicationId, sessionZKClient.readTags(), sessionId);
+            } finally {
+                // Delete downloaded file reference, not needed anymore
+                log.log(Level.FINE, "Deleting file distribution reference for app package with session id " + sessionDir);
+                IOUtils.recursiveDeleteDir(sessionDir);
+            }
         }
     }
 

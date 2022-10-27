@@ -268,13 +268,9 @@ public class ApplicationRepositoryTest {
         File filereferenceDirOldest = createFileReferenceOnDisk(new File(fileReferencesDir, "bar"));
         clock.advance(Duration.ofSeconds(1));
 
-        // Add file references that are not in use and could be deleted
-        IntStream.range(0, 3).forEach(i -> {
-            try {
-                createFileReferenceOnDisk(new File(fileReferencesDir, "baz" + i));
-            } catch (IOException e) {
-                fail(e.getMessage());
-            }
+        // Add file references that are not in use should be deleted (baz0 and baz1)
+        IntStream.range(0, 2).forEach(i -> {
+            createFileReferenceOnDisk(new File(fileReferencesDir, "baz" + i));
             clock.advance(Duration.ofSeconds(1));
         });
         clock.advance(keepFileReferencesDuration);
@@ -293,20 +289,19 @@ public class ApplicationRepositoryTest {
         PrepareParams prepareParams = new PrepareParams.Builder().applicationId(applicationId()).ignoreValidationErrors(true).build();
         deployApp(new File("src/test/apps/app"), prepareParams);
 
-        List<String> deleted = applicationRepository.deleteUnusedFileDistributionReferences(fileReferencesDir,
-                                                                                                keepFileReferencesDuration,
-                                                                                                2);
+        List<String> deleted = applicationRepository.deleteUnusedFileDistributionReferences(fileReferencesDir, keepFileReferencesDuration);
         Collections.sort(deleted);
-        List<String> expected = new ArrayList<>(List.of("bar", "baz0"));
+        List<String> expected = new ArrayList<>(List.of("bar", "baz0", "baz1"));
         Collections.sort(expected);
         assertEquals(expected, deleted);
-        // bar and baz0 will be deleted, 2 of the old ones (baz1 and baz2) will be kept and foo is not old enough to be considered
+        // bar, baz0 and baz1 will be deleted and foo is not old enough to be considered
         assertFalse(filereferenceDirOldest.exists());
         assertFalse(new File(fileReferencesDir, "baz0").exists());
+        assertFalse(new File(fileReferencesDir, "baz1").exists());
         assertTrue(filereferenceDirNewest.exists());
     }
 
-    private File createFileReferenceOnDisk(File filereference) throws IOException {
+    private File createFileReferenceOnDisk(File filereference) {
         File fileReferenceDir = filereference.getParentFile();
         fileReferenceDir.mkdir();
         IOUtils.writeFile(filereference, Utf8.toBytes("test"));
