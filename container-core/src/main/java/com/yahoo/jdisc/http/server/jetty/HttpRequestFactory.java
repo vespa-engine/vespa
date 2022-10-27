@@ -94,6 +94,6 @@ class HttpRequestFactory {
     }
 
     private static X509Certificate[] getCertChain(HttpServletRequest servletRequest) {
-        return (X509Certificate[]) servletRequest.getAttribute("javax.servlet.request.X509Certificate");
+        return (X509Certificate[]) servletRequest.getAttribute(RequestUtils.SERVLET_REQUEST_X509CERT);
     }
 }
