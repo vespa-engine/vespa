@@ -35,6 +35,10 @@ public class MailVerifier {
     }
 
     public PendingMailVerification sendMailVerification(TenantName tenantName, String email, PendingMailVerification.MailType mailType) {
+        if (!email.contains("@")) {
+            throw new IllegalArgumentException("Invalid email address");
+        }
+
         var verificationCode = UUID.randomUUID().toString();
         var verificationDeadline = clock.instant().plus(VERIFICATION_DEADLINE);
         var pendingMailVerification = new PendingMailVerification(tenantName, email, verificationCode, verificationDeadline, mailType);

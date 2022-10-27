@@ -199,13 +199,13 @@ public class ApplicationApiCloudTest extends ControllerContainerCloudTest {
         var missingEmailResponse = request("/application/v4/tenant/scoober/info", PUT)
                 .data(partialInfoMissingEmail)
                 .roles(Set.of(Role.administrator(tenantName)));
-        tester.assertResponse(missingEmailResponse, "{\"error-code\":\"BAD_REQUEST\",\"message\":\"'contactEmail' cannot be empty\"}", 400);
+        tester.assertResponse(missingEmailResponse, "{\"error-code\":\"BAD_REQUEST\",\"message\":\"Invalid email address\"}", 400);
 
         var partialInfoBadEmail = "{\"contactName\": \"Scoober Rentals Inc.\", \"contactEmail\": \"somethingweird\"}";
         var badEmailResponse = request("/application/v4/tenant/scoober/info", PUT)
                 .data(partialInfoBadEmail)
                 .roles(Set.of(Role.administrator(tenantName)));
-        tester.assertResponse(badEmailResponse, "{\"error-code\":\"BAD_REQUEST\",\"message\":\"'contactEmail' needs to be an email address\"}", 400);
+        tester.assertResponse(badEmailResponse, "{\"error-code\":\"BAD_REQUEST\",\"message\":\"Invalid email address\"}", 400);
 
         var invalidWebsite = "{\"contactName\": \"Scoober Rentals Inc.\", \"contactEmail\": \"email@scoober.com\", \"website\": \"scoober\" }";
         var badWebsiteResponse = request("/application/v4/tenant/scoober/info", PUT)
@@ -245,7 +245,7 @@ public class ApplicationApiCloudTest extends ControllerContainerCloudTest {
         var contactsWithInvalidEmailResponse = request("/application/v4/tenant/scoober/info", PUT)
                 .data(contactsWithInvalidEmail)
                 .roles(Set.of(Role.administrator(tenantName)));
-        tester.assertResponse(contactsWithInvalidEmailResponse, "{\"error-code\":\"BAD_REQUEST\",\"message\":\"'email' needs to be an email address\"}", 400);
+        tester.assertResponse(contactsWithInvalidEmailResponse, "{\"error-code\":\"BAD_REQUEST\",\"message\":\"Invalid email address\"}", 400);
 
         // duplicate contact is not allowed
         var contactsWithDuplicateEmail = "{\"contacts\": [{\"audiences\": [\"tenant\"],\"email\": \"contact1@email.com\"}, {\"audiences\": [\"tenant\"],\"email\": \"contact1@email.com\"}]}";

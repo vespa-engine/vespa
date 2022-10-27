@@ -820,12 +820,6 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
                 })
                 .orElse(oldContact.email());
 
-        if (!mergedEmail.getEmailAddress().isBlank() && !mergedEmail.getEmailAddress().contains("@")) {
-            // email address validation is notoriously hard - we should probably just try to send a
-            // verification email to this address.  checking for @ is a simple best-effort.
-            throw new IllegalArgumentException("'email' needs to be an email address");
-        }
-
         return TenantContact.empty()
                 .withName(getString(insp.field("name"), oldContact.name()))
                 .withEmail(mergedEmail)
@@ -848,10 +842,6 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
                 List<TenantContacts.Audience> audiences = SlimeUtils.entriesStream(inspector.field("audiences"))
                             .map(audience -> fromAudience(audience.asString()))
                             .toList();
-
-                if (!email.contains("@")) {
-                    throw new IllegalArgumentException("'email' needs to be an email address");
-                }
 
                 // If contact exists, update audience. Otherwise, create new unverified contact
                 return oldContacts.ofType(TenantContacts.EmailContact.class)
