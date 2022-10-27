@@ -42,7 +42,7 @@ public class FlagDbFile {
     }
 
     public FlagDbFile(FileSystem fileSystem) {
-        this(fileSystem.getPath(Defaults.getDefaults().vespaHome() + "/var/vespa/flag.db"));
+        this(fileSystem.getPath(Defaults.getDefaults().underVespaHome("var/vespa/flag.db")));
     }
 
     public FlagDbFile(Path path) {
