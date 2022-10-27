@@ -82,7 +82,7 @@ public class SlimeUtils {
         return baos.toByteArray();
     }
 
-    public static String toJson(Slime slime) throws UncheckedIOException {
+    public static String toJson(Slime slime) {
         return toJson(slime.get());
     }
 
