@@ -103,12 +103,13 @@ public class NodeRepositoryProvisioner implements Provisioner {
 
             groups = target.groups();
             resources = getNodeResources(cluster, target.nodeResources(), application, exclusive);
-            nodeSpec = NodeSpec.from(target.nodes(), resources, exclusive, actual.canFail(), requested.cloudAccount());
+            nodeSpec = NodeSpec.from(target.nodes(), resources, exclusive, actual.canFail(),
+                                     requested.cloudAccount().orElse(nodeRepository.zone().cloud().account()));
         }
         else {
             groups = 1; // type request with multiple groups is not supported
             resources = getNodeResources(cluster, requested.minResources().nodeResources(), application, true);
-            nodeSpec = NodeSpec.from(requested.type());
+            nodeSpec = NodeSpec.from(requested.type(), nodeRepository.zone().cloud().account());
         }
         return asSortedHosts(preparer.prepare(application, cluster, nodeSpec, groups), resources);
     }
@@ -259,7 +260,7 @@ public class NodeRepositoryProvisioner implements Provisioner {
     private IllegalArgumentException newNoAllocationPossible(ClusterSpec spec, Limits limits) {
         StringBuilder message = new StringBuilder("No allocation possible within ").append(limits);
 
-        boolean exclusiveHosts = spec.isExclusive() || nodeRepository.zone().getCloud().dynamicProvisioning();
+        boolean exclusiveHosts = spec.isExclusive() || nodeRepository.zone().cloud().dynamicProvisioning();
         if (exclusiveHosts)
             message.append(". Nearest allowed node resources: ").append(findNearestNodeResources(limits));
 

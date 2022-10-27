@@ -178,7 +178,7 @@ public class LoadBalancerProvisioner {
         return loadBalancerId;
     }
 
-    private void prepare(LoadBalancerId id, NodeList nodes, Optional<CloudAccount> cloudAccount) {
+    private void prepare(LoadBalancerId id, NodeList nodes, CloudAccount cloudAccount) {
         Instant now = nodeRepository.clock().instant();
         Optional<LoadBalancer> loadBalancer = db.readLoadBalancer(id);
         Optional<LoadBalancerInstance> instance = provisionInstance(id, nodes, loadBalancer, cloudAccount);
@@ -212,7 +212,7 @@ public class LoadBalancerProvisioner {
     /** Provision or reconfigure a load balancer instance, if necessary */
     private Optional<LoadBalancerInstance> provisionInstance(LoadBalancerId id, NodeList nodes,
                                                              Optional<LoadBalancer> currentLoadBalancer,
-                                                             Optional<CloudAccount> cloudAccount) {
+                                                             CloudAccount cloudAccount) {
         boolean shouldDeactivateRouting = deactivateRouting.with(FetchVector.Dimension.APPLICATION_ID,
                                                                  id.application().serializedForm())
                                                            .value();

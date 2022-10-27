@@ -29,7 +29,6 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
-import java.util.stream.Collectors;
 
 /**
  * A node in the node repository. The identity of a node is given by its id.
@@ -56,7 +55,7 @@ public final class Node implements Nodelike {
     private final Optional<ClusterSpec.Type> exclusiveToClusterType;
     private final Optional<String> switchHostname;
     private final List<TrustStoreItem> trustStoreItems;
-    private final Optional<CloudAccount> cloudAccount;
+    private final CloudAccount cloudAccount;
 
     /** Record of the last event of each type happening to this node */
     private final History history;
@@ -87,7 +86,7 @@ public final class Node implements Nodelike {
                 Reports reports, Optional<String> modelName, Optional<TenantName> reservedTo,
                 Optional<ApplicationId> exclusiveToApplicationId, Optional<ClusterSpec.Type> exclusiveToClusterType,
                 Optional<String> switchHostname, List<TrustStoreItem> trustStoreItems,
-                Optional<CloudAccount> cloudAccount) {
+                CloudAccount cloudAccount) {
         this.id = Objects.requireNonNull(id, "A node must have an ID");
         this.hostname = requireNonEmptyString(hostname, "A node must have a hostname");
         this.ipConfig = Objects.requireNonNull(ipConfig, "A node must a have an IP config");
@@ -104,7 +103,7 @@ public final class Node implements Nodelike {
         this.exclusiveToApplicationId = Objects.requireNonNull(exclusiveToApplicationId, "exclusiveToApplicationId cannot be null");
         this.exclusiveToClusterType = Objects.requireNonNull(exclusiveToClusterType, "exclusiveToClusterType cannot be null");
         this.switchHostname = requireNonEmptyString(switchHostname, "switchHostname cannot be null");
-        this.trustStoreItems = Objects.requireNonNull(trustStoreItems).stream().distinct().collect(Collectors.toUnmodifiableList());
+        this.trustStoreItems = Objects.requireNonNull(trustStoreItems).stream().distinct().toList();
         this.cloudAccount = Objects.requireNonNull(cloudAccount);
 
         if (state == State.active)
@@ -119,7 +118,7 @@ public final class Node implements Nodelike {
             if (!ipConfig.pool().ipSet().isEmpty()) throw new IllegalArgumentException("A child node cannot have an IP address pool");
             if (modelName.isPresent()) throw new IllegalArgumentException("A child node cannot have model name set");
             if (switchHostname.isPresent()) throw new IllegalArgumentException("A child node cannot have switch hostname set");
-            if (cloudAccount().isPresent()) throw new IllegalArgumentException("A child node cannot have cloud account set");
+            if (!cloudAccount.isEmpty()) throw new IllegalArgumentException("A child node cannot have cloud account set");
         }
 
         if (type != NodeType.host && reservedTo.isPresent())
@@ -223,8 +222,8 @@ public final class Node implements Nodelike {
         return trustStoreItems;
     }
 
-    /** Returns the cloud account of this host. This is empty if the host is in the zone's default account */
-    public Optional<CloudAccount> cloudAccount() {
+    /** Returns the cloud account of this host */
+    public CloudAccount cloudAccount() {
         return cloudAccount;
     }
 
@@ -664,7 +663,7 @@ public final class Node implements Nodelike {
         private Reports reports;
         private History history;
         private List<TrustStoreItem> trustStoreItems;
-        private CloudAccount cloudAccount;
+        private CloudAccount cloudAccount = CloudAccount.empty;
 
         private Builder(String id, String hostname, Flavor flavor, State state, NodeType type) {
             this.id = id;
@@ -751,7 +750,7 @@ public final class Node implements Nodelike {
                             Optional.ofNullable(modelName), Optional.ofNullable(reservedTo), Optional.ofNullable(exclusiveToApplicationId),
                             Optional.ofNullable(exclusiveToClusterType), Optional.ofNullable(switchHostname),
                             Optional.ofNullable(trustStoreItems).orElseGet(List::of),
-                            Optional.ofNullable(cloudAccount));
+                            cloudAccount);
         }
 
     }

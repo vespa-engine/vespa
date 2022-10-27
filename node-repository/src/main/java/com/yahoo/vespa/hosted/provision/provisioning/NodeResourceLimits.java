@@ -5,9 +5,7 @@ import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.NodeType;
-import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.Zone;
-import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
 
 import java.util.Locale;
@@ -64,7 +62,7 @@ public class NodeResourceLimits {
     }
 
     private double minAdvertisedVcpu(ClusterSpec.Type clusterType) {
-        if (zone().environment() == Environment.dev && !zone().getCloud().dynamicProvisioning()) return 0.1;
+        if (zone().environment() == Environment.dev && !zone().cloud().dynamicProvisioning()) return 0.1;
         if (clusterType.isContent() && zone().environment().isProduction()) return 1.0;
         if (clusterType == ClusterSpec.Type.admin) return 0.1;
         return 0.5;
@@ -81,7 +79,7 @@ public class NodeResourceLimits {
 
     // Note: Assumes node type 'host'
     private long reservedDiskSpaceGb(NodeResources.StorageType storageType, boolean exclusive) {
-        if (storageType == NodeResources.StorageType.local && zone().getCloud().dynamicProvisioning())
+        if (storageType == NodeResources.StorageType.local && zone().cloud().dynamicProvisioning())
             return nodeRepository.resourcesCalculator().reservedDiskSpaceInBase2Gb(NodeType.host, ! exclusive);
         else
             return 4;

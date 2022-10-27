@@ -70,7 +70,7 @@ public class CapacityPolicies {
         if (target.isUnspecified()) return target; // Cannot be modified
 
         // Dev does not cap the cpu or network of containers since usage is spotty: Allocate just a small amount exclusively
-        if (zone.environment() == Environment.dev && !zone.getCloud().dynamicProvisioning())
+        if (zone.environment() == Environment.dev && !zone.cloud().dynamicProvisioning())
             target = target.withVcpu(0.1).withBandwidthGbps(0.1);
 
         // Allow slow storage in zones which are not performance sensitive
@@ -97,14 +97,14 @@ public class CapacityPolicies {
 
         if (clusterSpec.type() == ClusterSpec.Type.content) {
             // TODO: Simplify when no application is on an older version than 8.75
-            return zone.getCloud().dynamicProvisioning()
+            return zone.cloud().dynamicProvisioning()
                    ? versioned(clusterSpec, Map.of(new Version(0), new NodeResources(2.0, 8, 50, 0.3),
                                                    new Version(8, 75), new NodeResources(2, 16, 300, 0.3)))
                    : versioned(clusterSpec, Map.of(new Version(0), new NodeResources(1.5, 8, 50, 0.3),
                                                    new Version(8, 75), new NodeResources(2, 16, 300, 0.3)));
         }
         else {
-            return zone.getCloud().dynamicProvisioning()
+            return zone.cloud().dynamicProvisioning()
                    ? versioned(clusterSpec, Map.of(new Version(0), new NodeResources(2.0, 8, 50, 0.3)))
                    : versioned(clusterSpec, Map.of(new Version(0), new NodeResources(1.5, 8, 50, 0.3)));
         }
@@ -125,7 +125,7 @@ public class CapacityPolicies {
 
     /** Returns whether an exclusive host is required for given cluster type and exclusivity requirement */
     private boolean requiresExclusiveHost(ClusterSpec.Type type, boolean exclusive) {
-        return zone.getCloud().dynamicProvisioning() && (exclusive || !sharedHosts.value().isEnabled(type.name()));
+        return zone.cloud().dynamicProvisioning() && (exclusive || !sharedHosts.value().isEnabled(type.name()));
     }
 
     /** Returns the resources for the newest version not newer than that requested in the cluster spec. */
@@ -137,14 +137,14 @@ public class CapacityPolicies {
 
     // The lowest amount resources that can be exclusive allocated (i.e. a matching host flavor for this exists)
     private NodeResources smallestExclusiveResources() {
-        return (zone.getCloud().name().equals(CloudName.GCP))
+        return (zone.cloud().name().equals(CloudName.GCP))
                 ? new NodeResources(1, 4, 50, 0.3)
                 : new NodeResources(0.5, 4, 50, 0.3);
     }
 
     // The lowest amount resources that can be shared (i.e. a matching host flavor for this exists)
     private NodeResources smallestSharedResources() {
-        return (zone.getCloud().name().equals(CloudName.GCP))
+        return (zone.cloud().name().equals(CloudName.GCP))
                 ? new NodeResources(1, 4, 50, 0.3)
                 : new NodeResources(0.5, 2, 50, 0.3);
     }

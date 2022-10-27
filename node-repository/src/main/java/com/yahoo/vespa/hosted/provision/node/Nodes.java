@@ -510,7 +510,7 @@ public class Nodes {
                 db.removeNodes(removed, transaction);
             } else {
                 removed = removeChildren(node, force, transaction);
-                if (zone.getCloud().dynamicProvisioning()) {
+                if (zone.cloud().dynamicProvisioning()) {
                     db.removeNodes(List.of(node), transaction);
                 } else {
                     move(node.hostname(), Node.State.deprovisioned, Agent.system, false, Optional.empty(), transaction);
@@ -580,7 +580,7 @@ public class Nodes {
      *  - Node is in parked or failed state
      */
     private void requireBreakfixable(Node node) {
-        if (zone.getCloud().dynamicProvisioning()) {
+        if (zone.cloud().dynamicProvisioning()) {
             illegal("Can not breakfix in zone: " + zone);
         }
 
@@ -736,7 +736,7 @@ public class Nodes {
     }
 
     public boolean canAllocateTenantNodeTo(Node host) {
-        return canAllocateTenantNodeTo(host, zone.getCloud().dynamicProvisioning());
+        return canAllocateTenantNodeTo(host, zone.cloud().dynamicProvisioning());
     }
 
     public boolean canAllocateTenantNodeTo(Node host, boolean dynamicProvisioning) {

@@ -23,10 +23,10 @@ public class LoadBalancerInstance {
     private final Set<Integer> ports;
     private final Set<String> networks;
     private final Set<Real> reals;
-    private final Optional<CloudAccount> cloudAccount;
+    private final CloudAccount cloudAccount;
 
     public LoadBalancerInstance(Optional<DomainName> hostname, Optional<String> ipAddress, Optional<DnsZone> dnsZone, Set<Integer> ports,
-                                Set<String> networks, Set<Real> reals, Optional<CloudAccount> cloudAccount) {
+                                Set<String> networks, Set<Real> reals, CloudAccount cloudAccount) {
         this.hostname = Objects.requireNonNull(hostname, "hostname must be non-null");
         this.ipAddress = Objects.requireNonNull(ipAddress, "ip must be non-null");
         this.dnsZone = Objects.requireNonNull(dnsZone, "dnsZone must be non-null");
@@ -35,9 +35,10 @@ public class LoadBalancerInstance {
         this.reals = ImmutableSortedSet.copyOf(Objects.requireNonNull(reals, "targets must be non-null"));
         this.cloudAccount = Objects.requireNonNull(cloudAccount, "cloudAccount must be non-null");
 
-        if (hostname.isEmpty() == ipAddress.isEmpty())
+        if (hostname.isEmpty() == ipAddress.isEmpty()) {
             throw new IllegalArgumentException("Exactly 1 of hostname=%s and ipAddress=%s must be set".formatted(
                     hostname.map(DomainName::value).orElse("<empty>"), ipAddress.orElse("<empty>")));
+        }
     }
 
     /** Fully-qualified domain name of this load balancer. This hostname can be used for query and feed */
@@ -70,8 +71,8 @@ public class LoadBalancerInstance {
         return reals;
     }
 
-    /** Cloud account of this load balancer. This is empty if the load balancer is in the zone's default account */
-    public Optional<CloudAccount> cloudAccount() {
+    /** Cloud account of this load balancer */
+    public CloudAccount cloudAccount() {
         return cloudAccount;
     }
 

@@ -45,7 +45,7 @@ public class OsVersions {
     private final Cloud cloud;
 
     public OsVersions(NodeRepository nodeRepository) {
-        this(nodeRepository, nodeRepository.zone().getCloud(), MAX_DELEGATED_UPGRADES);
+        this(nodeRepository, nodeRepository.zone().cloud(), MAX_DELEGATED_UPGRADES);
     }
 
     OsVersions(NodeRepository nodeRepository, Cloud cloud, int maxDelegatedUpgrades) {

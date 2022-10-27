@@ -87,7 +87,7 @@ public class NodeRepository extends AbstractComponent {
              metricsDb,
              orchestrator,
              config.useCuratorClientCache(),
-             zone.environment().isProduction() && !zone.getCloud().dynamicProvisioning() && !zone.system().isCd() ? 1 : 0,
+             zone.environment().isProduction() && !zone.cloud().dynamicProvisioning() && !zone.system().isCd() ? 1 : 0,
              config.nodeCacheSize());
     }
 
@@ -109,10 +109,10 @@ public class NodeRepository extends AbstractComponent {
                           boolean useCuratorClientCache,
                           int spareCount,
                           long nodeCacheSize) {
-        if (provisionServiceProvider.getHostProvisioner().isPresent() != zone.getCloud().dynamicProvisioning())
+        if (provisionServiceProvider.getHostProvisioner().isPresent() != zone.cloud().dynamicProvisioning())
             throw new IllegalArgumentException(String.format(
                     "dynamicProvisioning property must be 1-to-1 with availability of HostProvisioner, was: dynamicProvisioning=%s, hostProvisioner=%s",
-                    zone.getCloud().dynamicProvisioning(), provisionServiceProvider.getHostProvisioner().map(__ -> "present").orElse("empty")));
+                    zone.cloud().dynamicProvisioning(), provisionServiceProvider.getHostProvisioner().map(__ -> "present").orElse("empty")));
 
         this.flagSource = flagSource;
         this.db = new CuratorDatabaseClient(flavors, curator, clock, useCuratorClientCache, nodeCacheSize);

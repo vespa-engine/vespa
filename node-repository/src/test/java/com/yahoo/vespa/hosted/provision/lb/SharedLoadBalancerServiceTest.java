@@ -2,6 +2,7 @@
 package com.yahoo.vespa.hosted.provision.lb;
 
 import com.yahoo.config.provision.ApplicationId;
+import com.yahoo.config.provision.CloudAccount;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.HostName;
 import org.junit.Test;
@@ -26,7 +27,7 @@ public class SharedLoadBalancerServiceTest {
 
     @Test
     public void test_create_lb() {
-        var lb = loadBalancerService.create(new LoadBalancerSpec(applicationId, clusterId, reals, Optional.empty()), false);
+        var lb = loadBalancerService.create(new LoadBalancerSpec(applicationId, clusterId, reals, CloudAccount.empty), false);
 
         assertEquals(Optional.of(HostName.of("vip.example.com")), lb.hostname());
         assertEquals(Optional.empty(), lb.dnsZone());

@@ -559,14 +559,14 @@ public class DynamicProvisioningMaintainerTest {
         tester.maintainer.maintain();
         List<ProvisionedHost> newHosts = tester.hostProvisioner.provisionedHosts();
         assertEquals(2, newHosts.size());
-        assertTrue(newHosts.stream().allMatch(host -> host.cloudAccount().get().equals(cloudAccount)));
+        assertTrue(newHosts.stream().allMatch(host -> host.cloudAccount().equals(cloudAccount)));
         for (var host : newHosts) {
             provisioningTester.nodeRepository().nodes().setReady(host.hostHostname(), Agent.operator, getClass().getSimpleName());
         }
         provisioningTester.prepareAndActivateInfraApplication(DynamicProvisioningTester.tenantHostApp, NodeType.host);
         NodeList activeHosts = provisioningTester.nodeRepository().nodes().list(Node.State.active).nodeType(NodeType.host);
         assertEquals(2, activeHosts.size());
-        assertTrue(activeHosts.stream().allMatch(host -> host.cloudAccount().get().equals(cloudAccount)));
+        assertTrue(activeHosts.stream().allMatch(host -> host.cloudAccount().equals(cloudAccount)));
         assertEquals(2, provisioningTester.activate(applicationId, prepared).size());
     }
 

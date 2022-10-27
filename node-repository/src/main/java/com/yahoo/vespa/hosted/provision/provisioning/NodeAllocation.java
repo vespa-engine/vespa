@@ -201,7 +201,7 @@ class NodeAllocation {
         if (candidate.parentHostname().isEmpty()) return false;
 
         // In dynamic provisioned zones, exclusivity is violated if...
-        if (nodeRepository.zone().getCloud().dynamicProvisioning()) {
+        if (nodeRepository.zone().cloud().dynamicProvisioning()) {
             // If either the parent is dedicated to a cluster type different from this cluster
             return  ! candidate.parent.flatMap(Node::exclusiveToClusterType).map(cluster.type()::equals).orElse(true) ||
                     // or this cluster is requiring exclusivity, but the host is exclusive to a different owner

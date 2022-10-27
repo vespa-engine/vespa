@@ -60,7 +60,7 @@ public interface HostProvisioner {
                         Version osVersion,
                         HostSharing sharing,
                         Optional<ClusterSpec.Type> clusterType,
-                        Optional<CloudAccount> cloudAccount,
+                        CloudAccount cloudAccount,
                         Consumer<List<ProvisionedHost>> provisionedHostConsumer) throws NodeAllocationException;
 
     /**

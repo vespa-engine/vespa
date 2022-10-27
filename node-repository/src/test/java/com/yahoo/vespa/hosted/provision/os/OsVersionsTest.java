@@ -4,6 +4,7 @@ package com.yahoo.vespa.hosted.provision.os;
 import com.yahoo.component.Version;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.Cloud;
+import com.yahoo.config.provision.CloudAccount;
 import com.yahoo.config.provision.CloudName;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.HostSpec;
@@ -335,7 +336,11 @@ public class OsVersionsTest {
 
         tester.flagSource().withIntFlag(PermanentFlags.MAX_REBUILDS.id(), maxRebuilds);
         tester.flagSource().withBooleanFlag(Flags.SOFT_REBUILD.id(), softRebuild);
-        var versions = new OsVersions(tester.nodeRepository(), Cloud.builder().dynamicProvisioning(true).name(CloudName.AWS).build(), Integer.MAX_VALUE);
+        var versions = new OsVersions(tester.nodeRepository(), Cloud.builder()
+                                                                    .dynamicProvisioning(true)
+                                                                    .name(CloudName.AWS)
+                                                                    .account(new CloudAccount("000000000000"))
+                                                                    .build(), Integer.MAX_VALUE);
 
         provisionInfraApplication(hostCount, infraApplication, NodeType.host, NodeResources.StorageType.remote);
         Supplier<NodeList> hostNodes = () -> tester.nodeRepository().nodes().list().nodeType(NodeType.host);

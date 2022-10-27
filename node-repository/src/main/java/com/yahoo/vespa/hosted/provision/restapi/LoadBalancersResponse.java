@@ -76,7 +76,8 @@ public class LoadBalancersResponse extends SlimeJsonResponse {
                 });
             });
             lb.instance()
-              .flatMap(LoadBalancerInstance::cloudAccount)
+              .map(LoadBalancerInstance::cloudAccount)
+              .filter(cloudAccount -> !cloudAccount.isEmpty())
               .ifPresent(cloudAccount -> lbObject.setString("cloudAccount", cloudAccount.value()));
         });
     }

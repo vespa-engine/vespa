@@ -4,9 +4,9 @@ package com.yahoo.vespa.hosted.provision.provisioning;
 import com.yahoo.component.Version;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ClusterSpec;
+import com.yahoo.config.provision.NodeAllocationException;
 import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.NodeType;
-import com.yahoo.config.provision.NodeAllocationException;
 import com.yahoo.transaction.Mutex;
 import com.yahoo.vespa.hosted.provision.LockedNodeList;
 import com.yahoo.vespa.hosted.provision.Node;
@@ -159,7 +159,7 @@ public class GroupPreparer {
                                                           cluster,
                                                           requestedNodes,
                                                           wantedGroups,
-                                                          nodeRepository.zone().getCloud().dynamicProvisioning(),
+                                                          nodeRepository.zone().cloud().dynamicProvisioning(),
                                                           nodeRepository.nameResolver(),
                                                           nodeRepository.nodes(),
                                                           nodeRepository.resourcesCalculator(),
@@ -169,7 +169,7 @@ public class GroupPreparer {
     }
 
     private boolean canProvisionDynamically(NodeType hostType) {
-        return nodeRepository.zone().getCloud().dynamicProvisioning() &&
+        return nodeRepository.zone().cloud().dynamicProvisioning() &&
                (hostType == NodeType.host || hostType.isConfigServerHostLike());
     }
 

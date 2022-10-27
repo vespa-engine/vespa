@@ -69,8 +69,8 @@ public interface NodeSpec {
     /** Returns true if nodes with non-active parent hosts should be rejected */
     boolean rejectNonActiveParent();
 
-    /** Returns the cloud account to use when fulfilling this spec or empty if none is explicitly requested */
-    Optional<CloudAccount> cloudAccount();
+    /** Returns the cloud account to use when fulfilling this spec */
+    CloudAccount cloudAccount();
 
     /**
      * Returns true if a node with given current resources and current spare host resources can be resized
@@ -81,12 +81,12 @@ public interface NodeSpec {
         return false;
     }
 
-    static NodeSpec from(int nodeCount, NodeResources resources, boolean exclusive, boolean canFail, Optional<CloudAccount> cloudAccount) {
+    static NodeSpec from(int nodeCount, NodeResources resources, boolean exclusive, boolean canFail, CloudAccount cloudAccount) {
         return new CountNodeSpec(nodeCount, resources, exclusive, canFail, cloudAccount);
     }
 
-    static NodeSpec from(NodeType type) {
-        return new TypeNodeSpec(type);
+    static NodeSpec from(NodeType type, CloudAccount cloudAccount) {
+        return new TypeNodeSpec(type, cloudAccount);
     }
 
     /** A node spec specifying a node count and a flavor */
@@ -96,17 +96,14 @@ public interface NodeSpec {
         private final NodeResources requestedNodeResources;
         private final boolean exclusive;
         private final boolean canFail;
-        private final Optional<CloudAccount> cloudAccount;
+        private final CloudAccount cloudAccount;
 
-        private CountNodeSpec(int count, NodeResources resources, boolean exclusive, boolean canFail, Optional<CloudAccount> cloudAccount) {
+        private CountNodeSpec(int count, NodeResources resources, boolean exclusive, boolean canFail, CloudAccount cloudAccount) {
             this.count = count;
             this.requestedNodeResources = Objects.requireNonNull(resources, "Resources must be specified");
             this.exclusive = exclusive;
             this.canFail = canFail;
             this.cloudAccount = Objects.requireNonNull(cloudAccount);
-            if (cloudAccount.isPresent() && !exclusive) {
-                throw new IllegalArgumentException("Node spec with custom cloud account requires exclusive=true");
-            }
         }
 
         @Override
@@ -184,7 +181,7 @@ public interface NodeSpec {
         }
 
         @Override
-        public Optional<CloudAccount> cloudAccount() {
+        public CloudAccount cloudAccount() {
             return cloudAccount;
         }
 
@@ -200,9 +197,11 @@ public interface NodeSpec {
                                                                                NodeType.controller, 3);
 
         private final NodeType type;
+        private final CloudAccount cloudAccount;
 
-        public TypeNodeSpec(NodeType type) {
+        public TypeNodeSpec(NodeType type, CloudAccount cloudAccount) {
             this.type = type;
+            this.cloudAccount = cloudAccount;
         }
 
         @Override
@@ -257,8 +256,8 @@ public interface NodeSpec {
         }
 
         @Override
-        public Optional<CloudAccount> cloudAccount() {
-            return Optional.empty(); // Type spec does not support custom cloud accounts
+        public CloudAccount cloudAccount() {
+            return cloudAccount;
         }
 
         @Override

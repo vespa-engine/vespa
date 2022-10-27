@@ -71,7 +71,7 @@ public class SpareCapacityMaintainer extends NodeRepositoryMaintainer {
         if ( ! nodeRepository().nodes().isWorking()) return 0.0;
 
         // Don't need to maintain spare capacity in dynamically provisioned zones; can provision more on demand.
-        if (nodeRepository().zone().getCloud().dynamicProvisioning()) return 1.0;
+        if (nodeRepository().zone().cloud().dynamicProvisioning()) return 1.0;
 
         NodeList allNodes = nodeRepository().nodes().list();
         CapacityChecker capacityChecker = new CapacityChecker(allNodes);

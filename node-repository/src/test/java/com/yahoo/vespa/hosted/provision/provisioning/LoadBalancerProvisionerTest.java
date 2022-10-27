@@ -318,7 +318,7 @@ public class LoadBalancerProvisionerTest {
         tester.activate(app1, prepare(app1, capacity, clusterRequest(ClusterSpec.Type.container, ClusterSpec.Id.from("c1"))));
         LoadBalancerList loadBalancers = tester.nodeRepository().loadBalancers().list();
         assertEquals(1, loadBalancers.size());
-        assertEquals(cloudAccount, loadBalancers.first().get().instance().get().cloudAccount().get());
+        assertEquals(cloudAccount, loadBalancers.first().get().instance().get().cloudAccount());
     }
 
     private void assertReals(ApplicationId application, ClusterSpec.Id cluster, Node.State... states) {

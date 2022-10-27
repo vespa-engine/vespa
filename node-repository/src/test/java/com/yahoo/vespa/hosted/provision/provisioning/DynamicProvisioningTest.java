@@ -5,6 +5,7 @@ import com.yahoo.component.Version;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.Capacity;
 import com.yahoo.config.provision.Cloud;
+import com.yahoo.config.provision.CloudAccount;
 import com.yahoo.config.provision.ClusterResources;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.Environment;
@@ -78,7 +79,7 @@ public class DynamicProvisioningTest {
         mockHostProvisioner(hostProvisioner, "large", 3, null); // Provision shared hosts
         prepareAndActivate(application1, clusterSpec("mycluster"), 4, 1, resources);
         verify(hostProvisioner).provisionHosts(eq(List.of(100, 101, 102, 103)), eq(NodeType.host), eq(resources), eq(application1),
-                eq(Version.emptyVersion), eq(HostSharing.any), eq(Optional.of(ClusterSpec.Type.content)), eq(Optional.empty()), any());
+                                               eq(Version.emptyVersion), eq(HostSharing.any), eq(Optional.of(ClusterSpec.Type.content)), eq(CloudAccount.empty), any());
 
         // Total of 8 nodes should now be in node-repo, 4 active hosts and 4 active nodes
         assertEquals(8, tester.nodeRepository().nodes().list().size());
@@ -102,7 +103,7 @@ public class DynamicProvisioningTest {
         mockHostProvisioner(hostProvisioner, "large", 3, application3);
         prepareAndActivate(application3, clusterSpec("mycluster", true), 4, 1, resources);
         verify(hostProvisioner).provisionHosts(eq(List.of(104, 105, 106, 107)), eq(NodeType.host), eq(resources), eq(application3),
-                eq(Version.emptyVersion), eq(HostSharing.exclusive), eq(Optional.of(ClusterSpec.Type.content)), eq(Optional.empty()), any());
+                eq(Version.emptyVersion), eq(HostSharing.exclusive), eq(Optional.of(ClusterSpec.Type.content)), eq(CloudAccount.empty), any());
 
         // Total of 20 nodes should now be in node-repo, 8 active hosts and 12 active nodes
         assertEquals(20, tester.nodeRepository().nodes().list().size());

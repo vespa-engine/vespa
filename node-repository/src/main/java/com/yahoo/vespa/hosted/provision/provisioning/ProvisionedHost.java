@@ -35,11 +35,11 @@ public class ProvisionedHost {
     private final List<Address> nodeAddresses;
     private final NodeResources nodeResources;
     private final Version osVersion;
-    private final Optional<CloudAccount> cloudAccount;
+    private final CloudAccount cloudAccount;
 
     public ProvisionedHost(String id, String hostHostname, Flavor hostFlavor, NodeType hostType,
                            Optional<ApplicationId> exclusiveToApplicationId, Optional<ClusterSpec.Type> exclusiveToClusterType,
-                           List<Address> nodeAddresses, NodeResources nodeResources, Version osVersion, Optional<CloudAccount> cloudAccount) {
+                           List<Address> nodeAddresses, NodeResources nodeResources, Version osVersion, CloudAccount cloudAccount) {
         this.id = Objects.requireNonNull(id, "Host id must be set");
         this.hostHostname = Objects.requireNonNull(hostHostname, "Host hostname must be set");
         this.hostFlavor = Objects.requireNonNull(hostFlavor, "Host flavor must be set");
@@ -65,10 +65,10 @@ public class ProvisionedHost {
     public Node generateHost() {
         Node.Builder builder = Node.create(id, IP.Config.of(Set.of(), Set.of(), nodeAddresses), hostHostname, hostFlavor,
                                            hostType)
-                                   .status(Status.initial().withOsVersion(OsVersion.EMPTY.withCurrent(Optional.of(osVersion))));
+                                   .status(Status.initial().withOsVersion(OsVersion.EMPTY.withCurrent(Optional.of(osVersion))))
+                                   .cloudAccount(cloudAccount);
         exclusiveToApplicationId.ifPresent(builder::exclusiveToApplicationId);
         exclusiveToClusterType.ifPresent(builder::exclusiveToClusterType);
-        cloudAccount.ifPresent(builder::cloudAccount);
         return builder.build();
     }
 
@@ -86,7 +86,7 @@ public class ProvisionedHost {
     public List<Address> nodeAddresses() { return nodeAddresses; }
     public NodeResources nodeResources() { return nodeResources; }
     public Version osVersion() { return osVersion; }
-    public Optional<CloudAccount> cloudAccount() { return cloudAccount; }
+    public CloudAccount cloudAccount() { return cloudAccount; }
 
     public String nodeHostname() { return nodeAddresses.get(0).hostname(); }
 
