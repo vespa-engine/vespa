@@ -17,6 +17,31 @@ public class JsonTestHelper {
     private static final ObjectMapper mapper = new ObjectMapper();
 
     /**
+     * Returns a normalized JSON String.
+     *
+     * <ol>
+     *     <li>A JSON string with each object's names in sorted order.</li>
+     *     <li>Two JSONs are equal iff their normalized JSON strings are equal.*</li>
+     *     <li>The normalized JSON is (by default) an indented multi-line string to facilitate
+     *     readability and line-based diff tools.</li>
+     *     <li>The normalized string does not end with a newline (\n).</li>
+     * </ol>
+     *
+     * <p>*) No effort is done to normalize decimals and may cause false non-equality,
+     * e.g. 1.2e1 is not equal to 12.  This may be fixed at a later time if needed.</p>
+     */
+    public static String normalize(String json) {
+        JsonNode jsonNode;
+        try {
+            jsonNode = mapper.readTree(json);
+        } catch (JsonProcessingException e) {
+            throw new IllegalArgumentException("Invalid JSON", e);
+        }
+
+        return JsonNodeFormatter.toNormalizedJson(jsonNode, false);
+    }
+
+    /**
      * Convenience method to input JSON without escaping double quotes and newlines
      * Each parameter represents a line of JSON encoded data
      * The lines are joined with newline and single quotes are replaced with double quotes

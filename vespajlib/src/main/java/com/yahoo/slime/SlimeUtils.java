@@ -97,10 +97,6 @@ public class SlimeUtils {
         return outputStream.toString(StandardCharsets.UTF_8);
     }
 
-    public static String toPrettyJson(String json) {
-        return toJson(jsonToSlimeOrThrow(json).get(), false);
-    }
-
     public static Slime jsonToSlime(byte[] json) {
         Slime slime = new Slime();
         new JsonDecoder().decode(slime, json);
