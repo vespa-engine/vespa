@@ -3,7 +3,7 @@
 
 //go:build !windows
 
-package startcbinary
+package util
 
 import (
 	"fmt"
@@ -11,7 +11,6 @@ import (
 	"strings"
 
 	"github.com/vespa-engine/vespa/client/go/trace"
-	"github.com/vespa-engine/vespa/client/go/util"
 	"golang.org/x/sys/unix"
 )
 
@@ -19,19 +18,27 @@ func findInPath(prog string) string {
 	if strings.Contains(prog, "/") {
 		return prog
 	}
-	path := strings.Split(os.Getenv(ENV_PATH), ":")
+	path := strings.Split(os.Getenv("PATH"), ":")
 	for _, dir := range path {
 		fn := dir + "/" + prog
-		if util.IsRegularFile(fn) {
+		if IsExecutableFile(fn) {
 			return fn
 		}
 	}
 	return prog
 }
 
-func myexecvp(prog string, argv []string, envv []string) error {
+func Execvp(prog string, argv []string) error {
+	return Execvpe(prog, argv, os.Environ())
+}
+
+func Execvpe(prog string, argv []string, envv []string) error {
 	prog = findInPath(prog)
 	argv[0] = prog
+	return Execve(prog, argv, envv)
+}
+
+func Execve(prog string, argv []string, envv []string) error {
 	trace.Trace("run cmd:", strings.Join(argv, " "))
 	err := unix.Exec(prog, argv, envv)
 	return fmt.Errorf("cannot execute '%s': %v", prog, err)

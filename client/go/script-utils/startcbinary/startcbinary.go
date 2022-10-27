@@ -6,6 +6,8 @@ package startcbinary
 import (
 	"fmt"
 	"os"
+
+	"github.com/vespa-engine/vespa/client/go/util"
 )
 
 func startCbinary(spec *ProgSpec) int {
@@ -40,5 +42,5 @@ func (spec *ProgSpec) run() error {
 		spec.setenv(ENV_LD_PRELOAD, spec.vespaMallocPreload)
 	}
 	envv := spec.effectiveEnv()
-	return myexecvp(prog, args, envv)
+	return util.Execvpe(prog, args, envv)
 }
