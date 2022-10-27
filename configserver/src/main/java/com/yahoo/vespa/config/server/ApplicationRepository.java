@@ -594,19 +594,15 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
         return fileDistributionStatus.status(getApplication(applicationId), timeout);
     }
 
-    public List<String> deleteUnusedFileDistributionReferences(File fileReferencesPath,
-                                                               Duration keepFileReferencesDuration,
-                                                               int numberToAlwaysKeep) {
+    public List<String> deleteUnusedFileDistributionReferences(File fileReferencesPath, Duration keepFileReferencesDuration) {
         if (!fileReferencesPath.isDirectory()) throw new RuntimeException(fileReferencesPath + " is not a directory");
 
         Set<String> fileReferencesInUse = getFileReferencesInUse();
         log.log(Level.FINE, () -> "File references in use : " + fileReferencesInUse);
         Instant instant = clock.instant().minus(keepFileReferencesDuration);
-        log.log(Level.FINE, () -> "Remove unused file references last modified before " + instant +
-                " (but keep " + numberToAlwaysKeep + " of those)");
+        log.log(Level.FINE, () -> "Remove unused file references last modified before " + instant);
 
-        List<String> candidates = sortedUnusedFileReferences(fileReferencesPath, fileReferencesInUse, instant);
-        List<String> fileReferencesToDelete = candidates.subList(0, Math.max(0, candidates.size() - numberToAlwaysKeep));
+        List<String> fileReferencesToDelete = sortedUnusedFileReferences(fileReferencesPath, fileReferencesInUse, instant);
         if (fileReferencesToDelete.size() > 0) {
             log.log(Level.FINE, () -> "Will delete file references not in use: " + fileReferencesToDelete);
             fileReferencesToDelete.forEach(fileReference -> {
