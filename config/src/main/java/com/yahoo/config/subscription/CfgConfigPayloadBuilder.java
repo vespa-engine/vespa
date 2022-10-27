@@ -19,6 +19,7 @@ import static java.util.logging.Level.FINEST;
  * @author hmusum
  */
 public class CfgConfigPayloadBuilder {
+
     private static final java.util.logging.Logger log = java.util.logging.Logger.getLogger(CfgConfigPayloadBuilder.class.getName());
 
     /**
@@ -39,7 +40,7 @@ public class CfgConfigPayloadBuilder {
             parseLine(line, lineNum, payloadBuilder);
             lineNum++;
         }
-        log.log(FINEST, () -> "payload=" + payloadBuilder.toString());
+        log.log(FINEST, () -> "payload=" + payloadBuilder);
         return payloadBuilder;
     }
 
@@ -53,8 +54,8 @@ public class CfgConfigPayloadBuilder {
             log.log(FINE, () -> "Got field without value in line " + lineNum + ": " + line + ", skipping");
             return;
         }
-        field=field.trim();
-        value=value.trim();
+        field = field.trim();
+        value = value.trim();
         validateField(field, trimmedLine, lineNum);
         validateValue(value, trimmedLine, lineNum);
         List<String> fields = parseFieldList(field);
@@ -96,7 +97,7 @@ public class CfgConfigPayloadBuilder {
     Pair<String, String> parseFieldAndValue(String line) {
         String field=null;
         String value;
-        StringBuffer sb = new StringBuffer();
+        StringBuilder sb = new StringBuilder();
         boolean inMapKey = false;
         for (char c : line.toCharArray()) {
             if (c=='{') inMapKey=true;
@@ -104,7 +105,7 @@ public class CfgConfigPayloadBuilder {
             if (c==' ' && !inMapKey) {
                 if (field==null) {
                     field = sb.toString();
-                    sb = new StringBuffer();
+                    sb = new StringBuilder();
                     continue;
                 }
             }
@@ -117,14 +118,14 @@ public class CfgConfigPayloadBuilder {
     // split on dot, but not if inside { } (map key)
     List<String> parseFieldList(String field) {
         List<String> ret = new ArrayList<>();
-        StringBuffer sb = new StringBuffer();
+        StringBuilder sb = new StringBuilder();
         boolean inMapKey = false;
         for (char c : field.toCharArray()) {
             if (c=='{') inMapKey=true;
             if (c=='}') inMapKey=false;
             if (c=='.' && !inMapKey) {
                 ret.add(sb.toString());
-                sb = new StringBuffer();
+                sb = new StringBuilder();
                 continue;
             }
             sb.append(c);
@@ -137,7 +138,7 @@ public class CfgConfigPayloadBuilder {
     private void validateField(String field, String line, int lineNum) {
         if (field.length() == 0) {
             throw new ConfigurationRuntimeException("Error on line " + lineNum + ": " + line + "\n" +
-                    "'" + field + "' is not a valid field name");
+                                                    "'" + field + "' is not a valid field name");
         }
     }
 
@@ -145,7 +146,7 @@ public class CfgConfigPayloadBuilder {
     private void validateValue(String value, String line, int lineNum) {
         if (value.length() == 0) {
             throw new ConfigurationRuntimeException("Error on line " + lineNum + ": " + line + "\n" +
-                    "'" + value + "' is not a valid value");
+                                                    "'" + value + "' is not a valid value");
         }
     }
 
@@ -192,4 +193,5 @@ public class CfgConfigPayloadBuilder {
             return 0;
         }
     }
+
 }

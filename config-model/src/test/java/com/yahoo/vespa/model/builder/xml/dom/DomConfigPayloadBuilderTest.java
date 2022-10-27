@@ -129,7 +129,7 @@ public class DomConfigPayloadBuilderTest {
         try {
             new DomConfigPayloadBuilder(null).build(configRoot);
             fail("Expected exception for wrong tag name.");
-        } catch (ConfigurationRuntimeException e) {
+        } catch (IllegalArgumentException e) {
             assertEquals("The root element must be 'config', but was 'configs'", e.getMessage());
         }
     }
@@ -141,7 +141,7 @@ public class DomConfigPayloadBuilderTest {
         try {
             new DomConfigPayloadBuilder(null).build(configRoot);
             fail("Expected exception for mismatch between def-name and xml name attribute.");
-        } catch (ConfigurationRuntimeException e) {
+        } catch (IllegalArgumentException e) {
             assertEquals("The 'config' element must have a 'name' attribute that matches the name of the config definition", e.getMessage());
         }
     }
@@ -158,7 +158,7 @@ public class DomConfigPayloadBuilderTest {
 
     @Test
     void testNameParsingInvalidName() {
-        assertThrows(ConfigurationRuntimeException.class, () -> {
+        assertThrows(IllegalArgumentException.class, () -> {
             Element configRoot = getDocument(new StringReader("<config name=\" function-test\" version=\"1\">" +
                     "<int_val>1</int_val> +" +
                     "</config>"));
@@ -168,7 +168,7 @@ public class DomConfigPayloadBuilderTest {
 
     @Test
     void testNameParsingInvalidNamespace() {
-        assertThrows(ConfigurationRuntimeException.class, () -> {
+        assertThrows(IllegalArgumentException.class, () -> {
             Element configRoot = getDocument(new StringReader("<config name=\"_foo.function-test\" version=\"1\">" +
                     "<int_val>1</int_val> +" +
                     "</config>"));
@@ -221,7 +221,7 @@ public class DomConfigPayloadBuilderTest {
 
     @Test
     void require_that_item_is_reserved_in_root() {
-        assertThrows(ConfigurationRuntimeException.class, () -> {
+        assertThrows(IllegalArgumentException.class, () -> {
             Element configRoot = getDocument(
                     "<config name=\"test.arraytypes\" version=\"1\">" +
                             "    <item>13</item>" +
@@ -232,7 +232,7 @@ public class DomConfigPayloadBuilderTest {
 
     @Test
     void require_that_exceptions_are_issued() throws FileNotFoundException {
-        assertThrows(ConfigurationRuntimeException.class, () -> {
+        assertThrows(IllegalArgumentException.class, () -> {
             Element configRoot = getDocument(
                     "<config name=\"test.simpletypes\">" +
                             "<longval>invalid</longval>" +

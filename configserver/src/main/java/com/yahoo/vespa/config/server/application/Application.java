@@ -157,8 +157,8 @@ public class Application implements ModelResult {
                     // This can happen in cases where services ask for config that no longer exist before they have been able
                     // to reconfigure themselves
                     log.log(Level.INFO, TenantRepository.logPre(getId()) +
-                            ": Error resolving instance for builder '" + cacheBuilderClassNameForErrorReport +
-                            "', returning empty config: " + Exceptions.toMessageString(e));
+                                        ": Error resolving instance for builder '" + cacheBuilderClassNameForErrorReport +
+                                        "', returning empty config: " + Exceptions.toMessageString(e));
                     payload = ConfigPayload.fromBuilder(new ConfigPayloadBuilder());
                 }
                 if (def.getCNode() != null)

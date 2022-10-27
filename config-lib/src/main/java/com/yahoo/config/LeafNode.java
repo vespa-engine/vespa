@@ -4,7 +4,7 @@ package com.yahoo.config;
 /**
  * Superclass for all leaf nodes in a {@link ConfigInstance}.
  * <p>
- * Subclasses represents leaf nodes with different types. These
+ * Subclasses represent leaf nodes with different types. These
  * implementations should implement method value() with return-value
  * corresponding to the actual type.
  *
@@ -73,9 +73,9 @@ public abstract class LeafNode<T> extends Node implements Cloneable {
      * @return a new instance similar to this object.
      */
     @Override
-    protected Object clone() {
+    protected LeafNode<?> clone() {
         try {
-            return super.clone();
+            return (LeafNode<?>) super.clone();
         } catch (CloneNotSupportedException e) {
             throw new ConfigurationRuntimeException(e);
         }
@@ -83,10 +83,8 @@ public abstract class LeafNode<T> extends Node implements Cloneable {
 
     @Override
     public boolean equals(Object o) {
-        if (! (o instanceof LeafNode))
-            return false;
+        if (! (o instanceof LeafNode<?> other)) return false;
 
-        LeafNode<?> other = (LeafNode)o;
         return value == null ? other.value == null :  value().equals(other.value);
     }
 
@@ -102,4 +100,5 @@ public abstract class LeafNode<T> extends Node implements Cloneable {
     void serialize(Serializer serializer) {
         serializer.serialize(getValue());
     }
+
 }

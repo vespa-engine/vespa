@@ -25,19 +25,18 @@ public class ElapsedTime {
     // safe than sorry. It also covers in SearchHandler where the same Execution instance
     // is used for search and fill.
     /** A map used as a set to store the time track of all the Execution instances for a Result */
-    private Set<TimeTracker> tracks = new TinyIdentitySet<>(8);
+    private final Set<TimeTracker> tracks = new TinyIdentitySet<>(8);
 
     public void add(TimeTracker track) {
         tracks.add(track);
     }
 
     private long fetcher(Activity toFetch, TimeTracker fetchFrom) {
-        switch (toFetch) {
-            case SEARCH: return fetchFrom.searchTime();
-            case FILL:   return fetchFrom.fillTime();
-            case PING:   return fetchFrom.pingTime();
-            default:     return 0L;
-        }
+        return switch (toFetch) {
+            case SEARCH -> fetchFrom.searchTime();
+            case FILL -> fetchFrom.fillTime();
+            case PING -> fetchFrom.pingTime();
+        };
     }
 
     /**

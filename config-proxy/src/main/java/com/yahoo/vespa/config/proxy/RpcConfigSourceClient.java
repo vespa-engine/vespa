@@ -153,7 +153,7 @@ class RpcConfigSourceClient implements ConfigSourceClient, Runnable {
                 subscriber.subscribe();
                 subscribers.put(configCacheKey, subscriber);
             } catch (ConfigurationRuntimeException e) {
-                log.log(Level.INFO, "Subscribe for '" + configCacheKey + "' failed, closing subscriber");
+                log.log(Level.INFO, "Subscribe for '" + configCacheKey + "' failed, closing subscriber", e);
                 subscriber.cancel();
             }
         }

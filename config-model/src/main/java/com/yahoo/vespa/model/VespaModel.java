@@ -520,7 +520,8 @@ public final class VespaModel extends AbstractConfigProducerRoot implements Mode
             throw new ConfigurationRuntimeException(e);
         }
         if (!(i instanceof ConfigInstance.Builder)) {
-            throw new ConfigurationRuntimeException(fullClassName + " is not a ConfigInstance.Builder, can not produce config for the name '" + key.getName() + "'.");
+            throw new ConfigurationRuntimeException(fullClassName + " is not a ConfigInstance.Builder, " +
+                                                    "can not produce config for the name '" + key.getName() + "'.");
         }
         return (ConfigInstance.Builder) i;
     }

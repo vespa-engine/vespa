@@ -54,19 +54,19 @@ public class DomConfigPayloadBuilder {
 
     public static ConfigDefinitionKey parseConfigName(Element configE) {
         if (!configE.getNodeName().equals("config")) {
-            throw new ConfigurationRuntimeException("The root element must be 'config', but was '" + configE.getNodeName() + "'");
+            throw new IllegalArgumentException("The root element must be 'config', but was '" + configE.getNodeName() + "'");
         }
 
         if (!configE.hasAttribute("name")) {
-            throw new ConfigurationRuntimeException
+            throw new IllegalArgumentException
                     ("The 'config' element must have a 'name' attribute that matches the name of the config definition");
         }
 
         String elementString = configE.getAttribute("name");
         if (!elementString.contains(".")) {
-            throw new ConfigurationRuntimeException("The config name '" + elementString +
-                                                    "' contains illegal characters. Only names with the pattern " +
-                                                    namespacePattern.pattern() + "." + namePattern.pattern() + " are legal.");
+            throw new IllegalArgumentException("The config name '" + elementString +
+                                               "' contains illegal characters. Only names with the pattern " +
+                                               namespacePattern.pattern() + "." + namePattern.pattern() + " are legal.");
         }
 
         Tuple2<String, String> t = ConfigUtils.getNameAndNamespaceFromString(elementString);
@@ -74,15 +74,15 @@ public class DomConfigPayloadBuilder {
         String xmlNamespace = t.second;
 
         if (!validName(xmlName)) {
-            throw new ConfigurationRuntimeException("The config name '" + xmlName +
-                                                    "' contains illegal characters. Only names with the pattern " +
-                                                    namePattern.toString() + " are legal.");
+            throw new IllegalArgumentException("The config name '" + xmlName +
+                                               "' contains illegal characters. Only names with the pattern " +
+                                               namePattern.toString() + " are legal.");
         }
 
         if (!validNamespace(xmlNamespace)) {
-            throw new ConfigurationRuntimeException("The config namespace '" + xmlNamespace +
-                                                    "' contains illegal characters. Only namespaces with the pattern " +
-                                                    namespacePattern.toString() + " are legal.");
+            throw new IllegalArgumentException("The config namespace '" + xmlNamespace +
+                                               "' contains illegal characters. Only namespaces with the pattern " +
+                                               namespacePattern.toString() + " are legal.");
         }
         return new ConfigDefinitionKey(xmlName, xmlNamespace);
     }
@@ -123,12 +123,12 @@ public class DomConfigPayloadBuilder {
         String name = extractName(element);
         String value = XML.getValue(element);
         if (value == null) {
-            throw new ConfigurationRuntimeException("Element '" + name + "' must have either children or a value");
+            throw new IllegalArgumentException("Element '" + name + "' must have either children or a value");
         }
 
         if ("item".equals(name)) {
             if (parentName == null)
-                throw new ConfigurationRuntimeException("<item> is a reserved keyword for array and map elements");
+                throw new IllegalArgumentException("<item> is a reserved keyword for array and map elements");
             if (element.hasAttribute("key")) {
                 payloadBuilder.getMap(parentName).put(element.getAttribute("key"), value);
             } else {
@@ -190,7 +190,7 @@ public class DomConfigPayloadBuilder {
                     parseElement(child, payloadBuilder, name);
                 }
             } else {
-                throw new ConfigurationRuntimeException("<item> is a reserved keyword for array and map elements");
+                throw new IllegalArgumentException("<item> is a reserved keyword for array and map elements");
             }
         }
     }
@@ -209,8 +209,8 @@ public class DomConfigPayloadBuilder {
                 parseComplex(currElem, children, payloadBuilder, parentName);
             }
         } catch (Exception exception) {
-            throw new ConfigurationRuntimeException("Error parsing element at " + XML.getNodePath(currElem, " > ") +
-                                                    ": " + Exceptions.toMessageString(exception));
+            throw new IllegalArgumentException("Error parsing element at " + XML.getNodePath(currElem, " > ") +
+                                               ": " + Exceptions.toMessageString(exception));
         }
     }
 

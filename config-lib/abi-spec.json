@@ -251,9 +251,10 @@
       "public abstract java.lang.String getValue()",
       "protected final boolean setValue(java.lang.String)",
       "protected abstract boolean doSetValue(java.lang.String)",
-      "protected java.lang.Object clone()",
+      "protected com.yahoo.config.LeafNode clone()",
       "public boolean equals(java.lang.Object)",
-      "public int hashCode()"
+      "public int hashCode()",
+      "protected bridge synthetic java.lang.Object clone()"
     ],
     "fields" : [
       "protected boolean initialized",
