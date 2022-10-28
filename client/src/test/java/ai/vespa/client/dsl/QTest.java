@@ -165,15 +165,24 @@ class QTest {
     }
 
     @Test
-    void userInput_with_and_with_out_defaultIndex() {
+    void userInput_with_and_without_defaultIndex() {
         String q = Q.select("*")
                 .from("sd1")
-                .where(Q.ui("value"))
+                .where(Q.ui("value1"))
                 .and(Q.ui("index", "value2"))
                 .semicolon()
                 .build();
+        assertEquals("yql=select * from sd1 where userInput(\"value1\") and ({\"defaultIndex\":\"index\"}userInput(\"value2\"));", q);
+    }
 
-        assertEquals(q, "yql=select * from sd1 where userInput(@_1) and ([{\"defaultIndex\":\"index\"}]userInput(@_2_index));&_2_index=value2&_1=value");
+    @Test
+    void userInput_with_rank() {
+        String q = Q.select("url")
+                    .from("site")
+                    .where(Q.rank(Q.p("docQ").nearestNeighbor("vectorQuery"),
+                                  Q.ui("@query")))
+                    .semicolon().build();
+        assertEquals("yql=select url from site where rank(nearestNeighbor(docQ, vectorQuery), userInput(@query));", q);
     }
 
     @Test
@@ -185,7 +194,7 @@ class QTest {
                 .semicolon()
                 .build();
 
-        assertEquals(q, "yql=select * from sd1 where dotProduct(f1, {\"a\":1,\"b\":2,\"c\":3}) and f2 contains \"1\";");
+        assertEquals("yql=select * from sd1 where dotProduct(f1, {\"a\":1,\"b\":2,\"c\":3}) and f2 contains \"1\";", q);
     }
 
     @Test

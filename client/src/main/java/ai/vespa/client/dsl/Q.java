@@ -69,7 +69,7 @@ public final class Q {
      * @param ranks the ranks
      * @return the rank query
      */
-    public static Rank rank(Query query, Query... ranks) {
+    public static Rank rank(Query query, QueryChain... ranks) {
         return new Rank(query, ranks);
     }
 

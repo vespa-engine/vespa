@@ -1,16 +1,14 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package ai.vespa.client.dsl;
 
-import java.util.Collections;
-import java.util.Map;
 import java.util.UUID;
 
 public class UserInput extends QueryChain {
 
     private final Annotation annotation; // accept only defaultIndex annotation
     private final String value;
+    private final boolean valueIsReference;
     private final String indexField;
-    private String placeholder; // for generating unique param
     private boolean setDefaultIndex;
 
     UserInput(Sources sources, String value) {
@@ -21,6 +19,7 @@ public class UserInput extends QueryChain {
         this.sources = sources;
         this.annotation = annotation;
         this.value = value;
+        this.valueIsReference = value.startsWith("@");
         this.nonEmpty = true;
 
         if (annotation.contains("defaultIndex")) {
@@ -39,23 +38,21 @@ public class UserInput extends QueryChain {
         this(null, annotation, value);
     }
 
-    public void setIndex(int index) {
-        placeholder = setDefaultIndex
-                      ? "_" + index + "_" + indexField
-                      : "_" + index;
-    }
-
     @Override
     public String toString() {
-        //([{"defaultIndex": "shpdescfree"}](userInput(@_shpdescfree_1)))
-        return setDefaultIndex
-               ? Text.format("([%s]userInput(@%s))", annotation, placeholder)
-               : Text.format("userInput(@%s)", placeholder);
-    }
-
-
-    Map<String, String> getParam() {
-        return Collections.singletonMap(placeholder, value);
+        StringBuilder b = new StringBuilder();
+        if (setDefaultIndex)
+            b.append("(").append(annotation);
+        b.append("userInput(");
+        if ( ! valueIsReference)
+            b.append("\"");
+        b.append(value);
+        if ( ! valueIsReference)
+            b.append("\"");
+        b.append(")");
+        if (setDefaultIndex)
+            b.append(")");
+        return b.toString();
     }
 
     @Override
