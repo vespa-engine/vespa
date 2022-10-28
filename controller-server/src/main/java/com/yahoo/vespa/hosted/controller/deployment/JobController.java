@@ -10,6 +10,9 @@ import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.Tags;
 import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.transaction.Mutex;
+import com.yahoo.vespa.flags.FetchVector.Dimension;
+import com.yahoo.vespa.flags.ListFlag;
+import com.yahoo.vespa.flags.PermanentFlags;
 import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.ApplicationController;
 import com.yahoo.vespa.hosted.controller.Controller;
@@ -118,6 +121,7 @@ public class JobController {
     private final BufferedLogStore logs;
     private final TesterCloud cloud;
     private final JobMetrics metric;
+    private final ListFlag<String> disabledZones;
 
     private final AtomicReference<Consumer<Run>> runner = new AtomicReference<>(__ -> { });
 
@@ -128,6 +132,7 @@ public class JobController {
         this.logs = new BufferedLogStore(curator, controller.serviceRegistry().runDataStore());
         this.cloud = controller.serviceRegistry().testerCloud();
         this.metric = new JobMetrics(controller.metric());
+        this.disabledZones = PermanentFlags.DISABLED_DEPLOYMENT_ZONES.bindTo(controller.flagSource());
     }
 
     public TesterCloud cloud() { return cloud; }
@@ -142,6 +147,10 @@ public class JobController {
                     curator.readLastRun(id, type).ifPresent(curator::writeLastRun);
                 });
             }
+    }
+
+    public boolean isDisabled(JobId id) {
+        return disabledZones.with(Dimension.APPLICATION_ID, id.application().serializedForm()).value().contains(id.type().zone().value());
     }
 
     /** Returns all entries currently logged for the given run. */

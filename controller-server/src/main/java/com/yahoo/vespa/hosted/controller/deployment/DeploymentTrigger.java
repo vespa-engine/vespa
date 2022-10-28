@@ -378,6 +378,7 @@ public class DeploymentTrigger {
             DeploymentStatus.Job job = jobsList.get(0);
             if (     job.readyAt().isPresent()
                 && ! clock.instant().isBefore(job.readyAt().get())
+                && ! controller.jobController().isDisabled(new JobId(jobId.application(), job.type()))
                 && ! (jobId.type().isProduction() && isUnhealthyInAnotherZone(status.application(), jobId))
                 &&   abortIfRunning(status, jobsToRun, jobId)) // Abort and trigger this later if running with outdated parameters.
                 jobs.add(deploymentJob(status.application().require(jobId.application().instance()),

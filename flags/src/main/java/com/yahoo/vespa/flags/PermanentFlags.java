@@ -296,6 +296,13 @@ public class PermanentFlags {
             "Takes effect at redeployment",
             ZONE_ID, APPLICATION_ID);
 
+    public static final UnboundListFlag<String> DISABLED_DEPLOYMENT_ZONES = defineListFlag(
+            "disabled-deployment-zones", List.of(), String.class,
+            "The zones, e.g., prod.norway-71, where deployments jobs are currently disabled",
+            "Takes effect immediately",
+            APPLICATION_ID
+    );
+
     private PermanentFlags() {}
 
     private static UnboundBooleanFlag defineFeatureFlag(
