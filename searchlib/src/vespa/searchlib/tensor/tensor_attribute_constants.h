@@ -13,7 +13,7 @@ inline constexpr uint32_t TENSOR_ATTRIBUTE_VERSION = 0;
 inline constexpr uint32_t DENSE_TENSOR_ATTRIBUTE_VERSION = 1;
 
 /*
- * Values used to determine if a tensor is present on not for dense tensor attributes
+ * Values used to determine if a tensor is present or not for dense tensor attributes
  * (cf. DENSE_TENSOR_ATTRIBUTE_VERSION) that otherwise has fixed size for a saved tensor.
  */
 inline constexpr uint8_t tensorIsNotPresent = 0;
