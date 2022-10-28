@@ -23,18 +23,18 @@ import java.util.List;
  */
 public class DirtyExpirer extends Expirer {
 
-    private final boolean keepAllocationOnExpiry;
+    private final boolean wantToDeprovisionOnExpiry;
 
     DirtyExpirer(NodeRepository nodeRepository, Duration dirtyTimeout, Metric metric) {
         super(Node.State.dirty, History.Event.Type.deallocated, nodeRepository, dirtyTimeout, metric);
-        // Do not keep allocation in dynamically provisioned zones so that the hosts can be deprovisioned
-        this.keepAllocationOnExpiry = ! nodeRepository.zone().cloud().dynamicProvisioning();
+        // Deprovision hosts in dynamically provisioned on expiry
+        this.wantToDeprovisionOnExpiry = nodeRepository.zone().cloud().dynamicProvisioning();
     }
 
     @Override
     protected void expire(List<Node> expired) {
         for (Node expiredNode : expired)
-            nodeRepository().nodes().fail(expiredNode.hostname(), keepAllocationOnExpiry, Agent.DirtyExpirer, "Node is stuck in dirty");
+            nodeRepository().nodes().fail(expiredNode.hostname(), wantToDeprovisionOnExpiry, Agent.DirtyExpirer, "Node is stuck in dirty");
     }
 
 }

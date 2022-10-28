@@ -594,7 +594,7 @@ public class DynamicProvisioningMaintainerTest {
         assertEquals(Node.State.failed, tester.nodeRepository.nodes().node(host43.hostname()).get().state());
 
         // Last child is parked
-        tester.nodeRepository.nodes().park(host42.hostname(), true, Agent.system, getClass().getSimpleName());
+        tester.nodeRepository.nodes().park(host42.hostname(), false, Agent.system, getClass().getSimpleName());
 
         // Host and children can now be removed
         tester.maintainer.maintain();

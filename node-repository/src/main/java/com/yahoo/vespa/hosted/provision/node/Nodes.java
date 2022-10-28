@@ -11,11 +11,13 @@ import com.yahoo.config.provision.Zone;
 import com.yahoo.transaction.Mutex;
 import com.yahoo.transaction.NestedTransaction;
 import com.yahoo.vespa.applicationmodel.HostName;
+import com.yahoo.vespa.applicationmodel.InfrastructureApplication;
 import com.yahoo.vespa.hosted.provision.LockedNodeList;
 import com.yahoo.vespa.hosted.provision.NoSuchNodeException;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeList;
 import com.yahoo.vespa.hosted.provision.NodeMutex;
+import com.yahoo.vespa.hosted.provision.applications.Applications;
 import com.yahoo.vespa.hosted.provision.maintenance.NodeFailer;
 import com.yahoo.vespa.hosted.provision.node.filter.NodeFilter;
 import com.yahoo.vespa.hosted.provision.persistence.CuratorDatabaseClient;
@@ -60,12 +62,14 @@ public class Nodes {
     private final Zone zone;
     private final Clock clock;
     private final Orchestrator orchestrator;
+    private final Applications applications;
 
-    public Nodes(CuratorDatabaseClient db, Zone zone, Clock clock, Orchestrator orchestrator) {
+    public Nodes(CuratorDatabaseClient db, Zone zone, Clock clock, Orchestrator orchestrator, Applications applications) {
         this.zone = zone;
         this.clock = clock;
         this.db = db;
         this.orchestrator = orchestrator;
+        this.applications = applications;
     }
 
     /** Read and write all nodes to make sure they are stored in the latest version of the serialized format */
@@ -228,7 +232,7 @@ public class Nodes {
      * @param reusable move the node directly to {@link Node.State#dirty} after removal
      */
     public void setRemovable(ApplicationId application, List<Node> nodes, boolean reusable) {
-        try (Mutex lock = lock(application)) {
+        try (Mutex lock = applications.lock(application)) {
             List<Node> removableNodes = nodes.stream()
                                              .map(node -> node.with(node.allocation().get().removable(true, reusable)))
                                              .toList();
@@ -320,7 +324,7 @@ public class Nodes {
 
     public Node deallocate(Node node, Agent agent, String reason, NestedTransaction transaction) {
         if (parkOnDeallocationOf(node, agent)) {
-            return park(node.hostname(), false, agent, reason, transaction);
+            return park(node.hostname(), true, agent, reason, transaction);
         } else {
             Node.State toState = Node.State.dirty;
             if (node.state() == Node.State.parked) {
@@ -338,11 +342,11 @@ public class Nodes {
      * @throws NoSuchNodeException if the node is not found
      */
     public Node fail(String hostname, Agent agent, String reason) {
-        return fail(hostname, true, agent, reason);
+        return fail(hostname, false, agent, reason);
     }
 
-    public Node fail(String hostname, boolean keepAllocation, Agent agent, String reason) {
-        return move(hostname, Node.State.failed, agent, keepAllocation, Optional.of(reason));
+    public Node fail(String hostname, boolean wantToDeprovision, Agent agent, String reason) {
+        return move(hostname, Node.State.failed, agent, wantToDeprovision, Optional.of(reason));
     }
 
     /**
@@ -357,7 +361,7 @@ public class Nodes {
         List<Node> changed = performOn(children, (node, lock) -> failOrMark(node, agent, reason, lock));
 
         if (children.state(Node.State.active).isEmpty())
-            changed.add(move(hostname, Node.State.failed, agent, true, Optional.of(reason)));
+            changed.add(move(hostname, Node.State.failed, agent, false, Optional.of(reason)));
         else
             changed.addAll(performOn(NodeList.of(node(hostname).orElseThrow()), (node, lock) -> failOrMark(node, agent, reason, lock)));
 
@@ -370,7 +374,7 @@ public class Nodes {
             write(node, lock);
             return node;
         } else {
-            return move(node.hostname(), Node.State.failed, agent, true, Optional.of(reason));
+            return move(node.hostname(), Node.State.failed, agent, false, Optional.of(reason));
         }
     }
 
@@ -380,15 +384,15 @@ public class Nodes {
      * @return the node in its new state
      * @throws NoSuchNodeException if the node is not found
      */
-    public Node park(String hostname, boolean keepAllocation, Agent agent, String reason) {
+    public Node park(String hostname, boolean wantToDeprovision, Agent agent, String reason) {
         NestedTransaction transaction = new NestedTransaction();
-        Node parked = park(hostname, keepAllocation, agent, reason, transaction);
+        Node parked = park(hostname, wantToDeprovision, agent, reason, transaction);
         transaction.commit();
         return parked;
     }
 
-    private Node park(String hostname, boolean keepAllocation, Agent agent, String reason, NestedTransaction transaction) {
-        return move(hostname, Node.State.parked, agent, keepAllocation, Optional.of(reason), transaction);
+    private Node park(String hostname, boolean wantToDeprovision, Agent agent, String reason, NestedTransaction transaction) {
+        return move(hostname, Node.State.parked, agent, wantToDeprovision, Optional.of(reason), transaction);
     }
 
     /**
@@ -407,7 +411,7 @@ public class Nodes {
      * @throws NoSuchNodeException if the node is not found
      */
     public Node reactivate(String hostname, Agent agent, String reason) {
-        return move(hostname, Node.State.active, agent, true, Optional.of(reason));
+        return move(hostname, Node.State.active, agent, false, Optional.of(reason));
     }
 
     /**
@@ -419,7 +423,7 @@ public class Nodes {
             requireBreakfixable(node);
             NestedTransaction transaction = new NestedTransaction();
             List<Node> removed = removeChildren(node, false, transaction);
-            removed.add(move(node.hostname(), Node.State.breakfixed, agent, true, Optional.of(reason), transaction));
+            removed.add(move(node.hostname(), Node.State.breakfixed, agent, false, Optional.of(reason), transaction));
             transaction.commit();
             return removed;
         }
@@ -428,39 +432,37 @@ public class Nodes {
     private List<Node> moveRecursively(String hostname, Node.State toState, Agent agent, Optional<String> reason) {
         NestedTransaction transaction = new NestedTransaction();
         List<Node> moved = list().childrenOf(hostname).asList().stream()
-                                 .map(child -> move(child.hostname(), toState, agent, true, reason, transaction))
+                                 .map(child -> move(child.hostname(), toState, agent, false, reason, transaction))
                                  .collect(Collectors.toList());
-        moved.add(move(hostname, toState, agent, true, reason, transaction));
+        moved.add(move(hostname, toState, agent, false, reason, transaction));
         transaction.commit();
         return moved;
     }
 
     /** Move a node to given state */
-    private Node move(String hostname, Node.State toState, Agent agent, boolean keepAllocation, Optional<String> reason) {
+    private Node move(String hostname, Node.State toState, Agent agent, boolean wantToDeprovision, Optional<String> reason) {
         NestedTransaction transaction = new NestedTransaction();
-        Node moved = move(hostname, toState, agent, keepAllocation, reason, transaction);
+        Node moved = move(hostname, toState, agent, wantToDeprovision, reason, transaction);
         transaction.commit();
         return moved;
     }
 
     /** Move a node to given state as part of a transaction */
-    private Node move(String hostname, Node.State toState, Agent agent, boolean keepAllocation, Optional<String> reason, NestedTransaction transaction) {
+    private Node move(String hostname, Node.State toState, Agent agent, boolean wantToDeprovision, Optional<String> reason, NestedTransaction transaction) {
         // TODO: Work out a safe lock acquisition strategy for moves. Lock is only held while adding operations to
         //       transaction, but lock must also be held while committing
         try (NodeMutex lock = lockAndGetRequired(hostname)) {
             Node node = lock.node();
             if (toState == Node.State.active) {
                 if (node.allocation().isEmpty()) illegal("Could not set " + node + " active: It has no allocation");
-                if (!keepAllocation) illegal("Could not set " + node + " active: Requested to discard allocation");
                 for (Node currentActive : list(Node.State.active).owner(node.allocation().get().owner())) {
                     if (node.allocation().get().membership().cluster().equals(currentActive.allocation().get().membership().cluster())
                         && node.allocation().get().membership().index() == currentActive.allocation().get().membership().index())
                         illegal("Could not set " + node + " active: Same cluster and index as " + currentActive);
                 }
             }
-            if (!keepAllocation && node.allocation().isPresent()) {
-                node = node.withoutAllocation();
-            }
+            if (wantToDeprovision)
+                node = node.withWantToRetire(wantToDeprovision, wantToDeprovision, agent, clock.instant());
             if (toState == Node.State.deprovisioned) {
                 node = node.with(IP.Config.EMPTY);
             }
@@ -708,8 +710,9 @@ public class Nodes {
 
         // Group matching nodes by the lock needed
         for (Node node : nodes) {
-            if (node.allocation().isPresent())
-                allocatedNodes.put(node.allocation().get().owner(), node);
+            Optional<ApplicationId> applicationId = applicationIdForLock(node);
+            if (applicationId.isPresent())
+                allocatedNodes.put(applicationId.get(), node);
             else
                 unallocatedNodes.add(node);
         }
@@ -724,7 +727,7 @@ public class Nodes {
             }
         }
         for (Map.Entry<ApplicationId, List<Node>> applicationNodes : allocatedNodes.entrySet()) {
-            try (Mutex lock = lock(applicationNodes.getKey())) {
+            try (Mutex lock = applications.lock(applicationNodes.getKey())) {
                 for (Node node : applicationNodes.getValue()) {
                     Optional<Node> currentNode = db.readNode(node.hostname());  // Re-read while holding lock
                     if (currentNode.isEmpty()) continue;
@@ -760,30 +763,16 @@ public class Nodes {
         }
     }
 
-    /** Create a lock which provides exclusive rights to making changes to the given application */
-    // TODO: Move to Applications
-    public Mutex lock(ApplicationId application) {
-        return db.lock(application);
-    }
-
-    /** Create a lock with a timeout which provides exclusive rights to making changes to the given application */
-    public Mutex lock(ApplicationId application, Duration timeout) {
-        return db.lock(application, timeout);
-    }
-
     /** Create a lock which provides exclusive rights to modifying unallocated nodes */
     public Mutex lockUnallocated() { return db.lockInactive(); }
 
     /** Returns the unallocated/application lock, and the node acquired under that lock. */
-    public Optional<NodeMutex> lockAndGet(Node node) { return lockAndGet(node, Optional.empty()); }
-
-    /** Returns the unallocated/application lock, and the node acquired under that lock. */
-    public Optional<NodeMutex> lockAndGet(Node node, Optional<Duration> timeout) {
+    private Optional<NodeMutex> lockAndGet(Node node, Optional<Duration> timeout) {
         Node staleNode = node;
 
         final int maxRetries = 4;
         for (int i = 0; i < maxRetries; ++i) {
-            Mutex lockToClose = timeout.isPresent() ? lock(staleNode, timeout.get()) : lock(staleNode);
+            Mutex lockToClose = lock(staleNode, timeout);
             try {
                 // As an optimization we first try finding the node in the same state
                 Optional<Node> freshNode = node(staleNode.hostname(), staleNode.state());
@@ -794,8 +783,9 @@ public class Nodes {
                     }
                 }
 
-                if (Objects.equals(freshNode.get().allocation().map(Allocation::owner),
-                                   staleNode.allocation().map(Allocation::owner))) {
+                if (node.type() != NodeType.tenant ||
+                        Objects.equals(freshNode.get().allocation().map(Allocation::owner),
+                                       staleNode.allocation().map(Allocation::owner))) {
                     NodeMutex nodeMutex = new NodeMutex(freshNode.get(), lockToClose);
                     lockToClose = null;
                     return Optional.of(nodeMutex);
@@ -823,6 +813,12 @@ public class Nodes {
     }
 
     /** Returns the unallocated/application lock, and the node acquired under that lock. */
+    public Optional<NodeMutex> lockAndGet(Node node) { return lockAndGet(node, Optional.empty()); }
+
+    /** Returns the unallocated/application lock, and the node acquired under that lock. */
+    public Optional<NodeMutex> lockAndGet(Node node, Duration timeout) { return lockAndGet(node, Optional.of(timeout)); }
+
+    /** Returns the unallocated/application lock, and the node acquired under that lock. */
     public NodeMutex lockAndGetRequired(Node node) {
         return lockAndGet(node).orElseThrow(() -> new NoSuchNodeException("No node with hostname '" + node.hostname() + "'"));
     }
@@ -837,19 +833,34 @@ public class Nodes {
         return lockAndGet(hostname, timeout).orElseThrow(() -> new NoSuchNodeException("No node with hostname '" + hostname + "'"));
     }
 
-    private Mutex lock(Node node) {
-        return node.allocation().isPresent() ? lock(node.allocation().get().owner()) : lockUnallocated();
-    }
-
-    private Mutex lock(Node node, Duration timeout) {
-        return node.allocation().isPresent() ? lock(node.allocation().get().owner(), timeout) : lockUnallocated();
+    private Mutex lock(Node node, Optional<Duration> timeout) {
+        Optional<ApplicationId> application = applicationIdForLock(node);
+        if (application.isPresent())
+            return timeout.map(t -> applications.lock(application.get(), t))
+                          .orElseGet(() -> applications.lock(application.get()));
+        else
+            return timeout.map(db::lockInactive).orElseGet(db::lockInactive);
     }
 
     private Node requireNode(String hostname) {
         return node(hostname).orElseThrow(() -> new NoSuchNodeException("No node with hostname '" + hostname + "'"));
     }
 
-    private void illegal(String message) {
+    /** Returns the application ID that should be used for locking when modifying this node */
+    private static Optional<ApplicationId> applicationIdForLock(Node node) {
+        return switch (node.type()) {
+            case tenant -> node.allocation().map(Allocation::owner);
+            case host -> Optional.of(InfrastructureApplication.TENANT_HOST.id());
+            case config -> Optional.of(InfrastructureApplication.CONFIG_SERVER.id());
+            case confighost -> Optional.of(InfrastructureApplication.CONFIG_SERVER_HOST.id());
+            case controller -> Optional.of(InfrastructureApplication.CONTROLLER.id());
+            case controllerhost -> Optional.of(InfrastructureApplication.CONTROLLER_HOST.id());
+            case proxy -> Optional.of(InfrastructureApplication.PROXY.id());
+            case proxyhost -> Optional.of(InfrastructureApplication.PROXY_HOST.id());
+        };
+    }
+
+    private static void illegal(String message) {
         throw new IllegalArgumentException(message);
     }
 

@@ -102,7 +102,7 @@ public class FailedExpirer extends NodeRepositoryMaintainer {
                                                         .mapToList(Node::hostname);
 
                 if (unparkedChildren.isEmpty()) {
-                    nodeRepository.nodes().park(candidate.hostname(), false, Agent.FailedExpirer,
+                    nodeRepository.nodes().park(candidate.hostname(), true, Agent.FailedExpirer,
                                                 "Parked by FailedExpirer due to hardware issue or high fail count");
                 } else {
                     log.info(String.format("Expired failed node %s with hardware issue was not parked because of " +

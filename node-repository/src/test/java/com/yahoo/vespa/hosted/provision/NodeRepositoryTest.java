@@ -40,7 +40,7 @@ public class NodeRepositoryTest {
         assertEquals(4, tester.nodeRepository().nodes().list().size());
 
         for (var hostname : List.of("host2", "cfghost1")) {
-            tester.nodeRepository().nodes().park(hostname, true, Agent.system, "Parking to unit test");
+            tester.nodeRepository().nodes().park(hostname, false, Agent.system, "Parking to unit test");
             tester.nodeRepository().nodes().removeRecursively(hostname);
         }
 

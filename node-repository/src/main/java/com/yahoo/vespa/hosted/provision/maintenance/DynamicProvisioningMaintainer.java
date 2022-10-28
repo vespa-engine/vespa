@@ -132,7 +132,7 @@ public class DynamicProvisioningMaintainer extends NodeRepositoryMaintainer {
         }
 
         excessHosts.forEach(host -> {
-            Optional<NodeMutex> optionalMutex = nodeRepository().nodes().lockAndGet(host, Optional.of(Duration.ofSeconds(10)));
+            Optional<NodeMutex> optionalMutex = nodeRepository().nodes().lockAndGet(host, Duration.ofSeconds(10));
             if (optionalMutex.isEmpty()) return;
             try (NodeMutex mutex = optionalMutex.get()) {
                 if (host.state() != mutex.node().state()) return;
@@ -156,7 +156,8 @@ public class DynamicProvisioningMaintainer extends NodeRepositoryMaintainer {
     private void replaceRootDisk(NodeList nodes) {
         NodeList softRebuildingHosts = nodes.rebuilding(true);
         for (var host : softRebuildingHosts) {
-            Optional<NodeMutex> optionalMutex = nodeRepository().nodes().lockAndGet(host, Optional.of(Duration.ofSeconds(10)));
+            Optional<NodeMutex> optionalMutex = nodeRepository().nodes().lockAndGet(host, Duration.ofSeconds(10));
+            if (optionalMutex.isEmpty()) return;
             try (NodeMutex mutex = optionalMutex.get()) {
                 // Re-check flag while holding lock
                 host = mutex.node();

@@ -35,7 +35,7 @@ public class ApplicationPatcher implements AutoCloseable {
             throw new UncheckedIOException("Error reading request body", e);
         }
         // Use same timeout for acquiring lock as client timeout for patch request
-        this.lock = nodeRepository.nodes().lock(applicationId, Duration.ofSeconds(30));
+        this.lock = nodeRepository.applications().lock(applicationId, Duration.ofSeconds(30));
         try {
             this.application = nodeRepository.applications().require(applicationId);
         }

@@ -179,7 +179,7 @@ public class MockNodeRepository extends NodeRepository {
                                                                              clock().instant())));
         cluster1 = cluster1.withTarget(Optional.of(new ClusterResources(4, 1,
                                                                         new NodeResources(3, 16, 100, 1))));
-        try (Mutex lock = nodes().lock(app1Id)) {
+        try (Mutex lock = applications().lock(app1Id)) {
             applications().put(app1.with(cluster1), lock);
         }
 

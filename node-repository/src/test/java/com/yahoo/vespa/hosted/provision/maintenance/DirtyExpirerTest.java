@@ -62,7 +62,7 @@ public class DirtyExpirerTest {
         tester.clock().advance(expiryTimeout.plusSeconds(1));
         expirer.run();
         assertEquals(Node.State.failed, tester.nodeRepository().nodes().list().first().get().state());
-        assertEquals(dynamicProvisioning, tester.nodeRepository().nodes().list().first().get().allocation().isEmpty());
+        assertEquals(dynamicProvisioning, tester.nodeRepository().nodes().list().first().get().status().wantToDeprovision());
     }
 
 }

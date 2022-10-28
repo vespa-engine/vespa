@@ -165,10 +165,10 @@ public class ProvisioningTest {
         Set<Integer> state1Indexes = state1.allHosts.stream().map(hostSpec -> hostSpec.membership().get().index()).collect(Collectors.toSet());
 
         // deallocate 2 nodes with index 0
-        NodeMutex node1 = tester.nodeRepository().nodes().lockAndGet(tester.removeOne(state1.container0).hostname()).get();
-        NodeMutex node2 = tester.nodeRepository().nodes().lockAndGet(tester.removeOne(state1.content0).hostname()).get();
-        tester.nodeRepository().nodes().write(node1.node().withoutAllocation(), node1);
-        tester.nodeRepository().nodes().write(node2.node().withoutAllocation(), node1);
+        Node node1 = tester.nodeRepository().nodes().node(tester.removeOne(state1.container0).hostname()).get();
+        Node node2 = tester.nodeRepository().nodes().node(tester.removeOne(state1.content0).hostname()).get();
+        tester.nodeRepository().nodes().removeRecursively(node1, true);
+        tester.nodeRepository().nodes().removeRecursively(node2, true);
 
         // redeploy to get new nodes
         SystemState state2 = prepare(app1, 2, 2, 3, 3, defaultResources, tester);

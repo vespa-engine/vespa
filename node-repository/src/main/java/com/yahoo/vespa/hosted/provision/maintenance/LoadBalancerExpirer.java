@@ -146,7 +146,11 @@ public class LoadBalancerExpirer extends NodeRepositoryMaintainer {
     }
 
     private List<Node> allocatedNodes(LoadBalancerId loadBalancer) {
-        return nodeRepository().nodes().list().owner(loadBalancer.application()).cluster(loadBalancer.cluster()).asList();
+        return nodeRepository().nodes()
+                .list(Node.State.active, Node.State.inactive, Node.State.reserved)
+                .owner(loadBalancer.application())
+                .cluster(loadBalancer.cluster())
+                .asList();
     }
 
 }

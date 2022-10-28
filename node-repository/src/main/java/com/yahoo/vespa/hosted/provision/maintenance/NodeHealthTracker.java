@@ -63,7 +63,7 @@ public class NodeHealthTracker extends NodeRepositoryMaintainer {
 
             // Lock and update status
             ApplicationId owner = node.get().allocation().get().owner();
-            try (var lock = nodeRepository().nodes().lock(owner)) {
+            try (var lock = nodeRepository().applications().lock(owner)) {
                 node = getNode(hostname.toString(), owner, lock); // Re-get inside lock
                 if (node.isEmpty()) return; // Node disappeared or changed allocation
                 attempts.add(1);

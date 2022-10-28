@@ -8,6 +8,7 @@ import com.yahoo.transaction.Mutex;
 import com.yahoo.transaction.NestedTransaction;
 import com.yahoo.vespa.hosted.provision.persistence.CuratorDatabaseClient;
 
+import java.time.Duration;
 import java.util.List;
 import java.util.Optional;
 
@@ -60,6 +61,16 @@ public class Applications {
 
     public void remove(ApplicationTransaction transaction) {
         db.deleteApplication(transaction);
+    }
+
+    /** Create a lock which provides exclusive rights to making changes to the given application */
+    public Mutex lock(ApplicationId application) {
+        return db.lock(application);
+    }
+
+    /** Create a lock with a timeout which provides exclusive rights to making changes to the given application */
+    public Mutex lock(ApplicationId application, Duration timeout) {
+        return db.lock(application, timeout);
     }
 
 }

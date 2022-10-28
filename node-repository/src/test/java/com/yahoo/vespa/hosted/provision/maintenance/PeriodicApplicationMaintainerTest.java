@@ -66,7 +66,7 @@ public class PeriodicApplicationMaintainerTest {
         // Fail and park some nodes
         nodeRepository.nodes().fail(nodeRepository.nodes().list().owner(fixture.app1).asList().get(3).hostname(), Agent.system, "Failing to unit test");
         nodeRepository.nodes().fail(nodeRepository.nodes().list().owner(fixture.app2).asList().get(0).hostname(), Agent.system, "Failing to unit test");
-        nodeRepository.nodes().park(nodeRepository.nodes().list().owner(fixture.app2).asList().get(4).hostname(), true, Agent.system, "Parking to unit test");
+        nodeRepository.nodes().park(nodeRepository.nodes().list().owner(fixture.app2).asList().get(4).hostname(), false, Agent.system, "Parking to unit test");
         int failedInApp1 = 1;
         int failedOrParkedInApp2 = 2;
         assertEquals(fixture.wantedNodesApp1 - failedInApp1, nodeRepository.nodes().list(Node.State.active).owner(fixture.app1).size());
