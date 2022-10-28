@@ -40,7 +40,7 @@ export default param('root', [
     param('features', 'Parent', { children: 'String' }),
     param('listFeatures', 'Boolean'),
     param('profile', 'String'),
-    param('properties', 'String'),
+    param('properties', 'String', { children: 'String' }),
     param('softtimeout', [
       param('enable', 'Boolean'),
       param('factor', 'Float'),
