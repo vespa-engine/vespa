@@ -710,8 +710,9 @@ public class Nodes {
 
         // Group matching nodes by the lock needed
         for (Node node : nodes) {
-            if (node.allocation().isPresent())
-                allocatedNodes.put(node.allocation().get().owner(), node);
+            Optional<ApplicationId> applicationId = applicationIdForLock(node);
+            if (applicationId.isPresent())
+                allocatedNodes.put(applicationId.get(), node);
             else
                 unallocatedNodes.add(node);
         }
@@ -833,16 +834,7 @@ public class Nodes {
     }
 
     private Mutex lock(Node node, Optional<Duration> timeout) {
-        Optional<ApplicationId> application = switch (node.type()) {
-            case tenant -> node.allocation().map(Allocation::owner);
-            case host -> Optional.of(InfrastructureApplication.TENANT_HOST.id());
-            case config -> Optional.of(InfrastructureApplication.CONFIG_SERVER.id());
-            case confighost -> Optional.of(InfrastructureApplication.CONFIG_SERVER_HOST.id());
-            case controller -> Optional.of(InfrastructureApplication.CONTROLLER.id());
-            case controllerhost -> Optional.of(InfrastructureApplication.CONTROLLER_HOST.id());
-            case proxy -> Optional.of(InfrastructureApplication.PROXY.id());
-            case proxyhost -> Optional.of(InfrastructureApplication.PROXY_HOST.id());
-        };
+        Optional<ApplicationId> application = applicationIdForLock(node);
         if (application.isPresent())
             return timeout.map(t -> applications.lock(application.get(), t))
                           .orElseGet(() -> applications.lock(application.get()));
@@ -854,7 +846,21 @@ public class Nodes {
         return node(hostname).orElseThrow(() -> new NoSuchNodeException("No node with hostname '" + hostname + "'"));
     }
 
-    private void illegal(String message) {
+    /** Returns the application ID that should be used for locking when modifying this node */
+    private static Optional<ApplicationId> applicationIdForLock(Node node) {
+        return switch (node.type()) {
+            case tenant -> node.allocation().map(Allocation::owner);
+            case host -> Optional.of(InfrastructureApplication.TENANT_HOST.id());
+            case config -> Optional.of(InfrastructureApplication.CONFIG_SERVER.id());
+            case confighost -> Optional.of(InfrastructureApplication.CONFIG_SERVER_HOST.id());
+            case controller -> Optional.of(InfrastructureApplication.CONTROLLER.id());
+            case controllerhost -> Optional.of(InfrastructureApplication.CONTROLLER_HOST.id());
+            case proxy -> Optional.of(InfrastructureApplication.PROXY.id());
+            case proxyhost -> Optional.of(InfrastructureApplication.PROXY_HOST.id());
+        };
+    }
+
+    private static void illegal(String message) {
         throw new IllegalArgumentException(message);
     }
 
