@@ -16,7 +16,10 @@
 #include <vespa/searchlib/queryeval/booleanmatchiteratorwrapper.h>
 #include <vespa/searchlib/queryeval/fake_requestcontext.h>
 #include <vespa/searchlib/queryeval/fake_searchable.h>
+#include <vespa/searchlib/queryeval/leaf_blueprints.h>
 #include <vespa/searchlib/queryeval/searchiterator.h>
+#include <vespa/searchlib/queryeval/simpleresult.h>
+#include <vespa/searchlib/queryeval/simple_phrase_blueprint.h>
 #include <vespa/searchlib/queryeval/blueprint.h>
 #include <vespa/vespalib/util/sequencedtaskexecutor.h>
 #include <vespa/vespalib/util/size_literals.h>
@@ -225,8 +228,10 @@ verifyResult(const FakeResult &expect,
     TermFieldMatchData &tmd = *match_data->resolveTermField(handle);
 
     FakeResult actual;
+    SimpleResult exp_simple;
     search->initFullRange();
     for (search->seek(1); !search->isAtEnd(); search->seek(search->getDocId() + 1)) {
+        exp_simple.addHit(search->getDocId());
         actual.doc(search->getDocId());
         search->unpack(search->getDocId());
         EXPECT_EQ(search->getDocId(), tmd.getDocId());
@@ -236,8 +241,25 @@ verifyResult(const FakeResult &expect,
             actual.pos(p.getPosition());
         }
     }
-    EXPECT_EQ(expect, actual);
-    return expect == actual;
+    bool success = true;
+    EXPECT_EQ(expect, actual) << (success = false, "");
+    using FilterConstraint = Blueprint::FilterConstraint;
+    for (auto constraint : { FilterConstraint::LOWER_BOUND, FilterConstraint::UPPER_BOUND }) {
+        constexpr uint32_t docid_limit = 10u;
+        auto filter_search = result->createFilterSearch(true, constraint);
+        auto act_simple = SimpleResult().search(*filter_search, docid_limit);
+        if (constraint == FilterConstraint::LOWER_BOUND) {
+            EXPECT_TRUE(exp_simple.contains(act_simple)) << (success = false, "");
+        }
+        if (constraint == FilterConstraint::UPPER_BOUND) {
+            EXPECT_TRUE(act_simple.contains(exp_simple)) << (success = false, "");
+        }
+        if (dynamic_cast<FakeBlueprint*>(result.get()) == nullptr &&
+            dynamic_cast<SimplePhraseBlueprint*>(result.get()) == nullptr) {
+            EXPECT_EQ(exp_simple, act_simple) << (success = false, "");
+        }
+    }
+    return success;
 }
 
 namespace {
@@ -246,12 +268,12 @@ SimpleStringTerm makeTerm(const std::string &term) {
 }
 
 Node::UP makePhrase(const std::string &term1, const std::string &term2) {
-    SimplePhrase * phrase = new SimplePhrase("field", 0, search::query::Weight(0));
-    Node::UP node(phrase);
-    phrase->append(Node::UP(new SimpleStringTerm(makeTerm(term1))));
-    phrase->append(Node::UP(new SimpleStringTerm(makeTerm(term2))));
-    return node;
+    auto phrase = std::make_unique<SimplePhrase>("field", 0, search::query::Weight(0));
+    phrase->append(std::make_unique<SimpleStringTerm>(makeTerm(term1)));
+    phrase->append(std::make_unique<SimpleStringTerm>(makeTerm(term2)));
+    return phrase;
 }
+
 }  // namespace
 
 // tests basic usage; index some documents in docid order and perform

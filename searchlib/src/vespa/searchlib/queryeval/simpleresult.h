@@ -83,6 +83,8 @@ public:
      * @param rhs other results
      **/
     bool operator==(const SimpleResult &rhs) const { return (_hits == rhs._hits); }
+
+    bool contains(const SimpleResult& subset) const;
 };
 
 std::ostream &operator << (std::ostream &out, const SimpleResult &result);
