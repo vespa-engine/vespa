@@ -43,13 +43,12 @@ public class AllocatableClusterResources {
         this.fulfilment = 1;
     }
 
-    // TODO: Use NodeList to make the initializers below nicer
-    public AllocatableClusterResources(List<Node> nodes, NodeRepository nodeRepository) {
+    public AllocatableClusterResources(NodeList nodes, NodeRepository nodeRepository) {
         this.nodes = nodes.size();
         this.groups = (int)nodes.stream().map(node -> node.allocation().get().membership().cluster().group()).distinct().count();
-        this.realResources = averageRealResourcesOf(nodes, nodeRepository); // Average since we average metrics over nodes
-        this.advertisedResources = nodes.get(0).allocation().get().requestedResources();
-        this.clusterSpec = nodes.get(0).allocation().get().membership().cluster();
+        this.realResources = averageRealResourcesOf(nodes.asList(), nodeRepository); // Average since we average metrics over nodes
+        this.advertisedResources = nodes.requestedResources();
+        this.clusterSpec = nodes.clusterSpec();
         this.fulfilment = 1;
     }
 
