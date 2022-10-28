@@ -8,15 +8,20 @@ import (
 	"fmt"
 	"os"
 	"strings"
+
+	"github.com/vespa-engine/vespa/client/go/trace"
+	"github.com/vespa-engine/vespa/client/go/util"
+)
+
+const (
+	defaultVespaInstallDir = "/opt/vespa"
+	scriptUtilsFilename    = "libexec/vespa/script-utils"
 )
 
 func FindHome() string {
-	const (
-		defaultInstallDir = "opt/vespa"
-		commonEnvSh       = "libexec/vespa/common-env.sh"
-	)
 	// use env var if it is set:
 	if ev := os.Getenv("VESPA_HOME"); ev != "" {
+		trace.Debug("VH set:", ev)
 		return ev
 	}
 	// some helper functions...
@@ -27,22 +32,22 @@ func FindHome() string {
 		}
 		return path[:idx]
 	}
-	var isFile = func(fn string) bool {
-		st, err := os.Stat(fn)
-		return err == nil && st.Mode().IsRegular()
-	}
 	var findPath = func() string {
 		myProgName := os.Args[0]
 		if strings.HasPrefix(myProgName, "/") {
+			trace.Debug("findPath", myProgName, "=>", dirName(myProgName))
 			return dirName(myProgName)
 		}
 		if strings.Contains(myProgName, "/") {
-			dir, _ := os.Getwd()
-			return dir + "/" + dirName(myProgName)
+			curDir, _ := os.Getwd()
+			path := fmt.Sprintf("%s/%s", curDir, dirName(myProgName))
+			trace.Debug("findPath", myProgName, "=>", path)
+			return path
 		}
 		for _, dir := range strings.Split(os.Getenv("PATH"), ":") {
-			fn := dir + "/" + myProgName
-			if isFile(fn) {
+			fn := fmt.Sprintf("%s/%s", dir, myProgName)
+			if util.IsRegularFile(fn) {
+				trace.Debug("findPath", myProgName, "=>", dir)
 				return dir
 			}
 		}
@@ -50,14 +55,16 @@ func FindHome() string {
 	}
 	// detect path from argv[0]
 	for path := findPath(); path != ""; path = dirName(path) {
-		if isFile(path + "/" + commonEnvSh) {
+		mySelf := fmt.Sprintf("%s/%s", path, scriptUtilsFilename)
+		if util.IsRegularFile(mySelf) {
+			trace.Debug("found", mySelf, "VH =>", path)
 			os.Setenv("VESPA_HOME", path)
 			return path
 		}
 	}
 	// fallback
-	os.Setenv("VESPA_HOME", defaultInstallDir)
-	return defaultInstallDir
+	os.Setenv("VESPA_HOME", defaultVespaInstallDir)
+	return defaultVespaInstallDir
 }
 
 func HasFileUnderVespaHome(fn string) (bool, string) {
@@ -70,4 +77,14 @@ func HasFileUnderVespaHome(fn string) (bool, string) {
 		}
 	}
 	return false, ""
+}
+
+func FindAndVerifyVespaHome() string {
+	vespaHome := FindHome()
+	myself := fmt.Sprintf("%s/%s", vespaHome, scriptUtilsFilename)
+	if !util.IsExecutableFile(myself) {
+		trace.Warning("missing or bad file:", myself)
+		util.JustExitMsg("Not a valid VESPA_HOME: " + vespaHome)
+	}
+	return vespaHome
 }
