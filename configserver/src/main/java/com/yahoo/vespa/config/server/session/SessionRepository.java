@@ -841,15 +841,24 @@ public class SessionRepository {
         File schemasDir = applicationDir.resolve(ApplicationPackage.SCHEMAS_DIR.getRelative()).toFile();
         File sdDir = applicationDir.resolve(ApplicationPackage.SEARCH_DEFINITIONS_DIR.getRelative()).toFile();
         if (sdDir.exists() && sdDir.isDirectory()) {
-            File[] sdFiles = sdDir.listFiles();
-            if (sdFiles != null) {
-                Files.createDirectories(schemasDir.toPath());
-                Arrays.asList(sdFiles).forEach(file -> Exceptions.uncheck(
-                        () -> Files.move(file.toPath(),
-                                         schemasDir.toPath().resolve(file.toPath().getFileName()),
-                                         StandardCopyOption.REPLACE_EXISTING)));
+            try {
+                File[] sdFiles = sdDir.listFiles();
+                if (sdFiles != null) {
+                    Files.createDirectories(schemasDir.toPath());
+                    Arrays.asList(sdFiles).forEach(file -> Exceptions.uncheck(
+                            () -> Files.move(file.toPath(),
+                                             schemasDir.toPath().resolve(file.toPath().getFileName()),
+                                             StandardCopyOption.REPLACE_EXISTING)));
+                }
+                Files.delete(sdDir.toPath());
+            } catch (IOException | UncheckedIOException e) {
+                if (schemasDir.exists() && schemasDir.isDirectory())
+                    throw new InvalidApplicationException(
+                            "Both " + ApplicationPackage.SCHEMAS_DIR.getRelative() + " and " + ApplicationPackage.SEARCH_DEFINITIONS_DIR +
+                                    " exists in application package, please remove " + ApplicationPackage.SEARCH_DEFINITIONS_DIR, e);
+                else
+                    throw e;
             }
-            Files.delete(sdDir.toPath());
         }
     }
 
