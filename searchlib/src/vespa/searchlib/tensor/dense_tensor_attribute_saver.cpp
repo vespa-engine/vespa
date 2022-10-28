@@ -3,19 +3,13 @@
 #include "dense_tensor_attribute_saver.h"
 #include "dense_tensor_store.h"
 #include "nearest_neighbor_index_saver.h"
+#include "tensor_attribute_constants.h"
 #include <vespa/searchlib/util/bufferwriter.h>
 #include <vespa/searchlib/attribute/iattributesavetarget.h>
 
 using vespalib::GenerationHandler;
 
 namespace search::tensor {
-
-namespace {
-
-constexpr uint8_t tensorIsNotPresent = 0;
-constexpr uint8_t tensorIsPresent = 1;
-
-}
 
 DenseTensorAttributeSaver::
 DenseTensorAttributeSaver(GenerationHandler::Guard &&guard,

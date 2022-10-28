@@ -5,6 +5,7 @@
 #include "nearest_neighbor_index.h"
 #include "nearest_neighbor_index_loader.h"
 #include "nearest_neighbor_index_saver.h"
+#include "tensor_attribute_constants.h"
 #include <vespa/eval/eval/value.h>
 #include <vespa/fastlib/io/bufferedfile.h>
 #include <vespa/searchcommon/attribute/config.h>
@@ -31,15 +32,12 @@ namespace search::tensor {
 
 namespace {
 
-constexpr uint32_t DENSE_TENSOR_ATTRIBUTE_VERSION = 1;
 constexpr uint32_t LOAD_COMMIT_INTERVAL = 256;
 const vespalib::string tensorTypeTag("tensortype");
 
 class BlobSequenceReader : public ReaderBase
 {
 private:
-    static constexpr uint8_t tensorIsNotPresent = 0;
-    static constexpr uint8_t tensorIsPresent = 1;
     bool _use_index_file;
     FileWithHeader _index_file;
 
