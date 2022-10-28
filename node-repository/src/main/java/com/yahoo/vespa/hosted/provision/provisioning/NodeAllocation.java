@@ -104,22 +104,20 @@ class NodeAllocation {
     /**
      * Offer some nodes to this. The nodes may have an allocation to a different application or cluster,
      * an allocation to this cluster, or no current allocation (in which case one is assigned).
-     * 
+     *
      * Note that if unallocated nodes are offered before allocated nodes, this will unnecessarily
      * reject allocated nodes due to index duplicates.
      *
      * @param candidates the nodes which are potentially on offer. These may belong to a different application etc.
-     * @return the subset of offeredNodes which was accepted, with the correct allocation assigned
      */
-    List<Node> offer(List<NodeCandidate> candidates) {
-        List<Node> accepted = new ArrayList<>();
+    void offer(List<NodeCandidate> candidates) {
         for (NodeCandidate candidate : candidates) {
             if (candidate.allocation().isPresent()) {
                 Allocation allocation = candidate.allocation().get();
                 ClusterMembership membership = allocation.membership();
                 if ( ! allocation.owner().equals(application)) continue; // wrong application
                 if ( ! membership.cluster().satisfies(cluster)) continue; // wrong cluster id/type
-                if ((! candidate.isSurplus || saturated()) && ! membership.cluster().group().equals(cluster.group())) continue; // wrong group and we can't or have no reason to change it
+                if ((! candidate.isSurplus || saturated()) && ! membership.cluster().group().equals(cluster.group())) continue; // wrong group, and we can't or have no reason to change it
                 if ( candidate.state() == Node.State.active && allocation.removable()) continue; // don't accept; causes removal
                 if ( candidate.state() == Node.State.active && candidate.wantToFail()) continue; // don't accept; causes failing
                 if ( indexes.contains(membership.index())) continue; // duplicate index (just to be sure)
@@ -130,8 +128,9 @@ class NodeAllocation {
 
                 if ((! saturated() && hasCompatibleFlavor(candidate) && requestedNodes.acceptable(candidate)) || acceptToRetire) {
                     candidate = candidate.withNode();
-                    if (candidate.isValid())
-                        accepted.add(acceptNode(candidate, shouldRetire(candidate, candidates), resizeable));
+                    if (candidate.isValid()) {
+                        acceptNode(candidate, shouldRetire(candidate, candidates), resizeable);
+                    }
                 }
             }
             else if (! saturated() && hasCompatibleFlavor(candidate)) {
@@ -154,12 +153,11 @@ class NodeAllocation {
                                                ClusterMembership.from(cluster, nextIndex.get()),
                                                requestedNodes.resources().orElse(candidate.resources()),
                                                nodeRepository.clock().instant());
-                if (candidate.isValid())
-                    accepted.add(acceptNode(candidate, Retirement.none, false));
+                if (candidate.isValid()) {
+                    acceptNode(candidate, Retirement.none, false);
+                }
             }
         }
-
-        return accepted;
     }
 
     /** Returns the cause of retirement for given candidate */
