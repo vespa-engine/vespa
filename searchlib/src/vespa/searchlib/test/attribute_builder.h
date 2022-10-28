@@ -26,14 +26,19 @@ public:
     AttributeBuilder(AttributeVector& attr);
 
     // Fill functions for integer attributes
-    AttributeBuilder& fill(const std::vector<int64_t>& values);
-    AttributeBuilder& fill_array(const std::vector<std::vector<int64_t>>& values);
-    AttributeBuilder& fill_wset(const std::vector<std::vector<std::pair<int64_t, int32_t>>>& values);
+    AttributeBuilder& fill(std::initializer_list<int32_t> values);
+    AttributeBuilder& fill_array(std::initializer_list<std::initializer_list<int32_t>> values);
+    AttributeBuilder& fill_wset(std::initializer_list<std::initializer_list<std::pair<int32_t, int32_t>>> values);
+
+    // Fill functions for float attributes
+    AttributeBuilder& fill(std::initializer_list<double> values);
+    AttributeBuilder& fill_array(std::initializer_list<std::initializer_list<double>> values);
+    AttributeBuilder& fill_wset(std::initializer_list<std::initializer_list<std::pair<double, int32_t>>> values);
 
     // Fill functions for string attributes
-    AttributeBuilder& fill(const std::vector<vespalib::string>& values);
-    AttributeBuilder& fill_array(const std::vector<std::vector<vespalib::string>>& values);
-    AttributeBuilder& fill_wset(const std::vector<std::vector<std::pair<vespalib::string, int32_t>>>& values);
+    AttributeBuilder& fill(std::initializer_list<vespalib::string> values);
+    AttributeBuilder& fill_array(std::initializer_list<std::initializer_list<vespalib::string>> values);
+    AttributeBuilder& fill_wset(std::initializer_list<std::initializer_list<std::pair<vespalib::string, int32_t>>> values);
 
     std::shared_ptr<AttributeVector> get() const { return _attr_ptr; }
 };

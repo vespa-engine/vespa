@@ -152,7 +152,7 @@ downcast(ParentType& parent)
 }
 
 AttributeVector::SP
-make_string_attribute(const std::vector<vespalib::string>& values)
+make_string_attribute(std::initializer_list<vespalib::string> values)
 {
     Config cfg(BasicType::STRING, CollectionType::SINGLE);
     return AttributeBuilder(field, cfg).fill(values).get();
@@ -165,7 +165,7 @@ make_string_attribute(const std::string& value)
 }
 
 AttributeVector::SP
-make_wset_string_attribute(const std::vector<std::vector<vespalib::string>>& values)
+make_wset_string_attribute(std::initializer_list<std::initializer_list<vespalib::string>> values)
 {
     Config cfg(BasicType::STRING, CollectionType::WSET);
     // fast-search is needed to trigger use of DirectAttributeBlueprint.
@@ -174,16 +174,16 @@ make_wset_string_attribute(const std::vector<std::vector<vespalib::string>>& val
 }
 
 AttributeVector::SP
-make_int_attribute(int64_t value)
+make_int_attribute(int32_t value)
 {
     Config cfg(BasicType::INT32, CollectionType::SINGLE);
     return AttributeBuilder(field, cfg).fill({-1, -1, value}).get();
 }
 
 AttributeVector::SP
-make_fast_search_long_attribute(int64_t value)
+make_fast_search_long_attribute(int32_t value)
 {
-    Config cfg(BasicType::fromType(int64_t()), CollectionType::SINGLE);
+    Config cfg(BasicType::INT64, CollectionType::SINGLE);
     cfg.setFastSearch(true);
     return AttributeBuilder(field, cfg).fill({-1, -1, value}).get();
 }
