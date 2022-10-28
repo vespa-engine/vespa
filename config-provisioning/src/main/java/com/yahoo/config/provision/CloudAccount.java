@@ -22,4 +22,9 @@ public class CloudAccount extends PatternedStringWrapper<CloudAccount> {
         return this.equals(empty);
     }
 
+    @Override
+    public String toString() {
+        return isEmpty() ? "unspecified account" : "account '" + value() + "'";
+    }
+
 }
