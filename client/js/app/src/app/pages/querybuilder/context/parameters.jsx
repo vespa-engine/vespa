@@ -12,18 +12,18 @@ export default param('root', [
   param('yql', 'String'),
 
   // Native Execution Parameters
-  param('hits', 'Integer'),
-  param('offset', 'Integer'),
-  param('queryProfile', 'String'),
-  param('groupingSessionCache', 'Boolean'),
-  param('searchChain', 'String'),
-  param('timeout', 'Double'),
-  param('noCache', 'Boolean'),
+  param('hits', 'Integer', { min: 0, default: 10 }),
+  param('offset', 'Integer', { min: 0, default: 0 }),
+  param('queryProfile', 'String', { default: 'default' }),
+  param('groupingSessionCache', 'Boolean', { default: true }),
+  param('searchChain', 'String', { default: 'default' }),
+  param('timeout', 'Float', { min: 0, default: 0.5 }),
+  param('noCache', 'Boolean', { default: false }),
 
   // Query Model
   param('model', [
-    param('defaultIndex', 'String'),
-    param('encoding', 'String'),
+    param('defaultIndex', 'String', { default: 'default' }),
+    param('encoding', 'String', { default: 'utf-8' }),
     param('filter', 'String'),
     param('locale', 'String'),
     param('language', 'String'),
@@ -38,79 +38,82 @@ export default param('root', [
   param('ranking', [
     param('location', 'String'),
     param('features', 'Parent', { children: 'String' }),
-    param('listFeatures', 'Boolean'),
-    param('profile', 'String'),
+    param('listFeatures', 'Boolean', { default: false }),
+    param('profile', 'String', { default: 'default' }),
     param('properties', 'String', { children: 'String' }),
     param('softtimeout', [
-      param('enable', 'Boolean'),
-      param('factor', 'Float'),
+      param('enable', 'Boolean', { default: true }),
+      param('factor', 'Float', { min: 0, max: 1, default: 0.7 }),
     ]),
     param('sorting', 'String'),
     param('freshness', 'String'),
-    param('queryCache', 'Boolean'),
-    param('rerankCount', 'Integer'),
+    param('queryCache', 'Boolean', { default: false }),
+    param('rerankCount', 'Integer', { min: 0 }),
     param('matching', [
-      param('numThreadsPerSearch', 'Integer'),
-      param('minHitsPerThread', 'Integer'),
-      param('numSearchPartitions', 'Integer'),
-      param('termwiseLimit', 'Float'),
-      param('postFilterThreshold', 'Float'),
-      param('approximateThreshold', 'Float'),
+      param('numThreadsPerSearch', 'Integer', { min: 0 }),
+      param('minHitsPerThread', 'Integer', { min: 0 }),
+      param('numSearchPartitions', 'Integer', { min: 0 }),
+      param('termwiseLimit', 'Float', { min: 0, max: 1 }),
+      param('postFilterThreshold', 'Float', { min: 0, max: 1 }),
+      param('approximateThreshold', 'Float', { min: 0, max: 1 }),
     ]),
     param('matchPhase', [
       param('attribute', 'String'),
-      param('maxHits', 'Integer'),
+      param('maxHits', 'Integer', { min: 0 }),
       param('ascending', 'Boolean'),
       param('diversity', [
         param('attribute', 'String'),
-        param('minGroups', 'Integer'),
+        param('minGroups', 'Integer', { min: 0 }),
       ]),
     ]),
   ]),
 
   // Grouping
-  param('collapsesize', 'Integer'),
+  param('collapsesize', 'Integer', { min: 1, default: 1 }),
   param('collapsefield', 'String'),
   param('collapse', [param('summary', 'String')]),
   param('grouping', [
-    param('defaultMaxGroups', 'Integer'),
-    param('defaultMaxHits', 'Integer'),
-    param('globalMaxGroups', 'Integer'),
-    param('defaultPrecisionFactor', 'Float'),
+    param('defaultMaxGroups', 'Integer', { min: -1, default: 10 }),
+    param('defaultMaxHits', 'Integer', { min: -1, default: 10 }),
+    param('globalMaxGroups', 'Integer', { min: -1, default: 10000 }),
+    param('defaultPrecisionFactor', 'Float', { min: 0, default: 2.0 }),
   ]),
 
   // Presentation
   param('presentation', [
-    param('bolding', 'Boolean'),
-    param('format', [param('tensors', 'String')]),
+    param('bolding', 'Boolean', { default: true }),
+    param('format', 'String', { default: 'default' }),
     param('template', 'String'),
     param('summary', 'String'),
-    param('timing', 'Boolean'),
+    param('timing', 'Boolean', { default: false }),
   ]),
 
   // Tracing
   param('trace', [
-    param('level', 'Integer'),
-    param('explainLevel', 'Integer'),
-    param('profileDepth', 'Integer'),
-    param('timestamps', 'Boolean'),
-    param('query', 'Boolean'),
+    param('level', 'Integer', { min: 1 }),
+    param('explainLevel', 'Integer', { min: 1 }),
+    param('profileDepth', 'Integer', { min: 1 }),
+    param('timestamps', 'Boolean', { default: false }),
+    param('query', 'Boolean', { default: true }),
   ]),
 
   // Semantic Rules
-  param('rules', [param('off', 'Boolean'), param('rulebase', 'String')]),
-  param('tracelevel', [param('rules', 'Integer')]),
+  param('rules', [
+    param('off', 'Boolean', { default: true }),
+    param('rulebase', 'String'),
+  ]),
+  param('tracelevel', [param('rules', 'Integer', { min: 0 })]),
 
   // Dispatch
-  param('dispatch', [param('topKProbability', 'Float')]),
+  param('dispatch', [param('topKProbability', 'Float', { min: 0, max: 1 })]),
 
   // Other
   param('recall', 'String'),
   param('user', 'String'),
-  param('hitcountestimate', 'Boolean'),
-  param('metrics', [param('ignore', 'Boolean')]),
-  param('weakAnd', [param('replace', 'Boolean')]),
-  param('wand', [param('hits', 'Integer')]),
+  param('hitcountestimate', 'Boolean', { default: false }),
+  param('metrics', [param('ignore', 'Boolean', { default: false })]),
+  param('weakAnd', [param('replace', 'Boolean', { default: false })]),
+  param('wand', [param('hits', 'Integer', { default: 100 })]),
 
   param('streaming', [
     param('userid', 'Integer'),
