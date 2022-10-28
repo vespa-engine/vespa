@@ -44,6 +44,7 @@ import org.junit.Test;
 
 import java.time.Duration;
 import java.time.Instant;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
@@ -437,16 +438,15 @@ public class DynamicProvisioningMaintainerTest {
         final ApplicationId hostApp;
         final ApplicationId configSrvApp;
         switch (hostType) {
-            case confighost:
+            case confighost -> {
                 hostApp = new ConfigServerHostApplication().getApplicationId();
                 configSrvApp = new ConfigServerApplication().getApplicationId();
-                break;
-            case controllerhost:
+            }
+            case controllerhost -> {
                 hostApp = new ControllerHostApplication().getApplicationId();
                 configSrvApp = new ControllerApplication().getApplicationId();
-                break;
-            default:
-                throw new IllegalArgumentException("Unexpected config server host like node type: " + hostType);
+            }
+            default -> throw new IllegalArgumentException("Unexpected config server host like node type: " + hostType);
         }
 
         Cloud cloud = Cloud.builder().dynamicProvisioning(true).build();
@@ -551,23 +551,32 @@ public class DynamicProvisioningMaintainerTest {
         // Deployment requests capacity in custom account
         ClusterSpec spec = ProvisioningTester.contentClusterSpec();
         ClusterResources resources = new ClusterResources(2, 1, new NodeResources(16, 24, 100, 1));
-        CloudAccount cloudAccount = new CloudAccount("012345678912");
-        Capacity capacity = Capacity.from(resources, resources, false, true, Optional.of(cloudAccount));
-        List<HostSpec> prepared = provisioningTester.prepare(applicationId, spec, capacity);
+        CloudAccount cloudAccount0 = new CloudAccount("000000000000");
+        Capacity capacity0 = Capacity.from(resources, resources, false, true, Optional.of(cloudAccount0));
+        List<HostSpec> prepared = provisioningTester.prepare(applicationId, spec, capacity0);
 
         // Hosts are provisioned in requested account
-        tester.maintainer.maintain();
-        List<ProvisionedHost> newHosts = tester.hostProvisioner.provisionedHosts();
-        assertEquals(2, newHosts.size());
-        assertTrue(newHosts.stream().allMatch(host -> host.cloudAccount().equals(cloudAccount)));
-        for (var host : newHosts) {
-            provisioningTester.nodeRepository().nodes().setReady(host.hostHostname(), Agent.operator, getClass().getSimpleName());
-        }
-        provisioningTester.prepareAndActivateInfraApplication(DynamicProvisioningTester.tenantHostApp, NodeType.host);
-        NodeList activeHosts = provisioningTester.nodeRepository().nodes().list(Node.State.active).nodeType(NodeType.host);
-        assertEquals(2, activeHosts.size());
-        assertTrue(activeHosts.stream().allMatch(host -> host.cloudAccount().equals(cloudAccount)));
+        provisionHostsIn(cloudAccount0, 2, tester);
         assertEquals(2, provisioningTester.activate(applicationId, prepared).size());
+        NodeList allNodes0 = tester.nodeRepository.nodes().list();
+
+        // Redeployment in different account provisions a new set of hosts
+        CloudAccount cloudAccount1 = new CloudAccount("100000000000");
+        Capacity capacity1 = Capacity.from(resources, resources, false, true, Optional.of(cloudAccount1));
+        prepared = provisioningTester.prepare(applicationId, spec, capacity1);
+        provisionHostsIn(cloudAccount1, 2, tester);
+        assertEquals(2, provisioningTester.activate(applicationId, prepared).size());
+
+        // No nodes or hosts are reused
+        NodeList allNodes1 = tester.nodeRepository.nodes().list();
+        NodeList activeNodes0 = allNodes0.state(Node.State.active).owner(applicationId);
+        NodeList activeNodes1 = allNodes1.state(Node.State.active).owner(applicationId);
+        assertTrue("New set of nodes is activated",
+                   Collections.disjoint(activeNodes0.asList(),
+                                        activeNodes1.asList()));
+        assertTrue("New set of parents are used",
+                   Collections.disjoint(allNodes0.parentsOf(activeNodes0).asList(),
+                                        allNodes1.parentsOf(activeNodes1).asList()));
     }
 
     @Test
@@ -625,6 +634,25 @@ public class DynamicProvisioningMaintainerTest {
         tester.hostProvisioner.completeRebuildOf(host1);
         tester.maintainer.maintain();
         assertEquals(0, tester.nodeRepository.nodes().list().rebuilding(true).size());
+    }
+
+    private void provisionHostsIn(CloudAccount cloudAccount, int count, DynamicProvisioningTester tester) {
+        tester.maintainer.maintain();
+        List<String> provisionedHostnames = tester.hostProvisioner.provisionedHosts().stream()
+                                                                  .filter(host -> host.cloudAccount().equals(cloudAccount))
+                                                                  .map(ProvisionedHost::hostHostname)
+                                                                  .toList();
+        assertEquals(count, provisionedHostnames.size());
+        for (var hostname : provisionedHostnames) {
+            tester.provisioningTester.nodeRepository().nodes().setReady(hostname, Agent.operator, getClass().getSimpleName());
+        }
+        tester.provisioningTester.prepareAndActivateInfraApplication(DynamicProvisioningTester.tenantHostApp, NodeType.host);
+        NodeList activeHosts = tester.provisioningTester.nodeRepository().nodes()
+                                                        .list(Node.State.active)
+                                                        .nodeType(NodeType.host)
+                                                        .matching(host -> provisionedHostnames.contains(host.hostname()));
+        assertTrue(activeHosts.stream().allMatch(host -> host.cloudAccount().equals(cloudAccount)));
+        assertEquals(count, activeHosts.size());
     }
 
     private void assertCfghost3IsActive(DynamicProvisioningTester tester) {

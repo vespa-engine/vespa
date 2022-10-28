@@ -122,6 +122,7 @@ class NodeAllocation {
                 if ( candidate.state() == Node.State.active && candidate.wantToFail()) continue; // don't accept; causes failing
                 if ( indexes.contains(membership.index())) continue; // duplicate index (just to be sure)
                 if ( requiredHostFlavor.isPresent() && ! candidate.parent.map(node -> node.flavor().name()).equals(requiredHostFlavor)) continue;
+                if ( candidate.parent.isPresent() && ! candidate.parent.get().cloudAccount().equals(requestedNodes.cloudAccount())) continue; // wrong account
 
                 boolean resizeable = requestedNodes.considerRetiring() && candidate.isResizable;
                 boolean acceptToRetire = acceptToRetire(candidate);
