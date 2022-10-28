@@ -47,6 +47,7 @@ import com.yahoo.slime.Slime;
 import com.yahoo.slime.SlimeUtils;
 import com.yahoo.text.Text;
 import com.yahoo.vespa.athenz.api.OAuthCredentials;
+import com.yahoo.vespa.flags.Flags;
 import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.Instance;
@@ -568,8 +569,11 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
         var mergedEmail = optional("email", inspector.field("contact"))
                 .filter(address -> !address.equals(info.contact().email().getEmailAddress()))
                 .map(address -> {
-                    controller.mailVerifier().sendMailVerification(cloudTenant.name(), address, PendingMailVerification.MailType.TENANT_CONTACT);
-                    return new Email(address, false);
+                    if (emailVerificationEnabled()) {
+                        controller.mailVerifier().sendMailVerification(cloudTenant.name(), address, PendingMailVerification.MailType.TENANT_CONTACT);
+                        return new Email(address, false);
+                    }
+                    return new Email(address, true);
                 })
                 .orElse(info.contact().email());
 
@@ -754,8 +758,11 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
         var mergedEmail = optional("contactEmail", insp)
                 .filter(address -> !address.equals(oldInfo.contact().email().getEmailAddress()))
                 .map(address -> {
-                    controller.mailVerifier().sendMailVerification(tenant.name(), address, PendingMailVerification.MailType.TENANT_CONTACT);
-                    return new Email(address, false);
+                    if (emailVerificationEnabled()) {
+                        controller.mailVerifier().sendMailVerification(tenant.name(), address, PendingMailVerification.MailType.TENANT_CONTACT);
+                        return new Email(address, false);
+                    }
+                    return new Email(address, true);
                 })
                 .orElse(oldInfo.contact().email());
 
@@ -810,7 +817,7 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
         var mergedEmail = optional("email", insp)
                 .filter(address -> !address.equals(oldContact.email().getEmailAddress()))
                 .map(address -> {
-                    if (isBillingContact)
+                    if (isBillingContact || !emailVerificationEnabled())
                         return new Email(address, true);
                     controller.mailVerifier().sendMailVerification(tenantName, address, PendingMailVerification.MailType.TENANT_CONTACT);
                     return new Email(address, false);
@@ -847,8 +854,11 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
                         .findAny()
                         .map(emailContact -> new TenantContacts.EmailContact(audiences, emailContact.email()))
                         .orElseGet(() -> {
-                            controller.mailVerifier().sendMailVerification(tenantName, email, PendingMailVerification.MailType.NOTIFICATIONS);
-                            return new TenantContacts.EmailContact(audiences, new Email(email, false));
+                            if (emailVerificationEnabled()) {
+                                controller.mailVerifier().sendMailVerification(tenantName, email, PendingMailVerification.MailType.NOTIFICATIONS);
+                                return new TenantContacts.EmailContact(audiences, new Email(email, false));
+                            }
+                            return new TenantContacts.EmailContact(audiences, new Email(email, true));
                         });
             }).toList();
 
@@ -3074,5 +3084,8 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
                           .collect(collectingAndThen(Collectors.toList(), Collections::unmodifiableList));
     }
 
+    public boolean emailVerificationEnabled() {
+        return Flags.ENABLED_MAIL_VERIFICATION.bindTo(controller.flagSource()).value();
+    }
 }
 

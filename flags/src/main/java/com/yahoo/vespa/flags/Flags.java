@@ -414,6 +414,12 @@ public class Flags {
             "Set mode for Auth0 session logout ('disabled', 'log_only', 'enabled')",
             "Takes effect on controller restart/redeployment");
 
+    public static final UnboundBooleanFlag ENABLED_MAIL_VERIFICATION = defineFeatureFlag(
+            "enabled-mail-verification", false,
+            List.of("olaa"), "2022-10-28", "2023-01-01",
+            "Enable mail verification",
+            "Takes effect immediately");
+
     /** WARNING: public for testing: All flags should be defined in {@link Flags}. */
     public static UnboundBooleanFlag defineFeatureFlag(String flagId, boolean defaultValue, List<String> owners,
                                                        String createdAt, String expiresAt, String description,
