@@ -23,12 +23,12 @@ func basename(s string) string {
 
 func main() {
 	defer handleSimplePanic()
+	_ = vespa.FindAndVerifyVespaHome()
 	action := basename(os.Args[0])
 	if action == "script-utils" && len(os.Args) > 1 {
 		action = os.Args[1]
 		os.Args = os.Args[1:]
 	}
-	_ = vespa.FindHome()
 	switch action {
 	case "start-c-binary":
 		os.Exit(startcbinary.Run(os.Args[1:]))
