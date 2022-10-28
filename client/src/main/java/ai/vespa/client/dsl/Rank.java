@@ -9,9 +9,9 @@ import java.util.stream.Stream;
 
 public class Rank extends QueryChain {
 
-    private final List<Query> queries = new ArrayList<>();
+    private final List<QueryChain> queries = new ArrayList<>();
 
-    Rank(Query query, Query... ranks) {
+    Rank(Query query, QueryChain... ranks) {
         this.query = query;
         this.nonEmpty = query.nonEmpty();
         queries.add(query);
