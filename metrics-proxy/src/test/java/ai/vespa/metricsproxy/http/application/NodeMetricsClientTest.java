@@ -32,7 +32,7 @@ import static org.junit.Assert.assertTrue;
 
 /**
  * Two optimizations worth noting:
- *
+ * <p>
  * 1. Using a ClassRule for the wire mocking means it is reused between test methods.
  * 2. Configuring stubs on the rule is faster than using the static WireMock.stubFor method.
  *
@@ -133,13 +133,16 @@ public class NodeMetricsClientTest {
         MetricsPacket replacedCpuMetric = customMetrics.get(0);
         assertTrue(replacedCpuMetric.metrics().containsKey(toMetricId(REPLACED_CPU_METRIC)));
     }
-    private void updateSnapshot(ConsumerId consumerId, Duration ttl) {
 
+    private void updateSnapshot(ConsumerId consumerId, Duration ttl) {
         var optional = nodeMetricsClient.startSnapshotUpdate(consumerId, ttl);
         optional.ifPresent(future -> {
             try {
-                assertTrue(future.get());
-            } catch (InterruptedException | ExecutionException e) {}
+                future.get();
+            } catch (InterruptedException | ExecutionException e) {
+                throw new AssertionError(e);
+            }
         });
     }
+
 }

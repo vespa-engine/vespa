@@ -32,7 +32,7 @@ import static java.util.stream.Collectors.toList;
  * Retrieves metrics from a single Vespa node over http. To avoid unnecessary load on metrics
  * proxies, a cached snapshot per consumer is retained and served for a fixed TTL period.
  * Upon failure to retrieve metrics, an empty snapshot is cached.
- *
+ * <p>
  * This class assumes that the consumer id is a valid and existing one, which is already
  * ensured by the {@link ApplicationMetricsHandler}.
  *
@@ -62,23 +62,23 @@ public class NodeMetricsClient {
         return (snapshot != null) ? snapshot.metrics : List.of();
     }
 
-    Optional<Future<Boolean>> startSnapshotUpdate(ConsumerId consumer, Duration ttl) {
+    Optional<Future<?>> startSnapshotUpdate(ConsumerId consumer, Duration ttl) {
         var snapshot = snapshots.get(consumer);
         if ((snapshot != null) && snapshot.isValid(clock.instant(), ttl)) return Optional.empty();
 
         return Optional.of(retrieveMetrics(consumer));
     }
 
-    private Future<Boolean> retrieveMetrics(ConsumerId consumer) {
+    private Future<?> retrieveMetrics(ConsumerId consumer) {
         String metricsUri = node.metricsUri(consumer).toString();
         log.log(FINE, () -> "Retrieving metrics from host " + metricsUri);
 
-        CompletableFuture<Boolean> onDone = new CompletableFuture<>();
+        CompletableFuture<?> onDone = new CompletableFuture<>();
         httpClient.execute(SimpleRequestBuilder.get(metricsUri).build(),
                 new FutureCallback<>() {
                     @Override public void completed(SimpleHttpResponse result) {
                         handleResponse(metricsUri, consumer, result.getBodyText());
-                        onDone.complete(true);
+                        onDone.complete(null);
                     }
                     @Override public void failed(Exception ex) { onDone.completeExceptionally(ex); }
                     @Override public void cancelled() { onDone.cancel(false);  }
