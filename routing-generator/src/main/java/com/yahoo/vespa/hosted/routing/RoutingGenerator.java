@@ -29,6 +29,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.BiConsumer;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -57,7 +58,7 @@ public class RoutingGenerator extends AbstractComponent {
     private final ScheduledExecutorService scheduledExecutor = new ScheduledThreadPoolExecutor(1, new DaemonThreadFactory("routing-generator-maintenance"));
     private final Object monitor = new Object();
 
-    private volatile RoutingTable routingTable = null;
+    private final AtomicReference<RoutingTable> routingTable = new AtomicReference<>();
 
     @Inject
     public RoutingGenerator(ZoneConfig zoneConfig, RoutingStatus routingStatus, Metric metric) {
@@ -81,23 +82,19 @@ public class RoutingGenerator extends AbstractComponent {
 
     /** Get the currently active routing table, if any */
     public Optional<RoutingTable> routingTable() {
-        synchronized (monitor) {
-            return Optional.ofNullable(routingTable);
-        }
+        return Optional.ofNullable(routingTable.get());
     }
 
     /** Reload the current routing table, if any */
     private void reload() {
-        synchronized (monitor) {
-            routingTable().ifPresent(this::load);
-        }
+        routingTable().ifPresent(this::load);
     }
 
     /** Load the given routing table */
     private void load(RoutingTable newTable) {
         synchronized (monitor) {
             router.load(newTable);
-            routingTable = newTable;
+            routingTable.set(newTable);
         }
     }
 
