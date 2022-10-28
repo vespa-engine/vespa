@@ -102,6 +102,11 @@ public class ApplicationMetricsRetriever extends AbstractComponent implements Ru
 
     @Override
     public void deconstruct() {
+        try {
+            httpClient.close();
+        } catch (IOException e) {
+            log.warning("Failed closing httpclient: " + e);
+        }
         synchronized (pollThread) {
             stopped = true;
             pollThread.notifyAll();
@@ -109,11 +114,6 @@ public class ApplicationMetricsRetriever extends AbstractComponent implements Ru
         try {
             pollThread.join();
         } catch (InterruptedException e) {}
-        try {
-            httpClient.close();
-        } catch (IOException e) {
-            log.warning("Failed closing httpclient: " + e);
-        }
         super.deconstruct();
     }
 
@@ -161,13 +161,12 @@ public class ApplicationMetricsRetriever extends AbstractComponent implements Ru
         int numOk = 0;
         int numTried = futures.size();
         for (Map.Entry<Node, Future<Boolean>> entry : futures.entrySet()) {
-            if (stopped) break;
             try {
                 Boolean result = entry.getValue().get(taskTimeout.get().toMillis(), TimeUnit.MILLISECONDS);
                 if (result == Boolean.TRUE) numOk++;
             } catch (InterruptedException | ExecutionException | TimeoutException e) {
                 Throwable cause = e.getCause();
-                if (e instanceof ExecutionException && ((cause instanceof SocketException) || cause instanceof ConnectTimeoutException)) {
+                if (stopped || e instanceof ExecutionException && ((cause instanceof SocketException) || cause instanceof ConnectTimeoutException)) {
                     log.log(Level.FINE, "Failed retrieving metrics for '" + entry.getKey() + "' : " + cause.getMessage());
                 } else {
                     log.log(Level.WARNING, "Failed retrieving metrics for '" + entry.getKey() + "' : ", e);

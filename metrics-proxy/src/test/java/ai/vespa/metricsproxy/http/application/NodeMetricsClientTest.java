@@ -32,7 +32,7 @@ import static org.junit.Assert.assertTrue;
 
 /**
  * Two optimizations worth noting:
- *
+ * <p>
  * 1. Using a ClassRule for the wire mocking means it is reused between test methods.
  * 2. Configuring stubs on the rule is faster than using the static WireMock.stubFor method.
  *

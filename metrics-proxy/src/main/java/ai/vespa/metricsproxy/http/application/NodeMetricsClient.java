@@ -32,7 +32,7 @@ import static java.util.stream.Collectors.toList;
  * Retrieves metrics from a single Vespa node over http. To avoid unnecessary load on metrics
  * proxies, a cached snapshot per consumer is retained and served for a fixed TTL period.
  * Upon failure to retrieve metrics, an empty snapshot is cached.
- *
+ * <p>
  * This class assumes that the consumer id is a valid and existing one, which is already
  * ensured by the {@link ApplicationMetricsHandler}.
  *
