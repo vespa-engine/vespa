@@ -1,9 +1,10 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
+#include <vespa/searchcommon/attribute/config.h>
 #include <vespa/searchlib/attribute/attributefactory.h>
 #include <vespa/searchlib/attribute/attributeiterators.h>
-#include <vespa/searchlib/attribute/searchcontextelementiterator.h>
 #include <vespa/searchlib/attribute/flagattribute.h>
+#include <vespa/searchlib/attribute/searchcontextelementiterator.h>
 #include <vespa/searchlib/attribute/singleboolattribute.h>
 #include <vespa/searchlib/attribute/stringbase.h>
 #include <vespa/searchlib/common/bitvectoriterator.h>
@@ -15,12 +16,12 @@
 #include <vespa/searchlib/queryeval/executeinfo.h>
 #include <vespa/searchlib/queryeval/hitcollector.h>
 #include <vespa/searchlib/queryeval/simpleresult.h>
+#include <vespa/searchlib/test/attribute_builder.h>
 #include <vespa/searchlib/test/searchiteratorverifier.h>
-#include <vespa/searchcommon/attribute/config.h>
+#include <vespa/vespalib/stllike/asciistream.h>
 #include <vespa/vespalib/testkit/testapp.h>
 #include <vespa/vespalib/util/compress.h>
 #include <vespa/vespalib/util/stringfmt.h>
-#include <vespa/vespalib/stllike/asciistream.h>
 #include <initializer_list>
 #include <set>
 
@@ -58,6 +59,7 @@ using attribute::BasicType;
 using attribute::CollectionType;
 using attribute::Config;
 using attribute::SearchContextParams;
+using attribute::test::AttributeBuilder;
 using fef::MatchData;
 using fef::TermFieldMatchData;
 using fef::TermFieldMatchDataArray;
@@ -205,8 +207,8 @@ private:
     // test search iterator functionality
     void testStrictSearchIterator(SearchContext & threeHits, SearchContext & noHits, const IteratorTester & typeTester);
     void testNonStrictSearchIterator(SearchContext & threeHits, SearchContext & noHits, const IteratorTester & typeTester);
-    void fillForSearchIteratorTest(IntegerAttribute * ia);
-    void fillForSemiNibbleSearchIteratorTest(IntegerAttribute * ia);
+    AttributePtr fillForSearchIteratorTest(const vespalib::string& name, const Config& cfg);
+    AttributePtr fillForSemiNibbleSearchIteratorTest(const vespalib::string& name, const Config& cfg);
     void testSearchIterator();
 
 
@@ -236,20 +238,16 @@ private:
     void performCaseInsensitiveSearch(const StringAttribute & vec, const vespalib::string & term, const DocSet & expected);
     void testCaseInsensitiveSearch(const AttributePtr & ptr);
     void testCaseInsensitiveSearch();
-    void testRegexSearch(const AttributePtr & ptr);
+    void testRegexSearch(const vespalib::string& name, const Config& cfg);
     void testRegexSearch();
 
 
     // test prefix search
-    void performPrefixSearch(const StringAttribute & vec, const vespalib::string & term,
-                             const DocSet & expected, TermType termType);
-    void testPrefixSearch(const AttributePtr & ptr);
+    void testPrefixSearch(const vespalib::string& name, const Config& cfg);
     void testPrefixSearch();
 
     // test fuzzy search
-    void performFuzzySearch(const StringAttribute & vec, const vespalib::string & term,
-                             const DocSet & expected, TermType termType);
-    void testFuzzySearch(const AttributePtr & ptr);
+    void testFuzzySearch(const vespalib::string& name, const Config& cfg);
     void testFuzzySearch();
 
     // test that search is working after clear doc
@@ -278,7 +276,7 @@ private:
 
     void requireThatFlagAttributeHandlesTheByteRange();
 
-    void requireThatOutOfBoundsSearchTermGivesZeroHits(const vespalib::string &name, const Config &cfg, int64_t maxValue);
+    void requireThatOutOfBoundsSearchTermGivesZeroHits(const vespalib::string &name, const Config &cfg, int32_t maxValue);
     void requireThatOutOfBoundsSearchTermGivesZeroHits();
 
     void single_bool_attribute_search_context_handles_true_and_false_queries();
@@ -829,30 +827,16 @@ SearchContextTest::testNonStrictSearchIterator(SearchContext & threeHits,
     }
 }
 
-void
-SearchContextTest::fillForSearchIteratorTest(IntegerAttribute * ia)
+AttributePtr
+SearchContextTest::fillForSearchIteratorTest(const vespalib::string& name, const Config& cfg)
 {
-    addReservedDoc(*ia);
-    ia->addDocs(5);
-    ia->update(1, 10);
-    ia->update(2, 20);
-    ia->update(3, 10);
-    ia->update(4, 20);
-    ia->update(5, 10);
-    ia->commit(true);
+    return AttributeBuilder(name, cfg).fill({10, 20, 10, 20, 10}).get();
 }
 
-void
-SearchContextTest::fillForSemiNibbleSearchIteratorTest(IntegerAttribute * ia)
+AttributePtr
+SearchContextTest::fillForSemiNibbleSearchIteratorTest(const vespalib::string& name, const Config& cfg)
 {
-    addReservedDoc(*ia);
-    ia->addDocs(5);
-    ia->update(1, 1);
-    ia->update(2, 2);
-    ia->update(3, 1);
-    ia->update(4, 2);
-    ia->update(5, 1);
-    ia->commit(true);
+    return AttributeBuilder(name, cfg).fill({1, 2, 1, 2, 1}).get();
 }
 
 void
@@ -860,8 +844,7 @@ SearchContextTest::testSearchIterator()
 {
     {
         Config cfg(BasicType::INT32, CollectionType::SINGLE);
-        AttributePtr ptr = AttributeFactory::createAttribute("s-int32", cfg);
-        fillForSearchIteratorTest(dynamic_cast<IntegerAttribute *>(ptr.get()));
+        auto ptr = fillForSearchIteratorTest("s-int32", cfg);
 
         SearchContextPtr threeHits = getSearch(*ptr.get(), 10);
         SearchContextPtr noHits = getSearch(*ptr.get(), 30);
@@ -873,9 +856,7 @@ SearchContextTest::testSearchIterator()
     }
     {
         Config cfg(BasicType::UINT2, CollectionType::SINGLE);
-        AttributePtr ptr = AttributeFactory::createAttribute("s-uint2", cfg);
-        fillForSemiNibbleSearchIteratorTest(dynamic_cast<IntegerAttribute *>
-                (ptr.get()));
+        auto ptr = fillForSemiNibbleSearchIteratorTest("s-uint2", cfg);
 
         SearchContextPtr threeHits = getSearch(*ptr.get(), 1);
         SearchContextPtr noHits = getSearch(*ptr.get(), 3);
@@ -888,8 +869,7 @@ SearchContextTest::testSearchIterator()
     {
         Config cfg(BasicType::INT32, CollectionType::SINGLE);
         cfg.setFastSearch(true);
-        AttributePtr ptr = AttributeFactory::createAttribute("sfs-int32", cfg);
-        fillForSearchIteratorTest(dynamic_cast<IntegerAttribute *>(ptr.get()));
+        auto ptr = fillForSearchIteratorTest("sfs-int32", cfg);
 
         SearchContextPtr threeHits = getSearch(*ptr.get(), 10);
         SearchContextPtr noHits = getSearch(*ptr.get(), 30);
@@ -899,16 +879,8 @@ SearchContextTest::testSearchIterator()
     {
         Config cfg(BasicType::STRING, CollectionType::SINGLE);
         cfg.setFastSearch(true);
-        AttributePtr ptr = AttributeFactory::createAttribute("sfs-string", cfg);
-        auto * sa = dynamic_cast<StringAttribute *>(ptr.get());
-        addReservedDoc(*ptr);
-        ptr->addDocs(5);
-        sa->update(1, "three");
-        sa->update(2, "two");
-        sa->update(3, "three");
-        sa->update(4, "two");
-        sa->update(5, "three");
-        ptr->commit(true);
+        auto ptr = AttributeBuilder("sfs-string", cfg).
+                fill({"three", "two", "three", "two", "three"}).get();
 
         SearchContextPtr threeHits = getSearch(*ptr.get(), "three");
         SearchContextPtr noHits = getSearch(*ptr.get(), "none");
@@ -918,8 +890,7 @@ SearchContextTest::testSearchIterator()
     {
         Config cfg(BasicType::INT8, CollectionType::ARRAY);
         cfg.setFastSearch(true);
-        AttributePtr ptr = AttributeFactory::createAttribute("flags", cfg);
-        fillForSearchIteratorTest(dynamic_cast<IntegerAttribute *>(ptr.get()));
+        auto ptr = fillForSearchIteratorTest("flags", cfg);
 
         SearchContextPtr threeHits = getSearch(*ptr.get(), 10);
         SearchContextPtr noHits = getSearch(*ptr.get(), 30);
@@ -1207,17 +1178,10 @@ SearchContextTest::testRangeSearch(const AttributePtr & ptr, uint32_t numDocs, s
 void
 SearchContextTest::testRangeSearchLimited()
 {
-    largeint_t VALUES [] = {0,1,1,2,3,4,5,6,7,8,9,9,10 };
-    std::vector<largeint_t> values(VALUES, VALUES+sizeof(VALUES)/sizeof(VALUES[0]));
     Config cfg(BasicType::INT32, CollectionType::SINGLE);
     cfg.setFastSearch(true);
-    AttributePtr ptr = AttributeFactory::createAttribute("limited-int32", cfg);
-    auto & vec = dynamic_cast<IntegerAttribute &>(*ptr);
-    addDocs(vec, values.size());
-    for (size_t i(1); i < values.size(); i++) {
-        EXPECT_TRUE(vec.update(i, values[i]));
-    }
-    ptr->commit(true);
+    auto ptr = AttributeBuilder("limited-int32", cfg).fill({1,1,2,3,4,5,6,7,8,9,9,10}).get();
+    auto& vec = dynamic_cast<IntegerAttribute &>(*ptr);
 
     DocSet expected;
     for (size_t i(1); i < 12; i++) {
@@ -1390,25 +1354,13 @@ SearchContextTest::testCaseInsensitiveSearch(const AttributePtr & ptr)
 }
 
 void
-SearchContextTest::testRegexSearch(const AttributePtr & ptr)
+SearchContextTest::testRegexSearch(const vespalib::string& name, const Config& cfg)
 {
-    LOG(info, "testRegexSearch: vector '%s'", ptr->getName().c_str());
+    LOG(info, "testRegexSearch: vector '%s'", name.c_str());
+    auto attr = AttributeBuilder(name, cfg).
+            fill({"abc1def", "abc2Def", "abc2def", "abc4def", "abc5def", "abc6def"}).get();
 
-    auto & vec = dynamic_cast<StringAttribute &>(*ptr.get());
-
-    uint32_t numDocs = 6;
-    addDocs(*ptr.get(), numDocs);
-
-    const char * strings [] = {"abc1def", "abc2Def", "abc2def", "abc4def", "abc5def", "abc6def"};
     std::vector<const char *> terms = { "abc", "bc2de", "^abc1def.*bar" };
-
-    for (uint32_t doc = 1; doc < numDocs + 1; ++doc) {
-        ASSERT_TRUE(doc < vec.getNumDocs());
-        EXPECT_TRUE(vec.update(doc, strings[doc - 1]));
-    }
-
-    ptr->commit(true);
-
     std::vector<DocSet> expected;
     DocSet empty;
     expected.emplace_back(DocSet{1, 2, 3, 4, 5, 6}); // "abc"
@@ -1416,8 +1368,8 @@ SearchContextTest::testRegexSearch(const AttributePtr & ptr)
     expected.emplace_back(empty);                    // "^abc1def.*bar"
 
     for (uint32_t i = 0; i < terms.size(); ++i) {
-        performSearch(vec, terms[i], expected[i], TermType::REGEXP);
-        performSearch(vec, terms[i], empty, TermType::WORD);
+        performSearch(*attr, terms[i], expected[i], TermType::REGEXP);
+        performSearch(*attr, terms[i], empty, TermType::WORD);
     }
 }
 
@@ -1434,7 +1386,7 @@ void
 SearchContextTest::testRegexSearch()
 {
     for (const auto & cfg : _stringCfg) {
-        testRegexSearch(AttributeFactory::createAttribute(cfg.first, cfg.second));
+        testRegexSearch(cfg.first, cfg.second);
     }
 }
 
@@ -1444,57 +1396,31 @@ SearchContextTest::testRegexSearch()
 //-----------------------------------------------------------------------------
 
 void
-SearchContextTest::performPrefixSearch(const StringAttribute & vec, const vespalib::string & term,
-                                       const DocSet & expected, TermType termType)
+SearchContextTest::testPrefixSearch(const vespalib::string& name, const Config& cfg)
 {
-    performSearch(vec, term, expected, termType);
-}
+    LOG(info, "testPrefixSearch: vector '%s'", name.c_str());
+    auto attr = AttributeBuilder(name, cfg).
+            fill({"prefixsearch", "PREFIXSEARCH", "PrefixSearch", "precommit", "PRECOMMIT", "PreCommit"}).get();
 
-void
-SearchContextTest::testPrefixSearch(const AttributePtr & ptr)
-{
-    LOG(info, "testPrefixSearch: vector '%s'", ptr->getName().c_str());
-
-    auto & vec = dynamic_cast<StringAttribute &>(*ptr.get());
-
-    uint32_t numDocs = 6;
-    addDocs(*ptr.get(), numDocs);
-
-    const char * strings [] = {"prefixsearch", "PREFIXSEARCH", "PrefixSearch", "precommit", "PRECOMMIT", "PreCommit"};
-    const char * terms[][3] = {{"pre", "PRE", "Pre"}, {"pref", "PREF", "Pref"},
-        {"prec", "PREC", "PreC"}, {"prex", "PREX", "Prex"}};
-
-    for (uint32_t doc = 1; doc < numDocs + 1; ++doc) {
-        ASSERT_TRUE(doc < vec.getNumDocs());
-        EXPECT_TRUE(vec.update(doc, strings[doc - 1]));
-    }
-
-    ptr->commit(true);
-
+    const char * terms[][3] = {{"pre", "PRE", "Pre"},
+                               {"pref", "PREF", "Pref"},
+                               {"prec", "PREC", "PreC"},
+                               {"prex", "PREX", "Prex"}};
     std::vector<DocSet> expected;
     DocSet empty;
-    {
-        uint32_t docs[] = {1, 2, 3, 4, 5, 6};
-        expected.emplace_back(docs, docs + 6); // "pre"
-    }
-    {
-        uint32_t docs[] = {1, 2, 3};
-        expected.emplace_back(docs, docs + 3); // "pref"
-    }
-    {
-        uint32_t docs[] = {4, 5, 6};
-        expected.emplace_back(docs, docs + 3); // "prec"
-    }
-    expected.emplace_back(); // "prex"
+    expected.emplace_back(DocSet({1, 2, 3, 4, 5, 6})); // "pre"
+    expected.emplace_back(DocSet({1, 2, 3}));          // "pref"
+    expected.emplace_back(DocSet({4, 5, 6}));          // "prec"
+    expected.emplace_back();                           // "prex"
 
     for (uint32_t i = 0; i < 4; ++i) {
         for (uint32_t j = 0; j < 3; ++j) {
-            if (j == 0 || ptr->getConfig().fastSearch()) {
-                performPrefixSearch(vec, terms[i][j], expected[i], TermType::PREFIXTERM);
-                performPrefixSearch(vec, terms[i][j], empty, TermType::WORD);
+            if (j == 0 || attr->getConfig().fastSearch()) {
+                performSearch(*attr, terms[i][j], expected[i], TermType::PREFIXTERM);
+                performSearch(*attr, terms[i][j], empty, TermType::WORD);
             } else {
-                performPrefixSearch(vec, terms[i][j], empty, TermType::PREFIXTERM);
-                performPrefixSearch(vec, terms[i][j], empty, TermType::WORD);
+                performSearch(*attr, terms[i][j], empty, TermType::PREFIXTERM);
+                performSearch(*attr, terms[i][j], empty, TermType::WORD);
             }
         }
     }
@@ -1505,7 +1431,7 @@ void
 SearchContextTest::testPrefixSearch()
 {
     for (const auto & cfg : _stringCfg) {
-        testPrefixSearch(AttributeFactory::createAttribute(cfg.first, cfg.second));
+        testPrefixSearch(cfg.first, cfg.second);
     }
 }
 
@@ -1514,52 +1440,25 @@ SearchContextTest::testPrefixSearch()
 //-----------------------------------------------------------------------------
 
 void
-SearchContextTest::performFuzzySearch(const StringAttribute & vec, const vespalib::string & term,
-                                       const DocSet & expected, TermType termType)
+SearchContextTest::testFuzzySearch(const vespalib::string& name, const Config& cfg)
 {
-    performSearch(vec, term, expected, termType);
-}
+    LOG(info, "testFuzzySearch: vector '%s'", name.c_str());
+    auto attr = AttributeBuilder(name, cfg).fill({"fuzzysearch", "notthis", "FUZZYSEARCH"}).get();
 
-void
-SearchContextTest::testFuzzySearch(const AttributePtr & ptr)
-{
-    LOG(info, "testFuzzySearch: vector '%s'", ptr->getName().c_str());
-
-    auto & vec = dynamic_cast<StringAttribute &>(*ptr.get());
-
-    uint32_t numDocs = 2;
-    addDocs(*ptr.get(), numDocs);
-
-    const char * strings [] = {"fuzzysearch", "FUZZYSEARCH"};
     const char * terms[][2] = {
         {"fuzzysearch", "FUZZYSEARCH"},
         {"fuzzysearck", "FUZZYSEARCK"},
         {"fuzzysekkkk", "FUZZYSEKKKK"}
     };
-
-    for (uint32_t doc = 1; doc < numDocs + 1; ++doc) {
-        ASSERT_TRUE(doc < vec.getNumDocs());
-        EXPECT_TRUE(vec.update(doc, strings[doc - 1]));
-    }
-
-    ptr->commit(true);
-
     std::vector<DocSet> expected;
     DocSet empty;
-    {
-        uint32_t docs[] = {1, 2};
-        expected.emplace_back(docs, docs + 2); // normal search
-    }
-    {
-        uint32_t docs[] = {1, 2};
-        expected.emplace_back(docs, docs + 2); // fuzzy search
-    }
-
+    expected.emplace_back(DocSet({1, 3})); // normal search
+    expected.emplace_back(DocSet({1, 3})); // fuzzy search
     expected.emplace_back(); // results
 
     for (uint32_t i = 0; i < 3; ++i) {
         for (uint32_t j = 0; j < 2; ++j) {
-            performFuzzySearch(vec, terms[i][j], expected[i], TermType::FUZZYTERM);
+            performSearch(*attr, terms[i][j], expected[i], TermType::FUZZYTERM);
         }
     }
 }
@@ -1568,7 +1467,7 @@ void
 SearchContextTest::testFuzzySearch()
 {
     for (const auto & cfg : _stringCfg) {
-        testFuzzySearch(AttributeFactory::createAttribute(cfg.first, cfg.second));
+        testFuzzySearch(cfg.first, cfg.second);
     }
 }
 
@@ -1735,33 +1634,16 @@ SearchContextTest::requireThatFlagAttributeIsWorkingWhenNewDocsAreAdded()
     cfg.setFastSearch(true);
     {
         cfg.setGrowStrategy(GrowStrategy::make(1, 0, 1));
-        AttributePtr a = AttributeFactory::createAttribute("flags", cfg);
-        auto & fa = dynamic_cast<FlagAttribute &>(*a);
-        addReservedDoc(fa);
-        fa.addDocs(1);
-        fa.append(1, 10, 1);
-        fa.append(1, 24, 1);
-        fa.commit(true);
-        fa.addDocs(1);
-        fa.append(2, 20, 1);
-        fa.append(2, 24, 1);
-        fa.commit(true);
-        fa.addDocs(1);
-        fa.append(3, 30, 1);
-        fa.append(3, 26, 1);
-        fa.commit(true);
-        fa.addDocs(1);
-        fa.append(4, 40, 1);
-        fa.append(4, 24, 1);
-        fa.commit(true);
+        auto a = AttributeBuilder("flags", cfg).
+                fill_array({{10, 24}, {20, 24}, {30, 26}, {40, 24}}).get();
         {
-            ResultSetPtr rs = performSearch(fa, "<24");
+            ResultSetPtr rs = performSearch(*a, "<24");
             EXPECT_EQUAL(2u, rs->getNumHits());
             EXPECT_EQUAL(1u, rs->getArray()[0].getDocId());
             EXPECT_EQUAL(2u, rs->getArray()[1].getDocId());
         }
         {
-            ResultSetPtr rs = performSearch(fa, "24");
+            ResultSetPtr rs = performSearch(*a, "24");
             EXPECT_EQUAL(3u, rs->getNumHits());
             EXPECT_EQUAL(1u, rs->getArray()[0].getDocId());
             EXPECT_EQUAL(2u, rs->getArray()[1].getDocId());
@@ -1813,14 +1695,9 @@ SearchContextTest::requireThatInvalidSearchTermGivesZeroHits(const vespalib::str
                                                              const Config & cfg,
                                                              ValueType value)
 {
-    AttributePtr a = AttributeFactory::createAttribute(name, cfg);
-    auto & va = dynamic_cast<VectorType &>(*a);
+    auto a = AttributeBuilder(name, cfg).fill({value}).get();
     LOG(info, "requireThatInvalidSearchTermGivesZeroHits: vector '%s'", a->getName().c_str());
-    addReservedDoc(*a);
-    a->addDocs(1);
-    va.update(1, value);
-    va.commit(true);
-    ResultSetPtr rs = performSearch(va, "foo");
+    ResultSetPtr rs = performSearch(*a, "foo");
     EXPECT_EQUAL(0u, rs->getNumHits());
 }
 
@@ -1828,10 +1705,10 @@ void
 SearchContextTest::requireThatInvalidSearchTermGivesZeroHits()
 {
     for (const auto & cfg : _integerCfg) {
-        requireThatInvalidSearchTermGivesZeroHits<IntegerAttribute>(cfg.first, cfg.second, 10);
+        requireThatInvalidSearchTermGivesZeroHits<IntegerAttribute, int32_t>(cfg.first, cfg.second, 10);
     }
     for (const auto & cfg : _floatCfg) {
-        requireThatInvalidSearchTermGivesZeroHits<FloatingPointAttribute>(cfg.first, cfg.second, 10);
+        requireThatInvalidSearchTermGivesZeroHits<FloatingPointAttribute, double>(cfg.first, cfg.second, 10.0);
     }
 }
 
@@ -1841,46 +1718,29 @@ SearchContextTest::requireThatFlagAttributeHandlesTheByteRange()
     LOG(info, "requireThatFlagAttributeHandlesTheByteRange()");
     Config cfg(BasicType::INT8, CollectionType::ARRAY);
     cfg.setFastSearch(true);
+    auto a = AttributeBuilder("flags", cfg).
+            fill_array({{-128}, {-64, -8}, {0, 8}, {64, 24}, {127}}).get();
 
-    AttributePtr a = AttributeFactory::createAttribute("flags", cfg);
-    auto & fa = dynamic_cast<FlagAttribute &>(*a);
-    addReservedDoc(fa);
-    fa.addDocs(5);
-    fa.append(1, -128, 1);
-    fa.append(2, -64, 1);
-    fa.append(2, -8, 1);
-    fa.append(3, 0, 1);
-    fa.append(3, 8, 1);
-    fa.append(4, 64, 1);
-    fa.append(4, 24, 1);
-    fa.append(5, 127, 1);
-    fa.commit(true);
-
-    performSearch(fa, "-128", DocSet().put(1), TermType::WORD);
-    performSearch(fa, "127", DocSet().put(5), TermType::WORD);
-    performSearch(fa, ">-128", DocSet().put(2).put(3).put(4).put(5), TermType::WORD);
-    performSearch(fa, "<127", DocSet().put(1).put(2).put(3).put(4), TermType::WORD);
-    performSearch(fa, "[-128;-8]", DocSet().put(1).put(2), TermType::WORD);
-    performSearch(fa, "[-8;8]", DocSet().put(2).put(3), TermType::WORD);
-    performSearch(fa, "[8;127]", DocSet().put(3).put(4).put(5), TermType::WORD);
-    performSearch(fa, "[-129;-8]", DocSet().put(1).put(2), TermType::WORD);
-    performSearch(fa, "[8;128]", DocSet().put(3).put(4).put(5), TermType::WORD);
+    performSearch(*a, "-128", DocSet({1}), TermType::WORD);
+    performSearch(*a, "127", DocSet({5}), TermType::WORD);
+    performSearch(*a, ">-128", DocSet({2, 3, 4, 5}), TermType::WORD);
+    performSearch(*a, "<127", DocSet({1, 2, 3, 4}), TermType::WORD);
+    performSearch(*a, "[-128;-8]", DocSet({1, 2}), TermType::WORD);
+    performSearch(*a, "[-8;8]", DocSet({2, 3}), TermType::WORD);
+    performSearch(*a, "[8;127]", DocSet({3, 4, 5}), TermType::WORD);
+    performSearch(*a, "[-129;-8]", DocSet({1, 2}), TermType::WORD);
+    performSearch(*a, "[8;128]", DocSet({3, 4, 5}), TermType::WORD);
 }
 
 void
 SearchContextTest::requireThatOutOfBoundsSearchTermGivesZeroHits(const vespalib::string &name,
                                                                  const Config &cfg,
-                                                                 int64_t maxValue)
+                                                                 int32_t maxValue)
 {
-    AttributePtr a = AttributeFactory::createAttribute(name, cfg);
-    auto &ia = dynamic_cast<IntegerAttribute &>(*a);
-    addReservedDoc(*a);
-    a->addDocs(1);
-    ia.update(1, maxValue);
-    ia.commit(true);
+    auto a = AttributeBuilder(name, cfg).fill({maxValue}).get();
     vespalib::string term = vespalib::make_string("%" PRIu64 "", (int64_t) maxValue + 1);
     LOG(info, "requireThatOutOfBoundsSearchTermGivesZeroHits: vector '%s', term '%s'", a->getName().c_str(), term.c_str());
-    ResultSetPtr rs = performSearch(ia, term);
+    ResultSetPtr rs = performSearch(*a, term);
     EXPECT_EQUAL(0u, rs->getNumHits());
 }
 
