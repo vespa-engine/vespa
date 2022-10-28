@@ -68,7 +68,7 @@ public class Autoscaler {
         if ( ! clusterIsStable(clusterNodes, nodeRepository))
             return Advice.none(Status.waiting, "Cluster change in progress");
 
-        var currentAllocation = new AllocatableClusterResources(clusterNodes, nodeRepository);
+        var currentAllocation = new AllocatableClusterResources(clusterNodes.asList(), nodeRepository);
         Optional<AllocatableClusterResources> bestAllocation =
                 allocationOptimizer.findBestAllocation(clusterModel.loadAdjustment(), currentAllocation, clusterModel, limits);
         if (bestAllocation.isEmpty())

@@ -703,6 +703,7 @@ public class YqlParserTestCase {
     }
 
     @Test
+    @SuppressWarnings("deprecation")
     void testWeakAnd() {
         assertParse("select foo from bar where weakAnd(a contains \"A\", b contains \"B\")",
                 "WEAKAND(100) a:A b:B");

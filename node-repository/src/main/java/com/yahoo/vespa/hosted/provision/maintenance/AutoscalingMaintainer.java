@@ -86,7 +86,7 @@ public class AutoscalingMaintainer extends NodeRepositoryMaintainer {
                 applications().put(application.get().with(updatedCluster), lock);
                 if (advice.isPresent() && advice.target().isPresent() && !cluster.get().targetResources().equals(advice.target())) {
                     // 2. Also autoscale
-                    ClusterResources before = new AllocatableClusterResources(clusterNodes, nodeRepository()).advertisedResources();
+                    ClusterResources before = new AllocatableClusterResources(clusterNodes.asList(), nodeRepository()).advertisedResources();
                     try (MaintenanceDeployment deployment = new MaintenanceDeployment(applicationId, deployer, metric, nodeRepository())) {
                         if (deployment.isValid()) {
                             deployment.activate();

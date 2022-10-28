@@ -10,7 +10,6 @@ import com.yahoo.vespa.hosted.provision.applications.Application;
 import com.yahoo.vespa.hosted.provision.applications.Cluster;
 import com.yahoo.vespa.hosted.provision.applications.ScalingEvent;
 import com.yahoo.vespa.hosted.provision.autoscale.ClusterModel;
-import com.yahoo.vespa.hosted.provision.autoscale.Limits;
 import com.yahoo.vespa.hosted.provision.autoscale.Load;
 import com.yahoo.vespa.hosted.provision.autoscale.MetricsDb;
 
@@ -66,9 +65,8 @@ public class ApplicationSerializer {
         Optional<ClusterModel> clusterModel = ClusterModel.create(application, nodes.clusterSpec(), cluster, nodes, metricsDb, nodeRepository.clock());
         Cursor clusterObject = clustersObject.setObject(cluster.id().value());
         clusterObject.setString("type", nodes.clusterSpec().type().name());
-        Limits limits = Limits.of(cluster).fullySpecified(applicationNodes.clusterSpec(), nodeRepository, application.id());
-        toSlime(limits.min(), clusterObject.setObject("min"));
-        toSlime(limits.max(), clusterObject.setObject("max"));
+        toSlime(cluster.minResources(), clusterObject.setObject("min"));
+        toSlime(cluster.maxResources(), clusterObject.setObject("max"));
         toSlime(currentResources, clusterObject.setObject("current"));
         if (cluster.shouldSuggestResources(currentResources))
             cluster.suggestedResources().ifPresent(suggested -> toSlime(suggested.resources(), clusterObject.setObject("suggested")));
