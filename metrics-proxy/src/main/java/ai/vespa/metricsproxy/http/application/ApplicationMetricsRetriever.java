@@ -153,17 +153,16 @@ public class ApplicationMetricsRetriever extends AbstractComponent implements Ru
     }
 
     private int fetchMetricsAsync(ConsumerId consumer) {
-        Map<Node, Future<Boolean>> futures = new HashMap<>();
+        Map<Node, Future<?>> futures = new HashMap<>();
         for (NodeMetricsClient client : clients) {
-            var optional = client.startSnapshotUpdate(consumer, METRICS_TTL);
-            optional.ifPresent(future -> futures.put(client.node, future));
+            client.startSnapshotUpdate(consumer, METRICS_TTL).ifPresent(future -> futures.put(client.node, future));
         }
         int numOk = 0;
         int numTried = futures.size();
-        for (Map.Entry<Node, Future<Boolean>> entry : futures.entrySet()) {
+        for (Map.Entry<Node, Future<?>> entry : futures.entrySet()) {
             try {
-                Boolean result = entry.getValue().get(taskTimeout.get().toMillis(), TimeUnit.MILLISECONDS);
-                if (result == Boolean.TRUE) numOk++;
+                entry.getValue().get(taskTimeout.get().toMillis(), TimeUnit.MILLISECONDS);
+                numOk++;
             } catch (InterruptedException | ExecutionException | TimeoutException e) {
                 Throwable cause = e.getCause();
                 if (stopped || e instanceof ExecutionException && ((cause instanceof SocketException) || cause instanceof ConnectTimeoutException)) {

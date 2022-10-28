@@ -133,13 +133,16 @@ public class NodeMetricsClientTest {
         MetricsPacket replacedCpuMetric = customMetrics.get(0);
         assertTrue(replacedCpuMetric.metrics().containsKey(toMetricId(REPLACED_CPU_METRIC)));
     }
-    private void updateSnapshot(ConsumerId consumerId, Duration ttl) {
 
+    private void updateSnapshot(ConsumerId consumerId, Duration ttl) {
         var optional = nodeMetricsClient.startSnapshotUpdate(consumerId, ttl);
         optional.ifPresent(future -> {
             try {
-                assertTrue(future.get());
-            } catch (InterruptedException | ExecutionException e) {}
+                future.get();
+            } catch (InterruptedException | ExecutionException e) {
+                throw new AssertionError(e);
+            }
         });
     }
+
 }
