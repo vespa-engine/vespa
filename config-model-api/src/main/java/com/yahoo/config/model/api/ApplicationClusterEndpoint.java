@@ -137,7 +137,7 @@ public class ApplicationClusterEndpoint {
         }
     }
 
-    public static class DnsName {
+    public static class DnsName implements Comparable<DnsName> {
 
         private static final int MAX_LABEL_LENGTH = 63;
 
@@ -209,6 +209,11 @@ public class ApplicationClusterEndpoint {
             return "DnsName{" +
                    "name='" + name + '\'' +
                    '}';
+        }
+
+        @Override
+        public int compareTo(DnsName o) {
+            return name.compareTo(o.name);
         }
     }
 }

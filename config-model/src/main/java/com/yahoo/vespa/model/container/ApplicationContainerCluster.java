@@ -193,6 +193,7 @@ public final class ApplicationContainerCluster extends ContainerCluster<Applicat
         // Add zone local endpoints using zone dns suffixes, tenant, application and cluster id.
         List<String> hosts = getContainers().stream()
                 .map(AbstractService::getHostName)
+                .sorted()
                 .collect(Collectors.toList());
 
         for (String suffix : deployState.getProperties().zoneDnsSuffixes()) {
