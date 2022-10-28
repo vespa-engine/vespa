@@ -252,20 +252,10 @@ public class NodeList extends AbstractFilteringList<Node, NodeList> {
     }
 
     /**
-     * Returns the requested resources of the nodes in this
-     *
-     * @throws IllegalStateException if there are no nodes in this list, or they do not all belong to the same cluster
-     */
-    public NodeResources requestedResources() {
-        ensureSingleCluster();
-        if (isEmpty()) throw new IllegalStateException("No nodes");
-        return first().get().allocation().get().requestedResources();
-    }
-
-    /**
      * Returns the cluster spec of the nodes in this, without any group designation
      *
-     * @throws IllegalStateException if there are no nodes in this list, or they do not all belong to the same cluster
+     * @throws IllegalStateException if there are no nodes in thus list or they do not all belong
+     *                               to the same cluster
      */
     public ClusterSpec clusterSpec() {
         ensureSingleCluster();
