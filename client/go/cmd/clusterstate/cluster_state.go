@@ -11,6 +11,7 @@ import (
 	"strings"
 
 	"github.com/vespa-engine/vespa/client/go/trace"
+	"github.com/vespa-engine/vespa/client/go/util"
 )
 
 // common struct used various places in the clustercontroller REST api:
@@ -101,7 +102,7 @@ func (model *VespaModelConfig) getClusterState(cluster string) (*ClusterState, *
 		var buf bytes.Buffer
 		err := curlGet(url, &buf)
 		if err != nil {
-			errs = append(errs, "could not get:"+url)
+			errs = append(errs, "could not get: "+url)
 			continue
 		}
 		codec := json.NewDecoder(&buf)
@@ -116,5 +117,6 @@ func (model *VespaModelConfig) getClusterState(cluster string) (*ClusterState, *
 		return &parsedJson, &cc
 	}
 	// no success:
-	panic(errs)
+	util.JustExitMsg(fmt.Sprint(errs))
+	panic("unreachable")
 }

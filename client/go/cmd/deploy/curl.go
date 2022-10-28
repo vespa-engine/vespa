@@ -14,6 +14,7 @@ import (
 
 	"github.com/vespa-engine/vespa/client/go/curl"
 	"github.com/vespa-engine/vespa/client/go/trace"
+	"github.com/vespa-engine/vespa/client/go/util"
 	"github.com/vespa-engine/vespa/client/go/vespa"
 )
 
@@ -59,20 +60,20 @@ func urlWithoutQuery(url string) string {
 func newCurlCommand(url string, args []string) *curl.Command {
 	tls, err := vespa.LoadTlsConfig()
 	if err != nil {
-		panic(err)
+		util.JustExitWith(err)
 	}
 	if tls != nil && strings.HasPrefix(url, "http:") {
 		url = "https:" + url[5:]
 	}
 	cmd, err := curl.RawArgs(url, args...)
 	if err != nil {
-		panic(err)
+		util.JustExitWith(err)
 	}
 	if tls != nil {
 		if tls.DisableHostnameValidation {
 			cmd, err = curl.RawArgs(url, append(args, "--insecure")...)
 			if err != nil {
-				panic(err)
+				util.JustExitWith(err)
 			}
 		}
 		cmd.PrivateKey = tls.Files.PrivateKey

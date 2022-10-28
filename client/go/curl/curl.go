@@ -8,6 +8,7 @@ import (
 	"runtime"
 
 	"github.com/kballard/go-shellquote"
+	"github.com/vespa-engine/vespa/client/go/util"
 )
 
 type header struct {
@@ -34,14 +35,14 @@ func (c *Command) GetUrlPrefix() string {
 
 func (c *Command) WithBodyFile(fn string) {
 	if c.bodyInput != nil {
-		panic("cannot use both WithBodyFile and WithBodyInput")
+		util.JustExitMsg("cannot use both WithBodyFile and WithBodyInput")
 	}
 	c.bodyFile = fn
 }
 
 func (c *Command) WithBodyInput(r io.Reader) {
 	if c.bodyFile != "" {
-		panic("cannot use both WithBodyFile and WithBodyInput")
+		util.JustExitMsg("cannot use both WithBodyFile and WithBodyInput")
 	}
 	c.bodyInput = r
 }

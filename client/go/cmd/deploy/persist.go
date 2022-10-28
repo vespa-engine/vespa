@@ -9,6 +9,7 @@ import (
 	"path/filepath"
 
 	"github.com/vespa-engine/vespa/client/go/trace"
+	"github.com/vespa-engine/vespa/client/go/util"
 )
 
 const (
@@ -40,11 +41,11 @@ func configsourceUrlUsedFile() string {
 func createTenantDir(tenant string) string {
 	home, err := createCloudconfigDir()
 	if err != nil {
-		panic(err)
+		util.JustExitWith(err)
 	}
 	tdir := filepath.Join(home, tenant)
 	if err := os.MkdirAll(tdir, 0700); err != nil {
-		panic(err)
+		util.JustExitWith(err)
 	}
 	return tdir
 }
@@ -76,9 +77,9 @@ func getSessionIdFromFile(tenant string) string {
 	dir := createTenantDir(tenant)
 	fn := filepath.Join(dir, sessionIdFileName)
 	bytes, err := os.ReadFile(fn)
-	if err == nil {
-		trace.Trace("Session-id", string(bytes), "found from file", fn)
-		return string(bytes)
+	if err != nil {
+		util.JustExitMsg("Could not read session id from file, and no session id supplied as argument. Exiting.")
 	}
-	panic("Could not read session id from file, and no session id supplied as argument. Exiting.")
+	trace.Trace("Session-id", string(bytes), "found from file", fn)
+	return string(bytes)
 }

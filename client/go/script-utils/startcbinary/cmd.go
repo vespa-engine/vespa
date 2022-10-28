@@ -21,7 +21,7 @@ func Run(args []string) int {
 	spec := NewProgSpec(args)
 	err := vespa.LoadDefaultEnv()
 	if err != nil {
-		panic(err)
+		util.JustExitWith(err)
 	}
 	hostname, err := vespa.FindOurHostname()
 	if err != nil {
