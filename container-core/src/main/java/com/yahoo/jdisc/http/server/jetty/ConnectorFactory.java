@@ -139,6 +139,11 @@ public class ConnectorFactory {
         httpConfig.setOutputBufferSize(connectorConfig.outputBufferSize());
         httpConfig.setRequestHeaderSize(connectorConfig.requestHeaderSize());
         httpConfig.setResponseHeaderSize(connectorConfig.responseHeaderSize());
+
+        // Disable use of ByteBuffer.allocateDirect()
+        httpConfig.setUseInputDirectByteBuffers(false);
+        httpConfig.setUseOutputDirectByteBuffers(false);
+
         httpConfig.setHttpCompliance(HttpCompliance.RFC7230);
         // TODO Vespa 9 Use default URI compliance (LEGACY == old Jetty 9.4 compliance)
         httpConfig.setUriCompliance(UriCompliance.LEGACY);
@@ -175,9 +180,11 @@ public class ConnectorFactory {
     }
 
     private SslConnectionFactory newSslConnectionFactory(Metric metric, ConnectionFactory wrappedFactory) {
-        SslConnectionFactory connectionFactory = new SslConnectionFactory(createSslContextFactory(), wrappedFactory.getProtocol());
-        connectionFactory.addBean(new SslHandshakeFailedListener(metric, connectorConfig.name(), connectorConfig.listenPort()));
-        return connectionFactory;
+        var fac = new SslConnectionFactory(createSslContextFactory(), wrappedFactory.getProtocol());
+        fac.setDirectBuffersForDecryption(false);
+        fac.setDirectBuffersForDecryption(false);
+        fac.addBean(new SslHandshakeFailedListener(metric, connectorConfig.name(), connectorConfig.listenPort()));
+        return fac;
     }
 
     private SslContextFactory.Server createSslContextFactory() {
