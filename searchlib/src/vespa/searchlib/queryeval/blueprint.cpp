@@ -15,11 +15,15 @@
 #include <vespa/vespalib/objects/objectdumper.h>
 #include <vespa/vespalib/objects/object2slime.h>
 #include <vespa/vespalib/util/classname.h>
+#include <vespa/vespalib/util/require.h>
 #include <vespa/vespalib/data/slime/inserter.h>
+#include <type_traits>
 #include <map>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".queryeval.blueprint");
+
+using vespalib::Trinary;
 
 namespace search::queryeval {
 
@@ -170,20 +174,50 @@ Blueprint::FilterConstraint invert(Blueprint::FilterConstraint constraint) {
     abort();
 }
 
+template <typename Op> bool inherit_strict(size_t);
+template <> bool inherit_strict<AndSearch>(size_t i) { return (i == 0); }
+template <> bool inherit_strict<OrSearch>(size_t) { return true; }
+
+template <typename Op> bool should_short_circuit(Trinary);
+template <> bool should_short_circuit<AndSearch>(Trinary matches_any) { return (matches_any == Trinary::False); }
+template <> bool should_short_circuit<OrSearch>(Trinary matches_any) { return (matches_any == Trinary::True); }
+
+template <typename Op> bool should_prune(Trinary, bool, bool);
+template <> bool should_prune<AndSearch>(Trinary matches_any, bool strict, bool first_child) {
+    return (matches_any == Trinary::True) && !(strict && first_child);
+}
+template <> bool should_prune<OrSearch>(Trinary matches_any, bool, bool) { return (matches_any == Trinary::False); }
+
 template <typename Op>
 std::unique_ptr<SearchIterator>
 create_op_filter(const Blueprint::Children &children, bool strict, Blueprint::FilterConstraint constraint)
 {
-    MultiSearch::Children sub_searches;
-    sub_searches.reserve(children.size());
+    REQUIRE(children.size() > 0);
+    MultiSearch::Children list;
+    std::unique_ptr<SearchIterator> spare;
+    list.reserve(children.size());
     for (size_t i = 0; i < children.size(); ++i) {
-        bool child_strict = strict && (std::is_same_v<Op,AndSearch> ? (i == 0) : true);
-        auto search = children[i]->createFilterSearch(child_strict, constraint);
-        sub_searches.push_back(std::move(search));
+        auto strict_child = strict && inherit_strict<Op>(i);
+        auto filter = children[i]->createFilterSearch(strict_child, constraint);
+        auto matches_any = filter->matches_any();
+        if (should_short_circuit<Op>(matches_any)) {
+            return filter;
+        }
+        if (should_prune<Op>(matches_any, strict, list.empty())) {
+            spare = std::move(filter);
+        } else {
+            list.push_back(std::move(filter));
+        }
+    }
+    if (list.empty()) {
+        assert(spare);
+        return spare;
+    }
+    if (list.size() == 1) {
+        return std::move(list[0]);
     }
     UnpackInfo unpack_info;
-    auto search = Op::create(std::move(sub_searches), strict, unpack_info);
-    return search;
+    return Op::create(std::move(list), strict, unpack_info);
 }
 
 }
@@ -223,21 +257,37 @@ Blueprint::create_atmost_or_filter(const Children &children, bool strict, Bluepr
 std::unique_ptr<SearchIterator>
 Blueprint::create_andnot_filter(const Children &children, bool strict, Blueprint::FilterConstraint constraint)
 {
-    MultiSearch::Children sub_searches;
-    sub_searches.reserve(children.size());
-    for (size_t i = 0; i < children.size(); ++i) {
-        auto search = (i == 0)
-            ? children[i]->createFilterSearch(strict, constraint)
-            : children[i]->createFilterSearch(false, invert(constraint));
-        sub_searches.push_back(std::move(search));
+    REQUIRE(children.size() > 0);
+    MultiSearch::Children list;
+    list.reserve(children.size());
+    {
+        auto filter = children[0]->createFilterSearch(strict, constraint);
+        if (filter->matches_any() == Trinary::False) {
+            return filter;
+        }
+        list.push_back(std::move(filter));
     }
-    return AndNotSearch::create(std::move(sub_searches), strict);
+    for (size_t i = 1; i < children.size(); ++i) {
+        auto filter = children[i]->createFilterSearch(false, invert(constraint));
+        auto matches_any = filter->matches_any();
+        if (matches_any == Trinary::True) {
+            return std::make_unique<EmptySearch>();
+        }
+        if (matches_any == Trinary::Undefined) {
+            list.push_back(std::move(filter));
+        }
+    }
+    assert(!list.empty());
+    if (list.size() == 1) {
+        return std::move(list[0]);
+    }
+    return AndNotSearch::create(std::move(list), strict);
 }
 
 std::unique_ptr<SearchIterator>
 Blueprint::create_first_child_filter(const Children &children, bool strict, Blueprint::FilterConstraint constraint)
 {
-    assert(children.size() > 0);
+    REQUIRE(children.size() > 0);
     return children[0]->createFilterSearch(strict, constraint);
 }
 
