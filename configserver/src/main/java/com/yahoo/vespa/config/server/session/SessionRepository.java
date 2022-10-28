@@ -854,8 +854,8 @@ public class SessionRepository {
             } catch (IOException | UncheckedIOException e) {
                 if (schemasDir.exists() && schemasDir.isDirectory())
                     throw new InvalidApplicationException(
-                            "Both " + ApplicationPackage.SCHEMAS_DIR.getRelative() + " and " + ApplicationPackage.SEARCH_DEFINITIONS_DIR +
-                                    " exists in application package, please remove " + ApplicationPackage.SEARCH_DEFINITIONS_DIR, e);
+                            "Both " + ApplicationPackage.SCHEMAS_DIR.getRelative() + "/ and " + ApplicationPackage.SEARCH_DEFINITIONS_DIR +
+                                    "/ exist in application package, please remove " + ApplicationPackage.SEARCH_DEFINITIONS_DIR + "/", e);
                 else
                     throw e;
             }
