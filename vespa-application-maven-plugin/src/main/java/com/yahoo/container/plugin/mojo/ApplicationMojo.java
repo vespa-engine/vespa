@@ -3,6 +3,7 @@ package com.yahoo.container.plugin.mojo;
 
 import org.apache.commons.io.FileUtils;
 import org.apache.maven.artifact.Artifact;
+import org.apache.maven.artifact.resolver.ArtifactResolutionException;
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugins.annotations.LifecyclePhase;
@@ -71,7 +72,11 @@ public class ApplicationMojo extends AbstractMojo {
         Version parentVersion = null;
         Artifact parentArtifact = current.getParentArtifact();
         if (parentArtifact != null && isVespaParent(parentArtifact.getGroupId())) {
-            parentVersion = Version.from(parentArtifact.getVersion());
+            try {
+                parentVersion = Version.from(parentArtifact.getSelectedVersion().toString());
+            } catch (ArtifactResolutionException e) {
+                parentVersion = Version.from(parentArtifact.getVersion());
+            }
             if (parentVersion.compareTo(compileVersion) < 0)
                 throw new IllegalArgumentException("compile version (" + compileVersion + ") cannot be higher than parent version (" + parentVersion + ")");
         }
