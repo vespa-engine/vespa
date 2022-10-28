@@ -68,7 +68,7 @@ public class LoadBalancer {
 
     public enum State {
 
-        /** This load balancer has been provisioned and reserved for an application */
+        /** The load balancer has been provisioned and reserved for an application */
         reserved,
 
         /**
@@ -80,6 +80,9 @@ public class LoadBalancer {
 
         /** The load balancer is in active use by an application */
         active,
+
+        /** The load balancer should be removed immediately by {@link LoadBalancerExpirer} */
+        removable,
 
     }
 

@@ -10,6 +10,10 @@ import com.yahoo.config.provision.TransientException;
  */
 public class LoadBalancerServiceException extends TransientException {
 
+    public LoadBalancerServiceException(String message) {
+        super(message);
+    }
+
     public LoadBalancerServiceException(String message, Throwable cause) {
         super(message, cause);
     }
