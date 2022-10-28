@@ -2,6 +2,7 @@
 
 #include "tensor_attribute.h"
 #include "blob_sequence_reader.h"
+#include "tensor_attribute_constants.h"
 #include "tensor_store_saver.h"
 #include <vespa/document/base/exceptions.h>
 #include <vespa/document/datatype/tensor_data_type.h>
@@ -30,8 +31,6 @@ using vespalib::eval::ValueType;
 namespace search::tensor {
 
 namespace {
-
-constexpr uint32_t TENSOR_ATTRIBUTE_VERSION = 0;
 
 Value::UP
 createEmptyTensor(const ValueType &type)
