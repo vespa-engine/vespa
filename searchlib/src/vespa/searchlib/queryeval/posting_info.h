@@ -29,7 +29,7 @@ private:
     int32_t _maxWeight;
 
 public:
-    MinMaxPostingInfo(int32_t minWeight, int32_t maxWeight)
+    MinMaxPostingInfo(int32_t minWeight, int32_t maxWeight) noexcept
         : PostingInfo(),
           _minWeight(minWeight),
           _maxWeight(maxWeight)

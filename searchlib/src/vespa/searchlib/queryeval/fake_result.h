@@ -95,7 +95,7 @@ public:
     }
 
     FakeResult &minMax(int32_t minWeight, int32_t maxWeight) {
-        _minMaxPostingInfo.reset(new MinMaxPostingInfo(minWeight, maxWeight));
+        _minMaxPostingInfo = std::make_shared<MinMaxPostingInfo>(minWeight, maxWeight);
         return *this;
     }
 

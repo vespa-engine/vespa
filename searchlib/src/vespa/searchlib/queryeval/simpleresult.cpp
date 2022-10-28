@@ -62,6 +62,22 @@ SimpleResult::search(SearchIterator &sb, uint32_t docIdLimit)
     return *this;
 }
 
+bool
+SimpleResult::contains(const SimpleResult& subset) const
+{
+    auto hits_itr = _hits.begin();
+    for (uint32_t i = 0; i < subset.getHitCount(); ++i) {
+        uint32_t subset_hit = subset.getHit(i);
+        while (hits_itr != _hits.end() && *hits_itr < subset_hit) {
+            ++hits_itr;
+        }
+        if (hits_itr == _hits.end() || *hits_itr > subset_hit) {
+            return false;
+        }
+    }
+    return true;
+}
+
 std::ostream &
 operator << (std::ostream &out, const SimpleResult &result)
 {
