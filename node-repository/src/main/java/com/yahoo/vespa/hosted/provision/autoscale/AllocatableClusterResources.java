@@ -43,6 +43,7 @@ public class AllocatableClusterResources {
         this.fulfilment = 1;
     }
 
+    // TODO: Use NodeList to make the initializers below nicer
     public AllocatableClusterResources(List<Node> nodes, NodeRepository nodeRepository) {
         this.nodes = nodes.size();
         this.groups = (int)nodes.stream().map(node -> node.allocation().get().membership().cluster().group()).distinct().count();
