@@ -66,7 +66,7 @@ public class ApplicationSerializer {
         Optional<ClusterModel> clusterModel = ClusterModel.create(application, nodes.clusterSpec(), cluster, nodes, metricsDb, nodeRepository.clock());
         Cursor clusterObject = clustersObject.setObject(cluster.id().value());
         clusterObject.setString("type", nodes.clusterSpec().type().name());
-        Limits limits = Limits.of(cluster).fullySpecified(applicationNodes.clusterSpec(), nodeRepository, application.id());
+        Limits limits = Limits.of(cluster).fullySpecified(nodes.clusterSpec(), nodeRepository, application.id());
         toSlime(limits.min(), clusterObject.setObject("min"));
         toSlime(limits.max(), clusterObject.setObject("max"));
         toSlime(currentResources, clusterObject.setObject("current"));
