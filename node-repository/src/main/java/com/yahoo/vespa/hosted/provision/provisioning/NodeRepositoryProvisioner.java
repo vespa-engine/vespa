@@ -169,7 +169,7 @@ public class NodeRepositoryProvisioner implements Provisioner {
         AllocatableClusterResources currentResources =
                 firstDeployment // start at min, preserve current resources otherwise
                 ? new AllocatableClusterResources(initialResourcesFrom(requested, clusterSpec, application.id()), clusterSpec, nodeRepository)
-                : new AllocatableClusterResources(nodes.asList(), nodeRepository);
+                : new AllocatableClusterResources(nodes, nodeRepository);
         var clusterModel = new ClusterModel(application, clusterSpec, cluster, nodes, nodeRepository.metricsDb(), nodeRepository.clock());
         return within(Limits.of(requested), currentResources, firstDeployment, clusterModel);
     }
