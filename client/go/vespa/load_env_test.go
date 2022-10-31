@@ -4,24 +4,32 @@ package vespa
 import (
 	"fmt"
 	"os"
+	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/vespa-engine/vespa/client/go/trace"
 )
 
-func setup(t *testing.T, contents string) {
-	tmp := t.TempDir() + "/load_env_test.tmp"
+func setup(t *testing.T, contents string) string {
+	td := t.TempDir()
+	tmp := td + "/load_env_test.tmp"
 	vdir := tmp + "/vespa"
+	bdir := vdir + "/bin"
 	cdir := vdir + "/conf/vespa"
 	envf := cdir + "/default-env.txt"
 	err := os.MkdirAll(cdir, 0755)
 	assert.Nil(t, err)
 	t.Setenv("VESPA_HOME", vdir)
+	err = os.MkdirAll(bdir, 0755)
+	assert.Nil(t, err)
 	err = os.WriteFile(envf, []byte(contents), 0644)
 	assert.Nil(t, err)
+	return tmp
 }
 
 func TestLoadEnvSimple(t *testing.T) {
+	trace.AdjustVerbosity(0)
 	t.Setenv("VESPA_FOO", "was foo")
 	t.Setenv("VESPA_BAR", "was bar")
 	t.Setenv("VESPA_FOOBAR", "foobar")
@@ -160,4 +168,16 @@ unset XYZ
 	// run it
 	err = ExportDefaultEnvToSh()
 	assert.Nil(t, err)
+}
+
+func TestLoadEnvNop(t *testing.T) {
+	td := setup(t, "")
+	t.Setenv("PATH", td)
+	err := LoadDefaultEnv()
+	assert.Nil(t, err)
+	// check results
+	path := os.Getenv("PATH")
+	fmt.Println("got path:", path)
+	assert.True(t, strings.Contains(path, td+"/vespa/bin:"))
+	assert.True(t, strings.Contains(path, ":"+td))
 }
