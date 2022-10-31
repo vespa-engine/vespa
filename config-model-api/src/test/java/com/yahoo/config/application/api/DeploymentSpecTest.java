@@ -1613,6 +1613,7 @@ public class DeploymentSpecTest {
                 "</deployment>"
         );
         DeploymentSpec spec = DeploymentSpec.fromXml(r);
+        assertEquals(Optional.of(new CloudAccount("100000000000")), spec.cloudAccount());
         assertCloudAccount("800000000000", spec.requireInstance("alpha"), Environment.prod, "us-east-1");
         assertCloudAccount("200000000000", spec.requireInstance("beta"), Environment.prod, "us-west-1");
         assertCloudAccount("600000000000", spec.requireInstance("beta"), Environment.staging, "");

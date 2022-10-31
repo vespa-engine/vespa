@@ -4,6 +4,7 @@ package com.yahoo.config.application.api;
 import com.google.common.collect.ImmutableSet;
 import com.yahoo.config.provision.CloudAccount;
 import com.yahoo.config.provision.Environment;
+import com.yahoo.config.provision.InstanceName;
 import com.yahoo.config.provision.RegionName;
 import org.junit.Test;
 
@@ -715,6 +716,7 @@ public class DeploymentSpecWithoutInstanceTest {
         );
         DeploymentSpec spec = DeploymentSpec.fromXml(r);
         DeploymentInstanceSpec instance = spec.requireInstance("default");
+        assertEquals(Optional.of(new CloudAccount("012345678912")), spec.cloudAccount());
         assertEquals(Optional.of(new CloudAccount("219876543210")), instance.cloudAccount(Environment.prod, Optional.of(RegionName.from("us-east-1"))));
         assertEquals(Optional.of(new CloudAccount("012345678912")), instance.cloudAccount(Environment.prod, Optional.of(RegionName.from("us-west-1"))));
         assertEquals(Optional.of(new CloudAccount("012345678912")), instance.cloudAccount(Environment.staging, Optional.empty()));
@@ -728,6 +730,7 @@ public class DeploymentSpecWithoutInstanceTest {
                 "</deployment>"
         );
         spec = DeploymentSpec.fromXml(r);
+        assertEquals(Optional.empty(), spec.cloudAccount());
         assertEquals(Optional.of(new CloudAccount("219876543210")), spec.requireInstance("default").cloudAccount(Environment.prod, Optional.of(RegionName.from("us-east-1"))));
         assertEquals(Optional.empty(), spec.requireInstance("default").cloudAccount(Environment.prod, Optional.of(RegionName.from("us-west-1"))));
     }

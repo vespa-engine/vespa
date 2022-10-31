@@ -40,6 +40,7 @@ public class DeploymentSpec {
                                                                   Optional.empty(),
                                                                   Optional.empty(),
                                                                   Optional.empty(),
+                                                                  Optional.empty(),
                                                                   List.of(),
                                                                   "<deployment version='1.0'/>",
                                                                   List.of());
@@ -50,6 +51,7 @@ public class DeploymentSpec {
     private final Optional<Integer> majorVersion;
     private final Optional<AthenzDomain> athenzDomain;
     private final Optional<AthenzService> athenzService;
+    private final Optional<CloudAccount> cloudAccount;
     private final List<Endpoint> endpoints;
     private final List<DeprecatedElement> deprecatedElements;
 
@@ -59,6 +61,7 @@ public class DeploymentSpec {
                           Optional<Integer> majorVersion,
                           Optional<AthenzDomain> athenzDomain,
                           Optional<AthenzService> athenzService,
+                          Optional<CloudAccount> cloudAccount,
                           List<Endpoint> endpoints,
                           String xmlForm,
                           List<DeprecatedElement> deprecatedElements) {
@@ -66,6 +69,7 @@ public class DeploymentSpec {
         this.majorVersion = Objects.requireNonNull(majorVersion);
         this.athenzDomain = Objects.requireNonNull(athenzDomain);
         this.athenzService = Objects.requireNonNull(athenzService);
+        this.cloudAccount = Objects.requireNonNull(cloudAccount);
         this.xmlForm = Objects.requireNonNull(xmlForm);
         this.endpoints = List.copyOf(Objects.requireNonNull(endpoints));
         this.deprecatedElements = List.copyOf(Objects.requireNonNull(deprecatedElements));
@@ -166,7 +170,10 @@ public class DeploymentSpec {
     //    b. for multi-instance specs the root tag may or may not have a service, and unknown instances also lead here; and
     // 3. any tester application deployment is always an unknown instance, and always gets here, but there should not be any reason
     //    to have environment, instance or region variants on those.
-    public Optional<AthenzService> athenzService() { return this.athenzService; }
+    public Optional<AthenzService> athenzService() { return athenzService; }
+
+    /** Cloud account set on the deployment root; see discussion for {@link #athenzService}. */
+    public Optional<CloudAccount> cloudAccount() { return cloudAccount; }
 
     /** Returns the XML form of this spec, or null if it was not created by fromXml, nor is empty */
     public String xmlForm() { return xmlForm; }

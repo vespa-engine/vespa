@@ -148,6 +148,7 @@ public class DeploymentSpecXmlReader {
                                   optionalIntegerAttribute(majorVersionAttribute, root),
                                   stringAttribute(athenzDomainAttribute, root).map(AthenzDomain::from),
                                   stringAttribute(athenzServiceAttribute, root).map(AthenzService::from),
+                                  stringAttribute(cloudAccountAttribute, root).map(CloudAccount::new),
                                   applicationEndpoints,
                                   xmlForm,
                                   deprecatedElements);

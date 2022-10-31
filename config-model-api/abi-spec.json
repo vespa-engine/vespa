@@ -436,11 +436,12 @@
       "public"
     ],
     "methods" : [
-      "public void <init>(java.util.List, java.util.Optional, java.util.Optional, java.util.Optional, java.util.List, java.lang.String, java.util.List)",
+      "public void <init>(java.util.List, java.util.Optional, java.util.Optional, java.util.Optional, java.util.Optional, java.util.List, java.lang.String, java.util.List)",
       "public java.util.Optional majorVersion()",
       "public java.util.List steps()",
       "public java.util.Optional athenzDomain()",
       "public java.util.Optional athenzService()",
+      "public java.util.Optional cloudAccount()",
       "public java.lang.String xmlForm()",
       "public java.util.Optional instance(com.yahoo.config.provision.InstanceName)",
       "public com.yahoo.config.application.api.DeploymentInstanceSpec requireInstance(java.lang.String)",

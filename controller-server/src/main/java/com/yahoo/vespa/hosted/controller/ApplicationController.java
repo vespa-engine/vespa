@@ -674,7 +674,8 @@ public class ApplicationController {
         ZoneId zoneId = deployment.zoneId();
         Optional<CloudAccount> requestedAccount = spec.instance(deployment.applicationId().instance())
                                                       .flatMap(instanceSpec -> instanceSpec.cloudAccount(zoneId.environment(),
-                                                                                                         Optional.of(zoneId.region())));
+                                                                                                         Optional.of(zoneId.region())))
+                                                      .or(spec::cloudAccount);
         if (requestedAccount.isEmpty()) {
             return Optional.empty();
         }
