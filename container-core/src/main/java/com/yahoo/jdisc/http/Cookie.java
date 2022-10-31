@@ -2,7 +2,7 @@
 package com.yahoo.jdisc.http;
 
 import org.eclipse.jetty.http.HttpCookie;
-import org.eclipse.jetty.server.Cookies;
+import org.eclipse.jetty.server.CookieCutter;
 
 import java.util.Arrays;
 import java.util.HashSet;
@@ -180,7 +180,7 @@ public class Cookie {
     }
 
     public static List<Cookie> fromCookieHeader(String headerVal) {
-        Cookies cookieCutter = new Cookies();
+        CookieCutter cookieCutter = new CookieCutter();
         cookieCutter.addCookieField(headerVal);
         return Arrays.stream(cookieCutter.getCookies())
                 .map(servletCookie -> {

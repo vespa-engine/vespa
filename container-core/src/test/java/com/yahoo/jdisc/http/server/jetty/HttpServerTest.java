@@ -186,10 +186,9 @@ public class HttpServerTest {
     @Test
     void requireThatServerCanEchoCompressed() throws Exception {
         final JettyTestDriver driver = JettyTestDriver.newInstance(new EchoRequestHandler());
-        try (SimpleHttpClient client = driver.newClient(true)) {
-            client.get("/status.html")
-                    .expectStatusCode(is(OK));
-        }
+        SimpleHttpClient client = driver.newClient(true);
+        client.get("/status.html")
+                .expectStatusCode(is(OK));
         assertTrue(driver.close());
     }
 
@@ -533,9 +532,9 @@ public class HttpServerTest {
                 .withTrustStore(certificateFile)
                 .build();
 
-        try (var c = new SimpleHttpClient(trustStoreOnlyCtx, driver.server().getListenPort(), false)) {
-            c.get("/dummy.html").expectStatusCode(is(UNAUTHORIZED));
-        }
+        new SimpleHttpClient(trustStoreOnlyCtx, driver.server().getListenPort(), false)
+                .get("/dummy.html")
+                .expectStatusCode(is(UNAUTHORIZED));
 
         assertTrue(driver.close());
     }
@@ -551,9 +550,9 @@ public class HttpServerTest {
                 .withTrustStore(certificateFile)
                 .build();
 
-        try (var c = new SimpleHttpClient(trustStoreOnlyCtx, driver.server().getListenPort(), false)) {
-            c.get("/status.html").expectStatusCode(is(OK));
-        }
+        new SimpleHttpClient(trustStoreOnlyCtx, driver.server().getListenPort(), false)
+                .get("/status.html")
+                .expectStatusCode(is(OK));
 
         assertTrue(driver.close());
     }
