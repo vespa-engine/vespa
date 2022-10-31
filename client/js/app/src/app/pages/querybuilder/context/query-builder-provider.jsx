@@ -106,7 +106,11 @@ function inputAdd(params, { id: parentId, type: typeName }) {
       ? { name: typeName, type: parent.type.children }
       : parent.type.children[typeName];
 
-  parent.value.push({ id, value: type.children ? [] : '', type });
+  parent.value.push({
+    id,
+    value: type.children ? [] : type.default?.toString() ?? '',
+    type,
+  });
 
   return cloned;
 }
@@ -120,8 +124,8 @@ function inputUpdate(params, { id, type, value }) {
       typeof parent.type.children === 'string'
         ? { name: type, type: parent.type.children }
         : parent.type.children[type];
-    if ((node.type.children != null) !== (newType.children != null))
-      node.value = newType.children ? [] : '';
+    if (node.type.type !== newType.type.type)
+      node.value = newType.children ? [] : newType.default?.toString() ?? '';
     node.type = newType;
   }
   if (value != null) node.value = value;

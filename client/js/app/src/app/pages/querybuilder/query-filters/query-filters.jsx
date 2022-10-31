@@ -6,6 +6,7 @@ import {
   Button,
   Box,
   Stack,
+  Switch,
   Badge,
   Group,
 } from '@mantine/core';
@@ -25,47 +26,100 @@ function AddProperty(props) {
   );
 }
 
+function Property({ id, type, types }) {
+  if (types)
+    return (
+      <Select
+        sx={{ flex: 1 }}
+        data={Object.values({ [type.name]: type, ...types }).map(
+          ({ name }) => name
+        )}
+        onChange={(type) => dispatch(ACTION.INPUT_UPDATE, { id, type })}
+        value={type.name}
+        searchable
+      />
+    );
+
+  return (
+    <TextInput
+      sx={{ flex: 1 }}
+      onChange={(event) =>
+        dispatch(ACTION.INPUT_UPDATE, {
+          id,
+          type: event.currentTarget.value,
+        })
+      }
+      placeholder="String"
+      value={type.name}
+    />
+  );
+}
+
+function Value({ id, type, value }) {
+  if (type.children) return null;
+
+  if (type.type === 'Boolean')
+    return (
+      <Switch
+        sx={{ flex: 1 }}
+        onLabel="true"
+        offLabel="false"
+        size="xl"
+        checked={value === 'true'}
+        onChange={(event) =>
+          dispatch(ACTION.INPUT_UPDATE, {
+            id,
+            value: event.currentTarget.checked.toString(),
+          })
+        }
+      />
+    );
+
+  const props = { value, placeholder: type.type };
+  if (type.type === 'Integer' || type.type === 'Float') {
+    props.type = 'number';
+    let range;
+    if (type.min != null) {
+      props.min = type.min;
+      range = `[${props.min}, `;
+    } else range = '(-∞, ';
+    if (type.max != null) {
+      props.max = type.max;
+      range += props.max + ']';
+    } else range += '∞)';
+    props.placeholder += ` in ${range}`;
+
+    if (type.type === 'Float' && type.min != null && type.max != null)
+      props.step = (type.max - type.min) / 100;
+
+    if (parseFloat(value) < type.min || parseFloat(value) > type.max)
+      props.error = `Must be within ${range}`;
+  }
+
+  return (
+    <TextInput
+      sx={{ flex: 1 }}
+      onChange={(event) =>
+        dispatch(ACTION.INPUT_UPDATE, {
+          id,
+          value: event.currentTarget.value,
+        })
+      }
+      {...props}
+    />
+  );
+}
+
 function Input({ id, value, types, type }) {
   return (
     <>
-      <Box sx={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
-        {types ? (
-          <Select
-            sx={{ flex: 1 }}
-            data={Object.values({ [type.name]: type, ...types }).map(
-              ({ name }) => name
-            )}
-            onChange={(type) => dispatch(ACTION.INPUT_UPDATE, { id, type })}
-            value={type.name}
-            searchable
-          />
-        ) : (
-          <TextInput
-            sx={{ flex: 1 }}
-            onChange={(event) =>
-              dispatch(ACTION.INPUT_UPDATE, {
-                id,
-                type: event.currentTarget.value,
-              })
-            }
-            placeholder="String"
-            value={type.name}
-          />
-        )}
-        {!type.children && (
-          <TextInput
-            sx={{ flex: 1 }}
-            onChange={(event) =>
-              dispatch(ACTION.INPUT_UPDATE, {
-                id,
-                value: event.currentTarget.value,
-              })
-            }
-            placeholder={type.type}
-            value={value}
-          />
-        )}
-        <ActionIcon onClick={() => dispatch(ACTION.INPUT_REMOVE, id)}>
+      <Box sx={{ display: 'flex', gap: '5px' }}>
+        <Property {...{ id, type, types }} />
+        <Value {...{ id, type, value }} />
+        <ActionIcon
+          sx={{ marginTop: 5 }}
+          onClick={() => dispatch(ACTION.INPUT_REMOVE, id)}
+        >
           <Icon name="circle-minus" />
         </ActionIcon>
       </Box>
