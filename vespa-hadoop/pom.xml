@@ -18,6 +18,7 @@
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <hadoop.version>3.3.4</hadoop.version>
+        <woodstox.version>6.4.0</woodstox.version>
         <pig.version>0.16.0</pig.version>
     </properties>
 
@@ -28,6 +29,12 @@
                 <groupId>org.eclipse.jetty</groupId>
                 <artifactId>jetty-util</artifactId>
                 <version>${jetty.version}</version>
+            </dependency>
+            <!-- Force fresh woodstox-core without security issue -->
+            <dependency>
+                <groupId>com.fasterxml.woodstox</groupId>
+                <artifactId>woodstox-core</artifactId>
+                <version>${woodstox.version}</version>
             </dependency>
         </dependencies>
     </dependencyManagement>
