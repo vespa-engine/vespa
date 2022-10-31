@@ -4,6 +4,7 @@ package com.yahoo.vespa.security.tool;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
+import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
@@ -15,6 +16,7 @@ import java.nio.file.attribute.PosixFilePermissions;
 import java.util.List;
 import java.util.Map;
 
+import static com.yahoo.security.ArrayUtils.toUtf8Bytes;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
@@ -27,17 +29,19 @@ public class CryptoToolsTest {
 
     private static record ProcessOutput(int exitCode, String stdOut, String stdErr) {}
 
+    private static final byte[] EMPTY_BYTES = new byte[0];
+
     @TempDir
     public File tmpFolder;
 
     private void verifyStdoutMatchesFile(List<String> args, String expectedFile) throws IOException {
-        var procOut = runMain(args, Map.of());
+        var procOut = runMain(args, EMPTY_BYTES, Map.of());
         assertEquals(0, procOut.exitCode());
         assertEquals(readTestResource(expectedFile), procOut.stdOut());
     }
 
     private void verifyStderrEquals(List<String> args, String expectedMessage) throws IOException {
-        var procOut = runMain(args, Map.of());
+        var procOut = runMain(args, EMPTY_BYTES, Map.of());
         assertEquals(1, procOut.exitCode()); // Assume checking stderr is because of a failure.
         assertEquals(expectedMessage, procOut.stdErr());
     }
@@ -161,7 +165,7 @@ public class CryptoToolsTest {
                                    "--output-file",          "foo",
                                    "--recipient-public-key", TEST_PUB_KEY,
                                    "--key-id",               "1234"),
-                "Invalid command line arguments: Cannot encrypt file 'no-such-file' as it does not exist\n");
+                "Invalid command line arguments: Input file 'no-such-file' does not exist\n");
     }
 
     @Test
@@ -188,7 +192,7 @@ public class CryptoToolsTest {
                                    "--recipient-private-key-file", absPathOf(privKeyFile),
                                    "--token",                      TEST_TOKEN,
                                    "--key-id",                     Integer.toString(TEST_TOKEN_KEY_ID)),
-                "Invalid command line arguments: Cannot decrypt file 'no-such-file' as it does not exist\n");
+                "Invalid command line arguments: Input file 'no-such-file' does not exist\n");
     }
 
     @Test
@@ -210,7 +214,7 @@ public class CryptoToolsTest {
     }
 
     @Test
-    void can_end_to_end_keygen_encrypt_and_decrypt() throws IOException {
+    void can_end_to_end_keygen_encrypt_and_decrypt_via_files() throws IOException {
         String greatSecret = "Dogs can't look up";
 
         Path secretFile = pathInTemp("secret.txt");
@@ -261,19 +265,72 @@ public class CryptoToolsTest {
         assertEquals(greatSecret, Files.readString(decryptedPath));
     }
 
-    private ProcessOutput runMain(List<String> args) {
-        // Expect that this is used for running a command that is not supposed to fail. But if it does,
-        // include exception trace in stderr to make it easier to debug.
-        return runMain(args, Map.of("VESPA_DEBUG", "true"));
+    @Test
+    void can_end_to_end_keygen_encrypt_and_decrypt_via_stdio_streams() throws IOException {
+        String greatSecret = "forbidden knowledge about cats.txt";
+
+        var privPath = pathInTemp("priv.txt");
+        var pubPath = pathInTemp("pub.txt");
+        var procOut = runMain(List.of(
+                "keygen",
+                "--private-out-file", absPathOf(privPath),
+                "--public-out-file",  absPathOf(pubPath)));
+        assertEquals(0, procOut.exitCode());
+        assertEquals("", procOut.stdOut());
+        assertEquals("", procOut.stdErr());
+
+        assertTrue(privPath.toFile().exists());
+        assertTrue(pubPath.toFile().exists());
+
+        var encryptedPath = pathInTemp("encrypted.bin");
+        // Encryption emits token on stdout, so can't support ciphertext output via that channel.
+        procOut = runMain(List.of(
+                "encrypt",
+                "-", // Encrypt stdin
+                "--output-file",          absPathOf(encryptedPath),
+                "--recipient-public-key", Files.readString(pubPath),
+                "--key-id",               "1234"),
+                toUtf8Bytes(greatSecret));
+        assertEquals(0, procOut.exitCode());
+        assertEquals("", procOut.stdErr());
+
+        var token = procOut.stdOut();
+        assertFalse(token.isBlank());
+
+        assertTrue(encryptedPath.toFile().exists());
+
+        procOut = runMain(List.of(
+                "decrypt",
+                "-", // Decrypt stdin
+                "--output-file",                "-", // Plaintext to stdout
+                "--recipient-private-key-file", absPathOf(privPath),
+                "--key-id",                     "1234",
+                "--token",                      token
+        ), Files.readAllBytes(encryptedPath));
+
+        assertEquals(0, procOut.exitCode());
+        assertEquals("", procOut.stdErr());
+        assertEquals(greatSecret, procOut.stdOut());
     }
 
-    private ProcessOutput runMain(List<String> args, Map<String, String> env) {
+    private ProcessOutput runMain(List<String> args) {
+        return runMain(args, EMPTY_BYTES);
+    }
+
+    private ProcessOutput runMain(List<String> args, byte[] stdInBytes) {
+        // Expect that this is used for running a command that is not supposed to fail. But if it does,
+        // include exception trace in stderr to make it easier to debug.
+        return runMain(args, stdInBytes, Map.of("VESPA_DEBUG", "true"));
+    }
+
+    private ProcessOutput runMain(List<String> args, byte[] stdInBytes, Map<String, String> env) {
         var stdOutBytes = new ByteArrayOutputStream();
         var stdErrBytes = new ByteArrayOutputStream();
+        var stdIn       = new ByteArrayInputStream(stdInBytes);
         var stdOut      = new PrintStream(stdOutBytes);
         var stdError    = new PrintStream(stdErrBytes);
 
-        int exitCode = new Main(stdOut, stdError).execute(args.toArray(new String[0]), env);
+        int exitCode = new Main(stdIn, stdOut, stdError).execute(args.toArray(new String[0]), env);
 
         stdOut.flush();
         stdError.flush();

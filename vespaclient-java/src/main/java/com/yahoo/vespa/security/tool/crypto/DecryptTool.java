@@ -36,7 +36,8 @@ public class DecryptTool implements Tool {
                     .longOpt(OUTPUT_FILE_OPTION)
                     .hasArg(true)
                     .required(false)
-                    .desc("Output file for decrypted plaintext")
+                    .desc("Output file for decrypted plaintext. Specify '-' (without the " +
+                          "quotes) to write plaintext to STDOUT instead of a file.")
                     .build(),
             Option.builder("k")
                     .longOpt(RECIPIENT_PRIVATE_KEY_FILE_OPTION)
@@ -68,7 +69,8 @@ public class DecryptTool implements Tool {
         return new ToolDescription(
                 "<encrypted file> <options>",
                 "Decrypts a file using a provided token and a secret private key. The file must " +
-                "previously have been encrypted using the public key component of the given private key.",
+                "previously have been encrypted using the public key component of the given private key.\n\n" +
+                "To decrypt the contents of STDIN, specify an input file of '-' (without the quotes).",
                 "Note: this is a BETA tool version; its interface may be changed at any time",
                 OPTIONS);
     }
@@ -81,14 +83,11 @@ public class DecryptTool implements Tool {
             if (leftoverArgs.length != 1) {
                 throw new IllegalArgumentException("Expected exactly 1 file argument to decrypt");
             }
-            var inputPath = Paths.get(leftoverArgs[0]);
-            if (!inputPath.toFile().exists()) {
-                throw new IllegalArgumentException("Cannot decrypt file '%s' as it does not exist".formatted(inputPath.toString()));
-            }
+            var inputArg   = leftoverArgs[0];
             var maybeKeyId = Optional.ofNullable(arguments.hasOption(KEY_ID_OPTION)
                                                  ? Integer.parseInt(arguments.getOptionValue(KEY_ID_OPTION))
                                                  : null);
-            var outputPath  = Paths.get(CliUtils.optionOrThrow(arguments, OUTPUT_FILE_OPTION));
+            var outputArg   = CliUtils.optionOrThrow(arguments, OUTPUT_FILE_OPTION);
             var privKeyPath = Paths.get(CliUtils.optionOrThrow(arguments, RECIPIENT_PRIVATE_KEY_FILE_OPTION));
             var tokenString = CliUtils.optionOrThrow(arguments, TOKEN_OPTION);
             var sealedSharedKey = SealedSharedKey.fromTokenString(tokenString.strip());
@@ -101,7 +100,10 @@ public class DecryptTool implements Tool {
             var secretShared = SharedKeyGenerator.fromSealedKey(sealedSharedKey, privateKey);
             var cipher       = SharedKeyGenerator.makeAesGcmDecryptionCipher(secretShared);
 
-            CipherUtils.streamEncipherFileContents(inputPath, outputPath, cipher);
+            try (var inStream  = CliUtils.inputStreamFromFileOrStream(inputArg, invocation.stdIn());
+                 var outStream = CliUtils.outputStreamToFileOrStream(outputArg, invocation.stdOut())) {
+                CipherUtils.streamEncipher(inStream, outStream, cipher);
+            }
 
         } catch (IOException e) {
             throw new RuntimeException(e);

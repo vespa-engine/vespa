@@ -10,6 +10,7 @@ import org.apache.commons.cli.DefaultParser;
 import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
 
+import java.io.InputStream;
 import java.io.PrintStream;
 import java.util.List;
 import java.util.Map;
@@ -26,16 +27,18 @@ import java.util.Optional;
  */
 public class Main {
 
+    private final InputStream stdIn;
     private final PrintStream stdOut;
     private final PrintStream stdError;
 
-    Main(PrintStream stdOut, PrintStream stdError) {
+    Main(InputStream stdIn, PrintStream stdOut, PrintStream stdError) {
+        this.stdIn = stdIn;
         this.stdOut = stdOut;
         this.stdError = stdError;
     }
 
     public static void main(String[] args) {
-        var program = new Main(System.out, System.err);
+        var program = new Main(System.in, System.out, System.err);
         int returnCode = program.execute(args, System.getenv());
         System.exit(returnCode);
     }
@@ -82,7 +85,7 @@ public class Main {
                 CliOptions.printToolSpecificHelp(stdOut, tool.name(), toolDesc, cliOpts);
                 return 0;
             }
-            var invocation = new ToolInvocation(cmdLine, envVars, stdOut, stdError, debugMode);
+            var invocation = new ToolInvocation(cmdLine, envVars, stdIn, stdOut, stdError, debugMode);
             return tool.invoke(invocation);
         } catch (ParseException e) {
             return handleException("Failed to parse command line arguments: " + e.getMessage(), e, debugMode);

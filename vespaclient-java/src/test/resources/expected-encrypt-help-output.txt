@@ -3,6 +3,9 @@ One-way encrypts a file using the public key of a recipient. A public
 token is printed on standard out. The recipient can use this token to
 decrypt the file using their private key. The token does not have to be
 kept secret.
+
+To encrypt the contents of STDIN, specify an input file of '-' (without
+the quotes).
  -h,--help                         Show help
  -i,--key-id <arg>                 Numeric ID of recipient key
  -o,--output-file <arg>            Output file (will be truncated if it
