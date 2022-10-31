@@ -1,7 +1,11 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.node.admin.maintenance.coredump;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.yahoo.security.SecretSharedKey;
+import com.yahoo.security.SharedKeyGenerator;
 import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.NodeSpec;
 import com.yahoo.vespa.hosted.node.admin.container.metrics.Dimensions;
 import com.yahoo.vespa.hosted.node.admin.container.metrics.Metrics;
@@ -13,6 +17,7 @@ import com.yahoo.vespa.hosted.node.admin.task.util.file.UnixPath;
 import com.yahoo.vespa.hosted.node.admin.task.util.fs.ContainerPath;
 import com.yahoo.vespa.hosted.node.admin.task.util.process.Terminal;
 
+import javax.crypto.CipherOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.UncheckedIOException;
@@ -46,6 +51,7 @@ public class CoredumpHandler {
     private static final String PROCESSING_DIRECTORY_NAME = "processing";
     private static final String METADATA_FILE_NAME = "metadata.json";
     private static final String COMPRESSED_EXTENSION = ".zstd";
+    private static final String ENCRYPTED_EXTENSION = ".enc";
     public static final String COREDUMP_FILENAME_PREFIX = "dump_";
 
     private final Logger logger = Logger.getLogger(CoredumpHandler.class.getName());
@@ -58,6 +64,7 @@ public class CoredumpHandler {
     private final Metrics metrics;
     private final Clock clock;
     private final Supplier<String> coredumpIdSupplier;
+    private final Supplier<SecretSharedKey> secretSharedKeySupplier;
 
     /**
      * @param crashPathInContainer path inside the container where core dump are dumped
@@ -66,12 +73,13 @@ public class CoredumpHandler {
     public CoredumpHandler(Terminal terminal, CoreCollector coreCollector, CoredumpReporter coredumpReporter,
                            String crashPathInContainer, Path doneCoredumpsPath, Metrics metrics) {
         this(coreCollector, coredumpReporter, crashPathInContainer, doneCoredumpsPath,
-                metrics, Clock.systemUTC(), () -> UUID.randomUUID().toString());
+                metrics, Clock.systemUTC(), () -> UUID.randomUUID().toString(), () -> null /*TODO*/);
     }
 
     CoredumpHandler(CoreCollector coreCollector, CoredumpReporter coredumpReporter,
                     String crashPathInContainer, Path doneCoredumpsPath, Metrics metrics,
-                    Clock clock, Supplier<String> coredumpIdSupplier) {
+                    Clock clock, Supplier<String> coredumpIdSupplier,
+                    Supplier<SecretSharedKey> secretSharedKeySupplier) {
         this.coreCollector = coreCollector;
         this.coredumpReporter = coredumpReporter;
         this.crashPatchInContainer = crashPathInContainer;
@@ -79,6 +87,7 @@ public class CoredumpHandler {
         this.metrics = metrics;
         this.clock = clock;
         this.coredumpIdSupplier = coredumpIdSupplier;
+        this.secretSharedKeySupplier = secretSharedKeySupplier;
     }
 
 
@@ -151,10 +160,12 @@ public class CoredumpHandler {
 
     void processAndReportSingleCoredump(NodeAgentContext context, ContainerPath coredumpDirectory, Supplier<Map<String, Object>> nodeAttributesSupplier) {
         try {
-            String metadata = getMetadata(context, coredumpDirectory, nodeAttributesSupplier);
+            Optional<SecretSharedKey> sharedCoreKey = Optional.ofNullable(secretSharedKeySupplier.get());
+            Optional<String> decryptionToken = sharedCoreKey.map(k -> k.sealedSharedKey().toTokenString());
+            String metadata = getMetadata(context, coredumpDirectory, nodeAttributesSupplier, decryptionToken);
             String coredumpId = coredumpDirectory.getFileName().toString();
             coredumpReporter.reportCoredump(coredumpId, metadata);
-            finishProcessing(context, coredumpDirectory);
+            finishProcessing(context, coredumpDirectory, sharedCoreKey);
             context.log(logger, "Successfully reported coredump " + coredumpId);
         } catch (Exception e) {
             throw new RuntimeException("Failed to process coredump " + coredumpDirectory, e);
@@ -165,7 +176,7 @@ public class CoredumpHandler {
      * @return coredump metadata from metadata.json if present, otherwise attempts to get metadata using
      * {@link CoreCollector} and stores it to metadata.json
      */
-    String getMetadata(NodeAgentContext context, ContainerPath coredumpDirectory, Supplier<Map<String, Object>> nodeAttributesSupplier) throws IOException {
+    String getMetadata(NodeAgentContext context, ContainerPath coredumpDirectory, Supplier<Map<String, Object>> nodeAttributesSupplier, Optional<String> decryptionToken) throws IOException {
         UnixPath metadataPath = new UnixPath(coredumpDirectory.resolve(METADATA_FILE_NAME));
         if (!metadataPath.exists()) {
             ContainerPath coredumpFile = findCoredumpFileInProcessingDirectory(coredumpDirectory);
@@ -175,25 +186,51 @@ public class CoredumpHandler {
                     .resolve(context.containerName().asString())
                     .resolve(coredumpDirectory.getFileName().toString())
                     .resolve(coredumpFile.getFileName().toString()).toString());
+            decryptionToken.ifPresent(token -> metadata.put("decryption_token", token));
 
             String metadataFields = objectMapper.writeValueAsString(Map.of("fields", metadata));
             metadataPath.writeUtf8File(metadataFields);
             return metadataFields;
         } else {
-            return metadataPath.readUtf8File();
+            if (decryptionToken.isPresent()) {
+                // Since encryption keys are single-use and generated for each core dump processing invocation,
+                // we must ensure we store and report the token associated with the _latest_ (i.e. current)
+                // attempt at processing the core dump. Patch and rewrite the file with a new token, if present.
+                String metadataFields = metadataWithPatchedTokenValue(metadataPath, decryptionToken.get());
+                metadataPath.deleteIfExists();
+                metadataPath.writeUtf8File(metadataFields);
+                return metadataFields;
+            } else {
+                return metadataPath.readUtf8File();
+            }
         }
     }
 
+    private String metadataWithPatchedTokenValue(UnixPath metadataPath, String decryptionToken) throws JsonProcessingException {
+        var jsonRoot = objectMapper.readTree(metadataPath.readUtf8File());
+        if (jsonRoot.path("fields").isObject()) {
+            ((ObjectNode)jsonRoot.get("fields")).put("decryption_token", decryptionToken);
+        } // else: unit testing case without real metadata
+        return objectMapper.writeValueAsString(jsonRoot);
+    }
+
+    static OutputStream maybeWrapWithEncryption(OutputStream wrappedStream, Optional<SecretSharedKey> sharedCoreKey) {
+        return sharedCoreKey
+                .map(key -> (OutputStream)new CipherOutputStream(wrappedStream, SharedKeyGenerator.makeAesGcmEncryptionCipher(key)))
+                .orElse(wrappedStream);
+    }
+
     /**
-     * Compresses core file (and deletes the uncompressed core), then moves the entire core dump processing
-     * directory to {@link #doneCoredumpsPath} for archive
+     * Compresses and, if a key is provided, encrypts core file (and deletes the uncompressed core), then moves
+     * the entire core dump processing directory to {@link #doneCoredumpsPath} for archive
      */
-    private void finishProcessing(NodeAgentContext context, ContainerPath coredumpDirectory) throws IOException {
+    private void finishProcessing(NodeAgentContext context, ContainerPath coredumpDirectory, Optional<SecretSharedKey> sharedCoreKey) throws IOException {
         ContainerPath coreFile = findCoredumpFileInProcessingDirectory(coredumpDirectory);
-        ContainerPath compressedCoreFile = coreFile.resolveSibling(coreFile.getFileName() + COMPRESSED_EXTENSION);
+        String extension = COMPRESSED_EXTENSION + (sharedCoreKey.isPresent() ? ENCRYPTED_EXTENSION : "");
+        ContainerPath compressedCoreFile = coreFile.resolveSibling(coreFile.getFileName() + extension);
 
         try (ZstdCompressingInputStream zcis = new ZstdCompressingInputStream(Files.newInputStream(coreFile));
-             OutputStream fos = Files.newOutputStream(compressedCoreFile)) {
+             OutputStream fos = maybeWrapWithEncryption(Files.newOutputStream(compressedCoreFile), sharedCoreKey)) {
             zcis.transferTo(fos);
         } catch (IOException e) {
             throw new UncheckedIOException(e);
@@ -208,7 +245,8 @@ public class CoredumpHandler {
 
     ContainerPath findCoredumpFileInProcessingDirectory(ContainerPath coredumpProccessingDirectory) {
         return (ContainerPath) FileFinder.files(coredumpProccessingDirectory)
-                .match(nameStartsWith(COREDUMP_FILENAME_PREFIX).and(nameEndsWith(COMPRESSED_EXTENSION).negate()))
+                .match(nameStartsWith(COREDUMP_FILENAME_PREFIX).and(nameEndsWith(COMPRESSED_EXTENSION).negate())
+                                                               .and(nameEndsWith(ENCRYPTED_EXTENSION).negate()))
                 .maxDepth(1)
                 .stream()
                 .map(FileFinder.FileAttributes::path)
@@ -225,6 +263,7 @@ public class CoredumpHandler {
                 .match(nameStartsWith(".").negate())
                 .match(nameMatches(HS_ERR_PATTERN).negate())
                 .match(nameEndsWith(COMPRESSED_EXTENSION).negate())
+                .match(nameEndsWith(ENCRYPTED_EXTENSION).negate())
                 .match(nameStartsWith("metadata").negate())
                 .list().size();
 
