@@ -18,7 +18,7 @@
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <hadoop.version>3.3.4</hadoop.version>
-        <pig.version>0.16.0</pig.version>
+        <pig.version>0.17.0</pig.version>
         <jetty9.version>9.4.49.v20220914</jetty9.version>
     </properties>
 
@@ -131,7 +131,6 @@
             <groupId>org.apache.pig</groupId>
             <artifactId>pig</artifactId>
             <version>${pig.version}</version>
-            <classifier>h2</classifier>
             <scope>provided</scope>
         </dependency>
 
