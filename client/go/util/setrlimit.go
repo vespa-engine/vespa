@@ -5,9 +5,11 @@
 package util
 
 import (
+	"os"
+	"strconv"
+
 	"github.com/vespa-engine/vespa/client/go/trace"
 	"golang.org/x/sys/unix"
-	"os"
 )
 
 type ResourceId int
@@ -29,6 +31,13 @@ func (rid ResourceId) String() string {
 		return "max user processes"
 	}
 	return "unknown resource id"
+}
+
+func readableLimit(val uint64) string {
+	if val == NO_RLIMIT {
+		return "unlimited"
+	}
+	return strconv.FormatUint(val, 10)
 }
 
 func SetResourceLimit(resource ResourceId, newVal uint64) {
@@ -57,6 +66,6 @@ func SetResourceLimit(resource ResourceId, newVal uint64) {
 	if err != nil {
 		trace.Trace("Failed setting resource limit:", err)
 	} else {
-		trace.Trace("Resource limit", resource, "adjusted OK:", wanted.Cur, "/", wanted.Max)
+		trace.Trace("Resource limit", resource, "adjusted OK:", readableLimit(wanted.Cur), "/", readableLimit(wanted.Max))
 	}
 }
