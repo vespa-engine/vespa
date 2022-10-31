@@ -10,20 +10,33 @@ import (
 	"os"
 	"strings"
 
+	"github.com/vespa-engine/vespa/client/go/trace"
 	"github.com/vespa-engine/vespa/client/go/util"
+)
+
+const (
+	ENV_JAVA_HOME       = util.ENV_JAVA_HOME
+	ENV_PATH            = util.ENV_PATH
+	ENV_VESPA_HOME      = util.ENV_VESPA_HOME
+	ENV_VESPA_USER      = util.ENV_VESPA_USER
+	CURRENT_GCC_TOOLSET = "/opt/rh/gcc-toolset-11/root/usr/bin"
 )
 
 // backwards-compatible parsing of default-env.txt
 func LoadDefaultEnv() error {
-	return loadDefaultEnvTo(new(osEnvReceiver))
+	receiver := new(osEnvReceiver)
+	err := loadDefaultEnvTo(receiver)
+	ensureGoodPath(receiver)
+	return err
 }
 
 // parse default-env.txt, then dump export statements for "sh" to stdout
 func ExportDefaultEnvToSh() error {
 	holder := newShellEnvExporter()
 	err := loadDefaultEnvTo(holder)
-	holder.fallbackVar("VESPA_HOME", FindHome())
-	holder.fallbackVar("VESPA_USER", FindVespaUser())
+	holder.fallbackVar(ENV_VESPA_HOME, FindHome())
+	holder.fallbackVar(ENV_VESPA_USER, FindVespaUser())
+	ensureGoodPath(holder)
 	holder.dump()
 	return err
 }
@@ -32,6 +45,7 @@ type loadEnvReceiver interface {
 	fallbackVar(varName, varVal string)
 	overrideVar(varName, varVal string)
 	unsetVar(varName string)
+	currentValue(varName string) string
 }
 
 type osEnvReceiver struct {
@@ -47,6 +61,9 @@ func (p *osEnvReceiver) overrideVar(varName, varVal string) {
 }
 func (p *osEnvReceiver) unsetVar(varName string) {
 	os.Unsetenv(varName)
+}
+func (p *osEnvReceiver) currentValue(varName string) string {
+	return os.Getenv(varName)
 }
 
 func loadDefaultEnvTo(r loadEnvReceiver) error {
@@ -155,10 +172,9 @@ func newShellEnvExporter() *shellEnvExporter {
 	}
 }
 func (p *shellEnvExporter) fallbackVar(varName, varVal string) {
-	if p.exportVars[varName] == "" {
-		if os.Getenv(varName) == "" || os.Getenv(varName) == varVal || p.unsetVars[varName] != "" {
-			p.overrideVar(varName, varVal)
-		}
+	old := p.currentValue(varName)
+	if old == "" || old == varVal {
+		p.overrideVar(varName, varVal)
 	}
 }
 func (p *shellEnvExporter) overrideVar(varName, varVal string) {
@@ -168,6 +184,15 @@ func (p *shellEnvExporter) overrideVar(varName, varVal string) {
 func (p *shellEnvExporter) unsetVar(varName string) {
 	delete(p.exportVars, varName)
 	p.unsetVars[varName] = "unset"
+}
+func (p *shellEnvExporter) currentValue(varName string) string {
+	if p.unsetVars[varName] != "" {
+		return ""
+	}
+	if val, ok := p.exportVars[varName]; ok {
+		return val
+	}
+	return os.Getenv(varName)
 }
 
 func shellQuote(s string) string {
@@ -232,4 +257,49 @@ func (p *shellEnvExporter) dump() {
 	for vn, _ := range p.unsetVars {
 		fmt.Printf("unset %s\n", vn)
 	}
+}
+
+type pathBuilder struct {
+	curPath []string
+}
+
+func (builder *pathBuilder) applyTo(receiver loadEnvReceiver) {
+	newPath := strings.Join(builder.curPath, ":")
+	trace.Trace("updating PATH in environment =>", newPath)
+	receiver.overrideVar(ENV_PATH, newPath)
+}
+
+func (builder *pathBuilder) appendPath(p string) {
+	if !util.IsDirectory(p) {
+		return
+	}
+	for _, elem := range builder.curPath {
+		if elem == p {
+			return
+		}
+	}
+	builder.curPath = append(builder.curPath, p)
+}
+
+func ensureGoodPath(receiver loadEnvReceiver) {
+	var builder pathBuilder
+	builder.curPath = make([]string, 0, 15)
+	builder.appendPath(FindHome() + "/bin")
+	builder.appendPath(FindHome() + "/bin64")
+	// Prefer newer gdb and pstack:
+	builder.appendPath("/opt/rh/gcc-toolset-11/root/usr/bin")
+	// how to find the "java" program?
+	if javaHome := os.Getenv(ENV_JAVA_HOME); javaHome != "" {
+		builder.appendPath(javaHome + "/bin")
+	}
+	envPath := receiver.currentValue(ENV_PATH)
+	for _, p := range strings.Split(envPath, ":") {
+		builder.appendPath(p)
+	}
+	builder.appendPath("/opt/vespa-deps/bin")
+	builder.appendPath("/usr/local/bin")
+	builder.appendPath("/usr/local/sbin")
+	builder.appendPath("/usr/bin")
+	builder.appendPath("/usr/sbin")
+	builder.applyTo(receiver)
 }

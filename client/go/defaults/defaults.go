@@ -10,12 +10,13 @@ import (
 	"strings"
 
 	"github.com/vespa-engine/vespa/client/go/trace"
+	"github.com/vespa-engine/vespa/client/go/util"
 )
 
 const (
-	ENV_VESPA_HOME = "VESPA_HOME"
-	ENV_VESPA_USER = "VESPA_USER"
-	ENV_VESPA_HOST = "VESPA_HOSTNAME"
+	ENV_VESPA_HOME = util.ENV_VESPA_HOME
+	ENV_VESPA_HOST = util.ENV_VESPA_HOSTNAME
+	ENV_VESPA_USER = util.ENV_VESPA_USER
 
 	ENV_CONFIGSERVERS     = "VESPA_CONFIGSERVERS"
 	ENV_ADDR_CONFIGSERVER = "addr_configserver"
