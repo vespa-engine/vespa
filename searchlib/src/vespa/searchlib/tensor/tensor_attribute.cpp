@@ -2,8 +2,10 @@
 
 #include "tensor_attribute.h"
 #include "blob_sequence_reader.h"
+#include "nearest_neighbor_index.h"
+#include "nearest_neighbor_index_saver.h"
 #include "tensor_attribute_constants.h"
-#include "tensor_store_saver.h"
+#include "tensor_attribute_saver.h"
 #include <vespa/document/base/exceptions.h>
 #include <vespa/document/datatype/tensor_data_type.h>
 #include <vespa/searchlib/attribute/address_space_components.h>
@@ -53,6 +55,7 @@ TensorAttribute::TensorAttribute(vespalib::stringref name, const Config &cfg, Te
     : NotImplementedAttribute(name, cfg),
       _refVector(cfg.getGrowStrategy(), getGenerationHolder()),
       _tensorStore(tensorStore),
+      _index(),
       _is_dense(cfg.tensorType().is_dense()),
       _emptyTensor(createEmptyTensor(cfg.tensorType())),
       _compactGeneration(0)
@@ -261,7 +264,7 @@ TensorAttribute::onShrinkLidSpace()
 uint32_t
 TensorAttribute::getVersion() const
 {
-    return TENSOR_ATTRIBUTE_VERSION;
+    return (_tensorStore.as_dense() != nullptr) ? DENSE_TENSOR_ATTRIBUTE_VERSION : TENSOR_ATTRIBUTE_VERSION;
 }
 
 TensorAttribute::RefCopyVector
@@ -316,11 +319,13 @@ TensorAttribute::onInitSave(vespalib::stringref fileName)
 {
     vespalib::GenerationHandler::Guard guard(getGenerationHandler().
                                              takeGuard());
-    return std::make_unique<TensorStoreSaver>
+    auto index_saver = (_index ? _index->make_saver() : std::unique_ptr<NearestNeighborIndexSaver>());
+    return std::make_unique<TensorAttributeSaver>
         (std::move(guard),
          this->createAttributeHeader(fileName),
          getRefCopy(),
-         _tensorStore);
+         _tensorStore,
+         std::move(index_saver));
 }
 
 void

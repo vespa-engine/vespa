@@ -9,14 +9,14 @@ namespace search { class BufferWriter; }
 
 namespace search::tensor {
 
-class DenseTensorStore;
+class TensorStore;
 class NearestNeighborIndexSaver;
 
 /**
- * Class for saving a dense tensor attribute.
+ * Class for saving a tensor attribute.
  * Will also save the nearest neighbor index if existing.
  */
-class DenseTensorAttributeSaver : public AttributeSaver {
+class TensorAttributeSaver : public AttributeSaver {
 public:
     using RefCopyVector = TensorAttribute::RefCopyVector;
 private:
@@ -24,20 +24,21 @@ private:
     using IndexSaverUP = std::unique_ptr<NearestNeighborIndexSaver>;
 
     RefCopyVector      _refs;
-    const DenseTensorStore &_tensorStore;
+    const TensorStore& _tensor_store;
     IndexSaverUP _index_saver;
 
     bool onSave(IAttributeSaveTarget &saveTarget) override;
+    void save_dense_tensor_store(BufferWriter& writer, const DenseTensorStore& dense_tensor_store) const;
     void save_tensor_store(BufferWriter& writer) const;
 
 public:
-    DenseTensorAttributeSaver(GenerationHandler::Guard &&guard,
+    TensorAttributeSaver(GenerationHandler::Guard &&guard,
                               const attribute::AttributeHeader &header,
                               RefCopyVector &&refs,
-                              const DenseTensorStore &tensorStore,
+                              const TensorStore &tensor_store,
                               IndexSaverUP index_saver);
 
-    ~DenseTensorAttributeSaver() override;
+    ~TensorAttributeSaver() override;
 
     static vespalib::string index_file_suffix();
 };

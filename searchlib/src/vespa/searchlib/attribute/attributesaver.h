@@ -27,6 +27,7 @@ protected:
 
     virtual bool onSave(IAttributeSaveTarget &saveTarget) = 0;
 
+    uint32_t get_header_version() const { return _header.getVersion(); }
 public:
     virtual ~AttributeSaver();
 

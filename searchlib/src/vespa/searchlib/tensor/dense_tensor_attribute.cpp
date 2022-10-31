@@ -1,11 +1,10 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "dense_tensor_attribute.h"
-#include "dense_tensor_attribute_saver.h"
 #include "nearest_neighbor_index.h"
 #include "nearest_neighbor_index_loader.h"
-#include "nearest_neighbor_index_saver.h"
 #include "tensor_attribute_constants.h"
+#include "tensor_attribute_saver.h"
 #include <vespa/eval/eval/value.h>
 #include <vespa/fastlib/io/bufferedfile.h>
 #include <vespa/searchcommon/attribute/config.h>
@@ -68,7 +67,7 @@ can_use_index_save_file(const search::attribute::Config &config, const search::a
 bool
 has_index_file(AttributeVector& attr)
 {
-    return LoadUtils::file_exists(attr, DenseTensorAttributeSaver::index_file_suffix());
+    return LoadUtils::file_exists(attr, TensorAttributeSaver::index_file_suffix());
 }
 
 BlobSequenceReader::BlobSequenceReader(AttributeVector& attr, bool has_index)
@@ -77,7 +76,7 @@ BlobSequenceReader::BlobSequenceReader(AttributeVector& attr, bool has_index)
                       can_use_index_save_file(attr.getConfig(),
                                               search::attribute::AttributeHeader::extractTags(getDatHeader(), attr.getBaseFileName()))),
       _index_file(_use_index_file ?
-                  attribute::LoadUtils::openFile(attr, DenseTensorAttributeSaver::index_file_suffix()) :
+                  attribute::LoadUtils::openFile(attr, TensorAttributeSaver::index_file_suffix()) :
                   std::unique_ptr<Fast_BufferedFile>())
 {
 }
@@ -155,7 +154,6 @@ DenseTensorAttribute::DenseTensorAttribute(vespalib::stringref baseFileName, con
                                            const NearestNeighborIndexFactory& index_factory)
     : TensorAttribute(baseFileName, cfg, _denseTensorStore),
       _denseTensorStore(cfg.tensorType(), get_memory_allocator()),
-      _index(),
       _comp(cfg.tensorType())
 {
     if (cfg.hnsw_index_params().has_value()) {
@@ -413,26 +411,6 @@ DenseTensorAttribute::onLoad(vespalib::Executor *executor)
         }
     }
     return true;
-}
-
-
-std::unique_ptr<AttributeSaver>
-DenseTensorAttribute::onInitSave(vespalib::stringref fileName)
-{
-    vespalib::GenerationHandler::Guard guard(getGenerationHandler().takeGuard());
-    auto index_saver = (_index ? _index->make_saver() : std::unique_ptr<NearestNeighborIndexSaver>());
-    return std::make_unique<DenseTensorAttributeSaver>
-        (std::move(guard),
-         this->createAttributeHeader(fileName),
-         getRefCopy(),
-         _denseTensorStore,
-         std::move(index_saver));
-}
-
-uint32_t
-DenseTensorAttribute::getVersion() const
-{
-    return DENSE_TENSOR_ATTRIBUTE_VERSION;
 }
 
 void

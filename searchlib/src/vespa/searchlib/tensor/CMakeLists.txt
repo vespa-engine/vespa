@@ -6,7 +6,6 @@ vespa_add_library(searchlib_tensor OBJECT
     blob_sequence_reader.cpp
     default_nearest_neighbor_index_factory.cpp
     dense_tensor_attribute.cpp
-    dense_tensor_attribute_saver.cpp
     dense_tensor_store.cpp
     direct_tensor_attribute.cpp
     direct_tensor_store.cpp
@@ -29,11 +28,11 @@ vespa_add_library(searchlib_tensor OBJECT
     serialized_fast_value_attribute.cpp
     small_subspaces_buffer_type.cpp
     tensor_attribute.cpp
+    tensor_attribute_saver.cpp
     tensor_buffer_operations.cpp
     tensor_buffer_store.cpp
     tensor_buffer_type_mapper.cpp
     tensor_deserialize.cpp
     tensor_store.cpp
-    tensor_store_saver.cpp
     DEPENDS
 )
