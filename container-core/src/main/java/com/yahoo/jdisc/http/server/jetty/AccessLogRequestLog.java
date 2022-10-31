@@ -8,6 +8,7 @@ import com.yahoo.container.logging.RequestLog;
 import com.yahoo.container.logging.RequestLogEntry;
 import com.yahoo.jdisc.http.HttpRequest;
 import com.yahoo.jdisc.http.ServerConfig;
+import jakarta.servlet.http.HttpServletRequest;
 import org.eclipse.jetty.http2.HTTP2Stream;
 import org.eclipse.jetty.http2.server.HttpTransportOverHTTP2;
 import org.eclipse.jetty.server.HttpChannel;
@@ -16,7 +17,6 @@ import org.eclipse.jetty.server.Request;
 import org.eclipse.jetty.server.Response;
 import org.eclipse.jetty.util.component.AbstractLifeCycle;
 
-import javax.servlet.http.HttpServletRequest;
 import java.security.cert.X509Certificate;
 import java.time.Duration;
 import java.time.Instant;

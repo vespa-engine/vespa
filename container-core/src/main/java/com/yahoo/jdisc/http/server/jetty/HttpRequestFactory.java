@@ -3,10 +3,10 @@ package com.yahoo.jdisc.http.server.jetty;
 
 import com.yahoo.jdisc.http.HttpRequest;
 import com.yahoo.jdisc.service.CurrentContainer;
+import jakarta.servlet.http.HttpServletRequest;
 import org.eclipse.jetty.server.Request;
 import org.eclipse.jetty.util.Utf8Appendable;
 
-import javax.servlet.http.HttpServletRequest;
 import java.net.InetSocketAddress;
 import java.net.URI;
 import java.security.cert.X509Certificate;
@@ -94,6 +94,6 @@ class HttpRequestFactory {
     }
 
     private static X509Certificate[] getCertChain(HttpServletRequest servletRequest) {
-        return (X509Certificate[]) servletRequest.getAttribute("javax.servlet.request.X509Certificate");
+        return (X509Certificate[]) servletRequest.getAttribute(RequestUtils.SERVLET_REQUEST_X509CERT);
     }
 }
