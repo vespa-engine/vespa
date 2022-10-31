@@ -1005,7 +1005,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
             .ifPresent(domain -> {
                 AthenzService service = spec.instance(app.getApplicationId().instance())
                                             .flatMap(instanceSpec -> instanceSpec.athenzService(zone.environment(), zone.region()))
-                                            .or(() -> spec.athenzService())
+                                            .or(spec::athenzService)
                                             .orElseThrow(() -> new IllegalArgumentException("Missing Athenz service configuration in instance '" +
                                                                                             app.getApplicationId().instance() + "'"));
             String zoneDnsSuffix = zone.environment().value() + "-" + zone.region().value() + "." + athenzDnsSuffix;
