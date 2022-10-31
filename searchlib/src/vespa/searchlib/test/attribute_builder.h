@@ -22,23 +22,35 @@ private:
     AttributeVector& _attr;
 
 public:
+    using WeightedInt = std::pair<int32_t, int32_t>;
+    using WeightedDouble = std::pair<double, int32_t>;
+    using WeightedString = std::pair<vespalib::string, int32_t>;
+    using IntList = std::initializer_list<int32_t>;
+    using DoubleList = std::initializer_list<double>;
+    using StringList = std::initializer_list<vespalib::string>;
+    using WeightedIntList = std::initializer_list<WeightedInt>;
+    using WeightedDoubleList = std::initializer_list<WeightedDouble>;
+    using WeightedStringList = std::initializer_list<WeightedString>;
+
     AttributeBuilder(const vespalib::string& name, const Config& cfg);
-    AttributeBuilder(AttributeVector& attr);
+
+    AttributeBuilder& docs(size_t num_docs);
 
     // Fill functions for integer attributes
     AttributeBuilder& fill(std::initializer_list<int32_t> values);
-    AttributeBuilder& fill_array(std::initializer_list<std::initializer_list<int32_t>> values);
-    AttributeBuilder& fill_wset(std::initializer_list<std::initializer_list<std::pair<int32_t, int32_t>>> values);
+    AttributeBuilder& fill(std::initializer_list<int64_t> values);
+    AttributeBuilder& fill_array(std::initializer_list<IntList> values);
+    AttributeBuilder& fill_wset(std::initializer_list<WeightedIntList> values);
 
     // Fill functions for float attributes
     AttributeBuilder& fill(std::initializer_list<double> values);
-    AttributeBuilder& fill_array(std::initializer_list<std::initializer_list<double>> values);
-    AttributeBuilder& fill_wset(std::initializer_list<std::initializer_list<std::pair<double, int32_t>>> values);
+    AttributeBuilder& fill_array(std::initializer_list<DoubleList> values);
+    AttributeBuilder& fill_wset(std::initializer_list<WeightedDoubleList> values);
 
     // Fill functions for string attributes
     AttributeBuilder& fill(std::initializer_list<vespalib::string> values);
-    AttributeBuilder& fill_array(std::initializer_list<std::initializer_list<vespalib::string>> values);
-    AttributeBuilder& fill_wset(std::initializer_list<std::initializer_list<std::pair<vespalib::string, int32_t>>> values);
+    AttributeBuilder& fill_array(std::initializer_list<StringList> values);
+    AttributeBuilder& fill_wset(std::initializer_list<WeightedStringList> values);
 
     std::shared_ptr<AttributeVector> get() const { return _attr_ptr; }
 };
