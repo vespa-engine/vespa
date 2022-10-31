@@ -82,7 +82,7 @@ private:
     void testFieldMatchExecutorRemaining();
 
     void assertAge(feature_t expAge, const vespalib::string & attr, uint64_t now, uint64_t docTime);
-    static void setupForAgeTest(FtFeatureTest & ft, uint64_t docTime);
+    static void setupForAgeTest(FtFeatureTest & ft, int64_t docTime);
     static void setupForAttributeTest(FtFeatureTest &ft, bool setup_env = true);
     void assertCloseness(feature_t exp, const vespalib::string & attr, double distance, double maxDistance = 0, double halfResponse = 0);
     static void setupForDistanceTest(FtFeatureTest & ft, const vespalib::string & attrName,

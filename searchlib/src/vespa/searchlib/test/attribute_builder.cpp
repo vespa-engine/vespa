@@ -14,12 +14,7 @@ AttributeBuilder::AttributeBuilder(const vespalib::string& name, const Config& c
     : _attr_ptr(AttributeFactory::createAttribute(name, cfg)),
       _attr(*_attr_ptr)
 {
-}
-
-AttributeBuilder::AttributeBuilder(AttributeVector& attr)
-    : _attr_ptr(),
-      _attr(attr)
-{
+    _attr.addReservedDoc();
 }
 
 namespace {
@@ -27,7 +22,6 @@ namespace {
 void
 add_docs(AttributeVector& attr, size_t num_docs)
 {
-    attr.addReservedDoc();
     attr.addDocs(num_docs);
 }
 
@@ -48,8 +42,7 @@ template <typename AttrType, typename ValueType>
 void
 fill_array_helper(AttributeVector& attr, std::initializer_list<std::initializer_list<ValueType>> values)
 {
-    assert((attr.getConfig().collectionType() == CollectionType::ARRAY) ||
-           (attr.getConfig().collectionType() == CollectionType::WSET));
+    assert(attr.hasMultiValue());
     add_docs(attr, values.size());
     auto& real = dynamic_cast<AttrType&>(attr);
     uint32_t docid = 1;
@@ -66,7 +59,7 @@ template <typename AttrType, typename ValueType>
 void
 fill_wset_helper(AttributeVector& attr, std::initializer_list<std::initializer_list<std::pair<ValueType, int32_t>>> values)
 {
-    assert(attr.getConfig().collectionType() == CollectionType::WSET);
+    assert(attr.hasMultiValue());
     add_docs(attr, values.size());
     auto& real = dynamic_cast<AttrType&>(attr);
     uint32_t docid = 1;
@@ -82,6 +75,13 @@ fill_wset_helper(AttributeVector& attr, std::initializer_list<std::initializer_l
 }
 
 AttributeBuilder&
+AttributeBuilder::docs(size_t num_docs)
+{
+    add_docs(_attr, num_docs);
+    return *this;
+}
+
+AttributeBuilder&
 AttributeBuilder::fill(std::initializer_list<int32_t> values)
 {
     fill_helper<IntegerAttribute, int32_t>(_attr, values);
@@ -89,14 +89,21 @@ AttributeBuilder::fill(std::initializer_list<int32_t> values)
 }
 
 AttributeBuilder&
-AttributeBuilder::fill_array(std::initializer_list<std::initializer_list<int32_t>> values)
+AttributeBuilder::fill(std::initializer_list<int64_t> values)
+{
+    fill_helper<IntegerAttribute, int64_t>(_attr, values);
+    return *this;
+}
+
+AttributeBuilder&
+AttributeBuilder::fill_array(std::initializer_list<IntList> values)
 {
     fill_array_helper<IntegerAttribute, int32_t>(_attr, values);
     return *this;
 }
 
 AttributeBuilder&
-AttributeBuilder::fill_wset(std::initializer_list<std::initializer_list<std::pair<int32_t, int32_t>>> values)
+AttributeBuilder::fill_wset(std::initializer_list<WeightedIntList> values)
 {
     fill_wset_helper<IntegerAttribute, int32_t>(_attr, values);
     return *this;
@@ -110,14 +117,14 @@ AttributeBuilder::fill(std::initializer_list<double> values)
 }
 
 AttributeBuilder&
-AttributeBuilder::fill_array(std::initializer_list<std::initializer_list<double>> values)
+AttributeBuilder::fill_array(std::initializer_list<DoubleList> values)
 {
     fill_array_helper<FloatingPointAttribute, double>(_attr, values);
     return *this;
 }
 
 AttributeBuilder&
-AttributeBuilder::fill_wset(std::initializer_list<std::initializer_list<std::pair<double, int32_t>>> values)
+AttributeBuilder::fill_wset(std::initializer_list<WeightedDoubleList> values)
 {
     fill_wset_helper<FloatingPointAttribute, double>(_attr, values);
     return *this;
@@ -131,14 +138,14 @@ AttributeBuilder::fill(std::initializer_list<vespalib::string> values)
 }
 
 AttributeBuilder&
-AttributeBuilder::fill_array(std::initializer_list<std::initializer_list<vespalib::string>> values)
+AttributeBuilder::fill_array(std::initializer_list<StringList> values)
 {
     fill_array_helper<StringAttribute, vespalib::string>(_attr, values);
     return *this;
 }
 
 AttributeBuilder&
-AttributeBuilder::fill_wset(std::initializer_list<std::initializer_list<std::pair<vespalib::string, int32_t>>> values)
+AttributeBuilder::fill_wset(std::initializer_list<WeightedStringList> values)
 {
     fill_wset_helper<StringAttribute, vespalib::string>(_attr, values);
     return *this;
