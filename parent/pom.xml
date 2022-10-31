@@ -1062,7 +1062,7 @@
         <maven-plugin-api.version>3.8.5</maven-plugin-api.version>
         <maven-plugin-tools.version>3.6.4</maven-plugin-tools.version>
         <maven-resources-plugin.version>3.2.0</maven-resources-plugin.version>
-        <maven-shade-plugin.version>3.3.0</maven-shade-plugin.version>
+        <maven-shade-plugin.version>3.4.1</maven-shade-plugin.version>
         <maven-site-plugin.version>3.9.1</maven-site-plugin.version>
         <maven-source-plugin.version>3.2.1</maven-source-plugin.version>
         <mockito.version>4.0.0</mockito.version>
