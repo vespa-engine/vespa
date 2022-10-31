@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/ssh-agent /bin/bash
 # Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 set -euo pipefail
@@ -23,8 +23,18 @@ BUILD_DIR=$(mktemp -d)
 trap "rm -rf $BUILD_DIR" EXIT
 cd $BUILD_DIR
 
-git clone --depth 1 https://github.com/vespa-engine/docker-image
+ssh-add -D
+ssh-add <(echo $DOCKER_IMAGE_DEPLOY_KEY | base64 -d)
+git clone git@github.com:vespa-engine/docker-image
 cd docker-image
+
+RELEASE_TAG="v$VESPA_VERSION"
+if git rev-parse $RELEASE_TAG &> /dev/null; then
+    git checkout $RELEASE_TAG
+else
+    git tag -a "$RELEASE_TAG" -m "Release version $VERSION"
+    git push origin "$RELEASE_TAG"
+fi
 
 docker info
 docker version
@@ -38,14 +48,20 @@ docker context use vespa-context
 docker buildx create --name vespa-builder --driver docker-container --use
 docker buildx inspect --bootstrap
 
-# Push to Docker Hub
-if curl -fsSL https://index.docker.io/v1/repositories/vespaengine/vespa/tags/$VESPA_VERSION &> /dev/null; then
-    echo "Container image docker.io/vespaengine/vespa:$VESPA_VERSION aldready exists."
-else
-    docker login --username aressem --password "$DOCKER_HUB_DEPLOY_KEY"
-    docker buildx build --progress plain --push --platform linux/amd64,linux/arm64 --build-arg VESPA_VERSION=$VESPA_VERSION \
-                        --tag docker.io/vespaengine/vespa:$VESPA_VERSION --tag docker.io/vespaengine/vespa:latest .
-fi
+for data in "Dockerfile vespa" "Dockerfile.minimal vespa-8-minimal"; do
+    set -- $data
+    DOCKER_FILE=$1
+    IMAGE_NAME=$2
+
+    # Push to Docker Hub
+    if curl -fsSL https://index.docker.io/v1/repositories/vespaengine/$IMAGE_NAME/tags/$VESPA_VERSION &> /dev/null; then
+        echo "Container image docker.io/vespaengine/$IMAGE_NAME:$VESPA_VERSION aldready exists."
+    else
+        docker login --username aressem --password "$DOCKER_HUB_DEPLOY_KEY"
+        docker buildx build --progress plain --push --platform linux/amd64,linux/arm64 --build-arg VESPA_VERSION=$VESPA_VERSION \
+               --file $DOCKER_FILE --tag docker.io/vespaengine/$IMAGE_NAME:$VESPA_VERSION --tag docker.io/vespaengine/$IMAGE_NAME:latest .
+    fi
+done
 
 # Push to GitHub Container Registry
 JWT=$(curl -sSL -u aressem:$GHCR_DEPLOY_KEY "https://ghcr.io/token?service=ghcr.io&scope=repository:vespa-engine/vespa:pull" | jq -re '.token')
@@ -57,4 +73,3 @@ else
     docker buildx build --progress plain --push --platform linux/amd64,linux/arm64 --build-arg VESPA_VERSION=$VESPA_VERSION \
                         --tag ghcr.io/vespa-engine/vespa:$VESPA_VERSION  --tag ghcr.io/vespa-engine/vespa:latest .
 fi
-
