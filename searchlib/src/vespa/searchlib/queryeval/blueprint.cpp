@@ -144,17 +144,6 @@ Blueprint::root() const
     return *bp;
 }
 
-SearchIterator::UP
-Blueprint::createFilterSearch(bool /*strict*/, FilterConstraint constraint) const
-{
-    if (constraint == FilterConstraint::UPPER_BOUND) {
-        return std::make_unique<FullSearch>();
-    } else {
-        LOG_ASSERT(constraint == FilterConstraint::LOWER_BOUND);
-        return std::make_unique<EmptySearch>();
-    }
-}
-
 std::unique_ptr<MatchingElementsSearch>
 Blueprint::create_matching_elements_search(const MatchingElementsFields &fields) const
 {
@@ -289,6 +278,17 @@ Blueprint::create_first_child_filter(const Children &children, bool strict, Blue
 {
     REQUIRE(children.size() > 0);
     return children[0]->createFilterSearch(strict, constraint);
+}
+
+std::unique_ptr<SearchIterator>
+Blueprint::create_default_filter(bool, FilterConstraint constraint)
+{
+    if (constraint == FilterConstraint::UPPER_BOUND) {
+        return std::make_unique<FullSearch>();
+    } else {
+        REQUIRE_EQ(constraint, FilterConstraint::LOWER_BOUND);
+        return std::make_unique<EmptySearch>();
+    }
 }
 
 vespalib::string

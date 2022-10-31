@@ -266,6 +266,9 @@ public:
             return std::make_unique<LocationPreFilterIterator<false>>(std::move(children));
         }
     }
+    SearchIteratorUP createFilterSearch(bool strict, FilterConstraint constraint) const override {
+        return create_default_filter(strict, constraint);
+    }
 
     void fetchPostings(const queryeval::ExecuteInfo &execInfo) override {
         for (auto & search : _rangeSearches) {
@@ -318,6 +321,9 @@ public:
             LOG(debug, "wrong size tfmda: %zu (fallback to old location iterator)\n", tfmda.size());
         }
         return FastS_AllocLocationIterator(_attribute.getNumDocs(), strict, _location);
+    }
+    SearchIteratorUP createFilterSearch(bool strict, FilterConstraint constraint) const override {
+        return create_default_filter(strict, constraint);
     }
 };
 

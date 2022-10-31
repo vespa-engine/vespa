@@ -287,6 +287,9 @@ struct VerifyMatchData {
             ++vmd.child_cnt;
             return std::make_unique<EmptySearch>();
         }
+        SearchIteratorUP createFilterSearch(bool strict, FilterConstraint constraint) const override {
+            return create_default_filter(strict, constraint);
+        }
     };
     size_t child_cnt = 0;
     TermFieldMatchData *child_tfmd = nullptr;

@@ -225,13 +225,14 @@ public:
     bool frozen() const { return _frozen; }
 
     virtual SearchIteratorUP createSearch(fef::MatchData &md, bool strict) const = 0;
-    virtual SearchIteratorUP createFilterSearch(bool strict, FilterConstraint constraint) const;
+    virtual SearchIteratorUP createFilterSearch(bool strict, FilterConstraint constraint) const = 0;
     static SearchIteratorUP create_and_filter(const Children &children, bool strict, FilterConstraint constraint);
     static SearchIteratorUP create_or_filter(const Children &children, bool strict, FilterConstraint constraint);
     static SearchIteratorUP create_atmost_and_filter(const Children &children, bool strict, FilterConstraint constraint);
     static SearchIteratorUP create_atmost_or_filter(const Children &children, bool strict, FilterConstraint constraint);
     static SearchIteratorUP create_andnot_filter(const Children &children, bool strict, FilterConstraint constraint);
     static SearchIteratorUP create_first_child_filter(const Children &children, bool strict, FilterConstraint constraint);
+    static SearchIteratorUP create_default_filter(bool strict, FilterConstraint constraint);
 
     // for debug dumping
     vespalib::string asString() const;

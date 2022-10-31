@@ -67,6 +67,9 @@ public:
 
     std::unique_ptr<SearchIterator> createLeafSearch(const search::fef::TermFieldMatchDataArray& tfmda,
                                                      bool strict) const override;
+    SearchIteratorUP createFilterSearch(bool strict, FilterConstraint constraint) const override {
+        return create_default_filter(strict, constraint);
+    }
     void visitMembers(vespalib::ObjectVisitor& visitor) const override;
     bool always_needs_unpack() const override;
 };

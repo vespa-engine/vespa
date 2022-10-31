@@ -38,6 +38,9 @@ struct MyTerm : public search::queryeval::SimpleLeafBlueprint {
     SearchIterator::UP createLeafSearch(const search::fef::TermFieldMatchDataArray &, bool) const override {
         return SearchIterator::UP();
     }
+    SearchIteratorUP createFilterSearch(bool strict, FilterConstraint constraint) const override {
+        return create_default_filter(strict, constraint);
+    }
 };
 
 class Test : public vespalib::TestApp {

@@ -51,6 +51,9 @@ public:
 
     SearchIterator::UP
     createLeafSearch(const fef::TermFieldMatchDataArray &tfmda, bool strict) const override;
+    SearchIteratorUP createFilterSearch(bool strict, FilterConstraint constraint) const override {
+        return create_default_filter(strict, constraint);
+    }
 
     // Exposed for testing
     const BitVectorCache::CountVector &  getKV() const { return _kV; }
