@@ -88,6 +88,9 @@ struct MyBlueprint : SimpleLeafBlueprint {
     {
         return std::make_unique<MyTerm>(hits, strict);
     }
+    SearchIteratorUP createFilterSearch(bool strict, FilterConstraint constraint) const override {
+        return create_default_filter(strict, constraint);
+    }
 };
 
 MyBlueprint::~MyBlueprint() = default;

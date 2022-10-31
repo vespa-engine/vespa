@@ -54,6 +54,9 @@ struct DefaultBlueprint : Blueprint {
     void fetchPostings(const ExecuteInfo &) override { abort(); }
     void freeze() override { abort(); }
     SearchIteratorUP createSearch(MatchData &, bool) const override { abort(); }
+    SearchIteratorUP createFilterSearch(bool strict, FilterConstraint constraint) const override {
+        return create_default_filter(strict, constraint);
+    }
 };
 
 // proxy class used to make various decorators for leaf blueprints
@@ -412,8 +415,13 @@ TEST(FilterSearchTest, custom_leaf) {
     verify(*hits({5,10,20}), Expect::hits({5,10,20}));
 }
 
-TEST(FilterSearchTest, default_blueprint) {
+TEST(FilterSearchTest, default_filter) {
     verify(DefaultBlueprint(), Expect::full(), Expect::empty());
+    auto adapter = [](const auto &ignore_children, bool strict, Constraint constraint) {
+                       (void) ignore_children;
+                       return Blueprint::create_default_filter(strict, constraint);
+                   };
+    verify(Combine(adapter, Children()), Expect::full(), Expect::empty());
 }
 
 TEST(FilterSearchTest, simple_or) {

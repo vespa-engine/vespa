@@ -82,6 +82,9 @@ struct MockBlueprint : SimpleLeafBlueprint {
         }
         return std::make_unique<MockSearch>(spec, term, strict, tfmda, postings_fetched);
     }
+    SearchIteratorUP createFilterSearch(bool strict, FilterConstraint constraint) const override {
+        return create_default_filter(strict, constraint);
+    }
     void fetchPostings(const search::queryeval::ExecuteInfo &execInfo) override {
         postings_strict = execInfo;
         postings_fetched = true;

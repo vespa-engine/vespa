@@ -360,6 +360,9 @@ public:
         (void) tfmda;
         return _sc->createIterator(&_tfmd, strict);
     }
+    SearchIteratorUP createFilterSearch(bool strict, FilterConstraint constraint) const override {
+        return create_default_filter(strict, constraint);
+    }
 private:
     search::SingleBoolAttribute     _a;
     std::unique_ptr<search::attribute::SearchContext> _sc;

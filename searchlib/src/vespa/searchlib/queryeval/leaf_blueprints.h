@@ -86,6 +86,10 @@ public:
     const attribute::ISearchContext *get_attribute_search_context() const override {
         return _ctx.get();
     }
+
+    SearchIteratorUP createFilterSearch(bool strict, FilterConstraint constraint) const override {
+        return create_default_filter(strict, constraint);
+    }
 };
 
 //-----------------------------------------------------------------------------

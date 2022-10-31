@@ -132,6 +132,10 @@ public:
     bool got_global_filter() const { return _got_global_filter; }
     // make public
     using LeafBlueprint::set_want_global_filter;
+
+    SearchIteratorUP createFilterSearch(bool strict, FilterConstraint constraint) const override {
+        return create_default_filter(strict, constraint);
+    }
 };
 
 //-----------------------------------------------------------------------------
