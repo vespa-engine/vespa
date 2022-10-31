@@ -8,7 +8,10 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
+import java.nio.charset.StandardCharsets;
 import java.util.Random;
+
+import static java.nio.charset.StandardCharsets.UTF_8;
 
 /**
  * @author Tony Vaagenes
@@ -18,11 +21,9 @@ import java.util.Random;
 public class DirConfigSource {
 
     private final File tempFolder;
-    public final ConfigSource configSource;
 
-    public DirConfigSource(File tmpDir, String testSourcePrefix) {
+    public DirConfigSource(File tmpDir) {
         this.tempFolder = tmpDir;
-        this.configSource = new ConfigSourceSet(testSourcePrefix + new Random().nextLong());
     }
 
     public void writeConfig(String name, String contents) {
@@ -42,17 +43,13 @@ public class DirConfigSource {
         return "dir:" + tempFolder.getPath();
     }
 
-    public ConfigSource configSource() {
-        return configSource;
-    }
-
     public void cleanup() {
         tempFolder.delete();
     }
 
     private static void printFile(File f, String content) {
         try (OutputStream out = new FileOutputStream(f)) {
-            out.write(content.getBytes("UTF-8"));
+            out.write(content.getBytes(UTF_8));
         } catch (IOException e) {
             throw new RuntimeException(e);
         }

@@ -18,11 +18,10 @@ public class ConfigSetSubscription<T extends ConfigInstance> extends ConfigSubsc
     private final ConfigSet set;
     private final ConfigKey<T> subKey;
 
-    ConfigSetSubscription(ConfigKey<T> key, ConfigSource cset) {
+    ConfigSetSubscription(ConfigKey<T> key, ConfigSet cset) {
         super(key);
-        if (!(cset instanceof ConfigSet)) throw new IllegalArgumentException("Source is not a ConfigSet: " + cset);
-        this.set = (ConfigSet) cset;
-        subKey = new ConfigKey<>(configClass, key.getConfigId());
+        this.set = cset;
+        this.subKey = new ConfigKey<>(configClass, key.getConfigId());
         if (!set.contains(subKey)) {
             throw new IllegalArgumentException("The given ConfigSet " + set + " does not contain a config for " + subKey);
         }

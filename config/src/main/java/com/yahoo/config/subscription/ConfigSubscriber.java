@@ -407,15 +407,6 @@ public class ConfigSubscriber implements AutoCloseable {
         }
     }
 
-    /**
-     * The source used by this subscriber.
-     *
-     * @return the {@link ConfigSource} used by this subscriber
-     */
-    public ConfigSource getSource() {
-        return source;
-    }
-
     public boolean isClosed() {
         synchronized (monitor) {
             return state == State.CLOSED;

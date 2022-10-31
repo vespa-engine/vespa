@@ -31,7 +31,7 @@ public class ContainerTestBase {
 
     @BeforeEach
     public void setup() {
-        dirConfigSource = new DirConfigSource(tmpDir, "ContainerTest-");
+        dirConfigSource = new DirConfigSource(tmpDir);
         componentGraph = new ComponentGraph(0);
         osgi = new TestOsgi(BundleTestUtil.testBundles());
     }
@@ -43,8 +43,8 @@ public class ContainerTestBase {
 
 
     protected Container newContainer(DirConfigSource dirConfigSource,
-                                            ComponentDeconstructor deconstructor) {
-        return new Container(new CloudSubscriberFactory(dirConfigSource.configSource),
+                                     ComponentDeconstructor deconstructor) {
+        return new Container(new CloudSubscriberFactory(null),
                              dirConfigSource.configId(),
                              deconstructor,
                              osgi);

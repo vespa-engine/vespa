@@ -92,7 +92,6 @@ public class ConfigSetSubscriptionTest {
         a0builder.message("A new message, 0").times(880);
         a1builder.message("A new message, 1").times(890);
         barBuilder.stringVal("new StringVal");
-        subscriber.reload(1);
         assertTrue(subscriber.nextConfig(0, false));
         assertTrue(hA0.isChanged());
         assertTrue(hA1.isChanged());

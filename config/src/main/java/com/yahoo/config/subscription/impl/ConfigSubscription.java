@@ -121,7 +121,7 @@ public abstract class ConfigSubscription<T extends ConfigInstance> {
         if (source instanceof FileSource || configId.startsWith("file:")) return getFileSub(key, source);
         if (source instanceof DirSource || configId.startsWith("dir:")) return getDirFileSub(key, source);
         if (source instanceof JarSource || configId.startsWith("jar:")) return getJarSub(key, source);
-        if (source instanceof ConfigSet) return new ConfigSetSubscription<>(key, source);
+        if (source instanceof ConfigSet cset) return new ConfigSetSubscription<>(key, cset);
         if (source instanceof ConfigSourceSet) {
             JRTConfigRequester requester = requesters.getRequester((ConfigSourceSet) source, timingValues);
             return new JRTConfigSubscription<>(key, requester, timingValues);
@@ -132,13 +132,12 @@ public abstract class ConfigSubscription<T extends ConfigInstance> {
     private static <T extends ConfigInstance> JarConfigSubscription<T> getJarSub(ConfigKey<T> key, ConfigSource source) {
         String jarName;
         String path = "config/";
-        if (source instanceof JarSource) {
-            JarSource js = (JarSource) source;
+        if (source instanceof JarSource js) {
             jarName = js.getJarFile().getName();
             if (js.getPath() != null) path = js.getPath();
         } else {
-            jarName = key.getConfigId().replace("jar:", "").replaceFirst("\\!/.*", "");
-            if (key.getConfigId().contains("!/")) path = key.getConfigId().replaceFirst(".*\\!/", "");
+            jarName = key.getConfigId().replace("jar:", "").replaceFirst("!/.*", "");
+            if (key.getConfigId().contains("!/")) path = key.getConfigId().replaceFirst(".*!/", "");
         }
         return new JarConfigSubscription<>(key, jarName, path);
     }

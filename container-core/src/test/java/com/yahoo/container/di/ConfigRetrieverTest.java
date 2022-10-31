@@ -39,7 +39,7 @@ public class ConfigRetrieverTest {
 
     @BeforeEach
     public void setup() {
-        dirConfigSource = new DirConfigSource(tmpDir, "ConfigRetrieverTest-");
+        dirConfigSource = new DirConfigSource(tmpDir);
     }
 
     @AfterEach
@@ -109,11 +109,10 @@ public class ConfigRetrieverTest {
 
     private ConfigRetriever createConfigRetriever() {
         String configId = dirConfigSource.configId();
-        CloudSubscriberFactory subscriberFactory = new CloudSubscriberFactory(dirConfigSource.configSource());
         Set<ConfigKey<? extends ConfigInstance>> keys = new HashSet<>();
         keys.add(new ConfigKey<>(Bootstrap1Config.class, configId));
         keys.add(new ConfigKey<>(Bootstrap2Config.class, configId));
-        return new ConfigRetriever(keys, subscriberFactory);
+        return new ConfigRetriever(keys, new CloudSubscriberFactory(null));
     }
 
     private void writeConfig(String name, String contents) {
