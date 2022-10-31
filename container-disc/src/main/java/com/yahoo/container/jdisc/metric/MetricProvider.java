@@ -17,13 +17,7 @@ public final class MetricProvider implements Provider<Metric> {
     private final Metric metric;
 
     public MetricProvider(MetricConsumerProvider provider) {
-        metric = new com.yahoo.jdisc.application.MetricProvider(new com.google.inject.Provider<MetricConsumer>() {
-
-            @Override
-            public MetricConsumer get() {
-                return provider.newInstance();
-            }
-        }).get();
+        metric = new com.yahoo.jdisc.application.MetricProvider(provider::newInstance).get();
     }
 
     @Override
