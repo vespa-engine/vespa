@@ -143,7 +143,20 @@ public class CoredumpHandlerTest {
         verify(coredumpIdSupplier, times(1)).get();
     }
 
-    void do_get_metadata_test(Optional<String> decryptionToken) throws IOException {
+    private static String buildExpectedMetadataString(Optional<String> decryptionToken) {
+        return "{\"fields\":{" +
+               "\"hostname\":\"host123.yahoo.com\"," +
+               "\"kernel_version\":\"3.10.0-862.9.1.el7.x86_64\"," +
+               "\"backtrace\":[\"call 1\",\"function 2\",\"something something\"]," +
+               "\"vespa_version\":\"6.48.4\"," +
+               "\"bin_path\":\"/bin/bash\"," +
+               "\"coredump_path\":\"/home/docker/dumps/container-123/id-123/dump_core.456\"," +
+               "\"docker_image\":\"vespa/ci:6.48.4\"" +
+               decryptionToken.map(",\"decryption_token\":\"%s\""::formatted).orElse("") +
+               "}}";
+    }
+
+    void do_get_metadata_test(Optional<String> oldDecryptionToken, Optional<String> newDecryptionToken) throws IOException {
         Map<String, Object> metadata = new HashMap<>();
         metadata.put("bin_path", "/bin/bash");
         metadata.put("backtrace", List.of("call 1", "function 2", "something something"));
@@ -154,17 +167,7 @@ public class CoredumpHandlerTest {
                 "kernel_version", "3.10.0-862.9.1.el7.x86_64",
                 "docker_image", "vespa/ci:6.48.4");
 
-        String expectedMetadataStr = "{\"fields\":{" +
-                "\"hostname\":\"host123.yahoo.com\"," +
-                "\"kernel_version\":\"3.10.0-862.9.1.el7.x86_64\"," +
-                "\"backtrace\":[\"call 1\",\"function 2\",\"something something\"]," +
-                "\"vespa_version\":\"6.48.4\"," +
-                "\"bin_path\":\"/bin/bash\"," +
-                "\"coredump_path\":\"/home/docker/dumps/container-123/id-123/dump_core.456\"," +
-                "\"docker_image\":\"vespa/ci:6.48.4\"" +
-                decryptionToken.map(",\"decryption_token\":\"%s\""::formatted).orElse("") +
-                "}}";
-
+        String expectedMetadataStr = buildExpectedMetadataString(oldDecryptionToken);
 
         ContainerPath coredumpDirectory = context.paths().of("/var/crash/id-123");
         Files.createDirectories(coredumpDirectory.pathOnHost());
@@ -172,23 +175,34 @@ public class CoredumpHandlerTest {
         when(coreCollector.collect(eq(context), eq(coredumpDirectory.resolve("dump_core.456"))))
                 .thenReturn(metadata);
 
-        assertEquals(expectedMetadataStr, coredumpHandler.getMetadata(context, coredumpDirectory, () -> attributes, decryptionToken));
+        assertEquals(expectedMetadataStr, coredumpHandler.getMetadata(context, coredumpDirectory, () -> attributes, oldDecryptionToken));
         verify(coreCollector, times(1)).collect(any(), any());
 
-        // Calling it again will simply read the previously generated metadata from disk
-        assertEquals(expectedMetadataStr, coredumpHandler.getMetadata(context, coredumpDirectory, () -> attributes, decryptionToken));
+        // Calling it again will read the previously generated metadata from disk and selectively
+        // patch in an updated decryption token value, if one is provided.
+        // This avoids having to re-run a potentially expensive collector step.
+        expectedMetadataStr = buildExpectedMetadataString(newDecryptionToken);
+        assertEquals(expectedMetadataStr, coredumpHandler.getMetadata(context, coredumpDirectory, () -> attributes, newDecryptionToken));
         verify(coreCollector, times(1)).collect(any(), any());
     }
 
     @Test
     void get_metadata_test_without_encryption() throws IOException {
-        do_get_metadata_test(Optional.empty()); // No token in metadata
+        do_get_metadata_test(Optional.empty(), Optional.empty()); // No token in metadata
     }
 
     @Test
     void get_metadata_test_with_encryption() throws IOException {
         when(secretSharedKeySupplier.get()).thenReturn(makeFixedSecretSharedKey());
-        do_get_metadata_test(Optional.of("AVeryCoolToken"));
+        do_get_metadata_test(Optional.of("AVeryCoolToken"), Optional.of("AnEvenCoolerToken"));
+    }
+
+    @Test
+    void get_metadata_test_without_encryption_then_with_encryption() throws IOException {
+        // Edge where encryption was enabled between attempted processing runs.
+        // We don't bother with testing the opposite edge case (encryption -> no encryption), since
+        // in that case the core dump itself won't be encrypted so the token will be a no-op.
+        do_get_metadata_test(Optional.empty(), Optional.of("TheSwaggestToken"));
     }
 
     @Test
@@ -212,13 +226,13 @@ public class CoredumpHandlerTest {
     void do_process_single_coredump_test(String expectedCoreFileName) throws IOException {
         ContainerPath coredumpDirectory = context.paths().of("/path/to/coredump/proccessing/id-123");
         Files.createDirectories(coredumpDirectory);
-        Files.write(coredumpDirectory.resolve("metadata.json"), "metadata".getBytes());
+        Files.write(coredumpDirectory.resolve("metadata.json"), "{\"test-metadata\":{}}".getBytes());
         Files.createFile(coredumpDirectory.resolve("dump_bash.core.431"));
         assertFolderContents(coredumpDirectory, "metadata.json", "dump_bash.core.431");
 
         coredumpHandler.processAndReportSingleCoredump(context, coredumpDirectory, Map::of);
         verify(coreCollector, never()).collect(any(), any());
-        verify(coredumpReporter, times(1)).reportCoredump(eq("id-123"), eq("metadata"));
+        verify(coredumpReporter, times(1)).reportCoredump(eq("id-123"), eq("{\"test-metadata\":{}}"));
         assertFalse(Files.exists(coredumpDirectory));
         assertFolderContents(doneCoredumpsPath.resolve("container-123"), "id-123");
         assertFolderContents(doneCoredumpsPath.resolve("container-123").resolve("id-123"), "metadata.json", expectedCoreFileName);

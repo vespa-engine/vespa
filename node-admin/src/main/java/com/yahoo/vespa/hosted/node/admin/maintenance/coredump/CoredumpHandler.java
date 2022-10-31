@@ -1,7 +1,9 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.node.admin.maintenance.coredump;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.yahoo.security.SecretSharedKey;
 import com.yahoo.security.SharedKeyGenerator;
 import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.NodeSpec;
@@ -190,8 +192,26 @@ public class CoredumpHandler {
             metadataPath.writeUtf8File(metadataFields);
             return metadataFields;
         } else {
-            return metadataPath.readUtf8File();
+            if (decryptionToken.isPresent()) {
+                // Since encryption keys are single-use and generated for each core dump processing invocation,
+                // we must ensure we store and report the token associated with the _latest_ (i.e. current)
+                // attempt at processing the core dump. Patch and rewrite the file with a new token, if present.
+                String metadataFields = metadataWithPatchedTokenValue(metadataPath, decryptionToken.get());
+                metadataPath.deleteIfExists();
+                metadataPath.writeUtf8File(metadataFields);
+                return metadataFields;
+            } else {
+                return metadataPath.readUtf8File();
+            }
         }
+    }
+
+    private String metadataWithPatchedTokenValue(UnixPath metadataPath, String decryptionToken) throws JsonProcessingException {
+        var jsonRoot = objectMapper.readTree(metadataPath.readUtf8File());
+        if (jsonRoot.path("fields").isObject()) {
+            ((ObjectNode)jsonRoot.get("fields")).put("decryption_token", decryptionToken);
+        } // else: unit testing case without real metadata
+        return objectMapper.writeValueAsString(jsonRoot);
     }
 
     static OutputStream maybeWrapWithEncryption(OutputStream wrappedStream, Optional<SecretSharedKey> sharedCoreKey) {
