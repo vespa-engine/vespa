@@ -25,7 +25,8 @@ enum PathGroup {
                        "/deployment/v1/{*}"),
 
     /** Paths used for system management by operators. */
-    operator("/controller/v1/{*}",
+    operator("/cores/v1/{*}",
+             "/controller/v1/{*}",
              "/flags/v1/{*}",
              "/loadbalancers/v1/{*}",
              "/nodes/v2/{*}",
