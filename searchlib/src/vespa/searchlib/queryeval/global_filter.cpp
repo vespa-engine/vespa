@@ -9,6 +9,7 @@
 
 using vespalib::Runnable;
 using vespalib::ThreadBundle;
+using vespalib::Trinary;
 
 namespace search::queryeval {
 
@@ -19,6 +20,15 @@ struct Inactive : GlobalFilter {
     uint32_t size() const override { abort(); }
     uint32_t count() const override { abort(); }
     bool check(uint32_t) const override { abort(); }
+};
+
+struct EmptyFilter : GlobalFilter {
+    uint32_t docid_limit;
+    EmptyFilter(uint32_t docid_limit_in) : docid_limit(docid_limit_in) {}
+    bool is_active() const override { return true; }
+    uint32_t size() const override { return docid_limit; }
+    uint32_t count() const override { return 0; }
+    bool check(uint32_t) const override { return false; }
 };
 
 struct BitVectorFilter : public GlobalFilter {
@@ -56,22 +66,38 @@ struct MultiBitVectorFilter : public GlobalFilter {
     }
 };
 
-std::unique_ptr<BitVector> make_part(Blueprint &blueprint, uint32_t begin, uint32_t end) {
+struct PartResult {
+    Trinary matches_any;
+    std::unique_ptr<BitVector> bits;
+    PartResult()
+      : matches_any(Trinary::False), bits() {}
+    PartResult(Trinary matches_any_in)
+      : matches_any(matches_any_in), bits() {}
+    PartResult(std::unique_ptr<BitVector> &&bits_in)
+      : matches_any(Trinary::Undefined), bits(std::move(bits_in)) {}
+};
+
+PartResult make_part(Blueprint &blueprint, uint32_t begin, uint32_t end) {
     bool strict = true;
     auto constraint = Blueprint::FilterConstraint::UPPER_BOUND;
-    auto filter_iterator = blueprint.createFilterSearch(strict, constraint);
-    filter_iterator->initRange(begin, end);
-    auto result = filter_iterator->get_hits(begin);
-    // count bits in parallel and cache the results for later
-    result->countTrueBits();
-    return result;
+    auto filter = blueprint.createFilterSearch(strict, constraint);
+    auto matches_any = filter->matches_any();
+    if (matches_any == Trinary::Undefined) {
+        filter->initRange(begin, end);
+        auto bits = filter->get_hits(begin);
+        // count bits in parallel and cache the results for later
+        bits->countTrueBits();
+        return PartResult(std::move(bits));
+    } else {
+        return PartResult(matches_any);
+    }
 }
 
 struct MakePart : Runnable {
     Blueprint &blueprint;
     uint32_t begin;
     uint32_t end;
-    std::unique_ptr<BitVector> result;
+    PartResult result;
     MakePart(Blueprint &blueprint_in, uint32_t begin_in, uint32_t end_in) noexcept
       : blueprint(blueprint_in), begin(begin_in), end(end_in), result() {}
     void run() override { result = make_part(blueprint, begin, end); }
@@ -146,13 +172,18 @@ GlobalFilter::create(Blueprint &blueprint, uint32_t docid_limit, ThreadBundle &t
     assert(parts.size() <= num_threads);
     assert((docid == docid_limit) || parts.empty());
     thread_bundle.run(parts);
-    if (parts.size() == 1) {
-        return create(std::move(parts[0].result));
-    }
     std::vector<std::unique_ptr<BitVector>> vectors;
     vectors.reserve(parts.size());
     for (MakePart &part: parts) {
-        vectors.push_back(std::move(part.result));
+        switch (part.result.matches_any) {
+        case Trinary::False: return std::make_unique<EmptyFilter>(docid_limit);
+        case Trinary::True: return create(); // filter not needed after all
+        case Trinary::Undefined:
+            vectors.push_back(std::move(part.result.bits));
+        }
+    }
+    if (vectors.size() == 1) {
+        return create(std::move(vectors[0]));
     }
     return create(std::move(vectors));
 }

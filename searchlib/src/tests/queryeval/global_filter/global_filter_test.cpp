@@ -2,6 +2,7 @@
 
 #include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/util/require.h>
+#include <vespa/vespalib/util/classname.h>
 #include <vespa/vespalib/util/simple_thread_bundle.h>
 #include <vespa/searchlib/common/bitvector.h>
 #include <vespa/searchlib/queryeval/global_filter.h>
@@ -197,6 +198,23 @@ TEST(GlobalFilterTest, multi_threaded_global_filter_works_with_docid_limit_0) {
     auto blueprint = create_blueprint(2, 100);
     auto filter = GlobalFilter::create(*blueprint, 0, thread_bundle);
     verify(*filter, 2, 1);
+}
+
+TEST(GlobalFilterTest, global_filter_matching_any_document_becomes_invalid) {
+    SimpleThreadBundle thread_bundle(7);
+    AlwaysTrueBlueprint blueprint;
+    auto filter = GlobalFilter::create(blueprint, 100, thread_bundle);
+    EXPECT_FALSE(filter->is_active());
+}
+
+TEST(GlobalFilterTest, global_filter_not_matching_any_document_becomes_empty) {
+    SimpleThreadBundle thread_bundle(7);
+    EmptyBlueprint blueprint;
+    auto filter = GlobalFilter::create(blueprint, 100, thread_bundle);
+    auto class_name = vespalib::getClassName(*filter);
+    fprintf(stderr, "empty global filter class name: %s\n", class_name.c_str());
+    EXPECT_TRUE(class_name.find("EmptyFilter") < class_name.size());
+    verify(*filter, 1000, 100);
 }
 
 GTEST_MAIN_RUN_ALL_TESTS()
