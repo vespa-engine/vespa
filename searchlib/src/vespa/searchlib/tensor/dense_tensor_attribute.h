@@ -20,7 +20,6 @@ class NearestNeighborIndex;
 class DenseTensorAttribute : public TensorAttribute, public DocVectorAccess {
 private:
     DenseTensorStore _denseTensorStore;
-    std::unique_ptr<NearestNeighborIndex> _index;
     TypedCellsComparator _comp;
 
     bool tensor_is_unchanged(DocId docid, const vespalib::eval::Value& new_tensor) const;
@@ -44,8 +43,6 @@ public:
     vespalib::eval::TypedCells extract_cells_ref(DocId docId) const override;
     bool supports_extract_cells_ref() const override { return true; }
     bool onLoad(vespalib::Executor *executor) override;
-    std::unique_ptr<AttributeSaver> onInitSave(vespalib::stringref fileName) override;
-    uint32_t getVersion() const override;
     void onCommit() override;
     void before_inc_generation(generation_t current_gen) override;
     void reclaim_memory(generation_t oldest_used_gen) override;

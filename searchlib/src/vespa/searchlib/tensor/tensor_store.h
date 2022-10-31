@@ -14,6 +14,8 @@ namespace vespalib::eval { struct Value; }
 
 namespace search::tensor {
 
+class DenseTensorStore;
+
 /**
  * Class for storing serialized tensors in memory, used by TensorAttribute.
  *
@@ -46,6 +48,7 @@ public:
     virtual EntryRef store_encoded_tensor(vespalib::nbostream& encoded) = 0;
     virtual std::unique_ptr<vespalib::eval::Value> get_tensor(EntryRef ref) const = 0;
     virtual bool encode_stored_tensor(EntryRef ref, vespalib::nbostream& target) const = 0;
+    virtual const DenseTensorStore* as_dense() const;
 
     // Inherit doc from DataStoreBase
     void reclaim_memory(generation_t oldest_used_gen) {

@@ -25,6 +25,7 @@ protected:
 
     RefVector _refVector; // docId -> ref in data store for serialized tensor
     TensorStore &_tensorStore; // data store for serialized tensors
+    std::unique_ptr<NearestNeighborIndex> _index;
     bool _is_dense;
     std::unique_ptr<vespalib::eval::Value> _emptyTensor;
     uint64_t    _compactGeneration; // Generation when last compact occurred

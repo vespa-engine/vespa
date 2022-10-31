@@ -184,4 +184,10 @@ DenseTensorStore::encode_stored_tensor(EntryRef ref, vespalib::nbostream& target
     abort();
 }
 
+const DenseTensorStore*
+DenseTensorStore::as_dense() const
+{
+    return this;
+}
+
 }
