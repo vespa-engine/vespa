@@ -19,6 +19,8 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <hadoop.version>3.3.4</hadoop.version>
         <woodstox.version>6.4.0</woodstox.version>
+        <sun-jersey-json.version>1.19.4</sun-jersey-json.version>
+        <jettison.version>1.5.1</jettison.version>
         <pig.version>0.16.0</pig.version>
     </properties>
 
@@ -35,6 +37,18 @@
                 <groupId>com.fasterxml.woodstox</groupId>
                 <artifactId>woodstox-core</artifactId>
                 <version>${woodstox.version}</version>
+            </dependency>
+            <!-- Force fresh jersey-json without security issue -->
+            <dependency>
+                <groupId>com.sun.jersey</groupId>
+                <artifactId>jersey-json</artifactId>
+                <version>${sun-jersey-json.version}</version>
+            </dependency>
+            <!-- Force fresh jettison without security issue -->
+            <dependency>
+                <groupId>org.codehaus.jettison</groupId>
+                <artifactId>jettison</artifactId>
+                <version>${jettison.version}</version>
             </dependency>
         </dependencies>
     </dependencyManagement>

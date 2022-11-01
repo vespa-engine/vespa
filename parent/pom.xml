@@ -999,6 +999,21 @@
                 <artifactId>json</artifactId>
                 <version>${org.json.version}</version>
             </dependency>
+            <dependency> <!-- Due to hadoop-common pulling in 1.7.7 -->
+                <groupId>org.apache.avro</groupId>
+                <artifactId>avro</artifactId>
+                <version>${avro.version}</version>
+            </dependency>
+            <dependency> <!-- Due to hadoop-common pulling in 9.8.1 -->
+                <groupId>com.nimbusds</groupId>
+                <artifactId>nimbus-jose-jwt</artifactId>
+                <version>${nimbus.version}</version>
+            </dependency>
+            <dependency> <!-- Due to hadoop-common pulling in older version -->
+                <groupId>net.minidev</groupId>
+                <artifactId>json-smart</artifactId>
+                <version>${json-smart.version}</version>
+            </dependency>
         </dependencies>
     </dependencyManagement>
 
@@ -1014,7 +1029,7 @@
 
         <!-- Athenz dependencies. Make sure these dependencies match those in Vespa's internal repositories -->
         <athenz.version>1.10.54</athenz.version> <!-- WARNING: sync cloud-tenant-base-dependencies-enforcer/pom.xml -->
-        <jjwt.version>0.11.2</jjwt.version>
+        <avro.version>1.11.1</avro.version>
         <aws-sdk.version>1.12.325</aws-sdk.version>
         <!-- Athenz END -->
 
@@ -1035,7 +1050,9 @@
         <hdrhistogram.version>2.1.12</hdrhistogram.version>
         <jetty.version>9.4.49.v20220914</jetty.version>
         <jetty-alpn.version>1.1.3.v20160715</jetty-alpn.version>
+        <jjwt.version>0.11.2</jjwt.version>
         <jna.version>5.11.0</jna.version>
+        <json-smart.version>2.4.8</json-smart.version>
         <junit.version>5.8.1</junit.version>
         <maven-archiver.version>3.5.2</maven-archiver.version>
         <maven-assembly-plugin.version>3.3.0</maven-assembly-plugin.version>
@@ -1056,6 +1073,7 @@
         <maven-site-plugin.version>3.9.1</maven-site-plugin.version>
         <maven-source-plugin.version>3.2.1</maven-source-plugin.version>
         <mockito.version>4.0.0</mockito.version>
+        <nimbus.version>9.25.6</nimbus.version>
         <onnxruntime.version>1.12.1</onnxruntime.version> <!-- WARNING: sync cloud-tenant-base-dependencies-enforcer/pom.xml -->
         <org.json.version>20220320</org.json.version>
         <org.lz4.version>1.8.0</org.lz4.version>
