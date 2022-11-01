@@ -612,30 +612,6 @@ public class DynamicProvisioningMaintainerTest {
         }
     }
 
-    @Test
-    public void rebuild_host() {
-        var tester = new DynamicProvisioningTester();
-        Node host1 = tester.addNode("host1", Optional.empty(), NodeType.host, Node.State.active);
-        Node host11 = tester.addNode("host1-1", Optional.of("host1"), NodeType.tenant, Node.State.parked, DynamicProvisioningTester.tenantApp);
-        Node host2 = tester.addNode("host2", Optional.empty(), NodeType.host, Node.State.active);
-        Node host21 = tester.addNode("host2-1", Optional.of("host2"), NodeType.tenant, Node.State.parked, DynamicProvisioningTester.tenantApp);
-
-        // No rebuilds in initial run
-        tester.maintainer.maintain();
-        assertEquals(0, tester.nodeRepository.nodes().list().rebuilding(true).size());
-
-        // Host starts rebuilding
-        tester.nodeRepository.nodes().rebuild(host1.hostname(), true, Agent.RebuildingOsUpgrader,
-                                              tester.nodeRepository.clock().instant());
-        tester.maintainer.maintain();
-        assertEquals(1, tester.nodeRepository.nodes().list().rebuilding(true).size());
-
-        // Rebuild completes
-        tester.hostProvisioner.completeRebuildOf(host1);
-        tester.maintainer.maintain();
-        assertEquals(0, tester.nodeRepository.nodes().list().rebuilding(true).size());
-    }
-
     private void provisionHostsIn(CloudAccount cloudAccount, int count, DynamicProvisioningTester tester) {
         tester.maintainer.maintain();
         List<String> provisionedHostnames = tester.hostProvisioner.provisionedHosts().stream()

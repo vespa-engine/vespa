@@ -143,8 +143,8 @@ public class MockHostProvisioner implements HostProvisioner {
         return this;
     }
 
-    public MockHostProvisioner completeRebuildOf(Node host) {
-        rebuildsCompleted.add(host.hostname());
+    public MockHostProvisioner completeRebuildOf(String hostname) {
+        rebuildsCompleted.add(hostname);
         return this;
     }
 
