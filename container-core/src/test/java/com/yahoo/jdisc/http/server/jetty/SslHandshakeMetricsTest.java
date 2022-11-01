@@ -16,13 +16,14 @@ import java.nio.file.Path;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
+import java.util.Optional;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import static com.yahoo.jdisc.http.server.jetty.Utils.createSslTestDriver;
 import static com.yahoo.jdisc.http.server.jetty.Utils.generatePrivateKeyAndCertificate;
-import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 import static org.junit.jupiter.api.Assumptions.assumeTrue;
@@ -59,7 +60,7 @@ class SslHandshakeMetricsTest {
         verify(metricConsumer.mockitoMock(), atLeast(1))
                 .add(MetricDefinitions.SSL_HANDSHAKE_FAILURE_MISSING_CLIENT_CERT, 1L, MetricConsumerMock.STATIC_CONTEXT);
         assertTrue(driver.close());
-        assertThat(connectionLog.logEntries()).hasSize(1);
+        assertTrue(connectionLog.logEntries().size() > 0);
         assertSslHandshakeFailurePresent(
                 connectionLog.logEntries().get(0), SSLHandshakeException.class, SslHandshakeFailure.MISSING_CLIENT_CERT.failureType());
     }
@@ -82,7 +83,7 @@ class SslHandshakeMetricsTest {
         verify(metricConsumer.mockitoMock(), atLeast(1))
                 .add(MetricDefinitions.SSL_HANDSHAKE_FAILURE_INCOMPATIBLE_PROTOCOLS, 1L, MetricConsumerMock.STATIC_CONTEXT);
         assertTrue(driver.close());
-        assertThat(connectionLog.logEntries()).hasSize(1);
+        assertTrue(connectionLog.logEntries().size() > 0);
         assertSslHandshakeFailurePresent(
                 connectionLog.logEntries().get(0), SSLHandshakeException.class, SslHandshakeFailure.INCOMPATIBLE_PROTOCOLS.failureType());
     }
@@ -103,7 +104,7 @@ class SslHandshakeMetricsTest {
         verify(metricConsumer.mockitoMock(), atLeast(1))
                 .add(MetricDefinitions.SSL_HANDSHAKE_FAILURE_INCOMPATIBLE_CIPHERS, 1L, MetricConsumerMock.STATIC_CONTEXT);
         assertTrue(driver.close());
-        assertThat(connectionLog.logEntries()).hasSize(1);
+        assertTrue(connectionLog.logEntries().size() > 0);
         assertSslHandshakeFailurePresent(
                 connectionLog.logEntries().get(0), SSLHandshakeException.class, SslHandshakeFailure.INCOMPATIBLE_CIPHERS.failureType());
     }
@@ -128,7 +129,7 @@ class SslHandshakeMetricsTest {
         verify(metricConsumer.mockitoMock(), atLeast(1))
                 .add(MetricDefinitions.SSL_HANDSHAKE_FAILURE_INVALID_CLIENT_CERT, 1L, MetricConsumerMock.STATIC_CONTEXT);
         assertTrue(driver.close());
-        assertThat(connectionLog.logEntries()).hasSize(1);
+        assertTrue(connectionLog.logEntries().size() > 0);
         assertSslHandshakeFailurePresent(
                 connectionLog.logEntries().get(0), SSLHandshakeException.class, SslHandshakeFailure.INVALID_CLIENT_CERT.failureType());
     }
@@ -153,7 +154,7 @@ class SslHandshakeMetricsTest {
         verify(metricConsumer.mockitoMock(), atLeast(1))
                 .add(MetricDefinitions.SSL_HANDSHAKE_FAILURE_EXPIRED_CLIENT_CERT, 1L, MetricConsumerMock.STATIC_CONTEXT);
         assertTrue(driver.close());
-        assertThat(connectionLog.logEntries()).hasSize(1);
+        assertTrue(connectionLog.logEntries().size() > 0);
     }
 
 
@@ -165,22 +166,28 @@ class SslHandshakeMetricsTest {
             String expectedExceptionSubstring) throws IOException {
         List<String> protocols = protocolOverride != null ? List.of(protocolOverride) : null;
         List<String> ciphers = cipherOverride != null ? List.of(cipherOverride) : null;
-        try (var client = new SimpleHttpClient(sslContext, protocols, ciphers, testDriver.server().getListenPort(), false)) {
-            client.get("/status.html");
-            fail("SSLHandshakeException expected");
-        } catch (SSLHandshakeException e) {
-            assertThat(e.getMessage()).contains(expectedExceptionSubstring);
-        } catch (SocketException | SSLException e) {
-            // This exception is thrown if Apache httpclient's write thread detects the handshake failure before the read thread.
-            log.log(Level.WARNING, "Client failed to get a proper TLS handshake response: " + e.getMessage(), e);
-            // Only ignore a subset of exceptions
-            assertTrue(e.getMessage().contains("readHandshakeRecord") || e.getMessage().contains("Broken pipe"), e.getMessage());
+        for (int i = 0; i < 100; i++) {
+            try (var client = new SimpleHttpClient(sslContext, protocols, ciphers, testDriver.server().getListenPort(), false)) {
+                client.get("/status.html");
+                fail("SSLHandshakeException expected");
+            } catch (SSLHandshakeException e) {
+                assertTrue(e.getMessage().contains(expectedExceptionSubstring), e.getMessage());
+                return; // OK!
+            } catch (SocketException | SSLException e) {
+                // This exception is thrown if Apache httpclient's write thread detects the handshake failure before the read thread.
+                log.log(Level.WARNING, "Client failed to get a proper TLS handshake response: " + e.getMessage(), e);
+                // Only ignore a subset of exceptions
+                assertTrue(   e.getMessage().contains("readHandshakeRecord")
+                           || e.getMessage().contains("Broken pipe")
+                           || e.getMessage().contains("Connection reset by peer"),
+                              e.getMessage());
+            }
         }
     }
 
     private static void assertSslHandshakeFailurePresent(
             ConnectionLogEntry entry, Class<? extends SSLHandshakeException> expectedException, String expectedType) {
-        assertThat(entry.sslHandshakeFailure()).isPresent();
+        assertNotEquals(Optional.empty(), entry.sslHandshakeFailure());
         ConnectionLogEntry.SslHandshakeFailure failure = entry.sslHandshakeFailure().get();
         assertEquals(expectedType, failure.type());
         ConnectionLogEntry.SslHandshakeFailure.ExceptionEntry exceptionEntry = failure.exceptionChain().get(0);
