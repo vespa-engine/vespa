@@ -8,7 +8,7 @@ import com.yahoo.test.ManualClock;
 import com.yahoo.vespa.config.ConfigKey;
 import org.junit.Test;
 
-import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
@@ -23,7 +23,7 @@ public class RoutingGeneratorTest {
         RouterMock router = new RouterMock();
         RoutingGenerator generator = new RoutingGenerator(new ConfigSetMock(), router, new ManualClock());
         try {
-            router.awaitLoad();
+            router.awaitLoad(generator);
             assertNotNull("Router loads table", router.currentTable);
             assertEquals("Routing generator and router has same table",
                          generator.routingTable().get(),
@@ -34,22 +34,24 @@ public class RoutingGeneratorTest {
     }
 
     private static class RouterMock implements Router {
-
-        private final CountDownLatch latch = new CountDownLatch(1);
-
         private volatile RoutingTable currentTable = null;
 
         @Override
         public void load(RoutingTable table) {
             currentTable = table;
-            latch.countDown();
         }
 
-        public void awaitLoad() {
-            try {
-                latch.await();
-            } catch (InterruptedException e) {
-                throw new RuntimeException(e);
+        public void awaitLoad(RoutingGenerator generator) {
+            AtomicBoolean completed = new AtomicBoolean(false);
+            while (!completed.get()) {
+                generator.routingTable().ifPresent(table -> completed.set(table == currentTable));
+                if (!completed.get()) {
+                    try {
+                        Thread.sleep(1);
+                    } catch (InterruptedException e) {
+                        throw new RuntimeException(e);
+                    }
+                }
             }
         }
 
