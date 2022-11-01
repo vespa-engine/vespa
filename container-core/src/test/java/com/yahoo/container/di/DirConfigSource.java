@@ -19,30 +19,24 @@ import static java.nio.charset.StandardCharsets.UTF_8;
  * @author gjoranv
  * @author ollivir
  */
-public class DirConfigSource {
+class DirConfigSource {
 
     private final File tempFolder;
-    public final ConfigSource configSource; // TODO jonmv: remove, unused
 
-    public DirConfigSource(File tmpDir, String testSourcePrefix) {
+     DirConfigSource(File tmpDir) {
         this.tempFolder = tmpDir;
-        this.configSource = new ConfigSourceSet(testSourcePrefix + new Random().nextLong());
     }
 
-    public void writeConfig(String name, String contents) {
-        File file = new File(tempFolder, name + ".cfg");
-        if (!file.exists()) {
-            try {
-                file.createNewFile();
-            } catch (IOException e) {
-                throw new RuntimeException(e);
-            }
+     void writeConfig(String name, String contents) {
+        try {
+            Files.writeString(tempFolder.toPath().resolve(name + ".cfg"), contents);
         }
-
-        printFile(file, contents + "\n");
+        catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
     }
 
-    public String configId() {
+     String configId() {
         return "dir:" + tempFolder.getPath();
     }
 
@@ -50,12 +44,5 @@ public class DirConfigSource {
         return configSource;
     }
 
-    private static void printFile(File f, String content) {
-        try (OutputStream out = new FileOutputStream(f)) {
-            out.write(content.getBytes(UTF_8));
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
-    }
 
 }

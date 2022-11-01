@@ -9,7 +9,6 @@ import com.yahoo.container.di.ConfigRetriever.BootstrapConfigs;
 import com.yahoo.container.di.ConfigRetriever.ComponentsConfigs;
 import com.yahoo.container.di.ConfigRetriever.ConfigSnapshot;
 import com.yahoo.vespa.config.ConfigKey;
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
@@ -39,7 +38,7 @@ public class ConfigRetrieverTest {
 
     @BeforeEach
     public void setup() {
-        dirConfigSource = new DirConfigSource(tmpDir, "ConfigRetrieverTest-");
+        dirConfigSource = new DirConfigSource(tmpDir);
     }
 
     @Test

@@ -22,7 +22,7 @@ public class ConfigSetSubscription<T extends ConfigInstance> extends ConfigSubsc
         super(key);
         this.set = cset;
         this.subKey = new ConfigKey<>(configClass, key.getConfigId());
-        if (!set.contains(subKey)) {
+        if ( ! set.contains(subKey)) {
             throw new IllegalArgumentException("The given ConfigSet " + set + " does not contain a config for " + subKey);
         }
         setGeneration(0L);

@@ -159,16 +159,10 @@ public abstract class ConfigSubscription<T extends ConfigInstance> {
         return new FileConfigSubscription<>(key, new File(dir, getConfigFilename(key)));
     }
 
-    @SuppressWarnings("unchecked")
     @Override
     public boolean equals(Object o) {
-        if (o instanceof ConfigSubscription) {
-            ConfigSubscription<T> other = (ConfigSubscription<T>) o;
-            return key.equals(other.key);
-        }
-        return false;
+        return o instanceof ConfigSubscription<?> cs && key.equals(cs.key);
     }
-
 
     /**
      * Called from {@link ConfigSubscriber} when the changed status of this config is propagated to the clients
