@@ -49,6 +49,7 @@ public:
     virtual std::unique_ptr<vespalib::eval::Value> get_tensor(EntryRef ref) const = 0;
     virtual bool encode_stored_tensor(EntryRef ref, vespalib::nbostream& target) const = 0;
     virtual const DenseTensorStore* as_dense() const;
+    virtual DenseTensorStore* as_dense();
 
     // Inherit doc from DataStoreBase
     void reclaim_memory(generation_t oldest_used_gen) {

@@ -190,4 +190,10 @@ DenseTensorStore::as_dense() const
     return this;
 }
 
+DenseTensorStore*
+DenseTensorStore::as_dense()
+{
+    return this;
+}
+
 }
