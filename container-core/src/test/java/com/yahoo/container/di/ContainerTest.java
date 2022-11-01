@@ -282,8 +282,9 @@ public class ContainerTest extends ContainerTestBase {
                      () -> getNewComponentGraph(container, currentGraph));
 
         ExecutorService exec = Executors.newFixedThreadPool(1);
+        dirConfigSource.clearCheckedConfigs();
         Future<ComponentGraph> newGraph = exec.submit(() -> getNewComponentGraph(container, currentGraph));
-
+        dirConfigSource.awaitConfigChecked(10_000);
         try {
             newGraph.get(1, TimeUnit.SECONDS);
             fail("Expected waiting for new config.");

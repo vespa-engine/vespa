@@ -10,6 +10,8 @@ import java.io.File;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.nio.file.Files;
+import java.util.HashSet;
+import java.util.Set;
 
 /**
  * @author Tony Vaagenes
@@ -18,7 +20,9 @@ import java.nio.file.Files;
  */
 class DirConfigSource {
 
+    private final Set<String> checked = new HashSet<>();
     private final File tempFolder;
+    private boolean doubleChecked;
 
     DirConfigSource(File tmpDir) {
         this.tempFolder = tmpDir;
@@ -37,8 +41,33 @@ class DirConfigSource {
         return "dir:" + tempFolder.getPath();
     }
 
+    synchronized void clearCheckedConfigs() {
+        checked.clear();
+        doubleChecked = false;
+    }
+
+    synchronized void awaitConfigChecked(long millis) throws InterruptedException {
+         long remaining, doom = System.currentTimeMillis() + millis;
+         while ( ! doubleChecked && (remaining = doom - System.currentTimeMillis()) > 0) wait(remaining);
+        Assertions.assertTrue(doubleChecked, "no config was checked more than once during " + millis + " millis");
+    }
+
     ConfigSource configSource() {
-        return new DirSource(tempFolder);
+        return new DirSource(tempFolder) {
+            @Override public FileSource getFile(String name) {
+                return new FileSource(new File(tempFolder, name)) {
+                    @Override public long getLastModified() {
+                        synchronized (DirConfigSource.this) {
+                            if ( ! checked.add(name)) {
+                                doubleChecked = true;
+                                DirConfigSource.this.notifyAll();
+                            }
+                            return super.getLastModified();
+                        }
+                    }
+                };
+            }
+        };
     }
 
 }
