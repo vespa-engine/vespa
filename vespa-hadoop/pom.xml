@@ -22,6 +22,7 @@
         <sun-jersey-json.version>1.19.4</sun-jersey-json.version>
         <jettison.version>1.5.1</jettison.version>
         <pig.version>0.16.0</pig.version>
+        <tomcat-jasper.version>5.5.23</tomcat-jasper.version>
     </properties>
 
     <dependencyManagement>
@@ -49,6 +50,23 @@
                 <groupId>org.codehaus.jettison</groupId>
                 <artifactId>jettison</artifactId>
                 <version>${jettison.version}</version>
+            </dependency>
+            <!-- Below versions are to bring transitive dependencies from pig up-to-date -->
+            <dependency>
+                <groupId>tomcat</groupId>
+                <artifactId>jasper-runtime</artifactId>
+                <version>${tomcat-jasper.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>tomcat</groupId>
+                <artifactId>jasper-compiler</artifactId>
+                <version>${tomcat-jasper.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.codehaus.groovy</groupId>
+                <artifactId>groovy-all</artifactId>
+                <version>3.0.13</version>
+                <type>pom</type>
             </dependency>
         </dependencies>
     </dependencyManagement>
