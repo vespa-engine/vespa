@@ -476,14 +476,6 @@
                 <artifactId>zookeeper</artifactId>
                 <version>${zookeeper.client.version}</version>
                 <exclusions>
-                    <!--
-                      Container provides wiring for all common log libraries
-                      Duplicate embedding results in various warnings being printed to stderr
-                     -->
-                    <exclusion>
-                        <groupId>org.slf4j</groupId>
-                        <artifactId>slf4j-api</artifactId>
-                    </exclusion>
                     <exclusion>
                         <groupId>org.slf4j</groupId>
                         <artifactId>slf4j-log4j12</artifactId>
