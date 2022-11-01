@@ -96,7 +96,7 @@ public class RebalancerTest {
         tester.maintain();
         assertTrue("Want to retire is reset", tester.getNodes(Node.State.active).stream().noneMatch(node -> node.status().wantToRetire()));
         assertEquals("Reserved node was moved to dirty", 2, tester.getNodes(Node.State.dirty).size());
-        String reservedHostname = tester.getNodes(Node.State.dirty).first().get().hostname();
+        String reservedHostname = tester.getNodes(Node.State.dirty).owner(memoryApp).first().get().hostname();
         tester.nodeRepository().nodes().setReady(reservedHostname, Agent.system, "Cleanup");
         tester.nodeRepository().nodes().removeRecursively(reservedHostname);
 

@@ -23,9 +23,9 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 import static com.yahoo.vespa.hosted.provision.node.Report.Type.HARD_FAIL;
 import static org.junit.Assert.assertEquals;
@@ -647,9 +647,9 @@ public class NodeFailerTest {
                 .entrySet().stream()
                 .filter(entry -> entry.getValue().size() == n)
                 .map(Map.Entry::getKey)
-                .flatMap(parentHost -> Stream.of(parentHost.get()))
+                .flatMap(Optional::stream)
                 .filter(node -> ! exceptSet.contains(node))
-                .findFirst()
+                .min(Comparator.naturalOrder())
                 .orElseThrow();
     }
 
