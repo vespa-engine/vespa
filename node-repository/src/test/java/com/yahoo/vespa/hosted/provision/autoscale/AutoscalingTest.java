@@ -2,6 +2,7 @@
 package com.yahoo.vespa.hosted.provision.autoscale;
 
 import com.yahoo.config.provision.Capacity;
+import com.yahoo.config.provision.Cloud;
 import com.yahoo.config.provision.ClusterResources;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.Environment;
@@ -14,9 +15,11 @@ import com.yahoo.config.provision.NodeResources.StorageType;
 import static com.yahoo.config.provision.NodeResources.StorageType.remote;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.config.provision.RegionName;
+import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
 import com.yahoo.vespa.hosted.provision.Nodelike;
+import com.yahoo.vespa.hosted.provision.autoscale.awsnodes.AwsHostResourcesCalculatorImpl;
 import com.yahoo.vespa.hosted.provision.provisioning.CapacityPolicies;
 import com.yahoo.vespa.hosted.provision.provisioning.HostResourcesCalculator;
 import org.junit.Test;
@@ -108,6 +111,27 @@ public class AutoscalingTest {
                                          fixture.autoscale());
     }
 
+    @Test
+    public void test_autoscaling_without_traffic() {
+        var min = new ClusterResources(1, 1, new NodeResources(2, 4, 10, 0.3));
+        var now = new ClusterResources(4, 1, new NodeResources(2, 16, 10, 0.3));
+        var max = new ClusterResources(4, 1, new NodeResources(3, 16, 50, 0.3));
+        var fixture = AutoscalingTester.fixture(min, now, max)
+                                       .clusterType(ClusterSpec.Type.container)
+                                       .awsProdSetup()
+                                       .build();
+        var duration = fixture.loader().addMeasurements(new Load(0.04, 0.39, 0.01), 20);
+        fixture.tester().clock().advance(duration.negated());
+        fixture.loader().zeroTraffic(20);
+
+        //System.out.println("Average       " + fixture.clusterModel().averageLoad());
+        //System.out.println("Ideal         " + fixture.clusterModel().idealLoad());
+        //System.out.println("Adjustment to " + fixture.clusterModel().loadAdjustment());
+        fixture.tester().assertResources("Scaled down",
+                                         2, 1, 2, 16, 10,
+                                         fixture.autoscale());
+    }
+
     /** We prefer fewer nodes for container clusters as (we assume) they all use the same disk and memory */
     @Test
     public void test_autoscaling_single_container_group() {
@@ -129,7 +153,7 @@ public class AutoscalingTest {
     public void autoscaling_handles_disk_setting_changes() {
         var resources = new NodeResources(3, 100, 100, 1, slow);
         var fixture = AutoscalingTester.fixture()
-                                       .hostResources(resources)
+                                       .hostFlavors(resources)
                                        .initialResources(Optional.of(new ClusterResources(5, 1, resources)))
                                        .capacity(Capacity.from(new ClusterResources(5, 1, resources)))
                                        .build();
@@ -266,7 +290,7 @@ public class AutoscalingTest {
         var fixture = AutoscalingTester.fixture()
                                        .dynamicProvisioning(true)
                                        .clusterType(ClusterSpec.Type.container)
-                                       .hostResources(local, remote)
+                                       .hostFlavors(local, remote)
                                        .capacity(Capacity.from(resources))
                                        .initialResources(Optional.of(new ClusterResources(3, 1, resources.nodeResources())))
                                        .build();
@@ -289,7 +313,7 @@ public class AutoscalingTest {
         var fixture = AutoscalingTester.fixture()
                                        .dynamicProvisioning(true)
                                        .clusterType(ClusterSpec.Type.content)
-                                       .hostResources(local, remote)
+                                       .hostFlavors(local, remote)
                                        .capacity(Capacity.from(resources))
                                        .initialResources(Optional.of(new ClusterResources(3, 1, resources.nodeResources())))
                                        .build();
@@ -459,10 +483,10 @@ public class AutoscalingTest {
         ClusterResources max = new ClusterResources(20, 1, new NodeResources(100, 1000, 1000, 1));
         var fixture = AutoscalingTester.fixture()
                                        .dynamicProvisioning(true)
-                                       .hostResources(new NodeResources(3, 200, 100, 1, fast, remote),
-                                                      new NodeResources(3, 150, 100, 1, fast, remote),
-                                                      new NodeResources(3, 100, 100, 1, fast, remote),
-                                                      new NodeResources(3,  80, 100, 1, fast, remote))
+                                       .hostFlavors(new NodeResources(3, 200, 100, 1, fast, remote),
+                                                    new NodeResources(3, 150, 100, 1, fast, remote),
+                                                    new NodeResources(3, 100, 100, 1, fast, remote),
+                                                    new NodeResources(3,  80, 100, 1, fast, remote))
                                        .capacity(Capacity.from(min, max))
                                        .initialResources(Optional.of(new ClusterResources(5, 1,
                                                                                           new NodeResources(3, 100, 100, 1))))

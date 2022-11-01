@@ -25,6 +25,15 @@ public class Loader {
         this.fixture = fixture;
     }
 
+    /** Assign measured zero traffic in the same way as the system will. */
+    public Duration zeroTraffic(int measurements) {
+        try (var lock = fixture.tester().nodeRepository().applications().lock(fixture.applicationId())) {
+            var statusWithZeroLoad = fixture.application().status().withCurrentReadShare(0).withMaxReadShare(1);
+            fixture.tester().nodeRepository().applications().put(fixture.application().with(statusWithZeroLoad), lock);
+        }
+        return addQueryRateMeasurements(measurements, (n) -> 0.0);
+    }
+
     /**
      * Adds measurements with the given resource value and ideal values for the other resources,
      * scaled to take one node redundancy into account.
