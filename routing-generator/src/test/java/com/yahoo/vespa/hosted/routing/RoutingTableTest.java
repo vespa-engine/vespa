@@ -10,20 +10,21 @@ import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.vespa.hosted.routing.RoutingTable.Endpoint;
 import com.yahoo.vespa.hosted.routing.RoutingTable.Real;
 import com.yahoo.vespa.hosted.routing.RoutingTable.Target;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 import java.util.List;
 import java.util.Map;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
  * @author mpolden
  */
-public class RoutingTableTest {
+class RoutingTableTest {
 
     @Test
-    public void translate_from_lb_services_config() {
+    void translate_from_lb_services_config() {
         RoutingTable expected = new RoutingTable(Map.of(
                 new Endpoint("beta.music.vespa.us-north-1.vespa.oath.cloud", RoutingMethod.sharedLayer4),
                 Target.create(ApplicationId.from("vespa", "music", "beta"),

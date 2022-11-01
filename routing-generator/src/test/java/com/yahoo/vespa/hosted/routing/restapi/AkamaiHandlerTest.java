@@ -16,15 +16,16 @@ import com.yahoo.vespa.hosted.routing.mock.RoutingStatusMock;
 import com.yahoo.vespa.hosted.routing.status.HealthStatus;
 import com.yahoo.vespa.hosted.routing.status.ServerGroup;
 import com.yahoo.yolean.Exceptions;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 import java.io.ByteArrayOutputStream;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * @author oyving
@@ -89,7 +90,7 @@ public class AkamaiHandlerTest {
         String responseBody = out.toString();
 
         String expected = "\"message\":\"" + message + "\"";
-        assertTrue("Contains expected message", responseBody.contains(expected));
+        assertTrue(responseBody.contains(expected), "Contains expected message");
     }
 
     private static RoutingTable makeRoutingTable() {

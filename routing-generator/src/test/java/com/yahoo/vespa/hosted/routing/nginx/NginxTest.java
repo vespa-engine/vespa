@@ -15,7 +15,8 @@ import com.yahoo.vespa.hosted.routing.TestUtil;
 import com.yahoo.vespa.hosted.routing.mock.RoutingStatusMock;
 import com.yahoo.yolean.Exceptions;
 import com.yahoo.yolean.concurrent.Sleeper;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 import java.nio.file.FileSystem;
 import java.nio.file.Files;
@@ -29,9 +30,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 /**
  * @author mpolden
@@ -125,7 +126,7 @@ public class NginxTest {
         }
 
         public NginxTester assertMetric(String name, double expected) {
-            assertEquals("Metric " + name + " has expected value", expected, metric.metrics().get(name).get(Map.of()), Double.MIN_VALUE);
+            assertEquals(expected, metric.metrics().get(name).get(Map.of()), Double.MIN_VALUE, "Metric " + name + " has expected value");
             return this;
         }
 
@@ -138,7 +139,7 @@ public class NginxTest {
 
         public NginxTester assertTemporaryConfigRemoved(boolean removed) {
             Path path = NginxPath.temporaryConfig.in(fileSystem);
-            assertEquals(path + (removed ? " does not exist" : " exists"), removed, !Files.exists(path));
+            assertEquals(removed, !Files.exists(path), path + (removed ? " does not exist" : " exists"));
             return this;
         }
 
@@ -163,8 +164,7 @@ public class NginxTest {
             if (loaded) {
                 assertEquals(reloadCommand, processExecuter.history().get(processExecuter.history().size() - 1));
             } else {
-                assertTrue("Config is not loaded",
-                           processExecuter.history.stream().noneMatch(command -> command.equals(reloadCommand)));
+                assertTrue(processExecuter.history.stream().noneMatch(command -> command.equals(reloadCommand)), "Config is not loaded");
             }
             return this;
         }

@@ -3,14 +3,14 @@ package com.yahoo.vespa.hosted.routing.status;
 
 import com.yahoo.vespa.hosted.routing.mock.HttpClientMock;
 import com.yahoo.vespa.hosted.routing.mock.HttpClientMock.JsonResponse;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.net.URI;
 import java.util.Arrays;
 import java.util.stream.Collectors;
 
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * @author mpolden

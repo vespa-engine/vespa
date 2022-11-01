@@ -12,7 +12,8 @@ import com.yahoo.vespa.hosted.routing.RoutingTable.Endpoint;
 import com.yahoo.vespa.hosted.routing.RoutingTable.Target;
 import com.yahoo.vespa.hosted.routing.mock.HealthStatusMock;
 import com.yahoo.vespa.hosted.routing.status.ServerGroup;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
 import java.nio.file.FileSystem;
@@ -25,8 +26,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNull;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 
 /**
  * @author mortent

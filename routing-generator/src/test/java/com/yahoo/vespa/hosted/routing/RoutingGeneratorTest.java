@@ -6,28 +6,31 @@ import com.yahoo.config.ConfigInstance;
 import com.yahoo.config.subscription.ConfigSet;
 import com.yahoo.test.ManualClock;
 import com.yahoo.vespa.config.ConfigKey;
-import org.junit.Test;
+import org.junit.jupiter.api.RepeatedTest;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Timeout;
 
 import java.util.concurrent.CountDownLatch;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 /**
  * @author mpolden
  */
 public class RoutingGeneratorTest {
 
-    @Test(timeout = 2000)
+    @Test()
+    @Timeout(5)
     public void config_subscription() {
         RouterMock router = new RouterMock();
         RoutingGenerator generator = new RoutingGenerator(new ConfigSetMock(), router, new ManualClock());
         try {
             router.awaitLoad();
-            assertNotNull("Router loads table", router.currentTable);
-            assertEquals("Routing generator and router has same table",
-                         generator.routingTable().get(),
-                         router.currentTable);
+            assertNotNull(router.currentTable, "Router loads table");
+            assertEquals(generator.routingTable().get(),
+                         router.currentTable,
+                         "Routing generator and router has same table");
         } finally {
             generator.deconstruct();
         }
@@ -65,6 +68,7 @@ public class RoutingGeneratorTest {
 
         @Override
         public ConfigInstance.Builder get(ConfigKey<?> key) {
+            incrementGeneration();
             if (++attempt <= 5) {
                 throw new RuntimeException("Failed to get config on attempt " + attempt);
             }
