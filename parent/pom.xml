@@ -1009,6 +1009,11 @@
                 <artifactId>nimbus-jose-jwt</artifactId>
                 <version>${nimbus.version}</version>
             </dependency>
+            <dependency> <!-- Due to hadoop-common pulling in older version -->
+                <groupId>net.minidev</groupId>
+                <artifactId>json-smart</artifactId>
+                <version>${json-smart.version}</version>
+            </dependency>
         </dependencies>
     </dependencyManagement>
 
@@ -1047,6 +1052,7 @@
         <jetty-alpn.version>1.1.3.v20160715</jetty-alpn.version>
         <jjwt.version>0.11.2</jjwt.version>
         <jna.version>5.11.0</jna.version>
+        <json-smart.version>2.4.8</json-smart.version>
         <junit.version>5.8.1</junit.version>
         <maven-archiver.version>3.5.2</maven-archiver.version>
         <maven-assembly-plugin.version>3.3.0</maven-assembly-plugin.version>
