@@ -36,6 +36,10 @@ public final class MethodCache {
 
     public Method get(Object object, Consumer<String> onPut) {
         Pair<Class<?>, Method> pair = cache.get(object.getClass().getName());
+        // When changing bundles, you might end up having cached the old method pointing to the old bundle.
+        // That will then lead to a class cast exception when invoking the wrong clone method.
+        // Whenever we detect a new class with the same name, we therefore drop the entire cache. 
+        // This is also the reason for caching the pair of method and original class—not just the method.
         if (pair != null && pair.getFirst() != object.getClass()) {
             cache.clear();
             pair = null;
