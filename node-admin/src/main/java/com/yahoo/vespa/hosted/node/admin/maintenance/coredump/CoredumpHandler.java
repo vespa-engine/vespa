@@ -50,7 +50,7 @@ public class CoredumpHandler {
     private static final Pattern HS_ERR_PATTERN = Pattern.compile("hs_err_pid[0-9]+\\.log");
     private static final String PROCESSING_DIRECTORY_NAME = "processing";
     private static final String METADATA_FILE_NAME = "metadata.json";
-    private static final String COMPRESSED_EXTENSION = ".zstd";
+    private static final String COMPRESSED_EXTENSION = ".zst";
     private static final String ENCRYPTED_EXTENSION = ".enc";
     public static final String COREDUMP_FILENAME_PREFIX = "dump_";
 

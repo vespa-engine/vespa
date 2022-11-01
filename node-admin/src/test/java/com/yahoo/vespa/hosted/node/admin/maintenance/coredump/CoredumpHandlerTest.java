@@ -217,8 +217,8 @@ public class CoredumpHandlerTest {
         assertThrows(IllegalStateException.class, () -> {
             ContainerPath coredumpDirectory = context.paths().of("/path/to/coredump/proccessing/id-123");
             Files.createDirectories(coredumpDirectory);
-            Files.createFile(coredumpDirectory.resolve("dump_bash.core.431.zstd"));
-            Files.createFile(coredumpDirectory.resolve("dump_bash.core.543.zstd.enc"));
+            Files.createFile(coredumpDirectory.resolve("dump_bash.core.431.zst"));
+            Files.createFile(coredumpDirectory.resolve("dump_bash.core.543.zst.enc"));
             coredumpHandler.findCoredumpFileInProcessingDirectory(coredumpDirectory);
         });
     }
@@ -240,13 +240,13 @@ public class CoredumpHandlerTest {
 
     @Test
     void process_single_coredump_test_without_encryption() throws IOException {
-        do_process_single_coredump_test("dump_bash.core.431.zstd");
+        do_process_single_coredump_test("dump_bash.core.431.zst");
     }
 
     @Test
     void process_single_coredump_test_with_encryption() throws IOException {
         when(secretSharedKeySupplier.get()).thenReturn(makeFixedSecretSharedKey());
-        do_process_single_coredump_test("dump_bash.core.431.zstd.enc");
+        do_process_single_coredump_test("dump_bash.core.431.zst.enc");
     }
 
     @Test
