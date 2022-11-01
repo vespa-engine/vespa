@@ -198,8 +198,7 @@ TensorAttributeLoader::TensorAttributeLoader(AttributeVector& attr, GenerationHa
       _generation_handler(generation_handler),
       _ref_vector(ref_vector),
       _store(store),
-      _index(index),
-      _use_index_file(false)
+      _index(index)
 {
 }
 
@@ -254,44 +253,38 @@ void
 TensorAttributeLoader::build_index(vespalib::Executor* executor, uint32_t docid_limit)
 {
     std::unique_ptr<IndexBuilder> builder;
-    if (_index && !_use_index_file) {
-        if (executor != nullptr) {
-            builder = std::make_unique<ThreadedIndexBuilder>(_attr, _generation_handler, _store, *_index, *executor);
-        } else {
-            builder = std::make_unique<ForegroundIndexBuilder>(_attr, *_index);
+    if (executor != nullptr) {
+        builder = std::make_unique<ThreadedIndexBuilder>(_attr, _generation_handler, _store, *_index, *executor);
+    } else {
+        builder = std::make_unique<ForegroundIndexBuilder>(_attr, *_index);
+    }
+    for (uint32_t lid = 0; lid < docid_limit; ++lid) {
+        auto ref = _ref_vector[lid].load_relaxed();
+        if (ref.valid()) {
+            builder->add(lid, ref);
         }
     }
-    if (builder) {
-        for (uint32_t lid = 0; lid < docid_limit; ++lid) {
-            auto ref = _ref_vector[lid].load_relaxed();
-            if (ref.valid()) {
-                builder->add(lid, ref);
-            }
-        }
-        builder->wait_complete();
-        _attr.commit();
-    }
+    builder->wait_complete();
+    _attr.commit();
 }
 
 bool
 TensorAttributeLoader::load_index()
 {
-    if (_index && _use_index_file) {
-        FileWithHeader index_file(LoadUtils::openFile(_attr, TensorAttributeSaver::index_file_suffix()));
-        try {
-            auto index_loader = _index->make_loader(index_file.file());
-            size_t cnt = 0;
-            while (index_loader->load_next()) {
-                if ((++cnt % LOAD_COMMIT_INTERVAL) == 0) {
-                    _attr.commit();
-                }
+    FileWithHeader index_file(LoadUtils::openFile(_attr, TensorAttributeSaver::index_file_suffix()));
+    try {
+        auto index_loader = _index->make_loader(index_file.file());
+        size_t cnt = 0;
+        while (index_loader->load_next()) {
+            if ((++cnt % LOAD_COMMIT_INTERVAL) == 0) {
+                _attr.commit();
             }
-            _attr.commit();
-        } catch (const std::runtime_error& ex) {
-            LOG(error, "Exception while loading nearest neighbor index for tensor attribute '%s': %s",
-                _attr.getName().c_str(), ex.what());
-            return false;
         }
+        _attr.commit();
+    } catch (const std::runtime_error& ex) {
+        LOG(error, "Exception while loading nearest neighbor index for tensor attribute '%s': %s",
+            _attr.getName().c_str(), ex.what());
+        return false;
     }
     return true;
 }
@@ -302,10 +295,6 @@ TensorAttributeLoader::on_load(vespalib::Executor* executor)
     BlobSequenceReader reader(_attr);
     if (!reader.hasData()) {
         return false;
-    }
-    if (_index != nullptr && has_index_file(_attr)) {
-        auto header = AttributeHeader::extractTags(reader.getDatHeader(), _attr.getBaseFileName());
-        _use_index_file = can_use_index_save_file(_attr.getConfig(), header);
     }
     _attr.setCreateSerialNum(reader.getCreateSerialNum());
     assert(_attr.getConfig().tensorType().to_spec() ==
@@ -322,8 +311,21 @@ TensorAttributeLoader::on_load(vespalib::Executor* executor)
     _attr.commit();
     _attr.getStatus().setNumDocs(docid_limit);
     _attr.setCommittedDocIdLimit(docid_limit);
-    build_index(executor, docid_limit);
-    return load_index();
+    if (_index != nullptr) {
+        bool use_index_file = false;
+        if (has_index_file(_attr)) {
+            auto header = AttributeHeader::extractTags(reader.getDatHeader(), _attr.getBaseFileName());
+            use_index_file = can_use_index_save_file(_attr.getConfig(), header);
+        }
+        if (use_index_file) {
+            if (!load_index()) {
+                return false;
+            }
+        } else {
+            build_index(executor, docid_limit);
+        }
+    }
+    return true;
 }
 
 }

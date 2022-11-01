@@ -28,7 +28,6 @@ class TensorAttributeLoader {
     RefVector&            _ref_vector;
     TensorStore&          _store;
     NearestNeighborIndex* _index;
-    bool                  _use_index_file;
 
     void load_dense_tensor_store(BlobSequenceReader& reader, uint32_t docid_limit, DenseTensorStore& dense_store);
     void load_tensor_store(BlobSequenceReader& reader, uint32_t docid_limit);
