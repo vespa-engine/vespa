@@ -235,7 +235,7 @@ public class Flags {
 
     public static final UnboundDoubleFlag MIN_NODE_RATIO_PER_GROUP = defineDoubleFlag(
             "min-node-ratio-per-group", 0.0,
-            List.of("geirst", "vekterli"), "2021-07-16", "2022-11-01",
+            List.of("geirst", "vekterli"), "2021-07-16", "2023-02-01",
             "Minimum ratio of nodes that have to be available (i.e. not Down) in any hierarchic content cluster group for the group to be Up",
             "Takes effect at redeployment",
             ZONE_ID, APPLICATION_ID);
@@ -349,7 +349,7 @@ public class Flags {
 
     public static final UnboundBooleanFlag USE_TWO_PHASE_DOCUMENT_GC = defineFeatureFlag(
             "use-two-phase-document-gc", false,
-            List.of("vekterli"), "2022-08-24", "2022-11-01",
+            List.of("vekterli"), "2022-08-24", "2022-12-01",
             "Use two-phase document GC in content clusters",
             "Takes effect at redeployment",
             ZONE_ID, APPLICATION_ID);
