@@ -96,20 +96,8 @@ public class CloneHelper {
             return ((HashMap<?, ?>) object).clone();
         else if (object instanceof HashSet)
             return ((HashSet<?>) object).clone();
-        try {
-            return cloneByReflection(object);
-        } catch (IllegalArgumentException e) {
-            if ( ! (   e.getCause() instanceof ClassCastException
-                    || Objects.requireNonNullElse(e.getMessage(), "").startsWith("java.lang.ClassCastException")))
-                throw e;
-
-            // When changing bundles you might end up having cached the old method pointing to old bundle,
-            // That might then lead to a class cast exception when invoking the wrong clone method.
-            // So we will give dropping the cache a try, and retry the clone.
-            cloneMethodCache.clear();
-            return cloneByReflection(object);
-        }
-
+        
+        return cloneByReflection(object);
     }
 
     private Object cloneByReflection(Object object) {

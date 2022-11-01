@@ -57,7 +57,7 @@ public class OsgiImpl implements Osgi {
         return jdiscOsgi.getBundles(alwaysCurrentBundle);
     }
 
-    public Class<Object> resolveClass(BundleInstantiationSpecification spec) {
+    public Class<?> resolveClass(BundleInstantiationSpecification spec) {
         Bundle bundle = getBundle(spec.bundle);
         if (bundle != null) {
             return resolveFromBundle(spec, bundle);
