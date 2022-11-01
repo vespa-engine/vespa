@@ -25,7 +25,9 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+import java.util.concurrent.CancellationException;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
@@ -54,7 +56,7 @@ public class ApplicationMetricsRetriever extends AbstractComponent implements Ru
     private final Thread pollThread;
     private final Set<ConsumerId> consumerSet;
     private long pollCount = 0;
-    private boolean stopped;
+    private final AtomicBoolean stopped;
 
     private final AtomicReference<Duration> taskTimeout;
 
@@ -62,7 +64,7 @@ public class ApplicationMetricsRetriever extends AbstractComponent implements Ru
     public ApplicationMetricsRetriever(MetricsNodesConfig nodesConfig) {
         clients = createNodeClients(nodesConfig);
         taskTimeout = new AtomicReference<>(timeout(clients.size()));
-        stopped = false;
+        stopped = new AtomicBoolean(false);
         consumerSet = new HashSet<>();
         httpClient.start();
         pollThread = new Thread(this, "metrics-poller");
@@ -90,7 +92,7 @@ public class ApplicationMetricsRetriever extends AbstractComponent implements Ru
                     pollCount++;
                     pollThread.notifyAll();
                     pollThread.wait(timeUntilNextPoll.toMillis());
-                    if (stopped) return;
+                    if (stopped.get()) return;
                 }
             } catch (InterruptedException e) {
             } catch (Exception e) {
@@ -108,11 +110,16 @@ public class ApplicationMetricsRetriever extends AbstractComponent implements Ru
             log.warning("Failed closing httpclient: " + e);
         }
         synchronized (pollThread) {
-            stopped = true;
+            stopped.set(true);
             pollThread.notifyAll();
         }
         try {
-            pollThread.join();
+            pollThread.join(Duration.ofSeconds(3).toMillis());
+            if (pollThread.isAlive()) {
+                log.log(Level.WARNING, "metrics poller thread still not stopped, using Thread.interrupt():");
+                pollThread.interrupt();
+                pollThread.join();
+            }
         } catch (InterruptedException e) {}
         super.deconstruct();
     }
@@ -160,12 +167,13 @@ public class ApplicationMetricsRetriever extends AbstractComponent implements Ru
         int numOk = 0;
         int numTried = futures.size();
         for (Map.Entry<Node, Future<?>> entry : futures.entrySet()) {
+            if (stopped.get()) break;
             try {
                 entry.getValue().get(taskTimeout.get().toMillis(), TimeUnit.MILLISECONDS);
                 numOk++;
-            } catch (InterruptedException | ExecutionException | TimeoutException e) {
+            } catch (InterruptedException | ExecutionException | TimeoutException | CancellationException e) {
                 Throwable cause = e.getCause();
-                if (stopped || e instanceof ExecutionException && ((cause instanceof SocketException) || cause instanceof ConnectTimeoutException)) {
+                if (stopped.get() || e instanceof ExecutionException && ((cause instanceof SocketException) || cause instanceof ConnectTimeoutException)) {
                     log.log(Level.FINE, "Failed retrieving metrics for '" + entry.getKey() + "' : " + cause.getMessage());
                 } else {
                     log.log(Level.WARNING, "Failed retrieving metrics for '" + entry.getKey() + "' : ", e);
