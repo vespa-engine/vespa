@@ -61,12 +61,11 @@ public class SearchHandlerTest {
     public void startUp() throws IOException {
         File cfgDir = newFolder(tempfolder, "SearchHandlerTestCase");
         tempDir = cfgDir.getAbsolutePath();
-        String configId = "dir:" + tempDir;
 
         IOUtils.copyDirectory(new File(testDir), cfgDir, 1); // make configs active
         generateComponentsConfigForActive();
 
-        configurer = new HandlersConfigurerTestWrapper(new Container(), configId);
+        configurer = new HandlersConfigurerTestWrapper(new Container(), cfgDir);
         searchHandler = (SearchHandler)configurer.getRequestHandlerRegistry().getComponent(SearchHandler.class.getName());
         metric = (MockMetric) searchHandler.metric();
         driver = new RequestHandlerTestDriver(searchHandler);

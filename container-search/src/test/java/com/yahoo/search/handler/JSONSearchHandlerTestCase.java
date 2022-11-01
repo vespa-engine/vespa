@@ -71,7 +71,7 @@ public class JSONSearchHandlerTestCase {
         IOUtils.copyDirectory(new File(testDir), cfgDir, 1); // make configs active
         generateComponentsConfigForActive();
 
-        configurer = new HandlersConfigurerTestWrapper(new Container(), configId);
+        configurer = new HandlersConfigurerTestWrapper(new Container(), cfgDir);
         searchHandler = (SearchHandler)configurer.getRequestHandlerRegistry().getComponent(SearchHandler.class.getName());
         driver = new RequestHandlerTestDriver(searchHandler);
     }

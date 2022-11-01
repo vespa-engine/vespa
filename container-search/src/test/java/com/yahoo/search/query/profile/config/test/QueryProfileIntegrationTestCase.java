@@ -16,6 +16,8 @@ import com.yahoo.search.result.Hit;
 import com.yahoo.search.searchchain.Execution;
 import org.junit.jupiter.api.Test;
 
+import java.io.File;
+
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
@@ -33,10 +35,9 @@ public class QueryProfileIntegrationTestCase {
 
     @Test
     void testUntyped() {
-        String configId = "dir:src/test/java/com/yahoo/search/query/profile/config/test/untyped";
-        System.setProperty("config.id", configId);
+        File cfgDir = new File("src/test/java/com/yahoo/search/query/profile/config/test/untyped");
         Container container = new Container();
-        HandlersConfigurerTestWrapper configurer = new HandlersConfigurerTestWrapper(container, configId);
+        HandlersConfigurerTestWrapper configurer = new HandlersConfigurerTestWrapper(container, cfgDir);
         SearchHandler searchHandler = (SearchHandler) configurer.getRequestHandlerRegistry().getComponent(SearchHandler.class.getName());
 
         // Should get "default" query profile containing the "test" search chain containing the "test" searcher
@@ -76,10 +77,9 @@ public class QueryProfileIntegrationTestCase {
 
     @Test
     void testTyped() {
-        String configId = "dir:src/test/java/com/yahoo/search/query/profile/config/test/typed";
-        System.setProperty("config.id", configId);
+        File cfgDir = new File("src/test/java/com/yahoo/search/query/profile/config/test/typed");
         Container container = new Container();
-        HandlersConfigurerTestWrapper configurer = new HandlersConfigurerTestWrapper(container, configId);
+        HandlersConfigurerTestWrapper configurer = new HandlersConfigurerTestWrapper(container, cfgDir);
         SearchHandler searchHandler = (SearchHandler) configurer.getRequestHandlerRegistry().getComponent(SearchHandler.class.getName());
 
         // Should get "default" query profile containing the "test" search chain containing the "test" searcher

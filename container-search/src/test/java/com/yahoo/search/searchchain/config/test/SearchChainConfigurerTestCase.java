@@ -76,7 +76,7 @@ public class SearchChainConfigurerTestCase {
 
     @Test
     synchronized void testConfiguration() {
-        HandlersConfigurerTestWrapper configurer = new HandlersConfigurerTestWrapper("dir:" + testDir);
+        HandlersConfigurerTestWrapper configurer = new HandlersConfigurerTestWrapper(new File(testDir));
 
         SearchChain simple = getSearchChainRegistryFrom(configurer).getComponent("simple");
         assertNotNull(simple);
@@ -125,7 +125,7 @@ public class SearchChainConfigurerTestCase {
 
     @Test
     void testConfigurableSearcher() {
-        HandlersConfigurerTestWrapper configurer = new HandlersConfigurerTestWrapper("dir:" + testDir);
+        HandlersConfigurerTestWrapper configurer = new HandlersConfigurerTestWrapper(new File(testDir));
 
         SearchChain configurable = getSearchChainRegistryFrom(configurer).getComponent("configurable");
         assertNotNull(configurable);
@@ -157,7 +157,7 @@ public class SearchChainConfigurerTestCase {
         printFile(new File(cfgDir + "/int.cfg"), "intVal 16\n");
         printFile(new File(cfgDir + "/string.cfg"), "stringVal \"testSearcherConfigUpdate\"\n");
 
-        HandlersConfigurerTestWrapper configurer = new HandlersConfigurerTestWrapper("dir:" + cfgDir);
+        HandlersConfigurerTestWrapper configurer = new HandlersConfigurerTestWrapper(cfgDir);
         SearcherRegistry searchers = getSearchChainRegistryFrom(configurer).getSearcherRegistry();
         assertEquals(3, searchers.getComponentCount());
 
@@ -209,7 +209,7 @@ public class SearchChainConfigurerTestCase {
         copyFile(testDir + "container-http.cfg", cfgDir +  "/container-http.cfg");
         createComponentsConfig(testDir + "chainsConfigUpdate_1.cfg", testDir + "handlers.cfg", cfgDir +  "/components.cfg");
 
-        HandlersConfigurerTestWrapper configurer = new HandlersConfigurerTestWrapper("dir:" + cfgDir);
+        HandlersConfigurerTestWrapper configurer = new HandlersConfigurerTestWrapper(cfgDir);
 
         SearchChainRegistry scReg = getSearchChainRegistryFrom(configurer);
         SearcherRegistry searchers = scReg.getSearcherRegistry();

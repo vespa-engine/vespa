@@ -48,8 +48,7 @@ public class DependencyConfigTestCase {
     }
 
     public static void setUp() {
-        String configId = "dir:" + root;
-        configurer = new HandlersConfigurerTestWrapper(configId);
+        configurer = new HandlersConfigurerTestWrapper(new File(root));
         registry=((SearchHandler) configurer.getRequestHandlerRegistry().getComponent("com.yahoo.search.handler.SearchHandler")).getSearchChainRegistry();
     }
 
