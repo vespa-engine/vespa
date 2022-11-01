@@ -17,7 +17,6 @@ import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
 
-import static com.yahoo.vespa.config.PayloadChecksum.Type.MD5;
 import static java.util.logging.Level.FINE;
 import static java.util.logging.Level.INFO;
 
@@ -86,7 +85,7 @@ public class JRTConfigSubscription<T extends ConfigInstance> extends ConfigSubsc
         // These flags may have been left true from a previous call, since ConfigSubscriber's nextConfig
         // not necessarily returned true and reset the flags then
         ConfigState<T> configState = getConfigState();
-        return configState.isGenerationChanged() || configState.isConfigChanged() || hasException();
+        return configState.hasGenerationChanged() || configState.hasConfigChanged() || hasException();
     }
 
     /**

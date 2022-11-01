@@ -71,9 +71,9 @@ public abstract class ConfigSubscription<T extends ConfigInstance> {
 
         private ConfigState<T> createUnchanged() {  return new ConfigState<>(generation, config, payloadChecksums); }
 
-        public boolean isConfigChanged() { return configChanged; }
+        public boolean hasConfigChanged() { return configChanged; }
 
-        public boolean isGenerationChanged() { return generationChanged; }
+        public boolean hasGenerationChanged() { return generationChanged; }
 
         public Long getGeneration() { return generation; }
 
@@ -143,8 +143,8 @@ public abstract class ConfigSubscription<T extends ConfigInstance> {
     }
 
     private static <T extends ConfigInstance> ConfigSubscription<T> getFileSub(ConfigKey<T> key, ConfigSource source) {
-        File file = source instanceof FileSource fileSource ? fileSource.getFile()
-                                                            : new File(key.getConfigId().replace("file:", ""));
+        FileSource file = source instanceof FileSource fileSource ? fileSource
+                                                                  : new FileSource(new File(key.getConfigId().replace("file:", "")));
         return new FileConfigSubscription<>(key, file);
     }
 
@@ -157,7 +157,7 @@ public abstract class ConfigSubscription<T extends ConfigInstance> {
     private static <T extends ConfigInstance> ConfigSubscription<T> getDirFileSub(ConfigKey<T> key, ConfigSource source) {
         DirSource dir = source instanceof DirSource dirSource ? dirSource
                                                               : new DirSource(new File(key.getConfigId().replace("dir:", "")));
-        File file = dir.get(getConfigFilename(key));
+        FileSource file = dir.get(getConfigFilename(key));
         return new FileConfigSubscription<>(key, file);
     }
 
@@ -177,11 +177,11 @@ public abstract class ConfigSubscription<T extends ConfigInstance> {
      */
     public boolean isConfigChangedAndReset(Long requiredGen) {
         ConfigState<T> prev = config.get();
-        while (prev.getGeneration().equals(requiredGen) && !config.compareAndSet(prev, prev.createUnchanged())) {
+        while (prev.getGeneration().equals(requiredGen) && ! config.compareAndSet(prev, prev.createUnchanged())) {
             prev = config.get();
         }
         // A false positive is a lot better than a false negative
-        return !prev.getGeneration().equals(requiredGen) || prev.isConfigChanged();
+        return ! prev.getGeneration().equals(requiredGen) || prev.hasConfigChanged();
     }
 
     void setConfig(Long generation, boolean applyOnRestart, T config, PayloadChecksums payloadChecksums) {
@@ -218,12 +218,12 @@ public abstract class ConfigSubscription<T extends ConfigInstance> {
 
     void setGeneration(Long generation) {
         ConfigState<T> prev = config.get();
-        this.config.set(new ConfigState<>(true, generation, prev.applyOnRestart(), prev.isConfigChanged(), prev.getConfig(), prev.payloadChecksums));
+        this.config.set(new ConfigState<>(true, generation, prev.applyOnRestart(), prev.hasConfigChanged(), prev.getConfig(), prev.payloadChecksums));
     }
 
     void setApplyOnRestart(boolean applyOnRestart) {
         ConfigState<T> prev = config.get();
-        this.config.set(new ConfigState<>(prev.isGenerationChanged(), prev.getGeneration(), applyOnRestart, prev.isConfigChanged(), prev.getConfig(), prev.payloadChecksums));
+        this.config.set(new ConfigState<>(prev.hasGenerationChanged(), prev.getGeneration(), applyOnRestart, prev.hasConfigChanged(), prev.getConfig(), prev.payloadChecksums));
     }
 
     /**
@@ -249,8 +249,8 @@ public abstract class ConfigSubscription<T extends ConfigInstance> {
         StringBuilder s = new StringBuilder(key.toString());
         ConfigState<T> c = config.get();
         s.append(", Current generation: ").append(c.getGeneration())
-                .append(", Generation changed: ").append(c.isGenerationChanged())
-                .append(", Config changed: ").append(c.isConfigChanged());
+                .append(", Generation changed: ").append(c.hasGenerationChanged())
+                .append(", Config changed: ").append(c.hasConfigChanged());
         if (exception != null)
             s.append(", Exception: ").append(exception);
         return s.toString();

@@ -128,12 +128,12 @@ public class ContainerTest extends ContainerTestBase {
         DestructableComponent componentToDestruct = oldGraph.getInstance(DestructableComponent.class);
 
         writeBootstrapConfigs("id2", DestructableComponent.class);
-        container.reloadConfig(2);
+        dirConfigSource.incrementGeneration();
         getNewComponentGraph(container, oldGraph);
         assertTrue(componentToDestruct.deconstructed);
     }
 
-    @Disabled  // because logAndDie is impossible(?) to verify programmatically
+    @Disabled("because logAndDie is impossible(?) to verify programmatically")
     @Test
     void manually_verify_what_happens_when_first_graph_contains_component_that_throws_exception_in_ctor() {
         writeBootstrapConfigs("thrower", ComponentThrowingExceptionInConstructor.class);
@@ -261,7 +261,7 @@ public class ContainerTest extends ContainerTestBase {
         container.reloadConfig(2);
 
         assertThrows(IllegalArgumentException.class,
-                () -> getNewComponentGraph(container, currentGraph));
+                     () -> getNewComponentGraph(container, currentGraph));
 
         ExecutorService exec = Executors.newFixedThreadPool(1);
         Future<ComponentGraph> newGraph = exec.submit(() -> getNewComponentGraph(container, currentGraph));

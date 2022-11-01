@@ -17,8 +17,8 @@ public class DirSource implements ConfigSource {
         this.dir = dir;
     }
 
-    public File get(String name) {
-        return new File(dir, name);
+    public FileSource get(String name) {
+        return new FileSource(new File(dir, name));
     }
 
 }

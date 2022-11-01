@@ -275,7 +275,7 @@ public class ConfigSubscriber implements AutoCloseable {
                 ConfigSubscription<? extends ConfigInstance> subscription = h.subscription();
                 log.log(Level.FINEST, () -> "Calling nextConfig for " + subscription.getKey());
                 if ( ! subscription.nextConfig(timeLeftMillis)) {
-                    // This subscriber has no new state and we know it has exhausted all time
+                    // This subscriber has no new state, and we know it has exhausted the timeout.
                     log.log(Level.FINEST, () -> "No new config for " + subscription.getKey());
                     return false;
                 }
@@ -284,8 +284,8 @@ public class ConfigSubscriber implements AutoCloseable {
                 ConfigSubscription.ConfigState<? extends ConfigInstance> config = subscription.getConfigState();
                 if (currentGen == null) currentGen = config.getGeneration();
                 allGenerationsTheSame &= currentGen.equals(config.getGeneration());
-                allGenerationsChanged &= config.isGenerationChanged();
-                anyConfigChanged      |= config.isConfigChanged();
+                allGenerationsChanged &= config.hasGenerationChanged();
+                anyConfigChanged      |= config.hasConfigChanged();
                 applyOnRestartOnly    |= config.applyOnRestart();
                 timeLeftMillis = timeoutInMillis + started - now(expiredOnEntry);
             }
@@ -304,7 +304,7 @@ public class ConfigSubscriber implements AutoCloseable {
         } while (!reconfigDue && timeLeftMillis > 0);
         if (reconfigDue) {
             // This indicates the clients will possibly reconfigure their services, so "reset" changed-logic in subscriptions.
-            // Also if appropriate update the changed flag on the handler, which clients use.
+            // Also, if appropriate, update the changed flag on the handler, which clients use.
             log.log(Level.FINE, () -> "Reconfig will happen for generation " + generation);
             markSubsChangedSeen(currentGen);
             synchronized (monitor) {
