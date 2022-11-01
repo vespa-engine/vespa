@@ -10,7 +10,10 @@ import java.util.Optional;
 /**
  * A host or node flavor.
  * *Host* flavors come from a configured set which corresponds to the actual flavors available in a zone.
+ * Its resources are the real resources available on the host.
+ *
  * *Node* flavors are simply a wrapper of a NodeResources object.
+ * Its resources are the advertised resources as specified or implied by the application package.
  *
  * @author bratseth
  */

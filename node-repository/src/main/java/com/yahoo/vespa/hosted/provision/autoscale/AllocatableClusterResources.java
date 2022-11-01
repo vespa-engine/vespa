@@ -202,12 +202,14 @@ public class AllocatableClusterResources {
 
                 if ( ! between(applicationLimits.min().nodeResources(), applicationLimits.max().nodeResources(), advertisedResources)) continue;
                 if ( ! systemLimits.isWithinRealLimits(realResources, clusterSpec.type())) continue;
+
                 var candidate = new AllocatableClusterResources(wantedResources.with(realResources),
                                                                 advertisedResources,
                                                                 wantedResources,
                                                                 clusterSpec);
-                if (best.isEmpty() || candidate.preferableTo(best.get()))
+                if (best.isEmpty() || candidate.preferableTo(best.get())) {
                     best = Optional.of(candidate);
+                }
             }
             return best;
         }

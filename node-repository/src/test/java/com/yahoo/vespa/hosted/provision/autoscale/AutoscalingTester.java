@@ -27,6 +27,7 @@ import com.yahoo.vespa.hosted.provision.provisioning.ProvisioningTester;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 
 import static org.junit.Assert.assertEquals;
@@ -42,13 +43,9 @@ class AutoscalingTester {
     private final HostResourcesCalculator hostResourcesCalculator;
     private final CapacityPolicies capacityPolicies;
 
-    public AutoscalingTester(Zone zone, HostResourcesCalculator resourcesCalculator, List<NodeResources> hostResources) {
-        this(zone, hostResources, resourcesCalculator, 20);
-    }
-
-    private AutoscalingTester(Zone zone, List<NodeResources> hostResources, HostResourcesCalculator resourcesCalculator, int hostCount) {
-        this(zone, toFlavors(hostResources), resourcesCalculator);
-        for (Flavor flavor : toFlavors(hostResources))
+    public AutoscalingTester(Zone zone, HostResourcesCalculator resourcesCalculator, List<Flavor> hostFlavors, int hostCount) {
+        this(zone, hostFlavors, resourcesCalculator);
+        for (Flavor flavor : hostFlavors)
             provisioningTester.makeReadyNodes(hostCount, flavor.name(), NodeType.host, 8);
         provisioningTester.activateTenantHosts();
     }
@@ -73,6 +70,10 @@ class AutoscalingTester {
     }
 
     public static Fixture.Builder fixture() { return new Fixture.Builder(); }
+
+    public static Fixture.Builder fixture(ClusterResources min, ClusterResources now, ClusterResources max) {
+        return new Fixture.Builder().initialResources(Optional.of(now)).capacity(Capacity.from(min, max));
+    }
 
     public ProvisioningTester provisioning() { return provisioningTester; }
 

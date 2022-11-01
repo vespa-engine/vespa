@@ -214,7 +214,7 @@ public class ClusterModel {
         return nodes > 1 ? (groups == 1 ? 1 : groups - 1) : groups;
     }
 
-    /** Ideal cpu load must take the application traffic fraction into account */
+    /** Ideal cpu load must take the application traffic fraction into account. */
     private double idealCpuLoad() {
         double queryCpuFraction = queryCpuFraction();
 
@@ -238,7 +238,7 @@ public class ClusterModel {
         // Assumptions: 1) Write load is not organic so we should not grow to handle more.
         //                 (TODO: But allow applications to set their target write rate and size for that)
         //              2) Write load does not change in BCP scenarios.
-        return queryCpuFraction * 1 / growthRateHeadroom * 1 / trafficShiftHeadroom * idealQueryCpuLoad +
+        return queryCpuFraction * 1/growthRateHeadroom * 1/trafficShiftHeadroom * idealQueryCpuLoad +
                (1 - queryCpuFraction) * idealWriteCpuLoad;
     }
 

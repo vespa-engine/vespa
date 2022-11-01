@@ -23,7 +23,7 @@ public class AutoscalingIntegrationTest {
     @Test
     public void testComponentIntegration() {
         var fixture = AutoscalingTester.fixture()
-                                       .hostResources(new NodeResources(3, 20, 200, 1))
+                                       .hostFlavors(new NodeResources(3, 20, 200, 1))
                                        .initialResources(Optional.of(new ClusterResources(2, 1,
                                                                                           new NodeResources(1, 10, 100, 1))))
                                        .build();

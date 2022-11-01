@@ -8,13 +8,17 @@ import com.yahoo.config.provision.Cloud;
 import com.yahoo.config.provision.ClusterResources;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.Environment;
+import com.yahoo.config.provision.Flavor;
 import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.RegionName;
+import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeList;
 import com.yahoo.vespa.hosted.provision.applications.Application;
 import com.yahoo.vespa.hosted.provision.applications.Cluster;
+import com.yahoo.vespa.hosted.provision.autoscale.awsnodes.AwsHostResourcesCalculatorImpl;
+import com.yahoo.vespa.hosted.provision.autoscale.awsnodes.AwsNodeTypes;
 import com.yahoo.vespa.hosted.provision.provisioning.HostResourcesCalculator;
 
 import java.time.Duration;
@@ -40,7 +44,7 @@ public class Fixture {
         applicationId = builder.application;
         clusterSpec = builder.cluster;
         capacity = builder.capacity;
-        tester = new AutoscalingTester(builder.zone, builder.resourceCalculator, builder.hostResources);
+        tester = new AutoscalingTester(builder.zone, builder.resourceCalculator, builder.hostFlavors, 20);
         var deployCapacity = initialResources.isPresent() ? Capacity.from(initialResources.get()) : capacity;
         tester.deploy(builder.application, builder.cluster, deployCapacity);
         this.loader = new Loader(this);
@@ -121,7 +125,7 @@ public class Fixture {
         ApplicationId application = AutoscalingTester.applicationId("application1");
         ClusterSpec cluster = ClusterSpec.request(ClusterSpec.Type.content, ClusterSpec.Id.from("cluster1")).vespaVersion("7").build();
         Zone zone = new Zone(Environment.prod, RegionName.from("us-east"));
-        List<NodeResources> hostResources = List.of(new NodeResources(100, 100, 100, 1));
+        List<Flavor> hostFlavors = List.of(new Flavor(new NodeResources(100, 100, 100, 1)));
         Optional<ClusterResources> initialResources = Optional.of(new ClusterResources(5, 1, new NodeResources(3, 10, 100, 1)));
         Capacity capacity = Capacity.from(new ClusterResources(2, 1,
                                                                new NodeResources(1, 1, 1, 1, NodeResources.DiskSpeed.any)),
@@ -153,13 +157,28 @@ public class Fixture {
             return this;
         }
 
+        public Fixture.Builder awsProdSetup() {
+             return this.awsHostFlavors()
+                        .awsResourceCalculator()
+                        .zone(new Zone(Cloud.builder().dynamicProvisioning(true).build(),
+                                       SystemName.Public,
+                                       Environment.prod,
+                                       RegionName.from("aws-eu-west-1a")));
+        }
+
         public Fixture.Builder vespaVersion(Version version) {
             cluster = ClusterSpec.request(cluster.type(), cluster.id()).vespaVersion(version).build();
             return this;
         }
 
-        public Fixture.Builder hostResources(NodeResources ... hostResources) {
-            this.hostResources = Arrays.stream(hostResources).collect(Collectors.toList());
+        public Fixture.Builder hostFlavors(NodeResources ... hostResources) {
+            this.hostFlavors = Arrays.stream(hostResources).map(r -> new Flavor(r)).collect(Collectors.toList());
+            return this;
+        }
+
+        /** Adds the host resources available on AWS. */
+        public Fixture.Builder awsHostFlavors() {
+            this.hostFlavors = AwsNodeTypes.asFlavors();
             return this;
         }
 
@@ -175,6 +194,11 @@ public class Fixture {
 
         public Fixture.Builder resourceCalculator(HostResourcesCalculator resourceCalculator) {
             this.resourceCalculator = resourceCalculator;
+            return this;
+        }
+
+        public Fixture.Builder awsResourceCalculator() {
+            this.resourceCalculator = new AwsHostResourcesCalculatorImpl();
             return this;
         }
 
