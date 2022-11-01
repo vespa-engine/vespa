@@ -375,7 +375,7 @@ public class CoredumpHandler {
         ReportCoreDumpRequest requestInstance = new ReportCoreDumpRequest();
         requestInstance.fillFrom(metadata);
         requestInstance.save(metadataPath);
-        context.log(logger, "Wrote " + metadataPath);
+        context.log(logger, "Wrote " + metadataPath.pathOnHost());
         return metadata;
     }
 
