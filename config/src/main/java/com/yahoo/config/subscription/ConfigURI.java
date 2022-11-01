@@ -12,8 +12,8 @@ import java.io.File;
  */
 public class ConfigURI {
 
-    private String configId;
-    private ConfigSource source;
+    private final String configId;
+    private final ConfigSource source;
 
     private ConfigURI(String configId, ConfigSource source) {
         this.configId = configId;

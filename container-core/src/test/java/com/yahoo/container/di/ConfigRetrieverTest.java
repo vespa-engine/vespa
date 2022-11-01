@@ -42,11 +42,6 @@ public class ConfigRetrieverTest {
         dirConfigSource = new DirConfigSource(tmpDir, "ConfigRetrieverTest-");
     }
 
-    @AfterEach
-    public void cleanup() {
-        dirConfigSource.cleanup();
-    }
-
     @Test
     void require_that_bootstrap_configs_come_first() {
         writeConfigs();
@@ -54,6 +49,7 @@ public class ConfigRetrieverTest {
         ConfigSnapshot bootstrapConfigs = retriever.getConfigs(Collections.emptySet(), 0, true);
 
         assertTrue(bootstrapConfigs instanceof BootstrapConfigs);
+        retriever.shutdown();
     }
 
     @Test
@@ -71,12 +67,12 @@ public class ConfigRetrieverTest {
         } else {
             fail("ComponentsConfigs has unexpected type: " + componentsConfigs);
         }
+        retriever.shutdown();
     }
 
     @Disabled
     @SuppressWarnings("unused")
     public void require_exception_upon_modified_components_keys_without_bootstrap() {
-
         writeConfigs();
         ConfigRetriever retriever = createConfigRetriever();
         ConfigKey<? extends ConfigInstance> testConfigKey = new ConfigKey<>(TestConfig.class, dirConfigSource.configId());
@@ -99,6 +95,7 @@ public class ConfigRetrieverTest {
         ConfigRetriever retriever = createConfigRetriever();
         assertTrue(retriever.getConfigs(Collections.emptySet(), 0, true) instanceof BootstrapConfigs);
         assertTrue(retriever.getConfigs(Collections.emptySet(), 0, true) instanceof ComponentsConfigs);
+        retriever.shutdown();
     }
 
     public void writeConfigs() {

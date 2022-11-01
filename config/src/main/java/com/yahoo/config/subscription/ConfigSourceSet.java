@@ -58,7 +58,7 @@ public class ConfigSourceSet implements ConfigSource {
      * @param address  Connection endpoint on the format "tcp/host:port".
      */
     public ConfigSourceSet(String address) {
-        this(new String[] {address});
+        this(new String[] { address });
     }
 
     /**

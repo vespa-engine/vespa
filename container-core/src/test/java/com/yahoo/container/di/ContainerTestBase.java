@@ -36,12 +36,6 @@ public class ContainerTestBase {
         osgi = new TestOsgi(BundleTestUtil.testBundles());
     }
 
-    @AfterEach
-    public void cleanup() {
-        dirConfigSource.cleanup();
-    }
-
-
     protected Container newContainer(DirConfigSource dirConfigSource,
                                             ComponentDeconstructor deconstructor) {
         return new Container(new CloudSubscriberFactory(dirConfigSource.configSource),

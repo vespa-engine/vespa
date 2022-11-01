@@ -121,10 +121,9 @@ public abstract class ConfigSubscription<T extends ConfigInstance> {
         if (source instanceof FileSource || configId.startsWith("file:")) return getFileSub(key, source);
         if (source instanceof DirSource || configId.startsWith("dir:")) return getDirFileSub(key, source);
         if (source instanceof JarSource || configId.startsWith("jar:")) return getJarSub(key, source);
-        if (source instanceof ConfigSet) return new ConfigSetSubscription<>(key, source);
-        if (source instanceof ConfigSourceSet) {
-            JRTConfigRequester requester = requesters.getRequester((ConfigSourceSet) source, timingValues);
-            return new JRTConfigSubscription<>(key, requester, timingValues);
+        if (source instanceof ConfigSet cset) return new ConfigSetSubscription<>(key, cset);
+        if (source instanceof ConfigSourceSet csset) {
+            return new JRTConfigSubscription<>(key, requesters.getRequester(csset, timingValues), timingValues);
         }
         throw new IllegalArgumentException("Unknown source type: " + source);
     }
@@ -132,21 +131,19 @@ public abstract class ConfigSubscription<T extends ConfigInstance> {
     private static <T extends ConfigInstance> JarConfigSubscription<T> getJarSub(ConfigKey<T> key, ConfigSource source) {
         String jarName;
         String path = "config/";
-        if (source instanceof JarSource) {
-            JarSource js = (JarSource) source;
+        if (source instanceof JarSource js) {
             jarName = js.getJarFile().getName();
             if (js.getPath() != null) path = js.getPath();
         } else {
-            jarName = key.getConfigId().replace("jar:", "").replaceFirst("\\!/.*", "");
-            if (key.getConfigId().contains("!/")) path = key.getConfigId().replaceFirst(".*\\!/", "");
+            jarName = key.getConfigId().replace("jar:", "").replaceFirst("!/.*", "");
+            if (key.getConfigId().contains("!/")) path = key.getConfigId().replaceFirst(".*!/", "");
         }
         return new JarConfigSubscription<>(key, jarName, path);
     }
 
     private static <T extends ConfigInstance> ConfigSubscription<T> getFileSub(ConfigKey<T> key, ConfigSource source) {
-        File file = ((source instanceof FileSource))
-                ? ((FileSource) source).getFile()
-                : new File(key.getConfigId().replace("file:", ""));
+        File file = source instanceof FileSource fileSource ? fileSource.getFile()
+                                                            : new File(key.getConfigId().replace("file:", ""));
         return new FileConfigSubscription<>(key, file);
     }
 
@@ -158,17 +155,8 @@ public abstract class ConfigSubscription<T extends ConfigInstance> {
     }
 
     private static <T extends ConfigInstance> ConfigSubscription<T> getDirFileSub(ConfigKey<T> key, ConfigSource source) {
-        String dir = key.getConfigId().replace("dir:", "");
-        if (source instanceof DirSource) {
-            dir = ((DirSource) source).getDir().toString();
-        }
-        if (!dir.endsWith(File.separator)) dir = dir + File.separator;
-        String name = getConfigFilename(key);
-        File file = new File(dir + name);
-        if (!file.exists()) {
-            throw new IllegalArgumentException("Could not find a config file for '" + key.getName() + "' in '" + dir + "'");
-        }
-        return new FileConfigSubscription<>(key, file);
+        File dir = source instanceof DirSource dirSource ? dirSource.getDir() : new File(key.getConfigId().replace("dir:", ""));
+        return new FileConfigSubscription<>(key, new File(dir, getConfigFilename(key)));
     }
 
     @SuppressWarnings("unchecked")

@@ -112,10 +112,8 @@ public class ContainerTest extends ContainerTestBase {
         // bundle-2 is installed, bundle-1 has been uninstalled
         assertEquals(1, osgi.getBundles().length);
         assertEquals("bundle-2", osgi.getBundles()[0].getSymbolicName());
-    }
 
-    //@Test TODO
-    public void deconstructor_is_given_guice_components() {
+        container.shutdownConfigRetriever();
     }
 
     @Test
@@ -131,9 +129,11 @@ public class ContainerTest extends ContainerTestBase {
         container.reloadConfig(2);
         getNewComponentGraph(container, oldGraph);
         assertTrue(componentToDestruct.deconstructed);
+
+        container.shutdownConfigRetriever();
     }
 
-    @Disabled  // because logAndDie is impossible(?) to verify programmatically
+    @Disabled("because logAndDie is impossible(?) to verify programmatically")
     @Test
     void manually_verify_what_happens_when_first_graph_contains_component_that_throws_exception_in_ctor() {
         writeBootstrapConfigs("thrower", ComponentThrowingExceptionInConstructor.class);
@@ -144,6 +144,8 @@ public class ContainerTest extends ContainerTestBase {
         } catch (Throwable t) {
             fail("Expected to log and die");
         }
+
+        container.shutdownConfigRetriever();
     }
 
     // Failure in component construction phase
@@ -172,6 +174,8 @@ public class ContainerTest extends ContainerTestBase {
         assertEquals(3, currentGraph.generation());
         assertSame(simpleComponent, currentGraph.getInstance(SimpleComponent.class));
         assertNotNull(currentGraph.getInstance(ComponentTakingConfig.class));
+
+        container.shutdownConfigRetriever();
     }
 
     @Test
@@ -195,6 +199,8 @@ public class ContainerTest extends ContainerTestBase {
         // bundle-1 is kept, bundle-2 has been uninstalled
         assertEquals(1, osgi.getBundles().length);
         assertEquals("bundle-1", osgi.getBundles()[0].getSymbolicName());
+
+        container.shutdownConfigRetriever();
     }
 
     // Failure in graph creation phase
@@ -213,6 +219,8 @@ public class ContainerTest extends ContainerTestBase {
         container.reloadConfig(2);
         assertNewComponentGraphFails(container, currentGraph, IllegalArgumentException.class);
         assertEquals(1, currentGraph.generation());
+
+        container.shutdownConfigRetriever();
     }
 
     @Test
@@ -238,6 +246,8 @@ public class ContainerTest extends ContainerTestBase {
         // bundle-1 is kept, bundle-2 has been uninstalled
         assertEquals(1, osgi.getBundles().length);
         assertEquals("bundle-1", osgi.getBundles()[0].getSymbolicName());
+
+        container.shutdownConfigRetriever();
     }
 
     private void assertNewComponentGraphFails(Container container, ComponentGraph currentGraph, Class<? extends RuntimeException> exception) {
@@ -261,7 +271,7 @@ public class ContainerTest extends ContainerTestBase {
         container.reloadConfig(2);
 
         assertThrows(IllegalArgumentException.class,
-                () -> getNewComponentGraph(container, currentGraph));
+                     () -> getNewComponentGraph(container, currentGraph));
 
         ExecutorService exec = Executors.newFixedThreadPool(1);
         Future<ComponentGraph> newGraph = exec.submit(() -> getNewComponentGraph(container, currentGraph));
@@ -277,10 +287,12 @@ public class ContainerTest extends ContainerTestBase {
         container.reloadConfig(3);
 
         assertNotNull(newGraph.get(5, TimeUnit.MINUTES));
+
+        container.shutdownConfigRetriever();
     }
 
     @Test
-    void providers_are_destructed() {
+    void providers_are_destroyed() {
         writeBootstrapConfigs("id1", DestructableProvider.class);
 
         ComponentDeconstructor deconstructor = (generation, components, bundles) -> {
@@ -304,6 +316,8 @@ public class ContainerTest extends ContainerTestBase {
         getNewComponentGraph(container, oldGraph);
 
         assertTrue(destructableEntity.deconstructed);
+
+        container.shutdownConfigRetriever();
     }
 
     @Test

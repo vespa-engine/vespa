@@ -45,11 +45,7 @@ class MetricImpl implements Metric {
     }
 
     private MetricConsumer currentConsumer() {
-        Thread thread = Thread.currentThread();
-        if (thread instanceof ContainerThread) {
-            return ((ContainerThread)thread).consumer();
-        }
-        return consumer.get();
+        return Thread.currentThread() instanceof ContainerThread thread ? thread.consumer() : consumer.get();
     }
 
     private static class LocalConsumer extends ThreadLocal<MetricConsumer> {

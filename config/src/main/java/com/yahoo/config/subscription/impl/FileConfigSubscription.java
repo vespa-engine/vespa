@@ -11,6 +11,7 @@ import com.yahoo.vespa.config.ConfigPayload;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.Files;
 import java.util.Arrays;
 
 import static java.util.logging.Level.FINE;
@@ -29,13 +30,12 @@ public class FileConfigSubscription<T extends ConfigInstance> extends ConfigSubs
         super(key);
         setGeneration(0L);
         file = f;
-        if (!file.exists() && !file.isFile())
-            throw new IllegalArgumentException("Not a file: " + file);
+        if ( ! file.isFile()) throw new IllegalArgumentException("Not a file: " + file);
     }
 
     @Override
     public boolean nextConfig(long timeout) {
-        if (!file.exists() && !file.isFile()) throw new IllegalArgumentException("Not a file: " + file);
+        if ( ! file.isFile()) throw new IllegalArgumentException("Not a file: " + file);
         if (checkReloaded()) {
             log.log(FINE, () -> "User forced config reload at " + System.currentTimeMillis());
             // User forced reload
@@ -61,7 +61,7 @@ public class FileConfigSubscription<T extends ConfigInstance> extends ConfigSubs
     private T updateConfig() {
         ts = file.lastModified();
         try {
-            ConfigPayload payload = new CfgConfigPayloadBuilder().deserialize(Arrays.asList(IOUtils.readFile(file).split("\n")));
+            ConfigPayload payload = new CfgConfigPayloadBuilder().deserialize(Files.readAllLines(file.toPath()));
             return payload.toInstance(configClass, key.getConfigId());
         } catch (IOException e) {
             throw new ConfigurationRuntimeException(e);

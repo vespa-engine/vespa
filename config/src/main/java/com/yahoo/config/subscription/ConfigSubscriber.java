@@ -275,7 +275,7 @@ public class ConfigSubscriber implements AutoCloseable {
                 ConfigSubscription<? extends ConfigInstance> subscription = h.subscription();
                 log.log(Level.FINEST, () -> "Calling nextConfig for " + subscription.getKey());
                 if ( ! subscription.nextConfig(timeLeftMillis)) {
-                    // This subscriber has no new state and we know it has exhausted all time
+                    // This subscriber has no new state, and we know it has exhausted the timeout
                     log.log(Level.FINEST, () -> "No new config for " + subscription.getKey());
                     return false;
                 }
@@ -405,15 +405,6 @@ public class ConfigSubscriber implements AutoCloseable {
         for (ConfigHandle<?> h : subscriptionHandles) {
             h.subscription().reload(generation);
         }
-    }
-
-    /**
-     * The source used by this subscriber.
-     *
-     * @return the {@link ConfigSource} used by this subscriber
-     */
-    public ConfigSource getSource() {
-        return source;
     }
 
     public boolean isClosed() {
