@@ -2,8 +2,6 @@
 package com.yahoo.vespa.hosted.node.admin.configserver;
 
 import com.yahoo.vespa.flags.FlagRepository;
-import com.yahoo.vespa.hosted.node.admin.configserver.cores.Cores;
-import com.yahoo.vespa.hosted.node.admin.configserver.cores.CoresImpl;
 import com.yahoo.vespa.hosted.node.admin.configserver.flags.RealFlagRepository;
 import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.NodeRepository;
 import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.RealNodeRepository;
@@ -24,7 +22,6 @@ public class RealConfigServerClients implements ConfigServerClients {
     private final Orchestrator orchestrator;
     private final State state;
     private final RealFlagRepository flagRepository;
-    private final Cores cores;
 
     /**
      * @param configServerApi the backend API to use - will be closed at {@link #stop()}.
@@ -35,7 +32,6 @@ public class RealConfigServerClients implements ConfigServerClients {
         orchestrator = new OrchestratorImpl(configServerApi);
         state = new StateImpl(configServerApi);
         flagRepository = new RealFlagRepository(configServerApi);
-        cores = new CoresImpl(configServerApi);
     }
 
     @Override
@@ -56,11 +52,6 @@ public class RealConfigServerClients implements ConfigServerClients {
     @Override
     public FlagRepository flagRepository() {
         return flagRepository;
-    }
-
-    @Override
-    public Cores cores() {
-        return cores;
     }
 
     @Override

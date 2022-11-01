@@ -2,6 +2,7 @@
 package com.yahoo.vespa.hosted.node.admin.configserver.noderepository;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import com.google.common.base.Strings;
 import com.yahoo.component.Version;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.DockerImage;
@@ -10,9 +11,9 @@ import com.yahoo.config.provision.NodeType;
 import com.yahoo.config.provision.host.FlavorOverrides;
 import com.yahoo.vespa.hosted.node.admin.configserver.ConfigServerApi;
 import com.yahoo.vespa.hosted.node.admin.configserver.HttpException;
-import com.yahoo.vespa.hosted.node.admin.configserver.StandardConfigServerResponse;
 import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.bindings.GetAclResponse;
 import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.bindings.GetNodesResponse;
+import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.bindings.NodeMessageResponse;
 import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.bindings.NodeRepositoryNode;
 
 import java.net.URI;
@@ -47,8 +48,9 @@ public class RealNodeRepository implements NodeRepository {
                 .map(RealNodeRepository::nodeRepositoryNodeFromAddNode)
                 .collect(Collectors.toList());
 
-        configServerApi.post("/nodes/v2/node", nodesToPost, StandardConfigServerResponse.class)
-                       .throwOnError("Failed to add nodes");
+        NodeMessageResponse response = configServerApi.post("/nodes/v2/node", nodesToPost, NodeMessageResponse.class);
+        if (Strings.isNullOrEmpty(response.errorCode)) return;
+        throw new NodeRepositoryException("Failed to add nodes: " + response.message + " " + response.errorCode);
     }
 
     @Override
@@ -117,20 +119,26 @@ public class RealNodeRepository implements NodeRepository {
 
     @Override
     public void updateNodeAttributes(String hostName, NodeAttributes nodeAttributes) {
-        configServerApi.patch("/nodes/v2/node/" + hostName,
-                              nodeRepositoryNodeFromNodeAttributes(nodeAttributes),
-                              StandardConfigServerResponse.class)
-                       .throwOnError("Failed to update node attributes");
+        NodeMessageResponse response = configServerApi.patch(
+                "/nodes/v2/node/" + hostName,
+                nodeRepositoryNodeFromNodeAttributes(nodeAttributes),
+                NodeMessageResponse.class);
+
+        if (Strings.isNullOrEmpty(response.errorCode)) return;
+        throw new NodeRepositoryException("Failed to update node attributes: " + response.message + " " + response.errorCode);
     }
 
     @Override
     public void setNodeState(String hostName, NodeState nodeState) {
         String state = nodeState.name();
-        StandardConfigServerResponse response = configServerApi.put("/nodes/v2/state/" + state + "/" + hostName,
-                                                                    Optional.empty(), /* body */
-                                                                    StandardConfigServerResponse.class);
+        NodeMessageResponse response = configServerApi.put(
+                "/nodes/v2/state/" + state + "/" + hostName,
+                Optional.empty(), /* body */
+                NodeMessageResponse.class);
         logger.info(response.message);
-        response.throwOnError("Failed to set node state");
+
+        if (Strings.isNullOrEmpty(response.errorCode)) return;
+        throw new NodeRepositoryException("Failed to set node state: " + response.message + " " + response.errorCode);
     }
 
     private static NodeSpec createNodeSpec(NodeRepositoryNode node) {
@@ -145,7 +153,7 @@ public class RealNodeRepository implements NodeRepository {
         NodeReports reports = NodeReports.fromMap(Optional.ofNullable(node.reports).orElseGet(Map::of));
         List<Event> events = node.history.stream()
                 .map(event -> new Event(event.agent, event.event, Optional.ofNullable(event.at).map(Instant::ofEpochMilli).orElse(Instant.EPOCH)))
-                .toList();
+                .collect(Collectors.toUnmodifiableList());
 
         List<TrustStoreItem> trustStore = Optional.ofNullable(node.trustStore).orElse(List.of()).stream()
                 .map(item -> new TrustStoreItem(item.fingerprint, Instant.ofEpochMilli(item.expiry)))

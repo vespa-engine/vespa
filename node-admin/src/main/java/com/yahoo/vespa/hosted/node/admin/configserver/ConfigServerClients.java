@@ -2,7 +2,6 @@
 package com.yahoo.vespa.hosted.node.admin.configserver;
 
 import com.yahoo.vespa.flags.FlagRepository;
-import com.yahoo.vespa.hosted.node.admin.configserver.cores.Cores;
 import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.NodeRepository;
 import com.yahoo.vespa.hosted.node.admin.configserver.orchestrator.Orchestrator;
 import com.yahoo.vespa.hosted.node.admin.configserver.state.State;
@@ -24,9 +23,6 @@ public interface ConfigServerClients {
 
     /** Get handle to the /flags/v1 REST API */
     FlagRepository flagRepository();
-
-    /** Get handle to the /cores/v1 REST API */
-    Cores cores();
 
     void stop();
 }
