@@ -1,0 +1,5 @@
+usage: vespa-security token-info <token string>
+Dumps information about the various components of a token
+ -h,--help   Show help
+Note: this is a BETA tool version; its interface may be changed at any
+time

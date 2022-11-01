@@ -64,8 +64,14 @@ public class KeygenTool implements Tool {
                 OPTIONS);
     }
 
-    private void handleExistingFileIfAny(Path filePath, boolean allowOverwrite) throws IOException {
-        if (filePath.toFile().exists()) {
+    private static void verifyNotSameKeyPaths(Path privPath, Path pubPath) {
+        if (privPath.equals(pubPath)) {
+            throw new IllegalArgumentException("Private and public key output files must be different");
+        }
+    }
+
+    private static void handleExistingFileIfAny(Path filePath, boolean allowOverwrite) throws IOException {
+        if (Files.exists(filePath)) {
             if (!allowOverwrite) {
                 throw new IllegalArgumentException(("Output file '%s' already exists. No keys written. " +
                                                     "If you want to overwrite existing files, specify --%s.")
@@ -83,6 +89,7 @@ public class KeygenTool implements Tool {
             var arguments   = invocation.arguments();
             var privOutPath = Paths.get(CliUtils.optionOrThrow(arguments, PRIVATE_OUT_FILE_OPTION));
             var pubOutPath  = Paths.get(CliUtils.optionOrThrow(arguments, PUBLIC_OUT_FILE_OPTION));
+            verifyNotSameKeyPaths(privOutPath, pubOutPath);
 
             boolean allowOverwrite = arguments.hasOption(OVERWRITE_EXISTING_OPTION);
             handleExistingFileIfAny(privOutPath, allowOverwrite);

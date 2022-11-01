@@ -72,6 +72,11 @@ public class CryptoToolsTest {
     }
 
     @Test
+    void token_info_help_printed_if_help_option_given_to_subtool() throws IOException {
+        verifyStdoutMatchesFile(List.of("token-info", "--help"), "expected-token-info-help-output.txt");
+    }
+
+    @Test
     void missing_required_parameter_prints_error_message() throws IOException {
         // We don't test all possible input arguments to all tools, since it'd be too closely
         // bound to the order in which the implementation checks for argument presence.
@@ -106,6 +111,16 @@ public class CryptoToolsTest {
                 ("Invalid command line arguments: Output file '%s' already exists. No keys written. " +
                  "If you want to overwrite existing files, specify --overwrite-existing.\n")
                  .formatted(absPathOf(pubKeyFile)));
+    }
+
+    @Test
+    void keygen_fails_if_priv_and_pub_paths_equal() throws IOException {
+        Path keyFile = pathInTemp("foo.txt");
+
+        verifyStderrEquals(List.of("keygen",
+                        "--private-out-file", absPathOf(keyFile),
+                        "--public-out-file",  absPathOf(keyFile)),
+                "Invalid command line arguments: Private and public key output files must be different\n");
     }
 
     // ... but we'll allow it if someone enables the foot-gun option.
@@ -211,6 +226,17 @@ public class CryptoToolsTest {
                                    "--key-id",                     TEST_TOKEN_KEY_ID + "-wrong"),
                 "Invalid command line arguments: Key ID specified with --key-id does not " +
                         "match key ID used when generating the supplied token\n");
+    }
+
+    @Test
+    void token_info_fails_with_error_message_if_no_token_string_given() throws IOException {
+        verifyStderrEquals(List.of("token-info"),
+                "Invalid command line arguments: Expected exactly 1 token string argument\n");
+    }
+
+    @Test
+    void token_info_is_printed_to_stdout() throws IOException {
+        verifyStdoutMatchesFile(List.of("token-info", TEST_TOKEN), "expected-token-info-output.txt");
     }
 
     @Test
