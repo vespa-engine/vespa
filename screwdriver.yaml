@@ -125,12 +125,7 @@ jobs:
           git clone -q https://github.com/vespa-engine/system-test
           (cd system-test && git checkout $SYSTEM_TEST_REF)
           # Set correct version in pom.xml files
-          (cd vespa && \
-           find . -name "pom.xml" -exec sed -i'' \
-                -e "s,<version>.*SNAPSHOT.*</version>,<version>$VESPA_VERSION</version>," \
-                -e "s,<vespaversion>.*project.version.*</vespaversion>,<vespaversion>$VESPA_VERSION</vespaversion>," \
-                -e "s,<test-framework.version>.*project.version.*</test-framework.version>,<test-framework.version>$VESPA_VERSION</test-framework.version>," \
-                {} \;)
+          (cd vespa && screwdriver/replace-vespa-version-in-poms.sh $VESPA_VERSION $(pwd) )
       - make-srpm: |
           make -C $WORKDIR/vespa -f .copr/Makefile srpm outdir=$WORKDIR
       - *restore-cache

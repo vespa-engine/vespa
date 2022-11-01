@@ -39,10 +39,7 @@ chmod 700 $SD_SOURCE_DIR/screwdriver/deploy
 chmod 600 $SD_SOURCE_DIR/screwdriver/deploy/*
 
 # Build the Java code with the correct version set
-find . -name "pom.xml" -exec sed -i'' -e "s,<version>.*SNAPSHOT.*</version>,<version>$VESPA_RELEASE</version>," \
-     -e "s,<vespaversion>.*project.version.*</vespaversion>,<vespaversion>$VESPA_RELEASE</vespaversion>," \
-     -e "s,<test-framework.version>.*project.version.*</test-framework.version>,<test-framework.version>$VESPA_RELEASE</test-framework.version>," \
-     {} \;
+screwdriver/replace-vespa-version-in-poms.sh $VESPA_RELEASE .
 
 # We disable javadoc for all modules not marked as public API
 for MODULE in $(comm -2 -3 \
