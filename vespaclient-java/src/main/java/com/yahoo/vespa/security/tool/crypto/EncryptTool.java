@@ -10,6 +10,7 @@ import com.yahoo.vespa.security.tool.ToolInvocation;
 import org.apache.commons.cli.Option;
 
 import java.io.IOException;
+import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.List;
 
@@ -58,7 +59,8 @@ public class EncryptTool implements Tool {
                 "<input file> <options>",
                 "One-way encrypts a file using the public key of a recipient. A public token is printed on " +
                 "standard out. The recipient can use this token to decrypt the file using their private key. " +
-                "The token does not have to be kept secret.",
+                "The token does not have to be kept secret.\n\n" +
+                "To encrypt the contents of STDIN, specify an input file of '-' (without the quotes).",
                 "Note: this is a BETA tool version; its interface may be changed at any time",
                 OPTIONS);
     }
@@ -71,10 +73,7 @@ public class EncryptTool implements Tool {
             if (leftoverArgs.length != 1) {
                 throw new IllegalArgumentException("Expected exactly 1 file argument to encrypt");
             }
-            var inputPath  = Paths.get(leftoverArgs[0]);
-            if (!inputPath.toFile().exists()) {
-                throw new IllegalArgumentException("Cannot encrypt file '%s' as it does not exist".formatted(inputPath.toString()));
-            }
+            var inputArg   = leftoverArgs[0];
             var outputPath = Paths.get(CliUtils.optionOrThrow(arguments, OUTPUT_FILE_OPTION));
 
             var recipientPubKey = KeyUtils.fromBase64EncodedX25519PublicKey(CliUtils.optionOrThrow(arguments, RECIPIENT_PUBLIC_KEY_OPTION).strip());
@@ -82,7 +81,10 @@ public class EncryptTool implements Tool {
             var shared = SharedKeyGenerator.generateForReceiverPublicKey(recipientPubKey, keyId);
             var cipher = SharedKeyGenerator.makeAesGcmEncryptionCipher(shared);
 
-            CipherUtils.streamEncipherFileContents(inputPath, outputPath, cipher);
+            try (var inStream  = CliUtils.inputStreamFromFileOrStream(inputArg, invocation.stdIn());
+                 var outStream = Files.newOutputStream(outputPath)) {
+                CipherUtils.streamEncipher(inStream, outStream, cipher);
+            }
 
             invocation.stdOut().println(shared.sealedSharedKey().toTokenString());
         } catch (IOException e) {
