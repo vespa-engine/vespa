@@ -5,6 +5,7 @@ import com.yahoo.config.ConfigInstance;
 import com.yahoo.vespa.config.ConfigKey;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicLong;
 
 /**
  * Config source as a programmatically built set of {@link com.yahoo.config.ConfigInstance}s
@@ -14,7 +15,7 @@ import java.util.concurrent.ConcurrentHashMap;
 public class ConfigSet implements ConfigSource {
 
     private final Map<ConfigKey<?>, ConfigInstance.Builder> configs = new ConcurrentHashMap<>();
-    private long generation = 1;
+    private final AtomicLong generation = new AtomicLong(1);
 
     /**
      * Inserts a new builder in this set. If an existing entry exists, it is overwritten.
@@ -30,7 +31,7 @@ public class ConfigSet implements ConfigSource {
     }
 
     public void incrementGeneration() {
-        ++generation;
+        generation.incrementAndGet();
     }
 
     /**
@@ -53,7 +54,7 @@ public class ConfigSet implements ConfigSource {
         return configs.containsKey(key);
     }
 
-    public long generation() { return generation; }
+    public long generation() { return generation.get(); }
 
     @Override
     public String toString() {

@@ -29,9 +29,10 @@ public class ConfigSetSubscription<T extends ConfigInstance> extends ConfigSubsc
     }
 
     private boolean hasConfigChanged() {
-        T myInstance = getNewInstance();
         if (generation != (generation = set.generation())) {
-            setConfigAndGeneration(generation, false, myInstance, PayloadChecksums.empty());
+            T myInstance = getNewInstance();
+            if ( ! myInstance.equals(getConfigState().getConfig())) setConfig(generation, false, myInstance, PayloadChecksums.empty());
+            else setConfigAndGeneration(generation, false, myInstance, PayloadChecksums.empty());
             return true;
         }
         return false;

@@ -5,20 +5,17 @@ import com.yahoo.config.subscription.ConfigSet;
 import com.yahoo.config.subscription.ConfigURI;
 import com.yahoo.messagebus.routing.RoutingSpec;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.io.TempDir;
 
-import java.io.File;
 import java.util.concurrent.TimeUnit;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * @author Simon Thoresen Hult
  */
 public class ConfigAgentTestCase {
-
-    @TempDir
-    public File tmpFolder;
 
     @Test
     void testRoutingConfig() throws InterruptedException {
@@ -38,13 +35,15 @@ public class ConfigAgentTestCase {
 
         handler.reset();
         set.addBuilder("test", writeHalf());
-        assertTrue(handler.await(120, TimeUnit.SECONDS));
+        set.incrementGeneration();
+        assertTrue(handler.await(5, TimeUnit.SECONDS));
         assertTrue(testHalf(handler.spec));
         assertFalse(testFull(handler.spec));
 
         handler.reset();
         set.addBuilder("test", writeFull());
-        assertTrue(handler.await(120, TimeUnit.SECONDS));
+        set.incrementGeneration();
+        assertTrue(handler.await(5, TimeUnit.SECONDS));
         assertTrue(testFull(handler.spec));
         assertFalse(testHalf(handler.spec));
     }
@@ -186,4 +185,5 @@ public class ConfigAgentTestCase {
             return spec != null;
         }
     }
+
 }
