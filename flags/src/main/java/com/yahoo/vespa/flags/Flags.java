@@ -420,6 +420,13 @@ public class Flags {
             "Enable mail verification",
             "Takes effect immediately");
 
+    public static final UnboundBooleanFlag REPORT_CORES_VIA_CFG = defineFeatureFlag(
+            "report-cores-via-cfg", false,
+            List.of("hakonhall"), "2022-11-01", "2022-12-01",
+            "If true, report core dumps to the config server instead of directly to the panic app.",
+            "Takes effect on the next tick.",
+            ZONE_ID, NODE_TYPE, HOSTNAME);
+
     /** WARNING: public for testing: All flags should be defined in {@link Flags}. */
     public static UnboundBooleanFlag defineFeatureFlag(String flagId, boolean defaultValue, List<String> owners,
                                                        String createdAt, String expiresAt, String description,

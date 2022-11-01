@@ -5,6 +5,7 @@ import com.yahoo.config.provision.DockerImage;
 
 import java.nio.file.Path;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 
 /**
@@ -15,6 +16,7 @@ public class CoreDumpMetadata {
     private List<String> backtrace;
     private List<String> backtraceAllThreads;
     private Path coreDumpPath;
+    private String decryptionToken;
     private String kernelVersion;
     private String cpuMicrocodeVersion;
     private DockerImage dockerImage;
@@ -26,6 +28,7 @@ public class CoreDumpMetadata {
     public Optional<List<String>> backtrace() { return Optional.ofNullable(backtrace); };
     public Optional<List<String>> backtraceAllThreads() { return Optional.ofNullable(backtraceAllThreads); };
     public Optional<Path> coredumpPath() { return Optional.ofNullable(coreDumpPath); };
+    public Optional<String> decryptionToken() { return Optional.ofNullable(decryptionToken); }
     public Optional<String> kernelVersion() { return Optional.ofNullable(kernelVersion); };
     public Optional<String> cpuMicrocodeVersion() { return Optional.ofNullable(cpuMicrocodeVersion); };
     public Optional<DockerImage> dockerImage() { return Optional.ofNullable(dockerImage); };
@@ -35,6 +38,7 @@ public class CoreDumpMetadata {
     public CoreDumpMetadata setBacktrace(List<String> backtrace) { this.backtrace = backtrace; return this; };
     public CoreDumpMetadata setBacktraceAllThreads(List<String> backtraceAllThreads) { this.backtraceAllThreads = backtraceAllThreads; return this; };
     public CoreDumpMetadata setCoreDumpPath(Path coreDumpPath) { this.coreDumpPath = coreDumpPath; return this; };
+    public CoreDumpMetadata setDecryptionToken(String decryptionToken) { this.decryptionToken = decryptionToken; return this; }
     public CoreDumpMetadata setKernelVersion(String kernelVersion) { this.kernelVersion = kernelVersion; return this; };
     public CoreDumpMetadata setCpuMicrocodeVersion(String cpuMicrocodeVersion) { this.cpuMicrocodeVersion = cpuMicrocodeVersion; return this; };
     public CoreDumpMetadata setDockerImage(DockerImage dockerImage) { this.dockerImage = dockerImage; return this; };
@@ -47,6 +51,7 @@ public class CoreDumpMetadata {
                ", backtrace=" + backtrace +
                ", backtraceAllThreads=" + backtraceAllThreads +
                ", coreDumpPath=" + coreDumpPath +
+               ", decryptionToken=" + decryptionToken +
                ", kernelVersion='" + kernelVersion + '\'' +
                ", cpuMicrocodeVersion='" + cpuMicrocodeVersion + '\'' +
                ", dockerImage=" + dockerImage +
@@ -54,6 +59,25 @@ public class CoreDumpMetadata {
                '}';
     }
 
-    @Override public boolean equals(Object o) { throw new UnsupportedOperationException(); }
-    @Override public int hashCode() { throw new UnsupportedOperationException(); }
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        CoreDumpMetadata metadata = (CoreDumpMetadata) o;
+        return Objects.equals(binPath, metadata.binPath) &&
+               Objects.equals(backtrace, metadata.backtrace) &&
+               Objects.equals(backtraceAllThreads, metadata.backtraceAllThreads) &&
+               Objects.equals(coreDumpPath, metadata.coreDumpPath) &&
+               Objects.equals(decryptionToken, metadata.decryptionToken) &&
+               Objects.equals(kernelVersion, metadata.kernelVersion) &&
+               Objects.equals(cpuMicrocodeVersion, metadata.cpuMicrocodeVersion) &&
+               Objects.equals(dockerImage, metadata.dockerImage) &&
+               Objects.equals(vespaVersion, metadata.vespaVersion);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(binPath, backtrace, backtraceAllThreads, coreDumpPath, decryptionToken, kernelVersion,
+                            cpuMicrocodeVersion, dockerImage, vespaVersion);
+    }
 }
