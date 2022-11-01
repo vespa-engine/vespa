@@ -17,4 +17,10 @@ TensorStore::as_dense() const
     return nullptr;
 }
 
+DenseTensorStore*
+TensorStore::as_dense()
+{
+    return nullptr;
+}
+
 }

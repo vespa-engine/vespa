@@ -28,6 +28,7 @@ vespa_add_library(searchlib_tensor OBJECT
     serialized_fast_value_attribute.cpp
     small_subspaces_buffer_type.cpp
     tensor_attribute.cpp
+    tensor_attribute_loader.cpp
     tensor_attribute_saver.cpp
     tensor_buffer_operations.cpp
     tensor_buffer_store.cpp

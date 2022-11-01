@@ -28,8 +28,6 @@ private:
     vespalib::MemoryUsage update_stat() override;
     vespalib::MemoryUsage memory_usage() const override;
     void populate_address_space_usage(AddressSpaceUsage& usage) const override;
-    class ThreadedLoader;
-    class ForegroundLoader;
 public:
     DenseTensorAttribute(vespalib::stringref baseFileName, const Config& cfg,
                          const NearestNeighborIndexFactory& index_factory = DefaultNearestNeighborIndexFactory());
@@ -42,7 +40,6 @@ public:
     std::unique_ptr<vespalib::eval::Value> getTensor(DocId docId) const override;
     vespalib::eval::TypedCells extract_cells_ref(DocId docId) const override;
     bool supports_extract_cells_ref() const override { return true; }
-    bool onLoad(vespalib::Executor *executor) override;
     void onCommit() override;
     void before_inc_generation(generation_t current_gen) override;
     void reclaim_memory(generation_t oldest_used_gen) override;

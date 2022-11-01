@@ -1,10 +1,10 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "tensor_attribute.h"
-#include "blob_sequence_reader.h"
 #include "nearest_neighbor_index.h"
 #include "nearest_neighbor_index_saver.h"
 #include "tensor_attribute_constants.h"
+#include "tensor_attribute_loader.h"
 #include "tensor_attribute_saver.h"
 #include <vespa/document/base/exceptions.h>
 #include <vespa/document/datatype/tensor_data_type.h>
@@ -282,36 +282,10 @@ TensorAttribute::getRefCopy() const
 }
 
 bool
-TensorAttribute::onLoad(vespalib::Executor*)
+TensorAttribute::onLoad(vespalib::Executor* executor)
 {
-    BlobSequenceReader tensorReader(*this);
-    if (!tensorReader.hasData()) {
-        return false;
-    }
-    setCreateSerialNum(tensorReader.getCreateSerialNum());
-    assert(tensorReader.getVersion() == getVersion());
-    uint32_t numDocs = tensorReader.getDocIdLimit();
-    _refVector.reset();
-    _refVector.unsafe_reserve(numDocs);
-    vespalib::Array<char> buffer(1024);
-    for (uint32_t lid = 0; lid < numDocs; ++lid) {
-        uint32_t tensorSize = tensorReader.getNextSize();
-        if (tensorSize != 0) {
-            if (tensorSize > buffer.size()) {
-                buffer.resize(tensorSize + 1024);
-            }
-            tensorReader.readBlob(&buffer[0], tensorSize);
-            vespalib::nbostream source(&buffer[0], tensorSize);
-            EntryRef ref = _tensorStore.store_encoded_tensor(source);
-            _refVector.push_back(AtomicEntryRef(ref));
-        } else {
-            EntryRef invalid;
-            _refVector.push_back(AtomicEntryRef(invalid));
-        }
-    }
-    setNumDocs(numDocs);
-    setCommittedDocIdLimit(numDocs);
-    return true;
+    TensorAttributeLoader loader(*this, getGenerationHandler(), _refVector, _tensorStore, _index.get());
+    return loader.on_load(executor);
 }
 
 std::unique_ptr<AttributeSaver>

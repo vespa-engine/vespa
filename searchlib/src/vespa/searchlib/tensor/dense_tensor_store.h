@@ -71,6 +71,7 @@ public:
     std::unique_ptr<vespalib::eval::Value> get_tensor(EntryRef ref) const override;
     bool encode_stored_tensor(EntryRef ref, vespalib::nbostream &target) const override;
     const DenseTensorStore* as_dense() const override;
+    DenseTensorStore* as_dense() override;
 
     vespalib::eval::TypedCells get_typed_cells(EntryRef ref) const {
         return vespalib::eval::TypedCells(ref.valid() ? getRawBuffer(ref) : &_emptySpace[0],
