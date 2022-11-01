@@ -2,17 +2,14 @@
 package com.yahoo.container.di;
 
 import com.yahoo.config.subscription.ConfigSource;
-import com.yahoo.config.subscription.ConfigSourceSet;
+import com.yahoo.config.subscription.DirSource;
+import com.yahoo.config.subscription.FileSource;
 import org.junit.jupiter.api.Assertions;
 
 import java.io.File;
-import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.OutputStream;
-import java.nio.charset.StandardCharsets;
-import java.util.Random;
-
-import static java.nio.charset.StandardCharsets.UTF_8;
+import java.io.UncheckedIOException;
+import java.nio.file.Files;
 
 /**
  * @author Tony Vaagenes
@@ -23,11 +20,11 @@ class DirConfigSource {
 
     private final File tempFolder;
 
-     DirConfigSource(File tmpDir) {
+    DirConfigSource(File tmpDir) {
         this.tempFolder = tmpDir;
     }
 
-     void writeConfig(String name, String contents) {
+    void writeConfig(String name, String contents) {
         try {
             Files.writeString(tempFolder.toPath().resolve(name + ".cfg"), contents);
         }
@@ -36,13 +33,12 @@ class DirConfigSource {
         }
     }
 
-     String configId() {
+    String configId() {
         return "dir:" + tempFolder.getPath();
     }
 
-    public ConfigSource configSource() {
-        return configSource;
+    ConfigSource configSource() {
+        return new DirSource(tempFolder);
     }
-
 
 }

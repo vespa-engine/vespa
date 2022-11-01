@@ -142,8 +142,8 @@ public abstract class ConfigSubscription<T extends ConfigInstance> {
     }
 
     private static <T extends ConfigInstance> ConfigSubscription<T> getFileSub(ConfigKey<T> key, ConfigSource source) {
-        File file = source instanceof FileSource fileSource ? fileSource.getFile()
-                                                            : new File(key.getConfigId().replace("file:", ""));
+        FileSource file = source instanceof FileSource fileSource ? fileSource
+                                                                  : new FileSource(new File(key.getConfigId().replace("file:", "")));
         return new FileConfigSubscription<>(key, file);
     }
 
@@ -155,8 +155,9 @@ public abstract class ConfigSubscription<T extends ConfigInstance> {
     }
 
     private static <T extends ConfigInstance> ConfigSubscription<T> getDirFileSub(ConfigKey<T> key, ConfigSource source) {
-        File dir = source instanceof DirSource dirSource ? dirSource.getDir() : new File(key.getConfigId().replace("dir:", ""));
-        return new FileConfigSubscription<>(key, new File(dir, getConfigFilename(key)));
+        DirSource dir = source instanceof DirSource dirSource ? dirSource
+                                                              : new DirSource(new File(key.getConfigId().replace("dir:", "")));
+        return new FileConfigSubscription<>(key, dir.getFile(getConfigFilename(key)));
     }
 
     @Override
