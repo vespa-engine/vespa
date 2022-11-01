@@ -43,7 +43,6 @@
       "public void <init>(java.lang.String, com.yahoo.messagebus.ConfigHandler)",
       "public void <init>(com.yahoo.config.subscription.ConfigURI, com.yahoo.messagebus.ConfigHandler)",
       "public void <init>(com.yahoo.messagebus.MessagebusConfig, com.yahoo.messagebus.ConfigHandler)",
-      "public void reload(long)",
       "public void subscribe()",
       "public void configure(com.yahoo.messagebus.MessagebusConfig)",
       "public void shutdown()",
