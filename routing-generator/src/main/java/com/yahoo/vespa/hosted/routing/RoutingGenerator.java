@@ -95,8 +95,8 @@ public class RoutingGenerator extends AbstractComponent {
     /** Load the given routing table */
     private void load(RoutingTable newTable) {
         synchronized (monitor) {
-            router.load(newTable);
             routingTable = newTable;
+            router.load(newTable);
         }
     }
 
