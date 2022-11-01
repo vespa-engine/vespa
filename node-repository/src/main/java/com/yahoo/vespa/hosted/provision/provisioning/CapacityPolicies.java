@@ -96,12 +96,13 @@ public class CapacityPolicies {
         }
 
         if (clusterSpec.type() == ClusterSpec.Type.content) {
-            // TODO: Simplify when no application is on an older version than 8.75
+            // TODO: Simplify when no application is on an older version than 8.78
             return zone.cloud().dynamicProvisioning()
                    ? versioned(clusterSpec, Map.of(new Version(0), new NodeResources(2.0, 8, 50, 0.3),
                                                    new Version(8, 75), new NodeResources(2, 16, 300, 0.3)))
                    : versioned(clusterSpec, Map.of(new Version(0), new NodeResources(1.5, 8, 50, 0.3),
-                                                   new Version(8, 75), new NodeResources(2, 16, 300, 0.3)));
+                                                   new Version(8, 75), new NodeResources(2, 16, 300, 0.3),
+                                                   new Version(8, 78), new NodeResources(1.5, 8, 50, 0.3)));
         }
         else {
             return zone.cloud().dynamicProvisioning()
