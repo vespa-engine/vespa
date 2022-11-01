@@ -250,7 +250,7 @@ public class ContainerTest extends ContainerTestBase {
         }
     }
 
-    @RepeatedTest(100)
+    @Test
     void getNewComponentGraph_hangs_waiting_for_valid_config_after_invalid_config() throws Exception {
         dirConfigSource.writeConfig("test", "stringVal \"original\"");
         writeBootstrapConfigs("myId", ComponentTakingConfig.class);
