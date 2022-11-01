@@ -230,8 +230,8 @@ public class CryptoToolsTest {
         assertEquals("", procOut.stdOut());
         assertEquals("", procOut.stdErr());
 
-        assertTrue(privPath.toFile().exists());
-        assertTrue(pubPath.toFile().exists());
+        assertTrue(Files.exists(privPath));
+        assertTrue(Files.exists(pubPath));
 
         var encryptedPath = pathInTemp("encrypted.bin");
         // TODO support (and test) public key via file
@@ -247,7 +247,7 @@ public class CryptoToolsTest {
         var token = procOut.stdOut();
         assertFalse(token.isBlank());
 
-        assertTrue(encryptedPath.toFile().exists());
+        assertTrue(Files.exists(encryptedPath));
 
         var decryptedPath = pathInTemp("decrypted.txt");
         procOut = runMain(List.of(
@@ -279,8 +279,8 @@ public class CryptoToolsTest {
         assertEquals("", procOut.stdOut());
         assertEquals("", procOut.stdErr());
 
-        assertTrue(privPath.toFile().exists());
-        assertTrue(pubPath.toFile().exists());
+        assertTrue(Files.exists(privPath));
+        assertTrue(Files.exists(pubPath));
 
         var encryptedPath = pathInTemp("encrypted.bin");
         // Encryption emits token on stdout, so can't support ciphertext output via that channel.
@@ -297,7 +297,7 @@ public class CryptoToolsTest {
         var token = procOut.stdOut();
         assertFalse(token.isBlank());
 
-        assertTrue(encryptedPath.toFile().exists());
+        assertTrue(Files.exists(encryptedPath));
 
         procOut = runMain(List.of(
                 "decrypt",

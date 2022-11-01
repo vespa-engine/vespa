@@ -27,7 +27,7 @@ public class CliUtils {
             return stdIn;
         } else {
             var inputPath = Paths.get(pathOrDash);
-            if (!inputPath.toFile().exists()) {
+            if (!Files.exists(inputPath)) {
                 throw new IllegalArgumentException("Input file '%s' does not exist".formatted(inputPath.toString()));
             }
             return Files.newInputStream(inputPath);
