@@ -395,18 +395,6 @@ public class ConfigSubscriber implements AutoCloseable {
         }
     }
 
-    /**
-     * Sets all subscriptions under this subscriber to have the given generation. This is intended for testing, to emulate a
-     * reload-config operation.
-     *
-     * @param generation a generation number
-     */
-    public void reload(long generation) {
-        for (ConfigHandle<?> h : subscriptionHandles) {
-            h.subscription().reload(generation);
-        }
-    }
-
     public boolean isClosed() {
         synchronized (monitor) {
             return state == State.CLOSED;

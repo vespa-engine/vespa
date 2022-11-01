@@ -38,7 +38,7 @@ public class ContainerTestBase {
 
     protected Container newContainer(DirConfigSource dirConfigSource,
                                      ComponentDeconstructor deconstructor) {
-        return new Container(new CloudSubscriberFactory(null),
+        return new Container(new CloudSubscriberFactory(dirConfigSource.source()),
                              dirConfigSource.configId(),
                              deconstructor,
                              osgi);

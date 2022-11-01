@@ -25,7 +25,9 @@ import static org.junit.Assert.assertTrue;
  * @author Ulf Lilleengen
  */
 public class FileConfigSubscriptionTest {
+
     private File TEST_TYPES_FILE;
+    private long timestamp = System.currentTimeMillis();
 
     @Before
     public void setUp() throws IOException {
@@ -36,6 +38,11 @@ public class FileConfigSubscriptionTest {
         FileWriter writer = new FileWriter(TEST_TYPES_FILE);
         writer.write(field + " " + value);
         writer.close();
+        incrementTimestamp();
+    }
+
+    private void incrementTimestamp() {
+        TEST_TYPES_FILE.setLastModified(timestamp += 1000);
     }
 
     @Test
@@ -61,7 +68,6 @@ public class FileConfigSubscriptionTest {
         assertTrue(sub.nextConfig(1000));
         assertEquals(23, sub.getConfigState().getConfig().intval());
         writeConfig("intval", "33");
-        sub.reload(1);
         assertTrue(sub.nextConfig(1000));
         ConfigSubscription.ConfigState<SimpletypesConfig> configState = sub.getConfigState();
         assertEquals(33, configState.getConfig().intval());
@@ -72,20 +78,20 @@ public class FileConfigSubscriptionTest {
         assertSame(configState, sub.getConfigState());
         assertTrue(configState.hasConfigChanged());
         assertTrue(configState.hasGenerationChanged());
-        assertTrue(sub.isConfigChangedAndReset(1L));
+        assertTrue(sub.isConfigChangedAndReset(2L));
         assertNotSame(configState, sub.getConfigState());
         configState = sub.getConfigState();
         assertFalse(configState.hasConfigChanged());
         assertFalse(configState.hasGenerationChanged());
 
-        sub.reload(2);
+        incrementTimestamp();
         assertTrue(sub.nextConfig(1000));
         configState = sub.getConfigState();
         assertEquals(33, configState.getConfig().intval());
         assertFalse(configState.hasConfigChanged());
         assertTrue(configState.hasGenerationChanged());
 
-        assertFalse(sub.isConfigChangedAndReset(2L));
+        assertFalse(sub.isConfigChangedAndReset(3L));
         assertNotSame(configState, sub.getConfigState());
         configState = sub.getConfigState();
         assertFalse(configState.hasConfigChanged());

@@ -284,11 +284,6 @@ public class Container {
         retriever.shutdown();
     }
 
-    // Reload config manually, when subscribing to non-configserver sources
-    public void reloadConfig(long generation) {
-        subscriberFactory.reloadActiveSubscribers(generation);
-    }
-
     public static <T extends ConfigInstance> T getConfig(ConfigKey<T> key,
                                                          Map<ConfigKey<? extends ConfigInstance>, ConfigInstance> configs) {
         ConfigInstance inst = configs.get(key);

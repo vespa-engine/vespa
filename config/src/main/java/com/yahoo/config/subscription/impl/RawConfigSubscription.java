@@ -29,9 +29,6 @@ public class RawConfigSubscription<T extends ConfigInstance> extends ConfigSubsc
 
     @Override
     public boolean nextConfig(long timeout) {
-        if (checkReloaded()) {
-            throw new UnsupportedOperationException();
-        }
         if (payload == null) {
             payload = inputPayload;
             ConfigPayload configPayload = new CfgConfigPayloadBuilder().deserialize(Arrays.asList(payload.split("\n")));

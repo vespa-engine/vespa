@@ -8,13 +8,8 @@ import com.yahoo.container.di.config.Subscriber;
 import com.yahoo.container.di.config.SubscriberFactory;
 import com.yahoo.vespa.config.ConfigKey;
 
-import java.util.ArrayList;
 import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
 import java.util.Set;
-import java.util.WeakHashMap;
 
 /**
  * @author Tony Vaagenes
@@ -23,9 +18,6 @@ import java.util.WeakHashMap;
 public class CloudSubscriberFactory implements SubscriberFactory {
 
     private final ConfigSource configSource;
-    private final Map<CloudSubscriber, Integer> activeSubscribers = new WeakHashMap<>();
-
-    private Optional<Long> testGeneration = Optional.empty();
 
     public CloudSubscriberFactory(ConfigSource configSource) {
         this.configSource = configSource;
@@ -39,21 +31,8 @@ public class CloudSubscriberFactory implements SubscriberFactory {
             ConfigKey<ConfigInstance> invariant = (ConfigKey<ConfigInstance>) key;
             subscriptionKeys.add(invariant);
         }
-        CloudSubscriber subscriber = new CloudSubscriber(name, configSource, subscriptionKeys);
 
-        testGeneration.ifPresent(subscriber.getSubscriber()::reload); // TODO: test specific code, remove
-        activeSubscribers.put(subscriber, 0);
-
-        return subscriber;
-    }
-
-    //TODO: test specific code, remove
-    @Override
-    public void reloadActiveSubscribers(long generation) {
-        testGeneration = Optional.of(generation);
-
-        List<CloudSubscriber> subscribers = new ArrayList<>(activeSubscribers.keySet());
-        subscribers.forEach(s -> s.getSubscriber().reload(generation));
+        return new CloudSubscriber(name, configSource, subscriptionKeys);
     }
 
     public static class Provider implements com.google.inject.Provider<SubscriberFactory> {

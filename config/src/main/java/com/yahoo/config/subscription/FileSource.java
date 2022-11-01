@@ -11,14 +11,22 @@ import java.io.File;
 public class FileSource implements ConfigSource {
 
     private final File file;
+    private long generation;
+    private long timestamp;
 
     public FileSource(File file) {
-        if ( ! file.isFile()) throw new IllegalArgumentException("Not an ordinary file: "+file);
+        if ( ! file.isFile()) throw new IllegalArgumentException("Not an ordinary file: " + file);
         this.file = file;
+        this.timestamp = file.lastModified();
+        this.generation = 1;
     }
 
     public File getFile() {
         return file;
+    }
+
+    public long generation() {
+        return timestamp != (timestamp = file.lastModified()) ? ++generation : generation;
     }
 
 }

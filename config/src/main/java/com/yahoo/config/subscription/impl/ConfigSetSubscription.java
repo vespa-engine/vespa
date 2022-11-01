@@ -5,6 +5,7 @@ import com.yahoo.config.ConfigInstance;
 import com.yahoo.config.subscription.ConfigSet;
 import com.yahoo.config.subscription.ConfigSource;
 import com.yahoo.vespa.config.ConfigKey;
+import com.yahoo.vespa.config.PayloadChecksums;
 
 import java.lang.reflect.Constructor;
 
@@ -17,27 +18,20 @@ public class ConfigSetSubscription<T extends ConfigInstance> extends ConfigSubsc
 
     private final ConfigSet set;
     private final ConfigKey<T> subKey;
+    private long generation = -1;
 
     ConfigSetSubscription(ConfigKey<T> key, ConfigSet cset) {
         super(key);
         this.set = cset;
         this.subKey = new ConfigKey<>(configClass, key.getConfigId());
-        if (!set.contains(subKey)) {
+        if ( ! set.contains(subKey))
             throw new IllegalArgumentException("The given ConfigSet " + set + " does not contain a config for " + subKey);
-        }
-        setGeneration(0L);
     }
 
     private boolean hasConfigChanged() {
         T myInstance = getNewInstance();
-        ConfigState<T> configState = getConfigState();
-        // User forced reload
-        if (checkReloaded()) {
-            setConfigIfChanged(myInstance);
-            return true;
-        }
-        if (!myInstance.equals(configState.getConfig())) {
-            setConfigIncGen(myInstance);
+        if (generation != (generation = set.generation())) {
+            setConfigAndGeneration(generation, false, myInstance, PayloadChecksums.empty());
             return true;
         }
         return false;

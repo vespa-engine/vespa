@@ -88,10 +88,6 @@ public class StandaloneSubscriberFactory implements SubscriberFactory {
         return new StandaloneSubscriber((Set<ConfigKey<ConfigInstance>>) configKeys);
     }
 
-    public void reloadActiveSubscribers(long generation) {
-        throw new RuntimeException("unsupported");
-    }
-
     private static ConfigInstance.Builder newBuilderInstance(ConfigKey<ConfigInstance> key) {
         try {
             return builderClass(key).getDeclaredConstructor().newInstance();

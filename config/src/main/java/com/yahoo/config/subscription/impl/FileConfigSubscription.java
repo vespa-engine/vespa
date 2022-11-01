@@ -26,7 +26,7 @@ import static java.util.logging.Level.FINE;
 public class FileConfigSubscription<T extends ConfigInstance> extends ConfigSubscription<T> {
 
     final FileSource file;
-    long ts;
+    long generation = -1;
 
     FileConfigSubscription(ConfigKey<T> key, FileSource file) {
         super(key);
@@ -37,18 +37,9 @@ public class FileConfigSubscription<T extends ConfigInstance> extends ConfigSubs
 
     @Override
     public boolean nextConfig(long timeout) {
-        if ( ! file.getFile().isFile()) throw new IllegalArgumentException("Not a file: " + file.getFile());
-        if (checkReloaded()) {
-            log.log(FINE, () -> "User forced config reload at " + System.currentTimeMillis());
-            // User forced reload
-            setConfigIfChanged(updateConfig());
-            ConfigState<T> configState = getConfigState();
-            log.log(FINE, () -> "Config updated at " + System.currentTimeMillis() + ", changed: " + configState.isConfigChanged());
-            log.log(FINE, () -> "Config: " + configState.getConfig().toString());
-            return true;
-        }
-        if (file.getFile().lastModified() != ts) {
-            setConfigIncGen(updateConfig());
+        if ( ! file.getFile().isFile()) throw new IllegalArgumentException("Not a file: " + file);
+        if (generation != (generation = file.generation())) {
+            setConfigAndGeneration(generation, false, updateConfig(), PayloadChecksums.empty());
             return true;
         }
         try {
@@ -61,7 +52,6 @@ public class FileConfigSubscription<T extends ConfigInstance> extends ConfigSubs
     }
 
     private T updateConfig() {
-        ts = file.getFile().lastModified();
         try {
             ConfigPayload payload = new CfgConfigPayloadBuilder().deserialize(Files.readAllLines(file.getFile().toPath()));
             return payload.toInstance(configClass, key.getConfigId());

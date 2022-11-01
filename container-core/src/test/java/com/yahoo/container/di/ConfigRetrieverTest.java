@@ -107,10 +107,11 @@ public class ConfigRetrieverTest {
         Set<ConfigKey<? extends ConfigInstance>> keys = new HashSet<>();
         keys.add(new ConfigKey<>(Bootstrap1Config.class, configId));
         keys.add(new ConfigKey<>(Bootstrap2Config.class, configId));
-        return new ConfigRetriever(keys, new CloudSubscriberFactory(null));
+        return new ConfigRetriever(keys, new CloudSubscriberFactory(dirConfigSource.source()));
     }
 
     private void writeConfig(String name, String contents) {
         dirConfigSource.writeConfig(name, contents);
     }
+
 }

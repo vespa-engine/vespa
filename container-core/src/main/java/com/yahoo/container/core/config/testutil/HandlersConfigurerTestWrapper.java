@@ -8,6 +8,8 @@ import com.google.inject.Scopes;
 import com.yahoo.component.AbstractComponent;
 import com.yahoo.component.provider.ComponentRegistry;
 import com.yahoo.config.subscription.ConfigSourceSet;
+import com.yahoo.config.subscription.DirSource;
+import com.yahoo.config.subscription.FileSource;
 import com.yahoo.container.Container;
 import com.yahoo.container.core.config.HandlersConfigurerDi;
 import com.yahoo.container.di.CloudSubscriberFactory;
@@ -22,11 +24,13 @@ import com.yahoo.language.simple.SimpleLinguistics;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.util.LinkedHashSet;
 import java.util.Random;
 import java.util.Set;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
+import java.util.concurrent.atomic.AtomicLong;
 
 /**
  * Class for testing HandlersConfigurer.
@@ -39,8 +43,7 @@ import java.util.concurrent.Executors;
  */
 public class HandlersConfigurerTestWrapper {
 
-    private final ConfigSourceSet configSources =
-            new ConfigSourceSet(this.getClass().getSimpleName() + ": " + new Random().nextLong());
+    private final ReloadableConfigSource dirSource;
     private final HandlersConfigurerDi configurer;
 
     // TODO: Remove once tests use ConfigSet rather than dir:
@@ -66,53 +69,66 @@ public class HandlersConfigurerTestWrapper {
             "query-profiles.cfg"
     };
     private final Set<File> createdFiles = new LinkedHashSet<>();
-    private int lastGeneration = 1;
     private final Container container;
 
-    private void createFiles(String configId) {
-        if (configId.startsWith("dir:")) {
-            try {
-                System.setProperty("config.id", configId);
-                String dirName = configId.substring(4);
-                for (String file : testFiles) {
-                    createIfNotExists(dirName, file);
-                }
-            } catch (IOException e) {
-                e.printStackTrace();
+    private static class ReloadableConfigSource extends DirSource {
+
+        private final AtomicLong generation = new AtomicLong(1);
+        private final File dir;
+
+        public ReloadableConfigSource(File dir) {
+            super(dir);
+            this.dir = dir;
+        }
+
+        @Override public FileSource get(String name) {
+            return new FileSource(new File(dir, name)) {
+                @Override public long generation() {
+                    return generation.get();
+                };
+            };
+        }
+
+        public String configId() {
+            return "dir:" + dir;
+        }
+
+    }
+
+    private ReloadableConfigSource createFiles(File configDir) {
+        try {
+            configDir.mkdirs();
+            for (String name : testFiles) {
+                File file = new File(configDir, name);
+                if (file.createNewFile()) createdFiles.add(file);
             }
+            ReloadableConfigSource source = new ReloadableConfigSource(configDir);
+            System.setProperty("config.id", source.configId());
+            return source;
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
         }
     }
 
-    // TODO: Remove once tests use ConfigSet rather than dir:
-    private void createIfNotExists(String dir, String file) throws IOException {
-        final File f = new File(dir + "/" + file);
-        if (f.createNewFile()) {
-            createdFiles.add(f);
-        }
+    public HandlersConfigurerTestWrapper(File configDir) {
+        this(Container.get(), configDir);
     }
 
-    public HandlersConfigurerTestWrapper(String configId) {
-        this(Container.get(), configId);
-    }
-
-    public HandlersConfigurerTestWrapper(Container container, String configId) {
-        createFiles(configId);
-        MockOsgiWrapper mockOsgiWrapper = new MockOsgiWrapper();
-        ComponentDeconstructor testDeconstructor = getTestDeconstructor();
-        configurer = new HandlersConfigurerDi(
-                new CloudSubscriberFactory(configSources),
-                container,
-                configId,
-                testDeconstructor,
-                guiceInjector(),
-                mockOsgiWrapper);
+    public HandlersConfigurerTestWrapper(Container container, File configDir) {
         this.container = container;
+        this.dirSource = createFiles(configDir);
+        this.configurer = new HandlersConfigurerDi(
+                new CloudSubscriberFactory(dirSource),
+                container,
+                this.dirSource.configId(),
+                getTestDeconstructor(),
+                guiceInjector(),
+                new MockOsgiWrapper());
     }
 
     private ComponentDeconstructor getTestDeconstructor() {
         return (generation, components, bundles) -> components.forEach(component -> {
-            if (component instanceof AbstractComponent) {
-                AbstractComponent abstractComponent = (AbstractComponent) component;
+            if (component instanceof AbstractComponent abstractComponent) {
                 if (abstractComponent.isDeconstructable()) abstractComponent.deconstruct();
             }
             if (! bundles.isEmpty()) throw new IllegalArgumentException("This test should not use bundles");
@@ -120,16 +136,16 @@ public class HandlersConfigurerTestWrapper {
     }
 
     public void reloadConfig() {
-        configurer.reloadConfig(++lastGeneration);
+        dirSource.generation.incrementAndGet();
         Runnable cleanupTask = configurer.waitForNextGraphGeneration(guiceInjector(), false);
+        dirSource.generation.incrementAndGet();
         cleanupTask.run();
     }
 
     public void shutdown() {
         configurer.shutdown();
-        // TODO: Remove once tests use ConfigSet rather than dir:
-        for (File f : createdFiles) {
-            f.delete();
+        for (File file : createdFiles) {
+            file.delete();
         }
     }
 

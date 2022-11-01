@@ -55,16 +55,6 @@ public class ConfigAgent implements ConfigSubscriber.SingleSubscriber<Messagebus
     }
 
     /**
-     * Force reload config. Only necessary for testing or if subscribing to
-     * config using files.
-     */
-    public void reload(long generation) {
-        if (subscriber != null) {
-            subscriber.reload(generation);
-        }
-    }
-
-    /**
      * Start listening for config updates. This method will not return until the handler has been configured at least
      * once unless an exception is thrown.
      */

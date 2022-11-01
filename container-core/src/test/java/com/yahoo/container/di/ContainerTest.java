@@ -9,6 +9,7 @@ import com.yahoo.container.di.componentgraph.core.ComponentGraph;
 import com.yahoo.container.di.componentgraph.core.ComponentGraphTest.SimpleComponent;
 import com.yahoo.container.di.componentgraph.core.ComponentNode.ComponentConstructorException;
 import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.RepeatedTest;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
@@ -59,7 +60,7 @@ public class ContainerTest extends ContainerTestBase {
 
         // Reconfigure
         dirConfigSource.writeConfig("test", "stringVal \"reconfigured\"");
-        container.reloadConfig(2);
+        dirConfigSource.incrementGeneration();
 
         ComponentGraph newComponentGraph = getNewComponentGraph(container, componentGraph);
         ComponentTakingConfig component2 = createComponentTakingConfig(newComponentGraph);
@@ -83,7 +84,7 @@ public class ContainerTest extends ContainerTestBase {
                 new ComponentEntry("id1", ComponentTakingConfig.class),
                 new ComponentEntry("id2", ComponentTakingConfig.class));
 
-        container.reloadConfig(2);
+        dirConfigSource.incrementGeneration();
         ComponentGraph newGraph = getNewComponentGraph(container, graph);
 
         assertNotNull(ComponentGraph.getNode(newGraph, "id1"));
@@ -106,7 +107,7 @@ public class ContainerTest extends ContainerTestBase {
         assertEquals("bundle-1", osgi.getBundles()[0].getSymbolicName());
 
         writeBootstrapConfigsWithBundles(List.of("bundle-2"), List.of(component2));
-        container.reloadConfig(2);
+        dirConfigSource.incrementGeneration();
         getNewComponentGraph(container, graph);
 
         // bundle-2 is installed, bundle-1 has been uninstalled
@@ -158,7 +159,7 @@ public class ContainerTest extends ContainerTestBase {
         SimpleComponent simpleComponent = currentGraph.getInstance(SimpleComponent.class);
 
         writeBootstrapConfigs("thrower", ComponentThrowingExceptionInConstructor.class);
-        container.reloadConfig(2);
+        dirConfigSource.incrementGeneration();
         assertNewComponentGraphFails(container, currentGraph, ComponentConstructorException.class);
         assertEquals(1, currentGraph.generation());
 
@@ -166,7 +167,7 @@ public class ContainerTest extends ContainerTestBase {
         ComponentEntry componentTakingConfigEntry = new ComponentEntry("componentTakingConfig", ComponentTakingConfig.class);
         dirConfigSource.writeConfig("test", "stringVal \"myString\"");
         writeBootstrapConfigs(simpleComponentEntry, componentTakingConfigEntry);
-        container.reloadConfig(3);
+        dirConfigSource.incrementGeneration();
         currentGraph = getNewComponentGraph(container, currentGraph);
 
         assertEquals(3, currentGraph.generation());
@@ -188,7 +189,7 @@ public class ContainerTest extends ContainerTestBase {
         assertEquals("bundle-1", osgi.getBundles()[0].getSymbolicName());
 
         writeBootstrapConfigsWithBundles(List.of("bundle-2"), List.of(throwingComponentEntry));
-        container.reloadConfig(2);
+        dirConfigSource.incrementGeneration();
         assertNewComponentGraphFails(container, currentGraph, ComponentConstructorException.class);
         assertEquals(1, currentGraph.generation());
 
@@ -210,7 +211,7 @@ public class ContainerTest extends ContainerTestBase {
 
         writeBootstrapConfigs("thrower", ComponentThrowingExceptionForMissingConfig.class);
         dirConfigSource.writeConfig("test", "stringVal \"myString\"");
-        container.reloadConfig(2);
+        dirConfigSource.incrementGeneration();
         assertNewComponentGraphFails(container, currentGraph, IllegalArgumentException.class);
         assertEquals(1, currentGraph.generation());
     }
@@ -230,7 +231,7 @@ public class ContainerTest extends ContainerTestBase {
 
         writeBootstrapConfigsWithBundles(List.of("bundle-2"), List.of(configThrower));
         dirConfigSource.writeConfig("test", "stringVal \"myString\"");
-        container.reloadConfig(2);
+        dirConfigSource.incrementGeneration();
 
         assertNewComponentGraphFails(container, currentGraph, IllegalArgumentException.class);
         assertEquals(1, currentGraph.generation());
@@ -249,7 +250,7 @@ public class ContainerTest extends ContainerTestBase {
         }
     }
 
-    @Test
+    @RepeatedTest(100)
     void getNewComponentGraph_hangs_waiting_for_valid_config_after_invalid_config() throws Exception {
         dirConfigSource.writeConfig("test", "stringVal \"original\"");
         writeBootstrapConfigs("myId", ComponentTakingConfig.class);
@@ -258,7 +259,7 @@ public class ContainerTest extends ContainerTestBase {
         final ComponentGraph currentGraph = getNewComponentGraph(container);
 
         writeBootstrapConfigs("thrower", ComponentThrowingExceptionForMissingConfig.class);
-        container.reloadConfig(2);
+        dirConfigSource.incrementGeneration();
 
         assertThrows(IllegalArgumentException.class,
                      () -> getNewComponentGraph(container, currentGraph));
@@ -274,7 +275,7 @@ public class ContainerTest extends ContainerTestBase {
         }
 
         writeBootstrapConfigs("myId2", ComponentTakingConfig.class);
-        container.reloadConfig(3);
+        dirConfigSource.incrementGeneration();
 
         assertNotNull(newGraph.get(5, TimeUnit.MINUTES));
     }
@@ -300,7 +301,7 @@ public class ContainerTest extends ContainerTestBase {
         DestructableEntity destructableEntity = oldGraph.getInstance(DestructableEntity.class);
 
         writeBootstrapConfigs("id2", DestructableProvider.class);
-        container.reloadConfig(2);
+        dirConfigSource.incrementGeneration();
         getNewComponentGraph(container, oldGraph);
 
         assertTrue(destructableEntity.deconstructed);

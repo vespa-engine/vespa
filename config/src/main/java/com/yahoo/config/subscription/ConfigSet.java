@@ -14,6 +14,7 @@ import java.util.concurrent.ConcurrentHashMap;
 public class ConfigSet implements ConfigSource {
 
     private final Map<ConfigKey<?>, ConfigInstance.Builder> configs = new ConcurrentHashMap<>();
+    private long generation = 1;
 
     /**
      * Inserts a new builder in this set. If an existing entry exists, it is overwritten.
@@ -26,6 +27,10 @@ public class ConfigSet implements ConfigSource {
         Class<?> configClass = builder.getClass().getDeclaringClass();
         ConfigKey<?> key = new ConfigKey(configClass, configId);
         configs.put(key, builder);
+    }
+
+    public void incrementGeneration() {
+        ++generation;
     }
 
     /**
@@ -47,6 +52,8 @@ public class ConfigSet implements ConfigSource {
     public boolean contains(ConfigKey<?> key) {
         return configs.containsKey(key);
     }
+
+    public long generation() { return generation; }
 
     @Override
     public String toString() {

@@ -137,10 +137,6 @@ public class HandlersConfigurerDi {
         });
     }
 
-    public void reloadConfig(long generation) {
-        container.reloadConfig(generation);
-    }
-
     public <T> T getComponent(Class<T> componentClass) {
         return currentGraph.getInstance(componentClass);
     }

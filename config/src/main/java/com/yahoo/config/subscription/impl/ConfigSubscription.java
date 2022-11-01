@@ -85,13 +85,6 @@ public abstract class ConfigSubscription<T extends ConfigInstance> {
 
     }
 
-    /**
-     * If non-null: The user has set this generation explicitly. nextConfig should take this into account.
-     * Access to these variables _must_ be synchronized, as nextConfig and reload() is likely to be run from
-     * independent threads.
-     */
-    private final AtomicReference<Long> reloadedGeneration = new AtomicReference<>();
-
     enum State {
         OPEN, CLOSED
     }
@@ -203,19 +196,6 @@ public abstract class ConfigSubscription<T extends ConfigInstance> {
         this.config.set(new ConfigState<>(true, generation, applyOnRestart, configChanged, config, payloadChecksums));
     }
 
-    /**
-     * Used by {@link FileConfigSubscription} and {@link ConfigSetSubscription}
-     */
-    protected void setConfigIncGen(T config) {
-        ConfigState<T> prev = this.config.get();
-        this.config.set(new ConfigState<>(true, prev.getGeneration() + 1, prev.applyOnRestart(), true, config, prev.payloadChecksums));
-    }
-
-    protected void setConfigIfChanged(T config) {
-        ConfigState<T> prev = this.config.get();
-        this.config.set(new ConfigState<>(true, prev.getGeneration(), prev.applyOnRestart(), !Objects.equals(prev.getConfig(), config), config, prev.payloadChecksums));
-    }
-
     void setGeneration(Long generation) {
         ConfigState<T> prev = config.get();
         this.config.set(new ConfigState<>(true, generation, prev.applyOnRestart(), prev.hasConfigChanged(), prev.getConfig(), prev.payloadChecksums));
@@ -266,8 +246,7 @@ public abstract class ConfigSubscription<T extends ConfigInstance> {
     }
 
     /**
-     * Polls this subscription for a change. The method is guaranteed to use all of the given timeout before returning false. It will also take into account a user-set generation,
-     * that can be set by {@link ConfigSubscriber#reload(long)}.
+     * Polls this subscription for a change. The method is guaranteed to exhaust the given timeout before returning false.
      *
      * @param timeout in milliseconds
      * @return false if timed out, true if generation or config or {@link #exception} changed. If true, the {@link #config} field will be set also.
@@ -325,31 +304,6 @@ public abstract class ConfigSubscription<T extends ConfigInstance> {
      */
     static <T extends ConfigInstance> String getConfigFilename(ConfigKey<T> key) {
         return key.getName() + ".cfg";
-    }
-
-    /**
-     * Force this into the given generation, used in testing
-     *
-     * @param generation a config generation
-     */
-    public void reload(long generation) {
-        reloadedGeneration.set(generation);
-    }
-
-    /**
-     * True if someone has set the {@link #reloadedGeneration} number by calling {@link #reload(long)}
-     * and hence wants to force a given generation programmatically. If that is the case,
-     * sets the generation and flags it as changed accordingly.
-     *
-     * @return true if {@link #reload(long)} has been called, false otherwise
-     */
-    protected boolean checkReloaded() {
-        Long reloaded = reloadedGeneration.getAndSet(null);
-        if (reloaded != null) {
-            setGeneration(reloaded);
-            return true;
-        }
-        return false;
     }
 
     /**

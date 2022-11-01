@@ -92,6 +92,7 @@ public class ConfigSetSubscriptionTest {
         a0builder.message("A new message, 0").times(880);
         a1builder.message("A new message, 1").times(890);
         barBuilder.stringVal("new StringVal");
+        myConfigs.incrementGeneration();
         assertTrue(subscriber.nextConfig(0, false));
         assertTrue(hA0.isChanged());
         assertTrue(hA1.isChanged());
@@ -105,7 +106,7 @@ public class ConfigSetSubscriptionTest {
 
         // Reconfigure only one
         a0builder.message("Another new message, 0").times(8800);
-        subscriber.reload(2);
+        myConfigs.incrementGeneration();
         assertTrue(subscriber.nextConfig(0, false));
         assertTrue(hA0.isChanged());
         assertFalse(hA1.isChanged());
@@ -119,7 +120,7 @@ public class ConfigSetSubscriptionTest {
 
         //Reconfigure only one, and only one field on the builder
         a1builder.message("Yet another message, 1");
-        subscriber.reload(3);
+        myConfigs.incrementGeneration();
         assertTrue(subscriber.nextConfig(0, false));
         assertFalse(hA0.isChanged());
         assertTrue(hA1.isChanged());
@@ -151,9 +152,9 @@ public class ConfigSetSubscriptionTest {
 
         //Reconfigure two times in a row
         a0builder.message("A new message, 2");
-        subscriber.reload(1);
+        myConfigs.incrementGeneration();
         a0builder.message("An even newer message, 3");
-        subscriber.reload(2);
+        myConfigs.incrementGeneration();
 
         // Should pick up the last one
         assertTrue(subscriber.nextConfig(0, false));

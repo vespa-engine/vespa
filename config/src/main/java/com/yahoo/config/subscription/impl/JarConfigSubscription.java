@@ -39,9 +39,6 @@ public class JarConfigSubscription<T extends ConfigInstance> extends ConfigSubsc
 
     @Override
     public boolean nextConfig(long timeout) {
-        if (checkReloaded()) {
-            throw new UnsupportedOperationException();
-        }
         if (zipEntry == null) {
             // First time polled
             JarFile jarFile;

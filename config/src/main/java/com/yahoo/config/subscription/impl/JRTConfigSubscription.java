@@ -187,11 +187,6 @@ public class JRTConfigSubscription<T extends ConfigInstance> extends ConfigSubsc
         return requester;
     }
 
-    @Override
-    public void reload(long generation) {
-        log.log(FINE, "reload() is without effect on a JRTConfigSubscription.");
-    }
-
     void setLastCallBackOKTS(Instant lastCallBackOKTS) {
         this.lastOK = lastCallBackOKTS;
     }
