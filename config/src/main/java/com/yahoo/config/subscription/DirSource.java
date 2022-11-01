@@ -5,18 +5,20 @@ import java.io.File;
 
 /**
  * Source specifying config from a local directory
+ *
  * @author Vegard Havdal
  */
 public class DirSource implements ConfigSource {
+
     private final File dir;
 
     public DirSource(File dir) {
-        if (!dir.isDirectory()) throw new IllegalArgumentException("Not a directory: "+dir);
+        if ( ! dir.isDirectory()) throw new IllegalArgumentException("Not a directory: " + dir);
         this.dir = dir;
     }
 
-    public File getDir() {
-        return dir;
+    public File get(String name) {
+        return new File(dir, name);
     }
 
 }

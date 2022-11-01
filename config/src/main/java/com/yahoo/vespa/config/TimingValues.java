@@ -9,6 +9,7 @@ import java.util.Random;
  * @author Gunnar Gauslaa Bergem
  */
 public class TimingValues {
+
     public static final long defaultNextConfigTimeout = 1000;
     // See getters below for an explanation of how these values are used and interpreted
     // All time values in milliseconds.
@@ -131,6 +132,5 @@ public class TimingValues {
                + ", fixedDelay=" + fixedDelay
                + ", rand=" + rand + "]";
     }
-
 
 }

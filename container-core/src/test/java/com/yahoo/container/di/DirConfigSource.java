@@ -3,12 +3,15 @@ package com.yahoo.container.di;
 
 import com.yahoo.config.subscription.ConfigSource;
 import com.yahoo.config.subscription.ConfigSourceSet;
+import com.yahoo.config.subscription.DirSource;
 
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
+import java.io.UncheckedIOException;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 import java.util.Random;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
@@ -27,32 +30,20 @@ public class DirConfigSource {
     }
 
     public void writeConfig(String name, String contents) {
-        File file = new File(tempFolder, name + ".cfg");
-        if (!file.exists()) {
-            try {
-                file.createNewFile();
-            } catch (IOException e) {
-                throw new RuntimeException(e);
-            }
+        try {
+            Files.writeString(tempFolder.toPath().resolve(name + ".cfg"), contents + "\n", UTF_8);
         }
-
-        printFile(file, contents + "\n");
+        catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
     }
 
     public String configId() {
         return "dir:" + tempFolder.getPath();
     }
 
-    public void cleanup() {
-        tempFolder.delete();
-    }
-
-    private static void printFile(File f, String content) {
-        try (OutputStream out = new FileOutputStream(f)) {
-            out.write(content.getBytes(UTF_8));
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
+    public ConfigSource source() {
+        return new DirSource(tempFolder);
     }
 
 }

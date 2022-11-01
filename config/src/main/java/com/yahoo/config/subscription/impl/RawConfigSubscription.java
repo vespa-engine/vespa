@@ -30,7 +30,7 @@ public class RawConfigSubscription<T extends ConfigInstance> extends ConfigSubsc
     @Override
     public boolean nextConfig(long timeout) {
         if (checkReloaded()) {
-            return true;
+            throw new UnsupportedOperationException();
         }
         if (payload == null) {
             payload = inputPayload;

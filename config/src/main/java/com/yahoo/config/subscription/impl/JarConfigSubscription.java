@@ -40,8 +40,7 @@ public class JarConfigSubscription<T extends ConfigInstance> extends ConfigSubsc
     @Override
     public boolean nextConfig(long timeout) {
         if (checkReloaded()) {
-            // Not supporting changing the payload for jar
-            return true;
+            throw new UnsupportedOperationException();
         }
         if (zipEntry == null) {
             // First time polled

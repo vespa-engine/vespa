@@ -117,10 +117,10 @@ public abstract class ConfigSubscription<T extends ConfigInstance> {
     public static <T extends ConfigInstance> ConfigSubscription<T> get(ConfigKey<T> key, JrtConfigRequesters requesters,
                                                                        ConfigSource source, TimingValues timingValues) {
         String configId = key.getConfigId();
-        if (source instanceof RawSource || configId.startsWith("raw:")) return getRawSub(key, source);
+        if (source instanceof RawSource  || configId.startsWith("raw:")) return getRawSub(key, source);
         if (source instanceof FileSource || configId.startsWith("file:")) return getFileSub(key, source);
-        if (source instanceof DirSource || configId.startsWith("dir:")) return getDirFileSub(key, source);
-        if (source instanceof JarSource || configId.startsWith("jar:")) return getJarSub(key, source);
+        if (source instanceof DirSource  || configId.startsWith("dir:")) return getDirFileSub(key, source);
+        if (source instanceof JarSource  || configId.startsWith("jar:")) return getJarSub(key, source);
         if (source instanceof ConfigSet cset) return new ConfigSetSubscription<>(key, cset);
         if (source instanceof ConfigSourceSet) {
             JRTConfigRequester requester = requesters.getRequester((ConfigSourceSet) source, timingValues);
@@ -143,30 +143,21 @@ public abstract class ConfigSubscription<T extends ConfigInstance> {
     }
 
     private static <T extends ConfigInstance> ConfigSubscription<T> getFileSub(ConfigKey<T> key, ConfigSource source) {
-        File file = ((source instanceof FileSource))
-                ? ((FileSource) source).getFile()
-                : new File(key.getConfigId().replace("file:", ""));
+        File file = source instanceof FileSource fileSource ? fileSource.getFile()
+                                                            : new File(key.getConfigId().replace("file:", ""));
         return new FileConfigSubscription<>(key, file);
     }
 
     private static <T extends ConfigInstance> ConfigSubscription<T> getRawSub(ConfigKey<T> key, ConfigSource source) {
-        String payload = ((source instanceof RawSource)
-                ? ((RawSource) source).payload
-                : key.getConfigId().replace("raw:", ""));
+        String payload = source instanceof RawSource rawSource ? rawSource.payload
+                                                               : key.getConfigId().replace("raw:", "");
         return new RawConfigSubscription<>(key, payload);
     }
 
     private static <T extends ConfigInstance> ConfigSubscription<T> getDirFileSub(ConfigKey<T> key, ConfigSource source) {
-        String dir = key.getConfigId().replace("dir:", "");
-        if (source instanceof DirSource) {
-            dir = ((DirSource) source).getDir().toString();
-        }
-        if (!dir.endsWith(File.separator)) dir = dir + File.separator;
-        String name = getConfigFilename(key);
-        File file = new File(dir + name);
-        if (!file.exists()) {
-            throw new IllegalArgumentException("Could not find a config file for '" + key.getName() + "' in '" + dir + "'");
-        }
+        DirSource dir = source instanceof DirSource dirSource ? dirSource
+                                                              : new DirSource(new File(key.getConfigId().replace("dir:", "")));
+        File file = dir.get(getConfigFilename(key));
         return new FileConfigSubscription<>(key, file);
     }
 

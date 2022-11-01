@@ -280,7 +280,7 @@ public class ContainerTest extends ContainerTestBase {
     }
 
     @Test
-    void providers_are_destructed() {
+    void providers_are_destroyed() {
         writeBootstrapConfigs("id1", DestructableProvider.class);
 
         ComponentDeconstructor deconstructor = (generation, components, bundles) -> {

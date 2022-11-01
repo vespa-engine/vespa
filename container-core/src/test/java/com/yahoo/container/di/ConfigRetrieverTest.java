@@ -42,11 +42,6 @@ public class ConfigRetrieverTest {
         dirConfigSource = new DirConfigSource(tmpDir);
     }
 
-    @AfterEach
-    public void cleanup() {
-        dirConfigSource.cleanup();
-    }
-
     @Test
     void require_that_bootstrap_configs_come_first() {
         writeConfigs();
