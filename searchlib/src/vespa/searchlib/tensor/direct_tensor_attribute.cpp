@@ -60,23 +60,6 @@ DirectTensorAttribute::update_tensor(DocId docId,
     }
 }
 
-std::unique_ptr<vespalib::eval::Value>
-DirectTensorAttribute::getTensor(DocId docId) const
-{
-    EntryRef ref;
-    if (docId < getCommittedDocIdLimit()) {
-        ref = acquire_entry_ref(docId);
-    }
-    if (ref.valid()) {
-        auto ptr = _direct_store.get_tensor_ptr(ref);
-        if (ptr) {
-            return FastValueBuilderFactory::get().copy(*ptr);
-        }
-    }
-    std::unique_ptr<vespalib::eval::Value> empty;
-    return empty;
-}
-
 const vespalib::eval::Value &
 DirectTensorAttribute::get_tensor_ref(DocId docId) const
 {

@@ -15,8 +15,7 @@ namespace search::tensor {
 
 SerializedFastValueAttribute::SerializedFastValueAttribute(stringref name, const Config &cfg)
   : TensorAttribute(name, cfg, _tensorBufferStore),
-    _tensor_type(cfg.tensorType()),
-    _tensorBufferStore(_tensor_type, get_memory_allocator(), 1000u)
+    _tensorBufferStore(cfg.tensorType(), get_memory_allocator(), 1000u)
 {
 }
 
@@ -25,25 +24,6 @@ SerializedFastValueAttribute::~SerializedFastValueAttribute()
 {
     getGenerationHolder().reclaim_all();
     _tensorStore.reclaim_all_memory();
-}
-
-void
-SerializedFastValueAttribute::setTensor(DocId docId, const vespalib::eval::Value &tensor)
-{
-    checkTensorType(tensor);
-    EntryRef ref = _tensorBufferStore.store_tensor(tensor);
-    assert(ref.valid());
-    setTensorRef(docId, ref);
-}
-
-std::unique_ptr<Value>
-SerializedFastValueAttribute::getTensor(DocId docId) const
-{
-    EntryRef ref;
-    if (docId < getCommittedDocIdLimit()) {
-        ref = acquire_entry_ref(docId);
-    }
-    return _tensorBufferStore.get_tensor(ref);
 }
 
 }

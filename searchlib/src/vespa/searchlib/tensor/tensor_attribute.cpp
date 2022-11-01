@@ -73,6 +73,7 @@ TensorAttribute::asTensorAttribute() const
 uint32_t
 TensorAttribute::clearDoc(DocId docId)
 {
+    consider_remove_from_index(docId);
     EntryRef oldRef(_refVector[docId].load_relaxed());
     updateUncommittedDocIdLimit(docId);
     _refVector[docId] = AtomicEntryRef();
@@ -97,6 +98,12 @@ TensorAttribute::onCommit()
         incGeneration();
         updateStat(true);
     }
+    if (_index) {
+        if (_index->consider_compact(getConfig().getCompactionStrategy())) {
+            incGeneration();
+            updateStat(true);
+        }
+    }
 }
 
 void
@@ -116,6 +123,9 @@ TensorAttribute::reclaim_memory(generation_t oldest_used_gen)
 {
     _tensorStore.reclaim_memory(oldest_used_gen);
     getGenerationHolder().reclaim(oldest_used_gen);
+    if (_index) {
+        _index->reclaim_memory(oldest_used_gen);
+    }
 }
 
 void
@@ -123,6 +133,9 @@ TensorAttribute::before_inc_generation(generation_t current_gen)
 {
     getGenerationHolder().assign_generation(current_gen);
     _tensorStore.assign_generation(current_gen);
+    if (_index) {
+        _index->assign_generation(current_gen);
+    }
 }
 
 bool
@@ -166,12 +179,32 @@ TensorAttribute::setTensorRef(DocId docId, EntryRef ref)
     }
 }
 
+void
+TensorAttribute::internal_set_tensor(DocId docid, const Value& tensor)
+{
+    consider_remove_from_index(docid);
+    EntryRef ref = _tensorStore.store_tensor(tensor);
+    assert(ref.valid());
+    setTensorRef(docid, ref);
+}
+
+void
+TensorAttribute::consider_remove_from_index(DocId docid)
+{
+    if (_index && _refVector[docid].load_relaxed().valid()) {
+        _index->remove_document(docid);
+    }
+}
+
 vespalib::MemoryUsage
 TensorAttribute::update_stat()
 {
     vespalib::MemoryUsage result = _refVector.getMemoryUsage();
     result.merge(_tensorStore.update_stat(getConfig().getCompactionStrategy()));
     result.mergeGenerationHeldBytes(getGenerationHolder().get_held_bytes());
+    if (_index) {
+        result.merge(_index->update_stat(getConfig().getCompactionStrategy()));
+    }
     return result;
 }
 
@@ -181,6 +214,9 @@ TensorAttribute::memory_usage() const
     vespalib::MemoryUsage result = _refVector.getMemoryUsage();
     result.merge(_tensorStore.getMemoryUsage());
     result.mergeGenerationHeldBytes(getGenerationHolder().get_held_bytes());
+    if (_index) {
+        result.merge(_index->memory_usage());
+    }
     return result;
 }
 
@@ -202,6 +238,9 @@ TensorAttribute::populate_address_space_usage(AddressSpaceUsage& usage) const
         auto stats = vespalib::SharedStringRepo::stats();
         usage.set(AddressSpaceComponents::shared_string_repo,
                   vespalib::AddressSpace(stats.max_part_usage, 0, stats.part_limit()));
+    }
+    if (_index) {
+        _index->populate_address_space_usage(usage);
     }
 }
 
@@ -227,6 +266,22 @@ const vespalib::eval::ValueType &
 TensorAttribute::getTensorType() const
 {
     return getConfig().tensorType();
+}
+
+const NearestNeighborIndex*
+TensorAttribute::nearest_neighbor_index() const
+{
+    return _index.get();
+}
+
+std::unique_ptr<Value>
+TensorAttribute::getTensor(DocId docId) const
+{
+    EntryRef ref;
+    if (docId < getCommittedDocIdLimit()) {
+        ref = acquire_entry_ref(docId);
+    }
+    return _tensorStore.get_tensor(ref);
 }
 
 void
@@ -259,6 +314,9 @@ TensorAttribute::onShrinkLidSpace()
     assert(_refVector.size() >= committedDocIdLimit);
     _refVector.shrink(committedDocIdLimit);
     setNumDocs(committedDocIdLimit);
+    if (_index) {
+        _index->shrink_lid_space(committedDocIdLimit);
+    }
 }
 
 uint32_t
@@ -300,6 +358,16 @@ TensorAttribute::onInitSave(vespalib::stringref fileName)
          getRefCopy(),
          _tensorStore,
          std::move(index_saver));
+}
+
+void
+TensorAttribute::setTensor(DocId docId, const Value& tensor)
+{
+    checkTensorType(tensor);
+    internal_set_tensor(docId, tensor);
+    if (_index) {
+        _index->add_document(docId);
+    }
 }
 
 void
