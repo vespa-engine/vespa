@@ -144,10 +144,10 @@ public class CryptoToolsTest {
 
     private static final String TEST_PRIV_KEY     = "4qGcntygFn_a3uqeBa1PbDlygQ-cpOuNznTPIz9ftWE";
     private static final String TEST_PUB_KEY      = "ROAH_S862tNMpbJ49lu1dPXFCPHFIXZK30pSrMZEmEg";
-    // Token created for the above public key (matching the above private key), using key id 1
-    private static final String TEST_TOKEN        = "AQAAAQAgwyxd7bFNQB_2LdL3bw-xFlvrxXhs7WWNVCKZ4" +
-                                                    "EFeNVtu42JMwM74bMN4E46v6mYcfQNPzcMGaP22Wl2cTnji0A";
-    private static final int    TEST_TOKEN_KEY_ID = 1;
+    // Token created for the above public key (matching the above private key), using key id "my key ID"
+    private static final String TEST_TOKEN        = "AQlteSBrZXkgSUQgAtTxJJdmv3eUoW5Z3NJSdZ3poKPEkW0SJOG" +
+                                                    "QXP6CaC5XfyAVoUlK_NyYIMsJKyNYKU6WmagZpVG2zQGFJoqiFA";
+    private static final String TEST_TOKEN_KEY_ID = "my key ID";
 
     @Test
     void encrypt_fails_with_error_message_if_no_input_file_is_given() throws IOException {
@@ -177,7 +177,7 @@ public class CryptoToolsTest {
                                    "--output-file",                "foo",
                                    "--recipient-private-key-file", absPathOf(privKeyFile),
                                    "--token",                      TEST_TOKEN,
-                                   "--key-id",                     Integer.toString(TEST_TOKEN_KEY_ID)),
+                                   "--key-id",                     TEST_TOKEN_KEY_ID),
                 "Invalid command line arguments: Expected exactly 1 file argument to decrypt\n");
     }
 
@@ -191,7 +191,7 @@ public class CryptoToolsTest {
                                    "--output-file",                "foo",
                                    "--recipient-private-key-file", absPathOf(privKeyFile),
                                    "--token",                      TEST_TOKEN,
-                                   "--key-id",                     Integer.toString(TEST_TOKEN_KEY_ID)),
+                                   "--key-id",                     TEST_TOKEN_KEY_ID),
                 "Invalid command line arguments: Input file 'no-such-file' does not exist\n");
     }
 
@@ -208,9 +208,9 @@ public class CryptoToolsTest {
                                    "--output-file",                "foo",
                                    "--recipient-private-key-file", absPathOf(privKeyFile),
                                    "--token",                      TEST_TOKEN,
-                                   "--key-id",                     Integer.toString(TEST_TOKEN_KEY_ID + 1)),
-                "Invalid command line arguments: Key ID specified with --key-id (2) does not match " +
-                        "key ID used when generating the supplied token (1)\n");
+                                   "--key-id",                     TEST_TOKEN_KEY_ID + "-wrong"),
+                "Invalid command line arguments: Key ID specified with --key-id does not " +
+                        "match key ID used when generating the supplied token\n");
     }
 
     @Test

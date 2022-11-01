@@ -13,8 +13,11 @@ import org.apache.commons.cli.Option;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
+
+import static com.yahoo.security.ArrayUtils.toUtf8Bytes;
 
 /**
  * Tooling for decrypting a file using a private key that corresponds to the public key used
@@ -85,16 +88,19 @@ public class DecryptTool implements Tool {
             }
             var inputArg   = leftoverArgs[0];
             var maybeKeyId = Optional.ofNullable(arguments.hasOption(KEY_ID_OPTION)
-                                                 ? Integer.parseInt(arguments.getOptionValue(KEY_ID_OPTION))
+                                                 ? arguments.getOptionValue(KEY_ID_OPTION)
                                                  : null);
             var outputArg   = CliUtils.optionOrThrow(arguments, OUTPUT_FILE_OPTION);
             var privKeyPath = Paths.get(CliUtils.optionOrThrow(arguments, RECIPIENT_PRIVATE_KEY_FILE_OPTION));
             var tokenString = CliUtils.optionOrThrow(arguments, TOKEN_OPTION);
             var sealedSharedKey = SealedSharedKey.fromTokenString(tokenString.strip());
-            if (maybeKeyId.isPresent() && (maybeKeyId.get() != sealedSharedKey.keyId())) {
-                throw new IllegalArgumentException(("Key ID specified with --key-id (%d) does not match key ID " +
-                                                    "used when generating the supplied token (%d)")
-                                                    .formatted(maybeKeyId.get(), sealedSharedKey.keyId()));
+            if (maybeKeyId.isPresent()) {
+                byte[] myKeyIdBytes = toUtf8Bytes(maybeKeyId.get());
+                if (!Arrays.equals(myKeyIdBytes, sealedSharedKey.keyId())) {
+                    // Don't include raw key bytes array verbatim in message (may contain control chars etc).
+                    throw new IllegalArgumentException("Key ID specified with --key-id does not match key ID " +
+                                                       "used when generating the supplied token");
+                }
             }
             var privateKey   = KeyUtils.fromBase64EncodedX25519PrivateKey(Files.readString(privKeyPath).strip());
             var secretShared = SharedKeyGenerator.fromSealedKey(sealedSharedKey, privateKey);

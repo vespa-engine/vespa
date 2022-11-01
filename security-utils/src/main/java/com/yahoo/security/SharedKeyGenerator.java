@@ -60,18 +60,17 @@ public class SharedKeyGenerator {
         }
     }
 
-    public static SecretSharedKey generateForReceiverPublicKey(PublicKey receiverPublicKey, int keyId) {
+    public static SecretSharedKey generateForReceiverPublicKey(PublicKey receiverPublicKey, byte[] keyId) {
         var secretKey = generateRandomSecretAesKey();
-        // TODO do we want to tie the key ID to the sealing via AAD?
-        var sealed = HPKE.sealBase((XECPublicKey) receiverPublicKey, EMPTY_BYTES, EMPTY_BYTES, secretKey.getEncoded());
+        // We protect the integrity of the key ID by passing it as AAD.
+        var sealed = HPKE.sealBase((XECPublicKey) receiverPublicKey, EMPTY_BYTES, keyId, secretKey.getEncoded());
         var sealedSharedKey = new SealedSharedKey(keyId, sealed.enc(), sealed.ciphertext());
         return new SecretSharedKey(secretKey, sealedSharedKey);
     }
 
     public static SecretSharedKey fromSealedKey(SealedSharedKey sealedKey, PrivateKey receiverPrivateKey) {
-        // TODO do we want to tie the key ID to the opening via AAD?
         byte[] secretKeyBytes = HPKE.openBase(sealedKey.enc(), (XECPrivateKey) receiverPrivateKey,
-                                              EMPTY_BYTES, EMPTY_BYTES, sealedKey.ciphertext());
+                                              EMPTY_BYTES, sealedKey.keyId(), sealedKey.ciphertext());
         return new SecretSharedKey(new SecretKeySpec(secretKeyBytes, "AES"), sealedKey);
     }
 
