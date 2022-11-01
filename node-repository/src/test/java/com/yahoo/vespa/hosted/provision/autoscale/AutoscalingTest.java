@@ -124,7 +124,6 @@ public class AutoscalingTest {
         fixture.tester().clock().advance(duration.negated());
         fixture.loader().zeroTraffic(20);
 
-        //System.out.println("Average       " + fixture.clusterModel().averageLoad());
         //System.out.println("Ideal         " + fixture.clusterModel().idealLoad());
         //System.out.println("Adjustment to " + fixture.clusterModel().loadAdjustment());
         fixture.tester().assertResources("Scaled down",

@@ -48,11 +48,11 @@ public class AllocationOptimizer {
             for (int nodes = limits.min().nodes(); nodes <= limits.max().nodes(); nodes++) {
                 if (nodes % groups != 0) continue;
 
-                ClusterResources next = new ClusterResources(nodes,
-                                                             groups,
-                                                             nodeResourcesWith(nodes, groups,
-                                                                               limits, targetLoad, current, clusterModel));
-                var allocatableResources = AllocatableClusterResources.from(next, current.clusterSpec(), limits,
+                var resources = new ClusterResources(nodes,
+                                                     groups,
+                                                     nodeResourcesWith(nodes, groups,
+                                                                       limits, targetLoad, current, clusterModel));
+                var allocatableResources = AllocatableClusterResources.from(resources, current.clusterSpec(), limits,
                                                                             hosts, nodeRepository);
                 if (allocatableResources.isEmpty()) continue;
                 if (bestAllocation.isEmpty() || allocatableResources.get().preferableTo(bestAllocation.get()))
@@ -76,7 +76,6 @@ public class AllocationOptimizer {
                      .multiply(clusterModel.loadWith(nodes, groups)) // redundancy aware adjustment with these counts
                      .divide(clusterModel.redundancyAdjustment())    // correct for double redundancy adjustment
                      .scaled(current.realResources().nodeResources());
-
         // Combine the scaled resource values computed here
         // with the currently configured non-scaled values, given in the limits, if any
         var nonScaled = limits.isEmpty() || limits.min().nodeResources().isUnspecified()
