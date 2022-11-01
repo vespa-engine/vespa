@@ -32,7 +32,7 @@ RELEASE_TAG="v$VESPA_VERSION"
 if git rev-parse $RELEASE_TAG &> /dev/null; then
     git checkout $RELEASE_TAG
 else
-    git tag -a "$RELEASE_TAG" -m "Release version $VERSION"
+    git tag -a "$RELEASE_TAG" -m "Release version $VESPA_VERSION"
     git push origin "$RELEASE_TAG"
 fi
 
