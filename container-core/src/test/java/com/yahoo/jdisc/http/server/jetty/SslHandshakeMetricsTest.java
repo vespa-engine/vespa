@@ -166,22 +166,19 @@ class SslHandshakeMetricsTest {
             String expectedExceptionSubstring) throws IOException {
         List<String> protocols = protocolOverride != null ? List.of(protocolOverride) : null;
         List<String> ciphers = cipherOverride != null ? List.of(cipherOverride) : null;
-        for (int i = 0; i < 100; i++) {
-            try (var client = new SimpleHttpClient(sslContext, protocols, ciphers, testDriver.server().getListenPort(), false)) {
-                client.get("/status.html");
-                fail("SSLHandshakeException expected");
-            } catch (SSLHandshakeException e) {
-                assertTrue(e.getMessage().contains(expectedExceptionSubstring), e.getMessage());
-                return; // OK!
-            } catch (SocketException | SSLException e) {
-                // This exception is thrown if Apache httpclient's write thread detects the handshake failure before the read thread.
-                log.log(Level.WARNING, "Client failed to get a proper TLS handshake response: " + e.getMessage(), e);
-                // Only ignore a subset of exceptions
-                assertTrue(   e.getMessage().contains("readHandshakeRecord")
-                           || e.getMessage().contains("Broken pipe")
-                           || e.getMessage().contains("Connection reset by peer"),
-                              e.getMessage());
-            }
+        try (var client = new SimpleHttpClient(sslContext, protocols, ciphers, testDriver.server().getListenPort(), false)) {
+            client.get("/status.html");
+            fail("SSLHandshakeException expected");
+        } catch (SSLHandshakeException e) {
+            assertTrue(e.getMessage().contains(expectedExceptionSubstring), e.getMessage());
+        } catch (SocketException | SSLException e) {
+            // This exception is thrown if Apache httpclient's write thread detects the handshake failure before the read thread.
+            log.log(Level.WARNING, "Client failed to get a proper TLS handshake response: " + e.getMessage(), e);
+            // Only ignore a subset of exceptions
+            assertTrue(   e.getMessage().contains("readHandshakeRecord")
+                          || e.getMessage().contains("Broken pipe")
+                          || e.getMessage().contains("Connection reset by peer"),
+                          e.getMessage());
         }
     }
 
