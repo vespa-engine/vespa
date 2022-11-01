@@ -293,9 +293,12 @@ Query::handle_global_filter(Blueprint& blueprint, uint32_t docid_limit,
                                                      estimated_hit_ratio, global_filter_upper_limit));
         }
         global_filter = GlobalFilter::create(blueprint, docid_limit, thread_bundle);
+        if (!global_filter->is_active() && trace && trace->shouldTrace(5)) {
+            trace->addEvent(5, "Global filter matches everything");
+        }
     } else {
         if (trace && trace->shouldTrace(5)) {
-            trace->addEvent(5, vespalib::make_string("Create match all global filter (estimated_hit_ratio (%f) > upper_limit (%f))",
+            trace->addEvent(5, vespalib::make_string("Create match everything global filter (estimated_hit_ratio (%f) > upper_limit (%f))",
                                                      estimated_hit_ratio, global_filter_upper_limit));
         }
         global_filter = GlobalFilter::create();
