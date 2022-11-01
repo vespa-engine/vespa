@@ -4,6 +4,8 @@ package com.yahoo.vespa.hosted.node.admin.maintenance.coredump;
 import com.yahoo.security.SealedSharedKey;
 import com.yahoo.security.SecretSharedKey;
 import com.yahoo.test.ManualClock;
+import com.yahoo.vespa.flags.InMemoryFlagSource;
+import com.yahoo.vespa.hosted.node.admin.configserver.cores.Cores;
 import com.yahoo.vespa.hosted.node.admin.container.metrics.DimensionMetrics;
 import com.yahoo.vespa.hosted.node.admin.container.metrics.Metrics;
 import com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAgentContext;
@@ -52,6 +54,7 @@ public class CoredumpHandlerTest {
     private final Path doneCoredumpsPath = fileSystem.getPath("/home/docker/dumps");
 
     private final CoreCollector coreCollector = mock(CoreCollector.class);
+    private final Cores cores = mock(Cores.class);
     private final CoredumpReporter coredumpReporter = mock(CoredumpReporter.class);
     private final Metrics metrics = new Metrics();
     private final ManualClock clock = new ManualClock();
@@ -59,10 +62,11 @@ public class CoredumpHandlerTest {
     private final Supplier<String> coredumpIdSupplier = mock(Supplier.class);
     @SuppressWarnings("unchecked")
     private final Supplier<SecretSharedKey> secretSharedKeySupplier = mock(Supplier.class);
-    private final CoredumpHandler coredumpHandler = new CoredumpHandler(coreCollector, coredumpReporter,
-            containerCrashPath.pathInContainer(), doneCoredumpsPath, metrics, clock, coredumpIdSupplier,
-            secretSharedKeySupplier);
-
+    private final InMemoryFlagSource flagSource = new InMemoryFlagSource();
+    private final CoredumpHandler coredumpHandler =
+            new CoredumpHandler(coreCollector, cores, coredumpReporter, containerCrashPath.pathInContainer(),
+                                doneCoredumpsPath, metrics, clock, coredumpIdSupplier, secretSharedKeySupplier,
+                                flagSource);
 
     @Test
     void coredump_enqueue_test() throws IOException {

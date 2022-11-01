@@ -4,8 +4,16 @@ package com.yahoo.vespa.hosted.node.admin.maintenance.coredump;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.yahoo.config.provision.DockerImage;
 import com.yahoo.security.SecretSharedKey;
 import com.yahoo.security.SharedKeyGenerator;
+import com.yahoo.vespa.flags.BooleanFlag;
+import com.yahoo.vespa.flags.FetchVector;
+import com.yahoo.vespa.flags.FlagSource;
+import com.yahoo.vespa.flags.Flags;
+import com.yahoo.vespa.hosted.node.admin.configserver.cores.CoreDumpMetadata;
+import com.yahoo.vespa.hosted.node.admin.configserver.cores.Cores;
+import com.yahoo.vespa.hosted.node.admin.configserver.cores.bindings.ReportCoreDumpRequest;
 import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.NodeSpec;
 import com.yahoo.vespa.hosted.node.admin.container.metrics.Dimensions;
 import com.yahoo.vespa.hosted.node.admin.container.metrics.Metrics;
@@ -15,14 +23,15 @@ import com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAgentContext;
 import com.yahoo.vespa.hosted.node.admin.task.util.file.FileFinder;
 import com.yahoo.vespa.hosted.node.admin.task.util.file.UnixPath;
 import com.yahoo.vespa.hosted.node.admin.task.util.fs.ContainerPath;
-import com.yahoo.vespa.hosted.node.admin.task.util.process.Terminal;
 
 import javax.crypto.CipherOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.UncheckedIOException;
+import java.nio.file.FileSystems;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.time.Clock;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -50,6 +59,7 @@ public class CoredumpHandler {
     private static final Pattern HS_ERR_PATTERN = Pattern.compile("hs_err_pid[0-9]+\\.log");
     private static final String PROCESSING_DIRECTORY_NAME = "processing";
     private static final String METADATA_FILE_NAME = "metadata.json";
+    private static final String METADATA2_FILE_NAME = "metadata2.json";
     private static final String COMPRESSED_EXTENSION = ".zst";
     private static final String ENCRYPTED_EXTENSION = ".enc";
     public static final String COREDUMP_FILENAME_PREFIX = "dump_";
@@ -58,6 +68,7 @@ public class CoredumpHandler {
     private final ObjectMapper objectMapper = new ObjectMapper();
 
     private final CoreCollector coreCollector;
+    private final Cores cores;
     private final CoredumpReporter coredumpReporter;
     private final String crashPatchInContainer;
     private final Path doneCoredumpsPath;
@@ -65,22 +76,26 @@ public class CoredumpHandler {
     private final Clock clock;
     private final Supplier<String> coredumpIdSupplier;
     private final Supplier<SecretSharedKey> secretSharedKeySupplier;
+    private final BooleanFlag reportCoresViaCfgFlag;
 
     /**
      * @param crashPathInContainer path inside the container where core dump are dumped
-     * @param doneCoredumpsPath path on host where processed core dumps are stored
+     * @param doneCoredumpsPath    path on host where processed core dumps are stored
      */
-    public CoredumpHandler(Terminal terminal, CoreCollector coreCollector, CoredumpReporter coredumpReporter,
-                           String crashPathInContainer, Path doneCoredumpsPath, Metrics metrics) {
-        this(coreCollector, coredumpReporter, crashPathInContainer, doneCoredumpsPath,
-                metrics, Clock.systemUTC(), () -> UUID.randomUUID().toString(), () -> null /*TODO*/);
+    public CoredumpHandler(CoreCollector coreCollector, Cores cores, CoredumpReporter coredumpReporter,
+                           String crashPathInContainer, Path doneCoredumpsPath, Metrics metrics,
+                           FlagSource flagSource) {
+        this(coreCollector, cores, coredumpReporter, crashPathInContainer, doneCoredumpsPath,
+             metrics, Clock.systemUTC(), () -> UUID.randomUUID().toString(), () -> null /*TODO*/,
+             flagSource);
     }
 
-    CoredumpHandler(CoreCollector coreCollector, CoredumpReporter coredumpReporter,
+    CoredumpHandler(CoreCollector coreCollector, Cores cores, CoredumpReporter coredumpReporter,
                     String crashPathInContainer, Path doneCoredumpsPath, Metrics metrics,
                     Clock clock, Supplier<String> coredumpIdSupplier,
-                    Supplier<SecretSharedKey> secretSharedKeySupplier) {
+                    Supplier<SecretSharedKey> secretSharedKeySupplier, FlagSource flagSource) {
         this.coreCollector = coreCollector;
+        this.cores = cores;
         this.coredumpReporter = coredumpReporter;
         this.crashPatchInContainer = crashPathInContainer;
         this.doneCoredumpsPath = doneCoredumpsPath;
@@ -88,10 +103,12 @@ public class CoredumpHandler {
         this.clock = clock;
         this.coredumpIdSupplier = coredumpIdSupplier;
         this.secretSharedKeySupplier = secretSharedKeySupplier;
+        this.reportCoresViaCfgFlag = Flags.REPORT_CORES_VIA_CFG.bindTo(flagSource);
     }
 
 
-    public void converge(NodeAgentContext context, Supplier<Map<String, Object>> nodeAttributesSupplier, boolean throwIfCoreBeingWritten) {
+    public void converge(NodeAgentContext context, Supplier<Map<String, Object>> nodeAttributesSupplier,
+                         Optional<DockerImage> dockerImage, boolean throwIfCoreBeingWritten) {
         ContainerPath containerCrashPath = context.paths().of(crashPatchInContainer, context.users().vespa());
         ContainerPath containerProcessingPath = containerCrashPath.resolve(PROCESSING_DIRECTORY_NAME);
 
@@ -110,7 +127,13 @@ public class CoredumpHandler {
 
         // Check if we have already started to process a core dump or we can enqueue a new core one
         getCoredumpToProcess(containerCrashPath, containerProcessingPath)
-                .ifPresent(path -> processAndReportSingleCoredump(context, path, nodeAttributesSupplier));
+                .ifPresent(path -> {
+                    if (reportCoresViaCfgFlag.with(FetchVector.Dimension.NODE_TYPE, context.nodeType().name()).value()) {
+                        processAndReportSingleCoreDump2(context, path, dockerImage);
+                    } else {
+                        processAndReportSingleCoredump(context, path, nodeAttributesSupplier);
+                    }
+                });
     }
 
     /** @return path to directory inside processing directory that contains a core dump file to process */
@@ -224,7 +247,7 @@ public class CoredumpHandler {
      * Compresses and, if a key is provided, encrypts core file (and deletes the uncompressed core), then moves
      * the entire core dump processing directory to {@link #doneCoredumpsPath} for archive
      */
-    private void finishProcessing(NodeAgentContext context, ContainerPath coredumpDirectory, Optional<SecretSharedKey> sharedCoreKey) throws IOException {
+    private void finishProcessing(NodeAgentContext context, ContainerPath coredumpDirectory, Optional<SecretSharedKey> sharedCoreKey) {
         ContainerPath coreFile = findCoredumpFileInProcessingDirectory(coredumpDirectory);
         String extension = COMPRESSED_EXTENSION + (sharedCoreKey.isPresent() ? ENCRYPTED_EXTENSION : "");
         ContainerPath compressedCoreFile = coreFile.resolveSibling(coreFile.getFileName() + extension);
@@ -235,12 +258,12 @@ public class CoredumpHandler {
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }
-        Files.delete(coreFile);
+        uncheck(() -> Files.delete(coreFile));
 
         Path newCoredumpDirectory = doneCoredumpsPath.resolve(context.containerName().asString());
         uncheck(() -> Files.createDirectories(newCoredumpDirectory));
         // Files.move() does not support moving non-empty directories across providers, move using host paths
-        Files.move(coredumpDirectory.pathOnHost(), newCoredumpDirectory.resolve(coredumpDirectory.getFileName().toString()));
+        uncheck(() -> Files.move(coredumpDirectory.pathOnHost(), newCoredumpDirectory.resolve(coredumpDirectory.getFileName().toString())));
     }
 
     ContainerPath findCoredumpFileInProcessingDirectory(ContainerPath coredumpProccessingDirectory) {
@@ -312,6 +335,62 @@ public class CoredumpHandler {
         // Wait at least a minute until we start processing a core/heap dump to ensure that
         // kernel/JVM has finished writing it
         return clock.instant().minusSeconds(60).isAfter(fileAttributes.lastModifiedTime());
+    }
+
+    void processAndReportSingleCoreDump2(NodeAgentContext context, ContainerPath coreDumpDirectory,
+                                         Optional<DockerImage> dockerImage) {
+        CoreDumpMetadata metadata = gatherMetadata(context, coreDumpDirectory);
+        dockerImage.ifPresent(metadata::setDockerImage);
+        dockerImage.flatMap(DockerImage::tag).ifPresent(metadata::setVespaVersion);
+        dockerImage.ifPresent(metadata::setDockerImage);
+        Optional<SecretSharedKey> sharedCoreKey = Optional.ofNullable(secretSharedKeySupplier.get());
+        sharedCoreKey.map(key -> key.sealedSharedKey().toTokenString()).ifPresent(metadata::setDecryptionToken);
+
+        String coreDumpId = coreDumpDirectory.getFileName().toString();
+        cores.report(context.hostname(), coreDumpId, metadata);
+        finishProcessing(context, coreDumpDirectory, sharedCoreKey);
+        context.log(logger, "Successfully reported core dump " + coreDumpId);
+    }
+
+    private CoreDumpMetadata gatherMetadata(NodeAgentContext context, ContainerPath coreDumpDirectory) {
+        ContainerPath metadataPath = coreDumpDirectory.resolve(METADATA2_FILE_NAME);
+        Optional<ReportCoreDumpRequest> request = ReportCoreDumpRequest.load(metadataPath);
+        if (request.isPresent()) {
+            return request.map(requestInstance -> {
+                              var metadata = new CoreDumpMetadata();
+                              requestInstance.populateMetadata(metadata, FileSystems.getDefault());
+                              return metadata;
+                          })
+                          .get();
+        }
+
+        ContainerPath coreDumpFile = findCoredumpFileInProcessingDirectory(coreDumpDirectory);
+        CoreDumpMetadata metadata = coreCollector.collect2(context, coreDumpFile);
+        metadata.setCpuMicrocodeVersion(getMicrocodeVersion())
+                .setKernelVersion(System.getProperty("os.version"))
+                .setCoreDumpPath(doneCoredumpsPath.resolve(context.containerName().asString())
+                                                  .resolve(coreDumpDirectory.getFileName().toString())
+                                                  .resolve(coreDumpFile.getFileName().toString()));
+
+        ReportCoreDumpRequest requestInstance = new ReportCoreDumpRequest();
+        requestInstance.fillFrom(metadata);
+        requestInstance.save(metadataPath);
+        context.log(logger, "Wrote " + metadataPath);
+        return metadata;
+    }
+
+    private String getMicrocodeVersion() {
+        String output = uncheck(() -> Files.readAllLines(Paths.get("/proc/cpuinfo")).stream()
+                                           .filter(line -> line.startsWith("microcode"))
+                                           .findFirst()
+                                           .orElse("microcode : UNKNOWN"));
+
+        String[] results = output.split(":");
+        if (results.length != 2) {
+            throw ConvergenceException.ofError("Result from detect microcode command not as expected: " + output);
+        }
+
+        return results[1].trim();
     }
 
 }

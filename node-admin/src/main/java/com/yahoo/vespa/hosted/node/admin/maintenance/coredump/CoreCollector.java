@@ -1,6 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.node.admin.maintenance.coredump;
 
+import com.yahoo.vespa.hosted.node.admin.configserver.cores.CoreDumpMetadata;
 import com.yahoo.vespa.hosted.node.admin.container.ContainerOperations;
 import com.yahoo.vespa.hosted.node.admin.nodeadmin.ConvergenceException;
 import com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAgentContext;
@@ -126,6 +127,33 @@ public class CoreCollector {
             context.log(logger, Level.WARNING, "Failed to extract backtrace", e);
         }
         return data;
+    }
+
+    CoreDumpMetadata collect2(NodeAgentContext context, ContainerPath coredumpPath) {
+        var metadata = new CoreDumpMetadata();
+
+        if (JAVA_HEAP_DUMP_PATTERN.matcher(coredumpPath.getFileName().toString()).find()) {
+            metadata.setBinPath("java")
+                    .setBacktrace(List.of("Heap dump, no backtrace available"));
+            return metadata;
+        }
+
+        try {
+            String binPath = readBinPath(context, coredumpPath);
+            metadata.setBinPath(binPath);
+
+            if (Path.of(binPath).getFileName().toString().equals("java")) {
+                metadata.setBacktraceAllThreads(readJstack(context, coredumpPath, binPath));
+            } else {
+                metadata.setBacktrace(readBacktrace(context, coredumpPath, binPath, false));
+                metadata.setBacktraceAllThreads(readBacktrace(context, coredumpPath, binPath, true));
+            }
+        } catch (ConvergenceException e) {
+            context.log(logger, Level.WARNING, "Failed to extract backtrace: " + e.getMessage());
+        } catch (RuntimeException e) {
+            context.log(logger, Level.WARNING, "Failed to extract backtrace", e);
+        }
+        return metadata;
     }
 
     private String asString(CommandResult result) {
