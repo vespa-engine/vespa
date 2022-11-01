@@ -999,6 +999,11 @@
                 <artifactId>json</artifactId>
                 <version>${org.json.version}</version>
             </dependency>
+            <dependency> <!-- Due to hadoop pulling in 1.7.7 -->
+                <groupId>org.apache.avro</groupId>
+                <artifactId>avro</artifactId>
+                <version>${avro.version}</version>
+            </dependency>
         </dependencies>
     </dependencyManagement>
 
@@ -1024,6 +1029,7 @@
                  find zkfacade/src/main/java/org/apache/curator -name package-info.java | \
                      xargs perl -pi -e 's/major = [0-9]+, minor = [0-9]+, micro = [0-9]+/major = 5, minor = 3, micro = 0/g'
         -->
+        <avro.version>1.11.1</avro.version>
         <bouncycastle.version>1.72</bouncycastle.version>
         <curator.version>5.3.0</curator.version>
         <commons-codec.version>1.15</commons-codec.version>
