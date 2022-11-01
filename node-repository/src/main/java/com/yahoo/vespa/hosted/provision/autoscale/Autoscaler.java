@@ -76,7 +76,8 @@ public class Autoscaler {
 
         if (! worthRescaling(currentAllocation.realResources(), bestAllocation.get().realResources())) {
             if (bestAllocation.get().fulfilment() < 1)
-                return Advice.dontScale(Status.insufficient, "Configured limits prevents better scaling of this cluster");
+                return Advice.dontScale(Status.insufficient, "Configured limits prevents better scaling of this cluster"
+                + " (" + bestAllocation.get() + " real " + bestAllocation.get().realResources() + ")");
             else
                 return Advice.dontScale(Status.ideal, "Cluster is ideally scaled");
         }
