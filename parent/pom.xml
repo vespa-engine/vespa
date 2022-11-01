@@ -499,6 +499,41 @@
                 <artifactId>netty-all</artifactId>
                 <version>${netty.version}</version>
             </dependency>
+            <dependency>
+                <groupId>io.netty</groupId>
+                <artifactId>netty-buffer</artifactId>
+                <version>${netty.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.netty</groupId>
+                <artifactId>netty-common</artifactId>
+                <version>${netty.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.netty</groupId>
+                <artifactId>netty-codec</artifactId>
+                <version>${netty.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.netty</groupId>
+                <artifactId>netty-codec-http2</artifactId>
+                <version>${netty.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.netty</groupId>
+                <artifactId>netty-codec-http</artifactId>
+                <version>${netty.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.netty</groupId>
+                <artifactId>netty-transport</artifactId>
+                <version>${netty.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.netty</groupId>
+                <artifactId>netty-transport-classes-epoll</artifactId>
+                <version>${netty.version}</version>
+            </dependency>
             <dependency> <!-- Control netty-handler version -->
                 <groupId>io.netty</groupId>
                 <artifactId>netty-handler</artifactId>
@@ -511,7 +546,7 @@
             </dependency>
             <dependency> <!-- Control netty-handler version -->
                 <groupId>io.netty</groupId>
-                <artifactId>netty-tcnative-classes</artifactId>
+                <artifactId>netty-tcnative</artifactId>
                 <version>${netty-tcnative.version}</version>
             </dependency>
             <dependency>
@@ -1065,7 +1100,7 @@
         <!-- Athenz dependencies. Make sure these dependencies match those in Vespa's internal repositories -->
         <athenz.version>1.10.54</athenz.version> <!-- WARNING: sync cloud-tenant-base-dependencies-enforcer/pom.xml -->
         <avro.version>1.11.1</avro.version>
-        <aws-sdk.version>1.12.325</aws-sdk.version>
+        <aws-sdk.version>1.12.331</aws-sdk.version>
         <!-- Athenz END -->
 
         <!-- WARNING: If you change curator version, you also need to update
