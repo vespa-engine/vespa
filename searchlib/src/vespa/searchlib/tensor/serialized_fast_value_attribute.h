@@ -17,13 +17,10 @@ namespace search::tensor {
  *
  */
 class SerializedFastValueAttribute : public TensorAttribute {
-    vespalib::eval::ValueType _tensor_type;
     TensorBufferStore _tensorBufferStore; // data store for serialized tensors
 public:
     SerializedFastValueAttribute(vespalib::stringref baseFileName, const Config &cfg);
     ~SerializedFastValueAttribute() override;
-    void setTensor(DocId docId, const vespalib::eval::Value &tensor) override;
-    std::unique_ptr<vespalib::eval::Value> getTensor(DocId docId) const override;
 };
 
 }

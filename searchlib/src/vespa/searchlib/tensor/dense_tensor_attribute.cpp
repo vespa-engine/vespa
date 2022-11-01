@@ -20,51 +20,6 @@ DenseTensorAttribute::tensor_is_unchanged(DocId docid, const Value& new_tensor) 
     return _comp.equals(old_tensor, new_tensor.cells());
 }
 
-void
-DenseTensorAttribute::internal_set_tensor(DocId docid, const Value& tensor)
-{
-    consider_remove_from_index(docid);
-    EntryRef ref = _denseTensorStore.store_tensor(tensor);
-    setTensorRef(docid, ref);
-}
-
-void
-DenseTensorAttribute::consider_remove_from_index(DocId docid)
-{
-    if (_index && _refVector[docid].load_relaxed().valid()) {
-        _index->remove_document(docid);
-    }
-}
-
-vespalib::MemoryUsage
-DenseTensorAttribute::update_stat()
-{
-    vespalib::MemoryUsage result = TensorAttribute::update_stat();
-    if (_index) {
-        result.merge(_index->update_stat(getConfig().getCompactionStrategy()));
-    }
-    return result;
-}
-
-vespalib::MemoryUsage
-DenseTensorAttribute::memory_usage() const
-{
-    vespalib::MemoryUsage result = TensorAttribute::memory_usage();
-    if (_index) {
-        result.merge(_index->memory_usage());
-    }
-    return result;
-}
-
-void
-DenseTensorAttribute::populate_address_space_usage(AddressSpaceUsage& usage) const
-{
-    TensorAttribute::populate_address_space_usage(usage);
-    if (_index) {
-        _index->populate_address_space_usage(usage);
-    }
-}
-
 DenseTensorAttribute::DenseTensorAttribute(vespalib::stringref baseFileName, const Config& cfg,
                                            const NearestNeighborIndexFactory& index_factory)
     : TensorAttribute(baseFileName, cfg, _denseTensorStore),
@@ -85,23 +40,6 @@ DenseTensorAttribute::~DenseTensorAttribute()
 {
     getGenerationHolder().reclaim_all();
     _tensorStore.reclaim_all_memory();
-}
-
-uint32_t
-DenseTensorAttribute::clearDoc(DocId docId)
-{
-    consider_remove_from_index(docId);
-    return TensorAttribute::clearDoc(docId);
-}
-
-void
-DenseTensorAttribute::setTensor(DocId docId, const Value& tensor)
-{
-    checkTensorType(tensor);
-    internal_set_tensor(docId, tensor);
-    if (_index) {
-        _index->add_document(docId);
-    }
 }
 
 std::unique_ptr<PrepareResult>
@@ -133,16 +71,6 @@ DenseTensorAttribute::complete_set_tensor(DocId docid, const Value& tensor,
     }
 }
 
-std::unique_ptr<Value>
-DenseTensorAttribute::getTensor(DocId docId) const
-{
-    EntryRef ref;
-    if (docId < getCommittedDocIdLimit()) {
-        ref = acquire_entry_ref(docId);
-    }
-    return _denseTensorStore.get_tensor(ref);
-}
-
 vespalib::eval::TypedCells
 DenseTensorAttribute::extract_cells_ref(DocId docId) const
 {
@@ -154,36 +82,6 @@ DenseTensorAttribute::extract_cells_ref(DocId docId) const
 }
 
 void
-DenseTensorAttribute::onCommit()
-{
-    TensorAttribute::onCommit();
-    if (_index) {
-        if (_index->consider_compact(getConfig().getCompactionStrategy())) {
-            incGeneration();
-            updateStat(true);
-        }
-    }
-}
-
-void
-DenseTensorAttribute::before_inc_generation(generation_t current_gen)
-{
-    TensorAttribute::before_inc_generation(current_gen);
-    if (_index) {
-        _index->assign_generation(current_gen);
-    }
-}
-
-void
-DenseTensorAttribute::reclaim_memory(generation_t oldest_used_gen)
-{
-    TensorAttribute::reclaim_memory(oldest_used_gen);
-    if (_index) {
-        _index->reclaim_memory(oldest_used_gen);
-    }
-}
-
-void
 DenseTensorAttribute::get_state(const vespalib::slime::Inserter& inserter) const
 {
     auto& object = inserter.insertObject();
@@ -191,15 +89,6 @@ DenseTensorAttribute::get_state(const vespalib::slime::Inserter& inserter) const
     if (_index) {
         ObjectInserter index_inserter(object, "nearest_neighbor_index");
         _index->get_state(index_inserter);
-    }
-}
-
-void
-DenseTensorAttribute::onShrinkLidSpace()
-{
-    TensorAttribute::onShrinkLidSpace();
-    if (_index) {
-        _index->shrink_lid_space(getCommittedDocIdLimit());
     }
 }
 
