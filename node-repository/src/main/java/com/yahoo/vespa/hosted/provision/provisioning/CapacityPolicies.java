@@ -56,13 +56,12 @@ public class CapacityPolicies {
         if (isTester) return 1;
 
         if (required) return requested;
-        switch(zone.environment()) {
-            case dev : case test : return 1;
-            case perf : return Math.min(requested, 3);
-            case staging: return requested <= 1 ? requested : Math.max(2, requested / 10);
-            case prod : return requested;
-            default : throw new IllegalArgumentException("Unsupported environment " + zone.environment());
-        }
+        return switch (zone.environment()) {
+            case dev, test -> 1;
+            case perf -> Math.min(requested, 3);
+            case staging -> requested <= 1 ? requested : Math.max(2, requested / 10);
+            case prod -> requested;
+        };
     }
 
     private NodeResources decideNodeResources(NodeResources target, boolean required, boolean exclusive) {
@@ -115,9 +114,7 @@ public class CapacityPolicies {
         if (requiresExclusiveHost(clusterSpec.type(), exclusive)) {
             return versioned(clusterSpec, Map.of(new Version(0), smallestExclusiveResources()));
         }
-        return versioned(clusterSpec, Map.of(new Version(0), new NodeResources(0.25, 1.14, 10, 0.3),
-                                             new Version(7, 586, 50), new NodeResources(0.25, 1.333, 10, 0.3),
-                                             new Version(7, 586, 54), new NodeResources(0.25, 1.14, 10, 0.3)));
+        return versioned(clusterSpec, Map.of(new Version(0), new NodeResources(0.25, 1.14, 10, 0.3)));
     }
 
     private Architecture adminClusterArchitecture(ApplicationId instance) {
