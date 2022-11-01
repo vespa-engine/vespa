@@ -299,7 +299,7 @@ public class CoredumpHandlerTest {
     private static SecretSharedKey makeFixedSecretSharedKey() {
         byte[] keyBytes = bytesOf("very secret yes!"); // 128 bits
         var secretKey = new SecretKeySpec(keyBytes, "AES");
-        int keyId = 123;
+        byte[] keyId = bytesOf("the shiniest key");
         // We don't parse any of these fields in the test, so just use dummy contents.
         byte[] enc = bytesOf("hello world");
         byte[] ciphertext = bytesOf("imaginary ciphertext");
