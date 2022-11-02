@@ -324,7 +324,7 @@ public class Nodes {
 
     public Node deallocate(Node node, Agent agent, String reason, NestedTransaction transaction) {
         if (parkOnDeallocationOf(node, agent)) {
-            return park(node.hostname(), true, agent, reason, transaction);
+            return park(node.hostname(), false, agent, reason, transaction);
         } else {
             Node.State toState = Node.State.dirty;
             if (node.state() == Node.State.parked) {
