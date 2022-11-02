@@ -86,10 +86,12 @@ public record NodeAcl(Node node,
                 // - port 19070 (RPC) from all tenant nodes (and their hosts, in case traffic is NAT-ed via parent)
                 // - port 19070 (RPC) from all proxy nodes (and their hosts, in case traffic is NAT-ed via parent)
                 // - port 4443 from the world
+                // - port 51820 from the world (WireGuard)
                 trustedNodes.addAll(TrustedNode.of(allNodes.nodeType(NodeType.host, NodeType.tenant,
                                                                      NodeType.proxyhost, NodeType.proxy),
                                                    RPC_PORTS));
                 trustedPorts.add(4443);
+                trustedPorts.add(51820);
             }
             case proxy -> {
                 // Proxy nodes trust:

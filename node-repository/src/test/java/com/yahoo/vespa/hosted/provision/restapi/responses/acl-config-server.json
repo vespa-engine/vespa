@@ -274,6 +274,10 @@
     {
       "port": 4443,
       "trustedBy": "cfg1.yahoo.com"
+    },
+    {
+      "port":51820,
+      "trustedBy":"cfg1.yahoo.com"
     }
   ]
 }
