@@ -161,7 +161,7 @@ public class ConnectorFactory {
     }
 
     private HTTP2ServerConnectionFactory newHttp2ConnectionFactory() {
-        HTTP2ServerConnectionFactory factory = new FixedHTTP2ServerConnectionFactory(newHttpConfiguration());
+        HTTP2ServerConnectionFactory factory = new HTTP2ServerConnectionFactory(newHttpConfiguration());
         setHttp2Config(factory);
         return factory;
     }
