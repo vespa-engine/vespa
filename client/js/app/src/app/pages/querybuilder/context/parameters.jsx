@@ -114,6 +114,7 @@ export default param('root', [
   param('metrics', [param('ignore', 'Boolean', { default: false })]),
   param('weakAnd', [param('replace', 'Boolean', { default: false })]),
   param('wand', [param('hits', 'Integer', { default: 100 })]),
+  param('sorting', [param('degrading', 'Boolean', { default: true })]),
 
   param('streaming', [
     param('userid', 'Integer'),
