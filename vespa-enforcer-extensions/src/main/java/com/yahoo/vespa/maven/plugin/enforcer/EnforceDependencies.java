@@ -2,6 +2,7 @@
 package com.yahoo.vespa.maven.plugin.enforcer;
 
 import org.apache.maven.artifact.Artifact;
+import org.apache.maven.artifact.DefaultArtifact;
 import org.apache.maven.enforcer.rule.api.EnforcerRule;
 import org.apache.maven.enforcer.rule.api.EnforcerRuleException;
 import org.apache.maven.enforcer.rule.api.EnforcerRuleHelper;
@@ -100,20 +101,32 @@ public class EnforceDependencies implements EnforcerRule {
         return children;
     }
 
-    // Similar rule matching to bannedDependencies but without support for version ranges
+    /**
+     * Rules follows same structure as {@link DefaultArtifact#toString} output.
+     * Allowed variants:
+     * - {@code <groupId>:<artifactId>:<version>:<scope>}
+     * - {@code <groupId>:<artifactId>:<type>:<version>:<scope>}
+     * - {@code <groupId>:<artifactId>:<type>:<classifier>:<version>:<scope>}
+     */
     private static boolean matches(Artifact dependency, String rule) throws EnforcerRuleException {
         String[] segments = rule.split(":");
-        if (segments.length < 1 || segments.length > 6) throw new EnforcerRuleException("Invalid rule: " + rule);
-        if (!segmentMatches(dependency.getGroupId(), segments[0])) return false;
-        if (segments.length > 1 && !segmentMatches(dependency.getArtifactId(), segments[1])) return false;
-        if (segments.length > 2 && !versionMatches(dependency.getVersion(), segments[2])) return false;
-        if (segments.length > 3 && !segmentMatches(dependency.getType(), segments[3])) return false;
-        if (segments.length > 4 && !segmentMatches(dependency.getScope(), segments[4])) return false;
-        if (segments.length > 5 && dependency.hasClassifier() && !segmentMatches(dependency.getClassifier(), segments[5]))
-            return false;
-        return true;
+        if (segments.length < 4 || segments.length > 6) throw new EnforcerRuleException("Invalid rule: " + rule);
+        int index = 0;
+        if (!segmentMatches(dependency.getGroupId(), segments[index++])) return false;
+        if (!segmentMatches(dependency.getArtifactId(), segments[index++])) return false;
+        if (segments.length >= 5) {
+            if (!segmentMatches(dependency.getType(), segments[index++])) return false;
+        }
+        if (segments.length == 6) {
+            if (!dependency.hasClassifier() || !segmentMatches(dependency.getClassifier(), segments[index++])) return false;
+        } else {
+            if (dependency.hasClassifier()) return false;
+        }
+        if (!versionMatches(dependency.getVersion(), segments[index++])) return false;
+        return segmentMatches(dependency.getScope(), segments[index]);
     }
 
+    /** Matches simple glob like patterns using '?' and '*' */
     private static boolean segmentMatches(String value, String segmentPattern) {
         String regex = segmentPattern
                 .replace(".", "\\.").replace("*", ".*").replace(":", "\\:").replace('?', '.').replace("(", "\\(")
