@@ -39,7 +39,7 @@ chmod 700 $SD_SOURCE_DIR/screwdriver/deploy
 chmod 600 $SD_SOURCE_DIR/screwdriver/deploy/*
 
 # Build the Java code with the correct version set
-screwdriver/replace-vespa-version-in-poms.sh $VESPA_RELEASE .
+$SD_SOURCE_DIR/screwdriver/replace-vespa-version-in-poms.sh $VESPA_RELEASE .
 
 # We disable javadoc for all modules not marked as public API
 for MODULE in $(comm -2 -3 \
