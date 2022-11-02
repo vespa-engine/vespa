@@ -70,7 +70,7 @@ class EnforceDependenciesTest {
         Set<Artifact> dependencies = Set.of(
                 artifact("com.yahoo.vespa", "testutils", "8.0.0", "test"));
         Set<String> rules = Set.of(
-                "com.yahoo.vespa:testutils:[7.0.0]:jar:test");
+                "com.yahoo.vespa:testutils:7.0.0:jar:test");
         EnforcerRuleException exception = assertThrows(
                 EnforcerRuleException.class,
                 () -> EnforceDependencies.validateDependencies(dependencies, rules, true));
@@ -80,7 +80,7 @@ class EnforceDependenciesTest {
                 Dependencies not matching any rule:
                  - com.yahoo.vespa:testutils:jar:8.0.0:test
                 Rules not matching any dependency:
-                 - com.yahoo.vespa:testutils:[7.0.0]:jar:test
+                 - com.yahoo.vespa:testutils:7.0.0:jar:test
                 """;
         assertEquals(expectedErrorMessage, exception.getMessage());
     }

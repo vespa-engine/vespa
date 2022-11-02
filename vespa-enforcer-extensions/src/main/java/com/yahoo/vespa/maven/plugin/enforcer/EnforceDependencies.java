@@ -2,10 +2,6 @@
 package com.yahoo.vespa.maven.plugin.enforcer;
 
 import org.apache.maven.artifact.Artifact;
-import org.apache.maven.artifact.versioning.ArtifactVersion;
-import org.apache.maven.artifact.versioning.DefaultArtifactVersion;
-import org.apache.maven.artifact.versioning.InvalidVersionSpecificationException;
-import org.apache.maven.artifact.versioning.VersionRange;
 import org.apache.maven.enforcer.rule.api.EnforcerRule;
 import org.apache.maven.enforcer.rule.api.EnforcerRuleException;
 import org.apache.maven.enforcer.rule.api.EnforcerRuleHelper;
@@ -104,7 +100,7 @@ public class EnforceDependencies implements EnforcerRule {
         return children;
     }
 
-    // Similar rule matching to bannedDependencies
+    // Similar rule matching to bannedDependencies but without support for version ranges
     private static boolean matches(Artifact dependency, String rule) throws EnforcerRuleException {
         String[] segments = rule.split(":");
         if (segments.length < 1 || segments.length > 6) throw new EnforcerRuleException("Invalid rule: " + rule);
@@ -120,22 +116,13 @@ public class EnforceDependencies implements EnforcerRule {
 
     private static boolean segmentMatches(String value, String segmentPattern) {
         String regex = segmentPattern
-                .replace(".", "\\.").replace("*", ".*").replace(":", "\\:").replace('?', '.')
-                .replace("[", "\\[").replace("]", "\\]").replace("(", "\\(").replace(")", "\\)");
+                .replace(".", "\\.").replace("*", ".*").replace(":", "\\:").replace('?', '.').replace("(", "\\(")
+                .replace(")", "\\)");
         return Pattern.matches(regex, value);
     }
 
-    private static boolean versionMatches(String rawVersion, String segmentPattern) throws EnforcerRuleException {
-        try {
-            if (segmentMatches(rawVersion, segmentPattern)) return true;
-            VersionRange allowedRange = VersionRange.createFromVersionSpec(segmentPattern);
-            ArtifactVersion version = new DefaultArtifactVersion(rawVersion);
-            ArtifactVersion recommended = allowedRange.getRecommendedVersion();
-            if (recommended == null) return allowedRange.containsVersion(version);
-            return recommended.compareTo(version) <= 0;
-        } catch (InvalidVersionSpecificationException e) {
-            throw new EnforcerRuleException(e.getMessage(), e);
-        }
+    private static boolean versionMatches(String rawVersion, String segmentPattern) {
+        return segmentMatches(rawVersion, segmentPattern);
     }
 
     public void setAllowed(List<String> allowed) { this.allowedDependencies = allowed; }
