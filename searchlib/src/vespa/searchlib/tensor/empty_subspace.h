@@ -16,11 +16,11 @@ namespace search::tensor {
 class EmptySubspace
 {
     std::vector<char>          _empty_space;
-    vespalib::eval::TypedCells _empty;
+    vespalib::eval::TypedCells _cells;
 public:
     EmptySubspace(const vespalib::eval::ValueType& type);
     ~EmptySubspace();
-    const vespalib::eval::TypedCells& empty() const noexcept { return _empty; }
+    const vespalib::eval::TypedCells& cells() const noexcept { return _cells; }
 };
 
 }

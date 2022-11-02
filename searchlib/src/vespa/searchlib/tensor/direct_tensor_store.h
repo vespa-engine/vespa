@@ -62,7 +62,7 @@ public:
     vespalib::eval::TypedCells get_typed_cells(EntryRef ref, uint32_t subspace) const {
         auto tensor = get_tensor_ptr(ref);
         if (tensor == nullptr || subspace >= tensor->index().size()) {
-            return _empty.empty();
+            return _empty.cells();
         }
         auto cells = tensor->cells();
         auto type = tensor->type();

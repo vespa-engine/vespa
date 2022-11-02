@@ -76,7 +76,7 @@ public:
 
     vespalib::eval::TypedCells get_typed_cells(EntryRef ref) const {
         if (!ref.valid()) {
-            return _empty.empty();
+            return _empty.cells();
         }
         return vespalib::eval::TypedCells(getRawBuffer(ref),
                                           _type.cell_type(), getNumCells());
