@@ -4,6 +4,11 @@ package com.yahoo.jdisc.http.server.jetty;
 import com.yahoo.jdisc.Metric;
 import com.yahoo.jdisc.http.HttpRequest;
 import com.yahoo.jdisc.http.ServerConfig;
+import jakarta.servlet.AsyncEvent;
+import jakarta.servlet.AsyncListener;
+import jakarta.servlet.ServletException;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import org.eclipse.jetty.http.HttpHeader;
 import org.eclipse.jetty.http.HttpStatus;
 import org.eclipse.jetty.server.AsyncContextEvent;
@@ -11,14 +16,8 @@ import org.eclipse.jetty.server.Handler;
 import org.eclipse.jetty.server.HttpChannelState;
 import org.eclipse.jetty.server.Request;
 import org.eclipse.jetty.server.handler.HandlerWrapper;
-import org.eclipse.jetty.util.FutureCallback;
 import org.eclipse.jetty.util.component.Graceful;
 
-import javax.servlet.AsyncEvent;
-import javax.servlet.AsyncListener;
-import javax.servlet.ServletException;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -27,12 +26,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.Future;
-import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicLong;
-import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.atomic.LongAdder;
 import java.util.function.ObjLongConsumer;
 import java.util.stream.Collectors;
@@ -49,7 +46,7 @@ class HttpResponseStatisticsCollector extends HandlerWrapper implements Graceful
 
     static final String requestTypeAttribute = "requestType";
 
-    private final AtomicReference<FutureCallback> shutdown = new AtomicReference<>();
+    private final Shutdown shutdown;
     private final List<String> monitoringHandlerPaths;
     private final List<String> searchHandlerPaths;
     private final Set<String> ignoredUserAgents;
@@ -66,6 +63,10 @@ class HttpResponseStatisticsCollector extends HandlerWrapper implements Graceful
         this.monitoringHandlerPaths = monitoringHandlerPaths;
         this.searchHandlerPaths = searchHandlerPaths;
         this.ignoredUserAgents = Set.copyOf(ignoredUserAgents);
+        this.shutdown = new Shutdown(this) {
+            @Override public boolean isShutdownDone() { return inFlight.get() == 0; }
+        };
+
     }
 
     private final AsyncListener completionWatcher = new AsyncListener() {
@@ -97,7 +98,7 @@ class HttpResponseStatisticsCollector extends HandlerWrapper implements Graceful
 
         try {
             Handler handler = getHandler();
-            if (handler != null && shutdown.get() == null && isStarted()) {
+            if (handler != null && !shutdown.isShutdown() && isStarted()) {
                 handler.handle(path, baseRequest, request, response);
             } else if ( ! baseRequest.isHandled()) {
                 baseRequest.setHandled(true);
@@ -129,14 +130,9 @@ class HttpResponseStatisticsCollector extends HandlerWrapper implements Graceful
                             .increment());
         }
         long live = inFlight.decrementAndGet();
-        FutureCallback shutdownCb = shutdown.get();
-        if (shutdownCb != null) {
-            if (flushableResponse != null) {
-                flushableResponse.flushBuffer();
-            }
-            if (live == 0) {
-                shutdownCb.succeeded();
-            }
+        if (shutdown.isShutdown()) {
+            if (flushableResponse != null) flushableResponse.flushBuffer();
+            if (live == 0) shutdown.check();
         }
     }
 
@@ -162,35 +158,19 @@ class HttpResponseStatisticsCollector extends HandlerWrapper implements Graceful
 
     @Override
     protected void doStart() throws Exception {
-        shutdown.set(null);
+        shutdown.cancel();
         super.doStart();
     }
 
     @Override
     protected void doStop() throws Exception {
+        shutdown.cancel();
         super.doStop();
-        FutureCallback shutdownCb = shutdown.get();
-        if ( ! shutdownCb.isDone()) {
-            shutdownCb.failed(new TimeoutException());
-        }
     }
 
-    @Override
-    public Future<Void> shutdown() {
-        FutureCallback shutdownCb = new FutureCallback(false);
-        shutdown.compareAndSet(null, shutdownCb);
-        shutdownCb = shutdown.get();
-        if (inFlight.get() == 0) {
-            shutdownCb.succeeded();
-        }
-        return shutdownCb;
-    }
+    @Override public CompletableFuture<Void> shutdown() { return shutdown.shutdown(); }
+    @Override public boolean isShutdown() { return shutdown.isShutdown(); }
 
-    @Override
-    public boolean isShutdown() {
-        FutureCallback futureCallback = shutdown.get();
-        return futureCallback != null && futureCallback.isDone();
-    }
 
     static class Dimensions {
         final String protocol;
