@@ -129,7 +129,7 @@ public class GroupPreparer {
                 } catch (NodeAllocationException e) {
                     // Mark the nodes that were written to ZK in the consumer for deprovisioning. While these hosts do
                     // not exist, we cannot remove them from ZK here because other nodes may already have been
-                    // allocated on them, so let DynamicProvisioningMaintainer deal with it
+                    // allocated on them, so let HostDeprovisioner deal with it
                     hosts.forEach(host -> nodeRepository.nodes().deprovision(host.hostname(), Agent.system, nodeRepository.clock().instant()));
                     throw e;
                 }

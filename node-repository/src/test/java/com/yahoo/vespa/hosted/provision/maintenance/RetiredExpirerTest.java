@@ -225,7 +225,7 @@ public class RetiredExpirerTest {
         assertEquals(1, parked.size());
         assertEquals(2, tester.nodeRepository().nodes().list(Node.State.active).nodeType(NodeType.config).size());
 
-        // Node is removed by DynamicProvisioningMaintainer (depending on its host), and these events should not affect
+        // Node is removed by HostDeprovisioner (depending on its host), and these events should not affect
         // the 2 active config servers.
         retiredNode = parked.first().get();
         nodeRepository.nodes().removeRecursively(retiredNode, true);

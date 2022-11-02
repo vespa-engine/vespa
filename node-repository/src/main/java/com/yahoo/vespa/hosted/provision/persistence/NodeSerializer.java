@@ -467,7 +467,8 @@ public class NodeSerializer {
             case "application" : return Agent.application;
             case "system" : return Agent.system;
             case "DirtyExpirer" : return Agent.DirtyExpirer;
-            case "DynamicProvisioningMaintainer" : return Agent.DynamicProvisioningMaintainer;
+            case "DynamicProvisioningMaintainer":
+            case "HostCapacityMaintainer": return Agent.HostCapacityMaintainer;
             case "FailedExpirer" : return Agent.FailedExpirer;
             case "InactiveExpirer" : return Agent.InactiveExpirer;
             case "NodeFailer" : return Agent.NodeFailer;
@@ -490,7 +491,7 @@ public class NodeSerializer {
             case application : return "application";
             case system : return "system";
             case DirtyExpirer : return "DirtyExpirer";
-            case DynamicProvisioningMaintainer : return "DynamicProvisioningMaintainer";
+            case HostCapacityMaintainer: return "DynamicProvisioningMaintainer";
             case FailedExpirer : return "FailedExpirer";
             case InactiveExpirer : return "InactiveExpirer";
             case NodeFailer : return "NodeFailer";

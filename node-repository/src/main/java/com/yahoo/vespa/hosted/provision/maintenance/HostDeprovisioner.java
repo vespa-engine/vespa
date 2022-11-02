@@ -12,6 +12,8 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
+ * Deprovisions hosts that are no longer needed in dynamically provisioned systems.
+ *
  * @author freva
  */
 public class HostDeprovisioner extends NodeRepositoryMaintainer {

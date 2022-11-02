@@ -22,6 +22,8 @@ import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
 /**
+ * Resumes provisioning (requests additional IP addresses, updates DNS when IPs are ready) of hosts in state provisioned
+ *
  * @author freva
  * @author mpolden
  */
@@ -50,12 +52,12 @@ public class HostResumeProvisioner extends NodeRepositoryMaintainer {
         int failures = 0;
         for (Node host : hosts) {
             Set<Node> children = nodesByProvisionedParentHostname.getOrDefault(host.hostname(), Set.of());
-            try {
-                try (var lock = nodeRepository().nodes().lockUnallocated()) {
-                    List<Node> updatedNodes = hostProvisioner.provision(host, children);
-                    verifyDns(updatedNodes);
-                    nodeRepository().nodes().write(updatedNodes, lock);
-                }
+            // This doesn't actually require unallocated lock, but that is much easier than simultaneously holding
+            // the application locks of the host and all it's children.
+            try (var lock = nodeRepository().nodes().lockUnallocated()) {
+                List<Node> updatedNodes = hostProvisioner.provision(host, children);
+                verifyDns(updatedNodes);
+                nodeRepository().nodes().write(updatedNodes, lock);
             } catch (IllegalArgumentException | IllegalStateException e) {
                 log.log(Level.INFO, "Could not provision " + host.hostname() + " with " + children.size() + " children, will retry in " +
                                     interval() + ": " + Exceptions.toMessageString(e));
@@ -65,7 +67,7 @@ public class HostResumeProvisioner extends NodeRepositoryMaintainer {
                                       " children, failing out the host recursively", e);
                 // Fail out as operator to force a quick redeployment
                 nodeRepository().nodes().failOrMarkRecursively(
-                        host.hostname(), Agent.DynamicProvisioningMaintainer, "Failed by HostProvisioner due to provisioning failure");
+                        host.hostname(), Agent.operator, "Failed by HostProvisioner due to provisioning failure");
             } catch (RuntimeException e) {
                 if (e.getCause() instanceof NamingException)
                     log.log(Level.INFO, "Could not provision " + host.hostname() + ", will retry in " + interval() + ": " + Exceptions.toMessageString(e));

@@ -22,7 +22,7 @@ public enum Agent {
     ProvisionedExpirer,
     ReservationExpirer,
     ParkedExpirer,
-    DynamicProvisioningMaintainer,
+    HostCapacityMaintainer,
     RetiringOsUpgrader,
     RebuildingOsUpgrader,
     SpareCapacityMaintainer,

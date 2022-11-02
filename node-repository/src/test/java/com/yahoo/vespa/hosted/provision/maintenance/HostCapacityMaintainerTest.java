@@ -442,12 +442,11 @@ public class HostCapacityMaintainerTest {
         // to parked
         int removedIndex = nodeToRemove.get().allocation().get().membership().index();
         tester.nodeRepository().nodes().setRemovable(configSrvApp, List.of(nodeToRemove.get()), true);
+        tester.nodeRepository().nodes().setRemovable(hostApp, List.of(hostToRemove.get()), true);
         tester.prepareAndActivateInfraApplication(configSrvApp, hostType.childNodeType());
-        assertSame("Node moves to expected state", Node.State.parked, nodeToRemove.get().state());
+        tester.prepareAndActivateInfraApplication(hostApp, hostType);
         assertEquals(2, tester.nodeRepository().nodes().list().nodeType(hostType.childNodeType()).state(Node.State.active).size());
-
-        // Host is parked (done by DynamicProvisioningMaintainer in a real system)
-        tester.nodeRepository().nodes().deallocate(hostToRemove.get(), Agent.system, getClass().getSimpleName());
+        assertSame("Node moves to expected state", Node.State.parked, nodeToRemove.get().state());
         assertSame("Host moves to parked", Node.State.parked, hostToRemove.get().state());
 
         // deprovisioning host cannot be unparked

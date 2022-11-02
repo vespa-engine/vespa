@@ -104,9 +104,9 @@ public class HostCapacityMaintainer extends NodeRepositoryMaintainer {
 
                     // Retire the host to parked if possible, otherwise move it straight to parked
                     if (EnumSet.of(Node.State.reserved, Node.State.active, Node.State.inactive).contains(host.state())) {
-                        Node retiredHost = host.withWantToRetire(true, true, Agent.DynamicProvisioningMaintainer, nodeRepository().clock().instant());
+                        Node retiredHost = host.withWantToRetire(true, true, Agent.HostCapacityMaintainer, nodeRepository().clock().instant());
                         nodeRepository().nodes().write(retiredHost, mutex);
-                    } else nodeRepository().nodes().park(host.hostname(), true, Agent.DynamicProvisioningMaintainer, "Parked for removal");
+                    } else nodeRepository().nodes().park(host.hostname(), true, Agent.HostCapacityMaintainer, "Parked for removal");
                 } catch (UncheckedTimeoutException e) {
                     log.log(Level.WARNING, "Failed to mark " + host.hostname() +
                             " for deprovisioning: Failed to get lock on node, will retry later");
@@ -226,7 +226,7 @@ public class HostCapacityMaintainer extends NodeRepositoryMaintainer {
                                            osVersion, HostSharing.shared, Optional.empty(), nodeRepository().zone().cloud().account(),
                                            provisionedHosts -> {
                                                hosts.addAll(provisionedHosts.stream().map(ProvisionedHost::generateHost).toList());
-                                               nodeRepository().nodes().addNodes(hosts, Agent.DynamicProvisioningMaintainer);
+                                               nodeRepository().nodes().addNodes(hosts, Agent.HostCapacityMaintainer);
                                            });
             return hosts;
         } catch (NodeAllocationException | IllegalArgumentException | IllegalStateException e) {
