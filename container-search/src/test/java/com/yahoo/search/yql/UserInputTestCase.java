@@ -91,9 +91,14 @@ public class UserInputTestCase {
 
     @Test
     void testUserInputSettingTargetHits() {
+        assertTargetHitsIsPropagatedInUserInput("weakAnd");
+        assertTargetHitsIsPropagatedInUserInput("tokenize");
+    }
+
+    private void assertTargetHitsIsPropagatedInUserInput(String grammar) {
         URIBuilder builder = searchUri();
         builder.setParameter("yql",
-                             "select * from sources * where {grammar: \"weakAnd\", targetHits: 17, defaultIndex: \"f\"}userInput(\"a test\")");
+                             "select * from sources * where {grammar: \"" + grammar + "\", targetHits: 17, defaultIndex: \"f\"}userInput(\"a test\")");
         Query query = searchAndAssertNoErrors(builder);
         assertEquals("select * from sources * where ({targetNumHits: 17}weakAnd(f contains \"a\", f contains \"test\"))", query.yqlRepresentation());
         WeakAndItem weakAnd = (WeakAndItem)query.getModel().getQueryTree().getRoot();

@@ -446,12 +446,6 @@ public class YqlParserTestCase {
     }
 
     @Test
-    void testTokenizeGrammar() {
-        Item root = parse("select foo from bar where ({grammar: \"tokenize\", targetHits: 10, defaultIndex: \"default\"}userInput(\"this is  a test\"))").getRoot();
-        assertEquals("WEAKAND(100) default:this default:is default:a default:test", root.toString());
-    }
-
-    @Test
     void testAccentDropping() {
         assertFalse(getRootWord("select foo from bar where baz contains " +
                 "( {accentDrop: false} \"colors\")").isNormalizable());

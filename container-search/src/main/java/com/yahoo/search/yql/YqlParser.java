@@ -132,7 +132,7 @@ public class YqlParser implements Parser {
     public static final String USER_INPUT_LANGUAGE = "language";
     private static final String USER_INPUT_GRAMMAR_RAW = "raw";
     private static final String USER_INPUT_GRAMMAR_SEGMENT = "segment";
-    private static final String USER_INPUT_GRAMMAR_WEAKAND = "weakAnd";
+    private static final Set<String> WEAKAND_GRAMMARS = Set.of("weakAnd", "tokenize");
     private static final String USER_INPUT = "userInput";
     private static final String USER_QUERY = "userQuery";
     private static final String NON_EMPTY = "nonEmpty";
@@ -731,8 +731,9 @@ public class YqlParser implements Parser {
         }
 
         // Set grammar-specific annotations
-        if (USER_INPUT_GRAMMAR_WEAKAND.equals(grammar) && item instanceof WeakAndItem weakAndItem) {
-            weakAndItem.setN(getAnnotation(ast, TARGET_HITS, Integer.class, WeakAndItem.defaultN, "'targetHits' (N) for weak and"));
+        if (WEAKAND_GRAMMARS.contains(grammar) && item instanceof WeakAndItem weakAndItem) {
+            weakAndItem.setN(getAnnotation(ast, TARGET_HITS, Integer.class, WeakAndItem.defaultN,
+                                           "'targetHits' (N) for weak and"));
         }
         return item;
     }
