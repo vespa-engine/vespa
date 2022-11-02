@@ -26,7 +26,7 @@ public class FileDeleter {
     public boolean converge(TaskContext context) {
         boolean deleted = uncheck(() -> Files.deleteIfExists(path));
         if (deleted) {
-            context.recordSystemModification(logger, "Deleted file or directory " + path);
+            context.recordSystemModification(logger, "Deleted " + path);
         }
 
         return deleted;
