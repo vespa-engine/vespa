@@ -66,39 +66,6 @@ import static org.junit.Assert.fail;
 public class DynamicProvisioningMaintainerTest {
 
     @Test
-    public void delegates_to_host_provisioner_and_writes_back_result() {
-        var tester = new DynamicProvisioningTester().addInitialNodes();
-        tester.hostProvisioner.with(Behaviour.failDeprovisioning); // To avoid deleting excess nodes
-
-        Node host3 = tester.nodeRepository.nodes().node("host3").orElseThrow();
-        Node host4 = tester.nodeRepository.nodes().node("host4").orElseThrow();
-        Node host41 = tester.nodeRepository.nodes().node("host4-1").orElseThrow();
-        assertTrue("No IP addresses assigned",
-                   Stream.of(host3, host4, host41).map(node -> node.ipConfig().primary()).allMatch(Set::isEmpty));
-
-        Node host3new = host3.with(host3.ipConfig().withPrimary(Set.of("::3:0")));
-        Node host4new = host4.with(host4.ipConfig().withPrimary(Set.of("::4:0")));
-        Node host41new = host41.with(host41.ipConfig().withPrimary(Set.of("::4:1", "::4:2")));
-
-        tester.maintainer.maintain();
-        assertEquals(host3new, tester.nodeRepository.nodes().node("host3").get());
-        assertEquals(host4new, tester.nodeRepository.nodes().node("host4").get());
-        assertEquals(host41new, tester.nodeRepository.nodes().node("host4-1").get());
-    }
-
-    @Test
-    public void correctly_fails_if_irrecoverable_failure() {
-        var tester = new DynamicProvisioningTester();
-        tester.hostProvisioner.with(Behaviour.failProvisioning);
-        Node host4 = tester.addNode("host4", Optional.empty(), NodeType.host, Node.State.provisioned);
-        Node host41 = tester.addNode("host4-1", Optional.of("host4"), NodeType.tenant, Node.State.reserved, DynamicProvisioningTester.tenantApp);
-        assertTrue("No IP addresses assigned", Stream.of(host4, host41).map(node -> node.ipConfig().primary()).allMatch(Set::isEmpty));
-
-        tester.maintainer.maintain();
-        assertEquals(Set.of("host4", "host4-1"), tester.nodeRepository.nodes().list(Node.State.failed).hostnames());
-    }
-
-    @Test
     public void finds_nodes_that_need_deprovisioning_without_pre_provisioning() {
         var tester = new DynamicProvisioningTester().addInitialNodes();
         assertTrue(tester.nodeRepository.nodes().node("host2").isPresent());
@@ -381,24 +348,6 @@ public class DynamicProvisioningMaintainerTest {
         assertTrue(tester.nodeRepository.nodes().node("hostname102").isPresent());
         assertTrue(tester.nodeRepository.nodes().node("hostname103").isPresent());
         assertTrue(tester.nodeRepository.nodes().node("hostname104").isPresent());
-    }
-
-    @Test
-    public void defer_writing_ip_addresses_until_dns_resolves() {
-        var tester = new DynamicProvisioningTester().addInitialNodes();
-        tester.hostProvisioner.with(Behaviour.failDnsUpdate);
-
-        Supplier<NodeList> provisioning = () -> tester.nodeRepository.nodes().list(Node.State.provisioned).nodeType(NodeType.host);
-        assertEquals(2, provisioning.get().size());
-        tester.maintainer.maintain();
-
-        assertTrue("No IP addresses written as DNS updates are failing",
-                   provisioning.get().stream().allMatch(host -> host.ipConfig().pool().ipSet().isEmpty()));
-
-        tester.hostProvisioner.without(Behaviour.failDnsUpdate);
-        tester.maintainer.maintain();
-        assertTrue("IP addresses written as DNS updates are succeeding",
-                   provisioning.get().stream().noneMatch(host -> host.ipConfig().pool().ipSet().isEmpty()));
     }
 
     @Test

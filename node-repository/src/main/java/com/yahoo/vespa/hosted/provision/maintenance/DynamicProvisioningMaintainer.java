@@ -26,17 +26,13 @@ import com.yahoo.vespa.hosted.provision.NodeRepository;
 import com.yahoo.vespa.hosted.provision.NodesAndHosts;
 import com.yahoo.vespa.hosted.provision.node.Agent;
 import com.yahoo.vespa.hosted.provision.node.History;
-import com.yahoo.vespa.hosted.provision.node.IP;
-import com.yahoo.vespa.hosted.provision.provisioning.FatalProvisioningException;
 import com.yahoo.vespa.hosted.provision.provisioning.HostProvisioner;
 import com.yahoo.vespa.hosted.provision.provisioning.HostProvisioner.HostSharing;
 import com.yahoo.vespa.hosted.provision.provisioning.NodeCandidate;
 import com.yahoo.vespa.hosted.provision.provisioning.NodePrioritizer;
 import com.yahoo.vespa.hosted.provision.provisioning.NodeSpec;
 import com.yahoo.vespa.hosted.provision.provisioning.ProvisionedHost;
-import com.yahoo.yolean.Exceptions;
 
-import javax.naming.NamingException;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
@@ -45,7 +41,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.Set;
 import java.util.function.Function;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -77,44 +72,8 @@ public class DynamicProvisioningMaintainer extends NodeRepositoryMaintainer {
     @Override
     protected double maintain() {
         NodeList nodes = nodeRepository().nodes().list();
-        resumeProvisioning(nodes);
         convergeToCapacity(nodes);
         return 1.0;
-    }
-
-    /** Resume provisioning of already provisioned hosts and their children */
-    private void resumeProvisioning(NodeList nodes) {
-        Map<String, Set<Node>> nodesByProvisionedParentHostname =
-                nodes.nodeType(NodeType.tenant, NodeType.config, NodeType.controller)
-                     .asList()
-                     .stream()
-                     .filter(node -> node.parentHostname().isPresent())
-                     .collect(Collectors.groupingBy(node -> node.parentHostname().get(), Collectors.toSet()));
-
-        nodes.state(Node.State.provisioned).nodeType(NodeType.host, NodeType.confighost, NodeType.controllerhost).forEach(host -> {
-            Set<Node> children = nodesByProvisionedParentHostname.getOrDefault(host.hostname(), Set.of());
-            try {
-                try (var lock = nodeRepository().nodes().lockUnallocated()) {
-                    List<Node> updatedNodes = hostProvisioner.provision(host, children);
-                    verifyDns(updatedNodes);
-                    nodeRepository().nodes().write(updatedNodes, lock);
-                }
-            } catch (IllegalArgumentException | IllegalStateException e) {
-                log.log(Level.INFO, "Could not provision " + host.hostname() + " with " + children.size() + " children, will retry in " +
-                                    interval() + ": " + Exceptions.toMessageString(e));
-            } catch (FatalProvisioningException e) {
-                log.log(Level.SEVERE, "Failed to provision " + host.hostname() + " with " + children.size()  +
-                                      " children, failing out the host recursively", e);
-                // Fail out as operator to force a quick redeployment
-                nodeRepository().nodes().failOrMarkRecursively(
-                        host.hostname(), Agent.DynamicProvisioningMaintainer, "Failed by HostProvisioner due to provisioning failure");
-            } catch (RuntimeException e) {
-                if (e.getCause() instanceof NamingException)
-                    log.log(Level.INFO, "Could not provision " + host.hostname() + ", will retry in " + interval() + ": " + Exceptions.toMessageString(e));
-                else
-                    log.log(Level.WARNING, "Failed to provision " + host.hostname() + ", will retry in " + interval(), e);
-            }
-        });
     }
 
     /** Converge zone to wanted capacity */
@@ -336,14 +295,5 @@ public class DynamicProvisioningMaintainer extends NodeRepositoryMaintainer {
     private static NodeResources toNodeResources(ClusterCapacity clusterCapacity) {
         return new NodeResources(clusterCapacity.vcpu(), clusterCapacity.memoryGb(), clusterCapacity.diskGb(),
                 clusterCapacity.bandwidthGbps());
-    }
-
-    /** Verify DNS configuration of given nodes */
-    private void verifyDns(List<Node> nodes) {
-        for (var node : nodes) {
-            for (var ipAddress : node.ipConfig().primary()) {
-                IP.verifyDns(node.hostname(), ipAddress, nodeRepository().nameResolver());
-            }
-        }
     }
 }
