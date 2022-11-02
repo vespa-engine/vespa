@@ -109,7 +109,7 @@ public class AclProvisioningTest {
                            TrustedNode.of(configNodes)),
                    Set.of("10.2.3.0/24", "10.4.5.0/24"),
                    List.of(nodeAcl));
-        assertEquals(Set.of(22, 4443, 51820), nodeAcl.trustedPorts());
+        assertEquals(Set.of(22, 4443), nodeAcl.trustedPorts());
     }
 
     @Test
