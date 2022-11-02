@@ -2,37 +2,21 @@
 
 #include <vespa/vespalib/coro/lazy.h>
 #include <vespa/vespalib/coro/sync_wait.h>
+#include <vespa/vespalib/coro/schedule.h>
+#include <vespa/vespalib/util/size_literals.h>
 #include <vespa/vespalib/util/require.h>
+#include <vespa/vespalib/util/threadstackexecutor.h>
 #include <vespa/vespalib/gtest/gtest.h>
 #include <mutex>
 
 #include <thread>
 
+using vespalib::Executor;
 using vespalib::coro::Lazy;
+using vespalib::coro::ScheduleFailedException;
+using vespalib::coro::schedule;
 using vespalib::coro::sync_wait;
-
-std::mutex thread_lock;
-std::vector<std::thread> threads;
-struct JoinThreads {
-    ~JoinThreads() {
-        for (auto &thread: threads) {
-            thread.join();
-        }
-        threads.clear();
-    }
-};
-
-auto run_in_other_thread() {
-    struct awaiter {
-        bool await_ready() const noexcept { return false; }
-        void await_suspend(std::coroutine_handle<> handle) const {
-            auto guard = std::lock_guard(thread_lock);
-            threads.push_back(std::thread(handle));
-        }
-        void await_resume() const noexcept {}
-    };
-    return awaiter();
-}
+using vespalib::coro::try_schedule;
 
 Lazy<int> make_lazy(int value) {
     co_return value;
@@ -68,9 +52,17 @@ Lazy<T> forward_value(Lazy<T> value) {
 }
 
 template <typename T>
-Lazy<T> switch_thread(Lazy<T> value) {
+Lazy<std::pair<bool,T>> try_schedule_on(Executor &executor, Lazy<T> value) {
     std::cerr << "switching from thread " << std::this_thread::get_id() << std::endl;
-    co_await run_in_other_thread();
+    bool accepted = co_await try_schedule(executor);
+    std::cerr << "........... to thread " << std::this_thread::get_id() << std::endl;
+    co_return std::make_pair(accepted, co_await value);
+}
+
+template <typename T>
+Lazy<T> schedule_on(Executor &executor, Lazy<T> value) {
+    std::cerr << "switching from thread " << std::this_thread::get_id() << std::endl;
+    co_await schedule(executor);
     std::cerr << "........... to thread " << std::this_thread::get_id() << std::endl;
     co_return co_await value;
 }
@@ -107,15 +99,28 @@ TEST(LazyTest, extract_rvalue_from_lazy_in_sync_wait) {
 }
 
 TEST(LazyTest, calculate_result_in_another_thread) {
-    JoinThreads thread_guard;
-    auto result = sync_wait(switch_thread(make_lazy(7)));
-    EXPECT_EQ(result, 7);
+    vespalib::ThreadStackExecutor executor(1, 128_Ki);
+    auto result = sync_wait(try_schedule_on(executor, make_lazy(7)));
+    EXPECT_EQ(result.first, true);
+    EXPECT_EQ(result.second, 7);
+    auto result2 = sync_wait(schedule_on(executor, make_lazy(8)));
+    EXPECT_EQ(result2, 8);
 }
 
 TEST(LazyTest, exceptions_are_propagated) {
-    JoinThreads thread_guard;
-    auto lazy = switch_thread(forward_value(will_throw()));
+    vespalib::ThreadStackExecutor executor(1, 128_Ki);
+    auto lazy = try_schedule_on(executor, forward_value(will_throw()));
     EXPECT_THROW(sync_wait(lazy), vespalib::RequireFailedException);
+}
+
+TEST(LazyTest, not_able_to_switch_thread_if_executor_is_shut_down) {
+    vespalib::ThreadStackExecutor executor(1, 128_Ki);
+    executor.shutdown();
+    auto result = sync_wait(try_schedule_on(executor, make_lazy(7)));
+    EXPECT_EQ(result.first, false);
+    EXPECT_EQ(result.second, 7);
+    auto lazy = schedule_on(executor, make_lazy(8));
+    EXPECT_THROW(sync_wait(lazy), ScheduleFailedException);
 }
 
 GTEST_MAIN_RUN_ALL_TESTS()
