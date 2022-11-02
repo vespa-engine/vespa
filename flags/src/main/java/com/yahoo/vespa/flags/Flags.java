@@ -418,6 +418,13 @@ public class Flags {
             "Takes effect on the next tick.",
             ZONE_ID, NODE_TYPE, HOSTNAME);
 
+    public static final UnboundStringFlag CORE_ENCRYPTION_PUBLIC_KEY_ID = defineStringFlag(
+            "core-encryption-public-key-id", "",
+            List.of("vekterli"), "2022-11-03", "2022-12-01",
+            "Specifies which public key to use for core dump encryption.",
+            "Takes effect on the next tick.",
+            ZONE_ID, NODE_TYPE, HOSTNAME);
+
     /** WARNING: public for testing: All flags should be defined in {@link Flags}. */
     public static UnboundBooleanFlag defineFeatureFlag(String flagId, boolean defaultValue, List<String> owners,
                                                        String createdAt, String expiresAt, String description,
