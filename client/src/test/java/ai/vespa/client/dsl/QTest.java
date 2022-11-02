@@ -27,7 +27,7 @@ class QTest {
                 .where("f1").contains("v1")
                 .build();
 
-        assertEquals(q, "yql=select f1, f2 from sd1 where f1 contains \"v1\";");
+        assertEquals(q, "yql=select f1, f2 from sd1 where f1 contains \"v1\"");
     }
 
     @Test
@@ -37,7 +37,7 @@ class QTest {
                 .where("f1").contains("v1")
                 .build();
 
-        assertEquals(q, "yql=select * from sd1 where f1 contains \"v1\";");
+        assertEquals(q, "yql=select * from sd1 where f1 contains \"v1\"");
     }
 
     @Test
@@ -47,7 +47,7 @@ class QTest {
                 .where("f1").contains("v1")
                 .build();
 
-        assertEquals(q, "yql=select * from sources sd1, sd2 where f1 contains \"v1\";");
+        assertEquals(q, "yql=select * from sources sd1, sd2 where f1 contains \"v1\"");
     }
 
     @Test
@@ -67,7 +67,7 @@ class QTest {
                 .param("paramk1", "paramv1")
                 .build();
 
-        assertEquals(q, "yql=select * from sd1 where f1 contains \"v1\" and f2 contains \"v2\" or f3 contains \"v3\" and !(f4 contains \"v4\") order by f1 desc, f2 asc limit 2 offset 1 timeout 3;&paramk1=paramv1");
+        assertEquals(q, "yql=select * from sd1 where f1 contains \"v1\" and f2 contains \"v2\" or f3 contains \"v3\" and !(f4 contains \"v4\") order by f1 desc, f2 asc limit 2 offset 1 timeout 3&paramk1=paramv1");
     }
 
     @Test
@@ -80,7 +80,7 @@ class QTest {
                 .andnot("f4").matches("v4")
                 .build();
 
-        assertEquals(q, "yql=select * from sd1 where f1 matches \"v1\" and f2 matches \"v2\" or f3 matches \"v3\" and !(f4 matches \"v4\");");
+        assertEquals(q, "yql=select * from sd1 where f1 matches \"v1\" and f2 matches \"v2\" or f3 matches \"v3\" and !(f4 matches \"v4\")");
     }
 
     @Test
@@ -95,7 +95,7 @@ class QTest {
                 .and("f6").inRange(6, 7)
                 .build();
 
-        assertEquals(q, "yql=select * from sd1 where f1 <= 1 and f2 < 2 and f3 >= 3 and f4 > 4 and f5 = 5 and range(f6, 6, 7);");
+        assertEquals(q, "yql=select * from sd1 where f1 <= 1 and f2 < 2 and f3 >= 3 and f4 > 4 and f5 = 5 and range(f6, 6, 7)");
     }
 
     @Test
@@ -110,7 +110,7 @@ class QTest {
                 .and("f6").inRange(6L, 7L)
                 .build();
 
-        assertEquals(q, "yql=select * from sd1 where f1 <= 1L and f2 < 2L and f3 >= 3L and f4 > 4L and f5 = 5L and range(f6, 6L, 7L);");
+        assertEquals(q, "yql=select * from sd1 where f1 <= 1L and f2 < 2L and f3 >= 3L and f4 > 4L and f5 = 5L and range(f6, 6L, 7L)");
     }
 
     @Test
@@ -125,7 +125,7 @@ class QTest {
                 .and("f6").inRange(6.6, 7.7)
                 .build();
 
-        assertEquals(q, "yql=select * from sd1 where f1 <= 1.1 and f2 < 2.2 and f3 >= 3.3 and f4 > 4.4 and f5 = 5.5 and range(f6, 6.6, 7.7);");
+        assertEquals(q, "yql=select * from sd1 where f1 <= 1.1 and f2 < 2.2 and f3 >= 3.3 and f4 > 4.4 and f5 = 5.5 and range(f6, 6.6, 7.7)");
     }
 
     @Test
@@ -140,7 +140,7 @@ class QTest {
                 .and("f6").inRange(6.6D, 7.7D)
                 .build();
 
-        assertEquals(q, "yql=select * from sd1 where f1 <= 1.1 and f2 < 2.2 and f3 >= 3.3 and f4 > 4.4 and f5 = 5.5 and range(f6, 6.6, 7.7);");
+        assertEquals(q, "yql=select * from sd1 where f1 <= 1.1 and f2 < 2.2 and f3 >= 3.3 and f4 > 4.4 and f5 = 5.5 and range(f6, 6.6, 7.7)");
     }
 
     @Test
@@ -152,7 +152,7 @@ class QTest {
                         .or(Q.p("f2").contains("4").andnot("f3").contains("5")))
                 .build();
 
-        assertEquals(q, "yql=select * from sd1 where f1 contains \"1\" and !((f2 contains \"2\" and f3 contains \"3\") or (f2 contains \"4\" and !(f3 contains \"5\")));");
+        assertEquals(q, "yql=select * from sd1 where f1 contains \"1\" and !((f2 contains \"2\" and f3 contains \"3\") or (f2 contains \"4\" and !(f3 contains \"5\")))");
     }
 
     @Test
@@ -162,7 +162,7 @@ class QTest {
                 .where(Q.ui("value1"))
                 .and(Q.ui("index", "value2"))
                 .build();
-        assertEquals("yql=select * from sd1 where userInput(\"value1\") and ({\"defaultIndex\":\"index\"}userInput(\"value2\"));", q);
+        assertEquals("yql=select * from sd1 where userInput(\"value1\") and ({\"defaultIndex\":\"index\"}userInput(\"value2\"))", q);
     }
 
     @Test
@@ -172,7 +172,7 @@ class QTest {
                     .where(Q.rank(Q.p("docQ").nearestNeighbor("vectorQuery"),
                                   Q.ui("@query")))
                     .build();
-        assertEquals("yql=select url from site where rank(nearestNeighbor(docQ, vectorQuery), userInput(@query));", q);
+        assertEquals("yql=select url from site where rank(nearestNeighbor(docQ, vectorQuery), userInput(@query))", q);
     }
 
     @Test
@@ -183,7 +183,7 @@ class QTest {
             .and("f2").contains("1")
                 .build();
 
-        assertEquals("yql=select * from sd1 where dotProduct(f1, {\"a\":1,\"b\":2,\"c\":3}) and f2 contains \"1\";", q);
+        assertEquals("yql=select * from sd1 where dotProduct(f1, {\"a\":1,\"b\":2,\"c\":3}) and f2 contains \"1\"", q);
     }
 
     @Test
@@ -194,7 +194,7 @@ class QTest {
                 .and("f2").contains("1")
                 .build();
 
-        assertEquals(q, "yql=select * from sd1 where weightedSet(f1, {\"a\":1,\"b\":2,\"c\":3}) and f2 contains \"1\";");
+        assertEquals(q, "yql=select * from sd1 where weightedSet(f1, {\"a\":1,\"b\":2,\"c\":3}) and f2 contains \"1\"");
     }
 
     @Test
@@ -205,7 +205,7 @@ class QTest {
                 .and("f2").contains("v2")
                 .build();
 
-        assertEquals(q, "yql=select * from sd1 where nonEmpty(f1 contains \"v1\") and f2 contains \"v2\";");
+        assertEquals(q, "yql=select * from sd1 where nonEmpty(f1 contains \"v1\") and f2 contains \"v2\"");
     }
 
 
@@ -221,7 +221,7 @@ class QTest {
                 )
                 .build();
 
-        assertEquals(q, "yql=select * from sd1 where wand(f1, {\"a\":1,\"b\":2,\"c\":3}) and wand(f2, [[1,1],[2,2]]) and ([{\"scoreThreshold\":0.13}]wand(f3, [[1,1],[2,2]]));");
+        assertEquals(q, "yql=select * from sd1 where wand(f1, {\"a\":1,\"b\":2,\"c\":3}) and wand(f2, [[1,1],[2,2]]) and ({\"scoreThreshold\":0.13}wand(f3, [[1,1],[2,2]]))");
     }
 
     @Test
@@ -234,7 +234,7 @@ class QTest {
                 )
                 .build();
 
-        assertEquals(q, "yql=select * from sd1 where weakAnd(f1 contains \"v1\", f2 contains \"v2\") and ([{\"scoreThreshold\":0.13}]weakAnd(f1 contains \"v1\", f2 contains \"v2\"));");
+        assertEquals(q, "yql=select * from sd1 where weakAnd(f1 contains \"v1\", f2 contains \"v2\") and ({\"scoreThreshold\":0.13}weakAnd(f1 contains \"v1\", f2 contains \"v2\"))");
     }
 
     @Test
@@ -244,7 +244,7 @@ class QTest {
                 .where("a").contains("b").and(Q.geoLocation("taiwan", 25.105497, 121.597366, "200km"))
                 .build();
 
-        assertEquals(q, "yql=select * from sd1 where a contains \"b\" and geoLocation(taiwan, 25.105497, 121.597366, \"200km\");");
+        assertEquals(q, "yql=select * from sd1 where a contains \"b\" and geoLocation(taiwan, 25.105497, 121.597366, \"200km\")");
     }
 
     @Test
@@ -256,7 +256,7 @@ class QTest {
                         .annotate(A.a("targetHits", 10, "approximate", false))
                 )
                 .build();
-        assertEquals(q, "yql=select * from sd1 where a contains \"b\" and ([{\"approximate\":false,\"targetHits\":10}]nearestNeighbor(vec1, vec2));");
+        assertEquals(q, "yql=select * from sd1 where a contains \"b\" and ([{\"approximate\":false,\"targetHits\":10}]nearestNeighbor(vec1, vec2))");
     }
 
     @Test
@@ -279,7 +279,7 @@ class QTest {
                 )
                 .build();
 
-        assertEquals(q, "yql=select * from sd1 where rank(f1 contains \"v1\");");
+        assertEquals(q, "yql=select * from sd1 where rank(f1 contains \"v1\")");
     }
 
     @Test
@@ -293,7 +293,7 @@ class QTest {
                 )
                 .build();
 
-        assertEquals(q, "yql=select * from sd1 where rank(f1 contains \"v1\", f2 contains \"v2\", f3 = 3);");
+        assertEquals(q, "yql=select * from sd1 where rank(f1 contains \"v1\", f2 contains \"v2\", f3 = 3)");
     }
 
     @Test
@@ -307,7 +307,7 @@ class QTest {
                 )
                 .build();
 
-        assertEquals(q, "yql=select * from sd1 where rank(f1 contains \"v1\", f2 contains \"v2\", f3 = 3);");
+        assertEquals(q, "yql=select * from sd1 where rank(f1 contains \"v1\", f2 contains \"v2\", f3 = 3)");
     }
 
     @Test
@@ -320,7 +320,7 @@ class QTest {
                     .where("f1").contains(annotation, "v1")
                     .build();
 
-            assertEquals(q, "yql=select * from sd1 where f1 contains (" + expected + "\"v1\");");
+            assertEquals(q, "yql=select * from sd1 where f1 contains (" + expected + "\"v1\")");
         }
         {
             Annotation annotation = A.defaultIndex("idx");
@@ -330,7 +330,7 @@ class QTest {
                     .where("f1").contains(annotation, "v1")
                     .build();
 
-            assertEquals(q, "yql=select * from sd1 where f1 contains (" + expected + "\"v1\");");
+            assertEquals(q, "yql=select * from sd1 where f1 contains (" + expected + "\"v1\")");
         }
         {
             Annotation annotation = A.a(stringObjMap("a1", stringObjMap("k1", "v1", "k2", 2)));
@@ -340,7 +340,7 @@ class QTest {
                     .where("f1").contains(annotation, "v1")
                     .build();
 
-            assertEquals(q, "yql=select * from sd1 where f1 contains (" + expected + "\"v1\");");
+            assertEquals(q, "yql=select * from sd1 where f1 contains (" + expected + "\"v1\")");
         }
 
     }
@@ -352,7 +352,7 @@ class QTest {
                 .where("f1").contains("v1").annotate(A.a("ak1", "av1"))
                 .build();
 
-        assertEquals(q, "yql=select * from sd1 where ([{\"ak1\":\"av1\"}](f1 contains \"v1\"));");
+        assertEquals(q, "yql=select * from sd1 where ([{\"ak1\":\"av1\"}](f1 contains \"v1\"))");
     }
 
     @Test
@@ -362,7 +362,7 @@ class QTest {
                 .where(Q.p("f1").contains("v1").annotate(A.a("ak1", "av1")).and("f2").contains("v2"))
                 .build();
 
-        assertEquals(q, "yql=select * from sd1 where ([{\"ak1\":\"av1\"}](f1 contains \"v1\" and f2 contains \"v2\"));");
+        assertEquals(q, "yql=select * from sd1 where ([{\"ak1\":\"av1\"}](f1 contains \"v1\" and f2 contains \"v2\"))");
     }
 
     @Test
@@ -375,7 +375,7 @@ class QTest {
                 )
                 .build();
 
-        assertEquals(q, "yql=select * from sd1 where (([{\"ak1\":\"av1\"}](f1 contains \"v1\")) and f2 contains \"v2\");");
+        assertEquals(q, "yql=select * from sd1 where (([{\"ak1\":\"av1\"}](f1 contains \"v1\")) and f2 contains \"v2\")");
     }
 
     @Test
@@ -383,7 +383,7 @@ class QTest {
         String q = Q.p("f1").contains("v1")
                 .build();
 
-        assertEquals(q, "yql=select * from sources * where f1 contains \"v1\";");
+        assertEquals(q, "yql=select * from sources * where f1 contains \"v1\"");
     }
 
     @Test
@@ -395,7 +395,7 @@ class QTest {
                 .orderByDesc(A.a(stringObjMap("function", "lowercase")), "f5")
                 .build();
 
-        assertEquals(q, "yql=select * from sources * where f1 contains \"v1\" order by f2 asc, [{\"function\":\"uca\",\"locale\":\"en_US\",\"strength\":\"IDENTICAL\"}]f3 asc, f4 desc, [{\"function\":\"lowercase\"}]f5 desc;");
+        assertEquals(q, "yql=select * from sources * where f1 contains \"v1\" order by f2 asc, {\"function\":\"uca\",\"locale\":\"en_US\",\"strength\":\"IDENTICAL\"}f3 asc, f4 desc, {\"function\":\"lowercase\"}f5 desc");
     }
 
     @Test
@@ -403,7 +403,7 @@ class QTest {
         String q = Q.p("f1").containsSameElement(Q.p("stime").le(1).and("etime").gt(2))
                 .build();
 
-        assertEquals(q, "yql=select * from sources * where f1 contains sameElement(stime <= 1, etime > 2);");
+        assertEquals(q, "yql=select * from sources * where f1 contains sameElement(stime <= 1, etime > 2)");
     }
 
     @Test
@@ -413,32 +413,32 @@ class QTest {
                     .build();
             String q2 = Q.p("f1").containsPhrase(Arrays.asList("p1", "p2", "p3"))
                     .build();
-            assertEquals(q1, "yql=select * from sources * where f1 contains phrase(\"p1\", \"p2\", \"p3\");");
-            assertEquals(q2, "yql=select * from sources * where f1 contains phrase(\"p1\", \"p2\", \"p3\");");
+            assertEquals(q1, "yql=select * from sources * where f1 contains phrase(\"p1\", \"p2\", \"p3\")");
+            assertEquals(q2, "yql=select * from sources * where f1 contains phrase(\"p1\", \"p2\", \"p3\")");
         }
         {
             String q1 = Q.p("f1").containsNear("p1", "p2", "p3")
                     .build();
             String q2 = Q.p("f1").containsNear(Arrays.asList("p1", "p2", "p3"))
                     .build();
-            assertEquals(q1, "yql=select * from sources * where f1 contains near(\"p1\", \"p2\", \"p3\");");
-            assertEquals(q2, "yql=select * from sources * where f1 contains near(\"p1\", \"p2\", \"p3\");");
+            assertEquals(q1, "yql=select * from sources * where f1 contains near(\"p1\", \"p2\", \"p3\")");
+            assertEquals(q2, "yql=select * from sources * where f1 contains near(\"p1\", \"p2\", \"p3\")");
         }
         {
             String q1 = Q.p("f1").containsOnear("p1", "p2", "p3")
                     .build();
             String q2 = Q.p("f1").containsOnear(Arrays.asList("p1", "p2", "p3"))
                     .build();
-            assertEquals(q1, "yql=select * from sources * where f1 contains onear(\"p1\", \"p2\", \"p3\");");
-            assertEquals(q2, "yql=select * from sources * where f1 contains onear(\"p1\", \"p2\", \"p3\");");
+            assertEquals(q1, "yql=select * from sources * where f1 contains onear(\"p1\", \"p2\", \"p3\")");
+            assertEquals(q2, "yql=select * from sources * where f1 contains onear(\"p1\", \"p2\", \"p3\")");
         }
         {
             String q1 = Q.p("f1").containsEquiv("p1", "p2", "p3")
                     .build();
             String q2 = Q.p("f1").containsEquiv(Arrays.asList("p1", "p2", "p3"))
                     .build();
-            assertEquals(q1, "yql=select * from sources * where f1 contains equiv(\"p1\", \"p2\", \"p3\");");
-            assertEquals(q2, "yql=select * from sources * where f1 contains equiv(\"p1\", \"p2\", \"p3\");");
+            assertEquals(q1, "yql=select * from sources * where f1 contains equiv(\"p1\", \"p2\", \"p3\")");
+            assertEquals(q2, "yql=select * from sources * where f1 contains equiv(\"p1\", \"p2\", \"p3\")");
         }
     }
 
@@ -447,7 +447,7 @@ class QTest {
         String q = Q.p("f1").containsUri("https://test.uri")
                 .build();
 
-        assertEquals(q, "yql=select * from sources * where f1 contains uri(\"https://test.uri\");");
+        assertEquals(q, "yql=select * from sources * where f1 contains uri(\"https://test.uri\")");
     }
 
     @Test
@@ -455,7 +455,7 @@ class QTest {
         String q = Q.p("f1").containsUri(A.a("key", "value"), "https://test.uri")
                 .build();
 
-        assertEquals(q, "yql=select * from sources * where f1 contains ([{\"key\":\"value\"}]uri(\"https://test.uri\"));");
+        assertEquals(q, "yql=select * from sources * where f1 contains ([{\"key\":\"value\"}]uri(\"https://test.uri\"))");
     }
 
     @Test
@@ -463,7 +463,7 @@ class QTest {
         String q = Q.p("f1").nearestNeighbor("query_vector")
                 .build();
 
-        assertEquals(q, "yql=select * from sources * where nearestNeighbor(f1, query_vector);");
+        assertEquals(q, "yql=select * from sources * where nearestNeighbor(f1, query_vector)");
     }
 
     @Test
@@ -471,7 +471,7 @@ class QTest {
         String q = Q.p("f1").nearestNeighbor(A.a("targetHits", 10), "query_vector")
                 .build();
 
-        assertEquals(q, "yql=select * from sources * where ([{\"targetHits\":10}]nearestNeighbor(f1, query_vector));");
+        assertEquals(q, "yql=select * from sources * where ([{\"targetHits\":10}]nearestNeighbor(f1, query_vector))");
     }
 
     @Test
@@ -479,7 +479,7 @@ class QTest {
         String q = Q.p("f1").containsEquiv(Collections.singletonList("p1"))
                 .build();
 
-        assertEquals(q, "yql=select * from sources * where f1 contains \"p1\";");
+        assertEquals(q, "yql=select * from sources * where f1 contains \"p1\"");
     }
 
     @Test
@@ -504,13 +504,13 @@ class QTest {
             String q = Q.p("f1").containsNear(A.a("distance", 5), "p1", "p2", "p3")
                     .build();
 
-            assertEquals(q, "yql=select * from sources * where f1 contains ([{\"distance\":5}]near(\"p1\", \"p2\", \"p3\"));");
+            assertEquals(q, "yql=select * from sources * where f1 contains ([{\"distance\":5}]near(\"p1\", \"p2\", \"p3\"))");
         }
         {
             String q = Q.p("f1").containsOnear(A.a("distance", 5), "p1", "p2", "p3")
                     .build();
 
-            assertEquals(q, "yql=select * from sources * where f1 contains ([{\"distance\":5}]onear(\"p1\", \"p2\", \"p3\"));");
+            assertEquals(q, "yql=select * from sources * where f1 contains ([{\"distance\":5}]onear(\"p1\", \"p2\", \"p3\"))");
         }
     }
 
@@ -540,7 +540,7 @@ class QTest {
                 )
                 .build();
 
-        assertEquals(q, "yql=select * from sources * where f1 contains \"v1\" | all(group(a) max(5) each(output(count()) all(max(1) each(output(summary()))) all(group(b) each(output(count()) all(max(1) each(output(summary()))) all(group(c) each(output(count()) all(max(1) each(output(summary())))))))));");
+        assertEquals(q, "yql=select * from sources * where f1 contains \"v1\" | all(group(a) max(5) each(output(count()) all(max(1) each(output(summary()))) all(group(b) each(output(count()) all(max(1) each(output(summary()))) all(group(c) each(output(count()) all(max(1) each(output(summary())))))))))");
     }
 
     @Test
@@ -559,7 +559,7 @@ class QTest {
                 .group("all(group(a) max(5) each(output(count()) all(max(1) each(output(summary()))) all(group(b) each(output(count()) all(max(1) each(output(summary()))) all(group(c) each(output(count()) all(max(1) each(output(summary())))))))))")
                 .build();
 
-        assertEquals(q, "yql=select * from sources * where f1 contains \"v1\" | all(group(a) max(5) each(output(count()) all(max(1) each(output(summary()))) all(group(b) each(output(count()) all(max(1) each(output(summary()))) all(group(c) each(output(count()) all(max(1) each(output(summary())))))))));");
+        assertEquals(q, "yql=select * from sources * where f1 contains \"v1\" | all(group(a) max(5) each(output(count()) all(max(1) each(output(summary()))) all(group(b) each(output(count()) all(max(1) each(output(summary()))) all(group(c) each(output(count()) all(max(1) each(output(summary())))))))))");
     }
 
 @Test
@@ -579,7 +579,7 @@ class QTest {
                 .reduce(Query::and)
                 .get();
 
-        assertEquals(q.build(), "yql=select * from sources * where a contains \"1\" and b contains \"2\" and c contains \"3\";");
+        assertEquals(q.build(), "yql=select * from sources * where a contains \"1\" and b contains \"2\" and c contains \"3\"");
     }
 
     @Test
@@ -589,14 +589,14 @@ class QTest {
 
         map.forEach((k, v) -> q.and(Q.p(k).contains(v)));
 
-        assertEquals(q.build(), "yql=select * from sources * where a contains \"1\" and b contains \"2\" and c contains \"3\";");
+        assertEquals(q.build(), "yql=select * from sources * where a contains \"1\" and b contains \"2\" and c contains \"3\"");
     }
 
     @Test
     void empty_queries_should_not_print_out() {
         String q = Q.p(Q.p(Q.p().andnot(Q.p()).and(Q.p()))).and("a").contains("1").build();
 
-        assertEquals(q, "yql=select * from sources * where a contains \"1\";");
+        assertEquals(q, "yql=select * from sources * where a contains \"1\"");
     }
 
     @Test

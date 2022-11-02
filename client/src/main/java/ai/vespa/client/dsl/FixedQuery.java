@@ -353,7 +353,6 @@ public class FixedQuery {
         if (!"".equals(endQuery.toString())) {
             sb.append(' ').append(endQuery);
         }
-        sb.append(";");
 
         queryMap = new LinkedHashMap<>(); // for the order
         queryMap.put("yql", sb.toString());
