@@ -76,14 +76,20 @@ public class EndQuery {
     }
 
     /**
-     * Semicolon.
-     * turn a query into fixed query.
+     * Calls fix()
      *
-     * @return the fixed query
+     * @deprecated use {link #fix}
      */
-    public FixedQuery semicolon() {
+    @Deprecated // TODO: Remove on Vespa 9
+    public FixedQuery semicolon() { return fix(); }
+
+    /** Returns a fixed query containing this. */
+    public FixedQuery fix() {
         return new FixedQuery(this);
     }
+
+    /** Calls fix().build() */
+    public String build() { return fix().build(); }
 
     /**
      * Group.
