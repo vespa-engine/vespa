@@ -228,7 +228,8 @@ func IsProdRegion(s string, system vespa.System) bool {
 	}
 	switch s {
 	case "aws-us-east-1c", "aws-us-west-2a",
-		"aws-eu-west-1a", "aws-ap-northeast-1a":
+		"aws-eu-west-1a", "aws-ap-northeast-1a",
+		"gcp-us-central1-f":
 		return true
 	}
 	return false
