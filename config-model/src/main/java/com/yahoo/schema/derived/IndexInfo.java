@@ -189,9 +189,9 @@ public class IndexInfo extends Derived implements IndexInfoConfig.Producer {
     }
 
     private static boolean needLowerCase(ImmutableSDField field) {
-        return field.doesIndexing()
-                || field.doesLowerCasing()
-                || ((field.doesAttributing() || (field.getAttribute() != null))
+        return ( field.doesIndexing() && field.getMatching().getCase() != Case.CASED)
+               || field.doesLowerCasing()
+               || ((field.doesAttributing() || (field.getAttribute() != null))
                     && isAnyChildString(field.getDataType())
                     && field.getMatching().getCase().equals(Case.UNCASED));
     }
