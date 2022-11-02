@@ -3,7 +3,6 @@ package com.yahoo.container.jdisc.metric;
 
 import com.yahoo.container.di.componentgraph.Provider;
 import com.yahoo.jdisc.Metric;
-import com.yahoo.jdisc.application.MetricConsumer;
 
 /**
  * An implementation of {@link Provider} component of <code>Metric</code>. Because this class depends on {@link
@@ -17,13 +16,7 @@ public final class MetricProvider implements Provider<Metric> {
     private final Metric metric;
 
     public MetricProvider(MetricConsumerProvider provider) {
-        metric = new com.yahoo.jdisc.application.MetricProvider(new com.google.inject.Provider<MetricConsumer>() {
-
-            @Override
-            public MetricConsumer get() {
-                return provider.newInstance();
-            }
-        }).get();
+        metric = new com.yahoo.jdisc.application.MetricProvider(provider::newInstance).get();
     }
 
     @Override

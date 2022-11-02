@@ -23,7 +23,6 @@ public class ConfigSet implements ConfigSource {
     @SuppressWarnings({"unchecked", "rawtypes"})
     public void addBuilder(String configId, ConfigInstance.Builder builder) {
         Class<?> configClass = builder.getClass().getDeclaringClass();
-        //System.out.println("Declaring class for builder " + builder + " is " + configClass);
         ConfigKey<?> key = new ConfigKey(configClass, configId);
         configs.put(key, builder);
     }
@@ -56,4 +55,5 @@ public class ConfigSet implements ConfigSource {
         }
         return sb.toString();
     }
+
 }

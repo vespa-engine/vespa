@@ -5,13 +5,11 @@ import com.yahoo.config.ConfigInstance;
 import com.yahoo.config.ConfigurationRuntimeException;
 import com.yahoo.config.subscription.CfgConfigPayloadBuilder;
 import com.yahoo.config.subscription.ConfigInterruptedException;
-import com.yahoo.io.IOUtils;
+import com.yahoo.config.subscription.FileSource;
 import com.yahoo.vespa.config.ConfigKey;
 import com.yahoo.vespa.config.ConfigPayload;
 
-import java.io.File;
 import java.io.IOException;
-import java.util.Arrays;
 
 import static java.util.logging.Level.FINE;
 
@@ -22,20 +20,19 @@ import static java.util.logging.Level.FINE;
  */
 public class FileConfigSubscription<T extends ConfigInstance> extends ConfigSubscription<T> {
 
-    final File file;
+    final FileSource file;
     long ts;
 
-    FileConfigSubscription(ConfigKey<T> key, File f) {
+    FileConfigSubscription(ConfigKey<T> key, FileSource file) {
         super(key);
+        file.validateFile();
         setGeneration(0L);
-        file = f;
-        if (!file.exists() && !file.isFile())
-            throw new IllegalArgumentException("Not a file: " + file);
+        this.file = file;
     }
 
     @Override
     public boolean nextConfig(long timeout) {
-        if (!file.exists() && !file.isFile()) throw new IllegalArgumentException("Not a file: " + file);
+        file.validateFile();
         if (checkReloaded()) {
             log.log(FINE, () -> "User forced config reload at " + System.currentTimeMillis());
             // User forced reload
@@ -45,7 +42,7 @@ public class FileConfigSubscription<T extends ConfigInstance> extends ConfigSubs
             log.log(FINE, () -> "Config: " + configState.getConfig().toString());
             return true;
         }
-        if (file.lastModified() != ts) {
+        if (file.getLastModified() != ts) {
             setConfigIncGen(updateConfig());
             return true;
         }
@@ -59,9 +56,9 @@ public class FileConfigSubscription<T extends ConfigInstance> extends ConfigSubs
     }
 
     private T updateConfig() {
-        ts = file.lastModified();
+        ts = file.getLastModified();
         try {
-            ConfigPayload payload = new CfgConfigPayloadBuilder().deserialize(Arrays.asList(IOUtils.readFile(file).split("\n")));
+            ConfigPayload payload = new CfgConfigPayloadBuilder().deserialize(file.getContent());
             return payload.toInstance(configClass, key.getConfigId());
         } catch (IOException e) {
             throw new ConfigurationRuntimeException(e);

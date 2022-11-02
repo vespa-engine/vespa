@@ -2,60 +2,72 @@
 package com.yahoo.container.di;
 
 import com.yahoo.config.subscription.ConfigSource;
-import com.yahoo.config.subscription.ConfigSourceSet;
+import com.yahoo.config.subscription.DirSource;
+import com.yahoo.config.subscription.FileSource;
+import org.junit.jupiter.api.Assertions;
 
 import java.io.File;
-import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.OutputStream;
-import java.util.Random;
+import java.io.UncheckedIOException;
+import java.nio.file.Files;
+import java.util.HashSet;
+import java.util.Set;
 
 /**
  * @author Tony Vaagenes
  * @author gjoranv
  * @author ollivir
  */
-public class DirConfigSource {
+class DirConfigSource {
 
+    private final Set<String> checked = new HashSet<>();
     private final File tempFolder;
-    public final ConfigSource configSource;
+    private boolean doubleChecked;
 
-    public DirConfigSource(File tmpDir, String testSourcePrefix) {
+    DirConfigSource(File tmpDir) {
         this.tempFolder = tmpDir;
-        this.configSource = new ConfigSourceSet(testSourcePrefix + new Random().nextLong());
     }
 
-    public void writeConfig(String name, String contents) {
-        File file = new File(tempFolder, name + ".cfg");
-        if (!file.exists()) {
-            try {
-                file.createNewFile();
-            } catch (IOException e) {
-                throw new RuntimeException(e);
-            }
+    void writeConfig(String name, String contents) {
+        try {
+            Files.writeString(tempFolder.toPath().resolve(name + ".cfg"), contents);
         }
-
-        printFile(file, contents + "\n");
+        catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
     }
 
-    public String configId() {
+    String configId() {
         return "dir:" + tempFolder.getPath();
     }
 
-    public ConfigSource configSource() {
-        return configSource;
+    synchronized void clearCheckedConfigs() {
+        checked.clear();
+        doubleChecked = false;
     }
 
-    public void cleanup() {
-        tempFolder.delete();
+    synchronized void awaitConfigChecked(long millis) throws InterruptedException {
+         long remaining, doom = System.currentTimeMillis() + millis;
+         while ( ! doubleChecked && (remaining = doom - System.currentTimeMillis()) > 0) wait(remaining);
+        Assertions.assertTrue(doubleChecked, "no config was checked more than once during " + millis + " millis");
     }
 
-    private static void printFile(File f, String content) {
-        try (OutputStream out = new FileOutputStream(f)) {
-            out.write(content.getBytes("UTF-8"));
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
+    ConfigSource configSource() {
+        return new DirSource(tempFolder) {
+            @Override public FileSource getFile(String name) {
+                return new FileSource(new File(tempFolder, name)) {
+                    @Override public long getLastModified() {
+                        synchronized (DirConfigSource.this) {
+                            if ( ! checked.add(name)) {
+                                doubleChecked = true;
+                                DirConfigSource.this.notifyAll();
+                            }
+                            return super.getLastModified();
+                        }
+                    }
+                };
+            }
+        };
     }
 
 }

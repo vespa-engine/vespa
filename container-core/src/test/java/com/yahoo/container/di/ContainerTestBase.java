@@ -6,7 +6,6 @@ import com.yahoo.container.core.config.BundleTestUtil;
 import com.yahoo.container.core.config.TestOsgi;
 import com.yahoo.container.di.ContainerTest.ComponentTakingConfig;
 import com.yahoo.container.di.componentgraph.core.ComponentGraph;
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.io.TempDir;
 import org.osgi.framework.Bundle;
@@ -31,20 +30,14 @@ public class ContainerTestBase {
 
     @BeforeEach
     public void setup() {
-        dirConfigSource = new DirConfigSource(tmpDir, "ContainerTest-");
+        dirConfigSource = new DirConfigSource(tmpDir);
         componentGraph = new ComponentGraph(0);
         osgi = new TestOsgi(BundleTestUtil.testBundles());
     }
 
-    @AfterEach
-    public void cleanup() {
-        dirConfigSource.cleanup();
-    }
-
-
     protected Container newContainer(DirConfigSource dirConfigSource,
                                             ComponentDeconstructor deconstructor) {
-        return new Container(new CloudSubscriberFactory(dirConfigSource.configSource),
+        return new Container(new CloudSubscriberFactory(dirConfigSource.configSource()),
                              dirConfigSource.configId(),
                              deconstructor,
                              osgi);

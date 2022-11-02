@@ -9,7 +9,6 @@ import com.yahoo.container.di.ConfigRetriever.BootstrapConfigs;
 import com.yahoo.container.di.ConfigRetriever.ComponentsConfigs;
 import com.yahoo.container.di.ConfigRetriever.ConfigSnapshot;
 import com.yahoo.vespa.config.ConfigKey;
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
@@ -39,12 +38,7 @@ public class ConfigRetrieverTest {
 
     @BeforeEach
     public void setup() {
-        dirConfigSource = new DirConfigSource(tmpDir, "ConfigRetrieverTest-");
-    }
-
-    @AfterEach
-    public void cleanup() {
-        dirConfigSource.cleanup();
+        dirConfigSource = new DirConfigSource(tmpDir);
     }
 
     @Test
@@ -54,6 +48,7 @@ public class ConfigRetrieverTest {
         ConfigSnapshot bootstrapConfigs = retriever.getConfigs(Collections.emptySet(), 0, true);
 
         assertTrue(bootstrapConfigs instanceof BootstrapConfigs);
+        retriever.shutdown();
     }
 
     @Test
@@ -71,12 +66,12 @@ public class ConfigRetrieverTest {
         } else {
             fail("ComponentsConfigs has unexpected type: " + componentsConfigs);
         }
+        retriever.shutdown();
     }
 
     @Disabled
     @SuppressWarnings("unused")
     public void require_exception_upon_modified_components_keys_without_bootstrap() {
-
         writeConfigs();
         ConfigRetriever retriever = createConfigRetriever();
         ConfigKey<? extends ConfigInstance> testConfigKey = new ConfigKey<>(TestConfig.class, dirConfigSource.configId());
@@ -99,6 +94,7 @@ public class ConfigRetrieverTest {
         ConfigRetriever retriever = createConfigRetriever();
         assertTrue(retriever.getConfigs(Collections.emptySet(), 0, true) instanceof BootstrapConfigs);
         assertTrue(retriever.getConfigs(Collections.emptySet(), 0, true) instanceof ComponentsConfigs);
+        retriever.shutdown();
     }
 
     public void writeConfigs() {

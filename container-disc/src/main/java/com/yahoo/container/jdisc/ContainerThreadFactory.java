@@ -3,7 +3,6 @@ package com.yahoo.container.jdisc;
 
 import com.yahoo.container.jdisc.metric.MetricConsumerProvider;
 import com.yahoo.jdisc.application.ContainerThread;
-import com.yahoo.jdisc.application.MetricConsumer;
 
 import java.util.concurrent.ThreadFactory;
 
@@ -15,14 +14,7 @@ public class ContainerThreadFactory implements ThreadFactory {
     private final ThreadFactory delegate;
 
     public ContainerThreadFactory(MetricConsumerProvider metricConsumerProvider) {
-        metricConsumerProvider.getClass(); // throws NullPointerException
-        delegate = new ContainerThread.Factory(new com.google.inject.Provider<MetricConsumer>() {
-
-            @Override
-            public MetricConsumer get() {
-                return metricConsumerProvider.newInstance();
-            }
-        });
+        delegate = new ContainerThread.Factory(metricConsumerProvider::newInstance);
     }
 
     @Override

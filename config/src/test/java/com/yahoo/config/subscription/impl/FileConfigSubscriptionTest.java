@@ -2,6 +2,7 @@
 package com.yahoo.config.subscription.impl;
 
 import com.yahoo.config.subscription.DirSource;
+import com.yahoo.config.subscription.FileSource;
 import com.yahoo.foo.SimpletypesConfig;
 import com.yahoo.foo.TestReferenceConfig;
 import com.yahoo.vespa.config.ConfigKey;
@@ -42,7 +43,7 @@ public class FileConfigSubscriptionTest {
         writeConfig("intval", "23");
         ConfigSubscription<SimpletypesConfig> sub = new FileConfigSubscription<>(
                 new ConfigKey<>(SimpletypesConfig.class, ""),
-                TEST_TYPES_FILE);
+                new FileSource(TEST_TYPES_FILE));
         assertTrue(sub.nextConfig(1000));
         assertEquals(23, sub.getConfigState().getConfig().intval());
         Thread.sleep(1000);
@@ -56,7 +57,7 @@ public class FileConfigSubscriptionTest {
         writeConfig("intval", "23");
         ConfigSubscription<SimpletypesConfig> sub = new FileConfigSubscription<>(
                 new ConfigKey<>(SimpletypesConfig.class, ""),
-                TEST_TYPES_FILE);
+                new FileSource(TEST_TYPES_FILE));
         assertTrue(sub.nextConfig(1000));
         assertEquals(23, sub.getConfigState().getConfig().intval());
         writeConfig("intval", "33");
@@ -110,9 +111,10 @@ public class FileConfigSubscriptionTest {
         writeConfig("intval", "23");
         ConfigSubscription<SimpletypesConfig> sub = new FileConfigSubscription<>(
                 new ConfigKey<>(SimpletypesConfig.class, ""),
-                TEST_TYPES_FILE);
+                new FileSource(TEST_TYPES_FILE));
         sub.reload(1);
         Files.delete(TEST_TYPES_FILE.toPath()); // delete file so the below statement throws exception
         sub.nextConfig(0);
     }
+
 }
