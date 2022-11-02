@@ -807,7 +807,6 @@ public class HttpServerConformanceTest extends ServerProviderConformanceTest {
                 post.setProtocolVersion(HttpVersion.HTTP_1_1);
                 request = post;
             }
-            request.addHeader("Connection", "close");
             return executorService.submit(() -> httpClient.execute(request));
         }
 
