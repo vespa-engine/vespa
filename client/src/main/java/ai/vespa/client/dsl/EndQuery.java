@@ -76,14 +76,20 @@ public class EndQuery {
     }
 
     /**
-     * Semicolon.
-     * turn a query into fixed query.
+     * Calls fix()
      *
-     * @return the fixed query
+     * @deprecated use {link #fix}
      */
-    public FixedQuery semicolon() {
+    @Deprecated // TODO: Remove on Vespa 9
+    public FixedQuery semicolon() { return fix(); }
+
+    /** Returns a fixed query containing this. */
+    public FixedQuery fix() {
         return new FixedQuery(this);
     }
+
+    /** Calls fix().build() */
+    public String build() { return fix().build(); }
 
     /**
      * Group.
@@ -163,7 +169,7 @@ public class EndQuery {
         StringBuilder sb = new StringBuilder();
         String orderStr = order.stream().map(array -> A.empty().equals(array[0])
                                                       ? Text.format("%s %s", array[1], array[2])
-                                                      : Text.format("[%s]%s %s", array[0], array[1], array[2]))
+                                                      : Text.format("%s%s %s", array[0], array[1], array[2]))
             .collect(Collectors.joining(", "));
 
         String others = map.entrySet().stream()

@@ -54,7 +54,7 @@ public class WeakAnd extends QueryChain {
             s =
             Text.format("weakAnd(%s)",
                         value.queries.stream().map(Object::toString).collect(Collectors.joining(", ")));
-        return hasAnnotation ? Text.format("([%s]%s)", annotation, s) : s;
+        return hasAnnotation ? Text.format("(%s%s)", annotation, s) : s;
     }
 
 }
