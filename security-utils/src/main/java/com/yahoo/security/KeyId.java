@@ -38,7 +38,7 @@ public class KeyId {
      */
     public static KeyId ofBytes(byte[] keyIdBytes) {
         Objects.requireNonNull(keyIdBytes);
-        return new KeyId(keyIdBytes.clone());
+        return new KeyId(Arrays.copyOf(keyIdBytes, keyIdBytes.length));
     }
 
     /**

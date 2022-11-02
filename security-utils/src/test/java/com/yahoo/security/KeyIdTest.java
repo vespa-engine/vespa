@@ -52,7 +52,7 @@ public class KeyIdTest {
     @Test
     void key_id_bytes_are_deep_copied_when_constructed_from_raw_byte_array() {
         byte[] keyBytes = new byte[]{'f','o','o'};
-        byte[] expected = keyBytes.clone();
+        byte[] expected = Arrays.copyOf(keyBytes, keyBytes.length);
         var id = KeyId.ofBytes(keyBytes);
         keyBytes[0] = 'b';
         assertArrayEquals(expected, id.asBytes());
