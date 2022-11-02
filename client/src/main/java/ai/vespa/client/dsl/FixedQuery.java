@@ -332,7 +332,6 @@ public class FixedQuery {
         return this;
     }
 
-
     /**
      * build the query map from the query
      *
@@ -342,7 +341,6 @@ public class FixedQuery {
         if (queryMap != null) {
             return queryMap;
         }
-        assignIndex();
 
         StringBuilder sb = new StringBuilder();
         sb.append("select ")
@@ -372,23 +370,6 @@ public class FixedQuery {
     public String build() {
         return buildQueryMap().entrySet().stream().map(entry -> entry.getKey() + "=" + entry.getValue())
             .collect(Collectors.joining("&"));
-    }
-
-    private void assignIndex() {
-        assignIndex(endQuery.queryChain.getQuery(), new AtomicInteger());
-    }
-
-    private void assignIndex(QueryChain q, AtomicInteger ai) {
-        q.setIndex(ai.incrementAndGet());
-        if (q instanceof Query) {
-            assignIndex((Query) q, ai);
-        }
-    }
-
-    private void assignIndex(Query q, AtomicInteger ai) {
-        q.queries.stream()
-            .filter(QueryChain::nonEmpty)
-            .forEach(qu -> assignIndex(qu, ai));
     }
 
     private Map<String, String> getUserInputs() {
