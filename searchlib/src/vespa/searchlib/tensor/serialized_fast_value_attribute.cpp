@@ -26,4 +26,11 @@ SerializedFastValueAttribute::~SerializedFastValueAttribute()
     _tensorStore.reclaim_all_memory();
 }
 
+vespalib::eval::TypedCells
+SerializedFastValueAttribute::get_vector(uint32_t docid, uint32_t subspace) const
+{
+    EntryRef ref = acquire_entry_ref(docid);
+    return _tensorBufferStore.get_typed_cells(ref, subspace);
+}
+
 }

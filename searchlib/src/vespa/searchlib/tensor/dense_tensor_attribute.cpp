@@ -93,9 +93,9 @@ DenseTensorAttribute::get_state(const vespalib::slime::Inserter& inserter) const
 }
 
 vespalib::eval::TypedCells
-DenseTensorAttribute::get_vector(uint32_t docid) const
+DenseTensorAttribute::get_vector(uint32_t docid, uint32_t subspace) const
 {
-    EntryRef ref = acquire_entry_ref(docid);
+    EntryRef ref = (subspace == 0) ? acquire_entry_ref(docid) : EntryRef();
     return _denseTensorStore.get_typed_cells(ref);
 }
 

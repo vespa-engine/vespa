@@ -132,10 +132,10 @@ protected:
 
     inline TypedCells get_vector(uint32_t nodeid) const {
         uint32_t docid = get_docid(nodeid);
-        return _vectors.get_vector(docid);
+        return _vectors.get_vector(docid, 0);
     }
     inline TypedCells get_vector_by_docid(uint32_t docid) const {
-        return _vectors.get_vector(docid);
+        return _vectors.get_vector(docid, 0);
     }
 
     double calc_distance(uint32_t lhs_nodeid, uint32_t rhs_nodeid) const;

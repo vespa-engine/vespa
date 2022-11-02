@@ -3,6 +3,7 @@
 #pragma once
 
 #include "i_tensor_attribute.h"
+#include "doc_vector_access.h"
 #include "prepare_result.h"
 #include "tensor_store.h"
 #include <vespa/searchlib/attribute/not_implemented_attribute.h>
@@ -16,8 +17,7 @@ namespace search::tensor {
 /**
  * Attribute vector class used to store tensors for all documents in memory.
  */
-class TensorAttribute : public NotImplementedAttribute, public ITensorAttribute
-{
+class TensorAttribute : public NotImplementedAttribute, public ITensorAttribute, public DocVectorAccess {
 protected:
     using AtomicEntryRef = vespalib::datastore::AtomicEntryRef;
     using EntryRef = TensorStore::EntryRef;

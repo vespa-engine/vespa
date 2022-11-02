@@ -21,6 +21,9 @@ class SerializedFastValueAttribute : public TensorAttribute {
 public:
     SerializedFastValueAttribute(vespalib::stringref baseFileName, const Config &cfg);
     ~SerializedFastValueAttribute() override;
+
+    // Implements DocVectorAccess
+    vespalib::eval::TypedCells get_vector(uint32_t docid, uint32_t subspace) const override;
 };
 
 }

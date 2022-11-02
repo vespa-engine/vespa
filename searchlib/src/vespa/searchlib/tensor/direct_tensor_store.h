@@ -3,6 +3,8 @@
 #pragma once
 
 #include "tensor_store.h"
+#include "empty_subspace.h"
+#include <vespa/eval/eval/value.h>
 #include <vespa/vespalib/datastore/datastore.h>
 
 namespace vespalib::eval { struct Value; }
@@ -32,11 +34,12 @@ private:
     };
 
     TensorStoreType _tensor_store;
+    EmptySubspace   _empty;
 
     EntryRef add_entry(TensorSP tensor);
 
 public:
-    DirectTensorStore();
+    DirectTensorStore(const vespalib::eval::ValueType& tensor_type);
     ~DirectTensorStore() override;
     using RefType = TensorStoreType::RefType;
 
@@ -56,6 +59,17 @@ public:
     EntryRef store_encoded_tensor(vespalib::nbostream& encoded) override;
     std::unique_ptr<vespalib::eval::Value> get_tensor(EntryRef ref) const override;
     bool encode_stored_tensor(EntryRef ref, vespalib::nbostream& target) const override;
+    vespalib::eval::TypedCells get_typed_cells(EntryRef ref, uint32_t subspace) const {
+        auto tensor = get_tensor_ptr(ref);
+        if (tensor == nullptr || subspace >= tensor->index().size()) {
+            return _empty.empty();
+        }
+        auto cells = tensor->cells();
+        auto type = tensor->type();
+        auto data = static_cast<const char *>(cells.data);
+        auto dense_subspace_size = type.dense_subspace_size();
+        return vespalib::eval::TypedCells(data + vespalib::eval::CellTypeUtils::mem_size(type.cell_type(), subspace * dense_subspace_size), cells.type, dense_subspace_size);
+    }
 };
 
 }

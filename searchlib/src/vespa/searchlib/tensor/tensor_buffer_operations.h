@@ -2,7 +2,7 @@
 
 #pragma once
 
-#include <vespa/eval/eval/cell_type.h>
+#include "empty_subspace.h"
 #include <vespa/vespalib/datastore/aligner.h>
 #include <vespa/vespalib/util/arrayref.h>
 #include <vespa/vespalib/util/string_id.h>
@@ -45,6 +45,7 @@ class TensorBufferOperations
     vespalib::eval::CellType          _cell_type;
     std::vector<vespalib::string_id>  _addr;
     std::vector<vespalib::string_id*> _addr_refs;
+    EmptySubspace                     _empty;
 
     using Aligner = vespalib::datastore::Aligner<vespalib::datastore::dynamic_alignment>;
 
@@ -99,6 +100,18 @@ public:
     void reclaim_labels(vespalib::ArrayRef<char> buf) const;
     // Serialize stored tensor to target (used when saving attribute)
     void encode_stored_tensor(vespalib::ConstArrayRef<char> buf, const vespalib::eval::ValueType& type, vespalib::nbostream& target) const;
+    vespalib::eval::TypedCells get_empty_subspace() const noexcept {
+        return _empty.empty();
+    }
+    vespalib::eval::TypedCells get_typed_cells(vespalib::ConstArrayRef<char> buf, uint32_t subspace) const {
+        auto num_subspaces = get_num_subspaces(buf);
+        if (subspace >= num_subspaces) {
+            return _empty.empty();
+        }
+        auto cells_mem_size = get_cells_mem_size(num_subspaces);
+        auto aligner = select_aligner(cells_mem_size);
+        return vespalib::eval::TypedCells(buf.data() + get_cells_offset(num_subspaces, aligner) + get_cells_mem_size(subspace), _cell_type, _dense_subspace_size);
+    }
 };
 
 }
