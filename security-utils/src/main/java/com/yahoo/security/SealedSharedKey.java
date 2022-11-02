@@ -19,20 +19,14 @@ import static com.yahoo.security.ArrayUtils.toUtf8Bytes;
  * This token representation is expected to be used as a convenient serialization
  * form when communicating shared keys.
  */
-public record SealedSharedKey(byte[] keyId, byte[] enc, byte[] ciphertext) {
+public record SealedSharedKey(KeyId keyId, byte[] enc, byte[] ciphertext) {
 
     /** Current encoding version of opaque sealed key tokens. Must be less than 256. */
     public static final int CURRENT_TOKEN_VERSION = 1;
-    public static final int MAX_KEY_ID_UTF8_LENGTH = 255;
     /** Encryption context for v1 tokens is always a 32-byte X25519 public key */
     public static final int MAX_ENC_CONTEXT_LENGTH = 255;
 
     public SealedSharedKey {
-        if (keyId.length > MAX_KEY_ID_UTF8_LENGTH) {
-            throw new IllegalArgumentException("Key ID is too large to be encoded (max is %d, got %d)"
-                    .formatted(MAX_KEY_ID_UTF8_LENGTH, keyId.length));
-        }
-        verifyByteStringRoundtripsAsValidUtf8(keyId);
         if (enc.length > MAX_ENC_CONTEXT_LENGTH) {
             throw new IllegalArgumentException("Encryption context is too large to be encoded (max is %d, got %d)"
                     .formatted(MAX_ENC_CONTEXT_LENGTH, enc.length));
@@ -44,11 +38,12 @@ public record SealedSharedKey(byte[] keyId, byte[] enc, byte[] ciphertext) {
      * reconstruct the SealedSharedKey instance when passed verbatim to fromTokenString().
      */
     public String toTokenString() {
+        byte[] keyIdBytes = keyId.asBytes();
         // u8 token version || u8 length(key id) || key id || u8 length(enc) || enc || ciphertext
-        ByteBuffer encoded = ByteBuffer.allocate(1 + 1 + keyId.length + 1 + enc.length + ciphertext.length);
+        ByteBuffer encoded = ByteBuffer.allocate(1 + 1 + keyIdBytes.length + 1 + enc.length + ciphertext.length);
         encoded.put((byte)CURRENT_TOKEN_VERSION);
-        encoded.put((byte)keyId.length);
-        encoded.put(keyId);
+        encoded.put((byte)keyIdBytes.length);
+        encoded.put(keyIdBytes);
         encoded.put((byte)enc.length);
         encoded.put(enc);
         encoded.put(ciphertext);
@@ -76,24 +71,15 @@ public record SealedSharedKey(byte[] keyId, byte[] enc, byte[] ciphertext) {
                                                .formatted(CURRENT_TOKEN_VERSION, version));
         }
         int keyIdLen = Byte.toUnsignedInt(decoded.get());
-        byte[] keyId = new byte[keyIdLen];
-        decoded.get(keyId);
-        verifyByteStringRoundtripsAsValidUtf8(keyId);
+        byte[] keyIdBytes = new byte[keyIdLen];
+        decoded.get(keyIdBytes);
         int encLen = Byte.toUnsignedInt(decoded.get());
         byte[] enc = new byte[encLen];
         decoded.get(enc);
         byte[] ciphertext = new byte[decoded.remaining()];
         decoded.get(ciphertext);
 
-        return new SealedSharedKey(keyId, enc, ciphertext);
-    }
-
-    private static void verifyByteStringRoundtripsAsValidUtf8(byte[] byteStr) {
-        String asStr   = fromUtf8Bytes(byteStr); // Replaces bad chars with a placeholder
-        byte[] asBytes = toUtf8Bytes(asStr);
-        if (!Arrays.equals(byteStr, asBytes)) {
-            throw new IllegalArgumentException("Key ID is not valid normalized UTF-8");
-        }
+        return new SealedSharedKey(KeyId.ofBytes(keyIdBytes), enc, ciphertext);
     }
 
     public int tokenVersion() { return CURRENT_TOKEN_VERSION; }

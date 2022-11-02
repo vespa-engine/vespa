@@ -21,7 +21,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 
 public class SharedKeyTest {
 
-    private static final byte[] KEY_ID_1 = new byte[] {1};
+    private static final KeyId KEY_ID_1 = KeyId.ofString("1");
 
     @Test
     void generated_secret_key_is_128_bit_aes() {
@@ -49,7 +49,7 @@ public class SharedKeyTest {
     void token_v1_representation_is_stable() {
         var receiverPrivate = KeyUtils.fromBase64EncodedX25519PrivateKey("4qGcntygFn_a3uqeBa1PbDlygQ-cpOuNznTPIz9ftWE");
         var receiverPublic  = KeyUtils.fromBase64EncodedX25519PublicKey( "ROAH_S862tNMpbJ49lu1dPXFCPHFIXZK30pSrMZEmEg");
-        byte[] keyId        = toUtf8Bytes("my key ID");
+        var keyId           = KeyId.ofString("my key ID");
 
         // Token generated for the above receiver public key, with the below expected shared secret (in hex)
         var publicToken = "AQlteSBrZXkgSUQgAtTxJJdmv3eUoW5Z3NJSdZ3poKPEkW0SJOGQXP6CaC5XfyAVoUlK_NyYIMsJKyNYKU6WmagZpVG2zQGFJoqiFA";
@@ -58,7 +58,7 @@ public class SharedKeyTest {
         var theirSealed = SealedSharedKey.fromTokenString(publicToken);
         var theirShared = SharedKeyGenerator.fromSealedKey(theirSealed, receiverPrivate);
 
-        assertArrayEquals(keyId, theirSealed.keyId());
+        assertEquals(keyId, theirSealed.keyId());
         assertEquals(expectedSharedSecret, hex(theirShared.secretKey().getEncoded()));
     }
 
@@ -73,21 +73,21 @@ public class SharedKeyTest {
 
     @Test
     void token_carries_opaque_key_id_bytes_as_metadata() {
-        byte[] keyId    = toUtf8Bytes("hello key id world");
+        var keyId       = KeyId.ofString("hello key id world");
         var keyPair     = KeyUtils.generateX25519KeyPair();
         var myShared    = SharedKeyGenerator.generateForReceiverPublicKey(keyPair.getPublic(), keyId);
         var publicToken = myShared.sealedSharedKey().toTokenString();
         var theirShared = SealedSharedKey.fromTokenString(publicToken);
-        assertArrayEquals(theirShared.keyId(), keyId);
+        assertEquals(theirShared.keyId(), keyId);
     }
 
     @Test
     void key_id_integrity_is_protected_by_aad() {
-        byte[] goodId = toUtf8Bytes("my key 1");
-        var keyPair   = KeyUtils.generateX25519KeyPair();
-        var myShared  = SharedKeyGenerator.generateForReceiverPublicKey(keyPair.getPublic(), goodId);
-        var mySealed  = myShared.sealedSharedKey();
-        byte[] badId  = toUtf8Bytes("my key 2");
+        var goodId   = KeyId.ofString("my key 1");
+        var keyPair  = KeyUtils.generateX25519KeyPair();
+        var myShared = SharedKeyGenerator.generateForReceiverPublicKey(keyPair.getPublic(), goodId);
+        var mySealed = myShared.sealedSharedKey();
+        var badId    = KeyId.ofString("my key 2");
 
         var tamperedShared = new SealedSharedKey(badId, mySealed.enc(), mySealed.ciphertext());
         // Should not be able to unseal the token since the AAD auth tag won't be correct
@@ -96,44 +96,32 @@ public class SharedKeyTest {
     }
 
     @Test
-    void key_id_encoding_size_is_bounded() {
-        byte[] okId = new byte[SealedSharedKey.MAX_KEY_ID_UTF8_LENGTH];
-        Arrays.fill(okId, (byte)'A');
+    void can_encode_and_decode_largest_possible_key_id() {
+        byte[] okIdBytes = new byte[KeyId.MAX_KEY_ID_UTF8_LENGTH];
+        Arrays.fill(okIdBytes, (byte)'A');
+        var okId     = KeyId.ofBytes(okIdBytes);
         var keyPair  = KeyUtils.generateX25519KeyPair();
         var myShared = SharedKeyGenerator.generateForReceiverPublicKey(keyPair.getPublic(), okId);
-        assertArrayEquals(okId, myShared.sealedSharedKey().keyId());
+        assertEquals(okId, myShared.sealedSharedKey().keyId());
 
         var asToken = myShared.sealedSharedKey().toTokenString();
         var decoded = SealedSharedKey.fromTokenString(asToken);
-        assertArrayEquals(okId, decoded.keyId());
-
-        byte[] tooBigId = new byte[SealedSharedKey.MAX_KEY_ID_UTF8_LENGTH + 1];
-        Arrays.fill(tooBigId, (byte)'A');
-        assertThrows(IllegalArgumentException.class,
-                     () -> SharedKeyGenerator.generateForReceiverPublicKey(keyPair.getPublic(), tooBigId));
-    }
-
-    @Test
-    void malformed_utf8_key_id_is_rejected_on_construction() {
-        byte[] malformedId = new byte[]{ (byte)0xC0 }; // First part of a 2-byte continuation without trailing byte
-        var keyPair = KeyUtils.generateX25519KeyPair();
-        assertThrows(IllegalArgumentException.class,
-                     () -> SharedKeyGenerator.generateForReceiverPublicKey(keyPair.getPublic(), malformedId));
+        assertEquals(okId, decoded.keyId());
     }
 
     // TODO make this test less implementation specific if possible...
     @Test
     void malformed_utf8_key_id_is_rejected_on_parsing() {
-        byte[] goodId = new byte[] { (byte)'A' };
-        var keyPair   = KeyUtils.generateX25519KeyPair();
-        var myShared  = SharedKeyGenerator.generateForReceiverPublicKey(keyPair.getPublic(), goodId);
+        var goodId   = KeyId.ofBytes(new byte[] { (byte)'A' });
+        var keyPair  = KeyUtils.generateX25519KeyPair();
+        var myShared = SharedKeyGenerator.generateForReceiverPublicKey(keyPair.getPublic(), goodId);
 
         // token header is u8 version || u8 key id length || key id bytes ...
-        // Since the key ID is only 1 bytes long, patch it with a bad UTF-8 value (see above test)
+        // Since the key ID is only 1 bytes long, patch it with a bad UTF-8 value
         byte[] tokenBytes = Base64.getUrlDecoder().decode(myShared.sealedSharedKey().toTokenString());
-        tokenBytes[2] = (byte)0xC0;
-        var tokenStr = Base64.getUrlEncoder().encodeToString(tokenBytes);
-        assertThrows(IllegalArgumentException.class, () -> SealedSharedKey.fromTokenString(tokenStr));
+        tokenBytes[2] = (byte)0xC0; // First part of a 2-byte continuation without trailing byte
+        var patchedTokenStr = Base64.getUrlEncoder().encodeToString(tokenBytes);
+        assertThrows(IllegalArgumentException.class, () -> SealedSharedKey.fromTokenString(patchedTokenStr));
     }
 
     static byte[] streamEncryptString(String data, SecretSharedKey secretSharedKey) throws IOException {
