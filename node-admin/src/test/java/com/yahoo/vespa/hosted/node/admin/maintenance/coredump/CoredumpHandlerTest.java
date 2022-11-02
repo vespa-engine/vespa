@@ -1,6 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.node.admin.maintenance.coredump;
 
+import com.yahoo.security.KeyId;
 import com.yahoo.security.SealedSharedKey;
 import com.yahoo.security.SecretSharedKey;
 import com.yahoo.test.ManualClock;
@@ -303,7 +304,7 @@ public class CoredumpHandlerTest {
     private static SecretSharedKey makeFixedSecretSharedKey() {
         byte[] keyBytes = bytesOf("very secret yes!"); // 128 bits
         var secretKey = new SecretKeySpec(keyBytes, "AES");
-        byte[] keyId = bytesOf("the shiniest key");
+        var keyId = KeyId.ofString("the shiniest key");
         // We don't parse any of these fields in the test, so just use dummy contents.
         byte[] enc = bytesOf("hello world");
         byte[] ciphertext = bytesOf("imaginary ciphertext");

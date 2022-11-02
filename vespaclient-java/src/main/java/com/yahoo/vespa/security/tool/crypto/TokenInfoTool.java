@@ -47,7 +47,7 @@ public class TokenInfoTool implements Tool {
         var stdOut = invocation.stdOut();
 
         stdOut.format("Version:         %d\n", token.tokenVersion());
-        stdOut.format("Key ID:          %s (%s)\n", StringUtilities.escape(fromUtf8Bytes(token.keyId())), hex(token.keyId()));
+        stdOut.format("Key ID:          %s (%s)\n", StringUtilities.escape(token.keyId().asString()), hex(token.keyId().asBytes()));
         stdOut.format("HPKE enc:        %s\n", hex(token.enc()));
         stdOut.format("HPKE ciphertext: %s\n", hex(token.ciphertext()));
 

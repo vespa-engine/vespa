@@ -1,6 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.security.tool.crypto;
 
+import com.yahoo.security.KeyId;
 import com.yahoo.security.KeyUtils;
 import com.yahoo.security.SealedSharedKey;
 import com.yahoo.security.SharedKeyGenerator;
@@ -95,8 +96,8 @@ public class DecryptTool implements Tool {
             var tokenString = CliUtils.optionOrThrow(arguments, TOKEN_OPTION);
             var sealedSharedKey = SealedSharedKey.fromTokenString(tokenString.strip());
             if (maybeKeyId.isPresent()) {
-                byte[] myKeyIdBytes = toUtf8Bytes(maybeKeyId.get());
-                if (!Arrays.equals(myKeyIdBytes, sealedSharedKey.keyId())) {
+                var myKeyId = KeyId.ofString(maybeKeyId.get());
+                if (!myKeyId.equals(sealedSharedKey.keyId())) {
                     // Don't include raw key bytes array verbatim in message (may contain control chars etc).
                     throw new IllegalArgumentException("Key ID specified with --key-id does not match key ID " +
                                                        "used when generating the supplied token");

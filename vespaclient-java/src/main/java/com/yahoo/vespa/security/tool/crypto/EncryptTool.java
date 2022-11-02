@@ -1,6 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.security.tool.crypto;
 
+import com.yahoo.security.KeyId;
 import com.yahoo.security.KeyUtils;
 import com.yahoo.security.SharedKeyGenerator;
 import com.yahoo.vespa.security.tool.CliUtils;
@@ -79,7 +80,7 @@ public class EncryptTool implements Tool {
             var outputPath = Paths.get(CliUtils.optionOrThrow(arguments, OUTPUT_FILE_OPTION));
 
             var recipientPubKey = KeyUtils.fromBase64EncodedX25519PublicKey(CliUtils.optionOrThrow(arguments, RECIPIENT_PUBLIC_KEY_OPTION).strip());
-            var keyId  = toUtf8Bytes(CliUtils.optionOrThrow(arguments, KEY_ID_OPTION));
+            var keyId  = KeyId.ofString(CliUtils.optionOrThrow(arguments, KEY_ID_OPTION));
             var shared = SharedKeyGenerator.generateForReceiverPublicKey(recipientPubKey, keyId);
             var cipher = SharedKeyGenerator.makeAesGcmEncryptionCipher(shared);
 
