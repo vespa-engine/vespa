@@ -1,0 +1,4 @@
+Version:         1
+Key ID:          my key ID (6d79206b6579204944)
+HPKE enc:        02d4f1249766bf7794a16e59dcd252759de9a0a3c4916d1224e1905cfe82682e
+HPKE ciphertext: 577f2015a1494afcdc9820cb092b2358294e9699a819a551b6cd0185268aa214
