@@ -37,6 +37,7 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -50,19 +51,19 @@ import java.util.stream.Collectors;
  * @author freva
  * @author mpolden
  */
-public class DynamicProvisioningMaintainer extends NodeRepositoryMaintainer {
+public class HostCapacityMaintainer extends NodeRepositoryMaintainer {
 
-    private static final Logger log = Logger.getLogger(DynamicProvisioningMaintainer.class.getName());
+    private static final Logger log = Logger.getLogger(HostCapacityMaintainer.class.getName());
 
     private final HostProvisioner hostProvisioner;
     private final ListFlag<ClusterCapacity> preprovisionCapacityFlag;
     private final JacksonFlag<SharedHost> sharedHostFlag;
 
-    DynamicProvisioningMaintainer(NodeRepository nodeRepository,
-                                  Duration interval,
-                                  HostProvisioner hostProvisioner,
-                                  FlagSource flagSource,
-                                  Metric metric) {
+    HostCapacityMaintainer(NodeRepository nodeRepository,
+                           Duration interval,
+                           HostProvisioner hostProvisioner,
+                           FlagSource flagSource,
+                           Metric metric) {
         super(nodeRepository, interval, metric);
         this.hostProvisioner = hostProvisioner;
         this.preprovisionCapacityFlag = PermanentFlags.PREPROVISION_CAPACITY.bindTo(flagSource);
@@ -72,42 +73,46 @@ public class DynamicProvisioningMaintainer extends NodeRepositoryMaintainer {
     @Override
     protected double maintain() {
         NodeList nodes = nodeRepository().nodes().list();
-        convergeToCapacity(nodes);
-        return 1.0;
-    }
-
-    /** Converge zone to wanted capacity */
-    private void convergeToCapacity(NodeList nodes) {
         List<Node> excessHosts;
         try {
             excessHosts = provision(nodes);
         } catch (NodeAllocationException | IllegalStateException e) {
             log.log(Level.WARNING, "Failed to allocate preprovisioned capacity and/or find excess hosts: " + e.getMessage());
-            return;  // avoid removing excess hosts
+            return 0;  // avoid removing excess hosts
         } catch (RuntimeException e) {
             log.log(Level.WARNING, "Failed to allocate preprovisioned capacity and/or find excess hosts", e);
-            return;  // avoid removing excess hosts
+            return 0;  // avoid removing excess hosts
         }
 
-        excessHosts.forEach(host -> {
-            Optional<NodeMutex> optionalMutex = nodeRepository().nodes().lockAndGet(host, Duration.ofSeconds(10));
-            if (optionalMutex.isEmpty()) return;
-            try (NodeMutex mutex = optionalMutex.get()) {
-                if (host.state() != mutex.node().state()) return;
-                host = mutex.node();
-                // First mark the host as wantToDeprovision so that if hostProvisioner fails, this host
-                // * won't get new nodes allocated to it
-                // * will be selected as excess on next iteration of this maintainer
-                nodeRepository().nodes().deprovision(host.hostname(), Agent.DynamicProvisioningMaintainer, nodeRepository().clock().instant());
-                hostProvisioner.deprovision(host);
-                nodeRepository().nodes().removeRecursively(host, true);
-            } catch (UncheckedTimeoutException e) {
-                log.log(Level.WARNING, "Failed to deprovision " + host.hostname() +
-                                       ": Failed to get lock on node, will retry later");
-            } catch (RuntimeException e) {
-                log.log(Level.WARNING, "Failed to deprovision " + host.hostname() + ", will retry in " + interval(), e);
+        markForRemoval(excessHosts);
+        return 1;
+    }
+
+    private void markForRemoval(List<Node> excessHosts) {
+        if (excessHosts.isEmpty()) return;
+
+        try (var lock = nodeRepository().nodes().lockUnallocated()) {
+            NodeList nodes = nodeRepository().nodes().list(); // Reread nodes under lock
+            for (Node host : excessHosts) {
+                Optional<NodeMutex> optionalMutex = nodeRepository().nodes().lockAndGet(host, Duration.ofSeconds(10));
+                if (optionalMutex.isEmpty()) continue;
+                try (NodeMutex mutex = optionalMutex.get()) {
+                    host = mutex.node();
+                    if (!canRemoveHost(host)) continue;
+                    if (!nodes.childrenOf(host).stream().allMatch(HostCapacityMaintainer::canDeprovision))
+                        continue;
+
+                    // Retire the host to parked if possible, otherwise move it straight to parked
+                    if (EnumSet.of(Node.State.reserved, Node.State.active, Node.State.inactive).contains(host.state())) {
+                        Node retiredHost = host.withWantToRetire(true, true, Agent.DynamicProvisioningMaintainer, nodeRepository().clock().instant());
+                        nodeRepository().nodes().write(retiredHost, mutex);
+                    } else nodeRepository().nodes().park(host.hostname(), true, Agent.DynamicProvisioningMaintainer, "Parked for removal");
+                } catch (UncheckedTimeoutException e) {
+                    log.log(Level.WARNING, "Failed to mark " + host.hostname() +
+                            " for deprovisioning: Failed to get lock on node, will retry later");
+                }
             }
-        });
+        }
     }
 
     /**
@@ -153,7 +158,7 @@ public class DynamicProvisioningMaintainer extends NodeRepositoryMaintainer {
             }
         }
         for (var node : nodes) {
-            if (node.parentHostname().isPresent() && !canRemoveNode(node)) {
+            if (node.parentHostname().isPresent() && !canDeprovision(node)) {
                 removableHostsByHostname.remove(node.parentHostname().get());
             }
         }
@@ -169,12 +174,7 @@ public class DynamicProvisioningMaintainer extends NodeRepositoryMaintainer {
         };
     }
 
-    private static boolean canRemoveNode(Node node) {
-        if (node.type().isHost()) throw new IllegalArgumentException("Node " + node + " is not a child");
-        return node.allocation().isEmpty() || canDeprovision(node);
-    }
-
-    private static boolean canDeprovision(Node node) {
+    static boolean canDeprovision(Node node) {
         return node.status().wantToDeprovision() && (node.state() == Node.State.parked ||
                                                      node.state() == Node.State.failed);
     }

@@ -70,7 +70,8 @@ public class NodeRepositoryMaintenance extends AbstractComponent {
                                 .ifPresent(maintainers::add);
         provisionServiceProvider.getHostProvisioner()
                                 .map(hostProvisioner -> List.of(
-                                        new DynamicProvisioningMaintainer(nodeRepository, defaults.dynamicProvisionerInterval, hostProvisioner, flagSource, metric),
+                                        new HostCapacityMaintainer(nodeRepository, defaults.dynamicProvisionerInterval, hostProvisioner, flagSource, metric),
+                                        new HostDeprovisioner(nodeRepository, defaults.hostDeprovisionerInterval, metric, hostProvisioner),
                                         new HostResumeProvisioner(nodeRepository, defaults.hostResumeProvisionerInterval, metric, hostProvisioner),
                                         new HostRetirer(nodeRepository, defaults.hostRetirerInterval, metric, hostProvisioner),
                                         new DiskReplacer(nodeRepository, defaults.diskReplacerInterval, metric, hostProvisioner)))
@@ -113,6 +114,7 @@ public class NodeRepositoryMaintenance extends AbstractComponent {
         private final Duration infrastructureProvisionInterval;
         private final Duration loadBalancerExpirerInterval;
         private final Duration dynamicProvisionerInterval;
+        private final Duration hostDeprovisionerInterval;
         private final Duration hostResumeProvisionerInterval;
         private final Duration diskReplacerInterval;
         private final Duration osUpgradeActivatorInterval;
@@ -128,6 +130,7 @@ public class NodeRepositoryMaintenance extends AbstractComponent {
         DefaultTimes(Zone zone, Deployer deployer) {
             autoscalingInterval = Duration.ofMinutes(5);
             dynamicProvisionerInterval = Duration.ofMinutes(3);
+            hostDeprovisionerInterval = Duration.ofMinutes(3);
             hostResumeProvisionerInterval = Duration.ofMinutes(3);
             diskReplacerInterval = Duration.ofMinutes(3);
             failedExpirerInterval = Duration.ofMinutes(10);
