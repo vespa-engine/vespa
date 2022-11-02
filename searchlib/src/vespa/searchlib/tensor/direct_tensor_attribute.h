@@ -23,6 +23,9 @@ public:
     void set_tensor(DocId docId, std::unique_ptr<vespalib::eval::Value> tensor);
     const vespalib::eval::Value &get_tensor_ref(DocId docId) const override;
     bool supports_get_tensor_ref() const override { return true; }
+
+    // Implements DocVectorAccess
+    vespalib::eval::TypedCells get_vector(uint32_t docid, uint32_t subspace) const override;
 };
 
 }  // namespace search::tensor

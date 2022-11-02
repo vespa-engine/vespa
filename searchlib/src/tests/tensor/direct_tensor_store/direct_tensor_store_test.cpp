@@ -2,22 +2,23 @@
 
 #include <vespa/searchlib/tensor/direct_tensor_store.h>
 #include <vespa/vespalib/gtest/gtest.h>
-#include <vespa/eval/eval/simple_value.h>
+#include <vespa/eval/eval/fast_value.h>
 #include <vespa/eval/eval/tensor_spec.h>
 #include <vespa/eval/eval/value.h>
+#include <vespa/eval/eval/value_codec.h>
 #include <vespa/vespalib/datastore/datastore.hpp>
 
 using namespace search::tensor;
 
 using vespalib::datastore::EntryRef;
-using vespalib::eval::SimpleValue;
+using vespalib::eval::FastValueBuilderFactory;
 using vespalib::eval::TensorSpec;
 using vespalib::eval::Value;
 using vespalib::eval::ValueType;
 using vespalib::eval::TypedCells;
 using vespalib::MemoryUsage;
 
-vespalib::string tensor_spec("tensor(x{})");
+vespalib::string tensor_type_spec("tensor(x{})");
 
 class MockBigTensor : public Value
 {
@@ -41,21 +42,21 @@ public:
 Value::UP
 make_tensor(const TensorSpec& spec)
 {
-    auto value = SimpleValue::from_spec(spec);
+    auto value = value_from_spec(spec, FastValueBuilderFactory::get());
     return std::make_unique<MockBigTensor>(std::move(value));
 }
 
 Value::UP
 make_tensor(double value)
 {
-    return make_tensor(TensorSpec(tensor_spec).add({{"x", "a"}}, value));
+    return make_tensor(TensorSpec(tensor_type_spec).add({{"x", "a"}}, value));
 }
 
 class DirectTensorStoreTest : public ::testing::Test {
 public:
     DirectTensorStore store;
 
-    DirectTensorStoreTest() : store() {}
+    DirectTensorStoreTest() : store(ValueType::from_spec(tensor_type_spec)) {}
 
     virtual ~DirectTensorStoreTest() {
         store.reclaim_all_memory();
@@ -122,6 +123,26 @@ TEST_F(DirectTensorStoreTest, move_on_compact_allocates_new_entry_and_leaves_old
     expect_tensor(exp, ref_2);
     EXPECT_EQ(0, mem_2.allocatedBytesOnHold());
     EXPECT_GT(mem_2.usedBytes(), mem_1.usedBytes() + tensor_mem_usage.allocatedBytes());
+}
+
+TEST_F(DirectTensorStoreTest, get_typed_cells)
+{
+    auto tensor_spec = TensorSpec(tensor_type_spec).add({{"x", "a"}}, 4.5).add({{"x", "b"}}, 5.5).add({{"x", "c"}}, 6.5).add({{"x", "d"}}, 7.5);
+    auto tensor = value_from_spec(tensor_spec, FastValueBuilderFactory::get());
+    auto ref = store.store_tensor(std::move(tensor));
+    std::vector<double> values;
+    for (uint32_t subspace = 0; subspace < 4; ++subspace) {
+        auto cells = store.get_typed_cells(ref, subspace).typify<double>();
+        EXPECT_EQ(1, cells.size());
+        values.emplace_back(cells[0]);
+    }
+    EXPECT_EQ((std::vector<double>{4.5, 5.5, 6.5, 7.5}), values);
+    for (auto tref : { ref, EntryRef() }) {
+        auto subspace = tref.valid() ? 4 : 0;
+        auto cells = store.get_typed_cells(tref, subspace).typify<double>();
+        EXPECT_EQ(1, cells.size());
+        EXPECT_EQ(0.0, cells[0]);
+    }
 }
 
 GTEST_MAIN_RUN_ALL_TESTS()

@@ -34,6 +34,13 @@ public:
     EntryRef store_encoded_tensor(vespalib::nbostream& encoded) override;
     std::unique_ptr<vespalib::eval::Value> get_tensor(EntryRef ref) const override;
     bool encode_stored_tensor(EntryRef ref, vespalib::nbostream& target) const override;
+    vespalib::eval::TypedCells get_typed_cells(EntryRef ref, uint32_t subspace) const {
+        if (!ref.valid()) {
+            return _ops.get_empty_subspace();
+        }
+        auto buf = _array_store.get(ref);
+        return _ops.get_typed_cells(buf, subspace);
+    }
 };
 
 }

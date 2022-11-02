@@ -1,14 +1,15 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include <vespa/searchlib/tensor/tensor_buffer_store.h>
-#include <vespa/eval/eval/simple_value.h>
+#include <vespa/eval/eval/fast_value.h>
 #include <vespa/eval/eval/tensor_spec.h>
 #include <vespa/eval/eval/value.h>
+#include <vespa/eval/eval/value_codec.h>
 #include <vespa/vespalib/gtest/gtest.h>
 
 using search::tensor::TensorBufferStore;
 using vespalib::datastore::EntryRef;
-using vespalib::eval::SimpleValue;
+using vespalib::eval::FastValueBuilderFactory;
 using vespalib::eval::TensorSpec;
 using vespalib::eval::Value;
 using vespalib::eval::ValueType;
@@ -52,7 +53,7 @@ TensorBufferStoreTest::store_tensor(const Value& tensor)
 EntryRef
 TensorBufferStoreTest::store_tensor(const TensorSpec& spec)
 {
-    auto tensor = SimpleValue::from_spec(spec);
+    auto tensor = value_from_spec(spec, FastValueBuilderFactory::get());
     return store_tensor(*tensor);
 }
 
@@ -158,6 +159,24 @@ TEST_F(TensorBufferStoreTest, stored_tensor_can_be_encoded_and_stored_as_encoded
 {
     for (auto& tensor_spec : tensor_specs) {
         assert_store_encode_store_encoded_load(tensor_spec);
+    }
+}
+
+TEST_F(TensorBufferStoreTest, get_typed_cells)
+{
+    auto ref = store_tensor(tensor_specs.back());
+    std::vector<double> values;
+    for (uint32_t subspace = 0; subspace < 4; ++subspace) {
+        auto cells = _store.get_typed_cells(ref, subspace).typify<double>();
+        EXPECT_EQ(1, cells.size());
+        values.emplace_back(cells[0]);
+    }
+    EXPECT_EQ((std::vector<double>{4.5, 5.5, 6.5, 7.5}), values);
+    for (auto tref : { ref, EntryRef() }) {
+        auto subspace = tref.valid() ? 4 : 0;
+        auto cells = _store.get_typed_cells(tref, subspace).typify<double>();
+        EXPECT_EQ(1, cells.size());
+        EXPECT_EQ(0.0, cells[0]);
     }
 }
 

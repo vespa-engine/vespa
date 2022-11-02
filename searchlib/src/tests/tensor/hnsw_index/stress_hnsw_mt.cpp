@@ -110,8 +110,9 @@ public:
         memcpy(&_vectors[docid], vec.cbegin(), sizeof(MallocPointVector));
         return *this;
     }
-    vespalib::eval::TypedCells get_vector(uint32_t docid) const override {
+    vespalib::eval::TypedCells get_vector(uint32_t docid, uint32_t subspace) const override {
         assert(docid < NUM_POSSIBLE_DOCS);
+        (void) subspace;
         ConstVectorRef ref(_vectors[docid]);
         return vespalib::eval::TypedCells(ref);
     }

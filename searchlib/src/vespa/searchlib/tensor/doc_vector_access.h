@@ -15,7 +15,7 @@ namespace search::tensor {
 class DocVectorAccess {
 public:
     virtual ~DocVectorAccess() {}
-    virtual vespalib::eval::TypedCells get_vector(uint32_t docid) const = 0;
+    virtual vespalib::eval::TypedCells get_vector(uint32_t docid, uint32_t subspace) const = 0;
 };
 
 }

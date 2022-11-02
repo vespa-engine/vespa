@@ -74,7 +74,8 @@ TensorBufferOperations::TensorBufferOperations(const vespalib::eval::ValueType& 
       _dense_subspace_size(tensor_type.dense_subspace_size()),
       _cell_type(tensor_type.cell_type()),
       _addr(_num_mapped_dimensions),
-      _addr_refs()
+      _addr_refs(),
+      _empty(tensor_type)
 {
     _addr_refs.reserve(_addr.size());
     for (auto& label : _addr) {

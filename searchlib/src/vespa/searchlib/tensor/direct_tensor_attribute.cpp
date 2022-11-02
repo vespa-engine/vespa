@@ -3,13 +3,15 @@
 #include "direct_tensor_attribute.h"
 #include <vespa/eval/eval/fast_value.h>
 #include <vespa/eval/eval/value.h>
+#include <vespa/searchcommon/attribute/config.h>
 
 using vespalib::eval::FastValueBuilderFactory;
 
 namespace search::tensor {
 
 DirectTensorAttribute::DirectTensorAttribute(stringref name, const Config &cfg)
-    : TensorAttribute(name, cfg, _direct_store)
+    : TensorAttribute(name, cfg, _direct_store),
+      _direct_store(cfg.tensorType())
 {
 }
 
@@ -69,6 +71,13 @@ DirectTensorAttribute::get_tensor_ref(DocId docId) const
     if ( ptr == nullptr) { return *_emptyTensor; }
 
     return *ptr;
+}
+
+vespalib::eval::TypedCells
+DirectTensorAttribute::get_vector(uint32_t docid, uint32_t subspace) const
+{
+    EntryRef ref = acquire_entry_ref(docid);
+    return _direct_store.get_typed_cells(ref, subspace);
 }
 
 } // namespace

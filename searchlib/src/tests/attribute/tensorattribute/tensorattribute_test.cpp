@@ -198,7 +198,7 @@ public:
     size_t memory_usage_cnt() const { return _memory_usage_cnt; }
 
     void add_document(uint32_t docid) override {
-        auto vector = _vectors.get_vector(docid).typify<double>();
+        auto vector = _vectors.get_vector(docid, 0).typify<double>();
         _adds.emplace_back(docid, DoubleVector(vector.begin(), vector.end()));
     }
     std::unique_ptr<PrepareResult> prepare_add_document(uint32_t docid,
@@ -214,11 +214,11 @@ public:
         auto* mock_result = dynamic_cast<MockPrepareResult*>(prepare_result.get());
         assert(mock_result);
         EXPECT_EQUAL(docid, mock_result->docid);
-        auto vector = _vectors.get_vector(docid).typify<double>();
+        auto vector = _vectors.get_vector(docid, 0).typify<double>();
         _complete_adds.emplace_back(docid, DoubleVector(vector.begin(), vector.end()));
     }
     void remove_document(uint32_t docid) override {
-        auto vector = _vectors.get_vector(docid).typify<double>();
+        auto vector = _vectors.get_vector(docid, 0).typify<double>();
         _removes.emplace_back(docid, DoubleVector(vector.begin(), vector.end()));
     }
     void assign_generation(generation_t current_gen) override {

@@ -79,9 +79,8 @@ DenseTensorStore::DenseTensorStore(const ValueType &type, std::shared_ptr<vespal
       _tensorSizeCalc(type),
       _bufferType(_tensorSizeCalc, std::move(allocator)),
       _type(type),
-      _emptySpace()
+      _empty(type)
 {
-    _emptySpace.resize(getBufSize(), 0);
     _store.addType(&_bufferType);
     _store.init_primary_buffers();
     _store.enableFreeLists();

@@ -43,7 +43,8 @@ public:
         _vectors[docid] = vec;
         return *this;
     }
-    vespalib::eval::TypedCells get_vector(uint32_t docid) const override {
+    vespalib::eval::TypedCells get_vector(uint32_t docid, uint32_t subspace) const override {
+        (void) subspace;
         ArrayRef ref(_vectors[docid]);
         return vespalib::eval::TypedCells(ref);
     }
@@ -138,7 +139,7 @@ public:
     }
     void expect_top_3(uint32_t docid, std::vector<uint32_t> exp_hits) {
         uint32_t k = 3;
-        auto qv = vectors.get_vector(docid);
+        auto qv = vectors.get_vector(docid, 0);
         auto rv = index->top_k_candidates(qv, k, global_filter->ptr_if_active()).peek();
         std::sort(rv.begin(), rv.end(), LesserDistance());
         size_t idx = 0;
@@ -158,7 +159,7 @@ public:
         check_with_distance_threshold(docid);
     }
     void check_with_distance_threshold(uint32_t docid) {
-        auto qv = vectors.get_vector(docid);
+        auto qv = vectors.get_vector(docid, 0);
         uint32_t k = 3;
         auto rv = index->top_k_candidates(qv, k, global_filter->ptr_if_active()).peek();
         std::sort(rv.begin(), rv.end(), LesserDistance());
@@ -712,7 +713,7 @@ public:
     UP prepare_add(uint32_t docid, uint32_t max_level = 0) {
         level_generator->level = max_level;
         vespalib::GenerationHandler::Guard dummy;
-        auto vector = vectors.get_vector(docid);
+        auto vector = vectors.get_vector(docid, 0);
         return index->prepare_add_document(docid, vector, dummy);
     }
     void complete_add(uint32_t docid, UP up) {
