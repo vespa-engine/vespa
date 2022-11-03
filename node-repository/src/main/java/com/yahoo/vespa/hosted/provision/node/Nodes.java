@@ -659,17 +659,18 @@ public class Nodes {
         boolean wantToRetire = op.needsRetirement();
         List<Node> result = new ArrayList<>();
         try (NodeMutex lock = nodeMutex.get(); Mutex allocationLock = lockUnallocated()) {
-            // This takes allocationLock to prevent any further allocation of nodes on this host
-            host = lock.node();
-            if (wantToRetire) { // Apply recursively if we're retiring
-                List<Node> updatedNodes = performOn(list(allocationLock).childrenOf(host), (node, nodeLock) -> {
-                    Node newNode = node.withWantToRetire(wantToRetire, wantToDeprovision, wantToRebuild, agent, instant);
-                    return write(newNode, nodeLock);
-                });
-                result.addAll(updatedNodes);
-            }
-            Node newHost = host.withWantToRetire(wantToRetire, wantToDeprovision, wantToRebuild, agent, instant);
+            // Modify parent with wantToRetire while holding the allocationLock to prevent
+            // any further allocation of nodes on this host
+            Node newHost = lock.node().withWantToRetire(wantToRetire, wantToDeprovision, wantToRebuild, agent, instant);
             result.add(write(newHost, lock));
+        }
+
+        if (wantToRetire) { // Apply recursively if we're retiring
+            List<Node> updatedNodes = performOn(list().childrenOf(host), (node, nodeLock) -> {
+                Node newNode = node.withWantToRetire(wantToRetire, wantToDeprovision, wantToRebuild, agent, instant);
+                return write(newNode, nodeLock);
+            });
+            result.addAll(updatedNodes);
         }
         return result;
     }
