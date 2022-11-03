@@ -500,65 +500,64 @@ public class ApplicationController {
 
             Version platform = run.versions().sourcePlatform().filter(__ -> deploySourceVersions).orElse(run.versions().targetPlatform());
             RevisionId revision = run.versions().sourceRevision().filter(__ -> deploySourceVersions).orElse(run.versions().targetRevision());
-            try (ApplicationPackageStream applicationPackage = new ApplicationPackageStream(applicationStore.stream(deployment, revision),
-                                                                                            ApplicationPackageStream.addingCertificate(run.testerCertificate()))) {
-                AtomicReference<RevisionId> lastRevision = new AtomicReference<>();
-                Instance instance;
-                Set<ContainerEndpoint> containerEndpoints;
+            ApplicationPackageStream applicationPackage = new ApplicationPackageStream(() -> applicationStore.stream(deployment, revision),
+                                                                                       ApplicationPackageStream.addingCertificate(run.testerCertificate()));
+            AtomicReference<RevisionId> lastRevision = new AtomicReference<>();
+            Instance instance;
+            Set<ContainerEndpoint> containerEndpoints;
+            try (Mutex lock = lock(applicationId)) {
+                LockedApplication application = new LockedApplication(requireApplication(applicationId), lock);
+                application.get().revisions().last().map(ApplicationVersion::id).ifPresent(lastRevision::set);
+                instance = application.get().require(job.application().instance());
+
+                containerEndpoints = controller.routing().of(deployment).prepare(application);
+
+            } // Release application lock while doing the deployment, which is a lengthy task.
+
+            Supplier<Optional<EndpointCertificateMetadata>> endpointCertificateMetadata = () -> {
                 try (Mutex lock = lock(applicationId)) {
-                    LockedApplication application = new LockedApplication(requireApplication(applicationId), lock);
-                    application.get().revisions().last().map(ApplicationVersion::id).ifPresent(lastRevision::set);
-                    instance = application.get().require(job.application().instance());
-
-                    containerEndpoints = controller.routing().of(deployment).prepare(application);
-
-                } // Release application lock while doing the deployment, which is a lengthy task.
-
-                Supplier<Optional<EndpointCertificateMetadata>> endpointCertificateMetadata = () -> {
-                    try (Mutex lock = lock(applicationId)) {
-                        Optional<EndpointCertificateMetadata> data = endpointCertificates.getMetadata(instance, zone, applicationPackage.truncatedPackage().deploymentSpec());
-                        data.ifPresent(e -> deployLogger.accept("Using CA signed certificate version %s".formatted(e.version())));
-                        return data;
-                    }
-                };
-
-                // Carry out deployment without holding the application lock.
-                DeploymentResult result = deploy(job.application(), instance.tags(), applicationPackage, zone, platform, containerEndpoints,
-                                                 endpointCertificateMetadata, run.isDryRun());
-
-
-                // Record the quota usage for this application
-                var quotaUsage = deploymentQuotaUsage(zone, job.application());
-
-                // For direct deployments use the full deployment ID, but otherwise use just the tenant and application as
-                // the source since it's the same application, so it should have the same warnings.
-                // These notifications are only updated when the last submitted revision is deployed here.
-                NotificationSource source = zone.environment().isManuallyDeployed()
-                                            ? NotificationSource.from(deployment)
-                                            : revision.equals(lastRevision.get()) ? NotificationSource.from(applicationId) : null;
-                if (source != null) {
-                    List<String> warnings = Optional.ofNullable(result.log())
-                                                    .map(logs -> logs.stream()
-                                                                     .filter(LogEntry::concernsPackage)
-                                                                     .filter(log -> log.level().intValue() >= Level.WARNING.intValue())
-                                                                     .map(LogEntry::message)
-                                                                     .sorted()
-                                                                     .distinct()
-                                                                     .collect(Collectors.toList()))
-                                                    .orElseGet(List::of);
-                    if (warnings.isEmpty())
-                        controller.notificationsDb().removeNotification(source, Notification.Type.applicationPackage);
-                    else
-                        controller.notificationsDb().setNotification(source, Notification.Type.applicationPackage, Notification.Level.warning, warnings);
+                    Optional<EndpointCertificateMetadata> data = endpointCertificates.getMetadata(instance, zone, applicationPackage.truncatedPackage().deploymentSpec());
+                    data.ifPresent(e -> deployLogger.accept("Using CA signed certificate version %s".formatted(e.version())));
+                    return data;
                 }
+            };
 
-                lockApplicationOrThrow(applicationId, application ->
-                        store(application.with(job.application().instance(),
-                                               i -> i.withNewDeployment(zone, revision, platform,
-                                                                        clock.instant(), warningsFrom(result.log()),
-                                                                        quotaUsage))));
-                return result;
+            // Carry out deployment without holding the application lock.
+            DeploymentResult result = deploy(job.application(), instance.tags(), applicationPackage, zone, platform, containerEndpoints,
+                                             endpointCertificateMetadata, run.isDryRun());
+
+
+            // Record the quota usage for this application
+            var quotaUsage = deploymentQuotaUsage(zone, job.application());
+
+            // For direct deployments use the full deployment ID, but otherwise use just the tenant and application as
+            // the source since it's the same application, so it should have the same warnings.
+            // These notifications are only updated when the last submitted revision is deployed here.
+            NotificationSource source = zone.environment().isManuallyDeployed()
+                                        ? NotificationSource.from(deployment)
+                                        : revision.equals(lastRevision.get()) ? NotificationSource.from(applicationId) : null;
+            if (source != null) {
+                List<String> warnings = Optional.ofNullable(result.log())
+                                                .map(logs -> logs.stream()
+                                                                 .filter(LogEntry::concernsPackage)
+                                                                 .filter(log -> log.level().intValue() >= Level.WARNING.intValue())
+                                                                 .map(LogEntry::message)
+                                                                 .sorted()
+                                                                 .distinct()
+                                                                 .collect(Collectors.toList()))
+                                                .orElseGet(List::of);
+                if (warnings.isEmpty())
+                    controller.notificationsDb().removeNotification(source, Notification.Type.applicationPackage);
+                else
+                    controller.notificationsDb().setNotification(source, Notification.Type.applicationPackage, Notification.Level.warning, warnings);
             }
+
+            lockApplicationOrThrow(applicationId, application ->
+                    store(application.with(job.application().instance(),
+                                           i -> i.withNewDeployment(zone, revision, platform,
+                                                                    clock.instant(), warningsFrom(result.log()),
+                                                                    quotaUsage))));
+            return result;
         }
     }
 
@@ -612,7 +611,7 @@ public class ApplicationController {
     public DeploymentResult deploySystemApplicationPackage(SystemApplication application, ZoneId zone, Version version) {
         if (application.hasApplicationPackage()) {
             ApplicationPackageStream applicationPackage = new ApplicationPackageStream(
-                    new ByteArrayInputStream(artifactRepository.getSystemApplicationPackage(application.id(), zone, version))
+                    () -> new ByteArrayInputStream(artifactRepository.getSystemApplicationPackage(application.id(), zone, version))
             );
             return deploy(application.id(), Tags.empty(), applicationPackage, zone, version, Set.of(), Optional::empty, false);
         } else {
@@ -630,7 +629,7 @@ public class ApplicationController {
                                     Supplier<Optional<EndpointCertificateMetadata>> endpointCertificateMetadata,
                                     boolean dryRun) {
         DeploymentId deployment = new DeploymentId(application, zone);
-        try (applicationPackage) {
+        try {
             Optional<DockerImage> dockerImageRepo = Optional.ofNullable(
                     dockerImageRepoFlag
                             .with(FetchVector.Dimension.ZONE_ID, zone.value())
@@ -656,7 +655,7 @@ public class ApplicationController {
                                                                    .collect(toList());
             Supplier<Optional<CloudAccount>> cloudAccount = () -> decideCloudAccountOf(deployment, applicationPackage.truncatedPackage().deploymentSpec());
             ConfigServer.PreparedApplication preparedApplication =
-                    configServer.deploy(new DeploymentData(application, tags, zone, applicationPackage, platform,
+                    configServer.deploy(new DeploymentData(application, tags, zone, applicationPackage::zipStream, platform,
                                                            endpoints, endpointCertificateMetadata, dockerImageRepo, domain,
                                                            deploymentQuota, tenantSecretStores, operatorCertificates,
                                                            cloudAccount, dryRun));

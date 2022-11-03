@@ -209,14 +209,14 @@ public class ApplicationPackageTest {
         byte[] zip = zip(content);
         assertEquals(content, unzip(zip));
 
-        ApplicationPackageStream identity = new ApplicationPackageStream(new ByteArrayInputStream(zip));
+        ApplicationPackageStream identity = new ApplicationPackageStream(() -> new ByteArrayInputStream(zip));
         InputStream lazy = new LazyInputStream(() -> new ByteArrayInputStream(identity.truncatedPackage().zippedContent()));
         assertEquals("must completely exhaust input before reading package",
                      assertThrows(IllegalStateException.class, identity::truncatedPackage).getMessage());
 
         // Verify no content has changed when passing through the stream.
         ByteArrayOutputStream out = new ByteArrayOutputStream();
-        identity.transferTo(out);
+        identity.zipStream().transferTo(out);
         assertEquals(content, unzip(out.toByteArray()));
         assertEquals(content, unzip(identity.truncatedPackage().zippedContent()));
         assertEquals(content, unzip(lazy.readAllBytes()));
@@ -229,9 +229,9 @@ public class ApplicationPackageTest {
                                                                       "unused1.xml", in -> null,
                                                                       "unused2.xml", __ -> new ByteArrayInputStream(jdiscXml.getBytes(UTF_8)));
         Predicate<String> truncation = name -> name.endsWith(".xml");
-        ApplicationPackageStream modifier = new ApplicationPackageStream(new ByteArrayInputStream(zip), truncation, replacements);
+        ApplicationPackageStream modifier = new ApplicationPackageStream(() -> new ByteArrayInputStream(zip), truncation, replacements);
         out.reset();
-        modifier.transferTo(out);
+        modifier.zipStream().transferTo(out);
 
         assertEquals(Map.of("deployment.xml", deploymentXml + "\n\n",
                             "services.xml", servicesXml,

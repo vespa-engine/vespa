@@ -34,7 +34,7 @@ public class DeploymentData {
     private final ApplicationId instance;
     private final Tags tags;
     private final ZoneId zone;
-    private final InputStream applicationPackage;
+    private final Supplier<InputStream> applicationPackage;
     private final Version platform;
     private final Set<ContainerEndpoint> containerEndpoints;
     private final Supplier<Optional<EndpointCertificateMetadata>> endpointCertificateMetadata;
@@ -46,7 +46,7 @@ public class DeploymentData {
     private final Supplier<Optional<CloudAccount>> cloudAccount;
     private final boolean dryRun;
 
-    public DeploymentData(ApplicationId instance, Tags tags, ZoneId zone, InputStream applicationPackage, Version platform,
+    public DeploymentData(ApplicationId instance, Tags tags, ZoneId zone, Supplier<InputStream> applicationPackage, Version platform,
                           Set<ContainerEndpoint> containerEndpoints,
                           Supplier<Optional<EndpointCertificateMetadata>> endpointCertificateMetadata,
                           Optional<DockerImage> dockerImageRepo,
@@ -83,7 +83,7 @@ public class DeploymentData {
     }
 
     public InputStream applicationPackage() {
-        return applicationPackage;
+        return applicationPackage.get();
     }
 
     public Version platform() {

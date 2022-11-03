@@ -42,6 +42,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
+import java.util.function.Supplier;
 import java.util.function.UnaryOperator;
 import java.util.jar.JarInputStream;
 import java.util.jar.Manifest;
@@ -74,7 +75,7 @@ public class TestPackage {
     private final ApplicationPackageStream applicationPackageStream;
     private final X509Certificate certificate;
 
-    public TestPackage(InputStream inZip, boolean isPublicSystem, RunId id, Testerapp testerApp,
+    public TestPackage(Supplier<InputStream> inZip, boolean isPublicSystem, RunId id, Testerapp testerApp,
                        DeploymentSpec spec, Instant certificateValidFrom, Duration certificateValidDuration) {
         KeyPair keyPair;
         if (certificateValidFrom != null) {

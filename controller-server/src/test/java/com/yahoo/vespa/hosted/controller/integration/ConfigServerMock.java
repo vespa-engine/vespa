@@ -42,6 +42,7 @@ import com.yahoo.vespa.hosted.controller.api.integration.noderepository.RestartF
 import com.yahoo.vespa.hosted.controller.api.integration.secrets.TenantSecretStore;
 import com.yahoo.vespa.hosted.controller.application.SystemApplication;
 import com.yahoo.vespa.hosted.controller.application.pkg.ApplicationPackage;
+import wiremock.org.checkerframework.checker.units.qual.A;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -378,6 +379,13 @@ public class ConfigServerMock extends AbstractComponent implements ConfigServer 
 
     @Override
     public PreparedApplication deploy(DeploymentData deployment) {
+        ApplicationPackage appPackage;
+        try (InputStream in = deployment.applicationPackage()) {
+            appPackage = new ApplicationPackage(in.readAllBytes());
+        }
+        catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
         lastPrepareVersion = deployment.platform();
         if (prepareException != null)
             prepareException.accept(ApplicationId.from(deployment.instance().tenant(),
@@ -385,12 +393,7 @@ public class ConfigServerMock extends AbstractComponent implements ConfigServer 
                                                        deployment.instance().instance()));
         DeploymentId id = new DeploymentId(deployment.instance(), deployment.zone());
 
-        try {
-            applications.put(id, new Application(id.applicationId(), lastPrepareVersion, new ApplicationPackage(deployment.applicationPackage().readAllBytes())));
-        }
-        catch (IOException e) {
-            throw new UncheckedIOException(e);
-        }
+        applications.put(id, new Application(id.applicationId(), lastPrepareVersion, appPackage));
         ClusterSpec.Id cluster = ClusterSpec.Id.from("default");
         deployment.endpointCertificateMetadata(); // Supplier with side effects >_<
 
