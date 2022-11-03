@@ -14,7 +14,6 @@ import java.util.zip.ZipInputStream;
 import java.util.zip.ZipOutputStream;
 
 import static java.lang.Math.min;
-import static java.util.function.UnaryOperator.identity;
 
 /**
  * Wraps a zipped application package stream.
@@ -31,7 +30,7 @@ public class ApplicationPackageStream extends InputStream {
     private final ZipOutputStream outZip = new ZipOutputStream(out);
     private final ByteArrayOutputStream teeOut = new ByteArrayOutputStream(1 << 16);
     private final ZipOutputStream teeZip = new ZipOutputStream(teeOut);
-    private final Map<String, UnaryOperator<InputStream>> replacements;
+    private final Replacer replacer;
     private final Predicate<String> filter;
     private final ZipInputStream inZip;
 
@@ -43,16 +42,24 @@ public class ApplicationPackageStream extends InputStream {
     private boolean done = false;
     private boolean closed = false;
 
+    /** Stream that effectively copies the input stream to its {@link #truncatedPackage()} when exhausted. */
     public ApplicationPackageStream(InputStream in) {
         this(in, __ -> true, Map.of());
     }
 
+    /** Stream that replaces the indicated entries, and copies the filtered entries to its {@link #truncatedPackage()} when exhausted. */
     public ApplicationPackageStream(InputStream in, Predicate<String> truncation, Map<String, UnaryOperator<InputStream>> replacements) {
-        this.inZip = new ZipInputStream(in);
-        this.filter = truncation;
-        this.replacements = new HashMap<>(replacements);
+        this(in, truncation, Replacer.of(replacements));
     }
 
+    /** Stream that uses the given replacer to modify content, and copies the filtered entries to its {@link #truncatedPackage()} when exhausted. */
+    public ApplicationPackageStream(InputStream in, Predicate<String> truncation, Replacer replacer) {
+        this.inZip = new ZipInputStream(in);
+        this.filter = truncation;
+        this.replacer = replacer;
+    }
+
+    /** Returns the application backed by only the files indicated by the truncation filter. Throws if not yet exhausted. */
     public ApplicationPackage truncatedPackage() {
         if (ap == null) throw new IllegalStateException("must completely exhaust input before reading package");
         return ap;
@@ -89,8 +96,9 @@ public class ApplicationPackageStream extends InputStream {
         String name;
         InputStream content = null;
         if (next == null) {
-            // We may still have replacements to fill in, but if we don't, we're done filling, for ever!
-            if (replacements.isEmpty()) {
+            // We may still have replacements to fill in, but if we don't, we're done filling, forever!
+            name = replacer.next();
+            if (name == null) {
                 outZip.close(); // This typically makes new output available, so must check for that after this.
                 teeZip.close();
                 currentIn = nullInputStream();
@@ -98,7 +106,6 @@ public class ApplicationPackageStream extends InputStream {
                 done = true;
                 return;
             }
-            name = replacements.keySet().iterator().next();
         }
         else {
             name = next.getName();
@@ -106,10 +113,7 @@ public class ApplicationPackageStream extends InputStream {
         }
 
         includeCurrent = filter.test(name);
-
-        UnaryOperator<InputStream> mapper = replacements.remove(name);
-        currentIn = mapper == null ? content : mapper.apply(content);
-
+        currentIn = replacer.modify(name, content);
         if (currentIn == null) {
             currentIn = InputStream.nullInputStream();
         }
@@ -151,6 +155,36 @@ public class ApplicationPackageStream extends InputStream {
     @Override
     public void close() throws IOException {
         if (closed != (closed = true)) inZip.close();
+    }
+
+    /** Replaces entries in a zip stream as they are encountered, then appends remaining entries at the end. */
+    public interface Replacer {
+
+        /** Called when the entries of the original zip stream are exhausted. Return remaining names, or {@code null} when none left. */
+        String next();
+
+        /** Modify content for a given name; return {@code null} for removal; in is {@code null} for entries not present in the input. */
+        InputStream modify(String name, InputStream in);
+
+        /**
+         * Removes entries whose name map to {@code in -> null}.
+         * Modifies entries present in both input and the map.
+         * Appends entries present exclusively in the map.
+         * Writes all other entries as they are.
+         */
+        static Replacer of(Map<String, UnaryOperator<InputStream>> replacements) {
+            return new Replacer() {
+                Map<String, UnaryOperator<InputStream>> remaining = new HashMap<>(replacements);
+                @Override public String next() {
+                    return remaining.isEmpty() ? null : remaining.keySet().iterator().next();
+                }
+                @Override public InputStream modify(String name, InputStream in) {
+                    UnaryOperator<InputStream> mapper = remaining.remove(name);
+                    return mapper == null ? in : mapper.apply(in);
+                }
+            };
+        }
+
     }
 
     public static class LazyInputStream extends InputStream {
