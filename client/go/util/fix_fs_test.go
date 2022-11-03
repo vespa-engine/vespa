@@ -2,6 +2,7 @@
 package util
 
 import (
+	"fmt"
 	"os"
 	"os/user"
 	"strconv"
@@ -112,4 +113,30 @@ func TestSuperUserOnly(t *testing.T) {
 		fixSpec.GroupId = groupId
 	}
 	testFixSpec(t, fixSpec)
+}
+
+func expectSimplePanic() {
+	if r := recover(); r != nil {
+		if jee, ok := r.(*JustExitError); ok {
+			fmt.Fprintln(os.Stderr, "got as expected:", jee)
+			return
+		}
+		panic(r)
+	}
+}
+
+func TestFailedFixdir(t *testing.T) {
+	tmpDir := setup(t)
+	spec := NewFixSpec()
+	defer expectSimplePanic()
+	spec.FixDir(tmpDir + "/a/bad/subdir")
+	assert.Equal(t, "", "should not be reached")
+}
+
+func TestFailedFixfile(t *testing.T) {
+	tmpDir := setup(t)
+	spec := NewFixSpec()
+	defer expectSimplePanic()
+	spec.FixFile(tmpDir + "/a")
+	assert.Equal(t, "", "should not be reached")
 }
