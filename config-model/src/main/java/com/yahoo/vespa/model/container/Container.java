@@ -310,6 +310,7 @@ public abstract class Container extends AbstractService implements
                             .slobrokId(serviceSlobrokId()))
                 .filedistributor(filedistributorConfig())
                 .discriminator((clusterName != null ? clusterName + "." : "" ) + name)
+                .clustername(clusterName != null ? clusterName : "")
                 .nodeIndex(index)
                 .shutdown.dumpHeapOnTimeout(dumpHeapOnShutdownTimeout)
                          .timeout(shutdownTimeoutS);

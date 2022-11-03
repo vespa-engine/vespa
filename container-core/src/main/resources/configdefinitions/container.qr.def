@@ -23,6 +23,9 @@ rpc.slobrokId string default="" restart
 ## this string will be unique for every QRS in a Vespa application.
 discriminator string default="qrserver.0" restart
 
+## Cluster name
+clustername string default=""
+
 ## Index of this container inside the cluster. Guaranteed to be non-negative
 ## and unique for every container in a cluster, but not necessarily contiguous
 ## or starting from zero.
