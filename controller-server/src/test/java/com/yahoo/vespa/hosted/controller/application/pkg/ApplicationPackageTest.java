@@ -7,6 +7,7 @@ import com.yahoo.security.KeyAlgorithm;
 import com.yahoo.security.KeyUtils;
 import com.yahoo.security.SignatureAlgorithm;
 import com.yahoo.security.X509CertificateBuilder;
+import com.yahoo.vespa.hosted.controller.application.pkg.ApplicationPackageStream.LazyInputStream;
 import org.junit.jupiter.api.Test;
 
 import javax.security.auth.x500.X500Principal;
@@ -190,4 +191,74 @@ public class ApplicationPackageTest {
             assertEquals(certificates.subList(0, i + 1), applicationPackage.trustedCertificates());
         }
     }
+
+    static byte[] zip(Map<String, String> content) {
+        return filesZip(content.entrySet().stream().collect(Collectors.toMap(entry -> entry.getKey(),
+                                                                             entry -> entry.getValue().getBytes(UTF_8))));
+    }
+
+    @Test
+    void testApplicationPackageStream() throws Exception {
+        Map<String, String> content = Map.of("deployment.xml", deploymentXml,
+                                             "services.xml", servicesXml,
+                                             "jdisc.xml", jdiscXml,
+                                             "unused1.xml", jdiscXml,
+                                             "content/content.xml", contentXml,
+                                             "content/nodes.xml", nodesXml,
+                                             "gurba", "gurba");
+        byte[] zip = zip(content);
+        assertEquals(content, unzip(zip));
+
+        ApplicationPackageStream identity = new ApplicationPackageStream(new ByteArrayInputStream(zip));
+        InputStream lazy = new LazyInputStream(() -> new ByteArrayInputStream(identity.truncatedPackage().zippedContent()));
+        assertEquals("must completely exhaust input before reading package",
+                     assertThrows(IllegalStateException.class, identity::truncatedPackage).getMessage());
+
+        // Verify no content has changed when passing through the stream.
+        ByteArrayOutputStream out = new ByteArrayOutputStream();
+        identity.transferTo(out);
+        assertEquals(content, unzip(out.toByteArray()));
+        assertEquals(content, unzip(identity.truncatedPackage().zippedContent()));
+        assertEquals(content, unzip(lazy.readAllBytes()));
+        ApplicationPackage original = new ApplicationPackage(zip);
+        assertEquals(unzip(original.metaDataZip()), unzip(identity.truncatedPackage().metaDataZip()));
+        assertEquals(original.bundleHash(), identity.truncatedPackage().bundleHash());
+
+        // Change deployment.xml, remove unused1.xml and add unused2.xml
+        Map<String, UnaryOperator<InputStream>> replacements = Map.of("deployment.xml", in -> new SequenceInputStream(in, new ByteArrayInputStream("\n\n".getBytes(UTF_8))),
+                                                                      "unused1.xml", in -> null,
+                                                                      "unused2.xml", __ -> new ByteArrayInputStream(jdiscXml.getBytes(UTF_8)));
+        Predicate<String> truncation = name -> name.endsWith(".xml");
+        ApplicationPackageStream modifier = new ApplicationPackageStream(new ByteArrayInputStream(zip), truncation, replacements);
+        out.reset();
+        modifier.transferTo(out);
+
+        assertEquals(Map.of("deployment.xml", deploymentXml + "\n\n",
+                            "services.xml", servicesXml,
+                            "jdisc.xml", jdiscXml,
+                            "unused2.xml", jdiscXml,
+                            "content/content.xml", contentXml,
+                            "content/nodes.xml", nodesXml,
+                            "gurba", "gurba"),
+                     unzip(out.toByteArray()));
+
+        assertEquals(Map.of("deployment.xml", deploymentXml + "\n\n",
+                            "services.xml", servicesXml,
+                            "jdisc.xml", jdiscXml,
+                            "unused2.xml", jdiscXml,
+                            "content/content.xml", contentXml,
+                            "content/nodes.xml", nodesXml),
+                     unzip(modifier.truncatedPackage().zippedContent()));
+
+        // Compare retained metadata for an updated original package, and the truncated package of the modifier.
+        assertEquals(unzip(new ApplicationPackage(zip(Map.of("deployment.xml", deploymentXml + "\n\n",  // Expected to change.
+                                                             "services.xml", servicesXml,
+                                                             "jdisc.xml", jdiscXml,
+                                                             "unused1.xml", jdiscXml,                   // Irrelevant.
+                                                             "content/content.xml", contentXml,
+                                                             "content/nodes.xml", nodesXml,
+                                                             "gurba", "gurba"))).metaDataZip()),
+                     unzip(modifier.truncatedPackage().metaDataZip()));
+    }
+
 }
