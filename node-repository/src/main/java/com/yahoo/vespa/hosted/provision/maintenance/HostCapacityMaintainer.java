@@ -12,6 +12,7 @@ import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.jdisc.Metric;
 import com.yahoo.lang.MutableInteger;
+import com.yahoo.transaction.Mutex;
 import com.yahoo.vespa.flags.FlagSource;
 import com.yahoo.vespa.flags.JacksonFlag;
 import com.yahoo.vespa.flags.ListFlag;
@@ -84,35 +85,41 @@ public class HostCapacityMaintainer extends NodeRepositoryMaintainer {
             return 0;  // avoid removing excess hosts
         }
 
-        markForRemoval(excessHosts);
-        return 1;
+        return markForRemoval(excessHosts);
     }
 
-    private void markForRemoval(List<Node> excessHosts) {
-        if (excessHosts.isEmpty()) return;
+    private double markForRemoval(List<Node> excessHosts) {
+        if (excessHosts.isEmpty()) return 1;
 
-        try (var lock = nodeRepository().nodes().lockUnallocated()) {
-            NodeList nodes = nodeRepository().nodes().list(); // Reread nodes under lock
-            for (Node host : excessHosts) {
-                Optional<NodeMutex> optionalMutex = nodeRepository().nodes().lockAndGet(host, Duration.ofSeconds(10));
-                if (optionalMutex.isEmpty()) continue;
-                try (NodeMutex mutex = optionalMutex.get()) {
-                    host = mutex.node();
-                    if (!canRemoveHost(host)) continue;
-                    if (!nodes.childrenOf(host).stream().allMatch(HostCapacityMaintainer::canDeprovision))
-                        continue;
+        int attempts = 0, success = 0;
+        for (List<Node> typeExcessHosts : excessHosts.stream().collect(Collectors.groupingBy(Node::type)).values()) {
+            attempts++;
+            // All nodes in the list are hosts of the same type, so they use the same lock regardless of their allocation
+            Optional<NodeMutex> appMutex = nodeRepository().nodes().lockAndGet(typeExcessHosts.get(0), Duration.ofSeconds(10));
+            if (appMutex.isEmpty()) continue;
+            try (Mutex lock = appMutex.get();
+                 Mutex unallocatedLock = nodeRepository().nodes().lockUnallocated()) {
+                // Re-read all nodes under lock and compute the candidates for removal. The actual nodes we want
+                // to mark for removal is the intersection with typeExcessHosts
+                List<Node> toMarkForRemoval = candidatesForRemoval(nodeRepository().nodes().list().asList()).stream()
+                        .filter(typeExcessHosts::contains)
+                        .toList();
 
+                for (Node host : toMarkForRemoval) {
+                    attempts++;
                     // Retire the host to parked if possible, otherwise move it straight to parked
                     if (EnumSet.of(Node.State.reserved, Node.State.active, Node.State.inactive).contains(host.state())) {
                         Node retiredHost = host.withWantToRetire(true, true, Agent.HostCapacityMaintainer, nodeRepository().clock().instant());
-                        nodeRepository().nodes().write(retiredHost, mutex);
+                        nodeRepository().nodes().write(retiredHost, lock);
                     } else nodeRepository().nodes().park(host.hostname(), true, Agent.HostCapacityMaintainer, "Parked for removal");
-                } catch (UncheckedTimeoutException e) {
-                    log.log(Level.WARNING, "Failed to mark " + host.hostname() +
-                            " for deprovisioning: Failed to get lock on node, will retry later");
+                    success++;
                 }
+            } catch (UncheckedTimeoutException e) {
+                log.log(Level.WARNING, "Failed to mark excess hosts for deprovisioning: Failed to get lock, will retry later");
             }
+            success++;
         }
+        return asSuccessFactor(attempts, attempts - success);
     }
 
     /**
