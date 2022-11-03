@@ -7,6 +7,8 @@
 
 namespace search::tensor {
 
+class VectorBundle;
+
 /**
  * Interface that provides access to the vector that is associated with the the given document id.
  *
@@ -16,6 +18,7 @@ class DocVectorAccess {
 public:
     virtual ~DocVectorAccess() {}
     virtual vespalib::eval::TypedCells get_vector(uint32_t docid, uint32_t subspace) const = 0;
+    virtual VectorBundle get_vectors(uint32_t docid) const = 0;
 };
 
 }

@@ -6,6 +6,7 @@
 #include <vespa/searchlib/tensor/hnsw_index.h>
 #include <vespa/searchlib/tensor/random_level_generator.h>
 #include <vespa/searchlib/tensor/inv_log_level_generator.h>
+#include <vespa/searchlib/tensor/vector_bundle.h>
 #include <vespa/searchlib/queryeval/global_filter.h>
 #include <vespa/vespalib/datastore/compaction_spec.h>
 #include <vespa/vespalib/datastore/compaction_strategy.h>
@@ -23,6 +24,7 @@ using namespace search::tensor;
 using namespace vespalib::slime;
 using vespalib::Slime;
 using search::BitVector;
+using vespalib::eval::get_cell_type;
 using vespalib::datastore::CompactionSpec;
 using vespalib::datastore::CompactionStrategy;
 using search::queryeval::GlobalFilter;
@@ -47,6 +49,10 @@ public:
         (void) subspace;
         ArrayRef ref(_vectors[docid]);
         return vespalib::eval::TypedCells(ref);
+    }
+    VectorBundle get_vectors(uint32_t docid) const override {
+        ArrayRef ref(_vectors[docid]);
+        return VectorBundle(ref.data(), get_cell_type<FloatType>(), 1, ref.size() * sizeof(FloatType), ref.size());
     }
 
     void clear() { _vectors.clear(); }

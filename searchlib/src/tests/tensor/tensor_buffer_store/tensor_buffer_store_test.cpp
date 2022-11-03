@@ -162,22 +162,19 @@ TEST_F(TensorBufferStoreTest, stored_tensor_can_be_encoded_and_stored_as_encoded
     }
 }
 
-TEST_F(TensorBufferStoreTest, get_typed_cells)
+TEST_F(TensorBufferStoreTest, get_vectors)
 {
     auto ref = store_tensor(tensor_specs.back());
     std::vector<double> values;
+    auto vectors = _store.get_vectors(ref);
+    EXPECT_EQ(4, vectors.subspaces());
     for (uint32_t subspace = 0; subspace < 4; ++subspace) {
-        auto cells = _store.get_typed_cells(ref, subspace).typify<double>();
+        auto cells = vectors.cells(subspace).typify<double>();
         EXPECT_EQ(1, cells.size());
         values.emplace_back(cells[0]);
     }
     EXPECT_EQ((std::vector<double>{4.5, 5.5, 6.5, 7.5}), values);
-    for (auto tref : { ref, EntryRef() }) {
-        auto subspace = tref.valid() ? 4 : 0;
-        auto cells = _store.get_typed_cells(tref, subspace).typify<double>();
-        EXPECT_EQ(1, cells.size());
-        EXPECT_EQ(0.0, cells[0]);
-    }
+    EXPECT_EQ(0, _store.get_vectors(EntryRef()).subspaces());
 }
 
 GTEST_MAIN_RUN_ALL_TESTS()

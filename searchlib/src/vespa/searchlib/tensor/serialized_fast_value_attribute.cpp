@@ -30,7 +30,15 @@ vespalib::eval::TypedCells
 SerializedFastValueAttribute::get_vector(uint32_t docid, uint32_t subspace) const
 {
     EntryRef ref = acquire_entry_ref(docid);
-    return _tensorBufferStore.get_typed_cells(ref, subspace);
+    auto vectors = _tensorBufferStore.get_vectors(ref);
+    return (subspace < vectors.subspaces()) ? vectors.cells(subspace) : _tensorBufferStore.get_empty_subspace();
+}
+
+VectorBundle
+SerializedFastValueAttribute::get_vectors(uint32_t docid) const
+{
+    EntryRef ref = acquire_entry_ref(docid);
+    return _tensorBufferStore.get_vectors(ref);
 }
 
 }

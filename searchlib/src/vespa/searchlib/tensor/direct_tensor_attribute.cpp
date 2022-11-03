@@ -77,7 +77,15 @@ vespalib::eval::TypedCells
 DirectTensorAttribute::get_vector(uint32_t docid, uint32_t subspace) const
 {
     EntryRef ref = acquire_entry_ref(docid);
-    return _direct_store.get_typed_cells(ref, subspace);
+    auto vectors = _direct_store.get_vectors(ref);
+    return (subspace < vectors.subspaces()) ? vectors.cells(subspace) : _direct_store.get_empty_subspace();
+}
+
+VectorBundle
+DirectTensorAttribute::get_vectors(uint32_t docid) const
+{
+    EntryRef ref = acquire_entry_ref(docid);
+    return _direct_store.get_vectors(ref);
 }
 
 } // namespace
