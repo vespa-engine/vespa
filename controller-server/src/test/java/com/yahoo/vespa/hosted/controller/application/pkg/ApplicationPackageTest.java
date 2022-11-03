@@ -24,12 +24,14 @@ import java.security.cert.X509Certificate;
 import java.time.Instant;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.function.Predicate;
 import java.util.function.UnaryOperator;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 import static com.yahoo.vespa.hosted.controller.application.pkg.ApplicationPackage.filesZip;
+import static com.yahoo.vespa.hosted.controller.application.pkg.ApplicationPackageStream.addingCertificate;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -170,8 +172,8 @@ public class ApplicationPackageTest {
     }
 
     @Test
-    void test_replacement() {
-        ApplicationPackage applicationPackage = new ApplicationPackage(new byte[0]);
+    void test_replacement() throws IOException {
+        byte[] zip = zip(Map.of());
         List<X509Certificate> certificates = IntStream.range(0, 3)
                                                       .mapToObj(i -> {
                                                           KeyPair keyPair = KeyUtils.generateKeypair(KeyAlgorithm.EC, 256);
@@ -185,10 +187,11 @@ public class ApplicationPackageTest {
                                                                                        .build();
                                                       }).toList();
 
-        assertEquals(List.of(), applicationPackage.trustedCertificates());
+        assertEquals(List.of(), new ApplicationPackage(zip).trustedCertificates());
         for (int i = 0; i < certificates.size(); i++) {
-            applicationPackage = applicationPackage.withTrustedCertificate(certificates.get(i));
-            assertEquals(certificates.subList(0, i + 1), applicationPackage.trustedCertificates());
+            InputStream in = new ByteArrayInputStream(zip);
+            zip = new ApplicationPackageStream(() -> in, __ -> false, addingCertificate(Optional.of(certificates.get(i)))).zipStream().readAllBytes();
+            assertEquals(certificates.subList(0, i + 1), new ApplicationPackage(zip).trustedCertificates());
         }
     }
 

@@ -9,6 +9,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.UncheckedIOException;
 import java.security.cert.X509Certificate;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -20,6 +21,7 @@ import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 import java.util.zip.ZipOutputStream;
 
+import static com.yahoo.security.X509CertificateUtils.certificateListFromPem;
 import static java.io.OutputStream.nullOutputStream;
 import static java.lang.Math.min;
 import static java.nio.charset.StandardCharsets.UTF_8;
@@ -52,9 +54,10 @@ public class ApplicationPackageStream {
                           .orElse(Replacer.of(Map.of()));
     }
 
-    static InputStream append(InputStream trustBytes, X509Certificate cert) {
+    static InputStream append(InputStream trustIn, X509Certificate cert) {
         try {
-            List<X509Certificate> trusted = X509CertificateUtils.certificateListFromPem(new String(trustBytes.readAllBytes(), UTF_8));
+            List<X509Certificate> trusted = trustIn == null ? new ArrayList<>()
+                                                            : new ArrayList<>(certificateListFromPem(new String(trustIn.readAllBytes(), UTF_8)));
             trusted.add(cert);
             return new ByteArrayInputStream(X509CertificateUtils.toPem(trusted).getBytes(UTF_8));
         }

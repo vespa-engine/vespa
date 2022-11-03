@@ -59,9 +59,7 @@ import static java.util.stream.Collectors.toMap;
  * A representation of the content of an application package.
  * Only meta-data content can be accessed as anything other than compressed data.
  * A package is identified by a hash of the content.
- * 
- * This is immutable.
- * 
+ *
  * @author bratseth
  * @author jonmv
  */
@@ -122,17 +120,6 @@ public class ApplicationPackage {
         this.bundleHash = calculateBundleHash(zippedContent);
 
         preProcessAndPopulateCache();
-    }
-
-    /** Returns a copy of this with the given certificate appended. */
-    public ApplicationPackage withTrustedCertificate(X509Certificate certificate) {
-        List<X509Certificate> trustedCertificates = new ArrayList<>(this.trustedCertificates);
-        trustedCertificates.add(certificate);
-        byte[] certificatesBytes = X509CertificateUtils.toPem(trustedCertificates).getBytes(UTF_8);
-
-        ByteArrayOutputStream modified = new ByteArrayOutputStream(zippedContent.length + certificatesBytes.length);
-        ZipEntries.transferAndWrite(modified, new ByteArrayInputStream(zippedContent), trustedCertificatesFile, certificatesBytes);
-        return new ApplicationPackage(modified.toByteArray());
     }
 
     /** Hash of all files and settings that influence what is deployed to config servers. */
