@@ -38,7 +38,7 @@ func IsExecutableFile(path string) bool {
 	return !errors.Is(err, os.ErrNotExist) &&
 		info != nil &&
 		info.Mode().IsRegular() &&
-		((info.Mode() & 0111) == 0111)
+		((int(info.Mode()) & 0111) == 0111)
 }
 
 // Returns the content of a reader as a string
