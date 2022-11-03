@@ -410,131 +410,129 @@ public class NodeSerializer {
     
     /** Returns the event type, or null if this event type should be ignored */
     private History.Event.Type eventTypeFromString(String eventTypeString) {
-        switch (eventTypeString) {
-            case "provisioned" : return History.Event.Type.provisioned;
-            case "deprovisioned" : return History.Event.Type.deprovisioned;
-            case "readied" : return History.Event.Type.readied;
-            case "reserved" : return History.Event.Type.reserved;
-            case "activated" : return History.Event.Type.activated;
-            case "wantToRetire": return History.Event.Type.wantToRetire;
-            case "wantToFail": return History.Event.Type.wantToFail;
-            case "retired" : return History.Event.Type.retired;
-            case "deactivated" : return History.Event.Type.deactivated;
-            case "parked" : return History.Event.Type.parked;
-            case "failed" : return History.Event.Type.failed;
-            case "deallocated" : return History.Event.Type.deallocated;
-            case "down" : return History.Event.Type.down;
-            case "up" : return History.Event.Type.up;
-            case "resized" : return History.Event.Type.resized;
-            case "rebooted" : return History.Event.Type.rebooted;
-            case "osUpgraded" : return History.Event.Type.osUpgraded;
-            case "firmwareVerified" : return History.Event.Type.firmwareVerified;
-            case "breakfixed" : return History.Event.Type.breakfixed;
-            case "preferToRetire" : return History.Event.Type.preferToRetire;
-        }
-        throw new IllegalArgumentException("Unknown node event type '" + eventTypeString + "'");
+        return switch (eventTypeString) {
+            case "provisioned" -> History.Event.Type.provisioned;
+            case "deprovisioned" -> History.Event.Type.deprovisioned;
+            case "readied" -> History.Event.Type.readied;
+            case "reserved" -> History.Event.Type.reserved;
+            case "activated" -> History.Event.Type.activated;
+            case "wantToRetire" -> History.Event.Type.wantToRetire;
+            case "wantToFail" -> History.Event.Type.wantToFail;
+            case "retired" -> History.Event.Type.retired;
+            case "deactivated" -> History.Event.Type.deactivated;
+            case "parked" -> History.Event.Type.parked;
+            case "failed" -> History.Event.Type.failed;
+            case "deallocated" -> History.Event.Type.deallocated;
+            case "down" -> History.Event.Type.down;
+            case "up" -> History.Event.Type.up;
+            case "resized" -> History.Event.Type.resized;
+            case "rebooted" -> History.Event.Type.rebooted;
+            case "osUpgraded" -> History.Event.Type.osUpgraded;
+            case "firmwareVerified" -> History.Event.Type.firmwareVerified;
+            case "breakfixed" -> History.Event.Type.breakfixed;
+            case "preferToRetire" -> History.Event.Type.preferToRetire;
+            default -> throw new IllegalArgumentException("Unknown node event type '" + eventTypeString + "'");
+        };
     }
 
     private String toString(History.Event.Type nodeEventType) {
-        switch (nodeEventType) {
-            case provisioned : return "provisioned";
-            case deprovisioned : return "deprovisioned";
-            case readied : return "readied";
-            case reserved : return "reserved";
-            case activated : return "activated";
-            case wantToRetire: return "wantToRetire";
-            case wantToFail: return "wantToFail";
-            case retired : return "retired";
-            case deactivated : return "deactivated";
-            case parked : return "parked";
-            case failed : return "failed";
-            case deallocated : return "deallocated";
-            case down : return "down";
-            case up : return "up";
-            case resized: return "resized";
-            case rebooted: return "rebooted";
-            case osUpgraded: return "osUpgraded";
-            case firmwareVerified: return "firmwareVerified";
-            case breakfixed: return "breakfixed";
-            case preferToRetire: return "preferToRetire";
-        }
-        throw new IllegalArgumentException("Serialized form of '" + nodeEventType + "' not defined");
+        return switch (nodeEventType) {
+            case provisioned -> "provisioned";
+            case deprovisioned -> "deprovisioned";
+            case readied -> "readied";
+            case reserved -> "reserved";
+            case activated -> "activated";
+            case wantToRetire -> "wantToRetire";
+            case wantToFail -> "wantToFail";
+            case retired -> "retired";
+            case deactivated -> "deactivated";
+            case parked -> "parked";
+            case failed -> "failed";
+            case deallocated -> "deallocated";
+            case down -> "down";
+            case up -> "up";
+            case resized -> "resized";
+            case rebooted -> "rebooted";
+            case osUpgraded -> "osUpgraded";
+            case firmwareVerified -> "firmwareVerified";
+            case breakfixed -> "breakfixed";
+            case preferToRetire -> "preferToRetire";
+        };
     }
 
     private Agent eventAgentFromSlime(Inspector eventAgentField) {
-        switch (eventAgentField.asString()) {
-            case "operator" : return Agent.operator;
-            case "application" : return Agent.application;
-            case "system" : return Agent.system;
-            case "DirtyExpirer" : return Agent.DirtyExpirer;
-            case "DynamicProvisioningMaintainer":
-            case "HostCapacityMaintainer": return Agent.HostCapacityMaintainer;
-            case "FailedExpirer" : return Agent.FailedExpirer;
-            case "InactiveExpirer" : return Agent.InactiveExpirer;
-            case "NodeFailer" : return Agent.NodeFailer;
-            case "NodeHealthTracker" : return Agent.NodeHealthTracker;
-            case "ProvisionedExpirer" : return Agent.ProvisionedExpirer;
-            case "Rebalancer" : return Agent.Rebalancer;
-            case "ReservationExpirer" : return Agent.ReservationExpirer;
-            case "RetiringUpgrader" : return Agent.RetiringOsUpgrader;
-            case "RebuildingOsUpgrader" : return Agent.RebuildingOsUpgrader;
-            case "SpareCapacityMaintainer": return Agent.SpareCapacityMaintainer;
-            case "SwitchRebalancer": return Agent.SwitchRebalancer;
-            case "HostEncrypter": return Agent.HostEncrypter;
-            case "ParkedExpirer": return Agent.ParkedExpirer;
-        }
-        throw new IllegalArgumentException("Unknown node event agent '" + eventAgentField.asString() + "'");
+        return switch (eventAgentField.asString()) {
+            case "operator" -> Agent.operator;
+            case "application" -> Agent.application;
+            case "system" -> Agent.system;
+            case "DirtyExpirer" -> Agent.DirtyExpirer;
+            case "DynamicProvisioningMaintainer", "HostCapacityMaintainer" -> Agent.HostCapacityMaintainer;
+            case "HostResumeProvisioner" -> Agent.HostResumeProvisioner;
+            case "FailedExpirer" -> Agent.FailedExpirer;
+            case "InactiveExpirer" -> Agent.InactiveExpirer;
+            case "NodeFailer" -> Agent.NodeFailer;
+            case "NodeHealthTracker" -> Agent.NodeHealthTracker;
+            case "ProvisionedExpirer" -> Agent.ProvisionedExpirer;
+            case "Rebalancer" -> Agent.Rebalancer;
+            case "ReservationExpirer" -> Agent.ReservationExpirer;
+            case "RetiringUpgrader" -> Agent.RetiringOsUpgrader;
+            case "RebuildingOsUpgrader" -> Agent.RebuildingOsUpgrader;
+            case "SpareCapacityMaintainer" -> Agent.SpareCapacityMaintainer;
+            case "SwitchRebalancer" -> Agent.SwitchRebalancer;
+            case "HostEncrypter" -> Agent.HostEncrypter;
+            case "ParkedExpirer" -> Agent.ParkedExpirer;
+            default -> throw new IllegalArgumentException("Unknown node event agent '" + eventAgentField.asString() + "'");
+        };
     }
     private String toString(Agent agent) {
-        switch (agent) {
-            case operator : return "operator";
-            case application : return "application";
-            case system : return "system";
-            case DirtyExpirer : return "DirtyExpirer";
-            case HostCapacityMaintainer: return "DynamicProvisioningMaintainer";
-            case FailedExpirer : return "FailedExpirer";
-            case InactiveExpirer : return "InactiveExpirer";
-            case NodeFailer : return "NodeFailer";
-            case NodeHealthTracker: return "NodeHealthTracker";
-            case ProvisionedExpirer : return "ProvisionedExpirer";
-            case Rebalancer : return "Rebalancer";
-            case ReservationExpirer : return "ReservationExpirer";
-            case RetiringOsUpgrader: return "RetiringUpgrader";
-            case RebuildingOsUpgrader: return "RebuildingOsUpgrader";
-            case SpareCapacityMaintainer: return "SpareCapacityMaintainer";
-            case SwitchRebalancer: return "SwitchRebalancer";
-            case HostEncrypter: return "HostEncrypter";
-            case ParkedExpirer: return "ParkedExpirer";
-        }
-        throw new IllegalArgumentException("Serialized form of '" + agent + "' not defined");
+        return switch (agent) {
+            case operator -> "operator";
+            case application -> "application";
+            case system -> "system";
+            case DirtyExpirer -> "DirtyExpirer";
+            case HostCapacityMaintainer -> "DynamicProvisioningMaintainer";
+            case HostResumeProvisioner -> "HostResumeProvisioner";
+            case FailedExpirer -> "FailedExpirer";
+            case InactiveExpirer -> "InactiveExpirer";
+            case NodeFailer -> "NodeFailer";
+            case NodeHealthTracker -> "NodeHealthTracker";
+            case ProvisionedExpirer -> "ProvisionedExpirer";
+            case Rebalancer -> "Rebalancer";
+            case ReservationExpirer -> "ReservationExpirer";
+            case RetiringOsUpgrader -> "RetiringUpgrader";
+            case RebuildingOsUpgrader -> "RebuildingOsUpgrader";
+            case SpareCapacityMaintainer -> "SpareCapacityMaintainer";
+            case SwitchRebalancer -> "SwitchRebalancer";
+            case HostEncrypter -> "HostEncrypter";
+            case ParkedExpirer -> "ParkedExpirer";
+        };
     }
 
     static NodeType nodeTypeFromString(String typeString) {
-        switch (typeString) {
-            case "tenant": return NodeType.tenant;
-            case "host": return NodeType.host;
-            case "proxy": return NodeType.proxy;
-            case "proxyhost": return NodeType.proxyhost;
-            case "config": return NodeType.config;
-            case "confighost": return NodeType.confighost;
-            case "controller": return NodeType.controller;
-            case "controllerhost": return NodeType.controllerhost;
-            default : throw new IllegalArgumentException("Unknown node type '" + typeString + "'");
-        }
+        return switch (typeString) {
+            case "tenant" -> NodeType.tenant;
+            case "host" -> NodeType.host;
+            case "proxy" -> NodeType.proxy;
+            case "proxyhost" -> NodeType.proxyhost;
+            case "config" -> NodeType.config;
+            case "confighost" -> NodeType.confighost;
+            case "controller" -> NodeType.controller;
+            case "controllerhost" -> NodeType.controllerhost;
+            default -> throw new IllegalArgumentException("Unknown node type '" + typeString + "'");
+        };
     }
 
     static String toString(NodeType type) {
-        switch (type) {
-            case tenant: return "tenant";
-            case host: return "host";
-            case proxy: return "proxy";
-            case proxyhost: return "proxyhost";
-            case config: return "config";
-            case confighost: return "confighost";
-            case controller: return "controller";
-            case controllerhost: return "controllerhost";
-        }
-        throw new IllegalArgumentException("Serialized form of '" + type + "' not defined");
+        return switch (type) {
+            case tenant -> "tenant";
+            case host -> "host";
+            case proxy -> "proxy";
+            case proxyhost -> "proxyhost";
+            case config -> "config";
+            case confighost -> "confighost";
+            case controller -> "controller";
+            case controllerhost -> "controllerhost";
+        };
     }
 
 }

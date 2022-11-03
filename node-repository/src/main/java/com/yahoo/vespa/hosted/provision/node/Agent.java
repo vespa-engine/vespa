@@ -23,6 +23,7 @@ public enum Agent {
     ReservationExpirer,
     ParkedExpirer,
     HostCapacityMaintainer,
+    HostResumeProvisioner,
     RetiringOsUpgrader,
     RebuildingOsUpgrader,
     SpareCapacityMaintainer,

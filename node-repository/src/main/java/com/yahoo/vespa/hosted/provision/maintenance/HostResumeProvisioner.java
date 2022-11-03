@@ -65,9 +65,8 @@ public class HostResumeProvisioner extends NodeRepositoryMaintainer {
                 failures++;
                 log.log(Level.SEVERE, "Failed to provision " + host.hostname() + " with " + children.size()  +
                                       " children, failing out the host recursively", e);
-                // Fail out as operator to force a quick redeployment
                 nodeRepository().nodes().failOrMarkRecursively(
-                        host.hostname(), Agent.operator, "Failed by HostProvisioner due to provisioning failure");
+                        host.hostname(), Agent.HostResumeProvisioner, "Failed by HostResumeProvisioner due to provisioning failure");
             } catch (RuntimeException e) {
                 if (e.getCause() instanceof NamingException)
                     log.log(Level.INFO, "Could not provision " + host.hostname() + ", will retry in " + interval() + ": " + Exceptions.toMessageString(e));
