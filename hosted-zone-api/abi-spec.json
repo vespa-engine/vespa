@@ -93,10 +93,10 @@
     "methods" : [
       "public void <init>(ai.vespa.cloud.ApplicationId, ai.vespa.cloud.Zone, ai.vespa.cloud.Cluster, ai.vespa.cloud.Node)",
       "public void <init>(ai.vespa.cloud.ApplicationId, ai.vespa.cloud.Zone, ai.vespa.cloud.Cloud, ai.vespa.cloud.Cluster, ai.vespa.cloud.Node)",
+      "public void <init>(ai.vespa.cloud.ApplicationId, ai.vespa.cloud.Zone, ai.vespa.cloud.Cloud, java.lang.String, ai.vespa.cloud.Node)",
       "public ai.vespa.cloud.ApplicationId application()",
       "public ai.vespa.cloud.Zone zone()",
       "public ai.vespa.cloud.Cloud cloud()",
-      "public ai.vespa.cloud.Cluster cluster()",
       "public java.lang.String clusterName()",
       "public ai.vespa.cloud.Node node()"
     ],

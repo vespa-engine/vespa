@@ -19,15 +19,14 @@ public class SystemInfoTest {
         ApplicationId application = new ApplicationId("tenant1", "application1", "instance1");
         Zone zone = new Zone(Environment.dev, "us-west-1");
         Cloud cloud = new Cloud("aws");
-        Cluster cluster = new Cluster("clusterId", 1, List.of());
+        String cluster = "clusterName";
         Node node = new Node(0);
 
         SystemInfo info = new SystemInfo(application, zone, cloud, cluster, node);
         assertEquals(application, info.application());
         assertEquals(zone, info.zone());
         assertEquals(cloud, info.cloud());
-        assertEquals(cluster, info.cluster());
-        assertEquals(cluster.id(), info.clusterName());
+        assertEquals(cluster, info.clusterName());
         assertEquals(node, info.node());
     }
 
