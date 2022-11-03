@@ -18,7 +18,6 @@ import org.apache.hc.core5.http.io.entity.EntityUtils;
 import org.apache.hc.core5.http.io.entity.HttpEntities;
 import org.apache.hc.core5.http.io.support.ClassicRequestBuilder;
 import org.apache.hc.core5.util.Timeout;
-import sun.misc.Unsafe;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
@@ -174,7 +173,7 @@ public abstract class AbstractHttpClient implements HttpClient {
 
         @Override
         public HttpClient.RequestBuilder body(byte[] json) {
-            return body(HttpEntities.create(json, ContentType.APPLICATION_JSON));
+            return body(() -> HttpEntities.create(json, ContentType.APPLICATION_JSON));
         }
 
         @Override
