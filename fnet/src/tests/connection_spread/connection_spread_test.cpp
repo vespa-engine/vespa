@@ -74,6 +74,13 @@ TEST_F("require that connections are spread among transport threads", Fixture)
     std::vector<FNET_Connection *> connections;
     for (size_t i = 0; i < 256; ++i) {
         std::this_thread::sleep_for(1ms);
+        if (i > f1.server.GetNumIOComponents() + 16) {
+            /*
+             * tcp listen backlog is limited (cf. SOMAXCONN).
+             * Slow down when getting too far ahead of server.
+             */
+            std::this_thread::sleep_for(10ms);
+        }
         connections.push_back(f1.client.Connect(spec.c_str(), &f1.streamer));
         ASSERT_TRUE(connections.back());
     }
