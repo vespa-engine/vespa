@@ -295,7 +295,7 @@ public class ApplicationPackage {
 
         private Map<Path, Optional<byte[]>> read(Collection<String> names) {
             var entries = ZipEntries.from(zip,
-                                          name -> names.contains(name),
+                                          names::contains,
                                           maxSize,
                                           true)
                                     .asList().stream()

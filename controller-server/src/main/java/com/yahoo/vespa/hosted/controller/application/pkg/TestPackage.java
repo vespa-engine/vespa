@@ -219,7 +219,7 @@ public class TestPackage {
     }
 
     /** Returns the generated services.xml content for the tester application. */
-    public static byte[] servicesXml(boolean systemUsesAthenz, boolean useTesterCertificate, boolean hasLegacyTests,
+    static byte[] servicesXml(boolean systemUsesAthenz, boolean useTesterCertificate, boolean hasLegacyTests,
                                      NodeResources resources, ControllerConfig.Steprunner.Testerapp config) {
         int jdiscMemoryGb = 2; // 2Gb memory for tester application which uses Maven.
         int jdiscMemoryPct = (int) Math.ceil(100 * jdiscMemoryGb / resources.memoryGb());
