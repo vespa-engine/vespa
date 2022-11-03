@@ -23,7 +23,7 @@ public interface ImportedMlModel {
     ModelType modelType();
 
     Optional<String> inputTypeSpec(String input);
-    Map<String, String> smallConstants();
+    Map<String, Tensor> smallConstants();
     Map<String, Tensor> largeConstants();
     Map<String, String> functions();
     List<ImportedMlFunction> outputExpressions();

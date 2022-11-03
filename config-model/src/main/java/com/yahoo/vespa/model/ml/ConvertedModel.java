@@ -294,8 +294,7 @@ public class ConvertedModel {
     }
 
     private static void transformSmallConstant(ModelStore store, RankProfile profile, String constantName,
-                                               String constantValueString) {
-        Tensor constantValue = Tensor.from(constantValueString);
+                                               Tensor constantValue) {
         store.writeSmallConstant(constantName, constantValue);
         Reference name = FeatureNames.asConstantFeature(constantName);
         profile.add(new RankProfile.Constant(name, constantValue));

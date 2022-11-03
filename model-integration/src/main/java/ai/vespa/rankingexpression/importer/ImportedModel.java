@@ -85,7 +85,7 @@ public class ImportedModel implements ImportedMlModel {
      * These should have sizes up to a few kb at most, and correspond to constant values given in the source model.
      */
     @Override
-    public Map<String, String> smallConstants() { return asStrings(smallConstants); }
+    public Map<String, Tensor> smallConstants() { return Map.copyOf(smallConstants); }
 
     boolean hasSmallConstant(String name) { return smallConstants.containsKey(name); }
 

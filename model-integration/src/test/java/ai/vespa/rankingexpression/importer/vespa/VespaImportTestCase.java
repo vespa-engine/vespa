@@ -39,8 +39,8 @@ public class VespaImportTestCase {
         assertEquals("tensor(x[3])", model.inputs().get("input2").toString());
 
         assertEquals(2, model.smallConstants().size());
-        assertEquals("tensor(x[3]):[0.5, 1.5, 2.5]", model.smallConstants().get("constant1"));
-        assertEquals("tensor():{3.0}", model.smallConstants().get("constant2"));
+        assertEquals("tensor(x[3]):[0.5, 1.5, 2.5]", model.smallConstants().get("constant1").toString());
+        assertEquals("tensor():{3.0}", model.smallConstants().get("constant2").toString());
 
         assertEquals(1, model.largeConstants().size());
         assertEquals("tensor(x[3]):[0.5, 1.5, 2.5]", model.largeConstants().get("constant1asLarge").toString());
