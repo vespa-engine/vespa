@@ -15,6 +15,7 @@
 #include <vespa/searchlib/tensor/hnsw_index.h>
 #include <vespa/searchlib/tensor/inv_log_level_generator.h>
 #include <vespa/searchlib/tensor/random_level_generator.h>
+#include <vespa/searchlib/tensor/vector_bundle.h>
 #include <vespa/vespalib/data/input.h>
 #include <vespa/vespalib/data/memory_input.h>
 #include <vespa/vespalib/data/slime/slime.h>
@@ -31,6 +32,7 @@ LOG_SETUP("stress_hnsw_mt");
 using namespace search::tensor;
 using namespace vespalib::slime;
 using search::BitVector;
+using vespalib::eval::CellType;
 using vespalib::GenerationHandler;
 using vespalib::MemoryUsage;
 using vespalib::Slime;
@@ -115,6 +117,11 @@ public:
         (void) subspace;
         ConstVectorRef ref(_vectors[docid]);
         return vespalib::eval::TypedCells(ref);
+    }
+    VectorBundle get_vectors(uint32_t docid) const override {
+        assert(docid < NUM_POSSIBLE_DOCS);
+        ConstVectorRef ref(_vectors[docid]);
+        return VectorBundle(ref.data(), CellType::FLOAT, 1, sizeof(float) * NUM_DIMS, NUM_DIMS);
     }
 };
 

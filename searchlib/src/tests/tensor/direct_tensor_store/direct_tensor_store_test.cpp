@@ -125,24 +125,21 @@ TEST_F(DirectTensorStoreTest, move_on_compact_allocates_new_entry_and_leaves_old
     EXPECT_GT(mem_2.usedBytes(), mem_1.usedBytes() + tensor_mem_usage.allocatedBytes());
 }
 
-TEST_F(DirectTensorStoreTest, get_typed_cells)
+TEST_F(DirectTensorStoreTest, get_vectors)
 {
     auto tensor_spec = TensorSpec(tensor_type_spec).add({{"x", "a"}}, 4.5).add({{"x", "b"}}, 5.5).add({{"x", "c"}}, 6.5).add({{"x", "d"}}, 7.5);
     auto tensor = value_from_spec(tensor_spec, FastValueBuilderFactory::get());
     auto ref = store.store_tensor(std::move(tensor));
     std::vector<double> values;
+    auto vectors = store.get_vectors(ref);
+    EXPECT_EQ(4, vectors.subspaces());
     for (uint32_t subspace = 0; subspace < 4; ++subspace) {
-        auto cells = store.get_typed_cells(ref, subspace).typify<double>();
+        auto cells = vectors.cells(subspace).typify<double>();
         EXPECT_EQ(1, cells.size());
         values.emplace_back(cells[0]);
     }
     EXPECT_EQ((std::vector<double>{4.5, 5.5, 6.5, 7.5}), values);
-    for (auto tref : { ref, EntryRef() }) {
-        auto subspace = tref.valid() ? 4 : 0;
-        auto cells = store.get_typed_cells(tref, subspace).typify<double>();
-        EXPECT_EQ(1, cells.size());
-        EXPECT_EQ(0.0, cells[0]);
-    }
+    EXPECT_EQ(0, store.get_vectors(EntryRef()).subspaces());
 }
 
 GTEST_MAIN_RUN_ALL_TESTS()

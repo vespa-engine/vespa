@@ -4,6 +4,7 @@
 
 #include "tensor_store.h"
 #include "empty_subspace.h"
+#include "vector_bundle.h"
 #include <vespa/eval/eval/value.h>
 #include <vespa/vespalib/datastore/datastore.h>
 
@@ -59,16 +60,17 @@ public:
     EntryRef store_encoded_tensor(vespalib::nbostream& encoded) override;
     std::unique_ptr<vespalib::eval::Value> get_tensor(EntryRef ref) const override;
     bool encode_stored_tensor(EntryRef ref, vespalib::nbostream& target) const override;
-    vespalib::eval::TypedCells get_typed_cells(EntryRef ref, uint32_t subspace) const {
+    vespalib::eval::TypedCells get_empty_subspace() const noexcept {
+        return _empty.cells();
+    }
+    VectorBundle get_vectors(EntryRef ref) const {
         auto tensor = get_tensor_ptr(ref);
-        if (tensor == nullptr || subspace >= tensor->index().size()) {
-            return _empty.cells();
+        if (tensor == nullptr) {
+            return VectorBundle();
         }
-        auto cells = tensor->cells();
         auto type = tensor->type();
-        auto data = static_cast<const char *>(cells.data);
-        auto dense_subspace_size = type.dense_subspace_size();
-        return vespalib::eval::TypedCells(data + vespalib::eval::CellTypeUtils::mem_size(type.cell_type(), subspace * dense_subspace_size), cells.type, dense_subspace_size);
+        auto subspace_size = type.dense_subspace_size();
+        return VectorBundle(tensor->cells().data, type.cell_type(), tensor->index().size(), vespalib::eval::CellTypeUtils::mem_size(type.cell_type(), subspace_size), subspace_size);
     }
 };
 

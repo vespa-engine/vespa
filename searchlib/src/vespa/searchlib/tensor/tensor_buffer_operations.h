@@ -3,6 +3,7 @@
 #pragma once
 
 #include "empty_subspace.h"
+#include "vector_bundle.h"
 #include <vespa/vespalib/datastore/aligner.h>
 #include <vespa/vespalib/util/arrayref.h>
 #include <vespa/vespalib/util/string_id.h>
@@ -103,14 +104,11 @@ public:
     vespalib::eval::TypedCells get_empty_subspace() const noexcept {
         return _empty.cells();
     }
-    vespalib::eval::TypedCells get_typed_cells(vespalib::ConstArrayRef<char> buf, uint32_t subspace) const {
+    VectorBundle get_vectors(vespalib::ConstArrayRef<char> buf) const {
         auto num_subspaces = get_num_subspaces(buf);
-        if (subspace >= num_subspaces) {
-            return _empty.cells();
-        }
         auto cells_mem_size = get_cells_mem_size(num_subspaces);
         auto aligner = select_aligner(cells_mem_size);
-        return vespalib::eval::TypedCells(buf.data() + get_cells_offset(num_subspaces, aligner) + get_cells_mem_size(subspace), _cell_type, _dense_subspace_size);
+        return VectorBundle(buf.data() + get_cells_offset(num_subspaces, aligner), _cell_type, num_subspaces, _dense_subspace_size * _cell_mem_size, _dense_subspace_size);
     }
 };
 

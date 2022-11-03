@@ -4,6 +4,7 @@
 
 #include "tensor_store.h"
 #include "empty_subspace.h"
+#include "vector_bundle.h"
 #include <vespa/eval/eval/value_type.h>
 #include <vespa/eval/eval/typed_cells.h>
 #include <vespa/vespalib/datastore/datastore.h>
@@ -80,6 +81,12 @@ public:
         }
         return vespalib::eval::TypedCells(getRawBuffer(ref),
                                           _type.cell_type(), getNumCells());
+    }
+    VectorBundle get_vectors(EntryRef ref) const {
+        if (!ref.valid()) {
+            return VectorBundle();
+        }
+        return VectorBundle(getRawBuffer(ref), _type.cell_type(), 1, getBufSize(), getNumCells());
     }
     // The following method is meant to be used only for unit tests.
     uint32_t getArraySize() const { return _bufferType.getArraySize(); }
