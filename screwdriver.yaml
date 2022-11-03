@@ -159,7 +159,7 @@ jobs:
           cd docker
           docker build --file Dockerfile.systemtest \
                        --build-arg VESPA_BASE_IMAGE=vespaengine/vespa-systemtest-base-centos-stream8:latest \
-                       --build-arg SYSTEMTEST_BASE_IMAGE=vespa --build-arg SKIP_M2_POPULATE=true \
+                       --build-arg SYSTEMTEST_BASE_IMAGE=vespa --build-arg SKIP_M2_POPULATE=false \
                        --target systemtest \
                        --tag vespaengine/vespa-systemtest-centos-stream8:$VESPA_VERSION \
                        --tag vespaengine/vespa-systemtest-centos-stream8:latest .
