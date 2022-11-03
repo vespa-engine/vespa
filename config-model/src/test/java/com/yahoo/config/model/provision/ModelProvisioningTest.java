@@ -224,7 +224,7 @@ public class ModelProvisioningTest {
         assertEquals(2, model.getContentClusters().get("content1").getRootGroup().getNodes().size(), "Nodes in content1");
         assertEquals(1, model.getContainerClusters().get("container1").getContainers().size(), "Nodes in container1");
         assertEquals(2, model.getContentClusters().get("content").getRootGroup().getNodes().size(), "Nodes in cluster without ID");
-        assertEquals(70, physicalMemoryPercentage(model.getContainerClusters().get("container1")), "Heap size for container");
+        assertEquals(ApplicationContainerCluster.defaultHeapSizePercentageOfTotalNodeMemory, physicalMemoryPercentage(model.getContainerClusters().get("container1")), "Heap size for container");
         assertProvisioned(2, ClusterSpec.Id.from("content1"), ClusterSpec.Type.content, model);
         assertProvisioned(1, ClusterSpec.Id.from("container1"), ClusterSpec.Type.container, model);
         assertProvisioned(2, ClusterSpec.Id.from("content"), ClusterSpec.Type.content, model);
@@ -345,7 +345,7 @@ public class ModelProvisioningTest {
         VespaModel model = tester.createModel(xmlWithNodes, true);
         assertEquals(2, model.getContentClusters().get("content1").getRootGroup().getNodes().size(), "Nodes in content1");
         assertEquals(2, model.getContainerClusters().get("container1").getContainers().size(), "Nodes in container1");
-        assertEquals(70, physicalMemoryPercentage(model.getContainerClusters().get("container1")), "Heap size is normal");
+        assertEquals(ApplicationContainerCluster.defaultHeapSizePercentageOfTotalNodeMemory, physicalMemoryPercentage(model.getContainerClusters().get("container1")), "Heap size is normal");
         assertEquals((long) ((3 - reservedMemoryGb) * (Math.pow(1024, 3))), protonMemorySize(model.getContentClusters().get("content1")), "Memory for proton is normal");
     }
 
