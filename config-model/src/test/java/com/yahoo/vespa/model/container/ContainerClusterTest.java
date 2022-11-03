@@ -113,11 +113,11 @@ public class ContainerClusterTest {
         assertEquals("cd", config.system());
     }
 
-    private void verifyHeapSizeAsPercentageOfPhysicalMemory(boolean isHosted,
+    private void verifyHeapSizeAsPercentageOfPhysicalMemory(MockRoot root,
                                                             boolean isCombinedCluster,
                                                             Integer explicitMemoryPercentage,
                                                             int expectedMemoryPercentage) {
-        ApplicationContainerCluster cluster = newClusterWithSearch(createRoot(isHosted), isCombinedCluster, explicitMemoryPercentage);
+        ApplicationContainerCluster cluster = newClusterWithSearch(root, isCombinedCluster, explicitMemoryPercentage);
         QrStartConfig.Builder qsB = new QrStartConfig.Builder();
         cluster.getConfig(qsB);
         QrStartConfig qsC= new QrStartConfig(qsB);
@@ -127,16 +127,20 @@ public class ContainerClusterTest {
 
     @Test
     void requireThatHeapSizeAsPercentageOfPhysicalMemoryForHostedAndNot() {
+        int heapSizeInFlag = 89;
         boolean hosted = true;
         boolean combined = true; // a cluster running on content nodes (only relevant with hosted)
-        verifyHeapSizeAsPercentageOfPhysicalMemory(  hosted, !combined, null, 70);
-        verifyHeapSizeAsPercentageOfPhysicalMemory(  hosted,   combined, null, 18);
-        verifyHeapSizeAsPercentageOfPhysicalMemory(!hosted, !combined, null, 0);
+        verifyHeapSizeAsPercentageOfPhysicalMemory(createRoot(hosted), !combined, null, ApplicationContainerCluster.defaultHeapSizePercentageOfTotalNodeMemory);
+        verifyHeapSizeAsPercentageOfPhysicalMemory(createRoot(hosted, heapSizeInFlag), !combined, null, heapSizeInFlag);
+        verifyHeapSizeAsPercentageOfPhysicalMemory(createRoot(hosted),   combined, null, 18);
+        verifyHeapSizeAsPercentageOfPhysicalMemory(createRoot(hosted, heapSizeInFlag),   combined, null, 18);
+        verifyHeapSizeAsPercentageOfPhysicalMemory(createRoot(!hosted), !combined, null, 0);
+        verifyHeapSizeAsPercentageOfPhysicalMemory(createRoot(!hosted, heapSizeInFlag), !combined, null, 0);
 
         // Explicit value overrides all defaults
-        verifyHeapSizeAsPercentageOfPhysicalMemory(  hosted, !combined, 67, 67);
-        verifyHeapSizeAsPercentageOfPhysicalMemory(  hosted,   combined, 68, 68);
-        verifyHeapSizeAsPercentageOfPhysicalMemory(!hosted, !combined, 69, 69);
+        verifyHeapSizeAsPercentageOfPhysicalMemory(createRoot(hosted, heapSizeInFlag), !combined, 67, 67);
+        verifyHeapSizeAsPercentageOfPhysicalMemory(createRoot(hosted, heapSizeInFlag),   combined, 68, 68);
+        verifyHeapSizeAsPercentageOfPhysicalMemory(createRoot(!hosted, heapSizeInFlag), !combined, 69, 69);
     }
 
     private void verifyJvmArgs(boolean isHosted, boolean hasDocproc, String expectedArgs, String jvmArgs) {
@@ -500,6 +504,13 @@ public class ContainerClusterTest {
 
     private static MockRoot createRoot(boolean isHosted) {
         DeployState state = new DeployState.Builder().properties(new TestProperties().setHostedVespa(isHosted)).build();
+        return createRoot(state);
+    }
+    private static MockRoot createRoot(boolean isHosted, int heapSizePercentage) {
+        DeployState state = new DeployState.Builder().properties(
+                new TestProperties()
+                        .setHostedVespa(isHosted)
+                        .setHeapSizePercentage(heapSizePercentage)).build();
         return createRoot(state);
     }
 

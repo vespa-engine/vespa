@@ -76,7 +76,7 @@ public final class ApplicationContainerCluster extends ContainerCluster<Applicat
     private static final BindingPattern PROMETHEUS_V1_HANDLER_BINDING_1 = SystemBindingPattern.fromHttpPath(PrometheusV1Handler.V1_PATH);
     private static final BindingPattern PROMETHEUS_V1_HANDLER_BINDING_2 = SystemBindingPattern.fromHttpPath(PrometheusV1Handler.V1_PATH + "/*");
 
-    public static final int heapSizePercentageOfTotalNodeMemory = 70;
+    public static final int defaultHeapSizePercentageOfTotalNodeMemory = 70;
     public static final int heapSizePercentageOfTotalNodeMemoryWhenCombinedCluster = 18;
 
     private final Set<FileReference> applicationBundles = new LinkedHashSet<>();
@@ -91,6 +91,7 @@ public final class ApplicationContainerCluster extends ContainerCluster<Applicat
     private boolean messageBusEnabled = true;
     private final int transport_events_before_wakeup;
     private final int transport_connections_per_target;
+    private final int heapSizePercentageOfTotalNodeMemory;
 
     private Integer memoryPercentage = null;
 
@@ -118,6 +119,9 @@ public final class ApplicationContainerCluster extends ContainerCluster<Applicat
         addTestrunnerComponentsIfTester(deployState);
         transport_connections_per_target = deployState.featureFlags().mbusJavaRpcNumTargets();
         transport_events_before_wakeup = deployState.featureFlags().mbusJavaEventsBeforeWakeup();
+        heapSizePercentageOfTotalNodeMemory = deployState.featureFlags().heapSizePercentage() > 0
+                ? Math.min(99, deployState.featureFlags().heapSizePercentage())
+                : defaultHeapSizePercentageOfTotalNodeMemory;
     }
 
     @Override
@@ -169,8 +173,7 @@ public final class ApplicationContainerCluster extends ContainerCluster<Applicat
         this.modelEvaluation = modelEvaluation;
     }
 
-    public void setMemoryPercentage(Integer memoryPercentage) { this.memoryPercentage = memoryPercentage;
-    }
+    public void setMemoryPercentage(Integer memoryPercentage) { this.memoryPercentage = memoryPercentage; }
 
     @Override
     public Optional<Integer> getMemoryPercentage() {

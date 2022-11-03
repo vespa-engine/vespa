@@ -44,6 +44,12 @@ public class PermanentFlags {
             "Takes effect at redeployment",
             ZONE_ID, APPLICATION_ID);
 
+    public static final UnboundIntFlag HEAP_SIZE_PERCENTAGE = defineIntFlag(
+            "heap-size-percentage", 70,
+            "Sets default jvm heap size percentage",
+            "Takes effect at redeployment",
+            ZONE_ID, APPLICATION_ID);
+
     public static final UnboundBooleanFlag FLEET_CANARY = defineFeatureFlag(
             "fleet-canary", false,
             "Whether the host is a fleet canary.",

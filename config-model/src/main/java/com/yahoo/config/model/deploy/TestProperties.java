@@ -12,6 +12,7 @@ import com.yahoo.config.provision.AthenzDomain;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.HostName;
 import com.yahoo.config.provision.Zone;
+import com.yahoo.vespa.model.container.ApplicationContainerCluster;
 
 import java.net.URI;
 import java.security.cert.X509Certificate;
@@ -76,6 +77,7 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
     private int rpc_num_targets = 1;
     private int rpc_events_before_wakeup = 1;
     private int mbus_network_threads = 1;
+    private int heapSizePercentage = ApplicationContainerCluster.defaultHeapSizePercentageOfTotalNodeMemory;
     private Architecture adminClusterNodeResourcesArchitecture = Architecture.getDefault();
     private boolean useRestrictedDataPlaneBindings = false;
 
@@ -127,6 +129,7 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
     @Override public int mbusCppRpcNumTargets() { return mbus_cpp_num_targets; }
     @Override public int mbusCppEventsBeforeWakeup() { return mbus_cpp_events_before_wakeup; }
     @Override public int rpcNumTargets() { return rpc_num_targets; }
+    @Override public int heapSizePercentage() { return heapSizePercentage; }
     @Override public int rpcEventsBeforeWakeup() { return rpc_events_before_wakeup; }
     @Override public String queryDispatchPolicy() { return queryDispatchPolicy; }
     @Override public boolean useTwoPhaseDocumentGc() { return useTwoPhaseDocumentGc; }
@@ -163,6 +166,11 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
 
     public TestProperties setFeedNiceness(double feedNiceness) {
         this.feedNiceness = feedNiceness;
+        return this;
+    }
+
+    public TestProperties setHeapSizePercentage(int percentage) {
+        this.heapSizePercentage = percentage;
         return this;
     }
 
