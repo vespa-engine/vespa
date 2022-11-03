@@ -10,8 +10,6 @@ import com.yahoo.document.datatypes.FieldValue;
  */
 public interface FieldValueAdapter extends FieldTypeAdapter {
 
-    DocumentType getDocumentType();
-
     FieldValue getInputValue(String fieldName);
 
     FieldValue getInputValue(FieldPath fieldPath);

@@ -204,11 +204,14 @@
       "abstract"
     ],
     "methods" : [
-      "public abstract com.yahoo.language.process.Stemmer getStemmer()",
-      "public abstract com.yahoo.language.process.Tokenizer getTokenizer()",
+      "public com.yahoo.language.process.Stemmer getStemmer()",
+      "public com.yahoo.language.process.Stemmer getStemmer(com.yahoo.language.process.LinguisticsContext)",
+      "public com.yahoo.language.process.Tokenizer getTokenizer()",
+      "public com.yahoo.language.process.Tokenizer getTokenizer(com.yahoo.language.process.LinguisticsContext)",
       "public abstract com.yahoo.language.process.Normalizer getNormalizer()",
-      "public abstract com.yahoo.language.process.Transformer getTransformer()",
-      "public abstract com.yahoo.language.process.Segmenter getSegmenter()",
+      "public com.yahoo.language.process.Transformer getTransformer()",
+      "public com.yahoo.language.process.Segmenter getSegmenter()",
+      "public com.yahoo.language.process.Segmenter getSegmenter(com.yahoo.language.process.LinguisticsContext)",
       "public abstract com.yahoo.language.detect.Detector getDetector()",
       "public abstract com.yahoo.language.process.GramSplitter getGramSplitter()",
       "public abstract com.yahoo.language.process.CharacterClasses getCharacterClasses()",
@@ -427,6 +430,33 @@
     ],
     "fields" : [ ]
   },
+  "com.yahoo.language.process.LinguisticsContext$Builder" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [ ],
+    "attributes" : [
+      "public"
+    ],
+    "methods" : [
+      "public void <init>()",
+      "public com.yahoo.language.process.LinguisticsContext$Builder schema(java.lang.String)",
+      "public com.yahoo.language.process.LinguisticsContext$Builder field(java.lang.String)",
+      "public com.yahoo.language.process.LinguisticsContext build()"
+    ],
+    "fields" : [ ]
+  },
+  "com.yahoo.language.process.LinguisticsContext" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [ ],
+    "attributes" : [
+      "public"
+    ],
+    "methods" : [
+      "public java.util.Optional schema()",
+      "public java.util.Optional field()",
+      "public static com.yahoo.language.process.LinguisticsContext empty()"
+    ],
+    "fields" : [ ]
+  },
   "com.yahoo.language.process.Normalizer" : {
     "superClass" : "java.lang.Object",
     "interfaces" : [ ],
@@ -461,7 +491,7 @@
       "abstract"
     ],
     "methods" : [
-      "public abstract java.util.List segment(java.lang.String, com.yahoo.language.Language)"
+      "public java.util.List segment(java.lang.String, com.yahoo.language.Language)"
     ],
     "fields" : [ ]
   },
@@ -734,7 +764,7 @@
       "abstract"
     ],
     "methods" : [
-      "public abstract java.lang.Iterable tokenize(java.lang.String, com.yahoo.language.Language, com.yahoo.language.process.StemMode, boolean)"
+      "public java.lang.Iterable tokenize(java.lang.String, com.yahoo.language.Language, com.yahoo.language.process.StemMode, boolean)"
     ],
     "fields" : [ ]
   },

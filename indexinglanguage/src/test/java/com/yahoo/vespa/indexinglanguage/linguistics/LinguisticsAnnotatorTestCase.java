@@ -8,6 +8,7 @@ import com.yahoo.document.annotation.SpanTrees;
 import com.yahoo.document.datatypes.StringFieldValue;
 import com.yahoo.language.Language;
 import com.yahoo.language.Linguistics;
+import com.yahoo.language.process.LinguisticsContext;
 import com.yahoo.language.process.StemMode;
 import com.yahoo.language.process.Token;
 import com.yahoo.language.process.TokenType;
@@ -15,8 +16,8 @@ import com.yahoo.language.process.Tokenizer;
 import com.yahoo.language.simple.SimpleLinguistics;
 import com.yahoo.language.simple.SimpleToken;
 
+import com.yahoo.vespa.indexinglanguage.expressions.ExecutionContext;
 import org.junit.Test;
-import org.mockito.Mockito;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -156,9 +157,9 @@ public class LinguisticsAnnotatorTestCase {
 
         Linguistics linguistics = newLinguistics(List.of(newToken("foo", "bar", TokenType.ALPHABETIC, false)),
                                                  Collections.<String, String>emptyMap());
-        new LinguisticsAnnotator(linguistics, CONFIG).annotate(val);
+        new LinguisticsAnnotator(linguistics, LinguisticsContext.empty(), CONFIG).annotate(val, new ExecutionContext());
 
-        assertTrue(new LinguisticsAnnotator(linguistics, CONFIG).annotate(val));
+        assertTrue(new LinguisticsAnnotator(linguistics, LinguisticsContext.empty(), CONFIG).annotate(val, new ExecutionContext()));
         assertEquals(spanTree, val.getSpanTree(SpanTrees.LINGUISTICS));
     }
 
@@ -174,36 +175,33 @@ public class LinguisticsAnnotatorTestCase {
 
         Linguistics linguistics = new SimpleLinguistics();
 
-        LinguisticsAnnotator annotator = new LinguisticsAnnotator(linguistics, new AnnotatorConfig().setMaxTokenLength(12));
+        LinguisticsAnnotator annotator = new LinguisticsAnnotator(linguistics, LinguisticsContext.empty(), new AnnotatorConfig().setMaxTokenLength(12));
 
-        assertTrue(annotator.annotate(shortValue));
+        assertTrue(annotator.annotate(shortValue, new ExecutionContext()));
         assertEquals(spanTree, shortValue.getSpanTree(SpanTrees.LINGUISTICS));
         assertEquals(shortString, shortValue.getSpanTree(SpanTrees.LINGUISTICS).getStringFieldValue().getString());
 
         StringFieldValue cappedValue = new StringFieldValue(shortString + " a longer string");
-        assertTrue(annotator.annotate(cappedValue));
+        assertTrue(annotator.annotate(cappedValue, new ExecutionContext()));
         assertEquals((shortString + " a longer string"), cappedValue.getSpanTree(SpanTrees.LINGUISTICS).getStringFieldValue().getString());
     }
 
     @Test
     public void requireThatMaxTermOccurencesIsHonored() {
         final String inputTerm = "foo";
-        final String stemmedInputTerm = "bar"; // completely different from
-                                               // inputTerm for safer test
+        final String stemmedInputTerm = "bar";
         final String paddedInputTerm = inputTerm + " ";
         final SpanTree expected = new SpanTree(SpanTrees.LINGUISTICS);
-        final int inputTermOccurence = AnnotatorConfig.DEFAULT_MAX_TERM_OCCURRENCES * 2;
+        final int inputTermOccurrence = AnnotatorConfig.DEFAULT_MAX_TERM_OCCURRENCES * 2;
         for (int i = 0; i < AnnotatorConfig.DEFAULT_MAX_TERM_OCCURRENCES; ++i) {
             expected.spanList().span(i * paddedInputTerm.length(), inputTerm.length())
                     .annotate(new Annotation(AnnotationTypes.TERM, new StringFieldValue(stemmedInputTerm)));
         }
         for (TokenType type : TokenType.values()) {
-            if (!type.isIndexable()) {
-                continue;
-            }
+            if ( ! type.isIndexable()) continue;
             StringBuilder input = new StringBuilder();
-            Token[] tokens = new Token[inputTermOccurence];
-            for (int i = 0; i < inputTermOccurence; ++i) {
+            Token[] tokens = new Token[inputTermOccurrence];
+            for (int i = 0; i < inputTermOccurrence; ++i) {
                 SimpleToken t = newToken(inputTerm, stemmedInputTerm, type);
                 t.setOffset(i * paddedInputTerm.length());
                 tokens[i] = t;
@@ -235,14 +233,30 @@ public class LinguisticsAnnotatorTestCase {
 
     private static void assertAnnotations(SpanTree expected, String str, Linguistics linguistics) {
         StringFieldValue val = new StringFieldValue(str);
-        assertEquals(expected != null, new LinguisticsAnnotator(linguistics, CONFIG).annotate(val));
+        assertEquals(expected != null, new LinguisticsAnnotator(linguistics, LinguisticsContext.empty(), CONFIG).annotate(val, new ExecutionContext()));
         assertEquals(expected, val.getSpanTree(SpanTrees.LINGUISTICS));
     }
 
     private static Linguistics newLinguistics(List<? extends Token> tokens, Map<String, String> replacementTerms) {
-        Linguistics linguistics = Mockito.mock(Linguistics.class);
-        Mockito.when(linguistics.getTokenizer()).thenReturn(new MyTokenizer(tokens, replacementTerms));
-        return linguistics;
+        return new MyLinguistics(tokens, replacementTerms);
+    }
+
+    private static class MyLinguistics extends SimpleLinguistics {
+
+        private final List<? extends Token> tokens;
+        private final Map<String, String> replacementTerms;
+
+        public MyLinguistics(List<? extends Token> tokens, Map<String, String> replacementTerms) {
+            super();
+            this.tokens = tokens;
+            this.replacementTerms = replacementTerms;
+        }
+
+        @Override
+        public Tokenizer getTokenizer(LinguisticsContext context) {
+            return new MyTokenizer(tokens, replacementTerms);
+        }
+
     }
 
     private static class MyTokenizer implements Tokenizer {

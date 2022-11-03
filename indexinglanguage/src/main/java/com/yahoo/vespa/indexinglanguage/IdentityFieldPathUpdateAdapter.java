@@ -67,7 +67,4 @@ public class IdentityFieldPathUpdateAdapter implements UpdateAdapter {
         fwdAdapter.tryOutputType(exp, fieldName, valueType);
     }
 
-    @Override
-    public DocumentType getDocumentType() { return fwdAdapter.getDocumentType(); }
-
 }

@@ -2,6 +2,7 @@
 package com.yahoo.vespa.indexinglanguage;
 
 import com.yahoo.document.DataType;
+import com.yahoo.document.DocumentType;
 import com.yahoo.document.Field;
 import com.yahoo.document.FieldPath;
 import com.yahoo.document.datatypes.FieldValue;

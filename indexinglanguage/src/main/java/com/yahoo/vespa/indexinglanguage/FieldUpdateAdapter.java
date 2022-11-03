@@ -95,9 +95,6 @@ public class FieldUpdateAdapter implements UpdateAdapter {
         return adapter.setOutputValue(exp, fieldName, fieldValue);
     }
 
-    @Override
-    public DocumentType getDocumentType() { return adapter.getDocumentType(); }
-
     public static FieldUpdateAdapter fromPartialUpdate(DocumentAdapter documentAdapter, ValueUpdate valueUpdate) {
         return new FieldUpdateAdapter(null, documentAdapter, new PartialBuilder(valueUpdate));
     }

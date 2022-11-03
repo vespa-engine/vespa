@@ -48,8 +48,7 @@ public class OpenNlpTokenizer implements Tokenizer {
     }
 
     @Override
-    public Iterable<Token> tokenize(String input, Language language, StemMode stemMode, boolean removeAccents,
-                                    LinguisticsContext context) {
+    public Iterable<Token> tokenize(String input, Language language, StemMode stemMode, boolean removeAccents) {
         Stemmer stemmer = stemmerFor(language, stemMode);
         if (stemmer == null)
             return simpleTokenizer.tokenize(input, language, stemMode, removeAccents);

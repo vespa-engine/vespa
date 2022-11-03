@@ -28,6 +28,7 @@ import static com.yahoo.language.LinguisticsCase.toLowerCase;
 public class LinguisticsAnnotator {
 
     private final Linguistics factory;
+    private final LinguisticsContext linguisticsContext;
     private final AnnotatorConfig config;
 
     private static class TermOccurrences {
@@ -56,8 +57,9 @@ public class LinguisticsAnnotator {
      * @param factory the linguistics factory to use when annotating
      * @param config  the linguistics config to use
      */
-    public LinguisticsAnnotator(Linguistics factory, AnnotatorConfig config) {
+    public LinguisticsAnnotator(Linguistics factory, LinguisticsContext context, AnnotatorConfig config) {
         this.factory = factory;
+        this.linguisticsContext = context;
         this.config = config;
     }
 
@@ -70,15 +72,14 @@ public class LinguisticsAnnotator {
     public boolean annotate(StringFieldValue text, ExecutionContext context) {
         if (text.getSpanTree(SpanTrees.LINGUISTICS) != null) return true;  // Already annotated with LINGUISTICS.
 
-        Tokenizer tokenizer = factory.getTokenizer();
+        Tokenizer tokenizer = factory.getTokenizer(linguisticsContext);
         String input = (text.getString().length() <= config.getMaxTokenizeLength())
                 ? text.getString()
                 : text.getString().substring(0, config.getMaxTokenizeLength());
         Iterable<Token> tokens = tokenizer.tokenize(input,
                                                     config.getLanguage(),
                                                     config.getStemMode(),
-                                                    config.getRemoveAccents(),
-                                                    new LinguisticsContext(context.getDocumentType().getName()));
+                                                    config.getRemoveAccents());
         TermOccurrences termOccurrences = new TermOccurrences(config.getMaxTermOccurrences());
         SpanTree tree = new SpanTree(SpanTrees.LINGUISTICS);
         for (Token token : tokens)
@@ -93,9 +94,9 @@ public class LinguisticsAnnotator {
      * Creates a TERM annotation which has the lowercase value as annotation (only) if it is different from the
      * original.
      *
-     * @param termToLowerCase The term to lower case.
-     * @param origTerm        The original term.
-     * @return the created TERM annotation.
+     * @param termToLowerCase the term to lower case
+     * @param origTerm        the original term
+     * @return the created TERM annotation
      */
     public static Annotation lowerCaseTermAnnotation(String termToLowerCase, String origTerm) {
         String annotationValue = toLowerCase(termToLowerCase);

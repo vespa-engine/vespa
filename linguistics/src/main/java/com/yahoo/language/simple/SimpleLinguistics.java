@@ -7,6 +7,7 @@ import com.yahoo.language.Linguistics;
 import com.yahoo.language.detect.Detector;
 import com.yahoo.language.process.CharacterClasses;
 import com.yahoo.language.process.GramSplitter;
+import com.yahoo.language.process.LinguisticsContext;
 import com.yahoo.language.process.Normalizer;
 import com.yahoo.language.process.Segmenter;
 import com.yahoo.language.process.SegmenterImpl;
@@ -45,10 +46,10 @@ public class SimpleLinguistics implements Linguistics {
     }
 
     @Override
-    public Stemmer getStemmer() { return new StemmerImpl(getTokenizer()); }
+    public Stemmer getStemmer(LinguisticsContext context) { return new StemmerImpl(getTokenizer(context)); }
 
     @Override
-    public Tokenizer getTokenizer() { return new SimpleTokenizer(normalizer, transformer, specialTokenRegistry); }
+    public Tokenizer getTokenizer(LinguisticsContext context) { return new SimpleTokenizer(normalizer, transformer, specialTokenRegistry); }
 
     @Override
     public Normalizer getNormalizer() { return normalizer; }
@@ -57,7 +58,7 @@ public class SimpleLinguistics implements Linguistics {
     public Transformer getTransformer() { return transformer; }
 
     @Override
-    public Segmenter getSegmenter() { return new SegmenterImpl(getTokenizer()); }
+    public Segmenter getSegmenter(LinguisticsContext context) { return new SegmenterImpl(getTokenizer(context)); }
 
     @Override
     public Detector getDetector() { return detector; }

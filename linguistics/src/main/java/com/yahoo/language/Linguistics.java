@@ -4,6 +4,7 @@ package com.yahoo.language;
 import com.yahoo.language.detect.Detector;
 import com.yahoo.language.process.CharacterClasses;
 import com.yahoo.language.process.GramSplitter;
+import com.yahoo.language.process.LinguisticsContext;
 import com.yahoo.language.process.Normalizer;
 import com.yahoo.language.process.Segmenter;
 import com.yahoo.language.process.Stemmer;
@@ -38,19 +39,36 @@ public interface Linguistics {
         CHARACTER_CLASSES
     }
 
+    /** Prefer getStemmer(LinguisticsContext) */
+    // TODO: Deprecate this
+    default Stemmer getStemmer() {
+        return getStemmer(LinguisticsContext.empty());
+    }
+
     /**
      * Returns a thread-unsafe stemmer or lemmatizer.
      * This is used at query time to do stemming of search terms to indexes which contains text tokenized
      * with stemming turned on
      */
-    Stemmer getStemmer();
+    default Stemmer getStemmer(LinguisticsContext linguisticsContext) {
+        return getStemmer();
+    }
+
+    /**
+     * Prefer getTokenize(LinguisticsContext).
+     */
+    default Tokenizer getTokenizer() {
+        return getTokenizer(LinguisticsContext.empty());
+    }
 
     /**
      * Returns a thread-unsafe tokenizer.
      * This is used at indexing time to produce an optionally stemmed and
      * transformed (accent normalized) stream of indexable tokens.
      */
-    Tokenizer getTokenizer();
+    default Tokenizer getTokenizer(LinguisticsContext context) {
+        return getTokenizer();
+    }
 
     /** Returns a thread-unsafe normalizer. This is used at query time to cjk normalize query text. */
     Normalizer getNormalizer();
@@ -60,14 +78,26 @@ public interface Linguistics {
      * This is used at query time to do stemming of search terms to indexes which contains text tokenized
      * with accent normalization turned on
      */
-    Transformer getTransformer();
+    default Transformer getTransformer() {
+        return getTransformer();
+    }
+
+    /**
+     * Prefer getSegmenter(LinguisticsContext).
+     */
+    // TODO: Deprecate this
+    default Segmenter getSegmenter() {
+        return getSegmenter(LinguisticsContext.empty());
+    }
 
     /**
      * Returns a thread-unsafe segmenter.
      * This is used at query time to find the individual semantic components of search terms to indexes
      * tokenized with segmentation.
      */
-    Segmenter getSegmenter();
+    default Segmenter getSegmenter(LinguisticsContext context) {
+        return getSegmenter();
+    }
 
     /**
      * Returns a thread-unsafe detector.

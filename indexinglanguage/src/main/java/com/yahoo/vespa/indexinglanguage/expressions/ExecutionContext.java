@@ -11,6 +11,7 @@ import com.yahoo.language.detect.Detection;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
 
 /**
  * @author Simon Thoresen Hult
@@ -74,12 +75,6 @@ public class ExecutionContext implements FieldTypeAdapter, FieldValueAdapter, Cl
         return this;
     }
 
-    @Override
-    public DocumentType getDocumentType() {
-        if (adapter == null) return null; // Only happens in tests
-        return adapter.getDocumentType();
-    }
-
     public FieldValueAdapter getAdapter() {
         return adapter;
     }
@@ -98,8 +93,7 @@ public class ExecutionContext implements FieldTypeAdapter, FieldValueAdapter, Cl
     }
 
     public ExecutionContext setLanguage(Language language) {
-        language.getClass();
-        this.language = language;
+        this.language = Objects.requireNonNull(language);
         return this;
     }
 

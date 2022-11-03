@@ -3,14 +3,18 @@ package com.yahoo.language.simple;
 
 import com.yahoo.language.Language;
 import com.yahoo.language.LinguisticsCase;
-import com.yahoo.language.process.*;
+import com.yahoo.language.process.Normalizer;
+import com.yahoo.language.process.SpecialTokenRegistry;
+import com.yahoo.language.process.StemMode;
+import com.yahoo.language.process.Token;
+import com.yahoo.language.process.TokenType;
+import com.yahoo.language.process.Tokenizer;
+import com.yahoo.language.process.Transformer;
 import com.yahoo.language.simple.kstem.KStemmer;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Function;
-import java.util.logging.Logger;
-import java.util.logging.Level;
 
 /**
  * <p>A tokenizer which splits on whitespace, normalizes and transforms using the given implementations
@@ -23,7 +27,6 @@ import java.util.logging.Level;
  */
 public class SimpleTokenizer implements Tokenizer {
 
-    private static final Logger log = Logger.getLogger(SimpleTokenizer.class.getName());
     private final static int SPACE_CODE = 32;
 
     private final Normalizer normalizer;
@@ -90,21 +93,13 @@ public class SimpleTokenizer implements Tokenizer {
     }
 
     private String processToken(String token, Language language, StemMode stemMode, boolean removeAccents) {
-        String original = token;
-        log.log(Level.FINEST, () -> "processToken '" + original + "'");
         token = normalizer.normalize(token);
         token = LinguisticsCase.toLowerCase(token);
         if (removeAccents)
             token = transformer.accentDrop(token, language);
-        if (stemMode != StemMode.NONE) {
-            String oldToken = token;
+        if (stemMode != StemMode.NONE)
             token = stemmer.stem(token);
-            String newToken = token;
-            log.log(Level.FINEST, () -> "stem '" + oldToken+"' to '" + newToken+"'");
-        }
-        String result = token;
-        log.log(Level.FINEST, () -> "processed token is: " + result);
-        return result;
+        return token;
     }
 
 }

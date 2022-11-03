@@ -17,9 +17,9 @@ public class SegmenterImpl implements Segmenter {
     }
 
     @Override
-    public List<String> segment(String input, Language language, LinguisticsContext context) {
+    public List<String> segment(String input, Language language) {
         List<String> segments = new ArrayList<>();
-        for (Token token : tokenizer.tokenize(input, language, StemMode.NONE, false, context)) {
+        for (Token token : tokenizer.tokenize(input, language, StemMode.NONE, false)) {
             findSegments(token, segments);
         }
         if (segments.isEmpty()) {
