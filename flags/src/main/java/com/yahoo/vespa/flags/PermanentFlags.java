@@ -61,7 +61,7 @@ public class PermanentFlags {
             "Specifies the resources that ought to be immediately available for additional cluster " +
                     "allocations.  If the resources are not available, additional hosts will be provisioned. " +
                     "Only applies to dynamically provisioned zones.",
-            "Takes effect on next iteration of DynamicProvisioningMaintainer.");
+            "Takes effect on next iteration of HostCapacityMaintainer.");
 
     public static final UnboundIntFlag REBOOT_INTERVAL_IN_DAYS = defineIntFlag(
             "reboot-interval-in-days", 15,
@@ -73,7 +73,7 @@ public class PermanentFlags {
             "shared-host", SharedHost.createDisabled(), SharedHost.class,
             "Specifies whether shared hosts can be provisioned, and if so, the advertised " +
                     "node resources of the host, the maximum number of containers, etc.",
-            "Takes effect on next iteration of DynamicProvisioningMaintainer.");
+            "Takes effect on next iteration of HostCapacityMaintainer.");
 
     public static final UnboundStringFlag HOST_FLAVOR = defineStringFlag(
             "host-flavor", "",

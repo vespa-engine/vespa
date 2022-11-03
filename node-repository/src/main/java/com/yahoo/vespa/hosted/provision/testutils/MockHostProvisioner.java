@@ -70,7 +70,7 @@ public class MockHostProvisioner implements HostProvisioner {
                                                                    .orElseThrow(() -> new NodeAllocationException("No host flavor matches " + resources, true)));
         List<ProvisionedHost> hosts = new ArrayList<>();
         for (int index : provisionIndices) {
-            String hostHostname = hostType == NodeType.host ? "hostname" + index : hostType.name() + index;
+            String hostHostname = hostType == NodeType.host ? "host" + index : hostType.name() + index;
             hosts.add(new ProvisionedHost("id-of-" + hostType.name() + index,
                                           hostHostname,
                                           hostFlavor,
@@ -143,8 +143,8 @@ public class MockHostProvisioner implements HostProvisioner {
         return this;
     }
 
-    public MockHostProvisioner completeRebuildOf(Node host) {
-        rebuildsCompleted.add(host.hostname());
+    public MockHostProvisioner completeRebuildOf(String hostname) {
+        rebuildsCompleted.add(hostname);
         return this;
     }
 
@@ -173,11 +173,11 @@ public class MockHostProvisioner implements HostProvisioner {
     }
 
     private List<Address> createAddressesForHost(NodeType hostType, Flavor flavor, int hostIndex) {
-        long numAddresses = Math.max(1, Math.round(flavor.resources().bandwidthGbps()));
-        return IntStream.range(0, (int) numAddresses)
+        long numAddresses = Math.max(2, Math.round(flavor.resources().bandwidthGbps()));
+        return IntStream.range(1, (int) numAddresses)
                         .mapToObj(i -> {
                             String hostname = hostType == NodeType.host
-                                    ? "nodename" + hostIndex + "_" + i
+                                    ? "host" + hostIndex + "-" + i
                                     : hostType.childNodeType().name() + i;
                             return new Address(hostname);
                         })

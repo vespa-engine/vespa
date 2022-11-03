@@ -69,11 +69,13 @@ public class NodeRepositoryMaintenance extends AbstractComponent {
                                 .map(lbService -> new LoadBalancerExpirer(nodeRepository, defaults.loadBalancerExpirerInterval, lbService, metric))
                                 .ifPresent(maintainers::add);
         provisionServiceProvider.getHostProvisioner()
-                                .map(hostProvisioner -> new DynamicProvisioningMaintainer(nodeRepository, defaults.dynamicProvisionerInterval, hostProvisioner, flagSource, metric))
-                                .ifPresent(maintainers::add);
-        provisionServiceProvider.getHostProvisioner()
-                                .map(hostProvisioner -> new HostRetirer(nodeRepository, defaults.hostRetirerInterval, metric, hostProvisioner))
-                                .ifPresent(maintainers::add);
+                                .map(hostProvisioner -> List.of(
+                                        new HostCapacityMaintainer(nodeRepository, defaults.dynamicProvisionerInterval, hostProvisioner, flagSource, metric),
+                                        new HostDeprovisioner(nodeRepository, defaults.hostDeprovisionerInterval, metric, hostProvisioner),
+                                        new HostResumeProvisioner(nodeRepository, defaults.hostResumeProvisionerInterval, metric, hostProvisioner),
+                                        new HostRetirer(nodeRepository, defaults.hostRetirerInterval, metric, hostProvisioner),
+                                        new DiskReplacer(nodeRepository, defaults.diskReplacerInterval, metric, hostProvisioner)))
+                                .ifPresent(maintainers::addAll);
         // The DuperModel is filled with infrastructure applications by the infrastructure provisioner, so explicitly run that now
         infrastructureProvisioner.maintainButThrowOnException();
     }
@@ -112,6 +114,9 @@ public class NodeRepositoryMaintenance extends AbstractComponent {
         private final Duration infrastructureProvisionInterval;
         private final Duration loadBalancerExpirerInterval;
         private final Duration dynamicProvisionerInterval;
+        private final Duration hostDeprovisionerInterval;
+        private final Duration hostResumeProvisionerInterval;
+        private final Duration diskReplacerInterval;
         private final Duration osUpgradeActivatorInterval;
         private final Duration rebalancerInterval;
         private final Duration nodeMetricsCollectionInterval;
@@ -125,6 +130,9 @@ public class NodeRepositoryMaintenance extends AbstractComponent {
         DefaultTimes(Zone zone, Deployer deployer) {
             autoscalingInterval = Duration.ofMinutes(5);
             dynamicProvisionerInterval = Duration.ofMinutes(3);
+            hostDeprovisionerInterval = Duration.ofMinutes(3);
+            hostResumeProvisionerInterval = Duration.ofMinutes(3);
+            diskReplacerInterval = Duration.ofMinutes(3);
             failedExpirerInterval = Duration.ofMinutes(10);
             failGrace = Duration.ofMinutes(20);
             infrastructureProvisionInterval = Duration.ofMinutes(3);

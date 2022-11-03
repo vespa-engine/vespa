@@ -421,6 +421,7 @@ public class ProvisioningTester {
             }
 
             String hostname = nodeNamer.apply(nextHost);
+            String[] hostnameParts = hostname.split("\\.", 2);
             String ipv4 = String.format("127.0.%d.%d", nextIP / 256, nextIP % 256);
             String ipv6 = String.format("::%x", nextIP);
 
@@ -432,13 +433,14 @@ public class ProvisioningTester {
             Set<String> ipAddressPool = new LinkedHashSet<>();
             for (int poolIp = 1; poolIp <= ipAddressPoolSize; poolIp++) {
                 nextIP++;
+                String nodeHostname = hostnameParts[0] + "-" + poolIp + (hostnameParts.length > 1 ? "." + hostnameParts[1] : "");
                 String ipv6Addr = String.format("::%x", nextIP);
                 ipAddressPool.add(ipv6Addr);
-                nameResolver.addRecord(String.format("node-%d-of-%s", poolIp, hostname), ipv6Addr);
+                nameResolver.addRecord(nodeHostname, ipv6Addr);
                 if (dualStack) {
                     String ipv4Addr = String.format("127.0.%d.%d", (127 + (nextIP / 256)), nextIP % 256);
                     ipAddressPool.add(ipv4Addr);
-                    nameResolver.addRecord(String.format("node-%d-of-%s", poolIp, hostname), ipv4Addr);
+                    nameResolver.addRecord(nodeHostname, ipv4Addr);
                 }
             }
             Node.Builder builder = Node.create(hostname, new IP.Config(hostIps, ipAddressPool), hostname, flavor, type);

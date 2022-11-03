@@ -33,7 +33,7 @@ public class AutoscalingIntegrationTest {
         Autoscaler autoscaler = new Autoscaler(fixture.tester().nodeRepository());
 
         // The metrics response (below) hardcodes these hostnames:
-        assertEquals(Set.of("node-1-of-host-1.yahoo.com", "node-1-of-host-10.yahoo.com"), fixture.nodes().hostnames());
+        assertEquals(Set.of("host-1-1.yahoo.com", "host-10-1.yahoo.com"), fixture.nodes().hostnames());
 
         for (int i = 0; i < 1000; i++) {
             fixture.tester().clock().advance(Duration.ofSeconds(10));
@@ -58,7 +58,7 @@ public class AutoscalingIntegrationTest {
                 "{\n" +
                 "  \"nodes\": [\n" +
                 "    {\n" +
-                "      \"hostname\": \"node-1-of-host-1.yahoo.com\",\n" +
+                "      \"hostname\": \"host-1-1.yahoo.com\",\n" +
                 "      \"role\": \"role0\",\n" +
                 "      \"node\": {\n" +
                 "        \"timestamp\": [now],\n" +
@@ -77,7 +77,7 @@ public class AutoscalingIntegrationTest {
                 "      }\n" +
                 "    },\n" +
                 "    {\n" +
-                "      \"hostname\": \"node-1-of-host-10.yahoo.com\",\n" +
+                "      \"hostname\": \"host-10-1.yahoo.com\",\n" +
                 "      \"role\": \"role1\",\n" +
                 "      \"node\": {\n" +
                 "        \"timestamp\": [now],\n" +

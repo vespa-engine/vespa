@@ -99,7 +99,8 @@ public class ProvisioningTest {
 
         // remove nodes before deploying
         SystemState state5 = prepare(application1, 2, 2, 3, 3, defaultResources, tester);
-        HostSpec removed = tester.removeOne(state5.allHosts);
+        HostSpec removed = tester.removeOne(state5.content0);
+        state5.allHosts.remove(removed);
         tester.activate(application1, state5.allHosts);
         assertEquals(removed.hostname(),
                      tester.nodeRepository().nodes().list(Node.State.inactive).owner(application1).first().get().hostname());
@@ -1102,11 +1103,11 @@ public class ProvisioningTest {
 
     private static class SystemState {
 
-        private Set<HostSpec> allHosts;
-        private Set<HostSpec> container0;
-        private Set<HostSpec> container1;
-        private Set<HostSpec> content0;
-        private Set<HostSpec> content1;
+        private final Set<HostSpec> allHosts;
+        private final Set<HostSpec> container0;
+        private final Set<HostSpec> container1;
+        private final Set<HostSpec> content0;
+        private final Set<HostSpec> content1;
 
         public SystemState(Set<HostSpec> allHosts,
                            Set<HostSpec> container1,
