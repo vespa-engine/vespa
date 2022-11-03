@@ -1634,8 +1634,9 @@ SearchContextTest::requireThatFlagAttributeIsWorkingWhenNewDocsAreAdded()
     cfg.setFastSearch(true);
     {
         cfg.setGrowStrategy(GrowStrategy::make(1, 0, 1));
+        using IL = AttributeBuilder::IntList;
         auto a = AttributeBuilder("flags", cfg).
-                fill_array({{10, 24}, {20, 24}, {30, 26}, {40, 24}}).get();
+                fill_array({IL{10, 24}, {20, 24}, {30, 26}, {40, 24}}).get();
         {
             ResultSetPtr rs = performSearch(*a, "<24");
             EXPECT_EQUAL(2u, rs->getNumHits());
@@ -1718,8 +1719,9 @@ SearchContextTest::requireThatFlagAttributeHandlesTheByteRange()
     LOG(info, "requireThatFlagAttributeHandlesTheByteRange()");
     Config cfg(BasicType::INT8, CollectionType::ARRAY);
     cfg.setFastSearch(true);
+    using IL = AttributeBuilder::IntList;
     auto a = AttributeBuilder("flags", cfg).
-            fill_array({{-128}, {-64, -8}, {0, 8}, {64, 24}, {127}}).get();
+            fill_array({IL{-128}, {-64, -8}, {0, 8}, {64, 24}, {127}}).get();
 
     performSearch(*a, "-128", DocSet({1}), TermType::WORD);
     performSearch(*a, "127", DocSet({5}), TermType::WORD);
