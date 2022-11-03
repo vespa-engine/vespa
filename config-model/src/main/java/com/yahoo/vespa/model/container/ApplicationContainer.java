@@ -41,6 +41,7 @@ public final class ApplicationContainer extends Container implements
         addComponent(new SimpleComponent("com.yahoo.container.jdisc.messagebus.SessionCache"));
         addComponent(new SimpleComponent("com.yahoo.container.jdisc.SystemInfoProvider"));
         addComponent(new SimpleComponent("com.yahoo.container.jdisc.ZoneInfoProvider"));
+        addComponent(new SimpleComponent("com.yahoo.container.jdisc.ClusterInfoProvider"));
     }
 
     @Override
