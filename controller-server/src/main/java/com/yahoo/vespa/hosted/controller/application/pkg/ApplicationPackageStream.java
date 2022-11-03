@@ -1,11 +1,19 @@
 package com.yahoo.vespa.hosted.controller.application.pkg;
 
+import com.yahoo.security.X509CertificateUtils;
+
+import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.FilterInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
+import java.io.UncheckedIOException;
+import java.security.cert.X509Certificate;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
 import java.util.function.UnaryOperator;
@@ -13,7 +21,9 @@ import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 import java.util.zip.ZipOutputStream;
 
+import static java.io.OutputStream.nullOutputStream;
 import static java.lang.Math.min;
+import static java.nio.charset.StandardCharsets.UTF_8;
 
 /**
  * Wraps a zipped application package stream.
@@ -42,9 +52,31 @@ public class ApplicationPackageStream extends InputStream {
     private boolean done = false;
     private boolean closed = false;
 
+    public static Replacer addingCertificate(Optional<X509Certificate> certificate) {
+        return certificate.map(cert -> Replacer.of(Map.of(ApplicationPackage.trustedCertificatesFile,
+                                                          trustBytes -> append(trustBytes, cert))))
+                          .orElse(Replacer.of(Map.of()));
+    }
+
+    static InputStream append(InputStream trustBytes, X509Certificate cert) {
+        try {
+            List<X509Certificate> trusted = X509CertificateUtils.certificateListFromPem(new String(trustBytes.readAllBytes(), UTF_8));
+            trusted.add(cert);
+            return new ByteArrayInputStream(X509CertificateUtils.toPem(trusted).getBytes(UTF_8));
+        }
+        catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
+    }
+
     /** Stream that effectively copies the input stream to its {@link #truncatedPackage()} when exhausted. */
     public ApplicationPackageStream(InputStream in) {
         this(in, __ -> true, Map.of());
+    }
+
+    /** Stream that replaces the indicated entries, and copies all metadata files to its {@link #truncatedPackage()} when exhausted. */
+    public ApplicationPackageStream(InputStream in, Replacer replacer) {
+        this(in, name -> ApplicationPackage.prePopulated.contains(name) || name.endsWith(".xml"), replacer);
     }
 
     /** Stream that replaces the indicated entries, and copies the filtered entries to its {@link #truncatedPackage()} when exhausted. */
@@ -153,8 +185,15 @@ public class ApplicationPackageStream extends InputStream {
     }
 
     @Override
-    public void close() throws IOException {
-        if (closed != (closed = true)) inZip.close();
+    public void close() {
+        if ( ! closed) try {
+            transferTo(nullOutputStream());
+            inZip.close();
+            closed = true;
+        }
+        catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
     }
 
     /** Replaces entries in a zip stream as they are encountered, then appends remaining entries at the end. */
@@ -167,14 +206,17 @@ public class ApplicationPackageStream extends InputStream {
         InputStream modify(String name, InputStream in);
 
         /**
-         * Removes entries whose name map to {@code in -> null}.
-         * Modifies entries present in both input and the map.
-         * Appends entries present exclusively in the map.
-         * Writes all other entries as they are.
+         * Wraps a map of fixed replacements, and:
+         * <ul>
+         * <li>Removes entries whose value is {@code null}.</li>
+         * <li>Modifies entries present in both input and the map.</li>
+         * <li>Appends entries present exclusively in the map.</li>
+         * <li>Writes all other entries as they are.</li>
+         * </ul>
          */
         static Replacer of(Map<String, UnaryOperator<InputStream>> replacements) {
             return new Replacer() {
-                Map<String, UnaryOperator<InputStream>> remaining = new HashMap<>(replacements);
+                final Map<String, UnaryOperator<InputStream>> remaining = new HashMap<>(replacements);
                 @Override public String next() {
                     return remaining.isEmpty() ? null : remaining.keySet().iterator().next();
                 }
@@ -184,34 +226,6 @@ public class ApplicationPackageStream extends InputStream {
                 }
             };
         }
-
-    }
-
-    public static class LazyInputStream extends InputStream {
-
-        private Supplier<InputStream> source;
-        private InputStream delegate;
-
-        public LazyInputStream(Supplier<InputStream> source) {
-            this.source = source;
-        }
-
-        private InputStream in() {
-            if (delegate == null) {
-                delegate = source.get();
-                source = null;
-            }
-            return delegate;
-        }
-
-        @Override public int read() throws IOException { return in().read(); }
-        @Override public int read(byte[] b, int off, int len) throws IOException { return in().read(b, off, len); }
-        @Override public long skip(long n) throws IOException { return in().skip(n); }
-        @Override public int available() throws IOException { return in().available(); }
-        @Override public void close() throws IOException { in().close(); }
-        @Override public synchronized void mark(int readlimit) { in().mark(readlimit); }
-        @Override public synchronized void reset() throws IOException { in().reset(); }
-        @Override public boolean markSupported() { return in().markSupported(); }
 
     }
 

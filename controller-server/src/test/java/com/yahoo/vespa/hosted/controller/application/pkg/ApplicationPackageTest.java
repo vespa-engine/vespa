@@ -3,11 +3,11 @@ package com.yahoo.vespa.hosted.controller.application.pkg;
 
 import com.yahoo.config.application.api.DeploymentSpec;
 import com.yahoo.config.application.api.ValidationId;
+import com.yahoo.io.LazyInputStream;
 import com.yahoo.security.KeyAlgorithm;
 import com.yahoo.security.KeyUtils;
 import com.yahoo.security.SignatureAlgorithm;
 import com.yahoo.security.X509CertificateBuilder;
-import com.yahoo.vespa.hosted.controller.application.pkg.ApplicationPackageStream.LazyInputStream;
 import org.junit.jupiter.api.Test;
 
 import javax.security.auth.x500.X500Principal;

@@ -80,7 +80,7 @@ public interface HttpClient extends Closeable {
         /** Sets the request body. */
         default RequestBuilder body(HttpEntity entity) {
             if (entity.isRepeatable()) return body(() -> entity);
-            throw new IllegalArgumentException("entitiy must be repeatable, or a supplier must be used");
+            throw new IllegalArgumentException("entity must be repeatable, or a supplier must be used");
         }
 
         /** Sets the request body. */

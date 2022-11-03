@@ -67,11 +67,13 @@ import static java.util.stream.Collectors.toMap;
  */
 public class ApplicationPackage {
 
-    private static final String trustedCertificatesFile = "security/clients.pem";
-    private static final String buildMetaFile = "build-meta.json";
+    static final String trustedCertificatesFile = "security/clients.pem";
+    static final String buildMetaFile = "build-meta.json";
     static final String deploymentFile = "deployment.xml";
-    private static final String validationOverridesFile = "validation-overrides.xml";
+    static final String validationOverridesFile = "validation-overrides.xml";
     static final String servicesFile = "services.xml";
+    static final Set<String> prePopulated = Set.of(deploymentFile, validationOverridesFile, servicesFile, buildMetaFile, trustedCertificatesFile);
+
     private static Hasher hasher() { return Hashing.murmur3_128().newHasher(); }
 
     private final String bundleHash;
@@ -101,7 +103,7 @@ public class ApplicationPackage {
      */
     public ApplicationPackage(byte[] zippedContent, boolean requireFiles) {
         this.zippedContent = Objects.requireNonNull(zippedContent, "The application package content cannot be null");
-        this.files = new ZipArchiveCache(zippedContent, Set.of(deploymentFile, validationOverridesFile, servicesFile, buildMetaFile, trustedCertificatesFile));
+        this.files = new ZipArchiveCache(zippedContent, prePopulated);
 
         Optional<DeploymentSpec> deploymentSpec = files.get(deploymentFile).map(bytes -> new String(bytes, UTF_8)).map(DeploymentSpec::fromXml);
         if (requireFiles && deploymentSpec.isEmpty())

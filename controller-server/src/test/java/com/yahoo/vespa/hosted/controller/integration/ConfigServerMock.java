@@ -44,7 +44,9 @@ import com.yahoo.vespa.hosted.controller.application.SystemApplication;
 import com.yahoo.vespa.hosted.controller.application.pkg.ApplicationPackage;
 
 import java.io.ByteArrayInputStream;
+import java.io.IOException;
 import java.io.InputStream;
+import java.io.UncheckedIOException;
 import java.net.URI;
 import java.time.Duration;
 import java.time.Instant;
@@ -383,8 +385,14 @@ public class ConfigServerMock extends AbstractComponent implements ConfigServer 
                                                        deployment.instance().instance()));
         DeploymentId id = new DeploymentId(deployment.instance(), deployment.zone());
 
-        applications.put(id, new Application(id.applicationId(), lastPrepareVersion, new ApplicationPackage(deployment.applicationPackage())));
+        try {
+            applications.put(id, new Application(id.applicationId(), lastPrepareVersion, new ApplicationPackage(deployment.applicationPackage().readAllBytes())));
+        }
+        catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
         ClusterSpec.Id cluster = ClusterSpec.Id.from("default");
+        deployment.endpointCertificateMetadata(); // Supplier with side effects >_<
 
         if (nodeRepository().list(id.zoneId(), NodeFilter.all().applications(id.applicationId())).isEmpty())
             provision(id.zoneId(), id.applicationId(), cluster);
