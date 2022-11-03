@@ -219,17 +219,17 @@ fixlimits () {
     if [ "$(id -u)" -ne 0 ]; then
         # number of open files:
         if [ $file_descriptor -lt $file_descriptor_limit ]; then
-            echo "Expected file descriptor limit to be at least $file_descriptor_limit, was $file_descriptor"
+            echo "Expected file descriptor limit to be at least $file_descriptor_limit, was $file_descriptor" >&2
         fi
 
         # core file size
         if [ "$core_size" != "unlimited" ]; then
-            echo "Expected core file size to be unlimited, was $core_size"
+            echo "Expected core file size to be unlimited, was $core_size" >&2
         fi
 
         # number of processes/threads
         if [ "$max_processes" != "unlimited" ] && [ "$max_processes" -lt "$max_processes_limit" ]; then
-            echo "Expected max processes to be at least $max_processes_limit, was $max_processes"
+            echo "Expected max processes to be at least $max_processes_limit, was $max_processes" >&2
         fi
     else
         # number of open files:
