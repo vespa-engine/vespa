@@ -613,7 +613,7 @@ public class OsVersionsTest {
                 Node newNode = Node.create(node.id(), node.ipConfig(), node.hostname(), node.flavor(), node.type())
                                    .build();
                 node = tester.nodeRepository().nodes().addNodes(List.of(newNode), Agent.system).get(0);
-                node = tester.nodeRepository().nodes().setReady(node.hostname(), Agent.system, getClass().getSimpleName());
+                node = tester.move(Node.State.ready, node);
                 tester.prepareAndActivateInfraApplication(application, nodeType);
                 node = tester.nodeRepository().nodes().node(node.hostname()).get();
             }

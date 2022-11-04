@@ -60,7 +60,7 @@ public class NodeRepositoryTest {
             // Expected
         }
 
-        tester.nodeRepository().nodes().setReady("host1", Agent.system, getClass().getSimpleName());
+        tester.nodeRepository().nodes().setReady(tester.nodeRepository().nodes().lockAndGetRequired("host1"), Agent.system, getClass().getSimpleName());
         tester.nodeRepository().nodes().removeRecursively("host1");
     }
 
@@ -85,8 +85,8 @@ public class NodeRepositoryTest {
     @Test
     public void fail_readying_with_hard_fail() {
         NodeRepositoryTester tester = new NodeRepositoryTester();
-        tester.addHost("host1", "host1", "default", NodeType.tenant);
-        tester.addHost("host2", "host2", "default", NodeType.tenant);
+        tester.addHost("host1", "host1", "default", NodeType.host);
+        tester.addHost("host2", "host2", "default", NodeType.host);
 
         Node node2 = tester.nodeRepository().nodes().node("host2").orElseThrow();
         var reportsBuilder = new Reports.Builder(node2.reports());
@@ -133,7 +133,7 @@ public class NodeRepositoryTest {
 
         // Now node10 is in provisioned, set node11 to failed and node12 to ready, and it should be OK to delete host1
         tester.nodeRepository().nodes().fail("node11", Agent.system, getClass().getSimpleName());
-        tester.nodeRepository().nodes().setReady("node12", Agent.system, getClass().getSimpleName());
+        tester.nodeRepository().nodes().setReady(tester.nodeRepository().nodes().lockAndGetRequired("node12"), Agent.system, getClass().getSimpleName());
         tester.nodeRepository().nodes().removeRecursively("node12"); // Remove one of the children first instead
         assertEquals(4, tester.nodeRepository().nodes().list().size());
         tester.nodeRepository().nodes().removeRecursively("host1");

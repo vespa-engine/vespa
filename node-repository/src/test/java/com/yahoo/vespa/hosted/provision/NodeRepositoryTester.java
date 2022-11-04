@@ -4,7 +4,6 @@ package com.yahoo.vespa.hosted.provision;
 import com.yahoo.config.provision.DockerImage;
 import com.yahoo.config.provision.Flavor;
 import com.yahoo.config.provision.NodeFlavors;
-import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.config.provisioning.FlavorsConfig;
@@ -66,10 +65,6 @@ public class NodeRepositoryTester {
 
     public Node addHost(String id, String hostname, String flavor, NodeType type) {
         return addNode(id, hostname, null, nodeFlavors.getFlavorOrThrow(flavor), type);
-    }
-
-    public Node addNode(String id, String parentHostname, NodeResources resources) {
-        return addNode(id, id, parentHostname, new Flavor(resources), NodeType.tenant);
     }
 
     public Node addNode(String id, String hostname, String parentHostname, String flavor, NodeType type) {

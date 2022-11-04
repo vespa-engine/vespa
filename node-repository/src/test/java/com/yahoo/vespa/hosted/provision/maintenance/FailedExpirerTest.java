@@ -313,7 +313,7 @@ public class FailedExpirerTest {
                                      .map(this::get)
                                      .collect(Collectors.toList());
             nodes = nodeRepository.nodes().deallocate(nodes, Agent.system, getClass().getSimpleName());
-            nodeRepository.nodes().setReady(nodes, Agent.system, getClass().getSimpleName());
+            tester.move(Node.State.ready, nodes);
             return this;
         }
 

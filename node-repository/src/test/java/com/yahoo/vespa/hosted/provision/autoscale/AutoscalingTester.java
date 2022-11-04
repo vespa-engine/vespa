@@ -18,7 +18,6 @@ import com.yahoo.vespa.hosted.provision.Nodelike;
 import com.yahoo.vespa.hosted.provision.applications.Application;
 import com.yahoo.vespa.hosted.provision.applications.Cluster;
 import com.yahoo.vespa.hosted.provision.applications.ScalingEvent;
-import com.yahoo.vespa.hosted.provision.node.Agent;
 import com.yahoo.vespa.hosted.provision.node.IP;
 import com.yahoo.vespa.hosted.provision.provisioning.CapacityPolicies;
 import com.yahoo.vespa.hosted.provision.provisioning.HostResourcesCalculator;
@@ -108,7 +107,7 @@ class AutoscalingTester {
         Node host = nodeRepository().nodes().node(node.parentHostname().get()).get();
         host = host.with(new IP.Config(Set.of("::" + 0 + ":0"), Set.of("::" + 0 + ":2")));
         if (host.state() == Node.State.provisioned)
-            nodeRepository().nodes().setReady(List.of(host), Agent.system, getClass().getSimpleName());
+            provisioningTester.move(Node.State.ready, host);
     }
 
     public void deactivateRetired(ApplicationId application, ClusterSpec cluster, Capacity capacity) {

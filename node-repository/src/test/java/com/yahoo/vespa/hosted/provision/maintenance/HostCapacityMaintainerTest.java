@@ -297,7 +297,7 @@ public class HostCapacityMaintainerTest {
 
         // Activate hosts
         List<Node> provisioned = tester.nodeRepository.nodes().list().state(Node.State.provisioned).asList();
-        tester.nodeRepository.nodes().setReady(provisioned, Agent.system, this.getClass().getSimpleName());
+        tester.provisioningTester.move(Node.State.ready, provisioned);
         tester.provisioningTester.activateTenantHosts();
 
         // Allocating nodes to a host does not result in provisioning of additional capacity
@@ -477,7 +477,7 @@ public class HostCapacityMaintainerTest {
         dynamicProvisioningTester.maintain();
         List<ProvisionedHost> newHosts = dynamicProvisioningTester.hostProvisioner.provisionedHosts();
         assertEquals(1, newHosts.size());
-        tester.nodeRepository().nodes().setReady(newHosts.get(0).hostHostname(), Agent.operator, getClass().getSimpleName());
+        tester.move(Node.State.ready, newHosts.get(0).hostHostname());
         tester.prepareAndActivateInfraApplication(hostApp, hostType);
         assertEquals(3, tester.nodeRepository().nodes().list(Node.State.active).nodeType(hostType).size());
 
@@ -573,7 +573,7 @@ public class HostCapacityMaintainerTest {
                                                                   .toList();
         assertEquals(count, provisionedHostnames.size());
         for (var hostname : provisionedHostnames) {
-            tester.provisioningTester.nodeRepository().nodes().setReady(hostname, Agent.operator, getClass().getSimpleName());
+            tester.provisioningTester.move(Node.State.ready, hostname);
         }
         tester.provisioningTester.prepareAndActivateInfraApplication(DynamicProvisioningTester.tenantHostApp.getApplicationId(), NodeType.host);
         NodeList activeHosts = tester.provisioningTester.nodeRepository().nodes()

@@ -59,7 +59,7 @@ public class LoadBalancerExpirerTest {
         assertNotSame(LoadBalancer.State.inactive, loadBalancers.get().get(lb2).state());
 
         // Expirer defers removal while nodes are still allocated to application
-        tester.nodeRepository().nodes().setReady(tester.nodeRepository().nodes().list(Node.State.dirty).asList(), Agent.system, getClass().getSimpleName());
+        tester.move(Node.State.ready, tester.nodeRepository().nodes().list(Node.State.dirty).asList());
         expirer.maintain();
         assertEquals(Set.of(), tester.loadBalancerService().instances().get(lb1).reals());
         assertEquals(Set.of(), loadBalancers.get().get(lb1).instance().get().reals());
@@ -138,7 +138,7 @@ public class LoadBalancerExpirerTest {
                           .cluster(cluster)
                           .asList();
         nodes = tester.nodeRepository().nodes().deallocate(nodes, Agent.system, getClass().getSimpleName());
-        tester.nodeRepository().nodes().setReady(nodes, Agent.system, getClass().getSimpleName());
+        tester.move(Node.State.ready, nodes);
     }
 
     private void deployApplication(ApplicationId application, ClusterSpec.Id... clusters) {

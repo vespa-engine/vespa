@@ -75,7 +75,7 @@ public class InactiveAndFailedExpirerTest {
         assertEquals(2, dirty.size());
 
         // One node is set back to ready
-        Node ready = tester.nodeRepository().nodes().setReady(List.of(dirty.asList().get(0)), Agent.system, getClass().getSimpleName()).get(0);
+        Node ready = tester.move(Node.State.ready, dirty.asList().get(0));
         assertEquals("Allocated history is removed on readying",
                 List.of(History.Event.Type.provisioned, History.Event.Type.readied),
                 ready.history().events().stream().map(History.Event::type).collect(Collectors.toList()));

@@ -244,7 +244,7 @@ public class RetiredExpirerTest {
         var nodes = List.of(node);
         nodes = nodeRepository.nodes().addNodes(nodes, Agent.system);
         nodes = nodeRepository.nodes().deallocate(nodes, Agent.system, getClass().getSimpleName());
-        nodeRepository.nodes().setReady(nodes, Agent.system, getClass().getSimpleName());
+        tester.move(Node.State.ready, nodes);
 
         // no changes while replacement config server is ready
         retiredExpirer.run();

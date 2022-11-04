@@ -12,9 +12,9 @@ import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.Flavor;
 import com.yahoo.config.provision.HostSpec;
 import com.yahoo.config.provision.InstanceName;
+import com.yahoo.config.provision.NodeAllocationException;
 import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.NodeType;
-import com.yahoo.config.provision.NodeAllocationException;
 import com.yahoo.config.provision.ProvisionLock;
 import com.yahoo.config.provision.RegionName;
 import com.yahoo.config.provision.SystemName;
@@ -23,7 +23,6 @@ import com.yahoo.config.provision.Zone;
 import com.yahoo.transaction.NestedTransaction;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeList;
-import com.yahoo.vespa.hosted.provision.node.Agent;
 import org.junit.Test;
 
 import java.util.HashSet;
@@ -82,7 +81,7 @@ public class VirtualNodeProvisioningTest {
         // The surplus node is dirtied and then readied for new allocations
         List<Node> dirtyNode = tester.nodeRepository().nodes().list(Node.State.dirty).owner(applicationId).asList();
         assertEquals(1, dirtyNode.size());
-        tester.nodeRepository().nodes().setReady(dirtyNode, Agent.system, getClass().getSimpleName());
+        tester.move(Node.State.ready, dirtyNode);
 
         // Go up to 4 nodes again in container cluster
         List<HostSpec> containerHosts3 = tester.prepare(applicationId, containerClusterSpec, containerNodeCount, groups, resources1);
@@ -648,7 +647,7 @@ public class VirtualNodeProvisioningTest {
         else {
             assertEquals(0, tester.getNodes(app1, Node.State.inactive).size());
             assertEquals(2, tester.nodeRepository().nodes().list(Node.State.dirty).size());
-            tester.nodeRepository().nodes().setReady(tester.nodeRepository().nodes().list(Node.State.dirty).asList(), Agent.system, "test");
+            tester.move(Node.State.ready, tester.nodeRepository().nodes().list(Node.State.dirty).asList());
             tester.activate(app1, cluster1, Capacity.from(new ClusterResources(4, 1, r)));
         }
 

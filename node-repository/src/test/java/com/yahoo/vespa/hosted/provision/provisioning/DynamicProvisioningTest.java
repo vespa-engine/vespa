@@ -475,7 +475,7 @@ public class DynamicProvisioningTest {
         List<HostSpec> prepared = tester.prepare(application, clusterSpec, nodes, groups, resources);
         NodeList provisionedHosts = tester.nodeRepository().nodes().list(Node.State.provisioned).nodeType(NodeType.host);
         if (!provisionedHosts.isEmpty()) {
-            tester.nodeRepository().nodes().setReady(provisionedHosts.asList(), Agent.system, DynamicProvisioningTest.class.getSimpleName());
+            tester.move(Node.State.ready, provisionedHosts.asList());
             tester.activateTenantHosts();
         }
         tester.activate(application, prepared);
