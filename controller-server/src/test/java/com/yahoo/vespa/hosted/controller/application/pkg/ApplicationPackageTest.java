@@ -160,11 +160,11 @@ public class ApplicationPackageTest {
         assertEquals(originalPackage.bundleHash(), similarDeploymentXml.bundleHash());
     }
 
-    static Map<String, String> unzip(byte[] zip) {
-        return ZipEntries.from(zip, __ -> true, 1 << 24, true)
+    private static Map<String, String> unzip(byte[] zip) {
+        return ZipEntries.from(zip, __ -> true, 1 << 10, true)
                          .asList().stream()
                          .collect(Collectors.toMap(ZipEntries.ZipEntryWithContent::name,
-                                                   entry -> new String(entry.content().orElse(new byte[0]), UTF_8)));
+                                          entry -> new String(entry.contentOrThrow(), UTF_8)));
     }
 
     private ApplicationPackage getApplicationZip(String path) throws IOException {
