@@ -26,9 +26,11 @@ import java.util.stream.StreamSupport;
 public record NodeAcl(Node node,
                       Set<TrustedNode> trustedNodes,
                       Set<String> trustedNetworks,
-                      Set<Integer> trustedPorts) {
+                      Set<Integer> trustedPorts,
+                      Set<Integer> trustedUdpPorts) {
 
     private static final Set<Integer> RPC_PORTS = Set.of(19070);
+    private static final int WIREGUARD_PORT = 51820;
 
     public NodeAcl {
         Objects.requireNonNull(node, "node must be non-null");
@@ -40,6 +42,7 @@ public record NodeAcl(Node node,
     public static NodeAcl from(Node node, NodeList allNodes, LoadBalancers loadBalancers) {
         Set<TrustedNode> trustedNodes = new TreeSet<>(Comparator.comparing(TrustedNode::hostname));
         Set<Integer> trustedPorts = new LinkedHashSet<>();
+        Set<Integer> trustedUdpPorts = new LinkedHashSet<>();
         Set<String> trustedNetworks = new LinkedHashSet<>();
 
         // For all cases below, trust:
@@ -86,10 +89,12 @@ public record NodeAcl(Node node,
                 // - port 19070 (RPC) from all tenant nodes (and their hosts, in case traffic is NAT-ed via parent)
                 // - port 19070 (RPC) from all proxy nodes (and their hosts, in case traffic is NAT-ed via parent)
                 // - port 4443 from the world
+                // - udp port 51820 from the world
                 trustedNodes.addAll(TrustedNode.of(allNodes.nodeType(NodeType.host, NodeType.tenant,
                                                                      NodeType.proxyhost, NodeType.proxy),
                                                    RPC_PORTS));
                 trustedPorts.add(4443);
+                trustedUdpPorts.add(WIREGUARD_PORT);
             }
             case proxy -> {
                 // Proxy nodes trust:
@@ -109,7 +114,7 @@ public record NodeAcl(Node node,
             default -> throw new IllegalArgumentException("Don't know how to create ACL for " + node +
                                                           " of type " + node.type());
         }
-        return new NodeAcl(node, trustedNodes, trustedNetworks, trustedPorts);
+        return new NodeAcl(node, trustedNodes, trustedNetworks, trustedPorts, trustedUdpPorts);
     }
 
     public record TrustedNode(String hostname, NodeType type, Set<String> ipAddresses, Set<Integer> ports) {
