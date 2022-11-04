@@ -5,6 +5,7 @@ import com.yahoo.security.KeyId;
 import com.yahoo.security.SealedSharedKey;
 import com.yahoo.security.SecretSharedKey;
 import com.yahoo.test.ManualClock;
+import com.yahoo.vespa.flags.Flags;
 import com.yahoo.vespa.flags.InMemoryFlagSource;
 import com.yahoo.vespa.hosted.node.admin.configserver.cores.Cores;
 import com.yahoo.vespa.hosted.node.admin.container.metrics.DimensionMetrics;
@@ -61,8 +62,7 @@ public class CoredumpHandlerTest {
     private final ManualClock clock = new ManualClock();
     @SuppressWarnings("unchecked")
     private final Supplier<String> coredumpIdSupplier = mock(Supplier.class);
-    @SuppressWarnings("unchecked")
-    private final Supplier<SecretSharedKey> secretSharedKeySupplier = mock(Supplier.class);
+    private final SecretSharedKeySupplier secretSharedKeySupplier = mock(SecretSharedKeySupplier.class);
     private final InMemoryFlagSource flagSource = new InMemoryFlagSource();
     private final CoredumpHandler coredumpHandler =
             new CoredumpHandler(coreCollector, cores, coredumpReporter, containerCrashPath.pathInContainer(),
@@ -198,7 +198,7 @@ public class CoredumpHandlerTest {
 
     @Test
     void get_metadata_test_with_encryption() throws IOException {
-        when(secretSharedKeySupplier.get()).thenReturn(makeFixedSecretSharedKey());
+        when(secretSharedKeySupplier.create(any())).thenReturn(Optional.of(makeFixedSecretSharedKey()));
         do_get_metadata_test(Optional.of("AVeryCoolToken"), Optional.of("AnEvenCoolerToken"));
     }
 
@@ -250,8 +250,25 @@ public class CoredumpHandlerTest {
 
     @Test
     void process_single_coredump_test_with_encryption() throws IOException {
-        when(secretSharedKeySupplier.get()).thenReturn(makeFixedSecretSharedKey());
+        flagSource.withStringFlag(Flags.CORE_ENCRYPTION_PUBLIC_KEY_ID.id(), "bar-key");
+        when(secretSharedKeySupplier.create(KeyId.ofString("bar-key"))).thenReturn(Optional.of(makeFixedSecretSharedKey()));
         do_process_single_coredump_test("dump_bash.core.431.zst.enc");
+    }
+
+    // TODO fail closed instead of open
+    @Test
+    void encryption_disabled_when_no_public_key_set_in_feature_flag() throws IOException {
+        flagSource.withStringFlag(Flags.CORE_ENCRYPTION_PUBLIC_KEY_ID.id(), ""); // empty -> not set
+        verify(secretSharedKeySupplier, never()).create(any());
+        do_process_single_coredump_test("dump_bash.core.431.zst"); // No .enc suffix; not encrypted
+    }
+
+    // TODO fail closed instead of open
+    @Test
+    void encryption_disabled_when_no_key_returned_for_key_id_specified_by_feature_flag() throws IOException {
+        flagSource.withStringFlag(Flags.CORE_ENCRYPTION_PUBLIC_KEY_ID.id(), "baz-key");
+        when(secretSharedKeySupplier.create(KeyId.ofString("baz-key"))).thenReturn(Optional.empty());
+        do_process_single_coredump_test("dump_bash.core.431.zst"); // No .enc suffix; not encrypted
     }
 
     @Test

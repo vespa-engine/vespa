@@ -5,12 +5,14 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.yahoo.config.provision.DockerImage;
+import com.yahoo.security.KeyId;
 import com.yahoo.security.SecretSharedKey;
 import com.yahoo.security.SharedKeyGenerator;
 import com.yahoo.vespa.flags.BooleanFlag;
 import com.yahoo.vespa.flags.FetchVector;
 import com.yahoo.vespa.flags.FlagSource;
 import com.yahoo.vespa.flags.Flags;
+import com.yahoo.vespa.flags.StringFlag;
 import com.yahoo.vespa.hosted.node.admin.configserver.cores.CoreDumpMetadata;
 import com.yahoo.vespa.hosted.node.admin.configserver.cores.Cores;
 import com.yahoo.vespa.hosted.node.admin.configserver.cores.bindings.ReportCoreDumpRequest;
@@ -47,6 +49,7 @@ import java.util.function.Supplier;
 import java.util.logging.Logger;
 import java.util.regex.Pattern;
 import java.util.stream.IntStream;
+import java.util.stream.Stream;
 
 import static com.yahoo.vespa.hosted.node.admin.task.util.file.FileFinder.nameEndsWith;
 import static com.yahoo.vespa.hosted.node.admin.task.util.file.FileFinder.nameMatches;
@@ -79,8 +82,9 @@ public class CoredumpHandler {
     private final Metrics metrics;
     private final Clock clock;
     private final Supplier<String> coredumpIdSupplier;
-    private final Supplier<SecretSharedKey> secretSharedKeySupplier;
+    private final SecretSharedKeySupplier secretSharedKeySupplier;
     private final BooleanFlag reportCoresViaCfgFlag;
+    private final StringFlag coreEncryptionPublicKeyIdFlag;
 
     /**
      * @param crashPathInContainer path inside the container where core dump are dumped
@@ -90,14 +94,23 @@ public class CoredumpHandler {
                            String crashPathInContainer, Path doneCoredumpsPath, Metrics metrics,
                            FlagSource flagSource) {
         this(coreCollector, cores, coredumpReporter, crashPathInContainer, doneCoredumpsPath,
-             metrics, Clock.systemUTC(), () -> UUID.randomUUID().toString(), () -> null /*TODO*/,
+             metrics, Clock.systemUTC(), () -> UUID.randomUUID().toString(), (ctx) -> Optional.empty() /*TODO*/,
              flagSource);
+    }
+
+    // TODO remove redundant constructor once internal callsite has been updated
+    public CoredumpHandler(CoreCollector coreCollector, Cores cores, CoredumpReporter coredumpReporter,
+                           String crashPathInContainer, Path doneCoredumpsPath, Metrics metrics,
+                           SecretSharedKeySupplier secretSharedKeySupplier, FlagSource flagSource) {
+        this(coreCollector, cores, coredumpReporter, crashPathInContainer, doneCoredumpsPath,
+                metrics, Clock.systemUTC(), () -> UUID.randomUUID().toString(), secretSharedKeySupplier,
+                flagSource);
     }
 
     CoredumpHandler(CoreCollector coreCollector, Cores cores, CoredumpReporter coredumpReporter,
                     String crashPathInContainer, Path doneCoredumpsPath, Metrics metrics,
                     Clock clock, Supplier<String> coredumpIdSupplier,
-                    Supplier<SecretSharedKey> secretSharedKeySupplier, FlagSource flagSource) {
+                    SecretSharedKeySupplier secretSharedKeySupplier, FlagSource flagSource) {
         this.coreCollector = coreCollector;
         this.cores = cores;
         this.coredumpReporter = coredumpReporter;
@@ -108,6 +121,7 @@ public class CoredumpHandler {
         this.coredumpIdSupplier = coredumpIdSupplier;
         this.secretSharedKeySupplier = secretSharedKeySupplier;
         this.reportCoresViaCfgFlag = Flags.REPORT_CORES_VIA_CFG.bindTo(flagSource);
+        this.coreEncryptionPublicKeyIdFlag = Flags.CORE_ENCRYPTION_PUBLIC_KEY_ID.bindTo(flagSource);
     }
 
 
@@ -196,9 +210,16 @@ public class CoredumpHandler {
         return Optional.of(enqueuedDir);
     }
 
+    private String corePublicKeyFlagValue(NodeAgentContext context) {
+        return coreEncryptionPublicKeyIdFlag.with(FetchVector.Dimension.NODE_TYPE, context.nodeType().name()).value();
+    }
+
     void processAndReportSingleCoredump(NodeAgentContext context, ContainerPath coredumpDirectory, Supplier<Map<String, Object>> nodeAttributesSupplier) {
         try {
-            Optional<SecretSharedKey> sharedCoreKey = Optional.ofNullable(secretSharedKeySupplier.get());
+            Optional<SecretSharedKey> sharedCoreKey = Optional.of(corePublicKeyFlagValue(context))
+                    .filter(k -> !k.isEmpty())
+                    .map(KeyId::ofString)
+                    .flatMap(secretSharedKeySupplier::create);
             Optional<String> decryptionToken = sharedCoreKey.map(k -> k.sealedSharedKey().toTokenString());
             String metadata = getMetadata(context, coredumpDirectory, nodeAttributesSupplier, decryptionToken);
             String coredumpId = coredumpDirectory.getFileName().toString();
@@ -359,7 +380,10 @@ public class CoredumpHandler {
         dockerImage.ifPresent(metadata::setDockerImage);
         dockerImage.flatMap(DockerImage::tag).ifPresent(metadata::setVespaVersion);
         dockerImage.ifPresent(metadata::setDockerImage);
-        Optional<SecretSharedKey> sharedCoreKey = Optional.ofNullable(secretSharedKeySupplier.get());
+        Optional<SecretSharedKey> sharedCoreKey = Optional.of(corePublicKeyFlagValue(context))
+                .filter(k -> !k.isEmpty())
+                .map(KeyId::ofString)
+                .flatMap(secretSharedKeySupplier::create);
         sharedCoreKey.map(key -> key.sealedSharedKey().toTokenString()).ifPresent(metadata::setDecryptionToken);
 
         String coreDumpId = coreDumpDirectory.getFileName().toString();
