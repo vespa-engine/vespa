@@ -1,18 +1,24 @@
 package com.yahoo.vespa.hosted.controller.application.pkg;
 
 import com.yahoo.config.application.api.DeploymentSpec;
+import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.zone.ZoneId;
+import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
+import com.yahoo.vespa.hosted.controller.api.integration.deployment.RunId;
 import com.yahoo.vespa.hosted.controller.application.pkg.TestPackage.TestSummary;
 import com.yahoo.vespa.hosted.controller.config.ControllerConfig;
+import com.yahoo.vespa.hosted.controller.config.ControllerConfig.Steprunner.Testerapp;
 import org.junit.jupiter.api.Test;
 
+import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.jar.JarOutputStream;
 import java.util.zip.ZipEntry;
 
@@ -20,9 +26,11 @@ import static com.yahoo.vespa.hosted.controller.api.integration.deployment.Teste
 import static com.yahoo.vespa.hosted.controller.api.integration.deployment.TesterCloud.Suite.staging;
 import static com.yahoo.vespa.hosted.controller.api.integration.deployment.TesterCloud.Suite.staging_setup;
 import static com.yahoo.vespa.hosted.controller.api.integration.deployment.TesterCloud.Suite.system;
+import static com.yahoo.vespa.hosted.controller.application.pkg.ApplicationPackageTest.unzip;
 import static com.yahoo.vespa.hosted.controller.application.pkg.TestPackage.validateTests;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * @author jonmv
@@ -77,15 +85,15 @@ public class TestPackageTest {
     @Test
     void testBundleValidation() throws IOException {
         byte[] testZip = ApplicationPackage.filesZip(Map.of("components/foo-tests.jar", testsJar("SystemTest", "StagingSetup", "ProductionTest"),
-                "artifacts/key", new byte[0]));
+                                                            "artifacts/key", new byte[0]));
         TestSummary summary = validateTests(List.of(system), testZip);
 
         assertEquals(List.of(system, staging_setup, production), summary.suites());
         assertEquals(List.of("test package contains 'artifacts/key'; this conflicts with credentials used to run tests in Vespa Cloud",
-                        "test package has staging setup, so it should also include staging tests",
-                        "test package has production tests, but no production tests are declared in deployment.xml",
-                        "see https://docs.vespa.ai/en/testing.html for details on how to write system tests for Vespa"),
-                summary.problems());
+                             "test package has staging setup, so it should also include staging tests",
+                             "test package has production tests, but no production tests are declared in deployment.xml",
+                             "see https://docs.vespa.ai/en/testing.html for details on how to write system tests for Vespa"),
+                     summary.problems());
     }
 
     @Test
@@ -95,20 +103,47 @@ public class TestPackageTest {
 
         assertEquals(List.of(staging, production), summary.suites());
         assertEquals(List.of("test package has staging tests, so it should also include staging setup",
-                        "see https://docs.vespa.ai/en/testing.html for details on how to write system tests for Vespa"),
-                summary.problems());
+                             "see https://docs.vespa.ai/en/testing.html for details on how to write system tests for Vespa"),
+                     summary.problems());
     }
 
     @Test
     void testBasicTestsValidation() {
         byte[] testZip = ApplicationPackage.filesZip(Map.of("tests/staging-test/foo.json", new byte[0],
-                "tests/staging-setup/foo.json", new byte[0]));
+                                                            "tests/staging-setup/foo.json", new byte[0]));
         TestSummary summary = validateTests(List.of(system, production), testZip);
         assertEquals(List.of(staging_setup, staging), summary.suites());
         assertEquals(List.of("test package has no system tests, but <test /> is declared in deployment.xml",
-                        "test package has no production tests, but production tests are declared in deployment.xml",
-                        "see https://docs.vespa.ai/en/testing.html for details on how to write system tests for Vespa"),
-                summary.problems());
+                             "test package has no production tests, but production tests are declared in deployment.xml",
+                             "see https://docs.vespa.ai/en/testing.html for details on how to write system tests for Vespa"),
+                     summary.problems());
+    }
+
+    @Test
+    void testTestPacakgeAssembly() throws IOException {
+        byte[] bundleZip = ApplicationPackage.filesZip(Map.of("components/foo-tests.jar", testsJar("SystemTest", "ProductionTest"),
+                                                              "artifacts/key", new byte[0]));
+        TestPackage bundleTests = new TestPackage(() -> new ByteArrayInputStream(bundleZip),
+                                                  false,
+                                                  new RunId(ApplicationId.defaultId(), JobType.dev("abc"), 123),
+                                                  new Testerapp.Builder().tenantCdBundle("foo").runtimeProviderClass("bar").build(),
+                                                  DeploymentSpec.fromXml("""
+                                                                         <deployment>
+                                                                           <test />
+                                                                         </deployment>
+                                                                         """),
+                                                  null,
+                                                  null);
+
+        Map<String, String> bundlePackage = unzip(bundleTests.asApplicationPackage().zipStream().readAllBytes());
+        bundlePackage.keySet().removeIf(name -> name.startsWith("tests/.ignore") || name.startsWith("artifacts/.ignore"));
+        assertEquals(Set.of("deployment.xml",
+                            "services.xml",
+                            "components/foo-tests.jar",
+                            "artifacts/key"),
+                     bundlePackage.keySet());
+        assertEquals(Map.of(),
+                     unzip(bundleTests.asApplicationPackage().truncatedPackage().zippedContent()));
     }
 
     @Test
