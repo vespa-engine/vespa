@@ -194,7 +194,7 @@ public class DeploymentSpec {
     public DeploymentInstanceSpec requireInstance(InstanceName name) {
         Optional<DeploymentInstanceSpec> instance = instance(name);
         if (instance.isEmpty())
-            throw new IllegalArgumentException("No instance '" + name + "' in deployment.xml'. Instances: " +
+            throw new IllegalArgumentException("No instance '" + name + "' in deployment.xml. Instances: " +
                                                instances().stream().map(spec -> spec.name().toString()).collect(Collectors.joining(",")));
         return instance.get();
     }
