@@ -12,11 +12,11 @@ import com.yahoo.vespa.hosted.controller.api.integration.billing.Quota;
 import com.yahoo.vespa.hosted.controller.api.integration.certificates.EndpointCertificateMetadata;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.ContainerEndpoint;
 import com.yahoo.vespa.hosted.controller.api.integration.secrets.TenantSecretStore;
+import com.yahoo.yolean.concurrent.Memoized;
 
 import java.io.InputStream;
 import java.security.cert.X509Certificate;
 import java.util.List;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Supplier;
@@ -62,13 +62,13 @@ public class DeploymentData {
         this.applicationPackage = requireNonNull(applicationPackage);
         this.platform = requireNonNull(platform);
         this.containerEndpoints = Set.copyOf(requireNonNull(containerEndpoints));
-        this.endpointCertificateMetadata = requireNonNull(endpointCertificateMetadata);
+        this.endpointCertificateMetadata = new Memoized<>(requireNonNull(endpointCertificateMetadata));
         this.dockerImageRepo = requireNonNull(dockerImageRepo);
         this.athenzDomain = athenzDomain;
-        this.quota = quota;
+        this.quota = new Memoized<>(requireNonNull(quota));
         this.tenantSecretStores = List.copyOf(requireNonNull(tenantSecretStores));
         this.operatorCertificates = List.copyOf(requireNonNull(operatorCertificates));
-        this.cloudAccount = Objects.requireNonNull(cloudAccount);
+        this.cloudAccount = new Memoized<>(requireNonNull(cloudAccount));
         this.dryRun = dryRun;
     }
 
