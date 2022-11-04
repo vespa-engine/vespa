@@ -28,13 +28,13 @@ public interface HostResourcesCalculator {
      * Used with exclusive hosts:
      * Returns the lowest possible real resources we'll get if requesting the given advertised resources
      */
-    NodeResources requestToReal(NodeResources advertisedResources, boolean exclusive);
+    NodeResources requestToReal(NodeResources advertisedResources, boolean exclusiveAllocation);
 
     /**
      * Used with shared hosts:
      * Returns the advertised resources we need to request to be sure to get at least the given real resources.
      */
-    NodeResources realToRequest(NodeResources realResources, boolean exclusive);
+    NodeResources realToRequest(NodeResources realResources, boolean exclusiveAllocation);
 
     /**
      * Returns the disk space to reserve in base2 GB. This space is reserved for use by the host, e.g. for storing

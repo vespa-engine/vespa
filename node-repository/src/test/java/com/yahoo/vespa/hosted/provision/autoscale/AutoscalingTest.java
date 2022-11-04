@@ -123,9 +123,6 @@ public class AutoscalingTest {
         var duration = fixture.loader().addMeasurements(new Load(0.04, 0.39, 0.01), 20);
         fixture.tester().clock().advance(duration.negated());
         fixture.loader().zeroTraffic(20);
-
-        //System.out.println("Ideal         " + fixture.clusterModel().idealLoad());
-        //System.out.println("Adjustment to " + fixture.clusterModel().loadAdjustment());
         fixture.tester().assertResources("Scaled down",
                                          2, 1, 2, 16, 10,
                                          fixture.autoscale());
