@@ -175,10 +175,14 @@ public class InactiveAndFailedExpirerTest {
         List<Node> inactiveNodes = tester.getNodes(applicationId, Node.State.inactive).asList();
         assertEquals(2, inactiveNodes.size());
 
-        // Nodes marked for deprovisioning are moved to parked
+        // Nodes marked for deprovisioning are moved to dirty and then parked when readied by host-admin
         tester.patchNodes(inactiveNodes, (node) -> node.withWantToRetire(true, true, Agent.system, tester.clock().instant()));
         tester.advanceTime(Duration.ofMinutes(11));
         new InactiveExpirer(tester.nodeRepository(), Duration.ofMinutes(10), Map.of(), new TestMetric()).run();
+
+        NodeList expired = tester.nodeRepository().nodes().list(Node.State.dirty);
+        assertEquals(2, expired.size());
+        expired.forEach(node -> tester.nodeRepository().nodes().markNodeAvailableForNewAllocation(node.hostname(), Agent.operator, "Readied by host-admin"));
         assertEquals(2, tester.nodeRepository().nodes().list(Node.State.parked).size());
     }
 
