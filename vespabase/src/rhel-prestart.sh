@@ -124,9 +124,9 @@ fixdir ${VESPA_USER} ${VESPA_GROUP}   755  logs/vespa
 fixdir ${VESPA_USER} ${VESPA_GROUP}   755  logs/vespa/access
 fixdir ${VESPA_USER} ${VESPA_GROUP}   755  logs/vespa/configserver
 fixdir ${VESPA_USER} ${VESPA_GROUP}   755  logs/vespa/search
-fixdir ${VESPA_USER} ${VESPA_GROUP}   755  tmp
-fixdir ${VESPA_USER} ${VESPA_GROUP}   755  tmp/vespa
 fixdir ${VESPA_USER} ${VESPA_GROUP}   755  var
+fixdir ${VESPA_USER} ${VESPA_GROUP}   755  var/tmp
+fixdir ${VESPA_USER} ${VESPA_GROUP}   755  var/tmp/vespa
 fixdir ${VESPA_USER} ${VESPA_GROUP}   755  var/crash
 fixdir ${VESPA_USER} ${VESPA_GROUP}   755  var/db
 fixdir ${VESPA_USER} ${VESPA_GROUP}   755  var/db/vespa
