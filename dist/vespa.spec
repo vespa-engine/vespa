@@ -637,7 +637,7 @@ fi
 %dir %{_prefix}/conf/logd
 %dir %attr(-,%{_vespa_user},%{_vespa_group}) %{_prefix}/conf/telegraf
 %dir %{_prefix}/conf/vespa
-%dir %attr(-,%{_vespa_user},%{_vespa_group}) %{_prefix}/conf/zookeeper
+%dir %attr(-,%{_vespa_user},%{_vespa_group}) %{_prefix}/var/zookeeper/conf
 %dir %{_prefix}/etc
 %{_prefix}/etc/systemd
 %{_prefix}/etc/vespa

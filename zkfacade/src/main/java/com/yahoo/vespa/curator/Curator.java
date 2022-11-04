@@ -61,7 +61,7 @@ import java.util.logging.Logger;
 public class Curator extends AbstractComponent implements AutoCloseable {
 
     private static final Logger LOG = Logger.getLogger(Curator.class.getName());
-    private static final File ZK_CLIENT_CONFIG_FILE = new File(Defaults.getDefaults().underVespaHome("conf/zookeeper/zookeeper-client.cfg"));
+    private static final File ZK_CLIENT_CONFIG_FILE = new File(Defaults.getDefaults().underVespaHome("var/zookeeper/conf/zookeeper-client.cfg"));
 
     // Note that session timeout has min and max values are related to tickTime defined by server, see zookeeper-server.def
     static final Duration DEFAULT_ZK_SESSION_TIMEOUT = Duration.ofSeconds(120);
