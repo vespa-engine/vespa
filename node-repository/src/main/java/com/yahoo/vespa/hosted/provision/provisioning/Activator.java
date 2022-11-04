@@ -73,6 +73,8 @@ class Activator {
 
         NodeList reserved = updatePortsFrom(hosts, applicationNodes.state(Node.State.reserved)
                                                                    .matching(node -> hostnames.contains(node.hostname())));
+        nodeRepository.nodes().reserve(reserved.asList()); // Re-reserve nodes to avoid reservation expiry
+
         NodeList oldActive = applicationNodes.state(Node.State.active); // All nodes active now
         NodeList continuedActive = oldActive.matching(node -> hostnames.contains(node.hostname()));
         NodeList newActive = withHostInfo(continuedActive, hosts, activationTime).and(reserved); // All nodes that will be active when this is committed
