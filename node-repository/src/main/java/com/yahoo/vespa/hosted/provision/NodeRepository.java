@@ -5,6 +5,7 @@ import com.yahoo.component.annotation.Inject;
 import com.yahoo.component.AbstractComponent;
 import com.yahoo.concurrent.maintenance.JobControl;
 import com.yahoo.config.provision.ApplicationTransaction;
+import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.DockerImage;
 import com.yahoo.config.provision.NodeFlavors;
 import com.yahoo.config.provision.Zone;
@@ -189,6 +190,15 @@ public class NodeRepository extends AbstractComponent {
 
     /** The number of nodes we should ensure has free capacity for node failures whenever possible */
     public int spareCount() { return spareCount; }
+
+    /**
+     * Returns whether nodes are allocated exclusively in this instance given this cluster spec.
+     * Exclusive allocation requires that the wanted node resources matches the advertised resources of the node
+     * perfectly.
+     */
+    public boolean exclusiveAllocation(ClusterSpec clusterSpec) {
+        return clusterSpec.isExclusive() || zone().cloud().dynamicProvisioning();
+    }
 
     /**
      * Returns ACLs for the children of the given host.

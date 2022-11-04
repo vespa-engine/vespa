@@ -37,7 +37,7 @@ public class AllocatableClusterResources {
                                        NodeRepository nodeRepository) {
         this.nodes = requested.nodes();
         this.groups = requested.groups();
-        this.realResources = nodeRepository.resourcesCalculator().requestToReal(requested.nodeResources(), clusterSpec.isExclusive());
+        this.realResources = nodeRepository.resourcesCalculator().requestToReal(requested.nodeResources(), nodeRepository.exclusiveAllocation(clusterSpec));
         this.advertisedResources = requested.nodeResources();
         this.clusterSpec = clusterSpec;
         this.fulfilment = 1;
@@ -163,8 +163,8 @@ public class AllocatableClusterResources {
                                                              NodeList hosts,
                                                              NodeRepository nodeRepository) {
         var systemLimits = new NodeResourceLimits(nodeRepository);
-        boolean exclusive = clusterSpec.isExclusive();
-        if ( !clusterSpec.isExclusive() && !nodeRepository.zone().cloud().dynamicProvisioning()) {
+        boolean exclusive = nodeRepository.exclusiveAllocation(clusterSpec);
+        if (! exclusive) {
             // We decide resources: Add overhead to what we'll request (advertised) to make sure real becomes (at least) cappedNodeResources
             var advertisedResources = nodeRepository.resourcesCalculator().realToRequest(wantedResources.nodeResources(), exclusive);
             advertisedResources = systemLimits.enlargeToLegal(advertisedResources, clusterSpec.type(), exclusive); // Ask for something legal

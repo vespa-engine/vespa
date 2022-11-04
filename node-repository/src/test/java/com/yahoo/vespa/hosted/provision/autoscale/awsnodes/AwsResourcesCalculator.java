@@ -20,6 +20,7 @@ public class AwsResourcesCalculator {
 
     /** The real resources of a child. */
     public NodeResources realResourcesOfChildContainer(NodeResources resources, VespaFlavor hostFlavor) {
+        // This must match realResourcesOfChildSaturatingHost() if exclusive is true, and vice versa
         boolean exclusive = saturates(hostFlavor, resources);
         return resources.withMemoryGb(resources.memoryGb() - memoryOverhead(hostFlavor, resources, false))
                         .withDiskGb(resources.diskGb() - diskOverhead(hostFlavor, resources, false, exclusive));
