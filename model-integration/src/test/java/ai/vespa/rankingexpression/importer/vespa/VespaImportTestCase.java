@@ -38,12 +38,12 @@ public class VespaImportTestCase {
         assertEquals("tensor(name{},x[3])", model.inputs().get("input1").toString());
         assertEquals("tensor(x[3])", model.inputs().get("input2").toString());
 
-        assertEquals(2, model.smallConstants().size());
-        assertEquals("tensor(x[3]):[0.5, 1.5, 2.5]", model.smallConstants().get("constant1").toString());
-        assertEquals("tensor():{3.0}", model.smallConstants().get("constant2").toString());
+        assertEquals(2, model.smallConstantTensors().size());
+        assertEquals("tensor(x[3]):[0.5, 1.5, 2.5]", model.smallConstantTensors().get("constant1").toString());
+        assertEquals("tensor():{3.0}", model.smallConstantTensors().get("constant2").toString());
 
-        assertEquals(1, model.largeConstants().size());
-        assertEquals("tensor(x[3]):[0.5, 1.5, 2.5]", model.largeConstants().get("constant1asLarge").toString());
+        assertEquals(1, model.largeConstantTensors().size());
+        assertEquals("tensor(x[3]):[0.5, 1.5, 2.5]", model.largeConstantTensors().get("constant1asLarge").toString());
 
         assertEquals(2, model.expressions().size());
         assertEquals("reduce(reduce(input1 * input2, sum, name) * constant1, max, x) * constant2",
@@ -71,8 +71,8 @@ public class VespaImportTestCase {
         assertTrue(model.expressions().isEmpty());
         assertTrue(model.functions().isEmpty());
         assertTrue(model.inputs().isEmpty());
-        assertTrue(model.largeConstants().isEmpty());
-        assertTrue(model.smallConstants().isEmpty());
+        assertTrue(model.largeConstantTensors().isEmpty());
+        assertTrue(model.smallConstantTensors().isEmpty());
     }
 
     @Test

@@ -199,8 +199,8 @@ public class ConvertedModel {
                                                                    ModelStore store) {
         // Add constants
         Set<String> constantsReplacedByFunctions = new HashSet<>();
-        model.smallConstants().forEach((k, v) -> transformSmallConstant(store, profile, k, v));
-        model.largeConstants().forEach((k, v) -> transformLargeConstant(store, profile, queryProfiles,
+        model.smallConstantTensors().forEach((k, v) -> transformSmallConstant(store, profile, k, v));
+        model.largeConstantTensors().forEach((k, v) -> transformLargeConstant(store, profile, queryProfiles,
                                                                         constantsReplacedByFunctions, k, v));
 
         // Add functions

@@ -23,8 +23,12 @@ public interface ImportedMlModel {
     ModelType modelType();
 
     Optional<String> inputTypeSpec(String input);
-    Map<String, Tensor> smallConstants();
-    Map<String, Tensor> largeConstants();
+    @Deprecated(forRemoval = true)
+    Map<String, String> smallConstants();
+    @Deprecated(forRemoval = true)
+    Map<String, String> largeConstants();
+    Map<String, Tensor> smallConstantTensors();
+    Map<String, Tensor> largeConstantTensors();
     Map<String, String> functions();
     List<ImportedMlFunction> outputExpressions();
 
