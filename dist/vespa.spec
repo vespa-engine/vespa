@@ -551,6 +551,7 @@ cp %{buildroot}/%{_prefix}/etc/systemd/system/vespa-configserver.service %{build
 %endif
 
 ln -s /usr/lib/jvm/jre-17-openjdk %{buildroot}/%{_prefix}/jdk
+ln -s %{_prefix}/var/tmp %{buildroot}/%{_prefix}/tmp
 
 %clean
 rm -rf $RPM_BUILD_ROOT
@@ -690,8 +691,6 @@ fi
 %{_prefix}/man
 %{_prefix}/sbin
 %{_prefix}/share
-%dir %attr(-,%{_vespa_user},%{_vespa_group}) %{_prefix}/tmp
-%dir %attr(-,%{_vespa_user},%{_vespa_group}) %{_prefix}/tmp/vespa
 %dir %attr(-,%{_vespa_user},%{_vespa_group}) %{_prefix}/var
 %dir %attr(-,%{_vespa_user},%{_vespa_group}) %{_prefix}/var/crash
 %dir %attr(-,%{_vespa_user},%{_vespa_group}) %{_prefix}/var/db
@@ -707,6 +706,8 @@ fi
 %dir %attr(-,%{_vespa_user},%{_vespa_group}) %{_prefix}/var/db/vespa/tmp
 %dir %attr(-,%{_vespa_user},%{_vespa_group}) %{_prefix}/var/jdisc_container
 %dir %attr(-,%{_vespa_user},%{_vespa_group}) %{_prefix}/var/run
+%dir %attr(-,%{_vespa_user},%{_vespa_group}) %{_prefix}/var/tmp
+%dir %attr(-,%{_vespa_user},%{_vespa_group}) %{_prefix}/var/tmp/vespa
 %dir %attr(-,%{_vespa_user},%{_vespa_group}) %{_prefix}/var/vespa
 %dir %attr(-,%{_vespa_user},%{_vespa_group}) %{_prefix}/var/vespa/application
 %dir %attr(-,%{_vespa_user},%{_vespa_group}) %{_prefix}/var/vespa/bundlecache
