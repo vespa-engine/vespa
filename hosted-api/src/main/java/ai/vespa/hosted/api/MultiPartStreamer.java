@@ -15,7 +15,6 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.Enumeration;
 import java.util.List;
 import java.util.UUID;
 import java.util.function.Supplier;
@@ -90,12 +89,10 @@ public class MultiPartStreamer {
 
     /** Returns an input stream which is an aggregate of all current parts in this, plus an end marker. */
     public InputStream data() {
-        InputStream aggregate = new SequenceInputStream(new Enumeration<>() {
-            final int j = streams.size();
-            int i = -1;
-            @Override public boolean hasMoreElements() { return i < j; }
-            @Override public InputStream nextElement() { return ++i < j ? streams.get(i).get() : end(); }
-        });
+        InputStream aggregate = new SequenceInputStream(Collections.enumeration(Stream.concat(streams.stream().map(Supplier::get),
+                                                                                              Stream.of(end()))
+                                                                                      .collect(Collectors.toList())));
+
         try {
             if (aggregate.skip(2) != 2)// This should never happen, as the first stream is a ByteArrayInputStream.
                 throw new IllegalStateException("Failed skipping extraneous bytes.");
