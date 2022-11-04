@@ -42,8 +42,17 @@ public class SystemInfo {
         return cloud;
     }
 
-    /** Returns the cluster this is part of */
+    /**
+     *  Returns the cluster this is part of
+     * @deprecated This will shortly be removed as it breaks the intention of SystemInfo
+     *             Use clusterName() as replacement for cluster().id().
+     *             If you need cluster size or node indices you should have Cluster injected directly.
+     */
+    @Deprecated(forRemoval = true)
     public Cluster cluster() { return cluster; }
+
+    /** Returns the name of the cluster it is running in */
+    public String clusterName() { return cluster.id(); }
 
     /** Returns the node this is running on */
     public Node node() { return node; }

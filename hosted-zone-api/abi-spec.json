@@ -97,6 +97,7 @@
       "public ai.vespa.cloud.Zone zone()",
       "public ai.vespa.cloud.Cloud cloud()",
       "public ai.vespa.cloud.Cluster cluster()",
+      "public java.lang.String clusterName()",
       "public ai.vespa.cloud.Node node()"
     ],
     "fields" : [ ]

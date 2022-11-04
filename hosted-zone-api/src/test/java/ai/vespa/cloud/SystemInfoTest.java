@@ -14,6 +14,7 @@ import static org.junit.jupiter.api.Assertions.fail;
 public class SystemInfoTest {
 
     @Test
+    @SuppressWarnings("removal")
     void testSystemInfo() {
         ApplicationId application = new ApplicationId("tenant1", "application1", "instance1");
         Zone zone = new Zone(Environment.dev, "us-west-1");
@@ -26,6 +27,7 @@ public class SystemInfoTest {
         assertEquals(zone, info.zone());
         assertEquals(cloud, info.cloud());
         assertEquals(cluster, info.cluster());
+        assertEquals(cluster.id(), info.clusterName());
         assertEquals(node, info.node());
     }
 
