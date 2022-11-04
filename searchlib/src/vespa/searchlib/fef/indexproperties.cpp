@@ -399,7 +399,7 @@ GlobalFilterLowerLimit::lookup(const Properties &props, double defaultValue)
 
 const vespalib::string GlobalFilterUpperLimit::NAME("vespa.matching.global_filter.upper_limit");
 
-const double GlobalFilterUpperLimit::DEFAULT_VALUE(2.0);
+const double GlobalFilterUpperLimit::DEFAULT_VALUE(1.0);
 
 double
 GlobalFilterUpperLimit::lookup(const Properties &props)
