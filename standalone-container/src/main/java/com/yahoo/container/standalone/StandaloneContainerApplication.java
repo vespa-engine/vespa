@@ -67,7 +67,7 @@ public class StandaloneContainerApplication implements Application {
     public static final Named APPLICATION_PATH_NAME = Names.named(APPLICATION_LOCATION_INSTALL_VARIABLE);
     public static final Named CONFIG_MODEL_REPO_NAME = Names.named("ConfigModelRepo");
 
-    private static final String DEFAULT_TMP_BASE_DIR = Defaults.getDefaults().underVespaHome("var/tmp");
+    private static final String DEFAULT_TMP_BASE_DIR = Defaults.getDefaults().underVespaHome("tmp");
     private static final String TMP_DIR_NAME = "standalone_container";
 
     private static final StaticConfigDefinitionRepo configDefinitionRepo = new StaticConfigDefinitionRepo();
