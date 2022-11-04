@@ -93,6 +93,7 @@ public class ImportedModel implements ImportedMlModel {
      */
     @Override
     @SuppressWarnings("removal")
+    @Deprecated(forRemoval = true)
     public Map<String, String> smallConstants() { return asStrings(smallConstants); }
 
     boolean hasSmallConstant(String name) { return smallConstants.containsKey(name); }
@@ -110,6 +111,7 @@ public class ImportedModel implements ImportedMlModel {
      */
     @Override
     @SuppressWarnings("removal")
+    @Deprecated(forRemoval = true)
     public Map<String, String> largeConstants() { return asStrings(largeConstants); }
 
     boolean hasLargeConstant(String name) { return largeConstants.containsKey(name); }
