@@ -9,8 +9,8 @@ EmptySubspace::EmptySubspace(const SubspaceType& type)
     : _empty_space(),
       _cells()
 {
-    _empty_space.resize(type.mem_size()),
-        _cells = vespalib::eval::TypedCells(&_empty_space[0], type.cell_type(), type.size());
+    _empty_space.resize(type.mem_size());
+    _cells = vespalib::eval::TypedCells(&_empty_space[0], type.cell_type(), type.size());
 }
 
 EmptySubspace::~EmptySubspace() = default;
