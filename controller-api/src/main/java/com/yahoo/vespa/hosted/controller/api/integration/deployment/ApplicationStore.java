@@ -5,6 +5,9 @@ import com.yahoo.config.provision.ApplicationName;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.vespa.hosted.controller.api.identifiers.DeploymentId;
 
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.UncheckedIOException;
 import java.time.Instant;
 import java.util.Optional;
 
@@ -17,7 +20,16 @@ import java.util.Optional;
 public interface ApplicationStore {
 
     /** Returns the application package of the given revision. */
-    byte[] get(DeploymentId deploymentId, RevisionId revisionId);
+    default byte[] get(DeploymentId deploymentId, RevisionId revisionId) {
+        try (InputStream stream = stream(deploymentId, revisionId)) {
+            return stream.readAllBytes();
+        }
+        catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
+    }
+
+    InputStream stream(DeploymentId deploymentId, RevisionId revisionId);
 
     /** Returns the application package diff, compared to the previous build, for the given tenant, application and build number */
     Optional<byte[]> getDiff(TenantName tenantName, ApplicationName applicationName, long buildNumber);
@@ -43,7 +55,16 @@ public interface ApplicationStore {
     void removeAll(TenantName tenant, ApplicationName application);
 
     /** Returns the tester application package of the given revision. Does NOT contain the services.xml. */
-    byte[] getTester(TenantName tenant, ApplicationName application, RevisionId revision);
+    default byte[] getTester(TenantName tenant, ApplicationName application, RevisionId revision) {
+        try (InputStream stream = streamTester(tenant, application, revision)) {
+            return stream.readAllBytes();
+        }
+        catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
+    }
+
+    InputStream streamTester(TenantName tenantName, ApplicationName applicationName, RevisionId revision);
 
     /** Returns the application package diff, compared to the previous build, for the given deployment and build number */
     Optional<byte[]> getDevDiff(DeploymentId deploymentId, long buildNumber);

@@ -13,11 +13,13 @@ import com.yahoo.vespa.hosted.controller.api.integration.certificates.EndpointCe
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.ContainerEndpoint;
 import com.yahoo.vespa.hosted.controller.api.integration.secrets.TenantSecretStore;
 
+import java.io.InputStream;
 import java.security.cert.X509Certificate;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.function.Supplier;
 
 import static java.util.Objects.requireNonNull;
 
@@ -32,27 +34,28 @@ public class DeploymentData {
     private final ApplicationId instance;
     private final Tags tags;
     private final ZoneId zone;
-    private final byte[] applicationPackage;
+    private final Supplier<InputStream> applicationPackage;
     private final Version platform;
     private final Set<ContainerEndpoint> containerEndpoints;
-    private final Optional<EndpointCertificateMetadata> endpointCertificateMetadata;
+    private final Supplier<Optional<EndpointCertificateMetadata>> endpointCertificateMetadata;
     private final Optional<DockerImage> dockerImageRepo;
     private final Optional<AthenzDomain> athenzDomain;
-    private final Quota quota;
+    private final Supplier<Quota> quota;
     private final List<TenantSecretStore> tenantSecretStores;
     private final List<X509Certificate> operatorCertificates;
-    private final Optional<CloudAccount> cloudAccount;
+    private final Supplier<Optional<CloudAccount>> cloudAccount;
     private final boolean dryRun;
 
-    public DeploymentData(ApplicationId instance, Tags tags, ZoneId zone, byte[] applicationPackage, Version platform,
+    public DeploymentData(ApplicationId instance, Tags tags, ZoneId zone, Supplier<InputStream> applicationPackage, Version platform,
                           Set<ContainerEndpoint> containerEndpoints,
-                          Optional<EndpointCertificateMetadata> endpointCertificateMetadata,
+                          Supplier<Optional<EndpointCertificateMetadata>> endpointCertificateMetadata,
                           Optional<DockerImage> dockerImageRepo,
                           Optional<AthenzDomain> athenzDomain,
-                          Quota quota,
+                          Supplier<Quota> quota,
                           List<TenantSecretStore> tenantSecretStores,
                           List<X509Certificate> operatorCertificates,
-                          Optional<CloudAccount> cloudAccount, boolean dryRun) {
+                          Supplier<Optional<CloudAccount>> cloudAccount,
+                          boolean dryRun) {
         this.instance = requireNonNull(instance);
         this.tags = requireNonNull(tags);
         this.zone = requireNonNull(zone);
@@ -79,8 +82,8 @@ public class DeploymentData {
         return zone;
     }
 
-    public byte[] applicationPackage() {
-        return applicationPackage;
+    public InputStream applicationPackage() {
+        return applicationPackage.get();
     }
 
     public Version platform() {
@@ -92,7 +95,7 @@ public class DeploymentData {
     }
 
     public Optional<EndpointCertificateMetadata> endpointCertificateMetadata() {
-        return endpointCertificateMetadata;
+        return endpointCertificateMetadata.get();
     }
 
     public Optional<DockerImage> dockerImageRepo() {
@@ -104,7 +107,7 @@ public class DeploymentData {
     }
 
     public Quota quota() {
-        return quota;
+        return quota.get();
     }
 
     public List<TenantSecretStore> tenantSecretStores() {
@@ -116,9 +119,11 @@ public class DeploymentData {
     }
 
     public Optional<CloudAccount> cloudAccount() {
-        return cloudAccount;
+        return cloudAccount.get();
     }
 
-    public boolean isDryRun() { return dryRun; }
+    public boolean isDryRun() {
+        return dryRun;
+    }
 
 }
