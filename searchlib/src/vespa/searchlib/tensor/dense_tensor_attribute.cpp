@@ -52,7 +52,8 @@ DenseTensorAttribute::prepare_set_tensor(DocId docid, const Value& tensor) const
             // With this optimization we avoid doing unnecessary costly work, first removing the vector point, then inserting the same point.
             return {};
         }
-        return _index->prepare_add_document(docid, tensor.cells(), getGenerationHandler().takeGuard());
+        VectorBundle vectors(tensor.cells().data, tensor.index().size(), _denseTensorStore.get_subspace_type());
+        return _index->prepare_add_document(docid, vectors, getGenerationHandler().takeGuard());
     }
     return {};
 }

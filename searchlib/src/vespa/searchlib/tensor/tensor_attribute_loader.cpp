@@ -159,7 +159,7 @@ ThreadedIndexBuilder::add(uint32_t lid, EntryRef ref) {
     ++_pending;
     auto dense_store = _store.as_dense();
     auto task = vespalib::makeLambdaTask([this, ref, lid, dense_store]() {
-        auto prepared = _index.prepare_add_document(lid, dense_store->get_typed_cells(ref),
+        auto prepared = _index.prepare_add_document(lid, dense_store->get_vectors(ref),
                                                     _generation_handler.takeGuard());
         std::unique_lock guard(_mutex);
         _queue.push(std::make_pair(lid, std::move(prepared)));

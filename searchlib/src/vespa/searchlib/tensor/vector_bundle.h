@@ -2,6 +2,7 @@
 
 #pragma once
 
+#include "subspace_type.h"
 #include <vespa/eval/eval/typed_cells.h>
 #include <cassert>
 
@@ -27,12 +28,12 @@ public:
           _subspace_size(0)
     {
     }
-    VectorBundle(const void *data, vespalib::eval::CellType cell_type, uint32_t subspaces, size_t subspace_mem_size, size_t subspace_size)
+    VectorBundle(const void *data, uint32_t subspaces, const SubspaceType& subspace_type)
         : _data(data),
-          _cell_type(cell_type),
+          _cell_type(subspace_type.cell_type()),
           _subspaces(subspaces),
-          _subspace_mem_size(subspace_mem_size),
-          _subspace_size(subspace_size)
+          _subspace_mem_size(subspace_type.mem_size()),
+          _subspace_size(subspace_type.size())
     {
     }
     ~VectorBundle() = default;

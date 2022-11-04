@@ -57,6 +57,7 @@ using search::tensor::NearestNeighborIndexSaver;
 using search::tensor::PrepareResult;
 using search::tensor::SerializedFastValueAttribute;
 using search::tensor::TensorAttribute;
+using search::tensor::VectorBundle;
 using vespalib::datastore::CompactionStrategy;
 using vespalib::eval::CellType;
 using vespalib::eval::SimpleValue;
@@ -202,10 +203,11 @@ public:
         _adds.emplace_back(docid, DoubleVector(vector.begin(), vector.end()));
     }
     std::unique_ptr<PrepareResult> prepare_add_document(uint32_t docid,
-                                                        vespalib::eval::TypedCells vector,
+                                                        VectorBundle vectors,
                                                         vespalib::GenerationHandler::Guard guard) const override {
         (void) guard;
-        auto d_vector = vector.typify<double>();
+        assert(vectors.subspaces() == 1);
+        auto d_vector = vectors.cells(0).typify<double>();
         _prepare_adds.emplace_back(docid, DoubleVector(d_vector.begin(), d_vector.end()));
         return std::make_unique<MockPrepareResult>(docid);
     }

@@ -52,6 +52,7 @@ private:
     TensorSizeCalc _tensorSizeCalc;
     BufferType _bufferType;
     ValueType _type; // type of dense tensor
+    SubspaceType  _subspace_type;
     EmptySubspace _empty;
 public:
     DenseTensorStore(const ValueType &type, std::shared_ptr<vespalib::alloc::MemoryAllocator> allocator);
@@ -86,8 +87,9 @@ public:
         if (!ref.valid()) {
             return VectorBundle();
         }
-        return VectorBundle(getRawBuffer(ref), _type.cell_type(), 1, getBufSize(), getNumCells());
+        return VectorBundle(getRawBuffer(ref), 1, _subspace_type);
     }
+    const SubspaceType& get_subspace_type() const noexcept { return _subspace_type; }
     // The following method is meant to be used only for unit tests.
     uint32_t getArraySize() const { return _bufferType.getArraySize(); }
 };
