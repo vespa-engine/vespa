@@ -445,6 +445,8 @@ public class HostCapacityMaintainerTest {
         tester.nodeRepository().nodes().setRemovable(hostApp, List.of(hostToRemove.get()), true);
         tester.prepareAndActivateInfraApplication(configSrvApp, hostType.childNodeType());
         tester.prepareAndActivateInfraApplication(hostApp, hostType);
+        tester.nodeRepository().nodes().markNodeAvailableForNewAllocation(nodeToRemove.get().hostname(), Agent.operator, "Readied by host-admin");
+        tester.nodeRepository().nodes().markNodeAvailableForNewAllocation(hostToRemove.get().hostname(), Agent.operator, "Readied by host-admin");
         assertEquals(2, tester.nodeRepository().nodes().list().nodeType(hostType.childNodeType()).state(Node.State.active).size());
         assertSame("Node moves to expected state", Node.State.parked, nodeToRemove.get().state());
         assertSame("Host moves to parked", Node.State.parked, hostToRemove.get().state());

@@ -194,8 +194,8 @@ public class Nodes {
         Node node = nodeMutex.node();
         if (node.state() != Node.State.provisioned && node.state() != Node.State.dirty)
             illegal("Can not set " + node + " ready. It is not provisioned or dirty.");
-        if (!node.status().wantToDeprovision()) // Do not reset status if wantToDeprovision
-            node = node.withWantToRetire(false, false, false, agent, clock.instant());
+        if (node.status().wantToDeprovision() || node.status().wantToRebuild())
+            return park(node.hostname(), false, agent, reason);
 
         return db.writeTo(Node.State.ready, node, agent, Optional.of(reason));
     }
@@ -313,9 +313,9 @@ public class Nodes {
             return park(node.hostname(), false, agent, reason, transaction);
         } else {
             Node.State toState = Node.State.dirty;
-            if (node.state() == Node.State.parked) {
-                if (node.status().wantToDeprovision()) throw new IllegalArgumentException("Cannot move " + node + " to " + toState + ": It's being deprovisioned");
-                if (node.status().wantToRebuild()) throw new IllegalArgumentException("Cannot move " + node + " to " + toState + ": It's being rebuilt");
+            if (node.state() == Node.State.parked && node.type().isHost()) {
+                if (node.status().wantToDeprovision()) illegal("Cannot move " + node + " to " + toState + ": It's being deprovisioned");
+                if (node.status().wantToRebuild()) illegal("Cannot move " + node + " to " + toState + ": It's being rebuilt");
             }
             return db.writeTo(toState, List.of(node), agent, Optional.of(reason), transaction).get(0);
         }
@@ -859,17 +859,13 @@ public class Nodes {
 
     /** Returns whether node should be parked when deallocated by given agent */
     private static boolean parkOnDeallocationOf(Node node, Agent agent) {
-        if (node.state() == Node.State.parked) return false;
-        if (agent == Agent.operator) return false;
-        if (node.type() == NodeType.tenant && node.status().wantToDeprovision()) return false;
-        boolean retirementRequestedByOperator = node.status().wantToRetire() &&
-                                                node.history().event(History.Event.Type.wantToRetire)
-                                                    .map(History.Event::agent)
-                                                    .map(a -> a == Agent.operator)
-                                                    .orElse(false);
-        return node.status().wantToDeprovision() ||
-               node.status().wantToRebuild() ||
-               retirementRequestedByOperator;
+        return  agent != Agent.operator &&
+               !node.status().wantToDeprovision() &&
+                node.status().wantToRetire() &&
+                node.history().event(History.Event.Type.wantToRetire)
+                              .map(History.Event::agent)
+                              .map(a -> a == Agent.operator)
+                              .orElse(false);
     }
 
     private enum HostOperation {
