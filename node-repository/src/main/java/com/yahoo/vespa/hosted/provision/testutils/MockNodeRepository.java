@@ -23,6 +23,7 @@ import com.yahoo.transaction.NestedTransaction;
 import com.yahoo.vespa.curator.mock.MockCurator;
 import com.yahoo.vespa.flags.InMemoryFlagSource;
 import com.yahoo.vespa.hosted.provision.Node;
+import com.yahoo.vespa.hosted.provision.NodeMutex;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
 import com.yahoo.vespa.hosted.provision.applications.Application;
 import com.yahoo.vespa.hosted.provision.applications.Cluster;
@@ -148,7 +149,7 @@ public class MockNodeRepository extends NodeRepository {
         nodes.remove(node7);
         nodes.remove(node55);
         nodes = nodes().deallocate(nodes, Agent.system, getClass().getSimpleName());
-        nodes().setReady(nodes, Agent.system, getClass().getSimpleName());
+        nodes.forEach(node -> nodes().setReady(new NodeMutex(node, () -> {}), Agent.system, getClass().getSimpleName()));
 
         nodes().fail(node5.hostname(), Agent.system, getClass().getSimpleName());
         nodes().deallocateRecursively(node55.hostname(), Agent.system, getClass().getSimpleName());
@@ -195,7 +196,7 @@ public class MockNodeRepository extends NodeRepository {
         largeNodes.add(Node.create("node13", ipConfig(13), "host13.yahoo.com", resources(10, 48, 500, 1, fast, local), NodeType.tenant).build());
         largeNodes.add(Node.create("node14", ipConfig(14), "host14.yahoo.com", resources(10, 48, 500, 1, fast, local), NodeType.tenant).build());
         nodes().addNodes(largeNodes, Agent.system);
-        nodes().setReady(largeNodes, Agent.system, getClass().getSimpleName());
+        largeNodes.forEach(node -> nodes().setReady(new NodeMutex(node, () -> {}), Agent.system, getClass().getSimpleName()));
         ApplicationId app4 = ApplicationId.from(TenantName.from("tenant4"), ApplicationName.from("application4"), InstanceName.from("instance4"));
         ClusterSpec cluster4 = ClusterSpec.request(ClusterSpec.Type.container, ClusterSpec.Id.from("id4")).vespaVersion("6.42").build();
         activate(provisioner.prepare(app4, cluster4, Capacity.from(new ClusterResources(2, 1, new NodeResources(10, 48, 500, 1)), false, true), null), app4, provisioner);

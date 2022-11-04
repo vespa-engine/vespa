@@ -189,29 +189,15 @@ public class Nodes {
         }
     }
 
-    /** Sets a list of nodes ready and returns the nodes in the ready state */
-    public List<Node> setReady(List<Node> nodes, Agent agent, String reason) {
-        try (Mutex lock = lockUnallocated()) {
-            List<Node> nodesWithResetFields = nodes.stream()
-                                                   .map(node -> {
-                                                       if (node.state() != Node.State.provisioned && node.state() != Node.State.dirty)
-                                                           illegal("Can not set " + node + " ready. It is not provisioned or dirty.");
-                                                       if (node.status().wantToDeprovision()) return node; // Do not reset status if wantToDeprovision
-                                                       return node.withWantToRetire(false,
-                                                                                    false,
-                                                                                    false,
-                                                                                    Agent.system,
-                                                                                    clock.instant());
-                                                   })
-                                                   .collect(Collectors.toList());
-            return db.writeTo(Node.State.ready, nodesWithResetFields, agent, Optional.of(reason));
-        }
-    }
+    /** Sets a node to ready and returns the node in the ready state */
+    public Node setReady(NodeMutex nodeMutex, Agent agent, String reason) {
+        Node node = nodeMutex.node();
+        if (node.state() != Node.State.provisioned && node.state() != Node.State.dirty)
+            illegal("Can not set " + node + " ready. It is not provisioned or dirty.");
+        if (!node.status().wantToDeprovision()) // Do not reset status if wantToDeprovision
+            node = node.withWantToRetire(false, false, false, agent, clock.instant());
 
-    public Node setReady(String hostname, Agent agent, String reason) {
-        Node nodeToReady = requireNode(hostname);
-        if (nodeToReady.state() == Node.State.ready) return nodeToReady;
-        return setReady(List.of(nodeToReady), agent, reason).get(0);
+        return db.writeTo(Node.State.ready, node, agent, Optional.of(reason));
     }
 
     /** Reserve nodes. This method does <b>not</b> lock the node repository. */
@@ -475,21 +461,27 @@ public class Nodes {
      * containers this will remove the node from node repository, otherwise the node will be moved to state ready.
      */
     public Node markNodeAvailableForNewAllocation(String hostname, Agent agent, String reason) {
-        Node node = requireNode(hostname);
-        if (node.flavor().getType() == Flavor.Type.DOCKER_CONTAINER && node.type() == NodeType.tenant) {
-            if (node.state() != Node.State.dirty)
-                illegal("Cannot make " + node  + " available for new allocation as it is not in state [dirty]");
-            return removeRecursively(node, true).get(0);
+        try (NodeMutex nodeMutex = lockAndGetRequired(hostname)) {
+            Node node = nodeMutex.node();
+            if (node.type() == NodeType.tenant) {
+                if (node.state() != Node.State.dirty)
+                    illegal("Cannot make " + node + " available for new allocation as it is not in state [dirty]");
+
+                NestedTransaction transaction = new NestedTransaction();
+                db.removeNodes(List.of(node), transaction);
+                transaction.commit();
+                return node;
+            }
+
+            if (node.state() == Node.State.ready) return node;
+
+            Node parentHost = node.parentHostname().flatMap(this::node).orElse(node);
+            List<String> failureReasons = NodeFailer.reasonsToFailHost(parentHost);
+            if (!failureReasons.isEmpty())
+                illegal(node + " cannot be readied because it has hard failures: " + failureReasons);
+
+            return setReady(nodeMutex, agent, reason);
         }
-
-        if (node.state() == Node.State.ready) return node;
-
-        Node parentHost = node.parentHostname().flatMap(this::node).orElse(node);
-        List<String> failureReasons = NodeFailer.reasonsToFailHost(parentHost);
-        if ( ! failureReasons.isEmpty())
-            illegal(node + " cannot be readied because it has hard failures: " + failureReasons);
-
-        return setReady(List.of(node), agent, reason).get(0);
     }
 
     /**

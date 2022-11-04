@@ -4,176 +4,170 @@
       "hostname": "cfg1.yahoo.com",
       "type": "config",
       "ipAddress": "127.0.201.1",
-      "trustedBy": "foo.yahoo.com"
+      "trustedBy": "host3.yahoo.com"
     },
     {
       "hostname": "cfg1.yahoo.com",
       "type": "config",
       "ipAddress": "::201:1",
-      "trustedBy": "foo.yahoo.com"
+      "trustedBy": "host3.yahoo.com"
     },
     {
       "hostname": "cfg2.yahoo.com",
       "type": "config",
       "ipAddress": "127.0.202.1",
-      "trustedBy": "foo.yahoo.com"
+      "trustedBy": "host3.yahoo.com"
     },
     {
       "hostname": "cfg2.yahoo.com",
       "type": "config",
       "ipAddress": "::202:1",
-      "trustedBy": "foo.yahoo.com"
-    },
-    {
-      "hostname": "foo.yahoo.com",
-      "type": "tenant",
-      "ipAddress": "127.0.222.1",
-      "trustedBy": "foo.yahoo.com"
+      "trustedBy": "host3.yahoo.com"
     },
     {
       "hostname": "host1.yahoo.com",
       "type": "tenant",
       "ipAddress": "127.0.1.1",
-      "trustedBy": "foo.yahoo.com"
+      "trustedBy": "host3.yahoo.com"
     },
     {
       "hostname": "host1.yahoo.com",
       "type": "tenant",
       "ipAddress": "::1:1",
-      "trustedBy": "foo.yahoo.com"
+      "trustedBy": "host3.yahoo.com"
     },
     {
       "hostname": "host10.yahoo.com",
       "type": "tenant",
       "ipAddress": "127.0.10.1",
-      "trustedBy": "foo.yahoo.com"
+      "trustedBy": "host3.yahoo.com"
     },
     {
       "hostname": "host10.yahoo.com",
       "type": "tenant",
       "ipAddress": "::10:1",
-      "trustedBy": "foo.yahoo.com"
+      "trustedBy": "host3.yahoo.com"
     },
     {
       "hostname": "host13.yahoo.com",
       "type": "tenant",
       "ipAddress": "127.0.13.1",
-      "trustedBy": "foo.yahoo.com"
+      "trustedBy": "host3.yahoo.com"
     },
     {
       "hostname": "host13.yahoo.com",
       "type": "tenant",
       "ipAddress": "::13:1",
-      "trustedBy": "foo.yahoo.com"
+      "trustedBy": "host3.yahoo.com"
     },
     {
       "hostname": "host14.yahoo.com",
       "type": "tenant",
       "ipAddress": "127.0.14.1",
-      "trustedBy": "foo.yahoo.com"
+      "trustedBy": "host3.yahoo.com"
     },
     {
       "hostname": "host14.yahoo.com",
       "type": "tenant",
       "ipAddress": "::14:1",
-      "trustedBy": "foo.yahoo.com"
+      "trustedBy": "host3.yahoo.com"
     },
     {
       "hostname": "host2.yahoo.com",
       "type": "tenant",
       "ipAddress": "127.0.2.1",
-      "trustedBy": "foo.yahoo.com"
+      "trustedBy": "host3.yahoo.com"
     },
     {
       "hostname": "host2.yahoo.com",
       "type": "tenant",
       "ipAddress": "::2:1",
-      "trustedBy": "foo.yahoo.com"
+      "trustedBy": "host3.yahoo.com"
     },
     {
       "hostname": "host3.yahoo.com",
       "type": "tenant",
       "ipAddress": "127.0.3.1",
-      "trustedBy": "foo.yahoo.com"
+      "trustedBy": "host3.yahoo.com"
     },
     {
       "hostname": "host3.yahoo.com",
       "type": "tenant",
       "ipAddress": "::3:1",
-      "trustedBy": "foo.yahoo.com"
+      "trustedBy": "host3.yahoo.com"
     },
     {
       "hostname": "host4.yahoo.com",
       "type": "tenant",
       "ipAddress": "127.0.4.1",
-      "trustedBy": "foo.yahoo.com"
+      "trustedBy": "host3.yahoo.com"
     },
     {
       "hostname": "host4.yahoo.com",
       "type": "tenant",
       "ipAddress": "::4:1",
-      "trustedBy": "foo.yahoo.com"
+      "trustedBy": "host3.yahoo.com"
     },
     {
       "hostname": "host5.yahoo.com",
       "type": "tenant",
       "ipAddress": "127.0.5.1",
-      "trustedBy": "foo.yahoo.com"
+      "trustedBy": "host3.yahoo.com"
     },
     {
       "hostname": "host5.yahoo.com",
       "type": "tenant",
       "ipAddress": "::5:1",
-      "trustedBy": "foo.yahoo.com"
+      "trustedBy": "host3.yahoo.com"
     },
     {
       "hostname": "host55.yahoo.com",
       "type": "tenant",
       "ipAddress": "127.0.55.1",
-      "trustedBy": "foo.yahoo.com"
+      "trustedBy": "host3.yahoo.com"
     },
     {
       "hostname": "host55.yahoo.com",
       "type": "tenant",
       "ipAddress": "::55:1",
-      "trustedBy": "foo.yahoo.com"
+      "trustedBy": "host3.yahoo.com"
     },
     {
       "hostname": "host6.yahoo.com",
       "type": "tenant",
       "ipAddress": "127.0.6.1",
-      "trustedBy": "foo.yahoo.com"
+      "trustedBy": "host3.yahoo.com"
     },
     {
       "hostname": "host6.yahoo.com",
       "type": "tenant",
       "ipAddress": "::6:1",
-      "trustedBy": "foo.yahoo.com"
+      "trustedBy": "host3.yahoo.com"
     },
     {
       "hostname": "host7.yahoo.com",
       "type": "tenant",
       "ipAddress": "127.0.7.1",
-      "trustedBy": "foo.yahoo.com"
+      "trustedBy": "host3.yahoo.com"
     },
     {
       "hostname": "host7.yahoo.com",
       "type": "tenant",
       "ipAddress": "::7:1",
-      "trustedBy": "foo.yahoo.com"
+      "trustedBy": "host3.yahoo.com"
     },
     {
       "hostname": "test-node-pool-102-2",
       "type": "tenant",
       "ipAddress": "::102:2",
-      "trustedBy": "foo.yahoo.com"
+      "trustedBy": "host3.yahoo.com"
     }
   ],
   "trustedNetworks": [],
   "trustedPorts": [
     {
-      "port":22,
-      "trustedBy":"foo.yahoo.com"
+      "port": 22,
+      "trustedBy": "host3.yahoo.com"
     }
   ]
 }

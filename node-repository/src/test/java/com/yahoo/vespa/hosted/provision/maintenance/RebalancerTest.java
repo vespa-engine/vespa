@@ -19,7 +19,6 @@ import com.yahoo.transaction.NestedTransaction;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeList;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
-import com.yahoo.vespa.hosted.provision.node.Agent;
 import com.yahoo.vespa.hosted.provision.provisioning.FlavorConfigBuilder;
 import com.yahoo.vespa.hosted.provision.provisioning.ProvisioningTester;
 import com.yahoo.vespa.hosted.provision.testutils.MockDeployer;
@@ -97,7 +96,7 @@ public class RebalancerTest {
         assertTrue("Want to retire is reset", tester.getNodes(Node.State.active).stream().noneMatch(node -> node.status().wantToRetire()));
         assertEquals("Reserved node was moved to dirty", 2, tester.getNodes(Node.State.dirty).size());
         String reservedHostname = tester.getNodes(Node.State.dirty).owner(memoryApp).first().get().hostname();
-        tester.nodeRepository().nodes().setReady(reservedHostname, Agent.system, "Cleanup");
+        tester.tester.move(Node.State.ready, reservedHostname);
         tester.nodeRepository().nodes().removeRecursively(reservedHostname);
 
         //     ... otherwise we successfully rebalance, again reducing skew

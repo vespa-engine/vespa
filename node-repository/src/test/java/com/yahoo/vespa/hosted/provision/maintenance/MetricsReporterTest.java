@@ -181,7 +181,7 @@ public class MetricsReporterTest {
                                       nodeFlavors.getFlavorOrThrow("host"), NodeType.host).build();
         nodeRepository.nodes().addNodes(List.of(dockerHost), Agent.system);
         nodeRepository.nodes().deallocateRecursively("dockerHost", Agent.system, getClass().getSimpleName());
-        nodeRepository.nodes().setReady("dockerHost", Agent.system, getClass().getSimpleName());
+        tester.move(Node.State.ready, "dockerHost");
 
         Node container1 = Node.reserve(Set.of("::2"), "container1",
                                        "dockerHost", new NodeResources(1, 3, 2, 1), NodeType.tenant).build();

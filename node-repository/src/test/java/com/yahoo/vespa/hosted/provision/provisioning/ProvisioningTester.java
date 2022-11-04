@@ -467,7 +467,7 @@ public class ProvisioningTester {
 
         nodes = nodeRepository.nodes().addNodes(nodes, Agent.system);
         nodes = nodeRepository.nodes().deallocate(nodes, Agent.system, getClass().getSimpleName());
-        nodeRepository.nodes().setReady(nodes, Agent.system, getClass().getSimpleName());
+        move(Node.State.ready, nodes);
 
         ConfigServerApplication application = new ConfigServerApplication();
         List<HostSpec> hosts = prepare(application.getApplicationId(),
@@ -494,7 +494,7 @@ public class ProvisioningTester {
         List<Node> nodes = makeProvisionedNodes(n, flavor, reservedTo, type, ipAddressPoolSize, dualStack);
         nodes = nodeRepository.nodes().deallocate(nodes, Agent.system, getClass().getSimpleName());
         nodes.forEach(node -> { if (node.resources().isUnspecified()) throw new IllegalArgumentException(); });
-        return nodeRepository.nodes().setReady(nodes, Agent.system, getClass().getSimpleName());
+        return move(Node.State.ready, nodes);
     }
 
     public Flavor asFlavor(String flavorString, NodeType type) {
@@ -536,8 +536,7 @@ public class ProvisioningTester {
         }
         nodes = nodeRepository.nodes().addNodes(nodes, Agent.system);
         nodes = nodeRepository.nodes().deallocate(nodes, Agent.system, getClass().getSimpleName());
-        nodeRepository.nodes().setReady(nodes, Agent.system, getClass().getSimpleName());
-        return nodes;
+        return move(Node.State.ready, nodes);
     }
 
     /** Create one or more child nodes on given parent host */
@@ -612,6 +611,16 @@ public class ProvisioningTester {
                                     .map(n -> nodeRepository().nodes().node(n.parentHostname().get()).get())
                                     .filter(p -> p.flavor().name().equals(hostFlavor))
                                     .count();
+    }
+
+    public Node move(Node.State toState, String hostname) {
+        return move(toState, nodeRepository.nodes().node(hostname).orElseThrow());
+    }
+    public Node move(Node.State toState, Node node) {
+        return move(toState, List.of(node)).get(0);
+    }
+    public List<Node> move(Node.State toState, List<Node> nodes) {
+        return nodeRepository.database().writeTo(toState, nodes, Agent.operator, Optional.of("ProvisionTester"));
     }
 
     public static final class Builder {

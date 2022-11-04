@@ -253,7 +253,7 @@ public class NodeFailTester {
 
         nodes = nodeRepository.nodes().addNodes(nodes, Agent.system);
         nodes = nodeRepository.nodes().deallocate(nodes, Agent.system, getClass().getSimpleName());
-        return nodeRepository.nodes().setReady(nodes, Agent.system, getClass().getSimpleName());
+        return tester.move(Node.State.ready, nodes);
     }
 
     private List<Node> createHostNodes(int count) {
@@ -262,7 +262,7 @@ public class NodeFailTester {
                                                        Optional.empty(), NodeType.host, 10, false);
         nodes = nodeRepository.nodes().deallocate(nodes, Agent.system, getClass().getSimpleName());
         tester.activateTenantHosts();
-        return nodeRepository.nodes().setReady(nodes, Agent.system, getClass().getSimpleName());
+        return tester.move(Node.State.ready, nodes);
     }
 
     // Prefer using this instead of the above
