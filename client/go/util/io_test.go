@@ -41,3 +41,17 @@ func TestIsRegularFile(t *testing.T) {
 	assert.Nil(t, err)
 	assert.Equal(t, false, IsRegularFile(tmpDir+"/no/such/thing.go"))
 }
+
+func TestIsExecutableFile(t *testing.T) {
+	assert.Equal(t, false, IsExecutableFile("io.go"))
+	assert.Equal(t, false, IsExecutableFile("nosuchthing.go"))
+	tmpDir := t.TempDir()
+	err := os.WriteFile(tmpDir+"/run.sh", []byte("#!/bin/sh\necho foo\n"), 0755)
+	assert.Nil(t, err)
+	assert.Equal(t, true, IsExecutableFile(tmpDir+"/run.sh"))
+	/* unix only:
+	out, err := BackTicksWithStderr.Run(tmpDir + "/run.sh")
+	assert.Nil(t, err)
+	assert.Equal(t, "foo\n", out)
+	*/
+}
