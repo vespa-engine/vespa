@@ -56,7 +56,6 @@ import static com.yahoo.vespa.hosted.controller.application.pkg.ApplicationPacka
 import static com.yahoo.vespa.hosted.controller.application.pkg.ApplicationPackage.servicesFile;
 import static java.io.InputStream.nullInputStream;
 import static java.nio.charset.StandardCharsets.UTF_8;
-import static java.util.function.UnaryOperator.identity;
 import static java.util.stream.Collectors.groupingBy;
 import static java.util.stream.Collectors.mapping;
 import static java.util.stream.Collectors.toList;
@@ -112,7 +111,7 @@ public class TestPackage {
             @Override
             public InputStream modify(String name, InputStream in) {
                 hasLegacyTests |= name.startsWith("artifacts/") && name.endsWith("-tests.jar");
-                return entries.containsKey(name) ? null : replacements.getOrDefault(name, identity()).apply(in);
+                return entries.containsKey(name) ? null : replacements.get(name).apply(in);
             }
 
             {
