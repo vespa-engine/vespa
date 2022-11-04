@@ -4,7 +4,6 @@ package ai.vespa.rankingexpression.importer.vespa;
 import ai.vespa.rankingexpression.importer.ImportedModel;
 import ai.vespa.rankingexpression.importer.configmodelview.ImportedMlFunction;
 import com.yahoo.searchlib.rankingexpression.RankingExpression;
-import com.yahoo.searchlib.rankingexpression.evaluation.Context;
 import com.yahoo.searchlib.rankingexpression.evaluation.MapContext;
 import com.yahoo.searchlib.rankingexpression.evaluation.TensorValue;
 import com.yahoo.searchlib.rankingexpression.parser.ParseException;
@@ -40,11 +39,11 @@ public class VespaImportTestCase {
         assertEquals("tensor(x[3])", model.inputs().get("input2").toString());
 
         assertEquals(2, model.smallConstants().size());
-        assertEquals("tensor(x[3]):[0.5, 1.5, 2.5]", model.smallConstants().get("constant1"));
-        assertEquals("tensor():{3.0}", model.smallConstants().get("constant2"));
+        assertEquals("tensor(x[3]):[0.5, 1.5, 2.5]", model.smallConstants().get("constant1").toString());
+        assertEquals("tensor():{3.0}", model.smallConstants().get("constant2").toString());
 
         assertEquals(1, model.largeConstants().size());
-        assertEquals("tensor(x[3]):[0.5, 1.5, 2.5]", model.largeConstants().get("constant1asLarge"));
+        assertEquals("tensor(x[3]):[0.5, 1.5, 2.5]", model.largeConstants().get("constant1asLarge").toString());
 
         assertEquals(2, model.expressions().size());
         assertEquals("reduce(reduce(input1 * input2, sum, name) * constant1, max, x) * constant2",
