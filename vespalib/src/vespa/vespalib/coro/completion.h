@@ -86,7 +86,7 @@ auto make_receiver(F &&f) {
  **/
 template <typename T>
 T sync_wait(Lazy<T> value) {
-    return std::move(make_future(std::move(value)).get());
+    return make_future(std::move(value)).get();
 }
 
 /**
