@@ -207,32 +207,36 @@ public class JobController {
                 return run;
 
             List<LogEntry> log;
-            Instant deployedAt;
+            Optional<Instant> deployedAt;
             Instant from;
             if ( ! run.id().type().isProduction()) {
-                deployedAt = run.stepInfo(installInitialReal).or(() -> run.stepInfo(installReal)).flatMap(StepInfo::startTime).orElseThrow();
-                from = run.lastVespaLogTimestamp().isAfter(run.start()) ? run.lastVespaLogTimestamp() : deployedAt.minusSeconds(10);
-                log = LogEntry.parseVespaLog(controller.serviceRegistry().configServer()
-                                                       .getLogs(new DeploymentId(id.application(), zone),
-                                                                Map.of("from", Long.toString(from.toEpochMilli()))),
-                                             from);
+                deployedAt = run.stepInfo(installInitialReal).or(() -> run.stepInfo(installReal)).flatMap(StepInfo::startTime);
+                if (deployedAt.isPresent()) {
+                    from = run.lastVespaLogTimestamp().isAfter(run.start()) ? run.lastVespaLogTimestamp() : deployedAt.get().minusSeconds(10);
+                    log = LogEntry.parseVespaLog(controller.serviceRegistry().configServer()
+                                                           .getLogs(new DeploymentId(id.application(), zone),
+                                                                    Map.of("from", Long.toString(from.toEpochMilli()))),
+                                                 from);
+                }
+                else log = List.of();
             }
-            else
-                log = List.of();
+            else log = List.of();
 
             if (id.type().isTest()) {
-                deployedAt = run.stepInfo(installTester).flatMap(StepInfo::startTime).orElseThrow();
-                from = run.lastVespaLogTimestamp().isAfter(run.start()) ? run.lastVespaLogTimestamp() : deployedAt.minusSeconds(10);
-                List<LogEntry> testerLog = LogEntry.parseVespaLog(controller.serviceRegistry().configServer()
-                                                                            .getLogs(new DeploymentId(id.tester().id(), zone),
-                                                                                     Map.of("from", Long.toString(from.toEpochMilli()))),
-                                                                  from);
+                deployedAt = run.stepInfo(installTester).flatMap(StepInfo::startTime);
+                if (deployedAt.isPresent()) {
+                    from = run.lastVespaLogTimestamp().isAfter(run.start()) ? run.lastVespaLogTimestamp() : deployedAt.get().minusSeconds(10);
+                    List<LogEntry> testerLog = LogEntry.parseVespaLog(controller.serviceRegistry().configServer()
+                                                                                .getLogs(new DeploymentId(id.tester().id(), zone),
+                                                                                         Map.of("from", Long.toString(from.toEpochMilli()))),
+                                                                      from);
 
-                Instant justNow = controller.clock().instant().minusSeconds(2);
-                log = Stream.concat(log.stream(), testerLog.stream())
-                            .filter(entry -> entry.at().isBefore(justNow))
-                            .sorted(comparing(LogEntry::at))
-                            .collect(toUnmodifiableList());
+                    Instant justNow = controller.clock().instant().minusSeconds(2);
+                    log = Stream.concat(log.stream(), testerLog.stream())
+                                .filter(entry -> entry.at().isBefore(justNow))
+                                .sorted(comparing(LogEntry::at))
+                                .toList();
+                }
             }
             if (log.isEmpty())
                 return run;
