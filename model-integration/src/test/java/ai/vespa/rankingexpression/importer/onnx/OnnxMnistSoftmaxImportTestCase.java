@@ -23,13 +23,13 @@ public class OnnxMnistSoftmaxImportTestCase {
         // Check constants
         assertEquals(2, model.largeConstants().size());
 
-        Tensor constant0 = model.largeConstants().get("test_Variable");
+        Tensor constant0 = Tensor.from(model.largeConstants().get("test_Variable"));
         assertNotNull(constant0);
         assertEquals(new TensorType.Builder(TensorType.Value.FLOAT).indexed("d2", 784).indexed("d1", 10).build(),
                      constant0.type());
         assertEquals(7840, constant0.size());
 
-        Tensor constant1 = model.largeConstants().get("test_Variable_1");
+        Tensor constant1 = Tensor.from(model.largeConstants().get("test_Variable_1"));
         assertNotNull(constant1);
         assertEquals(new TensorType.Builder(TensorType.Value.FLOAT).indexed("d1", 10).build(), constant1.type());
         assertEquals(10, constant1.size());
