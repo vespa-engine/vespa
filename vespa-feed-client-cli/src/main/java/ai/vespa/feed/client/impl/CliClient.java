@@ -31,6 +31,7 @@ import java.util.Map;
 import java.util.Random;
 import java.util.UUID;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
@@ -243,7 +244,7 @@ public class CliClient {
     /** Creates an input stream that spits out random documents (id and data) for one minute. */
     static InputStream createDummyInputStream(int payloadSize) {
         Instant end = Instant.now().plusSeconds(60);
-        return createDummyInputStream(payloadSize, new Random(), () -> Instant.now().isBefore(end));
+        return createDummyInputStream(payloadSize, ThreadLocalRandom.current(), () -> Instant.now().isBefore(end));
     }
 
     static InputStream createDummyInputStream(int payloadSize, Random random, BooleanSupplier hasNext) {
