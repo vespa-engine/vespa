@@ -9,6 +9,7 @@
 #include "nearest_neighbor_index.h"
 #include "random_level_generator.h"
 #include "hnsw_graph.h"
+#include "vector_bundle.h"
 #include <vespa/eval/eval/typed_cells.h>
 #include <vespa/searchlib/common/bitvector.h>
 #include <vespa/vespalib/datastore/array_store.h>
@@ -134,8 +135,8 @@ protected:
         uint32_t docid = get_docid(nodeid);
         return _vectors.get_vector(docid, 0);
     }
-    inline TypedCells get_vector_by_docid(uint32_t docid) const {
-        return _vectors.get_vector(docid, 0);
+    inline VectorBundle get_vector_by_docid(uint32_t docid) const {
+        return _vectors.get_vectors(docid);
     }
 
     double calc_distance(uint32_t lhs_nodeid, uint32_t rhs_nodeid) const;
@@ -174,7 +175,7 @@ protected:
         ~PreparedAddDoc() = default;
         PreparedAddDoc(PreparedAddDoc&& other) = default;
     };
-    PreparedAddDoc internal_prepare_add(uint32_t docid, TypedCells input_vector,
+    PreparedAddDoc internal_prepare_add(uint32_t docid, VectorBundle input_vectors,
                                         vespalib::GenerationHandler::Guard read_guard) const;
     LinkArray filter_valid_nodeids(uint32_t level, const PreparedAddDoc::Links &neighbors, uint32_t self_nodeid);
     void internal_complete_add(uint32_t docid, PreparedAddDoc &op);
@@ -188,8 +189,8 @@ public:
     // Implements NearestNeighborIndex
     void add_document(uint32_t docid) override;
     std::unique_ptr<PrepareResult> prepare_add_document(uint32_t docid,
-            TypedCells vector,
-            vespalib::GenerationHandler::Guard read_guard) const override;
+                                                        VectorBundle vectors,
+                                                        vespalib::GenerationHandler::Guard read_guard) const override;
     void complete_add_document(uint32_t docid, std::unique_ptr<PrepareResult> prepare_result) override;
     void remove_node(uint32_t nodeid);
     void remove_document(uint32_t docid) override;

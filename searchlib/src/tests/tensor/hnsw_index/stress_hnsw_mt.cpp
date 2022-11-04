@@ -184,7 +184,7 @@ public:
             return result_promise.get_future();
         }
         void run() override {
-            auto v = vespalib::eval::TypedCells(vec);
+            VectorBundle v(vec.data(), CellType::FLOAT, 1, vec.size() * sizeof(float), vec.size());
             auto up = parent.index->prepare_add_document(docid, v, read_guard);
             result_promise.set_value(std::move(up));
         }

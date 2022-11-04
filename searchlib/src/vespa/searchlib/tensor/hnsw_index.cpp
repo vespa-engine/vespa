@@ -7,6 +7,7 @@
 #include "hnsw_index_loader.hpp"
 #include "hnsw_index_saver.h"
 #include "random_level_generator.h"
+#include "vector_bundle.h"
 #include <vespa/searchlib/attribute/address_space_components.h>
 #include <vespa/searchlib/attribute/address_space_usage.h>
 #include <vespa/searchlib/queryeval/global_filter.h>
@@ -347,8 +348,10 @@ HnswIndex::add_document(uint32_t docid)
 }
 
 HnswIndex::PreparedAddDoc
-HnswIndex::internal_prepare_add(uint32_t docid, TypedCells input_vector, vespalib::GenerationHandler::Guard read_guard) const
+HnswIndex::internal_prepare_add(uint32_t docid, VectorBundle input_vectors, vespalib::GenerationHandler::Guard read_guard) const
 {
+    assert(input_vectors.subspaces() == 1);
+    auto input_vector = input_vectors.cells(0);
     // TODO: Add capping on num_levels
     int level = _level_generator->max_level();
     PreparedAddDoc op(docid, level, std::move(read_guard));
@@ -424,8 +427,8 @@ HnswIndex::internal_complete_add(uint32_t docid, PreparedAddDoc &op)
 
 std::unique_ptr<PrepareResult>
 HnswIndex::prepare_add_document(uint32_t docid, 
-            TypedCells vector,
-            vespalib::GenerationHandler::Guard read_guard) const
+                                VectorBundle vectors,
+                                vespalib::GenerationHandler::Guard read_guard) const
 {
     uint32_t max_nodes = _graph.node_refs_size.load(std::memory_order_acquire);
     if (max_nodes < _cfg.min_size_before_two_phase()) {
@@ -433,7 +436,7 @@ HnswIndex::prepare_add_document(uint32_t docid,
         // to ensure they are linked together:
         return std::make_unique<PreparedFirstAddDoc>();
     }
-    PreparedAddDoc op = internal_prepare_add(docid, vector, std::move(read_guard));
+    PreparedAddDoc op = internal_prepare_add(docid, vectors, std::move(read_guard));
     return std::make_unique<PreparedAddDoc>(std::move(op));
 }
 

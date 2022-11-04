@@ -719,8 +719,8 @@ public:
     UP prepare_add(uint32_t docid, uint32_t max_level = 0) {
         level_generator->level = max_level;
         vespalib::GenerationHandler::Guard dummy;
-        auto vector = vectors.get_vector(docid, 0);
-        return index->prepare_add_document(docid, vector, dummy);
+        auto vectors_to_add = vectors.get_vectors(docid);
+        return index->prepare_add_document(docid, vectors_to_add, dummy);
     }
     void complete_add(uint32_t docid, UP up) {
         index->complete_add_document(docid, std::move(up));
