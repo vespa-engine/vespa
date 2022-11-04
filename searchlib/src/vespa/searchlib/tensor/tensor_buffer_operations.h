@@ -3,6 +3,7 @@
 #pragma once
 
 #include "empty_subspace.h"
+#include "subspace_type.h"
 #include "vector_bundle.h"
 #include <vespa/vespalib/datastore/aligner.h>
 #include <vespa/vespalib/util/arrayref.h>
@@ -39,11 +40,9 @@ namespace search::tensor {
  */
 class TensorBufferOperations
 {
+    SubspaceType                      _subspace_type;
     uint32_t                          _num_mapped_dimensions;
-    uint32_t                          _cell_mem_size;
     uint32_t                          _min_alignment;
-    size_t                            _dense_subspace_size;
-    vespalib::eval::CellType          _cell_type;
     std::vector<vespalib::string_id>  _addr;
     std::vector<vespalib::string_id*> _addr_refs;
     EmptySubspace                     _empty;
@@ -58,7 +57,7 @@ class TensorBufferOperations
     static constexpr size_t get_num_subspaces_size() noexcept { return sizeof(uint32_t); }
     static constexpr size_t get_labels_offset() noexcept { return get_num_subspaces_size(); }
     size_t get_cells_mem_size(uint32_t num_subspaces) const noexcept {
-        return _dense_subspace_size * _cell_mem_size * num_subspaces;
+        return _subspace_type.mem_size() * num_subspaces;
     }
     auto select_aligner(size_t cells_mem_size) const noexcept {
         return Aligner((cells_mem_size < CELLS_ALIGNMENT_MEM_SIZE_MIN) ? _min_alignment : CELLS_ALIGNMENT);
@@ -108,7 +107,7 @@ public:
         auto num_subspaces = get_num_subspaces(buf);
         auto cells_mem_size = get_cells_mem_size(num_subspaces);
         auto aligner = select_aligner(cells_mem_size);
-        return VectorBundle(buf.data() + get_cells_offset(num_subspaces, aligner), _cell_type, num_subspaces, _dense_subspace_size * _cell_mem_size, _dense_subspace_size);
+        return VectorBundle(buf.data() + get_cells_offset(num_subspaces, aligner), num_subspaces, _subspace_type);
     }
 };
 

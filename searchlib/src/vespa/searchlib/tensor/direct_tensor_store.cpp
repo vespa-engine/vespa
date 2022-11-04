@@ -53,7 +53,8 @@ DirectTensorStore::add_entry(TensorSP tensor)
 DirectTensorStore::DirectTensorStore(const vespalib::eval::ValueType& tensor_type)
     : TensorStore(_tensor_store),
       _tensor_store(std::make_unique<TensorBufferType>()),
-      _empty(tensor_type)
+      _subspace_type(tensor_type),
+      _empty(_subspace_type)
 {
     _tensor_store.enableFreeLists();
 }

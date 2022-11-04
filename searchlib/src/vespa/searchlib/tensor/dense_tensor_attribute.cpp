@@ -52,11 +52,7 @@ DenseTensorAttribute::prepare_set_tensor(DocId docid, const Value& tensor) const
             // With this optimization we avoid doing unnecessary costly work, first removing the vector point, then inserting the same point.
             return {};
         }
-        auto cells = tensor.cells();
-        auto& type = tensor.type();
-        auto cell_type = type.cell_type();
-        auto subspace_size = type.dense_subspace_size();
-        VectorBundle vectors(cells.data, cell_type, tensor.index().size(), vespalib::eval::CellTypeUtils::mem_size(cell_type, subspace_size), subspace_size);
+        VectorBundle vectors(tensor.cells().data, tensor.index().size(), _denseTensorStore.get_subspace_type());
         return _index->prepare_add_document(docid, vectors, getGenerationHandler().takeGuard());
     }
     return {};

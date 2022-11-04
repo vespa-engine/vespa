@@ -9,6 +9,7 @@
 #include <vector>
 
 #include <vespa/eval/eval/typed_cells.h>
+#include <vespa/eval/eval/value_type.h>
 #include <vespa/searchlib/common/bitvector.h>
 #include <vespa/searchlib/tensor/distance_functions.h>
 #include <vespa/searchlib/tensor/doc_vector_access.h>
@@ -33,6 +34,7 @@ using namespace search::tensor;
 using namespace vespalib::slime;
 using search::BitVector;
 using vespalib::eval::CellType;
+using vespalib::eval::ValueType;
 using vespalib::GenerationHandler;
 using vespalib::MemoryUsage;
 using vespalib::Slime;
@@ -41,6 +43,12 @@ using vespalib::Slime;
 #define NUM_POSSIBLE_V 1000000
 #define NUM_POSSIBLE_DOCS 30000
 #define NUM_OPS 1000000
+
+namespace {
+
+SubspaceType subspace_type(ValueType::make_type(CellType::FLOAT, {{"dims", NUM_DIMS }}));
+
+}
 
 class RndGen {
 private:
@@ -121,7 +129,8 @@ public:
     VectorBundle get_vectors(uint32_t docid) const override {
         assert(docid < NUM_POSSIBLE_DOCS);
         ConstVectorRef ref(_vectors[docid]);
-        return VectorBundle(ref.data(), CellType::FLOAT, 1, sizeof(float) * NUM_DIMS, NUM_DIMS);
+        assert(subspace_type.size() == ref.size());
+        return VectorBundle(ref.data(), 1, subspace_type);
     }
 };
 
@@ -184,7 +193,8 @@ public:
             return result_promise.get_future();
         }
         void run() override {
-            VectorBundle v(vec.data(), CellType::FLOAT, 1, vec.size() * sizeof(float), vec.size());
+            assert(subspace_type.size() == vec.size());
+            VectorBundle v(vec.data(), 1, subspace_type);
             auto up = parent.index->prepare_add_document(docid, v, read_guard);
             result_promise.set_value(std::move(up));
         }

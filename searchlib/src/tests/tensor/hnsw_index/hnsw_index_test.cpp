@@ -1,11 +1,13 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
+#include <vespa/eval/eval/value_type.h>
 #include <vespa/searchlib/common/bitvector.h>
 #include <vespa/searchlib/tensor/distance_functions.h>
 #include <vespa/searchlib/tensor/doc_vector_access.h>
 #include <vespa/searchlib/tensor/hnsw_index.h>
 #include <vespa/searchlib/tensor/random_level_generator.h>
 #include <vespa/searchlib/tensor/inv_log_level_generator.h>
+#include <vespa/searchlib/tensor/subspace_type.h>
 #include <vespa/searchlib/tensor/vector_bundle.h>
 #include <vespa/searchlib/queryeval/global_filter.h>
 #include <vespa/vespalib/datastore/compaction_spec.h>
@@ -25,6 +27,7 @@ using namespace vespalib::slime;
 using vespalib::Slime;
 using search::BitVector;
 using vespalib::eval::get_cell_type;
+using vespalib::eval::ValueType;
 using vespalib::datastore::CompactionSpec;
 using vespalib::datastore::CompactionStrategy;
 using search::queryeval::GlobalFilter;
@@ -35,9 +38,14 @@ private:
     using Vector = std::vector<FloatType>;
     using ArrayRef = vespalib::ConstArrayRef<FloatType>;
     std::vector<Vector> _vectors;
+    SubspaceType        _subspace_type;
 
 public:
-    MyDocVectorAccess() : _vectors() {}
+    MyDocVectorAccess()
+        : _vectors(),
+          _subspace_type(ValueType::make_type(get_cell_type<FloatType>(), {{"dims", 2}}))
+    {
+    }
     MyDocVectorAccess& set(uint32_t docid, const Vector& vec) {
         if (docid >= _vectors.size()) {
             _vectors.resize(docid + 1);
@@ -52,7 +60,8 @@ public:
     }
     VectorBundle get_vectors(uint32_t docid) const override {
         ArrayRef ref(_vectors[docid]);
-        return VectorBundle(ref.data(), get_cell_type<FloatType>(), 1, ref.size() * sizeof(FloatType), ref.size());
+        assert(_subspace_type.size() == ref.size());
+        return VectorBundle(ref.data(), 1, _subspace_type);
     }
 
     void clear() { _vectors.clear(); }

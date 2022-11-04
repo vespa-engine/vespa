@@ -68,14 +68,12 @@ FastValueView::FastValueView(const ValueType& type, ConstArrayRef<string_id> lab
 }
 
 TensorBufferOperations::TensorBufferOperations(const vespalib::eval::ValueType& tensor_type)
-    : _num_mapped_dimensions(tensor_type.count_mapped_dimensions()),
-      _cell_mem_size(vespalib::eval::CellTypeUtils::mem_size(tensor_type.cell_type(), 1u)),
-      _min_alignment(adjust_min_alignment(vespalib::eval::CellTypeUtils::alignment(tensor_type.cell_type()))),
-      _dense_subspace_size(tensor_type.dense_subspace_size()),
-      _cell_type(tensor_type.cell_type()),
+    : _subspace_type(tensor_type),
+      _num_mapped_dimensions(tensor_type.count_mapped_dimensions()),
+      _min_alignment(adjust_min_alignment(vespalib::eval::CellTypeUtils::alignment(_subspace_type.cell_type()))),
       _addr(_num_mapped_dimensions),
       _addr_refs(),
-      _empty(tensor_type)
+      _empty(_subspace_type)
 {
     _addr_refs.reserve(_addr.size());
     for (auto& label : _addr) {
@@ -106,8 +104,8 @@ TensorBufferOperations::store_tensor(ArrayRef<char> buf, const vespalib::eval::V
     uint32_t num_subspaces = tensor.index().size();
     assert(num_subspaces <= num_subspaces_mask);
     auto labels_end_offset = get_labels_offset() + get_labels_mem_size(num_subspaces);
-    auto cells_size = num_subspaces * _dense_subspace_size;
-    auto cells_mem_size = cells_size * _cell_mem_size; // Size measured in bytes
+    auto cells_size = num_subspaces * _subspace_type.size();
+    auto cells_mem_size = num_subspaces * _subspace_type.mem_size(); // Size measured in bytes
     auto aligner = select_aligner(cells_mem_size);
     auto cells_start_offset = aligner.align(labels_end_offset);
     auto cells_end_offset = cells_start_offset + cells_mem_size;
@@ -148,11 +146,11 @@ TensorBufferOperations::make_fast_view(ConstArrayRef<char> buf, const vespalib::
     auto num_subspaces = get_num_subspaces(buf);
     assert(buf.size() >= get_array_size(num_subspaces));
     ConstArrayRef<string_id> labels(reinterpret_cast<const string_id*>(buf.data() + get_labels_offset()), num_subspaces * _num_mapped_dimensions);
-    auto cells_size = num_subspaces * _dense_subspace_size;
-    auto cells_mem_size = cells_size * _cell_mem_size; // Size measured in bytes
+    auto cells_size = num_subspaces * _subspace_type.size();
+    auto cells_mem_size = num_subspaces * _subspace_type.mem_size(); // Size measured in bytes
     auto aligner = select_aligner(cells_mem_size);
     auto cells_start_offset = get_cells_offset(num_subspaces, aligner);
-    TypedCells cells(buf.data() + cells_start_offset, _cell_type, cells_size);
+    TypedCells cells(buf.data() + cells_start_offset, _subspace_type.cell_type(), cells_size);
     assert(cells_start_offset + cells_mem_size <= buf.size());
     return std::make_unique<FastValueView>(tensor_type, labels, cells, _num_mapped_dimensions, num_subspaces);
 }
@@ -187,11 +185,11 @@ TensorBufferOperations::encode_stored_tensor(ConstArrayRef<char> buf, const vesp
     auto num_subspaces = get_num_subspaces(buf);
     assert(buf.size() >= get_array_size(num_subspaces));
     ConstArrayRef<string_id> labels(reinterpret_cast<const string_id*>(buf.data() + get_labels_offset()), num_subspaces * _num_mapped_dimensions);
-    auto cells_size = num_subspaces * _dense_subspace_size;
-    auto cells_mem_size = cells_size * _cell_mem_size; // Size measured in bytes
+    auto cells_size = num_subspaces * _subspace_type.size();
+    auto cells_mem_size = num_subspaces * _subspace_type.mem_size(); // Size measured in bytes
     auto aligner = select_aligner(cells_mem_size);
     auto cells_start_offset = get_cells_offset(num_subspaces, aligner);
-    TypedCells cells(buf.data() + cells_start_offset, _cell_type, cells_size);
+    TypedCells cells(buf.data() + cells_start_offset, _subspace_type.cell_type(), cells_size);
     assert(cells_start_offset + cells_mem_size <= buf.size());
     StringIdVector labels_copy(labels.begin(), labels.end());
     StreamedValueView streamed_value_view(tensor_type, _num_mapped_dimensions, cells, num_subspaces, labels_copy);

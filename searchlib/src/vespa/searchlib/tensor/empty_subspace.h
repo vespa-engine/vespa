@@ -5,9 +5,9 @@
 #include <vespa/eval/eval/typed_cells.h>
 #include <vector>
 
-namespace vespalib::eval { class ValueType; }
-
 namespace search::tensor {
+
+class SubspaceType;
 
 /*
  * Class containg an empty subspace, used as a bad fallback when we cannot
@@ -18,7 +18,7 @@ class EmptySubspace
     std::vector<char>          _empty_space;
     vespalib::eval::TypedCells _cells;
 public:
-    EmptySubspace(const vespalib::eval::ValueType& type);
+    explicit EmptySubspace(const SubspaceType& type);
     ~EmptySubspace();
     const vespalib::eval::TypedCells& cells() const noexcept { return _cells; }
 };

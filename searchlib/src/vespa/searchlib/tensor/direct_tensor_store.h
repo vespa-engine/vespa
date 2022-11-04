@@ -4,6 +4,7 @@
 
 #include "tensor_store.h"
 #include "empty_subspace.h"
+#include "subspace_type.h"
 #include "vector_bundle.h"
 #include <vespa/eval/eval/value.h>
 #include <vespa/vespalib/datastore/datastore.h>
@@ -35,6 +36,7 @@ private:
     };
 
     TensorStoreType _tensor_store;
+    SubspaceType    _subspace_type;
     EmptySubspace   _empty;
 
     EntryRef add_entry(TensorSP tensor);
@@ -68,9 +70,7 @@ public:
         if (tensor == nullptr) {
             return VectorBundle();
         }
-        auto type = tensor->type();
-        auto subspace_size = type.dense_subspace_size();
-        return VectorBundle(tensor->cells().data, type.cell_type(), tensor->index().size(), vespalib::eval::CellTypeUtils::mem_size(type.cell_type(), subspace_size), subspace_size);
+        return VectorBundle(tensor->cells().data, tensor->index().size(), _subspace_type);
     }
 };
 
