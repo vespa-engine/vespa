@@ -129,7 +129,7 @@ func TestFailedFixdir(t *testing.T) {
 	tmpDir := setup(t)
 	spec := NewFixSpec()
 	defer expectSimplePanic()
-	spec.FixDir(tmpDir + "/a/bad/subdir")
+	spec.FixDir(tmpDir + "/a/f1")
 	assert.Equal(t, "", "should not be reached")
 }
 
