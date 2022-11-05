@@ -2787,4 +2787,25 @@ public class DeploymentTriggerTest {
         assertThrows(IllegalStateException.class, JobType.fromJobName("staging-test", zones)::zone);
     }
 
+    @Test
+    void test() {
+        String deploymentXml = """
+                               <deployment version="1.0" major-version="8">
+                                 <test/>
+                                 <staging/>
+                                 <block-change days="mon-sat,sun" hours="20-23" time-zone="Asia/Taipei"/>
+                                 <block-change days="mon-sat,sun" hours="0-8" time-zone="Asia/Taipei"/>
+                                 <block-change to-date="2022-10-13" hours="0-23"/>
+                                 <prod>
+                                   <region>aws-us-east-1a</region>
+                                   <test>aws-us-east-1a</test>
+                                   <delay hours="1"/>
+                                   <region>aws-us-west-2a</region>
+                                 </prod>
+                               </deployment>""";
+
+        // TODO jonmv: recreate problem where revision starts, then upgrade, while prod is blocked,
+        //             then both are tested as separate upgrades, but prod-test has them reversed.
+    }
+
 }
