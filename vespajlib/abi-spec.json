@@ -3833,6 +3833,7 @@
       "public"
     ],
     "methods" : [
+      "public void <init>(java.util.function.Supplier)",
       "public void <init>(java.util.function.Supplier, com.yahoo.yolean.concurrent.Memoized$Closer)",
       "public static com.yahoo.yolean.concurrent.Memoized of(java.util.function.Supplier)",
       "public static com.yahoo.yolean.concurrent.Memoized combine(com.yahoo.yolean.concurrent.Memoized, java.util.function.Function, com.yahoo.yolean.concurrent.Memoized$Closer)",

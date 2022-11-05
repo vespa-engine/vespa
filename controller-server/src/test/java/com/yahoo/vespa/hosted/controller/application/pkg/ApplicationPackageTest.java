@@ -3,18 +3,40 @@ package com.yahoo.vespa.hosted.controller.application.pkg;
 
 import com.yahoo.config.application.api.DeploymentSpec;
 import com.yahoo.config.application.api.ValidationId;
+import com.yahoo.io.LazyInputStream;
+import com.yahoo.security.KeyAlgorithm;
+import com.yahoo.security.KeyUtils;
+import com.yahoo.security.SignatureAlgorithm;
+import com.yahoo.security.X509CertificateBuilder;
 import org.junit.jupiter.api.Test;
 
+import javax.security.auth.x500.X500Principal;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.SequenceInputStream;
+import java.math.BigInteger;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.security.KeyPair;
+import java.security.cert.X509Certificate;
 import java.time.Instant;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
+import java.util.function.Predicate;
+import java.util.function.UnaryOperator;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
+import static com.yahoo.vespa.hosted.controller.application.pkg.ApplicationPackage.filesZip;
+import static com.yahoo.vespa.hosted.controller.application.pkg.ApplicationPackageStream.addingCertificate;
 import static java.nio.charset.StandardCharsets.UTF_8;
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
@@ -24,35 +46,41 @@ import static org.junit.jupiter.api.Assertions.fail;
  */
 public class ApplicationPackageTest {
 
-    static final String deploymentXml = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
-                                        "<deployment version=\"1.0\">\n" +
-                                        "    <test />\n" +
-                                        "    <prod>\n" +
-                                        "        <parallel>\n" +
-                                        "            <region active=\"true\">us-central-1</region>\n" +
-                                        "        </parallel>\n" +
-                                        "    </prod>\n" +
-                                        "</deployment>\n";
+    static final String deploymentXml = """
+                                        <?xml version="1.0" encoding="UTF-8"?>
+                                        <deployment version="1.0">
+                                            <test />
+                                            <prod>
+                                                <parallel>
+                                                    <region active="true">us-central-1</region>
+                                                </parallel>
+                                            </prod>
+                                        </deployment>
+                                        """;
 
-    static final String servicesXml = "<services version='1.0' xmlns:deploy=\"vespa\" xmlns:preprocess=\"properties\">\n" +
-                                      "    <preprocess:include file='jdisc.xml' />\n" +
-                                      "    <content version='1.0' if='foo' />\n" +
-                                      "    <content version='1.0' id='foo' deploy:environment='staging prod' deploy:region='us-east-3 us-central-1'>\n" +
-                                      "        <preprocess:include file='content/content.xml' />\n" +
-                                      "    </content>\n" +
-                                      "    <preprocess:include file='not_found.xml' required='false' />\n" +
-                                      "</services>\n";
+    static final String servicesXml = """
+                                      <services version='1.0' xmlns:deploy="vespa" xmlns:preprocess="properties">
+                                          <preprocess:include file='jdisc.xml' />
+                                          <content version='1.0' if='foo' />
+                                          <content version='1.0' id='foo' deploy:environment='staging prod' deploy:region='us-east-3 us-central-1'>
+                                              <preprocess:include file='content/content.xml' />
+                                          </content>
+                                          <preprocess:include file='not_found.xml' required='false' />
+                                      </services>
+                                      """;
 
     private static final String jdiscXml = "<container id='stateless' version='1.0' />\n";
 
-    private static final String contentXml = "<documents>\n" +
-                                             "    <document type=\"music.sd\" mode=\"index\" />\n" +
-                                             "</documents>\n" +
-                                             "<preprocess:include file=\"nodes.xml\" />";
+    private static final String contentXml = """
+                                             <documents>
+                                                 <document type="music.sd" mode="index" />
+                                             </documents>
+                                             <preprocess:include file="nodes.xml" />""";
 
-    private static final String nodesXml = "<nodes>\n" +
-                                           "    <node hostalias=\"node0\" distribution-key=\"0\" />\n" +
-                                           "</nodes>";
+    private static final String nodesXml = """
+                                           <nodes>
+                                               <node hostalias="node0" distribution-key="0" />
+                                           </nodes>""";
 
     @Test
     void test_createEmptyForDeploymentRemoval() {
@@ -67,22 +95,22 @@ public class ApplicationPackageTest {
 
     @Test
     void testMetaData() {
-        byte[] zip = ApplicationPackage.filesZip(Map.of("services.xml", servicesXml.getBytes(UTF_8),
-                "jdisc.xml", jdiscXml.getBytes(UTF_8),
-                "content/content.xml", contentXml.getBytes(UTF_8),
-                "content/nodes.xml", nodesXml.getBytes(UTF_8),
-                "gurba", "gurba".getBytes(UTF_8)));
+        byte[] zip = filesZip(Map.of("services.xml", servicesXml.getBytes(UTF_8),
+                                                        "jdisc.xml", jdiscXml.getBytes(UTF_8),
+                                                        "content/content.xml", contentXml.getBytes(UTF_8),
+                                                        "content/nodes.xml", nodesXml.getBytes(UTF_8),
+                                                        "gurba", "gurba".getBytes(UTF_8)));
 
         assertEquals(Map.of("services.xml", servicesXml,
-                        "jdisc.xml", jdiscXml,
-                        "content/content.xml", contentXml,
-                        "content/nodes.xml", nodesXml),
-                unzip(new ApplicationPackage(zip, false).metaDataZip()));
+                            "jdisc.xml", jdiscXml,
+                            "content/content.xml", contentXml,
+                            "content/nodes.xml", nodesXml),
+                     unzip(new ApplicationPackage(zip, false).metaDataZip()));
     }
 
     @Test
     void testMetaDataWithMissingFiles() {
-        byte[] zip = ApplicationPackage.filesZip(Map.of("services.xml", servicesXml.getBytes(UTF_8)));
+        byte[] zip = filesZip(Map.of("services.xml", servicesXml.getBytes(UTF_8)));
 
         try {
             new ApplicationPackage(zip, false).metaDataZip();
@@ -132,15 +160,108 @@ public class ApplicationPackageTest {
         assertEquals(originalPackage.bundleHash(), similarDeploymentXml.bundleHash());
     }
 
-    private static Map<String, String> unzip(byte[] zip) {
-        return ZipEntries.from(zip, __ -> true, 1 << 10, true)
+    static Map<String, String> unzip(byte[] zip) {
+        return ZipEntries.from(zip, __ -> true, 1 << 24, true)
                          .asList().stream()
                          .collect(Collectors.toMap(ZipEntries.ZipEntryWithContent::name,
-                                          entry -> new String(entry.contentOrThrow(), UTF_8)));
+                                                   entry -> new String(entry.content().orElse(new byte[0]), UTF_8)));
     }
 
-    private ApplicationPackage getApplicationZip(String path) throws Exception {
+    private ApplicationPackage getApplicationZip(String path) throws IOException {
         return new ApplicationPackage(Files.readAllBytes(Path.of("src/test/resources/application-packages/" + path)), true);
+    }
+
+    @Test
+    void test_replacement() throws IOException {
+        byte[] zip = zip(Map.of());
+        List<X509Certificate> certificates = IntStream.range(0, 3)
+                                                      .mapToObj(i -> {
+                                                          KeyPair keyPair = KeyUtils.generateKeypair(KeyAlgorithm.EC, 256);
+                                                          X500Principal subject = new X500Principal("CN=subject" + i);
+                                                          return X509CertificateBuilder.fromKeypair(keyPair,
+                                                                                                    subject,
+                                                                                                    Instant.now(),
+                                                                                                    Instant.now().plusSeconds(1),
+                                                                                                    SignatureAlgorithm.SHA512_WITH_ECDSA,
+                                                                                                    BigInteger.valueOf(1))
+                                                                                       .build();
+                                                      }).toList();
+
+        assertEquals(List.of(), new ApplicationPackage(zip).trustedCertificates());
+        for (int i = 0; i < certificates.size(); i++) {
+            InputStream in = new ByteArrayInputStream(zip);
+            zip = new ApplicationPackageStream(() -> in, __ -> false, addingCertificate(Optional.of(certificates.get(i)))).zipStream().readAllBytes();
+            assertEquals(certificates.subList(0, i + 1), new ApplicationPackage(zip).trustedCertificates());
+        }
+    }
+
+    static byte[] zip(Map<String, String> content) {
+        return filesZip(content.entrySet().stream().collect(Collectors.toMap(entry -> entry.getKey(),
+                                                                             entry -> entry.getValue().getBytes(UTF_8))));
+    }
+
+    @Test
+    void testApplicationPackageStream() throws Exception {
+        Map<String, String> content = Map.of("deployment.xml", deploymentXml,
+                                             "services.xml", servicesXml,
+                                             "jdisc.xml", jdiscXml,
+                                             "unused1.xml", jdiscXml,
+                                             "content/content.xml", contentXml,
+                                             "content/nodes.xml", nodesXml,
+                                             "gurba", "gurba");
+        byte[] zip = zip(content);
+        assertEquals(content, unzip(zip));
+
+        ApplicationPackageStream identity = new ApplicationPackageStream(() -> new ByteArrayInputStream(zip));
+        InputStream lazy = new LazyInputStream(() -> new ByteArrayInputStream(identity.truncatedPackage().zippedContent()));
+        assertEquals("must completely exhaust input before reading package",
+                     assertThrows(IllegalStateException.class, identity::truncatedPackage).getMessage());
+
+        // Verify no content has changed when passing through the stream.
+        ByteArrayOutputStream out = new ByteArrayOutputStream();
+        identity.zipStream().transferTo(out);
+        assertEquals(content, unzip(out.toByteArray()));
+        assertEquals(content, unzip(identity.truncatedPackage().zippedContent()));
+        assertEquals(content, unzip(lazy.readAllBytes()));
+        ApplicationPackage original = new ApplicationPackage(zip);
+        assertEquals(unzip(original.metaDataZip()), unzip(identity.truncatedPackage().metaDataZip()));
+        assertEquals(original.bundleHash(), identity.truncatedPackage().bundleHash());
+
+        // Change deployment.xml, remove unused1.xml and add unused2.xml
+        Map<String, UnaryOperator<InputStream>> replacements = Map.of("deployment.xml", in -> new SequenceInputStream(in, new ByteArrayInputStream("\n\n".getBytes(UTF_8))),
+                                                                      "unused1.xml", in -> null,
+                                                                      "unused2.xml", __ -> new ByteArrayInputStream(jdiscXml.getBytes(UTF_8)));
+        Predicate<String> truncation = name -> name.endsWith(".xml");
+        ApplicationPackageStream modifier = new ApplicationPackageStream(() -> new ByteArrayInputStream(zip), truncation, replacements);
+        out.reset();
+        modifier.zipStream().transferTo(out);
+
+        assertEquals(Map.of("deployment.xml", deploymentXml + "\n\n",
+                            "services.xml", servicesXml,
+                            "jdisc.xml", jdiscXml,
+                            "unused2.xml", jdiscXml,
+                            "content/content.xml", contentXml,
+                            "content/nodes.xml", nodesXml,
+                            "gurba", "gurba"),
+                     unzip(out.toByteArray()));
+
+        assertEquals(Map.of("deployment.xml", deploymentXml + "\n\n",
+                            "services.xml", servicesXml,
+                            "jdisc.xml", jdiscXml,
+                            "unused2.xml", jdiscXml,
+                            "content/content.xml", contentXml,
+                            "content/nodes.xml", nodesXml),
+                     unzip(modifier.truncatedPackage().zippedContent()));
+
+        // Compare retained metadata for an updated original package, and the truncated package of the modifier.
+        assertEquals(unzip(new ApplicationPackage(zip(Map.of("deployment.xml", deploymentXml + "\n\n",  // Expected to change.
+                                                             "services.xml", servicesXml,
+                                                             "jdisc.xml", jdiscXml,
+                                                             "unused1.xml", jdiscXml,                   // Irrelevant.
+                                                             "content/content.xml", contentXml,
+                                                             "content/nodes.xml", nodesXml,
+                                                             "gurba", "gurba"))).metaDataZip()),
+                     unzip(modifier.truncatedPackage().metaDataZip()));
     }
 
 }
