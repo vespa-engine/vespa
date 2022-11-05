@@ -9,8 +9,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.Map;
 import java.util.TreeMap;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 /**
  * Wrapper around Jetty's {@link MultiPartFormInputStream}.
@@ -46,7 +44,6 @@ public class MultiPartFormParser {
 
         private PartItem(Part servletPart) throws IOException {
             this(servletPart.getName(), servletPart.getInputStream(), servletPart.getContentType());
-            Logger.getLogger(MultiPartFormParser.class.getName()).log(Level.INFO, servletPart.toString());
         }
 
         public PartItem(String name, InputStream data, String contentType) {
