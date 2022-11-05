@@ -45,13 +45,14 @@ public class CompressedApplicationInputStream implements AutoCloseable {
     public static CompressedApplicationInputStream createFromCompressedStream(InputStream is, String contentType, long maxSizeInBytes) {
         try {
             Options options = Options.standard().maxSize(maxSizeInBytes).allowDotSegment(true);
-            return switch (contentType) {
-                case ApplicationApiHandler.APPLICATION_X_GZIP ->
-                        new CompressedApplicationInputStream(ArchiveStreamReader.ofTarGzip(is, options));
-                case ApplicationApiHandler.APPLICATION_ZIP ->
-                        new CompressedApplicationInputStream(ArchiveStreamReader.ofZip(is, options));
-                default -> throw new BadRequestException("Unable to decompress");
-            };
+            switch (contentType) {
+                case ApplicationApiHandler.APPLICATION_X_GZIP:
+                    return new CompressedApplicationInputStream(ArchiveStreamReader.ofTarGzip(is, options));
+                case ApplicationApiHandler.APPLICATION_ZIP:
+                    return new CompressedApplicationInputStream(ArchiveStreamReader.ofZip(is, options));
+                default:
+                    throw new BadRequestException("Unable to decompress");
+            }
         } catch (UncheckedIOException e) {
             throw new InternalServerException("Unable to create compressed application stream", e);
         }

@@ -22,8 +22,6 @@ import com.yahoo.vespa.config.server.tenant.TenantRepository;
 import org.apache.hc.core5.http.ContentType;
 
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.UncheckedIOException;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.List;
@@ -82,8 +80,7 @@ public class ApplicationApiHandler extends SessionHandler {
         if (multipartRequest) {
             try {
                 Map<String, PartItem> parts = new MultiPartFormParser(request).readParts();
-                byte[] params;
-                try (InputStream part = parts.get(MULTIPART_PARAMS).data()) { params = part.readAllBytes(); } ;
+                byte[] params = parts.get(MULTIPART_PARAMS).data().readAllBytes();
                 log.log(Level.FINE, "Deploy parameters: [{0}]", new String(params, StandardCharsets.UTF_8));
                 prepareParams = PrepareParams.fromJson(params, tenantName, zookeeperBarrierTimeout);
                 PartItem appPackagePart = parts.get(MULTIPART_APPLICATION_PACKAGE);
@@ -97,13 +94,8 @@ public class ApplicationApiHandler extends SessionHandler {
             compressedStream = createFromCompressedStream(request.getData(), request.getHeader(contentTypeHeader), maxApplicationPackageSize);
         }
 
-        try (compressedStream) {
-            PrepareResult result = applicationRepository.deploy(compressedStream, prepareParams);
-            return new SessionPrepareAndActivateResponse(result, request, prepareParams.getApplicationId(), zone);
-        }
-        catch (IOException e) {
-            throw new UncheckedIOException(e);
-        }
+        PrepareResult result = applicationRepository.deploy(compressedStream, prepareParams);
+        return new SessionPrepareAndActivateResponse(result, request, prepareParams.getApplicationId(), zone);
     }
 
     @Override
