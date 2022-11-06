@@ -26,9 +26,12 @@ public class Loader {
     }
 
     /** Assign measured zero traffic in the same way as the system will. */
-    public Duration zeroTraffic(int measurements) {
+    public Duration zeroTraffic(int measurements, int prodRegions) {
         try (var lock = fixture.tester().nodeRepository().applications().lock(fixture.applicationId())) {
-            var statusWithZeroLoad = fixture.application().status().withCurrentReadShare(0).withMaxReadShare(1);
+            var statusWithZeroLoad = fixture.application().status()
+                                            .withCurrentReadShare(0)
+                                            // the line below from TrafficShareUpdater
+                                            .withMaxReadShare(prodRegions < 2 ? 1.0 : 1.0 / ( prodRegions - 1.0));
             fixture.tester().nodeRepository().applications().put(fixture.application().with(statusWithZeroLoad), lock);
         }
         return addQueryRateMeasurements(measurements, (n) -> 0.0);

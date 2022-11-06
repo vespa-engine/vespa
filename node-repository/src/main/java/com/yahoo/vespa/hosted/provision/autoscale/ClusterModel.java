@@ -225,15 +225,14 @@ public class ClusterModel {
             growthRateHeadroom = Math.min(growthRateHeadroom, 1 / queryFractionOfMax() + 0.1);
 
         // How much headroom is needed to handle sudden arrival of additional traffic due to another zone going down?
-        double maxTrafficShiftHeadroom = 10.0; // Cap to avoid extreme sizes from a current very small share
         double trafficShiftHeadroom;
         if (application.status().maxReadShare() == 0) // No traffic fraction data
             trafficShiftHeadroom = 2.0; // assume we currently get half of the global share of traffic
         else if (application.status().currentReadShare() == 0)
-            trafficShiftHeadroom = maxTrafficShiftHeadroom;
+            trafficShiftHeadroom = 1/application.status().maxReadShare();
         else
             trafficShiftHeadroom = application.status().maxReadShare() / application.status().currentReadShare();
-        trafficShiftHeadroom = Math.min(trafficShiftHeadroom, maxTrafficShiftHeadroom);
+        trafficShiftHeadroom = Math.min(trafficShiftHeadroom, 1/application.status().maxReadShare());
 
         // Assumptions: 1) Write load is not organic so we should not grow to handle more.
         //                 (TODO: But allow applications to set their target write rate and size for that)
