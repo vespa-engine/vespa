@@ -1035,7 +1035,6 @@
 
         <!-- Athenz dependencies. Make sure these dependencies match those in Vespa's internal repositories -->
         <athenz.version>1.10.54</athenz.version> <!-- WARNING: sync cloud-tenant-base-dependencies-enforcer/pom.xml -->
-        <avro.version>1.11.1</avro.version>
         <aws-sdk.version>1.12.331</aws-sdk.version>
         <!-- Athenz END -->
 
@@ -1078,7 +1077,7 @@
         <maven-shade-plugin.version>3.4.1</maven-shade-plugin.version>
         <maven-site-plugin.version>3.9.1</maven-site-plugin.version>
         <maven-source-plugin.version>3.2.1</maven-source-plugin.version>
-	<mockito.version>4.0.0</mockito.version>
+        <mockito.version>4.0.0</mockito.version>
         <onnxruntime.version>1.12.1</onnxruntime.version> <!-- WARNING: sync cloud-tenant-base-dependencies-enforcer/pom.xml -->
         <org.json.version>20220320</org.json.version>
         <org.lz4.version>1.8.0</org.lz4.version>
@@ -1086,8 +1085,8 @@
         <protobuf.version>3.21.7</protobuf.version>
         <spifly.version>1.3.5</spifly.version>
         <surefire.version>2.22.2</surefire.version>
-	<wiremock.version>2.34.0</wiremock.version>
-	<zookeeper.client.version>3.8.0</zookeeper.client.version>
+        <wiremock.version>2.34.0</wiremock.version>
+        <zookeeper.client.version>3.8.0</zookeeper.client.version>
 
         <doclint>all</doclint>
         <test.hide>true</test.hide>
