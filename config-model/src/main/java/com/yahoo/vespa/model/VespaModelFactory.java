@@ -2,6 +2,11 @@
 package com.yahoo.vespa.model;
 
 import ai.vespa.rankingexpression.importer.configmodelview.MlModelImporter;
+import ai.vespa.rankingexpression.importer.lightgbm.LightGBMImporter;
+import ai.vespa.rankingexpression.importer.onnx.OnnxImporter;
+import ai.vespa.rankingexpression.importer.tensorflow.TensorFlowImporter;
+import ai.vespa.rankingexpression.importer.vespa.VespaImporter;
+import ai.vespa.rankingexpression.importer.xgboost.XGBoostImporter;
 import com.yahoo.component.annotation.Inject;
 import com.yahoo.component.Version;
 import com.yahoo.component.provider.ComponentRegistry;
@@ -56,7 +61,6 @@ public class VespaModelFactory implements ModelFactory {
     /** Creates a factory for Vespa models for this version of the source */
     @Inject
     public VespaModelFactory(ComponentRegistry<ConfigModelPlugin> pluginRegistry,
-                             ComponentRegistry<MlModelImporter> modelImporters,
                              ComponentRegistry<Validator> additionalValidators,
                              Zone zone) {
         this.version = new Version(VespaVersion.major, VespaVersion.minor, VespaVersion.micro);
@@ -67,7 +71,12 @@ public class VespaModelFactory implements ModelFactory {
             }
         }
         this.configModelRegistry = new MapConfigModelRegistry(modelBuilders);
-        this.modelImporters = modelImporters.allComponents();
+        this.modelImporters = List.of(
+                new VespaImporter(),
+                new OnnxImporter(),
+                new TensorFlowImporter(),
+                new XGBoostImporter(),
+                new LightGBMImporter());
         this.zone = zone;
         this.additionalValidators = List.copyOf(additionalValidators.allComponents());
 
