@@ -41,25 +41,30 @@ public class ClusterModelTest {
         // No current traffic share: Ideal load is low but capped
         var model1 = clusterModel(new Status(0.0, 1.0),
                                   t -> t == 0 ? 10000.0 : 0.0, t -> 0.0);
-        assertEquals(0.10672097759674132, model1.idealLoad().cpu(), delta);
+        assertEquals(0.37067209775967414, model1.idealLoad().cpu(), delta);
 
         // Almost no current traffic share: Ideal load is low but capped
         var model2 = clusterModel(new Status(0.0001, 1.0),
                                   t -> t == 0 ? 10000.0 : 0.0, t -> 0.0);
-        assertEquals(0.10672097759674132, model2.idealLoad().cpu(), delta);
+        assertEquals(0.37067209775967414, model2.idealLoad().cpu(), delta);
     }
 
     @Test
     public void test_growth_headroom() {
-        // No current traffic: Ideal load is low but capped
+        // No traffic data: Ideal load assumes 2 regions
         var model1 = clusterModel(new Status(0.0, 0.0),
                                   t -> t == 0 ? 10000.0 : 0.0, t -> 0.0);
         assertEquals(0.2240325865580448, model1.idealLoad().cpu(), delta);
 
-        // Almost no current traffic: Ideal load is low but capped
-        var model2 = clusterModel(new Status(0.0001, 1.0),
+        // No traffic: Ideal load is higher since we now know there is only one zone
+        var model2 = clusterModel(new Status(0.0, 1.0),
+                                  t -> t == 0 ? 10000.0 : 0.0, t -> 0.0);
+        assertEquals(0.37067209775967414, model2.idealLoad().cpu(), delta);
+
+        // Almost no current traffic: Similar number as above
+        var model3 = clusterModel(new Status(0.0001, 1.0),
                                   t -> t == 0 ? 10000.0 : 0.0001, t -> 0.0);
-        assertEquals(0.0326530612244898, model2.idealLoad().cpu(), delta);
+        assertEquals(0.32653061224489793, model3.idealLoad().cpu(), delta);
     }
 
     private ClusterModel clusterModelWithNoData() {
@@ -72,7 +77,6 @@ public class ClusterModelTest {
         ClusterSpec clusterSpec = clusterSpec();
         Cluster cluster = cluster(resources());
         application = application.with(cluster);
-
         return new ClusterModel(application.with(status),
                                 clusterSpec, cluster, clock, Duration.ofMinutes(10),
                                 timeseries(cluster,100, queryRate, writeRate, clock),

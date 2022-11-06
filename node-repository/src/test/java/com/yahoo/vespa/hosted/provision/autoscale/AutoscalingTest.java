@@ -113,16 +113,16 @@ public class AutoscalingTest {
 
     @Test
     public void test_autoscaling_without_traffic() {
-        var min = new ClusterResources(1, 1, new NodeResources(2, 4, 10, 0.3));
-        var now = new ClusterResources(4, 1, new NodeResources(2, 16, 10, 0.3));
-        var max = new ClusterResources(4, 1, new NodeResources(3, 16, 50, 0.3));
+        var min = new ClusterResources(1, 1, new NodeResources(0.5, 4, 10, 0.3));
+        var now = new ClusterResources(4, 1, new NodeResources(8, 16, 10, 0.3));
+        var max = new ClusterResources(4, 1, new NodeResources(16, 32, 50, 0.3));
         var fixture = AutoscalingTester.fixture(min, now, max)
                                        .clusterType(ClusterSpec.Type.container)
                                        .awsProdSetup()
                                        .build();
         var duration = fixture.loader().addMeasurements(new Load(0.04, 0.39, 0.01), 20);
         fixture.tester().clock().advance(duration.negated());
-        fixture.loader().zeroTraffic(20);
+        fixture.loader().zeroTraffic(20, 1);
         fixture.tester().assertResources("Scaled down",
                                          2, 1, 2, 16, 10,
                                          fixture.autoscale());
