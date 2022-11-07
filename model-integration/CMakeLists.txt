@@ -2,5 +2,3 @@
 install_jar(model-integration-jar-with-dependencies.jar)
 
 install(FILES src/main/config/model-integration.xml DESTINATION conf/configserver-app)
-
-install_config_definitions()
