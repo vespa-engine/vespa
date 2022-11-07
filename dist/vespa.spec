@@ -588,7 +588,7 @@ exit 0
 
 %post base
 
-ln -s %{_prefix}/var/tmp %{buildroot}/%{_prefix}/tmp
+ln -sf %{_prefix}/var/tmp %{_prefix}/tmp
 
 %postun base
 if [ $1 -eq 0 ]; then # this is an uninstallation
@@ -607,7 +607,7 @@ then
 	mv %{_prefix}/conf/vespa/default-env.txt.rpmsave %{_prefix}/conf/vespa/default-env.txt
     fi
 fi
-if test -L rm %{_prefix}/tmp
+if test -L %{_prefix}/tmp
 then
     rm -f %{_prefix}/tmp
 fi
