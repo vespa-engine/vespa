@@ -6,4 +6,11 @@ vespa_add_executable(vespalib_generator_test_app TEST
     vespalib
     GTest::GTest
 )
+vespa_add_executable(vespalib_generator_bench_app TEST
+    SOURCES
+    generator_bench.cpp
+    DEPENDS
+    vespalib
+    GTest::GTest
+)
 vespa_add_test(NAME vespalib_generator_test_app COMMAND vespalib_generator_test_app)
