@@ -50,7 +50,7 @@ public class Lock implements Mutex {
         if (!acquired) {
             threadLockStats.acquireTimedOut();
             throw new UncheckedTimeoutException("Timed out after waiting " + timeout +
-                    " to acquire lock '" + lockPath + "'");
+                                                " to acquire lock '" + lockPath + "'");
         }
 
         threadLockStats.lockAcquired();
