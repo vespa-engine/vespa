@@ -34,15 +34,23 @@ public class Memoized<T, E extends Exception> implements Supplier<T>, AutoClosea
     private volatile T wrapped;
     private Supplier<T> factory;
 
+    /** Returns a new Memoized which has no close method. */
+    public Memoized(Supplier<T> factory) {
+        this(factory, __ -> { });
+    }
+
+    /** Returns a new Memoized with the given factory and closer. */
     public Memoized(Supplier<T> factory, Closer<T, E> closer) {
         this.factory = requireNonNull(factory);
         this.closer = requireNonNull(closer);
     }
 
+    /** Returns a generic AutoCloseable Memoized with the given AutoCloseable-supplier. */
     public static <T extends AutoCloseable> Memoized<T, ?> of(Supplier<T> factory) {
         return new Memoized<>(factory, AutoCloseable::close);
     }
 
+    /** Composes the given memoized with a function taking its output as an argument to produce a new Memoized, with the given closer. */
     public static <T, U, E extends Exception> Memoized<U, E> combine(Memoized<T, ? extends E> inner, Function<T, U> outer, Closer<U, ? extends E> closer) {
         return new Memoized<>(() -> outer.apply(inner.get()), compose(closer, inner::close));
     }
