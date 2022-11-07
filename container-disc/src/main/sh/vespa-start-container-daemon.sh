@@ -274,7 +274,7 @@ exec $numactlcmd $envcmd java \
         --add-opens=java.base/java.nio=ALL-UNNAMED \
         --add-opens=java.base/jdk.internal.loader=ALL-UNNAMED \
         --add-opens=java.base/sun.security.ssl=ALL-UNNAMED  \
-        -Djava.io.tmpdir="${VESPA_HOME}/tmp" \
+        -Djava.io.tmpdir="${VESPA_HOME}/var/tmp" \
         -Djava.library.path="${VESPA_HOME}/lib64" \
         -Djava.security.properties=${VESPA_HOME}/conf/vespa/java.security.override \
         -Djava.awt.headless=true \
