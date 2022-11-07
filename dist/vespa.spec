@@ -551,7 +551,6 @@ cp %{buildroot}/%{_prefix}/etc/systemd/system/vespa-configserver.service %{build
 %endif
 
 ln -s /usr/lib/jvm/jre-17-openjdk %{buildroot}/%{_prefix}/jdk
-ln -s %{_prefix}/var/tmp %{buildroot}/%{_prefix}/tmp
 
 %clean
 rm -rf $RPM_BUILD_ROOT
@@ -587,6 +586,10 @@ exit 0
 %systemd_postun_with_restart vespa-configserver.service
 %endif
 
+%post base
+
+ln -s %{_prefix}/var/tmp %{buildroot}/%{_prefix}/tmp
+
 %postun base
 if [ $1 -eq 0 ]; then # this is an uninstallation
     rm -f /etc/profile.d/vespa.sh
@@ -603,6 +606,10 @@ then
     else
 	mv %{_prefix}/conf/vespa/default-env.txt.rpmsave %{_prefix}/conf/vespa/default-env.txt
     fi
+fi
+if test -L rm %{_prefix}/tmp
+then
+    rm -f %{_prefix}/tmp
 fi
 
 %files
