@@ -216,19 +216,6 @@ public class SessionRepository {
         return List.copyOf(localSessionCache.values());
     }
 
-    public Set<LocalSession> getLocalSessionsFromFileSystem() {
-        File[] sessions = tenantFileSystemDirs.sessionsPath().listFiles(sessionApplicationsFilter);
-        if (sessions == null) return Set.of();
-
-        Set<LocalSession> sessionIds = new HashSet<>();
-        for (File session : sessions) {
-            long sessionId = Long.parseLong(session.getName());
-            LocalSession localSession = getSessionFromFile(sessionId);
-            sessionIds.add(localSession);
-        }
-        return sessionIds;
-    }
-
     private LocalSession getSessionFromFile(long sessionId) {
         SessionZooKeeperClient sessionZKClient = createSessionZooKeeperClient(sessionId);
         File sessionDir = getAndValidateExistingSessionAppDir(sessionId);
@@ -377,10 +364,7 @@ public class SessionRepository {
     }
 
     public int deleteExpiredRemoteSessions(Clock clock) {
-        Duration expiryTime = configserverConfig.hostedVespa()
-                ? sessionLifetime.multipliedBy(2)
-                : sessionLifetime.multipliedBy(12); // TODO: Remove when tested more (Oct. 2022 at the latest)
-
+        Duration expiryTime = sessionLifetime.multipliedBy(2);
         List<Long> remoteSessionsFromZooKeeper = getRemoteSessionsFromZooKeeper();
         log.log(Level.FINE, () -> "Remote sessions for tenant " + tenantName + ": " + remoteSessionsFromZooKeeper);
 
