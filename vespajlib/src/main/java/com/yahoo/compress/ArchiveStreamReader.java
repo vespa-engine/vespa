@@ -136,8 +136,8 @@ public class ArchiveStreamReader implements AutoCloseable {
         // Commons Compress only has limited support for symlinks as they are only detected when the ZIP file is read
         // through org.apache.commons.compress.archivers.zip.ZipFile. This is not the case in this class, because it must
         // support reading ZIP files from generic input streams. The check below thus always returns false.
-        if (entry instanceof ZipArchiveEntry) return ((ZipArchiveEntry) entry).isUnixSymlink();
-        if (entry instanceof TarArchiveEntry) return ((TarArchiveEntry) entry).isSymbolicLink();
+        if (entry instanceof ZipArchiveEntry zipEntry) return zipEntry.isUnixSymlink();
+        if (entry instanceof TarArchiveEntry tarEntry) return tarEntry.isSymbolicLink();
         throw new IllegalArgumentException("Unsupported archive entry " + entry.getClass().getSimpleName() + ", cannot check for symbolic link");
     }
 

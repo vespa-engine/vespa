@@ -34,6 +34,7 @@ import com.yahoo.vespa.hosted.controller.application.Deployment;
 import com.yahoo.vespa.hosted.controller.application.Endpoint;
 import com.yahoo.vespa.hosted.controller.application.TenantAndApplicationId;
 import com.yahoo.vespa.hosted.controller.application.pkg.ApplicationPackage;
+import com.yahoo.vespa.hosted.controller.application.pkg.ApplicationPackageStream;
 import com.yahoo.vespa.hosted.controller.application.pkg.TestPackage;
 import com.yahoo.vespa.hosted.controller.maintenance.JobRunner;
 import com.yahoo.vespa.hosted.controller.notification.Notification;
@@ -43,6 +44,7 @@ import com.yahoo.vespa.hosted.controller.routing.context.DeploymentRoutingContex
 import com.yahoo.yolean.Exceptions;
 
 import java.io.ByteArrayOutputStream;
+import java.io.InputStream;
 import java.io.PrintStream;
 import java.io.UncheckedIOException;
 import java.security.cert.CertificateExpiredException;
@@ -928,14 +930,13 @@ public class InternalStepRunner implements StepRunner {
     }
 
     /** Returns the application package for the tester application, assembled from a generated config, fat-jar and services.xml. */
-    private ApplicationPackage testerPackage(RunId id) {
+    private ApplicationPackageStream testerPackage(RunId id) {
         RevisionId revision = controller.jobController().run(id).versions().targetRevision();
         DeploymentSpec spec = controller.applications().requireApplication(TenantAndApplicationId.from(id.application())).deploymentSpec();
-        byte[] testZip = controller.applications().applicationStore().getTester(id.application().tenant(),
-                                                                                id.application().application(), revision);
         boolean useTesterCertificate = useTesterCertificate(id);
 
-        TestPackage testPackage = new TestPackage(testZip,
+        TestPackage testPackage = new TestPackage(() -> controller.applications().applicationStore().streamTester(id.application().tenant(),
+                                                                                                                  id.application().application(), revision),
                                                   controller.system().isPublic(),
                                                   id,
                                                   controller.controllerConfig().steprunner().testerapp(),

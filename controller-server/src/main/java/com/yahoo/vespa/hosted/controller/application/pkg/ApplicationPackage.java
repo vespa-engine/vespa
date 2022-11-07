@@ -59,19 +59,19 @@ import static java.util.stream.Collectors.toMap;
  * A representation of the content of an application package.
  * Only meta-data content can be accessed as anything other than compressed data.
  * A package is identified by a hash of the content.
- * 
- * This is immutable.
- * 
+ *
  * @author bratseth
  * @author jonmv
  */
 public class ApplicationPackage {
 
-    private static final String trustedCertificatesFile = "security/clients.pem";
-    private static final String buildMetaFile = "build-meta.json";
+    static final String trustedCertificatesFile = "security/clients.pem";
+    static final String buildMetaFile = "build-meta.json";
     static final String deploymentFile = "deployment.xml";
-    private static final String validationOverridesFile = "validation-overrides.xml";
+    static final String validationOverridesFile = "validation-overrides.xml";
     static final String servicesFile = "services.xml";
+    static final Set<String> prePopulated = Set.of(deploymentFile, validationOverridesFile, servicesFile, buildMetaFile, trustedCertificatesFile);
+
     private static Hasher hasher() { return Hashing.murmur3_128().newHasher(); }
 
     private final String bundleHash;
@@ -101,7 +101,7 @@ public class ApplicationPackage {
      */
     public ApplicationPackage(byte[] zippedContent, boolean requireFiles) {
         this.zippedContent = Objects.requireNonNull(zippedContent, "The application package content cannot be null");
-        this.files = new ZipArchiveCache(zippedContent, Set.of(deploymentFile, validationOverridesFile, servicesFile, buildMetaFile, trustedCertificatesFile));
+        this.files = new ZipArchiveCache(zippedContent, prePopulated);
 
         Optional<DeploymentSpec> deploymentSpec = files.get(deploymentFile).map(bytes -> new String(bytes, UTF_8)).map(DeploymentSpec::fromXml);
         if (requireFiles && deploymentSpec.isEmpty())
@@ -120,17 +120,6 @@ public class ApplicationPackage {
         this.bundleHash = calculateBundleHash(zippedContent);
 
         preProcessAndPopulateCache();
-    }
-
-    /** Returns a copy of this with the given certificate appended. */
-    public ApplicationPackage withTrustedCertificate(X509Certificate certificate) {
-        List<X509Certificate> trustedCertificates = new ArrayList<>(this.trustedCertificates);
-        trustedCertificates.add(certificate);
-        byte[] certificatesBytes = X509CertificateUtils.toPem(trustedCertificates).getBytes(UTF_8);
-
-        ByteArrayOutputStream modified = new ByteArrayOutputStream(zippedContent.length + certificatesBytes.length);
-        ZipEntries.transferAndWrite(modified, new ByteArrayInputStream(zippedContent), trustedCertificatesFile, certificatesBytes);
-        return new ApplicationPackage(modified.toByteArray());
     }
 
     /** Hash of all files and settings that influence what is deployed to config servers. */
@@ -295,7 +284,7 @@ public class ApplicationPackage {
 
         private Map<Path, Optional<byte[]>> read(Collection<String> names) {
             var entries = ZipEntries.from(zip,
-                                          name -> names.contains(name),
+                                          names::contains,
                                           maxSize,
                                           true)
                                     .asList().stream()
