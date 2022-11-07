@@ -15,6 +15,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.NoSuchElementException;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Predicate;
@@ -107,7 +108,7 @@ public class ZipEntries {
         }
 
         public String name() { return name; }
-        public byte[] contentOrThrow() { return content.orElseThrow(); }
+        public byte[] contentOrThrow() { return content.orElseThrow(() -> new NoSuchElementException("'" + name + "' has no content")); }
         public Optional<byte[]> content() { return content; }
         public long size() { return size; }
     }
