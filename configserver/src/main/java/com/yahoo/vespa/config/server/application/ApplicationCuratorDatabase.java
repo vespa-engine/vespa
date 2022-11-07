@@ -103,7 +103,7 @@ public class ApplicationCuratorDatabase {
 
     /**
      * Returns the active session id for the given application.
-     * Returns Optional.empty if application not found or no active session exists.
+     * Returns Optional.empty() if application not found or no active session exists.
      */
     public Optional<Long> activeSessionOf(ApplicationId id) {
         Optional<byte[]> data = curator.getData(applicationPath(id));

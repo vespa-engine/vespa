@@ -84,13 +84,14 @@ public class AutoscalingMaintainer extends NodeRepositoryMaintainer {
                                          .with(advice.reason())
                                          .withTarget(advice.target());
                 applications().put(application.get().with(updatedCluster), lock);
-                if (advice.isPresent() && advice.target().isPresent() && !cluster.get().targetResources().equals(advice.target())) {
+
+                ClusterResources current = new AllocatableClusterResources(clusterNodes, nodeRepository()).advertisedResources();
+                if (advice.isPresent() && advice.target().isPresent() && !current.equals(advice.target().get())) {
                     // 2. Also autoscale
-                    ClusterResources before = new AllocatableClusterResources(clusterNodes, nodeRepository()).advertisedResources();
                     try (MaintenanceDeployment deployment = new MaintenanceDeployment(applicationId, deployer, metric, nodeRepository())) {
                         if (deployment.isValid()) {
                             deployment.activate();
-                            logAutoscaling(before, advice.target().get(), applicationId, clusterNodes);
+                            logAutoscaling(current, advice.target().get(), applicationId, clusterNodes);
                         }
                     }
                 }
