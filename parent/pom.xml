@@ -495,61 +495,6 @@
                 <!-- No version property, as we don't want maven-dependency-plugin to alert about newer versions. -->
                 <version>3.1.9</version>
             </dependency>
-            <dependency> <!-- Control netty-all version -->
-                <groupId>io.netty</groupId>
-                <artifactId>netty-all</artifactId>
-                <version>${netty.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>io.netty</groupId>
-                <artifactId>netty-buffer</artifactId>
-                <version>${netty.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>io.netty</groupId>
-                <artifactId>netty-common</artifactId>
-                <version>${netty.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>io.netty</groupId>
-                <artifactId>netty-codec</artifactId>
-                <version>${netty.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>io.netty</groupId>
-                <artifactId>netty-codec-http2</artifactId>
-                <version>${netty.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>io.netty</groupId>
-                <artifactId>netty-codec-http</artifactId>
-                <version>${netty.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>io.netty</groupId>
-                <artifactId>netty-transport</artifactId>
-                <version>${netty.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>io.netty</groupId>
-                <artifactId>netty-transport-classes-epoll</artifactId>
-                <version>${netty.version}</version>
-            </dependency>
-            <dependency> <!-- Control netty-handler version -->
-                <groupId>io.netty</groupId>
-                <artifactId>netty-handler</artifactId>
-                <version>${netty.version}</version>
-            </dependency>
-            <dependency> <!-- Control netty-transport-native-epoll version -->
-                <groupId>io.netty</groupId>
-                <artifactId>netty-transport-native-epoll</artifactId>
-                <version>${netty.version}</version>
-            </dependency>
-            <dependency> <!-- Control netty-handler version -->
-                <groupId>io.netty</groupId>
-                <artifactId>netty-tcnative</artifactId>
-                <version>${netty-tcnative.version}</version>
-            </dependency>
             <dependency>
                 <groupId>com.github.tomakehurst</groupId>
                 <artifactId>wiremock-jre8-standalone</artifactId>
@@ -1075,104 +1020,6 @@
                 <artifactId>json</artifactId>
                 <version>${org.json.version}</version>
             </dependency>
-            <dependency> <!-- Due to hadoop-common pulling in 1.7.7 -->
-                <groupId>org.apache.avro</groupId>
-                <artifactId>avro</artifactId>
-                <version>${avro.version}</version>
-            </dependency>
-            <dependency> <!-- Due to hadoop-common pulling in 9.8.1 -->
-                <groupId>com.nimbusds</groupId>
-                <artifactId>nimbus-jose-jwt</artifactId>
-                <version>${nimbus.version}</version>
-            </dependency>
-            <dependency> <!-- Due to hadoop-common pulling in older version -->
-                <groupId>net.minidev</groupId>
-                <artifactId>json-smart</artifactId>
-                <version>${json-smart.version}</version>
-            </dependency>
-            <dependency>
-                <!-- Force fresh woodstox-core without security issue hadoop-3.3.4 -->
-                <groupId>com.fasterxml.woodstox</groupId>
-                <artifactId>woodstox-core</artifactId>
-                <version>${woodstox.version}</version>
-            </dependency>
-            <dependency>
-                <!-- Force fresh jersey-json without security issue hadoop-3.3.4 -->
-                <groupId>com.sun.jersey</groupId>
-                <artifactId>jersey-json</artifactId>
-                <version>${sun-jersey-json.version}</version>
-            </dependency>
-            <dependency>
-                <!-- Force fresh jettison without security issue hadoop-3.3.4 -->
-                <groupId>org.codehaus.jettison</groupId>
-                <artifactId>jettison</artifactId>
-                <version>${jettison.version}</version>
-            </dependency>
-            <dependency>
-                <!-- Transitive dependencies from pig-0.16 up-to-date -->
-                <groupId>tomcat</groupId>
-                <artifactId>jasper-runtime</artifactId>
-                <version>${tomcat-jasper.version}</version>
-            </dependency>
-            <dependency>
-                <!-- Transitive dependencies from pig-0.16 up-to-date -->
-                <groupId>tomcat</groupId>
-                <artifactId>jasper-compiler</artifactId>
-                <version>${tomcat-jasper.version}</version>
-            </dependency>
-            <!-- Hadoop dependencies -->
-            <dependency>
-                <groupId>org.apache.hadoop</groupId>
-                <artifactId>hadoop-common</artifactId>
-                <version>${hadoop.version}</version>
-                <exclusions>
-                    <exclusion>
-                        <groupId>log4j</groupId>
-                        <artifactId>log4j</artifactId>
-                    </exclusion>
-                    <exclusion>
-                        <groupId>org.slf4j</groupId>
-                        <artifactId>slf4j-log4j12</artifactId>
-                    </exclusion>
-                </exclusions>
-            </dependency>
-            <dependency>
-                <groupId>org.apache.hadoop</groupId>
-                <artifactId>hadoop-client</artifactId>
-                <version>${hadoop.version}</version>
-                <exclusions>
-                    <exclusion>
-                        <groupId>log4j</groupId>
-                        <artifactId>log4j</artifactId>
-                    </exclusion>
-                    <exclusion>
-                        <groupId>org.slf4j</groupId>
-                        <artifactId>slf4j-log4j12</artifactId>
-                    </exclusion>
-                </exclusions>
-            </dependency>
-            <dependency>
-                <groupId>org.apache.pig</groupId>
-                <artifactId>pig</artifactId>
-                <version>${pig.version}</version>
-                <classifier>h2</classifier>
-            </dependency>
-            <dependency>
-                <!-- Hadoop test dependency -->
-                <groupId>org.apache.hadoop</groupId>
-                <artifactId>hadoop-minicluster</artifactId>
-                <version>${hadoop.version}</version>
-                <exclusions>
-                    <exclusion>
-                        <groupId>log4j</groupId>
-                        <artifactId>log4j</artifactId>
-                    </exclusion>
-                    <exclusion>
-                        <groupId>org.slf4j</groupId>
-                        <artifactId>slf4j-log4j12</artifactId>
-                    </exclusion>
-                </exclusions>
-            </dependency>
         </dependencies>
     </dependencyManagement>
 
@@ -1188,7 +1035,6 @@
 
         <!-- Athenz dependencies. Make sure these dependencies match those in Vespa's internal repositories -->
         <athenz.version>1.10.54</athenz.version> <!-- WARNING: sync cloud-tenant-base-dependencies-enforcer/pom.xml -->
-        <avro.version>1.11.1</avro.version>
         <aws-sdk.version>1.12.331</aws-sdk.version>
         <!-- Athenz END -->
 
@@ -1207,15 +1053,11 @@
         <felix.version>7.0.1</felix.version>
         <felix.log.version>1.0.1</felix.log.version>
         <findbugs.version>3.0.2</findbugs.version> <!-- Should be kept in sync with guava -->
-        <groovy.version>3.0.13</groovy.version>
-        <hadoop.version>3.3.4</hadoop.version>
         <hdrhistogram.version>2.1.12</hdrhistogram.version>
-        <jettison.version>1.5.1</jettison.version>
         <jetty.version>9.4.49.v20220914</jetty.version>
         <jetty-alpn.version>1.1.3.v20160715</jetty-alpn.version>
         <jjwt.version>0.11.2</jjwt.version>
         <jna.version>5.11.0</jna.version>
-        <json-smart.version>2.4.8</json-smart.version>
         <junit.version>5.8.1</junit.version>
         <maven-archiver.version>3.5.2</maven-archiver.version>
         <maven-assembly-plugin.version>3.3.0</maven-assembly-plugin.version>
@@ -1236,21 +1078,14 @@
         <maven-site-plugin.version>3.9.1</maven-site-plugin.version>
         <maven-source-plugin.version>3.2.1</maven-source-plugin.version>
         <mockito.version>4.0.0</mockito.version>
-        <netty.version>4.1.84.Final</netty.version>
-        <netty-tcnative.version>2.0.54.Final</netty-tcnative.version>
-        <nimbus.version>9.25.6</nimbus.version>
         <onnxruntime.version>1.12.1</onnxruntime.version> <!-- WARNING: sync cloud-tenant-base-dependencies-enforcer/pom.xml -->
         <org.json.version>20220320</org.json.version>
         <org.lz4.version>1.8.0</org.lz4.version>
-        <pig.version>0.16.0</pig.version>
         <prometheus.client.version>0.6.0</prometheus.client.version>
         <protobuf.version>3.21.7</protobuf.version>
         <spifly.version>1.3.5</spifly.version>
-        <sun-jersey-json.version>1.19.4</sun-jersey-json.version>
         <surefire.version>2.22.2</surefire.version>
-        <tomcat-jasper.version>5.5.23</tomcat-jasper.version>
         <wiremock.version>2.34.0</wiremock.version>
-        <woodstox.version>6.4.0</woodstox.version>
         <zookeeper.client.version>3.8.0</zookeeper.client.version>
 
         <doclint>all</doclint>
