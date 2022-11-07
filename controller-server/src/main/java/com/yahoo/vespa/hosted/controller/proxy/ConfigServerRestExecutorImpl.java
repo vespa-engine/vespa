@@ -58,7 +58,7 @@ import static com.yahoo.yolean.Exceptions.uncheck;
 public class ConfigServerRestExecutorImpl extends AbstractComponent implements ConfigServerRestExecutor {
 
     private static final Logger LOG = Logger.getLogger(ConfigServerRestExecutorImpl.class.getName());
-    private static final Duration PROXY_REQUEST_TIMEOUT = Duration.ofSeconds(10);
+    private static final Duration PROXY_REQUEST_TIMEOUT = Duration.ofSeconds(20);
     private static final Duration PING_REQUEST_TIMEOUT = Duration.ofMillis(500);
     private static final Duration SINGLE_TARGET_WAIT = Duration.ofSeconds(2);
     private static final int SINGLE_TARGET_RETRIES = 3;
