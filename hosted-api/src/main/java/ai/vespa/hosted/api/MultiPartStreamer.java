@@ -94,7 +94,7 @@ public class MultiPartStreamer {
             final int j = streams.size();
             int i = -1;
             @Override public boolean hasMoreElements() { return i < j; }
-            @Override public InputStream nextElement() { return ++i < j ? streams.get(i).get() : end(); }
+            @Override public InputStream nextElement() { return ++i < j ? streams.get(i).get() : i == j ? end() : null; }
         });
         try {
             if (aggregate.skip(2) != 2)// This should never happen, as the first stream is a ByteArrayInputStream.
@@ -116,17 +116,6 @@ public class MultiPartStreamer {
         return asStream(disposition(name) + (filename == null ? "" : "; filename=\"" + filename + "\"") + type(contentType));
     }
 
-    /** Returns the separator to put between one part and the next, when this is a file. */
-    private InputStream separator(String name, Path path) {
-        try {
-            String contentType = Files.probeContentType(path);
-            return separator(name, path.getFileName().toString(), contentType != null ? contentType : "application/octet-stream");
-        }
-        catch (IOException e) {
-            throw new UncheckedIOException(e);
-        }
-    }
-
     /** Returns the end delimiter of the request, with line breaks prepended. */
     private InputStream end() {
         return asStream("\r\n--" + boundary + "--");
@@ -143,7 +132,7 @@ public class MultiPartStreamer {
         return "\r\nContent-Type: " + contentType + "\r\n\r\n";
     }
 
-    /** Returns the a ByteArrayInputStream over the given string, UTF-8 encoded. */
+    /** Returns a ByteArrayInputStream over the given string, UTF-8 encoded. */
     private static InputStream asStream(String string) {
         return new ByteArrayInputStream(string.getBytes(StandardCharsets.UTF_8));
     }
