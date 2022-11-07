@@ -516,7 +516,7 @@ public class InternalStepRunnerTest {
         assertEquals(oldTrusted, tester.configServer().application(app.instanceId(), id.type().zone()).get().applicationPackage().trustedCertificates());
 
         tester.configServer().throwOnNextPrepare(null);
-        tester.clock().advance(Duration.ofSeconds(300));
+        tester.clock().advance(Duration.ofSeconds(450));
         tester.runner().run();
         assertEquals(succeeded, tester.jobs().run(id).stepStatuses().get(Step.deployTester));
         assertEquals(succeeded, tester.jobs().run(id).stepStatuses().get(Step.deployReal));
