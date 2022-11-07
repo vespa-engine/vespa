@@ -40,7 +40,6 @@ public class ApplicationPackageStream {
     private final Supplier<Replacer> replacer;
     private final Supplier<Predicate<String>> filter;
     private final Supplier<InputStream> in;
-
     private final AtomicReference<ApplicationPackage> truncatedPackage = new AtomicReference<>();
 
     public static Supplier<Replacer> addingCertificate(Optional<X509Certificate> certificate) {
@@ -88,7 +87,7 @@ public class ApplicationPackageStream {
      * and the first to be exhausted will populate the truncated application package.
      */
     public InputStream zipStream() {
-        return new Stream();
+        return new Stream(new ZipInputStream(in.get()), replacer.get(), filter.get(), truncatedPackage);
     }
 
     /**
@@ -101,22 +100,30 @@ public class ApplicationPackageStream {
         return truncated;
     }
 
-    private class Stream extends InputStream {
+    private static class Stream extends InputStream {
 
         private final byte[] inBuffer = new byte[1 << 16];
         private final ByteArrayOutputStream teeOut = new ByteArrayOutputStream(1 << 16);
         private final ZipOutputStream teeZip = new ZipOutputStream(teeOut);
-        private final ZipInputStream inZip = new ZipInputStream(in.get());
         private final ByteArrayOutputStream out = new ByteArrayOutputStream(1 << 16);
         private final ZipOutputStream outZip = new ZipOutputStream(out);
-        private final Replacer replacer = ApplicationPackageStream.this.replacer.get();
-        private final Predicate<String> filter = ApplicationPackageStream.this.filter.get();
+        private final AtomicReference<ApplicationPackage> truncatedPackage;
+        private final ZipInputStream inZip;
+        private final Replacer replacer;
+        private final Predicate<String> filter;
         private byte[] currentOut = new byte[0];
         private InputStream currentIn = InputStream.nullInputStream();
         private boolean includeCurrent = false;
         private int pos = 0;
         private boolean closed = false;
         private boolean done = false;
+
+        private Stream(ZipInputStream inZip, Replacer replacer, Predicate<String> filter, AtomicReference<ApplicationPackage> truncatedPackage) {
+            this.inZip = inZip;
+            this.replacer = replacer;
+            this.filter = filter;
+            this.truncatedPackage = truncatedPackage;
+        }
 
         private void fill() throws IOException {
             if (done) return;
