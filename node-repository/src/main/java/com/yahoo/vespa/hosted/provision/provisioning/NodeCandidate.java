@@ -430,7 +430,9 @@ public abstract class NodeCandidate implements Nodelike, Comparable<NodeCandidat
                                      resources.with(parent.get().resources().diskSpeed())
                                               .with(parent.get().resources().storageType())
                                               .with(parent.get().resources().architecture()),
-                                     NodeType.tenant).build();
+                                     NodeType.tenant)
+                            .cloudAccount(parent.get().cloudAccount())
+                            .build();
             return new ConcreteNodeCandidate(node, freeParentCapacity, parent, violatesSpares, exclusiveSwitch, isSurplus, isNew, isResizable);
 
         }
