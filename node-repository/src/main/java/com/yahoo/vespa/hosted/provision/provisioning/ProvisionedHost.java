@@ -74,9 +74,7 @@ public class ProvisionedHost {
 
     /** Generate {@link Node} instance representing the node running on this physical host */
     public Node generateNode() {
-        return Node.reserve(Set.of(), nodeHostname(), hostHostname, nodeResources, hostType.childNodeType())
-                .cloudAccount(cloudAccount)
-                .build();
+        return Node.reserve(Set.of(), nodeHostname(), hostHostname, nodeResources, hostType.childNodeType()).build();
     }
 
     public String getId() { return id; }
