@@ -12,8 +12,6 @@ import com.yahoo.vespa.hosted.controller.api.integration.deployment.RevisionId;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.TesterId;
 import com.yahoo.vespa.hosted.controller.application.TenantAndApplicationId;
 
-import java.io.ByteArrayInputStream;
-import java.io.InputStream;
 import java.time.Instant;
 import java.util.Map;
 import java.util.NavigableMap;
@@ -48,14 +46,15 @@ public class ApplicationStoreMock implements ApplicationStore {
     }
 
     @Override
-    public InputStream stream(DeploymentId deploymentId, RevisionId revisionId) {
+    public byte[] get(DeploymentId deploymentId, RevisionId revisionId) {
         if ( ! revisionId.isProduction())
-            return new ByteArrayInputStream(devStore.get(deploymentId));
+            return requireNonNull(devStore.get(deploymentId));
 
         TenantAndApplicationId tenantAndApplicationId = TenantAndApplicationId.from(deploymentId.applicationId());
         byte[] bytes = store.get(appId(tenantAndApplicationId.tenant(), tenantAndApplicationId.application())).get(revisionId);
-        if (bytes == null) throw new NotExistsException("No " + revisionId + " found for " + tenantAndApplicationId);
-        return new ByteArrayInputStream(bytes);
+        if (bytes == null)
+            throw new NotExistsException("No " + revisionId + " found for " + tenantAndApplicationId);
+        return bytes;
     }
 
     @Override
@@ -97,8 +96,8 @@ public class ApplicationStoreMock implements ApplicationStore {
     }
 
     @Override
-    public InputStream streamTester(TenantName tenant, ApplicationName application, RevisionId revision) {
-        return new ByteArrayInputStream(store.get(testerId(tenant, application)).get(revision));
+    public byte[] getTester(TenantName tenant, ApplicationName application, RevisionId revision) {
+        return requireNonNull(store.get(testerId(tenant, application)).get(revision));
     }
 
 
