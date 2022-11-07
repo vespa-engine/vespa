@@ -64,6 +64,7 @@ public:
             }
             return std::move(*value);
         }
+        ~promise_type();
     };
     using Handle = std::coroutine_handle<promise_type>;
 
@@ -107,5 +108,8 @@ public:
         }
     }
 };
+
+template<typename T>
+Lazy<T>::promise_type::~promise_type() = default;
 
 }

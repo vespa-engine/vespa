@@ -5,6 +5,7 @@
 #include <vespa/vespalib/util/executor.h>
 #include <coroutine>
 #include <exception>
+#include <stdexcept>
 
 namespace vespalib::coro {
 
