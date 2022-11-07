@@ -118,7 +118,6 @@ public final class Node implements Nodelike {
             if (!ipConfig.pool().ipSet().isEmpty()) throw new IllegalArgumentException("A child node cannot have an IP address pool");
             if (modelName.isPresent()) throw new IllegalArgumentException("A child node cannot have model name set");
             if (switchHostname.isPresent()) throw new IllegalArgumentException("A child node cannot have switch hostname set");
-            if (!cloudAccount.isEmpty()) throw new IllegalArgumentException("A child node cannot have cloud account set");
         }
 
         if (type != NodeType.host && reservedTo.isPresent())
