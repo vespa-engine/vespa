@@ -384,17 +384,20 @@ public class ApplicationApiCloudTest extends ControllerContainerCloudTest {
         tester.assertResponse(request("/application/v4/tenant/scoober", GET).roles(Role.reader(tenantName)),
                 (response) -> assertFalse(response.getBodyAsString().contains("archiveAccessRole")),
                 200);
+        tester.assertResponse(request("/application/v4/tenant/scoober/archive-access", PUT)
+                        .data("{\"role\":\"dummy\"}").roles(Role.administrator(tenantName)),
+                "{\"error-code\":\"BAD_REQUEST\",\"message\":\"Invalid archive access role 'dummy': Must match expected pattern: 'arn:aws:iam::\\\\d{12}:.+'\"}", 400);
 
         tester.assertResponse(request("/application/v4/tenant/scoober/archive-access/aws", PUT)
                         .data("{\"role\":\"arn:aws:iam::123456789012:role/my-role\"}").roles(Role.administrator(tenantName)),
                 "{\"message\":\"AWS archive access role set to 'arn:aws:iam::123456789012:role/my-role' for tenant scoober.\"}", 200);
         tester.assertResponse(request("/application/v4/tenant/scoober", GET).roles(Role.reader(tenantName)),
-                (response) -> assertTrue(response.getBodyAsString().contains("\"awsRole\":\"arn:aws:iam::123456789012:role/my-role\"")),
+                (response) -> assertTrue(response.getBodyAsString().contains("\"archiveAccessRole\":\"arn:aws:iam::123456789012:role/my-role\"")),
                 200);
         tester.assertResponse(request("/application/v4/tenant/scoober/archive-access/aws", DELETE).roles(Role.administrator(tenantName)),
                 "{\"message\":\"AWS archive access role removed for tenant scoober.\"}", 200);
         tester.assertResponse(request("/application/v4/tenant/scoober", GET).roles(Role.reader(tenantName)),
-                (response) -> assertFalse(response.getBodyAsString().contains("\"awsRole\":\"arn:aws:iam::123456789012:role/my-role\"")),
+                (response) -> assertFalse(response.getBodyAsString().contains("\"archiveAccessRole\":\"arn:aws:iam::123456789012:role/my-role\"")),
                 200);
 
         tester.assertResponse(request("/application/v4/tenant/scoober/archive-access/gcp", PUT)
@@ -409,25 +412,25 @@ public class ApplicationApiCloudTest extends ControllerContainerCloudTest {
                 (response) -> assertFalse(response.getBodyAsString().contains("\"gcpMember\":\"user:test@example.com\"")),
                 200);
 
-        tester.assertResponse(request("/application/v4/tenant/scoober/archive-access/aws", PUT)
+        tester.assertResponse(request("/application/v4/tenant/scoober/archive-access", PUT)
                         .data("{\"role\":\"arn:aws:iam::123456789012:role/my-role\"}").roles(Role.administrator(tenantName)),
                 "{\"message\":\"AWS archive access role set to 'arn:aws:iam::123456789012:role/my-role' for tenant scoober.\"}", 200);
         tester.assertResponse(request("/application/v4/tenant/scoober", GET).roles(Role.reader(tenantName)),
-                (response) -> assertTrue(response.getBodyAsString().contains("\"awsRole\":\"arn:aws:iam::123456789012:role/my-role\"")),
+                (response) -> assertTrue(response.getBodyAsString().contains("\"archiveAccessRole\":\"arn:aws:iam::123456789012:role/my-role\"")),
                 200);
 
-        tester.assertResponse(request("/application/v4/tenant/scoober/archive-access/aws", PUT)
+        tester.assertResponse(request("/application/v4/tenant/scoober/archive-access", PUT)
                         .data("{\"role\":\"arn:aws:iam::123456789012:role/my-role\"}").roles(Role.administrator(tenantName)),
                 "{\"message\":\"AWS archive access role set to 'arn:aws:iam::123456789012:role/my-role' for tenant scoober.\"}", 200);
         tester.assertResponse(request("/application/v4/tenant/scoober", GET).roles(Role.reader(tenantName)),
-                (response) -> assertTrue(response.getBodyAsString().contains("\"awsRole\":\"arn:aws:iam::123456789012:role/my-role\"")),
+                (response) -> assertTrue(response.getBodyAsString().contains("\"archiveAccessRole\":\"arn:aws:iam::123456789012:role/my-role\"")),
                 200);
 
         tester.assertResponse(request("/application/v4/tenant/scoober/application/albums/environment/prod/region/aws-us-east-1c/instance/default", GET)
                         .roles(Role.reader(tenantName)),
                 new File("deployment-cloud.json"));
 
-        tester.assertResponse(request("/application/v4/tenant/scoober/archive-access/aws", DELETE).roles(Role.administrator(tenantName)),
+        tester.assertResponse(request("/application/v4/tenant/scoober/archive-access", DELETE).roles(Role.administrator(tenantName)),
                 "{\"message\":\"AWS archive access role removed for tenant scoober.\"}", 200);
         tester.assertResponse(request("/application/v4/tenant/scoober", GET).roles(Role.reader(tenantName)),
                 (response) -> assertFalse(response.getBodyAsString().contains("archiveAccessRole")),
