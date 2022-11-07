@@ -18,14 +18,15 @@ import com.yahoo.text.Text;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.RunId;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.TesterCloud.Suite;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.TesterId;
-import com.yahoo.vespa.hosted.controller.application.pkg.ApplicationPackageStream.Replacer;
 import com.yahoo.vespa.hosted.controller.config.ControllerConfig;
 import com.yahoo.vespa.hosted.controller.config.ControllerConfig.Steprunner.Testerapp;
 import com.yahoo.yolean.Exceptions;
 
 import javax.security.auth.x500.X500Principal;
 import java.io.ByteArrayInputStream;
-import java.io.InputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.math.BigInteger;
 import java.security.KeyPair;
 import java.security.cert.X509Certificate;
@@ -42,8 +43,6 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
-import java.util.function.Supplier;
-import java.util.function.UnaryOperator;
 import java.util.jar.JarInputStream;
 import java.util.jar.Manifest;
 import java.util.regex.Pattern;
@@ -54,9 +53,8 @@ import static com.yahoo.vespa.hosted.controller.api.integration.deployment.Teste
 import static com.yahoo.vespa.hosted.controller.api.integration.deployment.TesterCloud.Suite.system;
 import static com.yahoo.vespa.hosted.controller.application.pkg.ApplicationPackage.deploymentFile;
 import static com.yahoo.vespa.hosted.controller.application.pkg.ApplicationPackage.servicesFile;
-import static java.io.InputStream.nullInputStream;
+import static com.yahoo.vespa.hosted.controller.application.pkg.ZipEntries.transferAndWrite;
 import static java.nio.charset.StandardCharsets.UTF_8;
-import static java.util.function.UnaryOperator.identity;
 import static java.util.stream.Collectors.groupingBy;
 import static java.util.stream.Collectors.mapping;
 import static java.util.stream.Collectors.toList;
@@ -73,14 +71,32 @@ public class TestPackage {
     static final NodeResources DEFAULT_TESTER_RESOURCES_AWS = new NodeResources(2, 8, 50, 0.3, NodeResources.DiskSpeed.any);
     static final NodeResources DEFAULT_TESTER_RESOURCES = new NodeResources(1, 4, 50, 0.3, NodeResources.DiskSpeed.any);
 
-    private final ApplicationPackageStream applicationPackageStream;
+    private final ApplicationPackage applicationPackage;
     private final X509Certificate certificate;
 
-    public TestPackage(Supplier<InputStream> inZip, boolean isPublicSystem, RunId id, Testerapp testerApp,
+    public TestPackage(byte[] testPackage, boolean isPublicSystem, RunId id, Testerapp testerApp,
                        DeploymentSpec spec, Instant certificateValidFrom, Duration certificateValidDuration) {
-        KeyPair keyPair;
+
+        // Copy contents of submitted application-test.zip, and ensure required directories exist within the zip.
+        Map<String, byte[]> entries = new HashMap<>();
+        entries.put("artifacts/.ignore-" + UUID.randomUUID(), new byte[0]);
+        entries.put("tests/.ignore-" + UUID.randomUUID(), new byte[0]);
+
+        entries.put(servicesFile,
+                    servicesXml(! isPublicSystem,
+                                certificateValidFrom != null,
+                                hasLegacyTests(testPackage),
+                                testerResourcesFor(id.type().zone(), spec.requireInstance(id.application().instance())),
+                                testerApp));
+
+        entries.put(deploymentFile,
+                    deploymentXml(id.tester(),
+                                  spec.athenzDomain(),
+                                  spec.requireInstance(id.application().instance())
+                                      .athenzService(id.type().zone().environment(), id.type().zone().region())));
+
         if (certificateValidFrom != null) {
-            keyPair = KeyUtils.generateKeypair(KeyAlgorithm.RSA, 2048);
+            KeyPair keyPair = KeyUtils.generateKeypair(KeyAlgorithm.RSA, 2048);
             X500Principal subject = new X500Principal("CN=" + id.tester().id().toFullString() + "." + id.type() + "." + id.number());
             this.certificate = X509CertificateBuilder.fromKeypair(keyPair,
                                                                   subject,
@@ -89,60 +105,26 @@ public class TestPackage {
                                                                   SignatureAlgorithm.SHA512_WITH_RSA,
                                                                   BigInteger.valueOf(1))
                                                      .build();
+            entries.put("artifacts/key", KeyUtils.toPem(keyPair.getPrivate()).getBytes(UTF_8));
+            entries.put("artifacts/cert", X509CertificateUtils.toPem(certificate).getBytes(UTF_8));
         }
         else {
-            keyPair = null;
             this.certificate = null;
         }
-        this.applicationPackageStream = new ApplicationPackageStream(inZip, () -> __ -> false, () -> new Replacer() {
 
-            // Initially skips all declared entries, ensuring they're generated and appended after all input entries.
-            final Map<String, UnaryOperator<InputStream>> entries = new HashMap<>();
-            final Map<String, UnaryOperator<InputStream>> replacements = new HashMap<>();
-            boolean hasLegacyTests = false;
-
-            @Override
-            public String next() {
-                if (entries.isEmpty()) return null;
-                String next = entries.keySet().iterator().next();
-                replacements.put(next, entries.remove(next));
-                return next;
-            }
-
-            @Override
-            public InputStream modify(String name, InputStream in) {
-                hasLegacyTests |= name.startsWith("artifacts/") && name.endsWith("-tests.jar");
-                return entries.containsKey(name) ? null : replacements.getOrDefault(name, identity()).apply(in);
-            }
-
-            {
-                // Copy contents of submitted application-test.zip, and ensure required directories exist within the zip.
-                entries.put("artifacts/.ignore-" + UUID.randomUUID(), __ -> nullInputStream());
-                entries.put("tests/.ignore-" + UUID.randomUUID(), __ -> nullInputStream());
-
-                entries.put(servicesFile,
-                            __ -> new ByteArrayInputStream(servicesXml( ! isPublicSystem,
-                                                                       certificateValidFrom != null,
-                                                                       hasLegacyTests,
-                                                                       testerResourcesFor(id.type().zone(), spec.requireInstance(id.application().instance())),
-                                                                       testerApp)));
-
-                entries.put(deploymentFile,
-                            __ -> new ByteArrayInputStream(deploymentXml(id.tester(),
-                                                                         spec.athenzDomain(),
-                                                                         spec.requireInstance(id.application().instance())
-                                                                             .athenzService(id.type().zone().environment(), id.type().zone().region()))));
-
-                if (certificate != null) {
-                    entries.put("artifacts/key", __ -> new ByteArrayInputStream(KeyUtils.toPem(keyPair.getPrivate()).getBytes(UTF_8)));
-                    entries.put("artifacts/cert", __ -> new ByteArrayInputStream(X509CertificateUtils.toPem(certificate).getBytes(UTF_8)));
-                }
-            }
-        });
+        ByteArrayOutputStream buffer = new ByteArrayOutputStream(testPackage.length + 10_000);
+        transferAndWrite(buffer, new ByteArrayInputStream(testPackage), entries);
+        this.applicationPackage = new ApplicationPackage(buffer.toByteArray());
     }
 
-    public ApplicationPackageStream asApplicationPackage() {
-        return applicationPackageStream;
+    static boolean hasLegacyTests(byte[] testPackage) {
+        return ZipEntries.from(testPackage, __ -> true, 0, false).asList().stream()
+                         .anyMatch(file -> file.name().startsWith("artifacts/") && file.name().endsWith("-tests.jar"));
+
+    }
+
+    public ApplicationPackage asApplicationPackage() {
+        return applicationPackage;
     }
 
     public X509Certificate certificate() {
@@ -225,7 +207,7 @@ public class TestPackage {
         return new TestSummary(problems, suites);
     }
 
-    static NodeResources testerResourcesFor(ZoneId zone, DeploymentInstanceSpec spec) {
+    public static NodeResources testerResourcesFor(ZoneId zone, DeploymentInstanceSpec spec) {
         NodeResources nodeResources = spec.steps().stream()
                                           .filter(step -> step.concerns(zone.environment()))
                                           .findFirst()
@@ -237,7 +219,7 @@ public class TestPackage {
     }
 
     /** Returns the generated services.xml content for the tester application. */
-    static byte[] servicesXml(boolean systemUsesAthenz, boolean useTesterCertificate, boolean hasLegacyTests,
+    public static byte[] servicesXml(boolean systemUsesAthenz, boolean useTesterCertificate, boolean hasLegacyTests,
                                      NodeResources resources, ControllerConfig.Steprunner.Testerapp config) {
         int jdiscMemoryGb = 2; // 2Gb memory for tester application which uses Maven.
         int jdiscMemoryPct = (int) Math.ceil(100 * jdiscMemoryGb / resources.memoryGb());
@@ -297,7 +279,7 @@ public class TestPackage {
     }
 
     /** Returns a dummy deployment xml which sets up the service identity for the tester, if present. */
-    static byte[] deploymentXml(TesterId id, Optional<AthenzDomain> athenzDomain, Optional<AthenzService> athenzService) {
+    public static byte[] deploymentXml(TesterId id, Optional<AthenzDomain> athenzDomain, Optional<AthenzService> athenzService) {
         String deploymentSpec =
                 "<?xml version='1.0' encoding='UTF-8'?>\n" +
                 "<deployment version=\"1.0\" " +

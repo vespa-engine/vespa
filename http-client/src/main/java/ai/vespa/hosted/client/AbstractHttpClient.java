@@ -173,7 +173,7 @@ public abstract class AbstractHttpClient implements HttpClient {
 
         @Override
         public HttpClient.RequestBuilder body(byte[] json) {
-            return body(() -> HttpEntities.create(json, ContentType.APPLICATION_JSON));
+            return body(HttpEntities.create(json, ContentType.APPLICATION_JSON));
         }
 
         @Override
