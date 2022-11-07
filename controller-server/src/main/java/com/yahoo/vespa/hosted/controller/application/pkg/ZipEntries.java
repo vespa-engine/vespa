@@ -36,36 +36,6 @@ public class ZipEntries {
         this.entries = List.copyOf(Objects.requireNonNull(entries));
     }
 
-    /** Copies the zipped content from in to out, adding/overwriting an entry with the given name and content. */
-    public static void transferAndWrite(OutputStream out, InputStream in, String name, byte[] content) {
-        transferAndWrite(out, in, Map.of(name, content));
-    }
-
-    /** Copies the zipped content from in to out, adding/overwriting/removing (on {@code null}) entries as specified. */
-    public static void transferAndWrite(OutputStream out, InputStream in, Map<String, byte[]> entries) {
-        try (ZipOutputStream zipOut = new ZipOutputStream(out);
-             ZipInputStream zipIn = new ZipInputStream(in)) {
-            for (ZipEntry entry = zipIn.getNextEntry(); entry != null; entry = zipIn.getNextEntry()) {
-                if (entries.containsKey(entry.getName()))
-                    continue;
-
-                zipOut.putNextEntry(new ZipEntry(entry.getName()));
-                zipIn.transferTo(zipOut);
-                zipOut.closeEntry();
-            }
-            for (Entry<String, byte[]> entry : entries.entrySet()) {
-                if (entry.getValue() != null) {
-                    zipOut.putNextEntry(new ZipEntry(entry.getKey()));
-                    zipOut.write(entry.getValue());
-                    zipOut.closeEntry();
-                }
-            }
-        }
-        catch (IOException e) {
-            throw new UncheckedIOException(e);
-        }
-    }
-
     /** Read ZIP entries from inputStream */
     public static ZipEntries from(byte[] zip, Predicate<String> entryNameMatcher, int maxEntrySizeInBytes, boolean throwIfEntryExceedsMaxSize) {
 

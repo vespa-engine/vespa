@@ -87,7 +87,7 @@ public class ApplicationPackageStream {
      * and the first to be exhausted will populate the truncated application package.
      */
     public InputStream zipStream() {
-        return new Stream(new ZipInputStream(in.get()), replacer.get(), filter.get(), truncatedPackage);
+        return new Stream(in.get(), replacer.get(), filter.get(), truncatedPackage);
     }
 
     /**
@@ -108,6 +108,7 @@ public class ApplicationPackageStream {
         private final ByteArrayOutputStream out = new ByteArrayOutputStream(1 << 16);
         private final ZipOutputStream outZip = new ZipOutputStream(out);
         private final AtomicReference<ApplicationPackage> truncatedPackage;
+        private final InputStream in;
         private final ZipInputStream inZip;
         private final Replacer replacer;
         private final Predicate<String> filter;
@@ -118,8 +119,9 @@ public class ApplicationPackageStream {
         private boolean closed = false;
         private boolean done = false;
 
-        private Stream(ZipInputStream inZip, Replacer replacer, Predicate<String> filter, AtomicReference<ApplicationPackage> truncatedPackage) {
-            this.inZip = inZip;
+        private Stream(InputStream in, Replacer replacer, Predicate<String> filter, AtomicReference<ApplicationPackage> truncatedPackage) {
+            this.in = in;
+            this.inZip = new ZipInputStream(in);
             this.replacer = replacer;
             this.filter = filter;
             this.truncatedPackage = truncatedPackage;
@@ -215,7 +217,8 @@ public class ApplicationPackageStream {
         @Override
         public void close() {
             if ( ! closed) try {
-                transferTo(nullOutputStream());
+                transferTo(nullOutputStream());    // Finish reading the zip, to populate the truncated package in case of errors.
+                in.transferTo(nullOutputStream()); // For some inane reason, ZipInputStream doesn't exhaust its wrapped input.
                 inZip.close();
                 closed = true;
             }
