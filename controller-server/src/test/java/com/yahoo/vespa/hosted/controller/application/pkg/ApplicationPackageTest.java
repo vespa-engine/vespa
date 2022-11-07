@@ -22,6 +22,7 @@ import java.nio.file.Path;
 import java.security.KeyPair;
 import java.security.cert.X509Certificate;
 import java.time.Instant;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -190,7 +191,7 @@ public class ApplicationPackageTest {
         assertEquals(List.of(), new ApplicationPackage(zip).trustedCertificates());
         for (int i = 0; i < certificates.size(); i++) {
             InputStream in = new ByteArrayInputStream(zip);
-            zip = new ApplicationPackageStream(() -> in, __ -> false, addingCertificate(Optional.of(certificates.get(i)))).zipStream().readAllBytes();
+            zip = new ApplicationPackageStream(() -> in, () -> __ -> false, addingCertificate(Optional.of(certificates.get(i)))).zipStream().readAllBytes();
             assertEquals(certificates.subList(0, i + 1), new ApplicationPackage(zip).trustedCertificates());
         }
     }
@@ -232,8 +233,12 @@ public class ApplicationPackageTest {
                                                                       "unused1.xml", in -> null,
                                                                       "unused2.xml", __ -> new ByteArrayInputStream(jdiscXml.getBytes(UTF_8)));
         Predicate<String> truncation = name -> name.endsWith(".xml");
-        ApplicationPackageStream modifier = new ApplicationPackageStream(() -> new ByteArrayInputStream(zip), truncation, replacements);
+        ApplicationPackageStream modifier = new ApplicationPackageStream(() -> new ByteArrayInputStream(Arrays.copyOf(zip, zip.length)), () -> truncation, replacements);
         out.reset();
+
+        InputStream partiallyRead = modifier.zipStream();
+        assertEquals(15, partiallyRead.readNBytes(15).length);
+
         modifier.zipStream().transferTo(out);
 
         assertEquals(Map.of("deployment.xml", deploymentXml + "\n\n",
@@ -262,6 +267,19 @@ public class ApplicationPackageTest {
                                                              "content/nodes.xml", nodesXml,
                                                              "gurba", "gurba"))).metaDataZip()),
                      unzip(modifier.truncatedPackage().metaDataZip()));
+
+        assertArrayEquals(modifier.zipStream().readAllBytes(),
+                          modifier.zipStream().readAllBytes());
+
+        ByteArrayOutputStream byteAtATime = new ByteArrayOutputStream();
+        try (InputStream stream = modifier.zipStream()) {
+            for (int b; (b = stream.read()) != -1; ) byteAtATime.write(b);
+            assertArrayEquals(modifier.zipStream().readAllBytes(),
+                              byteAtATime.toByteArray());
+        }
+
+        assertEquals(modifier.zipStream().readAllBytes().length,
+                     15 + partiallyRead.readAllBytes().length);
     }
 
 }

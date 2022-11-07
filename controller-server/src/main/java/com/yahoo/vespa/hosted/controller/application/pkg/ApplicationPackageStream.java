@@ -36,19 +36,13 @@ import static java.nio.charset.StandardCharsets.UTF_8;
  */
 public class ApplicationPackageStream {
 
-    private final byte[] inBuffer = new byte[1 << 16];
-    private final ByteArrayOutputStream out = new ByteArrayOutputStream(1 << 16);
-    private final ZipOutputStream outZip = new ZipOutputStream(out);
-    private final ByteArrayOutputStream teeOut = new ByteArrayOutputStream(1 << 16);
-    private final ZipOutputStream teeZip = new ZipOutputStream(teeOut);
-    private final Replacer replacer;
-    private final Predicate<String> filter;
+    private final Supplier<Replacer> replacer;
+    private final Supplier<Predicate<String>> filter;
     private final Supplier<InputStream> in;
 
     private ApplicationPackage ap = null;
-    private boolean done = false;
 
-    public static Replacer addingCertificate(Optional<X509Certificate> certificate) {
+    public static Supplier<Replacer> addingCertificate(Optional<X509Certificate> certificate) {
         return certificate.map(cert -> Replacer.of(Map.of(ApplicationPackage.trustedCertificatesFile,
                                                           trustBytes -> append(trustBytes, cert))))
                           .orElse(Replacer.of(Map.of()));
@@ -68,21 +62,21 @@ public class ApplicationPackageStream {
 
     /** Stream that effectively copies the input stream to its {@link #truncatedPackage()} when exhausted. */
     public ApplicationPackageStream(Supplier<InputStream> in) {
-        this(in, __ -> true, Map.of());
+        this(in, () -> __ -> true, Map.of());
     }
 
     /** Stream that replaces the indicated entries, and copies all metadata files to its {@link #truncatedPackage()} when exhausted. */
-    public ApplicationPackageStream(Supplier<InputStream> in, Replacer replacer) {
-        this(in, name -> ApplicationPackage.prePopulated.contains(name) || name.endsWith(".xml"), replacer);
+    public ApplicationPackageStream(Supplier<InputStream> in, Supplier<Replacer> replacer) {
+        this(in, () -> name -> ApplicationPackage.prePopulated.contains(name) || name.endsWith(".xml"), replacer);
     }
 
     /** Stream that replaces the indicated entries, and copies the filtered entries to its {@link #truncatedPackage()} when exhausted. */
-    public ApplicationPackageStream(Supplier<InputStream> in, Predicate<String> truncation, Map<String, UnaryOperator<InputStream>> replacements) {
+    public ApplicationPackageStream(Supplier<InputStream> in, Supplier<Predicate<String>> truncation, Map<String, UnaryOperator<InputStream>> replacements) {
         this(in, truncation, Replacer.of(replacements));
     }
 
     /** Stream that uses the given replacer to modify content, and copies the filtered entries to its {@link #truncatedPackage()} when exhausted. */
-    public ApplicationPackageStream(Supplier<InputStream> in, Predicate<String> truncation, Replacer replacer) {
+    public ApplicationPackageStream(Supplier<InputStream> in, Supplier<Predicate<String>> truncation, Supplier<Replacer> replacer) {
         this.in = in;
         this.filter = truncation;
         this.replacer = replacer;
@@ -100,12 +94,20 @@ public class ApplicationPackageStream {
 
     private class Stream extends InputStream {
 
+        private final byte[] inBuffer = new byte[1 << 16];
+        private final ByteArrayOutputStream teeOut = new ByteArrayOutputStream(1 << 16);
+        private final ZipOutputStream teeZip = new ZipOutputStream(teeOut);
         private final ZipInputStream inZip = new ZipInputStream(in.get());
+        private final ByteArrayOutputStream out = new ByteArrayOutputStream(1 << 16);
+        private final ZipOutputStream outZip = new ZipOutputStream(out);
+        private final Replacer replacer = ApplicationPackageStream.this.replacer.get();
+        private final Predicate<String> filter = ApplicationPackageStream.this.filter.get();
         private byte[] currentOut = new byte[0];
         private InputStream currentIn = InputStream.nullInputStream();
         private boolean includeCurrent = false;
         private int pos = 0;
         private boolean closed = false;
+        private boolean done = false;
 
         private void fill() throws IOException {
             if (done) return;
@@ -144,7 +146,7 @@ public class ApplicationPackageStream {
                     outZip.close(); // This typically makes new output available, so must check for that after this.
                     teeZip.close();
                     currentIn = nullInputStream();
-                    ap = new ApplicationPackage(teeOut.toByteArray());
+                    if (ap == null) ap = new ApplicationPackage(teeOut.toByteArray());
                     done = true;
                     return;
                 }
@@ -154,7 +156,7 @@ public class ApplicationPackageStream {
                 content = new FilterInputStream(inZip) { @Override public void close() { } }; // Protect inZip from replacements closing it.
             }
 
-            includeCurrent = filter.test(name);
+            includeCurrent = ap == null && filter.test(name);
             currentIn = replacer.modify(name, content);
             if (currentIn == null) {
                 currentIn = InputStream.nullInputStream();
@@ -172,7 +174,7 @@ public class ApplicationPackageStream {
                 fill();
                 if (pos == currentOut.length) return -1;
             }
-            return 0xff & inBuffer[pos++];
+            return 0xff & currentOut[pos++];
         }
 
         @Override
@@ -226,8 +228,8 @@ public class ApplicationPackageStream {
          * <li>Writes all other entries as they are.</li>
          * </ul>
          */
-        static Replacer of(Map<String, UnaryOperator<InputStream>> replacements) {
-            return new Replacer() {
+        static Supplier<Replacer> of(Map<String, UnaryOperator<InputStream>> replacements) {
+            return () -> new Replacer() {
                 final Map<String, UnaryOperator<InputStream>> remaining = new HashMap<>(replacements);
                 @Override public String next() {
                     return remaining.isEmpty() ? null : remaining.keySet().iterator().next();

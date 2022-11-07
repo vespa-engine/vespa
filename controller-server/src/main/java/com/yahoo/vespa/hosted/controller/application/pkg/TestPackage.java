@@ -94,7 +94,7 @@ public class TestPackage {
             keyPair = null;
             this.certificate = null;
         }
-        this.applicationPackageStream = new ApplicationPackageStream(inZip, __ -> false, new Replacer() {
+        this.applicationPackageStream = new ApplicationPackageStream(inZip, () -> __ -> false, () -> new Replacer() {
 
             // Initially skips all declared entries, ensuring they're generated and appended after all input entries.
             final Map<String, UnaryOperator<InputStream>> entries = new HashMap<>();
