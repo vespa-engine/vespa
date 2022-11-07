@@ -14,6 +14,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
 import java.util.function.UnaryOperator;
@@ -40,7 +41,7 @@ public class ApplicationPackageStream {
     private final Supplier<Predicate<String>> filter;
     private final Supplier<InputStream> in;
 
-    private ApplicationPackage ap = null;
+    private final AtomicReference<ApplicationPackage> truncatedPackage = new AtomicReference<>();
 
     public static Supplier<Replacer> addingCertificate(Optional<X509Certificate> certificate) {
         return certificate.map(cert -> Replacer.of(Map.of(ApplicationPackage.trustedCertificatesFile,
@@ -82,14 +83,22 @@ public class ApplicationPackageStream {
         this.replacer = replacer;
     }
 
+    /**
+     * Returns a new stream continaing the zipped application package this wraps. Separate streams may exist concurrently,
+     * and the first to be exhausted will populate the truncated application package.
+     */
     public InputStream zipStream() {
         return new Stream();
     }
 
-    /** Returns the application backed by only the files indicated by the truncation filter. Throws if not yet exhausted. */
+    /**
+     * Returns the application package backed by only the files indicated by the truncation filter.
+     * Throws if no instances of {@link #zipStream()} have been exhausted yet.
+     */
     public ApplicationPackage truncatedPackage() {
-        if (ap == null) throw new IllegalStateException("must completely exhaust input before reading package");
-        return ap;
+        ApplicationPackage truncated = truncatedPackage.get();
+        if (truncated == null) throw new IllegalStateException("must completely exhaust input before reading package");
+        return truncated;
     }
 
     private class Stream extends InputStream {
@@ -146,7 +155,7 @@ public class ApplicationPackageStream {
                     outZip.close(); // This typically makes new output available, so must check for that after this.
                     teeZip.close();
                     currentIn = nullInputStream();
-                    if (ap == null) ap = new ApplicationPackage(teeOut.toByteArray());
+                    truncatedPackage.compareAndSet(null, new ApplicationPackage(teeOut.toByteArray()));
                     done = true;
                     return;
                 }
@@ -156,7 +165,7 @@ public class ApplicationPackageStream {
                 content = new FilterInputStream(inZip) { @Override public void close() { } }; // Protect inZip from replacements closing it.
             }
 
-            includeCurrent = ap == null && filter.test(name);
+            includeCurrent = truncatedPackage.get() == null && filter.test(name);
             currentIn = replacer.modify(name, content);
             if (currentIn == null) {
                 currentIn = InputStream.nullInputStream();
