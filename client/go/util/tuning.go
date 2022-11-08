@@ -20,10 +20,12 @@ func OptionallyReduceTimerFrequency() {
 		backticks := BackTicksIgnoreStderr
 		out, _ := backticks.Run("uname", "-r")
 		if strings.Contains(out, "linuxkit") {
-			trace.Trace(
-				"Running docker on macos.",
-				"Reducing base frequency from 1000hz to 100hz due to high cost of sampling time.",
-				"This will reduce timeout accuracy.")
+			if os.Getenv(ENV_VESPA_TIMER_HZ) != "100" {
+				trace.Trace(
+					"Running docker on macos.",
+					"Reducing base frequency from 1000hz to 100hz due to high cost of sampling time.",
+					"This will reduce timeout accuracy.")
+			}
 			os.Setenv(ENV_VESPA_TIMER_HZ, "100")
 		}
 	}
