@@ -32,13 +32,16 @@ public class ModelReference {
         this.resolved = resolved;
     }
 
+    /** Returns whether this is already resolved. */
+    public boolean isResolved() { return resolved != null; }
+
     /** Returns the id specified for this model, oor null if it is resolved. */
     public Optional<String> modelId() { return modelId; }
 
     /** Returns the url specified for this model, or null if it is resolved. */
     public Optional<UrlReference> url() { return url; }
 
-    /** Returns the path specified for this model, oor null if it is resolved. */
+    /** Returns the path specified for this model, or null if it is resolved. */
     public Optional<FileReference> path() { return path; }
 
     /** Returns the path to the file containing this model, or null if this is unresolved. */
@@ -109,7 +112,7 @@ public class ModelReference {
         return new ModelReference(modelId, url, path, null);
     }
 
-    /** Creates a nresolved reference. */
+    /** Creates a resolved reference. */
     public static ModelReference resolved(Path path) {
         return new ModelReference(null, null, null, Objects.requireNonNull(path));
     }

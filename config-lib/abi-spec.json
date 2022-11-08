@@ -336,6 +336,7 @@
       "public"
     ],
     "methods" : [
+      "public boolean isResolved()",
       "public java.util.Optional modelId()",
       "public java.util.Optional url()",
       "public java.util.Optional path()",
