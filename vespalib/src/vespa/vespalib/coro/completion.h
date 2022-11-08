@@ -27,7 +27,7 @@ namespace vespalib::coro {
 // coroutine). The receiver in this context may be either an actual
 // receiver_of<T>, a callback function accepting a Received<T> or an
 // std::promise. The different cases are handled by the overloaded
-// Recieved<T>::forward function template.
+// Received<T>::forward function template.
 
 template <typename T, typename R>
 Detached connect_resume(Lazy<T> value, R receiver) {
