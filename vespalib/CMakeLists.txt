@@ -45,6 +45,7 @@ vespa_define_module(
     src/tests/coro/detached
     src/tests/coro/generator
     src/tests/coro/lazy
+    src/tests/coro/received
     src/tests/cpu_usage
     src/tests/crc
     src/tests/crypto

@@ -2,6 +2,8 @@
 
 #pragma once
 
+#include "received.h"
+
 #include <concepts>
 #include <coroutine>
 #include <optional>
@@ -39,69 +41,53 @@ public:
             return awaiter();
         }
         template <typename RET>
-        requires std::is_convertible_v<RET&&,T>
-        void return_value(RET &&ret_value) noexcept(std::is_nothrow_constructible_v<T,RET&&>) {
-            value = std::forward<RET>(ret_value);
+        void return_value(RET &&ret_value) {
+            result.set_value(std::forward<RET>(ret_value));
         }
         void unhandled_exception() noexcept {
-            exception = std::current_exception();
+            result.set_error(std::current_exception());
         }
-        std::optional<T> value;
-        std::exception_ptr exception;
+        Received<T> result;
         std::coroutine_handle<> waiter;
         promise_type(promise_type &&) = delete;
         promise_type(const promise_type &) = delete;
-        promise_type() noexcept : value(std::nullopt), exception(), waiter(std::noop_coroutine()) {}
-        T &result() & {
-            if (exception) {
-                std::rethrow_exception(exception);
-            }
-            return *value;
-        }
-        T &&result() && {
-            if (exception) {
-                std::rethrow_exception(exception);
-            }
-            return std::move(*value);
-        }
+        promise_type() noexcept : result(), waiter(std::noop_coroutine()) {}
         ~promise_type();
     };
     using Handle = std::coroutine_handle<promise_type>;
 
 private:
     Handle _handle;
-    
-    struct awaiter_base {
+
+    template <typename RET>
+    struct WaitFor {
         Handle handle;
-        awaiter_base(Handle handle_in) noexcept : handle(handle_in) {}
+        WaitFor(Handle handle_in) noexcept : handle(handle_in) {}
         bool await_ready() const noexcept { return handle.done(); }
         Handle await_suspend(std::coroutine_handle<> waiter) const noexcept {
             handle.promise().waiter = waiter;
             return handle;
         }
+        decltype(auto) await_resume() const { return RET::get(handle.promise()); }
     };
-    
+    struct LValue {
+        static T& get(auto &&promise) { return promise.result.get_value(); }
+    };
+    struct RValue {
+        static T&& get(auto &&promise) { return std::move(promise.result.get_value()); }
+    };
+    struct Result {
+        static Received<T>&& get(auto &&promise) { return std::move(promise.result); }
+    };
+
 public:
     Lazy(const Lazy &) = delete;
     Lazy &operator=(const Lazy &) = delete;
     explicit Lazy(Handle handle_in) noexcept : _handle(handle_in) {}
     Lazy(Lazy &&rhs) noexcept : _handle(std::exchange(rhs._handle, nullptr)) {}
-    auto operator co_await() & noexcept {
-        struct awaiter : awaiter_base {
-            using awaiter_base::handle;
-            awaiter(Handle handle_in) noexcept : awaiter_base(handle_in) {}
-            decltype(auto) await_resume() const { return handle.promise().result(); }
-        };
-        return awaiter(_handle);
-    }
-    auto operator co_await() && noexcept {
-        struct awaiter : awaiter_base {
-            using awaiter_base::handle;
-            awaiter(Handle handle_in) noexcept : awaiter_base(handle_in) {}
-            decltype(auto) await_resume() const { return std::move(handle.promise()).result(); }
-        };
-        return awaiter(_handle);
-    }
+    auto operator co_await() & noexcept { return WaitFor<LValue>(_handle); }
+    auto operator co_await() && noexcept { return WaitFor<RValue>(_handle); }
+    auto forward() noexcept { return WaitFor<Result>(_handle); }
     ~Lazy() {
         if (_handle) {
             _handle.destroy();

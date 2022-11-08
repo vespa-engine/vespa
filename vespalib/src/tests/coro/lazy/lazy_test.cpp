@@ -168,4 +168,25 @@ TEST(LazyTest, async_wait_with_move_only_result) {
     EXPECT_EQ(*(result.get_value()), 123);
 }
 
+struct Refs {
+    Gate &gate;
+    Received<std::unique_ptr<int>> &result;
+    Refs(Gate &gate_in, Received<std::unique_ptr<int>> &result_in)
+      : gate(gate_in), result(result_in) {}
+};
+
+TEST(LazyTest, async_wait_with_move_only_result_and_move_only_lambda) {
+    Gate gate;
+    Received<std::unique_ptr<int>> result;
+    vespalib::ThreadStackExecutor executor(1, 128_Ki);
+    auto lazy = schedule_on(executor, move_only_int());
+    async_wait(std::move(lazy), [refs = std::make_unique<Refs>(gate,result)](auto res)
+                                {
+                                    refs->result = std::move(res);
+                                    refs->gate.countDown();
+                                });
+    gate.await();
+    EXPECT_EQ(*(result.get_value()), 123);
+}
+
 GTEST_MAIN_RUN_ALL_TESTS()
