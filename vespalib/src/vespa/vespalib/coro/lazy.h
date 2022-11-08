@@ -74,7 +74,7 @@ private:
         static T& get(auto &&promise) { return promise.result.get_value(); }
     };
     struct RValue {
-        static T&& get(auto &&promise) { return std::move(promise.result.get_value()); }
+        static T&& get(auto &&promise) { return std::move(promise.result).get_value(); }
     };
     struct Result {
         static Received<T>&& get(auto &&promise) { return std::move(promise.result); }
