@@ -1,0 +1,6 @@
+#!/bin/sh
+
+# emulate bad or missing valgrind
+
+echo "some error message here"
+exit 1

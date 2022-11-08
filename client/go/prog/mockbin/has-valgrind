@@ -1,0 +1,6 @@
+#!/bin/sh
+
+# emulate working valgrind
+
+echo "some help text here"
+exit 0
