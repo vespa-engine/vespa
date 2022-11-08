@@ -34,7 +34,7 @@ class MockDispatcher extends Dispatcher {
     }
 
     private MockDispatcher(ClusterMonitor clusterMonitor, SearchCluster searchCluster, DispatchConfig dispatchConfig, RpcInvokerFactory invokerFactory) {
-        super(clusterMonitor, searchCluster, dispatchConfig, invokerFactory, new MockMetric());
+        super(clusterMonitor, searchCluster, dispatchConfig, invokerFactory);
         this.clusterMonitor = clusterMonitor;
     }
 

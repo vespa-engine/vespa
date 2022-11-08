@@ -6,7 +6,6 @@ import com.yahoo.component.AbstractComponent;
 import com.yahoo.component.ComponentId;
 import com.yahoo.compress.Compressor;
 import com.yahoo.container.handler.VipStatus;
-import com.yahoo.jdisc.Metric;
 import com.yahoo.prelude.fastsearch.VespaBackEndSearcher;
 import com.yahoo.processing.request.CompoundName;
 import com.yahoo.search.Query;
@@ -47,9 +46,6 @@ public class Dispatcher extends AbstractComponent {
 
     public static final String DISPATCH = "dispatch";
     private static final String TOP_K_PROBABILITY = "topKProbability";
-
-    private static final String INTERNAL_METRIC = "dispatch_internal";
-
     private static final int MAX_GROUP_SELECTION_ATTEMPTS = 3;
 
     /** If set will control computation of how many hits will be fetched from each partition.*/
@@ -58,14 +54,8 @@ public class Dispatcher extends AbstractComponent {
     /** A model of the search cluster this dispatches to */
     private final SearchCluster searchCluster;
     private final ClusterMonitor<Node> clusterMonitor;
-
     private final LoadBalancer loadBalancer;
-
     private final InvokerFactory invokerFactory;
-
-    private final Metric metric;
-    private final Metric.Context metricContext;
-
     private final int maxHitsPerNode;
 
     private static final QueryProfileType argumentType;
@@ -84,16 +74,15 @@ public class Dispatcher extends AbstractComponent {
     public Dispatcher(RpcResourcePool resourcePool,
                       ComponentId clusterId,
                       DispatchConfig dispatchConfig,
-                      VipStatus vipStatus,
-                      Metric metric) {
+                      VipStatus vipStatus) {
         this(resourcePool, new SearchCluster(clusterId.stringValue(), dispatchConfig,
                                              vipStatus, new RpcPingFactory(resourcePool)),
-             dispatchConfig, metric);
+             dispatchConfig);
 
     }
 
-    private Dispatcher(RpcResourcePool resourcePool, SearchCluster searchCluster, DispatchConfig dispatchConfig, Metric metric) {
-        this(new ClusterMonitor<>(searchCluster, true), searchCluster, dispatchConfig, new RpcInvokerFactory(resourcePool, searchCluster), metric);
+    private Dispatcher(RpcResourcePool resourcePool, SearchCluster searchCluster, DispatchConfig dispatchConfig) {
+        this(new ClusterMonitor<>(searchCluster, true), searchCluster, dispatchConfig, new RpcInvokerFactory(resourcePool, searchCluster));
     }
 
     private static LoadBalancer.Policy toLoadBalancerPolicy(DispatchConfig.DistributionPolicy.Enum policy) {
@@ -109,8 +98,7 @@ public class Dispatcher extends AbstractComponent {
     protected Dispatcher(ClusterMonitor<Node> clusterMonitor,
                          SearchCluster searchCluster,
                          DispatchConfig dispatchConfig,
-                         InvokerFactory invokerFactory,
-                         Metric metric) {
+                         InvokerFactory invokerFactory) {
         if (dispatchConfig.useMultilevelDispatch())
             throw new IllegalArgumentException(searchCluster + " is configured with multilevel dispatch, but this is not supported");
 
@@ -118,8 +106,6 @@ public class Dispatcher extends AbstractComponent {
         this.clusterMonitor = clusterMonitor;
         this.loadBalancer = new LoadBalancer(searchCluster, toLoadBalancerPolicy(dispatchConfig.distributionPolicy()));
         this.invokerFactory = invokerFactory;
-        this.metric = metric;
-        this.metricContext = metric.createContext(null);
         this.maxHitsPerNode = dispatchConfig.maxHitsPerNode();
         searchCluster.addMonitoring(clusterMonitor);
         Thread warmup = new Thread(() -> warmup(dispatchConfig.warmuptime()));
@@ -169,7 +155,6 @@ public class Dispatcher extends AbstractComponent {
             query.setHits(0);
             query.setOffset(0);
         }
-        metric.add(INTERNAL_METRIC, 1, metricContext);
         return invoker;
     }
 
