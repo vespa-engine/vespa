@@ -1,6 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.security.tool;
 
+import com.yahoo.vespa.security.tool.crypto.ConvertBaseTool;
 import com.yahoo.vespa.security.tool.crypto.DecryptTool;
 import com.yahoo.vespa.security.tool.crypto.EncryptTool;
 import com.yahoo.vespa.security.tool.crypto.KeygenTool;
@@ -45,7 +46,8 @@ public class Main {
     }
 
     private static final List<Tool> TOOLS = List.of(
-            new KeygenTool(), new EncryptTool(), new DecryptTool(), new TokenInfoTool());
+            new KeygenTool(), new EncryptTool(), new DecryptTool(), new TokenInfoTool(),
+            new ConvertBaseTool());
 
     private static Optional<Tool> toolFromCliArgs(String[] args) {
         if (args.length == 0) {

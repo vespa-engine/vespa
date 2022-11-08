@@ -1,0 +1,10 @@
+usage: vespa-security convert-base --from <base N> --to <base M>
+Reads up to 1024 bytes of STDIN interpreted as a base N string (ignoring
+whitespace) and writes to STDOUT as a base M string. Note that base 64 is
+expected to be in (and is output as) the URL-safe alphabet (padding
+optional for input, no padding for output).
+ -f,--from <arg>   From base. Supported values: 16, 58, 62, 64
+ -h,--help         Show help
+ -t,--to <arg>     To base. Supported values: 16, 58, 62, 64
+Note: this is a BETA tool version; its interface may be changed at any
+time.
