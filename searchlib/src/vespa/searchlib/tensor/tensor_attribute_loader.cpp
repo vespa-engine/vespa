@@ -68,7 +68,7 @@ is_present(uint8_t presence_flag) {
 class IndexBuilder {
 public:
     virtual ~IndexBuilder() = default;
-    virtual void add(uint32_t lid, EntryRef ref) = 0;
+    virtual void add(uint32_t lid) = 0;
     virtual void wait_complete() = 0;
 };
 
@@ -78,7 +78,7 @@ public:
  */
 class ThreadedIndexBuilder : public IndexBuilder {
 public:
-    ThreadedIndexBuilder(AttributeVector& attr, vespalib::GenerationHandler& generation_handler, TensorStore& store, NearestNeighborIndex& index, vespalib::Executor& shared_executor)
+    ThreadedIndexBuilder(TensorAttribute& attr, vespalib::GenerationHandler& generation_handler, TensorStore& store, NearestNeighborIndex& index, vespalib::Executor& shared_executor)
         : _attr(attr),
           _generation_handler(generation_handler),
           _store(store),
@@ -87,7 +87,7 @@ public:
           _queue(MAX_PENDING),
           _pending(0)
     {}
-    void add(uint32_t lid, EntryRef ref) override;
+    void add(uint32_t lid) override;
     void wait_complete() override {
         drainUntilPending(0);
     }
@@ -134,7 +134,7 @@ private:
         }
     }
     static constexpr uint32_t MAX_PENDING = 1000;
-    AttributeVector&        _attr;
+    TensorAttribute&        _attr;
     const vespalib::GenerationHandler& _generation_handler;
     TensorStore&            _store;
     NearestNeighborIndex&   _index;
@@ -146,7 +146,7 @@ private:
 };
 
 void
-ThreadedIndexBuilder::add(uint32_t lid, EntryRef ref) {
+ThreadedIndexBuilder::add(uint32_t lid) {
     Entry item;
     while (pop(item)) {
         // First process items that are ready to complete
@@ -157,9 +157,8 @@ ThreadedIndexBuilder::add(uint32_t lid, EntryRef ref) {
 
     // Then we can issue a new one
     ++_pending;
-    auto dense_store = _store.as_dense();
-    auto task = vespalib::makeLambdaTask([this, ref, lid, dense_store]() {
-        auto prepared = _index.prepare_add_document(lid, dense_store->get_vectors(ref),
+    auto task = vespalib::makeLambdaTask([this, lid]() {
+        auto prepared = _index.prepare_add_document(lid, _attr.get_vectors(lid),
                                                     _generation_handler.takeGuard());
         std::unique_lock guard(_mutex);
         _queue.push(std::make_pair(lid, std::move(prepared)));
@@ -177,7 +176,7 @@ public:
           _index(index)
     {
     }
-    void add(uint32_t lid, EntryRef) override {
+    void add(uint32_t lid) override {
         _index.add_document(lid);
         if ((lid % LOAD_COMMIT_INTERVAL) == 0) {
             _attr.commit();
@@ -193,7 +192,7 @@ private:
 
 }
 
-TensorAttributeLoader::TensorAttributeLoader(AttributeVector& attr, GenerationHandler& generation_handler, RefVector& ref_vector, TensorStore& store, NearestNeighborIndex* index)
+TensorAttributeLoader::TensorAttributeLoader(TensorAttribute& attr, GenerationHandler& generation_handler, RefVector& ref_vector, TensorStore& store, NearestNeighborIndex* index)
     : _attr(attr),
       _generation_handler(generation_handler),
       _ref_vector(ref_vector),
@@ -261,7 +260,7 @@ TensorAttributeLoader::build_index(vespalib::Executor* executor, uint32_t docid_
     for (uint32_t lid = 0; lid < docid_limit; ++lid) {
         auto ref = _ref_vector[lid].load_relaxed();
         if (ref.valid()) {
-            builder->add(lid, ref);
+            builder->add(lid);
         }
     }
     builder->wait_complete();

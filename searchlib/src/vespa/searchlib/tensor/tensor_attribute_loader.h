@@ -5,7 +5,6 @@
 #include <vespa/vespalib/datastore/atomic_entry_ref.h>
 #include <vespa/vespalib/util/rcuvector.h>
 
-namespace search { class AttributeVector; }
 namespace vespalib { class Executor; }
 
 namespace search::tensor {
@@ -13,6 +12,7 @@ namespace search::tensor {
 class BlobSequenceReader;
 class DenseTensorStore;
 class NearestNeighborIndex;
+class TensorAttribute;
 class TensorStore;
 
 /**
@@ -23,7 +23,7 @@ class TensorAttributeLoader {
     using AtomicEntryRef = vespalib::datastore::AtomicEntryRef;
     using GenerationHandler = vespalib::GenerationHandler;
     using RefVector = vespalib::RcuVectorBase<AtomicEntryRef>;
-    AttributeVector&      _attr;
+    TensorAttribute&      _attr;
     GenerationHandler&    _generation_handler;
     RefVector&            _ref_vector;
     TensorStore&          _store;
@@ -35,7 +35,7 @@ class TensorAttributeLoader {
     bool load_index();
 
 public:
-    TensorAttributeLoader(AttributeVector& attr, GenerationHandler& generation_handler, RefVector& ref_vector, TensorStore& store, NearestNeighborIndex* index);
+    TensorAttributeLoader(TensorAttribute& attr, GenerationHandler& generation_handler, RefVector& ref_vector, TensorStore& store, NearestNeighborIndex* index);
     ~TensorAttributeLoader();
     bool on_load(vespalib::Executor* executor);
 };
