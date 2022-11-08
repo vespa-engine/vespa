@@ -45,6 +45,8 @@
 #include <vespa/log/log.h>
 LOG_SETUP(".searchlib.attribute.attribute_blueprint_factory");
 
+using search::attribute::BasicType;
+using search::attribute::CollectionType;
 using search::attribute::IAttributeVector;
 using search::attribute::ISearchContext;
 using search::fef::TermFieldMatchData;
@@ -52,6 +54,7 @@ using search::fef::TermFieldMatchDataArray;
 using search::fef::TermFieldMatchDataPosition;
 using search::query::Location;
 using search::query::LocationTerm;
+using search::query::MultiTerm;
 using search::query::Node;
 using search::query::NumberTerm;
 using search::query::PredicateQuery;
@@ -62,7 +65,6 @@ using search::query::StackDumpCreator;
 using search::query::StringTerm;
 using search::query::SubstringTerm;
 using search::query::SuffixTerm;
-using search::query::MultiTerm;
 using search::queryeval::AndBlueprint;
 using search::queryeval::AndSearchStrict;
 using search::queryeval::Blueprint;
@@ -84,11 +86,11 @@ using search::queryeval::SimpleLeafBlueprint;
 using search::queryeval::WeightedSetTermBlueprint;
 using search::tensor::DenseTensorAttribute;
 using search::tensor::ITensorAttribute;
+using vespalib::Issue;
 using vespalib::geo::ZCurve;
 using vespalib::make_string;
 using vespalib::string;
 using vespalib::stringref;
-using vespalib::Issue;
 
 namespace search {
 namespace {
@@ -116,6 +118,7 @@ private:
 class AttributeFieldBlueprint : public SimpleLeafBlueprint
 {
 private:
+    const IAttributeVector& _attr;
     // Must take a copy of the query term for visitMembers()
     // as only a few ISearchContext implementations exposes the query term.
     vespalib::string _query_term;
@@ -126,6 +129,7 @@ private:
     AttributeFieldBlueprint(const FieldSpec &field, const IAttributeVector &attribute,
                             QueryTermSimple::UP term, const attribute::SearchContextParams &params)
         : SimpleLeafBlueprint(field),
+          _attr(attribute),
           _query_term(term->getTermString()),
           _search_context(attribute.createSearchContext(std::move(term), params)),
           _type(OTHER)
@@ -195,11 +199,39 @@ public:
     bool getRange(vespalib::string &from, vespalib::string &to) const override;
 };
 
+namespace {
+
+vespalib::string
+get_type(const IAttributeVector& attr)
+{
+    auto coll_type = CollectionType(attr.getCollectionType());
+    auto basic_type = BasicType(attr.getBasicType());
+    if (coll_type.type() == CollectionType::SINGLE) {
+        return basic_type.asString();
+    }
+    std::ostringstream oss;
+    oss << coll_type.asString() << "<" << basic_type.asString() << ">";
+    return oss.str();
+}
+
+void
+visit_attribute(vespalib::ObjectVisitor& visitor, const IAttributeVector& attr)
+{
+    visitor.openStruct("attribute", "IAttributeVector");
+    visitor.visitString("name", attr.getName());
+    visitor.visitString("type", get_type(attr));
+    visitor.visitBool("fast_search", attr.getIsFastSearch());
+    visitor.visitBool("filter", attr.getIsFilter());
+    visitor.closeStruct();
+}
+
+}
+
 void
 AttributeFieldBlueprint::visitMembers(vespalib::ObjectVisitor &visitor) const
 {
     LeafBlueprint::visitMembers(visitor);
-    visit(visitor, "attribute", _search_context->attributeName());
+    visit_attribute(visitor, _attr);
     visit(visitor, "query_term", _query_term);
 }
 
@@ -275,6 +307,11 @@ public:
             search->fetchPostings(execInfo);
         }
     }
+
+    void visitMembers(vespalib::ObjectVisitor& visitor) const override {
+        LeafBlueprint::visitMembers(visitor);
+        visit_attribute(visitor, _attribute);
+    }
 };
 
 LocationPreFilterBlueprint::~LocationPreFilterBlueprint() = default;
@@ -324,6 +361,10 @@ public:
     }
     SearchIteratorUP createFilterSearch(bool strict, FilterConstraint constraint) const override {
         return create_default_filter(strict, constraint);
+    }
+    void visitMembers(vespalib::ObjectVisitor& visitor) const override {
+        LeafBlueprint::visitMembers(visitor);
+        visit_attribute(visitor, _attribute);
     }
 };
 
@@ -435,6 +476,10 @@ public:
         } else {
             return {};
         }
+    }
+    void visitMembers(vespalib::ObjectVisitor& visitor) const override {
+        LeafBlueprint::visitMembers(visitor);
+        visit_attribute(visitor, _iattr);
     }
 };
 
@@ -623,7 +668,7 @@ public:
 
     void visitMembers(vespalib::ObjectVisitor &visitor) const override {
         LeafBlueprint::visitMembers(visitor);
-        visit(visitor, "attribute", _attrName);
+        visit_attribute(visitor, _iattr);
     }
     std::unique_ptr<queryeval::MatchingElementsSearch> create_matching_elements_search(const MatchingElementsFields &fields) const override {
         if (fields.has_field(_attrName)) {
