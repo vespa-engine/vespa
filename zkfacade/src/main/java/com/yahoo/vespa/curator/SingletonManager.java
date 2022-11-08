@@ -1,5 +1,6 @@
 package com.yahoo.vespa.curator;
 
+import com.yahoo.concurrent.UncheckedTimeoutException;
 import com.yahoo.jdisc.Metric;
 import com.yahoo.path.Path;
 import com.yahoo.protect.Process;
@@ -281,8 +282,12 @@ class SingletonManager {
                 lock = curator.lock(path.append("lock"), tickTimeout);
                 logger.log(INFO, "Acquired lock for ID: " + id);
             }
+            catch (UncheckedTimeoutException e) {
+                logger.log(FINE, e, () -> "Timed out acquiring lock for '" + path + "' within " + tickTimeout);
+                return;
+            }
             catch (RuntimeException e) {
-                logger.log(FINE, e, () -> "Failed acquiring lock for '" + path + "' within " + tickTimeout);
+                logger.log(INFO, e, () -> "Failed acquiring lock for '" + path + "' within " + tickTimeout);
                 return;
             }
             try {
