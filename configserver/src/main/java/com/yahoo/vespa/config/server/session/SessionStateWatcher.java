@@ -2,10 +2,10 @@
 package com.yahoo.vespa.config.server.session;
 
 import com.yahoo.text.Utf8;
+import com.yahoo.vespa.config.server.NotFoundException;
 import com.yahoo.vespa.config.server.monitoring.MetricUpdater;
 import com.yahoo.vespa.curator.Curator;
 import org.apache.curator.framework.recipes.cache.ChildData;
-
 import java.util.concurrent.Executor;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -80,6 +80,9 @@ public class SessionStateWatcher {
                     newStatus = Status.parse(Utf8.toString(node.getData()));
                     sessionStatusChanged(newStatus);
                 }
+            } catch (NotFoundException e) {
+                log.log(Level.INFO, "Session or application not found when handling session change to " + newStatus.name() + " for session " + sessionId);
+                metrics.incSessionChangeErrors();
             } catch (Exception e) {
                 log.log(Level.WARNING, "Error handling session change to " + newStatus.name() + " for session " + sessionId, e);
                 metrics.incSessionChangeErrors();
