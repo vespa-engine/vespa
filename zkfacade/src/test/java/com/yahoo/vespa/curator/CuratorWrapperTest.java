@@ -249,7 +249,7 @@ public class CuratorWrapperTest {
                 singleton = new Singleton(curator);
                 assertFalse(singleton.isActive);
                 assertFalse(curator.isActive(singleton.id()));
-                assertEquals(Map.of(), metric.metrics());
+                verifyMetrics(Map.of("is_active", 0.0), metric);
                 singleton.phaser.register();
             }
 
