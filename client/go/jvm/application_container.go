@@ -74,6 +74,10 @@ func (a *ApplicationContainer) addJdiscProperties() {
 
 }
 
+func validPercentage(val int) bool {
+	return val > 0 && val < 100
+}
+
 func (a *ApplicationContainer) configureMemory(qc *QrStartConfig) {
 	jvm_heapsize := qc.Jvm.Heapsize                                                         // Heap size (in megabytes) for the Java VM
 	jvm_minHeapsize := qc.Jvm.MinHeapsize                                                   // Min heapsize (in megabytes) for the Java VM
@@ -90,10 +94,10 @@ func (a *ApplicationContainer) configureMemory(qc *QrStartConfig) {
 	if jvm_minHeapsize <= 0 {
 		jvm_minHeapsize = jvm_heapsize
 	}
-	available := getAvailableMbOfMemory()
-	if jvm_heapSizeAsPercentageOfPhysicalMemory > 0 && jvm_heapSizeAsPercentageOfPhysicalMemory < 100 && available > 0 {
+	available := getAvailableMemory()
+	if validPercentage(jvm_heapSizeAsPercentageOfPhysicalMemory) && available.ToMB() > 500 {
 		available = adjustAvailableMemory(available)
-		jvm_heapsize = available * jvm_heapSizeAsPercentageOfPhysicalMemory / 100
+		jvm_heapsize = available.ToMB() * jvm_heapSizeAsPercentageOfPhysicalMemory / 100
 	}
 	if jvm_minHeapsize > jvm_heapsize {
 		trace.Warning(fmt.Sprintf(
@@ -119,7 +123,7 @@ func (a *ApplicationContainer) configureMemory(qc *QrStartConfig) {
 	opts.AddOption(fmt.Sprintf("-Xmx%dm", jvm_heapsize))
 	opts.AddOption(fmt.Sprintf("-XX:ThreadStackSize=%d", jvm_stacksize))
 	opts.AddOption(fmt.Sprintf("-XX:MaxDirectMemorySize=%dm", maxDirectMemorySize))
-	opts.MaybeAddHugepages(jvm_heapsize)
+	opts.MaybeAddHugepages(MegaBytesOfMemory(jvm_heapsize))
 	if jvm_compressedClassSpaceSize > 0 {
 		opts.AddOption(fmt.Sprintf("-XX:CompressedClassSpaceSize=%dm", jvm_compressedClassSpaceSize))
 	}

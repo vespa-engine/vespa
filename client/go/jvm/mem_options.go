@@ -11,77 +11,59 @@ import (
 	"github.com/vespa-engine/vespa/client/go/util"
 )
 
-const (
-	PowerOfTwo10 = 1 << 10
-)
-
-func (opts *Options) getOrSetHeapMb(prefix string, heapMb int) int {
+func (opts *Options) getOrSetHeapSize(prefix string, heapSize AmountOfMemory) AmountOfMemory {
 	var missing bool = true
 	for _, x := range opts.jvmArgs {
 		if strings.HasPrefix(x, prefix) {
-			var val int
-			var suffix rune
-			n, err := fmt.Sscanf(x, prefix+"%d%c", &val, &suffix)
-			if n == 2 && err == nil {
+			val, err := ParseJvmMemorySpec(strings.TrimPrefix(x, prefix))
+			if err == nil {
 				missing = false
-				switch suffix {
-				case 'k':
-					heapMb = val / PowerOfTwo10
-				case 'm':
-					heapMb = val
-				case 'g':
-					heapMb = val * PowerOfTwo10
-				default:
-					missing = true
-				}
+				heapSize = val
 			}
 		}
 	}
 	if missing {
-		suffix := "m"
-		newVal := heapMb
-		if (newVal % PowerOfTwo10) == 0 {
-			suffix = "g"
-			newVal /= PowerOfTwo10
-		}
-		opts.AppendOption(fmt.Sprintf("%s%d%s", prefix, newVal, suffix))
+		opts.AppendOption(fmt.Sprintf("%s%s", prefix, heapSize.AsJvmSpec()))
 	}
-	return heapMb
+	return heapSize
 }
 
-func (opts *Options) CurMinHeapMb(fallback int) int {
-	return opts.getOrSetHeapMb("-Xms", fallback)
+func (opts *Options) CurMinHeapSize(fallback AmountOfMemory) AmountOfMemory {
+	return opts.getOrSetHeapSize("-Xms", fallback)
 }
 
-func (opts *Options) CurMaxHeapMb(fallback int) int {
-	return opts.getOrSetHeapMb("-Xmx", fallback)
+func (opts *Options) CurMaxHeapSize(fallback AmountOfMemory) AmountOfMemory {
+	return opts.getOrSetHeapSize("-Xmx", fallback)
 }
 
-func (opts *Options) AddDefaultHeapSizeArgs(minHeapMb, maxHeapMb int) {
-	trace.Trace("AddDefaultHeapSizeArgs", minHeapMb, "/", maxHeapMb)
-	minHeapMb = opts.CurMinHeapMb(minHeapMb)
-	maxHeapMb = opts.CurMaxHeapMb(maxHeapMb)
-	opts.MaybeAddHugepages(maxHeapMb)
+func (opts *Options) AddDefaultHeapSizeArgs(minHeapSize, maxHeapSize AmountOfMemory) {
+	trace.Trace("AddDefaultHeapSizeArgs", minHeapSize, "/", maxHeapSize)
+	minHeapSize = opts.CurMinHeapSize(minHeapSize)
+	maxHeapSize = opts.CurMaxHeapSize(maxHeapSize)
+	opts.MaybeAddHugepages(maxHeapSize)
 }
 
-func (opts *Options) MaybeAddHugepages(maxHeapMb int) {
-	thpSizeMb := util.GetThpSizeMb()
-	if thpSizeMb*2 < maxHeapMb {
-		trace.Trace("add UseTransparentHugePages, thpSize", thpSizeMb, "* 2 < maxHeap", maxHeapMb)
+func (opts *Options) MaybeAddHugepages(maxHeapSize AmountOfMemory) {
+	thpSizeSize := util.GetThpSizeMb()
+	heapSize := maxHeapSize.ToMB()
+	if thpSizeSize*2 < heapSize {
+		trace.Trace("add UseTransparentHugePages, thpSize", thpSizeSize, "* 2 < maxHeap", heapSize)
 		opts.AddOption("-XX:+UseTransparentHugePages")
 	} else {
-		trace.Trace("no UseTransparentHugePages, thpSize", thpSizeMb, "* 2 >= maxHeap", maxHeapMb)
+		trace.Trace("no UseTransparentHugePages, thpSize", thpSizeSize, "* 2 >= maxHeap", heapSize)
 	}
 }
 
-func adjustAvailableMemory(measured int) int {
-	reserved := 1024
-	need_min := 64
-	if measured > need_min+2*reserved {
-		return measured - reserved
+func adjustAvailableMemory(measured AmountOfMemory) AmountOfMemory {
+	reserved := 1024 // MB
+	need_min := 64   // MB
+	available := measured.ToMB()
+	if available > need_min+2*reserved {
+		return MegaBytesOfMemory(available - reserved)
 	}
-	if measured > need_min {
-		return (measured + need_min) / 2
+	if available > need_min {
+		adjusted := (available + need_min) / 2
+		return MegaBytesOfMemory(adjusted)
 	}
-	return need_min
+	return MegaBytesOfMemory(need_min)
 }

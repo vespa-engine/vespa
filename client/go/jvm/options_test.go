@@ -7,60 +7,69 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-const (
-	aa = 123
-	bb = 234
-	cc = 456
-	dd = 567
-	ee = 16 * PowerOfTwo10
-	ff = 31 * PowerOfTwo10
-)
-
-func TestHeapMbSimple(t *testing.T) {
+func TestHeapSizeSimple(t *testing.T) {
+	var (
+		aa = MegaBytesOfMemory(123)
+		bb = MegaBytesOfMemory(234)
+	)
 	o := NewOptions(NewStandaloneContainer("foo"))
-	assert.Equal(t, aa, o.CurMinHeapMb(aa))
-	assert.Equal(t, bb, o.CurMaxHeapMb(bb))
+	assert.Equal(t, aa, o.CurMinHeapSize(aa))
+	assert.Equal(t, bb, o.CurMaxHeapSize(bb))
 	assert.Equal(t, 2, len(o.jvmArgs))
 	assert.Equal(t, "-Xms123m", o.jvmArgs[0])
 	assert.Equal(t, "-Xmx234m", o.jvmArgs[1])
 }
 
-func TestHeapMbMulti(t *testing.T) {
+func TestHeapSizeMulti(t *testing.T) {
+	var (
+		aa = MegaBytesOfMemory(123)
+		bb = MegaBytesOfMemory(234)
+		cc = MegaBytesOfMemory(456)
+		dd = MegaBytesOfMemory(567)
+	)
 	o := NewOptions(NewStandaloneContainer("foo"))
-	assert.Equal(t, aa, o.CurMinHeapMb(aa))
-	assert.Equal(t, aa, o.CurMaxHeapMb(aa))
+	assert.Equal(t, aa, o.CurMinHeapSize(aa))
+	assert.Equal(t, aa, o.CurMaxHeapSize(aa))
 	assert.Equal(t, 2, len(o.jvmArgs))
 	o.AppendOption("-Xms234m")
 	o.AppendOption("-Xmx456m")
 	assert.Equal(t, 4, len(o.jvmArgs))
-	assert.Equal(t, bb, o.CurMinHeapMb(aa))
-	assert.Equal(t, bb, o.CurMinHeapMb(dd))
-	assert.Equal(t, cc, o.CurMaxHeapMb(aa))
-	assert.Equal(t, cc, o.CurMaxHeapMb(dd))
+	assert.Equal(t, bb, o.CurMinHeapSize(aa))
+	assert.Equal(t, bb, o.CurMinHeapSize(dd))
+	assert.Equal(t, cc, o.CurMaxHeapSize(aa))
+	assert.Equal(t, cc, o.CurMaxHeapSize(dd))
 	o.AppendOption("-Xms1g")
 	o.AppendOption("-Xmx2g")
-	assert.Equal(t, 1*PowerOfTwo10, o.CurMinHeapMb(aa))
-	assert.Equal(t, 2*PowerOfTwo10, o.CurMaxHeapMb(aa))
+	assert.Equal(t, GigaBytesOfMemory(1), o.CurMinHeapSize(aa))
+	assert.Equal(t, GigaBytesOfMemory(2), o.CurMaxHeapSize(aa))
 	o.AppendOption("-Xms16777216k")
 	o.AppendOption("-Xmx32505856k")
-	assert.Equal(t, ee, o.CurMinHeapMb(aa))
-	assert.Equal(t, ff, o.CurMaxHeapMb(aa))
+	assert.Equal(t, KiloBytesOfMemory(16777216), o.CurMinHeapSize(aa))
+	assert.Equal(t, KiloBytesOfMemory(32505856), o.CurMaxHeapSize(aa))
 }
 
-func TestHeapMbAdd(t *testing.T) {
+func TestHeapSizeAdd(t *testing.T) {
+	var (
+		gg = MegaBytesOfMemory(12345)
+		hh = MegaBytesOfMemory(23456)
+	)
 	o := NewOptions(NewStandaloneContainer("foo"))
-	o.AddDefaultHeapSizeArgs(12345, 23456)
+	o.AddDefaultHeapSizeArgs(gg, hh)
 	assert.Equal(t, 3, len(o.jvmArgs))
 	assert.Equal(t, "-Xms12345m", o.jvmArgs[0])
 	assert.Equal(t, "-Xmx23456m", o.jvmArgs[1])
 	assert.Equal(t, "-XX:+UseTransparentHugePages", o.jvmArgs[2])
 }
 
-func TestHeapMbNoAdd(t *testing.T) {
+func TestHeapSizeNoAdd(t *testing.T) {
+	var (
+		bb = MegaBytesOfMemory(234)
+		cc = MegaBytesOfMemory(456)
+	)
 	o := NewOptions(NewStandaloneContainer("foo"))
 	o.AppendOption("-Xms128k")
 	o.AppendOption("-Xmx1280k")
-	o.AddDefaultHeapSizeArgs(234, 345)
+	o.AddDefaultHeapSizeArgs(bb, cc)
 	assert.Equal(t, 2, len(o.jvmArgs))
 	assert.Equal(t, "-Xms128k", o.jvmArgs[0])
 	assert.Equal(t, "-Xmx1280k", o.jvmArgs[1])

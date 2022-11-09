@@ -13,19 +13,19 @@ import (
 	"github.com/vespa-engine/vespa/client/go/util"
 )
 
-func parseFree(txt string) int {
+func parseFree(txt string) AmountOfMemory {
 	f := strings.Fields(txt)
 	for idx, field := range f {
 		if field == "Mem:" && idx+1 < len(f) {
 			res, err := strconv.Atoi(f[idx+1])
 			if err == nil {
-				return res
+				return MegaBytesOfMemory(res)
 			} else {
 				trace.Warning(err)
 			}
 		}
 	}
-	return 0
+	return BytesOfMemory(0)
 }
 
 func parentDir(dir string) string {
@@ -74,8 +74,8 @@ func vespa_cg2get(filename string) (output string, err error) {
 	return min_value, nil
 }
 
-func getAvailableMbOfMemory() int {
-	result := 0
+func getAvailableMemory() AmountOfMemory {
+	result := BytesOfMemory(0)
 	backticks := util.BackTicksWithStderr
 	freeOutput, err := backticks.Run("free", "-m")
 	if err == nil {
@@ -84,7 +84,7 @@ func getAvailableMbOfMemory() int {
 	} else {
 		trace.Trace("run 'free' failed:", err)
 	}
-	available_cgroup := int(1 << 31)
+	available_cgroup := KiloBytesOfMemory(1 << 31)
 	cggetOutput, err := backticks.Run("cgget", "-nv", "-r", "memory.limit_in_bytes", "/")
 	if err != nil {
 		if strings.Contains(cggetOutput, "Cgroup is not mounted") {
@@ -96,16 +96,16 @@ func getAvailableMbOfMemory() int {
 		trace.Debug("run 'cgget' failed:", err, "=>", cggetOutput)
 	}
 	if err == nil && cggetOutput != "max" {
-		numBytes, err := strconv.Atoi(cggetOutput)
-		if err == nil && numBytes > PowerOfTwo10 {
-			available_cgroup = numBytes / PowerOfTwo10
+		numBytes, err := strconv.ParseInt(cggetOutput, 10, 64)
+		if err == nil && numBytes > (1<<28) {
+			available_cgroup = AmountOfMemory{numBytes: numBytes}
 		} else {
 			trace.Warning("unexpected 'cgget' output:", cggetOutput)
 		}
 	}
-	if result == 0 || result > available_cgroup {
+	if result.ToKB() == 0 || result.ToKB() > available_cgroup.ToKB() {
 		result = available_cgroup
 	}
-	trace.Trace("getAvailableMbOfMemory returns:", result)
+	trace.Trace("getAvailableMemory returns:", result)
 	return result
 }

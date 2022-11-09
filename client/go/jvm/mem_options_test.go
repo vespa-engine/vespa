@@ -11,11 +11,12 @@ import (
 func TestAdjustment(t *testing.T) {
 	lastAdj := 64
 	for i := 0; i < 4096; i++ {
-		adj := adjustAvailableMemory(i)
-		assert.True(t, adj >= lastAdj)
-		lastAdj = adj
+		adj := adjustAvailableMemory(MegaBytesOfMemory(i)).ToMB()
+		assert.True(t, int(adj) >= lastAdj)
+		lastAdj = int(adj)
 	}
-	assert.Equal(t, 30000, adjustAvailableMemory(31024))
+	adj := adjustAvailableMemory(MegaBytesOfMemory(31024)).ToMB()
+	assert.Equal(t, 30000, int(adj))
 }
 
 func TestParseFree(t *testing.T) {
@@ -24,11 +25,11 @@ func TestParseFree(t *testing.T) {
 Mem:          19986         656        3157         218       16172       18832
 Swap:          2047         320        1727
 `)
-	assert.Equal(t, 19986, res)
+	assert.Equal(t, MegaBytesOfMemory(19986), res)
 }
 
 func TestGetAvail(t *testing.T) {
 	trace.AdjustVerbosity(0)
-	available := getAvailableMbOfMemory()
-	assert.True(t, available >= 0)
+	available := getAvailableMemory()
+	assert.True(t, available.ToMB() >= 0)
 }
