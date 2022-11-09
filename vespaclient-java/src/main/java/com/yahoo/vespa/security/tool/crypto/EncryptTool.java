@@ -15,8 +15,6 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.List;
 
-import static com.yahoo.security.ArrayUtils.toUtf8Bytes;
-
 /**
  * Tooling to encrypt a file using a public key, emitting a non-secret token that can be
  * passed on to a recipient holding the corresponding private key.
@@ -42,7 +40,7 @@ public class EncryptTool implements Tool {
                     .longOpt(RECIPIENT_PUBLIC_KEY_OPTION)
                     .hasArg(true)
                     .required(false)
-                    .desc("Recipient X25519 public key in Base64 encoded format")
+                    .desc("Recipient X25519 public key in Base58 encoded format")
                     .build(),
             Option.builder("i")
                     .longOpt(KEY_ID_OPTION)
@@ -79,7 +77,7 @@ public class EncryptTool implements Tool {
             var inputArg   = leftoverArgs[0];
             var outputPath = Paths.get(CliUtils.optionOrThrow(arguments, OUTPUT_FILE_OPTION));
 
-            var recipientPubKey = KeyUtils.fromBase64EncodedX25519PublicKey(CliUtils.optionOrThrow(arguments, RECIPIENT_PUBLIC_KEY_OPTION).strip());
+            var recipientPubKey = KeyUtils.fromBase58EncodedX25519PublicKey(CliUtils.optionOrThrow(arguments, RECIPIENT_PUBLIC_KEY_OPTION).strip());
             var keyId  = KeyId.ofString(CliUtils.optionOrThrow(arguments, KEY_ID_OPTION));
             var shared = SharedKeyGenerator.generateForReceiverPublicKey(recipientPubKey, keyId);
             var cipher = SharedKeyGenerator.makeAesGcmEncryptionCipher(shared);

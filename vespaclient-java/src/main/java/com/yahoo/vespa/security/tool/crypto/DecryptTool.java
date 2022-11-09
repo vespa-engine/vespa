@@ -14,11 +14,8 @@ import org.apache.commons.cli.Option;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
-
-import static com.yahoo.security.ArrayUtils.toUtf8Bytes;
 
 /**
  * Tooling for decrypting a file using a private key that corresponds to the public key used
@@ -47,7 +44,7 @@ public class DecryptTool implements Tool {
                     .longOpt(RECIPIENT_PRIVATE_KEY_FILE_OPTION)
                     .hasArg(true)
                     .required(false)
-                    .desc("Recipient private key file")
+                    .desc("Recipient private key file in Base58 encoded format")
                     .build(),
             Option.builder("i")
                     .longOpt(KEY_ID_OPTION)
@@ -103,7 +100,7 @@ public class DecryptTool implements Tool {
                                                        "used when generating the supplied token");
                 }
             }
-            var privateKey   = KeyUtils.fromBase64EncodedX25519PrivateKey(Files.readString(privKeyPath).strip());
+            var privateKey   = KeyUtils.fromBase58EncodedX25519PrivateKey(Files.readString(privKeyPath).strip());
             var secretShared = SharedKeyGenerator.fromSealedKey(sealedSharedKey, privateKey);
             var cipher       = SharedKeyGenerator.makeAesGcmDecryptionCipher(secretShared);
 

@@ -280,6 +280,25 @@ public class KeyUtils {
         return Base64.getUrlEncoder().withoutPadding().encodeToString(toRawX25519PublicKeyBytes(publicKey));
     }
 
+    // This sanity check is to avoid any DoS potential caused by passing in a very large key
+    // to a quadratic Base58 decoding routing. We don't do this for the encoding since we
+    // always control the input size for that case.
+    private static void verifyB58InputSmallEnoughToBeX25519Key(String key) {
+        if (key.length() > 64) { // a very wide margin...
+            throw new IllegalArgumentException("Input Base58 is too large to represent an X25519 key");
+        }
+    }
+
+    public static XECPublicKey fromBase58EncodedX25519PublicKey(String base58pk) {
+        verifyB58InputSmallEnoughToBeX25519Key(base58pk);
+        byte[] rawKeyBytes = Base58.codec().decode(base58pk);
+        return fromRawX25519PublicKey(rawKeyBytes);
+    }
+
+    public static String toBase58EncodedX25519PublicKey(XECPublicKey publicKey) {
+        return Base58.codec().encode(toRawX25519PublicKeyBytes(publicKey));
+    }
+
     public static XECPrivateKey fromRawX25519PrivateKey(byte[] rawScalarBytes) {
         try {
             NamedParameterSpec paramSpec = new NamedParameterSpec("X25519");
@@ -307,6 +326,16 @@ public class KeyUtils {
 
     public static String toBase64EncodedX25519PrivateKey(XECPrivateKey privateKey) {
         return Base64.getUrlEncoder().withoutPadding().encodeToString(toRawX25519PrivateKeyBytes(privateKey));
+    }
+
+    public static XECPrivateKey fromBase58EncodedX25519PrivateKey(String base58pk) {
+        verifyB58InputSmallEnoughToBeX25519Key(base58pk);
+        byte[] rawKeyBytes = Base58.codec().decode(base58pk);
+        return fromRawX25519PrivateKey(rawKeyBytes);
+    }
+
+    public static String toBase58EncodedX25519PrivateKey(XECPrivateKey privateKey) {
+        return Base58.codec().encode(toRawX25519PrivateKeyBytes(privateKey));
     }
 
     // TODO unify with generateKeypair()?

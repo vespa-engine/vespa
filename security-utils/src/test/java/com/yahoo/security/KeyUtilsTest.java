@@ -155,9 +155,15 @@ public class KeyUtilsTest {
         var priv = xecPrivFromHex(privHex);
         assertEquals(privHex, xecHexFromPriv(priv));
 
+        // Base 64
         var privB64 = KeyUtils.toBase64EncodedX25519PrivateKey(priv);
         var priv2 = KeyUtils.fromBase64EncodedX25519PrivateKey(privB64);
         assertEquals(privHex, xecHexFromPriv(priv2));
+
+        // Base 58
+        var privB58 = KeyUtils.toBase58EncodedX25519PrivateKey(priv);
+        var priv3 = KeyUtils.fromBase58EncodedX25519PrivateKey(privB58);
+        assertEquals(privHex, xecHexFromPriv(priv3));
     }
 
     @Test
@@ -166,9 +172,15 @@ public class KeyUtilsTest {
         var pub = xecPubFromHex(pubHex);
         assertEquals(pubHex, xecHexFromPub(pub));
 
+        // Base 64
         var pubB64 = KeyUtils.toBase64EncodedX25519PublicKey(pub);
         var pub2 = KeyUtils.fromBase64EncodedX25519PublicKey(pubB64);
         assertEquals(pubHex, xecHexFromPub(pub2));
+
+        // Base 58
+        var pubB58 = KeyUtils.toBase58EncodedX25519PublicKey(pub);
+        var pub3 = KeyUtils.fromBase58EncodedX25519PublicKey(pubB58);
+        assertEquals(pubHex, xecHexFromPub(pub3));
     }
 
     @Test

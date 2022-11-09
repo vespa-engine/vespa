@@ -10,7 +10,7 @@ the quotes).
  -i,--key-id <arg>                 Numeric ID of recipient key
  -o,--output-file <arg>            Output file (will be truncated if it
                                    already exists)
- -r,--recipient-public-key <arg>   Recipient X25519 public key in Base64
+ -r,--recipient-public-key <arg>   Recipient X25519 public key in Base58
                                    encoded format
 Note: this is a BETA tool version; its interface may be changed at any
 time

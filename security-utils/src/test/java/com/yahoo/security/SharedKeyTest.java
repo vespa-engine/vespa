@@ -14,7 +14,6 @@ import java.util.Arrays;
 import java.util.Base64;
 
 import static com.yahoo.security.ArrayUtils.hex;
-import static com.yahoo.security.ArrayUtils.toUtf8Bytes;
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -47,12 +46,12 @@ public class SharedKeyTest {
 
     @Test
     void token_v1_representation_is_stable() {
-        var receiverPrivate = KeyUtils.fromBase64EncodedX25519PrivateKey("4qGcntygFn_a3uqeBa1PbDlygQ-cpOuNznTPIz9ftWE");
-        var receiverPublic  = KeyUtils.fromBase64EncodedX25519PublicKey( "ROAH_S862tNMpbJ49lu1dPXFCPHFIXZK30pSrMZEmEg");
+        var receiverPrivate = KeyUtils.fromBase58EncodedX25519PrivateKey("GFg54SaGNCmcSGufZCx68SKLGuAFrASoDeMk3t5AjU6L");
+        var receiverPublic  = KeyUtils.fromBase58EncodedX25519PublicKey( "5drrkakYLjYSBpr5Haknh13EiCYL36ndMzK4gTJo6pwh");
         var keyId           = KeyId.ofString("my key ID");
 
         // Token generated for the above receiver public key, with the below expected shared secret (in hex)
-        var publicToken = "AQlteSBrZXkgSUQgAtTxJJdmv3eUoW5Z3NJSdZ3poKPEkW0SJOGQXP6CaC5XfyAVoUlK_NyYIMsJKyNYKU6WmagZpVG2zQGFJoqiFA";
+        var publicToken = "OntP9gRVAjXeZIr4zkYqRJFcnA993v7ZEE7VbcNs1NcR3HdE7Mpwlwi3r3anF1kVa5fn7O1CyeHQpBWpdayUTKkrtyFepG6WJrZdE";
         var expectedSharedSecret = "1b33b4dcd6a94e5a4a1ee6d208197d01";
 
         var theirSealed = SealedSharedKey.fromTokenString(publicToken);

@@ -168,11 +168,11 @@ public class CryptoToolsTest {
         assertEquals(expectedPerms, privKeyPerms);
     }
 
-    private static final String TEST_PRIV_KEY     = "4qGcntygFn_a3uqeBa1PbDlygQ-cpOuNznTPIz9ftWE";
-    private static final String TEST_PUB_KEY      = "ROAH_S862tNMpbJ49lu1dPXFCPHFIXZK30pSrMZEmEg";
+    private static final String TEST_PRIV_KEY     = "GFg54SaGNCmcSGufZCx68SKLGuAFrASoDeMk3t5AjU6L";
+    private static final String TEST_PUB_KEY      = "5drrkakYLjYSBpr5Haknh13EiCYL36ndMzK4gTJo6pwh";
     // Token created for the above public key (matching the above private key), using key id "my key ID"
-    private static final String TEST_TOKEN        = "AQlteSBrZXkgSUQgAtTxJJdmv3eUoW5Z3NJSdZ3poKPEkW0SJOG" +
-                                                    "QXP6CaC5XfyAVoUlK_NyYIMsJKyNYKU6WmagZpVG2zQGFJoqiFA";
+    private static final String TEST_TOKEN        = "OntP9gRVAjXeZIr4zkYqRJFcnA993v7ZEE7VbcNs1NcR3HdE7Mp" +
+                                                    "wlwi3r3anF1kVa5fn7O1CyeHQpBWpdayUTKkrtyFepG6WJrZdE";
     private static final String TEST_TOKEN_KEY_ID = "my key ID";
 
     @Test
