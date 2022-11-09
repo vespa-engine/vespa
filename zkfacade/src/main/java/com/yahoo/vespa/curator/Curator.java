@@ -120,6 +120,7 @@ public class Curator extends AbstractComponent implements AutoCloseable {
                      .connectString(connectionSpec.local())
                      .zookeeperFactory(new VespaZooKeeperFactory(createClientConfig(clientConfigFile)))
                      .dontUseContainerParents() // TODO: Consider changing this in Vespa 9
+                     .ensembleTracker(false)
                      .build(),
              juteMaxBuffer,
              sessionTimeout);
