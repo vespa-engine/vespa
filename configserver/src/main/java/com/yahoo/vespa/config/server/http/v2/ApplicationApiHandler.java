@@ -83,7 +83,7 @@ public class ApplicationApiHandler extends SessionHandler {
             try {
                 Map<String, PartItem> parts = new MultiPartFormParser(request).readParts();
                 byte[] params;
-                try (InputStream part = parts.get(MULTIPART_PARAMS).data()) { params = part.readAllBytes(); } ;
+                try (InputStream part = parts.get(MULTIPART_PARAMS).data()) { params = part.readAllBytes(); }
                 log.log(Level.FINE, "Deploy parameters: [{0}]", new String(params, StandardCharsets.UTF_8));
                 prepareParams = PrepareParams.fromJson(params, tenantName, zookeeperBarrierTimeout);
                 PartItem appPackagePart = parts.get(MULTIPART_APPLICATION_PACKAGE);
