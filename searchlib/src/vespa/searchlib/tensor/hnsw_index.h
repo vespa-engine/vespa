@@ -81,10 +81,16 @@ public:
         CompactionSpec link_arrays() const noexcept { return _link_arrays; }
     };
 
-    // Stubs for mapping between docid and nodeid.
-    static uint32_t get_docid(uint32_t nodeid) { return nodeid; }
+    uint32_t get_docid(uint32_t nodeid) const {
+        if constexpr (NodeType::identity_mapping) {
+            return nodeid;
+        } else {
+            return _graph.node_refs.acquire_elem_ref(nodeid).acquire_docid();
+        }
+    }
     static uint32_t get_nodeid(uint32_t docid) { return docid; }
 protected:
+    using NodeType = HnswGraph::NodeType;
     using AtomicEntryRef = HnswGraph::AtomicEntryRef;
     using NodeStore = HnswGraph::NodeStore;
 
@@ -132,8 +138,14 @@ protected:
     void remove_link_to(uint32_t remove_from, uint32_t remove_id, uint32_t level);
 
     inline TypedCells get_vector(uint32_t nodeid) const {
-        uint32_t docid = get_docid(nodeid);
-        return _vectors.get_vector(docid, 0);
+        if constexpr (NodeType::identity_mapping) {
+            return _vectors.get_vector(nodeid, 0);
+        } else {
+            auto& ref = _graph.node_refs.acquire_elem_ref(nodeid);
+            uint32_t docid = ref.acquire_docid();
+            uint32_t subspace = ref.acquire_subspace();
+            return _vectors.get_vector(docid, subspace);
+        }
     }
     inline VectorBundle get_vector_by_docid(uint32_t docid) const {
         return _vectors.get_vectors(docid);

@@ -107,6 +107,9 @@ public:
     void remove(EntryRef ref);
     EntryRef move_on_compact(EntryRef ref) override;
     ICompactionContext::UP compactWorst(CompactionSpec compaction_spec, const CompactionStrategy& compaction_strategy);
+    // Use this if references to array store is not an array of AtomicEntryRef
+    std::unique_ptr<CompactingBuffers> start_compact_worst_buffers(CompactionSpec compaction_spec, const CompactionStrategy &compaction_strategy);
+
     vespalib::MemoryUsage getMemoryUsage() const { return _store.getMemoryUsage(); }
 
     /**

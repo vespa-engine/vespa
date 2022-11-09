@@ -535,10 +535,18 @@ HnswIndex::reclaim_memory(generation_t oldest_used_gen)
 void
 HnswIndex::compact_level_arrays(CompactionSpec compaction_spec, const CompactionStrategy& compaction_strategy)
 {
-    auto context = _graph.nodes.compactWorst(compaction_spec, compaction_strategy);
+    auto compacting_buffers = _graph.nodes.start_compact_worst_buffers(compaction_spec, compaction_strategy);
     uint32_t nodeid_limit = _graph.node_refs.size();
-    vespalib::ArrayRef<AtomicEntryRef> refs(&_graph.node_refs[0], nodeid_limit);
-    context->compact(refs);
+    auto filter = compacting_buffers->make_entry_ref_filter();
+    vespalib::ArrayRef<NodeType> refs(&_graph.node_refs[0], nodeid_limit);
+    for (auto& ref : refs) {
+        auto node_ref = ref.ref().load_relaxed();
+        if (node_ref.valid() && filter.has(node_ref)) {
+            EntryRef new_node_ref = _graph.nodes.move_on_compact(node_ref);
+            ref.ref().store_release(new_node_ref);
+        }
+    }
+    compacting_buffers->finish();
 }
 
 void

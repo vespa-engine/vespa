@@ -2,6 +2,7 @@
 
 #pragma once
 
+#include "hnsw_simple_node.h"
 #include <vespa/vespalib/datastore/array_store.h>
 #include <vespa/vespalib/datastore/atomic_entry_ref.h>
 #include <vespa/vespalib/datastore/entryref.h>
@@ -23,9 +24,11 @@ struct HnswGraph {
     // This uses 12 bits for buffer id -> 4096 buffers.
     using LinkArrayEntryRefType = vespalib::datastore::EntryRefT<20>;
 
+    using NodeType = HnswSimpleNode;
+
     // Provides mapping from document id -> node reference.
     // The reference is used to lookup the node data in NodeStore.
-    using NodeRefVector = vespalib::RcuVector<AtomicEntryRef>;
+    using NodeRefVector = vespalib::RcuVector<NodeType>;
     using NodeRef = vespalib::datastore::EntryRef;
 
     // This stores the level arrays for all nodes.
@@ -55,11 +58,11 @@ struct HnswGraph {
     void trim_node_refs_size();
 
     NodeRef get_node_ref(uint32_t nodeid) const {
-        return node_refs.get_elem_ref(nodeid).load_relaxed(); // Called from writer only
+        return node_refs.get_elem_ref(nodeid).ref().load_relaxed(); // Called from writer only
     }
 
     NodeRef acquire_node_ref(uint32_t nodeid) const {
-        return node_refs.acquire_elem_ref(nodeid).load_acquire();
+        return node_refs.acquire_elem_ref(nodeid).ref().load_acquire();
     }
 
     bool still_valid(uint32_t nodeid, NodeRef node_ref) const {
