@@ -82,7 +82,11 @@ public:
     };
 
     uint32_t get_docid(uint32_t nodeid) const {
-        return _graph.node_refs.acquire_elem_ref(nodeid).acquire_docid(nodeid);
+        if constexpr (NodeType::identity_mapping) {
+            return nodeid;
+        } else {
+            return _graph.node_refs.acquire_elem_ref(nodeid).acquire_docid();
+        }
     }
     static uint32_t get_nodeid(uint32_t docid) { return docid; }
 protected:
@@ -134,10 +138,14 @@ protected:
     void remove_link_to(uint32_t remove_from, uint32_t remove_id, uint32_t level);
 
     inline TypedCells get_vector(uint32_t nodeid) const {
-        auto& ref = _graph.node_refs.acquire_elem_ref(nodeid);
-        uint32_t docid = ref.acquire_docid(nodeid);
-        uint32_t subspace = ref.acquire_subspace();
-        return _vectors.get_vector(docid, subspace);
+        if constexpr (NodeType::identity_mapping) {
+            return _vectors.get_vector(nodeid, 0);
+        } else {
+            auto& ref = _graph.node_refs.acquire_elem_ref(nodeid);
+            uint32_t docid = ref.acquire_docid();
+            uint32_t subspace = ref.acquire_subspace();
+            return _vectors.get_vector(docid, subspace);
+        }
     }
     inline VectorBundle get_vector_by_docid(uint32_t docid) const {
         return _vectors.get_vectors(docid);
