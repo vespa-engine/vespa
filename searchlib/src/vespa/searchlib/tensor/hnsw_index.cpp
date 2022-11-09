@@ -331,6 +331,7 @@ HnswIndex::HnswIndex(const DocVectorAccess& vectors, DistanceFunction::UP distan
       _vectors(vectors),
       _distance_func(std::move(distance_func)),
       _level_generator(std::move(level_generator)),
+      _id_mapping(),
       _cfg(cfg),
       _compaction_spec()
 {
@@ -414,8 +415,10 @@ HnswIndex::filter_valid_nodeids(uint32_t level, const PreparedAddDoc::Links &nei
 void
 HnswIndex::internal_complete_add(uint32_t docid, PreparedAddDoc &op)
 {
-    auto nodeid = get_nodeid(docid);
-    auto node_ref = _graph.make_node(nodeid, op.max_level + 1);
+    auto nodeids = _id_mapping.allocate_ids(docid, 1);
+    assert(nodeids.size() == 1);
+    auto nodeid = nodeids[0];
+    auto node_ref = _graph.make_node(nodeid, docid, 0, op.max_level + 1);
     for (int level = 0; level <= op.max_level; ++level) {
         auto neighbors = filter_valid_nodeids(level, op.connections[level], nodeid);
         connect_new_node(nodeid, neighbors, level);
@@ -510,8 +513,12 @@ HnswIndex::remove_node(uint32_t nodeid)
 void
 HnswIndex::remove_document(uint32_t docid)
 {
-    auto nodeid = get_nodeid(docid);
-    remove_node(nodeid);
+    auto nodeids = _id_mapping.get_ids(docid);
+    assert(nodeids.size() == 1u);
+    for (auto nodeid : nodeids) {
+        remove_node(nodeid);
+    }
+    _id_mapping.free_ids(docid);
 }
 
 void
@@ -782,7 +789,7 @@ HnswIndex::set_node(uint32_t nodeid, const HnswTestNode &node)
 {
     size_t num_levels = node.size();
     assert(num_levels > 0);
-    auto node_ref = _graph.make_node(nodeid, num_levels);
+    auto node_ref = _graph.make_node(nodeid, nodeid, 0, num_levels);
     for (size_t level = 0; level < num_levels; ++level) {
         connect_new_node(nodeid, node.level(level), level);
     }

@@ -4,6 +4,7 @@
 
 #include "distance_function.h"
 #include "doc_vector_access.h"
+#include "hnsw_identity_mapping.h"
 #include "hnsw_index_utils.h"
 #include "hnsw_test_node.h"
 #include "nearest_neighbor_index.h"
@@ -88,7 +89,8 @@ public:
             return _graph.node_refs.acquire_elem_ref(nodeid).acquire_docid();
         }
     }
-    static uint32_t get_nodeid(uint32_t docid) { return docid; }
+
+    using IdMapping = HnswIdentityMapping;
 protected:
     using NodeType = HnswGraph::NodeType;
     using AtomicEntryRef = HnswGraph::AtomicEntryRef;
@@ -106,6 +108,7 @@ protected:
     const DocVectorAccess& _vectors;
     DistanceFunction::UP _distance_func;
     RandomLevelGenerator::UP _level_generator;
+    IdMapping _id_mapping; // mapping from docid to nodeid vector
     Config _cfg;
     HnswIndexCompactionSpec _compaction_spec;
 
