@@ -286,10 +286,12 @@ class SingletonManager {
             }
             catch (UncheckedTimeoutException e) {
                 logger.log(FINE, e, () -> "Timed out acquiring lock for '" + path + "' within " + tickTimeout);
+                cleanOrphans();
                 return;
             }
             catch (RuntimeException e) {
-                logger.log(INFO, e, () -> "Failed acquiring lock for '" + path + "' within " + tickTimeout);
+                logger.log(WARNING, e, () -> "Failed acquiring lock for '" + path + "' within " + tickTimeout);
+                cleanOrphans();
                 return;
             }
             try {
@@ -301,6 +303,17 @@ class SingletonManager {
             }
             if ( ! doom.compareAndSet(ourDoom, start.plus(curator.sessionTimeout().multipliedBy(9).dividedBy(10)))) {
                 logger.log(FINE, "Deadline changed, current lease renewal is void");
+            }
+        }
+
+        private void cleanOrphans() {
+            List<String> orphans = null;
+            try {
+                for (String orphan : orphans = curator.framework().getZookeeperClient().getZooKeeper().getEphemerals(path.getAbsolute()))
+                    curator.delete(path.append(orphan));
+            }
+            catch (Exception e) {
+                logger.log(WARNING, "Failed cleaning orphans: " + orphans, e);
             }
         }
 
