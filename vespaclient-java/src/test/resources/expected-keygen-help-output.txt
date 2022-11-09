@@ -1,6 +1,6 @@
 usage: vespa-security keygen <options>
 Generates an X25519 key pair and stores its private/public parts in
-separate files in Base64 encoded form.
+separate files in Base58 encoded form.
  -h,--help                     Show help
  -k,--private-out-file <arg>   Output file for private (secret) key. Will
                                be created with restrictive file

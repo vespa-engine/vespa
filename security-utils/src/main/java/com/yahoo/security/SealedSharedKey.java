@@ -2,11 +2,6 @@
 package com.yahoo.security;
 
 import java.nio.ByteBuffer;
-import java.util.Arrays;
-import java.util.Base64;
-
-import static com.yahoo.security.ArrayUtils.fromUtf8Bytes;
-import static com.yahoo.security.ArrayUtils.toUtf8Bytes;
 
 /**
  * A SealedSharedKey represents the public part of a secure one-way ephemeral key exchange.
@@ -51,7 +46,7 @@ public record SealedSharedKey(KeyId keyId, byte[] enc, byte[] ciphertext) {
 
         byte[] encBytes = new byte[encoded.remaining()];
         encoded.get(encBytes);
-        return Base64.getUrlEncoder().withoutPadding().encodeToString(encBytes);
+        return Base62.codec().encode(encBytes);
     }
 
     /**
@@ -59,7 +54,8 @@ public record SealedSharedKey(KeyId keyId, byte[] enc, byte[] ciphertext) {
      * created by a call to toTokenString().
      */
     public static SealedSharedKey fromTokenString(String tokenString) {
-        byte[] rawTokenBytes = Base64.getUrlDecoder().decode(tokenString);
+        verifyInputTokenStringNotTooLarge(tokenString);
+        byte[] rawTokenBytes = Base62.codec().decode(tokenString);
         if (rawTokenBytes.length < 1) {
             throw new IllegalArgumentException("Decoded token too small to contain a version");
         }
@@ -83,5 +79,13 @@ public record SealedSharedKey(KeyId keyId, byte[] enc, byte[] ciphertext) {
     }
 
     public int tokenVersion() { return CURRENT_TOKEN_VERSION; }
+
+    private static void verifyInputTokenStringNotTooLarge(String tokenString) {
+        // Expected max decoded size for v1 is 3 + 255 + 32 + 32 = 322. For simplicity, round this
+        // up to 512 to effectively not have to care about the overhead of any reasonably chosen encoding.
+        if (tokenString.length() > 512) {
+            throw new IllegalArgumentException("Token string is too long to possibly be a valid token");
+        }
+    }
 
 }

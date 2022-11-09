@@ -59,7 +59,7 @@ public class KeygenTool implements Tool {
         return new ToolDescription(
                 "<options>",
                 "Generates an X25519 key pair and stores its private/public parts in " +
-                "separate files in Base64 encoded form.",
+                "separate files in Base58 encoded form.",
                 "Note: this is a BETA tool version; its interface may be changed at any time",
                 OPTIONS);
     }
@@ -101,8 +101,8 @@ public class KeygenTool implements Tool {
 
             var privFilePerms = PosixFilePermissions.fromString("rw-------");
             Files.createFile( privOutPath, PosixFilePermissions.asFileAttribute(privFilePerms));
-            Files.writeString(privOutPath, KeyUtils.toBase64EncodedX25519PrivateKey(privKey) + "\n");
-            Files.writeString(pubOutPath,  KeyUtils.toBase64EncodedX25519PublicKey(pubKey) + "\n");
+            Files.writeString(privOutPath, KeyUtils.toBase58EncodedX25519PrivateKey(privKey) + "\n");
+            Files.writeString(pubOutPath,  KeyUtils.toBase58EncodedX25519PublicKey(pubKey) + "\n");
 
         } catch (IOException e) {
             throw new RuntimeException(e);
