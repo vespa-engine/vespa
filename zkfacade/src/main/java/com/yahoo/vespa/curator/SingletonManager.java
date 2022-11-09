@@ -306,6 +306,7 @@ class SingletonManager {
             }
         }
 
+        /** This is a work-around for a bug where Curator leaks lock nodes, through "protection mode", probably because unexpected KeeperException children are thrown? */
         private void cleanOrphans() {
             List<String> orphans = null;
             try {
