@@ -1,7 +1,6 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.prelude.cluster;
 
-import com.google.common.collect.ImmutableList;
 import com.yahoo.component.ComponentId;
 import com.yahoo.component.provider.ComponentRegistry;
 import com.yahoo.concurrent.InThreadExecutorService;
@@ -27,9 +26,22 @@ import com.yahoo.search.searchchain.Execution;
 import com.yahoo.vespa.config.search.DispatchConfig;
 import org.junit.jupiter.api.Test;
 
-import java.util.*;
 
-import static org.junit.jupiter.api.Assertions.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Iterator;
+import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * Tests cluster monitoring
@@ -60,7 +72,7 @@ public class ClusterSearcherTestCase {
         clusters.put("cluster1", List.of("type1", "type2", "type3"));
         clusters.put("cluster2", List.of("type4", "type5"));
         clusters.put("type1", List.of("type6"));
-        Collection<SearchDefinition> searchDefs = ImmutableList.of(
+        Collection<SearchDefinition> searchDefs = List.of(
                 new SearchDefinition("type1"),
                 new SearchDefinition("type2"),
                 new SearchDefinition("type3"),
