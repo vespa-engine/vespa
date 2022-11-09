@@ -51,7 +51,7 @@ struct HnswGraph {
     HnswGraph();
     ~HnswGraph();
 
-    NodeRef make_node(uint32_t nodeid, uint32_t num_levels);
+    NodeRef make_node(uint32_t nodeid, uint32_t docid, uint32_t subspace, uint32_t num_levels);
 
     void remove_node(uint32_t nodeid);
 

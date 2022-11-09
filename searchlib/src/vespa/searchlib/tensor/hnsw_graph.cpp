@@ -22,7 +22,7 @@ HnswGraph::HnswGraph()
 HnswGraph::~HnswGraph() = default;
 
 HnswGraph::NodeRef
-HnswGraph::make_node(uint32_t nodeid, uint32_t num_levels)
+HnswGraph::make_node(uint32_t nodeid, uint32_t docid, uint32_t subspace, uint32_t num_levels)
 {
     node_refs.ensure_size(nodeid + 1, NodeType());
     // A document cannot be added twice.
@@ -30,7 +30,10 @@ HnswGraph::make_node(uint32_t nodeid, uint32_t num_levels)
     // Note: The level array instance lives as long as the document is present in the index.
     std::vector<AtomicEntryRef> levels(num_levels, AtomicEntryRef());
     auto node_ref = nodes.add(levels);
-    node_refs[nodeid].ref().store_release(node_ref);
+    auto& node = node_refs[nodeid];
+    node.ref().store_release(node_ref);
+    node.store_docid(docid);
+    node.store_subspace(subspace);
     if (nodeid >= node_refs_size.load(std::memory_order_relaxed)) {
         node_refs_size.store(nodeid + 1, std::memory_order_release);
     }
