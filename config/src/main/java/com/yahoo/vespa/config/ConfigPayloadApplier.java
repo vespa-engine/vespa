@@ -231,29 +231,32 @@ public class ConfigPayloadApplier<T extends ConfigInstance.Builder> {
             return getValueFromInspector(value);
     }
 
+    /**
+     * This may run on both the config server and subscribing nodes.
+     * We only have a urlDownloader set up when client side.
+     */
+    private boolean isClientside() {
+        return urlDownloader != null;
+    }
+
     private FileReference resolvePath(String value) {
         Path path = pathAcquirer.getPath(new FileReference(value));
         return new FileReference(path.toString());
     }
 
     private UrlReference resolveUrl(String url) {
-        if (! canResolveUrls()) // assuming config server - keep the url
-            return new UrlReference(url);
+        if ( ! isClientside()) return new UrlReference(url);
         File file = urlDownloader.waitFor(new UrlReference(url), 60 * 60);
         return new UrlReference(file.getAbsolutePath());
-    }
-
-    private boolean canResolveUrls() {
-        return urlDownloader != null;
     }
 
     private ModelReference resolveModel(String modelStringValue) {
         var model = ModelReference.valueOf(modelStringValue);
         if (model.isResolved())
             return model;
-        if (model.url().isPresent() && canResolveUrls()) // url has priority
+        if (isClientside() && model.url().isPresent()) // url has priority
             return ModelReference.resolved(Path.of(resolveUrl(model.url().get().value()).value()));
-        if (model.path().isPresent())
+        if (isClientside() && model.path().isPresent())
             return ModelReference.resolved(Path.of(resolvePath(model.path().get().value()).value()));
         return model;
     }
