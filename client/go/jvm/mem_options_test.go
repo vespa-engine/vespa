@@ -5,7 +5,6 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
-	"github.com/vespa-engine/vespa/client/go/trace"
 )
 
 func TestAdjustment(t *testing.T) {
@@ -17,19 +16,4 @@ func TestAdjustment(t *testing.T) {
 	}
 	adj := adjustAvailableMemory(MegaBytesOfMemory(31024)).ToMB()
 	assert.Equal(t, 30000, int(adj))
-}
-
-func TestParseFree(t *testing.T) {
-	res := parseFree(`
-              total        used        free      shared  buff/cache   available
-Mem:          19986         656        3157         218       16172       18832
-Swap:          2047         320        1727
-`)
-	assert.Equal(t, MegaBytesOfMemory(19986), res)
-}
-
-func TestGetAvail(t *testing.T) {
-	trace.AdjustVerbosity(0)
-	available := getAvailableMemory()
-	assert.True(t, available.ToMB() >= 0)
 }

@@ -38,26 +38,42 @@ func parentDir(dir string) string {
 	return dir[:lastSlash]
 }
 
-func vespa_cg2get(filename string) (output string, err error) {
-	_, err = os.Stat("/sys/fs/cgroup/cgroup.controllers")
+func readLineFrom(filename string) (string, error) {
+	content, err := os.ReadFile(filename)
+	s := string(content)
+	if err != nil {
+		return s, err
+	}
+	s = strings.TrimSuffix(s, "\n")
+	if strings.Contains(s, "\n") {
+		return s, fmt.Errorf("unexpected multiple lines in file %s", filename)
+	}
+	return s, nil
+}
+
+func vespa_cg2get(limitname string) (output string, err error) {
+	return vespa_cg2get_impl("", limitname)
+}
+func vespa_cg2get_impl(rootdir, limitname string) (output string, err error) {
+	_, err = os.Stat(rootdir + "/sys/fs/cgroup/cgroup.controllers")
 	if err != nil {
 		trace.Trace("no cgroups:", err)
 		return
 	}
-	cgroup_content, err := os.ReadFile("/proc/self/cgroup")
+	cgroup_content, err := readLineFrom(rootdir + "/proc/self/cgroup")
 	if err != nil {
 		trace.Trace("no cgroup for self:", err)
 		return
 	}
 	min_value := "max"
-	slice := strings.TrimPrefix(string(cgroup_content), "0::")
-	slice = strings.TrimSuffix(slice, "\n")
-	for strings.HasPrefix(slice, "/") {
-		path := fmt.Sprintf("/sys/fs/cgroup%s/%s", slice, filename)
-		fileContents, err := os.ReadFile(path)
+	path := rootdir + "/sys/fs/cgroup"
+	slice := strings.TrimPrefix(cgroup_content, "0::")
+	dirNames := strings.Split(slice, "/")
+	for _, dirName := range dirNames {
+		path = path + dirName + "/"
+		value, err := readLineFrom(path + limitname)
+		trace.Debug("read from", path+limitname, "=>", value)
 		if err == nil {
-			value := strings.TrimSuffix(string(fileContents), "\n")
-			trace.Debug("read from", path, "=>", value)
 			if value == "max" {
 				// nop
 			} else if min_value == "max" {
@@ -68,9 +84,8 @@ func vespa_cg2get(filename string) (output string, err error) {
 				min_value = value
 			}
 		}
-		slice = parentDir(slice)
 	}
-	trace.Trace("min_value:", min_value)
+	trace.Trace("min_value of", limitname, "for cgroups v2:", min_value)
 	return min_value, nil
 }
 
@@ -87,9 +102,7 @@ func getAvailableMemory() AmountOfMemory {
 	available_cgroup := KiloBytesOfMemory(1 << 31)
 	cggetOutput, err := backticks.Run("cgget", "-nv", "-r", "memory.limit_in_bytes", "/")
 	if err != nil {
-		if strings.Contains(cggetOutput, "Cgroup is not mounted") {
-			cggetOutput, err = vespa_cg2get("memory.max")
-		}
+		cggetOutput, err = vespa_cg2get("memory.max")
 	}
 	cggetOutput = strings.TrimSpace(cggetOutput)
 	if err != nil {
@@ -98,7 +111,7 @@ func getAvailableMemory() AmountOfMemory {
 	if err == nil && cggetOutput != "max" {
 		numBytes, err := strconv.ParseInt(cggetOutput, 10, 64)
 		if err == nil && numBytes > (1<<28) {
-			available_cgroup = AmountOfMemory{numBytes: numBytes}
+			available_cgroup = BytesOfMemory(numBytes)
 		} else {
 			trace.Warning("unexpected 'cgget' output:", cggetOutput)
 		}
