@@ -7,6 +7,7 @@ import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.Deployer;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.jdisc.Metric;
+import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeList;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
 import com.yahoo.vespa.hosted.provision.applications.Application;
@@ -70,33 +71,41 @@ public class AutoscalingMaintainer extends NodeRepositoryMaintainer {
         Cluster updatedCluster = updateCompletion(cluster.get(), clusterNodes);
         var advice = autoscaler.autoscale(application.get(), updatedCluster, clusterNodes);
 
-        // Lock and write if there are state updates and/or we should autoscale now
-        if (advice.isPresent() && !cluster.get().targetResources().equals(advice.target()) ||
-            (updatedCluster != cluster.get() || !advice.reason().equals(cluster.get().autoscalingStatus()))) {
-            try (var lock = nodeRepository().applications().lock(applicationId)) {
-                application = nodeRepository().applications().get(applicationId);
-                if (application.isEmpty()) return;
-                cluster = application.get().cluster(clusterId);
-                if (cluster.isEmpty()) return;
+        if ( ! anyChanges(advice, cluster.get(), updatedCluster, clusterNodes)) return;
 
-                // 1. Update cluster info
-                updatedCluster = updateCompletion(cluster.get(), clusterNodes)
-                                         .with(advice.reason())
-                                         .withTarget(advice.target());
-                applications().put(application.get().with(updatedCluster), lock);
+        try (var lock = nodeRepository().applications().lock(applicationId)) {
+            application = nodeRepository().applications().get(applicationId);
+            if (application.isEmpty()) return;
+            cluster = application.get().cluster(clusterId);
+            if (cluster.isEmpty()) return;
+            clusterNodes = nodeRepository().nodes().list(Node.State.active).owner(applicationId).cluster(clusterId);
 
-                ClusterResources current = new AllocatableClusterResources(clusterNodes, nodeRepository()).advertisedResources();
-                if (advice.isPresent() && advice.target().isPresent() && !current.equals(advice.target().get())) {
-                    // 2. Also autoscale
-                    try (MaintenanceDeployment deployment = new MaintenanceDeployment(applicationId, deployer, metric, nodeRepository())) {
-                        if (deployment.isValid()) {
-                            deployment.activate();
-                            logAutoscaling(current, advice.target().get(), applicationId, clusterNodes);
-                        }
+            // 1. Update cluster info
+            updatedCluster = updateCompletion(cluster.get(), clusterNodes)
+                                     .with(advice.reason())
+                                     .withTarget(advice.target());
+            applications().put(application.get().with(updatedCluster), lock);
+
+            var current = new AllocatableClusterResources(clusterNodes, nodeRepository()).advertisedResources();
+            if (advice.isPresent() && advice.target().isPresent() && !current.equals(advice.target().get())) {
+                // 2. Also autoscale
+                try (MaintenanceDeployment deployment = new MaintenanceDeployment(applicationId, deployer, metric, nodeRepository())) {
+                    if (deployment.isValid()) {
+                        deployment.activate();
+                        logAutoscaling(current, advice.target().get(), applicationId, clusterNodes);
                     }
                 }
             }
         }
+    }
+
+    private boolean anyChanges(Autoscaler.Advice advice, Cluster cluster, Cluster updatedCluster, NodeList clusterNodes) {
+        if (advice.isPresent() && !cluster.targetResources().equals(advice.target())) return true;
+        if (updatedCluster != cluster) return true;
+        if ( ! advice.reason().equals(cluster.autoscalingStatus())) return true;
+        if (advice.target().isPresent() &&
+            !advice.target().get().equals(new AllocatableClusterResources(clusterNodes, nodeRepository()).advertisedResources())) return true;
+        return false;
     }
 
     private Applications applications() {
