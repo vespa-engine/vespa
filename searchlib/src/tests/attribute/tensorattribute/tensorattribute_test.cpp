@@ -49,7 +49,7 @@ using search::tensor::DirectTensorAttribute;
 using search::tensor::DistanceCalculator;
 using search::tensor::DocVectorAccess;
 using search::tensor::HnswIndex;
-using search::tensor::HnswNode;
+using search::tensor::HnswTestNode;
 using search::tensor::NearestNeighborIndex;
 using search::tensor::NearestNeighborIndexFactory;
 using search::tensor::NearestNeighborIndexLoader;
@@ -852,7 +852,7 @@ TEST_F("Hnsw index is instantiated in dense tensor attribute when specified in c
 }
 
 void
-expect_level_0(uint32_t exp_docid, const HnswNode& node)
+expect_level_0(uint32_t exp_docid, const HnswTestNode& node)
 {
     ASSERT_GREATER_EQUAL(node.size(), 1u);
     ASSERT_EQUAL(1u, node.level(0).size());

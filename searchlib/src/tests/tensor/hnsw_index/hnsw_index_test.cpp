@@ -138,7 +138,7 @@ public:
         EXPECT_EQ(exp_nodeid, index->get_entry_nodeid());
         EXPECT_EQ(exp_level, index->get_entry_level());
     }
-    void expect_level_0(uint32_t nodeid, const HnswNode::LinkArray& exp_links) {
+    void expect_level_0(uint32_t nodeid, const HnswTestNode::LinkArray& exp_links) {
         auto node = index->get_node(nodeid);
         ASSERT_EQ(1, node.size());
         EXPECT_EQ(exp_links, node.level(0));
@@ -147,7 +147,7 @@ public:
         auto node = index->get_node(nodeid);
         EXPECT_TRUE(node.empty());
     }
-    void expect_levels(uint32_t nodeid, const HnswNode::LevelArray& exp_levels) {
+    void expect_levels(uint32_t nodeid, const HnswTestNode::LevelArray& exp_levels) {
         auto act_node = index->get_node(nodeid);
         ASSERT_EQ(exp_levels.size(), act_node.size());
         EXPECT_EQ(exp_levels, act_node.levels());
@@ -413,11 +413,11 @@ TEST_F(HnswIndexTest, manual_insert)
     init(false);
 
     std::vector<uint32_t> nbl;
-    HnswNode empty{nbl};
+    HnswTestNode empty{nbl};
     index->set_node(1, empty);
     index->set_node(2, empty);
 
-    HnswNode three{{1,2}};
+    HnswTestNode three{{1,2}};
     index->set_node(3, three);
     expect_level_0(1, {3});
     expect_level_0(2, {3});
@@ -425,13 +425,13 @@ TEST_F(HnswIndexTest, manual_insert)
 
     expect_entry_point(1, 0);
 
-    HnswNode twolevels{{{1},nbl}};
+    HnswTestNode twolevels{{{1},nbl}};
     index->set_node(4, twolevels);
 
     expect_entry_point(4, 1);
     expect_level_0(1, {3,4});
 
-    HnswNode five{{{1,2}, {4}}};
+    HnswTestNode five{{{1,2}, {4}}};
     index->set_node(5, five);
 
     expect_levels(1, {{3,4,5}});
@@ -490,10 +490,10 @@ TEST_F(HnswIndexTest, shrink_called_simple)
 {
     init(false);
     std::vector<uint32_t> nbl;
-    HnswNode empty{nbl};
+    HnswTestNode empty{nbl};
     index->set_node(1, empty);
     nbl.push_back(1);
-    HnswNode nb1{nbl};
+    HnswTestNode nb1{nbl};
     index->set_node(2, nb1);
     index->set_node(3, nb1);
     index->set_node(4, nb1);
@@ -530,10 +530,10 @@ TEST_F(HnswIndexTest, shrink_called_heuristic)
 {
     init(true);
     std::vector<uint32_t> nbl;
-    HnswNode empty{nbl};
+    HnswTestNode empty{nbl};
     index->set_node(1, empty);
     nbl.push_back(1);
-    HnswNode nb1{nbl};
+    HnswTestNode nb1{nbl};
     index->set_node(2, nb1);
     index->set_node(3, nb1);
     index->set_node(4, nb1);
