@@ -5,7 +5,7 @@
 #include "distance_function.h"
 #include "doc_vector_access.h"
 #include "hnsw_index_utils.h"
-#include "hnsw_node.h"
+#include "hnsw_test_node.h"
 #include "nearest_neighbor_index.h"
 #include "random_level_generator.h"
 #include "hnsw_graph.h"
@@ -223,8 +223,8 @@ public:
     int32_t get_entry_level() const { return _graph.get_entry_node().level; }
 
     // Should only be used by unit tests.
-    HnswNode get_node(uint32_t nodeid) const;
-    void set_node(uint32_t nodeid, const HnswNode &node);
+    HnswTestNode get_node(uint32_t nodeid) const;
+    void set_node(uint32_t nodeid, const HnswTestNode &node);
     bool check_link_symmetry() const;
     std::pair<uint32_t, bool> count_reachable_nodes() const;
     HnswGraph& get_graph() { return _graph; }

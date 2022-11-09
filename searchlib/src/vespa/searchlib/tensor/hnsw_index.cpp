@@ -751,26 +751,26 @@ HnswIndex::top_k_candidates(const TypedCells &vector, uint32_t k, const GlobalFi
     return best_neighbors;
 }
 
-HnswNode
+HnswTestNode
 HnswIndex::get_node(uint32_t nodeid) const
 {
     auto node_ref = _graph.acquire_node_ref(nodeid);
     if (!node_ref.valid()) {
-        return HnswNode();
+        return HnswTestNode();
     }
     auto levels = _graph.nodes.get(node_ref);
-    HnswNode::LevelArray result;
+    HnswTestNode::LevelArray result;
     for (const auto& links_ref : levels) {
         auto links = _graph.links.get(links_ref.load_acquire());
-        HnswNode::LinkArray result_links(links.begin(), links.end());
+        HnswTestNode::LinkArray result_links(links.begin(), links.end());
         std::sort(result_links.begin(), result_links.end());
         result.push_back(result_links);
     }
-    return HnswNode(result);
+    return HnswTestNode(result);
 }
 
 void
-HnswIndex::set_node(uint32_t nodeid, const HnswNode &node)
+HnswIndex::set_node(uint32_t nodeid, const HnswTestNode &node)
 {
     size_t num_levels = node.size();
     assert(num_levels > 0);
