@@ -162,6 +162,13 @@ ArrayStore<EntryT, RefT, TypeMapperT>::compactWorst(CompactionSpec compaction_sp
 }
 
 template <typename EntryT, typename RefT, typename TypeMapperT>
+std::unique_ptr<CompactingBuffers>
+ArrayStore<EntryT, RefT, TypeMapperT>::start_compact_worst_buffers(CompactionSpec compaction_spec, const CompactionStrategy &compaction_strategy)
+{
+    return _store.start_compact_worst_buffers(compaction_spec, compaction_strategy);
+}
+
+template <typename EntryT, typename RefT, typename TypeMapperT>
 vespalib::AddressSpace
 ArrayStore<EntryT, RefT, TypeMapperT>::addressSpaceUsage() const
 {

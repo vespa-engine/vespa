@@ -2,6 +2,7 @@
 
 #include "hnsw_graph.h"
 #include "hnsw_index.h"
+#include <vespa/vespalib/util/rcuvector.hpp>
 #include <vespa/vespalib/datastore/array_store.hpp>
 
 namespace search::tensor {
@@ -13,7 +14,7 @@ HnswGraph::HnswGraph()
     links(HnswIndex::make_default_link_store_config(), {}),
     entry_nodeid_and_level()
 {
-    node_refs.ensure_size(1, AtomicEntryRef());
+    node_refs.ensure_size(1, NodeType());
     EntryNode entry;
     set_entry_node(entry);
 }
@@ -23,13 +24,13 @@ HnswGraph::~HnswGraph() = default;
 HnswGraph::NodeRef
 HnswGraph::make_node(uint32_t nodeid, uint32_t num_levels)
 {
-    node_refs.ensure_size(nodeid + 1, AtomicEntryRef());
+    node_refs.ensure_size(nodeid + 1, NodeType());
     // A document cannot be added twice.
     assert(!get_node_ref(nodeid).valid());
     // Note: The level array instance lives as long as the document is present in the index.
     std::vector<AtomicEntryRef> levels(num_levels, AtomicEntryRef());
     auto node_ref = nodes.add(levels);
-    node_refs[nodeid].store_release(node_ref);
+    node_refs[nodeid].ref().store_release(node_ref);
     if (nodeid >= node_refs_size.load(std::memory_order_relaxed)) {
         node_refs_size.store(nodeid + 1, std::memory_order_release);
     }
@@ -43,7 +44,7 @@ HnswGraph::remove_node(uint32_t nodeid)
     assert(node_ref.valid());
     auto levels = nodes.get(node_ref);
     vespalib::datastore::EntryRef invalid;
-    node_refs[nodeid].store_release(invalid);
+    node_refs[nodeid].ref().store_release(invalid);
     // Ensure data referenced through the old ref can be recycled:
     nodes.remove(node_ref);
     for (size_t i = 0; i < levels.size(); ++i) {
@@ -127,6 +128,7 @@ HnswGraph::set_entry_node(EntryNode node) {
 
 namespace vespalib {
 
-template class RcuVectorBase<vespalib::datastore::AtomicEntryRef>;
+template class RcuVectorBase<search::tensor::HnswSimpleNode>;
+template class RcuVector<search::tensor::HnswSimpleNode>;
 
 }
