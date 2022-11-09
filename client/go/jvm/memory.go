@@ -56,6 +56,16 @@ func (v AmountOfMemory) AsJvmSpec() string {
 	}
 	return fmt.Sprintf("%d%s", val, suffix)
 }
+func (v AmountOfMemory) String() string {
+	val := v.numBytes
+	idx := 0
+	suffix := [9]string{"bytes", "KiB", "MiB", "GiB", "TiB", "PiB", "EiB", "ZiB", "YiB"}
+	for val > 0 && (val%PowerOfTwo10 == 0) {
+		val = val / PowerOfTwo10
+		idx++
+	}
+	return fmt.Sprintf("{%d %s}", val, suffix[idx])
+}
 
 func ParseJvmMemorySpec(spec string) (result AmountOfMemory, err error) {
 	result = BytesOfMemory(0)
