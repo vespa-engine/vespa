@@ -154,4 +154,4 @@ dependents may be added, while the queue is emptied from the head one entry at a
 a dependency (`previous`) completes computation. `enqueue` blocks until there is room in the client.
 
 **Code pointers:**
-- [Java feed client](https://github.com/vespa-engine/vespa/blob/master/vespa-feed-client/src/main/java/ai/vespa/feed/client/FeedClient.java)
+- [Java feed client](https://github.com/vespa-engine/vespa/blob/master/vespa-feed-client-api/src/main/java/ai/vespa/feed/client/FeedClient.java)
