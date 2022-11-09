@@ -32,6 +32,9 @@ func TestConversion(t *testing.T) {
 	assert.Equal(t, "17g", v1.AsJvmSpec())
 	assert.Equal(t, "17000m", v2.AsJvmSpec())
 	assert.Equal(t, "17000000k", v3.AsJvmSpec())
+	assert.Equal(t, "{17 GiB}", v1.String())
+	assert.Equal(t, "{17000 MiB}", v2.String())
+	assert.Equal(t, "{17000000 KiB}", v3.String())
 
 	var result AmountOfMemory
 	var err error

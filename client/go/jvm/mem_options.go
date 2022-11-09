@@ -8,7 +8,6 @@ import (
 	"strings"
 
 	"github.com/vespa-engine/vespa/client/go/trace"
-	"github.com/vespa-engine/vespa/client/go/util"
 )
 
 func (opts *Options) getOrSetHeapSize(prefix string, heapSize AmountOfMemory) AmountOfMemory {
@@ -43,14 +42,13 @@ func (opts *Options) AddDefaultHeapSizeArgs(minHeapSize, maxHeapSize AmountOfMem
 	opts.MaybeAddHugepages(maxHeapSize)
 }
 
-func (opts *Options) MaybeAddHugepages(maxHeapSize AmountOfMemory) {
-	thpSizeSize := util.GetThpSizeMb()
-	heapSize := maxHeapSize.ToMB()
-	if thpSizeSize*2 < heapSize {
-		trace.Trace("add UseTransparentHugePages, thpSize", thpSizeSize, "* 2 < maxHeap", heapSize)
+func (opts *Options) MaybeAddHugepages(heapSize AmountOfMemory) {
+	thpSize := getTransparentHugepageSize()
+	if thpSize.numBytes*2 < heapSize.numBytes {
+		trace.Trace("add UseTransparentHugePages, 2 * thpSize", thpSize, " < maxHeap", heapSize)
 		opts.AddOption("-XX:+UseTransparentHugePages")
 	} else {
-		trace.Trace("no UseTransparentHugePages, thpSize", thpSizeSize, "* 2 >= maxHeap", heapSize)
+		trace.Trace("no UseTransparentHugePages, 2 * thpSize", thpSize, " >= maxHeap", heapSize)
 	}
 }
 

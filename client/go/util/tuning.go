@@ -50,22 +50,3 @@ func TuneResourceLimits() {
 	SetResourceLimit(RLIMIT_NOFILE, numfiles)
 	SetResourceLimit(RLIMIT_NPROC, numprocs)
 }
-
-func GetThpSizeMb() int {
-	const fn = "/sys/kernel/mm/transparent_hugepage/hpage_pmd_size"
-	thp_size := 2
-	line, err := os.ReadFile(fn)
-	if err == nil {
-		chomped := strings.TrimSuffix(string(line), "\n")
-		number, err := strconv.Atoi(chomped)
-		if err == nil {
-			thp_size = number / (1024 * 1024)
-			trace.Trace("thp_size", chomped, "=>", thp_size)
-		} else {
-			trace.Trace("no thp_size:", err)
-		}
-	} else {
-		trace.Trace("no thp_size:", err)
-	}
-	return thp_size
-}

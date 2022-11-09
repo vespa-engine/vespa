@@ -122,3 +122,21 @@ func getAvailableMemory() AmountOfMemory {
 	trace.Trace("getAvailableMemory returns:", result)
 	return result
 }
+
+func getTransparentHugepageSize() AmountOfMemory {
+	const fn = "/sys/kernel/mm/transparent_hugepage/hpage_pmd_size"
+	thp_size := MegaBytesOfMemory(2)
+	line, err := readLineFrom(fn)
+	if err == nil {
+		number, err := strconv.ParseInt(line, 10, 64)
+		if err == nil {
+			thp_size = BytesOfMemory(number)
+			trace.Trace("thp_size", line, "=>", thp_size)
+		} else {
+			trace.Trace("no thp_size:", err)
+		}
+	} else {
+		trace.Trace("no thp_size:", err)
+	}
+	return thp_size
+}
