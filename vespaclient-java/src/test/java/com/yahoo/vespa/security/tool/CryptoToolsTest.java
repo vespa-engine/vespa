@@ -40,6 +40,12 @@ public class CryptoToolsTest {
         assertEquals(readTestResource(expectedFile), procOut.stdOut());
     }
 
+    private void verifyStdoutEquals(List<String> args, String stdIn, String expectedMessage) throws IOException {
+        var procOut = runMain(args, toUtf8Bytes(stdIn), Map.of());
+        assertEquals(0, procOut.exitCode());
+        assertEquals(expectedMessage, procOut.stdOut());
+    }
+
     private void verifyStderrEquals(List<String> args, String expectedMessage) throws IOException {
         var procOut = runMain(args, EMPTY_BYTES, Map.of());
         assertEquals(1, procOut.exitCode()); // Assume checking stderr is because of a failure.
@@ -74,6 +80,11 @@ public class CryptoToolsTest {
     @Test
     void token_info_help_printed_if_help_option_given_to_subtool() throws IOException {
         verifyStdoutMatchesFile(List.of("token-info", "--help"), "expected-token-info-help-output.txt");
+    }
+
+    @Test
+    void convert_base_help_printed_if_help_option_given_to_subtool() throws IOException {
+        verifyStdoutMatchesFile(List.of("convert-base", "--help"), "expected-convert-base-help-output.txt");
     }
 
     @Test
@@ -237,6 +248,26 @@ public class CryptoToolsTest {
     @Test
     void token_info_is_printed_to_stdout() throws IOException {
         verifyStdoutMatchesFile(List.of("token-info", TEST_TOKEN), "expected-token-info-output.txt");
+    }
+
+    @Test
+    void convert_base_reads_stdin_and_prints_conversion_on_stdout() throws IOException {
+        // Check all possible output encodings
+        verifyStdoutEquals(List.of("convert-base", "--from", "16", "--to", "16"), "0000287fb4cd", "0000287fb4cd\n");
+        verifyStdoutEquals(List.of("convert-base", "--from", "16", "--to", "58"), "0000287fb4cd", "11233QC4\n");
+        verifyStdoutEquals(List.of("convert-base", "--from", "16", "--to", "62"), "0000287fb4cd", "00jyw3x\n");
+        verifyStdoutEquals(List.of("convert-base", "--from", "16", "--to", "64"), "0000287fb4cd", "AAAof7TN\n");
+
+        // Check a single output encoding for each input encoding, making the simplifying assumption that
+        // decoding and encoding is independent. Base 16 already covered above.
+        verifyStdoutEquals(List.of("convert-base", "--from", "58", "--to", "16"), "11233QC4", "0000287fb4cd\n");
+        verifyStdoutEquals(List.of("convert-base", "--from", "62", "--to", "16"), "00jyw3x",  "0000287fb4cd\n");
+        verifyStdoutEquals(List.of("convert-base", "--from", "64", "--to", "16"), "AAAof7TN", "0000287fb4cd\n");
+    }
+
+    @Test
+    void convert_base_tool_ignores_whitespace_on_stdin() throws IOException {
+        verifyStdoutEquals(List.of("convert-base", "--from", "16", "--to", "58"), "  0000287fb4cd\n", "11233QC4\n");
     }
 
     @Test
