@@ -344,57 +344,78 @@ void
 HnswIndex::add_document(uint32_t docid)
 {
     vespalib::GenerationHandler::Guard no_guard_needed;
-    PreparedAddDoc op = internal_prepare_add(docid, get_vector_by_docid(docid), no_guard_needed);
-    internal_complete_add(docid, op);
+    PreparedAddDoc op(docid, std::move(no_guard_needed));
+    auto input_vectors = get_vector_by_docid(docid);
+    auto subspaces = input_vectors.subspaces();
+    op.nodes.reserve(subspaces);
+    auto nodeids = _id_mapping.allocate_ids(docid, subspaces);
+    assert(nodeids.size() == subspaces);
+    for (uint32_t subspace = 0; subspace < subspaces; ++subspace) {
+        auto entry = _graph.get_entry_node();
+        internal_prepare_add_node(op, input_vectors.cells(subspace), entry);
+        internal_complete_add_node(nodeids[subspace], docid, subspace, op.nodes.back());
+    }
 }
 
 HnswIndex::PreparedAddDoc
 HnswIndex::internal_prepare_add(uint32_t docid, VectorBundle input_vectors, vespalib::GenerationHandler::Guard read_guard) const
 {
     assert(input_vectors.subspaces() == 1);
-    auto input_vector = input_vectors.cells(0);
-    // TODO: Add capping on num_levels
-    int level = _level_generator->max_level();
-    PreparedAddDoc op(docid, level, std::move(read_guard));
+    PreparedAddDoc op(docid, std::move(read_guard));
     auto entry = _graph.get_entry_node();
+    auto subspaces = input_vectors.subspaces();
+    op.nodes.reserve(subspaces);
+    for (uint32_t subspace = 0; subspace < subspaces; ++subspace) {
+        internal_prepare_add_node(op, input_vectors.cells(subspace), entry);
+    }
+    return op;
+}
+
+void
+HnswIndex::internal_prepare_add_node(HnswIndex::PreparedAddDoc& op, TypedCells input_vector, const HnswGraph::EntryNode& entry) const
+{
+    // TODO: Add capping on num_levels
+    int node_max_level = _level_generator->max_level();
+    std::vector<PreparedAddNode::Links> connections(node_max_level + 1);
     if (entry.nodeid == 0) {
         // graph has no entry point
-        return op;
+        op.nodes.emplace_back(std::move(connections));
+        return;
     }
     int search_level = entry.level;
     double entry_dist = calc_distance(input_vector, entry.nodeid);
     // TODO: check if entry nodeid/node_ref is still valid here
     HnswCandidate entry_point(entry.nodeid, entry.node_ref, entry_dist);
-    while (search_level > op.max_level) {
+    while (search_level > node_max_level) {
         entry_point = find_nearest_in_layer(input_vector, entry_point, search_level);
         --search_level;
     }
 
     FurthestPriQ best_neighbors;
     best_neighbors.push(entry_point);
-    search_level = std::min(op.max_level, search_level);
-
+    search_level = std::min(node_max_level, search_level);
     // Find neighbors of the added document in each level it should exist in.
     while (search_level >= 0) {
         search_layer(input_vector, _cfg.neighbors_to_explore_at_construction(), best_neighbors, search_level);
         auto neighbors = select_neighbors(best_neighbors.peek(), _cfg.max_links_on_inserts());
-        op.connections[search_level].reserve(neighbors.used.size());
+        auto& links = connections[search_level];
+        links.reserve(neighbors.used.size());
         for (const auto & neighbor : neighbors.used) {
             auto neighbor_levels = _graph.get_level_array(neighbor.node_ref);
             if (size_t(search_level) < neighbor_levels.size()) {
-                op.connections[search_level].emplace_back(neighbor.nodeid, neighbor.node_ref);
+                links.emplace_back(neighbor.nodeid, neighbor.node_ref);
             } else {
                 LOG(warning, "in prepare_add(%u), selected neighbor %u is missing level %d (has %zu levels)",
-                    docid, neighbor.nodeid, search_level, neighbor_levels.size());
+                    op.docid, neighbor.nodeid, search_level, neighbor_levels.size());
             }
         }
         --search_level;
     }
-    return op;
+    op.nodes.emplace_back(std::move(connections));
 }
 
 HnswIndex::LinkArray 
-HnswIndex::filter_valid_nodeids(uint32_t level, const PreparedAddDoc::Links &neighbors, uint32_t self_nodeid)
+HnswIndex::filter_valid_nodeids(uint32_t level, const PreparedAddNode::Links &neighbors, uint32_t self_nodeid)
 {
     LinkArray valid;
     valid.reserve(neighbors.size());
@@ -415,16 +436,27 @@ HnswIndex::filter_valid_nodeids(uint32_t level, const PreparedAddDoc::Links &nei
 void
 HnswIndex::internal_complete_add(uint32_t docid, PreparedAddDoc &op)
 {
-    auto nodeids = _id_mapping.allocate_ids(docid, 1);
-    assert(nodeids.size() == 1);
-    auto nodeid = nodeids[0];
-    auto node_ref = _graph.make_node(nodeid, docid, 0, op.max_level + 1);
-    for (int level = 0; level <= op.max_level; ++level) {
-        auto neighbors = filter_valid_nodeids(level, op.connections[level], nodeid);
+    assert(op.nodes.size() == 1);
+    auto nodeids = _id_mapping.allocate_ids(docid, op.nodes.size());
+    assert(nodeids.size() == op.nodes.size());
+    uint32_t subspace = 0;
+    for (auto nodeid : nodeids) {
+        internal_complete_add_node(nodeid, docid, subspace, op.nodes[subspace]);
+        ++subspace;
+    }
+}
+
+void
+HnswIndex::internal_complete_add_node(uint32_t nodeid, uint32_t docid, uint32_t subspace, PreparedAddNode &prepared_node)
+{
+    int32_t num_levels = prepared_node.connections.size();
+    auto node_ref = _graph.make_node(nodeid, docid, subspace, num_levels);
+    for (int level = 0; level < num_levels; ++level) {
+        auto neighbors = filter_valid_nodeids(level, prepared_node.connections[level], nodeid);
         connect_new_node(nodeid, neighbors, level);
     }
-    if (op.max_level > get_entry_level()) {
-        _graph.set_entry_node({nodeid, node_ref, op.max_level});
+    if (num_levels - 1 > get_entry_level()) {
+        _graph.set_entry_node({nodeid, node_ref, num_levels - 1});
     }
 }
 
