@@ -425,6 +425,13 @@ public class Flags {
             "Takes effect on the next tick.",
             ZONE_ID, NODE_TYPE, HOSTNAME);
 
+    public static final UnboundBooleanFlag USE_OLD_JDISC_CONTAINER_STARTUP = defineFeatureFlag(
+            "use-old-jdisc-container-startup", true,
+            List.of("arnej", "baldersheim"), "2022-11-09", "2023-01-31",
+            "If true, use the old vespa-start-container-daemon script.",
+            "Takes effect immediately?",
+            ZONE_ID, APPLICATION_ID);
+
     /** WARNING: public for testing: All flags should be defined in {@link Flags}. */
     public static UnboundBooleanFlag defineFeatureFlag(String flagId, boolean defaultValue, List<String> owners,
                                                        String createdAt, String expiresAt, String description,
