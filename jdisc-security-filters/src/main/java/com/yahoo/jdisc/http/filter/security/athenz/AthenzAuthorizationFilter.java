@@ -148,7 +148,9 @@ public class AthenzAuthorizationFilter extends JsonSecurityRequestFilterBase {
     }
 
     private Result getResult(EnabledCredentials.Enum credentialType, AthenzIdentity identity, AuthorizationResult zpeResult, DiscFilterRequest request, ResourceNameAndAction resourceAndAction, List<String> privileges) {
-        return new Result(credentialType, identity, zpeResult, privileges, resourceAndAction.action());
+        String currentAction = resourceAndAction.action();
+        String futureAction = resourceAndAction.futureAction();
+        return new Result(credentialType, identity, zpeResult, privileges, currentAction, futureAction);
     }
 
     private List<String> mapToRequestPrivileges(List<AthenzRole> roles) {
@@ -280,7 +282,8 @@ public class AthenzAuthorizationFilter extends JsonSecurityRequestFilterBase {
                 "authz-required", Boolean.toString(authzRequired),
                 "httpMethod", HttpRequest.Method.valueOf(request.getMethod()).name(),
                 "requestPrivileges", result.map(r -> String.join(",", r.requestPrivileges)).orElse(""),
-                "requestMapping", result.map(r -> r.action).orElse("")
+                "currentRequestMapping", result.map(r -> r.currentAction).orElse(""),
+                "futureRequestMapping", result.map(r -> r.futureAction).orElse("")
         ));
         metric.add(ACCEPTED_METRIC_NAME, 1L, context);
     }
@@ -293,7 +296,8 @@ public class AthenzAuthorizationFilter extends JsonSecurityRequestFilterBase {
                 "zpe-status", zpeCode,
                 "httpMethod", HttpRequest.Method.valueOf(request.getMethod()),
                 "requestPrivileges", result.map(r -> String.join(",", r.requestPrivileges)).orElse(""),
-                "action", result.map(r -> r.action).orElse("")
+                "currentRequestMapping", result.map(r -> r.currentAction).orElse(""),
+                "futureRequestMapping", result.map(r -> r.futureAction).orElse("")
         ));
         metric.add(REJECTED_METRIC_NAME, 1L, context);
     }
@@ -303,14 +307,16 @@ public class AthenzAuthorizationFilter extends JsonSecurityRequestFilterBase {
         final AthenzIdentity identity;
         final AuthorizationResult zpeResult;
         final List<String> requestPrivileges;
-        final String action;
+        final String currentAction;
+        final String futureAction;
 
-        public Result(EnabledCredentials.Enum credentialType, AthenzIdentity identity, AuthorizationResult zpeResult, List<String> requestPrivileges, String action) {
+        public Result(EnabledCredentials.Enum credentialType, AthenzIdentity identity, AuthorizationResult zpeResult, List<String> requestPrivileges, String currentAction, String futureAction) {
             this.credentialType = credentialType;
             this.identity = identity;
             this.zpeResult = zpeResult;
             this.requestPrivileges = requestPrivileges;
-            this.action = action;
+            this.currentAction = currentAction;
+            this.futureAction = futureAction;
         }
     }
 }
