@@ -14,20 +14,24 @@ public class SystemInfo {
     private final ApplicationId application;
     private final Zone zone;
     private final Cloud cloud;
-    private final Cluster cluster;
+    private final String clusterName;
     private final Node node;
 
     // TODO: Remove on Vespa 9
     @Deprecated(forRemoval = true)
     public SystemInfo(ApplicationId application, Zone zone, Cluster cluster, Node node) {
-        this(application, zone, new Cloud(""), cluster, node);
+        this(application, zone, new Cloud(""), cluster.id(), node);
+    }
+    @Deprecated(forRemoval = true)
+    public SystemInfo(ApplicationId application, Zone zone, Cloud cloud, Cluster cluster, Node node) {
+        this(application, zone, cloud, cluster.id(), node);
     }
 
-    public SystemInfo(ApplicationId application, Zone zone, Cloud cloud, Cluster cluster, Node node) {
+    public SystemInfo(ApplicationId application, Zone zone, Cloud cloud, String clusterName, Node node) {
         this.application = Objects.requireNonNull(application, "Application cannot be null");
         this.zone = Objects.requireNonNull(zone, "Zone cannot be null");
         this.cloud = Objects.requireNonNull(cloud, "Cloud cannot be null");
-        this.cluster = Objects.requireNonNull(cluster, "Cluster cannot be null");
+        this.clusterName = Objects.requireNonNull(clusterName, "ClusterName cannot be null");
         this.node = Objects.requireNonNull(node, "Node cannot be null");
     }
 
@@ -42,17 +46,8 @@ public class SystemInfo {
         return cloud;
     }
 
-    /**
-     *  Returns the cluster this is part of
-     * @deprecated This will shortly be removed as it breaks the intention of SystemInfo
-     *             Use clusterName() as replacement for cluster().id().
-     *             If you need cluster size or node indices you should have Cluster injected directly.
-     */
-    @Deprecated(forRemoval = true)
-    public Cluster cluster() { return cluster; }
-
     /** Returns the name of the cluster it is running in */
-    public String clusterName() { return cluster.id(); }
+    public String clusterName() { return clusterName; }
 
     /** Returns the node this is running on */
     public Node node() { return node; }
