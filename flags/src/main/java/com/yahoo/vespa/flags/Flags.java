@@ -426,7 +426,7 @@ public class Flags {
             ZONE_ID, NODE_TYPE, HOSTNAME);
 
     public static final UnboundBooleanFlag USE_OLD_JDISC_CONTAINER_STARTUP = defineFeatureFlag(
-            "use-old-jdisc-container-startup", false,
+            "use-old-jdisc-container-startup", true,
             List.of("arnej", "baldersheim"), "2022-11-09", "2023-01-31",
             "If true, use the old vespa-start-container-daemon script.",
             "Takes effect immediately?",
