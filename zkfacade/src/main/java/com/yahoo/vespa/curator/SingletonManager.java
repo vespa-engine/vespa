@@ -310,6 +310,7 @@ class SingletonManager {
         private void cleanOrphans() {
             List<String> orphans = null;
             try {
+                // Only the ephemerals owned by this client session are listed here, and this client should only ever attempt this lock from this thread, i.e., 0 or 1 nodes. 
                 for (String orphan : orphans = curator.framework().getZookeeperClient().getZooKeeper().getEphemerals(path.getAbsolute()))
                     curator.delete(path.append(orphan));
             }
