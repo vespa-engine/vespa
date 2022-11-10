@@ -6,6 +6,7 @@ package vespa
 
 import (
 	"bufio"
+	"errors"
 	"fmt"
 	"os"
 	"strings"
@@ -71,6 +72,9 @@ func loadDefaultEnvTo(r loadEnvReceiver) error {
 	vespaHome := FindHome()
 	f, err := os.Open(vespaHome + defEnvTxt)
 	if err != nil {
+		if errors.Is(err, os.ErrNotExist) {
+			return nil
+		}
 		return err
 	}
 	defer f.Close()
