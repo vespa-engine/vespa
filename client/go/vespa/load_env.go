@@ -265,7 +265,9 @@ type pathBuilder struct {
 
 func (builder *pathBuilder) applyTo(receiver loadEnvReceiver) {
 	newPath := strings.Join(builder.curPath, ":")
-	trace.Trace("updating PATH in environment =>", newPath)
+	if newPath != receiver.currentValue(ENV_PATH) {
+		trace.Trace("updating PATH in environment =>", newPath)
+	}
 	receiver.overrideVar(ENV_PATH, newPath)
 }
 

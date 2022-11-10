@@ -79,7 +79,7 @@ func (spec *FixSpec) FixDir(dirName string) {
 	if err != nil {
 		JustExitWith(err)
 	}
-	trace.Trace("directory ok:", dirName)
+	trace.Debug("directory ok:", dirName)
 }
 
 // ensure file gets correct owner/permissions if it exists
