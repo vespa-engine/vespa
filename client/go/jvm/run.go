@@ -12,7 +12,12 @@ import (
 )
 
 func RunApplicationContainer(extraArgs []string) int {
-	trace.AdjustVerbosity(0)
+	if doTrace := os.Getenv("TRACE_JVM_STARTUP"); doTrace != "" {
+		trace.AdjustVerbosity(1)
+	}
+	if doDebug := os.Getenv("DEBUG_JVM_STARTUP"); doDebug != "" {
+		trace.AdjustVerbosity(2)
+	}
 	container := NewApplicationContainer(extraArgs)
 	container.Exec()
 	// unreachable:
