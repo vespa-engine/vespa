@@ -65,7 +65,8 @@ func SetResourceLimit(resource ResourceId, newVal uint64) {
 	err = unix.Setrlimit(int(resource), &wanted)
 	if err != nil {
 		trace.Trace("Failed setting resource limit:", err)
-	} else {
+	} else if (current.Cur != wanted.Cur) || (current.Max != wanted.Max) {
+		trace.Debug("Resource limit", resource, "was:", readableLimit(current.Cur), "/", readableLimit(current.Max))
 		trace.Trace("Resource limit", resource, "adjusted OK:", readableLimit(wanted.Cur), "/", readableLimit(wanted.Max))
 	}
 }

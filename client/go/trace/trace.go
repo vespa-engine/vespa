@@ -13,7 +13,8 @@ import (
 type outputLevel int
 
 const (
-	levelNone outputLevel = iota
+	levelWarning outputLevel = iota - 1
+	levelNone
 	levelInfo
 	levelTrace
 	levelDebug
@@ -30,25 +31,30 @@ func Silent() {
 	currentOutputLevel = levelNone
 }
 
-func outputStderr(l outputLevel, v ...interface{}) {
+func outputStderr(l outputLevel, n string, v ...interface{}) {
 	if l > currentOutputLevel {
 		return
 	}
-	fmt.Fprintln(os.Stderr, v...)
+	w := make([]interface{}, len(v)+1)
+	w[0] = n
+	for idx, arg := range v {
+		w[idx+1] = arg
+	}
+	fmt.Fprintln(os.Stderr, w...)
 }
 
 func Info(v ...interface{}) {
-	outputStderr(levelInfo, v...)
+	outputStderr(levelInfo, "[info]", v...)
 }
 
 func Trace(v ...interface{}) {
-	outputStderr(levelTrace, v...)
+	outputStderr(levelTrace, "[trace]", v...)
 }
 
 func Debug(v ...interface{}) {
-	outputStderr(levelDebug, v...)
+	outputStderr(levelDebug, "[debug]", v...)
 }
 
 func Warning(v ...interface{}) {
-	fmt.Fprintln(os.Stderr, v...)
+	outputStderr(levelWarning, "[warning]", v...)
 }

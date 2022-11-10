@@ -21,7 +21,6 @@ const (
 func FindHome() string {
 	// use env var if it is set:
 	if ev := os.Getenv("VESPA_HOME"); ev != "" {
-		trace.Debug("VH set:", ev)
 		return ev
 	}
 	// some helper functions...
