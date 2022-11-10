@@ -5,7 +5,6 @@
 #include "default_nearest_neighbor_index_factory.h"
 #include "dense_tensor_store.h"
 #include "tensor_attribute.h"
-#include "typed_cells_comparator.h"
 #include <memory>
 
 namespace search::tensor {
@@ -19,16 +18,12 @@ class NearestNeighborIndex;
 class DenseTensorAttribute : public TensorAttribute {
 private:
     DenseTensorStore _denseTensorStore;
-    TypedCellsComparator _comp;
 
-    bool tensor_is_unchanged(DocId docid, const vespalib::eval::Value& new_tensor) const;
 public:
     DenseTensorAttribute(vespalib::stringref baseFileName, const Config& cfg,
                          const NearestNeighborIndexFactory& index_factory = DefaultNearestNeighborIndexFactory());
     ~DenseTensorAttribute() override;
     // Implements AttributeVector and ITensorAttribute
-    std::unique_ptr<PrepareResult> prepare_set_tensor(DocId docid, const vespalib::eval::Value& tensor) const override;
-    void complete_set_tensor(DocId docid, const vespalib::eval::Value& tensor, std::unique_ptr<PrepareResult> prepare_result) override;
     vespalib::eval::TypedCells extract_cells_ref(DocId docId) const override;
     bool supports_extract_cells_ref() const override { return true; }
     void get_state(const vespalib::slime::Inserter& inserter) const override;

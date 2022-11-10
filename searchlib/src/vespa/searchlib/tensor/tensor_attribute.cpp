@@ -58,7 +58,9 @@ TensorAttribute::TensorAttribute(vespalib::stringref name, const Config &cfg, Te
       _index(),
       _is_dense(cfg.tensorType().is_dense()),
       _emptyTensor(createEmptyTensor(cfg.tensorType())),
-      _compactGeneration(0)
+      _compactGeneration(0),
+      _subspace_type(cfg.tensorType()),
+      _comp(cfg.tensorType())
 {
 }
 
@@ -393,23 +395,61 @@ TensorAttribute::update_tensor(DocId docId,
 std::unique_ptr<PrepareResult>
 TensorAttribute::prepare_set_tensor(DocId docid, const vespalib::eval::Value& tensor) const
 {
-    (void) docid;
-    (void) tensor;
-    return std::unique_ptr<PrepareResult>();
+    checkTensorType(tensor);
+    if (_index) {
+        VectorBundle vectors(tensor.cells().data, tensor.index().size(), _subspace_type);
+        if (tensor_cells_are_unchanged(docid, vectors)) {
+            // Don't make changes to the nearest neighbor index when the inserted tensor cells are unchanged.
+            // With this optimization we avoid doing unnecessary costly work, first removing the vector point, then inserting the same point.
+            return {};
+        }
+        return _index->prepare_add_document(docid, vectors, getGenerationHandler().takeGuard());
+    }
+    return {};
 }
 
 void
 TensorAttribute::complete_set_tensor(DocId docid, const vespalib::eval::Value& tensor,
                                      std::unique_ptr<PrepareResult> prepare_result)
 {
-    (void) docid;
-    (void) tensor;
-    (void) prepare_result;
+    if (_index && !prepare_result) {
+        // The tensor cells are unchanged
+        if (!_is_dense) {
+            // but labels might have changed.
+            EntryRef ref = _tensorStore.store_tensor(tensor);
+            assert(ref.valid());
+            setTensorRef(docid, ref);
+        }
+        return;
+    }
+    internal_set_tensor(docid, tensor);
+    if (_index) {
+        _index->complete_add_document(docid, std::move(prepare_result));
+    }
 }
 
 attribute::DistanceMetric
 TensorAttribute::distance_metric() const {
     return getConfig().distance_metric();
+}
+
+bool
+TensorAttribute::tensor_cells_are_unchanged(DocId docid, VectorBundle vectors) const
+{
+    if (docid >= getCommittedDocIdLimit()) {
+        return false;
+    }
+    auto old_vectors = get_vectors(docid);
+    auto old_subspaces = old_vectors.subspaces();
+    if (old_subspaces != vectors.subspaces()) {
+        return false;
+    }
+    for (uint32_t subspace = 0; subspace < old_subspaces; ++subspace) {
+        if (!_comp.equals(old_vectors.cells(subspace), vectors.cells(subspace))) {
+            return false;
+        }
+    }
+    return true;
 }
 
 }
