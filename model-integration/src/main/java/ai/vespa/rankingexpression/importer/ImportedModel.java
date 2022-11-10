@@ -81,10 +81,19 @@ public class ImportedModel implements ImportedMlModel {
     }
 
     /**
-     * Returns an immutable map of the small constants of this, represented as strings on the standard tensor form.
+     * Returns an immutable map of the small constants of this.
      * These should have sizes up to a few kb at most, and correspond to constant values given in the source model.
      */
     @Override
+    public Map<String, Tensor> smallConstantTensors() { return Map.copyOf(smallConstants); }
+    /**
+     * Returns an immutable map of the small constants of this, represented as strings on the standard tensor form.
+     * These should have sizes up to a few kb at most, and correspond to constant values given in the source model.
+     * @deprecated Use smallConstantTensors instead
+     */
+    @Override
+    @SuppressWarnings("removal")
+    @Deprecated(forRemoval = true)
     public Map<String, String> smallConstants() { return asStrings(smallConstants); }
 
     boolean hasSmallConstant(String name) { return smallConstants.containsKey(name); }
@@ -92,9 +101,17 @@ public class ImportedModel implements ImportedMlModel {
     /**
      * Returns an immutable map of the large constants of this.
      * These can have sizes in gigabytes and must be distributed to nodes separately from configuration.
-     * For TensorFlow this corresponds to Variable files stored separately.
      */
     @Override
+    public Map<String, Tensor> largeConstantTensors() { return Map.copyOf(largeConstants); }
+    /**
+     * Returns an immutable map of the large constants of this, represented as strings on the standard tensor form.
+     * These can have sizes in gigabytes and must be distributed to nodes separately from configuration.
+     * @deprecated Use largeConstantTensors instead
+     */
+    @Override
+    @SuppressWarnings("removal")
+    @Deprecated(forRemoval = true)
     public Map<String, String> largeConstants() { return asStrings(largeConstants); }
 
     boolean hasLargeConstant(String name) { return largeConstants.containsKey(name); }
