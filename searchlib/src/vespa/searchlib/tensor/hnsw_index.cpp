@@ -442,6 +442,7 @@ HnswIndex::internal_complete_add(uint32_t docid, PreparedAddDoc &op)
     uint32_t subspace = 0;
     for (auto nodeid : nodeids) {
         internal_complete_add_node(nodeid, docid, subspace, op.nodes[subspace]);
+        ++subspace;
     }
 }
 
