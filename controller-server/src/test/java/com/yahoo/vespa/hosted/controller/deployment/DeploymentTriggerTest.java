@@ -2787,4 +2787,63 @@ public class DeploymentTriggerTest {
         assertThrows(IllegalStateException.class, JobType.fromJobName("staging-test", zones)::zone);
     }
 
+    @Test
+    void test() {
+        String deploymentXml = """
+                               <deployment version="1.0">
+                                 <test/>
+                                 <staging/>
+                                 <block-change days="fri" hours="0-23" time-zone="UTC" />
+                                 <prod>
+                                   <region>us-east-3</region>
+                                   <delay hours="1"/>
+                                   <test>us-east-3</test>
+                                   <region>us-west-1</region>
+                                 </prod>
+                               </deployment>""";
+
+        // TODO jonmv: recreate problem where revision starts, then upgrade, while prod is blocked,
+        //             then both are tested as separate upgrades, but prod-test has them reversed.
+
+        Version version1 = new Version("7.1");
+        tester.controllerTester().upgradeSystem(version1);
+        ApplicationPackage applicationPackage = ApplicationPackageBuilder.fromDeploymentXml(deploymentXml);
+        tester.clock().setInstant(Instant.EPOCH.plusSeconds(8 * 60 * 60)); // Thursday morning.
+        DeploymentContext app = tester.newDeploymentContext().submit(applicationPackage);
+        RevisionId revision1 = app.lastSubmission().get();
+        app.runJob(systemTest).runJob(stagingTest).runJob(productionUsEast3);
+        tester.clock().advance(Duration.ofHours(1));
+        app.runJob(testUsEast3).runJob(productionUsWest1);
+        assertEquals(Change.empty(), app.instance().change());
+
+        tester.clock().advance(Duration.ofDays(1)); // Enter block window.
+        app.submit(applicationPackage);
+        assertEquals(Change.empty(), app.instance().change());
+
+        Version version2 = new Version("7.2");
+        RevisionId revision2 = app.lastSubmission().get();
+
+        app.runJob(systemTest).runJob(stagingTest);
+        app.triggerJobs().assertNotRunning(productionUsEast3);
+        tester.controllerTester().upgradeSystem(version2);
+        tester.clock().advance(Duration.ofDays(1)); // Leave block window.
+        tester.upgrader().run();
+        tester.outstandingChangeDeployer().run();
+        assertEquals(Change.of(revision2).with(version2), app.instance().change());
+        app.runJob(systemTest).runJob(stagingTest);
+        app.runJob(productionUsEast3);
+        app.triggerJobs();
+        app.assertNotRunning(productionUsEast3); // Platform upgrade should not start before test is done with revision.
+        tester.clock().advance(Duration.ofHours(1));
+        app.triggerJobs();
+        app.assertNotRunning(productionUsEast3); // Platform upgrade should not start before test is done with revision.
+        app.runJob(testUsEast3);
+        app.runJob(productionUsEast3)
+           .runJob(productionUsWest1);
+        tester.clock().advance(Duration.ofHours(1));
+        app.runJob(testUsEast3);
+        app.runJob(productionUsWest1);
+        assertEquals(Change.empty(), app.instance().change());
+    }
+
 }
