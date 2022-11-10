@@ -347,7 +347,7 @@ public class ContainerClusterTest {
         assertEquals(List.of("host-c1", "host-c2"),
                 config.server().stream().map(CuratorConfig.Server::hostname).collect(Collectors.toList()));
         assertTrue(config.zookeeperLocalhostAffinity());
-        assertEquals(12, config.zookeeperSessionTimeoutSeconds());
+        assertEquals(30, config.zookeeperSessionTimeoutSeconds());
     }
 
     @Test
