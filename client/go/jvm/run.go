@@ -27,10 +27,10 @@ func NewApplicationContainer(extraArgs []string) Container {
 	var a ApplicationContainer
 	a.configId = os.Getenv(util.ENV_CONFIG_ID)
 	a.serviceName = os.Getenv(util.ENV_SERVICE_NAME)
-	opts := NewOptions(&a)
-	a.addJvmArgs(opts)
+	a.jvmArgs = NewOptions(&a)
+	a.configureOptions()
 	for _, x := range extraArgs {
-		opts.AddOption(x)
+		a.JvmOptions().AddOption(x)
 	}
 	return &a
 }

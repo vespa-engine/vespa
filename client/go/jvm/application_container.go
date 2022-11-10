@@ -6,8 +6,6 @@ package jvm
 import (
 	"fmt"
 	"os"
-	"strconv"
-	"strings"
 
 	"github.com/vespa-engine/vespa/client/go/defaults"
 	"github.com/vespa-engine/vespa/client/go/trace"
@@ -121,15 +119,15 @@ func (a *ApplicationContainer) configureMemory(qc *QrStartConfig) {
 
 func (a *ApplicationContainer) configureGC(qc *QrStartConfig) {
 	if extra := qc.Jvm.Gcopts; extra != "" {
-		a.jvmArgs.AddJvmArgsFromString(extra)
+		a.JvmOptions().AddJvmArgsFromString(extra)
 	}
 	if qc.Jvm.Verbosegc {
-		a.jvmArgs.AddOption("-Xlog:gc")
+		a.JvmOptions().AddOption("-Xlog:gc")
 	}
 }
 
 func (a *ApplicationContainer) configureClasspath(qc *QrStartConfig) {
-	opts := a.jvmArgs
+	opts := a.JvmOptions()
 	if cp := qc.Jdisc.ClasspathExtra; cp != "" {
 		opts.classPath = append(opts.classPath, cp)
 	}
@@ -138,32 +136,13 @@ func (a *ApplicationContainer) configureClasspath(qc *QrStartConfig) {
 func (a *ApplicationContainer) configureCPU(qc *QrStartConfig) {
 	cnt := qc.Jvm.AvailableProcessors
 	if cnt > 0 {
-		trace.Trace("using", cnt, "from qr-start config")
-	} else {
-		out, err := util.BackTicksForwardStderr.Run("nproc", "--all")
-		if err != nil {
-			trace.Trace("failed nproc:", err)
-		} else {
-			cnt, err = strconv.Atoi(strings.TrimSpace(out))
-			if err != nil {
-				trace.Trace("bad nproc output:", strings.TrimSpace(out))
-				cnt = 0
-			} else {
-				trace.Trace("using", cnt, "from nproc --all")
-			}
-		}
+		trace.Trace("CpuCount: using", cnt, "from qr-start config")
 	}
-	if cnt > 0 {
-		num := strconv.Itoa(cnt)
-		a.jvmArgs.AddOption("-XX:ActiveProcessorCount=" + num)
-	}
+	a.JvmOptions().ConfigureCpuCount(cnt)
 }
 
-func (a *ApplicationContainer) addJvmArgs(opts *Options) {
-	if a.jvmArgs != nil {
-		panic("can only set jvmArgs once")
-	}
-	a.jvmArgs = opts
+func (a *ApplicationContainer) configureOptions() {
+	opts := a.JvmOptions()
 	opts.AddOption("-Dconfig.id=" + a.ConfigId())
 	if env := os.Getenv(VESPA_CONTAINER_JVMARGS); env != "" {
 		opts.AddJvmArgsFromString(env)

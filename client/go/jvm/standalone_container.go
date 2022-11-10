@@ -32,11 +32,9 @@ func (a *StandaloneContainer) ConfigId() string {
 	return ""
 }
 
-func (a *StandaloneContainer) addJvmArgs(opts *Options) {
-	if a.jvmArgs != nil {
-		panic("can only set jvmArgs once")
-	}
-	a.jvmArgs = opts
+func (a *StandaloneContainer) configureOptions() {
+	opts := a.jvmArgs
+	opts.ConfigureCpuCount(0)
 	opts.AddCommonXX()
 	opts.AddOption("-XX:-OmitStackTraceInFastThrow")
 	opts.AddCommonOpens()
@@ -54,7 +52,8 @@ func (a *StandaloneContainer) addJvmArgs(opts *Options) {
 func NewStandaloneContainer(svcName string) Container {
 	var a StandaloneContainer
 	a.serviceName = svcName
-	a.addJvmArgs(NewOptions(&a))
+	a.jvmArgs = NewOptions(&a)
+	a.configureOptions()
 	return &a
 }
 
