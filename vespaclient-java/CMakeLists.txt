@@ -1,6 +1,7 @@
 # Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 install_jar(vespaclient-java-jar-with-dependencies.jar)
 
+vespa_install_script(src/main/sh/vespa-crypto-cli.sh vespa-crypto-cli bin)
 vespa_install_script(src/main/sh/vespa-document-statistics.sh vespa-document-statistics bin)
 vespa_install_script(src/main/sh/vespa-stat.sh vespa-stat bin)
 vespa_install_script(src/main/sh/vespa-query-profile-dump-tool.sh vespa-query-profile-dump-tool bin)
