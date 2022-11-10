@@ -5,7 +5,9 @@
 #include "i_tensor_attribute.h"
 #include "doc_vector_access.h"
 #include "prepare_result.h"
+#include "subspace_type.h"
 #include "tensor_store.h"
+#include "typed_cells_comparator.h"
 #include <vespa/searchlib/attribute/not_implemented_attribute.h>
 #include <vespa/vespalib/util/rcuvector.h>
 #include <vespa/document/update/tensor_update.h>
@@ -29,6 +31,8 @@ protected:
     bool _is_dense;
     std::unique_ptr<vespalib::eval::Value> _emptyTensor;
     uint64_t    _compactGeneration; // Generation when last compact occurred
+    SubspaceType         _subspace_type;
+    TypedCellsComparator _comp;
 
     void checkTensorType(const vespalib::eval::Value &tensor) const;
     void setTensorRef(DocId docId, EntryRef ref);
@@ -41,6 +45,7 @@ protected:
     EntryRef acquire_entry_ref(DocId doc_id) const noexcept { return _refVector.acquire_elem_ref(doc_id).load_acquire(); }
     bool onLoad(vespalib::Executor *executor) override;
     std::unique_ptr<AttributeSaver> onInitSave(vespalib::stringref fileName) override;
+    bool tensor_cells_are_unchanged(DocId docid, VectorBundle vectors) const;
 
 public:
     using RefCopyVector = vespalib::Array<EntryRef>;

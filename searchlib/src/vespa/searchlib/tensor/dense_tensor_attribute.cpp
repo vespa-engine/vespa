@@ -13,18 +13,10 @@ using vespalib::slime::ObjectInserter;
 
 namespace search::tensor {
 
-bool
-DenseTensorAttribute::tensor_is_unchanged(DocId docid, const Value& new_tensor) const
-{
-    auto old_tensor = extract_cells_ref(docid);
-    return _comp.equals(old_tensor, new_tensor.cells());
-}
-
 DenseTensorAttribute::DenseTensorAttribute(vespalib::stringref baseFileName, const Config& cfg,
                                            const NearestNeighborIndexFactory& index_factory)
     : TensorAttribute(baseFileName, cfg, _denseTensorStore),
-      _denseTensorStore(cfg.tensorType(), get_memory_allocator()),
-      _comp(cfg.tensorType())
+      _denseTensorStore(cfg.tensorType(), get_memory_allocator())
 {
     if (cfg.hnsw_index_params().has_value()) {
         auto tensor_type = cfg.tensorType();
@@ -40,36 +32,6 @@ DenseTensorAttribute::~DenseTensorAttribute()
 {
     getGenerationHolder().reclaim_all();
     _tensorStore.reclaim_all_memory();
-}
-
-std::unique_ptr<PrepareResult>
-DenseTensorAttribute::prepare_set_tensor(DocId docid, const Value& tensor) const
-{
-    checkTensorType(tensor);
-    if (_index) {
-        if (tensor_is_unchanged(docid, tensor)) {
-            // Don't make changes to the nearest neighbor index when the inserted tensor is unchanged.
-            // With this optimization we avoid doing unnecessary costly work, first removing the vector point, then inserting the same point.
-            return {};
-        }
-        VectorBundle vectors(tensor.cells().data, tensor.index().size(), _denseTensorStore.get_subspace_type());
-        return _index->prepare_add_document(docid, vectors, getGenerationHandler().takeGuard());
-    }
-    return {};
-}
-
-void
-DenseTensorAttribute::complete_set_tensor(DocId docid, const Value& tensor,
-                                          std::unique_ptr<PrepareResult> prepare_result)
-{
-    if (_index && !prepare_result) {
-        // The tensor is unchanged.
-        return;
-    }
-    internal_set_tensor(docid, tensor);
-    if (_index) {
-        _index->complete_add_document(docid, std::move(prepare_result));
-    }
 }
 
 vespalib::eval::TypedCells
