@@ -121,6 +121,7 @@ public class ConfigserverClusterTest {
         assertEquals(1, config.server().size());
         assertEquals("localhost", config.server().get(0).hostname());
         assertEquals(2181, config.server().get(0).port());
+        assertEquals(120, config.zookeeperSessionTimeoutSeconds());
         assertTrue(config.zookeeperLocalhostAffinity());
     }
 

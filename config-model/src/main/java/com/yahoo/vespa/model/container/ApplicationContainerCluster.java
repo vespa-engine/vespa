@@ -313,10 +313,10 @@ public final class ApplicationContainerCluster extends ContainerCluster<Applicat
 
     @Override
     public void getConfig(CuratorConfig.Builder builder) {
-        if (getParent() instanceof ConfigserverCluster) return; // Produces its own config
         super.getConfig(builder);
+        if (getParent() instanceof ConfigserverCluster) return; // Produces its own config
 
-        // Will be forced between 2x and 20x of ZookeeperServerConfig.tickTime(), which is currently 6s.
+        // Will be bounded by 2x and 20x ZookeeperServerConfig.tickTime(), which is currently 6s.
         builder.zookeeperSessionTimeoutSeconds(zookeeperSessionTimeoutSeconds);
     }
 
