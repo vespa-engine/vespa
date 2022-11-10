@@ -24,6 +24,7 @@ import com.yahoo.vespa.hosted.provision.persistence.CuratorDatabaseClient;
 import com.yahoo.vespa.orchestrator.HostNameNotFoundException;
 import com.yahoo.vespa.orchestrator.Orchestrator;
 
+import javax.ws.rs.NotFoundException;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
@@ -273,8 +274,7 @@ public class Nodes {
     }
 
     public List<Node> deallocateRecursively(String hostname, Agent agent, String reason) {
-        Node nodeToDirty = node(hostname).orElseThrow(() -> new IllegalArgumentException("Could not deallocate " +
-                                                                                         hostname + ": Node not found"));
+        Node nodeToDirty = node(hostname).orElseThrow(() -> new NotFoundException("Could not deallocate " + hostname + ": Node not found"));
 
         List<Node> nodesToDirty =
                 (nodeToDirty.type().isHost() ?
