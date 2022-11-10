@@ -173,6 +173,8 @@ class SingletonManager {
                         updateStatus();
                         // Process the next pending, externally triggered task, if any.
                         doTask();
+                        // Write isActive metric regularly.
+                        metrics.ping();
                     }
                     catch (InterruptedException e) {
                         if ( ! shutdown.get()) {
@@ -284,10 +286,12 @@ class SingletonManager {
             }
             catch (UncheckedTimeoutException e) {
                 logger.log(FINE, e, () -> "Timed out acquiring lock for '" + path + "' within " + tickTimeout);
+                cleanOrphans();
                 return;
             }
             catch (RuntimeException e) {
-                logger.log(INFO, e, () -> "Failed acquiring lock for '" + path + "' within " + tickTimeout);
+                logger.log(WARNING, e, () -> "Failed acquiring lock for '" + path + "' within " + tickTimeout);
+                cleanOrphans();
                 return;
             }
             try {
@@ -302,9 +306,22 @@ class SingletonManager {
             }
         }
 
+        /** This is a work-around for a bug where Curator leaks lock nodes, through "protection mode", probably because unexpected KeeperException children are thrown? */
+        private void cleanOrphans() {
+            List<String> orphans = null;
+            try {
+                // Only the ephemerals owned by this client session are listed here, and this client should only ever attempt this lock from this thread, i.e., 0 or 1 nodes. 
+                for (String orphan : orphans = curator.framework().getZookeeperClient().getZooKeeper().getEphemerals(path.getAbsolute()))
+                    curator.delete(path.append(orphan));
+            }
+            catch (Exception e) {
+                logger.log(WARNING, "Failed cleaning orphans: " + orphans, e);
+            }
+        }
+
         /**
          * Attempt to activate or deactivate if status has changed.
-         * If activation fails, we release the lock, to a different container may acquire it.
+         * If activation fails, we release the lock, so a different container may acquire it.
          */
         private void updateStatus() {
             Instant ourDoom = doom.get();
@@ -384,9 +401,14 @@ class SingletonManager {
             static final String DEACTIVATION_FAILURES = PREFIX + "deactivation.failure.count";
 
             final Metric.Context context;
+            boolean isActive;
 
             MetricHelper() {
                 this.context = metric.createContext(Map.of("singletonId", id));
+            }
+
+            void ping() {
+                metric.set(IS_ACTIVE, isActive ? 1 : 0, context);
             }
 
             void activation(Runnable activation) {
@@ -403,7 +425,8 @@ class SingletonManager {
                 finally {
                     metric.set(ACTIVATION_MILLIS, Duration.between(start, clock.instant()).toMillis(), context);
                     if (failed) metric.add(ACTIVATION_FAILURES, 1, context);
-                    else metric.set(IS_ACTIVE, 1, context);
+                    else isActive = true;
+                    ping();
                 }
             }
 
@@ -421,7 +444,8 @@ class SingletonManager {
                 finally {
                     metric.set(DEACTIVATION_MILLIS, Duration.between(start, clock.instant()).toMillis(), context);
                     if (failed) metric.add(DEACTIVATION_FAILURES, 1, context);
-                    metric.set(IS_ACTIVE, 0, context);
+                    isActive = false;
+                    ping();
                 }
             }
 
