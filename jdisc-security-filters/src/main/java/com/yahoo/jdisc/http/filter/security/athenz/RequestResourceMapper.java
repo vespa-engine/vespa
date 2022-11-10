@@ -28,10 +28,15 @@ public interface RequestResourceMapper {
     class ResourceNameAndAction {
         private final AthenzResourceName resourceName;
         private final String action;
+        private final String futureAction;
 
         public ResourceNameAndAction(AthenzResourceName resourceName, String action) {
+            this(resourceName, action, action);
+        }
+        public ResourceNameAndAction(AthenzResourceName resourceName, String action, String futureAction) {
             this.resourceName = resourceName;
             this.action = action;
+            this.futureAction = futureAction;
         }
 
         public AthenzResourceName resourceName() {
@@ -40,6 +45,14 @@ public interface RequestResourceMapper {
 
         public String action() {
             return action;
+        }
+
+        public ResourceNameAndAction withFutureAction(String futureAction) {
+            return new ResourceNameAndAction(resourceName, action, futureAction);
+        }
+
+        public String futureAction() {
+            return futureAction;
         }
 
         @Override
