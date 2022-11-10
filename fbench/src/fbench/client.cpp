@@ -229,8 +229,10 @@ Client::run()
             if (_args->_usePostMode && _args->_base64Decode) {
                 try {
                     base64_decoded = Base64::decode(content, cLen);
-                } catch (...) {
-                    _status->SetError("POST request contains invalid base64 encoded data");
+                } catch (std::exception &e) {
+                    std::string msg = "POST request contains invalid base64 encoded data: ";
+                    msg.append(e.what());
+                    _status->SetError(msg.c_str());
                     break;
                 }
                 content = base64_decoded.c_str();
