@@ -22,7 +22,7 @@ type Options struct {
 	fixSpec   util.FixSpec
 }
 
-func NewOptions(c Container) Options {
+func NewOptions(c Container) *Options {
 	vespaUid, vespaGid := vespa.FindVespaUidAndGid()
 	fixSpec := util.FixSpec{
 		UserId:   vespaUid,
@@ -30,7 +30,7 @@ func NewOptions(c Container) Options {
 		DirMode:  0755,
 		FileMode: 0644,
 	}
-	return Options{
+	return &Options{
 		container: c,
 		classPath: make([]string, 0, 10),
 		jvmArgs:   make([]string, 0, 100),

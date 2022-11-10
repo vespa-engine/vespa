@@ -19,22 +19,12 @@ const (
 )
 
 type ApplicationContainer struct {
-	configId    string
-	serviceName string
-	jvmArgs     *Options
+	containerBase
 }
 
 func (a *ApplicationContainer) ArgForMain() string {
 	dir := defaults.UnderVespaHome("lib/jars")
 	return fmt.Sprintf("file:%s/%s", dir, JAR_FOR_APPLICATION_CONTAINER)
-}
-
-func (a *ApplicationContainer) ServiceName() string {
-	return a.serviceName
-}
-
-func (a *ApplicationContainer) ConfigId() string {
-	return a.configId
 }
 
 func (a *ApplicationContainer) Discriminator() string {
@@ -71,7 +61,6 @@ func (a *ApplicationContainer) addJdiscProperties() {
 	opts.AddOption("-Djdisc.config.file=" + propsFile)
 	opts.AddOption("-Djdisc.cache.path=" + bCacheDir)
 	opts.AddOption("-Djdisc.logger.tag=" + cfgId)
-
 }
 
 func validPercentage(val int) bool {
@@ -171,6 +160,9 @@ func (a *ApplicationContainer) configureCPU(qc *QrStartConfig) {
 }
 
 func (a *ApplicationContainer) addJvmArgs(opts *Options) {
+	if a.jvmArgs != nil {
+		panic("can only set jvmArgs once")
+	}
 	a.jvmArgs = opts
 	opts.AddOption("-Dconfig.id=" + a.ConfigId())
 	if env := os.Getenv(VESPA_CONTAINER_JVMARGS); env != "" {
