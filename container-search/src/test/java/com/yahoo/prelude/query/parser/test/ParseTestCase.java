@@ -12,6 +12,7 @@ import com.yahoo.prelude.query.CompositeItem;
 import com.yahoo.prelude.query.IntItem;
 import com.yahoo.prelude.query.Item;
 import com.yahoo.prelude.query.NotItem;
+import com.yahoo.prelude.query.NullItem;
 import com.yahoo.prelude.query.OrItem;
 import com.yahoo.prelude.query.PhraseItem;
 import com.yahoo.prelude.query.PhraseSegmentItem;
@@ -1475,7 +1476,7 @@ public class ParseTestCase {
 
     @Test
     void testLoneStar() {
-        assertNull(tester.parseQuery("*", null, Language.UNKNOWN, Query.Type.ANY, TestLinguistics.INSTANCE));
+        assertTrue(tester.parseQuery("*", null, Language.UNKNOWN, Query.Type.ANY, TestLinguistics.INSTANCE) instanceof NullItem);
     }
 
     @Test
