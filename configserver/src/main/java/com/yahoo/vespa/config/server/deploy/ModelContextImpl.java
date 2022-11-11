@@ -167,6 +167,7 @@ public class ModelContextImpl implements ModelContext {
     public static class FeatureFlags implements ModelContext.FeatureFlags {
 
         private final String queryDispatchPolicy;
+        private final double queryDispatchWarmup;
         private final double defaultTermwiseLimit;
         private final String feedSequencer;
         private final String responseSequencer;
@@ -251,6 +252,7 @@ public class ModelContextImpl implements ModelContext {
             this.rpc_num_targets = flagValue(source, appId, version, Flags.RPC_NUM_TARGETS);
             this.rpc_events_before_wakeup = flagValue(source, appId, version, Flags.RPC_EVENTS_BEFORE_WAKEUP);
             this.queryDispatchPolicy = flagValue(source, appId, version, Flags.QUERY_DISPATCH_POLICY);
+            this.queryDispatchWarmup = flagValue(source, appId, version, PermanentFlags.QUERY_DISPATCH_WARMUP);
             this.useRestrictedDataPlaneBindings = flagValue(source, appId, version, Flags.RESTRICT_DATA_PLANE_BINDINGS);
             this.heapPercentage = flagValue(source, appId, version, PermanentFlags.HEAP_SIZE_PERCENTAGE);
             this.useOldJdiscContainerStartup = flagValue(source, appId, version, Flags.USE_OLD_JDISC_CONTAINER_STARTUP);
@@ -259,6 +261,7 @@ public class ModelContextImpl implements ModelContext {
         @Override public boolean useOldJdiscContainerStartup() { return useOldJdiscContainerStartup; }
         @Override public int heapSizePercentage() { return heapPercentage; }
         @Override public String queryDispatchPolicy() { return queryDispatchPolicy; }
+        @Override public double queryDispatchWarmup() { return queryDispatchWarmup; }
         @Override public double defaultTermwiseLimit() { return defaultTermwiseLimit; }
         @Override public String feedSequencerType() { return feedSequencer; }
         @Override public String responseSequencerType() { return responseSequencer; }

@@ -50,6 +50,12 @@ public class PermanentFlags {
             "Takes effect at redeployment",
             ZONE_ID, APPLICATION_ID);
 
+    public static final UnboundDoubleFlag QUERY_DISPATCH_WARMUP = defineDoubleFlag(
+            "query-dispatch-warmup", 5,
+            "Warmup duration for query dispatcher",
+            "Takes effect at redeployment (requires restart)",
+            ZONE_ID, APPLICATION_ID);
+
     public static final UnboundBooleanFlag FLEET_CANARY = defineFeatureFlag(
             "fleet-canary", false,
             "Whether the host is a fleet canary.",
