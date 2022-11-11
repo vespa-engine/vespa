@@ -677,7 +677,7 @@ public class ApplicationController {
                                                       .flatMap(instanceSpec -> instanceSpec.cloudAccount(zoneId.environment(),
                                                                                                          Optional.of(zoneId.region())))
                                                       .or(spec::cloudAccount);
-        if (requestedAccount.isEmpty()) {
+        if (requestedAccount.isEmpty() || requestedAccount.map(CloudAccount::isDefault).orElse(false)) {
             return Optional.empty();
         }
         TenantName tenant = deployment.applicationId().tenant();

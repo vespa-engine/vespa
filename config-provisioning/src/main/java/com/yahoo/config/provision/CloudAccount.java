@@ -13,14 +13,17 @@ import java.util.regex.Pattern;
 public class CloudAccount extends PatternedStringWrapper<CloudAccount> {
 
     public static final CloudAccount empty = new CloudAccount("");
+    public static final CloudAccount default_ = new CloudAccount("default");
 
     public CloudAccount(String value) {
-        super(value, Pattern.compile("^([0-9]{12})?$"), "cloud account");
+        super(value, Pattern.compile("^([0-9]{12}|default)?$"), "cloud account");
     }
 
     public boolean isEmpty() {
         return this.equals(empty);
     }
+
+    public boolean isDefault() { return this.equals(default_); }
 
     @Override
     public String toString() {

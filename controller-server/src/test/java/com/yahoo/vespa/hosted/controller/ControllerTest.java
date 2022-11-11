@@ -1325,6 +1325,33 @@ public class ControllerTest {
     }
 
     @Test
+    void testCloudAccountWithDefaultOverride() {
+        var context = tester.newDeploymentContext();
+        var prodZone1 = productionUsEast3.zone();
+        var prodZone2 = productionUsWest1.zone();
+        var cloudAccount = "012345678912";
+        var application = new ApplicationPackageBuilder()
+                .cloudAccount(cloudAccount)
+                .region(prodZone1.region())
+                .region(prodZone2.region(), "default")
+                .build();
+
+        // I don't know why this makes the test pass :(
+        tester.controllerTester().flagSource().withListFlag(PermanentFlags.CLOUD_ACCOUNTS.id(), List.of(cloudAccount), String.class);
+
+        // Deployment to prod succeeds once all zones are configured in requested account
+        tester.controllerTester().zoneRegistry().configureCloudAccount(new CloudAccount(cloudAccount),
+                systemTest.zone(),
+                stagingTest.zone(),
+                prodZone1);
+
+        context.submit(application).deploy();
+
+        assertEquals(cloudAccount, tester.controllerTester().configServer().cloudAccount(context.deploymentIdIn(prodZone1)).get().value());
+        assertEquals(Optional.empty(), tester.controllerTester().configServer().cloudAccount(context.deploymentIdIn(prodZone2)));
+    }
+
+    @Test
     void testSubmitWithElementDeprecatedOnPreviousMajor() {
         DeploymentContext context = tester.newDeploymentContext();
         var applicationPackage = new ApplicationPackageBuilder()
