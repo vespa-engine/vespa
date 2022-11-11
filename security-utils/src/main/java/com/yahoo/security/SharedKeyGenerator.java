@@ -62,16 +62,24 @@ public class SharedKeyGenerator {
 
     public static SecretSharedKey generateForReceiverPublicKey(PublicKey receiverPublicKey, KeyId keyId) {
         var secretKey = generateRandomSecretAesKey();
-        // We protect the integrity of the key ID by passing it as AAD.
-        var sealed = HPKE.sealBase((XECPublicKey) receiverPublicKey, EMPTY_BYTES, keyId.asBytes(), secretKey.getEncoded());
-        var sealedSharedKey = new SealedSharedKey(keyId, sealed.enc(), sealed.ciphertext());
-        return new SecretSharedKey(secretKey, sealedSharedKey);
+        return internalSealSecretKeyForReceiver(secretKey, receiverPublicKey, keyId);
     }
 
     public static SecretSharedKey fromSealedKey(SealedSharedKey sealedKey, PrivateKey receiverPrivateKey) {
         byte[] secretKeyBytes = HPKE.openBase(sealedKey.enc(), (XECPrivateKey) receiverPrivateKey,
                                               EMPTY_BYTES, sealedKey.keyId().asBytes(), sealedKey.ciphertext());
         return new SecretSharedKey(new SecretKeySpec(secretKeyBytes, "AES"), sealedKey);
+    }
+
+    public static SecretSharedKey reseal(SecretSharedKey secret, PublicKey receiverPublicKey, KeyId keyId) {
+        return internalSealSecretKeyForReceiver(secret.secretKey(), receiverPublicKey, keyId);
+    }
+
+    private static SecretSharedKey internalSealSecretKeyForReceiver(SecretKey secretKey, PublicKey receiverPublicKey, KeyId keyId) {
+        // We protect the integrity of the key ID by passing it as AAD.
+        var sealed = HPKE.sealBase((XECPublicKey) receiverPublicKey, EMPTY_BYTES, keyId.asBytes(), secretKey.getEncoded());
+        var sealedSharedKey = new SealedSharedKey(keyId, sealed.enc(), sealed.ciphertext());
+        return new SecretSharedKey(secretKey, sealedSharedKey);
     }
 
     // A given key+IV pair can only be used for one single encryption session, ever.

@@ -27,10 +27,10 @@ import java.util.Optional;
  */
 public class DecryptTool implements Tool {
 
-    static final String OUTPUT_FILE_OPTION                = "output-file";
-    static final String RECIPIENT_PRIVATE_KEY_FILE_OPTION = "recipient-private-key-file";
-    static final String KEY_ID_OPTION                     = "key-id";
-    static final String TOKEN_OPTION                      = "token";
+    static final String OUTPUT_FILE_OPTION      = "output-file";
+    static final String PRIVATE_KEY_FILE_OPTION = "private-key-file";
+    static final String EXPECTED_KEY_ID_OPTION  = "expected-key-id";
+    static final String TOKEN_OPTION            = "token";
 
     private static final List<Option> OPTIONS = List.of(
             Option.builder("o")
@@ -41,17 +41,16 @@ public class DecryptTool implements Tool {
                           "quotes) to write plaintext to STDOUT instead of a file.")
                     .build(),
             Option.builder("k")
-                    .longOpt(RECIPIENT_PRIVATE_KEY_FILE_OPTION)
+                    .longOpt(PRIVATE_KEY_FILE_OPTION)
                     .hasArg(true)
                     .required(false)
-                    .desc("Recipient private key file in Base58 encoded format")
+                    .desc("Private key file in Base58 encoded format")
                     .build(),
-            Option.builder("i")
-                    .longOpt(KEY_ID_OPTION)
+            Option.builder("e")
+                    .longOpt(EXPECTED_KEY_ID_OPTION)
                     .hasArg(true)
                     .required(false)
-                    .desc("Numeric ID of recipient key. If this is not provided, " +
-                          "the key ID stored as part of the token is not verified.")
+                    .desc("Expected key ID in token. If this is not provided, the key ID is not verified.")
                     .build(),
             Option.builder("t")
                     .longOpt(TOKEN_OPTION)
@@ -85,21 +84,15 @@ public class DecryptTool implements Tool {
                 throw new IllegalArgumentException("Expected exactly 1 file argument to decrypt");
             }
             var inputArg   = leftoverArgs[0];
-            var maybeKeyId = Optional.ofNullable(arguments.hasOption(KEY_ID_OPTION)
-                                                 ? arguments.getOptionValue(KEY_ID_OPTION)
+            var maybeKeyId = Optional.ofNullable(arguments.hasOption(EXPECTED_KEY_ID_OPTION)
+                                                 ? arguments.getOptionValue(EXPECTED_KEY_ID_OPTION)
                                                  : null);
             var outputArg   = CliUtils.optionOrThrow(arguments, OUTPUT_FILE_OPTION);
-            var privKeyPath = Paths.get(CliUtils.optionOrThrow(arguments, RECIPIENT_PRIVATE_KEY_FILE_OPTION));
             var tokenString = CliUtils.optionOrThrow(arguments, TOKEN_OPTION);
             var sealedSharedKey = SealedSharedKey.fromTokenString(tokenString.strip());
-            if (maybeKeyId.isPresent()) {
-                var myKeyId = KeyId.ofString(maybeKeyId.get());
-                if (!myKeyId.equals(sealedSharedKey.keyId())) {
-                    // Don't include raw key bytes array verbatim in message (may contain control chars etc).
-                    throw new IllegalArgumentException("Key ID specified with --key-id does not match key ID " +
-                                                       "used when generating the supplied token");
-                }
-            }
+            ToolUtils.verifyExpectedKeyId(sealedSharedKey, maybeKeyId);
+
+            var privKeyPath  = Paths.get(CliUtils.optionOrThrow(arguments, PRIVATE_KEY_FILE_OPTION));
             var privateKey   = KeyUtils.fromBase58EncodedX25519PrivateKey(Files.readString(privKeyPath).strip());
             var secretShared = SharedKeyGenerator.fromSealedKey(sealedSharedKey, privateKey);
             var cipher       = SharedKeyGenerator.makeAesGcmDecryptionCipher(secretShared);
@@ -108,7 +101,6 @@ public class DecryptTool implements Tool {
                  var outStream = CliUtils.outputStreamToFileOrStream(outputArg, invocation.stdOut())) {
                 CipherUtils.streamEncipher(inStream, outStream, cipher);
             }
-
         } catch (IOException e) {
             throw new RuntimeException(e);
         }

@@ -21,6 +21,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 public class SharedKeyTest {
 
     private static final KeyId KEY_ID_1 = KeyId.ofString("1");
+    private static final KeyId KEY_ID_2 = KeyId.ofString("2");
 
     @Test
     void generated_secret_key_is_128_bit_aes() {
@@ -41,6 +42,21 @@ public class SharedKeyTest {
         var theirSealed = SealedSharedKey.fromTokenString(publicToken);
         var theirShared = SharedKeyGenerator.fromSealedKey(theirSealed, receiverKeyPair.getPrivate());
 
+        assertArrayEquals(myShared.secretKey().getEncoded(), theirShared.secretKey().getEncoded());
+    }
+
+    @Test
+    void secret_key_can_be_resealed_for_another_receiver() {
+        var originalReceiverKp  = KeyUtils.generateX25519KeyPair();
+        var secondaryReceiverKp = KeyUtils.generateX25519KeyPair();
+        var myShared = SharedKeyGenerator.generateForReceiverPublicKey(originalReceiverKp.getPublic(), KEY_ID_1);
+        var theirShared = SharedKeyGenerator.reseal(myShared, secondaryReceiverKp.getPublic(), KEY_ID_2);
+
+        var publicToken = theirShared.sealedSharedKey().toTokenString();
+        var theirSealed = SealedSharedKey.fromTokenString(publicToken);
+        assertEquals(KEY_ID_2, theirSealed.keyId());
+        theirShared = SharedKeyGenerator.fromSealedKey(theirSealed, secondaryReceiverKp.getPrivate());
+        // Should be same internal secret key
         assertArrayEquals(myShared.secretKey().getEncoded(), theirShared.secretKey().getEncoded());
     }
 

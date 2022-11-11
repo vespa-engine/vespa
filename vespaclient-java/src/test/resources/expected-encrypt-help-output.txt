@@ -7,7 +7,7 @@ kept secret.
 To encrypt the contents of STDIN, specify an input file of '-' (without
 the quotes).
  -h,--help                         Show help
- -i,--key-id <arg>                 Numeric ID of recipient key
+ -i,--key-id <arg>                 ID of recipient key
  -o,--output-file <arg>            Output file (will be truncated if it
                                    already exists)
  -r,--recipient-public-key <arg>   Recipient X25519 public key in Base58

@@ -1,6 +1,10 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.security.tool;
 
+import com.yahoo.security.KeyId;
+import com.yahoo.security.KeyUtils;
+import com.yahoo.security.SealedSharedKey;
+import com.yahoo.security.SharedKeyGenerator;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
@@ -16,6 +20,7 @@ import java.nio.file.attribute.PosixFilePermissions;
 import java.util.List;
 import java.util.Map;
 
+import static com.yahoo.security.ArrayUtils.hex;
 import static com.yahoo.security.ArrayUtils.toUtf8Bytes;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -27,7 +32,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  */
 public class CryptoToolsTest {
 
-    private static record ProcessOutput(int exitCode, String stdOut, String stdErr) {}
+    private record ProcessOutput(int exitCode, String stdOut, String stdErr) {}
 
     private static final byte[] EMPTY_BYTES = new byte[0];
 
@@ -85,6 +90,11 @@ public class CryptoToolsTest {
     @Test
     void convert_base_help_printed_if_help_option_given_to_subtool() throws IOException {
         verifyStdoutMatchesFile(List.of("convert-base", "--help"), "expected-convert-base-help-output.txt");
+    }
+
+    @Test
+    void reseal_help_printed_if_help_option_given_to_subtool() throws IOException {
+        verifyStdoutMatchesFile(List.of("reseal", "--help"), "expected-reseal-help-output.txt");
     }
 
     @Test
@@ -174,6 +184,7 @@ public class CryptoToolsTest {
     private static final String TEST_TOKEN        = "OntP9gRVAjXeZIr4zkYqRJFcnA993v7ZEE7VbcNs1NcR3HdE7Mp" +
                                                     "wlwi3r3anF1kVa5fn7O1CyeHQpBWpdayUTKkrtyFepG6WJrZdE";
     private static final String TEST_TOKEN_KEY_ID = "my key ID";
+    private static final String TEST_TOKEN_SECRET = "1b33b4dcd6a94e5a4a1ee6d208197d01";
 
     @Test
     void encrypt_fails_with_error_message_if_no_input_file_is_given() throws IOException {
@@ -200,10 +211,10 @@ public class CryptoToolsTest {
         Files.writeString(privKeyFile, TEST_PRIV_KEY);
 
         verifyStderrEquals(List.of("decrypt",
-                                   "--output-file",                "foo",
-                                   "--recipient-private-key-file", absPathOf(privKeyFile),
-                                   "--token",                      TEST_TOKEN,
-                                   "--key-id",                     TEST_TOKEN_KEY_ID),
+                                   "--output-file",      "foo",
+                                   "--private-key-file", absPathOf(privKeyFile),
+                                   "--token",            TEST_TOKEN,
+                                   "--expected-key-id",  TEST_TOKEN_KEY_ID),
                 "Invalid command line arguments: Expected exactly 1 file argument to decrypt\n");
     }
 
@@ -214,10 +225,10 @@ public class CryptoToolsTest {
 
         verifyStderrEquals(List.of("decrypt",
                                    "no-such-file",
-                                   "--output-file",                "foo",
-                                   "--recipient-private-key-file", absPathOf(privKeyFile),
-                                   "--token",                      TEST_TOKEN,
-                                   "--key-id",                     TEST_TOKEN_KEY_ID),
+                                   "--output-file",      "foo",
+                                   "--private-key-file", absPathOf(privKeyFile),
+                                   "--token",            TEST_TOKEN,
+                                   "--expected-key-id",  TEST_TOKEN_KEY_ID),
                 "Invalid command line arguments: Input file 'no-such-file' does not exist\n");
     }
 
@@ -231,11 +242,11 @@ public class CryptoToolsTest {
 
         verifyStderrEquals(List.of("decrypt",
                                    absPathOf(inputFile),
-                                   "--output-file",                "foo",
-                                   "--recipient-private-key-file", absPathOf(privKeyFile),
-                                   "--token",                      TEST_TOKEN,
-                                   "--key-id",                     TEST_TOKEN_KEY_ID + "-wrong"),
-                "Invalid command line arguments: Key ID specified with --key-id does not " +
+                                   "--output-file",      "foo",
+                                   "--private-key-file", absPathOf(privKeyFile),
+                                   "--token",            TEST_TOKEN,
+                                   "--expected-key-id",  TEST_TOKEN_KEY_ID + "-wrong"),
+                "Invalid command line arguments: Key ID specified with --expected-key-id does not " +
                         "match key ID used when generating the supplied token\n");
     }
 
@@ -268,6 +279,32 @@ public class CryptoToolsTest {
     @Test
     void convert_base_tool_ignores_whitespace_on_stdin() throws IOException {
         verifyStdoutEquals(List.of("convert-base", "--from", "16", "--to", "58"), "  0000287fb4cd\n", "11233QC4\n");
+    }
+
+    @Test
+    void can_reseal_a_token_to_another_recipient() throws IOException {
+        String recipientPrivKeyStr = "GdgfBZzPDqrCVs5f1xaYJpXVGwJzgdTAF1NNWiDk16YZ";
+        String recipientPubKeyStr  = "AiUirFvFuLJ6s71QBNxiRcctB4umzM6r2roP4Rf8WDKM";
+
+        Path privKeyFile = pathInTemp("my-priv.txt");
+        Files.writeString(privKeyFile, TEST_PRIV_KEY);
+
+        var procOut = runMain(List.of(
+                "reseal",
+                TEST_TOKEN,
+                "--private-key-file",     absPathOf(privKeyFile),
+                "--recipient-public-key", recipientPubKeyStr,
+                "--expected-key-id",      TEST_TOKEN_KEY_ID,
+                "--key-id",               "some-recipient-key-id"));
+        assertEquals(0, procOut.exitCode());
+        assertEquals("", procOut.stdErr());
+        var resealedToken = procOut.stdOut().strip();
+
+        // Verify that the resealed token wraps the same secret as the original one
+        var recipientPrivKey = KeyUtils.fromBase58EncodedX25519PrivateKey(recipientPrivKeyStr);
+        var recvShared = SharedKeyGenerator.fromSealedKey(SealedSharedKey.fromTokenString(resealedToken), recipientPrivKey);
+        assertEquals(KeyId.ofString("some-recipient-key-id"), recvShared.sealedSharedKey().keyId());
+        assertEquals(TEST_TOKEN_SECRET, hex(recvShared.secretKey().getEncoded()));
     }
 
     @Test
@@ -310,10 +347,10 @@ public class CryptoToolsTest {
         procOut = runMain(List.of(
                 "decrypt",
                 absPathOf(encryptedPath),
-                "--output-file",                absPathOf(decryptedPath),
-                "--recipient-private-key-file", absPathOf(privPath),
-                "--key-id",                     "1234",
-                "--token",                      token
+                "--output-file",      absPathOf(decryptedPath),
+                "--private-key-file", absPathOf(privPath),
+                "--expected-key-id",  "1234",
+                "--token",            token
                 ));
         assertEquals(0, procOut.exitCode());
         assertEquals("", procOut.stdOut());
@@ -359,10 +396,10 @@ public class CryptoToolsTest {
         procOut = runMain(List.of(
                 "decrypt",
                 "-", // Decrypt stdin
-                "--output-file",                "-", // Plaintext to stdout
-                "--recipient-private-key-file", absPathOf(privPath),
-                "--key-id",                     "1234",
-                "--token",                      token
+                "--output-file",      "-", // Plaintext to stdout
+                "--private-key-file", absPathOf(privPath),
+                "--expected-key-id",  "1234",
+                "--token",            token
         ), Files.readAllBytes(encryptedPath));
 
         assertEquals(0, procOut.exitCode());
