@@ -92,7 +92,7 @@ SecretStore = element secret-store {
 }
 
 ZooKeeper = element zookeeper {
-    empty
+    attribute session-timeout-seconds { string }?
 }
 
 ModelEvaluation = element model-evaluation {
