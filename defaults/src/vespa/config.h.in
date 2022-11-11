@@ -1,0 +1,16 @@
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+
+#pragma once
+
+/*
+ * Defines what sanitizers are active.
+ * Defines if epoll or io_uring is available.
+ *
+ * @DO_NOT_EDIT_MESSAGE@
+ */
+#cmakedefine VESPA_USE_ADDRESS_SANITIZER
+#cmakedefine VESPA_USE_THREAD_SANITIZER
+#cmakedefine VESPA_USE_UNDEFINED_SANITIZER
+#cmakedefine VESPA_USE_SANITIZER
+#cmakedefine VESPA_HAS_EPOLL
+#cmakedefine VESPA_HAS_IO_URING
