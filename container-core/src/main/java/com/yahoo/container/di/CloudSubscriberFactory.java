@@ -1,6 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.container.di;
 
+import com.yahoo.concurrent.DaemonThreadFactory;
 import com.yahoo.config.ConfigInstance;
 import com.yahoo.config.subscription.ConfigSource;
 import com.yahoo.config.subscription.ConfigSourceSet;
@@ -15,6 +16,10 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.WeakHashMap;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.SynchronousQueue;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
 
 /**
  * @author Tony Vaagenes
@@ -24,11 +29,25 @@ public class CloudSubscriberFactory implements SubscriberFactory {
 
     private final ConfigSource configSource;
     private final Map<CloudSubscriber, Integer> activeSubscribers = new WeakHashMap<>();
+    private final ExecutorService executor;
 
     private Optional<Long> testGeneration = Optional.empty();
 
     public CloudSubscriberFactory(ConfigSource configSource) {
         this.configSource = configSource;
+        executor = new ThreadPoolExecutor(1, Integer.MAX_VALUE,
+                1, TimeUnit.SECONDS, new SynchronousQueue<>(),
+                new DaemonThreadFactory("cloud-subscriber-factory"));
+    }
+
+    @Override
+    public void close() {
+        executor.shutdown();
+        try {
+            if ( ! executor.awaitTermination(10, TimeUnit.SECONDS)) {
+                executor.shutdownNow();
+            }
+        } catch (InterruptedException e) { }
     }
 
     @Override
@@ -39,7 +58,7 @@ public class CloudSubscriberFactory implements SubscriberFactory {
             ConfigKey<ConfigInstance> invariant = (ConfigKey<ConfigInstance>) key;
             subscriptionKeys.add(invariant);
         }
-        CloudSubscriber subscriber = new CloudSubscriber(name, configSource, subscriptionKeys);
+        CloudSubscriber subscriber = new CloudSubscriber(executor, name, configSource, subscriptionKeys);
 
         testGeneration.ifPresent(subscriber.getSubscriber()::reload); // TODO: test specific code, remove
         activeSubscribers.put(subscriber, 0);

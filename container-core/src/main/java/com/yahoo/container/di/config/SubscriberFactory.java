@@ -16,5 +16,5 @@ public interface SubscriberFactory {
 
     Subscriber getSubscriber(Set<? extends ConfigKey<?>> configKeys, String name);
     void reloadActiveSubscribers(long generation);
-
+    void close();
 }

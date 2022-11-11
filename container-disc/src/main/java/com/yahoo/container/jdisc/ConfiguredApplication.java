@@ -452,6 +452,7 @@ public final class ConfiguredApplication implements Application {
         startAndStopServers(List.of());
         startAndRemoveClients(List.of());
         activateContainer(null, () -> log.info("Last active container generation has terminated"));
+        subscriberFactory.close();
         nonTerminatedContainerTracker.arriveAndAwaitAdvance();
     }
 
