@@ -138,7 +138,7 @@ public class EnforceDependenciesAllProjects implements EnforcerRule {
         if (node.getChildren() != null) {
             for (DependencyNode dep : node.getChildren()) {
                 Dependency dependency = Dependency.fromArtifact(dep.getArtifact());
-                if (!dependency.version().endsWith("SNAPSHOT") && !ignored.matcher(dependency.asString()).matches()) {
+                if (!ignored.matcher(dependency.asString()).matches()) {
                     dependencies.add(dependency);
                 }
                 addDependenciesRecursive(dep, dependencies, ignored);
