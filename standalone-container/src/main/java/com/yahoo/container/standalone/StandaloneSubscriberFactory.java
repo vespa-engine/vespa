@@ -126,4 +126,5 @@ public class StandaloneSubscriberFactory implements SubscriberFactory {
     private static Class<ConfigInstance> configClass(ConfigBuilder builder) {
         return (Class<ConfigInstance>) builder.getClass().getEnclosingClass();
     }
+    @Override public void close() {}
 }

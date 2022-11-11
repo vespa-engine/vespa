@@ -10,6 +10,9 @@ import com.yahoo.vespa.config.ConfigKey;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Future;
 import java.util.logging.Logger;
 
 import static java.util.logging.Level.FINE;
@@ -29,10 +32,16 @@ public class CloudSubscriber  implements Subscriber {
     // if waitNextGeneration has not yet been called, -1 should be returned
     private long generation = -1L;
 
-    CloudSubscriber(String name, ConfigSource configSource, Set<ConfigKey<ConfigInstance>> keys) {
+    CloudSubscriber(ExecutorService executor, String name, ConfigSource configSource, Set<ConfigKey<ConfigInstance>> keys) {
         this.name = name;
         this.subscriber = new ConfigSubscriber(configSource);
-        keys.forEach(k -> handles.put(k, subscriber.subscribe(k.getConfigClass(), k.getConfigId())));
+        Map<ConfigKey<ConfigInstance>, Future<ConfigHandle<ConfigInstance>>> futureHandles = new HashMap<>();
+        keys.forEach(k -> futureHandles.put(k, executor.submit(() -> subscriber.subscribe(k.getConfigClass(), k.getConfigId()))));
+        futureHandles.forEach((k, f) -> {
+            try {
+                handles.put(k, f.get());
+            } catch (InterruptedException | ExecutionException e) {}
+        });
     }
 
     @Override
