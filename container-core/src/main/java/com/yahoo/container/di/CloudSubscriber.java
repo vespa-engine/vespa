@@ -54,7 +54,7 @@ public class CloudSubscriber  implements Subscriber {
         return generation;
     }
 
-    //mapValues returns a view,, so we need to force evaluation of it here to prevent deferred evaluation.
+    //mapValues returns a view, so we need to force evaluation of it here to prevent deferred evaluation.
     @Override
     public Map<ConfigKey<ConfigInstance>, ConfigInstance> config() {
         Map<ConfigKey<ConfigInstance>, ConfigInstance> ret = new HashMap<>();
