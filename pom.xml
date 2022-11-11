@@ -127,6 +127,7 @@
         <module>vespaclient-container-plugin</module>
         <module>vespaclient-java</module>
         <module>vespa-athenz</module>
+        <module>vespa-dependencies-enforcer</module>
         <module>vespa-documentgen-plugin</module>
         <module>vespa-feed-client</module>
         <module>vespa-feed-client-api</module>
