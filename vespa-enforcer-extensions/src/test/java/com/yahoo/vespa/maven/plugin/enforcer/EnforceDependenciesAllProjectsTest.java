@@ -31,7 +31,7 @@ class EnforceDependenciesAllProjectsTest {
                 Dependency.fromString("com.example:foo:1.2.3"),
                 Dependency.fromString("com.example:bar:2.3.4")));
         Path specFile = Paths.get("src/test/resources/allowed-dependencies.txt");
-        assertDoesNotThrow(() -> validateDependencies(dependencies, specFile));
+        assertDoesNotThrow(() -> validateDependencies(dependencies, specFile, "my-dep-enforcer"));
     }
 
     @Test
@@ -42,13 +42,15 @@ class EnforceDependenciesAllProjectsTest {
                 Dependency.fromString("com.example:foobar:3.4.5")));
         Path specFile = Paths.get("src/test/resources/allowed-dependencies.txt");
         var exception = assertThrows(EnforcerRuleException.class,
-                                     () -> validateDependencies(dependencies, specFile));
+                                     () -> validateDependencies(dependencies, specFile, "my-dep-enforcer"));
         String expectedErrorMessage =
                 """
                 The dependency enforcer failed:
                 Forbidden dependencies:
                  - com.example:foobar:3.4.5
-                Maven dependency validation failed. To update dependency spec run 'mvn enforcer:enforce -DdependencyEnforcer.writeSpec'""";
+                Maven dependency validation failed. To update dependency spec execute following the command from root of aggregator pom:
+                $ mvn enforcer:enforce -DdependencyEnforcer.writeSpec -pl my-dep-enforcer
+                """;
         assertEquals(expectedErrorMessage, exception.getMessage());
     }
 
@@ -58,13 +60,15 @@ class EnforceDependenciesAllProjectsTest {
                 Dependency.fromString("com.example:foo:1.2.3")));
         Path specFile = Paths.get("src/test/resources/allowed-dependencies.txt");
         var exception = assertThrows(EnforcerRuleException.class,
-                                     () -> validateDependencies(dependencies, specFile));
+                                     () -> validateDependencies(dependencies, specFile, "my-dep-enforcer"));
         String expectedErrorMessage =
                 """
                 The dependency enforcer failed:
                 Removed dependencies:
                  - com.example:bar:2.3.4
-                Maven dependency validation failed. To update dependency spec run 'mvn enforcer:enforce -DdependencyEnforcer.writeSpec'""";
+                Maven dependency validation failed. To update dependency spec execute following the command from root of aggregator pom:
+                $ mvn enforcer:enforce -DdependencyEnforcer.writeSpec -pl my-dep-enforcer
+                """;
         assertEquals(expectedErrorMessage, exception.getMessage());
     }
 

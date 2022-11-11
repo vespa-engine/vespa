@@ -50,7 +50,7 @@ public class EnforceDependenciesAllProjects implements EnforcerRule {
             writeDependencySpec(specFile, dependencies);
             log.info("Updated spec file '%s'".formatted(specFile.toString()));
         } else {
-            validateDependencies(dependencies, specFile);
+            validateDependencies(dependencies, specFile, projectName(helper));
         }
         log.info("The dependency enforcer completed successfully");
     }
@@ -87,7 +87,7 @@ public class EnforceDependenciesAllProjects implements EnforcerRule {
         @Override public int compareTo(Dependency o) { return COMPARATOR.compare(this, o); }
     }
 
-    static void validateDependencies(SortedSet<Dependency> dependencies, Path specFile)
+    static void validateDependencies(SortedSet<Dependency> dependencies, Path specFile, String moduleName)
             throws EnforcerRuleException {
         SortedSet<Dependency> allowedDependencies = loadDependencySpec(specFile);
         SortedSet<Dependency> forbiddenDependencies = new TreeSet<>(dependencies);
@@ -105,10 +105,10 @@ public class EnforceDependenciesAllProjects implements EnforcerRule {
                 removeDependencies.forEach(d -> errorMsg.append(" - ").append(d.asString()).append('\n'));
             }
             throw new EnforcerRuleException(
-                    errorMsg.append("Maven dependency validation failed. To update dependency spec run " +
-                                            "'mvn enforcer:enforce -D")
-                            .append(WRITE_SPEC_PROP).append("'")
-                            .toString());
+                    errorMsg.append("Maven dependency validation failed. ")
+                            .append("To update dependency spec execute following the command from root of aggregator pom:\n")
+                            .append("$ mvn enforcer:enforce -D").append(WRITE_SPEC_PROP).append(" -pl ")
+                            .append(moduleName).append("\n").toString());
         }
     }
 
@@ -122,7 +122,12 @@ public class EnforceDependenciesAllProjects implements EnforcerRule {
             SortedSet<Dependency> dependencies = new TreeSet<>();
             MavenSession session = (MavenSession) helper.evaluate("${session}");
             var graphBuilder = helper.getComponent(DependencyGraphBuilder.class);
-            for (MavenProject project : session.getAllProjects()) {
+            List<MavenProject> projects = session.getAllProjects();
+            if (projects.size() == 1) {
+                throw new EnforcerRuleException(
+                        "Only a single Maven module detected. Enforcer must be executed from root of aggregator pom.");
+            }
+            for (MavenProject project : projects) {
                 var req = new DefaultProjectBuildingRequest(session.getProjectBuildingRequest());
                 req.setProject(project);
                 DependencyNode root = graphBuilder.buildDependencyGraph(req, null);
@@ -150,6 +155,15 @@ public class EnforceDependenciesAllProjects implements EnforcerRule {
         try {
             MavenProject project = (MavenProject) helper.evaluate("${project}");
             return Paths.get(project.getBasedir() + File.separator + specFile).normalize();
+        } catch (ExpressionEvaluationException e) {
+            throw new EnforcerRuleException(e.getMessage(), e);
+        }
+    }
+
+    private static String projectName(EnforcerRuleHelper helper) throws EnforcerRuleException {
+        try {
+            MavenProject p = (MavenProject) helper.evaluate("${project}");
+            return p.getModules().isEmpty() ? p.getName() : ".";
         } catch (ExpressionEvaluationException e) {
             throw new EnforcerRuleException(e.getMessage(), e);
         }
