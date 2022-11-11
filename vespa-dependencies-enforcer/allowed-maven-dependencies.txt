@@ -52,8 +52,6 @@ commons-cli:commons-cli:1.4
 commons-codec:commons-codec:1.15
 commons-fileupload:commons-fileupload:1.4
 commons-io:commons-io:2.11.0
-commons-io:commons-io:2.2
-commons-io:commons-io:2.6
 commons-logging:commons-logging:1.2
 io.airlift:aircompressor:0.21
 io.airlift:airline:0.9
