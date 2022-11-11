@@ -25,6 +25,44 @@
         <module>../vespa-enforcer-extensions</module>
     </modules>
 
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-enforcer-plugin</artifactId>
+                <inherited>false</inherited>
+                <dependencies>
+                    <dependency>
+                        <groupId>com.yahoo.vespa</groupId>
+                        <artifactId>vespa-enforcer-extensions</artifactId>
+                        <version>${project.version}</version>
+                    </dependency>
+                </dependencies>
+                <executions>
+                    <execution>
+                        <id>default-cli</id>
+                        <goals>
+                            <!-- To allow running 'mvn enforcer:enforce' from the command line -->
+                            <goal>enforce</goal>
+                        </goals>
+                        <configuration>
+                            <rules>
+                                <enforceDependencies implementation="com.yahoo.vespa.maven.plugin.enforcer.EnforceDependenciesAllProjects">
+                                    <specFile>allowed-maven-dependencies.txt</specFile>
+                                    <ignored>
+                                        <i>com.yahoo.vespa:*:*</i>
+                                        <i>ai.vespa:*:*</i>
+                                    </ignored>
+                                </enforceDependencies>
+                            </rules>
+                            <fail>true</fail>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
+    </build>
+
     <properties>
         <maven.deploy.skip>true</maven.deploy.skip>
         <maven.javadoc.skip>true</maven.javadoc.skip>
