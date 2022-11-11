@@ -89,6 +89,7 @@ public final class ApplicationContainerCluster extends ContainerCluster<Applicat
 
     private MbusParams mbusParams;
     private boolean messageBusEnabled = true;
+    private int zookeeperSessionTimeoutSeconds = 30;
     private final int transport_events_before_wakeup;
     private final int transport_connections_per_target;
     private final int heapSizePercentageOfTotalNodeMemory;
@@ -312,11 +313,11 @@ public final class ApplicationContainerCluster extends ContainerCluster<Applicat
 
     @Override
     public void getConfig(CuratorConfig.Builder builder) {
-        if (getParent() instanceof ConfigserverCluster) return; // Produces its own config
         super.getConfig(builder);
+        if (getParent() instanceof ConfigserverCluster) return; // Produces its own config
 
-        // 12s is 2x the current ZookeeperServerConfig.tickTime() of 6s, and the default minimum the server will accept.
-        builder.zookeeperSessionTimeoutSeconds(12); // TODO jonmv: make configurable
+        // Will be bounded by 2x and 20x ZookeeperServerConfig.tickTime(), which is currently 6s.
+        builder.zookeeperSessionTimeoutSeconds(zookeeperSessionTimeoutSeconds);
     }
 
     public Optional<String> getTlsClientAuthority() {
@@ -328,6 +329,10 @@ public final class ApplicationContainerCluster extends ContainerCluster<Applicat
     }
 
     public void setMessageBusEnabled(boolean messageBusEnabled) { this.messageBusEnabled = messageBusEnabled; }
+
+    public void setZookeeperSessionTimeoutSeconds(int timeoutSeconds) {
+        this.zookeeperSessionTimeoutSeconds = timeoutSeconds;
+    }
 
     protected boolean messageBusEnabled() { return messageBusEnabled; }
 

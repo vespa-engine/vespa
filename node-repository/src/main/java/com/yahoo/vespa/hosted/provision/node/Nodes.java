@@ -131,7 +131,7 @@ public class Nodes {
     /** Adds a list of newly created reserved nodes to the node repository */
     public List<Node> addReservedNodes(LockedNodeList nodes) {
         for (Node node : nodes) {
-            if ( node.flavor().getType() != Flavor.Type.DOCKER_CONTAINER)
+            if (node.flavor().getType() != Flavor.Type.DOCKER_CONTAINER)
                 illegal("Cannot add " + node + ": This is not a child node");
             if (node.allocation().isEmpty())
                 illegal("Cannot add " + node + ": Child nodes need to be allocated");

@@ -233,7 +233,9 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
     }
 
     private void addZooKeeper(ApplicationContainerCluster cluster, Element spec) {
-        if ( ! hasZooKeeper(spec)) return;
+        Element zooKeeper = getZooKeeper(spec);
+        if (zooKeeper == null) return;
+
         Element nodesElement = XML.getChild(spec, "nodes");
         boolean isCombined = nodesElement != null && nodesElement.hasAttribute("of");
         if (isCombined) {
@@ -247,6 +249,17 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
         }
         cluster.addSimpleComponent("com.yahoo.vespa.curator.Curator", null, "zkfacade");
         cluster.addSimpleComponent("com.yahoo.vespa.curator.CuratorWrapper", null, "zkfacade");
+        String sessionTimeoutSeconds = zooKeeper.getAttribute("session-timeout-seconds");
+        if ( ! sessionTimeoutSeconds.isBlank()) {
+            try {
+                int timeoutSeconds = Integer.parseInt(sessionTimeoutSeconds);
+                if (timeoutSeconds <= 0) throw new IllegalArgumentException("must be a positive value");
+                cluster.setZookeeperSessionTimeoutSeconds(timeoutSeconds);
+            }
+            catch (RuntimeException e) {
+                throw new IllegalArgumentException("invalid zookeeper session-timeout-seconds '" + sessionTimeoutSeconds + "'", e);
+            }
+        }
 
         // These need to be setup so that they will use the container's config id, since each container
         // have different config (id of zookeeper server)
@@ -806,7 +819,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
                                                                                   ClusterSpec.Type.container,
                                                                                   ClusterSpec.Id.from(cluster.getName()), 
                                                                                   log,
-                                                                                  hasZooKeeper(containerElement));
+                                                                                  getZooKeeper(containerElement) != null);
         return createNodesFromHosts(hosts, cluster, context.getDeployState());
     }
 
@@ -1036,8 +1049,8 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
                         ));
     }
 
-    private static boolean hasZooKeeper(Element spec) {
-        return XML.getChild(spec, "zookeeper") != null;
+    private static Element getZooKeeper(Element spec) {
+        return XML.getChild(spec, "zookeeper");
     }
 
     /** Disallow renderers named "XmlRenderer" or "JsonRenderer" */
