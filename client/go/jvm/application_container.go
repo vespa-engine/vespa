@@ -98,6 +98,7 @@ func (a *ApplicationContainer) configureMemory(qc *QrStartConfig) {
 	if validPercentage(jvm_heapSizeAsPercentageOfPhysicalMemory) && available.ToMB() > 500 {
 		available = adjustAvailableMemory(available)
 		jvm_heapsize = available.ToMB() * jvm_heapSizeAsPercentageOfPhysicalMemory / 100
+		jvm_minHeapsize = jvm_heapsize
 	}
 	if jvm_minHeapsize > jvm_heapsize {
 		trace.Warning(fmt.Sprintf(
