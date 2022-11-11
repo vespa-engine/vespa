@@ -41,8 +41,10 @@
                                 <enforceDependencies implementation="com.yahoo.vespa.maven.plugin.enforcer.EnforceDependenciesAllProjects">
                                     <specFile>allowed-maven-dependencies.txt</specFile>
                                     <ignored>
-                                        <i>com.yahoo.vespa:*:*</i>
                                         <i>ai.vespa:*:*</i>
+                                        <i>com.yahoo.vespa:*:*</i>
+                                        <i>com.yahoo.vespa.bundle-plugin:*:*</i>
+                                        <i>com.yahoo.vespa.jdisc_core:*:*</i>
                                     </ignored>
                                 </enforceDependencies>
                             </rules>
