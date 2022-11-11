@@ -17,6 +17,7 @@ import org.codehaus.plexus.component.repository.exception.ComponentLookupExcepti
 
 import java.io.File;
 import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -135,7 +136,7 @@ public class EnforceDependenciesAllProjects implements EnforcerRule {
             }
             return dependencies;
         } catch (ExpressionEvaluationException | DependencyGraphBuilderException | ComponentLookupException e) {
-            throw new EnforcerRuleException(e.getMessage(), e);
+            throw new RuntimeException(e.getMessage(), e);
         }
     }
 
@@ -151,26 +152,25 @@ public class EnforceDependenciesAllProjects implements EnforcerRule {
         }
     }
 
-    private static Path resolveSpecFile(EnforcerRuleHelper helper, String specFile) throws EnforcerRuleException {
+    private static Path resolveSpecFile(EnforcerRuleHelper helper, String specFile) {
         try {
             MavenProject project = (MavenProject) helper.evaluate("${project}");
             return Paths.get(project.getBasedir() + File.separator + specFile).normalize();
         } catch (ExpressionEvaluationException e) {
-            throw new EnforcerRuleException(e.getMessage(), e);
+            throw new RuntimeException(e.getMessage(), e);
         }
     }
 
-    private static String projectName(EnforcerRuleHelper helper) throws EnforcerRuleException {
+    private static String projectName(EnforcerRuleHelper helper) {
         try {
             MavenProject p = (MavenProject) helper.evaluate("${project}");
             return p.getModules().isEmpty() ? p.getName() : ".";
         } catch (ExpressionEvaluationException e) {
-            throw new EnforcerRuleException(e.getMessage(), e);
+            throw new RuntimeException(e.getMessage(), e);
         }
     }
 
-    static void writeDependencySpec(Path specFile, SortedSet<Dependency> dependencies)
-            throws EnforcerRuleException {
+    static void writeDependencySpec(Path specFile, SortedSet<Dependency> dependencies) {
         try (var out = Files.newBufferedWriter(specFile)) {
             out.write("# Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.\n");
             for (Dependency d : dependencies) {
@@ -178,18 +178,18 @@ public class EnforceDependenciesAllProjects implements EnforcerRule {
                 out.write('\n');
             }
         } catch (IOException e) {
-            throw new EnforcerRuleException(e.getMessage(), e);
+            throw new UncheckedIOException(e);
         }
     }
 
-    private static SortedSet<Dependency> loadDependencySpec(Path specFile) throws EnforcerRuleException {
+    private static SortedSet<Dependency> loadDependencySpec(Path specFile) {
         try {
             try (Stream<String> s = Files.lines(specFile)) {
                 return s.map(String::trim).filter(l -> !l.isEmpty() && !l.startsWith("#")).map(Dependency::fromString)
                         .collect(Collectors.toCollection(TreeSet::new));
             }
         } catch (IOException e) {
-            throw new EnforcerRuleException(e.getMessage(), e);
+            throw new UncheckedIOException(e);
         }
     }
 
