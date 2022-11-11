@@ -17,6 +17,7 @@ import org.codehaus.plexus.component.repository.exception.ComponentLookupExcepti
 
 import java.io.File;
 import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -50,7 +51,7 @@ public class EnforceDependenciesAllProjects implements EnforcerRule {
             writeDependencySpec(specFile, dependencies);
             log.info("Updated spec file '%s'".formatted(specFile.toString()));
         } else {
-            validateDependencies(dependencies, specFile);
+            validateDependencies(dependencies, specFile, projectName(helper));
         }
         log.info("The dependency enforcer completed successfully");
     }
@@ -87,7 +88,7 @@ public class EnforceDependenciesAllProjects implements EnforcerRule {
         @Override public int compareTo(Dependency o) { return COMPARATOR.compare(this, o); }
     }
 
-    static void validateDependencies(SortedSet<Dependency> dependencies, Path specFile)
+    static void validateDependencies(SortedSet<Dependency> dependencies, Path specFile, String moduleName)
             throws EnforcerRuleException {
         SortedSet<Dependency> allowedDependencies = loadDependencySpec(specFile);
         SortedSet<Dependency> forbiddenDependencies = new TreeSet<>(dependencies);
@@ -105,10 +106,10 @@ public class EnforceDependenciesAllProjects implements EnforcerRule {
                 removeDependencies.forEach(d -> errorMsg.append(" - ").append(d.asString()).append('\n'));
             }
             throw new EnforcerRuleException(
-                    errorMsg.append("Maven dependency validation failed. To update dependency spec run " +
-                                            "'mvn enforcer:enforce -D")
-                            .append(WRITE_SPEC_PROP).append("'")
-                            .toString());
+                    errorMsg.append("Maven dependency validation failed. ")
+                            .append("To update dependency spec execute following the command from root of aggregator pom:\n")
+                            .append("$ mvn enforcer:enforce -D").append(WRITE_SPEC_PROP).append(" -pl ")
+                            .append(moduleName).append("\n").toString());
         }
     }
 
@@ -122,7 +123,12 @@ public class EnforceDependenciesAllProjects implements EnforcerRule {
             SortedSet<Dependency> dependencies = new TreeSet<>();
             MavenSession session = (MavenSession) helper.evaluate("${session}");
             var graphBuilder = helper.getComponent(DependencyGraphBuilder.class);
-            for (MavenProject project : session.getAllProjects()) {
+            List<MavenProject> projects = session.getAllProjects();
+            if (projects.size() == 1) {
+                throw new EnforcerRuleException(
+                        "Only a single Maven module detected. Enforcer must be executed from root of aggregator pom.");
+            }
+            for (MavenProject project : projects) {
                 var req = new DefaultProjectBuildingRequest(session.getProjectBuildingRequest());
                 req.setProject(project);
                 DependencyNode root = graphBuilder.buildDependencyGraph(req, null);
@@ -130,7 +136,7 @@ public class EnforceDependenciesAllProjects implements EnforcerRule {
             }
             return dependencies;
         } catch (ExpressionEvaluationException | DependencyGraphBuilderException | ComponentLookupException e) {
-            throw new EnforcerRuleException(e.getMessage(), e);
+            throw new RuntimeException(e.getMessage(), e);
         }
     }
 
@@ -138,7 +144,7 @@ public class EnforceDependenciesAllProjects implements EnforcerRule {
         if (node.getChildren() != null) {
             for (DependencyNode dep : node.getChildren()) {
                 Dependency dependency = Dependency.fromArtifact(dep.getArtifact());
-                if (!dependency.version().endsWith("SNAPSHOT") && !ignored.matcher(dependency.asString()).matches()) {
+                if (!ignored.matcher(dependency.asString()).matches()) {
                     dependencies.add(dependency);
                 }
                 addDependenciesRecursive(dep, dependencies, ignored);
@@ -146,17 +152,25 @@ public class EnforceDependenciesAllProjects implements EnforcerRule {
         }
     }
 
-    private static Path resolveSpecFile(EnforcerRuleHelper helper, String specFile) throws EnforcerRuleException {
+    private static Path resolveSpecFile(EnforcerRuleHelper helper, String specFile) {
         try {
             MavenProject project = (MavenProject) helper.evaluate("${project}");
             return Paths.get(project.getBasedir() + File.separator + specFile).normalize();
         } catch (ExpressionEvaluationException e) {
-            throw new EnforcerRuleException(e.getMessage(), e);
+            throw new RuntimeException(e.getMessage(), e);
         }
     }
 
-    static void writeDependencySpec(Path specFile, SortedSet<Dependency> dependencies)
-            throws EnforcerRuleException {
+    private static String projectName(EnforcerRuleHelper helper) {
+        try {
+            MavenProject p = (MavenProject) helper.evaluate("${project}");
+            return p.getModules().isEmpty() ? p.getName() : ".";
+        } catch (ExpressionEvaluationException e) {
+            throw new RuntimeException(e.getMessage(), e);
+        }
+    }
+
+    static void writeDependencySpec(Path specFile, SortedSet<Dependency> dependencies) {
         try (var out = Files.newBufferedWriter(specFile)) {
             out.write("# Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.\n");
             for (Dependency d : dependencies) {
@@ -164,18 +178,18 @@ public class EnforceDependenciesAllProjects implements EnforcerRule {
                 out.write('\n');
             }
         } catch (IOException e) {
-            throw new EnforcerRuleException(e.getMessage(), e);
+            throw new UncheckedIOException(e);
         }
     }
 
-    private static SortedSet<Dependency> loadDependencySpec(Path specFile) throws EnforcerRuleException {
+    private static SortedSet<Dependency> loadDependencySpec(Path specFile) {
         try {
             try (Stream<String> s = Files.lines(specFile)) {
                 return s.map(String::trim).filter(l -> !l.isEmpty() && !l.startsWith("#")).map(Dependency::fromString)
                         .collect(Collectors.toCollection(TreeSet::new));
             }
         } catch (IOException e) {
-            throw new EnforcerRuleException(e.getMessage(), e);
+            throw new UncheckedIOException(e);
         }
     }
 
