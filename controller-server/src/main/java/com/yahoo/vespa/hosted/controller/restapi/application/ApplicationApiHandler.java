@@ -2941,7 +2941,7 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
 
         ApplicationPackage applicationPackage = new ApplicationPackage(dataParts.get(EnvironmentResource.APPLICATION_ZIP), true);
 
-        byte[] testPackage = dataParts.get(EnvironmentResource.APPLICATION_TEST_ZIP);
+        byte[] testPackage = dataParts.getOrDefault(EnvironmentResource.APPLICATION_TEST_ZIP, new byte[0]);
         Submission submission = new Submission(applicationPackage, testPackage, sourceUrl, sourceRevision, authorEmail, description, risk);
 
         controller.applications().verifyApplicationIdentityConfiguration(TenantName.from(tenant),

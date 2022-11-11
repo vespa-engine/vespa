@@ -1588,30 +1588,31 @@ public class DeploymentSpecTest {
 
     @Test
     public void cloudAccount() {
-        StringReader r = new StringReader(
-                "<deployment version='1.0' cloud-account='100000000000'>" +
-                "    <instance id='alpha'>" +
-                "      <prod cloud-account='800000000000'>" +
-                "          <region>us-east-1</region>" +
-                "      </prod>" +
-                "    </instance>" +
-                "    <instance id='beta' cloud-account='200000000000'>" +
-                "      <staging cloud-account='600000000000'/>" +
-                "      <perf cloud-account='700000000000'/>" +
-                "      <prod>" +
-                "          <region>us-west-1</region>" +
-                "      </prod>" +
-                "    </instance>" +
-                "    <instance id='main'>" +
-                "      <test cloud-account='500000000000'/>" +
-                "      <dev cloud-account='400000000000'/>" +
-                "      <prod>" +
-                "          <region cloud-account='300000000000'>us-east-1</region>" +
-                "          <region>eu-west-1</region>" +
-                "      </prod>" +
-                "    </instance>" +
-                "</deployment>"
-        );
+        String r =
+                """
+                <deployment version='1.0' cloud-account='100000000000'>
+                    <instance id='alpha'>
+                      <prod cloud-account='800000000000'>
+                          <region>us-east-1</region>
+                      </prod>
+                    </instance>
+                    <instance id='beta' cloud-account='200000000000'>
+                      <staging cloud-account='600000000000'/>
+                      <perf cloud-account='700000000000'/>
+                      <prod>
+                          <region>us-west-1</region>
+                      </prod>
+                    </instance>
+                    <instance id='main'>
+                      <test cloud-account='500000000000'/>
+                      <dev cloud-account='400000000000'/>
+                      <prod>
+                          <region cloud-account='300000000000'>us-east-1</region>
+                          <region>eu-west-1</region>
+                      </prod>
+                    </instance>
+                </deployment>
+                """;
         DeploymentSpec spec = DeploymentSpec.fromXml(r);
         assertEquals(Optional.of(new CloudAccount("100000000000")), spec.cloudAccount());
         assertCloudAccount("800000000000", spec.requireInstance("alpha"), Environment.prod, "us-east-1");
