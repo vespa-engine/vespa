@@ -1,8 +1,8 @@
 # Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 aopalliance:aopalliance:1.0
-com.fasterxml.jackson.core:jackson-annotations:2.13.4
-com.fasterxml.jackson.core:jackson-core:2.13.4
-com.fasterxml.jackson.core:jackson-databind:2.13.4.2
+com.fasterxml.jackson.core:jackson-annotations:2.14.0
+com.fasterxml.jackson.core:jackson-core:2.14.0
+com.fasterxml.jackson.core:jackson-databind:2.14.0
 com.google.errorprone:error_prone_annotations:2.2.0
 com.google.guava:failureaccess:1.0.1
 com.google.guava:guava:27.1-jre
