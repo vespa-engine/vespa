@@ -6,21 +6,21 @@ import com.yahoo.io.IOUtils;
 import com.yahoo.text.Utf8;
 import net.jpountz.xxhash.XXHash64;
 import net.jpountz.xxhash.XXHashFactory;
-
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.FilenameFilter;
 import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.attribute.BasicFileAttributes;
-import java.nio.file.attribute.FileTime;
-import java.time.Instant;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+
+import static com.yahoo.yolean.Exceptions.uncheck;
 
 public class FileDirectory  {
 
@@ -104,7 +104,7 @@ public class FileDirectory  {
     }
 
     // If there exists a directory for a file reference, but content does not have correct hash or the file we want to add
-    // does not exist in the directory, delete it
+    // does not exist in the directory, delete the directory
     private void verifyExistingFile(File source, Long hashOfFileToBeAdded) throws IOException {
         FileReference fileReference = fileReferenceFromHash(hashOfFileToBeAdded);
         File destinationDir = destinationDir(fileReference);
@@ -112,15 +112,10 @@ public class FileDirectory  {
 
         File existingFile = destinationDir.toPath().resolve(source.getName()).toFile();
         if ( ! existingFile.exists() || ! computeHash(existingFile).equals(hashOfFileToBeAdded)) {
-            log.log(Level.SEVERE, "Directory for file reference '" + fileReference.value() +
+            log.log(Level.WARNING, "Directory for file reference '" + fileReference.value() +
                     "' has content that does not match its hash, deleting everything in " +
                     destinationDir.getAbsolutePath());
             IOUtils.recursiveDeleteDir(destinationDir);
-        } else {
-            // Update last access time (used to keep track of when we can delete unused file references
-            // so update when adding and it already exists)
-            FileTime fileTime = FileTime.from(Instant.now());
-            Files.setAttribute(destinationDir.toPath(), "basic:lastAccessTime", fileTime);
         }
     }
 
@@ -132,35 +127,35 @@ public class FileDirectory  {
         return new FileReference(Long.toHexString(hash));
     }
 
+    // Pre-condition: Destination dir does not exist
     private FileReference addFile(File source, FileReference reference) {
         ensureRootExist();
+        Path tempDestinationDir = uncheck(() -> Files.createTempDirectory(root.toPath(), "writing"));
         try {
+            // Prepare and verify
             logfileInfo(source);
             File destinationDir = destinationDir(reference);
-            Path tempDestinationDir = Files.createTempDirectory(root.toPath(), "writing");
-            File destination = new File(tempDestinationDir.toFile(), source.getName());
-            if (!destinationDir.exists()) {
-                destinationDir.mkdir();
-                log.log(Level.FINE, () -> "file reference '" + reference.value() + "', source: " + source.getAbsolutePath() );
-                if (source.isDirectory()) {
-                    log.log(Level.FINE, () -> "Copying source " + source.getAbsolutePath() + " to " + destination.getAbsolutePath());
-                    IOUtils.copyDirectory(source, destination, -1);
-                } else {
-                    copyFile(source, destination);
-                }
-                if (!destinationDir.exists()) {
-                    log.log(Level.FINE, () -> "Moving from " + tempDestinationDir + " to " + destinationDir.getAbsolutePath());
-                    if ( ! tempDestinationDir.toFile().renameTo(destinationDir)) {
-                        log.log(Level.WARNING, "Failed moving '" + tempDestinationDir.toFile().getAbsolutePath() + "' to '" + destination.getAbsolutePath() + "'.");
-                    }
-                } else {
-                    IOUtils.copyDirectory(tempDestinationDir.toFile(), destinationDir, -1);
-                }
-            }
-            IOUtils.recursiveDeleteDir(tempDestinationDir.toFile());
+            File tempDestination = new File(tempDestinationDir.toFile(), source.getName());
+            if ( ! destinationDir.mkdir())
+                log.log(Level.WARNING, () -> "destination dir " + destinationDir + " already exists");
+
+            // Copy files
+            log.log(Level.FINE, () -> "Copying " + source.getAbsolutePath() + " to " + tempDestination.getAbsolutePath());
+            if (source.isDirectory())
+                IOUtils.copyDirectory(source, tempDestination, -1);
+            else
+                copyFile(source, tempDestination);
+
+            // Move to final destination
+            log.log(Level.FINE, () -> "Moving " + tempDestinationDir + " to " + destinationDir.getAbsolutePath());
+            if ( ! tempDestinationDir.toFile().renameTo(destinationDir))
+                log.log(Level.WARNING, "Failed moving '" + tempDestinationDir.toFile().getAbsolutePath() +
+                        "' to '" + tempDestination.getAbsolutePath() + "'.");
             return reference;
         } catch (IOException e) {
-            throw new IllegalArgumentException(e);
+            throw new UncheckedIOException(e);
+        } finally {
+            IOUtils.recursiveDeleteDir(tempDestinationDir.toFile());
         }
     }
 
