@@ -1,0 +1,15 @@
+usage: vespa-security reseal <token> <options>
+Reseals the input token for another recipient, allowing that recipient to
+decrypt the file that the input token was originally created for.
+Prints new token to STDOUT.
+ -e,--expected-key-id <arg>        Expected key ID in token. If this is
+                                   not provided, the key ID is not
+                                   verified.
+ -h,--help                         Show help
+ -i,--key-id <arg>                 ID of recipient key
+ -k,--private-key-file <arg>       Private key file in Base58 encoded
+                                   format
+ -r,--recipient-public-key <arg>   Recipient X25519 public key in Base58
+                                   encoded format
+Note: this is a BETA tool version; its interface may be changed at any
+time

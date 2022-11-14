@@ -46,7 +46,7 @@ public class EncryptTool implements Tool {
                     .longOpt(KEY_ID_OPTION)
                     .hasArg(true)
                     .required(false)
-                    .desc("Numeric ID of recipient key")
+                    .desc("ID of recipient key")
                     .build());
 
     @Override

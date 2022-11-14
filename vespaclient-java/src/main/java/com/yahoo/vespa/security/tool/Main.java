@@ -5,6 +5,7 @@ import com.yahoo.vespa.security.tool.crypto.ConvertBaseTool;
 import com.yahoo.vespa.security.tool.crypto.DecryptTool;
 import com.yahoo.vespa.security.tool.crypto.EncryptTool;
 import com.yahoo.vespa.security.tool.crypto.KeygenTool;
+import com.yahoo.vespa.security.tool.crypto.ResealTool;
 import com.yahoo.vespa.security.tool.crypto.TokenInfoTool;
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.CommandLineParser;
@@ -47,7 +48,7 @@ public class Main {
 
     private static final List<Tool> TOOLS = List.of(
             new KeygenTool(), new EncryptTool(), new DecryptTool(), new TokenInfoTool(),
-            new ConvertBaseTool());
+            new ConvertBaseTool(), new ResealTool());
 
     private static Optional<Tool> toolFromCliArgs(String[] args) {
         if (args.length == 0) {
