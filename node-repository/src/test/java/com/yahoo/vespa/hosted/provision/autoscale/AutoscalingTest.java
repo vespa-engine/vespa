@@ -305,29 +305,6 @@ public class AutoscalingTest {
     }
 
     @Test
-    public void content_prefers_local_disk_when_no_local_match() {
-        var resources = new ClusterResources( 2, 1, new NodeResources(3, 100, 50, 1));
-        var local  = new NodeResources(3, 100,  75, 1, fast, StorageType.local);
-        var remote = new NodeResources(3, 100,  50, 1, fast, StorageType.remote);
-        var fixture = AutoscalingTester.fixture()
-                                       .dynamicProvisioning(true)
-                                       .clusterType(ClusterSpec.Type.content)
-                                       .hostFlavors(local, remote)
-                                       .capacity(Capacity.from(resources))
-                                       .initialResources(Optional.of(new ClusterResources(3, 1, resources.nodeResources())))
-                                       .build();
-
-        fixture.tester().clock().advance(Duration.ofDays(2));
-        fixture.loader().applyLoad(new Load(0.01, 0.01, 0.01), 120);
-        Autoscaler.Advice suggestion = fixture.suggest();
-        fixture.tester().assertResources("Always prefers local disk for content",
-                                         2, 1, 3.0,  100.0, 75.0,
-                                         suggestion);
-        assertEquals("Always prefers local disk for content",
-                     StorageType.local, suggestion.target().get().nodeResources().storageType());
-    }
-
-    @Test
     public void suggestions_ignores_limits() {
         ClusterResources min = new ClusterResources( 2, 1, new NodeResources(1, 1, 1, 1));
         var fixture = AutoscalingTester.fixture().hostCount(20).capacity(Capacity.from(min, min)).build();
