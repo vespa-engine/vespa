@@ -19,6 +19,8 @@ import java.nio.file.attribute.BasicFileAttributes;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import static com.yahoo.yolean.Exceptions.uncheck;
+
 public class FileDirectory  {
 
     private static final Logger log = Logger.getLogger(FileDirectory.class.getName());
@@ -127,10 +129,10 @@ public class FileDirectory  {
     // Pre-condition: Destination dir does not exist
     private FileReference addFile(File source, FileReference reference) {
         ensureRootExist();
+        Path tempDestinationDir = uncheck(() -> Files.createTempDirectory(root.toPath(), "writing"));
         try {
             logfileInfo(source);
             File destinationDir = destinationDir(reference);
-            Path tempDestinationDir = Files.createTempDirectory(root.toPath(), "writing");
             File destination = new File(tempDestinationDir.toFile(), source.getName());
             if (!destinationDir.exists()) {
                 destinationDir.mkdir();
@@ -150,10 +152,11 @@ public class FileDirectory  {
                     IOUtils.copyDirectory(tempDestinationDir.toFile(), destinationDir, -1);
                 }
             }
-            IOUtils.recursiveDeleteDir(tempDestinationDir.toFile());
             return reference;
         } catch (IOException e) {
             throw new IllegalArgumentException(e);
+        } finally {
+            IOUtils.recursiveDeleteDir(tempDestinationDir.toFile());
         }
     }
 
