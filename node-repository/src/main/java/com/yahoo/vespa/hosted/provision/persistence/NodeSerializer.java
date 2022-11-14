@@ -19,6 +19,7 @@ import com.yahoo.config.provision.NodeFlavors;
 import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.config.provision.TenantName;
+import com.yahoo.config.provision.WireguardKey;
 import com.yahoo.config.provision.host.FlavorOverrides;
 import com.yahoo.config.provision.serialization.NetworkPortsSerializer;
 import com.yahoo.slime.ArrayTraverser;
@@ -100,6 +101,7 @@ public class NodeSerializer {
     private static final String switchHostnameKey = "switchHostname";
     private static final String trustedCertificatesKey = "trustedCertificates";
     private static final String cloudAccountKey = "cloudAccount";
+    private static final String wireguardPubKeyKey = "wireguardPubkey";
 
     // Node resource fields
     private static final String flavorKey = "flavor";
@@ -197,6 +199,7 @@ public class NodeSerializer {
         if (!node.cloudAccount().isUnspecified()) {
             object.setString(cloudAccountKey, node.cloudAccount().value());
         }
+        node.wireguardPubKey().ifPresent(pubKey -> object.setString(wireguardPubKeyKey, pubKey.value()));
     }
 
     private void toSlime(Flavor flavor, Cursor object) {
@@ -295,7 +298,8 @@ public class NodeSerializer {
                         SlimeUtils.optionalString(object.field(exclusiveToClusterTypeKey)).map(ClusterSpec.Type::from),
                         SlimeUtils.optionalString(object.field(switchHostnameKey)),
                         trustedCertificatesFromSlime(object),
-                        SlimeUtils.optionalString(object.field(cloudAccountKey)).map(CloudAccount::from).orElse(CloudAccount.empty));
+                        SlimeUtils.optionalString(object.field(cloudAccountKey)).map(CloudAccount::from).orElse(CloudAccount.empty),
+                        SlimeUtils.optionalString(object.field(wireguardPubKeyKey)).map(WireguardKey::from));
     }
 
     private Status statusFromSlime(Inspector object) {
