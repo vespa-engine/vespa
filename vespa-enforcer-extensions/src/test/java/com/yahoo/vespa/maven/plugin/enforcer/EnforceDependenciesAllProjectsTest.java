@@ -25,13 +25,15 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
  */
 class EnforceDependenciesAllProjectsTest {
 
+    private static final Path POM_FILE = Paths.get("/vespa-src/pom.xml");
+
     @Test
     void succeeds_dependencies_matches_spec() {
         SortedSet<Dependency> dependencies = new TreeSet<>(Set.of(
                 Dependency.fromString("com.example:foo:1.2.3"),
                 Dependency.fromString("com.example:bar:2.3.4")));
         Path specFile = Paths.get("src/test/resources/allowed-dependencies.txt");
-        assertDoesNotThrow(() -> validateDependencies(dependencies, specFile, "my-dep-enforcer"));
+        assertDoesNotThrow(() -> validateDependencies(dependencies, specFile, POM_FILE, "my-dep-enforcer"));
     }
 
     @Test
@@ -42,14 +44,14 @@ class EnforceDependenciesAllProjectsTest {
                 Dependency.fromString("com.example:foobar:3.4.5")));
         Path specFile = Paths.get("src/test/resources/allowed-dependencies.txt");
         var exception = assertThrows(EnforcerRuleException.class,
-                                     () -> validateDependencies(dependencies, specFile, "my-dep-enforcer"));
+                                     () -> validateDependencies(dependencies, specFile, POM_FILE, "my-dep-enforcer"));
         String expectedErrorMessage =
                 """
                 The dependency enforcer failed:
                 Forbidden dependencies:
                  - com.example:foobar:3.4.5
-                Maven dependency validation failed. To update dependency spec execute following the command from root of aggregator pom:
-                $ mvn enforcer:enforce -DdependencyEnforcer.writeSpec -pl my-dep-enforcer
+                Maven dependency validation failed. To update dependency spec run:
+                $ mvn validate -DdependencyEnforcer.writeSpec -pl my-dep-enforcer -f /vespa-src/pom.xml
                 """;
         assertEquals(expectedErrorMessage, exception.getMessage());
     }
@@ -60,20 +62,20 @@ class EnforceDependenciesAllProjectsTest {
                 Dependency.fromString("com.example:foo:1.2.3")));
         Path specFile = Paths.get("src/test/resources/allowed-dependencies.txt");
         var exception = assertThrows(EnforcerRuleException.class,
-                                     () -> validateDependencies(dependencies, specFile, "my-dep-enforcer"));
+                                     () -> validateDependencies(dependencies, specFile, POM_FILE, "my-dep-enforcer"));
         String expectedErrorMessage =
                 """
                 The dependency enforcer failed:
                 Removed dependencies:
                  - com.example:bar:2.3.4
-                Maven dependency validation failed. To update dependency spec execute following the command from root of aggregator pom:
-                $ mvn enforcer:enforce -DdependencyEnforcer.writeSpec -pl my-dep-enforcer
+                Maven dependency validation failed. To update dependency spec run:
+                $ mvn validate -DdependencyEnforcer.writeSpec -pl my-dep-enforcer -f /vespa-src/pom.xml
                 """;
         assertEquals(expectedErrorMessage, exception.getMessage());
     }
 
     @Test
-    void writes_valid_spec_file(@TempDir Path tempDir) throws EnforcerRuleException, IOException {
+    void writes_valid_spec_file(@TempDir Path tempDir) throws IOException {
         SortedSet<Dependency> dependencies = new TreeSet<>(Set.of(
                 Dependency.fromString("com.example:foo:1.2.3"),
                 Dependency.fromString("com.example:bar:2.3.4")));
