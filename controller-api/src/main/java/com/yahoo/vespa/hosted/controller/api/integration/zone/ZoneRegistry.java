@@ -110,7 +110,7 @@ public interface ZoneRegistry {
     /** IAM tenant developer role ARN */
     Optional<String> tenantDeveloperRoleArn(TenantName tenant);
 
-    /** Returns athenz domain tied to the given cloud account */
-    AthenzDomain cloudAccountAthenzDomain(CloudAccount cloudAccount);
+    /** Returns athenz domain tied to the given cloud account, if any */
+    Optional<AthenzDomain> cloudAccountAthenzDomain(CloudAccount cloudAccount);
 
 }
