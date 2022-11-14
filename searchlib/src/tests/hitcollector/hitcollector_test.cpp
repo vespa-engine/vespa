@@ -517,8 +517,11 @@ TEST("require that hits can be added out of order when passing array limit") {
         expRh.back()._docId = i;
         expRh.back()._rankValue = (i < 50) ? default_rank_value : (i + 100);
     }
-    // add results in reverse order
-    for (uint32_t i = numHits; i-- > 0; ) {
+    for (uint32_t i = 50; i < 150; ++i) {
+        hc.addHit(i, i + 100);
+    }
+    // only the overflowing doc is out of order
+    for (uint32_t i = 0; i < 50; ++i) {
         hc.addHit(i, i + 100);
     }
     std::unique_ptr<ResultSet> rs = hc.getResultSet();

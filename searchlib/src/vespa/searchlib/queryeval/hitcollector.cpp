@@ -106,6 +106,9 @@ HitCollector::RankedHitCollector::collectAndChangeCollector(uint32_t docId, feat
         for (uint32_t i = 0; i < iSize; ++i) {
             hc._docIdVector.push_back(hc._hits[i].first);
         }
+        if ((iSize > 0) && (docId < hc._docIdVector.back())) {
+            hc._unordered = true;
+        }
         hc._docIdVector.push_back(docId);
         newCollector = std::make_unique<DocIdCollector<true>>(hc);
     } else {
