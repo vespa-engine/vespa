@@ -21,8 +21,11 @@ import java.io.UncheckedIOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.ArrayDeque;
+import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.SortedSet;
@@ -40,6 +43,7 @@ public class EnforceDependenciesAllProjects implements EnforcerRule {
     private static final String NON_TEST_HEADER = "#[non-test]";
     private static final String TEST_ONLY_HEADER = "#[test-only]";
 
+    private String rootProjectId;
     private String specFile;
     private List<String> ignored = List.of();
     private List<String> testUtilProjects = List.of();
@@ -47,7 +51,7 @@ public class EnforceDependenciesAllProjects implements EnforcerRule {
     @Override
     public void execute(EnforcerRuleHelper helper) throws EnforcerRuleException {
         Log log = helper.getLog();
-        Dependencies deps = getDependenciesOfAllProjects(helper, ignored, testUtilProjects);
+        Dependencies deps = getDependenciesOfAllProjects(helper, ignored, testUtilProjects, rootProjectId);
         log.info("Found %d unique dependencies (%d non-test, %d test only)".formatted(
                 deps.nonTest().size() + deps.testOnly().size(), deps.nonTest().size(), deps.testOnly().size()));
         Path specFile = resolveSpecFile(helper, this.specFile);
@@ -61,6 +65,8 @@ public class EnforceDependenciesAllProjects implements EnforcerRule {
     }
 
     // Config injection for rule configuration. Method names must match config XML elements.
+    @SuppressWarnings("unused") public void setRootProjectId(String l) { this.rootProjectId = l; }
+    @SuppressWarnings("unused") public String getRootProjectId() { return rootProjectId; }
     @SuppressWarnings("unused") public void setSpecFile(String f) { this.specFile = f; }
     @SuppressWarnings("unused") public String getSpecFile() { return specFile; }
     @SuppressWarnings("unused") public void setIgnored(List<String> l) { this.ignored = l; }
@@ -129,7 +135,7 @@ public class EnforceDependenciesAllProjects implements EnforcerRule {
     }
 
     private static Dependencies getDependenciesOfAllProjects(EnforcerRuleHelper helper, List<String> ignored,
-                                                             List<String> testUtilProjects)
+                                                             List<String> testUtilProjects, String rootProjectId)
             throws EnforcerRuleException {
         try {
             Pattern depIgnorePattern = Pattern.compile(
@@ -144,7 +150,7 @@ public class EnforceDependenciesAllProjects implements EnforcerRule {
             SortedSet<Dependency> testDeps = new TreeSet<>();
             MavenSession session = mavenSession(helper);
             var graphBuilder = helper.getComponent(DependencyGraphBuilder.class);
-            List<MavenProject> projects = session.getAllProjects();
+            List<MavenProject> projects = getAllProjects(session, rootProjectId);
             if (projects.size() == 1) {
                 throw new EnforcerRuleException(
                         "Only a single Maven module detected. Enforcer must be executed from root of aggregator pom.");
@@ -153,7 +159,7 @@ public class EnforceDependenciesAllProjects implements EnforcerRule {
                 var req = new DefaultProjectBuildingRequest(session.getProjectBuildingRequest());
                 req.setProject(project);
                 DependencyNode root = graphBuilder.buildDependencyGraph(req, null);
-                String projectId = "%s:%s".formatted(project.getGroupId(), project.getArtifactId());
+                String projectId = projectIdOf(project);
                 boolean overrideToTest = projectIgnorePattern.matcher(projectId).matches();
                 if (overrideToTest) helper.getLog().info("Treating dependencies of '%s' as 'test'".formatted(projectId));
                 addDependenciesRecursive(root, nonTestDeps, testDeps, depIgnorePattern, overrideToTest);
@@ -163,6 +169,46 @@ public class EnforceDependenciesAllProjects implements EnforcerRule {
         } catch (DependencyGraphBuilderException | ComponentLookupException e) {
             throw new RuntimeException(e.getMessage(), e);
         }
+    }
+
+    private static String projectIdOf(MavenProject project) { return "%s:%s".formatted(project.getGroupId(), project.getArtifactId()); }
+
+    /** Only return the projects we'd like to enforce dependencies for: the root project, its modules, their modules, etc. */
+    private static List<MavenProject> getAllProjects(MavenSession session, String rootProjectId) throws EnforcerRuleException {
+        if (rootProjectId == null) throw new EnforcerRuleException("Missing required <rootProjectId> in <enforceDependencies> in pom.xml");
+
+        MavenProject rootProject = session.getProjects()
+                                          .stream()
+                                          .filter(project -> rootProjectId.equals(projectIdOf(project)))
+                                          .findAny()
+                                          .orElseThrow(() -> new EnforcerRuleException("Root project not found: " + rootProjectId));
+
+        Map<Path, MavenProject> projectsByBaseDir = session
+                .getProjects()
+                .stream()
+                .collect(Collectors.toMap(project -> project.getBasedir().toPath().normalize(), project -> project));
+
+        var projects = new ArrayList<MavenProject>();
+
+        var pendingProjects = new ArrayDeque<MavenProject>();
+        pendingProjects.add(rootProject);
+
+        while (!pendingProjects.isEmpty()) {
+            MavenProject project = pendingProjects.pop();
+            projects.add(project);
+
+            for (var module : project.getModules()) {
+                // Assumption: The module is a relative path to a project base directory.
+                Path moduleBaseDir = project.getBasedir().toPath().resolve(module).normalize();
+                MavenProject moduleProject = projectsByBaseDir.get(moduleBaseDir);
+                if (moduleProject == null)
+                    throw new EnforcerRuleException("Failed to find module '" + module + "' in project " + project.getBasedir());
+                pendingProjects.add(moduleProject);
+            }
+        }
+
+        projects.sort(Comparator.comparing(EnforceDependenciesAllProjects::projectIdOf));
+        return projects;
     }
 
     private static void addDependenciesRecursive(
