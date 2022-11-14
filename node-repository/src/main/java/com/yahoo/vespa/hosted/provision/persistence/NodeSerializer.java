@@ -194,7 +194,7 @@ public class NodeSerializer {
         node.exclusiveToApplicationId().ifPresent(applicationId -> object.setString(exclusiveToApplicationIdKey, applicationId.serializedForm()));
         node.exclusiveToClusterType().ifPresent(clusterType -> object.setString(exclusiveToClusterTypeKey, clusterType.name()));
         trustedCertificatesToSlime(node.trustedCertificates(), object.setArray(trustedCertificatesKey));
-        if (!node.cloudAccount().isEmpty()) {
+        if (!node.cloudAccount().isUnspecified()) {
             object.setString(cloudAccountKey, node.cloudAccount().value());
         }
     }
@@ -295,7 +295,7 @@ public class NodeSerializer {
                         SlimeUtils.optionalString(object.field(exclusiveToClusterTypeKey)).map(ClusterSpec.Type::from),
                         SlimeUtils.optionalString(object.field(switchHostnameKey)),
                         trustedCertificatesFromSlime(object),
-                        SlimeUtils.optionalString(object.field(cloudAccountKey)).map(CloudAccount::new).orElse(CloudAccount.empty));
+                        SlimeUtils.optionalString(object.field(cloudAccountKey)).map(CloudAccount::from).orElse(CloudAccount.empty));
     }
 
     private Status statusFromSlime(Inspector object) {

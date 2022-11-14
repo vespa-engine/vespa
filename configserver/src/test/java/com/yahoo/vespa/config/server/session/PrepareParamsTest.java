@@ -210,7 +210,7 @@ public class PrepareParamsTest {
     public void testCloudAccount() {
         String json = "{\"cloudAccount\": {\"id\": \"012345678912\"}}";
         PrepareParams params = PrepareParams.fromJson(json.getBytes(StandardCharsets.UTF_8), TenantName.defaultName(), Duration.ZERO);
-        assertEquals(new CloudAccount("012345678912"), params.cloudAccount().get());
+        assertEquals(CloudAccount.from("012345678912"), params.cloudAccount().get());
     }
 
     private void assertPrepareParamsEqual(PrepareParams urlParams, PrepareParams jsonParams) {

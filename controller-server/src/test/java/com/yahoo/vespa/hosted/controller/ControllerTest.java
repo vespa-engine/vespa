@@ -56,7 +56,6 @@ import org.junit.jupiter.api.Test;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Collection;
-import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -1306,14 +1305,14 @@ public class ControllerTest {
                .abortJob(stagingTest);
 
         // Deployment to prod succeeds once all zones are configured in requested account
-        tester.controllerTester().zoneRegistry().configureCloudAccount(new CloudAccount(cloudAccount),
+        tester.controllerTester().zoneRegistry().configureCloudAccount(CloudAccount.from(cloudAccount),
                                                                        systemTest.zone(),
                                                                        stagingTest.zone(),
                                                                        prodZone);
         context.submit(applicationPackage).deploy();
 
         // Dev zone is added as a configured zone and deployment succeeds
-        tester.controllerTester().zoneRegistry().configureCloudAccount(new CloudAccount(cloudAccount), devZone);
+        tester.controllerTester().zoneRegistry().configureCloudAccount(CloudAccount.from(cloudAccount), devZone);
         context.runJob(devZone, applicationPackage);
 
         // All deployments use the custom account
@@ -1322,6 +1321,33 @@ public class ControllerTest {
                                              .cloudAccount(context.deploymentIdIn(zoneId))
                                              .get().value());
         }
+    }
+
+    @Test
+    void testCloudAccountWithDefaultOverride() {
+        var context = tester.newDeploymentContext();
+        var prodZone1 = productionUsEast3.zone();
+        var prodZone2 = productionUsWest1.zone();
+        var cloudAccount = "012345678912";
+        var application = new ApplicationPackageBuilder()
+                .cloudAccount(cloudAccount)
+                .region(prodZone1.region())
+                .region(prodZone2.region(), "default")
+                .build();
+
+        // Allow use of custom account (test, staging and zone 1)
+        tester.controllerTester().flagSource().withListFlag(PermanentFlags.CLOUD_ACCOUNTS.id(), List.of(cloudAccount), String.class);
+
+        // Deployment to prod succeeds once all zones are configured in requested account
+        tester.controllerTester().zoneRegistry().configureCloudAccount(CloudAccount.from(cloudAccount),
+                systemTest.zone(),
+                stagingTest.zone(),
+                prodZone1);
+
+        context.submit(application).deploy();
+
+        assertEquals(cloudAccount, tester.controllerTester().configServer().cloudAccount(context.deploymentIdIn(prodZone1)).get().value());
+        assertEquals(Optional.empty(), tester.controllerTester().configServer().cloudAccount(context.deploymentIdIn(prodZone2)));
     }
 
     @Test

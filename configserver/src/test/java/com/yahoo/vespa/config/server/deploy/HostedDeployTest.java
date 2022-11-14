@@ -512,7 +512,7 @@ public class HostedDeployTest {
 
     @Test
     public void testRedeployWithCloudAccount() {
-        CloudAccount cloudAccount = new CloudAccount("012345678912");
+        CloudAccount cloudAccount = CloudAccount.from("012345678912");
         DeployTester tester = new DeployTester.Builder(temporaryFolder)
                 .modelFactory(createHostedModelFactory(Version.fromString("4.5.6"), Clock.systemUTC()))
                 .build();

@@ -339,7 +339,7 @@ public class OsVersionsTest {
         var versions = new OsVersions(tester.nodeRepository(), Cloud.builder()
                                                                     .dynamicProvisioning(true)
                                                                     .name(CloudName.AWS)
-                                                                    .account(new CloudAccount("000000000000"))
+                                                                    .account(CloudAccount.from("000000000000"))
                                                                     .build(), Integer.MAX_VALUE);
 
         provisionInfraApplication(hostCount, infraApplication, NodeType.host, NodeResources.StorageType.remote);

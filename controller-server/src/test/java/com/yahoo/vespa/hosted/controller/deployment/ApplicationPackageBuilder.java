@@ -173,6 +173,16 @@ public class ApplicationPackageBuilder {
         return this;
     }
 
+    public ApplicationPackageBuilder region(RegionName regionName, String cloudAccount) {
+        prodBody.append("      <region ")
+                .append("cloud-account=\"")
+                .append(cloudAccount)
+                .append("\">")
+                .append(regionName)
+                .append("</region>\n");
+        return this;
+    }
+
     public ApplicationPackageBuilder region(RegionName regionName, boolean active) {
         prodBody.append("      <region active='")
                 .append(active)

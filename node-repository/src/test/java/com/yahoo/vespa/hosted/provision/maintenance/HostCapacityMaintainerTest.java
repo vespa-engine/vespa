@@ -506,7 +506,7 @@ public class HostCapacityMaintainerTest {
         // Deployment requests capacity in custom account
         ClusterSpec spec = ProvisioningTester.contentClusterSpec();
         ClusterResources resources = new ClusterResources(2, 1, new NodeResources(16, 24, 100, 1));
-        CloudAccount cloudAccount0 = new CloudAccount("000000000000");
+        CloudAccount cloudAccount0 = CloudAccount.from("000000000000");
         Capacity capacity0 = Capacity.from(resources, resources, false, true, Optional.of(cloudAccount0));
         List<HostSpec> prepared = provisioningTester.prepare(applicationId, spec, capacity0);
 
@@ -516,7 +516,7 @@ public class HostCapacityMaintainerTest {
         NodeList allNodes0 = tester.nodeRepository.nodes().list();
 
         // Redeployment in different account provisions a new set of hosts
-        CloudAccount cloudAccount1 = new CloudAccount("100000000000");
+        CloudAccount cloudAccount1 = CloudAccount.from("100000000000");
         Capacity capacity1 = Capacity.from(resources, resources, false, true, Optional.of(cloudAccount1));
         prepared = provisioningTester.prepare(applicationId, spec, capacity1);
         provisionHostsIn(cloudAccount1, 2, tester);

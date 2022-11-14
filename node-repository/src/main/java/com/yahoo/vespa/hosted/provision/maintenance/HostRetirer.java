@@ -45,7 +45,7 @@ public class HostRetirer extends NodeRepositoryMaintainer {
                                               .not().deprovisioning();
         List<CloudAccount> cloudAccounts = candidates.stream()
                                                      .map(Node::cloudAccount)
-                                                     .filter(cloudAccount -> !cloudAccount.isEmpty())
+                                                     .filter(cloudAccount -> !cloudAccount.isUnspecified())
                                                      .distinct()
                                                      .collect(Collectors.toList());
         Map<String, List<HostEvent>> eventsByHostId = hostProvisioner.hostEventsIn(cloudAccounts).stream()

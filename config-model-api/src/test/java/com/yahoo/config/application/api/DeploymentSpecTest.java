@@ -1601,6 +1601,7 @@ public class DeploymentSpecTest {
                       <perf cloud-account='700000000000'/>
                       <prod>
                           <region>us-west-1</region>
+                          <region cloud-account='default'>us-west-2</region>
                       </prod>
                     </instance>
                     <instance id='main'>
@@ -1614,7 +1615,7 @@ public class DeploymentSpecTest {
                 </deployment>
                 """;
         DeploymentSpec spec = DeploymentSpec.fromXml(r);
-        assertEquals(Optional.of(new CloudAccount("100000000000")), spec.cloudAccount());
+        assertEquals(Optional.of(CloudAccount.from("100000000000")), spec.cloudAccount());
         assertCloudAccount("800000000000", spec.requireInstance("alpha"), Environment.prod, "us-east-1");
         assertCloudAccount("200000000000", spec.requireInstance("beta"), Environment.prod, "us-west-1");
         assertCloudAccount("600000000000", spec.requireInstance("beta"), Environment.staging, "");
@@ -1625,10 +1626,11 @@ public class DeploymentSpecTest {
         assertCloudAccount("400000000000", spec.requireInstance("main"), Environment.dev, "");
         assertCloudAccount("500000000000", spec.requireInstance("main"), Environment.test, "");
         assertCloudAccount("100000000000", spec.requireInstance("main"), Environment.staging, "");
+        assertCloudAccount("default", spec.requireInstance("beta"), Environment.prod, "us-west-2");
     }
 
     private void assertCloudAccount(String expected, DeploymentInstanceSpec instance, Environment environment, String region) {
-        assertEquals(Optional.of(expected).map(CloudAccount::new), instance.cloudAccount(environment, Optional.of(region).filter(s -> !s.isEmpty()).map(RegionName::from)));
+        assertEquals(Optional.of(expected).map(CloudAccount::from), instance.cloudAccount(environment, Optional.of(region).filter(s -> !s.isEmpty()).map(RegionName::from)));
     }
 
     private static void assertInvalid(String deploymentSpec, String errorMessagePart) {

@@ -148,7 +148,7 @@ public class DeploymentSpecXmlReader {
                                   optionalIntegerAttribute(majorVersionAttribute, root),
                                   stringAttribute(athenzDomainAttribute, root).map(AthenzDomain::from),
                                   stringAttribute(athenzServiceAttribute, root).map(AthenzService::from),
-                                  stringAttribute(cloudAccountAttribute, root).map(CloudAccount::new),
+                                  stringAttribute(cloudAccountAttribute, root).map(CloudAccount::from),
                                   applicationEndpoints,
                                   xmlForm,
                                   deprecatedElements);
@@ -186,7 +186,7 @@ public class DeploymentSpecXmlReader {
         int maxIdleHours = getWithFallback(instanceElement, parentTag, upgradeTag, "max-idle-hours", Integer::parseInt, 8);
         List<DeploymentSpec.ChangeBlocker> changeBlockers = readChangeBlockers(instanceElement, parentTag);
         Optional<AthenzService> athenzService = mostSpecificAttribute(instanceElement, athenzServiceAttribute).map(AthenzService::from);
-        Optional<CloudAccount> cloudAccount = mostSpecificAttribute(instanceElement, cloudAccountAttribute).map(CloudAccount::new);
+        Optional<CloudAccount> cloudAccount = mostSpecificAttribute(instanceElement, cloudAccountAttribute).map(CloudAccount::from);
         Notifications notifications = readNotifications(instanceElement, parentTag);
 
         // Values where there is no default
@@ -448,7 +448,7 @@ public class DeploymentSpecXmlReader {
     }
 
     private Optional<CloudAccount> readCloudAccount(Element tag) {
-        return mostSpecificAttribute(tag, cloudAccountAttribute).map(CloudAccount::new);
+        return mostSpecificAttribute(tag, cloudAccountAttribute).map(CloudAccount::from);
     }
 
     private Optional<String> readGlobalServiceId(Element environmentTag) {

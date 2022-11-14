@@ -326,7 +326,7 @@ public class LoadBalancerProvisionerTest {
         assertEquals(cloudAccount0, loadBalancers.first().get().instance().get().cloudAccount());
 
         // Changing account fails if there is an existing LB in the previous account.
-        CloudAccount cloudAccount1 = new CloudAccount("111111111111");
+        CloudAccount cloudAccount1 = CloudAccount.from("111111111111");
         Capacity capacity = Capacity.from(resources, resources, false, true, Optional.of(cloudAccount1));
         try {
             prepare(app1, capacity, clusterRequest(ClusterSpec.Type.container, ClusterSpec.Id.from("c1")));
