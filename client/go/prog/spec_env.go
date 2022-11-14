@@ -22,31 +22,30 @@ func (p *Spec) Getenv(k string) string {
 }
 
 func (spec *Spec) effectiveEnv() []string {
-	env := make(map[string]string)
-	for _, entry := range os.Environ() {
-		addInMap := func(kv string) bool {
-			for idx, elem := range kv {
-				if elem == '=' {
-					k := kv[:idx]
-					env[k] = kv
-					return true
-				}
+	envMap := make(map[string]string)
+	addToMap := func(kv string) {
+		for idx, elem := range kv {
+			if elem == '=' {
+				k := kv[:idx]
+				envMap[k] = kv
+				return
 			}
-			return false
 		}
-		if !addInMap(entry) {
-			env[entry] = ""
-		}
+		trace.Trace("invalid entry in os.Environ():", kv)
+		envMap[kv] = kv
+	}
+	for _, entry := range os.Environ() {
+		addToMap(entry)
 	}
 	for k, v := range spec.Env {
 		trace.Trace("add to environment:", k, "=", v)
-		env[k] = k + "=" + v
+		envMap[k] = k + "=" + v
 	}
-	envv := make([]string, 0, len(env))
-	for _, v := range env {
-		envv = append(envv, v)
+	envVec := make([]string, 0, len(envMap))
+	for _, val := range envMap {
+		envVec = append(envVec, val)
 	}
-	return envv
+	return envVec
 }
 
 func (spec *Spec) considerFallback(varName, varValue string) {

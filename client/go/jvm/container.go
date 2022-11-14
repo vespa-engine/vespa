@@ -4,7 +4,11 @@
 package jvm
 
 import (
+	"fmt"
+	"strings"
+
 	"github.com/vespa-engine/vespa/client/go/prog"
+	"github.com/vespa-engine/vespa/client/go/trace"
 	"github.com/vespa-engine/vespa/client/go/util"
 )
 
@@ -34,6 +38,14 @@ func (cb *containerBase) ConfigId() string {
 	return cb.configId
 }
 
+func readableEnv(env map[string]string) string {
+	var buf strings.Builder
+	for k, v := range env {
+		fmt.Fprintf(&buf, " %s=%s", k, v)
+	}
+	return buf.String()
+}
+
 func (cb *containerBase) Exec() {
 	argv := make([]string, 0, 100)
 	argv = append(argv, "java")
@@ -42,7 +54,9 @@ func (cb *containerBase) Exec() {
 	}
 	p := prog.NewSpec(argv)
 	p.ConfigureNumaCtl()
-	exportEnvSettings(cb, p)
+	cb.exportEnvSettings(p)
+	trace.Info("starting container; env:", readableEnv(p.Env))
+	trace.Info("starting container; exec:", argv)
 	err := p.Run()
 	util.JustExitWith(err)
 }

@@ -26,7 +26,7 @@ const (
 	MALLOC_ARENA_MAX   = util.ENV_MALLOC_ARENA_MAX
 )
 
-func exportEnvSettings(c *containerBase, ps *prog.Spec) {
+func (c *containerBase) exportEnvSettings(ps *prog.Spec) {
 	vespaHome := defaults.VespaHome()
 	vlt := fmt.Sprintf("file:%s/logs/vespa/vespa.log", vespaHome)
 	lcd := fmt.Sprintf("%s/var/db/vespa/logcontrol", vespaHome)
