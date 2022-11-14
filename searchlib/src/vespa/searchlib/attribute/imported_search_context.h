@@ -43,7 +43,7 @@ class ImportedSearchContext : public ISearchContext {
     SearchContextParams                             _params;
     mutable std::atomic<bool>                       _zero_hits;
 
-    static constexpr uint32_t MIN_TARGET_HITS_FOR_APPROXIMATION = 100;
+    static constexpr uint32_t MIN_TARGET_HITS_FOR_APPROXIMATION = 50;
 
     uint32_t getTargetLid(uint32_t lid) const {
         // Check range to avoid reading memory beyond end of mapping array
