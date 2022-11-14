@@ -110,7 +110,7 @@ public class CuratorWrapper extends AbstractComponent implements VespaCurator {
     @Override
     public void register(SingletonWorker singleton, Duration timeout) {
         try {
-            await(singletons.register(singleton.id(), singleton), timeout, "register " + singleton);
+            await(singletons.register(singleton.id(), singleton), timeout, "registering " + singleton);
         }
         catch (RuntimeException e) {
             try {
@@ -125,7 +125,7 @@ public class CuratorWrapper extends AbstractComponent implements VespaCurator {
 
     @Override
     public void unregister(SingletonWorker singleton, Duration timeout) {
-        await(singletons.unregister(singleton), timeout, "unregister " + singleton);
+        await(singletons.unregister(singleton), timeout, "unregistering " + singleton);
     }
 
     private void await(Future<?> future, Duration timeout, String action) {
@@ -141,7 +141,7 @@ public class CuratorWrapper extends AbstractComponent implements VespaCurator {
             throw new UncheckedTimeoutException("timed out while " + action, e);
         }
         catch (ExecutionException e) {
-            throw new RuntimeException("failed to " + action, e.getCause());
+            throw new RuntimeException("failed " + action, e.getCause());
         }
     }
 

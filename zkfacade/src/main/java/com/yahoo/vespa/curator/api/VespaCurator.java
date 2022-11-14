@@ -98,6 +98,29 @@ public interface VespaCurator {
      * containers in the cluster, and across all component generations.
      * <p>
      * <br>
+     * Notes to implementors:
+     * <ul>
+     *     <li>{@link #activate()} is called by the system on a singleton whenever it is the newest registered
+     *          singleton in this container, and this container has the lease for the ID with which the singleton
+     *          was registered. See {@link #id}, {@link #register} and {@link #isActive}.</li>
+     *     <li>{@link #deactivate()} is called by the system on a singleton which is currently active whenever
+     *         the above no longer holds. See {@link #unregister}.</li>
+     *     <li>Callbacks for the same ID are always invoked by the same thread, in serial; <strong>the callbacks must
+     *         return in a timely manner</strong>, but are encouraged to throw exceptions when something's wrong.</li>
+     *     <li>Activation and deactivation may be triggered by:
+     *         <ol>
+     *             <li>the container acquiring or losing the activation lease; or</li>
+     *             <li>registration of unregistration of a new or obsolete singleton.</li>
+     *         </ol>
+     *         Events triggered by the latter happen synchronously, and errors are propagated to the caller for cleanup.
+     *         Events triggered by the former may happen in the background, and because the system tries to always have
+     *         one activated singleton, exceptions during activation will cause the container to abandon its lease, so
+     *         another container may obtain it instead; exceptions during deactivation are only logged.
+     *     </li>
+     *     <li>A container without any registered singletons will not attempt to hold the activation lease.</li>
+     * </ul>
+     * <p>
+     * <br>
      * Sample usage:
      * <pre>
      * public class SingletonHolder extends AbstractComponent {
@@ -129,7 +152,8 @@ public interface VespaCurator {
      *
      *     &#064;Override
      *     public void activate() {
-     *         resource.open(); // Verify resource works here, and propagate any errors out.
+     *         try { resource.open(5, TimeUnit.SECONDS); } // Verify resource works here, and propagate any errors out.
+     *         catch (Exception e) { resource.close(); throw new RuntimeException("failed opening " + resource, e); }
      *         running.set(true);
      *         future = executor.submit(this::doWork);
      *     }
@@ -137,7 +161,7 @@ public interface VespaCurator {
      *     &#064;Override
      *     public void deactivate() {
      *         running.set(false);
-     *         try { future.get(10, TimeUnit.SECONDS); }
+     *         try { future.get(5, TimeUnit.SECONDS); }
      *         catch (Exception e) { ... }
      *         finally { resource.close(); }
      *     }
@@ -152,29 +176,6 @@ public interface VespaCurator {
      *
      * }
      * </pre>
-     * <p>
-     * <br>
-     * Notes to implementors:
-     * <ul>
-     *     <li>{@link #activate()} is called by the system on a singleton whenever it is the newest registered
-     *          singleton in this container, and this container has the lease for the ID with which the singleton
-     *          was registered. See {@link #id}, {@link #register} and {@link #isActive}.</li>
-     *     <li>{@link #deactivate()} is called by the system on a singleton which is currently active whenever
-     *         the above no longer holds. See {@link #unregister}.</li>
-     *     <li>Callbacks for the same ID are always invoked by the same thread, in serial; the callbacks must
-     *         return in a timely manner, but are encouraged to throw exceptions when something's wrong</li>
-     *     <li>Activation and deactivation may be triggered by:
-     *         <ol>
-     *             <li>the container acquiring or losing the activation lease; or</li>
-     *             <li>registration of unregistration of a new or obsolete singleton.</li>
-     *         </ol>
-     *         Events triggered by the latter happen synchronously, and errors are propagated to the caller for cleanup.
-     *         Events triggered by the former may happen in the background, and because the system tries to always have
-     *         one activated singleton, exceptions during activation will cause the container to abandon its lease, so
-     *         another container may obtain it instead; exceptions during deactivation are only logged.
-     *     </li>
-     *     <li>A container without any registered singletons will not attempt to hold the activation lease.</li>
-     * </ul>
      */
     interface SingletonWorker {
 
