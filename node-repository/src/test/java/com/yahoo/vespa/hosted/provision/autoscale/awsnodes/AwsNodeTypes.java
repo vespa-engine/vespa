@@ -2,7 +2,9 @@
 package com.yahoo.vespa.hosted.provision.autoscale.awsnodes;
 
 import com.yahoo.config.provision.Flavor;
+import com.yahoo.config.provision.NodeResources;
 
+import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
 
@@ -104,10 +106,14 @@ public class AwsNodeTypes {
                 new VespaFlavor("i4i_16xlarge", 64.0, 64.0, 512.0, 498.0, 15000.0, 10.0, fast, local, x86_64),
                 new VespaFlavor("i4i_32xlarge", 128.0, 128.0, 1024.0, 996.0, 30000.0, 10.0, fast, local, x86_64));
 
-    public static List<VespaFlavor> asVespaFlavors() { return hostFlavors; }
+    public static List<VespaFlavor> asVespaFlavors() { return sorted(hostFlavors); }
 
     public static List<Flavor> asFlavors() {
-        return hostFlavors.stream().map(f -> toFlavor(f)).toList();
+        return sorted(hostFlavors).stream().map(f -> toFlavor(f)).toList();
+    }
+
+    private static List<VespaFlavor> sorted(List<VespaFlavor> flavors) {
+        return flavors.stream().sorted(Comparator.comparing(n -> n.realResources().storageType() == NodeResources.StorageType.local ? 0 : 1)).toList();
     }
 
     private static Flavor toFlavor(VespaFlavor vespaFlavor) {
