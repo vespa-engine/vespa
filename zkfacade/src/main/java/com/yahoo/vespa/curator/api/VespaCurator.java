@@ -153,7 +153,7 @@ public interface VespaCurator {
      *     &#064;Override
      *     public void activate() {
      *         try { resource.open(5, TimeUnit.SECONDS); } // Verify resource works here, and propagate any errors out.
-     *         catch {Exception e) { resource.close(); throw new RuntimeException("failed opening " + resource, e); }
+     *         catch (Exception e) { resource.close(); throw new RuntimeException("failed opening " + resource, e); }
      *         running.set(true);
      *         future = executor.submit(this::doWork);
      *     }
