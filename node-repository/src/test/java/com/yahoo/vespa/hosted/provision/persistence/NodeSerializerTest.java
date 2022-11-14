@@ -492,7 +492,7 @@ public class NodeSerializerTest {
 
     @Test
     public void cloud_account_serialization() {
-        CloudAccount account = new CloudAccount("012345678912");
+        CloudAccount account = CloudAccount.from("012345678912");
         Node node = Node.create("id", "host1.example.com", nodeFlavors.getFlavorOrThrow("default"), State.provisioned, NodeType.host)
                         .cloudAccount(account)
                         .exclusiveToApplicationId(ApplicationId.defaultId())

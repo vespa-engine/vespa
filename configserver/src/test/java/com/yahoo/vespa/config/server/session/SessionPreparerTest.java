@@ -348,7 +348,7 @@ public class SessionPreparerTest {
         TestModelFactory modelFactory = new TestModelFactory(version123);
         preparer = createPreparer(new ModelFactoryRegistry(List.of(modelFactory)), HostProvisionerProvider.empty());
         ApplicationId applicationId = applicationId("test");
-        CloudAccount expected = new CloudAccount("012345678912");
+        CloudAccount expected = CloudAccount.from("012345678912");
         PrepareParams params = new PrepareParams.Builder().applicationId(applicationId)
                                                           .cloudAccount(expected)
                                                           .build();

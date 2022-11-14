@@ -15,8 +15,8 @@ public class CloudAccount extends PatternedStringWrapper<CloudAccount> {
     public static final CloudAccount empty = new CloudAccount("");
     public static final CloudAccount default_ = new CloudAccount("default");
 
-    public CloudAccount(String value) {
-        super(value, Pattern.compile("^([0-9]{12}|default)?$"), "cloud account");
+    private CloudAccount(String value) {
+        super(value, Pattern.compile("^([0-9]{12})?$"), "cloud account");
     }
 
     public boolean isEmpty() {
@@ -24,6 +24,13 @@ public class CloudAccount extends PatternedStringWrapper<CloudAccount> {
     }
 
     public boolean isDefault() { return this.equals(default_); }
+
+    public static CloudAccount from(String cloudAccount) {
+        return switch (cloudAccount) {
+            case "" -> empty;
+            default -> new CloudAccount(cloudAccount);
+        };
+    }
 
     @Override
     public String toString() {

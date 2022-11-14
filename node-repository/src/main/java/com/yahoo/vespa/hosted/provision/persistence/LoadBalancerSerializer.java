@@ -101,7 +101,7 @@ public class LoadBalancerSerializer {
         Optional<DomainName> hostname = optionalString(object.field(hostnameField), Function.identity()).filter(s -> !s.isEmpty()).map(DomainName::of);
         Optional<String> ipAddress = optionalString(object.field(lbIpAddressField), Function.identity()).filter(s -> !s.isEmpty());
         Optional<DnsZone> dnsZone = optionalString(object.field(dnsZoneField), DnsZone::new);
-        CloudAccount cloudAccount = optionalString(object.field(cloudAccountField), CloudAccount::new).orElse(CloudAccount.empty);
+        CloudAccount cloudAccount = optionalString(object.field(cloudAccountField), CloudAccount::from).orElse(CloudAccount.empty);
         Optional<LoadBalancerInstance> instance = hostname.isEmpty() && ipAddress.isEmpty() ? Optional.empty() :
                 Optional.of(new LoadBalancerInstance(hostname, ipAddress, dnsZone, ports, networks, reals, cloudAccount));
 

@@ -28,7 +28,7 @@ class CloudAccountChangeValidatorTest {
     @Test
     public void validate() {
         VespaModel model0 = model(provisioned(capacity(CloudAccount.empty)));
-        VespaModel model1 = model(provisioned(capacity(new CloudAccount("000000000000"))));
+        VespaModel model1 = model(provisioned(capacity(CloudAccount.from("000000000000"))));
 
         CloudAccountChangeValidator validator = new CloudAccountChangeValidator();
         try {

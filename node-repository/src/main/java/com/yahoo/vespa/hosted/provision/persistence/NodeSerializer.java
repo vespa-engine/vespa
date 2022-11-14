@@ -295,7 +295,7 @@ public class NodeSerializer {
                         SlimeUtils.optionalString(object.field(exclusiveToClusterTypeKey)).map(ClusterSpec.Type::from),
                         SlimeUtils.optionalString(object.field(switchHostnameKey)),
                         trustedCertificatesFromSlime(object),
-                        SlimeUtils.optionalString(object.field(cloudAccountKey)).map(CloudAccount::new).orElse(CloudAccount.empty));
+                        SlimeUtils.optionalString(object.field(cloudAccountKey)).map(CloudAccount::from).orElse(CloudAccount.empty));
     }
 
     private Status statusFromSlime(Inspector object) {

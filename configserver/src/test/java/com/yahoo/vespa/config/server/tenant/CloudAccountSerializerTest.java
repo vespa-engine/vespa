@@ -15,7 +15,7 @@ public class CloudAccountSerializerTest {
 
     @Test
     public void serialization() {
-        CloudAccount account = new CloudAccount("012345678912");
+        CloudAccount account = CloudAccount.from("012345678912");
         assertEquals(account, fromSlime(toSlime(account).get()));
     }
 

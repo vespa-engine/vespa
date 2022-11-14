@@ -683,7 +683,7 @@ public class ApplicationController {
         TenantName tenant = deployment.applicationId().tenant();
         Set<CloudAccount> tenantAccounts = cloudAccountsFlag.with(FetchVector.Dimension.TENANT_ID, tenant.value())
                                                             .value().stream()
-                                                            .map(CloudAccount::new)
+                                                            .map(CloudAccount::from)
                                                             .collect(Collectors.toSet());
         if (!tenantAccounts.contains(requestedAccount.get())) {
             throw new IllegalArgumentException("Requested cloud account '" + requestedAccount.get().value() +

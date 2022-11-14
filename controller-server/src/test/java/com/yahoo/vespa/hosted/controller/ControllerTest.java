@@ -56,7 +56,6 @@ import org.junit.jupiter.api.Test;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Collection;
-import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -1306,14 +1305,14 @@ public class ControllerTest {
                .abortJob(stagingTest);
 
         // Deployment to prod succeeds once all zones are configured in requested account
-        tester.controllerTester().zoneRegistry().configureCloudAccount(new CloudAccount(cloudAccount),
+        tester.controllerTester().zoneRegistry().configureCloudAccount(CloudAccount.from(cloudAccount),
                                                                        systemTest.zone(),
                                                                        stagingTest.zone(),
                                                                        prodZone);
         context.submit(applicationPackage).deploy();
 
         // Dev zone is added as a configured zone and deployment succeeds
-        tester.controllerTester().zoneRegistry().configureCloudAccount(new CloudAccount(cloudAccount), devZone);
+        tester.controllerTester().zoneRegistry().configureCloudAccount(CloudAccount.from(cloudAccount), devZone);
         context.runJob(devZone, applicationPackage);
 
         // All deployments use the custom account
@@ -1340,7 +1339,7 @@ public class ControllerTest {
         tester.controllerTester().flagSource().withListFlag(PermanentFlags.CLOUD_ACCOUNTS.id(), List.of(cloudAccount), String.class);
 
         // Deployment to prod succeeds once all zones are configured in requested account
-        tester.controllerTester().zoneRegistry().configureCloudAccount(new CloudAccount(cloudAccount),
+        tester.controllerTester().zoneRegistry().configureCloudAccount(CloudAccount.from(cloudAccount),
                 systemTest.zone(),
                 stagingTest.zone(),
                 prodZone1);

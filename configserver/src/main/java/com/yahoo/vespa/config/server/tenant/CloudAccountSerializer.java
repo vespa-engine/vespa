@@ -16,7 +16,7 @@ public class CloudAccountSerializer {
     private CloudAccountSerializer() {}
 
     public static CloudAccount fromSlime(Inspector object) {
-        return new CloudAccount(object.field(ID_FIELD).asString());
+        return CloudAccount.from(object.field(ID_FIELD).asString());
     }
 
     public static Slime toSlime(CloudAccount account) {
