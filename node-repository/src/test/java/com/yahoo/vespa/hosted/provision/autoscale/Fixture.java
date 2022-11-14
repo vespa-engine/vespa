@@ -126,7 +126,7 @@ public class Fixture {
         ClusterSpec cluster = ClusterSpec.request(ClusterSpec.Type.content, ClusterSpec.Id.from("cluster1")).vespaVersion("7").build();
         Zone zone = new Zone(Environment.prod, RegionName.from("us-east"));
         List<Flavor> hostFlavors = List.of(new Flavor(new NodeResources(100, 100, 100, 1)));
-        Optional<ClusterResources> initialResources = Optional.of(new ClusterResources(5, 1, new NodeResources(3, 10, 100, 1)));
+        Optional<ClusterResources> initialResources = Optional.of(new ClusterResources(5, 1, new NodeResources(2, 16, 75, 1)));
         Capacity capacity = Capacity.from(new ClusterResources(2, 1,
                                                                new NodeResources(1, 1, 1, 1, NodeResources.DiskSpeed.any)),
                                           new ClusterResources(20, 1,
