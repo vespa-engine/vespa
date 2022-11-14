@@ -37,7 +37,7 @@ public class AthenzIdentities {
             throw new IllegalArgumentException("Invalid Athenz identity: " + fullName);
         }
         AthenzDomain domain = new AthenzDomain(fullName.substring(0, domainIdentityNameSeparatorIndex));
-        String identityName = fullName.substring(domainIdentityNameSeparatorIndex + 1, fullName.length());
+        String identityName = fullName.substring(domainIdentityNameSeparatorIndex + 1);
         return from(domain, identityName);
     }
 

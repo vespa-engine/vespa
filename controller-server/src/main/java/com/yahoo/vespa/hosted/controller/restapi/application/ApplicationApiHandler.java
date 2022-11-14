@@ -1869,7 +1869,7 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
         controller.applications().decideCloudAccountOf(deploymentId, application.deploymentSpec()).ifPresent(cloudAccount -> {
             Cursor enclave = response.setObject("enclave");
             enclave.setString("cloudAccount", cloudAccount.value());
-            enclave.setString("athensDomain", controller.zoneRegistry().cloudAccountAthenzDomain(cloudAccount).value());
+            controller.zoneRegistry().cloudAccountAthenzDomain(cloudAccount).ifPresent(domain -> enclave.setString("athensDomain", domain.value()));
         });
 
         var instance = application.instances().get(deploymentId.applicationId().instance());

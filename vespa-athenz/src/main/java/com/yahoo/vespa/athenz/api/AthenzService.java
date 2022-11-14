@@ -24,11 +24,10 @@ public class AthenzService implements AthenzIdentity {
 
     public AthenzService(String fullName) {
         AthenzIdentity identity = AthenzIdentities.from(fullName);
-        if (!(identity instanceof AthenzService)) {
+        if ( ! (identity instanceof AthenzService service)) {
             throw new IllegalArgumentException(String.format("'%s' is not an Athenz service", fullName));
         }
-        AthenzService service = (AthenzService) identity;
-        this.domain = service.getDomain();
+        this.domain = service.domain;
         this.serviceName = service.serviceName;
     }
 

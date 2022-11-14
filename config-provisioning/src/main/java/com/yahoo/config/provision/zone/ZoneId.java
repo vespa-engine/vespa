@@ -8,7 +8,7 @@ import java.util.Objects;
 
 /**
  * Unique identifier for a Zone; use when referencing them.
- *
+ * <p>
  * Serialised form is 'environment.region'.
  *
  * @author jonmv
