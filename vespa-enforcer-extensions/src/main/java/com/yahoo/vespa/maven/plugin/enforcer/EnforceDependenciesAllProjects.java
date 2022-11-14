@@ -37,21 +37,25 @@ import java.util.stream.Stream;
 public class EnforceDependenciesAllProjects implements EnforcerRule {
 
     private static final String WRITE_SPEC_PROP = "dependencyEnforcer.writeSpec";
+    private static final String NON_TEST_HEADER = "#[non-test]";
+    private static final String TEST_ONLY_HEADER = "#[test-only]";
 
     private String specFile;
-    private List<String> ignored;
+    private List<String> ignored = List.of();
+    private List<String> testUtilProjects = List.of();
 
     @Override
     public void execute(EnforcerRuleHelper helper) throws EnforcerRuleException {
         Log log = helper.getLog();
-        SortedSet<Dependency> dependencies = getDependenciesOfAllProjects(helper, ignored);
-        log.info("Found %d unique dependencies".formatted(dependencies.size()));
+        Dependencies deps = getDependenciesOfAllProjects(helper, ignored, testUtilProjects);
+        log.info("Found %d unique dependencies (%d non-test, %d test only)".formatted(
+                deps.nonTest().size() + deps.testOnly().size(), deps.nonTest().size(), deps.testOnly().size()));
         Path specFile = resolveSpecFile(helper, this.specFile);
         if (System.getProperties().containsKey(WRITE_SPEC_PROP)) {
-            writeDependencySpec(specFile, dependencies);
+            writeDependencySpec(specFile, deps);
             log.info("Updated spec file '%s'".formatted(specFile.toString()));
         } else {
-            validateDependencies(dependencies, specFile, aggregatorPomRoot(helper), projectName(helper));
+            validateDependencies(deps, specFile, aggregatorPomRoot(helper), projectName(helper));
         }
         log.info("The dependency enforcer completed successfully");
     }
@@ -61,6 +65,8 @@ public class EnforceDependenciesAllProjects implements EnforcerRule {
     @SuppressWarnings("unused") public String getSpecFile() { return specFile; }
     @SuppressWarnings("unused") public void setIgnored(List<String> l) { this.ignored = l; }
     @SuppressWarnings("unused") public List<String> getIgnored() { return ignored; }
+    @SuppressWarnings("unused") public void setTestUtilProjects(List<String> l) { this.testUtilProjects = l; }
+    @SuppressWarnings("unused") public List<String> getTestUtilProjects() { return testUtilProjects; }
 
     record Dependency(String groupId, String artifactId, String version, Optional<String> classifier)
             implements Comparable<Dependency> {
@@ -88,24 +94,16 @@ public class EnforceDependenciesAllProjects implements EnforcerRule {
         @Override public int compareTo(Dependency o) { return COMPARATOR.compare(this, o); }
     }
 
-    static void validateDependencies(SortedSet<Dependency> dependencies, Path specFile, Path aggregatorPomRoot,
+    record Dependencies(SortedSet<Dependency> nonTest, SortedSet<Dependency> testOnly) {}
+
+    static void validateDependencies(Dependencies dependencies, Path specFile, Path aggregatorPomRoot,
                                      String moduleName)
             throws EnforcerRuleException {
-        SortedSet<Dependency> allowedDependencies = loadDependencySpec(specFile);
-        SortedSet<Dependency> forbiddenDependencies = new TreeSet<>(dependencies);
-        forbiddenDependencies.removeAll(allowedDependencies);
-        SortedSet<Dependency> removeDependencies = new TreeSet<>(allowedDependencies);
-        removeDependencies.removeAll(dependencies);
-        if (!forbiddenDependencies.isEmpty() || !removeDependencies.isEmpty()) {
+        Dependencies allowedDependencies = loadDependencySpec(specFile);
+        if (!allowedDependencies.equals(dependencies)) {
             StringBuilder errorMsg = new StringBuilder("The dependency enforcer failed:\n");
-            if (!forbiddenDependencies.isEmpty()) {
-                errorMsg.append("Forbidden dependencies:\n");
-                forbiddenDependencies.forEach(d -> errorMsg.append(" - ").append(d.asString()).append('\n'));
-            }
-            if (!removeDependencies.isEmpty()) {
-                errorMsg.append("Removed dependencies:\n");
-                removeDependencies.forEach(d -> errorMsg.append(" - ").append(d.asString()).append('\n'));
-            }
+            generateDiff(errorMsg, "non-test", dependencies.nonTest(), allowedDependencies.nonTest());
+            generateDiff(errorMsg, "test-only", dependencies.testOnly(), allowedDependencies.testOnly());
             throw new EnforcerRuleException(
                     errorMsg.append("Maven dependency validation failed. ")
                             .append("If this change was intentional, update the dependency spec by running:\n")
@@ -114,14 +112,36 @@ public class EnforceDependenciesAllProjects implements EnforcerRule {
         }
     }
 
-    private static SortedSet<Dependency> getDependenciesOfAllProjects(EnforcerRuleHelper helper, List<String> ignored)
+    static void generateDiff(
+            StringBuilder errorMsg, String label, SortedSet<Dependency> actual, SortedSet<Dependency> expected) {
+        SortedSet<Dependency> forbidden = new TreeSet<>(actual);
+        forbidden.removeAll(expected);
+        SortedSet<Dependency> removed = new TreeSet<>(expected);
+        removed.removeAll(actual);
+        if (!forbidden.isEmpty()) {
+            errorMsg.append("Forbidden ").append(label).append(" dependencies:\n");
+            forbidden.forEach(d -> errorMsg.append(" - ").append(d.asString()).append('\n'));
+        }
+        if (!removed.isEmpty()) {
+            errorMsg.append("Removed ").append(label).append(" dependencies:\n");
+            removed.forEach(d -> errorMsg.append(" - ").append(d.asString()).append('\n'));
+        }
+    }
+
+    private static Dependencies getDependenciesOfAllProjects(EnforcerRuleHelper helper, List<String> ignored,
+                                                             List<String> testUtilProjects)
             throws EnforcerRuleException {
         try {
-            Pattern ignorePattern = Pattern.compile(
+            Pattern depIgnorePattern = Pattern.compile(
                     ignored.stream()
                             .map(s -> s.replace(".", "\\.").replace("*", ".*").replace(":", "\\:").replace('?', '.'))
                             .collect(Collectors.joining(")|(", "^(", ")$")));
-            SortedSet<Dependency> dependencies = new TreeSet<>();
+            Pattern projectIgnorePattern = Pattern.compile(
+                    testUtilProjects.stream()
+                            .map(s -> s.replace(".", "\\.").replace("*", ".*").replace(":", "\\:").replace('?', '.'))
+                            .collect(Collectors.joining(")|(", "^(", ")$")));
+            SortedSet<Dependency> nonTestDeps = new TreeSet<>();
+            SortedSet<Dependency> testDeps = new TreeSet<>();
             MavenSession session = mavenSession(helper);
             var graphBuilder = helper.getComponent(DependencyGraphBuilder.class);
             List<MavenProject> projects = session.getAllProjects();
@@ -133,22 +153,33 @@ public class EnforceDependenciesAllProjects implements EnforcerRule {
                 var req = new DefaultProjectBuildingRequest(session.getProjectBuildingRequest());
                 req.setProject(project);
                 DependencyNode root = graphBuilder.buildDependencyGraph(req, null);
-                addDependenciesRecursive(root, dependencies, ignorePattern);
+                String projectId = "%s:%s".formatted(project.getGroupId(), project.getArtifactId());
+                boolean overrideToTest = projectIgnorePattern.matcher(projectId).matches();
+                if (overrideToTest) helper.getLog().info("Treating dependencies of '%s' as 'test'".formatted(projectId));
+                addDependenciesRecursive(root, nonTestDeps, testDeps, depIgnorePattern, overrideToTest);
             }
-            return dependencies;
+            testDeps.removeAll(nonTestDeps);
+            return new Dependencies(nonTestDeps, testDeps);
         } catch (DependencyGraphBuilderException | ComponentLookupException e) {
             throw new RuntimeException(e.getMessage(), e);
         }
     }
 
-    private static void addDependenciesRecursive(DependencyNode node, Set<Dependency> dependencies, Pattern ignored) {
+    private static void addDependenciesRecursive(
+            DependencyNode node, Set<Dependency> nonTestDeps, Set<Dependency> testDeps, Pattern ignored,
+            boolean overrideToTest) {
         if (node.getChildren() != null) {
             for (DependencyNode dep : node.getChildren()) {
-                Dependency dependency = Dependency.fromArtifact(dep.getArtifact());
+                Artifact a = dep.getArtifact();
+                Dependency dependency = Dependency.fromArtifact(a);
                 if (!ignored.matcher(dependency.asString()).matches()) {
-                    dependencies.add(dependency);
+                    if (a.getScope().equals("test") || overrideToTest) {
+                        testDeps.add(dependency);
+                    } else {
+                        nonTestDeps.add(dependency);
+                    }
                 }
-                addDependenciesRecursive(dep, dependencies, ignored);
+                addDependenciesRecursive(dep, nonTestDeps, testDeps, ignored, overrideToTest);
             }
         }
     }
@@ -182,27 +213,41 @@ public class EnforceDependenciesAllProjects implements EnforcerRule {
         }
     }
 
-    static void writeDependencySpec(Path specFile, SortedSet<Dependency> dependencies) {
+    static void writeDependencySpec(Path specFile, Dependencies dependencies) {
         try (var out = Files.newBufferedWriter(specFile)) {
-            out.write("# Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.\n");
-            for (Dependency d : dependencies) {
-                out.write(d.asString());
-                out.write('\n');
+            out.write("# Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.\n\n");
+            out.write(NON_TEST_HEADER); out.write('\n');
+            out.write("# Contains dependencies that are not used exclusively in 'test' scope\n");
+            for (Dependency d : dependencies.nonTest()) {
+                out.write(d.asString()); out.write('\n');
+            }
+            out.write("\n"); out.write(TEST_ONLY_HEADER); out.write('\n');
+            out.write("# Contains dependencies that are used exclusively in 'test' scope\n");
+            for (Dependency d : dependencies.testOnly()) {
+                out.write(d.asString()); out.write('\n');
             }
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }
     }
 
-    private static SortedSet<Dependency> loadDependencySpec(Path specFile) {
+    private static Dependencies loadDependencySpec(Path specFile) {
         try {
+            List<String> lines;
             try (Stream<String> s = Files.lines(specFile)) {
-                return s.map(String::trim).filter(l -> !l.isEmpty() && !l.startsWith("#")).map(Dependency::fromString)
-                        .collect(Collectors.toCollection(TreeSet::new));
+                lines = s.map(String::trim).filter(l -> !l.isEmpty()).toList();
             }
+            SortedSet<Dependency> nonTest = parseDependencies(lines.stream().takeWhile(l -> !l.equals(TEST_ONLY_HEADER)));
+            SortedSet<Dependency> testOnly = parseDependencies(lines.stream().dropWhile(l -> !l.equals(TEST_ONLY_HEADER)));
+            return new Dependencies(nonTest, testOnly);
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }
+    }
+
+    private static SortedSet<Dependency> parseDependencies(Stream<String> lines) {
+        return lines.filter(l -> !l.startsWith("#")).map(Dependency::fromString)
+                .collect(Collectors.toCollection(TreeSet::new));
     }
 
     // Mark rule as not cachable
