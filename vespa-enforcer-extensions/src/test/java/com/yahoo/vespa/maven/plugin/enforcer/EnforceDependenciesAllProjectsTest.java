@@ -50,7 +50,7 @@ class EnforceDependenciesAllProjectsTest {
                 The dependency enforcer failed:
                 Forbidden dependencies:
                  - com.example:foobar:3.4.5
-                Maven dependency validation failed. To update dependency spec run:
+                Maven dependency validation failed. If this change was intentional, update the dependency spec by running:
                 $ mvn validate -DdependencyEnforcer.writeSpec -pl my-dep-enforcer -f /vespa-src/pom.xml
                 """;
         assertEquals(expectedErrorMessage, exception.getMessage());
@@ -68,7 +68,7 @@ class EnforceDependenciesAllProjectsTest {
                 The dependency enforcer failed:
                 Removed dependencies:
                  - com.example:bar:2.3.4
-                Maven dependency validation failed. To update dependency spec run:
+                Maven dependency validation failed. If this change was intentional, update the dependency spec by running:
                 $ mvn validate -DdependencyEnforcer.writeSpec -pl my-dep-enforcer -f /vespa-src/pom.xml
                 """;
         assertEquals(expectedErrorMessage, exception.getMessage());

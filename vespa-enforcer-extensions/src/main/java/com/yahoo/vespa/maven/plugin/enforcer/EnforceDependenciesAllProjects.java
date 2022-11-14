@@ -108,7 +108,7 @@ public class EnforceDependenciesAllProjects implements EnforcerRule {
             }
             throw new EnforcerRuleException(
                     errorMsg.append("Maven dependency validation failed. ")
-                            .append("To update dependency spec run:\n")
+                            .append("If this change was intentional, update the dependency spec by running:\n")
                             .append("$ mvn validate -D").append(WRITE_SPEC_PROP).append(" -pl ").append(moduleName)
                             .append(" -f ").append(aggregatorPomRoot).append("\n").toString());
         }
