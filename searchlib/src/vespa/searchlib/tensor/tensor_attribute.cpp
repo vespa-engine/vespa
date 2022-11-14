@@ -210,18 +210,6 @@ TensorAttribute::update_stat()
     return result;
 }
 
-vespalib::MemoryUsage
-TensorAttribute::memory_usage() const
-{
-    vespalib::MemoryUsage result = _refVector.getMemoryUsage();
-    result.merge(_tensorStore.getMemoryUsage());
-    result.mergeGenerationHeldBytes(getGenerationHolder().get_held_bytes());
-    if (_index) {
-        result.merge(_index->memory_usage());
-    }
-    return result;
-}
-
 void
 TensorAttribute::populate_state(vespalib::slime::Cursor& object) const
 {

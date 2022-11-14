@@ -39,7 +39,6 @@ protected:
     void internal_set_tensor(DocId docid, const vespalib::eval::Value& tensor);
     void consider_remove_from_index(DocId docid);
     virtual vespalib::MemoryUsage update_stat();
-    virtual vespalib::MemoryUsage memory_usage() const;
     void populate_state(vespalib::slime::Cursor& object) const;
     void populate_address_space_usage(AddressSpaceUsage& usage) const override;
     EntryRef acquire_entry_ref(DocId doc_id) const noexcept { return _refVector.acquire_elem_ref(doc_id).load_acquire(); }

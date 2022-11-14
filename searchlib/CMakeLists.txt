@@ -221,6 +221,7 @@ vespa_define_module(
     src/tests/tensor/direct_tensor_store
     src/tests/tensor/distance_functions
     src/tests/tensor/hnsw_index
+    src/tests/tensor/hnsw_nodeid_mapping
     src/tests/tensor/hnsw_saver
     src/tests/tensor/tensor_buffer_operations
     src/tests/tensor/tensor_buffer_store
