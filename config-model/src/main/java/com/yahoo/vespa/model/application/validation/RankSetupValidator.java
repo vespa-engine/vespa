@@ -64,7 +64,7 @@ public class RankSetupValidator extends Validator {
                                                ".")
                     .toFile();
             for (SearchCluster cluster : model.getSearchClusters()) {
-                // Skipping rannking expression checking for streaming clusters, not implemented yet
+                // Skipping ranking expression checking for streaming clusters, not implemented yet
                 if (cluster.isStreaming()) continue;
 
                 IndexedSearchCluster sc = (IndexedSearchCluster) cluster;
