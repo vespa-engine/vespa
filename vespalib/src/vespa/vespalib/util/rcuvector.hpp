@@ -19,10 +19,9 @@ RcuVectorHeld<T>::~RcuVectorHeld() = default;
 
 template <typename T>
 size_t RcuVectorBase<T>::calcNewSize(size_t baseSize) const {
-    size_t delta = (baseSize * _growStrategy.getGrowFactor()) + _growStrategy.getGrowDelta();
-    size_t newSize = baseSize + std::max(delta, static_cast<size_t>(1));
-    return std::max(newSize, _growStrategy.getMinimumCapacity());
+    return _growStrategy.calc_new_size(baseSize);
 }
+
 template <typename T>
 size_t RcuVectorBase<T>::calcNewSize() const {
     return calcNewSize(_data.capacity());

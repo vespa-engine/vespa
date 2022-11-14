@@ -2,6 +2,7 @@
 
 #pragma once
 
+#include <algorithm>
 #include <cstddef>
 
 namespace vespalib {
@@ -31,6 +32,12 @@ public:
 
     void         setInitialCapacity(size_t v) noexcept { _initialCapacity = v; }
     void         setGrowDelta(size_t v) noexcept { _growDelta = v; }
+
+    size_t calc_new_size(size_t base_size) const {
+        size_t delta = (base_size * getGrowFactor()) + getGrowDelta();
+        size_t new_size = base_size + std::max(delta, static_cast<size_t>(1));
+        return std::max(new_size, getMinimumCapacity());
+    }
 
     bool operator==(const GrowStrategy & rhs) const noexcept {
         return (_initialCapacity == rhs._initialCapacity &&
