@@ -216,7 +216,7 @@ public class CuratorWrapperTest {
             stunning.arriveAndAwaitAdvance(); // Failing component is done being deactivated.
             stunning.arriveAndAwaitAdvance(); // Failing component is done cleaning up after itself.
             assertTrue(newSingleton.isActive);
-            assertEquals("failed to register failing singleton", thrownMessage.get());
+            assertEquals("failed registering failing singleton", thrownMessage.get());
             verifyMetrics(Map.of("activation.count", 6.0,
                                  "activation.millis", 0.0,
                                  "activation.failure.count", 1.0,
