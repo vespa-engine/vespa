@@ -259,7 +259,10 @@ class AutoscalingTester {
                 && resources.diskGb() <= flavorResources.diskGb())
                 flavorResources = flavorResources.withDiskGb(resources.diskGb());
 
-            return flavorResources.justNumbers().equals(resources.justNumbers());
+            if (flavorResources.bandwidthGbps() >= resources.bandwidthGbps())
+                flavorResources = flavorResources.withBandwidthGbps(resources.bandwidthGbps());
+
+            return flavorResources.compatibleWith(resources);
         }
 
     }

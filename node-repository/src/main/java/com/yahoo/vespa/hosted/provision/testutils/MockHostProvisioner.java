@@ -65,7 +65,8 @@ public class MockHostProvisioner implements HostProvisioner {
                                ApplicationId applicationId, Version osVersion, HostSharing sharing,
                                Optional<ClusterSpec.Type> clusterType, CloudAccount cloudAccount,
                                Consumer<List<ProvisionedHost>> provisionedHostsConsumer) {
-        Flavor hostFlavor = this.hostFlavor.orElseGet(() -> flavors.stream().filter(f -> compatible(f, resources))
+        Flavor hostFlavor = this.hostFlavor.orElseGet(() -> flavors.stream()
+                                                                   .filter(f -> compatible(f, resources))
                                                                    .findFirst()
                                                                    .orElseThrow(() -> new NodeAllocationException("No host flavor matches " + resources, true)));
         List<ProvisionedHost> hosts = new ArrayList<>();
