@@ -6,7 +6,6 @@ import com.yahoo.io.IOUtils;
 import com.yahoo.text.Utf8;
 import net.jpountz.xxhash.XXHash64;
 import net.jpountz.xxhash.XXHashFactory;
-
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
@@ -17,8 +16,6 @@ import java.nio.channels.FileChannel;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.attribute.BasicFileAttributes;
-import java.nio.file.attribute.FileTime;
-import java.time.Instant;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -104,7 +101,7 @@ public class FileDirectory  {
     }
 
     // If there exists a directory for a file reference, but content does not have correct hash or the file we want to add
-    // does not exist in the directory, delete it
+    // does not exist in the directory, delete the directory
     private void verifyExistingFile(File source, Long hashOfFileToBeAdded) throws IOException {
         FileReference fileReference = fileReferenceFromHash(hashOfFileToBeAdded);
         File destinationDir = destinationDir(fileReference);
@@ -112,15 +109,10 @@ public class FileDirectory  {
 
         File existingFile = destinationDir.toPath().resolve(source.getName()).toFile();
         if ( ! existingFile.exists() || ! computeHash(existingFile).equals(hashOfFileToBeAdded)) {
-            log.log(Level.SEVERE, "Directory for file reference '" + fileReference.value() +
+            log.log(Level.WARNING, "Directory for file reference '" + fileReference.value() +
                     "' has content that does not match its hash, deleting everything in " +
                     destinationDir.getAbsolutePath());
             IOUtils.recursiveDeleteDir(destinationDir);
-        } else {
-            // Update last access time (used to keep track of when we can delete unused file references
-            // so update when adding and it already exists)
-            FileTime fileTime = FileTime.from(Instant.now());
-            Files.setAttribute(destinationDir.toPath(), "basic:lastAccessTime", fileTime);
         }
     }
 
@@ -132,6 +124,7 @@ public class FileDirectory  {
         return new FileReference(Long.toHexString(hash));
     }
 
+    // Pre-condition: Destination dir does not exist
     private FileReference addFile(File source, FileReference reference) {
         ensureRootExist();
         try {
