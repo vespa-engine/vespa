@@ -2,7 +2,6 @@
 package com.yahoo.vespa.hosted.provision.autoscale;
 
 import com.yahoo.config.provision.Capacity;
-import com.yahoo.config.provision.Cloud;
 import com.yahoo.config.provision.ClusterResources;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.Environment;
@@ -19,7 +18,6 @@ import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
 import com.yahoo.vespa.hosted.provision.Nodelike;
-import com.yahoo.vespa.hosted.provision.autoscale.awsnodes.AwsHostResourcesCalculatorImpl;
 import com.yahoo.vespa.hosted.provision.provisioning.CapacityPolicies;
 import com.yahoo.vespa.hosted.provision.provisioning.HostResourcesCalculator;
 import org.junit.Test;
@@ -37,7 +35,7 @@ public class AutoscalingTest {
 
     @Test
     public void test_autoscaling_single_content_group() {
-        var fixture = AutoscalingTester.fixture().build();
+        var fixture = AutoscalingTester.fixture().hostCount(20).build();
 
         fixture.loader().applyCpuLoad(0.7f, 10);
         ClusterResources scaledResources = fixture.tester().assertResources("Scaling up since resource usage is too high",
@@ -65,14 +63,14 @@ public class AutoscalingTest {
     /** Using too many resources for a short period is proof we should scale up regardless of the time that takes. */
     @Test
     public void test_no_autoscaling_with_no_measurements() {
-        var fixture = AutoscalingTester.fixture().build();
+        var fixture = AutoscalingTester.fixture().hostCount(20).build();
         assertTrue(fixture.autoscale().target().isEmpty());
     }
 
     /** Using too many resources for a short period is proof we should scale up regardless of the time that takes. */
     @Test
     public void test_autoscaling_up_is_fast() {
-        var fixture = AutoscalingTester.fixture().build();
+        var fixture = AutoscalingTester.fixture().hostCount(20).build();
         fixture.loader().applyLoad(new Load(1.0, 1.0, 1.0), 3);
         fixture.tester().assertResources("Scaling up since resource usage is too high",
                                          10, 1, 7.2, 8.5, 92.6,
@@ -82,7 +80,7 @@ public class AutoscalingTest {
     /** When scaling up, disregard underutilized dimensions (memory here) */
     @Test
     public void test_only_autoscaling_up_quickly() {
-        var fixture = AutoscalingTester.fixture().build();
+        var fixture = AutoscalingTester.fixture().hostCount(20).build();
         fixture.loader().applyLoad(new Load(1.0, 0.1, 1.0), 10);
         fixture.tester().assertResources("Scaling up (only) since resource usage is too high",
                                          10, 1, 8.6, 4.4, 92.6,
@@ -92,7 +90,7 @@ public class AutoscalingTest {
     /** When ok to scale down, scale in both directions simultaneously (compare to test_only_autoscaling_up_quickly) */
     @Test
     public void test_scale_in_both_directions_when_ok_to_scale_down() {
-        var fixture = AutoscalingTester.fixture().build();
+        var fixture = AutoscalingTester.fixture().hostCount(20).build();
         fixture.tester.clock().advance(Duration.ofDays(2));
         fixture.loader().applyLoad(new Load(1.0, 0.1, 1.0), 10);
         fixture.tester().assertResources("Scaling up (only) since resource usage is too high",
@@ -102,7 +100,7 @@ public class AutoscalingTest {
 
     @Test
     public void test_autoscaling_uses_peak() {
-        var fixture = AutoscalingTester.fixture().build();
+        var fixture = AutoscalingTester.fixture().hostCount(20).build();
         fixture.loader().applyCpuLoad(0.01, 100);
         fixture.loader().applyCpuLoad(0.70, 1);
         fixture.loader().applyCpuLoad(0.01, 100);
@@ -131,7 +129,7 @@ public class AutoscalingTest {
     /** We prefer fewer nodes for container clusters as (we assume) they all use the same disk and memory */
     @Test
     public void test_autoscaling_single_container_group() {
-        var fixture = AutoscalingTester.fixture().clusterType(ClusterSpec.Type.container).build();
+        var fixture = AutoscalingTester.fixture().hostCount(20).clusterType(ClusterSpec.Type.container).build();
 
         fixture.loader().applyCpuLoad(0.25f, 120);
         ClusterResources scaledResources = fixture.tester().assertResources("Scaling cpu up",
@@ -149,6 +147,7 @@ public class AutoscalingTest {
     public void autoscaling_handles_disk_setting_changes() {
         var resources = new NodeResources(3, 100, 100, 1, slow);
         var fixture = AutoscalingTester.fixture()
+                                       .hostCount(20)
                                        .hostFlavors(resources)
                                        .initialResources(Optional.of(new ClusterResources(5, 1, resources)))
                                        .capacity(Capacity.from(new ClusterResources(5, 1, resources)))
@@ -183,6 +182,7 @@ public class AutoscalingTest {
                                      new ClusterResources( 10, 1, resources.with(DiskSpeed.any)));
         var fixture = AutoscalingTester.fixture()
                                        .capacity(capacity)
+                                       .hostCount(20)
                                        .initialResources(Optional.empty())
                                        .build();
 
@@ -204,6 +204,7 @@ public class AutoscalingTest {
         var now = new ClusterResources(5, 1, new NodeResources(1.9, 70, 70, 1));
         var max = new ClusterResources( 6, 1, new NodeResources(2.4, 78, 79, 1));
         var fixture = AutoscalingTester.fixture()
+                                       .hostCount(20)
                                        .initialResources(Optional.of(now))
                                        .capacity(Capacity.from(min, max)).build();
 
@@ -218,7 +219,7 @@ public class AutoscalingTest {
     public void autoscaling_respects_lower_limit() {
         var min = new ClusterResources( 4, 1, new NodeResources(1.8, 7.4, 8.5, 1));
         var max = new ClusterResources( 6, 1, new NodeResources(2.4, 78, 79, 1));
-        var fixture = AutoscalingTester.fixture().capacity(Capacity.from(min, max)).build();
+        var fixture = AutoscalingTester.fixture().hostCount(20).capacity(Capacity.from(min, max)).build();
 
         // deploy
         fixture.tester().clock().advance(Duration.ofDays(2));
@@ -233,6 +234,7 @@ public class AutoscalingTest {
         var min = new ClusterResources( 2, 1, NodeResources.unspecified());
         var max = new ClusterResources( 6, 1, NodeResources.unspecified());
         var fixture = AutoscalingTester.fixture()
+                                       .hostCount(20)
                                        .initialResources(Optional.empty())
                                        .capacity(Capacity.from(min, max))
                                        .build();
@@ -257,6 +259,7 @@ public class AutoscalingTest {
         var now = new ClusterResources(5, 5, new NodeResources(3.0, 10, 10, 1));
         var max = new ClusterResources(18, 6, new NodeResources(100, 1000, 1000, 1));
         var fixture = AutoscalingTester.fixture()
+                                       .hostCount(20)
                                        .initialResources(Optional.of(now))
                                        .capacity(Capacity.from(min, max))
                                        .build();
@@ -270,7 +273,7 @@ public class AutoscalingTest {
     @Test
     public void test_autoscaling_limits_when_min_equals_max() {
         ClusterResources min = new ClusterResources( 2, 1, new NodeResources(1, 1, 1, 1));
-        var fixture = AutoscalingTester.fixture().capacity(Capacity.from(min, min)).build();
+        var fixture = AutoscalingTester.fixture().hostCount(20).capacity(Capacity.from(min, min)).build();
 
         // deploy
         fixture.tester().clock().advance(Duration.ofDays(1));
@@ -327,7 +330,7 @@ public class AutoscalingTest {
     @Test
     public void suggestions_ignores_limits() {
         ClusterResources min = new ClusterResources( 2, 1, new NodeResources(1, 1, 1, 1));
-        var fixture = AutoscalingTester.fixture().capacity(Capacity.from(min, min)).build();
+        var fixture = AutoscalingTester.fixture().hostCount(20).capacity(Capacity.from(min, min)).build();
         fixture.tester().clock().advance(Duration.ofDays(2));
         fixture.loader().applyCpuLoad(1.0, 120);
         fixture.tester().assertResources("Suggesting above capacity limit",
@@ -337,7 +340,7 @@ public class AutoscalingTest {
 
     @Test
     public void not_using_out_of_service_measurements() {
-        var fixture = AutoscalingTester.fixture().build();
+        var fixture = AutoscalingTester.fixture().hostCount(20).build();
         fixture.tester().clock().advance(Duration.ofDays(2));
         fixture.loader().applyLoad(new Load(0.9, 0.6, 0.7),  1, false, true, 120);
         assertTrue("Not scaling up since nodes were measured while cluster was out of service",
@@ -346,7 +349,7 @@ public class AutoscalingTest {
 
     @Test
     public void not_using_unstable_measurements() {
-        var fixture = AutoscalingTester.fixture().build();
+        var fixture = AutoscalingTester.fixture().hostCount(20).build();
         fixture.tester().clock().advance(Duration.ofDays(2));
         fixture.loader().applyLoad(new Load(0.9, 0.6, 0.7),  1, true, false, 120);
         assertTrue("Not scaling up since nodes were measured while cluster was unstable",
@@ -359,6 +362,7 @@ public class AutoscalingTest {
         var now = new ClusterResources(5, 5, new NodeResources(3, 100, 100, 1));
         var max = new ClusterResources(20, 20, new NodeResources(10, 1000, 1000, 1));
         var fixture = AutoscalingTester.fixture()
+                                       .hostCount(20)
                                        .initialResources(Optional.of(now))
                                        .capacity(Capacity.from(min, max))
                                        .build();
@@ -375,6 +379,7 @@ public class AutoscalingTest {
         var now = new ClusterResources(6, 2, new NodeResources(3, 100, 100, 1));
         var max = new ClusterResources(21, 7, new NodeResources(100, 1000, 1000, 1));
         var fixture = AutoscalingTester.fixture()
+                                       .hostCount(20)
                                        .initialResources(Optional.of(now))
                                        .capacity(Capacity.from(min, max))
                                        .build();
@@ -394,6 +399,7 @@ public class AutoscalingTest {
         var now = new ClusterResources(6, 2, new NodeResources(3, 100, 100, 1));
         var max = new ClusterResources(21, 7, new NodeResources(100, 1000, 1000, 1));
         var fixture = AutoscalingTester.fixture()
+                                       .hostCount(20)
                                        .initialResources(Optional.of(now))
                                        .capacity(Capacity.from(min, max))
                                        .build();
@@ -412,6 +418,7 @@ public class AutoscalingTest {
         var now = new ClusterResources(6, 2, new NodeResources(10, 100, 100, 1));
         var max = new ClusterResources(30, 30, new NodeResources(100, 100, 1000, 1));
         var fixture = AutoscalingTester.fixture()
+                                       .hostCount(20)
                                        .initialResources(Optional.of(now))
                                        .capacity(Capacity.from(min, max))
                                        .build();
@@ -428,6 +435,7 @@ public class AutoscalingTest {
         var now = new ClusterResources(6, 1, new NodeResources(3, 100, 100, 1));
         var max = new ClusterResources(20, 1, new NodeResources(100, 1000, 1000, 1));
         var fixture = AutoscalingTester.fixture()
+                                       .hostCount(20)
                                        .initialResources(Optional.of(now))
                                        .capacity(Capacity.from(min, max))
                                        .build();
@@ -440,7 +448,7 @@ public class AutoscalingTest {
 
     @Test
     public void scaling_down_only_after_delay() {
-        var fixture = AutoscalingTester.fixture().build();
+        var fixture = AutoscalingTester.fixture().hostCount(20).build();
         fixture.loader().applyCpuLoad(0.02, 120);
         assertTrue("Too soon  after initial deployment", fixture.autoscale().target().isEmpty());
         fixture.tester().clock().advance(Duration.ofDays(2));
@@ -454,6 +462,7 @@ public class AutoscalingTest {
     public void test_autoscaling_considers_real_resources() {
         { // No memory tax
             var fixture = AutoscalingTester.fixture()
+                                           .hostCount(20)
                                            .resourceCalculator(new OnlySubtractingWhenForecastingCalculator(0))
                                            .build();
             fixture.loader().applyLoad(new Load(1.0, 1.0, 0.7), 1000);
@@ -464,6 +473,7 @@ public class AutoscalingTest {
 
         {
             var fixture = AutoscalingTester.fixture()
+                                           .hostCount(20)
                                            .resourceCalculator(new OnlySubtractingWhenForecastingCalculator(3))
                                            .build();
             fixture.loader().applyLoad(new Load(1.0, 1.0, 0.7), 1000);
@@ -508,6 +518,7 @@ public class AutoscalingTest {
         var min = new ClusterResources( 1, 1, new NodeResources(3, 100, 100, 1));
         var max = new ClusterResources(10, 1, new NodeResources(3, 100, 100, 1));
         var fixture = AutoscalingTester.fixture()
+                                       .hostCount(20)
                                        .capacity(Capacity.from(min, max))
                                        .build();
 
@@ -534,7 +545,7 @@ public class AutoscalingTest {
 
     @Test
     public void test_autoscaling_considers_growth_rate() {
-        var fixture = AutoscalingTester.fixture().build();
+        var fixture = AutoscalingTester.fixture().hostCount(20).build();
 
         fixture.tester().clock().advance(Duration.ofDays(2));
         Duration timeAdded = fixture.loader().addLoadMeasurements(100, t -> t == 0 ? 20.0 : 10.0, t -> 0.0);
@@ -568,7 +579,7 @@ public class AutoscalingTest {
 
     @Test
     public void test_autoscaling_considers_query_vs_write_rate() {
-        var fixture = AutoscalingTester.fixture().build();
+        var fixture = AutoscalingTester.fixture().hostCount(20).build();
 
         fixture.loader().addCpuMeasurements(0.4, 220);
 
@@ -620,6 +631,7 @@ public class AutoscalingTest {
     @Test
     public void test_autoscaling_in_dev() {
         var fixture = AutoscalingTester.fixture()
+                                       .hostCount(20)
                                        .zone(new Zone(Environment.dev, RegionName.from("us-east")))
                                        .build();
         fixture.tester().clock().advance(Duration.ofDays(2));
@@ -640,6 +652,7 @@ public class AutoscalingTest {
                               true);
 
         var fixture = AutoscalingTester.fixture()
+                                       .hostCount(20)
                                        .capacity(requiredCapacity)
                                        .zone(new Zone(Environment.dev, RegionName.from("us-east")))
                                        .build();
@@ -659,6 +672,7 @@ public class AutoscalingTest {
                               true);
 
         var fixture = AutoscalingTester.fixture()
+                                       .hostCount(20)
                                        .capacity(requiredCapacity)
                                        .zone(new Zone(Environment.dev, RegionName.from("us-east")))
                                        .build();

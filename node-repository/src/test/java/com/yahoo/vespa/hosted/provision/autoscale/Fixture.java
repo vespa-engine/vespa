@@ -40,11 +40,11 @@ public class Fixture {
     final Capacity capacity;
     final Loader loader;
 
-    public Fixture(Fixture.Builder builder, Optional<ClusterResources> initialResources) {
+    public Fixture(Fixture.Builder builder, Optional<ClusterResources> initialResources, int hostCount) {
         applicationId = builder.application;
         clusterSpec = builder.cluster;
         capacity = builder.capacity;
-        tester = new AutoscalingTester(builder.zone, builder.resourceCalculator, builder.hostFlavors, 20);
+        tester = new AutoscalingTester(builder.zone, builder.resourceCalculator, builder.hostFlavors, hostCount);
         var deployCapacity = initialResources.isPresent() ? Capacity.from(initialResources.get()) : capacity;
         tester.deploy(builder.application, builder.cluster, deployCapacity);
         this.loader = new Loader(this);
@@ -132,6 +132,7 @@ public class Fixture {
                                           new ClusterResources(20, 1,
                                                                new NodeResources(100, 1000, 1000, 1, NodeResources.DiskSpeed.any)));
         HostResourcesCalculator resourceCalculator = new AutoscalingTester.MockHostResourcesCalculator(zone, 0);
+        int hostCount = 0;
 
         public Fixture.Builder zone(Zone zone) {
             this.zone = zone;
@@ -202,8 +203,13 @@ public class Fixture {
             return this;
         }
 
+        public Fixture.Builder hostCount(int hostCount) { // TODO: Remove all usage of this
+            this.hostCount = hostCount;
+            return this;
+        }
+
         public Fixture build() {
-            return new Fixture(this, initialResources);
+            return new Fixture(this, initialResources, hostCount);
         }
 
     }
