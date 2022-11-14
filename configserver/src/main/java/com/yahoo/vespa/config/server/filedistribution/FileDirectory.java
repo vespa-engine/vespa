@@ -11,6 +11,7 @@ import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.FilenameFilter;
 import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
 import java.nio.file.Files;
@@ -131,30 +132,28 @@ public class FileDirectory  {
         ensureRootExist();
         Path tempDestinationDir = uncheck(() -> Files.createTempDirectory(root.toPath(), "writing"));
         try {
+            // Prepare and verify
             logfileInfo(source);
             File destinationDir = destinationDir(reference);
-            File destination = new File(tempDestinationDir.toFile(), source.getName());
-            if (!destinationDir.exists()) {
-                destinationDir.mkdir();
-                log.log(Level.FINE, () -> "file reference '" + reference.value() + "', source: " + source.getAbsolutePath() );
-                if (source.isDirectory()) {
-                    log.log(Level.FINE, () -> "Copying source " + source.getAbsolutePath() + " to " + destination.getAbsolutePath());
-                    IOUtils.copyDirectory(source, destination, -1);
-                } else {
-                    copyFile(source, destination);
-                }
-                if (!destinationDir.exists()) {
-                    log.log(Level.FINE, () -> "Moving from " + tempDestinationDir + " to " + destinationDir.getAbsolutePath());
-                    if ( ! tempDestinationDir.toFile().renameTo(destinationDir)) {
-                        log.log(Level.WARNING, "Failed moving '" + tempDestinationDir.toFile().getAbsolutePath() + "' to '" + destination.getAbsolutePath() + "'.");
-                    }
-                } else {
-                    IOUtils.copyDirectory(tempDestinationDir.toFile(), destinationDir, -1);
-                }
-            }
+            File tempDestination = new File(tempDestinationDir.toFile(), source.getName());
+            if ( ! destinationDir.mkdir())
+                log.log(Level.WARNING, () -> "destination dir " + destinationDir + " already exists");
+
+            // Copy files
+            log.log(Level.FINE, () -> "Copying " + source.getAbsolutePath() + " to " + tempDestination.getAbsolutePath());
+            if (source.isDirectory())
+                IOUtils.copyDirectory(source, tempDestination, -1);
+            else
+                copyFile(source, tempDestination);
+
+            // Move to final destination
+            log.log(Level.FINE, () -> "Moving " + tempDestinationDir + " to " + destinationDir.getAbsolutePath());
+            if ( ! tempDestinationDir.toFile().renameTo(destinationDir))
+                log.log(Level.WARNING, "Failed moving '" + tempDestinationDir.toFile().getAbsolutePath() +
+                        "' to '" + tempDestination.getAbsolutePath() + "'.");
             return reference;
         } catch (IOException e) {
-            throw new IllegalArgumentException(e);
+            throw new UncheckedIOException(e);
         } finally {
             IOUtils.recursiveDeleteDir(tempDestinationDir.toFile());
         }
