@@ -139,7 +139,7 @@ public final class ThreadLocalDirectory<AGGREGATOR, SAMPLE> {
          *
          * <p>
          * The method may or may not return a fresh instance of the current
-         * value for each invokation, if using a mutable aggregator the typical
+         * value for each invocation, if using a mutable aggregator the typical
          * case will be returning the same instance for the new and old value of
          * current, while if using an immutable aggregator, one is forced to
          * return new instances.

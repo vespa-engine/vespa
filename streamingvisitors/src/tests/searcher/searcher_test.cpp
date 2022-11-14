@@ -734,14 +734,14 @@ TEST("Snippet modifier search") {
 TEST("snippet modifier") {
     { // string field value
         SnippetModifierSetup sms(StringList().add("ab"));
-        // multiple invokations
+        // multiple invocations
         assertSnippetModifier(sms, StringFieldValue("ab"), "\x1F""ab\x1F");
         assertSnippetModifier(sms, StringFieldValue("xxxxabxxxxabxxxx"), "xxxx\x1F""ab\x1Fxxxx\x1F""ab\x1Fxxxx");
         assertSnippetModifier(sms, StringFieldValue("xxabxx"), "xx\x1F""ab\x1Fxx");
     }
     { // collection field value
         SnippetModifierSetup sms(StringList().add("ab"));
-        // multiple invokations
+        // multiple invocations
         assertSnippetModifier(sms, getFieldValue(StringList().add("ab")), "\x1F""ab\x1F");
         assertSnippetModifier(sms, getFieldValue(StringList().add("xxabxx")), "xx\x1F""ab\x1Fxx");
         assertSnippetModifier(sms, getFieldValue(StringList().add("ab").add("xxabxx").add("xxxxxx")),

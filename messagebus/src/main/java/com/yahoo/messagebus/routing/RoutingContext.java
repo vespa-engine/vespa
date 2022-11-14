@@ -327,7 +327,7 @@ public class RoutingContext {
     /**
      * <p>Adds a child routing context to this based on a given route. This is
      * the typical entry point a policy will use to select recipients during a
-     * {@link RoutingPolicy#select(RoutingContext)} invokation.</p>
+     * {@link RoutingPolicy#select(RoutingContext)} invocation.</p>
      *
      * @param route The route to contain in the child context.
      */
