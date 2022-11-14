@@ -255,8 +255,8 @@ public class ZoneRegistryMock extends AbstractComponent implements ZoneRegistry 
     @Override public Optional<String> tenantDeveloperRoleArn(TenantName tenant) { return Optional.empty(); }
 
     @Override
-    public AthenzDomain cloudAccountAthenzDomain(CloudAccount cloudAccount) {
-        return AthenzDomain.from("vespa.enclave");
+    public Optional<AthenzDomain> cloudAccountAthenzDomain(CloudAccount cloudAccount) {
+        return Optional.of(AthenzDomain.from("vespa.enclave"));
     }
 
     @Override
