@@ -6,7 +6,6 @@ package jvm
 import (
 	"os"
 
-	"github.com/vespa-engine/vespa/client/go/prog"
 	"github.com/vespa-engine/vespa/client/go/trace"
 	"github.com/vespa-engine/vespa/client/go/util"
 )
@@ -25,29 +24,13 @@ func RunApplicationContainer(extraArgs []string) int {
 }
 
 func NewApplicationContainer(extraArgs []string) Container {
-	configId := os.Getenv(util.ENV_CONFIG_ID)
-	serviceName := os.Getenv(util.ENV_SERVICE_NAME)
-	a := ApplicationContainer{
-		configId:    configId,
-		serviceName: serviceName,
-	}
-	opts := NewOptions(&a)
-	a.addJvmArgs(&opts)
+	var a ApplicationContainer
+	a.configId = os.Getenv(util.ENV_CONFIG_ID)
+	a.serviceName = os.Getenv(util.ENV_SERVICE_NAME)
+	a.jvmArgs = NewOptions(&a)
+	a.configureOptions()
 	for _, x := range extraArgs {
-		opts.AddOption(x)
+		a.JvmOptions().AddOption(x)
 	}
 	return &a
-}
-
-func (a *ApplicationContainer) Exec() {
-	argv := make([]string, 0, 100)
-	argv = append(argv, "java")
-	for _, x := range a.jvmArgs.Args() {
-		argv = append(argv, x)
-	}
-	p := prog.NewSpec(argv)
-	p.ConfigureNumaCtl()
-	exportEnvSettings(a, p)
-	err := p.Run()
-	util.JustExitWith(err)
 }

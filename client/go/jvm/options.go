@@ -5,6 +5,7 @@ package jvm
 
 import (
 	"fmt"
+	"strconv"
 	"strings"
 
 	"github.com/vespa-engine/vespa/client/go/defaults"
@@ -22,7 +23,7 @@ type Options struct {
 	fixSpec   util.FixSpec
 }
 
-func NewOptions(c Container) Options {
+func NewOptions(c Container) *Options {
 	vespaUid, vespaGid := vespa.FindVespaUidAndGid()
 	fixSpec := util.FixSpec{
 		UserId:   vespaUid,
@@ -30,7 +31,7 @@ func NewOptions(c Container) Options {
 		DirMode:  0755,
 		FileMode: 0644,
 	}
-	return Options{
+	return &Options{
 		container: c,
 		classPath: make([]string, 0, 10),
 		jvmArgs:   make([]string, 0, 100),
@@ -73,5 +74,25 @@ func (opts *Options) Args() []string {
 func (opts *Options) AddJvmArgsFromString(args string) {
 	for _, x := range strings.Fields(args) {
 		opts.AppendOption(x)
+	}
+}
+
+func (opts *Options) ConfigureCpuCount(cnt int) {
+	if cnt <= 0 {
+		out, err := util.BackTicksForwardStderr.Run("nproc", "--all")
+		if err != nil {
+			trace.Trace("failed nproc:", err)
+		} else {
+			cnt, err = strconv.Atoi(strings.TrimSpace(out))
+			if err != nil {
+				trace.Trace("bad nproc output:", strings.TrimSpace(out))
+				cnt = 0
+			} else {
+				trace.Trace("CpuCount: using", cnt, "from nproc --all")
+			}
+		}
+	}
+	if cnt > 0 {
+		opts.AddOption(fmt.Sprintf("-XX:ActiveProcessorCount=%d", cnt))
 	}
 }

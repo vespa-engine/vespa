@@ -31,30 +31,27 @@ func Silent() {
 	currentOutputLevel = levelNone
 }
 
-func outputStderr(l outputLevel, n string, v ...interface{}) {
+func outputTracing(l outputLevel, n string, v ...interface{}) {
 	if l > currentOutputLevel {
 		return
 	}
-	w := make([]interface{}, len(v)+1)
-	w[0] = n
-	for idx, arg := range v {
-		w[idx+1] = arg
-	}
-	fmt.Fprintln(os.Stderr, w...)
+	out := os.Stderr
+	fmt.Fprintf(out, "%s\t", n)
+	fmt.Fprintln(out, v...)
 }
 
 func Info(v ...interface{}) {
-	outputStderr(levelInfo, "[info]", v...)
+	outputTracing(levelInfo, "info", v...)
 }
 
 func Trace(v ...interface{}) {
-	outputStderr(levelTrace, "[trace]", v...)
+	outputTracing(levelTrace, "info", v...)
 }
 
 func Debug(v ...interface{}) {
-	outputStderr(levelDebug, "[debug]", v...)
+	outputTracing(levelDebug, "debug", v...)
 }
 
 func Warning(v ...interface{}) {
-	outputStderr(levelWarning, "[warning]", v...)
+	outputTracing(levelWarning, "warning", v...)
 }
