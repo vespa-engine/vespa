@@ -41,6 +41,9 @@ class ImportedSearchContext : public ISearchContext {
     TargetLids                                      _targetLids;
     PostingListMerger<int32_t>                      _merger;
     SearchContextParams                             _params;
+    mutable std::atomic<bool>                       _zero_hits;
+
+    static constexpr uint32_t MIN_TARGET_HITS_FOR_APPROXIMATION = 50;
 
     uint32_t getTargetLid(uint32_t lid) const {
         // Check range to avoid reading memory beyond end of mapping array
@@ -49,6 +52,8 @@ class ImportedSearchContext : public ISearchContext {
 
     void makeMergedPostings(bool isFilter);
     void considerAddSearchCacheEntry();
+    uint32_t calc_approx_hits(uint32_t target_approx_hits) const;
+    uint32_t calc_exact_hits() const;
 public:
     ImportedSearchContext(std::unique_ptr<QueryTermSimple> term,
                           const SearchContextParams& params,

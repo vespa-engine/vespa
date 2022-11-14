@@ -44,18 +44,78 @@ ImportedSearchContext::ImportedSearchContext(
       _target_search_context(_target_attribute.createSearchContext(std::move(term), params)),
       _targetLids(_reference_attribute.getTargetLids()),
       _merger(_reference_attribute.getCommittedDocIdLimit()),
-      _params(params)
+      _params(params),
+      _zero_hits(false)
 {
 }
 
 ImportedSearchContext::~ImportedSearchContext() = default;
 
-unsigned int ImportedSearchContext::approximateHits() const {
-    return _reference_attribute.getNumDocs();
+uint32_t
+ImportedSearchContext::calc_approx_hits(uint32_t target_approx_hits) const
+{
+    uint32_t docid_limit = _targetLids.size();
+    uint32_t target_docid_limit = _target_attribute.getCommittedDocIdLimit();
+    double approx_hits_multiplier = static_cast<double>(docid_limit) / target_docid_limit;
+    if (approx_hits_multiplier < 1.0) {
+        approx_hits_multiplier = 1.0;
+    }
+    uint64_t approx_hits = target_approx_hits * approx_hits_multiplier;
+    if (approx_hits > docid_limit) {
+        approx_hits = docid_limit;
+    }
+    return approx_hits;
+}
+
+uint32_t
+ImportedSearchContext::calc_exact_hits() const
+{
+    uint32_t docid_limit = _targetLids.size();
+    uint32_t target_docid_limit = _target_attribute.getCommittedDocIdLimit();
+    auto reverse_mapping_refs = _reference_attribute.getReverseMappingRefs();
+    auto& reverse_mapping = _reference_attribute.getReverseMapping();
+    if (target_docid_limit > reverse_mapping_refs.size()) {
+        target_docid_limit = reverse_mapping_refs.size();
+    }
+    fef::TermFieldMatchData matchData;
+    auto it = _target_search_context->createIterator(&matchData, true);
+    uint64_t sum_hits = 0;
+    it->initRange(1, target_docid_limit);
+    for (uint32_t lid = it->seekFirst(1); !it->isAtEnd(); lid = it->seekNext(lid + 1)) {
+        EntryRef ref = reverse_mapping_refs[lid].load_acquire();
+        if (__builtin_expect(ref.valid(), true)) {
+            sum_hits += reverse_mapping.frozenSize(ref);
+        }
+    }
+    if (sum_hits > docid_limit) {
+        sum_hits = docid_limit;
+    }
+    return sum_hits;
+}
+
+unsigned int
+ImportedSearchContext::approximateHits() const
+{
+    uint32_t target_approx_hits = _target_search_context->approximateHits();
+    if (target_approx_hits == 0) {
+        _zero_hits.store(true, std::memory_order_relaxed);
+        return 0;
+    }
+    if (!_target_attribute.getIsFastSearch()) {
+        return _reference_attribute.getNumDocs();
+    }
+    if (target_approx_hits >= MIN_TARGET_HITS_FOR_APPROXIMATION) {
+        return calc_approx_hits(target_approx_hits);
+    } else {
+        return calc_exact_hits();
+    }
 }
 
 std::unique_ptr<queryeval::SearchIterator>
 ImportedSearchContext::createIterator(fef::TermFieldMatchData* matchData, bool strict) {
+    if (_zero_hits.load(std::memory_order_relaxed)) {
+        return std::make_unique<EmptySearch>();
+    }
     if (_searchCacheLookup) {
         return BitVectorIterator::create(_searchCacheLookup->bitVector.get(), _searchCacheLookup->docIdLimit, *matchData, strict);
     }
