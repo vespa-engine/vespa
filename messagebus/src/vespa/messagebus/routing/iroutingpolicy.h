@@ -35,7 +35,7 @@ public:
      * recipients. This is done by adding child routing contexts to the argument object. These children can then be
      * iterated and manipulated even before selection pass is concluded.
      *
-     * @param context The complete context for the invokation of this policy. Contains all available data.
+     * @param context The complete context for the invocation of this policy. Contains all available data.
      */
     virtual void select(RoutingContext &context) = 0;
 
@@ -44,7 +44,7 @@ public:
      * merging multiple replies into a single sensible reply. The replies is contained in the child context objects of
      * the argument context, and then response must be set in that context.
      *
-     * @param context The complete context for the invokation of this policy. Contains all available data.
+     * @param context The complete context for the invocation of this policy. Contains all available data.
      */
     virtual void merge(RoutingContext &context) = 0;
 

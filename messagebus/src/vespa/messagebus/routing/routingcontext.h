@@ -244,7 +244,7 @@ public:
 
     /**
      * Adds a child routing context to this based on a given route. This is the typical entry point a policy will use to
-     * select recipients during a {@link RoutingPolicy#select(RoutingContext)} invokation.
+     * select recipients during a {@link RoutingPolicy#select(RoutingContext)} invocation.
      *
      * @param route The route to contain in the child context.
      */

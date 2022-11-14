@@ -110,7 +110,7 @@ DocsumTest::testFlattenDocsumWriter()
         TEST_DO(assertFlattenDocsumWriter(createFieldValue(StringList().add("foo bar").add("baz").add(" qux ")),
                                   "foo bar baz  qux "));
     }
-    { // test mulitple invokations
+    { // test mulitple invocations
         FlattenDocsumWriter fdw("#");
         TEST_DO(assertFlattenDocsumWriter(fdw, StringFieldValue("foo"), "foo"));
         TEST_DO(assertFlattenDocsumWriter(fdw, StringFieldValue("bar"), "foo#bar"));

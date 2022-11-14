@@ -14,7 +14,7 @@ namespace feedtoken {
 /**
  * This class is used by the FeedEngine to encapsulate the necessary information
  * for an IFeedHandler to perform an async reply to an operation. A unique
- * instance of this class is passed to every invokation of the IFeedHandler.
+ * instance of this class is passed to every invocation of the IFeedHandler.
  */
 class ITransport {
 public:
