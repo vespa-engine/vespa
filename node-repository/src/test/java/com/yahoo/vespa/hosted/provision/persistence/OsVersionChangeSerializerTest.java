@@ -7,10 +7,7 @@ import com.yahoo.vespa.hosted.provision.os.OsVersionChange;
 import com.yahoo.vespa.hosted.provision.os.OsVersionTarget;
 import org.junit.Test;
 
-import java.time.Duration;
-import java.time.Instant;
 import java.util.Map;
-import java.util.Optional;
 
 import static org.junit.Assert.assertEquals;
 
@@ -22,9 +19,9 @@ public class OsVersionChangeSerializerTest {
     @Test
     public void serialization() {
         var change = new OsVersionChange(Map.of(
-                NodeType.host, new OsVersionTarget(NodeType.host, Version.fromString("1.2.3"), Duration.ofHours(1), Optional.of(Instant.ofEpochMilli(123))),
-                NodeType.proxyhost, new OsVersionTarget(NodeType.proxyhost, Version.fromString("4.5.6"), Duration.ofHours(2), Optional.empty()),
-                NodeType.confighost, new OsVersionTarget(NodeType.confighost, Version.fromString("7.8.9"), Duration.ZERO, Optional.of(Instant.ofEpochMilli(456)))
+                NodeType.host, new OsVersionTarget(NodeType.host, Version.fromString("1.2.3")),
+                NodeType.proxyhost, new OsVersionTarget(NodeType.proxyhost, Version.fromString("4.5.6")),
+                NodeType.confighost, new OsVersionTarget(NodeType.confighost, Version.fromString("7.8.9"))
         ));
         var serialized = OsVersionChangeSerializer.fromJson(OsVersionChangeSerializer.toJson(change));
         assertEquals(serialized, change);

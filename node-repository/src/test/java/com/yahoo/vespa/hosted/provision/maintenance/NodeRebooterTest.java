@@ -126,7 +126,7 @@ public class NodeRebooterTest {
 
     /** Schedule OS upgrade for all host nodes */
     private void scheduleOsUpgrade(NodeRepository nodeRepository) {
-        nodeRepository.osVersions().setTarget(NodeType.host, Version.fromString("7.1"), Duration.ZERO, false);
+        nodeRepository.osVersions().setTarget(NodeType.host, Version.fromString("7.1"), false);
     }
 
     /** Simulate completion of an OS upgrade */

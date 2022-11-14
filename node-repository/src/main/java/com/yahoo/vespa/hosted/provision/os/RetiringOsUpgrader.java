@@ -16,8 +16,7 @@ import java.util.Optional;
 import java.util.logging.Logger;
 
 /**
- * An upgrader that retires and deprovisions hosts on stale OS versions. Retirement of each host is spread out in time,
- * according to a time budget, to avoid potential service impact of retiring too many hosts close together.
+ * An upgrader that retires and deprovisions hosts on stale OS versions.
  *
  * Used in clouds where hosts must be re-provisioned to upgrade their OS.
  *
@@ -30,22 +29,23 @@ public class RetiringOsUpgrader implements OsUpgrader {
     protected final NodeRepository nodeRepository;
 
     private final boolean softRebuild;
+    private final int maxActiveUpgrades;
 
-    public RetiringOsUpgrader(NodeRepository nodeRepository, boolean softRebuild) {
+    public RetiringOsUpgrader(NodeRepository nodeRepository, boolean softRebuild, int maxActiveUpgrades) {
         this.nodeRepository = nodeRepository;
         this.softRebuild = softRebuild;
+        this.maxActiveUpgrades = maxActiveUpgrades;
+        if (maxActiveUpgrades < 1) throw new IllegalArgumentException("maxActiveUpgrades must be positive, was " +
+                                                                      maxActiveUpgrades);
     }
 
     @Override
     public void upgradeTo(OsVersionTarget target) {
         NodeList allNodes = nodeRepository.nodes().list();
         Instant now = nodeRepository.clock().instant();
-        NodeList candidates = candidates(now, target, allNodes);
-        candidates.not().deprovisioning()
-                  .matching(node -> canUpgradeAt(now, node))
-                  .byIncreasingOsVersion()
-                  .first(1)
-                  .forEach(node -> deprovision(node, target.version(), now));
+        for (var candidate : candidates(now, target, allNodes)) {
+            deprovision(candidate, target.version(), now);
+        }
     }
 
     @Override
@@ -67,11 +67,12 @@ public class RetiringOsUpgrader implements OsUpgrader {
         }
         if (activeNodes.isEmpty()) return NodeList.of();
 
-        Duration nodeBudget = target.upgradeBudget().dividedBy(activeNodes.size());
-        Instant retiredAt = target.lastRetiredAt().orElse(Instant.EPOCH);
-        if (instant.isBefore(retiredAt.plus(nodeBudget))) return NodeList.of(); // Budget has not been spent yet
-
-        return activeNodes.osVersionIsBefore(target.version());
+        int numberToDeprovision = Math.max(0, maxActiveUpgrades - activeNodes.deprovisioning().size());
+        return activeNodes.not().deprovisioning()
+                          .osVersionIsBefore(target.version())
+                          .matching(node -> canUpgradeAt(instant, node))
+                          .byIncreasingOsVersion()
+                          .first(numberToDeprovision);
     }
 
     /** Upgrade given host by retiring and deprovisioning it */
@@ -81,7 +82,6 @@ public class RetiringOsUpgrader implements OsUpgrader {
                  ", want " + target);
         nodeRepository.nodes().deprovision(host.hostname(), Agent.RetiringOsUpgrader, now);
         nodeRepository.nodes().upgradeOs(NodeListFilter.from(host), Optional.of(target));
-        nodeRepository.osVersions().writeChange((change) -> change.withRetirementAt(now, host.type()));
     }
 
     /** The duration this leaves new nodes alone before scheduling any upgrade */
