@@ -12,8 +12,8 @@ import java.util.regex.Pattern;
  */
 public class CloudAccount extends PatternedStringWrapper<CloudAccount> {
 
+    /** Empty value. When this is used, either implicitly or explicitly, the zone will use its default account */
     public static final CloudAccount empty = new CloudAccount("");
-    public static final CloudAccount default_ = new CloudAccount("default");
 
     private CloudAccount(String value) {
         super(value, Pattern.compile("^([0-9]{12})?$"), "cloud account");
@@ -23,11 +23,9 @@ public class CloudAccount extends PatternedStringWrapper<CloudAccount> {
         return this.equals(empty);
     }
 
-    public boolean isDefault() { return this.equals(default_); }
-
     public static CloudAccount from(String cloudAccount) {
         return switch (cloudAccount) {
-            case "" -> empty;
+            case "", "default" -> empty;
             default -> new CloudAccount(cloudAccount);
         };
     }

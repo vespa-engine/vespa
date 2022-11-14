@@ -1335,7 +1335,7 @@ public class ControllerTest {
                 .region(prodZone2.region(), "default")
                 .build();
 
-        // I don't know why this makes the test pass :(
+        // Allow use of custom account (zone 1)
         tester.controllerTester().flagSource().withListFlag(PermanentFlags.CLOUD_ACCOUNTS.id(), List.of(cloudAccount), String.class);
 
         // Deployment to prod succeeds once all zones are configured in requested account
