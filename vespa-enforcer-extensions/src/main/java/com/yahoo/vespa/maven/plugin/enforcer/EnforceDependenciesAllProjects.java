@@ -51,7 +51,7 @@ public class EnforceDependenciesAllProjects implements EnforcerRule {
             writeDependencySpec(specFile, dependencies);
             log.info("Updated spec file '%s'".formatted(specFile.toString()));
         } else {
-            validateDependencies(dependencies, specFile, projectName(helper));
+            validateDependencies(dependencies, specFile, aggregatorPomRoot(helper), projectName(helper));
         }
         log.info("The dependency enforcer completed successfully");
     }
@@ -88,7 +88,8 @@ public class EnforceDependenciesAllProjects implements EnforcerRule {
         @Override public int compareTo(Dependency o) { return COMPARATOR.compare(this, o); }
     }
 
-    static void validateDependencies(SortedSet<Dependency> dependencies, Path specFile, String moduleName)
+    static void validateDependencies(SortedSet<Dependency> dependencies, Path specFile, Path aggregatorPomRoot,
+                                     String moduleName)
             throws EnforcerRuleException {
         SortedSet<Dependency> allowedDependencies = loadDependencySpec(specFile);
         SortedSet<Dependency> forbiddenDependencies = new TreeSet<>(dependencies);
@@ -107,9 +108,9 @@ public class EnforceDependenciesAllProjects implements EnforcerRule {
             }
             throw new EnforcerRuleException(
                     errorMsg.append("Maven dependency validation failed. ")
-                            .append("To update dependency spec execute following the command from root of aggregator pom:\n")
-                            .append("$ mvn enforcer:enforce -D").append(WRITE_SPEC_PROP).append(" -pl ")
-                            .append(moduleName).append("\n").toString());
+                            .append("If this change was intentional, update the dependency spec by running:\n")
+                            .append("$ mvn validate -D").append(WRITE_SPEC_PROP).append(" -pl ").append(moduleName)
+                            .append(" -f ").append(aggregatorPomRoot).append("\n").toString());
         }
     }
 
@@ -121,7 +122,7 @@ public class EnforceDependenciesAllProjects implements EnforcerRule {
                             .map(s -> s.replace(".", "\\.").replace("*", ".*").replace(":", "\\:").replace('?', '.'))
                             .collect(Collectors.joining(")|(", "^(", ")$")));
             SortedSet<Dependency> dependencies = new TreeSet<>();
-            MavenSession session = (MavenSession) helper.evaluate("${session}");
+            MavenSession session = mavenSession(helper);
             var graphBuilder = helper.getComponent(DependencyGraphBuilder.class);
             List<MavenProject> projects = session.getAllProjects();
             if (projects.size() == 1) {
@@ -135,7 +136,7 @@ public class EnforceDependenciesAllProjects implements EnforcerRule {
                 addDependenciesRecursive(root, dependencies, ignorePattern);
             }
             return dependencies;
-        } catch (ExpressionEvaluationException | DependencyGraphBuilderException | ComponentLookupException e) {
+        } catch (DependencyGraphBuilderException | ComponentLookupException e) {
             throw new RuntimeException(e.getMessage(), e);
         }
     }
@@ -153,18 +154,29 @@ public class EnforceDependenciesAllProjects implements EnforcerRule {
     }
 
     private static Path resolveSpecFile(EnforcerRuleHelper helper, String specFile) {
+        return Paths.get(mavenProject(helper).getBasedir() + File.separator + specFile).normalize();
+    }
+
+    private static String projectName(EnforcerRuleHelper helper) {
+        MavenProject p = mavenProject(helper);
+        return p.getModules().isEmpty() ? p.getName() : ".";
+    }
+
+    private static Path aggregatorPomRoot(EnforcerRuleHelper helper) {
+        return mavenSession(helper).getRequest().getPom().toPath();
+    }
+
+    private static MavenProject mavenProject(EnforcerRuleHelper helper) {
         try {
-            MavenProject project = (MavenProject) helper.evaluate("${project}");
-            return Paths.get(project.getBasedir() + File.separator + specFile).normalize();
+            return (MavenProject) helper.evaluate("${project}");
         } catch (ExpressionEvaluationException e) {
             throw new RuntimeException(e.getMessage(), e);
         }
     }
 
-    private static String projectName(EnforcerRuleHelper helper) {
+    private static MavenSession mavenSession(EnforcerRuleHelper helper) {
         try {
-            MavenProject p = (MavenProject) helper.evaluate("${project}");
-            return p.getModules().isEmpty() ? p.getName() : ".";
+            return (MavenSession) helper.evaluate("${session}");
         } catch (ExpressionEvaluationException e) {
             throw new RuntimeException(e.getMessage(), e);
         }
