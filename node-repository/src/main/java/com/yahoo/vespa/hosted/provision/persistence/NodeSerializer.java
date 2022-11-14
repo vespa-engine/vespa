@@ -194,7 +194,7 @@ public class NodeSerializer {
         node.exclusiveToApplicationId().ifPresent(applicationId -> object.setString(exclusiveToApplicationIdKey, applicationId.serializedForm()));
         node.exclusiveToClusterType().ifPresent(clusterType -> object.setString(exclusiveToClusterTypeKey, clusterType.name()));
         trustedCertificatesToSlime(node.trustedCertificates(), object.setArray(trustedCertificatesKey));
-        if (!node.cloudAccount().isEmpty()) {
+        if (!node.cloudAccount().isUnspecified()) {
             object.setString(cloudAccountKey, node.cloudAccount().value());
         }
     }

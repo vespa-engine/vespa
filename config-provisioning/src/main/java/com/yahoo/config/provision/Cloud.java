@@ -21,7 +21,7 @@ public class Cloud {
         this.dynamicProvisioning = dynamicProvisioning;
         this.requireAccessControl = requireAccessControl;
         this.account = Objects.requireNonNull(account);
-        if (name.equals(CloudName.AWS) && account.isEmpty()) {
+        if (name.equals(CloudName.AWS) && account.isUnspecified()) {
             throw new IllegalArgumentException("Account must be non-empty in cloud '" + name + "'");
         }
     }

@@ -19,7 +19,7 @@ public class CloudAccount extends PatternedStringWrapper<CloudAccount> {
         super(value, Pattern.compile("^([0-9]{12})?$"), "cloud account");
     }
 
-    public boolean isEmpty() {
+    public boolean isUnspecified() {
         return this.equals(empty);
     }
 
@@ -32,7 +32,7 @@ public class CloudAccount extends PatternedStringWrapper<CloudAccount> {
 
     @Override
     public String toString() {
-        return isEmpty() ? "unspecified account" : "account '" + value() + "'";
+        return isUnspecified() ? "unspecified account" : "account '" + value() + "'";
     }
 
 }

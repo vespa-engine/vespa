@@ -57,7 +57,7 @@ class CloudAccountChangeValidatorTest {
                              new ClusterResources(2, 1, nodeResources),
                              false,
                              false,
-                             Optional.of(cloudAccount).filter(account -> !account.isEmpty()));
+                             Optional.of(cloudAccount).filter(account -> !account.isUnspecified()));
     }
 
     private static VespaModel model(Provisioned provisioned) {

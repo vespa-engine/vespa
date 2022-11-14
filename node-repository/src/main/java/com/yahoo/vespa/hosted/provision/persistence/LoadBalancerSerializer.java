@@ -72,7 +72,7 @@ public class LoadBalancerSerializer {
         }));
         loadBalancer.instance()
                     .map(LoadBalancerInstance::cloudAccount)
-                    .filter(cloudAccount -> !cloudAccount.isEmpty())
+                    .filter(cloudAccount -> !cloudAccount.isUnspecified())
                     .ifPresent(cloudAccount -> root.setString(cloudAccountField, cloudAccount.value()));
         try {
             return SlimeUtils.toJsonBytes(slime);
