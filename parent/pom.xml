@@ -565,8 +565,25 @@
             </dependency>
             <dependency>
                 <groupId>com.yahoo.athenz</groupId>
+                <artifactId>athenz-cert-refresher</artifactId>
+                <version>${athenz.version}</version>
+                <exclusions>
+                    <exclusion>
+                        <groupId>org.bouncycastle</groupId>
+                        <artifactId>bcpkix-jdk15on</artifactId>
+                    </exclusion>
+                </exclusions>
+            </dependency>
+            <dependency>
+                <groupId>com.yahoo.athenz</groupId>
                 <artifactId>athenz-zms-java-client</artifactId>
                 <version>${athenz.version}</version>
+                <exclusions>
+                    <exclusion>
+                        <groupId>org.bouncycastle</groupId>
+                        <artifactId>bcpkix-jdk15on</artifactId>
+                    </exclusion>
+                </exclusions>
             </dependency>
             <dependency>
                 <groupId>com.yahoo.athenz</groupId>
@@ -577,6 +594,12 @@
                 <groupId>com.yahoo.athenz</groupId>
                 <artifactId>athenz-zts-java-client</artifactId>
                 <version>${athenz.version}</version>
+                <exclusions>
+                    <exclusion>
+                        <groupId>org.bouncycastle</groupId>
+                        <artifactId>bcpkix-jdk15on</artifactId>
+                    </exclusion>
+                </exclusions>
             </dependency>
             <dependency>
                 <groupId>commons-io</groupId>
