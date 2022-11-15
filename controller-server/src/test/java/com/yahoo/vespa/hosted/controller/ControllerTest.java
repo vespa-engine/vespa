@@ -38,6 +38,7 @@ import com.yahoo.vespa.hosted.controller.application.pkg.ApplicationPackage;
 import com.yahoo.vespa.hosted.controller.deployment.ApplicationPackageBuilder;
 import com.yahoo.vespa.hosted.controller.deployment.DeploymentContext;
 import com.yahoo.vespa.hosted.controller.deployment.DeploymentTester;
+import com.yahoo.vespa.hosted.controller.deployment.RunStatus;
 import com.yahoo.vespa.hosted.controller.deployment.Submission;
 import com.yahoo.vespa.hosted.controller.integration.ZoneApiMock;
 import com.yahoo.vespa.hosted.controller.notification.Notification;
@@ -1296,12 +1297,21 @@ public class ControllerTest {
                 .cloudAccount(cloudAccount)
                 .region(prodZone.region())
                 .build();
-        // Prod and dev deployments fail because cloud account is not declared for this tenant
-        context.submit(applicationPackage).runJobExpectingFailure(systemTest, "Requested cloud account '012345678912' is not valid for tenant 'tenant'");
+
+        // Submission fails because cloud account is not declared for this tenant
+        assertEquals("cloud accounts [012345678912] are not valid for tenant tenant",
+                     assertThrows(IllegalArgumentException.class,
+                                  () -> context.submit(applicationPackage))
+                             .getMessage());
+        assertEquals("cloud accounts [012345678912] are not valid for tenant tenant",
+                     assertThrows(IllegalArgumentException.class,
+                                  () -> context.runJob(devUsEast1, applicationPackage))
+                             .getMessage());
 
         // Deployment fails because zone is not configured in requested cloud account
         tester.controllerTester().flagSource().withListFlag(PermanentFlags.CLOUD_ACCOUNTS.id(), List.of(cloudAccount), String.class);
-        context.runJobExpectingFailure(systemTest, "Zone test.us-east-1 is not configured in requested cloud account '012345678912'")
+        context.submit(applicationPackage)
+               .runJobExpectingFailure(systemTest, "Zone test.us-east-1 is not configured in requested cloud account '012345678912'")
                .abortJob(stagingTest);
 
         // Deployment to prod succeeds once all zones are configured in requested account
