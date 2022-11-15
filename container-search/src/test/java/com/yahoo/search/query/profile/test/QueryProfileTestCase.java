@@ -3,6 +3,10 @@ package com.yahoo.search.query.profile.test;
 
 import com.yahoo.jdisc.http.HttpRequest.Method;
 import com.yahoo.container.jdisc.HttpRequest;
+import com.yahoo.prelude.Index;
+import com.yahoo.prelude.IndexFacts;
+import com.yahoo.prelude.IndexModel;
+import com.yahoo.prelude.SearchDefinition;
 import com.yahoo.processing.request.CompoundName;
 import com.yahoo.processing.request.Properties;
 import com.yahoo.search.Query;
@@ -12,6 +16,7 @@ import com.yahoo.search.query.profile.QueryProfileProperties;
 import com.yahoo.search.query.profile.QueryProfileRegistry;
 import com.yahoo.search.query.profile.compiled.CompiledQueryProfile;
 import com.yahoo.search.query.profile.compiled.ValueWithSource;
+import com.yahoo.search.searchchain.Execution;
 import com.yahoo.yolean.trace.TraceNode;
 import org.junit.jupiter.api.Test;
 
@@ -340,6 +345,21 @@ public class QueryProfileTestCase {
         query = new Query(HttpRequest.createTestRequest("?model.defaultIndex=title&model.language=de", Method.GET), profile.compile(null));
         assertEquals("default", query.getModel().getDefaultIndex());
         assertEquals("de", query.getModel().getLanguage().languageCode());
+    }
+
+    /** Tests that the ref: here is not mistaken for a query profile reference. */
+    @Test
+    void testReferenceAsQueryString() {
+        SearchDefinition sd = new SearchDefinition("test");
+        sd.addIndex(new Index("someField"));
+        IndexFacts facts = new IndexFacts(new IndexModel(sd));
+
+        var profile = new QueryProfile("test");
+        var registry = new QueryProfileRegistry();
+        registry.register(profile);
+        var query = new Query("?query=ref:", registry.compile().findQueryProfile("test"));
+        query.getModel().setExecution(new Execution(Execution.Context.createContextStub(facts)));
+        assertEquals("WEAKAND(100) ref", query.getModel().getQueryTree().getRoot().toString());
     }
 
     /** Dots are followed when setting overridability, also with variants */

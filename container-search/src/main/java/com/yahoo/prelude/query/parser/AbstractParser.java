@@ -244,9 +244,7 @@ public abstract class AbstractParser implements CustomParser {
     private static void assignDefaultIndex(String defaultIndex, Item item) {
         if (defaultIndex == null || item == null) return;
 
-        if (item instanceof IndexedItem) {
-            IndexedItem indexName = (IndexedItem) item;
-
+        if (item instanceof IndexedItem indexName) {
             if ("".equals(indexName.getIndexName()))
                 indexName.setIndexName(defaultIndex);
         }

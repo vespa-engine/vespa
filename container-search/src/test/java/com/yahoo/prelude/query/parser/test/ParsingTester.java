@@ -117,7 +117,7 @@ public class ParsingTester {
                               Language language, Linguistics linguistics) {
         Item root = parseQuery(toParse, filter, language, mode, linguistics);
         if (parsed == null) {
-            assertNull(root);
+            assertTrue(root instanceof NullItem, "root is " + root);
         } else {
             assertNotNull(root, "Got null from parsing " + toParse);
             assertEquals(parsed, root.toString(), "Parse of '" + toParse + "'");
@@ -135,9 +135,7 @@ public class ParsingTester {
                 .setLinguistics(linguistics)
                 .setSpecialTokens(tokenRegistry.getSpecialTokens("default")));
         Item root = parser.parse(new Parsable().setQuery(query).setFilter(filter).setLanguage(language)).getRoot();
-        if (root instanceof NullItem) {
-            return null;
-        }
+        if (root == null) throw new NullPointerException(); // Should be NullItem
         return root;
     }
 

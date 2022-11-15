@@ -139,14 +139,15 @@ public class QueryProfileProperties extends Properties {
             if ( ! profile.getTypes().isEmpty())
                 value = convertByType(name, value, context);
 
+            // TODO: On Vespa 9, only support this when the profile is typed and this field has a query profile type
             if (value instanceof String && value.toString().startsWith("ref:")) {
                 if (profile.getRegistry() == null)
                     throw new IllegalInputException("Runtime query profile references does not work when the " +
                                                     "QueryProfileProperties are constructed without a registry");
                 String queryProfileId = value.toString().substring(4);
-                value = profile.getRegistry().findQueryProfile(queryProfileId);
-                if (value == null)
-                    throw new IllegalInputException("Query profile '" + queryProfileId + "' is not found");
+                var referencedProfile = profile.getRegistry().findQueryProfile(queryProfileId);
+                if (referencedProfile != null)
+                    value = referencedProfile;
             }
 
             if (set) {
@@ -168,6 +169,7 @@ public class QueryProfileProperties extends Properties {
     }
 
     private String toShortString(Object value) {
+        if (value == null) return "null";
         if ( ! (value instanceof Tensor)) return value.toString();
         return ((Tensor)value).toAbbreviatedString();
     }
