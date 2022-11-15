@@ -191,6 +191,13 @@ public class ApplicationController {
         applicationPackageValidator.validate(application, applicationPackage, clock.instant());
     }
 
+    public Set<CloudAccount> accountsOf(TenantName tenant) {
+        return cloudAccountsFlag.with(FetchVector.Dimension.TENANT_ID, tenant.value())
+                                .value().stream()
+                                .map(CloudAccount::from)
+                                .collect(Collectors.toSet());
+    }
+
     /** Returns the application with the given id, or null if it is not present */
     public Optional<Application> getApplication(TenantAndApplicationId id) {
         return curator.readApplication(id);
@@ -681,10 +688,7 @@ public class ApplicationController {
             return Optional.empty();
         }
         TenantName tenant = deployment.applicationId().tenant();
-        Set<CloudAccount> tenantAccounts = cloudAccountsFlag.with(FetchVector.Dimension.TENANT_ID, tenant.value())
-                                                            .value().stream()
-                                                            .map(CloudAccount::from)
-                                                            .collect(Collectors.toSet());
+        Set<CloudAccount> tenantAccounts = accountsOf(tenant);
         if (!tenantAccounts.contains(requestedAccount.get())) {
             throw new IllegalArgumentException("Requested cloud account '" + requestedAccount.get().value() +
                                                "' is not valid for tenant '" + tenant + "'");

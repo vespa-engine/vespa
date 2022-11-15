@@ -8,6 +8,7 @@ import com.yahoo.config.application.api.Endpoint;
 import com.yahoo.config.application.api.Endpoint.Level;
 import com.yahoo.config.application.api.ValidationId;
 import com.yahoo.config.application.api.ValidationOverrides;
+import com.yahoo.config.provision.CloudAccount;
 import com.yahoo.config.provision.CloudName;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.InstanceName;
@@ -16,6 +17,7 @@ import com.yahoo.config.provision.zone.ZoneApi;
 import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.Controller;
+import com.yahoo.vespa.hosted.controller.api.identifiers.DeploymentId;
 import com.yahoo.vespa.hosted.controller.application.EndpointId;
 import com.yahoo.vespa.hosted.controller.versions.VespaVersion;
 
@@ -29,7 +31,10 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.TreeSet;
 import java.util.stream.Collectors;
+
+import static java.util.stream.Collectors.joining;
 
 /**
  * This contains validators for a {@link ApplicationPackage} that depend on a {@link Controller} to perform validation.
@@ -56,6 +61,24 @@ public class ApplicationPackageValidator {
         validateCompactedEndpoint(applicationPackage);
         validateSecurityClientsPem(applicationPackage);
         validateDeprecatedElements(applicationPackage);
+        validateCloudAccounts(application, applicationPackage);
+    }
+
+    private void validateCloudAccounts(Application application, ApplicationPackage applicationPackage) {
+        Set<CloudAccount> tenantAccounts = new TreeSet<>(controller.applications().accountsOf(application.id().tenant()));
+        Set<CloudAccount> declaredAccounts = new TreeSet<>();
+        applicationPackage.deploymentSpec().cloudAccount().ifPresent(declaredAccounts::add);
+        for (DeploymentInstanceSpec instance : applicationPackage.deploymentSpec().instances())
+            for (ZoneId zone : controller.zoneRegistry().zones().controllerUpgraded().ids())
+                instance.cloudAccount(zone.environment(), Optional.of(zone.region())).ifPresent(declaredAccounts::add);
+
+        declaredAccounts.removeIf(tenantAccounts::contains);
+        declaredAccounts.removeIf(CloudAccount::isUnspecified);
+        if ( ! declaredAccounts.isEmpty())
+            throw new IllegalArgumentException("cloud accounts " +
+                                               declaredAccounts.stream().map(CloudAccount::value).collect(joining(", ", "[", "]")) +
+                                               " are not valid for tenant " +
+                                               application.id().tenant());
     }
 
     /** Verify that deployment spec does not use elements deprecated on a major version older than wanted major version */
