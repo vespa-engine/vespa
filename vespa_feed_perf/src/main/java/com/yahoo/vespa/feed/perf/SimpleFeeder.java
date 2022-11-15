@@ -387,7 +387,7 @@ public class SimpleFeeder implements ReplyHandler {
     }
 
 
-    static class RetryExecutionhandler implements RejectedExecutionHandler {
+    static class RetryExecutionHandler implements RejectedExecutionHandler {
 
         @Override
         public void rejectedExecution(Runnable r, ThreadPoolExecutor executor) {
@@ -402,7 +402,7 @@ public class SimpleFeeder implements ReplyHandler {
                 ? new ThreadPoolExecutor(numThreads, numThreads, 0L, TimeUnit.SECONDS,
                                          new ArrayBlockingQueue<>(numThreads*100),
                                          ThreadFactoryFactory.getDaemonThreadFactory("perf-feeder"),
-                                         new RetryExecutionhandler())
+                                         new RetryExecutionHandler())
                 : null;
         printHeader(out);
         long numMessagesSent = 0;
