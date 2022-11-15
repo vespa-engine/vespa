@@ -166,7 +166,7 @@ public class Endpoint {
     }
 
     private static URI createUrl(String name, TenantAndApplicationId application, Optional<InstanceName> instance,
-                                 List<Target> targets, Scope scope, SystemName system, Port port, boolean legacy) {
+                                 List<Target> targets, Scope scope, SystemName system, Port port) {
 
         String separator = ".";
         String portPart = port.isDefault() ? "" : ":" + port.port;
@@ -178,8 +178,8 @@ public class Endpoint {
                           separator +
                           sanitize(application.tenant().value()) +
                           "." +
-                          scopePart(scope, targets, system, legacy) +
-                          dnsSuffix(system, legacy) +
+                          scopePart(scope, targets, system) +
+                          dnsSuffix(system) +
                           portPart +
                           "/");
     }
@@ -193,7 +193,7 @@ public class Endpoint {
         return name + separator;
     }
 
-    private static String scopePart(Scope scope, List<Target> targets, SystemName system, boolean legacy) {
+    private static String scopePart(Scope scope, List<Target> targets, SystemName system) {
         String scopeSymbol = scopeSymbol(scope, system);
         Set<ZoneId> zones = targets.stream().map(target -> target.deployment.zoneId()).collect(toSet());
         if (scope == Scope.global) return scopeSymbol;
@@ -201,7 +201,7 @@ public class Endpoint {
 
         ZoneId zone = targets.get(0).deployment().zoneId();
         String region = zone.region().value();
-        boolean skipEnvironment = zone.environment().isProduction() && (system.isPublic() || !legacy);
+        boolean skipEnvironment = zone.environment().isProduction();
         String environment = skipEnvironment ? "" : "." + zone.environment().value();
         if (system.isPublic()) {
             return region + environment + "." + scopeSymbol;
@@ -239,18 +239,15 @@ public class Endpoint {
     }
 
     /** Returns the DNS suffix used for endpoints in given system */
-    private static String dnsSuffix(SystemName system, boolean legacy) {
+    private static String dnsSuffix(SystemName system) {
         switch (system) {
             case cd, main -> {
-                if (legacy) return YAHOO_DNS_SUFFIX;
                 return OATH_DNS_SUFFIX;
             }
             case Public -> {
-                if (legacy) throw new IllegalArgumentException("No legacy DNS suffix declared for system " + system);
                 return PUBLIC_DNS_SUFFIX;
             }
             case PublicCd -> {
-                if (legacy) throw new IllegalArgumentException("No legacy DNS suffix declared for system " + system);
                 return PUBLIC_CD_DNS_SUFFIX;
             }
             default -> throw new IllegalArgumentException("No DNS suffix declared for system " + system);
@@ -259,7 +256,7 @@ public class Endpoint {
 
     /** Returns the DNS suffix used for internal names (i.e. names not exposed to tenants) in given system */
     public static String internalDnsSuffix(SystemName system) {
-        String suffix = dnsSuffix(system, false);
+        String suffix = dnsSuffix(system);
         if (system.isPublic()) {
             // Certificate provider requires special approval for three-level DNS names, e.g. foo.vespa-app.cloud.
             // To avoid this in public we always add an extra level.
@@ -586,8 +583,7 @@ public class Endpoint {
                                 Objects.requireNonNull(targets, "targets must be non-null"),
                                 Objects.requireNonNull(scope, "scope must be non-null"),
                                 Objects.requireNonNull(system, "system must be non-null"),
-                                Objects.requireNonNull(port, "port must be non-null"),
-                                legacy);
+                                Objects.requireNonNull(port, "port must be non-null"));
             return new Endpoint(application,
                                 instance,
                                 endpointId,
