@@ -6,8 +6,6 @@
 
 namespace search::tensor {
 
-class HnswIndex;
-
 /*
  * Tracker for visited nodes based on search::AllocatedBitVector. Best when
  * many nodes are visited.
@@ -16,7 +14,7 @@ class BitVectorVisitedTracker
 {
     search::AllocatedBitVector _visited;
 public:
-    BitVectorVisitedTracker(const HnswIndex&, uint32_t nodeid_limit, uint32_t);
+    BitVectorVisitedTracker(uint32_t nodeid_limit, uint32_t);
     ~BitVectorVisitedTracker();
     void mark(uint32_t nodeid) { _visited.setBit(nodeid); }
     bool try_mark(uint32_t nodeid) {

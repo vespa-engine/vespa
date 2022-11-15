@@ -4,7 +4,7 @@
 
 namespace search::tensor {
 
-BitVectorVisitedTracker::BitVectorVisitedTracker(const HnswIndex&, uint32_t nodeid_limit, uint32_t)
+BitVectorVisitedTracker::BitVectorVisitedTracker(uint32_t nodeid_limit, uint32_t)
     : _visited(nodeid_limit)
 {
 }

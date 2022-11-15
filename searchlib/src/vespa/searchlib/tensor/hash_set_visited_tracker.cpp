@@ -4,7 +4,7 @@
 
 namespace search::tensor {
 
-HashSetVisitedTracker::HashSetVisitedTracker(const HnswIndex&, uint32_t, uint32_t estimated_visited_nodes)
+HashSetVisitedTracker::HashSetVisitedTracker(uint32_t, uint32_t estimated_visited_nodes)
     : _visited(estimated_visited_nodes)
 {
 }
