@@ -14,7 +14,6 @@ import com.yahoo.vespa.hosted.controller.api.identifiers.DeploymentId;
 import com.yahoo.vespa.hosted.controller.api.integration.zone.ZoneRegistry;
 
 import java.net.URI;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -167,8 +166,8 @@ public class Endpoint {
     }
 
     private static URI createUrl(String name, TenantAndApplicationId application, Optional<InstanceName> instance,
-                                 List<Target> targets, Scope scope, SystemName system, Port port, boolean legacy,
-                                 boolean includeRegionIfApplicationEndpoint) {
+                                 List<Target> targets, Scope scope, SystemName system, Port port, boolean legacy) {
+
         String separator = ".";
         String portPart = port.isDefault() ? "" : ":" + port.port;
         return URI.create("https://" +
@@ -179,7 +178,7 @@ public class Endpoint {
                           separator +
                           sanitize(application.tenant().value()) +
                           "." +
-                          scopePart(scope, targets, system, legacy, includeRegionIfApplicationEndpoint) +
+                          scopePart(scope, targets, system, legacy) +
                           dnsSuffix(system, legacy) +
                           portPart +
                           "/");
@@ -194,11 +193,11 @@ public class Endpoint {
         return name + separator;
     }
 
-    private static String scopePart(Scope scope, List<Target> targets, SystemName system, boolean legacy, boolean includeRegionIfApplicationEndpoint) {
+    private static String scopePart(Scope scope, List<Target> targets, SystemName system, boolean legacy) {
         String scopeSymbol = scopeSymbol(scope, system);
         Set<ZoneId> zones = targets.stream().map(target -> target.deployment.zoneId()).collect(toSet());
         if (scope == Scope.global) return scopeSymbol;
-        if (scope == Scope.application && ! includeRegionIfApplicationEndpoint) return scopeSymbol;
+        if (scope == Scope.application) return scopeSymbol;
 
         ZoneId zone = targets.get(0).deployment().zoneId();
         String region = zone.region().value();
@@ -424,34 +423,14 @@ public class Endpoint {
 
     }
 
-    public static class EndpointFactory {
+    /** Build an endpoint for given instance */
+    public static EndpointBuilder of(ApplicationId instance) {
+        return new EndpointBuilder(TenantAndApplicationId.from(instance), Optional.of(instance.instance()));
+    }
 
-        private final Function<ZoneId, CloudName> clouds;
-
-        public EndpointFactory(Function<ZoneId, CloudName> clouds) {
-            this.clouds = clouds;
-        }
-
-        public EndpointFactory(ZoneRegistry zones) {
-            this(zone -> findCloud(zone, zones));
-        }
-
-        /** Build an endpoint for given instance */
-        public EndpointBuilder of(ApplicationId instance) {
-            return new EndpointBuilder(TenantAndApplicationId.from(instance), Optional.of(instance.instance()), clouds);
-        }
-
-        /** Build an endpoint for given application */
-        public EndpointBuilder of(TenantAndApplicationId application) {
-            return new EndpointBuilder(application, Optional.empty(), clouds);
-        }
-
-        private static CloudName findCloud(ZoneId zone, ZoneRegistry zones) {
-            return zones.zones().all().get(zone)
-                        .orElseThrow(() -> new IllegalArgumentException("unknown zone '" + zone + "'"))
-                        .getCloudName();
-        }
-
+    /** Build an endpoint for given application */
+    public static EndpointBuilder of(TenantAndApplicationId application) {
+        return new EndpointBuilder(application, Optional.empty());
     }
 
     /** A target of an endpoint */
@@ -494,8 +473,6 @@ public class Endpoint {
         private final TenantAndApplicationId application;
         private final Optional<InstanceName> instance;
 
-        private final Function<ZoneId, CloudName> cloudFinder;
-        private final Set<CloudName> clouds = new HashSet<>();
         private Scope scope;
         private List<Target> targets;
         private ClusterSpec.Id cluster;
@@ -505,10 +482,9 @@ public class Endpoint {
         private boolean legacy = false;
         private boolean certificateName = false;
 
-        private EndpointBuilder(TenantAndApplicationId application, Optional<InstanceName> instance, Function<ZoneId, CloudName> cloudFinder) {
+        private EndpointBuilder(TenantAndApplicationId application, Optional<InstanceName> instance) {
             this.application = Objects.requireNonNull(application);
             this.instance = Objects.requireNonNull(instance);
-            this.cloudFinder = Objects.requireNonNull(cloudFinder);
         }
 
         /** Sets the deployment target for this */
@@ -516,7 +492,6 @@ public class Endpoint {
             this.cluster = cluster;
             this.scope = requireUnset(Scope.zone);
             this.targets = List.of(new Target(deployment));
-            this.clouds.add(cloudFinder.apply(deployment.zoneId()));
             return this;
         }
 
@@ -526,7 +501,6 @@ public class Endpoint {
             this.cluster = cluster;
             this.targets = deployments.stream().map(Target::new).toList();
             this.scope = requireUnset(Scope.global);
-            for (DeploymentId deployment : deployments) this.clouds.add(cloudFinder.apply(deployment.zoneId()));
             return this;
         }
 
@@ -563,7 +537,6 @@ public class Endpoint {
                                       .map(kv -> new Target(kv.getKey(), kv.getValue()))
                                       .toList();
             this.scope = Scope.application;
-            for (DeploymentId deploymentId : deployments.keySet()) this.clouds.add(cloudFinder.apply(deploymentId.zoneId()));
             return this;
         }
 
@@ -572,7 +545,6 @@ public class Endpoint {
             this.cluster = cluster;
             this.scope = requireUnset(Scope.weighted);
             this.targets = List.of(new Target(new DeploymentId(application.instance(instance.get()), effectiveZone(zone))));
-            this.clouds.add(cloudFinder.apply(zone));
             return this;
         }
 
@@ -608,7 +580,6 @@ public class Endpoint {
             if (routingMethod.isDirect() && !port.isDefault()) {
                 throw new IllegalArgumentException("Routing method " + routingMethod + " can only use default port");
             }
-            boolean includeRegionIfApplicationEndpoint = ! Set.of(CloudName.AWS, CloudName.GCP).containsAll(clouds);
             URI url = createUrl(endpointOrClusterAsString(endpointId, cluster),
                                 Objects.requireNonNull(application, "application must be non-null"),
                                 Objects.requireNonNull(instance, "instance must be non-null"),
@@ -616,8 +587,7 @@ public class Endpoint {
                                 Objects.requireNonNull(scope, "scope must be non-null"),
                                 Objects.requireNonNull(system, "system must be non-null"),
                                 Objects.requireNonNull(port, "port must be non-null"),
-                                legacy,
-                                includeRegionIfApplicationEndpoint);
+                                legacy);
             return new Endpoint(application,
                                 instance,
                                 endpointId,

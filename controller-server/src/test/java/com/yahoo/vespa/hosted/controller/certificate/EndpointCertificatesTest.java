@@ -270,8 +270,6 @@ public class EndpointCertificatesTest {
                 "*.a1.t1.g.vespa-app.cloud",
                 "a1.t1.r.vespa-app.cloud",
                 "*.a1.t1.r.vespa-app.cloud",
-                "a1.t1.aws-us-east-1c.r.vespa-app.cloud",
-                "*.a1.t1.aws-us-east-1c.r.vespa-app.cloud",
                 "a1.t1.aws-us-east-1c.z.vespa-app.cloud",
                 "*.a1.t1.aws-us-east-1c.z.vespa-app.cloud",
                 "a1.t1.us-east-1.test.z.vespa-app.cloud",

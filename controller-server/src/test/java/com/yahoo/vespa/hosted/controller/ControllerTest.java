@@ -666,9 +666,9 @@ public class ControllerTest {
         // Expected container endpoints are passed to each deployment
         Map<DeploymentId, Map<String, Integer>> deploymentEndpoints = Map.of(
                 new DeploymentId(beta, east3), Map.of(),
-                new DeploymentId(main, east3), Map.of("e.app1.tenant1.us-east-3-r.vespa.oath.cloud", 3),
-                new DeploymentId(beta, west1), Map.of("d.app1.tenant1.us-west-1-r.vespa.oath.cloud", 3),
-                new DeploymentId(main, west1), Map.of("d.app1.tenant1.us-west-1-r.vespa.oath.cloud", 7),
+                new DeploymentId(main, east3), Map.of("e.app1.tenant1.r.vespa.oath.cloud", 3),
+                new DeploymentId(beta, west1), Map.of("d.app1.tenant1.r.vespa.oath.cloud", 3),
+                new DeploymentId(main, west1), Map.of("d.app1.tenant1.r.vespa.oath.cloud", 7),
                 new DeploymentId(beta, east1a), Map.of("a.app1.tenant1.r.vespa.oath.cloud", 2,
                                                        "b.app1.tenant1.r.vespa.oath.cloud", 1),
                 new DeploymentId(main, east1a), Map.of("a.app1.tenant1.r.vespa.oath.cloud", 8,
@@ -722,10 +722,10 @@ public class ControllerTest {
                                                      RecordName.from("c.app1.tenant1.r.vespa.oath.cloud"),
                                                      RecordData.from("weighted/lb-0--tenant1.app1.beta--prod.aws-us-east-1b/dns-zone-1/prod.aws-us-east-1b/4")),
                                           new Record(Record.Type.CNAME,
-                                                     RecordName.from("d.app1.tenant1.us-west-1-r.vespa.oath.cloud"),
+                                                     RecordName.from("d.app1.tenant1.r.vespa.oath.cloud"),
                                                      RecordData.from("vip.prod.us-west-1.")),
                                           new Record(Record.Type.CNAME,
-                                                     RecordName.from("e.app1.tenant1.us-east-3-r.vespa.oath.cloud"),
+                                                     RecordName.from("e.app1.tenant1.r.vespa.oath.cloud"),
                                                      RecordData.from("vip.prod.us-east-3.")))),
                      new TreeSet<>(records));
         List<String> endpointDnsNames = tester.controller().routing().declaredEndpointsOf(context.application())
@@ -735,8 +735,8 @@ public class ControllerTest {
         assertEquals(List.of("a.app1.tenant1.r.vespa.oath.cloud",
                              "b.app1.tenant1.r.vespa.oath.cloud",
                              "c.app1.tenant1.r.vespa.oath.cloud",
-                             "d.app1.tenant1.us-west-1-r.vespa.oath.cloud",
-                             "e.app1.tenant1.us-east-3-r.vespa.oath.cloud"),
+                             "d.app1.tenant1.r.vespa.oath.cloud",
+                             "e.app1.tenant1.r.vespa.oath.cloud"),
                      endpointDnsNames);
     }
 

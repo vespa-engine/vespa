@@ -9,7 +9,6 @@ import com.yahoo.text.Text;
 import com.yahoo.vespa.hosted.controller.api.identifiers.DeploymentId;
 import com.yahoo.vespa.hosted.controller.api.integration.zone.ZoneRegistry;
 import com.yahoo.vespa.hosted.controller.application.Endpoint;
-import com.yahoo.vespa.hosted.controller.application.Endpoint.EndpointFactory;
 import com.yahoo.vespa.hosted.controller.application.Endpoint.Port;
 import com.yahoo.vespa.hosted.controller.application.EndpointId;
 
@@ -127,9 +126,9 @@ public record RoutingPolicy(RoutingPolicyId id,
     }
 
     private Endpoint.EndpointBuilder endpoint(RoutingMethod routingMethod, ZoneRegistry zones) {
-        return new EndpointFactory(zones).of(id.owner())
-                                         .on(Port.fromRoutingMethod(routingMethod))
-                                         .routingMethod(routingMethod);
+        return Endpoint.of(id.owner())
+                       .on(Port.fromRoutingMethod(routingMethod))
+                       .routingMethod(routingMethod);
     }
 
     /** The status of a routing policy */

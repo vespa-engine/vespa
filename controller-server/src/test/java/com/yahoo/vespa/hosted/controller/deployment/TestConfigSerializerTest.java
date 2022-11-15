@@ -11,7 +11,6 @@ import com.yahoo.slime.SlimeUtils;
 import com.yahoo.vespa.hosted.controller.api.identifiers.DeploymentId;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.RevisionId;
 import com.yahoo.vespa.hosted.controller.application.Endpoint;
-import com.yahoo.vespa.hosted.controller.application.Endpoint.EndpointFactory;
 import com.yahoo.vespa.hosted.controller.application.EndpointId;
 import org.junit.jupiter.api.Test;
 
@@ -40,12 +39,12 @@ public class TestConfigSerializerTest {
                             Version.fromString("1.2.3"),
                             RevisionId.forProduction(321),
                             Instant.ofEpochMilli(222),
-                            Map.of(zone, List.of(new EndpointFactory(__ -> CloudName.DEFAULT).of(ApplicationId.defaultId())
-                                                                                             .target(EndpointId.of("ai"), ClusterSpec.Id.from("qrs"),
+                            Map.of(zone, List.of(Endpoint.of(ApplicationId.defaultId())
+                                                         .target(EndpointId.of("ai"), ClusterSpec.Id.from("qrs"),
                                                                                                      List.of(new DeploymentId(ApplicationId.defaultId(),
                                                                                                                               ZoneId.defaultId())))
-                                                                                             .on(Endpoint.Port.tls())
-                                                                                             .in(SystemName.main))),
+                                                         .on(Endpoint.Port.tls())
+                                                         .in(SystemName.main))),
                             Map.of(zone, List.of("facts")));
         byte[] expected = Files.readAllBytes(Paths.get("src/test/resources/testConfig.json"));
         assertEquals(new String(SlimeUtils.toJsonBytes(SlimeUtils.jsonToSlime(expected))),
