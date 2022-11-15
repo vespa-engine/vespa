@@ -16,14 +16,7 @@ public interface RequestResourceMapper {
     /**
      * @return A resource name + action to use for access control, empty if no access control should be performed.
      */
-    Optional<ResourceNameAndAction> getResourceNameAndAction(String method, String uriPath, String uriQuery);
-
-    /**
-     * @return A resource name + action to use for access control, empty if no access control should be performed.
-     */
-    default Optional<ResourceNameAndAction> getResourceNameAndAction(DiscFilterRequest request) {
-        return getResourceNameAndAction(request.getMethod(), request.getRequestURI(), request.getQueryString());
-    }
+    Optional<ResourceNameAndAction> getResourceNameAndAction(DiscFilterRequest request);
 
     class ResourceNameAndAction {
         private final AthenzResourceName resourceName;

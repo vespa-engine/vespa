@@ -2,6 +2,7 @@
 package com.yahoo.jdisc.http.filter.security.athenz;
 
 import com.yahoo.component.annotation.Inject;
+import com.yahoo.jdisc.http.filter.DiscFilterRequest;
 import com.yahoo.vespa.athenz.api.AthenzResourceName;
 
 import java.util.Optional;
@@ -27,7 +28,7 @@ public class StaticRequestResourceMapper implements RequestResourceMapper {
     }
 
     @Override
-    public Optional<ResourceNameAndAction> getResourceNameAndAction(String method, String uriPath, String uriQuery) {
+    public Optional<ResourceNameAndAction> getResourceNameAndAction(DiscFilterRequest request) {
         return Optional.of(new ResourceNameAndAction(resourceName, action));
     }
 }
