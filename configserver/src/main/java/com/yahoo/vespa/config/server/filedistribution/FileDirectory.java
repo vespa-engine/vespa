@@ -98,17 +98,19 @@ public class FileDirectory  {
 
     public FileReference addFile(File source) throws IOException {
         Long hash = computeHash(source);
-        verifyExistingFile(source, hash);
         FileReference fileReference = fileReferenceFromHash(hash);
-        return addFile(source, fileReference);
+
+        if (shouldAddFile(source, hash))
+            return addFile(source, fileReference);
+
+        return fileReference;
     }
 
-    // If there exists a directory for a file reference, but content does not have correct hash or the file we want to add
-    // does not exist in the directory, delete the directory
-    private void verifyExistingFile(File source, Long hashOfFileToBeAdded) throws IOException {
+    // Check if we should add file, it might already exist
+    private boolean shouldAddFile(File source, Long hashOfFileToBeAdded) throws IOException {
         FileReference fileReference = fileReferenceFromHash(hashOfFileToBeAdded);
         File destinationDir = destinationDir(fileReference);
-        if (!destinationDir.exists()) return;
+        if ( ! destinationDir.exists()) return true;
 
         File existingFile = destinationDir.toPath().resolve(source.getName()).toFile();
         if ( ! existingFile.exists() || ! computeHash(existingFile).equals(hashOfFileToBeAdded)) {
@@ -116,7 +118,11 @@ public class FileDirectory  {
                     "' has content that does not match its hash, deleting everything in " +
                     destinationDir.getAbsolutePath());
             IOUtils.recursiveDeleteDir(destinationDir);
+            return true;
         }
+
+        log.log(Level.FINE, "Directory for file reference '" + fileReference.value() + "' already exists and has all content");
+        return false;
     }
 
     private File destinationDir(FileReference fileReference) {
