@@ -113,7 +113,7 @@ public class EnforceDependenciesAllProjects implements EnforcerRule {
             throw new EnforcerRuleException(
                     errorMsg.append("Maven dependency validation failed. ")
                             .append("If this change was intentional, update the dependency spec by running:\n")
-                            .append("$ mvn validate -D").append(WRITE_SPEC_PROP).append(" -pl ").append(moduleName)
+                            .append("$ mvn validate -D").append(WRITE_SPEC_PROP).append(" -pl :").append(moduleName)
                             .append(" -f ").append(aggregatorPomRoot).append("\n").toString());
         }
     }
@@ -151,10 +151,6 @@ public class EnforceDependenciesAllProjects implements EnforcerRule {
             MavenSession session = mavenSession(helper);
             var graphBuilder = helper.getComponent(DependencyGraphBuilder.class);
             List<MavenProject> projects = getAllProjects(session, rootProjectId);
-            if (projects.size() == 1) {
-                throw new EnforcerRuleException(
-                        "Only a single Maven module detected. Enforcer must be executed from root of aggregator pom.");
-            }
             for (MavenProject project : projects) {
                 var req = new DefaultProjectBuildingRequest(session.getProjectBuildingRequest());
                 req.setProject(project);
@@ -177,14 +173,18 @@ public class EnforceDependenciesAllProjects implements EnforcerRule {
     private static List<MavenProject> getAllProjects(MavenSession session, String rootProjectId) throws EnforcerRuleException {
         if (rootProjectId == null) throw new EnforcerRuleException("Missing required <rootProjectId> in <enforceDependencies> in pom.xml");
 
-        MavenProject rootProject = session.getProjects()
-                                          .stream()
-                                          .filter(project -> rootProjectId.equals(projectIdOf(project)))
-                                          .findAny()
-                                          .orElseThrow(() -> new EnforcerRuleException("Root project not found: " + rootProjectId));
+        List<MavenProject> allProjects = session.getAllProjects();
+        if (allProjects.size() == 1) {
+            throw new EnforcerRuleException(
+                    "Only a single Maven module detected. Enforcer must be executed from root of aggregator pom.");
+        }
+        MavenProject rootProject = allProjects
+                .stream()
+                .filter(project -> rootProjectId.equals(projectIdOf(project)))
+                .findAny()
+                .orElseThrow(() -> new EnforcerRuleException("Root project not found: " + rootProjectId));
 
-        Map<Path, MavenProject> projectsByBaseDir = session
-                .getProjects()
+        Map<Path, MavenProject> projectsByBaseDir = allProjects
                 .stream()
                 .collect(Collectors.toMap(project -> project.getBasedir().toPath().normalize(), project -> project));
 
@@ -234,10 +234,7 @@ public class EnforceDependenciesAllProjects implements EnforcerRule {
         return Paths.get(mavenProject(helper).getBasedir() + File.separator + specFile).normalize();
     }
 
-    private static String projectName(EnforcerRuleHelper helper) {
-        MavenProject p = mavenProject(helper);
-        return p.getModules().isEmpty() ? p.getName() : ".";
-    }
+    private static String projectName(EnforcerRuleHelper helper) { return mavenProject(helper).getArtifactId(); }
 
     private static Path aggregatorPomRoot(EnforcerRuleHelper helper) {
         return mavenSession(helper).getRequest().getPom().toPath();
