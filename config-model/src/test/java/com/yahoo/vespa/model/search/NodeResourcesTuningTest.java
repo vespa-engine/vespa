@@ -168,10 +168,15 @@ public class NodeResourcesTuningTest {
         assertSharedDisk(true, true);
     }
 
+    private static ProtonConfig fromMemAndCpu(int gb, int vcpu) {
+        return getConfig(new FlavorsConfig.Flavor.Builder().minMainMemoryAvailableGb(gb).minCpuCores(vcpu));
+    }
     @Test
     public void require_that_concurrent_flush_threads_is_1_with_low_memory() {
-        assertEquals(2, configFromMemorySetting(13, 0).flush().maxconcurrent());
-        assertEquals(1, configFromMemorySetting(11, 0).flush().maxconcurrent());
+        assertEquals(2, fromMemAndCpu(17, 9).flush().maxconcurrent());
+        assertEquals(1, fromMemAndCpu(15, 8).flush().maxconcurrent());
+        assertEquals(1, fromMemAndCpu(17, 8).flush().maxconcurrent());
+        assertEquals(1, fromMemAndCpu(15, 8).flush().maxconcurrent());
     }
 
     private static void assertDocumentStoreMaxFileSize(long expFileSizeBytes, int wantedMemoryGb) {
