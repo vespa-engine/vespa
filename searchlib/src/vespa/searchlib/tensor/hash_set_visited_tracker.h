@@ -6,8 +6,6 @@
 
 namespace search::tensor {
 
-class HnswIndex;
-
 /*
  * Tracker for visited nodes based on vespalib::hash_set<uint32_t>. Best when
  * only a small portion of the nodes are visited.
@@ -16,7 +14,7 @@ class HashSetVisitedTracker
 {
     vespalib::hash_set<uint32_t> _visited;
 public:
-    HashSetVisitedTracker(const HnswIndex&, uint32_t, uint32_t estimated_visited_nodes);
+    HashSetVisitedTracker(uint32_t, uint32_t estimated_visited_nodes);
     ~HashSetVisitedTracker();
     void mark(uint32_t nodeid) { _visited.insert(nodeid); }
     bool try_mark(uint32_t nodeid) {

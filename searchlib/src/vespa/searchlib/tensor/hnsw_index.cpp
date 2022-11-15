@@ -264,7 +264,7 @@ HnswIndex::search_layer_helper(const TypedCells& input, uint32_t neighbors_to_fi
                                uint32_t nodeid_limit, uint32_t estimated_visited_nodes) const
 {
     NearestPriQ candidates;
-    VisitedTracker visited(*this, nodeid_limit, estimated_visited_nodes);
+    VisitedTracker visited(nodeid_limit, estimated_visited_nodes);
     for (const auto &entry : best_neighbors.peek()) {
         if (entry.nodeid >= nodeid_limit) {
             continue;
