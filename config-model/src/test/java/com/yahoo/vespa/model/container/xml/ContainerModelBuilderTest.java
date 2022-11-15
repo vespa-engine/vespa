@@ -17,6 +17,7 @@ import com.yahoo.config.model.provision.InMemoryProvisioner;
 import com.yahoo.config.model.provision.SingleNodeProvisioner;
 import com.yahoo.config.model.test.MockApplicationPackage;
 import com.yahoo.config.model.test.MockRoot;
+import com.yahoo.config.provision.CloudAccount;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.Flavor;
 import com.yahoo.config.provision.RegionName;
@@ -35,7 +36,6 @@ import com.yahoo.container.usability.BindingsOverviewHandler;
 import com.yahoo.net.HostName;
 import com.yahoo.prelude.cluster.QrMonitorConfig;
 import com.yahoo.search.config.QrStartConfig;
-import com.yahoo.vespa.defaults.Defaults;
 import com.yahoo.vespa.model.AbstractService;
 import com.yahoo.vespa.model.VespaModel;
 import com.yahoo.vespa.model.container.ApplicationContainer;
@@ -67,7 +67,13 @@ import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.containsString;
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 /**
  * Tests for "core functionality" of the container model, e.g. ports, or the 'components' and 'bundles' configs.
@@ -420,6 +426,27 @@ public class ContainerModelBuilderTest extends ContainerModelBuilderTestBase {
                         .setHostedVespa(true))
                 .build());
         assertEquals(2, model.hostSystem().getHosts().size());
+    }
+
+    @Test
+    void cloud_account_without_nodes_tag() throws Exception {
+        String servicesXml = "<container id='default' version='1.0' />";
+        ApplicationPackage applicationPackage = new MockApplicationPackage.Builder().withServices(servicesXml).build();
+        CloudAccount cloudAccount = CloudAccount.from("000000000000");
+        InMemoryProvisioner provisioner = new InMemoryProvisioner(true, false, "host1.yahoo.com", "host2.yahoo.com");
+        VespaModel model = new VespaModel(new NullConfigModelRegistry(), new DeployState.Builder()
+                .modelHostProvisioner(provisioner)
+                .provisioned(provisioner.startProvisionedRecording())
+                .applicationPackage(applicationPackage)
+                .properties(new TestProperties().setMultitenant(true)
+                                                .setHostedVespa(true)
+                                                .setCloudAccount(cloudAccount))
+                .build());
+        assertEquals(2, model.hostSystem().getHosts().size());
+        assertEquals(List.of(cloudAccount), model.provisioned().all().values()
+                                                 .stream()
+                                                 .map(capacity -> capacity.cloudAccount().get())
+                                                 .collect(Collectors.toList()));
     }
 
     @Test

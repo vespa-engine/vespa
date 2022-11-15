@@ -9,6 +9,7 @@ import com.yahoo.config.model.api.Quota;
 import com.yahoo.config.model.api.TenantSecretStore;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.AthenzDomain;
+import com.yahoo.config.provision.CloudAccount;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.HostName;
 import com.yahoo.config.provision.Zone;
@@ -80,6 +81,7 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
     private int heapSizePercentage = ApplicationContainerCluster.defaultHeapSizePercentageOfTotalNodeMemory;
     private Architecture adminClusterNodeResourcesArchitecture = Architecture.getDefault();
     private boolean useRestrictedDataPlaneBindings = false;
+    private Optional<CloudAccount> cloudAccount = Optional.empty();
 
     @Override public ModelContext.FeatureFlags featureFlags() { return this; }
     @Override public boolean multitenant() { return multitenant; }
@@ -134,6 +136,7 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
     @Override public String queryDispatchPolicy() { return queryDispatchPolicy; }
     @Override public boolean useTwoPhaseDocumentGc() { return useTwoPhaseDocumentGc; }
     @Override public boolean useRestrictedDataPlaneBindings() { return useRestrictedDataPlaneBindings; }
+    @Override public Optional<CloudAccount> cloudAccount() { return cloudAccount; }
 
     public TestProperties sharedStringRepoNoReclaim(boolean sharedStringRepoNoReclaim) {
         this.sharedStringRepoNoReclaim = sharedStringRepoNoReclaim;
@@ -355,6 +358,11 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
 
     public TestProperties setUseRestrictedDataPlaneBindings(boolean useRestrictedDataPlaneBindings) {
         this.useRestrictedDataPlaneBindings = useRestrictedDataPlaneBindings;
+        return this;
+    }
+
+    public TestProperties setCloudAccount(CloudAccount cloudAccount) {
+        this.cloudAccount = Optional.ofNullable(cloudAccount);
         return this;
     }
 
