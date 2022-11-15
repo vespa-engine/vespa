@@ -49,7 +49,7 @@ size_t calc_sum_direct(size_t first, size_t last) {
     return calc_sum(ValueRange(first, last));
 }
 
-Generator<size_t> gen_values(size_t first, size_t last) {
+Generator<const size_t &> gen_values(size_t first, size_t last) {
     for (size_t i = first; i < last; ++i) {
         co_yield i;
     }
