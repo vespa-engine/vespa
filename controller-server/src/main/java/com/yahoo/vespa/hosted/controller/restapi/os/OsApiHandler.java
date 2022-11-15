@@ -146,11 +146,10 @@ public class OsApiHandler extends AuditLoggingRequestHandler {
             return new MessageResponse("Cleared target OS version for cloud '" + cloud.value() + "'");
         }
         Version target = parseStringField("version", root, Version::fromString);
-        Duration upgradeBudget = parseStringField("upgradeBudget", root, Duration::parse);
         boolean force = root.field("force").asBool();
-        controller.upgradeOsIn(cloud, target, upgradeBudget, force);
+        controller.upgradeOsIn(cloud, target, force);
         return new MessageResponse("Set target OS version for cloud '" + cloud.value() + "' to " +
-                                   target.toFullString() + " with upgrade budget " + upgradeBudget);
+                                   target.toFullString());
     }
 
     private Slime osVersions() {
@@ -166,7 +165,7 @@ public class OsApiHandler extends AuditLoggingRequestHandler {
             Optional<OsVersionTarget> target = targets.stream().filter(t -> t.osVersion().equals(osVersion)).findFirst();
             currentVersionObject.setBool("targetVersion", target.isPresent());
             target.ifPresent(t -> {
-                currentVersionObject.setString("upgradeBudget", t.upgradeBudget().toString());
+                currentVersionObject.setString("upgradeBudget", Duration.ZERO.toString());
                 currentVersionObject.setLong("scheduledAt", t.scheduledAt().toEpochMilli());
                 Optional<Change> nextChange = osUpgradeScheduler.changeIn(t.osVersion().cloud(), now);
                 nextChange.ifPresent(c -> {

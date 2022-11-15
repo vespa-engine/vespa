@@ -47,7 +47,7 @@ public class OsUpgradeSchedulerTest {
 
         // Target is set manually
         Version version0 = Version.fromString("7.0.0.20220101");
-        tester.controller().upgradeOsIn(cloud, version0, Duration.ofDays(1), false);
+        tester.controller().upgradeOsIn(cloud, version0, false);
 
         // Target remains unchanged as it hasn't expired yet
         for (var interval : List.of(Duration.ZERO, Duration.ofDays(30))) {
@@ -106,7 +106,7 @@ public class OsUpgradeSchedulerTest {
 
         // Set initial target
         Version version0 = Version.fromString("7.0.0.20220101");
-        tester.controller().upgradeOsIn(cloud, version0, Duration.ofDays(1), false);
+        tester.controller().upgradeOsIn(cloud, version0, false);
 
         // Next version is triggered
         Version version1 = Version.fromString("7.0.0.20220301");
@@ -137,7 +137,7 @@ public class OsUpgradeSchedulerTest {
         // Set initial target
         CloudName cloud = tester.controller().clouds().iterator().next();
         Version version0 = Version.fromString("8.0");
-        tester.controller().upgradeOsIn(cloud, version0, Duration.ZERO, false);
+        tester.controller().upgradeOsIn(cloud, version0, false);
 
         // Stable release (tagged outside trigger period) is scheduled once trigger period opens
         Version version1 = Version.fromString("8.1");
@@ -151,7 +151,7 @@ public class OsUpgradeSchedulerTest {
 
         // A newer version is triggered manually
         Version version3 = Version.fromString("8.3");
-        tester.controller().upgradeOsIn(cloud, version3, Duration.ZERO, false);
+        tester.controller().upgradeOsIn(cloud, version3, false);
 
         // Nothing happens in next iteration as tagged release is older than manually triggered version
         scheduleUpgradeAfter(Duration.ofDays(7), version3, scheduler, tester);
@@ -168,7 +168,7 @@ public class OsUpgradeSchedulerTest {
         // Set initial target
         CloudName cloud = tester.controller().clouds().iterator().next();
         Version version0 = Version.fromString("8.0");
-        tester.controller().upgradeOsIn(cloud, version0, Duration.ZERO, false);
+        tester.controller().upgradeOsIn(cloud, version0, false);
 
         // Latest release is not scheduled immediately
         Version version1 = Version.fromString("8.1");
@@ -207,7 +207,6 @@ public class OsUpgradeSchedulerTest {
         CloudName cloud = tester.controller().clouds().iterator().next();
         OsVersionTarget target = tester.controller().osVersionTarget(cloud).get();
         assertEquals(version, target.osVersion().version());
-        assertEquals(Duration.ZERO, target.upgradeBudget(), "No budget when scheduling a tagged release");
     }
 
     private static ZoneApi zone(String id, CloudName cloud) {

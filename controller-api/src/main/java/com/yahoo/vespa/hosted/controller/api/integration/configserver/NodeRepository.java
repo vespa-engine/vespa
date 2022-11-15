@@ -9,7 +9,6 @@ import com.yahoo.config.provision.TenantName;
 import com.yahoo.config.provision.zone.ZoneId;
 
 import java.net.URI;
-import java.time.Duration;
 import java.util.List;
 import java.util.Map;
 
@@ -58,7 +57,7 @@ public interface NodeRepository {
     void upgrade(ZoneId zone, NodeType type, Version version, boolean allowDowngrade);
 
     /** Upgrade OS for all nodes of given type to a new version */
-    void upgradeOs(ZoneId zone, NodeType type, Version version, Duration upgradeBudget);
+    void upgradeOs(ZoneId zone, NodeType type, Version version);
 
     /** Get target versions for upgrades in given zone */
     TargetVersions targetVersionsOf(ZoneId zone);

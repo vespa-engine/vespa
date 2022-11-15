@@ -40,7 +40,7 @@ public class OsVersionStatusUpdaterTest {
         // Setting a new target adds it to current status
         Version version1 = Version.fromString("7.1");
         CloudName cloud = CloudName.DEFAULT;
-        tester.controller().upgradeOsIn(cloud, version1, Duration.ZERO, false);
+        tester.controller().upgradeOsIn(cloud, version1, false);
         statusUpdater.maintain();
 
         var osVersions = tester.controller().osVersionStatus().versions();
@@ -49,7 +49,7 @@ public class OsVersionStatusUpdaterTest {
         assertTrue(osVersions.get(new OsVersion(version1, cloud)).isEmpty(), "No nodes on current target");
 
         CloudName otherCloud = CloudName.AWS;
-        tester.controller().upgradeOsIn(otherCloud, version1, Duration.ZERO, false);
+        tester.controller().upgradeOsIn(otherCloud, version1, false);
         statusUpdater.maintain();
 
         osVersions = tester.controller().osVersionStatus().versions();
