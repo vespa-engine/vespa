@@ -5,12 +5,9 @@ import com.google.common.collect.ImmutableSortedMap;
 import com.yahoo.component.Version;
 import com.yahoo.config.provision.NodeType;
 
-import java.time.Duration;
-import java.time.Instant;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Optional;
 
 /**
  * The OS version change being deployed in a {@link com.yahoo.vespa.hosted.provision.NodeRepository}.
@@ -40,21 +37,10 @@ public class OsVersionChange {
     }
 
     /** Returns a copy of this with given target added */
-    public OsVersionChange withTarget(Version version, NodeType nodeType, Duration upgradeBudget) {
-        var targets = new HashMap<>(this.targets);
-        targets.compute(nodeType, (key, prevTarget) -> {
-            Optional<Instant> lastRetiredAt = Optional.ofNullable(prevTarget).flatMap(OsVersionTarget::lastRetiredAt);
-            return new OsVersionTarget(nodeType, version, upgradeBudget, lastRetiredAt);
-        });
-        return new OsVersionChange(targets);
-    }
-
-    /** Returns a copy of this with last retirement for given node type changed */
-    public OsVersionChange withRetirementAt(Instant instant, NodeType nodeType) {
-        requireTarget(nodeType);
-        var targets = new HashMap<>(this.targets);
-        targets.computeIfPresent(nodeType, (key, target) -> new OsVersionTarget(nodeType, target.version(), target.upgradeBudget(), Optional.of(instant)));
-        return new OsVersionChange(targets);
+    public OsVersionChange withTarget(Version version, NodeType nodeType) {
+        var copy = new HashMap<>(this.targets);
+        copy.compute(nodeType, (key, prevTarget) -> new OsVersionTarget(nodeType, version));
+        return new OsVersionChange(copy);
     }
 
     @Override

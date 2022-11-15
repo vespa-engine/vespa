@@ -10,7 +10,6 @@ import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.HostSpec;
 import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.NodeType;
-import com.yahoo.test.ManualClock;
 import com.yahoo.vespa.flags.Flags;
 import com.yahoo.vespa.flags.PermanentFlags;
 import com.yahoo.vespa.hosted.provision.Node;
@@ -23,7 +22,6 @@ import com.yahoo.vespa.hosted.provision.provisioning.ProvisioningTester;
 import org.junit.Test;
 
 import java.time.Duration;
-import java.time.temporal.ChronoUnit;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
@@ -53,7 +51,7 @@ public class OsVersionsTest {
         // Upgrade OS
         assertTrue("No versions set", versions.readChange().targets().isEmpty());
         var version1 = Version.fromString("7.1");
-        versions.setTarget(NodeType.host, version1, Duration.ZERO, false);
+        versions.setTarget(NodeType.host, version1, false);
         assertEquals(version1, versions.targetFor(NodeType.host).get());
         assertTrue("Per-node wanted OS version remains unset", hostNodes.get().stream().allMatch(node -> node.status().osVersion().wanted().isEmpty()));
 
@@ -63,7 +61,7 @@ public class OsVersionsTest {
 
         // Upgrade OS again
         var version2 = Version.fromString("7.2");
-        versions.setTarget(NodeType.host, version2, Duration.ZERO, false);
+        versions.setTarget(NodeType.host, version2, false);
         assertEquals(version2, versions.targetFor(NodeType.host).get());
 
         // Resume upgrade
@@ -81,12 +79,12 @@ public class OsVersionsTest {
 
         // Downgrading fails
         try {
-            versions.setTarget(NodeType.host, version1, Duration.ZERO, false);
+            versions.setTarget(NodeType.host, version1, false);
             fail("Expected exception");
         } catch (IllegalArgumentException ignored) {}
 
         // Forcing downgrade succeeds
-        versions.setTarget(NodeType.host, version1, Duration.ZERO, true);
+        versions.setTarget(NodeType.host, version1, true);
         assertEquals(version1, versions.targetFor(NodeType.host).get());
 
         // Target can be removed
@@ -118,7 +116,7 @@ public class OsVersionsTest {
 
         // Set target
         var version1 = Version.fromString("7.1");
-        versions.setTarget(NodeType.host, version1, Duration.ZERO, false);
+        versions.setTarget(NodeType.host, version1, false);
         assertEquals(version1, versions.targetFor(NodeType.host).get());
 
         // Activate target
@@ -155,7 +153,7 @@ public class OsVersionsTest {
 
         // Trigger upgrade to next version
         var version2 = Version.fromString("7.2");
-        versions.setTarget(NodeType.host, version2, Duration.ZERO, false);
+        versions.setTarget(NodeType.host, version2, false);
         versions.resumeUpgradeOf(NodeType.host, true);
 
         // Wanted version is changed to newest target for all nodes
@@ -164,8 +162,8 @@ public class OsVersionsTest {
 
     @Test
     public void upgrade_by_retiring() {
-        var versions = new OsVersions(tester.nodeRepository(), Cloud.builder().dynamicProvisioning(true).build(), Integer.MAX_VALUE);
-        var clock = (ManualClock) tester.nodeRepository().clock();
+        int maxActiveUpgrades = 2;
+        var versions = new OsVersions(tester.nodeRepository(), Cloud.builder().dynamicProvisioning(true).build(), maxActiveUpgrades);
         int hostCount = 10;
         // Provision hosts and children
         List<Node> hosts = provisionInfraApplication(hostCount);
@@ -176,40 +174,28 @@ public class OsVersionsTest {
         Supplier<NodeList> hostNodes = () -> tester.nodeRepository().nodes().list()
                                                    .hosts()
                                                    .not().state(Node.State.deprovisioned);
-        tester.clock().advance(Duration.ofDays(31)); // Let grace period pass
+        tester.clock().advance(Duration.ofDays(2)); // Let grace period pass
 
         // Target is set and upgrade started
         var version1 = Version.fromString("7.1");
-        Duration initialBudget = Duration.ofHours(24);
-        versions.setTarget(NodeType.host, version1, initialBudget, false);
-        Duration totalBudget = Duration.ofHours(12);
-        Duration nodeBudget = totalBudget.dividedBy(hostCount);
-        versions.setTarget(NodeType.host, version1, totalBudget,false);
+        versions.setTarget(NodeType.host, version1, false);
         versions.resumeUpgradeOf(NodeType.host, true);
 
         // One host is deprovisioning
-        assertEquals(1, hostNodes.get().deprovisioning().size());
+        assertEquals(maxActiveUpgrades, hostNodes.get().deprovisioning().size());
 
-        // Nothing happens on next resume as first host has not spent its budget
+        // Nothing happens on next resume as first batch has not completed upgrade
         versions.resumeUpgradeOf(NodeType.host, true);
         NodeList nodesDeprovisioning = hostNodes.get().deprovisioning();
-        assertEquals(1, nodesDeprovisioning.size());
+        assertEquals(maxActiveUpgrades, nodesDeprovisioning.size());
         assertEquals(2, deprovisioningChildrenOf(nodesDeprovisioning.asList().get(0)).size());
+        completeReprovisionOf(nodesDeprovisioning.asList());
 
-        // Budget has been spent and another host is retired
-        clock.advance(nodeBudget);
-        versions.resumeUpgradeOf(NodeType.host, true);
-        assertEquals(2, hostNodes.get().deprovisioning().size());
-
-        // Two nodes complete their upgrade by being reprovisioned
-        completeReprovisionOf(hostNodes.get().deprovisioning().asList());
-        assertEquals(2, hostNodes.get().onOsVersion(version1).size());
-        // The remaining hosts complete their upgrade
-        for (int i = 0; i < hostCount - 2; i++) {
-            clock.advance(nodeBudget);
+        // Remaining hosts complete upgrades one by one
+        for (int i = 0; i < hostCount - 2; i += maxActiveUpgrades) {
             versions.resumeUpgradeOf(NodeType.host, true);
             nodesDeprovisioning = hostNodes.get().deprovisioning();
-            assertEquals(1, nodesDeprovisioning.size());
+            assertEquals(maxActiveUpgrades, nodesDeprovisioning.size());
             assertEquals(2, deprovisioningChildrenOf(nodesDeprovisioning.asList().get(0)).size());
             completeReprovisionOf(nodesDeprovisioning.asList());
         }
@@ -217,17 +203,10 @@ public class OsVersionsTest {
         // All hosts upgraded and none are deprovisioning
         assertEquals(hostCount, hostNodes.get().onOsVersion(version1).not().deprovisioning().size());
         assertEquals(hostCount, tester.nodeRepository().nodes().list(Node.State.deprovisioned).size());
-        var lastRetiredAt = clock.instant().truncatedTo(ChronoUnit.MILLIS);
 
         // Resuming after everything has upgraded does nothing
         versions.resumeUpgradeOf(NodeType.host, true);
         assertEquals(0, hostNodes.get().deprovisioning().size());
-
-        // Another upgrade is triggered. Last retirement time is preserved
-        clock.advance(Duration.ofDays(1));
-        var version2 = Version.fromString("7.2");
-        versions.setTarget(NodeType.host, version2, totalBudget, false);
-        assertEquals(lastRetiredAt, versions.readChange().targets().get(NodeType.host).lastRetiredAt().get());
     }
 
     @Test
@@ -238,11 +217,11 @@ public class OsVersionsTest {
         Supplier<NodeList> hostNodes = () -> tester.nodeRepository().nodes().list()
                                                    .nodeType(NodeType.confighost)
                                                    .not().state(Node.State.deprovisioned);
-        tester.clock().advance(Duration.ofDays(31)); // Let grace period pass
+        tester.clock().advance(Duration.ofDays(2)); // Let grace period pass
 
-        // Target is set with zero budget and upgrade started
+        // Target is set and upgrade started
         var version1 = Version.fromString("7.1");
-        versions.setTarget(NodeType.confighost, version1, Duration.ZERO,false);
+        versions.setTarget(NodeType.confighost, version1, false);
         for (int i = 0; i < hostCount; i++) {
             versions.resumeUpgradeOf(NodeType.confighost, true);
         }
@@ -264,7 +243,7 @@ public class OsVersionsTest {
 
         // All hosts upgrade to first version. Upgrades are delegated
         var version0 = Version.fromString("7.0");
-        versions.setTarget(NodeType.host, version0, Duration.ZERO, false);
+        versions.setTarget(NodeType.host, version0, false);
         setCurrentVersion(hostNodes.get().asList(), version0);
 
         // One host is failed out
@@ -273,7 +252,7 @@ public class OsVersionsTest {
 
         // Target is set for new major version. Upgrade mechanism switches to rebuilding
         var version1 = Version.fromString("8.0");
-        versions.setTarget(NodeType.host, version1, Duration.ZERO, false);
+        versions.setTarget(NodeType.host, version1, false);
         versions.resumeUpgradeOf(NodeType.host, true);
 
         // One host starts rebuilding
@@ -309,7 +288,7 @@ public class OsVersionsTest {
 
         // Next version is within same major. Upgrade mechanism switches to delegated
         var version2 = Version.fromString("8.1");
-        versions.setTarget(NodeType.host, version2, Duration.ZERO, false);
+        versions.setTarget(NodeType.host, version2, false);
         versions.resumeUpgradeOf(NodeType.host, true);
         NodeList nonFailingHosts = hostNodes.get().except(failedHost);
         assertTrue("Wanted version is set", nonFailingHosts.stream()
@@ -348,7 +327,7 @@ public class OsVersionsTest {
         // New target is set
         int hostsRebuilt = 0;
         var version1 = Version.fromString("8.0");
-        versions.setTarget(NodeType.host, version1, Duration.ZERO, false);
+        versions.setTarget(NodeType.host, version1, false);
         versions.resumeUpgradeOf(NodeType.host, true);
 
         // First batch of hosts start rebuilding
@@ -394,14 +373,14 @@ public class OsVersionsTest {
 
         // All hosts upgrade to first version. Upgrades are delegated
         var version0 = Version.fromString("7.0");
-        versions.setTarget(NodeType.host, version0, Duration.ZERO, false);
-        versions.setTarget(NodeType.confighost, version0, Duration.ZERO, false);
+        versions.setTarget(NodeType.host, version0, false);
+        versions.setTarget(NodeType.confighost, version0, false);
         setCurrentVersion(hosts.get().asList(), version0);
 
         // Target is set for new major version
         var version1 = Version.fromString("8.0");
-        versions.setTarget(NodeType.host, version1, Duration.ZERO, false);
-        versions.setTarget(NodeType.confighost, version1, Duration.ZERO, false);
+        versions.setTarget(NodeType.host, version1, false);
+        versions.setTarget(NodeType.confighost, version1, false);
 
         // One  host of each type is upgraded
         for (int i = 0; i < hostCount; i++) {
@@ -429,12 +408,12 @@ public class OsVersionsTest {
 
         // All hosts are on initial version
         var version0 = Version.fromString("7.0");
-        versions.setTarget(NodeType.host, version0, Duration.ZERO, false);
+        versions.setTarget(NodeType.host, version0, false);
         setCurrentVersion(hosts.get().asList(), version0);
 
         // Target is set for new major version
         var version1 = Version.fromString("8.0");
-        versions.setTarget(NodeType.host, version1, Duration.ZERO, false);
+        versions.setTarget(NodeType.host, version1, false);
 
         // Upgrades 1 host per stateful cluster and 1 empty host
         versions.resumeUpgradeOf(NodeType.host, true);
@@ -502,12 +481,12 @@ public class OsVersionsTest {
 
         // All hosts are on initial version
         var version0 = Version.fromString("7.0");
-        versions.setTarget(NodeType.proxyhost, version0, Duration.ZERO, false);
+        versions.setTarget(NodeType.proxyhost, version0, false);
         setCurrentVersion(hosts.get().asList(), version0);
 
         // Target is set for new major version
         var version1 = Version.fromString("8.0");
-        versions.setTarget(NodeType.proxyhost, version1, Duration.ZERO, false);
+        versions.setTarget(NodeType.proxyhost, version1, false);
 
         // Upgrades 1 infrastructure host at a time
         for (int i = 0; i < hostCount; i++) {

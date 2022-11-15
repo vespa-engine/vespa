@@ -38,7 +38,7 @@ public class OsUpgradeScheduler extends ControllerMaintainer {
             Optional<Change> change = changeIn(cloud, now);
             if (change.isEmpty()) continue;
             if (!change.get().scheduleAt(now)) continue;
-            controller().upgradeOsIn(cloud, change.get().version(), change.get().upgradeBudget(), false);
+            controller().upgradeOsIn(cloud, change.get().version(), false);
         }
         return 1.0;
     }
@@ -101,12 +101,11 @@ public class OsUpgradeScheduler extends ControllerMaintainer {
 
     }
 
-    /** OS version change, its budget and the earliest time it can be scheduled */
-    public record Change(Version version, Duration upgradeBudget, Instant scheduleAt) {
+    /** OS version change and the earliest time it can be scheduled */
+    public record Change(Version version, Instant scheduleAt) {
 
         public Change {
             Objects.requireNonNull(version);
-            Objects.requireNonNull(upgradeBudget);
             Objects.requireNonNull(scheduleAt);
         }
 
@@ -131,7 +130,7 @@ public class OsUpgradeScheduler extends ControllerMaintainer {
             if (!release.version().isAfter(currentVersion)) return Optional.empty();
             Duration cooldown = remainingCooldownOf(cooldown(), release.age(instant));
             Instant scheduleAt = schedulingInstant(instant.plus(cooldown), system);
-            return Optional.of(new Change(release.version(), Duration.ZERO, scheduleAt));
+            return Optional.of(new Change(release.version(), scheduleAt));
         }
 
         /** Returns the release tag tracked by this system */
@@ -174,17 +173,13 @@ public class OsUpgradeScheduler extends ControllerMaintainer {
             }
             Duration cooldown = remainingCooldownOf(cooldown(), version.age(instant));
             Instant schedulingInstant = schedulingInstant(instant.plus(cooldown), system);
-            return Optional.of(new Change(version.version(), upgradeBudget(), schedulingInstant));
+            return Optional.of(new Change(version.version(), schedulingInstant));
         }
 
         private Duration cooldown() {
             return system.isCd()
                     ? Duration.ofDays(1)                          // CD: Give new releases some time to propagate
                     : Duration.ofDays(7 - RELEASE_DAY.ordinal()); // non-CD: Wait until start of the following week
-        }
-
-        private Duration upgradeBudget() {
-            return system.isCd() ? Duration.ZERO : Duration.ofDays(14);
         }
 
         /** Find the most recent version available according to the scheduling step, relative to now */

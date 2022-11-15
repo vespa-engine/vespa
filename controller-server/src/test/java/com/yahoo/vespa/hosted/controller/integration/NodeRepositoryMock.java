@@ -20,10 +20,8 @@ import com.yahoo.vespa.hosted.controller.api.integration.configserver.NodeReposi
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.TargetVersions;
 
 import java.net.URI;
-import java.time.Duration;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.TreeMap;
 import java.util.concurrent.ConcurrentHashMap;
@@ -39,7 +37,6 @@ public class NodeRepositoryMock implements NodeRepository {
     private final Map<ZoneId, Map<HostName, Node>> nodeRepository = new ConcurrentHashMap<>();
     private final Map<ZoneId, Map<ApplicationId, Application>> applications = new ConcurrentHashMap<>();
     private final Map<ZoneId, TargetVersions> targetVersions = new ConcurrentHashMap<>();
-    private final Map<Integer, Duration> osUpgradeBudgets = new ConcurrentHashMap<>();
     private final Map<DeploymentId, Pair<Double, Double>> trafficFractions = new ConcurrentHashMap<>();
     private final Map<ZoneId, Map<TenantName, URI>> archiveUris = new ConcurrentHashMap<>();
 
@@ -148,8 +145,7 @@ public class NodeRepositoryMock implements NodeRepository {
     }
 
     @Override
-    public void upgradeOs(ZoneId zone, NodeType type, Version version, Duration upgradeBudget) {
-        this.osUpgradeBudgets.put(Objects.hash(zone, type, version), upgradeBudget);
+    public void upgradeOs(ZoneId zone, NodeType type, Version version) {
         this.targetVersions.compute(zone, (ignored, targetVersions) -> {
             if (targetVersions == null) {
                 targetVersions = TargetVersions.EMPTY;
@@ -278,10 +274,6 @@ public class NodeRepositoryMock implements NodeRepository {
                         .clusterType(Node.ClusterType.container)
                         .build();
         putNodes(zone, List.of(nodeA, nodeB));
-    }
-
-    public Optional<Duration> osUpgradeBudget(ZoneId zone, NodeType type, Version version) {
-        return Optional.ofNullable(osUpgradeBudgets.get(Objects.hash(zone, type, version)));
     }
 
     public void doUpgrade(DeploymentId deployment, Optional<HostName> hostName, Version version) {

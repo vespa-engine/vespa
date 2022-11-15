@@ -3,24 +3,19 @@ package com.yahoo.vespa.hosted.controller.versions;
 
 import com.yahoo.component.Version;
 
-import java.time.Duration;
 import java.time.Instant;
 import java.util.Objects;
 
 /**
- * The OS version target for a cloud/system, containing the {@link OsVersion} and its upgrade budget.
+ * The OS version target for a cloud and the time it was scheduled.
  *
  * @author mpolden
  */
-public record OsVersionTarget(OsVersion osVersion,
-                              Duration upgradeBudget,
-                              Instant scheduledAt) implements VersionTarget, Comparable<OsVersionTarget> {
+public record OsVersionTarget(OsVersion osVersion, Instant scheduledAt) implements VersionTarget, Comparable<OsVersionTarget> {
 
     public OsVersionTarget {
         Objects.requireNonNull(osVersion);
-        Objects.requireNonNull(upgradeBudget);
         Objects.requireNonNull(scheduledAt);
-        if (upgradeBudget.isNegative()) throw new IllegalArgumentException("upgradeBudget cannot be negative");
     }
 
     @Override

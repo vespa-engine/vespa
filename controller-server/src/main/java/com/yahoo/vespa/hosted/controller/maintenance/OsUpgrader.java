@@ -44,14 +44,11 @@ public class OsUpgrader extends InfrastructureUpgrader<OsVersionTarget> {
 
     @Override
     protected void upgrade(OsVersionTarget target, SystemApplication application, ZoneApi zone) {
-        Duration zoneUpgradeBudget = zoneBudgetOf(target.upgradeBudget(), zone);
-        log.info(Text.format("Upgrading OS of %s to version %s in %s in cloud %s%s", application.id(),
+        log.info(Text.format("Upgrading OS of %s to version %s in %s in cloud %s", application.id(),
                                target.osVersion().version().toFullString(),
-                               zone.getVirtualId(), zone.getCloudName(),
-                               " with time budget " + zoneUpgradeBudget));
+                               zone.getVirtualId(), zone.getCloudName()));
         controller().serviceRegistry().configServer().nodeRepository().upgradeOs(zone.getVirtualId(), application.nodeType(),
-                                                                                 target.osVersion().version(),
-                                                                                 zoneUpgradeBudget);
+                                                                                 target.osVersion().version());
     }
 
     @Override
@@ -83,20 +80,6 @@ public class OsUpgrader extends InfrastructureUpgrader<OsVersionTarget> {
                            .osVersion(application.nodeType())
                            .map(currentTarget -> target.osVersion().version().isAfter(currentTarget))
                            .orElse(true);
-    }
-
-    /** Returns the available upgrade budget for given zone */
-    private Duration zoneBudgetOf(Duration totalBudget, ZoneApi zone) {
-        if (!spendBudgetOn(zone)) return Duration.ZERO;
-        long consecutiveZones = upgradePolicy.steps().stream()
-                                             .filter(step -> step.zones().stream().anyMatch(this::spendBudgetOn))
-                                             .count();
-        return totalBudget.dividedBy(consecutiveZones);
-    }
-
-    /** Returns whether to spend upgrade budget on given zone */
-    private boolean spendBudgetOn(ZoneApi zone) {
-        return !controller().zoneRegistry().systemZone().getVirtualId().equals(zone.getVirtualId()); // Do not spend budget on controller zone
     }
 
     /** Returns whether node currently allows upgrades */

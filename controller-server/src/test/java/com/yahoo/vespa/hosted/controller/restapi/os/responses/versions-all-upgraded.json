@@ -102,7 +102,7 @@
     {
       "version": "8.2.1",
       "targetVersion": true,
-      "upgradeBudget": "PT24H",
+      "upgradeBudget": "PT0S",
       "scheduledAt": 1234,
       "nextVersion": "8.2.1.20211228",
       "nextScheduledAt": 1640743200000,

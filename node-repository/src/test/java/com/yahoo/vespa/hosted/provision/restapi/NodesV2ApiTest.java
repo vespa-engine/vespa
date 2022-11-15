@@ -704,13 +704,13 @@ public class NodesV2ApiTest {
 
         // Upgrade OS for confighost and host
         assertResponse(new Request("http://localhost:8080/nodes/v2/upgrade/confighost",
-                                   Utf8.toBytes("{\"osVersion\": \"7.5.2\", \"upgradeBudget\": \"PT0S\"}"),
+                                   Utf8.toBytes("{\"osVersion\": \"7.5.2\"}"),
                                    Request.Method.PATCH),
-                       "{\"message\":\"Set osVersion to 7.5.2, upgradeBudget to PT0S for nodes of type confighost\"}");
+                       "{\"message\":\"Set osVersion to 7.5.2 for nodes of type confighost\"}");
         assertResponse(new Request("http://localhost:8080/nodes/v2/upgrade/host",
-                                   Utf8.toBytes("{\"osVersion\": \"7.5.2\", \"upgradeBudget\": \"PT0S\"}"),
+                                   Utf8.toBytes("{\"osVersion\": \"7.5.2\"}"),
                                    Request.Method.PATCH),
-                       "{\"message\":\"Set osVersion to 7.5.2, upgradeBudget to PT0S for nodes of type host\"}");
+                       "{\"message\":\"Set osVersion to 7.5.2 for nodes of type host\"}");
 
         // OS versions are set
         assertResponse(new Request("http://localhost:8080/nodes/v2/upgrade/"),
@@ -718,29 +718,29 @@ public class NodesV2ApiTest {
 
         // Upgrade OS and Vespa together
         assertResponse(new Request("http://localhost:8080/nodes/v2/upgrade/confighost",
-                                   Utf8.toBytes("{\"version\": \"6.124.42\", \"osVersion\": \"7.5.2\", \"upgradeBudget\": \"PT0S\"}"),
+                                   Utf8.toBytes("{\"version\": \"6.124.42\", \"osVersion\": \"7.5.2\"}"),
                                    Request.Method.PATCH),
-                       "{\"message\":\"Set version to 6.124.42, osVersion to 7.5.2, upgradeBudget to PT0S for nodes of type confighost\"}");
+                       "{\"message\":\"Set version to 6.124.42, osVersion to 7.5.2 for nodes of type confighost\"}");
 
         // Attempt to upgrade unsupported node type
         tester.assertResponse(new Request("http://localhost:8080/nodes/v2/upgrade/config",
-                                          Utf8.toBytes("{\"osVersion\": \"7.5.2\", \"upgradeBudget\": \"PT0S\"}"),
+                                          Utf8.toBytes("{\"osVersion\": \"7.5.2\"}"),
                                           Request.Method.PATCH),
                               400,
                               "{\"error-code\":\"BAD_REQUEST\",\"message\":\"Node type 'config' does not support OS upgrades\"}");
 
         // Attempt to downgrade OS
         tester.assertResponse(new Request("http://localhost:8080/nodes/v2/upgrade/confighost",
-                                          Utf8.toBytes("{\"osVersion\": \"7.4.2\", \"upgradeBudget\": \"PT0S\"}"),
+                                          Utf8.toBytes("{\"osVersion\": \"7.4.2\"}"),
                                           Request.Method.PATCH),
                               400,
                               "{\"error-code\":\"BAD_REQUEST\",\"message\":\"Cannot set target OS version to 7.4.2 without setting 'force', as it's lower than the current version: 7.5.2\"}");
 
         // Downgrading OS with force succeeds
         assertResponse(new Request("http://localhost:8080/nodes/v2/upgrade/confighost",
-                                   Utf8.toBytes("{\"osVersion\": \"7.4.2\", \"force\": true, \"upgradeBudget\": \"PT0S\"}"),
+                                   Utf8.toBytes("{\"osVersion\": \"7.4.2\", \"force\": true}"),
                                    Request.Method.PATCH),
-                       "{\"message\":\"Set osVersion to 7.4.2, upgradeBudget to PT0S for nodes of type confighost\"}");
+                       "{\"message\":\"Set osVersion to 7.4.2 for nodes of type confighost\"}");
 
         // Current target is considered bad, remove it
         tester.assertResponse(new Request("http://localhost:8080/nodes/v2/upgrade/confighost",
@@ -754,9 +754,9 @@ public class NodesV2ApiTest {
     public void test_os_version() throws Exception {
         // Schedule OS upgrade
         assertResponse(new Request("http://localhost:8080/nodes/v2/upgrade/host",
-                                   Utf8.toBytes("{\"osVersion\": \"7.5.2\", \"upgradeBudget\": \"PT0S\"}"),
+                                   Utf8.toBytes("{\"osVersion\": \"7.5.2\"}"),
                                    Request.Method.PATCH),
-                       "{\"message\":\"Set osVersion to 7.5.2, upgradeBudget to PT0S for nodes of type host\"}");
+                       "{\"message\":\"Set osVersion to 7.5.2 for nodes of type host\"}");
 
         var nodeRepository = (NodeRepository) tester.container().components().getComponent(MockNodeRepository.class.getName());
 
@@ -797,19 +797,6 @@ public class NodesV2ApiTest {
                        "{\"url\":\"http://localhost:8080/nodes/v2/node/dockerhost2.yahoo.com\"}," +
                        "{\"url\":\"http://localhost:8080/nodes/v2/node/dockerhost1.yahoo.com\"}" +
                        "]}");
-
-        // Schedule OS upgrade with budget
-        assertResponse(new Request("http://localhost:8080/nodes/v2/upgrade/host",
-                                   Utf8.toBytes("{\"osVersion\": \"7.42.1\", \"upgradeBudget\": \"PT24H\"}"),
-                                   Request.Method.PATCH),
-                       "{\"message\":\"Set osVersion to 7.42.1, upgradeBudget to PT24H for nodes of type host\"}");
-
-        // Invalid budget
-        tester.assertResponse(new Request("http://localhost:8080/nodes/v2/upgrade/host",
-                                          Utf8.toBytes("{\"osVersion\": \"7.42.1\", \"upgradeBudget\": \"foo\"}"),
-                                          Request.Method.PATCH),
-                              400,
-                              "{\"error-code\":\"BAD_REQUEST\",\"message\":\"Invalid duration 'foo': Text cannot be parsed to a Duration\"}");
     }
 
     @Test

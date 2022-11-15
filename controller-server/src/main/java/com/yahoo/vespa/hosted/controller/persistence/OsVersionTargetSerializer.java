@@ -9,7 +9,6 @@ import com.yahoo.slime.SlimeUtils;
 import com.yahoo.vespa.hosted.controller.versions.OsVersion;
 import com.yahoo.vespa.hosted.controller.versions.OsVersionTarget;
 
-import java.time.Duration;
 import java.time.Instant;
 import java.util.Collections;
 import java.util.Set;
@@ -25,7 +24,6 @@ public class OsVersionTargetSerializer {
     private final OsVersionSerializer osVersionSerializer;
 
     private static final String versionsField = "versions";
-    private static final String upgradeBudgetField = "upgradeBudget";
     private static final String scheduledAtField = "scheduledAt";
 
     public OsVersionTargetSerializer(OsVersionSerializer osVersionSerializer) {
@@ -45,16 +43,14 @@ public class OsVersionTargetSerializer {
         Set<OsVersionTarget> osVersionTargets = new TreeSet<>();
         array.traverse((ArrayTraverser) (i, inspector) -> {
             OsVersion osVersion = osVersionSerializer.fromSlime(inspector);
-            Duration upgradeBudget = SlimeUtils.duration(inspector.field(upgradeBudgetField));
             Instant scheduledAt = SlimeUtils.instant(inspector.field(scheduledAtField));
-            osVersionTargets.add(new OsVersionTarget(osVersion, upgradeBudget, scheduledAt));
+            osVersionTargets.add(new OsVersionTarget(osVersion, scheduledAt));
         });
         return Collections.unmodifiableSet(osVersionTargets);
     }
 
     private void toSlime(OsVersionTarget target, Cursor object) {
         osVersionSerializer.toSlime(target.osVersion(), object);
-        object.setLong(upgradeBudgetField, target.upgradeBudget().toMillis());
         object.setLong(scheduledAtField, target.scheduledAt().toEpochMilli());
     }
 

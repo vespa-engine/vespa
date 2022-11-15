@@ -50,7 +50,6 @@ import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.time.Duration;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -363,7 +362,6 @@ public class NodesV2ApiHandler extends ThreadedHttpRequestHandler {
         boolean force = inspector.field("force").asBool();
         Inspector versionField = inspector.field("version");
         Inspector osVersionField = inspector.field("osVersion");
-        Inspector upgradeBudgetField = inspector.field("upgradeBudget");
 
         if (versionField.valid()) {
             Version version = Version.fromString(versionField.asString());
@@ -378,20 +376,8 @@ public class NodesV2ApiHandler extends ThreadedHttpRequestHandler {
                 messageParts.add("osVersion to null");
             } else {
                 Version osVersion = Version.fromString(v);
-                Optional<Duration> upgradeBudget = Optional.of(upgradeBudgetField)
-                                                           .filter(Inspector::valid)
-                                                           .map(Inspector::asString)
-                                                           .map(s -> {
-                                                               try {
-                                                                   return Duration.parse(s);
-                                                               } catch (Exception e) {
-                                                                   throw new IllegalArgumentException("Invalid duration '" + s + "'", e);
-                                                               }
-                                                           });
-                if (upgradeBudget.isEmpty()) throw new IllegalArgumentException("upgradeBudget must be set");
-                nodeRepository.osVersions().setTarget(nodeType, osVersion, upgradeBudget.get(), force);
+                nodeRepository.osVersions().setTarget(nodeType, osVersion, force);
                 messageParts.add("osVersion to " + osVersion.toFullString());
-                messageParts.add("upgradeBudget to " + upgradeBudget.get());
             }
         }
 
