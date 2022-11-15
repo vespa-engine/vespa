@@ -14,11 +14,9 @@ import com.yahoo.config.provision.NodeResources.StorageType;
 import static com.yahoo.config.provision.NodeResources.StorageType.remote;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.config.provision.RegionName;
-import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
 import com.yahoo.vespa.hosted.provision.Nodelike;
-import com.yahoo.vespa.hosted.provision.autoscale.awsnodes.AwsNodeTypes;
 import com.yahoo.vespa.hosted.provision.provisioning.CapacityPolicies;
 import com.yahoo.vespa.hosted.provision.provisioning.HostResourcesCalculator;
 import org.junit.Test;
@@ -64,7 +62,7 @@ public class AutoscalingTest {
     /** Using too many resources for a short period is proof we should scale up regardless of the time that takes. */
     @Test
     public void test_no_autoscaling_with_no_measurements() {
-        var fixture = AutoscalingTester.fixture().awsProdSetup().build();
+        var fixture = AutoscalingTester.fixture().awsProdSetup(false).build();
         assertTrue(fixture.autoscale().target().isEmpty());
     }
 
@@ -117,7 +115,7 @@ public class AutoscalingTest {
         var max = new ClusterResources(4, 1, new NodeResources(16, 32, 50, 0.3));
         var fixture = AutoscalingTester.fixture(min, now, max)
                                        .clusterType(ClusterSpec.Type.container)
-                                       .awsProdSetup()
+                                       .awsProdSetup(false)
                                        .build();
         var duration = fixture.loader().addMeasurements(new Load(0.04, 0.39, 0.01), 20);
         fixture.tester().clock().advance(duration.negated());
@@ -289,6 +287,7 @@ public class AutoscalingTest {
         var remote = new NodeResources(3, 100,  50, 1, fast, StorageType.remote);
         var fixture = AutoscalingTester.fixture()
                                        .dynamicProvisioning(true)
+                                       .allowHostSharing(false)
                                        .clusterType(ClusterSpec.Type.container)
                                        .hostFlavors(local, remote)
                                        .capacity(Capacity.from(resources))
@@ -467,6 +466,7 @@ public class AutoscalingTest {
         ClusterResources max = new ClusterResources(20, 1, new NodeResources(100, 1000, 1000, 1));
         var fixture = AutoscalingTester.fixture()
                                        .dynamicProvisioning(true)
+                                       .allowHostSharing(false)
                                        .hostFlavors(new NodeResources(3, 200, 100, 1, fast, remote),
                                                     new NodeResources(3, 150, 100, 1, fast, remote),
                                                     new NodeResources(3, 100, 100, 1, fast, remote),

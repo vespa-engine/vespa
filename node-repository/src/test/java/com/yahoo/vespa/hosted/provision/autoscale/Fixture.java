@@ -139,13 +139,23 @@ public class Fixture {
             return this;
         }
 
-        /**
-         * Set to true to behave as if hosts are provisioned dynamically,
-         * and must therefore be allocated completely to one tenant node.
-         */
-        public Fixture. Builder dynamicProvisioning(boolean dynamic) {
+        /** Set to true to behave as if hosts are provisioned dynamically. */
+        public Fixture. Builder dynamicProvisioning(boolean dynamicProvisioning) {
             this.zone = new Zone(Cloud.builder()
-                                      .dynamicProvisioning(dynamic)
+                                      .dynamicProvisioning(dynamicProvisioning)
+                                      .allowHostSharing(zone.cloud().allowHostSharing())
+                                      .build(),
+                                 zone.system(),
+                                 zone.environment(),
+                                 zone.region());
+            return this;
+        }
+
+        /** Set to true to allow multiple nodes be provisioned on the same host. */
+        public Fixture. Builder allowHostSharing(boolean allowHostSharing) {
+            this.zone = new Zone(Cloud.builder()
+                                      .dynamicProvisioning(zone.cloud().dynamicProvisioning())
+                                      .allowHostSharing(allowHostSharing)
                                       .build(),
                                  zone.system(),
                                  zone.environment(),
@@ -158,10 +168,12 @@ public class Fixture {
             return this;
         }
 
-        public Fixture.Builder awsProdSetup() {
+        public Fixture.Builder awsProdSetup(boolean allowHostSharing) {
              return this.awsHostFlavors()
                         .awsResourceCalculator()
-                        .zone(new Zone(Cloud.builder().dynamicProvisioning(true).build(),
+                        .zone(new Zone(Cloud.builder().dynamicProvisioning(true)
+                                                      .allowHostSharing(allowHostSharing)
+                                            .build(),
                                        SystemName.Public,
                                        Environment.prod,
                                        RegionName.from("aws-eu-west-1a")));

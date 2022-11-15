@@ -205,6 +205,7 @@ class AutoscalingTester {
 
     public MetricsDb nodeMetricsDb() { return nodeRepository().metricsDb(); }
 
+    // TODO: Discontinue use of this
     public static class MockHostResourcesCalculator implements HostResourcesCalculator {
 
         private final Zone zone;

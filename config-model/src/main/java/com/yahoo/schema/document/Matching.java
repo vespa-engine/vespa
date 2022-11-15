@@ -24,12 +24,12 @@ public class Matching implements Cloneable, Serializable {
     private boolean algorithmUserSet = false;
 
     /** The gram size is the n in n-gram, or -1 if not set. Should only be set with gram matching. */
-    private int gramSize=-1;
+    private int gramSize = -1;
 
     /** Maximum number of characters to consider when searching in this field. Used for limiting resources, especially in streaming search. */
     private Integer maxLength;
 
-    private String exactMatchTerminator=null;
+    private String exactMatchTerminator = null;
 
     /** Creates a matching of type "text" */
     public Matching() {}
@@ -122,9 +122,8 @@ public class Matching implements Cloneable, Serializable {
 
     @Override
     public boolean equals(Object o) {
-        if (! (o instanceof Matching)) return false;
+        if (! (o instanceof Matching other)) return false;
 
-        Matching other=(Matching)o;
         if ( ! other.type.equals(this.type)) return false;
         if ( ! other.algorithm.equals(this.algorithm)) return false;
         if ( this.exactMatchTerminator == null && other.exactMatchTerminator != null) return false;

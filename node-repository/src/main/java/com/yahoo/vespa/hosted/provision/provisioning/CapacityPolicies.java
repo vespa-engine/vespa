@@ -69,7 +69,7 @@ public class CapacityPolicies {
         if (target.isUnspecified()) return target; // Cannot be modified
 
         // Dev does not cap the cpu or network of containers since usage is spotty: Allocate just a small amount exclusively
-        if (zone.environment() == Environment.dev && !zone.cloud().dynamicProvisioning())
+        if (zone.environment() == Environment.dev && zone.cloud().allowHostSharing())
             target = target.withVcpu(0.1).withBandwidthGbps(0.1);
 
         // Allow slow storage in zones which are not performance sensitive
@@ -120,7 +120,7 @@ public class CapacityPolicies {
 
     /** Returns whether an exclusive host is required for given cluster type and exclusivity requirement */
     private boolean requiresExclusiveHost(ClusterSpec.Type type, boolean exclusive) {
-        return zone.cloud().dynamicProvisioning() && (exclusive || !sharedHosts.value().isEnabled(type.name()));
+        return ! zone.cloud().allowHostSharing() && (exclusive || !sharedHosts.value().isEnabled(type.name()));
     }
 
     /** Returns the resources for the newest version not newer than that requested in the cluster spec. */

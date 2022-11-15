@@ -60,7 +60,7 @@ import static org.mockito.Mockito.when;
 public class DynamicProvisioningTest {
 
     private static final Zone zone = new Zone(
-            Cloud.builder().dynamicProvisioning(true).build(),
+            Cloud.builder().dynamicProvisioning(true).allowHostSharing(false).build(),
             SystemName.main,
             Environment.prod,
             RegionName.from("us-east"));

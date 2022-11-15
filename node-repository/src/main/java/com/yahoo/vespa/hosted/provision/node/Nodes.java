@@ -498,7 +498,7 @@ public class Nodes {
         try (Mutex lock = lockUnallocated()) {
             requireRemovable(node, false, force);
             NestedTransaction transaction = new NestedTransaction();
-            final List<Node> removed;
+            List<Node> removed;
             if (!node.type().isHost()) {
                 removed = List.of(node);
                 db.removeNodes(removed, transaction);
