@@ -13,7 +13,7 @@ import java.util.regex.Pattern;
 public class WireguardKey extends PatternedStringWrapper<WireguardKey> {
 
     // See https://lists.zx2c4.com/pipermail/wireguard/2020-December/006222.html
-    private static final Pattern pattern = Pattern.compile("^[A-Za-z0-9+/]{42}[A|E|I|M|Q|U|Y|c|g|k|o|s|w|4|8|0]=$");
+    private static final Pattern pattern = Pattern.compile("^[A-Za-z0-9+/]{42}[AEIMQUYcgkosw480]=$");
 
     public WireguardKey(String value) {
         super(value, pattern, "Wireguard key");
