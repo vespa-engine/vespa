@@ -98,7 +98,7 @@ public class NodeResourcesTuning implements ProtonConfig.Producer {
             builder.maxconcurrent(1);
         }
         builder.maxconcurrent(Math.min(builder.build().maxconcurrent(),
-                                       Math.max(1, (int)Math.ceil(resources.vcpu()*MAX_FLUSH_TREAD_RATIO))));
+                                       Math.max(1, (int)Math.ceil(resources.vcpu()*MAX_FLUSH_THREAD_RATIO))));
     }
 
     private void tuneFlushStrategyTlsSize(ProtonConfig.Flush.Memory.Builder builder) {
