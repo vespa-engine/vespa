@@ -94,6 +94,8 @@ public:
      * @return same as vespaConfigProxyRpcAddr + vespaConfigServerRpcAddrs
      **/
     static std::vector<std::string> vespaConfigSourcesRpcAddrs();
+
+    static std::string get_sanitizers();
 };
 
 } // namespace vespa

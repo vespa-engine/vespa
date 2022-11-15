@@ -1,6 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include "defaults.h"
 
+#include <vespa/config.h>
 #include <stdlib.h>
 #include <dirent.h>
 #include <stdio.h>
@@ -10,6 +11,7 @@
 #include <unistd.h>
 #include <atomic>
 #include <pwd.h>
+#include <sstream>
 
 namespace {
 
@@ -356,6 +358,38 @@ Defaults::vespaConfigSourcesRpcAddrs()
         ret.push_back(v);
     }
     return ret;
+}
+
+namespace {
+
+void
+append_sanitizer(std::ostringstream& oss, const std::string& value)
+{
+    if (!oss.str().empty()) {
+        oss << ",";
+    }
+    oss << value;
+}
+
+}
+
+std::string
+Defaults::get_sanitizers()
+{
+    std::ostringstream oss;
+#ifdef VESPA_USE_ADDRESS_SANITIZER
+    append_sanitizer(oss, "address");
+#endif
+#ifdef VESPA_USE_THREAD_SANITIZER
+    append_sanitizer(oss, "thread");
+#endif
+#ifdef VESPA_USE_UNDEFINED_SANITIZER
+    append_sanitizer(oss, "undefined");
+#endif
+    if (oss.str().empty()) {
+        append_sanitizer(oss, "none");
+    }
+    return oss.str();
 }
 
 } // namespace vespa

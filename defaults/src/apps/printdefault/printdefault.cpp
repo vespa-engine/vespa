@@ -25,6 +25,7 @@ void dumpAllVars() {
     }
     v = vespa::Defaults::vespaConfigProxyRpcAddr();
     printf("config proxy RPC addr = '%s'\n", v.c_str());
+    printf("sanitizers = '%s'\n", vespa::Defaults::get_sanitizers().c_str());
     printf("vespa version = '%s'\n", V_TAG_COMPONENT);
 }
 
@@ -34,6 +35,7 @@ int main(int argc, char **argv) {
         fprintf(stderr, "  variable names are: home, user, hostname, portbase, configservers,\n");
         fprintf(stderr, "                      configserver_rpc_port, configservers_rpc,\n");
         fprintf(stderr, "                      configservers_http, configsources, configproxy_rpc,\n");
+        fprintf(stderr, "                      sanitizers,\n");
         fprintf(stderr, "                      version\n");
         return 1;
     }
@@ -73,6 +75,9 @@ int main(int argc, char **argv) {
         printf("\n");
     } else if (strcmp(argv[1], "configproxy_rpc") == 0) {
         std::string v = vespa::Defaults::vespaConfigProxyRpcAddr();
+        printf("%s\n", v.c_str());
+    } else if (strcmp(argv[1], "sanitizers") == 0) {
+        std::string v = vespa::Defaults::get_sanitizers();
         printf("%s\n", v.c_str());
     } else if (strcmp(argv[1], "version") == 0) {
         printf("%s\n", V_TAG_COMPONENT);
