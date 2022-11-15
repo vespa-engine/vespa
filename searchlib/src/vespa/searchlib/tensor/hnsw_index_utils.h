@@ -2,10 +2,10 @@
 
 #pragma once
 
+#include <vespa/vespalib/datastore/entryref.h>
 #include <cstdint>
 #include <queue>
 #include <vector>
-#include "hnsw_graph.h"
 
 namespace search::tensor {
 
@@ -14,11 +14,11 @@ namespace search::tensor {
  */
 struct HnswCandidate {
     uint32_t nodeid;
-    HnswGraph::NodeRef node_ref;
+    vespalib::datastore::EntryRef node_ref;
     double distance;
     HnswCandidate(uint32_t nodeid_in, double distance_in) noexcept
       : nodeid(nodeid_in), node_ref(), distance(distance_in) {}
-    HnswCandidate(uint32_t nodeid_in, HnswGraph::NodeRef node_ref_in, double distance_in) noexcept
+    HnswCandidate(uint32_t nodeid_in, vespalib::datastore::EntryRef node_ref_in, double distance_in) noexcept
       : nodeid(nodeid_in), node_ref(node_ref_in), distance(distance_in) {}
 };
 
