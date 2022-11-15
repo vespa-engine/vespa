@@ -795,9 +795,12 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
             int nodeCount = deployState.zone().environment().isProduction() ? 2 : 1;
             deployState.getDeployLogger().logApplicationPackage(Level.INFO, "Using " + nodeCount +
                                                                             " nodes in " + cluster);
-            Capacity capacity = Capacity.from(new ClusterResources(nodeCount, 1, NodeResources.unspecified()),
+            ClusterResources resources = new ClusterResources(nodeCount, 1, NodeResources.unspecified());
+            Capacity capacity = Capacity.from(resources,
+                                              resources,
                                               false,
-                                              !deployState.getProperties().isBootstrap());
+                                              !deployState.getProperties().isBootstrap(),
+                                              context.getDeployState().getProperties().cloudAccount());
             var hosts = hostSystem.allocateHosts(clusterSpec, capacity, log);
             return createNodesFromHosts(hosts, cluster, context.getDeployState());
         }
