@@ -39,6 +39,7 @@
                         <configuration>
                             <rules>
                                 <enforceDependencies implementation="com.yahoo.vespa.maven.plugin.enforcer.EnforceDependenciesAllProjects">
+                                    <rootProjectId>com.yahoo.vespa:vespa</rootProjectId>
                                     <specFile>allowed-maven-dependencies.txt</specFile>
                                     <ignored>
                                         <i>ai.vespa:*:*</i>
