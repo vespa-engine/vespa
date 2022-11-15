@@ -9,6 +9,7 @@ import com.yahoo.text.Text;
 import com.yahoo.vespa.hosted.controller.api.identifiers.DeploymentId;
 import com.yahoo.vespa.hosted.controller.api.integration.zone.ZoneRegistry;
 import com.yahoo.vespa.hosted.controller.application.Endpoint;
+import com.yahoo.vespa.hosted.controller.application.Endpoint.EndpointFactory;
 import com.yahoo.vespa.hosted.controller.application.Endpoint.Port;
 import com.yahoo.vespa.hosted.controller.application.EndpointId;
 
@@ -96,12 +97,12 @@ public record RoutingPolicy(RoutingPolicyId id,
     /** Returns the zone endpoints of this */
     public List<Endpoint> zoneEndpointsIn(SystemName system, RoutingMethod routingMethod, ZoneRegistry zoneRegistry) {
         DeploymentId deployment = new DeploymentId(id.owner(), id.zone());
-        return List.of(endpoint(routingMethod).target(id.cluster(), deployment).in(system));
+        return List.of(endpoint(routingMethod, zoneRegistry).target(id.cluster(), deployment).in(system));
     }
 
     /** Returns the region endpoint of this */
-    public Endpoint regionEndpointIn(SystemName system, RoutingMethod routingMethod) {
-        return endpoint(routingMethod).targetRegion(id.cluster(), id.zone()).in(system);
+    public Endpoint regionEndpointIn(SystemName system, RoutingMethod routingMethod, ZoneRegistry zoneRegistry) {
+        return endpoint(routingMethod, zoneRegistry).targetRegion(id.cluster(), id.zone()).in(system);
     }
 
     @Override
@@ -125,10 +126,10 @@ public record RoutingPolicy(RoutingPolicyId id,
                            id.zone().value());
     }
 
-    private Endpoint.EndpointBuilder endpoint(RoutingMethod routingMethod) {
-        return Endpoint.of(id.owner())
-                       .on(Port.fromRoutingMethod(routingMethod))
-                       .routingMethod(routingMethod);
+    private Endpoint.EndpointBuilder endpoint(RoutingMethod routingMethod, ZoneRegistry zones) {
+        return new EndpointFactory(zones).of(id.owner())
+                                         .on(Port.fromRoutingMethod(routingMethod))
+                                         .routingMethod(routingMethod);
     }
 
     /** The status of a routing policy */

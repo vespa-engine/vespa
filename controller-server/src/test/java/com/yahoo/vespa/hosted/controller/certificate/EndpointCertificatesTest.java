@@ -4,6 +4,7 @@ package com.yahoo.vespa.hosted.controller.certificate;
 import com.yahoo.config.application.api.DeploymentSpec;
 import com.yahoo.config.application.api.xml.DeploymentSpecXmlReader;
 import com.yahoo.config.provision.ApplicationId;
+import com.yahoo.config.provision.CloudName;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.InstanceName;
 import com.yahoo.config.provision.RegionName;
@@ -25,6 +26,7 @@ import com.yahoo.vespa.hosted.controller.api.integration.certificates.EndpointCe
 import com.yahoo.vespa.hosted.controller.application.pkg.ApplicationPackage;
 import com.yahoo.vespa.hosted.controller.deployment.ApplicationPackageBuilder;
 import com.yahoo.vespa.hosted.controller.integration.SecretStoreMock;
+import com.yahoo.vespa.hosted.controller.integration.ZoneApiMock;
 import com.yahoo.vespa.hosted.controller.persistence.CuratorDb;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -136,9 +138,15 @@ public class EndpointCertificatesTest {
         assertEquals(expectedSans, endpointCertificateMetadata.get().requestedDnsSans());
     }
 
+    private ControllerTester publicTester() {
+        ControllerTester publicTester = new ControllerTester(SystemName.Public);
+        publicTester.zoneRegistry().setZones(tester.zoneRegistry().zones().all().zones());
+        return publicTester;
+    }
+
     @Test
     void provisions_new_certificate_in_public_prod() {
-        ControllerTester tester = new ControllerTester(SystemName.Public);
+        ControllerTester tester = publicTester();
         EndpointCertificateValidatorImpl endpointCertificateValidator = new EndpointCertificateValidatorImpl(secretStore, clock);
         EndpointCertificates endpointCertificates = new EndpointCertificates(tester.controller(), endpointCertificateMock, endpointCertificateValidator);
         List<String> expectedSans = List.of(
@@ -238,6 +246,9 @@ public class EndpointCertificatesTest {
         Instance instance = new Instance(ApplicationId.from("t1", "a1", "default"), Tags.empty());
         ZoneId zone1 = ZoneId.from(Environment.prod, RegionName.from("aws-us-east-1c"));
         ZoneId zone2 = ZoneId.from(Environment.prod, RegionName.from("aws-us-west-2a"));
+        ControllerTester tester = publicTester();
+        tester.zoneRegistry().addZones(ZoneApiMock.newBuilder().with(CloudName.DEFAULT).with(zone1).build(),
+                                       ZoneApiMock.newBuilder().with(CloudName.AWS).with(zone2).build());
         ApplicationPackage applicationPackage = new ApplicationPackageBuilder()
                 .instances("beta,main")
                 .region(zone1.region())
@@ -251,15 +262,14 @@ public class EndpointCertificatesTest {
                                                                            InstanceName.from("main"), 6),
                                             zone2.region().value(), Map.of(InstanceName.from("main"), 2)))
                 .build();
-        ControllerTester tester = new ControllerTester(SystemName.Public);
         EndpointCertificateValidatorImpl endpointCertificateValidator = new EndpointCertificateValidatorImpl(secretStore, clock);
         EndpointCertificates endpointCertificates = new EndpointCertificates(tester.controller(), endpointCertificateMock, endpointCertificateValidator);
         List<String> expectedSans = List.of(
                 "vlfms2wpoa4nyrka2s5lktucypjtxkqhv.internal.vespa-app.cloud",
                 "a1.t1.g.vespa-app.cloud",
                 "*.a1.t1.g.vespa-app.cloud",
-                "a1.t1.aws-us-west-2a.r.vespa-app.cloud",
-                "*.a1.t1.aws-us-west-2a.r.vespa-app.cloud",
+                "a1.t1.r.vespa-app.cloud",
+                "*.a1.t1.r.vespa-app.cloud",
                 "a1.t1.aws-us-east-1c.r.vespa-app.cloud",
                 "*.a1.t1.aws-us-east-1c.r.vespa-app.cloud",
                 "a1.t1.aws-us-east-1c.z.vespa-app.cloud",

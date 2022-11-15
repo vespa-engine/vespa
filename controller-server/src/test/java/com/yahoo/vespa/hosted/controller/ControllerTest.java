@@ -669,12 +669,12 @@ public class ControllerTest {
                 new DeploymentId(main, east3), Map.of("e.app1.tenant1.us-east-3-r.vespa.oath.cloud", 3),
                 new DeploymentId(beta, west1), Map.of("d.app1.tenant1.us-west-1-r.vespa.oath.cloud", 3),
                 new DeploymentId(main, west1), Map.of("d.app1.tenant1.us-west-1-r.vespa.oath.cloud", 7),
-                new DeploymentId(beta, east1a), Map.of("a.app1.tenant1.aws-us-east-1a-r.vespa.oath.cloud", 2,
-                                                       "b.app1.tenant1.aws-us-east-1a-r.vespa.oath.cloud", 1),
-                new DeploymentId(main, east1a), Map.of("a.app1.tenant1.aws-us-east-1a-r.vespa.oath.cloud", 8,
-                                                       "b.app1.tenant1.aws-us-east-1a-r.vespa.oath.cloud", 1),
-                new DeploymentId(beta, east1b), Map.of("c.app1.tenant1.aws-us-east-1b-r.vespa.oath.cloud", 4),
-                new DeploymentId(main, east1b), Map.of("a.app1.tenant1.aws-us-east-1b-r.vespa.oath.cloud", 1)
+                new DeploymentId(beta, east1a), Map.of("a.app1.tenant1.r.vespa.oath.cloud", 2,
+                                                       "b.app1.tenant1.r.vespa.oath.cloud", 1),
+                new DeploymentId(main, east1a), Map.of("a.app1.tenant1.r.vespa.oath.cloud", 8,
+                                                       "b.app1.tenant1.r.vespa.oath.cloud", 1),
+                new DeploymentId(beta, east1b), Map.of("c.app1.tenant1.r.vespa.oath.cloud", 4),
+                new DeploymentId(main, east1b), Map.of("a.app1.tenant1.r.vespa.oath.cloud", 1)
         );
         deploymentEndpoints.forEach((deployment, endpoints) -> {
             Set<ContainerEndpoint> expected = endpoints.entrySet().stream()
@@ -704,22 +704,22 @@ public class ControllerTest {
                                                      RecordName.from("main.app1.tenant1.aws-us-east-1b.vespa.oath.cloud"),
                                                      RecordData.from("lb-0--tenant1.app1.main--prod.aws-us-east-1b.")),
                                           new Record(Record.Type.ALIAS,
-                                                     RecordName.from("a.app1.tenant1.aws-us-east-1a-r.vespa.oath.cloud"),
+                                                     RecordName.from("a.app1.tenant1.r.vespa.oath.cloud"),
                                                      RecordData.from("weighted/lb-0--tenant1.app1.beta--prod.aws-us-east-1a/dns-zone-1/prod.aws-us-east-1a/2")),
                                           new Record(Record.Type.ALIAS,
-                                                     RecordName.from("a.app1.tenant1.aws-us-east-1a-r.vespa.oath.cloud"),
+                                                     RecordName.from("a.app1.tenant1.r.vespa.oath.cloud"),
                                                      RecordData.from("weighted/lb-0--tenant1.app1.main--prod.aws-us-east-1a/dns-zone-1/prod.aws-us-east-1a/8")),
                                           new Record(Record.Type.ALIAS,
-                                                     RecordName.from("a.app1.tenant1.aws-us-east-1b-r.vespa.oath.cloud"),
+                                                     RecordName.from("a.app1.tenant1.r.vespa.oath.cloud"),
                                                      RecordData.from("weighted/lb-0--tenant1.app1.main--prod.aws-us-east-1b/dns-zone-1/prod.aws-us-east-1b/1")),
                                           new Record(Record.Type.ALIAS,
-                                                     RecordName.from("b.app1.tenant1.aws-us-east-1a-r.vespa.oath.cloud"),
+                                                     RecordName.from("b.app1.tenant1.r.vespa.oath.cloud"),
                                                      RecordData.from("weighted/lb-0--tenant1.app1.beta--prod.aws-us-east-1a/dns-zone-1/prod.aws-us-east-1a/1")),
                                           new Record(Record.Type.ALIAS,
-                                                     RecordName.from("b.app1.tenant1.aws-us-east-1a-r.vespa.oath.cloud"),
+                                                     RecordName.from("b.app1.tenant1.r.vespa.oath.cloud"),
                                                      RecordData.from("weighted/lb-0--tenant1.app1.main--prod.aws-us-east-1a/dns-zone-1/prod.aws-us-east-1a/1")),
                                           new Record(Record.Type.ALIAS,
-                                                     RecordName.from("c.app1.tenant1.aws-us-east-1b-r.vespa.oath.cloud"),
+                                                     RecordName.from("c.app1.tenant1.r.vespa.oath.cloud"),
                                                      RecordData.from("weighted/lb-0--tenant1.app1.beta--prod.aws-us-east-1b/dns-zone-1/prod.aws-us-east-1b/4")),
                                           new Record(Record.Type.CNAME,
                                                      RecordName.from("d.app1.tenant1.us-west-1-r.vespa.oath.cloud"),
@@ -732,10 +732,9 @@ public class ControllerTest {
                                               .scope(Endpoint.Scope.application)
                                               .sortedBy(comparing(Endpoint::dnsName))
                                               .mapToList(Endpoint::dnsName);
-        assertEquals(List.of("a.app1.tenant1.aws-us-east-1a-r.vespa.oath.cloud",
-                             "a.app1.tenant1.aws-us-east-1b-r.vespa.oath.cloud",
-                             "b.app1.tenant1.aws-us-east-1a-r.vespa.oath.cloud",
-                             "c.app1.tenant1.aws-us-east-1b-r.vespa.oath.cloud",
+        assertEquals(List.of("a.app1.tenant1.r.vespa.oath.cloud",
+                             "b.app1.tenant1.r.vespa.oath.cloud",
+                             "c.app1.tenant1.r.vespa.oath.cloud",
                              "d.app1.tenant1.us-west-1-r.vespa.oath.cloud",
                              "e.app1.tenant1.us-east-3-r.vespa.oath.cloud"),
                      endpointDnsNames);

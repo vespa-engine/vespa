@@ -19,6 +19,7 @@ import com.yahoo.vespa.hosted.controller.api.integration.dns.Record;
 import com.yahoo.vespa.hosted.controller.api.integration.dns.RecordData;
 import com.yahoo.vespa.hosted.controller.api.integration.dns.RecordName;
 import com.yahoo.vespa.hosted.controller.application.Endpoint;
+import com.yahoo.vespa.hosted.controller.application.Endpoint.EndpointFactory;
 import com.yahoo.vespa.hosted.controller.application.Endpoint.Port;
 import com.yahoo.vespa.hosted.controller.application.EndpointId;
 import com.yahoo.vespa.hosted.controller.application.EndpointList;
@@ -71,6 +72,7 @@ public class RoutingController {
     private final Controller controller;
     private final RoutingPolicies routingPolicies;
     private final RotationRepository rotationRepository;
+    private final EndpointFactory endpointFactory;
 
     public RoutingController(Controller controller, RotationsConfig rotationsConfig) {
         this.controller = Objects.requireNonNull(controller, "controller must be non-null");
@@ -78,6 +80,7 @@ public class RoutingController {
         this.rotationRepository = new RotationRepository(Objects.requireNonNull(rotationsConfig, "rotationsConfig must be non-null"),
                                                          controller.applications(),
                                                          controller.curator());
+        this.endpointFactory = new EndpointFactory(controller.zoneRegistry());
     }
 
     /** Create a routing context for given deployment */
@@ -115,7 +118,7 @@ public class RoutingController {
             if (!policy.status().isActive()) continue;
             RoutingMethod routingMethod = controller.zoneRegistry().routingMethod(policy.id().zone());
             endpoints.addAll(policy.zoneEndpointsIn(controller.system(), routingMethod, controller.zoneRegistry()));
-            endpoints.add(policy.regionEndpointIn(controller.system(), routingMethod));
+            endpoints.add(policy.regionEndpointIn(controller.system(), routingMethod, controller.zoneRegistry()));
         }
         return EndpointList.copyOf(endpoints);
     }
@@ -158,23 +161,21 @@ public class RoutingController {
         }
         // Add application endpoints
         for (var declaredEndpoint : deploymentSpec.endpoints()) {
-            Map<ZoneId, Map<DeploymentId, Integer>> deployments = declaredEndpoint.targets().stream()
-                                                                                  .collect(groupingBy(t -> ZoneId.from(Environment.prod, t.region()),
-                                                                                                      toMap(t -> new DeploymentId(application.id().instance(t.instance()),
-                                                                                                                                  ZoneId.from(Environment.prod, t.region())),
-                                                                                                            t -> t.weight())));
+            Map<DeploymentId, Integer> deployments = declaredEndpoint.targets().stream()
+                                                                     .collect(toMap(t -> new DeploymentId(application.id().instance(t.instance()),
+                                                                                                          ZoneId.from(Environment.prod, t.region())),
+                                                                                    t -> t.weight()));
 
-            deployments.forEach((zone, weightedInstances) -> {
-                // Application endpoints are only supported when using direct routing methods
-                RoutingMethod routingMethod = usesSharedRouting(zone) ? RoutingMethod.sharedLayer4 : RoutingMethod.exclusive;
-                endpoints.add(Endpoint.of(application.id())
-                                      .targetApplication(EndpointId.of(declaredEndpoint.endpointId()),
-                                                         ClusterSpec.Id.from(declaredEndpoint.containerId()),
-                                                         weightedInstances)
-                                      .routingMethod(routingMethod)
-                                      .on(Port.fromRoutingMethod(routingMethod))
-                                      .in(controller.system()));
-            });
+            ZoneId zone = deployments.keySet().iterator().next().zoneId(); // Where multiple zones are possible, they all have the same routing method.
+            // Application endpoints are only supported when using direct routing methods
+            RoutingMethod routingMethod = usesSharedRouting(zone) ? RoutingMethod.sharedLayer4 : RoutingMethod.exclusive;
+            endpoints.add(endpointFactory.of(application.id())
+                                         .targetApplication(EndpointId.of(declaredEndpoint.endpointId()),
+                                                     ClusterSpec.Id.from(declaredEndpoint.containerId()),
+                                                     deployments)
+                                         .routingMethod(routingMethod)
+                                         .on(Port.fromRoutingMethod(routingMethod))
+                                         .in(controller.system()));
         }
         return EndpointList.copyOf(endpoints);
     }
@@ -207,8 +208,8 @@ public class RoutingController {
         List<Endpoint.EndpointBuilder> builders = new ArrayList<>();
         if (deployment.zoneId().environment().isProduction()) {
             // Add default and wildcard names for global endpoints
-            builders.add(Endpoint.of(deployment.applicationId()).target(EndpointId.defaultId()));
-            builders.add(Endpoint.of(deployment.applicationId()).wildcard());
+            builders.add(endpointFactory.of(deployment.applicationId()).target(EndpointId.defaultId()));
+            builders.add(endpointFactory.of(deployment.applicationId()).wildcard());
 
             // Add default and wildcard names for each region targeted by application endpoints
             List<DeploymentId> deploymentTargets = deploymentSpec.endpoints().stream()
@@ -220,14 +221,14 @@ public class RoutingController {
                                                                  .toList();
             TenantAndApplicationId application = TenantAndApplicationId.from(deployment.applicationId());
             for (var targetDeployment : deploymentTargets) {
-                builders.add(Endpoint.of(application).targetApplication(EndpointId.defaultId(), targetDeployment));
-                builders.add(Endpoint.of(application).wildcardApplication(targetDeployment));
+                builders.add(endpointFactory.of(application).targetApplication(EndpointId.defaultId(), targetDeployment));
+                builders.add(endpointFactory.of(application).wildcardApplication(targetDeployment));
             }
         }
 
         // Add default and wildcard names for zone endpoints
-        builders.add(Endpoint.of(deployment.applicationId()).target(ClusterSpec.Id.from("default"), deployment));
-        builders.add(Endpoint.of(deployment.applicationId()).wildcard(deployment));
+        builders.add(endpointFactory.of(deployment.applicationId()).target(ClusterSpec.Id.from("default"), deployment));
+        builders.add(endpointFactory.of(deployment.applicationId()).wildcard(deployment));
 
         // Build all certificate names
         for (var builder : builders) {
@@ -398,11 +399,11 @@ public class RoutingController {
                 throw new IllegalArgumentException("Invalid routing methods for " + routingId + ": Exceeded maximum " +
                                                    "direct methods");
             }
-            endpoints.add(Endpoint.of(routingId.instance())
-                                  .target(routingId.endpointId(), cluster, deployments)
-                                  .on(Port.fromRoutingMethod(method))
-                                  .routingMethod(method)
-                                  .in(controller.system()));
+            endpoints.add(endpointFactory.of(routingId.instance())
+                                         .target(routingId.endpointId(), cluster, deployments)
+                                         .on(Port.fromRoutingMethod(method))
+                                         .routingMethod(method)
+                                         .in(controller.system()));
         }
         return endpoints;
     }

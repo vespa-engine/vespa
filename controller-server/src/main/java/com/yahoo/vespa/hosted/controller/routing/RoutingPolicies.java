@@ -215,7 +215,7 @@ public class RoutingPolicies {
         for (var policy : policies) {
             if (policy.dnsZone().isEmpty() && policy.canonicalName().isPresent()) continue;
             if (controller.zoneRegistry().routingMethod(policy.id().zone()) != RoutingMethod.exclusive) continue;
-            Endpoint endpoint = policy.regionEndpointIn(controller.system(), RoutingMethod.exclusive);
+            Endpoint endpoint = policy.regionEndpointIn(controller.system(), RoutingMethod.exclusive, controller.zoneRegistry());
             var zonePolicy = db.readZoneRoutingPolicy(policy.id().zone());
             long weight = 1;
             if (isConfiguredOut(zonePolicy, policy, inactiveZones)) {
@@ -289,12 +289,10 @@ public class RoutingPolicies {
             activeTargets.addAll(inactiveTargets);
             inactiveTargets.clear();
         }
+
         targetsByEndpoint.forEach((applicationEndpoint, targets) -> {
-            ZoneId targetZone = applicationEndpoint.targets().stream()
-                                                   .map(Endpoint.Target::deployment)
-                                                   .map(DeploymentId::zoneId)
-                                                   .findFirst()
-                                                   .get();
+            // Where multiple zones are permitted, they all have the same routing policy, and nameServiceForwarder (below).
+            ZoneId targetZone = applicationEndpoint.targets().iterator().next().deployment().zoneId();
             Set<AliasTarget> aliasTargets = new LinkedHashSet<>();
             Set<DirectTarget> directTargets = new LinkedHashSet<>();
             for (Target target : targets) {
@@ -312,11 +310,8 @@ public class RoutingPolicies {
             }
         });
         inactiveTargetsByEndpoint.forEach((applicationEndpoint, targets) -> {
-            ZoneId targetZone = applicationEndpoint.targets().stream()
-                                                   .map(Endpoint.Target::deployment)
-                                                   .map(DeploymentId::zoneId)
-                                                   .findFirst()
-                                                   .get();
+            // Where multiple zones are permitted, they all have the same routing policy, and nameServiceForwarder (below).
+            ZoneId targetZone = applicationEndpoint.targets().iterator().next().deployment().zoneId();
             targets.forEach(target -> {
                 nameServiceForwarderIn(targetZone).removeRecords(target.type(),
                                                                  RecordName.from(applicationEndpoint.dnsName()),
