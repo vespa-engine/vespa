@@ -7,12 +7,22 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+type dummyContainer struct{ containerBase }
+
+func (*dummyContainer) ArgForMain() string { return "arg-for-main" }
+func newDummyContainer() Container {
+	var dc dummyContainer
+	dc.serviceName = "foo"
+	dc.jvmArgs = NewOptions(&dc)
+	return &dc
+}
+
 func TestHeapSizeSimple(t *testing.T) {
 	var (
 		aa = MegaBytesOfMemory(123)
 		bb = MegaBytesOfMemory(234)
 	)
-	o := NewOptions(NewStandaloneContainer("foo"))
+	o := newDummyContainer().JvmOptions()
 	assert.Equal(t, aa, o.CurMinHeapSize(aa))
 	assert.Equal(t, bb, o.CurMaxHeapSize(bb))
 	assert.Equal(t, 2, len(o.jvmArgs))
@@ -27,7 +37,7 @@ func TestHeapSizeMulti(t *testing.T) {
 		cc = MegaBytesOfMemory(456)
 		dd = MegaBytesOfMemory(567)
 	)
-	o := NewOptions(NewStandaloneContainer("foo"))
+	o := newDummyContainer().JvmOptions()
 	assert.Equal(t, aa, o.CurMinHeapSize(aa))
 	assert.Equal(t, aa, o.CurMaxHeapSize(aa))
 	assert.Equal(t, 2, len(o.jvmArgs))
@@ -53,7 +63,7 @@ func TestHeapSizeAdd(t *testing.T) {
 		gg = MegaBytesOfMemory(12345)
 		hh = MegaBytesOfMemory(23456)
 	)
-	o := NewOptions(NewStandaloneContainer("foo"))
+	o := newDummyContainer().JvmOptions()
 	o.AddDefaultHeapSizeArgs(gg, hh)
 	assert.Equal(t, 3, len(o.jvmArgs))
 	assert.Equal(t, "-Xms12345m", o.jvmArgs[0])
@@ -66,7 +76,7 @@ func TestHeapSizeNoAdd(t *testing.T) {
 		bb = MegaBytesOfMemory(234)
 		cc = MegaBytesOfMemory(456)
 	)
-	o := NewOptions(NewStandaloneContainer("foo"))
+	o := newDummyContainer().JvmOptions()
 	o.AppendOption("-Xms128k")
 	o.AppendOption("-Xmx1280k")
 	o.AddDefaultHeapSizeArgs(bb, cc)
