@@ -40,7 +40,10 @@ public class HostResumeProvisionerTest {
     private final MockNameResolver nameResolver = new MockNameResolver();
     private final MockHostProvisioner hostProvisioner = new MockHostProvisioner(flavors, nameResolver, 0);
     private final ProvisioningTester tester = new ProvisioningTester.Builder()
-            .zone(new Zone(Cloud.builder().dynamicProvisioning(true).build(), SystemName.defaultSystem(), Environment.dev, RegionName.defaultName()))
+            .zone(new Zone(Cloud.builder().dynamicProvisioning(true).allowHostSharing(false).build(),
+                           SystemName.defaultSystem(),
+                           Environment.dev,
+                           RegionName.defaultName()))
             .hostProvisioner(hostProvisioner)
             .nameResolver(nameResolver)
             .flavors(flavors)

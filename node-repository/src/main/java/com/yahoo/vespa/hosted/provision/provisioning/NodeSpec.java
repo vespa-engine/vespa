@@ -25,10 +25,7 @@ public interface NodeSpec {
     /** The node type this requests */
     NodeType type();
 
-    /**
-     * Returns whether the physical hosts running the nodes of this application can
-     * also run nodes of other applications.
-     */
+    /** Returns whether the hosts running the nodes of this application can also run nodes of other applications. */
     boolean isExclusive();
 
     /** Returns whether the given flavor is compatible with this spec */

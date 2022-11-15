@@ -197,7 +197,7 @@ public class NodeRepository extends AbstractComponent {
      * perfectly.
      */
     public boolean exclusiveAllocation(ClusterSpec clusterSpec) {
-        return clusterSpec.isExclusive() || zone().cloud().dynamicProvisioning();
+        return clusterSpec.isExclusive() || ! zone().cloud().allowHostSharing();
     }
 
     /**

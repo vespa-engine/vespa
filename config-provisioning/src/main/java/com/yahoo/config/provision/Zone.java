@@ -26,6 +26,7 @@ public class Zone {
         this(Cloud.builder()
                   .name(CloudName.from(configserverConfig.cloud()))
                   .dynamicProvisioning(cloudConfig.dynamicProvisioning())
+                  .allowHostSharing(cloudConfig.allowHostSharing())
                   .requireAccessControl(cloudConfig.requireAccessControl())
                   .account(CloudAccount.from(cloudConfig.account()))
                   .build(),
