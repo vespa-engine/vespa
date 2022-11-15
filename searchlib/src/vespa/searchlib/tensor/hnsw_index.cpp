@@ -326,7 +326,7 @@ HnswIndex::search_layer(const TypedCells& input, uint32_t neighbors_to_find,
 }
 
 HnswIndex::HnswIndex(const DocVectorAccess& vectors, DistanceFunction::UP distance_func,
-                     RandomLevelGenerator::UP level_generator, const Config& cfg)
+                     RandomLevelGenerator::UP level_generator, const HnswIndexConfig& cfg)
     : _graph(),
       _vectors(vectors),
       _distance_func(std::move(distance_func)),

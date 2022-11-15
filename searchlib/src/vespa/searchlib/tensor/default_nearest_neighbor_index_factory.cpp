@@ -33,11 +33,11 @@ DefaultNearestNeighborIndexFactory::make(const DocVectorAccess& vectors,
 {
     (void) vector_size;
     uint32_t m = params.max_links_per_node();
-    HnswIndex::Config cfg(m * 2,
-                          m,
-                          params.neighbors_to_explore_at_insert(),
-                          10000,
-                          true);
+    HnswIndexConfig cfg(m * 2,
+                        m,
+                        params.neighbors_to_explore_at_insert(),
+                        10000,
+                        true);
     return std::make_unique<HnswIndex>(vectors,
                                        make_distance_function(params.distance_metric(), cell_type),
                                        make_random_level_generator(m),

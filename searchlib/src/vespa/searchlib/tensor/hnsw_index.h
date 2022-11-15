@@ -2,6 +2,7 @@
 
 #pragma once
 
+#include "hnsw_index_config.h"
 #include "distance_function.h"
 #include "doc_vector_access.h"
 #include "hnsw_identity_mapping.h"
@@ -36,33 +37,6 @@ namespace search::tensor {
  */
 class HnswIndex : public NearestNeighborIndex {
 public:
-    class Config {
-    private:
-        uint32_t _max_links_at_level_0;
-        uint32_t _max_links_on_inserts;
-        uint32_t _neighbors_to_explore_at_construction;
-        uint32_t _min_size_before_two_phase;
-        bool _heuristic_select_neighbors;
-
-    public:
-        Config(uint32_t max_links_at_level_0_in,
-               uint32_t max_links_on_inserts_in,
-               uint32_t neighbors_to_explore_at_construction_in,
-               uint32_t min_size_before_two_phase_in,
-               bool heuristic_select_neighbors_in)
-            : _max_links_at_level_0(max_links_at_level_0_in),
-              _max_links_on_inserts(max_links_on_inserts_in),
-              _neighbors_to_explore_at_construction(neighbors_to_explore_at_construction_in),
-              _min_size_before_two_phase(min_size_before_two_phase_in),
-              _heuristic_select_neighbors(heuristic_select_neighbors_in)
-        {}
-        uint32_t max_links_at_level_0() const { return _max_links_at_level_0; }
-        uint32_t max_links_on_inserts() const { return _max_links_on_inserts; }
-        uint32_t neighbors_to_explore_at_construction() const { return _neighbors_to_explore_at_construction; }
-        uint32_t min_size_before_two_phase() const { return _min_size_before_two_phase; }
-        bool heuristic_select_neighbors() const { return _heuristic_select_neighbors; }
-    };
-
     class HnswIndexCompactionSpec {
         CompactionSpec _level_arrays;
         CompactionSpec _link_arrays;
@@ -109,7 +83,7 @@ protected:
     DistanceFunction::UP _distance_func;
     RandomLevelGenerator::UP _level_generator;
     IdMapping _id_mapping; // mapping from docid to nodeid vector
-    Config _cfg;
+    HnswIndexConfig _cfg;
     HnswIndexCompactionSpec _compaction_spec;
 
     uint32_t max_links_for_level(uint32_t level) const;
@@ -212,10 +186,10 @@ protected:
     void internal_complete_add_node(uint32_t nodeid, uint32_t docid, uint32_t subspace, PreparedAddNode &prepared_node);
 public:
     HnswIndex(const DocVectorAccess& vectors, DistanceFunction::UP distance_func,
-              RandomLevelGenerator::UP level_generator, const Config& cfg);
+              RandomLevelGenerator::UP level_generator, const HnswIndexConfig& cfg);
     ~HnswIndex() override;
 
-    const Config& config() const { return _cfg; }
+    const HnswIndexConfig& config() const { return _cfg; }
 
     // Implements NearestNeighborIndex
     void add_document(uint32_t docid) override;
