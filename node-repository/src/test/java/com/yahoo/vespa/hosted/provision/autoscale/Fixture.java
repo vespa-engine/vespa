@@ -151,7 +151,7 @@ public class Fixture {
             return this;
         }
 
-        /** Set to true to behave as if hosts are provisioned dynamically. */
+        /** Set to true to allow multiple nodes be provisioned on the same host. */
         public Fixture. Builder allowHostSharing(boolean allowHostSharing) {
             this.zone = new Zone(Cloud.builder()
                                       .dynamicProvisioning(zone.cloud().dynamicProvisioning())
