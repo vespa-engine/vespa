@@ -257,7 +257,7 @@ class Activator {
                 node.parentHostname(), node.flavor(), node.status(), node.state(), node.allocation(), node.history(),
                 node.type(), node.reports(), node.modelName(), node.reservedTo(),
                 node.exclusiveToApplicationId(), node.exclusiveToClusterType(), node.switchHostname(),
-                node.trustedCertificates(), cloudAccount);
+                node.trustedCertificates(), cloudAccount, node.wireguardPubKey());
     }
 
 }
