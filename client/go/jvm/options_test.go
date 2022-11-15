@@ -7,7 +7,12 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+func setup(t *testing.T) {
+	t.Setenv("VESPA_HOME", t.TempDir())
+}
+
 func TestHeapSizeSimple(t *testing.T) {
+	setup(t)
 	var (
 		aa = MegaBytesOfMemory(123)
 		bb = MegaBytesOfMemory(234)
@@ -21,6 +26,7 @@ func TestHeapSizeSimple(t *testing.T) {
 }
 
 func TestHeapSizeMulti(t *testing.T) {
+	setup(t)
 	var (
 		aa = MegaBytesOfMemory(123)
 		bb = MegaBytesOfMemory(234)
@@ -49,6 +55,7 @@ func TestHeapSizeMulti(t *testing.T) {
 }
 
 func TestHeapSizeAdd(t *testing.T) {
+	setup(t)
 	var (
 		gg = MegaBytesOfMemory(12345)
 		hh = MegaBytesOfMemory(23456)
@@ -62,6 +69,7 @@ func TestHeapSizeAdd(t *testing.T) {
 }
 
 func TestHeapSizeNoAdd(t *testing.T) {
+	setup(t)
 	var (
 		bb = MegaBytesOfMemory(234)
 		cc = MegaBytesOfMemory(456)
