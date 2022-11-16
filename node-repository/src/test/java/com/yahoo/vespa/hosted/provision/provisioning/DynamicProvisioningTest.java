@@ -226,7 +226,7 @@ public class DynamicProvisioningTest {
 
         ProvisioningTester tester = new ProvisioningTester.Builder().zone(zone)
                                                                     .flavors(flavors)
-                                                                    .hostProvisioner(new MockHostProvisioner(flavors, memoryTax))
+                                                                    .hostProvisioner(new MockHostProvisioner(flavors, memoryTax, zone.cloud()))
                                                                     .nameResolver(nameResolver)
                                                                     .resourcesCalculator(memoryTax, 0)
                                                                     .build();
@@ -268,7 +268,7 @@ public class DynamicProvisioningTest {
         InMemoryFlagSource flagSource = new InMemoryFlagSource();
         List<Flavor> flavors = List.of(new Flavor("x86", new NodeResources(1, 4, 50, 0.1, fast, local, Architecture.x86_64)),
                                        new Flavor("arm", new NodeResources(1, 4, 50, 0.1, fast, local, Architecture.arm64)));
-        MockHostProvisioner hostProvisioner = new MockHostProvisioner(flavors);
+        MockHostProvisioner hostProvisioner = new MockHostProvisioner(flavors, zone.cloud());
         ProvisioningTester tester = new ProvisioningTester.Builder().zone(zone)
                 .flavors(flavors)
                 .hostProvisioner(hostProvisioner)
@@ -315,7 +315,7 @@ public class DynamicProvisioningTest {
 
         ProvisioningTester tester = new ProvisioningTester.Builder().zone(zone)
                                                                     .flavors(flavors)
-                                                                    .hostProvisioner(new MockHostProvisioner(flavors, memoryTax))
+                                                                    .hostProvisioner(new MockHostProvisioner(flavors, memoryTax, zone.cloud()))
                                                                     .nameResolver(nameResolver)
                                                                     .resourcesCalculator(memoryTax, 0)
                                                                     .build();
@@ -325,7 +325,7 @@ public class DynamicProvisioningTest {
         ApplicationId app1 = ProvisioningTester.applicationId("app1");
         ClusterSpec cluster1 = ClusterSpec.request(ClusterSpec.Type.content, new ClusterSpec.Id("cluster1")).vespaVersion("7").build();
 
-        // Limits where each number is within flavor limits but but which don't contain any flavor leads to an error
+        // Limits where each number is within flavor limits but which don't contain any flavor leads to an error
         try {
             tester.activate(app1, cluster1, Capacity.from(resources(8, 4, 3.8, 20, 40),
                                                           resources(10, 5, 5, 25, 50)));
@@ -390,7 +390,7 @@ public class DynamicProvisioningTest {
 
         ProvisioningTester tester = new ProvisioningTester.Builder().zone(zone)
                                                                     .flavors(flavors)
-                                                                    .hostProvisioner(new MockHostProvisioner(flavors, memoryTax))
+                                                                    .hostProvisioner(new MockHostProvisioner(flavors, memoryTax, zone.cloud()))
                                                                     .nameResolver(nameResolver)
                                                                     .resourcesCalculator(memoryTax, 0)
                                                                     .build();
@@ -425,7 +425,7 @@ public class DynamicProvisioningTest {
 
         ProvisioningTester tester = new ProvisioningTester.Builder().zone(zone)
                                                                     .flavors(flavors)
-                                                                    .hostProvisioner(new MockHostProvisioner(flavors, memoryTax))
+                                                                    .hostProvisioner(new MockHostProvisioner(flavors, memoryTax, zone.cloud()))
                                                                     .nameResolver(nameResolver)
                                                                     .resourcesCalculator(memoryTax, localDiskTax)
                                                                     .build();

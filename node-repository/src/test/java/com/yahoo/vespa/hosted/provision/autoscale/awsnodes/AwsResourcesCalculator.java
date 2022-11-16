@@ -27,7 +27,7 @@ public class AwsResourcesCalculator {
     }
 
     /**
-     * Returns the memory overhead resulting if the given advertised resources are placed on the given node
+     * Returns the memory overhead resulting if the given resources are placed on the given node
      *
      * @param real true if the given resources are in real values, false if they are in advertised
      */
@@ -37,10 +37,11 @@ public class AwsResourcesCalculator {
                 + hostMemory; // Approximate cost of host administration processes
 
         if (hostMemoryOverhead > hostFlavor.advertisedResources().memoryGb()) // An unusably small flavor,
-            hostMemoryOverhead = hostFlavor.advertisedResources().memoryGb(); // overhead cannot exceed what's available
-
+            return resources.memoryGb(); // all will be overhead
         double memoryShare = resources.memoryGb() /
                              ( hostFlavor.advertisedResources().memoryGb() - ( real ? hostMemoryOverhead : 0));
+        if (memoryShare > 1) // The real resources of the host cannot fit the requested real resources after overhead
+            memoryShare = 1;
         return hostMemoryOverhead * memoryShare;
     }
 

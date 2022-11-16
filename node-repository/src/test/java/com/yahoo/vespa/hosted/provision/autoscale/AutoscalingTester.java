@@ -3,6 +3,7 @@ package com.yahoo.vespa.hosted.provision.autoscale;
 
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.Capacity;
+import com.yahoo.config.provision.Cloud;
 import com.yahoo.config.provision.ClusterResources;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.Flavor;
@@ -53,7 +54,7 @@ class AutoscalingTester {
         provisioningTester = new ProvisioningTester.Builder().zone(zone)
                                                              .flavors(flavors)
                                                              .resourcesCalculator(resourcesCalculator)
-                                                             .hostProvisioner(zone.cloud().dynamicProvisioning() ? new MockHostProvisioner(flavors) : null)
+                                                             .hostProvisioner(zone.cloud().dynamicProvisioning() ? new MockHostProvisioner(flavors, zone.cloud()) : null)
                                                              .build();
 
         hostResourcesCalculator = resourcesCalculator;
@@ -209,7 +210,7 @@ class AutoscalingTester {
     public static class MockHostResourcesCalculator implements HostResourcesCalculator {
 
         private final Zone zone;
-        private double memoryTax = 0;
+        private double memoryTax;
 
         public MockHostResourcesCalculator(Zone zone, double memoryTax) {
             this.zone = zone;
@@ -249,8 +250,8 @@ class AutoscalingTester {
 
     private class MockHostProvisioner extends com.yahoo.vespa.hosted.provision.testutils.MockHostProvisioner {
 
-        public MockHostProvisioner(List<Flavor> flavors) {
-            super(flavors);
+        public MockHostProvisioner(List<Flavor> flavors, Cloud cloud) {
+            super(flavors, cloud);
         }
 
         @Override

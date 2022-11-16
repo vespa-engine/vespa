@@ -127,14 +127,14 @@ class NodeAllocation {
                 boolean resizeable = requestedNodes.considerRetiring() && candidate.isResizable;
                 boolean acceptToRetire = acceptToRetire(candidate);
 
-                if ((! saturated() && hasCompatibleFlavor(candidate) && requestedNodes.acceptable(candidate)) || acceptToRetire) {
+                if ((! saturated() && hasCompatibleResources(candidate) && requestedNodes.acceptable(candidate)) || acceptToRetire) {
                     candidate = candidate.withNode();
                     if (candidate.isValid()) {
                         acceptNode(candidate, shouldRetire(candidate, candidates), resizeable);
                     }
                 }
             }
-            else if (! saturated() && hasCompatibleFlavor(candidate)) {
+            else if (! saturated() && hasCompatibleResources(candidate)) {
                 if (! nodeResourceLimits.isWithinRealLimits(candidate, cluster)) {
                     ++rejectedDueToInsufficientRealResources;
                     continue;
@@ -169,7 +169,7 @@ class NodeAllocation {
         }
         if ( ! nodeResourceLimits.isWithinRealLimits(candidate, cluster)) return Retirement.outsideRealLimits;
         if (violatesParentHostPolicy(candidate)) return Retirement.violatesParentHostPolicy;
-        if ( ! hasCompatibleFlavor(candidate)) return Retirement.incompatibleFlavor;
+        if ( ! hasCompatibleResources(candidate)) return Retirement.incompatibleResources;
         if (candidate.wantToRetire()) return Retirement.hardRequest;
         if (candidate.preferToRetire() && candidate.replaceableBy(candidates)) return Retirement.softRequest;
         if (violatesExclusivity(candidate)) return Retirement.violatesExclusivity;
@@ -241,11 +241,11 @@ class NodeAllocation {
         if (! requestedNodes.considerRetiring()) return false;
 
         return cluster.isStateful() ||
-               (cluster.type() == ClusterSpec.Type.container && !hasCompatibleFlavor(candidate));
+               (cluster.type() == ClusterSpec.Type.container && !hasCompatibleResources(candidate));
     }
 
-    private boolean hasCompatibleFlavor(NodeCandidate candidate) {
-        return requestedNodes.isCompatible(candidate.flavor(), nodeRepository.flavors()) || candidate.isResizable;
+    private boolean hasCompatibleResources(NodeCandidate candidate) {
+        return requestedNodes.isCompatible(candidate.resources()) || candidate.isResizable;
     }
 
     private Node acceptNode(NodeCandidate candidate, Retirement retirement, boolean resizeable) {
@@ -391,7 +391,7 @@ class NodeAllocation {
         }
         else if (deltaRetiredCount < 0) { // unretire until deltaRetiredCount is 0
             for (NodeCandidate candidate : byUnretiringPriority(nodes.values())) {
-                if ( candidate.allocation().get().membership().retired() && hasCompatibleFlavor(candidate) ) {
+                if (candidate.allocation().get().membership().retired() && hasCompatibleResources(candidate) ) {
                     candidate = candidate.withNode();
                     if (candidate.isResizable)
                         candidate = candidate.withNode(resize(candidate.toNode()));
@@ -482,7 +482,7 @@ class NodeAllocation {
         alreadyRetired("node is already retired"),
         outsideRealLimits("node real resources is outside limits"),
         violatesParentHostPolicy("node violates parent host policy"),
-        incompatibleFlavor("node flavor is incompatible"),
+        incompatibleResources("node resources are incompatible"),
         hardRequest("node is requested to retire"),
         softRequest("node is requested to retire (soft)"),
         violatesExclusivity("node violates host exclusivity"),

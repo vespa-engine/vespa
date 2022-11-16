@@ -156,7 +156,7 @@ public class AllocatableClusterResources {
     public static Optional<AllocatableClusterResources> from(ClusterResources wantedResources,
                                                              ClusterSpec clusterSpec,
                                                              Limits applicationLimits,
-                                                             NodeList hosts,
+                                                             List<NodeResources> availableRealHostResources,
                                                              NodeRepository nodeRepository) {
         var systemLimits = new NodeResourceLimits(nodeRepository);
         boolean exclusive = nodeRepository.exclusiveAllocation(clusterSpec);
@@ -168,8 +168,7 @@ public class AllocatableClusterResources {
             var realResources = nodeRepository.resourcesCalculator().requestToReal(advertisedResources, exclusive); // What we'll really get
             if ( ! systemLimits.isWithinRealLimits(realResources, clusterSpec.type()))
                 return Optional.empty();
-
-            if (matchesAny(hosts, advertisedResources))
+            if (anySatisfies(realResources, availableRealHostResources))
                     return Optional.of(new AllocatableClusterResources(wantedResources.with(realResources),
                                                                        advertisedResources,
                                                                        wantedResources,
@@ -212,11 +211,8 @@ public class AllocatableClusterResources {
     }
 
     /** Returns true if the given resources could be allocated on any of the given host flavors */
-    private static boolean matchesAny(NodeList hosts, NodeResources advertisedResources) {
-        // Tenant nodes should not consume more than half the resources of the biggest hosts
-        // to make it easier to shift them between hosts.
-        return hosts.stream().anyMatch(host -> host.resources().withVcpu(host.resources().vcpu() / 2)
-                                                   .satisfies(advertisedResources));
+    private static boolean anySatisfies(NodeResources realResources, List<NodeResources> availableRealHostResources) {
+        return availableRealHostResources.stream().anyMatch(realHostResources -> realHostResources.satisfies(realResources));
     }
 
     private static boolean between(NodeResources min, NodeResources max, NodeResources r) {

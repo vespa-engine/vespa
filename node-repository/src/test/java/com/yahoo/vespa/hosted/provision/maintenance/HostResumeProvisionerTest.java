@@ -38,12 +38,13 @@ public class HostResumeProvisionerTest {
 
     private final List<Flavor> flavors = FlavorConfigBuilder.createDummies("default").getFlavors();
     private final MockNameResolver nameResolver = new MockNameResolver();
-    private final MockHostProvisioner hostProvisioner = new MockHostProvisioner(flavors, nameResolver, 0);
+    private final Zone zone = new Zone(Cloud.builder().dynamicProvisioning(true).allowHostSharing(false).build(),
+                                       SystemName.defaultSystem(),
+                                       Environment.dev,
+                                       RegionName.defaultName());
+    private final MockHostProvisioner hostProvisioner = new MockHostProvisioner(flavors, nameResolver, 0, zone.cloud());
     private final ProvisioningTester tester = new ProvisioningTester.Builder()
-            .zone(new Zone(Cloud.builder().dynamicProvisioning(true).allowHostSharing(false).build(),
-                           SystemName.defaultSystem(),
-                           Environment.dev,
-                           RegionName.defaultName()))
+            .zone(zone)
             .hostProvisioner(hostProvisioner)
             .nameResolver(nameResolver)
             .flavors(flavors)

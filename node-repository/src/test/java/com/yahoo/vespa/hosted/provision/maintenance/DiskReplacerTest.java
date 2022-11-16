@@ -1,5 +1,6 @@
 package com.yahoo.vespa.hosted.provision.maintenance;
 
+import com.yahoo.config.provision.Cloud;
 import com.yahoo.config.provision.NodeResources;
 import com.yahoo.vespa.hosted.provision.node.Agent;
 import com.yahoo.vespa.hosted.provision.provisioning.ProvisioningTester;
@@ -17,7 +18,7 @@ import static org.junit.Assert.assertEquals;
 public class DiskReplacerTest {
 
     private final ProvisioningTester tester = new ProvisioningTester.Builder().build();
-    private final MockHostProvisioner hostProvisioner = new MockHostProvisioner(List.of());
+    private final MockHostProvisioner hostProvisioner = new MockHostProvisioner(List.of(), Cloud.defaultCloud());
     private final DiskReplacer diskReplacer = new DiskReplacer(tester.nodeRepository(), Duration.ofDays(1), new TestMetric(), hostProvisioner);
 
     @Test
