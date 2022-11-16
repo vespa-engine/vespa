@@ -50,6 +50,13 @@ func main() {
 		} else {
 			os.Exit(1)
 		}
+	case "detect-hostname":
+		myName, err := vespa.FindOurHostname()
+		fmt.Println(myName)
+		if err != nil {
+			fmt.Fprintln(os.Stderr, err)
+			os.Exit(1)
+		}
 	case "vespa-deploy":
 		cobra := deploy.NewDeployCmd()
 		cobra.Execute()
@@ -70,7 +77,7 @@ func main() {
 			os.Exit(startcbinary.Run(os.Args))
 		}
 		fmt.Fprintf(os.Stderr, "unknown action '%s'\n", action)
-		fmt.Fprintln(os.Stderr, "actions: export-env, ipv6-only, security-env")
+		fmt.Fprintln(os.Stderr, "actions: export-env, ipv6-only, security-env, detect-hostname")
 		fmt.Fprintln(os.Stderr, "(also: vespa-deploy, vespa-logfmt)")
 	}
 }
