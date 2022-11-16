@@ -424,6 +424,13 @@ public class Flags {
             "If true, use the old vespa-start-container-daemon script.",
             "Takes effect immediately?",
             ZONE_ID, APPLICATION_ID);
+    
+    public static final UnboundBooleanFlag ENABLE_DATAPLANE_FILTER = defineFeatureFlag(
+            "enable-dataplane-filter", false, 
+            List.of("tokle", "bjorncs"), "2022-11-15", "2023-01-31",
+            "Setup data plane filter from clients configuration",
+            "Takes effect on redeployment",
+            APPLICATION_ID);
 
     public static final UnboundBooleanFlag USE_LOCKS_IN_FILEDISTRIBUTION = defineFeatureFlag(
             "use-locks-in-filedistribution", false,
