@@ -13,6 +13,7 @@ import (
 	"github.com/vespa-engine/vespa/client/go/cmd/logfmt"
 	"github.com/vespa-engine/vespa/client/go/jvm"
 	"github.com/vespa-engine/vespa/client/go/script-utils/configserver"
+	"github.com/vespa-engine/vespa/client/go/script-utils/standalone"
 	"github.com/vespa-engine/vespa/client/go/script-utils/startcbinary"
 	"github.com/vespa-engine/vespa/client/go/util"
 	"github.com/vespa-engine/vespa/client/go/vespa"
@@ -38,6 +39,8 @@ func main() {
 		os.Exit(configserver.JustStartConfigserver())
 	case "vespa-start-container-daemon":
 		os.Exit(jvm.RunApplicationContainer(os.Args[1:]))
+	case "run-standalone-container":
+		os.Exit(standalone.StartStandaloneContainer(os.Args[1:]))
 	case "start-c-binary":
 		os.Exit(startcbinary.Run(os.Args[1:]))
 	case "export-env":

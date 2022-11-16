@@ -5,11 +5,13 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/vespa-engine/vespa/client/go/prog"
 )
 
 type dummyContainer struct{ containerBase }
 
-func (*dummyContainer) ArgForMain() string { return "arg-for-main" }
+func (*dummyContainer) ArgForMain() string           { return "arg-for-main" }
+func (*dummyContainer) exportExtraEnv(ps *prog.Spec) {}
 func newDummyContainer() Container {
 	var dc dummyContainer
 	dc.serviceName = "foo"

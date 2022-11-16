@@ -8,6 +8,8 @@ import (
 	"os"
 
 	"github.com/vespa-engine/vespa/client/go/defaults"
+	"github.com/vespa-engine/vespa/client/go/envvars"
+	"github.com/vespa-engine/vespa/client/go/prog"
 	"github.com/vespa-engine/vespa/client/go/trace"
 	"github.com/vespa-engine/vespa/client/go/util"
 )
@@ -77,4 +79,14 @@ func (a *StandaloneContainer) addJdiscProperties() {
 	opts.AddOption("-Djdisc.config.file=" + propsFile)
 	opts.AddOption("-Djdisc.cache.path=" + bCacheDir)
 	opts.AddOption("-Djdisc.logger.tag=" + svcName)
+}
+
+func (c *StandaloneContainer) exportExtraEnv(ps *prog.Spec) {
+	vespaHome := defaults.VespaHome()
+	app := fmt.Sprintf("%s/conf/%s-app", vespaHome, c.ServiceName())
+	if util.IsDirectory(app) {
+		ps.Setenv(envvars.STANDALONE_JDISC_APP_LOCATION, app)
+	} else {
+		util.JustExitMsg("standalone container requires an application directory, missing: " + app)
+	}
 }

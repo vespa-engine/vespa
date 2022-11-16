@@ -5,6 +5,7 @@ package jvm
 
 import (
 	"fmt"
+	"sort"
 	"strings"
 
 	"github.com/vespa-engine/vespa/client/go/prog"
@@ -18,6 +19,7 @@ type Container interface {
 	ArgForMain() string
 	JvmOptions() *Options
 	Exec()
+	exportExtraEnv(ps *prog.Spec)
 }
 
 type containerBase struct {
@@ -38,10 +40,20 @@ func (cb *containerBase) ConfigId() string {
 	return cb.configId
 }
 
+func keysOfMap(m map[string]string) []string {
+	keys := make([]string, 0, len(m))
+	for k, _ := range m {
+		keys = append(keys, k)
+	}
+	return keys
+}
+
 func readableEnv(env map[string]string) string {
+	keys := keysOfMap(env)
+	sort.Strings(keys)
 	var buf strings.Builder
-	for k, v := range env {
-		fmt.Fprintf(&buf, " %s=%s", k, v)
+	for _, k := range keys {
+		fmt.Fprintf(&buf, " %s=%s", k, env[k])
 	}
 	return buf.String()
 }
@@ -54,7 +66,7 @@ func (cb *containerBase) Exec() {
 	}
 	p := prog.NewSpec(argv)
 	p.ConfigureNumaCtl()
-	cb.exportEnvSettings(p)
+	cb.JvmOptions().exportEnvSettings(p)
 	trace.Info("starting container; env:", readableEnv(p.Env))
 	trace.Info("starting container; exec:", argv)
 	err := p.Run()

@@ -12,13 +12,16 @@ import (
 	"github.com/vespa-engine/vespa/client/go/util"
 )
 
-func (c *containerBase) exportEnvSettings(ps *prog.Spec) {
+func (opts *Options) exportEnvSettings(ps *prog.Spec) {
+	c := opts.container
 	vespaHome := defaults.VespaHome()
 	vlt := fmt.Sprintf("file:%s/logs/vespa/vespa.log", vespaHome)
 	lcd := fmt.Sprintf("%s/var/db/vespa/logcontrol", vespaHome)
+	lcf := fmt.Sprintf("%s/%s.logcontrol", lcd, c.ServiceName())
 	dlp := fmt.Sprintf("%s/lib64", vespaHome)
 	ps.Setenv(envvars.VESPA_LOG_TARGET, vlt)
 	ps.Setenv(envvars.VESPA_LOG_CONTROL_DIR, lcd)
+	ps.Setenv(envvars.VESPA_LOG_CONTROL_FILE, lcf)
 	ps.Setenv(envvars.VESPA_SERVICE_NAME, c.ServiceName())
 	ps.Setenv(envvars.LD_LIBRARY_PATH, dlp)
 	ps.Setenv(envvars.MALLOC_ARENA_MAX, "1")
@@ -26,8 +29,6 @@ func (c *containerBase) exportEnvSettings(ps *prog.Spec) {
 		ps.Setenv(envvars.JAVAVM_LD_PRELOAD, preload)
 		ps.Setenv(envvars.LD_PRELOAD, preload)
 	}
-	if c.ConfigId() != "" {
-		ps.Setenv(envvars.VESPA_CONFIG_ID, c.ConfigId())
-	}
 	util.OptionallyReduceTimerFrequency()
+	c.exportExtraEnv(ps)
 }
