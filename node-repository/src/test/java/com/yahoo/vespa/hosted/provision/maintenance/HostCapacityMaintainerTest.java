@@ -274,7 +274,6 @@ public class HostCapacityMaintainerTest {
         tester.maintain();
 
         // Hosts are provisioned
-        // TODO: Not thread safe as HostCapacityMaintainer may count hoists before we are done provisioning
         assertEquals(2, tester.provisionedHostsMatching(resources1));
         assertEquals(0, tester.hostProvisioner.deprovisionedHosts());
 

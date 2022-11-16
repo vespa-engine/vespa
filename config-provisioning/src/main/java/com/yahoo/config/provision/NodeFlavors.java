@@ -6,6 +6,8 @@ import com.yahoo.config.provisioning.FlavorsConfig;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -27,7 +29,10 @@ public class NodeFlavors {
     }
 
     public NodeFlavors(Collection<Flavor> flavors) {
-        configuredFlavors = flavors.stream().collect(Collectors.toUnmodifiableMap(f -> f.name(), f -> f));
+        Map<String, Flavor> map = new LinkedHashMap<>();
+        for (Flavor flavor : flavors)
+            map.put(flavor.name(), flavor);
+        configuredFlavors = Collections.unmodifiableMap(map);
     }
 
     public List<Flavor> getFlavors() {
