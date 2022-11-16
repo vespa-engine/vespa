@@ -4,6 +4,7 @@ package com.yahoo.vespa.hosted.provision.restapi;
 import com.yahoo.application.container.handler.Request;
 import com.yahoo.application.container.handler.Response;
 import com.yahoo.config.provision.ApplicationId;
+import com.yahoo.config.provision.CloudAccount;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.text.Utf8;
@@ -40,7 +41,7 @@ public class NodesV2ApiTest {
 
     @Before
     public void createTester() {
-        tester = new RestApiTester();
+        tester = new RestApiTester(CloudAccount.empty);
     }
 
     @After
