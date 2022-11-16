@@ -27,6 +27,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Function;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -126,10 +127,13 @@ public class FileDirectory extends AbstractComponent {
             return addFile(source, fileReference, hash);
     }
 
-    public void delete(FileReference fileReference) {
+    public void delete(FileReference fileReference, Function<FileReference, Boolean> canBeDeleted) {
         if (useLock.value())
             try (Lock lock = locks.lock(fileReference)) {
-                IOUtils.recursiveDeleteDir(destinationDir(fileReference));
+                if (canBeDeleted.apply(fileReference))
+                    IOUtils.recursiveDeleteDir(destinationDir(fileReference));
+                else
+                    log.log(Level.FINE, "Unable to delete file reference '" + fileReference.value() + "' since it is still in use");
             }
         else
             IOUtils.recursiveDeleteDir(destinationDir(fileReference));
