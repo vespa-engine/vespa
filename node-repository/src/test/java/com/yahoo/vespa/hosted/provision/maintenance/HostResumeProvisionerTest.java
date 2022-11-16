@@ -74,7 +74,6 @@ public class HostResumeProvisionerTest {
 
         Supplier<NodeList> provisioning = () -> tester.nodeRepository().nodes().list(Node.State.provisioned).nodeType(NodeType.host);
         assertEquals(1, provisioning.get().size());
-        provisioning.get().forEach(h -> System.out.println(h.hostname() + " " + h.ipConfig()));
         hostResumeProvisioner.maintain();
 
         assertTrue("No IP addresses written as DNS updates are failing",
