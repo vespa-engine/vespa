@@ -62,8 +62,9 @@ public class RetiringOsUpgrader implements OsUpgrader {
     private NodeList candidates(Instant instant, OsVersionTarget target, NodeList allNodes) {
         NodeList activeNodes = allNodes.state(Node.State.active).nodeType(target.nodeType());
         if (softRebuild) {
-            // Soft rebuild is enabled, so this should only act on hosts with local storage
-            activeNodes = activeNodes.storageType(NodeResources.StorageType.local);
+            // Soft rebuild is enabled, so this should only act on hosts with local storage, or non-x86-64
+            activeNodes = activeNodes.matching(node -> node.resources().storageType() == NodeResources.StorageType.local ||
+                                                       node.resources().architecture() != NodeResources.Architecture.x86_64);
         }
         if (activeNodes.isEmpty()) return NodeList.of();
 
