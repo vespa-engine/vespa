@@ -16,6 +16,7 @@
 #include <vespa/searchcommon/common/schema.h>
 #include <vespa/searchlib/common/sort.h>
 #include <vespa/searchlib/util/url.h>
+#include <vespa/vespalib/datastore/aligner.h>
 #include <vespa/vespalib/text/utf8.h>
 #include <vespa/vespalib/util/stringfmt.h>
 #include <vespa/vespalib/stllike/hash_map.hpp>
@@ -50,6 +51,7 @@ using index::Schema;
 using search::index::schema::CollectionType;
 using search::util::URL;
 using vespalib::make_string;
+using vespalib::datastore::Aligner;
 
 namespace documentinverterkludge::linguistics {
 
@@ -252,15 +254,15 @@ FieldInverter::saveWord(const vespalib::stringref word)
         return 0u;
     }
 
-    const size_t fullyPaddedSize = (wordsSize + 4 + len + 1 + 3) & ~3;
+    const size_t unpadded_size = wordsSize + 4 + len + 1;
+    const size_t fullyPaddedSize = Aligner<4>::align(unpadded_size);
     _words.reserve(vespalib::roundUp2inN(fullyPaddedSize));
     _words.resize(fullyPaddedSize);
 
     char * buf = &_words[0] + wordsSize;
     memset(buf, 0, 4);
     memcpy(buf + 4, word.data(), len);
-    uint32_t *lastWord = reinterpret_cast<uint32_t *>(buf + 4 + (len & ~0x3));
-    *lastWord &=  (0xffffff >> ((3 - (len & 3)) << 3)); //only on little endian machiness !!
+    memset(buf + 4 + len, 0, fullyPaddedSize - unpadded_size + 1);
 
     uint32_t wordRef = (wordsSize + 4) >> 2;
     // assert(wordRef != 0);
