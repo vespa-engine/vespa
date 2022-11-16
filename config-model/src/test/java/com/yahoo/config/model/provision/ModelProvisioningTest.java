@@ -1361,42 +1361,44 @@ public class ModelProvisioningTest {
     @Test
     public void testRequestingSpecificNodeResources() {
         String services =
-                "<?xml version='1.0' encoding='utf-8' ?>" +
-                "<services>" +
-                "   <admin version='4.0'>" +
-                "      <logservers>" +
-                "         <nodes count='1' dedicated='true'>" +
-                "            <resources vcpu='0.1' memory='0.2Gb' disk='300Gb' disk-speed='slow'/>" +
-                "         </nodes>" +
-                "      </logservers>" +
-                "      <slobroks>" +
-                "         <nodes count='2' dedicated='true'>" +
-                "            <resources vcpu='0.1' memory='0.3Gb' disk='1Gb' bandwidth='500Mbps'/>" +
-                "         </nodes>" +
-                "      </slobroks>" +
-                "   </admin>" +
-                "   <container version='1.0' id='container'>" +
-                "      <nodes count='4'>" +
-                "         <resources vcpu='12' memory='10Gb' disk='30Gb' architecture='arm64'/>" +
-                "      </nodes>" +
-                "   </container>" +
-                "   <content version='1.0' id='foo'>" +
-                "      <documents>" +
-                "        <document type='type1' mode='index'/>" +
-                "      </documents>" +
-                "      <nodes count='5'>" +
-                "         <resources vcpu='8' memory='200Gb' disk='1Pb'/>" +
-                "      </nodes>" +
-                "   </content>" +
-                "   <content version='1.0' id='bar'>" +
-                "      <documents>" +
-                "        <document type='type1' mode='index'/>" +
-                "      </documents>" +
-                "      <nodes count='6'>" +
-                "         <resources vcpu='10' memory='64Gb' disk='200Gb'/>" +
-                "      </nodes>" +
-                "   </content>" +
-                "</services>";
+                """
+                <?xml version='1.0' encoding='utf-8' ?>
+                <services>
+                   <admin version='4.0'>
+                      <logservers>
+                         <nodes count='1' dedicated='true'>
+                            <resources vcpu='0.1' memory='0.2Gb' disk='300Gb' disk-speed='slow'/>
+                         </nodes>
+                      </logservers>
+                      <slobroks>
+                         <nodes count='2' dedicated='true'>
+                            <resources vcpu='0.1' memory='0.3Gb' disk='1Gb' bandwidth='500Mbps'/>
+                         </nodes>
+                      </slobroks>
+                   </admin>
+                   <container version='1.0' id='container'>
+                      <nodes count='4'>
+                         <resources vcpu='12' memory='10Gb' disk='30Gb' architecture='arm64'/>
+                      </nodes>
+                   </container>
+                   <content version='1.0' id='foo'>
+                      <documents>
+                        <document type='type1' mode='index'/>
+                      </documents>
+                      <nodes count='5'>
+                         <resources vcpu='8' memory='200Gb' disk='1Pb'/>
+                      </nodes>
+                   </content>
+                   <content version='1.0' id='bar'>
+                      <documents>
+                        <document type='type1' mode='index'/>
+                      </documents>
+                      <nodes count='6'>
+                         <resources vcpu='10' memory='64Gb' disk='200Gb'/>
+                      </nodes>
+                   </content>
+                </services>
+                """;
 
         int totalHosts = 21;
         VespaModelTester tester = new VespaModelTester();
