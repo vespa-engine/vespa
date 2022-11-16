@@ -1381,6 +1381,13 @@ public class ModelProvisioningTest {
                          <resources vcpu='12' memory='10Gb' disk='30Gb' architecture='arm64'/>
                       </nodes>
                    </container>
+                   <container version='1.0' id='container2'>
+                      <nodes count='2'>
+                         <resources vcpu='4' memory='16Gb' disk='125Gb'>
+                           <gpu count='1' memory='16Gb'/>
+                         </resources>
+                      </nodes>
+                   </container>
                    <content version='1.0' id='foo'>
                       <documents>
                         <document type='type1' mode='index'/>
@@ -1400,12 +1407,15 @@ public class ModelProvisioningTest {
                 </services>
                 """;
 
-        int totalHosts = 21;
+        int totalHosts = 23;
         VespaModelTester tester = new VespaModelTester();
         tester.addHosts(new NodeResources(0.1, 0.2, 300, 0.3, NodeResources.DiskSpeed.slow), 1);// Logserver
         tester.addHosts(new NodeResources(0.1, 0.3, 1, 0.5), 2); // Slobrok
         tester.addHosts(new NodeResources(12, 10, 30, 0.3,
                                           NodeResources.DiskSpeed.fast, NodeResources.StorageType.local, NodeResources.Architecture.arm64), 4); // Container
+        tester.addHosts(new NodeResources(4, 16, 125, 10,
+                                          NodeResources.DiskSpeed.fast, NodeResources.StorageType.local, Architecture.x86_64,
+                                          new NodeResources.GpuResources(1, 16)), 4); // Container 2
         tester.addHosts(new NodeResources(8, 200, 1000000, 0.3), 5); // Content-foo
         tester.addHosts(new NodeResources(10, 64, 200, 0.3), 6); // Content-bar
         tester.addHosts(new NodeResources(0.5, 2, 10, 0.3), 6); // Cluster-controller
