@@ -21,6 +21,7 @@ import com.yahoo.vespa.config.server.application.Application;
 import com.yahoo.vespa.config.server.application.ApplicationSet;
 import com.yahoo.vespa.config.server.application.TenantApplications;
 import com.yahoo.vespa.config.server.application.TenantApplicationsTest;
+import com.yahoo.vespa.config.server.filedistribution.FileDirectory;
 import com.yahoo.vespa.config.server.filedistribution.FileDistributionFactory;
 import com.yahoo.vespa.config.server.host.HostRegistry;
 import com.yahoo.vespa.config.server.modelfactory.ModelFactoryRegistry;
@@ -212,7 +213,7 @@ public class TenantRepositoryTest {
                   Metrics.createTestMetrics(),
                   new StripedExecutor<>(new InThreadExecutorService()),
                   new StripedExecutor<>(new InThreadExecutorService()),
-                  new FileDistributionFactory(configserverConfig),
+                  new FileDistributionFactory(configserverConfig, new FileDirectory(configserverConfig)),
                   new InMemoryFlagSource(),
                   new InThreadExecutorService(),
                   new MockSecretStore(),

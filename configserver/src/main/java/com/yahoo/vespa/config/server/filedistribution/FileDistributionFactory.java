@@ -1,14 +1,12 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.config.server.filedistribution;
 
-import com.yahoo.component.annotation.Inject;
 import com.yahoo.cloud.config.ConfigserverConfig;
+import com.yahoo.component.annotation.Inject;
 import com.yahoo.config.application.api.FileRegistry;
 import com.yahoo.config.model.api.FileDistribution;
 import com.yahoo.jrt.Supervisor;
 import com.yahoo.jrt.Transport;
-import com.yahoo.vespa.defaults.Defaults;
-
 import java.io.File;
 
 /**
@@ -20,11 +18,14 @@ import java.io.File;
 public class FileDistributionFactory implements AutoCloseable {
 
     protected final ConfigserverConfig configserverConfig;
+    protected final FileDirectory fileDirectory;
     private final Supervisor supervisor = new Supervisor(new Transport("filedistribution"));
 
+
     @Inject
-    public FileDistributionFactory(ConfigserverConfig configserverConfig) {
+    public FileDistributionFactory(ConfigserverConfig configserverConfig, FileDirectory fileDirectory) {
         this.configserverConfig = configserverConfig;
+        this.fileDirectory = fileDirectory;
     }
 
     public FileRegistry createFileRegistry(File applicationPackage) {
@@ -36,12 +37,12 @@ public class FileDistributionFactory implements AutoCloseable {
     }
 
     public AddFileInterface createFileManager(File applicationDir) {
-        return new ApplicationFileManager(applicationDir, new FileDirectory(getFileReferencesDir()), configserverConfig.hostedVespa());
+        return new ApplicationFileManager(applicationDir, fileDirectory, configserverConfig.hostedVespa());
     }
 
-    protected File getFileReferencesDir() {
-        return new File(Defaults.getDefaults().underVespaHome(configserverConfig.fileReferencesDir()));
-    }
+    public FileDirectory fileDirectory() { return fileDirectory; }
+
+    protected File getFileReferencesDir() {return fileDirectory.getRoot();}
 
     public void close() {
         supervisor.transport().shutdown().join();

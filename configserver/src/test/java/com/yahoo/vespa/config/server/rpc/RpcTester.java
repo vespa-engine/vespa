@@ -19,6 +19,7 @@ import com.yahoo.vespa.config.server.SuperModelManager;
 import com.yahoo.vespa.config.server.SuperModelRequestHandler;
 import com.yahoo.vespa.config.server.TestConfigDefinitionRepo;
 import com.yahoo.vespa.config.server.application.OrchestratorMock;
+import com.yahoo.vespa.config.server.filedistribution.FileDirectory;
 import com.yahoo.vespa.config.server.filedistribution.FileServer;
 import com.yahoo.vespa.config.server.host.HostRegistry;
 import com.yahoo.vespa.config.server.monitoring.Metrics;
@@ -118,7 +119,7 @@ public class RpcTester implements AutoCloseable {
                                                                   new InMemoryFlagSource())),
                              Metrics.createTestMetrics(),
                              hostRegistry,
-                             new FileServer(temporaryFolder.newFolder()),
+                             new FileServer(new FileDirectory(temporaryFolder.newFolder())),
                              new NoopRpcAuthorizer(),
                              new RpcRequestHandlerProvider());
         rpcServer.setUpGetConfigHandlers();

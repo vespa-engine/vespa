@@ -1,9 +1,13 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.config.server.filedistribution;
 
+import com.yahoo.cloud.config.ConfigserverConfig;
+import com.yahoo.component.AbstractComponent;
+import com.yahoo.component.annotation.Inject;
 import com.yahoo.config.FileReference;
 import com.yahoo.io.IOUtils;
 import com.yahoo.text.Utf8;
+import com.yahoo.vespa.defaults.Defaults;
 import net.jpountz.xxhash.XXHash64;
 import net.jpountz.xxhash.XXHashFactory;
 import java.io.File;
@@ -22,10 +26,15 @@ import java.util.logging.Logger;
 
 import static com.yahoo.yolean.Exceptions.uncheck;
 
-public class FileDirectory  {
+public class FileDirectory extends AbstractComponent {
 
     private static final Logger log = Logger.getLogger(FileDirectory.class.getName());
     private final File root;
+
+    @Inject
+    public FileDirectory(ConfigserverConfig configserverConfig) {
+        this(new File(Defaults.getDefaults().underVespaHome(configserverConfig.fileReferencesDir())));
+    }
 
     public FileDirectory(File rootDir) {
         root = rootDir;

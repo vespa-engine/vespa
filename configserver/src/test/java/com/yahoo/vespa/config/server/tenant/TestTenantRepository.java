@@ -12,6 +12,7 @@ import com.yahoo.vespa.config.server.MockSecretStore;
 import com.yahoo.vespa.config.server.ConfigActivationListener;
 import com.yahoo.vespa.config.server.TestConfigDefinitionRepo;
 import com.yahoo.vespa.config.server.application.TenantApplicationsTest;
+import com.yahoo.vespa.config.server.filedistribution.FileDirectory;
 import com.yahoo.vespa.config.server.filedistribution.FileDistributionFactory;
 import com.yahoo.vespa.config.server.host.HostRegistry;
 import com.yahoo.vespa.config.server.modelfactory.ModelFactoryRegistry;
@@ -143,7 +144,7 @@ public class TestTenantRepository extends TenantRepository {
 
         public TenantRepository build() {
             if (fileDistributionFactory == null)
-                fileDistributionFactory = new FileDistributionFactory(configserverConfig);
+                fileDistributionFactory = new FileDistributionFactory(configserverConfig, new FileDirectory(configserverConfig));
             return new TestTenantRepository(hostRegistry,
                                             curator,
                                             metrics,

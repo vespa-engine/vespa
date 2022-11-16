@@ -5,7 +5,6 @@ import com.yahoo.config.FileReference;
 import com.yahoo.config.application.api.FileRegistry;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
-
 import java.io.File;
 import java.io.IOException;
 import java.io.StringReader;
@@ -79,7 +78,11 @@ public class FileDBRegistryTestCase {
         checkConsistentEntry(fileRegistry.export().get(0), importedRegistry);
         checkConsistentEntry(fileRegistry.export().get(1), importedRegistry);
 
-        assertEquals(new FileReference("non-existing-file"), importedRegistry.addFile(NO_FOO_FILE));
+        try {
+            importedRegistry.addFile(NO_FOO_FILE);
+        } catch (Exception e ) {
+            assertEquals("java.io.FileNotFoundException: src/test/apps/zkapp/files/no_foo.json (No such file or directory)", e.getMessage());
+        }
         assertEquals(2, importedRegistry.export().size());
         tmpDir.delete();
     }

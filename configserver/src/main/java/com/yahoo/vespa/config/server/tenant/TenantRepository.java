@@ -23,6 +23,7 @@ import com.yahoo.vespa.config.server.ConfigActivationListener;
 import com.yahoo.vespa.config.server.application.PermanentApplicationPackage;
 import com.yahoo.vespa.config.server.application.TenantApplications;
 import com.yahoo.vespa.config.server.deploy.TenantFileSystemDirs;
+import com.yahoo.vespa.config.server.filedistribution.FileDirectory;
 import com.yahoo.vespa.config.server.filedistribution.FileDistributionFactory;
 import com.yahoo.vespa.config.server.host.HostRegistry;
 import com.yahoo.vespa.config.server.modelfactory.ModelFactoryRegistry;
@@ -138,13 +139,14 @@ public class TenantRepository {
                             ConfigDefinitionRepo configDefinitionRepo,
                             ConfigActivationListener configActivationListener,
                             TenantListener tenantListener,
-                            ZookeeperServerConfig zookeeperServerConfig) {
+                            ZookeeperServerConfig zookeeperServerConfig,
+                            FileDirectory fileDirectory) {
         this(hostRegistry,
              curator,
              metrics,
              new StripedExecutor<>(),
              new StripedExecutor<>(),
-             new FileDistributionFactory(configserverConfig),
+             new FileDistributionFactory(configserverConfig, fileDirectory),
              flagSource,
              Executors.newFixedThreadPool(1, ThreadFactoryFactory.getThreadFactory(TenantRepository.class.getName())),
              secretStore,

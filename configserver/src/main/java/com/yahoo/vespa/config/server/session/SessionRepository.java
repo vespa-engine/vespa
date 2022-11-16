@@ -29,7 +29,6 @@ import com.yahoo.vespa.config.server.application.PermanentApplicationPackage;
 import com.yahoo.vespa.config.server.application.TenantApplications;
 import com.yahoo.vespa.config.server.configchange.ConfigChangeActions;
 import com.yahoo.vespa.config.server.deploy.TenantFileSystemDirs;
-import com.yahoo.vespa.config.server.filedistribution.FileDirectory;
 import com.yahoo.vespa.config.server.filedistribution.FileDistributionFactory;
 import com.yahoo.vespa.config.server.http.InvalidApplicationException;
 import com.yahoo.vespa.config.server.http.UnknownVespaVersionException;
@@ -43,7 +42,6 @@ import com.yahoo.vespa.config.server.tenant.TenantRepository;
 import com.yahoo.vespa.config.server.zookeeper.SessionCounter;
 import com.yahoo.vespa.config.server.zookeeper.ZKApplication;
 import com.yahoo.vespa.curator.Curator;
-import com.yahoo.vespa.defaults.Defaults;
 import com.yahoo.vespa.flags.FlagSource;
 import com.yahoo.vespa.flags.PermanentFlags;
 import com.yahoo.vespa.flags.UnboundStringFlag;
@@ -877,15 +875,13 @@ public class SessionRepository {
         FileReference fileReference = sessionZKClient.readApplicationPackageReference();
         log.log(Level.FINE, () -> "File reference for session id " + sessionId + ": " + fileReference);
         if (fileReference != null) {
-            File rootDir = new File(Defaults.getDefaults().underVespaHome(configserverConfig.fileReferencesDir()));
             File sessionDir;
-            FileDirectory fileDirectory = new FileDirectory(rootDir);
             try {
-                sessionDir = fileDirectory.getFile(fileReference);
+                sessionDir = fileDistributionFactory.fileDirectory().getFile(fileReference);
             } catch (IllegalArgumentException e) {
                 // We cannot be guaranteed that the file reference exists (it could be that it has not
                 // been downloaded yet), and e.g. when bootstrapping we cannot throw an exception in that case
-                log.log(Level.FINE, () -> "File reference for session id " + sessionId + ": " + fileReference + " not found in " + fileDirectory);
+                log.log(Level.FINE, () -> "File reference for session id " + sessionId + ": " + fileReference + " not found");
                 return;
             }
             ApplicationId applicationId = sessionZKClient.readApplicationId()
