@@ -277,6 +277,41 @@ public class EndpointTest {
     }
 
     @Test
+    void application_endpoints_legacy_dns_names() {
+        Map<String, Endpoint> tests = Map.of(
+                "weighted.a1.t1.us-west-1.r.vespa-app.cloud",
+                Endpoint.of(app1)
+                        .targetApplication(EndpointId.of("weighted"), ClusterSpec.Id.from("qrs"),
+                                           Map.of(new DeploymentId(app1.instance("i1"), ZoneId.from("prod", "us-west-1")), 1))
+                        .routingMethod(RoutingMethod.exclusive)
+                        .on(Port.tls())
+                        .in(SystemName.Public),
+                "weighted.a1.t1.us-west-1.r.cd.vespa-app.cloud",
+                Endpoint.of(app1)
+                        .targetApplication(EndpointId.of("weighted"), ClusterSpec.Id.from("qrs"),
+                                           Map.of(new DeploymentId(app1.instance("i1"), ZoneId.from("prod", "us-west-1")), 1))
+                        .routingMethod(RoutingMethod.exclusive)
+                        .on(Port.tls())
+                        .in(SystemName.PublicCd),
+                "a2.t2.us-east-3-r.vespa.oath.cloud",
+                Endpoint.of(app2)
+                        .targetApplication(EndpointId.defaultId(), ClusterSpec.Id.from("qrs"),
+                                           Map.of(new DeploymentId(app2.instance("i1"), ZoneId.from("prod", "us-east-3")), 1))
+                        .routingMethod(RoutingMethod.exclusive)
+                        .on(Port.tls())
+                        .in(SystemName.main),
+                "cd.a2.t2.us-east-3-r.vespa.oath.cloud",
+                Endpoint.of(app2)
+                        .targetApplication(EndpointId.defaultId(), ClusterSpec.Id.from("qrs"),
+                                           Map.of(new DeploymentId(app2.instance("i1"), ZoneId.from("prod", "us-east-3")), 1))
+                        .routingMethod(RoutingMethod.exclusive)
+                        .on(Port.tls())
+                        .in(SystemName.cd)
+        );
+        tests.forEach((expected, endpoint) -> assertEquals(expected, endpoint.legacyRegionalDsnName()));
+    }
+
+    @Test
     void application_endpoints() {
         Map<String, Endpoint> tests = Map.of(
                 "https://weighted.a1.t1.a.vespa-app.cloud/",
