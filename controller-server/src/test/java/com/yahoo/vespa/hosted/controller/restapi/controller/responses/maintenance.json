@@ -49,6 +49,9 @@
       "name": "DeploymentUpgrader"
     },
     {
+      "name": "EnclaveAccessMaintainer"
+    },
+    {
       "name": "EndpointCertificateMaintainer"
     },
     {
