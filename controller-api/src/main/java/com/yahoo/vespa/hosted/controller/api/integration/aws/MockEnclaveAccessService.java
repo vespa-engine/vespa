@@ -10,7 +10,7 @@ import java.util.TreeSet;
  */
 public class MockEnclaveAccessService implements EnclaveAccessService {
 
-    private volatile Set<CloudAccount> currentAccounts;
+    private volatile Set<CloudAccount> currentAccounts = new TreeSet<>();
 
     public Set<CloudAccount> currentAccounts() { return currentAccounts; }
 
