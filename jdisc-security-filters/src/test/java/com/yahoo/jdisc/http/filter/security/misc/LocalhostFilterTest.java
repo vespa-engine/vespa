@@ -4,14 +4,11 @@ package com.yahoo.jdisc.http.filter.security.misc;
 import com.yahoo.container.jdisc.RequestHandlerTestDriver;
 import com.yahoo.jdisc.Response;
 import com.yahoo.jdisc.http.filter.DiscFilterRequest;
+import com.yahoo.jdisc.http.filter.util.FilterTestUtils;
 import org.junit.jupiter.api.Test;
-import org.mockito.Mockito;
-
-import java.net.URI;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
-import static org.mockito.Mockito.when;
 
 /**
  * @author mpolden
@@ -34,12 +31,10 @@ public class LocalhostFilterTest {
     }
 
     private static DiscFilterRequest createRequest(String remoteAddr, String localAddr) {
-        DiscFilterRequest request = Mockito.mock(DiscFilterRequest.class);
-        when(request.getRemoteAddr()).thenReturn(remoteAddr);
-        when(request.getLocalAddr()).thenReturn(localAddr);
-        when(request.getMethod()).thenReturn("GET");
-        when(request.getUri()).thenReturn(URI.create("http://localhost:8080/"));
-        return request;
+        return FilterTestUtils.newRequestBuilder()
+                .withUri("http://%s:8080/".formatted(localAddr))
+                .withRemoteAddress(remoteAddr, 12345)
+                .build();
     }
 
     private static void assertUnauthorized(DiscFilterRequest request) {

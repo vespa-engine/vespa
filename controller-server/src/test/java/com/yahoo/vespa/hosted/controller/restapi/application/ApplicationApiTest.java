@@ -114,10 +114,12 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 public class ApplicationApiTest extends ControllerContainerTest {
 
     private static final String responseFiles = "src/test/java/com/yahoo/vespa/hosted/controller/restapi/application/responses/";
-    private static final String pemPublicKey = "-----BEGIN PUBLIC KEY-----\n" +
-                                               "MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEuKVFA8dXk43kVfYKzkUqhEY2rDT9\n" +
-                                               "z/4jKSTHwbYR8wdsOSrJGVEUPbS2nguIJ64OJH7gFnxM6sxUVj+Nm2HlXw==\n" +
-                                               "-----END PUBLIC KEY-----\n";
+    private static final String pemPublicKey = """
+                                               -----BEGIN PUBLIC KEY-----
+                                               MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEuKVFA8dXk43kVfYKzkUqhEY2rDT9
+                                               z/4jKSTHwbYR8wdsOSrJGVEUPbS2nguIJ64OJH7gFnxM6sxUVj+Nm2HlXw==
+                                               -----END PUBLIC KEY-----
+                                               """;
     private static final String quotedPemPublicKey = pemPublicKey.replaceAll("\\n", "\\\\n");
     private static final String accessDenied = "{\n  \"code\" : 403,\n  \"message\" : \"Access denied\"\n}";
 

@@ -6,6 +6,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.yahoo.container.jdisc.RequestHandlerTestDriver;
 import com.yahoo.jdisc.Response;
 import com.yahoo.jdisc.http.filter.DiscFilterRequest;
+import com.yahoo.jdisc.http.filter.util.FilterTestUtils;
 import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
@@ -13,7 +14,6 @@ import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.mockito.Mockito.mock;
 
 /**
  * @author bjorncs
@@ -26,7 +26,7 @@ public class JsonSecurityRequestFilterBaseTest {
     void filter_renders_errors_as_json() throws IOException {
         int statusCode = 403;
         String message = "Forbidden";
-        DiscFilterRequest request = mock(DiscFilterRequest.class);
+        DiscFilterRequest request = FilterTestUtils.newRequestBuilder().build();
         SimpleSecurityRequestFilter filter =
                 new SimpleSecurityRequestFilter(new JsonSecurityRequestFilterBase.ErrorResponse(statusCode, message));
         RequestHandlerTestDriver.MockResponseHandler responseHandler = new RequestHandlerTestDriver.MockResponseHandler();

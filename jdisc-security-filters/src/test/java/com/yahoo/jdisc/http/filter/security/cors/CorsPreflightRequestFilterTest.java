@@ -8,6 +8,7 @@ import com.yahoo.jdisc.handler.ResponseHandler;
 import com.yahoo.jdisc.http.filter.DiscFilterRequest;
 import com.yahoo.jdisc.http.filter.SecurityRequestFilter;
 import com.yahoo.jdisc.http.filter.security.cors.CorsFilterConfig.Builder;
+import com.yahoo.jdisc.http.filter.util.FilterTestUtils;
 import org.junit.jupiter.api.Test;
 
 import java.util.Arrays;
@@ -19,7 +20,6 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
 
 
 /**
@@ -70,10 +70,7 @@ public class CorsPreflightRequestFilterTest {
     }
 
     private static DiscFilterRequest newOptionsRequest(String origin) {
-        DiscFilterRequest request = mock(DiscFilterRequest.class);
-        when(request.getHeader("Origin")).thenReturn(origin);
-        when(request.getMethod()).thenReturn(OPTIONS.name());
-        return request;
+        return FilterTestUtils.newRequestBuilder().withHeader("Origin", origin).withMethod(OPTIONS).build();
     }
 
     private static CorsPreflightRequestFilter newRequestFilter(String... allowedOriginUrls) {

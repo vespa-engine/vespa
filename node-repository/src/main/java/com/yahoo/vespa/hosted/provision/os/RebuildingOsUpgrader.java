@@ -68,8 +68,10 @@ public class RebuildingOsUpgrader implements OsUpgrader {
     private List<Node> rebuildableHosts(OsVersionTarget target, NodeList allNodes, Instant now) {
         NodeList hostsOfTargetType = allNodes.nodeType(target.nodeType());
         if (softRebuild) {
-            // Soft rebuild is enabled so this should only act on hosts with remote storage
-            hostsOfTargetType = hostsOfTargetType.storageType(NodeResources.StorageType.remote);
+            // Soft rebuild is enabled so this should only act on hosts with remote storage and on x86-64
+            // TODO(mpolden): Rebuild arm64 hosts as well if image permissions can be fixed
+            hostsOfTargetType = hostsOfTargetType.matching(node -> node.resources().storageType() == NodeResources.StorageType.remote &&
+                                                                   node.resources().architecture() == NodeResources.Architecture.x86_64);
         }
         int rebuildLimit = rebuildLimit(target.nodeType(), hostsOfTargetType);
 

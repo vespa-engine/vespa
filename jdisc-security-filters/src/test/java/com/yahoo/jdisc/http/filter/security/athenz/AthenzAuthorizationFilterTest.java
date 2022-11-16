@@ -9,6 +9,7 @@ import com.yahoo.jdisc.Metric;
 import com.yahoo.jdisc.Response;
 import com.yahoo.jdisc.http.filter.DiscFilterRequest;
 import com.yahoo.jdisc.http.filter.security.athenz.AthenzAuthorizationFilterConfig.EnabledCredentials;
+import com.yahoo.jdisc.http.filter.util.FilterTestUtils;
 import com.yahoo.security.KeyAlgorithm;
 import com.yahoo.security.KeyUtils;
 import com.yahoo.security.SubjectAlternativeName;
@@ -267,14 +268,11 @@ public class AthenzAuthorizationFilterTest {
     }
 
     private static DiscFilterRequest createRequest(ZToken roleToken, AthenzAccessToken accessToken, X509Certificate clientCert) {
-        DiscFilterRequest request = mock(DiscFilterRequest.class);
-        when(request.getHeader(HEADER_NAME)).thenReturn(roleToken != null ? roleToken.getRawToken() : null);
-        when(request.getHeader(AthenzAccessToken.HTTP_HEADER_NAME)).thenReturn(accessToken != null ? "Bearer " + accessToken.value() : null);
-        when(request.getMethod()).thenReturn("GET");
-        when(request.getRequestURI()).thenReturn("/my/path");
-        when(request.getQueryString()).thenReturn(null);
-        when(request.getClientCertificateChain()).thenReturn(clientCert != null ? List.of(clientCert) : List.of());
-        return request;
+        var builder = FilterTestUtils.newRequestBuilder().withUri("https://localhost/my/path");
+        if (roleToken != null) builder.withHeader(HEADER_NAME, roleToken.getRawToken());
+        if (accessToken != null) builder.withHeader(AthenzAccessToken.HTTP_HEADER_NAME, accessToken.value());
+        if (clientCert != null) builder.withClientCertificate(clientCert);
+        return builder.build();
     }
 
     private static AthenzAuthorizationFilter createFilter(Zpe zpe, List<EnabledCredentials.Enum> enabledCredentials) {
@@ -298,7 +296,7 @@ public class AthenzAuthorizationFilterTest {
     }
 
     private static void assertAuthorizationResult(DiscFilterRequest request, Type expectedResult) {
-        verify(request).setAttribute(RESULT_ATTRIBUTE, expectedResult.name());
+        assertEquals(expectedResult.name(), request.getAttribute(RESULT_ATTRIBUTE));
     }
 
     private static void assertStatusCode(MockResponseHandler responseHandler, int statusCode) {
@@ -308,7 +306,7 @@ public class AthenzAuthorizationFilterTest {
     }
 
     private static void assertMatchedCredentialType(DiscFilterRequest request, EnabledCredentials.Enum expectedType) {
-        verify(request).setAttribute(MATCHED_CREDENTIAL_TYPE_ATTRIBUTE, expectedType.name());
+        assertEquals(expectedType.name(), request.getAttribute(MATCHED_CREDENTIAL_TYPE_ATTRIBUTE));
     }
 
     private static void assertRequestNotFiltered(MockResponseHandler responseHandler) {
@@ -316,7 +314,7 @@ public class AthenzAuthorizationFilterTest {
     }
 
     private static void assertMatchedRole(DiscFilterRequest request, AthenzRole role) {
-        verify(request).setAttribute(MATCHED_ROLE_ATTRIBUTE, role.roleName());
+        assertEquals(role.roleName(), request.getAttribute(MATCHED_ROLE_ATTRIBUTE));
     }
 
     private static void assertErrorMessage(MockResponseHandler responseHandler, String errorMessage) {

@@ -5,16 +5,15 @@ package com.yahoo.jdisc.http.filter.security.misc;
 import com.yahoo.container.jdisc.RequestHandlerTestDriver;
 import com.yahoo.jdisc.Response;
 import com.yahoo.jdisc.http.filter.DiscFilterRequest;
+import com.yahoo.jdisc.http.filter.util.FilterTestUtils;
 import com.yahoo.security.KeyAlgorithm;
 import com.yahoo.security.KeyUtils;
 import com.yahoo.security.SignatureAlgorithm;
 import com.yahoo.security.X509CertificateBuilder;
 import org.junit.jupiter.api.Test;
-import org.mockito.Mockito;
 
 import javax.security.auth.x500.X500Principal;
 import java.math.BigInteger;
-import java.net.URI;
 import java.security.cert.X509Certificate;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
@@ -23,7 +22,6 @@ import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
-import static org.mockito.Mockito.when;
 
 public class VespaTlsFilterTest {
 
@@ -43,11 +41,7 @@ public class VespaTlsFilterTest {
     }
 
     private static DiscFilterRequest createRequest(List<X509Certificate> certChain) {
-        DiscFilterRequest request = Mockito.mock(DiscFilterRequest.class);
-        when(request.getClientCertificateChain()).thenReturn(certChain);
-        when(request.getMethod()).thenReturn("GET");
-        when(request.getUri()).thenReturn(URI.create("http://localhost:8080/"));
-        return request;
+        return FilterTestUtils.newRequestBuilder().withClientCertificate(certChain).withUri("http://localhost:8080/").build();
     }
 
     private static void assertForbidden(DiscFilterRequest request) {
