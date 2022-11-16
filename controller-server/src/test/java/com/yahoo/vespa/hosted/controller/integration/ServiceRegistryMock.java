@@ -15,10 +15,9 @@ import com.yahoo.vespa.hosted.controller.api.integration.archive.ArchiveService;
 import com.yahoo.vespa.hosted.controller.api.integration.archive.MockArchiveService;
 import com.yahoo.vespa.hosted.controller.api.integration.athenz.AccessControlService;
 import com.yahoo.vespa.hosted.controller.api.integration.athenz.MockAccessControlService;
+import com.yahoo.vespa.hosted.controller.api.integration.aws.MockEnclaveAccessService;
 import com.yahoo.vespa.hosted.controller.api.integration.aws.MockResourceTagger;
 import com.yahoo.vespa.hosted.controller.api.integration.aws.MockRoleService;
-import com.yahoo.vespa.hosted.controller.api.integration.aws.ResourceTagger;
-import com.yahoo.vespa.hosted.controller.api.integration.aws.RoleService;
 import com.yahoo.vespa.hosted.controller.api.integration.billing.BillingController;
 import com.yahoo.vespa.hosted.controller.api.integration.billing.BillingDatabaseClient;
 import com.yahoo.vespa.hosted.controller.api.integration.billing.BillingDatabaseClientMock;
@@ -79,8 +78,9 @@ public class ServiceRegistryMock extends AbstractComponent implements ServiceReg
     private final MockTesterCloud mockTesterCloud;
     private final ApplicationStoreMock applicationStoreMock = new ApplicationStoreMock();
     private final MockRunDataStore mockRunDataStore = new MockRunDataStore();
+    private final MockEnclaveAccessService mockAMIService = new MockEnclaveAccessService();
     private final MockResourceTagger mockResourceTagger = new MockResourceTagger();
-    private final RoleService roleService = new MockRoleService();
+    private final MockRoleService roleService = new MockRoleService();
     private final BillingController billingController = new MockBillingController(clock);
     private final ArtifactRegistryMock containerRegistry = new ArtifactRegistryMock();
     private final NoopTenantSecretService tenantSecretService = new NoopTenantSecretService();
@@ -206,12 +206,17 @@ public class ServiceRegistryMock extends AbstractComponent implements ServiceReg
     }
 
     @Override
-    public ResourceTagger resourceTagger() {
+    public MockResourceTagger resourceTagger() {
         return mockResourceTagger;
     }
 
     @Override
-    public RoleService roleService() {
+    public MockEnclaveAccessService amiService() {
+        return mockAMIService;
+    }
+
+    @Override
+    public MockRoleService roleService() {
         return roleService;
     }
 

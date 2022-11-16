@@ -78,6 +78,7 @@ public class ControllerMaintenance extends AbstractComponent {
         maintainers.add(new UserManagementMaintainer(controller, intervals.userManagementMaintainer, controller.serviceRegistry().roleMaintainer()));
         maintainers.add(new BillingDatabaseMaintainer(controller, intervals.billingDatabaseMaintainer));
         maintainers.add(new MeteringMonitorMaintainer(controller, intervals.meteringMonitorMaintainer, controller.serviceRegistry().resourceDatabase(), metric));
+        maintainers.add(new AMISharer(controller, intervals.defaultInterval));
     }
 
     public Upgrader upgrader() { return upgrader; }

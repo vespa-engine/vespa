@@ -7,6 +7,7 @@ import com.yahoo.vespa.hosted.controller.api.identifiers.ControllerVersion;
 import com.yahoo.vespa.hosted.controller.api.integration.archive.ArchiveService;
 import com.yahoo.vespa.hosted.controller.api.integration.artifact.ArtifactRegistry;
 import com.yahoo.vespa.hosted.controller.api.integration.athenz.AccessControlService;
+import com.yahoo.vespa.hosted.controller.api.integration.aws.EnclaveAccessService;
 import com.yahoo.vespa.hosted.controller.api.integration.aws.ResourceTagger;
 import com.yahoo.vespa.hosted.controller.api.integration.aws.RoleService;
 import com.yahoo.vespa.hosted.controller.api.integration.billing.BillingController;
@@ -85,6 +86,8 @@ public interface ServiceRegistry {
     ZoneRegistry zoneRegistry();
 
     ResourceTagger resourceTagger();
+
+    EnclaveAccessService amiService();
 
     RoleService roleService();
 
