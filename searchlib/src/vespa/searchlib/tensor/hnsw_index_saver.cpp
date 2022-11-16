@@ -10,8 +10,9 @@ namespace search::tensor {
 
 namespace {
 
+template <HnswIndexType type>
 size_t
-count_valid_link_arrays(const HnswGraph & graph) {
+count_valid_link_arrays(const HnswGraph<type> & graph) {
     size_t count(0);
     size_t num_nodes = graph.node_refs.get_size(); // Called from writer only
     for (size_t i = 0; i < num_nodes; ++i) {
@@ -25,16 +26,22 @@ count_valid_link_arrays(const HnswGraph & graph) {
 
 }
 
-HnswIndexSaver::MetaData::MetaData()
+template <HnswIndexType type>
+HnswIndexSaver<type>::MetaData::MetaData()
     : entry_nodeid(0),
       entry_level(-1),
       refs(),
       nodes()
 {}
-HnswIndexSaver::MetaData::~MetaData() = default;
-HnswIndexSaver::~HnswIndexSaver() = default;
 
-HnswIndexSaver::HnswIndexSaver(const HnswGraph &graph)
+template <HnswIndexType type>
+HnswIndexSaver<type>::MetaData::~MetaData() = default;
+
+template <HnswIndexType type>
+HnswIndexSaver<type>::~HnswIndexSaver() = default;
+
+template <HnswIndexType type>
+HnswIndexSaver<type>::HnswIndexSaver(const HnswGraph<type> &graph)
     : _graph_links(graph.links), _meta_data()
 {
     auto entry = graph.get_entry_node();
@@ -59,8 +66,9 @@ HnswIndexSaver::HnswIndexSaver(const HnswGraph &graph)
     _meta_data.nodes.push_back(_meta_data.refs.size());
 }
 
+template <HnswIndexType type>
 void
-HnswIndexSaver::save(BufferWriter& writer) const
+HnswIndexSaver<type>::save(BufferWriter& writer) const
 {
     writer.write(&_meta_data.entry_nodeid, sizeof(uint32_t));
     writer.write(&_meta_data.entry_level, sizeof(int32_t));
@@ -86,5 +94,7 @@ HnswIndexSaver::save(BufferWriter& writer) const
     }
     writer.flush();
 }
+
+template class HnswIndexSaver<HnswIndexType::SINGLE>;
 
 }

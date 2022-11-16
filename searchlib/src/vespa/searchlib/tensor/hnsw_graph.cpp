@@ -7,11 +7,12 @@
 
 namespace search::tensor {
 
-HnswGraph::HnswGraph()
+template <HnswIndexType type>
+HnswGraph<type>::HnswGraph()
   : node_refs(),
     node_refs_size(1u),
-    nodes(HnswIndex::make_default_node_store_config(), {}),
-    links(HnswIndex::make_default_link_store_config(), {}),
+    nodes(HnswIndex<type>::make_default_node_store_config(), {}),
+    links(HnswIndex<type>::make_default_link_store_config(), {}),
     entry_nodeid_and_level()
 {
     node_refs.ensure_size(1, NodeType());
@@ -19,10 +20,12 @@ HnswGraph::HnswGraph()
     set_entry_node(entry);
 }
 
-HnswGraph::~HnswGraph() = default;
+template <HnswIndexType type>
+HnswGraph<type>::~HnswGraph() = default;
 
-HnswGraph::NodeRef
-HnswGraph::make_node(uint32_t nodeid, uint32_t docid, uint32_t subspace, uint32_t num_levels)
+template <HnswIndexType type>
+HnswGraph<type>::NodeRef
+HnswGraph<type>::make_node(uint32_t nodeid, uint32_t docid, uint32_t subspace, uint32_t num_levels)
 {
     node_refs.ensure_size(nodeid + 1, NodeType());
     // A document cannot be added twice.
@@ -40,8 +43,9 @@ HnswGraph::make_node(uint32_t nodeid, uint32_t docid, uint32_t subspace, uint32_
     return node_ref;
 }
 
+template <HnswIndexType type>
 void
-HnswGraph::remove_node(uint32_t nodeid)
+HnswGraph<type>::remove_node(uint32_t nodeid)
 {
     auto node_ref = get_node_ref(nodeid);
     assert(node_ref.valid());
@@ -59,8 +63,9 @@ HnswGraph::remove_node(uint32_t nodeid)
     }
 }
 
+template <HnswIndexType type>
 void
-HnswGraph::trim_node_refs_size()
+HnswGraph<type>::trim_node_refs_size()
 {
     uint32_t check_nodeid = node_refs_size.load(std::memory_order_relaxed) - 1;
     while (check_nodeid > 0u && !get_node_ref(check_nodeid).valid()) {
@@ -69,8 +74,9 @@ HnswGraph::trim_node_refs_size()
     node_refs_size.store(check_nodeid + 1, std::memory_order_release);
 }
 
+template <HnswIndexType type>
 void     
-HnswGraph::set_link_array(uint32_t nodeid, uint32_t level, const LinkArrayRef& new_links)
+HnswGraph<type>::set_link_array(uint32_t nodeid, uint32_t level, const LinkArrayRef& new_links)
 {
     auto new_links_ref = links.add(new_links);
     auto node_ref = get_node_ref(nodeid);
@@ -82,8 +88,9 @@ HnswGraph::set_link_array(uint32_t nodeid, uint32_t level, const LinkArrayRef& n
     links.remove(old_links_ref);
 }
 
-HnswGraph::Histograms
-HnswGraph::histograms() const
+template <HnswIndexType type>
+HnswGraph<type>::Histograms
+HnswGraph<type>::histograms() const
 {
     Histograms result;
     size_t num_nodes = node_refs_size.load(std::memory_order_acquire);
@@ -112,8 +119,9 @@ HnswGraph::histograms() const
     return result;
 }
 
+template <HnswIndexType type>
 void
-HnswGraph::set_entry_node(EntryNode node) {
+HnswGraph<type>::set_entry_node(EntryNode node) {
     uint64_t value = node.level;
     value <<= 32;
     value |= node.nodeid;
@@ -126,6 +134,8 @@ HnswGraph::set_entry_node(EntryNode node) {
     }
     entry_nodeid_and_level.store(value, std::memory_order_release);
 }
+
+template class HnswGraph<HnswIndexType::SINGLE>;
 
 } // namespace
 

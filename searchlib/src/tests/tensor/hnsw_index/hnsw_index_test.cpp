@@ -74,7 +74,7 @@ struct LevelGenerator : public RandomLevelGenerator {
 };
 
 using FloatVectors = MyDocVectorAccess<float>;
-using HnswIndexUP = std::unique_ptr<HnswIndex>;
+using HnswIndexUP = std::unique_ptr<HnswIndex<HnswIndexType::SINGLE>>;
 
 class HnswIndexTest : public ::testing::Test {
 public:
@@ -101,7 +101,7 @@ public:
     void init(bool heuristic_select_neighbors) {
         auto generator = std::make_unique<LevelGenerator>();
         level_generator = generator.get();
-        index = std::make_unique<HnswIndex>(vectors, std::make_unique<SquaredEuclideanDistance>(vespalib::eval::CellType::FLOAT),
+        index = std::make_unique<HnswIndex<HnswIndexType::SINGLE>>(vectors, std::make_unique<SquaredEuclideanDistance>(vespalib::eval::CellType::FLOAT),
                                             std::move(generator),
                                             HnswIndexConfig(5, 2, 10, 0, heuristic_select_neighbors));
     }
@@ -562,12 +562,12 @@ TEST_F(HnswIndexTest, shrink_called_heuristic)
 
 namespace {
 
-template <class ResultGraph>
+template <class ResultGraph, HnswIndexType type>
 ResultGraph
-make_graph_helper(HnswIndex& index)
+make_graph_helper(HnswIndex<type>& index)
 {
-    using LevelArrayRef = HnswGraph::LevelArrayRef;
-    using LinkArrayRef = HnswGraph::LinkArrayRef;
+    using LevelArrayRef = HnswGraph<type>::LevelArrayRef;
+    using LinkArrayRef = HnswGraph<type>::LinkArrayRef;
     auto& graph = index.get_graph();
     ResultGraph result(graph.size());
     assert(!graph.get_node_ref(0).valid());
@@ -593,26 +593,29 @@ make_graph_helper(HnswIndex& index)
 
 using LinkGraph = std::vector<std::vector<std::vector<uint32_t>>>;
 
+template <HnswIndexType type>
 LinkGraph
-make_link_graph(HnswIndex& index)
+make_link_graph(HnswIndex<type>& index)
 {
-    return make_graph_helper<LinkGraph>(index);
+    return make_graph_helper<LinkGraph, type>(index);
 }
 
 using LinkArrayRefGraph = std::vector<std::vector<uint32_t>>;
 
+template <HnswIndexType type>
 LinkArrayRefGraph
-make_link_array_refs(HnswIndex& index)
+make_link_array_refs(HnswIndex<type>& index)
 {
-    return make_graph_helper<LinkArrayRefGraph>(index);
+    return make_graph_helper<LinkArrayRefGraph, type>(index);
 }
 
 using LevelArrayRefGraph = std::vector<uint32_t>;
 
+template <HnswIndexType type>
 LevelArrayRefGraph
-make_level_array_refs(HnswIndex& index)
+make_level_array_refs(HnswIndex<type>& index)
 {
-    return make_graph_helper<LevelArrayRefGraph>(index);
+    return make_graph_helper<LevelArrayRefGraph, type>(index);
 }
 
 }

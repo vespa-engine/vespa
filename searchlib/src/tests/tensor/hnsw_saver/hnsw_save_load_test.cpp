@@ -50,7 +50,8 @@ public:
 
 using V = std::vector<uint32_t>;
 
-void populate(HnswGraph &graph) {
+template <HnswIndexType type>
+void populate(HnswGraph<type> &graph) {
     // no 0
     graph.make_node(1, 1, 0, 1);
     auto er = graph.make_node(2, 2, 0, 2);
@@ -68,7 +69,8 @@ void populate(HnswGraph &graph) {
     graph.set_entry_node({2, er, 1});
 }
 
-void modify(HnswGraph &graph) {
+template <HnswIndexType type>
+void modify(HnswGraph<type> &graph) {
     graph.remove_node(2);
     graph.remove_node(6);
     graph.make_node(7, 7, 0, 2);
@@ -85,8 +87,8 @@ void modify(HnswGraph &graph) {
 
 class CopyGraphTest : public ::testing::Test {
 public:
-    HnswGraph original;
-    HnswGraph copy;
+    HnswGraph<HnswIndexType::SINGLE> original;
+    HnswGraph<HnswIndexType::SINGLE> copy;
 
     void expect_empty_d(uint32_t nodeid) const {
         EXPECT_FALSE(copy.acquire_node_ref(nodeid).valid());
@@ -119,7 +121,7 @@ public:
         return vector_writer.output;
     }
     void load_copy(std::vector<char> data) {
-        HnswIndexLoader<VectorBufferReader> loader(copy, std::make_unique<VectorBufferReader>(data));
+        HnswIndexLoader<VectorBufferReader, HnswIndexType::SINGLE> loader(copy, std::make_unique<VectorBufferReader>(data));
         while (loader.load_next()) {}
     }
 

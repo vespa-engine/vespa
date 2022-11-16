@@ -35,6 +35,8 @@ namespace search::tensor {
  *
  * TODO: Add details on how to handle removes.
  */
+
+template <HnswIndexType type>
 class HnswIndex : public NearestNeighborIndex {
 public:
     class HnswIndexCompactionSpec {
@@ -66,19 +68,20 @@ public:
 
     using IdMapping = HnswIdentityMapping;
 protected:
-    using NodeType = HnswGraph::NodeType;
-    using AtomicEntryRef = HnswGraph::AtomicEntryRef;
-    using NodeStore = HnswGraph::NodeStore;
+    using GraphType = HnswGraph<type>;
+    using NodeType = GraphType::NodeType;
+    using AtomicEntryRef = vespalib::datastore::AtomicEntryRef;
+    using NodeStore = GraphType::NodeStore;
 
-    using LinkStore = HnswGraph::LinkStore;
-    using LinkArrayRef = HnswGraph::LinkArrayRef;
+    using LinkStore = GraphType::LinkStore;
+    using LinkArrayRef = GraphType::LinkArrayRef;
     using LinkArray = std::vector<uint32_t, vespalib::allocator_large<uint32_t>>;
 
-    using LevelArrayRef = HnswGraph::LevelArrayRef;
+    using LevelArrayRef = GraphType::LevelArrayRef;
 
     using TypedCells = vespalib::eval::TypedCells;
 
-    HnswGraph _graph;
+    GraphType _graph;
     const DocVectorAccess& _vectors;
     DistanceFunction::UP _distance_func;
     RandomLevelGenerator::UP _level_generator;
@@ -148,7 +151,7 @@ protected:
                                          double distance_threshold) const;
 
     struct PreparedAddNode {
-        using Links = std::vector<std::pair<uint32_t, HnswGraph::NodeRef>>;
+        using Links = std::vector<std::pair<uint32_t, vespalib::datastore::EntryRef>>;
         std::vector<Links> connections;
 
         PreparedAddNode() noexcept
@@ -180,7 +183,7 @@ protected:
     };
     PreparedAddDoc internal_prepare_add(uint32_t docid, VectorBundle input_vectors,
                                         vespalib::GenerationHandler::Guard read_guard) const;
-    void internal_prepare_add_node(HnswIndex::PreparedAddDoc& op, TypedCells input_vector, const HnswGraph::EntryNode& entry) const;
+    void internal_prepare_add_node(HnswIndex::PreparedAddDoc& op, TypedCells input_vector, const GraphType::EntryNode& entry) const;
     LinkArray filter_valid_nodeids(uint32_t level, const PreparedAddNode::Links &neighbors, uint32_t self_nodeid);
     void internal_complete_add(uint32_t docid, PreparedAddDoc &op);
     void internal_complete_add_node(uint32_t nodeid, uint32_t docid, uint32_t subspace, PreparedAddNode &prepared_node);
@@ -232,7 +235,7 @@ public:
     void set_node(uint32_t nodeid, const HnswTestNode &node);
     bool check_link_symmetry() const;
     std::pair<uint32_t, bool> count_reachable_nodes() const;
-    HnswGraph& get_graph() { return _graph; }
+    GraphType& get_graph() { return _graph; }
 
     static vespalib::datastore::ArrayStoreConfig make_default_node_store_config();
     static vespalib::datastore::ArrayStoreConfig make_default_link_store_config();

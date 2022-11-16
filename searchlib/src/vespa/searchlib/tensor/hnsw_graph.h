@@ -2,6 +2,7 @@
 
 #pragma once
 
+#include "hnsw_index_traits.h"
 #include "hnsw_simple_node.h"
 #include <vespa/vespalib/datastore/array_store.h>
 #include <vespa/vespalib/datastore/atomic_entry_ref.h>
@@ -14,6 +15,7 @@ namespace search::tensor {
  * Storage of a hierarchical navigable small world graph (HNSW)
  * that is used for approximate K-nearest neighbor search.
  */
+template <HnswIndexType type>
 struct HnswGraph {
     using AtomicEntryRef = vespalib::datastore::AtomicEntryRef;
 
@@ -24,7 +26,7 @@ struct HnswGraph {
     // This uses 12 bits for buffer id -> 4096 buffers.
     using LinkArrayEntryRefType = vespalib::datastore::EntryRefT<20>;
 
-    using NodeType = HnswSimpleNode;
+    using NodeType = HnswIndexTraits<type>::NodeType;
 
     // Provides mapping from document id -> node reference.
     // The reference is used to lookup the node data in NodeStore.
