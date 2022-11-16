@@ -47,7 +47,7 @@ public class FileDBRegistry implements FileRegistry {
             String ignoredFileSourceHost = reader.readLine();
             if (ignoredFileSourceHost == null)
                 throw new RuntimeException("No file source host");
-            return new FileDBRegistry(manager, decode(reader), false);
+            return new FileDBRegistry(manager, decode(reader), true);
         } catch (IOException e) {
             throw new RuntimeException("Error while reading pre-generated file registry", e);
         }
