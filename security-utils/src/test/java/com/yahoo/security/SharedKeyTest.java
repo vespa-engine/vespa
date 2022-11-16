@@ -3,8 +3,6 @@ package com.yahoo.security;
 
 import org.junit.jupiter.api.Test;
 
-import javax.crypto.CipherInputStream;
-import javax.crypto.CipherOutputStream;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -142,7 +140,7 @@ public class SharedKeyTest {
     static byte[] streamEncryptString(String data, SecretSharedKey secretSharedKey) throws IOException {
         var cipher = SharedKeyGenerator.makeAesGcmEncryptionCipher(secretSharedKey);
         var outStream = new ByteArrayOutputStream();
-        try (var cipherStream = new CipherOutputStream(outStream, cipher)) {
+        try (var cipherStream = cipher.wrapOutputStream(outStream)) {
             cipherStream.write(data.getBytes(StandardCharsets.UTF_8));
             cipherStream.flush();
         }
@@ -154,7 +152,7 @@ public class SharedKeyTest {
         var inStream = new ByteArrayInputStream(encrypted);
         var total    = ByteBuffer.allocate(encrypted.length); // Assume decrypted form can't be _longer_
         byte[] tmp   = new byte[8]; // short buf to test chunking
-        try (var cipherStream = new CipherInputStream(inStream, cipher)) {
+        try (var cipherStream = cipher.wrapInputStream(inStream)) {
             while (true) {
                 int read = cipherStream.read(tmp);
                 if (read == -1) {
@@ -178,6 +176,34 @@ public class SharedKeyTest {
         byte[] encrypted = streamEncryptString(terrifyingSecret, myShared);
         String decrypted = streamDecryptString(encrypted, myShared);
         assertEquals(terrifyingSecret, decrypted);
+    }
+
+    // javax.crypto.CipherOutputStream swallows exceptions caused by MAC failures in cipher
+    // decryption mode (!) and must therefore _not_ be used for this purpose. This is documented,
+    // but still very surprising behavior.
+    @Test
+    void cipher_output_stream_tag_mismatch_is_not_swallowed() throws Exception {
+        var receiverKeyPair = KeyUtils.generateX25519KeyPair();
+        var myShared        = SharedKeyGenerator.generateForReceiverPublicKey(receiverKeyPair.getPublic(), KEY_ID_1);
+        String plaintext = "...hello world?";
+        byte[] encrypted = streamEncryptString(plaintext, myShared);
+        // Corrupt MAC tag in ciphertext
+        encrypted[encrypted.length - 1] ^= 0x80;
+        // We don't necessarily know _which_ exception is thrown, but one _should_ be thrown!
+        assertThrows(Exception.class, () -> doOutputStreamCipherDecrypt(myShared, encrypted));
+        // Also try with corrupted ciphertext (pre MAC tag)
+        encrypted[encrypted.length - 1] ^= 0x80; // Flip MAC bit back to correct state
+        encrypted[encrypted.length - 17] ^= 0x80; // Pre 128-bit MAC tag
+        assertThrows(Exception.class, () -> doOutputStreamCipherDecrypt(myShared, encrypted));
+    }
+
+    private static void doOutputStreamCipherDecrypt(SecretSharedKey myShared, byte[] encrypted) throws Exception {
+        var cipher = SharedKeyGenerator.makeAesGcmDecryptionCipher(myShared);
+        var outStream = new ByteArrayOutputStream();
+        try (var cipherStream = cipher.wrapOutputStream(outStream)) {
+            cipherStream.write(encrypted);
+            cipherStream.flush();
+        }
     }
 
 }

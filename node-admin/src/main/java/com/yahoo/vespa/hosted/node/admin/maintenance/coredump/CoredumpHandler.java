@@ -29,7 +29,6 @@ import com.yahoo.vespa.hosted.node.admin.task.util.file.MakeDirectory;
 import com.yahoo.vespa.hosted.node.admin.task.util.file.UnixPath;
 import com.yahoo.vespa.hosted.node.admin.task.util.fs.ContainerPath;
 
-import javax.crypto.CipherOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.UncheckedIOException;
@@ -49,7 +48,6 @@ import java.util.function.Supplier;
 import java.util.logging.Logger;
 import java.util.regex.Pattern;
 import java.util.stream.IntStream;
-import java.util.stream.Stream;
 
 import static com.yahoo.vespa.hosted.node.admin.task.util.file.FileFinder.nameEndsWith;
 import static com.yahoo.vespa.hosted.node.admin.task.util.file.FileFinder.nameMatches;
@@ -275,7 +273,7 @@ public class CoredumpHandler {
 
     static OutputStream maybeWrapWithEncryption(OutputStream wrappedStream, Optional<SecretSharedKey> sharedCoreKey) {
         return sharedCoreKey
-                .map(key -> (OutputStream)new CipherOutputStream(wrappedStream, SharedKeyGenerator.makeAesGcmEncryptionCipher(key)))
+                .map(key -> SharedKeyGenerator.makeAesGcmEncryptionCipher(key).wrapOutputStream(wrappedStream))
                 .orElse(wrappedStream);
     }
 
