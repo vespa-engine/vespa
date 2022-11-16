@@ -20,6 +20,7 @@ import com.yahoo.vespa.hosted.controller.api.integration.dns.RecordData;
 import com.yahoo.vespa.hosted.controller.api.integration.dns.RecordName;
 import com.yahoo.vespa.hosted.controller.application.Endpoint;
 import com.yahoo.vespa.hosted.controller.application.Endpoint.Port;
+import com.yahoo.vespa.hosted.controller.application.Endpoint.Scope;
 import com.yahoo.vespa.hosted.controller.application.EndpointId;
 import com.yahoo.vespa.hosted.controller.application.EndpointList;
 import com.yahoo.vespa.hosted.controller.application.SystemApplication;
@@ -115,7 +116,7 @@ public class RoutingController {
             if (!policy.status().isActive()) continue;
             RoutingMethod routingMethod = controller.zoneRegistry().routingMethod(policy.id().zone());
             endpoints.addAll(policy.zoneEndpointsIn(controller.system(), routingMethod, controller.zoneRegistry()));
-            endpoints.add(policy.regionEndpointIn(controller.system(), routingMethod));
+            endpoints.add(policy.regionEndpointIn(controller.system(), routingMethod, controller.zoneRegistry()));
         }
         return EndpointList.copyOf(endpoints);
     }
@@ -158,23 +159,21 @@ public class RoutingController {
         }
         // Add application endpoints
         for (var declaredEndpoint : deploymentSpec.endpoints()) {
-            Map<ZoneId, Map<DeploymentId, Integer>> deployments = declaredEndpoint.targets().stream()
-                                                                                  .collect(groupingBy(t -> ZoneId.from(Environment.prod, t.region()),
-                                                                                                      toMap(t -> new DeploymentId(application.id().instance(t.instance()),
-                                                                                                                                  ZoneId.from(Environment.prod, t.region())),
-                                                                                                            t -> t.weight())));
+            Map<DeploymentId, Integer> deployments = declaredEndpoint.targets().stream()
+                                                                     .collect(toMap(t -> new DeploymentId(application.id().instance(t.instance()),
+                                                                                                          ZoneId.from(Environment.prod, t.region())),
+                                                                                    t -> t.weight()));
 
-            deployments.forEach((zone, weightedInstances) -> {
-                // Application endpoints are only supported when using direct routing methods
-                RoutingMethod routingMethod = usesSharedRouting(zone) ? RoutingMethod.sharedLayer4 : RoutingMethod.exclusive;
-                endpoints.add(Endpoint.of(application.id())
-                                      .targetApplication(EndpointId.of(declaredEndpoint.endpointId()),
-                                                         ClusterSpec.Id.from(declaredEndpoint.containerId()),
-                                                         weightedInstances)
-                                      .routingMethod(routingMethod)
-                                      .on(Port.fromRoutingMethod(routingMethod))
-                                      .in(controller.system()));
-            });
+            ZoneId zone = deployments.keySet().iterator().next().zoneId(); // Where multiple zones are possible, they all have the same routing method.
+            // Application endpoints are only supported when using direct routing methods
+            RoutingMethod routingMethod = usesSharedRouting(zone) ? RoutingMethod.sharedLayer4 : RoutingMethod.exclusive;
+            endpoints.add(Endpoint.of(application.id())
+                                  .targetApplication(EndpointId.of(declaredEndpoint.endpointId()),
+                                                     ClusterSpec.Id.from(declaredEndpoint.containerId()),
+                                                     deployments)
+                                  .routingMethod(routingMethod)
+                                  .on(Port.fromRoutingMethod(routingMethod))
+                                  .in(controller.system()));
         }
         return EndpointList.copyOf(endpoints);
     }
@@ -236,6 +235,7 @@ public class RoutingController {
                                        .on(Port.tls())
                                        .in(controller.system());
             endpointDnsNames.add(endpoint.dnsName());
+            if (endpoint.scope() == Scope.application) endpointDnsNames.add(endpoint.legacyRegionalDnsName());
         }
         return Collections.unmodifiableList(endpointDnsNames);
     }
@@ -313,6 +313,9 @@ public class RoutingController {
             controller.nameServiceForwarder().createRecord(
                     new Record(Record.Type.CNAME, RecordName.from(endpoint.dnsName()), RecordData.fqdn(vipHostname)),
                     Priority.normal);
+            controller.nameServiceForwarder().createRecord(
+                    new Record(Record.Type.CNAME, RecordName.from(endpoint.legacyRegionalDnsName()), RecordData.fqdn(vipHostname)),
+                    Priority.normal);
         }
         Map<ClusterSpec.Id, EndpointList> applicationEndpointsByCluster = applicationEndpoints.groupingBy(Endpoint::cluster);
         for (var kv : applicationEndpointsByCluster.entrySet()) {
@@ -325,7 +328,7 @@ public class RoutingController {
                 if (matchingTarget.isEmpty()) throw new IllegalStateException("No target found routing to " + deployment + " in " + endpoint);
                 containerEndpoints.add(new ContainerEndpoint(clusterId.value(),
                                                              asString(Endpoint.Scope.application),
-                                                             List.of(endpoint.dnsName()),
+                                                             List.of(endpoint.dnsName(), endpoint.legacyRegionalDnsName()),
                                                              OptionalInt.of(matchingTarget.get().weight()),
                                                              endpoint.routingMethod()));
             }

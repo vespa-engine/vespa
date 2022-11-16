@@ -215,7 +215,7 @@ public class RoutingPolicies {
         for (var policy : policies) {
             if (policy.dnsZone().isEmpty() && policy.canonicalName().isPresent()) continue;
             if (controller.zoneRegistry().routingMethod(policy.id().zone()) != RoutingMethod.exclusive) continue;
-            Endpoint endpoint = policy.regionEndpointIn(controller.system(), RoutingMethod.exclusive);
+            Endpoint endpoint = policy.regionEndpointIn(controller.system(), RoutingMethod.exclusive, controller.zoneRegistry());
             var zonePolicy = db.readZoneRoutingPolicy(policy.id().zone());
             long weight = 1;
             if (isConfiguredOut(zonePolicy, policy, inactiveZones)) {
@@ -289,12 +289,10 @@ public class RoutingPolicies {
             activeTargets.addAll(inactiveTargets);
             inactiveTargets.clear();
         }
+
         targetsByEndpoint.forEach((applicationEndpoint, targets) -> {
-            ZoneId targetZone = applicationEndpoint.targets().stream()
-                                                   .map(Endpoint.Target::deployment)
-                                                   .map(DeploymentId::zoneId)
-                                                   .findFirst()
-                                                   .get();
+            // Where multiple zones are permitted, they all have the same routing policy, and nameServiceForwarder (below).
+            ZoneId targetZone = applicationEndpoint.targets().iterator().next().deployment().zoneId();
             Set<AliasTarget> aliasTargets = new LinkedHashSet<>();
             Set<DirectTarget> directTargets = new LinkedHashSet<>();
             for (Target target : targets) {
@@ -305,21 +303,26 @@ public class RoutingPolicies {
             if ( ! aliasTargets.isEmpty()) {
                 nameServiceForwarderIn(targetZone).createAlias(
                         RecordName.from(applicationEndpoint.dnsName()), aliasTargets, Priority.normal);
+                nameServiceForwarderIn(targetZone).createAlias(
+                        RecordName.from(applicationEndpoint.legacyRegionalDnsName()), aliasTargets, Priority.normal);
             }
             if ( ! directTargets.isEmpty()) {
                 nameServiceForwarderIn(targetZone).createDirect(
                         RecordName.from(applicationEndpoint.dnsName()), directTargets, Priority.normal);
+                nameServiceForwarderIn(targetZone).createDirect(
+                        RecordName.from(applicationEndpoint.legacyRegionalDnsName()), directTargets, Priority.normal);
             }
         });
         inactiveTargetsByEndpoint.forEach((applicationEndpoint, targets) -> {
-            ZoneId targetZone = applicationEndpoint.targets().stream()
-                                                   .map(Endpoint.Target::deployment)
-                                                   .map(DeploymentId::zoneId)
-                                                   .findFirst()
-                                                   .get();
+            // Where multiple zones are permitted, they all have the same routing policy, and nameServiceForwarder.
+            ZoneId targetZone = applicationEndpoint.targets().iterator().next().deployment().zoneId();
             targets.forEach(target -> {
                 nameServiceForwarderIn(targetZone).removeRecords(target.type(),
                                                                  RecordName.from(applicationEndpoint.dnsName()),
+                                                                 target.data(),
+                                                                 Priority.normal);
+                nameServiceForwarderIn(targetZone).removeRecords(target.type(),
+                                                                 RecordName.from(applicationEndpoint.legacyRegionalDnsName()),
                                                                  target.data(),
                                                                  Priority.normal);
             });
@@ -377,9 +380,8 @@ public class RoutingPolicies {
                                                       .not().matching(policy -> activeIds.contains(policy.id()));
         for (var policy : removable) {
             for (var endpoint : policy.zoneEndpointsIn(controller.system(), RoutingMethod.exclusive, controller.zoneRegistry())) {
-                var dnsName = endpoint.dnsName();
                 nameServiceForwarderIn(allocation.deployment.zoneId()).removeRecords(Record.Type.CNAME,
-                                                                                     RecordName.from(dnsName),
+                                                                                     RecordName.from(endpoint.dnsName()),
                                                                                      Priority.normal);
             }
             newPolicies.remove(policy.id());
@@ -424,14 +426,22 @@ public class RoutingPolicies {
                 for (Endpoint endpoint : endpoints) {
                     if (policy.canonicalName().isPresent()) {
                         forwarder.removeRecords(Record.Type.ALIAS,
-                                RecordName.from(endpoint.dnsName()),
-                                RecordData.fqdn(policy.canonicalName().get().value()),
-                                Priority.normal);
+                                                RecordName.from(endpoint.dnsName()),
+                                                RecordData.fqdn(policy.canonicalName().get().value()),
+                                                Priority.normal);
+                        forwarder.removeRecords(Record.Type.ALIAS,
+                                                RecordName.from(endpoint.legacyRegionalDnsName()),
+                                                RecordData.fqdn(policy.canonicalName().get().value()),
+                                                Priority.normal);
                     } else {
                         forwarder.removeRecords(Record.Type.DIRECT,
-                                RecordName.from(endpoint.dnsName()),
-                                RecordData.from(policy.ipAddress().get()),
-                                Priority.normal);
+                                                RecordName.from(endpoint.dnsName()),
+                                                RecordData.from(policy.ipAddress().get()),
+                                                Priority.normal);
+                        forwarder.removeRecords(Record.Type.DIRECT,
+                                                RecordName.from(endpoint.legacyRegionalDnsName()),
+                                                RecordData.from(policy.ipAddress().get()),
+                                                Priority.normal);
                     }
                 }
             }

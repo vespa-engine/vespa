@@ -3,6 +3,7 @@ package com.yahoo.vespa.hosted.controller.deployment;
 
 import com.yahoo.component.Version;
 import com.yahoo.config.provision.ApplicationId;
+import com.yahoo.config.provision.CloudName;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.zone.ZoneId;
@@ -31,22 +32,23 @@ public class TestConfigSerializerTest {
     @Test
     void testConfig() throws IOException {
         ZoneId zone = DeploymentContext.systemTest.zone();
-        byte[] json = new TestConfigSerializer(SystemName.PublicCd).configJson(instanceId,
-                DeploymentContext.systemTest,
-                true,
-                Version.fromString("1.2.3"),
-                RevisionId.forProduction(321),
-                Instant.ofEpochMilli(222),
-                Map.of(zone, List.of(Endpoint.of(ApplicationId.defaultId())
-                        .target(EndpointId.of("ai"), ClusterSpec.Id.from("qrs"),
-                                List.of(new DeploymentId(ApplicationId.defaultId(),
-                                        ZoneId.defaultId())))
-                        .on(Endpoint.Port.tls())
-                        .in(SystemName.main))),
-                Map.of(zone, List.of("facts")));
+        byte[] json = new TestConfigSerializer(SystemName.PublicCd)
+                .configJson(instanceId,
+                            DeploymentContext.systemTest,
+                            true,
+                            Version.fromString("1.2.3"),
+                            RevisionId.forProduction(321),
+                            Instant.ofEpochMilli(222),
+                            Map.of(zone, List.of(Endpoint.of(ApplicationId.defaultId())
+                                                         .target(EndpointId.of("ai"), ClusterSpec.Id.from("qrs"),
+                                                                                                     List.of(new DeploymentId(ApplicationId.defaultId(),
+                                                                                                                              ZoneId.defaultId())))
+                                                         .on(Endpoint.Port.tls())
+                                                         .in(SystemName.main))),
+                            Map.of(zone, List.of("facts")));
         byte[] expected = Files.readAllBytes(Paths.get("src/test/resources/testConfig.json"));
         assertEquals(new String(SlimeUtils.toJsonBytes(SlimeUtils.jsonToSlime(expected))),
-                new String(json));
+                     new String(json));
     }
 
 }
