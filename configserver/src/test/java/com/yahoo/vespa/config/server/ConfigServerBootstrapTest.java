@@ -20,10 +20,12 @@ import com.yahoo.docproc.jdisc.metric.NullMetric;
 import com.yahoo.path.Path;
 import com.yahoo.text.Utf8;
 import com.yahoo.vespa.config.server.deploy.DeployTester;
+import com.yahoo.vespa.config.server.filedistribution.FileDirectory;
 import com.yahoo.vespa.config.server.rpc.RpcServer;
 import com.yahoo.vespa.config.server.version.VersionState;
 import com.yahoo.vespa.curator.Curator;
 import com.yahoo.vespa.curator.mock.MockCurator;
+import com.yahoo.vespa.flags.InMemoryFlagSource;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
@@ -181,7 +183,13 @@ public class ConfigServerBootstrapTest {
 
         StateMonitor stateMonitor = StateMonitor.createForTesting();
         VipStatus vipStatus = createVipStatus(stateMonitor);
-        return new Bootstrapper(tester.applicationRepository(), rpcServer, versionState, stateMonitor, vipStatus, vipStatusMode);
+        return new Bootstrapper(tester.applicationRepository(),
+                                rpcServer,
+                                versionState,
+                                stateMonitor,
+                                vipStatus,
+                                vipStatusMode,
+                                new FileDirectory(tester.applicationRepository().configserverConfig(), new InMemoryFlagSource()));
     }
 
     private void waitUntil(BooleanSupplier booleanSupplier, String messageIfWaitingFails) throws InterruptedException {
@@ -269,8 +277,9 @@ public class ConfigServerBootstrapTest {
                             VersionState versionState,
                             StateMonitor stateMonitor,
                             VipStatus vipStatus,
-                            VipStatusMode vipStatusMode) {
-            super(applicationRepository, server, versionState, stateMonitor, vipStatus, CONTINUE, vipStatusMode);
+                            VipStatusMode vipStatusMode,
+                            FileDirectory fileDirectory) {
+            super(applicationRepository, server, versionState, stateMonitor, vipStatus, CONTINUE, vipStatusMode, fileDirectory);
         }
 
         @Override

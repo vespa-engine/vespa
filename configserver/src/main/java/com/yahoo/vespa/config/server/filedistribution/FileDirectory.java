@@ -90,9 +90,7 @@ public class FileDirectory extends AbstractComponent {
         return files[0];
     }
 
-    File getRoot() {
-        return root;
-    }
+    public File getRoot() { return root; }
 
     private Long computeHash(File file) throws IOException {
         XXHash64 hasher = XXHashFactory.fastestInstance().hash64();

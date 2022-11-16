@@ -6,6 +6,7 @@ import com.yahoo.concurrent.maintenance.Maintainer;
 import com.yahoo.vespa.config.server.ApplicationRepository;
 import com.yahoo.vespa.config.server.ConfigServerBootstrap;
 import com.yahoo.vespa.config.server.application.ConfigConvergenceChecker;
+import com.yahoo.vespa.config.server.filedistribution.FileDirectory;
 import com.yahoo.vespa.curator.Curator;
 import com.yahoo.vespa.flags.FlagSource;
 
@@ -30,13 +31,15 @@ public class ConfigServerMaintenance {
     private final Curator curator;
     private final FlagSource flagSource;
     private final ConfigConvergenceChecker convergenceChecker;
+    private final FileDirectory fileDirectory;
 
-    public ConfigServerMaintenance(ApplicationRepository applicationRepository) {
+    public ConfigServerMaintenance(ApplicationRepository applicationRepository, FileDirectory fileDirectory) {
         this.configserverConfig = applicationRepository.configserverConfig();
         this.applicationRepository = applicationRepository;
         this.curator = applicationRepository.tenantRepository().getCurator();
         this.flagSource = applicationRepository.flagSource();
         this.convergenceChecker = applicationRepository.configConvergenceChecker();
+        this.fileDirectory = fileDirectory;
     }
 
     public void startBeforeBootstrap() {
@@ -46,8 +49,11 @@ public class ConfigServerMaintenance {
     }
 
     public void startAfterBootstrap() {
-        maintainers.add(new FileDistributionMaintainer(applicationRepository, curator,
-                                                       new DefaultTimes(configserverConfig).defaultInterval, flagSource));
+        maintainers.add(new FileDistributionMaintainer(applicationRepository,
+                                                       curator,
+                                                       new DefaultTimes(configserverConfig).defaultInterval,
+                                                       flagSource,
+                                                       fileDirectory));
         maintainers.add(new SessionsMaintainer(applicationRepository, curator, Duration.ofSeconds(30), flagSource));
         maintainers.add(new ReindexingMaintainer(applicationRepository, curator, flagSource,
                                                  Duration.ofMinutes(3), convergenceChecker, Clock.systemUTC()));
