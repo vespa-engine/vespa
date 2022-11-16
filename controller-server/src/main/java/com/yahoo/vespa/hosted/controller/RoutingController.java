@@ -20,6 +20,7 @@ import com.yahoo.vespa.hosted.controller.api.integration.dns.RecordData;
 import com.yahoo.vespa.hosted.controller.api.integration.dns.RecordName;
 import com.yahoo.vespa.hosted.controller.application.Endpoint;
 import com.yahoo.vespa.hosted.controller.application.Endpoint.Port;
+import com.yahoo.vespa.hosted.controller.application.Endpoint.Scope;
 import com.yahoo.vespa.hosted.controller.application.EndpointId;
 import com.yahoo.vespa.hosted.controller.application.EndpointList;
 import com.yahoo.vespa.hosted.controller.application.SystemApplication;
@@ -234,6 +235,7 @@ public class RoutingController {
                                        .on(Port.tls())
                                        .in(controller.system());
             endpointDnsNames.add(endpoint.dnsName());
+            if (endpoint.scope() == Scope.application) endpointDnsNames.add(endpoint.legacyRegionalDsnName());
         }
         return Collections.unmodifiableList(endpointDnsNames);
     }
@@ -311,6 +313,9 @@ public class RoutingController {
             controller.nameServiceForwarder().createRecord(
                     new Record(Record.Type.CNAME, RecordName.from(endpoint.dnsName()), RecordData.fqdn(vipHostname)),
                     Priority.normal);
+            controller.nameServiceForwarder().createRecord(
+                    new Record(Record.Type.CNAME, RecordName.from(endpoint.legacyRegionalDsnName()), RecordData.fqdn(vipHostname)),
+                    Priority.normal);
         }
         Map<ClusterSpec.Id, EndpointList> applicationEndpointsByCluster = applicationEndpoints.groupingBy(Endpoint::cluster);
         for (var kv : applicationEndpointsByCluster.entrySet()) {
@@ -323,7 +328,7 @@ public class RoutingController {
                 if (matchingTarget.isEmpty()) throw new IllegalStateException("No target found routing to " + deployment + " in " + endpoint);
                 containerEndpoints.add(new ContainerEndpoint(clusterId.value(),
                                                              asString(Endpoint.Scope.application),
-                                                             List.of(endpoint.dnsName()),
+                                                             List.of(endpoint.dnsName(), endpoint.legacyRegionalDsnName()),
                                                              OptionalInt.of(matchingTarget.get().weight()),
                                                              endpoint.routingMethod()));
             }

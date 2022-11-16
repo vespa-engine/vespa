@@ -41,6 +41,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.TreeSet;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
@@ -264,25 +265,29 @@ public class EndpointCertificatesTest {
                 .build();
         EndpointCertificateValidatorImpl endpointCertificateValidator = new EndpointCertificateValidatorImpl(secretStore, clock);
         EndpointCertificates endpointCertificates = new EndpointCertificates(tester.controller(), endpointCertificateMock, endpointCertificateValidator);
-        List<String> expectedSans = List.of(
+        Set<String> expectedSans = new TreeSet<>(List.of(
                 "vlfms2wpoa4nyrka2s5lktucypjtxkqhv.internal.vespa-app.cloud",
                 "a1.t1.g.vespa-app.cloud",
                 "*.a1.t1.g.vespa-app.cloud",
-                "a1.t1.r.vespa-app.cloud",
-                "*.a1.t1.r.vespa-app.cloud",
+                "a1.t1.a.vespa-app.cloud",
+                "a1.t1.aws-us-west-2a.r.vespa-app.cloud",
+                "a1.t1.aws-us-east-1c.r.vespa-app.cloud",
+                "*.a1.t1.a.vespa-app.cloud",
+                "*.a1.t1.aws-us-west-2a.r.vespa-app.cloud",
+                "*.a1.t1.aws-us-east-1c.r.vespa-app.cloud",
                 "a1.t1.aws-us-east-1c.z.vespa-app.cloud",
                 "*.a1.t1.aws-us-east-1c.z.vespa-app.cloud",
                 "a1.t1.us-east-1.test.z.vespa-app.cloud",
                 "*.a1.t1.us-east-1.test.z.vespa-app.cloud",
                 "a1.t1.us-east-3.staging.z.vespa-app.cloud",
                 "*.a1.t1.us-east-3.staging.z.vespa-app.cloud"
-        );
+        ));
         Optional<EndpointCertificateMetadata> endpointCertificateMetadata = endpointCertificates.getMetadata(instance, zone1, applicationPackage.deploymentSpec());
         assertTrue(endpointCertificateMetadata.isPresent());
         assertTrue(endpointCertificateMetadata.get().keyName().matches("vespa.tls.t1.a1.*-key"));
         assertTrue(endpointCertificateMetadata.get().certName().matches("vespa.tls.t1.a1.*-cert"));
         assertEquals(0, endpointCertificateMetadata.get().version());
-        assertEquals(expectedSans, endpointCertificateMetadata.get().requestedDnsSans());
+        assertEquals(expectedSans, new TreeSet<>(endpointCertificateMetadata.get().requestedDnsSans()));
     }
 
 }

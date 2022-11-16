@@ -24,6 +24,8 @@ import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import static java.util.Comparator.comparing;
+import static java.util.Comparator.naturalOrder;
 import static java.util.stream.Collectors.toSet;
 
 /**
@@ -44,13 +46,14 @@ public class Endpoint {
     private final ClusterSpec.Id cluster;
     private final Optional<InstanceName> instance;
     private final URI url;
+    private final URI legacyRegionalUrl;
     private final List<Target> targets;
     private final Scope scope;
     private final boolean legacy;
     private final RoutingMethod routingMethod;
 
     private Endpoint(TenantAndApplicationId application, Optional<InstanceName> instanceName, EndpointId id,
-                     ClusterSpec.Id cluster, URI url, List<Target> targets, Scope scope, Port port, boolean legacy,
+                     ClusterSpec.Id cluster, URI url, URI legacyRegionalUrl, List<Target> targets, Scope scope, Port port, boolean legacy,
                      RoutingMethod routingMethod, boolean certificateName) {
         Objects.requireNonNull(application, "application must be non-null");
         Objects.requireNonNull(instanceName, "instanceName must be non-null");
@@ -64,6 +67,7 @@ public class Endpoint {
         this.cluster = requireCluster(cluster, certificateName);
         this.instance = requireInstance(instanceName, scope);
         this.url = url;
+        this.legacyRegionalUrl = legacyRegionalUrl;
         this.targets = List.copyOf(requireTargets(targets, application, instanceName, scope, certificateName));
         this.scope = requireScope(scope, routingMethod);
         this.legacy = legacy;
@@ -100,6 +104,12 @@ public class Endpoint {
     public String dnsName() {
         // because getHost returns "null" for wildcard endpoints
         return url.getAuthority().replaceAll(":.*", "");
+    }
+
+    /** Returns the legacy DNS name with region, for application endpoints */
+    public String legacyRegionalDsnName() {
+        if (scope != Scope.application) throw new IllegalStateException("legacy regional URL is only for application scope endpoints, not " + this);
+        return legacyRegionalUrl.getAuthority().replaceAll(":.*", "");
     }
 
     /** Returns the target(s) to which this routes traffic */
@@ -166,7 +176,7 @@ public class Endpoint {
     }
 
     private static URI createUrl(String name, TenantAndApplicationId application, Optional<InstanceName> instance,
-                                 List<Target> targets, Scope scope, SystemName system, Port port) {
+                                 List<Target> targets, Scope scope, SystemName system, Port port, boolean legacyRegionalUrl) {
 
         String separator = ".";
         String portPart = port.isDefault() ? "" : ":" + port.port;
@@ -178,7 +188,7 @@ public class Endpoint {
                           separator +
                           sanitize(application.tenant().value()) +
                           "." +
-                          scopePart(scope, targets, system) +
+                          scopePart(scope, targets, system, legacyRegionalUrl) +
                           dnsSuffix(system) +
                           portPart +
                           "/");
@@ -193,13 +203,12 @@ public class Endpoint {
         return name + separator;
     }
 
-    private static String scopePart(Scope scope, List<Target> targets, SystemName system) {
-        String scopeSymbol = scopeSymbol(scope, system);
-        Set<ZoneId> zones = targets.stream().map(target -> target.deployment.zoneId()).collect(toSet());
+    private static String scopePart(Scope scope, List<Target> targets, SystemName system, boolean legacyRegion) {
+        String scopeSymbol = scopeSymbol(scope, system, legacyRegion);
         if (scope == Scope.global) return scopeSymbol;
-        if (scope == Scope.application) return scopeSymbol;
+        if (scope == Scope.application && ! legacyRegion) return scopeSymbol;
 
-        ZoneId zone = targets.get(0).deployment().zoneId();
+        ZoneId zone = targets.stream().map(target -> target.deployment.zoneId()).min(comparing(ZoneId::value)).get();
         String region = zone.region().value();
         boolean skipEnvironment = zone.environment().isProduction();
         String environment = skipEnvironment ? "" : "." + zone.environment().value();
@@ -209,20 +218,21 @@ public class Endpoint {
         return region + (scopeSymbol.isEmpty() ? "" : "-" + scopeSymbol) + environment;
     }
 
-    private static String scopeSymbol(Scope scope, SystemName system) {
+    private static String scopeSymbol(Scope scope, SystemName system, boolean legacyRegion) {
+        if (legacyRegion) return "r";
         if (system.isPublic()) {
             return switch (scope) {
                 case zone -> "z";
                 case weighted -> "w";
                 case global -> "g";
-                case application -> "r";
+                case application -> "a";
             };
         }
         return switch (scope) {
             case zone -> "";
             case weighted -> "w";
             case global -> "global";
-            case application -> "r";
+            case application -> "a";
         };
     }
 
@@ -583,12 +593,23 @@ public class Endpoint {
                                 Objects.requireNonNull(targets, "targets must be non-null"),
                                 Objects.requireNonNull(scope, "scope must be non-null"),
                                 Objects.requireNonNull(system, "system must be non-null"),
-                                Objects.requireNonNull(port, "port must be non-null"));
+                                Objects.requireNonNull(port, "port must be non-null"),
+                                false);
+            URI legacyRegionalUrl = scope != Scope.application ? null
+                                                               : createUrl(endpointOrClusterAsString(endpointId, cluster),
+                                                                           Objects.requireNonNull(application, "application must be non-null"),
+                                                                           Objects.requireNonNull(instance, "instance must be non-null"),
+                                                                           Objects.requireNonNull(targets, "targets must be non-null"),
+                                                                           Objects.requireNonNull(scope, "scope must be non-null"),
+                                                                           Objects.requireNonNull(system, "system must be non-null"),
+                                                                           Objects.requireNonNull(port, "port must be non-null"),
+                                                                           true);
             return new Endpoint(application,
                                 instance,
                                 endpointId,
                                 cluster,
                                 url,
+                                legacyRegionalUrl,
                                 targets,
                                 scope,
                                 port,
