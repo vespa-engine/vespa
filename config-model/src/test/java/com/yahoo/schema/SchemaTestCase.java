@@ -68,6 +68,50 @@ public class SchemaTestCase {
     }
 
     @Test
+    void testOnnxModelWithColonInput() throws Exception {
+        String schema =
+                """
+                schema msmarco {
+                    document msmarco {
+                        field id type string {
+                            indexing: summary | attribute
+                        }
+                        field text type string {
+                            indexing: summary | index
+                        }
+                    }
+                    onnx-model ltr_tensorflow {
+                        file: files/ltr_tensorflow.onnx
+                        input input:0: vespa_input
+                        output dense: dense
+                    }
+                    rank-profile tensorflow {
+                        function vespa_input() {
+                            expression {
+                                tensor<float>(x[1],y[3]):[[fieldMatch(text).queryCompleteness, fieldMatch(text).significance, nativeRank(text)]]
+                            }
+                        }
+                        first-phase {
+                            expression: sum(onnx(ltr_tensorflow).dense)
+                        }
+                        summary-features {
+                            onnx(ltr_tensorflow)
+                            fieldMatch(text).queryCompleteness
+                            fieldMatch(text).significance
+                            nativeRank(text)
+                        }
+                    }
+                }""";
+        ApplicationBuilder builder = new ApplicationBuilder(new DeployLoggerStub());
+        builder.processorsToSkip().add(OnnxModelTypeResolver.class); // Avoid discovering the Onnx model referenced does not exist
+        builder.addSchema(schema);
+        var application = builder.build(true);
+        var input = application.schemas().get("msmarco").onnxModels().get("ltr_tensorflow").getInputMap().get("input:0");
+        assertNotNull(input);
+        assertEquals("vespa_input", input);
+    }
+
+    @Test
     void testSchemaInheritance() throws ParseException {
         String parentLines = joinLines(
                 "schema parent {" +
