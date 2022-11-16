@@ -111,6 +111,7 @@ public class Flavor {
     public Type getType() { return type; }
     
     /** Convenience, returns getType() == Type.DOCKER_CONTAINER */
+    // TODO: Remove after December 2022
     public boolean isDocker() { return type == Type.DOCKER_CONTAINER; }
 
     @Override

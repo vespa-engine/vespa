@@ -274,6 +274,7 @@ public class HostCapacityMaintainerTest {
         tester.maintain();
 
         // Hosts are provisioned
+        // TODO: Not thread safe as HostCapacityMaintainer may count hoists before we are done provisioning
         assertEquals(2, tester.provisionedHostsMatching(resources1));
         assertEquals(0, tester.hostProvisioner.deprovisionedHosts());
 
@@ -623,10 +624,11 @@ public class HostCapacityMaintainerTest {
         }
 
         public DynamicProvisioningTester(Cloud cloud, MockNameResolver nameResolver) {
-            this.hostProvisioner = new MockHostProvisioner(flavors.getFlavors(), nameResolver, 0);
-            this.provisioningTester = new ProvisioningTester.Builder().zone(new Zone(cloud, SystemName.defaultSystem(),
-                                                                                     Environment.defaultEnvironment(),
-                                                                                     RegionName.defaultName()))
+            Zone zone = new Zone(cloud, SystemName.defaultSystem(),
+                                 Environment.defaultEnvironment(),
+                                 RegionName.defaultName());
+            this.hostProvisioner = new MockHostProvisioner(flavors.getFlavors(), nameResolver, 0, cloud);
+            this.provisioningTester = new ProvisioningTester.Builder().zone(zone)
                                                                       .flavors(flavors.getFlavors())
                                                                       .nameResolver(nameResolver)
                                                                       .flagSource(flagSource)

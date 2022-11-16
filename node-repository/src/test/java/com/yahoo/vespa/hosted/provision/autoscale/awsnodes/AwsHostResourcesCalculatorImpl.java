@@ -9,6 +9,7 @@ import com.yahoo.vespa.hosted.provision.NodeRepository;
 import com.yahoo.vespa.hosted.provision.Nodelike;
 import com.yahoo.vespa.hosted.provision.provisioning.HostResourcesCalculator;
 
+import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -44,9 +45,9 @@ public class AwsHostResourcesCalculatorImpl implements HostResourcesCalculator {
 
     @Override
     public NodeResources requestToReal(NodeResources advertisedResources, boolean exclusive) {
-        double memoryOverhead = compatibleFlavors(advertisedResources, exclusive)
+        double memoryOverhead = flavorsCompatibleWithAdvertised(advertisedResources, exclusive)
                                         .mapToDouble(flavor -> resourcesCalculator.memoryOverhead(flavor, advertisedResources, false)).max().orElse(0);
-        double diskOverhead   = compatibleFlavors(advertisedResources, exclusive)
+        double diskOverhead   = flavorsCompatibleWithAdvertised(advertisedResources, exclusive)
                                         .mapToDouble(flavor -> resourcesCalculator.diskOverhead(flavor, advertisedResources, false, exclusive)).max().orElse(0);
         return advertisedResources.withMemoryGb(advertisedResources.memoryGb() - memoryOverhead)
                                   .withDiskGb(advertisedResources.diskGb() - diskOverhead);
@@ -56,7 +57,7 @@ public class AwsHostResourcesCalculatorImpl implements HostResourcesCalculator {
     public NodeResources realToRequest(NodeResources realResources, boolean exclusive) {
         double worstMemoryOverhead = 0;
         double worstDiskOverhead = 0;
-        for (VespaFlavor flavor : flavors.values()) {
+        for (VespaFlavor flavor : flavorsCompatibleWithReal(realResources, exclusive)) {
             double memoryOverhead = resourcesCalculator.memoryOverhead(flavor, realResources, true);
             double diskOverhead = resourcesCalculator.diskOverhead(flavor, realResources, true, exclusive);
             NodeResources advertised = realResources.withMemoryGb(realResources.memoryGb() + memoryOverhead)
@@ -77,11 +78,20 @@ public class AwsHostResourcesCalculatorImpl implements HostResourcesCalculator {
     }
 
     /** Returns the flavors of hosts which are eligible and matches the given advertised resources */
-    private Stream<VespaFlavor> compatibleFlavors(NodeResources advertisedResources, boolean exclusive) {
+    private Stream<VespaFlavor> flavorsCompatibleWithAdvertised(NodeResources advertisedResources, boolean exclusive) {
         return flavors.values().stream()
                       .filter(flavor -> exclusive
                                         ? flavor.advertisedResources().compatibleWith(advertisedResources)
                                         : flavor.advertisedResources().satisfies(advertisedResources));
+    }
+
+    /** Returns the flavors of hosts which are eligible and matches the given real resources */
+    private List<VespaFlavor> flavorsCompatibleWithReal(NodeResources realResources, boolean exclusive) {
+        return flavors.values().stream()
+                      .filter(flavor -> exclusive
+                                        ? flavor.realResources().compatibleWith(realResources)
+                                        : flavor.realResources().satisfies(realResources))
+                      .collect(Collectors.toList());
     }
 
 }

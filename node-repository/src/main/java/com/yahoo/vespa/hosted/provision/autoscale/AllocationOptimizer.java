@@ -6,6 +6,7 @@ import com.yahoo.config.provision.NodeResources;
 import com.yahoo.vespa.hosted.provision.NodeList;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
 
+import java.util.List;
 import java.util.Optional;
 
 /**
@@ -43,7 +44,11 @@ public class AllocationOptimizer {
         else
             limits = atLeast(minimumNodes, limits).fullySpecified(current.clusterSpec(), nodeRepository, clusterModel.application().id());
         Optional<AllocatableClusterResources> bestAllocation = Optional.empty();
-        NodeList hosts = nodeRepository.nodes().list().hosts();
+        var availableRealHostResources = nodeRepository.zone().cloud().dynamicProvisioning()
+                                         ? nodeRepository.flavors().getFlavors().stream().map(flavor -> flavor.resources()).toList()
+                                         : nodeRepository.nodes().list().hosts().stream().map(host -> host.flavor().resources())
+                                                         .map(hostResources -> maxResourcesOf(hostResources, clusterModel))
+                                                         .toList();
         for (int groups = limits.min().groups(); groups <= limits.max().groups(); groups++) {
             for (int nodes = limits.min().nodes(); nodes <= limits.max().nodes(); nodes++) {
                 if (nodes % groups != 0) continue;
@@ -53,13 +58,20 @@ public class AllocationOptimizer {
                                                      nodeResourcesWith(nodes, groups,
                                                                        limits, targetLoad, current, clusterModel));
                 var allocatableResources = AllocatableClusterResources.from(resources, current.clusterSpec(), limits,
-                                                                            hosts, nodeRepository);
+                                                                            availableRealHostResources, nodeRepository);
                 if (allocatableResources.isEmpty()) continue;
                 if (bestAllocation.isEmpty() || allocatableResources.get().preferableTo(bestAllocation.get()))
                     bestAllocation = allocatableResources;
             }
         }
         return bestAllocation;
+    }
+
+    /** Returns the max resources of a host one node may allocate. */
+    private NodeResources maxResourcesOf(NodeResources hostResources, ClusterModel clusterModel) {
+        if (nodeRepository.exclusiveAllocation(clusterModel.clusterSpec())) return hostResources;
+        // static, shared hosts: Allocate at most half of the host cpu to simplify management
+        return hostResources.withVcpu(hostResources.vcpu() / 2);
     }
 
     /**

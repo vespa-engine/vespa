@@ -34,12 +34,12 @@ public class AutoscalingTest {
 
     @Test
     public void test_autoscaling_single_content_group() {
-        var fixture = AutoscalingTester.fixture().hostCount(20).build();
+        var fixture = AutoscalingTester.fixture().awsProdSetup(true).build();
 
         fixture.loader().applyCpuLoad(0.7f, 10);
-        ClusterResources scaledResources = fixture.tester().assertResources("Scaling up since resource usage is too high",
-                                                                            9, 1, 3.6,  8, 37.5,
-                                                                            fixture.autoscale());
+        var scaledResources = fixture.tester().assertResources("Scaling up since resource usage is too high",
+                                                               9, 1, 3.6,  8.3, 37.7,
+                                                               fixture.autoscale());
 
         fixture.deploy(Capacity.from(scaledResources));
         assertTrue("Cluster in flux -> No further change", fixture.autoscale().isEmpty());
@@ -55,14 +55,22 @@ public class AutoscalingTest {
         fixture.tester().clock().advance(Duration.ofDays(2));
         fixture.loader().applyCpuLoad(0.1f, 10);
         fixture.tester().assertResources("Scaling cpu down since usage has gone down significantly",
-                                         8, 1, 1.0, 8.1, 38.1,
+                                         8, 1, 1.0, 8.5, 38.5,
                                          fixture.autoscale());
     }
 
     /** Using too many resources for a short period is proof we should scale up regardless of the time that takes. */
     @Test
-    public void test_no_autoscaling_with_no_measurements() {
+    public void test_no_autoscaling_with_no_measurements_shared_hosts() {
+        var fixture = AutoscalingTester.fixture().awsProdSetup(true).build();
+        assertTrue(fixture.autoscale().target().isEmpty());
+    }
+
+    /** Using too many resources for a short period is proof we should scale up regardless of the time that takes. */
+    @Test
+    public void test_no_autoscaling_with_no_measurements_exclusive_hosts() {
         var fixture = AutoscalingTester.fixture().awsProdSetup(false).build();
+        System.out.println(fixture.autoscale().target());
         assertTrue(fixture.autoscale().target().isEmpty());
     }
 

@@ -28,8 +28,8 @@ public interface NodeSpec {
     /** Returns whether the hosts running the nodes of this application can also run nodes of other applications. */
     boolean isExclusive();
 
-    /** Returns whether the given flavor is compatible with this spec */
-    boolean isCompatible(Flavor flavor, NodeFlavors flavors);
+    /** Returns whether the given node resources is compatible with this spec */
+    boolean isCompatible(NodeResources resources);
 
     /** Returns whether the given node count is sufficient to consider this spec fulfilled to the maximum amount */
     boolean saturatedBy(int count);
@@ -115,12 +115,8 @@ public interface NodeSpec {
         public NodeType type() { return NodeType.tenant; }
 
         @Override
-        public boolean isCompatible(Flavor flavor, NodeFlavors flavors) {
-            if (flavor.isDocker()) { // Docker nodes can satisfy a request for parts of their resources
-                return flavor.resources().compatibleWith(requestedNodeResources);
-            } else { // Other nodes must be matched exactly
-                return requestedNodeResources.equals(flavor.resources());
-            }
+        public boolean isCompatible(NodeResources resources) {
+            return requestedNodeResources.compatibleWith(resources);
         }
 
         @Override
@@ -208,7 +204,7 @@ public interface NodeSpec {
         public boolean isExclusive() { return false; }
 
         @Override
-        public boolean isCompatible(Flavor flavor, NodeFlavors flavors) { return true; }
+        public boolean isCompatible(NodeResources resources) { return true; }
 
         @Override
         public boolean saturatedBy(int count) { return false; }

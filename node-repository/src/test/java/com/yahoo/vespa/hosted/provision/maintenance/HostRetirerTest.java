@@ -30,14 +30,15 @@ public class HostRetirerTest {
     @Test
     public void retire_hosts() {
         NodeFlavors flavors = FlavorConfigBuilder.createDummies("default");
-        MockHostProvisioner hostProvisioner = new MockHostProvisioner(flavors.getFlavors());
+        Zone zone = new Zone(Cloud.builder()
+                                  .dynamicProvisioning(true)
+                                  .build(), SystemName.defaultSystem(),
+                             Environment.defaultEnvironment(),
+                             RegionName.defaultName());
+        MockHostProvisioner hostProvisioner = new MockHostProvisioner(flavors.getFlavors(), zone.cloud());
         ProvisioningTester tester = new ProvisioningTester.Builder().hostProvisioner(hostProvisioner)
                                                                     .flavors(flavors.getFlavors())
-                                                                    .zone(new Zone(Cloud.builder()
-                                                                                        .dynamicProvisioning(true)
-                                                                                        .build(), SystemName.defaultSystem(),
-                                                                                   Environment.defaultEnvironment(),
-                                                                                   RegionName.defaultName()))
+                                                                    .zone(zone)
                                                                     .build();
         HostRetirer retirer = new HostRetirer(tester.nodeRepository(), Duration.ofDays(1), new MockMetric(), hostProvisioner);
         tester.makeReadyHosts(3, new NodeResources(24, 48, 1000, 10))

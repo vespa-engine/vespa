@@ -3,6 +3,7 @@ package com.yahoo.vespa.hosted.provision.testutils;
 
 import com.yahoo.component.Version;
 import com.yahoo.config.provision.ApplicationId;
+import com.yahoo.config.provision.Cloud;
 import com.yahoo.config.provision.CloudAccount;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.Flavor;
@@ -45,19 +46,21 @@ public class MockHostProvisioner implements HostProvisioner {
     private int deprovisionedHosts = 0;
     private EnumSet<Behaviour> behaviours = EnumSet.noneOf(Behaviour.class);
     private Optional<Flavor> hostFlavor = Optional.empty();
+    private Cloud cloud;
 
-    public MockHostProvisioner(List<Flavor> flavors, MockNameResolver nameResolver, int memoryTaxGb) {
+    public MockHostProvisioner(List<Flavor> flavors, MockNameResolver nameResolver, int memoryTaxGb, Cloud cloud) {
         this.flavors = List.copyOf(flavors);
         this.nameResolver = nameResolver;
         this.memoryTaxGb = memoryTaxGb;
+        this.cloud = cloud;
     }
 
-    public MockHostProvisioner(List<Flavor> flavors) {
-        this(flavors, 0);
+    public MockHostProvisioner(List<Flavor> flavors, Cloud cloud) {
+        this(flavors, 0, cloud);
     }
 
-    public MockHostProvisioner(List<Flavor> flavors, int memoryTaxGb) {
-        this(flavors, new MockNameResolver().mockAnyLookup(), memoryTaxGb);
+    public MockHostProvisioner(List<Flavor> flavors, int memoryTaxGb, Cloud cloud) {
+        this(flavors, new MockNameResolver().mockAnyLookup(), memoryTaxGb, cloud);
     }
 
     @Override
@@ -65,8 +68,10 @@ public class MockHostProvisioner implements HostProvisioner {
                                ApplicationId applicationId, Version osVersion, HostSharing sharing,
                                Optional<ClusterSpec.Type> clusterType, CloudAccount cloudAccount,
                                Consumer<List<ProvisionedHost>> provisionedHostsConsumer) {
+        boolean exclusive = sharing == HostSharing.exclusive || ! cloud.allowHostSharing();
         Flavor hostFlavor = this.hostFlavor.orElseGet(() -> flavors.stream()
-                                                                   .filter(f -> compatible(f, resources))
+                                                                   .filter(f -> exclusive ? compatible(f, resources)
+                                                                                          : f.resources().satisfies(resources))
                                                                    .findFirst()
                                                                    .orElseThrow(() -> new NodeAllocationException("No host flavor matches " + resources, true)));
         List<ProvisionedHost> hosts = new ArrayList<>();
