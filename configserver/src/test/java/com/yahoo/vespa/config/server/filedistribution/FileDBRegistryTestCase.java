@@ -80,11 +80,7 @@ public class FileDBRegistryTestCase {
         checkConsistentEntry(fileRegistry.export().get(0), importedRegistry);
         checkConsistentEntry(fileRegistry.export().get(1), importedRegistry);
 
-        try {
-            importedRegistry.addFile(NO_FOO_FILE);
-        } catch (Exception e ) {
-            assertEquals("java.io.FileNotFoundException: src/test/apps/zkapp/files/no_foo.json (No such file or directory)", e.getMessage());
-        }
+        importedRegistry.addFile(NO_FOO_FILE);
         assertEquals(2, importedRegistry.export().size());
         tmpDir.delete();
     }
