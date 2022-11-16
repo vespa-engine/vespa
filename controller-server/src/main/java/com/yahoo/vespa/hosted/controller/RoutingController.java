@@ -235,7 +235,7 @@ public class RoutingController {
                                        .on(Port.tls())
                                        .in(controller.system());
             endpointDnsNames.add(endpoint.dnsName());
-            if (endpoint.scope() == Scope.application) endpointDnsNames.add(endpoint.legacyRegionalDsnName());
+            if (endpoint.scope() == Scope.application) endpointDnsNames.add(endpoint.legacyRegionalDnsName());
         }
         return Collections.unmodifiableList(endpointDnsNames);
     }
@@ -314,7 +314,7 @@ public class RoutingController {
                     new Record(Record.Type.CNAME, RecordName.from(endpoint.dnsName()), RecordData.fqdn(vipHostname)),
                     Priority.normal);
             controller.nameServiceForwarder().createRecord(
-                    new Record(Record.Type.CNAME, RecordName.from(endpoint.legacyRegionalDsnName()), RecordData.fqdn(vipHostname)),
+                    new Record(Record.Type.CNAME, RecordName.from(endpoint.legacyRegionalDnsName()), RecordData.fqdn(vipHostname)),
                     Priority.normal);
         }
         Map<ClusterSpec.Id, EndpointList> applicationEndpointsByCluster = applicationEndpoints.groupingBy(Endpoint::cluster);
@@ -328,7 +328,7 @@ public class RoutingController {
                 if (matchingTarget.isEmpty()) throw new IllegalStateException("No target found routing to " + deployment + " in " + endpoint);
                 containerEndpoints.add(new ContainerEndpoint(clusterId.value(),
                                                              asString(Endpoint.Scope.application),
-                                                             List.of(endpoint.dnsName(), endpoint.legacyRegionalDsnName()),
+                                                             List.of(endpoint.dnsName(), endpoint.legacyRegionalDnsName()),
                                                              OptionalInt.of(matchingTarget.get().weight()),
                                                              endpoint.routingMethod()));
             }

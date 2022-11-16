@@ -308,7 +308,7 @@ public class EndpointTest {
                         .on(Port.tls())
                         .in(SystemName.cd)
         );
-        tests.forEach((expected, endpoint) -> assertEquals(expected, endpoint.legacyRegionalDsnName()));
+        tests.forEach((expected, endpoint) -> assertEquals(expected, endpoint.legacyRegionalDnsName()));
     }
 
     @Test

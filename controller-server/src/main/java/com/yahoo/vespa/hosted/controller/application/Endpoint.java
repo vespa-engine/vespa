@@ -2,7 +2,6 @@
 package com.yahoo.vespa.hosted.controller.application;
 
 import com.yahoo.config.provision.ApplicationId;
-import com.yahoo.config.provision.CloudName;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.InstanceName;
 import com.yahoo.config.provision.RegionName;
@@ -11,22 +10,17 @@ import com.yahoo.config.provision.zone.RoutingMethod;
 import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.text.Text;
 import com.yahoo.vespa.hosted.controller.api.identifiers.DeploymentId;
-import com.yahoo.vespa.hosted.controller.api.integration.zone.ZoneRegistry;
 
 import java.net.URI;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.Set;
-import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static java.util.Comparator.comparing;
-import static java.util.Comparator.naturalOrder;
-import static java.util.stream.Collectors.toSet;
 
 /**
  * Represents an application or instance endpoint in hosted Vespa.
@@ -107,7 +101,7 @@ public class Endpoint {
     }
 
     /** Returns the legacy DNS name with region, for application endpoints */
-    public String legacyRegionalDsnName() {
+    public String legacyRegionalDnsName() {
         if (scope != Scope.application) throw new IllegalStateException("legacy regional URL is only for application scope endpoints, not " + this);
         return legacyRegionalUrl.getAuthority().replaceAll(":.*", "");
     }

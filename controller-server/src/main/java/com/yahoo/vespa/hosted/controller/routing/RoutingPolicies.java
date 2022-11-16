@@ -304,13 +304,13 @@ public class RoutingPolicies {
                 nameServiceForwarderIn(targetZone).createAlias(
                         RecordName.from(applicationEndpoint.dnsName()), aliasTargets, Priority.normal);
                 nameServiceForwarderIn(targetZone).createAlias(
-                        RecordName.from(applicationEndpoint.legacyRegionalDsnName()), aliasTargets, Priority.normal);
+                        RecordName.from(applicationEndpoint.legacyRegionalDnsName()), aliasTargets, Priority.normal);
             }
             if ( ! directTargets.isEmpty()) {
                 nameServiceForwarderIn(targetZone).createDirect(
                         RecordName.from(applicationEndpoint.dnsName()), directTargets, Priority.normal);
                 nameServiceForwarderIn(targetZone).createDirect(
-                        RecordName.from(applicationEndpoint.legacyRegionalDsnName()), directTargets, Priority.normal);
+                        RecordName.from(applicationEndpoint.legacyRegionalDnsName()), directTargets, Priority.normal);
             }
         });
         inactiveTargetsByEndpoint.forEach((applicationEndpoint, targets) -> {
@@ -322,7 +322,7 @@ public class RoutingPolicies {
                                                                  target.data(),
                                                                  Priority.normal);
                 nameServiceForwarderIn(targetZone).removeRecords(target.type(),
-                                                                 RecordName.from(applicationEndpoint.legacyRegionalDsnName()),
+                                                                 RecordName.from(applicationEndpoint.legacyRegionalDnsName()),
                                                                  target.data(),
                                                                  Priority.normal);
             });
@@ -426,11 +426,11 @@ public class RoutingPolicies {
                 for (Endpoint endpoint : endpoints) {
                     if (policy.canonicalName().isPresent()) {
                         forwarder.removeRecords(Record.Type.ALIAS,
-                                RecordName.from(endpoint.dnsName()),
-                                RecordData.fqdn(policy.canonicalName().get().value()),
-                                Priority.normal);
+                                                RecordName.from(endpoint.dnsName()),
+                                                RecordData.fqdn(policy.canonicalName().get().value()),
+                                                Priority.normal);
                         forwarder.removeRecords(Record.Type.ALIAS,
-                                                RecordName.from(endpoint.legacyRegionalDsnName()),
+                                                RecordName.from(endpoint.legacyRegionalDnsName()),
                                                 RecordData.fqdn(policy.canonicalName().get().value()),
                                                 Priority.normal);
                     } else {
@@ -439,9 +439,9 @@ public class RoutingPolicies {
                                                 RecordData.from(policy.ipAddress().get()),
                                                 Priority.normal);
                         forwarder.removeRecords(Record.Type.DIRECT,
-                                RecordName.from(endpoint.legacyRegionalDsnName()),
-                                RecordData.from(policy.ipAddress().get()),
-                                Priority.normal);
+                                                RecordName.from(endpoint.legacyRegionalDnsName()),
+                                                RecordData.from(policy.ipAddress().get()),
+                                                Priority.normal);
                     }
                 }
             }
