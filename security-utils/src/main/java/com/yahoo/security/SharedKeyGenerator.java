@@ -6,15 +6,14 @@ import com.yahoo.security.hpke.Ciphersuite;
 import com.yahoo.security.hpke.Hpke;
 import com.yahoo.security.hpke.Kdf;
 import com.yahoo.security.hpke.Kem;
+import org.bouncycastle.crypto.engines.AESEngine;
+import org.bouncycastle.crypto.modes.GCMBlockCipher;
+import org.bouncycastle.crypto.params.AEADParameters;
+import org.bouncycastle.crypto.params.KeyParameter;
 
-import javax.crypto.Cipher;
 import javax.crypto.KeyGenerator;
-import javax.crypto.NoSuchPaddingException;
 import javax.crypto.SecretKey;
-import javax.crypto.spec.GCMParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
-import java.security.InvalidAlgorithmParameterException;
-import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
 import java.security.PrivateKey;
 import java.security.PublicKey;
@@ -93,33 +92,29 @@ public class SharedKeyGenerator {
             'h','e','r','e','B','d','r','a','g','o','n','s' // Nothing up my sleeve!
     };
 
-    private static Cipher makeAesGcmCipher(SecretSharedKey secretSharedKey, int cipherMode) {
-        try {
-            var cipher  = Cipher.getInstance(AES_GCM_ALGO_SPEC);
-            var gcmSpec = new GCMParameterSpec(AES_GCM_AUTH_TAG_BITS, FIXED_96BIT_IV_FOR_SINGLE_USE_KEY);
-            cipher.init(cipherMode, secretSharedKey.secretKey(), gcmSpec);
-            return cipher;
-        } catch (NoSuchAlgorithmException | NoSuchPaddingException
-                | InvalidKeyException | InvalidAlgorithmParameterException e) {
-            throw new RuntimeException(e);
-        }
+    private static AeadCipher makeAesGcmCipher(SecretSharedKey secretSharedKey, boolean forEncryption) {
+        var aeadParams = new AEADParameters(new KeyParameter(secretSharedKey.secretKey().getEncoded()),
+                                            AES_GCM_AUTH_TAG_BITS, FIXED_96BIT_IV_FOR_SINGLE_USE_KEY);
+        var cipher = new GCMBlockCipher(new AESEngine());
+        cipher.init(forEncryption, aeadParams);
+        return AeadCipher.of(cipher);
     }
 
     /**
-     * Creates an AES-GCM Cipher that can be used to encrypt arbitrary plaintext.
+     * Creates an AES-GCM cipher that can be used to encrypt arbitrary plaintext.
      *
      * The given secret key MUST NOT be used to encrypt more than one plaintext.
      */
-    public static Cipher makeAesGcmEncryptionCipher(SecretSharedKey secretSharedKey) {
-        return makeAesGcmCipher(secretSharedKey, Cipher.ENCRYPT_MODE);
+    public static AeadCipher makeAesGcmEncryptionCipher(SecretSharedKey secretSharedKey) {
+        return makeAesGcmCipher(secretSharedKey, true);
     }
 
     /**
-     * Creates an AES-GCM Cipher that can be used to decrypt ciphertext that was previously
+     * Creates an AES-GCM cipher that can be used to decrypt ciphertext that was previously
      * encrypted with the given secret key.
      */
-    public static Cipher makeAesGcmDecryptionCipher(SecretSharedKey secretSharedKey) {
-        return makeAesGcmCipher(secretSharedKey, Cipher.DECRYPT_MODE);
+    public static AeadCipher makeAesGcmDecryptionCipher(SecretSharedKey secretSharedKey) {
+        return makeAesGcmCipher(secretSharedKey, false);
     }
 
 }

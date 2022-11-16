@@ -1,8 +1,8 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.security.tool.crypto;
 
-import javax.crypto.Cipher;
-import javax.crypto.CipherOutputStream;
+import com.yahoo.security.AeadCipher;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -19,11 +19,11 @@ public class CipherUtils {
      *
      * @param input source stream to read from
      * @param output destination stream to write to
-     * @param cipher a Cipher in either ENCRYPT or DECRYPT mode
+     * @param cipher an {@link AeadCipher} created with for either encryption or decryption
      * @throws IOException if any file operation fails
      */
-    public static void streamEncipher(InputStream input, OutputStream output, Cipher cipher) throws IOException {
-        try (var cipherStream = new CipherOutputStream(output, cipher)) {
+    public static void streamEncipher(InputStream input, OutputStream output, AeadCipher cipher) throws IOException {
+        try (var cipherStream = cipher.wrapOutputStream(output)) {
             input.transferTo(cipherStream);
             cipherStream.flush();
         }
