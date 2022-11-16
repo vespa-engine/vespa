@@ -31,7 +31,6 @@ func RunPreStart() error {
 	}
 	fixSpec.FixDir("logs")
 	fixSpec.FixDir("logs/vespa")
-	fixSpec.FixDir("logs/vespa/access")
 	fixSpec.FixDir("logs/vespa/configserver")
 	fixSpec.FixDir("logs/vespa/search")
 	fixSpec.FixDir("var/tmp")
@@ -54,9 +53,10 @@ func RunPreStart() error {
 	fixSpec.FixDir("var/vespa/bundlecache")
 	fixSpec.FixDir("var/vespa/bundlecache/configserver")
 	fixSpec.FixDir("var/vespa/cache/config")
+	// fix wrong ownerships within directories:
 	var fixer fs.WalkDirFunc = func(path string, d fs.DirEntry, err error) error {
 		if err != nil {
-			panic(err)
+			util.JustExitWith(err)
 		}
 		if d.IsDir() {
 			fixSpec.FixDir(path)
@@ -68,5 +68,20 @@ func RunPreStart() error {
 	fileSystem := os.DirFS(vespaHome)
 	fs.WalkDir(fileSystem, "logs/vespa", fixer)
 	fs.WalkDir(fileSystem, "var/db/vespa", fixer)
+	// we used to have (Vespa 7) a directory "qrs", with "access" a symlink to that.
+	// now we want it the other way around, try to make it so:
+	const lva string = "logs/vespa/access"
+	const lvq string = "logs/vespa/qrs"
+	info, err := os.Lstat(lva)
+	if err == nil && (info.Mode()&os.ModeSymlink) != 0 {
+		err = os.Remove(lva)
+		if err != nil {
+			return err
+		}
+	}
+	fixSpec.FixDir(lva)
+	// best-effort fixup, not trying too hard to get backwards compatibility:
+	_ = os.Remove(lvq)
+	_ = os.Symlink("access", lvq)
 	return nil
 }
