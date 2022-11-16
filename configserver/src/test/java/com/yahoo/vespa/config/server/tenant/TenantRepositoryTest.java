@@ -30,6 +30,7 @@ import com.yahoo.vespa.config.server.monitoring.Metrics;
 import com.yahoo.vespa.config.server.provision.HostProvisionerProvider;
 import com.yahoo.vespa.curator.Curator;
 import com.yahoo.vespa.curator.mock.MockCurator;
+import com.yahoo.vespa.flags.FlagSource;
 import com.yahoo.vespa.flags.InMemoryFlagSource;
 import com.yahoo.vespa.model.VespaModel;
 import com.yahoo.vespa.model.VespaModelFactory;
@@ -40,7 +41,6 @@ import org.junit.Test;
 import org.junit.rules.ExpectedException;
 import org.junit.rules.TemporaryFolder;
 import org.xml.sax.SAXException;
-
 import java.io.IOException;
 import java.time.Clock;
 import java.util.Arrays;
@@ -207,14 +207,16 @@ public class TenantRepositoryTest {
 
     private static class FailingDuringBootstrapTenantRepository extends TenantRepository {
 
+        private static final FlagSource flagSource = new InMemoryFlagSource();
+
         public FailingDuringBootstrapTenantRepository(ConfigserverConfig configserverConfig) {
             super(new HostRegistry(),
                   new MockCurator(),
                   Metrics.createTestMetrics(),
                   new StripedExecutor<>(new InThreadExecutorService()),
                   new StripedExecutor<>(new InThreadExecutorService()),
-                  new FileDistributionFactory(configserverConfig, new FileDirectory(configserverConfig)),
-                  new InMemoryFlagSource(),
+                  new FileDistributionFactory(configserverConfig, new FileDirectory(configserverConfig, flagSource)),
+                  flagSource,
                   new InThreadExecutorService(),
                   new MockSecretStore(),
                   HostProvisionerProvider.withProvisioner(new MockProvisioner(), false),

@@ -43,6 +43,7 @@ import com.yahoo.vespa.config.server.session.PrepareParams;
 import com.yahoo.vespa.config.server.tenant.Tenant;
 import com.yahoo.vespa.config.server.tenant.TenantRepository;
 import com.yahoo.vespa.config.server.tenant.TestTenantRepository;
+import com.yahoo.vespa.flags.InMemoryFlagSource;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Rule;
@@ -125,7 +126,7 @@ public class ApplicationHandlerTest {
         tenantRepository = new TestTenantRepository.Builder()
                 .withClock(clock)
                 .withConfigserverConfig(configserverConfig)
-                .withFileDistributionFactory(new MockFileDistributionFactory(configserverConfig, new FileDirectory(configserverConfig)))
+                .withFileDistributionFactory(new MockFileDistributionFactory(configserverConfig, new FileDirectory(configserverConfig, new InMemoryFlagSource())))
                 .withHostProvisionerProvider(HostProvisionerProvider.withProvisioner(provisioner, false))
                 .withModelFactoryRegistry(new ModelFactoryRegistry(modelFactories))
                 .build();

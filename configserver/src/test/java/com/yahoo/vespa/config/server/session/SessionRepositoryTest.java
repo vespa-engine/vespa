@@ -98,7 +98,8 @@ public class SessionRepositoryTest {
                 .withConfigserverConfig(configserverConfig)
                 .withCurator(curator)
                 .withFlagSource(flagSource)
-                .withFileDistributionFactory(new MockFileDistributionFactory(configserverConfig, new FileDirectory(configserverConfig)))
+                .withFileDistributionFactory(
+                        new MockFileDistributionFactory(configserverConfig, new FileDirectory(configserverConfig, flagSource)))
                 .withModelFactoryRegistry(modelFactoryRegistry)
                 .build();
         tenantRepository.addTenant(SessionRepositoryTest.tenantName);

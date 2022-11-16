@@ -291,7 +291,8 @@ public class DeployTester {
                     .withClock(clock)
                     .withConfigserverConfig(configserverConfig)
                     .withCurator(curator)
-                    .withFileDistributionFactory(new MockFileDistributionFactory(configserverConfig, new FileDirectory(configserverConfig)))
+                    .withFileDistributionFactory(
+                            new MockFileDistributionFactory(configserverConfig, new FileDirectory(configserverConfig, flagSource)))
                     .withMetrics(Optional.ofNullable(metrics).orElse(Metrics.createTestMetrics()))
                     .withModelFactoryRegistry((new ModelFactoryRegistry(modelFactories)))
                     .withZone(zone);

@@ -4,7 +4,6 @@ package com.yahoo.vespa.config.server.filedistribution;
 import com.yahoo.config.FileReference;
 import com.yahoo.config.application.api.FileRegistry;
 import com.yahoo.path.Path;
-
 import java.io.File;
 import java.io.IOException;
 import java.nio.ByteBuffer;
@@ -21,8 +20,7 @@ public class MockFileRegistry implements FileRegistry {
     private final List<Entry> entries = new ArrayList<>();
     private final AddFileInterface addFileInterface;
 
-    public MockFileRegistry(File applicationDir, File rootPath) {
-        FileDirectory fileDirectory = new FileDirectory(rootPath);
+    public MockFileRegistry(File applicationDir, FileDirectory fileDirectory) {
         this.addFileInterface = new ApplicationFileManager(applicationDir, fileDirectory, false);
     }
 

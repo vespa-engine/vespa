@@ -122,12 +122,14 @@ public class ApplicationRepositoryTest {
                 .configDefinitionsDir(temporaryFolder.newFolder().getAbsolutePath())
                 .fileReferencesDir(temporaryFolder.newFolder().getAbsolutePath())
                 .build();
+        InMemoryFlagSource flagSource = new InMemoryFlagSource();
         tenantRepository = new TestTenantRepository.Builder()
                 .withClock(clock)
                 .withConfigserverConfig(configserverConfig)
                 .withCurator(curator)
-                .withFileDistributionFactory(new MockFileDistributionFactory(configserverConfig, new FileDirectory(configserverConfig)))
-                .withFlagSource(new InMemoryFlagSource())
+                .withFileDistributionFactory(
+                        new MockFileDistributionFactory(configserverConfig, new FileDirectory(configserverConfig, flagSource)))
+                .withFlagSource(flagSource)
                 .build();
         tenantRepository.addTenant(TenantRepository.HOSTED_VESPA_TENANT);
         tenantRepository.addTenant(tenant1);
