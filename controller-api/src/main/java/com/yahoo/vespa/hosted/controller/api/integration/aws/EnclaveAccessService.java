@@ -9,7 +9,7 @@ import java.util.Set;
  */
 public interface EnclaveAccessService {
 
-    /** Makes the current AMIs available to the given accounts. */
+    /** Ensures the given enclave accounts have access to resources they require to function. */
     void allowAccessFor(Set<CloudAccount> accounts);
 
 }

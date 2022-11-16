@@ -15,13 +15,13 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 /**
  * @author jonmv
  */
-class AMISharerTest {
+class EnclaveAccessMaintainerTest {
 
     @Test
     void test() {
         ControllerTester tester = new ControllerTester();
-        MockEnclaveAccessService amis = tester.serviceRegistry().amiService();
-        AMISharer sharer = new AMISharer(tester.controller(), Duration.ofMinutes(1));
+        MockEnclaveAccessService amis = tester.serviceRegistry().enclaveAccessService();
+        EnclaveAccessMaintainer sharer = new EnclaveAccessMaintainer(tester.controller(), Duration.ofMinutes(1));
         assertEquals(Set.of(), amis.currentAccounts());
 
         assertEquals(1, sharer.maintain());

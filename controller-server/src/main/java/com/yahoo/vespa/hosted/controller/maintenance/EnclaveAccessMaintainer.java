@@ -11,18 +11,18 @@ import java.util.logging.Logger;
 
 import static java.util.logging.Level.WARNING;
 
-public class AMISharer extends ControllerMaintainer {
+public class EnclaveAccessMaintainer extends ControllerMaintainer {
 
-    private static final Logger logger = Logger.getLogger(AMISharer.class.getName());
+    private static final Logger logger = Logger.getLogger(EnclaveAccessMaintainer.class.getName());
 
-    AMISharer(Controller controller, Duration interval) {
+    EnclaveAccessMaintainer(Controller controller, Duration interval) {
         super(controller, interval);
     }
 
     @Override
     protected double maintain() {
         try {
-            controller().serviceRegistry().amiService().allowAccessFor(externalAccounts());
+            controller().serviceRegistry().enclaveAccessService().allowAccessFor(externalAccounts());
             return 1;
         }
         catch (RuntimeException e) {

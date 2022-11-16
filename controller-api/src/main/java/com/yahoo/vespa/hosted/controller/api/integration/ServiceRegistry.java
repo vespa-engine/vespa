@@ -87,7 +87,7 @@ public interface ServiceRegistry {
 
     ResourceTagger resourceTagger();
 
-    EnclaveAccessService amiService();
+    EnclaveAccessService enclaveAccessService();
 
     RoleService roleService();
 

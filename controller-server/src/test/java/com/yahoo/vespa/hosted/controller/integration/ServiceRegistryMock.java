@@ -211,7 +211,7 @@ public class ServiceRegistryMock extends AbstractComponent implements ServiceReg
     }
 
     @Override
-    public MockEnclaveAccessService amiService() {
+    public MockEnclaveAccessService enclaveAccessService() {
         return mockAMIService;
     }
 
