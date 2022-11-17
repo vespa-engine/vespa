@@ -19,6 +19,7 @@ install_symlink(libexec/vespa/script-utils bin/vespa-security-env)
 install_symlink(libexec/vespa/script-utils bin/vespa-get-cluster-state)
 install_symlink(libexec/vespa/script-utils bin/vespa-get-node-state)
 install_symlink(libexec/vespa/script-utils bin/vespa-set-node-state)
+install_symlink(libexec/vespa/script-utils bin/vespa-start-configserver)
 
 install_symlink(libexec/vespa/script-utils bin/vespa-get-config)
 install_symlink(libexec/vespa/script-utils bin/vespa-verify-ranksetup)
