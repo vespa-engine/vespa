@@ -8,7 +8,6 @@ import com.yahoo.vespa.hosted.provision.NodeRepository;
 import com.yahoo.vespa.hosted.provision.node.filter.NodeListFilter;
 
 import java.time.Instant;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.logging.Logger;
 
@@ -20,32 +19,23 @@ import java.util.logging.Logger;
  *
  * @author mpolden
  */
-public class DelegatingOsUpgrader implements OsUpgrader {
+public class DelegatingOsUpgrader extends OsUpgrader {
 
     private static final Logger LOG = Logger.getLogger(DelegatingOsUpgrader.class.getName());
 
-    private final NodeRepository nodeRepository;
-
-    /** The maximum number of nodes, within a single node type, that can upgrade in parallel. */
-    private final int maxActiveUpgrades;
-
-    public DelegatingOsUpgrader(NodeRepository nodeRepository, int maxActiveUpgrades) {
-        this.nodeRepository = Objects.requireNonNull(nodeRepository);
-        this.maxActiveUpgrades = maxActiveUpgrades;
-        if (maxActiveUpgrades < 1) throw new IllegalArgumentException("maxActiveUpgrades must be positive, was " +
-                                                                      maxActiveUpgrades);
+    public DelegatingOsUpgrader(NodeRepository nodeRepository) {
+        super(nodeRepository);
     }
 
     @Override
     public void upgradeTo(OsVersionTarget target) {
         NodeList activeNodes = nodeRepository.nodes().list(Node.State.active).nodeType(target.nodeType());
-        int numberToUpgrade = Math.max(0, maxActiveUpgrades - activeNodes.changingOsVersionTo(target.version()).size());
         Instant now = nodeRepository.clock().instant();
         NodeList nodesToUpgrade = activeNodes.not().changingOsVersionTo(target.version())
                                              .osVersionIsBefore(target.version())
                                              .matching(node -> canUpgradeAt(now, node))
                                              .byIncreasingOsVersion()
-                                             .first(numberToUpgrade);
+                                             .first(upgradeSlots(target, activeNodes));
         if (nodesToUpgrade.size() == 0) return;
         LOG.info("Upgrading " + nodesToUpgrade.size() + " nodes of type " + target.nodeType() + " to OS version " +
                  target.version().toFullString());

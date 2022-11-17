@@ -1,6 +1,7 @@
 package com.yahoo.vespa.hosted.provision.os;
 
 import com.yahoo.config.provision.NodeType;
+import com.yahoo.vespa.hosted.provision.NodeRepository;
 
 import java.util.List;
 
@@ -9,9 +10,12 @@ import java.util.List;
  *
  * @author mpolden
  */
-public record CompositeOsUpgrader(List<OsUpgrader> upgraders) implements OsUpgrader {
+public class CompositeOsUpgrader extends OsUpgrader {
 
-    public CompositeOsUpgrader(List<OsUpgrader> upgraders) {
+    private final List<OsUpgrader> upgraders;
+
+    public CompositeOsUpgrader(NodeRepository nodeRepository, List<OsUpgrader> upgraders) {
+        super(nodeRepository);
         this.upgraders = List.copyOf(upgraders);
     }
 
