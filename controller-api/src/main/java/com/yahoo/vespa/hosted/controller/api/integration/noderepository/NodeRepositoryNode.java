@@ -450,7 +450,7 @@ public class NodeRepositoryNode {
         this.cloudAccount = cloudAccount;
     }
 
-    public String getWireguardPubKey() {return wireguardPubKey; }
+    public String getWireguardPubKey() { return wireguardPubKey; }
 
     public void setWireguardPubKey(String wireguardPubKey) { this.wireguardPubKey = wireguardPubKey; }
 
