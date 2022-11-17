@@ -49,7 +49,7 @@ size_t calc_sum_direct(size_t first, size_t last) {
     return calc_sum(ValueRange(first, last));
 }
 
-Generator<const size_t &> gen_values(size_t first, size_t last) {
+Generator<size_t> gen_values(size_t first, size_t last) {
     for (size_t i = first; i < last; ++i) {
         co_yield i;
     }
@@ -57,6 +57,16 @@ Generator<const size_t &> gen_values(size_t first, size_t last) {
 
 size_t calc_sum_generator(size_t first, size_t last) {
     return calc_sum(gen_values(first, last));
+}
+
+Generator<const size_t &> gen_values_ref(size_t first, size_t last) {
+    for (size_t i = first; i < last; ++i) {
+        co_yield i;
+    }
+}
+
+size_t calc_sum_generator_ref(size_t first, size_t last) {
+    return calc_sum(gen_values_ref(first, last));
 }
 
 struct MySeq : Sequence<size_t> {
@@ -79,7 +89,8 @@ TEST(GeneratorBench, direct_vs_generated_for_loop) {
     size_t last = 100000;
     size_t res_direct = 0;
     size_t res_generator = 1;
-    size_t res_sequence = 2;
+    size_t res_generator_ref = 2;
+    size_t res_sequence = 3;
     double direct_ms = BenchmarkTimer::benchmark([first,last,&res_direct](){
                                                      res_direct = calc_sum_direct(first, last);
                                                  }, 5.0) * 1000.0;
@@ -88,12 +99,20 @@ TEST(GeneratorBench, direct_vs_generated_for_loop) {
                                                         res_generator = calc_sum_generator(first, last);
                                                     }, 5.0) * 1000.0;
     fprintf(stderr, "generator: %g ms\n", generator_ms);
+    double generator_ref_ms = BenchmarkTimer::benchmark([first,last,&res_generator_ref](){
+                                                            res_generator_ref = calc_sum_generator_ref(first, last);
+                                                        }, 5.0) * 1000.0;
+    fprintf(stderr, "generator_ref: %g ms\n", generator_ref_ms);
     double sequence_ms = BenchmarkTimer::benchmark([first,last,&res_sequence](){
                                                        res_sequence = calc_sum_sequence(first, last);
                                                    }, 5.0) * 1000.0;
     fprintf(stderr, "sequence: %g ms\n", sequence_ms);
+    EXPECT_EQ(res_direct, res_generator);
+    EXPECT_EQ(res_direct, res_generator_ref);
+    EXPECT_EQ(res_direct, res_sequence);
     fprintf(stderr, "ratio (generator/direct): %g\n", (generator_ms/direct_ms));
     fprintf(stderr, "ratio (generator/sequence): %g\n", (generator_ms/sequence_ms));
+    fprintf(stderr, "ratio (generator/generator_ref): %g\n", (generator_ms/generator_ref_ms));
 }
 
 GTEST_MAIN_RUN_ALL_TESTS()
