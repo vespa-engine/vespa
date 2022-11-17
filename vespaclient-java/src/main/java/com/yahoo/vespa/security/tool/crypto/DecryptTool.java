@@ -1,8 +1,6 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.security.tool.crypto;
 
-import com.yahoo.security.KeyId;
-import com.yahoo.security.KeyUtils;
 import com.yahoo.security.SealedSharedKey;
 import com.yahoo.security.SharedKeyGenerator;
 import com.yahoo.vespa.security.tool.CliUtils;
@@ -12,10 +10,11 @@ import com.yahoo.vespa.security.tool.ToolInvocation;
 import org.apache.commons.cli.Option;
 
 import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Paths;
 import java.util.List;
 import java.util.Optional;
+
+import static com.yahoo.vespa.security.tool.crypto.ToolUtils.PRIVATE_KEY_DIR_OPTION;
+import static com.yahoo.vespa.security.tool.crypto.ToolUtils.PRIVATE_KEY_FILE_OPTION;
 
 /**
  * Tooling for decrypting a file using a private key that corresponds to the public key used
@@ -28,7 +27,6 @@ import java.util.Optional;
 public class DecryptTool implements Tool {
 
     static final String OUTPUT_FILE_OPTION      = "output-file";
-    static final String PRIVATE_KEY_FILE_OPTION = "private-key-file";
     static final String EXPECTED_KEY_ID_OPTION  = "expected-key-id";
     static final String TOKEN_OPTION            = "token";
 
@@ -45,6 +43,13 @@ public class DecryptTool implements Tool {
                     .hasArg(true)
                     .required(false)
                     .desc("Private key file in Base58 encoded format")
+                    .build(),
+            Option.builder("d")
+                    .longOpt(PRIVATE_KEY_DIR_OPTION)
+                    .hasArg(true)
+                    .required(false)
+                    .desc("Private key file directory used for automatically looking up " +
+                          "private keys based on the key ID specified as part of a token.")
                     .build(),
             Option.builder("e")
                     .longOpt(EXPECTED_KEY_ID_OPTION)
@@ -83,17 +88,14 @@ public class DecryptTool implements Tool {
             if (leftoverArgs.length != 1) {
                 throw new IllegalArgumentException("Expected exactly 1 file argument to decrypt");
             }
-            var inputArg   = leftoverArgs[0];
-            var maybeKeyId = Optional.ofNullable(arguments.hasOption(EXPECTED_KEY_ID_OPTION)
-                                                 ? arguments.getOptionValue(EXPECTED_KEY_ID_OPTION)
-                                                 : null);
+            var inputArg    = leftoverArgs[0];
+            var maybeKeyId  = Optional.ofNullable(arguments.getOptionValue(EXPECTED_KEY_ID_OPTION));
             var outputArg   = CliUtils.optionOrThrow(arguments, OUTPUT_FILE_OPTION);
             var tokenString = CliUtils.optionOrThrow(arguments, TOKEN_OPTION);
             var sealedSharedKey = SealedSharedKey.fromTokenString(tokenString.strip());
             ToolUtils.verifyExpectedKeyId(sealedSharedKey, maybeKeyId);
 
-            var privKeyPath  = Paths.get(CliUtils.optionOrThrow(arguments, PRIVATE_KEY_FILE_OPTION));
-            var privateKey   = KeyUtils.fromBase58EncodedX25519PrivateKey(Files.readString(privKeyPath).strip());
+            var privateKey   = ToolUtils.resolvePrivateKeyFromInvocation(invocation, sealedSharedKey.keyId());
             var secretShared = SharedKeyGenerator.fromSealedKey(sealedSharedKey, privateKey);
             var cipher       = SharedKeyGenerator.makeAesGcmDecryptionCipher(secretShared);
 

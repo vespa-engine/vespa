@@ -6,6 +6,7 @@ import org.apache.commons.cli.CommandLine;
 import java.io.InputStream;
 import java.io.PrintStream;
 import java.util.Map;
+import java.util.function.Supplier;
 
 /**
  * @author vekterli
@@ -16,5 +17,11 @@ public record ToolInvocation(CommandLine arguments,
                              PrintStream stdOut,
                              PrintStream stdError,
                              boolean debugMode) {
+
+    public void printIfDebug(Supplier<String> stringSupplier) {
+        if (debugMode) {
+            stdError.println(stringSupplier.get());
+        }
+    }
 
 }

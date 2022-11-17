@@ -12,10 +12,11 @@ import com.yahoo.vespa.security.tool.ToolInvocation;
 import org.apache.commons.cli.Option;
 
 import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Paths;
 import java.util.List;
 import java.util.Optional;
+
+import static com.yahoo.vespa.security.tool.crypto.ToolUtils.PRIVATE_KEY_DIR_OPTION;
+import static com.yahoo.vespa.security.tool.crypto.ToolUtils.PRIVATE_KEY_FILE_OPTION;
 
 /**
  * Tooling for resealing a token for another recipient. This allows for delegating
@@ -26,7 +27,6 @@ import java.util.Optional;
  */
 public class ResealTool implements Tool {
 
-    static final String PRIVATE_KEY_FILE_OPTION     = "private-key-file";
     static final String EXPECTED_KEY_ID_OPTION      = "expected-key-id";
     static final String RECIPIENT_KEY_ID_OPTION     = "key-id";
     static final String RECIPIENT_PUBLIC_KEY_OPTION = "recipient-public-key";
@@ -37,6 +37,13 @@ public class ResealTool implements Tool {
                     .hasArg(true)
                     .required(false)
                     .desc("Private key file in Base58 encoded format")
+                    .build(),
+            Option.builder("d")
+                    .longOpt(PRIVATE_KEY_DIR_OPTION)
+                    .hasArg(true)
+                    .required(false)
+                    .desc("Private key file directory used for automatically looking up " +
+                          "private keys based on the key ID specified as part of a token.")
                     .build(),
             Option.builder("e")
                     .longOpt(EXPECTED_KEY_ID_OPTION)
@@ -90,8 +97,7 @@ public class ResealTool implements Tool {
 
             var recipientPubKey = KeyUtils.fromBase58EncodedX25519PublicKey(CliUtils.optionOrThrow(arguments, RECIPIENT_PUBLIC_KEY_OPTION).strip());
             var recipientKeyId  = KeyId.ofString(CliUtils.optionOrThrow(arguments, RECIPIENT_KEY_ID_OPTION));
-            var privKeyPath     = Paths.get(CliUtils.optionOrThrow(arguments, PRIVATE_KEY_FILE_OPTION));
-            var privateKey      = KeyUtils.fromBase58EncodedX25519PrivateKey(Files.readString(privKeyPath).strip());
+            var privateKey      = ToolUtils.resolvePrivateKeyFromInvocation(invocation, sealedSharedKey.keyId());
             var secretShared    = SharedKeyGenerator.fromSealedKey(sealedSharedKey, privateKey);
             var resealedShared  = SharedKeyGenerator.reseal(secretShared, recipientPubKey, recipientKeyId);
 
