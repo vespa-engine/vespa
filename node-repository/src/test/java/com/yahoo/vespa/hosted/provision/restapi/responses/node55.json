@@ -44,6 +44,5 @@
     "127.0.55.1",
     "::55:1"
   ],
-  "additionalIpAddresses": [],
-  "cloudAccount": "111222333444"
+  "additionalIpAddresses": []
 }

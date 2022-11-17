@@ -7,7 +7,6 @@ import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ApplicationName;
 import com.yahoo.config.provision.ApplicationTransaction;
 import com.yahoo.config.provision.Capacity;
-import com.yahoo.config.provision.CloudAccount;
 import com.yahoo.config.provision.ClusterResources;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.DockerImage;
@@ -35,7 +34,6 @@ import com.yahoo.vespa.hosted.provision.node.Status;
 import com.yahoo.vespa.hosted.provision.provisioning.EmptyProvisionServiceProvider;
 import com.yahoo.vespa.hosted.provision.provisioning.NodeRepositoryProvisioner;
 
-import javax.inject.Inject;
 import java.time.Clock;
 import java.time.Instant;
 import java.time.ZoneId;
@@ -58,23 +56,20 @@ import static com.yahoo.config.provision.NodeResources.StorageType.remote;
  * Instantiated by DI.
  */
 public class MockNodeRepository extends NodeRepository {
-    public static final CloudAccount tenantAccount = CloudAccount.from("777888999000");
 
     private final NodeFlavors flavors;
-    private final CloudAccount defaultCloudAccount;
 
     /**
      * Constructor
      *
      * @param flavors flavors to have in node repo
      */
-    @Inject
-    public MockNodeRepository(MockCurator curator, NodeFlavors flavors, Zone zone) {
+    public MockNodeRepository(MockCurator curator, NodeFlavors flavors) {
         super(flavors,
               new EmptyProvisionServiceProvider(),
               curator,
               Clock.fixed(Instant.ofEpochMilli(123), ZoneId.of("Z")),
-              zone,
+              Zone.defaultZone(),
               new MockNameResolver().mockAnyLookup(),
               DockerImage.fromString("docker-registry.domain.tld:8080/dist/vespa"),
               Optional.empty(),
@@ -84,7 +79,6 @@ public class MockNodeRepository extends NodeRepository {
               true,
               0, 1000);
         this.flavors = flavors;
-        defaultCloudAccount = zone.cloud().account();
 
         curator.setZooKeeperEnsembleConnectionSpec("cfg1:1234,cfg2:1234,cfg3:1234");
         populate();
@@ -95,19 +89,14 @@ public class MockNodeRepository extends NodeRepository {
         List<Node> nodes = new ArrayList<>();
 
         // Regular nodes
-        nodes.add(Node.create("node1", ipConfig(1), "host1.yahoo.com", resources(2, 8, 50, 1, fast, local), NodeType.tenant)
-                          .cloudAccount(defaultCloudAccount).build());
-        nodes.add(Node.create("node2", ipConfig(2), "host2.yahoo.com", resources(2, 8, 50, 1, fast, local), NodeType.tenant)
-                          .cloudAccount(defaultCloudAccount).build());
-        // Emulate node in tenant account
-        nodes.add(Node.create("node3", ipConfig(3), "host3.yahoo.com", resources(0.5, 48, 500, 1, fast, local), NodeType.tenant)
-                              .cloudAccount(tenantAccount).build());
+        nodes.add(Node.create("node1", ipConfig(1), "host1.yahoo.com", resources(2, 8, 50, 1, fast, local), NodeType.tenant).build());
+        nodes.add(Node.create("node2", ipConfig(2), "host2.yahoo.com", resources(2, 8, 50, 1, fast, local), NodeType.tenant).build());
+        nodes.add(Node.create("node3", ipConfig(3), "host3.yahoo.com", resources(0.5, 48, 500, 1, fast, local), NodeType.tenant).build());
         Node node4 = Node.create("node4", ipConfig(4), "host4.yahoo.com", resources(1, 4, 100, 1, fast, local), NodeType.tenant)
                 .parentHostname("dockerhost1.yahoo.com")
                 .status(Status.initial()
                         .withVespaVersion(new Version("6.41.0"))
                         .withContainerImage(DockerImage.fromString("docker-registry.domain.tld:8080/dist/vespa:6.41.0")))
-                .cloudAccount(defaultCloudAccount)
                 .build();
         nodes.add(node4);
 
@@ -116,15 +105,12 @@ public class MockNodeRepository extends NodeRepository {
                 .status(Status.initial()
                         .withVespaVersion(new Version("1.2.3"))
                         .withContainerImage(DockerImage.fromString("docker-registry.domain.tld:8080/dist/vespa:1.2.3")))
-                .cloudAccount(defaultCloudAccount)
                 .build();
         nodes.add(node5);
 
 
-        nodes.add(Node.create("node6", ipConfig(6), "host6.yahoo.com", resources(2, 8, 50, 1, fast, local), NodeType.tenant)
-                              .cloudAccount(defaultCloudAccount).build());
-        Node node7 = Node.create("node7", ipConfig(7), "host7.yahoo.com", resources(2, 8, 50, 1, fast, local), NodeType.tenant)
-                                  .cloudAccount(defaultCloudAccount).build();
+        nodes.add(Node.create("node6", ipConfig(6), "host6.yahoo.com", resources(2, 8, 50, 1, fast, local), NodeType.tenant).build());
+        Node node7 = Node.create("node7", ipConfig(7), "host7.yahoo.com", resources(2, 8, 50, 1, fast, local), NodeType.tenant).build();
         nodes.add(node7);
 
         // 8, 9, 11 and 12 are added by web service calls
@@ -133,29 +119,26 @@ public class MockNodeRepository extends NodeRepository {
                 .status(Status.initial()
                         .withVespaVersion(Version.fromString("5.104.142"))
                         .withContainerImage(DockerImage.fromString("docker-registry.domain.tld:8080/dist/vespa:5.104.142")))
-                .cloudAccount(defaultCloudAccount)
                 .build();
         nodes.add(node10);
 
         Node node55 = Node.create("node55", ipConfig(55), "host55.yahoo.com", resources(2, 8, 50, 1, fast, local), NodeType.tenant)
-                          .status(Status.initial().withWantToRetire(true, true, false))
-                .cloudAccount(defaultCloudAccount).build();
+                          .status(Status.initial().withWantToRetire(true, true, false)).build();
         nodes.add(node55);
 
         /* Setup docker hosts (two of these will be reserved for spares */
         nodes.add(Node.create("dockerhost1", ipConfig(100, 1, 3), "dockerhost1.yahoo.com",
-                             flavors.getFlavorOrThrow("large"), NodeType.host).cloudAccount(defaultCloudAccount).build());
-        // Emulate host in tenant account
+                             flavors.getFlavorOrThrow("large"), NodeType.host).build());
         nodes.add(Node.create("dockerhost2", ipConfig(101, 1, 3), "dockerhost2.yahoo.com",
-                             flavors.getFlavorOrThrow("large"), NodeType.host).cloudAccount(tenantAccount).build());
+                             flavors.getFlavorOrThrow("large"), NodeType.host).build());
         nodes.add(Node.create("dockerhost3", ipConfig(102, 1, 3), "dockerhost3.yahoo.com",
-                             flavors.getFlavorOrThrow("large"), NodeType.host).cloudAccount(defaultCloudAccount).build());
+                             flavors.getFlavorOrThrow("large"), NodeType.host).build());
         nodes.add(Node.create("dockerhost4", ipConfig(103, 1, 3), "dockerhost4.yahoo.com",
-                             flavors.getFlavorOrThrow("large"), NodeType.host).cloudAccount(defaultCloudAccount).build());
+                             flavors.getFlavorOrThrow("large"), NodeType.host).build());
         nodes.add(Node.create("dockerhost5", ipConfig(104, 1, 3), "dockerhost5.yahoo.com",
-                             flavors.getFlavorOrThrow("large"), NodeType.host).cloudAccount(defaultCloudAccount).build());
+                             flavors.getFlavorOrThrow("large"), NodeType.host).build());
         nodes.add(Node.create("dockerhost6", ipConfig(105, 1, 3), "dockerhost6.yahoo.com",
-                flavors.getFlavorOrThrow("arm64"), NodeType.host).cloudAccount(defaultCloudAccount).build());
+                flavors.getFlavorOrThrow("arm64"), NodeType.host).build());
 
         // Config servers
         nodes.add(Node.create("cfg1", ipConfig(201), "cfg1.yahoo.com", flavors.getFlavorOrThrow("default"), NodeType.config).build());

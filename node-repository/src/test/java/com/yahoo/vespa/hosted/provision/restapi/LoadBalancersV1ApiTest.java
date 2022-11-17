@@ -2,7 +2,6 @@
 package com.yahoo.vespa.hosted.provision.restapi;
 
 import com.yahoo.application.container.handler.Request;
-import com.yahoo.config.provision.CloudAccount;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -13,7 +12,7 @@ public class LoadBalancersV1ApiTest {
 
     @Before
     public void createTester() {
-        tester = new RestApiTester(CloudAccount.empty);
+        tester = new RestApiTester();
     }
 
     @After

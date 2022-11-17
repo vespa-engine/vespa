@@ -109,8 +109,6 @@ public class NodeRepositoryNode {
     private String switchHostname;
     @JsonProperty("cloudAccount")
     private String cloudAccount;
-    @JsonProperty("wireguardPubKey")
-    private String wireguardPubKey;
 
     public String getUrl() {
         return url;
@@ -450,10 +448,6 @@ public class NodeRepositoryNode {
         this.cloudAccount = cloudAccount;
     }
 
-    public String getWireguardPubKey() { return wireguardPubKey; }
-
-    public void setWireguardPubKey(String wireguardPubKey) { this.wireguardPubKey = wireguardPubKey; }
-
     // --- Helper methods for code that (wrongly) consume this directly
 
     public boolean hasType(NodeType type) {
@@ -513,7 +507,6 @@ public class NodeRepositoryNode {
                ", exclusiveTo='" + exclusiveTo + '\'' +
                ", switchHostname='" + switchHostname + '\'' +
                ", cloudAccount='" + cloudAccount + '\'' +
-                ", wireguardPubKey='" + wireguardPubKey + '\'' +
                '}';
     }
 

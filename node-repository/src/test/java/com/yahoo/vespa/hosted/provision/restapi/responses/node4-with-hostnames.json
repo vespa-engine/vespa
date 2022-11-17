@@ -95,6 +95,5 @@
     "::4:1"
   ],
   "additionalIpAddresses": [],
-  "additionalHostnames": ["a","b"],
-  "cloudAccount": "111222333444"
+  "additionalHostnames": ["a","b"]
 }

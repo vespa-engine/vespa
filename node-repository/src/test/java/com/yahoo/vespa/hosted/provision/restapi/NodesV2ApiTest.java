@@ -4,7 +4,6 @@ package com.yahoo.vespa.hosted.provision.restapi;
 import com.yahoo.application.container.handler.Request;
 import com.yahoo.application.container.handler.Response;
 import com.yahoo.config.provision.ApplicationId;
-import com.yahoo.config.provision.CloudAccount;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.text.Utf8;
@@ -41,7 +40,7 @@ public class NodesV2ApiTest {
 
     @Before
     public void createTester() {
-        tester = new RestApiTester(CloudAccount.from("111222333444"));
+        tester = new RestApiTester();
     }
 
     @After
@@ -60,7 +59,6 @@ public class NodesV2ApiTest {
         assertFile(new Request("http://localhost:8080/nodes/v2/node/"), "nodes.json");
         assertFile(new Request("http://localhost:8080/nodes/v2/node/?recursive=true"), "nodes-recursive.json");
         assertFile(new Request("http://localhost:8080/nodes/v2/node/?recursive=true&includeDeprovisioned=true"), "nodes-recursive-include-deprovisioned.json");
-        assertFile(new Request("http://localhost:8080/nodes/v2/node/?recursive=true&enclave=true"), "enclave-nodes.json");
         assertFile(new Request("http://localhost:8080/nodes/v2/node/host2.yahoo.com"), "node2.json");
         assertFile(new Request("http://localhost:8080/nodes/v2/stats"), "stats.json");
         assertFile(new Request("http://localhost:8080/nodes/v2/maintenance/"), "maintenance.json");

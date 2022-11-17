@@ -3,7 +3,6 @@ package com.yahoo.vespa.hosted.node.admin.configserver.noderepository;
 
 import com.yahoo.application.Networking;
 import com.yahoo.application.container.JDisc;
-import com.yahoo.config.provision.CloudAccount;
 import com.yahoo.config.provision.DockerImage;
 import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.NodeType;
@@ -61,7 +60,7 @@ public class RealNodeRepositoryTest {
         for (int i = 0; i < 3; i++) {
             try {
                 int port = findRandomOpenPort();
-                container = JDisc.fromServicesXml(ContainerConfig.servicesXmlV2(port, CloudAccount.empty), Networking.enable);
+                container = JDisc.fromServicesXml(ContainerConfig.servicesXmlV2(port), Networking.enable);
                 ConfigServerApi configServerApi = ConfigServerApiImpl.createForTesting(
                         List.of(URI.create("http://127.0.0.1:" + port)));
                 waitForJdiscContainerToServe(configServerApi);

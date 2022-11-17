@@ -94,6 +94,5 @@
     "127.0.10.1",
     "::10:1"
   ],
-  "additionalIpAddresses": [],
-  "cloudAccount": "111222333444"
+  "additionalIpAddresses": []
 }

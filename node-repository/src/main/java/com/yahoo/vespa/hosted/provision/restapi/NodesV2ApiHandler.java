@@ -4,7 +4,6 @@ package com.yahoo.vespa.hosted.provision.restapi;
 import com.yahoo.component.Version;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ApplicationLockException;
-import com.yahoo.config.provision.CloudAccount;
 import com.yahoo.config.provision.Flavor;
 import com.yahoo.config.provision.HostFilter;
 import com.yahoo.config.provision.NodeFlavors;
@@ -37,7 +36,6 @@ import com.yahoo.vespa.hosted.provision.node.Address;
 import com.yahoo.vespa.hosted.provision.node.Agent;
 import com.yahoo.vespa.hosted.provision.node.IP;
 import com.yahoo.vespa.hosted.provision.node.filter.ApplicationFilter;
-import com.yahoo.vespa.hosted.provision.node.filter.CloudAccountFilter;
 import com.yahoo.vespa.hosted.provision.node.filter.NodeFilter;
 import com.yahoo.vespa.hosted.provision.node.filter.NodeHostFilter;
 import com.yahoo.vespa.hosted.provision.node.filter.NodeOsVersionFilter;
@@ -53,7 +51,6 @@ import java.io.UncheckedIOException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
@@ -76,7 +73,6 @@ public class NodesV2ApiHandler extends ThreadedHttpRequestHandler {
     private final NodeRepository nodeRepository;
     private final MetricsDb metricsDb;
     private final NodeFlavors nodeFlavors;
-    private final CloudAccount cloudAccount;
 
     @Inject
     public NodesV2ApiHandler(ThreadedHttpRequestHandler.Context parentCtx, Orchestrator orchestrator,
@@ -86,7 +82,6 @@ public class NodesV2ApiHandler extends ThreadedHttpRequestHandler {
         this.nodeRepository = nodeRepository;
         this.metricsDb = metricsDb;
         this.nodeFlavors = flavors;
-        this.cloudAccount = nodeRepository.zone().cloud().account();
     }
 
     @Override
@@ -334,10 +329,6 @@ public class NodesV2ApiHandler extends ThreadedHttpRequestHandler {
     }
 
     public static NodeFilter toNodeFilter(HttpRequest request) {
-        return toNodeFilter(request, Set.of());
-    }
-
-    public static NodeFilter toNodeFilter(HttpRequest request, Collection<CloudAccount> nonEnclaveAccounts) {
         return NodeFilter.in(request.getProperty("state"),
                              request.getBooleanProperty("includeDeprovisioned"))
                          .matching(NodeHostFilter.from(HostFilter.from(request.getProperty("hostname"),
@@ -347,8 +338,7 @@ public class NodesV2ApiHandler extends ThreadedHttpRequestHandler {
                                                  .and(ApplicationFilter.from(request.getProperty("application")))
                                                  .and(NodeTypeFilter.from(request.getProperty("type")))
                                                  .and(ParentHostFilter.from(request.getProperty("parentHost")))
-                                                 .and(NodeOsVersionFilter.from(request.getProperty("osVersion")))
-                                                 .and(CloudAccountFilter.from(nonEnclaveAccounts, request.getBooleanProperty("enclave"))));
+                                                 .and(NodeOsVersionFilter.from(request.getProperty("osVersion"))));
     }
 
     private static boolean isPatchOverride(HttpRequest request) {

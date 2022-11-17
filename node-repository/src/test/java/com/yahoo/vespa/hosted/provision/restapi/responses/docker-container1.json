@@ -66,6 +66,5 @@
   "ipAddresses": [
     "::102:2"
   ],
-  "additionalIpAddresses": [],
-  "cloudAccount": "111222333444"
+  "additionalIpAddresses": []
 }
