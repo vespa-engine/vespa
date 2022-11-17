@@ -49,6 +49,7 @@ using search::tensor::DirectTensorAttribute;
 using search::tensor::DistanceCalculator;
 using search::tensor::DocVectorAccess;
 using search::tensor::HnswIndex;
+using search::tensor::HnswIndexType;
 using search::tensor::HnswTestNode;
 using search::tensor::NearestNeighborIndex;
 using search::tensor::NearestNeighborIndexFactory;
@@ -411,8 +412,8 @@ struct Fixture {
         return *const_cast<IndexType*>(index);
     }
 
-    HnswIndex& hnsw_index() {
-        return get_nearest_neighbor_index<HnswIndex>();
+    HnswIndex<HnswIndexType::SINGLE>& hnsw_index() {
+        return get_nearest_neighbor_index<HnswIndex<HnswIndexType::SINGLE>>();
     }
 
     MockNearestNeighborIndex& mock_index() {

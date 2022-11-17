@@ -9,20 +9,20 @@
 
 namespace search::tensor {
 
-template <typename ReaderType>
+template <typename ReaderType, HnswIndexType type>
 void
-HnswIndexLoader<ReaderType>::init()
+HnswIndexLoader<ReaderType, type>::init()
 {
     _entry_nodeid = next_int();
     _entry_level = next_int();
     _num_nodes = next_int();
 }
 
-template <typename ReaderType>
-HnswIndexLoader<ReaderType>::~HnswIndexLoader() = default;
+template <typename ReaderType, HnswIndexType type>
+HnswIndexLoader<ReaderType, type>::~HnswIndexLoader() = default;
 
-template <typename ReaderType>
-HnswIndexLoader<ReaderType>::HnswIndexLoader(HnswGraph& graph, std::unique_ptr<ReaderType> reader)
+template <typename ReaderType, HnswIndexType type>
+HnswIndexLoader<ReaderType, type>::HnswIndexLoader(HnswGraph<type>& graph, std::unique_ptr<ReaderType> reader)
     : _graph(graph),
       _reader(std::move(reader)),
       _entry_nodeid(0),
@@ -35,9 +35,9 @@ HnswIndexLoader<ReaderType>::HnswIndexLoader(HnswGraph& graph, std::unique_ptr<R
     init();
 }
 
-template <typename ReaderType>
+template <typename ReaderType, HnswIndexType type>
 bool
-HnswIndexLoader<ReaderType>::load_next()
+HnswIndexLoader<ReaderType, type>::load_next()
 {
     assert(!_complete);
     if (_nodeid < _num_nodes) {

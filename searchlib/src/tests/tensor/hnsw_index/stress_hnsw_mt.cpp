@@ -135,7 +135,7 @@ public:
 };
 
 using FloatSqEuclideanDistance = SquaredEuclideanDistanceHW<float>;
-using HnswIndexUP = std::unique_ptr<HnswIndex>;
+using HnswIndexUP = std::unique_ptr<HnswIndex<HnswIndexType::SINGLE>>;
 
 class Stressor : public ::testing::Test {
 private:
@@ -250,7 +250,7 @@ public:
 
     void init() {
         uint32_t m = 16;
-        index = std::make_unique<HnswIndex>(vectors, std::make_unique<FloatSqEuclideanDistance>(),
+        index = std::make_unique<HnswIndex<HnswIndexType::SINGLE>>(vectors, std::make_unique<FloatSqEuclideanDistance>(),
                                             std::make_unique<InvLogLevelGenerator>(m),
                                             HnswIndexConfig(2*m, m, 200, 10, true));
     }

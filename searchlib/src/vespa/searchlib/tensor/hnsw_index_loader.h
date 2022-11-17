@@ -12,15 +12,16 @@ class FastOS_FileInterface;
 
 namespace search::tensor {
 
+template <HnswIndexType type>
 struct HnswGraph;
 
 /**
  * Implements loading of HNSW graph structure from binary format.
  **/
-template <typename ReaderType>
+template <typename ReaderType, HnswIndexType type>
 class HnswIndexLoader : public NearestNeighborIndexLoader {
 private:
-    HnswGraph& _graph;
+    HnswGraph<type>& _graph;
     std::unique_ptr<ReaderType> _reader;
     uint32_t _entry_nodeid;
     int32_t _entry_level;
@@ -35,7 +36,7 @@ private:
     }
 
 public:
-    HnswIndexLoader(HnswGraph& graph, std::unique_ptr<ReaderType> reader);
+    HnswIndexLoader(HnswGraph<type>& graph, std::unique_ptr<ReaderType> reader);
     virtual ~HnswIndexLoader();
     bool load_next() override;
 };

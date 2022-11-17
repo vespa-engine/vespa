@@ -16,9 +16,10 @@ namespace search::tensor {
  * the links will be fetched from the graph in the save()
  * method.
  **/
+template <HnswIndexType type>
 class HnswIndexSaver : public NearestNeighborIndexSaver {
 public:
-    HnswIndexSaver(const HnswGraph &graph);
+    HnswIndexSaver(const HnswGraph<type> &graph);
     ~HnswIndexSaver() override;
     void save(BufferWriter& writer) const override;
 
@@ -32,7 +33,7 @@ private:
         MetaData();
         ~MetaData();
     };
-    const HnswGraph::LinkStore &_graph_links;
+    const HnswGraph<type>::LinkStore &_graph_links;
     MetaData _meta_data;
 };
 
