@@ -2,7 +2,6 @@
 package com.yahoo.vespa.hosted.provision.os;
 
 import com.yahoo.component.Version;
-import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.vespa.flags.IntFlag;
 import com.yahoo.vespa.flags.PermanentFlags;
@@ -68,10 +67,8 @@ public class RebuildingOsUpgrader implements OsUpgrader {
     private List<Node> rebuildableHosts(OsVersionTarget target, NodeList allNodes, Instant now) {
         NodeList hostsOfTargetType = allNodes.nodeType(target.nodeType());
         if (softRebuild) {
-            // Soft rebuild is enabled so this should only act on hosts with remote storage and on x86-64
-            // TODO(mpolden): Rebuild arm64 hosts as well if image permissions can be fixed
-            hostsOfTargetType = hostsOfTargetType.matching(node -> node.resources().storageType() == NodeResources.StorageType.remote &&
-                                                                   node.resources().architecture() == NodeResources.Architecture.x86_64);
+            // Soft rebuild is enabled so this should act on hosts having replacable root disk
+            hostsOfTargetType = hostsOfTargetType.replaceableRootDisk();
         }
         int rebuildLimit = rebuildLimit(target.nodeType(), hostsOfTargetType);
 
