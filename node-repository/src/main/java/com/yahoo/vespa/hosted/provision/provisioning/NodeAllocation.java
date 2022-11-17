@@ -121,7 +121,6 @@ class NodeAllocation {
                 if ( candidate.state() == Node.State.active && allocation.removable()) continue; // don't accept; causes removal
                 if ( candidate.state() == Node.State.active && candidate.wantToFail()) continue; // don't accept; causes failing
                 if ( indexes.contains(membership.index())) continue; // duplicate index (just to be sure)
-                if ( requiredHostFlavor.isPresent() && ! candidate.parent.map(node -> node.flavor().name()).equals(requiredHostFlavor)) continue;
                 if ( candidate.parent.isPresent() && ! candidate.parent.get().cloudAccount().equals(requestedNodes.cloudAccount())) continue; // wrong account
 
                 boolean resizeable = requestedNodes.considerRetiring() && candidate.isResizable;
@@ -173,6 +172,7 @@ class NodeAllocation {
         if (candidate.wantToRetire()) return Retirement.hardRequest;
         if (candidate.preferToRetire() && candidate.replaceableBy(candidates)) return Retirement.softRequest;
         if (violatesExclusivity(candidate)) return Retirement.violatesExclusivity;
+        if (requiredHostFlavor.isPresent() && ! candidate.parent.map(node -> node.flavor().name()).equals(requiredHostFlavor)) return Retirement.violatesHostFlavor;
         return Retirement.none;
     }
 
@@ -486,6 +486,7 @@ class NodeAllocation {
         hardRequest("node is requested to retire"),
         softRequest("node is requested to retire (soft)"),
         violatesExclusivity("node violates host exclusivity"),
+        violatesHostFlavor("node violates host flavor"),
         none("");
 
         private final String description;
