@@ -7,7 +7,9 @@
 namespace search::tensor {
 
 class HnswSimpleNode;
+class HnswNode;
 class HnswIdentityMapping;
+class HnswNodeidMapping;
 
 /*
  * Class that selects what node type and id mapping to use based on
@@ -28,6 +30,20 @@ class HnswIndexTraits<HnswIndexType::SINGLE>
 public:
     using NodeType = HnswSimpleNode;
     using IdMapping = HnswIdentityMapping;
+};
+
+/*
+ * Node type and id mapping for hnsw index type MULTI.
+ *
+ * Multiple nodes per document.
+ * Managed mapping between nodeid and docid.
+ */
+template <>
+class HnswIndexTraits<HnswIndexType::MULTI>
+{
+public:
+    using NodeType = HnswNode;
+    using IdMapping = HnswNodeidMapping;
 };
 
 }

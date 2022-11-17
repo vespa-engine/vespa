@@ -8,10 +8,13 @@ namespace search::tensor {
  * Enum class that selects what type of hnsw index to use.
  *
  * SINGLE: One node per document. Identity mapping between nodeid and docid.
+ *
+ * MULTI: Multiple nodes per document. Managed mapping between nodeid and docid.
  */
 enum class HnswIndexType
 {
-    SINGLE
+    SINGLE,
+    MULTI
 };
 
 }

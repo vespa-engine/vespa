@@ -7,6 +7,7 @@
 #include "doc_vector_access.h"
 #include "hnsw_identity_mapping.h"
 #include "hnsw_index_utils.h"
+#include "hnsw_nodeid_mapping.h"
 #include "hnsw_test_node.h"
 #include "nearest_neighbor_index.h"
 #include "random_level_generator.h"
@@ -66,7 +67,7 @@ public:
         }
     }
 
-    using IdMapping = HnswIdentityMapping;
+    using IdMapping = HnswIndexTraits<type>::IdMapping;
 protected:
     using GraphType = HnswGraph<type>;
     using NodeType = GraphType::NodeType;
@@ -236,10 +237,10 @@ public:
     bool check_link_symmetry() const;
     std::pair<uint32_t, bool> count_reachable_nodes() const;
     GraphType& get_graph() { return _graph; }
+    IdMapping& get_id_mapping() { return _id_mapping; }
 
     static vespalib::datastore::ArrayStoreConfig make_default_node_store_config();
     static vespalib::datastore::ArrayStoreConfig make_default_link_store_config();
 };
 
 }
-

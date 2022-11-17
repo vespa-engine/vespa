@@ -591,6 +591,7 @@ HnswIndex<type>::assign_generation(generation_t current_gen)
     _graph.node_refs.setGeneration(current_gen + 1);
     _graph.nodes.assign_generation(current_gen);
     _graph.links.assign_generation(current_gen);
+    _id_mapping.assign_generation(current_gen);
 }
 
 template <HnswIndexType type>
@@ -600,6 +601,7 @@ HnswIndex<type>::reclaim_memory(generation_t oldest_used_gen)
     _graph.node_refs.reclaim_memory(oldest_used_gen);
     _graph.nodes.reclaim_memory(oldest_used_gen);
     _graph.links.reclaim_memory(oldest_used_gen);
+    _id_mapping.reclaim_memory(oldest_used_gen);
 }
 
 template <HnswIndexType type>
@@ -696,6 +698,7 @@ HnswIndex<type>::memory_usage() const
     result.merge(_graph.node_refs.getMemoryUsage());
     result.merge(_graph.nodes.getMemoryUsage());
     result.merge(_graph.links.getMemoryUsage());
+    result.merge(_id_mapping.memory_usage());
     return result;
 }
 
@@ -947,5 +950,6 @@ HnswIndex<type>::count_reachable_nodes() const
 }
 
 template class HnswIndex<HnswIndexType::SINGLE>;
+template class HnswIndex<HnswIndexType::MULTI>;
 
 } // namespace

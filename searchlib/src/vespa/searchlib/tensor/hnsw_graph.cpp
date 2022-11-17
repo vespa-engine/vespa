@@ -136,6 +136,7 @@ HnswGraph<type>::set_entry_node(EntryNode node) {
 }
 
 template class HnswGraph<HnswIndexType::SINGLE>;
+template class HnswGraph<HnswIndexType::MULTI>;
 
 } // namespace
 
@@ -143,5 +144,7 @@ namespace vespalib {
 
 template class RcuVectorBase<search::tensor::HnswSimpleNode>;
 template class RcuVector<search::tensor::HnswSimpleNode>;
+template class RcuVectorBase<search::tensor::HnswNode>;
+template class RcuVector<search::tensor::HnswNode>;
 
 }

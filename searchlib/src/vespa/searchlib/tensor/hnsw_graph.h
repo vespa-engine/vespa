@@ -4,6 +4,7 @@
 
 #include "hnsw_index_traits.h"
 #include "hnsw_simple_node.h"
+#include "hnsw_node.h"
 #include <vespa/vespalib/datastore/array_store.h>
 #include <vespa/vespalib/datastore/atomic_entry_ref.h>
 #include <vespa/vespalib/datastore/entryref.h>

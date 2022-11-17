@@ -15,6 +15,7 @@
 #include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/util/generationhandler.h>
 #include <vespa/vespalib/data/slime/slime.h>
+#include <type_traits>
 #include <vector>
 
 #include <vespa/log/log.h>
@@ -193,9 +194,11 @@ public:
     }
 
     FloatVectors& get_vectors() { return vectors; }
+
+    static constexpr bool is_single = std::is_same_v<IndexType, HnswIndex<HnswIndexType::SINGLE>>;
 };
 
-using HnswIndexTestTypes = ::testing::Types<HnswIndex<HnswIndexType::SINGLE>>;
+using HnswIndexTestTypes = ::testing::Types<HnswIndex<HnswIndexType::SINGLE>, HnswIndex<HnswIndexType::MULTI>>;
 
 VESPA_GTEST_TYPED_TEST_SUITE(HnswIndexTest, HnswIndexTestTypes);
 
@@ -462,12 +465,21 @@ TYPED_TEST(HnswIndexTest, memory_is_reclaimed_when_doing_changes_to_graph)
     EXPECT_EQ(0, mem_2.allocatedBytesOnHold());
 
     this->remove_document(2);
-    this->expect_level_0(1, {3});
-    this->expect_empty_level_0(2);
-    this->expect_level_0(3, {1});
+    size_t node_ref_growth = 0;
+    if constexpr (this->is_single) {
+        this->expect_level_0(1, {3});
+        this->expect_empty_level_0(2);
+        this->expect_level_0(3, {1});
+    } else {
+        // managed nodeid mapping, docid 1 => 1, docid 3 => 2
+        this->expect_level_0(1, {2});
+        this->expect_empty_level_0(3);
+        this->expect_level_0(2, {1});
+        node_ref_growth = sizeof(HnswNode); // Entry for nodeid 3 added when adding doc 2
+    }
     auto mem_3 = this->memory_usage();
     // We end up in the same state as before document 2 was added and effectively use the same amount of memory.
-    EXPECT_EQ((mem_1.usedBytes() - mem_1.deadBytes()), (mem_3.usedBytes() - mem_3.deadBytes()));
+    EXPECT_EQ((mem_1.usedBytes() - mem_1.deadBytes() + node_ref_growth), (mem_3.usedBytes() - mem_3.deadBytes()));
     EXPECT_EQ(0, mem_3.allocatedBytesOnHold());
 }
 
@@ -778,9 +790,12 @@ TYPED_TEST(TwoPhaseTest, two_phase_add)
     this->add_document(9, 1); // added
     this->complete_add(7, std::move(up));
 
+    auto& id_mapping = this->index->get_id_mapping();
+    auto nodeids = id_mapping.get_ids(7);
+    EXPECT_EQ(1, nodeids.size());
     // 1 filtered out because it was removed
     // 5 filtered out because it was updated
-    this->expect_levels(7, {{2}, {4}});
+    this->expect_levels(nodeids[0], {{2}, {4}});
 }
 
 
