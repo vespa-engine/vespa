@@ -41,7 +41,7 @@ public class NodesV2ApiTest {
 
     @Before
     public void createTester() {
-        tester = new RestApiTester(CloudAccount.empty);
+        tester = new RestApiTester(CloudAccount.from("111222333444"));
     }
 
     @After
