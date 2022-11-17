@@ -60,5 +60,6 @@
     "127.0.5.1",
     "::5:1"
   ],
-  "additionalIpAddresses": []
+  "additionalIpAddresses": [],
+  "cloudAccount": "111222333444"
 }

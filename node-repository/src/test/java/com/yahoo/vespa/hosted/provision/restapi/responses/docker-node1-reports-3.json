@@ -120,5 +120,6 @@
     "actualCpuCores": {
       "createdMillis": 3
     }
-  }
+  },
+  "cloudAccount": "111222333444"
 }
