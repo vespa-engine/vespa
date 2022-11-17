@@ -57,6 +57,7 @@ import com.yahoo.vespa.config.server.configchange.RestartActions;
 import com.yahoo.vespa.config.server.deploy.DeployHandlerLogger;
 import com.yahoo.vespa.config.server.deploy.Deployment;
 import com.yahoo.vespa.config.server.deploy.InfraDeployerProvider;
+import com.yahoo.vespa.config.server.filedistribution.FileDirectory;
 import com.yahoo.vespa.config.server.http.InternalServerException;
 import com.yahoo.vespa.config.server.http.LogRetriever;
 import com.yahoo.vespa.config.server.http.SecretStoreValidator;
@@ -594,24 +595,22 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
         return fileDistributionStatus.status(getApplication(applicationId), timeout);
     }
 
-    public List<String> deleteUnusedFileDistributionReferences(File fileReferencesPath, Duration keepFileReferencesDuration) {
-        if (!fileReferencesPath.isDirectory()) throw new RuntimeException(fileReferencesPath + " is not a directory");
-
+    public List<String> deleteUnusedFileDistributionReferences(FileDirectory fileDirectory, Duration keepFileReferencesDuration) {
         Set<String> fileReferencesInUse = getFileReferencesInUse();
         log.log(Level.FINE, () -> "File references in use : " + fileReferencesInUse);
         Instant instant = clock.instant().minus(keepFileReferencesDuration);
         log.log(Level.FINE, () -> "Remove unused file references last modified before " + instant);
 
-        List<String> fileReferencesToDelete = sortedUnusedFileReferences(fileReferencesPath, fileReferencesInUse, instant);
+        List<String> fileReferencesToDelete = sortedUnusedFileReferences(fileDirectory.getRoot(), fileReferencesInUse, instant);
         if (fileReferencesToDelete.size() > 0) {
             log.log(Level.FINE, () -> "Will delete file references not in use: " + fileReferencesToDelete);
-            fileReferencesToDelete.forEach(fileReference -> {
-                File file = new File(fileReferencesPath, fileReference);
-                if ( ! IOUtils.recursiveDeleteDir(file))
-                    log.log(Level.WARNING, "Could not delete " + file.getAbsolutePath());
-            });
+            fileReferencesToDelete.forEach(fileReference -> fileDirectory.delete(new FileReference(fileReference), this::isFileReferenceInUse));
         }
         return fileReferencesToDelete;
+    }
+
+    private boolean isFileReferenceInUse(FileReference fileReference) {
+        return getFileReferencesInUse().contains(fileReference.value());
     }
 
     private Set<String> getFileReferencesInUse() {

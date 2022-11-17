@@ -36,6 +36,7 @@ import com.yahoo.vespa.config.protocol.VespaVersion;
 import com.yahoo.vespa.config.server.application.OrchestratorMock;
 import com.yahoo.vespa.config.server.deploy.DeployTester;
 import com.yahoo.vespa.config.server.deploy.TenantFileSystemDirs;
+import com.yahoo.vespa.config.server.filedistribution.FileDirectory;
 import com.yahoo.vespa.config.server.filedistribution.MockFileDistributionFactory;
 import com.yahoo.vespa.config.server.http.v2.PrepareResult;
 import com.yahoo.vespa.config.server.session.LocalSession;
@@ -104,6 +105,7 @@ public class ApplicationRepositoryTest {
     private TimeoutBudget timeoutBudget;
     private Curator curator;
     private ConfigserverConfig configserverConfig;
+    private FileDirectory fileDirectory;
 
     @Rule
     public TemporaryFolder temporaryFolder = new TemporaryFolder();
@@ -121,12 +123,15 @@ public class ApplicationRepositoryTest {
                 .configDefinitionsDir(temporaryFolder.newFolder().getAbsolutePath())
                 .fileReferencesDir(temporaryFolder.newFolder().getAbsolutePath())
                 .build();
+        InMemoryFlagSource flagSource = new InMemoryFlagSource();
+        fileDirectory = new FileDirectory(configserverConfig, flagSource);
         tenantRepository = new TestTenantRepository.Builder()
                 .withClock(clock)
                 .withConfigserverConfig(configserverConfig)
                 .withCurator(curator)
-                .withFileDistributionFactory(new MockFileDistributionFactory(configserverConfig))
-                .withFlagSource(new InMemoryFlagSource())
+                .withFileDistributionFactory(
+                        new MockFileDistributionFactory(configserverConfig, fileDirectory))
+                .withFlagSource(flagSource)
                 .build();
         tenantRepository.addTenant(TenantRepository.HOSTED_VESPA_TENANT);
         tenantRepository.addTenant(tenant1);
@@ -260,8 +265,8 @@ public class ApplicationRepositoryTest {
     }
 
     @Test
-    public void deleteUnusedFileReferences() throws IOException {
-        File fileReferencesDir = temporaryFolder.newFolder();
+    public void deleteUnusedFileReferences() {
+        File fileReferencesDir = new File(configserverConfig.fileReferencesDir());
         Duration keepFileReferencesDuration = Duration.ofSeconds(4);
 
         // Add file reference that is not in use and should be deleted (older than 'keepFileReferencesDuration')
@@ -286,10 +291,10 @@ public class ApplicationRepositoryTest {
                 .build();
 
         // TODO: Deploy an app with a bundle or file that will be a file reference, too much missing in test setup to get this working now
-        PrepareParams prepareParams = new PrepareParams.Builder().applicationId(applicationId()).ignoreValidationErrors(true).build();
-        deployApp(new File("src/test/apps/app"), prepareParams);
+        // PrepareParams prepareParams = new PrepareParams.Builder().applicationId(applicationId()).ignoreValidationErrors(true).build();
+        // deployApp(new File("src/test/apps/app"), prepareParams);
 
-        List<String> deleted = applicationRepository.deleteUnusedFileDistributionReferences(fileReferencesDir, keepFileReferencesDuration);
+        List<String> deleted = applicationRepository.deleteUnusedFileDistributionReferences(fileDirectory, keepFileReferencesDuration);
         Collections.sort(deleted);
         List<String> expected = new ArrayList<>(List.of("bar", "baz0", "baz1"));
         Collections.sort(expected);

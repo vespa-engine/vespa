@@ -3,11 +3,9 @@ package com.yahoo.vespa.config.server.maintenance;
 
 import com.yahoo.cloud.config.ConfigserverConfig;
 import com.yahoo.vespa.config.server.ApplicationRepository;
+import com.yahoo.vespa.config.server.filedistribution.FileDirectory;
 import com.yahoo.vespa.curator.Curator;
-import com.yahoo.vespa.defaults.Defaults;
 import com.yahoo.vespa.flags.FlagSource;
-
-import java.io.File;
 import java.time.Duration;
 
 /**
@@ -21,23 +19,24 @@ import java.time.Duration;
 public class FileDistributionMaintainer extends ConfigServerMaintainer {
 
     private final ApplicationRepository applicationRepository;
-    private final File fileReferencesDir;
+    private final FileDirectory fileDirectory;
     private final Duration maxUnusedFileReferenceAge;
 
     FileDistributionMaintainer(ApplicationRepository applicationRepository,
                                Curator curator,
                                Duration interval,
-                               FlagSource flagSource) {
+                               FlagSource flagSource,
+                               FileDirectory fileDirectory) {
         super(applicationRepository, curator, flagSource, applicationRepository.clock().instant(), interval, false);
         this.applicationRepository = applicationRepository;
         ConfigserverConfig configserverConfig = applicationRepository.configserverConfig();
         this.maxUnusedFileReferenceAge = Duration.ofMinutes(configserverConfig.keepUnusedFileReferencesMinutes());
-        this.fileReferencesDir = new File(Defaults.getDefaults().underVespaHome(configserverConfig.fileReferencesDir()));
+        this.fileDirectory = fileDirectory;
     }
 
     @Override
     protected double maintain() {
-        applicationRepository.deleteUnusedFileDistributionReferences(fileReferencesDir, maxUnusedFileReferenceAge);
+        applicationRepository.deleteUnusedFileDistributionReferences(fileDirectory, maxUnusedFileReferenceAge);
         return 1.0;
     }
 

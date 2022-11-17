@@ -4,6 +4,7 @@ package com.yahoo.vespa.config.server.filedistribution;
 
 import com.yahoo.config.FileReference;
 import com.yahoo.io.IOUtils;
+import com.yahoo.vespa.flags.InMemoryFlagSource;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -30,7 +31,7 @@ public class FileDirectoryTest {
 
     @Before
     public void setup() {
-        fileDirectory = new FileDirectory(temporaryFolder.getRoot());
+        fileDirectory = new FileDirectory(temporaryFolder.getRoot(), new InMemoryFlagSource());
     }
 
     @Test
@@ -46,8 +47,6 @@ public class FileDirectoryTest {
 
     @Test
     public void requireThatFileReferenceWithSubDirectoriesWorks() throws IOException {
-        FileDirectory fileDirectory = new FileDirectory(temporaryFolder.getRoot());
-
         String subdirName = "subdir";
         File subDirectory = new File(temporaryFolder.getRoot(), subdirName);
         createFileInSubDir(subDirectory, "foo", "some content");
@@ -77,8 +76,6 @@ public class FileDirectoryTest {
 
     @Test
     public void requireThatExistingDirWithInvalidContentIsDeleted() throws IOException {
-        FileDirectory fileDirectory = new FileDirectory(temporaryFolder.getRoot());
-
         String subdirName = "subdir";
         File subDirectory = new File(temporaryFolder.getRoot(), subdirName);
         createFileInSubDir(subDirectory, "foo", "some content");
@@ -108,8 +105,6 @@ public class FileDirectoryTest {
 
     @Test
     public void requireThatNothingIsDoneIfFileReferenceExists() throws IOException {
-        FileDirectory fileDirectory = new FileDirectory(temporaryFolder.getRoot());
-
         String subdirName = "subdir";
         File subDirectory = new File(temporaryFolder.getRoot(), subdirName);
         createFileInSubDir(subDirectory, "foo", "some content");

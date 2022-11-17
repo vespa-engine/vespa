@@ -1,9 +1,18 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.config.server.filedistribution;
 
+import com.yahoo.cloud.config.ConfigserverConfig;
+import com.yahoo.component.AbstractComponent;
+import com.yahoo.component.annotation.Inject;
+import com.yahoo.concurrent.Lock;
+import com.yahoo.concurrent.Locks;
 import com.yahoo.config.FileReference;
 import com.yahoo.io.IOUtils;
 import com.yahoo.text.Utf8;
+import com.yahoo.vespa.defaults.Defaults;
+import com.yahoo.vespa.flags.BooleanFlag;
+import com.yahoo.vespa.flags.FlagSource;
+import com.yahoo.vespa.flags.Flags;
 import net.jpountz.xxhash.XXHash64;
 import net.jpountz.xxhash.XXHashFactory;
 import java.io.File;
@@ -17,18 +26,30 @@ import java.nio.channels.FileChannel;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.attribute.BasicFileAttributes;
+import java.util.concurrent.TimeUnit;
+import java.util.function.Function;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import static com.yahoo.yolean.Exceptions.uncheck;
 
-public class FileDirectory  {
+public class FileDirectory extends AbstractComponent {
 
     private static final Logger log = Logger.getLogger(FileDirectory.class.getName());
-    private final File root;
 
-    public FileDirectory(File rootDir) {
-        root = rootDir;
+    private final Locks<FileReference> locks = new Locks<>(1, TimeUnit.MINUTES);
+
+    private final File root;
+    private final BooleanFlag useLock;
+
+    @Inject
+    public FileDirectory(ConfigserverConfig configserverConfig, FlagSource flagSource) {
+        this(new File(Defaults.getDefaults().underVespaHome(configserverConfig.fileReferencesDir())), flagSource);
+    }
+
+    public FileDirectory(File rootDir, FlagSource flagSource) {
+        this.root = rootDir;
+        this.useLock = Flags.USE_LOCKS_IN_FILEDISTRIBUTION.bindTo(flagSource);
         try {
             ensureRootExist();
         } catch (IllegalArgumentException e) {
@@ -70,9 +91,7 @@ public class FileDirectory  {
         return files[0];
     }
 
-    File getRoot() {
-        return root;
-    }
+    public File getRoot() { return root; }
 
     private Long computeHash(File file) throws IOException {
         XXHash64 hasher = XXHashFactory.fastestInstance().hash64();
@@ -100,10 +119,24 @@ public class FileDirectory  {
         Long hash = computeHash(source);
         FileReference fileReference = fileReferenceFromHash(hash);
 
-        if (shouldAddFile(source, hash))
-            return addFile(source, fileReference);
+        if (useLock.value())
+            try (Lock lock = locks.lock(fileReference)) {
+                return addFile(source, fileReference, hash);
+            }
+        else
+            return addFile(source, fileReference, hash);
+    }
 
-        return fileReference;
+    public void delete(FileReference fileReference, Function<FileReference, Boolean> canBeDeleted) {
+        if (useLock.value())
+            try (Lock lock = locks.lock(fileReference)) {
+                if (canBeDeleted.apply(fileReference))
+                    IOUtils.recursiveDeleteDir(destinationDir(fileReference));
+                else
+                    log.log(Level.FINE, "Unable to delete file reference '" + fileReference.value() + "' since it is still in use");
+            }
+        else
+            IOUtils.recursiveDeleteDir(destinationDir(fileReference));
     }
 
     // Check if we should add file, it might already exist
@@ -134,7 +167,9 @@ public class FileDirectory  {
     }
 
     // Pre-condition: Destination dir does not exist
-    private FileReference addFile(File source, FileReference reference) {
+    private FileReference addFile(File source, FileReference reference, Long hash) throws IOException {
+        if ( ! shouldAddFile(source, hash)) return reference;
+
         ensureRootExist();
         Path tempDestinationDir = uncheck(() -> Files.createTempDirectory(root.toPath(), "writing"));
         try {

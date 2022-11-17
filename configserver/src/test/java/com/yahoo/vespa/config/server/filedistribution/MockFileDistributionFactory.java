@@ -11,13 +11,13 @@ import java.io.File;
 */
 public class MockFileDistributionFactory extends FileDistributionFactory {
 
-    public MockFileDistributionFactory(ConfigserverConfig configserverConfig) {
-        super(configserverConfig);
+    public MockFileDistributionFactory(ConfigserverConfig configserverConfig, FileDirectory fileDirectory) {
+        super(configserverConfig, fileDirectory);
     }
 
     @Override
     public FileRegistry createFileRegistry(File applicationPackage) {
-        return new MockFileRegistry(applicationPackage, getFileReferencesDir());
+        return new MockFileRegistry(applicationPackage, fileDirectory);
     }
 
     @Override

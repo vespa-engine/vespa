@@ -3,9 +3,9 @@ package com.yahoo.vespa.config.server.filedistribution;
 
 import com.yahoo.config.FileReference;
 import com.yahoo.config.application.api.FileRegistry;
+import com.yahoo.vespa.flags.InMemoryFlagSource;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
-
 import java.io.File;
 import java.io.IOException;
 import java.io.StringReader;
@@ -44,7 +44,8 @@ public class FileDBRegistryTestCase {
     public void importAndExport() throws IOException {
         TemporaryFolder tmpDir = new TemporaryFolder();
         tmpDir.create();
-        AddFileInterface fileManager = new ApplicationFileManager(new File(APP), new FileDirectory(tmpDir.newFolder()), false);
+        AddFileInterface fileManager =
+                new ApplicationFileManager(new File(APP), new FileDirectory(tmpDir.newFolder(), new InMemoryFlagSource()), false);
         FileRegistry fileRegistry = new FileDBRegistry(fileManager);
         assertEquals(FOO_REF, fileRegistry.addFile(FOO_FILE));
         try {
@@ -79,7 +80,7 @@ public class FileDBRegistryTestCase {
         checkConsistentEntry(fileRegistry.export().get(0), importedRegistry);
         checkConsistentEntry(fileRegistry.export().get(1), importedRegistry);
 
-        assertEquals(new FileReference("non-existing-file"), importedRegistry.addFile(NO_FOO_FILE));
+        importedRegistry.addFile(NO_FOO_FILE);
         assertEquals(2, importedRegistry.export().size());
         tmpDir.delete();
     }

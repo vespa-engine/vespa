@@ -33,8 +33,13 @@ public class FileDBRegistry implements FileRegistry {
     private static final Pattern entryDelimiterPattern = Pattern.compile(entryDelimiter, Pattern.LITERAL);
 
     public FileDBRegistry(AddFileInterface manager) {
-        silenceNonExistingFiles = false;
+        this(manager, Map.of(), false);
+    }
+
+    private FileDBRegistry(AddFileInterface manager, Map<String, FileReference> knownReferences, boolean silenceNonExistingFiles) {
+        this.silenceNonExistingFiles = silenceNonExistingFiles;
         this.manager = manager;
+        fileReferenceCache.putAll(knownReferences);
     }
 
     public static FileDBRegistry create(AddFileInterface manager, Reader persistedState) {
@@ -42,7 +47,7 @@ public class FileDBRegistry implements FileRegistry {
             String ignoredFileSourceHost = reader.readLine();
             if (ignoredFileSourceHost == null)
                 throw new RuntimeException("No file source host");
-            return new FileDBRegistry(manager, decode(reader));
+            return new FileDBRegistry(manager, decode(reader), true);
         } catch (IOException e) {
             throw new RuntimeException("Error while reading pre-generated file registry", e);
         }
@@ -62,11 +67,6 @@ public class FileDBRegistry implements FileRegistry {
             throw new RuntimeException("Error while reading pre-generated file registry", e);
         }
         return refs;
-    }
-    private FileDBRegistry(AddFileInterface manager, Map<String, FileReference> knownReferences) {
-        silenceNonExistingFiles = true;
-        this.manager = manager;
-        fileReferenceCache.putAll(knownReferences);
     }
 
     @Override

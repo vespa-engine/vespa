@@ -6,7 +6,6 @@ import com.yahoo.component.Version;
 import com.yahoo.concurrent.InThreadExecutorService;
 import com.yahoo.config.application.api.ApplicationFile;
 import com.yahoo.config.application.api.ApplicationPackage;
-import com.yahoo.config.model.NullConfigModelRegistry;
 import com.yahoo.config.model.api.Model;
 import com.yahoo.config.model.api.ModelContext;
 import com.yahoo.config.model.api.ModelCreateResult;
@@ -23,6 +22,7 @@ import com.yahoo.vespa.config.server.ApplicationRepository;
 import com.yahoo.vespa.config.server.MockProvisioner;
 import com.yahoo.vespa.config.server.application.ApplicationSet;
 import com.yahoo.vespa.config.server.application.OrchestratorMock;
+import com.yahoo.vespa.config.server.filedistribution.FileDirectory;
 import com.yahoo.vespa.config.server.filedistribution.MockFileDistributionFactory;
 import com.yahoo.vespa.config.server.http.InvalidApplicationException;
 import com.yahoo.vespa.config.server.modelfactory.ModelFactoryRegistry;
@@ -38,7 +38,6 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
 import org.junit.rules.TemporaryFolder;
-
 import java.io.File;
 import java.time.Clock;
 import java.time.Duration;
@@ -99,7 +98,8 @@ public class SessionRepositoryTest {
                 .withConfigserverConfig(configserverConfig)
                 .withCurator(curator)
                 .withFlagSource(flagSource)
-                .withFileDistributionFactory(new MockFileDistributionFactory(configserverConfig))
+                .withFileDistributionFactory(
+                        new MockFileDistributionFactory(configserverConfig, new FileDirectory(configserverConfig, flagSource)))
                 .withModelFactoryRegistry(modelFactoryRegistry)
                 .build();
         tenantRepository.addTenant(SessionRepositoryTest.tenantName);
