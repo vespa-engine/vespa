@@ -144,8 +144,9 @@ public class AllocatableClusterResources {
 
     private static NodeResources averageRealResourcesOf(List<Node> nodes, NodeRepository nodeRepository) {
         NodeResources sum = new NodeResources(0, 0, 0, 0).justNumbers();
-        for (Node node : nodes)
+        for (Node node : nodes) {
             sum = sum.add(nodeRepository.resourcesCalculator().realResourcesOf(node, nodeRepository).justNumbers());
+        }
         return nodes.get(0).allocation().get().requestedResources().justNonNumbers()
                                        .withVcpu(sum.vcpu() / nodes.size())
                                        .withMemoryGb(sum.memoryGb() / nodes.size())
@@ -197,7 +198,6 @@ public class AllocatableClusterResources {
 
                 if ( ! between(applicationLimits.min().nodeResources(), applicationLimits.max().nodeResources(), advertisedResources)) continue;
                 if ( ! systemLimits.isWithinRealLimits(realResources, clusterSpec.type())) continue;
-
                 var candidate = new AllocatableClusterResources(wantedResources.with(realResources),
                                                                 advertisedResources,
                                                                 wantedResources,

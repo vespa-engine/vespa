@@ -259,8 +259,7 @@ public class NodeResources {
     @Override
     public boolean equals(Object o) {
         if (o == this) return true;
-        if ( ! (o instanceof NodeResources)) return false;
-        NodeResources other = (NodeResources)o;
+        if ( ! (o instanceof NodeResources other)) return false;
         if ( ! equal(this.vcpu, other.vcpu)) return false;
         if ( ! equal(this.memoryGb, other.memoryGb)) return false;
         if ( ! equal(this.diskGb, other.diskGb)) return false;
@@ -333,8 +332,34 @@ public class NodeResources {
         return true;
     }
 
-    /** Returns true if all the resources of this are the same as or compatible with the given resources */
-    public boolean compatibleWith(NodeResources other) {
+    /**
+     * Returns true if all the resources of this are the same as or compatible with the requested resources:
+     * - Equal numbers only where request implies it (i.e not for disk if storage is any/remote, and not for bandwith
+     *   where we don't enforce constraints),
+     * - Compatible non-numbers.
+     */
+    public boolean compatibleWith(NodeResources requested) {
+        if ( ! equal(this.vcpu, requested.vcpu)) return false;
+        if ( ! equal(this.memoryGb, requested.memoryGb)) return false;
+        if (requested.storageType == StorageType.local) {
+            if ( ! equal(this.diskGb, requested.diskGb)) return false;
+        }
+        else {
+            if (this.diskGb < requested.diskGb) return false;
+        }
+        if ( ! this.diskSpeed.compatibleWith(requested.diskSpeed)) return false;
+        if ( ! this.storageType.compatibleWith(requested.storageType)) return false;
+        if ( ! this.architecture.compatibleWith(requested.architecture)) return false;
+
+        return true;
+    }
+
+    /**
+     * Returns true if all the resources of this are the same as or compatible with the given resources:
+     * - Equal numbers.
+     * - Compatible non-numbers.
+     */
+    public boolean equalsWhereSpecified(NodeResources other) {
         if ( ! equal(this.vcpu, other.vcpu)) return false;
         if ( ! equal(this.memoryGb, other.memoryGb)) return false;
         if ( ! equal(this.diskGb, other.diskGb)) return false;
