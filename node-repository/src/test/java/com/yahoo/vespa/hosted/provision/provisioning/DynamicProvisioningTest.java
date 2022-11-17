@@ -284,7 +284,6 @@ public class DynamicProvisioningTest {
         hostProvisioner.overrideHostFlavor("x86");
         tester.activate(app, cluster, capacity);
         NodeList nodes = tester.nodeRepository().nodes().list();
-        nodes.forEach(n -> System.out.println(n.hostname() + " " + n.flavor().name()));
         assertEquals(4, nodes.owner(app).state(Node.State.active).size());
         assertEquals(Set.of("x86"), nodes.parentsOf(nodes.owner(app).state(Node.State.active)).stream().map(n -> n.flavor().name()).collect(Collectors.toSet()));
 
@@ -292,18 +291,18 @@ public class DynamicProvisioningTest {
         flagSource.withStringFlag(PermanentFlags.HOST_FLAVOR.id(), "arm");
         tester.activate(app, cluster, capacity);
         nodes = tester.nodeRepository().nodes().list();
-        assertEquals(4, nodes.owner(app).state(Node.State.inactive).size());
-        assertEquals(4, nodes.owner(app).state(Node.State.active).size());
-        assertEquals(Set.of("x86"), nodes.parentsOf(tester.getNodes(app, Node.State.inactive)).stream().map(n -> n.flavor().name()).collect(Collectors.toSet()));
-        assertEquals(Set.of("arm"), nodes.parentsOf(tester.getNodes(app, Node.State.active)).stream().map(n -> n.flavor().name()).collect(Collectors.toSet()));
+        assertEquals(4, nodes.owner(app).state(Node.State.active).retired().size());
+        assertEquals(4, nodes.owner(app).state(Node.State.active).not().retired().size());
+        assertEquals(Set.of("x86"), nodes.parentsOf(tester.getNodes(app, Node.State.active).retired()).stream().map(n -> n.flavor().name()).collect(Collectors.toSet()));
+        assertEquals(Set.of("arm"), nodes.parentsOf(tester.getNodes(app, Node.State.active).not().retired()).stream().map(n -> n.flavor().name()).collect(Collectors.toSet()));
 
         flagSource.removeFlag(PermanentFlags.HOST_FLAVOR.id()); // Resetting flag does not moves the nodes back
         tester.activate(app, cluster, capacity);
         nodes = tester.nodeRepository().nodes().list();
-        assertEquals(4, nodes.owner(app).state(Node.State.inactive).size());
-        assertEquals(4, nodes.owner(app).state(Node.State.active).size());
-        assertEquals(Set.of("x86"), nodes.parentsOf(tester.getNodes(app, Node.State.inactive)).stream().map(n -> n.flavor().name()).collect(Collectors.toSet()));
-        assertEquals(Set.of("arm"), nodes.parentsOf(tester.getNodes(app, Node.State.active)).stream().map(n -> n.flavor().name()).collect(Collectors.toSet()));
+        assertEquals(4, nodes.owner(app).state(Node.State.active).retired().size());
+        assertEquals(4, nodes.owner(app).state(Node.State.active).not().retired().size());
+        assertEquals(Set.of("x86"), nodes.parentsOf(tester.getNodes(app, Node.State.active).retired()).stream().map(n -> n.flavor().name()).collect(Collectors.toSet()));
+        assertEquals(Set.of("arm"), nodes.parentsOf(tester.getNodes(app, Node.State.active).not().retired()).stream().map(n -> n.flavor().name()).collect(Collectors.toSet()));
     }
 
     @Test
