@@ -29,6 +29,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.SortedSet;
+import java.util.TreeMap;
 import java.util.TreeSet;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -59,6 +60,7 @@ public class EnforceDependenciesAllProjects implements EnforcerRule {
             writeDependencySpec(specFile, deps);
             log.info("Updated spec file '%s'".formatted(specFile.toString()));
         } else {
+            warnOnDuplicateVersions(log, deps);
             validateDependencies(deps, specFile, aggregatorPomRoot(helper), projectName(helper));
         }
         log.info("The dependency enforcer completed successfully");
@@ -228,6 +230,21 @@ public class EnforceDependenciesAllProjects implements EnforcerRule {
                 addDependenciesRecursive(dep, nonTestDeps, testDeps, ignored, overrideToTest);
             }
         }
+    }
+
+    private static void warnOnDuplicateVersions(Log log, Dependencies deps) {
+        Map<String, Set<String>> versionsForDependency = new TreeMap<>();
+        Set<Dependency> allDeps = new TreeSet<>(deps.nonTest());
+        allDeps.addAll(deps.testOnly());
+        for (Dependency d : allDeps) {
+            String id = "%s:%s".formatted(d.groupId(), d.artifactId());
+            versionsForDependency.computeIfAbsent(id, __ -> new TreeSet<>()).add(d.version());
+        }
+        versionsForDependency.forEach((dependency, versions) -> {
+            if (versions.size() > 1) {
+                log.warn("'%s' has multiple versions %s".formatted(dependency, versions));
+            }
+        });
     }
 
     private static Path resolveSpecFile(EnforcerRuleHelper helper, String specFile) {

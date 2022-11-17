@@ -115,7 +115,7 @@ public class UnixUidGidAttributeProvider extends AttributeProvider {
                 file.setAttribute("posix", "group", new BasicGroupPrincipal(String.valueOf(value)));
                 return;
         }
-        throw unsettable(view, attribute);
+        throw unsettable(view, attribute, create);
     }
 
     @SuppressWarnings("OctalInteger")

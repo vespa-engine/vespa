@@ -40,7 +40,7 @@
             <extension>
                 <groupId>org.apache.maven.wagon</groupId>
                 <artifactId>wagon-ssh-external</artifactId>
-                <version>2.7</version>
+                <version>${maven-wagon.version}</version>
             </extension>
             <extension>
                 <groupId>org.apache.maven.archetype</groupId>
@@ -540,7 +540,7 @@
             <dependency>
                 <groupId>com.google.jimfs</groupId>
                 <artifactId>jimfs</artifactId>
-                <version>1.1</version>
+                <version>1.2</version>
                 <scope>test</scope> <!-- TODO: remove scope from parent pom -->
             </dependency>
             <dependency>
@@ -605,6 +605,11 @@
                 <groupId>commons-io</groupId>
                 <artifactId>commons-io</artifactId>
                 <version>${commons-io.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.commons</groupId>
+                <artifactId>commons-lang3</artifactId>
+                <version>3.11</version>
             </dependency>
             <dependency>
                 <groupId>io.jsonwebtoken</groupId>
@@ -804,6 +809,16 @@
             </dependency>
             <dependency>
                 <groupId>org.apache.maven</groupId>
+                <artifactId>maven-repository-metadata</artifactId>
+                <version>${maven-core.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.maven</groupId>
+                <artifactId>maven-settings</artifactId>
+                <version>${maven-core.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.maven</groupId>
                 <artifactId>maven-plugin-api</artifactId>
                 <version>${maven-plugin-api.version}</version>
             </dependency>
@@ -836,7 +851,12 @@
             <dependency>
                 <groupId>org.apache.maven.wagon</groupId>
                 <artifactId>wagon-ssh-external</artifactId>
-                <version>2.7</version>
+                <version>${maven-wagon.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.maven.wagon</groupId>
+                <artifactId>wagon-provider-api</artifactId>
+                <version>${maven-wagon.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.apache.opennlp</groupId>
@@ -852,6 +872,11 @@
                 <groupId>org.assertj</groupId>
                 <artifactId>assertj-core</artifactId>
                 <version>3.11.1</version>
+            </dependency>
+            <dependency>
+                <groupId>org.codehaus.plexus</groupId>
+                <artifactId>plexus-interpolation</artifactId>
+                <version>1.26</version>
             </dependency>
             <dependency>
                 <groupId>org.bouncycastle</groupId>
@@ -1108,7 +1133,7 @@
         <jjwt.version>0.11.2</jjwt.version>
         <jna.version>5.11.0</jna.version>
         <junit.version>5.8.1</junit.version>
-        <maven-archiver.version>3.5.2</maven-archiver.version>
+        <maven-archiver.version>3.6.0</maven-archiver.version>
         <maven-assembly-plugin.version>3.3.0</maven-assembly-plugin.version>
         <maven-bundle-plugin.version>5.1.2</maven-bundle-plugin.version>
         <maven-compiler-plugin.version>3.10.1</maven-compiler-plugin.version>
@@ -1120,12 +1145,13 @@
         <maven-install-plugin.version>3.0.0-M1</maven-install-plugin.version>
         <maven-jar-plugin.version>3.2.0</maven-jar-plugin.version>
         <maven-javadoc-plugin.version>3.3.1</maven-javadoc-plugin.version>
-        <maven-plugin-api.version>3.8.5</maven-plugin-api.version>
+        <maven-plugin-api.version>3.8.6</maven-plugin-api.version>
         <maven-plugin-tools.version>3.6.4</maven-plugin-tools.version>
         <maven-resources-plugin.version>3.2.0</maven-resources-plugin.version>
         <maven-shade-plugin.version>3.4.1</maven-shade-plugin.version>
         <maven-site-plugin.version>3.9.1</maven-site-plugin.version>
         <maven-source-plugin.version>3.2.1</maven-source-plugin.version>
+        <maven-wagon.version>2.10</maven-wagon.version>
         <mockito.version>4.0.0</mockito.version>
         <netty.version>4.1.85.Final</netty.version>
         <netty-tcnative.version>2.0.54.Final</netty-tcnative.version>

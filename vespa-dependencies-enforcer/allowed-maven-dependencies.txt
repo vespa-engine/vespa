@@ -75,7 +75,6 @@ javax.annotation:javax.annotation-api:1.2
 javax.inject:javax.inject:1
 javax.servlet:javax.servlet-api:3.1.0
 javax.validation:validation-api:1.1.0.Final
-javax.ws.rs:javax.ws.rs-api:2.0
 javax.ws.rs:javax.ws.rs-api:2.0.1
 javax.xml.bind:jaxb-api:2.3.0
 joda-time:joda-time:2.8.1
@@ -87,7 +86,6 @@ org.apache.commons:commons-compress:1.21
 org.apache.commons:commons-csv:1.8
 org.apache.commons:commons-exec:1.3
 org.apache.commons:commons-lang3:3.11
-org.apache.commons:commons-lang3:3.8.1
 org.apache.commons:commons-math3:3.6.1
 org.apache.curator:curator-client:5.3.0
 org.apache.curator:curator-framework:5.3.0
@@ -100,7 +98,7 @@ org.apache.httpcomponents:httpmime:4.5.13
 org.apache.httpcomponents.client5:httpclient5:5.1.3
 org.apache.httpcomponents.core5:httpcore5:5.1.3
 org.apache.httpcomponents.core5:httpcore5-h2:5.1.3
-org.apache.maven:maven-archiver:3.5.2
+org.apache.maven:maven-archiver:3.6.0
 org.apache.maven:maven-artifact:3.8.6
 org.apache.maven:maven-artifact-manager:2.2.1
 org.apache.maven:maven-builder-support:3.8.6
@@ -108,14 +106,12 @@ org.apache.maven:maven-compat:3.0
 org.apache.maven:maven-core:3.8.6
 org.apache.maven:maven-model:3.8.6
 org.apache.maven:maven-model-builder:3.8.6
-org.apache.maven:maven-plugin-api:3.8.5
+org.apache.maven:maven-plugin-api:3.8.6
 org.apache.maven:maven-plugin-registry:2.2.1
 org.apache.maven:maven-profile:2.2.1
 org.apache.maven:maven-project:2.2.1
-org.apache.maven:maven-repository-metadata:2.2.1
 org.apache.maven:maven-repository-metadata:3.8.6
 org.apache.maven:maven-resolver-provider:3.8.6
-org.apache.maven:maven-settings:2.2.1
 org.apache.maven:maven-settings:3.8.6
 org.apache.maven:maven-settings-builder:3.8.6
 org.apache.maven.plugin-tools:maven-plugin-annotations:3.6.4
@@ -127,7 +123,6 @@ org.apache.maven.resolver:maven-resolver-util:1.6.3
 org.apache.maven.shared:file-management:3.0.0
 org.apache.maven.shared:maven-shared-io:3.0.0
 org.apache.maven.shared:maven-shared-utils:3.2.1
-org.apache.maven.wagon:wagon-provider-api:1.0-beta-6
 org.apache.maven.wagon:wagon-provider-api:2.10
 org.apache.opennlp:opennlp-tools:1.9.3
 org.apache.velocity:velocity-engine-core:2.3
@@ -143,11 +138,10 @@ org.codehaus.plexus:plexus-cipher:2.0
 org.codehaus.plexus:plexus-classworlds:2.6.0
 org.codehaus.plexus:plexus-component-annotations:1.5.5
 org.codehaus.plexus:plexus-container-default:1.0-alpha-9-stable-1
-org.codehaus.plexus:plexus-interpolation:1.11
 org.codehaus.plexus:plexus-interpolation:1.26
-org.codehaus.plexus:plexus-io:3.2.0
+org.codehaus.plexus:plexus-io:3.4.0
 org.codehaus.plexus:plexus-sec-dispatcher:2.0
-org.codehaus.plexus:plexus-utils:3.3.0
+org.codehaus.plexus:plexus-utils:3.3.1
 org.eclipse.collections:eclipse-collections:11.0.0
 org.eclipse.collections:eclipse-collections-api:11.0.0
 org.eclipse.jetty:jetty-alpn-java-server:9.4.49.v20220914
@@ -227,7 +221,6 @@ xml-apis:xml-apis:1.4.01
 # Contains dependencies that are used exclusively in 'test' scope
 com.github.tomakehurst:wiremock-jre8-standalone:2.35.0
 com.google.guava:guava-testlib:27.1-jre
-com.google.jimfs:jimfs:1.1
 com.google.jimfs:jimfs:1.2
 junit:junit:4.13.2
 net.bytebuddy:byte-buddy:1.11.19
@@ -235,7 +228,6 @@ net.bytebuddy:byte-buddy-agent:1.11.19
 org.apache.curator:curator-test:5.3.0
 org.assertj:assertj-core:3.11.1
 org.checkerframework:checker-qual:2.5.2
-org.codehaus.plexus:plexus-utils:3.3.1
 org.cthul:cthul-matchers:1.0
 org.hamcrest:hamcrest-all:1.3
 org.hamcrest:hamcrest-core:1.3
