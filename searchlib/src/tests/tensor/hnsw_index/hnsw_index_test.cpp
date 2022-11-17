@@ -74,15 +74,15 @@ struct LevelGenerator : public RandomLevelGenerator {
 };
 
 using FloatVectors = MyDocVectorAccess<float>;
-using HnswIndexUP = std::unique_ptr<HnswIndex<HnswIndexType::SINGLE>>;
 
+template <typename IndexType>
 class HnswIndexTest : public ::testing::Test {
 public:
     FloatVectors vectors;
     std::shared_ptr<GlobalFilter> global_filter;
     LevelGenerator* level_generator;
     GenerationHandler gen_handler;
-    HnswIndexUP index;
+    std::unique_ptr<IndexType> index;
 
     HnswIndexTest()
         : vectors(),
@@ -101,7 +101,7 @@ public:
     void init(bool heuristic_select_neighbors) {
         auto generator = std::make_unique<LevelGenerator>();
         level_generator = generator.get();
-        index = std::make_unique<HnswIndex<HnswIndexType::SINGLE>>(vectors, std::make_unique<SquaredEuclideanDistance>(vespalib::eval::CellType::FLOAT),
+        index = std::make_unique<IndexType>(vectors, std::make_unique<SquaredEuclideanDistance>(vespalib::eval::CellType::FLOAT),
                                             std::move(generator),
                                             HnswIndexConfig(5, 2, 10, 0, heuristic_select_neighbors));
     }
@@ -195,175 +195,178 @@ public:
     FloatVectors& get_vectors() { return vectors; }
 };
 
+using HnswIndexTestTypes = ::testing::Types<HnswIndex<HnswIndexType::SINGLE>>;
 
-TEST_F(HnswIndexTest, 2d_vectors_inserted_in_level_0_graph_with_simple_select_neighbors)
+VESPA_GTEST_TYPED_TEST_SUITE(HnswIndexTest, HnswIndexTestTypes);
+
+TYPED_TEST(HnswIndexTest, 2d_vectors_inserted_in_level_0_graph_with_simple_select_neighbors)
 {
-    init(false);
+    this->init(false);
 
-    add_document(1);
-    expect_level_0(1, {});
+    this->add_document(1);
+    this->expect_level_0(1, {});
 
-    add_document(2);
-    expect_level_0(1, {2});
-    expect_level_0(2, {1});
+    this->add_document(2);
+    this->expect_level_0(1, {2});
+    this->expect_level_0(2, {1});
 
-    add_document(3);
-    expect_level_0(1, {2, 3});
-    expect_level_0(2, {1, 3});
-    expect_level_0(3, {1, 2});
+    this->add_document(3);
+    this->expect_level_0(1, {2, 3});
+    this->expect_level_0(2, {1, 3});
+    this->expect_level_0(3, {1, 2});
 
-    add_document(4);
-    expect_level_0(1, {2, 3, 4});
-    expect_level_0(2, {1, 3});
-    expect_level_0(3, {1, 2, 4});
-    expect_level_0(4, {1, 3});
+    this->add_document(4);
+    this->expect_level_0(1, {2, 3, 4});
+    this->expect_level_0(2, {1, 3});
+    this->expect_level_0(3, {1, 2, 4});
+    this->expect_level_0(4, {1, 3});
 
-    add_document(5);
-    expect_level_0(1, {2, 3, 4});
-    expect_level_0(2, {1, 3, 5});
-    expect_level_0(3, {1, 2, 4, 5});
-    expect_level_0(4, {1, 3});
-    expect_level_0(5, {2, 3});
+    this->add_document(5);
+    this->expect_level_0(1, {2, 3, 4});
+    this->expect_level_0(2, {1, 3, 5});
+    this->expect_level_0(3, {1, 2, 4, 5});
+    this->expect_level_0(4, {1, 3});
+    this->expect_level_0(5, {2, 3});
 
-    add_document(6);
-    expect_level_0(1, {2, 3, 4});
-    expect_level_0(2, {1, 3, 5, 6});
-    expect_level_0(3, {1, 2, 4, 5});
-    expect_level_0(4, {1, 3});
-    expect_level_0(5, {2, 3, 6});
-    expect_level_0(6, {2, 5});
+    this->add_document(6);
+    this->expect_level_0(1, {2, 3, 4});
+    this->expect_level_0(2, {1, 3, 5, 6});
+    this->expect_level_0(3, {1, 2, 4, 5});
+    this->expect_level_0(4, {1, 3});
+    this->expect_level_0(5, {2, 3, 6});
+    this->expect_level_0(6, {2, 5});
 
-    add_document(7);
-    expect_level_0(1, {2, 3, 4});
-    expect_level_0(2, {1, 3, 5, 6, 7});
-    expect_level_0(3, {1, 2, 4, 5, 7});
-    expect_level_0(4, {1, 3});
-    expect_level_0(5, {2, 3, 6});
-    expect_level_0(6, {2, 5});
-    expect_level_0(7, {2, 3});
+    this->add_document(7);
+    this->expect_level_0(1, {2, 3, 4});
+    this->expect_level_0(2, {1, 3, 5, 6, 7});
+    this->expect_level_0(3, {1, 2, 4, 5, 7});
+    this->expect_level_0(4, {1, 3});
+    this->expect_level_0(5, {2, 3, 6});
+    this->expect_level_0(6, {2, 5});
+    this->expect_level_0(7, {2, 3});
 
-    expect_top_3(1, {1});
-    expect_top_3(2, {2, 1, 3});
-    expect_top_3(3, {3});
-    expect_top_3(4, {4, 1, 3});
-    expect_top_3(5, {5, 6, 2});
-    expect_top_3(6, {6, 5, 2});
-    expect_top_3(7, {7, 3, 2});
-    expect_top_3(8, {4, 3, 1});
-    expect_top_3(9, {7, 3, 2});
+    this->expect_top_3(1, {1});
+    this->expect_top_3(2, {2, 1, 3});
+    this->expect_top_3(3, {3});
+    this->expect_top_3(4, {4, 1, 3});
+    this->expect_top_3(5, {5, 6, 2});
+    this->expect_top_3(6, {6, 5, 2});
+    this->expect_top_3(7, {7, 3, 2});
+    this->expect_top_3(8, {4, 3, 1});
+    this->expect_top_3(9, {7, 3, 2});
 
-    set_filter({2,3,4,6});
-    expect_top_3(2, {2, 3});
-    expect_top_3(4, {4, 3});
-    expect_top_3(5, {6, 2});
-    expect_top_3(6, {6, 2});
-    expect_top_3(7, {3, 2});
-    expect_top_3(8, {4, 3});
-    expect_top_3(9, {3, 2});
+    this->set_filter({2,3,4,6});
+    this->expect_top_3(2, {2, 3});
+    this->expect_top_3(4, {4, 3});
+    this->expect_top_3(5, {6, 2});
+    this->expect_top_3(6, {6, 2});
+    this->expect_top_3(7, {3, 2});
+    this->expect_top_3(8, {4, 3});
+    this->expect_top_3(9, {3, 2});
 }
 
-TEST_F(HnswIndexTest, 2d_vectors_inserted_and_removed)
+TYPED_TEST(HnswIndexTest, 2d_vectors_inserted_and_removed)
 {
-    init(false);
+    this->init(false);
 
-    add_document(1);
-    expect_level_0(1, {});
-    expect_entry_point(1, 0);
+    this->add_document(1);
+    this->expect_level_0(1, {});
+    this->expect_entry_point(1, 0);
 
-    add_document(2);
-    expect_level_0(1, {2});
-    expect_level_0(2, {1});
-    expect_entry_point(1, 0);
+    this->add_document(2);
+    this->expect_level_0(1, {2});
+    this->expect_level_0(2, {1});
+    this->expect_entry_point(1, 0);
 
-    add_document(3);
-    expect_level_0(1, {2, 3});
-    expect_level_0(2, {1, 3});
-    expect_level_0(3, {1, 2});
-    expect_entry_point(1, 0);
+    this->add_document(3);
+    this->expect_level_0(1, {2, 3});
+    this->expect_level_0(2, {1, 3});
+    this->expect_level_0(3, {1, 2});
+    this->expect_entry_point(1, 0);
 
-    remove_document(2);
-    expect_level_0(1, {3});
-    expect_level_0(3, {1});
-    expect_entry_point(1, 0);
+    this->remove_document(2);
+    this->expect_level_0(1, {3});
+    this->expect_level_0(3, {1});
+    this->expect_entry_point(1, 0);
 
-    remove_document(1);
-    expect_level_0(3, {});
-    expect_entry_point(3, 0);
+    this->remove_document(1);
+    this->expect_level_0(3, {});
+    this->expect_entry_point(3, 0);
 
-    remove_document(3);
-    expect_entry_point(0, -1);
+    this->remove_document(3);
+    this->expect_entry_point(0, -1);
 }
 
-TEST_F(HnswIndexTest, 2d_vectors_inserted_in_hierarchic_graph_with_heuristic_select_neighbors)
+TYPED_TEST(HnswIndexTest, 2d_vectors_inserted_in_hierarchic_graph_with_heuristic_select_neighbors)
 {
-    init(true);
+    this->init(true);
 
-    add_document(1);
-    expect_entry_point(1, 0);
-    expect_level_0(1, {});
+    this->add_document(1);
+    this->expect_entry_point(1, 0);
+    this->expect_level_0(1, {});
 
-    add_document(2);
-    expect_entry_point(1, 0);
-    expect_level_0(1, {2});
-    expect_level_0(2, {1});
+    this->add_document(2);
+    this->expect_entry_point(1, 0);
+    this->expect_level_0(1, {2});
+    this->expect_level_0(2, {1});
 
     // Doc 3 is also added to level 1
-    add_document(3, 1);
-    expect_entry_point(3, 1);
+    this->add_document(3, 1);
+    this->expect_entry_point(3, 1);
     // Doc 3 is closest to 1 and they are linked.
     // Doc 3 is NOT linked to 2, since that is closer to 1 also.
-    expect_level_0(1, {2, 3});
-    expect_level_0(2, {1});
-    expect_levels(3, {{1}, {}});
+    this->expect_level_0(1, {2, 3});
+    this->expect_level_0(2, {1});
+    this->expect_levels(3, {{1}, {}});
 
     // Doc 4 is closest to 1 and they are linked.
     // Doc 4 is NOT linked to 3 as the distance between 4 and 3 is greater than the distance between 3 and 1.
     // Doc 3 is therefore reachable via 1. Same argument for why doc 4 is not linked to 2.
-    add_document(4);
-    expect_entry_point(3, 1);
-    expect_level_0(1, {2, 3, 4});
-    expect_level_0(2, {1});
-    expect_levels(3, {{1}, {}});
-    expect_level_0(4, {1});
+    this->add_document(4);
+    this->expect_entry_point(3, 1);
+    this->expect_level_0(1, {2, 3, 4});
+    this->expect_level_0(2, {1});
+    this->expect_levels(3, {{1}, {}});
+    this->expect_level_0(4, {1});
 
     // Doc 5 is closest to 2 and they are linked.
     // The other docs are reachable via 2, and no other links are created. Same argument as with doc 4 above.
-    add_document(5);
-    expect_entry_point(3, 1);
-    expect_level_0(1, {2, 3, 4});
-    expect_level_0(2, {1, 5});
-    expect_levels(3, {{1}, {}});
-    expect_level_0(4, {1});
-    expect_level_0(5, {2});
+    this->add_document(5);
+    this->expect_entry_point(3, 1);
+    this->expect_level_0(1, {2, 3, 4});
+    this->expect_level_0(2, {1, 5});
+    this->expect_levels(3, {{1}, {}});
+    this->expect_level_0(4, {1});
+    this->expect_level_0(5, {2});
 
     // Doc 6 is closest to 5 and they are linked.
     // Doc 6 is also linked to 2 as the distance between 6 and 2 is less than the distance between 2 and 5.
     // Doc 6 is also added to level 1 and 2, and linked to doc 3 in level 1.
-    add_document(6, 2);
-    expect_entry_point(6, 2);
-    expect_level_0(1, {2, 3, 4});
-    expect_level_0(2, {1, 5, 6});
-    expect_levels(3, {{1}, {6}});
-    expect_level_0(4, {1});
-    expect_level_0(5, {2, 6});
-    expect_levels(6, {{2, 5}, {3}, {}});
+    this->add_document(6, 2);
+    this->expect_entry_point(6, 2);
+    this->expect_level_0(1, {2, 3, 4});
+    this->expect_level_0(2, {1, 5, 6});
+    this->expect_levels(3, {{1}, {6}});
+    this->expect_level_0(4, {1});
+    this->expect_level_0(5, {2, 6});
+    this->expect_levels(6, {{2, 5}, {3}, {}});
 
     // Doc 7 is closest to 3 and they are linked.
     // Doc 7 is also linked to 6 as the distance between 7 and 6 is less than the distance between 6 and 3.
     // Docs 1, 2, 4 are reachable via 3.
-    add_document(7);
-    expect_entry_point(6, 2);
-    expect_level_0(1, {2, 3, 4});
-    expect_level_0(2, {1, 5, 6});
-    expect_levels(3, {{1, 7}, {6}});
-    expect_level_0(4, {1});
-    expect_level_0(5, {2, 6});
-    expect_levels(6, {{2, 5, 7}, {3}, {}});
-    expect_level_0(7, {3, 6});
+    this->add_document(7);
+    this->expect_entry_point(6, 2);
+    this->expect_level_0(1, {2, 3, 4});
+    this->expect_level_0(2, {1, 5, 6});
+    this->expect_levels(3, {{1, 7}, {6}});
+    this->expect_level_0(4, {1});
+    this->expect_level_0(5, {2, 6});
+    this->expect_levels(6, {{2, 5, 7}, {3}, {}});
+    this->expect_level_0(7, {3, 6});
     {
         Slime actualSlime;
         SlimeInserter inserter(actualSlime);
-        index->get_state(inserter);
+        this->index->get_state(inserter);
         const auto &root = actualSlime.get();
         EXPECT_EQ(0, root["memory_usage"]["onHold"].asLong());
         EXPECT_EQ(8, root["nodes"].asLong());
@@ -381,18 +384,18 @@ TEST_F(HnswIndexTest, 2d_vectors_inserted_in_hierarchic_graph_with_heuristic_sel
     // removing 1, its neighbors {2,3,4} will try to
     // link together, but since 2 already has enough links
     // only 3 and 4 will become neighbors:
-    remove_document(1);
-    expect_entry_point(6, 2);
-    expect_level_0(2, {5, 6});
-    expect_levels(3, {{4, 7}, {6}});
-    expect_level_0(4, {3});
-    expect_level_0(5, {2, 6});
-    expect_levels(6, {{2, 5, 7}, {3}, {}});
-    expect_level_0(7, {3, 6});
+    this->remove_document(1);
+    this->expect_entry_point(6, 2);
+    this->expect_level_0(2, {5, 6});
+    this->expect_levels(3, {{4, 7}, {6}});
+    this->expect_level_0(4, {3});
+    this->expect_level_0(5, {2, 6});
+    this->expect_levels(6, {{2, 5, 7}, {3}, {}});
+    this->expect_level_0(7, {3, 6});
     {
         Slime actualSlime;
         SlimeInserter inserter(actualSlime);
-        index->get_state(inserter);
+        this->index->get_state(inserter);
         const auto &root = actualSlime.get();
         EXPECT_EQ(0, root["memory_usage"]["onHold"].asLong());
         EXPECT_EQ(8, root["nodes"].asLong());
@@ -408,156 +411,156 @@ TEST_F(HnswIndexTest, 2d_vectors_inserted_in_hierarchic_graph_with_heuristic_sel
     }
 }
 
-TEST_F(HnswIndexTest, manual_insert)
+TYPED_TEST(HnswIndexTest, manual_insert)
 {
-    init(false);
+    this->init(false);
 
     std::vector<uint32_t> nbl;
     HnswTestNode empty{nbl};
-    index->set_node(1, empty);
-    index->set_node(2, empty);
+    this->index->set_node(1, empty);
+    this->index->set_node(2, empty);
 
     HnswTestNode three{{1,2}};
-    index->set_node(3, three);
-    expect_level_0(1, {3});
-    expect_level_0(2, {3});
-    expect_level_0(3, {1,2});
+    this->index->set_node(3, three);
+    this->expect_level_0(1, {3});
+    this->expect_level_0(2, {3});
+    this->expect_level_0(3, {1,2});
 
-    expect_entry_point(1, 0);
+    this->expect_entry_point(1, 0);
 
     HnswTestNode twolevels{{{1},nbl}};
-    index->set_node(4, twolevels);
+    this->index->set_node(4, twolevels);
 
-    expect_entry_point(4, 1);
-    expect_level_0(1, {3,4});
+    this->expect_entry_point(4, 1);
+    this->expect_level_0(1, {3,4});
 
     HnswTestNode five{{{1,2}, {4}}};
-    index->set_node(5, five);
+    this->index->set_node(5, five);
 
-    expect_levels(1, {{3,4,5}});
-    expect_levels(2, {{3,5}});
-    expect_levels(3, {{1,2}});
-    expect_levels(4, {{1}, {5}});
-    expect_levels(5, {{1,2}, {4}});
+    this->expect_levels(1, {{3,4,5}});
+    this->expect_levels(2, {{3,5}});
+    this->expect_levels(3, {{1,2}});
+    this->expect_levels(4, {{1}, {5}});
+    this->expect_levels(5, {{1,2}, {4}});
 }
 
-TEST_F(HnswIndexTest, memory_is_reclaimed_when_doing_changes_to_graph)
+TYPED_TEST(HnswIndexTest, memory_is_reclaimed_when_doing_changes_to_graph)
 {
-    init(false);
+    this->init(false);
 
-    add_document(1);
-    add_document(3);
-    auto mem_1 = memory_usage();
+    this->add_document(1);
+    this->add_document(3);
+    auto mem_1 = this->memory_usage();
 
-    add_document(2);
-    expect_level_0(1, {2,3});
-    expect_level_0(2, {1,3});
-    expect_level_0(3, {1,2});
-    auto mem_2 = memory_usage();
+    this->add_document(2);
+    this->expect_level_0(1, {2,3});
+    this->expect_level_0(2, {1,3});
+    this->expect_level_0(3, {1,2});
+    auto mem_2 = this->memory_usage();
     // We should use more memory with larger link arrays and extra document.
     EXPECT_GT((mem_2.usedBytes() - mem_2.deadBytes()), (mem_1.usedBytes() - mem_1.deadBytes()));
     EXPECT_EQ(0, mem_2.allocatedBytesOnHold());
 
-    remove_document(2);
-    expect_level_0(1, {3});
-    expect_empty_level_0(2);
-    expect_level_0(3, {1});
-    auto mem_3 = memory_usage();
+    this->remove_document(2);
+    this->expect_level_0(1, {3});
+    this->expect_empty_level_0(2);
+    this->expect_level_0(3, {1});
+    auto mem_3 = this->memory_usage();
     // We end up in the same state as before document 2 was added and effectively use the same amount of memory.
     EXPECT_EQ((mem_1.usedBytes() - mem_1.deadBytes()), (mem_3.usedBytes() - mem_3.deadBytes()));
     EXPECT_EQ(0, mem_3.allocatedBytesOnHold());
 }
 
-TEST_F(HnswIndexTest, memory_is_put_on_hold_while_read_guard_is_held)
+TYPED_TEST(HnswIndexTest, memory_is_put_on_hold_while_read_guard_is_held)
 {
-    init(true);
+    this->init(true);
 
-    add_document(1);
-    add_document(3);
+    this->add_document(1);
+    this->add_document(3);
     {
-        auto guard = take_read_guard();
-        add_document(2);
-        auto mem = memory_usage();
+        auto guard = this->take_read_guard();
+        this->add_document(2);
+        auto mem = this->memory_usage();
         // As read guard is held memory to reclaim is put on hold
         EXPECT_GT(mem.allocatedBytesOnHold(), 0);
     }
-    commit();
-    auto mem = memory_usage();
+    this->commit();
+    auto mem = this->memory_usage();
     EXPECT_EQ(0, mem.allocatedBytesOnHold());
 }
 
-TEST_F(HnswIndexTest, shrink_called_simple)
+TYPED_TEST(HnswIndexTest, shrink_called_simple)
 {
-    init(false);
+    this->init(false);
     std::vector<uint32_t> nbl;
     HnswTestNode empty{nbl};
-    index->set_node(1, empty);
+    this->index->set_node(1, empty);
     nbl.push_back(1);
     HnswTestNode nb1{nbl};
-    index->set_node(2, nb1);
-    index->set_node(3, nb1);
-    index->set_node(4, nb1);
-    index->set_node(5, nb1);
-    expect_level_0(1, {2,3,4,5});
-    index->set_node(6, nb1);
-    expect_level_0(1, {2,3,4,5,6});
-    expect_level_0(2, {1});
-    expect_level_0(3, {1});
-    expect_level_0(4, {1});
-    expect_level_0(5, {1});
-    expect_level_0(6, {1});
-    index->set_node(7, nb1);
-    expect_level_0(1, {2,3,4,6,7});
-    expect_level_0(5, {});
-    expect_level_0(6, {1});
-    index->set_node(8, nb1);
-    expect_level_0(1, {2,3,4,7,8});
-    expect_level_0(6, {});
-    index->set_node(9, nb1);
-    expect_level_0(1, {2,3,4,7,8});
-    expect_level_0(2, {1});
-    expect_level_0(3, {1});
-    expect_level_0(4, {1});
-    expect_level_0(5, {});
-    expect_level_0(6, {});
-    expect_level_0(7, {1});
-    expect_level_0(8, {1});
-    expect_level_0(9, {});
-    EXPECT_TRUE(index->check_link_symmetry());
+    this->index->set_node(2, nb1);
+    this->index->set_node(3, nb1);
+    this->index->set_node(4, nb1);
+    this->index->set_node(5, nb1);
+    this->expect_level_0(1, {2,3,4,5});
+    this->index->set_node(6, nb1);
+    this->expect_level_0(1, {2,3,4,5,6});
+    this->expect_level_0(2, {1});
+    this->expect_level_0(3, {1});
+    this->expect_level_0(4, {1});
+    this->expect_level_0(5, {1});
+    this->expect_level_0(6, {1});
+    this->index->set_node(7, nb1);
+    this->expect_level_0(1, {2,3,4,6,7});
+    this->expect_level_0(5, {});
+    this->expect_level_0(6, {1});
+    this->index->set_node(8, nb1);
+    this->expect_level_0(1, {2,3,4,7,8});
+    this->expect_level_0(6, {});
+    this->index->set_node(9, nb1);
+    this->expect_level_0(1, {2,3,4,7,8});
+    this->expect_level_0(2, {1});
+    this->expect_level_0(3, {1});
+    this->expect_level_0(4, {1});
+    this->expect_level_0(5, {});
+    this->expect_level_0(6, {});
+    this->expect_level_0(7, {1});
+    this->expect_level_0(8, {1});
+    this->expect_level_0(9, {});
+    EXPECT_TRUE(this->index->check_link_symmetry());
 }
 
-TEST_F(HnswIndexTest, shrink_called_heuristic)
+TYPED_TEST(HnswIndexTest, shrink_called_heuristic)
 {
-    init(true);
+    this->init(true);
     std::vector<uint32_t> nbl;
     HnswTestNode empty{nbl};
-    index->set_node(1, empty);
+    this->index->set_node(1, empty);
     nbl.push_back(1);
     HnswTestNode nb1{nbl};
-    index->set_node(2, nb1);
-    index->set_node(3, nb1);
-    index->set_node(4, nb1);
-    index->set_node(5, nb1);
-    expect_level_0(1, {2,3,4,5});
-    index->set_node(6, nb1);
-    expect_level_0(1, {2,3,4,5,6});
-    expect_level_0(2, {1});
-    expect_level_0(3, {1});
-    expect_level_0(4, {1});
-    expect_level_0(5, {1});
-    expect_level_0(6, {1});
-    index->set_node(7, nb1);
-    expect_level_0(1, {2,3,4});
-    expect_level_0(2, {1});
-    expect_level_0(3, {1});
-    expect_level_0(4, {1});
-    expect_level_0(5, {});
-    expect_level_0(6, {});
-    expect_level_0(7, {});
-    index->set_node(8, nb1);
-    index->set_node(9, nb1);
-    expect_level_0(1, {2,3,4,8,9});
-    EXPECT_TRUE(index->check_link_symmetry());
+    this->index->set_node(2, nb1);
+    this->index->set_node(3, nb1);
+    this->index->set_node(4, nb1);
+    this->index->set_node(5, nb1);
+    this->expect_level_0(1, {2,3,4,5});
+    this->index->set_node(6, nb1);
+    this->expect_level_0(1, {2,3,4,5,6});
+    this->expect_level_0(2, {1});
+    this->expect_level_0(3, {1});
+    this->expect_level_0(4, {1});
+    this->expect_level_0(5, {1});
+    this->expect_level_0(6, {1});
+    this->index->set_node(7, nb1);
+    this->expect_level_0(1, {2,3,4});
+    this->expect_level_0(2, {1});
+    this->expect_level_0(3, {1});
+    this->expect_level_0(4, {1});
+    this->expect_level_0(5, {});
+    this->expect_level_0(6, {});
+    this->expect_level_0(7, {});
+    this->index->set_node(8, nb1);
+    this->index->set_node(9, nb1);
+    this->expect_level_0(1, {2,3,4,8,9});
+    EXPECT_TRUE(this->index->check_link_symmetry());
 }
 
 namespace {
@@ -620,55 +623,55 @@ make_level_array_refs(HnswIndex<type>& index)
 
 }
 
-TEST_F(HnswIndexTest, hnsw_graph_is_compacted)
+TYPED_TEST(HnswIndexTest, hnsw_graph_is_compacted)
 {
-    init(true);
-    get_vectors().clear();
+    this->init(true);
+    this->get_vectors().clear();
     uint32_t doc_id = 1;
     for (uint32_t x = 0; x < 100; ++x) {
         for (uint32_t y = 0; y < 50; ++y) {
-            get_vectors().set(doc_id, { float(x), float(y) });
+            this->get_vectors().set(doc_id, { float(x), float(y) });
             ++doc_id;
         }
     }
     uint32_t doc_id_end = doc_id;
     for (doc_id = 1; doc_id < doc_id_end; ++doc_id) {
-        add_document(doc_id);
+        this->add_document(doc_id);
     }
     for (doc_id = 10; doc_id < doc_id_end; ++doc_id) {
-        remove_document(doc_id);
+        this->remove_document(doc_id);
     }
-    auto mem_1 = commit_and_update_stat();
-    auto link_graph_1 = make_link_graph(*index);
-    auto link_array_refs_1 = make_link_array_refs(*index);
-    auto level_array_refs_1 = make_level_array_refs(*index);
+    auto mem_1 = this->commit_and_update_stat();
+    auto link_graph_1 = make_link_graph(*this->index);
+    auto link_array_refs_1 = make_link_array_refs(*this->index);
+    auto level_array_refs_1 = make_level_array_refs(*this->index);
     // Normal compaction
-    EXPECT_TRUE(index->consider_compact(CompactionStrategy()));
-    auto mem_2 = commit_and_update_stat();
+    EXPECT_TRUE(this->index->consider_compact(CompactionStrategy()));
+    auto mem_2 = this->commit_and_update_stat();
     EXPECT_LT(mem_2.usedBytes(), mem_1.usedBytes());
     for (uint32_t i = 0; i < 10; ++i) {
         mem_1 = mem_2;
         // Forced compaction to move things around
         CompactionSpec compaction_spec(true, false);
         CompactionStrategy compaction_strategy;
-        index->compact_link_arrays(compaction_spec, compaction_strategy);
-        index->compact_level_arrays(compaction_spec, compaction_strategy);
-        commit();
-        index->update_stat(compaction_strategy);
-        mem_2 = commit_and_update_stat();
+        this->index->compact_link_arrays(compaction_spec, compaction_strategy);
+        this->index->compact_level_arrays(compaction_spec, compaction_strategy);
+        this->commit();
+        this->index->update_stat(compaction_strategy);
+        mem_2 = this->commit_and_update_stat();
         EXPECT_LE(mem_2.usedBytes(), mem_1.usedBytes());
         if (mem_2.usedBytes() == mem_1.usedBytes()) {
             break;
         }
     }
-    auto link_graph_2 = make_link_graph(*index);
-    auto link_array_refs_2 = make_link_array_refs(*index);
-    auto level_array_refs_2 = make_level_array_refs(*index);
+    auto link_graph_2 = make_link_graph(*this->index);
+    auto link_array_refs_2 = make_link_array_refs(*this->index);
+    auto level_array_refs_2 = make_level_array_refs(*this->index);
     EXPECT_EQ(link_graph_1, link_graph_2);
     EXPECT_NE(link_array_refs_1, link_array_refs_2);
     EXPECT_NE(level_array_refs_1, level_array_refs_2);
-    index->shrink_lid_space(10);
-    auto mem_3 = commit_and_update_stat();
+    this->index->shrink_lid_space(10);
+    auto mem_3 = this->commit_and_update_stat();
     EXPECT_LT(mem_3.usedBytes(), mem_2.usedBytes());
 }
 
@@ -719,59 +722,65 @@ TEST(LevelGeneratorTest, gives_various_levels)
     EXPECT_TRUE(hist.size() < 14);
 }
 
-class TwoPhaseTest : public HnswIndexTest {
+
+template <typename IndexType>
+class TwoPhaseTest : public HnswIndexTest<IndexType> {
 public:
-    TwoPhaseTest() : HnswIndexTest() {
-        init(true);
-        vectors.set(4, {1, 3}).set(5, {13, 3}).set(6, {7, 13})
+    TwoPhaseTest()
+        : HnswIndexTest<IndexType>()
+    {
+        this->init(true);
+        this->vectors.set(4, {1, 3}).set(5, {13, 3}).set(6, {7, 13})
                .set(1, {3, 7}).set(2, {7, 1}).set(3, {11, 7})
                .set(7, {6, 5}).set(8, {5, 5}).set(9, {6, 6});
     }
     using UP = std::unique_ptr<PrepareResult>;
     UP prepare_add(uint32_t docid, uint32_t max_level = 0) {
-        level_generator->level = max_level;
+        this->level_generator->level = max_level;
         vespalib::GenerationHandler::Guard dummy;
-        auto vectors_to_add = vectors.get_vectors(docid);
-        return index->prepare_add_document(docid, vectors_to_add, dummy);
+        auto vectors_to_add = this->vectors.get_vectors(docid);
+        return this->index->prepare_add_document(docid, vectors_to_add, dummy);
     }
     void complete_add(uint32_t docid, UP up) {
-        index->complete_add_document(docid, std::move(up));
-        commit();
+        this->index->complete_add_document(docid, std::move(up));
+        this->commit();
     }
 };
 
-TEST_F(TwoPhaseTest, two_phase_add)
+VESPA_GTEST_TYPED_TEST_SUITE(TwoPhaseTest, HnswIndexTestTypes);
+
+TYPED_TEST(TwoPhaseTest, two_phase_add)
 {
-    add_document(1);
-    add_document(2);
-    add_document(3);
-    expect_entry_point(1, 0);
-    add_document(4, 1);
-    add_document(5, 1);
-    add_document(6, 2);
-    expect_entry_point(6, 2);
+    this->add_document(1);
+    this->add_document(2);
+    this->add_document(3);
+    this->expect_entry_point(1, 0);
+    this->add_document(4, 1);
+    this->add_document(5, 1);
+    this->add_document(6, 2);
+    this->expect_entry_point(6, 2);
 
-    expect_level_0(1, {2,4,6});
-    expect_level_0(2, {1,3,4,5});
-    expect_level_0(3, {2,5,6});
+    this->expect_level_0(1, {2,4,6});
+    this->expect_level_0(2, {1,3,4,5});
+    this->expect_level_0(3, {2,5,6});
 
-    expect_levels(4, {{1,2}, {5,6}});
-    expect_levels(5, {{2,3}, {4,6}});
-    expect_levels(6, {{1,3}, {4,5}, {}});
+    this->expect_levels(4, {{1,2}, {5,6}});
+    this->expect_levels(5, {{2,3}, {4,6}});
+    this->expect_levels(6, {{1,3}, {4,5}, {}});
 
-    auto up = prepare_add(7, 1);
+    auto up = this->prepare_add(7, 1);
     // simulate things happening while 7 is in progress:
-    add_document(8); // added
-    remove_document(1); // removed
-    remove_document(5);
-    vectors.set(5, {8, 14}); // updated and moved
-    add_document(5, 2);
-    add_document(9, 1); // added
-    complete_add(7, std::move(up));
+    this->add_document(8); // added
+    this->remove_document(1); // removed
+    this->remove_document(5);
+    this->vectors.set(5, {8, 14}); // updated and moved
+    this->add_document(5, 2);
+    this->add_document(9, 1); // added
+    this->complete_add(7, std::move(up));
 
     // 1 filtered out because it was removed
     // 5 filtered out because it was updated
-    expect_levels(7, {{2}, {4}});
+    this->expect_levels(7, {{2}, {4}});
 }
 
 
