@@ -2,7 +2,6 @@
 package com.yahoo.vespa.hosted.provision.os;
 
 import com.yahoo.component.Version;
-import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeList;
@@ -22,21 +21,15 @@ import java.util.logging.Logger;
  *
  * @author mpolden
  */
-public class RetiringOsUpgrader implements OsUpgrader {
+public class RetiringOsUpgrader extends OsUpgrader {
 
     private static final Logger LOG = Logger.getLogger(RetiringOsUpgrader.class.getName());
 
-    protected final NodeRepository nodeRepository;
-
     private final boolean softRebuild;
-    private final int maxActiveUpgrades;
 
-    public RetiringOsUpgrader(NodeRepository nodeRepository, boolean softRebuild, int maxActiveUpgrades) {
-        this.nodeRepository = nodeRepository;
+    public RetiringOsUpgrader(NodeRepository nodeRepository, boolean softRebuild) {
+        super(nodeRepository);
         this.softRebuild = softRebuild;
-        this.maxActiveUpgrades = maxActiveUpgrades;
-        if (maxActiveUpgrades < 1) throw new IllegalArgumentException("maxActiveUpgrades must be positive, was " +
-                                                                      maxActiveUpgrades);
     }
 
     @Override
@@ -62,18 +55,14 @@ public class RetiringOsUpgrader implements OsUpgrader {
     private NodeList candidates(Instant instant, OsVersionTarget target, NodeList allNodes) {
         NodeList activeNodes = allNodes.state(Node.State.active).nodeType(target.nodeType());
         if (softRebuild) {
-            // Soft rebuild is enabled, so this should only act on hosts with local storage, or non-x86-64
-            activeNodes = activeNodes.matching(node -> node.resources().storageType() == NodeResources.StorageType.local ||
-                                                       node.resources().architecture() != NodeResources.Architecture.x86_64);
+            // Retire only hosts which do not have a replaceable root disk
+            activeNodes = activeNodes.not().replaceableRootDisk();
         }
-        if (activeNodes.isEmpty()) return NodeList.of();
-
-        int numberToDeprovision = Math.max(0, maxActiveUpgrades - activeNodes.deprovisioning().size());
         return activeNodes.not().deprovisioning()
                           .osVersionIsBefore(target.version())
                           .matching(node -> canUpgradeAt(instant, node))
                           .byIncreasingOsVersion()
-                          .first(numberToDeprovision);
+                          .first(upgradeSlots(target, activeNodes));
     }
 
     /** Upgrade given host by retiring and deprovisioning it */

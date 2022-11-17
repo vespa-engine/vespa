@@ -183,10 +183,10 @@ public class PermanentFlags {
             "Takes effect on redeployment",
             APPLICATION_ID);
 
-    public static final UnboundIntFlag MAX_REBUILDS = defineIntFlag(
-            "max-host-rebuilds", 10,
-            "The maximum number of hosts allowed to rebuild at a time",
-            "Takes effect immediately, but any current excess rebuilds will not be cancelled"
+    public static final UnboundIntFlag MAX_OS_UPGRADES = defineIntFlag(
+            "max-os-upgrades", 30,
+            "The maximum number hosts that can perform OS upgrade at a time",
+            "Takes effect immediately, but any current excess upgrades will not be cancelled"
     );
 
     public static final UnboundListFlag<String> EXTENDED_TRIAL_TENANTS = defineListFlag(

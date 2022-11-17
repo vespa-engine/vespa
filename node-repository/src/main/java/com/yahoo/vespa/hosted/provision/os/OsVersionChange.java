@@ -14,11 +14,9 @@ import java.util.Objects;
  *
  * @author mpolden
  */
-public class OsVersionChange {
+public record OsVersionChange(Map<NodeType, OsVersionTarget> targets) {
 
     public static final OsVersionChange NONE = new OsVersionChange(Map.of());
-
-    private final Map<NodeType, OsVersionTarget> targets;
 
     public OsVersionChange(Map<NodeType, OsVersionTarget> targets) {
         this.targets = ImmutableSortedMap.copyOf(Objects.requireNonNull(targets));
@@ -41,23 +39,6 @@ public class OsVersionChange {
         var copy = new HashMap<>(this.targets);
         copy.compute(nodeType, (key, prevTarget) -> new OsVersionTarget(nodeType, version));
         return new OsVersionChange(copy);
-    }
-
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-        OsVersionChange change = (OsVersionChange) o;
-        return targets.equals(change.targets);
-    }
-
-    @Override
-    public int hashCode() {
-        return Objects.hash(targets);
-    }
-
-    private void requireTarget(NodeType nodeType) {
-        if (!targets.containsKey(nodeType)) throw new IllegalArgumentException("No target set for " + nodeType);
     }
 
 }

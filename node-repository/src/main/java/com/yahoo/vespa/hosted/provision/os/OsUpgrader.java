@@ -2,7 +2,11 @@
 package com.yahoo.vespa.hosted.provision.os;
 
 import com.yahoo.config.provision.NodeType;
+import com.yahoo.vespa.flags.IntFlag;
+import com.yahoo.vespa.flags.PermanentFlags;
 import com.yahoo.vespa.hosted.provision.Node;
+import com.yahoo.vespa.hosted.provision.NodeList;
+import com.yahoo.vespa.hosted.provision.NodeRepository;
 
 import java.time.Instant;
 
@@ -11,16 +15,35 @@ import java.time.Instant;
  *
  * @author mpolden
  */
-public interface OsUpgrader {
+public abstract class OsUpgrader {
+
+    private final IntFlag maxActiveUpgrades;
+
+    final NodeRepository nodeRepository;
+
+    public OsUpgrader(NodeRepository nodeRepository) {
+        this.nodeRepository = nodeRepository;
+        this.maxActiveUpgrades = PermanentFlags.MAX_OS_UPGRADES.bindTo(nodeRepository.flagSource());
+    }
 
     /** Trigger upgrade to given target */
-    void upgradeTo(OsVersionTarget target);
+    abstract void upgradeTo(OsVersionTarget target);
 
     /** Disable OS upgrade for all nodes of given type */
-    void disableUpgrade(NodeType type);
+    abstract void disableUpgrade(NodeType type);
+
+    /** Returns the number of upgrade slots available for given target */
+    final int upgradeSlots(OsVersionTarget target, NodeList activeNodes) {
+        if (!activeNodes.stream().allMatch(node -> node.type() == target.nodeType())) {
+            throw new IllegalArgumentException("All node types must type of OS version target " + target.nodeType());
+        }
+        int max = target.nodeType() == NodeType.host ? maxActiveUpgrades.value() : 1;
+        int upgrading = activeNodes.changingOsVersionTo(target.version()).size();
+        return Math.max(0, max - upgrading);
+    }
 
     /** Returns whether node can upgrade at given instant */
-    default boolean canUpgradeAt(Instant instant, Node node) {
+    boolean canUpgradeAt(Instant instant, Node node) {
         return true;
     }
 
