@@ -96,5 +96,6 @@ HnswIndexSaver<type>::save(BufferWriter& writer) const
 }
 
 template class HnswIndexSaver<HnswIndexType::SINGLE>;
+template class HnswIndexSaver<HnswIndexType::MULTI>;
 
 }
