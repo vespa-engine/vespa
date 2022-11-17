@@ -289,10 +289,20 @@ public class NodesSpecification {
         NodeResources.DiskSpeed   diskSpeed     = parseOptionalDiskSpeed(element.stringAttribute("disk-speed"));
         NodeResources.StorageType storageType   = parseOptionalStorageType(element.stringAttribute("storage-type"));
         NodeResources.Architecture architecture = parseOptionalArchitecture(element.stringAttribute("architecture"));
+        NodeResources.GpuResources gpuResources = parseOptionalGpuResources(element.child("gpu"));
 
-        var min = new NodeResources(vcpu.getFirst(),  memory.getFirst(),  disk.getFirst(),  bandwith.getFirst(),  diskSpeed, storageType, architecture);
-        var max = new NodeResources(vcpu.getSecond(), memory.getSecond(), disk.getSecond(), bandwith.getSecond(), diskSpeed, storageType, architecture);
+        var min = new NodeResources(vcpu.getFirst(),  memory.getFirst(),  disk.getFirst(),  bandwith.getFirst(),
+                                    diskSpeed, storageType, architecture, gpuResources);
+        var max = new NodeResources(vcpu.getSecond(), memory.getSecond(), disk.getSecond(), bandwith.getSecond(),
+                                    diskSpeed, storageType, architecture, gpuResources);
         return new Pair<>(min, max);
+    }
+
+    private static NodeResources.GpuResources parseOptionalGpuResources(ModelElement element) {
+        if (element == null) return NodeResources.GpuResources.getDefault();
+        int count = element.requiredIntegerAttribute("count");
+        double memory = parseGbAmount(element.requiredStringAttribute("memory"), "B");
+        return new NodeResources.GpuResources(count, memory);
     }
 
     private static double parseGbAmount(String byteAmount, String unit) {

@@ -28,7 +28,13 @@ Resources = element resources {
     attribute disk { xsd:string } &
     attribute disk-speed { xsd:string }? &
     attribute storage-type { xsd:string }? &
-    attribute architecture { xsd:string }?
+    attribute architecture { xsd:string }? &
+    GpuResources?
+}
+
+GpuResources = element gpu {
+  attribute count { xsd:positiveInteger } &
+  attribute memory { xsd:string }
 }
 
 OptionalDedicatedNodes = element nodes {

@@ -3,6 +3,7 @@ package com.yahoo.config.provision;
 
 import java.util.Objects;
 import java.util.Optional;
+import java.util.stream.Stream;
 
 /**
  * A capacity request.
@@ -25,6 +26,8 @@ public final class Capacity {
         if (max.smallerThan(min))
             throw new IllegalArgumentException("The max capacity must be larger than the min capacity, but got min " +
                                                min + " and max " + max);
+        if (!min.equals(max) && Stream.of(min, max).anyMatch(cr -> !cr.nodeResources().gpuResources().isDefault()))
+            throw new IllegalArgumentException("Capacity range does not allow GPU, got min " + min + " and max " + max);
         this.min = min;
         this.max = max;
         this.required = required;

@@ -13,9 +13,7 @@ import com.yahoo.slime.Slime;
 import com.yahoo.slime.SlimeUtils;
 
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.LinkedHashSet;
-import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 
@@ -51,6 +49,8 @@ public class AllocatedHostsSerializer {
     private static final String diskSpeedKey = "diskSpeed";
     private static final String storageTypeKey = "storageType";
     private static final String architectureKey = "architecture";
+    private static final String gpuCountKey = "gpuCount";
+    private static final String gpuMemoryKey = "gpuMemory";
 
     /** Wanted version */
     private static final String hostSpecVespaVersionKey = "vespaVersion";
@@ -97,6 +97,10 @@ public class AllocatedHostsSerializer {
         resourcesObject.setString(diskSpeedKey, diskSpeedToString(resources.diskSpeed()));
         resourcesObject.setString(storageTypeKey, storageTypeToString(resources.storageType()));
         resourcesObject.setString(architectureKey, architectureToString(resources.architecture()));
+        if (!resources.gpuResources().isDefault()) {
+            resourcesObject.setLong(gpuCountKey, resources.gpuResources().count());
+            resourcesObject.setDouble(gpuMemoryKey, resources.gpuResources().memoryGb());
+        }
     }
 
     public static AllocatedHosts fromJson(byte[] json) {
@@ -113,7 +117,6 @@ public class AllocatedHostsSerializer {
     }
 
     private static HostSpec hostFromSlime(Inspector object) {
-
         if (object.field(hostSpecMembershipKey).valid()) { // Hosted
             return new HostSpec(object.field(hostSpecHostNameKey).asString(),
                                 nodeResourcesFromSlime(object.field(realResourcesKey)),
@@ -137,7 +140,15 @@ public class AllocatedHostsSerializer {
                                  resources.field(bandwidthKey).asDouble(),
                                  diskSpeedFromSlime(resources.field(diskSpeedKey)),
                                  storageTypeFromSlime(resources.field(storageTypeKey)),
-                                 architectureFromSlime(resources.field(architectureKey)));
+                                 architectureFromSlime(resources.field(architectureKey)),
+                                 gpuResourcesFromSlime(resources));
+    }
+
+    private static NodeResources.GpuResources gpuResourcesFromSlime(Inspector resources) {
+        Inspector gpuCountField = resources.field(gpuCountKey);
+        Inspector gpuMemoryField = resources.field(gpuMemoryKey);
+        if (!gpuCountField.valid() || !gpuMemoryField.valid()) return NodeResources.GpuResources.getDefault();
+        return new NodeResources.GpuResources((int) gpuCountField.asLong(), gpuMemoryField.asDouble());
     }
 
     private static NodeResources optionalNodeResourcesFromSlime(Inspector resources) {
@@ -146,58 +157,55 @@ public class AllocatedHostsSerializer {
     }
 
     private static NodeResources.DiskSpeed diskSpeedFromSlime(Inspector diskSpeed) {
-        switch (diskSpeed.asString()) {
-            case "fast" : return NodeResources.DiskSpeed.fast;
-            case "slow" : return NodeResources.DiskSpeed.slow;
-            case "any" : return NodeResources.DiskSpeed.any;
-            default: throw new IllegalStateException("Illegal disk-speed value '" + diskSpeed.asString() + "'");
-        }
+        return switch (diskSpeed.asString()) {
+            case "fast" -> NodeResources.DiskSpeed.fast;
+            case "slow" -> NodeResources.DiskSpeed.slow;
+            case "any" -> NodeResources.DiskSpeed.any;
+            default -> throw new IllegalStateException("Illegal disk-speed value '" + diskSpeed.asString() + "'");
+        };
     }
 
     private static String diskSpeedToString(NodeResources.DiskSpeed diskSpeed) {
-        switch (diskSpeed) {
-            case fast : return "fast";
-            case slow : return "slow";
-            case any : return "any";
-            default: throw new IllegalStateException("Illegal disk-speed value '" + diskSpeed + "'");
-        }
+        return switch (diskSpeed) {
+            case fast -> "fast";
+            case slow -> "slow";
+            case any -> "any";
+        };
     }
 
     private static NodeResources.StorageType storageTypeFromSlime(Inspector storageType) {
-        switch (storageType.asString()) {
-            case "remote" : return NodeResources.StorageType.remote;
-            case "local" : return NodeResources.StorageType.local;
-            case "any" : return NodeResources.StorageType.any;
-            default: throw new IllegalStateException("Illegal storage-type value '" + storageType.asString() + "'");
-        }
+        return switch (storageType.asString()) {
+            case "remote" -> NodeResources.StorageType.remote;
+            case "local" -> NodeResources.StorageType.local;
+            case "any" -> NodeResources.StorageType.any;
+            default -> throw new IllegalStateException("Illegal storage-type value '" + storageType.asString() + "'");
+        };
     }
 
     private static String storageTypeToString(NodeResources.StorageType storageType) {
-        switch (storageType) {
-            case remote : return "remote";
-            case local : return "local";
-            case any : return "any";
-            default: throw new IllegalStateException("Illegal storage-type value '" + storageType + "'");
-        }
+        return switch (storageType) {
+            case remote -> "remote";
+            case local -> "local";
+            case any -> "any";
+        };
     }
 
     private static NodeResources.Architecture architectureFromSlime(Inspector architecture) {
         if ( ! architecture.valid()) return NodeResources.Architecture.x86_64;
-        switch (architecture.asString()) {
-            case "x86_64" : return NodeResources.Architecture.x86_64;
-            case "arm64" : return NodeResources.Architecture.arm64;
-            case "any" : return NodeResources.Architecture.any;
-            default: throw new IllegalStateException("Illegal architecture value '" + architecture.asString() + "'");
-        }
+        return switch (architecture.asString()) {
+            case "x86_64" -> NodeResources.Architecture.x86_64;
+            case "arm64" -> NodeResources.Architecture.arm64;
+            case "any" -> NodeResources.Architecture.any;
+            default -> throw new IllegalStateException("Illegal architecture value '" + architecture.asString() + "'");
+        };
     }
 
     private static String architectureToString(NodeResources.Architecture architecture) {
-        switch (architecture) {
-            case x86_64: return "x86_64";
-            case arm64: return "arm64";
-            case any : return "any";
-            default: throw new IllegalStateException("Illegal architecture value '" + architecture + "'");
-        }
+        return switch (architecture) {
+            case x86_64 -> "x86_64";
+            case arm64 -> "arm64";
+            case any -> "any";
+        };
     }
 
     private static ClusterMembership membershipFromSlime(Inspector object) {
