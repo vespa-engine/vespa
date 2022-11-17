@@ -334,7 +334,7 @@ public class NodeResources {
 
     /**
      * Returns true if all the resources of this are the same as or compatible with the requested resources:
-     * - Equal numbers only where request implies it (i.e not for disk if storage is any/remote, and not for bandwith
+     * - Equal numbers only where request implies it (i.e not for disk if storage is any/remote, and not for bandwidth
      *   where we don't enforce constraints),
      * - Compatible non-numbers.
      */
