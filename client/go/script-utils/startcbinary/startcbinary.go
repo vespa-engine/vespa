@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/vespa-engine/vespa/client/go/envvars"
 	"github.com/vespa-engine/vespa/client/go/util"
 )
 
@@ -39,7 +40,7 @@ func (spec *ProgSpec) run() error {
 		prog = spec.numaCtlBinary()
 	}
 	if spec.shouldUseVespaMalloc {
-		spec.setenv(ENV_LD_PRELOAD, spec.vespaMallocPreload)
+		spec.setenv(envvars.LD_PRELOAD, spec.vespaMallocPreload)
 	}
 	envv := spec.effectiveEnv()
 	return util.Execvpe(prog, args, envv)

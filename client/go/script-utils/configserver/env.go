@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/vespa-engine/vespa/client/go/envvars"
 	"github.com/vespa-engine/vespa/client/go/util"
 )
 
@@ -16,15 +17,15 @@ func exportSettings(vespaHome string) {
 	lcf := fmt.Sprintf("%s/configserver.logcontrol", lcd)
 	dlp := fmt.Sprintf("%s/lib64", vespaHome)
 	app := fmt.Sprintf("%s/conf/configserver-app", vespaHome)
-	os.Setenv("VESPA_LOG_TARGET", vlt)
-	os.Setenv("VESPA_LOG_CONTROL_DIR", lcd)
-	os.Setenv("VESPA_LOG_CONTROL_FILE", lcf)
-	os.Setenv("VESPA_SERVICE_NAME", "configserver")
-	os.Setenv("LD_LIBRARY_PATH", dlp)
-	os.Setenv("JAVAVM_LD_PRELOAD", "")
-	os.Setenv("LD_PRELOAD", "")
-	os.Setenv("standalone_jdisc_container__app_location", app)
-	os.Setenv("standalone_jdisc_container__deployment_profile", "configserver")
-	os.Setenv("MALLOC_ARENA_MAX", "1")
+	os.Setenv(envvars.VESPA_LOG_TARGET, vlt)
+	os.Setenv(envvars.VESPA_LOG_CONTROL_DIR, lcd)
+	os.Setenv(envvars.VESPA_LOG_CONTROL_FILE, lcf)
+	os.Setenv(envvars.VESPA_SERVICE_NAME, "configserver")
+	os.Setenv(envvars.LD_LIBRARY_PATH, dlp)
+	os.Setenv(envvars.JAVAVM_LD_PRELOAD, "")
+	os.Setenv(envvars.LD_PRELOAD, "")
+	os.Setenv(envvars.STANDALONE_JDISC_APP_LOCATION, app)
+	os.Setenv(envvars.STANDALONE_JDISC_DEPLOYMENT_PROFILE, "configserver")
+	os.Setenv(envvars.MALLOC_ARENA_MAX, "1")
 	util.OptionallyReduceTimerFrequency()
 }

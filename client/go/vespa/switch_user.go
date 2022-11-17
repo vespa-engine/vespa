@@ -9,11 +9,12 @@ import (
 	"os"
 	"os/user"
 
+	"github.com/vespa-engine/vespa/client/go/envvars"
 	"github.com/vespa-engine/vespa/client/go/trace"
 	"github.com/vespa-engine/vespa/client/go/util"
 )
 
-const ENV_CHECK = "VESPA_ALREADY_SWITCHED_USER_TO"
+const ENV_CHECK = envvars.VESPA_ALREADY_SWITCHED_USER_TO
 
 func CheckCorrectUser() {
 	vespaUser := FindVespaUser()

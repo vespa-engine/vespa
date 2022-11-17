@@ -4,6 +4,7 @@
 package prog
 
 import (
+	"github.com/vespa-engine/vespa/client/go/envvars"
 	"github.com/vespa-engine/vespa/client/go/util"
 )
 
@@ -18,7 +19,7 @@ func (spec *Spec) Run() error {
 		prog = args[0]
 	}
 	if spec.shouldUseVespaMalloc {
-		spec.Setenv(ENV_LD_PRELOAD, spec.vespaMallocPreload)
+		spec.Setenv(envvars.LD_PRELOAD, spec.vespaMallocPreload)
 	}
 	envv := spec.effectiveEnv()
 	return util.Execvpe(prog, args, envv)

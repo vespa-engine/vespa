@@ -8,6 +8,7 @@ import (
 	"os"
 	"strings"
 
+	"github.com/vespa-engine/vespa/client/go/envvars"
 	"github.com/vespa-engine/vespa/client/go/trace"
 	"github.com/vespa-engine/vespa/client/go/util"
 	"github.com/vespa-engine/vespa/client/go/vespa"
@@ -16,24 +17,24 @@ import (
 func (p *ProgSpec) configureValgrind() {
 	p.shouldUseValgrind = false
 	p.shouldUseCallgrind = false
-	env := p.getenv(ENV_VESPA_USE_VALGRIND)
+	env := p.getenv(envvars.VESPA_USE_VALGRIND)
 	parts := strings.Split(env, " ")
 	for _, part := range parts {
 		if p.BaseName == part {
-			trace.Trace("using valgrind as", p.Program, "has basename in", ENV_VESPA_USE_VALGRIND, "=>", env)
+			trace.Trace("using valgrind as", p.Program, "has basename in", envvars.VESPA_USE_VALGRIND, "=>", env)
 			backticks := util.BackTicksWithStderr
 			out, err := backticks.Run("which", "valgrind")
 			if err != nil {
 				trace.Trace("no valgrind, 'which' fails:", err, "=>", out)
 				return
 			}
-			if opts := p.getenv(ENV_VESPA_VALGRIND_OPT); strings.Contains(opts, "callgrind") {
+			if opts := p.getenv(envvars.VESPA_VALGRIND_OPT); strings.Contains(opts, "callgrind") {
 				p.shouldUseCallgrind = true
 			}
 			p.shouldUseValgrind = true
 			return
 		}
-		trace.Debug("checking", ENV_VESPA_USE_VALGRIND, ":", p.BaseName, "!=", part)
+		trace.Debug("checking", envvars.VESPA_USE_VALGRIND, ":", p.BaseName, "!=", part)
 	}
 }
 
@@ -42,7 +43,7 @@ func (p *ProgSpec) valgrindBinary() string {
 }
 
 func (p *ProgSpec) valgrindOptions() []string {
-	env := p.getenv(ENV_VESPA_VALGRIND_OPT)
+	env := p.getenv(envvars.VESPA_VALGRIND_OPT)
 	if env != "" {
 		return strings.Fields(env)
 	}

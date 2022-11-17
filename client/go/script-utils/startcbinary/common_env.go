@@ -7,45 +7,9 @@ import (
 	"os"
 	"strings"
 
+	"github.com/vespa-engine/vespa/client/go/envvars"
 	"github.com/vespa-engine/vespa/client/go/trace"
-	"github.com/vespa-engine/vespa/client/go/util"
 	"github.com/vespa-engine/vespa/client/go/vespa"
-)
-
-const (
-	ENV_JAVA_HOME        = util.ENV_JAVA_HOME
-	ENV_LD_LIBRARY_PATH  = util.ENV_LD_LIBRARY_PATH
-	ENV_LD_PRELOAD       = util.ENV_LD_PRELOAD
-	ENV_MALLOC_ARENA_MAX = util.ENV_MALLOC_ARENA_MAX
-	ENV_PATH             = util.ENV_PATH
-	ENV_ROOT             = util.ENV_ROOT
-	ENV_VESPA_USER       = util.ENV_VESPA_USER
-
-	ENV_VESPA_AFFINITY_CPU_SOCKET    = "VESPA_AFFINITY_CPU_SOCKET"
-	ENV_VESPA_LOAD_CODE_AS_HUGEPAGES = "VESPA_LOAD_CODE_AS_HUGEPAGES"
-	ENV_VESPA_MALLOC_HUGEPAGES       = "VESPA_MALLOC_HUGEPAGES"
-	ENV_VESPA_MALLOC_MADVISE_LIMIT   = "VESPA_MALLOC_MADVISE_LIMIT"
-	ENV_VESPA_NO_NUMACTL             = "VESPA_NO_NUMACTL"
-	ENV_VESPA_TIMER_HZ               = "VESPA_TIMER_HZ"
-	ENV_VESPA_USE_HUGEPAGES          = "VESPA_USE_HUGEPAGES"
-	ENV_VESPA_USE_HUGEPAGES_LIST     = "VESPA_USE_HUGEPAGES_LIST"
-	ENV_VESPA_USE_MADVISE_LIST       = "VESPA_USE_MADVISE_LIST"
-	ENV_VESPA_USE_NO_VESPAMALLOC     = "VESPA_USE_NO_VESPAMALLOC"
-	ENV_VESPA_USE_VALGRIND           = "VESPA_USE_VALGRIND"
-	ENV_VESPA_USE_VESPAMALLOC        = "VESPA_USE_VESPAMALLOC"
-	ENV_VESPA_USE_VESPAMALLOC_D      = "VESPA_USE_VESPAMALLOC_D"
-	ENV_VESPA_USE_VESPAMALLOC_DST    = "VESPA_USE_VESPAMALLOC_DST"
-	ENV_VESPA_VALGRIND_OPT           = "VESPA_VALGRIND_OPT"
-
-	// backwards compatibility variables:
-	ENV_GLIBCXX_FORCE_NEW            = "GLIBCXX_FORCE_NEW"
-	ENV_HUGEPAGES_LIST               = "HUGEPAGES_LIST"
-	ENV_MADVISE_LIST                 = "MADVISE_LIST"
-	ENV_NO_VESPAMALLOC_LIST          = "NO_VESPAMALLOC_LIST"
-	ENV_STD_THREAD_PREVENT_TRY_CATCH = "STD_THREAD_PREVENT_TRY_CATCH"
-	ENV_VESPAMALLOCDST_LIST          = "VESPAMALLOCDST_LIST"
-	ENV_VESPAMALLOCD_LIST            = "VESPAMALLOCD_LIST"
-	ENV_VESPAMALLOC_LIST             = "VESPAMALLOCD_LIST"
 )
 
 func (spec *ProgSpec) considerFallback(varName, varValue string) {
@@ -59,25 +23,25 @@ func (spec *ProgSpec) considerEnvFallback(targetVar, fallbackVar string) {
 }
 
 func (spec *ProgSpec) configureCommonEnv() {
-	os.Unsetenv(ENV_LD_PRELOAD)
-	spec.setenv(ENV_STD_THREAD_PREVENT_TRY_CATCH, "true")
-	spec.setenv(ENV_GLIBCXX_FORCE_NEW, "1")
-	spec.setenv(ENV_LD_LIBRARY_PATH, vespa.FindHome()+"/lib64")
-	spec.setenv(ENV_MALLOC_ARENA_MAX, "1")
+	os.Unsetenv(envvars.LD_PRELOAD)
+	spec.setenv(envvars.STD_THREAD_PREVENT_TRY_CATCH, "true")
+	spec.setenv(envvars.GLIBCXX_FORCE_NEW, "1")
+	spec.setenv(envvars.LD_LIBRARY_PATH, vespa.FindHome()+"/lib64")
+	spec.setenv(envvars.MALLOC_ARENA_MAX, "1")
 
 	// fallback from old env.vars:
-	spec.considerEnvFallback(ENV_VESPA_USE_HUGEPAGES_LIST, ENV_HUGEPAGES_LIST)
-	spec.considerEnvFallback(ENV_VESPA_USE_MADVISE_LIST, ENV_MADVISE_LIST)
-	spec.considerEnvFallback(ENV_VESPA_USE_VESPAMALLOC, ENV_VESPAMALLOC_LIST)
-	spec.considerEnvFallback(ENV_VESPA_USE_VESPAMALLOC_D, ENV_VESPAMALLOCD_LIST)
-	spec.considerEnvFallback(ENV_VESPA_USE_VESPAMALLOC_DST, ENV_VESPAMALLOCDST_LIST)
-	spec.considerEnvFallback(ENV_VESPA_USE_NO_VESPAMALLOC, ENV_NO_VESPAMALLOC_LIST)
+	spec.considerEnvFallback(envvars.VESPA_USE_HUGEPAGES_LIST, envvars.HUGEPAGES_LIST)
+	spec.considerEnvFallback(envvars.VESPA_USE_MADVISE_LIST, envvars.MADVISE_LIST)
+	spec.considerEnvFallback(envvars.VESPA_USE_VESPAMALLOC, envvars.VESPAMALLOC_LIST)
+	spec.considerEnvFallback(envvars.VESPA_USE_VESPAMALLOC_D, envvars.VESPAMALLOCD_LIST)
+	spec.considerEnvFallback(envvars.VESPA_USE_VESPAMALLOC_DST, envvars.VESPAMALLOCDST_LIST)
+	spec.considerEnvFallback(envvars.VESPA_USE_NO_VESPAMALLOC, envvars.NO_VESPAMALLOC_LIST)
 	// other fallbacks:
-	spec.considerFallback(ENV_ROOT, vespa.FindHome())
-	spec.considerFallback(ENV_VESPA_USER, vespa.FindVespaUser())
-	spec.considerFallback(ENV_VESPA_USE_HUGEPAGES_LIST, "all")
-	spec.considerFallback(ENV_VESPA_USE_VESPAMALLOC, "all")
-	spec.considerFallback(ENV_VESPA_USE_NO_VESPAMALLOC, strings.Join([]string{
+	spec.considerFallback(envvars.ROOT, vespa.FindHome())
+	spec.considerFallback(envvars.VESPA_USER, vespa.FindVespaUser())
+	spec.considerFallback(envvars.VESPA_USE_HUGEPAGES_LIST, "all")
+	spec.considerFallback(envvars.VESPA_USE_VESPAMALLOC, "all")
+	spec.considerFallback(envvars.VESPA_USE_NO_VESPAMALLOC, strings.Join([]string{
 		"vespa-rpc-invoke",
 		"vespa-get-config",
 		"vespa-sentinel-cmd",
@@ -90,16 +54,16 @@ func (spec *ProgSpec) configureCommonEnv() {
 }
 
 func (spec *ProgSpec) configureHugePages() {
-	if spec.matchesListEnv(ENV_VESPA_USE_HUGEPAGES_LIST) {
-		spec.setenv(ENV_VESPA_USE_HUGEPAGES, "yes")
+	if spec.matchesListEnv(envvars.VESPA_USE_HUGEPAGES_LIST) {
+		spec.setenv(envvars.VESPA_USE_HUGEPAGES, "yes")
 	}
 }
 
 func (spec *ProgSpec) configureUseMadvise() {
-	limit := spec.valueFromListEnv(ENV_VESPA_USE_MADVISE_LIST)
+	limit := spec.valueFromListEnv(envvars.VESPA_USE_MADVISE_LIST)
 	if limit != "" {
-		trace.Trace("shall use madvise with limit", limit, "as set in", ENV_VESPA_USE_MADVISE_LIST)
-		spec.setenv(ENV_VESPA_MALLOC_MADVISE_LIMIT, limit)
+		trace.Trace("shall use madvise with limit", limit, "as set in", envvars.VESPA_USE_MADVISE_LIST)
+		spec.setenv(envvars.VESPA_MALLOC_MADVISE_LIMIT, limit)
 		return
 	}
 }
@@ -113,7 +77,7 @@ func (spec *ProgSpec) configurePath() {
 	spec.prependPath(vespa.FindHome() + "/bin")
 	// how to find the "java" program?
 	// should be available in $VESPA_HOME/bin or JAVA_HOME
-	if javaHome := spec.getenv(ENV_JAVA_HOME); javaHome != "" {
+	if javaHome := spec.getenv(envvars.JAVA_HOME); javaHome != "" {
 		spec.prependPath(javaHome + "/bin")
 	}
 }

@@ -8,6 +8,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/vespa-engine/vespa/client/go/envvars"
 	"github.com/vespa-engine/vespa/client/go/trace"
 	"github.com/vespa-engine/vespa/client/go/util"
 )
@@ -19,7 +20,7 @@ const (
 func (p *Spec) ConfigureNumaCtl() {
 	p.shouldUseNumaCtl = false
 	p.numaSocket = -1
-	if p.Getenv(ENV_VESPA_NO_NUMACTL) != "" {
+	if p.Getenv(envvars.VESPA_NO_NUMACTL) != "" {
 		return
 	}
 	backticks := util.BackTicksIgnoreStderr
@@ -39,7 +40,7 @@ func (p *Spec) ConfigureNumaCtl() {
 		return
 	}
 	p.shouldUseNumaCtl = true
-	if affinity := p.Getenv(ENV_VESPA_AFFINITY_CPU_SOCKET); affinity != "" {
+	if affinity := p.Getenv(envvars.VESPA_AFFINITY_CPU_SOCKET); affinity != "" {
 		wantSocket, _ := strconv.Atoi(affinity)
 		trace.Debug("want socket:", wantSocket)
 		parts := strings.Fields(out)
