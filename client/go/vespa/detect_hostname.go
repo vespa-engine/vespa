@@ -8,10 +8,10 @@ import (
 	"net"
 	"os"
 	"strings"
-)
 
-type lookupAddrFunc func(addr string) ([]string, error)
-type lookupIPFunc func(host string) ([]net.IP, error)
+	"github.com/vespa-engine/vespa/client/go/trace"
+	"github.com/vespa-engine/vespa/client/go/util"
+)
 
 // detect if this host is IPv6-only, in which case we want to pass
 // the flag "-Djava.net.preferIPv6Addresses=true" to any java command
@@ -45,9 +45,7 @@ func HasOnlyIpV6() bool {
 // If automatic detection fails, "localhost" will be returned, so
 // single-node setups still have a good chance of working.
 // Use the enviroment variable VESPA_HOSTNAME to override.
-func FindOurHostname() (string, error) { return findOurHostname(net.LookupAddr, net.LookupIP) }
-
-func findOurHostname(lookupAddr lookupAddrFunc, lookupIP lookupIPFunc) (string, error) {
+func FindOurHostname() (string, error) {
 	env := os.Getenv("VESPA_HOSTNAME")
 	if env != "" {
 		// assumes: env var is already validated and OK
@@ -55,16 +53,21 @@ func findOurHostname(lookupAddr lookupAddrFunc, lookupIP lookupIPFunc) (string, 
 	}
 	name, err := os.Hostname()
 	if err != nil {
-		name, err = findOurHostnameFrom("localhost", lookupAddr, lookupIP)
-	} else {
-		name, err = findOurHostnameFrom(name, lookupAddr, lookupIP)
+		name = "localhost"
 	}
-	name = strings.TrimSuffix(name, ".")
-	os.Setenv("VESPA_HOSTNAME", name)
+	name, err = findOurHostnameFrom(name)
+	if err == nil {
+		os.Setenv("VESPA_HOSTNAME", name)
+	}
 	return name, err
 }
 
 func validateHostname(name string) bool {
+	ipAddrs, _ := net.LookupIP(name)
+	trace.Debug("lookupIP", name, "=>", ipAddrs)
+	if len(ipAddrs) < 1 {
+		return false
+	}
 	myIpAddresses := make(map[string]bool)
 	interfaceAddrs, _ := net.InterfaceAddrs()
 	for _, ifAddr := range interfaceAddrs {
@@ -73,7 +76,7 @@ func validateHostname(name string) bool {
 			myIpAddresses[ipnet.IP.String()] = true
 		}
 	}
-	ipAddrs, _ := net.LookupIP(name)
+	trace.Debug("validate with interfaces =>", myIpAddresses)
 	someGood := false
 	for _, addr := range ipAddrs {
 		if len(myIpAddresses) == 0 {
@@ -89,52 +92,39 @@ func validateHostname(name string) bool {
 	return someGood
 }
 
-func findOurHostnameFrom(name string, lookupAddr lookupAddrFunc, lookupIP lookupIPFunc) (string, error) {
-	if strings.Contains(name, ".") && validateHostname(name) {
-		// it's all good
-		return name, nil
+func goodHostname(name string) (result string, good bool) {
+	result = strings.TrimSpace(name)
+	result = strings.TrimSuffix(result, ".")
+	if name != result {
+		trace.Trace("trimmed hostname", name, "=>", result)
 	}
-	possibles := make([]string, 0, 5)
-	if name != "" {
-		ipAddrs, _ := lookupIP(name)
-		for _, addr := range ipAddrs {
-			switch {
-			case addr.IsLoopback():
-				// skip
-			case addr.To4() != nil || addr.To16() != nil:
-				reverseNames, _ := lookupAddr(addr.String())
-				possibles = append(possibles, reverseNames...)
-			}
-		}
+	good = strings.Contains(result, ".") && validateHostname(result)
+	trace.Debug("hostname:", result, "good =>", good)
+	return
+}
+
+func findOurHostnameFrom(name string) (string, error) {
+	trimmed, good := goodHostname(name)
+	if good {
+		return trimmed, nil
 	}
-	interfaceAddrs, _ := net.InterfaceAddrs()
-	for _, ifAddr := range interfaceAddrs {
-		if ipnet, ok := ifAddr.(*net.IPNet); ok {
-			ip := ipnet.IP
-			if ip == nil || ip.IsLoopback() {
-				continue
-			}
-			reverseNames, _ := lookupAddr(ip.String())
-			possibles = append(possibles, reverseNames...)
-		}
+	backticks := util.BackTicksIgnoreStderr
+	out, err := backticks.Run("vespa-detect-hostname")
+	if err != nil {
+		out, err = backticks.Run("hostname", "-f")
 	}
-	// look for valid possible starting with the given name
-	for _, poss := range possibles {
-		if strings.HasPrefix(poss, name+".") && validateHostname(poss) {
-			return poss, nil
-		}
+	if err != nil {
+		out, err = backticks.Run("hostname")
 	}
-	// look for valid possible
-	for _, poss := range possibles {
-		if strings.Contains(poss, ".") && validateHostname(poss) {
-			return poss, nil
-		}
+	alternate, good := goodHostname(out)
+	if err == nil && good {
+		return alternate, nil
 	}
-	// look for any valid possible
-	for _, poss := range possibles {
-		if validateHostname(poss) {
-			return poss, nil
-		}
+	if validateHostname(trimmed) {
+		return trimmed, nil
 	}
-	return "localhost", fmt.Errorf("fallback to localhost, os.Hostname '%s'", name)
+	if validateHostname(alternate) {
+		return alternate, nil
+	}
+	return "localhost", fmt.Errorf("fallback to localhost [os.Hostname was '%s']", name)
 }
