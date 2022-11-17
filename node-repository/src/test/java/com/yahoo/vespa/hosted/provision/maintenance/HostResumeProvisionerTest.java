@@ -82,7 +82,6 @@ public class HostResumeProvisionerTest {
 
         hostProvisioner.without(MockHostProvisioner.Behaviour.failDnsUpdate);
         hostResumeProvisioner.maintain();
-        provisioning.get().forEach(h -> System.out.println(h.hostname() + " " + h.ipConfig()));
         assertTrue("IP addresses written as DNS updates are succeeding",
                 provisioning.get().stream().noneMatch(host -> host.ipConfig().pool().ipSet().isEmpty()));
     }

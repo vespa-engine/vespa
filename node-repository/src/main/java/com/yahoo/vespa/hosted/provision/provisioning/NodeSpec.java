@@ -116,7 +116,7 @@ public interface NodeSpec {
 
         @Override
         public boolean isCompatible(NodeResources resources) {
-            return requestedNodeResources.compatibleWith(resources);
+            return resources.equalsWhereSpecified(requestedNodeResources);
         }
 
         @Override
@@ -148,7 +148,7 @@ public interface NodeSpec {
 
         @Override
         public boolean needsResize(Node node) {
-            return ! node.resources().compatibleWith(requestedNodeResources);
+            return ! node.resources().equalsWhereSpecified(requestedNodeResources);
         }
 
         @Override

@@ -3,10 +3,8 @@ package com.yahoo.vespa.hosted.provision.autoscale;
 
 import com.yahoo.config.provision.ClusterResources;
 import com.yahoo.config.provision.NodeResources;
-import com.yahoo.vespa.hosted.provision.NodeList;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
 
-import java.util.List;
 import java.util.Optional;
 
 /**
@@ -60,8 +58,9 @@ public class AllocationOptimizer {
                 var allocatableResources = AllocatableClusterResources.from(resources, current.clusterSpec(), limits,
                                                                             availableRealHostResources, nodeRepository);
                 if (allocatableResources.isEmpty()) continue;
-                if (bestAllocation.isEmpty() || allocatableResources.get().preferableTo(bestAllocation.get()))
+                if (bestAllocation.isEmpty() || allocatableResources.get().preferableTo(bestAllocation.get())) {
                     bestAllocation = allocatableResources;
+                }
             }
         }
         return bestAllocation;

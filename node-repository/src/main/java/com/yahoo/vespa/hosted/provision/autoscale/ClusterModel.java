@@ -198,7 +198,7 @@ public class ClusterModel {
     }
 
     /**
-     * Returns the ideal load across the nodes of this sich that each node will be at ideal load
+     * Returns the ideal load across the nodes of this such that each node will be at ideal load
      * if one of  the nodes go down.
      */
     public Load idealLoad() {
