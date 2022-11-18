@@ -99,14 +99,14 @@ TensorBufferTypeMapperTest::select_type_ids()
  * TensorBufferStore.
  */
 
-VESPA_GTEST_INSTANTIATE_TEST_SUITE_P(TensorBufferTypeMapperMultiTest,
-                                     TensorBufferTypeMapperTest,
-                                     testing::Values(TestParam("1d", {8, 16, 32, 40, 64}, tensor_type_sparse_spec),
-                                                     TestParam("1dfloat", {4, 12, 20, 28, 36}, float_tensor_type_spec),
-                                                     TestParam("2d", {8, 24, 40, 56, 80}, tensor_type_2d_spec),
-                                                     TestParam("2dmixed", {8, 24, 48, 64, 96}, tensor_type_2d_mixed_spec),
-                                                     TestParam("dense", {8, 24}, tensor_type_dense_spec)),
-                                     testing::PrintToStringParamName());
+INSTANTIATE_TEST_SUITE_P(TensorBufferTypeMapperMultiTest,
+                         TensorBufferTypeMapperTest,
+                         testing::Values(TestParam("1d", {8, 16, 32, 40, 64}, tensor_type_sparse_spec),
+                                         TestParam("1dfloat", {4, 12, 20, 28, 36}, float_tensor_type_spec),
+                                         TestParam("2d", {8, 24, 40, 56, 80}, tensor_type_2d_spec),
+                                         TestParam("2dmixed", {8, 24, 48, 64, 96}, tensor_type_2d_mixed_spec),
+                                         TestParam("dense", {8, 24}, tensor_type_dense_spec)),
+                         testing::PrintToStringParamName());
 
 TEST_P(TensorBufferTypeMapperTest, array_sizes_are_calculated)
 {

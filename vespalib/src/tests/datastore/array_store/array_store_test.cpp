@@ -193,15 +193,15 @@ TEST(BasicStoreTest, test_with_trivial_and_non_trivial_types)
     EXPECT_FALSE(vespalib::can_skip_destruction<StringStoreTest::value_type>);
 }
 
-VESPA_GTEST_INSTANTIATE_TEST_SUITE_P(NumberStoreMultiTest,
-                                     NumberStoreTest,
-                                     testing::Values(TestParam(false), TestParam(true)),
-                                     testing::PrintToStringParamName());
+INSTANTIATE_TEST_SUITE_P(NumberStoreMultiTest,
+                         NumberStoreTest,
+                         testing::Values(TestParam(false), TestParam(true)),
+                         testing::PrintToStringParamName());
 
-VESPA_GTEST_INSTANTIATE_TEST_SUITE_P(NumberStoreFreeListsDisabledMultiTest,
-                                     NumberStoreFreeListsDisabledTest,
-                                     testing::Values(TestParam(false), TestParam(true)),
-                                     testing::PrintToStringParamName());
+INSTANTIATE_TEST_SUITE_P(NumberStoreFreeListsDisabledMultiTest,
+                         NumberStoreFreeListsDisabledTest,
+                         testing::Values(TestParam(false), TestParam(true)),
+                         testing::PrintToStringParamName());
 
 TEST_P(NumberStoreTest, control_static_sizes) {
 #ifdef _LIBCPP_VERSION

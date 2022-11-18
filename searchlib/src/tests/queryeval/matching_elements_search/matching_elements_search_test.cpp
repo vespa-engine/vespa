@@ -122,7 +122,7 @@ template <> MatchingElementsSearchTest<const char *>::LookupTests MatchingElemen
 #endif
 
 using MatchingElementsSearchTestTypes = ::testing::Types<int64_t, const char *>;
-VESPA_GTEST_TYPED_TEST_SUITE(MatchingElementsSearchTest, MatchingElementsSearchTestTypes);
+TYPED_TEST_SUITE(MatchingElementsSearchTest, MatchingElementsSearchTestTypes);
 
 TYPED_TEST(MatchingElementsSearchTest, verify_matching_elements)
 {

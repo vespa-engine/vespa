@@ -111,7 +111,7 @@ std::string version_as_gtest_string(TestParamInfo<vespalib::Version> info) {
 
 }
 
-VESPA_GTEST_INSTANTIATE_TEST_SUITE_P(MultiVersionTest, StorageProtocolTest,
+INSTANTIATE_TEST_SUITE_P(MultiVersionTest, StorageProtocolTest,
                                      Values(vespalib::Version(7, 41, 19)),
                                      version_as_gtest_string);
 

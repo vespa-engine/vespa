@@ -60,7 +60,7 @@ struct LockableMapTest : ::testing::Test {
 };
 
 using MapTypes = ::testing::Types<bucketdb::BTreeLockableMap<A>, bucketdb::StripedBTreeLockableMap<A>>;
-VESPA_GTEST_TYPED_TEST_SUITE(LockableMapTest, MapTypes);
+TYPED_TEST_SUITE(LockableMapTest, MapTypes);
 
 // Disable warnings emitted by gtest generated files when using typed tests
 #pragma GCC diagnostic push

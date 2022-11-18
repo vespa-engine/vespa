@@ -192,7 +192,7 @@ for (auto& bucket : buckets) {
     std::cout << "Unregister rate: " << std::fixed << rate << std::endl;
 }
 
-VESPA_GTEST_INSTANTIATE_TEST_SUITE_P(LidAllocatorParameterizedPerformanceTest, LidAllocatorPerformanceTest, testing::Values(false, true));
+INSTANTIATE_TEST_SUITE_P(LidAllocatorParameterizedPerformanceTest, LidAllocatorPerformanceTest, testing::Values(false, true));
 
 }
 

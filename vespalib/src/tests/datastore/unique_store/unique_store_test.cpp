@@ -288,7 +288,7 @@ struct HashSmallOffsetNumberUniqueStore
 };
 
 using UniqueStoreTestTypes = ::testing::Types<BTreeNumberUniqueStore, BTreeStringUniqueStore, BTreeCStringUniqueStore, BTreeDoubleUniqueStore, HybridNumberUniqueStore, HybridStringUniqueStore, HybridCStringUniqueStore, HybridDoubleUniqueStore, HashNumberUniqueStore, HashStringUniqueStore, HashCStringUniqueStore, HashDoubleUniqueStore>;
-VESPA_GTEST_TYPED_TEST_SUITE(TestBase, UniqueStoreTestTypes);
+TYPED_TEST_SUITE(TestBase, UniqueStoreTestTypes);
 
 // Disable warnings emitted by gtest generated files when using typed tests
 #pragma GCC diagnostic push
