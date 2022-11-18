@@ -9,6 +9,7 @@ import (
 
 	"github.com/vespa-engine/vespa/client/go/defaults"
 	"github.com/vespa-engine/vespa/client/go/envvars"
+	"github.com/vespa-engine/vespa/client/go/prog"
 	"github.com/vespa-engine/vespa/client/go/trace"
 	"github.com/vespa-engine/vespa/client/go/util"
 )
@@ -164,5 +165,13 @@ func (a *ApplicationContainer) configureOptions() {
 		logsDir := defaults.UnderVespaHome("logs/vespa")
 		zkLogFile := fmt.Sprintf("%s/zookeeper.%s", logsDir, svcName)
 		opts.AddOption("-Dzookeeper_log_file_prefix=" + zkLogFile)
+	}
+}
+
+func (c *ApplicationContainer) exportExtraEnv(ps *prog.Spec) {
+	if c.ConfigId() != "" {
+		ps.Setenv(envvars.VESPA_CONFIG_ID, c.ConfigId())
+	} else {
+		util.JustExitMsg("application container requires a config id")
 	}
 }
