@@ -17,7 +17,7 @@ import (
 
 func TestProdInit(t *testing.T) {
 	pkgDir := filepath.Join(t.TempDir(), "app")
-	createApplication(t, pkgDir, false)
+	createApplication(t, pkgDir, false, false)
 
 	answers := []string{
 		// Regions
@@ -85,7 +85,7 @@ func readFileString(t *testing.T, filename string) string {
 	return string(content)
 }
 
-func createApplication(t *testing.T, pkgDir string, java bool) {
+func createApplication(t *testing.T, pkgDir string, java bool, skipTests bool) {
 	appDir := filepath.Join(pkgDir, "src", "main", "application")
 	targetDir := filepath.Join(pkgDir, "target")
 	if err := os.MkdirAll(appDir, 0755); err != nil {
@@ -125,10 +125,13 @@ func createApplication(t *testing.T, pkgDir string, java bool) {
 		t.Fatal(err)
 	}
 	if java {
+		if skipTests {
+			t.Fatalf("skipTests=%t has no effect when java=%t", skipTests, java)
+		}
 		if err := os.WriteFile(filepath.Join(pkgDir, "pom.xml"), []byte(""), 0644); err != nil {
 			t.Fatal(err)
 		}
-	} else {
+	} else if !skipTests {
 		testsDir := filepath.Join(pkgDir, "src", "test", "application", "tests")
 		testBytes, _ := io.ReadAll(strings.NewReader("{\"steps\":[{}]}"))
 		writeTest(filepath.Join(testsDir, "system-test", "test.json"), testBytes, t)
@@ -148,8 +151,18 @@ func writeTest(path string, content []byte, t *testing.T) {
 
 func TestProdSubmit(t *testing.T) {
 	pkgDir := filepath.Join(t.TempDir(), "app")
-	createApplication(t, pkgDir, false)
+	createApplication(t, pkgDir, false, false)
+	prodSubmit(pkgDir, t)
+}
 
+func TestProdSubmitWithoutTests(t *testing.T) {
+	pkgDir := filepath.Join(t.TempDir(), "app")
+	createApplication(t, pkgDir, false, true)
+	prodSubmit(pkgDir, t)
+}
+
+func prodSubmit(pkgDir string, t *testing.T) {
+	t.Helper()
 	httpClient := &mock.HTTPClient{}
 	httpClient.NextResponseString(200, `ok`)
 
@@ -192,7 +205,7 @@ func TestProdSubmit(t *testing.T) {
 
 func TestProdSubmitWithJava(t *testing.T) {
 	pkgDir := filepath.Join(t.TempDir(), "app")
-	createApplication(t, pkgDir, true)
+	createApplication(t, pkgDir, true, false)
 
 	httpClient := &mock.HTTPClient{}
 	httpClient.NextResponseString(200, `ok`)
@@ -219,7 +232,7 @@ func TestProdSubmitWithJava(t *testing.T) {
 
 func TestProdSubmitInvalidZip(t *testing.T) {
 	pkgDir := filepath.Join(t.TempDir(), "app")
-	createApplication(t, pkgDir, true)
+	createApplication(t, pkgDir, true, false)
 
 	httpClient := &mock.HTTPClient{}
 	httpClient.NextResponseString(200, `ok`)
