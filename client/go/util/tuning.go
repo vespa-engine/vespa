@@ -8,25 +8,22 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/vespa-engine/vespa/client/go/envvars"
 	"github.com/vespa-engine/vespa/client/go/trace"
 )
 
-const (
-	ENV_VESPA_TIMER_HZ = "VESPA_TIMER_HZ"
-)
-
 func OptionallyReduceTimerFrequency() {
-	if os.Getenv(ENV_VESPA_TIMER_HZ) == "" {
+	if os.Getenv(envvars.VESPA_TIMER_HZ) == "" {
 		backticks := BackTicksIgnoreStderr
 		out, _ := backticks.Run("uname", "-r")
 		if strings.Contains(out, "linuxkit") {
-			if os.Getenv(ENV_VESPA_TIMER_HZ) != "100" {
+			if os.Getenv(envvars.VESPA_TIMER_HZ) != "100" {
 				trace.Trace(
 					"Running docker on macos.",
 					"Reducing base frequency from 1000hz to 100hz due to high cost of sampling time.",
 					"This will reduce timeout accuracy.")
 			}
-			os.Setenv(ENV_VESPA_TIMER_HZ, "100")
+			os.Setenv(envvars.VESPA_TIMER_HZ, "100")
 		}
 	}
 }
@@ -34,13 +31,13 @@ func OptionallyReduceTimerFrequency() {
 func TuneResourceLimits() {
 	var numfiles uint64 = 262144
 	var numprocs uint64 = 409600
-	if env := os.Getenv("file_descriptor_limit"); env != "" {
+	if env := os.Getenv(envvars.FILE_DESCRIPTOR_LIMIT); env != "" {
 		n, err := strconv.Atoi(env)
 		if err != nil {
 			numfiles = uint64(n)
 		}
 	}
-	if env := os.Getenv("num_processes_limit"); env != "" {
+	if env := os.Getenv(envvars.NUM_PROCESSES_LIMIT); env != "" {
 		n, err := strconv.Atoi(env)
 		if err != nil {
 			numprocs = uint64(n)

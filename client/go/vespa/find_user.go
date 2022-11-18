@@ -8,6 +8,8 @@ import (
 	"os"
 	"os/user"
 	"strconv"
+
+	"github.com/vespa-engine/vespa/client/go/envvars"
 )
 
 // Which user should vespa services run as?  If current user is root,
@@ -17,7 +19,7 @@ import (
 // we want to change to some non-privileged user.
 // Should be run after LoadDefaultEnv() which possibly loads VESPA_USER
 func FindVespaUser() string {
-	uName := os.Getenv("VESPA_USER")
+	uName := os.Getenv(envvars.VESPA_USER)
 	if uName != "" {
 		// no check here, assume valid
 		return uName
@@ -40,7 +42,7 @@ func FindVespaUser() string {
 		}
 	}
 	if uName != "" {
-		os.Setenv("VESPA_USER", uName)
+		os.Setenv(envvars.VESPA_USER, uName)
 	}
 	return uName
 }
@@ -52,8 +54,8 @@ func FindVespaUser() string {
 func FindVespaUidAndGid() (userId, groupId int) {
 	userId = -1
 	groupId = -1
-	uName := os.Getenv("VESPA_USER")
-	gName := os.Getenv("VESPA_GROUP")
+	uName := os.Getenv(envvars.VESPA_USER)
+	gName := os.Getenv(envvars.VESPA_GROUP)
 	if uName == "" {
 		uName = FindVespaUser()
 	}

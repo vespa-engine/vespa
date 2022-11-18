@@ -9,6 +9,7 @@ import (
 	"os"
 	"strings"
 
+	"github.com/vespa-engine/vespa/client/go/envvars"
 	"github.com/vespa-engine/vespa/client/go/trace"
 	"github.com/vespa-engine/vespa/client/go/util"
 )
@@ -46,7 +47,7 @@ func HasOnlyIpV6() bool {
 // single-node setups still have a good chance of working.
 // Use the enviroment variable VESPA_HOSTNAME to override.
 func FindOurHostname() (string, error) {
-	env := os.Getenv("VESPA_HOSTNAME")
+	env := os.Getenv(envvars.VESPA_HOSTNAME)
 	if env != "" {
 		// assumes: env var is already validated and OK
 		return env, nil
@@ -57,7 +58,7 @@ func FindOurHostname() (string, error) {
 	}
 	name, err = findOurHostnameFrom(name)
 	if err == nil {
-		os.Setenv("VESPA_HOSTNAME", name)
+		os.Setenv(envvars.VESPA_HOSTNAME, name)
 	}
 	return name, err
 }

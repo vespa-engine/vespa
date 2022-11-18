@@ -9,6 +9,7 @@ import (
 	"os"
 	"strings"
 
+	"github.com/vespa-engine/vespa/client/go/envvars"
 	"github.com/vespa-engine/vespa/client/go/trace"
 	"github.com/vespa-engine/vespa/client/go/util"
 )
@@ -20,7 +21,7 @@ const (
 
 func FindHome() string {
 	// use env var if it is set:
-	if ev := os.Getenv("VESPA_HOME"); ev != "" {
+	if ev := os.Getenv(envvars.VESPA_HOME); ev != "" {
 		return ev
 	}
 	// some helper functions...
@@ -43,7 +44,7 @@ func FindHome() string {
 			trace.Debug("findPath", myProgName, "=>", path)
 			return path
 		}
-		for _, dir := range strings.Split(os.Getenv("PATH"), ":") {
+		for _, dir := range strings.Split(os.Getenv(envvars.PATH), ":") {
 			fn := fmt.Sprintf("%s/%s", dir, myProgName)
 			if util.IsRegularFile(fn) {
 				trace.Debug("findPath", myProgName, "=>", dir)
@@ -57,12 +58,12 @@ func FindHome() string {
 		mySelf := fmt.Sprintf("%s/%s", path, scriptUtilsFilename)
 		if util.IsRegularFile(mySelf) {
 			trace.Debug("found", mySelf, "VH =>", path)
-			os.Setenv("VESPA_HOME", path)
+			os.Setenv(envvars.VESPA_HOME, path)
 			return path
 		}
 	}
 	// fallback
-	os.Setenv("VESPA_HOME", defaultVespaInstallDir)
+	os.Setenv(envvars.VESPA_HOME, defaultVespaInstallDir)
 	return defaultVespaInstallDir
 }
 

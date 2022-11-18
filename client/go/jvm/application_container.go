@@ -8,6 +8,7 @@ import (
 	"os"
 
 	"github.com/vespa-engine/vespa/client/go/defaults"
+	"github.com/vespa-engine/vespa/client/go/envvars"
 	"github.com/vespa-engine/vespa/client/go/trace"
 	"github.com/vespa-engine/vespa/client/go/util"
 )
@@ -144,7 +145,7 @@ func (a *ApplicationContainer) configureCPU(qc *QrStartConfig) {
 func (a *ApplicationContainer) configureOptions() {
 	opts := a.JvmOptions()
 	opts.AddOption("-Dconfig.id=" + a.ConfigId())
-	if env := os.Getenv(VESPA_CONTAINER_JVMARGS); env != "" {
+	if env := os.Getenv(envvars.VESPA_CONTAINER_JVMARGS); env != "" {
 		opts.AddJvmArgsFromString(env)
 	}
 	qrStartCfg := a.getQrStartCfg()

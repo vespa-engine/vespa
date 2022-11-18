@@ -9,6 +9,8 @@ import (
 	"os"
 	"strings"
 	"time"
+
+	"github.com/vespa-engine/vespa/client/go/envvars"
 )
 
 // make a vespa-format log line
@@ -16,9 +18,9 @@ import (
 func logMessage(l outputLevel, msg string) {
 	out := os.Stderr
 	unixTime := float64(time.Now().UnixMicro()) * 1.0e-6
-	hostname := os.Getenv("VESPA_HOSTNAME")
+	hostname := os.Getenv(envvars.VESPA_HOSTNAME)
 	pid := os.Getpid()
-	service := os.Getenv("VESPA_SERVICE_NAME")
+	service := os.Getenv(envvars.VESPA_SERVICE_NAME)
 	component := "stderr"
 	level := "error"
 	switch l {

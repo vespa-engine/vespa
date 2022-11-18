@@ -6,6 +6,7 @@ package configserver
 import (
 	"os"
 
+	"github.com/vespa-engine/vespa/client/go/envvars"
 	"github.com/vespa-engine/vespa/client/go/jvm"
 	"github.com/vespa-engine/vespa/client/go/trace"
 	"github.com/vespa-engine/vespa/client/go/util"
@@ -17,10 +18,10 @@ const (
 )
 
 func commonPreChecks() (veHome string) {
-	if doTrace := os.Getenv("TRACE_JVM_STARTUP"); doTrace != "" {
+	if doTrace := os.Getenv(envvars.TRACE_JVM_STARTUP); doTrace != "" {
 		trace.AdjustVerbosity(1)
 	}
-	if doDebug := os.Getenv("DEBUG_JVM_STARTUP"); doDebug != "" {
+	if doDebug := os.Getenv(envvars.DEBUG_JVM_STARTUP); doDebug != "" {
 		trace.AdjustVerbosity(2)
 	}
 	_ = vespa.FindAndVerifyVespaHome()
@@ -49,7 +50,7 @@ func JustStartConfigserver() int {
 	removeStaleZkLocks(vespaHome)
 	c := jvm.NewStandaloneContainer(SERVICE_NAME)
 	jvmOpts := c.JvmOptions()
-	if extra := os.Getenv("VESPA_CONFIGSERVER_JVMARGS"); extra != "" {
+	if extra := os.Getenv(envvars.VESPA_CONFIGSERVER_JVMARGS); extra != "" {
 		jvmOpts.AddJvmArgsFromString(extra)
 	}
 	minFallback := jvm.MegaBytesOfMemory(128)

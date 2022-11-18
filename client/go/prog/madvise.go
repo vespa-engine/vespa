@@ -4,14 +4,15 @@
 package prog
 
 import (
+	"github.com/vespa-engine/vespa/client/go/envvars"
 	"github.com/vespa-engine/vespa/client/go/trace"
 )
 
 func (spec *Spec) ConfigureUseMadvise() {
-	limit := spec.valueFromListEnv(ENV_VESPA_USE_MADVISE_LIST)
+	limit := spec.valueFromListEnv(envvars.VESPA_USE_MADVISE_LIST)
 	if limit != "" {
-		trace.Trace("shall use madvise with limit", limit, "as set in", ENV_VESPA_USE_MADVISE_LIST)
-		spec.Setenv(ENV_VESPA_MALLOC_MADVISE_LIMIT, limit)
+		trace.Trace("shall use madvise with limit", limit, "as set in", envvars.VESPA_USE_MADVISE_LIST)
+		spec.Setenv(envvars.VESPA_MALLOC_MADVISE_LIMIT, limit)
 		return
 	}
 }

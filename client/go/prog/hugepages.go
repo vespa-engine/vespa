@@ -4,12 +4,13 @@
 package prog
 
 import (
+	"github.com/vespa-engine/vespa/client/go/envvars"
 	"github.com/vespa-engine/vespa/client/go/trace"
 )
 
 func (spec *Spec) ConfigureHugePages() {
-	if spec.matchesListEnv(ENV_VESPA_USE_HUGEPAGES_LIST) {
-		trace.Debug("setting", ENV_VESPA_USE_HUGEPAGES, "= 'yes'")
-		spec.Setenv(ENV_VESPA_USE_HUGEPAGES, "yes")
+	if spec.matchesListEnv(envvars.VESPA_USE_HUGEPAGES_LIST) {
+		trace.Debug("setting", envvars.VESPA_USE_HUGEPAGES, "= 'yes'")
+		spec.Setenv(envvars.VESPA_USE_HUGEPAGES, "yes")
 	}
 }

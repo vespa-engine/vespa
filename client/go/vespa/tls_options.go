@@ -6,6 +6,8 @@ import (
 	"bytes"
 	"encoding/json"
 	"os"
+
+	"github.com/vespa-engine/vespa/client/go/envvars"
 )
 
 type VespaTlsConfig struct {
@@ -18,7 +20,7 @@ type VespaTlsConfig struct {
 }
 
 func LoadTlsConfig() (*VespaTlsConfig, error) {
-	fn := os.Getenv("VESPA_TLS_CONFIG_FILE")
+	fn := os.Getenv(envvars.VESPA_TLS_CONFIG_FILE)
 	if fn == "" {
 		return nil, nil
 	}
@@ -40,24 +42,24 @@ func ExportSecurityEnvToSh() {
 	cfg, _ := LoadTlsConfig()
 	helper := newShellEnvExporter()
 	if cfg == nil {
-		helper.unsetVar("VESPA_TLS_ENABLED")
+		helper.unsetVar(envvars.VESPA_TLS_ENABLED)
 	} else {
 		if fn := cfg.Files.PrivateKey; fn != "" {
-			helper.overrideVar("VESPA_TLS_PRIVATE_KEY", fn)
+			helper.overrideVar(envvars.VESPA_TLS_PRIVATE_KEY, fn)
 		}
 		if fn := cfg.Files.CaCertificates; fn != "" {
-			helper.overrideVar("VESPA_TLS_CA_CERT", fn)
+			helper.overrideVar(envvars.VESPA_TLS_CA_CERT, fn)
 		}
 		if fn := cfg.Files.Certificates; fn != "" {
-			helper.overrideVar("VESPA_TLS_CERT", fn)
+			helper.overrideVar(envvars.VESPA_TLS_CERT, fn)
 		}
 		if cfg.DisableHostnameValidation {
-			helper.overrideVar("VESPA_TLS_HOSTNAME_VALIDATION_DISABLED", "1")
+			helper.overrideVar(envvars.VESPA_TLS_HOSTNAME_VALIDATION_DISABLED, "1")
 		} else {
-			helper.unsetVar("VESPA_TLS_HOSTNAME_VALIDATION_DISABLED")
+			helper.unsetVar(envvars.VESPA_TLS_HOSTNAME_VALIDATION_DISABLED)
 		}
-		if os.Getenv("VESPA_TLS_INSECURE_MIXED_MODE") != "plaintext_client_mixed_server" {
-			helper.overrideVar("VESPA_TLS_ENABLED", "1")
+		if os.Getenv(envvars.VESPA_TLS_INSECURE_MIXED_MODE) != "plaintext_client_mixed_server" {
+			helper.overrideVar(envvars.VESPA_TLS_ENABLED, "1")
 		}
 	}
 	helper.dump()

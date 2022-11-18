@@ -7,6 +7,7 @@ import (
 	"os"
 	"strings"
 
+	"github.com/vespa-engine/vespa/client/go/envvars"
 	"github.com/vespa-engine/vespa/client/go/trace"
 )
 
@@ -56,7 +57,7 @@ func (p *ProgSpec) getenv(k string) string {
 
 func (p *ProgSpec) prependPath(dirName string) {
 	pathList := []string{dirName}
-	oldPath := p.getenv(ENV_PATH)
+	oldPath := p.getenv(envvars.PATH)
 	if oldPath == "" {
 		oldPath = "/usr/bin"
 	}
@@ -66,8 +67,8 @@ func (p *ProgSpec) prependPath(dirName string) {
 		}
 	}
 	newPath := strings.Join(pathList, ":")
-	p.setenv(ENV_PATH, newPath)
-	os.Setenv(ENV_PATH, newPath)
+	p.setenv(envvars.PATH, newPath)
+	os.Setenv(envvars.PATH, newPath)
 }
 
 func (p *ProgSpec) matchesListEnv(envVarName string) bool {

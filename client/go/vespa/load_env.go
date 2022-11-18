@@ -11,15 +11,12 @@ import (
 	"os"
 	"strings"
 
+	"github.com/vespa-engine/vespa/client/go/envvars"
 	"github.com/vespa-engine/vespa/client/go/trace"
 	"github.com/vespa-engine/vespa/client/go/util"
 )
 
 const (
-	ENV_JAVA_HOME       = util.ENV_JAVA_HOME
-	ENV_PATH            = util.ENV_PATH
-	ENV_VESPA_HOME      = util.ENV_VESPA_HOME
-	ENV_VESPA_USER      = util.ENV_VESPA_USER
 	CURRENT_GCC_TOOLSET = "/opt/rh/gcc-toolset-11/root/usr/bin"
 )
 
@@ -35,8 +32,8 @@ func LoadDefaultEnv() error {
 func ExportDefaultEnvToSh() error {
 	holder := newShellEnvExporter()
 	err := loadDefaultEnvTo(holder)
-	holder.fallbackVar(ENV_VESPA_HOME, FindHome())
-	holder.fallbackVar(ENV_VESPA_USER, FindVespaUser())
+	holder.fallbackVar(envvars.VESPA_HOME, FindHome())
+	holder.fallbackVar(envvars.VESPA_USER, FindVespaUser())
 	ensureGoodPath(holder)
 	holder.dump()
 	return err
@@ -269,10 +266,10 @@ type pathBuilder struct {
 
 func (builder *pathBuilder) applyTo(receiver loadEnvReceiver) {
 	newPath := strings.Join(builder.curPath, ":")
-	if newPath != receiver.currentValue(ENV_PATH) {
+	if newPath != receiver.currentValue(envvars.PATH) {
 		trace.Trace("updating PATH in environment =>", newPath)
 	}
-	receiver.overrideVar(ENV_PATH, newPath)
+	receiver.overrideVar(envvars.PATH, newPath)
 }
 
 func (builder *pathBuilder) appendPath(p string) {
@@ -295,10 +292,10 @@ func ensureGoodPath(receiver loadEnvReceiver) {
 	// Prefer newer gdb and pstack:
 	builder.appendPath("/opt/rh/gcc-toolset-11/root/usr/bin")
 	// how to find the "java" program?
-	if javaHome := os.Getenv(ENV_JAVA_HOME); javaHome != "" {
+	if javaHome := os.Getenv(envvars.JAVA_HOME); javaHome != "" {
 		builder.appendPath(javaHome + "/bin")
 	}
-	envPath := receiver.currentValue(ENV_PATH)
+	envPath := receiver.currentValue(envvars.PATH)
 	for _, p := range strings.Split(envPath, ":") {
 		builder.appendPath(p)
 	}

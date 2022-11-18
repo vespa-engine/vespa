@@ -9,39 +9,25 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/vespa-engine/vespa/client/go/envvars"
 	"github.com/vespa-engine/vespa/client/go/trace"
-	"github.com/vespa-engine/vespa/client/go/util"
 )
 
 const (
-	ENV_VESPA_HOME = util.ENV_VESPA_HOME
-	ENV_VESPA_HOST = util.ENV_VESPA_HOSTNAME
-	ENV_VESPA_USER = util.ENV_VESPA_USER
-
-	ENV_CONFIGSERVERS     = "VESPA_CONFIGSERVERS"
-	ENV_ADDR_CONFIGSERVER = "addr_configserver"
-
 	DEFAULT_VESPA_HOME = "/opt/vespa"
 	DEFAULT_VESPA_USER = "vespa"
 	DEFAULT_VESPA_HOST = "localhost"
 
-	DEFAULT_VESPA_PORT_BASE = 19000
-	ENV_VESPA_PORT_BASE     = "VESPA_PORT_BASE"
-
+	DEFAULT_VESPA_PORT_BASE      = 19000
 	CONFIGSERVER_RPC_PORT_OFFSET = 70
-	ENV_CONFIGSERVER_RPC_PORT    = "port_configserver_rpc"
-
-	CONFIGPROXY_RPC_PORT_OFFSET = 90
-	ENV_CONFIGPROXY_RPC_PORT    = "port_configproxy_rpc"
-
-	DEFAULT_WEB_SERVICE_PORT = 8080
-	ENV_WEB_SERVICE_PORT     = "VESPA_WEB_SERVICE_PORT"
+	CONFIGPROXY_RPC_PORT_OFFSET  = 90
+	DEFAULT_WEB_SERVICE_PORT     = 8080
 )
 
 // Compute the path prefix where Vespa files will live.
 // Note: does not end with "/"
 func VespaHome() string {
-	if env := os.Getenv(ENV_VESPA_HOME); env != "" {
+	if env := os.Getenv(envvars.VESPA_HOME); env != "" {
 		return env
 	}
 	return DEFAULT_VESPA_HOME
@@ -56,7 +42,7 @@ func UnderVespaHome(p string) string {
 
 // Compute the user name to own directories and run processes.
 func VespaUser() string {
-	if env := os.Getenv(ENV_VESPA_USER); env != "" {
+	if env := os.Getenv(envvars.VESPA_USER); env != "" {
 		return env
 	}
 	return DEFAULT_VESPA_USER
@@ -67,7 +53,7 @@ func VespaUser() string {
 // programs and provided in the environment variable VESPA_HOSTNAME;
 // if that variable isn't set a default of "localhost" is always returned.
 func VespaHostname() string {
-	if env := os.Getenv(ENV_VESPA_HOST); env != "" {
+	if env := os.Getenv(envvars.VESPA_HOSTNAME); env != "" {
 		return env
 	}
 	return DEFAULT_VESPA_HOST
@@ -76,9 +62,9 @@ func VespaHostname() string {
 // Compute the port number where the Vespa webservice
 // container should be available.
 func VespaContainerWebServicePort() int {
-	p := getNumFromEnv(ENV_WEB_SERVICE_PORT)
+	p := getNumFromEnv(envvars.VESPA_WEB_SERVICE_PORT)
 	if p > 0 {
-		trace.Debug(ENV_WEB_SERVICE_PORT, p)
+		trace.Debug(envvars.VESPA_WEB_SERVICE_PORT, p)
 		return p
 	}
 	return DEFAULT_WEB_SERVICE_PORT
@@ -86,9 +72,9 @@ func VespaContainerWebServicePort() int {
 
 // Compute the base for port numbers where the Vespa services should listen.
 func VespaPortBase() int {
-	p := getNumFromEnv(ENV_VESPA_PORT_BASE)
+	p := getNumFromEnv(envvars.VESPA_PORT_BASE)
 	if p > 0 {
-		trace.Debug(ENV_VESPA_PORT_BASE, p)
+		trace.Debug(envvars.VESPA_PORT_BASE, p)
 		return p
 	}
 	return DEFAULT_VESPA_PORT_BASE
@@ -168,9 +154,9 @@ func VespaConfigSourcesRpcAddrs() []string {
 }
 
 func splitVespaConfigservers() []string {
-	env := os.Getenv(ENV_CONFIGSERVERS)
+	env := os.Getenv(envvars.VESPA_CONFIGSERVERS)
 	if env == "" {
-		env = os.Getenv(ENV_ADDR_CONFIGSERVER)
+		env = os.Getenv(envvars.ADDR_CONFIGSERVER)
 	}
 	parts := make([]string, 0, 3)
 	for {
@@ -193,7 +179,7 @@ func splitVespaConfigservers() []string {
 }
 
 func findConfigproxyRpcPort() int {
-	p := getNumFromEnv(ENV_CONFIGPROXY_RPC_PORT)
+	p := getNumFromEnv(envvars.CONFIGPROXY_RPC_PORT)
 	if p > 0 {
 		return p
 	}
@@ -201,9 +187,9 @@ func findConfigproxyRpcPort() int {
 }
 
 func findConfigserverRpcPort() int {
-	p := getNumFromEnv(ENV_CONFIGSERVER_RPC_PORT)
+	p := getNumFromEnv(envvars.CONFIGSERVER_RPC_PORT)
 	if p > 0 {
-		trace.Debug(ENV_CONFIGSERVER_RPC_PORT, p)
+		trace.Debug(envvars.CONFIGSERVER_RPC_PORT, p)
 		return p
 	}
 	return VespaPortBase() + CONFIGSERVER_RPC_PORT_OFFSET

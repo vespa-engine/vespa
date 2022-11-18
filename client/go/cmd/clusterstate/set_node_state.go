@@ -14,6 +14,7 @@ import (
 	"github.com/fatih/color"
 	"github.com/spf13/cobra"
 	"github.com/vespa-engine/vespa/client/go/build"
+	"github.com/vespa-engine/vespa/client/go/envvars"
 	"github.com/vespa-engine/vespa/client/go/trace"
 	"github.com/vespa-engine/vespa/client/go/util"
 )
@@ -74,7 +75,7 @@ func runSetNodeState(opts *Options, args []string) {
 	if opts.Silent {
 		trace.Silent()
 	}
-	if opts.NoColors || os.Getenv("TERM") == "" {
+	if opts.NoColors || os.Getenv(envvars.TERM) == "" {
 		color.NoColor = true
 	}
 	wanted, err := knownState(args[0])

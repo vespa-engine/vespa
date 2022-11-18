@@ -6,13 +6,14 @@ package configserver
 import (
 	"os"
 
+	"github.com/vespa-engine/vespa/client/go/envvars"
 	"github.com/vespa-engine/vespa/client/go/trace"
 	"github.com/vespa-engine/vespa/client/go/util"
 )
 
 func maybeStartLogd() {
-	v1 := os.Getenv("cloudconfig_server__multitenant")
-	v2 := os.Getenv("VESPA_CONFIGSERVER_MULTITENANT")
+	v1 := os.Getenv(envvars.CLOUDCONFIG_SERVER_MULTITENANT)
+	v2 := os.Getenv(envvars.VESPA_CONFIGSERVER_MULTITENANT)
 	if v1 == "true" || v2 == "true" {
 		backticks := util.BackTicksForwardStderr
 		out, err := backticks.Run("libexec/vespa/start-logd")

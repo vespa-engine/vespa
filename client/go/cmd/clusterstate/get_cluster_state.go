@@ -12,6 +12,7 @@ import (
 	"github.com/fatih/color"
 	"github.com/spf13/cobra"
 	"github.com/vespa-engine/vespa/client/go/build"
+	"github.com/vespa-engine/vespa/client/go/envvars"
 	"github.com/vespa-engine/vespa/client/go/trace"
 )
 
@@ -39,7 +40,7 @@ func runGetClusterState(opts *Options) {
 	if opts.Silent {
 		trace.Silent()
 	}
-	if opts.NoColors || os.Getenv("TERM") == "" {
+	if opts.NoColors || os.Getenv(envvars.TERM) == "" {
 		color.NoColor = true
 	}
 	trace.Debug("run getClusterState with: ", opts)
