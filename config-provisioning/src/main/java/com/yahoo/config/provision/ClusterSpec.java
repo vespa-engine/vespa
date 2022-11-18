@@ -31,7 +31,7 @@ public final class ClusterSpec {
         this.type = type;
         this.id = id;
         this.groupId = groupId;
-        this.vespaVersion = Objects.requireNonNull(vespaVersion);
+        this.vespaVersion = Objects.requireNonNull(vespaVersion, "vespaVersion cannot be null");
         this.exclusive = exclusive;
         if (type == Type.combined) {
             if (combinedId.isEmpty()) throw new IllegalArgumentException("combinedId must be set for cluster of type " + type);

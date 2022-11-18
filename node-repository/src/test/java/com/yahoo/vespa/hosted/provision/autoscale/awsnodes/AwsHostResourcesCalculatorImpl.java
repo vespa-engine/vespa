@@ -12,7 +12,6 @@ import com.yahoo.vespa.hosted.provision.provisioning.HostResourcesCalculator;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 /**
  * @author valerijf
@@ -45,19 +44,32 @@ public class AwsHostResourcesCalculatorImpl implements HostResourcesCalculator {
 
     @Override
     public NodeResources requestToReal(NodeResources advertisedResources, boolean exclusive) {
-        double memoryOverhead = flavorsCompatibleWithAdvertised(advertisedResources, exclusive)
-                                        .mapToDouble(flavor -> resourcesCalculator.memoryOverhead(flavor, advertisedResources, false)).max().orElse(0);
-        double diskOverhead   = flavorsCompatibleWithAdvertised(advertisedResources, exclusive)
-                                        .mapToDouble(flavor -> resourcesCalculator.diskOverhead(flavor, advertisedResources, false, exclusive)).max().orElse(0);
+        // Only consider exactly matched flavors if any to avoid concluding we have slightly too little resources
+        // on an exactly matched flavor if we move from exclusive to shared hosts
+        List<VespaFlavor> consideredFlavors = flavorsCompatibleWithAdvertised(advertisedResources, true);
+        if (consideredFlavors.isEmpty())
+            consideredFlavors = flavorsCompatibleWithAdvertised(advertisedResources, false);
+
+        double memoryOverhead = consideredFlavors.stream()
+                                                 .mapToDouble(flavor -> resourcesCalculator.memoryOverhead(flavor, advertisedResources, false))
+                                                 .max().orElse(0);
+        double diskOverhead   = consideredFlavors.stream()
+                                                 .mapToDouble(flavor -> resourcesCalculator.diskOverhead(flavor, advertisedResources, false, exclusive))
+                                                 .max().orElse(0);
         return advertisedResources.withMemoryGb(advertisedResources.memoryGb() - memoryOverhead)
                                   .withDiskGb(advertisedResources.diskGb() - diskOverhead);
     }
 
     @Override
     public NodeResources realToRequest(NodeResources realResources, boolean exclusive) {
+        // Only consider exactly matched flavors if any to avoid concluding we have slightly too little resources
+        // on an exactly matched flavor if we move from exclusive to shared hosts
+        List<VespaFlavor> consideredFlavors = flavorsCompatibleWithReal(realResources, true);
+        if (consideredFlavors.isEmpty())
+            consideredFlavors = flavorsCompatibleWithReal(realResources, false);
         double worstMemoryOverhead = 0;
         double worstDiskOverhead = 0;
-        for (VespaFlavor flavor : flavorsCompatibleWithReal(realResources, exclusive)) {
+        for (VespaFlavor flavor : consideredFlavors) {
             double memoryOverhead = resourcesCalculator.memoryOverhead(flavor, realResources, true);
             double diskOverhead = resourcesCalculator.diskOverhead(flavor, realResources, true, exclusive);
             NodeResources advertised = realResources.withMemoryGb(realResources.memoryGb() + memoryOverhead)
@@ -78,20 +90,21 @@ public class AwsHostResourcesCalculatorImpl implements HostResourcesCalculator {
     }
 
     /** Returns the flavors of hosts which are eligible and matches the given advertised resources */
-    private Stream<VespaFlavor> flavorsCompatibleWithAdvertised(NodeResources advertisedResources, boolean exclusive) {
+    private List<VespaFlavor> flavorsCompatibleWithAdvertised(NodeResources advertisedResources, boolean exactOnly) {
         return flavors.values().stream()
-                      .filter(flavor -> exclusive
-                                        ? flavor.advertisedResources().compatibleWith(advertisedResources)
-                                        : flavor.advertisedResources().satisfies(advertisedResources));
+                      .filter(flavor -> exactOnly
+                                        ? flavor.advertisedResources().equalsWhereSpecified(advertisedResources)
+                                        : flavor.advertisedResources().satisfies(advertisedResources))
+                      .toList();
     }
 
     /** Returns the flavors of hosts which are eligible and matches the given real resources */
-    private List<VespaFlavor> flavorsCompatibleWithReal(NodeResources realResources, boolean exclusive) {
+    private List<VespaFlavor> flavorsCompatibleWithReal(NodeResources realResources, boolean exactOnly) {
         return flavors.values().stream()
-                      .filter(flavor -> exclusive
-                                        ? flavor.realResources().compatibleWith(realResources)
+                      .filter(flavor -> exactOnly
+                                        ? resourcesCalculator.realResourcesOfChildContainer(flavor.advertisedResources(), flavor).compatibleWith(realResources)
                                         : flavor.realResources().satisfies(realResources))
-                      .collect(Collectors.toList());
+                      .toList();
     }
 
 }

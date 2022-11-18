@@ -60,9 +60,16 @@ public class Fixture {
         return tester().nodeRepository().applications().get(applicationId).orElse(Application.empty(applicationId));
     }
 
+    public AllocatableClusterResources currentResources() {
+        return new AllocatableClusterResources(tester.nodeRepository().nodes().list(Node.State.active).owner(applicationId).cluster(clusterId()),
+                                               tester.nodeRepository());
+    }
+
     public Cluster cluster() {
         return application().cluster(clusterId()).get();
     }
+
+    public Capacity capacity() { return capacity; }
 
     public ClusterModel clusterModel() {
         return new ClusterModel(application(),
@@ -128,10 +135,10 @@ public class Fixture {
         List<Flavor> hostFlavors = List.of(new Flavor(new NodeResources(100, 100, 100, 1)));
         Optional<ClusterResources> initialResources = Optional.of(new ClusterResources(5, 1, new NodeResources(2, 16, 75, 1)));
         Capacity capacity = Capacity.from(new ClusterResources(2, 1,
-                                                               new NodeResources(1, 1, 1, 1, NodeResources.DiskSpeed.any)),
+                                                               new NodeResources(1, 4, 10, 1, NodeResources.DiskSpeed.any)),
                                           new ClusterResources(20, 1,
                                                                new NodeResources(100, 1000, 1000, 1, NodeResources.DiskSpeed.any)));
-        HostResourcesCalculator resourceCalculator = new AutoscalingTester.MockHostResourcesCalculator(zone, 0);
+        HostResourcesCalculator resourceCalculator = new AutoscalingTester.MockHostResourcesCalculator(zone);
         int hostCount = 0;
 
         public Fixture.Builder zone(Zone zone) {
@@ -165,6 +172,11 @@ public class Fixture {
 
         public Fixture.Builder clusterType(ClusterSpec.Type type) {
             cluster = ClusterSpec.request(type, cluster.id()).vespaVersion(cluster.vespaVersion()).build();
+            return this;
+        }
+
+        public Fixture.Builder cluster(ClusterSpec cluster) {
+            this.cluster = cluster;
             return this;
         }
 
@@ -215,7 +227,7 @@ public class Fixture {
             return this;
         }
 
-        public Fixture.Builder hostCount(int hostCount) { // TODO: Remove all usage of this
+        public Fixture.Builder hostCount(int hostCount) {
             this.hostCount = hostCount;
             return this;
         }

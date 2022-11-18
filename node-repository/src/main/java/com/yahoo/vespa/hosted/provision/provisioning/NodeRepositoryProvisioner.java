@@ -191,8 +191,8 @@ public class NodeRepositoryProvisioner implements Provisioner {
         if (limits.min().equals(limits.max())) return limits.min();
 
         // Don't change current deployments that are still legal
-        var currentAsAdvertised = current.advertisedResources();
-        if (! firstDeployment && currentAsAdvertised.isWithin(limits.min(), limits.max())) return currentAsAdvertised;
+        if (! firstDeployment && current.advertisedResources().isWithin(limits.min(), limits.max()))
+            return current.advertisedResources();
 
         // Otherwise, find an allocation that preserves the current resources as well as possible
         return allocationOptimizer.findBestAllocation(Load.one(),
