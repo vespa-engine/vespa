@@ -1,9 +1,9 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model.container.http;
 
-import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.component.ComponentId;
 import com.yahoo.component.ComponentSpecification;
+import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.container.bundle.BundleInstantiationSpecification;
 import com.yahoo.jdisc.http.ServerConfig;
 import com.yahoo.osgi.provider.model.ComponentModel;
@@ -14,6 +14,8 @@ import com.yahoo.vespa.model.container.component.SimpleComponent;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.SortedSet;
+import java.util.TreeSet;
 
 /**
  * @author Einar M R Rosenvinge
@@ -24,7 +26,7 @@ public class JettyHttpServer extends SimpleComponent implements ServerConfig.Pro
     private final ContainerCluster<?> cluster;
     private volatile boolean isHostedVespa;
     private final List<ConnectorFactory> connectorFactories = new ArrayList<>();
-    private final List<String> ignoredUserAgentsList = new ArrayList<>();
+    private final SortedSet<String> ignoredUserAgentsList = new TreeSet<>();
 
     public JettyHttpServer(String componentId, ContainerCluster<?> cluster, DeployState deployState) {
         super(new ComponentModel(componentId, com.yahoo.jdisc.http.server.jetty.JettyHttpServer.class.getName(), null));
