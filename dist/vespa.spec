@@ -94,14 +94,8 @@ BuildRequires: cmake >= 3.11.4-3
 BuildRequires: libarchive
 %endif
 %define _command_cmake cmake
-%if 0%{?_centos_stream}
-BuildRequires: (llvm-devel >= 14.0.0 and llvm-devel < 15)
-%else
-BuildRequires: (llvm-devel >= 13.0.1 and llvm-devel < 14)
 %endif
-%else
-BuildRequires: (llvm-devel >= 13.0.1 and llvm-devel < 14)
-%endif
+BuildRequires: llvm-devel
 BuildRequires: vespa-boost-devel >= 1.76.0-1
 BuildRequires: vespa-openssl-devel >= 1.1.1o-1
 %define _use_vespa_openssl 1
@@ -121,11 +115,7 @@ BuildRequires: vespa-lz4-devel >= 1.9.4-1
 BuildRequires: vespa-onnxruntime-devel = 1.12.1
 BuildRequires: vespa-libzstd-devel >= 1.5.2-1
 BuildRequires: protobuf-devel
-%if 0%{?_centos_stream}
-BuildRequires: (llvm-devel >= 14.0.0 and llvm-devel < 15)
-%else
-BuildRequires: (llvm-devel >= 13.0.0 and llvm-devel < 14)
-%endif
+BuildRequires: llvm-devel
 BuildRequires: boost-devel >= 1.75
 BuildRequires: gtest-devel
 BuildRequires: gmock-devel
@@ -145,34 +135,11 @@ BuildRequires: openssl-devel
 BuildRequires: vespa-lz4-devel >= 1.9.4-1
 BuildRequires: vespa-onnxruntime-devel = 1.12.1
 BuildRequires: vespa-libzstd-devel >= 1.5.2-1
-%if 0%{?amzn2022}
 BuildRequires: protobuf-devel
-BuildRequires: llvm-devel >= 14.0.5
-BuildRequires: boost-devel >= 1.75
+BuildRequires: llvm-devel
+BuildRequires: boost-devel
 BuildRequires: gtest-devel
 BuildRequires: gmock-devel
-%endif
-%if 0%{?fc36}
-BuildRequires: protobuf-devel
-BuildRequires: llvm-devel >= 14.0.0
-BuildRequires: boost-devel >= 1.76
-BuildRequires: gtest-devel
-BuildRequires: gmock-devel
-%endif
-%if 0%{?fc37}
-BuildRequires: protobuf-devel
-BuildRequires: llvm-devel >= 15.0.0
-BuildRequires: boost-devel >= 1.78
-BuildRequires: gtest-devel
-BuildRequires: gmock-devel
-%endif
-%if 0%{?fc38}
-BuildRequires: protobuf-devel
-BuildRequires: llvm-devel >= 15.0.0
-BuildRequires: boost-devel >= 1.78
-BuildRequires: gtest-devel
-BuildRequires: gmock-devel
-%endif
 %endif
 %if 0%{?amzn2022}
 BuildRequires: vespa-xxhash-devel >= 0.8.1
@@ -344,39 +311,16 @@ Requires: vespa-openssl >= 1.1.1o-1
 Requires: openssl-libs
 %endif
 %if 0%{?el8}
-%if 0%{?centos} || 0%{?rocky} || 0%{?oraclelinux}
-%if 0%{?_centos_stream}
-Requires: (llvm-libs >= 14.0.0 and llvm-libs < 15)
-%else
-Requires: (llvm-libs >= 13.0.1 and llvm-libs < 14)
-%endif
-%else
-Requires: (llvm-libs >= 13.0.1 and llvm-libs < 14)
-%endif
+Requires: llvm-libs
 Requires: vespa-protobuf = 3.21.7
 %endif
 %if 0%{?el9}
-%if 0%{?_centos_stream}
-Requires: (llvm-libs >= 14.0.0 and llvm-libs < 15)
-%else
-Requires: (llvm-libs >= 13.0.0 and llvm-libs < 14)
-%endif
+Requires: llvm-libs
 Requires: protobuf
 %endif
 %if 0%{?fedora}
 Requires: protobuf
-%if 0%{?amzn2022}
-Requires: llvm-libs >= 14.0.5
-%endif
-%if 0%{?fc36}
-Requires: llvm-libs >= 14.0.0
-%endif
-%if 0%{?fc37}
-Requires: llvm-libs >= 15.0.0
-%endif
-%if 0%{?fc38}
-Requires: llvm-libs >= 15.0.0
-%endif
+Requires: llvm-libs
 %endif
 Requires: vespa-onnxruntime = 1.12.1
 
