@@ -95,7 +95,7 @@ public:
     }
 };
 
-template<typename T>
+template<std::movable T>
 Lazy<T>::promise_type::~promise_type() = default;
 
 }

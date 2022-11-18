@@ -67,18 +67,18 @@ public:
         }
     }
 
-    using IdMapping = HnswIndexTraits<type>::IdMapping;
+    using IdMapping = typename HnswIndexTraits<type>::IdMapping;
 protected:
     using GraphType = HnswGraph<type>;
-    using NodeType = GraphType::NodeType;
+    using NodeType = typename GraphType::NodeType;
     using AtomicEntryRef = vespalib::datastore::AtomicEntryRef;
-    using NodeStore = GraphType::NodeStore;
+    using NodeStore = typename GraphType::NodeStore;
 
-    using LinkStore = GraphType::LinkStore;
-    using LinkArrayRef = GraphType::LinkArrayRef;
+    using LinkStore = typename GraphType::LinkStore;
+    using LinkArrayRef = typename GraphType::LinkArrayRef;
     using LinkArray = std::vector<uint32_t, vespalib::allocator_large<uint32_t>>;
 
-    using LevelArrayRef = GraphType::LevelArrayRef;
+    using LevelArrayRef = typename GraphType::LevelArrayRef;
 
     using TypedCells = vespalib::eval::TypedCells;
 
@@ -184,8 +184,8 @@ protected:
     };
     PreparedAddDoc internal_prepare_add(uint32_t docid, VectorBundle input_vectors,
                                         vespalib::GenerationHandler::Guard read_guard) const;
-    void internal_prepare_add_node(HnswIndex::PreparedAddDoc& op, TypedCells input_vector, const GraphType::EntryNode& entry) const;
-    LinkArray filter_valid_nodeids(uint32_t level, const PreparedAddNode::Links &neighbors, uint32_t self_nodeid);
+    void internal_prepare_add_node(HnswIndex::PreparedAddDoc& op, TypedCells input_vector, const typename GraphType::EntryNode& entry) const;
+    LinkArray filter_valid_nodeids(uint32_t level, const typename PreparedAddNode::Links &neighbors, uint32_t self_nodeid);
     void internal_complete_add(uint32_t docid, PreparedAddDoc &op);
     void internal_complete_add_node(uint32_t nodeid, uint32_t docid, uint32_t subspace, PreparedAddNode &prepared_node);
 public:

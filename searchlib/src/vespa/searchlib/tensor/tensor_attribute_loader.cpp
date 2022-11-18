@@ -81,12 +81,13 @@ public:
     ThreadedIndexBuilder(TensorAttribute& attr, vespalib::GenerationHandler& generation_handler, TensorStore& store, NearestNeighborIndex& index, vespalib::Executor& shared_executor)
         : _attr(attr),
           _generation_handler(generation_handler),
-          _store(store),
           _index(index),
           _shared_executor(shared_executor),
           _queue(MAX_PENDING),
           _pending(0)
-    {}
+    {
+        (void) store;
+    }
     void add(uint32_t lid) override;
     void wait_complete() override {
         drainUntilPending(0);
@@ -136,7 +137,6 @@ private:
     static constexpr uint32_t MAX_PENDING = 1000;
     TensorAttribute&        _attr;
     const vespalib::GenerationHandler& _generation_handler;
-    TensorStore&            _store;
     NearestNeighborIndex&   _index;
     vespalib::Executor&     _shared_executor;
     std::mutex              _mutex;

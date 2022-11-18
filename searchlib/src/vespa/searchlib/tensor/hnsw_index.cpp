@@ -100,7 +100,7 @@ HnswIndex<type>::have_closer_distance(HnswCandidate candidate, const HnswCandida
 }
 
 template <HnswIndexType type>
-HnswIndex<type>::SelectResult
+typename HnswIndex<type>::SelectResult
 HnswIndex<type>::select_neighbors_simple(const HnswCandidateVector& neighbors, uint32_t max_links) const
 {
     HnswCandidateVector sorted(neighbors);
@@ -117,7 +117,7 @@ HnswIndex<type>::select_neighbors_simple(const HnswCandidateVector& neighbors, u
 }
 
 template <HnswIndexType type>
-HnswIndex<type>::SelectResult
+typename HnswIndex<type>::SelectResult
 HnswIndex<type>::select_neighbors_heuristic(const HnswCandidateVector& neighbors, uint32_t max_links) const
 {
     SelectResult result;
@@ -145,7 +145,7 @@ HnswIndex<type>::select_neighbors_heuristic(const HnswCandidateVector& neighbors
 }
 
 template <HnswIndexType type>
-HnswIndex<type>::SelectResult
+typename HnswIndex<type>::SelectResult
 HnswIndex<type>::select_neighbors(const HnswCandidateVector& neighbors, uint32_t max_links) const
 {
     if (_cfg.heuristic_select_neighbors()) {
@@ -377,7 +377,7 @@ HnswIndex<type>::add_document(uint32_t docid)
 }
 
 template <HnswIndexType type>
-HnswIndex<type>::PreparedAddDoc
+typename HnswIndex<type>::PreparedAddDoc
 HnswIndex<type>::internal_prepare_add(uint32_t docid, VectorBundle input_vectors, vespalib::GenerationHandler::Guard read_guard) const
 {
     assert(input_vectors.subspaces() == 1);
@@ -393,7 +393,7 @@ HnswIndex<type>::internal_prepare_add(uint32_t docid, VectorBundle input_vectors
 
 template <HnswIndexType type>
 void
-HnswIndex<type>::internal_prepare_add_node(HnswIndex::PreparedAddDoc& op, TypedCells input_vector, const GraphType::EntryNode& entry) const
+HnswIndex<type>::internal_prepare_add_node(typename HnswIndex::PreparedAddDoc& op, TypedCells input_vector, const typename GraphType::EntryNode& entry) const
 {
     // TODO: Add capping on num_levels
     int node_max_level = _level_generator->max_level();
@@ -436,8 +436,8 @@ HnswIndex<type>::internal_prepare_add_node(HnswIndex::PreparedAddDoc& op, TypedC
 }
 
 template <HnswIndexType type>
-HnswIndex<type>::LinkArray
-HnswIndex<type>::filter_valid_nodeids(uint32_t level, const PreparedAddNode::Links &neighbors, uint32_t self_nodeid)
+typename HnswIndex<type>::LinkArray
+HnswIndex<type>::filter_valid_nodeids(uint32_t level, const typename PreparedAddNode::Links &neighbors, uint32_t self_nodeid)
 {
     LinkArray valid;
     valid.reserve(neighbors.size());

@@ -466,7 +466,7 @@ TYPED_TEST(HnswIndexTest, memory_is_reclaimed_when_doing_changes_to_graph)
 
     this->remove_document(2);
     size_t node_ref_growth = 0;
-    if constexpr (this->is_single) {
+    if constexpr (TestFixture::is_single) {
         this->expect_level_0(1, {3});
         this->expect_empty_level_0(2);
         this->expect_level_0(3, {1});
@@ -581,8 +581,8 @@ template <class ResultGraph, HnswIndexType type>
 ResultGraph
 make_graph_helper(HnswIndex<type>& index)
 {
-    using LevelArrayRef = HnswGraph<type>::LevelArrayRef;
-    using LinkArrayRef = HnswGraph<type>::LinkArrayRef;
+    using LevelArrayRef = typename HnswGraph<type>::LevelArrayRef;
+    using LinkArrayRef = typename HnswGraph<type>::LinkArrayRef;
     auto& graph = index.get_graph();
     ResultGraph result(graph.size());
     assert(!graph.get_node_ref(0).valid());
