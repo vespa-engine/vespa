@@ -24,10 +24,12 @@ public final class ClusterSpec {
     private final boolean exclusive;
     private final Optional<Id> combinedId;
     private final Optional<DockerImage> dockerImageRepo;
+    private final LoadBalancerSettings loadBalancerSettings;
     private final boolean stateful;
 
     private ClusterSpec(Type type, Id id, Optional<Group> groupId, Version vespaVersion, boolean exclusive,
-                        Optional<Id> combinedId, Optional<DockerImage> dockerImageRepo, boolean stateful) {
+                        Optional<Id> combinedId, Optional<DockerImage> dockerImageRepo,
+                        LoadBalancerSettings loadBalancerSettings, boolean stateful) {
         this.type = type;
         this.id = id;
         this.groupId = groupId;
@@ -45,6 +47,7 @@ public final class ClusterSpec {
         if (type.isContent() && !stateful) {
             throw new IllegalArgumentException("Cluster of type " + type + " must be stateful");
         }
+        this.loadBalancerSettings = Objects.requireNonNull(loadBalancerSettings);
         this.stateful = stateful;
     }
 
@@ -59,6 +62,9 @@ public final class ClusterSpec {
 
     /** Returns the docker image (repository + vespa version) we want this cluster to run */
     public Optional<String> dockerImage() { return dockerImageRepo.map(repo -> repo.withTag(vespaVersion).asString()); }
+
+    /** Returns any additional load balancer settings for application container clusters. */
+    public LoadBalancerSettings loadBalancerSettings() { return loadBalancerSettings; }
 
     /** Returns the version of Vespa that we want this cluster to run */
     public Version vespaVersion() { return vespaVersion; }
@@ -81,11 +87,11 @@ public final class ClusterSpec {
     public boolean isStateful() { return stateful; }
 
     public ClusterSpec with(Optional<Group> newGroup) {
-        return new ClusterSpec(type, id, newGroup, vespaVersion, exclusive, combinedId, dockerImageRepo, stateful);
+        return new ClusterSpec(type, id, newGroup, vespaVersion, exclusive, combinedId, dockerImageRepo, loadBalancerSettings, stateful);
     }
 
     public ClusterSpec exclusive(boolean exclusive) {
-        return new ClusterSpec(type, id, groupId, vespaVersion, exclusive, combinedId, dockerImageRepo, stateful);
+        return new ClusterSpec(type, id, groupId, vespaVersion, exclusive, combinedId, dockerImageRepo, loadBalancerSettings, stateful);
     }
 
     /** Creates a ClusterSpec when requesting a cluster */
@@ -103,13 +109,14 @@ public final class ClusterSpec {
         private final Type type;
         private final Id id;
         private final boolean specification;
-        private boolean stateful;
 
         private Optional<Group> groupId = Optional.empty();
         private Optional<DockerImage> dockerImageRepo = Optional.empty();
         private Version vespaVersion;
         private boolean exclusive = false;
         private Optional<Id> combinedId = Optional.empty();
+        private LoadBalancerSettings loadBalancerSettings = LoadBalancerSettings.empty;
+        private boolean stateful;
 
         private Builder(Type type, Id id, boolean specification) {
             this.type = type;
@@ -124,7 +131,7 @@ public final class ClusterSpec {
                 if (vespaVersion == null) throw new IllegalArgumentException("vespaVersion is required to be set when creating a ClusterSpec with specification()");
             } else
                 if (groupId.isPresent()) throw new IllegalArgumentException("groupId is not allowed to be set when creating a ClusterSpec with request()");
-            return new ClusterSpec(type, id, groupId, vespaVersion, exclusive, combinedId, dockerImageRepo, stateful);
+            return new ClusterSpec(type, id, groupId, vespaVersion, exclusive, combinedId, dockerImageRepo, loadBalancerSettings, stateful);
         }
 
         public Builder group(Group groupId) {
@@ -157,6 +164,11 @@ public final class ClusterSpec {
             return this;
         }
 
+        public Builder loadBalancerSettings(LoadBalancerSettings loadBalancerSettings) {
+            this.loadBalancerSettings = loadBalancerSettings;
+            return this;
+        }
+
         public Builder stateful(boolean stateful) {
             this.stateful = stateful;
             return this;
@@ -181,12 +193,13 @@ public final class ClusterSpec {
                groupId.equals(that.groupId) &&
                vespaVersion.equals(that.vespaVersion) &&
                combinedId.equals(that.combinedId) &&
-               dockerImageRepo.equals(that.dockerImageRepo);
+               dockerImageRepo.equals(that.dockerImageRepo) &&
+               loadBalancerSettings.equals(that.loadBalancerSettings);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(type, id, groupId, vespaVersion, exclusive, combinedId, dockerImageRepo, stateful);
+        return Objects.hash(type, id, groupId, vespaVersion, exclusive, combinedId, dockerImageRepo, loadBalancerSettings, stateful);
     }
 
     /**
@@ -203,7 +216,7 @@ public final class ClusterSpec {
     /** A cluster type */
     public enum Type {
 
-        // These enum values are stored in ZooKeeper - do not change
+        // These enum names are written to ZooKeeper - do not change
         admin,
         container,
         content,
@@ -220,13 +233,13 @@ public final class ClusterSpec {
         }
 
         public static Type from(String typeName) {
-            switch (typeName) {
-                case "admin" : return admin;
-                case "container" : return container;
-                case "content" : return content;
-                case "combined" : return combined;
-                default: throw new IllegalArgumentException("Illegal cluster type '" + typeName + "'");
-            }
+            return switch (typeName) {
+                case "admin" -> admin;
+                case "container" -> container;
+                case "content" -> content;
+                case "combined" -> combined;
+                default -> throw new IllegalArgumentException("Illegal cluster type '" + typeName + "'");
+            };
         }
 
     }

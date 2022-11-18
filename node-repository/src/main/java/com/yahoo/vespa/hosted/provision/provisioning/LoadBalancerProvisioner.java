@@ -206,7 +206,7 @@ public class LoadBalancerProvisioner {
         Instant now = nodeRepository.clock().instant();
         LoadBalancerId id = new LoadBalancerId(transaction.application(), cluster);
         Optional<LoadBalancer> loadBalancer = db.readLoadBalancer(id);
-        if (loadBalancer.isEmpty()) throw new IllegalArgumentException("Could not active load balancer that was never prepared: " + id);
+        if (loadBalancer.isEmpty()) throw new IllegalArgumentException("Could not activate load balancer that was never prepared: " + id);
         if (loadBalancer.get().instance().isEmpty()) throw new IllegalArgumentException("Activating " + id + ", but prepare never provisioned a load balancer instance");
 
         Optional<LoadBalancerInstance> instance = provisionInstance(id, nodes, loadBalancer, loadBalancer.get().instance().get().cloudAccount());

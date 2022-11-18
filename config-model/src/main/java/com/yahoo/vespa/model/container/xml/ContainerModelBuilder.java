@@ -27,6 +27,7 @@ import com.yahoo.config.provision.ClusterMembership;
 import com.yahoo.config.provision.ClusterResources;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.HostName;
+import com.yahoo.config.provision.LoadBalancerSettings;
 import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.config.provision.Zone;
@@ -734,6 +735,13 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
         }
     }
 
+    private LoadBalancerSettings loadBalancerSettings(Element loadBalancerElement) {
+        List<String> allowedUrnElements = XML.getChildren(XML.getChild(loadBalancerElement, "private-access"),
+                                                          "allowed-urn")
+                                             .stream().map(XML::getValue).toList();
+        return new LoadBalancerSettings(allowedUrnElements);
+    }
+
     private static Map<String, String> getEnvironmentVariables(Element environmentVariables) {
         var map = new LinkedHashMap<String, String>();
         if (environmentVariables != null) {
@@ -745,7 +753,8 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
         return map;
     }
     
-    private List<ApplicationContainer> createNodes(ApplicationContainerCluster cluster, Element containerElement, Element nodesElement, ConfigModelContext context) {
+    private List<ApplicationContainer> createNodes(ApplicationContainerCluster cluster, Element containerElement,
+                                                   Element nodesElement, ConfigModelContext context) {
         if (nodesElement.hasAttribute("type")) // internal use for hosted system infrastructure nodes
             return createNodesFromNodeType(cluster, nodesElement, context);
         else if (nodesElement.hasAttribute("of")) {// hosted node spec referencing a content cluster
@@ -818,9 +827,11 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
 
     private List<ApplicationContainer> createNodesFromNodeCount(ApplicationContainerCluster cluster, Element containerElement, Element nodesElement, ConfigModelContext context) {
         NodesSpecification nodesSpecification = NodesSpecification.from(new ModelElement(nodesElement), context);
+        LoadBalancerSettings loadBalancerSettings = loadBalancerSettings(XML.getChild(containerElement, "load-balancer"));
         Map<HostResource, ClusterMembership> hosts = nodesSpecification.provision(cluster.getRoot().hostSystem(),
                                                                                   ClusterSpec.Type.container,
-                                                                                  ClusterSpec.Id.from(cluster.getName()), 
+                                                                                  ClusterSpec.Id.from(cluster.getName()),
+                                                                                  loadBalancerSettings,
                                                                                   log,
                                                                                   getZooKeeper(containerElement) != null);
         return createNodesFromHosts(hosts, cluster, context.getDeployState());
