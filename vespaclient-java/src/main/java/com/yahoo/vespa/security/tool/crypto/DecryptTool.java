@@ -13,6 +13,7 @@ import java.io.IOException;
 import java.util.List;
 import java.util.Optional;
 
+import static com.yahoo.vespa.security.tool.crypto.ToolUtils.NO_INTERACTIVE_OPTION;
 import static com.yahoo.vespa.security.tool.crypto.ToolUtils.PRIVATE_KEY_DIR_OPTION;
 import static com.yahoo.vespa.security.tool.crypto.ToolUtils.PRIVATE_KEY_FILE_OPTION;
 
@@ -50,6 +51,13 @@ public class DecryptTool implements Tool {
                     .required(false)
                     .desc("Private key file directory used for automatically looking up " +
                           "private keys based on the key ID specified as part of a token.")
+                    .build(),
+            Option.builder()
+                    .longOpt(NO_INTERACTIVE_OPTION)
+                    .hasArg(false)
+                    .required(false)
+                    .desc("Never ask for private key interactively if no private key file or " +
+                          "directory is provided, even if process is running in a console")
                     .build(),
             Option.builder("e")
                     .longOpt(EXPECTED_KEY_ID_OPTION)
@@ -95,7 +103,8 @@ public class DecryptTool implements Tool {
             var sealedSharedKey = SealedSharedKey.fromTokenString(tokenString.strip());
             ToolUtils.verifyExpectedKeyId(sealedSharedKey, maybeKeyId);
 
-            var privateKey   = ToolUtils.resolvePrivateKeyFromInvocation(invocation, sealedSharedKey.keyId());
+            var privateKey   = ToolUtils.resolvePrivateKeyFromInvocation(invocation, sealedSharedKey.keyId(),
+                                                                         !CliUtils.useStdIo(inputArg) && !CliUtils.useStdIo(outputArg));
             var secretShared = SharedKeyGenerator.fromSealedKey(sealedSharedKey, privateKey);
             var cipher       = SharedKeyGenerator.makeAesGcmDecryptionCipher(secretShared);
 

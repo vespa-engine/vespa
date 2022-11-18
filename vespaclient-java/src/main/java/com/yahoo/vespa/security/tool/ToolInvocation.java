@@ -16,6 +16,7 @@ public record ToolInvocation(CommandLine arguments,
                              InputStream stdIn,
                              PrintStream stdOut,
                              PrintStream stdError,
+                             ConsoleInput consoleInputOrNull,
                              boolean debugMode) {
 
     public void printIfDebug(Supplier<String> stringSupplier) {

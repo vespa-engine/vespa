@@ -15,6 +15,7 @@ import java.io.IOException;
 import java.util.List;
 import java.util.Optional;
 
+import static com.yahoo.vespa.security.tool.crypto.ToolUtils.NO_INTERACTIVE_OPTION;
 import static com.yahoo.vespa.security.tool.crypto.ToolUtils.PRIVATE_KEY_DIR_OPTION;
 import static com.yahoo.vespa.security.tool.crypto.ToolUtils.PRIVATE_KEY_FILE_OPTION;
 
@@ -44,6 +45,13 @@ public class ResealTool implements Tool {
                     .required(false)
                     .desc("Private key file directory used for automatically looking up " +
                           "private keys based on the key ID specified as part of a token.")
+                    .build(),
+            Option.builder()
+                    .longOpt(NO_INTERACTIVE_OPTION)
+                    .hasArg(false)
+                    .required(false)
+                    .desc("Never ask for private key interactively if no private key file or " +
+                          "directory is provided, even if process is running in a console")
                     .build(),
             Option.builder("e")
                     .longOpt(EXPECTED_KEY_ID_OPTION)
@@ -97,7 +105,7 @@ public class ResealTool implements Tool {
 
             var recipientPubKey = KeyUtils.fromBase58EncodedX25519PublicKey(CliUtils.optionOrThrow(arguments, RECIPIENT_PUBLIC_KEY_OPTION).strip());
             var recipientKeyId  = KeyId.ofString(CliUtils.optionOrThrow(arguments, RECIPIENT_KEY_ID_OPTION));
-            var privateKey      = ToolUtils.resolvePrivateKeyFromInvocation(invocation, sealedSharedKey.keyId());
+            var privateKey      = ToolUtils.resolvePrivateKeyFromInvocation(invocation, sealedSharedKey.keyId(), true);
             var secretShared    = SharedKeyGenerator.fromSealedKey(sealedSharedKey, privateKey);
             var resealedShared  = SharedKeyGenerator.reseal(secretShared, recipientPubKey, recipientKeyId);
 
