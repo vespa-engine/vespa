@@ -5,6 +5,9 @@ given private key.
 
 To decrypt the contents of STDIN, specify an input file of '-' (without
 the quotes).
+ -d,--private-key-dir <arg>    Private key file directory used for
+                               automatically looking up private keys based
+                               on the key ID specified as part of a token.
  -e,--expected-key-id <arg>    Expected key ID in token. If this is not
                                provided, the key ID is not verified.
  -h,--help                     Show help

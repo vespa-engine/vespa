@@ -17,6 +17,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.attribute.PosixFilePermissions;
+import java.util.Base64;
 import java.util.List;
 import java.util.Map;
 
@@ -55,6 +56,12 @@ public class CryptoToolsTest {
         var procOut = runMain(args, EMPTY_BYTES, Map.of());
         assertEquals(1, procOut.exitCode()); // Assume checking stderr is because of a failure.
         assertEquals(expectedMessage, procOut.stdErr());
+    }
+
+    private static void writePrivateKeyFile(Path keyPath, String contents) throws IOException {
+        var privFilePerms = PosixFilePermissions.fromString("rw-------");
+        Files.createFile(keyPath, PosixFilePermissions.asFileAttribute(privFilePerms));
+        Files.writeString(keyPath, contents);
     }
 
     @Test
@@ -114,7 +121,7 @@ public class CryptoToolsTest {
     void keygen_fails_by_default_if_output_file_exists() throws IOException {
         Path privKeyFile = pathInTemp("priv.txt");
         Path pubKeyFile  = pathInTemp("pub.txt");
-        Files.writeString(privKeyFile, TEST_PRIV_KEY);
+        writePrivateKeyFile(privKeyFile, TEST_PRIV_KEY);
 
         verifyStderrEquals(List.of("keygen",
                                    "--private-out-file", absPathOf(privKeyFile),
@@ -149,7 +156,7 @@ public class CryptoToolsTest {
     void keygen_allowed_if_output_file_exists_and_explicit_overwrite_option_specified() throws IOException {
         Path privKeyFile = pathInTemp("priv.txt");
         Path pubKeyFile  = pathInTemp("pub.txt");
-        Files.writeString(privKeyFile, TEST_PRIV_KEY);
+        writePrivateKeyFile(privKeyFile, TEST_PRIV_KEY);
         Files.writeString(pubKeyFile,  TEST_PUB_KEY);
 
         var procOut = runMain(List.of("keygen",
@@ -208,7 +215,7 @@ public class CryptoToolsTest {
     @Test
     void decrypt_fails_with_error_message_if_no_input_file_is_given() throws IOException {
         Path privKeyFile = pathInTemp("priv.txt");
-        Files.writeString(privKeyFile, TEST_PRIV_KEY);
+        writePrivateKeyFile(privKeyFile, TEST_PRIV_KEY);
 
         verifyStderrEquals(List.of("decrypt",
                                    "--output-file",      "foo",
@@ -221,7 +228,7 @@ public class CryptoToolsTest {
     @Test
     void decrypt_fails_with_error_message_if_input_file_does_not_exist() throws IOException {
         Path privKeyFile = pathInTemp("priv.txt");
-        Files.writeString(privKeyFile, TEST_PRIV_KEY);
+        writePrivateKeyFile(privKeyFile, TEST_PRIV_KEY);
 
         verifyStderrEquals(List.of("decrypt",
                                    "no-such-file",
@@ -235,7 +242,7 @@ public class CryptoToolsTest {
     @Test
     void decrypt_fails_with_error_message_if_expected_key_id_does_not_match_key_id_in_token() throws IOException {
         Path privKeyFile = pathInTemp("priv.txt");
-        Files.writeString(privKeyFile, TEST_PRIV_KEY);
+        writePrivateKeyFile(privKeyFile, TEST_PRIV_KEY);
 
         Path inputFile = pathInTemp("input.txt");
         Files.writeString(inputFile, "dummy-not-actually-encrypted-data");
@@ -248,6 +255,23 @@ public class CryptoToolsTest {
                                    "--expected-key-id",  TEST_TOKEN_KEY_ID + "-wrong"),
                 "Invalid command line arguments: Key ID specified with --expected-key-id does not " +
                         "match key ID used when generating the supplied token\n");
+    }
+
+    @Test
+    void decrypt_fails_with_error_message_if_private_key_file_is_world_readable() throws IOException {
+        Path privKeyFile = pathInTemp("priv.txt");
+        Files.writeString(privKeyFile, TEST_PRIV_KEY); // Don't restrict file permissions
+
+        Path inputFile = pathInTemp("input.txt");
+        Files.writeString(inputFile, "dummy-not-actually-encrypted-data");
+
+        verifyStderrEquals(List.of("decrypt",
+                                   absPathOf(inputFile),
+                                   "--output-file",      "foo",
+                                   "--private-key-file", absPathOf(privKeyFile),
+                                   "--token",            TEST_TOKEN),
+                ("Invalid command line arguments: Private key file '%s' is insecurely " +
+                 "world-readable; refusing to read it\n").formatted(absPathOf(privKeyFile)));
     }
 
     @Test
@@ -287,7 +311,7 @@ public class CryptoToolsTest {
         String recipientPubKeyStr  = "AiUirFvFuLJ6s71QBNxiRcctB4umzM6r2roP4Rf8WDKM";
 
         Path privKeyFile = pathInTemp("my-priv.txt");
-        Files.writeString(privKeyFile, TEST_PRIV_KEY);
+        writePrivateKeyFile(privKeyFile, TEST_PRIV_KEY);
 
         var procOut = runMain(List.of(
                 "reseal",
@@ -407,14 +431,105 @@ public class CryptoToolsTest {
         assertEquals(greatSecret, procOut.stdOut());
     }
 
+    @Test
+    void can_look_up_private_key_by_token_key_id() throws Exception {
+        var bobPrivKeyStr    = "DDYLatvM8NAs2hvccBPCJf7GvxK97AYhG4vf4Vz61mKX";
+        var alicePrivKeyStr  = "AiKHsqgVXVe1dDYAtH23Hn1m82iCJSseiS9aZpam9sPG";
+        var plaintextData    = "the seagulls will attack the discarded french fries at dawn\n";
+        var encryptedDataB64 = "tLh3dL7Ecq/l4E35IHjS9/oCU2wTVv4KSk+dBVIQxl9PFnCLgpTF" +
+                               "OkhpCLQC9hqHfvco1bsV/+Gq6x2W8tpUoIR1X8GU04rIyBDYaw==";
+        // Token with key id "bobs-key-1"
+        var tokenToBob       = "1emu5Os1qeuJSkPeyYFKKBQl3r7a9GKyBR0k7QAcqTSmdm6XAPSVn" +
+                               "JJYI2RKVLodmB1ZUAwLDMMrvKtmY2d8Seo0VwA8rzUHTPDI8jO";
+        // Token with key id "alices-key-1"
+        var tokenToAlice     = "STZC6ERSqAu1wWbV0Dvsw68iMMTye15sNbXz7cU8cuGMARZX5HGBO" +
+                               "qiGwz3O4CmjaaeYfMnDqMJ7rKAA2GUIsKLio8Wp2gjgf3rJjZ3ha";
+        // Token with key id "eves-key"
+        var tokenToEve       = "5z0i4pTaWzlYFDDyIPl0wO2WWRuL0RTlP3fmM1mcWBYUg28C7jY3R" +
+                               "Kc6ymz3omho75jWR0v6AmcCHioRUwfOGMskAQGG27Lqfhvp";
+        // Token with key id "/etc/passwd"...
+        var unsafeIdToken    = "6rh1141HZxvToeRYZsTE7K6vmihcrLgBHj75XvTBdkw9nMVvAqXU3" +
+                               "7TkL8vuR40iCQYQFpyDqoorTF4HcfKLNsl7vqgkcje3kE6wCtPa";
+
+        var keyDirPath = pathInTemp("my-priv-keys");
+        Files.createDirectory(keyDirPath);
+        writePrivateKeyFile(keyDirPath.resolve("bobs-key-1.key"), bobPrivKeyStr);
+        writePrivateKeyFile(keyDirPath.resolve("alices-key-1.key"), alicePrivKeyStr);
+
+        Path encryptedFile = pathInTemp("secret.enc");
+        Files.write(encryptedFile, Base64.getDecoder().decode(encryptedDataB64));
+
+        // First test with explicit key dir argument.
+        // This shall look up 'bobs-key-1.key' in the private key directory
+        var procOut = runMain(List.of(
+                "decrypt",
+                absPathOf(encryptedFile),
+                "--output-file",     "-",
+                "--private-key-dir", absPathOf(keyDirPath),
+                "--token",           tokenToBob
+        ));
+        assertEquals("", procOut.stdErr());
+        assertEquals(0, procOut.exitCode());
+        assertEquals(plaintextData, procOut.stdOut());
+
+        // This shall look up 'alices-key-1.key' in the private key directory
+        procOut = runMain(List.of(
+                "decrypt",
+                absPathOf(encryptedFile),
+                "--output-file",     "-",
+                "--private-key-dir", absPathOf(keyDirPath),
+                "--token",           tokenToAlice
+        ));
+        assertEquals("", procOut.stdErr());
+        assertEquals(0, procOut.exitCode());
+        assertEquals(plaintextData, procOut.stdOut());
+
+        // This shall look up 'eves-key.key' in the private key directory, which does not exist.
+        procOut = runMain(List.of(
+                "decrypt",
+                absPathOf(encryptedFile),
+                "--output-file",     "-",
+                "--private-key-dir", absPathOf(keyDirPath),
+                "--token",           tokenToEve
+        ));
+        assertEquals("Invalid command line arguments: Could not find a private key " +
+                     "file matching token key ID 'eves-key'\n",
+                     procOut.stdErr());
+        assertEquals(1, procOut.exitCode());
+        assertEquals("", procOut.stdOut());
+
+        // Should also work if environment variable is set instead of key dir argument
+        var env = Map.of("VESPA_CRYPTO_CLI_PRIVATE_KEY_DIR", absPathOf(keyDirPath));
+        procOut = runMain(List.of(
+                "decrypt",
+                absPathOf(encryptedFile),
+                "--output-file", "-",
+                "--token",       tokenToBob
+        ), EMPTY_BYTES, env);
+        assertEquals("", procOut.stdErr());
+        assertEquals(0, procOut.exitCode());
+        assertEquals(plaintextData, procOut.stdOut());
+
+        // Path-unsafe token key IDs are not automatically looked up, but failed.
+        procOut = runMain(List.of(
+                "decrypt",
+                absPathOf(encryptedFile),
+                "--output-file", "-",
+                "--token",       unsafeIdToken
+        ), EMPTY_BYTES, env);
+        assertEquals("Invalid command line arguments: The token key ID is not comprised " +
+                     "of path-safe characters; refusing to auto-deduce key file name\n",
+                     procOut.stdErr());
+        assertEquals(1, procOut.exitCode());
+        assertEquals("", procOut.stdOut());
+    }
+
     private ProcessOutput runMain(List<String> args) {
         return runMain(args, EMPTY_BYTES);
     }
 
     private ProcessOutput runMain(List<String> args, byte[] stdInBytes) {
-        // Expect that this is used for running a command that is not supposed to fail. But if it does,
-        // include exception trace in stderr to make it easier to debug.
-        return runMain(args, stdInBytes, Map.of("VESPA_DEBUG", "true"));
+        return runMain(args, stdInBytes, Map.of());
     }
 
     private ProcessOutput runMain(List<String> args, byte[] stdInBytes, Map<String, String> env) {

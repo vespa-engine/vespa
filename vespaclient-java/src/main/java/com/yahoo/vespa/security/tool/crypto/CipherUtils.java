@@ -19,7 +19,7 @@ public class CipherUtils {
      *
      * @param input source stream to read from
      * @param output destination stream to write to
-     * @param cipher an {@link AeadCipher} created with for either encryption or decryption
+     * @param cipher an {@link AeadCipher} created for either encryption or decryption
      * @throws IOException if any file operation fails
      */
     public static void streamEncipher(InputStream input, OutputStream output, AeadCipher cipher) throws IOException {
