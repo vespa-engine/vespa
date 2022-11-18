@@ -3,6 +3,7 @@ package com.yahoo.vespa.hosted.provision.lb;
 
 import ai.vespa.http.DomainName;
 import com.yahoo.config.provision.ClusterSpec;
+import com.yahoo.config.provision.LoadBalancerSettings;
 import com.yahoo.config.provision.NodeType;
 
 import java.util.Objects;
@@ -12,7 +13,7 @@ import java.util.Set;
 /**
  * This implementation of {@link LoadBalancerService} returns the load balancer(s) that exist by default in the shared
  * routing layer.
- *
+ * <p>
  * Since such load balancers always exist, we can return the hostname of the routing layer VIP directly. Nothing has to
  * be provisioned.
  *
@@ -28,12 +29,14 @@ public class SharedLoadBalancerService implements LoadBalancerService {
 
     @Override
     public LoadBalancerInstance create(LoadBalancerSpec spec, boolean force) {
+        if (spec.settings() != LoadBalancerSettings.empty) throw new IllegalArgumentException("custom load balancer settings are not supported with " + getClass());
         return new LoadBalancerInstance(Optional.of(DomainName.of(vipHostname)),
                                         Optional.empty(),
                                         Optional.empty(),
                                         Set.of(4443),
                                         Set.of(),
                                         spec.reals(),
+                                        spec.settings(),
                                         spec.cloudAccount());
     }
 

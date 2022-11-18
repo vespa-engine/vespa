@@ -6,6 +6,7 @@ import com.google.common.collect.ImmutableSet;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.CloudAccount;
 import com.yahoo.config.provision.ClusterSpec;
+import com.yahoo.config.provision.LoadBalancerSettings;
 import com.yahoo.vespa.hosted.provision.lb.DnsZone;
 import com.yahoo.vespa.hosted.provision.lb.LoadBalancer;
 import com.yahoo.vespa.hosted.provision.lb.LoadBalancerId;
@@ -14,6 +15,7 @@ import com.yahoo.vespa.hosted.provision.lb.Real;
 import org.junit.Test;
 
 import java.time.Instant;
+import java.util.List;
 import java.util.Optional;
 
 import static java.time.temporal.ChronoUnit.MILLIS;
@@ -43,6 +45,7 @@ public class LoadBalancerSerializerTest {
                                                                     new Real(DomainName.of("real-2"),
                                                                              "127.0.0.2",
                                                                              4080)),
+                                                    new LoadBalancerSettings(List.of("123")),
                                                     CloudAccount.from("012345678912"))),
                                             LoadBalancer.State.active,
                                             now);
@@ -56,6 +59,7 @@ public class LoadBalancerSerializerTest {
         assertEquals(loadBalancer.state(), serialized.state());
         assertEquals(loadBalancer.changedAt().truncatedTo(MILLIS), serialized.changedAt());
         assertEquals(loadBalancer.instance().get().reals(), serialized.instance().get().reals());
+        assertEquals(loadBalancer.instance().get().settings(), serialized.instance().get().settings());
         assertEquals(loadBalancer.instance().get().cloudAccount(), serialized.instance().get().cloudAccount());
     }
 
