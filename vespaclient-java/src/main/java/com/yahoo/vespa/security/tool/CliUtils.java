@@ -22,8 +22,12 @@ public class CliUtils {
         return value;
     }
 
+    public static boolean useStdIo(String pathOrDash) {
+        return "-".equals(pathOrDash);
+    }
+
     public static InputStream inputStreamFromFileOrStream(String pathOrDash, InputStream stdIn) throws IOException {
-        if ("-".equals(pathOrDash)) {
+        if (useStdIo(pathOrDash)) {
             return stdIn;
         } else {
             var inputPath = Paths.get(pathOrDash);
@@ -35,7 +39,7 @@ public class CliUtils {
     }
 
     public static OutputStream outputStreamToFileOrStream(String pathOrDash, OutputStream stdOut) throws IOException {
-        if ("-".equals(pathOrDash)) {
+        if (useStdIo(pathOrDash)) {
             return stdOut;
         } else {
             // TODO fail if file already exists?

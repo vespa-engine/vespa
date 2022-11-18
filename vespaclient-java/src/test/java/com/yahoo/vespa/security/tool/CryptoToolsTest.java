@@ -510,6 +510,19 @@ public class CryptoToolsTest {
         assertEquals(0, procOut.exitCode());
         assertEquals(plaintextData, procOut.stdOut());
 
+        // Interactive private key reads are triggered when no other key option is used and stdio is left alone
+        Path decryptedFile = pathInTemp("decrypted.txt");
+        procOut = runMain(List.of(
+                "decrypt",
+                absPathOf(encryptedFile),
+                "--output-file",     absPathOf(decryptedFile),
+                "--token",           tokenToAlice
+        ), (prompt, args) -> alicePrivKeyStr);
+        assertEquals("", procOut.stdErr());
+        assertEquals(0, procOut.exitCode());
+        assertEquals("", procOut.stdOut()); // we mock the console input, so nothing output here
+        assertEquals(plaintextData, Files.readString(decryptedFile));
+
         // Path-unsafe token key IDs are not automatically looked up, but failed.
         procOut = runMain(List.of(
                 "decrypt",
@@ -518,7 +531,7 @@ public class CryptoToolsTest {
                 "--token",       unsafeIdToken
         ), EMPTY_BYTES, env);
         assertEquals("Invalid command line arguments: The token key ID is not comprised " +
-                     "of path-safe characters; refusing to auto-deduce key file name\n",
+                     "of path-safe characters; refusing to use it\n",
                      procOut.stdErr());
         assertEquals(1, procOut.exitCode());
         assertEquals("", procOut.stdOut());
@@ -529,17 +542,25 @@ public class CryptoToolsTest {
     }
 
     private ProcessOutput runMain(List<String> args, byte[] stdInBytes) {
-        return runMain(args, stdInBytes, Map.of());
+        return runMain(args, stdInBytes, Map.of(), null);
+    }
+
+    private ProcessOutput runMain(List<String> args, ConsoleInput consoleInput) {
+        return runMain(args, EMPTY_BYTES, Map.of(), consoleInput);
     }
 
     private ProcessOutput runMain(List<String> args, byte[] stdInBytes, Map<String, String> env) {
+        return runMain(args, stdInBytes, env, null);
+    }
+
+    private ProcessOutput runMain(List<String> args, byte[] stdInBytes, Map<String, String> env, ConsoleInput consoleInput) {
         var stdOutBytes = new ByteArrayOutputStream();
         var stdErrBytes = new ByteArrayOutputStream();
         var stdIn       = new ByteArrayInputStream(stdInBytes);
         var stdOut      = new PrintStream(stdOutBytes);
         var stdError    = new PrintStream(stdErrBytes);
 
-        int exitCode = new Main(stdIn, stdOut, stdError).execute(args.toArray(new String[0]), env);
+        int exitCode = new Main(stdIn, stdOut, stdError, consoleInput).execute(args.toArray(new String[0]), env);
 
         stdOut.flush();
         stdError.flush();

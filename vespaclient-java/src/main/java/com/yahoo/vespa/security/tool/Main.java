@@ -33,15 +33,22 @@ public class Main {
     private final InputStream stdIn;
     private final PrintStream stdOut;
     private final PrintStream stdError;
+    private final ConsoleInput consoleInputOrNull;
 
-    Main(InputStream stdIn, PrintStream stdOut, PrintStream stdError) {
+    Main(InputStream stdIn, PrintStream stdOut, PrintStream stdError, ConsoleInput consoleInputOrNull) {
         this.stdIn = stdIn;
         this.stdOut = stdOut;
         this.stdError = stdError;
+        this.consoleInputOrNull = consoleInputOrNull;
+    }
+
+    private static ConsoleInput consoleOrNullFromJvm() {
+        var console = System.console();
+        return console != null ? (prompt, args) -> new String(console.readPassword(prompt, args)).strip() : null;
     }
 
     public static void main(String[] args) {
-        var program = new Main(System.in, System.out, System.err);
+        var program = new Main(System.in, System.out, System.err, consoleOrNullFromJvm());
         int returnCode = program.execute(args, System.getenv());
         System.exit(returnCode);
     }
@@ -89,7 +96,7 @@ public class Main {
                 CliOptions.printToolSpecificHelp(stdOut, tool.name(), toolDesc, cliOpts);
                 return 0;
             }
-            var invocation = new ToolInvocation(cmdLine, envVars, stdIn, stdOut, stdError, debugMode);
+            var invocation = new ToolInvocation(cmdLine, envVars, stdIn, stdOut, stdError, consoleInputOrNull, debugMode);
             return tool.invoke(invocation);
         } catch (ParseException e) {
             return handleException("Failed to parse command line arguments: " + e.getMessage(), e, debugMode);
