@@ -15,6 +15,7 @@ public class NodeResources {
     private static final double cpuUnitCost =    0.11;
     private static final double memoryUnitCost = 0.011;
     private static final double diskUnitCost =   0.0004;
+    private static final double gpuUnitCost =    0; // TODO(mpolden): Decide cost of this
 
     private static final NodeResources zero = new NodeResources(0, 0, 0, 0);
     private static final NodeResources unspecified = new NodeResources(0, 0, 0, 0);
@@ -134,7 +135,7 @@ public class NodeResources {
             return count * memoryGb;
         }
 
-        public boolean lessThan(GpuResources other) {
+        private boolean lessThan(GpuResources other) {
             return totalMemory() < other.totalMemory();
         }
 
@@ -204,7 +205,10 @@ public class NodeResources {
 
     /** Returns the standard cost of these resources, in dollars per hour */
     public double cost() {
-        return vcpu * cpuUnitCost + memoryGb * memoryUnitCost + diskGb * diskUnitCost;
+        return (vcpu * cpuUnitCost) +
+               (memoryGb * memoryUnitCost) +
+               (diskGb * diskUnitCost) +
+               (gpuResources.totalMemory() * gpuUnitCost);
     }
 
     public NodeResources withVcpu(double vcpu) {
@@ -296,6 +300,8 @@ public class NodeResources {
         if (this.storageType != StorageType.any && other.storageType != StorageType.any && this.storageType != other.storageType)
             return false;
         if (this.architecture != Architecture.any && other.architecture != Architecture.any && this.architecture != other.architecture)
+            return false;
+        if ( ! this.gpuResources.equals(other.gpuResources))
             return false;
         return true;
     }
@@ -399,6 +405,7 @@ public class NodeResources {
         else {
             if (this.diskGb < requested.diskGb) return false;
         }
+        if ( ! this.gpuResources.equals(requested.gpuResources)) return false;
         if ( ! this.diskSpeed.compatibleWith(requested.diskSpeed)) return false;
         if ( ! this.storageType.compatibleWith(requested.storageType)) return false;
         if ( ! this.architecture.compatibleWith(requested.architecture)) return false;

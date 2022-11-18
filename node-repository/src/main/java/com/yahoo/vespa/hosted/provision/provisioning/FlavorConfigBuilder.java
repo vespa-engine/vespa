@@ -27,7 +27,7 @@ public class FlavorConfigBuilder {
                                                   double disk,
                                                   double bandwidth,
                                                   Flavor.Type type) {
-        return addFlavor(flavorName, cpu, mem, disk, bandwidth, true, true, type, Architecture.x86_64);
+        return addFlavor(flavorName, cpu, mem, disk, bandwidth, true, true, type, Architecture.x86_64, 0, 0);
     }
 
     public FlavorsConfig.Flavor.Builder addFlavor(String flavorName,
@@ -37,7 +37,7 @@ public class FlavorConfigBuilder {
                                                   double bandwidth,
                                                   Flavor.Type type,
                                                   Architecture architecture) {
-        return addFlavor(flavorName, cpu, mem, disk, bandwidth, true, true, type, architecture);
+        return addFlavor(flavorName, cpu, mem, disk, bandwidth, true, true, type, architecture, 0, 0);
     }
 
     public FlavorsConfig.Flavor.Builder addFlavor(String flavorName,
@@ -48,7 +48,9 @@ public class FlavorConfigBuilder {
                                                   boolean fastDisk,
                                                   boolean remoteStorage,
                                                   Flavor.Type type,
-                                                  Architecture architecture) {
+                                                  Architecture architecture,
+                                                  int gpuCount,
+                                                  double gpuMemory) {
         FlavorsConfig.Flavor.Builder flavor = new FlavorsConfig.Flavor.Builder();
         flavor.name(flavorName);
         flavor.minDiskAvailableGb(disk);
@@ -59,6 +61,8 @@ public class FlavorConfigBuilder {
         flavor.fastDisk(fastDisk);
         flavor.remoteStorage(remoteStorage);
         flavor.architecture(architecture.name());
+        flavor.gpuCount(gpuCount);
+        flavor.gpuMemoryGb(gpuMemory);
         builder.flavor(flavor);
         return flavor;
     }
@@ -84,6 +88,8 @@ public class FlavorConfigBuilder {
                 flavorConfigBuilder.addFlavor(flavorName, 4.,  80., 100, 10, Flavor.Type.BARE_METAL);
             else if (flavorName.equals("arm64"))
                 flavorConfigBuilder.addFlavor(flavorName,2.,  30., 20., 3, Flavor.Type.BARE_METAL, Architecture.arm64);
+            else if (flavorName.equals("gpu"))
+                flavorConfigBuilder.addFlavor(flavorName,4,  16, 125, 10, true, false, Flavor.Type.BARE_METAL, Architecture.x86_64, 1, 16);
             else
                 flavorConfigBuilder.addFlavor(flavorName, 1.,  30., 20., 3, Flavor.Type.BARE_METAL);
         }

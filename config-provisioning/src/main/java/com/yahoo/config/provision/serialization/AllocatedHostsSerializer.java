@@ -49,6 +49,7 @@ public class AllocatedHostsSerializer {
     private static final String diskSpeedKey = "diskSpeed";
     private static final String storageTypeKey = "storageType";
     private static final String architectureKey = "architecture";
+    private static final String gpuKey = "gpu";
     private static final String gpuCountKey = "gpuCount";
     private static final String gpuMemoryKey = "gpuMemory";
 
@@ -98,8 +99,9 @@ public class AllocatedHostsSerializer {
         resourcesObject.setString(storageTypeKey, storageTypeToString(resources.storageType()));
         resourcesObject.setString(architectureKey, architectureToString(resources.architecture()));
         if (!resources.gpuResources().isDefault()) {
-            resourcesObject.setLong(gpuCountKey, resources.gpuResources().count());
-            resourcesObject.setDouble(gpuMemoryKey, resources.gpuResources().memoryGb());
+            Cursor gpuObject = resourcesObject.setObject(gpuKey);
+            gpuObject.setLong(gpuCountKey, resources.gpuResources().count());
+            gpuObject.setDouble(gpuMemoryKey, resources.gpuResources().memoryGb());
         }
     }
 
@@ -141,14 +143,13 @@ public class AllocatedHostsSerializer {
                                  diskSpeedFromSlime(resources.field(diskSpeedKey)),
                                  storageTypeFromSlime(resources.field(storageTypeKey)),
                                  architectureFromSlime(resources.field(architectureKey)),
-                                 gpuResourcesFromSlime(resources));
+                                 gpuResourcesFromSlime(resources.field(gpuKey)));
     }
 
-    private static NodeResources.GpuResources gpuResourcesFromSlime(Inspector resources) {
-        Inspector gpuCountField = resources.field(gpuCountKey);
-        Inspector gpuMemoryField = resources.field(gpuMemoryKey);
-        if (!gpuCountField.valid() || !gpuMemoryField.valid()) return NodeResources.GpuResources.getDefault();
-        return new NodeResources.GpuResources((int) gpuCountField.asLong(), gpuMemoryField.asDouble());
+    private static NodeResources.GpuResources gpuResourcesFromSlime(Inspector gpu) {
+        if (!gpu.valid()) return NodeResources.GpuResources.getDefault();
+        return new NodeResources.GpuResources((int) gpu.field(gpuCountKey).asLong(),
+                                              gpu.field(gpuMemoryKey).asDouble());
     }
 
     private static NodeResources optionalNodeResourcesFromSlime(Inspector resources) {

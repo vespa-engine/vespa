@@ -59,7 +59,7 @@ import static org.junit.Assert.assertTrue;
  */
 public class NodeSerializerTest {
 
-    private final NodeFlavors nodeFlavors = FlavorConfigBuilder.createDummies("default", "large", "ugccloud-container", "arm64");
+    private final NodeFlavors nodeFlavors = FlavorConfigBuilder.createDummies("default", "large", "ugccloud-container", "arm64", "gpu");
     private final NodeSerializer nodeSerializer = new NodeSerializer(nodeFlavors, 1000);
     private final ManualClock clock = new ManualClock();
 
@@ -79,7 +79,8 @@ public class NodeSerializerTest {
     public void reserved_node_serialization() {
         Node node = createNode();
         NodeResources requestedResources = new NodeResources(1.2, 3.4, 5.6, 7.8,
-                                                             DiskSpeed.any, StorageType.any, Architecture.arm64);
+                                                             DiskSpeed.any, StorageType.any, Architecture.arm64,
+                                                             new NodeResources.GpuResources(1, 16));
 
         assertEquals(0, node.history().events().size());
         node = node.allocate(ApplicationId.from(TenantName.from("myTenant"),
