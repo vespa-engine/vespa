@@ -393,7 +393,7 @@ public class NodeResources {
     public boolean compatibleWith(NodeResources requested) {
         if ( ! equal(this.vcpu, requested.vcpu)) return false;
         if ( ! equal(this.memoryGb, requested.memoryGb)) return false;
-        if (requested.storageType == StorageType.local) {
+        if (this.storageType == StorageType.local || requested.storageType == StorageType.local) {
             if ( ! equal(this.diskGb, requested.diskGb)) return false;
         }
         else {

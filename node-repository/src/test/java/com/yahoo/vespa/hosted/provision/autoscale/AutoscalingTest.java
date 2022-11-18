@@ -649,4 +649,34 @@ public class AutoscalingTest {
                                          fixture.autoscale());
     }
 
+    @Test
+    public void test_changing_exclusivity() {
+        var fixture = AutoscalingTester.fixture()
+                                       .awsProdSetup(true)
+                                       .cluster(clusterSpec(true))
+                                       .initialResources(Optional.empty())
+                                       .build();
+        fixture.tester().assertResources("Initial deployment at minimum",
+                                         2, 1, 2, 4, 10,
+                                         fixture.currentResources().advertisedResources());
+
+        fixture.tester().deploy(fixture.applicationId(), clusterSpec(false), fixture.capacity());
+        fixture.tester().assertResources("With non-exclusive nodes, a better solution is " +
+                                         "50% more nodes with half the cpu",
+                                         3, 1, 1, 4, 10.2,
+                                         fixture.autoscale());
+
+        fixture.tester().deploy(fixture.applicationId(), clusterSpec(true), fixture.capacity());
+        fixture.tester().assertResources("Reverts to the initial resources",
+                                         2, 1, 2, 4, 10,
+                                         fixture.currentResources().advertisedResources());
+    }
+
+    private ClusterSpec clusterSpec(boolean exclusive) {
+        return ClusterSpec.request(ClusterSpec.Type.container,
+                                   ClusterSpec.Id.from("test")).vespaVersion("8.1.2")
+                          .exclusive(exclusive)
+                          .build();
+    }
+
 }

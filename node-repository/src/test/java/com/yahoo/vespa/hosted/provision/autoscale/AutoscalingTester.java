@@ -210,17 +210,15 @@ class AutoscalingTester {
     public static class MockHostResourcesCalculator implements HostResourcesCalculator {
 
         private final Zone zone;
-        private double memoryTax;
 
-        public MockHostResourcesCalculator(Zone zone, double memoryTax) {
+        public MockHostResourcesCalculator(Zone zone) {
             this.zone = zone;
-            this.memoryTax = memoryTax;
         }
 
         @Override
         public NodeResources realResourcesOf(Nodelike node, NodeRepository nodeRepository) {
             if (zone.cloud().dynamicProvisioning())
-                return node.resources().withMemoryGb(node.resources().memoryGb() - memoryTax);
+                return node.resources().withMemoryGb(node.resources().memoryGb());
             else
                 return node.resources();
         }
@@ -228,19 +226,19 @@ class AutoscalingTester {
         @Override
         public NodeResources advertisedResourcesOf(Flavor flavor) {
             if (zone.cloud().dynamicProvisioning())
-                return flavor.resources().withMemoryGb(flavor.resources().memoryGb() + memoryTax);
+                return flavor.resources().withMemoryGb(flavor.resources().memoryGb());
             else
                 return flavor.resources();
         }
 
         @Override
         public NodeResources requestToReal(NodeResources resources, boolean exclusive) {
-            return resources.withMemoryGb(resources.memoryGb() - memoryTax);
+            return resources.withMemoryGb(resources.memoryGb());
         }
 
         @Override
         public NodeResources realToRequest(NodeResources resources, boolean exclusive) {
-            return resources.withMemoryGb(resources.memoryGb() + memoryTax);
+            return resources.withMemoryGb(resources.memoryGb());
         }
 
         @Override
