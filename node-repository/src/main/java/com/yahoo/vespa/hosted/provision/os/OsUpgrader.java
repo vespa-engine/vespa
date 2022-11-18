@@ -8,6 +8,7 @@ import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeList;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
 
+import java.time.Duration;
 import java.time.Instant;
 
 /**
@@ -43,8 +44,13 @@ public abstract class OsUpgrader {
     }
 
     /** Returns whether node can upgrade at given instant */
-    boolean canUpgradeAt(Instant instant, Node node) {
-        return true;
+    final boolean canUpgradeAt(Instant instant, Node node) {
+        return node.history().age(instant).compareTo(gracePeriod()) > 0;
+    }
+
+    /** The duration this leaves new nodes alone before scheduling any upgrade */
+    private Duration gracePeriod() {
+        return Duration.ofDays(1);
     }
 
 }

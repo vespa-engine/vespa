@@ -93,8 +93,4 @@ public class RebuildingOsUpgrader extends OsUpgrader {
         nodeRepository.nodes().upgradeOs(NodeListFilter.from(host), Optional.of(target));
     }
 
-    private static void illegal(String msg) {
-        throw new IllegalArgumentException(msg);
-    }
-
 }
