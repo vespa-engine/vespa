@@ -9,7 +9,6 @@ import com.yahoo.vespa.hosted.provision.NodeRepository;
 import com.yahoo.vespa.hosted.provision.node.Agent;
 import com.yahoo.vespa.hosted.provision.node.filter.NodeListFilter;
 
-import java.time.Duration;
 import java.time.Instant;
 import java.util.Optional;
 import java.util.logging.Logger;
@@ -46,11 +45,6 @@ public class RetiringOsUpgrader extends OsUpgrader {
         // No action needed in this implementation.
     }
 
-    @Override
-    public boolean canUpgradeAt(Instant instant, Node node) {
-        return node.history().age(instant).compareTo(gracePeriod()) > 0;
-    }
-
     /** Returns nodes that are candidates for upgrade */
     private NodeList candidates(Instant instant, OsVersionTarget target, NodeList allNodes) {
         NodeList activeNodes = allNodes.state(Node.State.active).nodeType(target.nodeType());
@@ -72,11 +66,6 @@ public class RetiringOsUpgrader extends OsUpgrader {
                  ", want " + target);
         nodeRepository.nodes().deprovision(host.hostname(), Agent.RetiringOsUpgrader, now);
         nodeRepository.nodes().upgradeOs(NodeListFilter.from(host), Optional.of(target));
-    }
-
-    /** The duration this leaves new nodes alone before scheduling any upgrade */
-    private Duration gracePeriod() {
-        return Duration.ofDays(1);
     }
 
 }

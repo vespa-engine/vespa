@@ -11,7 +11,7 @@ import com.yahoo.vespa.hosted.provision.os.OsVersionTarget;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
-import java.util.HashMap;
+import java.util.TreeMap;
 
 /**
  * Serializer for {@link OsVersionChange}.
@@ -43,7 +43,7 @@ public class OsVersionChangeSerializer {
     }
 
     public static OsVersionChange fromJson(byte[] data) {
-        var targets = new HashMap<NodeType, OsVersionTarget>();
+        var targets = new TreeMap<NodeType, OsVersionTarget>();
         var inspector = SlimeUtils.jsonToSlime(data).get();
         inspector.field(TARGETS_FIELD).traverse((ArrayTraverser) (idx, arrayInspector) -> {
             var version = Version.fromString(arrayInspector.field(VERSION_FIELD).asString());

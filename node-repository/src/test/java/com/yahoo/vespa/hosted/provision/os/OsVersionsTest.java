@@ -175,7 +175,6 @@ public class OsVersionsTest {
         Supplier<NodeList> hostNodes = () -> tester.nodeRepository().nodes().list()
                                                    .hosts()
                                                    .not().state(Node.State.deprovisioned);
-        tester.clock().advance(Duration.ofDays(2)); // Let grace period pass
 
         // Target is set and upgrade started
         var version1 = Version.fromString("7.1");
@@ -219,7 +218,6 @@ public class OsVersionsTest {
         Supplier<NodeList> hostNodes = () -> tester.nodeRepository().nodes().list()
                                                    .nodeType(NodeType.host)
                                                    .not().state(Node.State.deprovisioned);
-        tester.clock().advance(Duration.ofDays(2)); // Let grace period pass
 
         // Target is set and upgrade started
         var version1 = Version.fromString("7.1");
@@ -541,6 +539,7 @@ public class OsVersionsTest {
                                                                        NodeResources.DiskSpeed.fast, storageType),
                                           nodeType, 10);
         tester.prepareAndActivateInfraApplication(application, nodeType);
+        tester.clock().advance(Duration.ofDays(1).plusSeconds(1)); // Let grace period pass
         return nodes.stream()
                     .map(Node::hostname)
                     .flatMap(hostname -> tester.nodeRepository().nodes().node(hostname).stream())

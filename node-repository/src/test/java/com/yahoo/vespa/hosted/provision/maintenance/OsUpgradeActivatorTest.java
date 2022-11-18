@@ -45,6 +45,7 @@ public class OsUpgradeActivatorTest {
         var tenantHostApplication = ApplicationId.from("hosted-vespa", "tenant-host", "default");
         var tenantHostNodes = tester.makeReadyNodes(3, "default", NodeType.host, 1);
         tester.prepareAndActivateInfraApplication(tenantHostApplication, NodeType.host, version0);
+        tester.clock().advance(Duration.ofDays(1).plusSeconds(1)); // Let grace period pass
 
         var allNodes = new ArrayList<>(configHostNodes);
         allNodes.addAll(tenantHostNodes);
