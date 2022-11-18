@@ -220,9 +220,9 @@ PostingStoreTest::test_compact_btree_nodes(uint32_t sequence_length)
     }
 }
 
-VESPA_GTEST_INSTANTIATE_TEST_SUITE_P(PostingStoreMultiTest,
-                                     PostingStoreTest,
-                                     testing::Values(PostingStoreSetup(false), PostingStoreSetup(true)), testing::PrintToStringParamName());
+INSTANTIATE_TEST_SUITE_P(PostingStoreMultiTest,
+                         PostingStoreTest,
+                         testing::Values(PostingStoreSetup(false), PostingStoreSetup(true)), testing::PrintToStringParamName());
 
 TEST_P(PostingStoreTest, require_that_nodes_for_multiple_small_btrees_are_compacted)
 {

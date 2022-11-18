@@ -200,7 +200,7 @@ public:
 
 using HnswIndexTestTypes = ::testing::Types<HnswIndex<HnswIndexType::SINGLE>, HnswIndex<HnswIndexType::MULTI>>;
 
-VESPA_GTEST_TYPED_TEST_SUITE(HnswIndexTest, HnswIndexTestTypes);
+TYPED_TEST_SUITE(HnswIndexTest, HnswIndexTestTypes);
 
 TYPED_TEST(HnswIndexTest, 2d_vectors_inserted_in_level_0_graph_with_simple_select_neighbors)
 {
@@ -759,7 +759,7 @@ public:
     }
 };
 
-VESPA_GTEST_TYPED_TEST_SUITE(TwoPhaseTest, HnswIndexTestTypes);
+TYPED_TEST_SUITE(TwoPhaseTest, HnswIndexTestTypes);
 
 TYPED_TEST(TwoPhaseTest, two_phase_add)
 {

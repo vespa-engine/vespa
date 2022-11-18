@@ -540,7 +540,7 @@ struct FieldIndexTest : public ::testing::Test {
 };
 
 using FieldIndexTestTypes = ::testing::Types<FieldIndex<false>, FieldIndex<true>>;
-VESPA_GTEST_TYPED_TEST_SUITE(FieldIndexTest, FieldIndexTestTypes);
+TYPED_TEST_SUITE(FieldIndexTest, FieldIndexTestTypes);
 
 // Disable warnings emitted by gtest generated files when using typed tests
 #pragma GCC diagnostic push

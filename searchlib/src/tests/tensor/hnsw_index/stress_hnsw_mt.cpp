@@ -351,7 +351,7 @@ public:
 
 using StressorTypes = ::testing::Types<HnswIndex<HnswIndexType::SINGLE>>;
 
-VESPA_GTEST_TYPED_TEST_SUITE(Stressor, StressorTypes);
+TYPED_TEST_SUITE(Stressor, StressorTypes);
 
 TYPED_TEST(Stressor, stress)
 {

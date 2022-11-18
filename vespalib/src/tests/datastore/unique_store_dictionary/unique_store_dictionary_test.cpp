@@ -75,7 +75,7 @@ struct UniqueStoreDictionaryTest : public ::testing::Test {
 };
 
 using UniqueStoreDictionaryTestTypes = ::testing::Types<DefaultUniqueStoreDictionary, UniqueStoreDictionary<DefaultDictionary, IUniqueStoreDictionary, ShardedHashMap>, UniqueStoreDictionary<NoBTreeDictionary, IUniqueStoreDictionary, ShardedHashMap>>;
-VESPA_GTEST_TYPED_TEST_SUITE(UniqueStoreDictionaryTest, UniqueStoreDictionaryTestTypes);
+TYPED_TEST_SUITE(UniqueStoreDictionaryTest, UniqueStoreDictionaryTestTypes);
 
 // Disable warnings emitted by gtest generated files when using typed tests
 #pragma GCC diagnostic push

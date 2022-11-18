@@ -158,7 +158,7 @@ public:
 #endif
 
 using FloatEnumStoreTestTypes = ::testing::Types<BTreeFloatEnumStore, BTreeDoubleEnumStore, HybridFloatEnumStore, HybridDoubleEnumStore, HashFloatEnumStore, HashDoubleEnumStore>;
-VESPA_GTEST_TYPED_TEST_SUITE(FloatEnumStoreTest, FloatEnumStoreTestTypes);
+TYPED_TEST_SUITE(FloatEnumStoreTest, FloatEnumStoreTestTypes);
 
 TYPED_TEST(FloatEnumStoreTest, numbers_can_be_inserted_and_retrieved)
 {
@@ -554,7 +554,7 @@ public:
 #endif
 
 using LoaderTestTypes = ::testing::Types<BTreeNumericEnumStore, BTreeFloatEnumStore, BTreeStringEnumStore, HybridNumericEnumStore, HybridFloatEnumStore, HybridStringEnumStore, HashNumericEnumStore, HashFloatEnumStore, HashStringEnumStore>;
-VESPA_GTEST_TYPED_TEST_SUITE(LoaderTest, LoaderTestTypes);
+TYPED_TEST_SUITE(LoaderTest, LoaderTestTypes);
 
 TYPED_TEST(LoaderTest, store_is_instantiated_with_enumerated_loader)
 {
@@ -803,7 +803,7 @@ EnumStoreDictionaryTest<EnumStoreTypeAndDictionaryType>::test_foreach_posting_li
 #endif
 
 using EnumStoreDictionaryTestTypes = ::testing::Types<BTreeNumericEnumStore, HybridNumericEnumStore, HashNumericEnumStore>;
-VESPA_GTEST_TYPED_TEST_SUITE(EnumStoreDictionaryTest, EnumStoreDictionaryTestTypes);
+TYPED_TEST_SUITE(EnumStoreDictionaryTest, EnumStoreDictionaryTestTypes);
 
 TYPED_TEST(EnumStoreDictionaryTest, find_frozen_index_works)
 {

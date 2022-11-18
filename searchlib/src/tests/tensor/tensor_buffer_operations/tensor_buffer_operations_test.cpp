@@ -158,9 +158,9 @@ TensorBufferOperationsTest::assert_store_encode_decode(const TensorSpec& tensor_
     EXPECT_EQ(tensor_spec, decoded_spec);
 }
 
-VESPA_GTEST_INSTANTIATE_TEST_SUITE_P(TensorBufferOperationsMultiTest,
-                                     TensorBufferOperationsTest,
-                                     testing::Values(TestParam("1d", {8, 16, 32, 40, 64}, TensorSpec(tensor_type_spec).add({{"x", "a"}}, 4.5)),
+INSTANTIATE_TEST_SUITE_P(TensorBufferOperationsMultiTest,
+                         TensorBufferOperationsTest,
+                         testing::Values(TestParam("1d", {8, 16, 32, 40, 64}, TensorSpec(tensor_type_spec).add({{"x", "a"}}, 4.5)),
                                                      TestParam("1dmulti", {8, 16, 32, 40, 64}, TensorSpec(tensor_type_spec).add({{"x", "a"}}, 4.5).add({{"x", "c"}}, 4.25)),
                                                      TestParam("1dfloat", {4, 12, 20, 28, 36}, TensorSpec(float_tensor_type_spec).add({{"y", "aa"}}, 4.25)),
                                                      TestParam("2d", {8, 24, 40, 56, 80}, TensorSpec(tensor_type_2d_spec).add({{"x", "a"},{"y", "aa"}}, 4.75)),

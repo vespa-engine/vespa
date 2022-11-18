@@ -122,6 +122,6 @@ TEST_P(MaintenanceSchedulerTest, priority_not_cleared_if_operation_not_started_o
               _priority_db.toString());
 }
 
-VESPA_GTEST_INSTANTIATE_TEST_SUITE_P(ImplicitClearOfDbPri, MaintenanceSchedulerTest, ::testing::Values(false, true));
+INSTANTIATE_TEST_SUITE_P(ImplicitClearOfDbPri, MaintenanceSchedulerTest, ::testing::Values(false, true));
 
 }

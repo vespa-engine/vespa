@@ -507,7 +507,7 @@ using BTreeStressTest = Fixture<Params>;
 
 using TestTypes = testing::Types<DirectKeyValueParams, IndirectKeyValueParams>;
 
-VESPA_GTEST_TYPED_TEST_SUITE(BTreeStressTest, TestTypes);
+TYPED_TEST_SUITE(BTreeStressTest, TestTypes);
 
 // Disable warnings emitted by gtest generated files when using typed tests
 #pragma GCC diagnostic push

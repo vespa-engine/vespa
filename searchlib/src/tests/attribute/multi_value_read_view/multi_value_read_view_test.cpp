@@ -448,7 +448,7 @@ auto test_values = ::testing::Values(TestParam(BasicType::Type::INT8),
                                      TestParam(BasicType::Type::DOUBLE),
                                      TestParam(BasicType::Type::STRING));
 
-VESPA_GTEST_INSTANTIATE_TEST_SUITE_P(ReadView, MultiValueReadViewTest, test_values,testing::PrintToStringParamName());
+INSTANTIATE_TEST_SUITE_P(ReadView, MultiValueReadViewTest, test_values,testing::PrintToStringParamName());
 
 }
 
