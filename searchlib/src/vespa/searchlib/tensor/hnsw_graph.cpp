@@ -24,7 +24,7 @@ template <HnswIndexType type>
 HnswGraph<type>::~HnswGraph() = default;
 
 template <HnswIndexType type>
-HnswGraph<type>::NodeRef
+typename HnswGraph<type>::NodeRef
 HnswGraph<type>::make_node(uint32_t nodeid, uint32_t docid, uint32_t subspace, uint32_t num_levels)
 {
     node_refs.ensure_size(nodeid + 1, NodeType());
@@ -89,7 +89,7 @@ HnswGraph<type>::set_link_array(uint32_t nodeid, uint32_t level, const LinkArray
 }
 
 template <HnswIndexType type>
-HnswGraph<type>::Histograms
+typename HnswGraph<type>::Histograms
 HnswGraph<type>::histograms() const
 {
     Histograms result;
@@ -135,8 +135,8 @@ HnswGraph<type>::set_entry_node(EntryNode node) {
     entry_nodeid_and_level.store(value, std::memory_order_release);
 }
 
-template class HnswGraph<HnswIndexType::SINGLE>;
-template class HnswGraph<HnswIndexType::MULTI>;
+template struct HnswGraph<HnswIndexType::SINGLE>;
+template struct HnswGraph<HnswIndexType::MULTI>;
 
 } // namespace
 

@@ -33,7 +33,7 @@ private:
         MetaData();
         ~MetaData();
     };
-    const HnswGraph<type>::LinkStore &_graph_links;
+    const typename HnswGraph<type>::LinkStore &_graph_links;
     MetaData _meta_data;
 };
 
