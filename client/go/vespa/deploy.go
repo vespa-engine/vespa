@@ -243,12 +243,14 @@ func Submit(opts DeploymentOptions) error {
 	if err := copyToPart(writer, applicationZip, "applicationZip", "application.zip"); err != nil {
 		return err
 	}
-	testApplicationZip, err := opts.ApplicationPackage.zipReader(true)
-	if err != nil {
-		return err
-	}
-	if err := copyToPart(writer, testApplicationZip, "applicationTestZip", "application-test.zip"); err != nil {
-		return err
+	if opts.ApplicationPackage.HasTests() {
+		testApplicationZip, err := opts.ApplicationPackage.zipReader(true)
+		if err != nil {
+			return err
+		}
+		if err := copyToPart(writer, testApplicationZip, "applicationTestZip", "application-test.zip"); err != nil {
+			return err
+		}
 	}
 	if err := writer.Close(); err != nil {
 		return err

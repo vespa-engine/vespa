@@ -184,6 +184,8 @@ func (ap *ApplicationPackage) Unzip(test bool) (string, error) {
 	return tmp, nil
 }
 
+func (ap *ApplicationPackage) HasTests() bool { return ap.TestPath != "" }
+
 func validPath(path string) bool {
 	path = strings.TrimSuffix(path, "/")
 	if filepath.Clean(path) != path {

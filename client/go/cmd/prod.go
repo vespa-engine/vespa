@@ -363,6 +363,9 @@ func prompt(cli *CLI, stdin *bufio.Reader, question, defaultAnswer string, valid
 }
 
 func verifyTests(cli *CLI, app vespa.ApplicationPackage) error {
+	if !app.HasTests() {
+		return nil
+	}
 	// TODO: system-test, staging-setup and staging-test should be required if the application
 	//       does not have any Java tests.
 	suites := map[string]bool{
