@@ -18,7 +18,7 @@ private:
 
 public:
     EquivBlueprint(const FieldSpecBaseList &fields, fef::MatchDataLayout subtree_mdl);
-    virtual ~EquivBlueprint();
+    ~EquivBlueprint() override;
 
     // used by create visitor
     EquivBlueprint& addTerm(Blueprint::UP term, double exactness);
