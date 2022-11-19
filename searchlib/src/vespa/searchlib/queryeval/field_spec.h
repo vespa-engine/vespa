@@ -59,6 +59,7 @@ private:
     List _list;
 
 public:
+    ~FieldSpecBaseList();
     using const_iterator = List::const_iterator;
     FieldSpecBaseList &add(const FieldSpecBase &spec) {
         _list.push_back(spec);
@@ -82,6 +83,7 @@ private:
     std::vector<FieldSpec> _list;
 
 public:
+    ~FieldSpecList();
     FieldSpecList &add(const FieldSpec &spec) {
         _list.push_back(spec);
         return *this;
