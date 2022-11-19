@@ -12,4 +12,8 @@ FieldSpecBase::FieldSpecBase(uint32_t fieldId, fef::TermFieldHandle handle, bool
     assert(fieldId < 0x1000000);  // Can be represented by 24 bits
 }
 
+FieldSpecBaseList::~FieldSpecBaseList() = default;
+
+FieldSpecList::~FieldSpecList() = default;
+
 }
