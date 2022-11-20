@@ -7,6 +7,7 @@ import com.yahoo.concurrent.maintenance.JobControl;
 import com.yahoo.config.provision.ApplicationTransaction;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.DockerImage;
+import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.NodeFlavors;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.config.provisioning.NodeRepositoryConfig;

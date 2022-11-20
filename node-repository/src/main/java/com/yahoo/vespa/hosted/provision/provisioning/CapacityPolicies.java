@@ -10,10 +10,8 @@ import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.Zone;
-import com.yahoo.vespa.flags.JacksonFlag;
 import com.yahoo.vespa.flags.PermanentFlags;
 import com.yahoo.vespa.flags.StringFlag;
-import com.yahoo.vespa.flags.custom.SharedHost;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
 import java.util.Map;
 import java.util.TreeMap;
@@ -30,13 +28,13 @@ import static java.util.Objects.requireNonNull;
  */
 public class CapacityPolicies {
 
+    private final NodeRepository nodeRepository;
     private final Zone zone;
-    private final JacksonFlag<SharedHost> sharedHosts;
     private final StringFlag adminClusterNodeArchitecture;
 
     public CapacityPolicies(NodeRepository nodeRepository) {
+        this.nodeRepository = nodeRepository;
         this.zone = nodeRepository.zone();
-        this.sharedHosts = PermanentFlags.SHARED_HOST.bindTo(nodeRepository.flagSource());
         this.adminClusterNodeArchitecture = PermanentFlags.ADMIN_CLUSTER_NODE_ARCHITECTURE.bindTo(nodeRepository.flagSource());
     }
 
@@ -87,7 +85,7 @@ public class CapacityPolicies {
                 return clusterControllerResources(clusterSpec).with(architecture);
             }
 
-            return (requiresExclusiveHost(clusterSpec)
+            return (nodeRepository.exclusiveAllocation(clusterSpec)
                     ? versioned(clusterSpec, Map.of(new Version(0), smallestExclusiveResources()))
                     : versioned(clusterSpec, Map.of(new Version(0), smallestSharedResources())))
                     .with(architecture);
@@ -107,7 +105,7 @@ public class CapacityPolicies {
     }
 
     private NodeResources clusterControllerResources(ClusterSpec clusterSpec) {
-        if (requiresExclusiveHost(clusterSpec)) {
+        if (nodeRepository.exclusiveAllocation(clusterSpec)) {
             return versioned(clusterSpec, Map.of(new Version(0), smallestExclusiveResources()));
         }
         return versioned(clusterSpec, Map.of(new Version(0), new NodeResources(0.25, 1.14, 10, 0.3)));
@@ -115,11 +113,6 @@ public class CapacityPolicies {
 
     private Architecture adminClusterArchitecture(ApplicationId instance) {
         return Architecture.valueOf(adminClusterNodeArchitecture.with(APPLICATION_ID, instance.serializedForm()).value());
-    }
-
-    /** Returns whether an exclusive host is required for given cluster type and exclusivity requirement */
-    private boolean requiresExclusiveHost(ClusterSpec cluster) {
-        return ! zone.cloud().allowHostSharing() && (cluster.isExclusive() || !sharedHosts.value().isEnabled(cluster.type().name()));
     }
 
     /** Returns the resources for the newest version not newer than that requested in the cluster spec. */
