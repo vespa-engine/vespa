@@ -58,7 +58,8 @@ public class Autoscaler {
     }
 
     private Advice autoscale(Application application, Cluster cluster, NodeList clusterNodes, Limits limits) {
-        ClusterModel clusterModel = new ClusterModel(application,
+        ClusterModel clusterModel = new ClusterModel(nodeRepository.zone(),
+                                                     application,
                                                      clusterNodes.clusterSpec(),
                                                      cluster,
                                                      clusterNodes,

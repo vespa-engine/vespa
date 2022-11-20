@@ -35,12 +35,14 @@ import java.util.stream.Collectors;
 public class Fixture {
 
     final AutoscalingTester tester;
+    final Zone zone;
     final ApplicationId applicationId;
     final ClusterSpec clusterSpec;
     final Capacity capacity;
     final Loader loader;
 
     public Fixture(Fixture.Builder builder, Optional<ClusterResources> initialResources, int hostCount) {
+        zone = builder.zone;
         applicationId = builder.application;
         clusterSpec = builder.cluster;
         capacity = builder.capacity;
@@ -72,7 +74,8 @@ public class Fixture {
     public Capacity capacity() { return capacity; }
 
     public ClusterModel clusterModel() {
-        return new ClusterModel(application(),
+        return new ClusterModel(zone,
+                                application(),
                                 clusterSpec,
                                 cluster(),
                                 nodes(),

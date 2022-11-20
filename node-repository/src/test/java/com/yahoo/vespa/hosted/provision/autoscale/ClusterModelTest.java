@@ -6,6 +6,7 @@ import com.yahoo.config.provision.Capacity;
 import com.yahoo.config.provision.ClusterResources;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.NodeResources;
+import com.yahoo.config.provision.Zone;
 import com.yahoo.test.ManualClock;
 import com.yahoo.vespa.hosted.provision.applications.Application;
 import com.yahoo.vespa.hosted.provision.applications.Cluster;
@@ -73,11 +74,13 @@ public class ClusterModelTest {
 
     private ClusterModel clusterModel(Status status, IntFunction<Double> queryRate, IntFunction<Double> writeRate) {
         ManualClock clock = new ManualClock();
+        Zone zone = Zone.defaultZone();
         Application application = Application.empty(ApplicationId.from("t1", "a1", "i1"));
         ClusterSpec clusterSpec = clusterSpec();
         Cluster cluster = cluster(resources());
         application = application.with(cluster);
-        return new ClusterModel(application.with(status),
+        return new ClusterModel(zone,
+                                application.with(status),
                                 clusterSpec, cluster, clock, Duration.ofMinutes(10),
                                 timeseries(cluster,100, queryRate, writeRate, clock),
                                 ClusterNodesTimeseries.empty());

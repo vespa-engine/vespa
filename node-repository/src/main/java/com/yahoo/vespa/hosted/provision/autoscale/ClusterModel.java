@@ -2,6 +2,7 @@
 package com.yahoo.vespa.hosted.provision.autoscale;
 
 import com.yahoo.config.provision.ClusterSpec;
+import com.yahoo.config.provision.Zone;
 import com.yahoo.vespa.hosted.provision.NodeList;
 import com.yahoo.vespa.hosted.provision.applications.Application;
 import com.yahoo.vespa.hosted.provision.applications.Cluster;
@@ -39,6 +40,7 @@ public class ClusterModel {
     // TODO: Measure this, and only take it into account with queries
     private static final double fixedCpuCostFraction = 0.1;
 
+    private final Zone zone;
     private final Application application;
     private final ClusterSpec clusterSpec;
     private final Cluster cluster;
@@ -53,12 +55,14 @@ public class ClusterModel {
     private Double queryFractionOfMax = null;
     private Double maxQueryGrowthRate = null;
 
-    public ClusterModel(Application application,
+    public ClusterModel(Zone zone,
+                        Application application,
                         ClusterSpec clusterSpec,
                         Cluster cluster,
                         NodeList clusterNodes,
                         MetricsDb metricsDb,
                         Clock clock) {
+        this.zone = zone;
         this.application = application;
         this.clusterSpec = clusterSpec;
         this.cluster = cluster;
@@ -69,14 +73,15 @@ public class ClusterModel {
         this.nodeTimeseries = new ClusterNodesTimeseries(scalingDuration(), cluster, nodes, metricsDb);
     }
 
-    /** For testing */
-    ClusterModel(Application application,
+    ClusterModel(Zone zone,
+                 Application application,
                  ClusterSpec clusterSpec,
                  Cluster cluster,
                  Clock clock,
                  Duration scalingDuration,
                  ClusterTimeseries clusterTimeseries,
                  ClusterNodesTimeseries nodeTimeseries) {
+        this.zone = zone;
         this.application = application;
         this.clusterSpec = clusterSpec;
         this.cluster = cluster;
@@ -311,14 +316,15 @@ public class ClusterModel {
      * This is useful in cases where it's possible to continue without the cluser model,
      * as QuestDb is known to temporarily fail during reading of data.
      */
-    public static Optional<ClusterModel> create(Application application,
+    public static Optional<ClusterModel> create(Zone zone,
+                                                Application application,
                                                 ClusterSpec clusterSpec,
                                                 Cluster cluster,
                                                 NodeList clusterNodes,
                                                 MetricsDb metricsDb,
                                                 Clock clock) {
         try {
-            return Optional.of(new ClusterModel(application, clusterSpec, cluster, clusterNodes, metricsDb, clock));
+            return Optional.of(new ClusterModel(zone, application, clusterSpec, cluster, clusterNodes, metricsDb, clock));
         }
         catch (Exception e) {
             log.log(Level.WARNING, "Failed creating a cluster model for " + application + " " + cluster, e);
