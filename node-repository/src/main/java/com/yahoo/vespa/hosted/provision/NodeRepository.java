@@ -12,6 +12,9 @@ import com.yahoo.config.provision.Zone;
 import com.yahoo.config.provisioning.NodeRepositoryConfig;
 import com.yahoo.vespa.curator.Curator;
 import com.yahoo.vespa.flags.FlagSource;
+import com.yahoo.vespa.flags.JacksonFlag;
+import com.yahoo.vespa.flags.PermanentFlags;
+import com.yahoo.vespa.flags.custom.SharedHost;
 import com.yahoo.vespa.hosted.provision.Node.State;
 import com.yahoo.vespa.hosted.provision.applications.Applications;
 import com.yahoo.vespa.hosted.provision.autoscale.MetricsDb;
@@ -62,6 +65,7 @@ public class NodeRepository extends AbstractComponent {
     private final MetricsDb metricsDb;
     private final Orchestrator orchestrator;
     private final int spareCount;
+    private final JacksonFlag<SharedHost> sharedHosts;
 
     /**
      * Creates a node repository from a zookeeper provider.
@@ -134,6 +138,7 @@ public class NodeRepository extends AbstractComponent {
         this.metricsDb = metricsDb;
         this.orchestrator = orchestrator;
         this.spareCount = spareCount;
+        this.sharedHosts = PermanentFlags.SHARED_HOST.bindTo(flagSource());
         nodes.rewrite();
     }
 
@@ -197,7 +202,8 @@ public class NodeRepository extends AbstractComponent {
      * perfectly.
      */
     public boolean exclusiveAllocation(ClusterSpec clusterSpec) {
-        return clusterSpec.isExclusive() || ! zone().cloud().allowHostSharing();
+        return clusterSpec.isExclusive() ||
+               ( !zone().cloud().allowHostSharing() && !sharedHosts.value().isEnabled(clusterSpec.type().name()));
     }
 
     /**

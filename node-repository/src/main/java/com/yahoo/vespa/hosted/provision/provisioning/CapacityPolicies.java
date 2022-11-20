@@ -79,16 +79,15 @@ public class CapacityPolicies {
         return target;
     }
 
-    public NodeResources defaultNodeResources(ClusterSpec clusterSpec, ApplicationId applicationId, boolean exclusive) {
+    public NodeResources defaultNodeResources(ClusterSpec clusterSpec, ApplicationId applicationId) {
         if (clusterSpec.type() == ClusterSpec.Type.admin) {
             Architecture architecture = adminClusterArchitecture(applicationId);
 
             if (clusterSpec.id().value().equals("cluster-controllers")) {
-                return clusterControllerResources(clusterSpec, exclusive)
-                        .with(architecture);
+                return clusterControllerResources(clusterSpec).with(architecture);
             }
 
-            return (requiresExclusiveHost(clusterSpec.type(), exclusive)
+            return (requiresExclusiveHost(clusterSpec)
                     ? versioned(clusterSpec, Map.of(new Version(0), smallestExclusiveResources()))
                     : versioned(clusterSpec, Map.of(new Version(0), smallestSharedResources())))
                     .with(architecture);
@@ -107,8 +106,8 @@ public class CapacityPolicies {
         }
     }
 
-    private NodeResources clusterControllerResources(ClusterSpec clusterSpec, boolean exclusive) {
-        if (requiresExclusiveHost(clusterSpec.type(), exclusive)) {
+    private NodeResources clusterControllerResources(ClusterSpec clusterSpec) {
+        if (requiresExclusiveHost(clusterSpec)) {
             return versioned(clusterSpec, Map.of(new Version(0), smallestExclusiveResources()));
         }
         return versioned(clusterSpec, Map.of(new Version(0), new NodeResources(0.25, 1.14, 10, 0.3)));
@@ -119,8 +118,8 @@ public class CapacityPolicies {
     }
 
     /** Returns whether an exclusive host is required for given cluster type and exclusivity requirement */
-    private boolean requiresExclusiveHost(ClusterSpec.Type type, boolean exclusive) {
-        return ! zone.cloud().allowHostSharing() && (exclusive || !sharedHosts.value().isEnabled(type.name()));
+    private boolean requiresExclusiveHost(ClusterSpec cluster) {
+        return ! zone.cloud().allowHostSharing() && (cluster.isExclusive() || !sharedHosts.value().isEnabled(cluster.type().name()));
     }
 
     /** Returns the resources for the newest version not newer than that requested in the cluster spec. */
@@ -145,9 +144,10 @@ public class CapacityPolicies {
     }
 
     /** Returns whether the nodes requested can share physical host with other applications */
-    public boolean decideExclusivity(Capacity capacity, boolean requestedExclusivity) {
-        if (capacity.cloudAccount().isPresent()) return true; // Implicit exclusive when using custom cloud account
-        return requestedExclusivity && (capacity.isRequired() || zone.environment() == Environment.prod);
+    public ClusterSpec decideExclusivity(Capacity capacity, ClusterSpec requestedCluster) {
+        if (capacity.cloudAccount().isPresent()) return requestedCluster.withExclusivity(true); // Implicit exclusive
+        boolean exclusive = requestedCluster.isExclusive() && (capacity.isRequired() || zone.environment() == Environment.prod);
+        return requestedCluster.withExclusivity(exclusive);
     }
 
 }
