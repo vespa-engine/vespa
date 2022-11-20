@@ -232,6 +232,7 @@ public class ClusterModel {
 
     /** Returns the headroom for growth during organic traffic growth as a multiple of current resources. */
     private double growthRateHeadroom() {
+        if ( ! zone.environment().isProduction()) return 1;
         double growthRateHeadroom = 1 + maxQueryGrowthRate() * scalingDuration().toMinutes();
         // Cap headroom at 10% above the historical observed peak
         if (queryFractionOfMax() != 0)
@@ -244,6 +245,7 @@ public class ClusterModel {
      * as a multiple of current resources.
      */
     private double trafficShiftHeadroom() {
+        if ( ! zone.environment().isProduction()) return 1;
         double trafficShiftHeadroom;
         if (application.status().maxReadShare() == 0) // No traffic fraction data
             trafficShiftHeadroom = 2.0; // assume we currently get half of the global share of traffic
