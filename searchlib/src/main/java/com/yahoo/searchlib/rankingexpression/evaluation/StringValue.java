@@ -5,6 +5,10 @@ import com.yahoo.javacc.UnicodeUtilities;
 import com.yahoo.searchlib.rankingexpression.rule.Function;
 import com.yahoo.tensor.Tensor;
 import com.yahoo.tensor.TensorType;
+import net.jpountz.xxhash.XXHash64;
+import net.jpountz.xxhash.XXHashFactory;
+
+import java.nio.charset.StandardCharsets;
 
 /**
  * A string value.
@@ -31,10 +35,15 @@ public class StringValue extends Value {
     @Override
     public TensorType type() { return TensorType.empty; }
 
-    /** Returns the hashcode of this, to enable strings to be encoded (with reasonable safely) as doubles for optimization */
+    /**
+     * Returns the XXHash hashcode of this, to enable strings to be encoded (with reasonable safely)
+     * as doubles for optimization.
+     */
     @Override
     public double asDouble() {
-        return value.hashCode();
+        XXHash64 hasher = XXHashFactory.fastestInstance().hash64();
+        byte[] data = value.getBytes(StandardCharsets.UTF_8);
+        return Double.longBitsToDouble(hasher.hash(data, 0, data.length, 0));
     }
 
     @Override
