@@ -3,7 +3,7 @@ package ai.vespa.client.dsl;
 
 import java.util.UUID;
 
-public class UserInput extends QueryChain {
+public class UserInput extends Query {
 
     private final Annotation annotation; // accept only defaultIndex annotation
     private final String value;
@@ -16,7 +16,7 @@ public class UserInput extends QueryChain {
     }
 
     UserInput(Sources sources, Annotation annotation, String value) {
-        this.sources = sources;
+        super(sources);
         this.annotation = annotation;
         this.value = value;
         this.valueIsReference = value.startsWith("@");
@@ -56,22 +56,26 @@ public class UserInput extends QueryChain {
     }
 
     @Override
-    boolean hasPositiveSearchField(String fieldName) {
+    public boolean hasPositiveSearchField(String fieldName) {
+        if (super.hasPositiveSearchField(fieldName)) return true;
         return !"andnot".equals(this.op) && this.indexField.equals(fieldName);
     }
 
     @Override
-    boolean hasPositiveSearchField(String fieldName, Object value) {
+    public boolean hasPositiveSearchField(String fieldName, Object value) {
+        if (super.hasPositiveSearchField(fieldName, value)) return true;
         return hasPositiveSearchField(fieldName) && this.value.equals(value);
     }
 
     @Override
-    boolean hasNegativeSearchField(String fieldName) {
+    public boolean hasNegativeSearchField(String fieldName) {
+        if (super.hasNegativeSearchField(fieldName)) return true;
         return "andnot".equals(this.op) && this.indexField.equals(fieldName);
     }
 
     @Override
-    boolean hasNegativeSearchField(String fieldName, Object value) {
+    public boolean hasNegativeSearchField(String fieldName, Object value) {
+        if (super.hasNegativeSearchField(fieldName, value)) return true;
         return hasNegativeSearchField(fieldName) && this.value.equals(value);
     }
 
