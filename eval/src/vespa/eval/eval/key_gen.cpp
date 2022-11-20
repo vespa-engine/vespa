@@ -4,8 +4,7 @@
 #include "node_visitor.h"
 #include "node_traverser.h"
 
-namespace vespalib {
-namespace eval {
+namespace vespalib::eval {
 
 using namespace nodes;
 
@@ -106,5 +105,4 @@ vespalib::string gen_key(const Function &function, PassParams pass_params)
     return key_gen.key;
 }
 
-} // namespace vespalib::eval
-} // namespace vespalib
+}

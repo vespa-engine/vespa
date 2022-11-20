@@ -4,6 +4,7 @@
 #include "iindexenvironment.h"
 #include "indexproperties.h"
 #include "iqueryenvironment.h"
+#include <vespa/searchlib/features/utils.h>
 #include <vespa/document/datatype/tensor_data_type.h>
 #include <vespa/eval/eval/fast_value.h>
 #include <vespa/eval/eval/interpreted_function.h>
@@ -11,7 +12,6 @@
 #include <vespa/eval/eval/value_codec.h>
 #include <vespa/vespalib/locale/c.h>
 #include <vespa/vespalib/util/issue.h>
-#include <vespa/vespalib/util/string_hash.h>
 #include <cerrno>
 
 using document::TensorDataType;
@@ -59,10 +59,10 @@ as_feature(const vespalib::string& str)
     errno = 0;
     double val = vespalib::locale::c::strtod(str.c_str(), &end);
     if (errno != 0 || *end != '\0') { // not happy
-        if (str.size() > 0 && str[0] == '\'') {
-            val = vespalib::hash_code(str.substr(1));
+        if ( ! str.empty() && str[0] == '\'') {
+            val = features::util::getAsFeature(vespalib::stringref(str.substr(1)));
         } else {
-            val = vespalib::hash_code(str);
+            val = features::util::getAsFeature(vespalib::stringref(str));
         }
     }
     return val;
@@ -84,7 +84,7 @@ as_tensor(const vespalib::string& expr, const ValueType& wanted_type)
     auto fun = Function::parse(expr);
     if (!fun->has_error() && (fun->num_params() == 0)) {
         NodeTypes types = NodeTypes(*fun, {});
-        ValueType res_type = types.get_type(fun->root());
+        const ValueType & res_type = types.get_type(fun->root());
         if (res_type == wanted_type) {
             SimpleObjectParams params({});
             InterpretedFunction ifun(factory, *fun, types);
@@ -152,12 +152,12 @@ QueryValue::QueryValue()
 {
 }
 
-QueryValue::QueryValue(const vespalib::string& key, const vespalib::eval::ValueType& type)
+QueryValue::QueryValue(const vespalib::string& key, vespalib::eval::ValueType type)
     : _key(key),
       _name("query(" + key + ")"),
       _old_key("$" + key),
       _stored_value_key("query.value." + key),
-      _type(type)
+      _type(std::move(type))
 {
 }
 
@@ -171,7 +171,7 @@ QueryValue::from_config(const vespalib::string& key, const IIndexEnvironment& en
     if (type.is_error()) {
         throw InvalidValueTypeException(key, type_str);
     }
-    return {key, type};
+    return {key, std::move(type)};
 }
 
 std::unique_ptr<Value>
@@ -187,7 +187,7 @@ QueryValue::make_default_value(const IIndexEnvironment& env) const
     } else {
         if (p.found()) {
             auto tensor = as_tensor(p.get(), _type);
-            if (tensor.get() == nullptr) {
+            if ( ! tensor) {
                 throw InvalidTensorValueException(_type, p.get().c_str());
             }
             return tensor;

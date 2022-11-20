@@ -6,6 +6,7 @@
 #include "string_stuff.h"
 #include <vespa/vespalib/util/hdr_abort.h>
 #include <vespa/vespalib/stllike/string.h>
+#include <vespa/vespalib/stllike/hash_fun.h>
 #include <vespa/vespalib/util/string_hash.h>
 #include <memory>
 #include <map>
@@ -120,9 +121,9 @@ private:
 public:
     String(const vespalib::string &value_in) : _value(value_in) {}
     bool is_const_double() const override { return true; }
-    double get_const_double_value() const override { return hash(); }
+    double get_const_double_value() const override { return hash2d(_value); }
     const vespalib::string &value() const { return _value; }
-    uint32_t hash() const { return hash_code(_value.data(), _value.size()); }
+    uint64_t hash() const { return hashValue(_value.data(), _value.size()); }
     vespalib::string dump(DumpContext &) const override {
         return as_quoted_string(_value);
     }

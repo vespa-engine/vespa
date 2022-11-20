@@ -4,7 +4,7 @@
 
 namespace vespalib {
 
-uint32_t hash_code(const char *str, size_t len) {
+double hash2d(const char *str, size_t len) {
     uint32_t hash = 0;
     for (size_t i = 0; i < len; ++i) {
         hash = (hash << 5) - hash + str[i];
@@ -12,8 +12,8 @@ uint32_t hash_code(const char *str, size_t len) {
     return hash;
 }
 
-uint32_t hash_code(vespalib::stringref str) {
-    return hash_code(str.data(), str.size());
+double hash2d(vespalib::stringref str) {
+    return hash2d(str.data(), str.size());
 }
 
 } // namespace vespalib

@@ -3,7 +3,7 @@
 #include "c.h"
 #include "locale.h"
 #include <cstdlib>
-#include <errno.h>
+#include <cerrno>
 
 namespace vespalib::locale::c {
 

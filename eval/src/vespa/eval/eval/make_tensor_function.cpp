@@ -167,7 +167,7 @@ struct TensorFunctionBuilder : public NodeVisitor, public NodeTraverser {
         make_inject(node, node.id());
     }
     void visit(const String &node) override {
-        make_const(node, stash.create<DoubleValue>(node.hash()));
+        make_const(node, stash.create<DoubleValue>(node.get_const_double_value()));
     }
     void visit(const In &node) override {
         auto my_in = std::make_unique<In>(std::make_unique<Symbol>(0));

@@ -59,7 +59,7 @@ private:
 
 public:
     QueryValue();
-    QueryValue(const vespalib::string& key, const vespalib::eval::ValueType& type);
+    QueryValue(const vespalib::string& key, vespalib::eval::ValueType type);
     ~QueryValue();
 
     /**
