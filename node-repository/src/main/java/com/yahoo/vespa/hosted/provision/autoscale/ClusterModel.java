@@ -2,6 +2,7 @@
 package com.yahoo.vespa.hosted.provision.autoscale;
 
 import com.yahoo.config.provision.ClusterSpec;
+import com.yahoo.config.provision.Zone;
 import com.yahoo.vespa.hosted.provision.NodeList;
 import com.yahoo.vespa.hosted.provision.applications.Application;
 import com.yahoo.vespa.hosted.provision.applications.Cluster;
@@ -39,6 +40,7 @@ public class ClusterModel {
     // TODO: Measure this, and only take it into account with queries
     private static final double fixedCpuCostFraction = 0.1;
 
+    private final Zone zone;
     private final Application application;
     private final ClusterSpec clusterSpec;
     private final Cluster cluster;
@@ -53,12 +55,14 @@ public class ClusterModel {
     private Double queryFractionOfMax = null;
     private Double maxQueryGrowthRate = null;
 
-    public ClusterModel(Application application,
+    public ClusterModel(Zone zone,
+                        Application application,
                         ClusterSpec clusterSpec,
                         Cluster cluster,
                         NodeList clusterNodes,
                         MetricsDb metricsDb,
                         Clock clock) {
+        this.zone = zone;
         this.application = application;
         this.clusterSpec = clusterSpec;
         this.cluster = cluster;
@@ -69,14 +73,15 @@ public class ClusterModel {
         this.nodeTimeseries = new ClusterNodesTimeseries(scalingDuration(), cluster, nodes, metricsDb);
     }
 
-    /** For testing */
-    ClusterModel(Application application,
+    ClusterModel(Zone zone,
+                 Application application,
                  ClusterSpec clusterSpec,
                  Cluster cluster,
                  Clock clock,
                  Duration scalingDuration,
                  ClusterTimeseries clusterTimeseries,
                  ClusterNodesTimeseries nodeTimeseries) {
+        this.zone = zone;
         this.application = application;
         this.clusterSpec = clusterSpec;
         this.cluster = cluster;
@@ -218,13 +223,29 @@ public class ClusterModel {
     private double idealCpuLoad() {
         double queryCpuFraction = queryCpuFraction();
 
-        // What's needed to have headroom for growth during scale-up as a fraction of current resources?
+        // Assumptions: 1) Write load is not organic so we should not grow to handle more.
+        //                 (TODO: But allow applications to set their target write rate and size for that)
+        //              2) Write load does not change in BCP scenarios.
+        return queryCpuFraction * 1/growthRateHeadroom() * 1/trafficShiftHeadroom() * idealQueryCpuLoad +
+               (1 - queryCpuFraction) * idealWriteCpuLoad;
+    }
+
+    /** Returns the headroom for growth during organic traffic growth as a multiple of current resources. */
+    private double growthRateHeadroom() {
+        if ( ! zone.environment().isProduction()) return 1;
         double growthRateHeadroom = 1 + maxQueryGrowthRate() * scalingDuration().toMinutes();
         // Cap headroom at 10% above the historical observed peak
         if (queryFractionOfMax() != 0)
             growthRateHeadroom = Math.min(growthRateHeadroom, 1 / queryFractionOfMax() + 0.1);
+        return growthRateHeadroom;
+    }
 
-        // How much headroom is needed to handle sudden arrival of additional traffic due to another zone going down?
+    /**
+     * Returns the headroom is needed to handle sudden arrival of additional traffic due to another zone going down
+     * as a multiple of current resources.
+     */
+    private double trafficShiftHeadroom() {
+        if ( ! zone.environment().isProduction()) return 1;
         double trafficShiftHeadroom;
         if (application.status().maxReadShare() == 0) // No traffic fraction data
             trafficShiftHeadroom = 2.0; // assume we currently get half of the global share of traffic
@@ -232,13 +253,7 @@ public class ClusterModel {
             trafficShiftHeadroom = 1/application.status().maxReadShare();
         else
             trafficShiftHeadroom = application.status().maxReadShare() / application.status().currentReadShare();
-        trafficShiftHeadroom = Math.min(trafficShiftHeadroom, 1/application.status().maxReadShare());
-
-        // Assumptions: 1) Write load is not organic so we should not grow to handle more.
-        //                 (TODO: But allow applications to set their target write rate and size for that)
-        //              2) Write load does not change in BCP scenarios.
-        return queryCpuFraction * 1/growthRateHeadroom * 1/trafficShiftHeadroom * idealQueryCpuLoad +
-               (1 - queryCpuFraction) * idealWriteCpuLoad;
+        return Math.min(trafficShiftHeadroom, 1/application.status().maxReadShare());
     }
 
     /** The estimated fraction of cpu usage which goes to processing queries vs. writes */
@@ -303,14 +318,15 @@ public class ClusterModel {
      * This is useful in cases where it's possible to continue without the cluser model,
      * as QuestDb is known to temporarily fail during reading of data.
      */
-    public static Optional<ClusterModel> create(Application application,
+    public static Optional<ClusterModel> create(Zone zone,
+                                                Application application,
                                                 ClusterSpec clusterSpec,
                                                 Cluster cluster,
                                                 NodeList clusterNodes,
                                                 MetricsDb metricsDb,
                                                 Clock clock) {
         try {
-            return Optional.of(new ClusterModel(application, clusterSpec, cluster, clusterNodes, metricsDb, clock));
+            return Optional.of(new ClusterModel(zone, application, clusterSpec, cluster, clusterNodes, metricsDb, clock));
         }
         catch (Exception e) {
             log.log(Level.WARNING, "Failed creating a cluster model for " + application + " " + cluster, e);
