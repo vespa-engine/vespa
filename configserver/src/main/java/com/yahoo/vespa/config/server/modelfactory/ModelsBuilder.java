@@ -134,7 +134,7 @@ public abstract class ModelsBuilder<MODELRESULT extends ModelResult> {
                 }
                 else {
                     if (e instanceof IllegalArgumentException) {
-                        var wrapped = new InvalidApplicationException("Error loading " + applicationId, e);
+                        var wrapped = new InvalidApplicationException("Invalid application", e);
                         deployLogger.logApplicationPackage(Level.SEVERE, Exceptions.toMessageString(wrapped));
                         throw wrapped;
                     }

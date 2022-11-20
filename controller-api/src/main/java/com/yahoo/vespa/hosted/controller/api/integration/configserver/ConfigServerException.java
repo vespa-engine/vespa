@@ -16,6 +16,12 @@ public class ConfigServerException extends RuntimeException {
     private final ErrorCode code;
     private final String message;
 
+    public ConfigServerException(ErrorCode code, String message) {
+        super(message);
+        this.code = code;
+        this.message = message;
+    }
+
     public ConfigServerException(ErrorCode code, String message, String context) {
         super(context + ": " + message);
         this.code = code;
