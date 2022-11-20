@@ -218,13 +218,27 @@ public class ClusterModel {
     private double idealCpuLoad() {
         double queryCpuFraction = queryCpuFraction();
 
-        // What's needed to have headroom for growth during scale-up as a fraction of current resources?
+        // Assumptions: 1) Write load is not organic so we should not grow to handle more.
+        //                 (TODO: But allow applications to set their target write rate and size for that)
+        //              2) Write load does not change in BCP scenarios.
+        return queryCpuFraction * 1/growthRateHeadroom() * 1/trafficShiftHeadroom() * idealQueryCpuLoad +
+               (1 - queryCpuFraction) * idealWriteCpuLoad;
+    }
+
+    /** Returns the headroom for growth during organic traffic growth as a multiple of current resources. */
+    private double growthRateHeadroom() {
         double growthRateHeadroom = 1 + maxQueryGrowthRate() * scalingDuration().toMinutes();
         // Cap headroom at 10% above the historical observed peak
         if (queryFractionOfMax() != 0)
             growthRateHeadroom = Math.min(growthRateHeadroom, 1 / queryFractionOfMax() + 0.1);
+        return growthRateHeadroom;
+    }
 
-        // How much headroom is needed to handle sudden arrival of additional traffic due to another zone going down?
+    /**
+     * Returns the headroom is needed to handle sudden arrival of additional traffic due to another zone going down
+     * as a multiple of current resources.
+     */
+    private double trafficShiftHeadroom() {
         double trafficShiftHeadroom;
         if (application.status().maxReadShare() == 0) // No traffic fraction data
             trafficShiftHeadroom = 2.0; // assume we currently get half of the global share of traffic
@@ -232,13 +246,7 @@ public class ClusterModel {
             trafficShiftHeadroom = 1/application.status().maxReadShare();
         else
             trafficShiftHeadroom = application.status().maxReadShare() / application.status().currentReadShare();
-        trafficShiftHeadroom = Math.min(trafficShiftHeadroom, 1/application.status().maxReadShare());
-
-        // Assumptions: 1) Write load is not organic so we should not grow to handle more.
-        //                 (TODO: But allow applications to set their target write rate and size for that)
-        //              2) Write load does not change in BCP scenarios.
-        return queryCpuFraction * 1/growthRateHeadroom * 1/trafficShiftHeadroom * idealQueryCpuLoad +
-               (1 - queryCpuFraction) * idealWriteCpuLoad;
+        return Math.min(trafficShiftHeadroom, 1/application.status().maxReadShare());
     }
 
     /** The estimated fraction of cpu usage which goes to processing queries vs. writes */
