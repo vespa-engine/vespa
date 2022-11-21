@@ -47,7 +47,7 @@ public class QuotaValidatorTest {
             tester.deploy(null, getServices("testCluster", 10), Environment.prod, null);
             fail();
         } catch (RuntimeException e) {
-            assertEquals("Deployment exceeds its quota and has been blocked! Please contact support to update your plan: Quota is $1.25, but at least $1.63 is required", e.getMessage());
+            assertEquals("The max resources specified cost $1.63 but your quota is $1.25: Contact support to upgrade your plan.", e.getMessage());
         }
     }
 
@@ -58,7 +58,7 @@ public class QuotaValidatorTest {
             tester.deploy(null, getServices("testCluster", 10), Environment.prod, null);
             fail();
         } catch (RuntimeException e) {
-            assertEquals("publiccd: Deployment exceeds its quota and has been blocked! Please contact support to update your plan: Quota is $1.00, but at least $1.63 is required", e.getMessage());
+            assertEquals("publiccd: The max resources specified cost $1.63 but your quota is $1.00: Contact support to upgrade your plan.", e.getMessage());
         }
     }
 
@@ -69,7 +69,7 @@ public class QuotaValidatorTest {
             tester.deploy(null, getServices("testCluster", 10), Environment.prod, null);
             fail();
         } catch (RuntimeException e) {
-            assertEquals("publiccd: Deployment exceeds its quota and has been blocked! Please contact support to update your plan: Quota is $1.25, but at least $1.63 is required", e.getMessage());
+            assertEquals("publiccd: The max resources specified cost $1.63 but your quota is $1.25: Contact support to upgrade your plan.", e.getMessage());
 
         }
     }
@@ -82,8 +82,8 @@ public class QuotaValidatorTest {
             tester.deploy(null, getServices("testCluster", 10), Environment.prod, null);
             fail();
         } catch (RuntimeException e) {
-            assertEquals("Please free up some capacity: Quota is $--.--, but at least $-.-- is required",
-                    ValidationTester.censorNumbers(e.getMessage()));
+            assertEquals("The max resources specified cost $-.-- but your quota is $--.--: Please free up some capacity.",
+                         ValidationTester.censorNumbers(e.getMessage()));
         }
     }
 

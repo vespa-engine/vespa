@@ -86,19 +86,19 @@ public class QuotaValidator extends Validator {
 
     private static void throwIfBudgetNegative(double spend, BigDecimal budget, SystemName systemName) {
         if (budget.doubleValue() < 0) {
-            throw new IllegalArgumentException(quotaMessage("Please free up some capacity", systemName, spend, budget));
+            throw new IllegalArgumentException(quotaMessage("Please free up some capacity.", systemName, spend, budget));
         }
     }
 
     private static void throwIfBudgetExceeded(double spend, BigDecimal budget, SystemName systemName) {
         if (budget.doubleValue() < spend) {
-            throw new IllegalArgumentException(quotaMessage("Deployment exceeds its quota and has been blocked! Please contact support to update your plan", systemName, spend, budget));
+            throw new IllegalArgumentException(quotaMessage("Contact support to upgrade your plan.", systemName, spend, budget));
         }
     }
 
     private static String quotaMessage(String message, SystemName system, double spend, BigDecimal budget) {
-        String quotaDescription = String.format(Locale.ENGLISH, "Quota is $%.2f, but at least $%.2f is required", budget, spend);
-        return (system == SystemName.Public ? "" : system.value() + ": ") + message + ": " + quotaDescription;
+        String quotaDescription = String.format(Locale.ENGLISH, "The max resources specified cost $%.2f but your quota is $%.2f", spend, budget);
+        return (system == SystemName.Public ? "" : system.value() + ": ") + quotaDescription + ": " + message;
     }
 
 }

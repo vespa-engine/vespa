@@ -148,6 +148,8 @@ public class SessionPreparer {
             return preparation.result();
         }
         catch (IllegalArgumentException e) {
+            if (e instanceof InvalidApplicationException)
+                throw e;
             throw new InvalidApplicationException("Invalid application package", e);
         }
     }
