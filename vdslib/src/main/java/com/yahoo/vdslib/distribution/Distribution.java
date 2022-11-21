@@ -1,7 +1,6 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vdslib.distribution;
 
-import com.yahoo.collections.BobHash;
 import com.yahoo.config.subscription.ConfigSubscriber;
 import com.yahoo.vdslib.state.ClusterState;
 import com.yahoo.vdslib.state.Node;
@@ -55,7 +54,7 @@ public class Distribution {
         StringTokenizer st = new StringTokenizer(path, ".");
         int[] p = new int[st.countTokens()];
         for (int i=0; i<p.length; ++i) {
-            p[i] = Integer.valueOf(st.nextToken());
+            p[i] = Integer.parseInt(st.nextToken());
         }
         return p;
     }
@@ -332,23 +331,6 @@ public class Distribution {
                 getIdealGroups(bucketId, clusterState, group, redundancyArray[i], results);
             }
         }
-    }
-
-    private int getDiskSeed(BucketId bucket, int nodeIndex) {
-        // Assumes MODULO_BID for now.
-
-        long currentid = bucket.withoutCountBits();
-        byte[] ordered = new byte[8];
-        ordered[0] = (byte)(currentid >> (0*8));
-        ordered[1] = (byte)(currentid >> (1*8));
-        ordered[2] = (byte)(currentid >> (2*8));
-        ordered[3] = (byte)(currentid >> (3*8));
-        ordered[4] = (byte)(currentid >> (4*8));
-        ordered[5] = (byte)(currentid >> (5*8));
-        ordered[6] = (byte)(currentid >> (6*8));
-        ordered[7] = (byte)(currentid >> (7*8));
-        int initval = (1664525 * nodeIndex + 0xdeadbeef);
-        return BobHash.hash(ordered, initval);
     }
 
     List<Integer> getIdealStorageNodes(ClusterState clusterState, BucketId bucket, String upStates) throws TooFewBucketBitsInUseException {
