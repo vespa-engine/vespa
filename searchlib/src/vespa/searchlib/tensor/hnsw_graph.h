@@ -27,6 +27,7 @@ struct HnswGraph {
     // This uses 12 bits for buffer id -> 4096 buffers.
     using LinkArrayEntryRefType = vespalib::datastore::EntryRefT<20>;
 
+    static constexpr HnswIndexType index_type = type;
     using NodeType = typename HnswIndexTraits<type>::NodeType;
 
     // Provides mapping from document id -> node reference.

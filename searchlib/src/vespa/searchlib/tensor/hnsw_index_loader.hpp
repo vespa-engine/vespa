@@ -40,10 +40,13 @@ bool
 HnswIndexLoader<ReaderType, type>::load_next()
 {
     assert(!_complete);
+    static constexpr bool identity_mapping = (type == HnswIndexType::SINGLE);
     if (_nodeid < _num_nodes) {
         uint32_t num_levels = next_int();
         if (num_levels > 0) {
-            _graph.make_node(_nodeid, _nodeid, 0, num_levels);
+            uint32_t docid = identity_mapping ? _nodeid : next_int();
+            uint32_t subspace = identity_mapping  ? 0 : next_int();
+            _graph.make_node(_nodeid, docid, subspace, num_levels);
             for (uint32_t level = 0; level < num_levels; ++level) {
                 uint32_t num_links = next_int();
                 _link_array.clear();
