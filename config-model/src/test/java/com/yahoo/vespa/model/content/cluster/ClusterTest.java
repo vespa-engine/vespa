@@ -61,7 +61,6 @@ public class ClusterTest {
         assertEquals(11.0, config.minSearchCoverage(), DELTA);
         assertEquals(0.23, config.minWaitAfterCoverageFactor(), DELTA);
         assertEquals(0.58, config.maxWaitAfterCoverageFactor(), DELTA);
-        assertEquals(2, config.searchableCopies());
         assertEquals(3, config.redundancy());
         assertEquals(DispatchConfig.DistributionPolicy.ADAPTIVE, config.distributionPolicy());
     }
@@ -79,7 +78,6 @@ public class ClusterTest {
         DispatchConfig.Builder builder = new DispatchConfig.Builder();
         cluster.getSearch().getConfig(builder);
         DispatchConfig config = new DispatchConfig(builder);
-        assertEquals(2, config.searchableCopies());
         assertEquals(3, config.redundancy());
         assertEquals(93.0, config.minActivedocsPercentage(), DELTA);
         assertEquals(DispatchConfig.DistributionPolicy.ROUNDROBIN, config.distributionPolicy());
@@ -94,7 +92,6 @@ public class ClusterTest {
         DispatchConfig.Builder builder = new DispatchConfig.Builder();
         cluster.getSearch().getConfig(builder);
         DispatchConfig config = new DispatchConfig(builder);
-        assertEquals(2, config.searchableCopies());
         assertEquals(3, config.redundancy());
         assertEquals(DispatchConfig.DistributionPolicy.ADAPTIVE, config.distributionPolicy());
         assertEquals(1.0, config.maxWaitAfterCoverageFactor(), DELTA);
