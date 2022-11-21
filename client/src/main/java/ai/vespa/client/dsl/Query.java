@@ -13,7 +13,6 @@ public class Query extends QueryChain {
 
     final List<QueryChain> queries = new ArrayList<>();
     private Annotation annotation;
-    private Sources sources;
 
     Query(Sources sources, QueryChain queryChain) {
         this.sources = sources;
