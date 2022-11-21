@@ -19,7 +19,7 @@ class HnswNode {
     vespalib::datastore::AtomicValueWrapper<uint32_t> _subspace;
 
 public:
-    HnswNode()
+    HnswNode() noexcept
         : _ref(),
           _docid(),
           _subspace()

@@ -10,6 +10,8 @@
 
 namespace search::tensor {
 
+class HnswSimpleNode;
+
 /*
  * Class used to maintain mapping from docid to nodeid for dense tensors
  * (one node per document).
@@ -34,6 +36,7 @@ public:
     void free_ids(uint32_t docid) { (void) docid; }
     void assign_generation(generation_t current_gen) { (void) current_gen; };
     void reclaim_memory(generation_t oldest_used_gen) { (void) oldest_used_gen; };
+    void on_load(vespalib::ConstArrayRef<HnswSimpleNode> nodes) { (void) nodes; }
     vespalib::MemoryUsage memory_usage() const { return vespalib::MemoryUsage(); }
 };
 
