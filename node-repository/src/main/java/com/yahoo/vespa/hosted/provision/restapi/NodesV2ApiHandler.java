@@ -76,7 +76,6 @@ public class NodesV2ApiHandler extends ThreadedHttpRequestHandler {
     private final NodeRepository nodeRepository;
     private final MetricsDb metricsDb;
     private final NodeFlavors nodeFlavors;
-    private final CloudAccount cloudAccount;
 
     @Inject
     public NodesV2ApiHandler(ThreadedHttpRequestHandler.Context parentCtx, Orchestrator orchestrator,
@@ -86,20 +85,19 @@ public class NodesV2ApiHandler extends ThreadedHttpRequestHandler {
         this.nodeRepository = nodeRepository;
         this.metricsDb = metricsDb;
         this.nodeFlavors = flavors;
-        this.cloudAccount = nodeRepository.zone().cloud().account();
     }
 
     @Override
     public HttpResponse handle(HttpRequest request) {
         try {
-            switch (request.getMethod()) {
-                case GET: return handleGET(request);
-                case PUT: return handlePUT(request);
-                case POST: return isPatchOverride(request) ? handlePATCH(request) : handlePOST(request);
-                case DELETE: return handleDELETE(request);
-                case PATCH: return handlePATCH(request);
-                default: return ErrorResponse.methodNotAllowed("Method '" + request.getMethod() + "' is not supported");
-            }
+            return switch (request.getMethod()) {
+                case GET -> handleGET(request);
+                case PUT -> handlePUT(request);
+                case POST -> isPatchOverride(request) ? handlePATCH(request) : handlePOST(request);
+                case DELETE -> handleDELETE(request);
+                case PATCH -> handlePATCH(request);
+                default -> ErrorResponse.methodNotAllowed("Method '" + request.getMethod() + "' is not supported");
+            };
         }
         catch (NotFoundException | NoSuchNodeException e) {
             return ErrorResponse.notFoundError(Exceptions.toMessageString(e));
@@ -299,7 +297,8 @@ public class NodesV2ApiHandler extends ThreadedHttpRequestHandler {
                     requiredField(resourcesInspector, "bandwidthGbps", Inspector::asDouble),
                     optionalString(resourcesInspector.field("diskSpeed")).map(NodeResourcesSerializer::diskSpeedFrom).orElse(NodeResources.DiskSpeed.getDefault()),
                     optionalString(resourcesInspector.field("storageType")).map(NodeResourcesSerializer::storageTypeFrom).orElse(NodeResources.StorageType.getDefault()),
-                    optionalString(resourcesInspector.field("architecture")).map(NodeResourcesSerializer::architectureFrom).orElse(NodeResources.Architecture.getDefault())));
+                    optionalString(resourcesInspector.field("architecture")).map(NodeResourcesSerializer::architectureFrom).orElse(NodeResources.Architecture.getDefault()),
+                    NodeResourcesSerializer.gpuResourcesFromSlime(inspector.field("gpu"))));
         }
 
         Flavor flavor = nodeFlavors.getFlavorOrThrow(flavorInspector.asString());
@@ -318,6 +317,8 @@ public class NodesV2ApiHandler extends ThreadedHttpRequestHandler {
                 flavor = flavor.with(flavor.resources().with(NodeResourcesSerializer.storageTypeFrom(resourcesInspector.field("storageType").asString())));
             if (resourcesInspector.field("architecture").valid())
                 flavor = flavor.with(flavor.resources().with(NodeResourcesSerializer.architectureFrom(resourcesInspector.field("architecture").asString())));
+            if (resourcesInspector.field("gpu").valid())
+                flavor = flavor.with(flavor.resources().with(NodeResourcesSerializer.gpuResourcesFromSlime(resourcesInspector.field("gpu"))));
         }
         return flavor;
     }
