@@ -71,9 +71,10 @@ public class AutoscalingTest {
     @Test
     public void test_autoscaling_up_is_fast() {
         var fixture = AutoscalingTester.fixture().awsProdSetup(true).build();
-        fixture.loader().applyLoad(new Load(1.0, 1.0, 1.0), 3);
+        fixture.loader().applyLoad(new Load(0.1, 0.1, 0.1), 3);
+        fixture.loader().applyLoad(new Load(1.0, 1.0, 1.0), 1);
         fixture.tester().assertResources("Scaling up since resource usage is too high",
-                                         8, 1, 5.9, 17.7, 89.4,
+                                         8, 1, 5.3, 17.7, 89.4,
                                          fixture.autoscale());
     }
 
