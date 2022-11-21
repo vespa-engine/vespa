@@ -20,7 +20,7 @@ func selectedEnv() []byte {
 	var buf bytes.Buffer
 	for _, vv := range os.Environ() {
 		varName := strings.Split(vv, "=")[0]
-		if strings.Contains(vv, "\n") || strings.Contains(varName, "%%") {
+		if strings.Contains(vv, "\\u") || strings.Contains(vv, "\n") || strings.Contains(varName, "%%") {
 			continue
 		}
 		buf.WriteString(vv)
