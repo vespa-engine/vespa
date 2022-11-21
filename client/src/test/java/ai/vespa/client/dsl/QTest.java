@@ -176,6 +176,16 @@ class QTest {
     }
 
     @Test
+    void userInput_with_rank_2() {
+        String q = Q.select("doc_id")
+                    .from("ss")
+                    .where(Q.rank(Q.p("query").nearestNeighbor( "vector").and("doc_type").contains("pdf"),
+                                  Q.ui("@query"))).build();
+        assertEquals("yql=select doc_id from ss where rank(nearestNeighbor(query, vector) and doc_type contains \"pdf\", userInput(@query))",
+                     q);
+    }
+
+    @Test
     void dot_product() {
         String q = Q.select("*")
                 .from("sd1")

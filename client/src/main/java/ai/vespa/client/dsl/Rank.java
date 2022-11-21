@@ -7,6 +7,8 @@ import java.util.Objects;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+// TODO:
+// - make all items subclasses of "Query" rather than QueryChain and remove all content from QueryChain
 public class Rank extends QueryChain {
 
     private final List<QueryChain> queries = new ArrayList<>();
