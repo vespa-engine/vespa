@@ -54,8 +54,9 @@ HnswIndexSaver<type>::HnswIndexSaver(const HnswGraph<type> &graph)
     _meta_data.refs.reserve(link_array_count);
     _meta_data.nodes.reserve(num_nodes+1);
     for (size_t i = 0; i < num_nodes; ++i) {
-        _meta_data.nodes.push_back(_meta_data.refs.size());
-        auto node_ref = graph.get_node_ref(i);
+        auto& node = graph.node_refs.get_elem_ref(i);
+        _meta_data.nodes.emplace_back(_meta_data.refs.size(), node);
+        auto node_ref = node.ref().load_relaxed();
         if (node_ref.valid()) {
             auto levels = graph.nodes.get(node_ref);
             for (const auto& links_ref : levels) {
@@ -63,7 +64,7 @@ HnswIndexSaver<type>::HnswIndexSaver(const HnswGraph<type> &graph)
             }
         }
     }
-    _meta_data.nodes.push_back(_meta_data.refs.size());
+    _meta_data.nodes.emplace_back(_meta_data.refs.size());
 }
 
 template <HnswIndexType type>
@@ -75,10 +76,19 @@ HnswIndexSaver<type>::save(BufferWriter& writer) const
     uint32_t num_nodes = _meta_data.nodes.size() - 1;
     writer.write(&num_nodes, sizeof(uint32_t));
     for (uint32_t i(0); i < num_nodes; i++) {
-        uint32_t offset = _meta_data.nodes[i];
-        uint32_t next_offset = _meta_data.nodes[i+1];
+        auto& node = _meta_data.nodes[i];
+        uint32_t offset = node.get_refs_offset();
+        uint32_t next_offset = _meta_data.nodes[i+1].get_refs_offset();
         uint32_t num_levels = next_offset - offset;
         writer.write(&num_levels, sizeof(uint32_t));
+        if (num_levels > 0) {
+            if constexpr (!HnswIndexSaverMetaDataNode<type>::identity_mapping) {
+                uint32_t docid = node.get_docid();
+                uint32_t subspace = node.get_subspace();
+                writer.write(&docid, sizeof(uint32_t));
+                writer.write(&subspace, sizeof(uint32_t));
+            }
+        }
         for (; offset < next_offset; offset++) {
             auto links_ref = _meta_data.refs[offset];
             if (links_ref.valid()) {

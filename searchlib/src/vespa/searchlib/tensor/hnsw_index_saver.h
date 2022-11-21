@@ -4,6 +4,7 @@
 
 #include "nearest_neighbor_index_saver.h"
 #include "hnsw_graph.h"
+#include "hnsw_index_saver_metadata_node.h"
 #include <vespa/vespalib/datastore/entryref.h>
 #include <vespa/vespalib/stllike/allocator.h>
 #include <vector>
@@ -29,7 +30,7 @@ private:
         uint32_t entry_nodeid;
         int32_t  entry_level;
         std::vector<EntryRef, vespalib::allocator_large<EntryRef>> refs;
-        std::vector<uint32_t, vespalib::allocator_large<uint32_t>> nodes;
+        std::vector<HnswIndexSaverMetaDataNode<type>, vespalib::allocator_large<HnswIndexSaverMetaDataNode<type>>> nodes;
         MetaData();
         ~MetaData();
     };

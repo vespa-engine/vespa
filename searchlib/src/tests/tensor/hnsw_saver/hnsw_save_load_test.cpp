@@ -51,14 +51,59 @@ public:
 using V = std::vector<uint32_t>;
 
 template <HnswIndexType type>
+uint32_t fake_docid(uint32_t nodeid);
+
+template <>
+uint32_t fake_docid<HnswIndexType::SINGLE>(uint32_t nodeid)
+{
+    return nodeid;
+}
+
+template <>
+uint32_t fake_docid<HnswIndexType::MULTI>(uint32_t nodeid)
+{
+    return nodeid + 100;
+}
+
+template <HnswIndexType type>
+uint32_t fake_subspace(uint32_t nodeid);
+
+template <>
+uint32_t fake_subspace<HnswIndexType::SINGLE>(uint32_t)
+{
+    return 0;
+}
+
+template <>
+uint32_t fake_subspace<HnswIndexType::MULTI>(uint32_t nodeid)
+{
+    return nodeid + 10;
+}
+
+template <typename NodeType>
+uint32_t fake_get_docid(const NodeType& node, uint32_t nodeid);
+
+template <>
+uint32_t fake_get_docid<HnswSimpleNode>(const HnswSimpleNode &, uint32_t nodeid)
+{
+    return fake_docid<HnswIndexType::SINGLE>(nodeid);
+}
+
+template <>
+uint32_t fake_get_docid<HnswNode>(const HnswNode& node, uint32_t)
+{
+    return node.acquire_docid();
+}
+
+template <HnswIndexType type>
 void populate(HnswGraph<type> &graph) {
     // no 0
-    graph.make_node(1, 1, 0, 1);
-    auto er = graph.make_node(2, 2, 0, 2);
+    graph.make_node(1, fake_docid<type>(1), fake_subspace<type>(1), 1);
+    auto er = graph.make_node(2, 102, 12, 2);
     // no 3
-    graph.make_node(4, 4, 0, 2);
-    graph.make_node(5, 5, 0, 0);
-    graph.make_node(6, 6, 0, 1);
+    graph.make_node(4, fake_docid<type>(4), fake_subspace<type>(4), 2);
+    graph.make_node(5, fake_docid<type>(5), fake_subspace<type>(5), 0);
+    graph.make_node(6, fake_docid<type>(6), fake_subspace<type>(6), 1);
 
     graph.set_link_array(1, 0, V{2, 4, 6});
     graph.set_link_array(2, 0, V{1, 4, 6});
@@ -73,7 +118,7 @@ template <HnswIndexType type>
 void modify(HnswGraph<type> &graph) {
     graph.remove_node(2);
     graph.remove_node(6);
-    graph.make_node(7, 7, 0, 2);
+    graph.make_node(7, fake_docid<type>(7), fake_subspace<type>(7), 2);
 
     graph.set_link_array(1, 0, V{7, 4});
     graph.set_link_array(4, 0, V{7, 2});
@@ -85,10 +130,11 @@ void modify(HnswGraph<type> &graph) {
 }
 
 
+template <typename GraphType>
 class CopyGraphTest : public ::testing::Test {
 public:
-    HnswGraph<HnswIndexType::SINGLE> original;
-    HnswGraph<HnswIndexType::SINGLE> copy;
+    GraphType original;
+    GraphType copy;
 
     void expect_empty_d(uint32_t nodeid) const {
         EXPECT_FALSE(copy.acquire_node_ref(nodeid).valid());
@@ -121,8 +167,14 @@ public:
         return vector_writer.output;
     }
     void load_copy(std::vector<char> data) {
-        HnswIndexLoader<VectorBufferReader, HnswIndexType::SINGLE> loader(copy, std::make_unique<VectorBufferReader>(data));
+        HnswIndexLoader<VectorBufferReader, GraphType::index_type> loader(copy, std::make_unique<VectorBufferReader>(data));
         while (loader.load_next()) {}
+    }
+
+    void expect_docid_and_subspace(uint32_t nodeid) const {
+        auto& node = copy.node_refs.get_elem_ref(nodeid);
+        EXPECT_EQ(fake_docid<GraphType::index_type>(nodeid), fake_get_docid(node, nodeid));
+        EXPECT_EQ(fake_subspace<GraphType::index_type>(nodeid), node.acquire_subspace());
     }
 
     void expect_copy_as_populated() const {
@@ -142,27 +194,35 @@ public:
         
         expect_level_1(2, {4});
         expect_level_1(4, {2});
+        expect_docid_and_subspace(1);
+        expect_docid_and_subspace(2);
+        expect_docid_and_subspace(4);
+        expect_docid_and_subspace(6);
     }
 };
 
-TEST_F(CopyGraphTest, reconstructs_graph)
+using GraphTestTypes = ::testing::Types<HnswGraph<HnswIndexType::SINGLE>, HnswGraph<HnswIndexType::MULTI>>;
+
+TYPED_TEST_SUITE(CopyGraphTest, GraphTestTypes);
+
+TYPED_TEST(CopyGraphTest, reconstructs_graph)
 {
-    populate(original);
-    auto data = save_original();
-    load_copy(data);
-    expect_copy_as_populated();
+    populate(this->original);
+    auto data = this->save_original();
+    this->load_copy(data);
+    this->expect_copy_as_populated();
 }
 
-TEST_F(CopyGraphTest, later_changes_ignored)
+TYPED_TEST(CopyGraphTest, later_changes_ignored)
 {
-    populate(original);
-    HnswIndexSaver saver(original);
-    modify(original);
+    populate(this->original);
+    HnswIndexSaver saver(this->original);
+    modify(this->original);
     VectorBufferWriter vector_writer;
     saver.save(vector_writer);
     auto data = vector_writer.output;
-    load_copy(data);
-    expect_copy_as_populated();
+    this->load_copy(data);
+    this->expect_copy_as_populated();
 }
 
 GTEST_MAIN_RUN_ALL_TESTS()
