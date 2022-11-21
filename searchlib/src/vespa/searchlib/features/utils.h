@@ -57,7 +57,7 @@ inline feature_t getAsFeature(T value)
  */
 template <>
 inline feature_t getAsFeature<ConstCharPtr>(ConstCharPtr value) {
-    return static_cast<feature_t>(vespalib::hash_code(value, strlen(value)));
+    return vespalib::hash2d(value, strlen(value));
 }
 
 /**
@@ -68,7 +68,7 @@ inline feature_t getAsFeature<ConstCharPtr>(ConstCharPtr value) {
  */
 template <>
 inline feature_t getAsFeature<vespalib::stringref>(vespalib::stringref value) {
-    return static_cast<feature_t>(vespalib::hash_code(value));
+    return vespalib::hash2d(value);
 }
 
 
@@ -184,7 +184,7 @@ lookupTable(const search::fef::IIndexEnvironment & env, const vespalib::string &
 inline const search::fef::ITermFieldData *
 getTermFieldData(const search::fef::IQueryEnvironment &env, uint32_t termId, uint32_t fieldId) {
     const search::fef::ITermData *td = env.getTerm(termId);
-    return (td == 0) ? 0 : td->lookupField(fieldId);
+    return (td == nullptr) ? nullptr : td->lookupField(fieldId);
 }
 
 /**
@@ -198,7 +198,7 @@ getTermFieldData(const search::fef::IQueryEnvironment &env, uint32_t termId, uin
 inline search::fef::TermFieldHandle
 getTermFieldHandle(const search::fef::IQueryEnvironment &env, uint32_t termId, uint32_t fieldId) {
     const search::fef::ITermFieldData *tfd = getTermFieldData(env, termId, fieldId);
-    return (tfd == 0) ? search::fef::IllegalHandle : tfd->getHandle();
+    return (tfd == nullptr) ? search::fef::IllegalHandle : tfd->getHandle();
 }
 
 /**

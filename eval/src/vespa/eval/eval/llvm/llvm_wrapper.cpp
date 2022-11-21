@@ -12,7 +12,6 @@
 #include <llvm/IR/IRBuilder.h>
 #include <llvm/IR/Intrinsics.h>
 #include <llvm/ExecutionEngine/ExecutionEngine.h>
-#include <llvm/Analysis/Passes.h>
 #include <llvm/IR/DataLayout.h>
 #include <llvm/Transforms/Scalar.h>
 #include <llvm/Transforms/IPO/PassManagerBuilder.h>
@@ -176,7 +175,7 @@ struct FunctionBuilder : public NodeVisitor, public NodeTraverser {
             params.push_back(&(*itr));
         }
     }
-    ~FunctionBuilder();
+    ~FunctionBuilder() override;
 
     //-------------------------------------------------------------------------
 
@@ -385,7 +384,7 @@ struct FunctionBuilder : public NodeVisitor, public NodeTraverser {
         push(get_param(item.id()));
     }
     void visit(const String &item) override {
-        push_double(item.hash());
+        push_double(item.get_const_double_value());
     }
     void visit(const In &item) override {
         llvm::Value *lhs = pop_double();

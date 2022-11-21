@@ -4,7 +4,6 @@
 #include <vespa/eval/eval/node_traverser.h>
 #include <vespa/eval/eval/node_visitor.h>
 
-using namespace vespalib::eval;
 using namespace vespalib::eval::nodes;
 
 namespace vespalib::eval {

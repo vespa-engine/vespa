@@ -4,8 +4,7 @@
 #include "node_visitor.h"
 #include "node_traverser.h"
 
-namespace vespalib {
-namespace eval {
+namespace vespalib::eval {
 
 using namespace nodes;
 
@@ -18,14 +17,23 @@ struct KeyGen : public NodeVisitor, public NodeTraverser {
     void add_double(double value) { key.append(&value, sizeof(value)); }
     void add_size(size_t value) { key.append(&value, sizeof(value)); }
     void add_int(int value) { key.append(&value, sizeof(value)); }
-    void add_hash(uint32_t value) { key.append(&value, sizeof(value)); }
     void add_byte(uint8_t value) { key.append(&value, sizeof(value)); }
 
     // visit
-    void visit(const Number   &node) override { add_byte( 1); add_double(node.value()); }
-    void visit(const Symbol   &node) override { add_byte( 2); add_int(node.id()); }
-    void visit(const String   &node) override { add_byte( 3); add_hash(node.hash()); }
-    void visit(const In       &node) override { add_byte( 4);
+    void visit(const Number &node) override {
+        add_byte( 1);
+        add_double(node.value());
+    }
+    void visit(const Symbol &node) override {
+        add_byte( 2);
+        add_int(node.id());
+    }
+    void visit(const String &node) override {
+        add_byte( 3);
+        add_double(node.get_const_double_value());
+    }
+    void visit(const In &node) override {
+        add_byte( 4);
         add_size(node.num_entries());
         for (size_t i = 0; i < node.num_entries(); ++i) {
             add_double(node.get_entry(i).get_const_double_value());
@@ -106,5 +114,4 @@ vespalib::string gen_key(const Function &function, PassParams pass_params)
     return key_gen.key;
 }
 
-} // namespace vespalib::eval
-} // namespace vespalib
+}

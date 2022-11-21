@@ -3,9 +3,7 @@
 #include "tensor_nodes.h"
 #include "node_visitor.h"
 
-namespace vespalib {
-namespace eval {
-namespace nodes {
+namespace vespalib::eval::nodes {
 
 void TensorMap     ::accept(NodeVisitor &visitor) const { visitor.visit(*this); }
 void TensorJoin    ::accept(NodeVisitor &visitor) const { visitor.visit(*this); }
@@ -18,6 +16,4 @@ void TensorCreate  ::accept(NodeVisitor &visitor) const { visitor.visit(*this); 
 void TensorLambda  ::accept(NodeVisitor &visitor) const { visitor.visit(*this); }
 void TensorPeek    ::accept(NodeVisitor &visitor) const { visitor.visit(*this); }
 
-} // namespace vespalib::eval::nodes
-} // namespace vespalib::eval
-} // namespace vespalib
+}

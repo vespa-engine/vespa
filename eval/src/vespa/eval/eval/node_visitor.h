@@ -7,8 +7,7 @@
 #include "operator_nodes.h"
 #include "call_nodes.h"
 
-namespace vespalib {
-namespace eval {
+namespace vespalib::eval {
 
 /**
  * Interface implemented by Node visitors to resolve the actual type
@@ -160,5 +159,4 @@ struct EmptyNodeVisitor : NodeVisitor {
     void visit(const nodes::Hamming        &) override {}
 };
 
-} // namespace vespalib::eval
-} // namespace vespalib
+}

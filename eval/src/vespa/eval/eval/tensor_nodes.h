@@ -12,9 +12,7 @@
 #include <vector>
 #include <map>
 
-namespace vespalib {
-namespace eval {
-namespace nodes {
+namespace vespalib::eval::nodes {
 
 class TensorMap : public Node {
 private:
@@ -414,6 +412,4 @@ public:
     }
 };
 
-} // namespace vespalib::eval::nodes
-} // namespace vespalib::eval
-} // namespace vespalib
+}

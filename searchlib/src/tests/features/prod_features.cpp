@@ -251,13 +251,13 @@ Test::testAttribute()
             addScore("attribute(sebool)", 0).
             addScore("attribute(sfloat)", 60.5f).
             addScore("attribute(sdouble)", 67.5f).
-            addScore("attribute(sstr)", (feature_t)vespalib::hash_code("foo")).
+            addScore("attribute(sstr)", vespalib::hash2d("foo")).
             addScore("attribute(sint).count", 1).
             addScore("attribute(sfloat).count", 1).
             addScore("attribute(sstr).count", 1).
             addScore("attribute(udefint)", search::attribute::getUndefined<feature_t>()).
             addScore("attribute(udeffloat)", search::attribute::getUndefined<feature_t>()).
-            addScore("attribute(udefstr)", (feature_t)vespalib::hash_code(""));
+            addScore("attribute(udefstr)", vespalib::hash2d(""));
 
         FtFeatureTest ft(_factory, exp.getKeys());
         ft.getIndexEnv().getBuilder()
@@ -284,8 +284,8 @@ Test::testAttribute()
             addScore("attribute(aint,2)", 0).
             addScore("attribute(afloat,0)", 70.5f).
             addScore("attribute(afloat,1)", 80.5f).
-            addScore("attribute(astr,0)", (feature_t)vespalib::hash_code("bar")).
-            addScore("attribute(astr,1)", (feature_t)vespalib::hash_code("baz")).
+            addScore("attribute(astr,0)", vespalib::hash2d("bar")).
+            addScore("attribute(astr,1)", vespalib::hash2d("baz")).
             addScore("attribute(aint).count", 2).
             addScore("attribute(aint,0).count", 0).
             addScore("attribute(afloat).count", 2).
@@ -333,10 +333,10 @@ Test::testAttribute()
             addScore("attribute(wsstr,foo).value", 0).
             addScore("attribute(wsstr,foo).weight", 0).
             addScore("attribute(wsstr,foo).contains", 0).
-            addScore("attribute(wsstr,qux).value", (feature_t)vespalib::hash_code("qux")).
+            addScore("attribute(wsstr,qux).value", vespalib::hash2d("qux")).
             addScore("attribute(wsstr,qux).weight", 11).
             addScore("attribute(wsstr,qux).contains", 1).
-            addScore("attribute(wsstr,quux).value", (feature_t)vespalib::hash_code("quux")).
+            addScore("attribute(wsstr,quux).value", vespalib::hash2d("quux")).
             addScore("attribute(wsstr,quux).weight", 12).
             addScore("attribute(wsstr,quux).contains", 1).
             addScore("attribute(wsint).count", 2).
@@ -1762,10 +1762,10 @@ Test::testQuery()
             addScore("query(def3)", 0.0).
             addScore("query(val1)", 1.1).
             addScore("query(val2)", 2.2).
-            addScore("query(hash1)", vespalib::hash_code("foo")).
-            addScore("query(hash2)", vespalib::hash_code("2")).
-            addScore("query(hash3)", vespalib::hash_code("foo")).
-            addScore("query(hash4)", vespalib::hash_code("'foo"));
+            addScore("query(hash1)", vespalib::hash2d("foo")).
+            addScore("query(hash2)", vespalib::hash2d("2")).
+            addScore("query(hash3)", vespalib::hash2d("foo")).
+            addScore("query(hash4)", vespalib::hash2d("'foo"));
         FtFeatureTest ft(_factory, exp.getKeys());
         ft.getIndexEnv().getProperties()
             .add("query(def1)", "1.0")

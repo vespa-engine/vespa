@@ -124,11 +124,11 @@ EvalSpec::add_terminal_cases() {
     add_expression({}, "10").add_case({}, 10.0);
     add_expression({}, "100").add_case({}, 100.0);
     add_rule({"a", -5.0, 5.0}, "a", [](double a){ return a; });
-    add_expression({}, "\"\"").add_case({}, vespalib::hash_code(""));
-    add_expression({}, "\"foo\"").add_case({}, vespalib::hash_code("foo"));
-    add_expression({}, "\"foo bar baz\"").add_case({}, vespalib::hash_code("foo bar baz"));
-    add_expression({}, "\">\\\\\\\"\\t\\n\\r\\f<\"").add_case({}, vespalib::hash_code(">\\\"\t\n\r\f<"));
-    add_expression({}, "\">\\x08\\x10\\x12\\x14<\"").add_case({}, vespalib::hash_code(">\x08\x10\x12\x14<"));
+    add_expression({}, "\"\"").add_case({}, vespalib::hash2d(""));
+    add_expression({}, "\"foo\"").add_case({}, vespalib::hash2d("foo"));
+    add_expression({}, "\"foo bar baz\"").add_case({}, vespalib::hash2d("foo bar baz"));
+    add_expression({}, "\">\\\\\\\"\\t\\n\\r\\f<\"").add_case({}, vespalib::hash2d(">\\\"\t\n\r\f<"));
+    add_expression({}, "\">\\x08\\x10\\x12\\x14<\"").add_case({}, vespalib::hash2d(">\x08\x10\x12\x14<"));
 }
 
 void

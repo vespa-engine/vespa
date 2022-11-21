@@ -145,7 +145,7 @@ struct EvalNode : public NodeVisitor {
         eval_param(node.id());
     }
     void visit(const String &node) override {
-        eval_const(num(node.hash()));
+        eval_const(num(node.get_const_double_value()));
     }
     void visit(const In &node) override {
         auto my_op1 = [&](double a) {

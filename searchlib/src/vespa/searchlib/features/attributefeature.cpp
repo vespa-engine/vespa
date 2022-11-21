@@ -113,7 +113,7 @@ public:
      *
      * @param attribute The attribute vector to use.
      */
-    SingleAttributeExecutor(const T & attribute) : _attribute(attribute) { }
+    explicit SingleAttributeExecutor(const T & attribute) : _attribute(attribute) { }
     void handle_bind_outputs(vespalib::ArrayRef<fef::NumberOrObject> outputs_in) override {
         fef::FeatureExecutor::handle_bind_outputs(outputs_in);
         auto o = outputs().get_bound();
@@ -128,7 +128,7 @@ class BoolAttributeExecutor final : public fef::FeatureExecutor {
 private:
     const SingleBoolAttribute & _attribute;
 public:
-    BoolAttributeExecutor(const SingleBoolAttribute & attribute)
+    explicit BoolAttributeExecutor(const SingleBoolAttribute & attribute)
         : _attribute(attribute)
     {}
     void execute(uint32_t docId) override {
@@ -162,7 +162,7 @@ private:
     const attribute::IAttributeVector & _attribute;
 
 public:
-    CountOnlyAttributeExecutor(const attribute::IAttributeVector & attribute) : _attribute(attribute) { }
+    explicit CountOnlyAttributeExecutor(const attribute::IAttributeVector & attribute) : _attribute(attribute) { }
     void execute(uint32_t docId) override;
     void handle_bind_outputs(vespalib::ArrayRef<fef::NumberOrObject> outputs_in) override {
         fef::FeatureExecutor::handle_bind_outputs(outputs_in);

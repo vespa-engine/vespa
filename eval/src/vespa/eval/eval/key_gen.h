@@ -4,8 +4,7 @@
 
 #include <vespa/vespalib/stllike/string.h>
 
-namespace vespalib {
-namespace eval {
+namespace vespalib::eval {
 
 class Function;
 enum class PassParams : uint8_t;
@@ -16,6 +15,4 @@ enum class PassParams : uint8_t;
  **/
 vespalib::string gen_key(const Function &function, PassParams pass_params);
 
-} // namespace vespalib::eval
-} // namespace vespalib
-
+}
