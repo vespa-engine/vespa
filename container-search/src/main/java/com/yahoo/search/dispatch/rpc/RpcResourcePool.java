@@ -12,6 +12,7 @@ import com.yahoo.search.Query;
 import com.yahoo.search.dispatch.FillInvoker;
 import com.yahoo.search.dispatch.rpc.Client.NodeConnection;
 import com.yahoo.vespa.config.search.DispatchConfig;
+import com.yahoo.vespa.config.search.DispatchNodesConfig;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -45,14 +46,14 @@ public class RpcResourcePool extends AbstractComponent {
     }
 
     @Inject
-    public RpcResourcePool(DispatchConfig dispatchConfig) {
+    public RpcResourcePool(DispatchConfig dispatchConfig, DispatchNodesConfig nodesConfig) {
         super();
         client = new RpcClient("dispatch-client", dispatchConfig.numJrtTransportThreads());
 
         // Create rpc node connection pools indexed by the node distribution key
         var builder = new ImmutableMap.Builder<Integer, NodeConnectionPool>();
         var numConnections = dispatchConfig.numJrtConnectionsPerNode();
-        for (var node : dispatchConfig.node()) {
+        for (var node : nodesConfig.node()) {
             var connections = new ArrayList<NodeConnection>(numConnections);
             for (int i = 0; i < numConnections; i++) {
                 connections.add(client.createConnection(node.host(), node.port()));

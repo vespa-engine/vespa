@@ -47,15 +47,3 @@ numJrtConnectionsPerNode int default=8
 
 # Number of seconds to spend warming up code to prevent JIT cold start issues.
 warmuptime double default=0.1
-
-# The unique key of a search node
-node[].key int
-
-# The index of the group this search node belongs to
-node[].group int default=0
-
-# The host name of this search node
-node[].host string
-
-# The rpc port of this search node
-node[].port int

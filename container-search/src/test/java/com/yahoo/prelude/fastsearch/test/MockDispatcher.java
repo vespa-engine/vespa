@@ -10,6 +10,7 @@ import com.yahoo.search.dispatch.rpc.RpcResourcePool;
 import com.yahoo.search.dispatch.searchcluster.Node;
 import com.yahoo.search.dispatch.searchcluster.SearchCluster;
 import com.yahoo.vespa.config.search.DispatchConfig;
+import com.yahoo.vespa.config.search.DispatchNodesConfig;
 
 import java.util.List;
 
@@ -18,14 +19,15 @@ class MockDispatcher extends Dispatcher {
     public final ClusterMonitor clusterMonitor;
 
     public static MockDispatcher create(List<Node> nodes) {
-        var rpcResourcePool = new RpcResourcePool(toDispatchConfig(nodes));
+        var rpcResourcePool = new RpcResourcePool(toDispatchConfig(), toNodesConfig(nodes));
 
         return create(nodes, rpcResourcePool, new VipStatus());
     }
 
     public static MockDispatcher create(List<Node> nodes, RpcResourcePool rpcResourcePool, VipStatus vipStatus) {
-        var dispatchConfig = toDispatchConfig(nodes);
-        var searchCluster = new SearchCluster("a", dispatchConfig, vipStatus, new RpcPingFactory(rpcResourcePool));
+        var dispatchConfig = toDispatchConfig();
+        var nodesConfig = toNodesConfig(nodes);
+        var searchCluster = new SearchCluster("a", dispatchConfig, nodesConfig, vipStatus, new RpcPingFactory(rpcResourcePool));
         return new MockDispatcher(new ClusterMonitor<>(searchCluster, true), searchCluster, dispatchConfig, rpcResourcePool);
     }
 
@@ -38,18 +40,21 @@ class MockDispatcher extends Dispatcher {
         this.clusterMonitor = clusterMonitor;
     }
 
-    static DispatchConfig toDispatchConfig(List<Node> nodes) {
-        DispatchConfig.Builder dispatchConfigBuilder = new DispatchConfig.Builder();
+    static DispatchConfig toDispatchConfig() {
+        return new DispatchConfig.Builder().build();
+    }
+    static DispatchNodesConfig toNodesConfig(List<Node> nodes) {
+        DispatchNodesConfig.Builder dispatchConfigBuilder = new DispatchNodesConfig.Builder();
         int key = 0;
         for (Node node : nodes) {
-            DispatchConfig.Node.Builder dispatchConfigNodeBuilder = new DispatchConfig.Node.Builder();
+            DispatchNodesConfig.Node.Builder dispatchConfigNodeBuilder = new DispatchNodesConfig.Node.Builder();
             dispatchConfigNodeBuilder.host(node.hostname());
             dispatchConfigNodeBuilder.port(0); // Mandatory, but currently not used here
             dispatchConfigNodeBuilder.group(node.group());
             dispatchConfigNodeBuilder.key(key++); // not used
             dispatchConfigBuilder.node(dispatchConfigNodeBuilder);
         }
-        return new DispatchConfig(dispatchConfigBuilder);
+        return dispatchConfigBuilder.build();
     }
 
 }

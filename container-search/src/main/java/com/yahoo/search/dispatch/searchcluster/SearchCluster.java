@@ -10,6 +10,7 @@ import com.yahoo.search.cluster.ClusterMonitor;
 import com.yahoo.search.cluster.NodeManager;
 import com.yahoo.search.dispatch.TopKEstimator;
 import com.yahoo.vespa.config.search.DispatchConfig;
+import com.yahoo.vespa.config.search.DispatchNodesConfig;
 
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -50,13 +51,14 @@ public class SearchCluster implements NodeManager<Node> {
     private final Optional<Node> localCorpusDispatchTarget;
 
     public SearchCluster(String clusterId, DispatchConfig dispatchConfig,
+                         DispatchNodesConfig nodesConfig,
                          VipStatus vipStatus, PingFactory pingFactory) {
         this.clusterId = clusterId;
         this.dispatchConfig = dispatchConfig;
         this.vipStatus = vipStatus;
         this.pingFactory = pingFactory;
 
-        this.nodes = toNodes(dispatchConfig);
+        this.nodes = toNodes(nodesConfig);
 
         // Create groups
         ImmutableMap.Builder<Integer, Group> groupsBuilder = new ImmutableMap.Builder<>();
@@ -92,7 +94,7 @@ public class SearchCluster implements NodeManager<Node> {
         // The search cluster to be searched has at least as many nodes as the container cluster we're running in.
         List<Node> localSearchNodes = nodes.stream()
                                            .filter(node -> node.hostname().equals(selfHostname))
-                                           .collect(Collectors.toList());
+                                           .toList();
         // Only use direct dispatch if we have exactly 1 search node on the same machine:
         if (localSearchNodes.size() != 1) return Optional.empty();
 
@@ -105,10 +107,10 @@ public class SearchCluster implements NodeManager<Node> {
         return Optional.of(localSearchNode);
     }
 
-    private static List<Node> toNodes(DispatchConfig dispatchConfig) {
-        return dispatchConfig.node().stream()
+    private static List<Node> toNodes(DispatchNodesConfig nodesConfig) {
+        return nodesConfig.node().stream()
                              .map(n -> new Node(n.key(), n.host(), n.group()))
-                             .collect(Collectors.toUnmodifiableList());
+                             .toList();
     }
 
     public DispatchConfig dispatchConfig() {

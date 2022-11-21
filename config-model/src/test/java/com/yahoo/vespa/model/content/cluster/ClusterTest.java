@@ -5,6 +5,7 @@ import com.yahoo.config.application.api.ApplicationPackage;
 import com.yahoo.config.model.test.MockApplicationPackage;
 import com.yahoo.config.model.test.TestDriver;
 import com.yahoo.vespa.config.search.DispatchConfig;
+import com.yahoo.vespa.config.search.DispatchNodesConfig;
 import com.yahoo.vespa.config.search.core.ProtonConfig;
 import com.yahoo.vespa.model.content.Content;
 import com.yahoo.vespa.model.search.IndexedSearchCluster;
@@ -90,8 +91,11 @@ public class ClusterTest {
         ContentCluster cluster = newContentCluster(joinLines("<search>", "</search>"),
                 joinLines("<tuning>", "</tuning>"));
         DispatchConfig.Builder builder = new DispatchConfig.Builder();
+        DispatchNodesConfig.Builder nodesBuilder = new DispatchNodesConfig.Builder();
         cluster.getSearch().getConfig(builder);
-        DispatchConfig config = new DispatchConfig(builder);
+        cluster.getSearch().getConfig(nodesBuilder);
+        DispatchConfig config = builder.build();
+        DispatchNodesConfig nodesConfig = nodesBuilder.build();
         assertEquals(3, config.redundancy());
         assertEquals(DispatchConfig.DistributionPolicy.ADAPTIVE, config.distributionPolicy());
         assertEquals(1.0, config.maxWaitAfterCoverageFactor(), DELTA);
@@ -101,22 +105,23 @@ public class ClusterTest {
         assertEquals(100.0, config.minSearchCoverage(), DELTA);
         assertEquals(97.0, config.minActivedocsPercentage(), DELTA);
         assertEquals(0.9999, config.topKProbability(), DELTA);
-        assertEquals(3, config.node().size());
-        assertEquals(0, config.node(0).key());
-        assertEquals(1, config.node(1).key());
-        assertEquals(2, config.node(2).key());
 
-        assertEquals(19106, config.node(0).port());
-        assertEquals(19118, config.node(1).port());
-        assertEquals(19130, config.node(2).port());
+        assertEquals(3, nodesConfig.node().size());
+        assertEquals(0, nodesConfig.node(0).key());
+        assertEquals(1, nodesConfig.node(1).key());
+        assertEquals(2, nodesConfig.node(2).key());
 
-        assertEquals(0, config.node(0).group());
-        assertEquals(0, config.node(1).group());
-        assertEquals(0, config.node(2).group());
+        assertEquals(19106, nodesConfig.node(0).port());
+        assertEquals(19118, nodesConfig.node(1).port());
+        assertEquals(19130, nodesConfig.node(2).port());
 
-        assertEquals("localhost", config.node(0).host());
-        assertEquals("localhost", config.node(1).host());
-        assertEquals("localhost", config.node(2).host());
+        assertEquals(0, nodesConfig.node(0).group());
+        assertEquals(0, nodesConfig.node(1).group());
+        assertEquals(0, nodesConfig.node(2).group());
+
+        assertEquals("localhost", nodesConfig.node(0).host());
+        assertEquals("localhost", nodesConfig.node(1).host());
+        assertEquals("localhost", nodesConfig.node(2).host());
     }
 
     private static ContentCluster newContentCluster(String contentSearchXml, String searchNodeTuningXml) {

@@ -14,6 +14,7 @@ import com.yahoo.schema.derived.SchemaInfo;
 import com.yahoo.vespa.config.search.AttributesConfig;
 import com.yahoo.vespa.config.search.DispatchConfig;
 import com.yahoo.vespa.config.search.DispatchConfig.DistributionPolicy;
+import com.yahoo.vespa.config.search.DispatchNodesConfig;
 import com.yahoo.vespa.config.search.RankProfilesConfig;
 import com.yahoo.vespa.config.search.core.ProtonConfig;
 import com.yahoo.vespa.configdefinition.IlscriptsConfig;
@@ -38,6 +39,7 @@ public class IndexedSearchCluster extends SearchCluster
         SchemaInfoConfig.Producer,
         IlscriptsConfig.Producer,
         DispatchConfig.Producer,
+        DispatchNodesConfig.Producer,
         ConfigInstance.Producer {
 
     private String indexingClusterName = null; // The name of the docproc cluster to run indexing, by config.
@@ -297,15 +299,18 @@ public class IndexedSearchCluster extends SearchCluster
         };
     }
     @Override
-    public void getConfig(DispatchConfig.Builder builder) {
+    public void getConfig(DispatchNodesConfig.Builder builder) {
         for (SearchNode node : getSearchNodes()) {
-            DispatchConfig.Node.Builder nodeBuilder = new DispatchConfig.Node.Builder();
+            DispatchNodesConfig.Node.Builder nodeBuilder = new DispatchNodesConfig.Node.Builder();
             nodeBuilder.key(node.getDistributionKey());
             nodeBuilder.group(node.getNodeSpec().groupIndex());
             nodeBuilder.host(node.getHostName());
             nodeBuilder.port(node.getRpcPort());
             builder.node(nodeBuilder);
         }
+    }
+    @Override
+    public void getConfig(DispatchConfig.Builder builder) {
         if (tuning.dispatch.getTopkProbability() != null) {
             builder.topKProbability(tuning.dispatch.getTopkProbability());
         }
