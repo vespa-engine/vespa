@@ -45,6 +45,7 @@ public class Ranking implements Cloneable {
     public static final String FRESHNESS = "freshness";
     public static final String QUERYCACHE = "queryCache";
     public static final String RERANKCOUNT = "rerankCount";
+    public static final String KEEPRANKCOUNT = "keepRankCount";
     public static final String MATCH_PHASE = "matchPhase";
     public static final String DIVERSITY = "diversity";
     public static final String SOFTTIMEOUT = "softtimeout";
@@ -65,6 +66,7 @@ public class Ranking implements Cloneable {
         argumentType.addField(new FieldDescription(FRESHNESS, "string", "datetime"));
         argumentType.addField(new FieldDescription(QUERYCACHE, "boolean"));
         argumentType.addField(new FieldDescription(RERANKCOUNT, "integer"));
+        argumentType.addField(new FieldDescription(KEEPRANKCOUNT, "integer"));
         argumentType.addField(new FieldDescription(MATCH_PHASE,  new QueryProfileFieldType(MatchPhase.getArgumentType()), "matchPhase"));
         argumentType.addField(new FieldDescription(DIVERSITY, new QueryProfileFieldType(Diversity.getArgumentType())));
         argumentType.addField(new FieldDescription(SOFTTIMEOUT, new QueryProfileFieldType(SoftTimeout.getArgumentType())));
@@ -95,6 +97,7 @@ public class Ranking implements Cloneable {
     private boolean queryCache = false;
 
     private Integer rerankCount = null;
+    private Integer keepRankCount = null;
 
     private RankProperties rankProperties = new RankProperties();
 
@@ -160,6 +163,11 @@ public class Ranking implements Cloneable {
 
     /** Returns the rerank-count that will be used, or null if not set */
     public Integer getRerankCount() { return rerankCount; }
+
+    /** Sets the keep-rank-count that will be used, or null if not set */
+    public void setKeepRankCount(int keepRankCount) { this.keepRankCount = keepRankCount; }
+    /** Returns the keep-rank-count that will be used, or null if not set */
+    public Integer getKeepRankCount() { return keepRankCount; }
 
     /** Returns the location of this query, or null if none */
     public Location getLocation() { return location; }
@@ -235,6 +243,8 @@ public class Ranking implements Cloneable {
         prepareNow(freshness);
         if (rerankCount != null)
             rankProperties.put("vespa.hitcollector.heapsize", rerankCount);
+        if (keepRankCount != null)
+            rankProperties.put("vespa.hitcollector.arraysize", keepRankCount);
     }
 
     private void prepareNow(Freshness freshness) {
