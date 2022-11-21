@@ -160,6 +160,10 @@
           <artifactId>aircompressor</artifactId>
         </exclusion>
         <exclusion>
+          <groupId>net.openhft</groupId>
+          <artifactId>zero-allocation-hashing</artifactId>
+        </exclusion>
+        <exclusion>
           <groupId>org.apache.commons</groupId>
           <artifactId>commons-compress</artifactId>
         </exclusion>

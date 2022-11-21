@@ -34,17 +34,14 @@
     <dependency>
       <groupId>io.airlift</groupId>
       <artifactId>aircompressor</artifactId>
-      <scope>compile</scope>
     </dependency>
     <dependency>
       <groupId>org.apache.commons</groupId>
       <artifactId>commons-compress</artifactId>
-      <scope>compile</scope>
     </dependency>
     <dependency>
       <groupId>net.openhft</groupId>
       <artifactId>zero-allocation-hashing</artifactId>
-      <version>0.16</version>
     </dependency>
 
     <!-- provided scope -->
