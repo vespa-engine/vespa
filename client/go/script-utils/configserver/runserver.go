@@ -48,6 +48,7 @@ func (rs *RunServer) Exec(prog string) {
 	argv := []string{
 		PROG_NAME,
 		"-s", rs.ServiceName,
+		"-r", "30",
 		"-p", rs.PidFile(),
 		"--",
 		prog,
