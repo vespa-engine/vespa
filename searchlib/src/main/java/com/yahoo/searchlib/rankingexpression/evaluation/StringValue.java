@@ -1,11 +1,11 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.searchlib.rankingexpression.evaluation;
 
+import com.yahoo.compress.Hasher;
 import com.yahoo.javacc.UnicodeUtilities;
 import com.yahoo.searchlib.rankingexpression.rule.Function;
 import com.yahoo.tensor.Tensor;
 import com.yahoo.tensor.TensorType;
-import net.openhft.hashing.LongHashFunction;
 import java.nio.charset.StandardCharsets;
 
 /**
@@ -41,7 +41,7 @@ public class StringValue extends Value {
     public double asDouble() {
         // Hash using the xxh3 algorithm which is also used on content nodes
         byte[] data = value.getBytes(StandardCharsets.UTF_8);
-        long h = LongHashFunction.xx3().hashBytes(data);
+        long h = Hasher.xxh3(data);
         if ((h & 0x7ff0000000000000L) == 0x7ff0000000000000L) {
             // Avoid nan and inf
             h = h & 0xffefffffffffffffL;
