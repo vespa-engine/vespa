@@ -205,7 +205,6 @@ BuildRequires: perf
 %if 0%{?amzn2022}
 Requires: vespa-xxhash >= 0.8.1
 %else
-Requires: xxhash
 Requires: xxhash-libs >= 0.8.1
 %endif
 Requires: gdb
