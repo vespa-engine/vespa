@@ -8,7 +8,7 @@ namespace vespalib {
 double hash2d(const char *str, size_t len) {
     size_t h = hashValue(str, len);
     if ((h & 0x7ff0000000000000ul) == 0x7ff0000000000000ul) {
-        // Avoid nan
+        // Avoid nan and inf
         h = h & 0xffeffffffffffffful;
     }
     double d = 0;

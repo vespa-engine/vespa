@@ -707,11 +707,6 @@
                 <version>${jna.version}</version>
             </dependency>
             <dependency>
-                <groupId>net.openhft</groupId>
-                <artifactId>zero-allocation-hashing</artifactId>
-                <version>0.16</version>
-            </dependency>
-            <dependency>
                 <groupId>net.spy</groupId>
                 <artifactId>spymemcached</artifactId>
                 <version>2.10.1</version>
