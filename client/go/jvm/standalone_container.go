@@ -5,12 +5,10 @@ package jvm
 
 import (
 	"fmt"
-	"os"
 
 	"github.com/vespa-engine/vespa/client/go/defaults"
 	"github.com/vespa-engine/vespa/client/go/envvars"
 	"github.com/vespa-engine/vespa/client/go/prog"
-	"github.com/vespa-engine/vespa/client/go/trace"
 	"github.com/vespa-engine/vespa/client/go/util"
 )
 
@@ -70,11 +68,7 @@ func (a *StandaloneContainer) addJdiscProperties() {
 	opts.fixSpec.FixDir(containerParentDir)
 	opts.fixSpec.FixDir(bCacheParentDir)
 	opts.fixSpec.FixDir(bCacheDir)
-	trace.Trace("write props file:", propsFile)
-	err := os.WriteFile(propsFile, selectedEnv(), 0600)
-	if err != nil {
-		util.JustExitWith(err)
-	}
+	a.propsFile = propsFile
 	opts.AddOption("-Djdisc.export.packages=")
 	opts.AddOption("-Djdisc.config.file=" + propsFile)
 	opts.AddOption("-Djdisc.cache.path=" + bCacheDir)

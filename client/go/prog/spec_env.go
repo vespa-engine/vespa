@@ -21,7 +21,7 @@ func (p *Spec) Getenv(k string) string {
 	return os.Getenv(k)
 }
 
-func (spec *Spec) effectiveEnv() []string {
+func (spec *Spec) EffectiveEnv() []string {
 	envMap := make(map[string]string)
 	addToMap := func(kv string) {
 		for idx, elem := range kv {

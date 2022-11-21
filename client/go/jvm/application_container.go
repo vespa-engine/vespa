@@ -53,11 +53,7 @@ func (a *ApplicationContainer) addJdiscProperties() {
 	propsFile := fmt.Sprintf("%s/%s.properties", containerHomeDir, "jdisc")
 	opts.fixSpec.FixDir(containerHomeDir)
 	opts.fixSpec.FixDir(bCacheDir)
-	trace.Trace("write props file:", propsFile)
-	err := os.WriteFile(propsFile, selectedEnv(), 0600)
-	if err != nil {
-		util.JustExitWith(err)
-	}
+	a.propsFile = propsFile
 	opts.AddOption("-Djdisc.config.file=" + propsFile)
 	opts.AddOption("-Djdisc.cache.path=" + bCacheDir)
 	opts.AddOption("-Djdisc.logger.tag=" + cfgId)

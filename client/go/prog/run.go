@@ -21,6 +21,6 @@ func (spec *Spec) Run() error {
 	if spec.shouldUseVespaMalloc {
 		spec.Setenv(envvars.LD_PRELOAD, spec.vespaMallocPreload)
 	}
-	envv := spec.effectiveEnv()
+	envv := spec.EffectiveEnv()
 	return util.Execvpe(prog, args, envv)
 }

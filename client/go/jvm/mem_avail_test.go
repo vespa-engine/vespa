@@ -9,7 +9,7 @@ import (
 )
 
 func TestCg2Get(t *testing.T) {
-	trace.AdjustVerbosity(2)
+	trace.AdjustVerbosity(0)
 	const MM = "memory.max"
 	res, err := vespa_cg2get(MM)
 
