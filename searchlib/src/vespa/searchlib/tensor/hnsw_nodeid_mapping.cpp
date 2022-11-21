@@ -116,23 +116,23 @@ HnswNodeidMapping::reclaim_memory(generation_t oldest_used_gen)
     });
 }
 
-void
-HnswNodeidMapping::on_load(vespalib::ConstArrayRef<HnswNode> nodes)
+uint32_t
+HnswNodeidMapping::get_docid_limit(vespalib::ConstArrayRef<HnswNode> nodes)
 {
-    if (nodes.empty()) {
-        return;
-    }
-    // Check that reserved nodeid is not used
-    assert(!nodes[0].ref().load_relaxed().valid());
-    // Detect histogram size
     uint32_t max_docid = 0;
     for (auto& node : nodes) {
         if (node.ref().load_relaxed().valid()) {
             max_docid = std::max(node.acquire_docid(), max_docid);
         }
     }
+    return max_docid + 1;
+}
+
+std::vector<uint32_t>
+HnswNodeidMapping::make_subspaces_histogram(vespalib::ConstArrayRef<HnswNode> nodes, uint32_t docid_limit)
+{
     // Make histogram
-    std::vector<uint32_t> histogram(max_docid + 1);
+    std::vector<uint32_t> histogram(docid_limit);
     for (auto& node : nodes) {
         if (node.ref().load_relaxed().valid()) {
             auto docid = node.acquire_docid();
@@ -142,8 +142,14 @@ HnswNodeidMapping::on_load(vespalib::ConstArrayRef<HnswNode> nodes)
         }
     }
     assert(histogram[0] == 0);
-    // Allocate mapping from docid to nodeids
-    ensure_refs_size(max_docid);
+    return histogram;
+}
+
+
+void
+HnswNodeidMapping::allocate_docid_to_nodeids_mapping(std::vector<uint32_t> histogram)
+{
+    ensure_refs_size(histogram.size() - 1);
     uint32_t docid = 0;
     for (auto subspaces : histogram) {
         if (subspaces > 0) {
@@ -156,25 +162,32 @@ HnswNodeidMapping::on_load(vespalib::ConstArrayRef<HnswNode> nodes)
         }
         ++docid;
     }
-    {
-        // Populate mapping from docid to nodeids and free list
-        uint32_t nodeid = 0;
-        for (auto& node : nodes) {
-            if (node.ref().load_relaxed().valid()) {
-                docid = node.acquire_docid();
-                auto subspace = node.acquire_subspace();
-                auto nodeids = _nodeids.get_writable(_refs[docid]);
-                assert(subspace < nodeids.size());
-                assert(nodeids[subspace] == 0);
-                nodeids[subspace] = nodeid;
-            } else if (nodeid > 0) {
-                _free_list.push_back(nodeid);
-            }
-            ++nodeid;
+}
+
+void
+HnswNodeidMapping::populate_docid_to_nodeids_mapping_and_free_list(vespalib::ConstArrayRef<HnswNode> nodes)
+{
+    uint32_t nodeid = 0;
+    for (auto& node : nodes) {
+        if (node.ref().load_relaxed().valid()) {
+            auto docid = node.acquire_docid();
+            auto subspace = node.acquire_subspace();
+            auto nodeids = _nodeids.get_writable(_refs[docid]);
+            assert(subspace < nodeids.size());
+            assert(nodeids[subspace] == 0);
+            nodeids[subspace] = nodeid;
+        } else if (nodeid > 0) {
+            _free_list.push_back(nodeid);
         }
+        ++nodeid;
     }
-    // All subspaces for a docid needs to have a nodeid
-    for (docid = 0; docid <= max_docid; ++docid) {
+    std::reverse(_free_list.begin(), _free_list.end());
+}
+
+void
+HnswNodeidMapping::assert_all_subspaces_have_valid_nodeid(uint32_t docid_limit)
+{
+    for (uint32_t docid = 0; docid < docid_limit; ++docid) {
         auto ref = _refs[docid];
         if (ref.valid()) {
             auto nodeids = _nodeids.get_writable(ref);
@@ -183,7 +196,21 @@ HnswNodeidMapping::on_load(vespalib::ConstArrayRef<HnswNode> nodes)
             }
         }
     }
-    std::reverse(_free_list.begin(), _free_list.end());
+}
+
+void
+HnswNodeidMapping::on_load(vespalib::ConstArrayRef<HnswNode> nodes)
+{
+    if (nodes.empty()) {
+        return;
+    }
+    // Check that reserved nodeid is not used
+    assert(!nodes[0].ref().load_relaxed().valid());
+    auto docid_limit = get_docid_limit(nodes);
+    auto histogram = make_subspaces_histogram(nodes, docid_limit);    // Allocate mapping from docid to nodeids
+    allocate_docid_to_nodeids_mapping(std::move(histogram));
+    populate_docid_to_nodeids_mapping_and_free_list(nodes);
+    assert_all_subspaces_have_valid_nodeid(docid_limit);
 }
 
 namespace {

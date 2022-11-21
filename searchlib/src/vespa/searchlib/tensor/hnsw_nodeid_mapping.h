@@ -41,6 +41,11 @@ private:
 
     void ensure_refs_size(uint32_t docid);
     uint32_t allocate_id();
+    uint32_t get_docid_limit(vespalib::ConstArrayRef<HnswNode> nodes);
+    std::vector<uint32_t> make_subspaces_histogram(vespalib::ConstArrayRef<HnswNode> nodes, uint32_t docid_limit);
+    void allocate_docid_to_nodeids_mapping(std::vector<uint32_t> histogram);
+    void populate_docid_to_nodeids_mapping_and_free_list(vespalib::ConstArrayRef<HnswNode> nodes);
+    void assert_all_subspaces_have_valid_nodeid(uint32_t docid_limit);
 
 public:
     HnswNodeidMapping();
