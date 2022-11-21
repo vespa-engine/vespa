@@ -26,16 +26,6 @@ maxHitsPerNode int default=2147483647
 ## a setting of 1.0. This is a significant optimisation with with very little loss in presicion.
 topKProbability double default=0.9999
 
-# Is multi-level dispatch configured for this cluster
-# Deprecated, will go away soon, NOOP
-useMultilevelDispatch bool default=false
-
-# Dispatch only to local nodes. DEPRECATED: The container will automatically do this when it is appropriate.
-useLocalNode bool default=false
-
-# Number of document replicas _per group_ that will be indexed in a stable cluster.
-searchableCopies long default=1
-
 # Number of document replicas _per group_ that will be present in a stable cluster.
 # Should always be >= searchableCopies.
 redundancy long default=1
@@ -69,7 +59,3 @@ node[].host string
 
 # The rpc port of this search node
 node[].port int
-
-# TODO(bjorncs) Remove after May 2022
-# Temporary feature flag
-mergeGroupingResultInSearchInvokerEnabled bool default=false

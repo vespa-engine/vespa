@@ -99,8 +99,6 @@ public class Dispatcher extends AbstractComponent {
                          SearchCluster searchCluster,
                          DispatchConfig dispatchConfig,
                          InvokerFactory invokerFactory) {
-        if (dispatchConfig.useMultilevelDispatch())
-            throw new IllegalArgumentException(searchCluster + " is configured with multilevel dispatch, but this is not supported");
 
         this.searchCluster = searchCluster;
         this.clusterMonitor = clusterMonitor;

@@ -428,7 +428,6 @@ public class InterleavedSearchInvokerTest {
     @Test
     void requireCorrectCoverageCalculationWhenDegradedCoverageIsExpectedUsingTargetActiveDocs() throws IOException {
         verifyCorrectCoverageCalculationWhenDegradedCoverageIsExpected(MockSearchCluster.createDispatchConfig(100.0, List.of())
-                .searchableCopies(1)
                 .redundancy(1)
                 .build(),
                 42);
