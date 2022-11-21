@@ -26,6 +26,7 @@ type containerBase struct {
 	configId    string
 	serviceName string
 	jvmArgs     *Options
+	propsFile   string
 }
 
 func (cb *containerBase) ServiceName() string {
@@ -67,6 +68,7 @@ func (cb *containerBase) Exec() {
 	p := prog.NewSpec(argv)
 	p.ConfigureNumaCtl()
 	cb.JvmOptions().exportEnvSettings(p)
+	writeEnvAsProperties(p.EffectiveEnv(), cb.propsFile)
 	trace.Info("starting container; env:", readableEnv(p.Env))
 	trace.Info("starting container; exec:", argv)
 	err := p.Run()
