@@ -214,43 +214,49 @@ public class NodeResources {
     public NodeResources withVcpu(double vcpu) {
         ensureSpecified();
         if (vcpu == this.vcpu) return this;
-        return new NodeResources(vcpu, memoryGb, diskGb, bandwidthGbps, diskSpeed, storageType, architecture);
+        return new NodeResources(vcpu, memoryGb, diskGb, bandwidthGbps, diskSpeed, storageType, architecture, gpuResources);
     }
 
     public NodeResources withMemoryGb(double memoryGb) {
         ensureSpecified();
         if (memoryGb == this.memoryGb) return this;
-        return new NodeResources(vcpu, memoryGb, diskGb, bandwidthGbps, diskSpeed, storageType, architecture);
+        return new NodeResources(vcpu, memoryGb, diskGb, bandwidthGbps, diskSpeed, storageType, architecture, gpuResources);
     }
 
     public NodeResources withDiskGb(double diskGb) {
         ensureSpecified();
         if (diskGb == this.diskGb) return this;
-        return new NodeResources(vcpu, memoryGb, diskGb, bandwidthGbps, diskSpeed, storageType, architecture);
+        return new NodeResources(vcpu, memoryGb, diskGb, bandwidthGbps, diskSpeed, storageType, architecture, gpuResources);
     }
 
     public NodeResources withBandwidthGbps(double bandwidthGbps) {
         ensureSpecified();
         if (bandwidthGbps == this.bandwidthGbps) return this;
-        return new NodeResources(vcpu, memoryGb, diskGb, bandwidthGbps, diskSpeed, storageType, architecture);
+        return new NodeResources(vcpu, memoryGb, diskGb, bandwidthGbps, diskSpeed, storageType, architecture, gpuResources);
     }
 
     public NodeResources with(DiskSpeed diskSpeed) {
         ensureSpecified();
         if (diskSpeed == this.diskSpeed) return this;
-        return new NodeResources(vcpu, memoryGb, diskGb, bandwidthGbps, diskSpeed, storageType, architecture);
+        return new NodeResources(vcpu, memoryGb, diskGb, bandwidthGbps, diskSpeed, storageType, architecture, gpuResources);
     }
 
     public NodeResources with(StorageType storageType) {
         ensureSpecified();
         if (storageType == this.storageType) return this;
-        return new NodeResources(vcpu, memoryGb, diskGb, bandwidthGbps, diskSpeed, storageType, architecture);
+        return new NodeResources(vcpu, memoryGb, diskGb, bandwidthGbps, diskSpeed, storageType, architecture, gpuResources);
     }
 
     public NodeResources with(Architecture architecture) {
         ensureSpecified();
         if (architecture == this.architecture) return this;
-        return new NodeResources(vcpu, memoryGb, diskGb, bandwidthGbps, diskSpeed, storageType, architecture);
+        return new NodeResources(vcpu, memoryGb, diskGb, bandwidthGbps, diskSpeed, storageType, architecture, gpuResources);
+    }
+
+    public NodeResources with(GpuResources gpuResources) {
+        ensureSpecified();
+        if (this.gpuResources.equals(gpuResources)) return this;
+        return new NodeResources(vcpu, memoryGb, diskGb, bandwidthGbps, diskSpeed, storageType, architecture, gpuResources);
     }
 
     /** Returns this with disk speed and storage type set to any */
@@ -276,7 +282,8 @@ public class NodeResources {
                                  bandwidthGbps - other.bandwidthGbps,
                                  this.diskSpeed.combineWith(other.diskSpeed),
                                  this.storageType.combineWith(other.storageType),
-                                 this.architecture.combineWith(other.architecture));
+                                 this.architecture.combineWith(other.architecture),
+                                 gpuResources);
     }
 
     public NodeResources add(NodeResources other) {
@@ -289,7 +296,8 @@ public class NodeResources {
                                  bandwidthGbps + other.bandwidthGbps,
                                  this.diskSpeed.combineWith(other.diskSpeed),
                                  this.storageType.combineWith(other.storageType),
-                                 this.architecture.combineWith(other.architecture));
+                                 this.architecture.combineWith(other.architecture),
+                                 gpuResources);
     }
 
     private boolean isInterchangeableWith(NodeResources other) {
