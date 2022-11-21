@@ -43,7 +43,12 @@ public class StringValue extends Value {
     public double asDouble() {
         XXHash64 hasher = XXHashFactory.fastestInstance().hash64();
         byte[] data = value.getBytes(StandardCharsets.UTF_8);
-        return Double.longBitsToDouble(hasher.hash(data, 0, data.length, 0));
+        long h = hasher.hash(data, 0, data.length, 0);
+        if ((h & 0x7ff0000000000000L) == 0x7ff0000000000000L) {
+            // Avoid nan
+            h = h & 0xffefffffffffffffL;
+        }
+        return Double.longBitsToDouble(h);
     }
 
     @Override
