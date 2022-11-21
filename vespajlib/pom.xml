@@ -41,6 +41,11 @@
       <artifactId>commons-compress</artifactId>
       <scope>compile</scope>
     </dependency>
+    <dependency>
+      <groupId>net.openhft</groupId>
+      <artifactId>zero-allocation-hashing</artifactId>
+      <version>0.16</version>
+    </dependency>
 
     <!-- provided scope -->
     <dependency>

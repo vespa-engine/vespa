@@ -5,9 +5,7 @@ import com.yahoo.javacc.UnicodeUtilities;
 import com.yahoo.searchlib.rankingexpression.rule.Function;
 import com.yahoo.tensor.Tensor;
 import com.yahoo.tensor.TensorType;
-import net.jpountz.xxhash.XXHash64;
-import net.jpountz.xxhash.XXHashFactory;
-
+import net.openhft.hashing.LongHashFunction;
 import java.nio.charset.StandardCharsets;
 
 /**
@@ -41,9 +39,9 @@ public class StringValue extends Value {
      */
     @Override
     public double asDouble() {
-        XXHash64 hasher = XXHashFactory.fastestInstance().hash64();
+        // Hash using the xxh3 algorithm which is also used on content nodes
         byte[] data = value.getBytes(StandardCharsets.UTF_8);
-        long h = hasher.hash(data, 0, data.length, 0);
+        long h = LongHashFunction.xx3().hashBytes(data);
         if ((h & 0x7ff0000000000000L) == 0x7ff0000000000000L) {
             // Avoid nan
             h = h & 0xffefffffffffffffL;
