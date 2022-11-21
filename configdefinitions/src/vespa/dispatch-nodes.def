@@ -1,0 +1,16 @@
+# Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+# List of nodes in a search cluster to dispatch to.
+
+namespace=vespa.config.search
+
+# The unique key of a search node
+node[].key int
+
+# The index of the group this search node belongs to
+node[].group int default=0
+
+# The host name of this search node
+node[].host string
+
+# The rpc port of this search node
+node[].port int
