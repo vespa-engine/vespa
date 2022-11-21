@@ -43,7 +43,7 @@ public class StringValue extends Value {
         byte[] data = value.getBytes(StandardCharsets.UTF_8);
         long h = LongHashFunction.xx3().hashBytes(data);
         if ((h & 0x7ff0000000000000L) == 0x7ff0000000000000L) {
-            // Avoid nan
+            // Avoid nan and inf
             h = h & 0xffefffffffffffffL;
         }
         return Double.longBitsToDouble(h);
