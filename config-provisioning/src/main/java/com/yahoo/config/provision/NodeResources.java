@@ -143,6 +143,14 @@ public class NodeResources {
 
         public static GpuResources getDefault() { return none; }
 
+        public GpuResources plus(GpuResources other) {
+            return new GpuResources(this.count + other.count, this.memoryGb + other.memoryGb);
+        }
+
+        public GpuResources minus(GpuResources other) {
+            return new GpuResources(this.count - other.count, this.memoryGb - other.memoryGb);
+        }
+
         @Override
         public boolean equals(Object o) {
             if (this == o) return true;
@@ -155,7 +163,6 @@ public class NodeResources {
         public int hashCode() {
             return Objects.hash(count, memoryGb);
         }
-
     }
 
     private final double vcpu;
@@ -259,7 +266,7 @@ public class NodeResources {
         return new NodeResources(vcpu, memoryGb, diskGb, bandwidthGbps, diskSpeed, storageType, architecture, gpuResources);
     }
 
-    /** Returns this with disk speed and storage type set to any */
+    /** Returns this with disk speed, storage type and architecture set to any */
     public NodeResources justNumbers() {
         if (isUnspecified()) return unspecified();
         return with(NodeResources.DiskSpeed.any).with(StorageType.any).with(Architecture.any);
@@ -268,7 +275,7 @@ public class NodeResources {
     /** Returns this with all numbers set to 0 */
     public NodeResources justNonNumbers() {
         if (isUnspecified()) return unspecified();
-        return withVcpu(0).withMemoryGb(0).withDiskGb(0).withBandwidthGbps(0);
+        return withVcpu(0).withMemoryGb(0).withDiskGb(0).withBandwidthGbps(0).with(GpuResources.getDefault());
     }
 
     public NodeResources subtract(NodeResources other) {
@@ -283,7 +290,7 @@ public class NodeResources {
                                  this.diskSpeed.combineWith(other.diskSpeed),
                                  this.storageType.combineWith(other.storageType),
                                  this.architecture.combineWith(other.architecture),
-                                 gpuResources);
+                                 this.gpuResources.minus(other.gpuResources));
     }
 
     public NodeResources add(NodeResources other) {
@@ -297,7 +304,7 @@ public class NodeResources {
                                  this.diskSpeed.combineWith(other.diskSpeed),
                                  this.storageType.combineWith(other.storageType),
                                  this.architecture.combineWith(other.architecture),
-                                 gpuResources);
+                                 this.gpuResources.plus(other.gpuResources));
     }
 
     private boolean isInterchangeableWith(NodeResources other) {
@@ -308,8 +315,6 @@ public class NodeResources {
         if (this.storageType != StorageType.any && other.storageType != StorageType.any && this.storageType != other.storageType)
             return false;
         if (this.architecture != Architecture.any && other.architecture != Architecture.any && this.architecture != other.architecture)
-            return false;
-        if ( ! this.gpuResources.equals(other.gpuResources))
             return false;
         return true;
     }
