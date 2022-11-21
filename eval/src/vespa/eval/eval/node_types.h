@@ -5,8 +5,7 @@
 #include "value_type.h"
 #include <map>
 
-namespace vespalib {
-namespace eval {
+namespace vespalib::eval {
 
 namespace nodes { struct Node; }
 class Function;
@@ -50,5 +49,4 @@ public:
     }
 };
 
-} // namespace vespalib::eval
-} // namespace vespalib
+}

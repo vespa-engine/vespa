@@ -4,15 +4,14 @@
 #include "node_visitor.h"
 #include "node_traverser.h"
 
-namespace vespalib {
-namespace eval {
+namespace vespalib::eval {
 
 namespace {
 
 struct ChildReaper : public NodeTraverser, public NodeHandler {
-    virtual void handle(nodes::Node_UP) override {}
-    virtual bool open(const nodes::Node &) override { return true; }
-    virtual void close(const nodes::Node &node) override {
+    void handle(nodes::Node_UP) override {}
+    bool open(const nodes::Node &) override { return true; }
+    void close(const nodes::Node &node) override {
         nodes::Node &mutable_node = const_cast<nodes::Node&>(node);
         mutable_node.detach_children(*this);
     }
@@ -29,5 +28,4 @@ delete_node(nodes::Node_UP node)
     }
 }
 
-} // namespace vespalib::eval
-} // namespace vespalib
+}

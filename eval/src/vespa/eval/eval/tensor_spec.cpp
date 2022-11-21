@@ -14,8 +14,7 @@
 #include <vespa/vespalib/data/slime/slime.h>
 #include <ostream>
 
-namespace vespalib {
-namespace eval {
+namespace vespalib::eval {
 
 namespace {
 
@@ -393,5 +392,4 @@ TensorSpec::diff(const TensorSpec &lhs, const vespalib::string &lhs_desc,
     return table.to_string();
 }
 
-} // namespace vespalib::eval
-} // namespace vespalib
+}

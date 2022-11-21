@@ -7,16 +7,12 @@
 #include <memory>
 #include <map>
 
-namespace vespalib {
+namespace vespalib::slime {
+    struct Cursor;
+    struct Inspector;
+}
 
-namespace slime {
-
-struct Cursor;
-struct Inspector;
-
-} // namespace vespalib::slime
-
-namespace eval {
+namespace vespalib::eval {
 
 struct Value;
 
@@ -86,5 +82,4 @@ public:
 bool operator==(const TensorSpec &lhs, const TensorSpec &rhs);
 std::ostream &operator<<(std::ostream &out, const TensorSpec &tensor);
 
-} // namespace vespalib::eval
-} // namespace vespalib
+}

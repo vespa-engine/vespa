@@ -4,8 +4,7 @@
 
 #include "basic_nodes.h"
 
-namespace vespalib {
-namespace eval {
+namespace vespalib::eval {
 
 /**
  * Interface used when traversing nodes. The open function is called
@@ -23,6 +22,4 @@ struct NodeTraverser {
     virtual ~NodeTraverser() {}
 };
 
-} // namespace vespalib::eval
-} // namespace vespalib
-
+}

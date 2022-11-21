@@ -123,7 +123,6 @@ public:
     bool is_const_double() const override { return true; }
     double get_const_double_value() const override { return hash2d(_value); }
     const vespalib::string &value() const { return _value; }
-    uint64_t hash() const { return hashValue(_value.data(), _value.size()); }
     vespalib::string dump(DumpContext &) const override {
         return as_quoted_string(_value);
     }

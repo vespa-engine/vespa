@@ -4,8 +4,7 @@
 
 #include "basic_nodes.h"
 
-namespace vespalib {
-namespace eval {
+namespace vespalib::eval {
 
 /**
  * Function used to delete an AST with arbitrary depth without
@@ -15,5 +14,4 @@ namespace eval {
  **/
 void delete_node(nodes::Node_UP node);
 
-} // namespace vespalib::eval
-} // namespace vespalib
+}
