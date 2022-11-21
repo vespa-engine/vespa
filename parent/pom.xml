@@ -627,6 +627,11 @@
                 <version>${jjwt.version}</version>
             </dependency>
             <dependency>
+                <groupId>net.openhft</groupId>
+                <artifactId>zero-allocation-hashing</artifactId>
+                <version>${zero-allocation-hashing.version}</version>
+            </dependency>
+            <dependency>
                 <groupId>org.apache.commons</groupId>
                 <artifactId>commons-text</artifactId>
                 <version>${commons-text.version}</version>
@@ -1168,6 +1173,7 @@
         <spifly.version>1.3.5</spifly.version>
         <surefire.version>2.22.2</surefire.version>
         <wiremock.version>2.35.0</wiremock.version>
+        <zero-allocation-hashing.version>0.16</zero-allocation-hashing.version>
         <zookeeper.client.version>3.8.0</zookeeper.client.version>
 
         <doclint>all</doclint>
