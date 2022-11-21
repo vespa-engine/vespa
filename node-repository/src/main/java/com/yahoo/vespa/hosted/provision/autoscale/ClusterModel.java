@@ -27,7 +27,7 @@ public class ClusterModel {
     private static final Logger log = Logger.getLogger(ClusterModel.class.getName());
 
     /** Containers typically use more cpu right after generation change, so discard those metrics */
-    public static final Duration warmupDuration = Duration.ofMinutes(5);
+    public static final Duration warmupDuration = Duration.ofMinutes(7);
 
     static final double idealQueryCpuLoad = 0.8;
     static final double idealWriteCpuLoad = 0.95;

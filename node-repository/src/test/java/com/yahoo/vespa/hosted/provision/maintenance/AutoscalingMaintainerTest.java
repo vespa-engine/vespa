@@ -153,7 +153,7 @@ public class AutoscalingMaintainerTest {
         // deploy
         tester.deploy(app1, cluster1, app1Capacity);
 
-        int measurements = 5;
+        int measurements = 6;
         Duration samplePeriod = Duration.ofSeconds(150);
         for (int i = 0; i < 20; i++) {
             // Record completion to keep scaling window at minimum
@@ -209,6 +209,8 @@ public class AutoscalingMaintainerTest {
 
         tester.deploy(app1, cluster1, capacity);
         // fast completion
+        tester.addMeasurements(1.0f, 0.3f, 0.3f, 0, 1, app1);
+        tester.clock().advance(Duration.ofSeconds(150));
         tester.addMeasurements(1.0f, 0.3f, 0.3f, 0, 1, app1);
         tester.clock().advance(Duration.ofSeconds(150));
         tester.addMeasurements(1.0f, 0.3f, 0.3f, 0, 1, app1);
