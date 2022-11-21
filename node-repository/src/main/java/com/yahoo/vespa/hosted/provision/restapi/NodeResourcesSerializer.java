@@ -3,6 +3,7 @@ package com.yahoo.vespa.hosted.provision.restapi;
 
 import com.yahoo.config.provision.NodeResources;
 import com.yahoo.slime.Cursor;
+import com.yahoo.slime.Inspector;
 
 /**
  * @author bratseth
@@ -72,6 +73,12 @@ public class NodeResourcesSerializer {
             case "any" -> NodeResources.Architecture.any;
             default -> throw new IllegalArgumentException("Unknown architecture '" + architecture + "'");
         };
+    }
+
+    public static NodeResources.GpuResources gpuResourcesFromSlime(Inspector gpuObject) {
+        if (!gpuObject.valid()) return NodeResources.GpuResources.getDefault();
+        return new NodeResources.GpuResources((int) gpuObject.field("gpuCount").asLong(),
+                                              gpuObject.field("gpuMemory").asDouble());
     }
 
 }
