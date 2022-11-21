@@ -12,6 +12,7 @@ double hash2d(const char *str, size_t len) {
         h = h & 0xffeffffffffffffful;
     }
     double d = 0;
+    static_assert(sizeof(d) == sizeof(h));
     memcpy(&d, &h, sizeof(d));
     return d;
 }
