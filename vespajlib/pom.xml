@@ -42,6 +42,16 @@
     <dependency>
       <groupId>net.openhft</groupId>
       <artifactId>zero-allocation-hashing</artifactId>
+      <exclusions>
+        <exclusion>
+          <groupId>com.intellij</groupId>
+          <artifactId>annotations</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>com.google.code.findbugs</groupId>
+          <artifactId>jsr305</artifactId>
+        </exclusion>
+      </exclusions>
     </dependency>
 
     <!-- provided scope -->
