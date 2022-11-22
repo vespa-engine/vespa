@@ -28,10 +28,10 @@ public class NodeResourceLimits {
     public void ensureWithinAdvertisedLimits(String type, NodeResources requested, ClusterSpec cluster) {
         if (requested.isUnspecified()) return;
 
-        if (requested.vcpu() < minAdvertisedVcpu(cluster))
-            illegal(type, "vcpu", "", cluster, requested.vcpu(), minAdvertisedVcpu(cluster));
-        if (requested.memoryGb() < minAdvertisedMemoryGb(cluster))
-            illegal(type, "memoryGb", "Gb", cluster, requested.memoryGb(), minAdvertisedMemoryGb(cluster));
+        if (requested.vcpu() < minAdvertisedVcpu(cluster.type()))
+            illegal(type, "vcpu", "", cluster, requested.vcpu(), minAdvertisedVcpu(cluster.type()));
+        if (requested.memoryGb() < minAdvertisedMemoryGb(cluster.type()))
+            illegal(type, "memoryGb", "Gb", cluster, requested.memoryGb(), minAdvertisedMemoryGb(cluster.type()));
         if (requested.diskGb() < minAdvertisedDiskGb(requested, cluster.isExclusive()))
             illegal(type, "diskGb", "Gb", cluster, requested.diskGb(), minAdvertisedDiskGb(requested, cluster.isExclusive()));
     }
@@ -40,36 +40,36 @@ public class NodeResourceLimits {
     public boolean isWithinRealLimits(NodeCandidate candidateNode, ClusterSpec cluster) {
         if (candidateNode.type() != NodeType.tenant) return true; // Resource limits only apply to tenant nodes
         return isWithinRealLimits(nodeRepository.resourcesCalculator().realResourcesOf(candidateNode, nodeRepository),
-                                  cluster);
+                                  cluster.type());
     }
 
     /** Returns whether the real resources we'll end up with on a given tenant node are within limits */
-    public boolean isWithinRealLimits(NodeResources realResources, ClusterSpec cluster) {
+    public boolean isWithinRealLimits(NodeResources realResources, ClusterSpec.Type clusterType) {
         if (realResources.isUnspecified()) return true;
 
-        if (realResources.vcpu() < minRealVcpu(cluster)) return false;
-        if (realResources.memoryGb() < minRealMemoryGb(cluster)) return false;
+        if (realResources.vcpu() < minRealVcpu(clusterType)) return false;
+        if (realResources.memoryGb() < minRealMemoryGb(clusterType)) return false;
         if (realResources.diskGb() < minRealDiskGb()) return false;
        return true;
     }
 
-    public NodeResources enlargeToLegal(NodeResources requested, ClusterSpec cluster, boolean exclusive) {
+    public NodeResources enlargeToLegal(NodeResources requested, ClusterSpec.Type clusterType, boolean exclusive) {
         if (requested.isUnspecified()) return requested;
 
-        return requested.withVcpu(Math.max(minAdvertisedVcpu(cluster), requested.vcpu()))
-                        .withMemoryGb(Math.max(minAdvertisedMemoryGb(cluster), requested.memoryGb()))
+        return requested.withVcpu(Math.max(minAdvertisedVcpu(clusterType), requested.vcpu()))
+                        .withMemoryGb(Math.max(minAdvertisedMemoryGb(clusterType), requested.memoryGb()))
                         .withDiskGb(Math.max(minAdvertisedDiskGb(requested, exclusive), requested.diskGb()));
     }
 
-    private double minAdvertisedVcpu(ClusterSpec cluster) {
-        if (zone().environment() == Environment.dev && ! nodeRepository.exclusiveAllocation(cluster)) return 0.1;
-        if (cluster.type().isContent() && zone().environment().isProduction()) return 1.0;
-        if (cluster.type() == ClusterSpec.Type.admin) return 0.1;
+    private double minAdvertisedVcpu(ClusterSpec.Type clusterType) {
+        if (zone().environment() == Environment.dev && zone().cloud().allowHostSharing()) return 0.1;
+        if (clusterType.isContent() && zone().environment().isProduction()) return 1.0;
+        if (clusterType == ClusterSpec.Type.admin) return 0.1;
         return 0.5;
     }
 
-    private double minAdvertisedMemoryGb(ClusterSpec cluster) {
-        if (cluster.type() == ClusterSpec.Type.admin) return 1;
+    private double minAdvertisedMemoryGb(ClusterSpec.Type clusterType) {
+        if (clusterType == ClusterSpec.Type.admin) return 1;
         return 4;
     }
 
@@ -85,10 +85,10 @@ public class NodeResourceLimits {
             return 4;
     }
 
-    private double minRealVcpu(ClusterSpec cluster) { return minAdvertisedVcpu(cluster); }
+    private double minRealVcpu(ClusterSpec.Type clusterType) { return minAdvertisedVcpu(clusterType); }
 
-    private double minRealMemoryGb(ClusterSpec cluster) {
-        return minAdvertisedMemoryGb(cluster) - 1.7;
+    private double minRealMemoryGb(ClusterSpec.Type clusterType) {
+        return minAdvertisedMemoryGb(clusterType) - 1.7;
     }
 
     private double minRealDiskGb() { return 6; }

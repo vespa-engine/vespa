@@ -273,7 +273,7 @@ public class AutoscalingTest {
                                        .build();
 
         NodeResources defaultResources =
-                new CapacityPolicies(fixture.tester().nodeRepository()).defaultNodeResources(fixture.clusterSpec, fixture.applicationId);
+                new CapacityPolicies(fixture.tester().nodeRepository()).defaultNodeResources(fixture.clusterSpec, fixture.applicationId, false);
 
         fixture.tester().assertResources("Min number of nodes and default resources",
                                          2, 1, defaultResources,

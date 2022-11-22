@@ -164,10 +164,10 @@ public class AllocatableClusterResources {
         if (! exclusive) {
             // We decide resources: Add overhead to what we'll request (advertised) to make sure real becomes (at least) cappedNodeResources
             var advertisedResources = nodeRepository.resourcesCalculator().realToRequest(wantedResources.nodeResources(), exclusive);
-            advertisedResources = systemLimits.enlargeToLegal(advertisedResources, clusterSpec, exclusive); // Ask for something legal
+            advertisedResources = systemLimits.enlargeToLegal(advertisedResources, clusterSpec.type(), exclusive); // Ask for something legal
             advertisedResources = applicationLimits.cap(advertisedResources); // Overrides other conditions, even if it will then fail
             var realResources = nodeRepository.resourcesCalculator().requestToReal(advertisedResources, exclusive); // What we'll really get
-            if ( ! systemLimits.isWithinRealLimits(realResources, clusterSpec))
+            if ( ! systemLimits.isWithinRealLimits(realResources, clusterSpec.type()))
                 return Optional.empty();
             if (anySatisfies(realResources, availableRealHostResources))
                     return Optional.of(new AllocatableClusterResources(wantedResources.with(realResources),
@@ -187,7 +187,7 @@ public class AllocatableClusterResources {
 
                 // Adjust where we don't need exact match to the flavor
                 if (flavor.resources().storageType() == NodeResources.StorageType.remote) {
-                    double diskGb = systemLimits.enlargeToLegal(cappedWantedResources, clusterSpec, exclusive).diskGb();
+                    double diskGb = systemLimits.enlargeToLegal(cappedWantedResources, clusterSpec.type(), exclusive).diskGb();
                     advertisedResources = advertisedResources.withDiskGb(diskGb);
                     realResources = realResources.withDiskGb(diskGb);
                 }
@@ -197,7 +197,7 @@ public class AllocatableClusterResources {
                 }
 
                 if ( ! between(applicationLimits.min().nodeResources(), applicationLimits.max().nodeResources(), advertisedResources)) continue;
-                if ( ! systemLimits.isWithinRealLimits(realResources, clusterSpec)) continue;
+                if ( ! systemLimits.isWithinRealLimits(realResources, clusterSpec.type())) continue;
                 var candidate = new AllocatableClusterResources(wantedResources.with(realResources),
                                                                 advertisedResources,
                                                                 wantedResources,
