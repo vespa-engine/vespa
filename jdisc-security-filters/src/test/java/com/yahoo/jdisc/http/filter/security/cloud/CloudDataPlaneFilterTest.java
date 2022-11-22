@@ -7,6 +7,7 @@ import com.yahoo.container.jdisc.RequestHandlerSpec;
 import com.yahoo.container.jdisc.RequestHandlerTestDriver.MockResponseHandler;
 import com.yahoo.jdisc.http.HttpRequest.Method;
 import com.yahoo.jdisc.http.filter.security.cloud.CloudDataPlaneFilter.ClientPrincipal;
+import com.yahoo.jdisc.http.filter.security.cloud.config.CloudDataPlaneFilterConfig;
 import com.yahoo.jdisc.http.filter.util.FilterTestUtils;
 import com.yahoo.security.KeyUtils;
 import com.yahoo.security.X509CertificateBuilder;

@@ -8,6 +8,7 @@ import com.yahoo.container.jdisc.RequestView;
 import com.yahoo.jdisc.Response;
 import com.yahoo.jdisc.http.filter.DiscFilterRequest;
 import com.yahoo.jdisc.http.filter.security.base.JsonSecurityRequestFilterBase;
+import com.yahoo.jdisc.http.filter.security.cloud.config.CloudDataPlaneFilterConfig;
 import com.yahoo.security.X509CertificateUtils;
 
 import java.security.Principal;
