@@ -234,10 +234,9 @@ public:
 
     void load_index(std::vector<char> data) {
         auto& graph = index->get_graph();
-        HnswIndexLoader<VectorBufferReader, IndexType::index_type> loader(graph, std::make_unique<VectorBufferReader>(data));
-        while (loader.load_next()) {}
         auto& id_mapping = index->get_id_mapping();
-        id_mapping.on_load(graph.node_refs.make_read_view(graph.node_refs.size()));
+        HnswIndexLoader<VectorBufferReader, IndexType::index_type> loader(graph, id_mapping, std::make_unique<VectorBufferReader>(data));
+        while (loader.load_next()) {}
     }
 
     static constexpr bool is_single = std::is_same_v<IndexType, HnswIndex<HnswIndexType::SINGLE>>;

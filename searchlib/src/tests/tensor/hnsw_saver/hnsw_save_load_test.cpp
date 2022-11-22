@@ -1,8 +1,11 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include <vespa/searchlib/tensor/hnsw_graph.h>
+#include <vespa/searchlib/tensor/hnsw_identity_mapping.h>
 #include <vespa/searchlib/tensor/hnsw_index_saver.h>
 #include <vespa/searchlib/tensor/hnsw_index_loader.hpp>
+#include <vespa/searchlib/tensor/hnsw_index_traits.h>
+#include <vespa/searchlib/tensor/hnsw_nodeid_mapping.h>
 #include <vespa/searchlib/test/vector_buffer_reader.h>
 #include <vespa/searchlib/test/vector_buffer_writer.h>
 #include <vespa/searchlib/util/fileutil.h>
@@ -32,7 +35,14 @@ uint32_t fake_docid<HnswIndexType::SINGLE>(uint32_t nodeid)
 template <>
 uint32_t fake_docid<HnswIndexType::MULTI>(uint32_t nodeid)
 {
-    return nodeid + 100;
+    switch (nodeid) {
+    case 5:
+        return 104;
+    case 6:
+        return 104;
+    default:
+        return nodeid + 100;
+    }
 }
 
 template <HnswIndexType type>
@@ -47,7 +57,14 @@ uint32_t fake_subspace<HnswIndexType::SINGLE>(uint32_t)
 template <>
 uint32_t fake_subspace<HnswIndexType::MULTI>(uint32_t nodeid)
 {
-    return nodeid + 10;
+    switch (nodeid) {
+    case 5:
+        return 2;
+    case 6:
+        return 1;
+    default:
+        return 0;
+    }
 }
 
 template <typename NodeType>
@@ -69,7 +86,7 @@ template <HnswIndexType type>
 void populate(HnswGraph<type> &graph) {
     // no 0
     graph.make_node(1, fake_docid<type>(1), fake_subspace<type>(1), 1);
-    auto er = graph.make_node(2, 102, 12, 2);
+    auto er = graph.make_node(2, fake_docid<type>(2), fake_subspace<type>(2), 2);
     // no 3
     graph.make_node(4, fake_docid<type>(4), fake_subspace<type>(4), 2);
     graph.make_node(5, fake_docid<type>(5), fake_subspace<type>(5), 0);
@@ -137,7 +154,8 @@ public:
         return vector_writer.output;
     }
     void load_copy(std::vector<char> data) {
-        HnswIndexLoader<VectorBufferReader, GraphType::index_type> loader(copy, std::make_unique<VectorBufferReader>(data));
+        typename HnswIndexTraits<GraphType::index_type>::IdMapping id_mapping;
+        HnswIndexLoader<VectorBufferReader, GraphType::index_type> loader(copy, id_mapping, std::make_unique<VectorBufferReader>(data));
         while (loader.load_next()) {}
     }
 

@@ -3,6 +3,7 @@
 #pragma once
 
 #include "nearest_neighbor_index_loader.h"
+#include "hnsw_index_traits.h"
 #include <vespa/vespalib/util/exceptions.h>
 #include <cstdint>
 #include <memory>
@@ -21,6 +22,8 @@ struct HnswGraph;
 template <typename ReaderType, HnswIndexType type>
 class HnswIndexLoader : public NearestNeighborIndexLoader {
 private:
+    using IdMapping = typename HnswIndexTraits<type>::IdMapping;
+
     HnswGraph<type>& _graph;
     std::unique_ptr<ReaderType> _reader;
     uint32_t _entry_nodeid;
@@ -29,6 +32,7 @@ private:
     uint32_t _nodeid;
     std::vector<uint32_t> _link_array;
     bool _complete;
+    IdMapping& _id_mapping;
 
     void init();
     uint32_t next_int() {
@@ -36,7 +40,7 @@ private:
     }
 
 public:
-    HnswIndexLoader(HnswGraph<type>& graph, std::unique_ptr<ReaderType> reader);
+    HnswIndexLoader(HnswGraph<type>& graph, IdMapping& id_mapping, std::unique_ptr<ReaderType> reader);
     virtual ~HnswIndexLoader();
     bool load_next() override;
 };

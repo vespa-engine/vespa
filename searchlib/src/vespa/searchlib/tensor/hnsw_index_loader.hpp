@@ -22,7 +22,7 @@ template <typename ReaderType, HnswIndexType type>
 HnswIndexLoader<ReaderType, type>::~HnswIndexLoader() = default;
 
 template <typename ReaderType, HnswIndexType type>
-HnswIndexLoader<ReaderType, type>::HnswIndexLoader(HnswGraph<type>& graph, std::unique_ptr<ReaderType> reader)
+HnswIndexLoader<ReaderType, type>::HnswIndexLoader(HnswGraph<type>& graph, IdMapping& id_mapping, std::unique_ptr<ReaderType> reader)
     : _graph(graph),
       _reader(std::move(reader)),
       _entry_nodeid(0),
@@ -30,7 +30,8 @@ HnswIndexLoader<ReaderType, type>::HnswIndexLoader(HnswGraph<type>& graph, std::
       _num_nodes(0),
       _nodeid(0),
       _link_array(),
-      _complete(false)
+      _complete(false),
+      _id_mapping(id_mapping)
 {
     init();
 }
@@ -65,6 +66,7 @@ HnswIndexLoader<ReaderType, type>::load_next()
         _graph.trim_node_refs_size();
         auto entry_node_ref = _graph.get_node_ref(_entry_nodeid);
         _graph.set_entry_node({_entry_nodeid, entry_node_ref, _entry_level});
+        _id_mapping.on_load(_graph.node_refs.make_read_view(_graph.node_refs.size()));
         _complete = true;
         return false;
     }
