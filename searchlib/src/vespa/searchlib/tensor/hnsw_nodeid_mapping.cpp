@@ -116,8 +116,10 @@ HnswNodeidMapping::reclaim_memory(generation_t oldest_used_gen)
     });
 }
 
+namespace {
+
 uint32_t
-HnswNodeidMapping::get_docid_limit(vespalib::ConstArrayRef<HnswNode> nodes)
+get_docid_limit(vespalib::ConstArrayRef<HnswNode> nodes)
 {
     uint32_t max_docid = 0;
     for (auto& node : nodes) {
@@ -129,7 +131,7 @@ HnswNodeidMapping::get_docid_limit(vespalib::ConstArrayRef<HnswNode> nodes)
 }
 
 std::vector<uint32_t>
-HnswNodeidMapping::make_subspaces_histogram(vespalib::ConstArrayRef<HnswNode> nodes, uint32_t docid_limit)
+make_subspaces_histogram(vespalib::ConstArrayRef<HnswNode> nodes, uint32_t docid_limit)
 {
     // Make histogram
     std::vector<uint32_t> histogram(docid_limit);
@@ -145,6 +147,7 @@ HnswNodeidMapping::make_subspaces_histogram(vespalib::ConstArrayRef<HnswNode> no
     return histogram;
 }
 
+}
 
 void
 HnswNodeidMapping::allocate_docid_to_nodeids_mapping(std::vector<uint32_t> histogram)
