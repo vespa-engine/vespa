@@ -52,6 +52,7 @@ import com.yahoo.vespa.model.container.component.chain.ProcessingHandler;
 import com.yahoo.vespa.model.container.configserver.ConfigserverCluster;
 import com.yahoo.vespa.model.container.docproc.ContainerDocproc;
 import com.yahoo.vespa.model.container.docproc.DocprocChains;
+import com.yahoo.vespa.model.container.http.Client;
 import com.yahoo.vespa.model.container.http.Http;
 import com.yahoo.vespa.model.container.processing.ProcessingChains;
 import com.yahoo.vespa.model.container.search.ContainerSearch;
@@ -161,6 +162,7 @@ public abstract class ContainerCluster<CONTAINER extends Container>
     private String jvmGCOptions = null;
 
     private boolean deferChangesUntilRestart = false;
+    private List<Client> clients;
 
     public ContainerCluster(AbstractConfigProducer<?> parent, String configSubId, String clusterId, DeployState deployState, boolean zooKeeperLocalhostAffinity) {
         this(parent, configSubId, clusterId, deployState, zooKeeperLocalhostAffinity, 1);
@@ -350,6 +352,14 @@ public abstract class ContainerCluster<CONTAINER extends Container>
 
     public Http getHttp() {
         return http;
+    }
+
+    public void setClients(List<Client> clients) {
+        this.clients = clients;
+    }
+
+    public List<Client> getClients() {
+        return clients;
     }
 
     public ContainerDocproc getDocproc() {

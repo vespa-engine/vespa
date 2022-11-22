@@ -4,6 +4,7 @@ package com.yahoo.vespa.model.container.xml;
 import com.google.common.collect.ImmutableList;
 import com.yahoo.component.Version;
 import com.yahoo.config.application.Xml;
+import com.yahoo.config.application.api.ApplicationFile;
 import com.yahoo.config.application.api.ApplicationPackage;
 import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.config.application.api.DeploymentInstanceSpec;
@@ -30,8 +31,10 @@ import com.yahoo.config.provision.HostName;
 import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.config.provision.Zone;
+import com.yahoo.container.jdisc.AclMapping;
 import com.yahoo.container.logging.FileConnectionLog;
 import com.yahoo.osgi.provider.model.ComponentModel;
+import com.yahoo.path.Path;
 import com.yahoo.schema.OnnxModel;
 import com.yahoo.schema.derived.RankProfileList;
 import com.yahoo.search.rendering.RendererRegistry;
@@ -72,6 +75,7 @@ import com.yahoo.vespa.model.container.component.UserBindingPattern;
 import com.yahoo.vespa.model.container.docproc.ContainerDocproc;
 import com.yahoo.vespa.model.container.docproc.DocprocChains;
 import com.yahoo.vespa.model.container.http.AccessControl;
+import com.yahoo.vespa.model.container.http.Client;
 import com.yahoo.vespa.model.container.http.ConnectorFactory;
 import com.yahoo.vespa.model.container.http.FilterChains;
 import com.yahoo.vespa.model.container.http.Http;
@@ -87,7 +91,10 @@ import com.yahoo.vespa.model.content.StorageGroup;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 
+import java.io.IOException;
+import java.io.InputStream;
 import java.net.URI;
+import java.nio.charset.StandardCharsets;
 import java.security.cert.X509Certificate;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -201,6 +208,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
         addStatusHandlers(cluster, context.getDeployState().isHosted());
         addUserHandlers(deployState, cluster, spec, context);
 
+        addClients(deployState, spec, cluster, context);
         addHttp(deployState, spec, cluster, context);
 
         addAccessLogs(deployState, cluster, spec);
@@ -441,6 +449,54 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
         }
     }
 
+    protected void addClients(DeployState deployState, Element spec, ApplicationContainerCluster cluster, ConfigModelContext context) {
+        if (!deployState.isHosted() || !deployState.zone().system().isPublic() || !deployState.featureFlags().enableDataPlaneFilter()) return;
+
+        List<Client> clients;
+        Element clientsElement = XML.getChild(spec, "clients");
+        boolean legacyMode = false;
+        if (clientsElement == null) {
+            Client defaultClient = new Client("default",
+                                              List.of(AclMapping.Action.READ.name(), AclMapping.Action.WRITE.name()),
+                                              getCertificates(app.getFile(Path.fromString("security/clients.pem"))));
+            clients = List.of(defaultClient);
+            legacyMode = true;
+        } else {
+            clients = XML.getChildren(clientsElement, "client").stream()
+                    .map(this::getCLient)
+                    .toList();
+        }
+        cluster.setClients(clients);
+        cluster.addComponent(new CloudDataPlaneFilter(cluster, legacyMode));
+    }
+
+    private Client getCLient(Element clientElement) {
+        String id = XML.attribute("id", clientElement).orElseThrow();
+        List<String> permissions = XML.attribute("permissions", clientElement)
+                .map(p -> p.split(",")).stream()
+                .flatMap(Arrays::stream)
+                .toList();
+
+        List<X509Certificate> x509Certificates = XML.getChildren(clientElement, "certificate").stream()
+                .map(certElem -> Path.fromString(certElem.getAttribute("file")))
+                .map(path -> app.getFile(path))
+                .map(this::getCertificates)
+                .flatMap(Collection::stream)
+                .toList();
+        return new Client(id, permissions, x509Certificates);
+    }
+
+    private List<X509Certificate> getCertificates(ApplicationFile file) {
+        try {
+            InputStream inputStream = file.createInputStream();
+            byte[] bytes = inputStream.readAllBytes();
+            inputStream.close();
+            return X509CertificateUtils.certificateListFromPem(new String(bytes, StandardCharsets.UTF_8));
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
     private void addDefaultConnectorHostedFilterBinding(ApplicationContainerCluster cluster) {
         cluster.getHttp().getAccessControl()
                 .ifPresent(accessControl -> accessControl.configureDefaultHostedConnector(cluster.getHttp()));                                 ;
@@ -456,7 +512,10 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
         boolean proxyProtocolMixedMode = deployState.getProperties().featureFlags().enableProxyProtocolMixedMode();
         if (deployState.endpointCertificateSecrets().isPresent()) {
             boolean authorizeClient = deployState.zone().system().isPublic();
-            if (authorizeClient && deployState.tlsClientAuthority().isEmpty()) {
+            List<X509Certificate> clientCertificates = deployState.featureFlags().enableDataPlaneFilter()
+                    ? getClientCertificates(cluster)
+                    : deployState.tlsClientAuthority().map(X509CertificateUtils::certificateListFromPem).orElse(List.of());
+            if (authorizeClient && clientCertificates.isEmpty()) {
                 throw new IllegalArgumentException("Client certificate authority security/clients.pem is missing - " +
                                                    "see: https://cloud.vespa.ai/en/security-model#data-plane");
             }
@@ -469,7 +528,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
 
             connectorFactory = authorizeClient
                     ? HostedSslConnectorFactory.withProvidedCertificateAndTruststore(
-                    serverName, endpointCertificateSecrets, getTlsClientAuthorities(deployState), tlsCiphersOverride, proxyProtocolMixedMode, HOSTED_VESPA_DATAPLANE_PORT)
+                    serverName, endpointCertificateSecrets, getTlsClientAuthorities(clientCertificates, deployState), tlsCiphersOverride, proxyProtocolMixedMode, HOSTED_VESPA_DATAPLANE_PORT)
                     : HostedSslConnectorFactory.withProvidedCertificate(
                     serverName, endpointCertificateSecrets, enforceHandshakeClientAuth, tlsCiphersOverride, proxyProtocolMixedMode, HOSTED_VESPA_DATAPLANE_PORT);
         } else {
@@ -479,15 +538,21 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
         server.addConnector(connectorFactory);
     }
 
+    // Returns the client certificates defined in
+    private List<X509Certificate> getClientCertificates(ApplicationContainerCluster cluster) {
+        return cluster.getClients()
+                .stream()
+                .map(Client::certificates)
+                .flatMap(Collection::stream)
+                .toList();
+    }
+
     /*
     Return trusted certificates as a PEM encoded string containing the concatenation of
     trusted certs from the application package and all operator certificates.
      */
-    String getTlsClientAuthorities(DeployState deployState) {
-        List<X509Certificate> trustedCertificates = deployState.tlsClientAuthority()
-                .map(X509CertificateUtils::certificateListFromPem)
-                .orElse(Collections.emptyList());
-        ArrayList<X509Certificate> x509Certificates = new ArrayList<>(trustedCertificates);
+    String getTlsClientAuthorities(List<X509Certificate> applicationCertificates, DeployState deployState) {
+        ArrayList<X509Certificate> x509Certificates = new ArrayList<>(applicationCertificates);
         x509Certificates.addAll(deployState.getProperties().operatorCertificates());
         return X509CertificateUtils.toPem(x509Certificates);
     }
