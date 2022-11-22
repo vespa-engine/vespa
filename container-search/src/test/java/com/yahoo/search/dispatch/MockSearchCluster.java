@@ -62,9 +62,6 @@ public class MockSearchCluster extends SearchCluster {
     }
 
     @Override
-    public List<Node> nodes() { return nodes; }
-
-    @Override
     public ImmutableMap<Integer, Group> groups() {
         return groups;
     }

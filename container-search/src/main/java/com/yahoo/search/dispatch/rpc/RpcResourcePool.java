@@ -2,11 +2,6 @@
 package com.yahoo.search.dispatch.rpc;
 
 import com.google.common.collect.ImmutableMap;
-import com.yahoo.compress.CompressionType;
-import com.yahoo.compress.Compressor;
-import com.yahoo.compress.Compressor.Compression;
-import com.yahoo.processing.request.CompoundName;
-import com.yahoo.search.Query;
 import com.yahoo.search.dispatch.FillInvoker;
 import com.yahoo.search.dispatch.rpc.Client.NodeConnection;
 import com.yahoo.vespa.config.search.DispatchNodesConfig;
@@ -23,12 +18,7 @@ import java.util.concurrent.ThreadLocalRandom;
  *
  * @author ollivir
  */
-public class RpcResourcePool implements AutoCloseable {
-
-    /** The compression method which will be used with rpc dispatch. "lz4" (default) and "none" is supported. */
-    public final static CompoundName dispatchCompression = new CompoundName("dispatch.compression");
-
-    private final Compressor compressor = new Compressor(CompressionType.LZ4, 5, 0.95, 32);
+public class RpcResourcePool implements RpcConnectionPool, AutoCloseable {
 
     /** Connections to the search nodes this talks to, indexed by node id ("partid") */
     private final ImmutableMap<Integer, NodeConnectionPool> nodeConnectionPools;
@@ -54,15 +44,7 @@ public class RpcResourcePool implements AutoCloseable {
         this.nodeConnectionPools = builder.build();
     }
 
-    public Compressor compressor() {
-        return compressor;
-    }
-
-    public Compression compress(Query query, byte[] payload) {
-        CompressionType compression = CompressionType.valueOf(query.properties().getString(dispatchCompression, "LZ4").toUpperCase());
-        return compressor.compress(compression, payload);
-    }
-
+    @Override
     public NodeConnection getConnection(int nodeId) {
         var pool = nodeConnectionPools.get(nodeId);
         if (pool == null) {

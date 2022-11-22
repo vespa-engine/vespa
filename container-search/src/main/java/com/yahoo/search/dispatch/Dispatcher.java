@@ -58,9 +58,9 @@ public class Dispatcher extends AbstractComponent {
     private final ClusterMonitor<Node> clusterMonitor;
     private final LoadBalancer loadBalancer;
     private final InvokerFactory invokerFactory;
-    private final RpcResourcePool rpcResourcePool;
     private final RpcClient rpcClient;
     private final int maxHitsPerNode;
+    private final RpcResourcePool rpcResourcePool;
 
     private static final QueryProfileType argumentType;
 
@@ -101,7 +101,7 @@ public class Dispatcher extends AbstractComponent {
                        RpcClient rpcClient, RpcResourcePool rpcResourcePool) {
         this(new ClusterMonitor<>(searchCluster, true),
                 searchCluster, dispatchConfig,
-                new RpcInvokerFactory(rpcResourcePool, searchCluster),
+                new RpcInvokerFactory(rpcResourcePool, searchCluster, dispatchConfig),
                 rpcClient, rpcResourcePool);
     }
 
@@ -161,9 +161,8 @@ public class Dispatcher extends AbstractComponent {
         new Compressor().warmup(seconds);
     }
 
-    /** Returns the search cluster this dispatches to */
-    public SearchCluster searchCluster() {
-        return searchCluster;
+    public boolean allGroupsHaveSize1() {
+        return searchCluster.allGroupsHaveSize1();
     }
 
     @Override

@@ -1,7 +1,6 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.search.dispatch.rpc;
 
-import com.yahoo.compress.CompressionType;
 import com.yahoo.compress.Compressor;
 import com.yahoo.prelude.fastsearch.VespaBackEndSearcher;
 import com.yahoo.search.Query;
@@ -29,19 +28,21 @@ public class RpcSearchInvoker extends SearchInvoker implements Client.ResponseRe
 
     private final VespaBackEndSearcher searcher;
     private final Node node;
-    private final RpcResourcePool resourcePool;
+    private final RpcConnectionPool resourcePool;
     private final BlockingQueue<Client.ResponseOrError<ProtobufResponse>> responses;
     private final int maxHits;
+    private final CompressPayload compressor;
 
     private Query query;
 
-    RpcSearchInvoker(VespaBackEndSearcher searcher, Node node, RpcResourcePool resourcePool, int maxHits) {
+    RpcSearchInvoker(VespaBackEndSearcher searcher, CompressPayload compressor, Node node, RpcConnectionPool resourcePool, int maxHits) {
         super(Optional.of(node));
         this.searcher = searcher;
         this.node = node;
         this.resourcePool = resourcePool;
         this.responses = new LinkedBlockingQueue<>(1);
         this.maxHits = maxHits;
+        this.compressor = compressor;
     }
 
     @Override
@@ -78,7 +79,7 @@ public class RpcSearchInvoker extends SearchInvoker implements Client.ResponseRe
         if (incomingContext instanceof RpcContext)
             return (RpcContext)incomingContext;
 
-        return new RpcContext(resourcePool, query,
+        return new RpcContext(compressor, query,
                               ProtobufSerialization.serializeSearchRequest(query,
                                                                            Math.min(query.getHits(), maxHits),
                                                                            searcher.getServerId(), requestTimeout));
@@ -110,8 +111,7 @@ public class RpcSearchInvoker extends SearchInvoker implements Client.ResponseRe
         }
 
         ProtobufResponse protobufResponse = response.response().get();
-        CompressionType compression = CompressionType.valueOf(protobufResponse.compression());
-        byte[] payload = resourcePool.compressor().decompress(protobufResponse.compressedPayload(), compression, protobufResponse.uncompressedSize());
+        byte[] payload = compressor.decompress(protobufResponse);
         return ProtobufSerialization.deserializeToSearchResult(payload, query, searcher, node.pathIndex(), node.key());
     }
 
@@ -133,8 +133,8 @@ public class RpcSearchInvoker extends SearchInvoker implements Client.ResponseRe
 
         final Compressor.Compression compressedPayload;
 
-        RpcContext(RpcResourcePool resourcePool, Query query, byte[] payload) {
-            compressedPayload = resourcePool.compress(query, payload);
+        RpcContext(CompressPayload compressor, Query query, byte[] payload) {
+            compressedPayload = compressor.compress(query, payload);
         }
 
     }
