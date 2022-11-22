@@ -20,15 +20,6 @@ public class Client {
         this.certificates = certificates;
     }
 
-//    public static Client createLegacyClient(List<X509Certificate> certificates) {
-//        return new Client(true, "default", List.of(AclMapping.Action.READ.name(), AclMapping.Action.WRITE.name()), certificates);
-//    }
-//
-//    public static Client createClient(String id, List<String> permissions, List<X509Certificate> certificates) {
-//        return new Client(false, id, permissions, certificates);
-//    }
-//
-
     public String id() {
         return id;
     }

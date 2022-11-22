@@ -27,14 +27,18 @@ public class CloudDataPlaneFilter extends SimpleComponent implements CloudDataPl
 
     @Override
     public void getConfig(CloudDataPlaneFilterConfig.Builder builder) {
-        List<Client> clients = cluster.getClients();
-        builder.legacyMode(legacyMode);
-        List<CloudDataPlaneFilterConfig.Clients.Builder> clientsList = clients.stream()
-                .map(x -> new CloudDataPlaneFilterConfig.Clients.Builder()
-                        .id(x.id())
-                        .certificates(X509CertificateUtils.toPem(x.certificates()))
-                        .permissions(x.permissions()))
-                .toList();
-        builder.clients(clientsList);
+        if (legacyMode) {
+            builder.legacyMode(true);
+        } else {
+            List<Client> clients = cluster.getClients();
+            builder.legacyMode(false);
+            List<CloudDataPlaneFilterConfig.Clients.Builder> clientsList = clients.stream()
+                    .map(x -> new CloudDataPlaneFilterConfig.Clients.Builder()
+                            .id(x.id())
+                            .certificates(X509CertificateUtils.toPem(x.certificates()))
+                            .permissions(x.permissions()))
+                    .toList();
+            builder.clients(clientsList);
+        }
     }
 }

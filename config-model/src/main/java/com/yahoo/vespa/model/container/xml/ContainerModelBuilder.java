@@ -457,7 +457,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
         boolean legacyMode = false;
         if (clientsElement == null) {
             Client defaultClient = new Client("default",
-                                              List.of(AclMapping.Action.READ.name(), AclMapping.Action.WRITE.name()),
+                                              List.of(),
                                               getCertificates(app.getFile(Path.fromString("security/clients.pem"))));
             clients = List.of(defaultClient);
             legacyMode = true;
