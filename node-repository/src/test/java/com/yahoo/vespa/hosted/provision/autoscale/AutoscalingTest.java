@@ -78,6 +78,24 @@ public class AutoscalingTest {
                                          fixture.autoscale());
     }
 
+    @Test
+    public void initial_deployment_with_host_sharing_flag() {
+        var min = new ClusterResources(7, 1, new NodeResources(2.0, 10.0, 384.0, 0.1));
+        var max = new ClusterResources(7, 1, new NodeResources(2.4, 32.0, 768.0, 0.1));
+        var fixture = AutoscalingTester.fixture()
+                                       .awsProdSetup(false)
+                                       .capacity(Capacity.from(min, max))
+                                       .initialResources(Optional.empty())
+                                       .hostSharingFlag()
+                                       .build();
+        // TODO: Not actually at min since flags are inconsistently handled
+        fixture.tester().assertResources("Initial resources at min, since flag turns on host sharing",
+                                         7, 1, 2.0, 16.0, 384.0,
+                                         fixture.currentResources().advertisedResources());
+    }
+
+
+
     /** When scaling up, disregard underutilized dimensions (memory here) */
     @Test
     public void test_only_autoscaling_up_quickly() {
@@ -273,7 +291,7 @@ public class AutoscalingTest {
                                        .build();
 
         NodeResources defaultResources =
-                new CapacityPolicies(fixture.tester().nodeRepository()).defaultNodeResources(fixture.clusterSpec, fixture.applicationId);
+                new CapacityPolicies(fixture.tester().nodeRepository()).defaultNodeResources(fixture.clusterSpec, fixture.applicationId, false);
 
         fixture.tester().assertResources("Min number of nodes and default resources",
                                          2, 1, defaultResources,

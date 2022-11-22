@@ -95,29 +95,28 @@ public class NodeRepositoryProvisioner implements Provisioner {
         NodeResources resources;
         NodeSpec nodeSpec;
         if (requested.type() == NodeType.tenant) {
-            cluster = capacityPolicies.decideExclusivity(requested, cluster);
-            Capacity actual = capacityPolicies.applyOn(requested, application, cluster.isExclusive());
+            boolean exclusive = capacityPolicies.decideExclusivity(requested, cluster.isExclusive());
+            Capacity actual = capacityPolicies.applyOn(requested, application, exclusive);
             ClusterResources target = decideTargetResources(application, cluster, actual);
             ensureRedundancy(target.nodes(), cluster, actual.canFail(), application);
             logIfDownscaled(requested.minResources().nodes(), actual.minResources().nodes(), cluster, logger);
 
             groups = target.groups();
-            resources = getNodeResources(cluster, target.nodeResources(), application);
-            nodeSpec = NodeSpec.from(target.nodes(), resources, cluster.isExclusive(), actual.canFail(),
+            resources = getNodeResources(cluster, target.nodeResources(), application, exclusive);
+            nodeSpec = NodeSpec.from(target.nodes(), resources, exclusive, actual.canFail(),
                                      requested.cloudAccount().orElse(nodeRepository.zone().cloud().account()));
         }
         else {
             groups = 1; // type request with multiple groups is not supported
-            cluster = cluster.withExclusivity(true);
-            resources = getNodeResources(cluster, requested.minResources().nodeResources(), application);
+            resources = getNodeResources(cluster, requested.minResources().nodeResources(), application, true);
             nodeSpec = NodeSpec.from(requested.type(), nodeRepository.zone().cloud().account());
         }
         return asSortedHosts(preparer.prepare(application, cluster, nodeSpec, groups), resources);
     }
 
-    private NodeResources getNodeResources(ClusterSpec cluster, NodeResources nodeResources, ApplicationId applicationId) {
+    private NodeResources getNodeResources(ClusterSpec cluster, NodeResources nodeResources, ApplicationId applicationId, boolean exclusive) {
         return nodeResources.isUnspecified()
-                ? capacityPolicies.defaultNodeResources(cluster, applicationId)
+                ? capacityPolicies.defaultNodeResources(cluster, applicationId, exclusive)
                 : nodeResources;
     }
 
@@ -178,7 +177,8 @@ public class NodeRepositoryProvisioner implements Provisioner {
     private ClusterResources initialResourcesFrom(Capacity requested, ClusterSpec clusterSpec, ApplicationId applicationId) {
         var initial = requested.minResources();
         if (initial.nodeResources().isUnspecified())
-            initial = initial.with(capacityPolicies.defaultNodeResources(clusterSpec, applicationId));
+            initial = initial.with(capacityPolicies.defaultNodeResources(clusterSpec, applicationId,
+                                                                         capacityPolicies.decideExclusivity(requested, clusterSpec.isExclusive())));
         return initial;
     }
 
@@ -260,7 +260,8 @@ public class NodeRepositoryProvisioner implements Provisioner {
     private IllegalArgumentException newNoAllocationPossible(ClusterSpec spec, Limits limits) {
         StringBuilder message = new StringBuilder("No allocation possible within ").append(limits);
 
-        if (nodeRepository.exclusiveAllocation(spec))
+        boolean exclusiveHosts = spec.isExclusive() || ! nodeRepository.zone().cloud().allowHostSharing();
+        if (exclusiveHosts)
             message.append(". Nearest allowed node resources: ").append(findNearestNodeResources(limits));
 
         return new IllegalArgumentException(message.toString());
