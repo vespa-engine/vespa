@@ -12,6 +12,7 @@ import com.yahoo.search.Query;
 import com.yahoo.search.Result;
 import com.yahoo.search.cluster.ClusterMonitor;
 import com.yahoo.search.dispatch.SearchPath.InvalidSearchPathException;
+import com.yahoo.search.dispatch.rpc.RpcClient;
 import com.yahoo.search.dispatch.rpc.RpcInvokerFactory;
 import com.yahoo.search.dispatch.rpc.RpcPingFactory;
 import com.yahoo.search.dispatch.rpc.RpcResourcePool;
@@ -57,6 +58,8 @@ public class Dispatcher extends AbstractComponent {
     private final ClusterMonitor<Node> clusterMonitor;
     private final LoadBalancer loadBalancer;
     private final InvokerFactory invokerFactory;
+    private final RpcResourcePool rpcResourcePool;
+    private final RpcClient rpcClient;
     private final int maxHitsPerNode;
 
     private static final QueryProfileType argumentType;
@@ -72,28 +75,34 @@ public class Dispatcher extends AbstractComponent {
     public static QueryProfileType getArgumentType() { return argumentType; }
 
     @Inject
-    public Dispatcher(RpcResourcePool resourcePool,
-                      ComponentId clusterId,
+    public Dispatcher(ComponentId clusterId,
                       DispatchConfig dispatchConfig,
                       DispatchNodesConfig nodesConfig,
                       VipStatus vipStatus) {
-        this(resourcePool, new SearchCluster(clusterId.stringValue(), dispatchConfig, nodesConfig,
-                                             vipStatus, new RpcPingFactory(resourcePool)),
-             dispatchConfig);
+        this(clusterId, dispatchConfig, nodesConfig, vipStatus,
+                new RpcClient("dispatch-client", dispatchConfig.numJrtTransportThreads()));
+    }
+    private Dispatcher(ComponentId clusterId, DispatchConfig dispatchConfig,
+                       DispatchNodesConfig nodesConfig, VipStatus vipStatus, RpcClient rpcClient) {
+        this(clusterId, dispatchConfig, nodesConfig, vipStatus, rpcClient,
+                new RpcResourcePool(rpcClient, nodesConfig, dispatchConfig.numJrtConnectionsPerNode()));
+
+    }
+    private Dispatcher(ComponentId clusterId, DispatchConfig dispatchConfig,
+                       DispatchNodesConfig nodesConfig, VipStatus vipStatus,
+                       RpcClient rpcClient, RpcResourcePool resourcePool) {
+        this(new SearchCluster(clusterId.stringValue(), dispatchConfig, nodesConfig,
+                        vipStatus, new RpcPingFactory(resourcePool)),
+                dispatchConfig, rpcClient, resourcePool);
 
     }
 
-    private Dispatcher(RpcResourcePool resourcePool, SearchCluster searchCluster, DispatchConfig dispatchConfig) {
-        this(new ClusterMonitor<>(searchCluster, true), searchCluster, dispatchConfig, new RpcInvokerFactory(resourcePool, searchCluster));
-    }
-
-    private static LoadBalancer.Policy toLoadBalancerPolicy(DispatchConfig.DistributionPolicy.Enum policy) {
-        return switch (policy) {
-            case ROUNDROBIN: yield LoadBalancer.Policy.ROUNDROBIN;
-            case BEST_OF_RANDOM_2: yield LoadBalancer.Policy.BEST_OF_RANDOM_2;
-            case ADAPTIVE,LATENCY_AMORTIZED_OVER_REQUESTS: yield LoadBalancer.Policy.LATENCY_AMORTIZED_OVER_REQUESTS;
-            case LATENCY_AMORTIZED_OVER_TIME: yield LoadBalancer.Policy.LATENCY_AMORTIZED_OVER_TIME;
-        };
+    private Dispatcher(SearchCluster searchCluster, DispatchConfig dispatchConfig,
+                       RpcClient rpcClient, RpcResourcePool rpcResourcePool) {
+        this(new ClusterMonitor<>(searchCluster, true),
+                searchCluster, dispatchConfig,
+                new RpcInvokerFactory(rpcResourcePool, searchCluster),
+                rpcClient, rpcResourcePool);
     }
 
     /* Protected for simple mocking in tests. Beware that searchCluster is shutdown on in deconstruct() */
@@ -101,11 +110,22 @@ public class Dispatcher extends AbstractComponent {
                          SearchCluster searchCluster,
                          DispatchConfig dispatchConfig,
                          InvokerFactory invokerFactory) {
+        this(clusterMonitor, searchCluster, dispatchConfig, invokerFactory, null, null);
+    }
+
+    private Dispatcher(ClusterMonitor<Node> clusterMonitor,
+                       SearchCluster searchCluster,
+                       DispatchConfig dispatchConfig,
+                       InvokerFactory invokerFactory,
+                       RpcClient rpcClient,
+                       RpcResourcePool rpcResourcePool) {
 
         this.searchCluster = searchCluster;
         this.clusterMonitor = clusterMonitor;
         this.loadBalancer = new LoadBalancer(searchCluster, toLoadBalancerPolicy(dispatchConfig.distributionPolicy()));
         this.invokerFactory = invokerFactory;
+        this.rpcClient = rpcClient;
+        this.rpcResourcePool = rpcResourcePool;
         this.maxHitsPerNode = dispatchConfig.maxHitsPerNode();
         searchCluster.addMonitoring(clusterMonitor);
         Thread warmup = new Thread(() -> warmup(dispatchConfig.warmuptime()));
@@ -122,6 +142,15 @@ public class Dispatcher extends AbstractComponent {
         // we should compute the state ourselves, so that when the dispatcher is ready the state
         // of its groups are also known.
         searchCluster.pingIterationCompleted();
+    }
+
+    private static LoadBalancer.Policy toLoadBalancerPolicy(DispatchConfig.DistributionPolicy.Enum policy) {
+        return switch (policy) {
+            case ROUNDROBIN: yield LoadBalancer.Policy.ROUNDROBIN;
+            case BEST_OF_RANDOM_2: yield LoadBalancer.Policy.BEST_OF_RANDOM_2;
+            case ADAPTIVE,LATENCY_AMORTIZED_OVER_REQUESTS: yield LoadBalancer.Policy.LATENCY_AMORTIZED_OVER_REQUESTS;
+            case LATENCY_AMORTIZED_OVER_TIME: yield LoadBalancer.Policy.LATENCY_AMORTIZED_OVER_TIME;
+        };
     }
 
     /**
@@ -142,6 +171,12 @@ public class Dispatcher extends AbstractComponent {
         // The clustermonitor must be shutdown first as it uses the invokerfactory through the searchCluster.
         clusterMonitor.shutdown();
         invokerFactory.release();
+        if (rpcResourcePool != null) {
+            rpcResourcePool.close();
+        }
+        if (rpcClient != null) {
+            rpcClient.close();
+        }
     }
 
     public FillInvoker getFillInvoker(Result result, VespaBackEndSearcher searcher) {

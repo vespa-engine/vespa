@@ -18,7 +18,7 @@ import com.yahoo.jrt.Values;
  *
  * @author bratseth
  */
-class RpcClient implements Client {
+public class RpcClient implements Client {
 
     private final Supervisor supervisor;
 

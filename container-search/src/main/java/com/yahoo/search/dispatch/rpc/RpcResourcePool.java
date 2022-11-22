@@ -2,8 +2,6 @@
 package com.yahoo.search.dispatch.rpc;
 
 import com.google.common.collect.ImmutableMap;
-import com.yahoo.component.annotation.Inject;
-import com.yahoo.component.AbstractComponent;
 import com.yahoo.compress.CompressionType;
 import com.yahoo.compress.Compressor;
 import com.yahoo.compress.Compressor.Compression;
@@ -11,7 +9,6 @@ import com.yahoo.processing.request.CompoundName;
 import com.yahoo.search.Query;
 import com.yahoo.search.dispatch.FillInvoker;
 import com.yahoo.search.dispatch.rpc.Client.NodeConnection;
-import com.yahoo.vespa.config.search.DispatchConfig;
 import com.yahoo.vespa.config.search.DispatchNodesConfig;
 
 import java.util.ArrayList;
@@ -26,7 +23,7 @@ import java.util.concurrent.ThreadLocalRandom;
  *
  * @author ollivir
  */
-public class RpcResourcePool extends AbstractComponent {
+public class RpcResourcePool implements AutoCloseable {
 
     /** The compression method which will be used with rpc dispatch. "lz4" (default) and "none" is supported. */
     public final static CompoundName dispatchCompression = new CompoundName("dispatch.compression");
@@ -35,23 +32,18 @@ public class RpcResourcePool extends AbstractComponent {
 
     /** Connections to the search nodes this talks to, indexed by node id ("partid") */
     private final ImmutableMap<Integer, NodeConnectionPool> nodeConnectionPools;
-    private final RpcClient client;
 
     RpcResourcePool(Map<Integer, NodeConnection> nodeConnections) {
         var builder = new ImmutableMap.Builder<Integer, NodeConnectionPool>();
         nodeConnections.forEach((key, connection) -> builder.put(key, new NodeConnectionPool(Collections.singletonList(connection))));
         this.nodeConnectionPools = builder.build();
-        client = null;
     }
 
-    @Inject
-    public RpcResourcePool(DispatchConfig dispatchConfig, DispatchNodesConfig nodesConfig) {
+    public RpcResourcePool(RpcClient client, DispatchNodesConfig nodesConfig, int numConnections) {
         super();
-        client = new RpcClient("dispatch-client", dispatchConfig.numJrtTransportThreads());
 
         // Create rpc node connection pools indexed by the node distribution key
         var builder = new ImmutableMap.Builder<Integer, NodeConnectionPool>();
-        var numConnections = dispatchConfig.numJrtConnectionsPerNode();
         for (var node : nodesConfig.node()) {
             var connections = new ArrayList<NodeConnection>(numConnections);
             for (int i = 0; i < numConnections; i++) {
@@ -81,12 +73,8 @@ public class RpcResourcePool extends AbstractComponent {
     }
 
     @Override
-    public void deconstruct() {
-        super.deconstruct();
+    public void close() {
         nodeConnectionPools.values().forEach(NodeConnectionPool::release);
-        if (client != null) {
-            client.close();
-        }
     }
 
     private static class NodeConnectionPool {
