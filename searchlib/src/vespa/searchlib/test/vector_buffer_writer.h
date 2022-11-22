@@ -14,7 +14,7 @@ private:
 public:
     std::vector<char> output;
     VectorBufferWriter();
-    ~VectorBufferWriter();
+    ~VectorBufferWriter() override;
     void flush() override;
 };
 
