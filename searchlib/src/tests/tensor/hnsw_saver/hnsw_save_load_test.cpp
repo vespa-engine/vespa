@@ -3,7 +3,8 @@
 #include <vespa/searchlib/tensor/hnsw_graph.h>
 #include <vespa/searchlib/tensor/hnsw_index_saver.h>
 #include <vespa/searchlib/tensor/hnsw_index_loader.hpp>
-#include <vespa/searchlib/util/bufferwriter.h>
+#include <vespa/searchlib/test/vector_buffer_reader.h>
+#include <vespa/searchlib/test/vector_buffer_writer.h>
 #include <vespa/searchlib/util/fileutil.h>
 #include <vespa/vespalib/gtest/gtest.h>
 #include <vector>
@@ -14,39 +15,8 @@ LOG_SETUP("hnsw_save_load_test");
 using namespace search::tensor;
 using search::BufferWriter;
 using search::fileutil::LoadedBuffer;
-
-class VectorBufferWriter : public BufferWriter {
-private:
-    char tmp[1024];
-public:
-    std::vector<char> output;
-    VectorBufferWriter() {
-        setup(tmp, 1024);
-    }
-    ~VectorBufferWriter() {}
-    void flush() override {
-        for (size_t i = 0; i < usedLen(); ++i) {
-            output.push_back(tmp[i]);
-        }
-        rewind();
-    }
-};
-
-class VectorBufferReader {
-private:
-    const std::vector<char>& _data;
-    size_t _pos;
-
-public:
-    VectorBufferReader(const std::vector<char>& data) : _data(data), _pos(0) {}
-    uint32_t readHostOrder() {
-        uint32_t result = 0;
-        assert(_pos + sizeof(uint32_t) <= _data.size());
-        std::memcpy(&result, _data.data() + _pos, sizeof(uint32_t));
-        _pos += sizeof(uint32_t);
-        return result;
-    }
-};
+using search::test::VectorBufferReader;
+using search::test::VectorBufferWriter;
 
 using V = std::vector<uint32_t>;
 

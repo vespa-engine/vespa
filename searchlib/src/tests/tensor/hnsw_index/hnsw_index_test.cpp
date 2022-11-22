@@ -2,6 +2,8 @@
 
 #include <vespa/eval/eval/value_type.h>
 #include <vespa/searchlib/common/bitvector.h>
+#include <vespa/searchlib/test/vector_buffer_reader.h>
+#include <vespa/searchlib/test/vector_buffer_writer.h>
 #include <vespa/searchlib/tensor/distance_functions.h>
 #include <vespa/searchlib/tensor/doc_vector_access.h>
 #include <vespa/searchlib/tensor/hnsw_index.h>
@@ -11,7 +13,6 @@
 #include <vespa/searchlib/tensor/inv_log_level_generator.h>
 #include <vespa/searchlib/tensor/subspace_type.h>
 #include <vespa/searchlib/tensor/vector_bundle.h>
-#include <vespa/searchlib/util/bufferwriter.h>
 #include <vespa/searchlib/queryeval/global_filter.h>
 #include <vespa/vespalib/datastore/compaction_spec.h>
 #include <vespa/vespalib/datastore/compaction_strategy.h>
@@ -36,39 +37,8 @@ using vespalib::eval::ValueType;
 using vespalib::datastore::CompactionSpec;
 using vespalib::datastore::CompactionStrategy;
 using search::queryeval::GlobalFilter;
-
-class VectorBufferWriter : public BufferWriter {
-private:
-    char tmp[1024];
-public:
-    std::vector<char> output;
-    VectorBufferWriter() {
-        setup(tmp, 1024);
-    }
-    ~VectorBufferWriter() {}
-    void flush() override {
-        for (size_t i = 0; i < usedLen(); ++i) {
-            output.push_back(tmp[i]);
-        }
-        rewind();
-    }
-};
-
-class VectorBufferReader {
-private:
-    const std::vector<char>& _data;
-    size_t _pos;
-
-public:
-    VectorBufferReader(const std::vector<char>& data) : _data(data), _pos(0) {}
-    uint32_t readHostOrder() {
-        uint32_t result = 0;
-        assert(_pos + sizeof(uint32_t) <= _data.size());
-        std::memcpy(&result, _data.data() + _pos, sizeof(uint32_t));
-        _pos += sizeof(uint32_t);
-        return result;
-    }
-};
+using search::test::VectorBufferReader;
+using search::test::VectorBufferWriter;
 
 template <typename FloatType>
 class MyDocVectorAccess : public DocVectorAccess {
