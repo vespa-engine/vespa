@@ -8,6 +8,10 @@
 namespace search::test
 {
 
+/*
+ * Class used by hnsw graph/index unit tests to save hnsw index to a
+ * vector.
+ */
 class VectorBufferWriter : public BufferWriter {
 private:
     char tmp[1024];

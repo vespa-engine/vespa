@@ -10,6 +10,10 @@
 namespace search::test
 {
 
+/*
+ * Class used by hnsw graph/index unit tests to load hnsw index from a
+ * vector.
+ */
 class VectorBufferReader {
 private:
     const std::vector<char>& _data;
