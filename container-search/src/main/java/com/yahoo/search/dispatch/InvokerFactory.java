@@ -117,6 +117,4 @@ public abstract class InvokerFactory {
         return new SearchErrorInvoker(ErrorMessage.createBackendCommunicationError(down.toString()), coverage);
     }
 
-    public void release() {}
-
 }

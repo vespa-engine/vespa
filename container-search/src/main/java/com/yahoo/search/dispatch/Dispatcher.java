@@ -159,7 +159,6 @@ public class Dispatcher extends AbstractComponent {
     public void deconstruct() {
         // The clustermonitor must be shutdown first as it uses the invokerfactory through the searchCluster.
         clusterMonitor.shutdown();
-        invokerFactory.release();
         if (rpcResourcePool != null) {
             rpcResourcePool.close();
         }
@@ -171,7 +170,8 @@ public class Dispatcher extends AbstractComponent {
 
     public SearchInvoker getSearchInvoker(Query query, VespaBackEndSearcher searcher) {
         SearchCluster cluster = searchCluster; // Take a snapshot
-        SearchInvoker invoker = getSearchPathInvoker(query, searcher, cluster).orElseGet(() -> getInternalInvoker(query, searcher, cluster, loadBalancer));
+        InvokerFactory factory = invokerFactory;
+        SearchInvoker invoker = getSearchPathInvoker(query, searcher, cluster, factory, maxHitsPerNode).orElseGet(() -> getInternalInvoker(query, searcher, cluster, loadBalancer, factory, maxHitsPerNode));
 
         if (query.properties().getBoolean(com.yahoo.search.query.Model.ESTIMATE)) {
             query.setHits(0);
@@ -181,7 +181,8 @@ public class Dispatcher extends AbstractComponent {
     }
 
     /** Builds an invoker based on searchpath */
-    private Optional<SearchInvoker> getSearchPathInvoker(Query query, VespaBackEndSearcher searcher, SearchCluster cluster) {
+    private static Optional<SearchInvoker> getSearchPathInvoker(Query query, VespaBackEndSearcher searcher, SearchCluster cluster,
+                                                                InvokerFactory invokerFactory, int maxHitsPerNode) {
         String searchPath = query.getModel().getSearchPath();
         if (searchPath == null) return Optional.empty();
 
@@ -200,7 +201,8 @@ public class Dispatcher extends AbstractComponent {
         }
     }
 
-    private SearchInvoker getInternalInvoker(Query query, VespaBackEndSearcher searcher, SearchCluster cluster, LoadBalancer loadBalancer) {
+    private static SearchInvoker getInternalInvoker(Query query, VespaBackEndSearcher searcher, SearchCluster cluster,
+                                                    LoadBalancer loadBalancer, InvokerFactory invokerFactory, int maxHitsPerNode) {
         Optional<Node> directNode = cluster.localCorpusDispatchTarget();
         if (directNode.isPresent()) {
             Node node = directNode.get();
@@ -252,7 +254,7 @@ public class Dispatcher extends AbstractComponent {
      *
      * @return a modifiable set containing the single group to reject, or null otherwise
      */
-    private Set<Integer> rejectGroupBlockingFeed(List<Group> groups) {
+    private static Set<Integer> rejectGroupBlockingFeed(List<Group> groups) {
         if (groups.size() == 1) return null;
         List<Group> groupsRejectingFeed = groups.stream().filter(Group::isBlockingWrites).toList();
         if (groupsRejectingFeed.size() != 1) return null;
