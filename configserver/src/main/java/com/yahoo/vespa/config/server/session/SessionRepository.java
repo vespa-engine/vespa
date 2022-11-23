@@ -866,7 +866,7 @@ public class SessionRepository {
         SessionZooKeeperClient sessionZKClient = createSessionZooKeeperClient(sessionId);
         FileReference fileReference = sessionZKClient.readApplicationPackageReference();
         log.log(Level.FINE, () -> "File reference for session id " + sessionId + ": " + fileReference);
-        if (fileReference == null) throw new RuntimeException("file reference for application package is null");
+        if (fileReference == null) return;
 
         File sessionDir;
         FileDirectory fileDirectory = fileDistributionFactory.fileDirectory();
