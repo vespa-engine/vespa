@@ -52,10 +52,9 @@ public class Dispatcher extends AbstractComponent {
     /** If set will control computation of how many hits will be fetched from each partition.*/
     public static final CompoundName topKProbability = CompoundName.fromComponents(DISPATCH, TOP_K_PROBABILITY);
 
-    /** A model of the search cluster this dispatches to */
-    private final SearchCluster searchCluster;
     private final ClusterMonitor<Node> clusterMonitor;
     private final LoadBalancer loadBalancer;
+    private final SearchCluster searchCluster;
     private final InvokerFactory invokerFactory;
     private final int maxHitsPerNode;
     private final RpcResourcePool rpcResourcePool;
@@ -114,7 +113,7 @@ public class Dispatcher extends AbstractComponent {
 
         this.searchCluster = searchCluster;
         this.clusterMonitor = clusterMonitor;
-        this.loadBalancer = new LoadBalancer(searchCluster, toLoadBalancerPolicy(dispatchConfig.distributionPolicy()));
+        this.loadBalancer = new LoadBalancer(searchCluster.orderedGroups(), toLoadBalancerPolicy(dispatchConfig.distributionPolicy()));
         this.invokerFactory = invokerFactory;
         this.rpcResourcePool = rpcResourcePool;
         this.maxHitsPerNode = dispatchConfig.maxHitsPerNode();
@@ -160,7 +159,6 @@ public class Dispatcher extends AbstractComponent {
     public void deconstruct() {
         // The clustermonitor must be shutdown first as it uses the invokerfactory through the searchCluster.
         clusterMonitor.shutdown();
-        invokerFactory.release();
         if (rpcResourcePool != null) {
             rpcResourcePool.close();
         }
@@ -172,7 +170,8 @@ public class Dispatcher extends AbstractComponent {
 
     public SearchInvoker getSearchInvoker(Query query, VespaBackEndSearcher searcher) {
         SearchCluster cluster = searchCluster; // Take a snapshot
-        SearchInvoker invoker = getSearchPathInvoker(query, searcher, cluster).orElseGet(() -> getInternalInvoker(query, searcher, cluster));
+        InvokerFactory factory = invokerFactory;
+        SearchInvoker invoker = getSearchPathInvoker(query, searcher, cluster, factory, maxHitsPerNode).orElseGet(() -> getInternalInvoker(query, searcher, cluster, loadBalancer, factory, maxHitsPerNode));
 
         if (query.properties().getBoolean(com.yahoo.search.query.Model.ESTIMATE)) {
             query.setHits(0);
@@ -182,7 +181,8 @@ public class Dispatcher extends AbstractComponent {
     }
 
     /** Builds an invoker based on searchpath */
-    private Optional<SearchInvoker> getSearchPathInvoker(Query query, VespaBackEndSearcher searcher, SearchCluster cluster) {
+    private static Optional<SearchInvoker> getSearchPathInvoker(Query query, VespaBackEndSearcher searcher, SearchCluster cluster,
+                                                                InvokerFactory invokerFactory, int maxHitsPerNode) {
         String searchPath = query.getModel().getSearchPath();
         if (searchPath == null) return Optional.empty();
 
@@ -201,7 +201,8 @@ public class Dispatcher extends AbstractComponent {
         }
     }
 
-    private SearchInvoker getInternalInvoker(Query query, VespaBackEndSearcher searcher, SearchCluster cluster) {
+    private static SearchInvoker getInternalInvoker(Query query, VespaBackEndSearcher searcher, SearchCluster cluster,
+                                                    LoadBalancer loadBalancer, InvokerFactory invokerFactory, int maxHitsPerNode) {
         Optional<Node> directNode = cluster.localCorpusDispatchTarget();
         if (directNode.isPresent()) {
             Node node = directNode.get();
@@ -253,7 +254,7 @@ public class Dispatcher extends AbstractComponent {
      *
      * @return a modifiable set containing the single group to reject, or null otherwise
      */
-    private Set<Integer> rejectGroupBlockingFeed(List<Group> groups) {
+    private static Set<Integer> rejectGroupBlockingFeed(List<Group> groups) {
         if (groups.size() == 1) return null;
         List<Group> groupsRejectingFeed = groups.stream().filter(Group::isBlockingWrites).toList();
         if (groupsRejectingFeed.size() != 1) return null;

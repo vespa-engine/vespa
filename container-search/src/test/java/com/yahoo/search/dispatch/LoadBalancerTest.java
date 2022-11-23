@@ -6,7 +6,6 @@ import com.yahoo.search.dispatch.LoadBalancer.BestOfRandom2;
 import com.yahoo.search.dispatch.LoadBalancer.GroupStatus;
 import com.yahoo.search.dispatch.searchcluster.Group;
 import com.yahoo.search.dispatch.searchcluster.Node;
-import com.yahoo.search.dispatch.searchcluster.SearchCluster;
 import org.junit.jupiter.api.Test;
 import org.opentest4j.AssertionFailedError;
 
@@ -18,8 +17,6 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Random;
 
-import static com.yahoo.search.dispatch.MockSearchCluster.createDispatchConfig;
-import static com.yahoo.search.dispatch.MockSearchCluster.createNodesConfig;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -32,8 +29,7 @@ public class LoadBalancerTest {
     @Test
     void requireThatLoadBalancerServesSingleNodeSetups() {
         Node n1 = new Node(0, "test-node1", 0);
-        SearchCluster cluster = new SearchCluster("a", createDispatchConfig(), createNodesConfig(n1), null, null);
-        LoadBalancer lb = new LoadBalancer(cluster, LoadBalancer.Policy.ROUNDROBIN);
+        LoadBalancer lb = new LoadBalancer(List.of(new Group(0, List.of(n1))), LoadBalancer.Policy.ROUNDROBIN);
 
         Optional<Group> grp = lb.takeGroup(null);
         Group group = grp.orElseThrow(() -> {
@@ -46,8 +42,7 @@ public class LoadBalancerTest {
     void requireThatLoadBalancerServesMultiGroupSetups() {
         Node n1 = new Node(0, "test-node1", 0);
         Node n2 = new Node(1, "test-node2", 1);
-        SearchCluster cluster = new SearchCluster("a", createDispatchConfig(), createNodesConfig(n1, n2), null, null);
-        LoadBalancer lb = new LoadBalancer(cluster, LoadBalancer.Policy.ROUNDROBIN);
+        LoadBalancer lb = new LoadBalancer(List.of(new Group(0, List.of(n1)), new Group(1,List.of(n2))), LoadBalancer.Policy.ROUNDROBIN);
 
         Optional<Group> grp = lb.takeGroup(null);
         Group group = grp.orElseThrow(() -> {
@@ -62,8 +57,7 @@ public class LoadBalancerTest {
         Node n2 = new Node(1, "test-node2", 0);
         Node n3 = new Node(0, "test-node3", 1);
         Node n4 = new Node(1, "test-node4", 1);
-        SearchCluster cluster = new SearchCluster("a", createDispatchConfig(), createNodesConfig(n1, n2, n3, n4), null, null);
-        LoadBalancer lb = new LoadBalancer(cluster, LoadBalancer.Policy.ROUNDROBIN);
+        LoadBalancer lb = new LoadBalancer(List.of(new Group(0, List.of(n1,n2)), new Group(1,List.of(n3,n4))), LoadBalancer.Policy.ROUNDROBIN);
 
         Optional<Group> grp = lb.takeGroup(null);
         assertTrue(grp.isPresent());
@@ -73,8 +67,7 @@ public class LoadBalancerTest {
     void requireThatLoadBalancerReturnsDifferentGroups() {
         Node n1 = new Node(0, "test-node1", 0);
         Node n2 = new Node(1, "test-node2", 1);
-        SearchCluster cluster = new SearchCluster("a", createDispatchConfig(), createNodesConfig(n1, n2), null, null);
-        LoadBalancer lb = new LoadBalancer(cluster, LoadBalancer.Policy.ROUNDROBIN);
+        LoadBalancer lb = new LoadBalancer(List.of(new Group(0, List.of(n1)), new Group(1,List.of(n2))), LoadBalancer.Policy.ROUNDROBIN);
 
         // get first group
         Optional<Group> grp = lb.takeGroup(null);
