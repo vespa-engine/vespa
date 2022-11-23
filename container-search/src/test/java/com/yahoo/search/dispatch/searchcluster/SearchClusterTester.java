@@ -16,15 +16,15 @@ public class SearchClusterTester {
     }
 
     public Group group(int id) {
-        return cluster.group(id).get();
+        return cluster.group(id);
     }
 
     public void setWorking(int group, int node, boolean working) {
-        cluster.group(group).get().nodes().get(node).setWorking(working);
+        cluster.group(group).nodes().get(node).setWorking(working);
     }
 
     public void setDocsPerNode(int docs, int groupId) {
-        for (Node node : cluster.groups().get(groupId).nodes()) {
+        for (Node node : cluster.group(groupId).nodes()) {
             node.setWorking(true);
             node.setActiveDocuments(docs);
         }

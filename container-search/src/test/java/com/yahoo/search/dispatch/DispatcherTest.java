@@ -110,7 +110,7 @@ public class DispatcherTest {
     void testGroup0IsSkippedWhenItIsBlockingFeed() {
         SearchCluster cluster = new MockSearchCluster("1", 3, 1);
         Dispatcher dispatcher = new Dispatcher(new ClusterMonitor<>(cluster, false), cluster, dispatchConfig, new MockInvokerFactory(cluster, dispatchConfig, (n, a) -> true));
-        cluster.group(0).get().nodes().get(0).setBlockingWrites(true);
+        cluster.group(0).nodes().get(0).setBlockingWrites(true);
         cluster.pingIterationCompleted();
         assertEquals(1,
                 (dispatcher.getSearchInvoker(new Query(), null).distributionKey().get()).longValue(),
@@ -122,8 +122,8 @@ public class DispatcherTest {
     void testGroup0IsSelectedWhenMoreAreBlockingFeed() {
         SearchCluster cluster = new MockSearchCluster("1", 3, 1);
         Dispatcher dispatcher = new Dispatcher(new ClusterMonitor<>(cluster, false), cluster, dispatchConfig, new MockInvokerFactory(cluster, dispatchConfig, (n, a) -> true));
-        cluster.group(0).get().nodes().get(0).setBlockingWrites(true);
-        cluster.group(1).get().nodes().get(0).setBlockingWrites(true);
+        cluster.group(0).nodes().get(0).setBlockingWrites(true);
+        cluster.group(1).nodes().get(0).setBlockingWrites(true);
         cluster.pingIterationCompleted();
         assertEquals(0,
                 dispatcher.getSearchInvoker(new Query(), null).distributionKey().get().longValue(),
@@ -135,7 +135,7 @@ public class DispatcherTest {
     void testGroup0IsSelectedWhenItIsBlockingFeedWhenNoOthers() {
         SearchCluster cluster = new MockSearchCluster("1", 1, 1);
         Dispatcher dispatcher = new Dispatcher(new ClusterMonitor<>(cluster, false), cluster, dispatchConfig, new MockInvokerFactory(cluster, dispatchConfig, (n, a) -> true));
-        cluster.group(0).get().nodes().get(0).setBlockingWrites(true);
+        cluster.group(0).nodes().get(0).setBlockingWrites(true);
         cluster.pingIterationCompleted();
         assertEquals(0,
                 (dispatcher.getSearchInvoker(new Query(), null).distributionKey().get()).longValue(),

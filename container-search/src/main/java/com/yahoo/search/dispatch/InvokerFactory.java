@@ -57,7 +57,7 @@ public abstract class InvokerFactory {
                                                 List<Node> nodes,
                                                 boolean acceptIncompleteCoverage,
                                                 int maxHits) {
-        Group group = searchCluster.group(nodes.get(0).group()).get(); // Nodes must be of the same group
+        Group group = searchCluster.group(nodes.get(0).group()); // Nodes must be of the same group
         List<SearchInvoker> invokers = new ArrayList<>(nodes.size());
         Set<Integer> failed = null;
         for (Node node : nodes) {

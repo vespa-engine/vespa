@@ -26,6 +26,7 @@ import com.yahoo.vespa.config.search.DispatchConfig;
 import com.yahoo.vespa.config.search.DispatchNodesConfig;
 
 import java.time.Duration;
+import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
@@ -83,7 +84,7 @@ public class Dispatcher extends AbstractComponent {
     private Dispatcher(ComponentId clusterId, DispatchConfig dispatchConfig,
                        DispatchNodesConfig nodesConfig, VipStatus vipStatus,
                        RpcResourcePool resourcePool) {
-        this(new SearchCluster(clusterId.stringValue(), dispatchConfig, nodesConfig,
+        this(new SearchCluster(clusterId.stringValue(), dispatchConfig.minActivedocsPercentage(), nodesConfig,
                         vipStatus, new RpcPingFactory(resourcePool)),
                 dispatchConfig, resourcePool);
 
@@ -113,7 +114,7 @@ public class Dispatcher extends AbstractComponent {
 
         this.searchCluster = searchCluster;
         this.clusterMonitor = clusterMonitor;
-        this.loadBalancer = new LoadBalancer(searchCluster.orderedGroups(), toLoadBalancerPolicy(dispatchConfig.distributionPolicy()));
+        this.loadBalancer = new LoadBalancer(searchCluster.groups(), toLoadBalancerPolicy(dispatchConfig.distributionPolicy()));
         this.invokerFactory = invokerFactory;
         this.rpcResourcePool = rpcResourcePool;
         this.maxHitsPerNode = dispatchConfig.maxHitsPerNode();
@@ -216,9 +217,9 @@ public class Dispatcher extends AbstractComponent {
         }
 
         int covered = cluster.groupsWithSufficientCoverage();
-        int groups = cluster.orderedGroups().size();
+        int groups = cluster.numGroups();
         int max = Integer.min(Integer.min(covered + 1, groups), MAX_GROUP_SELECTION_ATTEMPTS);
-        Set<Integer> rejected = rejectGroupBlockingFeed(cluster.orderedGroups());
+        Set<Integer> rejected = rejectGroupBlockingFeed(cluster.groups());
         for (int i = 0; i < max; i++) {
             Optional<Group> groupInCluster = loadBalancer.takeGroup(rejected);
             if (groupInCluster.isEmpty()) break; // No groups available
@@ -254,7 +255,7 @@ public class Dispatcher extends AbstractComponent {
      *
      * @return a modifiable set containing the single group to reject, or null otherwise
      */
-    private static Set<Integer> rejectGroupBlockingFeed(List<Group> groups) {
+    private static Set<Integer> rejectGroupBlockingFeed(Collection<Group> groups) {
         if (groups.size() == 1) return null;
         List<Group> groupsRejectingFeed = groups.stream().filter(Group::isBlockingWrites).toList();
         if (groupsRejectingFeed.size() != 1) return null;

@@ -26,8 +26,7 @@ class MockDispatcher extends Dispatcher {
 
     public static MockDispatcher create(List<Node> nodes, RpcResourcePool rpcResourcePool, VipStatus vipStatus) {
         var dispatchConfig = toDispatchConfig();
-        var nodesConfig = toNodesConfig(nodes);
-        var searchCluster = new SearchCluster("a", dispatchConfig, nodesConfig, vipStatus, new RpcPingFactory(rpcResourcePool));
+        var searchCluster = new SearchCluster("a", dispatchConfig.minActivedocsPercentage(), nodes, vipStatus, new RpcPingFactory(rpcResourcePool));
         return new MockDispatcher(new ClusterMonitor<>(searchCluster, true), searchCluster, dispatchConfig, rpcResourcePool);
     }
 

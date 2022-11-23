@@ -7,7 +7,6 @@ import com.yahoo.container.handler.VipStatus;
 import com.yahoo.net.HostName;
 import com.yahoo.prelude.Pong;
 import com.yahoo.search.cluster.ClusterMonitor;
-import com.yahoo.search.dispatch.MockSearchCluster;
 import com.yahoo.search.result.ErrorMessage;
 import org.junit.jupiter.api.Test;
 
@@ -56,7 +55,7 @@ public class SearchClusterTest {
                 numDocsPerNode.add(new AtomicInteger(1));
                 pingCounts.add(new AtomicInteger(0));
             }
-            searchCluster = new SearchCluster(clusterId, MockSearchCluster.createDispatchConfig(), MockSearchCluster.createNodesConfig(nodes).build(),
+            searchCluster = new SearchCluster(clusterId, 100.0, nodes,
                                               vipStatus, new Factory(nodesPerGroup, numDocsPerNode, pingCounts));
             clusterMonitor = new ClusterMonitor(searchCluster, false);
             searchCluster.addMonitoring(clusterMonitor);
@@ -334,7 +333,7 @@ public class SearchClusterTest {
 
     @Test
     void requireThatEmptyGroupIsInBalance() {
-        Group group = new Group(0, new ArrayList<>());
+        Group group = new Group(0, List.of());
         assertTrue(group.isBalanced());
         group.aggregateNodeValues();
         assertTrue(group.isBalanced());
@@ -342,7 +341,7 @@ public class SearchClusterTest {
 
     @Test
     void requireThatSingleNodeGroupIsInBalance() {
-        Group group = new Group(0, Arrays.asList(new Node(1, "n", 1)));
+        Group group = new Group(0, List.of(new Node(1, "n", 1)));
         group.nodes().forEach(node -> node.setWorking(true));
         assertTrue(group.isBalanced());
         group.aggregateNodeValues();
@@ -354,7 +353,7 @@ public class SearchClusterTest {
 
     @Test
     void requireThatMultiNodeGroupDetectsBalance() {
-        Group group = new Group(0, Arrays.asList(new Node(1, "n1", 1), new Node(2, "n2", 1)));
+        Group group = new Group(0, List.of(new Node(1, "n1", 1), new Node(2, "n2", 1)));
         assertTrue(group.isBalanced());
         group.nodes().forEach(node -> node.setWorking(true));
         assertTrue(group.isBalanced());
