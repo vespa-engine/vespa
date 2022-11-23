@@ -15,6 +15,8 @@ import com.yahoo.yolean.Exceptions;
 
 import java.time.Duration;
 import java.util.Map;
+import java.util.Optional;
+import java.util.OptionalLong;
 
 /**
  * Maintenance job which deactivates retired nodes, if given permission by orchestrator, or
@@ -61,13 +63,19 @@ public class RetiredExpirer extends NodeRepositoryMaintainer {
                 NodeList nodes = kv.getValue();
                 attempts++;
                 try (MaintenanceDeployment deployment = new MaintenanceDeployment(application, deployer, metric, nodeRepository())) {
-                    if (!deployment.isValid()) continue;
+                    if (!deployment.isValid()) {
+                        log.info("Skipping invalid deployment for " + application);
+                        continue;
+                    }
 
                     nodeRepository().nodes().setRemovable(application, nodes.asList(), removal.isReusable());
-                    boolean success = deployment.activate().isPresent();
-                    if (!success) continue;
+                    Optional<Long> session = deployment.activate();
                     String nodeList = String.join(", ", nodes.mapToList(Node::hostname));
-                    log.info("Redeployed " + application + " to deactivate retired nodes: " + nodeList);
+                    if (session.isEmpty()) {
+                        log.info("Failed to redeploy " + application);
+                        continue;
+                    }
+                    log.info("Redeployed " + application + " at session " + session.get() + " to deactivate retired nodes: " + nodeList);
                     successes++;
                 }
             }
