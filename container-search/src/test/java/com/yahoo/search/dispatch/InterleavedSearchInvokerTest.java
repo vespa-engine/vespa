@@ -22,6 +22,7 @@ import com.yahoo.searchlib.expression.IntegerResultNode;
 import com.yahoo.searchlib.expression.StringResultNode;
 import com.yahoo.test.ManualClock;
 import com.yahoo.vespa.config.search.DispatchConfig;
+import com.yahoo.vespa.config.search.DispatchNodesConfig;
 import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
@@ -40,6 +41,7 @@ import java.util.stream.StreamSupport;
 import static com.yahoo.container.handler.Coverage.DEGRADED_BY_MATCH_PHASE;
 import static com.yahoo.container.handler.Coverage.DEGRADED_BY_TIMEOUT;
 import static com.yahoo.search.dispatch.MockSearchCluster.createDispatchConfig;
+import static com.yahoo.search.dispatch.MockSearchCluster.createNodesConfig;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
@@ -54,7 +56,7 @@ public class InterleavedSearchInvokerTest {
 
     @Test
     void requireThatAdaptiveTimeoutsAreNotUsedWithFullCoverageRequirement() throws IOException {
-        SearchCluster cluster = new MockSearchCluster("!", createDispatchConfig(100.0), 1, 3);
+        SearchCluster cluster = new MockSearchCluster("!", createDispatchConfig(100.0), createNodesConfig(), 1, 3);
         try (SearchInvoker invoker = createInterleavedInvoker(cluster, new Group(0, List.of()), 3)) {
 
             expectedEvents.add(new Event(5000, 100, 0));
@@ -69,7 +71,7 @@ public class InterleavedSearchInvokerTest {
 
     @Test
     void requireThatTimeoutsAreNotMarkedAsAdaptive() throws IOException {
-        SearchCluster cluster = new MockSearchCluster("!", createDispatchConfig(100.0), 1, 3);
+        SearchCluster cluster = new MockSearchCluster("!", createDispatchConfig(100.0), createNodesConfig(), 1, 3);
         try (SearchInvoker invoker = createInterleavedInvoker(cluster, new Group(0, List.of()), 3)) {
 
             expectedEvents.add(new Event(5000, 300, 0));
@@ -88,7 +90,7 @@ public class InterleavedSearchInvokerTest {
 
     @Test
     void requireThatAdaptiveTimeoutDecreasesTimeoutWhenCoverageIsReached() throws IOException {
-        SearchCluster cluster = new MockSearchCluster("!", createDispatchConfig(50.0), 1, 4);
+        SearchCluster cluster = new MockSearchCluster("!", createDispatchConfig(50.0), createNodesConfig(), 1, 4);
         try (SearchInvoker invoker = createInterleavedInvoker(cluster, new Group(0, List.of()), 4)) {
 
             expectedEvents.add(new Event(5000, 100, 0));
@@ -400,8 +402,8 @@ public class InterleavedSearchInvokerTest {
         return hits;
     }
 
-    void verifyCorrectCoverageCalculationWhenDegradedCoverageIsExpected(DispatchConfig dispatchConfig, int expectedCoverage) throws IOException {
-        SearchCluster cluster = new MockSearchCluster("!", dispatchConfig, 1, 2);
+    void verifyCorrectCoverageCalculationWhenDegradedCoverageIsExpected(DispatchConfig dispatchConfig, DispatchNodesConfig nodesConfig, int expectedCoverage) throws IOException {
+        SearchCluster cluster = new MockSearchCluster("!", dispatchConfig, nodesConfig, 1, 2);
         invokers.add(new MockInvoker(0, createCoverage(50155, 50155, 60000, 1, 1, 0)));
         Coverage errorCoverage = new Coverage(0, 0, 0);
         errorCoverage.setNodesTried(1);
@@ -427,9 +429,10 @@ public class InterleavedSearchInvokerTest {
 
     @Test
     void requireCorrectCoverageCalculationWhenDegradedCoverageIsExpectedUsingTargetActiveDocs() throws IOException {
-        verifyCorrectCoverageCalculationWhenDegradedCoverageIsExpected(MockSearchCluster.createDispatchConfig(100.0, List.of())
+        verifyCorrectCoverageCalculationWhenDegradedCoverageIsExpected(MockSearchCluster.createDispatchConfigBuilder(100.0)
                 .redundancy(1)
                 .build(),
+                MockSearchCluster.createNodesConfig(),
                 42);
     }
 

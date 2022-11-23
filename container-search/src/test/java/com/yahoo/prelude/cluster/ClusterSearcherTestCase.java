@@ -24,6 +24,7 @@ import com.yahoo.search.schema.Schema;
 import com.yahoo.search.schema.SchemaInfo;
 import com.yahoo.search.searchchain.Execution;
 import com.yahoo.vespa.config.search.DispatchConfig;
+import com.yahoo.vespa.config.search.DispatchNodesConfig;
 import org.junit.jupiter.api.Test;
 
 
@@ -449,9 +450,11 @@ public class ClusterSearcherTestCase {
         var schema = new Schema.Builder("type1");
 
         DispatchConfig dispatchConfig = new DispatchConfig.Builder().build();
-        Dispatcher dispatcher = new Dispatcher(new RpcResourcePool(dispatchConfig),
+        DispatchNodesConfig nodesConfig = new DispatchNodesConfig.Builder().build();
+        Dispatcher dispatcher = new Dispatcher(new RpcResourcePool(dispatchConfig, nodesConfig),
                                                ComponentId.createAnonymousComponentId("test-id"),
                                                dispatchConfig,
+                                               nodesConfig,
                                                vipStatus);
         ComponentRegistry<Dispatcher> dispatchers = new ComponentRegistry<>();
         dispatchers.register(new ComponentId("dispatcher." + clusterName), dispatcher);

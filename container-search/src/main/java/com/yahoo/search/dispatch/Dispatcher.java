@@ -23,6 +23,7 @@ import com.yahoo.search.query.profile.types.FieldType;
 import com.yahoo.search.query.profile.types.QueryProfileType;
 import com.yahoo.search.result.ErrorMessage;
 import com.yahoo.vespa.config.search.DispatchConfig;
+import com.yahoo.vespa.config.search.DispatchNodesConfig;
 
 import java.time.Duration;
 import java.util.HashSet;
@@ -74,8 +75,9 @@ public class Dispatcher extends AbstractComponent {
     public Dispatcher(RpcResourcePool resourcePool,
                       ComponentId clusterId,
                       DispatchConfig dispatchConfig,
+                      DispatchNodesConfig nodesConfig,
                       VipStatus vipStatus) {
-        this(resourcePool, new SearchCluster(clusterId.stringValue(), dispatchConfig,
+        this(resourcePool, new SearchCluster(clusterId.stringValue(), dispatchConfig, nodesConfig,
                                              vipStatus, new RpcPingFactory(resourcePool)),
              dispatchConfig);
 

@@ -12,12 +12,13 @@ import com.yahoo.search.Query;
 import com.yahoo.search.dispatch.FillInvoker;
 import com.yahoo.search.dispatch.rpc.Client.NodeConnection;
 import com.yahoo.vespa.config.search.DispatchConfig;
+import com.yahoo.vespa.config.search.DispatchNodesConfig;
 
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
-import java.util.Random;
+import java.util.concurrent.ThreadLocalRandom;
 
 /**
  * RpcResourcePool constructs {@link FillInvoker} objects that communicate with content nodes over RPC. It also contains
@@ -31,7 +32,6 @@ public class RpcResourcePool extends AbstractComponent {
     public final static CompoundName dispatchCompression = new CompoundName("dispatch.compression");
 
     private final Compressor compressor = new Compressor(CompressionType.LZ4, 5, 0.95, 32);
-    private final Random random = new Random();
 
     /** Connections to the search nodes this talks to, indexed by node id ("partid") */
     private final ImmutableMap<Integer, NodeConnectionPool> nodeConnectionPools;
@@ -45,14 +45,14 @@ public class RpcResourcePool extends AbstractComponent {
     }
 
     @Inject
-    public RpcResourcePool(DispatchConfig dispatchConfig) {
+    public RpcResourcePool(DispatchConfig dispatchConfig, DispatchNodesConfig nodesConfig) {
         super();
         client = new RpcClient("dispatch-client", dispatchConfig.numJrtTransportThreads());
 
         // Create rpc node connection pools indexed by the node distribution key
         var builder = new ImmutableMap.Builder<Integer, NodeConnectionPool>();
         var numConnections = dispatchConfig.numJrtConnectionsPerNode();
-        for (var node : dispatchConfig.node()) {
+        for (var node : nodesConfig.node()) {
             var connections = new ArrayList<NodeConnection>(numConnections);
             for (int i = 0; i < numConnections; i++) {
                 connections.add(client.createConnection(node.host(), node.port()));
@@ -89,7 +89,7 @@ public class RpcResourcePool extends AbstractComponent {
         }
     }
 
-    private class NodeConnectionPool {
+    private static class NodeConnectionPool {
         private final List<Client.NodeConnection> connections;
 
         NodeConnectionPool(List<NodeConnection> connections) {
@@ -97,7 +97,7 @@ public class RpcResourcePool extends AbstractComponent {
         }
 
         Client.NodeConnection nextConnection() {
-            int slot = random.nextInt(connections.size());
+            int slot = ThreadLocalRandom.current().nextInt(connections.size());
             return connections.get(slot);
         }
 

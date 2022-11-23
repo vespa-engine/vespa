@@ -8,9 +8,9 @@ import com.yahoo.search.dispatch.searchcluster.Group;
 import com.yahoo.search.dispatch.searchcluster.Node;
 import com.yahoo.search.dispatch.searchcluster.SearchCluster;
 import com.yahoo.vespa.config.search.DispatchConfig;
+import com.yahoo.vespa.config.search.DispatchNodesConfig;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 
@@ -26,11 +26,11 @@ public class MockSearchCluster extends SearchCluster {
     private final List<Node> nodes;
 
     public MockSearchCluster(String clusterId, int groups, int nodesPerGroup) {
-        this(clusterId, createDispatchConfig(), groups, nodesPerGroup);
+        this(clusterId, createDispatchConfig(), createNodesConfig(), groups, nodesPerGroup);
     }
 
-    public MockSearchCluster(String clusterId, DispatchConfig dispatchConfig, int groups, int nodesPerGroup) {
-        super(clusterId, dispatchConfig, null, null);
+    public MockSearchCluster(String clusterId, DispatchConfig dispatchConfig, DispatchNodesConfig nodesConfig, int groups, int nodesPerGroup) {
+        super(clusterId, dispatchConfig, nodesConfig, null, null);
 
         ImmutableList.Builder<Group> orderedGroupBuilder = ImmutableList.builder();
         ImmutableMap.Builder<Integer, Group> groupBuilder = ImmutableMap.builder();
@@ -101,18 +101,18 @@ public class MockSearchCluster extends SearchCluster {
         node.setWorking(false);
     }
 
-    public static DispatchConfig createDispatchConfig(Node... nodes) {
-        return createDispatchConfig(100.0, nodes);
+    public static DispatchConfig createDispatchConfig() {
+        return createDispatchConfig(100.0);
     }
-    public static DispatchConfig createDispatchConfig(List<Node> nodes) {
-        return createDispatchConfig(100.0, nodes).build();
-    }
-
-    public static DispatchConfig createDispatchConfig(double minSearchCoverage, Node... nodes) {
-        return createDispatchConfig(minSearchCoverage, Arrays.asList(nodes)).build();
+    public static DispatchNodesConfig createNodesConfig(Node... nodes) {
+        return createNodesConfig(List.of(nodes)).build();
     }
 
-    public static DispatchConfig.Builder createDispatchConfig(double minSearchCoverage, List<Node> nodes) {
+    public static DispatchConfig createDispatchConfig(double minSearchCoverage) {
+        return createDispatchConfigBuilder(minSearchCoverage).build();
+    }
+
+    public static DispatchConfig.Builder createDispatchConfigBuilder(double minSearchCoverage) {
         DispatchConfig.Builder builder = new DispatchConfig.Builder();
         builder.minActivedocsPercentage(88.0);
         builder.minSearchCoverage(minSearchCoverage);
@@ -121,9 +121,14 @@ public class MockSearchCluster extends SearchCluster {
             builder.minWaitAfterCoverageFactor(0);
             builder.maxWaitAfterCoverageFactor(0.5);
         }
+        return builder;
+    }
+
+    public static DispatchNodesConfig.Builder createNodesConfig(List<Node> nodes) {
+        DispatchNodesConfig.Builder builder = new DispatchNodesConfig.Builder();
         int port = 10000;
         for (Node n : nodes) {
-            builder.node(new DispatchConfig.Node.Builder().key(n.key()).host(n.hostname()).port(port++).group(n.group()));
+            builder.node(new DispatchNodesConfig.Node.Builder().key(n.key()).host(n.hostname()).port(port++).group(n.group()));
         }
         return builder;
     }

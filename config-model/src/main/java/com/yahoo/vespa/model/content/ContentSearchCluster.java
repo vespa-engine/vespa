@@ -8,6 +8,7 @@ import com.yahoo.documentmodel.NewDocumentType;
 import com.yahoo.schema.Schema;
 import com.yahoo.schema.derived.SchemaInfo;
 import com.yahoo.vespa.config.search.DispatchConfig;
+import com.yahoo.vespa.config.search.DispatchNodesConfig;
 import com.yahoo.vespa.config.search.core.ProtonConfig;
 import com.yahoo.vespa.model.builder.xml.dom.DomSearchTuningBuilder;
 import com.yahoo.vespa.model.builder.xml.dom.ModelElement;
@@ -40,7 +41,11 @@ import static java.util.stream.Collectors.toList;
  * Encapsulates the various options for search in a content model.
  * Wraps a search cluster from com.yahoo.vespa.model.search.
  */
-public class ContentSearchCluster extends AbstractConfigProducer<SearchCluster> implements ProtonConfig.Producer, DispatchConfig.Producer {
+public class ContentSearchCluster extends AbstractConfigProducer<SearchCluster> implements
+        ProtonConfig.Producer,
+        DispatchNodesConfig.Producer,
+        DispatchConfig.Producer
+{
 
     private static final int DEFAULT_DOC_STORE_COMPRESSION_LEVEL = 3;
     private static final double DEFAULT_DISK_BLOAT = 0.25;
@@ -429,12 +434,18 @@ public class ContentSearchCluster extends AbstractConfigProducer<SearchCluster> 
     }
 
     @Override
-    public void getConfig(DispatchConfig.Builder builder) {
+    public void getConfig(DispatchNodesConfig.Builder builder) {
         if (hasIndexedCluster()) {
             getIndexed().getConfig(builder);
         }
     }
 
+    @Override
+    public void getConfig(DispatchConfig.Builder builder) {
+        if (hasIndexedCluster()) {
+            getIndexed().getConfig(builder);
+        }
+    }
     public Map<String, SearchCluster> getClusters() { return clusters; }
     public IndexedSearchCluster getIndexed() { return indexedCluster; }
     public boolean hasIndexedCluster()       { return indexedCluster != null; }

@@ -4,6 +4,7 @@ package com.yahoo.vespa.model.container.search;
 import com.yahoo.config.model.producer.AbstractConfigProducer;
 import com.yahoo.osgi.provider.model.ComponentModel;
 import com.yahoo.vespa.config.search.DispatchConfig;
+import com.yahoo.vespa.config.search.DispatchNodesConfig;
 import com.yahoo.vespa.model.container.component.Component;
 import com.yahoo.vespa.model.container.PlatformBundles;
 import com.yahoo.vespa.model.search.IndexedSearchCluster;
@@ -14,8 +15,10 @@ import com.yahoo.vespa.model.search.IndexedSearchCluster;
  *
  * @author bratseth
  */
-public class DispatcherComponent extends Component<AbstractConfigProducer<?>, ComponentModel>
-        implements DispatchConfig.Producer {
+public class DispatcherComponent extends Component<AbstractConfigProducer<?>, ComponentModel> implements
+        DispatchConfig.Producer,
+        DispatchNodesConfig.Producer
+{
 
     private final IndexedSearchCluster indexedSearchCluster;
 
@@ -37,6 +40,11 @@ public class DispatcherComponent extends Component<AbstractConfigProducer<?>, Co
 
     @Override
     public void getConfig(DispatchConfig.Builder builder) {
+        indexedSearchCluster.getConfig(builder);
+    }
+
+    @Override
+    public void getConfig(DispatchNodesConfig.Builder builder) {
         indexedSearchCluster.getConfig(builder);
     }
 

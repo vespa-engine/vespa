@@ -1,12 +1,9 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.search.dispatch.rpc;
 
-import com.yahoo.prelude.fastsearch.DocumentDatabase;
 import com.yahoo.prelude.fastsearch.VespaBackEndSearcher;
-import com.yahoo.processing.request.CompoundName;
 import com.yahoo.search.Query;
 import com.yahoo.search.Result;
-import com.yahoo.search.dispatch.Dispatcher;
 import com.yahoo.search.dispatch.FillInvoker;
 import com.yahoo.search.dispatch.InvokerFactory;
 import com.yahoo.search.dispatch.SearchInvoker;
@@ -19,9 +16,6 @@ import java.util.Optional;
  * @author ollivir
  */
 public class RpcInvokerFactory extends InvokerFactory {
-
-    /** Unless turned off this will fill summaries by dispatching directly to search nodes over RPC when possible */
-    private final static CompoundName dispatchSummaries = new CompoundName("dispatch.summaries");
 
     private final RpcResourcePool rpcResourcePool;
 

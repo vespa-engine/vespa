@@ -19,6 +19,7 @@ import java.util.Optional;
 import java.util.Random;
 
 import static com.yahoo.search.dispatch.MockSearchCluster.createDispatchConfig;
+import static com.yahoo.search.dispatch.MockSearchCluster.createNodesConfig;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -31,7 +32,7 @@ public class LoadBalancerTest {
     @Test
     void requireThatLoadBalancerServesSingleNodeSetups() {
         Node n1 = new Node(0, "test-node1", 0);
-        SearchCluster cluster = new SearchCluster("a", createDispatchConfig(n1), null, null);
+        SearchCluster cluster = new SearchCluster("a", createDispatchConfig(), createNodesConfig(n1), null, null);
         LoadBalancer lb = new LoadBalancer(cluster, LoadBalancer.Policy.ROUNDROBIN);
 
         Optional<Group> grp = lb.takeGroup(null);
@@ -45,7 +46,7 @@ public class LoadBalancerTest {
     void requireThatLoadBalancerServesMultiGroupSetups() {
         Node n1 = new Node(0, "test-node1", 0);
         Node n2 = new Node(1, "test-node2", 1);
-        SearchCluster cluster = new SearchCluster("a", createDispatchConfig(n1, n2), null, null);
+        SearchCluster cluster = new SearchCluster("a", createDispatchConfig(), createNodesConfig(n1, n2), null, null);
         LoadBalancer lb = new LoadBalancer(cluster, LoadBalancer.Policy.ROUNDROBIN);
 
         Optional<Group> grp = lb.takeGroup(null);
@@ -61,7 +62,7 @@ public class LoadBalancerTest {
         Node n2 = new Node(1, "test-node2", 0);
         Node n3 = new Node(0, "test-node3", 1);
         Node n4 = new Node(1, "test-node4", 1);
-        SearchCluster cluster = new SearchCluster("a", createDispatchConfig(n1, n2, n3, n4), null, null);
+        SearchCluster cluster = new SearchCluster("a", createDispatchConfig(), createNodesConfig(n1, n2, n3, n4), null, null);
         LoadBalancer lb = new LoadBalancer(cluster, LoadBalancer.Policy.ROUNDROBIN);
 
         Optional<Group> grp = lb.takeGroup(null);
@@ -72,7 +73,7 @@ public class LoadBalancerTest {
     void requireThatLoadBalancerReturnsDifferentGroups() {
         Node n1 = new Node(0, "test-node1", 0);
         Node n2 = new Node(1, "test-node2", 1);
-        SearchCluster cluster = new SearchCluster("a", createDispatchConfig(n1, n2), null, null);
+        SearchCluster cluster = new SearchCluster("a", createDispatchConfig(), createNodesConfig(n1, n2), null, null);
         LoadBalancer lb = new LoadBalancer(cluster, LoadBalancer.Policy.ROUNDROBIN);
 
         // get first group
