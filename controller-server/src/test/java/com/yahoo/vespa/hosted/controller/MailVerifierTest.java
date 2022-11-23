@@ -12,9 +12,11 @@ import com.yahoo.vespa.hosted.controller.tenant.TenantContacts;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import java.net.URI;
 import java.time.Duration;
 import java.util.List;
 
+import static com.yahoo.yolean.Exceptions.uncheck;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -27,7 +29,7 @@ class MailVerifierTest {
 
     private final ControllerTester tester = new ControllerTester(SystemName.Public);
     private final MockMailer mailer = tester.serviceRegistry().mailer();
-    private final MailVerifier mailVerifier = new MailVerifier(tester.controller().tenants(), mailer, tester.curator(), tester.clock());
+    private final MailVerifier mailVerifier = new MailVerifier(URI.create("https://dashboard.uri.example.com"), tester.controller().tenants(), mailer, tester.curator(), tester.clock());
 
     private static final TenantName tenantName = TenantName.from("scoober");
     private static final String mail = "unverified@bar.com";
@@ -53,9 +55,7 @@ class MailVerifierTest {
         mailVerifier.sendMailVerification(tenantName, mail, PendingMailVerification.MailType.NOTIFICATIONS);
 
         // Verify mail is sent
-        var expectedMail = "message";
         assertEquals(1, mailer.inbox(mail).size());
-        assertEquals(expectedMail, mailer.inbox(mail).get(0).message());
 
         // Verify ZK data is updated
         var writtenMailVerification = tester.curator().listPendingMailVerifications().get(0);

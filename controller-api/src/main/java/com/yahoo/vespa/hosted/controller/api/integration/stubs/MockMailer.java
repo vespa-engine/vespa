@@ -48,11 +48,6 @@ public class MockMailer implements Mailer {
         return "domain";
     }
 
-    @Override
-    public void sendVerificationMail(PendingMailVerification pendingMailVerification) {
-        send(new Mail(List.of(pendingMailVerification.getMailAddress()), "subject", "message"));
-    }
-
     /** Returns the list of mails sent to the given recipient. Modifications affect the set of mails stored in this. */
     public List<Mail> inbox(String recipient) {
         return mails.getOrDefault(recipient, List.of());
