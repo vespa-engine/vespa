@@ -4,7 +4,6 @@ package com.yahoo.prelude.fastsearch.test;
 import com.yahoo.container.handler.VipStatus;
 import com.yahoo.search.cluster.ClusterMonitor;
 import com.yahoo.search.dispatch.Dispatcher;
-import com.yahoo.search.dispatch.rpc.RpcClient;
 import com.yahoo.search.dispatch.rpc.RpcInvokerFactory;
 import com.yahoo.search.dispatch.rpc.RpcPingFactory;
 import com.yahoo.search.dispatch.rpc.RpcResourcePool;
@@ -20,7 +19,7 @@ class MockDispatcher extends Dispatcher {
     public final ClusterMonitor clusterMonitor;
 
     public static MockDispatcher create(List<Node> nodes) {
-        var rpcResourcePool = new RpcResourcePool(new RpcClient("rpcclient", 1), toNodesConfig(nodes), 2);
+        var rpcResourcePool = new RpcResourcePool(toDispatchConfig(), toNodesConfig(nodes));
 
         return create(nodes, rpcResourcePool, new VipStatus());
     }

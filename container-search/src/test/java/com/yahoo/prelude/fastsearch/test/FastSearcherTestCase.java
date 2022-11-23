@@ -13,7 +13,6 @@ import com.yahoo.prelude.fastsearch.SummaryParameters;
 import com.yahoo.search.Query;
 import com.yahoo.search.Result;
 import com.yahoo.search.Searcher;
-import com.yahoo.search.dispatch.rpc.RpcClient;
 import com.yahoo.search.dispatch.rpc.RpcResourcePool;
 import com.yahoo.search.dispatch.searchcluster.Node;
 import com.yahoo.search.grouping.GroupingRequest;
@@ -186,7 +185,7 @@ public class FastSearcherTestCase {
         b.searchcluster(searchClusterB);
         VipStatus vipStatus = new VipStatus(b.build());
         List<Node> nodes_1 = ImmutableList.of(new Node(0, "host0", 0));
-        RpcResourcePool rpcPool_1 = new RpcResourcePool(new RpcClient("rpcclient", 1), MockDispatcher.toNodesConfig(nodes_1), 2);
+        RpcResourcePool rpcPool_1 = new RpcResourcePool(MockDispatcher.toDispatchConfig(), MockDispatcher.toNodesConfig(nodes_1));
         MockDispatcher dispatch_1 = MockDispatcher.create(nodes_1, rpcPool_1, vipStatus);
         dispatch_1.clusterMonitor.shutdown();
         vipStatus.addToRotation(clusterName);

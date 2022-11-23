@@ -12,7 +12,6 @@ import com.yahoo.search.Query;
 import com.yahoo.search.Result;
 import com.yahoo.search.cluster.ClusterMonitor;
 import com.yahoo.search.dispatch.SearchPath.InvalidSearchPathException;
-import com.yahoo.search.dispatch.rpc.RpcClient;
 import com.yahoo.search.dispatch.rpc.RpcInvokerFactory;
 import com.yahoo.search.dispatch.rpc.RpcPingFactory;
 import com.yahoo.search.dispatch.rpc.RpcResourcePool;
@@ -58,7 +57,6 @@ public class Dispatcher extends AbstractComponent {
     private final ClusterMonitor<Node> clusterMonitor;
     private final LoadBalancer loadBalancer;
     private final InvokerFactory invokerFactory;
-    private final RpcClient rpcClient;
     private final int maxHitsPerNode;
     private final RpcResourcePool rpcResourcePool;
 
@@ -80,29 +78,24 @@ public class Dispatcher extends AbstractComponent {
                       DispatchNodesConfig nodesConfig,
                       VipStatus vipStatus) {
         this(clusterId, dispatchConfig, nodesConfig, vipStatus,
-                new RpcClient("dispatch-client", dispatchConfig.numJrtTransportThreads()));
-    }
-    private Dispatcher(ComponentId clusterId, DispatchConfig dispatchConfig,
-                       DispatchNodesConfig nodesConfig, VipStatus vipStatus, RpcClient rpcClient) {
-        this(clusterId, dispatchConfig, nodesConfig, vipStatus, rpcClient,
-                new RpcResourcePool(rpcClient, nodesConfig, dispatchConfig.numJrtConnectionsPerNode()));
+                new RpcResourcePool(dispatchConfig, nodesConfig));
 
     }
     private Dispatcher(ComponentId clusterId, DispatchConfig dispatchConfig,
                        DispatchNodesConfig nodesConfig, VipStatus vipStatus,
-                       RpcClient rpcClient, RpcResourcePool resourcePool) {
+                       RpcResourcePool resourcePool) {
         this(new SearchCluster(clusterId.stringValue(), dispatchConfig, nodesConfig,
                         vipStatus, new RpcPingFactory(resourcePool)),
-                dispatchConfig, rpcClient, resourcePool);
+                dispatchConfig, resourcePool);
 
     }
 
     private Dispatcher(SearchCluster searchCluster, DispatchConfig dispatchConfig,
-                       RpcClient rpcClient, RpcResourcePool rpcResourcePool) {
+                       RpcResourcePool rpcResourcePool) {
         this(new ClusterMonitor<>(searchCluster, true),
                 searchCluster, dispatchConfig,
                 new RpcInvokerFactory(rpcResourcePool, searchCluster, dispatchConfig),
-                rpcClient, rpcResourcePool);
+                rpcResourcePool);
     }
 
     /* Protected for simple mocking in tests. Beware that searchCluster is shutdown on in deconstruct() */
@@ -110,21 +103,19 @@ public class Dispatcher extends AbstractComponent {
                          SearchCluster searchCluster,
                          DispatchConfig dispatchConfig,
                          InvokerFactory invokerFactory) {
-        this(clusterMonitor, searchCluster, dispatchConfig, invokerFactory, null, null);
+        this(clusterMonitor, searchCluster, dispatchConfig, invokerFactory, null);
     }
 
     private Dispatcher(ClusterMonitor<Node> clusterMonitor,
                        SearchCluster searchCluster,
                        DispatchConfig dispatchConfig,
                        InvokerFactory invokerFactory,
-                       RpcClient rpcClient,
                        RpcResourcePool rpcResourcePool) {
 
         this.searchCluster = searchCluster;
         this.clusterMonitor = clusterMonitor;
         this.loadBalancer = new LoadBalancer(searchCluster, toLoadBalancerPolicy(dispatchConfig.distributionPolicy()));
         this.invokerFactory = invokerFactory;
-        this.rpcClient = rpcClient;
         this.rpcResourcePool = rpcResourcePool;
         this.maxHitsPerNode = dispatchConfig.maxHitsPerNode();
         searchCluster.addMonitoring(clusterMonitor);
@@ -173,9 +164,6 @@ public class Dispatcher extends AbstractComponent {
         if (rpcResourcePool != null) {
             rpcResourcePool.close();
         }
-        if (rpcClient != null) {
-            rpcClient.close();
-        }
     }
 
     public FillInvoker getFillInvoker(Result result, VespaBackEndSearcher searcher) {
@@ -183,7 +171,8 @@ public class Dispatcher extends AbstractComponent {
     }
 
     public SearchInvoker getSearchInvoker(Query query, VespaBackEndSearcher searcher) {
-        SearchInvoker invoker = getSearchPathInvoker(query, searcher).orElseGet(() -> getInternalInvoker(query, searcher));
+        SearchCluster cluster = searchCluster; // Take a snapshot
+        SearchInvoker invoker = getSearchPathInvoker(query, searcher, cluster).orElseGet(() -> getInternalInvoker(query, searcher, cluster));
 
         if (query.properties().getBoolean(com.yahoo.search.query.Model.ESTIMATE)) {
             query.setHits(0);
@@ -193,12 +182,12 @@ public class Dispatcher extends AbstractComponent {
     }
 
     /** Builds an invoker based on searchpath */
-    private Optional<SearchInvoker> getSearchPathInvoker(Query query, VespaBackEndSearcher searcher) {
+    private Optional<SearchInvoker> getSearchPathInvoker(Query query, VespaBackEndSearcher searcher, SearchCluster cluster) {
         String searchPath = query.getModel().getSearchPath();
         if (searchPath == null) return Optional.empty();
 
         try {
-            List<Node> nodes = SearchPath.selectNodes(searchPath, searchCluster);
+            List<Node> nodes = SearchPath.selectNodes(searchPath, cluster);
             if (nodes.isEmpty()) return Optional.empty();
 
             query.trace(false, 2, "Dispatching with search path ", searchPath);
@@ -212,8 +201,8 @@ public class Dispatcher extends AbstractComponent {
         }
     }
 
-    private SearchInvoker getInternalInvoker(Query query, VespaBackEndSearcher searcher) {
-        Optional<Node> directNode = searchCluster.localCorpusDispatchTarget();
+    private SearchInvoker getInternalInvoker(Query query, VespaBackEndSearcher searcher, SearchCluster cluster) {
+        Optional<Node> directNode = cluster.localCorpusDispatchTarget();
         if (directNode.isPresent()) {
             Node node = directNode.get();
             query.trace(false, 2, "Dispatching to ", node);
@@ -225,10 +214,10 @@ public class Dispatcher extends AbstractComponent {
                                  .orElseThrow(() -> new IllegalStateException("Could not dispatch directly to " + node));
         }
 
-        int covered = searchCluster.groupsWithSufficientCoverage();
-        int groups = searchCluster.orderedGroups().size();
+        int covered = cluster.groupsWithSufficientCoverage();
+        int groups = cluster.orderedGroups().size();
         int max = Integer.min(Integer.min(covered + 1, groups), MAX_GROUP_SELECTION_ATTEMPTS);
-        Set<Integer> rejected = rejectGroupBlockingFeed(searchCluster.orderedGroups());
+        Set<Integer> rejected = rejectGroupBlockingFeed(cluster.orderedGroups());
         for (int i = 0; i < max; i++) {
             Optional<Group> groupInCluster = loadBalancer.takeGroup(rejected);
             if (groupInCluster.isEmpty()) break; // No groups available

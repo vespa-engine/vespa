@@ -4,6 +4,7 @@ package com.yahoo.search.dispatch.rpc;
 import com.google.common.collect.ImmutableMap;
 import com.yahoo.search.dispatch.FillInvoker;
 import com.yahoo.search.dispatch.rpc.Client.NodeConnection;
+import com.yahoo.vespa.config.search.DispatchConfig;
 import com.yahoo.vespa.config.search.DispatchNodesConfig;
 
 import java.util.ArrayList;
@@ -22,22 +23,26 @@ public class RpcResourcePool implements RpcConnectionPool, AutoCloseable {
 
     /** Connections to the search nodes this talks to, indexed by node id ("partid") */
     private final ImmutableMap<Integer, NodeConnectionPool> nodeConnectionPools;
+    private final RpcClient rpcClient;
 
     RpcResourcePool(Map<Integer, NodeConnection> nodeConnections) {
         var builder = new ImmutableMap.Builder<Integer, NodeConnectionPool>();
         nodeConnections.forEach((key, connection) -> builder.put(key, new NodeConnectionPool(Collections.singletonList(connection))));
         this.nodeConnectionPools = builder.build();
+        this.rpcClient = null;
     }
 
-    public RpcResourcePool(RpcClient client, DispatchNodesConfig nodesConfig, int numConnections) {
+    public RpcResourcePool(DispatchConfig dispatchConfig, DispatchNodesConfig nodesConfig) {
         super();
+        rpcClient = new RpcClient("dispatch-client", dispatchConfig.numJrtTransportThreads());
 
         // Create rpc node connection pools indexed by the node distribution key
+        int numConnections = dispatchConfig.numJrtConnectionsPerNode();
         var builder = new ImmutableMap.Builder<Integer, NodeConnectionPool>();
         for (var node : nodesConfig.node()) {
             var connections = new ArrayList<NodeConnection>(numConnections);
             for (int i = 0; i < numConnections; i++) {
-                connections.add(client.createConnection(node.host(), node.port()));
+                connections.add(rpcClient.createConnection(node.host(), node.port()));
             }
             builder.put(node.key(), new NodeConnectionPool(connections));
         }
@@ -57,6 +62,9 @@ public class RpcResourcePool implements RpcConnectionPool, AutoCloseable {
     @Override
     public void close() {
         nodeConnectionPools.values().forEach(NodeConnectionPool::release);
+        if (rpcClient != null) {
+            rpcClient.close();
+        }
     }
 
     private static class NodeConnectionPool {

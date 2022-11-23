@@ -11,7 +11,6 @@ import com.yahoo.schema.ApplicationBuilder;
 import com.yahoo.schema.document.Attribute;
 import com.yahoo.schema.document.SDDocumentType;
 import com.yahoo.schema.document.SDField;
-import com.yahoo.vespa.config.search.DispatchConfig;
 import com.yahoo.vespa.config.search.DispatchNodesConfig;
 import com.yahoo.vespa.indexinglanguage.expressions.AttributeExpression;
 import com.yahoo.vespa.indexinglanguage.expressions.ScriptExpression;
@@ -174,17 +173,6 @@ public class SchemaClusterTest {
         assertEquals("j1/component/dispatcher." + cluster, dispatcher.getConfigId());
         DispatchNodesConfig.Builder dispatchConfigBuilder = new DispatchNodesConfig.Builder();
         model.getConfig(dispatchConfigBuilder, dispatcher.getConfigId());
-        assertEquals(host, dispatchConfigBuilder.build().node(0).host());
-
-        assertTrue(dispatcher.getInjectedComponentIds().contains("rpcresourcepool." + cluster));
-
-        Component<?,?> rpcResourcePool = (Component<?, ?>)dispatcher.getChildren().get("rpcresourcepool." + cluster);
-        assertNotNull(rpcResourcePool);
-        assertEquals("rpcresourcepool." + cluster, rpcResourcePool.getComponentId().stringValue());
-        assertEquals("com.yahoo.search.dispatch.rpc.RpcResourcePool", rpcResourcePool.getClassId().stringValue());
-        assertEquals("j1/component/dispatcher." + cluster + "/rpcresourcepool." + cluster, rpcResourcePool.getConfigId());
-        dispatchConfigBuilder = new DispatchNodesConfig.Builder();
-        model.getConfig(dispatchConfigBuilder, rpcResourcePool.getConfigId());
         assertEquals(host, dispatchConfigBuilder.build().node(0).host());
     }
 
