@@ -11,6 +11,7 @@ import com.yahoo.config.provision.RegionName;
 import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.jdisc.http.ConnectorConfig;
+import com.yahoo.jdisc.http.ServerConfig;
 import com.yahoo.jdisc.http.filter.security.cloud.config.CloudDataPlaneFilterConfig;
 import com.yahoo.security.KeyAlgorithm;
 import com.yahoo.security.KeyUtils;
@@ -39,6 +40,7 @@ import java.util.Optional;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertIterableEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 public class CloudDataPlaneFilterTest extends ContainerModelBuilderTestBase {
 
@@ -80,7 +82,9 @@ public class CloudDataPlaneFilterTest extends ContainerModelBuilderTestBase {
                 .build();
         createModel(root, state, null, clusterElem);
 
-        CloudDataPlaneFilterConfig config = root.getConfig(CloudDataPlaneFilterConfig.class, "container/component/com.yahoo.jdisc.http.filter.security.cloud.CloudDataPlaneFilter");
+        String configId = "container/filters/chain/cloud-data-plane-secure/component/" +
+                "com.yahoo.jdisc.http.filter.security.cloud.CloudDataPlaneFilter";
+        CloudDataPlaneFilterConfig config = root.getConfig(CloudDataPlaneFilterConfig.class, configId);
         assertFalse(config.legacyMode());
         List<CloudDataPlaneFilterConfig.Clients> clients = config.clients();
         assertEquals(1, clients.size());
@@ -100,6 +104,11 @@ public class CloudDataPlaneFilterTest extends ContainerModelBuilderTestBase {
         var caCerts = X509CertificateUtils.certificateListFromPem(connectorConfig.ssl().caCertificate());
         assertEquals(1, caCerts.size());
         assertEquals(List.of(certificate), caCerts);
+        var srvCfg = root.getConfig(ServerConfig.class, "container/http");
+        assertEquals("cloud-data-plane-insecure", srvCfg.defaultFilters().get(0).filterId());
+        assertEquals(8080, srvCfg.defaultFilters().get(0).localPort());
+        assertEquals("cloud-data-plane-secure", srvCfg.defaultFilters().get(1).filterId());
+        assertEquals(4443, srvCfg.defaultFilters().get(1).localPort());
     }
 
 

@@ -162,7 +162,8 @@ public abstract class ContainerCluster<CONTAINER extends Container>
     private String jvmGCOptions = null;
 
     private boolean deferChangesUntilRestart = false;
-    private List<Client> clients;
+    private boolean clientsLegacyMode;
+    private List<Client> clients = List.of();
 
     public ContainerCluster(AbstractConfigProducer<?> parent, String configSubId, String clusterId, DeployState deployState, boolean zooKeeperLocalhostAffinity) {
         this(parent, configSubId, clusterId, deployState, zooKeeperLocalhostAffinity, 1);
@@ -354,13 +355,16 @@ public abstract class ContainerCluster<CONTAINER extends Container>
         return http;
     }
 
-    public void setClients(List<Client> clients) {
+    public void setClients(boolean legacyMode, List<Client> clients) {
+        clientsLegacyMode = legacyMode;
         this.clients = clients;
     }
 
     public List<Client> getClients() {
         return clients;
     }
+
+    public boolean clientsLegacyMode() { return clientsLegacyMode; }
 
     public ContainerDocproc getDocproc() {
         return containerDocproc;

@@ -2,7 +2,11 @@
 package com.yahoo.vespa.model.container.xml;
 
 import com.google.common.collect.ImmutableList;
+import com.yahoo.component.ComponentId;
+import com.yahoo.component.ComponentSpecification;
 import com.yahoo.component.Version;
+import com.yahoo.component.chain.dependencies.Dependencies;
+import com.yahoo.component.chain.model.ChainedComponentModel;
 import com.yahoo.config.application.Xml;
 import com.yahoo.config.application.api.ApplicationFile;
 import com.yahoo.config.application.api.ApplicationPackage;
@@ -31,7 +35,7 @@ import com.yahoo.config.provision.HostName;
 import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.config.provision.Zone;
-import com.yahoo.container.jdisc.AclMapping;
+import com.yahoo.container.bundle.BundleInstantiationSpecification;
 import com.yahoo.container.logging.FileConnectionLog;
 import com.yahoo.osgi.provider.model.ComponentModel;
 import com.yahoo.path.Path;
@@ -72,11 +76,14 @@ import com.yahoo.vespa.model.container.component.Handler;
 import com.yahoo.vespa.model.container.component.SimpleComponent;
 import com.yahoo.vespa.model.container.component.SystemBindingPattern;
 import com.yahoo.vespa.model.container.component.UserBindingPattern;
+import com.yahoo.vespa.model.container.component.chain.Chain;
 import com.yahoo.vespa.model.container.docproc.ContainerDocproc;
 import com.yahoo.vespa.model.container.docproc.DocprocChains;
 import com.yahoo.vespa.model.container.http.AccessControl;
 import com.yahoo.vespa.model.container.http.Client;
 import com.yahoo.vespa.model.container.http.ConnectorFactory;
+import com.yahoo.vespa.model.container.http.Filter;
+import com.yahoo.vespa.model.container.http.FilterBinding;
 import com.yahoo.vespa.model.container.http.FilterChains;
 import com.yahoo.vespa.model.container.http.Http;
 import com.yahoo.vespa.model.container.http.JettyHttpServer;
@@ -112,6 +119,7 @@ import java.util.logging.Level;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
+import static com.yahoo.vespa.model.container.ContainerCluster.VIP_HANDLER_BINDING;
 import static java.util.logging.Level.WARNING;
 
 /**
@@ -446,7 +454,40 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
             addHostedImplicitAccessControlIfNotPresent(deployState, cluster);
             addDefaultConnectorHostedFilterBinding(cluster);
             addAdditionalHostedConnector(deployState, cluster, context);
+            addCloudDataPlaneFilter(deployState, cluster);
         }
+    }
+
+    private static void addCloudDataPlaneFilter(DeployState deployState, ApplicationContainerCluster cluster) {
+        if (!deployState.isHosted() || !deployState.zone().system().isPublic() || !deployState.featureFlags().enableDataPlaneFilter()) return;
+
+        // Setup secure filter chain
+        var secureChain = new Chain<Filter>(FilterChains.emptyChainSpec(ComponentId.fromString("cloud-data-plane-secure")));
+        secureChain.addInnerComponent(new CloudDataPlaneFilter(cluster, cluster.clientsLegacyMode()));
+        cluster.getHttp().getFilterChains().add(secureChain);
+        // Set cloud data plane filter as default request filter chain for data plane connector
+        cluster.getHttp().getHttpServer().orElseThrow().getConnectorFactories().stream()
+                .filter(c -> c.getListenPort() == HOSTED_VESPA_DATAPLANE_PORT).findAny().orElseThrow()
+                .setDefaultRequestFilterChain(secureChain.getComponentId());
+
+        // Setup insecure filter chain
+        var insecureChain = new Chain<Filter>(FilterChains.emptyChainSpec(ComponentId.fromString("cloud-data-plane-insecure")));
+        insecureChain.addInnerComponent(new Filter(
+                new ChainedComponentModel(
+                        new BundleInstantiationSpecification(
+                                new ComponentSpecification("com.yahoo.jdisc.http.filter.security.misc.NoopFilter"),
+                                null, new ComponentSpecification("jdisc-security-filters")),
+                        Dependencies.emptyDependencies())));
+        cluster.getHttp().getFilterChains().add(insecureChain);
+        var insecureChainComponentSpec = new ComponentSpecification(insecureChain.getComponentId().toString());
+        FilterBinding insecureBinding =
+                FilterBinding.create(FilterBinding.Type.REQUEST, insecureChainComponentSpec, VIP_HANDLER_BINDING);
+        cluster.getHttp().getBindings().add(insecureBinding);
+        // Set insecure filter as default request filter chain for default connector
+        cluster.getHttp().getHttpServer().orElseThrow().getConnectorFactories().stream()
+                .filter(c -> c.getListenPort() == Defaults.getDefaults().vespaWebServicePort()).findAny().orElseThrow()
+                .setDefaultRequestFilterChain(insecureChain.getComponentId());
+
     }
 
     protected void addClients(DeployState deployState, Element spec, ApplicationContainerCluster cluster, ConfigModelContext context) {
@@ -466,8 +507,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
                     .map(this::getCLient)
                     .toList();
         }
-        cluster.setClients(clients);
-        cluster.addComponent(new CloudDataPlaneFilter(cluster, legacyMode));
+        cluster.setClients(legacyMode, clients);
     }
 
     private Client getCLient(Element clientElement) {
