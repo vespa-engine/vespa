@@ -219,7 +219,7 @@ public class DynamicProvisioningTest {
     }
 
     @Test
-    public void test_capacity_is_in_advertised_amounts() {
+    public void capacity_is_in_advertised_amounts() {
         int memoryTax = 3;
         List<Flavor> flavors = List.of(new Flavor("2x",
                                                   new NodeResources(2, 17, 200, 10, fast, remote)));
@@ -306,7 +306,7 @@ public class DynamicProvisioningTest {
     }
 
     @Test
-    public void test_changing_limits() {
+    public void changing_limits() {
         int memoryTax = 3;
         List<Flavor> flavors = List.of(new Flavor("1x", new NodeResources(1, 10 - memoryTax, 100, 0.1, fast, remote)),
                                        new Flavor("2x", new NodeResources(2, 20 - memoryTax, 200, 0.1, fast, remote)),
@@ -380,7 +380,7 @@ public class DynamicProvisioningTest {
     }
 
     @Test
-    public void test_changing_storage_type() {
+    public void changing_storage_type() {
         int memoryTax = 3;
         List<Flavor> flavors = List.of(new Flavor("2x",  new NodeResources(2, 20 - memoryTax, 200, 0.1, fast, remote)),
                                        new Flavor("2xl", new NodeResources(2, 20 - memoryTax, 200, 0.1, fast, local)),
@@ -413,7 +413,7 @@ public class DynamicProvisioningTest {
     }
 
     @Test
-    public void test_any_disk_prefers_remote_for_container() {
+    public void any_disk_prefers_remote_for_container() {
         int memoryTax = 3;
         int localDiskTax = 55;
         // Disk tax is not included in flavor resources but memory tax is
@@ -439,6 +439,23 @@ public class DynamicProvisioningTest {
         tester.assertNodes("'any' selects a flavor with remote storage since it produces higher fulfilment",
                            4, 2, 2, 20, 200, fast, remote,
                            app1, cluster1);
+    }
+
+    @Test
+    public void gpu_host()  {
+        List<Flavor> flavors = List.of(new Flavor("gpu", new NodeResources(4, 16, 125, 10, fast, local,
+                                                                           Architecture.x86_64, new NodeResources.GpuResources(1, 16))));
+        ProvisioningTester tester = new ProvisioningTester.Builder().zone(zone)
+                                                                    .flavors(flavors)
+                                                                    .hostProvisioner(new MockHostProvisioner(flavors, zone.cloud()))
+                                                                    .nameResolver(nameResolver)
+                                                                    .build();
+        NodeResources resources = new NodeResources(4, 16, 125, 0.3,
+                                                  NodeResources.DiskSpeed.any, NodeResources.StorageType.any,
+                                                  NodeResources.Architecture.x86_64, new NodeResources.GpuResources(1, 16));
+        tester.prepare(ProvisioningTester.applicationId(), ClusterSpec.request(ClusterSpec.Type.container, ClusterSpec.Id.from("id1"))
+                                                                      .vespaVersion("8.0").build(),
+                       2, 1, resources);
     }
 
     private void prepareAndActivate(ApplicationId application, ClusterSpec clusterSpec, int nodes, int groups, NodeResources resources) {

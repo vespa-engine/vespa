@@ -126,8 +126,6 @@ public class NodeResources {
         private static final GpuResources none = new GpuResources(0, 0);
 
         public GpuResources {
-            if (count < 0) throw new IllegalArgumentException("GPU count cannot be negative, got " + count);
-            if (memoryGb < 0) throw new IllegalArgumentException("GPU memory cannot be negative, got " + memoryGb);
             validate(memoryGb, "memory");
         }
 
@@ -136,7 +134,8 @@ public class NodeResources {
         }
 
         private boolean lessThan(GpuResources other) {
-            return totalMemory() < other.totalMemory();
+            return this.count < other.count ||
+                   this.memoryGb < other.memoryGb;
         }
 
         public boolean isDefault() { return this.equals(getDefault()); }
@@ -372,7 +371,7 @@ public class NodeResources {
         if ( !gpuResources.isDefault()) {
             sb.append(", gpu count: ").append(gpuResources.count());
             sb.append(", gpu memory: ");
-            appendDouble(sb, memoryGb);
+            appendDouble(sb, gpuResources.memoryGb());
             sb.append(" Gb");
         }
         sb.append(']');

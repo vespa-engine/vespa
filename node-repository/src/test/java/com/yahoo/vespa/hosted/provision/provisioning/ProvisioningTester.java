@@ -731,6 +731,9 @@ public class ProvisioningTester {
             flavor.bandwidth(resources.bandwidthGbps() * 1000);
             flavor.fastDisk(resources.diskSpeed().compatibleWith(NodeResources.DiskSpeed.fast));
             flavor.remoteStorage(resources.storageType().compatibleWith(NodeResources.StorageType.remote));
+            flavor.architecture(resources.architecture().toString());
+            flavor.gpuCount(resources.gpuResources().count());
+            flavor.gpuMemoryGb(resources.gpuResources().memoryGb());
             return flavor;
         }
 
