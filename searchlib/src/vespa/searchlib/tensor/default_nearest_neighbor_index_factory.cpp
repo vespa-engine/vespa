@@ -28,6 +28,7 @@ make_random_level_generator(uint32_t m)
 std::unique_ptr<NearestNeighborIndex>
 DefaultNearestNeighborIndexFactory::make(const DocVectorAccess& vectors,
                                          size_t vector_size,
+                                         bool multi_vector_index,
                                          vespalib::eval::CellType cell_type,
                                          const search::attribute::HnswIndexParams& params) const
 {
@@ -38,10 +39,17 @@ DefaultNearestNeighborIndexFactory::make(const DocVectorAccess& vectors,
                         params.neighbors_to_explore_at_insert(),
                         10000,
                         true);
-    return std::make_unique<HnswIndex<HnswIndexType::SINGLE>>(vectors,
-                                       make_distance_function(params.distance_metric(), cell_type),
-                                       make_random_level_generator(m),
-                                       cfg);
+    if (multi_vector_index) {
+        return std::make_unique<HnswIndex<HnswIndexType::MULTI>>(vectors,
+                                                                  make_distance_function(params.distance_metric(), cell_type),
+                                                                  make_random_level_generator(m),
+                                                                  cfg);
+    } else {
+        return std::make_unique<HnswIndex<HnswIndexType::SINGLE>>(vectors,
+                                                                  make_distance_function(params.distance_metric(), cell_type),
+                                                                  make_random_level_generator(m),
+                                                                  cfg);
+    }
 }
 
 }

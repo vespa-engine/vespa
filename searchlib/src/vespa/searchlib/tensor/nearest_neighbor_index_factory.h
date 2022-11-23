@@ -20,6 +20,7 @@ public:
     virtual ~NearestNeighborIndexFactory() {}
     virtual std::unique_ptr<NearestNeighborIndex> make(const DocVectorAccess& vectors,
                                                        size_t vector_size,
+                                                       bool multi_vector_index,
                                                        vespalib::eval::CellType cell_type,
                                                        const search::attribute::HnswIndexParams& params) const = 0;
 };

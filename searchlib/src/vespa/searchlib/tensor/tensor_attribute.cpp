@@ -2,6 +2,7 @@
 
 #include "tensor_attribute.h"
 #include "nearest_neighbor_index.h"
+#include "nearest_neighbor_index_factory.h"
 #include "nearest_neighbor_index_saver.h"
 #include "tensor_attribute_constants.h"
 #include "tensor_attribute_loader.h"
@@ -51,7 +52,7 @@ vespalib::string makeWrongTensorTypeMsg(const ValueType &fieldTensorType, const 
 
 }
 
-TensorAttribute::TensorAttribute(vespalib::stringref name, const Config &cfg, TensorStore &tensorStore)
+TensorAttribute::TensorAttribute(vespalib::stringref name, const Config &cfg, TensorStore &tensorStore, const NearestNeighborIndexFactory& index_factory)
     : NotImplementedAttribute(name, cfg),
       _refVector(cfg.getGrowStrategy(), getGenerationHolder()),
       _tensorStore(tensorStore),
@@ -62,6 +63,11 @@ TensorAttribute::TensorAttribute(vespalib::stringref name, const Config &cfg, Te
       _subspace_type(cfg.tensorType()),
       _comp(cfg.tensorType())
 {
+    if (cfg.hnsw_index_params().has_value()) {
+        auto tensor_type = cfg.tensorType();
+        size_t vector_size = tensor_type.dense_subspace_size();
+        _index = index_factory.make(*this, vector_size, !_is_dense, tensor_type.cell_type(), cfg.hnsw_index_params().value());
+    }
 }
 
 TensorAttribute::~TensorAttribute() = default;

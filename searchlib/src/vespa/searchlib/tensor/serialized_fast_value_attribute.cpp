@@ -13,9 +13,9 @@ using namespace vespalib::eval;
 
 namespace search::tensor {
 
-SerializedFastValueAttribute::SerializedFastValueAttribute(stringref name, const Config &cfg)
-  : TensorAttribute(name, cfg, _tensorBufferStore),
-    _tensorBufferStore(cfg.tensorType(), get_memory_allocator(), 1000u)
+SerializedFastValueAttribute::SerializedFastValueAttribute(stringref name, const Config &cfg, const NearestNeighborIndexFactory& index_factory)
+    : TensorAttribute(name, cfg, _tensorBufferStore, index_factory),
+      _tensorBufferStore(cfg.tensorType(), get_memory_allocator(), 1000u)
 {
 }
 

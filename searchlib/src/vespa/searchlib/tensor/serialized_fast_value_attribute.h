@@ -3,6 +3,7 @@
 #pragma once
 
 #include "tensor_attribute.h"
+#include "default_nearest_neighbor_index_factory.h"
 #include "tensor_buffer_store.h"
 
 namespace search::tensor {
@@ -19,7 +20,7 @@ namespace search::tensor {
 class SerializedFastValueAttribute : public TensorAttribute {
     TensorBufferStore _tensorBufferStore; // data store for serialized tensors
 public:
-    SerializedFastValueAttribute(vespalib::stringref baseFileName, const Config &cfg);
+    SerializedFastValueAttribute(vespalib::stringref baseFileName, const Config &cfg, const NearestNeighborIndexFactory& index_factory = DefaultNearestNeighborIndexFactory());
     ~SerializedFastValueAttribute() override;
 
     // Implements DocVectorAccess

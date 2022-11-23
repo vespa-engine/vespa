@@ -9,8 +9,6 @@
 
 namespace search::tensor {
 
-class NearestNeighborIndex;
-
 /**
  * Attribute vector class used to store dense tensors for all
  * documents in memory.
