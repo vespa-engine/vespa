@@ -20,6 +20,7 @@ import com.yahoo.vespa.hosted.controller.tenant.TenantInfo;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import java.io.IOException;
 import java.time.Instant;
 import java.util.List;
 import java.util.Map;
@@ -54,7 +55,7 @@ public class NotifierTest {
     }
 
     @Test
-    void dispatch() {
+    void dispatch() throws IOException {
         var mailer = new MockMailer();
         var flagSource = new InMemoryFlagSource().withBooleanFlag(Flags.NOTIFICATION_DISPATCH_FLAG.id(), true);
         var notifier = new Notifier(curatorDb, new ZoneRegistryMock(SystemName.cd), mailer, flagSource);
@@ -68,21 +69,7 @@ public class NotifierTest {
         var mail = mailer.inbox(email.getEmailAddress()).get(0);
 
         assertEquals("[WARNING] Test package Vespa Notification for tenant1.default.default", mail.subject());
-        assertEquals("""
-                        <div style="background: #00598c; height: 55px; width: 100%">
-                          <img
-                            src="https://vespa.ai/assets/vespa-logo.png"
-                            style="width: auto; height: 34px; margin: 10px"
-                          />
-                        </div>
-                        <br>
-                        There are problems with tests for default.default<br>
-                        <ul>
-                        <li>test package has production tests, but no production tests are declared in deployment.xml</li><br>
-                        <li>see <a href="https://docs.vespa.ai/en/testing.html">https://docs.vespa.ai/en/testing.html</a> for details on how to write system tests for Vespa</li></ul>
-                        <br>
-                        <a href="https://dashboard.tld/tenant1/default">Vespa Console</a>""",
-                mail.htmlMessage().get());
+        assertEquals(new String(NotifierTest.class.getResourceAsStream("/mail/notification.txt").readAllBytes()), mail.htmlMessage().get());
     }
 
     @Test
