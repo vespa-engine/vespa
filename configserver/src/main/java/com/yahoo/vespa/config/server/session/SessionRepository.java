@@ -29,6 +29,7 @@ import com.yahoo.vespa.config.server.application.PermanentApplicationPackage;
 import com.yahoo.vespa.config.server.application.TenantApplications;
 import com.yahoo.vespa.config.server.configchange.ConfigChangeActions;
 import com.yahoo.vespa.config.server.deploy.TenantFileSystemDirs;
+import com.yahoo.vespa.config.server.filedistribution.FileDirectory;
 import com.yahoo.vespa.config.server.filedistribution.FileDistributionFactory;
 import com.yahoo.vespa.config.server.http.InvalidApplicationException;
 import com.yahoo.vespa.config.server.http.UnknownVespaVersionException;
@@ -860,9 +861,9 @@ public class SessionRepository {
     }
 
     /**
-     * Create a new local session for the given session id if it does not already exist.
-     * Will also add the session to the local session cache if necessary. If there is no
-     * remote session matching the session it will also be created.
+     * Create a new local session for the given session id if it does not already exist and
+     * will add the session to the local session cache. If there is no remote session matching
+     * the session id the remote session will also be created.
      */
     public void createLocalSessionFromDistributedApplicationPackage(long sessionId) {
         if (applicationRepo.sessionExistsInFileSystem(sessionId)) {
@@ -876,8 +877,9 @@ public class SessionRepository {
         log.log(Level.FINE, () -> "File reference for session id " + sessionId + ": " + fileReference);
         if (fileReference != null) {
             File sessionDir;
+            FileDirectory fileDirectory = fileDistributionFactory.fileDirectory();
             try {
-                sessionDir = fileDistributionFactory.fileDirectory().getFile(fileReference);
+                sessionDir = fileDirectory.getFile(fileReference);
             } catch (IllegalArgumentException e) {
                 // We cannot be guaranteed that the file reference exists (it could be that it has not
                 // been downloaded yet), and e.g. when bootstrapping we cannot throw an exception in that case
@@ -890,9 +892,8 @@ public class SessionRepository {
             try {
                 createLocalSession(sessionDir, applicationId, sessionZKClient.readTags(), sessionId);
             } finally {
-                // Delete downloaded file reference, not needed anymore
-                log.log(Level.FINE, "Deleting file distribution reference for app package with session id " + sessionDir);
-                IOUtils.recursiveDeleteDir(sessionDir);
+                log.log(Level.FINE, "Deleting file distribution reference " + fileReference + " for app package with session id " + sessionId);
+                fileDirectory.delete(fileReference, (reference) -> true); // Delete downloaded file reference, not needed anymore
             }
         }
     }
