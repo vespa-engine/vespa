@@ -9,8 +9,8 @@ using vespalib::eval::FastValueBuilderFactory;
 
 namespace search::tensor {
 
-DirectTensorAttribute::DirectTensorAttribute(stringref name, const Config &cfg)
-    : TensorAttribute(name, cfg, _direct_store),
+DirectTensorAttribute::DirectTensorAttribute(stringref name, const Config &cfg, const NearestNeighborIndexFactory& index_factory)
+    : TensorAttribute(name, cfg, _direct_store, index_factory),
       _direct_store(cfg.tensorType())
 {
 }

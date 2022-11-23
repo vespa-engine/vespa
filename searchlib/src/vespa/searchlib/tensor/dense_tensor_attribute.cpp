@@ -15,16 +15,9 @@ namespace search::tensor {
 
 DenseTensorAttribute::DenseTensorAttribute(vespalib::stringref baseFileName, const Config& cfg,
                                            const NearestNeighborIndexFactory& index_factory)
-    : TensorAttribute(baseFileName, cfg, _denseTensorStore),
+    : TensorAttribute(baseFileName, cfg, _denseTensorStore, index_factory),
       _denseTensorStore(cfg.tensorType(), get_memory_allocator())
 {
-    if (cfg.hnsw_index_params().has_value()) {
-        auto tensor_type = cfg.tensorType();
-        assert(tensor_type.dimensions().size() == 1);
-        assert(tensor_type.is_dense());
-        size_t vector_size = tensor_type.dimensions()[0].size;
-        _index = index_factory.make(*this, vector_size, tensor_type.cell_type(), cfg.hnsw_index_params().value());
-    }
 }
 
 

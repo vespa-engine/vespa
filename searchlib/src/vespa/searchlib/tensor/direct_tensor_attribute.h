@@ -3,6 +3,7 @@
 #pragma once
 
 #include "tensor_attribute.h"
+#include "default_nearest_neighbor_index_factory.h"
 #include "direct_tensor_store.h"
 
 namespace vespalib::eval { struct Value; }
@@ -14,7 +15,7 @@ class DirectTensorAttribute final : public TensorAttribute
     DirectTensorStore _direct_store;
 
 public:
-    DirectTensorAttribute(vespalib::stringref baseFileName, const Config &cfg);
+    DirectTensorAttribute(vespalib::stringref baseFileName, const Config &cfg, const NearestNeighborIndexFactory& index_factory = DefaultNearestNeighborIndexFactory());
     ~DirectTensorAttribute() override;
     void setTensor(DocId docId, const vespalib::eval::Value &tensor) override;
     void update_tensor(DocId docId,

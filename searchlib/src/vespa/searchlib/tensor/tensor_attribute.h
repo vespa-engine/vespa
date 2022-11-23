@@ -16,6 +16,8 @@ namespace vespalib::eval { struct Value; struct ValueBuilderFactory; }
 
 namespace search::tensor {
 
+class NearestNeighborIndexFactory;
+
 /**
  * Attribute vector class used to store tensors for all documents in memory.
  */
@@ -48,7 +50,7 @@ protected:
 
 public:
     using RefCopyVector = vespalib::Array<EntryRef>;
-    TensorAttribute(vespalib::stringref name, const Config &cfg, TensorStore &tensorStore);
+    TensorAttribute(vespalib::stringref name, const Config &cfg, TensorStore &tensorStore, const NearestNeighborIndexFactory& index_factory);
     ~TensorAttribute() override;
     const ITensorAttribute *asTensorAttribute() const override;
 

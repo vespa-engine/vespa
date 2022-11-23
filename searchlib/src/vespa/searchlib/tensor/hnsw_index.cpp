@@ -380,7 +380,6 @@ template <HnswIndexType type>
 typename HnswIndex<type>::PreparedAddDoc
 HnswIndex<type>::internal_prepare_add(uint32_t docid, VectorBundle input_vectors, vespalib::GenerationHandler::Guard read_guard) const
 {
-    assert(input_vectors.subspaces() == 1);
     PreparedAddDoc op(docid, std::move(read_guard));
     auto entry = _graph.get_entry_node();
     auto subspaces = input_vectors.subspaces();
@@ -459,7 +458,6 @@ template <HnswIndexType type>
 void
 HnswIndex<type>::internal_complete_add(uint32_t docid, PreparedAddDoc &op)
 {
-    assert(op.nodes.size() == 1);
     auto nodeids = _id_mapping.allocate_ids(docid, op.nodes.size());
     assert(nodeids.size() == op.nodes.size());
     uint32_t subspace = 0;
@@ -575,7 +573,6 @@ void
 HnswIndex<type>::remove_document(uint32_t docid)
 {
     auto nodeids = _id_mapping.get_ids(docid);
-    assert(nodeids.size() == 1u);
     for (auto nodeid : nodeids) {
         remove_node(nodeid);
     }
