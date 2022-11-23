@@ -1,6 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "hnsw_nodeid_mapping.h"
+#include "hnsw_node.h"
 #include <vespa/vespalib/datastore/array_store.hpp>
 #include <vespa/vespalib/util/generation_hold_list.hpp>
 #include <vespa/vespalib/util/size_literals.h>
@@ -113,6 +114,106 @@ HnswNodeidMapping::reclaim_memory(generation_t oldest_used_gen)
     _hold_list.reclaim(oldest_used_gen, [this](uint32_t nodeid) {
         _free_list.push_back(nodeid);
     });
+}
+
+namespace {
+
+uint32_t
+get_docid_limit(vespalib::ConstArrayRef<HnswNode> nodes)
+{
+    uint32_t max_docid = 0;
+    for (auto& node : nodes) {
+        if (node.ref().load_relaxed().valid()) {
+            max_docid = std::max(node.acquire_docid(), max_docid);
+        }
+    }
+    return max_docid + 1;
+}
+
+std::vector<uint32_t>
+make_subspaces_histogram(vespalib::ConstArrayRef<HnswNode> nodes, uint32_t docid_limit)
+{
+    // Make histogram
+    std::vector<uint32_t> histogram(docid_limit);
+    for (auto& node : nodes) {
+        if (node.ref().load_relaxed().valid()) {
+            auto docid = node.acquire_docid();
+            auto subspace = node.acquire_subspace();
+            auto &num_subspaces = histogram[docid];
+            num_subspaces = std::max(num_subspaces, subspace + 1);
+        }
+    }
+    assert(histogram[0] == 0);
+    return histogram;
+}
+
+}
+
+void
+HnswNodeidMapping::allocate_docid_to_nodeids_mapping(std::vector<uint32_t> histogram)
+{
+    ensure_refs_size(histogram.size() - 1);
+    uint32_t docid = 0;
+    for (auto subspaces : histogram) {
+        if (subspaces > 0) {
+            auto ref = _nodeids.allocate(subspaces);
+            _refs[docid] = ref;
+            auto nodeids = _nodeids.get_writable(ref);
+            for (auto& nodeid : nodeids) {
+                nodeid = 0;
+            }
+        }
+        ++docid;
+    }
+}
+
+void
+HnswNodeidMapping::populate_docid_to_nodeids_mapping_and_free_list(vespalib::ConstArrayRef<HnswNode> nodes)
+{
+    uint32_t nodeid = 0;
+    for (auto& node : nodes) {
+        if (node.ref().load_relaxed().valid()) {
+            auto docid = node.acquire_docid();
+            auto subspace = node.acquire_subspace();
+            auto nodeids = _nodeids.get_writable(_refs[docid]);
+            assert(subspace < nodeids.size());
+            assert(nodeids[subspace] == 0);
+            nodeids[subspace] = nodeid;
+        } else if (nodeid > 0) {
+            _free_list.push_back(nodeid);
+        }
+        ++nodeid;
+    }
+    std::reverse(_free_list.begin(), _free_list.end());
+}
+
+void
+HnswNodeidMapping::assert_all_subspaces_have_valid_nodeid(uint32_t docid_limit)
+{
+    for (uint32_t docid = 0; docid < docid_limit; ++docid) {
+        auto ref = _refs[docid];
+        if (ref.valid()) {
+            auto nodeids = _nodeids.get_writable(ref);
+            for (auto nodeid : nodeids) {
+                assert(nodeid != 0);
+            }
+        }
+    }
+}
+
+void
+HnswNodeidMapping::on_load(vespalib::ConstArrayRef<HnswNode> nodes)
+{
+    if (nodes.empty()) {
+        return;
+    }
+    // Check that reserved nodeid is not used
+    assert(!nodes[0].ref().load_relaxed().valid());
+    auto docid_limit = get_docid_limit(nodes);
+    auto histogram = make_subspaces_histogram(nodes, docid_limit);    // Allocate mapping from docid to nodeids
+    allocate_docid_to_nodeids_mapping(std::move(histogram));
+    populate_docid_to_nodeids_mapping_and_free_list(nodes);
+    assert_all_subspaces_have_valid_nodeid(docid_limit);
 }
 
 namespace {

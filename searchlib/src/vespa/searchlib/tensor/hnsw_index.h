@@ -67,6 +67,7 @@ public:
         }
     }
 
+    static constexpr HnswIndexType index_type = type;
     using IdMapping = typename HnswIndexTraits<type>::IdMapping;
 protected:
     using GraphType = HnswGraph<type>;

@@ -1,9 +1,11 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include <vespa/searchlib/tensor/hnsw_nodeid_mapping.h>
+#include <vespa/searchlib/tensor/hnsw_node.h>
 #include <vespa/vespalib/gtest/gtest.h>
 
 using namespace search::tensor;
+using vespalib::datastore::EntryRef;
 
 class HnswNodeidMappingTest : public ::testing::Test {
 public:
@@ -72,6 +74,24 @@ TEST_F(HnswNodeidMappingTest, free_ids_puts_nodeids_on_hold_list_and_then_free_l
 
     mapping.reclaim_memory(14); // {7, 8} are moved to free list
     expect_allocate_get({8, 7, 10}, 7); // Free list is first used, then new nodeid is allocated
+}
+
+TEST_F(HnswNodeidMappingTest, on_load_populates_mapping)
+{
+    std::vector<HnswNode> nodes(10);
+    nodes[1].ref().store_relaxed(EntryRef(1));
+    nodes[1].store_docid(7);
+    nodes[1].store_subspace(0);
+    nodes[2].ref().store_relaxed(EntryRef(2));
+    nodes[2].store_docid(4);
+    nodes[2].store_subspace(0);
+    nodes[7].ref().store_relaxed(EntryRef(3));
+    nodes[7].store_docid(4);
+    nodes[7].store_subspace(1);
+    mapping.on_load(vespalib::ConstArrayRef(nodes.data(), nodes.size()));
+    expect_get({1}, 7);
+    expect_get({2, 7}, 4);
+    expect_allocate_get({3, 4, 5, 6, 8, 9}, 1);
 }
 
 TEST_F(HnswNodeidMappingTest, memory_usage_increases_when_allocating_nodeids)

@@ -3,6 +3,7 @@ vespa_add_executable(searchlib_hnsw_save_load_test_app TEST
     SOURCES
     hnsw_save_load_test.cpp
     DEPENDS
+    searchlib_test
     searchlib
     GTest::GTest
 )

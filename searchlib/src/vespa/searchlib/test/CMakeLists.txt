@@ -12,6 +12,7 @@ vespa_add_library(searchlib_test
     searchiteratorverifier.cpp
     schema_builder.cpp
     string_field_builder.cpp
+    vector_buffer_writer.cpp
     $<TARGET_OBJECTS:searchlib_test_fakedata>
     $<TARGET_OBJECTS:searchlib_searchlib_test_diskindex>
     $<TARGET_OBJECTS:searchlib_test_gtest_migration>

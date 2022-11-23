@@ -13,6 +13,8 @@
 
 namespace search::tensor {
 
+class HnswNode;
+
 /**
  * Class used to keep track of the mapping from docid to array of nodeids.
  * A nodeid is an identifier for a node in the HNSW graph that represents a single vector.
@@ -39,6 +41,9 @@ private:
 
     void ensure_refs_size(uint32_t docid);
     uint32_t allocate_id();
+    void allocate_docid_to_nodeids_mapping(std::vector<uint32_t> histogram);
+    void populate_docid_to_nodeids_mapping_and_free_list(vespalib::ConstArrayRef<HnswNode> nodes);
+    void assert_all_subspaces_have_valid_nodeid(uint32_t docid_limit);
 
 public:
     HnswNodeidMapping();
@@ -49,6 +54,7 @@ public:
 
     void assign_generation(generation_t current_gen);
     void reclaim_memory(generation_t oldest_used_gen);
+    void on_load(vespalib::ConstArrayRef<HnswNode> nodes);
     // TODO: Add support for compaction
     vespalib::MemoryUsage memory_usage() const;
 };
