@@ -284,6 +284,7 @@ public class SessionRepository {
         session.setVespaVersion(existingSession.getVespaVersion());
         session.setDockerImageRepository(existingSession.getDockerImageRepository());
         session.setAthenzDomain(existingSession.getAthenzDomain());
+        session.setQuota(existingSession.getQuota());
         session.setTenantSecretStores(existingSession.getTenantSecretStores());
         session.setOperatorCertificates(existingSession.getOperatorCertificates());
         session.setCloudAccount(existingSession.getCloudAccount());
