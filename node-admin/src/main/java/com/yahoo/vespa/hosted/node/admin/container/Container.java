@@ -19,15 +19,17 @@ public class Container extends PartialContainer {
     private final ContainerResources resources;
     private final int conmonPid;
     private final List<Network> networks;
+    private final List<String> createCommand;
 
     public Container(ContainerId id, ContainerName name, Instant createdAt, State state, String imageId, DockerImage image,
                      Map<String, String> labels, int pid, int conmonPid, String hostname,
-                     ContainerResources resources, List<Network> networks, boolean managed) {
+                     ContainerResources resources, List<Network> networks, boolean managed, List<String> createCommand) {
         super(id, name, createdAt, state, imageId, image, labels, pid, managed);
         this.hostname = Objects.requireNonNull(hostname);
         this.resources = Objects.requireNonNull(resources);
         this.conmonPid = conmonPid;
         this.networks = List.copyOf(Objects.requireNonNull(networks));
+        this.createCommand = List.copyOf(Objects.requireNonNull(createCommand));
     }
 
     /** The hostname of this, if any */
@@ -50,18 +52,23 @@ public class Container extends PartialContainer {
         return networks;
     }
 
+    /** The command used to create this */
+    public List<String> createCommand() {
+        return createCommand;
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         if (!super.equals(o)) return false;
-        Container that = (Container) o;
-        return conmonPid == that.conmonPid && hostname.equals(that.hostname) && resources.equals(that.resources) && networks.equals(that.networks);
+        Container container = (Container) o;
+        return conmonPid == container.conmonPid && hostname.equals(container.hostname) && resources.equals(container.resources) && networks.equals(container.networks) && createCommand.equals(container.createCommand);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(super.hashCode(), hostname, resources, conmonPid, networks);
+        return Objects.hash(super.hashCode(), hostname, resources, conmonPid, networks, createCommand);
     }
 
     /** The network of a container */
