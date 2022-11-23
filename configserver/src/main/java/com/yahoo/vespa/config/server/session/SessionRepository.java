@@ -579,13 +579,7 @@ public class SessionRepository {
         zkWatcherExecutor.execute(() -> {
             log.log(Level.FINE, () -> "Got child event: " + event);
             switch (event.getType()) {
-                case CHILD_ADDED:
-                case CHILD_REMOVED:
-                case CONNECTION_RECONNECTED:
-                    sessionsChanged();
-                    break;
-                default:
-                    break;
+                case CHILD_ADDED, CHILD_REMOVED, CONNECTION_RECONNECTED -> sessionsChanged();
             }
         });
     }
@@ -636,9 +630,7 @@ public class SessionRepository {
             }
 
             sessionIdsToDelete.forEach(this::deleteLocalSession);
-
-            // Make sure to catch here, to avoid executor just dying in case of issues ...
-        } catch (Throwable e) {
+        } catch (Throwable e) { // Make sure to catch here, to avoid executor just dying in case of issues ...
             log.log(Level.WARNING, "Error when purging old sessions ", e);
         }
         log.log(Level.FINE, () -> "Done purging old sessions");
@@ -784,13 +776,12 @@ public class SessionRepository {
     }
 
     private Optional<ApplicationSet> getApplicationSet(long sessionId) {
-        Optional<ApplicationSet> applicationSet = Optional.empty();
         try {
-            applicationSet = Optional.ofNullable(getRemoteSession(sessionId)).map(this::ensureApplicationLoaded);
+            return Optional.ofNullable(getRemoteSession(sessionId)).map(this::ensureApplicationLoaded);
         } catch (IllegalArgumentException e) {
             // Do nothing if we have no currently active session
+            return Optional.empty();
         }
-        return applicationSet;
     }
 
     private void copyApp(File sourceDir, File destinationDir) throws IOException {
@@ -875,26 +866,26 @@ public class SessionRepository {
         SessionZooKeeperClient sessionZKClient = createSessionZooKeeperClient(sessionId);
         FileReference fileReference = sessionZKClient.readApplicationPackageReference();
         log.log(Level.FINE, () -> "File reference for session id " + sessionId + ": " + fileReference);
-        if (fileReference != null) {
-            File sessionDir;
-            FileDirectory fileDirectory = fileDistributionFactory.fileDirectory();
-            try {
-                sessionDir = fileDirectory.getFile(fileReference);
-            } catch (IllegalArgumentException e) {
-                // We cannot be guaranteed that the file reference exists (it could be that it has not
-                // been downloaded yet), and e.g. when bootstrapping we cannot throw an exception in that case
-                log.log(Level.FINE, () -> "File reference for session id " + sessionId + ": " + fileReference + " not found");
-                return;
-            }
-            ApplicationId applicationId = sessionZKClient.readApplicationId()
-                    .orElseThrow(() -> new RuntimeException("Could not find application id for session " + sessionId));
-            log.log(Level.FINE, () -> "Creating local session for tenant '" + tenantName + "' with session id " + sessionId);
-            try {
-                createLocalSession(sessionDir, applicationId, sessionZKClient.readTags(), sessionId);
-            } finally {
-                log.log(Level.FINE, "Deleting file distribution reference " + fileReference + " for app package with session id " + sessionId);
-                fileDirectory.delete(fileReference, (reference) -> true); // Delete downloaded file reference, not needed anymore
-            }
+        if (fileReference == null) throw new RuntimeException("file reference for application package is null");
+
+        File sessionDir;
+        FileDirectory fileDirectory = fileDistributionFactory.fileDirectory();
+        try {
+            sessionDir = fileDirectory.getFile(fileReference);
+        } catch (IllegalArgumentException e) {
+            // We cannot be guaranteed that the file reference exists (it could be that it has not
+            // been downloaded yet), and e.g. when bootstrapping we cannot throw an exception in that case
+            log.log(Level.FINE, () -> "File reference for session id " + sessionId + ": " + fileReference + " not found");
+            return;
+        }
+        ApplicationId applicationId = sessionZKClient.readApplicationId()
+                                                     .orElseThrow(() -> new RuntimeException("Could not find application id for session " + sessionId));
+        log.log(Level.FINE, () -> "Creating local session for tenant '" + tenantName + "' with session id " + sessionId);
+        try {
+            createLocalSession(sessionDir, applicationId, sessionZKClient.readTags(), sessionId);
+        } finally {
+            log.log(Level.FINE, "Deleting file distribution reference " + fileReference + " for app package with session id " + sessionId);
+            fileDirectory.delete(fileReference, (reference) -> true); // Delete downloaded file reference, not needed anymore
         }
     }
 
