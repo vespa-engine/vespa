@@ -2,7 +2,6 @@
 package com.yahoo.search.dispatch;
 
 import com.yahoo.search.dispatch.searchcluster.Group;
-import com.yahoo.search.dispatch.searchcluster.SearchCluster;
 
 import java.time.Duration;
 import java.util.ArrayList;
@@ -34,9 +33,9 @@ public class LoadBalancer {
 
     public enum Policy { ROUNDROBIN, LATENCY_AMORTIZED_OVER_REQUESTS, LATENCY_AMORTIZED_OVER_TIME, BEST_OF_RANDOM_2}
 
-    public LoadBalancer(SearchCluster searchCluster, Policy policy) {
-        this.scoreboard = new ArrayList<>(searchCluster.groups().size());
-        for (Group group : searchCluster.orderedGroups()) {
+    public LoadBalancer(List<Group> groups, Policy policy) {
+        this.scoreboard = new ArrayList<>(groups.size());
+        for (Group group : groups) {
             scoreboard.add(new GroupStatus(group));
         }
         if (scoreboard.size() == 1)
