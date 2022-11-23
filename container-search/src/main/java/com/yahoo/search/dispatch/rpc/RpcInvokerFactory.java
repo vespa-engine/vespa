@@ -9,6 +9,7 @@ import com.yahoo.search.dispatch.InvokerFactory;
 import com.yahoo.search.dispatch.SearchInvoker;
 import com.yahoo.search.dispatch.searchcluster.Node;
 import com.yahoo.search.dispatch.searchcluster.SearchCluster;
+import com.yahoo.vespa.config.search.DispatchConfig;
 
 import java.util.Optional;
 
@@ -17,19 +18,18 @@ import java.util.Optional;
  */
 public class RpcInvokerFactory extends InvokerFactory {
 
-    private final RpcResourcePool rpcResourcePool;
+    private final RpcConnectionPool rpcResourcePool;
+    private final CompressPayload compressor;
 
-    public RpcInvokerFactory(RpcResourcePool rpcResourcePool, SearchCluster searchCluster) {
-        super(searchCluster);
+    public RpcInvokerFactory(RpcConnectionPool rpcResourcePool, SearchCluster searchCluster, DispatchConfig dispatchConfig) {
+        super(searchCluster, dispatchConfig);
         this.rpcResourcePool = rpcResourcePool;
+        this.compressor = new CompressService();
     }
 
     @Override
-    protected Optional<SearchInvoker> createNodeSearchInvoker(VespaBackEndSearcher searcher,
-                                                              Query query,
-                                                              int maxHits,
-                                                              Node node) {
-        return Optional.of(new RpcSearchInvoker(searcher, node, rpcResourcePool, maxHits));
+    protected Optional<SearchInvoker> createNodeSearchInvoker(VespaBackEndSearcher searcher, Query query, int maxHits, Node node) {
+        return Optional.of(new RpcSearchInvoker(searcher, compressor, node, rpcResourcePool, maxHits));
     }
 
     @Override
@@ -37,7 +37,6 @@ public class RpcInvokerFactory extends InvokerFactory {
         Query query = result.getQuery();
 
         boolean summaryNeedsQuery = searcher.summaryNeedsQuery(query);
-        return new RpcProtobufFillInvoker(rpcResourcePool, searcher.getDocumentDatabase(query), searcher.getServerId(), summaryNeedsQuery);
+        return new RpcProtobufFillInvoker(rpcResourcePool, compressor, searcher.getDocumentDatabase(query), searcher.getServerId(), summaryNeedsQuery);
     }
-
 }

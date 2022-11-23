@@ -8,7 +8,6 @@ import com.yahoo.net.HostName;
 import com.yahoo.prelude.Pong;
 import com.yahoo.search.cluster.ClusterMonitor;
 import com.yahoo.search.cluster.NodeManager;
-import com.yahoo.search.dispatch.TopKEstimator;
 import com.yahoo.vespa.config.search.DispatchConfig;
 import com.yahoo.vespa.config.search.DispatchNodesConfig;
 
@@ -29,16 +28,14 @@ public class SearchCluster implements NodeManager<Node> {
 
     private static final Logger log = Logger.getLogger(SearchCluster.class.getName());
 
-    private final DispatchConfig dispatchConfig;
+    private final double minActivedocsPercentage;
     private final String clusterId;
+    private final VipStatus vipStatus;
+    private final PingFactory pingFactory;
     private final Map<Integer, Group> groups;
     private final List<Group> orderedGroups;
     private final List<Node> nodes;
-    private final VipStatus vipStatus;
-    private final PingFactory pingFactory;
-    private final TopKEstimator hitEstimator;
     private long nextLogTime = 0;
-    private static final double SKEW_FACTOR = 0.05;
 
     /**
      * A search node on this local machine having the entire corpus, which we therefore
@@ -48,13 +45,13 @@ public class SearchCluster implements NodeManager<Node> {
      * if it only queries this cluster when the local node cannot be used, to avoid unnecessary
      * cross-node network traffic.
      */
-    private final Optional<Node> localCorpusDispatchTarget;
+    private final Node localCorpusDispatchTarget;
 
     public SearchCluster(String clusterId, DispatchConfig dispatchConfig,
                          DispatchNodesConfig nodesConfig,
                          VipStatus vipStatus, PingFactory pingFactory) {
         this.clusterId = clusterId;
-        this.dispatchConfig = dispatchConfig;
+        this.minActivedocsPercentage = dispatchConfig.minActivedocsPercentage();
         this.vipStatus = vipStatus;
         this.pingFactory = pingFactory;
 
@@ -71,7 +68,6 @@ public class SearchCluster implements NodeManager<Node> {
         nodes.forEach(node -> groupIntroductionOrder.put(node.group(), groups.get(node.group())));
         this.orderedGroups = List.copyOf(groupIntroductionOrder.values());
 
-        hitEstimator = new TopKEstimator(30.0, dispatchConfig.topKProbability(), SKEW_FACTOR);
         this.localCorpusDispatchTarget = findLocalCorpusDispatchTarget(HostName.getLocalhost(), nodes, groups);
     }
 
@@ -85,7 +81,7 @@ public class SearchCluster implements NodeManager<Node> {
         }
     }
 
-    private static Optional<Node> findLocalCorpusDispatchTarget(String selfHostname,
+    private static Node findLocalCorpusDispatchTarget(String selfHostname,
                                                                 List<Node> nodes,
                                                                 Map<Integer, Group> groups) {
         // A search node in the search cluster in question is configured on the same host as the currently running container.
@@ -96,15 +92,15 @@ public class SearchCluster implements NodeManager<Node> {
                                            .filter(node -> node.hostname().equals(selfHostname))
                                            .toList();
         // Only use direct dispatch if we have exactly 1 search node on the same machine:
-        if (localSearchNodes.size() != 1) return Optional.empty();
+        if (localSearchNodes.size() != 1) return null;
 
         Node localSearchNode = localSearchNodes.iterator().next();
         Group localSearchGroup = groups.get(localSearchNode.group());
 
         // Only use direct dispatch if the local search node has the entire corpus
-        if (localSearchGroup.nodes().size() != 1) return Optional.empty();
+        if (localSearchGroup.nodes().size() != 1) return null;
 
-        return Optional.of(localSearchNode);
+        return localSearchNode;
     }
 
     private static List<Node> toNodes(DispatchNodesConfig nodesConfig) {
@@ -112,13 +108,6 @@ public class SearchCluster implements NodeManager<Node> {
                              .map(n -> new Node(n.key(), n.host(), n.group()))
                              .toList();
     }
-
-    public DispatchConfig dispatchConfig() {
-        return dispatchConfig;
-    }
-
-    /** Returns an immutable list of all nodes in this. */
-    public List<Node> nodes() { return nodes; }
 
     /** Returns the groups of this cluster as an immutable map indexed by group id */
     public Map<Integer, Group> groups() { return groups; }
@@ -148,16 +137,16 @@ public class SearchCluster implements NodeManager<Node> {
      * or empty if we should not dispatch directly.
      */
     public Optional<Node> localCorpusDispatchTarget() {
-        if ( localCorpusDispatchTarget.isEmpty()) return Optional.empty();
+        if ( localCorpusDispatchTarget == null) return Optional.empty();
 
         // Only use direct dispatch if the local group has sufficient coverage
-        Group localSearchGroup = groups().get(localCorpusDispatchTarget.get().group());
+        Group localSearchGroup = groups().get(localCorpusDispatchTarget.group());
         if ( ! localSearchGroup.hasSufficientCoverage()) return Optional.empty();
 
         // Only use direct dispatch if the local search node is not down
-        if ( localCorpusDispatchTarget.get().isWorking() == Boolean.FALSE) return Optional.empty();
+        if ( localCorpusDispatchTarget.isWorking() == Boolean.FALSE) return Optional.empty();
 
-        return localCorpusDispatchTarget;
+        return Optional.of(localCorpusDispatchTarget);
     }
 
     private void updateWorkingState(Node node, boolean isWorking) {
@@ -185,7 +174,7 @@ public class SearchCluster implements NodeManager<Node> {
     }
 
     private void updateVipStatusOnNodeChange(Node node, boolean nodeIsWorking) {
-        if (localCorpusDispatchTarget.isEmpty()) { // consider entire cluster
+        if (localCorpusDispatchTarget == null) { // consider entire cluster
             if (hasInformationAboutAllNodes())
                 setInRotationOnlyIf(hasWorkingNodes());
         }
@@ -198,7 +187,7 @@ public class SearchCluster implements NodeManager<Node> {
     }
 
     private void updateVipStatusOnCoverageChange(Group group, boolean sufficientCoverage) {
-        if ( localCorpusDispatchTarget.isEmpty()) { // consider entire cluster
+        if ( localCorpusDispatchTarget == null) { // consider entire cluster
             // VIP status does not depend on coverage
         }
         else if (usesLocalCorpusIn(group)) { // follow the status of this group
@@ -213,13 +202,6 @@ public class SearchCluster implements NodeManager<Node> {
             vipStatus.removeFromRotation(clusterId);
     }
 
-    public int estimateHitsToFetch(int wantedHits, int numPartitions) {
-        return hitEstimator.estimateK(wantedHits, numPartitions);
-    }
-    public int estimateHitsToFetch(int wantedHits, int numPartitions, double topKProbability) {
-        return hitEstimator.estimateK(wantedHits, numPartitions, topKProbability);
-    }
-
     public boolean hasInformationAboutAllNodes() {
         return nodes.stream().allMatch(node -> node.isWorking() != null);
     }
@@ -229,11 +211,11 @@ public class SearchCluster implements NodeManager<Node> {
     }
 
     private boolean usesLocalCorpusIn(Node node) {
-        return localCorpusDispatchTarget.isPresent() && localCorpusDispatchTarget.get().equals(node);
+        return node.equals(localCorpusDispatchTarget);
     }
 
     private boolean usesLocalCorpusIn(Group group) {
-        return localCorpusDispatchTarget.isPresent() && localCorpusDispatchTarget.get().group() == group.id();
+        return (localCorpusDispatchTarget != null) && localCorpusDispatchTarget.group() == group.id();
     }
 
     /** Used by the cluster monitor to manage node status */
@@ -286,7 +268,7 @@ public class SearchCluster implements NodeManager<Node> {
 
     private boolean isGroupCoverageSufficient(long activeDocuments, long medianDocuments) {
         double documentCoverage = 100.0 * (double) activeDocuments / medianDocuments;
-        if (medianDocuments > 0 && documentCoverage < dispatchConfig.minActivedocsPercentage())
+        if (medianDocuments > 0 && documentCoverage < minActivedocsPercentage)
             return false;
         return true;
     }

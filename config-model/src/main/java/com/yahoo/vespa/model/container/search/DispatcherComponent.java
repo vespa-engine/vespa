@@ -23,16 +23,12 @@ public class DispatcherComponent extends Component<AbstractConfigProducer<?>, Co
     private final IndexedSearchCluster indexedSearchCluster;
 
     public DispatcherComponent(IndexedSearchCluster indexedSearchCluster) {
-        super(toComponentModel(indexedSearchCluster));
+        super(toComponentModel(indexedSearchCluster.getClusterName()));
         this.indexedSearchCluster = indexedSearchCluster;
-        String clusterName = indexedSearchCluster.getClusterName();
-        var rpcResoucePool = new RpcResourcePoolComponent(clusterName);
-        inject(rpcResoucePool);
-        addComponent(rpcResoucePool);
     }
 
-    private static ComponentModel toComponentModel(IndexedSearchCluster indexedSearchCluster) {
-        String dispatcherComponentId = "dispatcher." + indexedSearchCluster.getClusterName(); // used by ClusterSearcher
+    private static ComponentModel toComponentModel(String clusterName) {
+        String dispatcherComponentId = "dispatcher." + clusterName; // used by ClusterSearcher
         return new ComponentModel(dispatcherComponentId,
                                   com.yahoo.search.dispatch.Dispatcher.class.getName(),
                                   PlatformBundles.SEARCH_AND_DOCPROC_BUNDLE);

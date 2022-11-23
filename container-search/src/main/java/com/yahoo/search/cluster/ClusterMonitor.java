@@ -111,7 +111,7 @@ public class ClusterMonitor<T> {
 
     /** Returns a thread-safe snapshot of the NodeMonitors of all added nodes */
     public List<BaseNodeMonitor<T>> nodeMonitors() {
-        return new java.util.ArrayList<>(nodeMonitors.values());
+        return List.copyOf(nodeMonitors.values());
     }
 
     /** Must be called when this goes out of use */

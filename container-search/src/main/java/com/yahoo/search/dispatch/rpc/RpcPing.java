@@ -25,17 +25,19 @@ public class RpcPing implements Pinger, Client.ResponseReceiver {
     private static final boolean triggeredClassLoading = ErrorMessage.createBackendCommunicationError("TriggerClassLoading") instanceof ErrorMessage;
 
     private final Node node;
-    private final RpcResourcePool resourcePool;
+    private final RpcConnectionPool connectionPool;
     private final ClusterMonitor<Node> clusterMonitor;
     private final long pingSequenceId;
     private final PongHandler pongHandler;
+    private final Compressor compressor;
 
-    public RpcPing(Node node, ClusterMonitor<Node> clusterMonitor, RpcResourcePool rpcResourcePool, PongHandler pongHandler) {
+    public RpcPing(Node node, ClusterMonitor<Node> clusterMonitor, RpcConnectionPool connectionPool, PongHandler pongHandler, Compressor compressor) {
         this.node = node;
-        this.resourcePool = rpcResourcePool;
+        this.connectionPool = connectionPool;
         this.clusterMonitor = clusterMonitor;
-        pingSequenceId = node.createPingSequenceId();
+        this.pingSequenceId = node.createPingSequenceId();
         this.pongHandler = pongHandler;
+        this. compressor = compressor;
     }
 
     @Override
@@ -63,16 +65,16 @@ public class RpcPing implements Pinger, Client.ResponseReceiver {
     }
 
     private void sendPing() {
-        var connection = resourcePool.getConnection(node.key());
+        var connection = connectionPool.getConnection(node.key());
         var ping = SearchProtocol.MonitorRequest.newBuilder().build().toByteArray();
         double timeoutSeconds = ((double) clusterMonitor.getConfiguration().getRequestTimeout()) / 1000.0;
-        Compressor.Compression compressionResult = resourcePool.compressor().compress(PING_COMPRESSION, ping);
+        Compressor.Compression compressionResult = compressor.compress(PING_COMPRESSION, ping);
         connection.request(RPC_METHOD, compressionResult.type(), ping.length, compressionResult.data(), this, timeoutSeconds);
     }
 
     private Pong decodeReply(ProtobufResponse response) throws InvalidProtocolBufferException {
         CompressionType compression = CompressionType.valueOf(response.compression());
-        byte[] responseBytes = resourcePool.compressor().decompress(response.compressedPayload(), compression, response.uncompressedSize());
+        byte[] responseBytes = compressor.decompress(response.compressedPayload(), compression, response.uncompressedSize());
         var reply = SearchProtocol.MonitorReply.parseFrom(responseBytes);
 
         if (reply.getDistributionKey() != node.key()) {

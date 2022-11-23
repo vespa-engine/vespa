@@ -6,7 +6,6 @@ import com.yahoo.prelude.fastsearch.GroupingListHit;
 import com.yahoo.search.Query;
 import com.yahoo.search.Result;
 import com.yahoo.search.dispatch.searchcluster.Group;
-import com.yahoo.search.dispatch.searchcluster.SearchCluster;
 import com.yahoo.search.result.ErrorMessage;
 import com.yahoo.search.result.Hit;
 import com.yahoo.search.searchchain.Execution;
@@ -38,27 +37,37 @@ public class InterleavedSearchInvoker extends SearchInvoker implements ResponseM
 
     private final Timer timer;
     private final Set<SearchInvoker> invokers;
-    private final SearchCluster searchCluster;
+    private final DispatchConfig dispatchConfig;
     private final Group group;
     private final LinkedBlockingQueue<SearchInvoker> availableForProcessing;
     private final Set<Integer> alreadyFailedNodes;
     private final CoverageAggregator coverageAggregator;
+    private final TopKEstimator hitEstimator;
     private Query query;
 
     private TimeoutHandler timeoutHandler;
     public InterleavedSearchInvoker(Timer timer, Collection<SearchInvoker> invokers,
-                                    SearchCluster searchCluster,
+                                    TopKEstimator hitEstimator,
+                                    DispatchConfig dispatchConfig,
                                     Group group,
                                     Set<Integer> alreadyFailedNodes) {
         super(Optional.empty());
         this.timer = timer;
         this.invokers = Collections.newSetFromMap(new IdentityHashMap<>());
         this.invokers.addAll(invokers);
-        this.searchCluster = searchCluster;
+        this.dispatchConfig = dispatchConfig;
         this.group = group;
         this.availableForProcessing = newQueue();
         this.alreadyFailedNodes = alreadyFailedNodes;
-        coverageAggregator = new CoverageAggregator(invokers.size());
+        this.coverageAggregator = new CoverageAggregator(invokers.size());
+        this.hitEstimator = hitEstimator;
+    }
+
+    private int estimateHitsToFetch(int wantedHits, int numPartitions) {
+        return hitEstimator.estimateK(wantedHits, numPartitions);
+    }
+    private int estimateHitsToFetch(int wantedHits, int numPartitions, double topKProbability) {
+        return hitEstimator.estimateK(wantedHits, numPartitions, topKProbability);
     }
 
     private TimeoutHandler createTimeoutHandler(DispatchConfig config, int askedNodes, Query query) {
@@ -84,8 +93,8 @@ public class InterleavedSearchInvoker extends SearchInvoker implements ResponseM
         if (group.isBalanced() && !group.isSparse()) {
             Double topkProbabilityOverrride = query.properties().getDouble(Dispatcher.topKProbability);
             q = (topkProbabilityOverrride != null)
-                    ? searchCluster.estimateHitsToFetch(neededHits, invokers.size(), topkProbabilityOverrride)
-                    : searchCluster.estimateHitsToFetch(neededHits, invokers.size());
+                    ? estimateHitsToFetch(neededHits, invokers.size(), topkProbabilityOverrride)
+                    : estimateHitsToFetch(neededHits, invokers.size());
         }
         query.setHits(q);
         query.setOffset(0);
@@ -94,7 +103,7 @@ public class InterleavedSearchInvoker extends SearchInvoker implements ResponseM
         for (SearchInvoker invoker : invokers) {
             context = invoker.sendSearchRequest(query, context);
         }
-        timeoutHandler = createTimeoutHandler(searchCluster.dispatchConfig(), invokers.size(), query);
+        timeoutHandler = createTimeoutHandler(dispatchConfig, invokers.size(), query);
 
         query.setHits(originalHits);
         query.setOffset(originalOffset);
@@ -127,7 +136,7 @@ public class InterleavedSearchInvoker extends SearchInvoker implements ResponseM
         groupingResultAggregator.toAggregatedHit().ifPresent(h -> result.getResult().hits().add(h));
 
         insertNetworkErrors(result.getResult());
-        CoverageAggregator adjusted = coverageAggregator.adjustedDegradedCoverage((int)searchCluster.dispatchConfig().redundancy(), timeoutHandler);
+        CoverageAggregator adjusted = coverageAggregator.adjustedDegradedCoverage((int)dispatchConfig.redundancy(), timeoutHandler);
         result.getResult().setCoverage(adjusted.createCoverage(timeoutHandler));
 
         int needed = query.getOffset() + query.getHits();

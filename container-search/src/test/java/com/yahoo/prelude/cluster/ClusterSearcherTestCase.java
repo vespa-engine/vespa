@@ -17,7 +17,6 @@ import com.yahoo.search.Query;
 import com.yahoo.search.Result;
 import com.yahoo.search.config.ClusterConfig;
 import com.yahoo.search.dispatch.Dispatcher;
-import com.yahoo.search.dispatch.rpc.RpcResourcePool;
 import com.yahoo.search.result.Hit;
 import com.yahoo.search.schema.RankProfile;
 import com.yahoo.search.schema.Schema;
@@ -451,8 +450,7 @@ public class ClusterSearcherTestCase {
 
         DispatchConfig dispatchConfig = new DispatchConfig.Builder().build();
         DispatchNodesConfig nodesConfig = new DispatchNodesConfig.Builder().build();
-        Dispatcher dispatcher = new Dispatcher(new RpcResourcePool(dispatchConfig, nodesConfig),
-                                               ComponentId.createAnonymousComponentId("test-id"),
+        Dispatcher dispatcher = new Dispatcher(ComponentId.createAnonymousComponentId("test-id"),
                                                dispatchConfig,
                                                nodesConfig,
                                                vipStatus);

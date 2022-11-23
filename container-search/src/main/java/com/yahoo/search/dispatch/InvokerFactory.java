@@ -10,6 +10,7 @@ import com.yahoo.search.dispatch.searchcluster.Node;
 import com.yahoo.search.dispatch.searchcluster.SearchCluster;
 import com.yahoo.search.result.Coverage;
 import com.yahoo.search.result.ErrorMessage;
+import com.yahoo.vespa.config.search.DispatchConfig;
 
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -21,11 +22,16 @@ import java.util.Set;
  * @author ollivir
  */
 public abstract class InvokerFactory {
+    private static final double SKEW_FACTOR = 0.05;
 
-    protected final SearchCluster searchCluster;
+    private final SearchCluster searchCluster;
+    private final DispatchConfig dispatchConfig;
+    private final TopKEstimator hitEstimator;
 
-    public InvokerFactory(SearchCluster searchCluster) {
+    public InvokerFactory(SearchCluster searchCluster, DispatchConfig dispatchConfig) {
         this.searchCluster = searchCluster;
+        this.dispatchConfig = dispatchConfig;
+        this.hitEstimator = new TopKEstimator(30.0, dispatchConfig.topKProbability(), SKEW_FACTOR);
     }
 
     protected abstract Optional<SearchInvoker> createNodeSearchInvoker(VespaBackEndSearcher searcher,
@@ -90,7 +96,7 @@ public abstract class InvokerFactory {
         if (invokers.size() == 1 && failed == null) {
             return Optional.of(invokers.get(0));
         } else {
-            return Optional.of(new InterleavedSearchInvoker(Timer.monotonic, invokers, searchCluster, group, failed));
+            return Optional.of(new InterleavedSearchInvoker(Timer.monotonic, invokers, hitEstimator, dispatchConfig, group, failed));
         }
     }
 

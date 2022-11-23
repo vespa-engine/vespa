@@ -58,6 +58,7 @@ public class Dispatcher extends AbstractComponent {
     private final LoadBalancer loadBalancer;
     private final InvokerFactory invokerFactory;
     private final int maxHitsPerNode;
+    private final RpcResourcePool rpcResourcePool;
 
     private static final QueryProfileType argumentType;
 
@@ -72,28 +73,29 @@ public class Dispatcher extends AbstractComponent {
     public static QueryProfileType getArgumentType() { return argumentType; }
 
     @Inject
-    public Dispatcher(RpcResourcePool resourcePool,
-                      ComponentId clusterId,
+    public Dispatcher(ComponentId clusterId,
                       DispatchConfig dispatchConfig,
                       DispatchNodesConfig nodesConfig,
                       VipStatus vipStatus) {
-        this(resourcePool, new SearchCluster(clusterId.stringValue(), dispatchConfig, nodesConfig,
-                                             vipStatus, new RpcPingFactory(resourcePool)),
-             dispatchConfig);
+        this(clusterId, dispatchConfig, nodesConfig, vipStatus,
+                new RpcResourcePool(dispatchConfig, nodesConfig));
+
+    }
+    private Dispatcher(ComponentId clusterId, DispatchConfig dispatchConfig,
+                       DispatchNodesConfig nodesConfig, VipStatus vipStatus,
+                       RpcResourcePool resourcePool) {
+        this(new SearchCluster(clusterId.stringValue(), dispatchConfig, nodesConfig,
+                        vipStatus, new RpcPingFactory(resourcePool)),
+                dispatchConfig, resourcePool);
 
     }
 
-    private Dispatcher(RpcResourcePool resourcePool, SearchCluster searchCluster, DispatchConfig dispatchConfig) {
-        this(new ClusterMonitor<>(searchCluster, true), searchCluster, dispatchConfig, new RpcInvokerFactory(resourcePool, searchCluster));
-    }
-
-    private static LoadBalancer.Policy toLoadBalancerPolicy(DispatchConfig.DistributionPolicy.Enum policy) {
-        return switch (policy) {
-            case ROUNDROBIN: yield LoadBalancer.Policy.ROUNDROBIN;
-            case BEST_OF_RANDOM_2: yield LoadBalancer.Policy.BEST_OF_RANDOM_2;
-            case ADAPTIVE,LATENCY_AMORTIZED_OVER_REQUESTS: yield LoadBalancer.Policy.LATENCY_AMORTIZED_OVER_REQUESTS;
-            case LATENCY_AMORTIZED_OVER_TIME: yield LoadBalancer.Policy.LATENCY_AMORTIZED_OVER_TIME;
-        };
+    private Dispatcher(SearchCluster searchCluster, DispatchConfig dispatchConfig,
+                       RpcResourcePool rpcResourcePool) {
+        this(new ClusterMonitor<>(searchCluster, true),
+                searchCluster, dispatchConfig,
+                new RpcInvokerFactory(rpcResourcePool, searchCluster, dispatchConfig),
+                rpcResourcePool);
     }
 
     /* Protected for simple mocking in tests. Beware that searchCluster is shutdown on in deconstruct() */
@@ -101,11 +103,20 @@ public class Dispatcher extends AbstractComponent {
                          SearchCluster searchCluster,
                          DispatchConfig dispatchConfig,
                          InvokerFactory invokerFactory) {
+        this(clusterMonitor, searchCluster, dispatchConfig, invokerFactory, null);
+    }
+
+    private Dispatcher(ClusterMonitor<Node> clusterMonitor,
+                       SearchCluster searchCluster,
+                       DispatchConfig dispatchConfig,
+                       InvokerFactory invokerFactory,
+                       RpcResourcePool rpcResourcePool) {
 
         this.searchCluster = searchCluster;
         this.clusterMonitor = clusterMonitor;
         this.loadBalancer = new LoadBalancer(searchCluster, toLoadBalancerPolicy(dispatchConfig.distributionPolicy()));
         this.invokerFactory = invokerFactory;
+        this.rpcResourcePool = rpcResourcePool;
         this.maxHitsPerNode = dispatchConfig.maxHitsPerNode();
         searchCluster.addMonitoring(clusterMonitor);
         Thread warmup = new Thread(() -> warmup(dispatchConfig.warmuptime()));
@@ -124,6 +135,15 @@ public class Dispatcher extends AbstractComponent {
         searchCluster.pingIterationCompleted();
     }
 
+    private static LoadBalancer.Policy toLoadBalancerPolicy(DispatchConfig.DistributionPolicy.Enum policy) {
+        return switch (policy) {
+            case ROUNDROBIN: yield LoadBalancer.Policy.ROUNDROBIN;
+            case BEST_OF_RANDOM_2: yield LoadBalancer.Policy.BEST_OF_RANDOM_2;
+            case ADAPTIVE,LATENCY_AMORTIZED_OVER_REQUESTS: yield LoadBalancer.Policy.LATENCY_AMORTIZED_OVER_REQUESTS;
+            case LATENCY_AMORTIZED_OVER_TIME: yield LoadBalancer.Policy.LATENCY_AMORTIZED_OVER_TIME;
+        };
+    }
+
     /**
      * Will run important code in order to trigger JIT compilation and avoid cold start issues.
      * Currently warms up lz4 compression code.
@@ -132,9 +152,8 @@ public class Dispatcher extends AbstractComponent {
         new Compressor().warmup(seconds);
     }
 
-    /** Returns the search cluster this dispatches to */
-    public SearchCluster searchCluster() {
-        return searchCluster;
+    public boolean allGroupsHaveSize1() {
+        return searchCluster.allGroupsHaveSize1();
     }
 
     @Override
@@ -142,6 +161,9 @@ public class Dispatcher extends AbstractComponent {
         // The clustermonitor must be shutdown first as it uses the invokerfactory through the searchCluster.
         clusterMonitor.shutdown();
         invokerFactory.release();
+        if (rpcResourcePool != null) {
+            rpcResourcePool.close();
+        }
     }
 
     public FillInvoker getFillInvoker(Result result, VespaBackEndSearcher searcher) {
@@ -149,7 +171,8 @@ public class Dispatcher extends AbstractComponent {
     }
 
     public SearchInvoker getSearchInvoker(Query query, VespaBackEndSearcher searcher) {
-        SearchInvoker invoker = getSearchPathInvoker(query, searcher).orElseGet(() -> getInternalInvoker(query, searcher));
+        SearchCluster cluster = searchCluster; // Take a snapshot
+        SearchInvoker invoker = getSearchPathInvoker(query, searcher, cluster).orElseGet(() -> getInternalInvoker(query, searcher, cluster));
 
         if (query.properties().getBoolean(com.yahoo.search.query.Model.ESTIMATE)) {
             query.setHits(0);
@@ -159,12 +182,12 @@ public class Dispatcher extends AbstractComponent {
     }
 
     /** Builds an invoker based on searchpath */
-    private Optional<SearchInvoker> getSearchPathInvoker(Query query, VespaBackEndSearcher searcher) {
+    private Optional<SearchInvoker> getSearchPathInvoker(Query query, VespaBackEndSearcher searcher, SearchCluster cluster) {
         String searchPath = query.getModel().getSearchPath();
         if (searchPath == null) return Optional.empty();
 
         try {
-            List<Node> nodes = SearchPath.selectNodes(searchPath, searchCluster);
+            List<Node> nodes = SearchPath.selectNodes(searchPath, cluster);
             if (nodes.isEmpty()) return Optional.empty();
 
             query.trace(false, 2, "Dispatching with search path ", searchPath);
@@ -178,8 +201,8 @@ public class Dispatcher extends AbstractComponent {
         }
     }
 
-    private SearchInvoker getInternalInvoker(Query query, VespaBackEndSearcher searcher) {
-        Optional<Node> directNode = searchCluster.localCorpusDispatchTarget();
+    private SearchInvoker getInternalInvoker(Query query, VespaBackEndSearcher searcher, SearchCluster cluster) {
+        Optional<Node> directNode = cluster.localCorpusDispatchTarget();
         if (directNode.isPresent()) {
             Node node = directNode.get();
             query.trace(false, 2, "Dispatching to ", node);
@@ -191,10 +214,10 @@ public class Dispatcher extends AbstractComponent {
                                  .orElseThrow(() -> new IllegalStateException("Could not dispatch directly to " + node));
         }
 
-        int covered = searchCluster.groupsWithSufficientCoverage();
-        int groups = searchCluster.orderedGroups().size();
+        int covered = cluster.groupsWithSufficientCoverage();
+        int groups = cluster.orderedGroups().size();
         int max = Integer.min(Integer.min(covered + 1, groups), MAX_GROUP_SELECTION_ATTEMPTS);
-        Set<Integer> rejected = rejectGroupBlockingFeed(searchCluster.orderedGroups());
+        Set<Integer> rejected = rejectGroupBlockingFeed(cluster.orderedGroups());
         for (int i = 0; i < max; i++) {
             Optional<Group> groupInCluster = loadBalancer.takeGroup(rejected);
             if (groupInCluster.isEmpty()) break; // No groups available

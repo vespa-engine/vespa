@@ -5,7 +5,6 @@ package com.yahoo.search.dispatch.rpc;
 import ai.vespa.searchlib.searchprotocol.protobuf.SearchProtocol;
 import com.google.common.collect.ImmutableMap;
 import com.yahoo.compress.CompressionType;
-import com.yahoo.prelude.fastsearch.FastHit;
 import com.yahoo.prelude.fastsearch.VespaBackEndSearcher;
 import com.yahoo.search.Query;
 import com.yahoo.search.Result;
@@ -14,7 +13,6 @@ import com.yahoo.search.searchchain.Execution;
 import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
-import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -25,6 +23,7 @@ import static org.junit.jupiter.api.Assertions.*;
  */
 public class RpcSearchInvokerTest {
 
+    private final CompressService compressor = new CompressService();
     @Test
     void testProtobufSerialization() throws IOException {
         var compressionTypeHolder = new AtomicReference<CompressionType>();
@@ -32,21 +31,21 @@ public class RpcSearchInvokerTest {
         var lengthHolder = new AtomicInteger();
         var mockClient = parameterCollectorClient(compressionTypeHolder, payloadHolder, lengthHolder);
         var mockPool = new RpcResourcePool(ImmutableMap.of(7, mockClient.createConnection("foo", 123)));
-        var invoker = new RpcSearchInvoker(mockSearcher(), new Node(7, "seven", 1), mockPool, 1000);
+        var invoker = new RpcSearchInvoker(mockSearcher(), compressor, new Node(7, "seven", 1), mockPool, 1000);
 
         Query q = new Query("search/?query=test&hits=10&offset=3");
         RpcSearchInvoker.RpcContext context = (RpcSearchInvoker.RpcContext) invoker.sendSearchRequest(q, null);
         assertEquals(lengthHolder.get(), context.compressedPayload.uncompressedSize());
         assertSame(context.compressedPayload.data(), payloadHolder.get());
 
-        var bytes = mockPool.compressor().decompress(payloadHolder.get(), compressionTypeHolder.get(), lengthHolder.get());
+        var bytes = compressor.compressor().decompress(payloadHolder.get(), compressionTypeHolder.get(), lengthHolder.get());
         var request = SearchProtocol.SearchRequest.newBuilder().mergeFrom(bytes).build();
 
         assertEquals(10, request.getHits());
         assertEquals(3, request.getOffset());
         assertTrue(request.getQueryTreeBlob().size() > 0);
 
-        var invoker2 = new RpcSearchInvoker(mockSearcher(), new Node(8, "eight", 1), mockPool, 1000);
+        var invoker2 = new RpcSearchInvoker(mockSearcher(), compressor, new Node(8, "eight", 1), mockPool, 1000);
         RpcSearchInvoker.RpcContext context2 = (RpcSearchInvoker.RpcContext) invoker2.sendSearchRequest(q, context);
         assertSame(context, context2);
         assertEquals(lengthHolder.get(), context.compressedPayload.uncompressedSize());
@@ -61,12 +60,12 @@ public class RpcSearchInvokerTest {
         var lengthHolder = new AtomicInteger();
         var mockClient = parameterCollectorClient(compressionTypeHolder, payloadHolder, lengthHolder);
         var mockPool = new RpcResourcePool(ImmutableMap.of(7, mockClient.createConnection("foo", 123)));
-        var invoker = new RpcSearchInvoker(mockSearcher(), new Node(7, "seven", 1), mockPool, maxHits);
+        var invoker = new RpcSearchInvoker(mockSearcher(), compressor, new Node(7, "seven", 1), mockPool, maxHits);
 
         Query q = new Query("search/?query=test&hits=10&offset=3");
         invoker.sendSearchRequest(q, null);
 
-        var bytes = mockPool.compressor().decompress(payloadHolder.get(), compressionTypeHolder.get(), lengthHolder.get());
+        var bytes = compressor.compressor().decompress(payloadHolder.get(), compressionTypeHolder.get(), lengthHolder.get());
         var request = SearchProtocol.SearchRequest.newBuilder().mergeFrom(bytes).build();
 
         assertEquals(maxHits, request.getHits());
