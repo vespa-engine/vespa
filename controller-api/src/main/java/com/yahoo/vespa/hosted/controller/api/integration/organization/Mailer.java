@@ -19,6 +19,4 @@ public interface Mailer {
     /** Returns the domain this is configured to use. */
     String domain();
 
-    void sendVerificationMail(PendingMailVerification pendingMailVerification);
-
 }

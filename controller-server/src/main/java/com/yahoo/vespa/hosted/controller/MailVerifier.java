@@ -2,6 +2,7 @@
 package com.yahoo.vespa.hosted.controller;
 
 import com.yahoo.config.provision.TenantName;
+import com.yahoo.vespa.hosted.controller.api.integration.organization.Mail;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.Mailer;
 import com.yahoo.vespa.hosted.controller.persistence.CuratorDb;
 import com.yahoo.vespa.hosted.controller.tenant.CloudTenant;
@@ -10,10 +11,14 @@ import com.yahoo.vespa.hosted.controller.tenant.TenantContacts;
 import com.yahoo.vespa.hosted.controller.tenant.TenantInfo;
 import com.yahoo.vespa.hosted.controller.tenant.PendingMailVerification;
 
+import java.net.URI;
 import java.time.Clock;
 import java.time.Duration;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
+
+import static com.yahoo.yolean.Exceptions.uncheck;
 
 
 /**
@@ -25,13 +30,16 @@ public class MailVerifier {
     private final Mailer mailer;
     private final CuratorDb curatorDb;
     private final Clock clock;
+    private  final URI dashboardUri;
     private static final Duration VERIFICATION_DEADLINE = Duration.ofDays(7);
 
-    public MailVerifier(TenantController tenantController, Mailer mailer, CuratorDb curatorDb, Clock clock) {
+
+    public MailVerifier(URI dashboardUri, TenantController tenantController, Mailer mailer, CuratorDb curatorDb, Clock clock) {
         this.tenantController = tenantController;
         this.mailer = mailer;
         this.curatorDb = curatorDb;
         this.clock = clock;
+        this.dashboardUri = dashboardUri;
     }
 
     public PendingMailVerification sendMailVerification(TenantName tenantName, String email, PendingMailVerification.MailType mailType) {
@@ -43,7 +51,7 @@ public class MailVerifier {
         var verificationDeadline = clock.instant().plus(VERIFICATION_DEADLINE);
         var pendingMailVerification = new PendingMailVerification(tenantName, email, verificationCode, verificationDeadline, mailType);
         writePendingVerification(pendingMailVerification);
-        mailer.sendVerificationMail(pendingMailVerification);
+        mailer.send(mailOf(pendingMailVerification));
         return pendingMailVerification;
     }
 
@@ -113,4 +121,15 @@ public class MailVerifier {
                 .map(CloudTenant.class::cast)
                 .orElseThrow(() -> new IllegalStateException("Mail verification is only applicable for cloud tenants"));
     }
+
+    private Mail mailOf(PendingMailVerification pendingMailVerification) {
+        var classLoader = this.getClass().getClassLoader();
+        var template = uncheck(() -> classLoader.getResourceAsStream("mail/mail-verification.tmpl").readAllBytes());
+        var message = new String(template)
+                .replaceAll("%\\{consoleUrl}", dashboardUri.getHost())
+                .replaceAll("%\\{email}", pendingMailVerification.getMailAddress())
+                .replaceAll("%\\{code}", pendingMailVerification.getVerificationCode());
+        return new Mail(List.of(pendingMailVerification.getMailAddress()), "Please verify your email", "", message);
+    }
+
 }
