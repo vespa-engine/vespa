@@ -40,6 +40,9 @@ public:
     DistanceMetric distance_metric() const override { return _target_tensor_attribute.distance_metric(); }
     uint32_t get_num_docs() const override { return getNumDocs(); }
 
+    vespalib::eval::TypedCells get_vector(uint32_t docid, uint32_t subspace) const override;
+    VectorBundle get_vectors(uint32_t docid) const override;
+
     const vespalib::eval::ValueType &getTensorType() const override;
     void get_state(const vespalib::slime::Inserter& inserter) const override;
 };

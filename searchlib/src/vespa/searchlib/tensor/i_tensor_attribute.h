@@ -2,9 +2,10 @@
 
 #pragma once
 
-#include <memory>
+#include "doc_vector_access.h"
 #include <vespa/eval/eval/typed_cells.h>
 #include <vespa/searchcommon/attribute/distance_metric.h>
+#include <memory>
 
 namespace vespalib::eval { class ValueType; struct Value; }
 namespace vespalib::slime { struct Inserter; }
@@ -16,8 +17,7 @@ class NearestNeighborIndex;
 /**
  * Interface for tensor attribute used by feature executors to get information.
  */
-class ITensorAttribute
-{
+class ITensorAttribute : public DocVectorAccess {
 public:
     virtual ~ITensorAttribute() {}
     virtual std::unique_ptr<vespalib::eval::Value> getTensor(uint32_t docId) const = 0;

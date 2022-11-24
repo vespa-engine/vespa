@@ -1,6 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "imported_tensor_attribute_vector_read_guard.h"
+#include "vector_bundle.h"
 #include <vespa/searchlib/attribute/attributevector.h>
 #include <vespa/eval/eval/value.h>
 
@@ -58,6 +59,18 @@ const vespalib::eval::Value&
 ImportedTensorAttributeVectorReadGuard::get_tensor_ref(uint32_t docid) const
 {
     return _target_tensor_attribute.get_tensor_ref(getTargetLid(docid));
+}
+
+vespalib::eval::TypedCells
+ImportedTensorAttributeVectorReadGuard::get_vector(uint32_t docid, uint32_t subspace) const
+{
+    return _target_tensor_attribute.get_vector(getTargetLid(docid), subspace);
+}
+
+search::tensor::VectorBundle
+ImportedTensorAttributeVectorReadGuard::get_vectors(uint32_t docid) const
+{
+    return _target_tensor_attribute.get_vectors(getTargetLid(docid));
 }
 
 const vespalib::eval::ValueType &
