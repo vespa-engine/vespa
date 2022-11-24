@@ -9,7 +9,9 @@ namespace search::tensor {
 class HnswSimpleNode;
 class HnswNode;
 class HnswIdentityMapping;
+class HnswMultiBestNeighbors;
 class HnswNodeidMapping;
+class HnswSingleBestNeighbors;
 
 /*
  * Class that selects what node type and id mapping to use based on
@@ -30,6 +32,7 @@ class HnswIndexTraits<HnswIndexType::SINGLE>
 public:
     using NodeType = HnswSimpleNode;
     using IdMapping = HnswIdentityMapping;
+    using SearchBestNeighbors = HnswSingleBestNeighbors;
 };
 
 /*
@@ -44,6 +47,7 @@ class HnswIndexTraits<HnswIndexType::MULTI>
 public:
     using NodeType = HnswNode;
     using IdMapping = HnswNodeidMapping;
+    using SearchBestNeighbors = HnswMultiBestNeighbors;
 };
 
 }

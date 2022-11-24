@@ -7,7 +7,9 @@
 #include "doc_vector_access.h"
 #include "hnsw_identity_mapping.h"
 #include "hnsw_index_utils.h"
+#include "hnsw_multi_best_neighbors.h"
 #include "hnsw_nodeid_mapping.h"
+#include "hnsw_single_best_neighbors.h"
 #include "hnsw_test_node.h"
 #include "nearest_neighbor_index.h"
 #include "random_level_generator.h"
@@ -68,6 +70,7 @@ public:
     }
 
     static constexpr HnswIndexType index_type = type;
+    using SearchBestNeighbors = typename HnswIndexTraits<type>::SearchBestNeighbors;
     using IdMapping = typename HnswIndexTraits<type>::IdMapping;
 protected:
     using GraphType = HnswGraph<type>;
@@ -82,6 +85,14 @@ protected:
     using LevelArrayRef = typename GraphType::LevelArrayRef;
 
     using TypedCells = vespalib::eval::TypedCells;
+
+    static uint32_t acquire_docid(const NodeType& node, uint32_t nodeid) {
+        if constexpr (NodeType::identity_mapping) {
+            return nodeid;
+        } else {
+            return node.acquire_docid();
+        }
+    }
 
     GraphType _graph;
     const DocVectorAccess& _vectors;
@@ -105,15 +116,18 @@ protected:
      * where the candidate is located.
      * Used by select_neighbors_heuristic().
      */
-    bool have_closer_distance(HnswCandidate candidate, const HnswCandidateVector& curr_result) const;
+    bool have_closer_distance(HnswTraversalCandidate candidate, const HnswTraversalCandidateVector& curr_result) const;
     struct SelectResult {
-        HnswCandidateVector used;
+        HnswTraversalCandidateVector used;
         LinkArray unused;
         ~SelectResult() {}
     };
-    SelectResult select_neighbors_heuristic(const HnswCandidateVector& neighbors, uint32_t max_links) const;
-    SelectResult select_neighbors_simple(const HnswCandidateVector& neighbors, uint32_t max_links) const;
-    SelectResult select_neighbors(const HnswCandidateVector& neighbors, uint32_t max_links) const;
+    template <typename HnswCandidateVectorT>
+    SelectResult select_neighbors_heuristic(const HnswCandidateVectorT& neighbors, uint32_t max_links) const;
+    template <typename HnswCandidateVectorT>
+    SelectResult select_neighbors_simple(const HnswCandidateVectorT& neighbors, uint32_t max_links) const;
+    template <typename HnswCandidateVectorT>
+    SelectResult select_neighbors(const HnswCandidateVectorT& neighbors, uint32_t max_links) const;
     void shrink_if_needed(uint32_t nodeid, uint32_t level);
     void connect_new_node(uint32_t nodeid, const LinkArrayRef &neighbors, uint32_t level);
     void mutual_reconnect(const LinkArrayRef &cluster, uint32_t level);
@@ -129,24 +143,29 @@ protected:
             return _vectors.get_vector(docid, subspace);
         }
     }
+    inline TypedCells get_vector(uint32_t docid, uint32_t subspace) const {
+        return _vectors.get_vector(docid, subspace);
+    }
     inline VectorBundle get_vector_by_docid(uint32_t docid) const {
         return _vectors.get_vectors(docid);
     }
 
     double calc_distance(uint32_t lhs_nodeid, uint32_t rhs_nodeid) const;
     double calc_distance(const TypedCells& lhs, uint32_t rhs_nodeid) const;
+    double calc_distance(const TypedCells& lhs, uint32_t rhs_docid, uint32_t rhs_subspace) const;
     uint32_t estimate_visited_nodes(uint32_t level, uint32_t nodeid_limit, uint32_t neighbors_to_find, const GlobalFilter* filter) const;
 
     /**
      * Performs a greedy search in the given layer to find the candidate that is nearest the input vector.
      */
     HnswCandidate find_nearest_in_layer(const TypedCells& input, const HnswCandidate& entry_point, uint32_t level) const;
-    template <class VisitedTracker>
-    void search_layer_helper(const TypedCells& input, uint32_t neighbors_to_find, FurthestPriQ& found_neighbors,
+    template <class VisitedTracker, class BestNeighbors>
+    void search_layer_helper(const TypedCells& input, uint32_t neighbors_to_find, BestNeighbors& best_neighbors,
                              uint32_t level, const GlobalFilter *filter,
                              uint32_t nodeid_limit,
                              uint32_t estimated_visited_nodes) const;
-    void search_layer(const TypedCells& input, uint32_t neighbors_to_find, FurthestPriQ& found_neighbors,
+    template <class BestNeighbors>
+    void search_layer(const TypedCells& input, uint32_t neighbors_to_find, BestNeighbors& best_neighbors,
                       uint32_t level, const GlobalFilter *filter = nullptr) const;
     std::vector<Neighbor> top_k_by_docid(uint32_t k, TypedCells vector,
                                          const GlobalFilter *filter, uint32_t explore_k,
@@ -227,7 +246,7 @@ public:
                                                  double distance_threshold) const override;
     const DistanceFunction *distance_function() const override { return _distance_func.get(); }
 
-    FurthestPriQ top_k_candidates(const TypedCells &vector, uint32_t k, const GlobalFilter *filter) const;
+    SearchBestNeighbors top_k_candidates(const TypedCells &vector, uint32_t k, const GlobalFilter *filter) const;
 
     uint32_t get_entry_nodeid() const { return _graph.get_entry_node().nodeid; }
     int32_t get_entry_level() const { return _graph.get_entry_node().level; }

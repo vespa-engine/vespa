@@ -88,7 +88,7 @@ HnswIndex<type>::max_links_for_level(uint32_t level) const
 
 template <HnswIndexType type>
 bool
-HnswIndex<type>::have_closer_distance(HnswCandidate candidate, const HnswCandidateVector& result) const
+HnswIndex<type>::have_closer_distance(HnswTraversalCandidate candidate, const HnswTraversalCandidateVector& result) const
 {
     for (const auto & neighbor : result) {
         double dist = calc_distance(candidate.nodeid, neighbor.nodeid);
@@ -100,10 +100,11 @@ HnswIndex<type>::have_closer_distance(HnswCandidate candidate, const HnswCandida
 }
 
 template <HnswIndexType type>
+template <typename HnswCandidateVectorT>
 typename HnswIndex<type>::SelectResult
-HnswIndex<type>::select_neighbors_simple(const HnswCandidateVector& neighbors, uint32_t max_links) const
+HnswIndex<type>::select_neighbors_simple(const HnswCandidateVectorT& neighbors, uint32_t max_links) const
 {
-    HnswCandidateVector sorted(neighbors);
+    HnswCandidateVectorT sorted(neighbors);
     std::sort(sorted.begin(), sorted.end(), LesserDistance());
     SelectResult result;
     for (const auto & candidate : sorted) {
@@ -117,8 +118,9 @@ HnswIndex<type>::select_neighbors_simple(const HnswCandidateVector& neighbors, u
 }
 
 template <HnswIndexType type>
+template <typename HnswCandidateVectorT>
 typename HnswIndex<type>::SelectResult
-HnswIndex<type>::select_neighbors_heuristic(const HnswCandidateVector& neighbors, uint32_t max_links) const
+HnswIndex<type>::select_neighbors_heuristic(const HnswCandidateVectorT& neighbors, uint32_t max_links) const
 {
     SelectResult result;
     NearestPriQ nearest;
@@ -145,8 +147,9 @@ HnswIndex<type>::select_neighbors_heuristic(const HnswCandidateVector& neighbors
 }
 
 template <HnswIndexType type>
+template <typename HnswCandidateVectorT>
 typename HnswIndex<type>::SelectResult
-HnswIndex<type>::select_neighbors(const HnswCandidateVector& neighbors, uint32_t max_links) const
+HnswIndex<type>::select_neighbors(const HnswCandidateVectorT& neighbors, uint32_t max_links) const
 {
     if (_cfg.heuristic_select_neighbors()) {
         return select_neighbors_heuristic(neighbors, max_links);
@@ -162,7 +165,7 @@ HnswIndex<type>::shrink_if_needed(uint32_t nodeid, uint32_t level)
     auto old_links = _graph.get_link_array(nodeid, level);
     uint32_t max_links = max_links_for_level(level);
     if (old_links.size() > max_links) {
-        HnswCandidateVector neighbors;
+        HnswTraversalCandidateVector neighbors;
         neighbors.reserve(old_links.size());
         for (uint32_t neighbor_nodeid : old_links) {
             double dist = calc_distance(nodeid, neighbor_nodeid);
@@ -226,6 +229,14 @@ HnswIndex<type>::calc_distance(const TypedCells& lhs, uint32_t rhs_nodeid) const
 }
 
 template <HnswIndexType type>
+double
+HnswIndex<type>::calc_distance(const TypedCells& lhs, uint32_t rhs_docid, uint32_t rhs_subspace) const
+{
+    auto rhs = get_vector(rhs_docid, rhs_subspace);
+    return _distance_func->calc(lhs, rhs);
+}
+
+template <HnswIndexType type>
 uint32_t
 HnswIndex<type>::estimate_visited_nodes(uint32_t level, uint32_t nodeid_limit, uint32_t neighbors_to_find, const GlobalFilter* filter) const
 {
@@ -258,12 +269,15 @@ HnswIndex<type>::find_nearest_in_layer(const TypedCells& input, const HnswCandid
     while (keep_searching) {
         keep_searching = false;
         for (uint32_t neighbor_nodeid : _graph.get_link_array(nearest.node_ref, level)) {
-            auto neighbor_ref = _graph.acquire_node_ref(neighbor_nodeid);
-            double dist = calc_distance(input, neighbor_nodeid);
+            auto& neighbor_node = _graph.acquire_node_refs_elem_ref(neighbor_nodeid);
+            auto neighbor_ref = neighbor_node.ref().load_acquire();
+            uint32_t neighbor_docid = acquire_docid(neighbor_node, neighbor_nodeid);
+            uint32_t neighbor_subspace = neighbor_node.acquire_subspace();
+            double dist = calc_distance(input, neighbor_docid, neighbor_subspace);
             if (_graph.still_valid(neighbor_nodeid, neighbor_ref)
                 && dist < nearest.distance)
             {
-                nearest = HnswCandidate(neighbor_nodeid, neighbor_ref, dist);
+                nearest = HnswCandidate(neighbor_nodeid, neighbor_docid, neighbor_ref, dist);
                 keep_searching = true;
             }
         }
@@ -272,10 +286,10 @@ HnswIndex<type>::find_nearest_in_layer(const TypedCells& input, const HnswCandid
 }
 
 template <HnswIndexType type>
-template <class VisitedTracker>
+template <class VisitedTracker, class BestNeighbors>
 void
 HnswIndex<type>::search_layer_helper(const TypedCells& input, uint32_t neighbors_to_find,
-                               FurthestPriQ& best_neighbors, uint32_t level, const GlobalFilter *filter,
+                               BestNeighbors& best_neighbors, uint32_t level, const GlobalFilter *filter,
                                uint32_t nodeid_limit, uint32_t estimated_visited_nodes) const
 {
     NearestPriQ candidates;
@@ -287,7 +301,7 @@ HnswIndex<type>::search_layer_helper(const TypedCells& input, uint32_t neighbors
         candidates.push(entry);
         visited.mark(entry.nodeid);
         if (filter && !filter->check(entry.nodeid)) {
-            assert(best_neighbors.size() == 1);
+            assert(best_neighbors.peek().size() == 1);
             best_neighbors.pop();
         }
     }
@@ -303,18 +317,21 @@ HnswIndex<type>::search_layer_helper(const TypedCells& input, uint32_t neighbors
             if (neighbor_nodeid >= nodeid_limit) {
                 continue;
             }
-            auto neighbor_ref = _graph.acquire_node_ref(neighbor_nodeid);
+            auto& neighbor_node = _graph.acquire_node_refs_elem_ref(neighbor_nodeid);
+            auto neighbor_ref = neighbor_node.ref().load_acquire();
             if ((! neighbor_ref.valid())
                 || ! visited.try_mark(neighbor_nodeid))
             {
                 continue;
             }
-            double dist_to_input = calc_distance(input, neighbor_nodeid);
+            uint32_t neighbor_docid = acquire_docid(neighbor_node, neighbor_nodeid);
+            uint32_t neighbor_subspace = neighbor_node.acquire_subspace();
+            double dist_to_input = calc_distance(input, neighbor_docid, neighbor_subspace);
             if (dist_to_input < limit_dist) {
                 candidates.emplace(neighbor_nodeid, neighbor_ref, dist_to_input);
                 if ((!filter) || filter->check(neighbor_nodeid)) {
-                    best_neighbors.emplace(neighbor_nodeid, neighbor_ref, dist_to_input);
-                    if (best_neighbors.size() > neighbors_to_find) {
+                    best_neighbors.emplace(neighbor_nodeid, neighbor_docid, neighbor_ref, dist_to_input);
+                    while (best_neighbors.size() > neighbors_to_find) {
                         best_neighbors.pop();
                         limit_dist = best_neighbors.top().distance;
                     }
@@ -325,9 +342,10 @@ HnswIndex<type>::search_layer_helper(const TypedCells& input, uint32_t neighbors
 }
 
 template <HnswIndexType type>
+template <class BestNeighbors>
 void
 HnswIndex<type>::search_layer(const TypedCells& input, uint32_t neighbors_to_find,
-                        FurthestPriQ& best_neighbors, uint32_t level, const GlobalFilter *filter) const
+                        BestNeighbors& best_neighbors, uint32_t level, const GlobalFilter *filter) const
 {
     uint32_t nodeid_limit = _graph.node_refs_size.load(std::memory_order_acquire);
     if (filter) {
@@ -404,8 +422,9 @@ HnswIndex<type>::internal_prepare_add_node(typename HnswIndex::PreparedAddDoc& o
     }
     int search_level = entry.level;
     double entry_dist = calc_distance(input_vector, entry.nodeid);
+    uint32_t entry_docid = get_docid(entry.nodeid);
     // TODO: check if entry nodeid/node_ref is still valid here
-    HnswCandidate entry_point(entry.nodeid, entry.node_ref, entry_dist);
+    HnswCandidate entry_point(entry.nodeid, entry_docid, entry.node_ref, entry_dist);
     while (search_level > node_max_level) {
         entry_point = find_nearest_in_layer(input_vector, entry_point, search_level);
         --search_level;
@@ -791,16 +810,8 @@ HnswIndex<type>::top_k_by_docid(uint32_t k, TypedCells vector,
                           const GlobalFilter *filter, uint32_t explore_k,
                           double distance_threshold) const
 {
-    std::vector<Neighbor> result;
-    FurthestPriQ candidates = top_k_candidates(vector, std::max(k, explore_k), filter);
-    while (candidates.size() > k) {
-        candidates.pop();
-    }
-    result.reserve(candidates.size());
-    for (const HnswCandidate & hit : candidates.peek()) {
-        if (hit.distance > distance_threshold) continue;
-        result.emplace_back(get_docid(hit.nodeid), hit.distance);
-    }
+    SearchBestNeighbors candidates = top_k_candidates(vector, std::max(k, explore_k), filter);
+    auto result = candidates.get_neighbors(k, distance_threshold);
     std::sort(result.begin(), result.end(), NeighborsByDocId());
     return result;
 }
@@ -823,10 +834,10 @@ HnswIndex<type>::find_top_k_with_filter(uint32_t k, TypedCells vector,
 }
 
 template <HnswIndexType type>
-FurthestPriQ
+typename HnswIndex<type>::SearchBestNeighbors
 HnswIndex<type>::top_k_candidates(const TypedCells &vector, uint32_t k, const GlobalFilter *filter) const
 {
-    FurthestPriQ best_neighbors;
+    SearchBestNeighbors best_neighbors;
     auto entry = _graph.get_entry_node();
     if (entry.nodeid == 0) {
         // graph has no entry point
@@ -834,8 +845,9 @@ HnswIndex<type>::top_k_candidates(const TypedCells &vector, uint32_t k, const Gl
     }
     int search_level = entry.level;
     double entry_dist = calc_distance(vector, entry.nodeid);
+    uint32_t entry_docid = get_docid(entry.nodeid);
     // TODO: check if entry docid/node_ref is still valid here
-    HnswCandidate entry_point(entry.nodeid, entry.node_ref, entry_dist);
+    HnswCandidate entry_point(entry.nodeid, entry_docid, entry.node_ref, entry_dist);
     while (search_level > 0) {
         entry_point = find_nearest_in_layer(vector, entry_point, search_level);
         --search_level;

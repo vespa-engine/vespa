@@ -65,6 +65,10 @@ struct HnswGraph {
         return node_refs.get_elem_ref(nodeid).ref().load_relaxed(); // Called from writer only
     }
 
+    const NodeType& acquire_node_refs_elem_ref(uint32_t nodeid) const {
+        return node_refs.acquire_elem_ref(nodeid);
+    }
+
     NodeRef acquire_node_ref(uint32_t nodeid) const {
         return node_refs.acquire_elem_ref(nodeid).ref().load_acquire();
     }
