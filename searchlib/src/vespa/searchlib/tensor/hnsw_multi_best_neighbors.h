@@ -18,16 +18,14 @@ class HnswMultiBestNeighbors {
     FurthestPriQ _candidates;
     vespalib::hash_map<uint32_t, uint32_t> _docids;
 
-    void add_docid(uint32_t docid)
-    {
+    void add_docid(uint32_t docid) {
         auto insres = _docids.insert(std::make_pair(docid, 1));
         if (!insres.second) {
             ++insres.first->second;
         }
     }
 
-    bool remove_docid(uint32_t docid)
-    {
+    bool remove_docid(uint32_t docid) {
         auto itr = _docids.find(docid);
         assert(itr != _docids.end());
         if (itr->second > 1) {

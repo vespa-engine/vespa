@@ -44,8 +44,7 @@ protected:
     }
     ~HnswBestNeighborsTest() override;
 
-    void add(uint32_t nodeid, uint32_t docid, double distance)
-    {
+    void add(uint32_t nodeid, uint32_t docid, double distance) {
         _neighbors.emplace(nodeid, docid, EntryRef(), distance);
     }
 
@@ -58,8 +57,7 @@ protected:
         EXPECT_EQ(exp, act);
     }
 
-    void populate()
-    {
+    void populate() {
         add(3, 3, 7.0);
         add(2, 2, 10.0);
         add(1, 1, 1.0);
