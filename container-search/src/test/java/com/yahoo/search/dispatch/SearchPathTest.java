@@ -2,6 +2,8 @@
 package com.yahoo.search.dispatch;
 
 import com.yahoo.search.dispatch.SearchPath.InvalidSearchPathException;
+import com.yahoo.search.dispatch.searchcluster.MockSearchCluster;
+import com.yahoo.search.dispatch.searchcluster.SearchGroups;
 import com.yahoo.search.dispatch.searchcluster.Node;
 import org.junit.jupiter.api.Test;
 
@@ -81,7 +83,7 @@ public class SearchPathTest {
         }
     }
 
-    private void verifyRandomGroup(MockSearchCluster cluster, String searchPath, Set<?> possibleSolutions) {
+    private void verifyRandomGroup(SearchGroups cluster, String searchPath, Set<?> possibleSolutions) {
         for (int i=0; i < 100; i++) {
             String nodes = distKeysAsString(SearchPath.selectNodes(searchPath, cluster));
             assertTrue(possibleSolutions.contains(nodes));
@@ -90,7 +92,7 @@ public class SearchPathTest {
 
     @Test
     void searchPathMustFilterNodesBasedOnDefinition() {
-        MockSearchCluster cluster = new MockSearchCluster("a", 3, 3);
+        SearchGroups cluster = MockSearchCluster.buildGroupListForTest(3, 3, 100);
 
         assertEquals(distKeysAsString(SearchPath.selectNodes("1/1", cluster)), "4");
         assertEquals(distKeysAsString(SearchPath.selectNodes("/1", cluster)), "3,4,5");

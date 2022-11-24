@@ -5,7 +5,10 @@ import com.yahoo.search.dispatch.searchcluster.Group;
 
 import java.time.Duration;
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Random;
 import java.util.Set;
@@ -28,15 +31,15 @@ public class LoadBalancer {
     private static final Duration INITIAL_QUERY_TIME = Duration.ofMillis(1);
     private static final double MIN_QUERY_TIME = Duration.ofMillis(1).toMillis()/1000.0;
 
-    private final List<GroupStatus> scoreboard;
+    private final Map<Integer, GroupStatus> scoreboard;
     private final GroupScheduler scheduler;
 
     public enum Policy { ROUNDROBIN, LATENCY_AMORTIZED_OVER_REQUESTS, LATENCY_AMORTIZED_OVER_TIME, BEST_OF_RANDOM_2}
 
-    public LoadBalancer(List<Group> groups, Policy policy) {
-        this.scoreboard = new ArrayList<>(groups.size());
+    public LoadBalancer(Collection<Group> groups, Policy policy) {
+        this.scoreboard = new HashMap<>();
         for (Group group : groups) {
-            scoreboard.add(new GroupStatus(group));
+            scoreboard.put(group.id(), new GroupStatus(group));
         }
         if (scoreboard.size() == 1)
             policy = Policy.ROUNDROBIN;
@@ -81,12 +84,8 @@ public class LoadBalancer {
      */
     public void releaseGroup(Group group, boolean success, RequestDuration searchTime) {
         synchronized (this) {
-            for (GroupStatus sched : scoreboard) {
-                if (sched.group.id() == group.id()) {
-                    sched.release(success, searchTime);
-                    break;
-                }
-            }
+            GroupStatus sched = scoreboard.get(group.id());
+            sched.release(success, searchTime);
         }
     }
 
@@ -146,31 +145,29 @@ public class LoadBalancer {
     private static class RoundRobinScheduler implements GroupScheduler {
 
         private int needle = 0;
-        private final List<GroupStatus> scoreboard;
+        private final Map<Integer, GroupStatus> scoreboard;
 
-        public RoundRobinScheduler(List<GroupStatus> scoreboard) {
+        public RoundRobinScheduler(Map<Integer, GroupStatus> scoreboard) {
             this.scoreboard = scoreboard;
         }
 
         @Override
         public Optional<GroupStatus> takeNextGroup(Set<Integer> rejectedGroups) {
             GroupStatus bestCandidate = null;
-            int bestIndex = needle;
 
-            int index = needle;
+            int groupId = needle;
             for (int i = 0; i < scoreboard.size(); i++) {
-                GroupStatus candidate = scoreboard.get(index);
-                if (rejectedGroups == null || !rejectedGroups.contains(candidate.group.id())) {
+                GroupStatus candidate = scoreboard.get(groupId);
+                if (rejectedGroups == null || !rejectedGroups.contains(candidate.groupId())) {
                     GroupStatus better = betterGroup(bestCandidate, candidate);
                     if (better == candidate) {
                         bestCandidate = candidate;
-                        bestIndex = index;
                     }
                 }
-                index = nextScoreboardIndex(index);
+                groupId = nextScoreboardIndex(groupId);
             }
-            needle = nextScoreboardIndex(bestIndex);
-            return Optional.ofNullable(bestCandidate);
+            needle = nextScoreboardIndex(bestCandidate.groupId());
+            return Optional.of(bestCandidate);
         }
 
         /**
@@ -203,7 +200,7 @@ public class LoadBalancer {
     static class AdaptiveScheduler implements GroupScheduler {
         enum Type {TIME, REQUESTS}
         private final Random random;
-        private final List<GroupStatus> scoreboard;
+        private final Map<Integer, GroupStatus> scoreboard;
 
         private static double toDouble(Duration duration) {
             return duration.toNanos()/1_000_000_000.0;
@@ -250,18 +247,16 @@ public class LoadBalancer {
             Duration averageSearchTime() { return fromDouble(averageSearchTime);}
         }
 
-        public AdaptiveScheduler(Type type, Random random, List<GroupStatus> scoreboard) {
+        public AdaptiveScheduler(Type type, Random random, Map<Integer, GroupStatus> scoreboard) {
             this.random = random;
             this.scoreboard = scoreboard;
-            for (GroupStatus gs : scoreboard) {
-                gs.setDecayer(type == Type.REQUESTS ? new DecayByRequests() : new DecayByTime());
-            }
+            scoreboard.forEach((id, gs) -> gs.setDecayer(type == Type.REQUESTS ? new DecayByRequests() : new DecayByTime()));
         }
 
         private Optional<GroupStatus> selectGroup(double needle, boolean requireCoverage, Set<Integer> rejected) {
             double sum = 0;
             int n = 0;
-            for (GroupStatus gs : scoreboard) {
+            for (GroupStatus gs : scoreboard.values()) {
                 if (rejected == null || !rejected.contains(gs.group.id())) {
                     if (!requireCoverage || gs.group.hasSufficientCoverage()) {
                         sum += gs.weight();
@@ -273,7 +268,7 @@ public class LoadBalancer {
                 return Optional.empty();
             }
             double accum = 0;
-            for (GroupStatus gs : scoreboard) {
+            for (GroupStatus gs : scoreboard.values()) {
                 if (rejected == null || !rejected.contains(gs.group.id())) {
                     if (!requireCoverage || gs.group.hasSufficientCoverage()) {
                         accum += gs.weight();
@@ -297,8 +292,8 @@ public class LoadBalancer {
 
     static class BestOfRandom2 implements GroupScheduler {
         private final Random random;
-        private final List<GroupStatus> scoreboard;
-        public BestOfRandom2(Random random, List<GroupStatus> scoreboard) {
+        private final Map<Integer, GroupStatus> scoreboard;
+        public BestOfRandom2(Random random, Map<Integer, GroupStatus> scoreboard) {
             this.random = random;
             this.scoreboard = scoreboard;
         }
@@ -312,11 +307,10 @@ public class LoadBalancer {
 
         private GroupStatus selectBestOf2(Set<Integer> rejectedGroups, boolean requireCoverage) {
             List<Integer> candidates = new ArrayList<>(scoreboard.size());
-            for (int i=0; i < scoreboard.size(); i++) {
-                GroupStatus gs = scoreboard.get(i);
+            for (GroupStatus gs : scoreboard.values()) {
                 if (rejectedGroups == null || !rejectedGroups.contains(gs.group.id())) {
                     if (!requireCoverage || gs.group.hasSufficientCoverage()) {
-                        candidates.add(i);
+                        candidates.add(gs.groupId());
                     }
                 }
             }
@@ -330,8 +324,7 @@ public class LoadBalancer {
         private GroupStatus selectRandom(List<Integer> candidates) {
             if ( ! candidates.isEmpty()) {
                 int index = random.nextInt(candidates.size());
-                Integer groupIndex = candidates.remove(index);
-                return scoreboard.get(groupIndex);
+                return scoreboard.get(candidates.remove(index));
             }
             return null;
         }

@@ -6,8 +6,8 @@ import com.yahoo.prelude.fastsearch.VespaBackEndSearcher;
 import com.yahoo.search.Query;
 import com.yahoo.search.Result;
 import com.yahoo.search.dispatch.searchcluster.Group;
+import com.yahoo.search.dispatch.searchcluster.SearchGroups;
 import com.yahoo.search.dispatch.searchcluster.Node;
-import com.yahoo.search.dispatch.searchcluster.SearchCluster;
 import com.yahoo.search.result.Coverage;
 import com.yahoo.search.result.ErrorMessage;
 import com.yahoo.vespa.config.search.DispatchConfig;
@@ -24,12 +24,12 @@ import java.util.Set;
 public abstract class InvokerFactory {
     private static final double SKEW_FACTOR = 0.05;
 
-    private final SearchCluster searchCluster;
+    private final SearchGroups cluster;
     private final DispatchConfig dispatchConfig;
     private final TopKEstimator hitEstimator;
 
-    public InvokerFactory(SearchCluster searchCluster, DispatchConfig dispatchConfig) {
-        this.searchCluster = searchCluster;
+    public InvokerFactory(SearchGroups searchCluster, DispatchConfig dispatchConfig) {
+        this.cluster = searchCluster;
         this.dispatchConfig = dispatchConfig;
         this.hitEstimator = new TopKEstimator(30.0, dispatchConfig.topKProbability(), SKEW_FACTOR);
     }
@@ -57,7 +57,7 @@ public abstract class InvokerFactory {
                                                 List<Node> nodes,
                                                 boolean acceptIncompleteCoverage,
                                                 int maxHits) {
-        Group group = searchCluster.group(nodes.get(0).group()).get(); // Nodes must be of the same group
+        Group group = cluster.get(nodes.get(0).group()); // Nodes must be of the same group
         List<SearchInvoker> invokers = new ArrayList<>(nodes.size());
         Set<Integer> failed = null;
         for (Node node : nodes) {
@@ -85,7 +85,7 @@ public abstract class InvokerFactory {
                     success.add(node);
                 }
             }
-            if ( ! searchCluster.isPartialGroupCoverageSufficient(success) && !acceptIncompleteCoverage) {
+            if ( ! cluster.isPartialGroupCoverageSufficient(success) && !acceptIncompleteCoverage) {
                 return Optional.empty();
             }
             if (invokers.isEmpty()) {

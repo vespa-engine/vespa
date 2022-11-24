@@ -11,9 +11,10 @@ import org.opentest4j.AssertionFailedError;
 
 import java.time.Duration;
 import java.time.Instant;
-import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Random;
 
@@ -110,14 +111,19 @@ public class LoadBalancerTest {
         assertEquals(Duration.ofNanos(1045087), decayer.averageSearchTime());
     }
 
+    private Map<Integer, GroupStatus> createScoreBoard(int count) {
+        Map<Integer, GroupStatus> scoreboard = new HashMap<>();
+        for (int i = 0; i < count; i++) {
+            GroupStatus gs = newGroupStatus(i);
+            scoreboard.put(gs.groupId(), gs);
+        }
+        return scoreboard;
+    }
+
     @Test
     void requireEqualDistributionInFlatWeightListWithAdaptiveScheduler() {
-        List<GroupStatus> scoreboard = new ArrayList<>();
-        for (int i = 0; i < 5; i++) {
-            scoreboard.add(newGroupStatus(i));
-        }
         Random seq = sequence(0.0, 0.1, 0.2, 0.39, 0.4, 0.6, 0.8, 0.99999);
-        AdaptiveScheduler sched = new AdaptiveScheduler(AdaptiveScheduler.Type.REQUESTS, seq, scoreboard);
+        AdaptiveScheduler sched = new AdaptiveScheduler(AdaptiveScheduler.Type.REQUESTS, seq, createScoreBoard(5));
 
         assertEquals(0, sched.takeNextGroup(null).get().groupId());
         assertEquals(0, sched.takeNextGroup(null).get().groupId());
@@ -131,15 +137,11 @@ public class LoadBalancerTest {
 
     @Test
     void requireThatAdaptiveSchedulerObeysWeights() {
-        List<GroupStatus> scoreboard = new ArrayList<>();
-        for (int i = 0; i < 5; i++) {
-            GroupStatus gs = newGroupStatus(i);
-            scoreboard.add(gs);
-        }
+        var scoreboard = createScoreBoard(5);
         Random seq = sequence(0.0, 0.4379, 0.4380, 0.6569, 0.6570, 0.8029, 0.8030, 0.9124, 0.9125);
         AdaptiveScheduler sched = new AdaptiveScheduler(AdaptiveScheduler.Type.REQUESTS, seq, scoreboard);
-        int i= 0;
-        for (GroupStatus gs : scoreboard) {
+        int i = 0;
+        for (GroupStatus gs : scoreboard.values()) {
             gs.setDecayer(new AdaptiveScheduler.DecayByRequests(1, Duration.ofMillis((long)(0.1 * (i + 1)*1000.0))));
             i++;
         }
@@ -161,10 +163,6 @@ public class LoadBalancerTest {
     }
     @Test
     void requireBestOfRandom2Scheduler() {
-        List<GroupStatus> scoreboard = new ArrayList<>();
-        for (int i = 0; i < 5; i++) {
-            scoreboard.add(newGroupStatus(i));
-        }
         Random seq = sequence(
                 0.1, 0.125,
                 0.1, 0.125,
@@ -175,7 +173,7 @@ public class LoadBalancerTest {
                 0.9, 0.125,
                 0.9, 0.125
                 );
-        BestOfRandom2 sched = new BestOfRandom2(seq, scoreboard);
+        BestOfRandom2 sched = new BestOfRandom2(seq, createScoreBoard(5));
 
         assertEquals(0, allocate(sched.takeNextGroup(null).get()).groupId());
         assertEquals(1, allocate(sched.takeNextGroup(null).get()).groupId());
