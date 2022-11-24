@@ -53,9 +53,9 @@ public:
             requires(!std::is_reference_v<T> && std::copy_constructible<T>)
         {
             struct awaiter : std::suspend_always {
-                awaiter(const T &value, Pointer &ptr)
+                awaiter(const T &value_in, Pointer &ptr)
                   noexcept(std::is_nothrow_constructible_v<T, const T &>)
-                  : value_cpy(value)
+                  : value_cpy(value_in)
                 {
                     ptr = std::addressof(value_cpy);
                 }
