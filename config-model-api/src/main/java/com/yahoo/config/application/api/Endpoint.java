@@ -11,9 +11,10 @@ import java.util.stream.Collectors;
 
 /**
  * Represents an application- or instance-level endpoint in deployments.xml.
- *
- * - An instance-level endpoint is global and can span multiple regions within a single instance.
- * - An application-level endpoint points can span multiple instances within a single region.
+ * <p>
+ * - An instance-level endpoint is global and may span multiple regions within a single instance.
+ * - An application-level endpoint may span multiple instances within a single region, or
+ *   even multiple instances across multiple regions, depending on the name service used for the cloud.
  *
  * @author ogronnesby
  * @author mpolden
@@ -44,7 +45,8 @@ public class Endpoint {
         this.level = Objects.requireNonNull(level, "level must be non-null");
         this.targets = List.copyOf(Objects.requireNonNull(targets, "targets must be non-null"));
         if (endpointId().length() > endpointMaxLength || !endpointPattern.matcher(endpointId()).matches()) {
-            throw new IllegalArgumentException("Invalid endpoint ID: '" + endpointId() + "'");
+            throw new IllegalArgumentException("Endpoint ID must be all lowercase, alphanumeric, with no consecutive dashes, " +
+                                               "of length 1 to 12, and begin with a character; but got '" + endpointId() + "'");
         }
         if (targets.isEmpty()) throw new IllegalArgumentException("targets must be non-empty");
         for (int i = 0; i < targets.size(); i++) {
@@ -66,7 +68,7 @@ public class Endpoint {
         }
     }
 
-    /** The unique identifer of this */
+    /** The unique identifier of this */
     public String endpointId() {
         return endpointId;
     }

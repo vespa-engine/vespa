@@ -2,6 +2,7 @@
 package com.yahoo.vespa.hosted.controller.routing;
 
 import ai.vespa.http.DomainName;
+import com.yahoo.concurrent.UncheckedTimeoutException;
 import com.yahoo.config.application.api.DeploymentSpec;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.zone.RoutingMethod;
@@ -9,6 +10,7 @@ import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.transaction.Mutex;
 import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.Controller;
+import com.yahoo.vespa.hosted.controller.api.identifiers.ClusterId;
 import com.yahoo.vespa.hosted.controller.api.identifiers.DeploymentId;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.LoadBalancer;
 import com.yahoo.vespa.hosted.controller.api.integration.dns.AliasTarget;
@@ -27,7 +29,9 @@ import com.yahoo.vespa.hosted.controller.dns.NameServiceForwarder;
 import com.yahoo.vespa.hosted.controller.dns.NameServiceQueue.Priority;
 import com.yahoo.vespa.hosted.controller.dns.NameServiceRequest;
 import com.yahoo.vespa.hosted.controller.persistence.CuratorDb;
+import com.yahoo.yolean.UncheckedInterruptedException;
 
+import java.time.Instant;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
@@ -349,7 +353,7 @@ public class RoutingPolicies {
             if (existingPolicy != null) {
                 newPolicy = newPolicy.with(newPolicy.status().with(existingPolicy.status().routingStatus()));
             }
-            updateZoneDnsOf(newPolicy);
+            updateZoneDnsOf(newPolicy, allocation);
             policies.put(newPolicy.id(), newPolicy);
         }
         RoutingPolicyList updated = RoutingPolicyList.copyOf(policies.values());
@@ -358,14 +362,40 @@ public class RoutingPolicies {
     }
 
     /** Update zone DNS record for given policy */
-    private void updateZoneDnsOf(RoutingPolicy policy) {
+    private void updateZoneDnsOf(RoutingPolicy policy, LoadBalancerAllocation allocation) {
         for (var endpoint : policy.zoneEndpointsIn(controller.system(), RoutingMethod.exclusive, controller.zoneRegistry())) {
             var name = RecordName.from(endpoint.dnsName());
             var record = policy.canonicalName().isPresent() ?
                     new Record(Record.Type.CNAME, name, RecordData.fqdn(policy.canonicalName().get().value())) :
                     new Record(Record.Type.A, name, RecordData.from(policy.ipAddress().orElseThrow()));
             nameServiceForwarderIn(policy.id().zone()).createRecord(record, Priority.normal);
+            setPrivateDns(endpoint, allocation);
         }
+    }
+
+    private void setPrivateDns(Endpoint endpoint, LoadBalancerAllocation allocation) {
+        controller.serviceRegistry().vpcEndpointService()
+                  .setPrivateDns(DomainName.of(endpoint.dnsName()),
+                                 new ClusterId(allocation.deployment, endpoint.cluster()),
+                                 controller.applications().decideCloudAccountOf(allocation.deployment, allocation.deploymentSpec))
+                  .ifPresent(challenge -> {
+                      try {
+                          nameServiceForwarderIn(allocation.deployment.zoneId()).createTxt(challenge.name(), List.of(challenge.data()), Priority.high);
+                          Instant doom = controller.clock().instant().plusSeconds(30);
+                          while (controller.clock().instant().isBefore(doom)) {
+                              if (controller.curator().readNameServiceQueue().requests().stream()
+                                            .noneMatch(request -> request.name().equals(Optional.of(challenge.name())))) {
+                                  challenge.trigger().run();
+                                  return;
+                              }
+                              Thread.sleep(100);
+                          }
+                          throw new UncheckedTimeoutException("timed out waiting for DNS challenge to be processed");
+                      }
+                      catch (InterruptedException e) {
+                          throw new UncheckedInterruptedException("interrupted waiting for DNS challenge to be processed", e, true);
+                      }
+                  });
     }
 
     /**

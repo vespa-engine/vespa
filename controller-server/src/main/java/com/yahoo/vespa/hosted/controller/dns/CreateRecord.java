@@ -3,9 +3,11 @@ package com.yahoo.vespa.hosted.controller.dns;
 
 import com.yahoo.vespa.hosted.controller.api.integration.dns.NameService;
 import com.yahoo.vespa.hosted.controller.api.integration.dns.Record;
+import com.yahoo.vespa.hosted.controller.api.integration.dns.RecordName;
 
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 
 /**
  * Create or update a record.
@@ -26,6 +28,11 @@ public class CreateRecord implements NameServiceRequest {
 
     public Record record() {
         return record;
+    }
+
+    @Override
+    public Optional<RecordName> name() {
+        return Optional.of(record.name());
     }
 
     @Override
