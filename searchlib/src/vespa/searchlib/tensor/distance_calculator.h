@@ -3,6 +3,7 @@
 
 #include "distance_function.h"
 #include "i_tensor_attribute.h"
+#include "vector_bundle.h"
 
 namespace vespalib::eval { struct Value; }
 
@@ -43,12 +44,24 @@ public:
     const DistanceFunction& function() const { return *_dist_fun; }
 
     double calc_raw_score(uint32_t docid) const {
-        double distance = _dist_fun->calc(_query_tensor_cells, _attr_tensor.extract_cells_ref(docid));
-        return _dist_fun->to_rawscore(distance);
+        auto vectors = _attr_tensor.get_vectors(docid);
+        double result = 0.0;
+        for (uint32_t i = 0; i < vectors.subspaces(); ++i) {
+            double distance = _dist_fun->calc(_query_tensor_cells, vectors.cells(i));
+            double score = _dist_fun->to_rawscore(distance);
+            result = std::max(result, score);
+        }
+        return result;
     }
 
     double calc_with_limit(uint32_t docid, double limit) const {
-        return _dist_fun->calc_with_limit(_query_tensor_cells, _attr_tensor.extract_cells_ref(docid), limit);
+        auto vectors = _attr_tensor.get_vectors(docid);
+        double result = std::numeric_limits<double>::max();
+        for (uint32_t i = 0; i < vectors.subspaces(); ++i) {
+            double distance = _dist_fun->calc_with_limit(_query_tensor_cells, vectors.cells(i), limit);
+            result = std::min(result, distance);
+        }
+        return result;
     }
 
     /**

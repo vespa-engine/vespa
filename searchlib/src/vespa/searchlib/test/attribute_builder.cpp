@@ -1,12 +1,18 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "attribute_builder.h"
+#include <vespa/eval/eval/simple_value.h>
+#include <vespa/eval/eval/tensor_spec.h>
 #include <vespa/searchlib/attribute/attributefactory.h>
 #include <vespa/searchlib/attribute/attributevector.h>
 #include <vespa/searchlib/attribute/floatbase.h>
 #include <vespa/searchlib/attribute/integerbase.h>
 #include <vespa/searchlib/attribute/stringbase.h>
+#include <vespa/searchlib/tensor/tensor_attribute.h>
 #include <cassert>
+
+using vespalib::eval::SimpleValue;
+using vespalib::eval::TensorSpec;
 
 namespace search::attribute::test {
 
@@ -148,6 +154,25 @@ AttributeBuilder&
 AttributeBuilder::fill_wset(std::initializer_list<WeightedStringList> values)
 {
     fill_wset_helper<StringAttribute, vespalib::string>(_attr, values);
+    return *this;
+}
+
+AttributeBuilder&
+AttributeBuilder::fill_tensor(const std::vector<vespalib::string>& values)
+{
+    add_docs(_attr, values.size());
+    auto& real = dynamic_cast<search::tensor::TensorAttribute&>(_attr);
+    vespalib::string tensor_type = real.getConfig().tensorType().to_spec();
+    uint32_t docid = 1;
+    for (const auto& value : values) {
+        if (!value.empty()) {
+            auto spec = TensorSpec::from_expr(tensor_type + ":" + value);
+            auto tensor = SimpleValue::from_spec(spec);
+            real.setTensor(docid, *tensor);
+        }
+        ++docid;
+    }
+    _attr.commit(true);
     return *this;
 }
 

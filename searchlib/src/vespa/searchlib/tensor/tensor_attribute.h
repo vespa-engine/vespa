@@ -3,7 +3,6 @@
 #pragma once
 
 #include "i_tensor_attribute.h"
-#include "doc_vector_access.h"
 #include "prepare_result.h"
 #include "subspace_type.h"
 #include "tensor_store.h"
@@ -21,7 +20,7 @@ class NearestNeighborIndexFactory;
 /**
  * Attribute vector class used to store tensors for all documents in memory.
  */
-class TensorAttribute : public NotImplementedAttribute, public ITensorAttribute, public DocVectorAccess {
+class TensorAttribute : public NotImplementedAttribute, public ITensorAttribute {
 protected:
     using AtomicEntryRef = vespalib::datastore::AtomicEntryRef;
     using EntryRef = TensorStore::EntryRef;

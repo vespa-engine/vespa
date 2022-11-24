@@ -52,6 +52,16 @@ public:
     AttributeBuilder& fill_array(std::initializer_list<StringList> values);
     AttributeBuilder& fill_wset(std::initializer_list<WeightedStringList> values);
 
+    /**
+     * Fill this tensor attribute with the given tensor values.
+     *
+     * Each string value represents the last part of a vespalib::eval::TensorSpec,
+     * without the tensor type as this is known from the tensor attribute.
+     * E.g "[1, 2]" is expanded to "tensor(x[2]):[1, 2]".
+     * If the string value is empty no tensor is set for that document.
+     */
+    AttributeBuilder& fill_tensor(const std::vector<vespalib::string>& values);
+
     std::shared_ptr<AttributeVector> get() const { return _attr_ptr; }
 };
 
