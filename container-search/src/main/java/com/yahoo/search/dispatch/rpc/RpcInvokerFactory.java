@@ -7,8 +7,8 @@ import com.yahoo.search.Result;
 import com.yahoo.search.dispatch.FillInvoker;
 import com.yahoo.search.dispatch.InvokerFactory;
 import com.yahoo.search.dispatch.SearchInvoker;
+import com.yahoo.search.dispatch.searchcluster.SearchGroups;
 import com.yahoo.search.dispatch.searchcluster.Node;
-import com.yahoo.search.dispatch.searchcluster.SearchCluster;
 import com.yahoo.vespa.config.search.DispatchConfig;
 
 import java.util.Optional;
@@ -21,8 +21,8 @@ public class RpcInvokerFactory extends InvokerFactory {
     private final RpcConnectionPool rpcResourcePool;
     private final CompressPayload compressor;
 
-    public RpcInvokerFactory(RpcConnectionPool rpcResourcePool, SearchCluster searchCluster, DispatchConfig dispatchConfig) {
-        super(searchCluster, dispatchConfig);
+    public RpcInvokerFactory(RpcConnectionPool rpcResourcePool, SearchGroups cluster, DispatchConfig dispatchConfig) {
+        super(cluster, dispatchConfig);
         this.rpcResourcePool = rpcResourcePool;
         this.compressor = new CompressService();
     }

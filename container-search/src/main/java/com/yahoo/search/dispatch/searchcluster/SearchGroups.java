@@ -7,12 +7,13 @@ import java.util.Set;
  * Simple interface for groups and their nodes in the content cluster
  * @author baldersheim
  */
-public interface GroupList {
-    Group group(int id);
-    Set<Integer> groupKeys();
+public interface SearchGroups {
+    Group get(int id);
+    Set<Integer> keys();
     Collection<Group> groups();
     default boolean isEmpty() {
-        return numGroups() == 0;
+        return size() == 0;
     }
-    int numGroups();
+    int size();
+    boolean isPartialGroupCoverageSufficient(Collection<Node> nodes);
 }

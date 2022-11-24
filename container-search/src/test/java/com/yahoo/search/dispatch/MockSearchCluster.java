@@ -1,12 +1,10 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.search.dispatch;
 
-import com.yahoo.search.dispatch.searchcluster.GroupListImpl;
+import com.yahoo.search.dispatch.searchcluster.SearchGroupsImpl;
 import com.yahoo.search.dispatch.searchcluster.Node;
 import com.yahoo.search.dispatch.searchcluster.SearchCluster;
 import com.yahoo.vespa.config.search.DispatchConfig;
-
-import java.util.List;
 
 /**
  * @author ollivir
@@ -14,12 +12,12 @@ import java.util.List;
 public class MockSearchCluster extends SearchCluster {
 
     public MockSearchCluster(String clusterId, int groups, int nodesPerGroup) {
-        super(clusterId, 88.0, GroupListImpl.buildGroupListForTest(groups, nodesPerGroup), null, null);
+        super(clusterId, SearchGroupsImpl.buildGroupListForTest(groups, nodesPerGroup, 88.0), null, null);
     }
 
     @Override
     public int groupsWithSufficientCoverage() {
-        return numGroups();
+        return groupList().size();
     }
 
     @Override

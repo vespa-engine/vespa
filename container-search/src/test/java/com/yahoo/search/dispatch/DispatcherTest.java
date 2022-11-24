@@ -5,6 +5,7 @@ import com.yahoo.prelude.fastsearch.VespaBackEndSearcher;
 import com.yahoo.search.Query;
 import com.yahoo.search.Result;
 import com.yahoo.search.cluster.ClusterMonitor;
+import com.yahoo.search.dispatch.searchcluster.SearchGroups;
 import com.yahoo.search.dispatch.searchcluster.Node;
 import com.yahoo.search.dispatch.searchcluster.PingFactory;
 import com.yahoo.search.dispatch.searchcluster.Pinger;
@@ -34,7 +35,7 @@ public class DispatcherTest {
         SearchCluster cl = new MockSearchCluster("1", 2, 2);
         Query q = new Query();
         q.getModel().setSearchPath("1/0"); // second node in first group
-        MockInvokerFactory invokerFactory = new MockInvokerFactory(cl, dispatchConfig, (nodes, a) -> {
+        MockInvokerFactory invokerFactory = new MockInvokerFactory(cl.groupList(), dispatchConfig, (nodes, a) -> {
             assertEquals(1, nodes.size());
             assertEquals(1, nodes.get(0).key());
             return true;
@@ -54,7 +55,7 @@ public class DispatcherTest {
                 return Optional.of(new Node(1, "test", 1));
             }
         };
-        MockInvokerFactory invokerFactory = new MockInvokerFactory(cl, dispatchConfig, (n, a) -> true);
+        MockInvokerFactory invokerFactory = new MockInvokerFactory(cl.groupList(), dispatchConfig, (n, a) -> true);
         Dispatcher disp = new Dispatcher(new ClusterMonitor<>(cl, false), cl, dispatchConfig, invokerFactory);
         SearchInvoker invoker = disp.getSearchInvoker(new Query(), null);
         assertNotNull(invoker);
@@ -66,7 +67,7 @@ public class DispatcherTest {
     void requireThatInvokerConstructionIsRetriedAndLastAcceptsAnyCoverage() {
         SearchCluster cl = new MockSearchCluster("1", 2, 1);
 
-        MockInvokerFactory invokerFactory = new MockInvokerFactory(cl, dispatchConfig, (n, acceptIncompleteCoverage) -> {
+        MockInvokerFactory invokerFactory = new MockInvokerFactory(cl.groupList(), dispatchConfig, (n, acceptIncompleteCoverage) -> {
             assertFalse(acceptIncompleteCoverage);
             return false;
         }, (n, acceptIncompleteCoverage) -> {
@@ -85,7 +86,7 @@ public class DispatcherTest {
         try {
             SearchCluster cl = new MockSearchCluster("1", 2, 1);
 
-            MockInvokerFactory invokerFactory = new MockInvokerFactory(cl, dispatchConfig, (n, a) -> false, (n, a) -> false);
+            MockInvokerFactory invokerFactory = new MockInvokerFactory(cl.groupList(), dispatchConfig, (n, a) -> false, (n, a) -> false);
             Dispatcher disp = new Dispatcher(new ClusterMonitor<>(cl, false), cl, dispatchConfig, invokerFactory);
             disp.getSearchInvoker(new Query(), null);
             disp.deconstruct();
@@ -99,7 +100,8 @@ public class DispatcherTest {
     @Test
     void testGroup0IsSelected() {
         SearchCluster cluster = new MockSearchCluster("1", 3, 1);
-        Dispatcher dispatcher = new Dispatcher(new ClusterMonitor<>(cluster, false), cluster, dispatchConfig, new MockInvokerFactory(cluster, dispatchConfig, (n, a) -> true));
+        Dispatcher dispatcher = new Dispatcher(new ClusterMonitor<>(cluster, false), cluster, dispatchConfig,
+                new MockInvokerFactory(cluster.groupList(), dispatchConfig, (n, a) -> true));
         cluster.pingIterationCompleted();
         assertEquals(0,
                 dispatcher.getSearchInvoker(new Query(), null).distributionKey().get().longValue());
@@ -109,7 +111,8 @@ public class DispatcherTest {
     @Test
     void testGroup0IsSkippedWhenItIsBlockingFeed() {
         SearchCluster cluster = new MockSearchCluster("1", 3, 1);
-        Dispatcher dispatcher = new Dispatcher(new ClusterMonitor<>(cluster, false), cluster, dispatchConfig, new MockInvokerFactory(cluster, dispatchConfig, (n, a) -> true));
+        Dispatcher dispatcher = new Dispatcher(new ClusterMonitor<>(cluster, false), cluster, dispatchConfig,
+                new MockInvokerFactory(cluster.groupList(), dispatchConfig, (n, a) -> true));
         cluster.group(0).nodes().get(0).setBlockingWrites(true);
         cluster.pingIterationCompleted();
         assertEquals(1,
@@ -121,7 +124,8 @@ public class DispatcherTest {
     @Test
     void testGroup0IsSelectedWhenMoreAreBlockingFeed() {
         SearchCluster cluster = new MockSearchCluster("1", 3, 1);
-        Dispatcher dispatcher = new Dispatcher(new ClusterMonitor<>(cluster, false), cluster, dispatchConfig, new MockInvokerFactory(cluster, dispatchConfig, (n, a) -> true));
+        Dispatcher dispatcher = new Dispatcher(new ClusterMonitor<>(cluster, false), cluster, dispatchConfig,
+                new MockInvokerFactory(cluster.groupList(), dispatchConfig, (n, a) -> true));
         cluster.group(0).nodes().get(0).setBlockingWrites(true);
         cluster.group(1).nodes().get(0).setBlockingWrites(true);
         cluster.pingIterationCompleted();
@@ -134,7 +138,8 @@ public class DispatcherTest {
     @Test
     void testGroup0IsSelectedWhenItIsBlockingFeedWhenNoOthers() {
         SearchCluster cluster = new MockSearchCluster("1", 1, 1);
-        Dispatcher dispatcher = new Dispatcher(new ClusterMonitor<>(cluster, false), cluster, dispatchConfig, new MockInvokerFactory(cluster, dispatchConfig, (n, a) -> true));
+        Dispatcher dispatcher = new Dispatcher(new ClusterMonitor<>(cluster, false), cluster, dispatchConfig,
+                new MockInvokerFactory(cluster.groupList(), dispatchConfig, (n, a) -> true));
         cluster.group(0).nodes().get(0).setBlockingWrites(true);
         cluster.pingIterationCompleted();
         assertEquals(0,
@@ -152,7 +157,7 @@ public class DispatcherTest {
         private final FactoryStep[] events;
         private int step = 0;
 
-        public MockInvokerFactory(SearchCluster cl, DispatchConfig disptachConfig, FactoryStep... events) {
+        public MockInvokerFactory(SearchGroups cl, DispatchConfig disptachConfig, FactoryStep... events) {
             super(cl, disptachConfig);
             this.events = events;
         }

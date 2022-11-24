@@ -1,9 +1,8 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-package com.yahoo.prelude.fastsearch.test;
+package com.yahoo.search.dispatch;
 
 import com.yahoo.container.handler.VipStatus;
 import com.yahoo.search.cluster.ClusterMonitor;
-import com.yahoo.search.dispatch.Dispatcher;
 import com.yahoo.search.dispatch.rpc.RpcInvokerFactory;
 import com.yahoo.search.dispatch.rpc.RpcPingFactory;
 import com.yahoo.search.dispatch.rpc.RpcResourcePool;
@@ -14,7 +13,7 @@ import com.yahoo.vespa.config.search.DispatchNodesConfig;
 
 import java.util.List;
 
-class MockDispatcher extends Dispatcher {
+public class MockDispatcher extends Dispatcher {
 
     public final ClusterMonitor clusterMonitor;
 
@@ -31,7 +30,7 @@ class MockDispatcher extends Dispatcher {
     }
 
     private MockDispatcher(ClusterMonitor clusterMonitor, SearchCluster searchCluster, DispatchConfig dispatchConfig, RpcResourcePool rpcResourcePool) {
-        this(clusterMonitor, searchCluster, dispatchConfig, new RpcInvokerFactory(rpcResourcePool, searchCluster, dispatchConfig));
+        this(clusterMonitor, searchCluster, dispatchConfig, new RpcInvokerFactory(rpcResourcePool, searchCluster.groupList(), dispatchConfig));
     }
 
     private MockDispatcher(ClusterMonitor clusterMonitor, SearchCluster searchCluster, DispatchConfig dispatchConfig, RpcInvokerFactory invokerFactory) {
@@ -39,10 +38,10 @@ class MockDispatcher extends Dispatcher {
         this.clusterMonitor = clusterMonitor;
     }
 
-    static DispatchConfig toDispatchConfig() {
+    public static DispatchConfig toDispatchConfig() {
         return new DispatchConfig.Builder().build();
     }
-    static DispatchNodesConfig toNodesConfig(List<Node> nodes) {
+    public static DispatchNodesConfig toNodesConfig(List<Node> nodes) {
         DispatchNodesConfig.Builder dispatchConfigBuilder = new DispatchNodesConfig.Builder();
         int key = 0;
         for (Node node : nodes) {

@@ -3,7 +3,7 @@ package com.yahoo.search.dispatch;
 
 import com.yahoo.collections.Pair;
 import com.yahoo.search.dispatch.searchcluster.Group;
-import com.yahoo.search.dispatch.searchcluster.GroupList;
+import com.yahoo.search.dispatch.searchcluster.SearchGroups;
 import com.yahoo.search.dispatch.searchcluster.Node;
 
 import java.util.ArrayList;
@@ -36,7 +36,7 @@ public class SearchPath {
      * @return list of nodes chosen with the search path, or an empty list in which
      *         case some other node selection logic should be used
      */
-    public static List<Node> selectNodes(String searchPath, GroupList cluster) {
+    public static List<Node> selectNodes(String searchPath, SearchGroups cluster) {
         Optional<SearchPath> sp = SearchPath.fromString(searchPath);
         if (sp.isPresent()) {
             return sp.get().mapToNodes(cluster);
@@ -73,7 +73,7 @@ public class SearchPath {
         this.groups = groups;
     }
 
-    private List<Node> mapToNodes(GroupList cluster) {
+    private List<Node> mapToNodes(SearchGroups cluster) {
         if (cluster.isEmpty()) {
             return List.of();
         }
@@ -100,11 +100,11 @@ public class SearchPath {
         return nodes.isEmpty() && groups.isEmpty();
     }
 
-    private Group selectRandomGroupWithSufficientCoverage(GroupList cluster, List<Integer> groupIds) {
+    private Group selectRandomGroupWithSufficientCoverage(SearchGroups cluster, List<Integer> groupIds) {
         while ( groupIds.size() > 1 ) {
             int index = random.nextInt(groupIds.size());
             int groupId = groupIds.get(index);
-            Group group = cluster.group(groupId);
+            Group group = cluster.get(groupId);
             if (group != null) {
                 if (group.hasSufficientCoverage()) {
                     return group;
@@ -115,10 +115,10 @@ public class SearchPath {
                 throw new InvalidSearchPathException("Invalid searchPath, cluster does not have " + (groupId + 1) + " groups");
             }
         }
-        return cluster.group(groupIds.get(0));
+        return cluster.get(groupIds.get(0));
     }
 
-    private Group selectGroup(GroupList cluster) {
+    private Group selectGroup(SearchGroups cluster) {
         if ( ! groups.isEmpty()) {
             List<Integer> potentialGroups = new ArrayList<>();
             for (Selection groupSelection : groups) {
@@ -130,7 +130,7 @@ public class SearchPath {
         }
 
         // pick any working group
-        return selectRandomGroupWithSufficientCoverage(cluster, new ArrayList<>(cluster.groupKeys()));
+        return selectRandomGroupWithSufficientCoverage(cluster, new ArrayList<>(cluster.keys()));
     }
 
     private static SearchPath parseElement(String element) {

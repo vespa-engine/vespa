@@ -1,8 +1,6 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.search.dispatch.searchcluster;
 
-import com.google.common.collect.ImmutableList;
-
 import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
@@ -22,7 +20,7 @@ public class Group {
     private final static int minDocsPerNodeToRequireLowSkew = 100;
 
     private final int id;
-    private final ImmutableList<Node> nodes;
+    private final List<Node> nodes;
     private final AtomicBoolean hasSufficientCoverage = new AtomicBoolean(true);
     private final AtomicBoolean hasFullCoverage = new AtomicBoolean(true);
     private final AtomicLong activeDocuments = new AtomicLong(0);
@@ -32,7 +30,7 @@ public class Group {
 
     public Group(int id, List<Node> nodes) {
         this.id = id;
-        this.nodes = ImmutableList.copyOf(nodes);
+        this.nodes = List.copyOf(nodes);
 
         int idx = 0;
         for(var node: nodes) {
@@ -48,7 +46,7 @@ public class Group {
     public int id() { return id; }
 
     /** Returns the nodes in this group as an immutable list */
-    public ImmutableList<Node> nodes() { return nodes; }
+    public List<Node> nodes() { return nodes; }
 
     /**
      * Returns whether this group has sufficient active documents

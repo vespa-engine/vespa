@@ -2,7 +2,6 @@
 package com.yahoo.search.dispatch.searchcluster;
 
 import com.google.common.collect.ImmutableMap;
-import com.google.common.math.Quantiles;
 import com.yahoo.container.handler.VipStatus;
 import com.yahoo.net.HostName;
 import com.yahoo.prelude.Pong;
@@ -14,7 +13,6 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.Set;
 import java.util.concurrent.Executor;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
@@ -24,15 +22,14 @@ import java.util.stream.Collectors;
  *
  * @author bratseth
  */
-public class SearchCluster implements NodeManager<Node>, GroupList {
+public class SearchCluster implements NodeManager<Node> {
 
     private static final Logger log = Logger.getLogger(SearchCluster.class.getName());
 
-    private final double minActivedocsPercentage;
     private final String clusterId;
     private final VipStatus vipStatus;
     private final PingFactory pingFactory;
-    private final GroupList groups;
+    private final SearchGroupsImpl groups;
     private long nextLogTime = 0;
 
     /**
@@ -52,12 +49,10 @@ public class SearchCluster implements NodeManager<Node>, GroupList {
     }
     public SearchCluster(String clusterId, double minActivedocsPercentage, List<Node> nodes,
                          VipStatus vipStatus, PingFactory pingFactory) {
-        this(clusterId, minActivedocsPercentage, toGroups(nodes), vipStatus, pingFactory);
+        this(clusterId, toGroups(nodes, minActivedocsPercentage), vipStatus, pingFactory);
     }
-    public SearchCluster(String clusterId, double minActivedocsPercentage, GroupList groups,
-                  VipStatus vipStatus, PingFactory pingFactory) {
+    public SearchCluster(String clusterId, SearchGroupsImpl groups, VipStatus vipStatus, PingFactory pingFactory) {
         this.clusterId = clusterId;
-        this.minActivedocsPercentage = minActivedocsPercentage;
         this.vipStatus = vipStatus;
         this.pingFactory = pingFactory;
         this.groups = groups;
@@ -74,7 +69,7 @@ public class SearchCluster implements NodeManager<Node>, GroupList {
         }
     }
 
-    private static Node findLocalCorpusDispatchTarget(String selfHostname, GroupList groups) {
+    private static Node findLocalCorpusDispatchTarget(String selfHostname, SearchGroups groups) {
         // A search node in the search cluster in question is configured on the same host as the currently running container.
         // It has all the data <==> No other nodes in the search cluster have the same group id as this node.
         //         That local search node responds.
@@ -86,7 +81,7 @@ public class SearchCluster implements NodeManager<Node>, GroupList {
         if (localSearchNodes.size() != 1) return null;
 
         Node localSearchNode = localSearchNodes.iterator().next();
-        Group localSearchGroup = groups.group(localSearchNode.group());
+        Group localSearchGroup = groups.get(localSearchNode.group());
 
         // Only use direct dispatch if the local search node has the entire corpus
         if (localSearchGroup.nodes().size() != 1) return null;
@@ -100,27 +95,19 @@ public class SearchCluster implements NodeManager<Node>, GroupList {
                              .toList();
     }
 
-    private static GroupList toGroups(Collection<Node> nodes) {
+    private static SearchGroupsImpl toGroups(Collection<Node> nodes, double minActivedocsPercentage) {
         ImmutableMap.Builder<Integer, Group> groupsBuilder = new ImmutableMap.Builder<>();
         for (Map.Entry<Integer, List<Node>> group : nodes.stream().collect(Collectors.groupingBy(Node::group)).entrySet()) {
             Group g = new Group(group.getKey(), group.getValue());
             groupsBuilder.put(group.getKey(), g);
         }
-        return new GroupListImpl(groupsBuilder.build());
+        return new SearchGroupsImpl(groupsBuilder.build(), minActivedocsPercentage);
     }
 
-    @Override
-    public Group group(int id) {
-        return groups.group(id);
-    }
-    @Override
-    public Set<Integer> groupKeys() { return groups.groupKeys(); }
-    @Override
-    public Collection<Group> groups() { return groups.groups(); }
-    @Override
-    public int numGroups() { return groups.numGroups(); }
+    public SearchGroups groupList() { return groups; }
+    public Group group(int id) { return groups.get(id); }
 
-    public boolean allGroupsHaveSize1() { return groups().stream().allMatch(g -> g.nodes().size() == 1); }
+    private Collection<Group> groups() { return groups.groups(); }
 
     public int groupsWithSufficientCoverage() {
         return (int)groups().stream().filter(Group::hasSufficientCoverage).count();
@@ -134,7 +121,7 @@ public class SearchCluster implements NodeManager<Node>, GroupList {
         if ( localCorpusDispatchTarget == null) return Optional.empty();
 
         // Only use direct dispatch if the local group has sufficient coverage
-        Group localSearchGroup = group(localCorpusDispatchTarget.group());
+        Group localSearchGroup = groups.get(localCorpusDispatchTarget.group());
         if ( ! localSearchGroup.hasSufficientCoverage()) return Optional.empty();
 
         // Only use direct dispatch if the local search node is not down
@@ -225,24 +212,18 @@ public class SearchCluster implements NodeManager<Node>, GroupList {
         // With just one group sufficient coverage may not be the same as full coverage, as the
         // group will always be marked sufficient for use.
         updateSufficientCoverage(group, true);
-        boolean sufficientCoverage = isGroupCoverageSufficient(group.activeDocuments(), group.activeDocuments());
+        boolean sufficientCoverage = groups.isGroupCoverageSufficient(group.activeDocuments(), group.activeDocuments());
         trackGroupCoverageChanges(group, sufficientCoverage, group.activeDocuments());
     }
 
     private void pingIterationCompletedMultipleGroups() {
         groups().forEach(Group::aggregateNodeValues);
-        long medianDocuments = medianDocumentsPerGroup();
+        long medianDocuments = groups.medianDocumentsPerGroup();
         for (Group group : groups()) {
-            boolean sufficientCoverage = isGroupCoverageSufficient(group.activeDocuments(), medianDocuments);
+            boolean sufficientCoverage = groups.isGroupCoverageSufficient(group.activeDocuments(), medianDocuments);
             updateSufficientCoverage(group, sufficientCoverage);
             trackGroupCoverageChanges(group, sufficientCoverage, medianDocuments);
         }
-    }
-
-    private long medianDocumentsPerGroup() {
-        if (isEmpty()) return 0;
-        var activeDocuments = groups().stream().map(Group::activeDocuments).collect(Collectors.toList());
-        return (long)Quantiles.median().compute(activeDocuments);
     }
 
     /**
@@ -252,27 +233,19 @@ public class SearchCluster implements NodeManager<Node>, GroupList {
      */
     @Override
     public void pingIterationCompleted() {
-        if (numGroups() == 1) {
+        if (groups.size() == 1) {
             pingIterationCompletedSingleGroup();
         } else {
             pingIterationCompletedMultipleGroups();
         }
     }
 
-    private boolean isGroupCoverageSufficient(long activeDocuments, long medianDocuments) {
-        double documentCoverage = 100.0 * (double) activeDocuments / medianDocuments;
-        return ! (medianDocuments > 0 && documentCoverage < minActivedocsPercentage);
-    }
+
 
     /**
      * Calculate whether a subset of nodes in a group has enough coverage
      */
-    public boolean isPartialGroupCoverageSufficient(List<Node> nodes) {
-        if (numGroups() == 1)
-            return true;
-        long activeDocuments = nodes.stream().mapToLong(Node::getActiveDocuments).sum();
-        return isGroupCoverageSufficient(activeDocuments, medianDocumentsPerGroup());
-    }
+
 
     private void trackGroupCoverageChanges(Group group, boolean fullCoverage, long medianDocuments) {
         if ( ! hasInformationAboutAllNodes()) return; // Be silent until we know what we are talking about.
