@@ -82,7 +82,7 @@ public class ConfigserverCluster extends AbstractConfigProducer
             builder.clientPort(options.zookeeperClientPort().get());
         }
         if (options.hostedVespa().orElse(false)) {
-            builder.vespaTlsConfigFile(Defaults.getDefaults().underVespaHome("var/zookeeper/conf/tls.conf.json"));
+            builder.vespaTlsConfigFile(Defaults.getDefaults().underVespaHome("conf/zookeeper/tls.conf.json"));
         }
     }
 

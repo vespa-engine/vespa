@@ -22,7 +22,7 @@ public class NodeResourcesTuning implements ProtonConfig.Producer {
     private final static double TLS_SIZE_FRACTION = 0.02;
     final static long MB = 1024 * 1024;
     public final static long GB = MB * 1024;
-    // This is an approximate number based on observation of a node using 33G memory with 765M docs
+    // This is an approximate number base on observation of a node using 33G memory with 765M docs
     private final static long MEMORY_COST_PER_DOCUMENT_STORE_ONLY = 46L;
     private final NodeResources resources;
     private final int threadsPerSearch;
