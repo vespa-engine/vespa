@@ -19,8 +19,10 @@ namespace vespalib::coro {
  * generator may produce any number of results using co_yield, but
  * cannot use co_await (it must be synchronous). The values produced
  * by the generator is accessed by using the generator as an
- * input_range. A generator is recursive (it may yield another
- * generator of the same type to include its values in the output).
+ * input_range. This kind of generator is not recursive (it cannot
+ * yield other generators of the same type directly). This is done to
+ * make it easier for compilers to perform HALO, code inlining and
+ * even constant folding.
  **/
 template <typename T, typename ValueType = std::remove_cvref<T>>
 class [[nodiscard]] Generator {
@@ -34,45 +36,27 @@ public:
     class promise_type {
     private:
         Pointer _ptr;
-        std::exception_ptr _exception;
-        Handle *_itr_state;
-        Handle _parent;
-
-        template <bool check_exception>
-        struct SwitchTo : std::suspend_always {
-            Handle next;
-            explicit SwitchTo(Handle next_in) : next(next_in) {}
-            std::coroutine_handle<> await_suspend(Handle prev) const noexcept {
-                if (next) {
-                    Handle &itr_state = prev.promise().itr_state();
-                    itr_state = next;
-                    next.promise().itr_state(itr_state);
-                    return next;
-                } else {
-                    return std::noop_coroutine();
-                }
-            }
-            void await_resume() const noexcept(!check_exception) {
-                if (check_exception && next.promise()._exception) {
-                    std::rethrow_exception(next.promise()._exception);
-                }
-            }
-        };
 
     public:
         promise_type(promise_type &&) = delete;
         promise_type(const promise_type &) = delete;
-        promise_type() noexcept : _ptr(nullptr), _exception(), _itr_state(nullptr), _parent(nullptr) {}
+        promise_type() noexcept : _ptr(nullptr) {}
         Generator<T> get_return_object() { return Generator(Handle::from_promise(*this)); }
         std::suspend_always initial_suspend() noexcept { return {}; }
-        auto final_suspend() noexcept { return SwitchTo<false>(_parent); }
-        std::suspend_always yield_value(T &&value) {
+        std::suspend_always final_suspend() noexcept { return {}; }
+        std::suspend_always yield_value(T &&value) noexcept {
             _ptr = &value;
             return {};
         }
-        auto yield_value(const T &value) requires(!std::is_reference_v<T> && std::copy_constructible<T>) {
+        auto yield_value(const T &value)
+            noexcept(std::is_nothrow_constructible_v<T, const T &>)
+            requires(!std::is_reference_v<T> && std::copy_constructible<T>)
+        {
             struct awaiter : std::suspend_always {
-                awaiter(const T &value, Pointer &ptr) : value_cpy(value) {
+                awaiter(const T &value_in, Pointer &ptr)
+                  noexcept(std::is_nothrow_constructible_v<T, const T &>)
+                  : value_cpy(value_in)
+                {
                     ptr = std::addressof(value_cpy);
                 }
                 awaiter(awaiter&&) = delete;
@@ -81,28 +65,12 @@ public:
             };
             return awaiter(value, _ptr);
         }
-        auto yield_value(Generator &&child) { return yield_value(child); }
-        auto yield_value(Generator &child) {
-            child._handle.promise()._parent = Handle::from_promise(*this);
-            return SwitchTo<true>(child._handle);
-        }
-        void return_void() { _ptr = nullptr; }
-        void unhandled_exception() {
-            if (_parent) {
-                _exception = std::current_exception();
-            } else {
-                throw;
-            }
-        }
-        T &&result() {
+        void return_void() noexcept {}
+        void unhandled_exception() { throw; }
+        T &&result() noexcept {
             return std::forward<T>(*_ptr);
         }
-        Pointer result_ptr() {
-            return _ptr;
-        }
-        Handle &itr_state() const noexcept { return *_itr_state; }
-        void itr_state(Handle &handle) noexcept { _itr_state = std::addressof(handle); }
-        template<typename U> std::suspend_always await_transform(U &&value) = delete;
+        template<typename U> U &&await_transform(U &&value) = delete;
     };
 
     class Iterator {
@@ -115,7 +83,6 @@ public:
         Iterator(const Iterator &rhs) = delete;
         Iterator &operator=(const Iterator &) = delete;
         explicit Iterator(Handle handle) : _handle(handle) {
-            _handle.promise().itr_state(_handle);
             _handle.resume();
         }
         using iterator_concept = std::input_iterator_tag;
@@ -125,7 +92,6 @@ public:
             return _handle.done();
         }
         Iterator &operator++() {
-            _handle.promise().itr_state(_handle);
             _handle.resume();
             return *this;
         }
@@ -134,9 +100,6 @@ public:
         }
         decltype(auto) operator*() const {
             return std::forward<T>(_handle.promise().result());
-        }
-        auto operator->() const {
-            return _handle.promise().result_ptr();
         }
     };
     

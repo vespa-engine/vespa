@@ -36,8 +36,12 @@ Generator<int> make_numbers(int begin, int end) {
 }
 
 Generator<int> make_numbers(int begin, int split, int end) {
-    co_yield make_numbers(begin, split);
-    co_yield make_numbers(split, end);
+    for (int num: make_numbers(begin, split)) {
+        co_yield num;
+    }
+    for (int num: make_numbers(split, end)) {
+        co_yield num;
+    }
 }
 
 static_assert(std::input_iterator<Generator<std::unique_ptr<int>>::Iterator>);
@@ -67,13 +71,19 @@ Generator<int> make_failed_numbers(int begin, int end, int fail) {
 
 Generator<int> make_safe(Generator<int> gen) {
     try {
-        co_yield gen;
+        for (int num: gen) {
+            co_yield num;
+        }
     } catch (...) {}
 }
 
 Generator<int> a_then_b(Generator<int> a, Generator<int> b) {
-    co_yield a;
-    co_yield b;
+    for (int num: a) {
+        co_yield num;
+    }
+    for (int num: b) {
+        co_yield num;
+    }
 }
 
 TEST(GeneratorTest, generate_some_numbers) {
@@ -116,13 +126,13 @@ TEST(GeneratorTest, generate_unmovable_values) {
     auto pos = gen.begin();
     auto end = gen.end();
     ASSERT_FALSE(pos == end);
-    EXPECT_EQ(pos->get(), 1);
+    EXPECT_EQ((*pos).get(), 1);
     ++pos;
     ASSERT_FALSE(pos == end);
-    EXPECT_EQ(pos->get(), 2);
+    EXPECT_EQ((*pos).get(), 2);
     ++pos;
     ASSERT_FALSE(pos == end);
-    EXPECT_EQ(pos->get(), 3);
+    EXPECT_EQ((*pos).get(), 3);
     ++pos;
     EXPECT_TRUE(pos == end);
 }
@@ -148,7 +158,7 @@ TEST(GeneratorTest, explicit_range_for_loop) {
     EXPECT_EQ(expect, 10);
 }
 
-TEST(GeneratorTest, recursive_generator) {
+TEST(GeneratorTest, nested_generator) {
     int expect = 1;
     for (int x: make_numbers(1, 4, 10)) {
         EXPECT_EQ(x, expect);
@@ -157,7 +167,7 @@ TEST(GeneratorTest, recursive_generator) {
     EXPECT_EQ(expect, 10);
 }
 
-TEST(GeneratorTest, deeper_recursive_generator) {
+TEST(GeneratorTest, deeper_nested_generator) {
     int expect = 1;
     for (int x: a_then_b(make_numbers(1, 3, 5), make_numbers(5, 7, 10))) {
         EXPECT_EQ(x, expect);
@@ -201,7 +211,7 @@ TEST(GeneratorTest, exception_captured_by_parent_generator) {
     EXPECT_EQ(expect, 10);
 }
 
-TEST(GeneratorTest, moving_iterator_with_recursive_generator) {
+TEST(GeneratorTest, moving_iterator_with_nested_generator) {
     auto gen = a_then_b(make_numbers(1, 3, 5), make_numbers(5, 7, 9));
     auto pos = std::ranges::begin(gen);
     auto end = std::ranges::end(gen);

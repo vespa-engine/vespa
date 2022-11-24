@@ -11,8 +11,23 @@ using vespalib::coro::Generator;
 using vespalib::BenchmarkTimer;
 using vespalib::Sequence;
 
-template <std::ranges::input_range T>
-size_t calc_sum(T&& values) {
+size_t calc_sum(const std::vector<size_t> &values) {
+    size_t sum = 0;
+    for (auto&& value: values) {
+        sum += value;
+    }
+    return sum;
+}
+
+size_t calc_sum(Generator<size_t> values) {
+    size_t sum = 0;
+    for (auto&& value: values) {
+        sum += value;
+    }
+    return sum;
+}
+
+size_t calc_sum(Generator<const size_t &> values) {
     size_t sum = 0;
     for (auto&& value: values) {
         sum += value;
@@ -28,91 +43,84 @@ size_t calc_sum(Sequence<size_t> &seq) {
     return sum;
 }
 
-struct ValueRange {
-    using iterator_concept = std::input_iterator_tag;
-    using difference_type = std::ptrdiff_t;
-    using value_type = size_t;
-    size_t first;
-    size_t last;
-    ValueRange() noexcept : first(0), last(0) {}
-    ValueRange(size_t first_in, size_t last_in) noexcept
-      : first(first_in), last(last_in) {}
-    auto begin() noexcept { return ValueRange(first, last); }
-    auto end() const noexcept { return std::default_sentinel_t(); }
-    bool operator==(std::default_sentinel_t) const noexcept { return (first == last); }
-    ValueRange &operator++() noexcept { ++first; return *this; }
-    void operator++(int) noexcept { operator++(); }
-    size_t operator*() const noexcept { return first; }
-};
-
-size_t calc_sum_direct(size_t first, size_t last) {
-    return calc_sum(ValueRange(first, last));
-}
-
-Generator<size_t> gen_values(size_t first, size_t last) {
-    for (size_t i = first; i < last; ++i) {
-        co_yield i;
+std::vector<size_t> make_data() __attribute__((noinline));
+std::vector<size_t> make_data() {
+    size_t n = 1000000;
+    std::vector<size_t> data;
+    data.reserve(n);
+    for (size_t i = 0; i < n; ++i) {
+        data.push_back(i + n);
     }
-}
-
-size_t calc_sum_generator(size_t first, size_t last) {
-    return calc_sum(gen_values(first, last));
-}
-
-Generator<const size_t &> gen_values_ref(size_t first, size_t last) {
-    for (size_t i = first; i < last; ++i) {
-        co_yield i;
-    }
-}
-
-size_t calc_sum_generator_ref(size_t first, size_t last) {
-    return calc_sum(gen_values_ref(first, last));
+    return data;
 }
 
 struct MySeq : Sequence<size_t> {
-    size_t first;
-    size_t last;
-    MySeq(size_t first_in, size_t last_in)
-      : first(first_in), last(last_in) {}
-    bool valid() const override { return (first < last); }
-    size_t get() const override { return first; }
-    void next() override { ++first; }
+    const std::vector<size_t> &data;
+    size_t pos;
+    MySeq(const std::vector<size_t> &data_in)
+      : data(data_in), pos(0) {}
+    bool valid() const override { return pos < data.size(); }
+    size_t get() const override { return data[pos]; }
+    void next() override { ++pos; }
 };
 
-size_t calc_sum_sequence(size_t first, size_t last) {
-    MySeq seq(first, last);
-    return calc_sum(seq);
+size_t calc_sum_direct(const std::vector<size_t> &data) {
+    return calc_sum(data);
+}
+
+size_t calc_sum_sequence(const std::vector<size_t> &data) {
+    MySeq my_seq(data);
+    return calc_sum(my_seq);
+}
+
+Generator<size_t> gen_values(const std::vector<size_t> &data) {
+    for (size_t value: data) {
+        co_yield value;
+    }
+}
+
+size_t calc_sum_generator(const std::vector<size_t> &data) {
+    return calc_sum(gen_values(data));
+}
+
+Generator<const size_t &> gen_values_noinline(const std::vector<size_t> &data) __attribute__((noinline));
+Generator<const size_t &> gen_values_noinline(const std::vector<size_t> &data) {
+    for (const size_t &value: data) {
+        co_yield value;
+    }
+}
+
+size_t calc_sum_generator_noinline(const std::vector<size_t> &data) {
+    return calc_sum(gen_values_noinline(data));
+}
+
+double bench(auto fun, const std::vector<size_t> &data, size_t &res) {
+    BenchmarkTimer timer(5.0);
+    while (timer.has_budget()) {
+        timer.before();
+        res = fun(data);
+        timer.after();
+    }
+    return timer.min_time() * 1000.0;
 }
 
 TEST(GeneratorBench, direct_vs_generated_for_loop) {
-    size_t first = 0;
-    size_t last = 100000;
-    size_t res_direct = 0;
-    size_t res_generator = 1;
-    size_t res_generator_ref = 2;
-    size_t res_sequence = 3;
-    double direct_ms = BenchmarkTimer::benchmark([first,last,&res_direct](){
-                                                     res_direct = calc_sum_direct(first, last);
-                                                 }, 5.0) * 1000.0;
-    fprintf(stderr, "direct: %g ms\n", direct_ms);
-    double generator_ms = BenchmarkTimer::benchmark([first,last,&res_generator](){
-                                                        res_generator = calc_sum_generator(first, last);
-                                                    }, 5.0) * 1000.0;
-    fprintf(stderr, "generator: %g ms\n", generator_ms);
-    double generator_ref_ms = BenchmarkTimer::benchmark([first,last,&res_generator_ref](){
-                                                            res_generator_ref = calc_sum_generator_ref(first, last);
-                                                        }, 5.0) * 1000.0;
-    fprintf(stderr, "generator_ref: %g ms\n", generator_ref_ms);
-    double sequence_ms = BenchmarkTimer::benchmark([first,last,&res_sequence](){
-                                                       res_sequence = calc_sum_sequence(first, last);
-                                                   }, 5.0) * 1000.0;
+    auto data = make_data();
+    size_t result[4] = { 0, 1, 2, 3 };
+    double sequence_ms = bench(calc_sum_sequence, data, result[0]);
     fprintf(stderr, "sequence: %g ms\n", sequence_ms);
-    EXPECT_EQ(res_direct, res_generator);
-    EXPECT_EQ(res_direct, res_generator_ref);
-    EXPECT_EQ(res_direct, res_sequence);
+    double generator_noinline_ms = bench(calc_sum_generator_noinline, data, result[1]);
+    fprintf(stderr, "generator_noinline: %g ms\n", generator_noinline_ms);
+    double generator_ms = bench(calc_sum_generator, data, result[2]);
+    fprintf(stderr, "generator: %g ms\n", generator_ms);
+    double direct_ms = bench(calc_sum_direct, data, result[3]);
+    fprintf(stderr, "direct: %g ms\n", direct_ms);
+    EXPECT_EQ(result[0], result[1]);
+    EXPECT_EQ(result[0], result[2]);
+    EXPECT_EQ(result[0], result[3]);
     fprintf(stderr, "ratio (generator/direct): %g\n", (generator_ms/direct_ms));
-    fprintf(stderr, "ratio (generator/sequence): %g\n", (generator_ms/sequence_ms));
-    fprintf(stderr, "ratio (generator/generator_ref): %g\n", (generator_ms/generator_ref_ms));
+    fprintf(stderr, "ratio (generator_noinline/generator): %g\n", (generator_noinline_ms/generator_ms));
+    fprintf(stderr, "ratio (sequence/generator): %g\n", (sequence_ms/generator_ms));
 }
 
 GTEST_MAIN_RUN_ALL_TESTS()
