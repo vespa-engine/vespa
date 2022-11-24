@@ -17,11 +17,13 @@ public class LoggerEntry {
     private final Long timestamp;
     private final Query query;
     private final ByteBuffer blob;
+    private final String track;
 
     private LoggerEntry(Builder builder) {
         timestamp = builder.timestamp;  // or set automatically if not set
         query = builder.query;
         blob = builder.blob;
+        track = builder.track;
     }
 
     public Long timestamp() {
@@ -49,6 +51,10 @@ public class LoggerEntry {
         return blob;
     }
 
+    public String track() {
+        return track;
+    }
+
     public String toString() {
         return serialize();
     }
@@ -61,6 +67,7 @@ public class LoggerEntry {
             root.setLong("timestamp", timestamp == null ? 0 : timestamp);
             root.setString("query", queryString());
             root.setString("blob", Base64.getEncoder().encodeToString(blob.array()));
+            root.setString("track", track());
 
             return Utf8.toString(SlimeUtils.toJsonBytes(slime));  // TODO
         } catch (IOException e) {
@@ -74,8 +81,9 @@ public class LoggerEntry {
         var timestamp = slime.get().field("timestamp").asLong();
         var query = new Query(slime.get().field("query").asString());
         var blob = slime.get().field("blob").asString();
+        var track = slime.get().field("track").asString();
 
-        return new LoggerEntry(new Builder().timestamp(timestamp).query(query).blob(blob));
+        return new LoggerEntry(new Builder().timestamp(timestamp).query(query).blob(blob).track(track));
     }
 
     public static class Builder {
@@ -85,6 +93,7 @@ public class LoggerEntry {
         private Long timestamp;
         private Query query;
         private ByteBuffer blob;
+        private String track = "";
 
         // For testing
         public Builder() { this(entry -> false); }
@@ -113,6 +122,11 @@ public class LoggerEntry {
             byte[] bytes = Utf8.toBytes(blob);
             this.blob = ByteBuffer.allocate(bytes.length);
             this.blob.put(bytes);
+            return this;
+        }
+
+        public Builder track(String track) {
+            this.track = track;
             return this;
         }
 
