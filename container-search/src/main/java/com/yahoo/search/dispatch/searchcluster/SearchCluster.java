@@ -1,7 +1,6 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.search.dispatch.searchcluster;
 
-import com.google.common.collect.ImmutableMap;
 import com.yahoo.container.handler.VipStatus;
 import com.yahoo.net.HostName;
 import com.yahoo.prelude.Pong;
@@ -10,6 +9,7 @@ import com.yahoo.search.cluster.NodeManager;
 import com.yahoo.vespa.config.search.DispatchNodesConfig;
 
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -30,7 +30,7 @@ public class SearchCluster implements NodeManager<Node> {
     private final VipStatus vipStatus;
     private final PingFactory pingFactory;
     private final SearchGroupsImpl groups;
-    private long nextLogTime = 0;
+    private volatile long nextLogTime = 0;
 
     /**
      * A search node on this local machine having the entire corpus, which we therefore
@@ -96,12 +96,12 @@ public class SearchCluster implements NodeManager<Node> {
     }
 
     private static SearchGroupsImpl toGroups(Collection<Node> nodes, double minActivedocsPercentage) {
-        ImmutableMap.Builder<Integer, Group> groupsBuilder = new ImmutableMap.Builder<>();
+        Map<Integer, Group> groups = new HashMap<>();
         for (Map.Entry<Integer, List<Node>> group : nodes.stream().collect(Collectors.groupingBy(Node::group)).entrySet()) {
             Group g = new Group(group.getKey(), group.getValue());
-            groupsBuilder.put(group.getKey(), g);
+            groups.put(group.getKey(), g);
         }
-        return new SearchGroupsImpl(groupsBuilder.build(), minActivedocsPercentage);
+        return new SearchGroupsImpl(Map.copyOf(groups), minActivedocsPercentage);
     }
 
     public SearchGroups groupList() { return groups; }
