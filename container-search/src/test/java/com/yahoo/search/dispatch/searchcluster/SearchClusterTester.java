@@ -1,8 +1,6 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.search.dispatch.searchcluster;
 
-import com.yahoo.search.dispatch.MockSearchCluster;
-
 public class SearchClusterTester {
 
     private final SearchCluster cluster;
