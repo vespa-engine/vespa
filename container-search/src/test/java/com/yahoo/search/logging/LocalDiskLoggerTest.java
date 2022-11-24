@@ -29,12 +29,14 @@ public class LocalDiskLoggerTest {
         LocalDiskLogger logger = new LocalDiskLogger(builder.build());
 
         logger.newEntry()
-                .blob("Yo entry".getBytes())
+                .blob("my entry blob content".getBytes())
+                .track("my-track")
                 .send();
         waitForFile(logFile);
 
         String test = IOUtils.readAll(new FileReader(logFile));
-        assertTrue(test.contains(Base64.getEncoder().encodeToString("Yo entry".getBytes())));
+        assertTrue(test.contains(Base64.getEncoder().encodeToString("my entry blob content".getBytes())));
+        assertTrue(test.contains("my-track"));
     }
 
     private void waitForFile(File file) throws InterruptedException {
