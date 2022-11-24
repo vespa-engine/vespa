@@ -3,6 +3,7 @@ package com.yahoo.vespa.hosted.controller.notification;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.yahoo.config.provision.Environment;
+import com.yahoo.config.provision.TenantName;
 import com.yahoo.restapi.UriBuilder;
 import com.yahoo.text.Text;
 import com.yahoo.vespa.flags.FetchVector;
@@ -131,22 +132,16 @@ public class Notifier {
         var notification = content.notification();
         var subject = Text.format("[%s] %s Vespa Notification for %s", notification.level().toString().toUpperCase(), content.prettyType(), applicationIdSource(notification.source()));
         var template = uncheck(() -> Notifier.class.getResourceAsStream("/mail/mail-notification.tmpl").readAllBytes());
-        var notificationsUri = new UriBuilder(dashboardUri)
-                .append("tenant/")
-                .append(content.notification().source().tenant().value())
-                .append("account/notifications")
-                .toURI()
-                .toString();
         var html = new String(template)
                 .replace("[[NOTIFICATION_HEADER]]", content.messagePrefix())
                 .replace("[[NOTIFICATION_ITEMS]]", notification.messages().stream()
                         .map(Notifier::linkify)
                         .map(m -> "<li>" + m + "</li>")
                         .collect(Collectors.joining()))
-                .replace("[[LINK_TO_ACCOUNT_NOTIFICATIONS]]", notificationsUri)
+                .replace("[[LINK_TO_ACCOUNT_NOTIFICATIONS]]", accountNotificationsUri(content.notification().source().tenant()))
                 .replace("[[LINK_TO_PRIVACY_POLICY]]", "https://legal.yahoo.com/xw/en/yahoo/privacy/topic/b2bprivacypolicy/index.html")
-                .replace("[[LINK_TO_TERMS_OF_SERVICE]]", "https://console.vespa-cloud.com/terms-of-service-trial.html")
-                .replace("[[LINK_TO_SUPPORT]]", "https://console.vespa-cloud.com/support");
+                .replace("[[LINK_TO_TERMS_OF_SERVICE]]", consoleUri("terms-of-service-trial.html"))
+                .replace("[[LINK_TO_SUPPORT]]", consoleUri("support"));
         return new Mail(recipients, subject, "", html);
     }
 
@@ -163,5 +158,16 @@ public class Notifier {
         return sb.toString();
     }
 
+    private String accountNotificationsUri(TenantName tenant) {
+        return new UriBuilder(dashboardUri)
+                .append("tenant/")
+                .append(tenant.value())
+                .append("account/notifications")
+                .toString();
+    }
+
+    private String consoleUri(String path) {
+        return new UriBuilder(dashboardUri).append(path).toString();
+    }
 
 }

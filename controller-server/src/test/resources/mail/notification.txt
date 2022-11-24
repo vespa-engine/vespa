@@ -604,7 +604,7 @@
                                 target="_blank"
                                 rel="noopener noreferrer"
                                 style="color: #005a8e"
-                                href="https://console.vespa-cloud.com/terms-of-service-trial.html"
+                                href="https://dashboard.tld/terms-of-service-trial.html"
                                 ><span style="color: #005a8e"
                                   >Terms of Service</span
                                 ></a
@@ -614,7 +614,7 @@
                                 target="_blank"
                                 rel="noopener noreferrer"
                                 style="color: #005a8e"
-                                href="https://console.vespa-cloud.com/support"
+                                href="https://dashboard.tld/support"
                                 ><span style="color: #005a8e">Support</span></a
                               >
                             </p>
