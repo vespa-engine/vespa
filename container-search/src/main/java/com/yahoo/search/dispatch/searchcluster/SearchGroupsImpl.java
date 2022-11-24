@@ -30,8 +30,9 @@ public class SearchGroupsImpl implements SearchGroups {
     }
 
     public boolean isGroupCoverageSufficient(long activeDocuments, long medianDocuments) {
+        if (medianDocuments <= 0) return true;
         double documentCoverage = 100.0 * (double) activeDocuments / medianDocuments;
-        return ! (medianDocuments > 0 && documentCoverage < minActivedocsPercentage);
+        return documentCoverage >= minActivedocsPercentage;
     }
 
     public long medianDocumentsPerGroup() {
