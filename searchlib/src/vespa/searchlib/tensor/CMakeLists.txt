@@ -19,7 +19,9 @@ vespa_add_library(searchlib_tensor OBJECT
     hnsw_graph.cpp
     hnsw_index.cpp
     hnsw_index_saver.cpp
+    hnsw_multi_best_neighbors.cpp
     hnsw_nodeid_mapping.cpp
+    hnsw_single_best_neighbors.cpp
     imported_tensor_attribute_vector.cpp
     imported_tensor_attribute_vector_read_guard.cpp
     inner_product_distance.cpp

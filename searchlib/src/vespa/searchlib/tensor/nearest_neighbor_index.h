@@ -45,6 +45,9 @@ public:
           : docid(id), distance(dist)
         {}
         Neighbor() noexcept : docid(0), distance(0.0) {}
+        bool operator==(const Neighbor& rhs) const {
+            return docid == rhs.docid && distance == rhs.distance;
+        }
     };
     virtual ~NearestNeighborIndex() = default;
     virtual void add_document(uint32_t docid) = 0;

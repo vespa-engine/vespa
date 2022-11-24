@@ -10,36 +10,58 @@
 namespace search::tensor {
 
 /**
- * Represents a candidate node with its distance to another point in space.
+ * Represents a travesal candidate node with its distance to another
+ * point in space.
  */
-struct HnswCandidate {
+struct HnswTraversalCandidate {
     uint32_t nodeid;
     vespalib::datastore::EntryRef node_ref;
     double distance;
-    HnswCandidate(uint32_t nodeid_in, double distance_in) noexcept
+    HnswTraversalCandidate(uint32_t nodeid_in, double distance_in) noexcept
       : nodeid(nodeid_in), node_ref(), distance(distance_in) {}
-    HnswCandidate(uint32_t nodeid_in, vespalib::datastore::EntryRef node_ref_in, double distance_in) noexcept
+    HnswTraversalCandidate(uint32_t nodeid_in, vespalib::datastore::EntryRef node_ref_in, double distance_in) noexcept
       : nodeid(nodeid_in), node_ref(node_ref_in), distance(distance_in) {}
+    HnswTraversalCandidate(uint32_t nodeid_in, uint32_t docid_in, vespalib::datastore::EntryRef node_ref_in, double distance_in) noexcept
+      : nodeid(nodeid_in), node_ref(node_ref_in), distance(distance_in)
+    {
+        (void) docid_in;
+    }
+};
+
+/**
+ * Represents a neighbor candidate node with its distance to another
+ * point in space.
+ */
+struct HnswCandidate : public HnswTraversalCandidate {
+    uint32_t docid;
+
+    HnswCandidate(uint32_t nodeid_in, uint32_t docid_in, vespalib::datastore::EntryRef node_ref_in, double distance_in) noexcept
+        : HnswTraversalCandidate(nodeid_in, docid_in, node_ref_in, distance_in),
+          docid(docid_in)
+    {
+    }
 };
 
 struct GreaterDistance {
-    bool operator() (const HnswCandidate& lhs, const HnswCandidate& rhs) const {
+    bool operator() (const HnswTraversalCandidate& lhs, const HnswTraversalCandidate& rhs) const {
         return (rhs.distance < lhs.distance);
     }
 };
 
 struct LesserDistance {
-    bool operator() (const HnswCandidate& lhs, const HnswCandidate& rhs) const {
+    bool operator() (const HnswTraversalCandidate& lhs, const HnswTraversalCandidate& rhs) const {
         return (lhs.distance < rhs.distance);
     }
 };
+
+using HnswTraversalCandidateVector = std::vector<HnswTraversalCandidate>;
 
 using HnswCandidateVector = std::vector<HnswCandidate>;
 
 /**
  * Priority queue that keeps the candidate node that is nearest a point in space on top.
  */
-using NearestPriQ = std::priority_queue<HnswCandidate, HnswCandidateVector, GreaterDistance>;
+using NearestPriQ = std::priority_queue<HnswTraversalCandidate, HnswTraversalCandidateVector, GreaterDistance>;
 
 /**
  * Priority queue that keeps the candidate node that is furthest away a point in space on top.
