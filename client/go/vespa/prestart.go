@@ -52,6 +52,7 @@ func RunPreStart() error {
 	fixSpec.FixDir("var/vespa/application")
 	fixSpec.FixDir("var/vespa/bundlecache")
 	fixSpec.FixDir("var/vespa/bundlecache/configserver")
+	fixSpec.FixDir("var/vespa/cache")
 	fixSpec.FixDir("var/vespa/cache/config")
 	// fix wrong ownerships within directories:
 	var fixer fs.WalkDirFunc = func(path string, d fs.DirEntry, err error) error {
