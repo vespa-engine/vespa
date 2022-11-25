@@ -12,7 +12,6 @@ using vespalib::datastore::EntryRef;
 namespace {
 
 constexpr uint32_t max_small_array_type_id = 64;
-constexpr size_t small_page_size = 4_Ki;
 constexpr size_t min_num_arrays_for_new_buffer = 512_Ki;
 constexpr float alloc_grow_factor = 0.3;
 
@@ -48,7 +47,7 @@ HnswNodeidMapping::HnswNodeidMapping()
       _nodeid_limit(1), // Starting with nodeid=1 matches that we also start with docid=1.
       _nodeids(NodeidStore::optimizedConfigForHugePage(max_small_array_type_id,
                                                        vespalib::alloc::MemoryAllocator::HUGEPAGE_SIZE,
-                                                       small_page_size,
+                                                       vespalib::alloc::MemoryAllocator::PAGE_SIZE,
                                                        min_num_arrays_for_new_buffer,
                                                        alloc_grow_factor).enable_free_lists(true), {}),
       _hold_list(),
