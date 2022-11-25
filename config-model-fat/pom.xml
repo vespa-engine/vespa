@@ -201,7 +201,6 @@
                     <i>com.google.inject:guice:jar:no_aop:*:*</i>
                     <i>com.google.j2objc:j2objc-annotations:*:*</i>
                     <i>com.google.protobuf:protobuf-java:*:*</i>
-                    <i>com.microsoft.onnxruntime:onnxruntime:*:*</i>
                     <i>com.sun.activation:javax.activation:*:*</i>
                     <i>com.sun.xml.bind:jaxb-core:*:*</i>
                     <i>com.sun.xml.bind:jaxb-impl:*:*</i>
