@@ -47,12 +47,7 @@ struct ConvertCellsSelector
     }
 };
 
-bool
-is_compatible(const vespalib::eval::ValueType& lhs,
-              const vespalib::eval::ValueType& rhs)
-{
-    return (lhs.dimensions() == rhs.dimensions());
-}
+
 
 }
 
@@ -100,7 +95,24 @@ DistanceCalculator::~DistanceCalculator() = default;
 
 namespace {
 
+bool
+supported_tensor_type(const vespalib::eval::ValueType& type)
+{
+    if (type.is_dense() && type.dimensions().size() == 1) {
+        return true;
+    }
+    if (type.is_mixed() && type.dimensions().size() == 2) {
+        return true;
+    }
+    return false;
+}
 
+bool
+is_compatible(const vespalib::eval::ValueType& lhs,
+              const vespalib::eval::ValueType& rhs)
+{
+    return (lhs.indexed_dimensions() == rhs.indexed_dimensions());
+}
 
 }
 
@@ -113,8 +125,8 @@ DistanceCalculator::make_with_validation(const search::attribute::IAttributeVect
         throw IllegalArgumentException("Attribute is not a tensor");
     }
     const auto& at_type = attr_tensor->getTensorType();
-    if ((!at_type.is_dense()) || (at_type.dimensions().size() != 1)) {
-        throw IllegalArgumentException(make_string("Attribute tensor type (%s) is not a dense tensor of order 1",
+    if (!supported_tensor_type(at_type)) {
+        throw IllegalArgumentException(make_string("Attribute tensor type (%s) is not supported",
                                                    at_type.to_spec().c_str()));
     }
     const auto& qt_type = query_tensor_in.type();
@@ -125,10 +137,6 @@ DistanceCalculator::make_with_validation(const search::attribute::IAttributeVect
     if (!is_compatible(at_type, qt_type)) {
         throw IllegalArgumentException(make_string("Attribute tensor type (%s) and query tensor type (%s) are not compatible",
                                                    at_type.to_spec().c_str(), qt_type.to_spec().c_str()));
-    }
-    if (!attr_tensor->supports_extract_cells_ref()) {
-        throw IllegalArgumentException(make_string("Attribute tensor does not support access to tensor data (type=%s)",
-                                                   at_type.to_spec().c_str()));
     }
     return std::make_unique<DistanceCalculator>(*attr_tensor, query_tensor_in);
 }
