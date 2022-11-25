@@ -41,9 +41,11 @@ func (spec *Spec) EffectiveEnv() []string {
 		trace.Trace("add to environment:", k, "=", v)
 		envMap[k] = k + "=" + v
 	}
-	envVec := make([]string, 0, len(envMap))
+	envVec := make([]string, len(envMap))
+	idx := 0
 	for _, val := range envMap {
-		envVec = append(envVec, val)
+		envVec[idx] = val
+		idx++
 	}
 	return envVec
 }

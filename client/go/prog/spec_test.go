@@ -37,3 +37,27 @@ func TestProgSpec(t *testing.T) {
 	s = spec.valueFromListString("one=1 all=123")
 	assert.Equal(t, "123", s)
 }
+
+type strVec []string
+
+func (v strVec) contains(w string) bool {
+	for _, val := range v {
+		if w == val {
+			return true
+		}
+	}
+	return false
+}
+
+func TestProgSpecEnv(t *testing.T) {
+	spec := NewSpec([]string{"/opt/vespa/bin/foobar"})
+	t.Setenv("FOO", "old foo")
+	t.Setenv("BAR", "bar")
+	spec.Setenv("FOO", "foo")
+	assert.Equal(t, "foo", spec.Getenv("FOO"))
+	assert.Equal(t, "bar", spec.Getenv("BAR"))
+	envv := strVec(spec.EffectiveEnv())
+	assert.True(t, envv.contains("FOO=foo"))
+	assert.True(t, envv.contains("BAR=bar"))
+	assert.False(t, envv.contains("FOO=old foo"))
+}

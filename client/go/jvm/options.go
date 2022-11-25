@@ -18,7 +18,6 @@ type Options struct {
 	container Container
 	classPath []string
 	jvmArgs   []string
-	present   map[string]bool
 	mainClass string
 	fixSpec   util.FixSpec
 }
@@ -35,15 +34,16 @@ func NewOptions(c Container) *Options {
 		container: c,
 		classPath: make([]string, 0, 10),
 		jvmArgs:   make([]string, 0, 100),
-		present:   make(map[string]bool),
 		mainClass: DEFAULT_MAIN_CLASS,
 		fixSpec:   fixSpec,
 	}
 }
 
 func (opts *Options) AddOption(arg string) {
-	if present := opts.present[arg]; present {
-		return
+	for _, old := range opts.jvmArgs {
+		if arg == old {
+			return
+		}
 	}
 	opts.AppendOption(arg)
 }
