@@ -55,7 +55,11 @@ public class Node {
 
     public String hostname() { return hostname; }
 
-    /** Returns the id of the group this node belongs to */
+    /**
+     * Returns the index of the group this node belongs to.
+     * This is a 0-base continuous integer id, not necessarily the same as the group id assigned by the
+     * application/node repo.
+     */
     public int group() { return group; }
 
     public void setWorking(boolean working) {

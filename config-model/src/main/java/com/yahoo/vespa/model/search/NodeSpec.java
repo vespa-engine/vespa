@@ -24,8 +24,8 @@ public class NodeSpec {
 
     /** 
      * Returns an index of the group of this node. 
-     * This is a 0-base continuous integer id, not necessarily the same as the group id assigned by the user
-     * or node repo.
+     * This is a 0-base continuous integer id, not necessarily the same as the group id assigned by the
+     * application/node repo.
      * This index is called a "row id" in some places in Vespa for historical reasons.
      */
     public int groupIndex() {
@@ -34,7 +34,7 @@ public class NodeSpec {
 
     /**
      * Returns the partition id of this, which is also a contiguous integer id, not necessarily
-     * the same as the group id assigned by the user or node repo.
+     * the same as the group id assigned by the application/node repo.
      */
     public int partitionId() {
         return partitionId;

@@ -16,8 +16,10 @@ public class Node {
         this.index = index;
     }
 
-    /** Returns the unique index for this node in the cluster.
-     * Indices are non-negative, but not necessarily contiguous or starting from zero. */
+    /**
+     * Returns the unique index of this node in the cluster.
+     * Indices are non-negative, but not necessarily contiguous or starting from zero.
+     */
     public int index() { return index; }
 
     @Override
