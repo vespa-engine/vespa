@@ -111,7 +111,8 @@ public class NodeRepositoryProvisioner implements Provisioner {
             resources = getNodeResources(cluster, requested.minResources().nodeResources(), application, true);
             nodeSpec = NodeSpec.from(requested.type(), nodeRepository.zone().cloud().account());
         }
-        return asSortedHosts(preparer.prepare(application, cluster, nodeSpec, groups), resources);
+        return asSortedHosts(preparer.prepare(application, cluster, nodeSpec, groups),
+                             requireCompatibleResources(resources, cluster));
     }
 
     private NodeResources getNodeResources(ClusterSpec cluster, NodeResources nodeResources, ApplicationId applicationId, boolean exclusive) {
@@ -255,6 +256,13 @@ public class NodeRepositoryProvisioner implements Provisioner {
             if (host.membership().get().cluster().group().isEmpty())
                 throw new IllegalArgumentException("Hosts must be assigned a group when activating, but got " + host);
         }
+    }
+
+    private static NodeResources requireCompatibleResources(NodeResources nodeResources, ClusterSpec cluster) {
+        if (cluster.type() != ClusterSpec.Type.container && !nodeResources.gpuResources().isDefault()) {
+            throw new IllegalArgumentException(cluster.id() + " of type " + cluster.type() + " does not support GPU resources");
+        }
+        return nodeResources;
     }
 
     private IllegalArgumentException newNoAllocationPossible(ClusterSpec spec, Limits limits) {
