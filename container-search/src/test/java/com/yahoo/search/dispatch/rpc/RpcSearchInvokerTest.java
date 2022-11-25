@@ -16,6 +16,8 @@ import java.io.IOException;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
+import static com.yahoo.search.dispatch.searchcluster.MockSearchCluster.createDispatchConfig;
+import static com.yahoo.search.dispatch.searchcluster.MockSearchCluster.createNodesConfig;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
@@ -69,6 +71,22 @@ public class RpcSearchInvokerTest {
         var request = SearchProtocol.SearchRequest.newBuilder().mergeFrom(bytes).build();
 
         assertEquals(maxHits, request.getHits());
+    }
+
+    void verifyConnections(RpcResourcePool rpcResourcePool, int numGroups, int nodesPerGroup) {
+        rpcResourcePool.updateNodes(createNodesConfig(numGroups,nodesPerGroup));
+        for (int nodeId = 0; nodeId < numGroups*nodesPerGroup; nodeId++) {
+            assertTrue(rpcResourcePool.getConnection(nodeId) instanceof RpcClient.RpcNodeConnection);
+        }
+        assertNull(rpcResourcePool.getConnection(numGroups*nodesPerGroup));
+    }
+
+    @Test
+    void testUpdateOfRpcResourcePool() {
+        RpcResourcePool rpcResourcePool = new RpcResourcePool(createDispatchConfig(), createNodesConfig(0, 0));
+        verifyConnections(rpcResourcePool, 3,3);
+        verifyConnections(rpcResourcePool, 4,4);
+        verifyConnections(rpcResourcePool, 2,2);
     }
 
     private Client parameterCollectorClient(AtomicReference<CompressionType> compressionTypeHolder, AtomicReference<byte[]> payloadHolder,

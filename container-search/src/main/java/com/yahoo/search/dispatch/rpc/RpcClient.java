@@ -36,7 +36,7 @@ public class RpcClient implements Client {
         return new RpcNodeConnection(hostname, port, supervisor);
     }
 
-    private static class RpcNodeConnection implements NodeConnection {
+    static class RpcNodeConnection implements NodeConnection {
 
         // Information about the connected node
         private final Supervisor supervisor;
@@ -54,6 +54,13 @@ public class RpcClient implements Client {
             this.port = port;
             description = "rpc node connection to " + hostname + ":" + port;
             target = supervisor.connect(new Spec(hostname, port));
+        }
+
+        public String getHostname() {
+            return hostname;
+        }
+        public int getPort() {
+            return port;
         }
 
         @Override
