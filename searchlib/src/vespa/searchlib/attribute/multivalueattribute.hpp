@@ -16,7 +16,6 @@ namespace search {
 
 namespace multivalueattribute {
 
-constexpr size_t SMALL_MEMORY_PAGE_SIZE = 4 * 1024;
 constexpr bool enable_free_lists = true;
 
 }
@@ -28,7 +27,7 @@ MultiValueAttribute(const vespalib::string &baseFileName,
     : B(baseFileName, cfg),
       _mvMapping(MultiValueMapping::optimizedConfigForHugePage(1023,
                                                                vespalib::alloc::MemoryAllocator::HUGEPAGE_SIZE,
-                                                               multivalueattribute::SMALL_MEMORY_PAGE_SIZE,
+                                                               vespalib::alloc::MemoryAllocator::PAGE_SIZE,
                                                                8 * 1024,
                                                                cfg.getGrowStrategy().getMultiValueAllocGrowFactor(),
                                                                multivalueattribute::enable_free_lists),

@@ -37,8 +37,10 @@ using document::BucketId;
 
 template <typename ReplicaStore>
 vespalib::datastore::ArrayStoreConfig make_default_array_store_config() {
-    return ReplicaStore::optimizedConfigForHugePage(1023, vespalib::alloc::MemoryAllocator::HUGEPAGE_SIZE,
-                                                    4_Ki, 8_Ki, 0.2).enable_free_lists(true);
+    return ReplicaStore::optimizedConfigForHugePage(1023,
+                                                    vespalib::alloc::MemoryAllocator::HUGEPAGE_SIZE,
+                                                    vespalib::alloc::MemoryAllocator::PAGE_SIZE,
+                                                    8_Ki, 0.2).enable_free_lists(true);
 }
 
 namespace {
