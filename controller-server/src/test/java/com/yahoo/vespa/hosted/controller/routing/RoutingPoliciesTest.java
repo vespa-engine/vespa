@@ -39,6 +39,7 @@ import com.yahoo.vespa.hosted.controller.deployment.DeploymentTester;
 import com.yahoo.vespa.hosted.controller.integration.ZoneApiMock;
 import com.yahoo.vespa.hosted.rotation.config.RotationsConfig;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Timeout;
 
 import java.time.Duration;
 import java.time.Instant;
@@ -511,6 +512,7 @@ public class RoutingPoliciesTest {
     }
 
     @Test
+    @Timeout(30)
     void private_dns_for_vpc_endpoint() {
         // Challenge answered for endpoint
         RoutingPoliciesTester tester = new RoutingPoliciesTester();
