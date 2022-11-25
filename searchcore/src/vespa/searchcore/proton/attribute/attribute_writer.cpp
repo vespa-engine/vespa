@@ -518,8 +518,7 @@ RemoveTask::run()
     const auto &fields = _wc.getFields();
     for (auto &field : fields) {
         AttributeVector &attr = field.getAttribute();
-        // Must use <= due to how move operations are handled
-        if (attr.getStatus().getLastSyncToken() <= _serialNum) {
+        if (attr.getStatus().getLastSyncToken() < _serialNum) {
             applyRemoveToAttribute(_serialNum, _lid, attr, _onWriteDone);
         }
     }
