@@ -15,4 +15,6 @@ public record LoadBalancerSettings(List<String> allowedUrns) {
         this.allowedUrns = List.copyOf(allowedUrns);
     }
 
+    public boolean isEmpty() { return allowedUrns.isEmpty(); }
+
 }

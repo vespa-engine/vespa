@@ -75,7 +75,7 @@ public class LoadBalancerSerializer {
         }));
         loadBalancer.instance()
                     .map(LoadBalancerInstance::settings)
-                    .filter(settings -> settings != LoadBalancerSettings.empty)
+                    .filter(settings -> ! settings.isEmpty())
                     .ifPresent(settings -> settings.allowedUrns().forEach(root.setObject(settingsField)
                                                                               .setArray(allowedUrnsField)::addString));
         loadBalancer.instance()
