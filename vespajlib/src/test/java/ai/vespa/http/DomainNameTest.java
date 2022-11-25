@@ -17,6 +17,7 @@ class DomainNameTest {
         DomainName.of("123");
         DomainName.of("foo.");
 
+        assertThrows(IllegalArgumentException.class, () -> DomainName.of(""));
         assertThrows(IllegalArgumentException.class, () -> DomainName.of("_"));
         assertThrows(IllegalArgumentException.class, () -> DomainName.of("-"));
         assertThrows(IllegalArgumentException.class, () -> DomainName.of("."));

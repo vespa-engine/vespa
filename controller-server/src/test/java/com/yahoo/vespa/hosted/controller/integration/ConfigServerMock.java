@@ -379,9 +379,9 @@ public class ConfigServerMock extends AbstractComponent implements ConfigServer 
 
     @Override
     public PreparedApplication deploy(DeploymentData deployment) {
-        ApplicationPackage appPackage;
+        byte[] appPackage;
         try (InputStream in = deployment.applicationPackage()) {
-            appPackage = new ApplicationPackage(in.readAllBytes());
+            appPackage = in.readAllBytes();
         }
         catch (IOException e) {
             throw new UncheckedIOException(e);
@@ -562,9 +562,9 @@ public class ConfigServerMock extends AbstractComponent implements ConfigServer 
         private final ApplicationId id;
         private final Version version;
         private boolean activated;
-        private final ApplicationPackage applicationPackage;
+        private final byte[] applicationPackage;
 
-        private Application(ApplicationId id, Version version, ApplicationPackage applicationPackage) {
+        private Application(ApplicationId id, Version version, byte[] applicationPackage) {
             this.id = id;
             this.version = version;
             this.applicationPackage = applicationPackage;
@@ -583,7 +583,7 @@ public class ConfigServerMock extends AbstractComponent implements ConfigServer 
         }
 
         public ApplicationPackage applicationPackage() {
-            return applicationPackage;
+            return new ApplicationPackage(applicationPackage);
         }
 
         private void activate() {
