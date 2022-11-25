@@ -40,7 +40,6 @@ import com.yahoo.vespa.hosted.controller.versions.OsVersionStatus;
 import com.yahoo.vespa.hosted.controller.versions.OsVersionTarget;
 import com.yahoo.vespa.hosted.controller.versions.VersionStatus;
 import com.yahoo.vespa.hosted.controller.versions.VespaVersion;
-import org.apache.zookeeper.data.Stat;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
