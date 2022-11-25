@@ -15,7 +15,7 @@ DistributorComponentRegisterImpl::DistributorComponentRegisterImpl()
 DistributorComponentRegisterImpl::~DistributorComponentRegisterImpl() = default;
 
 void
-DistributorComponentRegisterImpl::handleNewState()
+DistributorComponentRegisterImpl::handleNewState() noexcept
 {
     auto clusterStateBundle = getNodeStateUpdater().getClusterStateBundle();
     _clusterState = std::make_shared<lib::ClusterState>(*clusterStateBundle->getBaselineClusterState());

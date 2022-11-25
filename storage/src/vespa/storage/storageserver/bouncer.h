@@ -74,7 +74,7 @@ private:
      */
     uint64_t extractMutationTimestampIfAny(const api::StorageMessage& msg);
     bool onDown(const std::shared_ptr<api::StorageMessage>&) override;
-    void handleNewState() override;
+    void handleNewState() noexcept override;
     const lib::NodeState &getDerivedNodeState(document::BucketSpace bucketSpace) const;
     void append_node_identity(std::ostream& target_stream) const;
 };

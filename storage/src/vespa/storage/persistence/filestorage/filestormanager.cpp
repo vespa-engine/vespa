@@ -999,7 +999,7 @@ FileStorManager::propagateClusterStates()
 }
 
 void
-FileStorManager::handleNewState()
+FileStorManager::handleNewState() noexcept
 {
     propagateClusterStates();
     //TODO: Don't update if it isn't necessary (distributor-only change)
