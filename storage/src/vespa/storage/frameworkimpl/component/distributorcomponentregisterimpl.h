@@ -42,7 +42,7 @@ public:
     void setDistributorConfig(const DistributorConfig&);
     void setVisitorConfig(const VisitorConfig&);
 private:
-    void handleNewState() override;
+    void handleNewState() noexcept override;
     void setNodeStateUpdater(NodeStateUpdater& updater) override;
 };
 

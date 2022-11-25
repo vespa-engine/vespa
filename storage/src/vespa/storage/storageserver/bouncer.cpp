@@ -349,7 +349,7 @@ deriveNodeState(const lib::NodeState &reportedNodeState,
 }
 
 void
-Bouncer::handleNewState()
+Bouncer::handleNewState() noexcept
 {
     std::lock_guard lock(_lock);
     const auto reportedNodeState = *_component.getStateUpdater().getReportedNodeState();

@@ -163,7 +163,7 @@ struct MyStateListener : public StateListener {
         : updater(upd), current(*updater.getReportedNodeState()) {}
     ~MyStateListener() override = default;
 
-    void handleNewState() override {
+    void handleNewState() noexcept override {
         ost << current << " -> ";
         current = *updater.getReportedNodeState();
         ost << current << "\n";

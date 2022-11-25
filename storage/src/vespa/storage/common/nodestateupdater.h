@@ -31,8 +31,8 @@ namespace storage {
 namespace lib { class ClusterStateBundle; }
 
 struct StateListener {
-    virtual ~StateListener() {}
-    virtual void handleNewState() = 0;
+    virtual ~StateListener() = default;
+    virtual void handleNewState() noexcept = 0;
 };
 
 struct NodeStateUpdater {

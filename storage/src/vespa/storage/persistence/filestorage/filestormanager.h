@@ -101,7 +101,7 @@ public:
     }
     ProviderErrorWrapper& error_wrapper() noexcept;
 
-    void handleNewState() override;
+    void handleNewState() noexcept override;
 
     // Must be called exactly once at startup _before_ storage chain is opened.
     // This function expects that no external messages may arrive prior to, or
