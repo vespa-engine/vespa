@@ -87,7 +87,7 @@ public class Dispatcher extends AbstractComponent {
         this.dispatchConfig = dispatchConfig;
         rpcResourcePool = new RpcResourcePool(dispatchConfig, nodesConfig);
         searchCluster = new SearchCluster(clusterId.stringValue(), dispatchConfig.minActivedocsPercentage(),
-                                          nodesConfig, vipStatus, new RpcPingFactory(rpcResourcePool));
+                                          toNodes(nodesConfig), vipStatus, new RpcPingFactory(rpcResourcePool));
         clusterMonitor = new ClusterMonitor<>(searchCluster, true);
         volatileItems = update(null);
         initialWarmup(dispatchConfig.warmuptime());
@@ -102,6 +102,7 @@ public class Dispatcher extends AbstractComponent {
         this.clusterMonitor = clusterMonitor;
         this.volatileItems = update(invokerFactory);
     }
+
     private VolatileItems update(InvokerFactory invokerFactory) {
         var items = new VolatileItems(new LoadBalancer(searchCluster.groupList().groups(), toLoadBalancerPolicy(dispatchConfig.distributionPolicy())),
                                       (invokerFactory == null)
@@ -134,6 +135,11 @@ public class Dispatcher extends AbstractComponent {
             case ADAPTIVE,LATENCY_AMORTIZED_OVER_REQUESTS: yield LoadBalancer.Policy.LATENCY_AMORTIZED_OVER_REQUESTS;
             case LATENCY_AMORTIZED_OVER_TIME: yield LoadBalancer.Policy.LATENCY_AMORTIZED_OVER_TIME;
         };
+    }
+    private static List<Node> toNodes(DispatchNodesConfig nodesConfig) {
+        return nodesConfig.node().stream()
+                .map(n -> new Node(n.key(), n.host(), n.group()))
+                .toList();
     }
 
     /**

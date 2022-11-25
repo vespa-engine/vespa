@@ -34,7 +34,7 @@ public class Group {
         this.nodes = List.copyOf(nodes);
 
         int idx = 0;
-        for(var node: nodes) {
+        for (var node: nodes) {
             node.setPathIndex(idx);
             idx++;
         }
