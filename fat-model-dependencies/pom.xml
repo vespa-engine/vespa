@@ -75,7 +75,7 @@
       <version>${project.version}</version>
       <exclusions>
         <exclusion>
-          <!-- Not needed runtime, and a multi-release jar which is currently not supported by maven-bundle-plugin (really bndtools) -->
+          <!-- OPTIMIZATION: very large (60 MB) and not needed for config generation -->
           <groupId>com.microsoft.onnxruntime</groupId>
           <artifactId>onnxruntime</artifactId>
         </exclusion>
@@ -160,6 +160,11 @@
           <!-- OPTIMIZATION: very large (44 MB) and only used for query sorting -->
           <groupId>com.ibm.icu</groupId>
           <artifactId>icu4j</artifactId>
+        </exclusion>
+        <exclusion>
+          <!-- OPTIMIZATION: large (4 MB) and only used for query dispatch TDistribution-->
+          <groupId>org.apache.commons</groupId>
+          <artifactId>commons-math3</artifactId>
         </exclusion>
       </exclusions>
     </dependency>
