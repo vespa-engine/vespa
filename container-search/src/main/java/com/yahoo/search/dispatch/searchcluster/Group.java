@@ -2,8 +2,6 @@
 package com.yahoo.search.dispatch.searchcluster;
 
 import java.util.List;
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicLong;
 import java.util.logging.Logger;
 
 /**
@@ -21,12 +19,15 @@ public class Group {
 
     private final int id;
     private final List<Node> nodes;
-    private final AtomicBoolean hasSufficientCoverage = new AtomicBoolean(true);
-    private final AtomicBoolean hasFullCoverage = new AtomicBoolean(true);
-    private final AtomicLong activeDocuments = new AtomicLong(0);
-    private final AtomicLong targetActiveDocuments = new AtomicLong(0);
-    private final AtomicBoolean isBlockingWrites = new AtomicBoolean(false);
-    private final AtomicBoolean isBalanced = new AtomicBoolean(true);
+
+    // Using volatile to ensure visibility for reader.
+    // All udates are done in a single writer thread
+    private volatile boolean hasSufficientCoverage = true;
+    private volatile boolean hasFullCoverage = true;
+    private volatile long activeDocuments = 0;
+    private volatile long targetActiveDocuments = 0;
+    private volatile boolean isBlockingWrites = false;
+    private volatile boolean isBalanced = true;
 
     public Group(int id, List<Node> nodes) {
         this.id = id;
@@ -53,11 +54,11 @@ public class Group {
      * (compared to other groups) that is should receive traffic
      */
     public boolean hasSufficientCoverage() {
-        return hasSufficientCoverage.get();
+        return hasSufficientCoverage;
     }
 
     void setHasSufficientCoverage(boolean sufficientCoverage) {
-        hasSufficientCoverage.lazySet(sufficientCoverage);
+        hasSufficientCoverage = sufficientCoverage;
     }
 
     public int workingNodes() {
@@ -66,39 +67,38 @@ public class Group {
 
     public void aggregateNodeValues() {
         long activeDocs = nodes.stream().filter(node -> node.isWorking() == Boolean.TRUE).mapToLong(Node::getActiveDocuments).sum();
-        activeDocuments.set(activeDocs);
-        long targetActiveDocs = nodes.stream().filter(node -> node.isWorking() == Boolean.TRUE).mapToLong(Node::getTargetActiveDocuments).sum();
-        targetActiveDocuments.set(targetActiveDocs);
-        isBlockingWrites.set(nodes.stream().anyMatch(Node::isBlockingWrites));
+        activeDocuments = activeDocs;
+        targetActiveDocuments = nodes.stream().filter(node -> node.isWorking() == Boolean.TRUE).mapToLong(Node::getTargetActiveDocuments).sum();
+        isBlockingWrites = nodes.stream().anyMatch(Node::isBlockingWrites);
         int numWorkingNodes = workingNodes();
         if (numWorkingNodes > 0) {
             long average = activeDocs / numWorkingNodes;
             long skew = nodes.stream().filter(node -> node.isWorking() == Boolean.TRUE).mapToLong(node -> Math.abs(node.getActiveDocuments() - average)).sum();
             boolean balanced = skew <= activeDocs * maxContentSkew;
-            if (balanced != isBalanced.get()) {
+            if (balanced != isBalanced) {
                 if (!isSparse())
                     log.info("Content in " + this + ", with " + numWorkingNodes + "/" + nodes.size() + " working nodes, is " +
                              (balanced ? "" : "not ") + "well balanced. Current deviation: " + skew * 100 / activeDocs +
                              "%. Active documents: " + activeDocs + ", skew: " + skew + ", average: " + average +
                              (balanced ? "" : ". Top-k summary fetch optimization is deactivated."));
-                isBalanced.set(balanced);
+                isBalanced = balanced;
             }
         } else {
-            isBalanced.set(true);
+            isBalanced = true;
         }
     }
 
     /** Returns the active documents on this group. If unknown, 0 is returned. */
-    long activeDocuments() { return activeDocuments.get(); }
+    long activeDocuments() { return activeDocuments; }
 
     /** Returns the target active documents on this group. If unknown, 0 is returned. */
-    long targetActiveDocuments() { return targetActiveDocuments.get(); }
+    long targetActiveDocuments() { return targetActiveDocuments; }
 
     /** Returns whether any node in this group is currently blocking write operations */
-    public boolean isBlockingWrites() { return isBlockingWrites.get(); }
+    public boolean isBlockingWrites() { return isBlockingWrites; }
 
     /** Returns whether the nodes in the group have about the same number of documents */
-    public boolean isBalanced() { return isBalanced.get(); }
+    public boolean isBalanced() { return isBalanced; }
 
     /** Returns whether this group has too few documents per node to expect it to be balanced */
     public boolean isSparse() {
@@ -107,7 +107,8 @@ public class Group {
     }
 
     public boolean fullCoverageStatusChanged(boolean hasFullCoverageNow) {
-        boolean previousState = hasFullCoverage.getAndSet(hasFullCoverageNow);
+        boolean previousState = hasFullCoverage;
+        hasFullCoverage = hasFullCoverageNow;
         return previousState != hasFullCoverageNow;
     }
 
