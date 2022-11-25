@@ -8,16 +8,20 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 public class SearchGroupsImpl implements SearchGroups {
+
     private final Map<Integer, Group> groups;
     private final double minActivedocsPercentage;
+
     public SearchGroupsImpl(Map<Integer, Group> groups, double minActivedocsPercentage) {
         this.groups = Map.copyOf(groups);
         this.minActivedocsPercentage = minActivedocsPercentage;
     }
+
     @Override public Group get(int id) { return groups.get(id); }
     @Override public Set<Integer> keys() { return groups.keySet();}
     @Override public Collection<Group> groups() { return groups.values(); }
     @Override public int size() { return groups.size(); }
+
     @Override
     public boolean isPartialGroupCoverageSufficient(Collection<Node> nodes) {
         if (size() == 1)

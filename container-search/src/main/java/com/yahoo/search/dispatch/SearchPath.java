@@ -20,49 +20,16 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 /**
- * Utility class for parsing model.searchPath and filtering a search cluster
- * based on it.
+ * A subset of nodes and groups to which a query should be sent.
+ * See https://docs.vespa.ai/en/reference/query-api-reference.html#model.searchpath
  *
  * @author ollivir
  */
 public class SearchPath {
 
-    /**
-     * Parses the search path and select nodes from the given cluster based on it.
-     *
-     * @param searchPath unparsed search path expression (see: model.searchPath in Search API reference)
-     * @param cluster the search cluster from which nodes are selected
-     * @throws InvalidSearchPathException if the searchPath is malformed
-     * @return list of nodes chosen with the search path, or an empty list in which
-     *         case some other node selection logic should be used
-     */
-    public static List<Node> selectNodes(String searchPath, SearchGroups cluster) {
-        Optional<SearchPath> sp = SearchPath.fromString(searchPath);
-        if (sp.isPresent()) {
-            return sp.get().mapToNodes(cluster);
-        } else {
-            return List.of();
-        }
-    }
-
-    static Optional<SearchPath> fromString(String path) {
-        if (path == null || path.isEmpty()) {
-            return Optional.empty();
-        }
-        if (path.indexOf(';') >= 0) {
-            return Optional.empty(); // multi-level not supported at this time
-        }
-        try {
-            SearchPath sp = parseElement(path);
-            if (sp.isEmpty()) {
-                return Optional.empty();
-            } else {
-                return Optional.of(sp);
-            }
-        } catch (NumberFormatException | InvalidSearchPathException e) {
-            throw new InvalidSearchPathException("Invalid search path: " + path, e);
-        }
-    }
+    // An asterisk or forward slash or an empty string followed by a comma or the end of the string
+    private static final Pattern NODE_WILDCARD = Pattern.compile("^\\*?(?:,|$|/$)");
+    private static final Pattern NODE_RANGE = Pattern.compile("^\\[(\\d+),(\\d+)>(?:,|$)");
 
     private final List<Selection> nodes;
     private final List<Selection> groups;
@@ -71,6 +38,17 @@ public class SearchPath {
     private SearchPath(List<Selection> nodes, List<Selection> groups) {
         this.nodes = nodes;
         this.groups = groups;
+    }
+
+    @Override
+    public String toString() {
+        StringBuilder sb = new StringBuilder();
+        selectionToString(sb, nodes);
+        if ( ! groups.isEmpty()) {
+            sb.append('/');
+            selectionToString(sb, groups);
+        }
+        return sb.toString();
     }
 
     private List<Node> mapToNodes(SearchGroups cluster) {
@@ -112,7 +90,7 @@ public class SearchPath {
                     groupIds.remove(index);
                 }
             } else {
-                throw new InvalidSearchPathException("Invalid searchPath, cluster does not have " + (groupId + 1) + " groups");
+                throw new InvalidSearchPathException("Invalid search path: Cluster does not have " + (groupId + 1) + " groups");
             }
         }
         return cluster.get(groupIds.get(0));
@@ -131,6 +109,43 @@ public class SearchPath {
 
         // pick any working group
         return selectRandomGroupWithSufficientCoverage(cluster, new ArrayList<>(cluster.keys()));
+    }
+
+    /**
+     * Parses a search path and select nodes from the given cluster based on it.
+     *
+     * @param searchPath unparsed search path expression (see: model.searchPath in Search API reference)
+     * @param cluster the search cluster from which nodes are selected
+     * @throws InvalidSearchPathException if the searchPath is malformed
+     * @return list of nodes chosen with the search path, or an empty list in which
+     *         case some other node selection logic should be used
+     */
+    public static List<Node> selectNodes(String searchPath, SearchGroups cluster) {
+        Optional<SearchPath> sp = SearchPath.fromString(searchPath);
+        if (sp.isPresent()) {
+            return sp.get().mapToNodes(cluster);
+        } else {
+            return List.of();
+        }
+    }
+
+    static Optional<SearchPath> fromString(String path) {
+        if (path == null || path.isEmpty()) {
+            return Optional.empty();
+        }
+        if (path.indexOf(';') >= 0) {
+            return Optional.empty(); // multi-level not supported at this time
+        }
+        try {
+            SearchPath sp = parseElement(path);
+            if (sp.isEmpty()) {
+                return Optional.empty();
+            } else {
+                return Optional.of(sp);
+            }
+        } catch (NumberFormatException | InvalidSearchPathException e) {
+            throw new InvalidSearchPathException("Invalid search path '" + path + "'", e);
+        }
     }
 
     private static SearchPath parseElement(String element) {
@@ -156,14 +171,9 @@ public class SearchPath {
         return ret;
     }
 
-    // An asterisk or forward slash or an empty string followed by a comma or the end of the string
-    private static final Pattern NODE_WILDCARD = Pattern.compile("^\\*?(?:,|$|/$)");
-
     private static boolean isWildcard(String node) {
         return NODE_WILDCARD.matcher(node).lookingAt();
     }
-
-    private static final Pattern NODE_RANGE = Pattern.compile("^\\[(\\d+),(\\d+)>(?:,|$)");
 
     private static String parseNodeRange(String nodes, List<Selection> into) {
         Matcher m = NODE_RANGE.matcher(nodes);
@@ -209,18 +219,8 @@ public class SearchPath {
         }
     }
 
-    @Override
-    public String toString() {
-        StringBuilder sb = new StringBuilder();
-        selectionToString(sb, nodes);
-        if ( ! groups.isEmpty()) {
-            sb.append('/');
-            selectionToString(sb, groups);
-        }
-        return sb.toString();
-    }
-
     private static class Selection {
+
         private final int from;
         private final int to;
 
@@ -247,7 +247,8 @@ public class SearchPath {
         }
     }
 
-    public static class InvalidSearchPathException extends RuntimeException {
+    public static class InvalidSearchPathException extends IllegalArgumentException {
+
         public InvalidSearchPathException(String message) {
             super(message);
         }
@@ -255,6 +256,7 @@ public class SearchPath {
         public InvalidSearchPathException(String message, Throwable cause) {
             super(message, cause);
         }
+
     }
 
 }

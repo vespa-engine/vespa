@@ -211,7 +211,7 @@ public class Model implements Cloneable {
         this.encoding = toLowerCase(encoding);
     }
 
-    /** Set the path for which backend nodes to forward the search too. */
+    /** Set the path for which content nodes this query should go to - see  */
     public void setSearchPath(String searchPath) { this.searchPath = searchPath; }
 
     public String getSearchPath() { return searchPath; }
