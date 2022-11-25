@@ -766,6 +766,8 @@ TEST_F(HnswMultiIndexTest, duplicate_docid_is_removed)
         .set(3, {1, 2})
         .set(4, {2, 0, 2, 2});
     /*
+     * Graph showing documents at column x row y, origo in lower left corner.
+     *
      *   1 3 4
      *   . . .
      *   1 2 4
