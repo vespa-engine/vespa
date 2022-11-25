@@ -9,6 +9,7 @@ import com.yahoo.config.application.api.ValidationId;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.AthenzDomain;
 import com.yahoo.config.provision.AthenzService;
+import com.yahoo.config.provision.CloudAccount;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.HostName;
@@ -21,8 +22,11 @@ import com.yahoo.vespa.hosted.controller.Instance;
 import com.yahoo.vespa.hosted.controller.api.identifiers.DeploymentId;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.LoadBalancer;
 import com.yahoo.vespa.hosted.controller.api.integration.dns.Record;
+import com.yahoo.vespa.hosted.controller.api.integration.dns.Record.Type;
 import com.yahoo.vespa.hosted.controller.api.integration.dns.RecordData;
 import com.yahoo.vespa.hosted.controller.api.integration.dns.RecordName;
+import com.yahoo.vespa.hosted.controller.api.integration.dns.VpcEndpointService;
+import com.yahoo.vespa.hosted.controller.api.integration.dns.VpcEndpointService.DnsChallenge;
 import com.yahoo.vespa.hosted.controller.application.Endpoint;
 import com.yahoo.vespa.hosted.controller.application.EndpointId;
 import com.yahoo.vespa.hosted.controller.application.EndpointList;
@@ -47,11 +51,16 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.TreeSet;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 /**
  * @author mortent
@@ -499,6 +508,48 @@ public class RoutingPoliciesTest {
         assertEquals(newHostname.value() + ".",
                 tester.recordDataOf(Record.Type.CNAME, expectedRecords.iterator().next()).get(0),
                 "CNAME points to current load balancer");
+    }
+
+    @Test
+    void private_dns_for_vpc_endpoint() {
+        // Challenge answered for endpoint
+        RoutingPoliciesTester tester = new RoutingPoliciesTester();
+        Map<RecordName, RecordData> challenges = new ConcurrentHashMap<>();
+        tester.tester.controllerTester().serviceRegistry().vpcEndpointService().delegate =
+                (name, cluster, account) -> {
+                    RecordName recordName = RecordName.from("challenge--" + name.value());
+                    if (challenges.containsKey(recordName)) return Optional.empty();
+                    RecordData recordData = RecordData.from(account.map(CloudAccount::value).orElse("system"));
+                    return Optional.of(new DnsChallenge(recordName, recordData, () -> challenges.put(recordName, recordData)));
+                };
+
+        DeploymentContext app = tester.newDeploymentContext("t", "a", "default");
+        ApplicationPackage appPackage = applicationPackageBuilder().region(zone3.region()).build();
+        app.submit(appPackage);
+
+        AtomicBoolean done = new AtomicBoolean();
+        new Thread(() -> {
+            while ( ! done.get()) {
+                app.flushDnsUpdates();
+                try { Thread.sleep(10); } catch (InterruptedException e) { break; }
+            }
+        }).start();
+        app.deploy();
+        done.set(true);
+
+        assertEquals(Set.of(new Record(Type.CNAME,
+                                       RecordName.from("a.t.aws-us-east-1a.vespa.oath.cloud"),
+                                       RecordData.from("lb-0--t.a.default--prod.aws-us-east-1a.")),
+                            new Record(Type.TXT,
+                                       RecordName.from("challenge--a.t.aws-us-east-1a.vespa.oath.cloud"),
+                                       RecordData.from("system")),
+                            new Record(Type.TXT,
+                                       RecordName.from("challenge--a.t.us-east-1.test.vespa.oath.cloud"),
+                                       RecordData.from("system")),
+                            new Record(Type.TXT,
+                                       RecordName.from("challenge--a.t.us-east-3.staging.vespa.oath.cloud"),
+                                       RecordData.from("system"))),
+                     tester.controllerTester().nameService().records());
     }
 
     @Test

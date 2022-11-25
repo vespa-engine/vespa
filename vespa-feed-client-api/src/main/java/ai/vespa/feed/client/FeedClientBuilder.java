@@ -22,10 +22,17 @@ public interface FeedClientBuilder {
 
     String PREFERRED_IMPLEMENTATION_PROPERTY = "vespa.feed.client.builder.implementation";
 
-    /** Creates a builder for a single container endpoint **/
+    /**
+     * Creates a builder for a single feed container endpoint.
+     * This is for feeding against a container cluster with a load balancer in front of it.
+     **/
     static FeedClientBuilder create(URI endpoint) { return create(Collections.singletonList(endpoint)); }
 
-    /** Creates a builder for multiple container endpoints **/
+    /**
+     * Creates a builder which <em>distributes</em> the feed across the given feed container endpoints.
+     * This is for feeding directly against container nodes, i.e., when no load balancer sits in front of these.
+     * Each feed operation is sent to <em>one</em> of the endpoints, <strong>not all of them</strong>!
+     */
     static FeedClientBuilder create(List<URI> endpoints) {
         return Helper.getFeedClientBuilderSupplier().get().setEndpointUris(endpoints);
     }

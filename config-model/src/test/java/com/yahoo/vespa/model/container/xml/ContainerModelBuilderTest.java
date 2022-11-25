@@ -197,6 +197,57 @@ public class ContainerModelBuilderTest extends ContainerModelBuilderTestBase {
     }
 
     @Test
+    void load_balancers_can_be_set() throws IOException, SAXException {
+        // No load-balancer or nodes elements
+        verifyAllowedUrns("");
+
+        // No load-balancer element
+        verifyAllowedUrns("<nodes count='2' />");
+
+        // No nodes element
+        verifyAllowedUrns("""
+                          <load-balancer>
+                            <private-access>
+                              <allowed-urn>foo</allowed-urn>
+                              <allowed-urn>bar</allowed-urn>
+                            </private-access>
+                          </load-balancer>
+                          """);
+
+        // Both load-balancer and nodes
+        verifyAllowedUrns("""
+                          <load-balancer>
+                            <private-access>
+                              <allowed-urn>foo</allowed-urn>
+                              <allowed-urn>bar</allowed-urn>
+                            </private-access>
+                          </load-balancer>
+                          <nodes count='2' />
+                          """,
+                          "foo", "bar");
+    }
+
+    private void verifyAllowedUrns(String containerXml, String... expectedAllowedUrns) throws IOException, SAXException {
+        String servicesXml = """
+                             <container id='default' version='1.0'>
+                               %s
+                             </container>
+                             """.formatted(containerXml);
+        ApplicationPackage applicationPackage = new MockApplicationPackage.Builder().withServices(servicesXml).build();
+        InMemoryProvisioner provisioner = new InMemoryProvisioner(true, false, "host1.yahoo.com", "host2.yahoo.com");
+        VespaModel model = new VespaModel(new NullConfigModelRegistry(), new DeployState.Builder()
+                .modelHostProvisioner(provisioner)
+                .provisioned(provisioner.startProvisionedRecording())
+                .applicationPackage(applicationPackage)
+                .properties(new TestProperties().setMultitenant(true).setHostedVespa(true))
+                .build());
+        assertEquals(2, model.hostSystem().getHosts().size());
+        assertEquals(1, provisioner.provisionedClusters().size());
+        assertEquals(List.of(expectedAllowedUrns),
+                     provisioner.provisionedClusters().iterator().next().loadBalancerSettings().allowedUrns());
+    }
+
+    @Test
     void builtin_handlers_get_default_threadpool() {
         createBasicContainerModel();
 

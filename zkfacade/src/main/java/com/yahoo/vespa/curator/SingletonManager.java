@@ -327,7 +327,6 @@ class SingletonManager {
             Instant ourDoom = doom.get();
             boolean shouldBeActive = ourDoom != null && ourDoom != INVALID && ! clock.instant().isAfter(ourDoom);
             if ( ! active && shouldBeActive) {
-                logger.log(INFO, "Activating singleton for ID: " + id);
                 try {
                     active = true;
                     if ( ! singletons.isEmpty()) metrics.activation(singletons.peek()::activate);
@@ -338,7 +337,6 @@ class SingletonManager {
                 }
             }
             if (active && ! shouldBeActive) {
-                logger.log(INFO, "Deactivating singleton for ID: " + id);
                 logger.log(FINE, () -> "Doom value is " + doom);
                 try  {
                     if ( ! singletons.isEmpty()) metrics.deactivation(singletons.peek()::deactivate);
@@ -415,6 +413,7 @@ class SingletonManager {
                 Instant start = clock.instant();
                 boolean failed = false;
                 metric.add(ACTIVATION, 1, context);
+                logger.log(INFO, "Activating singleton for ID: " + id);
                 try {
                     activation.run();
                 }
@@ -423,7 +422,9 @@ class SingletonManager {
                     throw e;
                 }
                 finally {
-                    metric.set(ACTIVATION_MILLIS, Duration.between(start, clock.instant()).toMillis(), context);
+                    long durationMillis = Duration.between(start, clock.instant()).toMillis();
+                    metric.set(ACTIVATION_MILLIS, durationMillis, context);
+                    logger.log(INFO, "Activation completed in %.3f seconds".formatted(durationMillis * 1e-3));
                     if (failed) metric.add(ACTIVATION_FAILURES, 1, context);
                     else isActive = true;
                     ping();
@@ -434,6 +435,7 @@ class SingletonManager {
                 Instant start = clock.instant();
                 boolean failed = false;
                 metric.add(DEACTIVATION, 1, context);
+                logger.log(INFO, "Deactivating singleton for ID: " + id);
                 try {
                     deactivation.run();
                 }
@@ -442,7 +444,9 @@ class SingletonManager {
                     throw e;
                 }
                 finally {
-                    metric.set(DEACTIVATION_MILLIS, Duration.between(start, clock.instant()).toMillis(), context);
+                    long durationMillis = Duration.between(start, clock.instant()).toMillis();
+                    metric.set(DEACTIVATION_MILLIS, durationMillis, context);
+                    logger.log(INFO, "Deactivation completed in %.3f seconds".formatted(durationMillis * 1e-3));
                     if (failed) metric.add(DEACTIVATION_FAILURES, 1, context);
                     isActive = false;
                     ping();

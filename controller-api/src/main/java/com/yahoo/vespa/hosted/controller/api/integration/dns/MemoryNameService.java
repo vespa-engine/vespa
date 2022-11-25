@@ -8,6 +8,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.TreeSet;
+import java.util.concurrent.ConcurrentSkipListSet;
 import java.util.stream.Collectors;
 
 /**
@@ -17,7 +18,7 @@ import java.util.stream.Collectors;
  */
 public class MemoryNameService implements NameService {
 
-    private final Set<Record> records = new TreeSet<>();
+    private final Set<Record> records = new ConcurrentSkipListSet<>();
 
     public Set<Record> records() {
         return Collections.unmodifiableSet(records);

@@ -61,6 +61,7 @@ public class LoadBalancerServiceMock implements LoadBalancerService {
                 Collections.singleton(4443),
                 ImmutableSet.of("10.2.3.0/24", "10.4.5.0/24"),
                 spec.reals(),
+                spec.settings(),
                 spec.cloudAccount());
         instances.put(id, instance);
         return instance;

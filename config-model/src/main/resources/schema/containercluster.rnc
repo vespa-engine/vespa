@@ -6,7 +6,8 @@ ContainerCluster = element container {
     ContainerServices &    
     DocumentBinding* &
     NodesOfContainerCluster? &
-    ClientAuthorize?
+    ClientAuthorize? &
+    LoadBalancer?
 }
 
 ContainerServices =
@@ -253,6 +254,14 @@ NodesOfContainerCluster = element nodes {
         GenericConfig*
       }+
     )
+}
+
+LoadBalancer = element load-balancer {
+    element private-access {
+        element allow-urn {
+            xsd:string
+        }*
+    }?
 }
 
 

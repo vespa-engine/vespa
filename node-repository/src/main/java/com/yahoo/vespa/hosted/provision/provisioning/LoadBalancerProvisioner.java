@@ -6,7 +6,9 @@ import com.yahoo.config.provision.ApplicationName;
 import com.yahoo.config.provision.ApplicationTransaction;
 import com.yahoo.config.provision.CloudAccount;
 import com.yahoo.config.provision.ClusterSpec;
+import com.yahoo.config.provision.ClusterSpec.Type;
 import com.yahoo.config.provision.HostName;
+import com.yahoo.config.provision.LoadBalancerSettings;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.config.provision.exception.LoadBalancerServiceException;
@@ -38,6 +40,9 @@ import java.util.function.Function;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
+
+import static java.util.stream.Collectors.groupingBy;
+import static java.util.stream.Collectors.reducing;
 
 /**
  * Provisions and configures application load balancers.
@@ -75,12 +80,12 @@ public class LoadBalancerProvisioner {
 
     /**
      * Prepare a load balancer for given application and cluster.
-     *
+     * <p>
      * If a load balancer for the cluster already exists, it will be reconfigured based on the currently allocated
      * nodes. It's state will remain unchanged.
-     *
+     * <p>
      * If no load balancer exists, a new one will be provisioned in {@link LoadBalancer.State#reserved}.
-     *
+     * <p>
      * Calling this for irrelevant node or cluster types is a no-op.
      */
     public void prepare(ApplicationId application, ClusterSpec cluster, NodeSpec requestedNodes) {
@@ -89,33 +94,33 @@ public class LoadBalancerProvisioner {
             ClusterSpec.Id clusterId = effectiveId(cluster);
             LoadBalancerId loadBalancerId = requireNonClashing(new LoadBalancerId(application, clusterId));
             NodeList nodes = nodesOf(clusterId, application);
-            prepare(loadBalancerId, nodes, requestedNodes.cloudAccount());
+            prepare(loadBalancerId, nodes, cluster.loadBalancerSettings(), requestedNodes.cloudAccount());
         }
     }
 
     /**
      * Activate load balancer for given application and cluster.
-     *
+     * <p>
      * If a load balancer for the cluster already exists, it will be reconfigured based on the currently allocated
      * nodes and the load balancer itself will be moved to {@link LoadBalancer.State#active}.
-     *
+     * <p>
      * Load balancers for clusters that are no longer in given clusters are deactivated.
-     *
+     * <p>
      * Calling this when no load balancer has been prepared for given cluster is a no-op.
      */
     public void activate(Set<ClusterSpec> clusters, NodeList newActive, ApplicationTransaction transaction) {
-        Set<ClusterSpec.Id> activatingClusters = clusters.stream()
-                                                         .map(LoadBalancerProvisioner::effectiveId)
-                                                         .collect(Collectors.toSet());
+        Map<ClusterSpec.Id, ClusterSpec> activatingClusters = clusters.stream()
+                                                                      .collect(groupingBy(LoadBalancerProvisioner::effectiveId,
+                                                                                          reducing(null, (o, n) -> o == null || o.type() != Type.container ? n : o)));
         for (var cluster : loadBalancedClustersOf(newActive).entrySet()) {
-            if (!activatingClusters.contains(cluster.getKey())) continue;
+            if (!activatingClusters.containsKey(cluster.getKey())) continue;
 
             Node clusterNode = cluster.getValue().first().get();
             if (!shouldProvision(transaction.application(), clusterNode.type(), clusterNode.allocation().get().membership().cluster().type())) continue;
-            activate(transaction, cluster.getKey(), cluster.getValue());
+            activate(transaction, cluster.getKey(), activatingClusters.get(cluster.getKey()).loadBalancerSettings(), cluster.getValue());
         }
         // Deactivate any surplus load balancers, i.e. load balancers for clusters that have been removed
-        var surplusLoadBalancers = surplusLoadBalancersOf(transaction.application(), activatingClusters);
+        var surplusLoadBalancers = surplusLoadBalancersOf(transaction.application(), activatingClusters.keySet());
         deactivate(surplusLoadBalancers, transaction.nested());
     }
 
@@ -180,10 +185,10 @@ public class LoadBalancerProvisioner {
         return loadBalancerId;
     }
 
-    private void prepare(LoadBalancerId id, NodeList nodes, CloudAccount cloudAccount) {
+    private void prepare(LoadBalancerId id, NodeList nodes, LoadBalancerSettings loadBalancerSettings, CloudAccount cloudAccount) {
         Instant now = nodeRepository.clock().instant();
         Optional<LoadBalancer> loadBalancer = db.readLoadBalancer(id);
-        Optional<LoadBalancerInstance> instance = provisionInstance(id, nodes, loadBalancer, cloudAccount);
+        Optional<LoadBalancerInstance> instance = provisionInstance(id, nodes, loadBalancer, loadBalancerSettings, cloudAccount);
         LoadBalancer newLoadBalancer;
         LoadBalancer.State fromState = null;
         if (loadBalancer.isEmpty()) {
@@ -202,14 +207,14 @@ public class LoadBalancerProvisioner {
         requireInstance(id, instance, cloudAccount);
     }
 
-    private void activate(ApplicationTransaction transaction, ClusterSpec.Id cluster, NodeList nodes) {
+    private void activate(ApplicationTransaction transaction, ClusterSpec.Id cluster, LoadBalancerSettings loadBalancerSettings, NodeList nodes) {
         Instant now = nodeRepository.clock().instant();
         LoadBalancerId id = new LoadBalancerId(transaction.application(), cluster);
         Optional<LoadBalancer> loadBalancer = db.readLoadBalancer(id);
-        if (loadBalancer.isEmpty()) throw new IllegalArgumentException("Could not active load balancer that was never prepared: " + id);
+        if (loadBalancer.isEmpty()) throw new IllegalArgumentException("Could not activate load balancer that was never prepared: " + id);
         if (loadBalancer.get().instance().isEmpty()) throw new IllegalArgumentException("Activating " + id + ", but prepare never provisioned a load balancer instance");
 
-        Optional<LoadBalancerInstance> instance = provisionInstance(id, nodes, loadBalancer, loadBalancer.get().instance().get().cloudAccount());
+        Optional<LoadBalancerInstance> instance = provisionInstance(id, nodes, loadBalancer, loadBalancerSettings, loadBalancer.get().instance().get().cloudAccount());
         LoadBalancer.State state = instance.isPresent() ? LoadBalancer.State.active : loadBalancer.get().state();
         LoadBalancer newLoadBalancer = loadBalancer.get().with(instance).with(state, now);
         db.writeLoadBalancers(List.of(newLoadBalancer), loadBalancer.get().state(), transaction.nested());
@@ -219,6 +224,7 @@ public class LoadBalancerProvisioner {
     /** Provision or reconfigure a load balancer instance, if necessary */
     private Optional<LoadBalancerInstance> provisionInstance(LoadBalancerId id, NodeList nodes,
                                                              Optional<LoadBalancer> currentLoadBalancer,
+                                                             LoadBalancerSettings loadBalancerSettings,
                                                              CloudAccount cloudAccount) {
         boolean shouldDeactivateRouting = deactivateRouting.with(FetchVector.Dimension.APPLICATION_ID,
                                                                  id.application().serializedForm())
@@ -229,10 +235,10 @@ public class LoadBalancerProvisioner {
         } else {
             reals = realsOf(nodes);
         }
-        if (hasReals(currentLoadBalancer, reals)) return currentLoadBalancer.get().instance();
+        if (isUpToDate(currentLoadBalancer, reals, loadBalancerSettings)) return currentLoadBalancer.get().instance();
         log.log(Level.INFO, () -> "Provisioning instance for " + id + ", targeting: " + reals);
         try {
-            return Optional.of(service.create(new LoadBalancerSpec(id.application(), id.cluster(), reals, cloudAccount),
+            return Optional.of(service.create(new LoadBalancerSpec(id.application(), id.cluster(), reals, loadBalancerSettings, cloudAccount),
                                               shouldDeactivateRouting || allowEmptyReals(currentLoadBalancer)));
         } catch (Exception e) {
             log.log(Level.WARNING, e, () -> "Could not (re)configure " + id + ", targeting: " +
@@ -288,11 +294,12 @@ public class LoadBalancerProvisioner {
         return loadBalancer.instance().isEmpty() || loadBalancer.instance().get().cloudAccount().equals(cloudAccount);
     }
 
-    /** Returns whether load balancer has given reals */
-    private static boolean hasReals(Optional<LoadBalancer> loadBalancer, Set<Real> reals) {
+    /** Returns whether load balancer has given reals and settings */
+    private static boolean isUpToDate(Optional<LoadBalancer> loadBalancer, Set<Real> reals, LoadBalancerSettings loadBalancerSettings) {
         if (loadBalancer.isEmpty()) return false;
         if (loadBalancer.get().instance().isEmpty()) return false;
-        return loadBalancer.get().instance().get().reals().equals(reals);
+        return    loadBalancer.get().instance().get().reals().equals(reals)
+               && loadBalancer.get().instance().get().settings().equals(loadBalancerSettings);
     }
 
     /** Returns whether to allow given load balancer to have no reals */

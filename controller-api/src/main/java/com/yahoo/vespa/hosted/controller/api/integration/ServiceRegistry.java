@@ -20,6 +20,7 @@ import com.yahoo.vespa.hosted.controller.api.integration.deployment.ApplicationS
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.ArtifactRepository;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.TesterCloud;
 import com.yahoo.vespa.hosted.controller.api.integration.dns.NameService;
+import com.yahoo.vespa.hosted.controller.api.integration.dns.VpcEndpointService;
 import com.yahoo.vespa.hosted.controller.api.integration.entity.EntityService;
 import com.yahoo.vespa.hosted.controller.api.integration.horizon.HorizonClient;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.ContactRetriever;
@@ -56,6 +57,8 @@ public interface ServiceRegistry {
     default HostName getHostname() { return HostName.of(com.yahoo.net.HostName.getLocalhost()); }
 
     NameService nameService();
+
+    VpcEndpointService vpcEndpointService();
 
     Mailer mailer();
 

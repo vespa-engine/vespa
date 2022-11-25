@@ -1,10 +1,12 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.integration;
 
+import ai.vespa.http.DomainName;
 import com.yahoo.cloud.config.ConfigserverConfig;
 import com.yahoo.component.AbstractComponent;
 import com.yahoo.component.Version;
 import com.yahoo.component.annotation.Inject;
+import com.yahoo.config.provision.CloudAccount;
 import com.yahoo.config.provision.CloudName;
 import com.yahoo.config.provision.HostName;
 import com.yahoo.config.provision.SystemName;
@@ -28,6 +30,11 @@ import com.yahoo.vespa.hosted.controller.api.integration.certificates.EndpointCe
 import com.yahoo.vespa.hosted.controller.api.integration.certificates.EndpointCertificateValidator;
 import com.yahoo.vespa.hosted.controller.api.integration.certificates.EndpointCertificateValidatorMock;
 import com.yahoo.vespa.hosted.controller.api.integration.dns.MemoryNameService;
+import com.yahoo.vespa.hosted.controller.api.integration.dns.MockVpcEndpointService;
+import com.yahoo.vespa.hosted.controller.api.integration.dns.RecordData;
+import com.yahoo.vespa.hosted.controller.api.integration.dns.RecordName;
+import com.yahoo.vespa.hosted.controller.api.integration.dns.VpcEndpointService;
+import com.yahoo.vespa.hosted.controller.api.integration.dns.VpcEndpointService.DnsChallenge;
 import com.yahoo.vespa.hosted.controller.api.integration.entity.MemoryEntityService;
 import com.yahoo.vespa.hosted.controller.api.integration.horizon.HorizonClient;
 import com.yahoo.vespa.hosted.controller.api.integration.horizon.MockHorizonClient;
@@ -64,6 +71,7 @@ public class ServiceRegistryMock extends AbstractComponent implements ServiceReg
     private final ZoneRegistryMock zoneRegistryMock;
     private final ConfigServerMock configServerMock;
     private final MemoryNameService memoryNameService = new MemoryNameService();
+    private final MockVpcEndpointService vpcEndpointService = new MockVpcEndpointService();
     private final MockMailer mockMailer = new MockMailer();
     private final EndpointCertificateMock endpointCertificateMock = new EndpointCertificateMock(clock);
     private final EndpointCertificateValidatorMock endpointCertificateValidatorMock = new EndpointCertificateValidatorMock();
@@ -198,6 +206,11 @@ public class ServiceRegistryMock extends AbstractComponent implements ServiceReg
     @Override
     public MemoryNameService nameService() {
         return memoryNameService;
+    }
+
+    @Override
+    public MockVpcEndpointService vpcEndpointService() {
+        return vpcEndpointService;
     }
 
     @Override

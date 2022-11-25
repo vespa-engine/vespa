@@ -25,6 +25,7 @@ import java.util.ListIterator;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.TreeSet;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
@@ -67,6 +68,7 @@ public class InMemoryProvisioner implements HostProvisioner {
     private final boolean alwaysReturnOneNode;
 
     private Provisioned provisioned = new Provisioned();
+    private final Set<ClusterSpec> clusters = new TreeSet<>(Comparator.comparing(cluster -> cluster.id().value()));
 
     private Environment environment = Environment.prod;
 
@@ -146,6 +148,7 @@ public class InMemoryProvisioner implements HostProvisioner {
     @Override
     public List<HostSpec> prepare(ClusterSpec cluster, Capacity requested, ProvisionLogger logger) {
         provisioned.add(cluster.id(), requested);
+        clusters.add(cluster);
         if (environment == Environment.dev) {
             requested = requested.withLimits(requested.minResources().withNodes(1),
                                              requested.maxResources().withNodes(1));
@@ -197,6 +200,7 @@ public class InMemoryProvisioner implements HostProvisioner {
     /** Create a new provisioned instance to record provision requests to this and returns it */
     public Provisioned startProvisionedRecording() {
         provisioned = new Provisioned();
+        clusters.clear();
         return provisioned;
     }
 
@@ -287,4 +291,7 @@ public class InMemoryProvisioner implements HostProvisioner {
             return 0;
         }
     }
+
+    public Set<ClusterSpec> provisionedClusters() { return clusters; }
+
 }

@@ -11,6 +11,7 @@ import com.yahoo.config.provision.ClusterMembership;
 import com.yahoo.config.provision.ClusterResources;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.DockerImage;
+import com.yahoo.config.provision.LoadBalancerSettings;
 import com.yahoo.config.provision.NodeResources;
 import com.yahoo.text.XML;
 import com.yahoo.vespa.model.HostResource;
@@ -255,6 +256,15 @@ public class NodesSpecification {
                                                           ClusterSpec.Id clusterId,
                                                           DeployLogger logger,
                                                           boolean stateful) {
+        return provision(hostSystem, clusterType, clusterId, LoadBalancerSettings.empty, logger, stateful);
+    }
+
+    public Map<HostResource, ClusterMembership> provision(HostSystem hostSystem,
+                                                          ClusterSpec.Type clusterType,
+                                                          ClusterSpec.Id clusterId,
+                                                          LoadBalancerSettings loadBalancerSettings,
+                                                          DeployLogger logger,
+                                                          boolean stateful) {
         if (combinedId.isPresent())
             clusterType = ClusterSpec.Type.combined;
         ClusterSpec cluster = ClusterSpec.request(clusterType, clusterId)
@@ -262,6 +272,7 @@ public class NodesSpecification {
                                          .exclusive(exclusive)
                                          .combinedId(combinedId.map(ClusterSpec.Id::from))
                                          .dockerImageRepository(dockerImageRepo)
+                                         .loadBalancerSettings(loadBalancerSettings)
                                          .stateful(stateful)
                                          .build();
         return hostSystem.allocateHosts(cluster, Capacity.from(min, max, required, canFail, cloudAccount), logger);
