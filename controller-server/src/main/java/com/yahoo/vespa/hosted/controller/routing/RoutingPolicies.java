@@ -383,10 +383,12 @@ public class RoutingPolicies {
                           nameServiceForwarderIn(allocation.deployment.zoneId()).createTxt(challenge.name(), List.of(challenge.data()), Priority.high);
                           Instant doom = controller.clock().instant().plusSeconds(30);
                           while (controller.clock().instant().isBefore(doom)) {
-                              if (controller.curator().readNameServiceQueue().requests().stream()
-                                            .noneMatch(request -> request.name().equals(Optional.of(challenge.name())))) {
-                                  challenge.trigger().run();
-                                  return;
+                              try (Mutex lock = controller.curator().lockNameServiceQueue()) {
+                                  if (controller.curator().readNameServiceQueue().requests().stream()
+                                                .noneMatch(request -> request.name().equals(Optional.of(challenge.name())))) {
+                                      challenge.trigger().run();
+                                      return;
+                                  }
                               }
                               Thread.sleep(100);
                           }
