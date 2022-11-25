@@ -12,11 +12,16 @@ import java.util.regex.Pattern;
  */
 public class CloudAccount extends PatternedStringWrapper<CloudAccount> {
 
+    private static final String EMPTY = "";
+    private static final String AWS_ACCOUNT_ID = "[0-9]{12}";
+    // TODO: Uncomment and add to pattern below to support external accounts in GCP
+    //private static final String GCP_PROJECT_ID = "[a-z][a-z0-9-]{4,28}[a-z0-9]";
+
     /** Empty value. When this is used, either implicitly or explicitly, the zone will use its default account */
     public static final CloudAccount empty = new CloudAccount("");
 
     private CloudAccount(String value) {
-        super(value, Pattern.compile("^([0-9]{12})?$"), "cloud account");
+        super(value, Pattern.compile("^(" + EMPTY + "|" + AWS_ACCOUNT_ID + ")$"), "cloud account");
     }
 
     public boolean isUnspecified() {
