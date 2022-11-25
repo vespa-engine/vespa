@@ -88,7 +88,7 @@ public class Node {
     boolean isBlockingWrites() { return isBlockingWrites; }
 
     @Override
-    public int hashCode() { return Objects.hash(hostname, key, pathIndex, group); }
+    public int hashCode() { return Objects.hash(hostname, key, group); }
 
     @Override
     public boolean equals(Object o) {
@@ -96,7 +96,6 @@ public class Node {
         if ( ! (o instanceof Node other)) return false;
         if ( ! Objects.equals(this.hostname, other.hostname)) return false;
         if ( ! Objects.equals(this.key, other.key)) return false;
-        if ( ! Objects.equals(this.pathIndex, other.pathIndex)) return false;
         if ( ! Objects.equals(this.group, other.group)) return false;
 
         return true;

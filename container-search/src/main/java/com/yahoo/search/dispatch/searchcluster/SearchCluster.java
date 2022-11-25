@@ -6,7 +6,6 @@ import com.yahoo.net.HostName;
 import com.yahoo.prelude.Pong;
 import com.yahoo.search.cluster.ClusterMonitor;
 import com.yahoo.search.cluster.NodeManager;
-import com.yahoo.vespa.config.search.DispatchNodesConfig;
 
 import java.util.Collection;
 import java.util.HashMap;
@@ -42,11 +41,6 @@ public class SearchCluster implements NodeManager<Node> {
      */
     private final Node localCorpusDispatchTarget;
 
-    public SearchCluster(String clusterId, double minActivedocsPercentage,
-                         DispatchNodesConfig nodesConfig,
-                         VipStatus vipStatus, PingFactory pingFactory) {
-        this(clusterId, minActivedocsPercentage, toNodes(nodesConfig), vipStatus, pingFactory);
-    }
     public SearchCluster(String clusterId, double minActivedocsPercentage, List<Node> nodes,
                          VipStatus vipStatus, PingFactory pingFactory) {
         this(clusterId, toGroups(nodes, minActivedocsPercentage), vipStatus, pingFactory);
@@ -87,12 +81,6 @@ public class SearchCluster implements NodeManager<Node> {
         if (localSearchGroup.nodes().size() != 1) return null;
 
         return localSearchNode;
-    }
-
-    private static List<Node> toNodes(DispatchNodesConfig nodesConfig) {
-        return nodesConfig.node().stream()
-                             .map(n -> new Node(n.key(), n.host(), n.group()))
-                             .toList();
     }
 
     private static SearchGroupsImpl toGroups(Collection<Node> nodes, double minActivedocsPercentage) {
