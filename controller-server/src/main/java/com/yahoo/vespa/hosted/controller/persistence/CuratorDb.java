@@ -40,6 +40,7 @@ import com.yahoo.vespa.hosted.controller.versions.OsVersionStatus;
 import com.yahoo.vespa.hosted.controller.versions.OsVersionTarget;
 import com.yahoo.vespa.hosted.controller.versions.VersionStatus;
 import com.yahoo.vespa.hosted.controller.versions.VespaVersion;
+import org.apache.zookeeper.data.Stat;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
@@ -56,6 +57,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeoutException;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.logging.Level;
@@ -123,6 +125,9 @@ public class CuratorDb {
 
     // For each job id (path), store the ZK node version and its deserialised data - update when version changes.
     private final Map<Path, Pair<Integer, NavigableMap<RunId, Run>>> cachedHistoricRuns = new ConcurrentHashMap<>();
+
+    // Store the ZK node version and its deserialised data - update when version changes.
+    private final AtomicReference<Pair<Integer, VersionStatus>> cachedVersionStatus = new AtomicReference<>();
 
     @Inject
     public CuratorDb(Curator curator) {
@@ -283,7 +288,13 @@ public class CuratorDb {
     }
 
     public VersionStatus readVersionStatus() {
-        return readSlime(versionStatusPath()).map(versionStatusSerializer::fromSlime).orElseGet(VersionStatus::empty);
+        Path path = versionStatusPath();
+        return curator.getStat(path)
+                      .map(stat -> cachedVersionStatus.updateAndGet(old ->
+                          old != null && old.getFirst() == stat.getVersion()
+                                 ? old
+                                 : new Pair<>(stat.getVersion(), read(path, bytes -> versionStatusSerializer.fromSlime(SlimeUtils.jsonToSlime(bytes))).get())).getSecond())
+                      .orElseGet(VersionStatus::empty);
     }
 
     public void writeConfidenceOverrides(Map<Version, VespaVersion.Confidence> overrides) {
