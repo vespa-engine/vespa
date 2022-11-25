@@ -354,23 +354,17 @@ TEST_F(AttributeWriterTest, handles_remove)
 {
     auto a1 = addAttribute("a1");
     auto a2 = addAttribute("a2");
+    constexpr SerialNum fill_serial_num = 2;
     allocAttributeWriter();
-    fillAttribute(a1, 1, 10, 1);
-    fillAttribute(a2, 1, 20, 1);
-
-    remove(2, 0);
-
-    assertUndefined(*a1, 0);
-    assertUndefined(*a2, 0);
-
-    remove(2, 0); // same sync token as previous
-    try {
-        remove(1, 0); // lower sync token than previous
-        EXPECT_TRUE(true);  // update is ignored
-    } catch (vespalib::IllegalStateException & e) {
-        LOG(info, "Got expected exception: '%s'", e.getMessage().c_str());
-        EXPECT_TRUE(true);
-    }
+    fillAttribute(a1, 1, 10, fill_serial_num);
+    fillAttribute(a2, 1, 20, fill_serial_num);
+    remove(fill_serial_num - 1, 1); // lower sync token than during fill => ignored
+    remove(fill_serial_num, 1); // same sync token as during fill  => ignored
+    EXPECT_EQ(10, a1->getInt(1));
+    EXPECT_EQ(20, a2->getInt(1));
+    remove(fill_serial_num + 1, 1); // newer sync token => not ignored
+    assertUndefined(*a1, 1);
+    assertUndefined(*a2, 1);
 }
 
 TEST_F(AttributeWriterTest, handles_batch_remove)
