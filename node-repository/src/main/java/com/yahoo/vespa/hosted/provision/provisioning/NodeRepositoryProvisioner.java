@@ -259,7 +259,7 @@ public class NodeRepositoryProvisioner implements Provisioner {
     }
 
     private static NodeResources requireCompatibleResources(NodeResources nodeResources, ClusterSpec cluster) {
-        if (cluster.type() != ClusterSpec.Type.container && !nodeResources.gpuResources().isDefault()) {
+        if (cluster.type() != ClusterSpec.Type.container && !nodeResources.gpuResources().isZero()) {
             throw new IllegalArgumentException(cluster.id() + " of type " + cluster.type() + " does not support GPU resources");
         }
         return nodeResources;
