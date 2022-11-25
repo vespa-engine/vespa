@@ -131,6 +131,7 @@
                                         <include>com.yahoo.vespa:jdisc_core:*:provided</include>
                                         <include>com.yahoo.vespa:jrt:*:provided</include>
                                         <include>com.yahoo.vespa:linguistics:*:provided</include>
+                                        <include>com.yahoo.vespa:opennlp-linguistics:*:provided</include>
                                         <include>com.yahoo.vespa:messagebus:*:provided</include>
                                         <include>com.yahoo.vespa:model-evaluation:*:provided</include>
                                         <include>com.yahoo.vespa:predicate-search-core:*:provided</include>

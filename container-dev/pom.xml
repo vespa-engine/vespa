@@ -255,7 +255,7 @@
     </dependency>
     <dependency>
       <groupId>com.yahoo.vespa</groupId>
-      <artifactId>linguistics</artifactId>
+      <artifactId>opennlp-linguistics</artifactId>
       <version>${project.version}</version>
       <exclusions>
         <exclusion>

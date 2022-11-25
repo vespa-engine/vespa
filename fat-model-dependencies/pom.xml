@@ -118,6 +118,13 @@
       <groupId>com.yahoo.vespa</groupId>
       <artifactId>container-core</artifactId>
       <version>${project.version}</version>
+      <exclusions>
+        <exclusion>
+          <!-- OPTIMIZATION: large (10 MB) and not needed for config generation -->
+          <groupId>com.yahoo.vespa</groupId>
+          <artifactId>opennlp-linguistics</artifactId>
+        </exclusion>
+      </exclusions>
     </dependency>
     <dependency>
       <groupId>com.yahoo.vespa</groupId>
