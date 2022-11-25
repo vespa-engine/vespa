@@ -9,6 +9,7 @@ if [[ $# -ne 1 ]]; then
 fi
 
 readonly VESPA_VERSION=$1
+readonly VESPA_MAJOR=$(echo $VESPA_VERSION | cut -d. -f1)
 
 if [[ -z "$DOCKER_HUB_DEPLOY_KEY" ]]; then
     echo "Environment variable DOCKER_HUB_DEPLOY_KEY must be set, but is empty."
@@ -48,7 +49,7 @@ docker context use vespa-context
 docker buildx create --name vespa-builder --driver docker-container --use
 docker buildx inspect --bootstrap
 
-for data in "Dockerfile vespa" "Dockerfile.minimal vespa-8-minimal"; do
+for data in "Dockerfile vespa" "Dockerfile.minimal vespa-minimal"; do
     set -- $data
     DOCKER_FILE=$1
     IMAGE_NAME=$2
@@ -59,7 +60,8 @@ for data in "Dockerfile vespa" "Dockerfile.minimal vespa-8-minimal"; do
     else
         docker login --username aressem --password "$DOCKER_HUB_DEPLOY_KEY"
         docker buildx build --progress plain --push --platform linux/amd64,linux/arm64 --build-arg VESPA_VERSION=$VESPA_VERSION \
-               --file $DOCKER_FILE --tag docker.io/vespaengine/$IMAGE_NAME:$VESPA_VERSION --tag docker.io/vespaengine/$IMAGE_NAME:latest .
+               --file $DOCKER_FILE --tag docker.io/vespaengine/$IMAGE_NAME:$VESPA_VERSION \
+               --tag docker.io/vespaengine/$IMAGE_NAME:$VESPA_MAJOR --tag docker.io/vespaengine/$IMAGE_NAME:latest .
     fi
 done
 
@@ -71,5 +73,6 @@ if grep $VESPA_VERSION <<< "$IMAGE_TAGS" &> /dev/null; then
 else
     docker login --username aressem --password "$GHCR_DEPLOY_KEY" ghcr.io
     docker buildx build --progress plain --push --platform linux/amd64,linux/arm64 --build-arg VESPA_VERSION=$VESPA_VERSION \
-                        --tag ghcr.io/vespa-engine/vespa:$VESPA_VERSION  --tag ghcr.io/vespa-engine/vespa:latest .
+                        --tag ghcr.io/vespa-engine/vespa:$VESPA_VERSION --tag docker.io/vespaengine/$IMAGE_NAME:$VESPA_MAJOR \
+                        --tag ghcr.io/vespa-engine/vespa:latest .
 fi
