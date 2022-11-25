@@ -354,7 +354,7 @@ public class NodeAgentImpl implements NodeAgent {
             reasons.add("Container should be running with different memory allocation, wanted: " +
                         wantedContainerResources.toStringMemory() + ", actual: " + existingContainer.resources().toStringMemory());
         }
-        if (containerOperations.shouldRecreate(context, existingContainer)) {
+        if (containerOperations.shouldRecreate(context, existingContainer, wantedContainerResources)) {
             reasons.add("Container should be re-created to apply new configuration");
         }
         if (containerState == STARTING) {
