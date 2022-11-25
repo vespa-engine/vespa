@@ -327,6 +327,18 @@ TEST("require that nontrivial indexed dimensions can be obtained") {
     TEST_DO(my_check(type("tensor(a[1],b[1],x[10],y{},z[1])").nontrivial_indexed_dimensions()));
 }
 
+TEST("require that indexed dimensions can be obtained") {
+    auto my_check = [](const auto &list, size_t exp_size)
+    {
+        ASSERT_EQUAL(list.size(), 1u);
+        EXPECT_EQUAL(list[0].name, "x");
+        EXPECT_EQUAL(list[0].size, exp_size);
+    };
+    EXPECT_TRUE(type("double").indexed_dimensions().empty());
+    TEST_DO(my_check(type("tensor(x[10],y{})").indexed_dimensions(), 10));
+    TEST_DO(my_check(type("tensor(y{},x[1])").indexed_dimensions(), 1));
+}
+
 TEST("require that mapped dimensions can be obtained") {
     auto my_check = [](const auto &list)
                     {
