@@ -123,7 +123,7 @@ public class NodeResources {
 
     public record GpuResources(int count, double memoryGb) {
 
-        private static final GpuResources none = new GpuResources(0, 0);
+        private static final GpuResources zero = new GpuResources(0, 0);
 
         public GpuResources {
             validate(memoryGb, "memory");
@@ -138,9 +138,14 @@ public class NodeResources {
                    this.memoryGb < other.memoryGb;
         }
 
+        public boolean isZero() { return this.equals(zero); }
+
+        public static GpuResources zero() { return zero; }
+
         public boolean isDefault() { return this.equals(getDefault()); }
 
-        public static GpuResources getDefault() { return none; }
+        /** Returns zero gpu resources. */
+        public static GpuResources getDefault() { return zero; }
 
         public GpuResources plus(GpuResources other) {
             return new GpuResources(this.count + other.count, this.memoryGb + other.memoryGb);
@@ -274,7 +279,7 @@ public class NodeResources {
     /** Returns this with all numbers set to 0 */
     public NodeResources justNonNumbers() {
         if (isUnspecified()) return unspecified();
-        return withVcpu(0).withMemoryGb(0).withDiskGb(0).withBandwidthGbps(0).with(GpuResources.getDefault());
+        return withVcpu(0).withMemoryGb(0).withDiskGb(0).withBandwidthGbps(0).with(GpuResources.zero());
     }
 
     public NodeResources subtract(NodeResources other) {
@@ -497,6 +502,10 @@ public class NodeResources {
         if (Double.isNaN(value)) throw new IllegalArgumentException(valueName + " cannot be NaN");
         if (Double.isInfinite(value)) throw new IllegalArgumentException(valueName + " cannot be infinite");
         return value;
+    }
+
+    public boolean isZero() {
+        return this.equals(zero);
     }
 
     public static NodeResources zero() { return zero; }

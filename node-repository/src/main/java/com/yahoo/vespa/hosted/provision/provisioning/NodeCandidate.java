@@ -36,7 +36,7 @@ public abstract class NodeCandidate implements Nodelike, Comparable<NodeCandidat
 
     private static final NodeResources zeroResources =
             new NodeResources(0, 0, 0, 0, NodeResources.DiskSpeed.any, NodeResources.StorageType.any,
-                              NodeResources.Architecture.getDefault(), NodeResources.GpuResources.getDefault());
+                              NodeResources.Architecture.getDefault(), NodeResources.GpuResources.zero());
 
     /** The free capacity on the parent of this node, before adding this node to it */
     protected final NodeResources freeParentCapacity;
