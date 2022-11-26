@@ -84,10 +84,6 @@
       <version>${project.version}</version>
       <exclusions>
         <exclusion>
-          <groupId>commons-lang</groupId>
-          <artifactId>commons-lang</artifactId>
-        </exclusion>
-        <exclusion>
           <groupId>org.apache.httpcomponents</groupId>
           <artifactId>httpclient</artifactId>
         </exclusion>
@@ -186,10 +182,6 @@
         <exclusion>
           <groupId>com.ibm.icu</groupId>
           <artifactId>icu4j</artifactId>
-        </exclusion>
-        <exclusion>
-          <groupId>commons-lang</groupId>
-          <artifactId>commons-lang</artifactId>
         </exclusion>
         <exclusion>
           <groupId>org.antlr</groupId>
