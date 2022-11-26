@@ -215,7 +215,6 @@
                     <i>net.openhft:zero-allocation-hashing:*:*</i>
                     <i>org.antlr:antlr-runtime:*:*</i>
                     <i>org.antlr:antlr4-runtime:*:*</i>
-                    <i>org.apache.commons:commons-compress:*:*</i>
                     <i>org.apache.commons:commons-exec:*:*</i>
                     <i>org.apache.commons:commons-math3:*:*</i>
                     <i>org.apache.felix:org.apache.felix.framework:*:*</i>
