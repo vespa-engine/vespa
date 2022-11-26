@@ -23,10 +23,6 @@
       <version>${project.version}</version>
       <exclusions>
         <exclusion>
-          <groupId>biz.aQute.bnd</groupId>
-          <artifactId>*</artifactId>
-        </exclusion>
-        <exclusion>
           <groupId>com.yahoo.vespa</groupId>
           <artifactId>vespajlib</artifactId>
         </exclusion>
