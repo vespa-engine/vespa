@@ -29,7 +29,7 @@ public:
     uint64_t getLastSyncToken()            const { return _lastSyncToken.load(std::memory_order_relaxed); }
     uint64_t getUpdateCount()              const { return _updates; }
     uint64_t getNonIdempotentUpdateCount() const { return _nonIdempotentUpdates; }
-    uint32_t getBitVectors() const { return _bitVectors; }
+    uint32_t getBitVectors() const { return _bitVectors.load(std::memory_order_relaxed); }
 
     void setNumDocs(uint64_t v)                  { _numDocs.store(v, std::memory_order_relaxed); }
     void incNumDocs()                            { _numDocs.store(_numDocs.load(std::memory_order_relaxed) + 1u,
@@ -37,8 +37,8 @@ public:
     void setLastSyncToken(uint64_t v)            { _lastSyncToken.store(v, std::memory_order_relaxed); }
     void incUpdates(uint64_t v=1)                { _updates += v; }
     void incNonIdempotentUpdates(uint64_t v = 1) { _nonIdempotentUpdates += v; }
-    void incBitVectors() { ++_bitVectors; }
-    void decBitVectors() { --_bitVectors; }
+    void incBitVectors() { _bitVectors.store(getBitVectors() + 1, std::memory_order_relaxed); }
+    void decBitVectors() { _bitVectors.store(getBitVectors() - 1, std::memory_order_relaxed); }
 
     static vespalib::string
     createName(vespalib::stringref index, vespalib::stringref attr);
@@ -55,7 +55,7 @@ private:
     std::atomic<uint64_t> _lastSyncToken;
     uint64_t _updates;
     uint64_t _nonIdempotentUpdates;
-    uint32_t _bitVectors;
+    std::atomic<uint32_t> _bitVectors;
 };
 
 }
