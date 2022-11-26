@@ -14,7 +14,6 @@ PostingListSearchContext(const IEnumStoreDictionary& dictionary,
                          uint32_t docIdLimit,
                          uint64_t numValues,
                          bool hasWeight,
-                         uint32_t minBvDocFreq,
                          bool useBitVector,
                          const ISearchContext &baseSearchCtx)
     : _dictionary(dictionary),
@@ -31,7 +30,6 @@ PostingListSearchContext(const IEnumStoreDictionary& dictionary,
       _frozenRoot(),
       _FSTC(0.0),
       _PLSTC(0.0),
-      _minBvDocFreq(minBvDocFreq),
       _bv(nullptr),
       _baseSearchCtx(baseSearchCtx)
 {
