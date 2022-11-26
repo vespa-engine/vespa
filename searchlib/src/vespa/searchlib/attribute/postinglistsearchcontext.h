@@ -45,13 +45,12 @@ protected:
     vespalib::datastore::EntryRef     _frozenRoot; // Posting list in tree form
     float _FSTC;  // Filtering Search Time Constant
     float _PLSTC; // Posting List Search Time Constant
-    uint32_t                _minBvDocFreq;
     const BitVector *_bv; // bitvector if _useBitVector has been set
     const ISearchContext    &_baseSearchCtx;
 
 
     PostingListSearchContext(const IEnumStoreDictionary& dictionary, uint32_t docIdLimit, uint64_t numValues, bool hasWeight,
-                             uint32_t minBvDocFreq, bool useBitVector, const ISearchContext &baseSearchCtx);
+                             bool useBitVector, const ISearchContext &baseSearchCtx);
 
     ~PostingListSearchContext() override;
 
@@ -116,7 +115,7 @@ protected:
     static const long MIN_APPROXHITS_TO_NUMDOCS_RATIO_BEFORE_APPROXIMATION = 10;
 
     PostingListSearchContextT(const IEnumStoreDictionary& dictionary, uint32_t docIdLimit, uint64_t numValues,
-                              bool hasWeight, const PostingList &postingList, uint32_t minBvDocFreq,
+                              bool hasWeight, const PostingList &postingList,
                               bool useBitVector, const ISearchContext &baseSearchCtx);
     ~PostingListSearchContextT() override;
 
@@ -154,7 +153,7 @@ protected:
     using Parent::singleHits;
 
     PostingListFoldedSearchContextT(const IEnumStoreDictionary& dictionary, uint32_t docIdLimit, uint64_t numValues,
-                                    bool hasWeight, const PostingList &postingList, uint32_t minBvDocFreq,
+                                    bool hasWeight, const PostingList &postingList,
                                     bool useBitVector, const ISearchContext &baseSearchCtx);
 
     unsigned int approximateHits() const override;
@@ -244,7 +243,6 @@ PostingSearchContext(BaseSC&& base_sc, bool useBitVector, const AttrT &toBeSearc
               toBeSearched.getStatus().getNumValues(),
               toBeSearched.hasWeightedSetType(),
               toBeSearched.getPostingList(),
-              toBeSearched.getPostingList()._minBvDocFreq,
               useBitVector,
               *this),
       _toBeSearched(toBeSearched),
