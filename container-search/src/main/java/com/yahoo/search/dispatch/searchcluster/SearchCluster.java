@@ -41,7 +41,7 @@ public class SearchCluster implements NodeManager<Node> {
      */
     private final Node localCorpusDispatchTarget;
 
-    public SearchCluster(String clusterId, double minActivedocsPercentage, List<Node> nodes,
+    public SearchCluster(String clusterId, double minActivedocsPercentage, Collection<Node> nodes,
                          VipStatus vipStatus, PingFactory pingFactory) {
         this(clusterId, toGroups(nodes, minActivedocsPercentage), vipStatus, pingFactory);
     }
@@ -55,6 +55,7 @@ public class SearchCluster implements NodeManager<Node> {
 
     @Override
     public String name() { return clusterId; }
+    public VipStatus getVipStatus() { return vipStatus; }
 
     public void addMonitoring(ClusterMonitor<Node> clusterMonitor) {
         for (var group : groups()) {

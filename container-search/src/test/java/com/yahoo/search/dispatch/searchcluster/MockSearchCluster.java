@@ -2,6 +2,7 @@
 package com.yahoo.search.dispatch.searchcluster;
 
 import com.yahoo.vespa.config.search.DispatchConfig;
+import com.yahoo.vespa.config.search.DispatchNodesConfig;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -50,6 +51,19 @@ public class MockSearchCluster extends SearchCluster {
             builder.maxWaitAfterCoverageFactor(0.5);
         }
         return builder;
+    }
+
+    public static DispatchNodesConfig createNodesConfig(int numGroups, int nodesPerGroup) {
+        var builder = new DispatchNodesConfig.Builder();
+        int key = 0;
+        for (int g = 0; g < numGroups; g++) {
+            for (int i = 0; i < nodesPerGroup; i++) {
+                var nodeBuilder = new DispatchNodesConfig.Node.Builder();
+                nodeBuilder.key(key++).port(0).group(g).host("host" + g + "." + i);
+                builder.node.add(nodeBuilder);
+            }
+        }
+        return builder.build();
     }
 
     public static SearchGroupsImpl buildGroupListForTest(int numGroups, int nodesPerGroup, double minActivedocsPercentage) {

@@ -1,14 +1,13 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.search.dispatch.rpc;
 
-import com.google.common.collect.ImmutableMap;
 import com.yahoo.search.dispatch.FillInvoker;
 import com.yahoo.search.dispatch.rpc.Client.NodeConnection;
 import com.yahoo.vespa.config.search.DispatchConfig;
 import com.yahoo.vespa.config.search.DispatchNodesConfig;
 
 import java.util.ArrayList;
-import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ThreadLocalRandom;
@@ -22,31 +21,45 @@ import java.util.concurrent.ThreadLocalRandom;
 public class RpcResourcePool implements RpcConnectionPool, AutoCloseable {
 
     /** Connections to the search nodes this talks to, indexed by node id ("partid") */
-    private final ImmutableMap<Integer, NodeConnectionPool> nodeConnectionPools;
+    private volatile Map<Integer, NodeConnectionPool> nodeConnectionPools = Map.of();
+    private final int numConnections;
     private final RpcClient rpcClient;
 
     RpcResourcePool(Map<Integer, NodeConnection> nodeConnections) {
-        var builder = new ImmutableMap.Builder<Integer, NodeConnectionPool>();
-        nodeConnections.forEach((key, connection) -> builder.put(key, new NodeConnectionPool(Collections.singletonList(connection))));
-        this.nodeConnectionPools = builder.build();
+        var builder = new HashMap<Integer, NodeConnectionPool>();
+        nodeConnections.forEach((key, connection) -> builder.put(key, new NodeConnectionPool(List.of(connection))));
+        this.nodeConnectionPools = Map.copyOf(builder);
         this.rpcClient = null;
+        this.numConnections = 1;
     }
 
     public RpcResourcePool(DispatchConfig dispatchConfig, DispatchNodesConfig nodesConfig) {
         super();
         rpcClient = new RpcClient("dispatch-client", dispatchConfig.numJrtTransportThreads());
+        numConnections = dispatchConfig.numJrtConnectionsPerNode();
+        updateNodes(nodesConfig);
+    }
 
-        // Create rpc node connection pools indexed by the node distribution key
-        int numConnections = dispatchConfig.numJrtConnectionsPerNode();
-        var builder = new ImmutableMap.Builder<Integer, NodeConnectionPool>();
+    public void updateNodes(DispatchNodesConfig nodesConfig) {
+        var builder = new HashMap<Integer, NodeConnectionPool>();
         for (var node : nodesConfig.node()) {
-            var connections = new ArrayList<NodeConnection>(numConnections);
-            for (int i = 0; i < numConnections; i++) {
-                connections.add(rpcClient.createConnection(node.host(), node.port()));
+            var prev = nodeConnectionPools.get(node.key());
+            NodeConnection nc = prev != null ? prev.nextConnection() : null;
+            if (nc instanceof RpcClient.RpcNodeConnection rpcNodeConnection
+                    && rpcNodeConnection.getPort() == node.port()
+                    && rpcNodeConnection.getHostname().equals(node.host()))
+            {
+                builder.put(node.key(), prev);
+            } else {
+                if (prev != null) prev.release();
+                var connections = new ArrayList<NodeConnection>(numConnections);
+                for (int i = 0; i < numConnections; i++) {
+                    connections.add(rpcClient.createConnection(node.host(), node.port()));
+                }
+                builder.put(node.key(), new NodeConnectionPool(connections));
             }
-            builder.put(node.key(), new NodeConnectionPool(connections));
         }
-        this.nodeConnectionPools = builder.build();
+        this.nodeConnectionPools = Map.copyOf(builder);
     }
 
     @Override
