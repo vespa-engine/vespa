@@ -210,7 +210,6 @@
                     <i>io.prometheus:simpleclient_common:*:*</i>
                     <i>javax.inject:javax.inject:*:*</i>
                     <i>javax.servlet:javax.servlet-api:*:*</i>
-                    <i>net.java.dev.jna:jna:*:*</i>
                     <i>net.openhft:zero-allocation-hashing:*:*</i>
                     <i>org.antlr:antlr-runtime:*:*</i>
                     <i>org.antlr:antlr4-runtime:*:*</i>
