@@ -7,6 +7,7 @@ import com.yahoo.vespa.config.search.DispatchConfig;
 import com.yahoo.vespa.config.search.DispatchNodesConfig;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -37,11 +38,18 @@ public class RpcResourcePool implements RpcConnectionPool, AutoCloseable {
         super();
         rpcClient = new RpcClient("dispatch-client", dispatchConfig.numJrtTransportThreads());
         numConnections = dispatchConfig.numJrtConnectionsPerNode();
-        updateNodes(nodesConfig);
+        updateNodes(nodesConfig).forEach(item -> {
+            try {
+                item.close();
+            } catch (Exception e) {}
+        });
     }
 
-    public void updateNodes(DispatchNodesConfig nodesConfig) {
+    /** Will return a list of items that need a delayed close */
+    public Collection<AutoCloseable> updateNodes(DispatchNodesConfig nodesConfig) {
+        List<AutoCloseable> toClose = new ArrayList<>();
         var builder = new HashMap<Integer, NodeConnectionPool>();
+        // Who can be reused
         for (var node : nodesConfig.node()) {
             var prev = nodeConnectionPools.get(node.key());
             NodeConnection nc = prev != null ? prev.nextConnection() : null;
@@ -51,7 +59,6 @@ public class RpcResourcePool implements RpcConnectionPool, AutoCloseable {
             {
                 builder.put(node.key(), prev);
             } else {
-                if (prev != null) prev.release();
                 var connections = new ArrayList<NodeConnection>(numConnections);
                 for (int i = 0; i < numConnections; i++) {
                     connections.add(rpcClient.createConnection(node.host(), node.port()));
@@ -59,7 +66,15 @@ public class RpcResourcePool implements RpcConnectionPool, AutoCloseable {
                 builder.put(node.key(), new NodeConnectionPool(connections));
             }
         }
+        // Who are not needed any more
+        nodeConnectionPools.forEach((key, pool) -> {
+            var survivor = builder.get(key);
+            if (survivor == null || pool != survivor) {
+                toClose.add(pool);
+            }
+        });
         this.nodeConnectionPools = Map.copyOf(builder);
+        return toClose;
     }
 
     @Override
@@ -74,13 +89,13 @@ public class RpcResourcePool implements RpcConnectionPool, AutoCloseable {
 
     @Override
     public void close() {
-        nodeConnectionPools.values().forEach(NodeConnectionPool::release);
+        nodeConnectionPools.values().forEach(NodeConnectionPool::close);
         if (rpcClient != null) {
             rpcClient.close();
         }
     }
 
-    private static class NodeConnectionPool {
+    private static class NodeConnectionPool implements AutoCloseable {
         private final List<Client.NodeConnection> connections;
 
         NodeConnectionPool(List<NodeConnection> connections) {
@@ -92,7 +107,7 @@ public class RpcResourcePool implements RpcConnectionPool, AutoCloseable {
             return connections.get(slot);
         }
 
-        void release() {
+        public void close() {
             connections.forEach(Client.NodeConnection::close);
         }
     }

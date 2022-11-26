@@ -73,8 +73,14 @@ public class RpcSearchInvokerTest {
         assertEquals(maxHits, request.getHits());
     }
 
-    void verifyConnections(RpcResourcePool rpcResourcePool, int numGroups, int nodesPerGroup) {
-        rpcResourcePool.updateNodes(createNodesConfig(numGroups,nodesPerGroup));
+    void verifyConnections(RpcResourcePool rpcResourcePool, int numGroups, int nodesPerGroup, int expectNeedCloseCount) {
+        var toClose = rpcResourcePool.updateNodes(createNodesConfig(numGroups,nodesPerGroup));
+        assertEquals(expectNeedCloseCount, toClose.size());
+        toClose.forEach(item -> {
+            try {
+                item.close();
+            } catch (Exception e) {}
+        });
         for (int nodeId = 0; nodeId < numGroups*nodesPerGroup; nodeId++) {
             assertTrue(rpcResourcePool.getConnection(nodeId) instanceof RpcClient.RpcNodeConnection);
         }
@@ -84,9 +90,9 @@ public class RpcSearchInvokerTest {
     @Test
     void testUpdateOfRpcResourcePool() {
         RpcResourcePool rpcResourcePool = new RpcResourcePool(createDispatchConfig(), createNodesConfig(0, 0));
-        verifyConnections(rpcResourcePool, 3,3);
-        verifyConnections(rpcResourcePool, 4,4);
-        verifyConnections(rpcResourcePool, 2,2);
+        verifyConnections(rpcResourcePool, 3,3, 0);
+        verifyConnections(rpcResourcePool, 4,4, 6);
+        verifyConnections(rpcResourcePool, 2,2, 14);
     }
 
     private Client parameterCollectorClient(AtomicReference<CompressionType> compressionTypeHolder, AtomicReference<byte[]> payloadHolder,
