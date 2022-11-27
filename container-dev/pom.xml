@@ -84,10 +84,6 @@
       <version>${project.version}</version>
       <exclusions>
         <exclusion>
-          <groupId>commons-lang</groupId>
-          <artifactId>commons-lang</artifactId>
-        </exclusion>
-        <exclusion>
           <groupId>org.apache.httpcomponents</groupId>
           <artifactId>httpclient</artifactId>
         </exclusion>
@@ -188,14 +184,6 @@
           <artifactId>icu4j</artifactId>
         </exclusion>
         <exclusion>
-          <groupId>commons-collections</groupId>
-          <artifactId>commons-collections</artifactId>
-        </exclusion>
-        <exclusion>
-          <groupId>commons-lang</groupId>
-          <artifactId>commons-lang</artifactId>
-        </exclusion>
-        <exclusion>
           <groupId>org.antlr</groupId>
           <artifactId>antlr4-runtime</artifactId>
         </exclusion>
@@ -242,17 +230,6 @@
     <!-- NOTE: Dependencies below are added explicitly to exclude transitive deps that are not provided runtime by the container,
          and hence make them invisible to user projects' build classpath.
          Excluded artifacts should be added explicitly to the application module to make then visible in users' test classpath. -->
-    <dependency>
-      <groupId>com.yahoo.vespa</groupId>
-      <artifactId>document</artifactId>
-      <version>${project.version}</version>
-      <exclusions>
-        <exclusion>
-          <groupId>commons-collections</groupId>
-          <artifactId>commons-collections</artifactId>
-        </exclusion>
-      </exclusions>
-    </dependency>
     <dependency>
       <groupId>com.yahoo.vespa</groupId>
       <artifactId>linguistics</artifactId>

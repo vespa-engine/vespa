@@ -84,15 +84,11 @@
             <version>${vespaversion}</version>
             <scope>test</scope>
 	    <exclusions>
-		    <exclusion>
-			    <groupId>org.apache.commons</groupId>
-			    <artifactId>commons-exec</artifactId>
-		    </exclusion>
-		    <exclusion>
-			    <groupId>commons-lang</groupId>
-			    <artifactId>commons-lang</artifactId>
-		    </exclusion>
-	    </exclusions>
+                <exclusion>
+                    <groupId>org.apache.commons</groupId>
+                    <artifactId>commons-exec</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
 
         <dependency>
@@ -114,10 +110,6 @@
                 <exclusion>
                     <groupId>org.apache.commons</groupId>
                     <artifactId>commons-exec</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>commons-lang</groupId>
-                    <artifactId>commons-lang</artifactId>
                 </exclusion>
             </exclusions>
         </dependency>
