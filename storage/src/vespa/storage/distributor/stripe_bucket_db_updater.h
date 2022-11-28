@@ -71,6 +71,8 @@ public:
     }
 
     OperationRoutingSnapshot read_snapshot_for_bucket(const document::Bucket&) const;
+
+    void reset_all_last_gc_timestamps_to_current_time();
 private:
     class MergeReplyGuard {
     public:

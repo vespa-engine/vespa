@@ -1371,6 +1371,12 @@ std::string StateCheckersTest::testGarbageCollection(
         uint32_t checkInterval, uint32_t lastChangeTime,
         bool includePriority, bool includeSchedulingPri)
 {
+    GarbageCollectionStateChecker checker;
+    auto cfg = make_config();
+    cfg->setGarbageCollection("music", std::chrono::seconds(checkInterval));
+    cfg->setLastGarbageCollectionChangeTime(vespalib::steady_time(std::chrono::seconds(lastChangeTime)));
+    configure_stripe(cfg);
+    // Insert after stripe configuration to avoid GC timestamp being implicitly reset
     BucketDatabase::Entry e(document::BucketId(17, 0));
     e.getBucketInfo().addNode(BucketCopy(prevTimestamp, 0,
                                          api::BucketInfo(3,3,3)),
@@ -1378,11 +1384,6 @@ std::string StateCheckersTest::testGarbageCollection(
     e.getBucketInfo().setLastGarbageCollectionTime(prevTimestamp);
     getBucketDatabase().update(e);
 
-    GarbageCollectionStateChecker checker;
-    auto cfg = make_config();
-    cfg->setGarbageCollection("music", std::chrono::seconds(checkInterval));
-    cfg->setLastGarbageCollectionChangeTime(vespalib::steady_time(std::chrono::seconds(lastChangeTime)));
-    configure_stripe(cfg);
     NodeMaintenanceStatsTracker statsTracker;
     StateChecker::Context c(node_context(), operation_context(),
                             getDistributorBucketSpace(), statsTracker,
