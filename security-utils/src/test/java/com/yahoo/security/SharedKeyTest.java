@@ -131,9 +131,9 @@ public class SharedKeyTest {
 
         // token header is u8 version || u8 key id length || key id bytes ...
         // Since the key ID is only 1 bytes long, patch it with a bad UTF-8 value
-        byte[] tokenBytes = Base64.getUrlDecoder().decode(myShared.sealedSharedKey().toTokenString());
+        byte[] tokenBytes = Base62.codec().decode(myShared.sealedSharedKey().toTokenString());
         tokenBytes[2] = (byte)0xC0; // First part of a 2-byte continuation without trailing byte
-        var patchedTokenStr = Base64.getUrlEncoder().encodeToString(tokenBytes);
+        var patchedTokenStr = Base62.codec().encode(tokenBytes);
         assertThrows(IllegalArgumentException.class, () -> SealedSharedKey.fromTokenString(patchedTokenStr));
     }
 
