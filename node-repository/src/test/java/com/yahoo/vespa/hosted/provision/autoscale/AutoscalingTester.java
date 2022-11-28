@@ -13,7 +13,6 @@ import com.yahoo.config.provision.NodeType;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.test.ManualClock;
 import com.yahoo.transaction.Mutex;
-import com.yahoo.vespa.flags.InMemoryFlagSource;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
 import com.yahoo.vespa.hosted.provision.Nodelike;
@@ -44,24 +43,16 @@ class AutoscalingTester {
     private final HostResourcesCalculator hostResourcesCalculator;
     private final CapacityPolicies capacityPolicies;
 
-    public AutoscalingTester(Zone zone,
-                             HostResourcesCalculator resourcesCalculator,
-                             List<Flavor> hostFlavors,
-                             InMemoryFlagSource flagSource,
-                             int hostCount) {
-        this(zone, hostFlavors, resourcesCalculator, flagSource);
+    public AutoscalingTester(Zone zone, HostResourcesCalculator resourcesCalculator, List<Flavor> hostFlavors, int hostCount) {
+        this(zone, hostFlavors, resourcesCalculator);
         for (Flavor flavor : hostFlavors)
             provisioningTester.makeReadyNodes(hostCount, flavor.name(), NodeType.host, 8);
         provisioningTester.activateTenantHosts();
     }
 
-    private AutoscalingTester(Zone zone,
-                              List<Flavor> flavors,
-                              HostResourcesCalculator resourcesCalculator,
-                              InMemoryFlagSource flagSource) {
+    private AutoscalingTester(Zone zone, List<Flavor> flavors, HostResourcesCalculator resourcesCalculator) {
         provisioningTester = new ProvisioningTester.Builder().zone(zone)
                                                              .flavors(flavors)
-                                                             .flagSource(flagSource)
                                                              .resourcesCalculator(resourcesCalculator)
                                                              .hostProvisioner(zone.cloud().dynamicProvisioning() ? new MockHostProvisioner(flavors, zone.cloud()) : null)
                                                              .build();
@@ -151,7 +142,7 @@ class AutoscalingTester {
     }
 
     public Autoscaler.Advice autoscale(ApplicationId applicationId, ClusterSpec cluster, Capacity capacity) {
-        capacity = capacityPolicies.applyOn(capacity, applicationId, capacityPolicies.decideExclusivity(capacity, cluster.isExclusive()));
+        capacity = capacityPolicies.applyOn(capacity, applicationId, capacityPolicies.decideExclusivity(capacity, cluster).isExclusive());
         Application application = nodeRepository().applications().get(applicationId).orElse(Application.empty(applicationId))
                                                   .withCluster(cluster.id(), false, capacity);
         try (Mutex lock = nodeRepository().applications().lock(applicationId)) {

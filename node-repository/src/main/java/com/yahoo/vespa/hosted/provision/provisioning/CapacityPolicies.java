@@ -10,10 +10,8 @@ import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.Zone;
-import com.yahoo.vespa.flags.JacksonFlag;
 import com.yahoo.vespa.flags.PermanentFlags;
 import com.yahoo.vespa.flags.StringFlag;
-import com.yahoo.vespa.flags.custom.SharedHost;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
 import java.util.Map;
 import java.util.TreeMap;
@@ -30,13 +28,13 @@ import static java.util.Objects.requireNonNull;
  */
 public class CapacityPolicies {
 
+    private final NodeRepository nodeRepository;
     private final Zone zone;
-    private final JacksonFlag<SharedHost> sharedHosts;
     private final StringFlag adminClusterNodeArchitecture;
 
     public CapacityPolicies(NodeRepository nodeRepository) {
+        this.nodeRepository = nodeRepository;
         this.zone = nodeRepository.zone();
-        this.sharedHosts = PermanentFlags.SHARED_HOST.bindTo(nodeRepository.flagSource());
         this.adminClusterNodeArchitecture = PermanentFlags.ADMIN_CLUSTER_NODE_ARCHITECTURE.bindTo(nodeRepository.flagSource());
     }
 
@@ -79,16 +77,15 @@ public class CapacityPolicies {
         return target;
     }
 
-    public NodeResources defaultNodeResources(ClusterSpec clusterSpec, ApplicationId applicationId, boolean exclusive) {
+    public NodeResources defaultNodeResources(ClusterSpec clusterSpec, ApplicationId applicationId) {
         if (clusterSpec.type() == ClusterSpec.Type.admin) {
             Architecture architecture = adminClusterArchitecture(applicationId);
 
             if (clusterSpec.id().value().equals("cluster-controllers")) {
-                return clusterControllerResources(clusterSpec, exclusive)
-                        .with(architecture);
+                return clusterControllerResources(clusterSpec).with(architecture);
             }
 
-            return (requiresExclusiveHost(clusterSpec.type(), exclusive)
+            return (nodeRepository.exclusiveAllocation(clusterSpec)
                     ? versioned(clusterSpec, Map.of(new Version(0), smallestExclusiveResources()))
                     : versioned(clusterSpec, Map.of(new Version(0), smallestSharedResources())))
                     .with(architecture);
@@ -107,8 +104,8 @@ public class CapacityPolicies {
         }
     }
 
-    private NodeResources clusterControllerResources(ClusterSpec clusterSpec, boolean exclusive) {
-        if (requiresExclusiveHost(clusterSpec.type(), exclusive)) {
+    private NodeResources clusterControllerResources(ClusterSpec clusterSpec) {
+        if (nodeRepository.exclusiveAllocation(clusterSpec)) {
             return versioned(clusterSpec, Map.of(new Version(0), smallestExclusiveResources()));
         }
         return versioned(clusterSpec, Map.of(new Version(0), new NodeResources(0.25, 1.14, 10, 0.3)));
@@ -116,11 +113,6 @@ public class CapacityPolicies {
 
     private Architecture adminClusterArchitecture(ApplicationId instance) {
         return Architecture.valueOf(adminClusterNodeArchitecture.with(APPLICATION_ID, instance.serializedForm()).value());
-    }
-
-    /** Returns whether an exclusive host is required for given cluster type and exclusivity requirement */
-    private boolean requiresExclusiveHost(ClusterSpec.Type type, boolean exclusive) {
-        return ! zone.cloud().allowHostSharing() && (exclusive || !sharedHosts.value().isEnabled(type.name()));
     }
 
     /** Returns the resources for the newest version not newer than that requested in the cluster spec. */
@@ -145,9 +137,10 @@ public class CapacityPolicies {
     }
 
     /** Returns whether the nodes requested can share physical host with other applications */
-    public boolean decideExclusivity(Capacity capacity, boolean requestedExclusivity) {
-        if (capacity.cloudAccount().isPresent()) return true; // Implicit exclusive when using custom cloud account
-        return requestedExclusivity && (capacity.isRequired() || zone.environment() == Environment.prod);
+    public ClusterSpec decideExclusivity(Capacity capacity, ClusterSpec requestedCluster) {
+        if (capacity.cloudAccount().isPresent()) return requestedCluster.withExclusivity(true); // Implicit exclusive
+        boolean exclusive = requestedCluster.isExclusive() && (capacity.isRequired() || zone.environment() == Environment.prod);
+        return requestedCluster.withExclusivity(exclusive);
     }
 
 }
