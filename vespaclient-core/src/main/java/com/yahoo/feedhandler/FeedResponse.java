@@ -11,7 +11,6 @@ import com.yahoo.messagebus.Error;
 import com.yahoo.messagebus.ErrorCode;
 import com.yahoo.messagebus.Message;
 import com.yahoo.messagebus.Reply;
-import com.yahoo.search.result.ErrorMessage;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -21,7 +20,6 @@ import java.util.stream.Stream;
 public final class FeedResponse implements SharedSender.ResultCallback {
 
     private final static Logger log = Logger.getLogger(FeedResponse.class.getName());
-    private final List<ErrorMessage> errorMessages = new ArrayList<>();
     private final List<String> errors = new ArrayList<>();
     private final StringBuilder traces = new StringBuilder();
     private final RouteMetricSet metrics;
@@ -75,7 +73,7 @@ public final class FeedResponse implements SharedSender.ResultCallback {
 
                 String str = out.toString();
                 log.finest(str);
-                addError(convertErrorCode(err.getCode()), str);
+                addError(err);
             }
             if (abortOnError) {
                 isAborted = true;
@@ -92,14 +90,12 @@ public final class FeedResponse implements SharedSender.ResultCallback {
     }
 
     FeedResponse addXMLParseError(String error) {
-        errorMessages.add(ErrorMessage.createBadRequest(error));
         errors.add(error);
         return this;
     }
 
-    public FeedResponse addError(com.yahoo.container.protect.Error code, String error) {
-        errorMessages.add(new ErrorMessage(code.code, error));
-        errors.add(error);
+    public FeedResponse addError(Error error) {
+        errors.add(error.toString());
         return this;
     }
 
@@ -109,27 +105,6 @@ public final class FeedResponse implements SharedSender.ResultCallback {
 
     private static boolean containsFatalErrors(Stream<Error> errors) {
         return errors.anyMatch(e -> e.getCode() != DocumentProtocol.ERROR_TEST_AND_SET_CONDITION_FAILED);
-    }
-
-    private static com.yahoo.container.protect.Error convertErrorCode(int error) {
-        // We should try to enumerate these error a bit finer.
-        // Like busy, no space etc.
-        if (error == DocumentProtocol.ERROR_NO_SPACE) {
-            return com.yahoo.container.protect.Error.INSUFFICIENT_STORAGE;
-        } else if (isTransientError(error)) {
-            return com.yahoo.container.protect.Error.INTERNAL_SERVER_ERROR;
-        } if (isFatalError(error)) {
-            return com.yahoo.container.protect.Error.INTERNAL_SERVER_ERROR;
-        }
-        return com.yahoo.container.protect.Error.INTERNAL_SERVER_ERROR;
-    }
-
-    private static boolean isFatalError(int error) {
-        return (error >= ErrorCode.FATAL_ERROR) && (error < ErrorCode.ERROR_LIMIT);
-    }
-
-    private static boolean isTransientError(int error) {
-        return (error >= ErrorCode.TRANSIENT_ERROR) && (error < ErrorCode.FATAL_ERROR);
     }
 
     public boolean isSuccess() {

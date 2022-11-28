@@ -18,6 +18,7 @@ import com.yahoo.documentapi.messagebus.protocol.PutDocumentMessage;
 import com.yahoo.documentapi.messagebus.protocol.RemoveDocumentMessage;
 import com.yahoo.documentapi.messagebus.protocol.UpdateDocumentMessage;
 import com.yahoo.feedapi.DummySessionFactory;
+import com.yahoo.feedhandler.InputStreamRequest;
 import com.yahoo.feedhandler.VespaFeedHandler;
 import com.yahoo.text.Utf8;
 import com.yahoo.vespaclient.config.FeederConfig;

@@ -25,18 +25,9 @@
             <artifactId>commons-cli</artifactId>
         </dependency>
         <dependency>
-            <groupId>com.google.guava</groupId>
-            <artifactId>guava</artifactId>
-        </dependency>
-        <dependency>
             <groupId>junit</groupId>
             <artifactId>junit</artifactId>
             <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>com.yahoo.vespa</groupId>
-            <artifactId>component</artifactId>
-            <version>${project.version}</version>
         </dependency>
         <dependency>
             <groupId>com.yahoo.vespa</groupId>
