@@ -29,7 +29,8 @@ public class SharedLoadBalancerService implements LoadBalancerService {
 
     @Override
     public LoadBalancerInstance create(LoadBalancerSpec spec, boolean force) {
-        if ( ! spec.settings().isEmpty()) throw new IllegalArgumentException("custom load balancer settings are not supported with " + getClass());
+        if (spec.settings().isPresent() && ! spec.settings().get().isEmpty())
+            throw new IllegalArgumentException("custom load balancer settings are not supported with " + getClass());
         return new LoadBalancerInstance(Optional.of(DomainName.of(vipHostname)),
                                         Optional.empty(),
                                         Optional.empty(),

@@ -45,7 +45,7 @@ public class LoadBalancerSerializerTest {
                                                                     new Real(DomainName.of("real-2"),
                                                                              "127.0.0.2",
                                                                              4080)),
-                                                    new LoadBalancerSettings(List.of("123")),
+                                                    Optional.of(new LoadBalancerSettings(List.of("123"))),
                                                     CloudAccount.from("012345678912"))),
                                             LoadBalancer.State.active,
                                             now);
