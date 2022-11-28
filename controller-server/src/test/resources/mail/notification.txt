@@ -486,7 +486,7 @@
                                   valign="middle"
                                 >
                                   <a
-                                    href="#"
+                                    href="https://dashboard.tld/tenant/tenant1/application/default/prod/instance"
                                     style="
                                       display: inline-block;
                                       background: #005a8e;

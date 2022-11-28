@@ -28,6 +28,7 @@ public class ContainerEngineMock implements ContainerEngine {
 
     private final Map<ContainerName, Container> containers = new ConcurrentHashMap<>();
     private final Map<String, ImageDownload> images = new ConcurrentHashMap<>();
+
     private boolean asyncImageDownload = false;
 
     public ContainerEngineMock asyncImageDownload(boolean enabled) {
@@ -112,6 +113,11 @@ public class ContainerEngineMock implements ContainerEngine {
     }
 
     @Override
+    public boolean shouldRecreate(NodeAgentContext context, Container container, ContainerResources wantedResources) {
+        return false;
+    }
+
+    @Override
     public void updateContainer(NodeAgentContext context, ContainerId containerId, ContainerResources containerResources) {
         Container container = requireContainer(context.containerName());
         containers.put(container.name(), new Container(containerId, container.name(), container.createdAt(), container.state(),
@@ -119,7 +125,8 @@ public class ContainerEngineMock implements ContainerEngine {
                                                        container.labels(), container.pid(),
                                                        container.conmonPid(), container.hostname(),
                                                        containerResources, container.networks(),
-                                                       container.managed()));
+                                                       container.managed(),
+                                                       container.createCommand()));
     }
 
     @Override
@@ -200,7 +207,8 @@ public class ContainerEngineMock implements ContainerEngine {
                              context.hostname().value(),
                              containerResources,
                              List.of(),
-                             true);
+                             true,
+                             List.of());
     }
 
     private static class ImageDownload {

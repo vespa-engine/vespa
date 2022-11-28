@@ -1,6 +1,6 @@
-package com.yahoo.compress;
+package com.yahoo.vespa.archive;
 
-import com.yahoo.compress.ArchiveStreamReader.Options;
+import com.yahoo.vespa.archive.ArchiveStreamReader.Options;
 import com.yahoo.yolean.Exceptions;
 import org.apache.commons.compress.archivers.zip.ZipArchiveEntry;
 import org.apache.commons.compress.archivers.zip.ZipArchiveOutputStream;
