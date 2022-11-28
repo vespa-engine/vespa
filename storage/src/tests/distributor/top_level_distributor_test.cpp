@@ -650,8 +650,11 @@ TEST_F(TopLevelDistributorTest, gc_timestamps_reset_to_current_time_on_gc_enable
     BucketId b3(16, 3);
 
     add_nodes_to_stripe_bucket_db(b1, "0=1/1/1/t/a");
+    set_bucket_last_gc_time(b1, 100);
     add_nodes_to_stripe_bucket_db(b2, "0=2/2/2/t/a");
+    set_bucket_last_gc_time(b2, 101);
     add_nodes_to_stripe_bucket_db(b3, "0=3/3/3/t/a");
+    set_bucket_last_gc_time(b3, 102);
 
     // Reconfigure GC interval from 0 (disabled) to 3600 (enabled).
     auto cfg = current_distributor_config();
