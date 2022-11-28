@@ -9,6 +9,7 @@ vespa_add_executable(vespalib_generator_test_app TEST
 vespa_add_executable(vespalib_generator_bench_app TEST
     SOURCES
     generator_bench.cpp
+    hidden_sequence.cpp
     DEPENDS
     vespalib
     GTest::GTest
