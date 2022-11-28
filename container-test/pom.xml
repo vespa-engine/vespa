@@ -99,11 +99,6 @@
       <artifactId>aircompressor</artifactId>
       <scope>compile</scope>
     </dependency>
-    <dependency>
-      <groupId>org.apache.commons</groupId>
-      <artifactId>commons-compress</artifactId>
-      <scope>compile</scope>
-    </dependency>
     <dependency> <!-- TODO: Remove on Vespa 9 -->
       <!-- not used by Vespa, but was historically on test classpath -->
       <groupId>org.json</groupId>

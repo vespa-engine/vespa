@@ -226,8 +226,7 @@ public class MetricsProxyContainerCluster extends ContainerCluster<MetricsProxyC
     private Optional<Admin> getAdmin() {
         if (parent != null) {
             AbstractConfigProducerRoot r = parent.getRoot();
-            if (r instanceof VespaModel) {
-                VespaModel model = (VespaModel) r;
+            if (r instanceof VespaModel model) {
                 return Optional.ofNullable(model.getAdmin());
             }
         }

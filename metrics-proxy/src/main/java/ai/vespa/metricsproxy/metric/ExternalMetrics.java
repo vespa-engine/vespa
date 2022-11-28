@@ -62,7 +62,7 @@ public class ExternalMetrics {
 
     private Set<MetricId> metricsToRetain() {
         return consumers.getConsumersByMetric().keySet().stream()
-                .map(configuredMetric -> configuredMetric.id())
+                .map(ConfiguredMetric::id)
                 .collect(toCollection(LinkedHashSet::new));
     }
 

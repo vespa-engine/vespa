@@ -123,8 +123,12 @@ public class RankProfileList extends Derived implements RankProfilesConfig.Produ
                 rawRankProfiles.put(rawRank.getName(), rawRank);
             }
             return rawRankProfiles;
-        } catch (InterruptedException | ExecutionException e) {
+        } catch (InterruptedException e) {
             throw new IllegalStateException(e);
+        }
+        catch (ExecutionException e) {
+            throw e.getCause() instanceof IllegalArgumentException ? (IllegalArgumentException)e.getCause()
+                                                                   : new IllegalStateException(e);
         }
     }
 

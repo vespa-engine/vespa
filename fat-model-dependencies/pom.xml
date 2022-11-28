@@ -73,6 +73,13 @@
       <groupId>com.yahoo.vespa</groupId>
       <artifactId>model-integration</artifactId>
       <version>${project.version}</version>
+      <exclusions>
+        <exclusion>
+          <!-- OPTIMIZATION: very large (60 MB) and not needed for config generation -->
+          <groupId>com.microsoft.onnxruntime</groupId>
+          <artifactId>onnxruntime</artifactId>
+        </exclusion>
+      </exclusions>
     </dependency>
     <dependency>
       <groupId>com.yahoo.vespa</groupId>
@@ -93,6 +100,16 @@
       <groupId>com.yahoo.vespa</groupId>
       <artifactId>vespajlib</artifactId>
       <version>${project.version}</version>
+      <exclusions>
+        <exclusion>
+          <groupId>org.apache.commons</groupId>
+          <artifactId>commons-exec</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>net.java.dev.jna</groupId>
+          <artifactId>jna</artifactId>
+        </exclusion>
+      </exclusions>
     </dependency>
     <dependency>
       <groupId>com.yahoo.vespa</groupId>
@@ -160,6 +177,11 @@
           <!-- OPTIMIZATION: very large (44 MB) and only used for query sorting -->
           <groupId>com.ibm.icu</groupId>
           <artifactId>icu4j</artifactId>
+        </exclusion>
+        <exclusion>
+          <!-- OPTIMIZATION: large (4 MB) and only used for query dispatch TDistribution-->
+          <groupId>org.apache.commons</groupId>
+          <artifactId>commons-math3</artifactId>
         </exclusion>
       </exclusions>
     </dependency>

@@ -84,10 +84,6 @@
       <version>${project.version}</version>
       <exclusions>
         <exclusion>
-          <groupId>commons-lang</groupId>
-          <artifactId>commons-lang</artifactId>
-        </exclusion>
-        <exclusion>
           <groupId>org.apache.httpcomponents</groupId>
           <artifactId>httpclient</artifactId>
         </exclusion>
@@ -164,10 +160,6 @@
           <artifactId>zero-allocation-hashing</artifactId>
         </exclusion>
         <exclusion>
-          <groupId>org.apache.commons</groupId>
-          <artifactId>commons-compress</artifactId>
-        </exclusion>
-        <exclusion>
           <groupId>org.lz4</groupId>
           <artifactId>lz4-java</artifactId>
         </exclusion>
@@ -186,14 +178,6 @@
         <exclusion>
           <groupId>com.ibm.icu</groupId>
           <artifactId>icu4j</artifactId>
-        </exclusion>
-        <exclusion>
-          <groupId>commons-collections</groupId>
-          <artifactId>commons-collections</artifactId>
-        </exclusion>
-        <exclusion>
-          <groupId>commons-lang</groupId>
-          <artifactId>commons-lang</artifactId>
         </exclusion>
         <exclusion>
           <groupId>org.antlr</groupId>
@@ -242,17 +226,6 @@
     <!-- NOTE: Dependencies below are added explicitly to exclude transitive deps that are not provided runtime by the container,
          and hence make them invisible to user projects' build classpath.
          Excluded artifacts should be added explicitly to the application module to make then visible in users' test classpath. -->
-    <dependency>
-      <groupId>com.yahoo.vespa</groupId>
-      <artifactId>document</artifactId>
-      <version>${project.version}</version>
-      <exclusions>
-        <exclusion>
-          <groupId>commons-collections</groupId>
-          <artifactId>commons-collections</artifactId>
-        </exclusion>
-      </exclusions>
-    </dependency>
     <dependency>
       <groupId>com.yahoo.vespa</groupId>
       <artifactId>opennlp-linguistics</artifactId>

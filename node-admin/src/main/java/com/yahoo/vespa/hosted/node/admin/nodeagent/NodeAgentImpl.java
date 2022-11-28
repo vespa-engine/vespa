@@ -332,34 +332,34 @@ public class NodeAgentImpl implements NodeAgent {
     }
 
     private List<String> shouldRemoveContainer(NodeAgentContext context, Container existingContainer) {
-        final NodeState nodeState = context.node().state();
+        NodeState nodeState = context.node().state();
         List<String> reasons = new ArrayList<>();
-        if (nodeState == NodeState.dirty || nodeState == NodeState.provisioned)
+        if (nodeState == NodeState.dirty || nodeState == NodeState.provisioned) {
             reasons.add("Node in state " + nodeState + ", container should no longer be running");
-
+        }
         if (context.node().wantedDockerImage().isPresent() &&
                 !context.node().wantedDockerImage().get().equals(existingContainer.image())) {
-            reasons.add("The node is supposed to run a new Docker image: "
+            reasons.add("The node is supposed to run a new image: "
                         + existingContainer.image().asString() + " -> " + context.node().wantedDockerImage().get().asString());
         }
-
-        if (!existingContainer.state().isRunning())
+        if (!existingContainer.state().isRunning()) {
             reasons.add("Container no longer running");
-
+        }
         if (currentRebootGeneration < context.node().wantedRebootGeneration()) {
             reasons.add(String.format("Container reboot wanted. Current: %d, Wanted: %d",
                     currentRebootGeneration, context.node().wantedRebootGeneration()));
         }
-
         ContainerResources wantedContainerResources = getContainerResources(context);
         if (!wantedContainerResources.equalsMemory(existingContainer.resources())) {
             reasons.add("Container should be running with different memory allocation, wanted: " +
                         wantedContainerResources.toStringMemory() + ", actual: " + existingContainer.resources().toStringMemory());
         }
-
-        if (containerState == STARTING)
+        if (containerOperations.shouldRecreate(context, existingContainer, wantedContainerResources)) {
+            reasons.add("Container should be re-created to apply new configuration");
+        }
+        if (containerState == STARTING) {
             reasons.add("Container failed to start");
-
+        }
         return reasons;
     }
 
