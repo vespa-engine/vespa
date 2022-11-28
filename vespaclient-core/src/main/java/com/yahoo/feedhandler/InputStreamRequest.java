@@ -1,7 +1,5 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-package com.yahoo.vespafeeder;
-
-import com.yahoo.container.jdisc.HttpRequest;
+package com.yahoo.feedhandler;
 
 import java.io.InputStream;
 import java.util.HashMap;
@@ -16,10 +14,10 @@ import java.util.Map;
  */
 public class InputStreamRequest {
 
-    private InputStream input;
-    private Map<String, String> properties = new HashMap<>();
+    private final InputStream input;
+    private final Map<String, String> properties = new HashMap<>();
 
-    protected InputStreamRequest(InputStream input) {
+    public InputStreamRequest(InputStream input) {
         this.input = input;
     }
 
@@ -31,8 +29,6 @@ public class InputStreamRequest {
         return properties.get(key);
     }
 
-    public HttpRequest toRequest() {
-        return HttpRequest.createTestRequest("", com.yahoo.jdisc.http.HttpRequest.Method.POST, input, properties);
-    }
+    InputStream getData() { return input; }
 
 }

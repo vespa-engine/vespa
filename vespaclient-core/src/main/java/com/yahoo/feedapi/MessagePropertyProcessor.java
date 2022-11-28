@@ -3,9 +3,9 @@ package com.yahoo.feedapi;
 
 import com.yahoo.concurrent.SystemTimer;
 import com.yahoo.config.subscription.ConfigSubscriber;
-import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.documentapi.messagebus.protocol.DocumentMessage;
 import com.yahoo.documentapi.messagebus.protocol.DocumentProtocol;
+import com.yahoo.feedhandler.InputStreamRequest;
 import com.yahoo.messagebus.Message;
 import com.yahoo.messagebus.routing.Route;
 import com.yahoo.vespaclient.config.FeederConfig;
@@ -26,7 +26,6 @@ public class MessagePropertyProcessor implements ConfigSubscriber.SingleSubscrib
     private Route defaultRoute = null;
     private long defaultTimeoutMillis = 0;
     private boolean retryEnabled = true;
-    private String defaultDocprocChain = null;
     private boolean defaultAbortOnDocumentError = true;
     private boolean defaultAbortOnSendError = true;
     private boolean configChanged = false;
@@ -39,7 +38,7 @@ public class MessagePropertyProcessor implements ConfigSubscriber.SingleSubscrib
         defaultRoute = Route.parse(routeOverride);
     }
 
-    public PropertySetter buildPropertySetter(HttpRequest request) {
+    public PropertySetter buildPropertySetter(InputStreamRequest request) {
         String routeParam = null;
         double timeoutParam = -1;
         String priorityParam = null;
@@ -129,7 +128,6 @@ public class MessagePropertyProcessor implements ConfigSubscriber.SingleSubscrib
             log.log(Level.FINE, "Received new config (" +
                                     "route: " + (defaultRoute != null ? defaultRoute : "<none>") +
                                     ", timeout: " + defaultTimeoutMillis + " ms, retry enabled: " + retryEnabled +
-                                    ", docproc chain: " + (defaultDocprocChain != null ? defaultDocprocChain : "<none>") +
                                     ", abort on doc error: " + defaultAbortOnDocumentError +
                                     ", abort on feed error: " + defaultAbortOnSendError + ")");
         }
@@ -139,16 +137,16 @@ public class MessagePropertyProcessor implements ConfigSubscriber.SingleSubscrib
         /** Route either set by configuration or by explicit request override. May be null */
         private Route route;
         /** Timeout (in milliseconds) */
-        private long timeout;
-        private long totalTimeout;
-        private long startTime;
+        private final long timeout;
+        private final long totalTimeout;
+        private final long startTime;
         /** Explicit priority set. May be null */
         private DocumentProtocol.Priority priority;
-        private boolean retryEnabled;
-        private boolean abortOnDocumentError;
-        private boolean abortOnFeedError;
-        private boolean createIfNonExistent;
-        private int traceLevel;
+        private final boolean retryEnabled;
+        private final boolean abortOnDocumentError;
+        private final boolean abortOnFeedError;
+        private final boolean createIfNonExistent;
+        private final int traceLevel;
 
         PropertySetter(Route route, long timeout, long totalTimeout, DocumentProtocol.Priority priority,
                        boolean retryEnabled, boolean abortOnDocumentError, boolean abortOnFeedError,
