@@ -209,6 +209,16 @@
       </environment-variables>
       <node hostalias="host1" />
     </nodes>
+
+    <clients>
+      <client id="client1" permissions="read,write">
+        <certificate file="security/file.pem" />
+      </client>
+      <client id="client2" permissions="write">
+        <certificate file="security/file1.pem" />
+        <certificate file="security/file2.pem" />
+      </client>
+    </clients>
   </container>
 
   <container id='qrsCluster_2' version='1.0'>

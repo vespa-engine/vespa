@@ -24,7 +24,8 @@ ContainerServices =
     AccessLog* &
     SecretStore? &
     ZooKeeper? &
-    GenericConfig*
+    GenericConfig* &
+    Clients?
 
 # TODO(ogronnesby): Change this configuration syntax
 ClientAuthorize = element client-authorize { empty }
@@ -126,6 +127,18 @@ Threadpool = element threadpool {
     element max-threads { xsd:nonNegativeInteger } &
     element min-threads { xsd:nonNegativeInteger } &
     element queue-size { xsd:nonNegativeInteger }
+}
+
+Clients = element clients {
+    Client*
+}
+
+Client = element client {
+    ComponentId &
+    attribute permissions { string } &
+    element certificate {
+        attribute file { string }
+    }+
 }
 
 # SEARCH:
