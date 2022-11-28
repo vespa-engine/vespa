@@ -187,8 +187,6 @@
 
                     <!-- 3rd party artifacts embedded -->
                     <i>aopalliance:aopalliance:*:*</i>
-                    <i>biz.aQute.bnd:biz.aQute.bnd.util:*:*</i>
-                    <i>biz.aQute.bnd:biz.aQute.bndlib:*:*</i>
                     <i>com.fasterxml.jackson.core:jackson-annotations:*:*</i>
                     <i>com.fasterxml.jackson.core:jackson-core:*:*</i>
                     <i>com.fasterxml.jackson.core:jackson-databind:*:*</i>
