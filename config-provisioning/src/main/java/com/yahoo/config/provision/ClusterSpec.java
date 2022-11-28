@@ -91,7 +91,7 @@ public final class ClusterSpec {
     }
 
     public ClusterSpec withExclusivity(boolean exclusive) {
-        return new ClusterSpec(type, id, groupId, vespaVersion, exclusive, combinedId, dockerImageRepo, stateful);
+        return new ClusterSpec(type, id, groupId, vespaVersion, exclusive, combinedId, dockerImageRepo, loadBalancerSettings, stateful);
     }
 
     public ClusterSpec exclusive(boolean exclusive) {
