@@ -209,7 +209,6 @@
                     <i>io.prometheus:simpleclient:*:*</i>
                     <i>io.prometheus:simpleclient_common:*:*</i>
                     <i>javax.inject:javax.inject:*:*</i>
-                    <i>javax.servlet:javax.servlet-api:*:*</i>
                     <i>net.openhft:zero-allocation-hashing:*:*</i>
                     <i>org.antlr:antlr-runtime:*:*</i>
                     <i>org.antlr:antlr4-runtime:*:*</i>
@@ -217,23 +216,6 @@
                     <i>org.bouncycastle:bcpkix-jdk18on:*:*</i>
                     <i>org.bouncycastle:bcprov-jdk18on:*:*</i>
                     <i>org.bouncycastle:bcutil-jdk18on:*:*</i>
-                    <i>org.eclipse.jetty:jetty-alpn-java-server:*:*</i>
-                    <i>org.eclipse.jetty:jetty-alpn-server:*:*</i>
-                    <i>org.eclipse.jetty:jetty-client:*:*</i>
-                    <i>org.eclipse.jetty:jetty-continuation:*:*</i>
-                    <i>org.eclipse.jetty:jetty-http:*:*</i>
-                    <i>org.eclipse.jetty:jetty-io:*:*</i>
-                    <i>org.eclipse.jetty:jetty-jmx:*:*</i>
-                    <i>org.eclipse.jetty:jetty-security:*:*</i>
-                    <i>org.eclipse.jetty:jetty-server:*:*</i>
-                    <i>org.eclipse.jetty:jetty-servlet:*:*</i>
-                    <i>org.eclipse.jetty:jetty-servlets:*:*</i>
-                    <i>org.eclipse.jetty:jetty-util:*:*</i>
-                    <i>org.eclipse.jetty:jetty-util-ajax:*:*</i>
-                    <i>org.eclipse.jetty.alpn:alpn-api:*:*</i>
-                    <i>org.eclipse.jetty.http2:http2-common:*:*</i>
-                    <i>org.eclipse.jetty.http2:http2-hpack:*:*</i>
-                    <i>org.eclipse.jetty.http2:http2-server:*:*</i>
                     <i>org.hdrhistogram:HdrHistogram:*:*</i>
                     <i>org.lz4:lz4-java:*:*</i>
                     <i>org.slf4j:jcl-over-slf4j:*:*</i>
