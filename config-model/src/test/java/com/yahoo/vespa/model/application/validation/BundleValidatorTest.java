@@ -107,10 +107,20 @@ public class BundleValidatorTest {
 
     @Test
     void testImportPackagesParsing() {
+        assertEquals(new ImportPackageInfo("com.yahoo.config;version=\"[1.0.0,2)\",com.yahoo.filedistribution.fileacquirer;version=\"[1.0.0,2)\"," +
+                        "com.yahoo.jdisc,com.yahoo.jdisc.handler,java.io;version=\"[0.0.0,1)\",java.lang;version=\"[0.0.0,1)\"," +
+                        "java.nio;version=\"[0.0.0,1)\",java.util.concurrent;version=\"[0.0.0,1)\",java.util;version=\"[0.0.0,1)\"").packages(),
+                List.of("com.yahoo.config", "com.yahoo.filedistribution.fileacquirer", "com.yahoo.jdisc",
+                        "com.yahoo.jdisc.handler", "java.io", "java.lang", "java.nio", "java.util.concurrent", "java.util"));
+    }
+
+    @Test
+    void testQuotedTokenizer() {
         verifyParsing("org.json;version=\"[0.0.0,1)\",org.eclipse.jetty.client.api;version=\"[9.4.46,10)\"",
                 List.of("org.json", "version", "[0.0.0,1)", "org.eclipse.jetty.client.api", "version", "[9.4.46,10)"));
         verifyParsing("org.json;version='[0.0.0,1)',org.eclipse.jetty.client.api;version='[9.4.46,10)'",
                 List.of("org.json", "version", "[0.0.0,1)", "org.eclipse.jetty.client.api", "version", "[9.4.46,10)"));
     }
+
 
 }

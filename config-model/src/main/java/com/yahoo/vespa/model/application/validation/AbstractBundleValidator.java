@@ -78,14 +78,11 @@ public abstract class AbstractBundleValidator extends Validator {
 
     protected final void forEachImportPackage(Manifest mf, Consumer<String> consumer) {
         String importPackage = mf.getMainAttributes().getValue("Import-Package");
+        ImportPackageInfo importPackages = new ImportPackageInfo(importPackage);
         List<String> tokens = new TokenizeAndDeQuote(";,=", "\"'").tokenize(importPackage);
-        if (tokens.size() % 3 != 0) {
-            throw new IllegalArgumentException("Number of tokens " + tokens.size() + " must be divisible by 3.\n" +
-                    "Import-Package = '" + importPackage + "'\n" +
-                    "Token = " + tokens);
-        }
-        for (int packageNum = 0; packageNum < tokens.size()/3; packageNum++) {
-            consumer.accept(tokens.get(packageNum*3));
+
+        for (String packageName : importPackages.packages()) {
+            consumer.accept(packageName);
         }
     }
 
