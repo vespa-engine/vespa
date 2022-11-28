@@ -214,7 +214,6 @@
                     <i>org.antlr:antlr-runtime:*:*</i>
                     <i>org.antlr:antlr4-runtime:*:*</i>
                     <i>org.apache.felix:org.apache.felix.framework:*:*</i>
-                    <i>org.apache.opennlp:opennlp-tools:*:*</i>
                     <i>org.bouncycastle:bcpkix-jdk18on:*:*</i>
                     <i>org.bouncycastle:bcprov-jdk18on:*:*</i>
                     <i>org.bouncycastle:bcutil-jdk18on:*:*</i>
