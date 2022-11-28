@@ -36,7 +36,6 @@ import java.security.Principal;
 import java.security.cert.X509Certificate;
 import java.time.Instant;
 import java.util.Optional;
-import java.util.OptionalInt;
 import java.util.Scanner;
 import java.util.function.Function;
 
@@ -176,7 +175,7 @@ public class ControllerApiHandler extends AuditLoggingRequestHandler {
     }
 
     private HttpResponse overrideConfidence(HttpRequest request, String version) {
-        Confidence confidence = Confidence.valueOf(asString(request.getData()));
+        Confidence confidence = Confidence.valueOf(asString(request.getData()).trim());
         maintenance.upgrader().overrideConfidence(Version.fromString(version), confidence);
         return new UpgraderResponse(maintenance.upgrader());
     }

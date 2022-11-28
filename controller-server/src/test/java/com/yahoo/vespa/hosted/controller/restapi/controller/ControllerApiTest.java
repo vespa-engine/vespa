@@ -96,19 +96,19 @@ public class ControllerApiTest extends ControllerContainerTest {
         // Override confidence
         tester.assertResponse(
                 operatorRequest("http://localhost:8080/controller/v1/jobs/upgrader/confidence/6.42", "broken", Request.Method.POST),
-                "{\"upgradesPerMinute\":42.0,\"confidenceOverrides\":[{\"6.42\":\"broken\"}]}",
+                "{\"upgradesPerMinute\":42.0,\"confidenceOverrides\":[{\"6.42.0\":\"broken\"}]}",
                 200);
 
         // Override confidence for another version
         tester.assertResponse(
-                operatorRequest("http://localhost:8080/controller/v1/jobs/upgrader/confidence/6.43", "broken", Request.Method.POST),
-                "{\"upgradesPerMinute\":42.0,\"confidenceOverrides\":[{\"6.42\":\"broken\"},{\"6.43\":\"broken\"}]}",
+                operatorRequest("http://localhost:8080/controller/v1/jobs/upgrader/confidence/6.43", " broken ", Request.Method.POST),
+                "{\"upgradesPerMinute\":42.0,\"confidenceOverrides\":[{\"6.42.0\":\"broken\"},{\"6.43.0\":\"broken\"}]}",
                 200);
 
         // Remove first override
         tester.assertResponse(
                 operatorRequest("http://localhost:8080/controller/v1/jobs/upgrader/confidence/6.42", "", Request.Method.DELETE),
-                "{\"upgradesPerMinute\":42.0,\"confidenceOverrides\":[{\"6.43\":\"broken\"}]}",
+                "{\"upgradesPerMinute\":42.0,\"confidenceOverrides\":[{\"6.43.0\":\"broken\"}]}",
                 200);
 
         assertFalse(tester.controller().auditLogger().readLog().entries().isEmpty(), "Actions are logged to audit log");
