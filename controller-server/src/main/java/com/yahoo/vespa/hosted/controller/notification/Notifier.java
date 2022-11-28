@@ -138,6 +138,7 @@ public class Notifier {
                         .map(Notifier::linkify)
                         .map(m -> "<li>" + m + "</li>")
                         .collect(Collectors.joining()))
+                .replace("[[LINK_TO_NOTIFICATION]]", notificationLink(notification.source()))
                 .replace("[[LINK_TO_ACCOUNT_NOTIFICATIONS]]", accountNotificationsUri(content.notification().source().tenant()))
                 .replace("[[LINK_TO_PRIVACY_POLICY]]", "https://legal.yahoo.com/xw/en/yahoo/privacy/topic/b2bprivacypolicy/index.html")
                 .replace("[[LINK_TO_TERMS_OF_SERVICE]]", consoleUri("terms-of-service-trial.html"))
@@ -170,4 +171,23 @@ public class Notifier {
         return new UriBuilder(dashboardUri).append(path).toString();
     }
 
+    private String notificationLink(NotificationSource source) {
+        var uri = new UriBuilder(dashboardUri);
+        uri = uri.append("tenant").append(source.tenant().value());
+        if (source.application().isPresent())
+            uri = uri.append("application").append(source.application().get().value());
+        if (source.isProduction()) {
+            uri = uri.append("prod/instance");
+            if (source.jobType().isPresent()) {
+                uri = uri.append(source.instance().get().value());
+            }
+        }
+        else {
+            uri = uri.append("dev/instance/").append(source.instance().get().value());
+        }
+        if (source.jobType().isPresent()) {
+            uri = uri.append("job").append(source.jobType().get().jobName()).append("run").append(String.valueOf(source.runNumber().getAsLong()));
+        }
+        return uri.toString();
+    }
 }
