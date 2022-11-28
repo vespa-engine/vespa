@@ -34,10 +34,10 @@ public class ClusterMembership {
             for (int i = 4; i < components.length; i++) {
                 String component = components[i];
                 switch (component) {
-                    case "exclusive": exclusive = true; break;
-                    case "retired": retired = true; break;
-                    case "stateful": stateful = true; break;
-                    default: combinedId = Optional.of(component); break;
+                    case "exclusive" -> exclusive = true;
+                    case "retired" -> retired = true;
+                    case "stateful" -> stateful = true;
+                    default -> combinedId = Optional.of(component);
                 }
             }
         }

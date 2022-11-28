@@ -109,18 +109,18 @@ public class LoadBalancerProvisioner {
      * Calling this when no load balancer has been prepared for given cluster is a no-op.
      */
     public void activate(Set<ClusterSpec> clusters, NodeList newActive, ApplicationTransaction transaction) {
-        Map<ClusterSpec.Id, ClusterSpec> activatingClusters = clusters.stream()
-                                                                      .collect(groupingBy(LoadBalancerProvisioner::effectiveId,
-                                                                                          reducing(null, (o, n) -> o == null || o.type() != Type.container ? n : o)));
+        Set<ClusterSpec.Id> activatingClusters = clusters.stream()
+                                                         .map(LoadBalancerProvisioner::effectiveId)
+                                                         .collect(Collectors.toSet());
         for (var cluster : loadBalancedClustersOf(newActive).entrySet()) {
-            if (!activatingClusters.containsKey(cluster.getKey())) continue;
+            if ( ! activatingClusters.contains(cluster.getKey())) continue;
 
             Node clusterNode = cluster.getValue().first().get();
-            if (!shouldProvision(transaction.application(), clusterNode.type(), clusterNode.allocation().get().membership().cluster().type())) continue;
-            activate(transaction, cluster.getKey(), activatingClusters.get(cluster.getKey()).loadBalancerSettings(), cluster.getValue());
+            if ( ! shouldProvision(transaction.application(), clusterNode.type(), clusterNode.allocation().get().membership().cluster().type())) continue;
+            activate(transaction, cluster.getKey(), cluster.getValue());
         }
         // Deactivate any surplus load balancers, i.e. load balancers for clusters that have been removed
-        var surplusLoadBalancers = surplusLoadBalancersOf(transaction.application(), activatingClusters.keySet());
+        var surplusLoadBalancers = surplusLoadBalancersOf(transaction.application(), activatingClusters);
         deactivate(surplusLoadBalancers, transaction.nested());
     }
 
@@ -207,14 +207,16 @@ public class LoadBalancerProvisioner {
         requireInstance(id, instance, cloudAccount);
     }
 
-    private void activate(ApplicationTransaction transaction, ClusterSpec.Id cluster, LoadBalancerSettings loadBalancerSettings, NodeList nodes) {
+    private void activate(ApplicationTransaction transaction, ClusterSpec.Id cluster, NodeList nodes) {
         Instant now = nodeRepository.clock().instant();
         LoadBalancerId id = new LoadBalancerId(transaction.application(), cluster);
         Optional<LoadBalancer> loadBalancer = db.readLoadBalancer(id);
         if (loadBalancer.isEmpty()) throw new IllegalArgumentException("Could not activate load balancer that was never prepared: " + id);
         if (loadBalancer.get().instance().isEmpty()) throw new IllegalArgumentException("Activating " + id + ", but prepare never provisioned a load balancer instance");
 
-        Optional<LoadBalancerInstance> instance = provisionInstance(id, nodes, loadBalancer, loadBalancerSettings, loadBalancer.get().instance().get().cloudAccount());
+        Optional<LoadBalancerInstance> instance = provisionInstance(id, nodes, loadBalancer,
+                                                                    loadBalancer.get().instance().get().settings(),
+                                                                    loadBalancer.get().instance().get().cloudAccount());
         LoadBalancer.State state = instance.isPresent() ? LoadBalancer.State.active : loadBalancer.get().state();
         LoadBalancer newLoadBalancer = loadBalancer.get().with(instance).with(state, now);
         db.writeLoadBalancers(List.of(newLoadBalancer), loadBalancer.get().state(), transaction.nested());
