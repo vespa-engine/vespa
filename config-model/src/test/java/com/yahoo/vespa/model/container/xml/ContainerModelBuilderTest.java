@@ -208,8 +208,8 @@ public class ContainerModelBuilderTest extends ContainerModelBuilderTestBase {
         verifyAllowedUrns("""
                           <load-balancer>
                             <private-access>
-                              <allowed-urn>foo</allowed-urn>
-                              <allowed-urn>bar</allowed-urn>
+                              <allow-urn>foo</allow-urn>
+                              <allow-urn>bar</allow-urn>
                             </private-access>
                           </load-balancer>
                           """);
@@ -218,8 +218,8 @@ public class ContainerModelBuilderTest extends ContainerModelBuilderTestBase {
         verifyAllowedUrns("""
                           <load-balancer>
                             <private-access>
-                              <allowed-urn>foo</allowed-urn>
-                              <allowed-urn>bar</allowed-urn>
+                              <allow-urn>foo</allow-urn>
+                              <allow-urn>bar</allow-urn>
                             </private-access>
                           </load-balancer>
                           <nodes count='2' />

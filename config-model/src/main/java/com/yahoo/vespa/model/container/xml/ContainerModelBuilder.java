@@ -737,7 +737,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
 
     private LoadBalancerSettings loadBalancerSettings(Element loadBalancerElement) {
         List<String> allowedUrnElements = XML.getChildren(XML.getChild(loadBalancerElement, "private-access"),
-                                                          "allowed-urn")
+                                                          "allow-urn")
                                              .stream().map(XML::getValue).toList();
         return new LoadBalancerSettings(allowedUrnElements);
     }
