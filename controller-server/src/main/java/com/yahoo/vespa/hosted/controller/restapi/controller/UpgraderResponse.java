@@ -23,7 +23,7 @@ public class UpgraderResponse extends SlimeJsonResponse {
         Cursor array = root.setArray("confidenceOverrides");
         upgrader.confidenceOverrides().forEach((version, confidence) -> {
             Cursor object = array.addObject();
-            object.setString(version.toString(), confidence.name());
+            object.setString(version.toFullString(), confidence.name());
         });
 
         return slime;
