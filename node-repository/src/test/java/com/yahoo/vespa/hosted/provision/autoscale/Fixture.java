@@ -13,10 +13,6 @@ import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.RegionName;
 import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.Zone;
-import com.yahoo.vespa.flags.InMemoryFlagSource;
-import com.yahoo.vespa.flags.PermanentFlags;
-import com.yahoo.vespa.flags.custom.HostResources;
-import com.yahoo.vespa.flags.custom.SharedHost;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeList;
 import com.yahoo.vespa.hosted.provision.applications.Application;
@@ -50,7 +46,7 @@ public class Fixture {
         applicationId = builder.application;
         clusterSpec = builder.cluster;
         capacity = builder.capacity;
-        tester = new AutoscalingTester(builder.zone, builder.resourceCalculator, builder.hostFlavors, builder.flagSource, hostCount);
+        tester = new AutoscalingTester(builder.zone, builder.resourceCalculator, builder.hostFlavors, hostCount);
         var deployCapacity = initialResources.isPresent() ? Capacity.from(initialResources.get()) : capacity;
         tester.deploy(builder.application, builder.cluster, deployCapacity);
         this.loader = new Loader(this);
@@ -146,7 +142,6 @@ public class Fixture {
                                           new ClusterResources(20, 1,
                                                                new NodeResources(100, 1000, 1000, 1, NodeResources.DiskSpeed.any)));
         HostResourcesCalculator resourceCalculator = new AutoscalingTester.MockHostResourcesCalculator(zone);
-        final InMemoryFlagSource flagSource = new InMemoryFlagSource();
         int hostCount = 0;
 
         public Fixture.Builder zone(Zone zone) {
@@ -232,12 +227,6 @@ public class Fixture {
 
         public Fixture.Builder awsResourceCalculator() {
             this.resourceCalculator = new AwsHostResourcesCalculatorImpl();
-            return this;
-        }
-
-        public Fixture.Builder hostSharingFlag() {
-            var resources = new HostResources(8.0, 32.0, 100.0, 10.0, "fast", "local", null, 6, "x86_64");
-            flagSource.withJacksonFlag(PermanentFlags.SHARED_HOST.id(), new SharedHost(List.of(resources), null), SharedHost.class);
             return this;
         }
 
