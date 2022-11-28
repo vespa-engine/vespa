@@ -143,16 +143,8 @@ public class ContainerClusterTest {
         verifyHeapSizeAsPercentageOfPhysicalMemory(createRoot(!hosted, heapSizeInFlag), !combined, 69, 69);
     }
 
-    private void verifyJvmArgs(boolean isHosted, boolean hasDocproc, String expectedArgs, String jvmArgs) {
-        if (isHosted && hasDocproc) {
-            String defaultHostedJVMArgs = "-XX:+SuppressFatalErrorMessage";
-            if ( ! "".equals(expectedArgs)) {
-                defaultHostedJVMArgs = defaultHostedJVMArgs + " ";
-            }
-            assertEquals(defaultHostedJVMArgs + expectedArgs, jvmArgs);
-        } else {
-            assertEquals(expectedArgs, jvmArgs);
-        }
+    private void verifyJvmArgs(boolean isHosted, String expectedArgs, String jvmArgs) {
+        assertEquals(expectedJvmArgs(isHosted, expectedArgs), jvmArgs);
     }
 
     private void verifyJvmArgs(boolean isHosted, boolean hasDocProc) {
@@ -164,15 +156,15 @@ public class ContainerClusterTest {
         addContainer(root, cluster, "c1", "host-c1");
         assertEquals(1, cluster.getContainers().size());
         ApplicationContainer container = cluster.getContainers().get(0);
-        verifyJvmArgs(isHosted, hasDocProc, expectedJvmArgs(isHosted, ""), container.getJvmOptions());
+        verifyJvmArgs(isHosted, "", container.getJvmOptions());
         container.setJvmOptions("initial");
-        verifyJvmArgs(isHosted, hasDocProc, expectedJvmArgs(isHosted, "initial"), container.getJvmOptions());
+        verifyJvmArgs(isHosted, "initial", container.getJvmOptions());
         container.prependJvmOptions("ignored");
-        verifyJvmArgs(isHosted, hasDocProc, expectedJvmArgs(isHosted, "ignored initial"), container.getJvmOptions());
+        verifyJvmArgs(isHosted,  "ignored initial", container.getJvmOptions());
         container.appendJvmOptions("override");
-        verifyJvmArgs(isHosted, hasDocProc, expectedJvmArgs(isHosted, "ignored initial override"), container.getJvmOptions());
+        verifyJvmArgs(isHosted, "ignored initial override", container.getJvmOptions());
         container.setJvmOptions(null);
-        verifyJvmArgs(isHosted, hasDocProc, expectedJvmArgs(isHosted, ""), container.getJvmOptions());
+        verifyJvmArgs(isHosted,  "", container.getJvmOptions());
     }
 
     @Test

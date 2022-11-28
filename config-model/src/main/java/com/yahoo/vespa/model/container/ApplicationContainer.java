@@ -24,8 +24,6 @@ public final class ApplicationContainer extends Container implements
         QrStartConfig.Producer,
         ZookeeperServerConfig.Producer {
 
-    private static final String defaultHostedJVMArgs = "-XX:+SuppressFatalErrorMessage";
-
     private final boolean isHostedVespa;
 
     public ApplicationContainer(AbstractConfigProducer<?> parent, String name, int index, DeployState deployState) {
@@ -64,9 +62,6 @@ public final class ApplicationContainer extends Container implements
     public String getJvmOptions() {
         StringBuilder b = new StringBuilder();
         if (isHostedVespa) {
-            if (hasDocproc()) {
-                b.append(ApplicationContainer.defaultHostedJVMArgs).append(' ');
-            }
             b.append("-Djdk.tls.server.enableStatusRequestExtension=true ")
                     .append("-Djdk.tls.stapling.responseTimeout=2000 ")
                     .append("-Djdk.tls.stapling.cacheSize=256 ")
@@ -77,10 +72,6 @@ public final class ApplicationContainer extends Container implements
              b.append(jvmArgs.trim());
         }
         return b.toString().trim();
-    }
-
-    private boolean hasDocproc() {
-        return (parent instanceof ContainerCluster) && (((ContainerCluster<?>)parent).getDocproc() != null);
     }
 
     @Override
