@@ -1,27 +1,18 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.application.pkg;
 
-import com.yahoo.compress.ArchiveStreamReader;
-import com.yahoo.compress.ArchiveStreamReader.ArchiveFile;
-import com.yahoo.compress.ArchiveStreamReader.Options;
+import com.yahoo.vespa.archive.ArchiveStreamReader;
+import com.yahoo.vespa.archive.ArchiveStreamReader.ArchiveFile;
+import com.yahoo.vespa.archive.ArchiveStreamReader.Options;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.io.UncheckedIOException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
 import java.util.NoSuchElementException;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Predicate;
-import java.util.zip.ZipEntry;
-import java.util.zip.ZipInputStream;
-import java.util.zip.ZipOutputStream;
 
 /**
  * A list of entries read from a ZIP archive, and their contents.
