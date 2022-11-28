@@ -26,7 +26,6 @@
     <modules>
         <module>application</module>
         <module>application-model</module>
-        <module>application-preprocessor</module>
         <module>athenz-identity-provider-service</module>
         <module>bundle-plugin-test</module>
         <module>client</module>
