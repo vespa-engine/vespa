@@ -82,7 +82,6 @@
               com.yahoo.config.model.api,
               com.yahoo.config.model.api.container,
               com.yahoo.config.provision,
-              ai.vespa.rankingexpression.importer.configmodelview,
               com.yahoo.io.reader,
               com.yahoo.path,
               com.google.inject, <!-- must use @Inject exported from container -->
