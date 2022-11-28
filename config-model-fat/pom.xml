@@ -201,7 +201,6 @@
                     <i>com.google.inject:guice:jar:no_aop:*:*</i>
                     <i>com.google.j2objc:j2objc-annotations:*:*</i>
                     <i>com.google.protobuf:protobuf-java:*:*</i>
-                    <i>com.microsoft.onnxruntime:onnxruntime:*:*</i>
                     <i>com.sun.activation:javax.activation:*:*</i>
                     <i>com.sun.xml.bind:jaxb-core:*:*</i>
                     <i>com.sun.xml.bind:jaxb-impl:*:*</i>
@@ -211,12 +210,9 @@
                     <i>io.prometheus:simpleclient_common:*:*</i>
                     <i>javax.inject:javax.inject:*:*</i>
                     <i>javax.servlet:javax.servlet-api:*:*</i>
-                    <i>net.java.dev.jna:jna:*:*</i>
                     <i>net.openhft:zero-allocation-hashing:*:*</i>
                     <i>org.antlr:antlr-runtime:*:*</i>
                     <i>org.antlr:antlr4-runtime:*:*</i>
-                    <i>org.apache.commons:commons-exec:*:*</i>
-                    <i>org.apache.commons:commons-math3:*:*</i>
                     <i>org.apache.felix:org.apache.felix.framework:*:*</i>
                     <i>org.apache.opennlp:opennlp-tools:*:*</i>
                     <i>org.bouncycastle:bcpkix-jdk18on:*:*</i>

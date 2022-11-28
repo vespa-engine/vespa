@@ -37,7 +37,7 @@ Status::Status(const Status& rhs)
       _lastSyncToken(rhs.getLastSyncToken()),
       _updates(rhs._updates),
       _nonIdempotentUpdates(rhs._nonIdempotentUpdates),
-      _bitVectors(rhs._bitVectors)
+      _bitVectors(load_relaxed(rhs._bitVectors))
 {
 }
 
@@ -56,7 +56,7 @@ Status::operator=(const Status& rhs)
     setLastSyncToken(rhs.getLastSyncToken());
     _updates = rhs._updates;
     _nonIdempotentUpdates = rhs._nonIdempotentUpdates;
-    _bitVectors = rhs._bitVectors;
+    store_relaxed(_bitVectors, load_relaxed(rhs._bitVectors));
     return *this;
 }
 
