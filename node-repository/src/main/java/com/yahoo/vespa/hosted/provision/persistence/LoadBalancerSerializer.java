@@ -75,8 +75,8 @@ public class LoadBalancerSerializer {
         }));
         loadBalancer.instance()
                     .map(LoadBalancerInstance::settings)
-                    .filter(settings -> ! settings.isEmpty())
-                    .ifPresent(settings -> settings.allowedUrns().forEach(root.setObject(settingsField)
+                    .filter(settings -> ! settings.get().isEmpty())
+                    .ifPresent(settings -> settings.get().allowedUrns().forEach(root.setObject(settingsField)
                                                                               .setArray(allowedUrnsField)::addString));
         loadBalancer.instance()
                     .map(LoadBalancerInstance::cloudAccount)
@@ -112,7 +112,7 @@ public class LoadBalancerSerializer {
         LoadBalancerSettings settings = loadBalancerSettings(object.field(settingsField));
         CloudAccount cloudAccount = optionalString(object.field(cloudAccountField), CloudAccount::from).orElse(CloudAccount.empty);
         Optional<LoadBalancerInstance> instance = hostname.isEmpty() && ipAddress.isEmpty() ? Optional.empty() :
-                Optional.of(new LoadBalancerInstance(hostname, ipAddress, dnsZone, ports, networks, reals, settings, cloudAccount));
+                Optional.of(new LoadBalancerInstance(hostname, ipAddress, dnsZone, ports, networks, reals, Optional.of(settings), cloudAccount));
 
         return new LoadBalancer(LoadBalancerId.fromSerializedForm(object.field(idField).asString()),
                                 instance,

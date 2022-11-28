@@ -321,14 +321,14 @@ public class LoadBalancerProvisionerTest {
         tester.activate(app1, prepare(app1, capacity, clusterRequest(ClusterSpec.Type.container, ClusterSpec.Id.from("c1"))));
         LoadBalancerList loadBalancers = tester.nodeRepository().loadBalancers().list();
         assertEquals(1, loadBalancers.size());
-        assertEquals(LoadBalancerSettings.empty, loadBalancers.first().get().instance().get().settings());
+        assertEquals(LoadBalancerSettings.empty, loadBalancers.first().get().instance().get().settings().get());
 
         // Next deployment contains new settings
         LoadBalancerSettings settings = new LoadBalancerSettings(List.of("alice", "bob"));
         tester.activate(app1, prepare(app1, capacity, clusterRequest(ClusterSpec.Type.container, ClusterSpec.Id.from("c1"), Optional.empty(), settings)));
         loadBalancers = tester.nodeRepository().loadBalancers().list();
         assertEquals(1, loadBalancers.size());
-        assertEquals(settings, loadBalancers.first().get().instance().get().settings());
+        assertEquals(settings, loadBalancers.first().get().instance().get().settings().get());
     }
 
 

@@ -188,7 +188,7 @@ public class LoadBalancerProvisioner {
     private void prepare(LoadBalancerId id, NodeList nodes, LoadBalancerSettings loadBalancerSettings, CloudAccount cloudAccount) {
         Instant now = nodeRepository.clock().instant();
         Optional<LoadBalancer> loadBalancer = db.readLoadBalancer(id);
-        Optional<LoadBalancerInstance> instance = provisionInstance(id, nodes, loadBalancer, loadBalancerSettings, cloudAccount);
+        Optional<LoadBalancerInstance> instance = provisionInstance(id, nodes, loadBalancer, loadBalancerSettings, cloudAccount, false);
         LoadBalancer newLoadBalancer;
         LoadBalancer.State fromState = null;
         if (loadBalancer.isEmpty()) {
@@ -215,8 +215,9 @@ public class LoadBalancerProvisioner {
         if (loadBalancer.get().instance().isEmpty()) throw new IllegalArgumentException("Activating " + id + ", but prepare never provisioned a load balancer instance");
 
         Optional<LoadBalancerInstance> instance = provisionInstance(id, nodes, loadBalancer,
-                                                                    loadBalancer.get().instance().get().settings(),
-                                                                    loadBalancer.get().instance().get().cloudAccount());
+                                                                    loadBalancer.get().instance().get().settings().orElseThrow(),
+                                                                    loadBalancer.get().instance().get().cloudAccount(),
+                                                                    true);
         LoadBalancer.State state = instance.isPresent() ? LoadBalancer.State.active : loadBalancer.get().state();
         LoadBalancer newLoadBalancer = loadBalancer.get().with(instance).with(state, now);
         db.writeLoadBalancers(List.of(newLoadBalancer), loadBalancer.get().state(), transaction.nested());
@@ -227,7 +228,8 @@ public class LoadBalancerProvisioner {
     private Optional<LoadBalancerInstance> provisionInstance(LoadBalancerId id, NodeList nodes,
                                                              Optional<LoadBalancer> currentLoadBalancer,
                                                              LoadBalancerSettings loadBalancerSettings,
-                                                             CloudAccount cloudAccount) {
+                                                             CloudAccount cloudAccount,
+                                                             boolean activate) {
         boolean shouldDeactivateRouting = deactivateRouting.with(FetchVector.Dimension.APPLICATION_ID,
                                                                  id.application().serializedForm())
                                                            .value();
@@ -237,11 +239,14 @@ public class LoadBalancerProvisioner {
         } else {
             reals = realsOf(nodes);
         }
-        if (isUpToDate(currentLoadBalancer, reals, loadBalancerSettings)) return currentLoadBalancer.get().instance();
+        LoadBalancerSettings settingsToUse = activate ? loadBalancerSettings : null;
+        if (isUpToDate(currentLoadBalancer, reals, settingsToUse))
+            return currentLoadBalancer.get().instance().map(instance -> instance.withSettings(loadBalancerSettings));
         log.log(Level.INFO, () -> "Provisioning instance for " + id + ", targeting: " + reals);
         try {
-            return Optional.of(service.create(new LoadBalancerSpec(id.application(), id.cluster(), reals, loadBalancerSettings, cloudAccount),
-                                              shouldDeactivateRouting || allowEmptyReals(currentLoadBalancer)));
+            return Optional.of(service.create(new LoadBalancerSpec(id.application(), id.cluster(), reals, settingsToUse, cloudAccount),
+                                              shouldDeactivateRouting || allowEmptyReals(currentLoadBalancer))
+                                      .withSettings(loadBalancerSettings));
         } catch (Exception e) {
             log.log(Level.WARNING, e, () -> "Could not (re)configure " + id + ", targeting: " +
                                             reals + ". The operation will be retried on next deployment");
@@ -296,12 +301,12 @@ public class LoadBalancerProvisioner {
         return loadBalancer.instance().isEmpty() || loadBalancer.instance().get().cloudAccount().equals(cloudAccount);
     }
 
-    /** Returns whether load balancer has given reals and settings */
+    /** Returns whether load balancer has given reals, and settings if specified*/
     private static boolean isUpToDate(Optional<LoadBalancer> loadBalancer, Set<Real> reals, LoadBalancerSettings loadBalancerSettings) {
         if (loadBalancer.isEmpty()) return false;
         if (loadBalancer.get().instance().isEmpty()) return false;
         return    loadBalancer.get().instance().get().reals().equals(reals)
-               && loadBalancer.get().instance().get().settings().equals(loadBalancerSettings);
+               && (loadBalancerSettings == null || loadBalancer.get().instance().get().settings().get().equals(loadBalancerSettings));
     }
 
     /** Returns whether to allow given load balancer to have no reals */
