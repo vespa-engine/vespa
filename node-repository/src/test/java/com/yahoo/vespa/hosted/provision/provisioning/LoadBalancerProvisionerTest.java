@@ -161,8 +161,7 @@ public class LoadBalancerProvisionerTest {
                                       clusterRequest(ClusterSpec.Type.container, containerCluster),
                                       clusterRequest(ClusterSpec.Type.content, contentCluster)));
         List<LoadBalancer> activeLoadBalancers = lbApp1.get().stream()
-                                                       .filter(lb -> lb.state() == LoadBalancer.State.active)
-                                                       .collect(Collectors.toList());
+                                                       .filter(lb -> lb.state() == LoadBalancer.State.active).toList();
         assertEquals(1, activeLoadBalancers.size());
         assertEquals(Set.of(), activeLoadBalancers.get(0).instance().get().reals());
     }

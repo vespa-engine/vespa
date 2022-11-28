@@ -80,6 +80,7 @@ public class ProvisioningTester {
     private final NodeFlavors nodeFlavors;
     private final ManualClock clock;
     private final NodeRepository nodeRepository;
+    private final HostProvisioner hostProvisioner;
     private final NodeRepositoryProvisioner provisioner;
     private final CapacityPolicies capacityPolicies;
     private final ProvisionLogger provisionLogger;
@@ -102,6 +103,7 @@ public class ProvisioningTester {
         this.curator = curator;
         this.nodeFlavors = nodeFlavors;
         this.clock = new ManualClock();
+        this.hostProvisioner = hostProvisioner;
         ProvisionServiceProvider provisionServiceProvider = new MockProvisionServiceProvider(loadBalancerService, hostProvisioner, resourcesCalculator);
         this.nodeRepository = new NodeRepository(nodeFlavors,
                                                  provisionServiceProvider,
@@ -144,6 +146,7 @@ public class ProvisioningTester {
     public Orchestrator orchestrator() { return nodeRepository.orchestrator(); }
     public ManualClock clock() { return clock; }
     public NodeRepositoryProvisioner provisioner() { return provisioner; }
+    public HostProvisioner hostProvisioner() { return hostProvisioner; }
     public LoadBalancerServiceMock loadBalancerService() { return loadBalancerService; }
     public CapacityPolicies capacityPolicies() { return capacityPolicies; }
     public NodeList getNodes(ApplicationId id, Node.State ... inState) { return nodeRepository.nodes().list(inState).owner(id); }

@@ -64,9 +64,9 @@ public class MockNameResolver implements NameResolver {
             return records.get(name);
         }
         if (mockAnyLookup) {
-            Set<String> ipAddresses = Set.of(randomIpAddress());
-            records.put(name, ipAddresses);
-            return ipAddresses;
+            records.computeIfAbsent(name, (k) -> new HashSet<>())
+                   .add(randomIpAddress());
+            return records.get(name);
         }
         throw new RuntimeException(new UnknownHostException("Could not resolve: " + name));
     }
