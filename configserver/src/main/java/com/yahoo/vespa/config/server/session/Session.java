@@ -6,6 +6,7 @@ import com.yahoo.config.FileReference;
 import com.yahoo.config.application.api.ApplicationFile;
 import com.yahoo.config.application.api.ApplicationMetaData;
 import com.yahoo.config.application.api.ApplicationPackage;
+import com.yahoo.config.model.api.Quota;
 import com.yahoo.config.model.api.TenantSecretStore;
 import com.yahoo.config.provision.AllocatedHosts;
 import com.yahoo.config.provision.ApplicationId;
@@ -19,7 +20,6 @@ import com.yahoo.transaction.Transaction;
 import com.yahoo.vespa.config.server.NotFoundException;
 import com.yahoo.vespa.config.server.application.ApplicationSet;
 import com.yahoo.vespa.config.server.tenant.TenantRepository;
-
 import java.security.cert.X509Certificate;
 import java.time.Instant;
 import java.util.List;
@@ -141,6 +141,10 @@ public abstract class Session implements Comparable<Session>  {
         sessionZooKeeperClient.writeAthenzDomain(athenzDomain);
     }
 
+    public void setQuota(Optional<Quota> quota) {
+        sessionZooKeeperClient.writeQuota(quota);
+    }
+
     public void setTenantSecretStores(List<TenantSecretStore> tenantSecretStores) {
         sessionZooKeeperClient.writeTenantSecretStores(tenantSecretStores);
     }
@@ -179,6 +183,8 @@ public abstract class Session implements Comparable<Session>  {
     public Version getVespaVersion() { return sessionZooKeeperClient.readVespaVersion(); }
 
     public Optional<AthenzDomain> getAthenzDomain() { return sessionZooKeeperClient.readAthenzDomain(); }
+
+    public Optional<Quota> getQuota() { return sessionZooKeeperClient.readQuota(); }
 
     public AllocatedHosts getAllocatedHosts() {
         return sessionZooKeeperClient.getAllocatedHosts();
