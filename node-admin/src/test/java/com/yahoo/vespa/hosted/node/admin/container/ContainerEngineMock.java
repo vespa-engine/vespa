@@ -113,7 +113,7 @@ public class ContainerEngineMock implements ContainerEngine {
     }
 
     @Override
-    public boolean shouldRecreate(NodeAgentContext context, Container container) {
+    public boolean shouldRecreate(NodeAgentContext context, Container container, ContainerResources wantedResources) {
         return false;
     }
 

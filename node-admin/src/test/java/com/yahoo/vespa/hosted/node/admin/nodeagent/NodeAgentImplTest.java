@@ -360,7 +360,7 @@ public class NodeAgentImplTest {
                 .withRebootGeneration(wantedRebootGeneration)));
 
         // Re-create if new container config needs to be applied
-        when(containerOperations.shouldRecreate(eq(context), any())).thenReturn(true);
+        when(containerOperations.shouldRecreate(eq(context), any(), any())).thenReturn(true);
         nodeAgent.doConverge(context);
         verify(containerOperations, times(2)).removeContainer(eq(context), any());
         verify(containerOperations, times(2)).createContainer(eq(context), any());
