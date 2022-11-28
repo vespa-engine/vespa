@@ -31,7 +31,7 @@ public class CloudAccount extends PatternedStringWrapper<CloudAccount> {
         return switch (cloudAccount) {
             // TODO: Remove "default" as e.g. it is a valid GCP project ID
             case "", "default" -> empty;
-            default -> new CloudAccount(cloudAccount, EMPTY + "|" + AWS_ACCOUNT_ID + "|" + GCP_PROJECT_ID, "cloud account");
+            default -> new CloudAccount(cloudAccount, AWS_ACCOUNT_ID + "|" + GCP_PROJECT_ID, "cloud account");
         };
     }
 
