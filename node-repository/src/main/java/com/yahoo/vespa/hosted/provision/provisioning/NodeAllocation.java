@@ -34,8 +34,7 @@ import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
 /**
- * Used to manage a list of nodes during the node reservation process
- * in order to fulfill the nodespec.
+ * Used to manage a list of nodes during the node reservation process to fulfill the nodespec.
  * 
  * @author bratseth
  */
@@ -316,7 +315,7 @@ class NodeAllocation {
      * Returns {@link HostDeficit} describing the host deficit for the given {@link NodeSpec}.
      *
      * @return empty if the requested spec is already fulfilled. Otherwise returns {@link HostDeficit} containing the
-     * flavor and host count required to cover the deficit.
+     *         flavor and host count required to cover the deficit.
      */
     Optional<HostDeficit> hostDeficit() {
         if (nodeType().isHost()) {
@@ -519,6 +518,11 @@ class NodeAllocation {
 
         int count() {
             return count;
+        }
+
+        @Override
+        public String toString() {
+            return "deficit of " + count + " nodes with " + resources;
         }
 
     }

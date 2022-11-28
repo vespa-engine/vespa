@@ -9,6 +9,7 @@ import java.util.Objects;
  * @author hakon
  */
 public class Address {
+
     private final String hostname;
 
     public Address(String hostname) {

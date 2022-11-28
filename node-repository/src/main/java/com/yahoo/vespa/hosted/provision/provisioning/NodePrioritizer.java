@@ -146,12 +146,13 @@ public class NodePrioritizer {
             if (spareHosts.contains(host) && !canAllocateToSpareHosts) continue;
             if ( ! capacity.hasCapacity(host, requestedNodes.resources().get())) continue;
             if ( ! allNodesAndHosts.childrenOf(host).owner(application).cluster(clusterSpec.id()).isEmpty()) continue;
+
             candidates.add(NodeCandidate.createNewChild(requestedNodes.resources().get(),
-                                                   capacity.availableCapacityOf(host),
-                                                   host,
-                                                   spareHosts.contains(host),
-                                                   allNodesAndHosts.nodes(),
-                                                   nameResolver));
+                                                        capacity.availableCapacityOf(host),
+                                                        host,
+                                                        spareHosts.contains(host),
+                                                        allNodesAndHosts.nodes(),
+                                                        nameResolver));
         }
     }
 

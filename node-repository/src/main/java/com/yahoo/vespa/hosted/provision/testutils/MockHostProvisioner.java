@@ -190,7 +190,7 @@ public class MockHostProvisioner implements HostProvisioner {
                         .collect(Collectors.toList());
     }
 
-    private Node withIpAssigned(Node node) {
+    public Node withIpAssigned(Node node) {
         if (!node.type().isHost()) {
             return node.with(node.ipConfig().withPrimary(nameResolver.resolveAll(node.hostname())));
         }
