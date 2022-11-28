@@ -67,7 +67,6 @@
         <dependency>
             <groupId>org.apache.commons</groupId>
             <artifactId>commons-compress</artifactId>
-            <scope>provided</scope>
         </dependency>
         <dependency>
             <groupId>io.airlift</groupId>
