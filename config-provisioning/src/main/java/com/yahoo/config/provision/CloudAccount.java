@@ -12,11 +12,15 @@ import java.util.regex.Pattern;
  */
 public class CloudAccount extends PatternedStringWrapper<CloudAccount> {
 
-    /** Empty value. When this is used, either implicitly or explicitly, the zone will use its default account */
-    public static final CloudAccount empty = new CloudAccount("");
+    private static final String EMPTY = "";
+    private static final String AWS_ACCOUNT_ID = "[0-9]{12}";
+    private static final String GCP_PROJECT_ID = "[a-z][a-z0-9-]{4,28}[a-z0-9]";
 
-    private CloudAccount(String value) {
-        super(value, Pattern.compile("^([0-9]{12})?$"), "cloud account");
+    /** Empty value. When this is used, either implicitly or explicitly, the zone will use its default account */
+    public static final CloudAccount empty = new CloudAccount("", EMPTY, "cloud account");
+
+    private CloudAccount(String value, String regex, String description) {
+        super(value, Pattern.compile("^(" + regex + ")$"), description);
     }
 
     public boolean isUnspecified() {
@@ -25,8 +29,9 @@ public class CloudAccount extends PatternedStringWrapper<CloudAccount> {
 
     public static CloudAccount from(String cloudAccount) {
         return switch (cloudAccount) {
+            // TODO: Remove "default" as e.g. it is a valid GCP project ID
             case "", "default" -> empty;
-            default -> new CloudAccount(cloudAccount);
+            default -> new CloudAccount(cloudAccount, EMPTY + "|" + AWS_ACCOUNT_ID + "|" + GCP_PROJECT_ID, "cloud account");
         };
     }
 
