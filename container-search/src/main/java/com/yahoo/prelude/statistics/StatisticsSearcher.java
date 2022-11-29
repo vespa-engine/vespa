@@ -3,8 +3,8 @@ package com.yahoo.prelude.statistics;
 
 import com.yahoo.component.chain.dependencies.Before;
 import com.yahoo.concurrent.CopyOnWriteHashMap;
+import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.jdisc.Metric;
-import com.yahoo.jdisc.http.HttpRequest;
 import com.yahoo.metrics.simple.MetricReceiver;
 import com.yahoo.metrics.simple.MetricSettings;
 import com.yahoo.processing.request.CompoundName;
@@ -410,7 +410,6 @@ public class StatisticsSearcher extends Searcher {
      */
     private static long getStartNanoTime(Query query) {
         return Optional.ofNullable(query.getHttpRequest())
-                .flatMap(httpRequest -> Optional.ofNullable(httpRequest.getJDiscRequest()))
                 .map(HttpRequest::relativeCreatedAtNanoTime)
                 .orElseGet(System::nanoTime);
     }

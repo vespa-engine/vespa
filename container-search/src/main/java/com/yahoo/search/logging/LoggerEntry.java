@@ -9,6 +9,7 @@ import com.yahoo.slime.SlimeUtils;
 import com.yahoo.text.Utf8;
 import java.io.IOException;
 import java.io.UncheckedIOException;
+import java.net.URI;
 import java.nio.ByteBuffer;
 import java.util.Base64;
 
@@ -37,10 +38,11 @@ public class LoggerEntry {
     public String queryString() {
         String queryString = null;
         if (query != null) {
-            if (query.getHttpRequest() != null && query.getHttpRequest().getUri() != null) {
-                queryString = query.getHttpRequest().getUri().getPath();
-                if (query.getHttpRequest().getUri().getQuery() != null) {
-                    queryString += "?" + query.getHttpRequest().getUri().getRawQuery();
+            URI uri = query.getUri();
+            if (uri != null) {
+                queryString = uri.getPath();
+                if (uri.getQuery() != null) {
+                    queryString += "?" + uri.getRawQuery();
                 }
             }
         }

@@ -1985,6 +1985,7 @@
       "public com.yahoo.search.query.Model getModel()",
       "public com.yahoo.search.query.Trace getTrace()",
       "public com.yahoo.container.jdisc.HttpRequest getHttpRequest()",
+      "public java.net.URI getUri()",
       "public com.yahoo.search.query.SessionId getSessionId()",
       "public com.yahoo.search.query.SessionId getSessionId(java.lang.String)",
       "public void prepare()",

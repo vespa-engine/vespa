@@ -46,6 +46,7 @@ import com.yahoo.search.yql.VespaSerializer;
 import com.yahoo.search.yql.YqlParser;
 import com.yahoo.yolean.Exceptions;
 
+import java.net.URI;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -912,7 +913,9 @@ public class Query extends com.yahoo.processing.Request implements Cloneable {
      * Return the HTTP request which caused this query. This will never be null
      * when running with queries from the network.
      */
-     public HttpRequest getHttpRequest() { return httpRequest; }
+    public HttpRequest getHttpRequest() { return httpRequest; }
+
+    public URI getUri() { return httpRequest != null ? httpRequest.getUri() : null; }
 
     /** Returns the session id of this query, or null if none is assigned */
     public SessionId getSessionId() {
