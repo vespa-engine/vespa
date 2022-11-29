@@ -22,6 +22,8 @@ private:
     MessageBus      &_mbus;
     string           _name;
     IMessageHandler &_msgHandler;
+    bool             _session_registered;
+    bool             _broadcast_name;
 
     /**
      * This constructor is package private since only MessageBus is supposed to
@@ -36,13 +38,20 @@ public:
     /**
      * Convenience typedef for an auto pointer to a DestinationSession object.
      */
-    typedef std::unique_ptr<DestinationSession> UP;
+    using UP = std::unique_ptr<DestinationSession>;
 
     /**
      * The destructor untangles from messagebus. After this method returns,
      * messagebus will not invoke any handlers associated with this session.
      */
-    virtual ~DestinationSession();
+    ~DestinationSession() override;
+
+    /**
+     * If a session was created with defer_registered(true) as part of its parameters,
+     * it can be subsequently registered at most once. The session will not be visible
+     * for incoming messages until that point in time.
+     */
+    void register_session_deferred();
 
     /**
      * This method unregisters this session from message bus, effectively

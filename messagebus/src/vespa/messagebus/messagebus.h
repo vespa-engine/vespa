@@ -171,6 +171,12 @@ public:
     DestinationSession::UP createDestinationSession(const DestinationSessionParams &params);
 
     /**
+     * Register a session; used by session instances that are created with deferred registration.
+     * Don't use this directly.
+     */
+    void register_session(IMessageHandler& session, const string& session_name, bool broadcast_name);
+
+    /**
      * Unregister a session. This method is invoked by session destructors to ensure that no more Message objects are
      * delivered and that the session name is removed from the network naming service. The sync method can be invoked
      * after invoking this one to ensure that no callbacks are active.

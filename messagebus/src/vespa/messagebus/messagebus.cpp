@@ -225,11 +225,24 @@ MessageBus::createDestinationSession(const DestinationSessionParams &params)
 {
     std::lock_guard guard(_lock);
     DestinationSession::UP ret(new DestinationSession(*this, params));
-    _sessions[params.getName()] = ret.get();
-    if (params.getBroadcastName()) {
-        _network.registerSession(params.getName());
+    if (!params.defer_registration()) {
+        _sessions[params.getName()] = ret.get();
+        if (params.getBroadcastName()) {
+            _network.registerSession(params.getName());
+        }
     }
     return ret;
+}
+
+void
+MessageBus::register_session(IMessageHandler& session, const string& session_name, bool broadcast_name)
+{
+    std::lock_guard guard(_lock);
+    assert(!_sessions.contains(session_name));
+    _sessions[session_name] = &session;
+    if (broadcast_name) {
+        _network.registerSession(session_name);
+    }
 }
 
 void
