@@ -1,7 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.search.searchers;
 
-import com.yahoo.container.jdisc.HttpRequest;
+import com.yahoo.component.annotation.Inject;
 import com.yahoo.processing.request.CompoundName;
 import com.yahoo.search.Query;
 import com.yahoo.search.Result;
@@ -53,6 +53,7 @@ public class ConnectionControlSearcher extends Searcher {
     private static final String HTTP_CONNECTION_HEADER_NAME = "Connection";
     private static final String HTTP_CONNECTION_CLOSE_ARGUMENT = "Close";
 
+    @Inject
     public ConnectionControlSearcher() {
         this(() -> System.currentTimeMillis());
     }
@@ -100,14 +101,13 @@ public class ConnectionControlSearcher extends Searcher {
     }
 
     private void setCloseIfLifetimeExceeded(Query query, Result result, int maxLifetimeSeconds) {
-        final HttpRequest httpRequest = query.getHttpRequest();
-        if (httpRequest == null) {
+        if (query.getHttpRequest() == null) {
             query.trace(false, 5, simpleName, " got max lifetime = ", maxLifetimeSeconds,
                     ", but got no JDisc request. Setting no header.");
             return;
         }
 
-        final long connectedAtMillis = httpRequest.getJDiscRequest().getConnectedAt(TimeUnit.MILLISECONDS);
+        final long connectedAtMillis = query.getHttpRequest().getConnectedAt(TimeUnit.MILLISECONDS);
         final long maxLifeTimeMillis = maxLifetimeSeconds * 1000L;
         if (connectedAtMillis + maxLifeTimeMillis < clock.getAsLong()) {
             result.getHeaders(true).put(HTTP_CONNECTION_HEADER_NAME, HTTP_CONNECTION_CLOSE_ARGUMENT);

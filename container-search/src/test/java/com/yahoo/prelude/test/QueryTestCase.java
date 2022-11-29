@@ -71,7 +71,7 @@ public class QueryTestCase {
                 + "yahoo+com!253+interest:www+yahoo!138+"
                 + "interest:www+yahoo+com!136"
                 + "&hits=20&offset=0&vectorranking=queryrank");
-        assertEquals("/p13n", q.getHttpRequest().getUri().getPath());
+        assertEquals("/p13n", q.getUri().getPath());
         assertEquals(0, q.getOffset());
         assertEquals(20, q.getHits());
         assertEquals("queryrank", q.properties().get("vectorranking"));

@@ -337,7 +337,7 @@ public class SearchHandler extends LoggingRequestHandler {
     private void traceRequestAttributes(Query query) {
         int miminumTraceLevel = 7;
         if (query.getTraceLevel() >= 7) {
-            query.trace("Request attributes: " + query.getHttpRequest().getJDiscRequest().context(), miminumTraceLevel);
+            query.trace("Request attributes: " + query.getHttpRequest().context(), miminumTraceLevel);
         }
     }
 

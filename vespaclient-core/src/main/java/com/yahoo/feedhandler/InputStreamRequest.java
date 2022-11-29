@@ -6,9 +6,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- * This is needed because whoever wrote this library moronically decided to pass in-process communication through
- * the HTTP layer. As the feeded is being phased out in favor of the standalone HTTP client we don't bother to clean
- * it up properly.
+ * Simple wrapper of a stream and some properties.
  *
  * @author bratseth
  */
