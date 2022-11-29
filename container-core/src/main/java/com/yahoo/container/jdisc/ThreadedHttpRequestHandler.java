@@ -79,14 +79,13 @@ public abstract class ThreadedHttpRequestHandler extends ThreadedRequestHandler 
     @Override
     public final void handleRequest(Request request, BufferedContentChannel requestContent, ResponseHandler responseHandler) {
         log.log(Level.FINE, () -> "In " + this.getClass() + ".handleRequest()");
-        com.yahoo.jdisc.http.HttpRequest jdiscRequest = asHttpRequest(request);
-        HttpRequest httpRequest = new HttpRequest(jdiscRequest, new UnsafeContentInputStream(requestContent.toReadable()));
+        HttpRequest httpRequest = new HttpRequest(asHttpRequest(request), new UnsafeContentInputStream(requestContent.toReadable()));
         LazyContentChannel channel = null;
         try {
             channel = new LazyContentChannel(httpRequest, responseHandler, metric, log);
             HttpResponse httpResponse = handle(httpRequest, channel);
             channel.setHttpResponse(httpResponse); // may or may not have already been done
-            render(httpRequest, httpResponse, channel, jdiscRequest.creationTime(TimeUnit.MILLISECONDS));
+            render(httpRequest, httpResponse, channel, httpRequest.creationTime(TimeUnit.MILLISECONDS));
         } catch (Exception e) {
             metric.add(UNHANDLED_EXCEPTIONS_METRIC, 1L, contextFor(request, Map.of("exception", e.getClass().getSimpleName())));
             metric.add(RENDERING_ERRORS, 1, null);

@@ -362,7 +362,7 @@ public class Query extends com.yahoo.processing.Request implements Cloneable {
                       Map<String, Embedder> embedders,
                       ZoneInfo zoneInfo,
                       SchemaInfo schemaInfo) {
-        startTime = httpRequest.getJDiscRequest().creationTime(TimeUnit.MILLISECONDS);
+        startTime = httpRequest.creationTime(TimeUnit.MILLISECONDS);
         if (queryProfile != null) {
             // Move all request parameters to the query profile
             Properties queryProfileProperties = new QueryProfileProperties(queryProfile, embedders, zoneInfo);
