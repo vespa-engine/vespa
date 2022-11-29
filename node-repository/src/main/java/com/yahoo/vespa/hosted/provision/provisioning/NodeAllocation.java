@@ -127,9 +127,8 @@ class NodeAllocation {
 
                 if ((! saturated() && hasCompatibleResources(candidate) && requestedNodes.acceptable(candidate)) || acceptToRetire) {
                     candidate = candidate.withNode();
-                    if (candidate.isValid()) {
+                    if (candidate.isValid())
                         acceptNode(candidate, shouldRetire(candidate, candidates), resizeable);
-                    }
                 }
             }
             else if (! saturated() && hasCompatibleResources(candidate)) {
@@ -220,7 +219,7 @@ class NodeAllocation {
 
     /**
      * Returns whether this node should be accepted into the cluster even if it is not currently desired
-     * (already enough nodes, or wrong flavor).
+     * (already enough nodes, or wrong resources, etc.).
      * Such nodes will be marked retired during finalization of the list of accepted nodes.
      * The conditions for this are:
      *
@@ -262,8 +261,9 @@ class NodeAllocation {
                 || ! ( requestedNodes.needsResize(node) && node.allocation().get().membership().retired()))
                 acceptedWithoutResizingRetired++;
 
-            if (resizeable && ! ( node.allocation().isPresent() && node.allocation().get().membership().retired()))
+            if (resizeable && ! ( node.allocation().isPresent() && node.allocation().get().membership().retired())) {
                 node = resize(node);
+            }
 
             if (node.state() != Node.State.active) // reactivated node - wipe state that deactivated it
                 node = node.unretire().removable(false);

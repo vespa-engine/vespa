@@ -60,7 +60,6 @@ public class AutoscalingTest {
         assertTrue(fixture.autoscale().target().isEmpty());
     }
 
-    /** Using too many resources for a short period is proof we should scale up regardless of the time that takes. */
     @Test
     public void test_no_autoscaling_with_no_measurements_exclusive() {
         var fixture = AutoscalingTester.fixture().awsProdSetup(false).build();
@@ -76,6 +75,21 @@ public class AutoscalingTest {
         fixture.tester().assertResources("Scaling up since resource usage is too high",
                                          8, 1, 5.3, 17.7, 89.4,
                                          fixture.autoscale());
+    }
+
+    @Test
+    public void initial_deployment_with_host_sharing_flag() {
+        var min = new ClusterResources(7, 1, new NodeResources(2.0, 10.0, 384.0, 0.1));
+        var max = new ClusterResources(7, 1, new NodeResources(2.4, 32.0, 768.0, 0.1));
+        var fixture = AutoscalingTester.fixture()
+                                       .awsProdSetup(false)
+                                       .capacity(Capacity.from(min, max))
+                                       .initialResources(Optional.empty())
+                                       .hostSharingFlag()
+                                       .build();
+        fixture.tester().assertResources("Initial resources at min, since flag turns on host sharing",
+                                         7, 1, 2.0, 10.0, 384.0,
+                                         fixture.currentResources().advertisedResources());
     }
 
     /** When scaling up, disregard underutilized dimensions (memory here) */
