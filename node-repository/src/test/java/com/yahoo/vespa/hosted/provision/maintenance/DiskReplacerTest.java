@@ -18,7 +18,7 @@ import static org.junit.Assert.assertEquals;
 public class DiskReplacerTest {
 
     private final ProvisioningTester tester = new ProvisioningTester.Builder().build();
-    private final MockHostProvisioner hostProvisioner = new MockHostProvisioner(List.of(), Cloud.defaultCloud());
+    private final MockHostProvisioner hostProvisioner = new MockHostProvisioner(List.of());
     private final DiskReplacer diskReplacer = new DiskReplacer(tester.nodeRepository(), Duration.ofDays(1), new TestMetric(), hostProvisioner);
 
     @Test

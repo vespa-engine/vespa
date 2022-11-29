@@ -154,6 +154,8 @@ public interface NodeSpec {
         @Override
         public boolean canResize(NodeResources currentNodeResources, NodeResources currentSpareHostResources,
                                  ClusterSpec.Type type, boolean hasTopologyChange, int currentClusterSize) {
+            if (exclusive) return false; // exclusive resources must match the host
+
             // Never allow in-place resize when also changing topology or decreasing cluster size
             if (hasTopologyChange || count < currentClusterSize) return false;
 

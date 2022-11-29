@@ -42,7 +42,7 @@ public class HostResumeProvisionerTest {
                                        SystemName.defaultSystem(),
                                        Environment.dev,
                                        RegionName.defaultName());
-    private final MockHostProvisioner hostProvisioner = new MockHostProvisioner(flavors, nameResolver, 0, zone.cloud());
+    private final MockHostProvisioner hostProvisioner = new MockHostProvisioner(flavors, nameResolver, 0);
     private final ProvisioningTester tester = new ProvisioningTester.Builder()
             .zone(zone)
             .hostProvisioner(hostProvisioner)

@@ -13,6 +13,7 @@ import com.yahoo.config.provision.NodeType;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.test.ManualClock;
 import com.yahoo.transaction.Mutex;
+import com.yahoo.vespa.flags.InMemoryFlagSource;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
 import com.yahoo.vespa.hosted.provision.Nodelike;
@@ -43,18 +44,19 @@ class AutoscalingTester {
     private final HostResourcesCalculator hostResourcesCalculator;
     private final CapacityPolicies capacityPolicies;
 
-    public AutoscalingTester(Zone zone, HostResourcesCalculator resourcesCalculator, List<Flavor> hostFlavors, int hostCount) {
-        this(zone, hostFlavors, resourcesCalculator);
+    public AutoscalingTester(Zone zone, HostResourcesCalculator resourcesCalculator, List<Flavor> hostFlavors, InMemoryFlagSource flagSource, int hostCount) {
+        this(zone, hostFlavors, resourcesCalculator, flagSource);
         for (Flavor flavor : hostFlavors)
             provisioningTester.makeReadyNodes(hostCount, flavor.name(), NodeType.host, 8);
         provisioningTester.activateTenantHosts();
     }
 
-    private AutoscalingTester(Zone zone, List<Flavor> flavors, HostResourcesCalculator resourcesCalculator) {
+    private AutoscalingTester(Zone zone, List<Flavor> flavors, HostResourcesCalculator resourcesCalculator, InMemoryFlagSource flagSource) {
         provisioningTester = new ProvisioningTester.Builder().zone(zone)
                                                              .flavors(flavors)
                                                              .resourcesCalculator(resourcesCalculator)
-                                                             .hostProvisioner(zone.cloud().dynamicProvisioning() ? new MockHostProvisioner(flavors, zone.cloud()) : null)
+                                                             .flagSource(flagSource)
+                                                             .hostProvisioner(zone.cloud().dynamicProvisioning() ? new MockHostProvisioner(flavors) : null)
                                                              .build();
 
         hostResourcesCalculator = resourcesCalculator;
@@ -248,8 +250,8 @@ class AutoscalingTester {
 
     private class MockHostProvisioner extends com.yahoo.vespa.hosted.provision.testutils.MockHostProvisioner {
 
-        public MockHostProvisioner(List<Flavor> flavors, Cloud cloud) {
-            super(flavors, cloud);
+        public MockHostProvisioner(List<Flavor> flavors) {
+            super(flavors);
         }
 
         @Override
