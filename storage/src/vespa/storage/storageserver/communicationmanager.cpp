@@ -396,6 +396,7 @@ void CommunicationManager::configure(std::unique_ptr<CommunicationManagerConfig>
         mbus::DestinationSessionParams dstParams;
         dstParams.setName("default");
         dstParams.setBroadcastName(true);
+        dstParams.defer_registration(true); // Deferred session registration; see rationale below
         dstParams.setMessageHandler(*this);
         _messageBusSession = _mbus->getMessageBus().createDestinationSession(dstParams);
 
@@ -403,6 +404,14 @@ void CommunicationManager::configure(std::unique_ptr<CommunicationManagerConfig>
         srcParams.setThrottlePolicy(mbus::IThrottlePolicy::SP());
         srcParams.setReplyHandler(*this);
         _sourceSession = _mbus->getMessageBus().createSourceSession(srcParams);
+
+        // Creating a DestinationSession that is immediately registered as available for business
+        // means we may theoretically start receiving messages over the session even before the call returns
+        // to the caller. Either way there would be no memory barrier that ensures that _messageBusSession
+        // would be fully visible to the MessageBus threads (since it's written after return).
+        // To avoid this sneaky scenario, defer registration (and thus introduce a barrier) until
+        // _after_ we've initialized our internal member variables.
+        _messageBusSession->register_session_deferred();
     }
 }
 

@@ -20,7 +20,7 @@ protected:
 public:
     IMessageHandler(const IMessageHandler &) = delete;
     IMessageHandler & operator = (const IMessageHandler &) = delete;
-    virtual ~IMessageHandler() {}
+    virtual ~IMessageHandler() = default;
 
     /**
      * This method is invoked by messagebus to deliver a Message.
