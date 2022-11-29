@@ -1,7 +1,6 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "stripe_bucket_db_updater.h"
-#include "bucket_db_prune_elision.h"
 #include "bucket_space_distribution_context.h"
 #include "top_level_distributor.h"
 #include "distributor_bucket_space.h"
@@ -799,5 +798,41 @@ StripeBucketDBUpdater::MergingNodeRemover::storage_node_is_available(uint16_t in
 }
 
 StripeBucketDBUpdater::MergingNodeRemover::~MergingNodeRemover() = default;
+
+namespace {
+
+class MergingGcTimeSetter : public BucketDatabase::MergingProcessor {
+    // time_point would be preferable, but the internal DB representation is seconds since epoch
+    std::chrono::seconds _last_gc_at_secs_from_epoch;
+public:
+    explicit MergingGcTimeSetter(std::chrono::seconds gc_time_point) noexcept
+        : _last_gc_at_secs_from_epoch(gc_time_point) {
+    }
+
+    ~MergingGcTimeSetter() override = default;
+
+    Result merge(BucketDatabase::Merger& merger) override {
+        auto& entry = merger.current_entry();
+        // TODO widen internal GC time type...!
+        entry->setLastGarbageCollectionTime(static_cast<uint32_t>(_last_gc_at_secs_from_epoch.count()));
+        return Result::Update;
+    }
+
+};
+
+}
+
+void StripeBucketDBUpdater::reset_all_last_gc_timestamps_to_current_time() {
+    // Epochs are expected to be identical between clock types
+    // TODO remove framework clock types in favor of std::chrono
+    auto now_from_epoch = std::chrono::seconds(_node_ctx.clock().getTimeInSeconds().getTime());
+    MergingGcTimeSetter gc_time_setter(now_from_epoch);
+
+    auto& repo = _op_ctx.bucket_space_repo();
+    for (auto& bucket_space : repo) {
+        auto& bucket_db = bucket_space.second->getBucketDatabase();
+        bucket_db.merge(gc_time_setter);
+    }
+}
 
 } // distributor
