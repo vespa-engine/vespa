@@ -207,7 +207,6 @@ org.slf4j:jcl-over-slf4j:1.7.32
 org.slf4j:log4j-over-slf4j:1.7.32
 org.slf4j:slf4j-api:1.7.32
 org.slf4j:slf4j-jdk14:1.7.32
-org.slf4j:slf4j-nop:1.7.32
 org.slf4j:slf4j-simple:1.7.32
 org.sonatype.sisu:sisu-guice:2.1.7:noaop
 org.sonatype.sisu:sisu-inject-bean:1.4.2
