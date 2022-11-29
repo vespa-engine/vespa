@@ -48,8 +48,8 @@ public interface HostProvisioner {
      * @param osVersion the OS version to use. If this version does not exist, implementations may choose a suitable
      *                  fallback version.
      * @param sharing puts requirements on sharing or exclusivity of the host to be provisioned.
-     * @param cluster the cluster we are provisioning for, or empty if we are provisioning hosts
-     *                to be shared by multiple cluster nodes
+     * @param clusterType the cluster we are provisioning for, or empty if we are provisioning hosts
+     *                    to be shared by multiple cluster nodes
      * @param cloudAccount the cloud account to use
      * @param provisionedHostConsumer consumer of {@link ProvisionedHost}s describing the provisioned nodes,
      *                                the {@link Node} returned from {@link ProvisionedHost#generateHost()} must be
