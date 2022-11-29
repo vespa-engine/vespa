@@ -13,7 +13,7 @@ import com.yahoo.messagebus.MessageHandler;
 import com.yahoo.messagebus.Reply;
 import com.yahoo.messagebus.StaticThrottlePolicy;
 import com.yahoo.messagebus.ThrottlePolicy;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -22,12 +22,13 @@ import java.io.InputStream;
 import java.io.PrintStream;
 import java.lang.reflect.Field;
 import java.nio.charset.StandardCharsets;
-import java.util.Arrays;
+import java.util.List;
 import java.util.regex.Pattern;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
+
 
 /**
  * @author Simon Thoresen Hult
@@ -289,8 +290,8 @@ public class SimpleFeederTest {
     private static void assertFeed(FeederParams params, InputStream in, MessageHandler validator, String expectedErr, String expectedOut) throws Throwable {
         TestDriver driver = new TestDriver(params, in, validator);
         driver.run();
-        assertMatches(expectedErr, new String(driver.err.toByteArray(), StandardCharsets.UTF_8));
-        assertMatches(expectedOut, new String(driver.out.toByteArray(), StandardCharsets.UTF_8));
+        assertMatches(expectedErr, driver.err.toString(StandardCharsets.UTF_8));
+        assertMatches(expectedOut, driver.out.toString(StandardCharsets.UTF_8));
         assertTrue(driver.close());
     }
 
@@ -314,7 +315,7 @@ public class SimpleFeederTest {
             server = new SimpleServer(CONFIG_DIR, validator);
             feeder = new SimpleFeeder(params.setConfigId("dir:" + CONFIG_DIR)
                                             .setStdErr(new PrintStream(err))
-                                            .setInputStreams(Arrays.asList(in))
+                                            .setInputStreams(List.of(in))
                                             .setStdOut(new PrintStream(out)));
         }
 
