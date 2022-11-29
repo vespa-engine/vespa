@@ -235,14 +235,14 @@ public class Fixture {
             return this;
         }
 
-        public Fixture.Builder hostSharingFlag() {
-            var resources = new HostResources(8.0, 32.0, 100.0, 10.0, "fast", "local", null, 6, "x86_64");
-            flagSource.withJacksonFlag(PermanentFlags.SHARED_HOST.id(), new SharedHost(List.of(resources), null), SharedHost.class);
+        public Fixture.Builder hostCount(int hostCount) {
+            this.hostCount = hostCount;
             return this;
         }
 
-        public Fixture.Builder hostCount(int hostCount) {
-            this.hostCount = hostCount;
+        public Fixture.Builder hostSharingFlag() {
+            var resources = new HostResources(8.0, 32.0, 100.0, 10.0, "fast", "local", null, 6, "x86_64");
+            flagSource.withJacksonFlag(PermanentFlags.SHARED_HOST.id(), new SharedHost(List.of(resources), null), SharedHost.class);
             return this;
         }
 

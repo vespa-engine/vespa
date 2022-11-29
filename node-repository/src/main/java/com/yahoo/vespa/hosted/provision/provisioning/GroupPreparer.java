@@ -74,9 +74,9 @@ public class GroupPreparer {
     public PrepareResult prepare(ApplicationId application, ClusterSpec cluster, NodeSpec requestedNodes,
                                  List<Node> surplusActiveNodes, NodeIndices indices, int wantedGroups,
                                  NodesAndHosts<LockedNodeList> allNodesAndHosts) {
-        log.log(Level.FINE, "Preparing " + cluster.type().name() + " " + cluster.id() + " with requested resources " + requestedNodes.resources().orElse(NodeResources.unspecified()));
-        // Try preparing in memory without global unallocated lock. Most of the time there should be no changes and we
-        // can return nodes previously allocated.
+        log.log(Level.FINE, () -> "Preparing " + cluster.type().name() + " " + cluster.id() + " with requested resources " + requestedNodes.resources().orElse(NodeResources.unspecified()));
+        // Try preparing in memory without global unallocated lock. Most of the time there should be no changes,
+        // and we can return nodes previously allocated.
         NodeAllocation probeAllocation = prepareAllocation(application, cluster, requestedNodes, surplusActiveNodes,
                                                            indices::probeNext, wantedGroups, allNodesAndHosts);
         if (probeAllocation.fulfilledAndNoChanges()) {
@@ -105,7 +105,7 @@ public class GroupPreparer {
                                                           indices::next, wantedGroups, allNodesAndHosts);
             NodeType hostType = allocation.nodeType().hostType();
             if (canProvisionDynamically(hostType) && allocation.hostDeficit().isPresent()) {
-                HostSharing sharing = hostSharing(requestedNodes, hostType);
+                HostSharing sharing = hostSharing(cluster, hostType);
                 Version osVersion = nodeRepository.osVersions().targetFor(hostType).orElse(Version.emptyVersion);
                 NodeAllocation.HostDeficit deficit = allocation.hostDeficit().get();
 
@@ -125,7 +125,8 @@ public class GroupPreparer {
                 try {
                     hostProvisioner.get().provisionHosts(
                             allocation.provisionIndices(deficit.count()), hostType, deficit.resources(), application,
-                            osVersion, sharing, Optional.of(cluster.type()), requestedNodes.cloudAccount(), provisionedHostsConsumer);
+                            osVersion, sharing, Optional.of(cluster.type()), requestedNodes.cloudAccount(),
+                            provisionedHostsConsumer);
                 } catch (NodeAllocationException e) {
                     // Mark the nodes that were written to ZK in the consumer for deprovisioning. While these hosts do
                     // not exist, we cannot remove them from ZK here because other nodes may already have been
@@ -173,12 +174,11 @@ public class GroupPreparer {
                (hostType == NodeType.host || hostType.isConfigServerHostLike());
     }
 
-    private static HostSharing hostSharing(NodeSpec spec, NodeType hostType) {
-        HostSharing sharing = spec.isExclusive() ? HostSharing.exclusive : HostSharing.any;
-        if (!hostType.isSharable() && sharing != HostSharing.any) {
-            throw new IllegalArgumentException(hostType + " does not support sharing requirement");
-        }
-        return sharing;
+    private HostSharing hostSharing(ClusterSpec cluster, NodeType hostType) {
+        if ( hostType.isSharable())
+            return nodeRepository.exclusiveAllocation(cluster) ? HostSharing.exclusive : HostSharing.any;
+        else
+            return HostSharing.any;
     }
 
 }

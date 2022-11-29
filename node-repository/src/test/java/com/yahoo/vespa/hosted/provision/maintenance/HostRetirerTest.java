@@ -35,7 +35,7 @@ public class HostRetirerTest {
                                   .build(), SystemName.defaultSystem(),
                              Environment.defaultEnvironment(),
                              RegionName.defaultName());
-        MockHostProvisioner hostProvisioner = new MockHostProvisioner(flavors.getFlavors(), zone.cloud());
+        MockHostProvisioner hostProvisioner = new MockHostProvisioner(flavors.getFlavors());
         ProvisioningTester tester = new ProvisioningTester.Builder().hostProvisioner(hostProvisioner)
                                                                     .flavors(flavors.getFlavors())
                                                                     .zone(zone)

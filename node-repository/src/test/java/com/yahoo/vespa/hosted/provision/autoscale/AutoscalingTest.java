@@ -60,7 +60,6 @@ public class AutoscalingTest {
         assertTrue(fixture.autoscale().target().isEmpty());
     }
 
-    /** Using too many resources for a short period is proof we should scale up regardless of the time that takes. */
     @Test
     public void test_no_autoscaling_with_no_measurements_exclusive() {
         var fixture = AutoscalingTester.fixture().awsProdSetup(false).build();
@@ -88,13 +87,10 @@ public class AutoscalingTest {
                                        .initialResources(Optional.empty())
                                        .hostSharingFlag()
                                        .build();
-        // TODO: Not actually at min since flags are inconsistently handled
         fixture.tester().assertResources("Initial resources at min, since flag turns on host sharing",
-                                         7, 1, 2.0, 16.0, 384.0,
+                                         7, 1, 2.0, 10.0, 384.0,
                                          fixture.currentResources().advertisedResources());
     }
-
-
 
     /** When scaling up, disregard underutilized dimensions (memory here) */
     @Test
@@ -291,7 +287,7 @@ public class AutoscalingTest {
                                        .build();
 
         NodeResources defaultResources =
-                new CapacityPolicies(fixture.tester().nodeRepository()).defaultNodeResources(fixture.clusterSpec, fixture.applicationId, false);
+                new CapacityPolicies(fixture.tester().nodeRepository()).defaultNodeResources(fixture.clusterSpec, fixture.applicationId);
 
         fixture.tester().assertResources("Min number of nodes and default resources",
                                          2, 1, defaultResources,

@@ -34,8 +34,7 @@ import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
 /**
- * Used to manage a list of nodes during the node reservation process
- * in order to fulfill the nodespec.
+ * Used to manage a list of nodes during the node reservation process to fulfill the nodespec.
  * 
  * @author bratseth
  */
@@ -128,9 +127,8 @@ class NodeAllocation {
 
                 if ((! saturated() && hasCompatibleResources(candidate) && requestedNodes.acceptable(candidate)) || acceptToRetire) {
                     candidate = candidate.withNode();
-                    if (candidate.isValid()) {
+                    if (candidate.isValid())
                         acceptNode(candidate, shouldRetire(candidate, candidates), resizeable);
-                    }
                 }
             }
             else if (! saturated() && hasCompatibleResources(candidate)) {
@@ -221,7 +219,7 @@ class NodeAllocation {
 
     /**
      * Returns whether this node should be accepted into the cluster even if it is not currently desired
-     * (already enough nodes, or wrong flavor).
+     * (already enough nodes, or wrong resources, etc.).
      * Such nodes will be marked retired during finalization of the list of accepted nodes.
      * The conditions for this are:
      *
@@ -263,8 +261,9 @@ class NodeAllocation {
                 || ! ( requestedNodes.needsResize(node) && node.allocation().get().membership().retired()))
                 acceptedWithoutResizingRetired++;
 
-            if (resizeable && ! ( node.allocation().isPresent() && node.allocation().get().membership().retired()))
+            if (resizeable && ! ( node.allocation().isPresent() && node.allocation().get().membership().retired())) {
                 node = resize(node);
+            }
 
             if (node.state() != Node.State.active) // reactivated node - wipe state that deactivated it
                 node = node.unretire().removable(false);
@@ -316,7 +315,7 @@ class NodeAllocation {
      * Returns {@link HostDeficit} describing the host deficit for the given {@link NodeSpec}.
      *
      * @return empty if the requested spec is already fulfilled. Otherwise returns {@link HostDeficit} containing the
-     * flavor and host count required to cover the deficit.
+     *         flavor and host count required to cover the deficit.
      */
     Optional<HostDeficit> hostDeficit() {
         if (nodeType().isHost()) {
@@ -519,6 +518,11 @@ class NodeAllocation {
 
         int count() {
             return count;
+        }
+
+        @Override
+        public String toString() {
+            return "deficit of " + count + " nodes with " + resources;
         }
 
     }

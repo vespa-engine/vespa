@@ -626,7 +626,7 @@ public class HostCapacityMaintainerTest {
             Zone zone = new Zone(cloud, SystemName.defaultSystem(),
                                  Environment.defaultEnvironment(),
                                  RegionName.defaultName());
-            this.hostProvisioner = new MockHostProvisioner(flavors.getFlavors(), nameResolver, 0, cloud);
+            this.hostProvisioner = new MockHostProvisioner(flavors.getFlavors(), nameResolver, 0);
             this.provisioningTester = new ProvisioningTester.Builder().zone(zone)
                                                                       .flavors(flavors.getFlavors())
                                                                       .nameResolver(nameResolver)
