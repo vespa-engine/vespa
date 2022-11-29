@@ -64,9 +64,9 @@ if [[ $SHOULD_BUILD == systemtest ]]; then
   chmod 1777 /opt/vespa/tmp
 
   export USER=vespa
-  $SYSTEM_TEST_DIR/lib/node_server.rb &
+  sudo -u vespa $SYSTEM_TEST_DIR/lib/node_server.rb &
   NODE_SERVER_PID=$!
   sleep 3
-  ruby $SYSTEM_TEST_DIR/tests/search/basicsearch/basic_search.rb || (/opt/vespa/bin/vespa-logfmt -N && false)
+  sudo -u vespa ruby $SYSTEM_TEST_DIR/tests/search/basicsearch/basic_search.rb || (/opt/vespa/bin/vespa-logfmt -N && false)
 fi
 
