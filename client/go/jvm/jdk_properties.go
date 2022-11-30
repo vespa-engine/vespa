@@ -13,7 +13,7 @@ func (opts *Options) AddCommonJdkProperties() {
 	secOvr := defaults.UnderVespaHome("conf/vespa/java.security.override")
 	opts.fixSpec.FixDir(tmpDir)
 	opts.AddOption("-Djava.io.tmpdir=" + tmpDir)
-	opts.AddOption("-Djava.library.path=" + libDir)
+	opts.AddOption("-Djava.library.path=" + libDir + ":/opt/vespa-deps/lib64")
 	opts.AddOption("-Djava.security.properties=" + secOvr)
 	opts.AddOption("-Djava.awt.headless=true")
 	opts.AddOption("-Dsun.rmi.dgc.client.gcInterval=3600000")
