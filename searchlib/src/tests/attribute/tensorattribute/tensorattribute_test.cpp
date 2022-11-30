@@ -1271,7 +1271,6 @@ TEST_F("NN blueprint handles weak filter (pre-filtering)", NearestNeighborBluepr
     filter->setBit(5);
     filter->setBit(7);
     filter->setBit(9);
-    filter->setBit(11);
     filter->invalidateCachedCount();
     auto weak_filter = GlobalFilter::create(std::move(filter));
     bp->set_global_filter(*weak_filter, 0.6);
