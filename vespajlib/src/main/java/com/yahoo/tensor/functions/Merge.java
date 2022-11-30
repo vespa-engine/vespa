@@ -1,11 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.tensor.functions;
 
-import com.google.common.collect.ImmutableList;
-import com.google.common.collect.Sets;
-import com.yahoo.tensor.DimensionSizes;
 import com.yahoo.tensor.IndexedTensor;
-import com.yahoo.tensor.PartialAddress;
 import com.yahoo.tensor.Tensor;
 import com.yahoo.tensor.TensorAddress;
 import com.yahoo.tensor.TensorType;
@@ -14,15 +10,10 @@ import com.yahoo.tensor.evaluation.EvaluationContext;
 import com.yahoo.tensor.evaluation.Name;
 import com.yahoo.tensor.evaluation.TypeContext;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Optional;
-import java.util.Set;
 import java.util.function.DoubleBinaryOperator;
 
 /**
@@ -55,7 +46,7 @@ public class Merge<NAMETYPE extends Name> extends PrimitiveTensorFunction<NAMETY
     public DoubleBinaryOperator merger() { return merger; }
 
     @Override
-    public List<TensorFunction<NAMETYPE>> arguments() { return ImmutableList.of(argumentA, argumentB); }
+    public List<TensorFunction<NAMETYPE>> arguments() { return List.of(argumentA, argumentB); }
 
     @Override
     public TensorFunction<NAMETYPE> withArguments(List<TensorFunction<NAMETYPE>> arguments) {

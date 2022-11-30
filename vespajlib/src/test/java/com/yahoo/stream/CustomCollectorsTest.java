@@ -1,7 +1,6 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.stream;
 
-import com.google.common.collect.Lists;
 import com.yahoo.stream.CustomCollectors.DuplicateKeyException;
 import org.junit.Test;
 
@@ -42,7 +41,7 @@ public class CustomCollectorsTest {
 
     @Test
     public void custom_map_collector_throws_exception_upon_duplicate_keys() {
-        List<String> duplicates = Lists.newArrayList("same", "same");
+        List<String> duplicates = List.of("same", "same");
 
         try {
             duplicates.stream().collect(toCustomMap(Function.identity(), Function.identity(), HashMap::new));
@@ -53,7 +52,7 @@ public class CustomCollectorsTest {
     }
 
     private static List<String> numberList() {
-        return Lists.newArrayList("zero", "one", "two", "three", "four", "five", "six", "seven", "eight", "nine", "ten");
+        return List.of("zero", "one", "two", "three", "four", "five", "six", "seven", "eight", "nine", "ten");
     }
 
     private static class CustomHashMap<K,V> extends HashMap<K,V> {

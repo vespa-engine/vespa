@@ -1,7 +1,6 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.text;
 
-import com.google.common.collect.ImmutableMap;
 import org.junit.Ignore;
 import org.junit.Test;
 
@@ -11,9 +10,9 @@ import java.nio.ByteBuffer;
 import java.nio.charset.CharsetEncoder;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
+import java.util.Map;
 import java.util.function.Function;
 
-import static com.yahoo.text.Lowercase.toLowerCase;
 import static com.yahoo.text.Utf8.calculateBytePositions;
 import static com.yahoo.text.Utf8.calculateStringPositions;
 import static org.hamcrest.CoreMatchers.equalTo;
@@ -21,7 +20,6 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
 
 /**
  * @author <a href="mailto:borud@yahoo-inc.com">Bjorn Borud</a>
@@ -33,62 +31,6 @@ public class Utf8TestCase {
     private static final int[] TEST_CODEPOINTS = {0x0, 0x7f, 0x80, 0x7ff, 0x800, 0xd7ff, 0xe000, 0xffff, 0x10000, 0x10ffff,
             0x34, 0x355, 0x2567, 0xfff, 0xe987, 0x100abc
     };
-
-    public void dumpSome() throws java.io.IOException {
-        int i = 32;
-        int j = 3;
-        int cnt = 0;
-        while (i < 0x110000) {
-            if (i < 0xD800 || i >= 0xE000) ++cnt;
-            i += j;
-            ++j;
-        }
-        System.out.println("allocate "+cnt+" array entries");
-        int codes[] = new int[cnt];
-        i = 32;
-        j = 3;
-        cnt = 0;
-        while (i < 0x110000) {
-            if (i < 0xD800 || i >= 0xE000) codes[cnt++] = i;
-            i += j;
-            ++j;
-        }
-        assertEquals(cnt, codes.length);
-        System.out.println("fill "+cnt+" array entries");
-        String str = new String(codes, 0, cnt);
-        byte[] arr = Utf8.toBytes(str);
-        java.io.FileOutputStream fos = new java.io.FileOutputStream("random-long-utf8.dat");
-        fos.write(arr);
-        fos.close();
-    }
-
-    public void dumpMore() throws java.io.IOException {
-        java.text.Normalizer.Form form = java.text.Normalizer.Form.NFKC;
-
-        java.io.FileOutputStream fos = new java.io.FileOutputStream("lowercase-table.dat");
-        for (int i = 0; i < 0x110000; i++) {
-            StringBuilder b = new StringBuilder();
-            b.appendCodePoint(i);
-            String n1 = b.toString();
-            String n2 = java.text.Normalizer.normalize(b, form);
-            if (n1.equals(n2)) {
-                String l = toLowerCase(n1);
-                int chars = l.length();
-                int codes = l.codePointCount(0, chars);
-                if (codes != 1) {
-                    System.out.println("codepoint "+i+" transformed into "+codes+" codepoints: "+n1+" -> "+l);
-                } else {
-                    int lc = l.codePointAt(0);
-                    if (lc != i) {
-                        String o = "lowercase( "+i+" )= "+lc+"\n";
-                        byte[] arr = Utf8.toBytes(o);
-                        fos.write(arr);
-                    }
-                }
-            }
-        }
-        fos.close();
-    }
 
     @Test
     public void testSimple() {
@@ -322,7 +264,7 @@ public class Utf8TestCase {
             for (char c=0; c < i; c++) {
                 sb.append(c);
             }
-            assertTrue(Arrays.equals(Utf8.toBytesStd(sb.toString()), Utf8.toBytes(sb.toString())));
+            assertArrayEquals(Utf8.toBytesStd(sb.toString()), Utf8.toBytes(sb.toString()));
         }
     }
 
@@ -340,7 +282,7 @@ public class Utf8TestCase {
         byte [] a = Utf8.toBytes(String.valueOf(l));
         byte [] b = Utf8.toAsciiBytes(l);
         if (!Arrays.equals(a, b)) {
-            assertTrue(Arrays.equals(a, b));
+            assertArrayEquals(a, b);
         }
     }
 
@@ -348,8 +290,8 @@ public class Utf8TestCase {
     public void testBoolean() {
         assertEquals("true", String.valueOf(true));
         assertEquals("false", String.valueOf(false));
-        assertTrue(Arrays.equals(Utf8.toAsciiBytes(true), new Utf8String(String.valueOf(true)).getBytes()));
-        assertTrue(Arrays.equals(Utf8.toAsciiBytes(false), new Utf8String(String.valueOf(false)).getBytes()));
+        assertArrayEquals(Utf8.toAsciiBytes(true), new Utf8String(String.valueOf(true)).getBytes());
+        assertArrayEquals(Utf8.toAsciiBytes(false), new Utf8String(String.valueOf(false)).getBytes());
     }
     @Test
     public void testInt()
@@ -358,7 +300,7 @@ public class Utf8TestCase {
             byte [] a = Utf8.toBytes(String.valueOf(l));
             byte [] b = Utf8.toAsciiBytes(l);
             if (!Arrays.equals(a, b)) {
-                assertTrue(Arrays.equals(a, b));
+                assertArrayEquals(a, b);
             }
         }
     }
@@ -369,7 +311,7 @@ public class Utf8TestCase {
             byte [] a = Utf8.toBytes(String.valueOf(l));
             byte [] b = Utf8.toAsciiBytes(l);
             if (!Arrays.equals(a, b)) {
-                assertTrue(Arrays.equals(a, b));
+                assertArrayEquals(a, b);
             }
         }
     }
@@ -561,7 +503,7 @@ public class Utf8TestCase {
         byte[] unicode = "This is just sort of random mix. \u5370\u57df\u60c5\u5831\u53EF\u4EE5\u6709x\u00e9\u00e8".getBytes(StandardCharsets.UTF_8);
         int iterations = 100_000; // Use 100_000+ for benchmarking
 
-        ImmutableMap.of("ascii", ascii, "unicode", unicode).forEach((type, b) -> {
+        Map.of("ascii", ascii, "unicode", unicode).forEach((type, b) -> {
             long time1 = benchmark(() -> decode(Utf8::toString, b, iterations));
             System.out.printf("Utf8::toString of %s string took %d ms\n", type, time1);
             long time2 = benchmark(() -> decode((b1) -> new String(b1, StandardCharsets.UTF_8), b, iterations));
@@ -578,7 +520,7 @@ public class Utf8TestCase {
         String unicode = "This is just sort of random mix. \u5370\u57df\u60c5\u5831\u53EF\u4EE5\u6709x\u00e9\u00e8";
         int iterations = 1_000_000; // Use 1_000_000+ for benchmarking
 
-        ImmutableMap.of("ascii", ascii, "unicode", unicode).forEach((type, s) -> {
+        Map.of("ascii", ascii, "unicode", unicode).forEach((type, s) -> {
             long time1 = benchmark(() -> encode(Utf8::toBytes, s, iterations));
             System.out.printf("Utf8::toBytes of %s string took %d ms\n", type, time1);
             long time2 = benchmark(() -> encode((s1) -> s1.getBytes(StandardCharsets.UTF_8), s, iterations));

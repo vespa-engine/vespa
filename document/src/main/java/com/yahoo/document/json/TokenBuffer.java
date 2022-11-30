@@ -89,10 +89,6 @@ public class TokenBuffer {
         bufferJsonStruct(first, tokens, JsonToken.START_OBJECT);
     }
 
-    public void bufferArray(JsonToken first, JsonParser tokens) {
-        bufferJsonStruct(first, tokens, JsonToken.START_ARRAY);
-    }
-
     private void bufferJsonStruct(JsonToken first, JsonParser tokens, JsonToken firstToken) {
         int localNesting = 0;
         JsonToken t = first;
@@ -148,42 +144,6 @@ public class TokenBuffer {
 
     public int nesting() {
         return nesting;
-    }
-
-    public String dumpContents() {
-        StringBuilder b = new StringBuilder();
-        b.append("[nesting: ").append(nesting()).append("\n");
-        for (Token t : buffer) {
-            b.append("(").append(t.token).append(", \"").append(t.name).append("\", \"").append(t.text).append("\")\n");
-        }
-        b.append("]\n");
-        return b.toString();
-    }
-
-    public void fastForwardToEndObject() {
-        JsonToken t = currentToken();
-        while (t != JsonToken.END_OBJECT) {
-            t = next();
-        }
-    }
-
-    public TokenBuffer prefetchCurrentElement() {
-        Deque<Token> copy = new ArrayDeque<>();
-
-        if (currentToken().isScalarValue()) {
-            copy.add(buffer.peekFirst());
-        } else {
-            int localNesting = nesting();
-            int nestingBarrier = localNesting;
-            for (Token t : buffer) {
-                copy.add(t);
-                localNesting += nestingOffset(t.token);
-                if (localNesting < nestingBarrier) {
-                    break;
-                }
-            }
-        }
-        return new TokenBuffer(copy);
     }
 
     public Token prefetchScalar(String name) {

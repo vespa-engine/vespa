@@ -1,7 +1,6 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.document.annotation;
 
-import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMultiset;
 import com.yahoo.document.CollectionDataType;
 import com.yahoo.document.Field;
@@ -63,7 +62,6 @@ public class SpanTree implements Iterable<Annotation>, SpanNodeParent, Comparabl
         setRoot(new SpanList());
     }
 
-    @SuppressWarnings("unchecked")
     public SpanTree(SpanTree otherToCopy) {
         name = otherToCopy.name;
         setRoot(copySpan(otherToCopy.root));
@@ -250,7 +248,6 @@ public class SpanTree implements Iterable<Annotation>, SpanNodeParent, Comparabl
      * total number of Annotations, and m is the number of SpanNodes that had been removed from the tree.
      * The lower bound is Omega(n), if no SpanNodes had been removed from the tree.
      */
-    @SuppressWarnings("unchecked")
     public void cleanup() {
         Map<Annotation, Annotation> removedAnnotations = removeAnnotationsThatPointToInvalidSpanNodes();
 
@@ -269,9 +266,8 @@ public class SpanTree implements Iterable<Annotation>, SpanNodeParent, Comparabl
                 }
                 FieldValue value = a.getFieldValue();
 
-                if (value instanceof AnnotationReference) {
+                if (value instanceof AnnotationReference ref) {
                     //the annotation "a" has a reference
-                    AnnotationReference ref = (AnnotationReference) value;
                     if (removedAnnotations.get(ref.getReference()) != null) {
                         //this reference refers to a dead annotation
                         ref.setReference(null);
@@ -367,7 +363,6 @@ public class SpanTree implements Iterable<Annotation>, SpanNodeParent, Comparabl
         return false;
     }
 
-    @SuppressWarnings("unchecked")
     private Map<Annotation, Annotation> removeAnnotationsThatPointToInvalidSpanNodes() {
         Map<Annotation, Annotation> removedAnnotations = new IdentityHashMap<Annotation, Annotation>();
 
@@ -412,7 +407,6 @@ public class SpanTree implements Iterable<Annotation>, SpanNodeParent, Comparabl
         annotations.annotate(annotation);
     }
 
-    @SuppressWarnings("unchecked")
     private Collection<Annotation> getAnnotations() {
         return annotations.annotations();
     }
@@ -548,7 +542,6 @@ public class SpanTree implements Iterable<Annotation>, SpanNodeParent, Comparabl
      * Returns an Iterator over all annotations in this tree.&nbsp;Note that the iteration order is non-deterministic.
      * @return an Iterator over all annotations in this tree.
      */
-    @SuppressWarnings("unchecked")
     public Iterator<Annotation> iterator() {
         return annotations.annotations().iterator();
     }
@@ -559,7 +552,6 @@ public class SpanTree implements Iterable<Annotation>, SpanNodeParent, Comparabl
      * @param node the node to return annotations for.
      * @return an Iterator over all annotations that annotate the given node.
      */
-    @SuppressWarnings("unchecked")
     public Iterator<Annotation> iterator(SpanNode node) {
         return annotations.iterator(node);
     }
@@ -570,7 +562,6 @@ public class SpanTree implements Iterable<Annotation>, SpanNodeParent, Comparabl
      * @param node the node to recursively return annotations for.
      * @return a recursive Iterator over all annotations that annotate the given node and its subnodes.
      */
-    @SuppressWarnings("unchecked")
     public Iterator<Annotation> iteratorRecursive(SpanNode node) {
         return annotations.iteratorRecursive(node);
     }
@@ -642,10 +633,10 @@ public class SpanTree implements Iterable<Annotation>, SpanNodeParent, Comparabl
 
     public Collection<IndexKey> getCurrentIndexes() {
         if (annotations instanceof AnnotationType2AnnotationContainer)
-            return ImmutableList.of(IndexKey.ANNOTATION_TYPE);
+            return List.of(IndexKey.ANNOTATION_TYPE);
         if (annotations instanceof SpanNode2AnnotationContainer)
-            return ImmutableList.of(IndexKey.SPAN_NODE);
-        return ImmutableList.of();
+            return List.of(IndexKey.SPAN_NODE);
+        return List.of();
     }
 
     @Override
@@ -656,9 +647,8 @@ public class SpanTree implements Iterable<Annotation>, SpanNodeParent, Comparabl
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
-        if (!(o instanceof SpanTree)) return false;
+        if (!(o instanceof SpanTree tree)) return false;
 
-        SpanTree tree = (SpanTree) o;
         if (!annotationsEquals(tree)) return false;
         if (!name.equals(tree.name)) return false;
         if (!root.equals(tree.root)) return false;
@@ -666,7 +656,6 @@ public class SpanTree implements Iterable<Annotation>, SpanNodeParent, Comparabl
         return true;
     }
 
-    @SuppressWarnings("unchecked")
     private boolean annotationsEquals(SpanTree tree) {
         List<Annotation> annotationCollection = new LinkedList<Annotation>(getAnnotations());
         List<Annotation> otherAnnotations = new LinkedList<Annotation>(tree.getAnnotations());

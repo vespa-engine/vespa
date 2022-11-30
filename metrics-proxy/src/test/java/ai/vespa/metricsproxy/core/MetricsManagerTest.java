@@ -18,12 +18,10 @@ import ai.vespa.metricsproxy.service.DownService;
 import ai.vespa.metricsproxy.service.DummyService;
 import ai.vespa.metricsproxy.service.VespaService;
 import ai.vespa.metricsproxy.service.VespaServices;
-import com.google.common.collect.ImmutableList;
 import org.junit.Before;
 import org.junit.Test;
 
 import java.time.Instant;
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
@@ -48,7 +46,7 @@ public class MetricsManagerTest {
     private static final String SERVICE_0_ID = "dummy/id/0";
     private static final String SERVICE_1_ID = "dummy/id/1";
 
-    private static final List<VespaService> testServices = ImmutableList.of(
+    private static final List<VespaService> testServices = List.of(
             new DummyService(0, SERVICE_0_ID),
             new DummyService(1, SERVICE_1_ID));
 
@@ -64,7 +62,7 @@ public class MetricsManagerTest {
     public void service_that_is_down_has_a_separate_metrics_packet() {
         // Reset to use only the service that is down
         var downService = new DownService(HealthMetric.getDown("No response"));
-        List<VespaService> testServices = Collections.singletonList(downService);
+        List<VespaService> testServices = List.of(downService);
         MetricsManager metricsManager = TestUtil.createMetricsManager(new VespaServices(testServices),
                                                                       getMetricsConsumers(),getApplicationDimensions(), getNodeDimensions());
 
@@ -140,9 +138,9 @@ public class MetricsManagerTest {
     // TODO: test that non-whitelisted metrics are filtered out, but this is currently not the case, see ExternalMetrics.setExtraMetrics
     @Test
     public void extra_metrics_packets_containing_whitelisted_metrics_are_added() {
-        metricsManager.setExtraMetrics(ImmutableList.of(
+        metricsManager.setExtraMetrics(List.of(
                 new MetricsPacket.Builder(toServiceId("foo"))
-                        .putMetrics(ImmutableList.of(new Metric(WHITELISTED_METRIC_ID, 0)))));
+                        .putMetrics(List.of(new Metric(WHITELISTED_METRIC_ID, 0)))));
 
         List<MetricsPacket> packets = metricsManager.getMetrics(testServices, Instant.EPOCH);
         assertEquals(3, packets.size());
@@ -150,9 +148,9 @@ public class MetricsManagerTest {
 
     @Test
     public void extra_metrics_packets_without_whitelisted_metrics_are_not_added() {
-        metricsManager.setExtraMetrics(ImmutableList.of(
+        metricsManager.setExtraMetrics(List.of(
                 new MetricsPacket.Builder(toServiceId("foo"))
-                        .putMetrics(ImmutableList.of(new Metric(toMetricId("not-whitelisted"), 0)))));
+                        .putMetrics(List.of(new Metric(toMetricId("not-whitelisted"), 0)))));
 
         List<MetricsPacket> packets = metricsManager.getMetrics(testServices, Instant.EPOCH);
         assertEquals(2, packets.size());
@@ -161,9 +159,9 @@ public class MetricsManagerTest {
     @Test
     public void application_from_extra_metrics_packets_is_used_as_service_in_result_packets() {
         final ServiceId serviceId = toServiceId("custom-service");
-        metricsManager.setExtraMetrics(ImmutableList.of(
+        metricsManager.setExtraMetrics(List.of(
                 new MetricsPacket.Builder(serviceId)
-                        .putMetrics(ImmutableList.of(new Metric(WHITELISTED_METRIC_ID, 0)))));
+                        .putMetrics(List.of(new Metric(WHITELISTED_METRIC_ID, 0)))));
 
         List<MetricsPacket> packets = metricsManager.getMetrics(testServices, Instant.EPOCH);
         MetricsPacket extraPacket = null;
@@ -175,9 +173,9 @@ public class MetricsManagerTest {
 
     @Test
     public void extra_dimensions_are_added_to_metrics_packets_that_do_not_have_those_dimensions() {
-        metricsManager.setExtraMetrics(ImmutableList.of(
+        metricsManager.setExtraMetrics(List.of(
                 new MetricsPacket.Builder(toServiceId("foo"))
-                        .putMetrics(ImmutableList.of(new Metric(WHITELISTED_METRIC_ID, 0)))
+                        .putMetrics(List.of(new Metric(WHITELISTED_METRIC_ID, 0)))
                         .putDimension(ROLE_DIMENSION, "role from extraMetrics")));
 
         List<MetricsPacket> packets = metricsManager.getMetrics(testServices, Instant.EPOCH);
@@ -188,9 +186,9 @@ public class MetricsManagerTest {
 
     @Test
     public void extra_dimensions_do_not_overwrite_existing_dimension_values() {
-        metricsManager.setExtraMetrics(ImmutableList.of(
+        metricsManager.setExtraMetrics(List.of(
                 new MetricsPacket.Builder(toServiceId("foo"))
-                        .putMetrics(ImmutableList.of(new Metric(WHITELISTED_METRIC_ID, 0)))
+                        .putMetrics(List.of(new Metric(WHITELISTED_METRIC_ID, 0)))
                         .putDimension(METRIC_TYPE_DIMENSION_ID, "from extraMetrics")));
 
         List<MetricsPacket> packets = metricsManager.getMetrics(testServices, Instant.EPOCH);

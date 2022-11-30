@@ -1,7 +1,6 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.tensor.functions;
 
-import com.google.common.collect.ImmutableList;
 import com.yahoo.tensor.Tensor;
 import com.yahoo.tensor.TensorAddress;
 import com.yahoo.tensor.TensorType;
@@ -10,7 +9,6 @@ import com.yahoo.tensor.evaluation.EvaluationContext;
 import com.yahoo.tensor.evaluation.Name;
 import com.yahoo.tensor.evaluation.TypeContext;
 
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -30,7 +28,7 @@ public class Rename<NAMETYPE extends Name> extends PrimitiveTensorFunction<NAMET
     private final Map<String, String> fromToMap;
 
     public Rename(TensorFunction<NAMETYPE> argument, String fromDimension, String toDimension) {
-        this(argument, ImmutableList.of(fromDimension), ImmutableList.of(toDimension));
+        this(argument, List.of(fromDimension), List.of(toDimension));
     }
 
     public Rename(TensorFunction<NAMETYPE> argument, List<String> fromDimensions, List<String> toDimensions) {
@@ -43,8 +41,8 @@ public class Rename<NAMETYPE extends Name> extends PrimitiveTensorFunction<NAMET
             throw new IllegalArgumentException("Rename from and to dimensions must be equal, was " +
                                                fromDimensions.size() + " and " + toDimensions.size());
         this.argument = argument;
-        this.fromDimensions = ImmutableList.copyOf(fromDimensions);
-        this.toDimensions = ImmutableList.copyOf(toDimensions);
+        this.fromDimensions = List.copyOf(fromDimensions);
+        this.toDimensions = List.copyOf(toDimensions);
         this.fromToMap = fromToMap(fromDimensions, toDimensions);
     }
 
@@ -59,7 +57,7 @@ public class Rename<NAMETYPE extends Name> extends PrimitiveTensorFunction<NAMET
     }
 
     @Override
-    public List<TensorFunction<NAMETYPE>> arguments() { return Collections.singletonList(argument); }
+    public List<TensorFunction<NAMETYPE>> arguments() { return List.of(argument); }
 
     @Override
     public TensorFunction<NAMETYPE> withArguments(List<TensorFunction<NAMETYPE>> arguments) {

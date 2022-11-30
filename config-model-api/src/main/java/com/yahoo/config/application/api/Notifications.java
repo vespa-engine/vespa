@@ -1,7 +1,6 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.config.application.api;
 
-import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 
@@ -50,10 +49,10 @@ public class Notifications {
             return none;
 
         ImmutableMap.Builder<When, List<String>> emailAddresses = ImmutableMap.builder();
-        emailAddressesByWhen.forEach((when, addresses) -> emailAddresses.put(when, ImmutableList.copyOf(addresses)));
+        emailAddressesByWhen.forEach((when, addresses) -> emailAddresses.put(when, List.copyOf(addresses)));
 
         ImmutableMap.Builder<When, List<Role>> emailRoles = ImmutableMap.builder();
-        emailRolesByWhen.forEach((when, roles) -> emailRoles.put(when, ImmutableList.copyOf(roles)));
+        emailRolesByWhen.forEach((when, roles) -> emailRoles.put(when, List.copyOf(roles)));
 
         return new Notifications(emailAddresses.build(), emailRoles.build());
     }
@@ -122,11 +121,11 @@ public class Notifications {
         }
 
         public static When fromValue(String value) {
-            switch (value) {
-                case "failing": return failing;
-                case "failing-commit": return failingCommit;
-                default: throw new IllegalArgumentException("Unknown value '" + value + "'.");
-            }
+            return switch (value) {
+                case "failing" -> failing;
+                case "failing-commit" -> failingCommit;
+                default -> throw new IllegalArgumentException("Unknown value '" + value + "'.");
+            };
         }
 
     }

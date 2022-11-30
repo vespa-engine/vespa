@@ -1,7 +1,6 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.tensor.functions;
 
-import com.google.common.collect.ImmutableList;
 import com.yahoo.tensor.TensorType;
 import com.yahoo.tensor.evaluation.Name;
 
@@ -27,7 +26,7 @@ public class Matmul<NAMETYPE extends Name> extends CompositeTensorFunction<NAMET
     }
 
     @Override
-    public List<TensorFunction<NAMETYPE>> arguments() { return ImmutableList.of(argument1, argument2); }
+    public List<TensorFunction<NAMETYPE>> arguments() { return List.of(argument1, argument2); }
 
     @Override
     public TensorFunction<NAMETYPE> withArguments(List<TensorFunction<NAMETYPE>> arguments) {

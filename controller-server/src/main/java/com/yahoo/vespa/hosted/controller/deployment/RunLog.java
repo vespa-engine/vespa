@@ -1,7 +1,6 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.deployment;
 
-import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.yahoo.vespa.hosted.controller.api.integration.LogEntry;
 
@@ -32,7 +31,7 @@ public class RunLog {
         ImmutableMap.Builder<Step, List<LogEntry>> builder = ImmutableMap.builder();
         log.forEach((step, entries) -> {
             if ( ! entries.isEmpty())
-                builder.put(step, ImmutableList.copyOf(entries));
+                builder.put(step, List.copyOf(entries));
         });
         OptionalLong lastId = log.values().stream()
                                  .flatMap(List::stream)

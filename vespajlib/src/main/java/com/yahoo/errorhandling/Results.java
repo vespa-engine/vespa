@@ -1,11 +1,8 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.errorhandling;
 
-import com.google.common.collect.ImmutableList;
-
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.List;
 
 /**
@@ -17,8 +14,8 @@ public class Results<DATA, ERROR> {
     private final List<ERROR> errors;
 
     public Results(List<DATA> data, List<ERROR> errors) {
-        this.data = ImmutableList.copyOf(data);
-        this.errors = ImmutableList.copyOf(errors);
+        this.data = List.copyOf(data);
+        this.errors = List.copyOf(errors);
     }
 
     public boolean hasErrors() {

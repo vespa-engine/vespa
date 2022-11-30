@@ -1,7 +1,6 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.tensor.functions;
 
-import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Sets;
 import com.yahoo.tensor.DimensionSizes;
 import com.yahoo.tensor.IndexedTensor;
@@ -15,7 +14,6 @@ import com.yahoo.tensor.evaluation.Name;
 import com.yahoo.tensor.evaluation.TypeContext;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -60,7 +58,7 @@ public class Join<NAMETYPE extends Name> extends PrimitiveTensorFunction<NAMETYP
     public DoubleBinaryOperator combinator() { return combinator; }
 
     @Override
-    public List<TensorFunction<NAMETYPE>> arguments() { return ImmutableList.of(argumentA, argumentB); }
+    public List<TensorFunction<NAMETYPE>> arguments() { return List.of(argumentA, argumentB); }
 
     @Override
     public TensorFunction<NAMETYPE> withArguments(List<TensorFunction<NAMETYPE>> arguments) {
@@ -345,7 +343,7 @@ public class Join<NAMETYPE extends Name> extends PrimitiveTensorFunction<NAMETYP
         for (Iterator<Tensor.Cell> cellIterator = b.cellIterator(); cellIterator.hasNext(); ) {
             Tensor.Cell bCell = cellIterator.next();
             TensorAddress partialCommonAddress = partialCommonAddress(bCell, bIndexesInCommon);
-            for (Tensor.Cell aCell : aCellsByCommonAddress.getOrDefault(partialCommonAddress, Collections.emptyList())) {
+            for (Tensor.Cell aCell : aCellsByCommonAddress.getOrDefault(partialCommonAddress, List.of())) {
                 TensorAddress combinedAddress = joinAddresses(aCell.getKey(), aIndexesInJoined,
                                                               bCell.getKey(), bIndexesInJoined, joinedType);
                 if (combinedAddress == null) continue; // not combinable
