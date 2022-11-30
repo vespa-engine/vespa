@@ -35,9 +35,6 @@ public interface ContainerEngine {
     /** Remove given container. The container will be stopped if necessary */
     void removeContainer(TaskContext context, PartialContainer container);
 
-    /** Returns whether the given container should be re-created to apply new configuration */
-    boolean shouldRecreate(NodeAgentContext context, Container container, ContainerResources wantedResources);
-
     /** Get container for given context */
     Optional<Container> getContainer(NodeAgentContext context);
 

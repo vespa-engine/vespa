@@ -57,10 +57,6 @@ public class ContainerOperations {
         containerEngine.updateContainer(context, containerId, containerResources);
     }
 
-    public boolean shouldRecreate(NodeAgentContext context, Container container, ContainerResources wantedResources) {
-        return containerEngine.shouldRecreate(context, container, wantedResources);
-    }
-
     public Optional<Container> getContainer(NodeAgentContext context) {
         return containerEngine.getContainer(context);
     }
