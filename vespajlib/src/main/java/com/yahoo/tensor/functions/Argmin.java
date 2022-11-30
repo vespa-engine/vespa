@@ -1,10 +1,8 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.tensor.functions;
 
-import com.google.common.collect.ImmutableList;
 import com.yahoo.tensor.evaluation.Name;
 
-import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 
@@ -17,21 +15,21 @@ public class Argmin<NAMETYPE extends Name> extends CompositeTensorFunction<NAMET
     private final List<String> dimensions;
 
     public Argmin(TensorFunction<NAMETYPE> argument) {
-        this(argument, Collections.emptyList());
+        this(argument, List.of());
     }
 
     public Argmin(TensorFunction<NAMETYPE> argument, String dimension) {
-        this(argument, Collections.singletonList(dimension));
+        this(argument, List.of(dimension));
     }
 
     public Argmin(TensorFunction<NAMETYPE> argument, List<String> dimensions) {
         Objects.requireNonNull(dimensions, "The dimensions cannot be null");
         this.argument = argument;
-        this.dimensions = ImmutableList.copyOf(dimensions);
+        this.dimensions = List.copyOf(dimensions);
     }
 
     @Override
-    public List<TensorFunction<NAMETYPE>> arguments() { return Collections.singletonList(argument); }
+    public List<TensorFunction<NAMETYPE>> arguments() { return List.of(argument); }
 
     @Override
     public TensorFunction<NAMETYPE> withArguments(List<TensorFunction<NAMETYPE>> arguments) {

@@ -2,7 +2,6 @@
 package com.yahoo.vespa.hosted.provision.persistence;
 
 import com.google.common.cache.AbstractCache;
-import com.google.common.collect.ImmutableList;
 import com.yahoo.config.provision.HostName;
 import com.yahoo.path.Path;
 import com.yahoo.transaction.NestedTransaction;
@@ -155,7 +154,7 @@ public class CuratorDatabase {
 
         @Override
         public List<String> getChildren(Path path) {
-            return get(children, path, () -> ImmutableList.copyOf(curator.getChildren(path)));
+            return get(children, path, () -> List.copyOf(curator.getChildren(path)));
         }
 
         @Override

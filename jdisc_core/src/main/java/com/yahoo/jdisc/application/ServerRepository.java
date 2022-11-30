@@ -1,12 +1,14 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.jdisc.application;
 
-import com.google.common.collect.ImmutableList;
 import com.yahoo.jdisc.Container;
 import com.yahoo.jdisc.service.ServerProvider;
 import org.osgi.framework.Bundle;
 
-import java.util.*;
+import java.util.Collection;
+import java.util.Iterator;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.logging.Logger;
 
 /**
@@ -25,7 +27,7 @@ public class ServerRepository implements Iterable<ServerProvider> {
         this.guice = guice;
     }
 
-    public Iterable<ServerProvider> activate() { return ImmutableList.copyOf(servers); }
+    public Iterable<ServerProvider> activate() { return List.copyOf(servers); }
 
     public List<ServerProvider> installAll(Bundle bundle, Iterable<String> serverNames) throws ClassNotFoundException {
         List<ServerProvider> lst = new LinkedList<>();
@@ -65,7 +67,7 @@ public class ServerRepository implements Iterable<ServerProvider> {
     }
 
     public Collection<ServerProvider> collection() {
-        return Collections.unmodifiableCollection(servers);
+        return List.copyOf(servers);
     }
 
     @Override

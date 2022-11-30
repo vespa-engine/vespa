@@ -1,7 +1,6 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.tensor.functions;
 
-import com.google.common.collect.ImmutableList;
 import com.yahoo.tensor.evaluation.Name;
 
 import java.util.List;
@@ -23,7 +22,7 @@ public class XwPlusB<NAMETYPE extends Name> extends CompositeTensorFunction<NAME
     }
 
     @Override
-    public List<TensorFunction<NAMETYPE>> arguments() { return ImmutableList.of(x, w, b); }
+    public List<TensorFunction<NAMETYPE>> arguments() { return List.of(x, w, b); }
 
     @Override
     public TensorFunction<NAMETYPE> withArguments(List<TensorFunction<NAMETYPE>> arguments) {
