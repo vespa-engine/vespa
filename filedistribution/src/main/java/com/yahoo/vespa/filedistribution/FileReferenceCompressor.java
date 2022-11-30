@@ -1,7 +1,6 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.filedistribution;
 
-import com.google.common.io.ByteStreams;
 import net.jpountz.lz4.LZ4BlockInputStream;
 import net.jpountz.lz4.LZ4BlockOutputStream;
 import org.apache.commons.compress.archivers.ArchiveEntry;
@@ -87,9 +86,9 @@ public class FileReferenceCompressor {
                 if (!parent.exists() && !parent.mkdirs()) {
                     log.log(Level.WARNING, "Could not create dir " + parent.getAbsolutePath());
                 }
-                FileOutputStream fos = new FileOutputStream(outFile);
-                ByteStreams.copy(archiveInputStream, fos);
-                fos.close();
+                try (FileOutputStream fos = new FileOutputStream(outFile)) {
+                    archiveInputStream.transferTo(fos);
+                }
             }
             entries++;
         }
@@ -111,9 +110,10 @@ public class FileReferenceCompressor {
     }
 
     private static void writeFileToTar(ArchiveOutputStream taos, File baseDir, File file) throws IOException {
-        log.log(Level.FINEST, () -> "Adding file to tar: " + baseDir.toPath().relativize(file.toPath()).toString());
         taos.putArchiveEntry(taos.createArchiveEntry(file, baseDir.toPath().relativize(file.toPath()).toString()));
-        ByteStreams.copy(new FileInputStream(file), taos);
+        try (FileInputStream inputStream = new FileInputStream(file)) {
+            inputStream.transferTo(taos);
+        }
         taos.closeArchiveEntry();
     }
 
