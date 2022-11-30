@@ -376,7 +376,7 @@ void
 BitVector::consider_enable_range_check()
 {
     const char *env = getenv("VESPA_BITVECTOR_RANGE_CHECK");
-    if (env != nullptr && strcmp(env, "yes") == 0) {
+    if (env != nullptr && strcmp(env, "true") == 0) {
         _enable_range_check = true;
     }
 }
