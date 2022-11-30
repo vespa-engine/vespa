@@ -71,12 +71,12 @@ currentPolicyInitError(vespalib::stringref error) {
 void
 AsyncInitializationPolicy::select(mbus::RoutingContext& context)
 {
-    if (_syncInit && _state != State::DONE) {
-        initSynchronous();
-    }
-
     {
         std::lock_guard lock(_lock);
+
+        if (_syncInit && _state != State::DONE) {
+            initSynchronous();
+        }
 
         if (_state == State::NOT_STARTED || _state == State::FAILED) {
             // Only 1 task may be queued to the executor at any point in time.
