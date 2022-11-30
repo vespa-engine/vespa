@@ -659,7 +659,7 @@ public class Nodes {
 
         if (wantToRetire) { // Apply recursively if we're retiring
             List<Node> updatedNodes = performOn(list().childrenOf(host), (node, nodeLock) -> {
-                Node newNode = node.withWantToRetire(wantToRetire, wantToDeprovision, wantToRebuild, agent, instant);
+                Node newNode = node.withWantToRetire(wantToRetire, wantToDeprovision, false, agent, instant);
                 return write(newNode, nodeLock);
             });
             result.addAll(updatedNodes);
