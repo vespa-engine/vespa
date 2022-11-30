@@ -26,7 +26,7 @@ PartialBitVector::PartialBitVector(const BitVector & org, Index start, Index end
     if (org.size() < end) {
         clearInterval(org.size(), end);
     }
-    setBit(size());
+    set_bit_no_range_check(size());
 }
 
 PartialBitVector::~PartialBitVector() = default;

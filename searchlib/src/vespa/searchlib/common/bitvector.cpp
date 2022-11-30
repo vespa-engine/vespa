@@ -9,6 +9,7 @@
 #include <vespa/vespalib/util/size_literals.h>
 #include <vespa/vespalib/objects/nbostream.h>
 #include <vespa/fastos/file.h>
+#include <stdlib.h>
 #include <cassert>
 
 #include <vespa/log/log.h>
@@ -41,6 +42,8 @@ constexpr size_t MMAP_LIMIT = 256_Mi;
 namespace search {
 
 using vespalib::nbostream;
+
+bool BitVector::_enable_range_check = false;
 
 Alloc
 BitVector::allocatePaddedAndAligned(Index start, Index end, Index capacity, const Alloc* init_alloc)
@@ -79,7 +82,7 @@ void
 BitVector::clear()
 {
     memset(getActiveStart(), '\0', getActiveBytes());
-    setBit(size()); // Guard bit
+    set_bit_no_range_check(size()); // Guard bit
     setTrueBits(0);
 }
 
@@ -369,6 +372,15 @@ BitVector::create(const BitVector & rhs)
     return std::make_unique<AllocatedBitVector>(rhs);
 }
 
+void
+BitVector::consider_enable_range_check()
+{
+    const char *env = getenv("VESPA_BITVECTOR_RANGE_CHECK");
+    if (env != nullptr && strcmp(env, "yes") == 0) {
+        _enable_range_check = true;
+    }
+}
+
 MMappedBitVector::MMappedBitVector(Index numberOfElements, FastOS_FileInterface &file,
                                    int64_t offset, Index doccount) :
     BitVector()
@@ -422,5 +434,17 @@ operator>>(nbostream &in, AllocatedBitVector &bv)
     return in;
 }
 
+class ConsiderEnableRangeCheckCaller
+{
+public:
+    ConsiderEnableRangeCheckCaller();
+};
+
+ConsiderEnableRangeCheckCaller::ConsiderEnableRangeCheckCaller()
+{
+    BitVector::consider_enable_range_check();
+}
+
+ConsiderEnableRangeCheckCaller consider_enable_range_check_caller;
 
 } // namespace search
