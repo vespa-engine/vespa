@@ -22,7 +22,7 @@ auto schedule(Executor &executor) {
         awaiter(Executor &executor_in)
             : executor(executor_in) {}
         bool await_ready() const noexcept { return false; }
-        void await_suspend(std::coroutine_handle<> handle) {
+        void await_suspend(std::coroutine_handle<> handle) __attribute__((noinline)) {
             struct ResumeTask : Executor::Task {
                 std::coroutine_handle<> handle;
                 ResumeTask(std::coroutine_handle<> handle_in)
@@ -52,7 +52,7 @@ auto try_schedule(Executor &executor) {
         awaiter(Executor &executor_in)
             : executor(executor_in), accepted(true) {}
         bool await_ready() const noexcept { return false; }
-        bool await_suspend(std::coroutine_handle<> handle) {
+        bool await_suspend(std::coroutine_handle<> handle) __attribute__((noinline)) {
             struct ResumeTask : Executor::Task {
                 std::coroutine_handle<> handle;
                 ResumeTask(std::coroutine_handle<> handle_in)
@@ -66,8 +66,9 @@ auto try_schedule(Executor &executor) {
                 // with handle.resume() from executor thread before
                 // await_suspend has returned.
                 accepted = false;
+                return false;
             }
-            return accepted;
+            return true;
         }
         [[nodiscard]] bool await_resume() const noexcept { return accepted; }
     };
