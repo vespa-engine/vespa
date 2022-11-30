@@ -38,6 +38,7 @@ import com.yahoo.config.provision.NodeType;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.container.bundle.BundleInstantiationSpecification;
 import com.yahoo.container.logging.FileConnectionLog;
+import com.yahoo.io.IOUtils;
 import com.yahoo.osgi.provider.model.ComponentModel;
 import com.yahoo.path.Path;
 import com.yahoo.schema.OnnxModel;
@@ -100,9 +101,8 @@ import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 
 import java.io.IOException;
-import java.io.InputStream;
+import java.io.Reader;
 import java.net.URI;
-import java.nio.charset.StandardCharsets;
 import java.security.cert.X509Certificate;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -529,10 +529,10 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
 
     private List<X509Certificate> getCertificates(ApplicationFile file) {
         try {
-            InputStream inputStream = file.createInputStream();
-            byte[] bytes = inputStream.readAllBytes();
-            inputStream.close();
-            return X509CertificateUtils.certificateListFromPem(new String(bytes, StandardCharsets.UTF_8));
+            Reader reader = file.createReader();
+            String certPem = IOUtils.readAll(reader);
+            reader.close();
+            return X509CertificateUtils.certificateListFromPem(certPem);
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
