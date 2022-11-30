@@ -9,8 +9,8 @@
 #include <vespa/vespalib/util/size_literals.h>
 #include <vespa/vespalib/objects/nbostream.h>
 #include <vespa/fastos/file.h>
-#include <stdlib.h>
 #include <cassert>
+#include <cstdlib>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".searchlib.common.bitvector");
