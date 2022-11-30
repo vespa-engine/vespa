@@ -86,6 +86,7 @@ public class Validation {
         new CloudWatchValidator().validate(model, deployState);
         new QuotaValidator().validate(model, deployState);
         new UriBindingsValidator().validate(model, deployState);
+        new CloudDataPlaneFilterValidator().validate(model, deployState);
 
         additionalValidators.forEach(v -> v.validate(model, deployState));
 
