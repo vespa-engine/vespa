@@ -1,10 +1,12 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.config.provision.serialization;
 
+import com.yahoo.component.Version;
 import com.yahoo.config.provision.AllocatedHosts;
 import com.yahoo.config.provision.ClusterMembership;
 import com.yahoo.config.provision.DockerImage;
 import com.yahoo.config.provision.HostSpec;
+import com.yahoo.config.provision.LoadBalancerSettings;
 import com.yahoo.config.provision.NodeResources;
 import com.yahoo.slime.ArrayTraverser;
 import com.yahoo.slime.Cursor;
@@ -38,6 +40,8 @@ public class AllocatedHostsSerializer {
     private static final String hostSpecKey = "hostSpec";
     private static final String hostSpecHostNameKey = "hostName";
     private static final String hostSpecMembershipKey = "membership";
+    private static final String loadBalancerSettingsKey = "loadBalancerSettings";
+    private static final String allowedUrnsKey = "allowedUrns";
 
     private static final String realResourcesKey = "realResources";
     private static final String advertisedResourcesKey = "advertisedResources";
@@ -81,6 +85,9 @@ public class AllocatedHostsSerializer {
         host.membership().ifPresent(membership -> {
             object.setString(hostSpecMembershipKey, membership.stringValue());
             object.setString(hostSpecVespaVersionKey, membership.cluster().vespaVersion().toFullString());
+            if ( ! membership.cluster().loadBalancerSettings().isEmpty())
+                membership.cluster().loadBalancerSettings().allowedUrns()
+                          .forEach(object.setObject(loadBalancerSettingsKey).setArray(allowedUrnsKey)::addString);
             membership.cluster().dockerImageRepo().ifPresent(repo -> object.setString(hostSpecDockerImageRepoKey, repo.untagged()));
         });
         toSlime(host.realResources(), object.setObject(realResourcesKey));
@@ -125,7 +132,7 @@ public class AllocatedHostsSerializer {
                                 nodeResourcesFromSlime(object.field(advertisedResourcesKey)),
                                 optionalNodeResourcesFromSlime(object.field(requestedResourcesKey)), // TODO: Make non-optional when we serialize NodeResources.unspecified()
                                 membershipFromSlime(object),
-                                optionalString(object.field(hostSpecCurrentVespaVersionKey)).map(com.yahoo.component.Version::new),
+                                optionalString(object.field(hostSpecCurrentVespaVersionKey)).map(Version::new),
                                 NetworkPortsSerializer.fromSlime(object.field(hostSpecNetworkPortsKey)),
                                 optionalDockerImage(object.field(hostSpecDockerImageRepoKey)));
         }
@@ -211,10 +218,15 @@ public class AllocatedHostsSerializer {
 
     private static ClusterMembership membershipFromSlime(Inspector object) {
         return ClusterMembership.from(object.field(hostSpecMembershipKey).asString(),
-                                      com.yahoo.component.Version.fromString(object.field(hostSpecVespaVersionKey).asString()),
+                                      Version.fromString(object.field(hostSpecVespaVersionKey).asString()),
                                       object.field(hostSpecDockerImageRepoKey).valid()
-                                              ? Optional.of(DockerImage.fromString(object.field(hostSpecDockerImageRepoKey).asString()))
-                                              : Optional.empty());
+                                      ? Optional.of(DockerImage.fromString(object.field(hostSpecDockerImageRepoKey).asString()))
+                                      : Optional.empty(),
+                                      object.field(loadBalancerSettingsKey).valid()
+                                      ? new LoadBalancerSettings(SlimeUtils.entriesStream(object.field(loadBalancerSettingsKey).field(allowedUrnsKey))
+                                                                           .map(Inspector::asString)
+                                                                           .toList())
+                                      : LoadBalancerSettings.empty);
     }
 
     private static Optional<String> optionalString(Inspector inspector) {

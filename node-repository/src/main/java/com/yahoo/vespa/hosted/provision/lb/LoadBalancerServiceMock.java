@@ -4,6 +4,7 @@ package com.yahoo.vespa.hosted.provision.lb;
 import ai.vespa.http.DomainName;
 import com.google.common.collect.ImmutableSet;
 import com.yahoo.config.provision.ClusterSpec;
+import com.yahoo.config.provision.LoadBalancerSettings;
 import com.yahoo.config.provision.NodeType;
 
 import java.util.Collections;
@@ -61,7 +62,7 @@ public class LoadBalancerServiceMock implements LoadBalancerService {
                 Collections.singleton(4443),
                 ImmutableSet.of("10.2.3.0/24", "10.4.5.0/24"),
                 spec.reals(),
-                spec.settings(),
+                spec.settings().orElse(LoadBalancerSettings.empty),
                 spec.cloudAccount());
         instances.put(id, instance);
         return instance;

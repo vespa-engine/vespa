@@ -24,11 +24,11 @@ public class LoadBalancerInstance {
     private final Set<Integer> ports;
     private final Set<String> networks;
     private final Set<Real> reals;
-    private final Optional<LoadBalancerSettings> settings;
+    private final LoadBalancerSettings settings;
     private final CloudAccount cloudAccount;
 
     public LoadBalancerInstance(Optional<DomainName> hostname, Optional<String> ipAddress, Optional<DnsZone> dnsZone, Set<Integer> ports,
-                                Set<String> networks, Set<Real> reals, Optional<LoadBalancerSettings> settings, CloudAccount cloudAccount) {
+                                Set<String> networks, Set<Real> reals, LoadBalancerSettings settings, CloudAccount cloudAccount) {
         this.hostname = Objects.requireNonNull(hostname, "hostname must be non-null");
         this.ipAddress = Objects.requireNonNull(ipAddress, "ip must be non-null");
         this.dnsZone = Objects.requireNonNull(dnsZone, "dnsZone must be non-null");
@@ -74,8 +74,8 @@ public class LoadBalancerInstance {
         return reals;
     }
 
-    /** Static user-configured settings of this load balancer, if set */
-    public Optional<LoadBalancerSettings> settings() {
+    /** Static user-configured settings of this load balancer */
+    public LoadBalancerSettings settings() {
         return settings;
     }
 
@@ -87,11 +87,6 @@ public class LoadBalancerInstance {
     /** Returns a copy of this with reals set to given reals */
     public LoadBalancerInstance withReals(Set<Real> reals) {
         return new LoadBalancerInstance(hostname, ipAddress, dnsZone, ports, networks, reals, settings, cloudAccount);
-    }
-
-    /** Returns a copy of this with the given settings */
-    public LoadBalancerInstance withSettings(LoadBalancerSettings settings) {
-        return new LoadBalancerInstance(hostname, ipAddress, dnsZone, ports, networks, reals, Optional.of(settings), cloudAccount);
     }
 
     private static Set<Integer> requirePorts(Set<Integer> ports) {
