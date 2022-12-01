@@ -283,7 +283,7 @@ public class Flags {
 
     public static final UnboundBooleanFlag ENABLE_PROXY_PROTOCOL_MIXED_MODE = defineFeatureFlag(
             "enable-proxy-protocol-mixed-mode", true,
-            List.of("tokle"), "2022-05-09", "2022-12-01",
+            List.of("tokle"), "2022-05-09", "2023-01-31",
             "Enable or disable proxy protocol mixed mode",
             "Takes effect on redeployment",
             APPLICATION_ID);
@@ -304,7 +304,7 @@ public class Flags {
 
     public static final UnboundBooleanFlag USE_YUM_PROXY_V2 = defineFeatureFlag(
             "use-yumproxy-v2", false,
-            List.of("tokle"), "2022-05-05", "2022-12-01",
+            List.of("tokle"), "2022-05-05", "2023-01-31",
             "Use yumproxy-v2",
             "Takes effect on host admin restart",
             HOSTNAME);
