@@ -101,11 +101,9 @@ public class FunctionEvaluator {
     }
 
     public Tensor evaluate() {
-        function.argumentTypes().keySet().stream().sorted()
-                .forEach(name -> {
-                            var type = function.argumentTypes().get(name);
-                            checkArgument(name, type);
-                        });
+        for (Map.Entry<String, TensorType> argument : function.argumentTypes().entrySet()) {
+            checkArgument(argument.getKey(), argument.getValue());
+        }
         evaluated = true;
         evaluateOnnxModels();
         return function.getBody().evaluate(context).asTensor();

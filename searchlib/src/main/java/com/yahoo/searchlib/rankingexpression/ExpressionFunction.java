@@ -1,6 +1,8 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.searchlib.rankingexpression;
 
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
 import com.yahoo.searchlib.rankingexpression.rule.ConstantNode;
 import com.yahoo.searchlib.rankingexpression.rule.ExpressionNode;
 import com.yahoo.searchlib.rankingexpression.rule.FunctionNode;
@@ -34,10 +36,10 @@ import java.util.Optional;
 public class ExpressionFunction {
 
     private final String name;
-    private final List<String> arguments;
+    private final ImmutableList<String> arguments;
 
     /** Types of the inputs, if known. The keys here is any subset (including empty and identity) of the argument list */
-    private final Map<String, TensorType> argumentTypes;
+    private final ImmutableMap<String, TensorType> argumentTypes;
     private final RankingExpression body;
 
     private final Optional<TensorType> returnType;
@@ -60,17 +62,17 @@ public class ExpressionFunction {
      * @param body the ranking expression that defines this function
      */
     public ExpressionFunction(String name, List<String> arguments, RankingExpression body) {
-        this(name, arguments, body, Map.of(), Optional.empty());
+        this(name, arguments, body, ImmutableMap.of(), Optional.empty());
     }
 
     public ExpressionFunction(String name, List<String> arguments, RankingExpression body,
                               Map<String, TensorType> argumentTypes, Optional<TensorType> returnType) {
         this.name = Objects.requireNonNull(name, "name cannot be null");
-        this.arguments = arguments==null ? List.of() : List.copyOf(arguments);
+        this.arguments = arguments==null ? ImmutableList.of() : ImmutableList.copyOf(arguments);
         this.body = Objects.requireNonNull(body, "body cannot be null");
         if ( ! this.arguments.containsAll(argumentTypes.keySet()))
             throw new IllegalArgumentException("Argument type keys must be a subset of the argument keys");
-        this.argumentTypes = Map.copyOf(argumentTypes);
+        this.argumentTypes = ImmutableMap.copyOf(argumentTypes);
         this.returnType = Objects.requireNonNull(returnType, "returnType cannot be null");
     }
 
