@@ -16,13 +16,13 @@ import java.security.NoSuchAlgorithmException;
  *
  * @author vekterli
  */
-final class AesGcm128 implements Aead {
+final class Aes128Gcm implements Aead {
 
     private static final String AEAD_CIPHER_SPEC = "AES/GCM/NoPadding";
 
-    private static final AesGcm128 INSTANCE = new AesGcm128();
+    private static final Aes128Gcm INSTANCE = new Aes128Gcm();
 
-    public static AesGcm128 getInstance() { return INSTANCE; }
+    public static Aes128Gcm getInstance() { return INSTANCE; }
 
     /**
      * @param key Symmetric key bytes for encryption/decryption
