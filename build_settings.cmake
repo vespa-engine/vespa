@@ -65,6 +65,15 @@ else()
   set(VESPA_STDCXX_FS_LIB "stdc++fs")
 endif()
 
+# Detect uring shared library.
+if(EXISTS "/usr/${CMAKE_INSTALL_LIBDIR}/liburing.so")
+  set(VESPA_URING_LIB "uring")
+  message("-- liburing found")
+else()
+  set(VESPA_URING_LIB "")
+  message("-- liburing not found")
+endif()
+
 if(VESPA_OS_DISTRO_COMBINED STREQUAL "debian 10")
   unset(VESPA_XXHASH_DEFINE)
 else()
