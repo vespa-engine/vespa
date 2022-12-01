@@ -28,7 +28,7 @@ GrowableBitVector::grow(BitWord::Index newSize, BitWord::Index newCapacity)
     if (newCapacity != self.capacity()) {
         auto tbv = std::make_unique<AllocatedBitVector>(newSize, newCapacity, self._alloc.get(), self.size(), &self._alloc);
         if (newSize > self.size()) {
-            tbv->clearBitAndMaintainCount(self.size());  // Clear old guard bit.
+            tbv->clear_bit_and_maintain_count_no_range_check(self.size());  // Clear old guard bit.
         }
         auto to_hold = std::make_unique<GenerationHeldAllocatedBitVector>(std::move(_stored));
         _self.store(tbv.get(), std::memory_order_release);
