@@ -23,6 +23,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import static com.yahoo.jrt.ErrorCode.CONNECTION;
 import static java.util.logging.Level.FINE;
 import static java.util.logging.Level.FINEST;
 import static java.util.logging.Level.SEVERE;
@@ -132,7 +133,7 @@ public class JRTConfigRequester implements RequestWaiter {
         if (sub.isClosed()) return; // Avoid error messages etc. after closing
 
         boolean validResponse = jrtReq.validateResponse();
-        log.log(FINE, () -> "Request callback " + (validResponse ? "valid" : "invalid") + ". Req: " + jrtReq + "\nSpec: " + connection);
+        log.log(FINE, () -> "Response " + (validResponse ? "valid" : "invalid") + ". Req: " + jrtReq + "\nSpec: " + connection);
         Trace trace = jrtReq.getResponseTrace();
         trace.trace(TRACELEVEL, "JRTConfigRequester.doHandle()");
         log.log(FINEST, () -> trace.toString());
@@ -142,34 +143,26 @@ public class JRTConfigRequester implements RequestWaiter {
             handleFailedRequest(jrtReq, sub, connection);
     }
 
-    private void logError(JRTClientConfigRequest jrtReq, Connection connection) {
-        switch (jrtReq.errorCode()) {
-            case com.yahoo.jrt.ErrorCode.CONNECTION:
-                log.log(FINE, () -> "Request callback failed: " + jrtReq.errorMessage() +
-                        "\nConnection spec: " + connection);
-                break;
-            case ErrorCode.APPLICATION_NOT_LOADED:
-            case ErrorCode.UNKNOWN_VESPA_VERSION:
-                logWarning(jrtReq, connection);
-                break;
-            default:
-                log.log(WARNING, "Request callback failed. Req: " + jrtReq + "\nSpec: " + connection.getAddress() +
-                        " . Req error message: " + jrtReq.errorMessage());
-                break;
-        }
-    }
+    private void logFailingRequest(JRTClientConfigRequest jrtReq, Connection connection) {
+        if (closed) return;
 
-    private void logWarning(JRTClientConfigRequest jrtReq, Connection connection) {
-        if ( ! closed && timeForLastLogWarning.isBefore(Instant.now().minus(delayBetweenWarnings))) {
-            log.log(WARNING, "Request callback failed: " + ErrorCode.getName(jrtReq.errorCode()) +
+        if (jrtReq.errorCode() == CONNECTION) {
+            log.log(FINE, () -> "Request failed: " + jrtReq.errorMessage() +
+                    "\nConnection spec: " + connection);
+        } else if (timeForLastLogWarning.isBefore(Instant.now().minus(delayBetweenWarnings))) {
+            log.log(WARNING, "Request failed: " + ErrorCode.getName(jrtReq.errorCode()) +
                     ". Connection spec: " + connection.getAddress() +
                     ", error message: " + jrtReq.errorMessage());
             timeForLastLogWarning = Instant.now();
+        } else {
+            log.log(FINE, () -> "Request failed: " + ErrorCode.getName(jrtReq.errorCode()) +
+                    ". Connection spec: " + connection.getAddress() +
+                    ", error message: " + jrtReq.errorMessage());
         }
     }
 
     private void handleFailedRequest(JRTClientConfigRequest jrtReq, JRTConfigSubscription<ConfigInstance> sub, Connection connection) {
-        logError(jrtReq, connection);
+        logFailingRequest(jrtReq, connection);
 
         connectionPool.switchConnection(connection);
         if (failures < 10)
