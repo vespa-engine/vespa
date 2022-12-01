@@ -49,30 +49,16 @@ public class ModelsEvaluationHandlerTest {
     @Test
     public void testListModels() {
         String url = "http://localhost/model-evaluation/v1";
-        String expected = "{" +
-                "\"lightgbm_regression\":\"http://localhost/model-evaluation/v1/lightgbm_regression\"," +
-                "\"mnist_saved\":\"http://localhost/model-evaluation/v1/mnist_saved\"," +
-                "\"mnist_softmax\":\"http://localhost/model-evaluation/v1/mnist_softmax\"," +
-                "\"mnist_softmax_saved\":\"http://localhost/model-evaluation/v1/mnist_softmax_saved\"," +
-                "\"vespa_model\":\"http://localhost/model-evaluation/v1/vespa_model\"," +
-                "\"xgboost_2_2\":\"http://localhost/model-evaluation/v1/xgboost_2_2\"," +
-                "\"xgboost_non_standalone\":\"http://localhost/model-evaluation/v1/xgboost_non_standalone\"" +
-                "}";
+        String expected =
+                "{\"mnist_softmax\":\"http://localhost/model-evaluation/v1/mnist_softmax\",\"xgboost_non_standalone\":\"http://localhost/model-evaluation/v1/xgboost_non_standalone\",\"mnist_saved\":\"http://localhost/model-evaluation/v1/mnist_saved\",\"mnist_softmax_saved\":\"http://localhost/model-evaluation/v1/mnist_softmax_saved\",\"vespa_model\":\"http://localhost/model-evaluation/v1/vespa_model\",\"xgboost_2_2\":\"http://localhost/model-evaluation/v1/xgboost_2_2\",\"lightgbm_regression\":\"http://localhost/model-evaluation/v1/lightgbm_regression\"}";
         handler.assertResponse(url, 200, expected);
     }
 
     @Test
     public void testListModelsWithDifferentHost() {
         String url = "http://localhost/model-evaluation/v1";
-        String expected = "{" +
-                "\"lightgbm_regression\":\"http://localhost:8088/model-evaluation/v1/lightgbm_regression\"," +
-                "\"mnist_saved\":\"http://localhost:8088/model-evaluation/v1/mnist_saved\"," +
-                "\"mnist_softmax\":\"http://localhost:8088/model-evaluation/v1/mnist_softmax\"," +
-                "\"mnist_softmax_saved\":\"http://localhost:8088/model-evaluation/v1/mnist_softmax_saved\"," +
-                "\"vespa_model\":\"http://localhost:8088/model-evaluation/v1/vespa_model\"," +
-                "\"xgboost_2_2\":\"http://localhost:8088/model-evaluation/v1/xgboost_2_2\"," +
-                "\"xgboost_non_standalone\":\"http://localhost:8088/model-evaluation/v1/xgboost_non_standalone\"" +
-                "}";
+        String expected =
+                "{\"mnist_softmax\":\"http://localhost:8088/model-evaluation/v1/mnist_softmax\",\"xgboost_non_standalone\":\"http://localhost:8088/model-evaluation/v1/xgboost_non_standalone\",\"mnist_saved\":\"http://localhost:8088/model-evaluation/v1/mnist_saved\",\"mnist_softmax_saved\":\"http://localhost:8088/model-evaluation/v1/mnist_softmax_saved\",\"vespa_model\":\"http://localhost:8088/model-evaluation/v1/vespa_model\",\"xgboost_2_2\":\"http://localhost:8088/model-evaluation/v1/xgboost_2_2\",\"lightgbm_regression\":\"http://localhost:8088/model-evaluation/v1/lightgbm_regression\"}";
         handler.assertResponse(url, 200, expected, Map.of("Host", "localhost:8088"));
     }
 

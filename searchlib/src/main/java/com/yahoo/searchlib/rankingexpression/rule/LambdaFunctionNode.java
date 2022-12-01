@@ -1,6 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.searchlib.rankingexpression.rule;
 
+import com.google.common.collect.ImmutableList;
 import com.yahoo.searchlib.rankingexpression.Reference;
 import com.yahoo.searchlib.rankingexpression.evaluation.Context;
 import com.yahoo.searchlib.rankingexpression.evaluation.MapContext;
@@ -26,7 +27,7 @@ import java.util.stream.Collectors;
  */
 public class LambdaFunctionNode extends CompositeNode {
 
-    private final List<String> arguments;
+    private final ImmutableList<String> arguments;
     private final ExpressionNode functionExpression;
 
     public LambdaFunctionNode(List<String> arguments, ExpressionNode functionExpression) {
@@ -36,7 +37,7 @@ public class LambdaFunctionNode extends CompositeNode {
                                                                                      .filter(f ->  ! arguments.contains(f))
                                                                                      .collect(Collectors.joining(", ")));
         }
-        this.arguments = List.copyOf(arguments);
+        this.arguments = ImmutableList.copyOf(arguments);
         this.functionExpression = functionExpression;
     }
 
@@ -105,12 +106,15 @@ public class LambdaFunctionNode extends CompositeNode {
     }
 
     private Optional<DoubleBinaryOperator> getDirectEvaluator() {
-        if ( ! (functionExpression instanceof OperationNode node)) {
+        if ( ! (functionExpression instanceof OperationNode)) {
             return Optional.empty();
         }
-        if ( ! (node.children().get(0) instanceof ReferenceNode lhs) || ! (node.children().get(1) instanceof ReferenceNode rhs)) {
+        OperationNode node = (OperationNode) functionExpression;
+        if ( ! (node.children().get(0) instanceof ReferenceNode) || ! (node.children().get(1) instanceof ReferenceNode)) {
             return Optional.empty();
         }
+        var lhs = (ReferenceNode) node.children().get(0);
+        var rhs = (ReferenceNode) node.children().get(1);
         if (! lhs.getName().equals(arguments.get(0)) || ! rhs.getName().equals(arguments.get(1))) {
             return Optional.empty();
         }
@@ -118,17 +122,17 @@ public class LambdaFunctionNode extends CompositeNode {
             return Optional.empty();
         }
         Operator operator = node.operators().get(0);
-        return switch (operator) {
-            case or -> asFunctionExpression((left, right) -> ((left != 0.0) || (right != 0.0)) ? 1.0 : 0.0);
-            case and -> asFunctionExpression((left, right) -> ((left != 0.0) && (right != 0.0)) ? 1.0 : 0.0);
-            case plus -> asFunctionExpression((left, right) -> left + right);
-            case minus -> asFunctionExpression((left, right) -> left - right);
-            case multiply -> asFunctionExpression((left, right) -> left * right);
-            case divide -> asFunctionExpression((left, right) -> left / right);
-            case modulo -> asFunctionExpression((left, right) -> left % right);
-            case power -> asFunctionExpression(Math::pow);
-            default -> Optional.empty();
-        };
+        switch (operator) {
+            case or: return asFunctionExpression((left, right) -> ((left != 0.0) || (right != 0.0)) ? 1.0 : 0.0);
+            case and: return asFunctionExpression((left, right) -> ((left != 0.0) && (right != 0.0)) ? 1.0 : 0.0);
+            case plus: return asFunctionExpression((left, right) -> left + right);
+            case minus: return asFunctionExpression((left, right) -> left - right);
+            case multiply: return asFunctionExpression((left, right) -> left * right);
+            case divide: return asFunctionExpression((left, right) -> left / right);
+            case modulo: return asFunctionExpression((left, right) -> left % right);
+            case power: return asFunctionExpression(Math::pow);
+        }
+        return Optional.empty();
     }
 
     private Optional<DoubleBinaryOperator> asFunctionExpression(DoubleBinaryOperator operator) {

@@ -1,6 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.searchlib.rankingexpression.rule;
 
+import com.google.common.collect.ImmutableList;
 import com.yahoo.searchlib.rankingexpression.Reference;
 import com.yahoo.searchlib.rankingexpression.evaluation.BooleanValue;
 import com.yahoo.searchlib.rankingexpression.evaluation.Context;
@@ -29,7 +30,7 @@ public class SetMembershipNode extends BooleanNode {
 
     public SetMembershipNode(ExpressionNode testValue, List<ExpressionNode> setValues) {
         this.testValue = testValue;
-        this.setValues = List.copyOf(setValues);
+        this.setValues = ImmutableList.copyOf(setValues);
     }
 
     /** The value to check for membership in the set */

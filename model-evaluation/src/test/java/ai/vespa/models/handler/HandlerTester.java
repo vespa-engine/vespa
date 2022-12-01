@@ -10,6 +10,7 @@ import com.yahoo.tensor.serialization.JsonFormat;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.util.Collections;
 import java.util.Map;
 import java.util.concurrent.Executors;
 
@@ -24,19 +25,19 @@ class HandlerTester {
     }
 
     void assertResponse(String url, int expectedCode) {
-        assertResponse(url, Map.of(), expectedCode, (String)null);
+        assertResponse(url, Collections.emptyMap(), expectedCode, (String)null);
     }
 
     void assertResponse(String url, int expectedCode, String expectedResult) {
-        assertResponse(url, Map.of(), expectedCode, expectedResult);
+        assertResponse(url, Collections.emptyMap(), expectedCode, expectedResult);
     }
 
     void assertResponse(String url, int expectedCode, String expectedResult, Map<String, String> headers) {
-        assertResponse(url, Map.of(), expectedCode, expectedResult, headers);
+        assertResponse(url, Collections.emptyMap(), expectedCode, expectedResult, headers);
     }
 
     void assertResponse(String url, Map<String, String> properties, int expectedCode, String expectedResult) {
-        assertResponse(url, properties, expectedCode, expectedResult, Map.of());
+        assertResponse(url, properties, expectedCode, expectedResult, Collections.emptyMap());
     }
 
     void assertResponse(String url, Map<String, String> properties, int expectedCode, String expectedResult, Map<String, String> headers) {

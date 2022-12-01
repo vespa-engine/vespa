@@ -102,8 +102,9 @@ public class ModelsEvaluationHandler extends ThreadedHttpRequestHandler {
     private HttpResponse listAllModels(HttpRequest request) {
         Slime slime = new Slime();
         Cursor root = slime.setObject();
-        modelsEvaluator.models().keySet().stream().sorted()
-                .forEach(name -> root.setString(name, baseUrl(request) + name));
+        for (String modelName: modelsEvaluator.models().keySet()) {
+            root.setString(modelName, baseUrl(request) + modelName);
+        }
         return new Response(200, com.yahoo.slime.JsonFormat.toJsonBytes(slime));
     }
 

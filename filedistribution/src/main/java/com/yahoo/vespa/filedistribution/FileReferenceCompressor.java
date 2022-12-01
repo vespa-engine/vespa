@@ -121,11 +121,14 @@ public class FileReferenceCompressor {
         switch (type) {
             case compressed:
                 log.log(Level.FINE, () -> "Compressing with compression type " + compressionType);
-                return switch (compressionType) {
-                    case gzip -> new GZIPOutputStream(new FileOutputStream(outputFile));
-                    case lz4 -> new LZ4BlockOutputStream(new FileOutputStream(outputFile));
-                    default -> throw new RuntimeException("Unknown compression type " + compressionType);
-                };
+                switch (compressionType) {
+                    case gzip:
+                        return new GZIPOutputStream(new FileOutputStream(outputFile));
+                    case lz4:
+                        return new LZ4BlockOutputStream(new FileOutputStream(outputFile));
+                    default:
+                        throw new RuntimeException("Unknown compression type " + compressionType);
+                }
             case file:
                 return new FileOutputStream(outputFile);
             default:
@@ -137,11 +140,14 @@ public class FileReferenceCompressor {
         switch (type) {
             case compressed:
                 log.log(Level.FINE, () -> "Decompressing with compression type " + compressionType);
-                return switch (compressionType) {
-                    case gzip -> new GZIPInputStream(new FileInputStream(inputFile));
-                    case lz4 -> new LZ4BlockInputStream(new FileInputStream(inputFile));
-                    default -> throw new RuntimeException("Unknown compression type " + compressionType);
-                };
+                switch (compressionType) {
+                    case gzip:
+                        return new GZIPInputStream(new FileInputStream(inputFile));
+                    case lz4:
+                        return new LZ4BlockInputStream(new FileInputStream(inputFile));
+                    default:
+                        throw new RuntimeException("Unknown compression type " + compressionType);
+                }
             case file:
                 return new FileInputStream(inputFile);
             default:
