@@ -1,8 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.searchlib.ranking.features.fieldmatch;
 
-import com.google.common.collect.ImmutableList;
-
+import java.util.Arrays;
 import java.util.List;
 
 /**
@@ -12,19 +11,17 @@ import java.util.List;
  */
 public class Field {
 
-    private final ImmutableList<Term> terms;
+    private final List<Term> terms;
 
     /** Creates a field from a space-separated string */
     public Field(String fieldString) {
-        ImmutableList.Builder<Term> list = new ImmutableList.Builder<>();
-        for (String term : fieldString.split(" "))
-            list.add(new Term(term));
-        this.terms = list.build();
+        terms = Arrays.stream(fieldString.split(" ")).map(Term::new).toList();
+
     }
 
     /** Creates a field from a list of terms */
     public Field(List<Term> terms) {
-        this.terms = ImmutableList.copyOf(terms);
+        this.terms = List.copyOf(terms);
     }
 
     /** Returns an immutable list of the terms in this */

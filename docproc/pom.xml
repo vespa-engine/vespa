@@ -17,12 +17,6 @@
   <dependencies>
     <!-- PROVIDED scope -->
     <dependency>
-      <groupId>com.google.inject</groupId>
-      <artifactId>guice</artifactId>
-      <classifier>no_aop</classifier>
-      <scope>provided</scope>
-    </dependency>
-    <dependency>
       <groupId>com.yahoo.vespa</groupId>
       <artifactId>component</artifactId>
       <version>${project.version}</version>
