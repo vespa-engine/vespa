@@ -5,7 +5,7 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0
                           http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
-    <artifactId>container-onnxruntime-bundle</artifactId>
+    <artifactId>container-onnxruntime</artifactId>
     <packaging>container-plugin</packaging>
     <version>8-SNAPSHOT</version>
     <parent>
@@ -73,7 +73,7 @@
                             <transformers>
                                 <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
                                     <manifestEntries>
-                                        <Bundle-Activator>ai.onnxruntime.vespa.OnnxBundleActivator</Bundle-Activator>
+                                        <Bundle-Activator>ai.vespa.onnxruntime.OnnxBundleActivator</Bundle-Activator>
                                     </manifestEntries>
                                 </transformer>
                             </transformers>

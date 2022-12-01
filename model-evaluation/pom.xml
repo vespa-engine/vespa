@@ -75,7 +75,7 @@
     </dependency>
     <dependency>
       <groupId>com.yahoo.vespa</groupId>
-      <artifactId>container-onnxruntime-bundle</artifactId>
+      <artifactId>container-onnxruntime</artifactId>
       <version>${project.version}</version>
       <scope>provided</scope>
     </dependency>

@@ -1,12 +1,13 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.                                                                                                                           
-package ai.onnxruntime.vespa;
+package ai.vespa.onnxruntime;
 
 import org.osgi.framework.BundleActivator;
 import org.osgi.framework.BundleContext;
 
 import java.util.logging.Logger;
 
-/**                                                                                                                                                                                                                                * @author arnej
+/**
+ * @author arnej
  * Loads native libraries when the bundle is activated.
  * Use system properties to ensure onnxruntime won't try
  * to load them itself.

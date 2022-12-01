@@ -116,7 +116,7 @@
                                         <include>com.yahoo.vespa:container-disc:*:provided</include>
                                         <include>com.yahoo.vespa:container-documentapi:*:provided</include>
                                         <include>com.yahoo.vespa:container-messagebus:*:provided</include>
-                                        <include>com.yahoo.vespa:container-onnxruntime-bundle:*:provided</include>
+                                        <include>com.yahoo.vespa:container-onnxruntime:*:provided</include>
                                         <include>com.yahoo.vespa:container-search-and-docproc:*:provided</include>
                                         <include>com.yahoo.vespa:container-search:*:provided</include>
                                         <include>com.yahoo.vespa:container:*:provided</include>
