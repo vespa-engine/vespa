@@ -104,7 +104,7 @@ public class ModelsEvaluatorTest {
             evaluator.evaluate();
         }
         catch (IllegalArgumentException e) {
-            assertEquals("'argNone' is not a valid argument in function 'test'. Expected arguments: arg2: tensor(d1{}), arg1: tensor(d0[1])",
+            assertEquals("'argNone' is not a valid argument in function 'test'. Expected arguments: arg1: tensor(d0[1]), arg2: tensor(d1{})",
                          Exceptions.toMessageString(e));
         }
 

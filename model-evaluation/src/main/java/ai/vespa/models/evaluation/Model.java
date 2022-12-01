@@ -84,7 +84,7 @@ public class Model {
                     }
                     else {
                         // External functions have type info (when not scalar) - add argument types
-                        if (function.getValue().argumentTypes().get(argument) == null)
+                        if (function.getValue().getArgumentType(argument) == null)
                             functions.put(function.getKey(), function.getValue().withArgument(argument, TensorType.empty));
                     }
                 }

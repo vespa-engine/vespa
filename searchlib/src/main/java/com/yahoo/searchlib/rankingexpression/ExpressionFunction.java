@@ -83,6 +83,7 @@ public class ExpressionFunction {
 
     /** Returns the types of the arguments of this, if specified. The keys of this may be any subset of the arguments */
     public Map<String, TensorType> argumentTypes() { return argumentTypes; }
+    public TensorType getArgumentType(String argumentName) { return argumentTypes.get(argumentName); }
 
     /** Returns the return type of this, or empty if not specified */
     public Optional<TensorType> returnType() { return returnType; }

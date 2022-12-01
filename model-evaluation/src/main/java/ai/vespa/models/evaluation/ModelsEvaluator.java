@@ -10,6 +10,7 @@ import com.yahoo.vespa.config.search.core.OnnxModelsConfig;
 import com.yahoo.vespa.config.search.core.RankingConstantsConfig;
 import com.yahoo.vespa.config.search.core.RankingExpressionsConfig;
 
+import java.util.Collections;
 import java.util.Map;
 
 /**
@@ -42,7 +43,7 @@ public class ModelsEvaluator extends AbstractComponent {
     }
 
     public ModelsEvaluator(Map<String, Model> models) {
-        this.models = Map.copyOf(models);
+        this.models = Collections.unmodifiableMap(models);
     }
 
     /** Returns the models of this as an immutable map */

@@ -153,8 +153,8 @@ public class ModelEvaluationTest {
         assertNotNull(evaluator.evaluatorOf("add_mul", "default.output2"));
         assertNotNull(evaluator.evaluatorOf("add_mul", "default", "output1"));
         assertNotNull(evaluator.evaluatorOf("add_mul", "default", "output2"));
-        assertEquals(TensorType.fromSpec("tensor<float>(d0[1])"), add_mul.functions().get(0).argumentTypes().get("input1"));
-        assertEquals(TensorType.fromSpec("tensor<float>(d0[1])"), add_mul.functions().get(0).argumentTypes().get("input2"));
+        assertEquals(TensorType.fromSpec("tensor<float>(d0[1])"), add_mul.functions().get(0).getArgumentType("input1"));
+        assertEquals(TensorType.fromSpec("tensor<float>(d0[1])"), add_mul.functions().get(0).getArgumentType("input2"));
 
         Model sqrt = evaluator.models().get("sqrt");
         assertNotNull(sqrt);
@@ -163,7 +163,7 @@ public class ModelEvaluationTest {
         assertNotNull(sqrt.evaluatorOf("out_layer_1_1"));  // converted from "out/layer/1:1"
         assertNotNull(evaluator.evaluatorOf("sqrt"));
         assertNotNull(evaluator.evaluatorOf("sqrt", "out_layer_1_1"));
-        assertEquals(TensorType.fromSpec("tensor<float>(d0[1])"), sqrt.functions().get(0).argumentTypes().get("input"));
+        assertEquals(TensorType.fromSpec("tensor<float>(d0[1])"), sqrt.functions().get(0).getArgumentType("input"));
     }
 
     private final String profile =
