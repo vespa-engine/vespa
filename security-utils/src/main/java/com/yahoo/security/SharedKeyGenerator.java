@@ -46,7 +46,7 @@ public class SharedKeyGenerator {
     private static final byte[] EMPTY_BYTES           = new byte[0];
     private static final SecureRandom SHARED_CSPRNG   = new SecureRandom();
     // Since the HPKE ciphersuite is not provided in the token, we must be very explicit about what it always is
-    private static final Ciphersuite HPKE_CIPHERSUITE = Ciphersuite.of(Kem.dHKemX25519HkdfSha256(), Kdf.hkdfSha256(), Aead.aesGcm128());
+    private static final Ciphersuite HPKE_CIPHERSUITE = Ciphersuite.of(Kem.dHKemX25519HkdfSha256(), Kdf.hkdfSha256(), Aead.aes128Gcm());
     private static final Hpke HPKE = Hpke.of(HPKE_CIPHERSUITE);
 
     private static SecretKey generateRandomSecretAesKey() {

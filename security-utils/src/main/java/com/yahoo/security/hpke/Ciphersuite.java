@@ -22,7 +22,7 @@ public record Ciphersuite(Kem kem, Kdf kdf, Aead aead) {
      * Returns a Ciphersuite of DHKEM(X25519, HKDF-SHA256), HKDF-SHA256, AES-128-GCM
      */
     public static Ciphersuite defaultSuite() {
-        return Ciphersuite.of(Kem.dHKemX25519HkdfSha256(), Kdf.hkdfSha256(), Aead.aesGcm128());
+        return Ciphersuite.of(Kem.dHKemX25519HkdfSha256(), Kdf.hkdfSha256(), Aead.aes128Gcm());
     }
 
 }
