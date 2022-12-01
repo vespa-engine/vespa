@@ -133,10 +133,11 @@ jobs:
           cd $WORKDIR/vespa
           export FACTORY_VESPA_VERSION=$VESPA_VERSION
           NUM_THREADS=$(( $(nproc) + 2 ))
+          VESPA_CMAKE_SANITIZERS_OPTION=""
           time make -C client/go BIN=$WORKDIR/vespa-install/opt/vespa/bin SHARE=$WORKDIR/vespa-install/usr/share install-all
           time ./bootstrap.sh java
           time mvn -T $NUM_THREADS $VESPA_MAVEN_EXTRA_OPTS install
-          cmake3 -DVESPA_UNPRIVILEGED=no .
+          cmake3 -DVESPA_UNPRIVILEGED=no $VESPA_CMAKE_SANITIZERS_OPTION .
           time make -j ${NUM_THREADS}
           time ctest3 --output-on-failure -j ${NUM_THREADS}
           ccache --show-stats
@@ -149,7 +150,10 @@ jobs:
                         --define "installdir $WORKDIR/vespa-install" *.src.rpm
           mkdir -p $WORKDIR/system-test/docker/rpms
           mv $WORKDIR/vespa-rpmbuild/RPMS/x86_64/*.rpm $WORKDIR/system-test/docker/rpms
-          rm -f $WORKDIR/system-test/docker/rpms/*debuginfo*rpm
+          if test -z "$VESPA_CMAKE_SANITIZERS_OPTION"
+          then
+              rm -f $WORKDIR/system-test/docker/rpms/*debuginfo*rpm
+          fi
           ls -la $WORKDIR/system-test/docker/rpms
       - build-test-image: |
           cd $WORKDIR/system-test
