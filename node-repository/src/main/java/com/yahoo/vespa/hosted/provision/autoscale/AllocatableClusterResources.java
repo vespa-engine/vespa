@@ -164,9 +164,11 @@ public class AllocatableClusterResources {
         if (! exclusive) {
             // We decide resources: Add overhead to what we'll request (advertised) to make sure real becomes (at least) cappedNodeResources
             var advertisedResources = nodeRepository.resourcesCalculator().realToRequest(wantedResources.nodeResources(), exclusive);
+            System.out.println("realToRequest: " + wantedResources.nodeResources() + " -> " + advertisedResources);
             advertisedResources = systemLimits.enlargeToLegal(advertisedResources, clusterSpec, exclusive); // Ask for something legal
             advertisedResources = applicationLimits.cap(advertisedResources); // Overrides other conditions, even if it will then fail
             var realResources = nodeRepository.resourcesCalculator().requestToReal(advertisedResources, exclusive); // What we'll really get
+            System.out.println("requestToReal: " + advertisedResources + " -> " + realResources);
             if ( ! systemLimits.isWithinRealLimits(realResources, clusterSpec))
                 return Optional.empty();
             if (anySatisfies(realResources, availableRealHostResources))

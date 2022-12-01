@@ -34,4 +34,7 @@ public class VespaFlavor {
 
     public NodeResources advertisedResources() { return advertisedResources; }
 
+    @Override
+    public String toString() { return "flavor " + name; }
+
 }
