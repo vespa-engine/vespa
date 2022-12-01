@@ -84,6 +84,7 @@ class Activator {
                                                "\nReserved: " + reserved.hostnames() +
                                                "\nActive: " + oldActive.hostnames());
 
+        // TODO GVL: Verify that all nodes have a wg pubKey in user account's parameter store.
         validateParentHosts(application, allNodes, reserved);
 
         NodeList activeToRemove = oldActive.matching(node ->  ! hostnames.contains(node.hostname()));

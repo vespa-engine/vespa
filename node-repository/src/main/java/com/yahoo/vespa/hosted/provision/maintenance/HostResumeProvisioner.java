@@ -57,6 +57,8 @@ public class HostResumeProvisioner extends NodeRepositoryMaintainer {
             try (var lock = nodeRepository().nodes().lockUnallocated()) {
                 List<Node> updatedNodes = hostProvisioner.provision(host, children);
                 verifyDns(updatedNodes);
+                // TODO GVL: verify, and get and write wireguard key for tenant host
+
                 nodeRepository().nodes().write(updatedNodes, lock);
             } catch (IllegalArgumentException | IllegalStateException e) {
                 log.log(Level.INFO, "Could not provision " + host.hostname() + " with " + children.size() + " children, will retry in " +
