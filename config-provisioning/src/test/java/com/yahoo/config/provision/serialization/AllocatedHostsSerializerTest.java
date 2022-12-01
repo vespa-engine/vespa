@@ -6,6 +6,7 @@ import com.yahoo.config.provision.AllocatedHosts;
 import com.yahoo.config.provision.ClusterMembership;
 import com.yahoo.config.provision.DockerImage;
 import com.yahoo.config.provision.HostSpec;
+import com.yahoo.config.provision.LoadBalancerSettings;
 import com.yahoo.config.provision.NetworkPorts;
 import com.yahoo.config.provision.NodeResources;
 import org.junit.jupiter.api.Test;
@@ -19,6 +20,7 @@ import java.util.Set;
 import static com.yahoo.config.provision.serialization.AllocatedHostsSerializer.fromJson;
 import static com.yahoo.config.provision.serialization.AllocatedHostsSerializer.toJson;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.fail;
 
 /**
  * @author bratseth
@@ -62,6 +64,15 @@ public class AllocatedHostsSerializerTest {
                                                       Optional.empty()),
                                Optional.of(Version.fromString("3.4.5")),
                                Optional.empty(), Optional.empty()));
+        hosts.add(new HostSpec("with-load-balancer-settings",
+                               smallSlowDiskSpeedNode,
+                               bigSlowDiskSpeedNode,
+                               anyDiskSpeedNode,
+                               ClusterMembership.from("container/test/0/0", Version.fromString("6.73.1"),
+                                                      Optional.empty(), new LoadBalancerSettings(List.of("burn"))),
+                               Optional.empty(),
+                               Optional.empty(),
+                               Optional.empty()));
         hosts.add(new HostSpec("with-ports",
                                smallSlowDiskSpeedNode,
                                bigSlowDiskSpeedNode,

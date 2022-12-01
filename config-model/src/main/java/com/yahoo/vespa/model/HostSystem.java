@@ -115,7 +115,7 @@ public class HostSystem extends AbstractConfigProducer<Host> {
         return hostResource;
     }
 
-    /** Returns the hosts owned by the application having this system - i.e all hosts except config servers */
+    /** Returns the hosts owned by the application having this system - i.e. all hosts except config servers */
     public List<HostResource> getHosts() {
         return hostname2host.values().stream()
                 .filter(host -> !host.getHost().runsConfigServer())

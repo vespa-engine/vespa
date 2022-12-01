@@ -99,16 +99,11 @@ public class AccessLogBuilder {
     }
 
     private static AccessLogType logTypeFor(AccessLogTypeLiteral typeLiteral) {
-        switch (typeLiteral) {
-            case DISABLED:
-                return null;
-            case VESPA:
-                return AccessLogType.queryAccessLog;
-            case JSON:
-                return AccessLogType.jsonAccessLog;
-            default:
-                throw new InconsistentSchemaAndCodeError();
-        }
+        return switch (typeLiteral) {
+            case DISABLED -> null;
+            case VESPA -> AccessLogType.queryAccessLog;
+            case JSON -> AccessLogType.jsonAccessLog;
+        };
     }
 
     public static Optional<AccessLogComponent> buildIfNotDisabled(DeployState deployState, ContainerCluster<?> cluster, Element accessLogSpec) {
