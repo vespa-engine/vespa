@@ -74,6 +74,7 @@ vdstestlib::DirConfig getStandardConfig(bool storagenode, const std::string & ro
     config = &dc.addConfig("stor-filestor");
     // Easier to see what goes wrong with only 1 thread per disk.
     config->set("num_threads", "1");
+    config->set("num_response_threads", "1");
     config->set("maximum_versions_of_single_document_stored", "0");
     config->set("keep_remove_time_period", "2000000000");
     config->set("revert_time_period", "2000000000");
