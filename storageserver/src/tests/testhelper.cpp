@@ -48,13 +48,8 @@ vdstestlib::DirConfig getStandardConfig(bool storagenode) {
     config = &dc.addConfig("stor-opslogger");
     config = &dc.addConfig("stor-filestor");
     // Easier to see what goes wrong with only 1 thread per disk.
-    config->set("minimum_file_meta_slots", "2");
-    config->set("minimum_file_header_block_size", "368");
-    config->set("minimum_file_size", "4096");
     config->set("threads[1]");
     config->set("threads[0].lowestpri 255");
-    config->set("dir_spread", "4");
-    config->set("dir_levels", "0");
     config->set("maximum_versions_of_single_document_stored", "0");
     //config->set("enable_slotfile_cache", "false");
     // Unit tests typically use fake low time values, so don't complain
@@ -62,17 +57,9 @@ vdstestlib::DirConfig getStandardConfig(bool storagenode) {
     // behavior
     config->set("keep_remove_time_period", "2000000000");
     config->set("revert_time_period", "2000000000");
-    config = &dc.addConfig("stor-memfilepersistence");
-    // Easier to see what goes wrong with only 1 thread per disk.
-    config->set("minimum_file_meta_slots", "2");
-    config->set("minimum_file_header_block_size", "368");
-    config->set("minimum_file_size", "4096");
-    config->set("dir_spread", "4");
-    config->set("dir_levels", "0");
     config = &dc.addConfig("persistence");
     config->set("keep_remove_time_period", "2000000000");
     config->set("revert_time_period", "2000000000");
-    config->set("fail_disk_after_error_count", "0");
     config = &dc.addConfig("stor-bouncer");
     config = &dc.addConfig("stor-integritychecker");
     config = &dc.addConfig("stor-bucketmover");
