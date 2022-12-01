@@ -197,18 +197,24 @@ public class NodeRepositoryNode {
         public String storageType;
         @JsonProperty
         public String architecture;
+        @JsonProperty
+        public Integer gpuCount;
+        @JsonProperty
+        public Double gpuMemoryGb;
 
         @Override
         public String toString() {
             return "NodeResources{" +
-                    "vcpu=" + vcpu +
-                    ", memoryGb=" + memoryGb +
-                    ", diskGb=" + diskGb +
-                    ", bandwidthGbps=" + bandwidthGbps +
-                    ", diskSpeed='" + diskSpeed + '\'' +
-                    ", storageType='" + storageType + '\'' +
-                    ", architecture='" + architecture + '\'' +
-                    '}';
+                   "vcpu=" + vcpu +
+                   ", memoryGb=" + memoryGb +
+                   ", diskGb=" + diskGb +
+                   ", bandwidthGbps=" + bandwidthGbps +
+                   ", diskSpeed='" + diskSpeed + '\'' +
+                   ", storageType='" + storageType + '\'' +
+                   ", architecture='" + architecture + '\'' +
+                   ", gpuCount=" + gpuCount +
+                   ", gpuMemoryGb=" + gpuMemoryGb +
+                   '}';
         }
     }
 

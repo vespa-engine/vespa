@@ -195,7 +195,13 @@ public class RealNodeRepository implements NodeRepository {
                 nodeResources.bandwidthGbps,
                 diskSpeedFromString(nodeResources.diskSpeed),
                 storageTypeFromString(nodeResources.storageType),
-                architectureFromString(nodeResources.architecture));
+                architectureFromString(nodeResources.architecture),
+                gpuResourcesFrom(nodeResources));
+    }
+
+    private static NodeResources.GpuResources gpuResourcesFrom(NodeRepositoryNode.NodeResources nodeResources) {
+        if (nodeResources.gpuCount == null || nodeResources.gpuMemoryGb == null) return NodeResources.GpuResources.zero();
+        return new NodeResources.GpuResources(nodeResources.gpuCount, nodeResources.gpuMemoryGb);
     }
 
     private static NodeResources.DiskSpeed diskSpeedFromString(String diskSpeed) {
@@ -233,7 +239,6 @@ public class RealNodeRepository implements NodeRepository {
             case fast -> "fast";
             case slow -> "slow";
             case any -> "any";
-            default -> throw new IllegalArgumentException("Unknown disk speed '" + diskSpeed.name() + "'");
         };
     }
 
@@ -242,7 +247,6 @@ public class RealNodeRepository implements NodeRepository {
             case remote -> "remote";
             case local -> "local";
             case any -> "any";
-            default -> throw new IllegalArgumentException("Unknown storage type '" + storageType.name() + "'");
         };
     }
 
@@ -251,7 +255,6 @@ public class RealNodeRepository implements NodeRepository {
             case arm64 -> "arm64";
             case x86_64 -> "x86_64";
             case any -> "any";
-            default -> throw new IllegalArgumentException("Unknown architecture '" + architecture.name() + "'");
         };
     }
 
@@ -274,6 +277,10 @@ public class RealNodeRepository implements NodeRepository {
             node.resources.diskSpeed = toString(resources.diskSpeed());
             node.resources.storageType = toString(resources.storageType());
             node.resources.architecture = toString(resources.architecture());
+            if (!resources.gpuResources().isZero()) {
+                node.resources.gpuCount = resources.gpuResources().count();
+                node.resources.gpuMemoryGb = resources.gpuResources().memoryGb();
+            }
         });
         node.type = addNode.nodeType.name();
         node.ipAddresses = addNode.ipAddresses;
