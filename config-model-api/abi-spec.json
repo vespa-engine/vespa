@@ -676,7 +676,8 @@
       "public static final enum com.yahoo.config.application.api.ValidationId globalEndpointChange",
       "public static final enum com.yahoo.config.application.api.ValidationId redundancyIncrease",
       "public static final enum com.yahoo.config.application.api.ValidationId redundancyOne",
-      "public static final enum com.yahoo.config.application.api.ValidationId pagedSettingRemoval"
+      "public static final enum com.yahoo.config.application.api.ValidationId pagedSettingRemoval",
+      "public static final enum com.yahoo.config.application.api.ValidationId certificateRemoval"
     ]
   },
   "com.yahoo.config.application.api.ValidationOverrides$Allow" : {

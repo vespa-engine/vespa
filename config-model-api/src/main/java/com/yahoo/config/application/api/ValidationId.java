@@ -26,7 +26,8 @@ public enum ValidationId {
     globalEndpointChange("global-endpoint-change"), // Changing global endpoints
     redundancyIncrease("redundancy-increase"), // Increasing redundancy - may easily cause feed blocked
     redundancyOne("redundancy-one"), // redundancy=1 requires a validation override on first deployment
-    pagedSettingRemoval("paged-setting-removal"); // May cause content nodes to run out of memory
+    pagedSettingRemoval("paged-setting-removal"), // May cause content nodes to run out of memory
+    certificateRemoval("certificate-removal"); // Remove data plane certificates
 
     private final String id;
 
