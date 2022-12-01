@@ -404,13 +404,6 @@ public class Flags {
             "Enable mail verification",
             "Takes effect immediately");
 
-    public static final UnboundBooleanFlag REPORT_CORES_VIA_CFG = defineFeatureFlag(
-            "report-cores-via-cfg", true,
-            List.of("hakonhall"), "2022-11-01", "2022-12-01",
-            "If true, report core dumps to the config server instead of directly to the panic app.",
-            "Takes effect on the next tick.",
-            ZONE_ID, NODE_TYPE, HOSTNAME);
-
     public static final UnboundStringFlag CORE_ENCRYPTION_PUBLIC_KEY_ID = defineStringFlag(
             "core-encryption-public-key-id", "",
             List.of("vekterli"), "2022-11-03", "2023-02-01",
