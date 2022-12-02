@@ -13,11 +13,13 @@ vespa_define_module(
     lz4
     xxhash
     zstd
+    ${VESPA_URING_LIB}
 
     APPS
     src/apps/make_fixture_macros
     src/apps/vespa-detect-hostname
     src/apps/vespa-drop-file-from-cache
+    src/apps/vespa-probe-io-uring
     src/apps/vespa-resource-limits
     src/apps/vespa-tsan-digest
     src/apps/vespa-validate-hostname
