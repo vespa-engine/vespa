@@ -30,6 +30,7 @@ import javax.security.auth.x500.X500Principal;
 import java.io.File;
 import java.io.IOException;
 import java.math.BigInteger;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.security.KeyPair;
@@ -42,7 +43,9 @@ import java.util.Optional;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertIterableEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 public class CloudDataPlaneFilterTest extends ContainerModelBuilderTestBase {
 
@@ -142,6 +145,26 @@ public class CloudDataPlaneFilterTest extends ContainerModelBuilderTestBase {
         var caCerts = X509CertificateUtils.certificateListFromPem(connectorConfig.ssl().caCertificate());
         assertEquals(1, caCerts.size());
         assertEquals(List.of(certificate), caCerts);
+    }
+
+    @Test
+    public void it_rejects_files_without_certificates() throws IOException {
+        Path certFile = securityFolder.resolve("foo.pem");
+        Element clusterElem = DomBuilderTest.parse(
+                """ 
+                        <container version='1.0'>
+                          <clients>
+                            <client id="foo" permissions="read,write">
+                                <certificate file="%s"/>
+                            </client>
+                          </clients>
+                        </container>
+                        """
+                        .formatted(applicationFolder.toPath().relativize(certFile).toString()));
+        Files.writeString(certFile, "effectively empty");
+
+        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> buildModel(true, clusterElem));
+        assertEquals("File security/foo.pem does not contain any certificates.", exception.getMessage());
     }
 
     private ConnectorConfig connectorConfig() {
