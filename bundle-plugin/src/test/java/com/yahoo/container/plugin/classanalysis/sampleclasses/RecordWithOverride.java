@@ -1,7 +1,6 @@
 package com.yahoo.container.plugin.classanalysis.sampleclasses;
 
-import com.google.common.collect.ImmutableList;
-
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -13,7 +12,7 @@ import java.util.List;
 public record RecordWithOverride(List<Byte> list) {
 
     public RecordWithOverride {
-        if (list instanceof ImmutableList<Byte> l) {
+        if (list instanceof ArrayList<Byte> l) {
             throw new IllegalArgumentException(l.toString());
         }
     }

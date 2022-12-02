@@ -2,7 +2,6 @@
 package com.yahoo.schema.derived;
 
 import ai.vespa.rankingexpression.importer.configmodelview.ImportedMlModels;
-import com.google.common.collect.ImmutableList;
 import com.yahoo.collections.Pair;
 import com.yahoo.compress.Compressor;
 import com.yahoo.config.model.api.ModelContext;
@@ -86,9 +85,9 @@ public class RawRankProfile implements RankProfilesConfig.Producer {
 
     private List<Pair<String, String>> decompress(Compressor.Compression compression) {
         String propertiesString = new String(compressor.decompress(compression), StandardCharsets.UTF_8);
-        if (propertiesString.isEmpty()) return ImmutableList.of();
+        if (propertiesString.isEmpty()) return List.of();
 
-        ImmutableList.Builder<Pair<String, String>> properties = new ImmutableList.Builder<>();
+        List<Pair<String, String>> properties = new ArrayList<>();
         for (int pos = 0; pos < propertiesString.length();) {
             int keyEndPos = propertiesString.indexOf(keyEndMarker, pos);
             String key = propertiesString.substring(pos, keyEndPos);
@@ -98,7 +97,7 @@ public class RawRankProfile implements RankProfilesConfig.Producer {
             pos = valueEndPos + valueEndMarker.length();
             properties.add(new Pair<>(key, value));
         }
-        return properties.build();
+        return List.copyOf(properties);
     }
 
     public String getName() { return name; }

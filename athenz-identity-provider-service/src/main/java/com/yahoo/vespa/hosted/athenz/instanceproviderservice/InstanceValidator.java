@@ -19,11 +19,11 @@ import com.yahoo.vespa.hosted.provision.NodeRepository;
 import java.net.InetAddress;
 import java.security.PublicKey;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 /**
@@ -119,10 +119,7 @@ public class InstanceValidator {
         // Find a list of SAN DNS
         List<String> sanDNS = Optional.ofNullable(instanceConfirmation.attributes.get(SAN_DNS_ATTRNAME))
                 .map(s -> s.split(","))
-                .map(Arrays::asList)
-                .map(List::stream)
-                .orElse(Stream.empty())
-                .collect(Collectors.toList());
+                .map(Arrays::asList).stream().flatMap(Collection::stream).toList();
 
         return sanDNS.stream()
                 .filter(dns -> dns.contains(INSTANCE_ID_DELIMITER))
@@ -152,15 +149,13 @@ public class InstanceValidator {
         // Find list of ipaddresses
         List<InetAddress> ips = Optional.ofNullable(confirmation.attributes.get(SAN_IPS_ATTRNAME))
                 .map(s -> s.split(","))
-                .map(Arrays::asList)
-                .map(List::stream)
-                .orElse(Stream.empty())
+                .map(Arrays::asList).stream().flatMap(Collection::stream)
                 .map(InetAddresses::forString)
-                .collect(Collectors.toList());
+                .toList();
 
         List<InetAddress> nodeIpAddresses = node.ipConfig().primary().stream()
                                                 .map(InetAddresses::forString)
-                                                .collect(Collectors.toList());
+                                                .toList();
 
         // Validate that ipaddresses in request are valid for node
 
@@ -187,7 +182,7 @@ public class InstanceValidator {
 
         Optional<ApplicationInfo> applicationInfo = superModelProvider.getSuperModel().getApplicationInfo(applicationId);
 
-        if (!applicationInfo.isPresent()) {
+        if (applicationInfo.isEmpty()) {
             log.info(String.format("Could not find application info for %s, existing applications: %s",
                                    applicationId.serializedForm(),
                                    superModelProvider.getSuperModel().getAllApplicationInfos()));
@@ -207,7 +202,7 @@ public class InstanceValidator {
                 .filter(serviceInfo -> serviceInfo.getProperty(SERVICE_PROPERTIES_SERVICE_KEY).isPresent())
                 .findFirst();
 
-        if (!matchingServiceInfo.isPresent()) {
+        if (matchingServiceInfo.isEmpty()) {
             log.info(String.format("Application %s has not specified domain/service", applicationId.serializedForm()));
             return false;
         }

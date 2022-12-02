@@ -2,7 +2,6 @@
 
 package com.yahoo.tensor;
 
-import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 
 import java.util.ArrayList;
@@ -11,7 +10,6 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 /**
  * A mixed tensor type. This is class is currently suitable for serialization
@@ -30,14 +28,14 @@ public class MixedTensor implements Tensor {
     private final TensorType type;
 
     /** The list of cells in the tensor */
-    private final ImmutableList<Cell> cells;
+    private final List<Cell> cells;
 
     /** An index structure over the cell list */
     private final Index index;
 
-    private MixedTensor(TensorType type, ImmutableList<Cell> cells, Index index) {
+    private MixedTensor(TensorType type, List<Cell> cells, Index index) {
         this.type = type;
-        this.cells = ImmutableList.copyOf(cells);
+        this.cells = List.copyOf(cells);
         this.index = index;
     }
 
@@ -91,7 +89,7 @@ public class MixedTensor implements Tensor {
     @Override
     public Iterator<Double> valueIterator() {
         return new Iterator<>() {
-            Iterator<Cell> cellIterator = cellIterator();
+            final Iterator<Cell> cellIterator = cellIterator();
             @Override
             public boolean hasNext() {
                 return cellIterator.hasNext();
@@ -154,14 +152,14 @@ public class MixedTensor implements Tensor {
 
     @Override
     public String toAbbreviatedString(boolean withType, boolean shortForms) {
-        return toString(withType, shortForms, Math.max(2, 10 / (type().dimensions().stream().filter(d -> d.isMapped()).count() + 1)));
+        return toString(withType, shortForms, Math.max(2, 10 / (type().dimensions().stream().filter(TensorType.Dimension::isMapped).count() + 1)));
     }
 
     private String toString(boolean withType, boolean shortForms, long maxCells) {
         if (! shortForms
             || type.rank() == 0
-            || type.rank() > 1 && type.dimensions().stream().filter(d -> d.isIndexed()).anyMatch(d -> d.size().isEmpty())
-            || type.dimensions().stream().filter(d -> d.isMapped()).count() > 1)
+            || type.rank() > 1 && type.dimensions().stream().filter(TensorType.Dimension::isIndexed).anyMatch(d -> d.size().isEmpty())
+            || type.dimensions().stream().filter(TensorType.Dimension::isMapped).count() > 1)
             return Tensor.toStandardString(this, withType, shortForms, maxCells);
 
         return (withType ? type + ":" : "") + index.contentToString(this, maxCells);
@@ -243,7 +241,7 @@ public class MixedTensor implements Tensor {
             indexBuilder = new Index.Builder(type);
             index = indexBuilder.index();
             denseSubtype = new TensorType(type.valueType(),
-                                          type.dimensions().stream().filter(d -> d.isIndexed()).collect(Collectors.toList()));
+                                          type.dimensions().stream().filter(TensorType.Dimension::isIndexed).toList());
         }
 
         public long denseSubspaceSize() {
@@ -290,7 +288,7 @@ public class MixedTensor implements Tensor {
         @Override
         public MixedTensor build() {
             long count = 0;
-            ImmutableList.Builder<Cell> builder = new ImmutableList.Builder<>();
+            List<Cell> builder = new ArrayList<>();
 
             for (Map.Entry<TensorAddress, double[]> entry : denseSubspaceMap.entrySet()) {
                 TensorAddress sparsePart = entry.getKey();
@@ -304,7 +302,7 @@ public class MixedTensor implements Tensor {
                     count++;
                 }
             }
-            return new MixedTensor(type, builder.build(), indexBuilder.build());
+            return new MixedTensor(type, builder, indexBuilder.build());
         }
 
     }
@@ -319,7 +317,7 @@ public class MixedTensor implements Tensor {
      */
     public static class UnboundBuilder extends Builder {
 
-        private Map<TensorAddress, Double> cells;
+        private final Map<TensorAddress, Double> cells;
         private final long[] dimensionBounds;
 
         private UnboundBuilder(TensorType type) {
@@ -394,8 +392,8 @@ public class MixedTensor implements Tensor {
 
         private Index(TensorType type) {
             this.type = type;
-            this.mappedDimensions = type.dimensions().stream().filter(d -> !d.isIndexed()).collect(Collectors.toList());
-            this.indexedDimensions = type.dimensions().stream().filter(d -> d.isIndexed()).collect(Collectors.toList());
+            this.mappedDimensions = type.dimensions().stream().filter(d -> !d.isIndexed()).toList();
+            this.indexedDimensions = type.dimensions().stream().filter(TensorType.Dimension::isIndexed).toList();
             this.sparseType = createPartialType(type.valueType(), mappedDimensions);
             this.denseType = createPartialType(type.valueType(), indexedDimensions);
         }

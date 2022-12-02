@@ -1,7 +1,6 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.api.integration.configserver;
 
-import com.google.common.collect.ImmutableList;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.HostName;
 import com.yahoo.config.provision.zone.ZoneId;
@@ -28,7 +27,7 @@ public class ServiceConvergence {
         this.zone = zone;
         this.converged = converged;
         this.wantedGeneration = wantedGeneration;
-        this.services = ImmutableList.copyOf(services);
+        this.services = List.copyOf(services);
     }
 
     public ApplicationId application() { return application; }
