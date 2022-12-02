@@ -1,6 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.config.model.provision;
 
+import com.google.common.collect.ImmutableList;
 import com.yahoo.component.Version;
 import com.yahoo.config.provision.Flavor;
 
@@ -15,12 +16,12 @@ import java.util.Optional;
 public class Host {
 
     private final String hostname;
-    private final List<String> aliases;
+    private final ImmutableList<String> aliases;
     private final Optional<Flavor> flavor;
     private final Optional<Version> version;
 
     public Host(String hostname) {
-        this(hostname, List.of(), Optional.empty());
+        this(hostname, ImmutableList.of(), Optional.empty());
     }
 
     public Host(String hostname, List<String> hostAliases) {
@@ -33,7 +34,7 @@ public class Host {
 
     public Host(String hostname, List<String> hostAliases, Optional<Flavor> flavor, Optional<Version> version) {
         this.hostname = hostname;
-        this.aliases = List.copyOf(hostAliases);
+        this.aliases = ImmutableList.copyOf(hostAliases);
         this.flavor = flavor;
         this.version = version;
     }
@@ -51,7 +52,7 @@ public class Host {
     @Override
     public String toString() {
         return hostname + (aliases.size() > 0 ? " (aliases: " + aliases + ")" : "" ) +
-                (flavor.map(value -> " (flavor: " + value + ")").orElse(""));
+                (flavor.isPresent() ? " (flavor: " + flavor.get() + ")" : "");
     }
 
 }

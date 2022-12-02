@@ -3,6 +3,7 @@ package com.yahoo.prelude.searcher.test;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+import com.google.common.collect.ImmutableList;
 import com.yahoo.component.ComponentId;
 import com.yahoo.component.chain.Chain;
 import com.yahoo.container.QrSearchersConfig;
@@ -83,7 +84,7 @@ public class JuniperSearcherTestCase {
 
     private Execution createExecution(Chain<Searcher> chain) {
         Map<String, List<String>> clusters = new LinkedHashMap<>();
-        Collection<SearchDefinition> searchDefs = List.of(createSearchDefinitionOne(), createSearchDefinitionTwo());
+        Collection<SearchDefinition> searchDefs = ImmutableList.of(createSearchDefinitionOne(), createSearchDefinitionTwo());
         IndexModel indexModel = new IndexModel(clusters, searchDefs);
         return new Execution(chain, Execution.Context.createContextStub(new IndexFacts(indexModel)));
     }

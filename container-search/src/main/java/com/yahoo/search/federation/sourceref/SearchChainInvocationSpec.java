@@ -1,6 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.search.federation.sourceref;
 
+import com.google.common.collect.ImmutableList;
 import com.yahoo.component.ComponentId;
 import com.yahoo.search.searchchain.model.federation.FederationOptions;
 
@@ -23,7 +24,7 @@ public class SearchChainInvocationSpec implements Cloneable {
     public final ComponentId provider;
 
     public final FederationOptions federationOptions;
-    public final List<String> documentTypes;
+    public final ImmutableList<String> documentTypes;
 
     SearchChainInvocationSpec(ComponentId searchChainId,
                               ComponentId source, ComponentId provider, FederationOptions federationOptions,
@@ -32,7 +33,7 @@ public class SearchChainInvocationSpec implements Cloneable {
         this.source = source;
         this.provider = provider;
         this.federationOptions = federationOptions;
-        this.documentTypes = List.copyOf(documentTypes);
+        this.documentTypes = ImmutableList.copyOf(documentTypes);
     }
 
     @Override
@@ -43,8 +44,9 @@ public class SearchChainInvocationSpec implements Cloneable {
     @Override
     public boolean equals(Object o) {
         if (o == this) return true;
-        if ( ! (o instanceof SearchChainInvocationSpec other)) return false;
+        if ( ! ( o instanceof SearchChainInvocationSpec)) return false;
 
+        SearchChainInvocationSpec other = (SearchChainInvocationSpec)o;
         if ( ! Objects.equals(this.searchChainId, other.searchChainId)) return false;
         if ( ! Objects.equals(this.source, other.source)) return false;
         if ( ! Objects.equals(this.provider, other.provider)) return false;

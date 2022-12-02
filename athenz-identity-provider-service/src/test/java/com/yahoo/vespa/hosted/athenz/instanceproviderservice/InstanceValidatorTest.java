@@ -1,6 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.athenz.instanceproviderservice;
 
+import com.google.common.collect.ImmutableList;
 import com.yahoo.component.Version;
 import com.yahoo.config.model.api.ApplicationInfo;
 import com.yahoo.config.model.api.HostInfo;
@@ -144,7 +145,7 @@ public class InstanceValidatorTest {
         nodeList = allocateNode(nodeList, node, applicationId);
         when(nodes.list()).thenReturn(NodeList.copyOf(nodeList));
         String nodeIp = node.ipConfig().primary().stream().findAny().orElseThrow(() -> new RuntimeException("No ipaddress for mocked node"));
-        InstanceConfirmation instanceConfirmation = createRefreshInstanceConfirmation(applicationId, domain, service, List.of(nodeIp));
+        InstanceConfirmation instanceConfirmation = createRefreshInstanceConfirmation(applicationId, domain, service, ImmutableList.of(nodeIp));
 
         assertTrue(instanceValidator.isValidRefresh(instanceConfirmation));
     }
@@ -178,7 +179,7 @@ public class InstanceValidatorTest {
         List<Node> nodeList = createNodes(10);
 
         when(nodes.list()).thenReturn(NodeList.copyOf(nodeList));
-        InstanceConfirmation instanceConfirmation = createRefreshInstanceConfirmation(applicationId, domain, service, List.of("::11"));
+        InstanceConfirmation instanceConfirmation = createRefreshInstanceConfirmation(applicationId, domain, service, ImmutableList.of("::11"));
 
         assertFalse(instanceValidator.isValidRefresh(instanceConfirmation));
 

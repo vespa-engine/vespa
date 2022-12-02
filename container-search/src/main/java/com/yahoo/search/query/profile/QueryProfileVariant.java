@@ -1,13 +1,11 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.search.query.profile;
 
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
 import com.yahoo.search.query.profile.types.QueryProfileType;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
+import java.util.*;
 
 /**
  * A variant of a query profile
@@ -42,7 +40,7 @@ public class QueryProfileVariant implements Cloneable, Comparable<QueryProfileVa
     public Map<String, Object> values() {
         if (values == null) {
             if (frozen)
-                return Map.of();
+                return Collections.emptyMap();
             else
                 values = new HashMap<>();
         }
@@ -56,7 +54,7 @@ public class QueryProfileVariant implements Cloneable, Comparable<QueryProfileVa
     public List<QueryProfile> inherited() {
         if (inherited == null) {
             if (frozen)
-                return List.of();
+                return Collections.emptyList();
             else
                 inherited = new ArrayList<>();
         }
@@ -142,9 +140,9 @@ public class QueryProfileVariant implements Cloneable, Comparable<QueryProfileVa
     public void freeze() {
         if (frozen) return;
         if (inherited != null)
-            inherited = List.copyOf(inherited);
+            inherited = ImmutableList.copyOf(inherited);
         if (values != null)
-            values = Map.copyOf(values);
+            values = ImmutableMap.copyOf(values);
         frozen=true;
     }
 

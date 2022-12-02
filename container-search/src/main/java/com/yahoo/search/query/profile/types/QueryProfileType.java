@@ -1,9 +1,12 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.search.query.profile.types;
 
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
 import com.yahoo.component.ComponentId;
 import com.yahoo.component.provider.FreezableSimpleComponent;
 import com.yahoo.processing.request.CompoundName;
+import com.yahoo.search.query.profile.OverridableQueryProfile;
 import com.yahoo.search.query.profile.QueryProfile;
 
 import java.util.ArrayList;
@@ -80,7 +83,8 @@ public class QueryProfileType extends FreezableSimpleComponent {
         Map<String, FieldDescription> unfrozenFields = new LinkedHashMap<>();
         for (Map.Entry<String, FieldDescription> field : fields.entrySet()) {
             FieldDescription unfrozenFieldValue = field.getValue();
-            if (field.getValue().getType() instanceof QueryProfileFieldType queryProfileFieldType) {
+            if (field.getValue().getType() instanceof QueryProfileFieldType) {
+                QueryProfileFieldType queryProfileFieldType = (QueryProfileFieldType)field.getValue().getType();
                 if (queryProfileFieldType.getQueryProfileType() != null) {
                     QueryProfileFieldType unfrozenType =
                             new QueryProfileFieldType(queryProfileFieldType.getQueryProfileType().unfrozen());
@@ -181,8 +185,8 @@ public class QueryProfileType extends FreezableSimpleComponent {
                     fields.put(field.getName(), field);
                 }
         }
-        fields = Collections.unmodifiableMap(fields);
-        inherited = List.copyOf(inherited);
+        fields = ImmutableMap.copyOf(fields);
+        inherited = ImmutableList.copyOf(inherited);
         strict = isStrict();
         matchAsPath = getMatchAsPath();
         super.freeze();
@@ -378,7 +382,7 @@ public class QueryProfileType extends FreezableSimpleComponent {
      */
     public Map<String, String> aliases() {
         if (isFrozen()) return aliases;
-        if (aliases == null) return Map.of();
+        if (aliases == null) return Collections.emptyMap();
         return Collections.unmodifiableMap(aliases);
     }
 

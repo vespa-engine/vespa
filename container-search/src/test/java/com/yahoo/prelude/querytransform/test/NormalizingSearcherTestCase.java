@@ -4,6 +4,7 @@ package com.yahoo.prelude.querytransform.test;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import com.google.common.collect.ImmutableList;
 import com.yahoo.language.Linguistics;
 import com.yahoo.language.simple.SimpleLinguistics;
 import com.yahoo.prelude.Index;
@@ -22,8 +23,8 @@ import org.junit.jupiter.api.Test;
 
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
-import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -72,7 +73,12 @@ public class NormalizingSearcherTestCase {
     }
 
     private String enc(String s) {
-        return URLEncoder.encode(s, StandardCharsets.UTF_8);
+        try {
+            return URLEncoder.encode(s, "utf-8");
+        }
+        catch (UnsupportedEncodingException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     @Test
@@ -123,9 +129,9 @@ public class NormalizingSearcherTestCase {
 
     private IndexFacts createIndexFacts() {
         Map<String, List<String>> clusters = new LinkedHashMap<>();
-        clusters.put("cluster1", List.of("type1", "type2", "type3"));
-        clusters.put("cluster2", List.of("type4", "type5"));
-        Collection<SearchDefinition> searchDefs = List.of(
+        clusters.put("cluster1", Arrays.asList("type1", "type2", "type3"));
+        clusters.put("cluster2", Arrays.asList("type4", "type5"));
+        Collection<SearchDefinition> searchDefs = ImmutableList.of(
                 createSearchDefinitionWithFields("type1", true),
                 createSearchDefinitionWithFields("type2", false),
                 new SearchDefinition("type3"),

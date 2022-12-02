@@ -1,11 +1,9 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.search.yql;
 
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
-
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -34,14 +32,22 @@ class ProjectionBuilder {
     }
 
     private String assignName(OperatorNode<ExpressionOperator> expr) {
-        String baseName = switch (expr.getOperator()) {
-            case PROPREF -> (String) expr.getArgument(1);
-            case READ_RECORD -> (String) expr.getArgument(0);
-            case READ_FIELD -> (String) expr.getArgument(1);
-            case VARREF -> (String) expr.getArgument(0);
-            default -> "expr";
+        String baseName = "expr";
+        switch (expr.getOperator()) {
+            case PROPREF:
+                baseName = (String) expr.getArgument(1);
+                break;
+            case READ_RECORD:
+                baseName = (String) expr.getArgument(0);
+                break;
+            case READ_FIELD:
+                baseName = (String) expr.getArgument(1);
+                break;
+            case VARREF:
+                baseName = (String) expr.getArgument(0);
+                break;
             // fall through, leaving baseName alone
-        };
+        }
         int c = 0;
         String candidate = baseName;
         while (fields.containsKey(candidate)) {
@@ -51,7 +57,7 @@ class ProjectionBuilder {
     }
 
     public OperatorNode<SequenceOperator> make(OperatorNode<SequenceOperator> target) {
-        List<OperatorNode<ProjectOperator>> lst = new ArrayList<>();
+        ImmutableList.Builder<OperatorNode<ProjectOperator>> lst = ImmutableList.builder();
         for (Map.Entry<String, OperatorNode<ExpressionOperator>> e : fields.entrySet()) {
             if (e.getKey().startsWith("*")) {
                 lst.add(OperatorNode.create(ProjectOperator.MERGE_RECORD, e.getValue().getArgument(0)));
@@ -61,7 +67,7 @@ class ProjectionBuilder {
                 lst.add(OperatorNode.create(ProjectOperator.FIELD, e.getValue(), e.getKey()));
             }
         }
-        return OperatorNode.create(SequenceOperator.PROJECT, target, List.copyOf(lst));
+        return OperatorNode.create(SequenceOperator.PROJECT, target, lst.build());
     }
 
 }

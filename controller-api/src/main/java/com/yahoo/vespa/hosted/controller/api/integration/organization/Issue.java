@@ -1,6 +1,8 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.api.integration.organization;
 
+import com.google.common.collect.ImmutableList;
+
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -28,7 +30,7 @@ public class Issue {
 
         this.summary = summary;
         this.description = description;
-        this.labels = List.copyOf(labels);
+        this.labels = ImmutableList.copyOf(labels);
         this.assignee = assignee;
         this.type = type;
         this.queue = queue;

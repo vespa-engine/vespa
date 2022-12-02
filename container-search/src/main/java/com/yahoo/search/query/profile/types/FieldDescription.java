@@ -1,9 +1,11 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.search.query.profile.types;
 
+import com.google.common.collect.ImmutableList;
 import com.yahoo.processing.request.CompoundName;
 import com.yahoo.search.query.profile.QueryProfile;
 
+import java.util.Arrays;
 import java.util.List;
 
 /**
@@ -94,14 +96,14 @@ public class FieldDescription implements Comparable<FieldDescription> {
         if (name.isCompound() && ! aliases.isEmpty())
             throw new IllegalArgumentException("Aliases are not allowed with compound names");
 
-        this.aliases = List.copyOf(aliases);
+        this.aliases = ImmutableList.copyOf(aliases);
         this.mandatory = mandatory;
         this.overridable = overridable;
     }
 
     private static List<String> toList(String string) {
-        if (string == null || string.isEmpty()) return List.of();
-        return List.of(string.split(" "));
+        if (string == null || string.isEmpty()) return ImmutableList.of();
+        return ImmutableList.copyOf(Arrays.asList(string.split(" ")));
     }
 
     /** Returns the full name of this as a string */

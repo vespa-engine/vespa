@@ -1,6 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.schema.expressiontransforms;
 
+import com.google.common.collect.ImmutableList;
 import com.yahoo.searchlib.rankingexpression.RankingExpression;
 import com.yahoo.searchlib.rankingexpression.transform.ConstantDereferencer;
 import com.yahoo.searchlib.rankingexpression.transform.ExpressionTransformer;
@@ -23,19 +24,19 @@ public class ExpressionTransforms {
 
     public ExpressionTransforms() {
         transforms =
-                List.of(new TensorFlowFeatureConverter(),
-                        new OnnxFeatureConverter(),
-                        new OnnxModelTransformer(),
-                        new XgboostFeatureConverter(),
-                        new LightGBMFeatureConverter(),
-                        new TokenTransformer(),
-                        new ConstantDereferencer(),
-                        new ConstantTensorTransformer(),
-                        new FunctionInliner(),
-                        new FunctionShadower(),
-                        new TensorMaxMinTransformer(),
-                        new Simplifier(),
-                        new BooleanExpressionTransformer());
+                ImmutableList.of(new TensorFlowFeatureConverter(),
+                                 new OnnxFeatureConverter(),
+                                 new OnnxModelTransformer(),
+                                 new XgboostFeatureConverter(),
+                                 new LightGBMFeatureConverter(),
+                                 new TokenTransformer(),
+                                 new ConstantDereferencer(),
+                                 new ConstantTensorTransformer(),
+                                 new FunctionInliner(),
+                                 new FunctionShadower(),
+                                 new TensorMaxMinTransformer(),
+                                 new Simplifier(),
+                                 new BooleanExpressionTransformer());
     }
 
     public RankingExpression transform(RankingExpression expression, RankProfileTransformContext context) {

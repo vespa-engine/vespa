@@ -9,6 +9,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
+import com.google.common.collect.ImmutableList;
 import com.yahoo.compress.IntegerCompressor;
 
 /**
@@ -29,7 +30,7 @@ public class WordAlternativesItem extends TermItem {
         this.alternatives = uniqueAlternatives(terms);
     }
 
-    private static List<Alternative> uniqueAlternatives(Collection<Alternative> terms) {
+    private static ImmutableList<Alternative> uniqueAlternatives(Collection<Alternative> terms) {
         List<Alternative> uniqueTerms = new ArrayList<>(terms.size());
         for (Alternative term : terms) {
             int i = Collections.binarySearch(uniqueTerms, term, (t0, t1) -> t0.word.compareTo(t1.word));
@@ -42,7 +43,7 @@ public class WordAlternativesItem extends TermItem {
                 uniqueTerms.add(~i, term);
             }
         }
-        return List.copyOf(uniqueTerms);
+        return ImmutableList.copyOf(uniqueTerms);
     }
 
     @Override
@@ -176,7 +177,8 @@ public class WordAlternativesItem extends TermItem {
 
         @Override
         public boolean equals(Object o) {
-            if ( ! (o instanceof Alternative other)) return false;
+            if ( ! (o instanceof Alternative)) return false;
+            var other = (Alternative)o;
             if ( ! Objects.equals(this.word, other.word)) return false;
             if (this.exactness != other.exactness) return false;
             return true;

@@ -1,6 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.search.federation;
 
+import com.google.common.collect.ImmutableList;
 import com.yahoo.search.Result;
 import com.yahoo.search.searchchain.FutureResult;
 
@@ -26,9 +27,9 @@ class FederationResult {
      * The remaining targets to wait for. 
      * Other targets are either complete, or should only be included if they are available when we complete
      */
-    private final List<TargetResult> targetsToWaitFor;
+    private List<TargetResult> targetsToWaitFor;
     
-    private FederationResult(List<TargetResult> targetResults) {
+    private FederationResult(ImmutableList<TargetResult> targetResults) {
         this.targetResults = targetResults;
 
         if (targetResults.stream().anyMatch(TargetResult::isMandatory))
@@ -93,7 +94,7 @@ class FederationResult {
         public Optional<Result> getIfAvailable(long timeout) {
             if (availableResult.isPresent()) return availableResult;
             availableResult = futureResult.getIfAvailable(timeout, TimeUnit.MILLISECONDS);
-            availableResult.ifPresent(target::modifyTargetResult);
+            availableResult.ifPresent(result -> target.modifyTargetResult(result));
             return availableResult;
         }
         
@@ -120,14 +121,14 @@ class FederationResult {
 
     public static class Builder {
         
-        private final List<TargetResult> results = new ArrayList<>();
+        private final ImmutableList.Builder<TargetResult> results = new ImmutableList.Builder();
         
         public void add(FederationSearcher.Target target, FutureResult futureResult) {
             results.add(new TargetResult(target, futureResult));
         }
         
         public FederationResult build() {
-            return new FederationResult(List.copyOf(results));
+            return new FederationResult(results.build());
         }
         
     }
