@@ -166,33 +166,20 @@ Onnx::ElementType make_element_type(ONNXTensorElementDataType element_type) {
 class OnnxString {
 private:
     static Ort::AllocatorWithDefaultOptions _alloc;
-    char *_str;
-    void cleanup() {
-        if (_str != nullptr) {
-            _alloc.Free(_str);
-            _str = nullptr;
-        }
-    }
-    OnnxString(char *str) : _str(str) {}
+    Ort::AllocatedStringPtr _str;
+    OnnxString(Ort::AllocatedStringPtr str) : _str(std::move(str)) {}
 public:
     OnnxString(const OnnxString &rhs) = delete;
     OnnxString &operator=(const OnnxString &rhs) = delete;
-    OnnxString(OnnxString &&rhs) : _str(rhs._str) {
-        rhs._str = nullptr;
-    }
-    OnnxString &operator=(OnnxString &&rhs) {
-        cleanup();
-        _str = rhs._str;
-        rhs._str = nullptr;
-        return *this;
-    }
-    const char *get() const { return _str; }
-    ~OnnxString() { cleanup(); }
+    OnnxString(OnnxString &&rhs) = default;
+    OnnxString &operator=(OnnxString &&rhs) = default;
+    const char *get() const { return _str.get(); }
+    ~OnnxString() = default;
     static OnnxString get_input_name(const Ort::Session &session, size_t idx) {
-        return OnnxString(session.GetInputName(idx, _alloc));
+        return OnnxString(session.GetInputNameAllocated(idx, _alloc));
     }
     static OnnxString get_output_name(const Ort::Session &session, size_t idx) {
-        return OnnxString(session.GetOutputName(idx, _alloc));
+        return OnnxString(session.GetOutputNameAllocated(idx, _alloc));
     }
 };
 Ort::AllocatorWithDefaultOptions OnnxString::_alloc;
