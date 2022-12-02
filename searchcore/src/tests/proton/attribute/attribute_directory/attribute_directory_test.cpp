@@ -6,7 +6,9 @@
 #include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/stllike/asciistream.h>
 #include <vespa/vespalib/stllike/string.h>
+#include <vespa/vespalib/util/size_literals.h>
 #include <filesystem>
+#include <fstream>
 
 #include <vespa/log/log.h>
 LOG_SETUP("attribute_directory_test");
@@ -43,6 +45,10 @@ bool hasAttributeDir(const std::shared_ptr<AttributeDirectory> &dir) {
 
 bool hasWriter(const std::unique_ptr<AttributeDirectory::Writer> &writer) {
     return static_cast<bool>(writer);
+}
+
+void create_directory(const vespalib::string& path) {
+    std::filesystem::create_directory(std::filesystem::path(path));
 }
 
 }
@@ -134,7 +140,7 @@ public:
         EXPECT_TRUE(hasAttributeDir(dir));
         auto writer = dir->getWriter();
         writer->createInvalidSnapshot(serialNum);
-        std::filesystem::create_directory(std::filesystem::path(writer->getSnapshotDir(serialNum)));
+        create_directory(writer->getSnapshotDir(serialNum));
         writer->markValidSnapshot(serialNum);
         assertAttributeDiskDir("foo");
     }
@@ -160,7 +166,7 @@ public:
         auto dir = createFooAttrDir();
         auto writer = dir->getWriter();
         writer->createInvalidSnapshot(serialNum);
-        std::filesystem::create_directory(std::filesystem::path(writer->getSnapshotDir(serialNum)));
+        create_directory(writer->getSnapshotDir(serialNum));
         writer->markValidSnapshot(serialNum);
     }
 
@@ -208,10 +214,10 @@ TEST_F(AttributeDirectoryTest, can_prune_attribute_snapshots)
     assertNotAttributeDiskDir("foo");
     auto writer = dir->getWriter();
     writer->createInvalidSnapshot(2);
-    std::filesystem::create_directory(std::filesystem::path(writer->getSnapshotDir(2)));
+    create_directory(writer->getSnapshotDir(2));
     writer->markValidSnapshot(2);
     writer->createInvalidSnapshot(4);
-    std::filesystem::create_directory(std::filesystem::path(writer->getSnapshotDir(4)));
+    create_directory(writer->getSnapshotDir(4));
     writer->markValidSnapshot(4);
     writer.reset();
     assertAttributeDiskDir("foo");
@@ -262,9 +268,9 @@ TEST_F(AttributeDirectoryTest, attribute_directory_is_not_removed_due_to_pruning
 
 TEST(BasicDirectoryTest, initial_state_tracks_disk_layout)
 {
-    std::filesystem::create_directory(std::filesystem::path("attributes"));
-    std::filesystem::create_directory(std::filesystem::path("attributes/foo"));
-    std::filesystem::create_directory(std::filesystem::path("attributes/bar"));
+    create_directory("attributes");
+    create_directory("attributes/foo");
+    create_directory("attributes/bar");
     IndexMetaInfo fooInfo("attributes/foo");
     IndexMetaInfo barInfo("attributes/bar");
     fooInfo.addSnapshot({true, 4, "snapshot-4"});
@@ -290,8 +296,8 @@ TEST(BasicDirectoryTest, initial_state_tracks_disk_layout)
 TEST_F(AttributeDirectoryTest, snapshot_removal_removes_correct_snapshot_directory)
 {
     setupFooSnapshots(5);
-    std::filesystem::create_directory(std::filesystem::path(getSnapshotDir("foo", 5)));
-    std::filesystem::create_directory(std::filesystem::path(getSnapshotDir("foo", 6)));
+    create_directory(getSnapshotDir("foo", 5));
+    create_directory(getSnapshotDir("foo", 6));
     assertSnapshotDir("foo", 5);
     assertSnapshotDir("foo", 6);
     invalidateFooSnapshots(false);
@@ -314,6 +320,86 @@ TEST_F(AttributeDirectoryTest, can_get_nonblocking_writer)
     EXPECT_TRUE(hasWriter(writer2));
     writer = dir->tryGetWriter();
     EXPECT_FALSE(hasWriter(writer));
+}
+
+class TransientDiskUsageFixture : public Fixture {
+public:
+    std::shared_ptr<AttributeDirectory> dir;
+    std::unique_ptr<AttributeDirectory::Writer> writer;
+    TransientDiskUsageFixture()
+        : dir(createFooAttrDir()),
+          writer(dir->getWriter())
+    {
+    }
+    ~TransientDiskUsageFixture() {}
+    void create_invalid_snapshot(SerialNum serial_num) {
+        writer->createInvalidSnapshot(serial_num);
+        create_directory(writer->getSnapshotDir(serial_num));
+    }
+    void create_valid_snapshot(SerialNum serial_num, size_t num_bytes_in_file) {
+        create_invalid_snapshot(serial_num);
+        write_snapshot_file(serial_num, num_bytes_in_file);
+        writer->markValidSnapshot(serial_num);
+    }
+    void write_snapshot_file(SerialNum serial_num, size_t num_bytes) {
+        std::ofstream file;
+        file.open(writer->getSnapshotDir(serial_num) + "/file.dat");
+        std::string data(num_bytes, 'X');
+        file.write(data.data(), num_bytes);
+        file.close();
+    }
+    size_t transient_disk_usage() const {
+        return dir->get_transient_resource_usage().disk();
+    }
+};
+
+class TransientDiskUsageTest : public TransientDiskUsageFixture, public testing::Test {};
+
+TEST_F(TransientDiskUsageTest, disk_usage_of_snapshots_can_count_towards_transient_usage)
+{
+    create_invalid_snapshot(3);
+    EXPECT_EQ(0, transient_disk_usage());
+    write_snapshot_file(3, 64);
+    // Note: search::DirectoryTraverse rounds each file size up to a block size of 4 KiB.
+    // Writing of snapshot 3 is ongoing and counts towards transient disk usage.
+    EXPECT_EQ(4_Ki, transient_disk_usage());
+    writer->markValidSnapshot(3);
+    // Snapshot 3 is now the best and does NOT count towards transient disk usage.
+    EXPECT_EQ(0, transient_disk_usage());
+
+    create_invalid_snapshot(5);
+    EXPECT_EQ(0, transient_disk_usage());
+    write_snapshot_file(5, 4_Ki + 1);
+    // Writing of snapshot 5 is ongoing and counts towards transient disk usage.
+    EXPECT_EQ(8_Ki, transient_disk_usage());
+    writer->markValidSnapshot(5);
+    // Snapshot 5 is now the best and only 3 counts towards transient disk usage.
+    EXPECT_EQ(4_Ki, transient_disk_usage());
+
+    // Snapshot 3 is removed.
+    writer->invalidateOldSnapshots();
+    writer->removeInvalidSnapshots();
+    EXPECT_EQ(0, transient_disk_usage());
+}
+
+TEST(TransientDiskUsageLoadTest, disk_usage_of_snapshots_are_calculated_when_loading)
+{
+    {
+        TransientDiskUsageFixture f;
+        f.cleanup(false);
+        f.create_valid_snapshot(3, 64);
+        f.create_valid_snapshot(5, 4_Ki + 1);
+        f.writer->invalidateOldSnapshots();
+        EXPECT_EQ(4_Ki, f.transient_disk_usage());
+    }
+    {
+        TransientDiskUsageFixture f;
+        // Snapshot 5 is the best and only 3 counts towards transient disk usage.
+        EXPECT_EQ(4_Ki, f.transient_disk_usage());
+        // Snapshot 3 is removed.
+        f.writer->removeInvalidSnapshots();
+        EXPECT_EQ(0, f.transient_disk_usage());
+    }
 }
 
 }
