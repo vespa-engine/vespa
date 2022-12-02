@@ -1,8 +1,6 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.api.integration.organization;
 
-import com.google.common.collect.ImmutableList;
-
 import java.net.URI;
 import java.util.List;
 import java.util.Objects;
@@ -26,7 +24,7 @@ public class Contact {
         this.propertyUrl = Objects.requireNonNull(propertyUrl, "propertyUrl must be non-null");
         this.url = Objects.requireNonNull(url, "url must be non-null");
         this.issueTrackerUrl = Objects.requireNonNull(issueTrackerUrl, "issueTrackerUrl must be non-null");
-        this.persons = ImmutableList.copyOf(Objects.requireNonNull(persons, "persons must be non-null"));
+        this.persons = List.copyOf(Objects.requireNonNull(persons, "persons must be non-null"));
         this.queue = queue;
         this.component = component;
     }

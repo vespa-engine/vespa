@@ -2,7 +2,6 @@
 package com.yahoo.vespa.model.admin.monitoring;
 
 import java.util.Collection;
-import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.Map;
@@ -24,7 +23,7 @@ public class MetricSet {
     private final Set<MetricSet> children;
 
     public MetricSet(String id, Collection<Metric> metrics) {
-        this(id, metrics, Collections.emptySet());
+        this(id, metrics, Set.of());
     }
 
     public MetricSet(String id, Collection<Metric> metrics, Collection<MetricSet> children) {
@@ -57,9 +56,7 @@ public class MetricSet {
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
-        if (!(o instanceof MetricSet)) return false;
-
-        MetricSet that = (MetricSet) o;
+        if (!(o instanceof MetricSet that)) return false;
 
         return Objects.equals(id, that.id);
 

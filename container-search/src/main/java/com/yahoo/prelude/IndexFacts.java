@@ -1,10 +1,16 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.prelude;
 
-import com.google.common.collect.ImmutableList;
 import com.yahoo.search.Query;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.TreeSet;
 
 import static com.yahoo.text.Lowercase.toLowerCase;
 
@@ -57,7 +63,6 @@ public class IndexFacts {
 
     public IndexFacts() {}
 
-    @SuppressWarnings({"deprecation"})
     public IndexFacts(IndexModel indexModel) {
         if (indexModel.getSearchDefinitions() != null) {
             this.searchDefinitions = indexModel.getSearchDefinitions();
@@ -85,20 +90,16 @@ public class IndexFacts {
     }
 
     private static void addEntry(Map<String, List<String>> result, String key, String value) {
-        List<String> values = result.get(key);
-        if (values == null) {
-            values = new ArrayList<>();
-            result.put(key, values);
-        }
+        List<String> values = result.computeIfAbsent(key, k -> new ArrayList<>());
         values.add(value);
     }
 
     // Assumes that document names are equal to the search definition that contain them.
     public List<String> clustersHavingSearchDefinition(String searchDefinitionName) {
-        if (clusterByDocument == null) return Collections.emptyList();
+        if (clusterByDocument == null) return List.of();
 
         List<String> clusters = clusterByDocument.get(searchDefinitionName);
-        return clusters != null ? clusters : Collections.<String>emptyList();
+        return clusters != null ? clusters : List.of();
     }
 
     private boolean isInitialized() {
@@ -168,9 +169,9 @@ public class IndexFacts {
     }
 
     private Collection<Index> getIndexes(String documentType) {
-        if ( ! isInitialized()) return Collections.emptyList();
+        if ( ! isInitialized()) return List.of();
         SearchDefinition sd = searchDefinitions.get(documentType);
-        if (sd == null) return Collections.emptyList();
+        if (sd == null) return List.of();
         return sd.indices().values();
     }
 
@@ -231,7 +232,7 @@ public class IndexFacts {
     }
 
     private Collection<String> emptyCollectionIfNull(Collection<String> collection) {
-        return collection == null ? Collections.<String>emptyList() : collection;
+        return collection == null ? List.of() : collection;
     }
 
     /**
@@ -318,7 +319,7 @@ public class IndexFacts {
         private final List<String> documentTypes;
 
         private Session(Query query) {
-            documentTypes = ImmutableList.copyOf(resolveDocumentTypes(query));
+            documentTypes = List.copyOf(resolveDocumentTypes(query));
         }
 
         private Session(Collection<String> sources, Collection<String> restrict) {
@@ -347,7 +348,7 @@ public class IndexFacts {
         // currently by the flat structure in IndexFacts.
         // That can be fixed without changing this API.
         public Index getIndex(String indexName, String documentType) {
-            return IndexFacts.this.getIndexFromDocumentTypes(indexName, Collections.singletonList(documentType));
+            return IndexFacts.this.getIndexFromDocumentTypes(indexName, List.of(documentType));
         }
 
         /** Returns all the indexes of a given search definition */

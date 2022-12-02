@@ -2,7 +2,6 @@
 package com.yahoo.search;
 
 import ai.vespa.cloud.ZoneInfo;
-import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.language.process.Embedder;
@@ -262,7 +261,7 @@ public class Query extends com.yahoo.processing.Request implements Cloneable {
 
     /** Returns an unmodifiable list of all the native properties under a Query */
     public static final List<CompoundName> nativeProperties =
-            ImmutableList.copyOf(namesUnder(CompoundName.empty, Query.getArgumentType()));
+            List.copyOf(namesUnder(CompoundName.empty, Query.getArgumentType()));
 
     private static List<CompoundName> namesUnder(CompoundName prefix, QueryProfileType type) {
         if (type == null) return Collections.emptyList(); // Names not known statically

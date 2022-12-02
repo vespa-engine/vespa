@@ -1,7 +1,6 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model.container.xml;
 
-import com.google.common.collect.ImmutableList;
 import com.yahoo.component.ComponentId;
 import com.yahoo.component.ComponentSpecification;
 import com.yahoo.component.Version;
@@ -154,7 +153,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
     private final boolean httpServerEnabled;
     protected DeployLogger log;
 
-    public static final List<ConfigModelId> configModelIds = ImmutableList.of(ConfigModelId.fromName(CONTAINER_TAG));
+    public static final List<ConfigModelId> configModelIds = List.of(ConfigModelId.fromName(CONTAINER_TAG));
 
     private static final String xmlRendererId = RendererRegistry.xmlRendererId.getName();
     private static final String jsonRendererId = RendererRegistry.jsonRendererId.getName();
@@ -217,7 +216,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
         addStatusHandlers(cluster, context.getDeployState().isHosted());
         addUserHandlers(deployState, cluster, spec, context);
 
-        addClients(deployState, spec, cluster, context);
+        addClients(deployState, spec, cluster);
         addHttp(deployState, spec, cluster, context);
 
         addAccessLogs(deployState, cluster, spec);
@@ -380,7 +379,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
                 // Only consider global endpoints.
                 .filter(endpoint -> endpoint.scope() == ApplicationClusterEndpoint.Scope.global)
                 .flatMap(endpoint -> endpoint.names().stream())
-                .collect(Collectors.toCollection(() -> new LinkedHashSet<>()));
+                .collect(Collectors.toCollection(LinkedHashSet::new));
 
         // Build the comma delimited list of endpoints this container should be known as.
         // Confusingly called 'rotations' for legacy reasons.
@@ -491,7 +490,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
 
     }
 
-    protected void addClients(DeployState deployState, Element spec, ApplicationContainerCluster cluster, ConfigModelContext context) {
+    protected void addClients(DeployState deployState, Element spec, ApplicationContainerCluster cluster) {
         if (!deployState.isHosted() || !deployState.zone().system().isPublic() || !deployState.featureFlags().enableDataPlaneFilter()) return;
 
         List<Client> clients;
@@ -773,11 +772,10 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
         return new JvmGcOptions(context.getDeployState(), jvmGCOptions).build();
     }
 
-    private static String getJvmOptions(ApplicationContainerCluster cluster,
-                                        Element nodesElement,
+    private static String getJvmOptions(Element nodesElement,
                                         DeployState deployState,
                                         boolean legacyOptions) {
-        return new JvmOptions(cluster, nodesElement, deployState, legacyOptions).build();
+        return new JvmOptions(nodesElement, deployState, legacyOptions).build();
     }
 
     private static String extractAttribute(Element element, String attrName) {
@@ -798,7 +796,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
 
     private void extractJvmFromLegacyNodesTag(List<ApplicationContainer> nodes, ApplicationContainerCluster cluster,
                                               Element nodesElement, ConfigModelContext context) {
-        applyNodesTagJvmArgs(nodes, getJvmOptions(cluster, nodesElement, context.getDeployState(), true));
+        applyNodesTagJvmArgs(nodes, getJvmOptions(nodesElement, context.getDeployState(), true));
 
         if (cluster.getJvmGCOptions().isEmpty()) {
             String jvmGCOptions = extractAttribute(nodesElement, VespaDomBuilder.JVM_GC_OPTIONS);
@@ -810,7 +808,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
 
     private void extractJvmTag(List<ApplicationContainer> nodes, ApplicationContainerCluster cluster,
                                Element nodesElement, Element jvmElement, ConfigModelContext context) {
-        applyNodesTagJvmArgs(nodes, getJvmOptions(cluster, nodesElement, context.getDeployState(), false));
+        applyNodesTagJvmArgs(nodes, getJvmOptions(nodesElement, context.getDeployState(), false));
         applyMemoryPercentage(cluster, jvmElement.getAttribute(VespaDomBuilder.Allocated_MEMORY_ATTRIB_NAME));
         String jvmGCOptions = extractAttribute(jvmElement, VespaDomBuilder.GC_OPTIONS);
         cluster.setJvmGCOptions(buildJvmGCOptions(context, jvmGCOptions));
@@ -1199,14 +1197,12 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
         // debug port will not be available in hosted, don't allow
         private static final Pattern invalidInHostedatttern = Pattern.compile("-Xrunjdwp:transport=.*");
 
-        private final ContainerCluster<?> cluster;
         private final Element nodesElement;
         private final DeployLogger logger;
         private final boolean legacyOptions;
         private final boolean isHosted;
 
-        public JvmOptions(ContainerCluster<?> cluster, Element nodesElement, DeployState deployState, boolean legacyOptions) {
-            this.cluster = cluster;
+        public JvmOptions(Element nodesElement, DeployState deployState, boolean legacyOptions) {
             this.nodesElement = nodesElement;
             this.logger = deployState.getDeployLogger();
             this.legacyOptions = legacyOptions;
@@ -1251,10 +1247,9 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
                                                 .collect(Collectors.toList());
             if (isHosted)
                 invalidOptions.addAll(Arrays.stream(optionList)
-                                            .filter(option -> !option.isEmpty())
-                                            .filter(option -> Pattern.matches(invalidInHostedatttern.pattern(), option))
-                                            .sorted()
-                                            .collect(Collectors.toList()));
+                        .filter(option -> !option.isEmpty())
+                        .filter(option -> Pattern.matches(invalidInHostedatttern.pattern(), option))
+                        .sorted().toList());
 
             if (invalidOptions.isEmpty()) return;
 
@@ -1303,10 +1298,9 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
                 if (isHosted) {
                     // CMS GC options cannot be used in hosted, CMS is unsupported in JDK 17
                     invalidOptions.addAll(Arrays.stream(optionList)
-                                                .filter(option -> !option.isEmpty())
-                                                .filter(option -> Pattern.matches(invalidCMSPattern.pattern(), option) ||
-                                                        option.equals("-XX:+UseConcMarkSweepGC"))
-                                                .collect(Collectors.toList()));
+                            .filter(option -> !option.isEmpty())
+                            .filter(option -> Pattern.matches(invalidCMSPattern.pattern(), option) ||
+                                    option.equals("-XX:+UseConcMarkSweepGC")).toList());
                 }
 
                 logOrFailInvalidOptions(invalidOptions);

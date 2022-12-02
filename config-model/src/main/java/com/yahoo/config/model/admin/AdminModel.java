@@ -1,7 +1,6 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.config.model.admin;
 
-import com.google.common.collect.ImmutableList;
 import com.yahoo.config.model.ApplicationConfigProducerRoot;
 import com.yahoo.config.model.ConfigModel;
 import com.yahoo.config.model.ConfigModelContext;
@@ -65,8 +64,8 @@ public class AdminModel extends ConfigModel {
     public static class BuilderV2 extends ConfigModelBuilder<AdminModel> {
 
         public static final List<ConfigModelId> configModelIds =
-                ImmutableList.of(ConfigModelId.fromNameAndVersion("admin", "2.0"),
-                                 ConfigModelId.fromNameAndVersion("admin", "1.0"));
+                List.of(ConfigModelId.fromNameAndVersion("admin", "2.0"),
+                        ConfigModelId.fromNameAndVersion("admin", "1.0"));
 
         public BuilderV2() {
             super(AdminModel.class);
@@ -98,8 +97,8 @@ public class AdminModel extends ConfigModel {
     public static class BuilderV4 extends ConfigModelBuilder<AdminModel> {
 
         public static final List<ConfigModelId> configModelIds =
-                ImmutableList.of(ConfigModelId.fromNameAndVersion("admin", "3.0"),
-                                 ConfigModelId.fromNameAndVersion("admin", "4.0"));
+                List.of(ConfigModelId.fromNameAndVersion("admin", "3.0"),
+                        ConfigModelId.fromNameAndVersion("admin", "4.0"));
 
         public BuilderV4() {
             super(AdminModel.class);
