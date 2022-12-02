@@ -8,6 +8,7 @@ import com.yahoo.config.model.producer.AbstractConfigProducer;
 import com.yahoo.vespa.defaults.Defaults;
 
 import java.util.Collection;
+import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -410,11 +411,12 @@ public abstract class AbstractService extends AbstractConfigProducer<AbstractCon
 
     @Override
     public Map<String, Object> getEnvVars() {
-        return Map.copyOf(environmentVariables);
+        return Collections.unmodifiableMap(environmentVariables);
     }
 
     public String getEnvStringForTesting() {
-        return environmentVariables.entrySet().stream().map(e -> e.getKey() + '=' + toEnvValue(e.getValue())).collect(Collectors.joining(" "));
+        return environmentVariables.entrySet().stream().sorted(Map.Entry.comparingByKey())
+                .map(e -> e.getKey() + '=' + toEnvValue(e.getValue())).collect(Collectors.joining(" "));
     }
 
     /**

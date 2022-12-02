@@ -2,11 +2,8 @@
 package com.yahoo.document.select.rule;
 
 import com.yahoo.document.BucketIdFactory;
-import com.yahoo.document.DocumentGet;
 import com.yahoo.document.DocumentOperation;
 import com.yahoo.document.DocumentPut;
-import com.yahoo.document.DocumentRemove;
-import com.yahoo.document.DocumentType;
 import com.yahoo.document.DocumentUpdate;
 import com.yahoo.document.select.BucketSet;
 import com.yahoo.document.select.Context;
