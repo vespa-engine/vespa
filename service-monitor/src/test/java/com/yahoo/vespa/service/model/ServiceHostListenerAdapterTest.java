@@ -142,7 +142,7 @@ public class ServiceHostListenerAdapterTest {
 
         List<HostInfo> hostnameList = Stream.of(hostnames)
                 .map(hostname -> new HostInfo(hostname, List.of()))
-                .collect(Collectors.toList());
+                .toList();
         when(model.getHosts()).thenReturn(hostnameList);
 
         return applicationInfo;

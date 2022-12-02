@@ -34,7 +34,7 @@ public class NodeRepoStatsData {
     public NodeRepoStats toNodeRepoStats() {
         return new NodeRepoStats(totalCost, totalAllocatedCost,
                                  load.toLoad(), activeLoad.toLoad(),
-                                 applications.stream().map(stats -> stats.toApplicationStats()).collect(Collectors.toList()));
+                                 applications.stream().map(stats -> stats.toApplicationStats()).toList());
     }
 
 }

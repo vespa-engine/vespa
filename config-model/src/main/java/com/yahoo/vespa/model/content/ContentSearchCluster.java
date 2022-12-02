@@ -355,7 +355,7 @@ public class ContentSearchCluster extends AbstractConfigProducer<SearchCluster> 
     private List<NewDocumentType> documentTypes(Predicate<NewDocumentType> filter) {
         return documentDefinitions.values().stream()
                 .filter(filter)
-                .collect(Collectors.toList());
+                .toList();
     }
 
     private boolean hasIndexingModeStreaming(NewDocumentType type) {

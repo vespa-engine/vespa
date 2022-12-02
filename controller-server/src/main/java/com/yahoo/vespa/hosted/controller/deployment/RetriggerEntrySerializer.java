@@ -27,7 +27,7 @@ public class RetriggerEntrySerializer {
     public List<RetriggerEntry> fromSlime(Slime slime) {
         return SlimeUtils.entriesStream(slime.get().field("entries"))
                 .map(this::deserializeEntry)
-                .collect(Collectors.toList());
+                .toList();
     }
 
     public Slime toSlime(List<RetriggerEntry> entryList) {

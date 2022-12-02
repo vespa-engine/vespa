@@ -127,24 +127,24 @@ public class LbServicesProducerTest {
         List<Endpoints> endpointList = config.tenants("foo").applications("foo:prod:" + regionName.value() + ":default").endpoints();
         // Expect 2 zone endpoints (2 suffixes), 2 global endpoints and 1 application endpoint
         assertEquals(5, endpointList.size());
-        List<Endpoints> zoneEndpoints = endpointList.stream().filter(e -> e.scope() == zone).collect(Collectors.toList());
+        List<Endpoints> zoneEndpoints = endpointList.stream().filter(e -> e.scope() == zone).toList();
         assertEquals(2, zoneEndpoints.size());
         assertTrue(zoneEndpoints.stream()
                            .filter(e -> e.routingMethod() == sharedLayer4)
-                           .map(Endpoints::dnsName).collect(Collectors.toList())
+                           .map(Endpoints::dnsName).toList()
                 .containsAll(List.of("mydisc.foo.foo.endpoint1.suffix", "mydisc.foo.foo.endpoint2.suffix")));
         assertContainsEndpoint(zoneEndpoints, "mydisc.foo.foo.endpoint1.suffix", "mydisc", zone, sharedLayer4, 1, List.of("foo.foo.yahoo.com"));
         assertContainsEndpoint(zoneEndpoints, "mydisc.foo.foo.endpoint2.suffix", "mydisc", zone, sharedLayer4, 1, List.of("foo.foo.yahoo.com"));
 
-        List<Endpoints> globalEndpoints = endpointList.stream().filter(e -> e.scope() == global).collect(Collectors.toList());
+        List<Endpoints> globalEndpoints = endpointList.stream().filter(e -> e.scope() == global).toList();
         assertEquals(2, globalEndpoints.size());
-        assertTrue(globalEndpoints.stream().map(Endpoints::dnsName).collect(Collectors.toList()).containsAll(List.of("rotation-1", "rotation-2")));
+        assertTrue(globalEndpoints.stream().map(Endpoints::dnsName).toList().containsAll(List.of("rotation-1", "rotation-2")));
         assertContainsEndpoint(globalEndpoints, "rotation-1", "mydisc", global, sharedLayer4, 1, List.of("foo.foo.yahoo.com"));
         assertContainsEndpoint(globalEndpoints, "rotation-2", "mydisc", global, sharedLayer4, 1, List.of("foo.foo.yahoo.com"));
 
-        List<Endpoints> applicationEndpoints = endpointList.stream().filter(e -> e.scope() == application).collect(Collectors.toList());
+        List<Endpoints> applicationEndpoints = endpointList.stream().filter(e -> e.scope() == application).toList();
         assertEquals(1, applicationEndpoints.size());
-        assertTrue(applicationEndpoints.stream().map(Endpoints::dnsName).collect(Collectors.toList()).contains("app-endpoint"));
+        assertTrue(applicationEndpoints.stream().map(Endpoints::dnsName).toList().contains("app-endpoint"));
         assertContainsEndpoint(applicationEndpoints, "app-endpoint", "mydisc", application, sharedLayer4, 1, List.of("foo.foo.yahoo.com"));
     }
 

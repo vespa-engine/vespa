@@ -32,7 +32,7 @@ public class OrFunction extends FunctionNode {
     public OrFunction copy() {
         return new OrFunction(getLabel(),
                               getLevelOrNull(),
-                              args().stream().map(arg -> arg.copy()).collect(Collectors.toList()));
+                              args().stream().map(arg -> arg.copy()).toList());
     }
 
     /**

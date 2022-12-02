@@ -43,7 +43,7 @@ public class RetriggerMaintainer extends ControllerMaintainer {
             // Remove all jobs that has succeeded with the required job run and persist the list
             List<RetriggerEntry> remaining = retriggerEntries.stream()
                     .filter(this::needsTrigger)
-                    .collect(Collectors.toList());
+                    .toList();
             controller().curator().writeRetriggerEntries(remaining);
         } catch (Exception e) {
             logger.log(Level.WARNING, "Exception while triggering jobs", e);

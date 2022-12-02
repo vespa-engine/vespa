@@ -31,7 +31,7 @@ public class ServiceMonitorImplTest {
         ApplicationInfo application1 = mock(ApplicationInfo.class);
         ApplicationInfo application2 = mock(ApplicationInfo.class);
         List<ApplicationInfo> applications = Stream.of(application1, application2)
-                .collect(Collectors.toList());
+                .toList();
         when(duperModelManager.getApplicationInfos()).thenReturn(applications);
 
         ServiceModel serviceModel = serviceMonitor.getServiceModelSnapshot();

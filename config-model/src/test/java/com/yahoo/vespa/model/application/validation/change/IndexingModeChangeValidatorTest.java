@@ -70,7 +70,7 @@ public class IndexingModeChangeValidatorTest {
     private void assertReindexingChange(String message, List<ConfigChangeAction> changeActions) {
         List<ConfigChangeAction> reindexingActions = changeActions.stream()
                                                               .filter(a -> a instanceof ConfigChangeReindexAction)
-                                                              .collect(Collectors.toList());
+                                                              .toList();
         assertEquals(1, reindexingActions.size());
         assertTrue(reindexingActions.get(0) instanceof ConfigChangeReindexAction);
         assertEquals("indexing-mode-change", ((ConfigChangeReindexAction)reindexingActions.get(0)).name());

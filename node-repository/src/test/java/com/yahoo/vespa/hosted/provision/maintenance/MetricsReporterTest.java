@@ -306,7 +306,7 @@ public class MetricsReporterTest {
     private Number getMetric(String name, TestMetric metric, Map<String, String> dimensions) {
         List<TestMetric.TestContext> metrics = metric.context.get(name).stream()
                                                              .filter(ctx -> ctx.properties.entrySet().containsAll(dimensions.entrySet()))
-                                                             .collect(Collectors.toList());
+                                                             .toList();
         if (metrics.isEmpty()) throw new IllegalArgumentException("No value found for metric " + name + " with dimensions " + dimensions);
         return metrics.get(metrics.size() - 1).value;
     }

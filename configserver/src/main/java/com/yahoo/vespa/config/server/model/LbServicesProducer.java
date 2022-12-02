@@ -74,7 +74,7 @@ public class LbServicesProducer implements LbServicesConfig.Producer {
                 .sorted(Comparator.comparing(ApplicationClusterInfo::name))
                 .map(ApplicationClusterInfo::endpoints)
                 .flatMap(endpoints -> getEndpointConfig(endpoints).stream())
-                .collect(Collectors.toList());
+                .toList();
         ab.endpoints(endpointBuilder);
         return ab;
     }
@@ -83,7 +83,7 @@ public class LbServicesProducer implements LbServicesConfig.Producer {
         return clusterEndpoints.stream()
                 .sorted(Comparator.comparing(ApplicationClusterEndpoint::dnsName))
                 .map(this::getEndpointConfig)
-                .collect(Collectors.toList());
+                .toList();
     }
 
     private LbServicesConfig.Tenants.Applications.Endpoints.Builder getEndpointConfig(ApplicationClusterEndpoint clusterEndpoints) {

@@ -32,7 +32,7 @@ public class AddFunction extends FunctionNode {
     public AddFunction copy() {
         return new AddFunction(getLabel(),
                                getLevelOrNull(),
-                               args().stream().map(arg -> arg.copy()).collect(Collectors.toList()));
+                               args().stream().map(arg -> arg.copy()).toList());
     }
 
     /**

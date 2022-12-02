@@ -109,7 +109,7 @@ public abstract class ModelsBuilder<MODELRESULT extends ModelResult> {
                                               .map(Version::getMajor)
                                               .distinct()
                                               .sorted(Comparator.reverseOrder())
-                                              .collect(Collectors.toList());
+                                              .toList();
 
         List<MODELRESULT> allApplicationModels = new ArrayList<>();
         // Build latest model for latest major only, if that fails build latest model for previous major

@@ -85,7 +85,7 @@ class Model {
     }
 
     List<String> segment(String text, Tokenizer tokenizer) {
-        return embed(text, tokenizer).stream().map(tokenId -> tokenId2Token.get(tokenId)).collect(Collectors.toList());
+        return embed(text, tokenizer).stream().map(tokenId -> tokenId2Token.get(tokenId)).toList();
     }
 
     private Tuple2<String, Integer> findLongestSubstring(String candidate) {

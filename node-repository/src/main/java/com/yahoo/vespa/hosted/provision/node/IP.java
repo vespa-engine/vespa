@@ -380,7 +380,7 @@ public class IP {
             String hostname6 = resolver.resolveHostname(ipv6Address).orElseThrow(() -> new IllegalArgumentException("Could not resolve IP address: " + ipv6Address));
             List<String> ipv4Addresses = resolver.resolveAll(hostname6).stream()
                                                  .filter(IP::isV4)
-                                                 .collect(Collectors.toList());
+                                                 .toList();
             if (ipv4Addresses.size() > 1) {
                 throw new IllegalArgumentException("Hostname " + hostname6 + " resolved to more than 1 IPv4 address: " + ipv4Addresses);
             }
@@ -407,7 +407,7 @@ public class IP {
             String hostname4 = resolver.resolveHostname(ipAddress).orElseThrow(() -> new IllegalArgumentException("Could not resolve IP address: " + ipAddress));
             List<String> addresses = resolver.resolveAll(hostname4).stream()
                                              .filter(IP::isV4)
-                                             .collect(Collectors.toList());
+                                             .toList();
             if (addresses.size() != 1) {
                 throw new IllegalArgumentException("Hostname " + hostname4 + " did not resolve to exactly 1 address. " +
                                                    "Resolved: " + addresses);

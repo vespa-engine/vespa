@@ -50,7 +50,7 @@ public class HostSuspensionRequestHandler extends RestApiRequestHandler<HostSusp
         List<String> hostnamesAsStrings = context.queryParameters().getStringList("hostname");
 
         HostName parentHostname = new HostName(parentHostnameString);
-        List<HostName> hostnames = hostnamesAsStrings.stream().map(HostName::new).collect(Collectors.toList());
+        List<HostName> hostnames = hostnamesAsStrings.stream().map(HostName::new).toList();
         try {
             orchestrator.suspendAll(parentHostname, hostnames);
         } catch (BatchHostStateChangeDeniedException e) {

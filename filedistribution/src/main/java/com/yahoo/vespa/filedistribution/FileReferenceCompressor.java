@@ -55,7 +55,7 @@ public class FileReferenceCompressor {
                         Files.find(Paths.get(directory.getAbsolutePath()),
                                    recurseDepth,
                                    (p, basicFileAttributes) -> basicFileAttributes.isRegularFile())
-                             .map(Path::toFile).collect(Collectors.toList()),
+                             .map(Path::toFile).toList(),
                         outputFile);
     }
 

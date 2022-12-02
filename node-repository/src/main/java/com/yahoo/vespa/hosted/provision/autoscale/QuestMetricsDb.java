@@ -176,7 +176,7 @@ public class QuestMetricsDb extends AbstractComponent implements MetricsDb {
             var snapshots = getNodeSnapshots(clock.instant().minus(period), hostnames, newContext());
             return snapshots.entrySet().stream()
                             .map(entry -> new NodeTimeseries(entry.getKey(), entry.getValue()))
-                            .collect(Collectors.toList());
+                            .toList();
         }
         catch (SqlException e) {
             throw new IllegalStateException("Could not read node timeseries data in Quest stored in " + dataDir, e);

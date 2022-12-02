@@ -1244,7 +1244,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
                                                 .filter(option -> !option.isEmpty())
                                                 .filter(option -> !Pattern.matches(validPattern.pattern(), option))
                                                 .sorted()
-                                                .collect(Collectors.toList());
+                                                .toList();
             if (isHosted)
                 invalidOptions.addAll(Arrays.stream(optionList)
                         .filter(option -> !option.isEmpty())
@@ -1293,7 +1293,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
                 List<String> invalidOptions = Arrays.stream(optionList)
                                                     .filter(option -> !option.isEmpty())
                                                     .filter(option -> !Pattern.matches(validPattern.pattern(), option))
-                                                    .collect(Collectors.toList());
+                                                    .toList();
 
                 if (isHosted) {
                     // CMS GC options cannot be used in hosted, CMS is unsupported in JDK 17

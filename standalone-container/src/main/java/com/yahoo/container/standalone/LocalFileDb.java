@@ -68,7 +68,7 @@ public class LocalFileDb implements FileAcquirer, FileRegistry {
     @Override
     public List<Entry> export() {
         return fileReferenceToFile.entrySet().stream().map(entry -> new Entry(entry.getValue().getPath(), entry.getKey()))
-                .collect(Collectors.toList());
+                .toList();
     }
 
     @Override

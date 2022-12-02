@@ -197,7 +197,7 @@ public class ConfigServerMock extends AbstractComponent implements ConfigServer 
                                                                                                                                       43,
                                                                                                                                       "container",
                                                                                                                                       2))
-                                                                                           .collect(Collectors.toList())));
+                                                                                           .toList()));
     }
 
     /** The version given in the previous prepare call, or empty if no call has been made */
@@ -431,7 +431,7 @@ public class ConfigServerMock extends AbstractComponent implements ConfigServer 
                                                                                                      43,
                                                                                                      "container",
                                                                                                      1))
-                                                          .collect(Collectors.toList())));
+                                                          .toList()));
 
         DeploymentResult result = new DeploymentResult("foo", warnings.getOrDefault(id, List.of()));
         return () -> result;

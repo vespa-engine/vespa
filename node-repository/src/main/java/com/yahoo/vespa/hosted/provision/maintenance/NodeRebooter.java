@@ -42,7 +42,7 @@ public class NodeRebooter extends NodeRepositoryMaintainer {
         List<Node> nodesToReboot = nodeRepository().nodes().list(Node.State.active, Node.State.ready).stream()
                 .filter(node -> node.type().isHost())
                 .filter(this::shouldReboot)
-                .collect(Collectors.toList());
+                .toList();
 
         if (!nodesToReboot.isEmpty())
             nodeRepository().nodes().reboot(NodeListFilter.from(nodesToReboot));

@@ -199,7 +199,7 @@ public class ZmsClientMock implements ZmsClient {
                         AthenzResourceName.fromString(a.resource()),
                         a.action())
                         .build())
-                .collect(Collectors.toList());
+                .toList();
         return Optional.of(new AthenzPolicy(policy.name(), assertions));
     }
 
@@ -221,7 +221,7 @@ public class ZmsClientMock implements ZmsClient {
     public List<AthenzService> listServices(AthenzDomain athenzDomain) {
         return athenz.getOrCreateDomain(athenzDomain).services.keySet().stream()
                 .map(serviceName -> new AthenzService(athenzDomain, serviceName))
-                .collect(Collectors.toList());
+                .toList();
     }
 
     @Override

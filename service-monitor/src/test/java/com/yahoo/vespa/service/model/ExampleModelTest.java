@@ -30,8 +30,8 @@ public class ExampleModelTest {
 
     @Test
     public void test() {
-        List<String> contentNodes = Stream.of("host1", "host2").collect(Collectors.toList());
-        List<String> containerNodes = Stream.of("host3", "host4").collect(Collectors.toList());
+        List<String> contentNodes = Stream.of("host1", "host2").toList();
+        List<String> containerNodes = Stream.of("host3", "host4").toList();
 
         ApplicationInfo application = ExampleModel
                 .createApplication(

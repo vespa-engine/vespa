@@ -233,7 +233,7 @@ public class SwitchRebalancerTest {
     private static MockDeployer deployer(ProvisioningTester tester, Capacity capacity, ClusterSpec first, ClusterSpec... rest) {
         List<ClusterContext> clusterContexts = Stream.concat(Stream.of(first), Stream.of(rest))
                                                      .map(spec -> new ClusterContext(app, spec, capacity))
-                                                     .collect(Collectors.toList());
+                                                     .toList();
         ApplicationContext context = new ApplicationContext(app, clusterContexts);
         return new MockDeployer(tester.provisioner(), tester.clock(), Map.of(app, context));
     }

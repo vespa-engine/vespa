@@ -43,7 +43,7 @@ public class TopologicalDocumentTypeSorterTest {
 
     private void assertOrder(List<String> expOrder, DocumentTypesBuilder builder) {
         List<NewDocumentType> sortedDocTypes = TopologicalDocumentTypeSorter.sort(builder.build());
-        List<String> actOrder = sortedDocTypes.stream().map(NewDocumentType::getName).collect(Collectors.toList());
+        List<String> actOrder = sortedDocTypes.stream().map(NewDocumentType::getName).toList();
         assertEquals(expOrder, actOrder);
     }
 

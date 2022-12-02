@@ -49,7 +49,7 @@ public class UcaFunction extends FunctionNode {
     public UcaFunction copy() {
         return new UcaFunction(getLabel(),
                                getLevelOrNull(),
-                               args().stream().map(arg -> arg.copy()).collect(Collectors.toList()));
+                               args().stream().map(arg -> arg.copy()).toList());
     }
 
     private boolean validStrength(String strength) {

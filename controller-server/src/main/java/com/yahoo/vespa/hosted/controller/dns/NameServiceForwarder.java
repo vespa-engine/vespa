@@ -52,7 +52,7 @@ public class NameServiceForwarder {
     public void createAlias(RecordName name, Set<AliasTarget> targets, NameServiceQueue.Priority priority) {
         var records = targets.stream()
                              .map(target -> new Record(Record.Type.ALIAS, name, target.pack()))
-                             .collect(Collectors.toList());
+                             .toList();
         forward(new CreateRecords(records), priority);
     }
 
@@ -60,7 +60,7 @@ public class NameServiceForwarder {
     public void createDirect(RecordName name, Set<DirectTarget> targets, NameServiceQueue.Priority priority) {
         var records = targets.stream()
                              .map(target -> new Record(Record.Type.DIRECT, name, target.pack()))
-                             .collect(Collectors.toList());
+                             .toList();
         forward(new CreateRecords(records), priority);
     }
 
@@ -68,7 +68,7 @@ public class NameServiceForwarder {
     public void createTxt(RecordName name, List<RecordData> txtData, NameServiceQueue.Priority priority) {
         var records = txtData.stream()
                              .map(data -> new Record(Record.Type.TXT, name, data))
-                             .collect(Collectors.toList());
+                             .toList();
         forward(new CreateRecords(records), priority);
     }
 

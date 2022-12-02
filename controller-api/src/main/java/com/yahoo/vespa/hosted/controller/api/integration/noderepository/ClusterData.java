@@ -56,7 +56,7 @@ public class ClusterData {
                            suggested == null ? Optional.empty() : Optional.of(suggested.toClusterResources()),
                            utilization == null ? Cluster.Utilization.empty() : utilization.toClusterUtilization(),
                            scalingEvents == null ? List.of()
-                                                 : scalingEvents.stream().map(data -> data.toScalingEvent()).collect(Collectors.toList()),
+                                                 : scalingEvents.stream().map(data -> data.toScalingEvent()).toList(),
                            autoscalingStatusCode,
                            autoscalingStatus,
                            scalingDuration == null ? Duration.ofMillis(0) : Duration.ofMillis(scalingDuration),

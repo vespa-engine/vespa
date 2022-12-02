@@ -32,7 +32,7 @@ class FederationResult {
         this.targetResults = targetResults;
 
         if (targetResults.stream().anyMatch(TargetResult::isMandatory))
-            targetsToWaitFor = targetResults.stream().filter(TargetResult::isMandatory).collect(Collectors.toList());
+            targetsToWaitFor = targetResults.stream().filter(TargetResult::isMandatory).toList();
         else
             targetsToWaitFor = new ArrayList<>(targetResults);
     }

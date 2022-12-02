@@ -137,7 +137,7 @@ public class NodeFailer extends NodeRepositoryMaintainer {
                 .filter(report -> report.getType().hostShouldBeFailed())
                 // The generated string is built from the report's ID, created time, and description only.
                 .map(report -> report.getReportId() + " reported " + report.getCreatedTime() + ": " + report.getDescription())
-                .collect(Collectors.toList());
+                .toList();
     }
 
     /** Returns whether node has any kind of hardware issue */

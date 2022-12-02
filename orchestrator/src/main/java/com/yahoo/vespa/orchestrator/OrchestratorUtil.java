@@ -76,7 +76,7 @@ public class OrchestratorUtil {
         Set<ApplicationInstanceReference> references = serviceMonitor.getAllApplicationInstanceReferences();
         List<ApplicationInstanceReference> referencesWithId = references.stream()
                 .filter(a -> OrchestratorUtil.toApplicationId(a).equals(applicationid))
-                .collect(Collectors.toList());
+                .toList();
 
         if (referencesWithId.size() > 1) {
             String msg = String.format("ApplicationId '%s' was not unique but mapped to '%s'", applicationid, referencesWithId);
