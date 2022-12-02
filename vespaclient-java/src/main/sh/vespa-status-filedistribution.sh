@@ -86,6 +86,6 @@ fi
 
 defaults="--tenant default --application default --instance default"
 jvmoptions="-XX:MaxJavaStackTraceDepth=1000000 $(getJavaOptionsIPV46) -Xms48m -Xmx48m"
-jar="-cp ${VESPA_HOME}/lib/jars/filedistribution-client-jar-with-dependencies.jar"
+jar="-cp ${VESPA_HOME}/lib/jars/vespaclient-java-jar-with-dependencies.jar"
 
 exec java $jvmoptions $jar com.yahoo.vespa.filedistribution.status.FileDistributionStatusClient $defaults $environment $region "$@"

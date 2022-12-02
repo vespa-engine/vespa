@@ -2,10 +2,11 @@
 
 package com.yahoo.vespa.filedistribution.status;
 
-import org.junit.Test;
+
+import org.junit.jupiter.api.Test;
 
 import static com.yahoo.vespa.filedistribution.status.FileDistributionStatusClient.CommandLineArguments;
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class FileDistributionStatusClientTest {
 

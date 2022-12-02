@@ -74,7 +74,6 @@
         <module>fat-model-dependencies</module>
         <module>fileacquirer</module>
         <module>filedistribution</module>
-        <module>filedistribution-client</module>
         <module>flags</module>
         <module>fsa</module>
         <module>hosted-api</module>
