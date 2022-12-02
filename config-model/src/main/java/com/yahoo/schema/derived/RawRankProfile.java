@@ -20,7 +20,6 @@ import com.yahoo.searchlib.rankingexpression.Reference;
 import com.yahoo.searchlib.rankingexpression.parser.ParseException;
 import com.yahoo.searchlib.rankingexpression.rule.ReferenceNode;
 import com.yahoo.searchlib.rankingexpression.rule.SerializationContext;
-import com.yahoo.tensor.TensorType;
 import com.yahoo.vespa.config.search.RankProfilesConfig;
 
 import java.nio.ByteBuffer;
@@ -196,7 +195,7 @@ public class RawRankProfile implements RankProfilesConfig.Producer {
             rankProperties = new ArrayList<>(compiled.getRankProperties());
 
             Map<String, RankProfile.RankingExpressionFunction> functions = compiled.getFunctions();
-            List<ExpressionFunction> functionExpressions = functions.values().stream().map(f -> f.function()).collect(Collectors.toList());
+            List<ExpressionFunction> functionExpressions = functions.values().stream().map(RankProfile.RankingExpressionFunction::function).collect(Collectors.toList());
             Map<String, String> functionProperties = new LinkedHashMap<>();
             SerializationContext functionSerializationContext = new SerializationContext(functionExpressions,
                                                                                          Map.of(),
@@ -248,8 +247,8 @@ public class RawRankProfile implements RankProfilesConfig.Producer {
                 String expressionString = e.getValue().function().getBody().getRoot().toString(context).toString();
 
                 context.addFunctionSerialization(propertyName, expressionString);
-                for (Map.Entry<String, TensorType> argumentType : e.getValue().function().argumentTypes().entrySet())
-                    context.addArgumentTypeSerialization(e.getKey(), argumentType.getKey(), argumentType.getValue());
+                e.getValue().function().argumentTypes().entrySet().stream().sorted(Map.Entry.comparingByKey())
+                        .forEach(argumentType -> context.addArgumentTypeSerialization(e.getKey(), argumentType.getKey(), argumentType.getValue()));
                 if (e.getValue().function().returnType().isPresent())
                     context.addFunctionTypeSerialization(e.getKey(), e.getValue().function().returnType().get());
                 // else if (e.getValue().function().arguments().isEmpty()) TODO: Enable this check when we resolve all types

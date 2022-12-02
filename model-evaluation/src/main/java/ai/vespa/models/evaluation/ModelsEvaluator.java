@@ -2,7 +2,6 @@
 package ai.vespa.models.evaluation;
 
 import com.yahoo.api.annotations.Beta;
-import com.google.common.collect.ImmutableMap;
 import com.yahoo.component.annotation.Inject;
 import com.yahoo.component.AbstractComponent;
 import com.yahoo.filedistribution.fileacquirer.FileAcquirer;
@@ -11,6 +10,7 @@ import com.yahoo.vespa.config.search.core.OnnxModelsConfig;
 import com.yahoo.vespa.config.search.core.RankingConstantsConfig;
 import com.yahoo.vespa.config.search.core.RankingExpressionsConfig;
 
+import java.util.Collections;
 import java.util.Map;
 
 /**
@@ -23,7 +23,7 @@ import java.util.Map;
 @Beta
 public class ModelsEvaluator extends AbstractComponent {
 
-    private final ImmutableMap<String, Model> models;
+    private final Map<String, Model> models;
 
     @Inject
     public ModelsEvaluator(RankProfilesConfig config,
@@ -43,7 +43,7 @@ public class ModelsEvaluator extends AbstractComponent {
     }
 
     public ModelsEvaluator(Map<String, Model> models) {
-        this.models = ImmutableMap.copyOf(models);
+        this.models = Collections.unmodifiableMap(models);
     }
 
     /** Returns the models of this as an immutable map */

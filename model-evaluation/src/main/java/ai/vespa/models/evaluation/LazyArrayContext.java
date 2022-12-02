@@ -1,8 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package ai.vespa.models.evaluation;
 
-import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.ImmutableSet;
+import com.yahoo.lang.MutableInteger;
 import com.yahoo.searchlib.rankingexpression.ExpressionFunction;
 import com.yahoo.searchlib.rankingexpression.Reference;
 import com.yahoo.searchlib.rankingexpression.evaluation.Context;
@@ -14,6 +13,7 @@ import com.yahoo.searchlib.rankingexpression.rule.CompositeNode;
 import com.yahoo.searchlib.rankingexpression.rule.ConstantNode;
 import com.yahoo.searchlib.rankingexpression.rule.ExpressionNode;
 import com.yahoo.searchlib.rankingexpression.rule.ReferenceNode;
+import com.yahoo.stream.CustomCollectors;
 import com.yahoo.tensor.Tensor;
 import com.yahoo.tensor.TensorType;
 
@@ -24,6 +24,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * An array context supporting functions invocations implemented as lazy values.
@@ -151,16 +152,16 @@ public final class LazyArrayContext extends Context implements ContextIndex {
     private static class IndexedBindings {
 
         /** The mapping from variable name to index */
-        private final ImmutableMap<String, Integer> nameToIndex;
+        private final Map<String, Integer> nameToIndex;
 
         /** The names which needs to be bound externally when invoking this (i.e not constant or invocation */
-        private final ImmutableSet<String> arguments;
+        private final Set<String> arguments;
 
         /** The current values set */
         private final Value[] values;
 
         /** ONNX models indexed by rank feature that calls them */
-        private final ImmutableMap<String, OnnxModel> onnxModels;
+        private final Map<String, OnnxModel> onnxModels;
 
         /** The object instance which encodes "no value is set". The actual value of this is never used. */
         private static final Value missing = new DoubleValue(Double.NaN).freeze();
@@ -169,14 +170,14 @@ public final class LazyArrayContext extends Context implements ContextIndex {
         private Value missingValue = new DoubleValue(Double.NaN).freeze();
 
 
-        private IndexedBindings(ImmutableMap<String, Integer> nameToIndex,
+        private IndexedBindings(Map<String, Integer> nameToIndex,
                                 Value[] values,
-                                ImmutableSet<String> arguments,
-                                ImmutableMap<String, OnnxModel> onnxModels) {
-            this.nameToIndex = nameToIndex;
+                                Set<String> arguments,
+                                Map<String, OnnxModel> onnxModels) {
+            this.nameToIndex = Map.copyOf(nameToIndex);
             this.values = values;
             this.arguments = arguments;
-            this.onnxModels = onnxModels;
+            this.onnxModels = Map.copyOf(onnxModels);
         }
 
         /**
@@ -195,16 +196,14 @@ public final class LazyArrayContext extends Context implements ContextIndex {
             Map<String, OnnxModel> onnxModelsInUse = new HashMap<>();
             extractBindTargets(function.getBody().getRoot(), referencedFunctions, bindTargets, arguments, onnxModels, onnxModelsInUse);
 
-            this.onnxModels = ImmutableMap.copyOf(onnxModelsInUse);
-            this.arguments = ImmutableSet.copyOf(arguments);
+            this.onnxModels = Map.copyOf(onnxModelsInUse);
+            this.arguments = Set.copyOf(arguments);
             values = new Value[bindTargets.size()];
             Arrays.fill(values, missing);
 
-            int i = 0;
-            ImmutableMap.Builder<String, Integer> nameToIndexBuilder = new ImmutableMap.Builder<>();
-            for (String variable : bindTargets)
-                nameToIndexBuilder.put(variable, i++);
-            nameToIndex = nameToIndexBuilder.build();
+            MutableInteger nextIndex = new MutableInteger(0);
+            nameToIndex = Map.copyOf(bindTargets.stream()
+                    .collect(CustomCollectors.toLinkedMap(name -> name, name -> nextIndex.next())));
 
             // 2. Bind the bind targets
             for (Constant constant : constants) {
@@ -252,8 +251,7 @@ public final class LazyArrayContext extends Context implements ContextIndex {
                 bindTargets.add(node.toString());
                 arguments.add(node.toString());
             }
-            else if (node instanceof CompositeNode) {
-                CompositeNode cNode = (CompositeNode)node;
+            else if (node instanceof CompositeNode cNode) {
                 for (ExpressionNode child : cNode.children())
                     extractBindTargets(child, functions, bindTargets, arguments, onnxModels, onnxModelsInUse);
             }
@@ -291,16 +289,14 @@ public final class LazyArrayContext extends Context implements ContextIndex {
         }
 
         private Optional<String> getArgument(ExpressionNode node) {
-            if (node instanceof ReferenceNode) {
-                ReferenceNode reference = (ReferenceNode) node;
+            if (node instanceof ReferenceNode reference) {
                 if (reference.getArguments().size() > 0) {
                     if (reference.getArguments().expressions().get(0) instanceof ConstantNode) {
                         ExpressionNode constantNode = reference.getArguments().expressions().get(0);
                         return Optional.of(stripQuotes(constantNode.toString()));
                     }
-                    if (reference.getArguments().expressions().get(0) instanceof ReferenceNode) {
-                        ReferenceNode referenceNode = (ReferenceNode) reference.getArguments().expressions().get(0);
-                        return Optional.of(referenceNode.getName());
+                    if (reference.getArguments().expressions().get(0) instanceof ReferenceNode refNode) {
+                        return Optional.of(refNode.getName());
                     }
                 }
             }
@@ -316,20 +312,17 @@ public final class LazyArrayContext extends Context implements ContextIndex {
         }
 
         private boolean isFunctionReference(ExpressionNode node) {
-            if ( ! (node instanceof ReferenceNode)) return false;
-            ReferenceNode reference = (ReferenceNode)node;
+            if ( ! (node instanceof ReferenceNode reference)) return false;
             return reference.getName().equals("rankingExpression") && reference.getArguments().size() == 1;
         }
 
         private boolean isOnnx(ExpressionNode node) {
-            if ( ! (node instanceof ReferenceNode)) return false;
-            ReferenceNode reference = (ReferenceNode) node;
+            if ( ! (node instanceof ReferenceNode reference)) return false;
             return reference.getName().equals("onnx") || reference.getName().equals("onnxModel");
         }
 
         private boolean isConstant(ExpressionNode node) {
-            if ( ! (node instanceof ReferenceNode)) return false;
-            ReferenceNode reference = (ReferenceNode)node;
+            if ( ! (node instanceof ReferenceNode reference)) return false;
             return reference.getName().equals("constant") && reference.getArguments().size() == 1;
         }
 

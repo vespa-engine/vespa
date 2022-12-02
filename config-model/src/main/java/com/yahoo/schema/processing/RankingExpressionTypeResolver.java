@@ -73,7 +73,7 @@ public class RankingExpressionTypeResolver extends Processor {
             for (String argument : expressionFunction.arguments()) {
                 Reference ref = Reference.fromIdentifier(argument);
                 if (context.getType(ref).equals(TensorType.empty)) {
-                    context.setType(ref, expressionFunction.argumentTypes().get(argument));
+                    context.setType(ref, expressionFunction.getArgumentType(argument));
                 }
             }
             context.forgetResolvedTypes();

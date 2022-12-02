@@ -10,7 +10,8 @@ import com.yahoo.searchlib.rankingexpression.parser.ParseException;
 import com.yahoo.tensor.Tensor;
 import org.junit.Test;
 
-import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
@@ -51,9 +52,12 @@ public class VespaImportTestCase {
         assertEquals("reduce(reduce(input1 * input2, sum, name) * constant(constant1asLarge), max, x) * constant2",
                      model.expressions().get("foo2").getRoot().toString());
 
-        List<ImportedMlFunction> functions = model.outputExpressions();
-        assertEquals(2, functions.size());
-        ImportedMlFunction foo1Function = functions.get(0);
+        Map<String, ImportedMlFunction> byName = model.outputExpressions().stream()
+                .collect(Collectors.toUnmodifiableMap(ImportedMlFunction::name, f -> f));
+        assertEquals(2, byName.size());
+        assertTrue(byName.containsKey("foo1"));
+        assertTrue(byName.containsKey("foo2"));
+        ImportedMlFunction foo1Function = byName.get("foo1");
         assertEquals("foo1", foo1Function.name());
         assertEquals("reduce(reduce(input1 * input2, sum, name) * constant1, max, x) * constant2", foo1Function.expression());
         assertEquals("tensor():{202.5}", evaluate(foo1Function, "{{name:a, x:0}: 1, {name:a, x:1}: 2, {name:a, x:2}: 3}").toString());

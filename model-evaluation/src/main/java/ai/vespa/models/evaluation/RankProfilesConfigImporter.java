@@ -32,6 +32,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.TreeMap;
 import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -59,7 +60,7 @@ public class RankProfilesConfigImporter {
                                          RankingExpressionsConfig expressionsConfig,
                                          OnnxModelsConfig onnxModelsConfig) {
         try {
-            Map<String, Model> models = new HashMap<>();
+            Map<String, Model> models = new TreeMap<>();
             for (RankProfilesConfig.Rankprofile profile : config.rankprofile()) {
                 Model model = importProfile(profile, constantsConfig, expressionsConfig, onnxModelsConfig);
                 models.put(model.name(), model);
