@@ -1,7 +1,6 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.prelude.test;
 
-import com.google.common.collect.ImmutableList;
 import com.yahoo.config.subscription.ConfigGetter;
 import com.yahoo.language.process.StemMode;
 import com.yahoo.prelude.Index;
@@ -13,11 +12,7 @@ import com.yahoo.search.config.IndexInfoConfig;
 import com.yahoo.search.searchchain.Execution;
 import org.junit.jupiter.api.Test;
 
-import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
-import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -28,7 +23,6 @@ import static org.junit.jupiter.api.Assertions.*;
  *
  * @author Steinar Knutsen
  */
-@SuppressWarnings({"rawtypes", "unchecked"})
 public class IndexFactsTestCase {
 
     private static final String INDEXFACTS_TESTING = "file:src/test/java/com/yahoo/prelude/test/indexfactstesting.cfg";
@@ -45,14 +39,8 @@ public class IndexFactsTestCase {
     }
 
     private Map<String, List<String>> createClusters() {
-        List<String> clusterOne = new ArrayList<>();
-        List<String> clusterTwo = new ArrayList<>();
-        clusterOne.addAll(Arrays.asList("one", "two"));
-        clusterTwo.addAll(Arrays.asList("one", "three"));
-        Map<String, List<String>> clusters = new HashMap<>();
-        clusters.put("clusterOne", clusterOne);
-        clusters.put("clusterTwo", clusterTwo);
-        return clusters;
+        return Map.of("clusterOne", List.of("one", "two"),
+                "clusterTwo", List.of("one", "three"));
     }
 
     @Test
@@ -86,7 +74,7 @@ public class IndexFactsTestCase {
         sd2.addIndex(a);
         assertEquals(sd2.getDefaultPosition(), "a");
 
-        IndexFacts indexFacts = createIndexFacts(ImmutableList.of(sd, sd2));
+        IndexFacts indexFacts = createIndexFacts(List.of(sd, sd2));
         assertEquals(indexFacts.getDefaultPosition(null), "a");
         assertEquals(indexFacts.getDefaultPosition("sd"), "c");
     }
@@ -142,8 +130,6 @@ public class IndexFactsTestCase {
         assertExactIsWorking("test");
         assertExactIsWorking("artist_name_ft_norm1");
 
-        List search = new ArrayList();
-        search.add("three");
         Query query = new Query();
         query.getModel().getSources().add("three");
         IndexFacts.Session threeSession = createIndexFacts().newSession(query);
@@ -194,7 +180,7 @@ public class IndexFactsTestCase {
         query.getModel().getSources().add("one");
         query.getModel().getRestrict().add("two");
 
-        IndexFacts.Session indexFacts = createIndexFacts().newSession(Collections.singleton("clusterOne"), Collections.emptyList());
+        IndexFacts.Session indexFacts = createIndexFacts().newSession(List.of("clusterOne"), List.of());
         assertTrue(indexFacts.isIndex("a"));
         assertFalse(indexFacts.isIndex("b"));
         assertTrue(indexFacts.isIndex("d"));
@@ -282,7 +268,7 @@ public class IndexFactsTestCase {
         b.indexinfo(b3);
 
         IndexInfoConfig config = new IndexInfoConfig(b);
-        IndexFacts indexFacts = new IndexFacts(new IndexModel(config, Collections.emptyMap()));
+        IndexFacts indexFacts = new IndexFacts(new IndexModel(config, Map.of()));
         Query query1 = new Query("?query=url:https://foo.bar");
         Query query2 = new Query("?query=url:https://foo.bar&restrict=hasUri");
         assertEquals(0, query1.getModel().getRestrict().size());
@@ -308,7 +294,7 @@ public class IndexFactsTestCase {
 
         // Alias to field1 conflics with field1 in the "union" search definition.
         // Should not produce an exception (but a log message):
-        new IndexFacts(new IndexModel(Collections.emptyMap(), ImmutableList.of(first, second)));
+        new IndexFacts(new IndexModel(Map.of(), List.of(first, second)));
     }
     
 }

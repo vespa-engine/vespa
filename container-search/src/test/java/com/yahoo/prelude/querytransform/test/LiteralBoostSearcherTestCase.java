@@ -1,7 +1,6 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.prelude.querytransform.test;
 
-import com.google.common.collect.ImmutableList;
 import com.yahoo.prelude.Index;
 import com.yahoo.prelude.IndexFacts;
 import com.yahoo.prelude.IndexModel;
@@ -12,7 +11,10 @@ import com.yahoo.search.searchchain.Execution;
 import com.yahoo.search.test.QueryTestCase;
 import org.junit.jupiter.api.Test;
 
-import java.util.*;
+import java.util.Collection;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
@@ -83,9 +85,9 @@ public class LiteralBoostSearcherTestCase {
 
     private IndexFacts createIndexFacts() {
         Map<String, List<String>> clusters = new LinkedHashMap<>();
-        clusters.put("cluster1", Arrays.asList("type1", "type2", "type3"));
-        clusters.put("cluster2", Arrays.asList("type4", "type5"));
-        Collection<SearchDefinition> searchDefs = ImmutableList.of(
+        clusters.put("cluster1", List.of("type1", "type2", "type3"));
+        clusters.put("cluster2", List.of("type4", "type5"));
+        Collection<SearchDefinition> searchDefs = List.of(
                 createSearchDefinitionWithFields("type1", true),
                 createSearchDefinitionWithFields("type2", false),
                 new SearchDefinition("type3"),

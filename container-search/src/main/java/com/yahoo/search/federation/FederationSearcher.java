@@ -1,7 +1,6 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.search.federation;
 
-import com.google.common.collect.ImmutableList;
 import com.yahoo.component.annotation.Inject;
 import com.yahoo.collections.Pair;
 import com.yahoo.component.ComponentId;
@@ -10,7 +9,6 @@ import com.yahoo.component.chain.Chain;
 import com.yahoo.component.chain.dependencies.After;
 import com.yahoo.component.chain.dependencies.Provides;
 import com.yahoo.component.provider.ComponentRegistry;
-import com.yahoo.concurrent.CopyOnWriteHashMap;
 import com.yahoo.errorhandling.Results;
 import com.yahoo.errorhandling.Results.Builder;
 import com.yahoo.prelude.IndexFacts;
@@ -28,7 +26,6 @@ import com.yahoo.search.federation.sourceref.SourceRefResolver;
 import com.yahoo.search.federation.sourceref.SourcesTarget;
 import com.yahoo.search.federation.sourceref.UnresolvedSearchChainException;
 import com.yahoo.search.query.Properties;
-import com.yahoo.search.query.properties.SubProperties;
 import com.yahoo.search.result.ErrorMessage;
 import com.yahoo.search.result.Hit;
 import com.yahoo.search.result.HitGroup;
@@ -77,11 +74,9 @@ public class FederationSearcher extends ForkingSearcher {
     public final static CompoundName PROVIDERNAME = new CompoundName("providerName");
     public static final String FEDERATION = "Federation";
     public static final String LOG_COUNT_PREFIX = "count_";
-    private static final List<CompoundName> queryAndHits = ImmutableList.of(Query.OFFSET, Query.HITS);
 
     private final SearchChainResolver searchChainResolver;
     private final SourceRefResolver sourceRefResolver;
-    private final CopyOnWriteHashMap<CompoundKey, CompoundName> map = new CopyOnWriteHashMap<>();
 
     private final TargetSelector<?> targetSelector;
     private final Clock clock = Clock.systemUTC();
@@ -336,22 +331,6 @@ public class FederationSearcher extends ForkingSearcher {
             }
         }
         return commentedSearchChains;
-    }
-
-    /** 
-     * Returns the set of properties set for the source or provider given in the query (if any).
-     *
-     * If the query has not set sourceName or providerName, null will be returned 
-     */
-    public static Properties getSourceProperties(Query query) {
-        String sourceName = query.properties().getString(SOURCENAME);
-        String providerName = query.properties().getString(PROVIDERNAME);
-        if (sourceName == null || providerName == null)
-            return null;
-        Properties sourceProperties = new SubProperties("source." + sourceName, query.properties());
-        Properties providerProperties = new SubProperties("provider." + providerName, query.properties());
-        sourceProperties.chain(providerProperties);
-        return sourceProperties;
     }
 
     @Override
@@ -662,9 +641,8 @@ public class FederationSearcher extends ForkingSearcher {
         @Override
         public boolean equals(Object o) {
             if (o == this) return true;
-            if ( ! ( o instanceof StandardTarget)) return false;
+            if ( ! (o instanceof StandardTarget other)) return false;
 
-            StandardTarget other = (StandardTarget)o;
             if ( ! Objects.equals(other.chain.getId(), this.chain.getId())) return false;
             if ( ! Objects.equals(other.target, this.target)) return false;
             return true;
