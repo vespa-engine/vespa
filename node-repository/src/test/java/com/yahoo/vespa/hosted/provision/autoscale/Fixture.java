@@ -189,14 +189,18 @@ public class Fixture {
         }
 
         public Fixture.Builder awsProdSetup(boolean allowHostSharing) {
-             return this.awsHostFlavors()
-                        .awsResourceCalculator()
-                        .zone(new Zone(Cloud.builder().dynamicProvisioning(true)
-                                                      .allowHostSharing(allowHostSharing)
-                                            .build(),
-                                       SystemName.Public,
-                                       Environment.prod,
-                                       RegionName.from("aws-eu-west-1a")));
+            return awsSetup(allowHostSharing, Environment.prod);
+        }
+
+        public Fixture.Builder awsSetup(boolean allowHostSharing, Environment environment) {
+            return this.awsHostFlavors()
+                       .awsResourceCalculator()
+                       .zone(new Zone(Cloud.builder().dynamicProvisioning(true)
+                                           .allowHostSharing(allowHostSharing)
+                                           .build(),
+                                      SystemName.Public,
+                                      environment,
+                                      RegionName.from("aws-eu-west-1a")));
         }
 
         public Fixture.Builder vespaVersion(Version version) {

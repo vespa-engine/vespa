@@ -167,13 +167,18 @@ public class AllocatableClusterResources {
             advertisedResources = systemLimits.enlargeToLegal(advertisedResources, clusterSpec, exclusive); // Ask for something legal
             advertisedResources = applicationLimits.cap(advertisedResources); // Overrides other conditions, even if it will then fail
             var realResources = nodeRepository.resourcesCalculator().requestToReal(advertisedResources, exclusive); // What we'll really get
+            if ( ! systemLimits.isWithinRealLimits(realResources, clusterSpec) && advertisedResources.storageType() == NodeResources.StorageType.any) {
+                // Since local disk resreves some of the storage, try to constrain to remote disk
+                advertisedResources = advertisedResources.with(NodeResources.StorageType.remote);
+                realResources = nodeRepository.resourcesCalculator().requestToReal(advertisedResources, exclusive);
+            }
             if ( ! systemLimits.isWithinRealLimits(realResources, clusterSpec))
                 return Optional.empty();
             if (anySatisfies(realResources, availableRealHostResources))
-                    return Optional.of(new AllocatableClusterResources(wantedResources.with(realResources),
-                                                                       advertisedResources,
-                                                                       wantedResources,
-                                                                       clusterSpec));
+                return Optional.of(new AllocatableClusterResources(wantedResources.with(realResources),
+                                                                   advertisedResources,
+                                                                   wantedResources,
+                                                                   clusterSpec));
             else
                 return Optional.empty();
         }
