@@ -1,7 +1,6 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.search.federation;
 
-import com.google.common.collect.ImmutableList;
 import com.yahoo.component.ComponentId;
 import com.yahoo.component.chain.Chain;
 import com.yahoo.prelude.IndexFacts;
@@ -14,7 +13,6 @@ import com.yahoo.search.searchchain.Execution;
 import com.yahoo.search.searchchain.SearchChainRegistry;
 import org.junit.jupiter.api.Test;
 
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -38,10 +36,10 @@ public class DuplicateSourceTestCase {
         SearchChainRegistry searchChains = new SearchChainRegistry();
         searchChains.register(new Chain<>("chain1", mockBackendSearcher));
         Map<String, List<String>> clusters = new HashMap<>();
-        clusters.put("chain1", ImmutableList.of("doc1", "doc2"));
-        IndexFacts indexFacts = new IndexFacts(new IndexModel(clusters, Collections.emptyList()));
+        clusters.put("chain1", List.of("doc1", "doc2"));
+        IndexFacts indexFacts = new IndexFacts(new IndexModel(clusters, List.of()));
         SearchChainResolver resolver = new SearchChainResolver.Builder()
-                .addSearchChain(new ComponentId("chain1"), ImmutableList.of("doc1", "doc2"))
+                .addSearchChain(new ComponentId("chain1"), List.of("doc1", "doc2"))
                 .build();
         FederationSearcher searcher = new FederationSearcher(new ComponentId("test"), resolver);
 

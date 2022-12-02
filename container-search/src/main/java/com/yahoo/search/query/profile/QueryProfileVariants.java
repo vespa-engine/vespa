@@ -1,12 +1,15 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.search.query.profile;
 
-import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableMap;
 import com.yahoo.component.provider.Freezable;
 import com.yahoo.search.query.profile.types.QueryProfileType;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 /**
  * This class represent a set of query profiles virtually - rather
@@ -54,7 +57,7 @@ public class QueryProfileVariants implements Freezable, Cloneable {
      * on lookup time to influence the value returned.
      */
     public QueryProfileVariants(String[] dimensions, QueryProfile owner) {
-        this(Arrays.asList(dimensions), owner);
+        this(List.of(dimensions), owner);
     }
 
     /**
@@ -77,13 +80,13 @@ public class QueryProfileVariants implements Freezable, Cloneable {
         if (frozen) return;
         for (FieldValues fieldValues : fieldValuesByName.values())
             fieldValues.freeze();
-        fieldValuesByName = ImmutableMap.copyOf(fieldValuesByName);
+        fieldValuesByName = Map.copyOf(fieldValuesByName);
         inheritedProfiles.freeze();
 
         Collections.sort(variants);
         for (QueryProfileVariant variant : variants)
             variant.freeze();
-        variants = ImmutableList.copyOf(variants);
+        variants = List.copyOf(variants);
 
         frozen=true;
     }
@@ -331,7 +334,7 @@ public class QueryProfileVariants implements Freezable, Cloneable {
             if (frozen) return;
             sort();
             if (resolutionList != null)
-                resolutionList = ImmutableList.copyOf(resolutionList);
+                resolutionList = List.copyOf(resolutionList);
             frozen = true;
         }
 

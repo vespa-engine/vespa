@@ -1,13 +1,10 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.search.querytransform.test;
 
-import java.util.Arrays;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import com.google.common.collect.ImmutableList;
 import com.yahoo.component.chain.Chain;
 import com.yahoo.language.Language;
 import com.yahoo.language.simple.SimpleLinguistics;
@@ -92,11 +89,11 @@ public class NGramSearcherTestCase {
         song.addIndex(songDefault);
 
         Map<String, List<String>> clusters = new HashMap<>();
-        clusters.put("musicOnly", Collections.singletonList(music.getName()));
-        clusters.put("songOnly", Collections.singletonList(song.getName()));
-        clusters.put("musicAndSong", Arrays.asList(music.getName(), song.getName()));
+        clusters.put("musicOnly", List.of(music.getName()));
+        clusters.put("songOnly", List.of(song.getName()));
+        clusters.put("musicAndSong", List.of(music.getName(), song.getName()));
 
-        IndexFacts indexFacts = new IndexFacts(new IndexModel(clusters, ImmutableList.of(music, song)));
+        IndexFacts indexFacts = new IndexFacts(new IndexModel(clusters, List.of(music, song)));
         return new Execution(createSearcher(), Execution.Context.createContextStub(indexFacts));
     }
 
