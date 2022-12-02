@@ -1,6 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.search.query.profile;
 
+import com.google.common.collect.ImmutableList;
 import com.yahoo.component.ComponentId;
 import com.yahoo.component.provider.FreezableSimpleComponent;
 import com.yahoo.processing.IllegalInputException;
@@ -419,7 +420,7 @@ public class QueryProfile extends FreezableSimpleComponent implements Cloneable 
 
         content.freeze();
 
-        inherited= inherited==null ? List.of() : List.copyOf(inherited);
+        inherited= inherited==null ? ImmutableList.of() : ImmutableList.copyOf(inherited);
 
         super.freeze();
     }
@@ -615,7 +616,8 @@ public class QueryProfile extends FreezableSimpleComponent implements Cloneable 
      * be added (usually because the new value was added to the existing).
      */
     static Object combineValues(Object newValue, Object existingValue) {
-        if (newValue instanceof QueryProfile newProfile) {
+        if (newValue instanceof QueryProfile) {
+            QueryProfile newProfile = (QueryProfile)newValue;
             if ( ! (existingValue instanceof QueryProfile)) {
                 if ( ! isModifiable(newProfile)) {
                     // Make the query profile reference overridable
@@ -629,7 +631,8 @@ public class QueryProfile extends FreezableSimpleComponent implements Cloneable 
             return combineProfiles(newProfile, (QueryProfile)existingValue);
         }
         else {
-            if (existingValue instanceof QueryProfile existingProfile) { // we need to set a non-leaf value on a query profile
+            if (existingValue instanceof QueryProfile) { // we need to set a non-leaf value on a query profile
+                QueryProfile existingProfile = (QueryProfile)existingValue;
                 if (isModifiable(existingProfile)) {
                     existingProfile.setValue(newValue);
                     return null;

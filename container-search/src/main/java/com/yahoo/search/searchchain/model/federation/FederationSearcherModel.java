@@ -3,6 +3,7 @@ package com.yahoo.search.searchchain.model.federation;
 
 import java.util.List;
 
+import com.google.common.collect.ImmutableList;
 import com.yahoo.container.bundle.BundleInstantiationSpecification;
 
 import com.yahoo.component.ComponentSpecification;
@@ -30,7 +31,7 @@ public class FederationSearcherModel extends ChainedComponentModel {
         super(BundleInstantiationSpecification.fromSearchAndDocproc(componentId, federationSearcherComponentSpecification),
               dependencies);
         this.inheritDefaultSources = inheritDefaultSources;
-        this.targets = List.copyOf(targets);
+        this.targets = ImmutableList.copyOf(targets);
     }
 
     /** Specifies one or more search chains that can be addressed as a single source. */

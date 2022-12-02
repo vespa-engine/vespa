@@ -22,6 +22,10 @@ public class NetworkMetrics {
                                 new Metric("net.out.dropped")
                 );
 
-        return new MetricSet("network", dockerNetworkMetrics);
+        Set<Metric> networkMetrics = ImmutableSet.<Metric>builder()
+                .addAll(dockerNetworkMetrics)
+                .build();
+
+        return new MetricSet("network", networkMetrics);
     }
 }

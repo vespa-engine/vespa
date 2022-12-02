@@ -1,6 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model.test;
 
+import com.google.common.collect.ImmutableList;
 import com.yahoo.config.application.api.ApplicationPackage;
 import com.yahoo.config.model.ConfigModelRegistry;
 import com.yahoo.config.model.NullConfigModelRegistry;
@@ -89,7 +90,7 @@ public class VespaModelTester {
                                                      "-" + Math.round(resources.memoryGb()) +
                                                      "-" + Math.round(resources.diskGb()),
                                             count - i);
-            hosts.add(new Host(hostname, List.of(), flavor));
+            hosts.add(new Host(hostname, ImmutableList.of(), flavor));
         }
         this.hostsByResources.put(resources, hosts);
 
