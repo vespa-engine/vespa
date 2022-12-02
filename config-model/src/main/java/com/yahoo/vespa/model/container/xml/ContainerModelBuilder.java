@@ -532,7 +532,11 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
             Reader reader = file.createReader();
             String certPem = IOUtils.readAll(reader);
             reader.close();
-            return X509CertificateUtils.certificateListFromPem(certPem);
+            List<X509Certificate> x509Certificates = X509CertificateUtils.certificateListFromPem(certPem);
+            if (x509Certificates.isEmpty()) {
+                throw new IllegalArgumentException("File %s does not contain any certificates.".formatted(file.getPath().getRelative()));
+            }
+            return x509Certificates;
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
