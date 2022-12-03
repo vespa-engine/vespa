@@ -12,8 +12,12 @@ import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.test.ManualClock;
 import com.yahoo.vespa.hosted.provision.Node;
+import com.yahoo.vespa.hosted.provision.NodeRepository;
 import com.yahoo.vespa.hosted.provision.applications.Cluster;
 import com.yahoo.vespa.hosted.provision.applications.ScalingEvent;
+import com.yahoo.vespa.hosted.provision.autoscale.ClusterModel;
+import com.yahoo.vespa.hosted.provision.node.Agent;
+import com.yahoo.vespa.hosted.provision.node.History;
 import com.yahoo.vespa.hosted.provision.testutils.MockDeployer;
 import org.junit.Test;
 
@@ -198,7 +202,7 @@ public class AutoscalingMaintainerTest {
     }
 
     @Test
-    public void test_autoscaling_ignores_high_cpu_right_after_generation_change() {
+    public void test_autoscaling_ignores_measurements_during_warmup() {
         ApplicationId app1 = AutoscalingMaintainerTester.makeApplicationId("app1");
         ClusterSpec cluster1 = AutoscalingMaintainerTester.containerClusterSpec();
         NodeResources resources = new NodeResources(4, 4, 10, 1);
@@ -207,25 +211,45 @@ public class AutoscalingMaintainerTest {
         var capacity = Capacity.from(min, max);
         var tester = new AutoscalingMaintainerTester(new MockDeployer.ApplicationContext(app1, cluster1, capacity));
 
+        // Add a scaling event
         tester.deploy(app1, cluster1, capacity);
-        // fast completion
-        tester.addMeasurements(1.0f, 0.3f, 0.3f, 0, 1, app1);
-        tester.clock().advance(Duration.ofSeconds(150));
-        tester.addMeasurements(1.0f, 0.3f, 0.3f, 0, 1, app1);
-        tester.clock().advance(Duration.ofSeconds(150));
-        tester.addMeasurements(1.0f, 0.3f, 0.3f, 0, 1, app1);
+        tester.addMeasurements(1.0f, 0.3f, 0.3f, 0, 4, app1);
         tester.maintainer().maintain();
         assertEquals("Scale up: " + tester.cluster(app1, cluster1).autoscalingStatus(),
                      1,
                      tester.cluster(app1, cluster1).lastScalingEvent().get().generation());
 
-        // fast completion, with initially overloaded cpu
-        tester.addMeasurements(3.0f, 0.3f, 0.3f, 1, 1, app1);
-        tester.clock().advance(Duration.ofSeconds(150));
-        tester.addMeasurements(0.2f, 0.3f, 0.3f, 1, 1, app1);
+        // measurements with outdated generation are ignored -> no autoscaling
+        var duration = tester.addMeasurements(3.0f, 0.3f, 0.3f, 0, 2, app1);
         tester.maintainer().maintain();
-        assertEquals("No autoscaling since we ignore the (first) data point in the warup period",
+        assertEquals("Measurements with outdated generation are ignored -> no autoscaling",
                      1,
+                     tester.cluster(app1, cluster1).lastScalingEvent().get().generation());
+        tester.clock().advance(duration.negated());
+
+        duration = tester.addMeasurements(3.0f, 0.3f, 0.3f, 1, 2, app1);
+        tester.maintainer().maintain();
+        assertEquals("Measurements right after generation change are ignored -> no autoscaling",
+                     1,
+                     tester.cluster(app1, cluster1).lastScalingEvent().get().generation());
+        tester.clock().advance(duration.negated());
+
+        // Add a restart event
+        tester.clock().advance(ClusterModel.warmupDuration.plus(Duration.ofMinutes(1)));
+        tester.nodeRepository().nodes().list().owner(app1).asList().forEach(node -> recordRestart(node, tester.nodeRepository()));
+
+        duration = tester.addMeasurements(3.0f, 0.3f, 0.3f, 1, 2, app1);
+        tester.maintainer().maintain();
+        assertEquals("Measurements right after restart are ignored -> no autoscaling",
+                     1,
+                     tester.cluster(app1, cluster1).lastScalingEvent().get().generation());
+        tester.clock().advance(duration.negated());
+
+        tester.clock().advance(ClusterModel.warmupDuration.plus(Duration.ofMinutes(1)));
+        tester.addMeasurements(3.0f, 0.3f, 0.3f, 1, 2, app1);
+        tester.maintainer().maintain();
+        assertEquals("We have valid measurements -> scale up",
+                     2,
                      tester.cluster(app1, cluster1).lastScalingEvent().get().generation());
     }
 
@@ -298,6 +322,13 @@ public class AutoscalingMaintainerTest {
                      tester.cluster(application, cluster).autoscalingStatus(),
                      generation + 1,
                      tester.cluster(application, cluster).lastScalingEvent().get().generation());
+    }
+
+    private void recordRestart(Node node, NodeRepository nodeRepository) {
+        var upEvent = new History.Event(History.Event.Type.up, Agent.system, nodeRepository.clock().instant());
+        try (var locked = nodeRepository.nodes().lockAndGetRequired(node)) {
+            nodeRepository.nodes().write(locked.node().with(locked.node().history().with(upEvent)), locked);
+        }
     }
 
     private void assertEvent(String explanation,
