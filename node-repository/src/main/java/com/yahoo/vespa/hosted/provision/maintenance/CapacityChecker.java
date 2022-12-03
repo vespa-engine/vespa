@@ -170,7 +170,7 @@ public class CapacityChecker {
                 Map.Entry::getKey,
                 e -> e.getValue().stream()
                         .map(Node::allocation).flatMap(Optional::stream)
-                        .toList()
+                        .collect(Collectors.toCollection(ArrayList::new))
         ));
     }
 

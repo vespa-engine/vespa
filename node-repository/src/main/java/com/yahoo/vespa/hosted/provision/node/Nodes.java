@@ -419,7 +419,7 @@ public class Nodes {
         NestedTransaction transaction = new NestedTransaction();
         List<Node> moved = list().childrenOf(hostname).asList().stream()
                                  .map(child -> move(child.hostname(), toState, agent, false, reason, transaction))
-                                 .toList();
+                                 .collect(Collectors.toCollection(ArrayList::new));
         moved.add(move(hostname, toState, agent, false, reason, transaction));
         transaction.commit();
         return moved;
