@@ -13,6 +13,7 @@ import com.yahoo.vespa.hosted.provision.lb.DnsZone;
 import com.yahoo.vespa.hosted.provision.lb.LoadBalancer;
 import com.yahoo.vespa.hosted.provision.lb.LoadBalancerId;
 import com.yahoo.vespa.hosted.provision.lb.LoadBalancerInstance;
+import com.yahoo.vespa.hosted.provision.lb.PrivateServiceId;
 import com.yahoo.vespa.hosted.provision.lb.Real;
 
 import java.io.IOException;
@@ -48,6 +49,7 @@ public class LoadBalancerSerializer {
     private static final String realsField = "reals";
     private static final String ipAddressField = "ipAddress";
     private static final String portField = "port";
+    private static final String serviceIdField = "serviceId";
     private static final String cloudAccountField = "cloudAccount";
     private static final String settingsField = "settings";
     private static final String allowedUrnsField = "allowedUrns";
@@ -78,6 +80,9 @@ public class LoadBalancerSerializer {
                     .filter(settings -> ! settings.isEmpty())
                     .ifPresent(settings -> settings.allowedUrns().forEach(root.setObject(settingsField)
                                                                               .setArray(allowedUrnsField)::addString));
+        loadBalancer.instance()
+                    .flatMap(LoadBalancerInstance::serviceId)
+                    .ifPresent(serviceId -> root.setString(serviceIdField, serviceId.value()));
         loadBalancer.instance()
                     .map(LoadBalancerInstance::cloudAccount)
                     .filter(cloudAccount -> !cloudAccount.isUnspecified())
@@ -110,9 +115,10 @@ public class LoadBalancerSerializer {
         Optional<String> ipAddress = optionalString(object.field(lbIpAddressField), Function.identity()).filter(s -> !s.isEmpty());
         Optional<DnsZone> dnsZone = optionalString(object.field(dnsZoneField), DnsZone::new);
         LoadBalancerSettings settings = loadBalancerSettings(object.field(settingsField));
+        Optional<PrivateServiceId> serviceId = optionalString(object.field(serviceIdField), PrivateServiceId::of);
         CloudAccount cloudAccount = optionalString(object.field(cloudAccountField), CloudAccount::from).orElse(CloudAccount.empty);
         Optional<LoadBalancerInstance> instance = hostname.isEmpty() && ipAddress.isEmpty() ? Optional.empty() :
-                Optional.of(new LoadBalancerInstance(hostname, ipAddress, dnsZone, ports, networks, reals, settings, cloudAccount));
+                Optional.of(new LoadBalancerInstance(hostname, ipAddress, dnsZone, ports, networks, reals, settings, serviceId, cloudAccount));
 
         return new LoadBalancer(LoadBalancerId.fromSerializedForm(object.field(idField).asString()),
                                 instance,

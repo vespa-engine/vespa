@@ -28,7 +28,11 @@
           "ipAddress": "127.0.10.1",
           "port": 4443
         }
-      ]
+      ],
+      "settings": {
+        "allowed-urns": [ "arne" ]
+      },
+      "serviceId": "service"
     },
     {
       "id": "cfg:cfg:cfg:configservers",

@@ -249,8 +249,11 @@ public class LoadBalancerProvisioner {
                                                                          : currentLoadBalancer.flatMap(LoadBalancer::instance)
                                                                                               .map(LoadBalancerInstance::settings)
                                                                                               .orElse(null);
-            return Optional.of(service.create(new LoadBalancerSpec(id.application(), id.cluster(), reals, settings, cloudAccount),
-                                              shouldDeactivateRouting || allowEmptyReals(currentLoadBalancer)));
+            LoadBalancerInstance created = service.create(new LoadBalancerSpec(id.application(), id.cluster(), reals, settings, cloudAccount),
+                                                          shouldDeactivateRouting || allowEmptyReals(currentLoadBalancer));
+            if (created.serviceId().isEmpty() && currentLoadBalancer.flatMap(LoadBalancer::instance).flatMap(LoadBalancerInstance::serviceId).isPresent())
+                created = created.withServiceId(currentLoadBalancer.flatMap(LoadBalancer::instance).flatMap(LoadBalancerInstance::serviceId).get());
+            return Optional.of(created);
         } catch (Exception e) {
             log.log(Level.WARNING, e, () -> "Could not (re)configure " + id + ", targeting: " +
                                             reals + ". The operation will be retried on next deployment");

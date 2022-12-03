@@ -63,6 +63,7 @@ import com.yahoo.vespa.hosted.controller.api.integration.configserver.Cluster;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.ConfigServerException;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.DeploymentResult;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.DeploymentResult.LogEntry;
+import com.yahoo.vespa.hosted.controller.api.integration.configserver.LoadBalancer;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.Node;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.NodeFilter;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.NodeRepository;
@@ -287,6 +288,7 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}/environment/{environment}/region/{region}/instance/{instance}")) return deployment(path.get("tenant"), path.get("application"), path.get("instance"), path.get("environment"), path.get("region"), request);
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}/environment/{environment}/region/{region}/instance/{instance}/suspended")) return suspended(path.get("tenant"), path.get("application"), path.get("instance"), path.get("environment"), path.get("region"), request);
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}/environment/{environment}/region/{region}/instance/{instance}/service/{service}/{host}/status/{*}")) return status(path.get("tenant"), path.get("application"), path.get("instance"), path.get("environment"), path.get("region"), path.get("service"), path.get("host"), path.getRest(), request);
+        if (path.matches("/application/v4/tenant/{tenant}/application/{application}/environment/{environment}/region/{region}/instance/{instance}/private-service")) return getPrivateServiceInfo(path.get("tenant"), path.get("application"), path.get("instance"), path.get("environment"), path.get("region"));
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}/environment/{environment}/region/{region}/instance/{instance}/nodes")) return nodes(path.get("tenant"), path.get("application"), path.get("instance"), path.get("environment"), path.get("region"));
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}/environment/{environment}/region/{region}/instance/{instance}/clusters")) return clusters(path.get("tenant"), path.get("application"), path.get("instance"), path.get("environment"), path.get("region"));
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}/environment/{environment}/region/{region}/instance/{instance}/logs")) return logs(path.get("tenant"), path.get("application"), path.get("instance"), path.get("environment"), path.get("region"), request.propertyMap());
@@ -1958,6 +1960,22 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
         controller.routing().of(deploymentId).setRoutingStatus(status, agent);
         return new MessageResponse(Text.format("Successfully set %s in %s %s service",
                                                  instance.id().toShortString(), zone, inService ? "in" : "out of"));
+    }
+
+    private HttpResponse getPrivateServiceInfo(String tenantName, String applicationName, String instanceName, String environment, String region) {
+        List<LoadBalancer> lbs = controller.serviceRegistry().configServer().getLoadBalancers(ApplicationId.from(tenantName, applicationName, instanceName),
+                                                                                              ZoneId.from(environment, region));
+        Slime slime = new Slime();
+        Cursor lbArray = slime.setObject().setArray("load-balancers");
+        for (LoadBalancer lb : lbs) {
+            Cursor lbObject = lbArray.addObject();
+            lbObject.setString("cluster", lb.cluster().value());
+            lb.service().ifPresent(service -> {
+                lbObject.setString("serviceId", service.id());
+                service.allowedUrns().forEach(lbObject.setArray("allowed-urns")::addString);
+            });
+        }
+        return new SlimeJsonResponse(slime);
     }
 
     private HttpResponse getGlobalRotationOverride(String tenantName, String applicationName, String instanceName, String environment, String region) {

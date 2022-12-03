@@ -5,6 +5,7 @@ import ai.vespa.http.DomainName;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ClusterSpec;
 
+import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 
@@ -22,9 +23,10 @@ public class LoadBalancer {
     private final Optional<String> ipAddress;
     private final State state;
     private final Optional<String> dnsZone;
+    private final Optional<PrivateServiceInfo> service;
 
     public LoadBalancer(String id, ApplicationId application, ClusterSpec.Id cluster, Optional<DomainName> hostname,
-                        Optional<String> ipAddress, State state, Optional<String> dnsZone) {
+                        Optional<String> ipAddress, State state, Optional<String> dnsZone, Optional<PrivateServiceInfo> service) {
         this.id = Objects.requireNonNull(id, "id must be non-null");
         this.application = Objects.requireNonNull(application, "application must be non-null");
         this.cluster = Objects.requireNonNull(cluster, "cluster must be non-null");
@@ -32,6 +34,7 @@ public class LoadBalancer {
         this.ipAddress = Objects.requireNonNull(ipAddress, "ipAddress must be non-null");
         this.state = Objects.requireNonNull(state, "state must be non-null");
         this.dnsZone = Objects.requireNonNull(dnsZone, "dnsZone must be non-null");
+        this.service = Objects.requireNonNull(service, "service must be non-null");
     }
 
     public String id() {
@@ -62,11 +65,17 @@ public class LoadBalancer {
         return state;
     }
 
+    public Optional<PrivateServiceInfo> service() {
+        return service;
+    }
+
     public enum State {
         active,
         inactive,
         reserved,
         unknown
     }
+
+    public record PrivateServiceInfo(String id, List<String> allowedUrns) { }
 
 }

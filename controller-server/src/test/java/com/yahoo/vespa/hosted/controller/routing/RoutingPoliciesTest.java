@@ -494,12 +494,13 @@ public class RoutingPoliciesTest {
         // Load balancer for the same application is provisioned again, but with a different hostname
         var newHostname = HostName.of("new-hostname");
         var loadBalancer = new LoadBalancer("LB-0-Z-" + zone1.value(),
-                context.instanceId(),
-                ClusterSpec.Id.from("c0"),
-                Optional.of(newHostname),
-                Optional.empty(),
-                LoadBalancer.State.active,
-                Optional.of("dns-zone-1"));
+                                            context.instanceId(),
+                                            ClusterSpec.Id.from("c0"),
+                                            Optional.of(newHostname),
+                                            Optional.empty(),
+                                            LoadBalancer.State.active,
+                                            Optional.of("dns-zone-1"),
+                                            Optional.empty());
         tester.controllerTester().configServer().putLoadBalancers(zone1, List.of(loadBalancer));
 
         // Application redeployment preserves DNS record
@@ -955,7 +956,8 @@ public class RoutingPoliciesTest {
                                      lbHostname,
                                      ipAddress,
                                      LoadBalancer.State.active,
-                                     Optional.of("dns-zone-1").filter(__ -> lbHostname.isPresent())));
+                                     Optional.of("dns-zone-1").filter(__ -> lbHostname.isPresent()),
+                                     Optional.empty()));
         }
         return loadBalancers;
     }
