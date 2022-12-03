@@ -170,16 +170,11 @@ public class NodeFailer extends NodeRepositoryMaintainer {
      * But we refuse to fail out config(host)/controller(host)
      */
     private boolean failAllowedFor(NodeType nodeType) {
-        switch (nodeType) {
-            case tenant:
-            case host:
-                return true;
-            case proxy:
-            case proxyhost:
-                return nodeRepository().nodes().list(Node.State.failed).nodeType(nodeType).isEmpty();
-            default:
-                return false;
-        }
+        return switch (nodeType) {
+            case tenant, host -> true;
+            case proxy, proxyhost -> nodeRepository().nodes().list(Node.State.failed).nodeType(nodeType).isEmpty();
+            default -> false;
+        };
     }
 
     /**
