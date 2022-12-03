@@ -58,7 +58,7 @@ public class OrderedTensorType {
     }
 
     public List<String> dimensionNames() {
-        return dimensions.stream().map(TensorType.Dimension::name).collect(Collectors.toList());
+        return dimensions.stream().map(TensorType.Dimension::name).toList();
     }
 
     private int[] createDimensionMap() {

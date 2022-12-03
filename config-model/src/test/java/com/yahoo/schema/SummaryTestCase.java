@@ -175,7 +175,7 @@ public class SummaryTestCase {
         tests.forEach(testValue -> {
             var actualFields = testValue.summary.getSummaryFields().values().stream()
                     .map(FieldBase::getName)
-                    .collect(Collectors.toList());
+                    .toList();
             assertEquals(Optional.ofNullable(testValue.parent),
                     testValue.summary.inherited(),
                     testValue.summary.getName() + (testValue.parent == null ? " does not inherit anything" : " inherits " + testValue.parent.getName()));
@@ -278,7 +278,7 @@ public class SummaryTestCase {
         public TestValue(DocumentSummary summary, DocumentSummary parent, List<List<String>> fields) {
             this.summary = summary;
             this.parent = parent;
-            this.fields = fields.stream().flatMap(Collection::stream).collect(Collectors.toList());;
+            this.fields = fields.stream().flatMap(Collection::stream).toList();;
         }
 
     }

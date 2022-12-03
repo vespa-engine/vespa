@@ -50,7 +50,7 @@ public class CostCalculator {
                               .reachable().in(Environment.prod).in(CloudName.YAHOO).zones().stream()
                               .flatMap(zone -> uncheck(() -> nodeRepository.list(zone.getId(), NodeFilter.all()).stream()))
                               .filter(node -> node.owner().isPresent() && !node.owner().get().tenant().equals(SystemApplication.TENANT))
-                              .collect(Collectors.toList());
+                              .toList();
         var totalAllocation = ResourceAllocation.ZERO;
         for (var node : nodes) {
             Property property = propertyByTenantName.get(node.owner().get().tenant());

@@ -33,7 +33,7 @@ public class UserManagementMaintainer extends ControllerMaintainer {
         var applications = controller().applications().idList()
                 .stream()
                 .map(appId -> ApplicationId.from(appId.tenant(), appId.application(), InstanceName.defaultName()))
-                .collect(Collectors.toList());
+                .toList();
         roleMaintainer.deleteLeftoverRoles(tenants, applications);
 
         if (!controller().system().isPublic()) {

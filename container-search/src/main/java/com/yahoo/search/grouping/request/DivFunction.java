@@ -33,7 +33,7 @@ public class DivFunction extends FunctionNode {
     public DivFunction copy() {
         return new DivFunction(getLabel(),
                                getLevelOrNull(),
-                               args().stream().map(arg -> arg.copy()).collect(Collectors.toList()));
+                               args().stream().map(arg -> arg.copy()).toList());
     }
 
     /**

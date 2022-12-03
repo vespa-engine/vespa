@@ -31,7 +31,7 @@ public class MulFunction extends FunctionNode {
     public MulFunction copy() {
         return new MulFunction(getLabel(),
                                getLevelOrNull(),
-                               args().stream().map(arg -> arg.copy()).collect(Collectors.toList()));
+                               args().stream().map(arg -> arg.copy()).toList());
     }
 
     /**

@@ -186,7 +186,7 @@ public class PreparedModelsBuilder extends ModelsBuilder<PreparedModelsBuilder.P
             try {
                 hostValidator.verifyHosts(applicationId, model.getHosts().stream()
                                                               .map(HostInfo::getHostname)
-                                                              .collect(Collectors.toList()));
+                                                              .toList());
                 return;
             } catch (IllegalArgumentException e) {
                 exception = e;

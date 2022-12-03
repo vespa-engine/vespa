@@ -161,7 +161,7 @@ public class ConfigValueChangeValidatorTest {
     private List<ConfigChangeAction> getConfigChanges(AbstractConfigProducerRoot currentModel,
                                                       AbstractConfigProducerRoot nextModel) {
         ConfigValueChangeValidator validator = new ConfigValueChangeValidator(logger);
-        return validator.findConfigChangesFromModels(currentModel, nextModel).collect(Collectors.toList());
+        return validator.findConfigChangesFromModels(currentModel, nextModel).toList();
     }
 
     private static void assertComponentsEquals(List<ConfigChangeAction> changes, String name, int index) {
@@ -219,7 +219,7 @@ public class ConfigValueChangeValidatorTest {
     private static List<String> createSchemas(List<String> docTypes) {
         return docTypes.stream()
                 .map(type -> "search " + type + " { document " + type + " { } }")
-                .collect(Collectors.toList());
+                .toList();
     }
 
     private static String createQrStartConfigSegment(boolean verboseGc, int heapsize) {

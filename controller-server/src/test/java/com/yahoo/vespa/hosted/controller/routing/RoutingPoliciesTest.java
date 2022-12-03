@@ -295,7 +295,7 @@ public class RoutingPoliciesTest {
                 "c0.app2.tenant1.us-west-1.vespa.oath.cloud",
                 "c1.app2.tenant1.us-west-1.vespa.oath.cloud"
         );
-        assertEquals(expectedRecords.stream().sorted().collect(Collectors.toList()), tester.recordNames().stream().sorted().collect(Collectors.toList()));
+        assertEquals(expectedRecords.stream().sorted().toList(), tester.recordNames().stream().sorted().toList());
         assertEquals(4, tester.policiesOf(context2.instanceId()).size());
 
         // Deploy removes cluster from app1
@@ -1053,7 +1053,7 @@ public class RoutingPoliciesTest {
             return tester.controllerTester().nameService().findRecords(type, RecordName.from(name)).stream()
                          .map(Record::data)
                          .map(RecordData::asString)
-                         .collect(Collectors.toList());
+                         .toList();
         }
 
         /** Assert that an application endpoint points to given targets and weights */
@@ -1110,7 +1110,7 @@ public class RoutingPoliciesTest {
                 String latencyTarget = "latency/" + regionEndpoint + "/dns-zone-1/" + zone.value();
                 latencyTargets.add(latencyTarget);
             });
-            List<DeploymentId> deployments = zoneWeights.keySet().stream().map(z -> new DeploymentId(instance, z)).collect(Collectors.toList());
+            List<DeploymentId> deployments = zoneWeights.keySet().stream().map(z -> new DeploymentId(instance, z)).toList();
             String globalEndpoint = tester.controller().routing().readDeclaredEndpointsOf(instance)
                                           .named(endpointId)
                                           .targets(deployments)

@@ -126,7 +126,7 @@ public class BufferedLogStore {
         return logSerializer.fromJson(Arrays.stream(chunkIds, firstChunk, chunkIds.length)
                                             .mapToObj(chunkId -> buffer.readLog(id, type, chunkId))
                                             .flatMap(Optional::stream)
-                                            .collect(Collectors.toList()),
+                                            .toList(),
                                       after);
     }
 

@@ -118,7 +118,7 @@ public class GroupPreparer {
                     List<NodeCandidate> candidates = provisionedHosts.stream()
                             .map(host -> NodeCandidate.createNewExclusiveChild(host.generateNode(),
                                     host.generateHost()))
-                            .collect(Collectors.toList());
+                            .toList();
                     allocation.offer(candidates);
                 };
 

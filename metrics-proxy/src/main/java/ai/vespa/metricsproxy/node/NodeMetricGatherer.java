@@ -64,7 +64,7 @@ public class NodeMetricGatherer {
                     metricPacketBuilder.putDimensionsIfAbsent(applicationDimensions.getDimensions())
                     .putDimensionsIfAbsent(nodeDimensions.getDimensions())
                     .putDimensionsIfAbsent(metricsManager.getExtraDimensions()).build()
-        ).collect(Collectors.toList());
+        ).toList();
     }
 
     protected static void addObjectToBuilders(List<MetricsPacket.Builder> builders, JsonNode object)  {

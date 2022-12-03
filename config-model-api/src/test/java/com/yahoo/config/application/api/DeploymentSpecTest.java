@@ -1235,12 +1235,12 @@ public class DeploymentSpecTest {
 
         assertEquals(
                 List.of("foo", "nalle", "default"),
-                spec.requireInstance("default").endpoints().stream().map(Endpoint::endpointId).collect(Collectors.toList())
+                spec.requireInstance("default").endpoints().stream().map(Endpoint::endpointId).toList()
         );
 
         assertEquals(
                 List.of("bar", "frosk", "quux"),
-                spec.requireInstance("default").endpoints().stream().map(Endpoint::containerId).collect(Collectors.toList())
+                spec.requireInstance("default").endpoints().stream().map(Endpoint::containerId).toList()
         );
 
         assertEquals(List.of(RegionName.from("us-east")), spec.requireInstance("default").endpoints().get(0).regions());
@@ -1677,7 +1677,7 @@ public class DeploymentSpecTest {
 
         return DeploymentSpec.fromXml(xml).requireInstance("default").endpoints().stream()
                              .map(Endpoint::endpointId)
-                             .collect(Collectors.toList());
+                             .toList();
     }
 
 }

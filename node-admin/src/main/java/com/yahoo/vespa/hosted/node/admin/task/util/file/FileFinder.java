@@ -128,7 +128,7 @@ public class FileFinder {
                 List<Path> paths = deletedPaths.stream()
                         .map(basePath::relativize)
                         .sorted()
-                        .collect(Collectors.toList());
+                        .toList();
                 context.log(logger, "Deleted these paths in " + basePath + ": " + paths);
             }
         }

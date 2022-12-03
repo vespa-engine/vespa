@@ -45,7 +45,7 @@ public class RealNodeRepository implements NodeRepository {
     public void addNodes(List<AddNode> nodes) {
         List<NodeRepositoryNode> nodesToPost = nodes.stream()
                 .map(RealNodeRepository::nodeRepositoryNodeFromAddNode)
-                .collect(Collectors.toList());
+                .toList();
 
         configServerApi.post("/nodes/v2/node", nodesToPost, StandardConfigServerResponse.class)
                        .throwOnError("Failed to add nodes");
@@ -58,7 +58,7 @@ public class RealNodeRepository implements NodeRepository {
 
         return nodesForHost.nodes.stream()
                 .map(RealNodeRepository::createNodeSpec)
-                .collect(Collectors.toList());
+                .toList();
     }
 
     @Override
@@ -149,7 +149,7 @@ public class RealNodeRepository implements NodeRepository {
 
         List<TrustStoreItem> trustStore = Optional.ofNullable(node.trustStore).orElse(List.of()).stream()
                 .map(item -> new TrustStoreItem(item.fingerprint, Instant.ofEpochMilli(item.expiry)))
-                .collect(Collectors.toList());
+                .toList();
 
 
         return new NodeSpec(
@@ -299,7 +299,7 @@ public class RealNodeRepository implements NodeRepository {
         node.currentFirmwareCheck = nodeAttributes.getCurrentFirmwareCheck().map(Instant::toEpochMilli).orElse(null);
         node.trustStore = nodeAttributes.getTrustStore().stream()
                 .map(item -> new NodeRepositoryNode.TrustStoreItem(item.fingerprint(), item.expiry().toEpochMilli()))
-                .collect(Collectors.toList());
+                .toList();
         Map<String, JsonNode> reports = nodeAttributes.getReports();
         node.reports = reports == null || reports.isEmpty() ? null : new TreeMap<>(reports);
 

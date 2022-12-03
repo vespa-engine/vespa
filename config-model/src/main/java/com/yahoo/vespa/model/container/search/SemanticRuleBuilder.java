@@ -23,7 +23,7 @@ public class SemanticRuleBuilder {
         List<NamedReader> ruleBaseFiles = null;
         try {
             ruleBaseFiles = applicationPackage.getFiles(ApplicationPackage.RULES_DIR, "sr");
-            return new SemanticRules(ruleBaseFiles.stream().map(this::toRuleBaseConfigView).collect(Collectors.toList()));
+            return new SemanticRules(ruleBaseFiles.stream().map(this::toRuleBaseConfigView).toList());
         }
         finally {
             NamedReader.closeAll(ruleBaseFiles);

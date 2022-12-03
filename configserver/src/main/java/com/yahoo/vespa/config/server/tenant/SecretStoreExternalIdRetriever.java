@@ -24,7 +24,7 @@ public class SecretStoreExternalIdRetriever {
                      throw new RuntimeException("No secret found in secret store for " + secretName);
                     return tenantSecretStore.withExternalId(secret);
                 })
-                .collect(Collectors.toList());
+                .toList();
     }
 
     public static String secretName(TenantName tenant, SystemName system, String storeName) {

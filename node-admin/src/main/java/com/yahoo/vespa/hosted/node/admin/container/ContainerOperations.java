@@ -137,7 +137,7 @@ public class ContainerOperations {
 
     /** Deletes the local images that are currently not in use by any container and not recently used. */
     public boolean deleteUnusedContainerImages(TaskContext context, List<DockerImage> excludes, Duration minImageAgeToDelete) {
-        List<String> excludedRefs = excludes.stream().map(DockerImage::asString).collect(Collectors.toList());
+        List<String> excludedRefs = excludes.stream().map(DockerImage::asString).toList();
         return imagePruner.removeUnusedImages(context, excludedRefs, minImageAgeToDelete);
     }
 

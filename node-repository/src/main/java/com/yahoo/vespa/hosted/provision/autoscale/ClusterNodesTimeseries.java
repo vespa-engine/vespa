@@ -110,14 +110,14 @@ public class ClusterNodesTimeseries {
     }
 
     private static List<NodeTimeseries> keep(List<NodeTimeseries> timeseries, Predicate<NodeMetricSnapshot> filter) {
-        return timeseries.stream().map(nodeTimeseries -> nodeTimeseries.keep(filter)).collect(Collectors.toList());
+        return timeseries.stream().map(nodeTimeseries -> nodeTimeseries.keep(filter)).toList();
     }
 
     private List<NodeTimeseries> keepGenerationAfterWarmup(List<NodeTimeseries> timeseries, long currentGeneration) {
         return timeseries.stream()
                          .map(nodeTimeseries -> nodeTimeseries.keepGenerationAfterWarmup(currentGeneration,
                                                                                          clusterNodes.node(nodeTimeseries.hostname())))
-                         .collect(Collectors.toList());
+                         .toList();
     }
 
     public static ClusterNodesTimeseries empty() {

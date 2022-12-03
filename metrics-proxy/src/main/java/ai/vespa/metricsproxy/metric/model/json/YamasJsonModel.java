@@ -84,7 +84,7 @@ public class YamasJsonModel {
 
         return metrics.keySet().stream()
                 .map(name -> new Metric(MetricId.toMetricId(name), metrics.get(name)))
-                .collect(Collectors.toList());
+                .toList();
     }
 
     Map<DimensionId, String> getDimensionsById() {

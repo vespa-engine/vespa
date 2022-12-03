@@ -243,7 +243,7 @@ public class DeploymentStatus {
                        .filter(version -> version.confidence().equalOrHigherThan(target))
                        .map(VespaVersion::versionNumber)
                        .sorted(reverseOrder())
-                       .collect(Collectors.toList());
+                       .toList();
     }
 
 

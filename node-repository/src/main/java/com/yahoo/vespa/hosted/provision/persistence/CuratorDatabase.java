@@ -63,7 +63,7 @@ public class CuratorDatabase {
                 .filter(hostAndPort -> !hostAndPort.isEmpty())
                 .map(hostAndPort -> hostAndPort.split(":")[0])
                 .map(HostName::of)
-                .collect(Collectors.toList());
+                .toList();
     }
 
     /** Create a reentrant lock */

@@ -32,7 +32,7 @@ public class XorBitFunction extends FunctionNode {
     public XorBitFunction copy() {
         return new XorBitFunction(getLabel(),
                                   getLevelOrNull(),
-                                  args().stream().map(arg -> arg.copy()).collect(Collectors.toList()));
+                                  args().stream().map(arg -> arg.copy()).toList());
     }
 
     /**
