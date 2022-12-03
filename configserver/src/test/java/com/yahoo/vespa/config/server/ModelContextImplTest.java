@@ -53,7 +53,6 @@ public class ModelContextImplTest {
         ModelContext context = new ModelContextImpl(
                 applicationPackage,
                 Optional.empty(),
-                Optional.empty(),
                 new BaseDeployLogger(),
                 new StaticConfigDefinitionRepo(),
                 new MockFileRegistry(),
@@ -83,7 +82,6 @@ public class ModelContextImplTest {
                 new Version(8));
         assertTrue(context.applicationPackage() instanceof MockApplicationPackage);
         assertEquals(hostProvisioner, context.getHostProvisioner());
-        assertFalse(context.permanentApplicationPackage().isPresent());
         assertFalse(context.previousModel().isPresent());
         assertTrue(context.getFileRegistry() instanceof MockFileRegistry);
         assertTrue(context.configDefinitionRepo() instanceof StaticConfigDefinitionRepo);

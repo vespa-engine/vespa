@@ -25,7 +25,6 @@ import com.yahoo.transaction.Transaction;
 import com.yahoo.vespa.config.server.ConfigServerDB;
 import com.yahoo.vespa.config.server.TimeoutBudget;
 import com.yahoo.vespa.config.server.application.ApplicationSet;
-import com.yahoo.vespa.config.server.application.PermanentApplicationPackage;
 import com.yahoo.vespa.config.server.application.TenantApplications;
 import com.yahoo.vespa.config.server.configchange.ConfigChangeActions;
 import com.yahoo.vespa.config.server.deploy.TenantFileSystemDirs;
@@ -110,7 +109,6 @@ public class SessionRepository {
     private final Curator curator;
     private final Executor zkWatcherExecutor;
     private final FileDistributionFactory fileDistributionFactory;
-    private final PermanentApplicationPackage permanentApplicationPackage;
     private final FlagSource flagSource;
     private final TenantFileSystemDirs tenantFileSystemDirs;
     private final Metrics metrics;
@@ -137,7 +135,6 @@ public class SessionRepository {
                              Metrics metrics,
                              StripedExecutor<TenantName> zkWatcherExecutor,
                              FileDistributionFactory fileDistributionFactory,
-                             PermanentApplicationPackage permanentApplicationPackage,
                              FlagSource flagSource,
                              ExecutorService zkCacheExecutor,
                              SecretStore secretStore,
@@ -157,7 +154,6 @@ public class SessionRepository {
         this.sessionLifetime = Duration.ofSeconds(configserverConfig.sessionLifetime());
         this.zkWatcherExecutor = command -> zkWatcherExecutor.execute(tenantName, command);
         this.fileDistributionFactory = fileDistributionFactory;
-        this.permanentApplicationPackage = permanentApplicationPackage;
         this.flagSource = flagSource;
         this.tenantFileSystemDirs = new TenantFileSystemDirs(configServerDB, tenantName);
         this.applicationRepo = applicationRepo;
@@ -548,7 +544,6 @@ public class SessionRepository {
                                                                     sessionPreparer.getExecutor(),
                                                                     curator,
                                                                     metrics,
-                                                                    permanentApplicationPackage,
                                                                     flagSource,
                                                                     secretStore,
                                                                     hostProvisionerProvider,

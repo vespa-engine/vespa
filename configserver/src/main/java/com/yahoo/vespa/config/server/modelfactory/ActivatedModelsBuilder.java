@@ -20,7 +20,6 @@ import com.yahoo.vespa.config.server.ServerCache;
 import com.yahoo.vespa.config.server.application.Application;
 import com.yahoo.vespa.config.server.application.ApplicationCuratorDatabase;
 import com.yahoo.vespa.config.server.application.ApplicationSet;
-import com.yahoo.vespa.config.server.application.PermanentApplicationPackage;
 import com.yahoo.vespa.config.server.deploy.ModelContextImpl;
 import com.yahoo.vespa.config.server.monitoring.MetricUpdater;
 import com.yahoo.vespa.config.server.monitoring.Metrics;
@@ -33,7 +32,6 @@ import com.yahoo.vespa.config.server.tenant.EndpointCertificateRetriever;
 import com.yahoo.vespa.config.server.tenant.TenantRepository;
 import com.yahoo.vespa.curator.Curator;
 import com.yahoo.vespa.flags.FlagSource;
-
 import java.util.Comparator;
 import java.util.Map;
 import java.util.Optional;
@@ -54,7 +52,6 @@ public class ActivatedModelsBuilder extends ModelsBuilder<Application> {
     private final long applicationGeneration;
     private final SessionZooKeeperClient zkClient;
     private final Optional<ApplicationSet> currentActiveApplicationSet;
-    private final PermanentApplicationPackage permanentApplicationPackage;
     private final ConfigDefinitionRepo configDefinitionRepo;
     private final Metrics metrics;
     private final Curator curator;
@@ -69,7 +66,6 @@ public class ActivatedModelsBuilder extends ModelsBuilder<Application> {
                                   ExecutorService executor,
                                   Curator curator,
                                   Metrics metrics,
-                                  PermanentApplicationPackage permanentApplicationPackage,
                                   FlagSource flagSource,
                                   SecretStore secretStore,
                                   HostProvisionerProvider hostProvisionerProvider,
@@ -82,7 +78,6 @@ public class ActivatedModelsBuilder extends ModelsBuilder<Application> {
         this.applicationGeneration = applicationGeneration;
         this.zkClient = zkClient;
         this.currentActiveApplicationSet = currentActiveApplicationSet;
-        this.permanentApplicationPackage = permanentApplicationPackage;
         this.configDefinitionRepo = configDefinitionRepo;
         this.metrics = metrics;
         this.curator = curator;
@@ -104,7 +99,6 @@ public class ActivatedModelsBuilder extends ModelsBuilder<Application> {
         ModelContext modelContext = new ModelContextImpl(
                 applicationPackage,
                 modelOf(modelFactory.version()),
-                permanentApplicationPackage.applicationPackage(),
                 new SilentDeployLogger(),
                 configDefinitionRepo,
                 getForVersionOrLatest(applicationPackage.getFileRegistries(), modelFactory.version()).orElse(new MockFileRegistry()),

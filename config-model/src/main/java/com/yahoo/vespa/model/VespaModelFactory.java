@@ -64,10 +64,10 @@ public class VespaModelFactory implements ModelFactory {
                              ComponentRegistry<Validator> additionalValidators,
                              Zone zone) {
         this.version = new Version(VespaVersion.major, VespaVersion.minor, VespaVersion.micro);
-        List<ConfigModelBuilder> modelBuilders = new ArrayList<>();
+        List<ConfigModelBuilder<?>> modelBuilders = new ArrayList<>();
         for (ConfigModelPlugin plugin : pluginRegistry.allComponents()) {
-            if (plugin instanceof ConfigModelBuilder) {
-                modelBuilders.add((ConfigModelBuilder) plugin);
+            if (plugin instanceof ConfigModelBuilder p) {
+                modelBuilders.add(p);
             }
         }
         this.configModelRegistry = new MapConfigModelRegistry(modelBuilders);
@@ -187,7 +187,6 @@ public class VespaModelFactory implements ModelFactory {
             .configDefinitionRepo(modelContext.configDefinitionRepo())
             .fileRegistry(modelContext.getFileRegistry())
             .executor(modelContext.getExecutor())
-            .permanentApplicationPackage(modelContext.permanentApplicationPackage())
             .properties(modelContext.properties())
             .vespaVersion(version())
             .modelHostProvisioner(modelContext.getHostProvisioner())

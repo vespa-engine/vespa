@@ -56,7 +56,6 @@ public class ModelContextImpl implements ModelContext {
 
     private final ApplicationPackage applicationPackage;
     private final Optional<Model> previousModel;
-    private final Optional<ApplicationPackage> permanentApplicationPackage;
     private final DeployLogger deployLogger;
     private final ConfigDefinitionRepo configDefinitionRepo;
     private final FileRegistry fileRegistry;
@@ -83,7 +82,6 @@ public class ModelContextImpl implements ModelContext {
 
     public ModelContextImpl(ApplicationPackage applicationPackage,
                             Optional<Model> previousModel,
-                            Optional<ApplicationPackage> permanentApplicationPackage,
                             DeployLogger deployLogger,
                             ConfigDefinitionRepo configDefinitionRepo,
                             FileRegistry fileRegistry,
@@ -98,7 +96,6 @@ public class ModelContextImpl implements ModelContext {
                             Version wantedNodeVespaVersion) {
         this.applicationPackage = applicationPackage;
         this.previousModel = previousModel;
-        this.permanentApplicationPackage = permanentApplicationPackage;
         this.deployLogger = deployLogger;
         this.configDefinitionRepo = configDefinitionRepo;
         this.fileRegistry = fileRegistry;
@@ -118,9 +115,6 @@ public class ModelContextImpl implements ModelContext {
 
     @Override
     public Optional<Model> previousModel() { return previousModel; }
-
-    @Override
-    public Optional<ApplicationPackage> permanentApplicationPackage() { return permanentApplicationPackage; }
 
     /**
      * Returns the host provisioner to use, or empty to use the default provisioner,

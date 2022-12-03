@@ -29,14 +29,12 @@ import com.yahoo.container.jdisc.secretstore.SecretStore;
 import com.yahoo.vespa.config.server.application.Application;
 import com.yahoo.vespa.config.server.application.ApplicationCuratorDatabase;
 import com.yahoo.vespa.config.server.application.ApplicationSet;
-import com.yahoo.vespa.config.server.application.PermanentApplicationPackage;
 import com.yahoo.vespa.config.server.deploy.ModelContextImpl;
 import com.yahoo.vespa.config.server.host.HostValidator;
 import com.yahoo.vespa.config.server.provision.HostProvisionerProvider;
 import com.yahoo.vespa.config.server.session.PrepareParams;
 import com.yahoo.vespa.curator.Curator;
 import com.yahoo.vespa.flags.FlagSource;
-
 import java.io.File;
 import java.io.IOException;
 import java.time.Duration;
@@ -56,7 +54,6 @@ public class PreparedModelsBuilder extends ModelsBuilder<PreparedModelsBuilder.P
 
     private static final Logger log = Logger.getLogger(PreparedModelsBuilder.class.getName());
 
-    private final PermanentApplicationPackage permanentApplicationPackage;
     private final FlagSource flagSource;
     private final SecretStore secretStore;
     private final List<ContainerEndpoint> containerEndpoints;
@@ -70,7 +67,6 @@ public class PreparedModelsBuilder extends ModelsBuilder<PreparedModelsBuilder.P
     private final ExecutorService executor;
 
     public PreparedModelsBuilder(ModelFactoryRegistry modelFactoryRegistry,
-                                 PermanentApplicationPackage permanentApplicationPackage,
                                  FlagSource flagSource,
                                  SecretStore secretStore,
                                  List<ContainerEndpoint> containerEndpoints,
@@ -87,7 +83,6 @@ public class PreparedModelsBuilder extends ModelsBuilder<PreparedModelsBuilder.P
                                  ConfigserverConfig configserverConfig,
                                  Zone zone) {
         super(modelFactoryRegistry, configserverConfig, zone, hostProvisionerProvider, deployLogger);
-        this.permanentApplicationPackage = permanentApplicationPackage;
         this.flagSource = flagSource;
         this.secretStore = secretStore;
         this.containerEndpoints = containerEndpoints;
@@ -115,7 +110,6 @@ public class PreparedModelsBuilder extends ModelsBuilder<PreparedModelsBuilder.P
         ModelContext modelContext = new ModelContextImpl(
                 applicationPackage,
                 modelOf(modelVersion),
-                permanentApplicationPackage.applicationPackage(),
                 deployLogger(),
                 configDefinitionRepo,
                 fileRegistry,
