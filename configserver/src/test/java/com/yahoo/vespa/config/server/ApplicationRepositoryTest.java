@@ -295,10 +295,8 @@ public class ApplicationRepositoryTest {
         // deployApp(new File("src/test/apps/app"), prepareParams);
 
         List<String> deleted = applicationRepository.deleteUnusedFileDistributionReferences(fileDirectory, keepFileReferencesDuration);
-        Collections.sort(deleted);
-        List<String> expected = new ArrayList<>(List.of("bar", "baz0", "baz1"));
-        Collections.sort(expected);
-        assertEquals(expected, deleted);
+        List<String> expected = List.of("bar", "baz0", "baz1");
+        assertEquals(expected.stream().sorted().toList(), deleted.stream().sorted().toList());
         // bar, baz0 and baz1 will be deleted and foo is not old enough to be considered
         assertFalse(filereferenceDirOldest.exists());
         assertFalse(new File(fileReferencesDir, "baz0").exists());

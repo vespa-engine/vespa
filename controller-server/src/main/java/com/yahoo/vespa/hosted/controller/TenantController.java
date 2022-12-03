@@ -70,7 +70,7 @@ public class TenantController {
         return curator.readTenants().stream()
                 .filter(tenant -> tenant.type() != Tenant.Type.deleted || includeDeleted)
                 .sorted(Comparator.comparing(Tenant::name))
-                .collect(Collectors.toList());
+                .toList();
     }
 
     /** Locks a tenant for modification and applies the given action. */

@@ -44,7 +44,7 @@ public class ProvisionedExpirerTest {
     private void populateNodeRepo() {
         var nodes = IntStream.range(0, 25)
                              .mapToObj(i -> Node.create("id-" + i, "host-" + i, new Flavor(NodeResources.unspecified()), Node.State.provisioned, NodeType.host).build())
-                             .collect(Collectors.toList());
+                             .toList();
         tester.nodeRepository().database().addNodesInState(nodes, Node.State.provisioned, Agent.system);
     }
 

@@ -38,7 +38,7 @@ public class CloudConfigInstallVariablesTest {
         CloudConfigOptions.ConfigServer[] parsed = toConfigServers("test1     test2");
         assertEquals(2, parsed.length);
 
-        List<String> hostNames = Arrays.stream(parsed).map(cs -> cs.hostName).collect(Collectors.toList());
+        List<String> hostNames = Arrays.stream(parsed).map(cs -> cs.hostName).toList();
         assertTrue(hostNames.containsAll(Arrays.asList("test1", "test2")));
     }
 

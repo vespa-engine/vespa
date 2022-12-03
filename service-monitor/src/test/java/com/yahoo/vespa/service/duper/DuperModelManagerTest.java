@@ -64,7 +64,7 @@ public class DuperModelManagerTest {
         makeManager(false);
 
         ApplicationId id = proxyHostApplication.getApplicationId();
-        List<HostName> proxyHostHosts = Stream.of("proxyhost1", "proxyhost2").map(HostName::of).collect(Collectors.toList());
+        List<HostName> proxyHostHosts = Stream.of("proxyhost1", "proxyhost2").map(HostName::of).toList();
         verify(duperModel, times(0)).add(any());
         manager.infraApplicationActivated(id, proxyHostHosts);
         verify(duperModel, times(1)).add(any());
@@ -91,12 +91,12 @@ public class DuperModelManagerTest {
     }
 
     private void testEnabledConfigServerLikeInfraApplication(ApplicationId firstId, ApplicationId secondId) {
-        List<HostName> hostnames1 = Stream.of("node11", "node12").map(HostName::of).collect(Collectors.toList());
+        List<HostName> hostnames1 = Stream.of("node11", "node12").map(HostName::of).toList();
         manager.infraApplicationActivated(firstId, hostnames1);
         verify(duperModel, times(1)).add(any());
 
         // Adding the second config server like application will be ignored
-        List<HostName> hostnames2 = Stream.of("node21", "node22").map(HostName::of).collect(Collectors.toList());
+        List<HostName> hostnames2 = Stream.of("node21", "node22").map(HostName::of).toList();
         assertThrows(IllegalArgumentException.class, () -> manager.infraApplicationActivated(secondId, hostnames2));
         verify(duperModel, times(1)).add(any());
 

@@ -32,7 +32,7 @@ public class AvgFunction extends FunctionNode {
     public AvgFunction copy() {
         return new AvgFunction(getLabel(),
                                getLevelOrNull(),
-                               args().stream().map(arg -> arg.copy()).collect(Collectors.toList()));
+                               args().stream().map(arg -> arg.copy()).toList());
     }
 
     /**

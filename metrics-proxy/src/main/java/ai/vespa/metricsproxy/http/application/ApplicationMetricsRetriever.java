@@ -185,7 +185,7 @@ public class ApplicationMetricsRetriever extends AbstractComponent implements Ru
         return nodesConfig.node().stream()
                 .map(Node::new)
                 .map(node-> new NodeMetricsClient(httpClient, node, Clock.systemUTC()))
-                .collect(Collectors.toList());
+                .toList();
     }
 
     static CloseableHttpAsyncClient createHttpClient() {

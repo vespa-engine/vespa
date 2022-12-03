@@ -112,7 +112,7 @@ public class ComponentNode extends Node {
         if (Provider.class.isAssignableFrom(clazz)) {
             //TODO: Test what happens if you ask for something that isn't a class, e.g. a parameterized type.
 
-            List<Type> allGenericInterfaces = allSuperClasses(clazz).stream().flatMap(c -> Arrays.stream(c.getGenericInterfaces())).collect(Collectors.toList());
+            List<Type> allGenericInterfaces = allSuperClasses(clazz).stream().flatMap(c -> Arrays.stream(c.getGenericInterfaces())).toList();
             for (Type t : allGenericInterfaces) {
                 if (t instanceof ParameterizedType && ((ParameterizedType) t).getRawType().equals(Provider.class)) {
                     Type[] typeArgs = ((ParameterizedType) t).getActualTypeArguments();

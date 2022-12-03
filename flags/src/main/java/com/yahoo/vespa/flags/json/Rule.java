@@ -53,7 +53,7 @@ public class Rule {
         WireRule wireRule = new WireRule();
 
         if (!andConditions.isEmpty()) {
-            wireRule.andConditions = andConditions.stream().map(Condition::toWire).collect(Collectors.toList());
+            wireRule.andConditions = andConditions.stream().map(Condition::toWire).toList();
         }
 
         wireRule.value = valueToApply.map(RawFlag::asJsonNode).orElse(null);
@@ -64,7 +64,7 @@ public class Rule {
     public static Rule fromWire(WireRule wireRule) {
         List<Condition> conditions = wireRule.andConditions == null ?
                 Collections.emptyList() :
-                wireRule.andConditions.stream().map(Condition::fromWire).collect(Collectors.toList());
+                wireRule.andConditions.stream().map(Condition::fromWire).toList();
         Optional<RawFlag> value = wireRule.value == null ? Optional.empty() : Optional.of(JsonNodeRawFlag.fromJsonNode(wireRule.value));
         return new Rule(value, conditions);
     }

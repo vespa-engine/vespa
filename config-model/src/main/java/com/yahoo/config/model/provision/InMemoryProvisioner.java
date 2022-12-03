@@ -127,11 +127,11 @@ public class InMemoryProvisioner implements HostProvisioner {
     }
 
     private static Collection<Host> toHostInstances(String[] hostnames) {
-        return Arrays.stream(hostnames).map(Host::new).collect(Collectors.toList());
+        return Arrays.stream(hostnames).map(Host::new).toList();
     }
 
     private static Collection<Host> createHostInstances(int hostCount) {
-        return IntStream.range(1, hostCount + 1).mapToObj(i -> new Host("host" + i)).collect(Collectors.toList());
+        return IntStream.range(1, hostCount + 1).mapToObj(i -> new Host("host" + i)).toList();
     }
 
     /** Returns the current allocations of this as a mutable map */
@@ -265,7 +265,7 @@ public class InMemoryProvisioner implements HostProvisioner {
     }
 
     private List<HostSpec> nonRetiredIn(List<HostSpec> hosts) {
-        return hosts.stream().filter(host -> ! retiredHostNames.contains(host.hostname())).collect(Collectors.toList());
+        return hosts.stream().filter(host -> ! retiredHostNames.contains(host.hostname())).toList();
     }
 
     private int totalAllocatedTo(ClusterSpec cluster) {

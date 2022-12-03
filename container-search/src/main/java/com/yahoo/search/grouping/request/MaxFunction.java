@@ -31,7 +31,7 @@ public class MaxFunction extends FunctionNode {
     public MaxFunction copy() {
         return new MaxFunction(getLabel(),
                                getLevelOrNull(),
-                               args().stream().map(arg -> arg.copy()).collect(Collectors.toList()));
+                               args().stream().map(arg -> arg.copy()).toList());
     }
 
     /**

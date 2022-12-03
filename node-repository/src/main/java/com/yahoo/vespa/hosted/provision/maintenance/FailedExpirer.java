@@ -86,7 +86,7 @@ public class FailedExpirer extends NodeRepositoryMaintainer {
 
     /** Recycle the nodes matching condition, and remove those nodes from the nodes list. */
     private void recycleIf(Predicate<Node> condition, List<Node> failedNodes, NodeList allNodes) {
-        List<Node> nodesToRecycle = failedNodes.stream().filter(condition).collect(Collectors.toList());
+        List<Node> nodesToRecycle = failedNodes.stream().filter(condition).toList();
         failedNodes.removeAll(nodesToRecycle);
         recycle(nodesToRecycle, allNodes);
     }

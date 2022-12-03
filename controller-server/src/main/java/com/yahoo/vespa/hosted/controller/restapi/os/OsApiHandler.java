@@ -134,7 +134,7 @@ public class OsApiHandler extends AuditLoggingRequestHandler {
         ZoneList zones = controller.zoneRegistry().zones().controllerUpgraded();
         if (path.get("region") != null) zones = zones.in(RegionName.from(path.get("region")));
         if (path.get("environment") != null) zones = zones.in(Environment.from(path.get("environment")));
-        return zones.zones().stream().map(ZoneApi::getId).collect(Collectors.toList());
+        return zones.zones().stream().map(ZoneApi::getId).toList();
     }
 
     private HttpResponse setOsVersion(HttpRequest request) {

@@ -30,7 +30,7 @@ public class ClusterProtonMetricsRetrieverTest {
     public void testMetricAggregation() throws IOException {
         List<URI> hosts = Stream.of(1, 2)
                 .map(item -> URI.create("http://localhost:" + wireMock.port() + "/metrics" + item + "/v2/values"))
-                .collect(Collectors.toList());
+                .toList();
 
         stubFor(get(urlEqualTo("/metrics1/v2/values"))
                 .willReturn(aResponse()

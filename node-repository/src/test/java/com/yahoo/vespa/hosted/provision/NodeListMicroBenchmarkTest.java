@@ -38,7 +38,7 @@ public class NodeListMicroBenchmarkTest {
     public void testChildrenOf() {
         List<Node> nodes = createHosts();
 
-        List<Node> childNodes = nodes.stream().map(host -> createNodes(host.hostname())).flatMap(Collection::stream).collect(Collectors.toList());
+        List<Node> childNodes = nodes.stream().map(host -> createNodes(host.hostname())).flatMap(Collection::stream).toList();
         nodes.addAll(childNodes);
         NodeList nodeList = new NodeList(nodes, false);
 

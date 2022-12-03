@@ -43,7 +43,7 @@ class MixedBinaryFormat implements BinaryFormat {
     }
 
     private void encodeSparseDimensions(GrowableByteBuffer buffer, MixedTensor tensor) {
-        List<TensorType.Dimension> sparseDimensions = tensor.type().dimensions().stream().filter(d -> !d.isIndexed()).collect(Collectors.toList());
+        List<TensorType.Dimension> sparseDimensions = tensor.type().dimensions().stream().filter(d -> !d.isIndexed()).toList();
         buffer.putInt1_4Bytes(sparseDimensions.size());
         for (TensorType.Dimension dimension : sparseDimensions) {
             buffer.putUtf8String(dimension.name());
@@ -51,7 +51,7 @@ class MixedBinaryFormat implements BinaryFormat {
     }
 
     private void encodeDenseDimensions(GrowableByteBuffer buffer, MixedTensor tensor) {
-        List<TensorType.Dimension> denseDimensions = tensor.type().dimensions().stream().filter(d -> d.isIndexed()).collect(Collectors.toList());
+        List<TensorType.Dimension> denseDimensions = tensor.type().dimensions().stream().filter(d -> d.isIndexed()).toList();
         buffer.putInt1_4Bytes(denseDimensions.size());
         for (TensorType.Dimension dimension : denseDimensions) {
             buffer.putUtf8String(dimension.name());
@@ -71,7 +71,7 @@ class MixedBinaryFormat implements BinaryFormat {
     }
 
     private void encodeCells(GrowableByteBuffer buffer, MixedTensor tensor, Consumer<Double> consumer) {
-        List<TensorType.Dimension> sparseDimensions = tensor.type().dimensions().stream().filter(d -> !d.isIndexed()).collect(Collectors.toList());
+        List<TensorType.Dimension> sparseDimensions = tensor.type().dimensions().stream().filter(d -> !d.isIndexed()).toList();
         long denseSubspaceSize = tensor.denseSubspaceSize();
         if (sparseDimensions.size() > 0) {
             buffer.putInt1_4Bytes((int)(tensor.size() / denseSubspaceSize));  // XXX: Size truncation
@@ -137,7 +137,7 @@ class MixedBinaryFormat implements BinaryFormat {
     }
 
     private void decodeCells(GrowableByteBuffer buffer, MixedTensor.BoundBuilder builder, TensorType type, Supplier<Double> supplier) {
-        List<TensorType.Dimension> sparseDimensions = type.dimensions().stream().filter(d -> !d.isIndexed()).collect(Collectors.toList());
+        List<TensorType.Dimension> sparseDimensions = type.dimensions().stream().filter(d -> !d.isIndexed()).toList();
         TensorType sparseType = MixedTensor.createPartialType(type.valueType(), sparseDimensions);
         long denseSubspaceSize = builder.denseSubspaceSize();
 

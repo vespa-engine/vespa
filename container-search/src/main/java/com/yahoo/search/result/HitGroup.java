@@ -477,7 +477,7 @@ public class HitGroup extends Hit implements DataList<Hit>, Cloneable, Iterable<
         if (getQuery().errors().isEmpty()) return null;
 
         // Move errors from the query into this
-        List<ErrorMessage> queryErrors = getQuery().errors().stream().map(this::toSearchError).collect(Collectors.toList());
+        List<ErrorMessage> queryErrors = getQuery().errors().stream().map(this::toSearchError).toList();
         getQuery().errors().clear(); // TODO: Remove this line (not promised, can be done at any time)
         return new DefaultErrorHit(getSource(), queryErrors);
     }

@@ -154,7 +154,7 @@ public class Configurator {
         return zookeeperServerConfig.server().stream()
                                     .map(ZookeeperServerConfig.Server::hostname)
                                     .distinct()
-                                    .collect(Collectors.toList());
+                                    .toList();
     }
 
     Path makeAbsolutePath(String filename) {

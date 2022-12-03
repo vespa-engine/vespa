@@ -135,20 +135,26 @@ public class JvmOptionsTest extends ContainerModelBuilderTestBase {
         // Valid options, should not log anything
         verifyLoggingOfJvmGcOptions(true, "-XX:+ParallelGCThreads=8");
         verifyLoggingOfJvmGcOptions(true, "-XX:MaxTenuringThreshold=15"); // No + or - after colon
-        verifyLoggingOfJvmGcOptions(false, "-XX:+UseConcMarkSweepGC");
+    }
+
+    private void verifyThatInvalidJvmGcOptionsFailDeployment(String options, String expected) throws IOException, SAXException {
+        try {
+            buildModelWithJvmOptions(new TestProperties().setHostedVespa(true),
+                    new TestLogger(), "gc-options", options);
+            fail();
+        } catch (IllegalArgumentException e) {
+            assertTrue(e.getMessage().startsWith(expected));
+        }
     }
 
     @Test
     void requireThatInvalidJvmGcOptionsFailDeployment() throws IOException, SAXException {
-        try {
-            buildModelWithJvmOptions(new TestProperties().setHostedVespa(true),
-                    new TestLogger(),
-                    "gc-options",
-                    "-XX:+ParallelGCThreads=8 foo     bar");
-            fail();
-        } catch (IllegalArgumentException e) {
-            assertTrue(e.getMessage().startsWith("Invalid or misplaced JVM GC options in services.xml: bar,foo"));
-        }
+        verifyThatInvalidJvmGcOptionsFailDeployment(
+                "-XX:+ParallelGCThreads=8 foo     bar",
+                "Invalid or misplaced JVM GC options in services.xml: bar,foo");
+        verifyThatInvalidJvmGcOptionsFailDeployment(
+                "-XX:+UseConcMarkSweepGC",
+                "Invalid or misplaced JVM GC options in services.xml: -XX:+UseConcMarkSweepGC");
     }
 
     private void verifyLoggingOfJvmGcOptions(boolean isHosted, String override, String... invalidOptions) throws IOException, SAXException  {

@@ -32,7 +32,7 @@ public class ProtonMetricsRetriever {
                 .filter(host -> host.getServices().stream().anyMatch(isSearchNode()))
                 .map(HostInfo::getHostname)
                 .map(ProtonMetricsRetriever::createMetricsProxyURI)
-                .collect(Collectors.toList());
+                .toList();
     }
 
     private static Predicate<ServiceInfo> isSearchNode() {

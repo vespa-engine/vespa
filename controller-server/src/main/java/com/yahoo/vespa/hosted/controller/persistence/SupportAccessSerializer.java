@@ -68,14 +68,14 @@ public class SupportAccessSerializer {
 
         List<SupportAccessGrant> inactiveGrants = supportAccess.grantHistory().stream()
                 .filter(grant -> currentTime.isAfter(grant.certificate().getNotAfter().toInstant()))
-                .collect(Collectors.toList());
+                .toList();
 
         serializeHistoricEvents(root, supportAccess.changeHistory(), inactiveGrants);
 
         // Active grants should show up in the grant section
         List<SupportAccessGrant> activeGrants = supportAccess.grantHistory().stream()
                 .filter(grant -> currentTime.isBefore(grant.certificate().getNotAfter().toInstant()))
-                .collect(Collectors.toList());
+                .toList();
         serializeGrants(root, activeGrants, false);
         return slime;
     }

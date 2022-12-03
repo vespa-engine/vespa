@@ -23,7 +23,7 @@ public class Diag<NAMETYPE extends Name> extends CompositeTensorFunction<NAMETYP
 
     public Diag(TensorType type) {
         this.type = type;
-        this.diagFunction = ScalarFunctions.equal(dimensionNames().collect(Collectors.toList()));
+        this.diagFunction = ScalarFunctions.equal(dimensionNames().toList());
     }
 
     @Override

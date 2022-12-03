@@ -248,7 +248,7 @@ public class InstanceValidatorTest {
     private ApplicationInfo mockApplicationInfo(ApplicationId appId, int numHosts, List<ServiceInfo> serviceInfo) {
         List<HostInfo> hosts = IntStream.range(0, numHosts)
                 .mapToObj(i -> new HostInfo("host-" + i + "." + appId.toShortString() + ".yahoo.com", serviceInfo))
-                .collect(Collectors.toList());
+                .toList();
 
         Model model = mock(Model.class);
         when(model.getHosts()).thenReturn(hosts);

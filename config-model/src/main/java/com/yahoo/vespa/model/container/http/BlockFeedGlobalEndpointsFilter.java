@@ -43,7 +43,7 @@ public class BlockFeedGlobalEndpointsFilter extends Filter implements RuleBasedF
                 .flatMap(e -> e.names().stream())
                 .collect(Collectors.toCollection(() -> new LinkedHashSet<>()));
         if(hostNames.size() > 0) {
-            Collection<String> hostnamesSorted = hostNames.stream().sorted().collect(Collectors.toList());
+            Collection<String> hostnamesSorted = hostNames.stream().sorted().toList();
             RuleBasedFilterConfig.Rule.Builder rule = new RuleBasedFilterConfig.Rule.Builder()
                     .hostNames(hostnamesSorted)
                     .pathExpressions(ContainerCluster.RESERVED_URI_PREFIX + "/{*}")

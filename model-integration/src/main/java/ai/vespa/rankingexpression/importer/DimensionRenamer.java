@@ -122,7 +122,7 @@ public class DimensionRenamer {
                 constraintsPerOperation.entrySet().stream()
                                                   .sorted(Comparator.comparingInt(entry -> - entry.getValue()))
                                                   .map(Map.Entry::getKey)
-                                                  .collect(Collectors.toList());
+                                                  .toList();
 
         List<RenameTarget> targets = new ArrayList<>();
         for (IntermediateOperation operation : prioritizedOperations) {

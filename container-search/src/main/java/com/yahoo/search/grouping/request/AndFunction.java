@@ -32,7 +32,7 @@ public class AndFunction extends FunctionNode {
     public AndFunction copy() {
         return new AndFunction(getLabel(),
                                getLevelOrNull(),
-                               args().stream().map(arg -> arg.copy()).collect(Collectors.toList()));
+                               args().stream().map(arg -> arg.copy()).toList());
     }
 
     /**

@@ -96,7 +96,7 @@ public class RuleBasedRequestFilter extends JsonSecurityRequestFilterBase {
         static List<Rule> fromConfig(List<RuleBasedFilterConfig.Rule> config) {
             return config.stream()
                     .map(Rule::new)
-                    .collect(Collectors.toList());
+                    .toList();
         }
 
         Rule(RuleBasedFilterConfig.Rule config) {

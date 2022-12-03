@@ -136,7 +136,7 @@ public class ConfigserverClusterTest {
     @SuppressWarnings("varargs")
     private static <T> void assertZookeeperServerProperty(
             List<ZookeeperServerConfig.Server> zkServers, Function<ZookeeperServerConfig.Server, T> propertyMapper, T... expectedProperties) {
-        List<T> actualPropertyValues = zkServers.stream().map(propertyMapper).collect(Collectors.toList());
+        List<T> actualPropertyValues = zkServers.stream().map(propertyMapper).toList();
         List<T> expectedPropertyValues = Arrays.asList(expectedProperties);
         assertEquals(expectedPropertyValues, actualPropertyValues);
     }

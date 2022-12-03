@@ -42,7 +42,7 @@ public class MockTesterCloud implements TesterCloud {
 
     @Override
     public List<LogEntry> getLog(DeploymentId deploymentId, long after) {
-        return log.stream().filter(entry -> entry.id() > after).collect(Collectors.toList());
+        return log.stream().filter(entry -> entry.id() > after).toList();
     }
 
     @Override

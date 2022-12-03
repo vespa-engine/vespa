@@ -114,7 +114,7 @@ public class TimeWindowTest {
         { // Empty results in default values
             TimeWindow tw = TimeWindow.from("", "", "", "", "");
             assertEquals(List.of(DayOfWeek.values()), tw.days());
-            assertEquals(IntStream.rangeClosed(0, 23).boxed().collect(Collectors.toList()), tw.hours());
+            assertEquals(IntStream.rangeClosed(0, 23).boxed().toList(), tw.hours());
             assertEquals("UTC", tw.zone().getId());
         }
         {
