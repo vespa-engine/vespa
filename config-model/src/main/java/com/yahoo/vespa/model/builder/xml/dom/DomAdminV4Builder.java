@@ -165,7 +165,7 @@ public class DomAdminV4Builder extends DomAdminBuilderBase {
                                                                      .filter(container -> retired == container.isRetired())
                                                                      .map(Container::getHostResource)
                                                                      .sorted(HostResource::comparePrimarilyByIndexTo)
-                                                                     .toList();
+                                                                     .collect(Collectors.toCollection(ArrayList::new));
         return hosts.subList(0, Math.min(count, hosts.size()));
     }
 

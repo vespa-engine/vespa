@@ -1244,7 +1244,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
                                                 .filter(option -> !option.isEmpty())
                                                 .filter(option -> !Pattern.matches(validPattern.pattern(), option))
                                                 .sorted()
-                                                .toList();
+                                                .collect(Collectors.toCollection(ArrayList::new));
             if (isHosted)
                 invalidOptions.addAll(Arrays.stream(optionList)
                         .filter(option -> !option.isEmpty())
@@ -1291,17 +1291,12 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
                 options = jvmGcOptions;
                 String[] optionList = options.split(" ");
                 List<String> invalidOptions = Arrays.stream(optionList)
-                                                    .filter(option -> !option.isEmpty())
-                                                    .filter(option -> !Pattern.matches(validPattern.pattern(), option))
-                                                    .toList();
-
-                if (isHosted) {
-                    // CMS GC options cannot be used in hosted, CMS is unsupported in JDK 17
-                    invalidOptions.addAll(Arrays.stream(optionList)
-                            .filter(option -> !option.isEmpty())
-                            .filter(option -> Pattern.matches(invalidCMSPattern.pattern(), option) ||
-                                    option.equals("-XX:+UseConcMarkSweepGC")).toList());
-                }
+                        .filter(option -> !option.isEmpty())
+                        .filter(option -> !Pattern.matches(validPattern.pattern(), option)
+                                || Pattern.matches(invalidCMSPattern.pattern(), option)
+                                || option.equals("-XX:+UseConcMarkSweepGC"))
+                        .sorted()
+                        .toList();
 
                 logOrFailInvalidOptions(invalidOptions);
             }
@@ -1315,7 +1310,6 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
         private void logOrFailInvalidOptions(List<String> options) {
             if (options.isEmpty()) return;
 
-            Collections.sort(options);
             String message = "Invalid or misplaced JVM GC options in services.xml: " +
                     String.join(",", options) + "." +
                     " See https://docs.vespa.ai/en/reference/services-container.html#jvm";
