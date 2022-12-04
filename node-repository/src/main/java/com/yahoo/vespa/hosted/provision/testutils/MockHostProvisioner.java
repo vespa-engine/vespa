@@ -184,7 +184,7 @@ public class MockHostProvisioner implements HostProvisioner {
                                     : hostType.childNodeType().name() + i;
                             return new Address(hostname);
                         })
-                        .collect(Collectors.toList());
+                        .toList();
     }
 
     public Node withIpAssigned(Node node) {

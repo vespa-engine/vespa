@@ -87,7 +87,7 @@ class FileDistributionRpcServer {
         String[] fileRefArray = new String[downloadStatus.keySet().size()];
         fileRefArray = downloadStatus.keySet().stream()
                 .map(FileReference::value)
-                .collect(Collectors.toList())
+                .toList()
                 .toArray(fileRefArray);
 
         double[] downloadStatusArray = new double[downloadStatus.values().size()];

@@ -28,7 +28,7 @@ public class HistoryTest {
         assertEquals(3, history.log().size());
         assertEquals("Most recent events are kept",
                      List.of(2L, 3L, 4L),
-                     history.log().stream().map(e -> e.at().toEpochMilli()).collect(Collectors.toList()));
+                     history.log().stream().map(e -> e.at().toEpochMilli()).toList());
     }
 
     private static List<Event> shuffledEvents(int count) {

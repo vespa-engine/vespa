@@ -91,7 +91,7 @@ public class ContentPolicy extends SlobrokPolicy {
             synchronized void remove(Integer v) {
                 List<Integer> snapshot = list.get();
                 if (snapshot.contains(v)) {
-                    list.set(snapshot.stream().filter((item) -> !v.equals(item)).collect(Collectors.toList()));
+                    list.set(snapshot.stream().filter((item) -> !v.equals(item)).toList());
                 }
             }
             int size() {

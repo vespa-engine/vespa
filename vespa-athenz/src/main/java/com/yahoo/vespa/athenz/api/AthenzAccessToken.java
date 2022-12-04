@@ -52,7 +52,7 @@ public class AthenzAccessToken {
         String domain = Optional.ofNullable(jwt().getClaim(AUDIENCE_CLAIM).asString()).orElse("");
         return Optional.ofNullable(jwt().getClaim(SCOPE_CLAIM).asList(String.class)).orElse(List.of()).stream()
                 .map(role -> new AthenzRole(domain, role))
-                .collect(Collectors.toList());
+                .toList();
     }
 
     private DecodedJWT jwt() {

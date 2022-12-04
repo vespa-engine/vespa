@@ -209,7 +209,7 @@ public class Fixture {
         }
 
         public Fixture.Builder hostFlavors(NodeResources ... hostResources) {
-            this.hostFlavors = Arrays.stream(hostResources).map(r -> new Flavor(r)).collect(Collectors.toList());
+            this.hostFlavors = Arrays.stream(hostResources).map(r -> new Flavor(r)).toList();
             return this;
         }
 

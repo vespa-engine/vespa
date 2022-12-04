@@ -375,7 +375,7 @@ public class VersionStatusTest {
 
         // Test version order
         List<VespaVersion> versions = tester.controller().readVersionStatus().versions();
-        assertEquals(List.of("6.2", "6.4", "6.5"), versions.stream().map(version -> version.versionNumber().toString()).collect(Collectors.toList()));
+        assertEquals(List.of("6.2", "6.4", "6.5"), versions.stream().map(version -> version.versionNumber().toString()).toList());
 
         // Check release status is correct (static data in MockMavenRepository, and upgradeSystem "releases" a version).
         assertTrue(versions.get(0).isReleased());

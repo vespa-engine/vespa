@@ -120,7 +120,7 @@ public class RealDataScenarioTest {
         List<HostSpec> hostSpecs = IntStream.range(0, capacities.length)
                                             .mapToObj(i -> tester.provisioner().prepare(app, specs[i], capacities[i], log::log))
                                             .flatMap(Collection::stream)
-                                            .collect(Collectors.toList());
+                                            .toList();
         NestedTransaction transaction = new NestedTransaction();
         tester.provisioner().activate(hostSpecs, new ActivationContext(0), new ApplicationTransaction(new ProvisionLock(app, () -> {}), transaction));
         transaction.commit();

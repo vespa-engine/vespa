@@ -78,6 +78,6 @@ public final class PublicDimensions {
      * All public dimensions, common dimensions first, then dimensions for individual metrics
      */
     public static final List<String> publicDimensions = Stream.concat(commonDimensions.stream(), metricDimensions.stream())
-            .collect(Collectors.toList());
+            .toList();
 
 }

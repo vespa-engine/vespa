@@ -65,7 +65,7 @@ public class TestDescriptor {
     }
 
     private static List<String> getJsonArray(Cursor cursor, String field) {
-        return SlimeStream.fromArray(cursor.field(field), Inspector::asString).collect(Collectors.toList());
+        return SlimeStream.fromArray(cursor.field(field), Inspector::asString).toList();
     }
 
     public String version() {

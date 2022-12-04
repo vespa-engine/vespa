@@ -146,7 +146,7 @@ public class NginxTest {
             List<String> rotatedFiles = Exceptions.uncheck(() -> Files.list(NginxPath.root.in(fileSystem))
                                                                       .map(path -> path.getFileName().toString())
                                                                       .filter(filename -> filename.contains(".conf-"))
-                                                                      .collect(Collectors.toList()));
+                                                                      .toList());
             assertEquals(List.of(expectedRotatedFiles), rotatedFiles);
             return this;
         }

@@ -143,7 +143,7 @@ public class RoutingController {
                 List<DeploymentId> deployments = spec.zones().stream()
                                                      .filter(zone -> zone.concerns(Environment.prod))
                                                      .map(zone -> new DeploymentId(instance, ZoneId.from(Environment.prod, zone.region().get())))
-                                                     .collect(Collectors.toList());
+                                                     .toList();
                 RoutingId routingId = RoutingId.of(instance, EndpointId.defaultId());
                 endpoints.addAll(computeGlobalEndpoints(routingId, ClusterSpec.Id.from(clusterId), deployments, deploymentSpec));
             });
@@ -153,7 +153,7 @@ public class RoutingController {
                 List<DeploymentId> deployments = declaredEndpoint.regions().stream()
                                                                  .map(region -> new DeploymentId(instance,
                                                                                                  ZoneId.from(Environment.prod, region)))
-                                                                 .collect(Collectors.toList());
+                                                                 .toList();
                 endpoints.addAll(computeGlobalEndpoints(routingId, ClusterSpec.Id.from(declaredEndpoint.containerId()), deployments, deploymentSpec));
             });
         }
@@ -345,7 +345,7 @@ public class RoutingController {
         for (var rotation : instance.rotations()) {
             var deployments = rotation.regions().stream()
                                       .map(region -> new DeploymentId(instance.id(), ZoneId.from(Environment.prod, region)))
-                                      .collect(Collectors.toList());
+                                      .toList();
             endpointsToRemove.addAll(computeGlobalEndpoints(RoutingId.of(instance.id(), rotation.endpointId()),
                                                             rotation.clusterId(), deployments, application.deploymentSpec()));
         }

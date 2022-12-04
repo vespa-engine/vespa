@@ -66,7 +66,7 @@ public class CapacityChecker {
     public List<Node> nodesFromHostnames(List<String> hostnames) {
         return hostnames.stream().filter(nodeMap::containsKey)
                                     .map(nodeMap::get)
-                                    .collect(Collectors.toList());
+                                    .toList();
 
     }
 
@@ -79,7 +79,7 @@ public class CapacityChecker {
         var parentNames = hosts.stream().map(Node::hostname).collect(Collectors.toSet());
         return allNodes.nodeType(NodeType.tenant).state(relevantNodeStates).stream()
                 .filter(t -> parentNames.contains(t.parentHostname().orElse("")))
-                .collect(Collectors.toList());
+                .toList();
     }
 
     private Optional<HostFailurePath> greedyHeuristicFindFailurePath(Map<Node, Integer> heuristic) {
@@ -88,7 +88,7 @@ public class CapacityChecker {
         List<Node> parentRemovalPriorityList = heuristic.entrySet().stream()
                                                         .sorted(this::hostMitigationOrder)
                                                         .map(Map.Entry::getKey)
-                                                        .collect(Collectors.toList());
+                                                        .toList();
 
         for (int i = 1; i <= parentRemovalPriorityList.size(); i++) {
             List<Node> hostsToRemove = parentRemovalPriorityList.subList(0, i);
@@ -170,7 +170,7 @@ public class CapacityChecker {
                 Map.Entry::getKey,
                 e -> e.getValue().stream()
                         .map(Node::allocation).flatMap(Optional::stream)
-                        .collect(Collectors.toList())
+                        .collect(Collectors.toCollection(ArrayList::new))
         ));
     }
 
@@ -189,7 +189,7 @@ public class CapacityChecker {
                                                     .filter(h -> !hostsToRemove.contains(h))
                                                     .filter(host -> !host.status().wantToRetire() &&
                                                             !host.status().wantToFail())
-                                                    .collect(Collectors.toList());
+                                                    .toList();
         if (validAllocationTargets.size() == 0)
             return Optional.of(HostRemovalFailure.none());
 
@@ -482,11 +482,11 @@ public class CapacityChecker {
 
         public AllocationFailureReasonList singularReasonFailures() {
             return new AllocationFailureReasonList(allocationFailureReasons.stream()
-                    .filter(reason -> reason.numberOfReasons() == 1).collect(Collectors.toList()));
+                    .filter(reason -> reason.numberOfReasons() == 1).toList());
         }
         public AllocationFailureReasonList multipleReasonFailures() {
             return new AllocationFailureReasonList(allocationFailureReasons.stream()
-                    .filter(reason -> reason.numberOfReasons() > 1).collect(Collectors.toList()));
+                    .filter(reason -> reason.numberOfReasons() > 1).toList());
         }
         public long size() {
             return allocationFailureReasons.size();

@@ -258,7 +258,7 @@ public class DummyVdsNode {
         synchronized(timer) {
             return clusterStateBundles.stream()
                     .map(ClusterStateBundle::getBaselineClusterState)
-                    .collect(Collectors.toList());
+                    .toList();
         }
     }
 

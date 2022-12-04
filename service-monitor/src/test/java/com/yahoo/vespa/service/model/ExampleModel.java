@@ -35,7 +35,7 @@ public class ExampleModel {
     public static final ApplicationId APPLICATION_ID = ApplicationId.from(TENANT, APPLICATION_NAME, INSTANCE_NAME);
 
     public static SuperModel createExampleSuperModelWithOneRpcPort(String hostname, int rpcPort) {
-        List<String> hosts = Stream.of(hostname).collect(Collectors.toList());
+        List<String> hosts = Stream.of(hostname).toList();
 
         ApplicationInfo applicationInfo = ExampleModel
                 .createApplication(TENANT, APPLICATION_NAME)
@@ -83,7 +83,7 @@ public class ExampleModel {
             List<String> allHosts = clusters.stream()
                     .flatMap(clusterBuilder -> clusterBuilder.hosts.stream())
                     .distinct()
-                    .collect(Collectors.toList());
+                    .toList();
 
             List<HostInfo> hostInfos = new ArrayList<>();
             for (String hostname : allHosts) {

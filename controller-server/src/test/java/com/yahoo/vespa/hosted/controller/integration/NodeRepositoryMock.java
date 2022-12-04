@@ -81,7 +81,7 @@ public class NodeRepositoryMock implements NodeRepository {
                                              (node.owner().isPresent() && filter.applications().contains(node.owner().get())))
                              .filter(node -> filter.hostnames().isEmpty() || filter.hostnames().contains(node.hostname()))
                              .filter(node -> filter.states().isEmpty() || filter.states().contains(node.state()))
-                             .collect(Collectors.toList());
+                             .toList();
     }
 
     @Override
@@ -101,7 +101,7 @@ public class NodeRepositoryMock implements NodeRepository {
                 applications.containsKey(zone)
                         ? applications.get(zone).keySet().stream()
                                       .map(id -> new ApplicationStats(id, Load.zero(), 0, 0))
-                                      .collect(Collectors.toList())
+                                      .toList()
                         : List.of();
 
         return new NodeRepoStats(0.0, 0.0, Load.zero(), Load.zero(), applicationStats);
@@ -336,7 +336,7 @@ public class NodeRepositoryMock implements NodeRepository {
         } else {
             nodes = list(zone, NodeFilter.all());
         }
-        putNodes(zone, nodes.stream().map(patcher).collect(Collectors.toList()));
+        putNodes(zone, nodes.stream().map(patcher).toList());
     }
 
 }

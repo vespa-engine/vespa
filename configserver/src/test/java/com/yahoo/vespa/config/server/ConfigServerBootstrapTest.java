@@ -75,7 +75,7 @@ public class ConfigServerBootstrapTest {
         assertEquals(List.of("ApplicationPackageMaintainer", "TenantsMaintainer"),
                      bootstrap.configServerMaintenance().maintainers().stream()
                               .map(Maintainer::name)
-                              .sorted().collect(Collectors.toList()));
+                              .sorted().toList());
         assertFalse(bootstrap.vipStatus().isInRotation());
 
         bootstrap.doStart();
@@ -86,7 +86,7 @@ public class ConfigServerBootstrapTest {
         assertEquals(List.of("ApplicationPackageMaintainer", "FileDistributionMaintainer", "ReindexingMaintainer", "SessionsMaintainer", "TenantsMaintainer"),
                      bootstrap.configServerMaintenance().maintainers().stream()
                               .map(Maintainer::name)
-                              .sorted().collect(Collectors.toList()));
+                              .sorted().toList());
 
         bootstrap.deconstruct();
         assertEquals(StateMonitor.Status.down, bootstrap.status());

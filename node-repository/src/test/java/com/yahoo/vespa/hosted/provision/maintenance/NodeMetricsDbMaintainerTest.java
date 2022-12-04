@@ -49,7 +49,7 @@ public class NodeMetricsDbMaintainerTest {
         assertEquals(2, timeseriesList.size());
         List<NodeMetricSnapshot> allSnapshots = timeseriesList.stream()
                                                               .flatMap(timeseries -> timeseries.asList().stream())
-                                                              .collect(Collectors.toList());
+                                                              .toList();
         assertTrue(allSnapshots.stream().anyMatch(snapshot -> snapshot.inService()));
         assertTrue(allSnapshots.stream().anyMatch(snapshot -> ! snapshot.inService()));
     }

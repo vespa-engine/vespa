@@ -124,7 +124,7 @@ public class JsonFormat {
 
     private static void encodeBlocks(MixedTensor tensor, Cursor cursor) {
         var mappedDimensions = tensor.type().dimensions().stream().filter(d -> d.isMapped())
-                .map(d -> TensorType.Dimension.mapped(d.name())).collect(Collectors.toList());
+                .map(d -> TensorType.Dimension.mapped(d.name())).toList();
         if (mappedDimensions.size() < 1) {
             throw new IllegalArgumentException("Should be ensured by caller");
         }

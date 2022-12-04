@@ -190,7 +190,7 @@ public class NodeAdminStateUpdaterTest {
         // When doing batch suspend, only suspend the containers if the host is not active
         List<String> activeHostnames = nodeRepository.getNodes(hostHostname.value()).stream()
                 .map(NodeSpec::hostname)
-                .collect(Collectors.toList());
+                .toList();
         updater.converge(SUSPENDED);
         verify(orchestrator, times(1)).suspend(eq(hostHostname.value()), eq(activeHostnames));
     }

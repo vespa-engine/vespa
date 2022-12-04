@@ -164,7 +164,7 @@ public class LoadBalancerProvisioner {
         var now = nodeRepository.clock().instant();
         var deactivatedLoadBalancers = loadBalancers.stream()
                                                     .map(lb -> lb.with(LoadBalancer.State.inactive, now))
-                                                    .collect(Collectors.toList());
+                                                    .toList();
         db.writeLoadBalancers(deactivatedLoadBalancers, LoadBalancer.State.active, transaction);
     }
 
