@@ -155,7 +155,7 @@ public class AthenzAuthorizationFilter extends JsonSecurityRequestFilterBase {
         return roles.stream()
                 .map(this::rolePrivilege)
                 .filter(Objects::nonNull)
-                .toList();
+                .collect(Collectors.toList());
     }
 
     private String rolePrivilege(AthenzRole role) {

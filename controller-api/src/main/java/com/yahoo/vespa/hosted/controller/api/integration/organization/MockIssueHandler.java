@@ -56,7 +56,7 @@ public class MockIssueHandler implements IssueHandler {
                                                  entry.getValue().updated,
                                                  entry.getValue().isOpen() ? Status.toDo : Status.done,
                                                  entry.getValue().assignee))
-                     .toList();
+                     .collect(Collectors.toList());
     }
 
     @Override
@@ -146,8 +146,8 @@ public class MockIssueHandler implements IssueHandler {
                         userList.stream().map(user ->
                                 user.split(" ")[0])
                                 .map(User::from)
-                                .toList()
-                ).toList();
+                                .collect(Collectors.toList())
+                ).collect(Collectors.toList());
     }
 
 

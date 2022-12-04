@@ -464,7 +464,7 @@ public class SystemUpgraderTest {
     private List<Node> listNodes(ZoneApi zone, SystemApplication application) {
         return nodeRepository().list(zone.getId(), NodeFilter.all().applications(application.id())).stream()
                                .filter(SystemUpgrader::eligibleForUpgrade)
-                               .toList();
+                               .collect(Collectors.toList());
     }
 
     private NodeRepositoryMock nodeRepository() {

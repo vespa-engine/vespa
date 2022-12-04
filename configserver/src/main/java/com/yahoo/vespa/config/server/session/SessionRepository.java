@@ -408,11 +408,11 @@ public class SessionRepository {
     private List<Long> getSessionListFromDirectoryCache(List<ChildData> children) {
         return getSessionList(children.stream()
                                       .map(child -> Path.fromString(child.getPath()).getName())
-                                      .toList());
+                                      .collect(Collectors.toList()));
     }
 
     private List<Long> getSessionList(List<String> children) {
-        return children.stream().map(Long::parseLong).toList();
+        return children.stream().map(Long::parseLong).collect(Collectors.toList());
     }
 
     private void loadRemoteSessions(ExecutorService executor) throws NumberFormatException {

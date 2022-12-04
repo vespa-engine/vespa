@@ -89,7 +89,7 @@ public abstract class ConfigServerMaintainer extends Maintainer {
         return Arrays.stream(curator.zooKeeperEnsembleConnectionSpec().split(","))
                      .filter(hostAndPort -> !hostAndPort.isEmpty())
                      .map(hostAndPort -> hostAndPort.split(":")[0])
-                     .toList();
+                     .collect(Collectors.toList());
     }
 
 

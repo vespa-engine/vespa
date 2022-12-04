@@ -269,7 +269,7 @@ public class NodePatcher {
         List<TrustStoreItem> trustStoreItems =
                 SlimeUtils.entriesStream(inspector)
                         .map(TrustStoreItem::fromSlime)
-                        .toList();
+                        .collect(Collectors.toList());
         return node.with(trustStoreItems);
     }
 

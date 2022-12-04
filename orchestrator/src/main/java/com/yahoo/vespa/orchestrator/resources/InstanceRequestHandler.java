@@ -90,7 +90,7 @@ public class InstanceRequestHandler extends RestApiRequestHandler<InstanceReques
     }
 
     private List<ApplicationInstanceReference> getAllInstances(RestApi.RequestContext context) {
-        return serviceMonitor.getAllApplicationInstanceReferences().stream().sorted().toList();
+        return serviceMonitor.getAllApplicationInstanceReferences().stream().sorted().collect(Collectors.toList());
     }
 
     private InstanceStatusResponse getInstance(RestApi.RequestContext context) {
@@ -132,7 +132,7 @@ public class InstanceRequestHandler extends RestApiRequestHandler<InstanceReques
         List<Mirror.Entry> entries = slobrokApi.lookup(applicationId, pattern);
         return entries.stream()
                 .map(entry -> new SlobrokEntryResponse(entry.getName(), entry.getSpecString()))
-                .toList();
+                .collect(Collectors.toList());
     }
 
     private ServiceStatusInfo getServiceStatus(RestApi.RequestContext context) {

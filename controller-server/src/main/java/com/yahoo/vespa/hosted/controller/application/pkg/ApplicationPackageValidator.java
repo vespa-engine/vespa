@@ -242,7 +242,7 @@ public class ApplicationPackageValidator {
                                   .flatMap(zone -> zone.region().stream())
                                   .distinct()
                                   .map(region -> new Endpoint.Target(region, instance.name(), 1))
-                                  .toList();
+                                  .collect(Collectors.toList());
             return new Endpoint(EndpointId.defaultId().id(), globalServiceId, Endpoint.Level.instance, targets);
         });
     }

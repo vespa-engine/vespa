@@ -94,7 +94,7 @@ public class VespaModelUtil {
         return clusterControllerInstances.stream()
                 .sorted(CLUSTER_CONTROLLER_INDEX_COMPARATOR)
                 .map(serviceInstance -> serviceInstance.hostName())
-                .toList();
+                .collect(Collectors.toList());
     }
 
     private static Collection<ServiceCluster> filter(Set<ServiceCluster> controllerClusters,

@@ -103,7 +103,7 @@ public abstract class YumCommand<T extends YumCommand<T>> {
             CommandLine commandLine = terminal.newCommandLine(context);
             commandLine.add("yum", yumCommand.name());
             addParametersToCommandLine(commandLine);
-            commandLine.add(packages.stream().map(pkg -> pkg.toName()).toList());
+            commandLine.add(packages.stream().map(pkg -> pkg.toName()).collect(Collectors.toList()));
 
             // There's no way to figure out whether a yum command would have been a no-op.
             // Therefore, run the command and parse the output to decide.

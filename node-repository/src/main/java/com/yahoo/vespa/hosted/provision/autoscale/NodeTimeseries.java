@@ -72,14 +72,14 @@ public class NodeTimeseries {
     public NodeTimeseries keep(Predicate<NodeMetricSnapshot> filter) {
         return new NodeTimeseries(hostname, snapshots.stream()
                                                      .filter(snapshot -> filter.test(snapshot))
-                                                     .toList());
+                                                     .collect(Collectors.toList()));
     }
 
     public NodeTimeseries keepAfter(Instant oldestTime) {
         return new NodeTimeseries(hostname,
                                   snapshots.stream()
                                            .filter(snapshot -> snapshot.at().equals(oldestTime) || snapshot.at().isAfter(oldestTime))
-                                           .toList());
+                                           .collect(Collectors.toList()));
     }
 
     public NodeTimeseries keepGenerationAfterWarmup(long generation, Optional<Node> node) {

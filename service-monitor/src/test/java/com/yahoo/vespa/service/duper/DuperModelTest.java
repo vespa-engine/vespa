@@ -57,7 +57,7 @@ public class DuperModelTest {
 
         List<HostInfo> hostInfos = Arrays.stream(hostnames)
                 .map(hostname -> new HostInfo(hostname.value(), List.of()))
-                .toList();
+                .collect(Collectors.toList());
         when(model.getHosts()).thenReturn(hostInfos);
     }
 

@@ -122,7 +122,7 @@ public class SchemaInfo {
         }
 
         private static List<Schema> keep(Set<String> names, Collection<Schema> schemas) {
-            return schemas.stream().filter(schema -> names.contains(schema.name())).toList();
+            return schemas.stream().filter(schema -> names.contains(schema.name())).collect(Collectors.toList());
         }
 
         /**

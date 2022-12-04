@@ -139,7 +139,7 @@ public class VespaServiceDumperImpl implements VespaServiceDumper {
                     String classification = a.classification().map(Artifact.Classification::value).orElse(null);
                     return SyncFileInfo.forServiceDump(destination, a.file(), compression, owner, classification);
                 })
-                .toList();
+                .collect(Collectors.toList());
         ctx.log(log, Level.INFO,
                 "Uploading " + filesToUpload.size() + " file(s) with destination " + destination);
         if (!syncClient.sync(ctx, filesToUpload, Integer.MAX_VALUE)) {

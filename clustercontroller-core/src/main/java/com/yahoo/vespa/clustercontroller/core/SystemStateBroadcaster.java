@@ -191,7 +191,7 @@ public class SystemStateBroadcaster {
         return dbContext.getCluster().getNodeInfos().stream()
                         .filter(this::nodeNeedsClusterStateBundle)
                         .filter(node -> !newestStateBundleAlreadySentToNode(node))
-                        .toList();
+                        .collect(Collectors.toList());
     }
 
     // Precondition: no nodes in the cluster need to receive the current cluster state version bundle
@@ -199,7 +199,7 @@ public class SystemStateBroadcaster {
         return dbContext.getCluster().getNodeInfos().stream()
                         .filter(this::nodeNeedsClusterStateActivation)
                         .filter(node -> !newestStateActivationAlreadySentToNode(node))
-                        .toList();
+                        .collect(Collectors.toList());
     }
 
     private boolean newestStateBundleAlreadySentToNode(NodeInfo node) {

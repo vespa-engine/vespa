@@ -450,7 +450,7 @@ public class AccessControlTest extends ContainerModelBuilderTestBase {
         assertEquals(2, caCerts.size());
         List<String> certnames = caCerts.stream()
                 .map(cert -> cert.getSubjectX500Principal().getName())
-                .toList();
+                .collect(Collectors.toList());
         assertThat(certnames, containsInAnyOrder("CN=operator", "CN=application"));
     }
 
@@ -491,7 +491,7 @@ public class AccessControlTest extends ContainerModelBuilderTestBase {
         assertEquals(2, connectorFactories.size());
         List<Integer> ports = connectorFactories.stream()
                 .map(ConnectorFactory::getListenPort)
-                .toList();
+                .collect(Collectors.toList());
         assertThat(ports, Matchers.containsInAnyOrder(8080, 4443));
 
         ConnectorFactory tlsPort = connectorFactories.stream().filter(connectorFactory -> connectorFactory.getListenPort() == 4443).findFirst().orElseThrow();

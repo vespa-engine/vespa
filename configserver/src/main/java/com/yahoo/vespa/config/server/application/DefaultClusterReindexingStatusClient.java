@@ -59,7 +59,7 @@ public class DefaultClusterReindexingStatusClient implements ClusterReindexingSt
         clusters.forEach((clusterId, clusterNodes) -> {
             var parallelRequests = clusterNodes.stream()
                     .map(this::getReindexingStatus)
-                    .toList();
+                    .collect(Collectors.toList());
             CompletableFuture<Map<String, ClusterReindexing>> combinedRequest = CompletableFutures.firstOf(parallelRequests);
             futureStatusPerCluster.put(clusterId, combinedRequest);
         });

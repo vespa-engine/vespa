@@ -146,7 +146,7 @@ public class RoutingApiHandler extends AuditLoggingRequestHandler {
                                   .map(zone -> zone.environment().value() +
                                                "/region/" + zone.region().value())
                                   .sorted()
-                                  .toList();
+                                  .collect(Collectors.toList());
         return new ResourceResponse(request.getUri(), resources);
     }
 
@@ -168,7 +168,7 @@ public class RoutingApiHandler extends AuditLoggingRequestHandler {
                                   .map(ApplicationName::value)
                                   .map(application -> "application/" + application)
                                   .sorted()
-                                  .toList();
+                                  .collect(Collectors.toList());
         return new ResourceResponse(request.getUri(), resources);
     }
 
@@ -185,7 +185,7 @@ public class RoutingApiHandler extends AuditLoggingRequestHandler {
                                   .map(InstanceName::value)
                                   .map(instance -> "instance/" + instance)
                                   .sorted()
-                                  .toList();
+                                  .collect(Collectors.toList());
         return new ResourceResponse(request.getUri(), resources);
     }
 
@@ -202,7 +202,7 @@ public class RoutingApiHandler extends AuditLoggingRequestHandler {
                                   .map(zone -> "environment/" + zone.environment().value() +
                                                "/region/" + zone.region().value())
                                   .sorted()
-                                  .toList();
+                                  .collect(Collectors.toList());
         return new ResourceResponse(request.getUri(), resources);
     }
 

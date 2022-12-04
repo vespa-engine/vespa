@@ -38,7 +38,7 @@ public class SearchGroupsImpl implements SearchGroups {
 
     public long medianDocumentsPerGroup() {
         if (isEmpty()) return 0;
-        var activeDocuments = groups().stream().map(Group::activeDocuments).toList();
+        var activeDocuments = groups().stream().map(Group::activeDocuments).collect(Collectors.toList());
         return (long) Quantiles.median().compute(activeDocuments);
     }
 }

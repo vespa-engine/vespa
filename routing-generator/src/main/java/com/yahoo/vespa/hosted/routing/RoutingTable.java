@@ -103,7 +103,7 @@ public class RoutingTable {
                                                                                    4443,
                                                                                    configuredEndpoint.weight(),
                                                                                    applications.getValue().activeRotation()))
-                                                         .toList();
+                                                         .collect(Collectors.toList());
                     Endpoint endpoint = new Endpoint(configuredEndpoint.dnsName(), routingMethodFrom(configuredEndpoint));
                     ClusterSpec.Id cluster = ClusterSpec.Id.from(configuredEndpoint.clusterId());
                     Target target;

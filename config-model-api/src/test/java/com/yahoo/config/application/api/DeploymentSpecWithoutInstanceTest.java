@@ -670,12 +670,12 @@ public class DeploymentSpecWithoutInstanceTest {
 
         assertEquals(
                 List.of("foo", "nalle", "default"),
-                spec.requireInstance("default").endpoints().stream().map(Endpoint::endpointId).toList()
+                spec.requireInstance("default").endpoints().stream().map(Endpoint::endpointId).collect(Collectors.toList())
         );
 
         assertEquals(
                 List.of("bar", "frosk", "quux"),
-                spec.requireInstance("default").endpoints().stream().map(Endpoint::containerId).toList()
+                spec.requireInstance("default").endpoints().stream().map(Endpoint::containerId).collect(Collectors.toList())
         );
 
         assertEquals(List.of(RegionName.from("us-east")), spec.requireInstance("default").endpoints().get(0).regions());

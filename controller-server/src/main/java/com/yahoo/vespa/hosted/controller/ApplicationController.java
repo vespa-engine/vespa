@@ -548,7 +548,7 @@ public class ApplicationController {
                                                                  .map(LogEntry::message)
                                                                  .sorted()
                                                                  .distinct()
-                                                                 .toList())
+                                                                 .collect(Collectors.toList()))
                                                 .orElseGet(List::of);
                 if (warnings.isEmpty())
                     controller.notificationsDb().removeNotification(source, Notification.Type.applicationPackage);

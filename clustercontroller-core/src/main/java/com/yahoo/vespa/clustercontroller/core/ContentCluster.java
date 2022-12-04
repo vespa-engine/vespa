@@ -144,7 +144,7 @@ public class ContentCluster {
                                     Objects.equals(userWantedState.getDescription(), ORCHESTRATOR_RESERVED_DESCRIPTION);
                         })
                                   .map(NodeInfo::getNodeIndex)
-                                  .toList();
+                                  .collect(Collectors.toList());
             default:
                 // Note: There is no trace left if the Orchestrator set the state to UP, so that's handled
                 // like any other state:

@@ -60,7 +60,7 @@ public abstract class SearchCluster extends AbstractConfigProducer<SearchCluster
         return schemas.values()
                       .stream()
                       .map(schema -> schema.fullSchema().getDocument().getDocumentName().getName())
-                      .toList();
+                      .collect(Collectors.toList());
     }
 
     public String getClusterName()              { return clusterName; }

@@ -60,7 +60,7 @@ public class AthenzAccessControlService implements AccessControlService {
         return zmsClient.listMembers(dataPlaneAccessRole)
                 .stream().filter(AthenzUser.class::isInstance)
                 .map(AthenzUser.class::cast)
-                .toList();
+                .collect(Collectors.toList());
     }
 
     /**

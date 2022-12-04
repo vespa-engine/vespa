@@ -337,7 +337,7 @@ public class ContainerClusterTest {
         cluster.getConfig(configBuilder);
         CuratorConfig config = configBuilder.build();
         assertEquals(List.of("host-c1", "host-c2"),
-                config.server().stream().map(CuratorConfig.Server::hostname).toList());
+                config.server().stream().map(CuratorConfig.Server::hostname).collect(Collectors.toList()));
         assertTrue(config.zookeeperLocalhostAffinity());
         assertEquals(30, config.zookeeperSessionTimeoutSeconds());
     }
@@ -360,7 +360,7 @@ public class ContainerClusterTest {
         cluster.getConfig(configBuilder);
         assertEquals(0, configBuilder.build().myid());
         assertEquals(List.of("host-c1", "host-c2", "host-c3"),
-                configBuilder.build().server().stream().map(ZookeeperServerConfig.Server::hostname).toList());
+                configBuilder.build().server().stream().map(ZookeeperServerConfig.Server::hostname).collect(Collectors.toList()));
 
     }
 
@@ -440,11 +440,11 @@ public class ContainerClusterTest {
         cluster.doPrepare(state);
         List<ApplicationClusterEndpoint> endpoints = cluster.endpoints();
 
-        assertNames(List.of(), endpoints.stream().filter(e -> e.routingMethod() == shared).toList());
-        assertNames(expectedSharedL4Names, endpoints.stream().filter(e -> e.routingMethod() == sharedLayer4).toList());
+        assertNames(List.of(), endpoints.stream().filter(e -> e.routingMethod() == shared).collect(Collectors.toList()));
+        assertNames(expectedSharedL4Names, endpoints.stream().filter(e -> e.routingMethod() == sharedLayer4).collect(Collectors.toList()));
 
         List<ContainerEndpoint> endpointsWithWeight =
-                globalEndpoints.stream().filter(endpoint -> endpoint.weight().isPresent()).toList();
+                globalEndpoints.stream().filter(endpoint -> endpoint.weight().isPresent()).collect(Collectors.toList());
         endpointsWithWeight.stream()
                 .filter(ce -> ce.weight().isPresent())
                 .forEach(ce -> assertTrue(endpointsMatch(ce, endpoints)));

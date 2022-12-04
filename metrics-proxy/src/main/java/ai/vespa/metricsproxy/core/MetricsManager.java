@@ -129,7 +129,7 @@ public class MetricsManager {
                 .map(builder -> builder.putDimensionsIfAbsent(globalDims))
                 .map(builder -> builder.putDimensionsIfAbsent(extraDimensions))
                 .map(builder -> adjustTimestamp(builder, startTime))
-                .toList();
+                .collect(Collectors.toList());
     }
 
     /**

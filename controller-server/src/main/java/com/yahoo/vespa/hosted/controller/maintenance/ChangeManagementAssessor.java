@@ -51,7 +51,7 @@ public class ChangeManagementAssessor {
         var tenantHosts = prParentHost.keySet().stream()
                 .filter(node -> node.type() == NodeType.host)
                 .map(node -> node.hostname())
-                .toList();
+                .collect(Collectors.toList());
 
         boolean allHostsReplacable = tenantHosts.isEmpty() || nodeRepository.isReplaceable(
                 zone,
@@ -84,7 +84,7 @@ public class ChangeManagementAssessor {
             assessment.impact = getImpact(cluster, impactedStats, totalStats);
 
             return assessment;
-        }).toList();
+        }).collect(Collectors.toList());
 
         var hostAssessments = prParentHost.entrySet().stream().map((entry) -> {
             HostAssessment hostAssessment = new HostAssessment();
@@ -99,7 +99,7 @@ public class ChangeManagementAssessor {
                     .count();
 
             return hostAssessment;
-        }).toList();
+        }).collect(Collectors.toList());
 
         return new Assessment(clusterAssessments, hostAssessments);
     }
@@ -116,7 +116,7 @@ public class ChangeManagementAssessor {
                                 return node.parentHostname().get().value();
                             }).findFirst().stream()
                 )
-                .toList();
+                .collect(Collectors.toList());
     }
 
     private static Cluster clusterKey(Node node) {
@@ -127,7 +127,7 @@ public class ChangeManagementAssessor {
     }
 
     private static long[] clusterStats(Cluster cluster, List<Node> containerNodes) {
-        List<Node> clusterNodes = containerNodes.stream().filter(node -> cluster.equals(clusterKey(node))).toList();
+        List<Node> clusterNodes = containerNodes.stream().filter(node -> cluster.equals(clusterKey(node))).collect(Collectors.toList());
         long groups = clusterNodes.stream().map(Node::group).distinct().count();
         return new long[] { clusterNodes.size(), groups};
     }

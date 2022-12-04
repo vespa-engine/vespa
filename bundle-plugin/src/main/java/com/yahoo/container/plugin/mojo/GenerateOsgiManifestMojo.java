@@ -70,7 +70,7 @@ public class GenerateOsgiManifestMojo extends AbstractGenerateOsgiManifestMojo {
                 throwIfInternalContainerArtifactsAreIncluded(artifactSet.getJarArtifactsToInclude());
 
             List<Export> exportedPackagesFromProvidedJars = exportedPackagesAggregated(
-                    artifactSet.getJarArtifactsProvided().stream().map(Artifact::getFile).toList());
+                    artifactSet.getJarArtifactsProvided().stream().map(Artifact::getFile).collect(Collectors.toList()));
 
             // Packages from Export-Package headers in provided scoped jars
             Set<String> exportedPackagesFromProvidedDeps = ExportPackages.packageNames(exportedPackagesFromProvidedJars);
@@ -182,7 +182,7 @@ public class GenerateOsgiManifestMojo extends AbstractGenerateOsgiManifestMojo {
 
     private void warnOnUnsupportedArtifacts(Collection<Artifact> nonJarArtifacts) {
         List<Artifact> unsupportedArtifacts = nonJarArtifacts.stream().filter(a -> ! a.getType().equals("pom"))
-                .toList();
+                .collect(Collectors.toList());
 
         unsupportedArtifacts.forEach(artifact -> getLog()
                 .warn(String.format("Unsupported artifact '%s': Type '%s' is not supported. Please file a feature request.",
@@ -215,7 +215,7 @@ public class GenerateOsgiManifestMojo extends AbstractGenerateOsgiManifestMojo {
         List<ClassFileMetaData> analyzedClasses = allDescendantFiles(outputDirectory)
                 .filter(file -> file.getName().endsWith(".class"))
                 .map(classFile -> Analyze.analyzeClass(classFile, artifactVersionOrNull(bundleVersion)))
-                .toList();
+                .collect(Collectors.toList());
 
         return PackageTally.fromAnalyzedClassFiles(analyzedClasses);
     }

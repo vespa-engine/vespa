@@ -31,7 +31,7 @@ public class TenantRoleMaintainer extends ControllerMaintainer {
 
         var tenantsWithRoles = tenants.stream()
                 .map(Tenant::name)
-                .toList();
+                .collect(Collectors.toList());
         roleService.maintainRoles(tenantsWithRoles);
 
         var deletedTenants = controller().tenants().asList(true).stream()

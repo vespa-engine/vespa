@@ -45,7 +45,7 @@ public class MemoryNameService implements NameService {
         var records = targets.stream()
                              .sorted((a, b) -> Comparator.comparing(AliasTarget::name).compare(a, b))
                              .map(d -> new Record(Record.Type.ALIAS, name, d.pack()))
-                             .toList();
+                             .collect(Collectors.toList());
         // Satisfy idempotency contract of interface
         for (var r1 : records) {
             this.records.removeIf(r2 -> conflicts(r1, r2));
@@ -59,7 +59,7 @@ public class MemoryNameService implements NameService {
         var records = targets.stream()
                 .sorted((a, b) -> Comparator.comparing((DirectTarget target) -> target.recordData().asString()).compare(a, b))
                 .map(d -> new Record(Record.Type.DIRECT, name, d.pack()))
-                .toList();
+                .collect(Collectors.toList());
         // Satisfy idempotency contract of interface
         for (var r1 : records) {
             this.records.removeIf(r2 -> conflicts(r1, r2));
@@ -72,7 +72,7 @@ public class MemoryNameService implements NameService {
     public List<Record> createTxtRecords(RecordName name, List<RecordData> txtData) {
         var records = txtData.stream()
                              .map(data -> new Record(Record.Type.TXT, name, data))
-                             .toList();
+                             .collect(Collectors.toList());
         records.forEach(this::add);
         return records;
     }

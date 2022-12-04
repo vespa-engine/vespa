@@ -51,7 +51,7 @@ public class Group extends Identifiable {
             if (list.size() == 2) {
                 return (cmp.compare(list.get(0), list.get(1)) > 0) ? List.of(list.get(1), list.get(0)) : list;
             }
-            return list.stream().sorted(cmp).toList();
+            return list.stream().sorted(cmp).collect(Collectors.toList());
         }
     }
 

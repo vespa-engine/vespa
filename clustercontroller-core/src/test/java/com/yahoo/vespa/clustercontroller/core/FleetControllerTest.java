@@ -241,7 +241,7 @@ public abstract class FleetControllerTest implements Waiter {
             public List<DummyVdsNode> getDummyNodes() {
                 return nodes.stream()
                         .filter(n -> !excludedNodes.contains(n.getNode().getIndex()))
-                        .toList();
+                        .collect(Collectors.toList());
             }
             @Override
             public Duration getTimeout() { return timeout; }

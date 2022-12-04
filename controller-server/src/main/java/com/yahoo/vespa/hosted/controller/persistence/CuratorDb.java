@@ -353,7 +353,7 @@ public class CuratorDb {
     public List<TenantName> readTenantNames() {
         return curator.getChildren(tenantRoot).stream()
                       .map(TenantName::from)
-                      .toList();
+                      .collect(Collectors.toList());
     }
 
     public void removeTenant(TenantName name) {
@@ -450,7 +450,7 @@ public class CuratorDb {
     public List<ApplicationId> applicationsWithJobs() {
         return curator.getChildren(jobRoot).stream()
                       .map(ApplicationId::fromSerializedForm)
-                      .toList();
+                      .collect(Collectors.toList());
     }
 
 
@@ -618,7 +618,7 @@ public class CuratorDb {
                 .stream()
                 .map(this::readChangeRequest)
                 .flatMap(Optional::stream)
-                .toList();
+                .collect(Collectors.toList());
     }
 
     public void writeChangeRequest(VespaChangeRequest changeRequest) {
@@ -682,7 +682,7 @@ public class CuratorDb {
                 .stream()
                 .map(this::getPendingMailVerification)
                 .flatMap(Optional::stream)
-                .toList();
+                .collect(Collectors.toList());
     }
 
     public void writePendingMailVerification(PendingMailVerification pendingMailVerification) {

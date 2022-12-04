@@ -23,13 +23,13 @@ public class DistributionBuilder {
         GroupBuilder(int... nodeCounts) {
             this.groupCount = nodeCounts.length;
             this.groupsWithNodeCount = IntStream.of(nodeCounts).boxed()
-                    .toList();
+                    .collect(Collectors.toList());
         }
 
         GroupBuilder eachWithNodeCount(int nodeCount) {
             groupsWithNodeCount = IntStream.range(0, groupCount)
                     .map(i -> nodeCount).boxed()
-                    .toList();
+                    .collect(Collectors.toList());
             return this;
         }
 
@@ -54,7 +54,7 @@ public class DistributionBuilder {
     static List<ConfiguredNode> buildConfiguredNodes(int nodeCount) {
         return IntStream.range(0, nodeCount)
                 .mapToObj(i -> new ConfiguredNode(i, false))
-                .toList();
+                .collect(Collectors.toList());
     }
 
     private static StorDistributionConfig.Group.Nodes.Builder configuredNode(ConfiguredNode node) {

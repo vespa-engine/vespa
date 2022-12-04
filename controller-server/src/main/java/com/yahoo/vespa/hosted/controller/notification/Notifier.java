@@ -107,7 +107,7 @@ public class Notifier {
     private void dispatch(Notification notification, TenantContacts.Type type, Collection<? extends TenantContacts.Contact> contacts) {
         switch (type) {
             case EMAIL:
-                dispatch(notification, contacts.stream().map(c -> (TenantContacts.EmailContact) c).toList());
+                dispatch(notification, contacts.stream().map(c -> (TenantContacts.EmailContact) c).collect(Collectors.toList()));
                 break;
             default:
                 throw new IllegalArgumentException("Unknown TenantContacts type " + type.name());
@@ -120,7 +120,7 @@ public class Notifier {
             mailer.send(mailOf(content, contacts.stream()
                     .filter(c -> c.email().isVerified())
                     .map(c -> c.email().getEmailAddress())
-                    .toList()));
+                    .collect(Collectors.toList())));
         } catch (MailerException e) {
             log.log(Level.SEVERE, "Failed sending email", e);
         } catch (MissingOptionalException e) {

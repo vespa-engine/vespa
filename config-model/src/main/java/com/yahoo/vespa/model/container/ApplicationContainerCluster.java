@@ -198,7 +198,7 @@ public final class ApplicationContainerCluster extends ContainerCluster<Applicat
         List<String> hosts = getContainers().stream()
                 .map(AbstractService::getHostName)
                 .sorted()
-                .toList();
+                .collect(Collectors.toList());
 
         for (String suffix : deployState.getProperties().zoneDnsSuffixes()) {
             ApplicationClusterEndpoint.DnsName l4Name = ApplicationClusterEndpoint.DnsName.sharedL4NameFrom(

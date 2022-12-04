@@ -33,7 +33,7 @@ public class NodeRepoMock implements NodeRepository {
     public List<NodeSpec> getNodes(String baseHostName) {
         return nodeSpecByHostname.values().stream()
                 .filter(node -> baseHostName.equals(node.parentHostname().orElse(null)))
-                .toList();
+                .collect(Collectors.toList());
     }
 
     @Override

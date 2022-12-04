@@ -261,7 +261,7 @@ class GraphImporter {
                                                                      IntermediateGraph intermediateGraph) {
         return node.getInputList().stream()
                 .map(nodeName -> importOperation(nodeName, onnxGraph, intermediateGraph))
-                .toList();
+                .collect(Collectors.toList());
     }
 
     private static void verifyNoWarnings(IntermediateGraph intermediateGraph) {

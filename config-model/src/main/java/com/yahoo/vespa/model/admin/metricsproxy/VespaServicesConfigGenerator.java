@@ -17,7 +17,7 @@ public class VespaServicesConfigGenerator {
         return services.stream()
                 .filter(VespaServicesConfigGenerator::doIncludeServiceMetrics)
                 .map(VespaServicesConfigGenerator::toServiceBuilder)
-                .toList();
+                .collect(Collectors.toList());
     }
 
     private static boolean doIncludeServiceMetrics(Service s) {

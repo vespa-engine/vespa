@@ -76,7 +76,7 @@ public final class IndexingScript extends Derived implements IlscriptsConfig.Pro
         return schema.allFieldsList().stream()
                      .filter(field -> ! field.isImportedField())
                      .filter(field -> field.containsExpression(SetLanguageExpression.class))
-                     .toList();
+                     .collect(Collectors.toList());
     }
 
     public Iterable<Expression> expressions() {

@@ -56,7 +56,7 @@ public class HealthRequestHandler extends RestApiRequestHandler<HealthRequestHan
                     .withPath(Path.parse("/orchestrator/v1/health/" + applicationId.serializedForm()))
                     .toString();
             return reference;
-        }).toList();
+        }).collect(Collectors.toList());
 
         return list;
     }
@@ -75,7 +75,7 @@ public class HealthRequestHandler extends RestApiRequestHandler<HealthRequestHan
             return serviceResource;
         })
                 .sorted(Comparator.comparing(resource -> resource.serviceType.s()))
-                .toList();
+                .collect(Collectors.toList());
 
         ApplicationServices applicationServices = new ApplicationServices();
         applicationServices.services = serviceResources;

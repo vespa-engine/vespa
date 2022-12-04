@@ -108,7 +108,7 @@ public class ChangeRequestMaintainer extends ControllerMaintainer {
                         zone -> nodeRepository.list(zone, NodeFilter.all())
                                 .stream()
                                 .map(node -> node.hostname().value())
-                                .toList()
+                                .collect(Collectors.toList())
                 ));
     }
 

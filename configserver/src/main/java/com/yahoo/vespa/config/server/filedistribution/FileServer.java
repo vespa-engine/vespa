@@ -261,7 +261,7 @@ public class FileServer {
     private static List<CompressionType> compressionTypesAsList(List<String> compressionTypes) {
         return compressionTypes.stream()
                                .map(CompressionType::valueOf)
-                               .toList();
+                               .collect(Collectors.toList());
     }
 
     private static ConnectionPool createConnectionPool(List<String> configServers, Supervisor supervisor) {

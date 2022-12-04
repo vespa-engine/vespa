@@ -83,7 +83,7 @@ public class FlagData {
         wireFlagData.id = id.toString();
 
         if (!rules.isEmpty()) {
-            wireFlagData.rules = rules.stream().map(Rule::toWire).toList();
+            wireFlagData.rules = rules.stream().map(Rule::toWire).collect(Collectors.toList());
         }
 
         wireFlagData.defaultFetchVector = FetchVectorHelper.toWire(defaultFetchVector);
@@ -126,17 +126,17 @@ public class FlagData {
 
     public static WireFlagDataList listToWire(List<FlagData> list) {
         WireFlagDataList wireList = new WireFlagDataList();
-        wireList.flags = list.stream().map(FlagData::toWire).toList();
+        wireList.flags = list.stream().map(FlagData::toWire).collect(Collectors.toList());
         return wireList;
     }
 
     public static List<FlagData> listFromWire(WireFlagDataList wireList) {
-        return wireList.flags.stream().map(FlagData::fromWire).toList();
+        return wireList.flags.stream().map(FlagData::fromWire).collect(Collectors.toList());
     }
 
     private static List<Rule> rulesFromWire(List<WireRule> wireRules) {
         if (wireRules == null) return List.of();
-        return wireRules.stream().map(Rule::fromWire).toList();
+        return wireRules.stream().map(Rule::fromWire).collect(Collectors.toList());
     }
 
     /** E.g. verify all RawFlag can be deserialized. */

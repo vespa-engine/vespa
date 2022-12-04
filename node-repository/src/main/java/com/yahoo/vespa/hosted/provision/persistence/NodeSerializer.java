@@ -400,14 +400,14 @@ public class NodeSerializer {
     private List<Address> addressesFromSlime(Inspector object) {
         return SlimeUtils.entriesStream(object.field(containersKey))
                          .map(elem -> new Address(elem.field(containerHostnameKey).asString()))
-                         .toList();
+                         .collect(Collectors.toList());
     }
 
     private List<TrustStoreItem> trustedCertificatesFromSlime(Inspector object) {
         return SlimeUtils.entriesStream(object.field(trustedCertificatesKey))
                          .map(elem -> new TrustStoreItem(elem.field(fingerprintKey).asString(),
                                                          Instant.ofEpochMilli(elem.field(expiresKey).asLong())))
-                         .toList();
+                         .collect(Collectors.toList());
     }
 
     // ----------------- Enum <-> string mappings ----------------------------------------

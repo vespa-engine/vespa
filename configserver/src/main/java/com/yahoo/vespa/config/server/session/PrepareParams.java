@@ -395,7 +395,7 @@ public final class PrepareParams {
         return SlimeUtils.entriesStream(array)
                 .map(Inspector::asString)
                 .map(X509CertificateUtils::fromPem)
-                .toList();
+                .collect(Collectors.toList());
     }
 
     public String getApplicationName() {

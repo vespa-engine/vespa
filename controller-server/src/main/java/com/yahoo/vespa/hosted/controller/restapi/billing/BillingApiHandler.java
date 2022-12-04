@@ -117,7 +117,7 @@ public class BillingApiHandler extends ThreadedHttpRequestHandler {
                             bill.sumAdditionalCost()
                     };
                 })
-                .toList();
+                .collect(Collectors.toList());
         return new CsvResponse(headers, rows);
     }
 
