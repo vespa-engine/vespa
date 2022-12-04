@@ -119,7 +119,7 @@ public class HostSystem extends AbstractConfigProducer<Host> {
     public List<HostResource> getHosts() {
         return hostname2host.values().stream()
                 .filter(host -> !host.getHost().runsConfigServer())
-                .toList();
+                .collect(Collectors.toList());
     }
 
     public void dumpPortAllocations() {

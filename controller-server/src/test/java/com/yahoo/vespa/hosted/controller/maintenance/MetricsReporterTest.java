@@ -625,7 +625,7 @@ public class MetricsReporterTest {
         var currentNodes = getNodes(zone, nodes, tester);
         var updatedNodes = currentNodes.stream()
                                        .map(node -> builderOps.apply(Node.builder(node)).build())
-                                       .toList();
+                                       .collect(Collectors.toList());
         tester.configServer().nodeRepository().putNodes(zone, updatedNodes);
     }
 

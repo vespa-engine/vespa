@@ -194,7 +194,7 @@ public class RawRankProfile implements RankProfilesConfig.Producer {
             rankProperties = new ArrayList<>(compiled.getRankProperties());
 
             Map<String, RankProfile.RankingExpressionFunction> functions = compiled.getFunctions();
-            List<ExpressionFunction> functionExpressions = functions.values().stream().map(RankProfile.RankingExpressionFunction::function).toList();
+            List<ExpressionFunction> functionExpressions = functions.values().stream().map(RankProfile.RankingExpressionFunction::function).collect(Collectors.toList());
             Map<String, String> functionProperties = new LinkedHashMap<>();
             SerializationContext functionSerializationContext = new SerializationContext(functionExpressions,
                                                                                          Map.of(),

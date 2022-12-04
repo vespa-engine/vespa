@@ -26,7 +26,7 @@ public class StartupCommandChangeValidator implements ChangeValidator {
     @Override
     public List<ConfigChangeAction> validate(VespaModel currentModel, VespaModel nextModel,
                                              ValidationOverrides overrides, Instant now) {
-        return findServicesWithChangedStartupCommand(currentModel, nextModel).toList();
+        return findServicesWithChangedStartupCommand(currentModel, nextModel).collect(Collectors.toList());
     }
 
     public Stream<ConfigChangeAction> findServicesWithChangedStartupCommand(AbstractConfigProducerRoot currentModel,

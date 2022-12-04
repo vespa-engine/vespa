@@ -53,7 +53,7 @@ public class ResourcesReductionValidator implements ChangeValidator {
                                  current.minResources().nodeResources().diskGb(),
                                  next.minResources().nodeResources().diskGb()))
                 .flatMap(Optional::stream)
-                .toList();
+                .collect(Collectors.toList());
         if (illegalChanges.isEmpty()) return;
 
         overrides.invalid(ValidationId.resourcesReduction,

@@ -222,7 +222,7 @@ public class DeploymentSpec {
     private static List<DeploymentInstanceSpec> instances(List<DeploymentSpec.Step> steps) {
         return steps.stream()
                     .flatMap(DeploymentSpec::flatten)
-                    .toList();
+                    .collect(Collectors.toList());
     }
 
     private static Stream<DeploymentInstanceSpec> flatten(Step step) {

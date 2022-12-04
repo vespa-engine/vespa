@@ -377,13 +377,13 @@ public class LoadBalancerProvisionerTest {
         List<String> reals = loadBalancers.get(0).instance().get().reals().stream()
                                           .map(real -> real.hostname().value())
                                           .sorted()
-                                          .toList();
+                                          .collect(Collectors.toList());
         List<String> activeNodes = tester.nodeRepository().nodes().list(states)
                                          .owner(application)
                                          .cluster(cluster)
                                          .hostnames().stream()
                                          .sorted()
-                                         .toList();
+                                         .collect(Collectors.toList());
         assertEquals("Load balancer targets active nodes of " + application + " in " + cluster,
                      activeNodes, reals);
     }

@@ -153,7 +153,7 @@ public class ResourceMeterMaintainer extends ControllerMaintainer {
                 .map(ZoneApi::getId)
                 .map(zoneId -> createResourceSnapshotsFromNodes(zoneId, nodeRepository.list(zoneId, NodeFilter.all())))
                 .flatMap(Collection::stream)
-                .toList();
+                .collect(Collectors.toList());
     }
 
     private Stream<Instance> mapApplicationToInstances(Application application) {
@@ -204,7 +204,7 @@ public class ResourceMeterMaintainer extends ControllerMaintainer {
                 .values()
                 .stream()
                 .flatMap(list -> list.values().stream())
-                .toList();
+                .collect(Collectors.toList());
     }
 
     private boolean unlessNodeOwnerIsSystemApplication(Node node) {

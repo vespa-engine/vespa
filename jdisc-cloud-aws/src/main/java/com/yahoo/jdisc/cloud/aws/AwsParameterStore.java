@@ -85,7 +85,7 @@ public class AwsParameterStore extends AbstractComponent implements SecretStore 
         return secretStoreConfig.awsParameterStores()
                 .stream()
                 .map(config -> new AwsSettings(config.name(), config.role(), config.awsId(), config.externalId(), config.region()))
-                .toList();
+                .collect(Collectors.toList());
     }
 
     public static class AwsSettings {

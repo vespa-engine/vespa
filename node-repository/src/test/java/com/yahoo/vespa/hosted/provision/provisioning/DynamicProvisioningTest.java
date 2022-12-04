@@ -190,7 +190,7 @@ public class DynamicProvisioningTest {
         var indices = tester.nodeRepository().nodes().list().owner(app).stream()
                 .map(node -> node.allocation().get().membership().index())
                 .collect(Collectors.toSet());
-        assertTrue(indices.containsAll(IntStream.range(0, 10).boxed().toList()));
+        assertTrue(indices.containsAll(IntStream.range(0, 10).boxed().collect(Collectors.toList())));
     }
 
     @Test

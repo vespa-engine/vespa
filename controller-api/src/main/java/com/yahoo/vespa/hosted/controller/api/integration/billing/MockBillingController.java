@@ -42,7 +42,7 @@ public class MockBillingController implements BillingController {
     public List<TenantName> tenantsWithPlan(List<TenantName> tenants, PlanId planId) {
         return tenants.stream()
                 .filter(t -> plans.getOrDefault(t, PlanId.from("trial")).equals(planId))
-                .toList();
+                .collect(Collectors.toList());
     }
 
     @Override
@@ -156,7 +156,7 @@ public class MockBillingController implements BillingController {
 
     @Override
     public List<Bill> getBills() {
-        return committedBills.values().stream().flatMap(Collection::stream).toList();
+        return committedBills.values().stream().flatMap(Collection::stream).collect(Collectors.toList());
     }
 
     @Override

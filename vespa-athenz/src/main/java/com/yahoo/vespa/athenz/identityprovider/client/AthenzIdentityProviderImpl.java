@@ -253,7 +253,7 @@ public final class AthenzIdentityProviderImpl extends AbstractComponent implemen
         try {
             List<AthenzRole> roleList = roles.stream()
                     .map(roleName -> new AthenzRole(domain, roleName))
-                    .toList();
+                    .collect(Collectors.toList());
             return roleSpecificAccessTokenCache.get(roleList).value();
         } catch (Exception e) {
             throw new AthenzIdentityProviderException("Could not retrieve access token: " + e.getMessage(), e);

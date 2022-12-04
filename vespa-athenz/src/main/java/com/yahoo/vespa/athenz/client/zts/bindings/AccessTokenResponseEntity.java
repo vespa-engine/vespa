@@ -32,7 +32,7 @@ public class AccessTokenResponseEntity {
         this.roles = Stream.of(roles.split(" "))
                 .map(AthenzResourceName::fromString)
                 .map(AthenzRole::fromResourceName)
-                .toList();
+                .collect(Collectors.toList());
     }
 
     public AthenzAccessToken accessToken() {

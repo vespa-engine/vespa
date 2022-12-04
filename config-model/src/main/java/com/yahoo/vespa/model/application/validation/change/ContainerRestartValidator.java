@@ -31,7 +31,7 @@ public class ContainerRestartValidator implements ChangeValidator {
                                   .filter(container -> isExistingContainer(container, currentModel))
                                   .filter(container -> shouldContainerRestartOnDeploy(container, nextModel))
                                   .map(container -> createConfigChangeAction(cluster.id(), container))
-                                  .toList());
+                                  .collect(Collectors.toList()));
         }
         return actions;
     }

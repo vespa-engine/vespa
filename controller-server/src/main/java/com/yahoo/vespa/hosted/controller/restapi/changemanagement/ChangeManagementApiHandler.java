@@ -295,7 +295,7 @@ public class ChangeManagementApiHandler extends AuditLoggingRequestHandler {
                 .flatMap(zone -> controller.serviceRegistry().configServer().nodeRepository().list(zone, NodeFilter.all()).stream())
                 .filter(node -> node.switchHostname().map(switches::contains).orElse(false))
                 .map(node -> node.hostname().value())
-                .toList();
+                .collect(Collectors.toList());
     }
 
     private List<ZoneId> getProdZones() {

@@ -129,7 +129,7 @@ public class OsVersionsTest {
                          minVersion(nodesUpgrading, OsVersion::wanted));
             var nodesOnLowestVersion = nodes.asList().stream()
                                             .sorted(Comparator.comparing(node -> node.status().osVersion().current().orElse(Version.emptyVersion)))
-                                            .toList()
+                                            .collect(Collectors.toList())
                                             .subList(0, maxActiveUpgrades);
             assertEquals("Nodes on lowest version are told to upgrade",
                          nodesUpgrading.asList(), nodesOnLowestVersion);
@@ -543,7 +543,7 @@ public class OsVersionsTest {
         return nodes.stream()
                     .map(Node::hostname)
                     .flatMap(hostname -> tester.nodeRepository().nodes().node(hostname).stream())
-                    .toList();
+                    .collect(Collectors.toList());
 
     }
 

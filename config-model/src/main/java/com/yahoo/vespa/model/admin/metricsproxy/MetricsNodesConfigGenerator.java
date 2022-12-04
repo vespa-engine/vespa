@@ -17,7 +17,7 @@ public class MetricsNodesConfigGenerator {
     public static List<MetricsNodesConfig.Node.Builder> generate(List<MetricsProxyContainer> containers) {
         return containers.stream()
                 .map(MetricsNodesConfigGenerator::toNodeBuilder)
-                .toList();
+                .collect(Collectors.toList());
     }
 
     private static MetricsNodesConfig.Node.Builder toNodeBuilder(MetricsProxyContainer container) {

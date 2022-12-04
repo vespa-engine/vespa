@@ -38,7 +38,7 @@ public class ClusterDeploymentMetricsRetrieverTest {
     public void testMetricAggregation() throws IOException {
         List<URI> hosts = Stream.of(1, 2, 3, 4)
                 .map(item -> URI.create("http://localhost:" + wireMock.port() + "/" + item))
-                .toList();
+                .collect(Collectors.toList());
 
         stubFor(get(urlEqualTo("/1"))
                 .willReturn(aResponse()

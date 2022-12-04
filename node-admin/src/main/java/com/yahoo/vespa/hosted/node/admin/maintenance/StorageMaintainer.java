@@ -90,7 +90,7 @@ public class StorageMaintainer {
                 .stream()
                 .sorted(Comparator.comparing(FileFinder.FileAttributes::lastModifiedTime))
                 .flatMap(fa -> SyncFileInfo.forLogFile(archiveUri.get(), fa.path(), throttle, owner).stream())
-                .toList();
+                .collect(Collectors.toList());
 
         return syncClient.sync(context, syncFileInfos, throttle ? 1 : 100);
     }

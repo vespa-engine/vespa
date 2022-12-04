@@ -145,8 +145,8 @@ public class QueryTestCase {
     @Test
     void testCloneWithConnectivity() {
         List<String> l = List.of("a", "b", "c", "a");
-        printIt(l.stream().filter(i -> isA(i)).toList());
-        printIt(l.stream().filter(i -> !isA(i)).toList());
+        printIt(l.stream().filter(i -> isA(i)).collect(Collectors.toList()));
+        printIt(l.stream().filter(i -> !isA(i)).collect(Collectors.toList()));
 
         Query q = new Query();
         WordItem a = new WordItem("a");

@@ -40,7 +40,7 @@ public class DeploymentMetricsRetriever {
                 .filter(host -> host.getServices().stream().noneMatch(isLogserver()))
                 .map(HostInfo::getHostname)
                 .map(DeploymentMetricsRetriever::createMetricsProxyURI)
-                .toList();
+                .collect(Collectors.toList());
 
     }
 

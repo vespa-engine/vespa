@@ -96,7 +96,7 @@ public final class NestedTransaction implements AutoCloseable {
 
     @Override
     public String toString() {
-        return String.join(",", transactions.stream().map(Object::toString).toList());
+        return String.join(",", transactions.stream().map(Object::toString).collect(Collectors.toList()));
     }
 
     private List<Transaction> organizeTransactions(List<ConstrainedTransaction> transactions) {
@@ -166,7 +166,7 @@ public final class NestedTransaction implements AutoCloseable {
 
     private List<OrderingConstraint> findAllOrderingConstraintsFrom(Class<? extends Transaction> transactionType,
                                                                     List<OrderingConstraint> constraints) {
-        return constraints.stream().filter(c -> c.before().equals(transactionType)).toList();
+        return constraints.stream().filter(c -> c.before().equals(transactionType)).collect(Collectors.toList());
     }
 
     private static class ConstrainedTransaction {

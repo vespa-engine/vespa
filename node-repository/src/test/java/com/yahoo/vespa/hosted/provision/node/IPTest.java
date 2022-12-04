@@ -66,7 +66,7 @@ public class IPTest {
                            .map(IP::parse)
                            .sorted(IP.NATURAL_ORDER)
                            .map(IP::asString)
-                           .toList()
+                           .collect(Collectors.toList())
         );
     }
 

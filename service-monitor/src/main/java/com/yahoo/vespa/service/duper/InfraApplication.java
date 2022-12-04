@@ -94,7 +94,7 @@ public abstract class InfraApplication implements InfraApplicationApi {
     }
 
     public ApplicationInfo makeApplicationInfo(List<HostName> hostnames) {
-        List<HostInfo> hostInfos = hostnames.stream().map(this::makeHostInfo).toList();
+        List<HostInfo> hostInfos = hostnames.stream().map(this::makeHostInfo).collect(Collectors.toList());
         return new ApplicationInfo(application.id(), 0, new HostsModel(hostInfos));
     }
 

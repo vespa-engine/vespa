@@ -690,7 +690,7 @@ public class HostCapacityMaintainerTest {
                             flavor.resources(),
                             Generation.initial(),
                             false));
-            List<Address> addresses = Stream.of(additionalHostnames).map(Address::new).toList();
+            List<Address> addresses = Stream.of(additionalHostnames).map(Address::new).collect(Collectors.toList());
             Node.Builder builder = Node.create("fake-id-" + hostname, hostname, flavor, state, nodeType)
                     .ipConfig(new IP.Config(state == Node.State.active ? Set.of("::1") : Set.of(), Set.of(), addresses));
             parentHostname.ifPresent(builder::parentHostname);

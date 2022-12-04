@@ -20,7 +20,7 @@ public class ReservedDocumentTypeNameValidator {
     public void validate(Map<String, NewDocumentType> documentDefinitions) {
         List<String> conflictingNames = documentDefinitions.keySet().stream()
                 .filter(this::isReservedName)
-                .toList();
+                .collect(Collectors.toList());
         if (!conflictingNames.isEmpty()) {
             throw new IllegalArgumentException(makeReservedNameMessage(conflictingNames));
         }

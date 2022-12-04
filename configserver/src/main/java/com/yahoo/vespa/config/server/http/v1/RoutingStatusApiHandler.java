@@ -129,7 +129,7 @@ public class RoutingStatusApiHandler extends RestApiRequestHandler<RoutingStatus
         DeploymentRoutingStatus wantedStatus = deploymentRoutingStatusFromSlime(requestBody, clock.instant());
         List<DeploymentRoutingStatus> currentStatuses = upstreamNames.stream()
                                                                      .map(this::deploymentStatus)
-                                                                     .toList();
+                                                                     .collect(Collectors.toList());
         DeploymentRoutingStatus currentStatus = currentStatuses.get(0);
         log.log(Level.INFO, "Changing routing status of " + instance + " from " +
                             currentStatus.status() + " to " + wantedStatus.status());

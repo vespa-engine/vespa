@@ -175,7 +175,7 @@ public class ApplicationSerializer {
     }
 
     private static List<ScalingEvent> scalingEventsFromSlime(Inspector eventArray) {
-        return SlimeUtils.entriesStream(eventArray).map(item -> scalingEventFromSlime(item)).toList();
+        return SlimeUtils.entriesStream(eventArray).map(item -> scalingEventFromSlime(item)).collect(Collectors.toList());
     }
 
     private static void toSlime(ScalingEvent event, Cursor object) {

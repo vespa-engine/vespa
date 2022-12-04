@@ -294,7 +294,7 @@ public class ReduceJoin<NAMETYPE extends Name> extends CompositeTensorFunction<N
         if (reducingDimensions.isEmpty()) {
             reducingDimensions = dimensionsInCommon((IndexedTensor)a, (IndexedTensor)b).dimensions().stream()
                     .map(TensorType.Dimension::name)
-                    .toList();
+                    .collect(Collectors.toList());
         }
         if (reducingDimensions.size() != 1) {
             return false;

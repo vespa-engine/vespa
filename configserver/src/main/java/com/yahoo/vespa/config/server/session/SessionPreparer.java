@@ -460,7 +460,7 @@ public class SessionPreparer {
          public ConfigChangeActions getConfigChangeActions() {
             return new ConfigChangeActions(results.stream().map(result -> result.actions)
                                                            .flatMap(Collection::stream)
-                                                           .toList());
+                                                           .collect(Collectors.toList()));
          }
 
     }

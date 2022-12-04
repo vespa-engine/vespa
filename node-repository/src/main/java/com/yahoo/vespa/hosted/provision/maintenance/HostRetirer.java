@@ -47,7 +47,7 @@ public class HostRetirer extends NodeRepositoryMaintainer {
                                                      .map(Node::cloudAccount)
                                                      .filter(cloudAccount -> !cloudAccount.isUnspecified())
                                                      .distinct()
-                                                     .toList();
+                                                     .collect(Collectors.toList());
         Map<String, List<HostEvent>> eventsByHostId = hostProvisioner.hostEventsIn(cloudAccounts).stream()
                                                                      .collect(Collectors.groupingBy(HostEvent::hostId));
         Instant now = nodeRepository().clock().instant();

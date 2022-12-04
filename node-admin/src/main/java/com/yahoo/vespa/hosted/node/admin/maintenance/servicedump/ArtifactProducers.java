@@ -30,7 +30,7 @@ class ArtifactProducers {
                             .filter(p -> p.getClass().equals(type))
                             .findAny()
                             .orElseThrow(() -> new IllegalArgumentException("No producer of type " + type)))
-                    .toList();
+                    .collect(Collectors.toList());
             if (producerMap.containsKey(alias)) {
                 throw new IllegalStateException("Alias name '" + alias + "' conflicts with producer");
             }

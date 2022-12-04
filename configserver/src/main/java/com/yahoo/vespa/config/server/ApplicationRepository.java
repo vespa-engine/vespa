@@ -632,7 +632,7 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
                 .filter(fileReference -> ! fileReferencesInUse.contains(fileReference))
                 .filter(fileReference -> isLastModifiedBefore(new File(fileReferencesPath, fileReference), instant))
                 .sorted(Comparator.comparing(a -> lastModified(new File(fileReferencesPath, a))))
-                .toList();
+                .collect(Collectors.toList());
     }
 
     public Set<FileReference> getFileReferences(ApplicationId applicationId) {
@@ -682,7 +682,7 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
     public List<ApplicationId> listApplications() {
         return tenantRepository.getAllTenants().stream()
                 .flatMap(tenant -> tenant.getApplicationRepo().activeApplications().stream())
-                .toList();
+                .collect(Collectors.toList());
     }
 
     private boolean isLastModifiedBefore(File fileReference, Instant instant) {

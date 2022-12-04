@@ -43,7 +43,7 @@ public class TargetCachingSlobrokHostFetcherTest {
 
     private static List<Mirror.Entry> dummyEntries(int... indices) {
         return Arrays.stream(indices)
-                .mapToObj(index -> new Mirror.Entry(idOfIndex(index), lookupSpecOfIndex(index))).toList();
+                .mapToObj(index -> new Mirror.Entry(idOfIndex(index), lookupSpecOfIndex(index))).collect(Collectors.toList());
     }
 
     static class Fixture {

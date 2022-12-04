@@ -86,7 +86,7 @@ public class ClusterDeploymentMetricsRetriever {
                     }
                     return null;
                 })
-                .toList();
+                .collect(Collectors.toList());
         try {
             executor.invokeAll(jobs, 1, TimeUnit.MINUTES);
         } catch (InterruptedException e) {

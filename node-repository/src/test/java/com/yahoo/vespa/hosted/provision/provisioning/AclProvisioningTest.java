@@ -245,12 +245,12 @@ public class AclProvisioningTest {
                 .flatMap(List::stream)
                 .distinct()
                 .sorted(Comparator.comparing(TrustedNode::hostname))
-                .toList();
+                .collect(Collectors.toList());
         List<TrustedNode> actualTrustedNodes = actual.stream()
                 .flatMap(acl -> acl.trustedNodes().stream())
                 .distinct()
                 .sorted(Comparator.comparing(TrustedNode::hostname))
-                .toList();
+                .collect(Collectors.toList());
         assertEquals(expectedTrustedNodes, actualTrustedNodes);
 
         Set<String> actualTrustedNetworks = actual.stream()

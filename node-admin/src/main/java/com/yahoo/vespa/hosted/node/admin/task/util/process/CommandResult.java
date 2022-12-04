@@ -37,7 +37,7 @@ public class CommandResult {
 
     /** Returns the output lines of the command, omitting trailing empty lines. */
     public List<String> getOutputLines() {
-        return getOutputLinesStream().toList();
+        return getOutputLinesStream().collect(Collectors.toList());
     }
 
     /** Returns the output lines as a stream, omitting trailing empty lines. */
@@ -78,7 +78,7 @@ public class CommandResult {
      * RuntimeException in UnexpectedOutputException w/output snippet. See map() for details.
      */
     public <R> List<R> mapEachLine(Function<String, R> mapper) {
-        return map(result -> result.getOutputLinesStream().map(mapper).toList());
+        return map(result -> result.getOutputLinesStream().map(mapper).collect(Collectors.toList()));
     }
 
     /**

@@ -72,7 +72,7 @@ class LogSerializer {
     Map<Step, List<LogEntry>> fromJson(List<byte[]> logJsons, long after) {
         return fromSlime(logJsons.stream()
                                  .map(SlimeUtils::jsonToSlime)
-                                 .toList(),
+                                 .collect(Collectors.toList()),
                          after);
     }
 

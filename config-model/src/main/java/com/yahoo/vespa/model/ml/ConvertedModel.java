@@ -173,7 +173,7 @@ public class ConvertedModel {
 
         if (arguments.output().isEmpty()) {
             List<Map.Entry<String, ExpressionFunction>> entriesWithTheRightPrefix =
-                    expressions.entrySet().stream().filter(entry -> entry.getKey().startsWith(arguments.signature().get() + ".")).toList();
+                    expressions.entrySet().stream().filter(entry -> entry.getKey().startsWith(arguments.signature().get() + ".")).collect(Collectors.toList());
             if (entriesWithTheRightPrefix.size() < 1)
                 throw new IllegalArgumentException("No expressions named '" + arguments.signature().get() +
                                                    missingExpressionMessageSuffix());
@@ -416,7 +416,7 @@ public class ConvertedModel {
             CompositeNode composite = (CompositeNode)node;
             return composite.setChildren(composite.children().stream()
                                                   .map(child -> replaceConstantsByFunctions(child, constantsReplacedByFunctions))
-                                                  .toList());
+                                                  .collect(Collectors.toList()));
         }
         return node;
     }

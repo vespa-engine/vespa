@@ -100,7 +100,7 @@ public class TensorType {
         else if (dimensionList.stream().noneMatch(d -> d.isIndexed()))
             mappedSubtype = this;
         else
-            mappedSubtype = new TensorType(valueType, dimensions.stream().filter(d -> ! d.isIndexed()).toList());
+            mappedSubtype = new TensorType(valueType, dimensions.stream().filter(d -> ! d.isIndexed()).collect(Collectors.toList()));
     }
 
     static public Value combinedValueType(TensorType ... types) {

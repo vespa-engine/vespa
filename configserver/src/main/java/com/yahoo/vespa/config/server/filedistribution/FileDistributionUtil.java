@@ -37,7 +37,7 @@ public class FileDistributionUtil {
                                .stream()
                                .filter(spec -> !spec.getHostName().equals(HostName.getLocalhost()))
                                .map(spec -> "tcp/" + spec.getHostName() + ":" + spec.getConfigServerPort())
-                               .toList();
+                               .collect(Collectors.toList());
     }
 
     public static boolean fileReferenceExistsOnDisk(File downloadDirectory, FileReference applicationPackageReference) {

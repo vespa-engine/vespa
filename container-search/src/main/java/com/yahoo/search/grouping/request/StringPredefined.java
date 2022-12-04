@@ -36,7 +36,7 @@ public class StringPredefined extends PredefinedFunction {
                                           .skip(1)
                                           .map(StringBucket.class::cast)
                                           .map(arg -> arg.copy())
-                                          .toList());
+                                          .collect(Collectors.toList()));
     }
 
     @Override

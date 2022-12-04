@@ -52,9 +52,9 @@ public class CoredumpCleanupRule {
             List<FileAttributes> fileAttributes = FileFinder.files(containerCrashPath)
                     .maxDepth(1).stream()
                     .sorted(CORE_DUMP_FILE_ATTRIBUTE_COMPARATOR)
-                    .toList();
+                    .collect(Collectors.toList());
 
-            return mapFirstAndRemaining(fileAttributes, Priority.MEDIUM, Priority.HIGHEST).toList();
+            return mapFirstAndRemaining(fileAttributes, Priority.MEDIUM, Priority.HIGHEST).collect(Collectors.toList());
         }
     }
 
@@ -81,7 +81,7 @@ public class CoredumpCleanupRule {
 
             return fileAttributesByContainerDay.values().stream()
                     .flatMap(fa -> mapFirstAndRemaining(fa, Priority.MEDIUM, Priority.HIGH))
-                    .toList();
+                    .collect(Collectors.toList());
         }
     }
 

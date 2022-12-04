@@ -349,7 +349,7 @@ public class CuratorDatabaseClient {
     public List<ApplicationId> readApplicationIds() {
         return db.getChildren(applicationsPath).stream()
                  .map(ApplicationId::fromSerializedForm)
-                 .toList();
+                 .collect(Collectors.toList());
     }
 
     public Optional<Application> readApplication(ApplicationId id) {

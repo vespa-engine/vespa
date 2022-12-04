@@ -154,7 +154,7 @@ public class HostCapacityMaintainer extends NodeRepositoryMaintainer {
                         return false;
                     }
                 })
-                .toList();
+                .collect(Collectors.toList());
     }
 
     private static List<Node> candidatesForRemoval(List<Node> nodes) {
@@ -295,7 +295,7 @@ public class HostCapacityMaintainer extends NodeRepositoryMaintainer {
                                   ClusterMembership.from(clusterSpec, index.next()),
                                   nodeResources,
                                   nodeRepository().clock().instant()))
-                .toList();
+                .collect(Collectors.toList());
 
     }
 

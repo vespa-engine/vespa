@@ -53,7 +53,7 @@ public class ContainerOperationsTest {
         assertEquals(List.of(c1.name(), c3.name()), containerEngine.listContainers(context).stream()
                 .map(PartialContainer::name)
                 .sorted()
-                .toList());
+                .collect(Collectors.toList()));
     }
 
     private Container createContainer(String name, boolean managed) {

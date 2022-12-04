@@ -572,7 +572,7 @@ public class ProvisioningTester {
 
     /** Returns the hosts from the input list which are not retired */
     public List<HostSpec> nonRetired(Collection<HostSpec> hosts) {
-        return hosts.stream().filter(host -> ! host.membership().get().retired()).toList();
+        return hosts.stream().filter(host -> ! host.membership().get().retired()).collect(Collectors.toList());
     }
 
     public void assertAllocatedOn(String explanation, String hostFlavor, ApplicationId app) {
@@ -595,7 +595,7 @@ public class ProvisioningTester {
             Optional<String> allocatedSwitchHostname = allNodes.parentOf(node).flatMap(Node::switchHostname);
             return allocatedSwitchHostname.isPresent() &&
                    allocatedSwitchHostname.get().equals(switchHostname);
-        }).toList();
+        }).collect(Collectors.toList());
     }
 
     public Set<String> switchesOf(NodeList applicationNodes, NodeList allNodes) {

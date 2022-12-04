@@ -187,7 +187,7 @@ public class TestRunner implements com.yahoo.vespa.testrunner.TestRunner {
             return element
                     .filter(Files::isRegularFile)
                     .filter(path -> path.toString().endsWith(".jar"))
-                    .toList();
+                    .collect(Collectors.toList());
         } catch (IOException e) {
             throw new UncheckedIOException("Failed to list files under " + directory, e);
         }

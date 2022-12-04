@@ -155,7 +155,7 @@ public record VersionStatus(List<VespaVersion> versions) {
                 boolean isReleased = Collections.binarySearch(releasedVersions, statistics.version()) >= 0;
                 List<NodeVersion> nodeVersions = systemApplicationVersions.stream()
                                                                           .filter(nodeVersion -> nodeVersion.currentVersion().equals(statistics.version()))
-                                                                          .toList();
+                                                                          .collect(Collectors.toList());
                 VespaVersion vespaVersion = createVersion(statistics,
                                                           controllerVersions.keySet(),
                                                           systemVersion,
