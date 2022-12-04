@@ -192,7 +192,7 @@ public class ConfigServerBootstrap extends AbstractComponent implements Runnable
 
     private void redeployAllApplications() throws InterruptedException {
         Instant end = clock.instant().plus(maxDurationOfRedeployment);
-        List<ApplicationId> applicationsToRedeploy = applicationRepository.listApplications();
+        List<ApplicationId> applicationsToRedeploy = new ArrayList<>(applicationRepository.listApplications());
         Collections.shuffle(applicationsToRedeploy);
         long failCount = 0;
         do {
