@@ -16,16 +16,16 @@ import com.yahoo.vespa.config.ConfigDefinitionKey;
 import com.yahoo.vespa.model.VespaModel;
 import org.junit.jupiter.api.Test;
 import org.xml.sax.SAXException;
-
 import java.io.File;
 import java.io.IOException;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.Set;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * @author Ulf Lilleengen
@@ -39,15 +39,6 @@ public class DeployStateTest {
         builder.modelHostProvisioner(provisioner);
         DeployState state = builder.build();
         assertEquals(provisioner, state.getProvisioner());
-    }
-
-    @Test
-    void testBuilder() {
-        DeployState.Builder builder = new DeployState.Builder();
-        ApplicationPackage app = MockApplicationPackage.createEmpty();
-        builder.permanentApplicationPackage(Optional.of(app));
-        DeployState state = builder.build();
-        assertEquals(app, state.getPermanentApplicationPackage().get());
     }
 
     @Test

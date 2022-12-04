@@ -71,7 +71,6 @@ public class DeployState implements ConfigDefinitionStore {
     private final List<Schema> schemas;
     private final ApplicationPackage applicationPackage;
     private final Optional<ConfigDefinitionRepo> configDefinitionRepo;
-    private final Optional<ApplicationPackage> permanentApplicationPackage;
     private final Optional<Model> previousModel;
     private final boolean accessLoggingEnabledByDefault;
     private final ModelContext.Properties properties;
@@ -111,7 +110,6 @@ public class DeployState implements ConfigDefinitionStore {
                         Provisioned provisioned,
                         ModelContext.Properties properties,
                         Version vespaVersion,
-                        Optional<ApplicationPackage> permanentApplicationPackage,
                         Optional<ConfigDefinitionRepo> configDefinitionRepo,
                         Optional<Model> previousModel,
                         Set<ContainerEndpoint> endpoints,
@@ -137,7 +135,6 @@ public class DeployState implements ConfigDefinitionStore {
         this.provisioned = provisioned;
         this.schemas = List.copyOf(application.schemas().values());
         this.documentModel = application.documentModel();
-        this.permanentApplicationPackage = permanentApplicationPackage;
         this.configDefinitionRepo = configDefinitionRepo;
         this.endpoints = Set.copyOf(endpoints);
         this.zone = zone;
@@ -251,10 +248,6 @@ public class DeployState implements ConfigDefinitionStore {
 
     public HostProvisioner getProvisioner() { return provisioner; }
 
-    public Optional<ApplicationPackage> getPermanentApplicationPackage() {
-        return permanentApplicationPackage;
-    }
-
     public ModelContext.Properties getProperties() { return properties; }
 
     public ModelContext.FeatureFlags featureFlags() { return properties.featureFlags(); }
@@ -317,7 +310,6 @@ public class DeployState implements ConfigDefinitionStore {
         private DeployLogger logger = new BaseDeployLogger();
         private Optional<HostProvisioner> hostProvisioner = Optional.empty();
         private Provisioned provisioned = new Provisioned();
-        private Optional<ApplicationPackage> permanentApplicationPackage = Optional.empty();
         private ModelContext.Properties properties = new TestProperties();
         private Version version = new Version(1, 0, 0);
         private Optional<ConfigDefinitionRepo> configDefinitionRepo = Optional.empty();
@@ -362,11 +354,6 @@ public class DeployState implements ConfigDefinitionStore {
 
         public Builder provisioned(Provisioned provisioned) {
             this.provisioned = provisioned;
-            return this;
-        }
-
-        public Builder permanentApplicationPackage(Optional<ApplicationPackage> permanentApplicationPackage) {
-            this.permanentApplicationPackage = permanentApplicationPackage;
             return this;
         }
 
@@ -466,7 +453,6 @@ public class DeployState implements ConfigDefinitionStore {
                                    provisioned,
                                    properties,
                                    version,
-                                   permanentApplicationPackage,
                                    configDefinitionRepo,
                                    previousModel,
                                    endpoints,

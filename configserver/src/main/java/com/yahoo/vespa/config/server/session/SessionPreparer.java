@@ -33,7 +33,6 @@ import com.yahoo.text.XML;
 import com.yahoo.vespa.config.server.ConfigServerSpec;
 import com.yahoo.vespa.config.server.TimeoutBudget;
 import com.yahoo.vespa.config.server.application.ApplicationSet;
-import com.yahoo.vespa.config.server.application.PermanentApplicationPackage;
 import com.yahoo.vespa.config.server.configchange.ConfigChangeActions;
 import com.yahoo.vespa.config.server.deploy.ZooKeeperDeployer;
 import com.yahoo.vespa.config.server.filedistribution.FileDistributionFactory;
@@ -83,7 +82,6 @@ public class SessionPreparer {
     private final ModelFactoryRegistry modelFactoryRegistry;
     private final FileDistributionFactory fileDistributionFactory;
     private final HostProvisionerProvider hostProvisionerProvider;
-    private final PermanentApplicationPackage permanentApplicationPackage;
     private final ConfigserverConfig configserverConfig;
     private final ConfigDefinitionRepo configDefinitionRepo;
     private final Curator curator;
@@ -96,7 +94,6 @@ public class SessionPreparer {
                            FileDistributionFactory fileDistributionFactory,
                            ExecutorService executor,
                            HostProvisionerProvider hostProvisionerProvider,
-                           PermanentApplicationPackage permanentApplicationPackage,
                            ConfigserverConfig configserverConfig,
                            ConfigDefinitionRepo configDefinitionRepo,
                            Curator curator,
@@ -106,7 +103,6 @@ public class SessionPreparer {
         this.modelFactoryRegistry = modelFactoryRegistry;
         this.fileDistributionFactory = fileDistributionFactory;
         this.hostProvisionerProvider = hostProvisionerProvider;
-        this.permanentApplicationPackage = permanentApplicationPackage;
         this.configserverConfig = configserverConfig;
         this.configDefinitionRepo = configDefinitionRepo;
         this.curator = curator;
@@ -206,7 +202,6 @@ public class SessionPreparer {
             this.athenzDomain = params.athenzDomain();
             this.fileRegistry = fileDistributionFactory.createFileRegistry(serverDbSessionDir);
             this.preparedModelsBuilder = new PreparedModelsBuilder(modelFactoryRegistry,
-                                                                   permanentApplicationPackage,
                                                                    flagSource,
                                                                    secretStore,
                                                                    containerEndpoints,
