@@ -40,25 +40,30 @@ public class StdOutVisitorHandler extends VdsVisitHandler {
     private int processTimeMilliSecs;
     private PrintStream out;
     private final boolean jsonOutput;
+    private final boolean tensorShortForm;
 
     private VisitorDataHandler dataHandler;
 
     public StdOutVisitorHandler(boolean printIds, boolean indentXml,
                                 boolean showProgress, boolean showStatistics, boolean doStatistics,
-                                boolean abortOnClusterDown, int processtime, boolean jsonOutput)
+                                boolean abortOnClusterDown, int processtime, boolean jsonOutput,
+                                boolean tensorShortForm)
     {
-        this(printIds, indentXml, showProgress, showStatistics, doStatistics, abortOnClusterDown, processtime, jsonOutput, createStdOutPrintStream());
+        this(printIds, indentXml, showProgress, showStatistics, doStatistics, abortOnClusterDown, processtime,
+             jsonOutput, tensorShortForm, createStdOutPrintStream());
     }
 
     StdOutVisitorHandler(boolean printIds, boolean indentXml,
                          boolean showProgress, boolean showStatistics, boolean doStatistics,
-                         boolean abortOnClusterDown, int processtime, boolean jsonOutput, PrintStream out)
+                         boolean abortOnClusterDown, int processtime, boolean jsonOutput,
+                         boolean tensorShortForm, PrintStream out)
     {
         super(showProgress, showStatistics, abortOnClusterDown);
         this.printIds = printIds;
         this.indentXml = indentXml;
         this.processTimeMilliSecs = processtime;
         this.jsonOutput = jsonOutput;
+        this.tensorShortForm = tensorShortForm;
         this.out = out;
         this.dataHandler = new DataHandler(doStatistics);
     }
@@ -169,7 +174,7 @@ public class StdOutVisitorHandler extends VdsVisitHandler {
 
         private void writeJsonDocument(Document doc) throws IOException {
             writeFeedStartOrRecordSeparator();
-            out.write(JsonWriter.toByteArray(doc));
+            out.write(JsonWriter.toByteArray(doc, tensorShortForm));
         }
 
         @Override

@@ -93,6 +93,10 @@ public class JsonWriter implements DocumentWriter {
         this(createPrivateGenerator(out));
     }
 
+    public JsonWriter(OutputStream out, boolean tensorShortForm) {
+        this(createPrivateGenerator(out), tensorShortForm);
+    }
+
     private static JsonGenerator createPrivateGenerator(OutputStream out) {
         try {
             return jsonFactory.createGenerator(out);
@@ -265,15 +269,26 @@ public class JsonWriter implements DocumentWriter {
     /**
      * Utility method to easily serialize a single document.
      *
-     * @param document
-     *            the document to be serialized
+     * @param document the document to be serialized
+     * @param tensorShortForm whether tensors should be serialized in short form
+     * @return the input document serialised as UTF-8 encoded JSON
+     */
+    public static byte[] toByteArray(Document document, boolean tensorShortForm) {
+        ByteArrayOutputStream out = new ByteArrayOutputStream();
+        JsonWriter writer = new JsonWriter(out, tensorShortForm);
+        writer.write(document);
+        return out.toByteArray();
+    }
+
+    /**
+     * Utility method to easily serialize a single document.
+     *
+     * @param document the document to be serialized
      * @return the input document serialised as UTF-8 encoded JSON
      */
     public static byte[] toByteArray(Document document) {
-        ByteArrayOutputStream out = new ByteArrayOutputStream();
-        JsonWriter writer = new JsonWriter(out);
-        writer.write(document);
-        return out.toByteArray();
+        // TODO Vespa 9: change tensorShortForm default to true
+        return toByteArray(document, false);
     }
 
     /**

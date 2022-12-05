@@ -348,6 +348,13 @@ public class VdsVisit {
                         FixedBucketSpaces.defaultSpace(), FixedBucketSpaces.globalSpace(), FixedBucketSpaces.defaultSpace()))
                 .build());
 
+        // TODO Vespa 9 replace with --tensor-long-form ?
+        options.addOption(Option.builder()
+                .longOpt("tensor-short-form")
+                .desc("Output JSON tensors in short form. Will be the default on Vespa 9")
+                .hasArg(false)
+                .build());
+
         return options;
     }
 
@@ -363,6 +370,7 @@ public class VdsVisit {
         private int processTime = 0;
         private int fullTimeout = 7 * 24 * 60 * 60 * 1000;
         private boolean jsonOutput = false;
+        private boolean tensorShortForm = false; // TODO Vespa 9: change default to true
 
         public VisitorParameters getVisitorParameters() {
             return visitorParameters;
@@ -430,6 +438,14 @@ public class VdsVisit {
 
         public void setJsonOutput(boolean jsonOutput) {
             this.jsonOutput = jsonOutput;
+        }
+
+        public boolean tensorShortForm() {
+            return tensorShortForm;
+        }
+
+        public void setTensorShortForm(boolean tensorShortForm) {
+            this.tensorShortForm = tensorShortForm;
         }
     }
 
@@ -552,6 +568,9 @@ public class VdsVisit {
                 StaticThrottlePolicy throttlePolicy = new StaticThrottlePolicy();
                 throttlePolicy.setMaxPendingCount(((Number)line.getParsedOptionValue("maxpendingsuperbuckets")).intValue());
                 params.setThrottlePolicy(throttlePolicy);
+            }
+            if (line.hasOption("tensor-short-form")) {
+                allParams.setTensorShortForm(true);
             }
 
             boolean jsonOutput = line.hasOption("jsonoutput");
@@ -723,7 +742,8 @@ public class VdsVisit {
                 params.getStatisticsParts() != null,
                 params.getAbortOnClusterDown(),
                 params.getProcessTime(),
-                params.jsonOutput);
+                params.jsonOutput,
+                params.tensorShortForm);
 
         if (visitorParameters.getResumeFileName() != null) {
             handler.setProgressFileName(visitorParameters.getResumeFileName());
