@@ -24,6 +24,7 @@ import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -138,7 +139,8 @@ public class VdsVisitTestCase {
                 "--skipbucketsonfatalerrors",
                 "--abortonclusterdown",
                 "--visitremoves",
-                "--bucketspace", "outerspace"
+                "--bucketspace", "outerspace",
+                "--shorttensors"
         };
         VdsVisit.ArgumentParser parser = createMockArgumentParser();
         VdsVisit.VdsVisitParameters allParams = parser.parse(args);
@@ -158,6 +160,7 @@ public class VdsVisitTestCase {
         assertEquals(123456789, params.getTimeoutMs());
         assertEquals(7 * 24 * 60 * 60 * 1000, allParams.getFullTimeout());
         assertEquals("kittens", allParams.getCluster());
+        assertTrue(allParams.tensorShortForm());
 
         assertTrue(params.getThrottlePolicy() instanceof StaticThrottlePolicy);
         assertEquals(3, ((StaticThrottlePolicy) params.getThrottlePolicy()).getMaxPendingCount());
@@ -200,6 +203,13 @@ public class VdsVisitTestCase {
     }
 
     private static String[] emptyArgList() { return new String[]{}; }
+
+    // TODO Vespa 9: change default from long to short
+    @Test
+    void tensor_output_format_is_long_by_default() throws Exception {
+        var allParams = createMockArgumentParser().parse(emptyArgList());
+        assertFalse(allParams.tensorShortForm());
+    }
 
     @Test
     void visitor_priority_is_low1_by_default() throws Exception {

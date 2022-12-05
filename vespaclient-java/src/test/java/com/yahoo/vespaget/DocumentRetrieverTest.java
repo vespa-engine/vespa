@@ -240,7 +240,7 @@ public class DocumentRetrieverTest {
     }
 
     @Test
-    void testEmtpyClusterList() throws DocumentRetrieverException {
+    void testEmptyClusterList() throws DocumentRetrieverException {
         Throwable exception = assertThrows(DocumentRetrieverException.class, () -> {
 
             ClientParameters params = createParameters()
