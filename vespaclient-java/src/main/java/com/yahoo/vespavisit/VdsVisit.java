@@ -348,7 +348,7 @@ public class VdsVisit {
                         FixedBucketSpaces.defaultSpace(), FixedBucketSpaces.globalSpace(), FixedBucketSpaces.defaultSpace()))
                 .build());
 
-        // TODO Vespa 9 replace with --tensor-long-form ?
+        // TODO Vespa 9: replace with --tensor-long-form ?
         options.addOption(Option.builder()
                 .longOpt("tensor-short-form")
                 .desc("Output JSON tensors in short form. Will be the default on Vespa 9")

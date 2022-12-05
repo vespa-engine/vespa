@@ -39,6 +39,7 @@ public class CommandLineOptions {
     public static final String PRIORITY_OPTION = "priority";
     public static final String JSONOUTPUT_OPTION = "jsonoutput";
     public static final String XMLOUTPUT_OPTION = "xmloutput";
+    public static final String TENSOR_SHORT_FORM_OPTION = "tensor-short-form";
 
     private final Options options = createOptions();
     private final InputStream stdIn;
@@ -131,6 +132,13 @@ public class CommandLineOptions {
                 .desc("XML output")
                 .longOpt(XMLOUTPUT_OPTION).build());
 
+        // TODO Vespa 9: replace with --tensor-long-form ?
+        options.addOption(Option.builder()
+                .longOpt(TENSOR_SHORT_FORM_OPTION)
+                .desc("Output JSON tensors in short form. Will be the default on Vespa 9")
+                .hasArg(false)
+                .build());
+
         return options;
     }
 
@@ -159,6 +167,7 @@ public class CommandLineOptions {
             boolean showDocSize = cl.hasOption(SHOWDOCSIZE_OPTION);
             boolean jsonOutput = cl.hasOption(JSONOUTPUT_OPTION);
             boolean xmlOutput = cl.hasOption(XMLOUTPUT_OPTION);
+            boolean tensorShortForm = cl.hasOption(TENSOR_SHORT_FORM_OPTION);
             int trace = getTrace(cl);
             DocumentProtocol.Priority priority = getPriority(cl);
             double timeout = getTimeout(cl);
@@ -209,6 +218,7 @@ public class CommandLineOptions {
                     .setPriority(priority)
                     .setTimeout(timeout)
                     .setJsonOutput(!xmlOutput)
+                    .setTensorShortForm(tensorShortForm)
                     .build();
         } catch (ParseException pe) {
             throw new IllegalArgumentException(pe.getMessage());
