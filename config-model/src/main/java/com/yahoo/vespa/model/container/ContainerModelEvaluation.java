@@ -28,12 +28,15 @@ public class ContainerModelEvaluation implements
 
     private final static String EVALUATION_BUNDLE_NAME = "model-evaluation";
     private final static String INTEGRATION_BUNDLE_NAME = "model-integration";
+    private final static String ONNXRUNTIME_BUNDLE_NAME = "container-onnxruntime.jar";
+
     private final static String EVALUATOR_NAME = ModelsEvaluator.class.getName();
     private final static String REST_HANDLER_NAME = "ai.vespa.models.handler.ModelsEvaluationHandler";
     private final static String REST_BINDING_PATH = "/model-evaluation/v1";
 
     public static final Path MODEL_EVALUATION_BUNDLE_FILE = PlatformBundles.absoluteBundlePath(EVALUATION_BUNDLE_NAME);
     public static final Path MODEL_INTEGRATION_BUNDLE_FILE = PlatformBundles.absoluteBundlePath(INTEGRATION_BUNDLE_NAME);
+    public static final Path ONNXRUNTIME_BUNDLE_FILE = PlatformBundles.absoluteBundlePath(ONNXRUNTIME_BUNDLE_NAME);
 
     /** Global rank profiles, aka models */
     private final RankProfileList rankProfileList;

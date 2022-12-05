@@ -112,6 +112,7 @@
             linguistics-components-jar-with-dependencies.jar,
             model-evaluation-jar-with-dependencies.jar,
             model-integration-jar-with-dependencies.jar,
+            container-onnxruntime.jar,
             <!-- END config-model dependencies -->
           </discPreInstallBundle>
         </configuration>

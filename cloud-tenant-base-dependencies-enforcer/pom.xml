@@ -28,7 +28,6 @@
         <httpclient.version>4.5.13</httpclient.version>
         <httpcore.version>4.4.13</httpcore.version>
         <junit5.version>5.8.1</junit5.version>  <!-- TODO: in parent this is named 'junit.version' -->
-        <onnxruntime.version>1.12.1</onnxruntime.version>
         <!-- END parent/pom.xml -->
 
 
@@ -117,6 +116,7 @@
                                         <include>com.yahoo.vespa:container-disc:*:provided</include>
                                         <include>com.yahoo.vespa:container-documentapi:*:provided</include>
                                         <include>com.yahoo.vespa:container-messagebus:*:provided</include>
+                                        <include>com.yahoo.vespa:container-onnxruntime:*:provided</include>
                                         <include>com.yahoo.vespa:container-search-and-docproc:*:provided</include>
                                         <include>com.yahoo.vespa:container-search:*:provided</include>
                                         <include>com.yahoo.vespa:container:*:provided</include>
@@ -174,7 +174,6 @@
                                         <include>com.google.code.findbugs:jsr305:3.0.2:test</include>
                                         <include>com.google.protobuf:protobuf-java:3.21.7:test</include>
                                         <include>com.ibm.icu:icu4j:70.1:test</include>
-                                        <include>com.microsoft.onnxruntime:onnxruntime:${onnxruntime.version}:test</include>
                                         <include>com.thaiopensource:jing:20091111:test</include>
                                         <include>commons-codec:commons-codec:${commons-codec.version}:test</include>
                                         <include>io.airlift:aircompressor:0.21:test</include>
