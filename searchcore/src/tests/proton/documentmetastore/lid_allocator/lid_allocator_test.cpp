@@ -150,7 +150,7 @@ TEST_F(LidAllocatorTest, active_lids_are_available_in_search_iterator)
     EXPECT_EQ(SimpleResult({1, 2, 4}), get_active_lids_in_search_iterator(5));
 }
 
-TEST_F(LidAllocatorTest, search_iterator_matches_all_when_all_lids_are_active)
+TEST_F(LidAllocatorTest, DISABLED_search_iterator_matches_all_when_all_lids_are_active)
 {
     register_lids({ 1, 2, 3, 4 });
     activate_lids({ 1, 2, 3, 4 }, true);

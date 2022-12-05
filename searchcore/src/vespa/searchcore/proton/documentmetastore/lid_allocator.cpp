@@ -233,7 +233,7 @@ Blueprint::UP
 LidAllocator::createWhiteListBlueprint() const
 {
     return std::make_unique<WhiteListBlueprint>(_activeLids.getBitVector(),
-                                                (getHighestUsedLid() == getNumActiveLids()));
+                                                false);
 }
 
 void
