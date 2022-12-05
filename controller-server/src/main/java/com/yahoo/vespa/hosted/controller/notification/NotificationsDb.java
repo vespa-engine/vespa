@@ -143,7 +143,7 @@ public class NotificationsDb {
             if (!initial.equals(updated)) {
                 curatorDb.writeNotifications(deploymentSource.tenant(), updated);
             }
-            changed = newNotifications.stream().filter(n -> !notificationExists(n, initial, true)).collect(Collectors.toList());
+            changed = newNotifications.stream().filter(n -> !notificationExists(n, initial, true)).toList();
         }
         notifier.dispatch(changed, deploymentSource);
     }

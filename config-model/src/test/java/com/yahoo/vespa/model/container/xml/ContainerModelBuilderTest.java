@@ -454,7 +454,7 @@ public class ContainerModelBuilderTest extends ContainerModelBuilderTestBase {
         final var model = new VespaModel(new NullConfigModelRegistry(), deployState);
         final var containers = model.getContainerClusters().values().stream()
                 .flatMap(cluster -> cluster.getContainers().stream())
-                .collect(Collectors.toList());
+                .toList();
 
         assertFalse(containers.isEmpty(), "Missing container objects based on configuration");
 
@@ -497,7 +497,7 @@ public class ContainerModelBuilderTest extends ContainerModelBuilderTestBase {
         assertEquals(List.of(cloudAccount), model.provisioned().all().values()
                                                  .stream()
                                                  .map(capacity -> capacity.cloudAccount().get())
-                                                 .collect(Collectors.toList()));
+                                                 .toList());
     }
 
     @Test

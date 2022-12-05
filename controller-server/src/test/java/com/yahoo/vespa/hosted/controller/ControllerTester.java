@@ -218,14 +218,14 @@ public final class ControllerTester {
     /** Set the zones and system for this and bootstrap infrastructure nodes */
     public ControllerTester setZones(List<ZoneId> zones) {
         ZoneApiMock.Builder builder = ZoneApiMock.newBuilder().withSystem(zoneRegistry().system());
-        zoneRegistry().setZones(zones.stream().map(zone -> builder.with(zone).build()).collect(Collectors.toList()));
+        zoneRegistry().setZones(zones.stream().map(zone -> builder.with(zone).build()).toList());
         configServer().bootstrap(zones, SystemApplication.notController());
         return this;
     }
 
     /** Set the routing method for given zones */
     public ControllerTester setRoutingMethod(List<ZoneId> zones, RoutingMethod routingMethod) {
-        zoneRegistry().setRoutingMethod(zones.stream().map(ZoneApiMock::from).collect(Collectors.toList()),
+        zoneRegistry().setRoutingMethod(zones.stream().map(ZoneApiMock::from).toList(),
                                         routingMethod);
         return this;
     }

@@ -52,7 +52,7 @@ public final class Path {
      * Add path elements by splitting based on delimiter and appending to elements.
      */
     private static List<String> elementsOf(String path, String delimiter) {
-        return Arrays.stream(path.split(delimiter)).filter(e -> !"".equals(e)).collect(Collectors.toList());
+        return Arrays.stream(path.split(delimiter)).filter(e -> !"".equals(e)).toList();
     }
 
     /**

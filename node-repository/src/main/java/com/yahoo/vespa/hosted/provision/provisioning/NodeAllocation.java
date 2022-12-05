@@ -410,7 +410,7 @@ class NodeAllocation {
             nodes.put(candidate.toNode().hostname(), candidate);
         }
 
-        return nodes.values().stream().map(n -> n.toNode()).collect(Collectors.toList());
+        return nodes.values().stream().map(n -> n.toNode()).toList();
     }
 
     List<Node> reservableNodes() {
@@ -427,7 +427,7 @@ class NodeAllocation {
         return nodes.values().stream()
                 .filter(predicate)
                 .map(n -> n.toNode())
-                .collect(Collectors.toList());
+                .toList();
     }
 
     /** Returns the number of nodes accepted this far */
@@ -440,7 +440,7 @@ class NodeAllocation {
 
     /** Prefer to retire nodes we want the least */
     private List<NodeCandidate> byRetiringPriority(Collection<NodeCandidate> candidates) {
-        return candidates.stream().sorted(Comparator.reverseOrder()).collect(Collectors.toList());
+        return candidates.stream().sorted(Comparator.reverseOrder()).toList();
     }
 
     /** Prefer to unretire nodes we don't want to retire, and otherwise those with lower index */
@@ -448,7 +448,7 @@ class NodeAllocation {
         return candidates.stream()
                          .sorted(Comparator.comparing(NodeCandidate::wantToRetire)
                                            .thenComparing(n -> n.allocation().get().membership().index()))
-                         .collect(Collectors.toList());
+                         .toList();
     }
 
     public String allocationFailureDetails() {

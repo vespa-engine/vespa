@@ -54,7 +54,7 @@ public class YumTester extends Yum {
 
         private GenericYumCommandExpectation(CommandType commandType, String... packages) {
             this.commandType = commandType;
-            this.packages = Stream.of(packages).map(YumPackageName::fromString).collect(Collectors.toList());
+            this.packages = Stream.of(packages).map(YumPackageName::fromString).toList();
         }
 
         public GenericYumCommandExpectation withEnableRepo(String... repo) {

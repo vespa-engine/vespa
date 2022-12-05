@@ -167,7 +167,7 @@ public class NodeSerializerTest {
         assertEquals(3, node.allocation().get().restartGeneration().wanted());
         assertEquals(4, node.allocation().get().restartGeneration().current());
         assertEquals(List.of(History.Event.Type.provisioned, History.Event.Type.reserved),
-                     node.history().events().stream().map(History.Event::type).collect(Collectors.toList()));
+                     node.history().events().stream().map(History.Event::type).toList());
         assertTrue(node.allocation().get().removable());
         assertEquals(NodeType.tenant, node.type());
     }
@@ -368,7 +368,7 @@ public class NodeSerializerTest {
         assertEquals(Version.fromString("7.2"), serialized.status().osVersion().current().get());
         var osUpgradedEvents = serialized.history().events().stream()
                                          .filter(event -> event.type() == History.Event.Type.osUpgraded)
-                                         .collect(Collectors.toList());
+                                         .toList();
         assertEquals("OS upgraded event is added", 1, osUpgradedEvents.size());
         assertEquals("Duplicate updates of same version uses earliest instant", Instant.ofEpochMilli(123),
                      osUpgradedEvents.get(0).at());

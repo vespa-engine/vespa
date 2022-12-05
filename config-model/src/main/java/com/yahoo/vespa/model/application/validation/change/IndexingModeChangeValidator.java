@@ -73,7 +73,7 @@ public class IndexingModeChangeValidator implements ChangeValidator {
             if (currentTypes.contains(type)) {
                 List<ServiceInfo> services = nextCluster.getSearch().getSearchNodes().stream()
                         .map(SearchNode::getServiceInfo)
-                        .collect(Collectors.toList());
+                        .toList();
                 actions.add(VespaReindexAction.of(
                         nextCluster.id(),
                         ValidationId.indexModeChange,

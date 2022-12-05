@@ -105,7 +105,7 @@ public class BundleValidator extends AbstractBundleValidator {
             this.name = name;
             this.javaPackageMatchers = javaPackagePatterns.stream()
                 .map(s -> Pattern.compile(s).asMatchPredicate())
-                .collect(Collectors.toList());
+                .toList();
             this.versionDiscriminator = versionDiscriminator;
             this.description = description;
         }

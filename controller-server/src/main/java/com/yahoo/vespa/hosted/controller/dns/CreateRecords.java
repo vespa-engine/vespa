@@ -56,7 +56,7 @@ public class CreateRecords implements NameServiceRequest {
                 nameService.createDirect(name, targets);
             }
             case TXT -> {
-                var dataFields = records.stream().map(Record::data).collect(Collectors.toList());
+                var dataFields = records.stream().map(Record::data).toList();
                 nameService.createTxtRecords(name, dataFields);
             }
         }

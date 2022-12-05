@@ -138,7 +138,7 @@ abstract class AbstractGenerateOsgiManifestMojo extends AbstractMojo {
 
     private Collection<String> osgiExportPackages(Map<String, ExportPackageAnnotation> exportedPackages) {
         return exportedPackages.entrySet().stream().map(entry -> entry.getKey() + ";version=" + entry.getValue().osgiVersion())
-                .collect(Collectors.toList());
+                .toList();
     }
 
     private static String asOsgiImport(String packageName, Optional<String> version) {
@@ -189,7 +189,7 @@ abstract class AbstractGenerateOsgiManifestMojo extends AbstractMojo {
         } else if (parameters.size() == 0) {
             return Optional.empty();
         } else {
-            List<String> paramNames = parameters.stream().map(ExportPackages.Parameter::getName).collect(Collectors.toList());
+            List<String> paramNames = parameters.stream().map(ExportPackages.Parameter::getName).toList();
             throw new RuntimeException("A single, optional version parameter expected, but got " + paramNames);
         }
     }

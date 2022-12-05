@@ -30,7 +30,7 @@ public class ServiceHealthGatherer {
                             .putDimension(DimensionId.toDimensionId("metrictype"), "health")
                             .addConsumers(Set.of(ConsumerId.toConsumerId("Vespa")));
                 })
-                .collect(Collectors.toList());
+                .toList();
     }
 
 }

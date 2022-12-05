@@ -42,7 +42,7 @@ public class ConfigValueChangeValidator implements ChangeValidator {
     @Override
     public List<ConfigChangeAction> validate(VespaModel currentModel, VespaModel nextModel,
                                              ValidationOverrides overrides, Instant now) {
-        return findConfigChangesFromModels(currentModel, nextModel).collect(Collectors.toList());
+        return findConfigChangesFromModels(currentModel, nextModel).toList();
     }
 
     public Stream<ConfigChangeAction> findConfigChangesFromModels(AbstractConfigProducerRoot currentModel,
@@ -57,7 +57,7 @@ public class ConfigValueChangeValidator implements ChangeValidator {
                                                                           AbstractConfigProducerRoot currentModel,
                                                                           AbstractConfigProducerRoot nextModel) {
         List<ChangesRequiringRestart> changes = findConfigChangesForService(service, currentModel, nextModel)
-            .collect(Collectors.toList());
+            .toList();
         if (changes.isEmpty()) {
             return Optional.empty();
         }

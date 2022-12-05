@@ -346,7 +346,7 @@ public class DefaultZmsClient extends ClientBase implements ZmsClient {
                 .filter(member -> ! member.pendingApproval())
                 .map(RoleEntity.Member::memberName)
                 .map(AthenzIdentities::from)
-                .collect(Collectors.toList());
+                .toList();
     }
 
     @Override
@@ -356,7 +356,7 @@ public class DefaultZmsClient extends ClientBase implements ZmsClient {
 
         return execute.services.stream()
                 .map(serviceName -> new AthenzService(athenzDomain, serviceName))
-                .collect(Collectors.toList());
+                .toList();
     }
 
     @Override

@@ -43,6 +43,6 @@ public class LinearCleanupRule implements DiskCleanupRule {
     public Collection<PrioritizedFileAttributes> prioritize() {
         return lister.get().stream()
                 .map(fa -> new PrioritizedFileAttributes(fa, prioritizer.apply(fa)))
-                .collect(Collectors.toList());
+                .toList();
     }
 }

@@ -41,7 +41,7 @@ public class CloudSecretStore extends SimpleComponent implements SecretStoreConf
                         .awsId(config.awsId)
                         .role(config.role)
                         .externalId(config.externalId)
-                ).collect(Collectors.toList())
+                ).toList()
         );
     }
 

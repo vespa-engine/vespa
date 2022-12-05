@@ -49,7 +49,7 @@ public class StartupCommandChangeValidatorTest {
     private static List<ConfigChangeAction> getStartupCommandChanges(
             AbstractConfigProducerRoot currentModel, AbstractConfigProducerRoot nextModel) {
         StartupCommandChangeValidator validator = new StartupCommandChangeValidator();
-        return validator.findServicesWithChangedStartupCommand(currentModel, nextModel).collect(Collectors.toList());
+        return validator.findServicesWithChangedStartupCommand(currentModel, nextModel).toList();
     }
 
     private static MockRoot createRootWithChildren(AbstractConfigProducer<?>... children) {

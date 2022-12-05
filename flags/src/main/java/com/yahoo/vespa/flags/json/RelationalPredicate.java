@@ -19,7 +19,7 @@ public class RelationalPredicate {
         // Make sure we try to match e.g. "<=" before "<" as the prefix of predicateString.
         List<RelationalOperator> operatorsByDecendingLength = Stream.of(RelationalOperator.values())
                 .sorted(Comparator.comparing(operator -> - operator.toText().length()))
-                .collect(Collectors.toList());
+                .toList();
 
         for (var operator : operatorsByDecendingLength) {
             if (predicateString.startsWith(operator.toText())) {

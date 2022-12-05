@@ -36,7 +36,7 @@ public class RawPredefined extends PredefinedFunction {
                                        .skip(1)
                                        .map(RawBucket.class::cast)
                                        .map(arg -> arg.copy())
-                                       .collect(Collectors.toList()));
+                                       .toList());
     }
 
     @Override

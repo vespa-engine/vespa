@@ -96,8 +96,8 @@ public class ComponentRegistryNode extends Node {
 
     public static boolean equalNodeEdges(List<Node> edges, List<Node> otherEdges) {
         if (edges.size() == otherEdges.size()) {
-            List<ComponentId> left = edges.stream().map(Node::componentId).sorted().collect(Collectors.toList());
-            List<ComponentId> right = otherEdges.stream().map(Node::componentId).sorted().collect(Collectors.toList());
+            List<ComponentId> left = edges.stream().map(Node::componentId).sorted().toList();
+            List<ComponentId> right = otherEdges.stream().map(Node::componentId).sorted().toList();
             return left.equals(right);
         } else {
             return false;

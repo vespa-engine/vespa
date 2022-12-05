@@ -167,7 +167,7 @@ public class HostCapacityTest {
     }
 
     private Node setupHostWithAdditionalHostnames(String hostHostname, String... additionalHostnames) {
-        List<Address> addresses = Stream.of(additionalHostnames).map(Address::new).collect(Collectors.toList());
+        List<Address> addresses = Stream.of(additionalHostnames).map(Address::new).toList();
 
         doAnswer(invocation -> ((Flavor)invocation.getArguments()[0]).resources())
                 .when(hostResourcesCalculator).advertisedResourcesOf(any());
@@ -181,7 +181,7 @@ public class HostCapacityTest {
     }
 
     private boolean hasCapacity(NodeResources requestedCapacity, Node host, Node... remainingNodes) {
-        List<Node> nodes = Stream.concat(Stream.of(host), Stream.of(remainingNodes)).collect(Collectors.toList());
+        List<Node> nodes = Stream.concat(Stream.of(host), Stream.of(remainingNodes)).toList();
         var capacity = new HostCapacity(new LockedNodeList(nodes, () -> {}), hostResourcesCalculator);
         return capacity.hasCapacity(host, requestedCapacity);
     }

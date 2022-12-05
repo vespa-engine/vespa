@@ -264,7 +264,7 @@ public class Nodes {
     private List<Node> fail(List<Node> nodes, Agent agent, String reason, NestedTransaction transaction) {
         nodes = nodes.stream()
                      .map(n -> n.withWantToFail(false, agent, clock.instant()))
-                     .collect(Collectors.toList());
+                     .toList();
         return db.writeTo(Node.State.failed, nodes, agent, Optional.of(reason), transaction);
     }
 
@@ -290,7 +290,7 @@ public class Nodes {
             illegal("Could not deallocate " + nodeToDirty + ": " +
                     hostnamesNotAllowedToDirty + " are not in states [provisioned, failed, parked, breakfixed]");
 
-        return nodesToDirty.stream().map(node -> deallocate(node, agent, reason)).collect(Collectors.toList());
+        return nodesToDirty.stream().map(node -> deallocate(node, agent, reason)).toList();
     }
 
     /**
@@ -305,7 +305,7 @@ public class Nodes {
     }
 
     public List<Node> deallocate(List<Node> nodes, Agent agent, String reason, NestedTransaction transaction) {
-        return nodes.stream().map(node -> deallocate(node, agent, reason, transaction)).collect(Collectors.toList());
+        return nodes.stream().map(node -> deallocate(node, agent, reason, transaction)).toList();
     }
 
     public Node deallocate(Node node, Agent agent, String reason, NestedTransaction transaction) {
@@ -419,7 +419,7 @@ public class Nodes {
         NestedTransaction transaction = new NestedTransaction();
         List<Node> moved = list().childrenOf(hostname).asList().stream()
                                  .map(child -> move(child.hostname(), toState, agent, false, reason, transaction))
-                                 .collect(Collectors.toList());
+                                 .collect(Collectors.toCollection(ArrayList::new));
         moved.add(move(hostname, toState, agent, false, reason, transaction));
         transaction.commit();
         return moved;

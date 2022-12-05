@@ -133,7 +133,7 @@ public class InfraDeployerImplTest {
     @SuppressWarnings("unchecked")
     private void verifyActivated(String... hostnames) {
         verify(duperModelInfraApi).infraApplicationActivated(
-                eq(application.getApplicationId()), eq(Stream.of(hostnames).map(HostName::of).collect(Collectors.toList())));
+                eq(application.getApplicationId()), eq(Stream.of(hostnames).map(HostName::of).toList()));
         ArgumentMatcher<ApplicationTransaction> transactionMatcher = t -> {
             assertEquals(application.getApplicationId(), t.application());
             return true;

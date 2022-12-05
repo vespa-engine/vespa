@@ -219,7 +219,7 @@ public class VdsClusterHtmlRenderer {
             if (stateBundle.clusterFeedIsBlocked()) {
                 var exhaustions = stateBundle.getFeedBlockOrNull().getConcreteExhaustions().stream()
                         .filter(ex -> ex.node.getIndex() == nodeInfo.getNodeIndex())
-                        .collect(Collectors.toList());
+                        .toList();
                 if (!exhaustions.isEmpty()) {
                     var exhaustionsDesc = exhaustions.stream()
                             .map(NodeResourceExhaustion::toShorthandDescription)

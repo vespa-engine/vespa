@@ -107,6 +107,6 @@ public class LinesComparatorTest {
 
     private static void assertDiff(String expected, String left, String right) {
         assertEquals(Optional.ofNullable(expected),
-                LinesComparator.diff(left.lines().collect(Collectors.toList()), right.lines().collect(Collectors.toList())));
+                LinesComparator.diff(left.lines().toList(), right.lines().toList()));
     }
 }

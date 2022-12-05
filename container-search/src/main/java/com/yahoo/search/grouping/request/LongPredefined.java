@@ -37,7 +37,7 @@ public class LongPredefined extends PredefinedFunction {
                                         .skip(1)
                                         .map(LongBucket.class::cast)
                                         .map(arg -> arg.copy())
-                                        .collect(Collectors.toList()));
+                                        .toList());
     }
 
     @Override

@@ -85,7 +85,7 @@ public class ExpeditedChangeApplicationMaintainer extends ApplicationMaintainer 
                                                             .map(event -> event.type() + (event.agent() == Agent.system ? "" : " by " + event.agent())))
                                     .sorted()
                                     .distinct()
-                                    .collect(Collectors.toList());
+                                    .toList();
 
         return reasons.isEmpty() ?
                 Optional.empty() :

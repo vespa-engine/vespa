@@ -51,7 +51,7 @@ public class ArtifactExpirer extends ControllerMaintainer {
             Instant now = controller().clock().instant();
             List<Artifact> artifactsToExpire = artifactRegistry.list().stream()
                     .filter(artifact -> isExpired(artifact, now, versionStatus))
-                    .collect(Collectors.toList());
+                    .toList();
             if (!artifactsToExpire.isEmpty()) {
                 log.log(Level.INFO, "Expiring " + artifactsToExpire.size() + " artifacts in " + cloudName + ": " + artifactsToExpire);
                 artifactRegistry.deleteAll(artifactsToExpire);
