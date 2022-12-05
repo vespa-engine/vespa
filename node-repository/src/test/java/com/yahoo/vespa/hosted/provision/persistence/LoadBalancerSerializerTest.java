@@ -11,6 +11,7 @@ import com.yahoo.vespa.hosted.provision.lb.DnsZone;
 import com.yahoo.vespa.hosted.provision.lb.LoadBalancer;
 import com.yahoo.vespa.hosted.provision.lb.LoadBalancerId;
 import com.yahoo.vespa.hosted.provision.lb.LoadBalancerInstance;
+import com.yahoo.vespa.hosted.provision.lb.PrivateServiceId;
 import com.yahoo.vespa.hosted.provision.lb.Real;
 import org.junit.Test;
 
@@ -46,6 +47,7 @@ public class LoadBalancerSerializerTest {
                                                                              "127.0.0.2",
                                                                              4080)),
                                                     new LoadBalancerSettings(List.of("123")),
+                                                    Optional.of(PrivateServiceId.of("foo")),
                                                     CloudAccount.from("012345678912"))),
                                             LoadBalancer.State.active,
                                             now);
@@ -60,6 +62,7 @@ public class LoadBalancerSerializerTest {
         assertEquals(loadBalancer.changedAt().truncatedTo(MILLIS), serialized.changedAt());
         assertEquals(loadBalancer.instance().get().reals(), serialized.instance().get().reals());
         assertEquals(loadBalancer.instance().get().settings(), serialized.instance().get().settings());
+        assertEquals(loadBalancer.instance().get().serviceId(), serialized.instance().get().serviceId());
         assertEquals(loadBalancer.instance().get().cloudAccount(), serialized.instance().get().cloudAccount());
     }
 

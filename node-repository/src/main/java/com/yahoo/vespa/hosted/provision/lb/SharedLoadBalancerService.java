@@ -38,6 +38,7 @@ public class SharedLoadBalancerService implements LoadBalancerService {
                                         Set.of(),
                                         spec.reals(),
                                         spec.settings().orElse(LoadBalancerSettings.empty),
+                                        Optional.empty(),
                                         spec.cloudAccount());
     }
 

@@ -63,6 +63,7 @@ public class LoadBalancerServiceMock implements LoadBalancerService {
                 ImmutableSet.of("10.2.3.0/24", "10.4.5.0/24"),
                 spec.reals(),
                 spec.settings().orElse(LoadBalancerSettings.empty),
+                spec.settings().map(__ -> PrivateServiceId.of("service")),
                 spec.cloudAccount());
         instances.put(id, instance);
         return instance;

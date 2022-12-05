@@ -25,10 +25,12 @@ public class LoadBalancerInstance {
     private final Set<String> networks;
     private final Set<Real> reals;
     private final LoadBalancerSettings settings;
+    private final Optional<PrivateServiceId> serviceId;
     private final CloudAccount cloudAccount;
 
-    public LoadBalancerInstance(Optional<DomainName> hostname, Optional<String> ipAddress, Optional<DnsZone> dnsZone, Set<Integer> ports,
-                                Set<String> networks, Set<Real> reals, LoadBalancerSettings settings, CloudAccount cloudAccount) {
+    public LoadBalancerInstance(Optional<DomainName> hostname, Optional<String> ipAddress, Optional<DnsZone> dnsZone,
+                                Set<Integer> ports, Set<String> networks, Set<Real> reals, LoadBalancerSettings settings,
+                                Optional<PrivateServiceId> serviceId, CloudAccount cloudAccount) {
         this.hostname = Objects.requireNonNull(hostname, "hostname must be non-null");
         this.ipAddress = Objects.requireNonNull(ipAddress, "ip must be non-null");
         this.dnsZone = Objects.requireNonNull(dnsZone, "dnsZone must be non-null");
@@ -36,6 +38,7 @@ public class LoadBalancerInstance {
         this.networks = ImmutableSortedSet.copyOf(Objects.requireNonNull(networks, "networks must be non-null"));
         this.reals = ImmutableSortedSet.copyOf(Objects.requireNonNull(reals, "targets must be non-null"));
         this.settings = Objects.requireNonNull(settings, "settings must be non-null");
+        this.serviceId = Objects.requireNonNull(serviceId, "private service id must be non-null");
         this.cloudAccount = Objects.requireNonNull(cloudAccount, "cloudAccount must be non-null");
 
         if (hostname.isEmpty() == ipAddress.isEmpty()) {
@@ -79,6 +82,11 @@ public class LoadBalancerInstance {
         return settings;
     }
 
+    /** ID of any private endpoint service configured for this load balancer. */
+    public Optional<PrivateServiceId> serviceId() {
+        return serviceId;
+    }
+
     /** Cloud account of this load balancer */
     public CloudAccount cloudAccount() {
         return cloudAccount;
@@ -86,7 +94,11 @@ public class LoadBalancerInstance {
 
     /** Returns a copy of this with reals set to given reals */
     public LoadBalancerInstance withReals(Set<Real> reals) {
-        return new LoadBalancerInstance(hostname, ipAddress, dnsZone, ports, networks, reals, settings, cloudAccount);
+        return new LoadBalancerInstance(hostname, ipAddress, dnsZone, ports, networks, reals, settings, serviceId, cloudAccount);
+    }
+
+    public LoadBalancerInstance withServiceId(PrivateServiceId serviceId) {
+        return new LoadBalancerInstance(hostname, ipAddress, dnsZone, ports, networks, reals, settings, Optional.of(serviceId), cloudAccount);
     }
 
     private static Set<Integer> requirePorts(Set<Integer> ports) {

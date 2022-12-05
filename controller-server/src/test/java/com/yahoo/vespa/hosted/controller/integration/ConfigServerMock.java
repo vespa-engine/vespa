@@ -31,6 +31,7 @@ import com.yahoo.vespa.hosted.controller.api.integration.configserver.ConfigServ
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.ContainerEndpoint;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.DeploymentResult;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.LoadBalancer;
+import com.yahoo.vespa.hosted.controller.api.integration.configserver.LoadBalancer.PrivateServiceInfo;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.Node;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.NodeFilter;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.ProxyResponse;
@@ -410,7 +411,8 @@ public class ConfigServerMock extends AbstractComponent implements ConfigServer 
                                                                    Optional.of(HostName.of("lb-0--" + id.applicationId().toFullString() + "--" + id.zoneId().toString())),
                                                                    Optional.empty(),
                                                                    LoadBalancer.State.active,
-                                                                   Optional.of("dns-zone-1"))));
+                                                                   Optional.of("dns-zone-1"),
+                                                                   Optional.of(new PrivateServiceInfo("service", List.of("arne"))))));
         }
 
         Application application = applications.get(id);
