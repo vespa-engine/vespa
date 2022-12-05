@@ -117,6 +117,46 @@ public abstract class Session implements Comparable<Session>  {
         return sessionZooKeeperClient.readActivatedTime();
     }
 
+    public void setApplicationId(ApplicationId applicationId) {
+        sessionZooKeeperClient.writeApplicationId(applicationId);
+    }
+
+    public void setTags(Tags tags) {
+        sessionZooKeeperClient.writeTags(tags);
+    }
+
+    void setApplicationPackageReference(FileReference applicationPackageReference) {
+        sessionZooKeeperClient.writeApplicationPackageReference(Optional.ofNullable(applicationPackageReference));
+    }
+
+    public void setVespaVersion(Version version) {
+        sessionZooKeeperClient.writeVespaVersion(version);
+    }
+
+    public void setDockerImageRepository(Optional<DockerImage> dockerImageRepository) {
+        sessionZooKeeperClient.writeDockerImageRepository(dockerImageRepository);
+    }
+
+    public void setAthenzDomain(Optional<AthenzDomain> athenzDomain) {
+        sessionZooKeeperClient.writeAthenzDomain(athenzDomain);
+    }
+
+    public void setQuota(Optional<Quota> quota) {
+        sessionZooKeeperClient.writeQuota(quota);
+    }
+
+    public void setTenantSecretStores(List<TenantSecretStore> tenantSecretStores) {
+        sessionZooKeeperClient.writeTenantSecretStores(tenantSecretStores);
+    }
+
+    public void setOperatorCertificates(List<X509Certificate> operatorCertificates) {
+        sessionZooKeeperClient.writeOperatorCertificates(operatorCertificates);
+    }
+
+    public void setCloudAccount(Optional<CloudAccount> cloudAccount) {
+        sessionZooKeeperClient.writeCloudAccount(cloudAccount);
+    }
+
     /** Returns application id read from ZooKeeper. Will throw RuntimeException if not found */
     public ApplicationId getApplicationId() {
         return sessionZooKeeperClient.readApplicationId()
@@ -151,7 +191,7 @@ public abstract class Session implements Comparable<Session>  {
     }
 
     public Transaction createDeactivateTransaction() {
-        return sessionZooKeeperClient.createWriteStatusTransaction(Status.DEACTIVATE);
+        return createSetStatusTransaction(Status.DEACTIVATE);
     }
 
     public List<TenantSecretStore> getTenantSecretStores() {
@@ -164,6 +204,10 @@ public abstract class Session implements Comparable<Session>  {
 
     public Optional<CloudAccount> getCloudAccount() {
         return sessionZooKeeperClient.readCloudAccount();
+    }
+
+    private Transaction createSetStatusTransaction(Status status) {
+        return sessionZooKeeperClient.createWriteStatusTransaction(status);
     }
 
     // Note: Assumes monotonically increasing session ids
@@ -186,7 +230,7 @@ public abstract class Session implements Comparable<Session>  {
         return getApplicationPackage().getFile(relativePath);
     }
 
-    Optional<ApplicationSet> applicationSet() { return Optional.empty(); }
+    Optional<ApplicationSet> applicationSet() { return Optional.empty(); };
 
     private void markSessionEdited() {
         setStatus(Session.Status.NEW);
