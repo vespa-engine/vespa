@@ -68,7 +68,7 @@ public class Curator extends AbstractComponent implements AutoCloseable {
 
     private static final Duration ZK_CONNECTION_TIMEOUT = Duration.ofSeconds(30);
     private static final Duration BASE_SLEEP_TIME = Duration.ofSeconds(1);
-    private static final int MAX_RETRIES = 10;
+    private static final int MAX_RETRIES = 4;
     private static final RetryPolicy DEFAULT_RETRY_POLICY = new ExponentialBackoffRetry((int) BASE_SLEEP_TIME.toMillis(), MAX_RETRIES);
     // Default value taken from ZookeeperServerConfig
     static final long defaultJuteMaxBuffer = Long.parseLong(System.getProperty("jute.maxbuffer", "52428800"));
