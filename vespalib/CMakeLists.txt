@@ -44,6 +44,7 @@ vespa_define_module(
     src/tests/component
     src/tests/compress
     src/tests/compression
+    src/tests/coro/async_io
     src/tests/coro/detached
     src/tests/coro/generator
     src/tests/coro/lazy

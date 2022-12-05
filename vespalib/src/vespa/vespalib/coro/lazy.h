@@ -98,4 +98,8 @@ public:
 template<std::movable T>
 Lazy<T>::promise_type::~promise_type() = default;
 
+// signal the completion of work without any result value
+struct Done {};
+using Work = Lazy<Done>;
+
 }
