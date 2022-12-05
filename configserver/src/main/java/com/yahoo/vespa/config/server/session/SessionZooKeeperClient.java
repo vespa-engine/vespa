@@ -199,6 +199,28 @@ public class SessionZooKeeperClient {
         return new FileReference(Utf8.toString(data.get()));
     }
 
+    void writeSessionParameters(ApplicationId applicationId,
+                                Tags tags,
+                                FileReference fileReference,
+                                Optional<DockerImage> dockerImageRepository,
+                                Version vespaVersion,
+                                Optional<AthenzDomain> athenzDomain,
+                                Optional<Quota> quota,
+                                List<TenantSecretStore> tenantSecretStores,
+                                List<X509Certificate> operatorCertificates,
+                                Optional<CloudAccount> cloudAccount) {
+        writeApplicationId(applicationId);
+        writeTags(tags);
+        writeApplicationPackageReference(Optional.of(fileReference));
+        writeVespaVersion(vespaVersion);
+        writeDockerImageRepository(dockerImageRepository);
+        writeAthenzDomain(athenzDomain);
+        writeQuota(quota);
+        writeTenantSecretStores(tenantSecretStores);
+        writeOperatorCertificates(operatorCertificates);
+        writeCloudAccount(cloudAccount);
+    }
+
     private Path applicationPackageReferencePath() {
         return sessionPath.append(APPLICATION_PACKAGE_REFERENCE_PATH);
     }
