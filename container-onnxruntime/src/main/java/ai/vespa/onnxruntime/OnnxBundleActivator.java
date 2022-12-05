@@ -33,7 +33,7 @@ public class OnnxBundleActivator implements BundleActivator {
                 try {
                     System.loadLibrary(libName);
                     log.fine("loaded native library OK: "+libName);
-                } catch (Exception e) {
+                } catch (Exception|UnsatisfiedLinkError e) {
                     log.warning("Could not load native library '"+libName+"' because: "+e.getMessage());
                 }
             }
