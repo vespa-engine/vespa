@@ -11,6 +11,7 @@ import com.yahoo.config.provision.NodeFlavors;
 import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.config.provision.TenantName;
+import com.yahoo.config.provision.security.NodePrincipal;
 import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.container.jdisc.HttpResponse;
 import com.yahoo.container.jdisc.ThreadedHttpRequestHandler;
@@ -173,7 +174,11 @@ public class NodesV2ApiHandler extends ThreadedHttpRequestHandler {
         if (path.matches("/nodes/v2/node/{hostname}")) {
             NodePatcher patcher = new NodePatcher(nodeFlavors, nodeRepository);
             String hostname = path.get("hostname");
-            patcher.patch(hostname, request.getData());
+            if (isTenantPeer(request)) {
+                patcher.patchFromUntrustedTenantHost(hostname, request.getData());
+            } else {
+                patcher.patch(hostname, request.getData());
+            }
             return new MessageResponse("Updated " + hostname);
         }
         else if (path.matches("/nodes/v2/application/{applicationId}")) {
@@ -193,6 +198,15 @@ public class NodesV2ApiHandler extends ThreadedHttpRequestHandler {
         }
 
         throw new NotFoundException("Nothing at '" + path + "'");
+    }
+
+    /** Returns true if the peer is a tenant host or node. */
+    private boolean isTenantPeer(HttpRequest request) {
+        return request.getJDiscRequest().getUserPrincipal() instanceof NodePrincipal nodePrincipal &&
+               switch (nodePrincipal.getIdentity().nodeType()) {
+                   case host, tenant -> true;
+                   default -> false;
+               };
     }
 
     private HttpResponse handlePOST(HttpRequest request) {

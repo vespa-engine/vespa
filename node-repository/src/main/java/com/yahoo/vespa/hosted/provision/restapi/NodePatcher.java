@@ -33,6 +33,7 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -77,9 +78,33 @@ public class NodePatcher {
      * Note: This may patch more than one node if the field being patched must be applied recursively to host and node.
      */
     public void patch(String hostname, InputStream json) {
+        unifiedPatch(hostname, json, false);
+    }
+
+    /** Apply given JSON from a tenant host that may have been compromised. */
+    public void patchFromUntrustedTenantHost(String hostname, InputStream json) {
+        unifiedPatch(hostname, json, true);
+    }
+
+    private void unifiedPatch(String hostname, InputStream json, boolean untrustedTenantHost) {
         Inspector root = Exceptions.uncheck(() -> SlimeUtils.jsonToSlime(json.readAllBytes())).get();
         Map<String, Inspector> fields = new HashMap<>();
         root.traverse(fields::put);
+
+        if (untrustedTenantHost) {
+            var disallowedFields = new HashSet<>(fields.keySet());
+            disallowedFields.removeAll(Set.of("currentDockerImage",
+                                              "currentFirmwareCheck",
+                                              "currentOsVersion",
+                                              "currentRebootGeneration",
+                                              "currentRestartGeneration",
+                                              "reports",
+                                              "trustStore",
+                                              "vespaVersion"));
+            if (!disallowedFields.isEmpty()) {
+                throw new IllegalArgumentException("Patching fields not supported: " + disallowedFields);
+            }
+        }
 
         // Create views grouping fields by their locking requirements
         Map<String, Inspector> regularFields = Maps.filterKeys(fields, k -> !IP_CONFIG_FIELDS.contains(k));
