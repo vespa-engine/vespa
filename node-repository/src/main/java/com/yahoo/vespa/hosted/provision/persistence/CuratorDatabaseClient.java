@@ -70,8 +70,7 @@ public class CuratorDatabaseClient {
     private static final Path firmwareCheckPath = root.append("firmwareCheck");
     private static final Path archiveUrisPath = root.append("archiveUris");
 
-    // TODO: Explain reasoning behind timeout value (why its it as high as 10 minutes?)
-    private static final Duration defaultLockTimeout = Duration.ofMinutes(10);
+    private static final Duration defaultLockTimeout = Duration.ofMinutes(1);
 
     private final NodeSerializer nodeSerializer;
     private final CuratorDatabase db;
