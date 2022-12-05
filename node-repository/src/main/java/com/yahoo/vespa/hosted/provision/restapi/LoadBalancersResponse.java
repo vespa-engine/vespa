@@ -77,7 +77,7 @@ public class LoadBalancersResponse extends SlimeJsonResponse {
             });
             lb.instance().ifPresent(instance -> {
                 if ( ! instance.settings().isEmpty())
-                    instance.settings().allowedUrns().forEach(lbObject.setObject("settings").setArray("allowed-urns")::addString);
+                    instance.settings().allowedUrns().forEach(lbObject.setObject("settings").setArray("allowedUrns")::addString);
                 instance.serviceId().ifPresent(serviceId -> lbObject.setString("serviceId", serviceId.value()));
             });
             lb.instance()

@@ -30,7 +30,7 @@
         }
       ],
       "settings": {
-        "allowed-urns": [ "arne" ]
+        "allowedUrns": [ "arne" ]
       },
       "serviceId": "service"
     },
