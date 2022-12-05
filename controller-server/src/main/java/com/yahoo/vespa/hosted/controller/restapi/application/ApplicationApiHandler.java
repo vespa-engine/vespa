@@ -1966,13 +1966,13 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
         List<LoadBalancer> lbs = controller.serviceRegistry().configServer().getLoadBalancers(ApplicationId.from(tenantName, applicationName, instanceName),
                                                                                               ZoneId.from(environment, region));
         Slime slime = new Slime();
-        Cursor lbArray = slime.setObject().setArray("load-balancers");
+        Cursor lbArray = slime.setObject().setArray("loadBalancers");
         for (LoadBalancer lb : lbs) {
             Cursor lbObject = lbArray.addObject();
             lbObject.setString("cluster", lb.cluster().value());
             lb.service().ifPresent(service -> {
                 lbObject.setString("serviceId", service.id());
-                service.allowedUrns().forEach(lbObject.setArray("allowed-urns")::addString);
+                service.allowedUrns().forEach(lbObject.setArray("allowedUrns")::addString);
             });
         }
         return new SlimeJsonResponse(slime);
