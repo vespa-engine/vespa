@@ -112,7 +112,6 @@
         <module>searchcore</module>
         <module>searchlib</module>
         <module>searchsummary</module>
-        <module>security-tools</module>
         <module>security-utils</module>
         <module>service-monitor</module>
         <module>socket_test</module>

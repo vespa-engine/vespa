@@ -686,7 +686,6 @@ fi
 %{_prefix}/jdk
 %dir %{_prefix}/lib
 %dir %{_prefix}/lib/jars
-%{_prefix}/lib/jars/security-tools-jar-with-dependencies.jar
 %dir %{_prefix}/libexec
 %dir %{_prefix}/libexec/vespa
 %{_prefix}/libexec/vespa/common-env.sh
