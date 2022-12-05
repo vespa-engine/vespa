@@ -14,12 +14,10 @@ import java.util.Optional;
  */
 public class ClusterMembership {
 
-    private ClusterSpec cluster; // final
-    private int index; // final
-    private boolean retired; // final
-    private String stringValue; // final
-
-    protected ClusterMembership() {}
+    private final ClusterSpec cluster;
+    private final int index;
+    private final boolean retired;
+    private final String stringValue;
 
     private ClusterMembership(String stringValue, Version vespaVersion, Optional<DockerImage> dockerImageRepo,
                               LoadBalancerSettings loadBalancerSettings) {
@@ -31,6 +29,7 @@ public class ClusterMembership {
         boolean exclusive = false;
         boolean stateful = false;
         var combinedId = Optional.<String>empty();
+        boolean retired = false;
         if (components.length > 4) {
             for (int i = 4; i < components.length; i++) {
                 String component = components[i];
@@ -54,6 +53,7 @@ public class ClusterMembership {
                                   .stateful(stateful)
                                   .build();
         this.index = Integer.parseInt(components[3]);
+        this.retired = retired;
         this.stringValue = toStringValue();
     }
 
