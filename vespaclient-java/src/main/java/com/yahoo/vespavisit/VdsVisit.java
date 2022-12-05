@@ -348,9 +348,9 @@ public class VdsVisit {
                         FixedBucketSpaces.defaultSpace(), FixedBucketSpaces.globalSpace(), FixedBucketSpaces.defaultSpace()))
                 .build());
 
-        // TODO Vespa 9: replace with --tensor-long-form ?
+        // TODO Vespa 9: replace with --longtensors ?
         options.addOption(Option.builder()
-                .longOpt("tensor-short-form")
+                .longOpt("shorttensors")
                 .desc("Output JSON tensors in short form. Will be the default on Vespa 9")
                 .hasArg(false)
                 .build());
@@ -569,7 +569,7 @@ public class VdsVisit {
                 throttlePolicy.setMaxPendingCount(((Number)line.getParsedOptionValue("maxpendingsuperbuckets")).intValue());
                 params.setThrottlePolicy(throttlePolicy);
             }
-            if (line.hasOption("tensor-short-form")) {
+            if (line.hasOption("shorttensors")) {
                 allParams.setTensorShortForm(true);
             }
 

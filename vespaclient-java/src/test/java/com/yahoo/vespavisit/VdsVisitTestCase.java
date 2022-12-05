@@ -140,7 +140,7 @@ public class VdsVisitTestCase {
                 "--abortonclusterdown",
                 "--visitremoves",
                 "--bucketspace", "outerspace",
-                "--tensor-short-form"
+                "--shorttensors"
         };
         VdsVisit.ArgumentParser parser = createMockArgumentParser();
         VdsVisit.VdsVisitParameters allParams = parser.parse(args);

@@ -71,7 +71,7 @@ public class CommandLineOptionsTest {
                 "--noretry",
                 "--trace", "1",
                 "--priority", Integer.toString(DocumentProtocol.Priority.HIGH_3.getValue()),
-                "--tensor-short-form",
+                "--shorttensors",
                 "id:1", "id:2"
         );
 
