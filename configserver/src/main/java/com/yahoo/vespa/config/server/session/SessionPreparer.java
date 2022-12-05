@@ -17,12 +17,9 @@ import com.yahoo.config.model.api.ContainerEndpoint;
 import com.yahoo.config.model.api.EndpointCertificateMetadata;
 import com.yahoo.config.model.api.EndpointCertificateSecrets;
 import com.yahoo.config.model.api.FileDistribution;
-import com.yahoo.config.model.api.Quota;
-import com.yahoo.config.model.api.TenantSecretStore;
 import com.yahoo.config.provision.AllocatedHosts;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.AthenzDomain;
-import com.yahoo.config.provision.CloudAccount;
 import com.yahoo.config.provision.DockerImage;
 import com.yahoo.config.provision.Tags;
 import com.yahoo.config.provision.Zone;
@@ -50,13 +47,11 @@ import com.yahoo.vespa.curator.Curator;
 import com.yahoo.vespa.flags.FlagSource;
 import com.yahoo.vespa.model.application.validation.BundleValidator;
 import org.xml.sax.SAXException;
-
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.transform.TransformerException;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
-import java.security.cert.X509Certificate;
 import java.time.Instant;
 import java.util.Collection;
 import java.util.List;
@@ -342,23 +337,16 @@ public class SessionPreparer {
             checkTimeout("making result from models");
         }
 
-        void writeStateZK(FileReference filereference) {
+        void writeStateZK(FileReference fileReference) {
             log.log(Level.FINE, "Writing application package state to zookeeper");
             writeStateToZooKeeper(sessionZooKeeperClient,
-                                  preprocessedApplicationPackage,
-                                  applicationId,
-                                  tags,
-                                  filereference,
+                                  fileReference,
                                   dockerImageRepository,
                                   vespaVersion,
                                   logger,
                                   prepareResult.getFileRegistries(),
                                   prepareResult.allocatedHosts(),
-                                  athenzDomain,
-                                  params.quota(),
-                                  params.tenantSecretStores(),
-                                  params.operatorCertificates(),
-                                  params.cloudAccount());
+                                  athenzDomain);
             checkTimeout("write state to zookeeper");
         }
 
@@ -384,41 +372,34 @@ public class SessionPreparer {
             return List.copyOf(endpoints);
         }
 
-    }
 
-    private void writeStateToZooKeeper(SessionZooKeeperClient zooKeeperClient,
-                                       ApplicationPackage applicationPackage,
-                                       ApplicationId applicationId,
-                                       Tags tags,
-                                       FileReference fileReference,
-                                       Optional<DockerImage> dockerImageRepository,
-                                       Version vespaVersion,
-                                       DeployLogger deployLogger,
-                                       Map<Version, FileRegistry> fileRegistryMap,
-                                       AllocatedHosts allocatedHosts,
-                                       Optional<AthenzDomain> athenzDomain,
-                                       Optional<Quota> quota,
-                                       List<TenantSecretStore> tenantSecretStores,
-                                       List<X509Certificate> operatorCertificates,
-                                       Optional<CloudAccount> cloudAccount) {
-        ZooKeeperDeployer zkDeployer = zooKeeperClient.createDeployer(deployLogger);
-        try {
-            zkDeployer.deploy(applicationPackage, fileRegistryMap, allocatedHosts);
-            // Note: When changing the below you need to also change similar calls in SessionRepository.createSessionFromExisting()
-            zooKeeperClient.writeApplicationId(applicationId);
-            zooKeeperClient.writeTags(tags);
-            zooKeeperClient.writeApplicationPackageReference(Optional.of(fileReference));
-            zooKeeperClient.writeVespaVersion(vespaVersion);
-            zooKeeperClient.writeDockerImageRepository(dockerImageRepository);
-            zooKeeperClient.writeAthenzDomain(athenzDomain);
-            zooKeeperClient.writeQuota(quota);
-            zooKeeperClient.writeTenantSecretStores(tenantSecretStores);
-            zooKeeperClient.writeOperatorCertificates(operatorCertificates);
-            zooKeeperClient.writeCloudAccount(cloudAccount);
-        } catch (RuntimeException | IOException e) {
-            zkDeployer.cleanup();
-            throw new RuntimeException("Error preparing session", e);
+        private void writeStateToZooKeeper(SessionZooKeeperClient zooKeeperClient,
+                                           FileReference fileReference,
+                                           Optional<DockerImage> dockerImageRepository,
+                                           Version vespaVersion,
+                                           DeployLogger deployLogger,
+                                           Map<Version, FileRegistry> fileRegistryMap,
+                                           AllocatedHosts allocatedHosts,
+                                           Optional<AthenzDomain> athenzDomain) {
+            ZooKeeperDeployer zkDeployer = zooKeeperClient.createDeployer(deployLogger);
+            try {
+                zkDeployer.deploy(applicationPackage, fileRegistryMap, allocatedHosts);
+                zooKeeperClient.writeSessionParameters(applicationId,
+                                                       tags,
+                                                       fileReference,
+                                                       dockerImageRepository,
+                                                       vespaVersion,
+                                                       athenzDomain,
+                                                       params.quota(),
+                                                       params.tenantSecretStores(),
+                                                       params.operatorCertificates(),
+                                                       params.cloudAccount());
+            } catch (RuntimeException | IOException e) {
+                zkDeployer.cleanup();
+                throw new RuntimeException("Error preparing session", e);
+            }
         }
+
     }
 
     /** The result of preparation over all model versions */

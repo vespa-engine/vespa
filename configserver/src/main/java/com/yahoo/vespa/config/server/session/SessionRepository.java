@@ -274,17 +274,17 @@ public class SessionRepository {
                                                             internalRedeploy,
                                                             timeoutBudget,
                                                             deployLogger);
-        // Note: Setters below need to be kept in sync with calls in SessionPreparer.writeStateToZooKeeper()
-        session.setApplicationId(existingApplicationId);
-        session.setTags(existingTags);
-        session.setApplicationPackageReference(existingSession.getApplicationPackageReference());
-        session.setVespaVersion(existingSession.getVespaVersion());
-        session.setDockerImageRepository(existingSession.getDockerImageRepository());
-        session.setAthenzDomain(existingSession.getAthenzDomain());
-        session.setQuota(existingSession.getQuota());
-        session.setTenantSecretStores(existingSession.getTenantSecretStores());
-        session.setOperatorCertificates(existingSession.getOperatorCertificates());
-        session.setCloudAccount(existingSession.getCloudAccount());
+        SessionZooKeeperClient sessionZooKeeperClient = createSessionZooKeeperClient(session.getSessionId());
+        sessionZooKeeperClient.writeSessionParameters(existingApplicationId,
+                                                      existingTags,
+                                                      existingSession.getApplicationPackageReference(),
+                                                      existingSession.getDockerImageRepository(),
+                                                      existingSession.getVespaVersion(),
+                                                      existingSession.getAthenzDomain(),
+                                                      existingSession.getQuota(),
+                                                      existingSession.getTenantSecretStores(),
+                                                      existingSession.getOperatorCertificates(),
+                                                      existingSession.getCloudAccount());
         return session;
     }
 
