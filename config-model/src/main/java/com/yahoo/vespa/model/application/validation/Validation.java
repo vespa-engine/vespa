@@ -10,6 +10,7 @@ import com.yahoo.config.model.api.ValidationParameters;
 import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.vespa.model.VespaModel;
+import com.yahoo.vespa.model.application.validation.change.CertificateRemovalChangeValidator;
 import com.yahoo.vespa.model.application.validation.change.ChangeValidator;
 import com.yahoo.vespa.model.application.validation.change.CloudAccountChangeValidator;
 import com.yahoo.vespa.model.application.validation.change.ClusterSizeReductionValidator;
@@ -121,7 +122,8 @@ public class Validation {
                 new ContainerRestartValidator(),
                 new NodeResourceChangeValidator(),
                 new RedundancyIncreaseValidator(),
-                new CloudAccountChangeValidator()
+                new CloudAccountChangeValidator(),
+                new CertificateRemovalChangeValidator()
         };
         List<ConfigChangeAction> actions = Arrays.stream(validators)
                                                  .flatMap(v -> v.validate(currentModel, nextModel, overrides, now).stream())
