@@ -188,12 +188,20 @@ private:
     mutable std::mutex _lock;
     mutable std::vector<search::fef::TermFieldMatchData *> _matchDataVector;
 
+    std::unique_ptr<SearchIterator> create_search_helper(bool strict) const {
+        auto tfmd = new search::fef::TermFieldMatchData;
+        {
+            std::lock_guard<std::mutex> lock(_lock);
+            _matchDataVector.push_back(tfmd);
+        }
+        return search::BitVectorIterator::create(&_activeLids, get_docid_limit(), *tfmd, strict);
+    }
     SearchIterator::UP
     createLeafSearch(const TermFieldMatchDataArray &tfmda, bool strict) const override
     {
         assert(tfmda.size() == 0);
         (void) tfmda;
-        return createFilterSearch(strict, FilterConstraint::UPPER_BOUND);
+        return create_search_helper(strict);
     }
 public:
     WhiteListBlueprint(const search::BitVector &activeLids, bool all_lids_active)
@@ -212,12 +220,7 @@ public:
         if (_all_lids_active) {
             return std::make_unique<FullSearch>();
         }
-        auto tfmd = new search::fef::TermFieldMatchData;
-        {
-            std::lock_guard<std::mutex> lock(_lock);
-            _matchDataVector.push_back(tfmd);
-        }
-        return search::BitVectorIterator::create(&_activeLids, get_docid_limit(), *tfmd, strict);
+        return create_search_helper(strict);
     }
 
     ~WhiteListBlueprint() {
