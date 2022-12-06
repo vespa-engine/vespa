@@ -609,7 +609,7 @@
             <dependency>
                 <groupId>org.apache.commons</groupId>
                 <artifactId>commons-lang3</artifactId>
-                <version>3.11</version>
+                <version>3.12.0</version>
             </dependency>
             <dependency>
                 <groupId>io.jsonwebtoken</groupId>
@@ -627,14 +627,14 @@
                 <version>${jjwt.version}</version>
             </dependency>
             <dependency>
+                <groupId>joda-time</groupId>
+                <artifactId>joda-time</artifactId>
+                <version>2.12.2</version>
+            </dependency>
+            <dependency>
                 <groupId>net.openhft</groupId>
                 <artifactId>zero-allocation-hashing</artifactId>
                 <version>${zero-allocation-hashing.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.apache.commons</groupId>
-                <artifactId>commons-text</artifactId>
-                <version>${commons-text.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.apache.commons</groupId>
@@ -644,22 +644,12 @@
             <dependency>
                 <groupId>commons-cli</groupId>
                 <artifactId>commons-cli</artifactId>
-                <version>1.4</version>
+                <version>1.5.0</version>
             </dependency>
             <dependency>
                 <groupId>commons-codec</groupId>
                 <artifactId>commons-codec</artifactId>
                 <version>${commons-codec.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>commons-net</groupId>
-                <artifactId>commons-net</artifactId>
-                <version>2.0</version>
-            </dependency>
-            <dependency>
-                <groupId>commons-pool</groupId>
-                <artifactId>commons-pool</artifactId>
-                <version>1.5.6</version>
             </dependency>
             <dependency>
                 <groupId>io.airlift</groupId>
@@ -729,7 +719,7 @@
             <dependency>
                 <groupId>org.apache.commons</groupId>
                 <artifactId>commons-compress</artifactId>
-                <version>1.21</version>
+                <version>1.22</version>
             </dependency>
             <dependency>
                 <groupId>org.apache.commons</groupId>
@@ -1126,7 +1116,6 @@
         <curator.version>5.3.0</curator.version>
         <commons-codec.version>1.15</commons-codec.version>
         <commons-io.version>2.11.0</commons-io.version>
-        <commons-text.version>1.10.0</commons-text.version>
         <commons.math3.version>3.6.1</commons.math3.version>
         <eclipse-collections.version>11.0.0</eclipse-collections.version>
         <felix.version>7.0.1</felix.version>
