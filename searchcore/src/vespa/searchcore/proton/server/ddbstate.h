@@ -49,7 +49,7 @@ private:
     static std::vector<vespalib::string> _stateNames;
     static std::vector<vespalib::string> _configStateNames;
 
-    void set_state(State state) noexcept { _state.store(state, std::memory_order_relaxed); }
+    void set_state(State state) noexcept { _state.store(state, std::memory_order_release); }
 
 public:
     DDBState();
@@ -67,7 +67,7 @@ public:
     bool enterOnlineState();
     void enterShutdownState();
     void enterDeadState();
-    State getState() const noexcept { return _state.load(std::memory_order_relaxed); }
+    State getState() const noexcept { return _state.load(std::memory_order_acquire); }
     static vespalib::string getStateString(State state);
     
     bool getClosed() const noexcept {
