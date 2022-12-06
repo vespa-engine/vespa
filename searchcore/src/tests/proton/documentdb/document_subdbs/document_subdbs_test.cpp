@@ -749,6 +749,13 @@ TEST_F("require that flush targets can be retrieved", SearchableFixture)
     EXPECT_TRUE(assertTarget("subdb.summary.shrink", FType::GC, FComponent::DOCUMENT_STORE, *targets[9]));
 }
 
+TEST_F("transient resource usage is zero in steady state", SearchableFixture)
+{
+    auto usage = f._subDb.get_transient_resource_usage();
+    EXPECT_EQUAL(0u, usage.disk());
+    EXPECT_EQUAL(0u, usage.memory());
+}
+
 TEST_F("require that only fast-access attributes are instantiated", FastAccessOnlyFixture)
 {
     std::vector<AttributeGuard> attrs;

@@ -121,6 +121,7 @@ public:
     SerialNum getOldestFlushedSerial() override;
     SerialNum getNewestFlushedSerial() override;
     virtual void pruneRemovedFields(SerialNum serialNum) override;
+    TransientResourceUsage get_transient_resource_usage() const override;
 };
 
 } // namespace proton

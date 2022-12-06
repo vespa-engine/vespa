@@ -166,9 +166,13 @@ DocumentMetaStoreFlushTarget(const DocumentMetaStore::SP dms, ITlsSyncer &tlsSyn
     _lastStats.setPathElementsToLog(8);
 }
 
-
 DocumentMetaStoreFlushTarget::~DocumentMetaStoreFlushTarget() = default;
 
+TransientResourceUsage
+DocumentMetaStoreFlushTarget::get_transient_resource_usage() const
+{
+    return _dmsDir->get_transient_resource_usage();
+}
 
 IFlushTarget::SerialNum
 DocumentMetaStoreFlushTarget::getFlushedSerialNum() const

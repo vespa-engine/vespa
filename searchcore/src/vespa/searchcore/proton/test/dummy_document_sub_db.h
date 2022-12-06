@@ -103,6 +103,7 @@ struct DummyDocumentSubDb : public IDocumentSubDB
     }
 
     void tearDownReferences(IDocumentDBReferenceResolver &) override { }
+    TransientResourceUsage get_transient_resource_usage() const override { return {}; }
 };
 
 }

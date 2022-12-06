@@ -58,6 +58,8 @@ public:
     std::shared_ptr<search::attribute::ReadableAttributeVector> readable_attribute_vector(const string& name) const override;
 
     void asyncForAttribute(const vespalib::string &name, std::unique_ptr<IAttributeFunctor> func) const override;
+
+    TransientResourceUsage get_transient_resource_usage() const override { return {}; }
 };
 
 } // namespace proton

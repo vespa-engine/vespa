@@ -650,4 +650,18 @@ AttributeManager::readable_attribute_vector(const string& name) const
     return _importedAttributes->get(name);
 }
 
+TransientResourceUsage
+AttributeManager::get_transient_resource_usage() const
+{
+    // Transient disk usage is measured as the total disk usage of all attribute snapshots
+    // that are NOT the valid best one.
+    // Transient memory usage is zero.
+    TransientResourceUsage result;
+    for (const auto& elem : _flushables) {
+        auto usage = elem.second.getFlusher()->get_transient_resource_usage();
+        result.merge(usage);
+    }
+    return result;
+}
+
 } // namespace proton
