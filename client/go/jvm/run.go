@@ -27,7 +27,7 @@ func NewApplicationContainer(extraArgs []string) Container {
 	var a ApplicationContainer
 	a.configId = os.Getenv(envvars.VESPA_CONFIG_ID)
 	a.serviceName = os.Getenv(envvars.VESPA_SERVICE_NAME)
-	a.jvmArgs = NewOptions(&a)
+	a.jvmOpts = NewOptions(&a)
 	a.configureOptions()
 	for _, x := range extraArgs {
 		a.JvmOptions().AddOption(x)
