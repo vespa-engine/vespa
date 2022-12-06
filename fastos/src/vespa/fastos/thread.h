@@ -455,7 +455,7 @@ class FastOS_Runnable
 {
 private:
     friend class FastOS_ThreadInterface;
-    FastOS_ThreadInterface *_thread;
+    std::atomic<FastOS_ThreadInterface*> _thread;
 
 public:
     FastOS_Runnable(const FastOS_Runnable&) = delete;
@@ -482,9 +482,9 @@ public:
      */
     virtual void Run(FastOS_ThreadInterface *thisThread, void *arguments)=0;
 
-    FastOS_ThreadInterface *GetThread()             { return _thread; }
-    const FastOS_ThreadInterface *GetThread() const { return _thread; }
-    bool HasThread()                          const { return _thread != nullptr; }
+    FastOS_ThreadInterface *GetThread()             noexcept { return _thread.load(std::memory_order_acquire); }
+    const FastOS_ThreadInterface *GetThread() const noexcept { return _thread.load(std::memory_order_acquire); }
+    bool HasThread()                          const noexcept { return GetThread() != nullptr; }
 };
 
 #include <vespa/fastos/unix_thread.h>

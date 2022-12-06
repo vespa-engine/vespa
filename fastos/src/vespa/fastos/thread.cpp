@@ -308,7 +308,7 @@ void FastOS_ThreadInterface::Dispatch(FastOS_Runnable *newOwner, void *arg)
     _owner = newOwner;
     _startArg = arg;
     // Set _thread variable before NewThread returns
-    _owner->_thread = this;
+    _owner->_thread.store(this, std::memory_order_release);
 
     // It is safe to signal after the unlock since _liveCond is still held
     // so the signalled thread still exists.
