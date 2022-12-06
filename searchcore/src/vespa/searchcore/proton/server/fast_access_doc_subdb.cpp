@@ -352,4 +352,12 @@ FastAccessDocSubDB::getNewestFlushedSerial()
     return highest;
 }
 
+TransientResourceUsage
+FastAccessDocSubDB::get_transient_resource_usage() const
+{
+    auto result = StoreOnlyDocSubDB::get_transient_resource_usage();
+    result.merge(getAttributeManager()->get_transient_resource_usage());
+    return result;
+}
+
 } // namespace proton

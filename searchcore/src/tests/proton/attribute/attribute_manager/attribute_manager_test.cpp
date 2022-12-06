@@ -865,6 +865,15 @@ TEST_F("require that shrink flushtarget is handed over to new attribute manager"
     EXPECT_EQUAL(am1->getShrinker("a1"), am3->getShrinker("a1"));
 }
 
+TEST_F("transient resource usage is zero in steady state", Fixture)
+{
+    f.addAttribute("a1");
+    f.addAttribute("a2");
+    auto usage = f._m.get_transient_resource_usage();
+    EXPECT_EQUAL(0u, usage.disk());
+    EXPECT_EQUAL(0u, usage.memory());
+}
+
 TEST_MAIN()
 {
     std::filesystem::remove_all(std::filesystem::path(test_dir));

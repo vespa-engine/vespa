@@ -343,4 +343,15 @@ SearchableDocSubDB::clearViews() {
     Parent::clearViews();
 }
 
+TransientResourceUsage
+SearchableDocSubDB::get_transient_resource_usage() const
+{
+    auto result = FastAccessDocSubDB::get_transient_resource_usage();
+    // Transient disk usage is measured as the total disk usage of all current fusion indexes.
+    // Transient memory usage is measured as the total memory usage of all memory indexes.
+    auto stats = getSearchableStats();
+    result.merge({stats.fusion_size_on_disk(), stats.memoryUsage().allocatedBytes()});
+    return result;
+}
+
 } // namespace proton

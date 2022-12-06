@@ -585,4 +585,10 @@ addTags(vespalib::GenericHeader &header, const vespalib::string &name) const
     header.putTag(Tag("subDB", _subDB));
 }
 
+TransientResourceUsage
+StoreOnlyDocSubDB::get_transient_resource_usage() const
+{
+    return _dmsFlushTarget->get_transient_resource_usage();
+}
+
 } // namespace proton

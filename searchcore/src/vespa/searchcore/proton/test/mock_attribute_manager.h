@@ -105,6 +105,7 @@ public:
     std::shared_ptr<search::attribute::ReadableAttributeVector> readable_attribute_vector(const string& name) const override {
         return _mock.readable_attribute_vector(name);
     }
+    TransientResourceUsage get_transient_resource_usage() const override { return {}; }
 };
 
 }
