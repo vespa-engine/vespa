@@ -133,6 +133,14 @@ public class RealNodeRepository implements NodeRepository {
         response.throwOnError("Failed to set node state");
     }
 
+    @Override
+    public void reboot(String hostname) {
+        String uri = "/nodes/v2/command/reboot?hostname=" + hostname;
+        StandardConfigServerResponse response = configServerApi.post(uri, Optional.empty(), StandardConfigServerResponse.class);
+        logger.info(response.message);
+        response.throwOnError("Failed to reboot " + hostname);
+    }
+
     private static NodeSpec createNodeSpec(NodeRepositoryNode node) {
         Objects.requireNonNull(node.type, "Unknown node type");
         NodeType nodeType = NodeType.valueOf(node.type);
