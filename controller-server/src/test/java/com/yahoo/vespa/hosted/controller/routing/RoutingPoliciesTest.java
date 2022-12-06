@@ -25,7 +25,6 @@ import com.yahoo.vespa.hosted.controller.api.integration.dns.Record;
 import com.yahoo.vespa.hosted.controller.api.integration.dns.Record.Type;
 import com.yahoo.vespa.hosted.controller.api.integration.dns.RecordData;
 import com.yahoo.vespa.hosted.controller.api.integration.dns.RecordName;
-import com.yahoo.vespa.hosted.controller.api.integration.dns.VpcEndpointService;
 import com.yahoo.vespa.hosted.controller.api.integration.dns.VpcEndpointService.DnsChallenge;
 import com.yahoo.vespa.hosted.controller.application.Endpoint;
 import com.yahoo.vespa.hosted.controller.application.EndpointId;
@@ -52,8 +51,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
-import java.util.TreeSet;
-import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
@@ -518,13 +515,12 @@ public class RoutingPoliciesTest {
         // Challenge answered for endpoint
         RoutingPoliciesTester tester = new RoutingPoliciesTester();
         Map<RecordName, RecordData> challenges = new ConcurrentHashMap<>();
-        tester.tester.controllerTester().serviceRegistry().vpcEndpointService().delegate =
-                (name, cluster, account) -> {
-                    RecordName recordName = RecordName.from("challenge--" + name.value());
-                    if (challenges.containsKey(recordName)) return Optional.empty();
-                    RecordData recordData = RecordData.from(account.map(CloudAccount::value).orElse("system"));
-                    return Optional.of(new DnsChallenge(recordName, recordData, () -> challenges.put(recordName, recordData)));
-                };
+        tester.tester.controllerTester().serviceRegistry().vpcEndpointService().delegate = (name, cluster, account) -> {
+                RecordName recordName = RecordName.from("challenge--" + name.value());
+                if (challenges.containsKey(recordName)) return Optional.empty();
+                RecordData recordData = RecordData.from(account.map(CloudAccount::value).orElse("system"));
+                return Optional.of(new DnsChallenge(recordName, recordData, () -> challenges.put(recordName, recordData)));
+            };
 
         DeploymentContext app = tester.newDeploymentContext("t", "a", "default");
         ApplicationPackage appPackage = applicationPackageBuilder().region(zone3.region()).build();
