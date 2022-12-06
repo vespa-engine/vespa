@@ -700,7 +700,8 @@ public class ApplicationApiTest extends ControllerContainerTest {
         // GET private service info
         tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/instance/instance1/environment/prod/region/us-central-1/private-service", GET)
                                       .userIdentity(USER_ID),
-                              "{\"loadBalancers\":[{\"cluster\":\"default\",\"serviceId\":\"service\",\"allowedUrns\":[\"arne\"]}]}");
+                              """
+                              {"loadBalancers":[{"cluster":"default","serviceId":"service","allowedUrns":["arne"],"endpoints":[{"endpointId":"endpoint-1","state":"available"}]}]}""");
 
         // GET service/state/v1
         tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/instance/instance1/environment/prod/region/us-central-1/service/storagenode/host.com/state/v1/?foo=bar", GET)

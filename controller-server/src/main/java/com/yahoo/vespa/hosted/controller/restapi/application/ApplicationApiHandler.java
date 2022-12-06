@@ -55,6 +55,7 @@ import com.yahoo.vespa.hosted.controller.LockedTenant;
 import com.yahoo.vespa.hosted.controller.NotExistsException;
 import com.yahoo.vespa.hosted.controller.api.application.v4.EnvironmentResource;
 import com.yahoo.vespa.hosted.controller.api.application.v4.model.ProtonMetrics;
+import com.yahoo.vespa.hosted.controller.api.identifiers.ClusterId;
 import com.yahoo.vespa.hosted.controller.api.identifiers.DeploymentId;
 import com.yahoo.vespa.hosted.controller.api.identifiers.TenantId;
 import com.yahoo.vespa.hosted.controller.api.integration.aws.TenantRoles;
@@ -73,6 +74,7 @@ import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.RevisionId;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.RunId;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.SourceRevision;
+import com.yahoo.vespa.hosted.controller.api.integration.dns.VpcEndpointService.VpcEndpoint;
 import com.yahoo.vespa.hosted.controller.api.integration.noderepository.RestartFilter;
 import com.yahoo.vespa.hosted.controller.api.integration.secrets.TenantSecretStore;
 import com.yahoo.vespa.hosted.controller.api.role.Role;
@@ -1963,16 +1965,26 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
     }
 
     private HttpResponse getPrivateServiceInfo(String tenantName, String applicationName, String instanceName, String environment, String region) {
-        List<LoadBalancer> lbs = controller.serviceRegistry().configServer().getLoadBalancers(ApplicationId.from(tenantName, applicationName, instanceName),
-                                                                                              ZoneId.from(environment, region));
+        DeploymentId id = new DeploymentId(ApplicationId.from(tenantName, applicationName, instanceName),
+                                           ZoneId.from(environment, region));
+        List<LoadBalancer> lbs = controller.serviceRegistry().configServer().getLoadBalancers(id.applicationId(), id.zoneId());
         Slime slime = new Slime();
         Cursor lbArray = slime.setObject().setArray("loadBalancers");
         for (LoadBalancer lb : lbs) {
             Cursor lbObject = lbArray.addObject();
             lbObject.setString("cluster", lb.cluster().value());
             lb.service().ifPresent(service -> {
-                lbObject.setString("serviceId", service.id());
+                lbObject.setString("serviceId", service.id()); // Really the "serviceName", but this is what the user needs >_<
                 service.allowedUrns().forEach(lbObject.setArray("allowedUrns")::addString);
+                Cursor endpointsArray = lbObject.setArray("endpoints");
+                controller.serviceRegistry().vpcEndpointService()
+                          .getConnections(new ClusterId(id, lb.cluster()),
+                                          controller.applications().decideCloudAccountOf(id, controller.applications().requireApplication(TenantAndApplicationId.from(tenantName, applicationName)).deploymentSpec()))
+                        .forEach(endpoint -> {
+                            Cursor endpointObject = endpointsArray.addObject();
+                            endpointObject.setString("endpointId", endpoint.endpointId());
+                            endpointObject.setString("state", endpoint.state());
+                        });
             });
         }
         return new SlimeJsonResponse(slime);
