@@ -2,9 +2,9 @@
 package util
 
 import (
-	"fmt"
 	"os"
 	"os/user"
+	"path/filepath"
 	"strconv"
 	"testing"
 
@@ -13,7 +13,8 @@ import (
 )
 
 func setup(t *testing.T) string {
-	tmpDir := t.TempDir()
+	tt := t.TempDir()
+	tmpDir, _ := filepath.EvalSymlinks(tt)
 	err := os.MkdirAll(tmpDir+"/a", 0755)
 	assert.Nil(t, err)
 	err = os.MkdirAll(tmpDir+"/a/bad", 0)
@@ -81,7 +82,7 @@ func TestSimpleFixes(t *testing.T) {
 }
 
 func TestSuperUserOnly(t *testing.T) {
-	trace.AdjustVerbosity(2)
+	trace.AdjustVerbosity(0)
 	var userId int = -1
 	var groupId int = -1
 	if os.Getuid() != 0 {
@@ -118,7 +119,7 @@ func TestSuperUserOnly(t *testing.T) {
 func expectSimplePanic() {
 	if r := recover(); r != nil {
 		if jee, ok := r.(*JustExitError); ok {
-			fmt.Fprintln(os.Stderr, "got as expected:", jee)
+			trace.Trace("got as expected:", jee)
 			return
 		}
 		panic(r)
