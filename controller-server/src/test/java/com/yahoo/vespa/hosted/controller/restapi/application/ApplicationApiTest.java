@@ -698,7 +698,7 @@ public class ApplicationApiTest extends ControllerContainerTest {
                 new File("suspended.json"));
 
         // GET private service info
-        tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/environment/prod/region/us-central-1/instance/instance1/private-service", GET)
+        tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/instance/instance1/environment/prod/region/us-central-1/private-service", GET)
                                       .userIdentity(USER_ID),
                               "{\"loadBalancers\":[{\"cluster\":\"default\",\"serviceId\":\"service\",\"allowedUrns\":[\"arne\"]}]}");
 
