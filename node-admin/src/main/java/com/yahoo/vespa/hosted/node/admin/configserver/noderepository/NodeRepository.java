@@ -25,4 +25,8 @@ public interface NodeRepository {
     void updateNodeAttributes(String hostName, NodeAttributes nodeAttributes);
 
     void setNodeState(String hostName, NodeState nodeState);
+
+    default void reboot(String hostname) {
+        throw new UnsupportedOperationException("Rebooting not supported in " + getClass().getName());
+    }
 }
