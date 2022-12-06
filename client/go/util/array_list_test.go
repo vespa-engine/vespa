@@ -8,7 +8,7 @@ import (
 )
 
 func TestArrayApi1(t *testing.T) {
-	v := Array[string]{"x", "y", "z"}
+	v := ArrayList[string]{"x", "y", "z"}
 	assert.Equal(t, 3, len(v))
 	v.Append("a")
 	assert.Equal(t, 4, len(v))
@@ -26,37 +26,37 @@ func TestArrayApi1(t *testing.T) {
 
 func TestArrayApi2(t *testing.T) {
 	tmp := []string{"i", "j", "k"}
-	v := NewArray[string](10)
+	v := NewArrayList[string](10)
 	assert.Equal(t, 0, len(v))
 	assert.Equal(t, 10, cap(v))
-	v.AppendAll(tmp)
+	v.AppendAll(tmp...)
 	assert.Equal(t, 3, len(v))
 	assert.Equal(t, 10, cap(v))
-	v.AppendAll(tmp)
+	v.AppendAll(tmp...)
 	assert.Equal(t, 6, len(v))
 	assert.Equal(t, 10, cap(v))
-	v.AppendAll(tmp)
+	v.AppendAll(tmp...)
 	assert.Equal(t, 9, len(v))
 	assert.Equal(t, 10, cap(v))
-	v.AppendAll(tmp)
+	v.AppendAll(tmp...)
 	assert.Equal(t, 12, len(v))
 	assert.Less(t, 11, cap(v))
 }
 
 func TestArrayApi3(t *testing.T) {
 	tmp := []string{"i", "j", "k"}
-	v := Array[string]{
+	v := ArrayList[string]{
 		"foo", "bar",
 		"baz", "qux",
 	}
 	assert.Equal(t, 4, len(v))
-	v.InsertElements(0, "a", "b")
+	v.InsertAll(0, "a", "b")
 	assert.Equal(t, 6, len(v))
-	v.AppendAll(tmp)
+	v.AppendAll(tmp...)
 	assert.Equal(t, 9, len(v))
-	v.AppendElements("x", "y")
+	v.AppendAll("x", "y")
 	assert.Equal(t, 11, len(v))
-	v.InsertElements(4, "foobar", "barfoo")
+	v.InsertAll(4, "foobar", "barfoo")
 	assert.Equal(t, 13, len(v))
 	assert.Equal(t, "a", v[0])
 	assert.Equal(t, "b", v[1])
@@ -74,12 +74,12 @@ func TestArrayApi3(t *testing.T) {
 }
 
 func TestArrayApi4(t *testing.T) {
-	v := NewArray[string](12)
+	v := NewArrayList[string](12)
 	arr := v[0:10]
-	v.InsertAll(0, []string{"a", "b", "e"})
-	v.InsertAll(3, []string{"f", "g", "o"})
-	v.InsertAll(2, []string{"c", "d"})
-	v.InsertAll(7, []string{"h", "i", "j", "k", "l", "m", "n"})
+	v.InsertAll(0, "a", "b", "e")
+	v.InsertAll(3, "f", "g", "o")
+	v.InsertAll(2, "c", "d")
+	v.InsertAll(7, "h", "i", "j", "k", "l", "m", "n")
 	assert.Equal(t, 15, len(v))
 	assert.Equal(t, "a", v[0])
 	assert.Equal(t, "b", v[1])

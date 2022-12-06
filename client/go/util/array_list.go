@@ -4,25 +4,21 @@
 // generic utilities
 package util
 
-type Array[E comparable] []E
+type ArrayList[E comparable] []E
 
-func NewArray[E comparable](initialCapacity int) Array[E] {
+func NewArrayList[E comparable](initialCapacity int) ArrayList[E] {
 	return make([]E, 0, initialCapacity)
 }
 
-func ArrayOf[E comparable](elems []E) Array[E] {
-	return Array[E](elems)
+func ArrayListOf[E comparable](elems []E) ArrayList[E] {
+	return ArrayList[E](elems)
 }
 
-func (arrayP *Array[E]) Append(elem E) {
+func (arrayP *ArrayList[E]) Append(elem E) {
 	*arrayP = append(*arrayP, elem)
 }
 
-func (arrayP *Array[E]) AppendElements(elems ...E) {
-	arrayP.AppendAll(elems)
-}
-
-func (arrayP *Array[E]) AppendAll(elemsToAppend []E) {
+func (arrayP *ArrayList[E]) AppendAll(elemsToAppend ...E) {
 	firstLen := len(*arrayP)
 	secondLen := len(elemsToAppend)
 	totLen := firstLen + secondLen
@@ -38,7 +34,7 @@ func (arrayP *Array[E]) AppendAll(elemsToAppend []E) {
 	}
 }
 
-func (arrayP *Array[E]) Insert(index int, elem E) {
+func (arrayP *ArrayList[E]) Insert(index int, elem E) {
 	cur := *arrayP
 	oldLen := len(cur)
 	result := append(cur, elem)
@@ -49,11 +45,7 @@ func (arrayP *Array[E]) Insert(index int, elem E) {
 	*arrayP = result
 }
 
-func (arrayP *Array[E]) InsertElements(index int, elems ...E) {
-	arrayP.InsertAll(index, elems)
-}
-
-func (arrayP *Array[E]) InsertAll(index int, elemsToInsert []E) {
+func (arrayP *ArrayList[E]) InsertAll(index int, elemsToInsert ...E) {
 	firstLen := len(*arrayP)
 	secondLen := len(elemsToInsert)
 	totLen := firstLen + secondLen
@@ -73,7 +65,7 @@ func (arrayP *Array[E]) InsertAll(index int, elemsToInsert []E) {
 	*arrayP = res
 }
 
-func (arrayP *Array[E]) Contains(elem E) bool {
+func (arrayP *ArrayList[E]) Contains(elem E) bool {
 	for _, old := range *arrayP {
 		if elem == old {
 			return true
@@ -82,7 +74,7 @@ func (arrayP *Array[E]) Contains(elem E) bool {
 	return false
 }
 
-func (arrayP *Array[E]) ForEach(f func(E)) {
+func (arrayP *ArrayList[E]) Each(f func(E)) {
 	for _, elem := range *arrayP {
 		f(elem)
 	}

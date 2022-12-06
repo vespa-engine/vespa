@@ -58,7 +58,7 @@ func (p *ProgSpec) numaCtlBinary() string {
 }
 
 func (p *ProgSpec) prependNumaCtl(args []string) []string {
-	v := util.NewArray[string](5 + len(args))
+	v := util.NewArrayList[string](5 + len(args))
 	v.Append("numactl")
 	if p.numaSocket >= 0 {
 		v.Append(fmt.Sprintf("--cpunodebind=%d", p.numaSocket))
@@ -67,6 +67,6 @@ func (p *ProgSpec) prependNumaCtl(args []string) []string {
 		v.Append("--interleave")
 		v.Append("all")
 	}
-	v.AppendAll(args)
+	v.AppendAll(args...)
 	return v
 }

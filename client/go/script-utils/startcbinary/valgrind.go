@@ -73,10 +73,10 @@ func (p *ProgSpec) valgrindLogOption() string {
 }
 
 func (p *ProgSpec) prependValgrind(args []string) []string {
-	v := util.NewArray[string](15 + len(args))
+	v := util.NewArrayList[string](15 + len(args))
 	v.Append(p.valgrindBinary())
-	v.AppendAll(p.valgrindOptions())
+	v.AppendAll(p.valgrindOptions()...)
 	v.Append(p.valgrindLogOption())
-	v.AppendAll(args)
+	v.AppendAll(args...)
 	return v
 }

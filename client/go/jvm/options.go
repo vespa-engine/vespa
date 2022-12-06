@@ -17,7 +17,7 @@ import (
 type Options struct {
 	container Container
 	classPath []string
-	jvmArgs   util.Array[string]
+	jvmArgs   util.ArrayList[string]
 	mainClass string
 	fixSpec   util.FixSpec
 }

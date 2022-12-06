@@ -60,7 +60,7 @@ func readableEnv(env map[string]string) string {
 }
 
 func (cb *containerBase) Exec() {
-	argv := util.ArrayOf(cb.JvmOptions().Args())
+	argv := util.ArrayListOf(cb.JvmOptions().Args())
 	argv.Insert(0, "java")
 	p := prog.NewSpec(argv)
 	p.ConfigureNumaCtl()
