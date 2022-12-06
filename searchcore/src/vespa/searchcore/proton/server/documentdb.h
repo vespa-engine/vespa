@@ -422,6 +422,7 @@ public:
     ExecutorThreadingService & getWriteService() { return _writeService; }
 
     void set_attribute_usage_listener(std::unique_ptr<IAttributeUsageListener> listener);
+    const DDBState& get_state() const noexcept { return _state; }
 };
 
 } // namespace proton
