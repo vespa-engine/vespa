@@ -15,7 +15,7 @@ func (*dummyContainer) exportExtraEnv(ps *prog.Spec) {}
 func newDummyContainer() Container {
 	var dc dummyContainer
 	dc.serviceName = "foo"
-	dc.jvmArgs = NewOptions(&dc)
+	dc.jvmOpts = NewOptions(&dc)
 	return &dc
 }
 

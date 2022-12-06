@@ -33,7 +33,7 @@ func (a *StandaloneContainer) ConfigId() string {
 }
 
 func (a *StandaloneContainer) configureOptions() {
-	opts := a.jvmArgs
+	opts := a.jvmOpts
 	opts.ConfigureCpuCount(0)
 	opts.AddCommonXX()
 	opts.AddOption("-XX:-OmitStackTraceInFastThrow")
@@ -52,7 +52,7 @@ func (a *StandaloneContainer) configureOptions() {
 func NewStandaloneContainer(svcName string) Container {
 	var a StandaloneContainer
 	a.serviceName = svcName
-	a.jvmArgs = NewOptions(&a)
+	a.jvmOpts = NewOptions(&a)
 	a.configureOptions()
 	return &a
 }

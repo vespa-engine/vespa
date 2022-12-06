@@ -25,7 +25,7 @@ type Container interface {
 type containerBase struct {
 	configId    string
 	serviceName string
-	jvmArgs     *Options
+	jvmOpts     *Options
 	propsFile   string
 }
 
@@ -34,7 +34,7 @@ func (cb *containerBase) ServiceName() string {
 }
 
 func (cb *containerBase) JvmOptions() *Options {
-	return cb.jvmArgs
+	return cb.jvmOpts
 }
 
 func (cb *containerBase) ConfigId() string {

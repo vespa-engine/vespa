@@ -45,7 +45,7 @@ func (a *ApplicationContainer) Discriminator() string {
 
 func (a *ApplicationContainer) addJdiscProperties() {
 	cfgId := a.ConfigId()
-	opts := a.jvmArgs
+	opts := a.jvmOpts
 	opts.AddCommonJdiscProperties()
 	containerParentDir := defaults.UnderVespaHome("var/jdisc_container")
 	containerHomeDir := fmt.Sprintf("%s/%s", containerParentDir, a.Discriminator())
@@ -104,7 +104,7 @@ func (a *ApplicationContainer) configureMemory(qc *QrStartConfig) {
 		jvm_directMemorySizeCache = 0
 	}
 	maxDirectMemorySize := jvm_baseMaxDirectMemorySize + (jvm_heapsize / 8) + jvm_directMemorySizeCache
-	opts := a.jvmArgs
+	opts := a.jvmOpts
 	opts.AddOption(fmt.Sprintf("-Xms%dm", jvm_minHeapsize))
 	opts.AddOption(fmt.Sprintf("-Xmx%dm", jvm_heapsize))
 	opts.AddOption(fmt.Sprintf("-XX:ThreadStackSize=%d", jvm_stacksize))
