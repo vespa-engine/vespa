@@ -46,8 +46,9 @@ public class FileSync {
     public boolean convergeTo(TaskContext taskContext, PartialFileData partialFileData, boolean atomicWrite) {
         boolean modifiedSystem = false;
 
-        if (partialFileData.getContent().isPresent())
-            modifiedSystem |= convergeTo(taskContext, partialFileData.getContent().get(), atomicWrite);
+        if (partialFileData.getContent().isPresent()) {
+            modifiedSystem |= convergeTo(taskContext, partialFileData.getContent().get(), atomicWrite, partialFileData.getPermissions());
+        }
 
         AttributeSync attributeSync = new AttributeSync(path.toPath()).with(partialFileData);
         modifiedSystem |= attributeSync.converge(taskContext, this.attributesCache);
@@ -60,15 +61,17 @@ public class FileSync {
      *
      * @param atomicWrite Whether to write updates to a temporary file in the same directory, and atomically move it
      *                    to path. Ensures the file cannot be read while in the middle of writing it.
+     * @param permissions Permissions if the file is created.
      * @return true if the content was written. Only modified if necessary (different).
      */
-    public boolean convergeTo(TaskContext taskContext, byte[] content, boolean atomicWrite) {
+    public boolean convergeTo(TaskContext taskContext, byte[] content, boolean atomicWrite, Optional<String> permissions) {
         Optional<Instant> lastModifiedTime = attributesCache.forceGet().map(FileAttributes::lastModifiedTime);
 
         if (lastModifiedTime.isEmpty()) {
-            taskContext.recordSystemModification(logger, "Creating file " + path);
+            taskContext.recordSystemModification(logger, "Creating file " + path +
+                                                         permissions.map(p -> " with permissions " + p).orElse(""));
             path.createParents();
-            writeBytes(content, atomicWrite);
+            writeBytes(content, atomicWrite, permissions);
             contentCache.updateWith(content, attributesCache.forceGet().orElseThrow().lastModifiedTime());
             return true;
         }
@@ -77,20 +80,28 @@ public class FileSync {
             return false;
         } else {
             taskContext.recordSystemModification(logger, "Patching file " + path);
-            writeBytes(content, atomicWrite);
+            // empty permissions here, because the file already exists and won't be applied anyway
+            writeBytes(content, atomicWrite, Optional.empty());
             contentCache.updateWith(content, attributesCache.forceGet().orElseThrow().lastModifiedTime());
             return true;
         }
     }
 
-    private void writeBytes(byte[] content, boolean atomic) {
+    private void writeBytes(byte[] content, boolean atomic, Optional<String> permissions) {
         if (atomic) {
-            String tmpPath = path.toPath().toString() + ".FileSyncTmp";
-            new UnixPath(path.toPath().getFileSystem().getPath(tmpPath))
-                    .writeBytes(content)
-                    .atomicMove(path.toPath());
+            UnixPath tmpPath = new UnixPath(path.toPath().getFileSystem().getPath(path.toPath().toString() + ".FileSyncTmp"));
+            if (permissions.isPresent()) {
+                tmpPath.writeBytes(content, permissions.get());
+            } else {
+                tmpPath.writeBytes(content);
+            }
+            tmpPath.atomicMove(path.toPath());
         } else {
-            path.writeBytes(content);
+            if (permissions.isPresent()) {
+                path.writeBytes(content, permissions.get());
+            } else {
+                path.writeBytes(content);
+            }
         }
     }
 }
