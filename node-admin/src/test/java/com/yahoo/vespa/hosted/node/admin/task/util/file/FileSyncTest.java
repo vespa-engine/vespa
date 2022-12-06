@@ -29,10 +29,9 @@ public class FileSyncTest {
 
     @Test
     void trivial() {
-        assertConvergence("Creating file /dir/file.txt",
+        assertConvergence("Creating file /dir/file.txt with permissions rw-r-xr--",
                 "Changing user ID of /dir/file.txt from 1 to 123",
-                "Changing group ID of /dir/file.txt from 2 to 456",
-                "Changing permissions of /dir/file.txt from rw-r--r-- to rw-r-xr--");
+                "Changing group ID of /dir/file.txt from 2 to 456");
 
         content = "new-content";
         assertConvergence("Patching file /dir/file.txt");
