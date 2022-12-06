@@ -17,7 +17,8 @@ public class CertificateRemovalChangeValidator implements ChangeValidator {
 
         current.getContainerClusters()
                 .forEach((clusterId, currentCluster) -> {
-                    validateClients(clusterId, currentCluster.getClients(), next.getContainerClusters().get(clusterId).getClients(), overrides, now);
+                    if(next.getContainerClusters().containsKey(clusterId))
+                        validateClients(clusterId, currentCluster.getClients(), next.getContainerClusters().get(clusterId).getClients(), overrides, now);
                 });
 
         return List.of();
