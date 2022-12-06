@@ -212,11 +212,9 @@ public class GramSplitter {
 
         /** Substring in code point space */
         public UnicodeString substring(int start, int codePoints) {
-            int offset = s.offsetByCodePoints(start, Math.min(codePoints, s.codePointCount(start, s.length())));
-            if (offset < 0)
-                return new UnicodeString(s.substring(start));
-            else
-                return new UnicodeString(s.substring(start, offset));
+            int cps = codePoints * 2 <= s.length() - start ? codePoints
+                                                           : Math.min(codePoints, s.codePointCount(start, s.length()));
+            return new UnicodeString(s.substring(start, s.offsetByCodePoints(start, cps)));
         }
 
         /** Returns the position count code points after start (which may be past the end of the string) */

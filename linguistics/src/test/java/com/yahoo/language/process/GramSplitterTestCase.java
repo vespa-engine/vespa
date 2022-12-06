@@ -1,13 +1,17 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.language.process;
 
+import com.yahoo.language.process.GramSplitter.Gram;
+import com.yahoo.language.process.GramSplitter.GramSplitterIterator;
 import com.yahoo.language.simple.SimpleLinguistics;
 import org.junit.Test;
 
 import java.util.Arrays;
 import java.util.Iterator;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 /**
  * @author bratseth
@@ -165,6 +169,15 @@ public class GramSplitterTestCase {
         assertEquals("ang", grams.next().extractFrom(text));
         assertFalse(grams.hasNext());
         assertFalse(grams.hasNext());
+    }
+
+    @Test
+    public void testLongString() {
+        String input = "hey ho come 色 let's go, and then we go again!\n色色色".repeat(10_000);
+        for (GramSplitterIterator grams = new GramSplitter(new CharacterClasses()).split(input, 3); grams.hasNext(); ) {
+            Gram gram = grams.next();
+            gram.extractFrom(input);
+        }
     }
 
     @Test
