@@ -31,8 +31,10 @@ public class ClusterModel {
 
     static final double idealQueryCpuLoad = 0.8;
     static final double idealWriteCpuLoad = 0.95;
-    static final double idealMemoryLoad = 0.65;
-    static final double idealAdminMemoryLoad = 0.75;
+
+    static final double idealContainerMemoryLoad = 0.8;
+    static final double idealContentMemoryLoad = 0.65;
+
     static final double idealContainerDiskLoad = 0.95;
     static final double idealContentDiskLoad = 0.6;
 
@@ -308,9 +310,9 @@ public class ClusterModel {
     }
 
     private double idealMemoryLoad() {
-        if (clusterSpec.type() == ClusterSpec.Type.admin)
-            return idealAdminMemoryLoad; // Not autoscaled, but ideal shown in console
-        return idealMemoryLoad;
+        if (clusterSpec.type().isContainer()) return idealContainerMemoryLoad;
+        if (clusterSpec.type() == ClusterSpec.Type.admin) return idealContainerMemoryLoad; // Not autoscaled, but ideal shown in console
+        return idealContentMemoryLoad;
     }
 
     private double idealDiskLoad() {
