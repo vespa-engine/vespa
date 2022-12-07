@@ -17,7 +17,7 @@ import (
 type Options struct {
 	container Container
 	classPath []string
-	jvmArgs   util.ArrayList[string]
+	jvmArgs   []string
 	mainClass string
 	fixSpec   util.FixSpec
 }
@@ -40,8 +40,10 @@ func NewOptions(c Container) *Options {
 }
 
 func (opts *Options) AddOption(arg string) {
-	if opts.jvmArgs.Contains(arg) {
-		return
+	for _, old := range opts.jvmArgs {
+		if arg == old {
+			return
+		}
 	}
 	opts.AppendOption(arg)
 }
