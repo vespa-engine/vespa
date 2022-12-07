@@ -56,10 +56,11 @@ class HttpFeedClientTest {
                 assertEquals("json", new String(request.body(), UTF_8));
 
                 HttpResponse response = HttpResponse.of(200,
-                                                        ("{\n" +
-                                                         "  \"pathId\": \"/document/v1/ns/type/docid/0\",\n" +
-                                                         "  \"id\": \"id:ns:type::0\"\n" +
-                                                         "}").getBytes(UTF_8));
+                                                        ("""
+                                                         {
+                                                           "pathId": "/document/v1/ns/type/docid/0",
+                                                           "id": "id:ns:type::0"
+                                                         }""").getBytes(UTF_8));
                 return CompletableFuture.completedFuture(response);
             }
             catch (Throwable thrown) {

@@ -18,6 +18,7 @@ import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.HashMap;
 import java.util.Map;
@@ -132,11 +133,16 @@ class HttpFeedClient implements FeedClient {
             cluster.dispatch(request, future);
             HttpResponse response = future.get(20, TimeUnit.SECONDS);
             if (response.code() != 200) {
-                throw new FeedException("non-200 response: " + response);
+                String message = switch (response.contentType()) {
+                    case "application/json" -> parseMessage(request.body());
+                    case "text/plain" -> new String(request.body(), UTF_8);
+                    default -> response.toString();
+                };
+                throw new FeedException("server responded non-OK to handshake: " + message);
             }
         }
         catch (IOException e) {
-            throw new FeedException("failed handshake with server: " + e, e);
+            throw new FeedException("failed initiating handshake with server: " + e, e);
         }
         catch (ExecutionException e) {
             throw new FeedException("failed handshake with server: " + e.getCause(), e.getCause());
@@ -150,6 +156,15 @@ class HttpFeedClient implements FeedClient {
         }
     }
 
+    private static String parseMessage(byte[] json) {
+        try {
+            return parse(null, json).message;
+        }
+        catch (Exception e) {
+            return new String(json, UTF_8);
+        }
+    }
+
     private enum Outcome { success, conditionNotMet, vespaFailure, transportFailure };
 
     static Result.Type toResultType(Outcome outcome) {
@@ -160,22 +175,17 @@ class HttpFeedClient implements FeedClient {
         };
     }
 
-    static Result toResult(HttpRequest request, HttpResponse response, DocumentId documentId) {
-        Outcome outcome = switch (response.code()) {
-            case 200 -> Outcome.success;
-            case 412 -> Outcome.conditionNotMet;
-            case 502, 504, 507 -> Outcome.vespaFailure;
-            default -> Outcome.transportFailure;
-        };
+    record MessageAndTrace(String message, String trace) { }
 
+    static MessageAndTrace parse(DocumentId documentId, byte[] json) {
         String message = null;
         String trace = null;
-        try (JsonParser parser = factory.createParser(response.body())) {
+        try (JsonParser parser = factory.createParser(json)) {
             if (parser.nextToken() != JsonToken.START_OBJECT)
                 throw new ResultParseException(
                         documentId,
                         "Expected '" + JsonToken.START_OBJECT + "', but found '" + parser.currentToken() + "' in: " +
-                        new String(response.body(), UTF_8));
+                        new String(json, UTF_8));
 
             String name;
             while ((name = parser.nextFieldName()) != null) {
@@ -185,7 +195,7 @@ class HttpFeedClient implements FeedClient {
                         if (parser.nextToken() != JsonToken.START_ARRAY)
                             throw new ResultParseException(documentId,
                                                            "Expected 'trace' to be an array, but got '" + parser.currentToken() + "' in: " +
-                                                           new String(response.body(), UTF_8));
+                                                           new String(json, UTF_8));
                         int start = (int) parser.getTokenLocation().getByteOffset();
                         int depth = 1;
                         while (depth > 0) switch (parser.nextToken()) {
@@ -193,7 +203,7 @@ class HttpFeedClient implements FeedClient {
                             case END_ARRAY -> --depth;
                         }
                         int end = (int) parser.getTokenLocation().getByteOffset() + 1;
-                        trace = new String(response.body(), start, end - start, UTF_8);
+                        trace = new String(json, start, end - start, UTF_8);
                     }
                     default -> parser.nextToken();
                 }
@@ -203,22 +213,35 @@ class HttpFeedClient implements FeedClient {
                 throw new ResultParseException(
                         documentId,
                         "Expected '" + JsonToken.END_OBJECT + "', but found '" + parser.currentToken() + "' in: "
-                                + new String(response.body(), UTF_8));
+                        + new String(json, UTF_8));
         }
         catch (IOException e) {
             throw new ResultParseException(documentId, e);
         }
 
+        return new MessageAndTrace(message, trace);
+    }
+
+    static Result toResult(HttpRequest request, HttpResponse response, DocumentId documentId) {
+        Outcome outcome = switch (response.code()) {
+            case 200 -> Outcome.success;
+            case 412 -> Outcome.conditionNotMet;
+            case 502, 504, 507 -> Outcome.vespaFailure;
+            default -> Outcome.transportFailure;
+        };
+
+        MessageAndTrace mat = parse(documentId, response.body());
+
         if (outcome == Outcome.transportFailure) // Not a Vespa response, but a failure in the HTTP layer.
             throw new FeedException(
                     documentId,
                     "Status " + response.code() + " executing '" + request + "': "
-                            + (message == null ? new String(response.body(), UTF_8) : message));
+                            + (mat.message == null ? new String(response.body(), UTF_8) : mat.message));
 
         if (outcome == Outcome.vespaFailure)
-            throw new ResultException(documentId, message, trace);
+            throw new ResultException(documentId, mat.message, mat.trace);
 
-        return new ResultImpl(toResultType(outcome), documentId, message, trace);
+        return new ResultImpl(toResultType(outcome), documentId, mat.message, mat.trace);
     }
 
     static String getPath(DocumentId documentId) {

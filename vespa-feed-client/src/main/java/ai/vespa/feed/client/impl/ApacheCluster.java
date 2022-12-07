@@ -188,9 +188,14 @@ class ApacheCluster implements Cluster {
         }
 
         @Override
+        public String contentType() {
+            return wrapped.getContentType().getMimeType();
+        }
+
+        @Override
         public String toString() {
             return "HTTP response with code " + code() +
-                   (body() != null ? " and body '" + new String(body(), UTF_8) + "'" : "");
+                   (body() != null ? " and body '" + wrapped.getBodyText() + "'" : "");
         }
 
     }
