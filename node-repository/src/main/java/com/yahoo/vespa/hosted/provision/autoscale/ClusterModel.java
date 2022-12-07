@@ -72,6 +72,7 @@ public class ClusterModel {
         this.scalingDuration = computeScalingDuration(cluster, clusterSpec);
         this.clusterTimeseries = metricsDb.getClusterTimeseries(application.id(), cluster.id());
         this.nodeTimeseries = new ClusterNodesTimeseries(scalingDuration(), cluster, nodes, metricsDb);
+        System.out.println("Scaling duration: " + scalingDuration + ", measurements per node: " + nodeTimeseries.measurementsPerNode());
     }
 
     ClusterModel(Zone zone,
@@ -100,6 +101,7 @@ public class ClusterModel {
 
     /** Returns the relative load adjustment that should be made to this cluster given available measurements. */
     public Load loadAdjustment() {
+        System.out.println("Node timeseries is empty: " + nodeTimeseries().isEmpty());
         if (nodeTimeseries().isEmpty()) return Load.one();
 
         Load adjustment = peakLoad().divide(idealLoad());
@@ -111,7 +113,6 @@ public class ClusterModel {
     /** Are we in a position to make decisions to scale down at this point? */
     private boolean safeToScaleDown() {
         if (hasScaledIn(scalingDuration().multipliedBy(3))) return false;
-        if (nodeTimeseries().measurementsPerNode() < 4) return false;
         if (nodeTimeseries().nodesMeasured() != nodeCount()) return false;
         return true;
     }
