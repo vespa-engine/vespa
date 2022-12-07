@@ -209,9 +209,13 @@
       "public void addDocumentOperation(com.yahoo.document.DocumentOperation)",
       "public java.util.List getDocumentOperations()",
       "public com.yahoo.docproc.CallStack callStack()",
+      "public void setExpiresAt(java.time.Instant)",
+      "public java.time.Duration timeLeft()",
       "public java.lang.String toString()"
     ],
-    "fields" : [ ]
+    "fields" : [
+      "public static final java.time.Duration NO_TIMEOUT"
+    ]
   },
   "com.yahoo.docproc.SimpleDocumentProcessor" : {
     "superClass" : "com.yahoo.docproc.DocumentProcessor",
