@@ -15,16 +15,23 @@ import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.JsonToken;
 
 import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
+import java.time.Duration;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.StringJoiner;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Supplier;
 
+import static ai.vespa.feed.client.OperationParameters.empty;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.Objects.requireNonNull;
 
@@ -51,6 +58,7 @@ class HttpFeedClient implements FeedClient {
         this.requestHeaders = new HashMap<>(builder.requestHeaders);
         this.requestStrategy = requestStrategy;
         this.speedTest = builder.speedTest;
+        verifyConnection(builder);
     }
 
     @Override
@@ -113,6 +121,50 @@ class HttpFeedClient implements FeedClient {
         return promise;
     }
 
+    private void verifyConnection(FeedClientBuilderImpl builder) {
+        if (builder.dryrun) return;
+        try (Cluster cluster = new ApacheCluster(builder)) {
+            HttpRequest request = new HttpRequest("POST",
+                                                  getPath(DocumentId.of("feeder", "handshake", "dummy")) + getQuery(empty(), true),
+                                                  requestHeaders,
+                                                  null,
+                                                  Duration.ofSeconds(10));
+            CompletableFuture<HttpResponse> future = new CompletableFuture<>();
+            cluster.dispatch(request, future);
+            HttpResponse response = future.get(20, TimeUnit.SECONDS);
+            if (response.code() != 200) {
+                String message;
+                switch (response.contentType()) { case "application/json": message = parseMessage(request.body()); break;
+                    case "text/plain": message = new String(request.body(), UTF_8); break;
+                    default: message = response.toString(); break;
+                }
+                throw new FeedException("server responded non-OK to handshake: " + message);
+            }
+        }
+        catch (IOException e) {
+            throw new FeedException("failed initiating handshake with server: " + e, e);
+        }
+        catch (ExecutionException e) {
+            throw new FeedException("failed handshake with server: " + e.getCause(), e.getCause());
+        }
+        catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new FeedException("interrupted during handshake with server", e);
+        }
+        catch (TimeoutException e) {
+            throw new FeedException("timed out during handshake with server", e);
+        }
+    }
+
+    private static String parseMessage(byte[] json) {
+        try {
+            return parse(null, json).message;
+        }
+        catch (Exception e) {
+            return new String(json, UTF_8);
+        }
+    }
+
     private enum Outcome { success, conditionNotMet, vespaFailure, transportFailure };
 
     static Result.Type toResultType(Outcome outcome) {
@@ -123,6 +175,64 @@ class HttpFeedClient implements FeedClient {
         }
     }
 
+    private static class MessageAndTrace {
+        final String message;
+        final String trace;
+        MessageAndTrace(String message, String trace) {
+            this.message = message;
+            this.trace = trace;
+        }
+    }
+
+    static MessageAndTrace parse(DocumentId documentId, byte[] json) {
+        String message = null;
+        String trace = null;
+        try (JsonParser parser = factory.createParser(json)) {
+            if (parser.nextToken() != JsonToken.START_OBJECT)
+                throw new ResultParseException(
+                        documentId,
+                        "Expected '" + JsonToken.START_OBJECT + "', but found '" + parser.currentToken() + "' in: " +
+                        new String(json, UTF_8));
+
+            String name;
+            while ((name = parser.nextFieldName()) != null) {
+                switch (name) {
+                    case "message":
+                        message = parser.nextTextValue();
+                        break;
+                    case "trace":
+                        if (parser.nextToken() != JsonToken.START_ARRAY)
+                            throw new ResultParseException(documentId,
+                                                           "Expected 'trace' to be an array, but got '" + parser.currentToken() + "' in: " +
+                                                           new String(json, UTF_8));
+                        int start = (int) parser.getTokenLocation().getByteOffset();
+                        int depth = 1;
+                        while (depth > 0) switch (parser.nextToken()) {
+                            case START_ARRAY: ++depth; break;
+                            case END_ARRAY: --depth; break;
+                        }
+                        int end = (int) parser.getTokenLocation().getByteOffset() + 1;
+                        trace = new String(json, start, end - start, UTF_8);
+                        break;
+                    default:
+                        parser.nextToken();
+                        break;
+                }
+            }
+
+            if (parser.currentToken() != JsonToken.END_OBJECT)
+                throw new ResultParseException(
+                        documentId,
+                        "Expected '" + JsonToken.END_OBJECT + "', but found '" + parser.currentToken() + "' in: "
+                        + new String(json, UTF_8));
+        }
+        catch (IOException e) {
+            throw new ResultParseException(documentId, e);
+        }
+
+        return new MessageAndTrace(message, trace);
+    }
+
     static Result toResult(HttpRequest request, HttpResponse response, DocumentId documentId) {
         Outcome outcome;
         switch (response.code()) {
@@ -131,61 +241,21 @@ class HttpFeedClient implements FeedClient {
             case 502:
             case 504:
             case 507: outcome = Outcome.vespaFailure; break;
-            default:  outcome = Outcome.transportFailure;
+            default: outcome = Outcome.transportFailure; break;
         }
 
-        String message = null;
-        String trace = null;
-        try {
-            JsonParser parser = factory.createParser(response.body());
-            if (parser.nextToken() != JsonToken.START_OBJECT)
-                throw new ResultParseException(
-                        documentId,
-                        "Expected '" + JsonToken.START_OBJECT + "', but found '" + parser.currentToken() + "' in: " +
-                        new String(response.body(), UTF_8));
-
-            String name;
-            while ((name = parser.nextFieldName()) != null) {
-                switch (name) {
-                    case "message": message = parser.nextTextValue(); break;
-                    case "trace": {
-                        if (parser.nextToken() != JsonToken.START_ARRAY)
-                            throw new ResultParseException(documentId,
-                                                           "Expected 'trace' to be an array, but got '" + parser.currentToken() + "' in: " +
-                                                           new String(response.body(), UTF_8));
-                        int start = (int) parser.getTokenLocation().getByteOffset();
-                        int depth = 1;
-                        while (depth > 0) switch (parser.nextToken()) {
-                            case START_ARRAY: ++depth; break;
-                            case END_ARRAY:   --depth; break;
-                        }
-                        int end = (int) parser.getTokenLocation().getByteOffset() + 1;
-                        trace = new String(response.body(), start, end - start, UTF_8);
-                    }; break;
-                    default: parser.nextToken();
-                }
-            }
-
-            if (parser.currentToken() != JsonToken.END_OBJECT)
-                throw new ResultParseException(
-                        documentId,
-                        "Expected '" + JsonToken.END_OBJECT + "', but found '" + parser.currentToken() + "' in: "
-                                + new String(response.body(), UTF_8));
-        }
-        catch (IOException e) {
-            throw new ResultParseException(documentId, e);
-        }
+        MessageAndTrace mat = parse(documentId, response.body());
 
         if (outcome == Outcome.transportFailure) // Not a Vespa response, but a failure in the HTTP layer.
             throw new FeedException(
                     documentId,
                     "Status " + response.code() + " executing '" + request + "': "
-                            + (message == null ? new String(response.body(), UTF_8) : message));
+                            + (mat.message == null ? new String(response.body(), UTF_8) : mat.message));
 
         if (outcome == Outcome.vespaFailure)
-            throw new ResultException(documentId, message, trace);
+            throw new ResultException(documentId, mat.message, mat.trace);
 
-        return new ResultImpl(toResultType(outcome), documentId, message, trace);
+        return new ResultImpl(toResultType(outcome), documentId, mat.message, mat.trace);
     }
 
     static String getPath(DocumentId documentId) {
