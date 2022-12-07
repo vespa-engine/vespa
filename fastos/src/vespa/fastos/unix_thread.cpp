@@ -37,7 +37,7 @@ bool FastOS_UNIX_Thread::CleanupClass ()
     return true;
 }
 
-bool FastOS_UNIX_Thread::Initialize (int stackSize, int stackGuardSize)
+bool FastOS_UNIX_Thread::Initialize (int /*stackSize*/, int stackGuardSize)
 {
     bool rc=false;
 
@@ -61,22 +61,7 @@ bool FastOS_UNIX_Thread::Initialize (int stackSize, int stackGuardSize)
     if (stackGuardSize != 0) {
         pthread_attr_setguardsize(&attr, stackGuardSize);
     }
-
     pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_JOINABLE);
-
-    size_t adjusted_stack_size = stackSize;
-#ifdef __linux__
-    ssize_t stack_needed_by_system = __pthread_get_minstack(&attr);
-    adjusted_stack_size += stack_needed_by_system;
-#else
-    adjusted_stack_size += PTHREAD_STACK_MIN;
-#endif
-    if (getenv("VESPA_IGNORE_REQUESTED_STACK_SIZES") == nullptr) {
-        //fprintf(stderr, "pthread_create: using adjusted stack size %zd\n", adjusted_stack_size);
-        pthread_attr_setstacksize(&attr, adjusted_stack_size);
-    } else {
-        //fprintf(stderr, "pthread_create: ignoring requested stack size %d\n", stackSize);
-    }
 
     rc = (0 == pthread_create(&_handle, &attr, FastOS_ThreadHook, this));
     if (rc)
