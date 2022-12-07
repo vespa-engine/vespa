@@ -169,6 +169,7 @@ public class DeploymentApiHandler extends ThreadedHttpRequestHandler {
                       instanceObject.setString("application", instance.application().value());
                       instanceObject.setString("instance", instance.instance().value());
                       instanceObject.setBool("upgrading", status.application().require(instance.instance()).change().platform().equals(Optional.of(statistics.version())));
+                      instanceObject.setBool("pinned", status.application().require(instance.instance()).change().isPinned());
                       DeploymentStatus.StepStatus stepStatus = status.instanceSteps().get(instance.instance());
                       if (stepStatus != null) { // Instance may not have any steps, i.e. an empty deployment spec has been submitted
                           stepStatus.blockedUntil(Change.of(statistics.version()))
