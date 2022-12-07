@@ -404,7 +404,7 @@ Requires: %{name}-base-libs = %{version}-%{release}
 Requires: %{name}-libs = %{version}-%{release}
 %if 0%{?el8}
 %if 0%{?_centos_stream}
-BuildRequires: python39
+Requires: python39
 %else
 Requires: python36
 %endif
