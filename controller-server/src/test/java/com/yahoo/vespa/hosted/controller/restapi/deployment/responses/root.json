@@ -36,6 +36,7 @@
           "application": "application1",
           "instance": "default",
           "upgrading": false,
+          "pinned": false,
           "upgradePolicy": "default",
           "compileVersion": "6.1.0",
           "jobs": [
@@ -77,6 +78,7 @@
           "application": "application2",
           "instance": "i2",
           "upgrading": false,
+          "pinned": false,
           "upgradePolicy": "default",
           "compileVersion": "6.1.0",
           "jobs": [
@@ -185,6 +187,7 @@
           "application": "application1",
           "instance": "default",
           "upgrading": true,
+          "pinned": false,
           "upgradePolicy": "default",
           "compileVersion": "6.1.0",
           "jobs": [
@@ -265,6 +268,7 @@
           "application": "application2",
           "instance": "i1",
           "upgrading": false,
+          "pinned": false,
           "upgradePolicy": "default",
           "compileVersion": "6.1.0",
           "jobs": [
@@ -324,6 +328,7 @@
           "application": "application2",
           "instance": "i2",
           "upgrading": true,
+          "pinned": false,
           "upgradePolicy": "default",
           "compileVersion": "6.1.0",
           "jobs": [
