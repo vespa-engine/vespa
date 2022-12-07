@@ -842,7 +842,7 @@ void
 MaintenanceControllerFixture::performStartMaintenance()
 {
     injectMaintenanceJobs();
-    _mc.start(_mcCfg);
+    _mc.start();
 }
 
 
@@ -867,7 +867,7 @@ MaintenanceControllerFixture::performForwardMaintenanceConfig()
 {
     _mc.killJobs();
     injectMaintenanceJobs();
-    _mc.newConfig(_mcCfg);
+    _mc.newConfig();
 }
 
 
