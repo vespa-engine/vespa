@@ -4,6 +4,7 @@ package ai.vespa.feed.client.impl;
 import ai.vespa.feed.client.DocumentId;
 import ai.vespa.feed.client.FeedClient;
 import ai.vespa.feed.client.FeedClientBuilder;
+import ai.vespa.feed.client.FeedException;
 import ai.vespa.feed.client.HttpResponse;
 import ai.vespa.feed.client.OperationParameters;
 import ai.vespa.feed.client.OperationStats;
@@ -42,7 +43,8 @@ class HttpFeedClientTest {
             @Override public void await() { throw new UnsupportedOperationException(); }
             @Override public CompletableFuture<HttpResponse> enqueue(DocumentId documentId, HttpRequest request) { return dispatch.get().apply(documentId, request); }
         }
-        FeedClient client = new HttpFeedClient(new FeedClientBuilderImpl(Collections.singletonList(URI.create("https://dummy:123"))), new MockRequestStrategy());
+        FeedClient client = new HttpFeedClient(new FeedClientBuilderImpl(Collections.singletonList(URI.create("https://dummy:123"))).setDryrun(true),
+                                               new MockRequestStrategy());
 
         // Update is a PUT, and 200 OK is a success.
         dispatch.set((documentId, request) -> {
@@ -201,6 +203,14 @@ class HttpFeedClientTest {
                                                  OperationParameters.empty())
                                             .get());
         assertEquals("Status 500 executing 'POST /document/v1/ns/type/docid/0': Alla ska i jorden.", expected.getCause().getMessage());
+    }
+
+    @Test
+    void testHandshake() {
+        assertEquals("failed handshake with server: java.net.UnknownHostException: dummy: nodename nor servname provided, or not known",
+                     assertThrows(FeedException.class,
+                                  () -> new HttpFeedClient(new FeedClientBuilderImpl(Collections.singletonList(URI.create("https://dummy:123"))), null))
+                             .getMessage());
     }
 
 }
