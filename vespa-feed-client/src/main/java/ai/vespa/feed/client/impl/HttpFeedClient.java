@@ -134,10 +134,12 @@ class HttpFeedClient implements FeedClient {
             HttpResponse response = future.get(20, TimeUnit.SECONDS);
             if (response.code() != 200) {
                 String message;
-                switch (response.contentType()) { case "application/json": message = parseMessage(request.body()); break;
-                    case "text/plain": message = new String(request.body(), UTF_8); break;
+                if (response.body() != null) switch (response.contentType()) {
+                    case "application/json": message = parseMessage(response.body()); break;
+                    case "text/plain": message = new String(response.body(), UTF_8); break;
                     default: message = response.toString(); break;
                 }
+                else message = response.toString();
                 throw new FeedException("server responded non-OK to handshake: " + message);
             }
         }
