@@ -53,15 +53,6 @@ public class ClusterCapacityTest {
         assertEquals(0.0, deserialized.diskGb(), 0.0001);
         assertEquals(1.0, deserialized.bandwidthGbps(), 0.0001);  // 1.0 is used as fallback
         assertEquals(7, deserialized.count());
-
-        // Test that no values for node resources is allowed in json also
-        String jsonWithNoValuesForNodeResources = "{\"count\":7}";
-        deserialized = mapper.readValue(jsonWithNoValuesForNodeResources, ClusterCapacity.class);
-        assertEquals(0.0, deserialized.vcpu(), 0.0001);
-        assertEquals(0.0, deserialized.memoryGb(), 0.0001);
-        assertEquals(0.0, deserialized.diskGb(), 0.0001);
-        assertEquals(1.0, deserialized.bandwidthGbps(), 0.0001);  // 1.0 is used as fallback
-        assertEquals(7, deserialized.count());
     }
 
 }
