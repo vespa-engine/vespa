@@ -244,7 +244,12 @@ class HttpFeedClient implements FeedClient {
     }
 
     static String encode(String raw) {
-        return URLEncoder.encode(raw, UTF_8);
+        try {
+            return URLEncoder.encode(raw, UTF_8.name());
+        }
+        catch (UnsupportedEncodingException e) {
+            throw new IllegalStateException(e);
+        }
     }
 
     static String getQuery(OperationParameters params, boolean speedTest) {
