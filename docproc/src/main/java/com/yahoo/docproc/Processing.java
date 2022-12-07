@@ -228,8 +228,8 @@ public final class Processing extends ProcessingAccess {
     public static final Duration NO_TIMEOUT = Duration.ofDays(10);
     /** @return time left or {@link #NO_TIMEOUT} if processing has no timeout */
     public Duration timeLeft() {
-        Instant now = SystemTimer.INSTANCE.instant();
         if (expiresAt == Instant.MAX) return NO_TIMEOUT;
+        Instant now = SystemTimer.INSTANCE.instant();
         if (now.isAfter(expiresAt)) return Duration.ZERO;
         return Duration.between(now, expiresAt);
     }
