@@ -133,11 +133,11 @@ class HttpFeedClient implements FeedClient {
             cluster.dispatch(request, future);
             HttpResponse response = future.get(20, TimeUnit.SECONDS);
             if (response.code() != 200) {
-                String message = switch (response.contentType()) {
-                    case "application/json" -> parseMessage(request.body());
-                    case "text/plain" -> new String(request.body(), UTF_8);
-                    default -> response.toString();
-                };
+                String message;
+                switch (response.contentType()) { case "application/json": message = parseMessage(request.body()); break;
+                    case "text/plain": message = new String(request.body(), UTF_8); break;
+                    default: message = response.toString(); break;
+                }
                 throw new FeedException("server responded non-OK to handshake: " + message);
             }
         }
@@ -168,14 +168,21 @@ class HttpFeedClient implements FeedClient {
     private enum Outcome { success, conditionNotMet, vespaFailure, transportFailure };
 
     static Result.Type toResultType(Outcome outcome) {
-        return switch (outcome) {
-            case success -> Result.Type.success;
-            case conditionNotMet -> Result.Type.conditionNotMet;
-            default -> throw new IllegalArgumentException("No corresponding result type for '" + outcome + "'");
-        };
+        switch (outcome) {
+            case success: return Result.Type.success;
+            case conditionNotMet: return Result.Type.conditionNotMet;
+            default: throw new IllegalArgumentException("No corresponding result type for '" + outcome + "'");
+        }
     }
 
-    record MessageAndTrace(String message, String trace) { }
+    private static class MessageAndTrace {
+        final String message;
+        final String trace;
+        MessageAndTrace(String message, String trace) {
+            this.message = message;
+            this.trace = trace;
+        }
+    }
 
     static MessageAndTrace parse(DocumentId documentId, byte[] json) {
         String message = null;
@@ -190,8 +197,10 @@ class HttpFeedClient implements FeedClient {
             String name;
             while ((name = parser.nextFieldName()) != null) {
                 switch (name) {
-                    case "message" -> message = parser.nextTextValue();
-                    case "trace" -> {
+                    case "message":
+                        message = parser.nextTextValue();
+                        break;
+                    case "trace":
                         if (parser.nextToken() != JsonToken.START_ARRAY)
                             throw new ResultParseException(documentId,
                                                            "Expected 'trace' to be an array, but got '" + parser.currentToken() + "' in: " +
@@ -199,13 +208,15 @@ class HttpFeedClient implements FeedClient {
                         int start = (int) parser.getTokenLocation().getByteOffset();
                         int depth = 1;
                         while (depth > 0) switch (parser.nextToken()) {
-                            case START_ARRAY -> ++depth;
-                            case END_ARRAY -> --depth;
+                            case START_ARRAY: ++depth; break;
+                            case END_ARRAY: --depth; break;
                         }
                         int end = (int) parser.getTokenLocation().getByteOffset() + 1;
                         trace = new String(json, start, end - start, UTF_8);
-                    }
-                    default -> parser.nextToken();
+                        break;
+                    default:
+                        parser.nextToken();
+                        break;
                 }
             }
 
@@ -223,12 +234,15 @@ class HttpFeedClient implements FeedClient {
     }
 
     static Result toResult(HttpRequest request, HttpResponse response, DocumentId documentId) {
-        Outcome outcome = switch (response.code()) {
-            case 200 -> Outcome.success;
-            case 412 -> Outcome.conditionNotMet;
-            case 502, 504, 507 -> Outcome.vespaFailure;
-            default -> Outcome.transportFailure;
-        };
+        Outcome outcome;
+        switch (response.code()) {
+            case 200: outcome = Outcome.success; break;
+            case 412: outcome = Outcome.conditionNotMet; break;
+            case 502:
+            case 504:
+            case 507: outcome = Outcome.vespaFailure; break;
+            default: outcome = Outcome.transportFailure; break;
+        }
 
         MessageAndTrace mat = parse(documentId, response.body());
 

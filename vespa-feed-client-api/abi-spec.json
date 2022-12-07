@@ -176,6 +176,7 @@
     "methods" : [
       "public abstract int code()",
       "public abstract byte[] body()",
+      "public java.lang.String contentType()",
       "public static ai.vespa.feed.client.HttpResponse of(int, byte[])"
     ],
     "fields" : [ ]
