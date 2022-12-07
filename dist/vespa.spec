@@ -62,7 +62,7 @@ BuildRequires: gcc-toolset-11-libatomic-devel
 %endif
 BuildRequires: maven
 BuildRequires: maven-openjdk17
-BuildRequires: pybind11-devel
+BuildRequires: vespa-pybind11-devel
 BuildRequires: python3-pytest
 BuildRequires: python36-devel
 BuildRequires: glibc-langpack-en
