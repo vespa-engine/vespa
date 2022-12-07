@@ -291,7 +291,8 @@ public class NodesV2ApiHandler extends ThreadedHttpRequestHandler {
                                            IP.Config.of(ipAddresses, ipAddressPool, addressPool),
                                            inspector.field("hostname").asString(),
                                            flavorFromSlime(inspector),
-                                           nodeTypeFromSlime(inspector.field("type")));
+                                           nodeTypeFromSlime(inspector.field("type")))
+                                   .cloudAccount(nodeRepository.zone().cloud().account());
         optionalString(inspector.field("parentHostname")).ifPresent(builder::parentHostname);
         optionalString(inspector.field("modelName")).ifPresent(builder::modelName);
         optionalString(inspector.field("reservedTo")).map(TenantName::from).ifPresent(builder::reservedTo);
