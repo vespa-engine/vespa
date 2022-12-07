@@ -19,36 +19,46 @@ import java.util.OptionalDouble;
 @JsonInclude(value = JsonInclude.Include.NON_NULL)
 public class ClusterCapacity {
     private final int count;
-    private final double vcpu;
-    private final double memoryGb;
-    private final double diskGb;
+    private final OptionalDouble vcpu;
+    private final OptionalDouble memoryGb;
+    private final OptionalDouble diskGb;
     private final OptionalDouble bandwidthGbps;
 
     @JsonCreator
     public ClusterCapacity(@JsonProperty("count") int count,
-                           @JsonProperty("vcpu") double vcpu,
-                           @JsonProperty("memoryGb") double memoryGb,
-                           @JsonProperty("diskGb") double diskGb,
+                           @JsonProperty("vcpu") Double vcpu,
+                           @JsonProperty("memoryGb") Double memoryGb,
+                           @JsonProperty("diskGb") Double diskGb,
                            @JsonProperty("bandwidthGbps") Double bandwidthGbps) {
         this.count = (int) requireNonNegative("count", count);
-        this.vcpu = requireNonNegative("vcpu", vcpu);
-        this.memoryGb = requireNonNegative("memoryGb", memoryGb);
-        this.diskGb = requireNonNegative("diskGb", diskGb);
+        this.vcpu = vcpu == null ? OptionalDouble.empty() : OptionalDouble.of(requireNonNegative("vcpu", vcpu));
+        this.memoryGb = memoryGb == null ? OptionalDouble.empty() : OptionalDouble.of(requireNonNegative("memoryGb", memoryGb));
+        this.diskGb = diskGb == null ? OptionalDouble.empty() : OptionalDouble.of(requireNonNegative("diskGb", diskGb));
         this.bandwidthGbps = bandwidthGbps == null ? OptionalDouble.empty() : OptionalDouble.of(bandwidthGbps);
     }
 
     /** Returns a new ClusterCapacity equal to {@code this}, but with the given count. */
     public ClusterCapacity withCount(int count) {
-        return new ClusterCapacity(count, vcpu, memoryGb, diskGb, bandwidthGbpsOrNull());
+        return new ClusterCapacity(count, vcpuOrNull(), memoryGbOrNull(), diskGbOrNull(), bandwidthGbpsOrNull());
     }
 
     @JsonGetter("count") public int count() { return count; }
-    @JsonGetter("vcpu") public double vcpu() { return vcpu; }
-    @JsonGetter("memoryGb") public double memoryGb() { return memoryGb; }
-    @JsonGetter("diskGb") public double diskGb() { return diskGb; }
+    @JsonGetter("vcpu") public Double vcpuOrNull() {
+        return vcpu.isPresent() ? vcpu.getAsDouble() : null;
+    }
+    @JsonGetter("memoryGb") public Double memoryGbOrNull() {
+        return memoryGb.isPresent() ? memoryGb.getAsDouble() : null;
+    }
+    @JsonGetter("diskGb") public Double diskGbOrNull() {
+        return diskGb.isPresent() ? diskGb.getAsDouble() : null;
+    }
     @JsonGetter("bandwidthGbps") public Double bandwidthGbpsOrNull() {
         return bandwidthGbps.isPresent() ? bandwidthGbps.getAsDouble() : null;
     }
+
+    @JsonIgnore public Double vcpu() { return vcpu.orElse(0.0); }
+    @JsonIgnore public Double memoryGb() { return memoryGb.orElse(0.0); }
+    @JsonIgnore public Double diskGb() { return diskGb.orElse(0.0); }
 
     @JsonIgnore
     public double bandwidthGbps() { return bandwidthGbps.orElse(1.0); }
@@ -70,9 +80,9 @@ public class ClusterCapacity {
         if (o == null || getClass() != o.getClass()) return false;
         ClusterCapacity that = (ClusterCapacity) o;
         return count == that.count &&
-                Double.compare(that.vcpu, vcpu) == 0 &&
-                Double.compare(that.memoryGb, memoryGb) == 0 &&
-                Double.compare(that.diskGb, diskGb) == 0 &&
+                vcpu.equals(that.vcpu) &&
+                memoryGb.equals(that.memoryGb) &&
+                diskGb.equals(that.diskGb) &&
                 bandwidthGbps.equals(that.bandwidthGbps);
     }
 
@@ -86,4 +96,5 @@ public class ClusterCapacity {
             throw new IllegalArgumentException("'" + name + "' must be positive, was " + value);
         return value;
     }
+
 }
