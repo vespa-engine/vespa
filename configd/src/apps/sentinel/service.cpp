@@ -2,6 +2,7 @@
 
 #include "service.h"
 #include "output-connection.h"
+#include "logctl.h"
 #include <vespa/vespalib/util/stringfmt.h>
 #include <vespa/vespalib/util/signalhandler.h>
 
@@ -328,6 +329,11 @@ Service::runChild()
 
     for (const auto &envvar : _config->environ) {
         setenv(envvar.varname.c_str(), envvar.varvalue.c_str(), 1);
+    }
+    for (const auto &logctl : _config->logctl) {
+        const auto cspec = _config->name + ":" + logctl.componentSpec;
+        const auto lspec = logctl.levelsModSpec;
+        justRunLogctl(cspec.c_str(), lspec.c_str());
     }
 
     // Set up environment

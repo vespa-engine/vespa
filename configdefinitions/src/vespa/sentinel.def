@@ -43,6 +43,10 @@ service[].command string
 service[].environ[].varname string
 service[].environ[].varvalue string
 
+## Tune log-level settings for specific components
+service[].logctl[].componentSpec string
+service[].logctl[].levelsModSpec string
+
 ## The command to run before stopping service. The same properties as for
 ## startup command holds.
 service[].preShutdownCommand string default=""

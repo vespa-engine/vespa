@@ -15,6 +15,7 @@ import com.yahoo.vespa.model.AbstractService;
 import com.yahoo.vespa.model.ConfigProxy;
 import com.yahoo.vespa.model.ConfigSentinel;
 import com.yahoo.vespa.model.HostResource;
+import com.yahoo.vespa.model.LogctlSpec;
 import com.yahoo.vespa.model.Logd;
 import com.yahoo.vespa.model.admin.clustercontroller.ClusterControllerContainer;
 import com.yahoo.vespa.model.admin.clustercontroller.ClusterControllerContainerCluster;
@@ -66,6 +67,14 @@ public class Admin extends AbstractConfigProducer<Admin> implements Serializable
     public void setLogForwarderConfig(LogForwarder.Config cfg, boolean includeAdmin) {
         this.logForwarderConfig = cfg;
         this.logForwarderIncludeAdmin = includeAdmin;
+    }
+
+    private final List<LogctlSpec> logctlSpecs = new ArrayList<>();
+    public List<LogctlSpec> getLogctlSpecs() {
+        return logctlSpecs;
+    }
+    public void addLogctlCommand(String componentSpec, String levelsModSpec) {
+        logctlSpecs.add(new LogctlSpec(componentSpec,  levelsModSpec));
     }
 
     /**

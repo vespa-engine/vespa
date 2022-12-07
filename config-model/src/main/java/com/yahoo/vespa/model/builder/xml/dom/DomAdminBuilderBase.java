@@ -110,4 +110,21 @@ public abstract class DomAdminBuilderBase extends VespaDomBuilder.DomConfigProdu
         }
     }
 
+    private void addLoggingSpec(ModelElement loggingSpec, Admin admin) {
+        if (loggingSpec == null) return;
+        String componentSpec = loggingSpec.requiredStringAttribute("name");
+        String levelsModSpec = loggingSpec.requiredStringAttribute("levels");
+        admin.addLogctlCommand(componentSpec, levelsModSpec);
+    }
+
+    void addLoggingSpecs(ModelElement loggingElement, Admin admin) {
+        if (loggingElement == null) return;
+        for (ModelElement e : loggingElement.children("class")) {
+            addLoggingSpec(e, admin);
+        }
+        for (ModelElement e : loggingElement.children("package")) {
+            addLoggingSpec(e, admin);
+        }
+    }
+
 }
