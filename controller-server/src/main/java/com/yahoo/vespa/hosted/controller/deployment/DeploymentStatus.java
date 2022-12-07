@@ -77,7 +77,7 @@ import static java.util.stream.Collectors.toUnmodifiableList;
 public class DeploymentStatus {
 
     private static <T> List<T> union(List<T> first, List<T> second) {
-        return Stream.concat(first.stream(), second.stream()).distinct().collect(toUnmodifiableList());
+        return Stream.concat(first.stream(), second.stream()).distinct().toList();
     }
 
     private final Application application;
