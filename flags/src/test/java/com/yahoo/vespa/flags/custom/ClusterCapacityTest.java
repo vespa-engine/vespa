@@ -9,6 +9,7 @@ import java.io.IOException;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class ClusterCapacityTest {
+
     @Test
     void serialization() throws IOException {
         ClusterCapacity clusterCapacity = new ClusterCapacity(7, 1.2, 3.4, 5.6, null);
@@ -38,4 +39,29 @@ public class ClusterCapacityTest {
         assertEquals(2.3, deserialized.bandwidthGbps(), 0.0001);
         assertEquals(7, deserialized.count());
     }
+
+    @Test
+    void serializationWithNoNodeResources() throws IOException {
+        ClusterCapacity clusterCapacity = new ClusterCapacity(7, null, null, null, null);
+        ObjectMapper mapper = new ObjectMapper();
+        String json = mapper.writeValueAsString(clusterCapacity);
+        assertEquals("{\"count\":7}", json);
+
+        ClusterCapacity deserialized = mapper.readValue(json, ClusterCapacity.class);
+        assertEquals(0.0, deserialized.vcpu(), 0.0001);
+        assertEquals(0.0, deserialized.memoryGb(), 0.0001);
+        assertEquals(0.0, deserialized.diskGb(), 0.0001);
+        assertEquals(1.0, deserialized.bandwidthGbps(), 0.0001);  // 1.0 is used as fallback
+        assertEquals(7, deserialized.count());
+
+        // Test that no values for node resources is allowed in json also
+        String jsonWithNoValuesForNodeResources = "{\"count\":7}";
+        deserialized = mapper.readValue(jsonWithNoValuesForNodeResources, ClusterCapacity.class);
+        assertEquals(0.0, deserialized.vcpu(), 0.0001);
+        assertEquals(0.0, deserialized.memoryGb(), 0.0001);
+        assertEquals(0.0, deserialized.diskGb(), 0.0001);
+        assertEquals(1.0, deserialized.bandwidthGbps(), 0.0001);  // 1.0 is used as fallback
+        assertEquals(7, deserialized.count());
+    }
+
 }
