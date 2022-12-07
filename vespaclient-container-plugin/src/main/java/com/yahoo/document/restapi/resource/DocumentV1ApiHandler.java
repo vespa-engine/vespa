@@ -1467,8 +1467,8 @@ public class DocumentV1ApiHandler extends AbstractRequestHandler {
             switch (response.getStatus()) {
                 case 200 -> report(DocumentOperationStatus.OK);
                 case 400 -> report(DocumentOperationStatus.REQUEST_ERROR);
-                case 404 -> report(DocumentOperationStatus.OK, DocumentOperationStatus.NOT_FOUND);
-                case 412 -> report(DocumentOperationStatus.OK, DocumentOperationStatus.CONDITION_FAILED);
+                case 404 -> report(DocumentOperationStatus.NOT_FOUND);
+                case 412 -> report(DocumentOperationStatus.CONDITION_FAILED);
                 case 429 -> report(DocumentOperationStatus.TOO_MANY_REQUESTS);
                 case 500,502,503,504,507 -> report(DocumentOperationStatus.SERVER_ERROR);
                 default -> throw new IllegalStateException("Unexpected status code '%s'".formatted(response.getStatus()));
