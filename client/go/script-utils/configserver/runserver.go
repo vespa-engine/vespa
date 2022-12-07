@@ -53,7 +53,7 @@ func (rs *RunServer) Exec(prog string) {
 		"--",
 		prog,
 	}
-	argv.AppendAll(argv...)
+	argv.AppendAll(rs.Args...)
 	err := util.Execvp(rs.ProgPath(), argv)
 	util.JustExitWith(err)
 }
