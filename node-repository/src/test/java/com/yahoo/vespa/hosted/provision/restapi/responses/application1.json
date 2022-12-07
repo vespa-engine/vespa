@@ -75,7 +75,7 @@
           "currentCpu": 0.0,
           "peakCpu": 0.0,
           "memory" : 0.0,
-          "idealMemory": 0.65,
+          "idealMemory": 0.8,
           "currentMemory": 0.0,
           "peakMemory": 0.0,
           "disk" : 0.0,

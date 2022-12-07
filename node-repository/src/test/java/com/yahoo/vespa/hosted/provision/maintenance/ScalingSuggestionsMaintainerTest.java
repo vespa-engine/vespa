@@ -70,7 +70,7 @@ public class ScalingSuggestionsMaintainerTest {
                                                                                    new TestMetric());
         maintainer.maintain();
 
-        assertEquals("12 nodes with [vcpu: 6.0, memory: 5.5 Gb, disk 10.0 Gb, bandwidth: 0.1 Gbps, architecture: x86_64]",
+        assertEquals("13 nodes with [vcpu: 5.5, memory: 4.5 Gb, disk 10.0 Gb, bandwidth: 0.1 Gbps, architecture: x86_64]",
                      suggestionOf(app1, cluster1, tester).get().resources().toString());
         assertEquals("8 nodes with [vcpu: 11.0, memory: 4.4 Gb, disk 11.8 Gb, bandwidth: 0.1 Gbps, architecture: x86_64]",
                      suggestionOf(app2, cluster2, tester).get().resources().toString());
@@ -80,7 +80,7 @@ public class ScalingSuggestionsMaintainerTest {
         addMeasurements(0.10f, 0.10f, 0.10f, 0, 500, app1, tester.nodeRepository());
         maintainer.maintain();
         assertEquals("Suggestion stays at the peak value observed",
-                     "12 nodes with [vcpu: 6.0, memory: 5.5 Gb, disk 10.0 Gb, bandwidth: 0.1 Gbps, architecture: x86_64]",
+                     "13 nodes with [vcpu: 5.5, memory: 4.5 Gb, disk 10.0 Gb, bandwidth: 0.1 Gbps, architecture: x86_64]",
                      suggestionOf(app1, cluster1, tester).get().resources().toString());
         // Utilization is still way down and a week has passed
         tester.clock().advance(Duration.ofDays(7));
