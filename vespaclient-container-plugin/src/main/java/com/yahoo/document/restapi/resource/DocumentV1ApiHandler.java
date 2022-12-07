@@ -1100,7 +1100,7 @@ public class DocumentV1ApiHandler extends AbstractRequestHandler {
         incrementMetricNumOperations(); incrementMetricNumPuts(); sampleLatency(latency);
         switch (outcome) {
             case SUCCESS -> incrementMetricSucceeded();
-            case CONDITION_FAILED -> { incrementMetricSucceeded(); incrementMetricConditionNotMet(); }
+            case CONDITION_FAILED -> incrementMetricConditionNotMet();
             default -> incrementMetricFailed();
         }
     }
@@ -1110,8 +1110,8 @@ public class DocumentV1ApiHandler extends AbstractRequestHandler {
         incrementMetricNumOperations(); incrementMetricNumUpdates(); sampleLatency(latency);
         switch (outcome) {
             case SUCCESS -> incrementMetricSucceeded();
-            case NOT_FOUND -> { incrementMetricSucceeded(); incrementMetricNotFound(); }
-            case CONDITION_FAILED -> { incrementMetricSucceeded(); incrementMetricConditionNotMet(); }
+            case NOT_FOUND -> incrementMetricNotFound();
+            case CONDITION_FAILED -> incrementMetricConditionNotMet();
             default -> incrementMetricFailed();
         }
     }
@@ -1119,9 +1119,8 @@ public class DocumentV1ApiHandler extends AbstractRequestHandler {
     private void updateRemoveMetrics(Outcome outcome, double latency) {
         incrementMetricNumOperations(); incrementMetricNumRemoves(); sampleLatency(latency);
         switch (outcome) {
-            case SUCCESS -> incrementMetricSucceeded();
-            case NOT_FOUND -> { incrementMetricSucceeded(); incrementMetricNotFound(); }
-            case CONDITION_FAILED -> { incrementMetricSucceeded(); incrementMetricConditionNotMet(); }
+            case SUCCESS,NOT_FOUND -> incrementMetricSucceeded();
+            case CONDITION_FAILED -> incrementMetricConditionNotMet();
             default -> incrementMetricFailed();
         }
     }
