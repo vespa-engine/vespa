@@ -1,11 +1,13 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.docproc.jdisc.messagebus;
 
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Logger;
 import com.yahoo.component.ComponentId;
 import com.yahoo.component.provider.ComponentRegistry;
+import com.yahoo.concurrent.SystemTimer;
 import com.yahoo.container.core.document.ContainerDocumentConfig;
 import com.yahoo.docproc.AbstractConcreteDocumentFactory;
 import com.yahoo.docproc.Processing;
@@ -98,7 +100,7 @@ class ProcessingFactory {
         Processing processing = new Processing();
         processing.addDocumentOperation(documentOperation);
         processing.setServiceName(serviceName);
-
+        processing.setExpiresAt(SystemTimer.INSTANCE.instant().plusMillis(message.getTimeRemainingNow()));
         processing.setVariable("route", message.getRoute());
         processing.setVariable("timeout", message.getTimeRemaining());
         return processing;
