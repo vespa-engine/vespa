@@ -2229,7 +2229,7 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
 
         Double speed = request.hasProperty("speed") ? Double.parseDouble(request.getProperty("speed")) : null;
         boolean indexedOnly = request.getBooleanProperty("indexedOnly");
-        controller.applications().reindex(id, zone, clusterNames, documentTypes, indexedOnly, speed);
+        controller.applications().reindex(id, zone, clusterNames, documentTypes, indexedOnly, speed, "reindexing triggered by " + requireUserPrincipal(request).getName());
         return new MessageResponse("Requested reindexing of " + id + " in " + zone +
                                    (clusterNames.isEmpty() ? "" : ", on clusters " + String.join(", ", clusterNames)) +
                                    (documentTypes.isEmpty() ? "" : ", for types " + String.join(", ", documentTypes)) +
@@ -2281,6 +2281,7 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
         status.message().ifPresent(message -> statusObject.setString("message", message));
         status.progress().ifPresent(progress -> statusObject.setDouble("progress", progress));
         status.speed().ifPresent(speed -> statusObject.setDouble("speed", speed));
+        status.cause().ifPresent(cause -> statusObject.setString("cause", cause));
     }
 
     private static String toString(ApplicationReindexing.State state) {

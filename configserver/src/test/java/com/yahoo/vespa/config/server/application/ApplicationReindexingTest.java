@@ -22,10 +22,10 @@ public class ApplicationReindexingTest {
     public void test() {
         ApplicationReindexing reindexing = ApplicationReindexing.empty()
                                                                 .withPending("one", "a", 10)
-                                                                .withReady("two", "b", Instant.ofEpochMilli(2), 3)
+                                                                .withReady("two", "b", Instant.ofEpochMilli(2), 3, "test reindexing")
                                                                 .withPending("two", "b", 20)
-                                                                .withReady("one", "a", Instant.ofEpochMilli(1), 1)
-                                                                .withReady("two", "a", Instant.ofEpochMilli(3), 2)
+                                                                .withReady("one", "a", Instant.ofEpochMilli(1), 1, "test reindexing")
+                                                                .withReady("two", "a", Instant.ofEpochMilli(3), 2, "test reindexing")
                                                                 .withoutPending("one", "a");
 
         assertEquals(Instant.ofEpochMilli(1),
@@ -51,14 +51,14 @@ public class ApplicationReindexingTest {
         assertEquals(Set.of("one", "two"),
                      reindexing.clusters().keySet());
 
-        assertEquals(Map.of("a", new Status(Instant.ofEpochMilli(1), 1)),
+        assertEquals(Map.of("a", new Status(Instant.ofEpochMilli(1), 1, "test reindexing")),
                      reindexing.clusters().get("one").ready());
 
         assertEquals(Map.of(),
                      reindexing.clusters().get("one").pending());
 
-        assertEquals(Map.of("a", new Status(Instant.ofEpochMilli(3), 2),
-                            "b", new Status(Instant.ofEpochMilli(2), 3)),
+        assertEquals(Map.of("a", new Status(Instant.ofEpochMilli(3), 2, "test reindexing"),
+                            "b", new Status(Instant.ofEpochMilli(2), 3, "test reindexing")),
                      reindexing.clusters().get("two").ready());
 
         assertEquals(Map.of("b", 20L),

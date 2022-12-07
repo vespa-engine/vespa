@@ -630,7 +630,7 @@ public class ApplicationApiTest extends ControllerContainerTest {
         // GET to get reindexing status
         tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/instance/instance1/environment/prod/region/us-central-1/reindexing", GET)
                         .userIdentity(USER_ID),
-                "{\"enabled\":true,\"clusters\":[{\"name\":\"cluster\",\"pending\":[{\"type\":\"type\",\"requiredGeneration\":100}],\"ready\":[{\"type\":\"type\",\"readyAtMillis\":345,\"startedAtMillis\":456,\"endedAtMillis\":567,\"state\":\"failed\",\"message\":\"(＃｀д´)ﾉ\",\"progress\":0.1,\"speed\":1.0}]}]}");
+                "{\"enabled\":true,\"clusters\":[{\"name\":\"cluster\",\"pending\":[{\"type\":\"type\",\"requiredGeneration\":100}],\"ready\":[{\"type\":\"type\",\"readyAtMillis\":345,\"startedAtMillis\":456,\"endedAtMillis\":567,\"state\":\"failed\",\"message\":\"(＃｀д´)ﾉ\",\"progress\":0.1,\"speed\":1.0,\"cause\":\"test reindexing\"}]}]}");
 
         // POST to request a service dump
         tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/instance/instance1/environment/prod/region/us-central-1/node/host-tenant1.application1.instance1-prod.us-central-1/service-dump", POST)

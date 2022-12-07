@@ -26,6 +26,9 @@ public interface Reindexing {
         /** The relative speed with which to reindex. */
         double speed();
 
+        /** The cause of reindexing for this document type. */
+        String cause();
+
     }
 
     Reindexing DISABLED_INSTANCE = new Reindexing() {};

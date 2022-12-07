@@ -241,37 +241,48 @@ public class ApplicationHandlerTest {
 
         clock.advance(Duration.ofSeconds(1));
         reindex(applicationId, "", "{\"message\":\"Reindexing document types [bar] in 'boo', [bar, bax, baz] in 'foo' of application default.default\"}");
-        expected = expected.withReady("boo", "bar", clock.instant(), 1).withReady("foo", "bar", clock.instant(), 1).withReady("foo", "baz", clock.instant(), 1).withReady("foo", "bax", clock.instant(), 1);
+        expected = expected.withReady("boo", "bar", clock.instant(), 1, "reindexing for an unknown reason")
+                           .withReady("foo", "bar", clock.instant(), 1, "reindexing for an unknown reason")
+                           .withReady("foo", "baz", clock.instant(), 1, "reindexing for an unknown reason")
+                           .withReady("foo", "bax", clock.instant(), 1, "reindexing for an unknown reason");
         assertEquals(expected,
                      database.readReindexingStatus(applicationId).orElseThrow());
 
         clock.advance(Duration.ofSeconds(1));
-        reindex(applicationId, "?indexedOnly=true", "{\"message\":\"Reindexing document types [bar] in 'foo' of application default.default\"}");
-        expected = expected.withReady("foo", "bar", clock.instant(), 1);
+        reindex(applicationId, "?indexedOnly=true&cause=test%20reindexing", "{\"message\":\"Reindexing document types [bar] in 'foo' of application default.default\"}");
+        expected = expected.withReady("foo", "bar", clock.instant(), 1, "test reindexing");
         assertEquals(expected,
                      database.readReindexingStatus(applicationId).orElseThrow());
 
         clock.advance(Duration.ofSeconds(1));
-        expected = expected.withReady("boo", "bar", clock.instant(), 1).withReady("foo", "bar", clock.instant(), 1).withReady("foo", "baz", clock.instant(), 1).withReady("foo", "bax", clock.instant(), 1);
-        reindex(applicationId, "?clusterId=", "{\"message\":\"Reindexing document types [bar] in 'boo', [bar, bax, baz] in 'foo' of application default.default\"}");
+        expected = expected.withReady("boo", "bar", clock.instant(), 1, "reindexing")
+                           .withReady("foo", "bar", clock.instant(), 1, "reindexing")
+                           .withReady("foo", "baz", clock.instant(), 1, "reindexing")
+                           .withReady("foo", "bax", clock.instant(), 1, "reindexing");
+        reindex(applicationId, "?clusterId=&cause=reindexing", "{\"message\":\"Reindexing document types [bar] in 'boo', [bar, bax, baz] in 'foo' of application default.default\"}");
         assertEquals(expected,
                      database.readReindexingStatus(applicationId).orElseThrow());
 
         clock.advance(Duration.ofSeconds(1));
-        expected = expected.withReady("boo", "bar", clock.instant(), 1).withReady("foo", "bar", clock.instant(), 1);
-        reindex(applicationId, "?documentType=bar", "{\"message\":\"Reindexing document types [bar] in 'boo', [bar] in 'foo' of application default.default\"}");
+        expected = expected.withReady("boo", "bar", clock.instant(), 1, "reindexing")
+                           .withReady("foo", "bar", clock.instant(), 1, "reindexing");
+        reindex(applicationId, "?documentType=bar&cause=reindexing", "{\"message\":\"Reindexing document types [bar] in 'boo', [bar] in 'foo' of application default.default\"}");
         assertEquals(expected,
                      database.readReindexingStatus(applicationId).orElseThrow());
 
         clock.advance(Duration.ofSeconds(1));
-        reindex(applicationId, "?clusterId=foo,boo", "{\"message\":\"Reindexing document types [bar] in 'boo', [bar, bax, baz] in 'foo' of application default.default\"}");
-        expected = expected.withReady("boo", "bar", clock.instant(), 1).withReady("foo", "bar", clock.instant(), 1).withReady("foo", "baz", clock.instant(), 1).withReady("foo", "bax", clock.instant(), 1);
+        reindex(applicationId, "?clusterId=foo,boo&cause=reindexing", "{\"message\":\"Reindexing document types [bar] in 'boo', [bar, bax, baz] in 'foo' of application default.default\"}");
+        expected = expected.withReady("boo", "bar", clock.instant(), 1, "reindexing")
+                           .withReady("foo", "bar", clock.instant(), 1, "reindexing")
+                           .withReady("foo", "baz", clock.instant(), 1, "reindexing")
+                           .withReady("foo", "bax", clock.instant(), 1, "reindexing");
         assertEquals(expected,
                      database.readReindexingStatus(applicationId).orElseThrow());
 
         clock.advance(Duration.ofSeconds(1));
-        reindex(applicationId, "?clusterId=foo&documentType=bar,baz&speed=0.1", "{\"message\":\"Reindexing document types [bar, baz] in 'foo' of application default.default\"}");
-        expected = expected.withReady("foo", "bar", clock.instant(), 0.1).withReady("foo", "baz", clock.instant(), 0.1);
+        reindex(applicationId, "?clusterId=foo&documentType=bar,baz&speed=0.1&cause=reindexing", "{\"message\":\"Reindexing document types [bar, baz] in 'foo' of application default.default\"}");
+        expected = expected.withReady("foo", "bar", clock.instant(), 0.1, "reindexing")
+                           .withReady("foo", "baz", clock.instant(), 0.1, "reindexing");
         assertEquals(expected,
                      database.readReindexingStatus(applicationId).orElseThrow());
 
@@ -298,7 +309,8 @@ public class ApplicationHandlerTest {
                                        "      \"ready\": {" +
                                        "        \"bar\": {" +
                                        "          \"readyMillis\": " + (now - 1000) + ", " +
-                                       "          \"speed\": 1.0" +
+                                       "          \"speed\": 1.0," +
+                                       "          \"cause\": \"reindexing\"" +
                                        "        }" +
                                        "      }" +
                                        "    }," +
@@ -307,15 +319,18 @@ public class ApplicationHandlerTest {
                                        "      \"ready\": {" +
                                        "        \"bar\": {" +
                                        "          \"readyMillis\": " + now + ", " +
-                                       "          \"speed\": 0.1" +
+                                       "          \"speed\": 0.1," +
+                                       "          \"cause\": \"reindexing\"" +
                                        "        }," +
                                        "        \"bax\": {" +
                                        "          \"readyMillis\": " + (now - 1000) + ", " +
-                                       "          \"speed\": 1.0" +
+                                       "          \"speed\": 1.0," +
+                                       "          \"cause\": \"reindexing\"" +
                                        "        }," +
                                        "        \"baz\": {" +
                                        "          \"readyMillis\": " + now + ", " +
-                                       "          \"speed\": 0.1" +
+                                       "          \"speed\": 0.1," +
+                                       "          \"cause\": \"reindexing\"" +
                                        "        }" +
                                        "      }" +
                                        "    }" +
@@ -499,7 +514,7 @@ public class ApplicationHandlerTest {
     public void testReindexingSerialization() throws IOException {
         Instant now = Instant.ofEpochMilli(123456);
         ApplicationReindexing applicationReindexing = ApplicationReindexing.empty()
-                                                                           .withPending("foo", "bar", 123L).withReady("moo", "baz", now, 1);
+                                                                           .withPending("foo", "bar", 123L).withReady("moo", "baz", now, 1, "reindexing");
         ClusterReindexing clusterReindexing = new ClusterReindexing(Map.of("bax", new Status(now, null, null, null, null),
                                                                            "baz", new Status(now.plusSeconds(1),
                                                                                              now.plusSeconds(2),
@@ -514,53 +529,56 @@ public class ApplicationHandlerTest {
                                                                   applicationReindexing,
                                                                   Map.of("boo", clusterReindexing,
                                                                          "moo", clusterReindexing))),
-                         "{\n" +
-                         "  \"enabled\": true,\n" +
-                         "  \"clusters\": {\n" +
-                         "    \"boo\": {\n" +
-                         "      \"pending\": {},\n" +
-                         "      \"ready\": {\n" +
-                         "        \"bar\": {},\n" +
-                         "        \"bax\": {\n" +
-                         "          \"startedMillis\": 123456\n" +
-                         "        },\n" +
-                         "        \"baz\": {\n" +
-                         "          \"startedMillis\": 124456,\n" +
-                         "          \"endedMillis\": 125456,\n" +
-                         "          \"state\": \"failed\",\n" +
-                         "          \"message\": \"message\",\n" +
-                         "          \"progress\": 0.1\n" +
-                         "        }\n" +
-                         "      }\n" +
-                         "    },\n" +
-                         "    \"foo\": {\n" +
-                         "      \"pending\": {\n" +
-                         "        \"bar\": 123\n" +
-                         "      },\n" +
-                         "      \"ready\": {\n" +
-                         "        \"bar\": {},\n" +
-                         "        \"hax\": {}\n" +
-                         "      }\n" +
-                         "    },\n" +
-                         "    \"moo\": {\n" +
-                         "      \"pending\": {},\n" +
-                         "      \"ready\": {\n" +
-                         "        \"bax\": {\n" +
-                         "          \"startedMillis\": 123456\n" +
-                         "        },\n" +
-                         "        \"baz\": {\n" +
-                         "          \"readyMillis\": 123456,\n" +
-                         "          \"speed\": 1.0,\n" +
-                         "          \"startedMillis\": 124456,\n" +
-                         "          \"endedMillis\": 125456,\n" +
-                         "          \"state\": \"failed\",\n" +
-                         "          \"message\": \"message\",\n" +
-                         "          \"progress\": 0.1\n" +
-                         "        }\n" +
-                         "      }\n" +
-                         "    }\n" +
-                         "  }\n" +
-                         "}\n");
+                         """
+                         {
+                           "enabled": true,
+                           "clusters": {
+                             "boo": {
+                               "pending": {},
+                               "ready": {
+                                 "bar": {},
+                                 "bax": {
+                                   "startedMillis": 123456
+                                 },
+                                 "baz": {
+                                   "startedMillis": 124456,
+                                   "endedMillis": 125456,
+                                   "state": "failed",
+                                   "message": "message",
+                                   "progress": 0.1
+                                 }
+                               }
+                             },
+                             "foo": {
+                               "pending": {
+                                 "bar": 123
+                               },
+                               "ready": {
+                                 "bar": {},
+                                 "hax": {}
+                               }
+                             },
+                             "moo": {
+                               "pending": {},
+                               "ready": {
+                                 "bax": {
+                                   "startedMillis": 123456
+                                 },
+                                 "baz": {
+                                   "readyMillis": 123456,
+                                   "speed": 1.0,
+                                   "cause": "reindexing",
+                                   "startedMillis": 124456,
+                                   "endedMillis": 125456,
+                                   "state": "failed",
+                                   "message": "message",
+                                   "progress": 0.1
+                                 }
+                               }
+                             }
+                           }
+                         }
+                         """);
     }
 
     @Test

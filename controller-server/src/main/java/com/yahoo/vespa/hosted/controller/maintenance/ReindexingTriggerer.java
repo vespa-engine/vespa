@@ -50,7 +50,8 @@ public class ReindexingTriggerer extends ControllerMaintainer {
                     for (Deployment deployment : deployments)
                         if (   inWindowOfOpportunity(now, id, deployment.zone())
                             && reindexingIsReady(controller().applications().applicationReindexing(id, deployment.zone()), now))
-                            controller().applications().reindex(id, deployment.zone(), List.of(), List.of(), true, speed);
+                            controller().applications().reindex(id, deployment.zone(), List.of(), List.of(), true, speed,
+                                                                "bakground reindexing, to account for changes in built-in linguistics components");
                 });
             return 1.0;
         }
