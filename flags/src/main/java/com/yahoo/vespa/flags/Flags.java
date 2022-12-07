@@ -68,13 +68,6 @@ public class Flags {
             "Takes effect at redeployment (requires restart)",
             ZONE_ID, APPLICATION_ID);
 
-    public static final UnboundBooleanFlag KEEP_STORAGE_NODE_UP = defineFeatureFlag(
-            "keep-storage-node-up", true,
-            List.of("hakonhall"), "2022-07-07", "2022-12-07",
-            "Whether to leave the storage node (with wanted state) UP while the node is permanently down.",
-            "Takes effect immediately for nodes transitioning to permanently down.",
-            ZONE_ID, APPLICATION_ID);
-
     public static final UnboundIntFlag MAX_UNCOMMITTED_MEMORY = defineIntFlag(
             "max-uncommitted-memory", 130000,
             List.of("geirst, baldersheim"), "2021-10-21", "2023-01-01",

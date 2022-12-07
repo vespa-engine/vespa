@@ -34,7 +34,6 @@ public class HostedVespaPolicy implements Policy {
     private final HostedVespaClusterPolicy clusterPolicy;
     private final ClusterControllerClientFactory clusterControllerClientFactory;
     private final ApplicationApiFactory applicationApiFactory;
-    private final BooleanFlag keepStorageNodeUpFlag;
 
     public HostedVespaPolicy(HostedVespaClusterPolicy clusterPolicy,
                              ClusterControllerClientFactory clusterControllerClientFactory,
@@ -43,7 +42,6 @@ public class HostedVespaPolicy implements Policy {
         this.clusterPolicy = clusterPolicy;
         this.clusterControllerClientFactory = clusterControllerClientFactory;
         this.applicationApiFactory = applicationApiFactory;
-        this.keepStorageNodeUpFlag = Flags.KEEP_STORAGE_NODE_UP.bindTo(flagSource);
     }
 
     @Override
@@ -101,18 +99,11 @@ public class HostedVespaPolicy implements Policy {
             clusterPolicy.verifyGroupGoingDownPermanentlyIsFine(cluster);
         }
 
-        boolean keepStorageNodeUp = keepStorageNodeUpFlag
-                .with(FetchVector.Dimension.APPLICATION_ID, applicationApi.applicationId().serializedForm())
-                .value();
-
         // Get permission from the Cluster Controller to remove the content nodes.
         for (StorageNode storageNode : applicationApi.getStorageNodesInGroupInClusterOrder()) {
-            if (keepStorageNodeUp) {
-                storageNode.setStorageNodeState(context.createSubcontextForSingleAppOp(true), ClusterControllerNodeState.DOWN);
-                storageNode.forceDistributorState(context, ClusterControllerNodeState.DOWN);
-            } else {
-                storageNode.setStorageNodeState(context, ClusterControllerNodeState.DOWN);
-            }
+            // Consider changing the semantics of setting storage node state to DOWN in cluster controller, to avoid 2 calls.
+            storageNode.setStorageNodeState(context.createSubcontextForSingleAppOp(true), ClusterControllerNodeState.DOWN);
+            storageNode.forceDistributorState(context, ClusterControllerNodeState.DOWN);
         }
 
         // Ensure all nodes in the group are marked as permanently down
