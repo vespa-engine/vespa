@@ -78,6 +78,25 @@ public class AutoscalingTest {
     }
 
     @Test
+    public void test_container_scaling_down_exclusive() {
+        var min = new ClusterResources(2, 1, new NodeResources(4, 8, 50, 0.1));
+        var now = new ClusterResources(8, 1, new NodeResources(4, 8, 50, 0.1));
+        var max = new ClusterResources(8, 1, new NodeResources(4, 8, 50, 0.1));
+        var fixture = AutoscalingTester.fixture()
+                                       .awsProdSetup(false)
+                                       .clusterType(ClusterSpec.Type.container)
+                                       .initialResources(Optional.of(now))
+                                       .capacity(Capacity.from(min, max))
+                                       .build();
+        fixture.tester().setScalingDuration(fixture.applicationId(), fixture.clusterSpec.id(), Duration.ofMinutes(5));
+
+        fixture.loader().applyLoad(new Load(0.01, 0.38, 0), 5);
+        fixture.tester().assertResources("Scaling down",
+                                         2, 1, 4, 8, 50,
+                                         fixture.autoscale());
+    }
+
+    @Test
     public void initial_deployment_with_host_sharing_flag() {
         var min = new ClusterResources(7, 1, new NodeResources(2.0, 10.0, 384.0, 0.1));
         var max = new ClusterResources(7, 1, new NodeResources(2.4, 32.0, 768.0, 0.1));

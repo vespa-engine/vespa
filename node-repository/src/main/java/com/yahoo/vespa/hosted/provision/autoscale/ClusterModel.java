@@ -111,7 +111,6 @@ public class ClusterModel {
     /** Are we in a position to make decisions to scale down at this point? */
     private boolean safeToScaleDown() {
         if (hasScaledIn(scalingDuration().multipliedBy(3))) return false;
-        if (nodeTimeseries().measurementsPerNode() < 4) return false;
         if (nodeTimeseries().nodesMeasured() != nodeCount()) return false;
         return true;
     }
