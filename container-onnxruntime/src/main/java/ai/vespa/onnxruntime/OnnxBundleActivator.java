@@ -23,18 +23,24 @@ public class OnnxBundleActivator implements BundleActivator {
 
     @Override
     public void start(BundleContext ctx) {
+        String skipAll = OnnxBundleActivator.class.getSimpleName() + SKIP_SUFFIX;
+        if (SKIP_VALUE.equals(System.getProperty(skipAll))) {
+            log.info("skip loading of native libraries");
+            return;
+        }
         for (String libName : LIBRARY_NAMES) {
             String skipProp = SKIP_PREFIX + libName + SKIP_SUFFIX;
             if (SKIP_VALUE.equals(System.getProperty(skipProp))) {
-                log.info("already loaded native library "+libName+", skipping");
+                log.fine("already loaded native library "+libName+", skipping");
             } else {
-                System.setProperty(skipProp, SKIP_VALUE);
-                log.info("loading native library: "+libName);
+                log.fine("loading native library: "+libName);
                 try {
                     System.loadLibrary(libName);
-                    log.fine("loaded native library OK: "+libName);
+                    // this property also signals onnxruntime to skip loading:
+                    System.setProperty(skipProp, SKIP_VALUE);
+                    log.info("loaded native library OK: "+libName);
                 } catch (Exception|UnsatisfiedLinkError e) {
-                    log.warning("Could not load native library '"+libName+"' because: "+e.getMessage());
+                    log.info("Could not load native library '"+libName+"' because: "+e.getMessage());
                 }
             }
         }
@@ -46,8 +52,10 @@ public class OnnxBundleActivator implements BundleActivator {
         // but this should in theory do the necessary thing.
         for (String libName : LIBRARY_NAMES) {
             String skipProp = SKIP_PREFIX + libName + SKIP_SUFFIX;
+            if (SKIP_VALUE.equals(System.getProperty(skipProp))) {
+                log.info("will unload native library: "+libName);
+            }
             System.clearProperty(skipProp);
-            log.info("will unload native library: "+libName);
         }
     }
 }
