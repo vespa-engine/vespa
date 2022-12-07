@@ -116,6 +116,7 @@ import static com.yahoo.jdisc.http.HttpRequest.Method.GET;
 import static com.yahoo.jdisc.http.HttpRequest.Method.OPTIONS;
 import static com.yahoo.jdisc.http.HttpRequest.Method.POST;
 import static com.yahoo.jdisc.http.HttpRequest.Method.PUT;
+import static com.yahoo.vespa.http.server.Headers.CLIENT_VERSION;
 import static java.util.Objects.requireNonNull;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.logging.Level.FINE;
@@ -449,7 +450,8 @@ public class DocumentV1ApiHandler extends AbstractRequestHandler {
     }
 
     private ContentChannel postDocument(HttpRequest request, DocumentPath path, ResponseHandler rawHandler) {
-        ResponseHandler handler = new MeasuringResponseHandler(rawHandler, com.yahoo.documentapi.metrics.DocumentOperationType.PUT, clock.instant());
+        ResponseHandler handler = new MeasuringResponseHandler(
+                request, rawHandler, com.yahoo.documentapi.metrics.DocumentOperationType.PUT, clock.instant());
         if (getProperty(request, DRY_RUN, booleanParser).orElse(false)) {
             handleFeedOperation(path, true, handler, new com.yahoo.documentapi.Response(-1));
             return ignoredContent;
@@ -471,7 +473,8 @@ public class DocumentV1ApiHandler extends AbstractRequestHandler {
     }
 
     private ContentChannel putDocument(HttpRequest request, DocumentPath path, ResponseHandler rawHandler) {
-        ResponseHandler handler = new MeasuringResponseHandler(rawHandler, com.yahoo.documentapi.metrics.DocumentOperationType.UPDATE, clock.instant());
+        ResponseHandler handler = new MeasuringResponseHandler(
+                request, rawHandler, com.yahoo.documentapi.metrics.DocumentOperationType.UPDATE, clock.instant());
         if (getProperty(request, DRY_RUN, booleanParser).orElse(false)) {
             handleFeedOperation(path, true, handler, new com.yahoo.documentapi.Response(-1));
             return ignoredContent;
@@ -495,7 +498,8 @@ public class DocumentV1ApiHandler extends AbstractRequestHandler {
     }
 
     private ContentChannel deleteDocument(HttpRequest request, DocumentPath path, ResponseHandler rawHandler) {
-        ResponseHandler handler = new MeasuringResponseHandler(rawHandler, com.yahoo.documentapi.metrics.DocumentOperationType.REMOVE, clock.instant());
+        ResponseHandler handler = new MeasuringResponseHandler(
+                request, rawHandler, com.yahoo.documentapi.metrics.DocumentOperationType.REMOVE, clock.instant());
         if (getProperty(request, DRY_RUN, booleanParser).orElse(false)) {
             handleFeedOperation(path, true, handler, new com.yahoo.documentapi.Response(-1));
             return ignoredContent;
@@ -1455,8 +1459,13 @@ public class DocumentV1ApiHandler extends AbstractRequestHandler {
         private final ResponseHandler delegate;
         private final com.yahoo.documentapi.metrics.DocumentOperationType type;
         private final Instant start;
+        private final HttpRequest request;
 
-        private MeasuringResponseHandler(ResponseHandler delegate, com.yahoo.documentapi.metrics.DocumentOperationType type, Instant start) {
+        private MeasuringResponseHandler(HttpRequest request,
+                                         ResponseHandler delegate,
+                                         com.yahoo.documentapi.metrics.DocumentOperationType type,
+                                         Instant start) {
+            this.request = request;
             this.delegate = delegate;
             this.type = type;
             this.start = start;
@@ -1473,10 +1482,17 @@ public class DocumentV1ApiHandler extends AbstractRequestHandler {
                 case 500,502,503,504,507 -> report(DocumentOperationStatus.SERVER_ERROR);
                 default -> throw new IllegalStateException("Unexpected status code '%s'".formatted(response.getStatus()));
             }
+            metrics.reportHttpRequest(clientVersion());
             return delegate.handleResponse(response);
         }
 
         private void report(DocumentOperationStatus... status) { metrics.report(type, start, status); }
+
+        private String clientVersion() {
+            return Optional.ofNullable(request.headers().get(Headers.CLIENT_VERSION))
+                    .filter(l -> !l.isEmpty()).map(l -> l.get(0))
+                    .orElse("unknown");
+        }
 
     }
 
