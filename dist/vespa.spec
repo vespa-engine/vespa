@@ -52,19 +52,21 @@ BuildRequires: gcc-toolset-11-gcc-c++
 BuildRequires: gcc-toolset-11-binutils
 BuildRequires: gcc-toolset-11-libasan-devel
 BuildRequires: gcc-toolset-11-libatomic-devel
+BuildRequires: python39-pybind11-devel
+BuildRequires: python39-devel
 %define _devtoolset_enable /opt/rh/gcc-toolset-11/enable
 %else
 BuildRequires: gcc-toolset-11-gcc-c++
 BuildRequires: gcc-toolset-11-binutils
 BuildRequires: gcc-toolset-11-libasan-devel
 BuildRequires: gcc-toolset-11-libatomic-devel
+BuildRequires: pybind11-devel
+BuildRequires: python36-devel
 %define _devtoolset_enable /opt/rh/gcc-toolset-11/enable
 %endif
 BuildRequires: maven
 BuildRequires: maven-openjdk17
 BuildRequires: python3-pytest
-BuildRequires: python39-pybind11-devel
-BuildRequires: python39-devel
 BuildRequires: glibc-langpack-en
 %endif
 %if 0%{?el9}
