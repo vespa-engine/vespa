@@ -74,6 +74,11 @@ Service::reconfigure(const SentinelConfig::Service& config)
     delete _config;
     _config = new SentinelConfig::Service(config);
 
+    for (const auto &logctl : _config->logctl) {
+        const auto cspec = _config->name + ":" + logctl.componentSpec;
+        const auto lspec = logctl.levelsModSpec;
+        justRunLogctl(cspec.c_str(), lspec.c_str());
+    }
     if ((_state == READY) || (_state == FINISHED) || (_state == RESTARTING)) {
         if (_isAutomatic) {
             LOG(debug, "%s: Restarting due to new config", name().c_str());
