@@ -845,7 +845,7 @@ public class DocumentV1ApiTest {
                 handler.get().handleResponse(new Response(0));  // response may eventually arrive, but too late.
         }
 
-        assertEquals(3, metric.metrics().get("httpapi_succeeded").get(Map.of()), 0);
+        assertEquals(5, metric.metrics().get("httpapi_succeeded").get(Map.of()), 0);
         assertEquals(1, metric.metrics().get("httpapi_condition_not_met").get(Map.of()), 0);
         assertEquals(1, metric.metrics().get("httpapi_not_found").get(Map.of()), 0);
         assertEquals(1, metric.metrics().get("httpapi_failed").get(Map.of()), 0);

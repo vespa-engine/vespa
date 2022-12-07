@@ -17,7 +17,7 @@ import java.util.Set;
  */
 public enum DocumentOperationStatus {
 
-    OK, REQUEST_ERROR, SERVER_ERROR;
+    OK, REQUEST_ERROR, SERVER_ERROR, CONDITION_FAILED, NOT_FOUND, TOO_MANY_REQUESTS;
 
     public static DocumentOperationStatus fromMessageBusErrorCodes(Set<Integer> errorCodes) {
         if (errorCodes.size() == 1 && errorCodes.contains(DocumentProtocol.ERROR_NO_SPACE))
