@@ -52,21 +52,19 @@ BuildRequires: gcc-toolset-11-gcc-c++
 BuildRequires: gcc-toolset-11-binutils
 BuildRequires: gcc-toolset-11-libasan-devel
 BuildRequires: gcc-toolset-11-libatomic-devel
-BuildRequires: python39-pybind11-devel
-BuildRequires: python39-devel
 %define _devtoolset_enable /opt/rh/gcc-toolset-11/enable
 %else
 BuildRequires: gcc-toolset-11-gcc-c++
 BuildRequires: gcc-toolset-11-binutils
 BuildRequires: gcc-toolset-11-libasan-devel
 BuildRequires: gcc-toolset-11-libatomic-devel
-BuildRequires: pybind11-devel
-BuildRequires: python36-devel
 %define _devtoolset_enable /opt/rh/gcc-toolset-11/enable
 %endif
 BuildRequires: maven
 BuildRequires: maven-openjdk17
+BuildRequires: pybind11-devel
 BuildRequires: python3-pytest
+BuildRequires: python36-devel
 BuildRequires: glibc-langpack-en
 %endif
 %if 0%{?el9}
@@ -403,11 +401,7 @@ Summary: Vespa - The open big data serving engine - ann-benchmark
 Requires: %{name}-base-libs = %{version}-%{release}
 Requires: %{name}-libs = %{version}-%{release}
 %if 0%{?el8}
-%if 0%{?_centos_stream}
-Requires: python39
-%else
 Requires: python36
-%endif
 %endif
 %if 0%{?el9}
 Requires: python3
