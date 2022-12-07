@@ -252,6 +252,7 @@ public class ApplicationHandler extends HttpHandler {
         Set<String> clusters = StringUtilities.split(request.getProperty("clusterId"));
         Set<String> types = StringUtilities.split(request.getProperty("documentType"));
         double speed = Double.parseDouble(Objects.requireNonNullElse(request.getProperty("speed"), "1"));
+        String cause = Objects.requireNonNullElse(request.getProperty("cause"), "reindexing for an unknown reason");
 
         Map<String, Set<String>> reindexed = new TreeMap<>();
         Instant now = applicationRepository.clock().instant();
@@ -267,7 +268,7 @@ public class ApplicationHandler extends HttpHandler {
                                                            String.join(", ", documentTypes.get(cluster)));
 
                     if ( ! indexedOnly || indexedDocumentTypes.get(cluster).contains(type)) {
-                        reindexing = reindexing.withReady(cluster, type, now, speed);
+                        reindexing = reindexing.withReady(cluster, type, now, speed, cause);
                         reindexed.computeIfAbsent(cluster, __ -> new TreeSet<>()).add(type);
                     }
                 }

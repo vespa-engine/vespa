@@ -38,7 +38,7 @@ public interface ConfigServer {
 
     PreparedApplication deploy(DeploymentData deployment);
 
-    void reindex(DeploymentId deployment, List<String> clusterNames, List<String> documentTypes, boolean indexedOnly, Double speed);
+    void reindex(DeploymentId deployment, List<String> clusterNames, List<String> documentTypes, boolean indexedOnly, Double speed, String cause);
 
     ApplicationReindexing getReindexing(DeploymentId deployment);
 

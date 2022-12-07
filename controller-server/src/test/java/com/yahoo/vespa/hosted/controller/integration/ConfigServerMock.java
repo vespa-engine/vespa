@@ -440,7 +440,7 @@ public class ConfigServerMock extends AbstractComponent implements ConfigServer 
     }
 
     @Override
-    public void reindex(DeploymentId deployment, List<String> clusterNames, List<String> documentTypes, boolean indexedOnly, Double speed) { }
+    public void reindex(DeploymentId deployment, List<String> clusterNames, List<String> documentTypes, boolean indexedOnly, Double speed, String cause) { }
 
     @Override
     public ApplicationReindexing getReindexing(DeploymentId deployment) {
@@ -453,7 +453,8 @@ public class ConfigServerMock extends AbstractComponent implements ConfigServer 
                                                                                                             ApplicationReindexing.State.FAILED,
                                                                                                             "(＃｀д´)ﾉ",
                                                                                                             0.1,
-                                                                                                            1.0)))));
+                                                                                                            1.0,
+                                                                                                            "test reindexing")))));
     }
 
     @Override

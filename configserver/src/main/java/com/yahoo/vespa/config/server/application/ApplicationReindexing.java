@@ -2,6 +2,7 @@
 package com.yahoo.vespa.config.server.application;
 
 import com.yahoo.config.model.api.Reindexing;
+import com.yahoo.vespa.config.server.maintenance.ReindexingMaintainer;
 
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
@@ -37,10 +38,10 @@ public class ApplicationReindexing implements Reindexing {
     }
 
     /** Returns a copy of this with reindexing for the given document type in the given cluster ready at the given instant. */
-    public ApplicationReindexing withReady(String cluster, String documentType, Instant readyAt, double speed) {
+    public ApplicationReindexing withReady(String cluster, String documentType, Instant readyAt, double speed, String cause) {
         Cluster current = clusters.getOrDefault(cluster, Cluster.empty());
         Cluster modified = new Cluster(current.pending,
-                                       with(documentType, new Status(readyAt, speed), current.ready));
+                                       with(documentType, new Status(readyAt, speed, cause), current.ready));
         return new ApplicationReindexing(enabled, with(cluster, modified, clusters));
     }
 
@@ -172,13 +173,17 @@ public class ApplicationReindexing implements Reindexing {
 
         private final Instant ready;
         private final double speed;
+        private final String cause;
 
-        Status(Instant ready, double speed) {
+        Status(Instant ready, double speed, String cause) {
             if (speed <= 0 || 10 < speed)
                 throw new IllegalArgumentException("Reindexing speed must be in (0, 10], but was " + speed);
 
             this.ready = ready.truncatedTo(ChronoUnit.MILLIS);
             this.speed = speed;
+            this.cause = cause.isBlank() ? speed < ReindexingMaintainer.SPEED ? "background reindexing, to account for changes in built-in linguistics components"
+                                                                              : "reindexing due to a schema change"
+                                         : cause;
         }
 
         @Override
@@ -190,21 +195,26 @@ public class ApplicationReindexing implements Reindexing {
         }
 
         @Override
+        public String cause() {
+            return cause;
+        }
+
+        @Override
         public boolean equals(Object o) {
             if (this == o) return true;
             if (o == null || getClass() != o.getClass()) return false;
             Status status = (Status) o;
-            return Double.compare(status.speed, speed) == 0 && ready.equals(status.ready);
+            return Double.compare(status.speed, speed) == 0 && ready.equals(status.ready) && cause.equals(status.cause);
         }
 
         @Override
         public int hashCode() {
-            return Objects.hash(ready, speed);
+            return Objects.hash(ready, speed, cause);
         }
 
         @Override
         public String toString() {
-            return "ready at " + ready + ", with relative speed " + speed;
+            return cause + ", ready at " + ready + ", with relative speed " + speed;
         }
 
     }
