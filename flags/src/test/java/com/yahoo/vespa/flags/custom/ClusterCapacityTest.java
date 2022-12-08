@@ -51,9 +51,22 @@ public class ClusterCapacityTest {
         ClusterCapacity clusterCapacity = new ClusterCapacity(7, null, null, null, null, null, null, null);
         ObjectMapper mapper = new ObjectMapper();
         String json = mapper.writeValueAsString(clusterCapacity);
-        assertEquals("{\"count\":7}", json);
+        assertEquals("{\"count\":7,\"diskSpeed\":\"fast\",\"storageType\":\"any\",\"architecture\":\"x86_64\"}", json);
 
         ClusterCapacity deserialized = mapper.readValue(json, ClusterCapacity.class);
+        assertEquals(7, deserialized.count());
+        assertEquals(0.0, deserialized.vcpu(), 0.0001);
+        assertEquals(0.0, deserialized.memoryGb(), 0.0001);
+        assertEquals(0.0, deserialized.diskGb(), 0.0001);
+        assertEquals(1.0, deserialized.bandwidthGbps(), 0.0001);  // 1.0 is used as fallback
+        assertEquals("fast", deserialized.diskSpeed());
+        assertEquals("any", deserialized.storageType());
+        assertEquals("x86_64", deserialized.architecture());
+
+
+        // Test that using no values for diskSpeed, storageType and architecture will give expected values (the default values)
+        var input = "{\"count\":7}";
+        deserialized = mapper.readValue(input, ClusterCapacity.class);
         assertEquals(7, deserialized.count());
         assertEquals(0.0, deserialized.vcpu(), 0.0001);
         assertEquals(0.0, deserialized.memoryGb(), 0.0001);

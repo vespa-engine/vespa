@@ -8,8 +8,13 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import java.util.Objects;
-import java.util.Optional;
 import java.util.OptionalDouble;
+
+import static com.yahoo.vespa.flags.custom.Validation.requireNonNegative;
+import static com.yahoo.vespa.flags.custom.Validation.validArchitectures;
+import static com.yahoo.vespa.flags.custom.Validation.validDiskSpeeds;
+import static com.yahoo.vespa.flags.custom.Validation.validStorageTypes;
+import static com.yahoo.vespa.flags.custom.Validation.validateEnum;
 
 /**
  * @author freva
@@ -23,10 +28,9 @@ public class ClusterCapacity {
     private final OptionalDouble memoryGb;
     private final OptionalDouble diskGb;
     private final OptionalDouble bandwidthGbps;
-    private final Optional<String> diskSpeed;
-    private final Optional<String> storageType;
-    private final Optional<String> architecture;
-
+    private final String diskSpeed;
+    private final String storageType;
+    private final String architecture;
 
     @JsonCreator
     public ClusterCapacity(@JsonProperty("count") int count,
@@ -42,15 +46,15 @@ public class ClusterCapacity {
         this.memoryGb = memoryGb == null ? OptionalDouble.empty() : OptionalDouble.of(requireNonNegative("memoryGb", memoryGb));
         this.diskGb = diskGb == null ? OptionalDouble.empty() : OptionalDouble.of(requireNonNegative("diskGb", diskGb));
         this.bandwidthGbps = bandwidthGbps == null ? OptionalDouble.empty() : OptionalDouble.of(bandwidthGbps);
-        this.diskSpeed = Optional.ofNullable(diskSpeed);
-        this.storageType = Optional.ofNullable(storageType);
-        this.architecture = Optional.ofNullable(architecture);
+        this.diskSpeed = validateEnum("diskSpeed", validDiskSpeeds, diskSpeed == null ? "fast" : diskSpeed);
+        this.storageType = validateEnum("storageType", validStorageTypes, storageType == null ? "any" : storageType);
+        this.architecture = validateEnum("architecture", validArchitectures, architecture == null ? "x86_64" : architecture);
     }
 
     /** Returns a new ClusterCapacity equal to {@code this}, but with the given count. */
     public ClusterCapacity withCount(int count) {
         return new ClusterCapacity(count, vcpuOrNull(), memoryGbOrNull(), diskGbOrNull(), bandwidthGbpsOrNull(),
-                                   diskSpeedOrNull(), storageTypeOrNull(), architectureOrNull());
+                                   diskSpeed, storageType, architecture);
     }
 
     @JsonGetter("count") public int count() { return count; }
@@ -66,23 +70,14 @@ public class ClusterCapacity {
     @JsonGetter("bandwidthGbps") public Double bandwidthGbpsOrNull() {
         return bandwidthGbps.isPresent() ? bandwidthGbps.getAsDouble() : null;
     }
-    @JsonGetter("diskSpeed") public String diskSpeedOrNull() {
-        return diskSpeed.orElse(null);
-    }
-    @JsonGetter("storageType") public String storageTypeOrNull() {
-        return storageType.orElse(null);
-    }
-    @JsonGetter("architecture") public String architectureOrNull() {
-        return architecture.orElse(null);
-    }
+    @JsonGetter("diskSpeed") public String diskSpeed() { return diskSpeed; }
+    @JsonGetter("storageType") public String storageType() { return storageType; }
+    @JsonGetter("architecture") public String architecture() { return architecture; }
 
     @JsonIgnore public Double vcpu() { return vcpu.orElse(0.0); }
     @JsonIgnore public Double memoryGb() { return memoryGb.orElse(0.0); }
     @JsonIgnore public Double diskGb() { return diskGb.orElse(0.0); }
     @JsonIgnore public double bandwidthGbps() { return bandwidthGbps.orElse(1.0); }
-    @JsonIgnore public String diskSpeed() { return diskSpeed.orElse("fast"); }
-    @JsonIgnore public String storageType() { return storageType.orElse("any"); }
-    @JsonIgnore public String architecture() { return architecture.orElse("x86_64"); }
 
     @Override
     public String toString() {
@@ -116,12 +111,6 @@ public class ClusterCapacity {
     @Override
     public int hashCode() {
         return Objects.hash(count, vcpu, memoryGb, diskGb, bandwidthGbps, diskSpeed, storageType, architecture);
-    }
-
-    private static double requireNonNegative(String name, double value) {
-        if (value < 0)
-            throw new IllegalArgumentException("'" + name + "' must be positive, was " + value);
-        return value;
     }
 
 }
