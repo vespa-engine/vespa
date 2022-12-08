@@ -31,6 +31,7 @@ import com.yahoo.vespa.config.search.core.OnnxModelsConfig;
 import com.yahoo.vespa.config.search.core.RankingConstantsConfig;
 import com.yahoo.vespa.config.search.core.RankingExpressionsConfig;
 import com.yahoo.vespa.model.AbstractService;
+import com.yahoo.vespa.model.VespaModel;
 import com.yahoo.vespa.model.admin.metricsproxy.MetricsProxyContainer;
 import com.yahoo.vespa.model.container.component.BindingPattern;
 import com.yahoo.vespa.model.container.component.Component;
@@ -125,11 +126,19 @@ public final class ApplicationContainerCluster extends ContainerCluster<Applicat
                 : defaultHeapSizePercentageOfTotalNodeMemory;
     }
 
+    private void wireLogctlSpecs() {
+        getAdmin().ifPresent(admin -> {
+            for (var c : getContainers()) {
+                c.setLogctlSpecs(admin.getLogctlSpecs());
+            }});
+    }
+
     @Override
     protected void doPrepare(DeployState deployState) {
         addAndSendApplicationBundles(deployState);
         sendUserConfiguredFiles(deployState);
         createEndpointList(deployState);
+        wireLogctlSpecs();
     }
 
     private void addAndSendApplicationBundles(DeployState deployState) {

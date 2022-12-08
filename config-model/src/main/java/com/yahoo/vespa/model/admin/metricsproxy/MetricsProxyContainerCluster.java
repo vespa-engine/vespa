@@ -223,16 +223,6 @@ public class MetricsProxyContainerCluster extends ContainerCluster<MetricsProxyC
                 .orElse(Collections.emptyMap());
     }
 
-    private Optional<Admin> getAdmin() {
-        if (parent != null) {
-            AbstractConfigProducerRoot r = parent.getRoot();
-            if (r instanceof VespaModel model) {
-                return Optional.ofNullable(model.getAdmin());
-            }
-        }
-        return Optional.empty();
-    }
-
     private Optional<String> getSystemName() {
         Monitoring monitoring = getMonitoringService();
         return monitoring != null && ! monitoring.getClustername().equals("") ?

@@ -5,6 +5,7 @@ import com.yahoo.config.model.ConfigModelContext.ApplicationType;
 import com.yahoo.config.model.api.ConfigServerSpec;
 import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.model.producer.AbstractConfigProducer;
+import com.yahoo.log.internal.LevelsModSpec;
 import com.yahoo.text.XML;
 import com.yahoo.vespa.model.Host;
 import com.yahoo.vespa.model.HostResource;
@@ -21,7 +22,9 @@ import com.yahoo.vespa.model.admin.monitoring.builder.xml.MetricsBuilder;
 import org.w3c.dom.Element;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 /**
@@ -107,6 +110,25 @@ public abstract class DomAdminBuilderBase extends VespaDomBuilder.DomConfigProdu
 		    .withClientName(e.stringAttribute("client-name"))
             .withPhoneHomeInterval(e.integerAttribute("phone-home-interval"));
             admin.setLogForwarderConfig(cfg, alsoForAdminCluster);
+        }
+    }
+
+    private void addLoggingSpec(ModelElement loggingSpec, Admin admin) {
+        if (loggingSpec == null) return;
+        String componentSpec = loggingSpec.requiredStringAttribute("name");
+        String levels = loggingSpec.requiredStringAttribute("levels");
+        var levelSpec = new LevelsModSpec();
+        levelSpec.setLevels(levels);
+        admin.addLogctlCommand(componentSpec, levelSpec.toLogctlModSpec());
+    }
+
+    void addLoggingSpecs(ModelElement loggingElement, Admin admin) {
+        if (loggingElement == null) return;
+        for (ModelElement e : loggingElement.children("class")) {
+            addLoggingSpec(e, admin);
+        }
+        for (ModelElement e : loggingElement.children("package")) {
+            addLoggingSpec(e, admin);
         }
     }
 

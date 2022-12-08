@@ -47,6 +47,7 @@ public class DomAdminV2Builder extends DomAdminBuilderBase {
             admin.setClusterControllers(addConfiguredClusterControllers(deployState, admin, adminE), deployState);
 
         addLogForwarders(new ModelElement(adminE).child("logforwarding"), admin);
+        addLoggingSpecs(new ModelElement(adminE).child("logging"), admin);
     }
 
     private List<Configserver> parseConfigservers(DeployState deployState, Admin admin, Element adminE) {

@@ -12,6 +12,7 @@ AdminV2 =
    AdminMonitoring? &
    Metrics? &
    ClusterControllers? &
+   LoggingSpecs? &
    LogForwarding?
  }
 
@@ -30,6 +31,7 @@ AdminV4 =
     GenericConfig* &
     AdminMonitoring? &
     Metrics? &
+    LoggingSpecs? &
     LogForwarding?
   }
 
@@ -112,4 +114,18 @@ LogForwarding = element logforwarding {
         attribute client-name { xsd:string } &
         attribute phone-home-interval { xsd:positiveInteger }?
     }
+}
+
+LoggingSpecs = element logging {
+    (
+    element class {
+        attribute name { xsd:Name } &
+        attribute levels { xsd:string }
+    }
+    |
+    element package {
+        attribute name { xsd:Name } &
+        attribute levels { xsd:string }
+    }
+    )*
 }
