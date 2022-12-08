@@ -127,18 +127,10 @@ public final class ApplicationContainerCluster extends ContainerCluster<Applicat
     }
 
     private void wireLogctlSpecs() {
-        var parent = getParent();
-        if (parent != null) {
-            var r = parent.getRoot();
-            if (r instanceof VespaModel model) {
-                var admin = model.getAdmin();
-                if (admin != null) {
-                    for (var c : getContainers()) {
-                        c.setLogctlSpecs(admin.getLogctlSpecs());
-                    }
-                }
-            }
-        }
+        getAdmin().ifPresent(admin -> {
+            for (var c : getContainers()) {
+                c.setLogctlSpecs(admin.getLogctlSpecs());
+            }});
     }
 
     @Override

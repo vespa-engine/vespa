@@ -36,6 +36,8 @@ import com.yahoo.search.query.profile.config.QueryProfilesConfig;
 import com.yahoo.vespa.configdefinition.IlscriptsConfig;
 import com.yahoo.vespa.model.PortsMeta;
 import com.yahoo.vespa.model.Service;
+import com.yahoo.vespa.model.VespaModel;
+import com.yahoo.vespa.model.admin.Admin;
 import com.yahoo.vespa.model.admin.monitoring.Monitoring;
 import com.yahoo.vespa.model.clients.ContainerDocumentApi;
 import com.yahoo.vespa.model.container.component.AccessLogComponent;
@@ -206,6 +208,17 @@ public abstract class ContainerCluster<CONTAINER extends Container>
     }
     public Zone getZone() {
         return zone;
+    }
+
+    protected Optional<Admin> getAdmin() {
+        var parent = getParent();
+        if (parent != null) {
+            var r = parent.getRoot();
+            if (r instanceof VespaModel model) {
+                return Optional.ofNullable(model.getAdmin());
+            }
+        }
+        return Optional.empty();
     }
 
     public void addDefaultHandlersWithVip() {
