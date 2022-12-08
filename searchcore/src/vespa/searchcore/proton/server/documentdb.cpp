@@ -983,7 +983,7 @@ DocumentDB::performStartMaintenance()
     }
     auto maintenanceConfig = activeConfig->getMaintenanceConfigSP();
     injectMaintenanceJobs(*maintenanceConfig);
-    _maintenanceController.start(maintenanceConfig);
+    _maintenanceController.start();
 }
 
 void
@@ -1003,7 +1003,7 @@ DocumentDB::forwardMaintenanceConfig()
         if (_maintenanceController.getPaused()) {
             injectMaintenanceJobs(*maintenanceConfig);
         }
-        _maintenanceController.newConfig(maintenanceConfig);
+        _maintenanceController.newConfig();
     }
 }
 

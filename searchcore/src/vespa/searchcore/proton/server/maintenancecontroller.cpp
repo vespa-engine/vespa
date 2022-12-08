@@ -2,7 +2,6 @@
 
 #include "maintenancecontroller.h"
 #include "maintenancejobrunner.h"
-#include "document_db_maintenance_config.h"
 #include "i_blockable_maintenance_job.h"
 #include <vespa/searchcorespi/index/i_thread_service.h>
 #include <vespa/searchcore/proton/common/scheduledexecutor.h>
@@ -52,7 +51,6 @@ MaintenanceController::MaintenanceController(FNET_Transport & transport,
       _remSubDB(),
       _notReadySubDB(),
       _periodicTimer(std::make_unique<ScheduledExecutor>(transport)),
-      _config(),
       _state(State::INITIALIZING),
       _docTypeName(docTypeName),
       _jobs(),
@@ -157,11 +155,10 @@ MaintenanceController::kill()
 }
 
 void
-MaintenanceController::start(const DocumentDBMaintenanceConfig::SP &config)
+MaintenanceController::start()
 {
     // Called by master write thread
     assert(_state == State::INITIALIZING);
-    _config = config;
     _state = State::STARTED;
     restart();
 }
@@ -197,10 +194,9 @@ MaintenanceController::addJobsToPeriodicTimer()
 }
 
 void
-MaintenanceController::newConfig(const DocumentDBMaintenanceConfig::SP &config)
+MaintenanceController::newConfig()
 {
     // Called by master write thread
-    _config = config;
     restart();
 }
 

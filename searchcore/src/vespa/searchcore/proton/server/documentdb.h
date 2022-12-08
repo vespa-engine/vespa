@@ -54,6 +54,7 @@ class ITransientResourceUsageProvider;
 class ReplayThrottlingPolicy;
 class StatusReport;
 struct MetricsWireService;
+class DocumentDBMaintenanceConfig;
 
 namespace matching { class SessionManager; }
 

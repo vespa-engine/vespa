@@ -25,7 +25,6 @@ namespace searchcorespi::index {
 namespace proton {
 
 class MaintenanceJobRunner;
-class DocumentDBMaintenanceConfig;
 class ScheduledExecutor;
 
 /**
@@ -38,7 +37,6 @@ class MaintenanceController
 public:
     using IThreadService = searchcorespi::index::IThreadService;
     using ISyncableThreadService = searchcorespi::index::ISyncableThreadService;
-    using DocumentDBMaintenanceConfigSP = std::shared_ptr<DocumentDBMaintenanceConfig>;
     using JobList = std::vector<std::shared_ptr<MaintenanceJobRunner>>;
     using UP = std::unique_ptr<MaintenanceController>;
     enum class State {INITIALIZING, STARTED, PAUSED, STOPPING};
@@ -58,8 +56,8 @@ public:
     }
 
     void stop();
-    void start(const DocumentDBMaintenanceConfigSP &config);
-    void newConfig(const DocumentDBMaintenanceConfigSP &config);
+    void start();
+    void newConfig();
     void updateMetrics(DocumentDBTaggedMetrics & metrics);
 
     void
@@ -90,7 +88,6 @@ private:
     MaintenanceDocumentSubDB          _remSubDB;
     MaintenanceDocumentSubDB          _notReadySubDB;
     std::unique_ptr<ScheduledExecutor>  _periodicTimer;
-    DocumentDBMaintenanceConfigSP     _config;
     State                             _state;
     const DocTypeName                &_docTypeName;
     JobList                           _jobs;
