@@ -57,6 +57,21 @@ Service::Service(const SentinelConfig::Service& service, const SentinelConfig::A
     start();
 }
 
+void applyLogctl(const cloud::config::SentinelConfig::Service &config) {
+    for (const auto &logctl : config.logctl) {
+        const auto cspec = config.name + ":" + logctl.componentSpec;
+        const auto lspec = logctl.levelsModSpec;
+        justRunLogctl(cspec.c_str(), lspec.c_str());
+    }
+}
+
+void unApplyLogctl(const cloud::config::SentinelConfig::Service &config) {
+    for (const auto &logctl : config.logctl) {
+        const auto cspec = config.name + ":" + logctl.componentSpec;
+        justRunLogctl(cspec.c_str(), "all=on,debug=off,spam=off");
+    }
+}
+
 void
 Service::reconfigure(const SentinelConfig::Service& config)
 {
@@ -71,14 +86,11 @@ Service::reconfigure(const SentinelConfig::Service& config)
         terminate();
     }
 
+    unApplyLogctl(*_config);
     delete _config;
     _config = new SentinelConfig::Service(config);
+    applyLogctl(*_config);
 
-    for (const auto &logctl : _config->logctl) {
-        const auto cspec = _config->name + ":" + logctl.componentSpec;
-        const auto lspec = logctl.levelsModSpec;
-        justRunLogctl(cspec.c_str(), lspec.c_str());
-    }
     if ((_state == READY) || (_state == FINISHED) || (_state == RESTARTING)) {
         if (_isAutomatic) {
             LOG(debug, "%s: Restarting due to new config", name().c_str());
@@ -335,11 +347,7 @@ Service::runChild()
     for (const auto &envvar : _config->environ) {
         setenv(envvar.varname.c_str(), envvar.varvalue.c_str(), 1);
     }
-    for (const auto &logctl : _config->logctl) {
-        const auto cspec = _config->name + ":" + logctl.componentSpec;
-        const auto lspec = logctl.levelsModSpec;
-        justRunLogctl(cspec.c_str(), lspec.c_str());
-    }
+    applyLogctl(*_config);
 
     // Set up environment
     setenv("VESPA_SERVICE_NAME", _config->name.c_str(), 1);

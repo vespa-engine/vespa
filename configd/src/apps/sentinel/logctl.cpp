@@ -17,7 +17,7 @@ void justRunLogctl(const char *cspec, const char *lspec)
     const char *progName = "vespa-logctl";
     pid_t pid = fork();
     if (pid == 0) {
-        LOG(debug, "running '%s' '%s' '%s'\n", progName, cspec, lspec);
+        LOG(debug, "running '%s' '%s' '%s'", progName, cspec, lspec);
         int rv = execlp(progName, progName, "-c", cspec, lspec, nullptr);
         if (rv != 0) {
             LOG(warning, "execlp of '%s' failed: %s", progName, strerror(errno));
