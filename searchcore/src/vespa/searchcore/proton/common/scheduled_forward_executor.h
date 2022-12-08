@@ -13,16 +13,14 @@ namespace proton {
  */
 class ScheduledForwardExecutor : public IScheduledExecutor {
 private:
-    ScheduledExecutor _scheduler;
-    vespalib::Executor& _executor;
+    ScheduledExecutor  _scheduler;
+    Executor         & _executor;
 
 public:
-    ScheduledForwardExecutor(FNET_Transport& transport, vespalib::Executor& executor);
+    ScheduledForwardExecutor(FNET_Transport& transport, Executor& executor);
     void reset();
 
-    void scheduleAtFixedRate(std::unique_ptr<vespalib::Executor::Task> task,
-                             vespalib::duration delay, vespalib::duration interval) override;
-
+    [[nodiscard]] Handle scheduleAtFixedRate(std::unique_ptr<Executor::Task> task, duration delay, duration interval) override;
 };
 
 }

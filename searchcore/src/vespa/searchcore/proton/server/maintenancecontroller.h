@@ -79,6 +79,7 @@ public:
 private:
     using Mutex = std::mutex;
     using Guard = std::lock_guard<Mutex>;
+    using TaskHandle = std::unique_ptr<vespalib::IDestructorCallback>;
 
     ISyncableThreadService           &_masterThread;
     vespalib::MonitoredRefCount      &_refCount;
@@ -86,6 +87,7 @@ private:
     MaintenanceDocumentSubDB          _remSubDB;
     MaintenanceDocumentSubDB          _notReadySubDB;
     std::unique_ptr<ScheduledExecutor>  _periodicTimer;
+    std::vector<TaskHandle>           _periodicTaskHandles;
     State                             _state;
     const DocTypeName                &_docTypeName;
     JobList                           _jobs;

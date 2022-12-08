@@ -2,6 +2,7 @@
 #pragma once
 
 #include "i_scheduled_executor.h"
+#include <vespa/vespalib/stllike/hash_map.h>
 #include <mutex>
 #include <vector>
 
@@ -19,13 +20,14 @@ class TimerTask;
 class ScheduledExecutor : public IScheduledExecutor
 {
 private:
-    using TaskList = std::vector<std::unique_ptr<TimerTask>>;
-    using duration = vespalib::duration;
-    using Executor = vespalib::Executor;
+    using TaskList = vespalib::hash_map<uint64_t, std::unique_ptr<TimerTask>>;
     FNET_Transport & _transport;
     std::mutex       _lock;
+    uint64_t         _nextKey;
     TaskList         _taskList;
 
+    bool cancel(uint64_t key);
+    class Registration;
 public:
     /**
      * Create a new timer, capable of scheduling tasks at fixed intervals.
@@ -38,7 +40,7 @@ public:
      */
     ~ScheduledExecutor() override;
 
-    void scheduleAtFixedRate(std::unique_ptr<Executor::Task> task, duration delay, duration interval) override;
+    [[nodiscard]] Handle scheduleAtFixedRate(std::unique_ptr<Executor::Task> task, duration delay, duration interval) override;
 
     /**
      * Reset timer, clearing the list of task to execute.

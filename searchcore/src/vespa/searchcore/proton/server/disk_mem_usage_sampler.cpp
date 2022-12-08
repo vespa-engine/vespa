@@ -17,6 +17,7 @@ DiskMemUsageSampler::DiskMemUsageSampler(FNET_Transport & transport, const std::
       _lastSampleTime(vespalib::steady_clock::now()),
       _periodicTimer(std::make_unique<ScheduledExecutor>(transport)),
       _lock(),
+      _periodicHandle(),
       _transient_usage_providers()
 {
     setConfig(config);
@@ -24,26 +25,25 @@ DiskMemUsageSampler::DiskMemUsageSampler(FNET_Transport & transport, const std::
 
 DiskMemUsageSampler::~DiskMemUsageSampler()
 {
-    _periodicTimer.reset();
+    _periodicHandle.reset();
 }
 
 void
 DiskMemUsageSampler::setConfig(const Config &config)
 {
-    _periodicTimer->reset();
+    _periodicHandle.reset();
     _filter.setConfig(config.filterConfig);
     _sampleInterval = config.sampleInterval;
     sampleAndReportUsage();
     _lastSampleTime = vespalib::steady_clock::now();
     vespalib::duration maxInterval = std::min(vespalib::duration(1s), _sampleInterval);
-    _periodicTimer->scheduleAtFixedRate(makeLambdaTask([this]() {
-                                            if (_filter.acceptWriteOperation() && (vespalib::steady_clock::now() < (_lastSampleTime + _sampleInterval))) {
-                                                return;
-                                            }
-                                            sampleAndReportUsage();
-                                            _lastSampleTime = vespalib::steady_clock::now();
-                                        }),
-                                        maxInterval, maxInterval);
+    _periodicHandle = _periodicTimer->scheduleAtFixedRate(makeLambdaTask([this]() {
+        if (_filter.acceptWriteOperation() && (vespalib::steady_clock::now() < (_lastSampleTime + _sampleInterval))) {
+            return;
+        }
+        sampleAndReportUsage();
+        _lastSampleTime = vespalib::steady_clock::now();
+    }), maxInterval, maxInterval);
 }
 
 void
