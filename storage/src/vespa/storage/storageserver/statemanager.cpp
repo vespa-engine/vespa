@@ -6,6 +6,9 @@
 #include <vespa/document/bucket/fixed_bucket_spaces.h>
 #include <vespa/metrics/jsonwriter.h>
 #include <vespa/metrics/metricmanager.h>
+#include <vespa/metrics/metricset.h>
+#include <vespa/metrics/metrictimer.h>
+#include <vespa/metrics/valuemetric.h>
 #include <vespa/storageapi/messageapi/storagemessage.h>
 #include <vespa/vdslib/state/cluster_state_bundle.h>
 #include <vespa/vdslib/state/clusterstate.h>
@@ -22,6 +25,20 @@ LOG_SETUP(".state.manager");
 
 namespace storage {
 
+struct StateManager::StateManagerMetrics : metrics::MetricSet {
+    metrics::DoubleAverageMetric invoke_state_listeners_latency;
+
+    explicit StateManagerMetrics(metrics::MetricSet* owner = nullptr)
+        : metrics::MetricSet("state_manager", {}, "", owner),
+          invoke_state_listeners_latency("invoke_state_listeners_latency", {},
+                                         "Time spent (in ms) propagating state changes to internal state listeners", this)
+    {}
+
+    ~StateManagerMetrics() override;
+};
+
+StateManager::StateManagerMetrics::~StateManagerMetrics() = default;
+
 using lib::ClusterStateBundle;
 
 StateManager::StateManager(StorageComponentRegister& compReg,
@@ -32,6 +49,7 @@ StateManager::StateManager(StorageComponentRegister& compReg,
       framework::HtmlStatusReporter("systemstate", "Node and system state"),
       _component(compReg, "statemanager"),
       _metricManager(metricManager),
+      _metrics(std::make_unique<StateManagerMetrics>()),
       _stateLock(),
       _stateCond(),
       _listenerLock(),
@@ -55,6 +73,7 @@ StateManager::StateManager(StorageComponentRegister& compReg,
     _nodeState->setMinUsedBits(58);
     _nodeState->setStartTimestamp(_component.getClock().getTimeInSeconds().getTime());
     _component.registerStatusPage(*this);
+    _component.registerMetric(*_metrics);
 }
 
 StateManager::~StateManager()
@@ -246,6 +265,7 @@ StateManager::notifyStateListeners()
             }
             _stateCond.notify_all();
         }
+        metrics::MetricTimer handler_latency_timer;
         for (auto* listener : _stateListeners) {
             listener->handleNewState();
             // If one of them actually altered the state again, abort
@@ -255,6 +275,7 @@ StateManager::notifyStateListeners()
                 break;
             }
         }
+        handler_latency_timer.stop(_metrics->invoke_state_listeners_latency);
     }
     if (newState) {
         sendGetNodeStateReplies();

@@ -45,8 +45,11 @@ class StateManager : public NodeStateUpdater,
     using TimeStateCmdPair   = std::pair<framework::MilliSecTime, api::GetNodeStateCommand::SP>;
     using TimeSysStatePair   = std::pair<framework::MilliSecTime, std::shared_ptr<const ClusterStateBundle>>;
 
+    struct StateManagerMetrics;
+
     StorageComponent                          _component;
     metrics::MetricManager&                   _metricManager;
+    std::unique_ptr<StateManagerMetrics>      _metrics;
     mutable std::mutex                        _stateLock;
     std::condition_variable                   _stateCond;
     std::mutex                                _listenerLock;
