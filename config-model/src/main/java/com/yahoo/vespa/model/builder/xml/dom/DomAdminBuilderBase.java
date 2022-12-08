@@ -5,7 +5,7 @@ import com.yahoo.config.model.ConfigModelContext.ApplicationType;
 import com.yahoo.config.model.api.ConfigServerSpec;
 import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.model.producer.AbstractConfigProducer;
-import com.yahoo.log.internal.LevelsModSpec;
+import com.yahoo.container.logging.LevelsModSpec;
 import com.yahoo.text.XML;
 import com.yahoo.vespa.model.Host;
 import com.yahoo.vespa.model.HostResource;
