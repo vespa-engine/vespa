@@ -198,6 +198,7 @@ public class Nodes {
         if (node.status().wantToDeprovision() || node.status().wantToRebuild())
             return park(node.hostname(), false, agent, reason);
 
+        node = node.withWantToRetire(false, false, false, agent, clock.instant());
         return db.writeTo(Node.State.ready, node, agent, Optional.of(reason));
     }
 
