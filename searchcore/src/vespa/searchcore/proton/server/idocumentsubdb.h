@@ -63,6 +63,7 @@ public:
     using IFlushTargetList = std::vector<std::shared_ptr<searchcorespi::IFlushTarget>>;
     using IndexConfig = index::IndexConfig;
     using OnDone = std::shared_ptr<vespalib::IDestructorCallback>;
+    using SessionManager = matching::SessionManager;
 public:
     IDocumentSubDB() { }
     virtual ~IDocumentSubDB() { }
@@ -75,7 +76,7 @@ public:
 
     // Called by master thread
     virtual void setup(const DocumentSubDbInitializerResult &initResult) = 0;
-    virtual void initViews(const DocumentDBConfig &configSnapshot, const std::shared_ptr<matching::SessionManager> &sessionManager) = 0;
+    virtual void initViews(const DocumentDBConfig &configSnapshot) = 0;
 
     virtual IReprocessingTask::List
     applyConfig(const DocumentDBConfig &newConfigSnapshot, const DocumentDBConfig &oldConfigSnapshot,

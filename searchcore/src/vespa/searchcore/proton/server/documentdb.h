@@ -253,14 +253,6 @@ public:
            const HwInfo &hwInfo);
 
     /**
-     * Expose a cost view of the session manager. This is used by the
-     * document db explorer.
-     **/
-    const matching::SessionManager &session_manager() const {
-        return *_sessionManager;
-    }
-
-    /**
      * Frees any allocated resources. This will also stop the internal thread
      * and wait for it to finish. All pending tasks are deleted.
      */
@@ -392,6 +384,7 @@ public:
     document::BucketSpace getBucketSpace() const override;
     vespalib::string getName() const override;
     uint32_t getDistributionKey() const override;
+    matching::SessionManager &session_manager() override;
 
     /**
      * Implements IFeedHandlerOwner

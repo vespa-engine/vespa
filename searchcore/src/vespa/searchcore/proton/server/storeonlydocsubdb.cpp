@@ -356,7 +356,7 @@ StoreOnlyDocSubDB::getFeedViewPersistentParams()
 }
 
 void
-StoreOnlyDocSubDB::initViews(const DocumentDBConfig &configSnapshot, const SessionManager::SP &sessionManager)
+StoreOnlyDocSubDB::initViews(const DocumentDBConfig &configSnapshot)
 {
     assert(_writeService.master().isCurrentThread());
     _iSearchView.set(std::make_shared<EmptySearchView>());
@@ -364,7 +364,6 @@ StoreOnlyDocSubDB::initViews(const DocumentDBConfig &configSnapshot, const Sessi
         std::lock_guard<std::mutex> guard(_configMutex);
         initFeedView(configSnapshot);
     }
-    (void) sessionManager;
 }
 
 void

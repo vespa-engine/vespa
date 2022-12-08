@@ -18,11 +18,11 @@ namespace matching {
 }
 
 class MatchView {
-    using SessionManagerSP = std::shared_ptr<matching::SessionManager>;
+    using SessionManager = matching::SessionManager;
     Matchers::SP                         _matchers;
     searchcorespi::IndexSearchable::SP   _indexSearchable;
     IAttributeManager::SP                _attrMgr;
-    SessionManagerSP                     _sessionMgr;
+    SessionManager                     & _sessionMgr;
     IDocumentMetaStoreContext::SP        _metaStore;
     DocIdLimit                          &_docIdLimit;
 
@@ -38,7 +38,7 @@ public:
     MatchView(Matchers::SP matchers,
               searchcorespi::IndexSearchable::SP indexSearchable,
               IAttributeManager::SP attrMgr,
-              SessionManagerSP sessionMgr,
+              SessionManager & sessionMgr,
               IDocumentMetaStoreContext::SP metaStore,
               DocIdLimit &docIdLimit);
     ~MatchView();
@@ -46,7 +46,7 @@ public:
     const Matchers::SP & getMatchers() const { return _matchers; }
     const searchcorespi::IndexSearchable::SP & getIndexSearchable() const { return _indexSearchable; }
     const IAttributeManager::SP & getAttributeManager() const { return _attrMgr; }
-    const SessionManagerSP & getSessionManager() const { return _sessionMgr; }
+    SessionManager & getSessionManager() const { return _sessionMgr; }
     const IDocumentMetaStoreContext::SP & getDocumentMetaStore() const { return _metaStore; }
     DocIdLimit & getDocIdLimit() const { return _docIdLimit; }
 

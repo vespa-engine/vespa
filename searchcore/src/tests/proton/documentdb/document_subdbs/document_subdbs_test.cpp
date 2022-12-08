@@ -93,10 +93,17 @@ struct ConfigDir4 { static vespalib::string dir() { return TEST_PATH("cfg4"); } 
 
 struct MySubDBOwner : public IDocumentSubDBOwner
 {
+    SessionManager _sessionMgr;
+    MySubDBOwner();
+    ~MySubDBOwner() override;
     document::BucketSpace getBucketSpace() const override { return makeBucketSpace(); }
     vespalib::string getName() const override { return "owner"; }
     uint32_t getDistributionKey() const override { return -1; }
+    SessionManager & session_manager() override { return _sessionMgr; }
 };
+
+MySubDBOwner::MySubDBOwner() : _sessionMgr(1) {}
+MySubDBOwner::~MySubDBOwner() = default;
 
 struct MySyncProxy : public SyncProxy
 {
@@ -354,8 +361,7 @@ struct FixtureBase
         vespalib::ThreadStackExecutor executor(1, 1_Mi);
         initializer::TaskRunner taskRunner(executor);
         taskRunner.runTask(task);
-        auto sessionMgr = std::make_shared<SessionManager>(1);
-        runInMasterAndSync([&]() { _subDb.initViews(*_snapshot->_cfg, sessionMgr); });
+        runInMasterAndSync([&]() { _subDb.initViews(*_snapshot->_cfg); });
     }
     void basicReconfig(SerialNum serialNum) {
         runInMasterAndSync([&]() { performReconfig(serialNum, make_all_attr_schema(two_attr_schema), ConfigDir2::dir()); });

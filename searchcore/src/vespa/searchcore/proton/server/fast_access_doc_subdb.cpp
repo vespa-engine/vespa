@@ -230,8 +230,7 @@ FastAccessDocSubDB::setup(const DocumentSubDbInitializerResult &initResult)
 }
 
 void
-FastAccessDocSubDB::initViews(const DocumentDBConfig &configSnapshot,
-                              const SessionManager::SP &)
+FastAccessDocSubDB::initViews(const DocumentDBConfig &configSnapshot)
 {
     // Called by executor thread
     _iSearchView.set(std::make_shared<EmptySearchView>());

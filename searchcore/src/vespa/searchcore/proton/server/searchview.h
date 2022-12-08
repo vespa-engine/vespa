@@ -11,7 +11,7 @@ namespace proton {
 class SearchView : public ISearchHandler, public std::enable_shared_from_this<SearchView>
 {
 public:
-    using SessionManagerSP = std::shared_ptr<matching::SessionManager>;
+    using SessionManager = matching::SessionManager;
     using IndexSearchable = searchcorespi::IndexSearchable;
     using InternalDocsumReply = std::pair<std::unique_ptr<DocsumReply>, bool>;
     typedef std::shared_ptr<SearchView> SP;
@@ -28,7 +28,7 @@ public:
     const Matchers::SP  & getMatchers()  const { return _matchView->getMatchers(); }
     const IndexSearchable::SP   & getIndexSearchable()  const { return _matchView->getIndexSearchable(); }
     const IAttributeManager::SP & getAttributeManager() const { return _matchView->getAttributeManager(); }
-    const SessionManagerSP  & getSessionManager()    const { return _matchView->getSessionManager(); }
+    SessionManager & getSessionManager()    const { return _matchView->getSessionManager(); }
     const IDocumentMetaStoreContext::SP & getDocumentMetaStore() const { return _matchView->getDocumentMetaStore(); }
     DocIdLimit &getDocIdLimit() const { return _matchView->getDocIdLimit(); }
     matching::MatchingStats getMatcherStats(const vespalib::string &rankProfile) const { return _matchView->getMatcherStats(rankProfile); }
