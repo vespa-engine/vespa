@@ -10,7 +10,6 @@
 #include <vespa/searchcore/proton/flushengine/threadedflushtarget.h>
 #include <vespa/searchcore/proton/index/index_manager_initializer.h>
 #include <vespa/searchcore/proton/index/index_writer.h>
-#include <vespa/searchcore/proton/matching/sessionmanager.h>
 #include <vespa/searchcore/proton/reference/document_db_reference.h>
 #include <vespa/searchcore/proton/reference/gid_to_lid_change_handler.h>
 #include <vespa/searchlib/fef/indexproperties.h>
@@ -19,7 +18,6 @@
 
 using vespa::config::search::RankProfilesConfig;
 using proton::matching::MatchingStats;
-using proton::matching::SessionManager;
 using search::GrowStrategy;
 using search::index::Schema;
 using search::SerialNum;
@@ -187,7 +185,7 @@ SearchableDocSubDB::setBucketStateCalculator(const std::shared_ptr<IBucketStateC
 }
 
 void
-SearchableDocSubDB::initViews(const DocumentDBConfig &configSnapshot, const SessionManager::SP &sessionManager)
+SearchableDocSubDB::initViews(const DocumentDBConfig &configSnapshot)
 {
     assert(_writeService.master().isCurrentThread());
 
@@ -199,7 +197,7 @@ SearchableDocSubDB::initViews(const DocumentDBConfig &configSnapshot, const Sess
                                    configSnapshot.getOnnxModelsSP());
     Matchers::SP matchers = _configurer.createMatchers(schema, configSnapshot.getRankProfilesConfig());
     auto matchView = std::make_shared<MatchView>(std::move(matchers), indexMgr->getSearchable(), attrMgr,
-                                                 sessionManager, _metaStoreCtx, _docIdLimit);
+                                                 _owner.session_manager(), _metaStoreCtx, _docIdLimit);
     _rSearchView.set(SearchView::create(
                                       getSummaryManager()->createSummarySetup(
                                               configSnapshot.getSummaryConfig(),

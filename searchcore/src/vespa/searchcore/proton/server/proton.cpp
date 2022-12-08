@@ -997,6 +997,12 @@ Proton::getDocumentDBReferenceRegistry() const
     return _documentDBReferenceRegistry;
 }
 
+matching::SessionManager &
+Proton::session_manager() {
+    // Temporary and will not be called used yet
+    abort();
+}
+
 storage::spi::PersistenceProvider &
 Proton::getPersistence()
 {

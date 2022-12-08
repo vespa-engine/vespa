@@ -34,7 +34,6 @@ convertGidsToLids(const DocsumRequest & request,
                   const search::IDocumentMetaStore &metaStore,
                   uint32_t docIdLimit)
 {
-    document::GlobalId empty;
     uint32_t lid = 0;
     for (size_t i = 0; i < request.hits.size(); ++i) {
         const DocsumRequest::Hit & h = request.hits[i];
@@ -128,7 +127,7 @@ SearchView::getDocsumsInternal(const DocsumRequest & req)
     MatchContext::UP mctx = _matchView->createContext();
     auto ctx = std::make_unique<DocsumContext>(req, _summarySetup->getDocsumWriter(), *store, _matchView->getMatcher(req.ranking),
                                                mctx->getSearchContext(), mctx->getAttributeContext(),
-                                               *_summarySetup->getAttributeManager(), *getSessionManager());
+                                               *_summarySetup->getAttributeManager(), getSessionManager());
     SearchView::InternalDocsumReply reply(ctx->getDocsums(), true);
     uint64_t endGeneration = readGuard->get().getCurrentGeneration();
     if (startGeneration != endGeneration) {

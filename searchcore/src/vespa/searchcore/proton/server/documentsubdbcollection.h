@@ -46,10 +46,7 @@ struct IBucketStateCalculator;
 struct IDocumentDBReferenceResolver;
 struct MetricsWireService;
 
-namespace matching {
-    class QueryLimiter;
-    class SessionManager;
-}
+namespace matching { class QueryLimiter; }
 
 namespace initializer { class InitializerTask; }
 
@@ -65,7 +62,6 @@ public:
 private:
     using IFeedViewSP = std::shared_ptr<IFeedView>;
     using IBucketStateCalculatorSP = std::shared_ptr<IBucketStateCalculator>;
-    using SessionManagerSP = std::shared_ptr<matching::SessionManager>;
     using IFlushTargetList = std::vector<std::shared_ptr<searchcorespi::IFlushTarget>>;
     SubDBVector _subDBs;
     IDocumentSubDBOwner     &_owner;
@@ -131,7 +127,7 @@ public:
     createInitializer(const DocumentDBConfig &configSnapshot, SerialNum configSerialNum,
                       const index::IndexConfig & indexCfg);
 
-    void initViews(const DocumentDBConfig &configSnapshot, const SessionManagerSP &sessionManager);
+    void initViews(const DocumentDBConfig &configSnapshot);
     void clearViews();
     void onReplayDone();
     void onReprocessDone(SerialNum serialNum);

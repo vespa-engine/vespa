@@ -340,7 +340,7 @@ DocumentDB::initFinish(DocumentDBConfig::SP configSnapshot)
     // Called by executor thread
     assert(_writeService.master().isCurrentThread());
     _bucketHandler.setReadyBucketHandler(_subDBs.getReadySubDB()->getDocumentMetaStoreContext().get());
-    _subDBs.initViews(*configSnapshot, _sessionManager);
+    _subDBs.initViews(*configSnapshot);
     syncFeedView();
     // Check that feed view has been activated.
     assert(_feedView.get());
@@ -1118,6 +1118,11 @@ void
 DocumentDB::set_attribute_usage_listener(std::unique_ptr<IAttributeUsageListener> listener)
 {
     _writeFilter.set_listener(std::move(listener));
+}
+
+matching::SessionManager &
+DocumentDB::session_manager() {
+    return *_sessionManager;
 }
 
 } // namespace proton

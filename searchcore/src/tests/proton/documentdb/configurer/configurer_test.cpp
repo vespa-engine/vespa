@@ -155,6 +155,7 @@ struct Fixture
     RankingAssetsRepo _constantValueRepo;
     vespalib::ThreadStackExecutor _summaryExecutor;
     std::shared_ptr<PendingLidTrackerBase> _pendingLidsForCommit;
+    SessionManager _sessionMgr;
     ViewSet _views;
     MyDocumentDBReferenceResolver _resolver;
     ConfigurerUP _configurer;
@@ -170,6 +171,7 @@ Fixture::Fixture()
       _constantValueRepo(_constantValueFactory),
       _summaryExecutor(8, 128_Ki),
       _pendingLidsForCommit(std::make_shared<PendingLidTracker>()),
+      _sessionMgr(100),
       _views(),
       _resolver(),
       _configurer()
@@ -197,7 +199,6 @@ Fixture::initViewSet(ViewSet &views)
     auto summaryMgr = make_shared<SummaryManager>
             (_summaryExecutor, search::LogDocumentStore::Config(), search::GrowStrategy(), BASE_DIR,
              TuneFileSummary(), views._fileHeaderContext,views._noTlSyncer, search::IBucketizer::SP());
-    auto sesMgr = make_shared<SessionManager>(100);
     auto metaStore = make_shared<DocumentMetaStoreContext>(make_shared<bucketdb::BucketDBOwner>());
     auto indexWriter = std::make_shared<IndexWriter>(indexMgr);
     auto attrWriter = std::make_shared<AttributeWriter>(attrMgr);
@@ -207,7 +208,7 @@ Fixture::initViewSet(ViewSet &views)
     views._summaryMgr = summaryMgr;
     views._dmsc = metaStore;
     IndexSearchable::SP indexSearchable;
-    auto matchView = std::make_shared<MatchView>(matchers, indexSearchable, attrMgr, sesMgr, metaStore, views._docIdLimit);
+    auto matchView = std::make_shared<MatchView>(matchers, indexSearchable, attrMgr, _sessionMgr, metaStore, views._docIdLimit);
     views.searchView.set(SearchView::create
                                  (summaryMgr->createSummarySetup(SummaryConfig(),
                                                                  JuniperrcConfig(), views.repo, attrMgr),
@@ -349,9 +350,7 @@ struct SearchViewComparer
     void expect_not_equal_attribute_manager() {
         EXPECT_NOT_EQUAL(_old->getAttributeManager().get(), _new->getAttributeManager().get());
     }
-    void expect_equal_session_manager() {
-        EXPECT_EQUAL(_old->getSessionManager().get(), _new->getSessionManager().get());
-    }
+
     void expect_equal_document_meta_store() {
         EXPECT_EQUAL(_old->getDocumentMetaStore().get(), _new->getDocumentMetaStore().get());
     }
@@ -436,7 +435,6 @@ TEST_F("require that we can reconfigure index searchable", Fixture)
         cmp.expect_equal_matchers();
         cmp.expect_not_equal_index_searchable();
         cmp.expect_equal_attribute_manager();
-        cmp.expect_equal_session_manager();
         cmp.expect_equal_document_meta_store();
     }
     { // verify feed view
@@ -471,7 +469,6 @@ TEST_F("require that we can reconfigure attribute manager", Fixture)
         cmp.expect_not_equal_matchers();
         cmp.expect_equal_index_searchable();
         cmp.expect_not_equal_attribute_manager();
-        cmp.expect_equal_session_manager();
         cmp.expect_equal_document_meta_store();
     }
     { // verify feed view
@@ -587,7 +584,6 @@ TEST_F("require that we can reconfigure matchers", Fixture)
         cmp.expect_not_equal_matchers();
         cmp.expect_equal_index_searchable();
         cmp.expect_equal_attribute_manager();
-        cmp.expect_equal_session_manager();
         cmp.expect_equal_document_meta_store();
     }
     { // verify feed view

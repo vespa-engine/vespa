@@ -10,6 +10,7 @@ vespa_add_library(searchcore_test STATIC
     documentdb_config_builder.cpp
     dummy_feed_view.cpp
     dummy_flush_target.cpp
+    dummydbowner.cpp
     mock_index_manager.cpp
     mock_shared_threading_service.cpp
     userdocumentsbuilder.cpp

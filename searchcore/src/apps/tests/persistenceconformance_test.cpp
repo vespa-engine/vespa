@@ -1,21 +1,8 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include <vespa/vespalib/testkit/testapp.h>
-
-#include <tests/proton/common/dummydbowner.h>
-#include <vespa/config-attributes.h>
-#include <vespa/config-bucketspaces.h>
-#include <vespa/config-imported-fields.h>
-#include <vespa/config-indexschema.h>
-#include <vespa/config-rank-profiles.h>
-#include <vespa/config-summary.h>
-#include <vespa/config/subscription/sourcespec.h>
-#include <vespa/document/base/testdocman.h>
-#include <vespa/document/config/documenttypes_config_fwd.h>
-#include <vespa/document/repo/documenttyperepo.h>
-#include <vespa/document/test/make_bucket_space.h>
-#include <vespa/fastos/file.h>
 #include <vespa/persistence/conformancetest/conformancetest.h>
+#include <vespa/searchcore/proton/test/dummydbowner.h>
 #include <vespa/searchcore/proton/common/alloc_config.h>
 #include <vespa/searchcore/proton/common/hw_info.h>
 #include <vespa/searchcore/proton/matching/querylimiter.h>
@@ -36,6 +23,17 @@
 #include <vespa/searchlib/index/dummyfileheadercontext.h>
 #include <vespa/searchlib/transactionlog/translogserver.h>
 #include <vespa/searchsummary/config/config-juniperrc.h>
+#include <vespa/config-attributes.h>
+#include <vespa/config-bucketspaces.h>
+#include <vespa/config-imported-fields.h>
+#include <vespa/config-indexschema.h>
+#include <vespa/config-rank-profiles.h>
+#include <vespa/config-summary.h>
+#include <vespa/config/subscription/sourcespec.h>
+#include <vespa/document/base/testdocman.h>
+#include <vespa/document/config/documenttypes_config_fwd.h>
+#include <vespa/document/repo/documenttyperepo.h>
+#include <vespa/document/test/make_bucket_space.h>
 #include <vespa/vespalib/util/size_literals.h>
 #include <filesystem>
 

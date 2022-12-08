@@ -51,7 +51,7 @@ struct DummyDocumentSubDb : public IDocumentSubDB
             (const_cast<DummyDocumentSubDb &>(*this), _service.write().master());
     }
     void setup(const DocumentSubDbInitializerResult &) override {}
-    void initViews(const DocumentDBConfig &, const proton::matching::SessionManager::SP &) override {}
+    void initViews(const DocumentDBConfig &) override {}
     IReprocessingTask::List applyConfig(const DocumentDBConfig &, const DocumentDBConfig &,
                                         SerialNum, const ReconfigParams &, IDocumentDBReferenceResolver &) override
     {

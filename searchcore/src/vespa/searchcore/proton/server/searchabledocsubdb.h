@@ -100,7 +100,7 @@ public:
                       const IndexConfig &indexCfg) const override;
 
     void setup(const DocumentSubDbInitializerResult &initResult) override;
-    void initViews(const DocumentDBConfig &configSnapshot, const SessionManagerSP &sessionManager)  override;
+    void initViews(const DocumentDBConfig &configSnapshot) override;
 
     IReprocessingTask::List
     applyConfig(const DocumentDBConfig &newConfigSnapshot, const DocumentDBConfig &oldConfigSnapshot,

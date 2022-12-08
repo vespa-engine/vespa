@@ -12,7 +12,6 @@
 #include <vespa/vespalib/util/lambdatask.h>
 #include <vespa/vespalib/util/threadstackexecutor.h>
 
-using proton::matching::SessionManager;
 using search::GrowStrategy;
 using search::SerialNum;
 using search::index::Schema;
@@ -184,11 +183,10 @@ DocumentSubDBCollection::createInitializer(const DocumentDBConfig &configSnapsho
 
 
 void
-DocumentSubDBCollection::initViews(const DocumentDBConfig &configSnapshot,
-                                   const SessionManager::SP &sessionManager)
+DocumentSubDBCollection::initViews(const DocumentDBConfig &configSnapshot)
 {
     for (auto subDb : _subDBs) {
-        subDb->initViews(configSnapshot, sessionManager);
+        subDb->initViews(configSnapshot);
     }
 }
 
