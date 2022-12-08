@@ -45,7 +45,7 @@ func (rs *RunServer) WouldRun() bool {
 }
 
 func (rs *RunServer) Exec(prog string) {
-	argv := []string{
+	argv := util.ArrayList[string]{
 		PROG_NAME,
 		"-s", rs.ServiceName,
 		"-r", "30",
@@ -53,9 +53,7 @@ func (rs *RunServer) Exec(prog string) {
 		"--",
 		prog,
 	}
-	for _, arg := range rs.Args {
-		argv = append(argv, arg)
-	}
+	argv.AppendAll(rs.Args...)
 	err := util.Execvp(rs.ProgPath(), argv)
 	util.JustExitWith(err)
 }
