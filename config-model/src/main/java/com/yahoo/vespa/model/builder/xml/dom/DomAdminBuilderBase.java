@@ -5,6 +5,7 @@ import com.yahoo.config.model.ConfigModelContext.ApplicationType;
 import com.yahoo.config.model.api.ConfigServerSpec;
 import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.model.producer.AbstractConfigProducer;
+import com.yahoo.log.internal.LevelsModSpec;
 import com.yahoo.text.XML;
 import com.yahoo.vespa.model.Host;
 import com.yahoo.vespa.model.HostResource;
@@ -112,40 +113,13 @@ public abstract class DomAdminBuilderBase extends VespaDomBuilder.DomConfigProdu
         }
     }
 
-    private static Map<String, String> defaultLogLevels() {
-        var m = new HashMap<String,String>();
-        m.put("all", "off");
-        m.put("error", "on");
-        m.put("warning", "on");
-        m.put("info", "on");
-        m.put("config", "on");
-        m.put("event", "on");
-        m.put("debug", "off");
-        m.put("spam", "off");
-        return m;
-    }
-
     private void addLoggingSpec(ModelElement loggingSpec, Admin admin) {
-        var currentLevels = defaultLogLevels();
         if (loggingSpec == null) return;
         String componentSpec = loggingSpec.requiredStringAttribute("name");
         String levels = loggingSpec.requiredStringAttribute("levels");
-        var levelsModSpec = new StringBuilder();
-        levelsModSpec.append("all=off");
-        for (String s : levels.split("[ ,]")) {
-            if (s.isEmpty()) continue;
-            String offOn = "on";
-            if (s.startsWith("-")) {
-                offOn = "off";
-                s = s.substring(1);
-            }
-            if (currentLevels.containsKey(s)) {
-                levelsModSpec.append(",").append(s).append("=").append(offOn);
-            } else {
-                throw new IllegalArgumentException("invalid level '" + s + "' in logging levels: " + levels);
-            }
-        }
-        admin.addLogctlCommand(componentSpec, levelsModSpec.toString());
+        var levelSpec = new LevelsModSpec();
+        levelSpec.setLevels(levels);
+        admin.addLogctlCommand(componentSpec, levelSpec.toLogctlModSpec());
     }
 
     void addLoggingSpecs(ModelElement loggingElement, Admin admin) {
