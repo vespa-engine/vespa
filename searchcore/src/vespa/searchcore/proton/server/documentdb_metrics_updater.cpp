@@ -1,7 +1,6 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "documentdb_metrics_updater.h"
-#include "ddbstate.h"
 #include "document_meta_store_read_guards.h"
 #include "documentsubdbcollection.h"
 #include "executorthreadingservice.h"
@@ -11,7 +10,6 @@
 #include <vespa/searchcore/proton/attribute/attribute_usage_filter.h>
 #include <vespa/searchcore/proton/attribute/i_attribute_manager.h>
 #include <vespa/searchcore/proton/docsummary/isummarymanager.h>
-#include <vespa/searchcore/proton/matching/matching_stats.h>
 #include <vespa/searchcore/proton/matching/matching_stats.h>
 #include <vespa/searchcore/proton/metrics/documentdb_job_trackers.h>
 #include <vespa/searchcore/proton/metrics/executor_threading_service_stats.h>
