@@ -172,7 +172,7 @@ public class FeedClientBuilderImpl implements FeedClientBuilder {
     }
 
     @Override
-    public FeedClientBuilder setSpeedTest(boolean enabled) {
+    public FeedClientBuilderImpl setSpeedTest(boolean enabled) {
         this.speedTest = enabled;
         return this;
     }
@@ -194,7 +194,11 @@ public class FeedClientBuilderImpl implements FeedClientBuilder {
         return this;
     }
 
-    @Override public FeedClientBuilder setProxy(URI uri) { this.proxy = uri; return this; }
+    @Override
+    public FeedClientBuilderImpl setProxy(URI uri) {
+        this.proxy = uri;
+        return this;
+    }
 
     /** Constructs instance of {@link ai.vespa.feed.client.FeedClient} from builder configuration */
     @Override

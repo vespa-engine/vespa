@@ -51,14 +51,18 @@ class HttpFeedClient implements FeedClient {
     private final boolean speedTest;
 
     HttpFeedClient(FeedClientBuilderImpl builder) throws IOException {
-        this(builder, new HttpRequestStrategy(builder));
+        this(builder, builder.dryrun ? new DryrunCluster() : new ApacheCluster(builder));
     }
 
-    HttpFeedClient(FeedClientBuilderImpl builder, RequestStrategy requestStrategy) {
+    HttpFeedClient(FeedClientBuilderImpl builder, Cluster cluster) {
+        this(builder, cluster, new HttpRequestStrategy(builder, cluster));
+    }
+
+    HttpFeedClient(FeedClientBuilderImpl builder, Cluster cluster, RequestStrategy requestStrategy) {
         this.requestHeaders = new HashMap<>(builder.requestHeaders);
         this.requestStrategy = requestStrategy;
         this.speedTest = builder.speedTest;
-        verifyConnection(builder);
+        verifyConnection(builder, cluster);
     }
 
     @Override
@@ -121,9 +125,8 @@ class HttpFeedClient implements FeedClient {
         return promise;
     }
 
-    private void verifyConnection(FeedClientBuilderImpl builder) {
-        if (builder.dryrun) return;
-        try (Cluster cluster = new ApacheCluster(builder)) {
+    private void verifyConnection(FeedClientBuilderImpl builder, Cluster cluster) {
+        try {
             HttpRequest request = new HttpRequest("POST",
                                                   getPath(DocumentId.of("feeder", "handshake", "dummy")) + getQuery(empty(), true),
                                                   requestHeaders,
@@ -140,11 +143,14 @@ class HttpFeedClient implements FeedClient {
                     default: message = response.toString(); break;
                 }
                 else message = response.toString();
+
+                // Old server ignores ?dryRun=true, but getting this particular error message means everything else is OK.
+                if (response.code() == 400 && "Could not read document, no document?".equals(message)) {
+                    if (builder.speedTest) throw new FeedException("server does not support speed test; upgrade to a newer version");
+                    return;
+                }
                 throw new FeedException("server responded non-OK to handshake: " + message);
             }
-        }
-        catch (IOException e) {
-            throw new FeedException("failed initiating handshake with server: " + e, e);
         }
         catch (ExecutionException e) {
             throw new FeedException("failed handshake with server: " + e.getCause(), e.getCause());

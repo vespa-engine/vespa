@@ -3,7 +3,6 @@ package ai.vespa.feed.client.impl;
 
 import ai.vespa.feed.client.DocumentId;
 import ai.vespa.feed.client.FeedClient;
-import ai.vespa.feed.client.FeedClientBuilder;
 import ai.vespa.feed.client.FeedException;
 import ai.vespa.feed.client.HttpResponse;
 import ai.vespa.feed.client.OperationParameters;
@@ -44,6 +43,7 @@ class HttpFeedClientTest {
             @Override public CompletableFuture<HttpResponse> enqueue(DocumentId documentId, HttpRequest request) { return dispatch.get().apply(documentId, request); }
         }
         FeedClient client = new HttpFeedClient(new FeedClientBuilderImpl(Collections.singletonList(URI.create("https://dummy:123"))).setDryrun(true),
+                                               new DryrunCluster(),
                                                new MockRequestStrategy());
 
         // Update is a PUT, and 200 OK is a success.
@@ -212,9 +212,44 @@ class HttpFeedClientTest {
 
     @Test
     void testHandshake() {
+        // dummy:123 does not exist, and results in a host-not-found exception.
         assertTrue(assertThrows(FeedException.class,
-                                () -> new HttpFeedClient(new FeedClientBuilderImpl(Collections.singletonList(URI.create("https://dummy:123"))), null))
+                                () -> new HttpFeedClient(new FeedClientBuilderImpl(Collections.singletonList(URI.create("https://dummy:123")))))
                            .getMessage().startsWith("failed handshake with server: java.net.UnknownHostException"));
+
+        HttpResponse oldResponse = HttpResponse.of(400, "{\"pathId\":\"/document/v1/test/build/docid/foo\",\"message\":\"Could not read document, no document?\"}".getBytes(UTF_8));
+        HttpResponse okResponse = HttpResponse.of(200, null);
+        AtomicReference<HttpResponse> response = new AtomicReference<>(oldResponse);
+        Cluster cluster = (request, vessel) -> {
+            try {
+                assertNull(request.body());
+                assertEquals("POST", request.method());
+                assertEquals("/document/v1/feeder/handshake/docid/dummy?dryRun=true", request.path());
+                vessel.complete(response.get());
+            }
+            catch (Throwable t) {
+                vessel.completeExceptionally(t);
+            }
+        };
+
+        // Old server, and speed-test.
+        assertEquals("server does not support speed test; upgrade to a newer version",
+                     assertThrows(FeedException.class,
+                                  () -> new HttpFeedClient(new FeedClientBuilderImpl(Collections.singletonList(URI.create("https://dummy:123"))).setSpeedTest(true),
+                                                           cluster,
+                                                           null))
+                             .getMessage());
+
+        // Old server.
+        new HttpFeedClient(new FeedClientBuilderImpl(Collections.singletonList(URI.create("https://dummy:123"))),
+                           cluster,
+                           null);
+
+        // New server.
+        response.set(okResponse);
+        new HttpFeedClient(new FeedClientBuilderImpl(Collections.singletonList(URI.create("https://dummy:123"))),
+                           cluster,
+                           null);
     }
 
 }
