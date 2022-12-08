@@ -11,14 +11,17 @@ import com.yahoo.collections.Tuple2;
 import com.yahoo.component.Vtag;
 import com.yahoo.component.provider.ComponentRegistry;
 import com.yahoo.container.core.ApplicationMetadataConfig;
+import com.yahoo.container.logging.LevelsModSpec;
 import com.yahoo.jdisc.Request;
 import com.yahoo.jdisc.Response;
 import com.yahoo.jdisc.Timer;
 import com.yahoo.jdisc.handler.AbstractRequestHandler;
+import com.yahoo.jdisc.handler.CompletionHandler;
 import com.yahoo.jdisc.handler.ContentChannel;
 import com.yahoo.jdisc.handler.ResponseDispatch;
 import com.yahoo.jdisc.handler.ResponseHandler;
 import com.yahoo.jdisc.http.HttpHeaders;
+import com.yahoo.system.ProcessExecuter;
 
 import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;
@@ -48,11 +51,12 @@ public class StateHandler extends AbstractRequestHandler {
     private static final String CONFIG_GENERATION_PATH = "config";
     private static final String HEALTH_PATH = "health";
     private static final String VERSION_PATH = "version";
-    
+    private static final String LOGCTL_PATH = "logctl";
+
     private final static MetricDimensions NULL_DIMENSIONS = StateMetricContext.newInstance(null);
     private final StateMonitor monitor;
     private final Timer timer;
-    private final byte[] config;
+    private final JsonNode config;
     private final SnapshotProvider snapshotProvider;
 
     @Inject
@@ -60,7 +64,7 @@ public class StateHandler extends AbstractRequestHandler {
                         ComponentRegistry<SnapshotProvider> snapshotProviders) {
         this.monitor = monitor;
         this.timer = timer;
-        this.config = buildConfigOutput(config);
+        this.config = buildConfigJson(config);
         snapshotProvider = getSnapshotProviderOrThrow(snapshotProviders);
     }
 
@@ -73,10 +77,30 @@ public class StateHandler extends AbstractRequestHandler {
         }
     }
 
+
+    private static class MyContentChannel implements ContentChannel {
+        private final List<ByteBuffer> buffers;
+        private final Runnable trigger;
+        @Override
+        public void write(ByteBuffer buf, CompletionHandler handler) {
+            buffers.add(buf);
+            if (handler != null) handler.completed();
+        }
+        @Override
+        public void close(CompletionHandler handler) {
+            trigger.run();
+            if (handler != null) handler.completed();
+        }
+        MyContentChannel(List<ByteBuffer> buffers, Runnable trigger) {
+            this.buffers = buffers;
+            this.trigger = trigger;
+        }
+    }
+
     @Override
     public ContentChannel handleRequest(Request request, ResponseHandler handler) {
-        new ResponseDispatch() {
-
+        List<ByteBuffer> input = new ArrayList<>();
+        var respDisp = new ResponseDispatch() {
             @Override
             protected Response newResponse() {
                 Response response = new Response(Response.Status.OK);
@@ -86,10 +110,10 @@ public class StateHandler extends AbstractRequestHandler {
 
             @Override
             protected Iterable<ByteBuffer> responseContent() {
-                return Collections.singleton(buildContent(request.getUri()));
+                return Collections.singleton(buildContent(request.getUri(), input));
             }
-        }.dispatch(handler);
-        return null;
+        };
+        return new MyContentChannel(input, () -> { respDisp.dispatch(handler); });
     }
 
     private String resolveContentType(URI requestUri) {
@@ -100,40 +124,41 @@ public class StateHandler extends AbstractRequestHandler {
         }
     }
 
-    private ByteBuffer buildContent(URI requestUri) {
-        String suffix = resolvePath(requestUri);
-        return switch (suffix) {
+    private ByteBuffer buildContent(URI requestUri, List<ByteBuffer> input) {
+        try {
+            String suffix = resolvePath(requestUri);
+            return switch (suffix) {
             case "" -> ByteBuffer.wrap(apiLinks(requestUri));
-            case CONFIG_GENERATION_PATH -> ByteBuffer.wrap(config);
+            case CONFIG_GENERATION_PATH -> ByteBuffer.wrap(toPrettyString(config));
             case HISTOGRAMS_PATH -> ByteBuffer.wrap(buildHistogramsOutput());
             case HEALTH_PATH, METRICS_PATH -> ByteBuffer.wrap(buildMetricOutput(suffix));
             case VERSION_PATH -> ByteBuffer.wrap(buildVersionOutput());
+            case LOGCTL_PATH -> ByteBuffer.wrap(runLogctl(input));
             default -> ByteBuffer.wrap(buildMetricOutput(suffix)); // XXX should possibly do something else here
-        };
-    }
-
-    private byte[] apiLinks(URI requestUri) {
-        try {
-            int port = requestUri.getPort();
-            String host = requestUri.getHost();
-            StringBuilder base = new StringBuilder("http://");
-            base.append(host);
-            if (port != -1) {
-                base.append(":").append(port);
-            }
-            base.append(STATE_API_ROOT);
-            String uriBase = base.toString();
-            ArrayNode linkList = jsonMapper.createArrayNode();
-            for (String api : new String[] {METRICS_PATH, CONFIG_GENERATION_PATH, HEALTH_PATH, VERSION_PATH}) {
-                ObjectNode resource = jsonMapper.createObjectNode();
-                resource.put("url", uriBase + "/" + api);
-                linkList.add(resource);
-            }
-            JsonNode resources = jsonMapper.createObjectNode().set("resources", linkList);
-            return toPrettyString(resources);
+            };
         } catch (JsonProcessingException e) {
             throw new RuntimeException("Bad JSON construction", e);
         }
+    }
+
+    private byte[] apiLinks(URI requestUri) throws JsonProcessingException {
+        int port = requestUri.getPort();
+        String host = requestUri.getHost();
+        StringBuilder base = new StringBuilder("http://");
+        base.append(host);
+        if (port != -1) {
+            base.append(":").append(port);
+        }
+        base.append(STATE_API_ROOT);
+        String uriBase = base.toString();
+        ArrayNode linkList = jsonMapper.createArrayNode();
+        for (String api : new String[] {METRICS_PATH, CONFIG_GENERATION_PATH, HEALTH_PATH, VERSION_PATH}) {
+            ObjectNode resource = jsonMapper.createObjectNode();
+            resource.put("url", uriBase + "/" + api);
+            linkList.add(resource);
+        }
+        JsonNode resources = jsonMapper.createObjectNode().set("resources", linkList);
+        return toPrettyString(resources);
     }
 
     private static String resolvePath(URI uri) {
@@ -150,35 +175,22 @@ public class StateHandler extends AbstractRequestHandler {
         return path;
     }
 
-    private static byte[] buildConfigOutput(ApplicationMetadataConfig config) {
-        try {
-            return toPrettyString(
-                    jsonMapper.createObjectNode()
-                            .set(CONFIG_GENERATION_PATH, jsonMapper.createObjectNode()
-                                    .put("generation", config.generation())
-                                    .set("container", jsonMapper.createObjectNode()
-                                            .put("generation", config.generation()))));
-        } catch (JsonProcessingException e) {
-            throw new RuntimeException("Bad JSON construction", e);
-        }
+    private static JsonNode buildConfigJson(ApplicationMetadataConfig config) {
+        return jsonMapper.createObjectNode()
+                .set(CONFIG_GENERATION_PATH, jsonMapper.createObjectNode()
+                     .put("generation", config.generation())
+                     .set("container", jsonMapper.createObjectNode()
+                          .put("generation", config.generation())));
     }
 
-    private static byte[] buildVersionOutput() {
-        try {
-            return toPrettyString(
-                    jsonMapper.createObjectNode()
-                            .put("version", Vtag.currentVersion.toString()));
-        } catch (JsonProcessingException e) {
-            throw new RuntimeException("Bad JSON construction", e);
-        }
+    private static byte[] buildVersionOutput() throws JsonProcessingException {
+        return toPrettyString(
+                jsonMapper.createObjectNode()
+                .put("version", Vtag.currentVersion.toString()));
     }
 
-    private byte[] buildMetricOutput(String consumer) {
-        try {
-            return toPrettyString(buildJsonForConsumer(consumer));
-        } catch (JsonProcessingException e) {
-            throw new RuntimeException("Bad JSON construction", e);
-        }
+    private byte[] buildMetricOutput(String consumer) throws JsonProcessingException {
+        return toPrettyString(buildJsonForConsumer(consumer));
     }
 
     private byte[] buildHistogramsOutput() {
@@ -187,6 +199,48 @@ public class StateHandler extends AbstractRequestHandler {
             snapshotProvider.histogram(new PrintStream(baos));
         }
         return baos.toByteArray();
+    }
+
+    private static byte[] runLogctl(List<ByteBuffer> input) throws JsonProcessingException {
+        try {
+            var accumulated = new java.io.ByteArrayOutputStream();
+            for (var buf : input) {
+                if (buf.hasArray()) {
+                    accumulated.write(buf.array(), buf.arrayOffset() + buf.position(), buf.remaining());
+                } else {
+                    while (buf.remaining() > 0) {
+                        accumulated.write(buf.get());
+                    }
+                }
+            }
+            var dec = new com.yahoo.slime.JsonDecoder();
+            var slime = dec.decode(new com.yahoo.slime.Slime(), accumulated.toByteArray());
+            com.yahoo.slime.Inspector obj = slime.get();
+            String component = obj.field("component").asString();
+            String levels = obj.field("levels").asString();
+            if (component.equals("") || levels.equals("")) {
+                return toPrettyString(jsonMapper.createObjectNode()
+                                      .put("error", "missing component or levels parameter"));
+            }
+            String serviceName = System.getenv("VESPA_SERVICE_NAME");
+            if (serviceName == null || serviceName.equals("")) {
+                return toPrettyString(jsonMapper.createObjectNode()
+                                      .put("error", "no VESPA_SERVICE_NAME"));
+            }
+            var lSpec = new LevelsModSpec();
+            lSpec.setLevels(levels);
+            var command = new String[] { "vespa-logctl", serviceName + ":" + component, lSpec.toLogctlModSpec() };
+            var ret = new ProcessExecuter(true).exec(command);
+            return toPrettyString(jsonMapper.createObjectNode()
+                                  .put("exitcode", ret.getFirst())
+                                  .put("output", ret.getSecond()));
+        } catch (java.io.IOException e) {
+            return toPrettyString(jsonMapper.createObjectNode()
+                                  .put("error", "io exception while running vespa-logctl"));
+        } catch (IllegalArgumentException e) {
+            return toPrettyString(jsonMapper.createObjectNode()
+                                  .put("error", e.getMessage()));
+        }
     }
 
     private ObjectNode buildJsonForConsumer(String consumer) {
