@@ -5,6 +5,7 @@
 #include "persistenceutil.h"
 #include "fieldvisitor.h"
 #include <vespa/persistence/spi/persistenceprovider.h>
+#include <vespa/document/base/exceptions.h>
 #include <vespa/document/select/parser.h>
 #include <vespa/document/repo/documenttyperepo.h>
 #include <vespa/vespalib/util/stringfmt.h>
@@ -61,7 +62,14 @@ api::ReturnCode
 TestAndSetHelper::retrieveAndMatch(spi::Context & context) {
     // Walk document selection tree to build a minimal field set 
     FieldVisitor fieldVisitor(*_docTypePtr);
-    _docSelectionUp->visit(fieldVisitor);
+    try {
+        _docSelectionUp->visit(fieldVisitor);
+    } catch (const document::FieldNotFoundException& e) {
+        return api::ReturnCode(api::ReturnCode::ILLEGAL_PARAMETERS,
+                               vespalib::make_string("Condition field '%s' could not be found, or is an imported field. "
+                                                     "Imported fields are not supported in conditional mutations.",
+                                                     e.getFieldName().c_str()));
+    }
 
     // Retrieve document
     auto result = retrieveDocument(fieldVisitor.getFieldSet(), context);
