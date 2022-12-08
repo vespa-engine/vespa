@@ -475,9 +475,7 @@ DocumentDB::applyConfig(DocumentDBConfig::SP configSnapshot, SerialNum serialNum
 
     // Save config via config manager if replay is done.
     auto replay_config = DocumentDBConfig::makeReplayConfig(configSnapshot);
-    bool equalReplayConfig =
-        *replay_config ==
-        *DocumentDBConfig::makeReplayConfig(_activeConfigSnapshot);
+    bool equalReplayConfig = (*replay_config == *DocumentDBConfig::makeReplayConfig(_activeConfigSnapshot));
     bool tlsReplayDone = _feedHandler->getTransactionLogReplayDone();
     FeedHandler::CommitResult commit_result;
     if (!equalReplayConfig && tlsReplayDone) {

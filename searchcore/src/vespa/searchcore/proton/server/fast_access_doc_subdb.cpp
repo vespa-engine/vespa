@@ -11,7 +11,6 @@
 #include <vespa/searchcore/proton/attribute/attribute_factory.h>
 #include <vespa/searchcore/proton/attribute/attribute_manager_initializer.h>
 #include <vespa/searchcore/proton/attribute/filter_attribute_manager.h>
-#include <vespa/searchcore/proton/attribute/sequential_attributes_initializer.h>
 #include <vespa/searchcore/proton/common/alloc_config.h>
 #include <vespa/searchcore/proton/matching/sessionmanager.h>
 #include <vespa/searchcore/proton/reprocessing/attribute_reprocessing_initializer.h>
@@ -232,10 +231,9 @@ FastAccessDocSubDB::setup(const DocumentSubDbInitializerResult &initResult)
 
 void
 FastAccessDocSubDB::initViews(const DocumentDBConfig &configSnapshot,
-                              const SessionManager::SP &sessionManager)
+                              const SessionManager::SP &)
 {
     // Called by executor thread
-    (void) sessionManager;
     _iSearchView.set(std::make_shared<EmptySearchView>());
     auto writer = std::make_shared<AttributeWriter>(getAndResetInitAttributeManager());
     {
@@ -246,10 +244,8 @@ FastAccessDocSubDB::initViews(const DocumentDBConfig &configSnapshot,
 
 IReprocessingTask::List
 FastAccessDocSubDB::applyConfig(const DocumentDBConfig &newConfigSnapshot, const DocumentDBConfig &oldConfigSnapshot,
-                                SerialNum serialNum, const ReconfigParams &params, IDocumentDBReferenceResolver &resolver)
+                                SerialNum serialNum, const ReconfigParams &params, IDocumentDBReferenceResolver &)
 {
-    (void) resolver;
-
     AllocStrategy alloc_strategy = newConfigSnapshot.get_alloc_config().make_alloc_strategy(_subDbType);
     reconfigure(newConfigSnapshot.getStoreConfig(), alloc_strategy);
     IReprocessingTask::List tasks;
