@@ -20,12 +20,13 @@ vespa_add_library(searchcore_pcommon STATIC
     pendinglidtracker.cpp
     replay_feed_token_factory.cpp
     replay_feedtoken_state.cpp
+    scheduled_forward_executor.cpp
+    scheduledexecutor.cpp
     select_utils.cpp
     selectcontext.cpp
     selectpruner.cpp
     state_reporter_utils.cpp
     statusreport.cpp
-    scheduledexecutor.cpp
     DEPENDS
     searchcore_proton_metrics
     searchcore_fconfig
