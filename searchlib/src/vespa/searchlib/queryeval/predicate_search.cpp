@@ -234,9 +234,6 @@ uint32_t addInterval(uint32_t interval, uint64_t subquery,
         return end;
     }
 }
-void restoreSortedOrder(size_t first, size_t last,
-                        vector<uint16_t> &indexes,
-                        const vector<uint32_t> &intervals) __attribute__((noinline));
 
 // One step of insertion sort: First element is moved to correct position.
 void restoreSortedOrder(size_t first, size_t last,
