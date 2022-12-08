@@ -58,6 +58,7 @@ DocumenttypesConfig TestDocRepo::getDefaultConfig() {
                      .addTensorField("sparse_xy_tensor", "tensor(x{},y{})")
                      .addTensorField("sparse_float_tensor", "tensor<float>(x{})")
                      .addTensorField("dense_tensor", "tensor(x[2])"))
+        .imported_field("my_imported_field")
         .doc_type.fieldsets["[document]"].fields.swap(documentfields);
 
     builder.document(type2_id, "testdoctype2",
