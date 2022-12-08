@@ -12,7 +12,6 @@
 #include <vespa/searchcore/proton/attribute/attribute_manager_initializer.h>
 #include <vespa/searchcore/proton/attribute/filter_attribute_manager.h>
 #include <vespa/searchcore/proton/common/alloc_config.h>
-#include <vespa/searchcore/proton/matching/sessionmanager.h>
 #include <vespa/searchcore/proton/reprocessing/attribute_reprocessing_initializer.h>
 #include <vespa/searchcore/proton/reprocessing/reprocess_documents_task.h>
 #include <vespa/vespalib/util/destructor_callbacks.h>
@@ -20,7 +19,6 @@
 #include <vespa/log/log.h>
 LOG_SETUP(".proton.server.fast_access_doc_subdb");
 
-using proton::matching::SessionManager;
 using search::AttributeGuard;
 using search::AttributeVector;
 using search::SerialNum;

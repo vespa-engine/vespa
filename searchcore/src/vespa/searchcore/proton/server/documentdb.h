@@ -36,6 +36,12 @@ namespace search {
         class TransLogClient;
         class WriterFactory;
     }
+    namespace engine {
+        class SearchReply;
+        class SearchRequest;
+        class DocsumReply;
+        class DocsumRequest;
+    }
 }
 
 namespace vespa::config::search::core::internal { class InternalProtonType; }
@@ -119,7 +125,6 @@ private:
     index::IndexConfig                               _indexCfg;
     std::unique_ptr<ReplayThrottlingPolicy>          _replay_throttling_policy;
     ConfigStore::UP                                  _config_store;
-    std::shared_ptr<matching::SessionManager>        _sessionManager; // TODO: This should not have to be a shared pointer.
     MetricsWireService                              &_metricsWireService;
     DocumentDBTaggedMetrics                          _metrics;
     std::unique_ptr<metrics::UpdateHook>             _metricsHook;

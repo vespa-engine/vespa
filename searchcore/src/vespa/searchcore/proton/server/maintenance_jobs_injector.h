@@ -6,7 +6,6 @@
 #include "i_lid_space_compaction_handler.h"
 #include "i_operation_storer.h"
 #include "iheartbeathandler.h"
-#include <vespa/searchcore/proton/matching/isessioncachepruner.h>
 #include <vespa/searchcore/proton/metrics/documentdb_job_trackers.h>
 
 namespace storage::spi {struct BucketExecutor; }
@@ -34,7 +33,6 @@ struct MaintenanceJobsInjector
                            const DocumentDBMaintenanceConfig &config,
                            storage::spi::BucketExecutor & bucketExecutor,
                            IHeartBeatHandler &hbHandler,
-                           matching::ISessionCachePruner &scPruner,
                            IOperationStorer &opStorer,
                            bucketdb::IBucketCreateNotifier &bucketCreateNotifier,
                            document::BucketSpace bucketSpace,

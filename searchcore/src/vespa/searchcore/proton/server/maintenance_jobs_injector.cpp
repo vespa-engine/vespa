@@ -6,7 +6,6 @@
 #include "job_tracked_maintenance_job.h"
 #include "lid_space_compaction_job.h"
 #include "lid_space_compaction_handler.h"
-#include "prune_session_cache_job.h"
 #include "pruneremoveddocumentsjob.h"
 #include "sample_attribute_usage_job.h"
 
@@ -72,7 +71,6 @@ MaintenanceJobsInjector::injectJobs(MaintenanceController &controller,
                                     const DocumentDBMaintenanceConfig &config,
                                     storage::spi::BucketExecutor & bucketExecutor,
                                     IHeartBeatHandler &hbHandler,
-                                    matching::ISessionCachePruner &scPruner,
                                     IOperationStorer &opStorer,
                                     bucketdb::IBucketCreateNotifier &bucketCreateNotifier,
                                     document::BucketSpace bucketSpace,
@@ -89,8 +87,6 @@ MaintenanceJobsInjector::injectJobs(MaintenanceController &controller,
                                     AttributeUsageFilter &attributeUsageFilter)
 {
     controller.registerJobInMasterThread(std::make_unique<HeartBeatJob>(hbHandler, config.getHeartBeatConfig()));
-    controller.registerJobInSharedExecutor(
-            std::make_unique<PruneSessionCacheJob>(scPruner, config.getSessionCachePruneInterval()));
 
     const auto & docTypeName = controller.getDocTypeName().getName();
     const MaintenanceDocumentSubDB &mRemSubDB(controller.getRemSubDB());

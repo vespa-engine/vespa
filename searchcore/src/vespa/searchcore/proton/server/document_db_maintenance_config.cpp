@@ -123,7 +123,6 @@ BucketMoveConfig::operator==(const BucketMoveConfig &rhs) const noexcept
 DocumentDBMaintenanceConfig::DocumentDBMaintenanceConfig() noexcept
     : _pruneRemovedDocuments(),
       _heartBeat(),
-      _sessionCachePruneInterval(900s),
       _visibilityDelay(vespalib::duration::zero()),
       _lidSpaceCompaction(),
       _attributeUsageFilterConfig(),
@@ -138,7 +137,6 @@ DocumentDBMaintenanceConfig::~DocumentDBMaintenanceConfig() = default;
 DocumentDBMaintenanceConfig::
 DocumentDBMaintenanceConfig(const DocumentDBPruneConfig &pruneRemovedDocuments,
                             const DocumentDBHeartBeatConfig &heartBeat,
-                            vespalib::duration groupingSessionPruneInterval,
                             vespalib::duration visibilityDelay,
                             const DocumentDBLidSpaceCompactionConfig &lidSpaceCompaction,
                             const AttributeUsageFilterConfig &attributeUsageFilterConfig,
@@ -148,7 +146,6 @@ DocumentDBMaintenanceConfig(const DocumentDBPruneConfig &pruneRemovedDocuments,
                             const BucketMoveConfig & bucketMoveconfig) noexcept
     : _pruneRemovedDocuments(pruneRemovedDocuments),
       _heartBeat(heartBeat),
-      _sessionCachePruneInterval(groupingSessionPruneInterval),
       _visibilityDelay(visibilityDelay),
       _lidSpaceCompaction(lidSpaceCompaction),
       _attributeUsageFilterConfig(attributeUsageFilterConfig),
@@ -165,7 +162,6 @@ operator==(const DocumentDBMaintenanceConfig &rhs) const noexcept
     return
         _pruneRemovedDocuments == rhs._pruneRemovedDocuments &&
         _heartBeat == rhs._heartBeat &&
-        _sessionCachePruneInterval == rhs._sessionCachePruneInterval &&
         _visibilityDelay == rhs._visibilityDelay &&
         _lidSpaceCompaction == rhs._lidSpaceCompaction &&
         _attributeUsageFilterConfig == rhs._attributeUsageFilterConfig &&

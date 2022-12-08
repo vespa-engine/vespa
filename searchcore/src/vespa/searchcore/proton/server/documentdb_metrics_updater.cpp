@@ -32,13 +32,11 @@ using matching::MatchingStats;
 DocumentDBMetricsUpdater::DocumentDBMetricsUpdater(const DocumentSubDBCollection &subDBs,
                                                    ExecutorThreadingService &writeService,
                                                    DocumentDBJobTrackers &jobTrackers,
-                                                   matching::SessionManager &sessionManager,
                                                    const AttributeUsageFilter &writeFilter,
                                                    FeedHandler& feed_handler)
     : _subDBs(subDBs),
       _writeService(writeService),
       _jobTrackers(jobTrackers),
-      _sessionManager(sessionManager),
       _writeFilter(writeFilter),
       _feed_handler(feed_handler),
       _lastDocStoreCacheStats(),
@@ -185,16 +183,6 @@ updateMatchingMetrics(const metrics::MetricLockGuard & guard, DocumentDBTaggedMe
 }
 
 void
-updateSessionCacheMetrics(DocumentDBTaggedMetrics &metrics, proton::matching::SessionManager &sessionManager)
-{
-    auto searchStats = sessionManager.getSearchStats();
-    metrics.sessionCache.search.update(searchStats);
-
-    auto groupingStats = sessionManager.getGroupingStats();
-    metrics.sessionCache.grouping.update(groupingStats);
-}
-
-void
 updateDocumentsMetrics(DocumentDBTaggedMetrics &metrics, const DocumentSubDBCollection &subDbs)
 {
     DocumentMetaStoreReadGuards dms(subDbs);
@@ -314,7 +302,6 @@ DocumentDBMetricsUpdater::updateMetrics(const metrics::MetricLockGuard & guard, 
     updateIndexMetrics(metrics, _subDBs.getReadySubDB()->getSearchableStats(), totalStats);
     updateAttributeMetrics(metrics, _subDBs, totalStats);
     updateMatchingMetrics(guard, metrics, *_subDBs.getReadySubDB());
-    updateSessionCacheMetrics(metrics, _sessionManager);
     updateDocumentsMetrics(metrics, _subDBs);
     updateDocumentStoreMetrics(metrics, _subDBs, _lastDocStoreCacheStats, totalStats);
     updateMiscMetrics(metrics, threadingServiceStats);

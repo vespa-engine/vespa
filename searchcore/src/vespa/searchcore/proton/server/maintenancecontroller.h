@@ -41,12 +41,11 @@ public:
     using UP = std::unique_ptr<MaintenanceController>;
     enum class State {INITIALIZING, STARTED, PAUSED, STOPPING};
 
-    MaintenanceController(FNET_Transport & transport, ISyncableThreadService& masterThread, vespalib::Executor& shared_executor,
+    MaintenanceController(FNET_Transport & transport, ISyncableThreadService& masterThread,
                           vespalib::MonitoredRefCount& refCount, const DocTypeName& docTypeName);
 
     ~MaintenanceController();
     void registerJobInMasterThread(IMaintenanceJob::UP job);
-    void registerJobInSharedExecutor(IMaintenanceJob::UP job);
 
     void killJobs();
 
@@ -82,7 +81,6 @@ private:
     using Guard = std::lock_guard<Mutex>;
 
     ISyncableThreadService           &_masterThread;
-    vespalib::Executor               &_shared_executor;
     vespalib::MonitoredRefCount      &_refCount;
     MaintenanceDocumentSubDB          _readySubDB;
     MaintenanceDocumentSubDB          _remSubDB;
