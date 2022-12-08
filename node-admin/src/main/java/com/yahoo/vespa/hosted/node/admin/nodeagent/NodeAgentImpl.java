@@ -614,12 +614,11 @@ public class NodeAgentImpl implements NodeAgent {
     private Duration warmUpDuration(NodeAgentContext context) {
         ZoneApi zone = context.zone();
         Optional<NodeMembership> membership = context.node().membership();
-        return zone.getSystemName().isCd()
-               || zone.getEnvironment().isTest()
+        return zone.getEnvironment().isTest()
                || context.nodeType() != NodeType.tenant
                || membership.map(mem -> ! (mem.type().hasContainer() || mem.type().isAdmin())).orElse(false)
                 ? Duration.ofSeconds(-1)
-                : warmUpDuration;
+                : warmUpDuration.dividedBy(zone.getSystemName().isCd() ? 3 : 1);
     }
 
 }
