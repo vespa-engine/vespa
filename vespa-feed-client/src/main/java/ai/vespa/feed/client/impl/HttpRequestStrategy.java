@@ -68,10 +68,6 @@ class HttpRequestStrategy implements RequestStrategy {
         return thread;
     });
 
-    HttpRequestStrategy(FeedClientBuilderImpl builder) throws IOException {
-        this(builder, builder.dryrun ? new DryrunCluster() : new ApacheCluster(builder));
-    }
-
     HttpRequestStrategy(FeedClientBuilderImpl builder, Cluster cluster) {
         this.cluster = builder.benchmark ? new BenchmarkingCluster(cluster) : cluster;
         this.strategy = builder.retryStrategy;
