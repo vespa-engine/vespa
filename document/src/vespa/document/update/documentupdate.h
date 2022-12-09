@@ -99,10 +99,12 @@ public:
     void eagerDeserialize() const;
 
     /** @return The type of document this update is for. */
-    const DocumentType& getType() const;
+    const DocumentType& getType() const noexcept;
 
     // Returns pointer to repo used for underlying update, or nullptr if default-constructed
-    const DocumentTypeRepo* getRepoPtr() const noexcept;
+    const DocumentTypeRepo* getRepoPtr() const noexcept {
+        return _repo;
+    }
 
     void serializeHEAD(vespalib::nbostream &stream) const;
 
