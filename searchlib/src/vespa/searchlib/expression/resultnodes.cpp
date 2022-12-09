@@ -215,7 +215,9 @@ RawResultNode::min(const ResultNode & b)
 
     size_t min_sz = std::min(s.size(), _value.size());
     if (min_sz == 0) {
-        setBuffer("", 0);
+        if ( ! _value.empty()) {
+            setBuffer("", 0);
+        }
     } else if (memcmp(_value.data(), s.data(), std::min(s.size(), _value.size())) > 0)  {
         setBuffer(s.data(), s.size());
     }
