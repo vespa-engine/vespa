@@ -130,7 +130,7 @@ ZCurve::RangeVector
 ZCurve::find_ranges(int min_x, int min_y,
                     int max_x, int max_y)
 {
-    int64_t total_size = ((max_x - min_x + 1L) * (max_y - min_y + 1L));
+    int64_t total_size = ((static_cast<int64_t>(max_x) - min_x + 1) * (static_cast<int64_t>(max_y) - min_y + 1));
     int64_t estimate_target = (total_size * 4);
     ZAreaSplitter splitter(min_x, min_y, max_x, max_y);
     while (splitter.total_estimate() > estimate_target && splitter.num_ranges() < 42) {
