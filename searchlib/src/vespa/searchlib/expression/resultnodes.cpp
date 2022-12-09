@@ -390,13 +390,13 @@ int RawResultNode::onCmp(const Identifiable & b) const
     }
 }
 
-size_t RawResultNode::hash() const { return hashBuf(&_value[0], _value.size()); }
+size_t RawResultNode::hash() const { return hashBuf(_value.data(), _value.size()); }
 
 size_t
 RawResultNode::hash(const void * buf) const
 {
     const std::vector<uint8_t> & s = *static_cast<const std::vector<uint8_t> *>(buf);
-    return hashBuf(&s[0], s.size());
+    return hashBuf(s.data(), s.size());
 }
 
 Deserializer &
