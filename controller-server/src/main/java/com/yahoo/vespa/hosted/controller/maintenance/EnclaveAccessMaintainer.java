@@ -23,8 +23,7 @@ public class EnclaveAccessMaintainer extends ControllerMaintainer {
     @Override
     protected double maintain() {
         try {
-            controller().serviceRegistry().enclaveAccessService().allowAccessFor(externalAccounts());
-            return 1;
+            return controller().serviceRegistry().enclaveAccessService().allowAccessFor(externalAccounts());
         }
         catch (RuntimeException e) {
             logger.log(WARNING, "Failed sharing AMIs", e);
