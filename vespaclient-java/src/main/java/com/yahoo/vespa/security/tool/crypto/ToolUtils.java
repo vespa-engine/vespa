@@ -26,7 +26,7 @@ public class ToolUtils {
     static final String NO_INTERACTIVE_OPTION   = "no-interactive";
     static final String PRIVATE_KEY_DIR_ENV_VAR = "VESPA_CRYPTO_CLI_PRIVATE_KEY_DIR";
 
-    static final Pattern SAFE_KEY_ID_PATTERN = Pattern.compile("^[a-zA-Z0-9_-]+$");
+    static final Pattern SAFE_KEY_ID_PATTERN = Pattern.compile("^[a-zA-Z0-9_-][a-zA-Z0-9_.-]*$");
 
     static void verifyExpectedKeyId(SealedSharedKey sealedSharedKey, Optional<String> maybeKeyId) {
         if (maybeKeyId.isPresent()) {
