@@ -87,7 +87,7 @@ DocumentUpdate::operator==(const DocumentUpdate& other) const
 }
 
 const DocumentType&
-DocumentUpdate::getType() const {
+DocumentUpdate::getType() const noexcept {
     return static_cast<const DocumentType &> (*_type);
 }
 
@@ -261,6 +261,7 @@ DocumentUpdate::initHEAD(const DocumentTypeRepo & repo, vespalib::nbostream && s
 void
 DocumentUpdate::initHEAD(const DocumentTypeRepo & repo, vespalib::nbostream & stream)
 {
+    _repo = &repo;
     size_t startPos = stream.rp();
     vespalib::stringref docId;
     _type = deserializeHeader(repo, stream, docId);

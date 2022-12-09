@@ -60,7 +60,7 @@ public:
      * The document type is not strictly needed, as we know this at applyTo()
      * time, but search does not use applyTo() code to do the update, and don't
      * know the document type of their objects, so this is supplied for
-     * convinience. It also makes it possible to check updates for sanity at
+     * convenience. It also makes it possible to check updates for sanity at
      * creation time.
      *
      * @param type The document type that this update is applicable for.
@@ -99,7 +99,12 @@ public:
     void eagerDeserialize() const;
 
     /** @return The type of document this update is for. */
-    const DocumentType& getType() const;
+    const DocumentType& getType() const noexcept;
+
+    // Returns pointer to repo used for underlying update, or nullptr if default-constructed
+    const DocumentTypeRepo* getRepoPtr() const noexcept {
+        return _repo;
+    }
 
     void serializeHEAD(vespalib::nbostream &stream) const;
 
