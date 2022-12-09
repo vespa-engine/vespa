@@ -240,8 +240,8 @@ public:
         : _terms(std::move(terms)),
           _pos(_terms.handles.size(), nullptr),
           _end(_terms.handles.size(), nullptr),
-          _position_queue(CmpPosition(&_pos[0])),
-          _element_queue(CmpElement(&_pos[0])),
+          _position_queue(CmpPosition(_pos.data())),
+          _element_queue(CmpElement(_pos.data())),
           _outputs(std::move(outputs_in)),
           _md(nullptr)
     { }
