@@ -404,11 +404,15 @@ public abstract class AsynchronousSectionedRenderer<RESPONSE extends Response> e
             }
         }
 
-        /**
-         * Renders a list
-         */
+        /** Renders a list. */
         private void renderDataList(DataList list) throws IOException {
             final boolean ordered = isOrdered(list);
+            if (list.asList() == null) {
+                logger.log(Level.WARNING, "DataList.asList() returned null, indicating it is closed. " +
+                                          "This is likely caused by adding the same list multiple " +
+                                          "times in the response.");
+                return;
+            }
             while (currentIndex < list.asList().size()) {
                 Data data = list.get(currentIndex++);
                 if (data instanceof DataList) {

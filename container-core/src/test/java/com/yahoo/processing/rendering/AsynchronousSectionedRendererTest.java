@@ -189,6 +189,18 @@ public class AsynchronousSectionedRendererTest {
                 render(dataList));
     }
 
+    /** Validate we get a full response with a malformed response structure. */
+    @Test
+    void testRenderingOfListsAddedTwice() throws Exception {
+        StringDataList dataList = createDataListWithReusedSublist();
+
+        TestRenderer renderer = new TestRenderer();
+        renderer.init();
+
+        assertEquals(" beginResponse beginList[[[]], []] beginList[[]] beginList[] endList[] endList[[]] beginList[] endList[] endList[[[]], []] endResponse",
+                     render(renderer, dataList));
+    }
+
     public StringDataList createDataList() {
         Request request = new Request();
         StringDataList dataList = new StringDataList(request);
@@ -197,6 +209,20 @@ public class AsynchronousSectionedRendererTest {
         secondLevel.add(new StringDataItem(request, "l11"));
         secondLevel.add(new StringDataItem(request, "l12"));
         dataList.add(secondLevel);
+        return dataList;
+    }
+
+    public StringDataList createDataListWithReusedSublist() {
+        Request request = new Request();
+        StringDataList dataList = new StringDataList(request);
+
+        StringDataList group1 = new StringDataList(request);
+        dataList.add(group1);
+
+        StringDataList group2 = new StringDataList(request);
+        group1.add(group2);
+
+        dataList.add(group2); // Bug: This should not be added twice
         return dataList;
     }
 
@@ -325,6 +351,7 @@ public class AsynchronousSectionedRendererTest {
     }
 
     private static abstract class StringData extends ListenableFreezableClass implements Data {
+
         private final Request request;
 
         private StringData(Request request) {
@@ -342,6 +369,7 @@ public class AsynchronousSectionedRendererTest {
         public String toString() {
             return getString();
         }
+
     }
 
     private class StringDataItem extends StringData {
@@ -361,7 +389,8 @@ public class AsynchronousSectionedRendererTest {
 
     private class StringDataList extends StringData implements DataList<StringData> {
 
-        private final ArrayList<StringData> list = new ArrayList<>();
+        private ArrayList<StringData> list = new ArrayList<>();
+        private String stringValue = null; // set on close
 
         private final IncomingData incomingData;
 
@@ -404,8 +433,24 @@ public class AsynchronousSectionedRendererTest {
 
         @Override
         public String getString() {
+            if (stringValue != null) return stringValue;
             return list.toString();
         }
+
+        @Override
+        public void close() {
+            if (list == null) return; // Already closed
+            stringValue = list.toString();
+            list = null;
+        }
+
+        @Override
+        public StringDataList clone() {
+            var clone = new StringDataList(request());
+            clone.list = new ArrayList<>(list);
+            return clone;
+        }
+
     }
 
     private static class NoopProcessor extends Processor {
