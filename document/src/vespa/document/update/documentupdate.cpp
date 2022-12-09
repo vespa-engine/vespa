@@ -91,6 +91,11 @@ DocumentUpdate::getType() const {
     return static_cast<const DocumentType &> (*_type);
 }
 
+const DocumentTypeRepo*
+DocumentUpdate::getRepoPtr() const noexcept {
+    return _repo;
+}
+
 const DocumentUpdate::FieldUpdateV &
 DocumentUpdate::getUpdates() const {
     ensureDeserialized();
