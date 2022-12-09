@@ -18,8 +18,8 @@ func newAPIKeyCmd(cli *CLI) *cobra.Command {
 	var overwriteKey bool
 	cmd := &cobra.Command{
 		Use:   "api-key",
-		Short: "Create a new user API key for authentication with Vespa Cloud",
-		Long: `Create a new user API key for authentication with Vespa Cloud.
+		Short: "Create a new user API key for control-plane authentication with Vespa Cloud",
+		Long: `Create a new user API key for control-plane authentication with Vespa Cloud.
 
 The API key will be stored in the Vespa CLI home directory
 (see 'vespa help config'). Other commands will then automatically load the API
@@ -37,7 +37,9 @@ Example of loading the key from a custom path:
     export VESPA_CLI_API_KEY_FILE=/path/to/api-key
 
 Note that when overriding API key through environment variables, that key will
-always be used. It's not possible to specify a tenant-specific key.`,
+always be used. It's not possible to specify a tenant-specific key.
+
+Read more in https://cloud.vespa.ai/en/security/guide`,
 		Example:           "$ vespa auth api-key -a my-tenant.my-app.my-instance",
 		DisableAutoGenTag: true,
 		SilenceUsage:      true,
