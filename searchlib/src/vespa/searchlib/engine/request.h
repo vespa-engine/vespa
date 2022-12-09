@@ -24,7 +24,7 @@ public:
     bool expired() const { return getTimeLeft() <= vespalib::duration::zero(); }
 
     const vespalib::stringref getStackRef() const {
-        return vespalib::stringref(&stackDump[0], stackDump.size());
+        return vespalib::stringref(stackDump.data(), stackDump.size());
     }
 
     void setTraceLevel(uint32_t level, uint32_t minLevel) const {
