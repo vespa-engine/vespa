@@ -15,8 +15,9 @@ public class MockEnclaveAccessService implements EnclaveAccessService {
     public Set<CloudAccount> currentAccounts() { return currentAccounts; }
 
     @Override
-    public void allowAccessFor(Set<CloudAccount> accounts) {
+    public double allowAccessFor(Set<CloudAccount> accounts) {
         currentAccounts = new TreeSet<>(accounts);
+        return 1;
     }
 
 }
