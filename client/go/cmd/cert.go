@@ -23,8 +23,8 @@ func newCertCmd(cli *CLI) *cobra.Command {
 	)
 	cmd := &cobra.Command{
 		Use:   "cert",
-		Short: "Create a new private key and self-signed certificate for Vespa Cloud deployment",
-		Long: `Create a new private key and self-signed certificate for Vespa Cloud deployment.
+		Short: "Create a new private key and self-signed certificate for data-plane access with Vespa Cloud",
+		Long: `Create a new private key and self-signed certificate for data-plane access with Vespa Cloud.
 
 The private key and certificate will be stored in the Vespa CLI home directory
 (see 'vespa help config'). Other commands will then automatically load the
@@ -46,7 +46,9 @@ Example of loading certificate and key from custom paths:
 
 Note that when overriding key pair through environment variables, that key pair
 will always be used for all applications. It's not possible to specify an
-application-specific key.`,
+application-specific key.
+
+Read more in https://cloud.vespa.ai/en/security/guide`,
 		Example: `$ vespa auth cert -a my-tenant.my-app.my-instance
 $ vespa auth cert -a my-tenant.my-app.my-instance path/to/application/package`,
 		DisableAutoGenTag: true,
