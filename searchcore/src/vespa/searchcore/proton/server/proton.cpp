@@ -3,9 +3,11 @@
 #include "proton.h"
 #include "disk_mem_usage_sampler.h"
 #include "document_db_explorer.h"
+#include "documentdbconfig.h"
 #include "fileconfigmanager.h"
 #include "flushhandlerproxy.h"
 #include "hw_info_explorer.h"
+#include "initialize_threads_calculator.h"
 #include "memoryflush.h"
 #include "persistencehandlerproxy.h"
 #include "prepare_restart_handler.h"
@@ -15,7 +17,6 @@
 #include "resource_usage_explorer.h"
 #include "searchhandlerproxy.h"
 #include "simpleflush.h"
-#include "documentdbconfig.h"
 
 #include <vespa/document/base/exceptions.h>
 #include <vespa/document/datatype/documenttype.h>
@@ -145,7 +146,6 @@ struct MetricsUpdateHook : metrics::UpdateHook
 
 const vespalib::string CUSTOM_COMPONENT_API_PATH = "/state/v1/custom/component";
 
-VESPA_THREAD_STACK_TAG(proton_initialize_executor)
 VESPA_THREAD_STACK_TAG(proton_close_executor)
 
 void ensureWritableDir(const vespalib::string &dirName) {
@@ -345,14 +345,12 @@ Proton::init(const BootstrapConfig::SP & configSnapshot)
 
     vespalib::string fileConfigId;
     _compile_cache_executor_binding = vespalib::eval::CompileCache::bind(_shared_service->shared_raw());
-    InitializeThreads initializeThreads;
-    if (protonConfig.initialize.threads > 0) {
-        initializeThreads = std::make_shared<vespalib::ThreadStackExecutor>(protonConfig.initialize.threads, 128_Ki,
-                                                                            CpuUsage::wrap(proton_initialize_executor, CpuCategory::SETUP));
-        _initDocumentDbsInSequence = (protonConfig.initialize.threads == 1);
-    }
-    _protonConfigurer.applyInitialConfig(initializeThreads);
-    initializeThreads.reset();
+
+    InitializeThreadsCalculator calc(protonConfig.basedir, protonConfig.initialize.threads);
+    LOG(info, "Start initializing components: threads=%u, configured=%u",
+        calc.num_threads(), protonConfig.initialize.threads);
+    _initDocumentDbsInSequence = (calc.num_threads() == 1);
+    _protonConfigurer.applyInitialConfig(calc.threads());
 
     _prepareRestartHandler = std::make_unique<PrepareRestartHandler>(*_flushEngine);
     RPCHooks::Params rpcParams(*this, protonConfig.rpcport, _configUri, protonConfig.slobrokconfigid,
@@ -361,6 +359,8 @@ Proton::init(const BootstrapConfig::SP & configSnapshot)
     _metricsEngine->addExternalMetrics(_rpcHooks->proto_rpc_adapter_metrics());
 
     waitForInitDone();
+    LOG(info, "Done initializing components");
+    calc.init_done();
 
     _metricsEngine->start(_configUri);
     _stateServer = std::make_unique<vespalib::StateServer>(protonConfig.httpport, _healthAdapter,
