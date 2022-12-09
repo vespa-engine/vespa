@@ -4,7 +4,6 @@
 #include "attribute_metrics.h"
 #include "memory_usage_metrics.h"
 #include "executor_threading_service_metrics.h"
-#include "sessionmanager_metrics.h"
 #include "document_db_feeding_metrics.h"
 #include <vespa/metrics/metricset.h>
 #include <vespa/metrics/valuemetric.h>
@@ -165,14 +164,6 @@ struct DocumentDBTaggedMetrics : metrics::MetricSet
         ~MatchingMetrics() override;
     };
 
-    struct SessionCacheMetrics : metrics::MetricSet {
-        SessionManagerMetrics search;
-        SessionManagerMetrics grouping;
-
-        SessionCacheMetrics(metrics::MetricSet *parent);
-        ~SessionCacheMetrics() override;
-    };
-
     struct DocumentsMetrics : metrics::MetricSet {
         metrics::LongValueMetric active;
         metrics::LongValueMetric ready;
@@ -198,7 +189,6 @@ struct DocumentDBTaggedMetrics : metrics::MetricSet
     SubDBMetrics removed;
     ExecutorThreadingServiceMetrics threadingService;
     MatchingMetrics matching;
-    SessionCacheMetrics sessionCache;
     DocumentsMetrics documents;
     BucketMoveMetrics bucketMove;
     DocumentDBFeedingMetrics feeding;

@@ -18,7 +18,6 @@
 #include <vespa/searchcore/proton/flushengine/shrink_lid_space_flush_target.h>
 #include <vespa/searchcore/proton/flushengine/threadedflushtarget.h>
 #include <vespa/searchcore/proton/index/index_writer.h>
-#include <vespa/searchcore/proton/matching/sessionmanager.h>
 #include <vespa/searchcore/proton/reference/dummy_gid_to_lid_change_handler.h>
 #include <vespa/searchlib/attribute/configconverter.h>
 #include <vespa/searchlib/common/flush_token.h>
@@ -39,7 +38,6 @@ using search::SerialNum;
 using vespalib::IllegalStateException;
 using vespalib::ThreadStackExecutorBase;
 using proton::matching::MatchingStats;
-using proton::matching::SessionManager;
 using vespalib::GenericHeader;
 using search::common::FileHeaderContext;
 using proton::initializer::InitializerTask;

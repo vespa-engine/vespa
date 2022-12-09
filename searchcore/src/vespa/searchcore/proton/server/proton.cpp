@@ -32,6 +32,8 @@
 #include <vespa/searchcore/proton/persistenceengine/persistenceengine.h>
 #include <vespa/searchcore/proton/reference/document_db_reference_registry.h>
 #include <vespa/searchcore/proton/summaryengine/summaryengine.h>
+#include <vespa/searchcore/proton/matching/session_manager_explorer.h>
+#include <vespa/searchcore/proton/common/scheduled_forward_executor.h>
 #include <vespa/searchlib/attribute/interlock.h>
 #include <vespa/searchlib/common/packets.h>
 #include <vespa/searchlib/transactionlog/trans_log_server_explorer.h>
@@ -254,6 +256,8 @@ Proton::Proton(FastOS_ThreadPool & threadPool, FNET_Transport & transport, const
       _protonConfigurer(_executor, *this, _protonDiskLayout),
       _protonConfigFetcher(_transport, configUri, _protonConfigurer, subscribeTimeout),
       _shared_service(),
+      _sessionManager(),
+      _scheduler(),
       _compile_cache_executor_binding(),
       _queryLimiter(),
       _distributionKey(-1),
@@ -307,6 +311,7 @@ Proton::init(const BootstrapConfig::SP & configSnapshot)
     _distributionKey = protonConfig.distributionkey;
     _summaryEngine = std::make_unique<SummaryEngine>(protonConfig.numsummarythreads, protonConfig.docsum.async);
     _summaryEngine->set_issue_forwarding(protonConfig.forwardIssues);
+    _sessionManager = std::make_unique<matching::SessionManager>(protonConfig.grouping.sessionmanager.maxentries);
 
     IFlushStrategy::SP strategy;
     const ProtonConfig::Flush & flush(protonConfig.flush);
@@ -342,6 +347,7 @@ Proton::init(const BootstrapConfig::SP & configSnapshot)
                                                              protonConfig.visit.ignoremaxbytes);
     _shared_service = std::make_unique<SharedThreadingService>(
             SharedThreadingServiceConfig::make(protonConfig, hwInfo.cpu()), _transport, *_persistenceEngine);
+    _scheduler = std::make_unique<ScheduledForwardExecutor>(_transport, _shared_service->shared());
 
     vespalib::string fileConfigId;
     _compile_cache_executor_binding = vespalib::eval::CompileCache::bind(_shared_service->shared_raw());
@@ -373,6 +379,8 @@ Proton::init(const BootstrapConfig::SP & configSnapshot)
     _rpcHooks->set_online();
 
     _flushEngine->start();
+    vespalib::duration pruneSessionsInterval = vespalib::from_s(protonConfig.grouping.sessionmanager.pruning.interval);
+    _scheduler->scheduleAtFixedRate(makeLambdaTask([&]() { _sessionManager->pruneTimedOutSessions(vespalib::steady_clock::now()); }), pruneSessionsInterval, pruneSessionsInterval);
     _isInitializing = false;
     _protonConfigurer.setAllowReconfig(true);
     _initComplete = true;
@@ -461,6 +469,7 @@ Proton::~Proton()
     if (_memoryFlushConfigUpdater) {
         _diskMemUsageSampler->notifier().removeDiskMemUsageListener(_memoryFlushConfigUpdater.get());
     }
+    _scheduler->reset();
     _executor.shutdown();
     _executor.sync();
     _rpcHooks.reset();
@@ -485,6 +494,7 @@ Proton::~Proton()
                                                 CpuUsage::wrap(proton_close_executor, CpuCategory::SETUP));
         closeDocumentDBs(closePool);
     }
+    _sessionManager->close();
     _documentDBMap.clear();
     _persistenceEngine.reset();
     _tls.reset();
@@ -764,6 +774,16 @@ updateExecutorMetrics(ExecutorMetrics &metrics, const vespalib::ExecutorStats &s
     metrics.update(stats);
 }
 
+void
+updateSessionCacheMetrics(ContentProtonMetrics &metrics, proton::matching::SessionManager &sessionManager)
+{
+    auto searchStats = sessionManager.getSearchStats();
+    metrics.sessionCache.search.update(searchStats);
+
+    auto groupingStats = sessionManager.getGroupingStats();
+    metrics.sessionCache.grouping.update(groupingStats);
+}
+
 }
 
 void
@@ -810,6 +830,7 @@ Proton::updateMetrics(const metrics::MetricLockGuard &)
         metrics.resourceUsage.cpu_util.write.set(cpu_util[CpuCategory::WRITE]);
         metrics.resourceUsage.cpu_util.compact.set(cpu_util[CpuCategory::COMPACT]);
         metrics.resourceUsage.cpu_util.other.set(cpu_util[CpuCategory::OTHER]);
+        updateSessionCacheMetrics(metrics, session_manager());
     }
     {
         ContentProtonMetrics::ProtonExecutorMetrics &metrics = _metricsEngine->root().executor;
@@ -829,6 +850,7 @@ Proton::updateMetrics(const metrics::MetricLockGuard &)
             metrics.field_writer.update(_shared_service->field_writer().getStats());
         }
     }
+
 }
 
 void
@@ -915,6 +937,8 @@ const vespalib::string TLS_NAME = "tls";
 const vespalib::string RESOURCE_USAGE = "resourceusage";
 const vespalib::string THREAD_POOLS = "threadpools";
 const vespalib::string HW_INFO = "hwinfo";
+const vespalib::string SESSION = "session";
+
 
 struct StateExplorerProxy : vespalib::StateExplorer {
     const StateExplorer &explorer;
@@ -959,7 +983,7 @@ Proton::get_state(const vespalib::slime::Inserter &, bool) const
 std::vector<vespalib::string>
 Proton::get_children_names() const
 {
-    return {DOCUMENT_DB, THREAD_POOLS, MATCH_ENGINE, FLUSH_ENGINE, TLS_NAME, HW_INFO, RESOURCE_USAGE};
+    return {DOCUMENT_DB, THREAD_POOLS, MATCH_ENGINE, FLUSH_ENGINE, TLS_NAME, HW_INFO, RESOURCE_USAGE, SESSION};
 }
 
 std::unique_ptr<vespalib::StateExplorer>
@@ -987,6 +1011,8 @@ Proton::get_child(vespalib::stringref name) const
 
     } else if (name == HW_INFO) {
         return std::make_unique<HwInfoExplorer>(_hw_info);
+    } else if (name == SESSION) {
+        return std::make_unique<matching::SessionManagerExplorer>(*_sessionManager);
     }
     return {};
 }
@@ -999,8 +1025,7 @@ Proton::getDocumentDBReferenceRegistry() const
 
 matching::SessionManager &
 Proton::session_manager() {
-    // Temporary and will not be called used yet
-    abort();
+    return *_sessionManager;
 }
 
 storage::spi::PersistenceProvider &

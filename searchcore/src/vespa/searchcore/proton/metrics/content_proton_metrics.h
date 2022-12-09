@@ -5,6 +5,7 @@
 #include "executor_metrics.h"
 #include "resource_usage_metrics.h"
 #include "trans_log_server_metrics.h"
+#include "sessionmanager_metrics.h"
 
 namespace proton {
 
@@ -32,13 +33,21 @@ struct ContentProtonMetrics : metrics::MetricSet
         ~ProtonExecutorMetrics();
     };
 
+    struct SessionCacheMetrics : metrics::MetricSet {
+        SessionManagerMetrics search;
+        SessionManagerMetrics grouping;
+
+        SessionCacheMetrics(metrics::MetricSet *parent);
+        ~SessionCacheMetrics() override;
+    };
+
     TransLogServerMetrics transactionLog;
     ResourceUsageMetrics resourceUsage;
     ProtonExecutorMetrics executor;
+    SessionCacheMetrics sessionCache;
 
     ContentProtonMetrics();
-    ~ContentProtonMetrics();
-
+    ~ContentProtonMetrics() override;
 };
 
 }

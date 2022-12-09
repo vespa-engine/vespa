@@ -30,6 +30,7 @@
 #include <vespa/searchcore/proton/persistenceengine/commit_and_wait_document_retriever.h>
 #include <vespa/searchcore/proton/reference/document_db_reference_resolver.h>
 #include <vespa/searchcore/proton/reference/i_document_db_reference_registry.h>
+#include <vespa/searchcore/proton/summaryengine/isearchhandler.h>
 #include <vespa/searchcore/proton/bucketdb/bucket_db_owner.h>
 #include <vespa/searchlib/attribute/configconverter.h>
 #include <vespa/searchlib/engine/docsumreply.h>
@@ -206,7 +207,6 @@ DocumentDB::DocumentDB(const vespalib::string &baseDir,
       _indexCfg(makeIndexConfig(protonCfg.index)),
       _replay_throttling_policy(std::make_unique<ReplayThrottlingPolicy>(make_replay_throttling_policy(protonCfg.replayThrottlingPolicy))),
       _config_store(std::move(config_store)),
-      _sessionManager(std::make_shared<matching::SessionManager>(protonCfg.grouping.sessionmanager.maxentries)),
       _metricsWireService(metricsWireService),
       _metrics(_docTypeName.getName(), protonCfg.numthreadspersearch),
       _metricsHook(std::make_unique<MetricsUpdateHook>(*this)),
@@ -223,10 +223,10 @@ DocumentDB::DocumentDB(const vespalib::string &baseDir,
               _writeService, shared_service.warmup(), fileHeaderContext, std::move(attribute_interlock),
               metricsWireService, getMetrics(), queryLimiter, shared_service.clock(),
               _configMutex, _baseDir, hwInfo),
-      _maintenanceController(shared_service.transport(), _writeService.master(), shared_service.shared(), _refCount, _docTypeName),
+      _maintenanceController(shared_service.transport(), _writeService.master(), _refCount, _docTypeName),
       _jobTrackers(),
       _calc(),
-      _metricsUpdater(_subDBs, _writeService, _jobTrackers, *_sessionManager, _writeFilter, *_feedHandler)
+      _metricsUpdater(_subDBs, _writeService, _jobTrackers, _writeFilter, *_feedHandler)
 {
     assert(configSnapshot);
 
@@ -593,7 +593,6 @@ DocumentDB::close()
     // matching, summary fetch, flushing and reconfig.
     _feedView.clear();
     _subDBs.clearViews();
-    _sessionManager->close();
     _state.enterDeadState();
 }
 
@@ -945,7 +944,6 @@ DocumentDB::injectMaintenanceJobs(const DocumentDBMaintenanceConfig &config)
             config,
             _bucketExecutor,
             *_feedHandler, // IHeartBeatHandler
-            *_sessionManager, // ISessionCachePruner
             *_feedHandler, // IOperationStorer
             _subDBs.getBucketCreateNotifier(),
             _bucketSpace,
@@ -1122,7 +1120,7 @@ DocumentDB::set_attribute_usage_listener(std::unique_ptr<IAttributeUsageListener
 
 matching::SessionManager &
 DocumentDB::session_manager() {
-    return *_sessionManager;
+    return _owner.session_manager();
 }
 
 } // namespace proton

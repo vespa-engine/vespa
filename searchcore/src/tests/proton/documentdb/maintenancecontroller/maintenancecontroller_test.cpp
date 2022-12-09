@@ -57,7 +57,6 @@ using document::DocumentId;
 using document::test::makeBucketSpace;
 using vespalib::system_clock;
 using proton::bucketdb::BucketCreateNotifier;
-using proton::matching::ISessionCachePruner;
 using search::AttributeGuard;
 using search::DocumentIdT;
 using search::DocumentMetaData;
@@ -203,18 +202,6 @@ struct MyBucketModifiedHandler : public IBucketModifiedHandler
     void reset() { _modified.clear(); }
 };
 
-
-struct MySessionCachePruner : public ISessionCachePruner
-{
-    std::atomic<bool> isInvoked;
-    MySessionCachePruner() : isInvoked(false) { }
-    void pruneTimedOutSessions(vespalib::steady_time current) override {
-        (void) current;
-        isInvoked.store(true, std::memory_order_relaxed);
-    }
-};
-
-
 class MyFeedHandler : public IDocumentMoveHandler,
                       public IPruneRemovedDocumentsHandler,
                       public IHeartBeatHandler,
@@ -329,7 +316,6 @@ class MaintenanceControllerFixture
 {
 public:
     MyExecutor                         _executor;
-    MyExecutor                         _genericExecutor;
     SyncableExecutorThreadService      _threadService;
     DummyBucketExecutor                _bucketExecutor;
     DocTypeName                        _docTypeName;
@@ -342,7 +328,6 @@ public:
     MyDocumentSubDB                    _ready;
     MyDocumentSubDB                    _removed;
     MyDocumentSubDB                    _notReady;
-    MySessionCachePruner               _gsp;
     MyFeedHandler                      _fh;
     DocumentDBMaintenanceConfig::SP    _mcCfg;
     bool                               _injectDefaultJobs;
@@ -353,7 +338,7 @@ public:
     test::DiskMemUsageNotifier         _diskMemUsageNotifier;
     BucketCreateNotifier               _bucketCreateNotifier;
     MonitoredRefCount                  _refCount;
-    Transport                       _transport;
+    Transport                          _transport;
     MaintenanceController              _mc;
 
     MaintenanceControllerFixture();
@@ -380,7 +365,6 @@ public:
         auto newCfg = std::make_shared<DocumentDBMaintenanceConfig>(
                            pruneConfig,
                            _mcCfg->getHeartBeatConfig(),
-                           _mcCfg->getSessionCachePruneInterval(),
                            _mcCfg->getVisibilityDelay(),
                            _mcCfg->getLidSpaceCompactionConfig(),
                            _mcCfg->getAttributeUsageFilterConfig(),
@@ -398,25 +382,6 @@ public:
         auto newCfg = std::make_shared<DocumentDBMaintenanceConfig>(
                            _mcCfg->getPruneRemovedDocumentsConfig(),
                            heartBeatConfig,
-                           _mcCfg->getSessionCachePruneInterval(),
-                           _mcCfg->getVisibilityDelay(),
-                           _mcCfg->getLidSpaceCompactionConfig(),
-                           _mcCfg->getAttributeUsageFilterConfig(),
-                           _mcCfg->getAttributeUsageSampleInterval(),
-                           _mcCfg->getBlockableJobConfig(),
-                           _mcCfg->getFlushConfig(),
-                           _mcCfg->getBucketMoveConfig());
-        _mcCfg = newCfg;
-        forwardMaintenanceConfig();
-    }
-
-    void
-    setGroupingSessionPruneInterval(vespalib::duration groupingSessionPruneInterval)
-    {
-        auto newCfg = std::make_shared<DocumentDBMaintenanceConfig>(
-                           _mcCfg->getPruneRemovedDocumentsConfig(),
-                           _mcCfg->getHeartBeatConfig(),
-                           groupingSessionPruneInterval,
                            _mcCfg->getVisibilityDelay(),
                            _mcCfg->getLidSpaceCompactionConfig(),
                            _mcCfg->getAttributeUsageFilterConfig(),
@@ -432,7 +397,6 @@ public:
         auto newCfg = std::make_shared<DocumentDBMaintenanceConfig>(
                            _mcCfg->getPruneRemovedDocumentsConfig(),
                            _mcCfg->getHeartBeatConfig(),
-                           _mcCfg->getSessionCachePruneInterval(),
                            _mcCfg->getVisibilityDelay(),
                            cfg,
                            _mcCfg->getAttributeUsageFilterConfig(),
@@ -754,7 +718,6 @@ MyExecutor::waitIdle(vespalib::duration timeout)
 
 MaintenanceControllerFixture::MaintenanceControllerFixture()
     : _executor(),
-      _genericExecutor(),
       _threadService(_executor),
       _bucketExecutor(2),
       _docTypeName("searchdocument"), // must match document builder
@@ -767,7 +730,6 @@ MaintenanceControllerFixture::MaintenanceControllerFixture()
       _ready(0u, SubDbType::READY, _builder.getRepo(), _bucketDB, _docTypeName),
       _removed(1u, SubDbType::REMOVED, _builder.getRepo(), _bucketDB, _docTypeName),
       _notReady(2u, SubDbType::NOTREADY, _builder.getRepo(), _bucketDB, _docTypeName),
-      _gsp(),
       _fh(_executor._threadId),
       _mcCfg(new DocumentDBMaintenanceConfig),
       _injectDefaultJobs(true),
@@ -778,7 +740,7 @@ MaintenanceControllerFixture::MaintenanceControllerFixture()
       _bucketCreateNotifier(),
       _refCount(),
       _transport(),
-      _mc(_transport.transport(), _threadService, _genericExecutor, _refCount, _docTypeName)
+      _mc(_transport.transport(), _threadService, _refCount, _docTypeName)
 {
     std::vector<MyDocumentSubDB *> subDBs;
     subDBs.push_back(&_ready);
@@ -830,7 +792,7 @@ void
 MaintenanceControllerFixture::injectMaintenanceJobs()
 {
     if (_injectDefaultJobs) {
-        MaintenanceJobsInjector::injectJobs(_mc, *_mcCfg, _bucketExecutor, _fh, _gsp, _fh,
+        MaintenanceJobsInjector::injectJobs(_mc, *_mcCfg, _bucketExecutor, _fh, _fh,
                                             _bucketCreateNotifier, makeBucketSpace(), _fh, _fh,
                                             _bmc, _clusterStateHandler, _bucketHandler, _calc, _diskMemUsageNotifier,
                                             _jobTrackers, _readyAttributeManager, _notReadyAttributeManager,
@@ -951,22 +913,6 @@ TEST_F("require that heartbeats are scheduled", MaintenanceControllerFixture)
     EXPECT_GREATER(f._fh.getHeartBeats(), 0u);
 }
 
-TEST_F("require that periodic session prunings are scheduled",
-       MaintenanceControllerFixture)
-{
-    ASSERT_FALSE(f._gsp.isInvoked.load(std::memory_order_relaxed));
-    f.notifyClusterStateChanged();
-    f.startMaintenance();
-    f.setGroupingSessionPruneInterval(200ms);
-    for (uint32_t i = 0; i < 600; ++i) {
-        std::this_thread::sleep_for(100ms);
-        if (f._gsp.isInvoked.load(std::memory_order_relaxed)) {
-            break;
-        }
-    }
-    ASSERT_TRUE(f._gsp.isInvoked.load(std::memory_order_relaxed));
-}
-
 TEST_F("require that a simple maintenance job is executed", MaintenanceControllerFixture)
 {
     auto job = std::make_unique<MySimpleJob>(200ms, 200ms, 3);
@@ -1061,13 +1007,13 @@ TEST_F("require that lid space compaction jobs can be disabled", MaintenanceCont
     f.forwardMaintenanceConfig();
     {
         auto jobs = f._mc.getJobList();
-        EXPECT_EQUAL(8u, jobs.size());
+        EXPECT_EQUAL(7u, jobs.size());
         EXPECT_TRUE(containsJob(jobs, "lid_space_compaction.searchdocument.my_sub_db"));
     }
     f.setLidSpaceCompactionConfig(DocumentDBLidSpaceCompactionConfig::createDisabled());
     {
         auto jobs = f._mc.getJobList();
-        EXPECT_EQUAL(5u, jobs.size());
+        EXPECT_EQUAL(4u, jobs.size());
         EXPECT_FALSE(containsJob(jobs, "lid_space_compaction.searchdocument.my_sub_db"));
     }
 }
@@ -1076,9 +1022,8 @@ TEST_F("require that maintenance jobs are run by correct executor", MaintenanceC
 {
     f.injectMaintenanceJobs();
     auto jobs = f._mc.getJobList();
-    EXPECT_EQUAL(8u, jobs.size());
+    EXPECT_EQUAL(7u, jobs.size());
     EXPECT_TRUE(containsJobAndExecutedBy(jobs, "heart_beat", f._threadService));
-    EXPECT_TRUE(containsJobAndExecutedBy(jobs, "prune_session_cache", f._genericExecutor));
     EXPECT_TRUE(containsJobAndExecutedBy(jobs, "prune_removed_documents.searchdocument", f._threadService));
     EXPECT_TRUE(containsJobAndExecutedBy(jobs, "move_buckets.searchdocument", f._threadService));
     EXPECT_TRUE(containsJobAndExecutedBy(jobs, "sample_attribute_usage.searchdocument", f._threadService));

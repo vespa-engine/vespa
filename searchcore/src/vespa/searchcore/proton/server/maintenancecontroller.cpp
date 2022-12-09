@@ -41,11 +41,9 @@ isRunnable(const MaintenanceJobRunner & job, const Executor * master) {
 
 MaintenanceController::MaintenanceController(FNET_Transport & transport,
                                              ISyncableThreadService& masterThread,
-                                             vespalib::Executor& shared_executor,
                                              MonitoredRefCount& refCount,
                                              const DocTypeName& docTypeName)
     : _masterThread(masterThread),
-      _shared_executor(shared_executor),
       _refCount(refCount),
       _readySubDB(),
       _remSubDB(),
@@ -67,13 +65,6 @@ MaintenanceController::registerJobInMasterThread(IMaintenanceJob::UP job)
 {
     // Called by master write thread
     registerJob(_masterThread, std::move(job));
-}
-
-void
-MaintenanceController::registerJobInSharedExecutor(IMaintenanceJob::UP job)
-{
-    // Called by master write thread
-    registerJob(_shared_executor, std::move(job));
 }
 
 void

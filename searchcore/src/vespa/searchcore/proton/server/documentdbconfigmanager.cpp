@@ -126,7 +126,6 @@ buildMaintenanceConfig(const BootstrapConfig::SP &bootstrapConfig,
             DocumentDBPruneConfig(pruneRemovedDocumentsInterval,
                                   pruneRemovedDocumentsAge),
             DocumentDBHeartBeatConfig(),
-            vespalib::from_s(proton.grouping.sessionmanager.pruning.interval),
             visibilityDelay,
             DocumentDBLidSpaceCompactionConfig(
                     vespalib::from_s(proton.lidspacecompaction.interval),

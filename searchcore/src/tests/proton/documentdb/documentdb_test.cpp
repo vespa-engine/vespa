@@ -290,11 +290,6 @@ TEST_F("requireThatStateIsReported", Fixture)
             slime.toString());
 }
 
-TEST_F("require that session manager can be explored", Fixture)
-{
-    EXPECT_TRUE(DocumentDBExplorer(f._db).get_child("session"));
-}
-
 TEST_F("require that document db registers reference", Fixture)
 {
     auto &registry = f._myDBOwner._registry;

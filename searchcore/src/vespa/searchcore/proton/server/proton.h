@@ -50,6 +50,7 @@ class MetricsEngine;
 class PersistenceEngine;
 class PrepareRestartHandler;
 class SummaryEngine;
+class ScheduledForwardExecutor;
 
 class Proton : public IProtonConfigurerOwner,
                public search::engine::MonitorServer,
@@ -112,7 +113,9 @@ private:
     std::unique_ptr<IProtonDiskLayout>     _protonDiskLayout;
     ProtonConfigurer                       _protonConfigurer;
     ProtonConfigFetcher                    _protonConfigFetcher;
-    std::unique_ptr<SharedThreadingService> _shared_service;
+    std::unique_ptr<SharedThreadingService>   _shared_service;
+    std::unique_ptr<matching::SessionManager> _sessionManager;
+    std::unique_ptr<ScheduledForwardExecutor> _scheduler;
     vespalib::eval::CompileCache::ExecutorBinding::UP _compile_cache_executor_binding;
     matching::QueryLimiter          _queryLimiter;
     uint32_t                        _distributionKey;
