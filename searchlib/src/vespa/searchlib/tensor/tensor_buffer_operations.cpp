@@ -134,7 +134,9 @@ TensorBufferOperations::store_tensor(ArrayRef<char> buf, const vespalib::eval::V
     }
     auto cells = tensor.cells();
     assert(cells_size == cells.size);
-    memcpy(buf.data() + cells_start_offset, cells.data, cells_mem_size);
+    if (cells_mem_size > 0) {
+        memcpy(buf.data() + cells_start_offset, cells.data, cells_mem_size);
+    }
     if (cells_end_offset != store_end) {
         memset(buf.data() + cells_end_offset, 0, store_end - cells_end_offset);
     }
