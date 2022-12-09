@@ -213,7 +213,12 @@ RawResultNode::min(const ResultNode & b)
     char buf[32];
     ConstBufferRef s(b.getString(BufferRef(buf, sizeof(buf))));
 
-    if (memcmp(&_value[0], s.data(), std::min(s.size(), _value.size())) > 0)  {
+    size_t min_sz = std::min(s.size(), _value.size());
+    if (min_sz == 0) {
+        if ( ! _value.empty()) {
+            setBuffer("", 0);
+        }
+    } else if (memcmp(_value.data(), s.data(), std::min(s.size(), _value.size())) > 0)  {
         setBuffer(s.data(), s.size());
     }
 }
@@ -224,7 +229,13 @@ RawResultNode::max(const ResultNode & b)
     char buf[32];
     ConstBufferRef s(b.getString(BufferRef(buf, sizeof(buf))));
 
-    if (memcmp(&_value[0], s.data(), std::min(s.size(), _value.size())) < 0)  {
+    size_t min_sz = std::min(s.size(), _value.size());
+    if (min_sz == 0) {
+        if (s.size() > _value.size()) {
+            setBuffer(s.data(), s.size());
+        }
+
+    } else if (memcmp(&_value[0], s.data(), std::min(s.size(), _value.size())) < 0)  {
         setBuffer(s.data(), s.size());
     }
 }
@@ -329,6 +340,11 @@ size_t hashBuf(const void *s, size_t sz)
     return result;
 }
 
+template <typename T>
+int cmpNum(T a, T b) {
+    return a < b ? -1 : a > b ? 1 : 0;
+}
+
 }
 
 size_t StringResultNode::hash() const { return hashBuf(_value.c_str(),  _value.size()); }
@@ -382,9 +398,13 @@ int RawResultNode::onCmp(const Identifiable & b) const
         return -1;
     } else {
         const RawResultNode & rb( static_cast<const RawResultNode &>(b) );
-        int result = memcmp(&_value[0], &rb._value[0], std::min(_value.size(), rb._value.size()));
+        size_t min_sz = std::min(_value.size(), rb._value.size());
+        if (min_sz == 0) {
+            return cmpNum(_value.size(), rb._value.size());
+        }
+        int result = memcmp(_value.data(), rb._value.data(), min_sz);
         if (result == 0) {
-            result = _value.size() < rb._value.size() ? -1 : _value.size() > rb._value.size() ? 1 : 0;
+            return cmpNum(_value.size(), rb._value.size());
         }
         return result;
     }
