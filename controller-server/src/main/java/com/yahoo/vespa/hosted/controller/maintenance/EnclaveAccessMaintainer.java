@@ -1,6 +1,7 @@
 package com.yahoo.vespa.hosted.controller.maintenance;
 
 import com.yahoo.config.provision.CloudAccount;
+import com.yahoo.config.provision.SystemName;
 import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.tenant.Tenant;
 
@@ -16,7 +17,7 @@ public class EnclaveAccessMaintainer extends ControllerMaintainer {
     private static final Logger logger = Logger.getLogger(EnclaveAccessMaintainer.class.getName());
 
     EnclaveAccessMaintainer(Controller controller, Duration interval) {
-        super(controller, interval);
+        super(controller, interval, null, Set.of(SystemName.PublicCd));
     }
 
     @Override
