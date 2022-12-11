@@ -3,6 +3,7 @@
 
 #include <vespa/vespalib/util/executor.h>
 #include <vespa/vespalib/util/time.h>
+#include <vespa/vespalib/util/idestructorcallback.h>
 #include <memory>
 
 namespace proton {
@@ -12,6 +13,9 @@ namespace proton {
  */
 class IScheduledExecutor {
 public:
+    using Handle = std::unique_ptr<vespalib::IDestructorCallback>;
+    using duration = vespalib::duration;
+    using Executor = vespalib::Executor;
     virtual ~IScheduledExecutor() = default;
 
     /**
@@ -20,9 +24,9 @@ public:
      * @param task The task to schedule.
      * @param delay The delay to wait before first execution.
      * @param interval The interval between the task is executed.
+     * @return A handle that will cancel the recurring task when it goes out of scope
      */
-    virtual void scheduleAtFixedRate(std::unique_ptr<vespalib::Executor::Task> task,
-                                     vespalib::duration delay, vespalib::duration interval) = 0;
+    [[nodiscard]] virtual Handle scheduleAtFixedRate(std::unique_ptr<Executor::Task> task, duration delay, duration interval) = 0;
 };
 
 }

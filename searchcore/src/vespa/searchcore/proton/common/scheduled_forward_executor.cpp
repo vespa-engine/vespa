@@ -3,13 +3,12 @@
 #include "scheduled_forward_executor.h"
 #include <vespa/vespalib/util/lambdatask.h>
 
-using vespalib::Executor;
 using vespalib::makeLambdaTask;
 
 namespace proton {
 
 ScheduledForwardExecutor::ScheduledForwardExecutor(FNET_Transport& transport,
-                                                   vespalib::Executor& executor)
+                                                   Executor& executor)
     : _scheduler(transport),
       _executor(executor)
 {
@@ -21,11 +20,11 @@ ScheduledForwardExecutor::reset()
     _scheduler.reset();
 }
 
-void
-ScheduledForwardExecutor::scheduleAtFixedRate(vespalib::Executor::Task::UP task,
-                                              vespalib::duration delay, vespalib::duration interval)
+IScheduledExecutor::Handle
+ScheduledForwardExecutor::scheduleAtFixedRate(Executor::Task::UP task,
+                                              duration delay, duration interval)
 {
-    _scheduler.scheduleAtFixedRate(makeLambdaTask([&, my_task = std::move(task)]() {
+    return _scheduler.scheduleAtFixedRate(makeLambdaTask([&, my_task = std::move(task)]() {
         _executor.execute(makeLambdaTask([&]() {
             my_task->run();
         }));

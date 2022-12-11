@@ -69,18 +69,27 @@ TYPED_TEST_SUITE(ScheduledExecutorTest, ScheduledTypes);
 TYPED_TEST(ScheduledExecutorTest, test_scheduling) {
     vespalib::CountDownLatch latch1(3);
     vespalib::CountDownLatch latch2(2);
-    this->timer->scheduleAtFixedRate(std::make_unique<TestTask>(latch1), 100ms, 200ms);
-    this->timer->scheduleAtFixedRate(std::make_unique<TestTask>(latch2), 500ms, 500ms);
+    auto handleA = this->timer->scheduleAtFixedRate(std::make_unique<TestTask>(latch1), 100ms, 200ms);
+    auto handleB = this->timer->scheduleAtFixedRate(std::make_unique<TestTask>(latch2), 500ms, 500ms);
     EXPECT_TRUE(latch1.await(60s));
     EXPECT_TRUE(latch2.await(60s));
 }
 
 TYPED_TEST(ScheduledExecutorTest, test_reset) {
     vespalib::CountDownLatch latch1(2);
-    this->timer->scheduleAtFixedRate(std::make_unique<TestTask>(latch1), 2s, 3s);
+    auto handleA = this->timer->scheduleAtFixedRate(std::make_unique<TestTask>(latch1), 2s, 3s);
     this->timer->reset();
     EXPECT_TRUE(!latch1.await(3s));
-    this->timer->scheduleAtFixedRate(std::make_unique<TestTask>(latch1), 200ms, 300ms);
+    auto handleB = this->timer->scheduleAtFixedRate(std::make_unique<TestTask>(latch1), 200ms, 300ms);
+    EXPECT_TRUE(latch1.await(60s));
+}
+
+TYPED_TEST(ScheduledExecutorTest, test_drop_handle) {
+    vespalib::CountDownLatch latch1(2);
+    auto handleA = this->timer->scheduleAtFixedRate(std::make_unique<TestTask>(latch1), 2s, 3s);
+    handleA.reset();
+    EXPECT_TRUE(!latch1.await(3s));
+    auto handleB = this->timer->scheduleAtFixedRate(std::make_unique<TestTask>(latch1), 200ms, 300ms);
     EXPECT_TRUE(latch1.await(60s));
 }
 

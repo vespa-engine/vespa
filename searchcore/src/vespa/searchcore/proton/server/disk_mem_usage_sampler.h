@@ -7,6 +7,8 @@
 
 class FNET_Transport;
 
+namespace vespalib { class IDestructorCallback; }
+
 namespace proton {
 
 class ITransientResourceUsageProvider;
@@ -21,7 +23,8 @@ class DiskMemUsageSampler {
     vespalib::duration     _sampleInterval;
     vespalib::steady_time  _lastSampleTime;
     std::unique_ptr<ScheduledExecutor> _periodicTimer;
-    std::mutex            _lock;
+    std::mutex             _lock;
+    std::unique_ptr<vespalib::IDestructorCallback> _periodicHandle;
     std::vector<std::shared_ptr<const ITransientResourceUsageProvider>> _transient_usage_providers;
 
     void sampleAndReportUsage();

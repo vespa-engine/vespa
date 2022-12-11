@@ -84,7 +84,7 @@ MaintenanceController::killJobs()
     // Called by master write thread
     assert(_masterThread.isCurrentThread());
     LOG(debug, "killJobs(): threadId=%zu", (size_t)FastOS_Thread::GetCurrentThreadId());
-    _periodicTimer->reset();
+    _periodicTaskHandles.clear();
     // No need to take _jobsLock as modification of _jobs also happens in master write thread.
     for (auto &job : _jobs) {
         job->stop(); // Make sure no more tasks are added to the executor
@@ -162,7 +162,7 @@ MaintenanceController::restart()
     if (!getStarted() || getStopping() || !_readySubDB.valid()) {
         return;
     }
-    _periodicTimer->reset();
+    _periodicTaskHandles.clear();
 
     addJobsToPeriodicTimer();
 }
@@ -174,14 +174,16 @@ MaintenanceController::addJobsToPeriodicTimer()
     for (const auto &jw : _jobs) {
         const IMaintenanceJob &job = jw->getJob();
         LOG(debug, "addJobsToPeriodicTimer(): docType='%s', job.name='%s', job.delay=%f, job.interval=%f",
-                _docTypeName.getName().c_str(), job.getName().c_str(), vespalib::to_s(job.getDelay()), vespalib::to_s(job.getInterval()));
+            _docTypeName.getName().c_str(), job.getName().c_str(), vespalib::to_s(job.getDelay()),
+            vespalib::to_s(job.getInterval()));
         if (job.getInterval() == vespalib::duration::zero()) {
             jw->run();
             continue;
         }
-        _periodicTimer->scheduleAtFixedRate(std::make_unique<JobWrapperTask>(jw.get()),
-                                            job.getDelay(), job.getInterval());
+        _periodicTaskHandles.push_back(_periodicTimer->scheduleAtFixedRate(std::make_unique<JobWrapperTask>(jw.get()),
+                                                                           job.getDelay(), job.getInterval()));
     }
+
 }
 
 void

@@ -13,12 +13,14 @@
 #include "proton_configurer.h"
 #include "rpc_hooks.h"
 #include "shared_threading_service.h"
-#include <vespa/eval/eval/llvm/compile_cache.h>
+#include <vespa/searchcore/proton/common/i_scheduled_executor.h>
+#include <vespa/searchcore/proton/matching/querylimiter.h>
 #include <vespa/searchcore/proton/matching/querylimiter.h>
 #include <vespa/searchcore/proton/persistenceengine/i_resource_write_filter.h>
 #include <vespa/searchcore/proton/persistenceengine/ipersistenceengineowner.h>
 #include <vespa/searchlib/common/fileheadercontext.h>
 #include <vespa/searchlib/engine/monitorapi.h>
+#include <vespa/eval/eval/llvm/compile_cache.h>
 #include <vespa/vespalib/net/http/component_config_producer.h>
 #include <vespa/vespalib/net/http/generic_state_handler.h>
 #include <vespa/vespalib/net/http/json_get_handler.h>
@@ -115,6 +117,7 @@ private:
     ProtonConfigFetcher                    _protonConfigFetcher;
     std::unique_ptr<SharedThreadingService>   _shared_service;
     std::unique_ptr<matching::SessionManager> _sessionManager;
+    IScheduledExecutor::Handle                _sessionPruneHandle;
     std::unique_ptr<ScheduledForwardExecutor> _scheduler;
     vespalib::eval::CompileCache::ExecutorBinding::UP _compile_cache_executor_binding;
     matching::QueryLimiter          _queryLimiter;
