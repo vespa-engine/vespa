@@ -379,7 +379,7 @@ RawResultNode::onGetInteger(size_t index) const
         uint8_t _bytes[8];
     } nbo;
     nbo._int64 = 0;
-    memcpy(nbo._bytes, &_value[0], std::min(sizeof(nbo._bytes), _value.size()));
+    memcpy(nbo._bytes, _value.data(), std::min(sizeof(nbo._bytes), _value.size()));
     return nbo::n2h(nbo._int64);
 }
 
@@ -391,7 +391,7 @@ double  RawResultNode::onGetFloat(size_t index) const
         uint8_t _bytes[8];
     } nbo;
     nbo._double = 0;
-    memcpy(nbo._bytes, &_value[0], std::min(sizeof(nbo._bytes), _value.size()));
+    memcpy(nbo._bytes, _value.data(), std::min(sizeof(nbo._bytes), _value.size()));
     return nbo::n2h(nbo._double);
 }
 
@@ -463,14 +463,14 @@ void
 RawResultNode::setBuffer(const void *buf, size_t sz)
 {
     _value.resize(sz + 1);
-    memcpy(&_value[0], buf, sz);
+    memcpy(_value.data(), buf, sz);
     _value.back() = 0;
     _value.resize(sz);
 }
 
 ResultNode::ConstBufferRef
 RawResultNode::onGetString(size_t, BufferRef ) const {
-    return ConstBufferRef(&_value[0], _value.size());
+    return ConstBufferRef(_value.data(), _value.size());
 }
 
 ResultNode::ConstBufferRef
