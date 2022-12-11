@@ -39,7 +39,7 @@ public:
 
     const vespalib::string & getResultClassName()      const { return _resultClassName; }
     vespalib::stringref getStackDump() const {
-        return {&_stackDump[0], _stackDump.size()};
+        return {_stackDump.data(), _stackDump.size()};
     }
 
     void dumpFeatures(bool v) { _dumpFeatures = v; }

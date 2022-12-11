@@ -93,7 +93,7 @@ bool InterpolatedLookup::onExecute() const
     size_t numValues = _attribute->getValueCount(_docId);
     std::vector<double> valueVector;
     valueVector.resize(numValues);
-    _attribute->get(_docId, &valueVector[0], numValues);
+    _attribute->get(_docId, valueVector.data(), numValues);
     double result = simpleInterpolate(numValues, valueVector, lookup);
     static_cast<FloatResultNode &>(updateResult()).set(result);
     return true;
