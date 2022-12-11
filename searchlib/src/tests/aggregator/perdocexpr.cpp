@@ -79,6 +79,9 @@ TEST("testMin") {
     testMin(StringResultNode("67"), StringResultNode("68"));
     testMin(RawResultNode("67", 2), RawResultNode("68", 2));
     testMin(RawResultNode("-67", 2), RawResultNode("68", 2));
+    TEST_DO(testMin(RawResultNode("abc", 3), RawResultNode("abd", 3)));
+    TEST_DO(testMin(RawResultNode("abc", 3), RawResultNode("abcd", 4)));
+    TEST_DO(testMin(RawResultNode("abcd", 4), RawResultNode("abd", 3)));
 }
 
 void testMax(const ResultNode & a, const ResultNode & b) {
@@ -102,6 +105,9 @@ TEST("testMax") {
     testMax(StringResultNode("67"), StringResultNode("68"));
     testMax(RawResultNode("67", 2), RawResultNode("68", 2));
     testMax(RawResultNode("-67", 2), RawResultNode("68", 2));
+    TEST_DO(testMax(RawResultNode("abc", 3), RawResultNode("abd", 3)));
+    TEST_DO(testMax(RawResultNode("abc", 3), RawResultNode("abcd", 4)));
+    TEST_DO(testMax(RawResultNode("abcd", 4), RawResultNode("abd", 3)));
 }
 
 ExpressionCountAggregationResult getExpressionCountWithNormalSketch() {
