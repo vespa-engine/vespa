@@ -239,43 +239,18 @@ RawResultNode::add(const ResultNode & b)
 void
 RawResultNode::min(const ResultNode & b)
 {
-    char buf[32];
-    ConstBufferRef s(b.getString(BufferRef(buf, sizeof(buf))));
-
-    size_t min_sz = std::min(s.size(), _value.size());
-    if (min_sz == 0) {
-        if ( ! _value.empty()) {
-            setBuffer("", 0);
-        }
-    } else {
-        int cmp = memcmp(_value.data(), s.data(), min_sz);
-        if (cmp > 0)  {
-            setBuffer(s.data(), s.size());
-        } else if (cmp == 0 && cmpNum(_value.size(), s.size()) > 0) {
-            setBuffer(s.data(), s.size());
-        }
+    int res = cmp(b);
+    if (res > 0) {
+        set(b);
     }
 }
 
 void
 RawResultNode::max(const ResultNode & b)
 {
-    char buf[32];
-    ConstBufferRef s(b.getString(BufferRef(buf, sizeof(buf))));
-
-    size_t min_sz = std::min(s.size(), _value.size());
-    if (min_sz == 0) {
-        if (s.size() > _value.size()) {
-            setBuffer(s.data(), s.size());
-        }
-
-    } else {
-        int cmp = memcmp(_value.data(), s.data(), min_sz);
-        if (cmp < 0)  {
-            setBuffer(s.data(), s.size());
-        } else if (cmp == 0 && cmpNum(_value.size(), s.size()) < 0) {
-            setBuffer(s.data(), s.size());
-        }
+    int res = cmp(b);
+    if (res < 0) {
+        set(b);
     }
 }
 
