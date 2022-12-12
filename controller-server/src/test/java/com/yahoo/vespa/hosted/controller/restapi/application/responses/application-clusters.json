@@ -55,17 +55,11 @@
         "cost": 0.29
       },
       "utilization": {
-        "cpu": 0.1,
         "idealCpu": 0.2,
-        "currentCpu": 0.3,
         "peakCpu": 0.35,
-        "memory": 0.4,
         "idealMemory": 0.5,
-        "currentMemory": 0.6,
         "peakMemory": 0.65,
-        "disk": 0.7,
         "idealDisk": 0.8,
-        "currentDisk": 0.9,
         "peakDisk": 1.0
       },
       "scalingEvents": [

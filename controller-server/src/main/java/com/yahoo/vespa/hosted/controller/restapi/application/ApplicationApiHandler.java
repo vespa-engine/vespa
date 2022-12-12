@@ -2705,19 +2705,13 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
     }
 
     private void utilizationToSlime(Cluster.Utilization utilization, Cursor utilizationObject) {
-        utilizationObject.setDouble("cpu", utilization.cpu());
         utilizationObject.setDouble("idealCpu", utilization.idealCpu());
-        utilizationObject.setDouble("currentCpu", utilization.currentCpu());
         utilizationObject.setDouble("peakCpu", utilization.peakCpu());
 
-        utilizationObject.setDouble("memory", utilization.memory());
         utilizationObject.setDouble("idealMemory", utilization.idealMemory());
-        utilizationObject.setDouble("currentMemory", utilization.currentMemory());
         utilizationObject.setDouble("peakMemory", utilization.peakMemory());
 
-        utilizationObject.setDouble("disk", utilization.disk());
         utilizationObject.setDouble("idealDisk", utilization.idealDisk());
-        utilizationObject.setDouble("currentDisk", utilization.currentDisk());
         utilizationObject.setDouble("peakDisk", utilization.peakDisk());
     }
 
