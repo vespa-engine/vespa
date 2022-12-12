@@ -470,7 +470,7 @@ Proton::~Proton()
         _diskMemUsageSampler->notifier().removeDiskMemUsageListener(_memoryFlushConfigUpdater.get());
     }
     _sessionPruneHandle.reset();
-    _scheduler->reset();
+    _scheduler.reset();
     _executor.shutdown();
     _executor.sync();
     _rpcHooks.reset();

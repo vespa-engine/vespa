@@ -75,12 +75,9 @@ ScheduledForwardExecutor::ScheduledForwardExecutor(FNET_Transport& transport,
 {
 }
 
-ScheduledForwardExecutor::~ScheduledForwardExecutor() = default;
-
-void
-ScheduledForwardExecutor::reset()
-{
-    _scheduler.reset();
+ScheduledForwardExecutor::~ScheduledForwardExecutor() {
+    std::lock_guard guard(_lock);
+    assert(_taskList.empty());
 }
 
 bool

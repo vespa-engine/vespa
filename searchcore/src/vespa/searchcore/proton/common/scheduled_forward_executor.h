@@ -26,8 +26,6 @@ private:
 public:
     ScheduledForwardExecutor(FNET_Transport& transport, Executor& executor);
     ~ScheduledForwardExecutor() override;
-    void reset();
-
     [[nodiscard]] Handle scheduleAtFixedRate(std::unique_ptr<Executor::Task> task, duration delay, duration interval) override;
 };
 

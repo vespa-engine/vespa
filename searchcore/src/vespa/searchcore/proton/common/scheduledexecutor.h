@@ -41,11 +41,6 @@ public:
     ~ScheduledExecutor() override;
 
     [[nodiscard]] Handle scheduleAtFixedRate(std::unique_ptr<Executor::Task> task, duration delay, duration interval) override;
-
-    /**
-     * Reset timer, clearing the list of task to execute.
-     */
-    void reset();
 };
 
 }
