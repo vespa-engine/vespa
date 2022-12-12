@@ -597,7 +597,7 @@ public class AutoscalingTest {
     public void test_autoscaling_weights_growth_rate_by_confidence() {
         var fixture = AutoscalingTester.fixture().awsProdSetup(true).build();
 
-        double scalingFactor = 1.0/6000; // To mke the average query rate low
+        double scalingFactor = 1.0/6000; // To make the average query rate low
         fixture.setScalingDuration(Duration.ofMinutes(60));
         fixture.tester().clock().advance(Duration.ofDays(2));
         Duration timeAdded = fixture.loader().addLoadMeasurements(100,

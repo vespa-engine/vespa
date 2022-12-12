@@ -268,7 +268,7 @@ public class ClusterModel {
 
     /**
      * Headroom values are a multiplier of the current query rate.
-     * Adjust this value closer to 1 if the query rate is too low to derive statistical conflusions
+     * Adjust this value closer to 1 if the query rate is too low to derive statistical conclusions
      * with high confidence to avoid large adjustments caused by random noise due to low traffic numbers.
      */
     private double adjustByConfidence(double headroom) {
