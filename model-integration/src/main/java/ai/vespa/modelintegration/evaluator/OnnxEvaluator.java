@@ -37,6 +37,9 @@ public class OnnxEvaluator {
             environment = OrtEnvironment.getEnvironment();
             session = environment.createSession(modelPath, options.getOptions());
         } catch (OrtException e) {
+            if (e.getCode() == OrtException.OrtErrorCode.ORT_NO_SUCHFILE) {
+                throw new IllegalArgumentException("No such file: "+modelPath);
+            }
             throw new RuntimeException("ONNX Runtime exception", e);
         }
     }
@@ -101,6 +104,11 @@ public class OnnxEvaluator {
         try {
             new OnnxEvaluator(modelPath);
             return true;
+        } catch (IllegalArgumentException e) {
+            if (e.getMessage().equals("No such file: ")) {
+                return true;
+            }
+            return false;
         } catch (UnsatisfiedLinkError | RuntimeException | NoClassDefFoundError e) {
             return false;
         }
