@@ -52,7 +52,7 @@ public class ApplicationPackageMaintainer extends ConfigServerMaintainer {
                                  Curator curator,
                                  Duration interval,
                                  FlagSource flagSource) {
-        super(applicationRepository, curator, flagSource, applicationRepository.clock().instant(), interval, false);
+        super(applicationRepository, curator, flagSource, applicationRepository.clock(), interval, false);
         this.applicationRepository = applicationRepository;
         this.configserverConfig = applicationRepository.configserverConfig();
         this.downloadDirectory = new File(Defaults.getDefaults().underVespaHome(configserverConfig.fileReferencesDir()));

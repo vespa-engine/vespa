@@ -48,7 +48,7 @@ public class ReindexingMaintainer extends ConfigServerMaintainer {
 
     public ReindexingMaintainer(ApplicationRepository applicationRepository, Curator curator, FlagSource flagSource,
                                 Duration interval, ConfigConvergenceChecker convergence, Clock clock) {
-        super(applicationRepository, curator, flagSource, clock.instant(), interval, true);
+        super(applicationRepository, curator, flagSource, clock, interval, true);
         this.convergence = convergence;
         this.clock = clock;
     }
