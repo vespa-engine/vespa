@@ -54,26 +54,21 @@ public class ConfiguratorTest {
     }
 
     @Test
-    public void config_is_written_correctly_when_one_server() {
+    public void config_is_written_correctly_with_one_server() {
         ZookeeperServerConfig.Builder builder = createConfigBuilderForSingleHost(cfgFile, idFile);
         new Configurator(builder.build()).writeConfigToDisk(VespaTlsConfig.tlsDisabled());
-        validateConfigFileSingleHost(cfgFile);
+        validateConfigFileSingleHost(cfgFile, false);
         validateIdFile(idFile, "0\n");
     }
 
     @Test
-    public void config_is_written_correctly_when_multiple_servers() {
-        ZookeeperServerConfig.Builder builder = new ZookeeperServerConfig.Builder();
-        builder.zooKeeperConfigFile(cfgFile.getAbsolutePath());
-        builder.server(newServer(0, "foo", 123, 321, false));
-        builder.server(newServer(1, "bar", 234, 432, false));
-        builder.server(newServer(2, "baz", 345, 543, true));
-        builder.myidFile(idFile.getAbsolutePath());
-        builder.myid(1);
-        builder.tickTime(1234);
-        new Configurator(builder.build()).writeConfigToDisk(VespaTlsConfig.tlsDisabled());
-        validateConfigFileMultipleHosts(cfgFile);
-        validateIdFile(idFile, "1\n");
+    public void config_is_written_correctly_with_multiple_servers() {
+        three_config_servers(false);
+    }
+
+    @Test
+    public void config_is_written_correctly_with_multiple_servers_on_hosted_vespa() {
+        three_config_servers(true);
     }
 
     @Test
@@ -81,7 +76,7 @@ public class ConfiguratorTest {
         ZookeeperServerConfig.Builder builder = createConfigBuilderForSingleHost(cfgFile, idFile);
         TlsContext tlsContext = createTlsContext();
         new Configurator(builder.build()).writeConfigToDisk(new VespaTlsConfig(tlsContext, MixedMode.TLS_CLIENT_MIXED_SERVER));
-        validateConfigFileTlsWithMixedMode(cfgFile);
+        validateConfigFileTlsWithMixedMode(cfgFile, false);
     }
 
     @Test
@@ -89,7 +84,7 @@ public class ConfiguratorTest {
         ZookeeperServerConfig.Builder builder = createConfigBuilderForSingleHost(cfgFile, idFile);
         TlsContext tlsContext = createTlsContext();
         new Configurator(builder.build()).writeConfigToDisk(new VespaTlsConfig(tlsContext, MixedMode.DISABLED));
-        validateConfigFileTlsWithoutMixedMode(cfgFile);
+        validateConfigFileTlsWithoutMixedMode(cfgFile, false);
     }
 
     @Test(expected = RuntimeException.class)
@@ -122,6 +117,21 @@ public class ConfiguratorTest {
         assertEquals("" + max_buffer, System.getProperty(ZOOKEEPER_JUTE_MAX_BUFFER));
     }
 
+    private void three_config_servers(boolean hosted) {
+        ZookeeperServerConfig.Builder builder = new ZookeeperServerConfig.Builder();
+        builder.zooKeeperConfigFile(cfgFile.getAbsolutePath());
+        builder.server(newServer(0, "foo", 123, 321, false));
+        builder.server(newServer(1, "bar", 234, 432, false));
+        builder.server(newServer(2, "baz", 345, 543, true));
+        builder.myidFile(idFile.getAbsolutePath());
+        builder.myid(1);
+        builder.tickTime(1234);
+        builder.dynamicReconfiguration(hosted);
+        new Configurator(builder.build()).writeConfigToDisk(VespaTlsConfig.tlsDisabled());
+        validateConfigFileMultipleHosts(cfgFile, hosted);
+        validateIdFile(idFile, "1\n");
+    }
+
     private ZookeeperServerConfig.Builder createConfigBuilderForSingleHost(File cfgFile, File idFile) {
         ZookeeperServerConfig.Builder builder = new ZookeeperServerConfig.Builder();
         builder.zooKeeperConfigFile(cfgFile.getAbsolutePath());
@@ -147,7 +157,7 @@ public class ConfiguratorTest {
         assertEquals(expected, actual);
     }
 
-    private String commonConfig() {
+    private String commonConfig(boolean hosted) {
         return "tickTime=1234\n" +
                "initLimit=20\n" +
                "syncLimit=15\n" +
@@ -161,13 +171,13 @@ public class ConfiguratorTest {
                "serverCnxnFactory=org.apache.zookeeper.server.VespaNettyServerCnxnFactory\n" +
                "quorumListenOnAllIPs=true\n" +
                "standaloneEnabled=false\n" +
-               "reconfigEnabled=true\n" +
+               "reconfigEnabled=" + hosted + "\n" +
                "skipACL=yes\n";
     }
 
-    private void validateConfigFileSingleHost(File cfgFile) {
+    private void validateConfigFileSingleHost(File cfgFile, boolean hosted) {
         String expected =
-                commonConfig() +
+                commonConfig(hosted) +
                 "server.0=foo:321:123;2181\n" +
                 "sslQuorum=false\n" +
                 "portUnification=false\n" +
@@ -191,9 +201,9 @@ public class ConfiguratorTest {
                 "ssl.clientAuth=NEED\n";
     }
 
-    private void validateConfigFileMultipleHosts(File cfgFile) {
+    private void validateConfigFileMultipleHosts(File cfgFile, boolean hosted) {
         String expected =
-                commonConfig() +
+                commonConfig(hosted) +
                 "server.0=foo:321:123;2181\n" +
                 "server.1=bar:432:234;2181\n" +
                 "server.2=baz:543:345:observer;2181\n" +
@@ -204,9 +214,9 @@ public class ConfiguratorTest {
     }
 
 
-    private void validateConfigFileTlsWithMixedMode(File cfgFile) {
+    private void validateConfigFileTlsWithMixedMode(File cfgFile, boolean hosted) {
         String expected =
-                commonConfig() +
+                commonConfig(hosted) +
                 "server.0=foo:321:123;2181\n" +
                 "sslQuorum=true\n" +
                 "portUnification=true\n" +
@@ -216,9 +226,9 @@ public class ConfiguratorTest {
         validateConfigFile(cfgFile, expected);
     }
 
-    private void validateConfigFileTlsWithoutMixedMode(File cfgFile) {
+    private void validateConfigFileTlsWithoutMixedMode(File cfgFile, boolean hosted) {
         String expected =
-                commonConfig() +
+                commonConfig(hosted) +
                 "server.0=foo:321:123;2181\n" +
                 "sslQuorum=true\n" +
                 "portUnification=false\n" +

@@ -31,7 +31,6 @@ import com.yahoo.vespa.config.search.core.OnnxModelsConfig;
 import com.yahoo.vespa.config.search.core.RankingConstantsConfig;
 import com.yahoo.vespa.config.search.core.RankingExpressionsConfig;
 import com.yahoo.vespa.model.AbstractService;
-import com.yahoo.vespa.model.VespaModel;
 import com.yahoo.vespa.model.admin.metricsproxy.MetricsProxyContainer;
 import com.yahoo.vespa.model.container.component.BindingPattern;
 import com.yahoo.vespa.model.container.component.Component;
@@ -39,7 +38,6 @@ import com.yahoo.vespa.model.container.component.Handler;
 import com.yahoo.vespa.model.container.component.SystemBindingPattern;
 import com.yahoo.vespa.model.container.configserver.ConfigserverCluster;
 import com.yahoo.vespa.model.utils.FileSender;
-
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -316,8 +314,8 @@ public final class ApplicationContainerCluster extends ContainerCluster<Applicat
                                    ! previousHosts.contains(container.getHostName()))
                          .retired(container.isRetired());
             builder.server(serverBuilder);
-            builder.dynamicReconfiguration(true);
         }
+        builder.dynamicReconfiguration(true);
     }
 
     @Override
