@@ -71,7 +71,7 @@
       },
       "utilization" : {
           "cpu" : 0.0,
-          "idealCpu": 0.1375,
+          "idealCpu": 0.40750000000000003,
           "currentCpu": 0.0,
           "peakCpu": 0.0,
           "memory" : 0.0,

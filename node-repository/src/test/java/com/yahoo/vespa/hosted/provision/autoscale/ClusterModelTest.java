@@ -41,31 +41,41 @@ public class ClusterModelTest {
     public void test_traffic_headroom() {
         // No current traffic share: Ideal load is low but capped
         var model1 = clusterModel(new Status(0.0, 1.0),
-                                  t -> t == 0 ? 10000.0 : 0.0, t -> 0.0);
-        assertEquals(0.37067209775967414, model1.idealLoad().cpu(), delta);
+                                  t -> t == 0 ? 10000.0 : 100.0, t -> 0.0);
+        assertEquals(0.32653061224489793, model1.idealLoad().cpu(), delta);
 
         // Almost no current traffic share: Ideal load is low but capped
         var model2 = clusterModel(new Status(0.0001, 1.0),
-                                  t -> t == 0 ? 10000.0 : 0.0, t -> 0.0);
-        assertEquals(0.37067209775967414, model2.idealLoad().cpu(), delta);
+                                  t -> t == 0 ? 10000.0 : 100.0, t -> 0.0);
+        assertEquals(0.32653061224489793, model2.idealLoad().cpu(), delta);
+
+        // Almost no traffic: Headroom impact is reduced due to uncertainty
+        var model3 = clusterModel(new Status(0.0001, 1.0),
+                                  t -> t == 0 ? 10000.0 : 1.0, t -> 0.0);
+        assertEquals(0.6465952717720751, model3.idealLoad().cpu(), delta);
     }
 
     @Test
     public void test_growth_headroom() {
         // No traffic data: Ideal load assumes 2 regions
         var model1 = clusterModel(new Status(0.0, 0.0),
-                                  t -> t == 0 ? 10000.0 : 0.0, t -> 0.0);
-        assertEquals(0.2240325865580448, model1.idealLoad().cpu(), delta);
+                                  t -> t == 0 ? 10000.0 : 100.0, t -> 0.0);
+        assertEquals(0.16326530612244897, model1.idealLoad().cpu(), delta);
 
         // No traffic: Ideal load is higher since we now know there is only one zone
         var model2 = clusterModel(new Status(0.0, 1.0),
-                                  t -> t == 0 ? 10000.0 : 0.0, t -> 0.0);
-        assertEquals(0.37067209775967414, model2.idealLoad().cpu(), delta);
+                                  t -> t == 0 ? 10000.0 : 100.0, t -> 0.0);
+        assertEquals(0.32653061224489793, model2.idealLoad().cpu(), delta);
 
         // Almost no current traffic: Similar number as above
         var model3 = clusterModel(new Status(0.0001, 1.0),
-                                  t -> t == 0 ? 10000.0 : 0.0001, t -> 0.0);
+                                  t -> t == 0 ? 10000.0 : 100.0, t -> 0.0);
         assertEquals(0.32653061224489793, model3.idealLoad().cpu(), delta);
+
+        // Low query rate: Impact of growth headroom is reduced due to uncertainty
+        var model4 = clusterModel(new Status(0.0001, 1.0),
+                                  t -> t == 0 ? 100.0 : 1.0, t -> 0.0);
+        assertEquals(0.6465952717720751, model4.idealLoad().cpu(), delta);
     }
 
     private ClusterModel clusterModelWithNoData() {

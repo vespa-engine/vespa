@@ -70,8 +70,8 @@ public class AutoscalingMaintainerTest {
         assertTrue(tester.deployer().lastDeployTime(app1).isEmpty());
         assertTrue(tester.deployer().lastDeployTime(app2).isEmpty());
 
-        tester.addMeasurements(0.9f, 0.9f, 0.9f, 0, 500, app1);
-        tester.addMeasurements(0.9f, 0.9f, 0.9f, 0, 500, app2);
+        tester.addMeasurements(0.9f, 0.9f, 0.9f, 0, 500, app1, cluster1.id());
+        tester.addMeasurements(0.9f, 0.9f, 0.9f, 0, 500, app2, cluster2.id());
 
         tester.clock().advance(Duration.ofMinutes(10));
         tester.maintainer().maintain();
@@ -93,7 +93,7 @@ public class AutoscalingMaintainerTest {
         tester.deploy(app1, cluster1, app1Capacity);
 
         // Measure overload
-        tester.addMeasurements(0.9f, 0.9f, 0.9f, 0, 500, app1);
+        tester.addMeasurements(0.9f, 0.9f, 0.9f, 0, 500, app1, cluster1.id());
 
         // Causes autoscaling
         tester.clock().advance(Duration.ofMinutes(10));
@@ -110,24 +110,24 @@ public class AutoscalingMaintainerTest {
         assertEquals(firstMaintenanceTime.toEpochMilli(), events.get(1).at().toEpochMilli());
 
         // Measure overload still, since change is not applied, but metrics are discarded
-        tester.addMeasurements(0.9f, 0.9f, 0.9f, 0, 500, app1);
+        tester.addMeasurements(0.9f, 0.9f, 0.9f, 0, 500, app1, cluster1.id());
         tester.maintainer().maintain();
         assertEquals(firstMaintenanceTime.toEpochMilli(), tester.deployer().lastDeployTime(app1).get().toEpochMilli());
 
         // Measure underload, but no autoscaling since we still haven't measured we're on the new config generation
-        tester.addMeasurements(0.1f, 0.1f, 0.1f, 0, 500, app1);
+        tester.addMeasurements(0.1f, 0.1f, 0.1f, 0, 500, app1, cluster1.id());
         tester.maintainer().maintain();
         assertEquals(firstMaintenanceTime.toEpochMilli(), tester.deployer().lastDeployTime(app1).get().toEpochMilli());
 
         // Add measurement of the expected generation, leading to rescaling
         // - record scaling completion
         tester.clock().advance(Duration.ofMinutes(5));
-        tester.addMeasurements(0.1f, 0.1f, 0.1f, 1, 1, app1);
+        tester.addMeasurements(0.1f, 0.1f, 0.1f, 1, 1, app1, cluster1.id());
         tester.maintainer().maintain();
         assertEquals(firstMaintenanceTime.toEpochMilli(), tester.deployer().lastDeployTime(app1).get().toEpochMilli());
         // - measure underload
         tester.clock().advance(Duration.ofDays(4)); // Exit cooling period
-        tester.addMeasurements(0.1f, 0.1f, 0.1f, 1, 500, app1);
+        tester.addMeasurements(0.1f, 0.1f, 0.1f, 1, 500, app1, cluster1.id());
         Instant lastMaintenanceTime = tester.clock().instant();
         tester.maintainer().maintain();
         assertEquals(lastMaintenanceTime.toEpochMilli(), tester.deployer().lastDeployTime(app1).get().toEpochMilli());
@@ -161,16 +161,16 @@ public class AutoscalingMaintainerTest {
         Duration samplePeriod = Duration.ofSeconds(150);
         for (int i = 0; i < 20; i++) {
             // Record completion to keep scaling window at minimum
-            tester.addMeasurements(0.1f, 0.1f, 0.1f, i, 1, app1);
+            tester.addMeasurements(0.1f, 0.1f, 0.1f, i, 1, app1, cluster1.id());
             tester.maintainer().maintain();
 
             tester.clock().advance(Duration.ofDays(1));
 
             if (i % 2 == 0) { // high load
-                tester.addMeasurements(0.99f, 0.99f, 0.99f, i, measurements, app1);
+                tester.addMeasurements(0.99f, 0.99f, 0.99f, i, measurements, app1, cluster1.id());
             }
             else { // low load
-                tester.addMeasurements(0.2f, 0.2f, 0.2f, i, measurements, app1);
+                tester.addMeasurements(0.2f, 0.2f, 0.2f, i, measurements, app1, cluster1.id());
             }
             tester.clock().advance(samplePeriod.negated().multipliedBy(measurements));
             tester.addQueryRateMeasurements(app1, cluster1.id(), measurements, t -> (t == 0 ? 20.0 : 10.0 ));
@@ -180,7 +180,7 @@ public class AutoscalingMaintainerTest {
         assertEquals(Cluster.maxScalingEvents, tester.cluster(app1, cluster1).scalingEvents().size());
 
         // Complete last event
-        tester.addMeasurements(0.1f, 0.1f, 0.1f, 20, 1, app1);
+        tester.addMeasurements(0.1f, 0.1f, 0.1f, 20, 1, app1, cluster1.id());
         tester.maintainer().maintain();
         assertEquals("Last event is completed",
                      tester.clock().instant(),
@@ -202,7 +202,6 @@ public class AutoscalingMaintainerTest {
 
         autoscale(false, Duration.ofMinutes( 1), Duration.ofMinutes( 5), clock, app1, cluster1, tester);
         autoscale( true, Duration.ofMinutes(19), Duration.ofMinutes(10), clock, app1, cluster1, tester);
-        autoscale( true, Duration.ofMinutes(40), Duration.ofMinutes(20), clock, app1, cluster1, tester);
     }
 
     @Test
@@ -217,21 +216,21 @@ public class AutoscalingMaintainerTest {
 
         // Add a scaling event
         tester.deploy(app1, cluster1, capacity);
-        tester.addMeasurements(1.0f, 0.3f, 0.3f, 0, 4, app1);
+        tester.addMeasurements(1.0f, 0.3f, 0.3f, 0, 4, app1, cluster1.id());
         tester.maintainer().maintain();
         assertEquals("Scale up: " + tester.cluster(app1, cluster1).autoscalingStatus(),
                      1,
                      tester.cluster(app1, cluster1).lastScalingEvent().get().generation());
 
         // measurements with outdated generation are ignored -> no autoscaling
-        var duration = tester.addMeasurements(3.0f, 0.3f, 0.3f, 0, 2, app1);
+        var duration = tester.addMeasurements(3.0f, 0.3f, 0.3f, 0, 2, app1, cluster1.id());
         tester.maintainer().maintain();
         assertEquals("Measurements with outdated generation are ignored -> no autoscaling",
                      1,
                      tester.cluster(app1, cluster1).lastScalingEvent().get().generation());
         tester.clock().advance(duration.negated());
 
-        duration = tester.addMeasurements(3.0f, 0.3f, 0.3f, 1, 2, app1);
+        duration = tester.addMeasurements(3.0f, 0.3f, 0.3f, 1, 2, app1, cluster1.id());
         tester.maintainer().maintain();
         assertEquals("Measurements right after generation change are ignored -> no autoscaling",
                      1,
@@ -242,7 +241,7 @@ public class AutoscalingMaintainerTest {
         tester.clock().advance(ClusterModel.warmupDuration.plus(Duration.ofMinutes(1)));
         tester.nodeRepository().nodes().list().owner(app1).asList().forEach(node -> recordRestart(node, tester.nodeRepository()));
 
-        duration = tester.addMeasurements(3.0f, 0.3f, 0.3f, 1, 2, app1);
+        duration = tester.addMeasurements(3.0f, 0.3f, 0.3f, 1, 2, app1, cluster1.id());
         tester.maintainer().maintain();
         assertEquals("Measurements right after restart are ignored -> no autoscaling",
                      1,
@@ -250,7 +249,7 @@ public class AutoscalingMaintainerTest {
         tester.clock().advance(duration.negated());
 
         tester.clock().advance(ClusterModel.warmupDuration.plus(Duration.ofMinutes(1)));
-        tester.addMeasurements(3.0f, 0.3f, 0.3f, 1, 2, app1);
+        tester.addMeasurements(3.0f, 0.3f, 0.3f, 1, 2, app1, cluster1.id());
         tester.maintainer().maintain();
         assertEquals("We have valid measurements -> scale up",
                      2,
@@ -310,7 +309,7 @@ public class AutoscalingMaintainerTest {
 
         clock.advance(completionTime);
         float load = down ? 0.1f : 1.0f;
-        tester.addMeasurements(load, load, load, generation, 1, application);
+        tester.addMeasurements(load, load, load, generation, 1, application, cluster.id());
         tester.maintainer().maintain();
         assertEvent("Measured completion of the last scaling event, but no new autoscaling yet",
                     generation, Optional.of(clock.instant()),
@@ -320,7 +319,7 @@ public class AutoscalingMaintainerTest {
         else
             clock.advance(expectedWindow.minus(completionTime));
 
-        tester.addMeasurements(load, load, load, generation, 200, application);
+        tester.addMeasurements(load, load, load, generation, 200, application, cluster.id());
         tester.maintainer().maintain();
         assertEquals("We passed window duration so a new autoscaling is started: " +
                      tester.cluster(application, cluster).autoscalingStatus(),
