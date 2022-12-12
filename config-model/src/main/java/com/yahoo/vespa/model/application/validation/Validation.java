@@ -88,6 +88,7 @@ public class Validation {
         new QuotaValidator().validate(model, deployState);
         new UriBindingsValidator().validate(model, deployState);
         new CloudDataPlaneFilterValidator().validate(model, deployState);
+        new AccessControlFilterExcludeValidator().validate(model, deployState);
 
         additionalValidators.forEach(v -> v.validate(model, deployState));
 
