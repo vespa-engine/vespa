@@ -57,6 +57,7 @@ public class ClusterModel {
     // Lazily initialized members
     private Double queryFractionOfMax = null;
     private Double maxQueryGrowthRate = null;
+    private OptionalDouble averageQueryRate = null;
 
     public ClusterModel(Zone zone,
                         Application application,
@@ -131,17 +132,23 @@ public class ClusterModel {
 
     /**
      * Returns the predicted max query growth rate per minute as a fraction of the average traffic
-     * in the scaling window
+     * in the scaling window.
      */
     public double maxQueryGrowthRate() {
         if (maxQueryGrowthRate != null) return maxQueryGrowthRate;
         return maxQueryGrowthRate = clusterTimeseries().maxQueryGrowthRate(scalingDuration(), clock);
     }
 
-    /** Returns the average query rate in the scaling window as a fraction of the max observed query rate */
+    /** Returns the average query rate in the scaling window as a fraction of the max observed query rate. */
     public double queryFractionOfMax() {
         if (queryFractionOfMax != null) return queryFractionOfMax;
         return queryFractionOfMax = clusterTimeseries().queryFractionOfMax(scalingDuration(), clock);
+    }
+
+    /** Returns the average query rate in the scaling window. */
+    public OptionalDouble averageQueryRate() {
+        if (averageQueryRate != null) return averageQueryRate;
+        return averageQueryRate = clusterTimeseries().queryRate(scalingDuration(), clock);
     }
 
     /** Returns the average of the last load measurement from each node. */
@@ -239,7 +246,8 @@ public class ClusterModel {
         // Cap headroom at 10% above the historical observed peak
         if (queryFractionOfMax() != 0)
             growthRateHeadroom = Math.min(growthRateHeadroom, 1 / queryFractionOfMax() + 0.1);
-        return growthRateHeadroom;
+
+        return adjustByConfidence(growthRateHeadroom);
     }
 
     /**
@@ -255,15 +263,23 @@ public class ClusterModel {
             trafficShiftHeadroom = 1/application.status().maxReadShare();
         else
             trafficShiftHeadroom = application.status().maxReadShare() / application.status().currentReadShare();
-        return Math.min(trafficShiftHeadroom, 1/application.status().maxReadShare());
+        return adjustByConfidence(Math.min(trafficShiftHeadroom, 1/application.status().maxReadShare()));
+    }
+
+    /**
+     * Headroom values are a multiplier of the current query rate.
+     * Adjust this value closer to 1 if the query rate is too low to derive statistical conflusions
+     * with high confidence to avoid large adjustments caused by random noise due to low traffic numbers.
+     */
+    private double adjustByConfidence(double headroom) {
+        return ( (headroom -1 ) * Math.min(1, averageQueryRate().orElse(0) / 100.0) ) + 1;
     }
 
     /** The estimated fraction of cpu usage which goes to processing queries vs. writes */
     public double queryCpuFraction() {
-        OptionalDouble queryRate = clusterTimeseries().queryRate(scalingDuration(), clock);
         OptionalDouble writeRate = clusterTimeseries().writeRate(scalingDuration(), clock);
-        if (queryRate.orElse(0) == 0 && writeRate.orElse(0) == 0) return queryCpuFraction(0.5);
-        return queryCpuFraction(queryRate.orElse(0) / (queryRate.orElse(0) + writeRate.orElse(0)));
+        if (averageQueryRate().orElse(0) == 0 && writeRate.orElse(0) == 0) return queryCpuFraction(0.5);
+        return queryCpuFraction(averageQueryRate().orElse(0) / (averageQueryRate().orElse(0) + writeRate.orElse(0)));
     }
 
     private double queryCpuFraction(double queryRateFraction) {

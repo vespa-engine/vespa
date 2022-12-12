@@ -74,7 +74,8 @@ public class GroupPreparer {
     public PrepareResult prepare(ApplicationId application, ClusterSpec cluster, NodeSpec requestedNodes,
                                  List<Node> surplusActiveNodes, NodeIndices indices, int wantedGroups,
                                  NodesAndHosts<LockedNodeList> allNodesAndHosts) {
-        log.log(Level.FINE, () -> "Preparing " + cluster.type().name() + " " + cluster.id() + " with requested resources " + requestedNodes.resources().orElse(NodeResources.unspecified()));
+        log.log(Level.FINE, () -> "Preparing " + cluster.type().name() + " " + cluster.id() + " with requested resources " +
+                                  requestedNodes.resources().orElse(NodeResources.unspecified()));
         // Try preparing in memory without global unallocated lock. Most of the time there should be no changes,
         // and we can return nodes previously allocated.
         NodeAllocation probeAllocation = prepareAllocation(application, cluster, requestedNodes, surplusActiveNodes,
