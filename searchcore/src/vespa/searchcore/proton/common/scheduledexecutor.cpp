@@ -44,7 +44,6 @@ public:
     ~Registration() {
         _executor.cancel(_key);
     }
-
 };
 
 ScheduledExecutor::ScheduledExecutor(FNET_Transport & transport)
