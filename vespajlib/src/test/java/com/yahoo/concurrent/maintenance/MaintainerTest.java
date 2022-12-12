@@ -70,10 +70,12 @@ public class MaintainerTest {
     private static class TestJobMetrics extends JobMetrics {
 
         double successFactor = 0.0;
+        long durationMs = 0;
 
         @Override
-        public void completed(String job, double successFactor) {
+        public void completed(String job, double successFactor, long durationMs) {
             this.successFactor = successFactor;
+            this.durationMs = durationMs;
         }
 
     }

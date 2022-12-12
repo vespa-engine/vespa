@@ -27,7 +27,7 @@ public class FileDistributionMaintainer extends ConfigServerMaintainer {
                                Duration interval,
                                FlagSource flagSource,
                                FileDirectory fileDirectory) {
-        super(applicationRepository, curator, flagSource, applicationRepository.clock().instant(), interval, false);
+        super(applicationRepository, curator, flagSource, applicationRepository.clock(), interval, false);
         this.applicationRepository = applicationRepository;
         ConfigserverConfig configserverConfig = applicationRepository.configserverConfig();
         this.maxUnusedFileReferenceAge = Duration.ofMinutes(configserverConfig.keepUnusedFileReferencesMinutes());
