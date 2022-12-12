@@ -67,7 +67,7 @@ ScheduledExecutor::scheduleAtFixedRate(Executor::Task::UP task, duration delay, 
     uint64_t key = _nextKey++;
     auto tTask = std::make_unique<TimerTask>(_transport.GetScheduler(), std::move(task), interval);
     auto & taskRef = *tTask;
-    _taskList[key] =  std::move(tTask);
+    _taskList[key] = std::move(tTask);
     taskRef.Schedule(vespalib::to_s(delay));
     return std::make_unique<Registration>(*this, key);
 }
@@ -80,6 +80,7 @@ ScheduledExecutor::cancel(uint64_t key)
     if (found == _taskList.end()) return false;
 
     found->second->Unschedule();
+    _taskList.erase(found);
     return true;
 }
 
