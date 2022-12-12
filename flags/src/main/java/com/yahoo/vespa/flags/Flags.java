@@ -234,7 +234,7 @@ public class Flags {
 
     public static final UnboundBooleanFlag IGNORE_THREAD_STACK_SIZES = defineFeatureFlag(
             "ignore-thread-stack-sizes", false,
-            List.of("arnej"), "2021-11-12", "2022-12-01",
+            List.of("arnej"), "2021-11-12", "2023-12-31",
             "Whether C++ thread creation should ignore any requested stack size",
             "Triggers restart, takes effect immediately",
             ZONE_ID, APPLICATION_ID);
