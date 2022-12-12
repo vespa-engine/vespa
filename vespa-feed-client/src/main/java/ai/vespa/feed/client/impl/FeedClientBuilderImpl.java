@@ -37,8 +37,8 @@ public class FeedClientBuilderImpl implements FeedClientBuilder {
     final Map<String, Supplier<String>> requestHeaders = new HashMap<>();
     SSLContext sslContext;
     HostnameVerifier hostnameVerifier;
-    int connectionsPerEndpoint = 4;
-    int maxStreamsPerConnection = 4096;
+    int connectionsPerEndpoint = 8;
+    int maxStreamsPerConnection = 32;
     FeedClient.RetryStrategy retryStrategy = defaultRetryStrategy;
     FeedClient.CircuitBreaker circuitBreaker = new GracePeriodCircuitBreaker(Duration.ofSeconds(10));
     Path certificateFile;
