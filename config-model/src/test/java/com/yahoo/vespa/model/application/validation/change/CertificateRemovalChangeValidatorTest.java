@@ -1,3 +1,4 @@
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model.application.validation.change;
 
 import com.yahoo.config.application.api.ValidationOverrides;
@@ -15,6 +16,9 @@ import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
+/**
+ * @author mortent
+ */
 public class CertificateRemovalChangeValidatorTest {
 
     private static final String validationOverrides =
