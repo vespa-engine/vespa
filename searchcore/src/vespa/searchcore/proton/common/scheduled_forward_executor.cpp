@@ -24,8 +24,9 @@ IScheduledExecutor::Handle
 ScheduledForwardExecutor::scheduleAtFixedRate(Executor::Task::UP task,
                                               duration delay, duration interval)
 {
-    return _scheduler.scheduleAtFixedRate(makeLambdaTask([&, my_task = std::move(task)]() {
-        _executor.execute(makeLambdaTask([&]() {
+    std::shared_ptr<Executor::Task> my_task = std::move(task);
+    return _scheduler.scheduleAtFixedRate(makeLambdaTask([&, my_task = std::move(my_task)]() {
+        _executor.execute(makeLambdaTask([&, my_task]() {
             my_task->run();
         }));
     }), delay, interval);
