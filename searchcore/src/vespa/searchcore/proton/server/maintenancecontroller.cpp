@@ -143,14 +143,13 @@ MaintenanceController::restart()
     if (!getStarted() || getStopping() || !_readySubDB.valid()) {
         return;
     }
-    _periodicTaskHandles.clear();
-
     addJobsToPeriodicTimer();
 }
 
 void
 MaintenanceController::addJobsToPeriodicTimer()
 {
+    _periodicTaskHandles.clear();
     // No need to take _jobsLock as modification of _jobs also happens in master write thread.
     for (const auto &jw : _jobs) {
         const IMaintenanceJob &job = jw->getJob();
