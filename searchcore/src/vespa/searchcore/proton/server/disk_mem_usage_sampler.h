@@ -50,8 +50,8 @@ public:
     };
 
     DiskMemUsageSampler(const std::string &path_in, const HwInfo &config);
-
     ~DiskMemUsageSampler();
+    void close();
 
     void setConfig(const Config &config, IScheduledExecutor & executor);
 

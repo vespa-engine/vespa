@@ -24,6 +24,11 @@ DiskMemUsageSampler::DiskMemUsageSampler(const std::string &path_in, const HwInf
 DiskMemUsageSampler::~DiskMemUsageSampler() = default;
 
 void
+DiskMemUsageSampler::close() {
+    _periodicHandle.reset();
+}
+
+void
 DiskMemUsageSampler::setConfig(const Config &config, IScheduledExecutor & executor)
 {
     _periodicHandle.reset();
