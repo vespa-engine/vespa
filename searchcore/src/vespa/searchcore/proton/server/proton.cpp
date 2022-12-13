@@ -297,8 +297,7 @@ Proton::init(const BootstrapConfig::SP & configSnapshot)
 
     setBucketCheckSumType(protonConfig);
     setFS4Compression(protonConfig);
-    _diskMemUsageSampler = std::make_unique<DiskMemUsageSampler>(_transport, protonConfig.basedir,
-                                                                 diskMemUsageSamplerConfig(protonConfig, hwInfo));
+    _diskMemUsageSampler = std::make_unique<DiskMemUsageSampler>(protonConfig.basedir, hwInfo);
 
     _tls = std::make_unique<TLS>(_configUri.createWithNewId(protonConfig.tlsconfigid), _fileHeaderContext);
     _metricsEngine->addMetricsHook(*_metricsHook);
@@ -348,6 +347,7 @@ Proton::init(const BootstrapConfig::SP & configSnapshot)
     _shared_service = std::make_unique<SharedThreadingService>(
             SharedThreadingServiceConfig::make(protonConfig, hwInfo.cpu()), _transport, *_persistenceEngine);
     _scheduler = std::make_unique<ScheduledForwardExecutor>(_transport, _shared_service->shared());
+    _diskMemUsageSampler->setConfig(diskMemUsageSamplerConfig(protonConfig, hwInfo), *_scheduler);
 
     vespalib::string fileConfigId;
     _compile_cache_executor_binding = vespalib::eval::CompileCache::bind(_shared_service->shared_raw());
@@ -406,7 +406,7 @@ Proton::applyConfig(const BootstrapConfig::SP & configSnapshot)
                             protonConfig.search.memory.limiter.minhits);
     const std::shared_ptr<const DocumentTypeRepo> repo = configSnapshot->getDocumentTypeRepoSP();
 
-    _diskMemUsageSampler->setConfig(diskMemUsageSamplerConfig(protonConfig, configSnapshot->getHwInfo()));
+    _diskMemUsageSampler->setConfig(diskMemUsageSamplerConfig(protonConfig, configSnapshot->getHwInfo()), *_scheduler);
     if (_memoryFlushConfigUpdater) {
         _memoryFlushConfigUpdater->setConfig(protonConfig.flush.memory);
         _flushEngine->kick();
@@ -470,6 +470,7 @@ Proton::~Proton()
         _diskMemUsageSampler->notifier().removeDiskMemUsageListener(_memoryFlushConfigUpdater.get());
     }
     _sessionPruneHandle.reset();
+    _diskMemUsageSampler->close();
     _scheduler.reset();
     _executor.shutdown();
     _executor.sync();

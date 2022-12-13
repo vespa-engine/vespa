@@ -1,6 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include <vespa/searchcore/proton/common/hw_info.h>
+#include <vespa/searchcore/proton/common/scheduledexecutor.h>
 #include <vespa/searchcore/proton/common/i_transient_resource_usage_provider.h>
 #include <vespa/searchcore/proton/server/disk_mem_usage_sampler.h>
 #include <vespa/searchcore/proton/test/transport_helper.h>
@@ -39,19 +40,22 @@ public:
 
 struct DiskMemUsageSamplerTest : public ::testing::Test {
     Transport transport;
+    ScheduledExecutor executor;
     std::unique_ptr<DiskMemUsageSampler> sampler;
     DiskMemUsageSamplerTest()
         : transport(),
-          sampler(std::make_unique<DiskMemUsageSampler>(transport.transport(), ".", DiskMemUsageSampler::Config(0.8, 0.8, 50ms, make_hw_info())))
+          executor(transport.transport()),
+          sampler(std::make_unique<DiskMemUsageSampler>(".", make_hw_info()))
     {
+        sampler->setConfig(DiskMemUsageSampler::Config(0.8, 0.8, 50ms, make_hw_info()), executor);
         sampler->add_transient_usage_provider(std::make_shared<MyProvider>(50, 200));
         sampler->add_transient_usage_provider(std::make_shared<MyProvider>(100, 150));
     }
-    ~DiskMemUsageSamplerTest() {
-        sampler.reset();
-    }
+    ~DiskMemUsageSamplerTest();
     const DiskMemUsageFilter& filter() const { return sampler->writeFilter(); }
 };
+
+DiskMemUsageSamplerTest::~DiskMemUsageSamplerTest() = default;
 
 TEST_F(DiskMemUsageSamplerTest, resource_usage_is_sampled)
 {
