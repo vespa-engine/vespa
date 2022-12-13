@@ -6,8 +6,6 @@ import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.tenant.Tenant;
 
 import java.time.Duration;
-import java.time.Instant;
-import java.util.Comparator;
 
 public class TenantRoleMaintainer extends ControllerMaintainer {
 
@@ -18,10 +16,7 @@ public class TenantRoleMaintainer extends ControllerMaintainer {
     @Override
     protected double maintain() {
         var roleService = controller().serviceRegistry().roleService();
-        var tenants = controller().tenants().asList().stream()
-                .sorted(Comparator.comparing(Tenant::tenantRolesLastMaintained))
-                .limit(5)
-                .toList();
+        var tenants = controller().tenants().asList();
 
         // Create separate athenz service for all tenants
         tenants.forEach(roleService::createTenantRole);
@@ -30,12 +25,6 @@ public class TenantRoleMaintainer extends ControllerMaintainer {
                 .map(Tenant::name)
                 .toList();
         roleService.maintainRoles(tenantsWithRoles);
-
-        // Update last maintained timestamp
-        var updated = Instant.now(controller().clock());
-        tenants.forEach(t -> {
-            controller().tenants().updateLastTenantRolesMaintained(t.name(), updated);
-        });
 
         return 1.0;
     }

@@ -31,8 +31,8 @@ public class CloudTenant extends Tenant {
     /** Public for the serialization layer — do not use! */
     public CloudTenant(TenantName name, Instant createdAt, LastLoginInfo lastLoginInfo, Optional<SimplePrincipal> creator,
                        BiMap<PublicKey, SimplePrincipal> developerKeys, TenantInfo info,
-                       List<TenantSecretStore> tenantSecretStores, ArchiveAccess archiveAccess, Optional<Instant> invalidateUserSessionsBefore, Instant tenantRoleLastMaintained) {
-        super(name, createdAt, lastLoginInfo, Optional.empty(), tenantRoleLastMaintained);
+                       List<TenantSecretStore> tenantSecretStores, ArchiveAccess archiveAccess, Optional<Instant> invalidateUserSessionsBefore) {
+        super(name, createdAt, lastLoginInfo, Optional.empty());
         this.creator = creator;
         this.developerKeys = developerKeys;
         this.info = Objects.requireNonNull(info);
@@ -47,7 +47,7 @@ public class CloudTenant extends Tenant {
                                createdAt,
                                LastLoginInfo.EMPTY,
                                Optional.ofNullable(creator).map(SimplePrincipal::of),
-                               ImmutableBiMap.of(), TenantInfo.empty(), List.of(), new ArchiveAccess(), Optional.empty(), Instant.EPOCH);
+                               ImmutableBiMap.of(), TenantInfo.empty(), List.of(), new ArchiveAccess(), Optional.empty());
     }
 
     /** The user that created the tenant */
