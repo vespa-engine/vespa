@@ -26,7 +26,8 @@ public class CertificateRemovalChangeValidator implements ChangeValidator {
 
     @Override
     public List<ConfigChangeAction> validate(VespaModel current, VespaModel next, ValidationOverrides overrides, Instant now) {
-
+        // Skip for tester applications
+        if (current.applicationPackage().getApplicationId().instance().isTester()) return List.of();
         current.getContainerClusters()
                 .forEach((clusterId, currentCluster) -> {
                     if(next.getContainerClusters().containsKey(clusterId))
