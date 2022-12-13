@@ -16,8 +16,8 @@ DiskMemUsageSampler::DiskMemUsageSampler(const std::string &path_in, const HwInf
       _sampleInterval(60s),
       _lastSampleTime(),
       _lock(),
-      _periodicHandle(),
-      _transient_usage_providers()
+      _transient_usage_providers(),
+      _periodicHandle()
 {
 }
 

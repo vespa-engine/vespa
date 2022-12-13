@@ -20,8 +20,8 @@ class DiskMemUsageSampler {
     vespalib::duration     _sampleInterval;
     vespalib::steady_time  _lastSampleTime;
     std::mutex             _lock;
-    std::unique_ptr<vespalib::IDestructorCallback> _periodicHandle;
     std::vector<std::shared_ptr<const ITransientResourceUsageProvider>> _transient_usage_providers;
+    std::unique_ptr<vespalib::IDestructorCallback> _periodicHandle;
 
     void sampleAndReportUsage();
     uint64_t sampleDiskUsage();

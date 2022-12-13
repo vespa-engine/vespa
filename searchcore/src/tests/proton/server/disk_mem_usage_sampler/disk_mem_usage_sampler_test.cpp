@@ -55,7 +55,9 @@ struct DiskMemUsageSamplerTest : public ::testing::Test {
     const DiskMemUsageFilter& filter() const { return sampler->writeFilter(); }
 };
 
-DiskMemUsageSamplerTest::~DiskMemUsageSamplerTest() = default;
+DiskMemUsageSamplerTest::~DiskMemUsageSamplerTest() {
+    sampler->close(); // Ensure all tasks are stopped
+}
 
 TEST_F(DiskMemUsageSamplerTest, resource_usage_is_sampled)
 {
