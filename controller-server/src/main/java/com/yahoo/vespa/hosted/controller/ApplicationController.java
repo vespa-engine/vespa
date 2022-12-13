@@ -101,6 +101,7 @@ import java.util.function.Supplier;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static com.yahoo.vespa.flags.FetchVector.Dimension.APPLICATION_ID;
 import static com.yahoo.vespa.hosted.controller.api.integration.configserver.Node.State.active;
@@ -504,8 +505,7 @@ public class ApplicationController {
 
             Version platform = run.versions().sourcePlatform().filter(__ -> deploySourceVersions).orElse(run.versions().targetPlatform());
             RevisionId revision = run.versions().sourceRevision().filter(__ -> deploySourceVersions).orElse(run.versions().targetRevision());
-            ApplicationPackageStream applicationPackage = new ApplicationPackageStream(() -> applicationStore.stream(deployment, revision),
-                                                                                       ApplicationPackageStream.addingCertificate(run.testerCertificate()));
+            ApplicationPackageStream applicationPackage = new ApplicationPackageStream(() -> applicationStore.stream(deployment, revision));
             AtomicReference<RevisionId> lastRevision = new AtomicReference<>();
             Instance instance;
             Set<ContainerEndpoint> containerEndpoints;
@@ -528,7 +528,7 @@ public class ApplicationController {
 
             // Carry out deployment without holding the application lock.
             DeploymentResult result = deploy(job.application(), instance.tags(), applicationPackage, zone, platform, containerEndpoints,
-                                             endpointCertificateMetadata, run.isDryRun());
+                                             endpointCertificateMetadata, run.isDryRun(), run.testerCertificate());
 
 
             // Record the quota usage for this application
@@ -617,7 +617,7 @@ public class ApplicationController {
             ApplicationPackageStream applicationPackage = new ApplicationPackageStream(
                     () -> new ByteArrayInputStream(artifactRepository.getSystemApplicationPackage(application.id(), zone, version))
             );
-            return deploy(application.id(), Tags.empty(), applicationPackage, zone, version, Set.of(), Optional::empty, false);
+            return deploy(application.id(), Tags.empty(), applicationPackage, zone, version, Set.of(), Optional::empty, false, Optional.empty());
         } else {
            throw new RuntimeException("This system application does not have an application package: " + application.id().toShortString());
         }
@@ -625,13 +625,13 @@ public class ApplicationController {
 
     /** Deploys the given tester application to the given zone. */
     public DeploymentResult deployTester(TesterId tester, ApplicationPackageStream applicationPackage, ZoneId zone, Version platform) {
-        return deploy(tester.id(), Tags.empty(), applicationPackage, zone, platform, Set.of(), Optional::empty, false);
+        return deploy(tester.id(), Tags.empty(), applicationPackage, zone, platform, Set.of(), Optional::empty, false, Optional.empty());
     }
 
     private DeploymentResult deploy(ApplicationId application, Tags tags, ApplicationPackageStream applicationPackage,
                                     ZoneId zone, Version platform, Set<ContainerEndpoint> endpoints,
                                     Supplier<Optional<EndpointCertificateMetadata>> endpointCertificateMetadata,
-                                    boolean dryRun) {
+                                    boolean dryRun, Optional<X509Certificate> testerCertificate) {
         DeploymentId deployment = new DeploymentId(application, zone);
         try {
             Optional<DockerImage> dockerImageRepo = Optional.ofNullable(
@@ -657,6 +657,9 @@ public class ApplicationController {
             List<X509Certificate> operatorCertificates = controller.supportAccess().activeGrantsFor(deployment).stream()
                                                                    .map(SupportAccessGrant::certificate)
                                                                    .collect(toList());
+            if (testerCertificate.isPresent()) {
+                operatorCertificates = Stream.concat(operatorCertificates.stream(), testerCertificate.stream()).toList();
+            }
             Supplier<Optional<CloudAccount>> cloudAccount = () -> decideCloudAccountOf(deployment, applicationPackage.truncatedPackage().deploymentSpec());
             ConfigServer.PreparedApplication preparedApplication =
                     configServer.deploy(new DeploymentData(application, tags, zone, applicationPackage::zipStream, platform,
