@@ -83,6 +83,7 @@ public class TenantSerializer {
     private static final String awsArchiveAccessRoleField = "awsArchiveAccessRole";
     private static final String gcpArchiveAccessMemberField = "gcpArchiveAccessMember";
     private static final String invalidateUserSessionsBeforeField = "invalidateUserSessionsBefore";
+    private static final String tenantRolesLastMaintainedField = "tenantRolesLastMaintained";
 
     private static final String awsIdField = "awsId";
     private static final String roleField = "role";
@@ -94,6 +95,7 @@ public class TenantSerializer {
         tenantObject.setString(typeField, valueOf(tenant.type()));
         tenantObject.setLong(createdAtField, tenant.createdAt().toEpochMilli());
         toSlime(tenant.lastLoginInfo(), tenantObject.setObject(lastLoginInfoField));
+        tenantObject.setLong(tenantRolesLastMaintainedField, tenant.tenantRolesLastMaintained().toEpochMilli());
 
         switch (tenant.type()) {
             case athenz:  toSlime((AthenzTenant) tenant, tenantObject); break;
@@ -178,7 +180,8 @@ public class TenantSerializer {
         Optional<Contact> contact = contactFrom(tenantObject.field(contactField));
         Instant createdAt = SlimeUtils.instant(tenantObject.field(createdAtField));
         LastLoginInfo lastLoginInfo = lastLoginInfoFromSlime(tenantObject.field(lastLoginInfoField));
-        return new AthenzTenant(name, domain, property, propertyId, contact, createdAt, lastLoginInfo);
+        Instant tenantRolesLastMaintained = SlimeUtils.instant(tenantObject.field(tenantRolesLastMaintainedField));
+        return new AthenzTenant(name, domain, property, propertyId, contact, createdAt, lastLoginInfo, tenantRolesLastMaintained);
     }
 
     private CloudTenant cloudTenantFrom(Inspector tenantObject) {
@@ -191,7 +194,8 @@ public class TenantSerializer {
         List<TenantSecretStore> tenantSecretStores = secretStoresFromSlime(tenantObject.field(secretStoresField));
         ArchiveAccess archiveAccess = archiveAccessFromSlime(tenantObject);
         Optional<Instant> invalidateUserSessionsBefore = SlimeUtils.optionalInstant(tenantObject.field(invalidateUserSessionsBeforeField));
-        return new CloudTenant(name, createdAt, lastLoginInfo, creator, developerKeys, info, tenantSecretStores, archiveAccess, invalidateUserSessionsBefore);
+        Instant tenantRolesLastMaintained = SlimeUtils.instant(tenantObject.field(tenantRolesLastMaintainedField));
+        return new CloudTenant(name, createdAt, lastLoginInfo, creator, developerKeys, info, tenantSecretStores, archiveAccess, invalidateUserSessionsBefore, tenantRolesLastMaintained);
     }
 
     private DeletedTenant deletedTenantFrom(Inspector tenantObject) {
