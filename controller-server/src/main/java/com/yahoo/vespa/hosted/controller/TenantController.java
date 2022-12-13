@@ -4,7 +4,6 @@ package com.yahoo.vespa.hosted.controller;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.text.Text;
 import com.yahoo.transaction.Mutex;
-import com.yahoo.vespa.curator.Lock;
 import com.yahoo.vespa.hosted.controller.api.identifiers.TenantId;
 import com.yahoo.vespa.hosted.controller.application.SystemApplication;
 import com.yahoo.vespa.hosted.controller.concurrent.Once;
@@ -26,7 +25,6 @@ import java.util.Optional;
 import java.util.function.Consumer;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.util.stream.Collectors;
 
 /**
  * A singleton owned by the Controller which contains the methods and state for controlling tenants.
