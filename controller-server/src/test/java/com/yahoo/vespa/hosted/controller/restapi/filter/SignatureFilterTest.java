@@ -78,7 +78,8 @@ public class SignatureFilterTest {
                                                      TenantInfo.empty(),
                                                      List.of(),
                                                      new ArchiveAccess(),
-                                                     Optional.empty()));
+                                                     Optional.empty(),
+                                                     Instant.EPOCH));
         tester.curator().writeApplication(new Application(appId, tester.clock().instant()));
     }
 
@@ -125,7 +126,8 @@ public class SignatureFilterTest {
                 TenantInfo.empty(),
                 List.of(),
                 new ArchiveAccess(),
-                Optional.empty()));
+                Optional.empty(),
+                Instant.EPOCH));
         verifySecurityContext(requestOf(signer.signed(request.copy(), Method.POST, () -> new ByteArrayInputStream(hiBytes)), hiBytes),
                 new SecurityContext(new SimplePrincipal("user"),
                         Set.of(Role.reader(id.tenant()),

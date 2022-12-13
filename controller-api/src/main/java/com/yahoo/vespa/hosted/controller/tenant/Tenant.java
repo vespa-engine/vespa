@@ -19,12 +19,14 @@ public abstract class Tenant {
     private final Instant createdAt;
     private final LastLoginInfo lastLoginInfo;
     private final Optional<Contact> contact;
+    private final Instant tenantRolesLastMaintained;
 
-    Tenant(TenantName name, Instant createdAt, LastLoginInfo lastLoginInfo, Optional<Contact> contact) {
+    Tenant(TenantName name, Instant createdAt, LastLoginInfo lastLoginInfo, Optional<Contact> contact, Instant tenantRolesLastMaintained) {
         this.name = name;
         this.createdAt = createdAt;
         this.lastLoginInfo = lastLoginInfo;
         this.contact = contact;
+        this.tenantRolesLastMaintained = tenantRolesLastMaintained;
     }
 
     /** Name of this tenant */
@@ -45,6 +47,10 @@ public abstract class Tenant {
     /** Contact information for this tenant */
     public Optional<Contact> contact() {
         return contact;
+    }
+
+    public Instant tenantRolesLastMaintained() {
+        return tenantRolesLastMaintained;
     }
 
     public abstract Type type();
