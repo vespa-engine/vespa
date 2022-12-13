@@ -5,8 +5,6 @@
 #include "disk_mem_usage_filter.h"
 #include <vespa/searchcore/proton/common/i_scheduled_executor.h>
 
-class FNET_Transport;
-
 namespace vespalib { class IDestructorCallback; }
 
 namespace proton {

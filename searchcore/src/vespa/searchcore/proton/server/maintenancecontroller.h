@@ -25,7 +25,7 @@ namespace searchcorespi::index {
 namespace proton {
 
 class MaintenanceJobRunner;
-class ScheduledExecutor;
+class IScheduledExecutor;
 
 /**
  * Class that controls the bucket moving between ready and notready sub databases
@@ -81,17 +81,17 @@ private:
     using Guard = std::lock_guard<Mutex>;
     using TaskHandle = std::unique_ptr<vespalib::IDestructorCallback>;
 
-    ISyncableThreadService           &_masterThread;
-    vespalib::MonitoredRefCount      &_refCount;
-    MaintenanceDocumentSubDB          _readySubDB;
-    MaintenanceDocumentSubDB          _remSubDB;
-    MaintenanceDocumentSubDB          _notReadySubDB;
-    std::unique_ptr<ScheduledExecutor>  _periodicTimer;
-    std::vector<TaskHandle>           _periodicTaskHandles;
-    State                             _state;
-    const DocTypeName                &_docTypeName;
-    JobList                           _jobs;
-    mutable Mutex                     _jobsLock;
+    ISyncableThreadService              &_masterThread;
+    vespalib::MonitoredRefCount         &_refCount;
+    MaintenanceDocumentSubDB             _readySubDB;
+    MaintenanceDocumentSubDB             _remSubDB;
+    MaintenanceDocumentSubDB             _notReadySubDB;
+    std::unique_ptr<IScheduledExecutor>  _periodicTimer;
+    std::vector<TaskHandle>              _periodicTaskHandles;
+    State                                _state;
+    const DocTypeName                   &_docTypeName;
+    JobList                              _jobs;
+    mutable Mutex                        _jobsLock;
 
     void addJobsToPeriodicTimer();
     void restart();
