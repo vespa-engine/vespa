@@ -444,7 +444,7 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
         Tenant tenant = tenantRepository.getTenant(application.tenant());
         if (tenant == null) return Optional.empty();
         Optional<Instant> activatedTime = getActiveSession(tenant, application).map(Session::getActivatedTime);
-        log.log(Level.FINE, application + " last activated " + activatedTime.orElse(Instant.EPOCH));
+        log.log(Level.FINEST, application + " last activated " + activatedTime.orElse(Instant.EPOCH));
         return activatedTime;
     }
 
