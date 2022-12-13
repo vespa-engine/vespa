@@ -82,47 +82,35 @@ public class Cluster {
 
     public static class Utilization {
 
-        private final double cpu, idealCpu, currentCpu, peakCpu;
-        private final double memory, idealMemory, currentMemory, peakMemory;
-        private final double disk, idealDisk, currentDisk, peakDisk;
+        private final double idealCpu, peakCpu;
+        private final double idealMemory, peakMemory;
+        private final double idealDisk, peakDisk;
 
-        public Utilization(double cpu, double idealCpu, double currentCpu, double peakCpu,
-                           double memory, double idealMemory, double currentMemory, double peakMemory,
-                           double disk, double idealDisk, double currentDisk, double peakDisk) {
-            this.cpu = cpu;
+        public Utilization(double idealCpu, double peakCpu,
+                           double idealMemory, double peakMemory,
+                           double idealDisk, double peakDisk) {
             this.idealCpu = idealCpu;
-            this.currentCpu = currentCpu;
             this.peakCpu = peakCpu;
 
-            this.memory = memory;
             this.idealMemory = idealMemory;
-            this.currentMemory = currentMemory;
             this.peakMemory = peakMemory;
 
-            this.disk = disk;
             this.idealDisk = idealDisk;
-            this.currentDisk = currentDisk;
             this.peakDisk = peakDisk;
         }
 
-        public double cpu() { return cpu; }
         public double idealCpu() { return idealCpu; }
-        public double currentCpu() { return currentCpu; }
         public double peakCpu() { return peakCpu; }
 
-        public double memory() { return memory; }
         public double idealMemory() { return idealMemory; }
-        public double currentMemory() { return currentMemory; }
         public double peakMemory() { return peakMemory; }
 
-        public double disk() { return disk; }
         public double idealDisk() { return idealDisk; }
-        public double currentDisk() { return currentDisk; }
         public double peakDisk() { return peakDisk; }
 
-        public static Utilization empty() { return new Utilization(0, 0, 0, 0, 0,
-                                                                   0, 0, 0,
-                                                                   0, 0, 0, 0); }
+        public static Utilization empty() { return new Utilization(0, 0,
+                                                                   0, 0,
+                                                                   0, 0); }
 
     }
 
