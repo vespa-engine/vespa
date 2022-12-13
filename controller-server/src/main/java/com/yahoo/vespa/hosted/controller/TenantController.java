@@ -158,6 +158,13 @@ public class TenantController {
         }
     }
 
+    public void updateLastTenantRolesMaintained(TenantName tenantName, Instant lastMaintained) {
+        try (Mutex lock = lock(tenantName)) {
+            var tenant = require(tenantName);
+            curator.writeTenant(LockedTenant.of(tenant, lock).with(lastMaintained).get());
+        }
+    }
+
     /** Deletes the given tenant. */
     public void delete(TenantName tenant, Optional<Credentials> credentials, boolean forget) {
         try (Mutex lock = lock(tenant)) {

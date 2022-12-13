@@ -44,7 +44,8 @@ public class NotifierTest {
                                     email)))),
             List.of(),
             new ArchiveAccess(),
-            Optional.empty());
+            Optional.empty(),
+            Instant.EPOCH);
 
 
     MockCuratorDb curatorDb = new MockCuratorDb(SystemName.Public);
