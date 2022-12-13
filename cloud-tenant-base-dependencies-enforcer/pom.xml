@@ -28,6 +28,7 @@
         <httpclient.version>4.5.13</httpclient.version>
         <httpcore.version>4.4.13</httpcore.version>
         <junit5.version>5.8.1</junit5.version>  <!-- TODO: in parent this is named 'junit.version' -->
+        <onnxruntime.version>1.12.1</onnxruntime.version>
         <!-- END parent/pom.xml -->
 
 
@@ -81,6 +82,7 @@
                                         <include>com.fasterxml.jackson.core:jackson-databind:${jackson-databind.version}:provided</include>
                                         <include>com.fasterxml.jackson.datatype:jackson-datatype-jdk8:${jackson2.version}:provided</include>
                                         <include>com.fasterxml.jackson.datatype:jackson-datatype-jsr310:${jackson2.version}:provided</include>
+                                        <include>com.microsoft.onnxruntime:onnxruntime:jar:${onnxruntime.version}:provided</include>
 
                                         <!-- Guava with its internal dependencies -->
                                         <include>com.google.guava:guava:${guava.version}:provided</include>
