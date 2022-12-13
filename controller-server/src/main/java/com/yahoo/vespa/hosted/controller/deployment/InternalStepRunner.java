@@ -33,7 +33,6 @@ import com.yahoo.vespa.hosted.controller.api.integration.organization.Mail;
 import com.yahoo.vespa.hosted.controller.application.Deployment;
 import com.yahoo.vespa.hosted.controller.application.Endpoint;
 import com.yahoo.vespa.hosted.controller.application.TenantAndApplicationId;
-import com.yahoo.vespa.hosted.controller.application.pkg.ApplicationPackage;
 import com.yahoo.vespa.hosted.controller.application.pkg.ApplicationPackageStream;
 import com.yahoo.vespa.hosted.controller.application.pkg.TestPackage;
 import com.yahoo.vespa.hosted.controller.maintenance.JobRunner;
@@ -44,7 +43,6 @@ import com.yahoo.vespa.hosted.controller.routing.context.DeploymentRoutingContex
 import com.yahoo.yolean.Exceptions;
 
 import java.io.ByteArrayOutputStream;
-import java.io.InputStream;
 import java.io.PrintStream;
 import java.io.UncheckedIOException;
 import java.security.cert.CertificateExpiredException;
@@ -127,31 +125,28 @@ public class InternalStepRunner implements StepRunner {
     public Optional<RunStatus> run(LockedStep step, RunId id) {
         DualLogger logger = new DualLogger(id, step.get());
         try {
-            switch (step.get()) {
-                case deployTester: return deployTester(id, logger);
-                case deployInitialReal: return deployInitialReal(id, logger);
-                case installInitialReal: return installInitialReal(id, logger);
-                case deployReal: return deployReal(id, logger);
-                case installTester: return installTester(id, logger);
-                case installReal: return installReal(id, logger);
-                case startStagingSetup: return startTests(id, true, logger);
-                case endStagingSetup: return endTests(id, true, logger);
-                case endTests: return endTests(id, false, logger);
-                case startTests: return startTests(id, false, logger);
-                case copyVespaLogs: return copyVespaLogs(id, logger);
-                case deactivateReal: return deactivateReal(id, logger);
-                case deactivateTester: return deactivateTester(id, logger);
-                case report: return report(id, logger);
-                default: throw new AssertionError("Unknown step '" + step + "'!");
-            }
-        }
-        catch (UncheckedIOException e) {
+            return switch (step.get()) {
+                case deployTester -> deployTester(id, logger);
+                case deployInitialReal -> deployInitialReal(id, logger);
+                case installInitialReal -> installInitialReal(id, logger);
+                case deployReal -> deployReal(id, logger);
+                case installTester -> installTester(id, logger);
+                case installReal -> installReal(id, logger);
+                case startStagingSetup -> startTests(id, true, logger);
+                case endStagingSetup -> endTests(id, true, logger);
+                case endTests -> endTests(id, false, logger);
+                case startTests -> startTests(id, false, logger);
+                case copyVespaLogs -> copyVespaLogs(id, logger);
+                case deactivateReal -> deactivateReal(id, logger);
+                case deactivateTester -> deactivateTester(id, logger);
+                case report -> report(id, logger);
+            };
+        } catch (UncheckedIOException e) {
             logger.logWithInternalException(INFO, "IO exception running " + id + ": " + Exceptions.toMessageString(e), e);
             return Optional.empty();
-        }
-        catch (RuntimeException e) {
+        } catch (RuntimeException|LinkageError e) {
             logger.log(WARNING, "Unexpected exception running " + id, e);
-            if (step.get().alwaysRun()) {
+            if (step.get().alwaysRun() && !(e instanceof LinkageError)) {
                 logger.log("Will keep trying, as this is a cleanup step.");
                 return Optional.empty();
             }
