@@ -61,6 +61,7 @@
                       </goals>
                       <configuration>
                          <minimizeJar>false</minimizeJar>
+                         <createDependencyReducedPom>false</createDependencyReducedPom>
                          <filters>
                              <filter>
                                 <artifact>com.microsoft.onnxruntime:*</artifact>
