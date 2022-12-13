@@ -97,6 +97,9 @@
       "name": "SystemUpgrader"
     },
     {
+      "name": "TenantRoleCleanupMaintainer"
+    },
+    {
       "name": "TenantRoleMaintainer"
     },
     {
