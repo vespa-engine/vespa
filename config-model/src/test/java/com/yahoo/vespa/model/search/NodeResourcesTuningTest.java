@@ -85,12 +85,21 @@ public class NodeResourcesTuningTest {
     }
 
     @Test
-    void require_that_num_search_threads_and_considers_explict_num_threads_per_search() {
+    void require_that_num_search_threads_considers_explict_num_threads_per_search() {
         ProtonConfig cfg = configFromNumCoresSetting(4.5, 3);
         assertEquals(15, cfg.numsearcherthreads());
         assertEquals(5, cfg.numsummarythreads());
         assertEquals(3, cfg.numthreadspersearch());
     }
+
+    @Test
+    void require_that_num_search_threads_can_only_have_4x_overcommit_rounded_up_to_num_threads_per_search() {
+        ProtonConfig cfg = configFromNumCoresSetting(9, 8);
+        assertEquals(40, cfg.numsearcherthreads());
+        assertEquals(9, cfg.numsummarythreads());
+        assertEquals(8, cfg.numthreadspersearch());
+    }
+
 
     @Test
     void require_that_fast_disk_is_reflected_in_proton_config() {
