@@ -13,13 +13,19 @@ namespace proton {
  */
 class ScheduledForwardExecutor : public IScheduledExecutor {
 private:
+    class State;
+    class Registration;
+    using Tasks = vespalib::hash_map<uint64_t, std::unique_ptr<State>>;
     ScheduledExecutor  _scheduler;
     Executor         & _executor;
+    std::mutex         _lock;
+    uint64_t           _nextKey;
+    Tasks              _taskList;
 
+    bool cancel(uint64_t key);
 public:
     ScheduledForwardExecutor(FNET_Transport& transport, Executor& executor);
-    void reset();
-
+    ~ScheduledForwardExecutor() override;
     [[nodiscard]] Handle scheduleAtFixedRate(std::unique_ptr<Executor::Task> task, duration delay, duration interval) override;
 };
 

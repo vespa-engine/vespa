@@ -25,7 +25,7 @@ public:
           _interval(interval)
     { }
 
-    ~TimerTask() {
+    ~TimerTask() override {
         Kill();
     }
 
@@ -44,7 +44,6 @@ public:
     ~Registration() {
         _executor.cancel(_key);
     }
-
 };
 
 ScheduledExecutor::ScheduledExecutor(FNET_Transport & transport)
@@ -56,7 +55,8 @@ ScheduledExecutor::ScheduledExecutor(FNET_Transport & transport)
 
 ScheduledExecutor::~ScheduledExecutor()
 {
-    reset();
+    std::lock_guard guard(_lock);
+    assert(_taskList.empty());
 }
 
 
@@ -82,16 +82,6 @@ ScheduledExecutor::cancel(uint64_t key)
     found->second->Unschedule();
     _taskList.erase(found);
     return true;
-}
-
-void
-ScheduledExecutor::reset()
-{
-    std::lock_guard guard(_lock);
-    for (auto & task : _taskList) {
-        task.second->Unschedule();
-    }
-    _taskList.clear();
 }
 
 }
