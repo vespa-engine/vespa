@@ -154,7 +154,7 @@ public class NodeRepositoryProvisioner implements Provisioner {
                               .withCluster(clusterSpec.id(), clusterSpec.isExclusive(), requested);
             nodeRepository.applications().put(application, lock);
             var cluster = application.cluster(clusterSpec.id()).get();
-            return cluster.targetResources().orElseGet(() -> currentResources(application, clusterSpec, cluster, requested));
+            return cluster.target().resources().orElseGet(() -> currentResources(application, clusterSpec, cluster, requested));
         }
     }
 

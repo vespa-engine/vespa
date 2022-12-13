@@ -11,6 +11,7 @@ import com.yahoo.vespa.hosted.provision.applications.AutoscalingStatus;
 import com.yahoo.vespa.hosted.provision.applications.Cluster;
 import com.yahoo.vespa.hosted.provision.applications.ScalingEvent;
 import com.yahoo.vespa.hosted.provision.applications.Status;
+import com.yahoo.vespa.hosted.provision.autoscale.Autoscaling;
 import org.junit.Test;
 
 import java.time.Instant;
@@ -35,8 +36,8 @@ public class ApplicationSerializerTest {
                                  new ClusterResources( 8, 4, new NodeResources(1, 2,  3,  4)),
                                  new ClusterResources(12, 6, new NodeResources(3, 6, 21, 24)),
                                  true,
-                                 Optional.empty(),
-                                 Optional.empty(),
+                                 Autoscaling.empty(),
+                                 Autoscaling.empty(),
                                  List.of(),
                                  AutoscalingStatus.empty()));
         var minResources = new NodeResources(1, 2, 3, 4);
@@ -45,10 +46,12 @@ public class ApplicationSerializerTest {
                                  new ClusterResources( 8, 4, minResources),
                                  new ClusterResources(14, 7, new NodeResources(3, 6, 21, 24)),
                                  false,
-                                 Optional.of(new Cluster.Suggestion(new ClusterResources(20, 10,
-                                                                                         new NodeResources(0.5, 4, 14, 16)),
-                                                                    Instant.ofEpochMilli(1234L))),
-                                 Optional.of(new ClusterResources(10, 5, new NodeResources(2, 4, 14, 16))),
+                                 new Autoscaling(new ClusterResources(20, 10,
+                                                                      new NodeResources(0.5, 4, 14, 16)),
+                                                 Instant.ofEpochMilli(1234L)),
+                                 new Autoscaling(new ClusterResources(10, 5,
+                                                                      new NodeResources(2, 4, 14, 16)),
+                                                 Instant.ofEpochMilli(5678L)),
                                  List.of(new ScalingEvent(new ClusterResources(10, 5, minResources),
                                                           new ClusterResources(12, 6, minResources),
                                                           7L,
@@ -76,8 +79,8 @@ public class ApplicationSerializerTest {
             assertEquals(originalCluster.minResources(), serializedCluster.minResources());
             assertEquals(originalCluster.maxResources(), serializedCluster.maxResources());
             assertEquals(originalCluster.required(), serializedCluster.required());
-            assertEquals(originalCluster.suggestedResources(), serializedCluster.suggestedResources());
-            assertEquals(originalCluster.targetResources(), serializedCluster.targetResources());
+            assertEquals(originalCluster.suggested(), serializedCluster.suggested());
+            assertEquals(originalCluster.target(), serializedCluster.target());
             assertEquals(originalCluster.scalingEvents(), serializedCluster.scalingEvents());
             assertEquals(originalCluster.autoscalingStatus(), serializedCluster.autoscalingStatus());
         }
