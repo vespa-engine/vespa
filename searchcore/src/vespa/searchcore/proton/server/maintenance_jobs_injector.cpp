@@ -38,7 +38,7 @@ injectLidSpaceCompactionJobs(MaintenanceController &controller,
                                                    std::move(lidHandler), opStorer, controller.masterThread(),
                                                    bucketExecutor, diskMemUsageNotifier,config.getBlockableJobConfig(),
                                                    clusterStateChangedNotifier, calc && calc->nodeRetired(), bucketSpace);
-        controller.registerJobInMasterThread(trackJob(tracker, std::move(job)));
+        controller.registerJob(trackJob(tracker, std::move(job)));
     }
 }
 
@@ -61,7 +61,7 @@ injectBucketMoveJob(MaintenanceController &controller,
                                      bucketExecutor, controller.getReadySubDB(), controller.getNotReadySubDB(),
                                      bucketCreateNotifier, clusterStateChangedNotifier, bucketStateChangedNotifier,
                                      diskMemUsageNotifier, config.getBlockableJobConfig(), docTypeName, bucketSpace);
-    controller.registerJobInMasterThread(trackJob(jobTrackers.getBucketMove(), std::move(bmj)));
+    controller.registerJob(trackJob(jobTrackers.getBucketMove(), std::move(bmj)));
 }
 
 }
@@ -86,12 +86,12 @@ MaintenanceJobsInjector::injectJobs(MaintenanceController &controller,
                                     IAttributeManagerSP notReadyAttributeManager,
                                     AttributeUsageFilter &attributeUsageFilter)
 {
-    controller.registerJobInMasterThread(std::make_unique<HeartBeatJob>(hbHandler, config.getHeartBeatConfig()));
+    controller.registerJob(std::make_unique<HeartBeatJob>(hbHandler, config.getHeartBeatConfig()));
 
     const auto & docTypeName = controller.getDocTypeName().getName();
     const MaintenanceDocumentSubDB &mRemSubDB(controller.getRemSubDB());
 
-    controller.registerJobInMasterThread(
+    controller.registerJob(
             trackJob(jobTrackers.getRemovedDocumentsPrune(),
                      PruneRemovedDocumentsJob::create(config.getPruneRemovedDocumentsConfig(), controller.retainDB(),
                                                       *mRemSubDB.meta_store(), mRemSubDB.sub_db_id(), bucketSpace,
@@ -113,7 +113,7 @@ MaintenanceJobsInjector::injectJobs(MaintenanceController &controller,
                         moveHandler, bucketModifiedHandler, clusterStateChangedNotifier, bucketStateChangedNotifier,
                         calc, jobTrackers, diskMemUsageNotifier);
 
-    controller.registerJobInMasterThread(
+    controller.registerJob(
             std::make_unique<SampleAttributeUsageJob>(std::move(readyAttributeManager),
                                                       std::move(notReadyAttributeManager),
                                                       attributeUsageFilter, docTypeName,

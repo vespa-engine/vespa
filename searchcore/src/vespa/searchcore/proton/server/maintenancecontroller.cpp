@@ -30,13 +30,6 @@ public:
     void run() override { _job->run(); }
 };
 
-bool
-isRunnable(const MaintenanceJobRunner & job, const Executor * master) {
-    return (&job.getExecutor() == master)
-           ? false
-           : job.isRunnable();
-}
-
 }
 
 MaintenanceController::MaintenanceController(FNET_Transport & transport,
@@ -61,18 +54,11 @@ MaintenanceController::~MaintenanceController()
 }
 
 void
-MaintenanceController::registerJobInMasterThread(IMaintenanceJob::UP job)
-{
-    // Called by master write thread
-    registerJob(_masterThread, std::move(job));
-}
-
-void
-MaintenanceController::registerJob(Executor & executor, IMaintenanceJob::UP job)
+MaintenanceController::registerJob(IMaintenanceJob::UP job)
 {
     // Called by master write thread
     Guard guard(_jobsLock);
-    _jobs.push_back(std::make_shared<MaintenanceJobRunner>(executor, std::move(job)));
+    _jobs.push_back(std::make_shared<MaintenanceJobRunner>(_masterThread, std::move(job)));
 }
 
 void
@@ -88,11 +74,6 @@ MaintenanceController::killJobs()
     // No need to take _jobsLock as modification of _jobs also happens in master write thread.
     for (auto &job : _jobs) {
         job->stop(); // Make sure no more tasks are added to the executor
-    }
-    for (auto &job : _jobs) {
-        while (isRunnable(*job, &_masterThread)) {
-            std::this_thread::sleep_for(1ms);
-        }
     }
     JobList tmpJobs;
     {

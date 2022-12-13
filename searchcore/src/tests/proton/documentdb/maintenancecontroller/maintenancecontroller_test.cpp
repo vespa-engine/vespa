@@ -917,7 +917,7 @@ TEST_F("require that a simple maintenance job is executed", MaintenanceControlle
 {
     auto job = std::make_unique<MySimpleJob>(200ms, 200ms, 3);
     MySimpleJob &myJob = *job;
-    f._mc.registerJobInMasterThread(std::move(job));
+    f._mc.registerJob(std::move(job));
     f._injectDefaultJobs = false;
     f.startMaintenance();
     bool done = myJob._latch.await(TIMEOUT);
@@ -929,7 +929,7 @@ TEST_F("require that a split maintenance job is executed", MaintenanceController
 {
     auto job = std::make_unique<MySplitJob>(200ms, TIMEOUT * 2, 3);
     MySplitJob &myJob = *job;
-    f._mc.registerJobInMasterThread(std::move(job));
+    f._mc.registerJob(std::move(job));
     f._injectDefaultJobs = false;
     f.startMaintenance();
     bool done = myJob._latch.await(TIMEOUT);
@@ -942,7 +942,7 @@ TEST_F("require that blocked jobs are not executed", MaintenanceControllerFixtur
     auto job = std::make_unique<MySimpleJob>(200ms, 200ms, 0);
     MySimpleJob &myJob = *job;
     myJob.block();
-    f._mc.registerJobInMasterThread(std::move(job));
+    f._mc.registerJob(std::move(job));
     f._injectDefaultJobs = false;
     f.startMaintenance();
     std::this_thread::sleep_for(2s);
@@ -955,8 +955,8 @@ TEST_F("require that maintenance controller state list jobs", MaintenanceControl
         auto job1 = std::make_unique<MySimpleJob>(TIMEOUT * 2, TIMEOUT * 2, 0);
         auto job2 = std::make_unique<MyLongRunningJob>(200ms, 200ms);
         auto &longRunningJob = dynamic_cast<MyLongRunningJob &>(*job2);
-        f._mc.registerJobInMasterThread(std::move(job1));
-        f._mc.registerJobInMasterThread(std::move(job2));
+        f._mc.registerJob(std::move(job1));
+        f._mc.registerJob(std::move(job2));
         f._injectDefaultJobs = false;
         f.startMaintenance();
         longRunningJob._firstRun.await(TIMEOUT);
@@ -994,14 +994,6 @@ containsJob(const MaintenanceController::JobList &jobs, const vespalib::string &
     return findJob(jobs, jobName) != nullptr;
 }
 
-bool
-containsJobAndExecutedBy(const MaintenanceController::JobList &jobs, const vespalib::string &jobName,
-                         const vespalib::Executor & executor)
-{
-    const auto *job = findJob(jobs, jobName);
-    return (job != nullptr) && (&job->getExecutor() == &executor);
-}
-
 TEST_F("require that lid space compaction jobs can be disabled", MaintenanceControllerFixture)
 {
     f.forwardMaintenanceConfig();
@@ -1016,17 +1008,6 @@ TEST_F("require that lid space compaction jobs can be disabled", MaintenanceCont
         EXPECT_EQUAL(4u, jobs.size());
         EXPECT_FALSE(containsJob(jobs, "lid_space_compaction.searchdocument.my_sub_db"));
     }
-}
-
-TEST_F("require that maintenance jobs are run by correct executor", MaintenanceControllerFixture)
-{
-    f.injectMaintenanceJobs();
-    auto jobs = f._mc.getJobList();
-    EXPECT_EQUAL(7u, jobs.size());
-    EXPECT_TRUE(containsJobAndExecutedBy(jobs, "heart_beat", f._threadService));
-    EXPECT_TRUE(containsJobAndExecutedBy(jobs, "prune_removed_documents.searchdocument", f._threadService));
-    EXPECT_TRUE(containsJobAndExecutedBy(jobs, "move_buckets.searchdocument", f._threadService));
-    EXPECT_TRUE(containsJobAndExecutedBy(jobs, "sample_attribute_usage.searchdocument", f._threadService));
 }
 
 void
