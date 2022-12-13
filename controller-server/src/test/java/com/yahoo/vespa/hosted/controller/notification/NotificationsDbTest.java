@@ -63,8 +63,7 @@ public class NotificationsDbTest {
                             email)))),
             List.of(),
             new ArchiveAccess(),
-            Optional.empty(),
-            Instant.EPOCH);
+            Optional.empty());
     private static final List<Notification> notifications = List.of(
             notification(1001, Type.deployment, Level.error, NotificationSource.from(tenant), "tenant msg"),
             notification(1101, Type.applicationPackage, Level.warning, NotificationSource.from(TenantAndApplicationId.from(tenant.value(), "app1")), "app msg"),

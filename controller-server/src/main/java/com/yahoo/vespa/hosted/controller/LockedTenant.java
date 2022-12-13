@@ -41,13 +41,11 @@ public abstract class LockedTenant {
     final TenantName name;
     final Instant createdAt;
     final LastLoginInfo lastLoginInfo;
-    final Instant tenantRolesLastMaintained;
 
-    private LockedTenant(TenantName name, Instant createdAt, LastLoginInfo lastLoginInfo, Instant tenantRolesLastMaintained) {
+    private LockedTenant(TenantName name, Instant createdAt, LastLoginInfo lastLoginInfo) {
         this.name = requireNonNull(name);
         this.createdAt = requireNonNull(createdAt);
         this.lastLoginInfo = requireNonNull(lastLoginInfo);
-        this.tenantRolesLastMaintained = requireNonNull(tenantRolesLastMaintained);
     }
 
     static LockedTenant of(Tenant tenant, Mutex lock) {
@@ -63,8 +61,6 @@ public abstract class LockedTenant {
     public abstract Tenant get();
 
     public abstract LockedTenant with(LastLoginInfo lastLoginInfo);
-
-    public abstract LockedTenant with(Instant tenantRolesLastMaintained);
 
     public Deleted deleted(Instant deletedAt) {
         return new Deleted(new DeletedTenant(name, createdAt, deletedAt));
@@ -85,8 +81,8 @@ public abstract class LockedTenant {
         private final Optional<Contact> contact;
 
         private Athenz(TenantName name, AthenzDomain domain, Property property, Optional<PropertyId> propertyId,
-                       Optional<Contact> contact, Instant createdAt, LastLoginInfo lastLoginInfo, Instant tenantRolesLastMaintained) {
-            super(name, createdAt, lastLoginInfo, tenantRolesLastMaintained);
+                       Optional<Contact> contact, Instant createdAt, LastLoginInfo lastLoginInfo) {
+            super(name, createdAt, lastLoginInfo);
             this.domain = domain;
             this.property = property;
             this.propertyId = propertyId;
@@ -94,38 +90,33 @@ public abstract class LockedTenant {
         }
 
         private Athenz(AthenzTenant tenant) {
-            this(tenant.name(), tenant.domain(), tenant.property(), tenant.propertyId(), tenant.contact(), tenant.createdAt(), tenant.lastLoginInfo(), tenant.tenantRolesLastMaintained());
+            this(tenant.name(), tenant.domain(), tenant.property(), tenant.propertyId(), tenant.contact(), tenant.createdAt(), tenant.lastLoginInfo());
         }
 
         @Override
         public AthenzTenant get() {
-            return new AthenzTenant(name, domain, property, propertyId, contact, createdAt, lastLoginInfo, tenantRolesLastMaintained);
+            return new AthenzTenant(name, domain, property, propertyId, contact, createdAt, lastLoginInfo);
         }
 
         public Athenz with(AthenzDomain domain) {
-            return new Athenz(name, domain, property, propertyId, contact, createdAt, lastLoginInfo, tenantRolesLastMaintained);
+            return new Athenz(name, domain, property, propertyId, contact, createdAt, lastLoginInfo);
         }
 
         public Athenz with(Property property) {
-            return new Athenz(name, domain, property, propertyId, contact, createdAt, lastLoginInfo, tenantRolesLastMaintained);
+            return new Athenz(name, domain, property, propertyId, contact, createdAt, lastLoginInfo);
         }
 
         public Athenz with(PropertyId propertyId) {
-            return new Athenz(name, domain, property, Optional.of(propertyId), contact, createdAt, lastLoginInfo, tenantRolesLastMaintained);
+            return new Athenz(name, domain, property, Optional.of(propertyId), contact, createdAt, lastLoginInfo);
         }
 
         public Athenz with(Contact contact) {
-            return new Athenz(name, domain, property, propertyId, Optional.of(contact), createdAt, lastLoginInfo, tenantRolesLastMaintained);
+            return new Athenz(name, domain, property, propertyId, Optional.of(contact), createdAt, lastLoginInfo);
         }
 
         @Override
         public LockedTenant with(LastLoginInfo lastLoginInfo) {
-            return new Athenz(name, domain, property, propertyId, contact, createdAt, lastLoginInfo, tenantRolesLastMaintained);
-        }
-
-        @Override
-        public LockedTenant with(Instant tenantRolesLastMaintained) {
-            return new Athenz(name, domain, property, propertyId, contact, createdAt, lastLoginInfo, tenantRolesLastMaintained);
+            return new Athenz(name, domain, property, propertyId, contact, createdAt, lastLoginInfo);
         }
 
     }
@@ -143,8 +134,8 @@ public abstract class LockedTenant {
 
         private Cloud(TenantName name, Instant createdAt, LastLoginInfo lastLoginInfo, Optional<SimplePrincipal> creator,
                       BiMap<PublicKey, SimplePrincipal> developerKeys, TenantInfo info,
-                      List<TenantSecretStore> tenantSecretStores, ArchiveAccess archiveAccess, Optional<Instant> invalidateUserSessionsBefore, Instant tenantRolesLastMaintained) {
-            super(name, createdAt, lastLoginInfo, tenantRolesLastMaintained);
+                      List<TenantSecretStore> tenantSecretStores, ArchiveAccess archiveAccess, Optional<Instant> invalidateUserSessionsBefore) {
+            super(name, createdAt, lastLoginInfo);
             this.developerKeys = ImmutableBiMap.copyOf(developerKeys);
             this.creator = creator;
             this.info = info;
@@ -154,12 +145,12 @@ public abstract class LockedTenant {
         }
 
         private Cloud(CloudTenant tenant) {
-            this(tenant.name(), tenant.createdAt(), tenant.lastLoginInfo(), tenant.creator(), tenant.developerKeys(), tenant.info(), tenant.tenantSecretStores(), tenant.archiveAccess(), tenant.invalidateUserSessionsBefore(), tenant.tenantRolesLastMaintained());
+            this(tenant.name(), tenant.createdAt(), tenant.lastLoginInfo(), tenant.creator(), tenant.developerKeys(), tenant.info(), tenant.tenantSecretStores(), tenant.archiveAccess(), tenant.invalidateUserSessionsBefore());
         }
 
         @Override
         public CloudTenant get() {
-            return new CloudTenant(name, createdAt, lastLoginInfo, creator, developerKeys, info, tenantSecretStores, archiveAccess, invalidateUserSessionsBefore, tenantRolesLastMaintained);
+            return new CloudTenant(name, createdAt, lastLoginInfo, creator, developerKeys, info, tenantSecretStores, archiveAccess, invalidateUserSessionsBefore);
         }
 
         public Cloud withDeveloperKey(PublicKey key, Principal principal) {
@@ -170,47 +161,42 @@ public abstract class LockedTenant {
             if (keys.inverse().containsKey(simplePrincipal))
                 throw new IllegalArgumentException(principal + " is already associated with key " + KeyUtils.toPem(keys.inverse().get(simplePrincipal)));
             keys.put(key, simplePrincipal);
-            return new Cloud(name, createdAt, lastLoginInfo, creator, keys, info, tenantSecretStores, archiveAccess, invalidateUserSessionsBefore, tenantRolesLastMaintained);
+            return new Cloud(name, createdAt, lastLoginInfo, creator, keys, info, tenantSecretStores, archiveAccess, invalidateUserSessionsBefore);
         }
 
         public Cloud withoutDeveloperKey(PublicKey key) {
             BiMap<PublicKey, SimplePrincipal> keys = HashBiMap.create(developerKeys);
             keys.remove(key);
-            return new Cloud(name, createdAt, lastLoginInfo, creator, keys, info, tenantSecretStores, archiveAccess, invalidateUserSessionsBefore, tenantRolesLastMaintained);
+            return new Cloud(name, createdAt, lastLoginInfo, creator, keys, info, tenantSecretStores, archiveAccess, invalidateUserSessionsBefore);
         }
 
         public Cloud withInfo(TenantInfo newInfo) {
-            return new Cloud(name, createdAt, lastLoginInfo, creator, developerKeys, newInfo, tenantSecretStores, archiveAccess, invalidateUserSessionsBefore, tenantRolesLastMaintained);
+            return new Cloud(name, createdAt, lastLoginInfo, creator, developerKeys, newInfo, tenantSecretStores, archiveAccess, invalidateUserSessionsBefore);
         }
 
         @Override
         public LockedTenant with(LastLoginInfo lastLoginInfo) {
-            return new Cloud(name, createdAt, lastLoginInfo, creator, developerKeys, info, tenantSecretStores, archiveAccess, invalidateUserSessionsBefore, tenantRolesLastMaintained);
+            return new Cloud(name, createdAt, lastLoginInfo, creator, developerKeys, info, tenantSecretStores, archiveAccess, invalidateUserSessionsBefore);
         }
 
         public Cloud withSecretStore(TenantSecretStore tenantSecretStore) {
             ArrayList<TenantSecretStore> secretStores = new ArrayList<>(tenantSecretStores);
             secretStores.add(tenantSecretStore);
-            return new Cloud(name, createdAt, lastLoginInfo, creator, developerKeys, info, secretStores, archiveAccess, invalidateUserSessionsBefore, tenantRolesLastMaintained);
+            return new Cloud(name, createdAt, lastLoginInfo, creator, developerKeys, info, secretStores, archiveAccess, invalidateUserSessionsBefore);
         }
 
         public Cloud withoutSecretStore(TenantSecretStore tenantSecretStore) {
             ArrayList<TenantSecretStore> secretStores = new ArrayList<>(tenantSecretStores);
             secretStores.remove(tenantSecretStore);
-            return new Cloud(name, createdAt, lastLoginInfo, creator, developerKeys, info, secretStores, archiveAccess, invalidateUserSessionsBefore, tenantRolesLastMaintained);
+            return new Cloud(name, createdAt, lastLoginInfo, creator, developerKeys, info, secretStores, archiveAccess, invalidateUserSessionsBefore);
         }
 
         public Cloud withArchiveAccess(ArchiveAccess archiveAccess) {
-            return new Cloud(name, createdAt, lastLoginInfo, creator, developerKeys, info, tenantSecretStores, archiveAccess, invalidateUserSessionsBefore,tenantRolesLastMaintained);
+            return new Cloud(name, createdAt, lastLoginInfo, creator, developerKeys, info, tenantSecretStores, archiveAccess, invalidateUserSessionsBefore);
         }
 
         public Cloud withInvalidateUserSessionsBefore(Instant invalidateUserSessionsBefore) {
-            return new Cloud(name, createdAt, lastLoginInfo, creator, developerKeys, info, tenantSecretStores, archiveAccess, Optional.of(invalidateUserSessionsBefore), tenantRolesLastMaintained);
-        }
-
-        @Override
-        public LockedTenant with(Instant tenantRolesLastMaintained) {
-            return new Cloud(name, createdAt, lastLoginInfo, creator, developerKeys, info, tenantSecretStores, archiveAccess, invalidateUserSessionsBefore, tenantRolesLastMaintained);
+            return new Cloud(name, createdAt, lastLoginInfo, creator, developerKeys, info, tenantSecretStores, archiveAccess, Optional.of(invalidateUserSessionsBefore));
         }
     }
 
@@ -221,7 +207,7 @@ public abstract class LockedTenant {
         private final Instant deletedAt;
 
         private Deleted(DeletedTenant tenant) {
-            super(tenant.name(), tenant.createdAt(), tenant.lastLoginInfo(), Instant.EPOCH);
+            super(tenant.name(), tenant.createdAt(), tenant.lastLoginInfo());
             this.deletedAt = tenant.deletedAt();
         }
 
@@ -232,11 +218,6 @@ public abstract class LockedTenant {
 
         @Override
         public LockedTenant with(LastLoginInfo lastLoginInfo) {
-            return this;
-        }
-
-        @Override
-        public LockedTenant with(Instant tenantRolesLastMaintained) {
             return this;
         }
     }
