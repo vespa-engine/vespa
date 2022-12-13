@@ -1,7 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "disk_mem_usage_sampler.h"
-#include <vespa/searchcore/proton/common/scheduledexecutor.h>
+#include <vespa/searchcore/proton/common/i_scheduled_executor.h>
 #include <vespa/vespalib/util/lambdatask.h>
 #include <vespa/searchcore/proton/common/i_transient_resource_usage_provider.h>
 #include <filesystem>
@@ -10,26 +10,21 @@ using vespalib::makeLambdaTask;
 
 namespace proton {
 
-DiskMemUsageSampler::DiskMemUsageSampler(FNET_Transport & transport, const std::string &path_in, const Config &config)
-    : _filter(config.hwInfo),
+DiskMemUsageSampler::DiskMemUsageSampler(const std::string &path_in, const HwInfo &hwInfo)
+    : _filter(hwInfo),
       _path(path_in),
       _sampleInterval(60s),
-      _lastSampleTime(vespalib::steady_clock::now()),
-      _periodicTimer(std::make_unique<ScheduledExecutor>(transport)),
+      _lastSampleTime(),
       _lock(),
       _periodicHandle(),
       _transient_usage_providers()
 {
-    setConfig(config);
 }
 
-DiskMemUsageSampler::~DiskMemUsageSampler()
-{
-    _periodicHandle.reset();
-}
+DiskMemUsageSampler::~DiskMemUsageSampler() = default;
 
 void
-DiskMemUsageSampler::setConfig(const Config &config)
+DiskMemUsageSampler::setConfig(const Config &config, IScheduledExecutor & executor)
 {
     _periodicHandle.reset();
     _filter.setConfig(config.filterConfig);
@@ -37,7 +32,7 @@ DiskMemUsageSampler::setConfig(const Config &config)
     sampleAndReportUsage();
     _lastSampleTime = vespalib::steady_clock::now();
     vespalib::duration maxInterval = std::min(vespalib::duration(1s), _sampleInterval);
-    _periodicHandle = _periodicTimer->scheduleAtFixedRate(makeLambdaTask([this]() {
+    _periodicHandle = executor.scheduleAtFixedRate(makeLambdaTask([this]() {
         if (_filter.acceptWriteOperation() && (vespalib::steady_clock::now() < (_lastSampleTime + _sampleInterval))) {
             return;
         }
@@ -81,8 +76,7 @@ uint64_t
 attemptSampleDirectoryDiskUsageOnce(const fs::path &path)
 {
     uint64_t result = 0;
-    for (const auto &elem : fs::recursive_directory_iterator(path,
-                                                             fs::directory_options::skip_permission_denied)) {
+    for (const auto &elem : fs::recursive_directory_iterator(path, fs::directory_options::skip_permission_denied)) {
         if (fs::is_regular_file(elem.path()) && !fs::is_symlink(elem.path())) {
             std::error_code fsize_err;
             const auto size = fs::file_size(elem.path(), fsize_err);
