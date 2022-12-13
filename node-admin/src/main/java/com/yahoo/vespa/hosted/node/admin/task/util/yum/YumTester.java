@@ -50,21 +50,21 @@ public class YumTester extends Yum {
     public class GenericYumCommandExpectation {
         private final CommandType commandType;
         protected final List<YumPackageName> packages;
-        private List<String> enableRepos = List.of();
         private List<String> disableRepos = List.of();
+        private List<String> enableRepos = List.of();
 
         private GenericYumCommandExpectation(CommandType commandType, String... packages) {
             this.commandType = commandType;
             this.packages = Stream.of(packages).map(YumPackageName::fromString).toList();
         }
 
-        public GenericYumCommandExpectation withEnableRepo(String... repo) {
-            this.enableRepos = List.of(repo);
+        public GenericYumCommandExpectation withDisableRepo(String... repo) {
+            this.disableRepos = List.of(repo);
             return this;
         }
 
-        public GenericYumCommandExpectation withDisableRepo(String... repo) {
-            this.disableRepos = List.of(repo);
+        public GenericYumCommandExpectation withEnableRepo(String... repo) {
+            this.enableRepos = List.of(repo);
             return this;
         }
 
@@ -96,8 +96,8 @@ public class YumTester extends Yum {
             cmd.append("yum ").append(commandType.command);
             if (commandType != CommandType.deleteVersionLock) {
                 cmd.append(" --assumeyes");
-                enableRepos.forEach(repo -> cmd.append(" --enablerepo=").append(repo));
                 disableRepos.forEach(repo -> cmd.append(" --disablerepo=").append(repo));
+                enableRepos.forEach(repo -> cmd.append(" --enablerepo=").append(repo));
             }
             if (commandType == CommandType.install && packages.size() > 1)
                 cmd.append(" --setopt skip_missing_names_on_install=False");

@@ -42,15 +42,15 @@ public abstract class YumCommand<T extends YumCommand<T>> {
         this.terminal = terminal;
     }
 
-    /** Enables the given repos for this command */
-    public T enableRepo(String... repo) {
-        enabledRepos = List.of(repo);
+    /** Disables the given repos for this command */
+    public T disableRepo(String... repo) {
+        disabledRepos = List.of(repo);
         return getThis();
     }
 
     /** Enables the given repos for this command */
-    public T disableRepo(String... repo) {
-        disabledRepos = List.of(repo);
+    public T enableRepo(String... repo) {
+        enabledRepos = List.of(repo);
         return getThis();
     }
 
@@ -58,8 +58,8 @@ public abstract class YumCommand<T extends YumCommand<T>> {
 
     protected void addParametersToCommandLine(CommandLine commandLine) {
         commandLine.add("--assumeyes");
-        enabledRepos.forEach(repo -> commandLine.add("--enablerepo=" + repo));
         disabledRepos.forEach(repo -> commandLine.add("--disablerepo=" + repo));
+        enabledRepos.forEach(repo -> commandLine.add("--enablerepo=" + repo));
     }
 
     public abstract boolean converge(TaskContext context);
