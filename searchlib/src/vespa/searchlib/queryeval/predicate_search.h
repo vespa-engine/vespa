@@ -8,14 +8,12 @@
 #include <vespa/searchlib/predicate/predicate_tree_annotator.h>
 #include <vector>
 
-namespace search {
-namespace fef {
-class TermFieldMatchData;
-class TermFieldMatchDataArray;
-}  // namespace fef
-namespace queryeval {
+namespace search::fef {
+    class TermFieldMatchData;
+    class TermFieldMatchDataArray;
+}
 
-
+namespace search::queryeval {
 
 class SkipMinFeature
 {
@@ -65,6 +63,4 @@ public:
     void doUnpack(uint32_t doc_id) override;
 };
 
-}  // namespace search::queryeval
-}  // namespace search
-
+}
