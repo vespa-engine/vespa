@@ -131,12 +131,18 @@ public class FileDirectory extends AbstractComponent {
         if (useLock.value())
             try (Lock lock = locks.lock(fileReference)) {
                 if (canBeDeleted.apply(fileReference))
-                    IOUtils.recursiveDeleteDir(destinationDir(fileReference));
+                    deleteDirRecursively(destinationDir(fileReference));
                 else
                     log.log(Level.FINE, "Unable to delete file reference '" + fileReference.value() + "' since it is still in use");
             }
         else
-            IOUtils.recursiveDeleteDir(destinationDir(fileReference));
+            deleteDirRecursively(destinationDir(fileReference));
+    }
+
+    private void deleteDirRecursively(File dir) {
+        log.log(Level.FINE, "Will delete dir " + dir);
+        if ( ! IOUtils.recursiveDeleteDir(dir))
+            log.log(Level.INFO, "Failed to delete " + dir);
     }
 
     // Check if we should add file, it might already exist
@@ -150,7 +156,7 @@ public class FileDirectory extends AbstractComponent {
             log.log(Level.WARNING, "Directory for file reference '" + fileReference.value() +
                     "' has content that does not match its hash, deleting everything in " +
                     destinationDir.getAbsolutePath());
-            IOUtils.recursiveDeleteDir(destinationDir);
+            deleteDirRecursively(destinationDir);
             return true;
         }
 

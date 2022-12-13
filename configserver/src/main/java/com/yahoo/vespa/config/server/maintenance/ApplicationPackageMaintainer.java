@@ -70,6 +70,9 @@ public class ApplicationPackageMaintainer extends ConfigServerMaintainer {
         int failures = 0;
 
         for (var applicationId : applicationRepository.listApplications()) {
+            if (shuttingDown())
+                break;
+            
             log.finest(() -> "Verifying application package for " + applicationId);
             Optional<Session> session = applicationRepository.getActiveSession(applicationId);
             if (session.isEmpty()) continue; // App might be deleted after call to listApplications() or not activated yet (bootstrap phase)
@@ -79,7 +82,8 @@ public class ApplicationPackageMaintainer extends ConfigServerMaintainer {
                 long sessionId = session.get().getSessionId();
                 attempts++;
                 if (!fileReferenceExistsOnDisk(downloadDirectory, appFileReference)) {
-                    log.fine(() -> "Downloading application package for " + applicationId + " (session " + sessionId + ")");
+                    log.fine(() -> "Downloading application package with file reference " + appFileReference +
+                            " for " + applicationId + " (session " + sessionId + ")");
 
                     FileReferenceDownload download = new FileReferenceDownload(appFileReference,
                                                                                this.getClass().getSimpleName(),
