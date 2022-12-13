@@ -653,21 +653,13 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
     }
 
     private Application getApplication(ApplicationId applicationId, Optional<Version> version) {
-        try {
-            Tenant tenant = getTenant(applicationId);
-            if (tenant == null) throw new NotFoundException("Tenant '" + applicationId.tenant() + "' not found");
+        Tenant tenant = getTenant(applicationId);
+        if (tenant == null) throw new NotFoundException("Tenant '" + applicationId.tenant() + "' not found");
 
-            Optional<ApplicationSet> activeApplicationSet = tenant.getSessionRepository().getActiveApplicationSet(applicationId);
-            if (activeApplicationSet.isEmpty()) throw new NotFoundException("Unknown application id '" + applicationId + "'");
+        Optional<ApplicationSet> activeApplicationSet = tenant.getSessionRepository().getActiveApplicationSet(applicationId);
+        if (activeApplicationSet.isEmpty()) throw new NotFoundException("Unknown application id '" + applicationId + "'");
 
-            return activeApplicationSet.get().getForVersionOrLatest(version, clock.instant());
-        } catch (NotFoundException e) {
-            log.log(Level.WARNING, "Failed getting application for '" + applicationId + "': " + e.getMessage());
-            throw e;
-        } catch (Exception e) {
-            log.log(Level.WARNING, "Failed getting application for '" + applicationId + "'", e);
-            throw e;
-        }
+        return activeApplicationSet.get().getForVersionOrLatest(version, clock.instant());
     }
 
     // Will return Optional.empty() if getting application fails (instead of throwing an exception)
