@@ -45,7 +45,7 @@ public:
                           vespalib::MonitoredRefCount& refCount, const DocTypeName& docTypeName);
 
     ~MaintenanceController();
-    void registerJobInMasterThread(IMaintenanceJob::UP job);
+    void registerJob(IMaintenanceJob::UP job);
 
     void killJobs();
 
@@ -96,7 +96,6 @@ private:
     void addJobsToPeriodicTimer();
     void restart();
     void performHoldJobs(JobList jobs);
-    void registerJob(vespalib::Executor & executor, IMaintenanceJob::UP job);
 };
 
 } // namespace proton

@@ -32,7 +32,6 @@ public:
     void run() override;
     void stop();
     bool isRunnable() const;
-    const vespalib::Executor & getExecutor() const { return _executor; }
     const IMaintenanceJob &getJob() const { return *_job; }
     IMaintenanceJob &getJob() { return *_job; }
 };
