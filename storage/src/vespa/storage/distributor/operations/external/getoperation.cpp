@@ -1,12 +1,14 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include "getoperation.h"
+#include <vespa/document/bucket/bucketidfactory.h>
+#include <vespa/document/fieldvalue/document.h>
+#include <vespa/storage/distributor/distributor_bucket_space.h>
 #include <vespa/storage/distributor/distributor_node_context.h>
 #include <vespa/storage/distributor/distributormetricsset.h>
 #include <vespa/storageapi/message/persistence.h>
 #include <vespa/vdslib/state/nodestate.h>
-#include <vespa/document/fieldvalue/document.h>
-#include <vespa/storage/distributor/distributor_bucket_space.h>
-#include <vespa/document/bucket/bucketidfactory.h>
+#include <vespa/vdslib/state/clusterstate.h>
+#include <vespa/vespalib/util/stringfmt.h>
 #include <cassert>
 
 #include <vespa/log/log.h>
@@ -47,7 +49,7 @@ GetOperation::GroupId::operator==(const GroupId& other) const
 }
 
 GetOperation::GetOperation(const DistributorNodeContext& node_ctx,
-                           const DistributorBucketSpace &bucketSpace,
+                           const DistributorBucketSpace& bucketSpace,
                            const std::shared_ptr<BucketDatabase::ReadGuard> & read_guard,
                            std::shared_ptr<api::GetCommand> msg,
                            PersistenceOperationMetricSet& metric,
@@ -133,7 +135,12 @@ GetOperation::onStart(DistributorStripeMessageSender& sender)
 
     // If nothing was sent (no useful copies), just return NOT_FOUND
     if (!sent) {
-        LOG(debug, "No useful bucket copies for get on document %s. Returning without document", _msg->getDocumentId().toString().c_str());
+        LOG(debug, "No useful bucket copies for get on document %s. Returning without document",
+            _msg->getDocumentId().toString().c_str());
+        MBUS_TRACE(_msg->getTrace(), 1, vespalib::make_string("GetOperation: no replicas available for bucket %s in cluster state '%s', "
+                                                              "returning as Not Found",
+                                                              _msg->getBucket().toString().c_str(),
+                                                              _bucketSpace.getClusterState().toString().c_str()));
         sendReply(sender);
     }
 }
@@ -219,7 +226,7 @@ void GetOperation::update_internal_metrics() {
     } else {
         metric->failures.storagefailure.inc();
     }
-    if (!_doc.get()) {
+    if (!_doc) {
         metric->failures.notfound.inc();
     }
     metric->latency.addValue(_operationTimer.getElapsedTimeAsDouble());
@@ -228,7 +235,7 @@ void GetOperation::update_internal_metrics() {
 void
 GetOperation::sendReply(DistributorStripeMessageSender& sender)
 {
-    if (_msg.get()) {
+    if (_msg) {
         const auto newest = _newest_replica.value_or(NewestReplica::make_empty());
         // If the newest entry is a tombstone (remove entry), the externally visible
         // behavior is as if the document was not found. In this case _doc will also
