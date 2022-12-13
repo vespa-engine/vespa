@@ -51,6 +51,7 @@ public class YumTester extends Yum {
         private final CommandType commandType;
         protected final List<YumPackageName> packages;
         private List<String> enableRepos = List.of();
+        private List<String> disableRepos = List.of();
 
         private GenericYumCommandExpectation(CommandType commandType, String... packages) {
             this.commandType = commandType;
@@ -59,6 +60,11 @@ public class YumTester extends Yum {
 
         public GenericYumCommandExpectation withEnableRepo(String... repo) {
             this.enableRepos = List.of(repo);
+            return this;
+        }
+
+        public GenericYumCommandExpectation withDisableRepo(String... repo) {
+            this.disableRepos = List.of(repo);
             return this;
         }
 
@@ -91,6 +97,7 @@ public class YumTester extends Yum {
             if (commandType != CommandType.deleteVersionLock) {
                 cmd.append(" --assumeyes");
                 enableRepos.forEach(repo -> cmd.append(" --enablerepo=").append(repo));
+                disableRepos.forEach(repo -> cmd.append(" --disablerepo=").append(repo));
             }
             if (commandType == CommandType.install && packages.size() > 1)
                 cmd.append(" --setopt skip_missing_names_on_install=False");

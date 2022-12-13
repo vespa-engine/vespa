@@ -35,6 +35,7 @@ public abstract class YumCommand<T extends YumCommand<T>> {
             builder::setName, builder::setEpoch, builder::setVersion, builder::setRelease, builder::setArchitecture);
 
     private List<String> enabledRepos = List.of();
+    private List<String> disabledRepos = List.of();
     private final Terminal terminal;
 
     protected YumCommand(Terminal terminal) {
@@ -47,11 +48,18 @@ public abstract class YumCommand<T extends YumCommand<T>> {
         return getThis();
     }
 
+    /** Enables the given repos for this command */
+    public T disableRepo(String... repo) {
+        disabledRepos = List.of(repo);
+        return getThis();
+    }
+
     protected abstract T getThis(); // Hack to get around unchecked cast warning
 
     protected void addParametersToCommandLine(CommandLine commandLine) {
         commandLine.add("--assumeyes");
         enabledRepos.forEach(repo -> commandLine.add("--enablerepo=" + repo));
+        disabledRepos.forEach(repo -> commandLine.add("--disablerepo=" + repo));
     }
 
     public abstract boolean converge(TaskContext context);
