@@ -13,11 +13,17 @@ public class Client {
     private String id;
     private List<String> permissions;
     private List<X509Certificate> certificates;
+    private boolean internal;
 
     public Client(String id, List<String> permissions, List<X509Certificate> certificates) {
+        this(id, permissions, certificates, false);
+    }
+
+    private Client(String id, List<String> permissions, List<X509Certificate> certificates, boolean internal) {
         this.id = id;
         this.permissions = permissions;
         this.certificates = certificates;
+        this.internal = internal;
     }
 
     public String id() {
@@ -30,5 +36,13 @@ public class Client {
 
     public List<X509Certificate> certificates() {
         return certificates;
+    }
+
+    public boolean internal() {
+        return internal;
+    }
+
+    public static Client internalClient(List<X509Certificate> certificates) {
+        return new Client("internal", List.of("read","write"), certificates, true);
     }
 }

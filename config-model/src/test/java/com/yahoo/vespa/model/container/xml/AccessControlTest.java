@@ -378,21 +378,16 @@ public class AccessControlTest extends ContainerModelBuilderTestBase {
     void missing_security_clients_pem_fails_in_public() {
         Element clusterElem = DomBuilderTest.parse("<container version='1.0' />");
 
-        try {
-            DeployState state = new DeployState.Builder()
-                    .properties(
-                            new TestProperties()
-                                    .setHostedVespa(true)
-                                    .setEndpointCertificateSecrets(Optional.of(new EndpointCertificateSecrets("CERT", "KEY"))))
-                    .zone(new Zone(SystemName.Public, Environment.prod, RegionName.defaultName()))
-                    .build();
-            createModel(root, state, null, clusterElem);
-        } catch (RuntimeException e) {
-            assertEquals("Client certificate authority security/clients.pem is missing - see: https://cloud.vespa.ai/en/security-model#data-plane",
-                    e.getMessage());
-            return;
-        }
-        fail();
+        DeployState state = new DeployState.Builder()
+                .properties(
+                        new TestProperties()
+                                .setHostedVespa(true)
+                                .setEndpointCertificateSecrets(Optional.of(new EndpointCertificateSecrets("CERT", "KEY"))))
+                .zone(new Zone(SystemName.Public, Environment.prod, RegionName.defaultName()))
+                .build();
+        RuntimeException e = assertThrows(RuntimeException.class, () -> createModel(root, state, null, clusterElem));
+        assertEquals("Client certificate authority security/clients.pem is missing - see: https://cloud.vespa.ai/en/security/guide#data-plane",
+                e.getMessage());
     }
 
     @Test
