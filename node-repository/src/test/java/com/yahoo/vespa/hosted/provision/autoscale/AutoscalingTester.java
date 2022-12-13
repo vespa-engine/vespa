@@ -132,8 +132,8 @@ class AutoscalingTester {
                               cluster.minResources(),
                               cluster.maxResources(),
                               cluster.required(),
-                              cluster.suggestedResources(),
-                              cluster.targetResources(),
+                              cluster.suggested(),
+                              cluster.target(),
                               List.of(), // Remove scaling events
                               cluster.autoscalingStatus());
         cluster = cluster.with(ScalingEvent.create(cluster.minResources(), cluster.minResources(),

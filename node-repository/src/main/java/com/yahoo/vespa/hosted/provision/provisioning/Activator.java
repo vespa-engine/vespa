@@ -118,8 +118,8 @@ class Activator {
                  || ! previousResources.justNumbers().equals(currentResources.justNumbers())) {
                 cluster = cluster.with(ScalingEvent.create(previousResources, currentResources, generation, at));
             }
-            if (cluster.targetResources().isPresent()
-                && cluster.targetResources().get().justNumbers().equals(currentResources.justNumbers())) {
+            if (cluster.target().resources().isPresent()
+                && cluster.target().resources().get().justNumbers().equals(currentResources.justNumbers())) {
                 cluster = cluster.with(new AutoscalingStatus(AutoscalingStatus.Status.ideal,
                                                              "Cluster is ideally scaled within configured limits"));
             }

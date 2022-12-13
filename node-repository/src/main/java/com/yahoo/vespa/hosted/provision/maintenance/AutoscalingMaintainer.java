@@ -15,6 +15,7 @@ import com.yahoo.vespa.hosted.provision.applications.Applications;
 import com.yahoo.vespa.hosted.provision.applications.Cluster;
 import com.yahoo.vespa.hosted.provision.autoscale.AllocatableClusterResources;
 import com.yahoo.vespa.hosted.provision.autoscale.Autoscaler;
+import com.yahoo.vespa.hosted.provision.autoscale.Autoscaling;
 import com.yahoo.vespa.hosted.provision.autoscale.NodeMetricSnapshot;
 import com.yahoo.vespa.hosted.provision.node.History;
 import java.time.Duration;
@@ -83,7 +84,7 @@ public class AutoscalingMaintainer extends NodeRepositoryMaintainer {
             // 1. Update cluster info
             updatedCluster = updateCompletion(cluster.get(), clusterNodes)
                                      .with(advice.reason())
-                                     .withTarget(advice.target());
+                                     .withTarget(new Autoscaling(advice.target(), nodeRepository().clock().instant()));
             applications().put(application.get().with(updatedCluster), lock);
 
             var current = new AllocatableClusterResources(clusterNodes, nodeRepository()).advertisedResources();
@@ -100,7 +101,7 @@ public class AutoscalingMaintainer extends NodeRepositoryMaintainer {
     }
 
     private boolean anyChanges(Autoscaler.Advice advice, Cluster cluster, Cluster updatedCluster, NodeList clusterNodes) {
-        if (advice.isPresent() && !cluster.targetResources().equals(advice.target())) return true;
+        if (advice.isPresent() && !cluster.target().resources().equals(advice.target())) return true;
         if (updatedCluster != cluster) return true;
         if ( ! advice.reason().equals(cluster.autoscalingStatus())) return true;
         if (advice.target().isPresent() &&

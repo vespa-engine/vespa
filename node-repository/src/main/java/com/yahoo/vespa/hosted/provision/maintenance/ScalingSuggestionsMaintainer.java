@@ -13,6 +13,7 @@ import com.yahoo.vespa.hosted.provision.applications.Application;
 import com.yahoo.vespa.hosted.provision.applications.Applications;
 import com.yahoo.vespa.hosted.provision.applications.Cluster;
 import com.yahoo.vespa.hosted.provision.autoscale.Autoscaler;
+import com.yahoo.vespa.hosted.provision.autoscale.Autoscaling;
 import com.yahoo.vespa.hosted.provision.autoscale.MetricsDb;
 
 import java.time.Duration;
@@ -82,11 +83,11 @@ public class ScalingSuggestionsMaintainer extends NodeRepositoryMaintainer {
         Optional<Cluster> cluster = application.cluster(clusterId);
         if (cluster.isEmpty()) return;
         var at = nodeRepository().clock().instant();
-        var currentSuggestion = cluster.get().suggestedResources();
-        if (currentSuggestion.isEmpty()
-            || currentSuggestion.get().at().isBefore(at.minus(Duration.ofDays(7)))
-            || isHigher(suggestion, currentSuggestion.get().resources()))
-            applications().put(application.with(cluster.get().withSuggested(Optional.of(new Cluster.Suggestion(suggestion,  at)))), lock);
+        var currentSuggestion = cluster.get().suggested();
+        if (currentSuggestion.resources().isEmpty()
+            || currentSuggestion.at().isBefore(at.minus(Duration.ofDays(7)))
+            || isHigher(suggestion, currentSuggestion.resources().get()))
+            applications().put(application.with(cluster.get().withSuggested(new Autoscaling(suggestion, at))), lock);
     }
 
     private boolean isHigher(ClusterResources r1, ClusterResources r2) {

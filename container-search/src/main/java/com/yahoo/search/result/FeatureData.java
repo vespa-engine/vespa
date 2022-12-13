@@ -100,11 +100,11 @@ public class FeatureData implements Inspectable, JsonProducer {
         Inspector featureValue = getInspector(featureName);
         if ( ! featureValue.valid()) return null;
 
-        switch (featureValue.type()) {
-            case DOUBLE: return featureValue.asDouble();
-            case DATA: throw new IllegalArgumentException("Feature '" + featureName + "' is a tensor, not a double");
-            default: throw new IllegalStateException("Unexpected feature value type " + featureValue.type());
-        }
+        return switch (featureValue.type()) {
+            case DOUBLE -> featureValue.asDouble();
+            case DATA -> throw new IllegalArgumentException("Feature '" + featureName + "' is a tensor, not a double");
+            default -> throw new IllegalStateException("Unexpected feature value type " + featureValue.type());
+        };
     }
 
     /**

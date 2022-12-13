@@ -77,8 +77,8 @@ public class ApplicationSerializer {
         toSlime(limits.max(), clusterObject.setObject("max"));
         toSlime(currentResources, clusterObject.setObject("current"));
         if (cluster.shouldSuggestResources(currentResources))
-            cluster.suggestedResources().ifPresent(suggested -> toSlime(suggested.resources(), clusterObject.setObject("suggested")));
-        cluster.targetResources().ifPresent(target -> toSlime(target, clusterObject.setObject("target")));
+            cluster.suggested().resources().ifPresent(suggested -> toSlime(suggested, clusterObject.setObject("suggested")));
+        cluster.target().resources().ifPresent(target -> toSlime(target, clusterObject.setObject("target")));
         clusterModel.ifPresent(model -> clusterUtilizationToSlime(model, clusterObject.setObject("utilization")));
         scalingEventsToSlime(cluster.scalingEvents(), clusterObject.setArray("scalingEvents"));
         clusterObject.setString("autoscalingStatusCode", cluster.autoscalingStatus().status().name());

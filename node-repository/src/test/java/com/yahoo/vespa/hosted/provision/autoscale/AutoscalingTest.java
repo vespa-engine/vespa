@@ -269,7 +269,7 @@ public class AutoscalingTest {
                                        .build();
 
         // Redeployment without target: Uses current resource numbers with *requested* non-numbers (i.e disk-speed any)
-        assertTrue(fixture.tester().nodeRepository().applications().get(fixture.applicationId).get().cluster(fixture.clusterSpec.id()).get().targetResources().isEmpty());
+        assertTrue(fixture.tester().nodeRepository().applications().get(fixture.applicationId).get().cluster(fixture.clusterSpec.id()).get().target().resources().isEmpty());
         fixture.deploy();
         assertEquals(DiskSpeed.any, fixture.nodes().first().get().allocation().get().requestedResources().diskSpeed());
 
