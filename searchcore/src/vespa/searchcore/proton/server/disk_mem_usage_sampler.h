@@ -2,8 +2,8 @@
 
 #pragma once
 
-#include <vespa/vespalib/util/time.h>
 #include "disk_mem_usage_filter.h"
+#include <vespa/searchcore/proton/common/i_scheduled_executor.h>
 
 class FNET_Transport;
 
@@ -12,7 +12,6 @@ namespace vespalib { class IDestructorCallback; }
 namespace proton {
 
 class ITransientResourceUsageProvider;
-class ScheduledExecutor;
 
 /*
  * Class to sample disk and memory usage used for filtering write operations.
@@ -22,7 +21,6 @@ class DiskMemUsageSampler {
     std::filesystem::path  _path;
     vespalib::duration     _sampleInterval;
     vespalib::steady_time  _lastSampleTime;
-    std::unique_ptr<ScheduledExecutor> _periodicTimer;
     std::mutex             _lock;
     std::unique_ptr<vespalib::IDestructorCallback> _periodicHandle;
     std::vector<std::shared_ptr<const ITransientResourceUsageProvider>> _transient_usage_providers;
@@ -41,8 +39,7 @@ public:
             : filterConfig(),
               sampleInterval(60s),
               hwInfo()
-        {
-        }
+        { }
 
         Config(double memoryLimit_in,
                double diskLimit_in,
@@ -51,23 +48,19 @@ public:
             : filterConfig(memoryLimit_in, diskLimit_in),
               sampleInterval(sampleInterval_in),
               hwInfo(hwInfo_in)
-        {
-        }
+        { }
     };
 
-    DiskMemUsageSampler(FNET_Transport & transport,
-                        const std::string &path_in,
-                        const Config &config);
+    DiskMemUsageSampler(const std::string &path_in, const HwInfo &config);
 
     ~DiskMemUsageSampler();
 
-    void setConfig(const Config &config);
+    void setConfig(const Config &config, IScheduledExecutor & executor);
 
     const DiskMemUsageFilter &writeFilter() const { return _filter; }
     IDiskMemUsageNotifier &notifier() { return _filter; }
     void add_transient_usage_provider(std::shared_ptr<const ITransientResourceUsageProvider> provider);
     void remove_transient_usage_provider(std::shared_ptr<const ITransientResourceUsageProvider> provider);
 };
-
 
 } // namespace proton
