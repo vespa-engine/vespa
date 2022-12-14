@@ -215,7 +215,7 @@ public class SessionPreparerTest {
         PrepareParams params = new PrepareParams.Builder().applicationId(applicationId()).build();
         int sessionId = 1;
         prepare(testApp, params);
-        assertEquals(applicationId(), createSessionZooKeeperClient(sessionId).readApplicationId().get());
+        assertEquals(applicationId(), createSessionZooKeeperClient(sessionId).readApplicationId());
     }
 
     @Test

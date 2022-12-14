@@ -169,8 +169,9 @@ public class SessionZooKeeperClient {
         curator.set(applicationIdPath(), Utf8.toBytes(id.serializedForm()));
     }
 
-    public Optional<ApplicationId> readApplicationId() {
-        return curator.getData(applicationIdPath()).map(d -> ApplicationId.fromSerializedForm(Utf8.toString(d)));
+    public ApplicationId readApplicationId() {
+        return curator.getData(applicationIdPath()).map(d -> ApplicationId.fromSerializedForm(Utf8.toString(d)))
+                      .orElseThrow(() -> new RuntimeException("Could not find application id for session " + sessionId));
     }
 
     private Path tagsPath() {
