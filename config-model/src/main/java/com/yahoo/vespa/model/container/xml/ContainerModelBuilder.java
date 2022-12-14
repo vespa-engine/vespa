@@ -518,6 +518,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
 
     private Client getCLient(Element clientElement) {
         String id = XML.attribute("id", clientElement).orElseThrow();
+        if (id.startsWith("_")) throw new IllegalArgumentException("Invalid client id '%s', id cannot start with '_'".formatted(id));
         List<String> permissions = XML.attribute("permissions", clientElement)
                 .map(p -> p.split(",")).stream()
                 .flatMap(Arrays::stream)

@@ -43,6 +43,6 @@ public class Client {
     }
 
     public static Client internalClient(List<X509Certificate> certificates) {
-        return new Client("internal", List.of("read","write"), certificates, true);
+        return new Client("_internal", List.of("read","write"), certificates, true);
     }
 }
