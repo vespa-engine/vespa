@@ -13,6 +13,21 @@ import java.util.stream.Collectors;
  * @author bratseth
  */
 public abstract class TensorAddress implements Comparable<TensorAddress> {
+    private static final String [] SMALL_INDEXES = createSmallIndexesAsStrings(1000);
+
+    private static String [] createSmallIndexesAsStrings(int count) {
+        String [] asStrings = new String[count];
+        for (int i = 0; i < count; i++) {
+            asStrings[i] = String.valueOf(i);
+        }
+        return asStrings;
+    }
+    private static String asString(int index) {
+        return (index < SMALL_INDEXES.length) ? SMALL_INDEXES[index] : String.valueOf(index);
+    }
+    private static String asString(long index) {
+        return (index < SMALL_INDEXES.length) ? SMALL_INDEXES[(int)index] : String.valueOf(index);
+    }
 
     public static TensorAddress of(String[] labels) {
         return new StringTensorAddress(labels);
@@ -127,7 +142,7 @@ public abstract class TensorAddress implements Comparable<TensorAddress> {
         @Override
         public TensorAddress withLabel(int index, long label) {
             String[] labels = Arrays.copyOf(this.labels, this.labels.length);
-            labels[index] = String.valueOf(label);
+            labels[index] = TensorAddress.asString(label);
             return new StringTensorAddress(labels);
         }
 
@@ -151,7 +166,7 @@ public abstract class TensorAddress implements Comparable<TensorAddress> {
         public int size() { return labels.length; }
 
         @Override
-        public String label(int i) { return String.valueOf(labels[i]); }
+        public String label(int i) { return TensorAddress.asString(labels[i]); }
 
         @Override
         public long numericLabel(int i) { return labels[i]; }
@@ -165,7 +180,7 @@ public abstract class TensorAddress implements Comparable<TensorAddress> {
 
         @Override
         public String toString() {
-            return "cell address (" + Arrays.stream(labels).mapToObj(String::valueOf).collect(Collectors.joining(",")) + ")";
+            return "cell address (" + Arrays.stream(labels).mapToObj(TensorAddress::asString).collect(Collectors.joining(",")) + ")";
         }
 
     }
