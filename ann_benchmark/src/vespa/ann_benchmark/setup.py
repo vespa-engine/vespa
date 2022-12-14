@@ -1,6 +1,6 @@
 # Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-import os
+import subprocess
 import sys
 import platform
 import distutils.sysconfig
@@ -11,8 +11,8 @@ class PreBuiltExt(build_ext):
     def build_extension(self, ext):
         print("Using prebuilt extension library")
         libdir="lib.%s-%s-%s" % (sys.platform, platform.machine(), distutils.sysconfig.get_python_version())
-        os.system("mkdir -p build/%s" % libdir)
-        os.system("cp -p vespa_ann_benchmark.*.so build/%s" % libdir)
+        subprocess.run(["mkdir", "-p", "build/%s" % libdir])
+        subprocess.run(["cp", "-p", "vespa_ann_benchmark.*.so build/%s" % libdir])
 
 setup(
   name="vespa_ann_benchmark",
