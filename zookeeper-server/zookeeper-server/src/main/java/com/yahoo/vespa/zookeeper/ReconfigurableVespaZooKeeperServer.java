@@ -1,12 +1,13 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.zookeeper;
 
-import ai.vespa.validation.Validation;
+import com.yahoo.component.annotation.Inject;
 import com.yahoo.cloud.config.ZookeeperServerConfig;
 import com.yahoo.component.AbstractComponent;
-import com.yahoo.component.annotation.Inject;
+
 import java.nio.file.Path;
 import java.time.Duration;
+import java.util.concurrent.atomic.AtomicReference;
 
 /**
  * Starts or reconfigures zookeeper cluster.
@@ -21,7 +22,6 @@ public class ReconfigurableVespaZooKeeperServer extends AbstractComponent implem
 
     @Inject
     public ReconfigurableVespaZooKeeperServer(Reconfigurer reconfigurer, ZookeeperServerConfig zookeeperServerConfig) {
-        Validation.require(true, zookeeperServerConfig.dynamicReconfiguration(), "dynamicReconfiguration must be true");
         peer = reconfigurer.startOrReconfigure(zookeeperServerConfig, this, () -> peer = new VespaQuorumPeer());
     }
 
