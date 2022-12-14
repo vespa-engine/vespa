@@ -113,11 +113,11 @@ public class OnnxEvaluationHandlerTest {
         handler.assertResponse(url, 200, expected);
     }
 
-    @Ignore
     @Test
     public void testBatchDimensionEvaluation() {
         Map<String, String> properties = new HashMap<>();
         properties.put("input", "tensor<float>(d0[],d1[3]):{{d0:0,d1:0}:0.1,{d0:0,d1:1}:0.2,{d0:0,d1:2}:0.3,{d0:1,d1:0}:0.4,{d0:1,d1:1}:0.5,{d0:1,d1:2}:0.6}");
+        properties.put("format.tensors", "long");
         String url = "http://localhost/model-evaluation/v1/one_layer/eval";  // output not specified
         Tensor expected = Tensor.from("tensor<float>(d0[2],d1[1]):[0.6393113,0.67574286]");
         handler.assertResponse(url, properties, 200, expected);
