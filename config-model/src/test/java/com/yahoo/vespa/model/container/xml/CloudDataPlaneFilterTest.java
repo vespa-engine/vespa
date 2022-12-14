@@ -167,6 +167,22 @@ public class CloudDataPlaneFilterTest extends ContainerModelBuilderTestBase {
         assertEquals("File security/foo.pem does not contain any certificates.", exception.getMessage());
     }
 
+    @Test
+    public void it_rejects_invalid_client_ids() throws IOException {
+        Element clusterElem = DomBuilderTest.parse(
+                """ 
+                        <container version='1.0'>
+                          <clients>
+                            <client id="_foo" permissions="read,write">
+                                <certificate file="foo"/>
+                            </client>
+                          </clients>
+                        </container>
+                        """);
+        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> buildModel(true, clusterElem));
+        assertEquals("Invalid client id '_foo', id cannot start with '_'", exception.getMessage());
+    }
+
     private ConnectorConfig connectorConfig() {
         ApplicationContainer container = (ApplicationContainer) root.getProducer("container/container.0");
         List<ConnectorFactory> connectorFactories = container.getHttp().getHttpServer().get().getConnectorFactories();
