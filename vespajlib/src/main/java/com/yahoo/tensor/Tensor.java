@@ -243,7 +243,7 @@ public interface Tensor {
     default Tensor notEqual(Tensor argument) { return join(argument, (a, b) -> ( a != b ? 1.0 : 0.0)); }
     default Tensor approxEqual(Tensor argument) { return join(argument, (a, b) -> ( approxEquals(a,b) ? 1.0 : 0.0)); }
     default Tensor bit(Tensor argument) { return join(argument, (a,b) -> ((int)b < 8 && (int)b >= 0 && ((int)a & (1 << (int)b)) != 0) ? 1.0 : 0.0); }
-    default Tensor hamming(Tensor argument) { return join(argument, (a,b) -> Hamming.hamming(a,b)); }
+    default Tensor hamming(Tensor argument) { return join(argument, Hamming::hamming); }
 
     default Tensor avg() { return avg(Collections.emptyList()); }
     default Tensor avg(String dimension) { return avg(Collections.singletonList(dimension)); }
@@ -466,9 +466,12 @@ public interface Tensor {
     class Cell implements Map.Entry<TensorAddress, Double> {
 
         private final TensorAddress address;
-        private final Number value;
+        private final double value;
 
         Cell(TensorAddress address, Number value) {
+            this(address, value.doubleValue());
+        }
+        Cell(TensorAddress address, double value) {
             this.address = address;
             this.value = value;
         }
@@ -485,7 +488,7 @@ public interface Tensor {
 
         /** Returns the value as a double */
         @Override
-        public Double getValue() { return value.doubleValue(); }
+        public Double getValue() { return value; }
 
         /** Returns the value as a float */
         public float getFloatValue() { return getValue().floatValue(); }
@@ -501,8 +504,7 @@ public interface Tensor {
         @Override
         public boolean equals(Object o) {
             if (o == this) return true;
-            if ( ! ( o instanceof Map.Entry)) return false;
-            Map.Entry<?,?> other = (Map.Entry)o;
+            if ( ! ( o instanceof Map.Entry<?,?> other)) return false;
             if ( ! this.getValue().equals(other.getValue())) return false;
             if ( ! this.getKey().equals(other.getKey())) return false;
             return true;
@@ -531,7 +533,7 @@ public interface Tensor {
 
         /** Creates a suitable builder for the given type */
         static Builder of(TensorType type) {
-            boolean containsIndexed = type.dimensions().stream().anyMatch(d -> d.isIndexed());
+            boolean containsIndexed = type.dimensions().stream().anyMatch(TensorType.Dimension::isIndexed);
             boolean containsMapped = type.dimensions().stream().anyMatch( d ->  ! d.isIndexed());
             if (containsIndexed && containsMapped)
                 return MixedTensor.Builder.of(type);
@@ -543,7 +545,7 @@ public interface Tensor {
 
         /** Creates a suitable builder for the given type */
         static Builder of(TensorType type, DimensionSizes dimensionSizes) {
-            boolean containsIndexed = type.dimensions().stream().anyMatch(d -> d.isIndexed());
+            boolean containsIndexed = type.dimensions().stream().anyMatch(TensorType.Dimension::isIndexed);
             boolean containsMapped = type.dimensions().stream().anyMatch( d ->  ! d.isIndexed());
             if (containsIndexed && containsMapped)
                 return MixedTensor.Builder.of(type);
