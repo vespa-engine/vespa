@@ -21,7 +21,7 @@ public class ReconfigurableVespaZooKeeperServer extends AbstractComponent implem
 
     @Inject
     public ReconfigurableVespaZooKeeperServer(Reconfigurer reconfigurer, ZookeeperServerConfig zookeeperServerConfig) {
-        Validation.require(true, zookeeperServerConfig.dynamicReconfiguration(), "dynamicReconfiguration must be true");
+        Validation.require(zookeeperServerConfig.dynamicReconfiguration(), zookeeperServerConfig.dynamicReconfiguration(), "dynamicReconfiguration must be true");
         peer = reconfigurer.startOrReconfigure(zookeeperServerConfig, this, () -> peer = new VespaQuorumPeer());
     }
 
