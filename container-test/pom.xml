@@ -51,6 +51,10 @@
       <artifactId>icu4j</artifactId>
     </dependency>
     <dependency>
+      <groupId>com.microsoft.onnxruntime</groupId>
+      <artifactId>onnxruntime</artifactId>
+    </dependency>
+    <dependency>
       <groupId>io.airlift</groupId>
       <artifactId>airline</artifactId>
       <exclusions>

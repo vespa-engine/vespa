@@ -82,7 +82,6 @@
                                         <include>com.fasterxml.jackson.core:jackson-databind:${jackson-databind.version}:provided</include>
                                         <include>com.fasterxml.jackson.datatype:jackson-datatype-jdk8:${jackson2.version}:provided</include>
                                         <include>com.fasterxml.jackson.datatype:jackson-datatype-jsr310:${jackson2.version}:provided</include>
-                                        <include>com.microsoft.onnxruntime:onnxruntime:jar:${onnxruntime.version}:provided</include>
 
                                         <!-- Guava with its internal dependencies -->
                                         <include>com.google.guava:guava:${guava.version}:provided</include>
@@ -176,6 +175,7 @@
                                         <include>com.google.code.findbugs:jsr305:3.0.2:test</include>
                                         <include>com.google.protobuf:protobuf-java:3.21.7:test</include>
                                         <include>com.ibm.icu:icu4j:70.1:test</include>
+                                        <include>com.microsoft.onnxruntime:onnxruntime:jar:${onnxruntime.version}:test</include>
                                         <include>com.thaiopensource:jing:20091111:test</include>
                                         <include>commons-codec:commons-codec:${commons-codec.version}:test</include>
                                         <include>io.airlift:aircompressor:0.21:test</include>
