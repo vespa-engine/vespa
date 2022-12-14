@@ -162,8 +162,7 @@ public class SessionZooKeeperClientTest {
         SessionZooKeeperClient zkc = createSessionZKClient(sessionId);
         Path path = sessionPath(sessionId).append(SessionZooKeeperClient.APPLICATION_ID_PATH);
         curator.set(path, Utf8.toBytes(idString));
-        ApplicationId applicationId = zkc.readApplicationId().get();
-        assertEquals(expectedIdString, applicationId.serializedForm());
+        assertEquals(expectedIdString, zkc.readApplicationId().serializedForm());
     }
 
     private SessionZooKeeperClient createSessionZKClient(long sessionId) {

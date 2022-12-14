@@ -873,8 +873,7 @@ public class SessionRepository {
             log.log(Level.FINE, () -> "File reference for session id " + sessionId + ": " + fileReference + " not found");
             return;
         }
-        ApplicationId applicationId = sessionZKClient.readApplicationId()
-                                                     .orElseThrow(() -> new RuntimeException("Could not find application id for session " + sessionId));
+        ApplicationId applicationId = sessionZKClient.readApplicationId();
         log.log(Level.FINE, () -> "Creating local session for tenant '" + tenantName + "' with session id " + sessionId);
         try {
             createLocalSession(sessionDir, applicationId, sessionZKClient.readTags(), sessionId);

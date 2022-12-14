@@ -17,7 +17,6 @@ import com.yahoo.config.provision.Tags;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.path.Path;
 import com.yahoo.transaction.Transaction;
-import com.yahoo.vespa.config.server.NotFoundException;
 import com.yahoo.vespa.config.server.application.ApplicationSet;
 import com.yahoo.vespa.config.server.tenant.TenantRepository;
 import java.security.cert.X509Certificate;
@@ -158,10 +157,7 @@ public abstract class Session implements Comparable<Session>  {
     }
 
     /** Returns application id read from ZooKeeper. Will throw RuntimeException if not found */
-    public ApplicationId getApplicationId() {
-        return sessionZooKeeperClient.readApplicationId()
-                .orElseThrow(() -> new NotFoundException("Unable to read application id for session " + sessionId));
-    }
+    public ApplicationId getApplicationId() { return sessionZooKeeperClient.readApplicationId(); }
 
     public Tags getTags() {
         return sessionZooKeeperClient.readTags();
