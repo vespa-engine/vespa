@@ -3,6 +3,7 @@
 #include "disk_mem_usage_sampler.h"
 #include <vespa/searchcore/proton/common/i_scheduled_executor.h>
 #include <vespa/vespalib/util/lambdatask.h>
+#include <vespa/vespalib/util/size_literals.h>
 #include <vespa/searchcore/proton/common/i_transient_resource_usage_provider.h>
 #include <filesystem>
 
@@ -65,6 +66,10 @@ namespace {
 
 namespace fs = std::filesystem;
 
+// Disk usage for symbolic links and directories
+constexpr uint64_t symlink_disk_usage = 4_Ki;
+constexpr uint64_t directory_disk_usage = 4_Ki;
+
 uint64_t
 sampleDiskUsageOnFileSystem(const fs::path &path, const HwInfo::Disk &disk)
 {
@@ -80,15 +85,19 @@ sampleDiskUsageOnFileSystem(const fs::path &path, const HwInfo::Disk &disk)
 uint64_t
 attemptSampleDirectoryDiskUsageOnce(const fs::path &path)
 {
-    uint64_t result = 0;
+    uint64_t result = directory_disk_usage;
     for (const auto &elem : fs::recursive_directory_iterator(path, fs::directory_options::skip_permission_denied)) {
-        if (fs::is_regular_file(elem.path()) && !fs::is_symlink(elem.path())) {
+        if (elem.is_symlink()) {
+            result += symlink_disk_usage;
+        } else if (elem.is_regular_file()) {
             std::error_code fsize_err;
-            const auto size = fs::file_size(elem.path(), fsize_err);
+            const auto size = elem.file_size(fsize_err);
             // Errors here typically happens when a file is removed while doing the directory scan. Ignore them.
             if (!fsize_err) {
                 result += size;
             }
+        } else if (elem.is_directory()) {
+            result += directory_disk_usage;
         }
     }
     return result;
