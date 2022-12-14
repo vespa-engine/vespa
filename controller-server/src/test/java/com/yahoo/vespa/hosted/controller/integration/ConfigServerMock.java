@@ -50,6 +50,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.UncheckedIOException;
 import java.net.URI;
+import java.security.cert.X509Certificate;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Collection;
@@ -95,6 +96,7 @@ public class ConfigServerMock extends AbstractComponent implements ConfigServer 
     private final Map<DeploymentId, List<ClusterMetrics>> clusterMetrics = new HashMap<>();
     private final Map<DeploymentId, TestReport> testReport = new HashMap<>();
     private final Map<DeploymentId, CloudAccount> cloudAccounts = new HashMap<>();
+    private final Map<DeploymentId, List<X509Certificate>> additionalCertificates = new HashMap<>();
     private List<ProtonMetrics> protonMetrics;
 
     private Version lastPrepareVersion = null;
@@ -307,6 +309,10 @@ public class ConfigServerMock extends AbstractComponent implements ConfigServer 
         deferLoadBalancerProvisioning.addAll(environments);
     }
 
+    public List<X509Certificate> additionalCertificates(DeploymentId deployment) {
+        return additionalCertificates.getOrDefault(deployment, List.of());
+    }
+
     @Override
     public NodeRepositoryMock nodeRepository() {
         return nodeRepository;
@@ -435,6 +441,7 @@ public class ConfigServerMock extends AbstractComponent implements ConfigServer 
                                                                                                      1))
                                                           .toList()));
 
+        additionalCertificates.put(id, deployment.operatorCertificates());
         DeploymentResult result = new DeploymentResult("foo", warnings.getOrDefault(id, List.of()));
         return () -> result;
     }

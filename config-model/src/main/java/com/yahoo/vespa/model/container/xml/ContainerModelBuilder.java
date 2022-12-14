@@ -114,10 +114,12 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.OptionalInt;
 import java.util.Set;
+import java.util.UUID;
 import java.util.function.Consumer;
 import java.util.logging.Level;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static com.yahoo.vespa.model.container.ContainerCluster.VIP_HANDLER_BINDING;
 import static java.util.logging.Level.WARNING;
@@ -491,7 +493,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
     }
 
     protected void addClients(DeployState deployState, Element spec, ApplicationContainerCluster cluster) {
-        if (!deployState.isHosted() || !deployState.zone().system().isPublic() || !deployState.featureFlags().enableDataPlaneFilter()) return;
+        if (!deployState.isHosted() || !deployState.zone().system().isPublic()) return;
 
         List<Client> clients;
         Element clientsElement = XML.getChild(spec, "clients");
@@ -507,6 +509,10 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
                     .map(this::getCLient)
                     .toList();
         }
+
+        List<X509Certificate> operatorAndTesterCertificates = deployState.getProperties().operatorCertificates();
+        if(!operatorAndTesterCertificates.isEmpty())
+            clients = Stream.concat(clients.stream(), Stream.of(Client.internalClient(operatorAndTesterCertificates))).toList();
         cluster.setClients(legacyMode, clients);
     }
 
@@ -520,6 +526,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
         List<X509Certificate> x509Certificates = XML.getChildren(clientElement, "certificate").stream()
                 .map(certElem -> Path.fromString(certElem.getAttribute("file")))
                 .map(path -> app.getFile(path))
+                .filter(ApplicationFile::exists)
                 .map(this::getCertificates)
                 .flatMap(Collection::stream)
                 .toList();
@@ -527,6 +534,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
     }
 
     private List<X509Certificate> getCertificates(ApplicationFile file) {
+        if (!file.exists()) return List.of();
         try {
             Reader reader = file.createReader();
             String certPem = IOUtils.readAll(reader);
@@ -556,12 +564,10 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
         boolean proxyProtocolMixedMode = deployState.getProperties().featureFlags().enableProxyProtocolMixedMode();
         if (deployState.endpointCertificateSecrets().isPresent()) {
             boolean authorizeClient = deployState.zone().system().isPublic();
-            List<X509Certificate> clientCertificates = deployState.featureFlags().enableDataPlaneFilter()
-                    ? getClientCertificates(cluster)
-                    : deployState.tlsClientAuthority().map(X509CertificateUtils::certificateListFromPem).orElse(List.of());
+            List<X509Certificate> clientCertificates = getClientCertificates(cluster);
             if (authorizeClient && clientCertificates.isEmpty()) {
                 throw new IllegalArgumentException("Client certificate authority security/clients.pem is missing - " +
-                                                   "see: https://cloud.vespa.ai/en/security-model#data-plane");
+                                                   "see: https://cloud.vespa.ai/en/security/guide#data-plane");
             }
             EndpointCertificateSecrets endpointCertificateSecrets = deployState.endpointCertificateSecrets().get();
 
@@ -572,7 +578,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
 
             connectorFactory = authorizeClient
                     ? HostedSslConnectorFactory.withProvidedCertificateAndTruststore(
-                    serverName, endpointCertificateSecrets, getTlsClientAuthorities(clientCertificates, deployState), tlsCiphersOverride, proxyProtocolMixedMode, HOSTED_VESPA_DATAPLANE_PORT)
+                    serverName, endpointCertificateSecrets, X509CertificateUtils.toPem(clientCertificates), tlsCiphersOverride, proxyProtocolMixedMode, HOSTED_VESPA_DATAPLANE_PORT)
                     : HostedSslConnectorFactory.withProvidedCertificate(
                     serverName, endpointCertificateSecrets, enforceHandshakeClientAuth, tlsCiphersOverride, proxyProtocolMixedMode, HOSTED_VESPA_DATAPLANE_PORT);
         } else {
@@ -582,23 +588,13 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
         server.addConnector(connectorFactory);
     }
 
-    // Returns the client certificates defined in
+    // Returns the client certificates of the clients defined for an application cluster
     private List<X509Certificate> getClientCertificates(ApplicationContainerCluster cluster) {
         return cluster.getClients()
                 .stream()
                 .map(Client::certificates)
                 .flatMap(Collection::stream)
                 .toList();
-    }
-
-    /*
-    Return trusted certificates as a PEM encoded string containing the concatenation of
-    trusted certs from the application package and all operator certificates.
-     */
-    String getTlsClientAuthorities(List<X509Certificate> applicationCertificates, DeployState deployState) {
-        ArrayList<X509Certificate> x509Certificates = new ArrayList<>(applicationCertificates);
-        x509Certificates.addAll(deployState.getProperties().operatorCertificates());
-        return X509CertificateUtils.toPem(x509Certificates);
     }
 
     private static boolean isHostedTenantApplication(ConfigModelContext context) {

@@ -39,10 +39,12 @@ public class CertificateRemovalChangeValidator implements ChangeValidator {
 
     void validateClients(String clusterId, List<Client> current, List<Client> next, ValidationOverrides overrides, Instant now) {
         List<X509Certificate> currentCertificates = current.stream()
+                .filter(client -> !client.internal())
                 .map(Client::certificates)
                 .flatMap(Collection::stream)
                 .toList();
         List<X509Certificate> nextCertificates = next.stream()
+                .filter(client -> !client.internal())
                 .map(Client::certificates)
                 .flatMap(Collection::stream)
                 .toList();
