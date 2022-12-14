@@ -113,6 +113,7 @@ public class ProvisioningTester {
                                                  nameResolver,
                                                  containerImage,
                                                  Optional.empty(),
+                                                 Optional.empty(),
                                                  flagSource,
                                                  new MemoryMetricsDb(clock),
                                                  orchestrator,

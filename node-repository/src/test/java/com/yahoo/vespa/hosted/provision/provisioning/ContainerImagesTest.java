@@ -5,14 +5,11 @@ import com.yahoo.component.Version;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ClusterMembership;
 import com.yahoo.config.provision.DockerImage;
-import com.yahoo.config.provision.Flavor;
 import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.node.Allocation;
 import com.yahoo.vespa.hosted.provision.node.Generation;
-import com.yahoo.vespa.hosted.provision.node.IP;
-import com.yahoo.vespa.hosted.provision.testutils.MockNodeFlavors;
 import org.junit.Test;
 
 import java.util.Optional;
@@ -29,7 +26,8 @@ public class ContainerImagesTest {
     public void image_selection() {
         DockerImage defaultImage = DockerImage.fromString("registry.example.com/vespa/default");
         DockerImage tenantImage = DockerImage.fromString("registry.example.com/vespa/tenant");
-        ContainerImages images = new ContainerImages(defaultImage, Optional.of(tenantImage));
+        DockerImage gpuImage = DockerImage.fromString("registry.example.com/vespa/tenant-gpu");
+        ContainerImages images = new ContainerImages(defaultImage, Optional.of(tenantImage), Optional.of(gpuImage));
 
         assertEquals(defaultImage, images.get(node(NodeType.confighost)));  // For preload purposes
         assertEquals(defaultImage, images.get(node(NodeType.config)));
@@ -45,27 +43,35 @@ public class ContainerImagesTest {
         assertEquals(requested, images.get(node(NodeType.tenant, requested)));
 
         // When there is no custom tenant image, the default one is used
-        images = new ContainerImages(defaultImage, Optional.empty());
+        images = new ContainerImages(defaultImage, Optional.empty(), Optional.of(gpuImage));
         assertEquals(defaultImage, images.get(node(NodeType.host)));
         assertEquals(defaultImage, images.get(node(NodeType.tenant)));
+
+        // Choose GPU when node has GPU resources
+        assertEquals(gpuImage, images.get(node(NodeType.tenant, null, true)));
     }
 
     private static Node node(NodeType type) {
-        return node(type, null);
+        return node(type, null, false);
     }
 
     private static Node node(NodeType type, DockerImage requested) {
-        Flavor flavor = new MockNodeFlavors().getFlavorOrThrow("default");
-        Node.Builder b = Node.create(type + "1", new IP.Config(Set.of(), Set.of()), type + "1.example.com", flavor, type);
-        if (requested != null) {
-            b.allocation(new Allocation(ApplicationId.defaultId(),
-                                        ClusterMembership.from("container/id1/4/37",
-                                                               Version.fromString("1.2.3"),
-                                                               Optional.of(requested)),
-                                        NodeResources.unspecified(),
-                                        Generation.initial(),
-                                        false));
+        return node(type, requested, false);
+    }
+
+    private static Node node(NodeType type, DockerImage requested, boolean gpu) {
+        NodeResources resources = new NodeResources(4, 8, 100, 0.3);
+        if (gpu) {
+            resources = resources.with(new NodeResources.GpuResources(1, 16));
         }
+        Node.Builder b = Node.reserve(Set.of("::1"), type + "1", "parent1", resources, type);
+        b.allocation(new Allocation(ApplicationId.defaultId(),
+                                    ClusterMembership.from("container/id1/4/37",
+                                                           Version.fromString("1.2.3"),
+                                                           Optional.ofNullable(requested)),
+                                    resources,
+                                    Generation.initial(),
+                                    false));
         return b.build();
     }
 
