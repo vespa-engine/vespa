@@ -34,18 +34,11 @@ public abstract class YumCommand<T extends YumCommand<T>> {
             PACKAGE_NAME_BUILDERS_GENERATOR = builder -> List.of(
             builder::setName, builder::setEpoch, builder::setVersion, builder::setRelease, builder::setArchitecture);
 
-    private List<String> disabledRepos = List.of();
     private List<String> enabledRepos = List.of();
     private final Terminal terminal;
 
     protected YumCommand(Terminal terminal) {
         this.terminal = terminal;
-    }
-
-    /** Disables the given repos for this command */
-    public T disableRepo(String... repo) {
-        disabledRepos = List.of(repo);
-        return getThis();
     }
 
     /** Enables the given repos for this command */
@@ -58,11 +51,6 @@ public abstract class YumCommand<T extends YumCommand<T>> {
 
     protected void addParametersToCommandLine(CommandLine commandLine) {
         commandLine.add("--assumeyes");
-        if (!enabledRepos.isEmpty() && disabledRepos.isEmpty()) {
-            commandLine.add("--disablerepo=*");
-        } else {
-            disabledRepos.forEach(repo -> commandLine.add("--disablerepo=" + repo));
-        }
         enabledRepos.forEach(repo -> commandLine.add("--enablerepo=" + repo));
     }
 
