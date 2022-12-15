@@ -15,12 +15,15 @@ import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.HostName;
 import com.yahoo.config.provision.RegionName;
+import com.yahoo.config.provision.Tags;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.config.provision.zone.RoutingMethod;
 import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.path.Path;
 import com.yahoo.vespa.flags.PermanentFlags;
+import com.yahoo.vespa.hosted.controller.api.application.v4.model.DeploymentData;
 import com.yahoo.vespa.hosted.controller.api.identifiers.DeploymentId;
+import com.yahoo.vespa.hosted.controller.api.integration.billing.Quota;
 import com.yahoo.vespa.hosted.controller.api.integration.certificates.EndpointCertificateMetadata;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.ContainerEndpoint;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.ApplicationVersion;
@@ -38,7 +41,6 @@ import com.yahoo.vespa.hosted.controller.application.pkg.ApplicationPackage;
 import com.yahoo.vespa.hosted.controller.deployment.ApplicationPackageBuilder;
 import com.yahoo.vespa.hosted.controller.deployment.DeploymentContext;
 import com.yahoo.vespa.hosted.controller.deployment.DeploymentTester;
-import com.yahoo.vespa.hosted.controller.deployment.RunStatus;
 import com.yahoo.vespa.hosted.controller.deployment.Submission;
 import com.yahoo.vespa.hosted.controller.integration.ZoneApiMock;
 import com.yahoo.vespa.hosted.controller.notification.Notification;
@@ -54,6 +56,7 @@ import com.yahoo.vespa.hosted.controller.versions.VespaVersion.Confidence;
 import com.yahoo.vespa.hosted.rotation.config.RotationsConfig;
 import org.junit.jupiter.api.Test;
 
+import java.io.InputStream;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Collection;
@@ -1397,6 +1400,19 @@ public class ControllerTest {
         } catch (IllegalArgumentException e) {
             assertTrue(e.getMessage().contains("Element 'prod' contains attribute 'global-service-id' deprecated since major version 7"));
         }
+    }
+
+    @Test
+    void testDeactivateDeploymentUnknownByController() {
+        DeploymentContext context = tester.newDeploymentContext();
+        DeploymentId deployment = context.deploymentIdIn(ZoneId.from("prod", "us-west-1"));
+        DeploymentData deploymentData = new DeploymentData(deployment.applicationId(), Tags.empty(), deployment.zoneId(), InputStream::nullInputStream, Version.fromString("6.1"),
+                                                           Set.of(), Optional::empty, Optional.empty(), Optional.empty(),
+                                                           Quota::unlimited, List.of(), List.of(), Optional::empty, false);
+        tester.configServer().deploy(deploymentData);
+        assertTrue(tester.configServer().application(deployment.applicationId(), deployment.zoneId()).isPresent());
+        tester.controller().applications().deactivate(deployment.applicationId(), deployment.zoneId());
+        assertFalse(tester.configServer().application(deployment.applicationId(), deployment.zoneId()).isPresent());
     }
 
 }
