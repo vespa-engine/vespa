@@ -4,12 +4,12 @@
 #include "bucketlistmerger.h"
 #include "distributor_stripe_component.h"
 #include "distributormessagesender.h"
-#include "messageguard.h"
 #include "operation_routing_snapshot.h"
 #include "outdated_nodes_map.h"
 #include "pendingclusterstate.h"
 #include "potential_data_loss_report.h"
 #include <vespa/document/bucket/bucket.h>
+#include <vespa/storage/common/message_guard.h>
 #include <vespa/storage/common/storagelink.h>
 #include <vespa/storageapi/message/bucket.h>
 #include <vespa/storageapi/messageapi/messagehandler.h>
