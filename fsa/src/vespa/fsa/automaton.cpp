@@ -341,6 +341,10 @@ void Automaton::PackedAutomaton::finalize()
         _packed_idx[i] = _pack_map[_packed_ptr[i]];
       }
     }
+    if (_blob_used == 0) {
+        _packable = false;
+        return;
+    }
 
     // compact blobs if the size is constant
     std::map<uint32_t,uint32_t> bcomp;
