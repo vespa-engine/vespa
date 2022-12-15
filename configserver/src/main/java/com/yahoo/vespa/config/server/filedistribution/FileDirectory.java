@@ -9,6 +9,7 @@ import com.yahoo.concurrent.Locks;
 import com.yahoo.config.FileReference;
 import com.yahoo.io.IOUtils;
 import com.yahoo.text.Utf8;
+import com.yahoo.vespa.config.server.ApplicationRepository;
 import com.yahoo.vespa.defaults.Defaults;
 import com.yahoo.vespa.flags.BooleanFlag;
 import com.yahoo.vespa.flags.FlagSource;
@@ -27,7 +28,6 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.util.concurrent.TimeUnit;
-import java.util.function.Function;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -127,13 +127,13 @@ public class FileDirectory extends AbstractComponent {
             return addFile(source, fileReference, hash);
     }
 
-    public void delete(FileReference fileReference, Function<FileReference, Boolean> canBeDeleted) {
+    public void delete(FileReference fileReference, ApplicationRepository applicationRepository) {
         if (useLock.value())
             try (Lock lock = locks.lock(fileReference)) {
-                if (canBeDeleted.apply(fileReference))
-                    deleteDirRecursively(destinationDir(fileReference));
-                else
+                if (applicationRepository.isFileReferenceInUse(fileReference))
                     log.log(Level.FINE, "Unable to delete file reference '" + fileReference.value() + "' since it is still in use");
+                else
+                    deleteDirRecursively(destinationDir(fileReference));
             }
         else
             deleteDirRecursively(destinationDir(fileReference));

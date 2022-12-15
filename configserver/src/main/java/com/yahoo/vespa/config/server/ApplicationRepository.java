@@ -4,9 +4,9 @@ package com.yahoo.vespa.config.server;
 import ai.vespa.http.DomainName;
 import ai.vespa.http.HttpURL;
 import ai.vespa.http.HttpURL.Query;
-import com.yahoo.component.annotation.Inject;
 import com.yahoo.cloud.config.ConfigserverConfig;
 import com.yahoo.component.Version;
+import com.yahoo.component.annotation.Inject;
 import com.yahoo.config.FileReference;
 import com.yahoo.config.application.api.ApplicationFile;
 import com.yahoo.config.application.api.ApplicationMetaData;
@@ -604,12 +604,12 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
         List<String> fileReferencesToDelete = sortedUnusedFileReferences(fileDirectory.getRoot(), fileReferencesInUse, instant);
         if (fileReferencesToDelete.size() > 0) {
             log.log(Level.FINE, () -> "Will delete file references not in use: " + fileReferencesToDelete);
-            fileReferencesToDelete.forEach(fileReference -> fileDirectory.delete(new FileReference(fileReference), this::isFileReferenceInUse));
+            fileReferencesToDelete.forEach(fileReference -> fileDirectory.delete(new FileReference(fileReference), this));
         }
         return fileReferencesToDelete;
     }
 
-    private boolean isFileReferenceInUse(FileReference fileReference) {
+    public boolean isFileReferenceInUse(FileReference fileReference) {
         return getFileReferencesInUse().contains(fileReference.value());
     }
 
