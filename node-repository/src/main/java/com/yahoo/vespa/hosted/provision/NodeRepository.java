@@ -7,7 +7,6 @@ import com.yahoo.concurrent.maintenance.JobControl;
 import com.yahoo.config.provision.ApplicationTransaction;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.DockerImage;
-import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.NodeFlavors;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.config.provisioning.NodeRepositoryConfig;
@@ -88,7 +87,8 @@ public class NodeRepository extends AbstractComponent {
              zone,
              new DnsNameResolver(),
              DockerImage.fromString(config.containerImage()),
-             Optional.of(config.tenantContainerImage()).filter(s -> !s.isEmpty()).map(DockerImage::fromString),
+             optionalImage(config.tenantContainerImage()),
+             optionalImage(config.tenantGpuContainerImage()),
              flagSource,
              metricsDb,
              orchestrator,
@@ -109,6 +109,7 @@ public class NodeRepository extends AbstractComponent {
                           NameResolver nameResolver,
                           DockerImage containerImage,
                           Optional<DockerImage> tenantContainerImage,
+                          Optional<DockerImage> tenantGpuContainerImage,
                           FlagSource flagSource,
                           MetricsDb metricsDb,
                           Orchestrator orchestrator,
@@ -132,7 +133,7 @@ public class NodeRepository extends AbstractComponent {
         this.osVersions = new OsVersions(this);
         this.infrastructureVersions = new InfrastructureVersions(db);
         this.firmwareChecks = new FirmwareChecks(db, clock);
-        this.containerImages = new ContainerImages(containerImage, tenantContainerImage);
+        this.containerImages = new ContainerImages(containerImage, tenantContainerImage, tenantGpuContainerImage);
         this.archiveUris = new ArchiveUris(db);
         this.jobControl = new JobControl(new JobControlFlags(db, flagSource));
         this.loadBalancers = new LoadBalancers(db);
@@ -229,6 +230,10 @@ public class NodeRepository extends AbstractComponent {
                    Optional.of("Application is removed"),
                    transaction.nested());
         applications.remove(transaction);
+    }
+
+    private static Optional<DockerImage> optionalImage(String image) {
+        return Optional.of(image).filter(s -> !s.isEmpty()).map(DockerImage::fromString);
     }
 
 }
