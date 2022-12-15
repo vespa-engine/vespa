@@ -50,7 +50,7 @@ public:
     }
 
     void onClose(DistributorStripeMessageSender&) override {}
-    const char* getName() const override { return "MockOperation"; }
+    const char* getName() const noexcept override { return "MockOperation"; }
     const std::string& getDetailedReason() const override {
         return _reason;
     }

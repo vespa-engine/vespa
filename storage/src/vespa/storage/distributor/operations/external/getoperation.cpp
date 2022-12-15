@@ -18,7 +18,7 @@ using document::BucketSpace;
 
 namespace storage::distributor {
 
-GetOperation::GroupId::GroupId(const document::BucketId& id, uint32_t checksum, int node)
+GetOperation::GroupId::GroupId(const document::BucketId& id, uint32_t checksum, int node) noexcept
     : _id(id),
       _checksum(checksum),
       _node(node)
@@ -26,7 +26,7 @@ GetOperation::GroupId::GroupId(const document::BucketId& id, uint32_t checksum, 
 }
 
 bool
-GetOperation::GroupId::operator<(const GroupId& other) const
+GetOperation::GroupId::operator<(const GroupId& other) const noexcept
 {
     if (_id.getRawId() != other._id.getRawId()) {
         return (_id.getRawId() < other._id.getRawId());
@@ -41,7 +41,7 @@ GetOperation::GroupId::operator<(const GroupId& other) const
 }
 
 bool
-GetOperation::GroupId::operator==(const GroupId& other) const
+GetOperation::GroupId::operator==(const GroupId& other) const noexcept
 {
     return (_id == other._id
             && _checksum == other._checksum
@@ -279,7 +279,7 @@ GetOperation::assignTargetNodeGroups(const BucketDatabase::ReadGuard& read_guard
 }
 
 bool
-GetOperation::all_bucket_metadata_initially_consistent() const
+GetOperation::all_bucket_metadata_initially_consistent() const noexcept
 {
     // TODO rename, calling this "responses" is confusing as it's populated before sending anything.
     return _responses.size() == 1;

@@ -82,11 +82,10 @@ BucketInstanceList::populate(const document::BucketId& specificId, const Distrib
 void
 BucketInstanceList::removeNodeDuplicates()
 {
-        // Normally few entries in list. Probably heaper to just go through entries
-        // to detect whether it pre exist rather than creating a set or similar.
+    // Normally few entries in list. Probably cheaper to just go through entries
+    // to detect whether it preexists rather than creating a set or similar.
     BucketInstanceList other;
-    for (uint32_t i=0; i<_instances.size(); ++i) {
-        BucketInstance& instance(_instances[i]);
+    for (const auto& instance : _instances) {
         if (!other.contains(instance._node)) {
             other.add(instance);
         }
@@ -97,7 +96,9 @@ BucketInstanceList::removeNodeDuplicates()
 void
 BucketInstanceList::limitToRedundancyCopies(uint16_t redundancy)
 {
-    while (_instances.size() > redundancy) _instances.pop_back();
+    while (_instances.size() > redundancy) {
+        _instances.pop_back();
+    }
 }
 
 document::BucketId
@@ -143,8 +144,7 @@ OperationTargetList
 BucketInstanceList::createTargets(document::BucketSpace bucketSpace)
 {
     OperationTargetList result;
-    for (uint32_t i=0; i<_instances.size(); ++i) {
-        BucketInstance& bi(_instances[i]);
+    for (const auto& bi : _instances) {
         result.push_back(OperationTarget(document::Bucket(bucketSpace, bi._bucket), bi._node, !bi._exist));
     }
     return result;

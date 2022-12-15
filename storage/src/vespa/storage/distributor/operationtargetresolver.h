@@ -56,7 +56,7 @@ public:
 
 class OperationTargetResolver {
 public:
-    virtual ~OperationTargetResolver() {}
+    virtual ~OperationTargetResolver() = default;
 
     // Sadly all operations but put currently implement this by themselves.
     enum OperationType {

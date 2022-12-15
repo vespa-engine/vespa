@@ -58,15 +58,15 @@ class GetBucketListReply : public BucketReply {
 public:
     struct BucketInfo {
         document::BucketId _bucket;
-        vespalib::string _bucketInformation;
+        vespalib::string   _bucketInformation;
 
         BucketInfo(const document::BucketId& id,
-                   vespalib::stringref bucketInformation)
+                   vespalib::stringref bucketInformation) noexcept
             : _bucket(id),
               _bucketInformation(bucketInformation)
         {}
 
-        bool operator==(const BucketInfo& other) const {
+        bool operator==(const BucketInfo& other) const noexcept {
             return (_bucket == other._bucket
                     && _bucketInformation == other._bucketInformation);
         }

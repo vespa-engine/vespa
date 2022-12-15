@@ -43,7 +43,7 @@ public:
 
     void updateDB();
     void updateMetrics();
-    bool success() const { return _success; }
+    [[nodiscard]] bool success() const noexcept { return _success; }
     void fail(MessageSender& sender, const api::ReturnCode& result) override;
 
     /**
@@ -67,19 +67,19 @@ public:
 
 private:
     using MessageBatch = std::vector<uint64_t>;
-    std::vector<MessageBatch> _messageBatches;
 
-    PersistenceOperationMetricSet& _metric;
+    std::vector<MessageBatch>             _messageBatches;
+    PersistenceOperationMetricSet&        _metric;
     std::shared_ptr<api::BucketInfoReply> _reply;
-    DistributorStripeOperationContext& _op_ctx;
-    api::Timestamp _revertTimestamp;
-    std::vector<BucketNodePair> _revertNodes;
-    mbus::Trace _trace;
-    framework::MilliSecTimer _requestTimer;
-    uint32_t _n_persistence_replies_total;
-    uint32_t _n_successful_persistence_replies;
-    uint8_t _priority;
-    bool _success;
+    DistributorStripeOperationContext&    _op_ctx;
+    api::Timestamp                        _revertTimestamp;
+    std::vector<BucketNodePair>           _revertNodes;
+    mbus::Trace                           _trace;
+    framework::MilliSecTimer              _requestTimer;
+    uint32_t                              _n_persistence_replies_total;
+    uint32_t                              _n_successful_persistence_replies;
+    uint8_t                               _priority;
+    bool                                  _success;
 
     bool canSendReplyEarly() const;
     void addBucketInfoFromReply(uint16_t node, const api::BucketInfoReply& reply);

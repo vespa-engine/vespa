@@ -50,15 +50,15 @@ private:
         PriFifoBucketMap::const_iterator _pri_fifo_end;
     public:
         PriFifoMappingConstIteratorImpl(PriFifoBucketMap::const_iterator pri_fifo_iter,
-                                        PriFifoBucketMap::const_iterator pri_fifo_end)
+                                        PriFifoBucketMap::const_iterator pri_fifo_end) noexcept
             : _pri_fifo_iter(pri_fifo_iter),
               _pri_fifo_end(pri_fifo_end)
         {}
         ~PriFifoMappingConstIteratorImpl() override = default;
 
-        void increment() override;
-        bool equal(const ConstIteratorImpl& other) const override;
-        PrioritizedBucket dereference() const override;
+        void increment() noexcept override;
+        bool equal(const ConstIteratorImpl& other) const noexcept override;
+        PrioritizedBucket dereference() const noexcept override;
     };
 
     void clearAllEntriesForBucket(const document::Bucket &bucket);

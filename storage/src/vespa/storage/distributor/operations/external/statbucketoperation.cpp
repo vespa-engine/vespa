@@ -42,27 +42,19 @@ StatBucketOperation::onStart(DistributorStripeMessageSender& sender)
 
     // If no entries exist, give empty reply
     if (nodes.size() == 0) {
-        api::StatBucketReply::SP reply(new api::StatBucketReply(*_command, "Bucket was not stored on any nodes."));
+        auto reply = std::make_shared<api::StatBucketReply>(*_command, "Bucket was not stored on any nodes.");
         reply->setResult(api::ReturnCode(api::ReturnCode::OK));
         sender.sendReply(reply);
     } else {
-        std::vector<std::shared_ptr<api::StorageCommand> > messages;
-        for (uint32_t i = 0; i < nodes.size(); i++) {
-            std::shared_ptr<api::StatBucketCommand> cmd(
-                    new api::StatBucketCommand(
-                            _command->getBucket(),
-                            _command->getDocumentSelection()));
-
-            messages.push_back(cmd);
-            _sent[cmd->getMsgId()] = nodes[i];
+        std::vector<std::shared_ptr<api::StorageCommand>> messages;
+        for (uint16_t node : nodes) {
+            auto cmd = std::make_shared<api::StatBucketCommand>(_command->getBucket(), _command->getDocumentSelection());
+            _sent[cmd->getMsgId()] = node;
+            messages.emplace_back(std::move(cmd));
         }
 
         for (uint32_t i = 0; i < nodes.size(); i++) {
-            sender.sendToNode(
-                       lib::NodeType::STORAGE,
-                       nodes[i],
-                       messages[i],
-                       true);
+            sender.sendToNode(lib::NodeType::STORAGE, nodes[i], messages[i], true);
         }
     }
 };
@@ -71,9 +63,8 @@ void
 StatBucketOperation::onReceive(DistributorStripeMessageSender& sender, const std::shared_ptr<api::StorageReply> & msg)
 {
     assert(msg->getType() == api::MessageType::STATBUCKET_REPLY);
-    api::StatBucketReply& myreply(dynamic_cast<api::StatBucketReply&>(*msg));
-
-    std::map<uint64_t, uint16_t>::iterator found = _sent.find(msg->getMsgId());
+    auto& myreply = dynamic_cast<api::StatBucketReply&>(*msg);
+    auto found = _sent.find(msg->getMsgId());
 
     if (found != _sent.end()) {
         std::ostringstream ost;
@@ -83,19 +74,15 @@ StatBucketOperation::onReceive(DistributorStripeMessageSender& sender, const std
             ost << "\tBucket information retrieval failed on node " << found->second << ": " << myreply.getResult() << "\n\n";
         }
         _results[found->second] = ost.str();
-
         _sent.erase(found);
     }
 
     if (_sent.empty()) {
         std::ostringstream ost;
-        for (std::map<uint16_t, std::string>::iterator iter = _results.begin();
-             iter != _results.end();
-             iter++) {
-            ost << iter->second;
+        for (const auto& result : _results) {
+            ost << result.second;
         }
-
-        api::StatBucketReply::SP reply(new api::StatBucketReply(*_command, ost.str()));
+        auto reply = std::make_shared<api::StatBucketReply>(*_command, ost.str());
         sender.sendReply(reply);
     }
 }

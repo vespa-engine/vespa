@@ -8,25 +8,20 @@
 #include <set>
 #include <optional>
 
-namespace document {
-class Document;
-}
+namespace document { class Document; }
 
-namespace storage {
-
-namespace api {
+namespace storage::api {
 class UpdateCommand;
 class UpdateReply;
 class CreateBucketReply;
 class ReturnCode;
 }
 
-class UpdateMetricSet;
-
-namespace distributor {
+namespace storage::distributor {
 
 class DistributorBucketSpace;
 class GetOperation;
+class UpdateMetricSet;
 
 /*
  * General functional outline:
@@ -59,7 +54,7 @@ public:
     TwoPhaseUpdateOperation(const DistributorNodeContext& node_ctx,
                             DistributorStripeOperationContext& op_ctx,
                             const DocumentSelectionParser& parser,
-                            DistributorBucketSpace &bucketSpace,
+                            DistributorBucketSpace& bucketSpace,
                             std::shared_ptr<api::UpdateCommand> msg,
                             DistributorMetricSet& metrics,
                             SequencingHandle sequencingHandle = SequencingHandle());
@@ -67,7 +62,7 @@ public:
 
     void onStart(DistributorStripeMessageSender& sender) override;
 
-    const char* getName() const override { return "twophaseupdate"; }
+    const char* getName() const noexcept override { return "twophaseupdate"; }
 
     std::string getStatus() const override { return ""; }
 
@@ -92,7 +87,7 @@ private:
     };
 
     void transitionTo(SendState newState);
-    static const char* stateToString(SendState);
+    static const char* stateToString(SendState) noexcept;
 
     void sendReply(DistributorStripeMessageSender&,
                    std::shared_ptr<api::UpdateReply>);
@@ -163,7 +158,3 @@ private:
 };
 
 }
-
-}
-
-

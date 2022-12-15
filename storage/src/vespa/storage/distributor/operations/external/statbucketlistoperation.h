@@ -5,11 +5,9 @@
 #include <vespa/storage/distributor/operations/operation.h>
 #include <vespa/storage/bucketdb/bucketdatabase.h>
 
-namespace storage {
+namespace storage::api { class GetBucketListCommand; }
 
-namespace api { class GetBucketListCommand; }
-
-namespace distributor {
+namespace storage::distributor {
 
 class MaintenanceOperationGenerator;
 
@@ -21,9 +19,9 @@ public:
             const MaintenanceOperationGenerator& generator,
             uint16_t distributorIndex,
             const std::shared_ptr<api::GetBucketListCommand>& cmd);
-    ~StatBucketListOperation() {}
+    ~StatBucketListOperation() override;
 
-    const char* getName() const override { return "statBucketList"; }
+    const char* getName() const noexcept override { return "statBucketList"; }
     std::string getStatus() const override { return ""; }
 
     void onStart(DistributorStripeMessageSender& sender) override;
@@ -43,5 +41,4 @@ private:
     std::shared_ptr<api::GetBucketListCommand> _command;
 };
 
-} // distributor
-} // storage
+} // storage::distributor

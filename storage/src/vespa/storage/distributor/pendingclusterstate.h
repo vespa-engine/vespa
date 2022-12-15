@@ -49,7 +49,7 @@ public:
             DistributorMessageSender& sender,
             const BucketSpaceStateMap& bucket_space_states,
             const std::shared_ptr<api::SetSystemStateCommand>& newStateCmd,
-            const OutdatedNodesMap &outdatedNodesMap,
+            const OutdatedNodesMap& outdatedNodesMap,
             api::Timestamp creationTimestamp)
     {
         // Naked new due to private constructor
@@ -99,7 +99,7 @@ public:
      * Returns true if all the nodes we requested have replied to
      * the request bucket info commands.
      */
-    bool done() {
+    [[nodiscard]] bool done() const noexcept {
         return _sentMessages.empty() && _delayedRequests.empty();
     }
 
@@ -111,7 +111,7 @@ public:
         return (_cmd.get() != nullptr);
     }
 
-    std::shared_ptr<api::SetSystemStateCommand> getCommand() {
+    std::shared_ptr<api::SetSystemStateCommand> getCommand() const noexcept {
         return _cmd;
     }
 
@@ -128,7 +128,7 @@ public:
                 && _newClusterStateBundle.deferredActivation());
     }
 
-    void clearCommand() {
+    void clearCommand() noexcept {
         _cmd.reset();
     }
 
@@ -151,7 +151,7 @@ public:
     void merge_into_bucket_databases(StripeAccessGuard& guard);
 
     // Get pending transition for a specific bucket space. Only used by unit test.
-    PendingBucketSpaceDbTransition &getPendingBucketSpaceDbTransition(document::BucketSpace bucketSpace);
+    PendingBucketSpaceDbTransition& getPendingBucketSpaceDbTransition(document::BucketSpace bucketSpace);
 
     // May be a subset of the nodes in the cluster, depending on how many nodes were consulted
     // as part of the pending cluster state. Caller must take care to aggregate features.
@@ -202,16 +202,12 @@ private:
         }
     };
 
-    void initializeBucketSpaceTransitions(bool distributionChanged, const OutdatedNodesMap &outdatedNodesMap);
+    void initializeBucketSpaceTransitions(bool distributionChanged, const OutdatedNodesMap& outdatedNodesMap);
     void logConstructionInformation() const;
     void requestNode(BucketSpaceAndNode bucketSpaceAndNode);
     void requestNodes();
     void requestBucketInfoFromStorageNodesWithChangedState();
 
-    /**
-     * Number of nodes with node type 'storage' in _newClusterState.
-     */
-    uint16_t newStateStorageNodeCount() const;
     bool shouldRequestBucketInfo() const;
     bool clusterIsDown() const;
     bool iAmDown() const;
@@ -222,26 +218,30 @@ private:
     void update_reply_failure_statistics(const api::ReturnCode& result, const BucketSpaceAndNode& source);
     void update_node_supported_features_from_reply(uint16_t node, const api::RequestBucketInfoReply& reply);
 
+    using SentMessages       = std::map<uint64_t, BucketSpaceAndNode>;
+    using DelayedRequests    = std::deque<std::pair<framework::MilliSecTime, BucketSpaceAndNode>>;
+    using PendingTransitions = std::unordered_map<document::BucketSpace, std::unique_ptr<PendingBucketSpaceDbTransition>, document::BucketSpace::hash>;
+    using NodeFeatures       = vespalib::hash_map<uint16_t, NodeSupportedFeatures>;
+
     std::shared_ptr<api::SetSystemStateCommand> _cmd;
 
-    std::map<uint64_t, BucketSpaceAndNode> _sentMessages;
-    std::vector<bool> _requestedNodes;
-    std::deque<std::pair<framework::MilliSecTime, BucketSpaceAndNode> > _delayedRequests;
+    SentMessages               _sentMessages;
+    std::vector<bool>          _requestedNodes;
+    DelayedRequests            _delayedRequests;
 
-    lib::ClusterStateBundle _prevClusterStateBundle;
-    lib::ClusterStateBundle _newClusterStateBundle;
+    lib::ClusterStateBundle    _prevClusterStateBundle;
+    lib::ClusterStateBundle    _newClusterStateBundle;
 
-    const framework::Clock& _clock;
-    ClusterInformation::CSP _clusterInfo;
-    api::Timestamp _creationTimestamp;
-
-    DistributorMessageSender& _sender;
+    const framework::Clock&    _clock;
+    ClusterInformation::CSP    _clusterInfo;
+    api::Timestamp             _creationTimestamp;
+    DistributorMessageSender&  _sender;
     const BucketSpaceStateMap& _bucket_space_states;
-    uint32_t _clusterStateVersion;
-    bool _isVersionedTransition;
-    bool _bucketOwnershipTransfer;
-    std::unordered_map<document::BucketSpace, std::unique_ptr<PendingBucketSpaceDbTransition>, document::BucketSpace::hash> _pendingTransitions;
-    vespalib::hash_map<uint16_t, NodeSupportedFeatures> _node_features;
+    uint32_t                   _clusterStateVersion;
+    bool                       _isVersionedTransition;
+    bool                       _bucketOwnershipTransfer;
+    PendingTransitions         _pendingTransitions;
+    NodeFeatures               _node_features;
 };
 
 }

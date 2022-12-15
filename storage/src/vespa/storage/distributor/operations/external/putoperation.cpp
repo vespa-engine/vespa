@@ -24,7 +24,7 @@ using document::BucketSpace;
 
 PutOperation::PutOperation(const DistributorNodeContext& node_ctx,
                            DistributorStripeOperationContext& op_ctx,
-                           DistributorBucketSpace &bucketSpace,
+                           DistributorBucketSpace& bucketSpace,
                            std::shared_ptr<api::PutCommand> msg,
                            PersistenceOperationMetricSet& metric, SequencingHandle sequencingHandle)
     : SequencedOperation(std::move(sequencingHandle)),
@@ -222,7 +222,7 @@ PutOperation::shouldImplicitlyActivateReplica(const OperationTargetList& targets
 }
 
 void
-PutOperation::onReceive(DistributorStripeMessageSender& sender, const std::shared_ptr<api::StorageReply> & msg)
+PutOperation::onReceive(DistributorStripeMessageSender& sender, const std::shared_ptr<api::StorageReply>& msg)
 {
     LOG(debug, "Received %s", msg->toString(true).c_str());
     _tracker.receiveReply(sender, static_cast<api::BucketInfoReply&>(*msg));

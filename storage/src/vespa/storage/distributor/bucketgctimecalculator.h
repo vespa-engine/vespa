@@ -22,14 +22,14 @@ class BucketGcTimeCalculator
 {
 public:
     class BucketIdHasher {
-        virtual size_t doHash(const document::BucketId&) const = 0;
+        virtual size_t doHash(const document::BucketId&) const noexcept = 0;
     public:
-        virtual ~BucketIdHasher() {}
-        size_t hash(const document::BucketId& b) const { return doHash(b); }
+        virtual ~BucketIdHasher() = default;
+        size_t hash(const document::BucketId& b) const noexcept { return doHash(b); }
     };
 
     class BucketIdIdentityHasher : public BucketIdHasher {
-        size_t doHash(const document::BucketId& b) const override {
+        size_t doHash(const document::BucketId& b) const noexcept override {
             return b.getId();
         }
     };

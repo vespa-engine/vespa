@@ -15,7 +15,9 @@ namespace std {
         for (uint32_t i=0; i<v.size(); ++i) {
             out << "\n  " << v[i];
         }
-        if (!v.empty()) out << "\n";
+        if (!v.empty()) {
+            out << "\n";
+        }
         return out << "]";
     }
 }
@@ -113,7 +115,9 @@ namespace {
         result.reserve(e->getNodeCount());
         for (uint32_t i=0, n=e->getNodeCount(); i < n; ++i) {
             const BucketCopy& cp = e->getNodeRef(i);
-            if (!cp.valid()) continue;
+            if (!cp.valid()) {
+                continue;
+            }
             result.push_back(cp.getNode());
         }
         return result;
@@ -185,9 +189,13 @@ ActiveList::print(std::ostream& out, bool verbose,
             out << "\n" << indent << "  "
                 << _v[i]._nodeIndex << " " << _v[i].getReason();
         }
-        if (!_v.empty()) out << "\n" << indent;
+        if (!_v.empty()) {
+            out << "\n" << indent;
+        }
     } else {
-        if (!_v.empty()) out << _v[0]._nodeIndex;
+        if (!_v.empty()) {
+            out << _v[0]._nodeIndex;
+        }
         for (size_t i=1; i<_v.size(); ++i) {
             out << " " << _v[i]._nodeIndex;
         }
@@ -196,10 +204,12 @@ ActiveList::print(std::ostream& out, bool verbose,
 }
 
 bool
-ActiveList::contains(uint16_t node) const
+ActiveList::contains(uint16_t node) const noexcept
 {
-    for (const auto & candadate : _v) {
-        if (node == candadate._nodeIndex) return true;
+    for (const auto& candidate : _v) {
+        if (node == candidate._nodeIndex) {
+            return true;
+        }
     }
     return false;
 }

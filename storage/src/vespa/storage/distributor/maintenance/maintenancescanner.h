@@ -17,9 +17,9 @@ public:
         BucketDatabase::Entry _entry;
 
     public:
-        bool isDone() const { return _done; }
-        document::BucketSpace getBucketSpace() const { return _bucketSpace; }
-        const BucketDatabase::Entry& getEntry() const { return _entry; }
+        [[nodiscard]] bool isDone() const noexcept { return _done; }
+        document::BucketSpace getBucketSpace() const noexcept { return _bucketSpace; }
+        const BucketDatabase::Entry& getEntry() const noexcept { return _entry; }
 
         static ScanResult createDone() { return ScanResult(true); }
         static ScanResult createNotDone(document::BucketSpace bucketSpace, BucketDatabase::Entry entry) {
@@ -27,7 +27,7 @@ public:
         }
 
     private:
-        ScanResult(bool done) : _done(done), _bucketSpace(document::BucketSpace::invalid()), _entry() {}
+        explicit ScanResult(bool done) : _done(done), _bucketSpace(document::BucketSpace::invalid()), _entry() {}
         ScanResult(document::BucketSpace bucketSpace, const BucketDatabase::Entry& e) : _done(false), _bucketSpace(bucketSpace), _entry(e) {}
     };
 

@@ -14,7 +14,7 @@ namespace storage::distributor {
  */
 class DocumentSelectionParser {
 public:
-    virtual ~DocumentSelectionParser() {}
+    virtual ~DocumentSelectionParser() = default;
     virtual std::unique_ptr<document::select::Node> parse_selection(const vespalib::string& str) const = 0;
 };
 

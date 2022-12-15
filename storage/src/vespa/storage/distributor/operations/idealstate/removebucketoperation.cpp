@@ -9,7 +9,9 @@
 
 LOG_SETUP(".distributor.operation.idealstate.remove");
 
-using namespace storage::distributor;
+namespace storage::distributor {
+
+RemoveBucketOperation::~RemoveBucketOperation() = default;
 
 bool
 RemoveBucketOperation::onStartInternal(DistributorStripeMessageSender& sender)
@@ -123,3 +125,4 @@ RemoveBucketOperation::shouldBlockThisOperation(uint32_t, uint16_t target_node, 
     return false;
 }
 
+} // storage::distributor

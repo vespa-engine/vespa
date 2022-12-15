@@ -9,14 +9,14 @@ class SynchronizeAndMoveStateChecker : public StateChecker
 {
 public:
     Result check(Context& c) const override;
-    const char* getName() const override { return "SynchronizeAndMove"; }
+    const char* getName() const noexcept override { return "SynchronizeAndMove"; }
 };
 
 class DeleteExtraCopiesStateChecker : public StateChecker
 {
 public:
     Result check(Context& c) const override;
-    const char* getName() const override { return "DeleteExtraCopies"; }
+    const char* getName() const noexcept override { return "DeleteExtraCopies"; }
 
 private:
     static bool bucketHasNoData(const Context& c);
@@ -33,7 +33,7 @@ class JoinBucketsStateChecker : public StateChecker
 {
 public:
     Result check(Context& c) const override;
-    const char* getName() const override { return "JoinBuckets"; }
+    const char* getName() const noexcept override { return "JoinBuckets"; }
 private:
     static uint64_t getTotalUsedFileSize(const Context& c);
     static uint64_t getTotalMetaCount(const Context& c);
@@ -50,7 +50,7 @@ class SplitBucketStateChecker : public StateChecker
 {
 public:
     Result check(Context& c) const override;
-    const char* getName() const override { return "SplitBucket"; }
+    const char* getName() const noexcept override { return "SplitBucket"; }
 private:
     static Result generateMinimumBucketSplitOperation(Context& c);
     static Result generateMaxSizeExceededSplitOperation(Context& c);
@@ -63,14 +63,12 @@ class SplitInconsistentStateChecker : public StateChecker
 {
 public:
     Result check(Context& c) const override;
-    const char* getName() const override { return "SplitInconsistentBuckets"; }
+    const char* getName() const noexcept override { return "SplitInconsistentBuckets"; }
 
 private:
-    typedef std::pair<document::BucketId, uint16_t> BucketAndNode;
     static bool isLeastSplitBucket(const document::BucketId& bucket,const std::vector<BucketDatabase::Entry>& entries);
     static uint32_t getHighestUsedBits(const std::vector<BucketDatabase::Entry>& entries);
     static vespalib::string getReason(const document::BucketId& bucketId, const std::vector<BucketDatabase::Entry>& entries);
-    static bool isLeastSplit(Context& c, std::vector<BucketAndNode>& others);
 };
 
 class ActiveList;
@@ -80,14 +78,14 @@ class BucketStateStateChecker : public StateChecker
     static bool shouldSkipActivationDueToMaintenance(const ActiveList& activeList, const Context& c);
 public:
     Result check(Context& c) const override;
-    const char* getName() const override { return "SetBucketState"; }
+    const char* getName() const noexcept override { return "SetBucketState"; }
 };
 
 class GarbageCollectionStateChecker : public StateChecker
 {
 public:
     Result check(Context& c) const override;
-    const char* getName() const override { return "GarbageCollection"; }
+    const char* getName() const noexcept override { return "GarbageCollection"; }
 private:
     static bool garbage_collection_disabled(const Context& c) noexcept;
     static bool needs_garbage_collection(const Context& c, std::chrono::seconds time_since_epoch);

@@ -59,7 +59,7 @@ class ServiceLayerComponent : public StorageComponent,
         _minUsedBitsTracker = &tracker;
     }
 public:
-    typedef std::unique_ptr<ServiceLayerComponent> UP;
+    using UP = std::unique_ptr<ServiceLayerComponent>;
 
     ServiceLayerComponent(ServiceLayerComponentRegister& compReg,
                           vespalib::stringref name)

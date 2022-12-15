@@ -6,9 +6,7 @@
 #include <vespa/metrics/countmetric.h>
 #include <vespa/storage/distributor/operations/idealstate/idealstateoperation.h>
 
-namespace storage {
-
-namespace distributor {
+namespace storage::distributor {
 
 class OperationMetricSet : public metrics::MetricSet
 {
@@ -50,7 +48,7 @@ public:
     metrics::LongValueMetric buckets_toomanycopies;
     metrics::LongValueMetric buckets;
     metrics::LongValueMetric buckets_notrusted;
-    metrics::LongValueMetric buckets_rechecking; // TODO remove, not used (but exposed by VespaMetricSet)
+    metrics::LongValueMetric buckets_rechecking; // TODO Vespa 9: remove, not used (but exposed by VespaMetricSet)
     metrics::LongValueMetric buckets_replicas_moving_out;
     metrics::LongValueMetric buckets_replicas_copying_in;
     metrics::LongValueMetric buckets_replicas_copying_out;
@@ -66,7 +64,4 @@ public:
     void setPendingOperations(const std::vector<uint64_t>& newMetrics);
 };
 
-}
-
-}
-
+} // storage::distributor

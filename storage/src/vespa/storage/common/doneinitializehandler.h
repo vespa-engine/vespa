@@ -13,7 +13,7 @@
 namespace storage {
 
 struct DoneInitializeHandler {
-    virtual ~DoneInitializeHandler() {}
+    virtual ~DoneInitializeHandler() = default;
     virtual void notifyDoneInitializing() = 0;
 };
 

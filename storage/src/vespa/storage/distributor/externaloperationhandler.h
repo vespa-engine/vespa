@@ -11,17 +11,17 @@
 
 namespace documentapi { class TestAndSetCondition; }
 namespace storage::lib { class ClusterState; }
-namespace storage { class PersistenceOperationMetricSet; }
 
 namespace storage::distributor {
 
 class DistributorMetricSet;
-class TopLevelDistributor;
-class MaintenanceOperationGenerator;
 class DirectDispatchSender;
-class SequencingHandle;
+class MaintenanceOperationGenerator;
 class OperationSequencer;
 class OperationOwner;
+class PersistenceOperationMetricSet;
+class SequencingHandle;
+class TopLevelDistributor;
 class UuidGenerator;
 
 class ExternalOperationHandler : public api::MessageHandler

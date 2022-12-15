@@ -23,7 +23,7 @@ class OperationSequencer;
 class Operation
 {
 public:
-    typedef std::shared_ptr<Operation> SP;
+    using SP = std::shared_ptr<Operation>;
 
     Operation();
 
@@ -45,7 +45,7 @@ public:
         onReceive(sender, msg);
     }
 
-    virtual const char* getName() const = 0;
+    virtual const char* getName() const noexcept = 0;
 
     virtual std::string getStatus() const;
 

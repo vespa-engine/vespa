@@ -77,7 +77,7 @@ public:
      */
     using TimePoint = std::chrono::milliseconds;
 
-    explicit PendingMessageTracker(framework::ComponentRegister&, uint32_t stripe_index);
+    PendingMessageTracker(framework::ComponentRegister&, uint32_t stripe_index);
     ~PendingMessageTracker() override;
 
     void insert(const std::shared_ptr<api::StorageMessage>&);
@@ -111,8 +111,8 @@ public:
      * The vector might be smaller than a given node index. In that case, that storage
      * node has never had any pending messages.
      */
-    const NodeInfo& getNodeInfo() const { return _nodeInfo; }
-    NodeInfo& getNodeInfo() { return _nodeInfo; }
+    const NodeInfo& getNodeInfo() const noexcept { return _nodeInfo; }
+    NodeInfo& getNodeInfo() noexcept { return _nodeInfo; }
 
     /**
      * Clears all pending messages for the given node, and returns

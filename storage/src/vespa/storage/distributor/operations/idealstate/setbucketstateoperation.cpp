@@ -10,7 +10,7 @@ LOG_SETUP(".distributor.operation.idealstate.setactive");
 
 namespace storage::distributor {
 
-SetBucketStateOperation::SetBucketStateOperation(const ClusterContext &cluster_ctx,
+SetBucketStateOperation::SetBucketStateOperation(const ClusterContext& cluster_ctx,
                                                  const BucketAndNodes& nodes,
                                                  const std::vector<uint16_t>& wantedActiveNodes)
     : IdealStateOperation(nodes),
@@ -37,7 +37,9 @@ bool
 SetBucketStateOperation::shouldBeActive(uint16_t node) const
 {
     for (uint32_t i=0, n=_wantedActiveNodes.size(); i<n; ++i) {
-        if (_wantedActiveNodes[i] == node) return true;
+        if (_wantedActiveNodes[i] == node) {
+            return true;
+        }
     }
     return false;
 }
@@ -73,8 +75,7 @@ void
 SetBucketStateOperation::onReceive(DistributorStripeMessageSender& sender,
                                    const std::shared_ptr<api::StorageReply>& reply)
 {
-    api::SetBucketStateReply& rep(
-            static_cast<api::SetBucketStateReply&>(*reply));
+    auto& rep = static_cast<api::SetBucketStateReply&>(*reply);
 
     const uint16_t node = _tracker.handleReply(rep);
     LOG(debug, "Got %s from node %u", reply->toString(true).c_str(), node);

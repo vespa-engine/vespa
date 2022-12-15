@@ -3,22 +3,17 @@
 
 #include <vespa/storage/distributor/persistencemessagetracker.h>
 
-namespace document {
-class Document;
-}
+namespace document { class Document; }
 
-namespace storage {
-
-namespace api {
+namespace storage::api {
 class UpdateCommand;
 class CreateBucketReply;
 }
 
-class UpdateMetricSet;
-
-namespace distributor {
+namespace storage::distributor {
 
 class DistributorBucketSpace;
+class UpdateMetricSet;
 
 class UpdateOperation : public Operation
 {
@@ -29,9 +24,10 @@ public:
                     const std::shared_ptr<api::UpdateCommand>& msg,
                     std::vector<BucketDatabase::Entry> entries,
                     UpdateMetricSet& metric);
+    ~UpdateOperation() override;
 
     void onStart(DistributorStripeMessageSender& sender) override;
-    const char* getName() const override { return "update"; };
+    const char* getName() const noexcept override { return "update"; };
     std::string getStatus() const override { return ""; };
     void onReceive(DistributorStripeMessageSender& sender, const std::shared_ptr<api::StorageReply> & msg) override;
     void onClose(DistributorStripeMessageSender& sender) override;
@@ -75,7 +71,5 @@ private:
                                    const PreviousDocumentVersion& highest_timestamped_version,
                                    const PreviousDocumentVersion& low_timestamped_version);
 };
-
-}
 
 }

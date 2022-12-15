@@ -14,7 +14,7 @@ class DistributorMetricSet;
  */
 class DistributorInterface : public DistributorMessageSender {
 public:
-    virtual ~DistributorInterface() {}
+    virtual ~DistributorInterface() = default;
     virtual DistributorMetricSet& metrics() = 0;
     virtual const DistributorConfiguration& config() const = 0;
 };

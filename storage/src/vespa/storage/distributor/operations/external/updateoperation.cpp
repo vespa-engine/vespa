@@ -41,6 +41,8 @@ UpdateOperation::UpdateOperation(const DistributorNodeContext& node_ctx,
 {
 }
 
+UpdateOperation::~UpdateOperation() = default;
+
 bool
 UpdateOperation::anyStorageNodesAvailable() const
 {

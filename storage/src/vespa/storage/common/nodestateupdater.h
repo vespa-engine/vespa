@@ -36,7 +36,7 @@ struct StateListener {
 };
 
 struct NodeStateUpdater {
-    typedef std::unique_ptr<NodeStateUpdater> UP;
+    using UP = std::unique_ptr<NodeStateUpdater>;
 
     virtual ~NodeStateUpdater() = default;
 
@@ -53,8 +53,8 @@ struct NodeStateUpdater {
      * before altering the state.
      */
     struct Lock {
-        typedef std::shared_ptr<Lock> SP;
-        virtual ~Lock() {}
+        using SP = std::shared_ptr<Lock>;
+        virtual ~Lock() = default;
     };
     virtual Lock::SP grabStateChangeLock() = 0;
 
