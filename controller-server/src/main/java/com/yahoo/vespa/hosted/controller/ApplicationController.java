@@ -428,14 +428,6 @@ public class ApplicationController {
                                            (wantedMajor.isPresent() ? " for specified major: " + wantedMajor.getAsInt() : ""));
     }
 
-    private OptionalInt firstNonEmpty(OptionalInt... choices) {
-        for (OptionalInt choice : choices)
-            if (choice.isPresent())
-                return choice;
-
-        return OptionalInt.empty();
-    }
-
     /**
      * Creates a new application for an existing tenant.
      *
@@ -729,10 +721,12 @@ public class ApplicationController {
         // Remove the instance as well, if it is no longer referenced, and contains only production deployments that are removed now.
         boolean removeInstance =    ! deploymentSpec.instanceNames().contains(instance)
                                  &&   application.get().require(instance).deployments().size() == deploymentsToRemove.size();
-        for (ZoneId zone : deploymentsToRemove)
-            application = deactivate(application, instance, zone);
-        if (removeInstance)
+        for (ZoneId zone : deploymentsToRemove) {
+            application = deactivate(application.get().id().instance(instance), zone, Optional.of(application)).get();
+        }
+        if (removeInstance) {
             application = application.without(instance);
+        }
         return application;
     }
 
@@ -871,10 +865,13 @@ public class ApplicationController {
         configServer.setSuspension(deploymentId, suspend);
     }
 
-    /** Deactivate application in the given zone */
-    public void deactivate(ApplicationId id, ZoneId zone) {
-        lockApplicationOrThrow(TenantAndApplicationId.from(id),
-                               application -> store(deactivate(application, id.instance(), zone)));
+    /** Deactivate application in the given zone. Even if the application itself does not exist, deactivation of the deployment will still be attempted */
+    public void deactivate(ApplicationId instanceId, ZoneId zone) {
+        TenantAndApplicationId applicationId = TenantAndApplicationId.from(instanceId);
+        try (Mutex lock = lock(applicationId)) {
+            Optional<LockedApplication> application = getApplication(applicationId).map(app -> new LockedApplication(app, lock));
+            deactivate(instanceId, zone, application).ifPresent(this::store);
+        }
     }
 
     /**
@@ -882,18 +879,18 @@ public class ApplicationController {
      *
      * @return the application with the deployment in the given zone removed
      */
-    private LockedApplication deactivate(LockedApplication application, InstanceName instanceName, ZoneId zone) {
-        DeploymentId id = new DeploymentId(application.get().id().instance(instanceName), zone);
+    private Optional<LockedApplication> deactivate(ApplicationId instanceId, ZoneId zone, Optional<LockedApplication> application) {
+        DeploymentId id = new DeploymentId(instanceId, zone);
         try {
             configServer.deactivate(id);
         } finally {
-            controller.routing().of(id).configure(application.get().deploymentSpec());
-            if (zone.environment().isManuallyDeployed())
+            application.ifPresent(app -> controller.routing().of(id).configure(app.get().deploymentSpec()));
+            if (id.zoneId().environment().isManuallyDeployed())
                 applicationStore.putMetaTombstone(id, clock.instant());
-            if (!zone.environment().isTest())
+            if (!id.zoneId().environment().isTest())
                 controller.notificationsDb().removeNotifications(NotificationSource.from(id));
         }
-        return application.with(instanceName, instance -> instance.withoutDeploymentIn(zone));
+        return application.map(app -> app.with(instanceId.instance(), instance -> instance.withoutDeploymentIn(id.zoneId())));
     }
 
     public DeploymentTrigger deploymentTrigger() { return deploymentTrigger; }
