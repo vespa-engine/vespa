@@ -17,13 +17,13 @@ struct MergeMetaData {
     MergeMetaData(uint16_t nodeIndex, const BucketCopy& copy) noexcept
         : _nodeIndex(nodeIndex), _sourceOnly(false), _copy(&copy) {}
 
-    bool trusted() const {
+    [[nodiscard]] bool trusted() const noexcept {
         return _copy->trusted();
     }
-    uint32_t checksum() const {
+    [[nodiscard]] uint32_t checksum() const noexcept {
         return _copy->getChecksum();
     }
-    bool source_only() const noexcept { return _sourceOnly; }
+    [[nodiscard]] bool source_only() const noexcept { return _sourceOnly; }
 };
 
 vespalib::asciistream& operator<<(vespalib::asciistream& out, const MergeMetaData& e);

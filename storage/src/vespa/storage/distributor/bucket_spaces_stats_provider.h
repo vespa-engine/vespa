@@ -17,30 +17,30 @@ private:
     size_t _bucketsTotal;
     size_t _bucketsPending;
 public:
-    BucketSpaceStats(size_t bucketsTotal_, size_t bucketsPending_)
+    constexpr BucketSpaceStats(size_t bucketsTotal_, size_t bucketsPending_) noexcept
         : _valid(true),
           _bucketsTotal(bucketsTotal_),
           _bucketsPending(bucketsPending_)
     {}
-    BucketSpaceStats()
+    constexpr BucketSpaceStats() noexcept
         : _valid(false),
           _bucketsTotal(0),
           _bucketsPending(0)
     {}
 
-    static BucketSpaceStats make_invalid() noexcept { return {}; }
+    static constexpr BucketSpaceStats make_invalid() noexcept { return {}; }
 
-    bool valid() const noexcept { return _valid; }
+    [[nodiscard]] bool valid() const noexcept { return _valid; }
     size_t bucketsTotal() const noexcept { return _bucketsTotal; }
     size_t bucketsPending() const noexcept { return _bucketsPending; }
 
-    bool operator==(const BucketSpaceStats& rhs) const {
+    bool operator==(const BucketSpaceStats& rhs) const noexcept {
         return (_valid == rhs._valid) &&
                 (_bucketsTotal == rhs._bucketsTotal) &&
                 (_bucketsPending == rhs._bucketsPending);
     }
 
-    void merge(const BucketSpaceStats& rhs) {
+    void merge(const BucketSpaceStats& rhs) noexcept {
         _valid = _valid && rhs._valid;
         _bucketsTotal += rhs._bucketsTotal;
         _bucketsPending += rhs._bucketsPending;

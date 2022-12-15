@@ -97,11 +97,12 @@ namespace {
     template<bool log>
     class DistributorInfoGatherer
     {
-        typedef api::RequestBucketInfoReply::EntryVector ResultArray;
-        DistributorStateCache _state;
+        using ResultArray = api::RequestBucketInfoReply::EntryVector;
+
+        DistributorStateCache                      _state;
         std::unordered_map<uint16_t, ResultArray>& _result;
-        const document::BucketIdFactory& _factory;
-        std::shared_ptr<const lib::Distribution> _storageDistribution;
+        const document::BucketIdFactory&           _factory;
+        std::shared_ptr<const lib::Distribution>  _storageDistribution;
 
     public:
         DistributorInfoGatherer(
@@ -123,9 +124,7 @@ namespace {
             try{
                 uint16_t i = _state.getOwner(b);
                 auto it = _result.find(i);
-                    // Template parameter. This block should not be included
-                    // in version not logging.
-                if (log) {
+                if constexpr (log) {
                     LOG(spam, "Bucket %s (reverse %" PRIu64 "), should be handled"
                               " by distributor %u which we are %sgenerating "
                               "state for.",
@@ -164,13 +163,13 @@ namespace {
             uint64_t active;
             uint64_t ready;
 
-            Count() noexcept : docs(0), bytes(0), buckets(0), active(0), ready(0) {}
+            constexpr Count() noexcept : docs(0), bytes(0), buckets(0), active(0), ready(0) {}
         };
 
         Count    count;
         uint32_t lowestUsedBit;
 
-        MetricsUpdater() noexcept
+        constexpr MetricsUpdater() noexcept
             : count(), lowestUsedBit(58) {}
 
         void operator()(document::BucketId::Type bucketId,

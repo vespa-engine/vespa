@@ -11,7 +11,7 @@ LOG_SETUP(".distributor.operation.idealstate.split");
 
 using namespace storage::distributor;
 
-SplitOperation::SplitOperation(const ClusterContext &cluster_ctx, const BucketAndNodes& nodes,
+SplitOperation::SplitOperation(const ClusterContext& cluster_ctx, const BucketAndNodes& nodes,
                                uint32_t maxBits, uint32_t splitCount, uint32_t splitSize)
     : IdealStateOperation(nodes),
       _tracker(cluster_ctx),
@@ -19,6 +19,7 @@ SplitOperation::SplitOperation(const ClusterContext &cluster_ctx, const BucketAn
       _splitCount(splitCount),
       _splitSize(splitSize)
 {}
+
 SplitOperation::~SplitOperation() = default;
 
 void

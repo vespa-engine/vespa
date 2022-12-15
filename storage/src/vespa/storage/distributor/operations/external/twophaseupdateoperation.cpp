@@ -22,13 +22,11 @@ using document::BucketSpace;
 
 namespace storage::distributor {
 
-
-
 TwoPhaseUpdateOperation::TwoPhaseUpdateOperation(
         const DistributorNodeContext& node_ctx,
         DistributorStripeOperationContext& op_ctx,
         const DocumentSelectionParser& parser,
-        DistributorBucketSpace &bucketSpace,
+        DistributorBucketSpace& bucketSpace,
         std::shared_ptr<api::UpdateCommand> msg,
         DistributorMetricSet& metrics,
         SequencingHandle sequencingHandle)
@@ -110,12 +108,13 @@ IntermediateMessageSender::IntermediateMessageSender(SentMessageMap& mm,
       callback(std::move(cb)),
       forward(fwd)
 { }
+
 IntermediateMessageSender::~IntermediateMessageSender() = default;
 
 }
 
 const char*
-TwoPhaseUpdateOperation::stateToString(SendState state)
+TwoPhaseUpdateOperation::stateToString(SendState state) noexcept
 {
     switch (state) {
     case SendState::NONE_SENT:          return "NONE_SENT";

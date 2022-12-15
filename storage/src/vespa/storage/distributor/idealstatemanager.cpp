@@ -27,16 +27,15 @@ IdealStateManager::IdealStateManager(
         DistributorStripeOperationContext& op_ctx,
         IdealStateMetricSet& metrics)
     : _metrics(metrics),
+      _stateCheckers(),
+      _splitBucketStateChecker(nullptr),
       _node_ctx(node_ctx),
       _op_ctx(op_ctx),
       _has_logged_phantom_replica_warning(false)
 {
-    LOG(debug, "Adding BucketStateStateChecker to state checkers");
     _stateCheckers.emplace_back(std::make_shared<BucketStateStateChecker>());
-
     _stateCheckers.emplace_back(std::make_shared<SplitBucketStateChecker>());
     _splitBucketStateChecker = dynamic_cast<SplitBucketStateChecker *>(_stateCheckers.back().get());
-
     _stateCheckers.emplace_back(std::make_shared<SplitInconsistentStateChecker>());
     _stateCheckers.emplace_back(std::make_shared<SynchronizeAndMoveStateChecker>());
     _stateCheckers.emplace_back(std::make_shared<JoinBucketsStateChecker>());
@@ -141,7 +140,7 @@ void IdealStateManager::verify_only_live_nodes_in_context(const StateChecker::Co
 
 StateChecker::Result
 IdealStateManager::generateHighestPriority(
-        const document::Bucket &bucket,
+        const document::Bucket& bucket,
         NodeMaintenanceStatsTracker& statsTracker) const
 {
     auto& distributorBucketSpace = _op_ctx.bucket_space_repo().get(bucket.getBucketSpace());
@@ -162,7 +161,7 @@ IdealStateManager::generateHighestPriority(
 
 MaintenancePriorityAndType
 IdealStateManager::prioritize(
-        const document::Bucket &bucket,
+        const document::Bucket& bucket,
         NodeMaintenanceStatsTracker& statsTracker) const
 {
     StateChecker::Result generated(generateHighestPriority(bucket, statsTracker));
@@ -198,7 +197,7 @@ IdealStateManager::generateInterceptingSplit(BucketSpace bucketSpace,
 }
 
 MaintenanceOperation::SP
-IdealStateManager::generate(const document::Bucket &bucket) const
+IdealStateManager::generate(const document::Bucket& bucket) const
 {
     NodeMaintenanceStatsTracker statsTracker;
     IdealStateOperation::SP op(

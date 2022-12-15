@@ -16,17 +16,17 @@ class Visitor;
 
 class VisitorEnvironment {
 public:
-    typedef std::unique_ptr<VisitorEnvironment> UP;
-    VisitorEnvironment() {}
-    virtual ~VisitorEnvironment() {}
+    using UP = std::unique_ptr<VisitorEnvironment>;
+    VisitorEnvironment() = default;
+    virtual ~VisitorEnvironment() = default;
 };
 
 class VisitorFactory {
 public:
-    typedef std::shared_ptr<VisitorFactory> SP;
-    typedef std::map<std::string, std::shared_ptr<VisitorFactory> > Map;
+    using SP = std::shared_ptr<VisitorFactory>;
+    using Map = std::map<std::string, std::shared_ptr<VisitorFactory>>;
 
-    virtual ~VisitorFactory() {};
+    virtual ~VisitorFactory() = default;
 
     virtual VisitorEnvironment::UP makeVisitorEnvironment(StorageComponent&) = 0;
 

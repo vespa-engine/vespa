@@ -2,7 +2,6 @@
 vespa_add_library(storage_hostreporter OBJECT
     SOURCES
     hostinfo.cpp
-    kernelmetrictool.cpp
     versionreporter.cpp
     DEPENDS
 )

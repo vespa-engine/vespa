@@ -8,11 +8,9 @@
 #include <vespa/metrics/summetric.h>
 #include <mutex>
 
-namespace storage {
+namespace storage::api { class ReturnCode; }
 
-namespace api {
-class ReturnCode;
-}
+namespace storage::distributor {
 
 class PersistenceFailuresMetricSet : public metrics::MetricSet
 {

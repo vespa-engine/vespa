@@ -3,7 +3,7 @@
 
 #include "persistence_operation_metric_set.h"
 
-namespace storage {
+namespace storage::distributor {
 
 class UpdateMetricSet : public PersistenceOperationMetricSet {
 public:

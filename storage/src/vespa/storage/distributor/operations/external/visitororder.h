@@ -7,9 +7,9 @@ namespace storage::distributor {
 
 struct VisitorOrder {
 
-    VisitorOrder() { }
+    VisitorOrder() = default;
 
-    bool operator()(const document::BucketId& a, const document::BucketId& b) {
+    bool operator()(const document::BucketId& a, const document::BucketId& b) noexcept {
         if (a == document::BucketId(INT_MAX) ||
             b == document::BucketId(0, 0)) {
             return false; // All before max, non before null

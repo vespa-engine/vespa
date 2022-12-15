@@ -2,7 +2,7 @@
 
 #include "visitormetricsset.h"
 
-namespace storage {
+namespace storage::distributor {
 
 using metrics::MetricSet;
 

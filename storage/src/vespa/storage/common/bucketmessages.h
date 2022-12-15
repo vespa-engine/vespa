@@ -17,8 +17,8 @@ class ReadBucketList : public api::InternalCommand {
     document::BucketSpace _bucketSpace;
 
 public:
-    typedef std::unique_ptr<ReadBucketList> UP;
-    static const uint32_t ID = 2003;
+    using UP = std::unique_ptr<ReadBucketList>;
+    static constexpr uint32_t ID = 2003;
 
     ReadBucketList(document::BucketSpace bucketSpace);
     ~ReadBucketList();
@@ -40,9 +40,9 @@ class ReadBucketListReply : public api::InternalReply {
     spi::BucketIdListResult::List _buckets;
 
 public:
-    typedef std::unique_ptr<ReadBucketListReply> UP;
-    typedef std::shared_ptr<ReadBucketListReply> SP;
-    static const uint32_t ID = 2004;
+    using UP = std::unique_ptr<ReadBucketListReply>;
+    using SP = std::shared_ptr<ReadBucketListReply>;
+    static constexpr uint32_t ID = 2004;
 
     ReadBucketListReply(const ReadBucketList& cmd);
     ~ReadBucketListReply();
@@ -72,7 +72,7 @@ class ReadBucketInfo : public api::InternalCommand {
     document::Bucket _bucket;
 
 public:
-    static const uint32_t ID = 2005;
+    static constexpr uint32_t ID = 2005;
 
     ReadBucketInfo(const document::Bucket &bucket);
     ~ReadBucketInfo();
@@ -95,7 +95,7 @@ class ReadBucketInfoReply : public api::InternalReply {
     document::Bucket _bucket;
 
 public:
-    static const uint32_t ID = 2006;
+    static constexpr uint32_t ID = 2006;
 
     ReadBucketInfoReply(const ReadBucketInfo& cmd);
     ~ReadBucketInfoReply();

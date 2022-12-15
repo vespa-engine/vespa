@@ -4,7 +4,6 @@
 #include "distributor_bucket_space_repo.h"
 #include "distributor_bucket_space.h"
 #include <vespa/vdslib/distribution/distribution.h>
-#include <vespa/storage/common/vectorprinter.h>
 #include <vespa/storageapi/message/persistence.h>
 
 #include <vespa/log/log.h>
@@ -41,7 +40,7 @@ PersistenceMessageTrackerImpl::updateDB()
         _op_ctx.update_bucket_database(entry.first, entry.second);
     }
 
-    for (const auto & entry :  _remapBucketInfo){
+    for (const auto & entry : _remapBucketInfo){
         _op_ctx.update_bucket_database(entry.first, entry.second, DatabaseUpdate::CREATE_IF_NONEXISTING);
     }
 }

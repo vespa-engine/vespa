@@ -37,7 +37,7 @@ class StorageLink : public document::Printable,
                     protected api::MessageHandler
 {
 public:
-    typedef std::unique_ptr<StorageLink> UP;
+    using UP = std::unique_ptr<StorageLink>;
 
     enum State { CREATED, OPENED, CLOSING, FLUSHINGDOWN, FLUSHINGUP, CLOSED };
 

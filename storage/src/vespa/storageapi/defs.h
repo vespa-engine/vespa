@@ -10,9 +10,9 @@
 
 namespace storage:: api {
 
-typedef uint64_t Timestamp;
-typedef uint32_t VisitorId;
+using Timestamp = uint64_t;
+using VisitorId = uint32_t;
 
-const Timestamp MAX_TIMESTAMP = (Timestamp)-1ll;
+constexpr Timestamp MAX_TIMESTAMP = (Timestamp)-1LL;
 
 }

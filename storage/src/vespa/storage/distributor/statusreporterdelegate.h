@@ -5,9 +5,7 @@
 #include "statusdelegator.h"
 #include <vespa/storageframework/generic/component/component.h>
 
-
-namespace storage {
-namespace distributor {
+namespace storage::distributor {
 
 class StatusReporterDelegate
     : public framework::StatusReporter
@@ -19,11 +17,11 @@ public:
     StatusReporterDelegate(framework::ComponentRegister& compReg,
                            const StatusDelegator& delegator,
                            const framework::StatusReporter& target);
+    ~StatusReporterDelegate() override;
 
     void registerStatusPage();
     vespalib::string getReportContentType(const framework::HttpUrlPath&) const override;
     bool reportStatus(std::ostream&, const framework::HttpUrlPath&) const override;
 };
 
-} // distributor
-} // storage
+} // storage::distributor

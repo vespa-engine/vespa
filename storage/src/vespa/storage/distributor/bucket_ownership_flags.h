@@ -17,14 +17,14 @@ class BucketOwnershipFlags {
     static constexpr uint8_t owned_in_pending_state_flag = 0x2;
     
 public:
-    BucketOwnershipFlags() noexcept
+    constexpr BucketOwnershipFlags() noexcept
         : _flags(0)
     { }
 
-    bool owned_in_current_state() const noexcept { return ((_flags & owned_in_current_state_flag) != 0); }
-    bool owned_in_pending_state() const noexcept {  return ((_flags & owned_in_pending_state_flag) != 0); }
-    void set_owned_in_current_state() noexcept { _flags |= owned_in_current_state_flag; }
-    void set_owned_in_pending_state() noexcept { _flags |= owned_in_pending_state_flag; }
+    constexpr bool owned_in_current_state() const noexcept { return ((_flags & owned_in_current_state_flag) != 0); }
+    constexpr bool owned_in_pending_state() const noexcept {  return ((_flags & owned_in_pending_state_flag) != 0); }
+    constexpr void set_owned_in_current_state() noexcept { _flags |= owned_in_current_state_flag; }
+    constexpr void set_owned_in_pending_state() noexcept { _flags |= owned_in_pending_state_flag; }
 };
 
 }

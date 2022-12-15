@@ -41,7 +41,7 @@ public:
                                         UuidGenerator& uuid_generator);
     ~ReadForWriteVisitorOperationStarter() override;
 
-    const char* getName() const override { return "ReadForWriteVisitorOperationStarter"; }
+    const char* getName() const noexcept override { return "ReadForWriteVisitorOperationStarter"; }
     void onClose(DistributorStripeMessageSender& sender) override;
     void onStart(DistributorStripeMessageSender& sender) override;
     void onReceive(DistributorStripeMessageSender& sender,

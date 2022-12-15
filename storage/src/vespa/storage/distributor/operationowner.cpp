@@ -11,9 +11,7 @@ LOG_SETUP(".operationowner");
 
 namespace storage::distributor {
 
-OperationOwner::~OperationOwner()
-{
-}
+OperationOwner::~OperationOwner() = default;
 
 void
 OperationOwner::Sender::sendCommand(const std::shared_ptr<api::StorageCommand> & msg)

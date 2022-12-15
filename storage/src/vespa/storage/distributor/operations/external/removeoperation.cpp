@@ -14,7 +14,7 @@ using document::BucketSpace;
 
 RemoveOperation::RemoveOperation(const DistributorNodeContext& node_ctx,
                                  DistributorStripeOperationContext& op_ctx,
-                                 DistributorBucketSpace &bucketSpace,
+                                 DistributorBucketSpace& bucketSpace,
                                  std::shared_ptr<api::RemoveCommand> msg,
                                  PersistenceOperationMetricSet& metric,
                                  SequencingHandle sequencingHandle)
@@ -81,7 +81,7 @@ RemoveOperation::onStart(DistributorStripeMessageSender& sender)
 void
 RemoveOperation::onReceive(DistributorStripeMessageSender& sender, const std::shared_ptr<api::StorageReply> & msg)
 {
-    api::RemoveReply& reply(static_cast<api::RemoveReply&>(*msg));
+    auto& reply = static_cast<api::RemoveReply&>(*msg);
 
     if (_tracker.getReply().get()) {
         api::RemoveReply& replyToSend =

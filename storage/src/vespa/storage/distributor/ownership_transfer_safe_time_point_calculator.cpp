@@ -3,8 +3,7 @@
 #include "ownership_transfer_safe_time_point_calculator.h"
 #include <thread>
 
-namespace storage {
-namespace distributor {
+namespace storage::distributor {
 
 OwnershipTransferSafeTimePointCalculator::TimePoint
 OwnershipTransferSafeTimePointCalculator::safeTimePoint(TimePoint now) const
@@ -30,5 +29,4 @@ OwnershipTransferSafeTimePointCalculator::safeTimePoint(TimePoint now) const
     return TimePoint(now_sec + std::chrono::seconds(1) + _max_cluster_clock_skew);
 }
 
-}
 }

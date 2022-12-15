@@ -29,7 +29,7 @@ PendingClusterState::PendingClusterState(
         DistributorMessageSender& sender,
         const BucketSpaceStateMap& bucket_space_states,
         const std::shared_ptr<api::SetSystemStateCommand>& newStateCmd,
-        const OutdatedNodesMap &outdatedNodesMap,
+        const OutdatedNodesMap& outdatedNodesMap,
         api::Timestamp creationTimestamp)
     : _cmd(newStateCmd),
       _sentMessages(),
@@ -79,7 +79,7 @@ PendingClusterState::PendingClusterState(
 PendingClusterState::~PendingClusterState() = default;
 
 void
-PendingClusterState::initializeBucketSpaceTransitions(bool distributionChanged, const OutdatedNodesMap &outdatedNodesMap)
+PendingClusterState::initializeBucketSpaceTransitions(bool distributionChanged, const OutdatedNodesMap& outdatedNodesMap)
 {
     OutdatedNodes emptyOutdatedNodes;
     for (const auto &elem : _bucket_space_states) {
@@ -127,12 +127,6 @@ PendingClusterState::getOutdatedNodesMap() const
         outdatedNodesMap.emplace(elem.first, elem.second->getOutdatedNodes());
     }
     return outdatedNodesMap;
-}
-
-uint16_t
-PendingClusterState::newStateStorageNodeCount() const
-{
-    return _newClusterStateBundle.getBaselineClusterState()->getNodeCount(lib::NodeType::STORAGE);
 }
 
 bool
@@ -318,7 +312,7 @@ PendingClusterState::getSummary() const
                    (_clock.getTimeInMicros().getTime() - _creationTimestamp));
 }
 
-PendingBucketSpaceDbTransition &
+PendingBucketSpaceDbTransition&
 PendingClusterState::getPendingBucketSpaceDbTransition(document::BucketSpace bucketSpace)
 {
     auto transitionIter = _pendingTransitions.find(bucketSpace);

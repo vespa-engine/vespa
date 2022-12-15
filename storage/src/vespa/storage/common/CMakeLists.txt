@@ -8,6 +8,7 @@ vespa_add_library(storage_common OBJECT
     distributorcomponent.cpp
     global_bucket_space_distribution_converter.cpp
     messagebucket.cpp
+    message_guard.cpp
     messagesender.cpp
     node_identity.cpp
     reindexing_constants.cpp

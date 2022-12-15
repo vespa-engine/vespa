@@ -4,8 +4,7 @@
 #include <vespa/storage/common/hostreporter/hostreporter.h>
 #include <atomic>
 
-namespace storage {
-namespace distributor {
+namespace storage::distributor {
 
 class BucketSpacesStatsProvider;
 class MinReplicaProvider;
@@ -46,6 +45,4 @@ private:
     std::atomic<bool> _enabled;
 };
 
-} // distributor
-} // storage
-
+} // storage::distributor

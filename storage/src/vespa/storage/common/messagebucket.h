@@ -14,8 +14,7 @@ class StorageMessage;
  * @throws vespalib::IllegalArgumentException if msg does not
  *     have a bucket id.
  */
-document::Bucket getStorageMessageBucket(
-        const api::StorageMessage& msg);
+document::Bucket getStorageMessageBucket(const api::StorageMessage& msg);
 
 }
 

@@ -19,6 +19,8 @@ StatBucketListOperation::StatBucketListOperation(
 {
 }
 
+StatBucketListOperation::~StatBucketListOperation() = default;
+
 void
 StatBucketListOperation::getBucketStatus(const BucketDatabase::Entry& entry,
                                          std::ostream& ost) const
@@ -42,20 +44,18 @@ StatBucketListOperation::getBucketStatus(const BucketDatabase::Entry& entry,
 void
 StatBucketListOperation::onStart(DistributorStripeMessageSender& sender)
 {
-    api::GetBucketListReply::SP reply(new api::GetBucketListReply(*_command));
+    auto reply = std::make_shared<api::GetBucketListReply>(*_command);
 
     std::vector<BucketDatabase::Entry> entries;
     _bucketDb.getAll(_command->getBucketId(), entries);
 
-    for (uint32_t i = 0; i < entries.size(); i++) {
+    for (const auto& entry : entries) {
         std::ostringstream ost;
         ost << "[distributor:" << _distributorIndex << "] ";
 
-        getBucketStatus(entries[i], ost);
+        getBucketStatus(entry, ost);
 
-        reply->getBuckets().push_back(api::GetBucketListReply::BucketInfo(
-                                              entries[i].getBucketId(),
-                                              ost.str()));
+        reply->getBuckets().emplace_back(entry.getBucketId(), ost.str());
     }
     sender.sendReply(reply);
 }

@@ -3,8 +3,7 @@
 #include "operationtargetresolver.h"
 #include <vespa/vespalib/stllike/asciistream.h>
 
-namespace storage {
-namespace distributor {
+namespace storage::distributor {
 
 void
 OperationTarget::print(vespalib::asciistream& out, const PrintProperties&) const {
@@ -13,5 +12,3 @@ OperationTarget::print(vespalib::asciistream& out, const PrintProperties&) const
 }
 
 }
-}
-

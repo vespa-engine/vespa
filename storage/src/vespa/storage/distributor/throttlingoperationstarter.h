@@ -30,7 +30,7 @@ class ThrottlingOperationStarter : public OperationStarter, public PendingWindow
         void onClose(DistributorStripeMessageSender& sender) override {
             _operation->onClose(sender);
         }
-        const char* getName() const override {
+        const char* getName() const noexcept override {
             return _operation->getName();
         }
         std::string getStatus() const override {

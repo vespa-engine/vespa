@@ -13,7 +13,6 @@
 
 namespace document { class Document; }
 
-namespace storage { struct VisitorMetricSet; }
 namespace storage::lib { class ClusterState; }
 
 namespace storage::distributor {
@@ -21,6 +20,7 @@ namespace storage::distributor {
 class DistributorBucketSpace;
 class DistributorNodeContext;
 class DistributorStripeOperationContext;
+struct VisitorMetricSet;
 
 class VisitorOperation  : public Operation
 {
@@ -37,7 +37,7 @@ public:
 
     VisitorOperation(const DistributorNodeContext& node_ctx,
                      DistributorStripeOperationContext& op_ctx,
-                     DistributorBucketSpace &bucketSpace,
+                     DistributorBucketSpace& bucketSpace,
                      const std::shared_ptr<api::CreateVisitorCommand>& msg,
                      const Config& config,
                      VisitorMetricSet& metrics);
@@ -47,7 +47,7 @@ public:
     void onClose(DistributorStripeMessageSender& sender) override;
     void onStart(DistributorStripeMessageSender& sender) override;
     void onReceive(DistributorStripeMessageSender& sender,
-                   const std::shared_ptr<api::StorageReply> & msg) override;
+                   const std::shared_ptr<api::StorageReply>& msg) override;
 
     // Only valid to call if is_read_for_write() == true
     void fail_with_bucket_already_locked(DistributorStripeMessageSender& sender);
@@ -55,7 +55,7 @@ public:
 
     [[nodiscard]] bool verify_command_and_expand_buckets(DistributorStripeMessageSender& sender);
 
-    const char* getName() const override { return "visit"; }
+    const char* getName() const noexcept override { return "visit"; }
     std::string getStatus() const override { return ""; }
 
     [[nodiscard]] bool has_sent_reply() const noexcept { return _sentReply; }
@@ -72,6 +72,7 @@ private:
         std::vector<uint16_t> triedNodes;
 
         BucketInfo() : done(false), activeNode(-1), failedCount(0), triedNodes() { }
+        ~BucketInfo();
 
         void print(vespalib::asciistream & out) const;
         vespalib::string toString() const;

@@ -49,7 +49,7 @@ public:
     /** Create an initially unset bucket id. */
     constexpr BucketId() noexcept : _id(0) {}
     /** Create a bucket id with the given raw unchecked content. */
-    explicit BucketId(Type id) noexcept : _id(id) {}
+    constexpr explicit BucketId(Type id) noexcept : _id(id) {}
     /** Create a bucket id using a set of bits from a raw unchecked value. */
     BucketId(uint32_t useBits, Type id) noexcept : _id(createUsedBits(useBits, id)) { }
 

@@ -15,6 +15,8 @@ StatusReporterDelegate::StatusReporterDelegate(
 {
 }
 
+StatusReporterDelegate::~StatusReporterDelegate() = default;
+
 vespalib::string
 StatusReporterDelegate::getReportContentType(const framework::HttpUrlPath& path) const
 {

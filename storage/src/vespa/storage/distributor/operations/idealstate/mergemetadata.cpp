@@ -3,14 +3,11 @@
 #include "mergemetadata.h"
 #include <vespa/vespalib/stllike/asciistream.h>
 
-namespace storage {
-namespace distributor {
+namespace storage::distributor {
 
 vespalib::asciistream& operator<<(vespalib::asciistream& out, const MergeMetaData& e)
 {
     return out << "MergeMetaData(" << e._nodeIndex << ")";
 }
 
-} // distributor
-} // storage
-
+} // storage::distributor

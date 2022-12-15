@@ -4,11 +4,9 @@
 #include <vespa/storage/distributor/operations/operation.h>
 #include <vespa/storage/distributor/persistencemessagetracker.h>
 
-namespace storage {
+namespace storage::api { class RemoveLocationCommand; }
 
-namespace api { class RemoveLocationCommand; }
-
-namespace distributor {
+namespace storage::distributor {
 
 class DistributorBucketSpace;
 
@@ -18,7 +16,7 @@ public:
     RemoveLocationOperation(const DistributorNodeContext& node_ctx,
                             DistributorStripeOperationContext& op_ctx,
                             const DocumentSelectionParser& parser,
-                            DistributorBucketSpace &bucketSpace,
+                            DistributorBucketSpace& bucketSpace,
                             std::shared_ptr<api::RemoveLocationCommand> msg,
                             PersistenceOperationMetricSet& metric);
     ~RemoveLocationOperation() override;
@@ -29,9 +27,9 @@ public:
                            const api::RemoveLocationCommand& cmd,
                            document::BucketId& id);
     void onStart(DistributorStripeMessageSender& sender) override;
-    const char* getName() const override { return "removelocation"; };
+    const char* getName() const noexcept override { return "removelocation"; };
     std::string getStatus() const override { return ""; };
-    void onReceive(DistributorStripeMessageSender& sender, const std::shared_ptr<api::StorageReply> &) override;
+    void onReceive(DistributorStripeMessageSender& sender, const std::shared_ptr<api::StorageReply>&) override;
     void onClose(DistributorStripeMessageSender& sender) override;
 private:
     PersistenceMessageTrackerImpl _trackerInstance;
@@ -43,7 +41,5 @@ private:
     const DocumentSelectionParser& _parser;
     DistributorBucketSpace &_bucketSpace;
 };
-
-}
 
 }

@@ -14,24 +14,24 @@ public:
 
     static const PrioritizedBucket INVALID;
 
-    PrioritizedBucket()
+    PrioritizedBucket() noexcept
         : _bucket(),
           _priority(MaintenancePriority::NO_MAINTENANCE_NEEDED)
     {}
 
-    PrioritizedBucket(const document::Bucket &bucket, Priority pri)
+    PrioritizedBucket(const document::Bucket &bucket, Priority pri) noexcept
         : _bucket(bucket),
           _priority(pri)
     {
     }
 
-    document::Bucket getBucket() const { return _bucket; }
+    document::Bucket getBucket() const noexcept { return _bucket; }
 
-    Priority getPriority() const {
+    Priority getPriority() const noexcept {
         return _priority;
     }
 
-    bool valid() const {
+    [[nodiscard]] bool valid() const noexcept {
         return _bucket.getBucketId().getRawId() != 0;
     }
 
@@ -41,19 +41,19 @@ public:
                                      MaintenancePriority::toString(_priority));
     }
 
-    bool operator==(const PrioritizedBucket& other) const {
+    bool operator==(const PrioritizedBucket& other) const noexcept {
         return _bucket == other._bucket && _priority == other._priority;
     }
 
-    bool requiresMaintenance() const {
+    [[nodiscard]] bool requiresMaintenance() const noexcept {
         return _priority != MaintenancePriority::NO_MAINTENANCE_NEEDED;
     }
 
-    bool moreImportantThan(const PrioritizedBucket& other) const {
+    [[nodiscard]] bool moreImportantThan(const PrioritizedBucket& other) const noexcept {
         return _priority > other._priority;
     }
 
-    bool moreImportantThan(Priority otherPri) const {
+    [[nodiscard]] bool moreImportantThan(Priority otherPri) const noexcept {
         return _priority > otherPri;
     }
 

@@ -14,9 +14,9 @@ protected:
     {
     public:
         virtual ~ConstIteratorImpl() = default;
-        virtual void increment() = 0;
-        virtual bool equal(const ConstIteratorImpl& other) const = 0;
-        virtual PrioritizedBucket dereference() const = 0;
+        virtual void increment() noexcept = 0;
+        virtual bool equal(const ConstIteratorImpl& other) const noexcept = 0;
+        virtual PrioritizedBucket dereference() const noexcept = 0;
     };
 
     using ConstIteratorImplPtr = std::unique_ptr<ConstIteratorImpl>;
@@ -31,25 +31,25 @@ public:
     {
         ConstIteratorImplPtr _impl;
     public:
-        explicit ConstIterator(ConstIteratorImplPtr impl)
+        explicit ConstIterator(ConstIteratorImplPtr impl) noexcept
             : _impl(std::move(impl))
         {}
         ConstIterator(const ConstIterator &) = delete;
-        ConstIterator(ConstIterator &&) = default;
+        ConstIterator(ConstIterator &&) noexcept = default;
 
         virtual ~ConstIterator() = default;
     private:
         friend class boost::iterator_core_access;
 
-        void increment() {
+        void increment() noexcept {
             _impl->increment();
         }
 
-        bool equal(const ConstIterator& other) const {
+        [[nodiscard]] bool equal(const ConstIterator& other) const noexcept {
             return _impl->equal(*other._impl);
         }
 
-        PrioritizedBucket dereference() const {
+        PrioritizedBucket dereference() const noexcept {
             return _impl->dereference();
         }
     };
@@ -59,7 +59,7 @@ public:
     virtual ~BucketPriorityDatabase() = default;
     
     virtual const_iterator begin() const = 0;
-    virtual const_iterator end() const  = 0;
+    virtual const_iterator end() const = 0;
     virtual void setPriority(const PrioritizedBucket&) = 0;
 };
 

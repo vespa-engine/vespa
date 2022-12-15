@@ -27,11 +27,11 @@ public:
     void onReceive(DistributorStripeMessageSender& sender,
                    const std::shared_ptr<api::StorageReply>&) override;
 
-    const char* getName() const override {
+    const char* getName() const noexcept override {
         return "join";
     }
 
-    Type getType() const override {
+    Type getType() const noexcept override {
         return JOIN_BUCKET;
     }
 

@@ -4,7 +4,7 @@
 #include <vespa/storageapi/messageapi/returncode.h>
 #include <vespa/metrics/summetric.hpp>
 
-namespace storage {
+namespace storage::distributor {
 
 using metrics::MetricSet;
 
@@ -107,5 +107,4 @@ PersistenceOperationMetricSet::updateFromResult(const api::ReturnCode& result)
     }
 }
 
-} // storage
-
+} // storage::distributor

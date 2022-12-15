@@ -10,6 +10,7 @@
 #include <vespa/storageapi/message/bucket.h>
 
 namespace storage::lib { class Distribution; }
+
 namespace storage::distributor {
 
 class MergeBucketMetricSet;
@@ -26,7 +27,6 @@ protected:
     MergeLimiter _limiter;
 
 public:
-    static const int LOAD = 10;
 
     MergeOperation(const BucketAndNodes& nodes, uint16_t maxNodes = 16)
         : IdealStateOperation(nodes),
@@ -34,13 +34,13 @@ public:
           _limiter(maxNodes)
     {}
 
-    ~MergeOperation();
+    ~MergeOperation() override;
 
     void onStart(DistributorStripeMessageSender& sender) override;
     void onReceive(DistributorStripeMessageSender& sender, const api::StorageReply::SP&) override;
-    const char* getName() const override { return "merge"; };
+    const char* getName() const noexcept override { return "merge"; };
     std::string getStatus() const override;
-    Type getType() const override { return MERGE_BUCKET; }
+    Type getType() const noexcept override { return MERGE_BUCKET; }
 
     /** Generates ordered list of nodes that should be included in the merge */
     static void generateSortedNodeList(
