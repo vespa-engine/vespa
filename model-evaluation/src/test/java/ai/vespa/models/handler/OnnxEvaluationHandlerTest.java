@@ -12,7 +12,6 @@ import com.yahoo.vespa.config.search.core.OnnxModelsConfig;
 import com.yahoo.vespa.config.search.core.RankingConstantsConfig;
 import com.yahoo.vespa.config.search.core.RankingExpressionsConfig;
 import org.junit.BeforeClass;
-import org.junit.Ignore;
 import org.junit.Test;
 
 import java.io.File;
@@ -32,36 +31,35 @@ public class OnnxEvaluationHandlerTest {
         handler = new HandlerTester(createModels());
     }
 
-    @Ignore
     @Test
     public void testListModels() {
         String url = "http://localhost/model-evaluation/v1";
         String expected = "{\"one_layer\":\"http://localhost/model-evaluation/v1/one_layer\"," +
                            "\"add_mul\":\"http://localhost/model-evaluation/v1/add_mul\"," +
                            "\"no_model\":\"http://localhost/model-evaluation/v1/no_model\"}";
-        handler.assertResponse(url, 200, expected);
+        handler.checkResponse(url, 200, HandlerTester.matchJson(expected));
     }
 
-    @Ignore
     @Test
     public void testModelInfo() {
         String url = "http://localhost/model-evaluation/v1/add_mul";
-        String expected = "{\"model\":\"add_mul\",\"functions\":[" +
-                "{\"function\":\"output1\"," +
-                    "\"info\":\"http://localhost/model-evaluation/v1/add_mul/output1\"," +
-                    "\"eval\":\"http://localhost/model-evaluation/v1/add_mul/output1/eval\"," +
-                    "\"arguments\":[" +
-                        "{\"name\":\"input1\",\"type\":\"tensor<float>(d0[1])\"}," +
-                        "{\"name\":\"input2\",\"type\":\"tensor<float>(d0[1])\"}" +
-                    "]}," +
-                "{\"function\":\"output2\"," +
-                    "\"info\":\"http://localhost/model-evaluation/v1/add_mul/output2\"," +
-                    "\"eval\":\"http://localhost/model-evaluation/v1/add_mul/output2/eval\"," +
-                    "\"arguments\":[" +
-                        "{\"name\":\"input1\",\"type\":\"tensor<float>(d0[1])\"}," +
-                        "{\"name\":\"input2\",\"type\":\"tensor<float>(d0[1])\"}" +
-                "]}]}";
-        handler.assertResponse(url, 200, expected);
+        var check = HandlerTester.matchJson(
+                "{'model':'add_mul','functions':[",
+                " {'function':'output1',",
+                "  'info':'http://localhost/model-evaluation/v1/add_mul/output1',",
+                "  'eval':'http://localhost/model-evaluation/v1/add_mul/output1/eval',",
+                "  'arguments':[",
+                "   {'name':'input1','type':'tensor<float>(d0[1])'},",
+                "   {'name':'input2','type':'tensor<float>(d0[1])'}",
+                "  ]},",
+                " {'function':'output2',",
+                "  'info':'http://localhost/model-evaluation/v1/add_mul/output2',",
+                "  'eval':'http://localhost/model-evaluation/v1/add_mul/output2/eval',",
+                "  'arguments':[",
+                "   {'name':'input1','type':'tensor<float>(d0[1])'},",
+                "   {'name':'input2','type':'tensor<float>(d0[1])'}",
+                "  ]}]}");
+        handler.checkResponse(url, 200, check);
     }
 
     @Test
