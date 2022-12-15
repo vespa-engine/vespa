@@ -221,12 +221,12 @@ jobs:
           dnf config-manager --add-repo https://download.docker.com/linux/centos/docker-ce.repo
           dnf install -y docker-ce docker-ce-cli containerd.io
           docker system info
+      - release-java-artifacts: |
+          screwdriver/release-java-artifacts.sh $VESPA_VERSION $VESPA_REF
       - release-rpms: |
           screwdriver/release-rpms.sh $VESPA_VERSION $VESPA_REF
       - release-container-image: |
           screwdriver/release-container-image.sh $VESPA_VERSION
-      - release-java-artifacts: |
-          screwdriver/release-java-artifacts.sh $VESPA_VERSION $VESPA_REF
       - update-sample-apps: |
           screwdriver/update-vespa-version-in-sample-apps.sh $VESPA_VERSION
 
