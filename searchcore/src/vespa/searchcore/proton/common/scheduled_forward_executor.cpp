@@ -102,7 +102,7 @@ ScheduledForwardExecutor::scheduleAtFixedRate(Executor::Task::UP task,
     auto handle = _scheduler.scheduleAtFixedRate(makeLambdaTask([&, my_task = std::move(my_task), my_state=state.get()]() {
         bool start_allowed = my_state->start();
         if (start_allowed) {
-            _executor.execute(makeLambdaTask([&, my_task]() {
+            _executor.execute(makeLambdaTask([my_state, my_task]() {
                 my_task->run();
                 my_state->complete();
             }));
