@@ -146,14 +146,14 @@ func (a *ApplicationContainer) configureOptions() {
 		opts.AddJvmArgsFromString(env)
 	}
 	qrStartCfg := a.getQrStartCfg()
-	a.configureCPU(qrStartCfg)
-	a.configureMemory(qrStartCfg)
-	a.configureGC(qrStartCfg)
-	a.configureClasspath(qrStartCfg)
 	opts.AddOption("-Djdisc.export.packages=" + qrStartCfg.Jdisc.ExportPackages)
 	opts.AddCommonXX()
 	opts.AddCommonOpens()
 	opts.AddCommonJdkProperties()
+	a.configureCPU(qrStartCfg)
+	a.configureMemory(qrStartCfg)
+	a.configureGC(qrStartCfg)
+	a.configureClasspath(qrStartCfg)
 	a.addJdiscProperties()
 	svcName := a.ServiceName()
 	if svcName == "container" || svcName == "container-clustercontroller" {
