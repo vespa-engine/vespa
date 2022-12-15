@@ -9,6 +9,7 @@
 #include <vespa/vespalib/util/size_literals.h>
 #include <vespa/vespalib/util/threadstackexecutor.h>
 #include <vespa/vespalib/util/lambdatask.h>
+#include <thread>
 
 using vespalib::Executor;
 using namespace proton;
