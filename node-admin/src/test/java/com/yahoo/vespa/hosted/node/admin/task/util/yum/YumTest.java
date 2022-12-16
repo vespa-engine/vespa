@@ -99,7 +99,7 @@ public class YumTest {
     void testAlreadyInstalled() {
         mockRpmQuery("package-1", null);
         terminal.expectCommand(
-                "yum install --assumeyes --enablerepo=repo1 --enablerepo=repo2 --setopt skip_missing_names_on_install=False package-1 package-2 2>&1",
+                "yum install --assumeyes \"--disablerepo=*\" --enablerepo=repo1 --enablerepo=repo2 --setopt skip_missing_names_on_install=False package-1 package-2 2>&1",
                 0,
                 "foobar\nNothing to do.\n"); // Note trailing dot
         assertFalse(yum.install("package-1", "package-2")
@@ -161,7 +161,7 @@ public class YumTest {
     void testInstallWithEnablerepo() {
         mockRpmQuery("package-1", null);
         terminal.expectCommand(
-                "yum install --assumeyes --enablerepo=repo-name --setopt skip_missing_names_on_install=False package-1 package-2 2>&1",
+                "yum install --assumeyes \"--disablerepo=*\" --enablerepo=repo-name --setopt skip_missing_names_on_install=False package-1 package-2 2>&1",
                 0,
                 "installing, installing");
 
@@ -201,10 +201,10 @@ public class YumTest {
 
         terminal.expectCommand("yum versionlock delete \"package-0:0.1-8.el7.*\" 2>&1");
 
-        terminal.expectCommand("yum versionlock add --assumeyes --enablerepo=somerepo \"package-0:0.10-654.el7.*\" 2>&1");
+        terminal.expectCommand("yum versionlock add --assumeyes \"--disablerepo=*\" --enablerepo=somerepo \"package-0:0.10-654.el7.*\" 2>&1");
 
         terminal.expectCommand(
-                "yum install --assumeyes --enablerepo=somerepo package-0:0.10-654.el7 2>&1",
+                "yum install --assumeyes \"--disablerepo=*\" --enablerepo=somerepo package-0:0.10-654.el7 2>&1",
                 0,
                 "Nothing to do\n");
 
@@ -254,7 +254,7 @@ public class YumTest {
         assertThrows(ChildProcessFailureException.class, () -> {
             mockRpmQuery("package-1", null);
             terminal.expectCommand(
-                    "yum install --assumeyes --enablerepo=repo-name --setopt skip_missing_names_on_install=False package-1 package-2 2>&1",
+                    "yum install --assumeyes \"--disablerepo=*\" --enablerepo=repo-name --setopt skip_missing_names_on_install=False package-1 package-2 2>&1",
                     1,
                     "error");
 
