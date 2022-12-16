@@ -38,8 +38,9 @@ void
 DiskMemUsageSampler::setConfig(const Config &config, IScheduledExecutor & executor)
 {
     bool wasChanged = _filter.setConfig(config.filterConfig);
-    if (_periodicHandle && (_sampleInterval == config.sampleInterval) && !wasChanged)
+    if (_periodicHandle && (_sampleInterval == config.sampleInterval) && !wasChanged) {
         return;
+    }
     _sampleInterval = config.sampleInterval;
     _periodicHandle.reset();
     sampleAndReportUsage();
