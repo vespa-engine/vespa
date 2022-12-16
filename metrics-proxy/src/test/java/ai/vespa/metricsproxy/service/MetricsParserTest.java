@@ -34,10 +34,22 @@ public class MetricsParserTest {
                 new MetricsParser.Dimension("cluster", "CLUSTER-2"),
                 new MetricsParser.Dimension("clusterid", "CLUSTER-2"));
 
-        System.out.println(dimensionsHashCode(dimensions1));
-        System.out.println(dimensionsHashCode(dimensions2));
         assertNotEquals(dimensionsHashCode(dimensions1), dimensionsHashCode(dimensions2));
     }
+
+    @Test
+    public void dimensions_hashcode_is_different_for_distinct_with_swapped_dimension_values() {
+        var dimensions1 = List.of(
+                new MetricsParser.Dimension("cluster", "CLUSTER-1"),
+                new MetricsParser.Dimension("clusterid", "CLUSTER-2"));
+
+        var dimensions2 = List.of(
+                new MetricsParser.Dimension("cluster", "CLUSTER-2"),
+                new MetricsParser.Dimension("clusterid", "CLUSTER-1"));
+
+        assertNotEquals(dimensionsHashCode(dimensions1), dimensionsHashCode(dimensions2));
+    }
+
 
     @Test
     public void different_dimension_values_are_not_treated_as_equal() throws Exception {
