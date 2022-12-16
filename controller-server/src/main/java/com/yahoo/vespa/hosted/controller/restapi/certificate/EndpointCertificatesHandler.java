@@ -1,4 +1,4 @@
-package com.yahoo.vespa.hosted.controller.certificate;
+package com.yahoo.vespa.hosted.controller.restapi.certificate;
 
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.container.jdisc.HttpRequest;

@@ -2,17 +2,12 @@
 package com.yahoo.vespa.hosted.controller.application;
 
 import com.yahoo.collections.AbstractFilteringList;
-import com.yahoo.component.Version;
 import com.yahoo.config.application.api.DeploymentSpec;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.ApplicationController;
 
-import java.time.Instant;
 import java.util.Collection;
-import java.util.Comparator;
-import java.util.List;
-import java.util.stream.Collectors;
 
 /**
  * A list of applications which can be filtered in various ways.
@@ -36,7 +31,7 @@ public class ApplicationList extends AbstractFilteringList<Application, Applicat
                        .map(TenantAndApplicationId::from)
                        .distinct()
                        .map(applications::requireApplication)
-                       .collect(Collectors.toUnmodifiableList()));
+                       .toList());
     }
 
     // ----------------------------------- Filters

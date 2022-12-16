@@ -4,6 +4,7 @@ package com.yahoo.vespa.hosted.controller;
 import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.vespa.hosted.controller.api.integration.stubs.MockMailer;
+import com.yahoo.vespa.hosted.controller.application.MailVerifier;
 import com.yahoo.vespa.hosted.controller.tenant.CloudTenant;
 import com.yahoo.vespa.hosted.controller.tenant.Email;
 import com.yahoo.vespa.hosted.controller.tenant.PendingMailVerification;

@@ -1,7 +1,9 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-package com.yahoo.vespa.hosted.controller;
+package com.yahoo.vespa.hosted.controller.application;
 
 import com.yahoo.config.provision.TenantName;
+import com.yahoo.vespa.hosted.controller.LockedTenant;
+import com.yahoo.vespa.hosted.controller.TenantController;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.Mail;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.Mailer;
 import com.yahoo.vespa.hosted.controller.persistence.CuratorDb;
@@ -26,13 +28,13 @@ import static com.yahoo.yolean.Exceptions.uncheck;
  */
 public class MailVerifier {
 
+    private static final Duration VERIFICATION_DEADLINE = Duration.ofDays(7);
+
     private final TenantController tenantController;
     private final Mailer mailer;
     private final CuratorDb curatorDb;
     private final Clock clock;
-    private  final URI dashboardUri;
-    private static final Duration VERIFICATION_DEADLINE = Duration.ofDays(7);
-
+    private final URI dashboardUri;
 
     public MailVerifier(URI dashboardUri, TenantController tenantController, Mailer mailer, CuratorDb curatorDb, Clock clock) {
         this.tenantController = tenantController;
