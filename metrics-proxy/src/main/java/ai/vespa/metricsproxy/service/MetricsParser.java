@@ -15,8 +15,10 @@ import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 import static ai.vespa.metricsproxy.metric.model.DimensionId.toDimensionId;
@@ -107,7 +109,7 @@ public class MetricsParser {
             throw new IOException("Expected start of 'metrics:values' array, got " + parser.currentToken());
         }
 
-        Map<Long, Map<DimensionId, String>> uniqueDimensions = new HashMap<>();
+        Map<Set<Dimension>, Map<DimensionId, String>> uniqueDimensions = new HashMap<>();
         while (parser.nextToken() == JsonToken.START_OBJECT) {
             handleValue(parser, timestamp, consumer, uniqueDimensions);
         }
@@ -115,7 +117,7 @@ public class MetricsParser {
 
     // One item in the 'values' array, where each item has 'name', 'values' and 'dimensions'
     static private void handleValue(JsonParser parser, Instant timestamp, Collector consumer,
-                                    Map<Long, Map<DimensionId, String>> uniqueDimensions) throws IOException {
+                                    Map<Set<Dimension>, Map<DimensionId, String>> uniqueDimensions) throws IOException {
         String name = "";
         String description = "";
         Map<DimensionId, String> dim = Map.of();
@@ -143,9 +145,9 @@ public class MetricsParser {
     }
 
     private static Map<DimensionId, String> parseDimensions(JsonParser parser,
-                                                            Map<Long, Map<DimensionId, String>> uniqueDimensions) throws IOException {
+                                                            Map<Set<Dimension>, Map<DimensionId, String>> uniqueDimensions) throws IOException {
 
-        List<Dimension> dimensions = new ArrayList<>();
+        Set<Dimension> dimensions = new HashSet<>();
 
         for (parser.nextToken(); parser.getCurrentToken() != JsonToken.END_OBJECT; parser.nextToken()) {
             String fieldName = parser.getCurrentName();
@@ -160,7 +162,7 @@ public class MetricsParser {
                 throw new IllegalArgumentException("Dimension '" + fieldName + "' must be a string");
             }
         }
-        return uniqueDimensions.computeIfAbsent(dimensionsHashCode(dimensions),
+        return uniqueDimensions.computeIfAbsent(dimensions,
                                                 key -> dimensions.stream().collect(Collectors.toUnmodifiableMap(
                                                         dim -> toDimensionId(dim.id), dim -> dim.value)));
     }
