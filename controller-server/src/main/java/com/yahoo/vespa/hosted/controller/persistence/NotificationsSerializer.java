@@ -4,7 +4,6 @@ package com.yahoo.vespa.hosted.controller.persistence;
 import com.yahoo.config.provision.ApplicationName;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.InstanceName;
-import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.slime.Cursor;
@@ -16,7 +15,6 @@ import com.yahoo.vespa.hosted.controller.notification.Notification;
 import com.yahoo.vespa.hosted.controller.notification.NotificationSource;
 
 import java.util.List;
-import java.util.stream.Collectors;
 
 /**
  * (de)serializes notifications for a tenant
@@ -105,7 +103,6 @@ public class NotificationsSerializer {
             case deployment -> "deployment";
             case feedBlock -> "feedBlock";
             case reindex -> "reindex";
-            default -> throw new IllegalArgumentException("No serialization defined for notification type " + type);
         };
     }
 
@@ -126,7 +123,6 @@ public class NotificationsSerializer {
             case info -> "info";
             case warning -> "warning";
             case error -> "error";
-            default -> throw new IllegalArgumentException("No serialization defined for notification level " + level);
         };
     }
 

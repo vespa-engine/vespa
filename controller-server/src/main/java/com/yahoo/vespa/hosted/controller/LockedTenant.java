@@ -51,12 +51,11 @@ public abstract class LockedTenant {
     }
 
     static LockedTenant of(Tenant tenant, Mutex lock) {
-        switch (tenant.type()) {
-            case athenz:  return new Athenz((AthenzTenant) tenant);
-            case cloud:   return new Cloud((CloudTenant) tenant);
-            case deleted: return new Deleted((DeletedTenant) tenant);
-            default:      throw new IllegalArgumentException("Unexpected tenant type '" + tenant.getClass().getName() + "'.");
-        }
+        return switch (tenant.type()) {
+            case athenz -> new Athenz((AthenzTenant) tenant);
+            case cloud -> new Cloud((CloudTenant) tenant);
+            case deleted -> new Deleted((DeletedTenant) tenant);
+        };
     }
 
     /** Returns a read-only copy of this */
