@@ -1,6 +1,5 @@
 package ai.vespa.metricsproxy.service;
 
-import ai.vespa.metricsproxy.core.VespaMetrics;
 import ai.vespa.metricsproxy.metric.Metric;
 import org.junit.Test;
 
@@ -16,11 +15,11 @@ import static org.junit.Assert.assertNotEquals;
  */
 public class MetricsParserTest {
 
-    private static class MetricsConsumer implements MetricsParser.Consumer {
+    private static class MetricsCollector implements MetricsParser.Collector {
         List<Metric> metrics = new ArrayList<>();
 
         @Override
-        public void consume(Metric metric) {
+        public void accept(Metric metric) {
             metrics.add(metric);
         }
     }
@@ -42,7 +41,7 @@ public class MetricsParserTest {
 
     @Test
     public void different_dimension_values_are_not_treated_as_equal() throws Exception {
-        var collector = new MetricsConsumer();
+        var collector = new MetricsCollector();
         MetricsParser.parse(metricsJson(), collector);
         assertEquals(2, collector.metrics.size());
         assertNotEquals("Dimensions should not be equal",

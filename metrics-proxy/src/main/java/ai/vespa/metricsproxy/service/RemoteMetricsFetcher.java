@@ -24,7 +24,7 @@ public class RemoteMetricsFetcher extends HttpMetricFetcher {
     /**
      * Connect to remote service over http and fetch metrics
      */
-    public void getMetrics(MetricsParser.Consumer consumer, int fetchCount) {
+    public void getMetrics(MetricsParser.Collector consumer, int fetchCount) {
         try (CloseableHttpResponse response = getResponse()) {
             HttpEntity entity = response.getEntity();
             try {
@@ -37,7 +37,7 @@ public class RemoteMetricsFetcher extends HttpMetricFetcher {
         } catch (IOException ignored) {}
     }
 
-    void createMetrics(String data, MetricsParser.Consumer consumer, int fetchCount) throws IOException {
+    void createMetrics(String data, MetricsParser.Collector consumer, int fetchCount) throws IOException {
         MetricsParser.parse(data, consumer);
     }
 }

@@ -16,7 +16,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 import static ai.vespa.metricsproxy.metric.model.DimensionId.toDimensionId;
 
@@ -26,22 +25,22 @@ import static ai.vespa.metricsproxy.metric.model.DimensionId.toDimensionId;
  * @author Jo Kristian Bergum
  */
 public class MetricsParser {
-    public interface Consumer {
-        void consume(Metric metric);
+    public interface Collector {
+        void accept(Metric metric);
     }
 
     private static final ObjectMapper jsonMapper = new ObjectMapper();
 
-    public static void parse(String data, Consumer consumer) throws IOException {
+    public static void parse(String data, Collector consumer) throws IOException {
         parse(jsonMapper.createParser(data), consumer);
     }
 
-    static void parse(InputStream data, Consumer consumer) throws IOException {
+    static void parse(InputStream data, Collector consumer) throws IOException {
         parse(jsonMapper.createParser(data), consumer);
     }
 
     // Top level 'metrics' object, with e.g. 'time', 'status' and 'metrics'.
-    private static void parse(JsonParser parser, Consumer consumer) throws IOException {
+    private static void parse(JsonParser parser, Collector consumer) throws IOException {
         if (parser.nextToken() != JsonToken.START_OBJECT) {
             throw new IOException("Expected start of object, got " + parser.currentToken());
         }
@@ -80,7 +79,7 @@ public class MetricsParser {
     }
 
     // 'metrics' object with 'snapshot' and 'values' arrays
-    static private void parseMetrics(JsonParser parser, Consumer consumer) throws IOException {
+    static private void parseMetrics(JsonParser parser, Collector consumer) throws IOException {
         if (parser.getCurrentToken() != JsonToken.START_OBJECT) {
             throw new IOException("Expected start of 'metrics' object, got " + parser.currentToken());
         }
@@ -101,7 +100,7 @@ public class MetricsParser {
     }
 
     // 'values' array
-    static private void parseMetricValues(JsonParser parser, Instant timestamp, Consumer consumer) throws IOException {
+    static private void parseMetricValues(JsonParser parser, Instant timestamp, Collector consumer) throws IOException {
         if (parser.getCurrentToken() != JsonToken.START_ARRAY) {
             throw new IOException("Expected start of 'metrics:values' array, got " + parser.currentToken());
         }
@@ -113,7 +112,7 @@ public class MetricsParser {
     }
 
     // One item in the 'values' array, where each item has 'name', 'values' and 'dimensions'
-    static private void handleValue(JsonParser parser, Instant timestamp, Consumer consumer,
+    static private void handleValue(JsonParser parser, Instant timestamp, Collector consumer,
                                     Map<Long, Map<DimensionId, String>> uniqueDimensions) throws IOException {
         String name = "";
         String description = "";
@@ -137,7 +136,7 @@ public class MetricsParser {
             }
         }
         for (Map.Entry<String, Number> value : values) {
-            consumer.consume(new Metric(MetricId.toMetricId(value.getKey()), value.getValue(), timestamp, dim, description));
+            consumer.accept(new Metric(MetricId.toMetricId(value.getKey()), value.getValue(), timestamp, dim, description));
         }
     }
 
