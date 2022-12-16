@@ -153,7 +153,8 @@ findBestTargetsToFlushPerHandler(const FlushContextsMap &flushContextsPerHandler
 
 FlushContext::List
 PrepareRestartFlushStrategy::getFlushTargets(const FlushContext::List &targetList,
-                                             const flushengine::TlsStatsMap &tlsStatsMap) const
+                                             const flushengine::TlsStatsMap &tlsStatsMap,
+                                             const flushengine::ActiveFlushStats&) const
 {
     return flatten(findBestTargetsToFlushPerHandler(
             groupByFlushHandler(removeGCFlushTargets(targetList)),

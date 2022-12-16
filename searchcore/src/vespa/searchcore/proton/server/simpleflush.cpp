@@ -13,10 +13,10 @@ SimpleFlush::SimpleFlush()
 }
 
 FlushContext::List
-SimpleFlush::getFlushTargets(const FlushContext::List &targetList,
-                             const flushengine::TlsStatsMap &tlsStatsMap) const
+SimpleFlush::getFlushTargets(const FlushContext::List& targetList,
+                             const flushengine::TlsStatsMap&,
+                             const flushengine::ActiveFlushStats&) const
 {
-    (void) tlsStatsMap;
     FlushContext::List fv(targetList);
     std::sort(fv.begin(), fv.end(), CompareTarget());
     return fv;

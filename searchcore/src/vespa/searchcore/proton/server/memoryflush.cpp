@@ -1,12 +1,12 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "memoryflush.h"
+#include <vespa/searchcore/proton/flushengine/active_flush_stats.h>
 #include <vespa/searchcore/proton/flushengine/tls_stats_map.h>
 #include <vespa/vespalib/stllike/asciistream.h>
 #include <vespa/vespalib/stllike/hash_set.h>
-#include <vespa/vespalib/util/time.h>
 #include <vespa/vespalib/util/size_literals.h>
-#include <algorithm>
+#include <vespa/vespalib/util/time.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".proton.server.memoryflush");
@@ -136,8 +136,9 @@ computeGain(const IFlushTarget::DiskGain & gain) {
 }
 
 FlushContext::List
-MemoryFlush::getFlushTargets(const FlushContext::List &targetList,
-                             const flushengine::TlsStatsMap & tlsStatsMap) const
+MemoryFlush::getFlushTargets(const FlushContext::List& targetList,
+                             const flushengine::TlsStatsMap& tlsStatsMap,
+                             const flushengine::ActiveFlushStats& active_flushes) const
 {
     OrderType order(DEFAULT);
     uint64_t totalMemory(0);
@@ -166,10 +167,17 @@ MemoryFlush::getFlushTargets(const FlushContext::List &targetList,
         vespalib::duration timeDiff(now - (lastFlushTime > vespalib::system_time() ? lastFlushTime : _startTime));
         totalMemory += mgain;
         const flushengine::TlsStats &tlsStats = tlsStatsMap.getTlsStats(handler.getName());
-        if (visitedHandlers.insert(&handler).second) {
-            totalTlsSize += tlsStats.getNumBytes();
-            if ((totalTlsSize > config.maxGlobalTlsSize) && (order < TLSSIZE)) {
-                order = TLSSIZE;
+
+        auto oldest_start_time = active_flushes.oldest_start_time(handler.getName());
+        // Don't consider TLSSIZE if there exists an active (ongoing) flush (for this flush handler)
+        // that started before the last flush time of the flush target to evaluate.
+        // Instead we should wait for the active (ongoing) flush to be finished before doing another evaluation.
+        if (!oldest_start_time.has_value() || lastFlushTime < oldest_start_time.value()) {
+            if (visitedHandlers.insert(&handler).second) {
+                totalTlsSize += tlsStats.getNumBytes();
+                if ((totalTlsSize > config.maxGlobalTlsSize) && (order < TLSSIZE)) {
+                    order = TLSSIZE;
+                }
             }
         }
         if ((mgain >= config.maxMemoryGain) && (order < MEMORY)) {

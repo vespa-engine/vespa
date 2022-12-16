@@ -1,5 +1,6 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
+#include <vespa/searchcore/proton/flushengine/active_flush_stats.h>
 #include <vespa/searchcore/proton/flushengine/cachedflushtarget.h>
 #include <vespa/searchcore/proton/flushengine/flush_engine_explorer.h>
 #include <vespa/searchcore/proton/flushengine/flushengine.h>
@@ -19,13 +20,8 @@
 #include <vespa/log/log.h>
 LOG_SETUP("flushengine_test");
 
-// --------------------------------------------------------------------------------
-//
-// Setup.
-//
-// --------------------------------------------------------------------------------
-
 using namespace proton;
+using namespace proton::flushengine;
 using namespace vespalib::slime;
 using searchcorespi::IFlushTarget;
 using searchcorespi::FlushTask;
@@ -335,8 +331,9 @@ public:
         const SimpleStrategy &_flush;
     };
 
-    FlushContext::List getFlushTargets(const FlushContext::List &targetList,
-                                       const flushengine::TlsStatsMap &) const override {
+    FlushContext::List getFlushTargets(const FlushContext::List& targetList,
+                                       const flushengine::TlsStatsMap&,
+                                       const flushengine::ActiveFlushStats&) const override {
         FlushContext::List fv(targetList);
         std::sort(fv.begin(), fv.end(), CompareTarget(*this));
         return fv;
@@ -380,8 +377,8 @@ public:
 
 class NoFlushStrategy : public SimpleStrategy
 {
-    FlushContext::List getFlushTargets(const FlushContext::List &, const flushengine::TlsStatsMap &) const override {
-        return FlushContext::List();
+    FlushContext::List getFlushTargets(const FlushContext::List &, const flushengine::TlsStatsMap &, const flushengine::ActiveFlushStats&) const override {
+        return {};
     }
 };
 
@@ -769,6 +766,28 @@ TEST_F("require that oldest serial is updated when finishing priority flush stra
     TEST_DO(f.assertOldestSerial(*handler, 10));
     f.engine.setStrategy(std::make_shared<SimpleStrategy>());
     EXPECT_EQUAL(20u, handler->_oldestSerial);
+}
+
+TEST("the oldest start time is tracked per flush handler in ActiveFlushStats")
+{
+    using seconds = std::chrono::seconds;
+    using vespalib::system_time;
+    system_time now = vespalib::system_clock::now();
+    system_time t1 = now + seconds(1);
+    system_time t2 = now + seconds(2);
+    system_time t3 = now + seconds(3);
+    system_time t4 = now + seconds(4);
+    ActiveFlushStats stats;
+    EXPECT_FALSE(stats.oldest_start_time("h1").has_value());
+    stats.set_start_time("h1", t2);
+    stats.set_start_time("h2", t4);
+    EXPECT_EQUAL(t2, stats.oldest_start_time("h1").value());
+    EXPECT_EQUAL(t4, stats.oldest_start_time("h2").value());
+
+    stats.set_start_time("h1", t1);
+    EXPECT_EQUAL(t1, stats.oldest_start_time("h1").value());
+    stats.set_start_time("h1", t3);
+    EXPECT_EQUAL(t1, stats.oldest_start_time("h1").value());
 }
 
 

@@ -35,6 +35,12 @@ public:
     static vespalib::string createName(const IFlushHandler & handler, const IFlushTarget & target);
 
     /**
+     * Create a combined name of the handler name and the target name.
+     */
+    static vespalib::string create_name(const vespalib::string& handler_name,
+                                        const vespalib::string& target_name);
+
+    /**
      * Constructs a new instance of this class.
      *
      * @param handler The flush handler that contains the given target.

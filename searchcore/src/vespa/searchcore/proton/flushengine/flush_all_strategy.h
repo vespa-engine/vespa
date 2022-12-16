@@ -16,7 +16,8 @@ public:
 
     FlushContext::List
     getFlushTargets(const FlushContext::List &targetList,
-                    const flushengine::TlsStatsMap &) const override;
+                    const flushengine::TlsStatsMap&,
+                    const flushengine::ActiveFlushStats&) const override;
 };
 
 } // namespace proton
