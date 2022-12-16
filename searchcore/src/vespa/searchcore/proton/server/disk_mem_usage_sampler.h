@@ -27,6 +27,7 @@ class DiskMemUsageSampler {
     uint64_t sampleDiskUsage();
     vespalib::ProcessMemoryStats sampleMemoryUsage();
     TransientResourceUsage sample_transient_resource_usage();
+    [[nodiscard]] bool timeToSampleAgain() const noexcept;
 public:
     struct Config {
         DiskMemUsageFilter::Config filterConfig;

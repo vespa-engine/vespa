@@ -65,9 +65,17 @@ assertResourceUsage(double usage, double limit, double utilization, const Resour
     EXPECT_DOUBLE_EQ(utilization, state.utilization());
 }
 
+TEST_F(DiskMemUsageFilterTest, reconfig_with_identical_config_is_noop)
+{
+    EXPECT_TRUE(_filter.setConfig(Config(1.0, 0.8)));
+    assertResourceUsage(0.2, 0.8, 0.25, _filter.usageState().diskState());
+    EXPECT_FALSE(_filter.setConfig(Config(1.0, 0.8)));
+    assertResourceUsage(0.2, 0.8, 0.25, _filter.usageState().diskState());
+}
+
 TEST_F(DiskMemUsageFilterTest, disk_limit_can_be_reached)
 {
-    _filter.setConfig(Config(1.0, 0.8));
+    EXPECT_TRUE(_filter.setConfig(Config(1.0, 0.8)));
     assertResourceUsage(0.2, 0.8, 0.25, _filter.usageState().diskState());
     triggerDiskLimit();
     testWrite("diskLimitReached: { "
@@ -80,7 +88,7 @@ TEST_F(DiskMemUsageFilterTest, disk_limit_can_be_reached)
 
 TEST_F(DiskMemUsageFilterTest, memory_limit_can_be_reached)
 {
-    _filter.setConfig(Config(0.8, 1.0));
+    EXPECT_TRUE(_filter.setConfig(Config(0.8, 1.0)));
     assertResourceUsage(0.3, 0.8, 0.375, _filter.usageState().memoryState());
     triggerMemoryLimit();
     testWrite("memoryLimitReached: { "
@@ -95,7 +103,7 @@ TEST_F(DiskMemUsageFilterTest, memory_limit_can_be_reached)
 
 TEST_F(DiskMemUsageFilterTest, both_disk_limit_and_memory_limit_can_be_reached)
 {
-    _filter.setConfig(Config(0.8, 0.8));
+    EXPECT_TRUE(_filter.setConfig(Config(0.8, 0.8)));
     triggerMemoryLimit();
     triggerDiskLimit();
     testWrite("memoryLimitReached: { "
