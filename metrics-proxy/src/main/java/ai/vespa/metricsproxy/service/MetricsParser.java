@@ -16,6 +16,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static ai.vespa.metricsproxy.metric.model.DimensionId.toDimensionId;
 
@@ -142,25 +143,42 @@ public class MetricsParser {
 
     private static Map<DimensionId, String> parseDimensions(JsonParser parser,
                                                             Map<Long, Map<DimensionId, String>> uniqueDimensions) throws IOException {
-        List<Map.Entry<String, String>> dims = new ArrayList<>();
-        int keyHash = 0;
-        int valueHash = 0;
+
+        List<Dimension> dimensions = new ArrayList<>();
+
         for (parser.nextToken(); parser.getCurrentToken() != JsonToken.END_OBJECT; parser.nextToken()) {
             String fieldName = parser.getCurrentName();
             JsonToken token = parser.nextToken();
+
             if (token == JsonToken.VALUE_STRING){
                 String value = parser.getValueAsString();
-                dims.add(Map.entry(fieldName, value));
-                keyHash ^= fieldName.hashCode();
-                valueHash ^= value.hashCode();
+                dimensions.add(Dimension.of(fieldName, value));
             } else if (token == JsonToken.VALUE_NULL) {
                 // TODO Should log a warning if this happens
             } else {
                 throw new IllegalArgumentException("Dimension '" + fieldName + "' must be a string");
             }
         }
-        Long uniqueKey = (((long) keyHash) << 32) | (valueHash & 0xffffffffL);
-        return uniqueDimensions.computeIfAbsent(uniqueKey, key -> dims.stream().collect(Collectors.toUnmodifiableMap(e -> toDimensionId(e.getKey()), Map.Entry::getValue)));
+        return uniqueDimensions.computeIfAbsent(dimensionsHashCode(dimensions),
+                                                key -> dimensions.stream().collect(Collectors.toUnmodifiableMap(
+                                                        dim -> toDimensionId(dim.id), dim -> dim.value)));
+    }
+
+    static long dimensionsHashCode(List<Dimension> dimensions) {
+        int keyHash = 0;
+        int valueHash = 0;
+
+        for (Dimension dim : dimensions) {
+            keyHash += dim.id.hashCode();
+            valueHash += dim.value.hashCode();
+        }
+        return (((long) keyHash) << 32) | (valueHash & 0xffffffffL);
+    }
+
+    record Dimension(String id, String value) {
+        static Dimension of(String id, String value) {
+            return new Dimension(id, value);
+        }
     }
 
     private static List<Map.Entry<String, Number>> parseValues(String prefix, JsonParser parser) throws IOException {

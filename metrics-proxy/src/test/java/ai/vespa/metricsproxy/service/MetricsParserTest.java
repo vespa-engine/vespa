@@ -7,6 +7,7 @@ import org.junit.Test;
 import java.util.ArrayList;
 import java.util.List;
 
+import static ai.vespa.metricsproxy.service.MetricsParser.dimensionsHashCode;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
 
@@ -22,6 +23,21 @@ public class MetricsParserTest {
         public void consume(Metric metric) {
             metrics.add(metric);
         }
+    }
+
+    @Test
+    public void dimensions_hashcode_is_different_for_distinct_but_duplicate_dimension_values() {
+        var dimensions1 = List.of(
+                new MetricsParser.Dimension("cluster", "CLUSTER-1"),
+                new MetricsParser.Dimension("clusterid", "CLUSTER-1"));
+
+        var dimensions2 = List.of(
+                new MetricsParser.Dimension("cluster", "CLUSTER-2"),
+                new MetricsParser.Dimension("clusterid", "CLUSTER-2"));
+
+        System.out.println(dimensionsHashCode(dimensions1));
+        System.out.println(dimensionsHashCode(dimensions2));
+        assertNotEquals(dimensionsHashCode(dimensions1), dimensionsHashCode(dimensions2));
     }
 
     @Test
