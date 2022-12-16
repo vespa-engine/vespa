@@ -15,12 +15,10 @@ import java.time.Instant;
 public class MailVerificationSerializer {
 
     private static final String tenantField = "tenant";
-    private static final String audiencesField = "audiences";
     private static final String emailField = "email";
     private static final String emailTypeField = "emailType";
     private static final String emailVerificationCodeField = "emailVerificationCode";
     private static final String emailVerificationDeadlineField = "emailVerificationDeadline";
-    private static final String rolesField = "roles";
 
     public static Slime toSlime(PendingMailVerification pendingMailVerification) {
         var slime = new Slime();
