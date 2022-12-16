@@ -38,6 +38,9 @@ public class ContainerImagesTest {
         assertEquals(defaultImage, images.get(node(NodeType.proxyhost))); // For preload purposes
         assertEquals(defaultImage, images.get(node(NodeType.proxy)));
 
+        // Choose GPU when node has GPU resources
+        assertEquals(gpuImage, images.get(node(NodeType.tenant, null, true)));
+
         // Tenant node requesting a special image
         DockerImage requested = DockerImage.fromString("registry.example.com/vespa/special");
         assertEquals(requested, images.get(node(NodeType.tenant, requested)));
@@ -46,9 +49,6 @@ public class ContainerImagesTest {
         images = new ContainerImages(defaultImage, Optional.empty(), Optional.of(gpuImage));
         assertEquals(defaultImage, images.get(node(NodeType.host)));
         assertEquals(defaultImage, images.get(node(NodeType.tenant)));
-
-        // Choose GPU when node has GPU resources
-        assertEquals(gpuImage, images.get(node(NodeType.tenant, null, true)));
     }
 
     private static Node node(NodeType type) {

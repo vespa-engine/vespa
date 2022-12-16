@@ -41,12 +41,10 @@ public class ContainerImages {
         if (requestedImage.isPresent()) {
             image = requestedImage.get();
         } else if (nodeType == NodeType.tenant) {
-            if (tenantImage.isPresent()) {
-                image = tenantImage.get();
-            } else if (!node.resources().gpuResources().isZero()) {
+            if (!node.resources().gpuResources().isZero()) {
                 image = tenantGpuImage.orElseThrow(() -> new IllegalArgumentException(node + " has GPU resources, but there is no GPU container image available"));
             } else {
-                image = defaultImage;
+                image = tenantImage.orElse(defaultImage);
             }
         } else {
             image = defaultImage;
