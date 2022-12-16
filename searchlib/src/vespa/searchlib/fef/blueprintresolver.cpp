@@ -297,21 +297,17 @@ BlueprintResolver::compile()
 {
     assert(_executorSpecs.empty()); // only one compilation allowed
     Compiler compiler(_factory, _indexEnv, _executorSpecs, _featureMap);
-    auto compile_task = makeLambdaTask([&]() {
-                                   compiler.probe_stack();
-                                   for (const auto &seed: _seeds) {
-                                       auto ref = compiler.resolve_feature(seed, Blueprint::AcceptInput::ANY);
-                                       if (compiler.failed()) {
-                                           _warnings = std::move(compiler.errors);
-                                           return;
-                                       }
-                                       _seedMap.emplace(FeatureNameParser(seed).featureName(), ref);
-                                   }
-                               });
-    ThreadStackExecutor executor(1, 8_Mi);
-    executor.execute(std::move(compile_task));
-    executor.sync();
-    executor.shutdown();
+
+    compiler.probe_stack();
+    for (const auto &seed: _seeds) {
+       auto ref = compiler.resolve_feature(seed, Blueprint::AcceptInput::ANY);
+       if (compiler.failed()) {
+           _warnings = std::move(compiler.errors);
+           break;
+       }
+       _seedMap.emplace(FeatureNameParser(seed).featureName(), ref);
+    }
+
     size_t stack_usage = compiler.stack_usage();
     if (stack_usage > (128_Ki)) {
         _warnings.emplace_back(fmt("high stack usage: %zu bytes", stack_usage));
