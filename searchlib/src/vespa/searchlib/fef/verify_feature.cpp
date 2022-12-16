@@ -2,6 +2,8 @@
 
 #include "verify_feature.h"
 #include "blueprintresolver.h"
+#include "blueprintfactory.h"
+#include "iindexenvironment.h"
 #include <vespa/vespalib/util/stringfmt.h>
 
 using vespalib::make_string_short::fmt;

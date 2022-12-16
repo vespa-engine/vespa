@@ -2,17 +2,16 @@
 
 #pragma once
 
-#include <vector>
-#include <queue>
-#include <map>
-#include "blueprint.h"
 #include "feature_type.h"
+#include <vector>
+#include <map>
 
 namespace search::fef {
 
 class BlueprintFactory;
 class IIndexEnvironment;
 class FeatureNameParser;
+class Blueprint;
 
 /**
  * This class is used by the framework to resolve blueprint
@@ -25,6 +24,7 @@ class BlueprintResolver
 {
 public:
     using SP = std::shared_ptr<BlueprintResolver>;
+    using BlueprintSP = std::shared_ptr<Blueprint>;
     using Warnings = std::vector<vespalib::string>;
 
     /**
@@ -53,11 +53,11 @@ public:
      * other executors.
      **/
     struct ExecutorSpec {
-        Blueprint::SP            blueprint;
+        BlueprintSP              blueprint;
         std::vector<FeatureRef>  inputs;
         std::vector<FeatureType> output_types;
 
-        ExecutorSpec(Blueprint::SP blueprint_in);
+        ExecutorSpec(BlueprintSP blueprint_in);
         ~ExecutorSpec();
     };
     using ExecutorSpecList = std::vector<ExecutorSpec>;
@@ -85,7 +85,7 @@ private:
     ExecutorSpecList              _executorSpecs;
     FeatureMap                    _featureMap;
     FeatureMap                    _seedMap;
-    Warnings                        _warnings;
+    Warnings                      _warnings;
 
 public:
     BlueprintResolver(const BlueprintResolver &) = delete;

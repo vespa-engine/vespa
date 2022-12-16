@@ -2,8 +2,7 @@
 
 #include "fieldinfo.h"
 
-namespace search {
-namespace fef {
+namespace search::fef {
 
 FieldInfo::FieldInfo(FieldType type_in, CollectionType collection_in,
                      const string &name_in, uint32_t id_in)
@@ -18,5 +17,4 @@ FieldInfo::FieldInfo(FieldType type_in, CollectionType collection_in,
 }
 
 
-} // namespace fef
-} // namespace search
+}

@@ -2,13 +2,9 @@
 
 #pragma once
 
-#include "number_or_object.h"
-#include <vespa/vespalib/stllike/string.h>
-#include <vector>
 #include "featureexecutor.h"
 
-namespace search {
-namespace fef {
+namespace search::fef {
 
 /**
  * A FeatureResolver knowns the name and memory location of values
@@ -35,5 +31,4 @@ public:
     LazyValue resolve(size_t i) const { return _features[i]; }
 };
 
-} // namespace fef
-} // namespace search
+}

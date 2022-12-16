@@ -4,8 +4,7 @@
 
 #include "table.h"
 
-namespace search {
-namespace fef {
+namespace search::fef {
 
 /**
  * This is an interface used to access registered tables.
@@ -17,13 +16,7 @@ public:
      * Returns a const view of the table with the given name or NULL if not found.
      **/
     virtual const Table * getTable(const vespalib::string & name) const = 0;
-
-    /**
-     * Virtual destructor to allow safe subclassing.
-     **/
-    virtual ~ITableManager() {}
+    virtual ~ITableManager() = default;
 };
 
-} // namespace fef
-} // namespace search
-
+}

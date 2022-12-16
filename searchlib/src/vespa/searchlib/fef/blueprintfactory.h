@@ -2,11 +2,15 @@
 
 #pragma once
 
-#include "blueprint.h"
 #include "iblueprintregistry.h"
+#include <vespa/vespalib/stllike/string.h>
 #include <map>
 
 namespace search::fef {
+
+class Blueprint;
+class IIndexEnvironment;
+class IDumpFeatureVisitor;
 
 /**
  * This class implements the blueprint repository interface and acts
@@ -15,20 +19,17 @@ namespace search::fef {
 class BlueprintFactory : public IBlueprintRegistry
 {
 private:
-    BlueprintFactory(const BlueprintFactory &);
-    BlueprintFactory &operator=(const BlueprintFactory &);
-
-    typedef std::map<vespalib::string, Blueprint::SP> BlueprintMap;
+    using BlueprintSP = std::shared_ptr<Blueprint>;
+    using BlueprintMap = std::map<vespalib::string, BlueprintSP>;
 
     BlueprintMap _blueprintMap;
 
 public:
-    /**
-     * Create an empty factory.
-     **/
+    BlueprintFactory(const BlueprintFactory &) = delete;
+    BlueprintFactory &operator=(const BlueprintFactory &) = delete;
     BlueprintFactory();
 
-    void addPrototype(Blueprint::SP proto) override;
+    void addPrototype(BlueprintSP proto) override;
 
     /**
      * This method will visit features to be dumped by forwarding the
@@ -50,7 +51,7 @@ public:
      * @return fresh and clean blueprint of the appropriate class
      * @param name feature executor base name
      **/
-    Blueprint::SP createBlueprint(const vespalib::string &name) const;
+    BlueprintSP createBlueprint(const vespalib::string &name) const;
 };
 
 }

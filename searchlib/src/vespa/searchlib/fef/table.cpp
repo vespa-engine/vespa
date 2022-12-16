@@ -3,8 +3,7 @@
 #include "table.h"
 #include <limits>
 
-namespace search {
-namespace fef {
+namespace search::fef {
 
 Table::Table() :
     _table(),
@@ -13,9 +12,6 @@ Table::Table() :
     _table.reserve(256);
 }
 
-Table::~Table()
-{
-}
+Table::~Table() = default;
 
-} // namespace fef
-} // namespace search
+}

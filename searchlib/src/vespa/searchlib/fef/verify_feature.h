@@ -2,10 +2,13 @@
 
 #pragma once
 
-#include "blueprintfactory.h"
-#include "iindexenvironment.h"
+#include <vespa/vespalib/stllike/string.h>
+#include <vector>
 
 namespace search::fef {
+
+class BlueprintFactory;
+class IIndexEnvironment;
 
 enum class Level {INFO, WARNING, ERROR};
 using Message = std::pair<Level, vespalib::string>;

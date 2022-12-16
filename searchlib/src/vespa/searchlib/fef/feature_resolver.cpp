@@ -2,8 +2,7 @@
 
 #include "feature_resolver.h"
 
-namespace search {
-namespace fef {
+namespace search::fef {
 
 FeatureResolver::FeatureResolver(size_t size_hint)
     : _names(),
@@ -15,7 +14,6 @@ FeatureResolver::FeatureResolver(size_t size_hint)
     _is_object.reserve(size_hint);
 }
 
-FeatureResolver::~FeatureResolver() { }
+FeatureResolver::~FeatureResolver() = default;
 
-} // namespace fef
-} // namespace search
+}

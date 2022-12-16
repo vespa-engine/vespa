@@ -8,6 +8,7 @@
 #include <vespa/searchlib/engine/trace.h>
 #include <vespa/searchlib/attribute/attribute_operation.h>
 #include <vespa/searchlib/common/bitvector.h>
+#include <vespa/searchlib/fef/rank_program.h>
 #include <vespa/searchlib/queryeval/multibitvectoriterator.h>
 #include <vespa/searchlib/queryeval/andnotsearch.h>
 #include <vespa/vespalib/data/slime/cursor.h>

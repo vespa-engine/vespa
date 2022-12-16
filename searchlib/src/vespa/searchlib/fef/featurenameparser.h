@@ -5,8 +5,7 @@
 #include <vespa/vespalib/stllike/string.h>
 #include <vector>
 
-namespace search {
-namespace fef {
+namespace search::fef {
 
 /**
  * Simple parser used to split feature names into components by the
@@ -96,6 +95,4 @@ public:
     const string &featureName() const { return _featureName; }
 };
 
-} // namespace fef
-} // namespace search
-
+}

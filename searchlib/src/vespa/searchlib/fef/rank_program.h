@@ -16,6 +16,8 @@ namespace vespalib { class ExecutionProfiler; }
 
 namespace search::fef {
 
+class IQueryEnvironment;
+
 /**
  * A rank program is able to lazily calculate a set of feature
  * values. In order to access (and thereby calculate) output features
@@ -29,9 +31,6 @@ namespace search::fef {
 class RankProgram
 {
 private:
-    RankProgram(const RankProgram &) = delete;
-    RankProgram &operator=(const RankProgram &) = delete;
-
     using MappedValues = std::map<const NumberOrObject *, LazyValue>;
     using ValueSet = vespalib::hash_set<const NumberOrObject *, vespalib::hash<const NumberOrObject *>,
                                         std::equal_to<>, vespalib::hashtable_base::and_modulator>;
@@ -50,7 +49,9 @@ private:
     FeatureResolver resolve(const BlueprintResolver::FeatureMap &features, bool unbox_seeds) const;
 
 public:
-    typedef std::unique_ptr<RankProgram> UP;
+    using UP = std::unique_ptr<RankProgram>;
+    RankProgram(const RankProgram &) = delete;
+    RankProgram &operator=(const RankProgram &) = delete;
 
     /**
      * Create a new rank program backed by the given resolver.
