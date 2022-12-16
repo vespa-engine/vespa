@@ -7,9 +7,11 @@ import ai.vespa.metricsproxy.metric.model.MetricId;
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.JsonToken;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.yahoo.compress.Hasher;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -164,14 +166,12 @@ public class MetricsParser {
     }
 
     static long dimensionsHashCode(List<Dimension> dimensions) {
-        int keyHash = 0;
-        int valueHash = 0;
+        long hash = 0;
 
         for (Dimension dim : dimensions) {
-            keyHash += dim.id.hashCode();
-            valueHash += dim.value.hashCode();
+            hash += Hasher.xxh3(dim.id.getBytes(StandardCharsets.UTF_8)) ^ Hasher.xxh3(dim.value.getBytes(StandardCharsets.UTF_8));
         }
-        return (((long) keyHash) << 32) | (valueHash & 0xffffffffL);
+        return hash;
     }
 
     record Dimension(String id, String value) {
