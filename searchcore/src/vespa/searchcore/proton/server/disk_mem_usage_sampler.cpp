@@ -29,21 +29,26 @@ DiskMemUsageSampler::close() {
     _periodicHandle.reset();
 }
 
+bool
+DiskMemUsageSampler::timeToSampleAgain() const noexcept {
+    return vespalib::steady_clock::now() >= (_lastSampleTime + _sampleInterval);
+}
+
 void
 DiskMemUsageSampler::setConfig(const Config &config, IScheduledExecutor & executor)
 {
-    _periodicHandle.reset();
-    _filter.setConfig(config.filterConfig);
+    bool wasChanged = _filter.setConfig(config.filterConfig);
+    if (_periodicHandle && (_sampleInterval == config.sampleInterval) && !wasChanged) {
+        return;
+    }
     _sampleInterval = config.sampleInterval;
+    _periodicHandle.reset();
     sampleAndReportUsage();
-    _lastSampleTime = vespalib::steady_clock::now();
     vespalib::duration maxInterval = std::min(vespalib::duration(1s), _sampleInterval);
     _periodicHandle = executor.scheduleAtFixedRate(makeLambdaTask([this]() {
-        if (_filter.acceptWriteOperation() && (vespalib::steady_clock::now() < (_lastSampleTime + _sampleInterval))) {
-            return;
+        if (!_filter.acceptWriteOperation() || timeToSampleAgain()) {
+            sampleAndReportUsage();
         }
-        sampleAndReportUsage();
-        _lastSampleTime = vespalib::steady_clock::now();
     }), maxInterval, maxInterval);
 }
 
@@ -60,6 +65,7 @@ DiskMemUsageSampler::sampleAndReportUsage()
     vespalib::ProcessMemoryStats memoryStats = sampleMemoryUsage();
     uint64_t diskUsage = sampleDiskUsage();
     _filter.set_resource_usage(transientUsage, memoryStats, diskUsage);
+    _lastSampleTime = vespalib::steady_clock::now();
 }
 
 namespace {

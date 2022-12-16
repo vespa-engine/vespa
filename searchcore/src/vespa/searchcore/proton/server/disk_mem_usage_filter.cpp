@@ -188,12 +188,14 @@ DiskMemUsageFilter::set_resource_usage(const TransientResourceUsage& transient_u
     recalcState(guard);
 }
 
-void
+bool
 DiskMemUsageFilter::setConfig(Config config_in)
 {
     Guard guard(_lock);
+    if (_config == config_in) return false;
     _config = config_in;
     recalcState(guard);
+    return true;
 }
 
 vespalib::ProcessMemoryStats
