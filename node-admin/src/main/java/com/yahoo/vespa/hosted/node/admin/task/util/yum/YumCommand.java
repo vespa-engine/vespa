@@ -51,6 +51,7 @@ public abstract class YumCommand<T extends YumCommand<T>> {
 
     protected void addParametersToCommandLine(CommandLine commandLine) {
         commandLine.add("--assumeyes");
+        if (!enabledRepos.isEmpty()) commandLine.add("--disablerepo=*");
         enabledRepos.forEach(repo -> commandLine.add("--enablerepo=" + repo));
     }
 

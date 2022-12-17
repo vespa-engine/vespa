@@ -90,6 +90,7 @@ public class YumTester extends Yum {
             cmd.append("yum ").append(commandType.command);
             if (commandType != CommandType.deleteVersionLock) {
                 cmd.append(" --assumeyes");
+                if (!enableRepos.isEmpty()) cmd.append(" \"--disablerepo=*\"");
                 enableRepos.forEach(repo -> cmd.append(" --enablerepo=").append(repo));
             }
             if (commandType == CommandType.install && packages.size() > 1)
