@@ -2,7 +2,6 @@
 package ai.vespa.metricsproxy.service;
 
 import ai.vespa.metricsproxy.metric.HealthMetric;
-import ai.vespa.metricsproxy.metric.Metrics;
 
 /**
  * @author gjoranv
@@ -18,7 +17,7 @@ public class DownService extends VespaService {
     }
 
     @Override
-    public void consumeMetrics(MetricsParser.Consumer consumer) {
+    public void consumeMetrics(MetricsParser.Collector consumer) {
     }
 
    @Override

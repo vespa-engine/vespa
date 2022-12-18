@@ -21,18 +21,18 @@ public class MetricsFetcherTest {
 
     private static final int port = 9;  //port number is not used in this test
 
-    private static class MetricsConsumer implements MetricsParser.Consumer {
+    private static class MetricsCollector implements MetricsParser.Collector {
         Metrics metrics = new Metrics();
         @Override
-        public void consume(Metric metric) {
+        public void accept(Metric metric) {
             metrics.add(metric);
         }
     }
     Metrics fetch(String data) throws IOException {
         RemoteMetricsFetcher fetcher = new RemoteMetricsFetcher(new DummyService(0, "dummy/id/0"), port);
-        MetricsConsumer consumer = new MetricsConsumer();
-        fetcher.createMetrics(data, consumer, 0);
-        return consumer.metrics;
+        MetricsCollector collector = new MetricsCollector();
+        fetcher.createMetrics(data, collector, 0);
+        return collector.metrics;
     }
 
     @Test

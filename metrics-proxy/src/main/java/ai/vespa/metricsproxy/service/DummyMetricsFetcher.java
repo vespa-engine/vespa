@@ -19,6 +19,6 @@ public class DummyMetricsFetcher extends RemoteMetricsFetcher {
     /**
      * Connect to remote service over http and fetch metrics
      */
-    public void getMetrics(MetricsParser.Consumer consumer, int fetchCount) {
+    public void getMetrics(MetricsParser.Collector consumer, int fetchCount) {
     }
 }
