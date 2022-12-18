@@ -126,6 +126,9 @@ public class StorageMaintainerTest {
         Files.createDirectories(containerVespaHome.resolve("var/db"));
         Files.createFile(containerVespaHome.resolve("var/db/some-file"));
 
+        Files.createDirectories(containerVespaHome.resolve("var/tmp"));
+        Files.createFile(containerVespaHome.resolve("var/tmp/some-file"));
+
         ContainerPath containerRoot = context.paths().of("/");
         Set<String> actualContents = FileFinder.files(containerRoot)
                 .stream()
@@ -135,6 +138,7 @@ public class StorageMaintainerTest {
                 "etc/something/conf",
                 "opt/vespa/logs/vespa/vespa.log",
                 "opt/vespa/logs/vespa/zookeeper.log",
+                "opt/vespa/var/tmp/some-file",
                 "opt/vespa/var/db/some-file");
         assertEquals(expectedContents, actualContents);
         return context;
