@@ -32,6 +32,44 @@ using namespace config::protocol::v3;
 
 namespace {
 
+struct Response {
+    vespalib::string defName;
+    vespalib::string defMd5;
+    vespalib::string configId;
+    vespalib::string configXxhash64;
+    int changed;
+    long generation;
+    StringVector payload;
+    vespalib::string ns;
+    void encodeResponse(FRT_RPCRequest * req) {
+        FRT_Values & ret = *req->GetReturn();
+
+        ret.AddString(defName.c_str());
+        ret.AddString("");
+        ret.AddString(defMd5.c_str());
+        ret.AddString(configId.c_str());
+        ret.AddString(configXxhash64.c_str());
+        ret.AddInt32(changed);
+        ret.AddInt64(generation);
+        FRT_StringValue * payload_arr = ret.AddStringArray(payload.size());
+        for (uint32_t i = 0; i < payload.size(); i++) {
+            ret.SetString(&payload_arr[i], payload[i].c_str());
+        }
+        if (!ns.empty())
+            ret.AddString(ns.c_str());
+        req->SetError(FRTE_NO_ERROR);
+    }
+    Response(vespalib::stringref name, vespalib::stringref md5,
+             vespalib::stringref id, vespalib::stringref hash)
+        : defName(name),
+          defMd5(md5),
+          configId(id),
+          configXxhash64(hash),
+          changed(0),
+          generation(0)
+    {}
+};
+
     struct RPCFixture
     {
         std::vector<FRT_RPCRequest *> requests;
@@ -87,20 +125,23 @@ namespace {
     struct ConnectionMock : public Connection {
         int errorCode;
         duration timeout;
-        FRT_RPCRequest * ans;
+        std::unique_ptr<Response> ans;
         fnet::frt::StandaloneFRT server;
         FRT_Supervisor & supervisor;
         FNET_Scheduler scheduler;
         vespalib::string address;
-        ConnectionMock(FRT_RPCRequest * answer = nullptr);
+        ConnectionMock() : ConnectionMock(std::unique_ptr<Response>()) { }
+        ConnectionMock(std::unique_ptr<Response> answer);
         ~ConnectionMock();
         FRT_RPCRequest * allocRPCRequest() override { return supervisor.AllocRPCRequest(); }
         void setError(int ec) override { errorCode = ec; }
         void invoke(FRT_RPCRequest * req, duration t, FRT_IRequestWait * waiter) override
         {
             timeout = t;
-            if (ans != nullptr)
-                waiter->RequestDone(ans);
+            if (ans != nullptr) {
+                ans->encodeResponse(req);
+                waiter->RequestDone(req);
+            }
             else
                 waiter->RequestDone(req);
         }
@@ -108,10 +149,10 @@ namespace {
         void setTransientDelay(duration delay) override { (void) delay; }
     };
 
-    ConnectionMock::ConnectionMock(FRT_RPCRequest * answer)
+    ConnectionMock::ConnectionMock(std::unique_ptr<Response> answer)
         : errorCode(0),
           timeout(0ms),
-          ans(answer),
+          ans(std::move(answer)),
           server(),
           supervisor(server.supervisor()),
           address()
@@ -128,7 +169,6 @@ namespace {
         FNET_Scheduler * getScheduler() override { return &current->scheduler; }
         void syncTransport() override { }
     };
-
 
     struct AgentResultFixture
     {
@@ -175,7 +215,7 @@ namespace {
         ConfigKey key;
         SourceFixture()
             : rpc(),
-              conn(rpc.createOKResponse("foo", "baz", "4", "boo")),
+              conn(std::make_unique<Response>("foo", "baz", "4", "boo")),
               key("foo", "bar", "4", "boo")
         { }
 
