@@ -291,7 +291,7 @@ FRT_Supervisor::SchedulerPtr::SchedulerPtr(FNET_TransportThread *transport_threa
 namespace fnet::frt {
 
 StandaloneFRT::StandaloneFRT(const TransportConfig &config)
-    : _threadPool(std::make_unique<FastOS_ThreadPool>(1024*128)),
+    : _threadPool(std::make_unique<FastOS_ThreadPool>()),
       _transport(std::make_unique<FNET_Transport>(config)),
       _supervisor(std::make_unique<FRT_Supervisor>(_transport.get()))
 {

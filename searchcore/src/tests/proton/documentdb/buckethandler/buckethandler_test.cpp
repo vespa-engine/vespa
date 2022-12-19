@@ -103,7 +103,7 @@ struct Fixture
           _ready(_bucketDB, SubDbType::READY),
           _removed(_bucketDB, SubDbType::REMOVED),
           _notReady(_bucketDB, SubDbType::NOTREADY),
-          _exec(1, 64000),
+          _exec(1),
           _handler(_exec),
           _changedHandler(),
           _calc(new BucketStateCalculator()),

@@ -11,7 +11,7 @@ using vespalib::makeSharedLambdaCallback;
 namespace storage::spi::dummy {
 
 DummyBucketExecutor::DummyBucketExecutor(size_t numExecutors)
-    : _executor(std::make_unique<vespalib::ThreadStackExecutor>(numExecutors, 0x10000)),
+    : _executor(std::make_unique<vespalib::ThreadStackExecutor>(numExecutors)),
       _lock(),
       _cond(),
       _inFlight(),

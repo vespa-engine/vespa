@@ -152,7 +152,7 @@ namespace {
 std::pair<std::string, std::string>
 getMatchedMetrics(const vespalib::string& config)
 {
-    FastOS_ThreadPool pool(256_Ki);
+    FastOS_ThreadPool pool;
     TestMetricSet mySet;
     MetricManager mm;
     mm.registerMetric(mm.getMetricLock(), mySet.set);
@@ -475,7 +475,7 @@ std::string dumpAllSnapshots(const MetricManager& mm,
 
 TEST_F(MetricManagerTest, test_snapshots)
 {
-    FastOS_ThreadPool pool(256_Ki);
+    FastOS_ThreadPool pool;
     FakeTimer* timer = new FakeTimer(1000);
     std::unique_ptr<MetricManager::Timer> timerImpl(timer);
     TestMetricSet mySet;
@@ -575,7 +575,7 @@ TEST_F(MetricManagerTest, test_snapshots)
 
 TEST_F(MetricManagerTest, test_xml_output)
 {
-    FastOS_ThreadPool pool(256_Ki);
+    FastOS_ThreadPool pool;
     FakeTimer* timer = new FakeTimer(1000);
     std::unique_ptr<MetricManager::Timer> timerImpl(timer);
     MetricManager mm(std::move(timerImpl));
@@ -653,7 +653,7 @@ TEST_F(MetricManagerTest, test_xml_output)
 
 TEST_F(MetricManagerTest, test_json_output)
 {
-    FastOS_ThreadPool pool(256_Ki);
+    FastOS_ThreadPool pool;
     FakeTimer* timer = new FakeTimer(1000);
     std::unique_ptr<MetricManager::Timer> timerImpl(timer);
     MetricManager mm(std::move(timerImpl));
@@ -752,7 +752,7 @@ struct MetricSnapshotTestFixture
 
     MetricSnapshotTestFixture(MetricManagerTest& callerTest, MetricSet& metricSet)
         : test(callerTest),
-          pool(DEFAULT_THREAD_STACK_SIZE),
+          pool(),
           timer(new FakeTimer(1000)),
           manager(std::unique_ptr<MetricManager::Timer>(timer)),
           mset(metricSet)
@@ -981,7 +981,7 @@ TEST_F(MetricManagerTest, json_output_can_have_multiple_sets_with_same_name)
 
 TEST_F(MetricManagerTest, test_text_output)
 {
-    FastOS_ThreadPool pool(256_Ki);
+    FastOS_ThreadPool pool;
     FakeTimer* timer = new FakeTimer(1000);
     std::unique_ptr<MetricManager::Timer> timerImpl(timer);
     MetricManager mm(std::move(timerImpl));
@@ -1080,7 +1080,7 @@ TEST_F(MetricManagerTest, test_update_hooks)
 {
     std::mutex output_mutex;
     std::ostringstream output;
-    FastOS_ThreadPool pool(256_Ki);
+    FastOS_ThreadPool pool;
     FakeTimer* timer = new FakeTimer(1000);
     std::unique_ptr<MetricManager::Timer> timerImpl(timer);
         // Add a metric set just so one exist

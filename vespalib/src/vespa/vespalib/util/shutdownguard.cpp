@@ -24,7 +24,7 @@ void ShutdownGuard::Run(FastOS_ThreadInterface *, void *)
 
 ShutdownGuard::ShutdownGuard(duration millis) :
     FastOS_Runnable(),
-    _pool(STACK_SIZE, 1),
+    _pool(1),
     _dieAtTime(steady_clock::now() + millis)
 {
     _pool.NewThread(this);

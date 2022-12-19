@@ -81,7 +81,7 @@ public:
     GateSP gate;
 
     FlushHandler()
-        : _executor(1, 64_Ki),
+        : _executor(1),
           gate()
     { }
     ~FlushHandler();
@@ -486,7 +486,7 @@ Test::requireThatOnlyOneFlusherCanRunAtTheSameTime()
     av->commit(CommitParam(9));
     IFlushTarget::SP ft = am.getFlushable("a8");
     (static_cast<FlushableAttribute *>(ft.get()))->setCleanUpAfterFlush(false);
-    vespalib::ThreadStackExecutor exec(16, 64000);
+    vespalib::ThreadStackExecutor exec(16);
 
     for (size_t i = 10; i < 100; ++i) {
         av->commit(CommitParam(i));
@@ -586,7 +586,7 @@ Test::requireThatShrinkWorks()
     EXPECT_EQUAL(1000u, av->getNumDocs());
     EXPECT_EQUAL(100u, av->getCommittedDocIdLimit());
     EXPECT_EQUAL(createSerialNum - 1, ft->getFlushedSerialNum());
-    vespalib::ThreadStackExecutor exec(1, 128_Ki);
+    vespalib::ThreadStackExecutor exec(1);
     vespalib::Executor::Task::UP task = ft->initFlush(53, std::make_shared<search::FlushToken>());
     exec.execute(std::move(task));
     exec.sync();

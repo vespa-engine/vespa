@@ -8,7 +8,6 @@
 #include <vespa/searchlib/memoryindex/memory_index.h>
 #include <vespa/searchlib/query/tree/simplequery.h>
 #include <vespa/searchlib/queryeval/fake_requestcontext.h>
-#include <vespa/searchlib/queryeval/fake_search.h>
 #include <vespa/searchlib/queryeval/fake_searchable.h>
 #include <vespa/searchlib/queryeval/searchiterator.h>
 #include <vespa/searchlib/queryeval/blueprint.h>
@@ -265,13 +264,13 @@ VESPA_THREAD_STACK_TAG(push_executor)
 Fixture::Fixture(uint32_t readThreads)
     : schema(makeSchema()),
       repo(makeDocTypeRepoConfig()),
-      _executor(1, 128_Ki),
+      _executor(1),
       _invertThreads(vespalib::SequencedTaskExecutor::create(invert_executor, 2)),
       _pushThreads(vespalib::SequencedTaskExecutor::create(push_executor, 2)),
       index(schema, MockFieldLengthInspector(), *_invertThreads, *_pushThreads),
       _readThreads(readThreads),
-      _writer(1, 128_Ki),
-      _readers(readThreads, 128_Ki),
+      _writer(1),
+      _readers(readThreads),
       _rnd(),
       _keyLimit(1000000),
       _readSeed(50),

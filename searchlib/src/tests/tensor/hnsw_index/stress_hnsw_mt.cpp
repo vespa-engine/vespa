@@ -18,7 +18,6 @@
 #include <vespa/searchlib/tensor/random_level_generator.h>
 #include <vespa/searchlib/tensor/vector_bundle.h>
 #include <vespa/vespalib/data/input.h>
-#include <vespa/vespalib/data/memory_input.h>
 #include <vespa/vespalib/data/slime/slime.h>
 #include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/util/blockingthreadstackexecutor.h>
@@ -254,8 +253,8 @@ public:
           vectors(),
           gen_handler(),
           index(),
-          multi_prepare_workers(10, 128_Ki, 50),
-          write_thread(1, 128_Ki, 500)
+          multi_prepare_workers(10, 50),
+          write_thread(1, 500)
     {
         loaded_vectors.load();
     }

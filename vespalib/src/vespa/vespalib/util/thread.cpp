@@ -32,7 +32,7 @@ Thread::Proxy::~Proxy() = default;
 
 Thread::Thread(Runnable &runnable, init_fun_t init_fun_in)
     : _proxy(*this, runnable, std::move(init_fun_in)),
-      _pool(STACK_SIZE, 1),
+      _pool(1),
       _lock(),
       _cond(),
       _stopped(false),

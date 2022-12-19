@@ -11,26 +11,23 @@ namespace vespalib {
  **/
 class BlockingThreadStackExecutor : public ThreadStackExecutorBase
 {
-private:
+public:
     bool acceptNewTask(unique_lock & guard, std::condition_variable & cond) override;
     void wakeup(unique_lock & guard, std::condition_variable &) override;
 
-public:
     /**
      * Create a new blocking thread stack executor. The task limit specifies
      * the maximum number of tasks that are currently handled by this
      * executor. Trying to execute more tasks will block.
      *
      * @param threads number of worker threads (concurrent tasks)
-     * @param stackSize stack size per worker thread
      * @param taskLimit upper limit on accepted tasks
      **/
-    BlockingThreadStackExecutor(uint32_t threads, uint32_t stackSize, uint32_t taskLimit);
+    BlockingThreadStackExecutor(uint32_t threads, uint32_t taskLimit);
 
     // same as above, but enables you to specify a custom function
     // used to wrap the main loop of all worker threads
-    BlockingThreadStackExecutor(uint32_t threads, uint32_t stackSize, uint32_t taskLimit,
-                                init_fun_t init_function);
+    BlockingThreadStackExecutor(uint32_t threads, uint32_t taskLimit, init_fun_t init_function);
 
     ~BlockingThreadStackExecutor() override;
 };

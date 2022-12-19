@@ -160,7 +160,7 @@ VESPA_THREAD_STACK_TAG(write_executor)
 // searches, dumps the index to disk, and performs the searches
 // again.
 void Test::requireThatMemoryIndexCanBeDumpedAndSearched() {
-    vespalib::ThreadStackExecutor sharedExecutor(2, 0x10000);
+    vespalib::ThreadStackExecutor sharedExecutor(2);
     auto indexFieldInverter = vespalib::SequencedTaskExecutor::create(invert_executor, 2);
     auto indexFieldWriter = vespalib::SequencedTaskExecutor::create(write_executor, 2);
     DocBuilder doc_builder([](auto& header) { header.addField(field_name, DataType::T_STRING); });

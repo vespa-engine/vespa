@@ -680,7 +680,7 @@ MyFeedHandler::appendOperation(const FeedOperation &op, DoneCallback)
 }
 
 MyExecutor::MyExecutor()
-  : vespalib::ThreadStackExecutorBase(128_Ki, -1, my_executor_init),
+  : vespalib::ThreadStackExecutorBase(-1, my_executor_init),
     _threadId()
 {
     start(1);

@@ -606,7 +606,7 @@ TEST_F(FileStorManagerTest, handler_paused_multi_thread) {
 
     Document::SP doc(createDocument(content, "id:footype:testdoctype1:n=1234:bar").release());
 
-    FastOS_ThreadPool pool(512_Ki);
+    FastOS_ThreadPool pool;
     MessagePusherThread pushthread(filestorHandler, doc);
     pushthread.start(pool);
 

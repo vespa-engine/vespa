@@ -569,7 +569,7 @@ AttributeBenchmark::main(int argc, char **argv)
 
     dc._attribute = vespalib::string(argv[optind]);
 
-    _threadPool = new FastOS_ThreadPool(256000);
+    _threadPool = new FastOS_ThreadPool();
 
     std::cout << "<attribute-benchmark>" << std::endl;
     init(dc);

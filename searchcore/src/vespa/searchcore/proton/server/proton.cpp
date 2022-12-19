@@ -148,7 +148,8 @@ struct MetricsUpdateHook : metrics::UpdateHook
 
 const vespalib::string CUSTOM_COMPONENT_API_PATH = "/state/v1/custom/component";
 
-VESPA_THREAD_STACK_TAG(proton_close_executor)
+VESPA_THREAD_STACK_TAG(proton_close_executor);
+VESPA_THREAD_STACK_TAG(proton_executor);
 
 void ensureWritableDir(const vespalib::string &dirName) {
     auto filename = dirName + "/tmp.filesystem.probe";
@@ -251,7 +252,7 @@ Proton::Proton(FastOS_ThreadPool & threadPool, FNET_Transport & transport, const
       _stateServer(),
       // This executor can only have 1 thread as it is used for
       // serializing startup.
-      _executor(1, 128_Ki),
+      _executor(1, CpuUsage::wrap(proton_executor, CpuCategory::SETUP)),
       _protonDiskLayout(),
       _protonConfigurer(_executor, *this, _protonDiskLayout),
       _protonConfigFetcher(_transport, configUri, _protonConfigurer, subscribeTimeout),
@@ -492,7 +493,7 @@ Proton::~Proton()
             }
         }
 
-        vespalib::ThreadStackExecutor closePool(std::min(_documentDBMap.size(), numCores), 0x20000,
+        vespalib::ThreadStackExecutor closePool(std::min(_documentDBMap.size(), numCores),
                                                 CpuUsage::wrap(proton_close_executor, CpuCategory::SETUP));
         closeDocumentDBs(closePool);
     }
@@ -632,7 +633,7 @@ Proton::addDocumentDB(const document::DocumentType &docType,
         // If configured value for initialize threads was 0, or we
         // are performing a reconfig after startup has completed, then use
         // 1 thread per document type.
-        initializeThreads = std::make_shared<vespalib::ThreadStackExecutor>(1, 128_Ki);
+        initializeThreads = std::make_shared<vespalib::ThreadStackExecutor>(1);
     }
     auto ret = DocumentDB::create(config.basedir + "/documents",
                                   documentDBConfig,

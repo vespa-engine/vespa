@@ -5,7 +5,6 @@
 #include <vespa/vespalib/util/threadstackexecutor.h>
 #include <vespa/vespalib/util/cpu_usage.h>
 #include <vespa/vespalib/util/sequencedtaskexecutor.h>
-#include <vespa/vespalib/util/size_literals.h>
 #include <vespa/vespalib/util/nice.h>
 
 using vespalib::CpuUsage;
@@ -21,10 +20,10 @@ SharedThreadingService::SharedThreadingService(const SharedThreadingServiceConfi
                                                FNET_Transport& transport,
                                                storage::spi::BucketExecutor& bucket_executor)
     : _transport(transport),
-      _warmup(std::make_unique<vespalib::ThreadStackExecutor>(cfg.warmup_threads(), 128_Ki,
+      _warmup(std::make_unique<vespalib::ThreadStackExecutor>(cfg.warmup_threads(),
                                                               CpuUsage::wrap(proton_warmup_executor, CpuUsage::Category::COMPACT),
                                                               cfg.shared_task_limit())),
-      _shared(std::make_shared<vespalib::BlockingThreadStackExecutor>(cfg.shared_threads(), 128_Ki,
+      _shared(std::make_shared<vespalib::BlockingThreadStackExecutor>(cfg.shared_threads(),
                                                                       cfg.shared_task_limit(), vespalib::be_nice(proton_shared_executor, cfg.feeding_niceness()))),
       _field_writer(),
       _invokeService(std::max(vespalib::adjustTimeoutByDetectedHz(1ms),

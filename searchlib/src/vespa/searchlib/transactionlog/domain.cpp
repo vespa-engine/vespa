@@ -9,6 +9,7 @@
 #include <vespa/vespalib/util/destructor_callbacks.h>
 #include <vespa/vespalib/util/size_literals.h>
 #include <vespa/vespalib/util/retain_guard.h>
+#include <vespa/vespalib/util/cpu_usage.h>
 #include <vespa/fastos/file.h>
 #include <algorithm>
 #include <thread>
@@ -23,8 +24,11 @@ LOG_SETUP(".transactionlog.domain");
 using vespalib::string;
 using vespalib::make_string_short::fmt;
 using vespalib::makeLambdaTask;
+using vespalib::CpuUsage;
 using std::runtime_error;
 using std::make_shared;
+
+using CpuCategory = vespalib::CpuUsage::Category;
 
 namespace search::transactionlog {
 namespace {
@@ -34,6 +38,7 @@ createCommitChunk(const DomainConfig &cfg) {
     return std::make_unique<CommitChunk>(cfg.getChunkSizeLimit(), cfg.getChunkSizeLimit()/256);
 }
 
+VESPA_THREAD_STACK_TAG(tls_domain_commit);
 }
 
 Domain::Domain(const string &domainName, const string & baseDir, vespalib::Executor & executor,
@@ -41,7 +46,7 @@ Domain::Domain(const string &domainName, const string & baseDir, vespalib::Execu
     : _config(cfg),
       _currentChunk(createCommitChunk(cfg)),
       _lastSerial(0),
-      _singleCommitter(std::make_unique<vespalib::ThreadStackExecutor>(1, 128_Ki)),
+      _singleCommitter(std::make_unique<vespalib::ThreadStackExecutor>(1, CpuUsage::wrap(tls_domain_commit, CpuCategory::WRITE))),
       _executor(executor),
       _sessionId(1),
       _name(domainName),

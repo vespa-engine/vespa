@@ -15,7 +15,6 @@ public:
     bool acceptNewTask(unique_lock &, std::condition_variable &) override;
     void wakeup(unique_lock &, std::condition_variable &) override;
 
-public:
     /**
      * Create a new thread stack executor. The task limit specifies
      * the maximum number of tasks that are currently handled by this
@@ -23,21 +22,16 @@ public:
      * greater than 0.
      *
      * @param threads number of worker threads (concurrent tasks)
-     * @param stackSize stack size per worker thread
      * @param taskLimit upper limit on accepted tasks
      **/
-    ThreadStackExecutor(uint32_t threads, uint32_t stackSize,
-                        uint32_t taskLimit = 0xffffffff);
+    ThreadStackExecutor(uint32_t threads, uint32_t taskLimit);
+    ThreadStackExecutor(uint32_t threads);
 
     // same as above, but enables you to specify a custom function
     // used to wrap the main loop of all worker threads
-    ThreadStackExecutor(uint32_t threads, uint32_t stackSize,
-                        init_fun_t init_function,
-                        uint32_t taskLimit = 0xffffffff);
+    ThreadStackExecutor(uint32_t threads, init_fun_t init_function, uint32_t taskLimit);
+    ThreadStackExecutor(uint32_t threads, init_fun_t init_function);
 
-    /**
-     * Will invoke cleanup.
-     **/
     ~ThreadStackExecutor() override;
 };
 

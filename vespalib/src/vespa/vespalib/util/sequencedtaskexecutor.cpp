@@ -14,7 +14,6 @@ namespace vespalib {
 
 namespace {
 
-constexpr uint32_t stackSize = 128_Ki;
 constexpr uint8_t MAGIC = 255;
 constexpr uint32_t NUM_PERFECT_PER_EXECUTOR = 8;
 constexpr uint16_t INVALID_KEY = 0x8000;
@@ -77,9 +76,9 @@ SequencedTaskExecutor::create(Runnable::init_fun_t func, uint32_t threads, uint3
                 executors.push_back(std::make_unique<SingleExecutor>(func, taskLimit, is_task_limit_hard, watermark, 100ms));
             } else {
                 if (is_task_limit_hard) {
-                    executors.push_back(std::make_unique<BlockingThreadStackExecutor>(1, stackSize, taskLimit, func));
+                    executors.push_back(std::make_unique<BlockingThreadStackExecutor>(1, taskLimit, func));
                 } else {
-                    executors.push_back(std::make_unique<ThreadStackExecutor>(1, stackSize, func));
+                    executors.push_back(std::make_unique<ThreadStackExecutor>(1, func));
                 }
             }
         }

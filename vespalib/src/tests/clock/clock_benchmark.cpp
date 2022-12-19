@@ -134,7 +134,7 @@ main(int , char *argv[])
     uint64_t frequency = atoll(argv[1]);
     uint32_t numThreads = atoi(argv[2]);
     uint64_t samples = atoll(argv[3]);
-    FastOS_ThreadPool pool(0x10000);
+    FastOS_ThreadPool pool;
     NSValue nsValue;
     NSVolatile nsVolatile;
     NSAtomic nsAtomic;

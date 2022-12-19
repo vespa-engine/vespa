@@ -21,7 +21,7 @@ CryptoEngine::SP null_crypto = std::make_shared<NullCryptoEngine>();
 struct BasicFixture {
     FastOS_ThreadPool thread_pool;
     FNET_Transport    transport;
-    BasicFixture() : thread_pool(128_Ki), transport(fnet::TransportConfig(4).crypto(null_crypto)) {
+    BasicFixture() : thread_pool(), transport(fnet::TransportConfig(4).crypto(null_crypto)) {
         ASSERT_TRUE(transport.Start(&thread_pool));
     }
     ~BasicFixture() {

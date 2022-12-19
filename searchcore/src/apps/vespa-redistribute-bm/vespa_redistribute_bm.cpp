@@ -24,7 +24,6 @@
 #include <vespa/searchlib/index/dummyfileheadercontext.h>
 #include <vespa/vespalib/objects/nbostream.h>
 #include <vespa/vespalib/util/lambdatask.h>
-#include <vespa/vespalib/util/size_literals.h>
 #include <vespa/vespalib/util/threadstackexecutor.h>
 #include <getopt.h>
 #include <filesystem>
@@ -209,16 +208,15 @@ public:
 };
 
 ReFeed::ReFeed(const BMParams& params, std::shared_ptr<const DocumentTypeRepo> repo, IBmFeedHandler& feed_handler, int64_t& time_bias, const std::vector<vespalib::nbostream>& feed, const vespalib::string& op_name)
-    : _top_executor(1, 128_Ki),
-      _executor(params.get_client_threads(), 128_Ki),
+    : _top_executor(1),
+      _executor(params.get_client_threads()),
       _feeder(repo, feed_handler, _executor),
       _op_name(op_name),
       _params(params),
       _time_bias(time_bias),
       _feed(feed)
 {
-    _top_executor.execute(makeLambdaTask([this]()
-                                         { run(); }));
+    _top_executor.execute(makeLambdaTask([this]() { run(); }));
 }
 
 ReFeed::~ReFeed()
@@ -355,7 +353,7 @@ Benchmark::adjust_cluster_state_after_first_redistribution()
 void
 Benchmark::make_feed()
 {
-    vespalib::ThreadStackExecutor executor(_params.get_client_threads(), 128_Ki);
+    vespalib::ThreadStackExecutor executor(_params.get_client_threads());
     _put_feed = _feed.make_feed(executor, _params, [this](BmRange range, BucketSelector bucket_selector) { return _feed.make_put_feed(range, bucket_selector); }, _feed.num_buckets(), "put");
     if (_params.get_refeed_mode() == ReFeedMode::UPDATE) {
         _update_feed = _feed.make_feed(executor, _params, [this](BmRange range, BucketSelector bucket_selector) { return _feed.make_update_feed(range, bucket_selector); }, _feed.num_buckets(), "update");
@@ -365,7 +363,7 @@ Benchmark::make_feed()
 void
 Benchmark::feed()
 {
-    vespalib::ThreadStackExecutor executor(_params.get_client_threads(), 128_Ki);
+    vespalib::ThreadStackExecutor executor(_params.get_client_threads());
     BmFeeder feeder(_repo, *_cluster->get_feed_handler(), executor);
     BmNodeStatsReporter reporter(*_cluster, false);
     reporter.start(500ms);

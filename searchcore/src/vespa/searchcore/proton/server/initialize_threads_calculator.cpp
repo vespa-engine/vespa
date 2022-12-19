@@ -2,11 +2,11 @@
 
 #include "initialize_threads_calculator.h"
 #include <vespa/vespalib/util/cpu_usage.h>
-#include <vespa/vespalib/util/size_literals.h>
 #include <vespa/vespalib/util/threadstackexecutor.h>
 #include <fstream>
 
 using vespalib::CpuUsage;
+using vespalib::ThreadStackExecutor;
 using CpuCategory = vespalib::CpuUsage::Category;
 
 namespace {
@@ -52,8 +52,7 @@ InitializeThreadsCalculator::InitializeThreadsCalculator(const vespalib::string&
     }
     write(_path.c_str(), _num_threads);
     if (_num_threads > 0) {
-        _threads = std::make_shared<vespalib::ThreadStackExecutor>(_num_threads, 128_Ki,
-                                                                   CpuUsage::wrap(proton_initialize_executor, CpuCategory::SETUP));
+        _threads = std::make_shared<ThreadStackExecutor>(_num_threads, CpuUsage::wrap(proton_initialize_executor, CpuCategory::SETUP));
     }
 }
 

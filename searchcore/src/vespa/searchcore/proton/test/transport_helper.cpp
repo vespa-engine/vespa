@@ -12,7 +12,7 @@
 namespace proton {
 
 Transport::Transport()
-    : _threadPool(std::make_unique<FastOS_ThreadPool>(64_Ki)),
+    : _threadPool(std::make_unique<FastOS_ThreadPool>()),
       _transport(std::make_unique<FNET_Transport>()),
       _clock(std::make_unique<vespalib::TestClock>())
 {
@@ -36,7 +36,7 @@ VESPA_THREAD_STACK_TAG(proton_transport_and_executor_field_writer)
 
 TransportAndExecutor::TransportAndExecutor(size_t num_threads)
     : Transport(),
-      _sharedExecutor(std::make_unique<vespalib::ThreadStackExecutor>(num_threads, 64_Ki)),
+      _sharedExecutor(std::make_unique<vespalib::ThreadStackExecutor>(num_threads)),
       _field_writer(vespalib::SequencedTaskExecutor::create(proton_transport_and_executor_field_writer, num_threads))
 {}
 

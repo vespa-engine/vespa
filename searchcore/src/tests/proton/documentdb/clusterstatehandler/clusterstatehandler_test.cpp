@@ -43,7 +43,7 @@ struct Fixture
     test::GenericResultHandler      _genericHandler;
     test::BucketIdListResultHandler _bucketListHandler;
     Fixture()
-        : _exec(1, 64000),
+        : _exec(1),
           _stateHandler(_exec),
           _changedHandler(),
           _genericHandler(),

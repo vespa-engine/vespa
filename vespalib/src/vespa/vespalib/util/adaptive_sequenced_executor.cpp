@@ -54,7 +54,7 @@ AdaptiveSequencedExecutor::Self::~Self()
 
 AdaptiveSequencedExecutor::ThreadTools::ThreadTools(AdaptiveSequencedExecutor &parent_in)
     : parent(parent_in),
-      pool(std::make_unique<FastOS_ThreadPool>(STACK_SIZE)),
+      pool(std::make_unique<FastOS_ThreadPool>()),
       allow_worker_exit()
 {
 }

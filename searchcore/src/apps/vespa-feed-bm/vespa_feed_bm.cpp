@@ -158,7 +158,7 @@ void
 Benchmark::run()
 {
     _cluster->start(_feed);
-    vespalib::ThreadStackExecutor executor(_params.get_client_threads(), 128_Ki);
+    vespalib::ThreadStackExecutor executor(_params.get_client_threads());
     BmFeeder feeder(_repo, *_cluster->get_feed_handler(), executor);
     auto put_feed = _feed.make_feed(executor, _params, [this](BmRange range, BucketSelector bucket_selector) { return _feed.make_put_feed(range, bucket_selector); }, _feed.num_buckets(), "put");
     auto update_feed = _feed.make_feed(executor, _params, [this](BmRange range, BucketSelector bucket_selector) { return _feed.make_update_feed(range, bucket_selector); }, _feed.num_buckets(), "update");

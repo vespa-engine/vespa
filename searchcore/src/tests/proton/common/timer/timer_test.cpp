@@ -52,9 +52,9 @@ public:
     std::unique_ptr<ScheduledT> timer;
 
     ScheduledExecutorTest()
-        : threadPool(64_Ki),
+        : threadPool(),
           transport(),
-          executor(1, 64_Ki)
+          executor(1)
     {
         transport.Start(&threadPool);
         timer = make_scheduled_executor<ScheduledT>(transport, executor);

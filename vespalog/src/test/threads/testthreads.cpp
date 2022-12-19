@@ -93,7 +93,7 @@ int
 ThreadTester::Main()
 {
     std::cerr << "Testing that logging is threadsafe. 5 sec test.\n";
-    FastOS_ThreadPool pool(128 * 1024);
+    FastOS_ThreadPool pool;
 
     const int numWriters = 30;
     const int numLoggers = 10;

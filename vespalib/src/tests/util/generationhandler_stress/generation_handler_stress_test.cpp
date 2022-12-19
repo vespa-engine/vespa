@@ -97,7 +97,7 @@ Fixture::Fixture()
     : ::testing::Test(),
       _generationHandler(),
       _readThreads(1),
-      _writer(1, 128_Ki),
+      _writer(1),
       _readers(),
       _doneWriteWork(0),
       _doneReadWork(0),
@@ -131,7 +131,7 @@ Fixture::set_read_threads(uint32_t read_threads)
         _readers->shutdown();
     }
     _readThreads = read_threads;
-    _readers = std::make_unique<ThreadStackExecutor>(read_threads, 128_Ki);
+    _readers = std::make_unique<ThreadStackExecutor>(read_threads);
 }
 
 void

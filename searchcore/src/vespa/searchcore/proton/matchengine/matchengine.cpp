@@ -51,7 +51,7 @@ MatchEngine::MatchEngine(size_t numThreads, size_t threadsPerSearch, uint32_t di
       _closed(false),
       _forward_issues(true),
       _handlers(),
-      _executor(std::max(size_t(1), numThreads / threadsPerSearch), 256_Ki,
+      _executor(std::max(size_t(1), numThreads / threadsPerSearch),
                 CpuUsage::wrap(match_engine_executor, CpuUsage::Category::READ)),
       _threadBundlePool(std::max(size_t(1), threadsPerSearch),
                         CpuUsage::wrap(match_engine_thread_bundle, CpuUsage::Category::READ)),

@@ -151,7 +151,7 @@ AsyncResolver::SP AsyncResolver::_shared_resolver(nullptr);
 
 AsyncResolver::AsyncResolver(HostResolver::SP resolver, size_t num_threads)
     : _resolver(std::move(resolver)),
-      _executor(std::make_unique<ThreadStackExecutor>(num_threads, 128_Ki, async_resolver_executor_thread))
+      _executor(std::make_unique<ThreadStackExecutor>(num_threads, async_resolver_executor_thread))
 {
 }
 

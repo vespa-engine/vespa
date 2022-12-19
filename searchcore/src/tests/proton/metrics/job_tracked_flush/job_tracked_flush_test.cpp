@@ -71,7 +71,7 @@ struct Fixture
           _trackedFlush(_tracker, _target),
           _task(),
           _taskGate(),
-          _exec(1, 64000)
+          _exec(1)
     {
     }
     void initFlush(SerialNum currentSerial) {

@@ -67,7 +67,7 @@ Slobrok::init()
 }
 
 Slobrok::Slobrok()
-    : _pool(128000, 0),
+    : _pool(),
       _env(),
       _port(0),
       _thread()
@@ -76,7 +76,7 @@ Slobrok::Slobrok()
 }
 
 Slobrok::Slobrok(int p)
-    : _pool(128000, 0),
+    : _pool(),
       _env(),
       _port(p),
       _thread()

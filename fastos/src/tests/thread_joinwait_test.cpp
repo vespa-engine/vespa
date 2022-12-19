@@ -17,7 +17,7 @@ class Thread_JoinWait_Test : public ThreadTestBase
       sprintf(testName, "Single Thread Join Wait Multiple Test %d", variant);
       TestHeader(testName);
 
-      FastOS_ThreadPool pool(128*1024);
+      FastOS_ThreadPool pool;
 
       const int testThreads=5;
       int lastThreadNum = testThreads-1;
@@ -35,8 +35,7 @@ class Thread_JoinWait_Test : public ThreadTestBase
       {
          jobs[i].code = WAIT_FOR_THREAD_TO_FINISH;
          jobs[i].mutex = &jobMutex;
-         jobs[i].ownThread = pool.NewThread(this,
-                 static_cast<void *>(&jobs[i]));
+         jobs[i].ownThread = pool.NewThread(this, static_cast<void *>(&jobs[i]));
 
          rc = (jobs[i].ownThread != nullptr);
          Progress(rc, "Creating Thread %d", i+1);

@@ -82,7 +82,7 @@ DocumentSubDBCollection::DocumentSubDBCollection(
 DocumentSubDBCollection::~DocumentSubDBCollection()
 {
     size_t numThreads = std::min(_subDBs.size(), static_cast<size_t>(_hwInfo.cpu().cores()));
-    vespalib::ThreadStackExecutor closePool(numThreads, 0x20000);
+    vespalib::ThreadStackExecutor closePool(numThreads);
     while (!_subDBs.empty()) {
         closePool.execute(makeLambdaTask([subDB=_subDBs.back()]() { delete subDB; }));
         _subDBs.pop_back();

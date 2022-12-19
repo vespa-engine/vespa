@@ -102,7 +102,7 @@ Fixture::Fixture()
     : _dirHandler(test_dir),
       _diskLayout(AttributeDiskLayout::create(test_dir)),
       _factory(),
-      _executor(1, 0x10000)
+      _executor(1)
 {
 }
 

@@ -97,12 +97,12 @@ BenchmarkDataStoreApp::benchmark(const vespalib::string & dir, size_t numReads, 
         tuning._randRead.setWantMemoryMap();
     }
     search::index::DummyFileHeaderContext fileHeaderContext;
-    vespalib::ThreadStackExecutor executor(1, 128_Ki);
+    vespalib::ThreadStackExecutor executor(1);
     transactionlog::NoSyncProxy noTlSyncer;
     LogDataStore store(executor, dir, config, growStrategy, tuning,
                        fileHeaderContext,
                        noTlSyncer, NULL, true);
-    vespalib::ThreadStackExecutor bmPool(numThreads, 128_Ki);
+    vespalib::ThreadStackExecutor bmPool(numThreads);
     LOG(info, "Start read benchmark with %lu threads doing %lu reads in chunks of %lu reads. Totally %lu objects", numThreads, numReads, perChunk, numThreads * numReads * perChunk);
     for (size_t i(0); i < numThreads; i++) {
         bmPool.execute(vespalib::makeLambdaTask([&]() { read(numReads, perChunk, static_cast<const IDataStore *>(&store)); }));
