@@ -18,7 +18,6 @@ import java.time.Duration;
  */
 public class FileDistributionMaintainer extends ConfigServerMaintainer {
 
-    private final ApplicationRepository applicationRepository;
     private final FileDirectory fileDirectory;
     private final Duration maxUnusedFileReferenceAge;
 
@@ -28,7 +27,6 @@ public class FileDistributionMaintainer extends ConfigServerMaintainer {
                                FlagSource flagSource,
                                FileDirectory fileDirectory) {
         super(applicationRepository, curator, flagSource, applicationRepository.clock(), interval, false);
-        this.applicationRepository = applicationRepository;
         ConfigserverConfig configserverConfig = applicationRepository.configserverConfig();
         this.maxUnusedFileReferenceAge = Duration.ofMinutes(configserverConfig.keepUnusedFileReferencesMinutes());
         this.fileDirectory = fileDirectory;
