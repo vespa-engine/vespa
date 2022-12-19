@@ -1,8 +1,10 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "ranksetup.h"
+#include "blueprint.h"
 #include "indexproperties.h"
 #include "featurenameparser.h"
+#include "idumpfeaturevisitor.h"
 #include <vespa/vespalib/util/stringfmt.h>
 #include <vespa/vespalib/stllike/asciistream.h>
 

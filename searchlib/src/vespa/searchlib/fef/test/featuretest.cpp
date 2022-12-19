@@ -2,6 +2,7 @@
 
 #include "featuretest.h"
 #include <vespa/searchlib/fef/utils.h>
+#include <vespa/searchlib/fef/blueprint.h>
 #include <vespa/vespalib/testkit/test_kit.h>
 
 #include <vespa/log/log.h>
@@ -28,7 +29,7 @@ FeatureTest::FeatureTest(BlueprintFactory &factory,
 {
 }
 
-FeatureTest::~FeatureTest() {}
+FeatureTest::~FeatureTest() = default;
 
 FeatureTest::FeatureTest(BlueprintFactory &factory,
                          const IndexEnvironment &indexEnv,

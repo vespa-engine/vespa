@@ -4,8 +4,7 @@
 
 #include "featureexecutor.h"
 
-namespace search {
-namespace fef {
+namespace search::fef {
 
 /**
  * A Feature Overrider is a simple decorator class that wraps a single
@@ -19,9 +18,6 @@ class FeatureOverrider : public FeatureExecutor
 private:
     using Value = vespalib::eval::Value;
 
-    FeatureOverrider(const FeatureOverrider &);
-    FeatureOverrider &operator=(const FeatureOverrider &);
-
     FeatureExecutor &   _executor;
     uint32_t            _outputIdx;
     feature_t           _number;
@@ -32,10 +28,11 @@ private:
     virtual void handle_bind_outputs(vespalib::ArrayRef<NumberOrObject> outputs) override;
 
 public:
+    FeatureOverrider(const FeatureOverrider &) = delete;
+    FeatureOverrider &operator=(const FeatureOverrider &) = delete;
     FeatureOverrider(FeatureExecutor &executor, uint32_t outputIdx, feature_t number, Value::UP object);
     bool isPure() override;
     void execute(uint32_t docId) override;
 };
 
-} // namespace fef
-} // namespace search
+}

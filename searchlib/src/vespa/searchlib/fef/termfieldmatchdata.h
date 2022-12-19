@@ -8,7 +8,6 @@
 #include <cstring>
 #include <limits>
 
-class MatchDataHeapTest;
 
 namespace search::fef {
 
@@ -68,9 +67,6 @@ private:
     uint16_t _fieldLength;
 
     Features  _data;
-
-    friend class ::MatchDataHeapTest;
-
 public:
     PositionsIterator begin() const { return allocated() ? getMultiple() : getFixed(); }
     PositionsIterator end() const { return allocated() ? getMultiple() + _sz : empty() ? getFixed() : getFixed()+1; }

@@ -3,8 +3,8 @@
 #pragma once
 
 #include <vespa/vespalib/stllike/string.h>
-namespace search {
-namespace fef {
+
+namespace search::fef {
 
 /**
  * This interface is implemented by objects that want to visit all
@@ -21,13 +21,8 @@ public:
      * @param name full feature name
      **/
     virtual void visitDumpFeature(const vespalib::string &name) = 0;
-
-    /**
-     * Virtual destructor to allow safe subclassing.
-     **/
-    virtual ~IDumpFeatureVisitor() {}
+    virtual ~IDumpFeatureVisitor() = default;
 };
 
-} // namespace fef
-} // namespace search
+}
 

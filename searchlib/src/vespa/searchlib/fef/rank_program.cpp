@@ -2,6 +2,7 @@
 
 #include "rank_program.h"
 #include "featureoverrider.h"
+#include "blueprint.h"
 #include <vespa/vespalib/locale/c.h>
 #include <vespa/eval/eval/fast_value.h>
 #include <vespa/eval/eval/value_codec.h>
@@ -23,8 +24,6 @@ using vespalib::eval::ValueType;
 using vespalib::eval::FastValueBuilderFactory;
 
 namespace search::fef {
-
-using MappedValues = std::map<const NumberOrObject *, LazyValue>;
 
 namespace {
 

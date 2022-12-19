@@ -3,17 +3,13 @@
 #include "blueprintresolver.h"
 #include "blueprintfactory.h"
 #include "featurenameparser.h"
-#include <vespa/vespalib/util/lambdatask.h>
+#include "blueprint.h"
 #include <vespa/vespalib/util/stringfmt.h>
 #include <vespa/vespalib/util/size_literals.h>
-#include <vespa/vespalib/util/threadstackexecutor.h>
 #include <cassert>
 #include <set>
-#include <thread>
 
 using vespalib::make_string_short::fmt;
-using vespalib::ThreadStackExecutor;
-using vespalib::makeLambdaTask;
 
 namespace search::fef {
 

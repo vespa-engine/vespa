@@ -4,8 +4,7 @@
 
 #include "itablefactory.h"
 
-namespace search {
-namespace fef {
+namespace search::fef {
 
 /**
  * This factory class is used to instantiate tables based on a function.
@@ -54,6 +53,4 @@ public:
     static bool parseFunctionName(const vespalib::string & name, ParsedName & parsed);
 };
 
-} // namespace fef
-} // namespace search
-
+}

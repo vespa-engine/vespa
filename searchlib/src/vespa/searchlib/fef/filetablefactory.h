@@ -4,8 +4,7 @@
 
 #include "itablefactory.h"
 
-namespace search {
-namespace fef {
+namespace search::fef {
 
 /**
  * This factory class is used to instantiate tables that are stored in files on disk.
@@ -29,6 +28,4 @@ public:
     Table::SP createTable(const vespalib::string & name) const override;
 };
 
-} // namespace fef
-} // namespace search
-
+}

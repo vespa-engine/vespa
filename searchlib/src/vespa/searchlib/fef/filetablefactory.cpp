@@ -6,8 +6,7 @@
 #include <vespa/log/log.h>
 LOG_SETUP(".fef.filetablefactory");
 
-namespace search {
-namespace fef {
+namespace search::fef {
 
 FileTableFactory::FileTableFactory(const vespalib::string & path) :
     _path(path)
@@ -37,5 +36,4 @@ FileTableFactory::createTable(const vespalib::string & name) const
     return Table::SP(NULL);
 }
 
-} // namespace fef
-} // namespace search
+}

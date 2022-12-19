@@ -5,8 +5,7 @@
 #include <vespa/vespalib/stllike/string.h>
 #include "table.h"
 
-namespace search {
-namespace fef {
+namespace search::fef {
 
 /**
  * This is an interface for a factory used to create tables.
@@ -28,9 +27,7 @@ public:
     /**
      * Virtual destructor to allow safe subclassing.
      **/
-    virtual ~ITableFactory() {}
+    virtual ~ITableFactory() = default;
 };
 
-} // namespace fef
-} // namespace search
-
+}

@@ -5,8 +5,7 @@
 #include "table.h"
 #include <vector>
 
-namespace search {
-namespace fef {
+namespace search::fef {
 
 /**
  * This class represents a rank table with double values. It takes both negative and positive indexes.
@@ -53,6 +52,4 @@ public:
     double max() const { return _max; }
 };
 
-} // namespace fef
-} // namespace search
-
+}
