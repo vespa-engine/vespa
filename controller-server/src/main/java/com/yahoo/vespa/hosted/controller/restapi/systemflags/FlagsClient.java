@@ -1,6 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.restapi.systemflags;
 
+import ai.vespa.util.http.hc4.SslConnectionSocketFactory;
 import ai.vespa.util.http.hc4.retry.DelayedConnectionLevelRetryHandler;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -22,7 +23,6 @@ import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPut;
 import org.apache.http.client.methods.HttpUriRequest;
 import org.apache.http.client.utils.URIBuilder;
-import org.apache.http.conn.ssl.SSLConnectionSocketFactory;
 import org.apache.http.entity.ContentType;
 import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.CloseableHttpClient;
@@ -100,12 +100,11 @@ class FlagsClient {
         DelayedConnectionLevelRetryHandler retryHandler = DelayedConnectionLevelRetryHandler.Builder
                 .withExponentialBackoff(Duration.ofSeconds(1), Duration.ofSeconds(20), 5)
                 .build();
-        SSLConnectionSocketFactory connectionSocketFactory = new SSLConnectionSocketFactory(
-                identityProvider.getConfigServerSslSocketFactory(), new FlagTargetsHostnameVerifier(targets));
 
         return HttpClientBuilder.create()
                 .setUserAgent("controller-flags-v1-client")
-                .setSSLSocketFactory(connectionSocketFactory)
+                .setSSLSocketFactory(SslConnectionSocketFactory.of(
+                        identityProvider.getConfigServerSslSocketFactory(), new FlagTargetsHostnameVerifier(targets)))
                 .setDefaultRequestConfig(RequestConfig.custom()
                                                  .setConnectTimeout((int) Duration.ofSeconds(10).toMillis())
                                                  .setConnectionRequestTimeout((int) Duration.ofSeconds(10).toMillis())

@@ -1,6 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.proxy;
 
+import ai.vespa.util.http.hc4.SslConnectionSocketFactory;
 import com.yahoo.component.AbstractComponent;
 import com.yahoo.component.annotation.Inject;
 import com.yahoo.jdisc.http.HttpRequest.Method;
@@ -69,9 +70,9 @@ public class ConfigServerRestExecutorImpl extends AbstractComponent implements C
 
     @Inject
     public ConfigServerRestExecutorImpl(ZoneRegistry zoneRegistry, ControllerIdentityProvider identityProvider) {
-        this(new SSLConnectionSocketFactory(identityProvider.getConfigServerSslSocketFactory(), new ControllerOrConfigserverHostnameVerifier(zoneRegistry)),
-                Sleeper.DEFAULT,
-                new ConnectionReuseStrategy(zoneRegistry));
+        this(SslConnectionSocketFactory.of(identityProvider.getConfigServerSslSocketFactory(), new ControllerOrConfigserverHostnameVerifier(zoneRegistry)),
+             Sleeper.DEFAULT, // Specify
+             new ConnectionReuseStrategy(zoneRegistry));
     }
 
     ConfigServerRestExecutorImpl(SSLConnectionSocketFactory connectionSocketFactory,

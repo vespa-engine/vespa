@@ -1,19 +1,12 @@
 package ai.vespa.util.http.hc5;
 
-import org.apache.hc.client5.http.config.RequestConfig;
 import org.apache.hc.client5.http.impl.classic.HttpClientBuilder;
-import org.apache.hc.client5.http.impl.classic.HttpClients;
 import org.apache.hc.client5.http.impl.io.PoolingHttpClientConnectionManagerBuilder;
 import org.apache.hc.client5.http.ssl.DefaultHostnameVerifier;
-import org.apache.hc.client5.http.ssl.SSLConnectionSocketFactoryBuilder;
-import org.apache.hc.core5.http.ContentType;
-import org.apache.hc.core5.http.HttpHeaders;
-import org.apache.hc.core5.util.Timeout;
 
 import javax.net.ssl.HostnameVerifier;
 import javax.net.ssl.SSLContext;
 import java.time.Duration;
-import java.util.Map;
 import java.util.function.Supplier;
 
 /**
@@ -34,14 +27,12 @@ public class DefaultHttpClientBuilder {
 
     /** Creates an HTTP client builder with the given SSL context, and using the provided timeouts for requests where config is not overridden. */
     public static HttpClientBuilder create(Supplier<SSLContext> sslContext, HostnameVerifier verifier, String userAgent) {
+        SSLContext ctx = sslContext.get();
+        var factory = ctx == null ? SslConnectionSocketFactory.of(verifier) : SslConnectionSocketFactory.of(ctx, verifier);
         return HttpClientBuilder.create()
                                 .setConnectionManager(PoolingHttpClientConnectionManagerBuilder
                                                               .create()
-                                                              .setSSLSocketFactory(SSLConnectionSocketFactoryBuilder
-                                                                                           .create()
-                                                                                           .setSslContext(sslContext.get())
-                                                                                           .setHostnameVerifier(verifier)
-                                                                                           .build())
+                                                              .setSSLSocketFactory(factory)
                                                               .build())
                                 .setUserAgent(userAgent)
                                 .disableCookieManagement()

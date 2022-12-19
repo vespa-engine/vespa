@@ -12,7 +12,6 @@ import org.apache.hc.core5.http.config.Registry;
 import org.apache.hc.core5.http.config.RegistryBuilder;
 
 import javax.net.ssl.HostnameVerifier;
-import javax.net.ssl.SSLParameters;
 
 import static com.yahoo.security.tls.MixedMode.PLAINTEXT_CLIENT_MIXED_SERVER;
 import static com.yahoo.security.tls.TransportSecurityUtils.getInsecureMixedMode;
@@ -65,11 +64,7 @@ public class VespaHttpClientBuilder {
     private static void addSslSocketFactory(HttpClientBuilder builder, HttpClientConnectionManagerFactory connectionManagerFactory,
                                             HostnameVerifier hostnameVerifier) {
         getSystemTlsContext().ifPresent(tlsContext -> {
-            SSLParameters parameters = tlsContext.parameters();
-            SSLConnectionSocketFactory socketFactory = new SSLConnectionSocketFactory(tlsContext.context(),
-                                                                                      parameters.getProtocols(),
-                                                                                      parameters.getCipherSuites(),
-                                                                                      hostnameVerifier);
+            SSLConnectionSocketFactory socketFactory = SslConnectionSocketFactory.of(tlsContext, hostnameVerifier);
             builder.setConnectionManager(connectionManagerFactory.create(createRegistry(socketFactory)));
             // Workaround that allows re-using https connections, see https://stackoverflow.com/a/42112034/1615280 for details.
             // Proper solution would be to add a request interceptor that adds a x500 principal as user token,
