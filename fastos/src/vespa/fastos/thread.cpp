@@ -14,10 +14,9 @@
 // FastOS_ThreadPool
 // ----------------------------------------------------------------------
 
-FastOS_ThreadPool::FastOS_ThreadPool(int stackSize, int maxThreads)
+FastOS_ThreadPool::FastOS_ThreadPool(int , int maxThreads)
     : _startedThreadsCount(0),
       _closeFlagMutex(),
-      _stackSize(stackSize),
       _closeCalledFlag(false),
       _freeMutex(),
       _liveMutex(),
@@ -255,7 +254,6 @@ void FastOS_ThreadInterface::Hook ()
         dispatchedGuard.unlock();           // END lock
 
         if(!finished) {
-            PreEntry();
             deleteOnCompletion = _owner->DeleteOnCompletion();
             _owner->Run(this, _startArg);
 
@@ -331,7 +329,7 @@ FastOS_ThreadInterface *FastOS_ThreadInterface::CreateThread(FastOS_ThreadPool *
 {
     FastOS_ThreadInterface *thread = new FastOS_Thread(pool);
 
-    if(!thread->Initialize(pool->GetStackSize(), pool->GetStackGuardSize())) {
+    if(!thread->Initialize()) {
         delete(thread);
         thread = nullptr;
     }

@@ -13,28 +13,21 @@
 
 class FastOS_UNIX_Thread : public FastOS_ThreadInterface
 {
-private:
-    FastOS_UNIX_Thread(const FastOS_UNIX_Thread &);
-    FastOS_UNIX_Thread& operator=(const FastOS_UNIX_Thread &);
-
 protected:
     pthread_t _handle;
     bool _handleValid;
 
-    bool Initialize (int stackSize, int stackGuardSize) override;
-    void PreEntry () override;
-
+    bool Initialize () override;
 public:
-    static bool InitializeClass ();
-    static bool CleanupClass ();
-
+    FastOS_UNIX_Thread(const FastOS_UNIX_Thread &) = delete;
+    FastOS_UNIX_Thread& operator=(const FastOS_UNIX_Thread &) = delete;
     FastOS_UNIX_Thread(FastOS_ThreadPool *pool)
         : FastOS_ThreadInterface(pool),
           _handle(),
           _handleValid(false)
     {}
 
-    ~FastOS_UNIX_Thread();
+    ~FastOS_UNIX_Thread() override;
 
     FastOS_ThreadId GetThreadId () const noexcept override;
     static bool CompareThreadIds (FastOS_ThreadId a, FastOS_ThreadId b);
