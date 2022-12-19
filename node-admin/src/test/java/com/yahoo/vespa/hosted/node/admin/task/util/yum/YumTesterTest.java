@@ -47,6 +47,12 @@ public class YumTesterTest {
     }
 
     @Test
+    void disable_other_repos() {
+        assertYumMethod(yum -> yum.expectInstall(packages).withDisableRepo("*").withEnableRepo(repos),
+                yum -> yum.install(List.of(packages)).disableRepo("*").enableRepo(repos).converge(context));
+    }
+
+    @Test
     void expect_query_installed() {
         yum.expectQueryInstalled(packages[0]).andReturn(fullPackage);
         assertEquals(Optional.of(fullPackage), yum.queryInstalled(context, packages[0]));
