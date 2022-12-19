@@ -29,6 +29,8 @@ import java.net.InetAddress;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import static ai.vespa.util.http.hc4.SslConnectionSocketFactory.noopVerifier;
+
 /**
  * Http client builder for internal Vespa communications over http/https.
  *
@@ -101,9 +103,8 @@ public class VespaHttpClientBuilder {
         }
     }
 
-    private static SSLConnectionSocketFactory createSslSocketFactory(TlsContext tlsContext) {
-        SSLParameters parameters = tlsContext.parameters();
-        return new SSLConnectionSocketFactory(tlsContext.context(), parameters.getProtocols(), parameters.getCipherSuites(), new NoopHostnameVerifier());
+    private static SSLConnectionSocketFactory createSslSocketFactory(TlsContext ctx) {
+        return SslConnectionSocketFactory.of(ctx, noopVerifier());
     }
 
     private static Registry<ConnectionSocketFactory> createRegistry(SSLConnectionSocketFactory sslSocketFactory) {
