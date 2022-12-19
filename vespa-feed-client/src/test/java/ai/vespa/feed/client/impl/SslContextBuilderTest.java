@@ -30,7 +30,6 @@ import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.Date;
 
-import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
@@ -58,13 +57,13 @@ class SslContextBuilderTest {
                         .withCaCertificates(certificateFile)
                         .withCertificateAndKey(certificateFile, privateKeyFile)
                         .build());
-        assertEquals("TLS", sslContext.getProtocol());
+        assertEquals("TLSv1.2", sslContext.getProtocol());
     }
 
     @Test
     void successfully_constructs_sslcontext_when_no_builder_parameter_given() {
         SSLContext sslContext = Assertions.assertDoesNotThrow(() -> new SslContextBuilder().build());
-        assertEquals("TLS", sslContext.getProtocol());
+        assertEquals("TLSv1.2", sslContext.getProtocol());
     }
 
     @Test
@@ -73,7 +72,7 @@ class SslContextBuilderTest {
                 new SslContextBuilder()
                         .withCertificateAndKey(certificateFile, privateKeyFile)
                         .build());
-        assertEquals("TLS", sslContext.getProtocol());
+        assertEquals("TLSv1.2", sslContext.getProtocol());
     }
 
     @Test
@@ -82,7 +81,7 @@ class SslContextBuilderTest {
                 new SslContextBuilder()
                         .withCaCertificates(certificateFile)
                         .build());
-        assertEquals("TLS", sslContext.getProtocol());
+        assertEquals("TLSv1.2", sslContext.getProtocol());
     }
 
     private static void writePem(Path file, String type, byte[] asn1DerEncodedObject) throws IOException {

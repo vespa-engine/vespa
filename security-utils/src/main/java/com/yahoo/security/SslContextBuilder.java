@@ -1,6 +1,8 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.security;
 
+import com.yahoo.security.tls.TlsContext;
+
 import javax.net.ssl.KeyManager;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.TrustManager;
@@ -129,7 +131,7 @@ public class SslContextBuilder {
 
     public SSLContext build() {
         try {
-            SSLContext sslContext = SSLContext.getInstance("TLS");
+            SSLContext sslContext = SSLContext.getInstance(TlsContext.SSL_CONTEXT_VERSION);
             X509ExtendedTrustManager trustManager = this.trustManager != null
                     ? this.trustManager
                     : trustManagerFactory.createTrustManager(trustStoreSupplier.get());
