@@ -34,7 +34,7 @@ private:
     const FRTConfigRequestFactory &    _requestFactory;
     std::unique_ptr<ConfigAgent>       _agent;
     const ConfigKey                    _key;
-    std::mutex                         _lock; // Protects _requests, _task and _closed
+    std::mutex                         _lock; // Protects _inflight, _task and _closed
     std::condition_variable            _cond;
     RequestMap                         _inflight;
     std::unique_ptr<FNET_Task>         _task;

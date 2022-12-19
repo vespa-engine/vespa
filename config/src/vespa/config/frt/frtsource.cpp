@@ -83,10 +83,9 @@ FRTSource::RequestDone(FRT_RPCRequest * request)
     }
     std::shared_ptr<FRTConfigRequest> configRequest;
     {
+        std::lock_guard guard(_lock);
         auto found = _inflight.find(request);
-        if (found == _inflight.end()) {
-            assert(false);
-        }
+        assert(found != _inflight.end());
         configRequest = found->second;
     }
     // If this was error from FRT side and nothing to do with config, notify
