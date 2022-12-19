@@ -34,7 +34,6 @@ import java.util.List;
 import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.concurrent.ThreadPoolExecutor;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
@@ -164,9 +163,6 @@ public class FileServer {
                           boolean downloadFromOtherSourceIfNotFound,
                           Set<CompressionType> acceptedCompressionTypes,
                           Request request, Receiver receiver) {
-        if (executor instanceof ThreadPoolExecutor)
-            log.log(Level.FINE, () -> "Active threads: " + ((ThreadPoolExecutor) executor).getActiveCount());
-
         log.log(Level.FINE, () -> "Received request for file reference '" + fileReference + "' from " + request.target());
         Instant deadline = Instant.now().plus(timeout);
         String client = request.target().toString();
