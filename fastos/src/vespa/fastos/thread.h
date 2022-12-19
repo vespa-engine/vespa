@@ -38,15 +38,8 @@ class FastOS_ThreadPool
     friend class FastOS_ThreadInterface;
 
 private:
-    FastOS_ThreadPool(const FastOS_ThreadPool&);
-    FastOS_ThreadPool& operator=(const FastOS_ThreadPool&);
-
     int _startedThreadsCount;
     std::mutex _closeFlagMutex;
-    /**
-     * The stack size for threads in this pool.
-     */
-    const int _stackSize;
     bool _closeCalledFlag;
 
     // Always lock in this order
@@ -136,6 +129,8 @@ private:
                        FastOS_ThreadInterface **listHead);
 
 public:
+    FastOS_ThreadPool(const FastOS_ThreadPool&) = delete;
+    FastOS_ThreadPool& operator=(const FastOS_ThreadPool&) = delete;
     /**
      * Create a threadpool that can hold a maximum of [maxThreads] threads.
      * @param  stackSize    The stack size for threads in this pool should
@@ -163,14 +158,6 @@ public:
      * @return          Pointer to newly created thread or nullptr on failure.
      */
     FastOS_ThreadInterface *NewThread (FastOS_Runnable *owner, void *arg=nullptr);
-
-    /**
-     * Get the stack size used for threads in this pool.
-     * @return          Stack size in bytes.
-     */
-    int GetStackSize() const { return _stackSize; }
-
-    int GetStackGuardSize() const { return 0; }
 
     /**
      * Close the threadpool. This involves setting the break flag on
@@ -271,18 +258,11 @@ protected:
     void Dispatch (FastOS_Runnable *owner, void *arg);
 
     /**
-     * This method is called prior to invoking @ref FastOS_Runnable::Run().
-     * Usually this involves setting operating system thread attributes,
-     * and is handled by each operating specific subclass.
-     */
-    virtual void PreEntry ()=0;
-
-    /**
      * Initializes a thread. This includes creating the operating system
-     * socket handle and setting it up and making it ready to be dispatched.
+     * thread handle and setting it up and making it ready to be dispatched.
      * @return   Boolean success/failure
      */
-    virtual bool Initialize (int stackSize, int stackGuardSize)=0;
+    virtual bool Initialize ()=0;
 
     /**
      * Used to store thread invocation arguments. These are passed along
