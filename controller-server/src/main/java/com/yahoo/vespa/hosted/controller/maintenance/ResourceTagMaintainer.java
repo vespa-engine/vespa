@@ -10,6 +10,7 @@ import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.api.integration.aws.ResourceTagger;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.Node;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.NodeFilter;
+import org.apache.hc.client5.http.ConnectTimeoutException;
 
 import java.time.Duration;
 import java.util.Map;
@@ -46,15 +47,24 @@ public class ResourceTagMaintainer extends ControllerMaintainer {
     }
 
     private Map<HostName, ApplicationId> getTenantOfParentHosts(ZoneId zoneId) {
-        return controller().serviceRegistry().configServer().nodeRepository()
-                .list(zoneId, NodeFilter.all())
-                .stream()
-                .filter(node -> node.type().isHost())
-                .collect(Collectors.toMap(
-                        Node::hostname,
-                        this::getApplicationId,
-                        (node1, node2) -> node1
-                ));
+        try {
+            return controller().serviceRegistry().configServer().nodeRepository()
+                    .list(zoneId, NodeFilter.all())
+                    .stream()
+                    .filter(node -> node.type().isHost())
+                    .collect(Collectors.toMap(
+                            Node::hostname,
+                            this::getApplicationId,
+                            (node1, node2) -> node1
+                    ));
+        } catch (Exception e) {
+            if (e.getCause() instanceof ConnectTimeoutException) {
+                // Usually transient - try again later
+                log.warning("Unable to retrieve hosts from " + zoneId.value());
+                return Map.of();
+            }
+            throw e;
+        }
     }
 
     private ApplicationId getApplicationId(Node node) {
