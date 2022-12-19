@@ -35,9 +35,9 @@ FRTSource::FRTSource(std::shared_ptr<ConnectionFactory> connectionFactory, const
     : _connectionFactory(std::move(connectionFactory)),
       _requestFactory(requestFactory),
       _agent(std::move(agent)),
+      _currentRequest(),
       _key(key),
       _lock(),
-      _inflight(),
       _task(std::make_unique<GetConfigTask>(_connectionFactory->getScheduler(), this)),
       _closed(false)
 {
@@ -66,10 +66,8 @@ FRTSource::getConfig()
 
     std::unique_ptr<FRTConfigRequest> request = _requestFactory.createConfigRequest(_key, connection, state, serverTimeout);
     FRT_RPCRequest * req = request->getRequest();
-    {
-        std::lock_guard guard(_lock);
-        _inflight[req] = std::move(request);
-    }
+
+    _currentRequest = std::move(request);
     connection->invoke(req, clientTimeout, this);
 }
 
@@ -81,24 +79,13 @@ FRTSource::RequestDone(FRT_RPCRequest * request)
         LOG(debug, "request aborted, stopping");
         return;
     }
-    std::shared_ptr<FRTConfigRequest> configRequest;
-    {
-        std::lock_guard guard(_lock);
-        auto found = _inflight.find(request);
-        assert(found != _inflight.end());
-        configRequest = found->second;
-    }
+    assert(_currentRequest);
     // If this was error from FRT side and nothing to do with config, notify
     // connection about the error.
     if (request->IsError()) {
-        configRequest->setError(request->GetErrorCode());
+        _currentRequest->setError(request->GetErrorCode());
     }
-    _agent->handleResponse(*configRequest, configRequest->createResponse(request));
-    {
-        std::lock_guard guard(_lock);
-        _inflight.erase(request);
-        _cond.notify_all();
-    }
+    _agent->handleResponse(*_currentRequest, _currentRequest->createResponse(request));
     LOG(spam, "Calling schedule");
     scheduleNextGetConfig();
 }
@@ -106,23 +93,19 @@ FRTSource::RequestDone(FRT_RPCRequest * request)
 void
 FRTSource::close()
 {
-    RequestMap inflight;
     {
         std::lock_guard guard(_lock);
         if (_closed)
             return;
         LOG(spam, "Killing task");
         _task->Kill();
-        inflight = _inflight;
     }
     LOG(spam, "Aborting");
-    for (auto & request : inflight) {
-        std::move(request.second)->abort();
-    }
-    inflight.clear();
-    LOG(spam, "Waiting");
-    std::unique_lock guard(_lock);
-    while (!_inflight.empty()) _cond.wait(guard);
+    if (_currentRequest.get() != NULL)
+        _currentRequest->abort();
+    LOG(spam, "Syncing");
+    _connectionFactory->syncTransport();
+    _currentRequest.reset(0);
     LOG(spam, "closed");
 }
 
