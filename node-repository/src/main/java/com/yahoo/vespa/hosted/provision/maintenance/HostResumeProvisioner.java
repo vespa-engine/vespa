@@ -82,8 +82,9 @@ public class HostResumeProvisioner extends NodeRepositoryMaintainer {
     /** Verify DNS configuration of given nodes */
     private void verifyDns(List<Node> nodes) {
         for (var node : nodes) {
+            boolean enclave = node.cloudAccount().isEnclave(nodeRepository().zone());
             for (var ipAddress : node.ipConfig().primary()) {
-                IP.verifyDns(node.hostname(), ipAddress, nodeRepository().nameResolver());
+                IP.verifyDns(node.hostname(), ipAddress, nodeRepository().nameResolver(), !enclave);
             }
         }
     }

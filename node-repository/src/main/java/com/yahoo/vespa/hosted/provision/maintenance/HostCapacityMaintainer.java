@@ -284,7 +284,7 @@ public class HostCapacityMaintainer extends NodeRepositoryMaintainer {
 
         NodePrioritizer prioritizer = new NodePrioritizer(nodesAndHosts, applicationId, clusterSpec, nodeSpec, wantedGroups,
                 true, nodeRepository().nameResolver(), nodeRepository().nodes(), nodeRepository().resourcesCalculator(),
-                nodeRepository().spareCount());
+                nodeRepository().spareCount(), nodeSpec.cloudAccount().isEnclave(nodeRepository().zone()));
         List<NodeCandidate> nodeCandidates = prioritizer.collect(List.of());
         MutableInteger index = new MutableInteger(0);
         return nodeCandidates

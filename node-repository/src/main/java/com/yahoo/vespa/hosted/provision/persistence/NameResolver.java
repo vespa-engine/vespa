@@ -23,17 +23,18 @@ public interface NameResolver {
     /** DNS record types */
     enum RecordType {
 
-        A("A"),
-        AAAA("AAAA");
+        A("A", "IPv4 address"),
+        AAAA("AAAA", "IPv6 address");
 
         private final String value;
+        private final String description;
 
-        public String value() {
-            return value;
-        }
+        public String value() { return value; }
+        public String description() { return description; }
 
-        RecordType(String value) {
+        RecordType(String value, String description) {
             this.value = value;
+            this.description = description;
         }
 
     }

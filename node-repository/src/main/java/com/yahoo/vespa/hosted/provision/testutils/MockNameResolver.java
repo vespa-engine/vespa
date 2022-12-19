@@ -1,10 +1,12 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.provision.testutils;
 
+import com.yahoo.vespa.hosted.provision.node.IP;
 import com.yahoo.vespa.hosted.provision.persistence.NameResolver;
 
 import java.net.UnknownHostException;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -12,6 +14,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ThreadLocalRandom;
+import java.util.stream.Collectors;
 
 /**
  * A mock DNS resolver. Can be configured to only answer specific lookups or any lookup.
@@ -73,8 +76,22 @@ public class MockNameResolver implements NameResolver {
 
     @Override
     public Set<String> resolve(String name, RecordType first, RecordType... rest) {
-        return resolveAll(name);
+        Set<RecordType> types = new HashSet<>(1 + rest.length);
+        types.add(first);
+        Collections.addAll(types, rest);
+
+        return resolveAll(name)
+                .stream()
+                .filter(addressString -> {
+                    if (types.contains(RecordType.A) && IP.isV4(addressString)) return true;
+                    if (types.contains(RecordType.AAAA) && IP.isV6(addressString)) return true;
+                    return false;
+                })
+                .collect(Collectors.toSet());
     }
+
+    private static boolean isIpv6(String ipAddress) { return ipAddress.contains(":"); }
+    private static boolean isIpv4(String ipAddress) { return !isIpv6(ipAddress) && ipAddress.contains("."); }
 
     @Override
     public Optional<String> resolveHostname(String ipAddress) {

@@ -85,7 +85,7 @@ public class IPTest {
         resolver.addReverseRecord("::1", "host3");
         resolver.addReverseRecord("::2", "host1");
 
-        Optional<IP.Allocation> allocation = pool.findAllocation(emptyList, resolver);
+        Optional<IP.Allocation> allocation = pool.findAllocation(emptyList, resolver, true);
         assertEquals(Optional.of("::1"), allocation.get().ipv6Address());
         assertFalse(allocation.get().ipv4Address().isPresent());
         assertEquals("host3", allocation.get().hostname());
@@ -93,7 +93,7 @@ public class IPTest {
         // Allocation fails if DNS record is missing
         resolver.removeRecord("host3");
         try {
-            pool.findAllocation(emptyList, resolver);
+            pool.findAllocation(emptyList, resolver, true);
             fail("Expected exception");
         } catch (Exception e) {
             assertEquals("java.net.UnknownHostException: Could not resolve: host3", e.getMessage());
@@ -103,7 +103,7 @@ public class IPTest {
     @Test
     public void test_find_allocation_ipv4_only() {
         var pool = testPool(false);
-        var allocation = pool.findAllocation(emptyList, resolver);
+        var allocation = pool.findAllocation(emptyList, resolver, true);
         assertFalse("Found allocation", allocation.isEmpty());
         assertEquals(Optional.of("127.0.0.1"), allocation.get().ipv4Address());
         assertTrue("No IPv6 address", allocation.get().ipv6Address().isEmpty());
@@ -112,7 +112,7 @@ public class IPTest {
     @Test
     public void test_find_allocation_dual_stack() {
         IP.Pool pool = testPool(true);
-        Optional<IP.Allocation> allocation = pool.findAllocation(emptyList, resolver);
+        Optional<IP.Allocation> allocation = pool.findAllocation(emptyList, resolver, true);
         assertEquals(Optional.of("::1"), allocation.get().ipv6Address());
         assertEquals("127.0.0.2", allocation.get().ipv4Address().get());
         assertEquals("host3", allocation.get().hostname());
@@ -123,7 +123,7 @@ public class IPTest {
         IP.Pool pool = testPool(true);
         resolver.addRecord("host3", "127.0.0.127");
         try {
-            pool.findAllocation(emptyList, resolver);
+            pool.findAllocation(emptyList, resolver, true);
             fail("Expected exception");
         } catch (IllegalArgumentException e) {
             assertEquals("Hostname host3 resolved to more than 1 IPv4 address: [127.0.0.2, 127.0.0.127]",
@@ -137,12 +137,28 @@ public class IPTest {
         resolver.removeRecord("127.0.0.2")
                 .addReverseRecord("127.0.0.2", "host5");
         try {
-            pool.findAllocation(emptyList, resolver);
+            pool.findAllocation(emptyList, resolver, true);
             fail("Expected exception");
         } catch (IllegalArgumentException e) {
             assertEquals("Hostnames resolved from each IP address do not point to the same hostname " +
                          "[::1 -> host3, 127.0.0.2 -> host5]", e.getMessage());
         }
+    }
+
+    @Test
+    public void test_enclave() {
+        // In Enclave, the hosts and their nodes have only public IPv6 addresses,
+        // and DNS has AAAA records without PTR records.
+
+        resolver.addRecord("host1", "2600:1f10:::1")
+                .addRecord("node1", "2600:1f10:::2")
+                .addRecord("node2", "2600:1f10:::3");
+
+        IP.Config config = IP.Config.of(Set.of("2600:1f10:::1"),
+                                        Set.of("2600:1f10:::2", "2600:1f10:::3"),
+                                        List.of(new Address("node1"), new Address("node2")));
+        IP.Pool pool = config.pool();
+        Optional<IP.Allocation> allocation = pool.findAllocation(emptyList, resolver, false);
     }
 
     private IP.Pool testPool(boolean dualStack) {

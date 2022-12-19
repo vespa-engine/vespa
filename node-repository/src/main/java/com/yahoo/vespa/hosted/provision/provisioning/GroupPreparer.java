@@ -164,7 +164,8 @@ public class GroupPreparer {
                                                           nodeRepository.nameResolver(),
                                                           nodeRepository.nodes(),
                                                           nodeRepository.resourcesCalculator(),
-                                                          nodeRepository.spareCount());
+                                                          nodeRepository.spareCount(),
+                                                          requestedNodes.cloudAccount().isEnclave(nodeRepository.zone()));
         allocation.offer(prioritizer.collect(surplusActiveNodes));
         return allocation;
     }

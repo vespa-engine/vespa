@@ -203,7 +203,7 @@ public class IP {
                 return new IpAddresses(addresses, Protocol.ipv4);
             }
 
-            // If we're dual-stacked, we must must have an equal number of addresses of each protocol.
+            // If we're dual-stacked, we must have an equal number of addresses of each protocol.
             if (ipv4AddrCount == ipv6AddrCount) {
                 return new IpAddresses(addresses, Protocol.dualStack);
             }
@@ -215,9 +215,15 @@ public class IP {
         }
 
         public enum Protocol {
-            dualStack,
-            ipv4,
-            ipv6
+            dualStack("dual-stack"),
+            ipv4("IPv4-only"),
+            ipv6("IPv6-only");
+
+            private final String description;
+
+            Protocol(String description) { this.description = description; }
+
+            public String getDescription() { return description; }
         }
 
         @Override
@@ -266,7 +272,7 @@ public class IP {
          * @param nodes a locked list of all nodes in the repository
          * @return an allocation from the pool, if any can be made
          */
-        public Optional<Allocation> findAllocation(LockedNodeList nodes, NameResolver resolver) {
+        public Optional<Allocation> findAllocation(LockedNodeList nodes, NameResolver resolver, boolean hasPtr) {
             if (ipAddresses.asSet().isEmpty()) {
                 // IP addresses have not yet been resolved and should be done later.
                 return findUnusedAddressStream(nodes)
@@ -274,10 +280,15 @@ public class IP {
                         .findFirst();
             }
 
+            if (!hasPtr) {
+                // Without PTR records (reverse IP mapping): Ensure only forward resolving from hostnames.
+                return findUnusedAddressStream(nodes).findFirst().map(address -> Allocation.fromAddress(address, resolver, ipAddresses.protocol));
+            }
+
             if (ipAddresses.protocol == IpAddresses.Protocol.ipv4) {
                 return findUnusedIpAddresses(nodes).stream()
-                        .findFirst()
-                        .map(addr -> Allocation.ofIpv4(addr, resolver));
+                                                   .findFirst()
+                                                   .map(addr -> Allocation.ofIpv4(addr, resolver));
             }
 
             var unusedAddresses = findUnusedIpAddresses(nodes);
@@ -364,8 +375,8 @@ public class IP {
         /**
          * Allocate an IPv6 address.
          *
-         * A successful allocation is guaranteed to have an IPv6 address, but may also have an IPv4 address if the
-         * hostname of the IPv6 address has an A record.
+         * <p>A successful allocation is guaranteed to have an IPv6 address, but may also have an IPv4 address if the
+         * hostname of the IPv6 address has an A record.</p>
          *
          * @param ipv6Address Unassigned IPv6 address
          * @param resolver DNS name resolver to use
@@ -415,6 +426,27 @@ public class IP {
             return new Allocation(hostname4, Optional.of(addresses.get(0)), Optional.empty());
         }
 
+        private static Allocation fromAddress(Address address, NameResolver resolver, IpAddresses.Protocol protocol) {
+            Optional<String> ipv4Address = resolveOptional(address.hostname(), resolver, RecordType.A);
+            if (protocol != IpAddresses.Protocol.ipv6 && ipv4Address.isEmpty())
+                throw new IllegalArgumentException(protocol.description + " hostname " + address.hostname() + " did not resolve to an IPv4 address");
+
+            Optional<String> ipv6Address = resolveOptional(address.hostname(), resolver, RecordType.AAAA);
+            if (protocol != IpAddresses.Protocol.ipv4 && ipv6Address.isEmpty())
+                throw new IllegalArgumentException(protocol.description + " hostname " + address.hostname() + " did not resolve to an IPv6 address");
+
+            return new Allocation(address.hostname(), ipv4Address, ipv6Address);
+        }
+
+        private static Optional<String> resolveOptional(String hostname, NameResolver resolver, RecordType recordType) {
+            Set<String> values = resolver.resolve(hostname, recordType);
+            return switch (values.size()) {
+                case 0 -> Optional.empty();
+                case 1 -> Optional.of(values.iterator().next());
+                default -> throw new IllegalArgumentException("Hostname " + hostname + " resolved to more than one " + recordType.description() + ": " + values);
+            };
+        }
+
         private static Allocation ofAddress(Address address) {
             return new Allocation(address.hostname(), Optional.empty(), Optional.empty());
         }
@@ -460,20 +492,22 @@ public class IP {
     }
 
     /** Verify DNS configuration of given hostname and IP address */
-    public static void verifyDns(String hostname, String ipAddress, NameResolver resolver) {
+    public static void verifyDns(String hostname, String ipAddress, NameResolver resolver, boolean hasPtr) {
         RecordType recordType = isV6(ipAddress) ? RecordType.AAAA : RecordType.A;
         Set<String> addresses = resolver.resolve(hostname, recordType);
         if (!addresses.equals(Set.of(ipAddress)))
             throw new IllegalArgumentException("Expected " + hostname + " to resolve to " + ipAddress +
                                                ", but got " + addresses);
 
-        Optional<String> reverseHostname = resolver.resolveHostname(ipAddress);
-        if (reverseHostname.isEmpty())
-            throw new IllegalArgumentException(ipAddress + " did not resolve to a hostname");
+        if (hasPtr) {
+            Optional<String> reverseHostname = resolver.resolveHostname(ipAddress);
+            if (reverseHostname.isEmpty())
+                throw new IllegalArgumentException(ipAddress + " did not resolve to a hostname");
 
-        if (!reverseHostname.get().equals(hostname))
-            throw new IllegalArgumentException(ipAddress + " resolved to " + reverseHostname.get() +
-                                               ", which does not match expected hostname " + hostname);
+            if (!reverseHostname.get().equals(hostname))
+                throw new IllegalArgumentException(ipAddress + " resolved to " + reverseHostname.get() +
+                                                   ", which does not match expected hostname " + hostname);
+        }
     }
 
     /** Convert IP address to string. This uses :: for zero compression in IPv6 addresses.  */
@@ -483,7 +517,7 @@ public class IP {
 
     /** Returns whether given string is an IPv4 address */
     public static boolean isV4(String ipAddress) {
-        return ipAddress.contains(".");
+        return !isV6(ipAddress) && ipAddress.contains(".");
     }
 
     /** Returns whether given string is an IPv6 address */
