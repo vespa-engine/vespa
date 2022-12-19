@@ -36,10 +36,11 @@ FlushAllStrategy::FlushAllStrategy()
 
 FlushContext::List
 FlushAllStrategy::getFlushTargets(const FlushContext::List &targetList,
-                                  const flushengine::TlsStatsMap &) const
+                                  const flushengine::TlsStatsMap&,
+                                  const flushengine::ActiveFlushStats&) const
 {
     if (targetList.empty()) {
-        return FlushContext::List();
+        return {};
     }
     FlushContext::List fv(targetList);
     std::sort(fv.begin(), fv.end(), CompareTarget());

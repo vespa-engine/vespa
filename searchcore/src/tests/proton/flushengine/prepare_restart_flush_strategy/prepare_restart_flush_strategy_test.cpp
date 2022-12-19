@@ -1,9 +1,10 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include <vespa/vespalib/testkit/testapp.h>
 
-#include <vespa/searchcore/proton/flushengine/prepare_restart_flush_strategy.h>
-#include <vespa/searchcore/proton/flushengine/flush_target_candidates.h>
+#include <vespa/searchcore/proton/flushengine/active_flush_stats.h>
 #include <vespa/searchcore/proton/flushengine/flush_target_candidate.h>
+#include <vespa/searchcore/proton/flushengine/flush_target_candidates.h>
+#include <vespa/searchcore/proton/flushengine/prepare_restart_flush_strategy.h>
 #include <vespa/searchcore/proton/flushengine/tls_stats_map.h>
 #include <vespa/searchcore/proton/test/dummy_flush_handler.h>
 #include <vespa/searchcore/proton/test/dummy_flush_target.h>
@@ -220,7 +221,8 @@ struct FlushStrategyFixture
     {}
     FlushContext::List getFlushTargets(const FlushContext::List &targetList,
                                        const flushengine::TlsStatsMap &tlsStatsMap) const {
-        return strategy.getFlushTargets(targetList, tlsStatsMap);
+        flushengine::ActiveFlushStats active_flushes;
+        return strategy.getFlushTargets(targetList, tlsStatsMap, active_flushes);
     }
 };
 

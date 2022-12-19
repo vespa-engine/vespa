@@ -80,7 +80,8 @@ public:
 
     FlushContext::List
     getFlushTargets(const FlushContext::List &targetList,
-                    const flushengine::TlsStatsMap &tlsStatsMap) const override;
+                    const flushengine::TlsStatsMap &tlsStatsMap,
+                    const flushengine::ActiveFlushStats& active_flushes) const override;
 
     void setConfig(const Config &config);
     Config getConfig() const;

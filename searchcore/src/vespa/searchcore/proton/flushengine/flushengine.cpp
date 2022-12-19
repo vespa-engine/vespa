@@ -1,6 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "flushengine.h"
+#include "active_flush_stats.h"
 #include "cachedflushtarget.h"
 #include "flush_all_strategy.h"
 #include "flushtask.h"
@@ -56,15 +57,17 @@ VESPA_THREAD_STACK_TAG(flush_engine_executor)
 
 }
 
-FlushEngine::FlushMeta::FlushMeta(const vespalib::string & name, uint32_t id)
-    : _name(name),
+FlushEngine::FlushMeta::FlushMeta(const vespalib::string& handler_name,
+                                  const vespalib::string& target_name, uint32_t id)
+    : _name((handler_name.empty() && target_name.empty()) ? "" : FlushContext::create_name(handler_name, target_name)),
+      _handler_name(handler_name),
       _timer(),
       _id(id)
 { }
 FlushEngine::FlushMeta::~FlushMeta() = default;
 
 FlushEngine::FlushInfo::FlushInfo()
-    : FlushMeta("", 0),
+    : FlushMeta("", "", 0),
       _target()
 {
 }
@@ -72,8 +75,8 @@ FlushEngine::FlushInfo::FlushInfo()
 FlushEngine::FlushInfo::~FlushInfo() = default;
 
 
-FlushEngine::FlushInfo::FlushInfo(uint32_t taskId, const IFlushTarget::SP &target, const vespalib::string & destination)
-    : FlushMeta(destination, taskId),
+FlushEngine::FlushInfo::FlushInfo(uint32_t taskId, const vespalib::string& handler_name, const IFlushTarget::SP& target)
+    : FlushMeta(handler_name, target->getName(), taskId),
       _target(target)
 {
 }
@@ -260,17 +263,32 @@ FlushEngine::getTargetList(bool includeFlushingTargets) const
     return ret;
 }
 
+namespace {
+
+flushengine::ActiveFlushStats
+make_active_flushes(const FlushEngine::FlushMetaSet& flush_set)
+{
+    flushengine::ActiveFlushStats result;
+    for (const auto& elem : flush_set) {
+        result.set_start_time(elem.handler_name(), elem.getStart());
+    }
+    return result;
+}
+
+}
+
 std::pair<FlushContext::List,bool>
 FlushEngine::getSortedTargetList()
 {
-    FlushContext::List unsortedTargets = getTargetList(false);
-    flushengine::TlsStatsMap tlsStatsMap(_tlsStatsFactory->create());
+    auto unsortedTargets = getTargetList(false);
+    auto tlsStatsMap = _tlsStatsFactory->create();
+    auto active_flushes = make_active_flushes(getCurrentlyFlushingSet());
     std::lock_guard<std::mutex> strategyGuard(_strategyLock);
     std::pair<FlushContext::List, bool> ret;
     if (_priorityStrategy) {
-        ret = std::make_pair(_priorityStrategy->getFlushTargets(unsortedTargets, tlsStatsMap), true);
+        ret = std::make_pair(_priorityStrategy->getFlushTargets(unsortedTargets, tlsStatsMap, active_flushes), true);
     } else {
-        ret = std::make_pair(_strategy->getFlushTargets(unsortedTargets, tlsStatsMap), false);
+        ret = std::make_pair(_strategy->getFlushTargets(unsortedTargets, tlsStatsMap, active_flushes), false);
     }
     return ret;
 }
@@ -427,7 +445,7 @@ FlushEngine::initFlush(const IFlushHandler::SP &handler, const IFlushTarget::SP 
         std::lock_guard<std::mutex> guard(_lock);
         taskId = _taskId++;
         vespalib::string name(FlushContext::createName(*handler, *target));
-        FlushInfo flush(taskId, target, name);
+        FlushInfo flush(taskId, handler->getName(), target);
         _flushing[taskId] = flush;
     }
     LOG(debug, "FlushEngine::initFlush(handler='%s', target='%s') => taskId='%d'",
