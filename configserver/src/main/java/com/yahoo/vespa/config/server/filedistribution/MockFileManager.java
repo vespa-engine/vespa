@@ -4,7 +4,6 @@ package com.yahoo.vespa.config.server.filedistribution;
 import com.yahoo.config.FileReference;
 import com.yahoo.path.Path;
 
-import java.io.File;
 import java.nio.ByteBuffer;
 
 /**
