@@ -3,6 +3,8 @@ package com.yahoo.vespa.hosted.controller.api.integration.secrets;
 
 import com.yahoo.config.provision.TenantName;
 
+import java.util.List;
+
 /**
  * @author olaa
  */
@@ -11,5 +13,7 @@ public interface TenantSecretService {
     void addSecretStore(TenantName tenant, TenantSecretStore tenantSecretStore, String externalId);
 
     void deleteSecretStore(TenantName tenant, TenantSecretStore tenantSecretStore);
+
+    void cleanupSecretStores(List<TenantName> deletedTenants);
 
 }

@@ -22,6 +22,10 @@ public class TenantRoleCleanupMaintainer extends ControllerMaintainer {
                 .toList();
         roleService.cleanupRoles(deletedTenants);
 
+        if (controller().system().isPublic()) {
+            controller().serviceRegistry().tenantSecretService().cleanupSecretStores(deletedTenants);
+        }
+
         return 1.0;
     }
 }

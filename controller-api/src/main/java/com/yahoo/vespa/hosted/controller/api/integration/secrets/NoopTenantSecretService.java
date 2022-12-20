@@ -3,6 +3,8 @@ package com.yahoo.vespa.hosted.controller.api.integration.secrets;
 
 import com.yahoo.config.provision.TenantName;
 
+import java.util.List;
+
 /**
  * @author olaa
  */
@@ -14,4 +16,6 @@ public class NoopTenantSecretService implements TenantSecretService {
     @Override
     public void deleteSecretStore(TenantName tenant, TenantSecretStore tenantSecretStore) {}
 
+    @Override
+    public void cleanupSecretStores(List<TenantName> deletedTenants) {}
 }
