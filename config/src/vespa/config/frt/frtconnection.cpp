@@ -14,19 +14,21 @@ namespace config {
 
 FRTConnection::FRTConnection(const vespalib::string& address, FRT_Supervisor& supervisor, const TimingValues & timingValues)
     : _address(address),
+      _transientDelay(timingValues.transientDelay),
       _fatalDelay(timingValues.fatalDelay),
       _supervisor(supervisor),
+      _lock(),
       _target(0),
       _suspendedUntil(),
       _suspendWarned(),
       _transientFailures(0),
-      _fatalFailures(0),
-      _transientDelay(timingValues.transientDelay)
+      _fatalFailures(0)
 {
 }
 
 FRTConnection::~FRTConnection()
 {
+    std::lock_guard guard(_lock);
     if (_target != nullptr) {
         LOG(debug, "Shutting down %s", _address.c_str());
         _target->SubRef();
@@ -37,6 +39,7 @@ FRTConnection::~FRTConnection()
 FRT_Target *
 FRTConnection::getTarget()
 {
+    std::lock_guard guard(_lock);
     if (_target == nullptr) {
         _target = _supervisor.GetTarget(_address.c_str());
     } else if ( ! _target->IsValid()) {
@@ -78,6 +81,7 @@ FRTConnection::setError(int errorCode)
 
 void FRTConnection::setSuccess()
 {
+    std::lock_guard guard(_lock);
     _transientFailures = 0;
     _fatalFailures = 0;
     _suspendedUntil = steady_time();
@@ -86,24 +90,17 @@ void FRTConnection::setSuccess()
 void FRTConnection::calculateSuspension(ErrorType type)
 {
     duration delay = duration::zero();
+    steady_time now = steady_clock::now();
+    std::lock_guard guard(_lock);
     switch(type) {
     case TRANSIENT:
-        _transientFailures.fetch_add(1);
-        delay = _transientFailures.load(std::memory_order_relaxed) * getTransientDelay();
-        if (delay > getMaxTransientDelay()) {
-            delay = getMaxTransientDelay();
-        }
+        delay = std::min(6u, ++_transientFailures) * _transientDelay;
         LOG(warning, "Connection to %s failed or timed out", _address.c_str());
         break;
     case FATAL:
-        _fatalFailures.fetch_add(1);
-        delay = _fatalFailures.load(std::memory_order_relaxed) * getFatalDelay();
-        if (delay > getMaxFatalDelay()) {
-            delay = getMaxFatalDelay();
-        }
+        delay = std::min(6u, ++_fatalFailures) * _fatalDelay;
         break;
     }
-    steady_time now = steady_clock::now();
     _suspendedUntil = now + delay;
     if (_suspendWarned < (now - 5s)) {
         LOG(warning, "FRT Connection %s suspended until %s", _address.c_str(), vespalib::to_string(to_utc(_suspendedUntil)).c_str());

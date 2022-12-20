@@ -3,7 +3,6 @@
 
 #include "connection.h"
 #include <vespa/config/common/timingvalues.h>
-#include <atomic>
 #include <memory>
 
 class FRT_Supervisor;
@@ -27,27 +26,21 @@ public:
     vespalib::steady_time getSuspendedUntil() const { return _suspendedUntil; }
     void setError(int errorCode) override;
     void setSuccess();
-
-    /// Only used for testing
-    void setTransientDelay(duration delay) { _transientDelay = delay; }
 private:
     FRT_Target * getTarget();
 
     void calculateSuspension(ErrorType type);
-    duration getTransientDelay() const { return _transientDelay; }
-    duration getMaxTransientDelay() const { return getTransientDelay() * 6; }
-    duration getMaxFatalDelay() const { return getFatalDelay() * 6; }
-    duration getFatalDelay() const { return _fatalDelay; }
 
     const vespalib::string _address;
+    const duration         _transientDelay;
     const duration         _fatalDelay;
     FRT_Supervisor&        _supervisor;
+    std::mutex             _lock;
     FRT_Target*            _target;
     vespalib::steady_time  _suspendedUntil;
     vespalib::steady_time  _suspendWarned;
-    std::atomic<int>       _transientFailures;
-    std::atomic<int>       _fatalFailures;
-    duration               _transientDelay;
+    uint32_t               _transientFailures;
+    uint32_t               _fatalFailures;
 };
 
 } // namespace config
