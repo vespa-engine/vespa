@@ -76,7 +76,7 @@ FRTSource::getConfig()
 void
 FRTSource::erase(FRT_RPCRequest * request) {
     std::lock_guard guard(_lock);
-    _inflight.erase(request);
+    assert(1 == _inflight.erase(request));
     _cond.notify_all();
 }
 
@@ -88,12 +88,25 @@ FRTSource::find(FRT_RPCRequest * request) {
     return found->second;
 }
 
+class FRTSource::CleanupGuard {
+public:
+    CleanupGuard(FRTSource * frtSource, FRT_RPCRequest * request)
+        : _frtSource(frtSource), _request(request) {}
+    ~CleanupGuard() {
+        _frtSource->erase(_request);
+    }
+private:
+    FRTSource      * _frtSource;
+    FRT_RPCRequest * _request;
+};
+
+
 void
 FRTSource::RequestDone(FRT_RPCRequest * request)
 {
+    FRTSource::CleanupGuard cleanup(this, request);
     if (request->GetErrorCode() == FRTE_RPC_ABORT) {
         LOG(debug, "request aborted, stopping");
-        erase(request);
         return;
     }
     std::shared_ptr<FRTConfigRequest> configRequest = find(request);
@@ -103,7 +116,6 @@ FRTSource::RequestDone(FRT_RPCRequest * request)
         configRequest->setError(request->GetErrorCode());
     }
     _agent->handleResponse(*configRequest, configRequest->createResponse(request));
-    erase(request);
     LOG(spam, "Calling schedule");
     scheduleNextGetConfig();
 }
@@ -122,7 +134,7 @@ FRTSource::close()
     }
     LOG(spam, "Aborting");
     for (auto & request : inflight) {
-        std::move(request.second)->abort();
+        request.second->abort();
     }
     inflight.clear();
     LOG(spam, "Waiting");

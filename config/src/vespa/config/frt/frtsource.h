@@ -27,6 +27,7 @@ public:
     void reload(int64_t generation) override;
     void getConfig() override;
 private:
+    class CleanupGuard;
     void scheduleNextGetConfig();
     void erase(FRT_RPCRequest *);
     std::shared_ptr<FRTConfigRequest> find(FRT_RPCRequest *);
