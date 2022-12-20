@@ -125,7 +125,6 @@ struct Response {
                 waiter->RequestDone(req);
         }
         const vespalib::string & getAddress() const override { return address; }
-        void setTransientDelay(duration delay) override { (void) delay; }
     };
 
     ConnectionMock::ConnectionMock(std::unique_ptr<Response> answer)

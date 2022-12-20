@@ -5,7 +5,6 @@
 #include <vespa/fnet/frt/error.h>
 #include <vespa/fnet/transport.h>
 #include <vespa/fastos/thread.h>
-#include <vespa/vespalib/util/size_literals.h>
 #include <sstream>
 #include <set>
 #include <unistd.h>
@@ -219,7 +218,7 @@ void Test::testSetErrorAllHashBased() {
 void Test::testSuspensionTimeout() {
     const ServerSpec spec(_sources);
     FRTConnectionPool sourcePool(_transport, spec, timingValues);
-    Connection* source = sourcePool.getCurrent();
+    FRTConnection* source = dynamic_cast<FRTConnection *>(sourcePool.getCurrent());
     source->setTransientDelay(1s);
     source->setError(FRTE_RPC_CONNECTION);
     for (int i = 0; i < 9; i++) {

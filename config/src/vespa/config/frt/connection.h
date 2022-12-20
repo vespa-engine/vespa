@@ -16,7 +16,6 @@ public:
     virtual void setError(int errorCode) = 0;
     virtual void invoke(FRT_RPCRequest * req, duration timeout, FRT_IRequestWait * waiter) = 0;
     virtual const vespalib::string & getAddress() const = 0;
-    virtual void setTransientDelay(duration delay) = 0;
     virtual ~Connection() = default;
 };
 

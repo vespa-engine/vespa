@@ -14,14 +14,14 @@ namespace config {
 
 FRTConnection::FRTConnection(const vespalib::string& address, FRT_Supervisor& supervisor, const TimingValues & timingValues)
     : _address(address),
+      _fatalDelay(timingValues.fatalDelay),
       _supervisor(supervisor),
       _target(0),
       _suspendedUntil(),
       _suspendWarned(),
       _transientFailures(0),
       _fatalFailures(0),
-      _transientDelay(timingValues.transientDelay),
-      _fatalDelay(timingValues.fatalDelay)
+      _transientDelay(timingValues.transientDelay)
 {
 }
 
@@ -80,7 +80,7 @@ void FRTConnection::setSuccess()
 {
     _transientFailures = 0;
     _fatalFailures = 0;
-    _suspendedUntil = system_time();
+    _suspendedUntil = steady_time();
 }
 
 void FRTConnection::calculateSuspension(ErrorType type)
@@ -103,16 +103,10 @@ void FRTConnection::calculateSuspension(ErrorType type)
         }
         break;
     }
-    system_time now = system_clock::now();
-    /*
-     * On Darwin, the std::chrono::steady_clock period (std::nano) is
-     * not exactly divisible by the std::chrono::system_clock period
-     * (std::micro). Thus we need to use std::chrono::duration_cast to
-     * convert from steady_time::duration to system_time::duration.
-     */
-    _suspendedUntil = now + std::chrono::duration_cast<system_time::duration>(delay);
+    steady_time now = steady_clock::now();
+    _suspendedUntil = now + delay;
     if (_suspendWarned < (now - 5s)) {
-        LOG(warning, "FRT Connection %s suspended until %s", _address.c_str(), vespalib::to_string(_suspendedUntil).c_str());
+        LOG(warning, "FRT Connection %s suspended until %s", _address.c_str(), vespalib::to_string(to_utc(_suspendedUntil)).c_str());
         _suspendWarned = now;
     }
 }
