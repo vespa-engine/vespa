@@ -419,7 +419,7 @@ public class Flags {
             APPLICATION_ID);
 
     public static final UnboundBooleanFlag USE_LOCKS_IN_FILEDISTRIBUTION = defineFeatureFlag(
-            "use-locks-in-filedistribution", false,
+            "use-locks-in-filedistribution", true,
             List.of("hmusum"), "2022-11-16", "2023-01-31",
             "If true, use locks when writing and deleting file references.",
             "Takes effect immediately",
