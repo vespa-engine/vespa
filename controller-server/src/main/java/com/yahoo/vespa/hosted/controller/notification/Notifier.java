@@ -136,7 +136,7 @@ public class Notifier {
                 .replace("[[NOTIFICATION_HEADER]]", content.messagePrefix())
                 .replace("[[NOTIFICATION_ITEMS]]", notification.messages().stream()
                         .map(Notifier::linkify)
-                        .map(m -> "<li>" + m + "</li>")
+                        .map(m -> "<p>" + m + "</p>")
                         .collect(Collectors.joining()))
                 .replace("[[LINK_TO_NOTIFICATION]]", notificationLink(notification.source()))
                 .replace("[[LINK_TO_ACCOUNT_NOTIFICATIONS]]", accountNotificationsUri(content.notification().source().tenant()))
