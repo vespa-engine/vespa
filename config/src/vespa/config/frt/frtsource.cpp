@@ -73,32 +73,37 @@ FRTSource::getConfig()
     connection->invoke(req, clientTimeout, this);
 }
 
+void
+FRTSource::erase(FRT_RPCRequest * request) {
+    std::lock_guard guard(_lock);
+    _inflight.erase(request);
+    _cond.notify_all();
+}
+
+std::shared_ptr<FRTConfigRequest>
+FRTSource::find(FRT_RPCRequest * request) {
+    std::lock_guard guard(_lock);
+    auto found = _inflight.find(request);
+    assert(found != _inflight.end());
+    return found->second;
+}
 
 void
 FRTSource::RequestDone(FRT_RPCRequest * request)
 {
     if (request->GetErrorCode() == FRTE_RPC_ABORT) {
         LOG(debug, "request aborted, stopping");
+        erase(request);
         return;
     }
-    std::shared_ptr<FRTConfigRequest> configRequest;
-    {
-        std::lock_guard guard(_lock);
-        auto found = _inflight.find(request);
-        assert(found != _inflight.end());
-        configRequest = found->second;
-    }
+    std::shared_ptr<FRTConfigRequest> configRequest = find(request);
     // If this was error from FRT side and nothing to do with config, notify
     // connection about the error.
     if (request->IsError()) {
         configRequest->setError(request->GetErrorCode());
     }
     _agent->handleResponse(*configRequest, configRequest->createResponse(request));
-    {
-        std::lock_guard guard(_lock);
-        _inflight.erase(request);
-        _cond.notify_all();
-    }
+    erase(request);
     LOG(spam, "Calling schedule");
     scheduleNextGetConfig();
 }
@@ -122,7 +127,9 @@ FRTSource::close()
     inflight.clear();
     LOG(spam, "Waiting");
     std::unique_lock guard(_lock);
-    while (!_inflight.empty()) _cond.wait(guard);
+    while (!_inflight.empty()) {
+        _cond.wait(guard);
+    }
     LOG(spam, "closed");
 }
 

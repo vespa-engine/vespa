@@ -28,6 +28,8 @@ public:
     void getConfig() override;
 private:
     void scheduleNextGetConfig();
+    void erase(FRT_RPCRequest *);
+    std::shared_ptr<FRTConfigRequest> find(FRT_RPCRequest *);
 
     using RequestMap = std::map<FRT_RPCRequest *, std::shared_ptr<FRTConfigRequest>>;
     std::shared_ptr<ConnectionFactory> _connectionFactory;
