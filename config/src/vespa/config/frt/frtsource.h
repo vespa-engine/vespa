@@ -27,15 +27,19 @@ public:
     void reload(int64_t generation) override;
     void getConfig() override;
 private:
+    class CleanupGuard;
     void scheduleNextGetConfig();
+    void erase(FRT_RPCRequest *);
+    std::shared_ptr<FRTConfigRequest> find(FRT_RPCRequest *);
 
+    using RequestMap = std::map<FRT_RPCRequest *, std::shared_ptr<FRTConfigRequest>>;
     std::shared_ptr<ConnectionFactory> _connectionFactory;
     const FRTConfigRequestFactory &    _requestFactory;
     std::unique_ptr<ConfigAgent>       _agent;
-    std::unique_ptr<FRTConfigRequest>  _currentRequest;
     const ConfigKey                    _key;
-
-    std::mutex                         _lock; // Protects _task and _closed
+    std::mutex                         _lock; // Protects _inflight, _task and _closed
+    std::condition_variable            _cond;
+    RequestMap                         _inflight;
     std::unique_ptr<FNET_Task>         _task;
     bool                               _closed;
 };

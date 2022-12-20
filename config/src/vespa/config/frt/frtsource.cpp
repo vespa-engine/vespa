@@ -35,9 +35,9 @@ FRTSource::FRTSource(std::shared_ptr<ConnectionFactory> connectionFactory, const
     : _connectionFactory(std::move(connectionFactory)),
       _requestFactory(requestFactory),
       _agent(std::move(agent)),
-      _currentRequest(),
       _key(key),
       _lock(),
+      _inflight(),
       _task(std::make_unique<GetConfigTask>(_connectionFactory->getScheduler(), this)),
       _closed(false)
 {
@@ -66,26 +66,57 @@ FRTSource::getConfig()
 
     std::unique_ptr<FRTConfigRequest> request = _requestFactory.createConfigRequest(_key, connection, state, serverTimeout);
     FRT_RPCRequest * req = request->getRequest();
-
-    _currentRequest = std::move(request);
+    {
+        std::lock_guard guard(_lock);
+        _inflight[req] = std::move(request);
+    }
     connection->invoke(req, clientTimeout, this);
 }
+
+void
+FRTSource::erase(FRT_RPCRequest * request) {
+    std::lock_guard guard(_lock);
+    auto num_erased = _inflight.erase(request);
+    assert(1u == num_erased);
+    _cond.notify_all();
+}
+
+std::shared_ptr<FRTConfigRequest>
+FRTSource::find(FRT_RPCRequest * request) {
+    std::lock_guard guard(_lock);
+    auto found = _inflight.find(request);
+    assert(found != _inflight.end());
+    return found->second;
+}
+
+class FRTSource::CleanupGuard {
+public:
+    CleanupGuard(FRTSource * frtSource, FRT_RPCRequest * request)
+        : _frtSource(frtSource), _request(request) {}
+    ~CleanupGuard() {
+        _frtSource->erase(_request);
+    }
+private:
+    FRTSource      * _frtSource;
+    FRT_RPCRequest * _request;
+};
 
 
 void
 FRTSource::RequestDone(FRT_RPCRequest * request)
 {
+    FRTSource::CleanupGuard cleanup(this, request);
     if (request->GetErrorCode() == FRTE_RPC_ABORT) {
         LOG(debug, "request aborted, stopping");
         return;
     }
-    assert(_currentRequest);
+    std::shared_ptr<FRTConfigRequest> configRequest = find(request);
     // If this was error from FRT side and nothing to do with config, notify
     // connection about the error.
     if (request->IsError()) {
-        _currentRequest->setError(request->GetErrorCode());
+        configRequest->setError(request->GetErrorCode());
     }
-    _agent->handleResponse(*_currentRequest, _currentRequest->createResponse(request));
+    _agent->handleResponse(*configRequest, configRequest->createResponse(request));
     LOG(spam, "Calling schedule");
     scheduleNextGetConfig();
 }
@@ -93,19 +124,25 @@ FRTSource::RequestDone(FRT_RPCRequest * request)
 void
 FRTSource::close()
 {
+    RequestMap inflight;
     {
         std::lock_guard guard(_lock);
         if (_closed)
             return;
         LOG(spam, "Killing task");
         _task->Kill();
+        inflight = _inflight;
     }
     LOG(spam, "Aborting");
-    if (_currentRequest.get() != NULL)
-        _currentRequest->abort();
-    LOG(spam, "Syncing");
-    _connectionFactory->syncTransport();
-    _currentRequest.reset(0);
+    for (auto & request : inflight) {
+        request.second->abort();
+    }
+    inflight.clear();
+    LOG(spam, "Waiting");
+    std::unique_lock guard(_lock);
+    while (!_inflight.empty()) {
+        _cond.wait(guard);
+    }
     LOG(spam, "closed");
 }
 
