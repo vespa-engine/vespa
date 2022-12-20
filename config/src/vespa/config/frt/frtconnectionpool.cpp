@@ -132,9 +132,9 @@ std::vector<FRTConnection *>
 FRTConnectionPool::getReadySources() const
 {
     std::vector<FRTConnection*> readySources;
+    auto timestamp = vespalib::steady_clock::now();
     for (const auto & entry : _connections) {
         FRTConnection* source = entry.second.get();
-        vespalib::system_time timestamp = vespalib::system_clock::now();
         if (source->getSuspendedUntil() < timestamp) {
             readySources.push_back(source);
         }
@@ -146,9 +146,9 @@ std::vector<FRTConnection *>
 FRTConnectionPool::getSuspendedSources() const
 {
     std::vector<FRTConnection*> suspendedSources;
+    auto timestamp = vespalib::steady_clock::now();
     for (const auto & entry : _connections) {
         FRTConnection* source = entry.second.get();
-        vespalib::system_time timestamp = vespalib::system_clock::now();
         if (source->getSuspendedUntil() >= timestamp) {
             suspendedSources.push_back(source);
         }

@@ -14,19 +14,21 @@ namespace config {
 
 FRTConnection::FRTConnection(const vespalib::string& address, FRT_Supervisor& supervisor, const TimingValues & timingValues)
     : _address(address),
+      _transientDelay(timingValues.transientDelay),
+      _fatalDelay(timingValues.fatalDelay),
       _supervisor(supervisor),
+      _lock(),
       _target(0),
       _suspendedUntil(),
       _suspendWarned(),
       _transientFailures(0),
-      _fatalFailures(0),
-      _transientDelay(timingValues.transientDelay),
-      _fatalDelay(timingValues.fatalDelay)
+      _fatalFailures(0)
 {
 }
 
 FRTConnection::~FRTConnection()
 {
+    std::lock_guard guard(_lock);
     if (_target != nullptr) {
         LOG(debug, "Shutting down %s", _address.c_str());
         _target->SubRef();
@@ -37,6 +39,7 @@ FRTConnection::~FRTConnection()
 FRT_Target *
 FRTConnection::getTarget()
 {
+    std::lock_guard guard(_lock);
     if (_target == nullptr) {
         _target = _supervisor.GetTarget(_address.c_str());
     } else if ( ! _target->IsValid()) {
@@ -78,41 +81,36 @@ FRTConnection::setError(int errorCode)
 
 void FRTConnection::setSuccess()
 {
+    std::lock_guard guard(_lock);
     _transientFailures = 0;
     _fatalFailures = 0;
-    _suspendedUntil = system_time();
+    _suspendedUntil = steady_time();
+}
+
+namespace {
+
+constexpr uint32_t MAX_DELAY_MULTIPLIER = 6u;
+constexpr vespalib::duration WARN_INTERVAL = 10s;
+
 }
 
 void FRTConnection::calculateSuspension(ErrorType type)
 {
     duration delay = duration::zero();
+    steady_time now = steady_clock::now();
+    std::lock_guard guard(_lock);
     switch(type) {
     case TRANSIENT:
-        _transientFailures.fetch_add(1);
-        delay = _transientFailures.load(std::memory_order_relaxed) * getTransientDelay();
-        if (delay > getMaxTransientDelay()) {
-            delay = getMaxTransientDelay();
-        }
+        delay = std::min(MAX_DELAY_MULTIPLIER, ++_transientFailures) * _transientDelay;
         LOG(warning, "Connection to %s failed or timed out", _address.c_str());
         break;
     case FATAL:
-        _fatalFailures.fetch_add(1);
-        delay = _fatalFailures.load(std::memory_order_relaxed) * getFatalDelay();
-        if (delay > getMaxFatalDelay()) {
-            delay = getMaxFatalDelay();
-        }
+        delay = std::min(MAX_DELAY_MULTIPLIER, ++_fatalFailures) * _fatalDelay;
         break;
     }
-    system_time now = system_clock::now();
-    /*
-     * On Darwin, the std::chrono::steady_clock period (std::nano) is
-     * not exactly divisible by the std::chrono::system_clock period
-     * (std::micro). Thus we need to use std::chrono::duration_cast to
-     * convert from steady_time::duration to system_time::duration.
-     */
-    _suspendedUntil = now + std::chrono::duration_cast<system_time::duration>(delay);
-    if (_suspendWarned < (now - 5s)) {
-        LOG(warning, "FRT Connection %s suspended until %s", _address.c_str(), vespalib::to_string(_suspendedUntil).c_str());
+    _suspendedUntil = now + delay;
+    if (_suspendWarned < (now - WARN_INTERVAL)) {
+        LOG(warning, "FRT Connection %s suspended until %s", _address.c_str(), vespalib::to_string(to_utc(_suspendedUntil)).c_str());
         _suspendWarned = now;
     }
 }
