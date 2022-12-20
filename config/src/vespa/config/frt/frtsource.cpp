@@ -76,7 +76,8 @@ FRTSource::getConfig()
 void
 FRTSource::erase(FRT_RPCRequest * request) {
     std::lock_guard guard(_lock);
-    assert(1 == _inflight.erase(request));
+    auto num_erased = _inflight.erase(request);
+    assert(1u == num_erased);
     _cond.notify_all();
 }
 
