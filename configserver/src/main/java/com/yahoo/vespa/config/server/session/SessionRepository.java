@@ -875,12 +875,7 @@ public class SessionRepository {
         }
         ApplicationId applicationId = sessionZKClient.readApplicationId();
         log.log(Level.FINE, () -> "Creating local session for tenant '" + tenantName + "' with session id " + sessionId);
-        try {
-            createLocalSession(sessionDir, applicationId, sessionZKClient.readTags(), sessionId);
-        } finally {
-            log.log(Level.FINE, "Deleting file distribution reference " + fileReference + " for app package with session id " + sessionId);
-            fileDirectory.delete(fileReference, (reference) -> true); // Delete downloaded file reference, not needed anymore
-        }
+        createLocalSession(sessionDir, applicationId, sessionZKClient.readTags(), sessionId);
     }
 
     private Optional<Long> getActiveSessionId(ApplicationId applicationId) {
