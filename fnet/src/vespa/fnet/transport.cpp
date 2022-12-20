@@ -134,7 +134,7 @@ FNET_Transport::FNET_Transport(const fnet::TransportConfig &cfg)
     : _async_resolver(cfg.resolver()),
       _crypto_engine(cfg.crypto()),
       _time_tools(cfg.time_tools()),
-      _work_pool(std::make_unique<vespalib::ThreadStackExecutor>(1, 128_Ki, fnet_work_pool, 1024)),
+      _work_pool(std::make_unique<vespalib::ThreadStackExecutor>(1, fnet_work_pool, 1024)),
       _threads(),
       _config(cfg.config())
 {

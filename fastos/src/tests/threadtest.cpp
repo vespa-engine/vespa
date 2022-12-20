@@ -19,7 +19,7 @@ class ThreadTest : public ThreadTestBase
    {
       TestHeader("Too Many Threads Test");
 
-      FastOS_ThreadPool *pool = new FastOS_ThreadPool(128*1024, MAX_THREADS);
+      FastOS_ThreadPool *pool = new FastOS_ThreadPool(MAX_THREADS);
 
       if (Progress(pool != nullptr, "Allocating ThreadPool")) {
          int i;
@@ -62,7 +62,7 @@ class ThreadTest : public ThreadTestBase
    {
       TestHeader("Create Single Thread And Join Test");
 
-      FastOS_ThreadPool *pool = new FastOS_ThreadPool(128*1024);
+      FastOS_ThreadPool *pool = new FastOS_ThreadPool;
 
       if (Progress(pool != nullptr, "Allocating ThreadPool")) {
          Job job;
@@ -93,7 +93,7 @@ class ThreadTest : public ThreadTestBase
     if (!silent)
       TestHeader("Thread Create Performance");
 
-    FastOS_ThreadPool *pool = new FastOS_ThreadPool(128 * 1024);
+    FastOS_ThreadPool *pool = new FastOS_ThreadPool;
 
     if (!silent)
       Progress(pool != nullptr, "Allocating ThreadPool");
@@ -166,7 +166,7 @@ class ThreadTest : public ThreadTestBase
    {
       TestHeader("Close Pool Test");
 
-      FastOS_ThreadPool pool(128*1024);
+      FastOS_ThreadPool pool;
       const int closePoolThreads=9;
       Job jobs[closePoolThreads];
 
@@ -188,7 +188,7 @@ class ThreadTest : public ThreadTestBase
    void BreakFlagTest () {
       TestHeader("BreakFlag Test");
 
-      FastOS_ThreadPool pool(128*1024);
+      FastOS_ThreadPool pool;
 
       const int breakFlagThreads=4;
 
@@ -212,7 +212,7 @@ class ThreadTest : public ThreadTestBase
 
       TestHeader ("Thread Id Test");
 
-      FastOS_ThreadPool pool(128*1024);
+      FastOS_ThreadPool pool;
       Job jobs[numThreads];
       std::mutex slowStartMutex;
 

@@ -157,7 +157,7 @@ namespace mbus {
 
 Messenger::Messenger()
     : _lock(),
-      _pool(128000),
+      _pool(),
       _children(),
       _queue(),
       _closed(false)

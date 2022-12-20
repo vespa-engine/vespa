@@ -14,7 +14,9 @@
 // FastOS_ThreadPool
 // ----------------------------------------------------------------------
 
-FastOS_ThreadPool::FastOS_ThreadPool(int , int maxThreads)
+FastOS_ThreadPool::FastOS_ThreadPool() : FastOS_ThreadPool(0) {}
+
+FastOS_ThreadPool::FastOS_ThreadPool(int maxThreads)
     : _startedThreadsCount(0),
       _closeFlagMutex(),
       _closeCalledFlag(false),

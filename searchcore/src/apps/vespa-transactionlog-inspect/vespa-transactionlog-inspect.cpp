@@ -387,7 +387,7 @@ public:
     BaseUtility(const BaseOptions &bopts)
         : _bopts(bopts),
           _fileHeader(),
-          _threadPool(64_Ki),
+          _threadPool(),
           _transport(),
           _server(_transport, _bopts.tlsName, _bopts.listenPort, _bopts.tlsDir, _fileHeader),
           _client(_transport, vespalib::make_string("tcp/localhost:%d", _bopts.listenPort))

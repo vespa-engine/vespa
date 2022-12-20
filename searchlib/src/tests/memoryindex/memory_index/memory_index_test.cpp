@@ -156,7 +156,7 @@ VESPA_THREAD_STACK_TAG(invert_executor)
 VESPA_THREAD_STACK_TAG(push_executor)
 
 Index::Index(const MySetup &setup)
-    : _executor(1, 128_Ki),
+    : _executor(1),
       _invertThreads(SequencedTaskExecutor::create(invert_executor, 2)),
       _pushThreads(SequencedTaskExecutor::create(push_executor, 2)),
       index(setup.make_all_index_schema(), setup, *_invertThreads, *_pushThreads),

@@ -1,15 +1,11 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include <vespa/vespalib/btree/btree.h>
-#include <vespa/vespalib/btree/btreebuilder.h>
 #include <vespa/vespalib/btree/btreenodeallocator.h>
-#include <vespa/vespalib/btree/btreeroot.h>
-#include <vespa/vespalib/btree/btreestore.h>
 #include <vespa/vespalib/gtest/gtest.h>
 
 #include <vespa/vespalib/util/lambdatask.h>
 #include <vespa/vespalib/util/rand48.h>
-#include <vespa/vespalib/util/size_literals.h>
 #include <vespa/vespalib/util/threadstackexecutor.h>
 
 #include <vespa/vespalib/btree/btreenodeallocator.hpp>
@@ -235,8 +231,8 @@ Fixture<Params>::Fixture()
       _generationHandler(),
       _tree(),
       _writeItr(_tree.begin()),
-      _writer(1, 128_Ki),
-      _readers(4, 128_Ki),
+      _writer(1),
+      _readers(4),
       _rnd(),
       _keyLimit(1000000),
       _readSeed(50),

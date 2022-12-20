@@ -152,12 +152,10 @@ ThreadStackExecutorBase::run()
 
 //-----------------------------------------------------------------------------
 
-ThreadStackExecutorBase::ThreadStackExecutorBase(uint32_t stackSize,
-                                                 uint32_t taskLimit,
-                                                 init_fun_t init_fun)
+ThreadStackExecutorBase::ThreadStackExecutorBase(uint32_t taskLimit, init_fun_t init_fun)
     : SyncableThreadExecutor(),
       Runnable(),
-      _pool(std::make_unique<FastOS_ThreadPool>(stackSize)),
+      _pool(std::make_unique<FastOS_ThreadPool>()),
       _lock(),
       _cond(),
       _stats(),

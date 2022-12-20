@@ -48,7 +48,7 @@ struct Fixture
     Gate blockedExecuteGate;
 
     Fixture(uint32_t taskLimit, uint32_t tasksToWaitFor)
-        : executor(1, 128000, taskLimit),
+        : executor(1, taskLimit),
           workersEntryGate(),
           workersExitLatch(tasksToWaitFor),
           blockedExecuteGate()
@@ -123,14 +123,14 @@ vespalib::string get_worker_stack_trace(BlockingThreadStackExecutor &executor) {
 
 VESPA_THREAD_STACK_TAG(my_stack_tag);
 
-TEST_F("require that executor has appropriate default thread stack tag", BlockingThreadStackExecutor(1, 128_Ki, 10)) {
+TEST_F("require that executor has appropriate default thread stack tag", BlockingThreadStackExecutor(1, 10)) {
     vespalib::string trace = get_worker_stack_trace(f1);
     if (!EXPECT_TRUE(trace.find("unnamed_blocking_executor") != vespalib::string::npos)) {
         fprintf(stderr, "%s\n", trace.c_str());
     }
 }
 
-TEST_F("require that executor thread stack tag can be set", BlockingThreadStackExecutor(1, 128_Ki, 10, my_stack_tag)) {
+TEST_F("require that executor thread stack tag can be set", BlockingThreadStackExecutor(1, 10, my_stack_tag)) {
     vespalib::string trace = get_worker_stack_trace(f1);
     if (!EXPECT_TRUE(trace.find("my_stack_tag") != vespalib::string::npos)) {
         fprintf(stderr, "%s\n", trace.c_str());
@@ -140,7 +140,7 @@ TEST_F("require that executor thread stack tag can be set", BlockingThreadStackE
 TEST_F("require that tasks posted from internal worker thread will not block executor", TimeBomb(60)) {
     size_t cnt = 0;
     Gate fork_done;
-    BlockingThreadStackExecutor executor(1, 128_Ki, 10);
+    BlockingThreadStackExecutor executor(1, 10);
     struct IncTask : Executor::Task {
         size_t &cnt;
         IncTask(size_t &cnt_in) : cnt(cnt_in) {}

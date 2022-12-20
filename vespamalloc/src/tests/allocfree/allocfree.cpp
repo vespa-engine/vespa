@@ -73,7 +73,7 @@ int Test::Main() {
     }
     TEST_INIT("allocfree_test");
 
-    FastOS_ThreadPool pool(128000);
+    FastOS_ThreadPool pool;
 
     std::map<int, std::shared_ptr<FreeWorker> > freeWorkers;
     std::map<int, std::shared_ptr<MallocWorker> > mallocWorkers;

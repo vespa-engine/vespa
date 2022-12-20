@@ -33,7 +33,7 @@ struct MyTask : Executor::Task {
     }
 };
 
-TEST_MT_F("stress test block thread stack executor", 8, BlockingThreadStackExecutor(4, 128000, 1000))
+TEST_MT_F("stress test block thread stack executor", 8, BlockingThreadStackExecutor(4, 1000))
 {
     size_t loop_cnt = 100;
     for (size_t i = 0; i < loop_cnt; ++i) {

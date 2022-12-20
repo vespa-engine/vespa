@@ -34,7 +34,7 @@ public:
 
 Test::Test()
     : vespalib::TestApp(),
-      _threadPool(64_Ki),
+      _threadPool(),
       _transport()
 {
     _transport.Start(&_threadPool);

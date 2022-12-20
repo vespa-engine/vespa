@@ -13,6 +13,9 @@
 #include <vespa/documentapi/messagebus/documentprotocol.h>
 #include <vespa/vespalib/text/stringtokenizer.h>
 
+namespace {
+    VESPA_THREAD_STACK_TAG(async_init_policy);
+}
 namespace documentapi {
 
 std::map<string, string>
@@ -34,9 +37,8 @@ AsyncInitializationPolicy::parse(string parameters) {
     return retVal;
 }
 
-AsyncInitializationPolicy::AsyncInitializationPolicy(
-        const std::map<string, string>&)
-    : _executor(new vespalib::ThreadStackExecutor(1, 1024)),
+AsyncInitializationPolicy::AsyncInitializationPolicy(const std::map<string, string>&)
+    : _executor(std::make_unique<vespalib::ThreadStackExecutor>(1, async_init_policy)),
       _state(State::NOT_STARTED),
       _syncInit(true)
 {
@@ -85,7 +87,7 @@ AsyncInitializationPolicy::select(mbus::RoutingContext& context)
             // entirely done with accessing the state of this policy (including
             // the mutex). After setting _state == RUNNING, only the task
             // is allowed to mutate _state.
-            _executor->execute(vespalib::Executor::Task::UP(new Task(*this)));
+            _executor->execute(std::make_unique<Task>(*this));
             _state = State::RUNNING;
         }
 

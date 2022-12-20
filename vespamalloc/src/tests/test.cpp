@@ -32,7 +32,7 @@ private:
 
 int main(int, char *[])
 {
-    FastOS_ThreadPool threadPool(512*1024);
+    FastOS_ThreadPool threadPool;
     printf("Main stack(%p)\n", &threadPool);
     Thread context;
 

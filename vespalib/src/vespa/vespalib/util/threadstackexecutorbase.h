@@ -150,13 +150,11 @@ protected:
      * executor. Both the number of threads and the task limit must be
      * greater than 0.
      *
-     * @param stackSize stack size per worker thread
      * @param taskLimit upper limit on accepted tasks
      * @param init_fun custom function used to wrap the main loop of
      *                 each worker thread.
      **/
-    ThreadStackExecutorBase(uint32_t stackSize, uint32_t taskLimit,
-                            init_fun_t init_fun);
+    ThreadStackExecutorBase(uint32_t taskLimit, init_fun_t init_fun);
 
     /**
      * This will start the theads. This is to avoid starting tasks in

@@ -20,7 +20,6 @@
 #include <vespa/searchcore/proton/server/i_proton_disk_layout.h>
 #include <vespa/searchcore/proton/server/threading_service_config.h>
 #include <vespa/searchsummary/config/config-juniperrc.h>
-#include <vespa/vespalib/util/size_literals.h>
 #include <vespa/vespalib/util/threadstackexecutor.h>
 #include <vespa/vespalib/test/insertion_operators.h>
 #include <vespa/config/subscription/configuri.h>
@@ -271,7 +270,7 @@ struct MyProtonConfigurerOwner : public IProtonConfigurerOwner,
     MyProtonConfigurerOwner()
         : IProtonConfigurerOwner(),
           MyLog(),
-          _executor(1, 128_Ki),
+          _executor(1),
           _dbs()
     {
     }

@@ -124,7 +124,7 @@ int Test::Main() {
 
     ASSERT_EQUAL(1024ul, sizeof(List));
 
-    FastOS_ThreadPool      pool(128000);
+    FastOS_ThreadPool      pool;
     List::AtomicHeadPtr    sharedList(List::HeadPtr(nullptr, 1));
     fprintf(stderr, "Start populating list\n");
     for (size_t i=0; i < NumBlocks; i++) {

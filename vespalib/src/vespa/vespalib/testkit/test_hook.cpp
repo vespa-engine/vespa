@@ -19,7 +19,7 @@ struct FastOSTestThreadRunner : FastOS_Runnable {
 
 struct FastOSTestThreadFactory : TestThreadFactory {
     FastOS_ThreadPool threadPool;
-    FastOSTestThreadFactory() : threadPool(256_Ki) {}
+    FastOSTestThreadFactory() : threadPool() {}
     void createThread(TestThreadEntry &entry) override {
         threadPool.NewThread(new FastOSTestThreadRunner(entry), 0);
     }

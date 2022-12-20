@@ -158,7 +158,7 @@ BuildContext::BuildContext(AddFieldsType add_fields)
     : DocBuilder(add_fields),
       _dmk("summary"),
       _fixed_repo(get_repo(), get_document_type()),
-      _summaryExecutor(4, 128_Ki),
+      _summaryExecutor(4),
       _noTlSyncer(),
       _str(_summaryExecutor, "summary",
            LogDocumentStore::Config(
@@ -242,7 +242,7 @@ public:
     DBContext(std::shared_ptr<const DocumentTypeRepo> repo, const char *docTypeName)
         : _dmk(docTypeName),
           _fileHeaderContext(),
-          _summaryExecutor(8, 128_Ki),
+          _summaryExecutor(8),
           _shared_service(_summaryExecutor, _summaryExecutor),
           _tls(_shared_service.transport(), "tmp", 9013, ".", _fileHeaderContext),
           _made_dir(std::filesystem::create_directory(std::filesystem::path("tmpdb"))),
@@ -272,7 +272,7 @@ public:
                                   _shared_service, _tls, _dummy, _fileHeaderContext,
                                   std::make_shared<search::attribute::Interlock>(),
                                   std::make_unique<MemoryConfigStore>(),
-                                  std::make_shared<vespalib::ThreadStackExecutor>(16, 128_Ki), _hwInfo),
+                                  std::make_shared<vespalib::ThreadStackExecutor>(16), _hwInfo),
             _ddb->start();
         _ddb->waitForOnlineState();
         _aw = std::make_unique<AttributeWriter>(_ddb->getReadySubDB()->getAttributeManager());

@@ -484,7 +484,7 @@ struct TLS {
     TransLogServer tls;
     TLS(const vespalib::string &name, int listenPort, const vespalib::string &baseDir,
         const common::FileHeaderContext &fileHeaderContext, const DomainConfig & cfg, size_t maxThreads = 4)
-        : threadPool(64_Ki),
+        : threadPool(),
           transport(),
           tls(transport, name, listenPort, baseDir, fileHeaderContext, cfg, maxThreads)
     {

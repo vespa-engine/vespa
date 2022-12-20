@@ -26,7 +26,7 @@ struct ServerFixture : FRT_Invokable {
 
     ServerFixture()
         : server(),
-          threadPool(64_Ki),
+          threadPool(),
           transport(),
           orb(server.supervisor())
     {

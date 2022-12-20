@@ -128,7 +128,7 @@ Fixture::Fixture(bool file_config)
     : FixtureBase(file_config),
       _dummy(),
       _myDBOwner(),
-      _summaryExecutor(8, 128_Ki),
+      _summaryExecutor(8),
       _shared_service(_summaryExecutor, _summaryExecutor),
       _hwInfo(),
       _db(),
@@ -155,7 +155,7 @@ Fixture::Fixture(bool file_config)
                              _fileHeaderContext,
                              std::make_shared<search::attribute::Interlock>(),
                              make_config_store(),
-                             std::make_shared<vespalib::ThreadStackExecutor>(16, 128_Ki), _hwInfo);
+                             std::make_shared<vespalib::ThreadStackExecutor>(16), _hwInfo);
     _db->start();
     _db->waitForOnlineState();
 }

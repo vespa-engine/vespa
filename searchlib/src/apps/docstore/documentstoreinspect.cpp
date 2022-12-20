@@ -108,7 +108,7 @@ DocumentStoreInspectApp::verify(const vespalib::string & dir)
     GrowStrategy growStrategy;
     TuneFileSummary tuning;
     search::index::DummyFileHeaderContext fileHeaderContext;
-    vespalib::ThreadStackExecutor executor(1, 128_Ki);
+    vespalib::ThreadStackExecutor executor(1);
     transactionlog::NoSyncProxy noTlSyncer;
 
     LogDataStore store(executor, dir, config, growStrategy, tuning,

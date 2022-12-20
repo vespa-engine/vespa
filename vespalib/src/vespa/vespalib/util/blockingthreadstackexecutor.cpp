@@ -21,15 +21,15 @@ BlockingThreadStackExecutor::wakeup(unique_lock &, std::condition_variable & con
     cond.notify_all();
 }
 
-BlockingThreadStackExecutor::BlockingThreadStackExecutor(uint32_t threads, uint32_t stackSize, uint32_t taskLimit)
-    : ThreadStackExecutorBase(stackSize, taskLimit, unnamed_blocking_executor)
+BlockingThreadStackExecutor::BlockingThreadStackExecutor(uint32_t threads, uint32_t taskLimit)
+    : ThreadStackExecutorBase(taskLimit, unnamed_blocking_executor)
 {
     start(threads);
 }
 
-BlockingThreadStackExecutor::BlockingThreadStackExecutor(uint32_t threads, uint32_t stackSize, uint32_t taskLimit,
+BlockingThreadStackExecutor::BlockingThreadStackExecutor(uint32_t threads, uint32_t taskLimit,
                                                          init_fun_t init_function)
-    : ThreadStackExecutorBase(stackSize, taskLimit, std::move(init_function))
+    : ThreadStackExecutorBase(taskLimit, std::move(init_function))
 {
     start(threads);
 }

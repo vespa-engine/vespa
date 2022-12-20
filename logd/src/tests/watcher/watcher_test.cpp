@@ -129,7 +129,7 @@ public:
 };
 
 WatcherTest::WatcherTest()
-    : _executor(1, 256_Ki)
+    : _executor(1)
 {
     remove_files();
     setenv("VESPA_LOG_TARGET", "file:vespa.log", true);

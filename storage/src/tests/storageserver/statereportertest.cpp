@@ -61,7 +61,7 @@ struct MetricClock : public metrics::MetricManager::Timer
 }
 
 StateReporterTest::StateReporterTest()
-    : _threadPool(256_Ki),
+    : _threadPool(),
       _clock(nullptr),
       _top(),
       _stateReporter()

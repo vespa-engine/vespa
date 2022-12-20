@@ -501,7 +501,7 @@ MyBmNode::MyBmNode(const vespalib::string& base_dir, int base_port, uint32_t nod
       _query_limiter(),
       _metrics_wire_service(),
       _config_stores(),
-      _summary_executor(8, 128_Ki),
+      _summary_executor(8),
       _shared_service(_summary_executor, _summary_executor),
       _tls(_shared_service.transport(), "tls", _tls_listen_port, _base_dir, _file_header_context),
       _document_db_owner(),
@@ -579,7 +579,7 @@ MyBmNode::create_document_db(const BmClusterParams& params)
                                       _metrics_wire_service, _file_header_context,
                                       std::make_shared<search::attribute::Interlock>(),
                                       _config_stores.getConfigStore(_doc_type_name.toString()),
-                                      std::make_shared<vespalib::ThreadStackExecutor>(16, 128_Ki), HwInfo());
+                                      std::make_shared<vespalib::ThreadStackExecutor>(16), HwInfo());
     _document_db->start();
     _document_db->waitForOnlineState();
 }

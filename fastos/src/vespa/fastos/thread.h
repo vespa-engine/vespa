@@ -131,14 +131,9 @@ private:
 public:
     FastOS_ThreadPool(const FastOS_ThreadPool&) = delete;
     FastOS_ThreadPool& operator=(const FastOS_ThreadPool&) = delete;
-    /**
-     * Create a threadpool that can hold a maximum of [maxThreads] threads.
-     * @param  stackSize    The stack size for threads in this pool should
-     *                      be this many bytes.
-     * @param  maxThreads   Maximum number of threads in threadpool.
-     *                      (0 == no limit).
-     */
-    FastOS_ThreadPool(int stackSize, int maxThreads=0);
+    FastOS_ThreadPool(int maxThreads);
+    /// Unlimited threads
+    FastOS_ThreadPool();
 
     /**
      * Destructor. Closes pool if necessary.

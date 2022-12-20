@@ -34,7 +34,7 @@ bool steady_buckets_stats(const std::optional<BmBucketsStats> buckets)
 
 BmNodeStatsReporter::BmNodeStatsReporter(BmCluster &cluster, bool report_merge_stats)
     : _cluster(cluster),
-      _executor(1, 128_Ki),
+      _executor(1),
       _mutex(),
       _cond(),
       _change_time(),

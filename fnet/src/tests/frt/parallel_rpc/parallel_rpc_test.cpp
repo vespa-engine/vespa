@@ -19,7 +19,7 @@ struct Rpc : FRT_Invokable {
     FNET_Transport    transport;
     FRT_Supervisor    orb;
     Rpc(CryptoEngine::SP crypto, size_t num_threads, bool drop_empty)
-        : thread_pool(128_Ki), transport(fnet::TransportConfig(num_threads).crypto(std::move(crypto)).drop_empty_buffers(drop_empty)), orb(&transport) {}
+        : thread_pool(), transport(fnet::TransportConfig(num_threads).crypto(std::move(crypto)).drop_empty_buffers(drop_empty)), orb(&transport) {}
     void start() {
         ASSERT_TRUE(transport.Start(&thread_pool));
     }

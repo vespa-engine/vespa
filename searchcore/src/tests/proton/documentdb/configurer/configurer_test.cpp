@@ -169,7 +169,7 @@ Fixture::Fixture()
       _queryLimiter(),
       _constantValueFactory(),
       _constantValueRepo(_constantValueFactory),
-      _summaryExecutor(8, 128_Ki),
+      _summaryExecutor(8),
       _pendingLidsForCommit(std::make_shared<PendingLidTracker>()),
       _sessionMgr(100),
       _views(),

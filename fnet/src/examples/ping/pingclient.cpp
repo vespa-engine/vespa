@@ -28,7 +28,7 @@ PingClient::main(int argc, char **argv)
     }
 
     FNET_PacketQueue           queue;
-    FastOS_ThreadPool          pool(65000);
+    FastOS_ThreadPool          pool;
     PingPacketFactory          factory;
     FNET_SimplePacketStreamer  streamer(&factory);
     FNET_Transport             transport;

@@ -359,7 +359,7 @@ struct FixtureBase
     void init() {
         DocumentSubDbInitializer::SP task =
             _subDb.createInitializer(*_snapshot->_cfg, Traits::configSerial(), IndexConfig());
-        vespalib::ThreadStackExecutor executor(1, 1_Mi);
+        vespalib::ThreadStackExecutor executor(1);
         initializer::TaskRunner taskRunner(executor);
         taskRunner.runTask(task);
         runInMasterAndSync([&]() { _subDb.initViews(*_snapshot->_cfg); });

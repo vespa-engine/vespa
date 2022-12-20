@@ -70,7 +70,7 @@ struct Fixture
           _runRetval(false),
           _runGates(getGateVector(numRuns)),
           _runIdx(0),
-          _exec(1, 64000)
+          _exec(1)
     {
     }
     void runJob() {

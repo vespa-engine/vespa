@@ -15,6 +15,9 @@
 #include <vespa/log/log.h>
 LOG_SETUP(".status");
 
+namespace {
+    VESPA_THREAD_STACK_TAG(status_web_server);
+}
 namespace storage {
 
 StatusWebServer::StatusWebServer(
@@ -81,7 +84,7 @@ void StatusWebServer::configure(std::unique_ptr<vespa::config::content::core::St
 StatusWebServer::WebServer::WebServer(StatusWebServer& status, uint16_t port)
     : _status(status),
       _server(vespalib::Portal::create(vespalib::CryptoEngine::get_default(), port)),
-      _executor(1, 256_Ki),
+      _executor(1, status_web_server),
       _root(_server->bind("/", *this))
 {
 }

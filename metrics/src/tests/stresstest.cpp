@@ -114,7 +114,7 @@ TEST(StressTest, test_stress)
     OuterMetricSet metrics;
 
     LOG(info, "Starting load givers");
-    FastOS_ThreadPool threadPool(256_Ki);
+    FastOS_ThreadPool threadPool;
     std::vector<Hammer::UP> hammers;
     for (uint32_t i=0; i<10; ++i) {
         hammers.push_back(std::make_unique<Hammer>(metrics, threadPool));

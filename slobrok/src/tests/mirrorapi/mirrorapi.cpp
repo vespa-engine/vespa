@@ -138,7 +138,7 @@ Test::Main()
     cloud::config::SlobroksConfig::Slobrok slobrok;
     slobrok.connectionspec = "tcp/localhost:18501";
     specBuilder.slobrok.push_back(slobrok);
-    FastOS_ThreadPool threadPool(0x10000);
+    FastOS_ThreadPool threadPool;
     FNET_Transport transport;
     FRT_Supervisor supervisor(&transport);
     MirrorAPI mirror(supervisor, slobrok::ConfiguratorFactory(config::ConfigUri::createFromInstance(specBuilder)));

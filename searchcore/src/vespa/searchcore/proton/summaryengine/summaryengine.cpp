@@ -63,7 +63,7 @@ SummaryEngine::SummaryEngine(size_t numThreads, bool async)
       _closed(false),
       _forward_issues(true),
       _handlers(),
-      _executor(numThreads, 128_Ki, CpuUsage::wrap(summary_engine_executor, CpuUsage::Category::READ)),
+      _executor(numThreads, CpuUsage::wrap(summary_engine_executor, CpuUsage::Category::READ)),
       _metrics(std::make_unique<DocsumMetrics>())
 { }
 

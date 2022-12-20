@@ -1,12 +1,14 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
-#include <vespa/fastos/thread.h>
 #include <vespa/vespalib/util/time.h>
 #include <atomic>
 #include <condition_variable>
 #include <mutex>
 #include <vector>
+
+class FastOS_ThreadInterface;
+class FastOS_ThreadPool;
 
 namespace storage::distributor {
 
@@ -37,7 +39,7 @@ class DistributorStripePool {
     using StripeVector       = std::vector<std::unique_ptr<DistributorStripeThread>>;
     using NativeThreadVector = std::vector<FastOS_ThreadInterface*>;
 
-    FastOS_ThreadPool       _thread_pool;
+    std::unique_ptr<FastOS_ThreadPool>  _thread_pool;
     uint8_t                 _n_stripe_bits;
     StripeVector            _stripes;
     NativeThreadVector      _threads;

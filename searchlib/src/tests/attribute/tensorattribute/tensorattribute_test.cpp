@@ -582,7 +582,7 @@ Fixture::Fixture(const vespalib::string &typeSpec, FixtureTraits traits)
       _index_factory(),
       _tensorAttr(),
       _attr(),
-      _executor(1, 0x10000),
+      _executor(1),
       _denseTensors(false),
       _traits(traits),
       _mmap_allocator_base_dir("mmap-file-allocator-factory-dir")

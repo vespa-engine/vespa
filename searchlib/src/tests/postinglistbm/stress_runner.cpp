@@ -160,7 +160,7 @@ StressMaster::StressMaster(vespalib::Rand48 &rnd,
 {
     LOG(info, "StressMaster::StressMaster()");
 
-    _threadPool = new FastOS_ThreadPool(128_Ki, 400);
+    _threadPool = new FastOS_ThreadPool(400);
 }
 
 StressMaster::~StressMaster()

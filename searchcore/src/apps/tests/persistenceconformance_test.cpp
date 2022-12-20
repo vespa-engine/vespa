@@ -34,7 +34,6 @@
 #include <vespa/document/config/documenttypes_config_fwd.h>
 #include <vespa/document/repo/documenttyperepo.h>
 #include <vespa/document/test/make_bucket_space.h>
-#include <vespa/vespalib/util/size_literals.h>
 #include <filesystem>
 
 #include <vespa/log/log.h>
@@ -203,7 +202,7 @@ public:
                                   _shared_service, _tls, _metricsWireService,
                                   _fileHeaderContext, std::make_shared<search::attribute::Interlock>(),
                                   _config_stores.getConfigStore(docType.toString()),
-                                  std::make_shared<vespalib::ThreadStackExecutor>(16, 128_Ki), HwInfo());
+                                  std::make_shared<vespalib::ThreadStackExecutor>(16), HwInfo());
     }
 };
 
@@ -214,7 +213,7 @@ DocumentDBFactory::DocumentDBFactory(const vespalib::string &baseDir, int tlsLis
       _tlsSpec(vespalib::make_string("tcp/localhost:%d", tlsListenPort)),
       _queryLimiter(),
       _metricsWireService(),
-      _summaryExecutor(8, 128_Ki),
+      _summaryExecutor(8),
       _shared_service(_summaryExecutor, _summaryExecutor),
       _tls(_shared_service.transport(), "tls", tlsListenPort, baseDir, _fileHeaderContext)
 {}

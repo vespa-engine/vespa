@@ -37,7 +37,6 @@
 #include <vespa/searchlib/engine/searchreply.h>
 #include <vespa/vespalib/util/destructor_callbacks.h>
 #include <vespa/vespalib/util/exceptions.h>
-#include <vespa/vespalib/util/size_literals.h>
 
 #include <vespa/log/log.h>
 #include <vespa/searchcorespi/index/warmupconfig.h>
@@ -72,7 +71,6 @@ using searchcorespi::IFlushTarget;
 namespace proton {
 
 namespace {
-constexpr uint32_t indexing_thread_stack_size = 128_Ki;
 
 index::IndexConfig
 makeIndexConfig(const ProtonConfig::Index & cfg) {
@@ -191,7 +189,7 @@ DocumentDB::DocumentDB(const vespalib::string &baseDir,
       // Only one thread per executor, or performDropFeedView() will fail.
       _writeServiceConfig(configSnapshot->get_threading_service_config()),
       _writeService(shared_service.shared(), shared_service.transport(), shared_service.clock(), shared_service.field_writer(),
-                    &shared_service.invokeService(), _writeServiceConfig, indexing_thread_stack_size),
+                    &shared_service.invokeService(), _writeServiceConfig),
       _initializeThreads(std::move(initializeThreads)),
       _initConfigSnapshot(),
       _initConfigSerialNum(0u),

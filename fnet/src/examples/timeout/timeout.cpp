@@ -54,7 +54,7 @@ MyApp::main(int, char **)
   ms_double                  ms;
   clock::time_point          t;
   FNET_PacketQueue           queue;
-  FastOS_ThreadPool          pool(65000);
+  FastOS_ThreadPool          pool;
   FNET_Transport             transport;
   Timeout                    timeout(transport.GetScheduler(), &queue);
   transport.Start(&pool);
