@@ -15,8 +15,8 @@ public:
     /**
      * Convenience typedefs.
      */
-    typedef std::unique_ptr<SearchResultMessage> UP;
-    typedef std::shared_ptr<SearchResultMessage> SP;
+    using UP = std::unique_ptr<SearchResultMessage>;
+    using SP = std::shared_ptr<SearchResultMessage>;
 
     /**
      * Constructs a new search result message for deserialization.

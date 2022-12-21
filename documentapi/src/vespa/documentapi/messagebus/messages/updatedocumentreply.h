@@ -13,8 +13,8 @@ public:
     /**
      * Convenience typedef.
      */
-    typedef std::unique_ptr<UpdateDocumentReply> UP;
-    typedef std::shared_ptr<UpdateDocumentReply> SP;
+    using UP = std::unique_ptr<UpdateDocumentReply>;
+    using SP = std::shared_ptr<UpdateDocumentReply>;
 
 public:
     /**

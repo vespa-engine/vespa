@@ -31,9 +31,9 @@ private:
         IRoutableFactory::SP getFactory(const vespalib::Version &version) const;
     };
 
-    typedef std::pair<vespalib::Version, uint32_t>   CacheKey;
-    typedef std::map<CacheKey, IRoutableFactory::SP> FactoryCache;
-    typedef std::map<uint32_t, VersionMap>           TypeMap;
+    using CacheKey = std::pair<vespalib::Version, uint32_t>;
+    using FactoryCache = std::map<CacheKey, IRoutableFactory::SP>;
+    using TypeMap = std::map<uint32_t, VersionMap>;
 
     mutable std::mutex   _lock;
     TypeMap              _factoryTypes;

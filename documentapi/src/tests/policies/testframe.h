@@ -24,7 +24,7 @@ public:
     /**
      * Convenience typedefs.
      */
-    typedef std::map<string, uint32_t> ReplyMap;
+    using ReplyMap = std::map<string, uint32_t>;
 
     /**
      * Create a named test frame.

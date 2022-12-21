@@ -7,8 +7,8 @@ namespace documentapi {
 
 class DocumentIgnoredReply : public DocumentReply {
 public:
-    typedef std::unique_ptr<DocumentIgnoredReply> UP;
-    typedef std::shared_ptr<DocumentIgnoredReply> SP;
+    using UP = std::unique_ptr<DocumentIgnoredReply>;
+    using SP = std::shared_ptr<DocumentIgnoredReply>;
 
     DocumentIgnoredReply();
 
