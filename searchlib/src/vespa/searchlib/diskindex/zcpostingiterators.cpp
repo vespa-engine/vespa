@@ -70,7 +70,7 @@ template <bool bigEndian, bool dynamic_k>
 void
 ZcRareWordPostingIterator<bigEndian, dynamic_k>::doSeek(uint32_t docId)
 {
-    typedef FeatureEncodeContext<bigEndian> EC;
+    using EC = FeatureEncodeContext<bigEndian>;
     uint32_t length;
     uint64_t val64;
 
@@ -163,7 +163,7 @@ void
 ZcRareWordPostingIterator<bigEndian, dynamic_k>::readWordStart(uint32_t docIdLimit)
 {
     (void) docIdLimit;
-    typedef FeatureEncodeContext<bigEndian> EC;
+    using EC = FeatureEncodeContext<bigEndian>;
     UC64_DECODECONTEXT_CONSTRUCTOR(o, _decodeContext->_);
     uint32_t length;
     uint64_t val64;
@@ -238,7 +238,7 @@ template <bool bigEndian>
 void
 ZcPostingIterator<bigEndian>::readWordStart(uint32_t docIdLimit)
 {
-    typedef FeatureEncodeContext<bigEndian> EC;
+    using EC = FeatureEncodeContext<bigEndian>;
     DecodeContextBase &d = *_decodeContext;
     UC64_DECODECONTEXT_CONSTRUCTOR(o, d._);
     uint32_t length;

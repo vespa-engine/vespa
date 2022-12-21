@@ -294,7 +294,7 @@ public:
     static size_t radix_sort(GR R, GE E, T * a, size_t n, unsigned int insertSortLevel=10, size_t topn=std::numeric_limits<size_t>::max());
     static size_t radix_sort_internal(GR R, GE E, T * a, size_t n, unsigned int insertSortLevel, size_t topn);
 private:
-    typedef ShiftBasedRadixSorterBase<GR, T, SHIFT> Base;
+    using Base = ShiftBasedRadixSorterBase<GR, T, SHIFT>;
 };
 
 template<typename T, typename GR, typename GE, int SHIFT, bool continueAfterRadixEnds>
@@ -365,7 +365,7 @@ template<typename T, bool asc=true>
 class NumericRadixSorter
 {
 public:
-    typedef vespalib::convertForSort<T, asc> C;
+    using C = vespalib::convertForSort<T, asc>;
     class RadixSortable {
     public:
         typename C::UIntType operator () (typename C::InputType v) const { return C::convert(v); }

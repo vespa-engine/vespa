@@ -17,7 +17,7 @@ FileHeaderContext::~FileHeaderContext() = default;
 void
 FileHeaderContext::addCreateAndFreezeTime(GenericHeader &header)
 {
-    typedef GenericHeader::Tag Tag;
+    using Tag = GenericHeader::Tag;
     header.putTag(Tag("createTime", duration_cast<microseconds>(system_clock::now().time_since_epoch()).count()));
     header.putTag(Tag("freezeTime", 0));
 }
@@ -25,7 +25,7 @@ FileHeaderContext::addCreateAndFreezeTime(GenericHeader &header)
 void
 FileHeaderContext::setFreezeTime(GenericHeader &header)
 {
-    typedef GenericHeader::Tag Tag;
+    using Tag = GenericHeader::Tag;
     if (header.hasTag("freezeTime") &&
         header.getTag("freezeTime").getType() == Tag::TYPE_INTEGER) {
         header.putTag(Tag("freezeTime", duration_cast<microseconds>(system_clock::now().time_since_epoch()).count()));

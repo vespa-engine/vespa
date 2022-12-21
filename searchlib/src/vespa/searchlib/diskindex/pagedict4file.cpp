@@ -354,7 +354,7 @@ PageDict4FileSeqWrite::close()
 void
 PageDict4FileSeqWrite::DictFileContext::writeExtendedHeader(vespalib::GenericHeader &header)
 {
-    typedef vespalib::GenericHeader::Tag Tag;
+    using Tag = vespalib::GenericHeader::Tag;
     header.putTag(Tag("numWordIds", _ec._numWordIds));
     header.putTag(Tag("avgBitsPerDoc", _ec._avgBitsPerDoc));
     header.putTag(Tag("minChunkDocs", _ec._minChunkDocs));
@@ -364,7 +364,7 @@ PageDict4FileSeqWrite::DictFileContext::writeExtendedHeader(vespalib::GenericHea
 void
 PageDict4FileSeqWrite::DictFileContext::makeHeader(const FileHeaderContext &fileHeaderContext)
 {
-    typedef vespalib::GenericHeader::Tag Tag;
+    using Tag = vespalib::GenericHeader::Tag;
     vespalib::FileHeader header(FileSettings::DIRECTIO_ALIGNMENT);
 
     fileHeaderContext.addTags(header, _file.GetFileName());
@@ -398,7 +398,7 @@ PageDict4FileSeqWrite::DictFileContext::updateHeader(uint64_t fileBitSize, uint6
     f.OpenReadWrite(_file.GetFileName());
     h.readFile(f);
     FileHeaderContext::setFreezeTime(h);
-    typedef vespalib::GenericHeader::Tag Tag;
+    using Tag = vespalib::GenericHeader::Tag;
     h.putTag(Tag("frozen", 1));
     h.putTag(Tag("fileBitSize", fileBitSize));
     if (_extended) {

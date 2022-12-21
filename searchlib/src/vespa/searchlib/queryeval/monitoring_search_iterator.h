@@ -90,7 +90,7 @@ public:
         void visitNotImplemented() override;
     };
 
-    typedef std::unique_ptr<MonitoringSearchIterator> UP;
+    using UP = std::unique_ptr<MonitoringSearchIterator>;
 
 private:
     const vespalib::string   _name;

@@ -6,7 +6,7 @@
 
 using search::IndexMetaInfo;
 
-typedef IndexMetaInfo::Snapshot Snap;
+using Snap = IndexMetaInfo::Snapshot;
 
 TEST_SETUP(Test)
 

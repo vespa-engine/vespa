@@ -21,7 +21,7 @@ namespace search::streaming {
 class QueryTerm : public QueryTermUCS4, public QueryNode
 {
 public:
-    typedef std::unique_ptr<QueryTerm> UP;
+    using UP = std::unique_ptr<QueryTerm>;
     class EncodingBitMap
     {
     public:

@@ -10,7 +10,7 @@ using search::attribute::IAttributeVector;
 
 namespace search {
 
-typedef fef::FeatureNameBuilder FNB;
+using FNB = fef::FeatureNameBuilder;
 
 namespace features {
 

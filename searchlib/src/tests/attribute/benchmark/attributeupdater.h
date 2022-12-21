@@ -90,8 +90,8 @@ template <typename Vector, typename T, typename BT>
 class AttributeUpdater
 {
 protected:
-    typedef AttributeVector::SP AttributePtr;
-    typedef std::map<uint32_t, std::vector<T> > AttributeCommit;
+    using AttributePtr = AttributeVector::SP;
+    using AttributeCommit = std::map<uint32_t, std::vector<T> >;
 
     const AttributePtr & _attrPtr;
     Vector & _attrVec;
@@ -156,7 +156,7 @@ template <typename Vector, typename T, typename BT>
 class AttributeUpdaterThread : public AttributeUpdater<Vector, T, BT>, public Runnable
 {
 private:
-    typedef AttributeVector::SP AttributePtr;
+    using AttributePtr = AttributeVector::SP;
 
 public:
     AttributeUpdaterThread(const AttributePtr & attrPtr, const std::vector<T> & values,

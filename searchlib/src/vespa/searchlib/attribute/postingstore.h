@@ -67,22 +67,22 @@ class PostingStore : public PostingListTraits<DataT>::PostingStoreBase,
 {
     vespalib::datastore::BufferType<BitVectorEntry> _bvType;
 public:
-    typedef DataT DataType;
-    typedef typename PostingListTraits<DataT>::PostingStoreBase Parent;
-    typedef typename Parent::AddIter AddIter;
-    typedef typename Parent::RemoveIter RemoveIter;
-    typedef typename Parent::RefType RefType;
-    typedef typename Parent::BTreeType BTreeType;
-    typedef typename Parent::Iterator Iterator;
-    typedef typename Parent::ConstIterator ConstIterator;
-    typedef typename Parent::KeyDataType KeyDataType;
-    typedef typename Parent::AggregatedType AggregatedType;
-    typedef typename Parent::BTreeTypeRefPair BTreeTypeRefPair;
-    typedef typename Parent::Builder Builder;
+    using DataType = DataT;
+    using Parent = typename PostingListTraits<DataT>::PostingStoreBase;
+    using AddIter = typename Parent::AddIter;
+    using RemoveIter = typename Parent::RemoveIter;
+    using RefType = typename Parent::RefType;
+    using BTreeType = typename Parent::BTreeType;
+    using Iterator = typename Parent::Iterator;
+    using ConstIterator = typename Parent::ConstIterator;
+    using KeyDataType = typename Parent::KeyDataType;
+    using AggregatedType = typename Parent::AggregatedType;
+    using BTreeTypeRefPair = typename Parent::BTreeTypeRefPair;
+    using Builder = typename Parent::Builder;
     using CompactionSpec = vespalib::datastore::CompactionSpec;
     using CompactionStrategy = vespalib::datastore::CompactionStrategy;
-    typedef vespalib::datastore::EntryRef EntryRef;
-    typedef std::less<uint32_t> CompareT;
+    using EntryRef = vespalib::datastore::EntryRef;
+    using CompareT = std::less<uint32_t>;
     using Parent::applyNewArray;
     using Parent::applyNewTree;
     using Parent::applyCluster;
@@ -103,7 +103,7 @@ public:
     using Parent::_allocator;
     using Parent::_aggrCalc;
     using Parent::BUFFERTYPE_BTREE;
-    typedef vespalib::datastore::Handle<BitVectorEntry> BitVectorRefPair;
+    using BitVectorRefPair = vespalib::datastore::Handle<BitVectorEntry>;
     
 
     PostingStore(IEnumStoreDictionary& dictionary, Status &status, const Config &config);

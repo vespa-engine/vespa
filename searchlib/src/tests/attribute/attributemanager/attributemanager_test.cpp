@@ -183,12 +183,12 @@ assertCollectionType(CollectionType exp, AttributesConfig::Attribute::Collection
 
 TEST("require that config can be converted")
 {
-    typedef BT AVBT;
-    typedef CollectionType AVCT;
+    using AVBT = BT;
+    using AVCT = CollectionType;
     using CACA = AttributesConfig::Attribute;
     using CACAD = CACA::Datatype;
     using CACAC = CACA::Collectiontype;
-    typedef ConfigConverter CC;
+    using CC = ConfigConverter;
 
     EXPECT_TRUE(assertDataType(AVBT::STRING, CACAD::STRING));
     EXPECT_TRUE(assertDataType(AVBT::INT8, CACAD::INT8));

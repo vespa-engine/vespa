@@ -127,7 +127,7 @@ public:
     template <typename V, typename T>
     static SearchContextPtr getSearch(const V & vec, const T & term, TermType termType=TermType::WORD);
 private:
-    typedef std::map<vespalib::string, Config> ConfigMap;
+    using ConfigMap = std::map<vespalib::string, Config>;
     // Map of all config objects
     ConfigMap _integerCfg;
     ConfigMap _floatCfg;

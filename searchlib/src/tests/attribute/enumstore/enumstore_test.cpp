@@ -109,9 +109,9 @@ struct StringEntry {
 };
 
 struct Reader {
-    typedef StringEnumStore::Index Index;
-    typedef std::vector<Index> IndexVector;
-    typedef std::vector<StringEntry> ExpectedVector;
+    using Index = StringEnumStore::Index;
+    using IndexVector = std::vector<Index>;
+    using ExpectedVector = std::vector<StringEntry>;
     uint32_t _generation;
     IndexVector _indices;
     ExpectedVector _expected;

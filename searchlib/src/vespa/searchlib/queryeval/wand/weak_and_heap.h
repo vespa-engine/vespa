@@ -16,7 +16,7 @@ namespace search::queryeval {
  */
 class WeakAndHeap {
 public:
-    typedef wand::score_t score_t;
+    using score_t = wand::score_t;
     WeakAndHeap(uint32_t scoresToTrack) :
        _minScore((scoresToTrack == 0)
                     ? std::numeric_limits<score_t>::max()
@@ -50,7 +50,7 @@ private:
 class SharedWeakAndPriorityQueue : public WeakAndHeap
 {
 private:
-    typedef vespalib::PriorityQueue<score_t> Scores;
+    using Scores = vespalib::PriorityQueue<score_t>;
     Scores         _bestScores;
     std::mutex     _lock;
 

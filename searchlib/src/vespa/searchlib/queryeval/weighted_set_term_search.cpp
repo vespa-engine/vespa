@@ -17,7 +17,7 @@ template <typename HEAP, typename IteratorPack>
 class WeightedSetTermSearchImpl : public WeightedSetTermSearch
 {
 private:
-    typedef uint32_t ref_t;
+    using ref_t = uint32_t;
 
     struct CmpDocId {
         const uint32_t *termPos;
@@ -168,8 +168,8 @@ WeightedSetTermSearch::create(const std::vector<SearchIterator *> &children,
                               const std::vector<int32_t> &weights,
                               fef::MatchData::UP match_data)
 {
-    typedef WeightedSetTermSearchImpl<vespalib::LeftArrayHeap, SearchIteratorPack> ArrayHeapImpl;
-    typedef WeightedSetTermSearchImpl<vespalib::LeftHeap, SearchIteratorPack> HeapImpl;
+    using ArrayHeapImpl = WeightedSetTermSearchImpl<vespalib::LeftArrayHeap, SearchIteratorPack>;
+    using HeapImpl = WeightedSetTermSearchImpl<vespalib::LeftHeap, SearchIteratorPack>;
 
     if (children.size() < 128) {
         return SearchIterator::UP(new ArrayHeapImpl(tmd, field_is_filter, weights, SearchIteratorPack(children, std::move(match_data))));
@@ -185,8 +185,8 @@ WeightedSetTermSearch::create(search::fef::TermFieldMatchData &tmd,
                               const std::vector<int32_t> &weights,
                               std::vector<DocumentWeightIterator> &&iterators)
 {
-    typedef WeightedSetTermSearchImpl<vespalib::LeftArrayHeap, AttributeIteratorPack> ArrayHeapImpl;
-    typedef WeightedSetTermSearchImpl<vespalib::LeftHeap, AttributeIteratorPack> HeapImpl;
+    using ArrayHeapImpl = WeightedSetTermSearchImpl<vespalib::LeftArrayHeap, AttributeIteratorPack>;
+    using HeapImpl = WeightedSetTermSearchImpl<vespalib::LeftHeap, AttributeIteratorPack>;
 
     if (iterators.size() < 128) {
         return SearchIterator::UP(new ArrayHeapImpl(tmd, field_is_filter, weights, AttributeIteratorPack(std::move(iterators))));

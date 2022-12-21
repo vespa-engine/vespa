@@ -11,7 +11,7 @@ namespace search {
 class IBucketizer
 {
 public:
-    typedef std::shared_ptr<IBucketizer> SP;
+    using SP = std::shared_ptr<IBucketizer>;
     virtual ~IBucketizer() { }
     virtual document::BucketId getBucketOf(const vespalib::GenerationHandler::Guard & guard, uint32_t lid) const = 0;
     virtual vespalib::GenerationHandler::Guard getGuard() const = 0;

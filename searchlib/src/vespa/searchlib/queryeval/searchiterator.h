@@ -175,7 +175,7 @@ public:
     virtual void and_hits_into(BitVector &result, uint32_t begin_id);
 
 public:
-    typedef std::unique_ptr<SearchIterator> UP;
+    using UP = std::unique_ptr<SearchIterator>;
 
     /**
      * The constructor sets the current document id to @ref beginId.

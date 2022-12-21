@@ -8,7 +8,7 @@ using namespace search::queryeval;
 using search::fef::TermFieldMatchData;
 using search::fef::TermFieldMatchDataPosition;
 
-typedef wand::Term Term;
+using Term = wand::Term;
 
 struct TestIterator : public SearchIterator
 {
@@ -18,7 +18,7 @@ struct TestIterator : public SearchIterator
     TermFieldMatchData _tfmd;
     uint32_t           _unpackDocId;
 
-    typedef std::unique_ptr<TestIterator> UP;
+    using UP = std::unique_ptr<TestIterator>;
     TestIterator(int32_t maxWeight, int32_t termWeight, bool useInfo)
         : _info(0, maxWeight),
           _termWeight(termWeight),

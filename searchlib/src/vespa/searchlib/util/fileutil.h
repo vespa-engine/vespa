@@ -20,7 +20,7 @@ protected:
 public:
     LoadedBuffer(const LoadedBuffer & rhs) = delete;
     LoadedBuffer & operator =(const LoadedBuffer & rhs) = delete;
-    typedef std::unique_ptr<LoadedBuffer> UP;
+    using UP = std::unique_ptr<LoadedBuffer>;
 
     LoadedBuffer(void * buf, size_t sz)
             : _buffer(buf),
@@ -95,7 +95,7 @@ template <typename T>
 class SequentialReadModifyWriteInterface
 {
 public:
-    typedef T Type;
+    using Type = T;
     virtual ~SequentialReadModifyWriteInterface() = default;
     virtual const T & read() = 0;
     virtual void write(const T & v) = 0;
@@ -109,7 +109,7 @@ template <typename T>
 class SequentialReadModifyWriteVector : public SequentialReadModifyWriteInterface<T>, public vespalib::Array<T>
 {
 private:
-    typedef vespalib::Array<T> Vector;
+    using Vector = vespalib::Array<T>;
 public:
     SequentialReadModifyWriteVector();
     explicit SequentialReadModifyWriteVector(size_t sz);

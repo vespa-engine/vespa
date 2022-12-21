@@ -23,7 +23,7 @@ const feature_t FEATURE_MAX = std::numeric_limits<feature_t>::max();
  */
 const feature_t FEATURE_MIN = -std::numeric_limits<feature_t>::max();
 
-typedef const char * ConstCharPtr;
+using ConstCharPtr = const char *;
 
 /**
  * Converts the given string to a numeric value.

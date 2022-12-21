@@ -90,7 +90,7 @@ public:
     /**
      * Convenience typedef for a shared pointer to this class.
      **/
-    typedef std::shared_ptr<RankSetup> SP;
+    using SP = std::shared_ptr<RankSetup>;
 
     /**
      * Create a new rank setup within the given index environment and

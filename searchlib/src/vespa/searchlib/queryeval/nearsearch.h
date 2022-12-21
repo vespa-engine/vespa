@@ -17,7 +17,7 @@ protected:
     uint32_t _window;
     bool     _strict;
 
-    typedef search::fef::TermFieldMatchDataArray TermFieldMatchDataArray;
+    using TermFieldMatchDataArray = search::fef::TermFieldMatchDataArray;
 
     class MatcherBase
     {
@@ -43,7 +43,7 @@ protected:
     /**
      * Typedef the list of positions iterators because it takes far too much space to write out :-)
      */
-    typedef std::vector<search::fef::TermFieldMatchData::PositionsIterator> PositionsIteratorList;
+    using PositionsIteratorList = std::vector<search::fef::TermFieldMatchData::PositionsIterator>;
 
     /**
      * Returns whether or not given document matches. This should only be called when all child terms are all

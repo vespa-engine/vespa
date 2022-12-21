@@ -13,8 +13,8 @@ namespace search::expression {
 
 class AttributeNode : public FunctionNode
 {
-    typedef vespalib::BufferRef BufferRef;
-    typedef vespalib::ConstBufferRef ConstBufferRef;
+    using BufferRef = vespalib::BufferRef;
+    using ConstBufferRef = vespalib::ConstBufferRef;
 public:
     DECLARE_NBO_SERIALIZE;
     class Configure : public vespalib::ObjectOperation, public vespalib::ObjectPredicate

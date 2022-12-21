@@ -42,7 +42,7 @@ public:
     };
 
 public:
-    typedef std::unique_ptr<WriteableFileChunk> UP;
+    using UP = std::unique_ptr<WriteableFileChunk>;
     WriteableFileChunk(vespalib::Executor & executor, FileId fileId, NameId nameId,
                        const vespalib::string & baseName, uint64_t initialSerialNum,
                        uint32_t docIdLimit, const Config & config,
@@ -73,9 +73,9 @@ public:
     static uint64_t writeIdxHeader(const common::FileHeaderContext &fileHeaderContext, uint32_t docIdLimit, FastOS_FileInterface &file);
 private:
     using ProcessedChunkUP = std::unique_ptr<ProcessedChunk>;
-    typedef std::map<uint32_t, ProcessedChunkUP > ProcessedChunkMap;
+    using ProcessedChunkMap = std::map<uint32_t, ProcessedChunkUP >;
 
-    typedef std::vector<ProcessedChunkUP> ProcessedChunkQ;
+    using ProcessedChunkQ = std::vector<ProcessedChunkUP>;
 
     bool frozen() const override { return _frozen.load(std::memory_order_acquire); }
     void waitForChunkFlushedToDisk(uint32_t chunkId) const;

@@ -56,7 +56,7 @@ public:
         const GroupEngine & _engine;
     };
 
-    typedef vespalib::hash_set<GroupRef, GroupHash, GroupEqual> Children;
+    using Children = vespalib::hash_set<GroupRef, GroupHash, GroupEqual>;
 
     /**
      * @param request The request creating this engine.

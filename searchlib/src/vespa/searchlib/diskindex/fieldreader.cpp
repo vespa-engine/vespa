@@ -317,7 +317,7 @@ FieldReaderStripInfo::scan_element_lengths(uint32_t scan_chunk)
 void
 FieldReaderStripInfo::read()
 {
-    typedef search::index::WordDocElementFeatures Element;
+    using Element = search::index::WordDocElementFeatures;
 
     for (;;) {
         FieldReader::read();

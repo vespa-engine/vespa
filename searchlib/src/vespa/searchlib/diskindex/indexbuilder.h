@@ -48,7 +48,7 @@ private:
     }
 
 public:
-    typedef index::WordDocElementWordPosFeatures WordDocElementWordPosFeatures;
+    using WordDocElementWordPosFeatures = index::WordDocElementWordPosFeatures;
 
     // Schema argument must live until IndexBuilder has been deleted.
     IndexBuilder(const Schema &schema); 

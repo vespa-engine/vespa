@@ -27,6 +27,6 @@ private:
     int32_t  _weight;
 };
 
-typedef std::vector<Hit> HitList;
+using HitList = std::vector<Hit>;
 
 }

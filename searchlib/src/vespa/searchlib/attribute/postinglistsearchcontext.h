@@ -193,7 +193,7 @@ class NumericPostingSearchContext
 {
 private:
     using Parent = PostingSearchContext<BaseSC, PostingListSearchContextT<DataT>, AttrT>;
-    typedef typename AttrT::T BaseType;
+    using BaseType = typename AttrT::T;
     using Params = attribute::SearchContextParams;
     using Parent::_low;
     using Parent::_high;

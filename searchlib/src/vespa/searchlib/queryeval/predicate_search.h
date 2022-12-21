@@ -18,7 +18,7 @@ namespace search::queryeval {
 class SkipMinFeature
 {
 public:
-    typedef std::unique_ptr<SkipMinFeature> UP;
+    using UP = std::unique_ptr<SkipMinFeature>;
     virtual ~SkipMinFeature() { }
     VESPA_DLL_LOCAL virtual uint32_t next() = 0;
     static SkipMinFeature::UP create(const uint8_t * min_feature, const uint8_t * kv, size_t sz);

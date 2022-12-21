@@ -460,10 +460,10 @@ IntermediateBlueprint::find(const IPredicate & pred) const
 FieldSpecBaseList
 IntermediateBlueprint::mixChildrenFields() const
 {
-    typedef std::map<uint32_t, const FieldSpecBase*> Map;
-    typedef Map::value_type                      MapVal;
-    typedef Map::iterator                        MapPos;
-    typedef std::pair<MapPos, bool>              MapRes;
+    using Map = std::map<uint32_t, const FieldSpecBase*>;
+    using MapVal = Map::value_type;
+    using MapPos = Map::iterator;
+    using MapRes = std::pair<MapPos, bool>;
 
     Map fieldMap;
     FieldSpecBaseList fieldList;

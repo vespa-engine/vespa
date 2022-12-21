@@ -14,7 +14,7 @@ namespace search::features {
  **/
 class TermFieldMdExecutor : public fef::FeatureExecutor {
 
-    typedef std::pair<fef::TermFieldHandle, query::Weight> Element;
+    using Element = std::pair<fef::TermFieldHandle, query::Weight>;
     std::vector<Element> _terms;
     const fef::MatchData *_md;
 

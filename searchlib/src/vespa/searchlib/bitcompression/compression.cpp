@@ -187,7 +187,7 @@ void
 FeatureEncodeContext<bigEndian>::
 writeBits(const uint64_t *bits, uint32_t bitOffset, uint32_t bitLength)
 {
-    typedef FeatureEncodeContext<bigEndian> EC;
+    using EC = FeatureEncodeContext<bigEndian>;
     UC64_ENCODECONTEXT_CONSTRUCTOR(o, _);
 
     if (bitOffset + bitLength < 64) {

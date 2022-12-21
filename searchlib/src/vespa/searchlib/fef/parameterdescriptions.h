@@ -154,7 +154,7 @@ public:
         bool hasRepeat() const { return _repeat != 0; }
         size_t getRepeat() const { return _repeat; }
     };
-    typedef std::vector<Description> DescriptionVector;
+    using DescriptionVector = std::vector<Description>;
 
 private:
     DescriptionVector _descriptions;

@@ -13,8 +13,8 @@ namespace search::bitcompression {
 class PostingListCountFileDecodeContext : public FeatureDecodeContext<true>
 {
 public:
-    typedef FeatureDecodeContext<true> ParentClass;
-    typedef index::PostingListCounts PostingListCounts;
+    using ParentClass = FeatureDecodeContext<true>;
+    using PostingListCounts = index::PostingListCounts;
     uint32_t _avgBitsPerDoc;    // Average number of bits per document
     uint32_t _minChunkDocs; // Minimum number of documents for chunking
     uint32_t _docIdLimit;   // Limit for document ids (docId < docIdLimit)
@@ -42,8 +42,8 @@ public:
 class PostingListCountFileEncodeContext : public FeatureEncodeContext<true>
 {
 public:
-    typedef FeatureEncodeContext<true> ParentClass;
-    typedef index::PostingListCounts PostingListCounts;
+    using ParentClass = FeatureEncodeContext<true>;
+    using PostingListCounts = index::PostingListCounts;
     uint32_t _avgBitsPerDoc;    // Average number of bits per document
     uint32_t _minChunkDocs; // Minimum number of documents for chunking
     uint32_t _docIdLimit;   // Limit for document ids (docId < docIdLimit)

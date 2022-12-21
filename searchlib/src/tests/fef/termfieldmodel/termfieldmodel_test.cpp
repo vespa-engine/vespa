@@ -43,8 +43,8 @@ void testSetup(State &state) {
     state.term.addField(7); // docfreq = 2
     state.term.addField(5); // docfreq = 3
 
-    typedef search::fef::ITermFieldRangeAdapter FRA;
-    typedef search::fef::SimpleTermFieldRangeAdapter SFR;
+    using FRA = search::fef::ITermFieldRangeAdapter;
+    using SFR = search::fef::SimpleTermFieldRangeAdapter;
 
     // lookup terms
     {

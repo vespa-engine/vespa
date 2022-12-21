@@ -7,7 +7,7 @@
 namespace search {
 
 // This is a unique identification number.
-typedef uint64_t SerialNum;
+using SerialNum = uint64_t;
 
 } // namespace search
 

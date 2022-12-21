@@ -227,7 +227,7 @@ Zc4PostingSeqWrite::makeHeader(const FileHeaderContext &fileHeaderContext)
     const vespalib::string &myId = _writer.get_dynamic_k() ? myId5 : myId4;
     vespalib::FileHeader header;
 
-    typedef vespalib::GenericHeader::Tag Tag;
+    using Tag = vespalib::GenericHeader::Tag;
     fileHeaderContext.addTags(header, _file.GetFileName());
     header.putTag(Tag("frozen", 0));
     header.putTag(Tag("fileBitSize", 0));
@@ -261,7 +261,7 @@ Zc4PostingSeqWrite::updateHeader()
     f.OpenReadWrite(_file.GetFileName());
     h.readFile(f);
     FileHeaderContext::setFreezeTime(h);
-    typedef vespalib::GenericHeader::Tag Tag;
+    using Tag = vespalib::GenericHeader::Tag;
     h.putTag(Tag("frozen", 1));
     h.putTag(Tag("fileBitSize", _fileBitSize));
     h.putTag(Tag("numWords", _writer.get_num_words()));

@@ -15,7 +15,7 @@ maxExpGolombVal(uint64_t kValue, uint64_t maxBits)
 
 class UniformApp
 {
-    typedef search::bitcompression::EncodeContext64BE EC64;
+    using EC64 = search::bitcompression::EncodeContext64BE;
 
     enum {
         MAXK = 30

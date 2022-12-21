@@ -10,7 +10,7 @@ namespace search::attribute::test {
 class MockAttributeContext : public IAttributeContext
 {
 private:
-    typedef std::map<string, IAttributeVector *> Map;
+    using Map = std::map<string, IAttributeVector *>;
     Map _vectors;
 
 public:

@@ -57,8 +57,8 @@ FtFeatureTest::~FtFeatureTest() {}
 std::vector<vespalib::string>
 FtUtil::tokenize(const vespalib::string & str, const vespalib::string & separator)
 {
-    typedef boost::tokenizer<boost::char_separator<char> > Tokenizer;
-    typedef boost::char_separator<char> Separator;
+    using Tokenizer = boost::tokenizer<boost::char_separator<char> >;
+    using Separator = boost::char_separator<char>;
 
     std::vector<vespalib::string> retval;
     if (separator != vespalib::string("")) {

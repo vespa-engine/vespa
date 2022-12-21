@@ -605,7 +605,7 @@ TEST("testDump") {
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wshadow"
 #endif
-    typedef SourceBlenderSearch::Child Source;
+    using Source = SourceBlenderSearch::Child;
 #ifdef __clang__
 #pragma clang diagnostic pop
 #endif

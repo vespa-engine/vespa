@@ -13,7 +13,7 @@ class ElementSimilarityBlueprint : public fef::Blueprint
 {
 private:
     struct OutputContext;
-    typedef std::unique_ptr<OutputContext> OutputContext_UP;
+    using OutputContext_UP = std::unique_ptr<OutputContext>;
 
     uint32_t                      _field_id;
     std::vector<OutputContext_UP> _outputs;

@@ -57,32 +57,32 @@ public:
 private:
     // Route QueryVisit requests to the correct custom type.
 
-    typedef typename NodeTypes::And TAnd;
-    typedef typename NodeTypes::AndNot TAndNot;
-    typedef typename NodeTypes::Equiv TEquiv;
-    typedef typename NodeTypes::NumberTerm TNumberTerm;
-    typedef typename NodeTypes::LocationTerm TLocTrm;
-    typedef typename NodeTypes::Near TNear;
-    typedef typename NodeTypes::ONear TONear;
-    typedef typename NodeTypes::Or TOr;
-    typedef typename NodeTypes::Phrase TPhrase;
-    typedef typename NodeTypes::SameElement TSameElement;
-    typedef typename NodeTypes::PrefixTerm TPrefixTerm;
-    typedef typename NodeTypes::RangeTerm TRangeTerm;
-    typedef typename NodeTypes::Rank TRank;
-    typedef typename NodeTypes::StringTerm TStringTerm;
-    typedef typename NodeTypes::SubstringTerm TSubstrTr;
-    typedef typename NodeTypes::SuffixTerm TSuffixTerm;
-    typedef typename NodeTypes::WeakAnd TWeakAnd;
-    typedef typename NodeTypes::WeightedSetTerm TWeightedSetTerm;
-    typedef typename NodeTypes::DotProduct TDotProduct;
-    typedef typename NodeTypes::WandTerm TWandTerm;
-    typedef typename NodeTypes::PredicateQuery TPredicateQuery;
-    typedef typename NodeTypes::RegExpTerm TRegExpTerm;
-    typedef typename NodeTypes::NearestNeighborTerm TNearestNeighborTerm;
-    typedef typename NodeTypes::TrueQueryNode TTrueQueryNode;
-    typedef typename NodeTypes::FalseQueryNode TFalseQueryNode;
-    typedef typename NodeTypes::FuzzyTerm TFuzzyTerm;
+    using TAnd = typename NodeTypes::And;
+    using TAndNot = typename NodeTypes::AndNot;
+    using TEquiv = typename NodeTypes::Equiv;
+    using TNumberTerm = typename NodeTypes::NumberTerm;
+    using TLocTrm = typename NodeTypes::LocationTerm;
+    using TNear = typename NodeTypes::Near;
+    using TONear = typename NodeTypes::ONear;
+    using TOr = typename NodeTypes::Or;
+    using TPhrase = typename NodeTypes::Phrase;
+    using TSameElement = typename NodeTypes::SameElement;
+    using TPrefixTerm = typename NodeTypes::PrefixTerm;
+    using TRangeTerm = typename NodeTypes::RangeTerm;
+    using TRank = typename NodeTypes::Rank;
+    using TStringTerm = typename NodeTypes::StringTerm;
+    using TSubstrTr = typename NodeTypes::SubstringTerm;
+    using TSuffixTerm = typename NodeTypes::SuffixTerm;
+    using TWeakAnd = typename NodeTypes::WeakAnd;
+    using TWeightedSetTerm = typename NodeTypes::WeightedSetTerm;
+    using TDotProduct = typename NodeTypes::DotProduct;
+    using TWandTerm = typename NodeTypes::WandTerm;
+    using TPredicateQuery = typename NodeTypes::PredicateQuery;
+    using TRegExpTerm = typename NodeTypes::RegExpTerm;
+    using TNearestNeighborTerm = typename NodeTypes::NearestNeighborTerm;
+    using TTrueQueryNode = typename NodeTypes::TrueQueryNode;
+    using TFalseQueryNode = typename NodeTypes::FalseQueryNode;
+    using TFuzzyTerm = typename NodeTypes::FuzzyTerm;
 
     void visit(And &n) override { visit(static_cast<TAnd&>(n)); }
     void visit(AndNot &n) override { visit(static_cast<TAndNot&>(n)); }

@@ -13,7 +13,7 @@ class PopulateInterface
 public:
     class Iterator {
     public:
-        typedef std::unique_ptr<Iterator> UP;
+        using UP = std::unique_ptr<Iterator>;
         virtual ~Iterator() { }
         virtual int32_t getNext() = 0;
     };
@@ -24,11 +24,11 @@ public:
 class BitVectorCache
 {
 public:
-    typedef uint64_t Key;
-    typedef vespalib::hash_set<Key> KeySet;
-    typedef std::vector<std::pair<Key, size_t>> KeyAndCountSet;
-    typedef CondensedBitVector::CountVector CountVector;
-    typedef vespalib::GenerationHolder GenerationHolder;
+    using Key = uint64_t;
+    using KeySet = vespalib::hash_set<Key>;
+    using KeyAndCountSet = std::vector<std::pair<Key, size_t>>;
+    using CountVector = CondensedBitVector::CountVector;
+    using GenerationHolder = vespalib::GenerationHolder;
 
     BitVectorCache(GenerationHolder &genHolder);
     ~BitVectorCache();
@@ -69,9 +69,9 @@ private:
         int32_t  _chunkId;
         uint32_t _chunkIndex;
     };
-    typedef vespalib::hash_map<Key, KeyMeta> Key2Index;
-    typedef std::vector<std::pair<Key, KeyMeta *>> SortedKeyMeta;
-    typedef std::vector<CondensedBitVector::SP> ChunkV;
+    using Key2Index = vespalib::hash_map<Key, KeyMeta>;
+    using SortedKeyMeta = std::vector<std::pair<Key, KeyMeta *>>;
+    using ChunkV = std::vector<CondensedBitVector::SP>;
 
     VESPA_DLL_LOCAL static SortedKeyMeta getSorted(Key2Index & keys);
     VESPA_DLL_LOCAL static void populate(Key2Index & newKeys, CondensedBitVector & chunk, const PopulateInterface & lookup);

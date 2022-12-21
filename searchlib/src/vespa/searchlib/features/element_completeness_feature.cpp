@@ -23,7 +23,7 @@ ElementCompletenessExecutor::ElementCompletenessExecutor(const fef::IQueryEnviro
     for (uint32_t i = 0; i < env.getNumTerms(); ++i) {
         const fef::ITermData *termData = env.getTerm(i);
         if (termData->getWeight().percent() != 0) { // only consider query terms with contribution
-            typedef fef::ITermFieldRangeAdapter FRA;
+            using FRA = fef::ITermFieldRangeAdapter;
             for (FRA iter(*termData); iter.valid(); iter.next()) {
                 const fef::ITermFieldData &tfd = iter.get();
                 if (tfd.getFieldId() == _params.fieldId) {

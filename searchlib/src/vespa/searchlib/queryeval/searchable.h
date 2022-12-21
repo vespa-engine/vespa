@@ -36,7 +36,7 @@ protected:
                                                        const search::query::Node &term) = 0;
 
 public:
-    typedef std::shared_ptr<Searchable> SP;
+    using SP = std::shared_ptr<Searchable>;
 
     Searchable() = default;
 

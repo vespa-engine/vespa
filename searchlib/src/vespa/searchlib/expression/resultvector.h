@@ -21,8 +21,8 @@ class ResultNodeVector : public ResultNode
 public:
     DECLARE_ABSTRACT_EXPRESSIONNODE(ResultNodeVector);
     DECLARE_RESULTNODE_SERIALIZE;
-    typedef std::unique_ptr<ResultNodeVector> UP;
-    typedef vespalib::IdentifiablePtr<ResultNodeVector> CP;
+    using UP = std::unique_ptr<ResultNodeVector>;
+    using CP = vespalib::IdentifiablePtr<ResultNodeVector>;
     virtual const ResultNode * find(const ResultNode & key) const = 0;
     virtual ResultNodeVector & push_back(const ResultNode & node) = 0;
     virtual ResultNodeVector & push_back_safe(const ResultNode & node) = 0;
@@ -153,7 +153,7 @@ int ResultNodeVectorT<B, C, G>::onCmp(const Identifiable & rhs) const
 template <typename B, typename C, typename G>
 void ResultNodeVectorT<B, C, G>::sort()
 {
-    typedef cmpT<B> LC;
+    using LC = cmpT<B>;
     std::sort(_result.begin(), _result.end(), typename LC::less());
 }
 
@@ -353,7 +353,7 @@ public:
     const IntegerBucketResultNode& getNullBucket() const override { return IntegerBucketResultNode::getNull(); }
 };
 
-typedef Int64ResultNodeVector IntegerResultNodeVector;
+using IntegerResultNodeVector = Int64ResultNodeVector;
 
 class EnumResultNodeVector : public NumericResultNodeVectorT<EnumResultNode>
 {

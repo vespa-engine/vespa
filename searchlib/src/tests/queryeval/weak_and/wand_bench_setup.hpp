@@ -18,8 +18,8 @@ using namespace search::fef;
 using namespace search::queryeval;
 using namespace vespalib;
 
-typedef ParallelWeakAndSearch::MatchParams PWMatchParams;
-typedef ParallelWeakAndSearch::RankParams PWRankParams;
+using PWMatchParams = ParallelWeakAndSearch::MatchParams;
+using PWRankParams = ParallelWeakAndSearch::RankParams;
 
 namespace {
 

@@ -3,7 +3,7 @@
 #include <vespa/searchlib/queryeval/wand/weak_and_heap.h>
 
 using namespace search::queryeval;
-typedef wand::score_t score_t;
+using score_t = wand::score_t;
 
 struct Scores : public std::vector<score_t> {
     Scores &s(score_t val) {

@@ -27,7 +27,7 @@ template<typename T>
 class RadixHelper
 {
 public:
-    typedef convertForSort<T, true> C;
+    using C = convertForSort<T, true>;
     inline typename C::UIntType
     operator()(typename C::InputType v) const {
         return C::convert(v);
@@ -38,7 +38,7 @@ void
 insertion_sort(RankedHit a[], uint32_t n) {
     uint32_t i, j;
     RankedHit swap;
-    typedef RadixHelper<search::HitRank> RT;
+    using RT = RadixHelper<search::HitRank>;
     RT R;
 
     for (i = 1; i < n; i++) {
@@ -62,7 +62,7 @@ FastS_radixsort(RankedHit a[], uint32_t n, uint32_t ntop)
     uint32_t sorted, remain;
     uint32_t i, j, k;
     RankedHit temp, swap;
-    typedef RadixHelper<search::HitRank> RT;
+    using RT = RadixHelper<search::HitRank>;
     RT R;
 
     memset(cnt, 0, 256*sizeof(uint32_t));

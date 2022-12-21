@@ -264,14 +264,14 @@ bool search(const string &term, IAttributeManager &attribute_manager,
 }
 
 template <typename T> struct AttributeVectorTypeFinder {
-    typedef search::SingleValueStringAttribute Type;
+    using Type = search::SingleValueStringAttribute;
     static void add(Type & a, const T & v) {
         a.update(a.getNumDocs()-1, v);
         a.commit();
     }
 };
 template <> struct AttributeVectorTypeFinder<int64_t> {
-    typedef search::SingleValueNumericAttribute<search::IntegerAttributeTemplate<int64_t> > Type;
+    using Type = search::SingleValueNumericAttribute<search::IntegerAttributeTemplate<int64_t> >;
     static void add(Type & a, int64_t v) { a.set(a.getNumDocs()-1, v); a.commit(); }
 };
 
@@ -288,8 +288,8 @@ void add_docs(AttributeVector *attr, size_t n) {
 
 template <typename T>
 MyAttributeManager makeAttributeManager(T value) {
-    typedef AttributeVectorTypeFinder<T> AT;
-    typedef typename AT::Type AttributeVectorType;
+    using AT = AttributeVectorTypeFinder<T>;
+    using AttributeVectorType = typename AT::Type;
     AttributeVectorType *attr = new AttributeVectorType(field);
     add_docs(attr, num_docs);
     AT::add(*attr, value);

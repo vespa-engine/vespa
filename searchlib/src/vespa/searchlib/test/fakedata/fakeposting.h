@@ -28,7 +28,7 @@ private:
 
     std::string _name;
 public:
-    typedef std::shared_ptr<FakePosting> SP;
+    using SP = std::shared_ptr<FakePosting>;
 
     FakePosting(const std::string &name);
 

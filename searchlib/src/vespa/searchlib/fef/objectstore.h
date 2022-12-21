@@ -12,7 +12,7 @@ namespace search::fef {
 class Anything
 {
 public:
-   typedef std::unique_ptr<Anything> UP;
+   using UP = std::unique_ptr<Anything>;
    virtual ~Anything() { }
 };
 
@@ -52,7 +52,7 @@ public:
     void add(const vespalib::string & key, Anything::UP value) override;
     const Anything * get(const vespalib::string & key) const override;
 private:
-    typedef vespalib::hash_map<vespalib::string, Anything *> ObjectMap;
+    using ObjectMap = vespalib::hash_map<vespalib::string, Anything *>;
     ObjectMap _objectMap;
 };
 

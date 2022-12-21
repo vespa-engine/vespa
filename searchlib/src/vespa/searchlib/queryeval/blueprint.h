@@ -309,7 +309,7 @@ protected:
     const Children& get_children() const { return _children; }
 
 public:
-    typedef std::vector<size_t> IndexList;
+    using IndexList = std::vector<size_t>;
     IntermediateBlueprint();
     ~IntermediateBlueprint() override;
 

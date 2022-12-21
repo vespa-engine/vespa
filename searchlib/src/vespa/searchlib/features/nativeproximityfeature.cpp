@@ -24,7 +24,7 @@ NativeProximityExecutorSharedState::NativeProximityExecutorSharedState(const IQu
 {
     QueryTermHelper queryTerms(env);
     for (const QueryTerm& qt : queryTerms.terms()) {
-        typedef search::fef::ITermFieldRangeAdapter FRA;
+        using FRA = search::fef::ITermFieldRangeAdapter;
         for (FRA iter(*qt.termData()); iter.valid(); iter.next()) {
             uint32_t fieldId = iter.get().getFieldId();
             if (_params.considerField(fieldId)) { // only consider fields with contribution

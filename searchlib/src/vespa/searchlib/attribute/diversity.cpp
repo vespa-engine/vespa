@@ -10,7 +10,7 @@ namespace search::attribute::diversity {
 template <typename T>
 struct FetchNumberFast {
     const T * const attr;
-    typedef typename T::LoadedValueType ValueType;
+    using ValueType = typename T::LoadedValueType;
     FetchNumberFast(const IAttributeVector &attr_in) : attr(dynamic_cast<const T *>(&attr_in)) {}
     ValueType get(uint32_t docid) const { return attr->getFast(docid); }
     bool valid() const { return (attr != nullptr); }
@@ -18,7 +18,7 @@ struct FetchNumberFast {
 
 struct FetchEnumFast {
     IAttributeVector::EnumRefs enumRefs;
-    typedef uint32_t ValueType;
+    using ValueType = uint32_t;
     FetchEnumFast(const IAttributeVector &attr) : enumRefs(attr.make_enum_read_view()) {}
     ValueType get(uint32_t docid) const { return enumRefs[docid].load_relaxed().ref(); }
     bool valid() const { return ! enumRefs.empty(); }
@@ -26,21 +26,21 @@ struct FetchEnumFast {
 
 struct FetchEnum {
     const IAttributeVector *attr;
-    typedef uint32_t ValueType;
+    using ValueType = uint32_t;
     FetchEnum(const IAttributeVector & attr_in) : attr(&attr_in) {}
     ValueType get(uint32_t docid) const { return attr->getEnum(docid); }
 };
 
 struct FetchInteger {
     const IAttributeVector * attr;
-    typedef int64_t ValueType;
+    using ValueType = int64_t;
     FetchInteger(const IAttributeVector & attr_in) : attr(&attr_in) {}
     ValueType get(uint32_t docid) const { return attr->getInt(docid); }
 };
 
 struct FetchFloat {
     const IAttributeVector * attr;
-    typedef double ValueType;
+    using ValueType = double;
     FetchFloat(const IAttributeVector & attr_in) : attr(&attr_in) {}
     ValueType get(uint32_t docid) const { return attr->getFloat(docid); }
 };
@@ -54,7 +54,7 @@ private:
     size_t  _cutoff_max_groups;
     bool    _cutoff_strict;
 
-    typedef vespalib::hash_map<typename Fetcher::ValueType, uint32_t> Diversity;
+    using Diversity = vespalib::hash_map<typename Fetcher::ValueType, uint32_t>;
     Diversity _seen;
 public:
     DiversityFilterT(Fetcher diversity, size_t max_per_group, size_t cutoff_max_groups,

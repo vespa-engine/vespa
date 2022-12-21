@@ -13,10 +13,10 @@ namespace search::test {
 
 class SearchIteratorVerifier {
 public:
-    typedef queryeval::SearchIterator SearchIterator;
-    typedef std::vector<uint32_t> DocIds;
-    typedef std::pair<uint32_t, uint32_t> Range;
-    typedef std::vector<Range> Ranges;
+    using SearchIterator = queryeval::SearchIterator;
+    using DocIds = std::vector<uint32_t>;
+    using Range = std::pair<uint32_t, uint32_t>;
+    using Ranges = std::vector<Range>;
 
     static SearchIterator::UP createIterator(const DocIds &docIds, bool strict);
     static SearchIterator::UP createEmptyIterator();

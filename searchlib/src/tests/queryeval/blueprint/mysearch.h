@@ -12,8 +12,8 @@ namespace search::queryeval {
 class MySearch : public MultiSearch
 {
 public:
-    typedef search::fef::TermFieldMatchDataArray TFMDA;
-    typedef search::fef::MatchData               MatchData;
+    using TFMDA = search::fef::TermFieldMatchDataArray;
+    using MatchData = search::fef::MatchData;
 
 private:
     vespalib::string _tag;
@@ -103,7 +103,7 @@ public:
 
 class MyLeaf : public SimpleLeafBlueprint
 {
-    typedef search::fef::TermFieldMatchDataArray TFMDA;
+    using TFMDA = search::fef::TermFieldMatchDataArray;
     bool _got_global_filter;
 
 public:

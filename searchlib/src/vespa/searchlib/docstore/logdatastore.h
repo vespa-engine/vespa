@@ -189,8 +189,8 @@ private:
     void compactWorst(uint64_t syncToken, bool compactDiskBloat);
     void compactFile(FileId chunkId);
 
-    typedef vespalib::RcuVector<uint64_t> LidInfoVector;
-    typedef std::vector<FileChunk::UP> FileChunkVector;
+    using LidInfoVector = vespalib::RcuVector<uint64_t>;
+    using FileChunkVector = std::vector<FileChunk::UP>;
 
     void updateLidMap(uint32_t lastFileChunkDocIdLimit);
     void preload();
@@ -251,7 +251,7 @@ private:
     void incGeneration();
     bool canShrinkLidSpace(const MonitorGuard &guard) const;
 
-    typedef std::vector<FileId> FileIdxVector;
+    using FileIdxVector = std::vector<FileId>;
     Config                                   _config;
     TuneFileSummary                          _tune;
     const search::common::FileHeaderContext &_fileHeaderContext;

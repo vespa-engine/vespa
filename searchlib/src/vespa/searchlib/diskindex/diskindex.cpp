@@ -356,7 +356,7 @@ public:
     }
 private:
 
-    typedef vespalib::hash_map<vespalib::string, DiskIndex::LookupResultVector> Cache;
+    using Cache = vespalib::hash_map<vespalib::string, DiskIndex::LookupResultVector>;
     DiskIndex &                   _diskIndex;
     const std::vector<uint32_t> & _fieldIds;
     Cache                         _cache;

@@ -570,10 +570,10 @@ ShowPostingListSubApp::showPostingList()
             offsetAndCounts._counts._bitLength,
             offsetAndCounts._counts._numDocs);
     }
-    typedef PostingListCounts Counts;
-    typedef PostingListHandle Handle;
-    typedef std::pair<Counts, Handle> CH;
-    typedef std::unique_ptr<CH> CHAP;
+    using Counts = PostingListCounts;
+    using Handle = PostingListHandle;
+    using CH = std::pair<Counts, Handle>;
+    using CHAP = std::unique_ptr<CH>;
     CHAP handle(new CH);
     handle->first = offsetAndCounts._counts;
     handle->second._bitOffset = offsetAndCounts._offset;

@@ -16,7 +16,7 @@ namespace search::queryeval {
 class EquivSearch : public SearchIterator
 {
 public:
-    typedef MultiSearch::Children Children;
+    using Children = MultiSearch::Children;
 
     static SearchIterator::UP
     create(Children children,

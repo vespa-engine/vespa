@@ -20,7 +20,7 @@ private:
     TableManager(const TableManager &);
     TableManager &operator=(const TableManager &);
 
-    typedef std::map<vespalib::string, Table::SP> TableCache;
+    using TableCache = std::map<vespalib::string, Table::SP>;
     std::vector<ITableFactory::SP> _factories;
     mutable TableCache             _cache;
     mutable std::mutex             _lock;

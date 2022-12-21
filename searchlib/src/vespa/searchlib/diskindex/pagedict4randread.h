@@ -11,16 +11,16 @@ namespace search::diskindex {
 
 class PageDict4RandRead : public index::DictionaryFileRandRead
 {
-    typedef bitcompression::PostingListCountFileDecodeContext DC;
-    typedef bitcompression::PageDict4SSReader SSReader;
+    using DC = bitcompression::PostingListCountFileDecodeContext;
+    using SSReader = bitcompression::PageDict4SSReader;
 
-    typedef bitcompression::PageDict4SSLookupRes SSLookupRes;
-    typedef bitcompression::PageDict4SPLookupRes SPLookupRes;
-    typedef bitcompression::PageDict4PLookupRes PLookupRes;
-    typedef bitcompression::PageDict4PageParams PageDict4PageParams;
+    using SSLookupRes = bitcompression::PageDict4SSLookupRes;
+    using SPLookupRes = bitcompression::PageDict4SPLookupRes;
+    using PLookupRes = bitcompression::PageDict4PLookupRes;
+    using PageDict4PageParams = bitcompression::PageDict4PageParams;
 
-    typedef index::PostingListCounts PostingListCounts;
-    typedef index::PostingListOffsetAndCounts PostingListOffsetAndCounts;
+    using PostingListCounts = index::PostingListCounts;
+    using PostingListOffsetAndCounts = index::PostingListOffsetAndCounts;
 
     std::unique_ptr<SSReader> _ssReader;
 

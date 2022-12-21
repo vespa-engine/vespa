@@ -9,7 +9,7 @@ namespace search::grouping {
 class GroupingEngine
 {
 public:
-    typedef std::vector<GroupEngine *> GroupEngines;
+    using GroupEngines = std::vector<GroupEngine *>;
 public:
     GroupingEngine(const GroupingEngine &) = delete;
     GroupingEngine & operator = (const GroupingEngine &) = delete;

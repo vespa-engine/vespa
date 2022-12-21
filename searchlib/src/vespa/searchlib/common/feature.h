@@ -4,7 +4,7 @@
 
 namespace search {
 
-typedef double feature_t;
+using feature_t = double;
 
 } // namespace search
 

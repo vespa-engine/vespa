@@ -11,7 +11,7 @@ using vespalib::ConstBufferRef;
 class Test : public vespalib::TestApp
 {
 public:
-    typedef std::vector<uint32_t> V;
+    using V = std::vector<uint32_t>;
     std::vector< std::vector<uint32_t> > _data;
     int Main() override;
     void generateVectors(size_t numVectors, size_t values);

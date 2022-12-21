@@ -46,7 +46,7 @@ public:
     /**
      * Convenience typedef for an auto-pointer to this class.
      **/
-    typedef std::unique_ptr<MatchData> UP;
+    using UP = std::unique_ptr<MatchData>;
 
     /**
      * Create a new object with the given number of term, attribute, and feature

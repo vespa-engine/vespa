@@ -19,7 +19,7 @@ private:
         char *buf;
         Blob(size_t s) : sz(s), buf(s == 0 ? 0 : new char[s]) {}
     };
-    typedef std::map<uint32_t, uint32_t> Map;
+    using Map = std::map<uint32_t, uint32_t>;
 
     void makeBlobs();
     void cleanBlobs();

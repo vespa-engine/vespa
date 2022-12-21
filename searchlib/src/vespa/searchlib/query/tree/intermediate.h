@@ -10,7 +10,7 @@ class Intermediate : public Node
 {
     std::vector<Node *> _children;
  public:
-    typedef std::unique_ptr<Intermediate> UP;
+    using UP = std::unique_ptr<Intermediate>;
 
     Intermediate(const Intermediate & rhs) = delete;
     Intermediate & operator = (const Intermediate & rhs) = delete;

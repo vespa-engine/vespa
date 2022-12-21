@@ -85,9 +85,9 @@ make_posting_lists_vector(MyPostingList (&plists)[N]) {
 }
 
 TermFieldMatchDataArray tfmda;
-typedef std::vector<uint8_t> CV;
-typedef std::vector<uint8_t> MF;
-typedef std::vector<uint16_t> IR;
+using CV = std::vector<uint8_t>;
+using MF = std::vector<uint8_t>;
+using IR = std::vector<uint16_t>;
 
 TEST("Require that the skipping is efficient") {
     const uint8_t min_feature[] = { 7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,

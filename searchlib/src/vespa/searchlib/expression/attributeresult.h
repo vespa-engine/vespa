@@ -10,7 +10,7 @@ namespace search::expression {
 class AttributeResult : public ResultNode
 {
 public:
-    typedef std::unique_ptr<AttributeResult> UP;
+    using UP = std::unique_ptr<AttributeResult>;
     DECLARE_RESULTNODE(AttributeResult);
     AttributeResult() : _attribute(nullptr), _docId(0) { }
     AttributeResult(const attribute::IAttributeVector * attribute, DocId docId) :

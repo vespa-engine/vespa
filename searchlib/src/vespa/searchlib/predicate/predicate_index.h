@@ -23,8 +23,8 @@ struct PredicateTreeAnnotations;
  * posting lists for matching.
  */
 class PredicateIndex : public PopulateInterface {
-    typedef SimpleIndex<vespalib::datastore::EntryRef> IntervalIndex;
-    typedef SimpleIndex<vespalib::datastore::EntryRef> BoundsIndex;
+    using IntervalIndex = SimpleIndex<vespalib::datastore::EntryRef>;
+    using BoundsIndex = SimpleIndex<vespalib::datastore::EntryRef>;
     template <typename IntervalT>
     using FeatureMap = std::unordered_map<uint64_t, std::vector<IntervalT>>;
     using generation_t = vespalib::GenerationHandler::generation_t;
@@ -32,9 +32,9 @@ class PredicateIndex : public PopulateInterface {
     using optional = std::optional<T>;
 
 public:
-    typedef std::unique_ptr<PredicateIndex> UP;
-    typedef vespalib::GenerationHandler GenerationHandler;
-    typedef vespalib::GenerationHolder GenerationHolder;
+    using UP = std::unique_ptr<PredicateIndex>;
+    using GenerationHandler = vespalib::GenerationHandler;
+    using GenerationHolder = vespalib::GenerationHolder;
     using BTreeIterator = SimpleIndex<vespalib::datastore::EntryRef>::BTreeIterator;
     using VectorIterator = SimpleIndex<vespalib::datastore::EntryRef>::VectorIterator;
 private:

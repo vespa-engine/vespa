@@ -118,10 +118,10 @@ MultiBitVectorIterator<Update>::strictSeek(uint32_t docId)
 }
 
 
-typedef MultiBitVectorIterator<And> AndBVIterator;
-typedef MultiBitVectorIteratorStrict<And> AndBVIteratorStrict;
-typedef MultiBitVectorIterator<Or> OrBVIterator;
-typedef MultiBitVectorIteratorStrict<Or> OrBVIteratorStrict;
+using AndBVIterator = MultiBitVectorIterator<And>;
+using AndBVIteratorStrict = MultiBitVectorIteratorStrict<And>;
+using OrBVIterator = MultiBitVectorIterator<Or>;
+using OrBVIteratorStrict = MultiBitVectorIteratorStrict<Or>;
 
 bool hasAtLeast2Bitvectors(const MultiSearch::Children & children)
 {

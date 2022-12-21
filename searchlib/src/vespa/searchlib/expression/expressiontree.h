@@ -64,11 +64,11 @@ private:
     bool onExecute() const override { return _root->execute(); }
     void onPrepare(bool preserveAccurateTypes) override;
 
-    typedef std::vector<AttributeNode *> AttributeNodeList;
-    typedef std::vector<DocumentAccessorNode *> DocumentAccessorNodeList;
-    typedef std::vector<RelevanceNode *> RelevanceNodeList;
-    typedef std::vector<InterpolatedLookup *> InterpolatedLookupList;
-    typedef std::vector<ArrayAtLookup *> ArrayAtLookupList;
+    using AttributeNodeList = std::vector<AttributeNode *>;
+    using DocumentAccessorNodeList = std::vector<DocumentAccessorNode *>;
+    using RelevanceNodeList = std::vector<RelevanceNode *>;
+    using InterpolatedLookupList = std::vector<InterpolatedLookup *>;
+    using ArrayAtLookupList = std::vector<ArrayAtLookup *>;
 
     ExpressionNode::CP        _root;
     AttributeNodeList         _attributeNodes;

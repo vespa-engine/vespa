@@ -13,7 +13,7 @@ struct QueryVisitor;
 */
 class Node {
  public:
-    typedef std::unique_ptr<Node> UP;
+    using UP = std::unique_ptr<Node>;
 
     virtual ~Node() = default;
     virtual void accept(QueryVisitor &visitor) = 0;

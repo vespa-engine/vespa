@@ -16,7 +16,7 @@ public:
     /**
      * Convenience typedef for a shared pointer to this class.
      **/
-    typedef std::shared_ptr<ITableFactory> SP;
+    using SP = std::shared_ptr<ITableFactory>;
 
     /**
      * Creates a table with the given name.

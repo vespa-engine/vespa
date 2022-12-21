@@ -31,7 +31,7 @@ struct NativeParamBase {
 template <class P>
 class NativeRankParamsBase {
 public:
-    typedef P Param;
+    using Param = P;
     std::vector<P> vector;
     NativeRankParamsBase() : vector() {}
     void resize(size_t numFields) {

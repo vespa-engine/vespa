@@ -61,7 +61,7 @@ private:
     double  _arithOperand;
     T       _v;
 public:
-    typedef T DataType;
+    using DataType = T;
 
     NumericChangeData(T v) : _arithOperand(0), _v(v) { }
     NumericChangeData() : _arithOperand(0), _v(T()) { }
@@ -77,7 +77,7 @@ public:
 
 class StringChangeData {
 public:
-    typedef vespalib::string DataType;
+    using DataType = vespalib::string;
 
     StringChangeData(const DataType & s);
     StringChangeData() : _s() { }
@@ -93,7 +93,7 @@ private:
 
 template<typename T>
 struct ChangeTemplate : public ChangeBase {
-    typedef T DataType;
+    using DataType = T;
 
     ChangeTemplate() : ChangeBase() { }
     ChangeTemplate(Type type, uint32_t d, const T & v, int32_t w = 1) :

@@ -29,11 +29,11 @@ using vespalib::eval::Function;
 using vespalib::eval::TensorSpec;
 using vespalib::eval::SimpleValue;
 
-typedef search::attribute::Config AVC;
-typedef search::attribute::BasicType AVBT;
-typedef search::attribute::CollectionType AVCT;
-typedef search::AttributeVector::SP AttributePtr;
-typedef FtTestApp FTA;
+using AVC = search::attribute::Config;
+using AVBT = search::attribute::BasicType;
+using AVCT = search::attribute::CollectionType;
+using AttributePtr = search::AttributeVector::SP;
+using FTA = FtTestApp;
 
 Value::UP make_tensor(const TensorSpec &spec) {
     return SimpleValue::from_spec(spec);

@@ -14,13 +14,13 @@ class QueryNode;
 class QueryNodeResultFactory;
 
 /// Typedef a simple list that contains references to QueryNodes.
-typedef std::vector<QueryNode *> QueryNodeRefList;
+using QueryNodeRefList = std::vector<QueryNode *>;
 /// Typedef a simple list that contains const references to QueryNodes.
-typedef std::vector<const QueryNode *> ConstQueryNodeRefList;
+using ConstQueryNodeRefList = std::vector<const QueryNode *>;
 /// Typedef a simple list that contains references to QueryTerms.
-typedef std::vector<QueryTerm *> QueryTermList;
+using QueryTermList = std::vector<QueryTerm *>;
 /// Typedef a simple list that contains const references to QueryTerms.
-typedef std::vector<const QueryTerm *> ConstQueryTermList;
+using ConstQueryTermList = std::vector<const QueryTerm *>;
 
 /**
   This is the base of any node in the query tree. Both leaf nodes (terms)
@@ -29,7 +29,7 @@ typedef std::vector<const QueryTerm *> ConstQueryTermList;
 class QueryNode
 {
  public:
-  typedef std::unique_ptr<QueryNode> UP;
+  using UP = std::unique_ptr<QueryNode>;
 
   virtual ~QueryNode() { }
   /// This evalutes if the subtree starting here evaluates to true.
@@ -58,7 +58,7 @@ class QueryNode
 };
 
 /// A list conating the QuerNode objects. With copy/assignment.
-typedef std::vector<QueryNode::UP> QueryNodeList;
+using QueryNodeList = std::vector<QueryNode::UP>;
 
 }
 

@@ -18,9 +18,9 @@ LOG_SETUP("attributebenchmark");
 
 using std::shared_ptr;
 
-typedef std::vector<uint32_t> NumVector;
-typedef std::vector<vespalib::string> StringVector;
-typedef search::attribute::Config AttrConfig;
+using NumVector = std::vector<uint32_t>;
+using StringVector = std::vector<vespalib::string>;
+using AttrConfig = search::attribute::Config;
 using search::attribute::BasicType;
 using search::attribute::CollectionType;
 

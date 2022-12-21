@@ -29,7 +29,7 @@ class DataStoreFileChunkStats;
 class IWriteData
 {
 public:
-    typedef std::unique_ptr<IWriteData> UP;
+    using UP = std::unique_ptr<IWriteData>;
     using LockGuard = std::unique_lock<std::mutex>;
 
     virtual ~IWriteData() = default;
@@ -103,9 +103,9 @@ public:
     private:
         int32_t _id;
     };
-    typedef vespalib::hash_map<uint32_t, std::unique_ptr<vespalib::DataBuffer>> LidBufferMap;
-    typedef std::unique_ptr<FileChunk> UP;
-    typedef uint32_t SubChunkId;
+    using LidBufferMap = vespalib::hash_map<uint32_t, std::unique_ptr<vespalib::DataBuffer>>;
+    using UP = std::unique_ptr<FileChunk>;
+    using SubChunkId = uint32_t;
     FileChunk(FileId fileId, NameId nameId, const vespalib::string &baseName, const TuneFileSummary &tune,
               const IBucketizer *bucketizer, bool skipCrcOnRead);
     virtual ~FileChunk();
@@ -201,7 +201,7 @@ public:
     static vespalib::string createIdxFileName(const vespalib::string & name);
     static vespalib::string createDatFileName(const vespalib::string & name);
 private:
-    typedef std::unique_ptr<FileRandRead> File;
+    using File = std::unique_ptr<FileRandRead>;
     void loadChunkInfo();
     const FileId           _fileId;
     const NameId           _nameId;
@@ -240,7 +240,7 @@ protected:
     static uint32_t readDocIdLimit(vespalib::GenericHeader &header);
     static void writeDocIdLimit(vespalib::GenericHeader &header, uint32_t docIdLimit);
 
-    typedef vespalib::Array<ChunkInfo> ChunkInfoVector;
+    using ChunkInfoVector = vespalib::Array<ChunkInfo>;
     const IBucketizer   * _bucketizer;
     size_t                _addedBytes;
     TuneFileSummary       _tune;

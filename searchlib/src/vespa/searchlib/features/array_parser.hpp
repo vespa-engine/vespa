@@ -17,7 +17,7 @@ template <typename OutputType, typename T>
 void
 ArrayParser::parse(const vespalib::string &input, OutputType &output)
 {
-    typedef std::vector<ValueAndIndex<T>> SparseVector;
+    using SparseVector = std::vector<ValueAndIndex<T>>;
     SparseVector sparse;
     parsePartial(input, sparse);
     std::sort(sparse.begin(), sparse.end());
@@ -36,7 +36,7 @@ ArrayParser::parsePartial(const vespalib::string &input, OutputType &output)
     size_t len = input.size();
     if (len >= 2) {
         vespalib::stringref s(input.c_str()+1, len - 2);
-        typedef typename OutputType::value_type ValueAndIndexType;
+        using ValueAndIndexType = typename OutputType::value_type;
         typename ValueAndIndexType::ValueType value;
         if ((input[0] == '{' && input[len - 1] == '}') ||
             (input[0] == '(' && input[len - 1] == ')') ) {

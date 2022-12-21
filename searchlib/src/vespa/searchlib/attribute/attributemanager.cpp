@@ -23,7 +23,7 @@ namespace {
 
 std::mutex baseDirLock;
 std::condition_variable baseDirCond;
-typedef std::set<string> BaseDirSet;
+using BaseDirSet = std::set<string>;
 BaseDirSet baseDirSet;
 
 static void

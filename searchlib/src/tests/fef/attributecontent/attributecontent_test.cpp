@@ -25,7 +25,7 @@ public:
 void
 Test::testWriteAndRead()
 {
-    typedef search::attribute::AttributeContent<uint32_t> UintContent;
+    using UintContent = search::attribute::AttributeContent<uint32_t>;
     UintContent buf;
     EXPECT_EQUAL(buf.capacity(), 16u);
     EXPECT_EQUAL(buf.size(), 0u);

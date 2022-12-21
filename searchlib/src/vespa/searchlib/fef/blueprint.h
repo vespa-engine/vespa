@@ -53,15 +53,15 @@ public:
     /**
      * Convenience typedef for an auto pointer to this class.
      **/
-    typedef std::unique_ptr<Blueprint> UP;
+    using UP = std::unique_ptr<Blueprint>;
 
     /**
      * Convenience typedef for an shared pointer to this class.
      **/
-    typedef std::shared_ptr<Blueprint> SP;
+    using SP = std::shared_ptr<Blueprint>;
 
-    typedef vespalib::string string;
-    typedef std::vector<string> StringVector;
+    using string = vespalib::string;
+    using StringVector = std::vector<string>;
 
 private:
     string                   _baseName;

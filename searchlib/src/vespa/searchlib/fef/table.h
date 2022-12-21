@@ -18,7 +18,7 @@ private:
     double              _max;
 
 public:
-    typedef std::shared_ptr<Table> SP;
+    using SP = std::shared_ptr<Table>;
 
     /**
      * Creates a new table with zero elements.

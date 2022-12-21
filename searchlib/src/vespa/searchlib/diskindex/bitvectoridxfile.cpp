@@ -89,7 +89,7 @@ void
 BitVectorIdxFileWrite::makeIdxHeader(const FileHeaderContext &fileHeaderContext)
 {
     vespalib::FileHeader h(FileSettings::DIRECTIO_ALIGNMENT);
-    typedef vespalib::GenericHeader::Tag Tag;
+    using Tag = vespalib::GenericHeader::Tag;
     fileHeaderContext.addTags(h, _idxFile->GetFileName());
     h.putTag(Tag("docIdLimit", _docIdLimit));
     h.putTag(Tag("numKeys", _numKeys));
@@ -107,7 +107,7 @@ void
 BitVectorIdxFileWrite::updateIdxHeader(uint64_t fileBitSize)
 {
     vespalib::FileHeader h(FileSettings::DIRECTIO_ALIGNMENT);
-    typedef vespalib::GenericHeader::Tag Tag;
+    using Tag = vespalib::GenericHeader::Tag;
     readHeader(h, _idxFile->GetFileName());
     FileHeaderContext::setFreezeTime(h);
     h.putTag(Tag("numKeys", _numKeys));

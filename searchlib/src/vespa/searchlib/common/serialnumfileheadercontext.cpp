@@ -21,7 +21,7 @@ SerialNumFileHeaderContext::addTags(vespalib::GenericHeader &header,
                                     const vespalib::string &name) const
 {
     _parentFileHeaderContext.addTags(header, name);
-    typedef vespalib::GenericHeader::Tag Tag;
+    using Tag = vespalib::GenericHeader::Tag;
     if (_serialNum != 0u)
         header.putTag(Tag("serialNum", _serialNum));
 }

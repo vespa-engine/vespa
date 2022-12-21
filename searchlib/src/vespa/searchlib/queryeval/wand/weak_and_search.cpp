@@ -15,7 +15,7 @@ template <typename FutureHeap, typename PastHeap, bool IS_STRICT>
 class WeakAndSearchLR : public WeakAndSearch
 {
 private:
-    typedef vespalib::PriorityQueue<score_t> Scores;
+    using Scores = vespalib::PriorityQueue<score_t>;
 
     VectorizedIteratorTerms        _terms;
     DualHeap<FutureHeap, PastHeap> _heaps;

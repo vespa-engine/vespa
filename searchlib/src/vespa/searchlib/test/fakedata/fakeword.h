@@ -22,7 +22,7 @@ namespace search::fakedata {
 class FakeWord
 {
 public:
-    typedef bitcompression::PosOccFieldsParams PosOccFieldsParams;
+    using PosOccFieldsParams = bitcompression::PosOccFieldsParams;
 
     class DocWordPosFeature
     {
@@ -42,7 +42,7 @@ public:
         ~DocWordPosFeature();
     };
 
-    typedef std::vector<DocWordPosFeature> DocWordPosFeatureList;
+    using DocWordPosFeatureList = std::vector<DocWordPosFeature>;
 
     class DocWordCollapsedFeature
     {
@@ -66,7 +66,7 @@ public:
         ~DocWordFeature();
     };
 
-    typedef std::vector<DocWordFeature> DocWordFeatureList;
+    using DocWordFeatureList = std::vector<DocWordFeature>;
 
     class Randomizer
     {
