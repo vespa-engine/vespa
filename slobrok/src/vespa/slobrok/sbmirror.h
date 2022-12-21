@@ -48,7 +48,7 @@ public:
     /**
      * @brief Clean up.
      **/
-    ~MirrorAPI();
+    ~MirrorAPI() override;
 
     // Inherit doc from IMirrorAPI.
     SpecList lookup(vespalib::stringref pattern) const override;

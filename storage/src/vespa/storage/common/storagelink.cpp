@@ -74,10 +74,12 @@ void StorageLink::doneInit()
 void StorageLink::close()
 {
     _state = CLOSING;
+    LOG(debug, "Start close link %s.", toString().c_str());
     onClose();
     if (!isBottom()) {
         _down->close();
     }
+    LOG(debug, "End close link %s.", toString().c_str());
 }
 
 void StorageLink::closeNextLink() {

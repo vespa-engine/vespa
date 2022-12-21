@@ -6,7 +6,6 @@
 #include <vespa/config/common/misc.h>
 #include <vespa/config/common/iconfigmanager.h>
 #include <vespa/config/common/iconfigcontext.h>
-#include <thread>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".config.subscription.configsubscriptionset");
@@ -23,7 +22,9 @@ ConfigSubscriptionSet::ConfigSubscriptionSet(std::shared_ptr<IConfigContext> con
       _mgr(_context->getManagerInstance()),
       _currentGeneration(-1),
       _subscriptionList(),
-      _state(OPEN)
+      _state(OPEN),
+      _lock(),
+      _cond()
 { }
 
 ConfigSubscriptionSet::~ConfigSubscriptionSet()
@@ -81,8 +82,9 @@ ConfigSubscriptionSet::acquireSnapshot(duration timeout, bool ignoreChange)
         inSync = generationsInSync && (_subscriptionList.size() == numGenerationChanged) && (ignoreChange || numChanged > 0);
         lastGeneration = generation;
         now = steady_clock::now();
-        if (!inSync && (now < deadline)) {
-            std::this_thread::sleep_for(std::min(_maxNapTime, deadline - now));
+        std::unique_lock guard(_lock);
+        if (!inSync && (now < deadline) && !isClosed()) {
+            _cond.wait_for(guard, std::min(_maxNapTime, deadline - now));
         } else {
             break;
         }
@@ -109,7 +111,11 @@ ConfigSubscriptionSet::acquireSnapshot(duration timeout, bool ignoreChange)
 void
 ConfigSubscriptionSet::close()
 {
-    _state = CLOSED;
+    {
+        std::lock_guard guard(_lock);
+        _state = CLOSED;
+        _cond.notify_all();
+    }
     for (const auto & subscription : _subscriptionList) {
         _mgr.unsubscribe(*subscription);
         subscription->close();

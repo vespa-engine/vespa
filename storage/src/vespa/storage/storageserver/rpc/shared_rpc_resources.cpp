@@ -102,7 +102,7 @@ void SharedRpcResources::wait_until_slobrok_is_ready() {
     while (_slobrok_register->busy() || !_slobrok_mirror->ready()) {
         // TODO some form of timeout mechanism here, and warning logging to identify SB issues
         LOG(debug, "Waiting for Slobrok to become ready");
-        std::this_thread::sleep_for(50ms);
+        std::this_thread::sleep_for(10ms);
     }
 }
 
