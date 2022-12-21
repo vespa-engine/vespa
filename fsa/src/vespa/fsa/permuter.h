@@ -27,11 +27,11 @@ private:
 
   static const unsigned int MAX_UNIT_LENGTH = 6;
 
-  typedef std::vector<std::string>                            PermTab;
-  typedef std::vector<std::string>::iterator                  PermTabIterator;
-  typedef std::map<std::string,unsigned int>                  PermMap;
-  typedef std::map<std::string,unsigned int>::iterator        PermMapIterator;
-  typedef std::map<std::string,unsigned int>::const_iterator  PermMapConstIterator;
+  using PermTab = std::vector<std::string>;
+  using PermTabIterator = std::vector<std::string>::iterator;
+  using PermMap = std::map<std::string,unsigned int>;
+  using PermMapIterator = std::map<std::string,unsigned int>::iterator;
+  using PermMapConstIterator = std::map<std::string,unsigned int>::const_iterator;
 
   PermTab        _permtab;
   PermMap        _permmap;

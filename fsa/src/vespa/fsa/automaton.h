@@ -508,38 +508,38 @@ private:
   /**
    * @brief Register of states, maps a transition list to a state object
    */
-  typedef std::map< TListPtr,State* > Register;
+  using Register = std::map< TListPtr,State* >;
   /**
    * @brief State register iterator.
    */
-  typedef std::map< TListPtr,State* >::iterator RegisterIterator;
+  using RegisterIterator = std::map< TListPtr,State* >::iterator;
 
   /**
    * @brief Register of states, maps a blob to a special state.
    */
-  typedef std::map< Blob,State* > BlobRegister;
+  using BlobRegister = std::map< Blob,State* >;
   /**
    * @brief Blob register iterator.
    */
-  typedef std::map< Blob,State* >::iterator BlobRegisterIterator;
+  using BlobRegisterIterator = std::map< Blob,State* >::iterator;
 
   /**
    * @brief Packing map, maps a state pointer to a state ID.
    */
-  typedef std::map< const void*, unsigned int > PackMap;
+  using PackMap = std::map< const void*, unsigned int >;
   /**
    * @brief Packing map iterator.
    */
-  typedef std::map< const void*, unsigned int >::iterator PackMapIterator;
+  using PackMapIterator = std::map< const void*, unsigned int >::iterator;
 
   /**
    * @brief symbol_t list.
    */
-  typedef std::list<symbol_t>  SymList;
+  using SymList = std::list<symbol_t> ;
   /**
    * @brief symbol_t list iterator.
    */
-  typedef std::list<symbol_t>::iterator SymListIterator;
+  using SymListIterator = std::list<symbol_t>::iterator;
   // }}}
 
   // {{{ Automaton::PackedAutomaton

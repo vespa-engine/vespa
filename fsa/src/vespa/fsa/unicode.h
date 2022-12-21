@@ -8,9 +8,9 @@
 namespace fsa {
 
 /** utf8_t is the type of the multi-byte UTF-8 character components */
-typedef uint8_t utf8_t;
+using utf8_t = uint8_t;
 /** ucs4_t is the type of the 4-byte UCS4 characters */
-typedef uint32_t ucs4_t;
+using ucs4_t = uint32_t;
 
 
 /**

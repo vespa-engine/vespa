@@ -47,11 +47,11 @@ private:
   FSAManager& operator=(const FSAManager&);
 
   /** %FSA library type */
-  typedef std::map<std::string,FSA::Handle*>                  Library;
+  using Library = std::map<std::string,FSA::Handle*>;
   /** %FSA library iterator type */
-  typedef std::map<std::string,FSA::Handle*>::iterator        LibraryIterator;
+  using LibraryIterator = std::map<std::string,FSA::Handle*>::iterator;
   /** %FSA library const iterator type */
-  typedef std::map<std::string,FSA::Handle*>::const_iterator  LibraryConstIterator;
+  using LibraryConstIterator = std::map<std::string,FSA::Handle*>::const_iterator;
 
   Library           _library;    /**< Library of automata.                         */
   mutable RWLock    _lock;       /**< Read-write lock for library synchronization. */
