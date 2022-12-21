@@ -42,24 +42,6 @@ public class ApplicationPackageStream {
     private final Supplier<InputStream> in;
     private final AtomicReference<ApplicationPackage> truncatedPackage = new AtomicReference<>();
 
-    public static Supplier<Replacer> addingCertificate(Optional<X509Certificate> certificate) {
-        return certificate.map(cert -> Replacer.of(Map.of(ApplicationPackage.trustedCertificatesFile,
-                                                          trustBytes -> append(trustBytes, cert))))
-                          .orElse(Replacer.of(Map.of()));
-    }
-
-    static InputStream append(InputStream trustIn, X509Certificate cert) {
-        try {
-            List<X509Certificate> trusted = trustIn == null ? new ArrayList<>()
-                                                            : new ArrayList<>(certificateListFromPem(new String(trustIn.readAllBytes(), UTF_8)));
-            trusted.add(cert);
-            return new ByteArrayInputStream(X509CertificateUtils.toPem(trusted).getBytes(UTF_8));
-        }
-        catch (IOException e) {
-            throw new UncheckedIOException(e);
-        }
-    }
-
     /** Stream that effectively copies the input stream to its {@link #truncatedPackage()} when exhausted. */
     public ApplicationPackageStream(Supplier<InputStream> in) {
         this(in, () -> __ -> true, Map.of());

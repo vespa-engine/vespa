@@ -80,7 +80,6 @@ public class ApplicationPackage {
     private final Optional<Version> compileVersion;
     private final Optional<Instant> buildTime;
     private final Optional<Version> parentVersion;
-    private final List<X509Certificate> trustedCertificates;
 
     /**
      * Creates an application package from its zipped content.
@@ -112,8 +111,6 @@ public class ApplicationPackage {
         this.compileVersion = buildMetaObject.flatMap(object -> parse(object, "compileVersion", field -> Version.fromString(field.asString())));
         this.buildTime = buildMetaObject.flatMap(object -> parse(object, "buildTime", field -> Instant.ofEpochMilli(field.asLong())));
         this.parentVersion = buildMetaObject.flatMap(object -> parse(object, "parentVersion", field -> Version.fromString(field.asString())));
-
-        this.trustedCertificates = files.get(trustedCertificatesFile).map(bytes -> X509CertificateUtils.certificateListFromPem(new String(bytes, UTF_8))).orElse(List.of());
 
         this.bundleHash = calculateBundleHash(zippedContent);
 
@@ -149,11 +146,6 @@ public class ApplicationPackage {
 
     /** Returns the parent version used to compile the package, if known. */
     public Optional<Version> parentVersion() { return parentVersion; }
-
-    /** Returns the list of certificates trusted by this application, or an empty list if no trust configured. */
-    public List<X509Certificate> trustedCertificates() {
-        return trustedCertificates;
-    }
 
     private static <Type> Optional<Type> parse(Inspector buildMetaObject, String fieldName, Function<Inspector, Type> mapper) {
         Inspector field = buildMetaObject.field(fieldName);

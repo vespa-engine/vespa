@@ -67,20 +67,6 @@ public class ApplicationApiCloudTest extends ControllerContainerCloudTest {
     }
 
     @Test
-    void test_missing_security_clients_pem() {
-        var application = prodBuilder().build();
-
-        var deployRequest = request("/application/v4/tenant/scoober/application/albums/submit", POST)
-                .data(createApplicationSubmissionData(application, 0))
-                .roles(Set.of(Role.developer(tenantName)));
-
-        tester.assertResponse(
-                deployRequest,
-                "{\"error-code\":\"BAD_REQUEST\",\"message\":\"Missing required file 'security/clients.pem'\"}",
-                400);
-    }
-
-    @Test
     void tenant_info_profile() {
         tester.flagSource().withBooleanFlag(Flags.ENABLED_MAIL_VERIFICATION.id(), true);
         var request = request("/application/v4/tenant/scoober/info/profile", GET)
