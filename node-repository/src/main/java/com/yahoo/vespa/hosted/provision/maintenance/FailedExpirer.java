@@ -44,7 +44,7 @@ public class FailedExpirer extends NodeRepositoryMaintainer {
 
     private static final Logger log = Logger.getLogger(FailedExpirer.class.getName());
     // Try recycling nodes until reaching this many failures
-    private static final int maxAllowedFailures = 50;
+    public static final int maxAllowedFailures = 50;
 
     private final NodeRepository nodeRepository;
     private final Duration statefulExpiry; // Stateful nodes: Grace period to allow recovery of data
