@@ -9,6 +9,7 @@ InvokeServiceImpl::InvokeServiceImpl(duration napTime)
     : _naptime(napTime),
       _now(steady_clock::now()),
       _lock(),
+      _cond(),
       _currId(0),
       _closed(false),
       _toInvoke(),
@@ -22,6 +23,7 @@ InvokeServiceImpl::~InvokeServiceImpl()
         std::lock_guard guard(_lock);
         assert(_toInvoke.empty());
         _closed = true;
+        _cond.notify_all();
     }
     _thread->join();
 }
@@ -39,7 +41,7 @@ public:
     }
 private:
     InvokeServiceImpl * _service;
-    uint64_t        _id;
+    uint64_t            _id;
 };
 
 std::unique_ptr<IDestructorCallback>
@@ -47,6 +49,7 @@ InvokeServiceImpl::registerInvoke(InvokeFunc func) {
     std::lock_guard guard(_lock);
     uint64_t id = _currId++;
     _toInvoke.emplace_back(id, std::move(func));
+    _cond.notify_all();
     return std::make_unique<Registration>(this, id);
 }
 
@@ -58,25 +61,19 @@ InvokeServiceImpl::unregister(uint64_t id) {
     });
     assert (found != _toInvoke.end());
     _toInvoke.erase(found);
+    _cond.notify_all();
 }
 
 void
 InvokeServiceImpl::runLoop() {
-    bool done = false;
-    while ( ! done ) {
+    std::unique_lock guard(_lock);
+    while ( ! _closed ) {
         _now.store(steady_clock::now(), std::memory_order_relaxed);
-        {
-            std::lock_guard guard(_lock);
-            for (auto & func: _toInvoke) {
-                func.second();
-            }
-            done = _closed;
+        for (auto & func: _toInvoke) {
+            func.second();
         }
-        if ( ! done) {
-            std::this_thread::sleep_for(_naptime);
-        }
+        _cond.wait_for(guard, _naptime);
     }
-
 }
 
 }
