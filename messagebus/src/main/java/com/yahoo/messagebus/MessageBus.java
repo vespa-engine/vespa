@@ -151,24 +151,18 @@ public class MessageBus implements ConfigHandler, NetworkOwner, MessageHandler, 
         this.net = net;
         net.attach(this);
         if ( ! net.net().waitUntilReady(180)) {
-            var failure = new IllegalStateException("Network failed to become ready in time.");
             try {
                 var tmp = net.net().getMirror();
                 var mirror = (com.yahoo.jrt.slobrok.api.Mirror) tmp;
-                mirror.dumpState();
-                if (mirror.ready()) {
-                    log.warning("location broker mirror is ready, but network is not");
-                } else if (mirror.getIterations() < 2) {
+                if (mirror.getIterations() < 2) {
                     Process.dumpThreads();
                     String fn = "var/crash/java_pid." + ProcessHandle.current().pid() + ".hprof";
                     Process.dumpHeap(Defaults.getDefaults().underVespaHome(fn), true);
-                } else {
-                    failure = new IllegalStateException("No answer from any service location broker, failing startup");
                 }
             } catch (Exception e) {
                 // ignore
             }
-            throw failure;
+            throw new IllegalStateException("Network failed to become ready in time.");
         }
 
         // Start messenger.
