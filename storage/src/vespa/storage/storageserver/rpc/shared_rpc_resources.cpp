@@ -18,6 +18,8 @@
 LOG_SETUP(".storage.shared_rpc_resources");
 
 using namespace std::chrono_literals;
+using vespalib::make_string_short::fmt;
+using vespalib::IllegalStateException;
 
 namespace storage::rpc {
 
@@ -88,8 +90,7 @@ void SharedRpcResources::start_server_and_register_slobrok(vespalib::stringref m
     LOG(debug, "Starting main RPC supervisor on port %d with slobrok handle '%s'",
         _rpc_server_port, vespalib::string(my_handle).c_str());
     if (!_orb->Listen(_rpc_server_port)) {
-        throw vespalib::IllegalStateException(vespalib::make_string("Failed to listen to RPC port %d", _rpc_server_port),
-                                              VESPA_STRLOC);
+        throw IllegalStateException(fmt("Failed to listen to RPC port %d", _rpc_server_port), VESPA_STRLOC);
     }
     _transport->Start(_thread_pool.get());
     _slobrok_register->registerName(my_handle);
@@ -111,9 +112,7 @@ void SharedRpcResources::shutdown() {
     if (listen_port() > 0) {
         _slobrok_register->unregisterName(_handle);
         // Give slobrok some time to dispatch unregister RPC
-        while (_slobrok_register->busy()) {
-            std::this_thread::sleep_for(10ms);
-        }
+        std::this_thread::sleep_for(10ms);
     }
     _transport->ShutDown(true);
     // FIXME need to reset to break weak_ptrs? But ShutDown should already sync pending resolves...!

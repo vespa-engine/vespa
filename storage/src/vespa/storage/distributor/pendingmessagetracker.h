@@ -2,7 +2,6 @@
 #pragma once
 
 #include "nodeinfo.h"
-#include <vespa/storage/common/storagelink.h>
 #include <vespa/storageframework/generic/status/htmlstatusreporter.h>
 #include <vespa/storageframework/generic/component/componentregister.h>
 #include <vespa/storageframework/generic/component/component.h>

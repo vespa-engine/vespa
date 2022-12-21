@@ -4,7 +4,6 @@
 #include "node_supported_features.h"
 #include "pending_bucket_space_db_transition_entry.h"
 #include "clusterinformation.h"
-#include <vespa/storage/common/storagelink.h>
 #include <vespa/storageapi/message/bucket.h>
 #include <vespa/storageapi/message/state.h>
 #include <vespa/storageframework/generic/clock/clock.h>
