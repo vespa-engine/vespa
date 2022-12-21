@@ -132,7 +132,7 @@ StartCommand() {
     # common setup
     export VESPA_SERVICE_NAME="$service"
 
-    if grep -q 'region.*us-west' /etc/vespa/host-admin.json; then
+    if true; then
         ${VESPA_HOME}/libexec/vespa/script-utils run-standalone-container "${jvm_arguments[@]}" &
         echo $! > "$pidfile"
         return
