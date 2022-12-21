@@ -73,7 +73,7 @@ public:
                 ApplicationGenerationFetcher& generationFetcher,
                 std::unique_ptr<HostInfo> hostInfo,
                 RunMode = NORMAL);
-    virtual ~StorageNode();
+    ~StorageNode() override;
 
     virtual const lib::NodeType& getNodeType() const = 0;
     bool attemptedStopped() const;

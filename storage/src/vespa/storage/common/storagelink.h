@@ -52,7 +52,7 @@ public:
     StorageLink & operator = (const StorageLink &) = delete;
     StorageLink(const std::string& name)
         : _name(name), _up(0), _down(), _state(CREATED) {}
-    virtual ~StorageLink();
+    ~StorageLink() override;
 
     const std::string& getName() const { return _name; }
     bool isTop() const { return (_up == 0); }
