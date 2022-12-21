@@ -16,7 +16,7 @@ class IAccelrated
 {
 public:
     virtual ~IAccelrated() = default;
-    typedef std::unique_ptr<IAccelrated> UP;
+    using UP = std::unique_ptr<IAccelrated>;
     virtual float dotProduct(const float * a, const float * b, size_t sz) const = 0;
     virtual double dotProduct(const double * a, const double * b, size_t sz) const = 0;
     virtual int64_t dotProduct(const int8_t * a, const int8_t * b, size_t sz) const = 0;

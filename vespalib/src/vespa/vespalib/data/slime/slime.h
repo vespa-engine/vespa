@@ -45,18 +45,18 @@ namespace vespalib {
 class Slime
 {
 private:
-    typedef slime::Symbol        Symbol;
-    typedef slime::SymbolTable   SymbolTable;
-    typedef slime::RootValue     RootValue;
-    typedef slime::Cursor        Cursor;
-    typedef slime::Inspector     Inspector;
+    using Symbol = slime::Symbol;
+    using SymbolTable = slime::SymbolTable;
+    using RootValue = slime::RootValue;
+    using Cursor = slime::Cursor;
+    using Inspector = slime::Inspector;
 
     std::unique_ptr<SymbolTable>   _names;
     std::unique_ptr<Stash>         _stash;
     RootValue                      _root;
 
 public:
-    typedef std::unique_ptr<Slime> UP;
+    using UP = std::unique_ptr<Slime>;
     class Params {
     private:
         std::unique_ptr<SymbolTable>  _symbols;

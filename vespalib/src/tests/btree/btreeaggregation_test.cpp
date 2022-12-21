@@ -62,7 +62,7 @@ toNotVal(uint32_t key)
 
 }
 
-typedef BTreeTraits<4, 4, 31, false> MyTraits;
+using MyTraits = BTreeTraits<4, 4, 31, false>;
 
 #define KEYWRAP
 
@@ -85,7 +85,7 @@ operator<<(std::ostream &s, const WrapInt &i)
     return s;
 }
 
-typedef WrapInt MyKey;
+using MyKey = WrapInt;
 class MyComp
 {
 public:
@@ -98,8 +98,8 @@ public:
 
 #define UNWRAP(key) (key._val)
 #else
-typedef int MyKey;
-typedef std::less<int> MyComp;
+using MyKey = int;
+using MyComp = std::less<int>;
 #define UNWRAP(key) (key)
 #endif
 
@@ -117,19 +117,19 @@ typedef BTreeStore<MyKey, int32_t,
                    MyComp,
                    BTreeDefaultTraits,
                    MinMaxAggrCalc> MyTreeStore;
-typedef MyTree::Builder               MyTreeBuilder;
-typedef MyTree::LeafNodeType          MyLeafNode;
-typedef MyTree::InternalNodeType      MyInternalNode;
-typedef MyTree::NodeAllocatorType     MyNodeAllocator;
-typedef MyTree::Builder::Aggregator   MyAggregator;
-typedef MyTree::AggrCalcType             MyAggrCalc;
-typedef std::pair<MyKey, int32_t> LeafPair;
-typedef MyTreeStore::KeyDataType    MyKeyData;
-typedef MyTreeStore::KeyDataTypeRefPair MyKeyDataRefPair;
+using MyTreeBuilder = MyTree::Builder;
+using MyLeafNode = MyTree::LeafNodeType;
+using MyInternalNode = MyTree::InternalNodeType;
+using MyNodeAllocator = MyTree::NodeAllocatorType;
+using MyAggregator = MyTree::Builder::Aggregator;
+using MyAggrCalc = MyTree::AggrCalcType;
+using LeafPair = std::pair<MyKey, int32_t>;
+using MyKeyData = MyTreeStore::KeyDataType;
+using MyKeyDataRefPair = MyTreeStore::KeyDataTypeRefPair;
 
-typedef BTree<int, BTreeNoLeafData, btree::NoAggregated> SetTreeB;
+using SetTreeB = BTree<int, BTreeNoLeafData, btree::NoAggregated>;
 
-typedef BTreeTraits<16, 16, 10, false> LSeekTraits;
+using LSeekTraits = BTreeTraits<16, 16, 10, false>;
 typedef BTree<int, BTreeNoLeafData, btree::NoAggregated,
               std::less<int>, LSeekTraits> SetTreeL;
 
@@ -144,8 +144,8 @@ using MyKeyAggrTree = BTree<MyKey, int32_t, btree::MinMaxAggregated, MyComp, MyT
 class MockTree
 {
 public:
-    typedef std::map<uint32_t, int32_t> MTree;
-    typedef std::map<int32_t, std::set<uint32_t> > MRTree;
+    using MTree = std::map<uint32_t, int32_t>;
+    using MRTree = std::map<int32_t, std::set<uint32_t> >;
     MTree _tree;
     MRTree _rtree;
 
@@ -190,7 +190,7 @@ MockTree::~MockTree() {}
 class MyTreeForceApplyStore : public MyTreeStore
 {
 public:
-    typedef MyComp CompareT;
+    using CompareT = MyComp;
 
     bool
     insert(EntryRef &ref, const KeyType &key, const DataType &data,
@@ -1055,7 +1055,6 @@ Test::requireThatUpdateOfKeyWorks()
 void
 Test::requireThatUpdateOfDataWorks()
 {
-    // typedef MyTree::Iterator Iterator;
     GenerationHandler g;
     MyTree t;
     MockTree mock;

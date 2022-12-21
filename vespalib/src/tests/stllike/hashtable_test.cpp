@@ -28,7 +28,7 @@ template<typename K> using up_hashtable =
 
 TEST("require that hashtable can store unique_ptrs") {
     up_hashtable<int> table(100);
-    typedef std::unique_ptr<int> UP;
+    using UP = std::unique_ptr<int>;
     table.insert(UP(new int(42)));
     auto it = table.find(42);
     EXPECT_EQUAL(42, **it);

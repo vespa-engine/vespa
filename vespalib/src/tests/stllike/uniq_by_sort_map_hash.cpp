@@ -14,17 +14,17 @@ template <typename T>
 class RoundRobinAllocator
 {
 public:
-    typedef size_t     size_type;
-    typedef ptrdiff_t  difference_type;
-    typedef T *        pointer;
-    typedef const T *  const_pointer;
-    typedef T &        reference;
-    typedef const T &  const_reference;
-    typedef T          value_type;
+    using size_type = size_t;
+    using difference_type = ptrdiff_t;
+    using pointer = T *;
+    using const_pointer = const T *;
+    using reference = T &;
+    using const_reference = const T &;
+    using value_type = T;
 
     template<typename _Tp1>
     struct rebind {
-        typedef RoundRobinAllocator<_Tp1> other;
+        using other = RoundRobinAllocator<_Tp1>;
     };
     RoundRobinAllocator() { }
     template<typename _Tp1>
@@ -101,7 +101,7 @@ struct IndirectCmp {
 size_t benchMap(const std::vector<Slot *> & v)
 {
     size_t uniq(0);
-    typedef std::set<Gid> M;
+    using M = std::set<Gid>;
     M set;
     for(size_t i(0), m(v.size()); i < m; i++) {
         const Slot & s = *v[i];
@@ -116,7 +116,7 @@ size_t benchMap(const std::vector<Slot *> & v)
 size_t benchMapIntelligent(const std::vector<Slot *> & v)
 {
     size_t uniq(0);
-    typedef std::set<Gid> M;
+    using M = std::set<Gid>;
     M set;
     for(size_t i(0), m(v.size()); i < m; i++) {
         const Slot & s = *v[i];
@@ -131,7 +131,7 @@ size_t benchMapIntelligent(const std::vector<Slot *> & v)
 size_t benchHashStl(const std::vector<Slot *> & v)
 {
     size_t uniq(0);
-    typedef std::unordered_set< Gid, Gid::hash > M;
+    using M = std::unordered_set< Gid, Gid::hash >;
     M set(v.size());
     for(size_t i(0), m(v.size()); i < m; i++) {
         const Slot & s = *v[i];
@@ -146,7 +146,7 @@ size_t benchHashStl(const std::vector<Slot *> & v)
 size_t benchHashStlIntelligent(const std::vector<Slot *> & v)
 {
     size_t uniq(0);
-    typedef std::unordered_set< Gid, Gid::hash > M;
+    using M = std::unordered_set< Gid, Gid::hash >;
     M set(v.size());
     for(size_t i(0), m(v.size()); i < m; i++) {
         const Slot & s = *v[i];
@@ -175,7 +175,7 @@ size_t benchHashStlFastAlloc(const std::vector<Slot *> & v)
 size_t benchHashVespaLib(const std::vector<Slot *> & v)
 {
     size_t uniq(0);
-    typedef vespalib::hash_set< Gid, Gid::hash > M;
+    using M = vespalib::hash_set< Gid, Gid::hash >;
     M set(v.size()*2);
     for(size_t i(0), m(v.size()); i < m; i++) {
         const Slot & s = *v[i];
@@ -190,7 +190,7 @@ size_t benchHashVespaLib(const std::vector<Slot *> & v)
 size_t benchHashVespaLibIntelligent(const std::vector<Slot *> & v)
 {
     size_t uniq(0);
-    typedef vespalib::hash_set< Gid, Gid::hash > M;
+    using M = vespalib::hash_set< Gid, Gid::hash >;
     M set(v.size()*2);
     for(size_t i(0), m(v.size()); i < m; i++) {
         const Slot & s = *v[i];
@@ -205,7 +205,7 @@ size_t benchHashVespaLibIntelligent(const std::vector<Slot *> & v)
 size_t benchHashVespaLibIntelligentAndFast(const std::vector<Slot *> & v)
 {
     size_t uniq(0);
-    typedef vespalib::hash_set< Gid, Gid::hash, std::equal_to<Gid>, vespalib::hashtable_base::and_modulator > M;
+    using M = vespalib::hash_set< Gid, Gid::hash, std::equal_to<Gid>, vespalib::hashtable_base::and_modulator >;
     M set(v.size()*2);
     for(size_t i(0), m(v.size()); i < m; i++) {
         const Slot & s = *v[i];

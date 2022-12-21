@@ -122,7 +122,7 @@ TEST("require that the heap algorithm can be changed") {
     }
 }
 
-typedef std::unique_ptr<int> int_up;
+using int_up = std::unique_ptr<int>;
 int_up wrap(int value) { return int_up(new int(value)); }
 struct CmpIntUp {
     bool operator()(const int_up &a, const int_up &b) const {

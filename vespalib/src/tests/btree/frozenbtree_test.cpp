@@ -27,22 +27,22 @@ namespace vespalib {
 class FrozenBTreeTest : public vespalib::TestApp
 {
 public:
-    typedef int KeyType;
+    using KeyType = int;
 private:
     std::vector<KeyType> _randomValues;
     std::vector<KeyType> _sortedRandomValues;
 
 public:
-    typedef int DataType;
+    using DataType = int;
     typedef BTreeRoot<KeyType, DataType,
                       btree::NoAggregated,
                       std::less<KeyType>,
                       BTreeDefaultTraits> Tree;
-    typedef Tree::NodeAllocatorType NodeAllocator;
-    typedef Tree::InternalNodeType InternalNodeType;
-    typedef Tree::LeafNodeType LeafNodeType;
-    typedef Tree::Iterator Iterator;
-    typedef Tree::ConstIterator ConstIterator;
+    using NodeAllocator = Tree::NodeAllocatorType;
+    using InternalNodeType = Tree::InternalNodeType;
+    using LeafNodeType = Tree::LeafNodeType;
+    using Iterator = Tree::Iterator;
+    using ConstIterator = Tree::ConstIterator;
 private:
     GenerationHandler *_generationHandler;
     NodeAllocator *_allocator;
@@ -360,9 +360,8 @@ printSubEnumTree(BTreeNode::Ref node,
                  NodeAllocator &allocator,
                  int indent) const
 {
-    // typedef BTreeNode Node;
-    typedef LeafNodeType LeafNode;
-    typedef InternalNodeType InternalNode;
+    using LeafNode = LeafNodeType;
+    using InternalNode = InternalNodeType;
     BTreeNode::Ref subNode;
     unsigned int i;
 

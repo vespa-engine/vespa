@@ -34,7 +34,7 @@ class FloatingPointType {
     Number _value;
 
 public:
-    typedef FloatingPointType<Number> Type;
+    using Type = FloatingPointType<Number>;
 
     FloatingPointType() : _value(0.0) {}
     FloatingPointType(Number n) : _value(n) {}
@@ -66,8 +66,8 @@ public:
     Type operator--(int) { Type t(_value); --_value; return t; }
 };
 
-typedef FloatingPointType<double> Double;
-typedef FloatingPointType<double> Float;
+using Double = FloatingPointType<double>;
+using Float = FloatingPointType<double>;
 
 template<typename Number>
 std::ostream& operator<<(std::ostream& out, FloatingPointType<Number> number);

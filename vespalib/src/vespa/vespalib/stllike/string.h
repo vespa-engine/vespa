@@ -20,8 +20,8 @@ namespace vespalib {
 class stringref
 {
 public:
-    typedef const char * const_iterator;
-    typedef size_t size_type;
+    using const_iterator = const char *;
+    using size_type = size_t;
     static const size_type npos = static_cast<size_type>(-1);
     stringref() : _s(""), _sz(0) { }
     stringref(const char * s) noexcept : _s(s), _sz(strlen(s)) { }
@@ -183,11 +183,11 @@ template <uint32_t StackSize>
 class small_string
 {
 public:
-    typedef size_t size_type;
-    typedef char * iterator;
-    typedef const char * const_iterator;
-    typedef char * reverse_iterator;
-    typedef const char * const_reverse_iterator;
+    using size_type = size_t;
+    using iterator = char *;
+    using const_iterator = const char *;
+    using reverse_iterator = char *;
+    using const_reverse_iterator = const char *;
     static const size_type npos = static_cast<size_type>(-1);
     small_string() noexcept : _buf(_stack), _sz(0), _bufferSize(StackSize) { _stack[0] = '\0'; }
     small_string(const char * s) noexcept : _buf(_stack), _sz(s ? strlen(s) : 0) { init(s); }
@@ -585,7 +585,7 @@ private:
             rhs._stack[0] = 0;
         }
     }
-    typedef uint32_t isize_type;
+    using isize_type = uint32_t;
     bool needAlloc(isize_type add) const { return (add + _sz + 1) > _bufferSize; }
     bool isAllocated() const { return _buf != _stack; }
     char * buffer() { return _buf; }
@@ -632,7 +632,7 @@ small_string<StackSize>::small_string(Iterator s, Iterator e) :
 template <uint32_t StackSize>
 const size_t small_string<StackSize>::npos;
 
-typedef small_string<48> string;
+using string = small_string<48>;
 
 template<uint32_t StackSize>
 small_string<StackSize>

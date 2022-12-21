@@ -148,8 +148,8 @@ makeTree(EntryRef &ref,
     for (uint32_t idx = 0; idx < clusterSize; ++idx, ++o) {
         lNode->update(idx, o->_key, o->getData());
     }
-    typedef BTreeAggregator<KeyT, DataT, AggrT,
-        TraitsT::INTERNAL_SLOTS, TraitsT::LEAF_SLOTS, AggrCalcT> Aggregator;
+    using Aggregator = BTreeAggregator<KeyT, DataT, AggrT,
+                                       TraitsT::INTERNAL_SLOTS, TraitsT::LEAF_SLOTS, AggrCalcT>;
     if constexpr (AggrCalcT::hasAggregated()) {
         Aggregator::recalc(*lNode, _aggrCalc);
     }
@@ -276,8 +276,8 @@ insert(EntryRef &ref,
         lNode->update(idx, i->_key, i->getData());
     }
     assert(idx == clusterSize + 1);
-    typedef BTreeAggregator<KeyT, DataT, AggrT,
-        TraitsT::INTERNAL_SLOTS, TraitsT::LEAF_SLOTS, AggrCalcT> Aggregator;
+    using Aggregator = BTreeAggregator<KeyT, DataT, AggrT,
+                                       TraitsT::INTERNAL_SLOTS, TraitsT::LEAF_SLOTS, AggrCalcT>;
     if constexpr (AggrCalcT::hasAggregated()) {
         Aggregator::recalc(*lNode, _aggrCalc);
     }

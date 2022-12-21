@@ -32,9 +32,9 @@ class NodeElement
     template <typename, typename, typename, typename, typename>
     friend class BTreeIterator;
 
-    typedef NodeT NodeType;
-    typedef typename NodeType::KeyType KeyType;
-    typedef typename NodeType::DataType DataType;
+    using NodeType = NodeT;
+    using KeyType = typename NodeType::KeyType;
+    using DataType = typename NodeType::DataType;
     const NodeType *_node;
     uint32_t _idx;
 
@@ -183,17 +183,17 @@ template <typename KeyT,
 class BTreeIteratorBase
 {
 protected:
-    typedef BTreeNodeAllocator<KeyT, DataT, AggrT,
-                               INTERNAL_SLOTS,
-                               LEAF_SLOTS> NodeAllocatorType;
-    typedef BTreeInternalNode<KeyT, AggrT, INTERNAL_SLOTS> InternalNodeType;
-    typedef BTreeLeafNode<KeyT, DataT, AggrT, LEAF_SLOTS>  LeafNodeType;
-    typedef typename InternalNodeType::RefPair InternalNodeTypeRefPair;
-    typedef typename LeafNodeType::RefPair LeafNodeTypeRefPair;
-    typedef BTreeLeafNodeTemp<KeyT, DataT, AggrT, LEAF_SLOTS> LeafNodeTempType;
-    typedef BTreeKeyData<KeyT, DataT> KeyDataType;
-    typedef KeyT KeyType;
-    typedef DataT DataType;
+    using NodeAllocatorType = BTreeNodeAllocator<KeyT, DataT, AggrT,
+                                                 INTERNAL_SLOTS,
+                                                 LEAF_SLOTS>;
+    using InternalNodeType = BTreeInternalNode<KeyT, AggrT, INTERNAL_SLOTS>;
+    using LeafNodeType = BTreeLeafNode<KeyT, DataT, AggrT, LEAF_SLOTS> ;
+    using InternalNodeTypeRefPair = typename InternalNodeType::RefPair;
+    using LeafNodeTypeRefPair = typename LeafNodeType::RefPair;
+    using LeafNodeTempType = BTreeLeafNodeTemp<KeyT, DataT, AggrT, LEAF_SLOTS>;
+    using KeyDataType = BTreeKeyData<KeyT, DataT>;
+    using KeyType = KeyT;
+    using DataType = DataT;
     template <typename, typename, typename, typename, typename, class>
     friend class BTreeInserter;
     template <typename, typename, typename, size_t, size_t, class>
@@ -201,7 +201,7 @@ protected:
     template <typename, typename, typename, typename, typename, class>
     friend class BTreeRemover;
 
-    typedef NodeElement<LeafNodeType> LeafElement;
+    using LeafElement = NodeElement<LeafNodeType>;
 
     /**
      * Current leaf node and current index within it.
@@ -211,7 +211,7 @@ protected:
      * Pointer to internal node and index to the child used to
      * traverse down the tree
      */
-    typedef NodeElement<InternalNodeType> PathElement;
+    using PathElement = NodeElement<InternalNodeType>;
     /**
      * Path from current leaf node up to the root (path[0] is the
      * parent of the leaf node)
@@ -584,23 +584,22 @@ class BTreeConstIterator : public BTreeIteratorBase<KeyT, DataT, AggrT,
                                                     TraitsT::PATH_SIZE>
 {
 protected:
-    typedef BTreeIteratorBase<KeyT,
-                              DataT,
-                              AggrT,
-                              TraitsT::INTERNAL_SLOTS,
-                              TraitsT::LEAF_SLOTS,
-                              TraitsT::PATH_SIZE> ParentType;
-    typedef typename ParentType::NodeAllocatorType NodeAllocatorType;
-    typedef typename ParentType::InternalNodeType InternalNodeType;
-    typedef typename ParentType::LeafNodeType LeafNodeType;
-    typedef typename ParentType::InternalNodeTypeRefPair
-    InternalNodeTypeRefPair;
-    typedef typename ParentType::LeafNodeTypeRefPair LeafNodeTypeRefPair;
-    typedef typename ParentType::LeafNodeTempType LeafNodeTempType;
-    typedef typename ParentType::KeyDataType KeyDataType;
-    typedef typename ParentType::KeyType KeyType;
-    typedef typename ParentType::DataType DataType;
-    typedef typename ParentType::PathElement PathElement;
+    using ParentType = BTreeIteratorBase<KeyT,
+                                         DataT,
+                                         AggrT,
+                                         TraitsT::INTERNAL_SLOTS,
+                                         TraitsT::LEAF_SLOTS,
+                                         TraitsT::PATH_SIZE>;
+    using NodeAllocatorType = typename ParentType::NodeAllocatorType;
+    using InternalNodeType = typename ParentType::InternalNodeType;
+    using LeafNodeType = typename ParentType::LeafNodeType;
+    using InternalNodeTypeRefPair = typename ParentType::InternalNodeTypeRefPair;
+    using LeafNodeTypeRefPair = typename ParentType::LeafNodeTypeRefPair;
+    using LeafNodeTempType = typename ParentType::LeafNodeTempType;
+    using KeyDataType = typename ParentType::KeyDataType;
+    using KeyType = typename ParentType::KeyType;
+    using DataType = typename ParentType::DataType;
+    using PathElement = typename ParentType::PathElement;
 
     using ParentType::_leaf;
     using ParentType::_path;
@@ -615,7 +614,7 @@ public:
 
 protected:
     /** Pointer to seek node and path index to the parent node **/
-    typedef std::pair<const BTreeNode *, uint32_t> SeekNode;
+    using SeekNode = std::pair<const BTreeNode *, uint32_t>;
 
 public:
     /**
@@ -800,22 +799,21 @@ class BTreeIterator : public BTreeConstIterator<KeyT, DataT, AggrT,
                                                 CompareT, TraitsT>
 {
 public:
-    typedef BTreeConstIterator<KeyT,
-                               DataT,
-                               AggrT,
-                               CompareT,
-                               TraitsT> ParentType;
-    typedef typename ParentType::NodeAllocatorType NodeAllocatorType;
-    typedef typename ParentType::InternalNodeType InternalNodeType;
-    typedef typename ParentType::LeafNodeType LeafNodeType;
-    typedef typename ParentType::InternalNodeTypeRefPair
-    InternalNodeTypeRefPair;
-    typedef typename ParentType::LeafNodeTypeRefPair LeafNodeTypeRefPair;
-    typedef typename ParentType::LeafNodeTempType LeafNodeTempType;
-    typedef typename ParentType::KeyDataType KeyDataType;
-    typedef typename ParentType::KeyType KeyType;
-    typedef typename ParentType::DataType DataType;
-    typedef typename ParentType::PathElement PathElement;
+    using ParentType = BTreeConstIterator<KeyT,
+                                          DataT,
+                                          AggrT,
+                                          CompareT,
+                                          TraitsT>;
+    using NodeAllocatorType = typename ParentType::NodeAllocatorType;
+    using InternalNodeType = typename ParentType::InternalNodeType;
+    using LeafNodeType = typename ParentType::LeafNodeType;
+    using InternalNodeTypeRefPair = typename ParentType::InternalNodeTypeRefPair;
+    using LeafNodeTypeRefPair = typename ParentType::LeafNodeTypeRefPair;
+    using LeafNodeTempType = typename ParentType::LeafNodeTempType;
+    using KeyDataType = typename ParentType::KeyDataType;
+    using KeyType = typename ParentType::KeyType;
+    using DataType = typename ParentType::DataType;
+    using PathElement = typename ParentType::PathElement;
     template <typename, typename, typename, typename, typename, class>
     friend class BTreeInserter;
     template <typename, typename, typename, size_t, size_t, class>

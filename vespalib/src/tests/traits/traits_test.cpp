@@ -13,7 +13,7 @@ struct Simple {
     Simple(const Simple &rhs) : value(rhs.value), moved(rhs.moved) {}
     Simple(Simple &&rhs) : value(rhs.value), moved(rhs.moved + 1) {}
 };
-typedef std::unique_ptr<Simple> Hard;
+using Hard = std::unique_ptr<Simple>;
 
 struct Base {
     virtual void foo() = 0;

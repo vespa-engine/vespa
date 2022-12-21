@@ -67,7 +67,7 @@ public:
         size_t _i;
     };
 
-    typedef std::unique_ptr<IArrayT> UP;
+    using UP = std::unique_ptr<IArrayT>;
     virtual const B &operator[](size_t i) const = 0;
     virtual B &operator[](size_t i) = 0;
     virtual IArrayT *clone() const override = 0;

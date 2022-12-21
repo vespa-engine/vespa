@@ -23,23 +23,22 @@ template <typename KeyT,
 class BTree
 {
 public:
-    typedef BTreeRoot<KeyT, DataT, AggrT, CompareT, TraitsT,
-                      AggrCalcT> TreeType;
-    typedef BTreeNodeAllocator<KeyT, DataT, AggrT,
-                               TraitsT::INTERNAL_SLOTS,
-                               TraitsT::LEAF_SLOTS> NodeAllocatorType;
-    typedef BTreeBuilder<KeyT, DataT, AggrT,
-                         TraitsT::INTERNAL_SLOTS,
-                         TraitsT::LEAF_SLOTS,
-                         AggrCalcT> Builder;
-    typedef typename TreeType::InternalNodeType InternalNodeType;
-    typedef typename TreeType::LeafNodeType LeafNodeType;
-    typedef typename TreeType::KeyType KeyType;
-    typedef typename TreeType::DataType DataType;
-    typedef typename TreeType::Iterator Iterator;
-    typedef typename TreeType::ConstIterator ConstIterator;
-    typedef typename TreeType::FrozenView FrozenView;
-    typedef typename TreeType::AggrCalcType  AggrCalcType;
+    using TreeType = BTreeRoot<KeyT, DataT, AggrT, CompareT, TraitsT, AggrCalcT>;
+    using NodeAllocatorType = BTreeNodeAllocator<KeyT, DataT, AggrT,
+                                                 TraitsT::INTERNAL_SLOTS,
+                                                 TraitsT::LEAF_SLOTS>;
+    using Builder = BTreeBuilder<KeyT, DataT, AggrT,
+                                 TraitsT::INTERNAL_SLOTS,
+                                 TraitsT::LEAF_SLOTS,
+                                 AggrCalcT>;
+    using InternalNodeType = typename TreeType::InternalNodeType;
+    using LeafNodeType = typename TreeType::LeafNodeType;
+    using KeyType = typename TreeType::KeyType;
+    using DataType = typename TreeType::DataType;
+    using Iterator = typename TreeType::Iterator;
+    using ConstIterator = typename TreeType::ConstIterator;
+    using FrozenView = typename TreeType::FrozenView;
+    using AggrCalcType = typename TreeType::AggrCalcType;
 private:
     NodeAllocatorType   _alloc;
     TreeType            _tree;

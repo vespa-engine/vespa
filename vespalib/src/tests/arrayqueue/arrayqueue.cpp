@@ -52,21 +52,21 @@ struct FunkyItem {
 };
 
 struct Copy {
-    typedef ArrayQueue<Int> Q;
+    using Q = ArrayQueue<Int>;
     static void push(Q &q, int v) { Int value(v); q.push(value); }
     static void pushFront(Q &q, int v) { Int value(v); q.pushFront(value); }
     static void set(Q &q, int idx, int val) { q.access(idx) = val; }
 };
 
 struct Move {
-    typedef ArrayQueue<std::unique_ptr<Int> > Q;
+    using Q = ArrayQueue<std::unique_ptr<Int> >;
     static void push(Q &q, int v) { q.push(std::unique_ptr<Int>(new Int(v))); }
     static void pushFront(Q &q, int v) { q.pushFront(std::unique_ptr<Int>(new Int(v))); }
     static void set(Q &q, int idx, int val) { *q.access(idx) = val; }
 };
 
 struct Emplace {
-    typedef ArrayQueue<FunkyItem> Q;
+    using Q = ArrayQueue<FunkyItem>;
     static void push(Q &q, int v) { q.emplace(v, v); }
     static void pushFront(Q &q, int v) { q.emplaceFront(v, v); }
     static void set(Q &q, int idx, int val) {
@@ -199,7 +199,7 @@ template <typename T> void subTestCopy() { TEST_ERROR("undefined"); }
 template <> void subTestCopy<Emplace>() {}
 template <> void subTestCopy<Move>() {}
 template <> void subTestCopy<Copy>() {
-    typedef Copy T;
+    using T = Copy;
     { // copy construct queue
         T::Q q1;
         T::push(q1, 1);

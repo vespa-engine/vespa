@@ -9,7 +9,7 @@
 
 using namespace vespalib;
 
-typedef Executor::Task Task;
+using Task = Executor::Task;
 
 struct MyTask : public Executor::Task {
     Gate &gate;

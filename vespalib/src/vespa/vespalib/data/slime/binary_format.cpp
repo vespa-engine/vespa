@@ -134,7 +134,7 @@ struct MappedSymbols {
 
 template <bool remap_symbols>
 struct SymbolHandler {
-    typedef typename std::conditional<remap_symbols, MappedSymbols, DirectSymbols>::type type;
+    using type = typename std::conditional<remap_symbols, MappedSymbols, DirectSymbols>::type;
 };
 
 template <bool remap_symbols>

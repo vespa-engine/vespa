@@ -47,7 +47,7 @@ struct MMapInfo {
     size_t _sz;
     string _stackTrace;
 };
-typedef std::map<const void *, MMapInfo> MMapStore;
+using MMapStore = std::map<const void *, MMapInfo>;
 MMapStore _G_HugeMappings;
 
 size_t

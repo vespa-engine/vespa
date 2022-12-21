@@ -201,7 +201,7 @@ public:
         void max(int64_t value) { _max = value; }
         bool operator<(const Range &rhs) const { return (_min < rhs._min); }
     };
-    typedef std::vector<Range> RangeVector;
+    using RangeVector = std::vector<Range>;
 
     /**
      * Given an inclusive bounding box, return a set of ranges in

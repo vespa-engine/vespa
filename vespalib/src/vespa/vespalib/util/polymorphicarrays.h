@@ -38,8 +38,8 @@ class ComplexArrayT final : public IArrayT<B>
 public:
     class Factory {
     public:
-        typedef std::unique_ptr<Factory> UP;
-        typedef vespalib::CloneablePtr<Factory> CP;
+        using UP = std::unique_ptr<Factory>;
+        using CP = vespalib::CloneablePtr<Factory>;
         virtual B * create() = 0;
         virtual Factory * clone() const = 0;
         virtual ~Factory() { }
@@ -63,7 +63,7 @@ public:
     iterator erase(iterator it) override  { _array.erase(_array.begin() + (it - this->begin())); return it; }
     void push_back(const B & v) override { _array.push_back(v.clone()); }
 private:
-    typedef vespalib::CloneablePtr<B> CP;
+    using CP = vespalib::CloneablePtr<B>;
     std::vector<CP> _array;
     typename Factory::CP _factory;
 };

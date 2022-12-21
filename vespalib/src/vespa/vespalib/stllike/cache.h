@@ -28,9 +28,9 @@ public:
 template<typename P, typename B, typename sizeK = vespalib::zero<typename P::Key>, typename sizeV = vespalib::zero<typename P::Value> >
 struct CacheParam : public P
 {
-    typedef B BackingStore;
-    typedef sizeK SizeK;
-    typedef sizeV SizeV;
+    using BackingStore = B;
+    using SizeK = sizeK;
+    using SizeV = sizeV;
 };
 
 /**
@@ -46,13 +46,13 @@ class cache : private lrucache_map<P>
 {
     using Lru = lrucache_map<P>;
 protected:
-    typedef typename P::BackingStore   BackingStore;
-    typedef typename P::Hash  Hash;
-    typedef typename P::Key   K;
-    typedef typename P::Value V;
-    typedef typename P::SizeK SizeK;
-    typedef typename P::SizeV SizeV;
-    typedef typename P::value_type value_type;
+    using BackingStore = typename P::BackingStore;
+    using Hash = typename P::Hash;
+    using K = typename P::Key;
+    using V = typename P::Value;
+    using SizeK = typename P::SizeK;
+    using SizeV = typename P::SizeV;
+    using value_type = typename P::value_type;
 public:
     /**
      * Will create a cache that populates on demand from the backing store.

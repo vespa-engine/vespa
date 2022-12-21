@@ -27,7 +27,7 @@ namespace vespalib {
 class Version
 {
 public:
-    typedef vespalib::string string;
+    using string = vespalib::string;
 private:
     int _major;
     int _minor;

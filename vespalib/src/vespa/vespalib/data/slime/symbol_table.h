@@ -26,7 +26,7 @@ private:
     SymbolVector _names;
 
 public:
-    typedef std::unique_ptr<SymbolTable> UP;
+    using UP = std::unique_ptr<SymbolTable>;
     SymbolTable(size_t expectedNumSymbols=16);
     ~SymbolTable();
     size_t symbols() const noexcept { return _names.size(); }

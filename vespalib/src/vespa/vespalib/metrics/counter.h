@@ -49,8 +49,8 @@ public:
         Increment(Key k, size_t v) : idx(k), value(v) {}
     };
 
-    typedef CounterAggregator aggregator_type;
-    typedef Increment sample_type;
+    using aggregator_type = CounterAggregator;
+    using sample_type = Increment;
 };
 
 } // namespace vespalib::metrics

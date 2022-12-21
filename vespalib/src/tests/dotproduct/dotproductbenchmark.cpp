@@ -112,7 +112,7 @@ std::function<void(int64_t)> use_sum = [](int64_t) noexcept { };
 class UnorderedSparseBenchmark : public SparseBenchmark
 {
 private:
-    typedef hash_map<uint32_t, int32_t> map;
+    using map = hash_map<uint32_t, int32_t>;
 public:
     UnorderedSparseBenchmark(size_t numDocs, size_t numValues, size_t numQueryValues);
     ~UnorderedSparseBenchmark();

@@ -12,7 +12,7 @@ namespace vespalib {
 template <typename T>
 struct Sequence
 {
-    typedef std::unique_ptr<Sequence> UP;
+    using UP = std::unique_ptr<Sequence>;
 
     virtual bool valid() const = 0;
     virtual T get() const = 0;

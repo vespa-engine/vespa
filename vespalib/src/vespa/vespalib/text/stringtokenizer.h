@@ -21,9 +21,9 @@ namespace vespalib {
 
 class StringTokenizer {
 public:
-    typedef vespalib::stringref Token;
-    typedef std::vector<Token> TokenList;
-    typedef TokenList::const_iterator Iterator;
+    using Token = vespalib::stringref;
+    using TokenList = std::vector<Token>;
+    using Iterator = TokenList::const_iterator;
 
     /**
      * @brief Split source on separators with optional trim.

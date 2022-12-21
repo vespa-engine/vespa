@@ -35,8 +35,8 @@ public:
     int getCtorCnt() const { return _d.ctorCnt; }
     int getDtorCnt() const { return _d.dtorCnt; }
 };
-typedef std::shared_ptr<DataRef> PT;
-typedef PtrHolder<DataRef> HOLD;
+using PT = std::shared_ptr<DataRef>;
+using HOLD = PtrHolder<DataRef>;
 
 
 void

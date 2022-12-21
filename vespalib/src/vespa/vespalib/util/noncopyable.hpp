@@ -20,7 +20,7 @@ namespace noncopyable_
   };
 }
 
-typedef noncopyable_::noncopyable noncopyable;
+using noncopyable = noncopyable_::noncopyable;
 
 } // namespace vespalib
 

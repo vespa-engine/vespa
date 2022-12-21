@@ -4,7 +4,7 @@
 #include <vector>
 #include <cinttypes>
 
-typedef vespalib::geo::ZCurve Z;
+using Z = vespalib::geo::ZCurve;
 
 bool inside(int x, int y, const Z::RangeVector &ranges) {
     int64_t z = Z::encode(x, y);
