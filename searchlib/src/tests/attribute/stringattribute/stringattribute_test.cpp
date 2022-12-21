@@ -20,12 +20,12 @@ using search::attribute::StringSearchHelper;
 using vespalib::datastore::EntryRef;
 using namespace search;
 
-typedef ArrayStringAttribute ArrayStr;
-typedef WeightedSetStringAttribute WeightedSetStr;
-typedef ArrayStringPostingAttribute ArrayStrPosting;
-typedef WeightedSetStringPostingAttribute WeightedSetStrPosting;
-typedef attribute::Config Config;
-typedef attribute::BasicType BasicType;
+using ArrayStr = ArrayStringAttribute;
+using WeightedSetStr = WeightedSetStringAttribute;
+using ArrayStrPosting = ArrayStringPostingAttribute;
+using WeightedSetStrPosting = WeightedSetStringPostingAttribute;
+using Config = attribute::Config;
+using BasicType = attribute::BasicType;
 
 template <typename Attribute>
 void

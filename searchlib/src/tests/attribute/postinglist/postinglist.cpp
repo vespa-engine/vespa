@@ -27,8 +27,8 @@ class AttributePostingListTest : public vespalib::TestApp
 {
 private:
     /* Limited STL version for validation of full version */
-    typedef std::set<uint32_t> STLPostingList;
-    typedef std::map<int, STLPostingList> STLValueTree;
+    using STLPostingList = std::set<uint32_t>;
+    using STLValueTree = std::map<int, STLPostingList>;
 
     class RandomValue
     {
@@ -96,18 +96,16 @@ private:
     std::vector<RandomValue> _randomValues;
 
 public:
-    typedef vespalib::datastore::DataStore<int> IntKeyStore;
-    typedef vespalib::btree::BTreeKeyData<uint32_t, vespalib::btree::BTreeNoLeafData>
-    AttributePosting;
-    typedef vespalib::btree::BTreeStore<uint32_t,
+    using IntKeyStore = vespalib::datastore::DataStore<int>;
+    using AttributePosting = vespalib::btree::BTreeKeyData<uint32_t, vespalib::btree::BTreeNoLeafData>;
+    using PostingList = vespalib::btree::BTreeStore<uint32_t,
                               vespalib::btree::BTreeNoLeafData,
                               vespalib::btree::NoAggregated,
                               std::less<uint32_t>,
-                              vespalib::btree::BTreeDefaultTraits>
-    PostingList;
-    typedef PostingList::NodeAllocatorType PostingListNodeAllocator;
-    typedef vespalib::datastore::EntryRef PostingIdx;
-    typedef vespalib::datastore::EntryRef StoreIndex;
+                              vespalib::btree::BTreeDefaultTraits>;
+    using PostingListNodeAllocator = PostingList::NodeAllocatorType;
+    using PostingIdx = vespalib::datastore::EntryRef;
+    using StoreIndex = vespalib::datastore::EntryRef;
 
     class IntComp {
     private:
@@ -127,14 +125,14 @@ public:
         }
     };
 
-    typedef vespalib::btree::BTreeRoot<StoreIndex, PostingIdx,
+    using IntEnumTree = vespalib::btree::BTreeRoot<StoreIndex, PostingIdx,
                              vespalib::btree::NoAggregated,
-                             const IntComp &> IntEnumTree;
-    typedef IntEnumTree::NodeAllocatorType IntEnumNodeAllocator;
-    typedef IntEnumTree Tree;
-    typedef IntEnumNodeAllocator TreeManager;
-    typedef IntKeyStore ValueHandle;
-    typedef std::vector<RandomValue> RandomValuesVector;
+                             const IntComp &>;
+    using IntEnumNodeAllocator = IntEnumTree::NodeAllocatorType;
+    using Tree = IntEnumTree;
+    using TreeManager = IntEnumNodeAllocator;
+    using ValueHandle = IntKeyStore;
+    using RandomValuesVector = std::vector<RandomValue>;
 private:
     GenerationHandler _handler;
     IntKeyStore *_intKeyStore;
@@ -607,7 +605,7 @@ AttributePostingListTest::doCompactEnumStore(Tree &tree,
         std::atomic_thread_fence(std::memory_order_release);
         i.writeKey(nv);
     }
-    typedef GenerationHandler::generation_t generation_t;
+    using generation_t = GenerationHandler::generation_t;
     for (std::vector<uint32_t>::const_iterator
              it = toHold.begin(), ite = toHold.end(); it != ite; ++it) {
         valueHandle.holdBuffer(*it);

@@ -19,7 +19,7 @@ struct IDocumentMetaStoreContext {
      */
     struct IReadGuard {
 
-        typedef std::unique_ptr<IReadGuard> UP;
+        using UP = std::unique_ptr<IReadGuard>;
 
         virtual ~IReadGuard() {}
 

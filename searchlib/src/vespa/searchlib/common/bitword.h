@@ -10,8 +10,8 @@ namespace search {
 
 class BitWord {
 public:
-    typedef uint64_t Word;
-    typedef uint32_t Index;
+    using Word = uint64_t;
+    using Index = uint32_t;
     static Word checkTab(Index index) { return _checkTab[bitNum(index)]; }
     static Word startBits(Index index) { return (std::numeric_limits<Word>::max() >> 1) >> (WordLen - 1 - bitNum(index)); }
     static constexpr size_t WordLen = sizeof(Word)*8;

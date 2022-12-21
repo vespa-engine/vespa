@@ -85,7 +85,7 @@ public:
         uint32_t _sz;
         uint32_t _offset;
     };
-    typedef std::vector<Entry> LidList;
+    using LidList = std::vector<Entry>;
     Chunk(uint32_t id, const Config & config);
     Chunk(uint32_t id, const void * buffer, size_t len, bool skipcrc=false);
     ~Chunk();
@@ -116,7 +116,7 @@ private:
     mutable std::mutex            _lock;
 };
 
-typedef std::vector<ChunkMeta> ChunkMetaV;
+using ChunkMetaV = std::vector<ChunkMeta>;
 
 } // namespace search
 

@@ -26,8 +26,8 @@ public:
     ZcPosOccRandRead();
     ~ZcPosOccRandRead();
 
-    typedef index::PostingListCounts PostingListCounts;
-    typedef index::PostingListHandle PostingListHandle;
+    using PostingListCounts = index::PostingListCounts;
+    using PostingListHandle = index::PostingListHandle;
 
     /**
      * Create iterator for single word.  Semantic lifetime of counts and

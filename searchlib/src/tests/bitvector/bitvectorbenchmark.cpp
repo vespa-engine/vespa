@@ -152,7 +152,7 @@ BitVectorBenchmark::testCountSpeed3()
 
 void BitVectorBenchmark::testOrSpeed2()
 {
-    typedef uint64_t T;
+    using T = uint64_t;
     T * a = reinterpret_cast<T *>(_bv[0]->getStart());
     const T * b = reinterpret_cast<const T *>(_bv[1]->getStart());
     size_t sz = _bv[0]->size()/(8*sizeof(*a));

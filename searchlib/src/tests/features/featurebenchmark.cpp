@@ -29,21 +29,21 @@ using search::AttributeFactory;
 using search::IntegerAttribute;
 using search::StringAttribute;
 
-typedef search::attribute::Config           AVC;
-typedef search::attribute::BasicType        AVBT;
-typedef search::attribute::CollectionType AVCT;
+using AVC = search::attribute::Config;
+using AVBT = search::attribute::BasicType;
+using AVCT = search::attribute::CollectionType;
 
-typedef AttributeVector::SP             AttributePtr;
+using AttributePtr = AttributeVector::SP;
 
 using CollectionType = FieldInfo::CollectionType;
 
 class Benchmark : public FtTestApp {
 public:
-    typedef std::vector<std::pair<vespalib::string, vespalib::string> > KeyValueVector;
+    using KeyValueVector = std::vector<std::pair<vespalib::string, vespalib::string> >;
 
     class Config {
     private:
-        typedef std::map<vespalib::string, vespalib::string> StringMap;
+        using StringMap = std::map<vespalib::string, vespalib::string>;
         StringMap _config;
 
         bool isKnown(const vespalib::string & key) const;

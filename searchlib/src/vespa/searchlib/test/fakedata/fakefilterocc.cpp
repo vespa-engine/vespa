@@ -21,8 +21,8 @@ FakeFilterOcc::FakeFilterOcc(const FakeWord &fw)
 {
     std::vector<uint32_t> fake;
 
-    typedef FakeWord FW;
-    typedef FW::DocWordFeatureList DWFL;
+    using FW = FakeWord;
+    using DWFL = FW::DocWordFeatureList;
 
     DWFL::const_iterator d(fw._postings.begin());
     DWFL::const_iterator de(fw._postings.end());

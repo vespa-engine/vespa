@@ -16,7 +16,7 @@ template <typename HEAP, typename IteratorPack>
 class DotProductSearchImpl : public DotProductSearch
 {
 private:
-    typedef uint32_t ref_t;
+    using ref_t = uint32_t;
 
     struct CmpDocId {
         const uint32_t *termPos;
@@ -161,8 +161,8 @@ DotProductSearch::create(const std::vector<SearchIterator*> &children,
                          const std::vector<int32_t> &weights,
                          MatchData::UP md)
 {
-    typedef DotProductSearchImpl<vespalib::LeftArrayHeap, SearchIteratorPack> ArrayHeapImpl;
-    typedef DotProductSearchImpl<vespalib::LeftHeap, SearchIteratorPack> HeapImpl;
+    using ArrayHeapImpl = DotProductSearchImpl<vespalib::LeftArrayHeap, SearchIteratorPack>;
+    using HeapImpl = DotProductSearchImpl<vespalib::LeftHeap, SearchIteratorPack>;
 
     if (childMatch.size() == 1) {
         return std::make_unique<SingleTermDotProductSearch>(tmd, SearchIterator::UP(children[0]),
@@ -182,8 +182,8 @@ DotProductSearch::create(TermFieldMatchData &tmd,
                          const std::vector<int32_t> &weights,
                          std::vector<DocumentWeightIterator> &&iterators)
 {
-    typedef DotProductSearchImpl<vespalib::LeftArrayHeap, AttributeIteratorPack> ArrayHeapImpl;
-    typedef DotProductSearchImpl<vespalib::LeftHeap, AttributeIteratorPack> HeapImpl;
+    using ArrayHeapImpl = DotProductSearchImpl<vespalib::LeftArrayHeap, AttributeIteratorPack>;
+    using HeapImpl = DotProductSearchImpl<vespalib::LeftHeap, AttributeIteratorPack>;
 
     if (iterators.size() < 128) {
         return std::make_unique<ArrayHeapImpl>(tmd, field_is_filter, weights, AttributeIteratorPack(std::move(iterators)));

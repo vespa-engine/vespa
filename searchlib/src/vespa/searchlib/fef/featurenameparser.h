@@ -14,8 +14,8 @@ namespace search::fef {
 class FeatureNameParser
 {
 public:
-    typedef vespalib::string string;
-    typedef std::vector<string> StringVector;
+    using string = vespalib::string;
+    using StringVector = std::vector<string>;
 private:
     bool                _valid;
     uint32_t            _endPos;

@@ -42,7 +42,7 @@ using CollectionType = FieldInfo::CollectionType;
 //---------------------------------------------------------------------------------------------------------------------
 // TermPositionList
 //---------------------------------------------------------------------------------------------------------------------
-typedef std::pair<uint32_t, uint32_t> TermPosition;
+using TermPosition = std::pair<uint32_t, uint32_t>;
 class TermPositionList : public std::vector<TermPosition> {
 public:
     TermPositionList &add(uint32_t termId, uint32_t pos) {

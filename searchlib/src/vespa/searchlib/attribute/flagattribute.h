@@ -8,14 +8,14 @@
 
 namespace search {
 
-typedef MultiValueNumericAttribute< IntegerAttributeTemplate<int8_t>, int8_t > FlagBaseImpl;
+using FlagBaseImpl = MultiValueNumericAttribute< IntegerAttributeTemplate<int8_t>, int8_t >;
 
 template <typename B>
 class FlagAttributeT : public B {
 public:
     FlagAttributeT(const vespalib::string & baseFileName, const AttributeVector::Config & cfg);
 private:
-    typedef AttributeVector::DocId DocId;
+    using DocId = AttributeVector::DocId;
     bool onLoad(vespalib::Executor *executor) override;
     bool onLoadEnumerated(ReaderBase &attrReader) override;
     std::unique_ptr<attribute::SearchContext>
@@ -43,7 +43,7 @@ private:
     uint32_t                                         _bitVectorSize;
 };
 
-typedef FlagAttributeT<FlagBaseImpl> FlagAttribute;
+using FlagAttribute = FlagAttributeT<FlagBaseImpl>;
 
 } // namespace search
 

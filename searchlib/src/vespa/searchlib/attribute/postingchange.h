@@ -19,8 +19,8 @@ template <typename P>
 class PostingChange
 {
 public:
-    typedef vespalib::Array<P> A;
-    typedef std::vector<uint32_t> R;
+    using A = vespalib::Array<P>;
+    using R = std::vector<uint32_t>;
     A _additions;
     R _removals;
 
@@ -57,7 +57,7 @@ template <typename WeightedIndex, typename PostingMap>
 class PostingChangeComputerT
 {
 private:
-    typedef std::vector<std::pair<uint32_t, std::vector<WeightedIndex>>> DocIndices;
+    using DocIndices = std::vector<std::pair<uint32_t, std::vector<WeightedIndex>>>;
 public:
     template <typename MultivalueMapping>
     static PostingMap compute(const MultivalueMapping & mvm, const DocIndices & docIndices,

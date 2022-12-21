@@ -124,7 +124,7 @@ writeCounts(const PostingListCounts &counts)
         encodeExpGolomb(numChunks, K_VALUE_COUNTFILE_NUMCHUNKS);
     }
     if (numChunks != 0) {
-        typedef std::vector<PostingListCounts::Segment>::const_iterator segit;
+        using segit = std::vector<PostingListCounts::Segment>::const_iterator;
 
         segit ite = counts._segments.end();
 

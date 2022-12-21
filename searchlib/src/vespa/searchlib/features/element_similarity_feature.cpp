@@ -20,7 +20,7 @@ namespace {
 //-----------------------------------------------------------------------------
 
 struct Aggregator {
-    typedef std::unique_ptr<Aggregator> UP;
+    using UP = std::unique_ptr<Aggregator>;
     virtual UP create() const = 0;
     virtual void clear() = 0;
     virtual void add(double) = 0;
@@ -79,7 +79,7 @@ create_aggregator(const vespalib::string &name) {
 
 typedef double (*function_5)(double, double, double, double, double);
 
-typedef std::pair<function_5, Aggregator::UP> OutputSpec;
+using OutputSpec = std::pair<function_5, Aggregator::UP>;
 
 //-----------------------------------------------------------------------------
 
@@ -111,7 +111,7 @@ struct VectorizedQueryTerms {
         for (uint32_t i = 0; i < env.getNumTerms(); ++i) {
             const fef::ITermData *termData = env.getTerm(i);
             if (termData->getWeight().percent() != 0) { // only consider query terms with contribution
-                typedef fef::ITermFieldRangeAdapter FRA;
+                using FRA = fef::ITermFieldRangeAdapter;
                 for (FRA iter(*termData); iter.valid(); iter.next()) {
                     const fef::ITermFieldData &tfd = iter.get();
                     if (tfd.getFieldId() == field_id) {
@@ -200,7 +200,7 @@ struct State {
 class ElementSimilarityExecutor : public fef::FeatureExecutor
 {
 private:
-    typedef fef::TermFieldMatchData::PositionsIterator ITR;
+    using ITR = fef::TermFieldMatchData::PositionsIterator;
 
     struct CmpPosition {
         ITR *pos;
@@ -224,8 +224,8 @@ private:
         }
     };
 
-    typedef vespalib::PriorityQueue<uint16_t, CmpPosition> PositionQueue;
-    typedef vespalib::PriorityQueue<uint16_t, CmpElement> ElementQueue;
+    using PositionQueue = vespalib::PriorityQueue<uint16_t, CmpPosition>;
+    using ElementQueue = vespalib::PriorityQueue<uint16_t, CmpElement>;
 
     VectorizedQueryTerms    _terms;
     std::vector<ITR>        _pos;

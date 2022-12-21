@@ -2037,7 +2037,7 @@ Test::testRankingExpression()
 vespalib::string
 Test::getExpression(const vespalib::string &parameter) const
 {
-    typedef search::fef::FeatureNameBuilder FNB;
+    using FNB = search::fef::FeatureNameBuilder;
     return FNB().baseName("rankingExpression").parameter(parameter).buildName();
 }
 
@@ -2148,7 +2148,7 @@ Test::testTermDistance()
     }
 
     { // test executor
-        typedef TermDistanceCalculator::Result Result;
+        using Result = TermDistanceCalculator::Result;
         const uint32_t UV = TermDistanceCalculator::UNDEFINED_VALUE;
 
         EXPECT_TRUE(assertTermDistance(Result(), "a b", "x x"));

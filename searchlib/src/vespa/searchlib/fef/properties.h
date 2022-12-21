@@ -23,8 +23,8 @@ class Properties;
 class Property
 {
 public:
-    typedef vespalib::string Value;
-    typedef std::vector<Value> Values;
+    using Value = vespalib::string;
+    using Values = std::vector<Value>;
 private:
     friend class Properties;
 
@@ -159,7 +159,7 @@ private:
     static uint32_t rawHash(const void *buf, uint32_t len);
 
 public:
-    typedef std::unique_ptr<Properties> UP;
+    using UP = std::unique_ptr<Properties>;
 
     /**
      * Create an empty properties object.

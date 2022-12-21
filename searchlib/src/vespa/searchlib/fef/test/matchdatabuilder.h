@@ -53,11 +53,11 @@ public:
     /**
      * Convenience typedefs.
      */
-    typedef std::unique_ptr<MatchDataBuilder>    UP;
-    typedef std::map<uint32_t, MyField>        IndexData;      // index data per field
-    typedef std::set<Position>                 Positions;      // match information for a single term and field combination
-    typedef std::map<uint32_t, Positions>      FieldPositions; // position information per field for a single term
-    typedef std::map<uint32_t, FieldPositions> TermMap;        // maps term id to map of position information per field
+    using UP = std::unique_ptr<MatchDataBuilder>;
+    using IndexData = std::map<uint32_t, MyField>;      // index data per field
+    using Positions = std::set<Position>;      // match information for a single term and field combination
+    using FieldPositions = std::map<uint32_t, Positions>; // position information per field for a single term
+    using TermMap = std::map<uint32_t, FieldPositions>;        // maps term id to map of position information per field
 
 public:
     /**

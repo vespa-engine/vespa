@@ -21,9 +21,9 @@ class AttributeManager : public IAttributeManager
 private:
     using Config = attribute::Config;
 public:
-    typedef std::vector<string> StringVector;
-    typedef search::IndexMetaInfo::Snapshot Snapshot;
-    typedef std::vector<AttributeGuard> AttributeList;
+    using StringVector = std::vector<string>;
+    using Snapshot = search::IndexMetaInfo::Snapshot;
+    using AttributeList = std::vector<AttributeGuard>;
     using VectorHolder = std::shared_ptr<AttributeVector>;
     AttributeManager();
     AttributeManager(const string & base);
@@ -58,7 +58,7 @@ public:
     uint64_t getMemoryFootprint() const;
 
 protected:
-    typedef vespalib::hash_map<string, VectorHolder> AttributeMap;
+    using AttributeMap = vespalib::hash_map<string, VectorHolder>;
     AttributeMap   _attributes;
     mutable std::mutex _loadLock;
 private:

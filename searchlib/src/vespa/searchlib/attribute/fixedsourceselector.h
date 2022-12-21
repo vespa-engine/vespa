@@ -18,7 +18,7 @@ private:
 
     using IIterator = queryeval::sourceselector::Iterator;
 public:
-    typedef std::unique_ptr<FixedSourceSelector> UP;
+    using UP = std::unique_ptr<FixedSourceSelector>;
     class Iterator : public IIterator {
     private:
         AttributeGuard _attributeGuard;

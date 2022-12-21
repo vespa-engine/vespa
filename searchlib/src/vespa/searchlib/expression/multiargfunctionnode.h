@@ -9,7 +9,7 @@ namespace expression {
 class MultiArgFunctionNode : public FunctionNode
 {
 public:
-    typedef std::vector<ExpressionNode::CP> ExpressionNodeVector;
+    using ExpressionNodeVector = std::vector<ExpressionNode::CP>;
     DECLARE_NBO_SERIALIZE;
     void visitMembers(vespalib::ObjectVisitor & visitor) const override;
     DECLARE_ABSTRACT_EXPRESSIONNODE(MultiArgFunctionNode);

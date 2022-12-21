@@ -6,8 +6,8 @@
 
 using namespace search::fef;
 
-typedef TermMatchDataMerger::Input MDMI;
-typedef TermMatchDataMerger::Inputs MDMIs;
+using MDMI = TermMatchDataMerger::Input;
+using MDMIs = TermMatchDataMerger::Inputs;
 
 namespace {
 

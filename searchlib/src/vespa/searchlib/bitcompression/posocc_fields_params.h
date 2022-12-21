@@ -18,8 +18,8 @@ class PosOccFieldsParams
     std::vector<PosOccFieldParams> _params;
 
 public:
-    typedef index::PostingListParams PostingListParams;
-    typedef index::Schema Schema;
+    using PostingListParams = index::PostingListParams;
+    using Schema = index::Schema;
 
     PosOccFieldsParams();
     PosOccFieldsParams(const PosOccFieldsParams &rhs);

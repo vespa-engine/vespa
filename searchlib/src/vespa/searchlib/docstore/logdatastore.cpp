@@ -338,7 +338,7 @@ LogDataStore::initFlush(uint64_t syncToken)
 std::pair<bool, LogDataStore::FileId>
 LogDataStore::findNextToCompact(bool dueToBloat)
 {
-    typedef std::multimap<double, FileId, std::greater<double>> CostMap;
+    using CostMap = std::multimap<double, FileId, std::greater<double>>;
     CostMap worst;
     MonitorGuard guard(_updateLock);
     for (size_t i(0); i < _fileChunks.size(); i++) {
@@ -775,7 +775,7 @@ LogDataStore::preload()
     if (!partList.empty()) {
         verifyModificationTime(partList);
         partList = scanDir(getBaseDir(), ".idx");
-        typedef NameIdSet::const_iterator It;
+        using It = NameIdSet::const_iterator;
         for (It it(partList.begin()), mt(--partList.end()); it != mt; it++) {
             _fileChunks.push_back(createReadOnlyFile(FileId(_fileChunks.size()), *it));
         }
@@ -867,7 +867,7 @@ LogDataStore::eraseIncompleteCompactedFiles(NameIdSet partList)
 void
 LogDataStore::eraseDanglingDatFiles(const NameIdSet &partList, const NameIdSet &datPartList)
 {
-    typedef NameIdSet::const_iterator IT;
+    using IT = NameIdSet::const_iterator;
     
     IT iib(partList.begin());
     IT ii(iib);

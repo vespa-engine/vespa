@@ -62,7 +62,7 @@ public:
 class AttributeSearcher : public Runnable
 {
 protected:
-    typedef AttributeVector::SP AttributePtr;
+    using AttributePtr = AttributeVector::SP;
 
     const AttributePtr    & _attrPtr;
     vespalib::Timer         _timer;

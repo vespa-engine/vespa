@@ -21,7 +21,7 @@ class OnnxModel;
 class IIndexEnvironment
 {
 public:
-    typedef vespalib::string string;
+    using string = vespalib::string;
     /**
      * This enum defines the different motivations the framework has
      * for configuring a feature blueprint. RANK means the feature is

@@ -44,7 +44,7 @@ using search::attribute::SearchContextParams;
 using search::fef::TermFieldMatchData;
 
 using SearchContextPtr = std::unique_ptr<SearchContext>;
-typedef std::unique_ptr<search::queryeval::SearchIterator> SearchBasePtr;
+using SearchBasePtr = std::unique_ptr<search::queryeval::SearchIterator>;
 
 
 class MemAttrFileWriter : public IAttributeFileWriter
@@ -93,7 +93,7 @@ private:
     MemAttrFileWriter _udatWriter;
 
 public:
-    typedef std::shared_ptr<MemAttr> SP;
+    using SP = std::shared_ptr<MemAttr>;
 
     MemAttr();
     ~MemAttr() override;
@@ -129,7 +129,7 @@ MemAttr::~MemAttr() = default;
 class EnumeratedSaveTest
 {
 private:
-    typedef AttributeVector::SP AttributePtr;
+    using AttributePtr = AttributeVector::SP;
 
     template <typename VectorType>
     VectorType & as(AttributePtr &v);
@@ -623,9 +623,7 @@ EnumeratedSaveTest::testReload(AttributePtr v0,
                                bool fastSearch,
                                search::DictionaryConfig dictionary_config)
 {
-    // typedef AttributePtr AVP;
-
-    bool flagAttr = 
+    bool flagAttr =
         cfg.collectionType() == CollectionType::ARRAY &&
         cfg.basicType() == BasicType::INT8 &&
         fastSearch;

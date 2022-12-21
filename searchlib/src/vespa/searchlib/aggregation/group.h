@@ -36,8 +36,8 @@ public:
     using ResultNode = expression::ResultNode;
     using ExpressionNode = expression::ExpressionNode;
     using UP = std::unique_ptr<Group>;
-    typedef Group * ChildP;
-    typedef ChildP * GroupList;
+    using ChildP = Group *;
+    using GroupList = ChildP *;
     struct GroupEqual {
         GroupEqual(const GroupList * v) : _v(v) { }
         bool operator()(uint32_t a, uint32_t b) { return (*_v)[a]->getId().cmpFast((*_v)[b]->getId()) == 0; }

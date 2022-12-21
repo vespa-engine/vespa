@@ -30,7 +30,7 @@ public:
         uint64_t                         wordNum;
         index::PostingListCounts         counts;
         uint64_t                         bitOffset;
-        typedef std::unique_ptr<LookupResult> UP;
+        using UP = std::unique_ptr<LookupResult>;
         LookupResult() noexcept;
         bool valid() const { return counts._numDocs > 0; }
         void swap(LookupResult & rhs) {
@@ -40,8 +40,8 @@ public:
             std::swap(bitOffset , rhs.bitOffset);
         }
     };
-    typedef std::vector<LookupResult> LookupResultVector;
-    typedef std::vector<uint32_t> IndexList;
+    using LookupResultVector = std::vector<LookupResult>;
+    using IndexList = std::vector<uint32_t>;
 
     class Key {
     public:

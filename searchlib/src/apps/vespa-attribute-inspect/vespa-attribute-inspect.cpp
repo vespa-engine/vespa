@@ -14,7 +14,7 @@
 
 namespace search {
 
-typedef AttributeVector::SP AttributePtr;
+using AttributePtr = AttributeVector::SP;
 
 class LoadAttribute
 {

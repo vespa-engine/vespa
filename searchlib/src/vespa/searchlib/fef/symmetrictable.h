@@ -21,7 +21,7 @@ private:
     double              _max;
 
 public:
-    typedef std::shared_ptr<SymmetricTable> SP;
+    using SP = std::shared_ptr<SymmetricTable>;
 
     SymmetricTable();
     /**

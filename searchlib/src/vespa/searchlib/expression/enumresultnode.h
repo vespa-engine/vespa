@@ -9,7 +9,7 @@ namespace expression {
 class EnumResultNode : public IntegerResultNodeT<int64_t>
 {
 private:
-    typedef IntegerResultNodeT<int64_t> Base;
+    using Base = IntegerResultNodeT<int64_t>;
 public:
     DECLARE_RESULTNODE(EnumResultNode);
     EnumResultNode(int64_t v=0) : Base(v) { }

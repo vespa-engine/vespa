@@ -24,9 +24,9 @@ template <int BucketBits, typename HashT> struct NormalSketch;
 template <int BucketBits, typename HashT>
 struct Sketch {
     enum { bucketBits = BucketBits };
-    typedef HashT hash_type;
-    typedef Sketch<BucketBits, HashT> SketchType;
-    typedef std::unique_ptr<SketchType> UP;
+    using hash_type = HashT;
+    using SketchType = Sketch<BucketBits, HashT>;
+    using UP = std::unique_ptr<SketchType>;
 
     static const HashT BUCKET_COUNT = HashT(1) << BucketBits;
     static const HashT BUCKET_MASK = BUCKET_COUNT - 1;
@@ -128,7 +128,7 @@ struct NormalSketch : Sketch<BucketBits, HashT> {
     using typename Sketch<BucketBits, HashT>::SketchType;
     using Sketch<BucketBits, HashT>::BUCKET_COUNT;
     using Sketch<BucketBits, HashT>::BUCKET_MASK;
-    typedef std::unique_ptr<NormalSketch> UP;
+    using UP = std::unique_ptr<NormalSketch>;
     enum { classId = IDENTIFIABLE_CLASSID_NS(search, NormalSketch) };
 
     uint8_t bucket[BUCKET_COUNT];

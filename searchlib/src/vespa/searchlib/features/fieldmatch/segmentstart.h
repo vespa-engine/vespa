@@ -23,8 +23,8 @@ public:
     /**
      * Convenience typedefs.
      */
-    typedef std::unique_ptr<SegmentStart> UP;
-    typedef std::shared_ptr<SegmentStart> SP;
+    using UP = std::unique_ptr<SegmentStart>;
+    using SP = std::shared_ptr<SegmentStart>;
 
 public:
     /**

@@ -77,7 +77,7 @@ private:
 
     class Collector {
     public:
-        typedef std::unique_ptr<Collector> UP;
+        using UP = std::unique_ptr<Collector>;
         virtual ~Collector() {}
         virtual void collect(uint32_t docId, feature_t score) = 0;
         virtual bool isDocIdCollector() const { return false; }

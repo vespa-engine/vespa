@@ -33,8 +33,8 @@ class BucketResultNode;
 class ResultNode : public vespalib::Identifiable
 {
 public:
-    typedef vespalib::BufferRef BufferRef;
-    typedef vespalib::ConstBufferRef ConstBufferRef;
+    using BufferRef = vespalib::BufferRef;
+    using ConstBufferRef = vespalib::ConstBufferRef;
 public:
     int64_t getInteger() const { return onGetInteger(0); }
     int64_t getEnum() const { return onGetEnum(0); }
@@ -54,8 +54,8 @@ private:
 public:
     DECLARE_ABSTRACT_RESULTNODE(ResultNode);
     ~ResultNode() { }
-    typedef std::unique_ptr<ResultNode> UP;
-    typedef vespalib::IdentifiablePtr<ResultNode> CP;
+    using UP = std::unique_ptr<ResultNode>;
+    using CP = vespalib::IdentifiablePtr<ResultNode>;
     virtual void set(const ResultNode & rhs) = 0;
 
     /**

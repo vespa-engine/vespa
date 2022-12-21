@@ -21,16 +21,16 @@ class MultiValueAttribute : public B,
                             public attribute::IMultiValueAttribute
 {
 protected:
-    typedef typename B::DocId                             DocId;
-    typedef typename B::Change                            Change;
-    typedef typename B::ChangeVector                      ChangeVector;
+    using DocId = typename B::DocId;
+    using Change = typename B::Change;
+    using ChangeVector = typename B::ChangeVector;
 
     using MultiValueType = M;
     using MultiValueMapping = attribute::MultiValueMapping<MultiValueType>;
     using ValueType = multivalue::ValueType_t<MultiValueType>;
-    typedef std::vector<MultiValueType>                   ValueVector;
+    using ValueVector = std::vector<MultiValueType>;
     using MultiValueArrayRef = vespalib::ConstArrayRef<MultiValueType>;
-    typedef std::vector<std::pair<DocId, ValueVector> >   DocumentValues;
+    using DocumentValues = std::vector<std::pair<DocId, ValueVector> >;
     using NonAtomicValueType = attribute::atomic_utils::NonAtomicValue_t<ValueType>;
 
     MultiValueMapping _mvMapping;

@@ -11,8 +11,8 @@ namespace expression {
 class ArrayOperationNode : public FunctionNode
 {
 public:
-    typedef attribute::IAttributeVector IAttributeVector;
-    typedef attribute::IAttributeContext IAttributeContext;
+    using IAttributeVector = attribute::IAttributeVector;
+    using IAttributeContext = attribute::IAttributeContext;
 
     DECLARE_NBO_SERIALIZE;
     DECLARE_ABSTRACT_EXPRESSIONNODE(ArrayOperationNode);

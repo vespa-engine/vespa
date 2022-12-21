@@ -17,7 +17,7 @@ public:
      * The iterator type of the underlying data, which have all
      * positions for a term across all fields searched.
      **/
-    typedef const TermFieldMatchDataPosition * PositionsIterator;
+    using PositionsIterator = const TermFieldMatchDataPosition *;
 
 private:
     uint32_t          _length;

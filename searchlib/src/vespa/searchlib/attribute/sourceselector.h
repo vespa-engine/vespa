@@ -35,8 +35,8 @@ public:
         HeaderInfo _header;
         AttributeMemorySaveTarget _memSaver;
     public:
-        typedef std::unique_ptr<SaveInfo> UP;
-        typedef std::shared_ptr<SaveInfo> SP;
+        using UP = std::unique_ptr<SaveInfo>;
+        using SP = std::shared_ptr<SaveInfo>;
         SaveInfo(const vespalib::string & baseFileName,
                  queryeval::Source defaultSource,
                  uint32_t baseId,
@@ -52,7 +52,7 @@ public:
     private:
         HeaderInfo _header;
     public:
-        typedef std::unique_ptr<LoadInfo> UP;
+        using UP = std::unique_ptr<LoadInfo>;
         LoadInfo(const vespalib::string & baseFileName);
         void load();
         const HeaderInfo & header() const { return _header; }
@@ -68,7 +68,7 @@ public:
     };
 
 public:
-    typedef std::unique_ptr<SourceSelector> UP;
+    using UP = std::unique_ptr<SourceSelector>;
     SourceSelector(queryeval::Source defaultSource, AttributeVector::SP realSource);
     /**
      * This will compute the distribution of the sources used over the whole lid space.

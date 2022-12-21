@@ -39,9 +39,9 @@ public:
 class FS4Properties
 {
 private:
-    typedef std::pair<uint32_t, uint32_t> StringRef;
-    typedef std::pair<StringRef, StringRef> Entry;
-    typedef std::vector<Entry> KeyValueVector;
+    using StringRef = std::pair<uint32_t, uint32_t>;
+    using Entry = std::pair<StringRef, StringRef>;
+    using KeyValueVector = std::vector<Entry>;
 
     KeyValueVector   _entries;
     vespalib::string _name;

@@ -31,7 +31,7 @@ private:
     const Props &lookup(vespalib::stringref name) const;
 
 public:
-    typedef PropsMap::const_iterator ITR;
+    using ITR = PropsMap::const_iterator;
 
     PropertiesMap();
     PropertiesMap(uint32_t sz);

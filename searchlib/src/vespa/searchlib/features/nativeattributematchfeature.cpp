@@ -28,7 +28,7 @@ NativeAttributeMatchExecutor::preComputeSetup(const IQueryEnvironment & env,
         const ITermData *termData = env.getTerm(i);
         if (termData->getWeight().percent() != 0) // only consider query terms with contribution
         {
-            typedef search::fef::ITermFieldRangeAdapter FRA;
+            using FRA = search::fef::ITermFieldRangeAdapter;
             for (FRA iter(*termData); iter.valid(); iter.next()) {
                 const ITermFieldData& tfd = iter.get();
                 uint32_t fieldId = tfd.getFieldId();

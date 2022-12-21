@@ -83,9 +83,9 @@ public:
     }
 };
 
-typedef AttrBuilder<SingleIntegerExtAttribute, int64_t> IntAttrBuilder;
-typedef AttrBuilder<SingleFloatExtAttribute, double> FloatAttrBuilder;
-typedef AttrBuilder<SingleStringExtAttribute, const char *> StringAttrBuilder;
+using IntAttrBuilder = AttrBuilder<SingleIntegerExtAttribute, int64_t>;
+using FloatAttrBuilder = AttrBuilder<SingleFloatExtAttribute, double>;
+using StringAttrBuilder = AttrBuilder<SingleStringExtAttribute, const char *>;
 
 using StringArrayAttrBuilder = AttrBuilder<MultiStringExtAttribute, const char *>;
 using IntArrayAttrBuilder = AttrBuilder<MultiIntegerExtAttribute, int64_t>;
@@ -1825,10 +1825,10 @@ Test::checkBucket(const NumericResultNode &width, const NumericResultNode &value
 void
 Test::testFixedWidthBuckets()
 {
-    typedef Int64ResultNode       Int;
-    typedef FloatResultNode         Float;
-    typedef IntegerBucketResultNode IntBucket;
-    typedef FloatBucketResultNode   FloatBucket;
+    using Int = Int64ResultNode;
+    using Float = FloatResultNode;
+    using IntBucket = IntegerBucketResultNode;
+    using FloatBucket = FloatBucketResultNode;
 
     // positive int buckets
     EXPECT_TRUE(checkBucket(Int(10), Int(0),   IntBucket(0,10)));

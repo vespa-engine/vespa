@@ -46,8 +46,7 @@ public:
 
 typedef FPFactory *(FPFactoryMaker)(const index::Schema &schema);
 
-typedef std::pair<const std::string, FPFactoryMaker *const>
-FPFactoryMapEntry;
+using FPFactoryMapEntry = std::pair<const std::string, FPFactoryMaker *const>;
 
 template <class F>
 static FPFactory *

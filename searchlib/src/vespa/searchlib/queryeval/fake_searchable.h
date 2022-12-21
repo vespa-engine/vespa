@@ -15,8 +15,8 @@ namespace search::queryeval {
 class FakeSearchable : public Searchable
 {
 private:
-    typedef std::pair<vespalib::string, vespalib::string> Key;
-    typedef std::map<Key, FakeResult> Map;
+    using Key = std::pair<vespalib::string, vespalib::string>;
+    using Map = std::map<Key, FakeResult>;
 
     vespalib::string _tag;
     Map              _map;

@@ -31,7 +31,7 @@ public:
         Child() : search(nullptr), sourceId(0) { }
         Child(SearchIterator *s, uint32_t id) noexcept : search(s), sourceId(id) {}
     };
-    typedef std::vector<Child> Children;
+    using Children = std::vector<Child>;
 
 private:
     SourceBlenderSearch(const SourceBlenderSearch &);
@@ -42,7 +42,7 @@ private:
 protected:
     using Iterator = sourceselector::Iterator;
     using Source = uint8_t;
-    typedef std::vector<Source> SourceIndex;
+    using SourceIndex = std::vector<Source>;
     SearchIterator            * _matchedChild;
     std::unique_ptr<Iterator>   _sourceSelector;
     SourceIndex                 _children;

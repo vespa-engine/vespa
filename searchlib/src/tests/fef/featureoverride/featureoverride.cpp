@@ -25,7 +25,7 @@ using vespalib::eval::FastValueBuilderFactory;
 using vespalib::make_string_short::fmt;
 
 
-typedef Blueprint::SP       BPSP;
+using BPSP = Blueprint::SP;
 
 struct Fixture
 {

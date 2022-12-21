@@ -712,7 +712,7 @@ public:
         END_BUFFER_SAFETY = 4
     };
 
-    typedef uint64_t UnitType;
+    using UnitType = uint64_t;
 
     // Pointers to compressed data
     uint64_t *_valI;
@@ -941,16 +941,16 @@ EncodeContext64EBase<false>::bswap(uint64_t val)
     return val;
 }
 
-typedef EncodeContext64EBase<true> EncodeContext64BEBase;
+using EncodeContext64BEBase = EncodeContext64EBase<true>;
 
-typedef EncodeContext64EBase<false> EncodeContext64LEBase;
+using EncodeContext64LEBase = EncodeContext64EBase<false>;
 
 
 template<bool bigEndian>
 class EncodeContext64 : public EncodeContext64EBase<bigEndian>
 {
 public:
-    typedef EncodeContext64EBase<bigEndian> BaseClass;
+    using BaseClass = EncodeContext64EBase<bigEndian>;
     using BaseClass::writeBits;
 
     /**
@@ -1068,9 +1068,9 @@ public:
 };
 
 
-typedef EncodeContext64<true> EncodeContext64BE;
+using EncodeContext64BE = EncodeContext64<true>;
 
-typedef EncodeContext64<false> EncodeContext64LE;
+using EncodeContext64LE = EncodeContext64<false>;
 
 class DecodeContext64Base : public search::ComprFileDecodeContext
 {
@@ -1274,7 +1274,7 @@ private:
     DecodeContext64(const DecodeContext64 &);
 
 public:
-    typedef EncodeContext64<bigEndian> EC;
+    using EC = EncodeContext64<bigEndian>;
 
     DecodeContext64() = default;
 
@@ -1476,17 +1476,17 @@ public:
     }
 };
 
-typedef DecodeContext64<true> DecodeContext64BE;
+using DecodeContext64BE = DecodeContext64<true>;
 
-typedef DecodeContext64<false> DecodeContext64LE;
+using DecodeContext64LE = DecodeContext64<false>;
 
 template <bool bigEndian>
 class FeatureDecodeContext : public DecodeContext64<bigEndian>
 {
 public:
-    typedef DecodeContext64<bigEndian> ParentClass;
-    typedef index::DocIdAndFeatures DocIdAndFeatures;
-    typedef index::PostingListParams PostingListParams;
+    using ParentClass = DecodeContext64<bigEndian>;
+    using DocIdAndFeatures = index::DocIdAndFeatures;
+    using PostingListParams = index::PostingListParams;
     using ParentClass::_val;
     using ParentClass::_valI;
     using ParentClass::_valE;
@@ -1525,18 +1525,18 @@ public:
     virtual void getParams(PostingListParams &params) const;
 };
 
-typedef FeatureDecodeContext<true> FeatureDecodeContextBE;
+using FeatureDecodeContextBE = FeatureDecodeContext<true>;
 
-typedef FeatureDecodeContext<false> FeatureDecodeContextLE;
+using FeatureDecodeContextLE = FeatureDecodeContext<false>;
 
 template <bool bigEndian>
 class FeatureEncodeContext : public EncodeContext64<bigEndian>
 {
 public:
     search::ComprFileWriteContext *_writeContext;
-    typedef EncodeContext64<bigEndian> ParentClass;
-    typedef index::DocIdAndFeatures DocIdAndFeatures;
-    typedef index::PostingListParams PostingListParams;
+    using ParentClass = EncodeContext64<bigEndian>;
+    using DocIdAndFeatures = index::DocIdAndFeatures;
+    using PostingListParams = index::PostingListParams;
     using ParentClass::_cacheInt;
     using ParentClass::_cacheFree;
     using ParentClass::smallPadBits;
@@ -1607,9 +1607,9 @@ public:
     virtual void getParams(PostingListParams &params) const;
 };
 
-typedef FeatureEncodeContext<true> FeatureEncodeContextBE;
+using FeatureEncodeContextBE = FeatureEncodeContext<true>;
 
-typedef FeatureEncodeContext<false> FeatureEncodeContextLE;
+using FeatureEncodeContextLE = FeatureEncodeContext<false>;
 
 extern template class FeatureDecodeContext<true>;
 extern template class FeatureDecodeContext<false>;

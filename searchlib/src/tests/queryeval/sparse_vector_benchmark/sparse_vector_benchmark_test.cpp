@@ -84,7 +84,7 @@ private:
     Writer _writer;
 
 public:
-    typedef std::unique_ptr<Graph> UP;
+    using UP = std::unique_ptr<Graph>;
     Graph(const std::string &file) : _writer(file) {}
     void addValue(double x, double y) { _writer.fmt("%g %g\n", x, y); }
 };
@@ -99,7 +99,7 @@ private:
     static int  _plots;
 
 public:
-    typedef std::unique_ptr<Plot> UP;
+    using UP = std::unique_ptr<Plot>;
 
     Plot(const std::string &title) : _name(vespalib::make_string("plot.%d", _plots++)), _graphs(0),
                                      _writer(vespalib::make_string("%s.gnuplot", _name.c_str())) {

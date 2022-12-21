@@ -12,9 +12,9 @@ namespace search {
  */
 class QueryTermSimple {
 public:
-    typedef std::unique_ptr<QueryTermSimple> UP;
-    typedef vespalib::string string;
-    typedef vespalib::stringref stringref;
+    using UP = std::unique_ptr<QueryTermSimple>;
+    using string = vespalib::string;
+    using stringref = vespalib::stringref;
     enum class Type : uint8_t {
         WORD = 0,
         PREFIXTERM = 1,

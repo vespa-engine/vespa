@@ -9,7 +9,7 @@ namespace search {
 namespace queryeval {
 
 struct WeakAndSearch : SearchIterator {
-    typedef wand::Terms Terms;
+    using Terms = wand::Terms;
     virtual size_t get_num_terms() const = 0;
     virtual int32_t get_term_weight(size_t idx) const = 0;
     virtual wand::score_t get_max_score(size_t idx) const = 0;

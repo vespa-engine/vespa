@@ -20,7 +20,7 @@ public:
             : matchData(arg_matchData), exactness(arg_exactness)
         {}
     };
-    typedef std::vector<Input> Inputs;
+    using Inputs = std::vector<Input>;
 private:
     std::vector<Inputs>                     _inputs;
     const TermFieldMatchDataArray           _output;

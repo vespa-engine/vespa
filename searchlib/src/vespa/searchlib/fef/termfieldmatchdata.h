@@ -19,8 +19,8 @@ class TermMatchDataMerger;
 class TermFieldMatchData
 {
 public:
-    typedef const TermFieldMatchDataPosition * PositionsIterator;
-    typedef TermFieldMatchDataPosition * MutablePositionsIterator;
+    using PositionsIterator = const TermFieldMatchDataPosition *;
+    using MutablePositionsIterator = TermFieldMatchDataPosition *;
     struct Positions {
         TermFieldMatchDataPosition *_positions;
         uint16_t                    _maxElementLength;

@@ -87,7 +87,7 @@ class CallBackTest : public Callback
 private:
     RPC::Result receive(const Packet & packet) override;
     void eof() override { _eof.set(); }
-    typedef std::map<SerialNum, std::unique_ptr<ByteBuffer>> PacketMap;
+    using PacketMap = std::map<SerialNum, std::unique_ptr<ByteBuffer>>;
     PacketMap _packetMap;
     Eof _eof;
 public:
@@ -146,7 +146,7 @@ CallBackManyTest::receive(const Packet & p)
 class CallBackUpdate : public Callback
 {
 public:
-    typedef std::map<SerialNum, Identifiable *> PacketMap;
+    using PacketMap = std::map<SerialNum, Identifiable *>;
 private:
     RPC::Result receive(const Packet & packet) override;
     void eof() override { _eof.set(); }

@@ -242,7 +242,7 @@ public:
 class TuneFileDocumentDB
 {
 public:
-    typedef std::shared_ptr<TuneFileDocumentDB> SP;
+    using SP = std::shared_ptr<TuneFileDocumentDB>;
 
     TuneFileIndexManager _index;
     TuneFileAttributes _attr;

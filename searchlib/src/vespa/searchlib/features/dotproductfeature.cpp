@@ -298,7 +298,7 @@ template <typename T, typename AsT = T>
 void
 parseVectors(const Property& prop, std::vector<T>& values, std::vector<uint32_t>& indexes)
 {
-    typedef std::vector<ArrayParser::ValueAndIndex<AsT>> SparseV;
+    using SparseV = std::vector<ArrayParser::ValueAndIndex<AsT>>;
     SparseV sparse;
     ArrayParser::parsePartial(prop.get(), sparse);
     if ( ! sparse.empty()) {

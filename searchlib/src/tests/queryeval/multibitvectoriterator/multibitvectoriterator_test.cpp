@@ -90,7 +90,7 @@ void Test::setup()
     }
 }
 
-typedef std::vector<uint32_t> H;
+using H = std::vector<uint32_t>;
 
 H
 seekNoReset(SearchIterator & s, uint32_t start, uint32_t docIdLimit)
@@ -565,7 +565,7 @@ Test::testOptimizeAndOr(bool invert)
 void
 Test::testEndGuard(bool invert)
 {
-    typedef AndSearch T;
+    using T = AndSearch;
     TermFieldMatchData tfmd;
 
     MultiSearch::Children children;

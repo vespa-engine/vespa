@@ -12,7 +12,7 @@ class WordNumMapper;
 
 class WordNumMapping
 {
-    typedef vespalib::Array<uint64_t> Array;
+    using Array = vespalib::Array<uint64_t>;
 
     static uint64_t noWordNumHigh() {
         return std::numeric_limits<uint64_t>::max();

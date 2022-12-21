@@ -9,7 +9,7 @@ namespace search::attribute { class IAttributeContext; }
 
 namespace search::expression {
 
-typedef uint32_t DocId;
+using DocId = uint32_t;
 
 class ResultNode;
 
@@ -50,6 +50,6 @@ private:
     virtual bool onExecute() const = 0;
 };
 
-typedef ExpressionNode::CP * ExpressionNodeArray;
+using ExpressionNodeArray = ExpressionNode::CP *;
 
 }

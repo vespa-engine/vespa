@@ -17,7 +17,7 @@ struct NativeAttributeMatchParam : public NativeParamBase
     NativeAttributeMatchParam() : NativeParamBase() { }
     fef::SymmetricTable weightBoostTable;
 };
-typedef NativeRankParamsBase<NativeAttributeMatchParam> NativeAttributeMatchParams;
+using NativeAttributeMatchParams = NativeRankParamsBase<NativeAttributeMatchParam>;
 
 /**
  * Implements the executor for calculating the native attribute match score.
@@ -35,8 +35,8 @@ protected:
         const fef::SymmetricTable * weightBoostTable;
         fef::TermFieldHandle tfh;
     };
-    typedef std::vector<CachedTermData> CachedVector;
-    typedef std::pair<CachedVector, feature_t> Precomputed;
+    using CachedVector = std::vector<CachedTermData>;
+    using Precomputed = std::pair<CachedVector, feature_t>;
 
     static feature_t calculateScore(const CachedTermData &td, const fef::TermFieldMatchData &tfmd);
 private:

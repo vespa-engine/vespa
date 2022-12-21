@@ -40,8 +40,8 @@ public:
         }
     };
 
-    typedef vespalib::string string;
-    typedef std::vector<string> StringVector;
+    using string = vespalib::string;
+    using StringVector = std::vector<string>;
 private:
     StringVector _names;
     std::vector<uint32_t> _docIds;

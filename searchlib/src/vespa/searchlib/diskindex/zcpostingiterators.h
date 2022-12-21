@@ -58,11 +58,11 @@ template <bool bigEndian>
 class ZcRareWordPostingIteratorBase : public ZcIteratorBase
 {
 private:
-    typedef ZcIteratorBase ParentClass;
+    using ParentClass = ZcIteratorBase;
 
 public:
-    typedef bitcompression::FeatureDecodeContext<bigEndian> DecodeContextBase;
-    typedef index::DocIdAndFeatures DocIdAndFeatures;
+    using DecodeContextBase = bitcompression::FeatureDecodeContext<bigEndian>;
+    using DocIdAndFeatures = index::DocIdAndFeatures;
     DecodeContextBase *_decodeContext;
     unsigned int       _residue;
     uint32_t           _prevDocId;  // Previous document id
@@ -308,14 +308,14 @@ template <bool bigEndian>
 class ZcPostingIterator : public ZcPostingIteratorBase
 {
 private:
-    typedef ZcPostingIteratorBase ParentClass;
+    using ParentClass = ZcPostingIteratorBase;
     using ParentClass::getDocId;
 
 public:
 
-    typedef bitcompression::FeatureDecodeContext<bigEndian> DecodeContextBase;
-    typedef index::DocIdAndFeatures DocIdAndFeatures;
-    typedef index::PostingListCounts PostingListCounts;
+    using DecodeContextBase = bitcompression::FeatureDecodeContext<bigEndian>;
+    using DocIdAndFeatures = index::DocIdAndFeatures;
+    using PostingListCounts = index::PostingListCounts;
     DecodeContextBase *_decodeContext;
     uint32_t _minChunkDocs;
     uint32_t _docIdK;

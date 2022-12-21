@@ -27,8 +27,8 @@ public:
             return syncToken < rhs.syncToken;
         }
     };
-    typedef std::vector<Snapshot> SnapshotList;
-    typedef SnapshotList::iterator SnapItr;
+    using SnapshotList = std::vector<Snapshot>;
+    using SnapItr = SnapshotList::iterator;
 
 private:
     vespalib::string  _path;

@@ -107,7 +107,7 @@ public:
 
     using GenerationHandler = vespalib::GenerationHandler;
     using GenerationHolder = vespalib::GenerationHolder;
-    typedef GenerationHandler::generation_t generation_t;
+    using generation_t = GenerationHandler::generation_t;
 
     ~AttributeVector() override;
 protected:

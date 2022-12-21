@@ -57,7 +57,7 @@ PageDict4PageParams::getFileHeaderPad(uint32_t offset)
 }
 
 
-typedef PageDict4StartOffset StartOffset;
+using StartOffset = PageDict4StartOffset;
 
 #define K_VALUE_COUNTFILE_L1_FILEOFFSET 7
 #define K_VALUE_COUNTFILE_L2_FILEOFFSET 11
@@ -145,7 +145,7 @@ readStartOffset(PostingListCountFileDecodeContext &d,
                 uint32_t fileOffsetK,
                 uint32_t accNumDocsK)
 {
-    typedef PostingListCountFileEncodeContext EC;
+    using EC = PostingListCountFileEncodeContext;
 
     UC64_DECODECONTEXT(o);
     uint32_t length;

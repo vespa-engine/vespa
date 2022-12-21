@@ -33,12 +33,12 @@ private:
 public:
     using DictionaryFileSeqRead = index::DictionaryFileSeqRead;
 
-    typedef index::PostingListFileSeqRead PostingListFileSeqRead;
-    typedef index::DocIdAndFeatures DocIdAndFeatures;
-    typedef index::Schema Schema;
-    typedef index::SchemaUtil::IndexIterator IndexIterator;
-    typedef index::PostingListCounts PostingListCounts;
-    typedef index::PostingListParams PostingListParams;
+    using PostingListFileSeqRead = index::PostingListFileSeqRead;
+    using DocIdAndFeatures = index::DocIdAndFeatures;
+    using Schema = index::Schema;
+    using IndexIterator = index::SchemaUtil::IndexIterator;
+    using PostingListCounts = index::PostingListCounts;
+    using PostingListParams = index::PostingListParams;
 
     uint64_t        _wordNum;
     DocIdAndFeatures _docIdAndFeatures;

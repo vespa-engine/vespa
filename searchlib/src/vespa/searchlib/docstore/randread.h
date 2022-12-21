@@ -15,7 +15,7 @@ namespace search {
 class FileRandRead
 {
 public:
-    typedef std::shared_ptr<FastOS_FileInterface> FSP;
+    using FSP = std::shared_ptr<FastOS_FileInterface>;
     virtual ~FileRandRead() { }
     virtual FSP read(size_t offset, vespalib::DataBuffer & buffer, size_t sz) = 0;
     virtual int64_t getSize() = 0;

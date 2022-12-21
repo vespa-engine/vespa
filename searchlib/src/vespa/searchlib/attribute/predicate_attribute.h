@@ -33,8 +33,8 @@ private:
  */
 class PredicateAttribute : public NotImplementedAttribute {
 public:
-    typedef uint8_t MinFeature;
-    typedef std::pair<const MinFeature *, size_t> MinFeatureHandle;
+    using MinFeature = uint8_t;
+    using MinFeatureHandle = std::pair<const MinFeature *, size_t>;
     using IntervalRange = uint16_t;
     using IntervalRangeVector = vespalib::RcuVectorBase<IntervalRange>;
 
@@ -85,7 +85,7 @@ private:
     int64_t _lower_bound;
     int64_t _upper_bound;
 
-    typedef vespalib::RcuVectorBase<uint8_t> MinFeatureVector;
+    using MinFeatureVector = vespalib::RcuVectorBase<uint8_t>;
     MinFeatureVector _min_feature;
 
     IntervalRangeVector _interval_range_vector;

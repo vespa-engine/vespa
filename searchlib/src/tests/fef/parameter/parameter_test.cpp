@@ -21,11 +21,11 @@ public:
 
 class ParameterTest : public vespalib::TestApp {
 private:
-    typedef ParameterDescriptions PDS;
-    typedef ParameterType PT;
-    typedef Parameter P;
-    typedef StringList SL;
-    typedef ParameterValidator::Result PVR;
+    using PDS = ParameterDescriptions;
+    using PT = ParameterType;
+    using P = Parameter;
+    using SL = StringList;
+    using PVR = ParameterValidator::Result;
 
     bool assertParameter(const Parameter & exp, const Parameter & act);
     bool validate(const IIndexEnvironment & env,

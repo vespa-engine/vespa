@@ -30,8 +30,8 @@ using namespace search::predicate;
 namespace search::queryeval {
 
 namespace {
-typedef PredicateBlueprint::IntervalEntry IntervalEntry;
-typedef PredicateBlueprint::BoundsEntry BoundsEntry;
+using IntervalEntry = PredicateBlueprint::IntervalEntry;
+using BoundsEntry = PredicateBlueprint::BoundsEntry;
 
 template <typename Entry>
 void pushValueDictionaryEntry(const Entry &entry,

@@ -118,7 +118,7 @@ public:
  */
 template <typename BufferStore, int SIZE_BITS = 8>
 class PredicateRefCache {
-    typedef RefCacheComparator<BufferStore, SIZE_BITS> ComparatorType;
+    using ComparatorType = RefCacheComparator<BufferStore, SIZE_BITS>;
 
     mutable CurrentZeroRef _current_zero_ref;
     std::set<uint32_t, ComparatorType> _ref_cache;

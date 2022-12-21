@@ -140,8 +140,8 @@ struct FtQueryTerm {
     }
 };
 
-typedef std::vector<FtQueryTerm> FtQuery;
-typedef std::map<vespalib::string, std::vector<vespalib::string> > StringVectorMap;
+using FtQuery = std::vector<FtQueryTerm>;
+using StringVectorMap = std::map<vespalib::string, std::vector<vespalib::string> >;
 
 //---------------------------------------------------------------------------------------------------------------------
 // FtUtil
@@ -160,14 +160,14 @@ public:
 //---------------------------------------------------------------------------------------------------------------------
 struct FtIndex {
     struct Element {
-        typedef std::vector<vespalib::string> Tokens;
+        using Tokens = std::vector<vespalib::string>;
         int32_t weight;
         Tokens  tokens;
         Element(int32_t w, const Tokens &t)
             : weight(w), tokens(t) {}
     };
-    typedef std::vector<Element>              Field;
-    typedef std::map<vespalib::string, Field> FieldMap;
+    using Field = std::vector<Element>;
+    using FieldMap = std::map<vespalib::string, Field>;
     FieldMap index; // raw content of all fields
     vespalib::string cursor; // last referenced field
     FtIndex() : index(), cursor() {}
@@ -188,7 +188,7 @@ struct FtIndex {
 // FtTestApp
 //---------------------------------------------------------------------------------------------------------------------
 struct FtTestApp : public vespalib::TestApp {
-    typedef vespalib::string string;
+    using string = vespalib::string;
     static void FT_SETUP_FAIL(const search::fef::Blueprint &prototype, const StringList &params);
     static void FT_SETUP_FAIL(const search::fef::Blueprint &prototype, const search::fef::test::IndexEnvironment &env,
                               const StringList &params);

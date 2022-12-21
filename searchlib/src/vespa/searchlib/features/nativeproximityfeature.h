@@ -42,7 +42,7 @@ public:
         TermPair(QueryTerm f, QueryTerm s, feature_t c) :
             first(f), second(s), connectedness(c) {}
     };
-    typedef std::vector<TermPair> TermPairVector;
+    using TermPairVector = std::vector<TermPair>;
     /**
      * Represents the setup needed to calculate the proximity score for a single field.
      **/

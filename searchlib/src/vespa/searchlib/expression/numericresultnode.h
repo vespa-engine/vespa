@@ -9,8 +9,8 @@ class NumericResultNode : public SingleResultNode
 {
 public:
     DECLARE_ABSTRACT_EXPRESSIONNODE(NumericResultNode);
-    typedef vespalib::IdentifiablePtr<NumericResultNode> CP;
-    typedef std::unique_ptr<NumericResultNode> UP;
+    using CP = vespalib::IdentifiablePtr<NumericResultNode>;
+    using UP = std::unique_ptr<NumericResultNode>;
     virtual NumericResultNode *clone() const override = 0;
     virtual void multiply(const ResultNode & b) = 0;
     virtual void divide(const ResultNode & b) = 0;

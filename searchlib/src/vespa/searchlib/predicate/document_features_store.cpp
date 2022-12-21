@@ -55,7 +55,7 @@ deserializeWords(DataBuffer &buffer, memoryindex::WordStore &word_store, WordInd
 template <typename RangeFeaturesMap>
 void
 deserializeRanges(DataBuffer &buffer, vector<EntryRef> &word_refs, RangeFeaturesMap &ranges, size_t &num_ranges) {
-    typedef typename RangeFeaturesMap::mapped_type::value_type Range;
+    using Range = typename RangeFeaturesMap::mapped_type::value_type;
     uint32_t ranges_size = buffer.readInt32();
     for (uint32_t i = 0; i < ranges_size; ++i) {
         uint32_t doc_id = buffer.readInt32();

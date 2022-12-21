@@ -63,7 +63,7 @@ private:
     uint32_t _lid;
 };
 
-typedef std::vector<LidInfoWithLid> LidInfoWithLidV;
+using LidInfoWithLidV = std::vector<LidInfoWithLid>;
 
 class ISetLid
 {

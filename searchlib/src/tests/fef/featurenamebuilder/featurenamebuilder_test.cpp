@@ -6,7 +6,7 @@ LOG_SETUP("featurenamebuilder_test");
 
 using namespace search::fef;
 
-typedef FeatureNameBuilder B;
+using B = FeatureNameBuilder;
 
 TEST_SETUP(Test);
 

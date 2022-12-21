@@ -14,8 +14,8 @@ namespace search::queryeval {
  */
 struct ParallelWeakAndSearch : public SearchIterator
 {
-    typedef wand::score_t score_t;
-    typedef wand::docid_t docid_t;
+    using score_t = wand::score_t;
+    using docid_t = wand::docid_t;
 
     /**
      * Params used to tweak the behavior of the WAND algorithm.
@@ -57,7 +57,7 @@ struct ParallelWeakAndSearch : public SearchIterator
         {}
     };
 
-    typedef wand::Terms Terms;
+    using Terms = wand::Terms;
 
     virtual size_t get_num_terms() const = 0;
     virtual int32_t get_term_weight(size_t idx) const = 0;

@@ -48,9 +48,9 @@ namespace wset {
 template <typename DimensionVType, typename DimensionHType, typename ComponentType, typename HashMapComparator = std::equal_to<DimensionHType> >
 class VectorBase : public fef::Anything {
 public:
-    typedef std::pair<DimensionVType, ComponentType> Element; // <dimension, component>
-    typedef std::vector<Element>                    Vector;
-    typedef vespalib::hash_map<DimensionHType, ComponentType, vespalib::hash<DimensionHType>, HashMapComparator, vespalib::hashtable_base::and_modulator> HashMap;
+    using Element = std::pair<DimensionVType, ComponentType>; // <dimension, component>
+    using Vector = std::vector<Element>;
+    using HashMap = vespalib::hash_map<DimensionHType, ComponentType, vespalib::hash<DimensionHType>, HashMapComparator, vespalib::hashtable_base::and_modulator>;
 protected:
     VectorBase();
     Vector _vector;
@@ -211,8 +211,8 @@ public:
 template <typename BaseType>
 class SparseDotProductExecutorBase : public DotProductExecutorBase<BaseType> {
 public:
-    typedef std::vector<uint32_t> IV;
-    typedef typename DotProductExecutorBase<BaseType>::V V;
+    using IV = std::vector<uint32_t>;
+    using V = typename DotProductExecutorBase<BaseType>::V;
     SparseDotProductExecutorBase(const V & queryVector, const IV & queryIndexes);
     ~SparseDotProductExecutorBase();
 protected:
@@ -225,8 +225,8 @@ class SparseDotProductByArrayReadViewExecutor : public SparseDotProductExecutorB
 public:
     using SparseDotProductExecutorBase<BaseType>::_queryIndexes;
     using SparseDotProductExecutorBase<BaseType>::_scratch;
-    typedef std::vector<uint32_t> IV;
-    typedef typename SparseDotProductExecutorBase<BaseType>::V V;
+    using IV = std::vector<uint32_t>;
+    using V = typename SparseDotProductExecutorBase<BaseType>::V;
     using ArrayReadView = attribute::IArrayReadView<BaseType>;
     SparseDotProductByArrayReadViewExecutor(const ArrayReadView* array_read_view, const V & queryVector, const IV & queryIndexes);
     ~SparseDotProductByArrayReadViewExecutor();

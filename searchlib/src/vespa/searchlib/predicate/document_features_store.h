@@ -18,7 +18,7 @@ namespace search::predicate {
  * lists of the dictionary.
  */
 class DocumentFeaturesStore {
-    typedef memoryindex::WordStore WordStore;
+    using WordStore = memoryindex::WordStore;
     struct Range {
         vespalib::datastore::EntryRef label_ref;
         int64_t from;
@@ -46,12 +46,12 @@ class DocumentFeaturesStore {
             return strcmp(getWord(lhs), getWord(rhs)) < 0;
         }
     };
-    typedef vespalib::Array<uint64_t> FeatureVector;
-    typedef vespalib::hash_map<uint32_t, FeatureVector> DocumentFeaturesMap;
-    typedef vespalib::Array<Range> RangeVector;
-    typedef vespalib::hash_map<uint32_t, RangeVector> RangeFeaturesMap;
-    typedef vespalib::btree::BTree<vespalib::datastore::EntryRef, vespalib::btree::BTreeNoLeafData,
-                         vespalib::btree::NoAggregated, const KeyComp &> WordIndex;
+    using FeatureVector = vespalib::Array<uint64_t>;
+    using DocumentFeaturesMap = vespalib::hash_map<uint32_t, FeatureVector>;
+    using RangeVector = vespalib::Array<Range>;
+    using RangeFeaturesMap = vespalib::hash_map<uint32_t, RangeVector>;
+    using WordIndex = vespalib::btree::BTree<vespalib::datastore::EntryRef, vespalib::btree::BTreeNoLeafData,
+                         vespalib::btree::NoAggregated, const KeyComp &>;
 
     DocumentFeaturesMap _docs;
     RangeFeaturesMap    _ranges;
@@ -66,7 +66,7 @@ class DocumentFeaturesStore {
     void setCurrent(uint32_t docId, FeatureVector *features);
 
 public:
-    typedef std::unordered_set<uint64_t> FeatureSet;
+    using FeatureSet = std::unordered_set<uint64_t>;
 
     DocumentFeaturesStore(uint32_t arity);
     DocumentFeaturesStore(vespalib::DataBuffer &buffer);

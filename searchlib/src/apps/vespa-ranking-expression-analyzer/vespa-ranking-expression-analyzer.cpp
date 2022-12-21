@@ -72,7 +72,7 @@ struct InputInfo {
 //-----------------------------------------------------------------------------
 
 struct FunctionInfo {
-    typedef std::vector<const Node *> TreeList;
+    using TreeList = std::vector<const Node *>;
 
     size_t expression_size;
     bool root_is_forest;

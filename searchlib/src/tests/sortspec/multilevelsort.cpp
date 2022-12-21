@@ -16,10 +16,10 @@ LOG_SETUP("multilevelsort_test");
 
 using namespace search;
 
-typedef FloatingPointAttributeTemplate<float>  Float;
-typedef FloatingPointAttributeTemplate<double> Double;
-typedef std::map<std::string, AttributeVector::SP > VectorMap;
-typedef AttributeVector::SP             AttributePtr;
+using Float = FloatingPointAttributeTemplate<float>;
+using Double = FloatingPointAttributeTemplate<double>;
+using VectorMap = std::map<std::string, AttributeVector::SP >;
+using AttributePtr = AttributeVector::SP;
 using search::attribute::Config;
 using search::attribute::BasicType;
 using search::attribute::CollectionType;

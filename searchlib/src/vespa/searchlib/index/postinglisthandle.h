@@ -20,7 +20,7 @@ class PostingListFileRandRead;
  */
 class PostingListHandle {
 public:
-    typedef std::unique_ptr<PostingListHandle> UP;
+    using UP = std::unique_ptr<PostingListHandle>;
     // Key portion
     PostingListFileRandRead *_file; // File containing posting list
     uint64_t _bitOffset;    // posting list start relative to start of file

@@ -48,21 +48,21 @@ protected:
     class VectorIntegerHandler : public VectorHandler<IntegerResultNodeVector>
     {
     private:
-        typedef VectorHandler<IntegerResultNodeVector> BaseHandler;
+        using BaseHandler = VectorHandler<IntegerResultNodeVector>;
     public:
         VectorIntegerHandler(const NumericFunctionNode & func) : BaseHandler(func) { }
     };
     class VectorFloatHandler : public VectorHandler<FloatResultNodeVector>
     {
     private:
-        typedef VectorHandler<FloatResultNodeVector> BaseHandler;
+        using BaseHandler = VectorHandler<FloatResultNodeVector>;
     public:
         VectorFloatHandler(const NumericFunctionNode & func) : BaseHandler(func) { }
     };
     class VectorStringHandler : public VectorHandler<StringResultNodeVector>
     {
     private:
-        typedef VectorHandler<StringResultNodeVector> BaseHandler;
+        using BaseHandler = VectorHandler<StringResultNodeVector>;
     public:
         VectorStringHandler(const NumericFunctionNode & func) : BaseHandler(func) { }
     };

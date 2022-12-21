@@ -18,8 +18,8 @@ namespace search::aggregation {
 class Grouping : public vespalib::Identifiable
 {
 public:
-    typedef std::vector<GroupingLevel> GroupingLevelList;
-    typedef std::unique_ptr<Grouping> UP;
+    using GroupingLevelList = std::vector<GroupingLevel>;
+    using UP = std::unique_ptr<Grouping>;
 
 private:
     uint32_t                 _id;         // client id for this grouping

@@ -32,6 +32,6 @@ public:
     const search::fef::FieldInfo * asField() const { return _fieldVal; }
 };
 
-typedef std::vector<Parameter> ParameterList;
+using ParameterList = std::vector<Parameter>;
 
 }

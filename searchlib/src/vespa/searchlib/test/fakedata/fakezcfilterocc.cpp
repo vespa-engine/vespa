@@ -149,9 +149,9 @@ FakeZcFilterOcc::setupT(const FakeWord &fw)
     PostingListCounts counts;
     Zc4PostingWriter<bigEndian> writer(counts);
 
-    typedef FakeWord FW;
-    typedef FW::DocWordFeatureList DWFL;
-    typedef FW::DocWordPosFeatureList DWPFL;
+    using FW = FakeWord;
+    using DWFL = FW::DocWordFeatureList;
+    using DWPFL = FW::DocWordPosFeatureList;
 
     DWFL::const_iterator d(fw._postings.begin());
     DWFL::const_iterator de(fw._postings.end());
@@ -397,8 +397,8 @@ public:
     unsigned int _residue;
     uint32_t _lastDocId;
 
-    typedef search::bitcompression::FeatureDecodeContextBE DecodeContext;
-    typedef search::bitcompression::FeatureEncodeContextBE EncodeContext;
+    using DecodeContext = search::bitcompression::FeatureDecodeContextBE;
+    using EncodeContext = search::bitcompression::FeatureEncodeContextBE;
     DecodeContext _decodeContext;
     uint32_t _docIdLimit;
 

@@ -109,7 +109,7 @@ private:
 class Int8ResultNode : public IntegerResultNodeT<int8_t>
 {
 private:
-    typedef IntegerResultNodeT<int8_t> Base;
+    using Base = IntegerResultNodeT<int8_t>;
 public:
     DECLARE_RESULTNODE(Int8ResultNode);
     Int8ResultNode(int8_t v=0) : Base(v) { }
@@ -120,7 +120,7 @@ private:
 class Int16ResultNode : public IntegerResultNodeT<int16_t>
 {
 private:
-    typedef IntegerResultNodeT<int16_t> Base;
+    using Base = IntegerResultNodeT<int16_t>;
 public:
     DECLARE_RESULTNODE(Int16ResultNode);
     Int16ResultNode(int16_t v=0) : Base(v) { }
@@ -131,7 +131,7 @@ private:
 class Int32ResultNode : public IntegerResultNodeT<int32_t>
 {
 private:
-    typedef IntegerResultNodeT<int32_t> Base;
+    using Base = IntegerResultNodeT<int32_t>;
 public:
     DECLARE_RESULTNODE(Int32ResultNode);
     Int32ResultNode(int32_t v=0) : Base(v) { }
@@ -142,7 +142,7 @@ private:
 class Int64ResultNode : public IntegerResultNodeT<int64_t>
 {
 private:
-    typedef IntegerResultNodeT<int64_t> Base;
+    using Base = IntegerResultNodeT<int64_t>;
 public:
     DECLARE_RESULTNODE(Int64ResultNode);
     Int64ResultNode(int64_t v=0) : Base(v) { }
