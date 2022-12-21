@@ -151,6 +151,8 @@ public class StorageMaintainer {
 
         rules.add(CoredumpCleanupRule.forContainer(context.paths().underVespaHome("var/crash")));
 
+        rules.add(CoredumpCleanupRule.forHost(context.paths().underVespaHome("var/crash")));
+
         rules.add(new LinearCleanupRule(() -> FileFinder.files(context.paths().underVespaHome("var/tmp")).list(),
                 fa -> monthNormalizer.apply(fa.lastModifiedTime()), Priority.LOWEST, Priority.HIGHEST));
 
