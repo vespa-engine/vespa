@@ -41,7 +41,7 @@ private:
     Alloc          _buffer;
 
 public:
-    typedef std::unique_ptr<DataBuffer> UP;
+    using UP = std::unique_ptr<DataBuffer>;
     DataBuffer(const DataBuffer &) = delete;
     DataBuffer &operator=(const DataBuffer &) = delete;
     DataBuffer(DataBuffer &&) noexcept = default;

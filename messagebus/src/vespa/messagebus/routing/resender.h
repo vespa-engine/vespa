@@ -23,7 +23,7 @@ class Resender
 {
 private:
     using time_point = std::chrono::steady_clock::time_point;
-    typedef std::pair<time_point , RoutingNode*> Entry;
+    using Entry = std::pair<time_point , RoutingNode*>;
     struct Cmp {
         bool operator()(const Entry &a, const Entry &b) {
             return (b.first < a.first);
@@ -38,7 +38,7 @@ public:
     /**
      * Convenience typedefs.
      */
-    typedef std::unique_ptr<Resender> UP;
+    using UP = std::unique_ptr<Resender>;
     Resender(const Resender &) = delete;
     Resender & operator = (const Resender &) = delete;
 

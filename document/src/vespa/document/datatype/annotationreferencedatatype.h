@@ -11,7 +11,7 @@ class AnnotationReferenceDataType final : public DataType {
     const AnnotationType *_type;
 
 public:
-    typedef std::shared_ptr<AnnotationReferenceDataType> SP;
+    using SP = std::shared_ptr<AnnotationReferenceDataType>;
 
     AnnotationReferenceDataType(const AnnotationType &type, int id);
     AnnotationReferenceDataType(const AnnotationReferenceDataType &) = delete;

@@ -179,7 +179,7 @@ MergeHandler::buildBucketInfoList(
     assert(output.size() == 0);
     assert(myNodeIndex < 16);
     uint32_t oldSize = output.size();
-    typedef api::BucketInfo DbBucketInfo;
+    using DbBucketInfo = api::BucketInfo;
 
     // Always verify that bucket database is correct in merge, such that
     // any out of sync data get fixed. Such errors must of course also be

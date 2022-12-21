@@ -439,7 +439,7 @@ TEST_P(StorageProtocolTest, delete_bucket) {
 }
 
 TEST_P(StorageProtocolTest, merge_bucket) {
-    typedef api::MergeBucketCommand::Node Node;
+    using Node = api::MergeBucketCommand::Node;
     std::vector<Node> nodes;
     nodes.push_back(Node(4, false));
     nodes.push_back(Node(13, true));

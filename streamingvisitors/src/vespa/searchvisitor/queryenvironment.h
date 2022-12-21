@@ -25,7 +25,7 @@ private:
     std::vector<search::common::GeoLocationSpec> _locations;
 
 public:
-    typedef std::unique_ptr<QueryEnvironment> UP;
+    using UP = std::unique_ptr<QueryEnvironment>;
 
     QueryEnvironment(const vespalib::string & location,
                      const IndexEnvironment & indexEnv,

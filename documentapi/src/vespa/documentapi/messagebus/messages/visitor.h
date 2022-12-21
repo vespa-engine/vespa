@@ -13,7 +13,7 @@
 namespace document { class Document; }
 namespace documentapi {
 
-typedef uint64_t Timestamp;
+using Timestamp = uint64_t;
 
 /**
  * @class CreateVisitorMessage
@@ -44,7 +44,7 @@ protected:
     DocumentReply::UP doCreateReply() const override;
 
 public:
-    typedef std::unique_ptr<CreateVisitorMessage> UP;
+    using UP = std::unique_ptr<CreateVisitorMessage>;
 
     CreateVisitorMessage(); // must be deserialized into
     CreateVisitorMessage(const string& libraryName,
@@ -123,7 +123,7 @@ protected:
     DocumentReply::UP doCreateReply() const override;
 
 public:
-    typedef std::unique_ptr<DestroyVisitorMessage> UP;
+    using UP = std::unique_ptr<DestroyVisitorMessage>;
 
     DestroyVisitorMessage(); // must be deserialized into
     DestroyVisitorMessage(const string &instanceId);
@@ -189,7 +189,7 @@ protected:
     DocumentReply::UP doCreateReply() const override;
 
 public:
-    typedef std::unique_ptr<VisitorInfoMessage> UP;
+    using UP = std::unique_ptr<VisitorInfoMessage>;
 
     VisitorInfoMessage();
     ~VisitorInfoMessage();
@@ -218,7 +218,7 @@ protected:
     DocumentReply::UP doCreateReply() const override;
 
 public:
-    typedef std::unique_ptr<MapVisitorMessage> UP;
+    using UP = std::unique_ptr<MapVisitorMessage>;
 
     MapVisitorMessage();
 

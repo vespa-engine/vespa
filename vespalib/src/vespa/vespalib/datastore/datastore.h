@@ -30,7 +30,7 @@ private:
     void free_elem_internal(EntryRef ref, size_t numElems);
 
 public:
-    typedef RefT RefType;
+    using RefType = RefT;
 
     DataStoreT(const DataStoreT &rhs) = delete;
     DataStoreT &operator=(const DataStoreT &rhs) = delete;
@@ -74,7 +74,7 @@ template <typename EntryType, typename RefT = EntryRefT<22> >
 class DataStore : public DataStoreT<RefT>
 {
 protected:
-    typedef DataStoreT<RefT> ParentType;
+    using ParentType = DataStoreT<RefT>;
     using ParentType::ensureBufferCapacity;
     using ParentType::getEntry;
     using ParentType::dropBuffers;

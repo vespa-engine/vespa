@@ -9,7 +9,7 @@ namespace vbench {
 
 struct Analyzer : public Handler<Request>
 {
-    typedef std::unique_ptr<Analyzer> UP;
+    using UP = std::unique_ptr<Analyzer>;
     virtual void report() = 0;
     virtual ~Analyzer() {}
 };

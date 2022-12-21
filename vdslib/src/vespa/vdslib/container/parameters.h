@@ -24,7 +24,7 @@ namespace vdslib {
 
 class Parameters : public vespalib::xml::XmlSerializable {
 public:
-    typedef vespalib::stringref KeyT;
+    using KeyT = vespalib::stringref;
     class Value : public vespalib::string
     {
     public:
@@ -34,8 +34,8 @@ public:
       Value(const void *v, size_t sz) : vespalib::string(v, sz) { }
       size_t length() const  { return size() - 1; }
     };
-    typedef vespalib::stringref ValueRef;
-    typedef vespalib::hash_map<vespalib::string, Value> ParametersMap;
+    using ValueRef = vespalib::stringref;
+    using ParametersMap = vespalib::hash_map<vespalib::string, Value>;
 private:
     ParametersMap _parameters;
 

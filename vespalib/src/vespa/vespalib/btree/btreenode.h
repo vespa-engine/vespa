@@ -139,7 +139,7 @@ public:
 template <typename AggrT>
 class BTreeNodeAggregatedWrap
 {
-    typedef AggrT AggregatedType;
+    using AggregatedType = AggrT;
 
     AggrT _aggr;
     static AggrT _instance;
@@ -157,7 +157,7 @@ public:
 template <>
 class BTreeNodeAggregatedWrap<NoAggregated>
 {
-    typedef NoAggregated AggregatedType;
+    using AggregatedType = NoAggregated;
 
     static NoAggregated _instance;
 public:
@@ -236,9 +236,9 @@ class BTreeNodeTT : public BTreeNodeT<KeyT, NumSlots>,
                     public BTreeNodeAggregatedWrap<AggrT>
 {
 public:
-    typedef BTreeNodeT<KeyT, NumSlots> ParentType;
-    typedef BTreeNodeDataWrap<DataT, NumSlots> DataWrapType;
-    typedef BTreeNodeAggregatedWrap<AggrT> AggrWrapType;
+    using ParentType = BTreeNodeT<KeyT, NumSlots>;
+    using DataWrapType = BTreeNodeDataWrap<DataT, NumSlots>;
+    using AggrWrapType = BTreeNodeAggregatedWrap<AggrT>;
     using ParentType::_validSlots;
     using ParentType::validSlots;
     using ParentType::getFrozen;
@@ -270,7 +270,7 @@ protected:
     }
 
 public:
-    typedef BTreeNodeTT<KeyT, DataT, AggrT, NumSlots> NodeType;
+    using NodeType = BTreeNodeTT<KeyT, DataT, AggrT, NumSlots>;
     void insert(uint32_t idx, const KeyT & key, const DataT & data);
     void update(uint32_t idx, const KeyT & key, const DataT & data) {
         // assert(idx < NodeType::maxSlots());
@@ -293,8 +293,8 @@ template <typename KeyT, typename AggrT, uint32_t NumSlots = 16>
 class BTreeInternalNode : public BTreeNodeTT<KeyT, BTreeNode::ChildRef, AggrT, NumSlots>
 {
 public:
-    typedef BTreeNodeTT<KeyT, BTreeNode::ChildRef, AggrT, NumSlots> ParentType;
-    typedef BTreeInternalNode<KeyT, AggrT, NumSlots> InternalNodeType;
+    using ParentType = BTreeNodeTT<KeyT, BTreeNode::ChildRef, AggrT, NumSlots>;
+    using InternalNodeType = BTreeInternalNode<KeyT, AggrT, NumSlots>;
     template <typename, typename, typename, size_t, size_t>
     friend class BTreeNodeAllocator;
     template <typename, typename, typename, size_t, size_t>
@@ -307,8 +307,8 @@ public:
     friend class datastore::Allocator;
     template <typename, typename...>
     friend struct datastore::allocator::Assigner;
-    typedef BTreeNode::Ref Ref;
-    typedef datastore::Handle<InternalNodeType> RefPair;
+    using Ref = BTreeNode::Ref;
+    using RefPair = datastore::Handle<InternalNodeType>;
     using ParentType::_keys;
     using ParentType::_data;
     using ParentType::validSlots;
@@ -320,8 +320,8 @@ public:
     using ParentType::setLevel;
     using ParentType::update;
     using ParentType::EMPTY_LEVEL;
-    typedef KeyT KeyType;
-    typedef Ref DataType;
+    using KeyType = KeyT;
+    using DataType = Ref;
 private:
     uint32_t _validLeaves;
 protected:
@@ -435,8 +435,8 @@ template <typename KeyT, typename DataT, typename AggrT,
 class BTreeLeafNode : public BTreeNodeTT<KeyT, DataT, AggrT, NumSlots>
 {
 public:
-    typedef BTreeNodeTT<KeyT, DataT, AggrT, NumSlots> ParentType;
-    typedef BTreeLeafNode<KeyT, DataT, AggrT, NumSlots> LeafNodeType;
+    using ParentType = BTreeNodeTT<KeyT, DataT, AggrT, NumSlots>;
+    using LeafNodeType = BTreeLeafNode<KeyT, DataT, AggrT, NumSlots>;
     template <typename, typename, typename, size_t, size_t>
     friend class BTreeNodeAllocator;
     template <typename, typename, typename, size_t, size_t>
@@ -447,8 +447,8 @@ public:
     friend class datastore::Allocator;
     template <typename, typename...>
     friend struct datastore::allocator::Assigner;
-    typedef BTreeNode::Ref Ref;
-    typedef datastore::Handle<LeafNodeType> RefPair;
+    using Ref = BTreeNode::Ref;
+    using RefPair = datastore::Handle<LeafNodeType>;
     using ParentType::validSlots;
     using ParentType::_validSlots;
     using ParentType::_keys;
@@ -456,9 +456,9 @@ public:
     using ParentType::stealSomeFromLeftNode;
     using ParentType::stealSomeFromRightNode;
     using ParentType::LEAF_LEVEL;
-    typedef BTreeKeyData<KeyT, DataT> KeyDataType;
-    typedef KeyT KeyType;
-    typedef DataT DataType;
+    using KeyDataType = BTreeKeyData<KeyT, DataT>;
+    using KeyType = KeyT;
+    using DataType = DataT;
 protected:
     BTreeLeafNode() : ParentType(LEAF_LEVEL) {}
 
@@ -532,8 +532,8 @@ template <typename KeyT, typename DataT, typename AggrT,
 class BTreeLeafNodeTemp : public BTreeLeafNode<KeyT, DataT, AggrT, NumSlots>
 {
 public:
-    typedef BTreeLeafNode<KeyT, DataT, AggrT, NumSlots> ParentType;
-    typedef typename ParentType::KeyDataType KeyDataType;
+    using ParentType = BTreeLeafNode<KeyT, DataT, AggrT, NumSlots>;
+    using KeyDataType = typename ParentType::KeyDataType;
 
     BTreeLeafNodeTemp(const KeyDataType *smallArray,
                       uint32_t arraySize)

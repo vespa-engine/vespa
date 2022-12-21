@@ -53,7 +53,7 @@ private:
     void unpackMatchData(search::fef::MatchData &matchData);
 
 public:
-    typedef std::unique_ptr<RankProcessor> UP;
+    using UP = std::unique_ptr<RankProcessor>;
 
     RankProcessor(RankManager::Snapshot::SP snapshot,
                   const vespalib::string &rankProfile,

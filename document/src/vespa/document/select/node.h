@@ -26,8 +26,8 @@ protected:
     bool _parentheses; // Set to true if parentheses was used around this part
                        // Set such that we can recreate original query in print.
 public:
-    typedef std::unique_ptr<Node> UP;
-    typedef std::shared_ptr<Node> SP;
+    using UP = std::unique_ptr<Node>;
+    using SP = std::shared_ptr<Node>;
 
     Node(vespalib::stringref name, uint32_t max_depth)
         : _name(name), _max_depth(max_depth), _parentheses(false)

@@ -19,7 +19,7 @@ namespace storage {
 
 struct ServiceLayerNodeContext : public StorageNodeContext {
     // Typedefs to simplify the remainder of the interface
-    typedef ServiceLayerComponentRegisterImpl ComponentRegister;
+    using ComponentRegister = ServiceLayerComponentRegisterImpl;
 
     /**
      * You can provide your own clock implementation. Useful in testing where

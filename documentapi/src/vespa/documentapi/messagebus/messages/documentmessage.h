@@ -24,8 +24,8 @@ public:
     /**
      * Convenience typedefs.
      */
-    typedef std::unique_ptr<DocumentMessage> UP;
-    typedef std::shared_ptr<DocumentMessage> SP;
+    using UP = std::unique_ptr<DocumentMessage>;
+    using SP = std::shared_ptr<DocumentMessage>;
 
     DocumentMessage();
     ~DocumentMessage() override;

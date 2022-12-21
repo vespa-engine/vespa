@@ -292,7 +292,7 @@ VespaDocumentDeserializer::read(StringFieldValue &value) {
 
 namespace {
 
-typedef SerializableArray::EntryMap FieldInfo;
+using FieldInfo = SerializableArray::EntryMap;
 
 void readFieldInfo(nbostream& input, SerializableArray::EntryMap & field_info) __attribute__((noinline));
 

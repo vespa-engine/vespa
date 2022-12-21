@@ -16,7 +16,7 @@ class StableStore
     template<typename U>
     friend void swap(StableStore<U> &a, StableStore<U> &b);
 public:
-    typedef std::unique_ptr<MyClass> UP;
+    using UP = std::unique_ptr<MyClass>;
 
     StableStore();
     ~StableStore() {}

@@ -8,8 +8,8 @@
 #include "reducematcher.h"
 #include "ITokenProcessor.h"
 
-typedef juniper::Result Result;
-typedef ITokenProcessor::Token Token;
+using Result = juniper::Result;
+using Token = ITokenProcessor::Token;
 
 // Reverse length order, longest match first - needed to allow matcher to
 // match on the most explicit matches before the more implicit ones
@@ -72,7 +72,7 @@ public:
 
     ~MatchObject();
 
-    typedef match_iterator iterator;
+    using iterator = match_iterator;
 
     /** Check if the given string matches any query term in the MatchObject
      * @param an iterator that will be updated to iterate over all matching query terms

@@ -154,7 +154,7 @@ operator<<(std::ostream& out, const MergeBucketCommand::Node& n);
  */
 class MergeBucketReply : public BucketReply {
 public:
-    typedef MergeBucketCommand::Node Node;
+    using Node = MergeBucketCommand::Node;
 
 private:
     std::vector<Node> _nodes;
@@ -182,7 +182,7 @@ public:
  */
 class GetBucketDiffCommand : public BucketCommand {
 public:
-    typedef MergeBucketCommand::Node Node;
+    using Node = MergeBucketCommand::Node;
 
     struct Entry : public document::Printable {
         Timestamp _timestamp;
@@ -227,8 +227,8 @@ public:
  */
 class GetBucketDiffReply : public BucketReply {
 public:
-    typedef MergeBucketCommand::Node Node;
-    typedef GetBucketDiffCommand::Entry Entry;
+    using Node = MergeBucketCommand::Node;
+    using Entry = GetBucketDiffCommand::Entry;
 
 private:
     std::vector<Node> _nodes;
@@ -257,7 +257,7 @@ public:
  */
 class ApplyBucketDiffCommand : public BucketInfoCommand {
 public:
-    typedef MergeBucketCommand::Node Node;
+    using Node = MergeBucketCommand::Node;
     struct Entry : public document::Printable {
         GetBucketDiffCommand::Entry _entry;
         vespalib::string _docName;
@@ -304,8 +304,8 @@ public:
  */
 class ApplyBucketDiffReply : public BucketInfoReply {
 public:
-    typedef MergeBucketCommand::Node Node;
-    typedef ApplyBucketDiffCommand::Entry Entry;
+    using Node = MergeBucketCommand::Node;
+    using Entry = ApplyBucketDiffCommand::Entry;
 
 private:
     std::vector<Node> _nodes;

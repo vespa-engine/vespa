@@ -31,14 +31,14 @@ struct TypeType : public Type {
     static const TypeType instance;
     TypeType() : Type(ID) {}
 };
-typedef TypeType<0> NIX;
-typedef TypeType<1> BOOL;
-typedef TypeType<2> LONG;
-typedef TypeType<3> DOUBLE;
-typedef TypeType<4> STRING;
-typedef TypeType<5> DATA;
-typedef TypeType<6> ARRAY;
-typedef TypeType<7> OBJECT;
+using NIX = TypeType<0>;
+using BOOL = TypeType<1>;
+using LONG = TypeType<2>;
+using DOUBLE = TypeType<3>;
+using STRING = TypeType<4>;
+using DATA = TypeType<5>;
+using ARRAY = TypeType<6>;
+using OBJECT = TypeType<7>;
 extern template struct TypeType<NIX::ID>;
 extern template struct TypeType<BOOL::ID>;
 extern template struct TypeType<LONG::ID>;

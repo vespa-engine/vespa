@@ -211,7 +211,7 @@ public:
     /**
      * Convenience typedefs.
      */
-    typedef std::unique_ptr<RoutingNode> UP;
+    using UP = std::unique_ptr<RoutingNode>;
 
     /**
      * Constructs a new instance of this class. This is the root node

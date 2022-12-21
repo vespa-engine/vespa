@@ -25,7 +25,7 @@ protected:
         int64_t _upper;
         bool    _valid;
     };
-    typedef std::vector<IntInfo> IntInfoListT;
+    using IntInfoListT = std::vector<IntInfo>;
     IntInfoListT _intTerm;
 };
 

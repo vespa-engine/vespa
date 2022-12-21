@@ -6,7 +6,7 @@
 
 namespace vsm {
 
-typedef std::shared_ptr<std::vector<size_t> > SharedOffsetBuffer;
+using SharedOffsetBuffer = std::shared_ptr<std::vector<size_t> >;
 
 /**
  * This class does substring searches the same way as UTF8SubStringFieldSearcher.
@@ -47,7 +47,7 @@ private:
     void insertSeparators(const char * mbegin, const char * mend);
 
 public:
-    typedef std::shared_ptr<UTF8SubstringSnippetModifier> SP;
+    using SP = std::shared_ptr<UTF8SubstringSnippetModifier>;
 
     std::unique_ptr<FieldSearcher> duplicate() const override;
 

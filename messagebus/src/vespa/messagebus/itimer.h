@@ -15,7 +15,7 @@ public:
     /**
      * Convenience typedefs.
      */
-    typedef std::unique_ptr<ITimer> UP;
+    using UP = std::unique_ptr<ITimer>;
 
     /**
      * Virtual destructor required for inheritance.

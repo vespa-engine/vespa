@@ -66,5 +66,5 @@ extern Juniper * _Juniper;
 
 } // end namespace juniper
 
-typedef juniper::TestQuery TestQuery;
+using TestQuery = juniper::TestQuery;
 

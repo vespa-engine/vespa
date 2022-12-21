@@ -10,7 +10,7 @@ using namespace vespalib;
 
 //-----------------------------------------------------------------------------
 
-typedef std::unique_ptr<int> int_up;
+using int_up = std::unique_ptr<int>;
 
 template <typename T> T wrap(int value);
 template <> int wrap<int>(int value) { return value; }
@@ -70,7 +70,7 @@ struct Input {
 
 template <typename Heap, typename Value = int, typename Cmp = CmpInt>
 struct Setup {
-    typedef Setup<Heap, int_up, CmpIntUp> IUP;
+    using IUP = Setup<Heap, int_up, CmpIntUp>;
     Input &input;
     std::vector<Value> data;
     Cmp cmp;

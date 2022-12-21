@@ -256,7 +256,7 @@ MessageBus::unregisterSession(const string &sessionName)
 RoutingTable::SP
 MessageBus::getRoutingTable(const string &protocol)
 {
-    typedef std::map<string, RoutingTable::SP>::iterator ITR;
+    using ITR = std::map<string, RoutingTable::SP>::iterator;
     std::lock_guard guard(_lock);
     ITR itr = _routingTables.find(protocol);
     if (itr == _routingTables.end()) {

@@ -50,13 +50,13 @@ template <typename KeyT,
 class BTreeNodeStore
 {
 public:
-    typedef datastore::DataStoreT<datastore::EntryRefT<22> > DataStoreType;
-    typedef DataStoreType::RefType RefType;
-    typedef BTreeInternalNode<KeyT, AggrT, INTERNAL_SLOTS> InternalNodeType;
-    typedef BTreeLeafNode<KeyT, DataT, AggrT, LEAF_SLOTS>  LeafNodeType;
-    typedef typename InternalNodeType::RefPair InternalNodeTypeRefPair;
-    typedef typename LeafNodeType::RefPair LeafNodeTypeRefPair;
-    typedef vespalib::GenerationHandler::generation_t generation_t;
+    using DataStoreType = datastore::DataStoreT<datastore::EntryRefT<22> >;
+    using RefType = DataStoreType::RefType;
+    using InternalNodeType = BTreeInternalNode<KeyT, AggrT, INTERNAL_SLOTS>;
+    using LeafNodeType = BTreeLeafNode<KeyT, DataT, AggrT, LEAF_SLOTS>;
+    using InternalNodeTypeRefPair = typename InternalNodeType::RefPair;
+    using LeafNodeTypeRefPair = typename LeafNodeType::RefPair;
+    using generation_t = vespalib::GenerationHandler::generation_t;
     using EntryRef = datastore::EntryRef;
     using CompactionStrategy = datastore::CompactionStrategy;
 

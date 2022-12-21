@@ -34,7 +34,7 @@ public:
         const FieldPath & getPath() const { return _path; }
     };
 
-    typedef std::vector<FieldIdentifier> FieldIdentifierVector;
+    using FieldIdentifierVector = std::vector<FieldIdentifier>;
 
 private:
     bool                        _struct_or_multivalue; // property of the output field

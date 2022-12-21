@@ -16,10 +16,10 @@ private:
             return (a.error() > b.error());
         }
     };
-    typedef ZCurve::Area Area;
-    typedef ZCurve::Range Range;
-    typedef ZCurve::RangeVector RangeVector;
-    typedef PriorityQueue<Area, MaxAreaErrorCmp, LeftArrayHeap> Queue;
+    using Area = ZCurve::Area;
+    using Range = ZCurve::Range;
+    using RangeVector = ZCurve::RangeVector;
+    using Queue = PriorityQueue<Area, MaxAreaErrorCmp, LeftArrayHeap>;
 
     Queue   _queue;
     int64_t _total_estimate;
@@ -59,8 +59,8 @@ public:
 class ZAreaSplitter
 {
 private:
-    typedef ZCurve::Area Area;
-    typedef ZCurve::RangeVector RangeVector;
+    using Area = ZCurve::Area;
+    using RangeVector = ZCurve::RangeVector;
 
     ZAreaQueue _queue;
 

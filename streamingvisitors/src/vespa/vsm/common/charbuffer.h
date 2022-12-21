@@ -16,7 +16,7 @@ private:
     size_t            _pos;
 
 public:
-    typedef std::shared_ptr<CharBuffer> SP;
+    using SP = std::shared_ptr<CharBuffer>;
 
     /**
      * Creates a char buffer with len bytes.

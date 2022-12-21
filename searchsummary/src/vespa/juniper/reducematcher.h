@@ -8,7 +8,7 @@
 namespace juniper
 {
 
-typedef std::map<std::string, std::vector<QueryTerm*> > string_match_table;
+using string_match_table = std::map<std::string, std::vector<QueryTerm*> >;
 
 class string_matcher
 {

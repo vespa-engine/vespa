@@ -79,7 +79,7 @@ private:
         size_t operator () (const LockId & lid) const { return lid.hash(); }
     };
     class LockIdSet : public vespalib::hash_set<LockId, hasher> {
-        typedef vespalib::hash_set<LockId, hasher> Hash;
+        using Hash = vespalib::hash_set<LockId, hasher>;
     public:
         LockIdSet();
         ~LockIdSet();
@@ -89,10 +89,10 @@ private:
     };
 
     class LockWaiters {
-        typedef vespalib::hash_map<size_t, LockId> WaiterMap;
+        using WaiterMap = vespalib::hash_map<size_t, LockId>;
     public:
-        typedef size_t Key;
-        typedef typename WaiterMap::const_iterator const_iterator;
+        using Key = size_t;
+        using const_iterator = typename WaiterMap::const_iterator;
         LockWaiters();
         ~LockWaiters();
         Key insert(const LockId & lid);

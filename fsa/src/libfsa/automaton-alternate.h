@@ -424,17 +424,17 @@ private:
     size_t _size; // used # of objects in current chunk
     static const size_t _CAPACITY = 16 * 1024 * 1024; // capacity of chunk in bytes
   public:
-    typedef size_t     size_type;
-    typedef ptrdiff_t  difference_type;
-    typedef _Tp*       pointer;
-    typedef const _Tp* const_pointer;
-    typedef _Tp&       reference;
-    typedef const _Tp& const_reference;
-    typedef _Tp        value_type;
+    using size_type = size_t;
+    using difference_type = ptrdiff_t;
+    using pointer = _Tp*;
+    using const_pointer = const _Tp*;
+    using reference = _Tp&;
+    using const_reference = const _Tp&;
+    using value_type = _Tp;
 
     template<typename _Tp1>
       struct rebind
-      { typedef MMapArenaAllocator<_Tp1> other; };
+      { using other = MMapArenaAllocator<_Tp1>; };
 
     MMapArenaAllocator() throw(): _chunks(), _size(0) { }
 
@@ -520,60 +520,60 @@ private:
   /**
    * @brief Register of states, maps a transition list to a state object
    */
-  typedef std::map< const TransitionList*,State*,TListPtrLess,MMapArenaAllocator< std::pair< const TransitionList*, State* > > > Register;
+  using Register = std::map< const TransitionList*,State*,TListPtrLess,MMapArenaAllocator< std::pair< const TransitionList*, State* > > >;
   /**
    * @brief State register iterator.
    */
-  typedef std::map< const TransitionList*,State*,TListPtrLess,MMapArenaAllocator< std::pair< const TransitionList*, State* > > >::iterator RegisterIterator;
+  using RegisterIterator = std::map< const TransitionList*,State*,TListPtrLess,MMapArenaAllocator< std::pair< const TransitionList*, State* > > >::iterator;
 
   /**
    * @brief Register of states, maps a blob to a special state.
    */
-  typedef std::map< Blob,State* > BlobRegister;
+  using BlobRegister = std::map< Blob,State* >;
   /**
    * @brief Blob register iterator.
    */
-  typedef std::map< Blob,State* >::iterator BlobRegisterIterator;
+  using BlobRegisterIterator = std::map< Blob,State* >::iterator;
 
   /**
    * @brief Array of state pointers.
    */
-  typedef std::vector< State* > StateArray;
+  using StateArray = std::vector< State* >;
   /**
    * @brief State* array iterator.
    */
-  typedef std::vector< State* >::iterator StateArrayIterator;
+  using StateArrayIterator = std::vector< State* >::iterator;
 
   /**
    * @brief Array of state/cell pairs.
    */
-  typedef std::vector< StateCellArrayItem > StateCellArray;
+  using StateCellArray = std::vector< StateCellArrayItem >;
   /**
    * @brief StateCell array iterator.
    */
-  typedef std::vector< StateCellArrayItem >::iterator StateCellArrayIterator;
+  using StateCellArrayIterator = std::vector< StateCellArrayItem >::iterator;
 
   /**
    * @brief Packing map, maps a state pointer to a state ID.
    */
-  typedef std::map< const void*, unsigned int > PackMap;
+  using PackMap = std::map< const void*, unsigned int >;
   /**
    * @brief Packing map iterator.
    */
-  typedef std::map< const void*, unsigned int >::iterator PackMapIterator;
+  using PackMapIterator = std::map< const void*, unsigned int >::iterator;
 
   /**
    * @brief symbol_t list.
    */
-  typedef std::list<symbol_t> SymList;
+  using SymList = std::list<symbol_t>;
   /**
    * @brief symbol_t list iterator.
    */
-  typedef std::list<symbol_t>::iterator SymListIterator;
+  using SymListIterator = std::list<symbol_t>::iterator;
   /**
    * @brief symbol_t list const_iterator.
    */
-  typedef std::list<symbol_t>::const_iterator SymListConstIterator;
+  using SymListConstIterator = std::list<symbol_t>::const_iterator;
   // }}}
 
   // {{{ Automaton::PackedAutomaton

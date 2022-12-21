@@ -20,7 +20,7 @@ public:
     /**
      * Convenience typedef for an auto-pointer to a hop.
      */
-    typedef std::unique_ptr<Hop> UP;
+    using UP = std::unique_ptr<Hop>;
 
     /**
      * Constructs an empty hop.

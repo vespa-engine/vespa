@@ -43,7 +43,7 @@ class ParamByReferenceVectorInt : public Benchmark
 public:
     DECLARE_BENCHMARK(ParamByReferenceVectorInt);
 private:
-    typedef std::vector<int> Vector;
+    using Vector = std::vector<int>;
     size_t callByReference(const Vector & values) const __attribute__((noinline));
     size_t onRun() override;
 };
@@ -53,7 +53,7 @@ class ParamByValueVectorInt : public Benchmark
 public:
     DECLARE_BENCHMARK(ParamByValueVectorInt);
 private:
-    typedef std::vector<int> Vector;
+    using Vector = std::vector<int>;
     size_t callByValue(Vector values) const __attribute__((noinline));
     size_t onRun() override;
 };
@@ -63,7 +63,7 @@ class ParamByReferenceVectorString : public Benchmark
 public:
     DECLARE_BENCHMARK(ParamByReferenceVectorString);
 private:
-    typedef std::vector<std::string> Vector;
+    using Vector = std::vector<std::string>;
     size_t callByReference(const Vector & values) const __attribute__((noinline));
     size_t onRun() override;
 };
@@ -73,7 +73,7 @@ class ParamByValueVectorString : public Benchmark
 public:
     DECLARE_BENCHMARK(ParamByValueVectorString);
 private:
-    typedef std::vector<std::string> Vector;
+    using Vector = std::vector<std::string>;
     size_t callByValue(Vector values) const __attribute__((noinline));
     size_t onRun() override;
 };
@@ -83,7 +83,7 @@ class ReturnByReferenceVectorString : public Benchmark
 public:
     DECLARE_BENCHMARK(ReturnByReferenceVectorString);
 private:
-    typedef std::vector<std::string> Vector;
+    using Vector = std::vector<std::string>;
     const Vector & returnByReference(Vector & values) const __attribute__((noinline));
     size_t onRun() override;
 };
@@ -93,7 +93,7 @@ class ReturnByValueVectorString : public Benchmark
 public:
     DECLARE_BENCHMARK(ReturnByValueVectorString);
 private:
-    typedef std::vector<std::string> Vector;
+    using Vector = std::vector<std::string>;
     Vector returnByValue() const __attribute__((noinline));
     size_t onRun() override;
 };
@@ -103,7 +103,7 @@ class ReturnByValueMultiVectorString : public Benchmark
 public:
     DECLARE_BENCHMARK(ReturnByValueMultiVectorString);
 private:
-    typedef std::vector<std::string> Vector;
+    using Vector = std::vector<std::string>;
     Vector returnByValue() const __attribute__((noinline));
     size_t onRun() override;
 };

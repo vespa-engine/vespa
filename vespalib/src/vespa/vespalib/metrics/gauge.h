@@ -39,8 +39,8 @@ public:
         Measurement(Key k, double v) : idx(k), value(v) {}
     };
 
-    typedef GaugeAggregator aggregator_type;
-    typedef Measurement sample_type;
+    using aggregator_type = GaugeAggregator;
+    using sample_type = Measurement;
 };
 
 } // namespace vespalib::metrics

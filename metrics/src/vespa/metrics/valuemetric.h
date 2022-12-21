@@ -149,10 +149,10 @@ public:
     void addToSnapshot(Metric&, std::vector<Metric::UP> &) const override;
 };
 
-typedef ValueMetric<double, double, true> DoubleValueMetric;
-typedef ValueMetric<double, double, false> DoubleAverageMetric;
-typedef ValueMetric<int64_t, int64_t, true> LongValueMetric;
-typedef ValueMetric<int64_t, int64_t, false> LongAverageMetric;
+using DoubleValueMetric = ValueMetric<double, double, true>;
+using DoubleAverageMetric = ValueMetric<double, double, false>;
+using LongValueMetric = ValueMetric<int64_t, int64_t, true>;
+using LongAverageMetric = ValueMetric<int64_t, int64_t, false>;
 
 } // metrics
 

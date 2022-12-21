@@ -17,8 +17,8 @@ namespace vbench {
 class HttpConnectionPool
 {
 private:
-    typedef vespalib::ArrayQueue<HttpConnection::UP> Queue;
-    typedef std::map<ServerSpec, size_t> Map;
+    using Queue = vespalib::ArrayQueue<HttpConnection::UP>;
+    using Map = std::map<ServerSpec, size_t>;
     using CryptoEngine = vespalib::CryptoEngine;
 
     std::mutex         _lock;

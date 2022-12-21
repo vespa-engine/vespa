@@ -7,7 +7,7 @@
 #include <sys/types.h>
 
 /** ucs4_t is the type of the 4-byte UCS4 characters */
-typedef unsigned int ucs4_t;
+using ucs4_t = unsigned int;
 
 /**
  * Utility class for unicode character handling.

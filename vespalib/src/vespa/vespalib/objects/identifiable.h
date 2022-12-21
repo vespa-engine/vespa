@@ -157,7 +157,7 @@ class Identifiable {
       const RuntimeInfo       * _base;
     };
 public:
-    typedef std::unique_ptr<Identifiable> UP;
+    using UP = std::unique_ptr<Identifiable>;
     class ILoader
     {
     public:
@@ -221,25 +221,25 @@ public:
      * to cast between Identifiable objects, using the inherits()
      * function defined above to check if the cast should succeed.
      */
-    template <typename T> struct BaseType { typedef T type; };
-    template <typename T> struct BaseType<T &> { typedef T type; };
-    template <typename T> struct BaseType<T *> { typedef T type; };
-    template <typename T> struct BaseType<const T &> { typedef T type; };
-    template <typename T> struct BaseType<const T *> { typedef T type; };
+    template <typename T> struct BaseType { using type = T; };
+    template <typename T> struct BaseType<T &> { using type = T; };
+    template <typename T> struct BaseType<T *> { using type = T; };
+    template <typename T> struct BaseType<const T &> { using type = T; };
+    template <typename T> struct BaseType<const T *> { using type = T; };
     template <typename Type> static void ERROR_Type_is_not_Identifiable() {
         Type *(*foo)() = &Type::identifyClassAsIdentifiable;
         (void) foo;
     }
     template <typename T, typename Base>
     static T cast(Base &p) {
-        typedef typename BaseType<T>::type Type;
+        using Type = typename BaseType<T>::type;
         ERROR_Type_is_not_Identifiable<Type>();  // Help diagnose errors.
         if (p.inherits(Type::classId)) { return static_cast<T>(p); }
         else { throw std::bad_cast(); }
     }
     template <typename T, typename Base>
     static T cast(Base *p) {
-        typedef typename BaseType<T>::type Type;
+        using Type = typename BaseType<T>::type;
         ERROR_Type_is_not_Identifiable<Type>();  // Help diagnose errors.
         if (p && p->inherits(Type::classId)) { return static_cast<T>(p); }
         else { return 0; }

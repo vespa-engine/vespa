@@ -91,7 +91,7 @@ void validate_subrange(Iterator &start, Iterator &end, SequenceValidator &valida
 
 }
 
-typedef BTreeTraits<4, 4, 31, false> MyTraits;
+using MyTraits = BTreeTraits<4, 4, 31, false>;
 
 #define KEYWRAP
 
@@ -114,7 +114,7 @@ operator<<(std::ostream &s, const WrapInt &i)
     return s;
 }
 
-typedef WrapInt MyKey;
+using MyKey = WrapInt;
 class MyComp
 {
 public:
@@ -127,8 +127,8 @@ public:
 
 #define UNWRAP(key) (key._val)
 #else
-typedef int MyKey;
-typedef std::less<int> MyComp;
+using MyKey = int;
+using MyComp = std::less<int>;
 #define UNWRAP(key) (key)
 #endif
 
@@ -138,17 +138,17 @@ typedef BTree<MyKey, std::string,
 typedef BTreeStore<MyKey, std::string,
                    btree::NoAggregated,
                    MyComp, MyTraits> MyTreeStore;
-typedef MyTree::Builder               MyTreeBuilder;
-typedef MyTree::LeafNodeType          MyLeafNode;
-typedef MyTree::InternalNodeType      MyInternalNode;
-typedef MyTree::NodeAllocatorType     MyNodeAllocator;
-typedef std::pair<MyKey, std::string> LeafPair;
-typedef MyTreeStore::KeyDataType    MyKeyData;
-typedef MyTreeStore::KeyDataTypeRefPair MyKeyDataRefPair;
+using MyTreeBuilder = MyTree::Builder;
+using MyLeafNode = MyTree::LeafNodeType;
+using MyInternalNode = MyTree::InternalNodeType;
+using MyNodeAllocator = MyTree::NodeAllocatorType;
+using LeafPair = std::pair<MyKey, std::string>;
+using MyKeyData = MyTreeStore::KeyDataType;
+using MyKeyDataRefPair = MyTreeStore::KeyDataTypeRefPair;
 
-typedef BTree<int, BTreeNoLeafData, btree::NoAggregated> SetTreeB;
+using SetTreeB = BTree<int, BTreeNoLeafData, btree::NoAggregated>;
 
-typedef BTreeTraits<16, 16, 10, false> LSeekTraits;
+using LSeekTraits = BTreeTraits<16, 16, 10, false>;
 typedef BTree<int, BTreeNoLeafData, btree::NoAggregated,
               std::less<int>, LSeekTraits> SetTreeL;
 
@@ -1067,10 +1067,10 @@ TEST_F(BTreeTest, require_that_memory_usage_is_calculated)
     typedef BTreeNodeAllocator<int32_t, int8_t,
         btree::NoAggregated,
         MyTraits::INTERNAL_SLOTS, MyTraits::LEAF_SLOTS> NodeAllocator;
-    typedef NodeAllocator::InternalNodeType        INode;
-    typedef NodeAllocator::LeafNodeType            LNode;
-    typedef NodeAllocator::InternalNodeTypeRefPair IRef;
-    typedef NodeAllocator::LeafNodeTypeRefPair     LRef;
+    using INode = NodeAllocator::InternalNodeType;
+    using LNode = NodeAllocator::LeafNodeType;
+    using IRef = NodeAllocator::InternalNodeTypeRefPair;
+    using LRef = NodeAllocator::LeafNodeTypeRefPair;
     LOG(info, "sizeof(BTreeNode)=%zu, sizeof(INode)=%zu, sizeof(LNode)=%zu",
         sizeof(BTreeNode), sizeof(INode), sizeof(LNode));
     EXPECT_GT(sizeof(INode), sizeof(LNode));
@@ -1194,7 +1194,7 @@ TEST_F(BTreeTest, require_that_update_of_key_works)
     typedef BTree<int, BTreeNoLeafData,
         btree::NoAggregated,
         UpdKeyComp &> UpdKeyTree;
-    typedef UpdKeyTree::Iterator                       UpdKeyTreeIterator;
+    using UpdKeyTreeIterator = UpdKeyTree::Iterator;
     GenerationHandler g;
     UpdKeyTree t;
     UpdKeyComp cmp1(0);
@@ -1309,8 +1309,8 @@ TEST_F(BTreeTest, require_that_apply_works)
 {
     typedef BTreeStore<MyKey, std::string, btree::NoAggregated, MyComp,
         BTreeDefaultTraits> TreeStore;
-    typedef TreeStore::KeyType KeyType;
-    typedef TreeStore::KeyDataType KeyDataType;
+    using KeyType = TreeStore::KeyType;
+    using KeyDataType = TreeStore::KeyDataType;
     GenerationHandler g;
     TreeStore s;
     std::vector<KeyDataType> additions;
@@ -1438,7 +1438,7 @@ BTreeTest::requireThatIteratorDistanceWorks(int numEntries)
 {
     GenerationHandler g;
     MyTree tree;
-    typedef MyTree::Iterator Iterator;
+    using Iterator = MyTree::Iterator;
     for (int i = 0; i < numEntries; ++i) {
         tree.insert(i, toStr(i));
     }

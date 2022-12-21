@@ -14,7 +14,7 @@ namespace document {
 
 class LongFieldValue final : public NumericFieldValue<int64_t> {
 public:
-    typedef int64_t Number;
+    using Number = int64_t;
 
     LongFieldValue(Number value = 0) : NumericFieldValue<Number>(Type::LONG, value) {}
 

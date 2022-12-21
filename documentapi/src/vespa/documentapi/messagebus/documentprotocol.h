@@ -32,8 +32,8 @@ public:
     /**
      * Convenience typedef.
      */
-    typedef std::unique_ptr<DocumentProtocol> UP;
-    typedef std::shared_ptr<DocumentProtocol> SP;
+    using UP = std::unique_ptr<DocumentProtocol>;
+    using SP = std::shared_ptr<DocumentProtocol>;
 
     /**
      * The name of this protocol is public static so it can be referenced by all of this protocol's messages

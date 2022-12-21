@@ -25,8 +25,8 @@ public:
     /**
      * Convenience typedefs.
      */
-    typedef std::unique_ptr<IRoutableFactory> UP;
-    typedef std::shared_ptr<IRoutableFactory> SP;
+    using UP = std::unique_ptr<IRoutableFactory>;
+    using SP = std::shared_ptr<IRoutableFactory>;
 
     IRoutableFactory(const IRoutableFactory &) = delete;
     IRoutableFactory & operator = (const IRoutableFactory &) = delete;

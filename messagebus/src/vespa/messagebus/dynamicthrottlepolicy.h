@@ -37,8 +37,8 @@ public:
     /**
      * Convenience typedefs.
      */
-    typedef std::unique_ptr<DynamicThrottlePolicy> UP;
-    typedef std::shared_ptr<DynamicThrottlePolicy> SP;
+    using UP = std::unique_ptr<DynamicThrottlePolicy>;
+    using SP = std::shared_ptr<DynamicThrottlePolicy>;
 
     /**
      * Constructs a new instance of this policy and sets the appropriate default values of member data.

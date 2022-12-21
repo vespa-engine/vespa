@@ -120,9 +120,9 @@ private:
     Fast_HashTable &operator=(Fast_HashTable &);
 
 public:
-    typedef Fast_HashTableElement<Key, T> element;
-    typedef Fast_HashTableIterator<Key, T, _tableSize> iterator;
-    typedef Key keytype;
+    using element = Fast_HashTableElement<Key, T>;
+    using iterator = Fast_HashTableIterator<Key, T, _tableSize>;
+    using keytype = Key;
 
     friend class Fast_HashTableIterator<Key, T, _tableSize>;
 
@@ -144,7 +144,7 @@ protected:
 public:
     Fast_HashTable() : _numElements(0), _lookupTable(NULL), _compare()
     {
-        typedef element dummyDef;
+        using dummyDef = element;
         _lookupTable = new dummyDef* [_tableSize];
         memset(_lookupTable, 0, _tableSize * sizeof(element *));
     }

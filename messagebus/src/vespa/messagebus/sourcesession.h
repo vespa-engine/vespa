@@ -48,7 +48,7 @@ public:
     /**
      * Convenience typedef for an auto pointer to a SourceSession object.
      **/
-    typedef std::unique_ptr<SourceSession> UP;
+    using UP = std::unique_ptr<SourceSession>;
 
     /**
      * The destructor untangles from messagebus. This is safe, but you will loose the replies of all pending

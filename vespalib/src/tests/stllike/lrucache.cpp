@@ -87,8 +87,8 @@ TEST("testCache") {
     EXPECT_TRUE(!cache.hasKey(3));
 }
 
-typedef std::shared_ptr<std::string> MyKey;
-typedef std::shared_ptr<std::string> MyData;
+using MyKey = std::shared_ptr<std::string>;
+using MyData = std::shared_ptr<std::string>;
 
 struct SharedEqual {
     bool operator()(const MyKey & a, const MyKey & b) {
@@ -134,7 +134,7 @@ TEST("testCacheErase") {
 }
 
 TEST("testCacheIterator") {
-    typedef lrucache_map< LruParam<int, string> > Cache;
+    using Cache = lrucache_map< LruParam<int, string> >;
     Cache cache(3);
     cache.insert(1, "first");
     cache.insert(2, "second");
@@ -170,7 +170,7 @@ TEST("testCacheIterator") {
 }
 
 TEST("testCacheIteratorErase") {
-    typedef lrucache_map< LruParam<int, string> > Cache;
+    using Cache = lrucache_map< LruParam<int, string> >;
     Cache cache(3);
     cache.insert(1, "first");
     cache.insert(8, "second");

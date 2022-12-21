@@ -102,7 +102,7 @@ Test::Main()
     TEST_INIT("sort_benchmark");
     steady_time start(steady_clock::now());
     if (payLoad < 8) {
-        typedef TT<8> T;
+        using T = TT<8>;
         if (type == "sortdirect") {
             sortDirect<T>(count);
         } else if (type == "sortindirect") {
@@ -111,7 +111,7 @@ Test::Main()
             LOG(warning, "type '%s' is unknown", type.c_str());
         }
     } else if (payLoad < 16) {
-        typedef TT<16> T;
+        using T = TT<16>;
         if (type == "sortdirect") {
             sortDirect<T>(count);
         } else if (type == "sortindirect") {
@@ -120,7 +120,7 @@ Test::Main()
             LOG(warning, "type '%s' is unknown", type.c_str());
         }
     } else if (payLoad < 32) {
-        typedef TT<32> T;
+        using T = TT<32>;
         if (type == "sortdirect") {
             sortDirect<T>(count);
         } else if (type == "sortindirect") {
@@ -129,7 +129,7 @@ Test::Main()
             LOG(warning, "type '%s' is unknown", type.c_str());
         }
     } else if (payLoad < 64) {
-        typedef TT<64> T;
+        using T = TT<64>;
         if (type == "sortdirect") {
             sortDirect<T>(count);
         } else if (type == "sortindirect") {
@@ -138,7 +138,7 @@ Test::Main()
             LOG(warning, "type '%s' is unknown", type.c_str());
         }
     } else if (payLoad < 128) {
-        typedef TT<128> T;
+        using T = TT<128>;
         if (type == "sortdirect") {
             sortDirect<T>(count);
         } else if (type == "sortindirect") {
@@ -147,7 +147,7 @@ Test::Main()
             LOG(warning, "type '%s' is unknown", type.c_str());
         }
     } else if (payLoad < 256) {
-        typedef TT<256> T;
+        using T = TT<256>;
         if (type == "sortdirect") {
             sortDirect<T>(count);
         } else if (type == "sortindirect") {
@@ -156,7 +156,7 @@ Test::Main()
             LOG(warning, "type '%s' is unknown", type.c_str());
         }
     } else if (payLoad < 512) {
-        typedef TT<512> T;
+        using T = TT<512>;
         if (type == "sortdirect") {
             sortDirect<T>(count);
         } else if (type == "sortindirect") {
@@ -165,7 +165,7 @@ Test::Main()
             LOG(warning, "type '%s' is unknown", type.c_str());
         }
     } else {
-        typedef TT<1024> T;
+        using T = TT<1024>;
         LOG(info, "Payload %ld is too big to make any sense. Using %ld.", payLoad, sizeof(T));
         if (type == "sortdirect") {
             sortDirect<T>(count);

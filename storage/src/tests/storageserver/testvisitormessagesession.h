@@ -22,7 +22,7 @@ private:
     bool _autoReply;
 
 public:
-    typedef std::unique_ptr<TestVisitorMessageSession> UP;
+    using UP = std::unique_ptr<TestVisitorMessageSession>;
 
     VisitorThread& thread;
     Visitor& visitor;

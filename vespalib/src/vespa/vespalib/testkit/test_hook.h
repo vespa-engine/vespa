@@ -75,8 +75,8 @@ protected:
     template <typename T>
     bool runTest(const T &fixture, size_t num_threads) {
         assert(num_threads > 0);
-        typedef std::unique_ptr<TestThreadWrapper> ThreadUP;
-        typedef std::unique_ptr<T> FixtureUP;
+        using ThreadUP = std::unique_ptr<TestThreadWrapper>;
+        using FixtureUP = std::unique_ptr<T>;
         std::vector<TestMaster::TraceItem> traceStack = TestMaster::master.getThreadTraceStack();
         CountDownLatch latch(num_threads);
         Barrier barrier(num_threads);

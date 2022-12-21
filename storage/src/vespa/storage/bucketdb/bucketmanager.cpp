@@ -510,7 +510,7 @@ BucketManager::processRequestBucketInfoCommands(document::BucketSpace bucketSpac
     //   from the current cluster state.
 
     std::set<uint16_t> seenDistributors;
-    typedef std::shared_ptr<api::RequestBucketInfoCommand> RBISP;
+    using RBISP = std::shared_ptr<api::RequestBucketInfoCommand>;
     std::map<uint16_t, RBISP> requests;
 
     auto distribution(_component.getBucketSpaceRepo().get(bucketSpace).getDistribution());

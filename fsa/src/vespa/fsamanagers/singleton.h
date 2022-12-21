@@ -44,8 +44,8 @@ private:
   void destroy();
 
 
-  typedef std::list<void(*)()>            FunctionList;
-  typedef std::list<void(*)()>::iterator  FunctionListIterator;
+  using FunctionList = std::list<void(*)()>;
+  using FunctionListIterator = std::list<void(*)()>::iterator;
 
   /** List of Singleton destroy functions */
   FunctionList _functionList;

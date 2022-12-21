@@ -14,7 +14,7 @@ namespace document {
 
 class FloatFieldValue final : public NumericFieldValue<float> {
 public:
-    typedef float Number;
+    using Number = float;
 
     FloatFieldValue(Number value = 0) : NumericFieldValue<Number>(Type::FLOAT, value) {}
 

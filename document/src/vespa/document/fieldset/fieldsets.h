@@ -48,7 +48,7 @@ public:
 class FieldCollection : public FieldSet
 {
 public:
-    typedef std::unique_ptr<FieldCollection> UP;
+    using UP = std::unique_ptr<FieldCollection>;
 
     FieldCollection(const DocumentType& docType, Field::Set set);
     FieldCollection(const FieldCollection &);

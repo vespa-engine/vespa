@@ -14,7 +14,7 @@ namespace document {
 
 class ByteFieldValue final : public NumericFieldValue<int8_t> {
 public:
-    typedef int8_t Number;
+    using Number = int8_t;
 
     ByteFieldValue(Number value = 0)
         : NumericFieldValue<Number>(Type::BYTE, value) {}

@@ -50,9 +50,9 @@ private:
     VESPA_DLL_LOCAL void ensureLookupMap() const;
     VESPA_DLL_LOCAL ssize_t findIndex(const FieldValue& fv) const;
 public:
-    typedef std::unique_ptr<MapFieldValue> UP;
+    using UP = std::unique_ptr<MapFieldValue>;
     class iterator {
-        typedef std::pair<FieldValue *, FieldValue *> pair;
+        using pair = std::pair<FieldValue *, FieldValue *>;
     public:
         iterator(MapFieldValue & map, size_t index) : _map(&map), _index(index) { }
         bool operator == (const iterator & rhs) const { return _map == rhs._map && _index == rhs._index; }
@@ -72,7 +72,7 @@ public:
     };
     class const_iterator {
     public:
-        typedef std::pair<const FieldValue *, const FieldValue *> pair;
+        using pair = std::pair<const FieldValue *, const FieldValue *>;
         const_iterator(const MapFieldValue & map, size_t index) : _map(&map), _index(index) { }
         bool operator == (const const_iterator & rhs) const { return _map == rhs._map && _index == rhs._index; }
         bool operator != (const const_iterator & rhs) const { return _map != rhs._map || _index != rhs._index; }

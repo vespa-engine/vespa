@@ -22,10 +22,10 @@ namespace document {
 
 class LiteralFieldValueB : public FieldValue {
 public:
-    typedef vespalib::string string;
-    typedef vespalib::stringref stringref;
-    typedef std::unique_ptr<LiteralFieldValueB> UP;
-    typedef string value_type;
+    using string = vespalib::string;
+    using stringref = vespalib::stringref;
+    using UP = std::unique_ptr<LiteralFieldValueB>;
+    using value_type = string;
 
     explicit LiteralFieldValueB(Type type);
     ~LiteralFieldValueB();

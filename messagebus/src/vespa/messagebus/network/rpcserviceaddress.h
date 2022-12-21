@@ -23,7 +23,7 @@ public:
     /**
      * Convenience typedefs.
      */
-    typedef std::unique_ptr<RPCServiceAddress> UP;
+    using UP = std::unique_ptr<RPCServiceAddress>;
 
     /**
      * Constructs a service address from the given specifications. The last component of the service is stored

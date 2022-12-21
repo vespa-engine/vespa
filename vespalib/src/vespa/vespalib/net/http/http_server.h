@@ -24,7 +24,7 @@ private:
 
     void get(Portal::GetRequest req) override;
 public:
-    typedef std::unique_ptr<HttpServer> UP;
+    using UP = std::unique_ptr<HttpServer>;
     HttpServer(int port_in);
     ~HttpServer();
     const vespalib::string &host() const { return _server->my_host(); }

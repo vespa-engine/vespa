@@ -20,9 +20,9 @@ struct JsonStreamTypes {
 };
 // Use namespace in function to avoid prefixing namespace everywhere.
 namespace jsonstream {
-    typedef JsonStreamTypes::Object Object;
-    typedef JsonStreamTypes::Array Array;
-    typedef JsonStreamTypes::End End;
+    using Object = JsonStreamTypes::Object;
+    using Array = JsonStreamTypes::Array;
+    using End = JsonStreamTypes::End;
 }
 
 // We can disable this if it ends up being a performance issue.

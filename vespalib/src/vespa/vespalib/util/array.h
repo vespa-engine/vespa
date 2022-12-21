@@ -78,11 +78,11 @@ public:
         const T * _p;
     };
     using Alloc = alloc::Alloc;
-    typedef const T * const_iterator;
-    typedef T * iterator;
-    typedef const T & const_reference;
-    typedef T value_type;
-    typedef size_t size_type;
+    using const_iterator = const T *;
+    using iterator = T *;
+    using const_reference = const T &;
+    using value_type = T;
+    using size_type = size_t;
 
     Array(const Alloc & initial=Alloc::alloc());
     Array(size_t sz, const Alloc & initial=Alloc::alloc());

@@ -30,7 +30,7 @@ private:
 
     void run() override;
 public:
-    typedef std::unique_ptr<Worker> UP;
+    using UP = std::unique_ptr<Worker>;
     Worker(Provider<Request> &provider, Handler<Request> &next,
            HttpConnectionPool &pool, Timer &timer);
     void join() override { _thread.join(); }

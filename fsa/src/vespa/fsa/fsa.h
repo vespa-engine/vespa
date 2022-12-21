@@ -23,22 +23,22 @@ namespace fsa {
 /**
  * @brief Symbol type used by the automaton. sizeof() should be 1.
  */
-typedef uint8_t symbol_t;
+using symbol_t = uint8_t;
 
 /**
  * @brief State type used by the automaton.
  */
-typedef uint32_t state_t;
+using state_t = uint32_t;
 
 /**
  * @brief Hash type used by the automaton.
  */
-typedef uint32_t hash_t;
+using hash_t = uint32_t;
 
 /**
  * @brief Data type used by the automaton. sizeof() should be 1.
  */
-typedef uint8_t data_t;
+using data_t = uint8_t;
 
 // }}}
 

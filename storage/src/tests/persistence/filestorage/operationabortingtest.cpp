@@ -31,7 +31,7 @@ class BlockingMockProvider : public PersistenceProviderWrapper
     vespalib::Barrier& _queueBarrier;
     vespalib::Barrier& _completionBarrier;
 public:
-    typedef std::unique_ptr<BlockingMockProvider> UP;
+    using UP = std::unique_ptr<BlockingMockProvider>;
 
     mutable std::atomic<uint32_t> _bucketInfoInvocations;
     std::atomic<uint32_t> _createBucketInvocations;

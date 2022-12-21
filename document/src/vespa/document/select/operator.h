@@ -19,7 +19,7 @@ namespace document::select {
 
 class Operator : public Printable {
 private:
-    typedef vespalib::hash_map<vespalib::string, const Operator*> OperatorMap;
+    using OperatorMap = vespalib::hash_map<vespalib::string, const Operator*>;
     static OperatorMap _operators;
     vespalib::string _name;
 

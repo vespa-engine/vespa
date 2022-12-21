@@ -9,7 +9,7 @@ namespace documentapi {
 
 class RoutingPolicyRepository {
 private:
-    typedef std::map<string, IRoutingPolicyFactory::SP> FactoryMap;
+    using FactoryMap = std::map<string, IRoutingPolicyFactory::SP>;
 
     mutable std::mutex  _lock;
     FactoryMap          _factories;

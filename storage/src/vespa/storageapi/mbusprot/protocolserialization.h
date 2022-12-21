@@ -70,12 +70,12 @@ protected:
     ProtocolSerialization() = default;
     virtual ~ProtocolSerialization() = default;
 
-    typedef api::StorageCommand SCmd;
-    typedef api::StorageReply SRep;
-    typedef document::ByteBuffer BBuf;
-    typedef vespalib::GrowableByteBuffer GBBuf;
-    typedef SerializationHelper SH;
-    typedef StorageMessage SM;
+    using SCmd = api::StorageCommand;
+    using SRep = api::StorageReply;
+    using BBuf = document::ByteBuffer;
+    using GBBuf = vespalib::GrowableByteBuffer;
+    using SH = SerializationHelper;
+    using SM = StorageMessage;
 
     virtual void onEncode(GBBuf&, const api::PutCommand&) const = 0;
     virtual void onEncode(GBBuf&, const api::PutReply&) const = 0;

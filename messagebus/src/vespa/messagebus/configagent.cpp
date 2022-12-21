@@ -18,7 +18,7 @@ ConfigAgent::configure(std::unique_ptr<MessagebusConfig> config)
 {
     const MessagebusConfig &cfg(*config);
     RoutingSpec spec;
-    typedef MessagebusConfig CFG;
+    using CFG = MessagebusConfig;
     for (uint32_t t = 0; t < cfg.routingtable.size(); ++t) {
         const CFG::Routingtable &table = cfg.routingtable[t];
         RoutingTableSpec tableSpec(table.protocol);

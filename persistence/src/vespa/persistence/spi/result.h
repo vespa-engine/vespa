@@ -11,7 +11,7 @@ class DocEntry;
 
 class Result {
 public:
-    typedef std::unique_ptr<Result> UP;
+    using UP = std::unique_ptr<Result>;
 
     enum class ErrorType {
         NONE,

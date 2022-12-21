@@ -371,7 +371,7 @@ private:
 void LatinTokenizerTest::TestTypeparamObservers()
 {
 
-    typedef Fast_LatinTokenizer<TPS,TPS> MyTokenizer;
+    using MyTokenizer = Fast_LatinTokenizer<TPS,TPS>;
 
     PushDesc("TypeparamObservers\n");
     std::string text("4Some6text");
@@ -390,7 +390,7 @@ void LatinTokenizerTest::TestTypeparamObservers()
 void LatinTokenizerTest::TestMapelURL()
 {
 
-    typedef Fast_LatinTokenizer<Maple_Space, Mapel_Pucntuation> MyTokenizer;
+    using MyTokenizer = Fast_LatinTokenizer<Maple_Space, Mapel_Pucntuation>;
 
     PushDesc("MapelURL\n");
     std::string text("http://search.msn.co.uk/results.asp?q= cfg=SMCBROWSE rn=1825822 dp=1873075 v=166:");

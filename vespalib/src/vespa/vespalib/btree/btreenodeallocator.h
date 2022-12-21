@@ -40,8 +40,8 @@ private:
 
     NodeStore _nodeStore;
 
-    typedef vespalib::Array<BTreeNode::Ref> RefVector;
-    typedef vespalib::Array<BTreeRootBaseType *> BTreeRootBaseTypeVector;
+    using RefVector = vespalib::Array<BTreeNode::Ref>;
+    using BTreeRootBaseTypeVector = vespalib::Array<BTreeRootBaseType *>;
     
     // Nodes that might not be frozen.
     RefVector _internalToFreeze;

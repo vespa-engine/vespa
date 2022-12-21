@@ -44,11 +44,11 @@ private:
   ConceptNetManager& operator=(const ConceptNetManager&);
 
   /** %ConceptNet library type */
-  typedef std::map<std::string,ConceptNet::Handle*>                  Library;
+  using Library = std::map<std::string,ConceptNet::Handle*>;
   /** %ConceptNet library iterator type */
-  typedef std::map<std::string,ConceptNet::Handle*>::iterator        LibraryIterator;
+  using LibraryIterator = std::map<std::string,ConceptNet::Handle*>::iterator;
   /** %ConceptNet library const iterator type */
-  typedef std::map<std::string,ConceptNet::Handle*>::const_iterator  LibraryConstIterator;
+  using LibraryConstIterator = std::map<std::string,ConceptNet::Handle*>::const_iterator;
 
   Library           _library;    /**< Library of concept networks.                 */
   mutable RWLock    _lock;       /**< Read-write lock for library synchronization. */

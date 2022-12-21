@@ -212,7 +212,7 @@ const AnnotationType *AnnotationTypeRepo::lookup(int32_t id) const {
 // Combination of a DocumentType and a collection of DataTypes
 // associated with it.
 struct DataTypeRepo {
-    typedef unique_ptr<DataTypeRepo> UP;
+    using UP = unique_ptr<DataTypeRepo>;
 
     std::unique_ptr<DocumentType> doc_type;
     Repo repo;
@@ -252,7 +252,7 @@ void setAnnotationDataTypes(const vector<DocumenttypesConfig::Documenttype::Anno
     }
 }
 
-typedef DocumenttypesConfig::Documenttype::Datatype Datatype;
+using Datatype = DocumenttypesConfig::Documenttype::Datatype;
 
 void addField(const Datatype::Sstruct::Field &field, Repo &repo, StructDataType &struct_type)
 {

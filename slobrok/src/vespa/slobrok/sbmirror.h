@@ -31,7 +31,7 @@ public:
      *
      * Elements are connection specs, typically "tcp/foo.bar.com:42"
      **/
-    typedef std::vector<std::string> StringList;
+    using StringList = std::vector<std::string>;
 
     /**
      * @brief Create a new MirrorAPI object using config

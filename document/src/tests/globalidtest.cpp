@@ -184,7 +184,7 @@ TEST_F(GlobalIdTest, testGidRangeConversion)
 
 TEST_F(GlobalIdTest, testBucketOrderCmp)
 {
-    typedef GlobalId::BucketOrderCmp C;
+    using C = GlobalId::BucketOrderCmp;
     EXPECT_TRUE(C::compareRaw(0, 0) == 0);
     EXPECT_TRUE(C::compareRaw(0, 1) == -1);
     EXPECT_TRUE(C::compareRaw(1, 0) == 1);
@@ -217,7 +217,7 @@ TEST_F(GlobalIdTest, testBucketOrderCmp)
         GlobalId bar = GlobalId::parse("gid(0x000000100030003000700000)");
         GlobalId baz = GlobalId::parse("gid(0x000000103330333000700000)");
 
-        typedef std::map<GlobalId, uint32_t, GlobalId::BucketOrderCmp> GidMap;
+        using GidMap = std::map<GlobalId, uint32_t, GlobalId::BucketOrderCmp>;
         GidMap gidMap;
         gidMap[foo] = 666;
         gidMap[bar] = 777;

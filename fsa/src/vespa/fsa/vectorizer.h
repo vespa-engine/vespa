@@ -39,8 +39,8 @@ public:
    */
   class VectorItem {
   public:
-    typedef std::pair<unsigned int /*position*/, int /*length*/> Hit;
-    typedef std::vector<Hit> Hits;
+    using Hit = std::pair<unsigned int /*position*/, int /*length*/>;
+    using Hits = std::vector<Hit>;
   private:
     std::string   _term;     /**< Term/phrase. */
     double        _weight;   /**< Term weight. */
@@ -334,7 +334,7 @@ public:
   /**
    * @brief Term vector type.
    */
-  typedef std::vector<VectorItem>    TermVector;
+  using TermVector = std::vector<VectorItem>;
 
 
 private:
@@ -355,7 +355,7 @@ private:
 
   public:
 
-    typedef std::map<std::string, std::pair<TfIdf, VectorItem::Hits> > ItemMap;
+    using ItemMap = std::map<std::string, std::pair<TfIdf, VectorItem::Hits> >;
 
     // {{{ Vectorizer::RawVector::iterator
 

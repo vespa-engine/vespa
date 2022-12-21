@@ -9,7 +9,7 @@ namespace document { class ByteBuffer; }
 namespace vespalib { class GrowableByteBuffer; }
 namespace vdslib {
 
-typedef std::map<size_t, vespalib::MallocPtr> IntBlobMapT;
+using IntBlobMapT = std::map<size_t, vespalib::MallocPtr>;
 
 class AggregatorList : public IntBlobMapT
 {
@@ -35,14 +35,14 @@ public:
     void serialize(vespalib::GrowableByteBuffer & buf) const;
     uint32_t getSerializedSize() const { return (1 + getCount()) * sizeof(uint32_t) + getSize(); }
 private:
-    typedef vespalib::MallocPtr Blob;
+    using Blob = vespalib::MallocPtr;
     Blob                _blob;
     std::vector<size_t> _offsets;
 };
 
 class SearchResult {
 public:
-    typedef double RankType;
+    using RankType = double;
 public:
     SearchResult();
 
@@ -121,7 +121,7 @@ private:
         }
     };
     size_t getBufCount() const { return _numDocIdBytes; }
-    typedef std::shared_ptr<vespalib::MallocPtr> DocIdBuffer;
+    using DocIdBuffer = std::shared_ptr<vespalib::MallocPtr>;
     uint32_t                     _totalHits;
     size_t                       _wantedHits;
     std::vector<Hit>             _hits;            // Corresponding rank.

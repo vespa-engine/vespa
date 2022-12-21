@@ -6,14 +6,14 @@
 
 namespace vsm {
 
-typedef vespalib::CloneablePtr<document::FieldValue> FieldValueContainer;
-typedef document::FieldPath FieldPath; // field path to navigate a field value
-typedef std::vector<FieldPath> FieldPathMapT; // map from field id to field path
-typedef std::shared_ptr<FieldPathMapT> SharedFieldPathMap;
+using FieldValueContainer = vespalib::CloneablePtr<document::FieldValue>;
+using FieldPath = document::FieldPath; // field path to navigate a field value
+using FieldPathMapT = std::vector<FieldPath>; // map from field id to field path
+using SharedFieldPathMap = std::shared_ptr<FieldPathMapT>;
 
 class StorageDocument : public Document {
 public:
-    typedef std::unique_ptr<StorageDocument> UP;
+    using UP = std::unique_ptr<StorageDocument>;
 
     class SubDocument {
     public:

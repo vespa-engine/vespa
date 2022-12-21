@@ -24,8 +24,8 @@ private:
     bool _set[256];
 };
 
-typedef vespalib::StringTokenizer::Token Token;
-typedef vespalib::StringTokenizer::TokenList TokenList;
+using Token = vespalib::StringTokenizer::Token;
+using TokenList = vespalib::StringTokenizer::TokenList;
 
 /**
  * strip leading and trailing sequences

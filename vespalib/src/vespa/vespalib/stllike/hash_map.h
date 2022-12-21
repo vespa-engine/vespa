@@ -11,16 +11,16 @@ template< typename K, typename V, typename H = vespalib::hash<K>, typename EQ = 
 class hash_map
 {
 public:
-    typedef std::pair<K, V> value_type;
-    typedef K key_type;
-    typedef V mapped_type;
+    using value_type = std::pair<K, V>;
+    using key_type = K;
+    using mapped_type = V;
     using HashTable = hashtable< K, value_type, H, EQ, Select1st<value_type>, M >;
 private:
     HashTable _ht;
 public:
-    typedef typename HashTable::iterator iterator;
-    typedef typename HashTable::const_iterator const_iterator;
-    typedef typename HashTable::insert_result insert_result;
+    using iterator = typename HashTable::iterator;
+    using const_iterator = typename HashTable::const_iterator;
+    using insert_result = typename HashTable::insert_result;
 public:
     hash_map(hash_map &&) noexcept = default;
     hash_map & operator = (hash_map &&) noexcept = default;

@@ -12,7 +12,7 @@
 namespace storage {
 
 struct DataStoredMetrics : metrics::MetricSet {
-    typedef std::shared_ptr<DataStoredMetrics> SP;
+    using SP = std::shared_ptr<DataStoredMetrics>;
 
     metrics::LongValueMetric buckets;
     metrics::LongValueMetric docs;

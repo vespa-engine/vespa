@@ -19,8 +19,8 @@ public:
     /**
      * Convenience typedefs.
      */
-    typedef std::unique_ptr<IRoutingPolicy> UP;
-    typedef std::shared_ptr<IRoutingPolicy> SP;
+    using UP = std::unique_ptr<IRoutingPolicy>;
+    using SP = std::shared_ptr<IRoutingPolicy>;
 
     IRoutingPolicy(const IRoutingPolicy &) = delete;
     IRoutingPolicy & operator = (const IRoutingPolicy &) = delete;

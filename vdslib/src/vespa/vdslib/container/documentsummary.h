@@ -56,7 +56,7 @@ private:
         }
     };
     size_t getSummarySize() const { return _summarySize; }
-    typedef std::shared_ptr<vespalib::MallocPtr> DocBuffer;
+    using DocBuffer = std::shared_ptr<vespalib::MallocPtr>;
     DocBuffer            _summaryBuffer;  // Raw zero-terminated documentids in rank order.
     std::vector<Summary> _summary;  // Constructed vector containing offset of document in buffer.
     size_t               _summarySize;

@@ -35,7 +35,7 @@ class BucketSelector {
 public:
     explicit BucketSelector(const BucketIdFactory& factory);
 
-    typedef std::vector<BucketId> BucketVector;
+    using BucketVector = std::vector<BucketId>;
     /**
      * Get a list of bucket ids that needs to be visited to be sure to find
      * all data matching given expression. Note that we can only detect

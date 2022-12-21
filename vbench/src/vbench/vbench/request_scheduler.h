@@ -32,7 +32,7 @@ private:
 
     void run() override;
 public:
-    typedef std::unique_ptr<RequestScheduler> UP;
+    using UP = std::unique_ptr<RequestScheduler>;
     using CryptoEngine = vespalib::CryptoEngine;
     RequestScheduler(CryptoEngine::SP crypto, Handler<Request> &next, size_t numWorkers);
     void abort();

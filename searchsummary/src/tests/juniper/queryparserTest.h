@@ -73,7 +73,7 @@ class QueryParserTest : public Test {
     void tearDown();
 
     typedef void(QueryParserTest::* tst_method_ptr) ();
-    typedef std::map<std::string, tst_method_ptr> MethodContainer;
+    using MethodContainer = std::map<std::string, tst_method_ptr>;
     MethodContainer test_methods_;
     void init();
 

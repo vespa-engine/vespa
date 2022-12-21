@@ -9,7 +9,7 @@ namespace document {
 struct SpanTreeVisitor;
 
 struct SpanNode {
-    typedef std::unique_ptr<SpanNode> UP;
+    using UP = std::unique_ptr<SpanNode>;
 
     virtual ~SpanNode() = default;
 

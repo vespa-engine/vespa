@@ -16,8 +16,8 @@ public:
     /**
      * Convenience typedef.
      */
-    typedef std::unique_ptr<DocumentSummaryMessage> UP;
-    typedef std::shared_ptr<DocumentSummaryMessage> SP;
+    using UP = std::unique_ptr<DocumentSummaryMessage>;
+    using SP = std::shared_ptr<DocumentSummaryMessage>;
 
     /**
      * Constructs a new document message with no content.

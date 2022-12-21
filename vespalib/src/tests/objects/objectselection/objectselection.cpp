@@ -12,7 +12,7 @@ using namespace vespalib;
 
 struct Foo : public Identifiable
 {
-    typedef IdentifiablePtr<Foo> CP;
+    using CP = IdentifiablePtr<Foo>;
     std::vector<CP> nodes;
 
     DECLARE_IDENTIFIABLE(Foo);

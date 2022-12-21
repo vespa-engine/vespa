@@ -192,11 +192,11 @@ public:
     class const_iterator;
     class iterator {
     public:
-        typedef std::ptrdiff_t difference_type;
-        typedef Value value_type;
-        typedef Value& reference;
-        typedef Value* pointer;
-        typedef std::forward_iterator_tag iterator_category;
+        using difference_type = std::ptrdiff_t;
+        using value_type = Value;
+        using reference = Value&;
+        using pointer = Value*;
+        using iterator_category = std::forward_iterator_tag;
 
         iterator(hashtable * hash) : _current(0), _hashTable(hash) {
             if (! _hashTable->_nodes[_current].valid()) {
@@ -236,11 +236,11 @@ public:
     };
     class const_iterator {
     public:
-        typedef std::ptrdiff_t difference_type;
-        typedef const Value value_type;
-        typedef const Value& reference;
-        typedef const Value* pointer;
-        typedef std::forward_iterator_tag iterator_category;
+        using difference_type = std::ptrdiff_t;
+        using value_type = const Value;
+        using reference = const Value&;
+        using pointer = const Value*;
+        using iterator_category = std::forward_iterator_tag;
 
         const_iterator(const hashtable * hash) : _current(0), _hashTable(hash) {
             if (! _hashTable->_nodes[_current].valid()) {
@@ -275,7 +275,7 @@ public:
         next_t            _current;
         const hashtable * _hashTable;
     };
-    typedef std::pair<iterator, bool> insert_result;
+    using insert_result = std::pair<iterator, bool>;
 
 public:
     hashtable(hashtable &&) noexcept = default;

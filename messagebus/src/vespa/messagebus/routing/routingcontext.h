@@ -31,7 +31,7 @@ public:
     /**
      * Convenience typedefs.
      */
-    typedef std::unique_ptr<RoutingContext> UP;
+    using UP = std::unique_ptr<RoutingContext>;
 
     /**
      * Constructs a new routing context for a given routing node and hop.

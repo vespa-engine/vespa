@@ -30,7 +30,7 @@ public:
         Metric::UP _startValue;
 
     public:
-        typedef std::shared_ptr<StartValue> SP;
+        using SP = std::shared_ptr<StartValue>;
         StartValue(const AddendMetric &metric)
             : _startValueChildren(),
               _startValue(metric.clone(_startValueChildren, CLONE, 0, false)) {}

@@ -24,8 +24,8 @@ private:
     std::mutex      _lock;
     IMessageHandler &_sender;
 
-    typedef Queue<Message*> MessageQueue;
-    typedef std::map<uint64_t, MessageQueue*> QueueMap;
+    using MessageQueue = Queue<Message*>;
+    using QueueMap = std::map<uint64_t, MessageQueue*>;
     QueueMap _seqMap;
 
 private:
@@ -51,7 +51,7 @@ public:
     /**
      * Convenience typedef for an auto pointer to a Sequencer object.
      */
-    typedef std::unique_ptr<Sequencer> UP;
+    using UP = std::unique_ptr<Sequencer>;
 
     /**
      * Create a new Sequencer using the given sender to send messages.

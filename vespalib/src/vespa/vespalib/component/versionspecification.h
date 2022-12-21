@@ -27,7 +27,7 @@ namespace vespalib {
 class VersionSpecification
 {
 public:
-    typedef Version::string string;
+    using string = Version::string;
 private:
     int _major;
     int _minor;

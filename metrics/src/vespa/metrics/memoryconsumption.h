@@ -27,7 +27,7 @@ struct SnapShotUsage;
 
 class MemoryConsumption : public vespalib::Printable {
 public:
-    typedef std::unique_ptr<MemoryConsumption> UP;
+    using UP = std::unique_ptr<MemoryConsumption>;
 
     uint32_t _consumerCount;
     uint32_t _consumerId;

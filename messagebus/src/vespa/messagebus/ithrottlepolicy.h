@@ -17,8 +17,8 @@ public:
     /**
      * Convenience typedefs.
      */
-    typedef std::unique_ptr<IThrottlePolicy> UP;
-    typedef std::shared_ptr<IThrottlePolicy> SP;
+    using UP = std::unique_ptr<IThrottlePolicy>;
+    using SP = std::shared_ptr<IThrottlePolicy>;
 
     /**
      * Virtual destructor required for inheritance.

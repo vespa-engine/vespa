@@ -30,7 +30,7 @@ class TickingThreadRunner final : public Runnable {
     char                      _state;
 
 public:
-    typedef std::shared_ptr<TickingThreadRunner> SP;
+    using SP = std::shared_ptr<TickingThreadRunner>;
 
     TickingThreadRunner(std::mutex& m,
                         std::condition_variable & cond,

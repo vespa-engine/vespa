@@ -24,7 +24,7 @@ class ServiceLayerComponentRegisterImpl
     MinimumUsedBitsTracker _minUsedBitsTracker;
 
 public:
-    typedef std::unique_ptr<ServiceLayerComponentRegisterImpl> UP;
+    using UP = std::unique_ptr<ServiceLayerComponentRegisterImpl>;
 
     explicit ServiceLayerComponentRegisterImpl(const ContentBucketDbOptions&);
 

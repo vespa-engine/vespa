@@ -6,7 +6,7 @@
 namespace documentapi {
 
 // Decide the type of string used once
-typedef vespalib::string string;
+using string = vespalib::string;
 
 } // namespace mbus
 

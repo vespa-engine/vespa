@@ -14,7 +14,7 @@ FNET_SignalShutDown::FNET_SignalShutDown(FNET_Transport &t)
 void
 FNET_SignalShutDown::PerformTask()
 {
-    typedef vespalib::SignalHandler SIG;
+    using SIG = vespalib::SignalHandler;
     if (SIG::INT.check() || SIG::TERM.check()) {
         fprintf(stderr, "got signal, shutting down...\n");
         _transport.ShutDown(false);
@@ -26,7 +26,7 @@ FNET_SignalShutDown::PerformTask()
 void
 FNET_SignalShutDown::hookSignals()
 {
-    typedef vespalib::SignalHandler SIG;
+    using SIG = vespalib::SignalHandler;
     SIG::INT.hook();
     SIG::TERM.hook();
 }

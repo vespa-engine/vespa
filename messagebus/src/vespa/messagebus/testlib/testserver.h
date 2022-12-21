@@ -28,7 +28,7 @@ public:
 
 class TestServer {
 public:
-    typedef std::unique_ptr<TestServer> UP;
+    using UP = std::unique_ptr<TestServer>;
     TestServer(const TestServer &) = delete;
     TestServer & operator = (const TestServer &) = delete;
 

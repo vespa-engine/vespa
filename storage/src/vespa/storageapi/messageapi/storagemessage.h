@@ -29,9 +29,9 @@ namespace vespalib { class asciistream; }
  * Adds a messagehandler callback and some utilities
  */
 #define DECLARE_POINTER_TYPEDEFS(message) \
-    typedef std::unique_ptr<message> UP; \
-    typedef std::shared_ptr<message> SP; \
-    typedef std::shared_ptr<const message> CSP;
+    using UP = std::unique_ptr<message>; \
+    using SP = std::shared_ptr<message>; \
+    using CSP = std::shared_ptr<const message>;
 
 #define DECLARE_STORAGEREPLY(reply, callback) \
 public: \
@@ -339,8 +339,8 @@ class StorageMessage : public vespalib::Printable
     friend class StorageMessageTest; // Used for testing only
 public:
     DECLARE_POINTER_TYPEDEFS(StorageMessage);
-    typedef uint64_t Id;
-    typedef uint8_t Priority;
+    using Id = uint64_t;
+    using Priority = uint8_t;
 
     enum LegacyPriorityValues {
         LOW = 225,

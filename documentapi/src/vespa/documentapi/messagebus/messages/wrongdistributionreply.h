@@ -10,8 +10,8 @@ private:
     string _systemState;
 
 public:
-    typedef std::unique_ptr<WrongDistributionReply> UP;
-    typedef std::shared_ptr<WrongDistributionReply> SP;
+    using UP = std::unique_ptr<WrongDistributionReply>;
+    using SP = std::shared_ptr<WrongDistributionReply>;
 
     WrongDistributionReply();
     WrongDistributionReply(const string &systemState);

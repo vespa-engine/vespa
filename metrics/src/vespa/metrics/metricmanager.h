@@ -76,7 +76,7 @@ public:
      * to is a metric set.
      */
     struct ConsumerSpec : public vespalib::Printable {
-        typedef std::shared_ptr<ConsumerSpec> SP;
+        using SP = std::shared_ptr<ConsumerSpec>;
 
         vespalib::hash_set<Metric::String> includedMetrics;
         ConsumerSpec(ConsumerSpec &&) noexcept = default;
@@ -104,7 +104,7 @@ private:
     std::list<UpdateHook*> _snapshotUpdateHooks;
     mutable std::mutex _waiter;
     mutable std::condition_variable _cond;
-    typedef std::pair<uint32_t, time_t> PeriodTimePair;
+    using PeriodTimePair = std::pair<uint32_t, time_t>;
     std::vector<MetricSnapshotSet::SP> _snapshots;
     MetricSnapshot::SP _totalMetrics;
     std::unique_ptr<Timer> _timer;
@@ -289,7 +289,7 @@ private:
 
     void handleMetricsAltered(const MetricLockGuard & guard);
 
-    typedef std::pair<uint32_t, std::string> SnapSpec;
+    using SnapSpec = std::pair<uint32_t, std::string>;
     static std::vector<SnapSpec> createSnapshotPeriods( const MetricsmanagerConfig& config);
     void assertMetricLockLocked(const MetricLockGuard& g) const;
 };

@@ -21,7 +21,7 @@ class PriorityConverter
                 vespa::config::content::core::StorPrioritymappingConfig>
 {
 public:
-    typedef vespa::config::content::core::StorPrioritymappingConfig Config;
+    using Config = vespa::config::content::core::StorPrioritymappingConfig;
 
     explicit PriorityConverter(const config::ConfigUri& configUri);
     ~PriorityConverter() override;

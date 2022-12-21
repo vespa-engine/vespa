@@ -16,8 +16,8 @@ public:
     /**
      * Convenience typedefs.
      */
-    typedef std::unique_ptr<IRoutingPolicyFactory> UP;
-    typedef std::shared_ptr<IRoutingPolicyFactory> SP;
+    using UP = std::unique_ptr<IRoutingPolicyFactory>;
+    using SP = std::shared_ptr<IRoutingPolicyFactory>;
 
     /**
      * Virtual destructor required for inheritance.

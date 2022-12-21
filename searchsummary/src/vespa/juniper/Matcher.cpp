@@ -60,7 +60,7 @@ Matcher::~Matcher()
 
 MatchCandidate* Matcher::NewCandidate(QueryExpr* query)
 {
-    typedef MatchElement * MatchElementP;
+    using MatchElementP = MatchElement *;
     return new MatchCandidate(query, new MatchElementP[query->_arity], _ctxt_start);
 }
 

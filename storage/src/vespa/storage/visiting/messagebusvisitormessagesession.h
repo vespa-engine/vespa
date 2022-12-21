@@ -21,7 +21,7 @@ class MessageBusVisitorMessageSession : public VisitorMessageSession,
                                         public mbus::IReplyHandler
 {
 public:
-    typedef std::unique_ptr<MessageBusVisitorMessageSession> UP;
+    using UP = std::unique_ptr<MessageBusVisitorMessageSession>;
 
     MessageBusVisitorMessageSession(Visitor& visitor, VisitorThread& thread)
         : _visitor(visitor),

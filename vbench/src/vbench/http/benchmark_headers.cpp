@@ -26,8 +26,8 @@ struct HeaderTraverser {
 };
 struct HeaderMapper {
     typedef BenchmarkHeaders::Value BenchmarkHeaders::*ValueRef;
-    typedef std::map<string,ValueRef> HeaderMap;
-    typedef std::map<string,ValueRef>::iterator HeaderEntry;
+    using HeaderMap = std::map<string,ValueRef>;
+    using HeaderEntry = std::map<string,ValueRef>::iterator;
     HeaderMap map;
     HeaderMapper() : map() {
         map[NUM_HITS]        = &BenchmarkHeaders::num_hits;

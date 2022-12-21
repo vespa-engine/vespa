@@ -12,8 +12,8 @@ class MatchObject;
 #include "queryvisitor.h"
 #include "expcache.h"
 
-typedef std::vector<QueryTerm*> queryterm_vector;
-typedef std::vector<QueryNode*> querynode_vector;
+using queryterm_vector = std::vector<QueryTerm*>;
+using querynode_vector = std::vector<QueryNode*>;
 
 namespace juniper
 {

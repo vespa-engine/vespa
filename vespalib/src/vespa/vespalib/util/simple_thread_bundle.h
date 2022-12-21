@@ -91,7 +91,7 @@ public:
     using Signal = fixed_thread_bundle::Signal;
     using init_fun_t = Runnable::init_fun_t;
 
-    typedef std::unique_ptr<SimpleThreadBundle> UP;
+    using UP = std::unique_ptr<SimpleThreadBundle>;
     enum Strategy { USE_SIGNAL_LIST, USE_SIGNAL_TREE, USE_BROADCAST };
 
     class Pool

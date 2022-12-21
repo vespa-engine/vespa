@@ -44,11 +44,11 @@ private:
   MetaDataManager& operator=(const MetaDataManager&);
 
   /** %MetaData library type */
-  typedef std::map<std::string,MetaData::Handle*>                  Library;
+  using Library = std::map<std::string,MetaData::Handle*>;
   /** %MetaData library iterator type */
-  typedef std::map<std::string,MetaData::Handle*>::iterator        LibraryIterator;
+  using LibraryIterator = std::map<std::string,MetaData::Handle*>::iterator;
   /** %MetaData library const iterator type */
-  typedef std::map<std::string,MetaData::Handle*>::const_iterator  LibraryConstIterator;
+  using LibraryConstIterator = std::map<std::string,MetaData::Handle*>::const_iterator;
 
   Library           _library;    /**< Library of MetaData objects.                 */
   mutable RWLock    _lock;       /**< Read-write lock for library synchronization. */

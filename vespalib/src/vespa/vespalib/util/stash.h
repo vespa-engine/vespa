@@ -126,7 +126,7 @@ public:
         Mark() noexcept : Mark(nullptr, nullptr) {}
     };
 
-    typedef std::unique_ptr<Stash> UP;
+    using UP = std::unique_ptr<Stash>;
     explicit Stash(size_t chunk_size) noexcept ;
     Stash() noexcept : Stash(4096) {}
     Stash(Stash &&rhs) noexcept;

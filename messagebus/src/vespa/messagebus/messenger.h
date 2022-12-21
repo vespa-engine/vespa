@@ -30,7 +30,7 @@ public:
         /**
          * Convenience typedefs.
          */
-        typedef std::unique_ptr<ITask> UP;
+        using UP = std::unique_ptr<ITask>;
 
         /**
          * Returns the priority of this task.

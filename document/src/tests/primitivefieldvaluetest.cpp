@@ -208,7 +208,7 @@ namespace {
     void
     testNumeric(const std::string& maxVal, bool floatingPoint)
     {
-        typedef typename Numeric::Number Number;
+        using Number = typename Numeric::Number;
         Number maxValue(std::numeric_limits<Number>::max());
             // Test common fieldvalue stuff
         testCommon(Numeric(),

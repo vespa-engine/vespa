@@ -13,7 +13,7 @@ private:
     string _value;
     SimpleReply &operator=(const SimpleReply &);
 public:
-    typedef std::unique_ptr<SimpleReply> UP;
+    using UP = std::unique_ptr<SimpleReply>;
     SimpleReply(const string &str);
     virtual ~SimpleReply();
     void setValue(const string &value);

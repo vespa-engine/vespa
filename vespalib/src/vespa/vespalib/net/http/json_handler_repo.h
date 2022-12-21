@@ -24,7 +24,7 @@ class JsonHandlerRepo : public JsonGetHandler
 {
 public:
     struct Token {
-        typedef std::unique_ptr<Token> UP;
+        using UP = std::unique_ptr<Token>;
         virtual ~Token() {}
     };
 
@@ -53,7 +53,7 @@ private:
     };
 
     struct State {
-        typedef std::shared_ptr<State> SP;
+        using SP = std::shared_ptr<State>;
         std::mutex lock;
         size_t seq;
         std::vector<Hook> hooks;

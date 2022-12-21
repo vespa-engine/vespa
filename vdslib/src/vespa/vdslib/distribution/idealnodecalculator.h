@@ -55,7 +55,7 @@ public:
  */
 class IdealNodeCalculator {
 public:
-    typedef std::shared_ptr<IdealNodeCalculator> SP;
+    using SP = std::shared_ptr<IdealNodeCalculator>;
     enum UpStates {
         UpInit,
         UpInitMaintenance,
@@ -85,7 +85,7 @@ public:
 class IdealNodeCalculatorConfigurable : public IdealNodeCalculator
 {
 public:
-    typedef std::shared_ptr<IdealNodeCalculatorConfigurable> SP;
+    using SP = std::shared_ptr<IdealNodeCalculatorConfigurable>;
 
     virtual void setDistribution(const Distribution&) = 0;
     virtual void setClusterState(const ClusterState&) = 0;
