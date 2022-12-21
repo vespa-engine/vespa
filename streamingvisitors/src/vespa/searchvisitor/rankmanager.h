@@ -18,7 +18,7 @@ class RankManager
 {
 public:
     /** collection of field ids for an index **/
-    typedef std::vector<uint32_t> View;
+    using View = std::vector<uint32_t>;
 
     /**
      * This class represents a snapshot of the rank-profiles config with associated setup per rank profile.
@@ -26,9 +26,9 @@ public:
      **/
     class Snapshot {
     private:
-        typedef std::pair<vespalib::string, search::fef::Properties> NamedPropertySet;
-        typedef vespalib::hash_map<vespalib::string, View> ViewMap;
-        typedef vespalib::hash_map<vespalib::string, int> Map;
+        using NamedPropertySet = std::pair<vespalib::string, search::fef::Properties>;
+        using ViewMap = vespalib::hash_map<vespalib::string, View>;
+        using Map = vespalib::hash_map<vespalib::string, int>;
         search::fef::TableManager                 _tableManager;
         IndexEnvironment                          _protoEnv;
         std::vector<NamedPropertySet>             _properties; // property set per rank profile
@@ -48,7 +48,7 @@ public:
         }
 
     public:
-        typedef std::shared_ptr<Snapshot> SP;
+        using SP = std::shared_ptr<Snapshot>;
         Snapshot();
         ~Snapshot();
         const std::vector<NamedPropertySet> & getProperties() const { return _properties; }

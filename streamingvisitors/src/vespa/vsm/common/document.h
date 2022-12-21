@@ -13,15 +13,15 @@ namespace vespalib {
 namespace vsm {
 
 /// Type to identify fields in documents.
-typedef unsigned int FieldIdT;
+using FieldIdT = unsigned int;
 /// A type to represent a list of FieldIds.
-typedef std::vector<FieldIdT> FieldIdTList;
+using FieldIdTList = std::vector<FieldIdT>;
 /// A type to represent all the fields contained in all the indexs.
-typedef vespalib::hash_map<vespalib::string, FieldIdTList> IndexFieldMapT;
+using IndexFieldMapT = vespalib::hash_map<vespalib::string, FieldIdTList>;
 /// A type to represent all the fields contained in all the indexs in an all the document types.
-typedef vespalib::hash_map<vespalib::string, IndexFieldMapT> DocumentTypeIndexFieldMapT;
+using DocumentTypeIndexFieldMapT = vespalib::hash_map<vespalib::string, IndexFieldMapT>;
 /// A type to represent a map from fieldname to fieldid.
-typedef std::map<vespalib::string, FieldIdT> StringFieldIdTMapT;
+using StringFieldIdTMapT = std::map<vespalib::string, FieldIdT>;
 
 class StringFieldIdTMap
 {
@@ -38,7 +38,7 @@ class StringFieldIdTMap
   StringFieldIdTMapT _map;
 };
 
-typedef vespalib::stringref FieldRef;
+using FieldRef = vespalib::stringref;
 
 /**
   This is the base class representing a document. It gives a document some

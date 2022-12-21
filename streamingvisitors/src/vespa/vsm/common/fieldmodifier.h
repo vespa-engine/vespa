@@ -12,7 +12,7 @@ namespace vsm {
 class FieldModifier
 {
 public:
-    typedef std::unique_ptr<FieldModifier> UP;
+    using UP = std::unique_ptr<FieldModifier>;
 
     /**
      * Modifies the given field value and returns a new one.
@@ -29,7 +29,7 @@ public:
     virtual ~FieldModifier() { }
 };
 
-typedef vespalib::hash_map<FieldIdT, FieldModifier::UP> FieldModifierMapT;
+using FieldModifierMapT = vespalib::hash_map<FieldIdT, FieldModifier::UP>;
 
 /**
  * This class wraps a map from field id to field modifier.

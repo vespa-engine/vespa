@@ -8,8 +8,8 @@
 
 namespace vsm {
 
-typedef size_t termcount_t;
-typedef size_t termsize_t;
+using termcount_t = size_t;
+using termsize_t = size_t;
 
 #if defined(COLLECT_CHAR_STAT)
   #define NEED_CHAR_STAT(a) { a; }
@@ -17,10 +17,10 @@ typedef size_t termsize_t;
   #define NEED_CHAR_STAT(a)
 #endif
 
-typedef ucs4_t cmptype_t;
-typedef vespalib::Array<cmptype_t> SearcherBuf;
-typedef std::shared_ptr<SearcherBuf> SharedSearcherBuf;
-typedef std::vector<char> CharVector;
+using cmptype_t = ucs4_t;
+using SearcherBuf = vespalib::Array<cmptype_t>;
+using SharedSearcherBuf = std::shared_ptr<SearcherBuf>;
+using CharVector = std::vector<char>;
 
 class FieldSearcherBase
 {
@@ -135,8 +135,8 @@ public:
     static search::byte _wordChar[256];
 };
 
-typedef std::unique_ptr<FieldSearcher> FieldSearcherContainer;
-typedef std::vector<FieldSearcherContainer> FieldIdTSearcherMapT;
+using FieldSearcherContainer = std::unique_ptr<FieldSearcher>;
+using FieldIdTSearcherMapT = std::vector<FieldSearcherContainer>;
 
 class FieldIdTSearcherMap : public FieldIdTSearcherMapT
 {

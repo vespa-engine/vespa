@@ -381,8 +381,8 @@ private:
         size_t _count;
         size_t _limit;
     };
-    typedef std::vector< GroupingEntry > GroupingList;
-    typedef std::vector<vsm::StorageDocument::UP> DocumentVector;
+    using GroupingList = std::vector< GroupingEntry >;
+    using DocumentVector = std::vector<vsm::StorageDocument::UP>;
 
     class StreamingDocsumsState {
         using ResolveClassInfo = search::docsummary::IDocsumWriter::ResolveClassInfo;

@@ -70,7 +70,7 @@ private:
         std::vector<search::fef::TermFieldMatchData> _matchData;
         vespalib::string _sortBlob;
     };
-    typedef std::vector<Hit> HitVector;
+    using HitVector = std::vector<Hit>;
     HitVector _hits;
     bool      _sortedByDocId; // flag for whether the hit vector is sorted on docId
 
@@ -79,7 +79,7 @@ private:
     bool addHit(Hit && hit);
 
 public:
-    typedef std::unique_ptr<HitCollector> UP;
+    using UP = std::unique_ptr<HitCollector>;
 
     struct IRankProgram {
         virtual ~IRankProgram() {}

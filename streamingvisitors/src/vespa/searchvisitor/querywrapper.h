@@ -50,7 +50,7 @@ public:
         bool isGeoPosTerm() const { return (_term != nullptr) && _term->isGeoLoc(); }
     };
 
-    typedef std::vector<Term> TermList;
+    using TermList = std::vector<Term>;
 
 private:
     PhraseList _phraseList;

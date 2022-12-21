@@ -12,14 +12,14 @@ using vespa::config::search::vsm::VsmfieldsConfig;
 
 namespace vsm {
 
-typedef vespalib::PtrHolder<VsmfieldsConfig> VsmfieldsHolder;
-typedef std::shared_ptr<VsmfieldsConfig> VsmfieldsHandle;
+using VsmfieldsHolder = vespalib::PtrHolder<VsmfieldsConfig>;
+using VsmfieldsHandle = std::shared_ptr<VsmfieldsConfig>;
 
-typedef vespalib::PtrHolder<VsmConfig> VsmHolder;
-typedef std::shared_ptr<VsmConfig> VsmHandle;
+using VsmHolder = vespalib::PtrHolder<VsmConfig>;
+using VsmHandle = std::shared_ptr<VsmConfig>;
 
-typedef vespalib::PtrHolder<VsmsummaryConfig> FastS_VsmsummaryHolder;
-typedef std::shared_ptr<VsmsummaryConfig> FastS_VsmsummaryHandle;
+using FastS_VsmsummaryHolder = vespalib::PtrHolder<VsmsummaryConfig>;
+using FastS_VsmsummaryHandle = std::shared_ptr<VsmsummaryConfig>;
 
 }
 
