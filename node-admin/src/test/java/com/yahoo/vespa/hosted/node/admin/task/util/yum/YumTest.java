@@ -172,6 +172,21 @@ public class YumTest {
     }
 
     @Test
+    void testInstallWithEnablerepoDisablerepo() {
+        mockRpmQuery("package-1", null);
+        terminal.expectCommand(
+                "yum install --assumeyes \"--disablerepo=*\" --enablerepo=repo-name --setopt skip_missing_names_on_install=False package-1 package-2 2>&1",
+                0,
+                "installing, installing");
+
+        assertTrue(yum
+                .install("package-1", "package-2")
+                .enableRepo("repo-name")
+                .disableRepo("*")
+                .converge(taskContext));
+    }
+
+    @Test
     void testWithVersionLock() {
         terminal.expectCommand("yum versionlock list 2>&1",
                 0,
