@@ -20,8 +20,8 @@ private:
     search::SerialNum              _lastSerial;
 
 public:
-    typedef std::shared_ptr<FlushContext> SP;
-    typedef std::vector<SP> List;
+    using SP = std::shared_ptr<FlushContext>;
+    using List = std::vector<SP>;
     FlushContext(const FlushContext &) = delete;
     FlushContext & operator = (const FlushContext &) = delete;
 

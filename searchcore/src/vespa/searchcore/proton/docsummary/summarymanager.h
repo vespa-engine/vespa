@@ -52,7 +52,7 @@ private:
     std::shared_ptr<search::IDocumentStore> _docStore;
 
 public:
-    typedef std::shared_ptr<SummaryManager> SP;
+    using SP = std::shared_ptr<SummaryManager>;
     SummaryManager(vespalib::Executor &shared_executor,
                    const search::LogDocumentStore::Config & summary,
                    const search::GrowStrategy & growStrategy,

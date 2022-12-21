@@ -36,8 +36,8 @@ class ReconfigParams;
 class SearchableDocSubDBConfigurer
 {
 private:
-    typedef vespalib::VarHolder<SearchView::SP> SearchViewHolder;
-    typedef vespalib::VarHolder<SearchableFeedView::SP> FeedViewHolder;
+    using SearchViewHolder = vespalib::VarHolder<SearchView::SP>;
+    using FeedViewHolder = vespalib::VarHolder<SearchableFeedView::SP>;
     const ISummaryManager::SP   &_summaryMgr;
     SearchViewHolder            &_searchView;
     FeedViewHolder              &_feedView;

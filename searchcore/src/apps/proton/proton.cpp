@@ -20,7 +20,7 @@
 #include <vespa/log/log.h>
 LOG_SETUP("proton");
 
-typedef vespalib::SignalHandler SIG;
+using SIG = vespalib::SignalHandler;
 using vespa::config::search::core::ProtonConfig;
 
 struct Params

@@ -87,8 +87,8 @@ public:
     /**
      * Convenience typedefs.
      */
-    typedef typename StdMap::iterator       iterator;
-    typedef typename StdMap::const_iterator const_iterator;
+    using iterator = typename StdMap::iterator;
+    using const_iterator = typename StdMap::const_iterator;
 
     /**
      * Constructs a new instance of this class.

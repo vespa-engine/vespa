@@ -15,9 +15,9 @@ class IBucketCreateNotifier;
 class BucketSessionBase
 {
 public:
-    typedef document::GlobalId GlobalId;
-    typedef document::BucketId BucketId;
-    typedef storage::spi::Timestamp Timestamp;
+    using GlobalId = document::GlobalId;
+    using BucketId = document::BucketId;
+    using Timestamp = storage::spi::Timestamp;
 
 protected:
     Guard _bucketDB;

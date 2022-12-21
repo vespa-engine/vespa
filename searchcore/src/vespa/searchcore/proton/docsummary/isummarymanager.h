@@ -27,8 +27,8 @@ public:
      */
     class ISummarySetup : public search::docsummary::IDocsumEnvironment {
     public:
-        typedef std::unique_ptr<ISummarySetup> UP;
-        typedef std::shared_ptr<ISummarySetup> SP;
+        using UP = std::unique_ptr<ISummarySetup>;
+        using SP = std::shared_ptr<ISummarySetup>;
 
         ~ISummarySetup() override = default;
 
@@ -37,8 +37,8 @@ public:
         virtual search::docsummary::IDocsumStore::UP createDocsumStore() = 0;
     };
 
-    typedef std::unique_ptr<ISummaryManager> UP;
-    typedef std::shared_ptr<ISummaryManager> SP;
+    using UP = std::unique_ptr<ISummaryManager>;
+    using SP = std::shared_ptr<ISummaryManager>;
 
     virtual ~ISummaryManager() = default;
 

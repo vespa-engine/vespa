@@ -24,7 +24,7 @@ using matching::Matcher;
 using matching::RankingExpressions;
 using matching::OnnxModels;
 
-typedef AttributeReprocessingInitializer::Config ARIConfig;
+using ARIConfig = AttributeReprocessingInitializer::Config;
 
 void
 SearchableDocSubDBConfigurer::reconfigureFeedView(IAttributeWriter::SP attrWriter,

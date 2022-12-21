@@ -10,7 +10,7 @@
 namespace proton {
 
 struct ConfigMaps {
-    typedef std::shared_ptr<ConfigMaps> SP;
+    using SP = std::shared_ptr<ConfigMaps>;
     std::map<search::SerialNum, std::shared_ptr<DocumentDBConfig>> configs;
     std::set<search::SerialNum> _valid;
     ~ConfigMaps();

@@ -24,7 +24,7 @@ private:
     std::vector<vespalib::string> getNames() const;
 
 public:
-    typedef std::shared_ptr<AttributePopulator> SP;
+    using SP = std::shared_ptr<AttributePopulator>;
 
     AttributePopulator(const proton::IAttributeManager::SP &mgr,
                        search::SerialNum initSerialNum,

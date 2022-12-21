@@ -51,7 +51,7 @@ private:
     vespalib::Trinary shouldBeReady(const document::BucketId &bucket) const;
     void forceCommit(const CommitParam & param, DoneCallback onDone) override;
 public:
-    typedef std::shared_ptr<CombiningFeedView> SP;
+    using SP = std::shared_ptr<CombiningFeedView>;
 
     CombiningFeedView(const std::vector<IFeedView::SP> &views,
                       document::BucketSpace bucketSpace,

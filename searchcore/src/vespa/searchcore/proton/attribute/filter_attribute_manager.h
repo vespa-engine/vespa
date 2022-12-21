@@ -17,7 +17,7 @@ namespace proton {
 class FilterAttributeManager : public IAttributeManager
 {
 public:
-    typedef std::set<vespalib::string> AttributeSet;
+    using AttributeSet = std::set<vespalib::string>;
 
 private:
     AttributeSet                           _acceptedAttributes;

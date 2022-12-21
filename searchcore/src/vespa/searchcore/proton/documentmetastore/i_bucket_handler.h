@@ -19,7 +19,7 @@ namespace proton::documentmetastore {
  */
 struct IBucketHandler
 {
-    typedef document::BucketId BucketId;
+    using BucketId = document::BucketId;
 
     virtual ~IBucketHandler() = default;
 

@@ -14,7 +14,7 @@ public:
     using SessionManager = matching::SessionManager;
     using IndexSearchable = searchcorespi::IndexSearchable;
     using InternalDocsumReply = std::pair<std::unique_ptr<DocsumReply>, bool>;
-    typedef std::shared_ptr<SearchView> SP;
+    using SP = std::shared_ptr<SearchView>;
 
     static std::shared_ptr<SearchView> create(ISummaryManager::ISummarySetup::SP summarySetup, MatchView::SP matchView);
     SearchView(const SearchView &) = delete;

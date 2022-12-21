@@ -99,7 +99,7 @@ private:
 class DocumentDBMaintenanceConfig
 {
 public:
-    typedef std::shared_ptr<DocumentDBMaintenanceConfig> SP;
+    using SP = std::shared_ptr<DocumentDBMaintenanceConfig>;
 
 private:
     DocumentDBPruneConfig                 _pruneRemovedDocuments;

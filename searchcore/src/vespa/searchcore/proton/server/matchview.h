@@ -31,7 +31,7 @@ class MatchView {
     }
 
 public:
-    typedef std::shared_ptr<MatchView> SP;
+    using SP = std::shared_ptr<MatchView>;
     MatchView(const MatchView &) = delete;
     MatchView & operator = (const MatchView &) = delete;
 

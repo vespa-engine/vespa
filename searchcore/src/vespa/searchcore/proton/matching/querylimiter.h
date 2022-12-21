@@ -12,11 +12,11 @@ namespace proton::matching {
 class QueryLimiter
 {
 private:
-    typedef vespalib::Doom Doom;
+    using Doom = vespalib::Doom;
 public:
     class Token {
     public:
-        typedef std::unique_ptr<Token> UP;
+        using UP = std::unique_ptr<Token>;
         virtual ~Token() = default;
     };
 public:

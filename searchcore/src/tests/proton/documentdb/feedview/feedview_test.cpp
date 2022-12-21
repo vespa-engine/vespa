@@ -62,8 +62,8 @@ using vespalib::eval::ValueType;
 using namespace proton;
 using namespace search::index;
 
-typedef SearchableFeedView::SerialNum SerialNum;
-typedef search::DocumentIdT DocumentIdT;
+using SerialNum = SearchableFeedView::SerialNum;
+using DocumentIdT = search::DocumentIdT;
 
 struct MyLidVector : public std::vector<DocumentIdT>
 {
@@ -225,7 +225,7 @@ public:
 
 struct MyDocumentStore : public test::DummyDocumentStore
 {
-    typedef std::map<DocumentIdT, document::Document::SP> DocMap;
+    using DocMap = std::map<DocumentIdT, document::Document::SP>;
     const document::DocumentTypeRepo & _repo;
     DocMap           _docs;
     uint64_t         _lastSyncToken;
@@ -462,7 +462,7 @@ struct DocumentContext
     DocumentUpdate::SP upd;
     BucketId           bid;
     Timestamp          ts;
-    typedef std::vector<DocumentContext> List;
+    using List = std::vector<DocumentContext>;
     DocumentContext(const vespalib::string &docId, uint64_t timestamp, DocBuilder &builder);
     ~DocumentContext();
     void addFieldUpdate(DocBuilder &builder, const vespalib::string &fieldName) {
@@ -488,8 +488,8 @@ struct FeedTokenContext
 {
     MyTransport mt;
     FeedToken   ft;
-    typedef std::shared_ptr<FeedTokenContext> SP;
-    typedef std::vector<SP> List;
+    using SP = std::shared_ptr<FeedTokenContext>;
+    using List = std::vector<SP>;
     FeedTokenContext(MyTracer &tracer);
     ~FeedTokenContext();
 };

@@ -26,7 +26,7 @@ protected:
     using DocsumRequest = search::engine::DocsumRequest;
     using ThreadBundle = vespalib::ThreadBundle;
 public:
-    typedef std::shared_ptr<ISearchHandler> SP;
+    using SP = std::shared_ptr<ISearchHandler>;
 
     ISearchHandler(const ISearchHandler &) = delete;
     ISearchHandler & operator = (const ISearchHandler &) = delete;

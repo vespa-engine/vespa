@@ -17,7 +17,7 @@ public:
     using AttributeList = std::vector<AttributeSpec>;
 
 private:
-    typedef search::SerialNum SerialNum;
+    using SerialNum = search::SerialNum;
 
     AttributeList _attributes;
     uint32_t      _docIdLimit;

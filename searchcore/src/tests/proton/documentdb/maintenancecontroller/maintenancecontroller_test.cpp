@@ -73,7 +73,7 @@ using storage::spi::dummy::DummyBucketExecutor;
 
 using BlockedReason = IBlockableMaintenanceJob::BlockedReason;
 
-typedef BucketId::List BucketIdVector;
+using BucketIdVector = BucketId::List;
 
 constexpr vespalib::duration TIMEOUT = 60s;
 
@@ -92,7 +92,7 @@ sampleThreadId(FastOS_ThreadId *threadId)
 
 class MyDocumentSubDB
 {
-    typedef std::map<DocumentIdT, Document::SP> DocMap;
+    using DocMap = std::map<DocumentIdT, Document::SP>;
     DocMap _docs;
     uint32_t _subDBId;
     DocumentMetaStore::SP _metaStoreSP;
@@ -441,7 +441,7 @@ void
 MyDocumentSubDB::handlePruneRemovedDocuments(const PruneRemovedDocumentsOperation &op)
 {
     assert(_subDBId == 1u);
-    typedef LidVectorContext::LidVector LidVector;
+    using LidVector = LidVectorContext::LidVector;
     const SerialNum serialNum = op.getSerialNum();
     const LidVectorContext &lidCtx = *op.getLidsToRemove();
     const LidVector &lidsToRemove(lidCtx.getLidVector());
@@ -464,7 +464,7 @@ MyDocumentSubDB::handlePut(PutOperation &op)
     bool needCommit = false;
 
     if (op.getValidDbdId(_subDBId)) {
-        typedef DocumentMetaStore::Result PutRes;
+        using PutRes = DocumentMetaStore::Result;
 
         PutRes putRes(_metaStore.put(gid,
                                      op.getBucketId(),
@@ -506,7 +506,7 @@ MyDocumentSubDB::handleRemove(RemoveOperationWithDocId &op)
     bool needCommit = false;
 
     if (op.getValidDbdId(_subDBId)) {
-        typedef DocumentMetaStore::Result PutRes;
+        using PutRes = DocumentMetaStore::Result;
 
         PutRes putRes(_metaStore.put(gid,
                                      op.getBucketId(),
@@ -564,7 +564,7 @@ MyDocumentSubDB::handleMove(const MoveOperation &op)
     bool needCommit = false;
 
     if (op.getValidDbdId(_subDBId)) {
-        typedef DocumentMetaStore::Result PutRes;
+        using PutRes = DocumentMetaStore::Result;
 
         PutRes putRes(_metaStore.put(gid,
                                      op.getBucketId(),

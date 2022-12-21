@@ -112,7 +112,7 @@ public:
         return SearchType::create(std::move(_children), _strict).release();
     }
 };
-typedef Create<OrSearch>     MyOr;
+using MyOr = Create<OrSearch>;
 
 class ISourceSelectorDummy : public ISourceSelector
 {
@@ -130,7 +130,7 @@ public:
 ISourceSelector::SourceStore ISourceSelectorDummy::_sourceStoreDummy("foo");
 
 
-typedef uint32_t SourceId;
+using SourceId = uint32_t;
 class Blender {
     bool _strict;
     SourceBlenderSearch::Children _children;
@@ -212,7 +212,7 @@ public:
     template <typename Tag> string getIteratorAsString();
 };
 
-typedef QueryBuilder<ProtonNodeTypes> QB;
+using QB = QueryBuilder<ProtonNodeTypes>;
 struct Phrase { void addToBuilder(QB& b) { b.addPhrase(2, view, id, weight); }};
 struct SameElement { void addToBuilder(QB& b) { b.addSameElement(2, view); }};
 struct Near   { void addToBuilder(QB& b) { b.addNear(2, distance); } };

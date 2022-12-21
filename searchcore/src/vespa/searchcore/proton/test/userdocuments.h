@@ -13,8 +13,8 @@ namespace proton::test {
 class UserDocuments
 {
 public:
-    typedef std::map<uint32_t, BucketDocuments> DocMap;
-    typedef DocMap::const_iterator Iterator;
+    using DocMap = std::map<uint32_t, BucketDocuments>;
+    using Iterator = DocMap::const_iterator;
 private:
     DocMap _docs;
 public:

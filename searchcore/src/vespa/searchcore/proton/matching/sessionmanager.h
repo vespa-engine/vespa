@@ -45,8 +45,8 @@ private:
     std::unique_ptr<SearchSessionCache> _search_map;
 
 public:
-    typedef std::unique_ptr<SessionManager> UP;
-    typedef std::shared_ptr<SessionManager> SP;
+    using UP = std::unique_ptr<SessionManager>;
+    using SP = std::shared_ptr<SessionManager>;
 
     SessionManager(uint32_t maxSizeGrouping);
     ~SessionManager();

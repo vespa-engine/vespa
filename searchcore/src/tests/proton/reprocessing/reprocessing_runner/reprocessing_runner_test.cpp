@@ -17,7 +17,7 @@ struct Fixture
     }
 };
 
-typedef ReprocessingRunner::ReprocessingTasks TaskList;
+using TaskList = ReprocessingRunner::ReprocessingTasks;
 
 struct MyTask : public IReprocessingTask
 {

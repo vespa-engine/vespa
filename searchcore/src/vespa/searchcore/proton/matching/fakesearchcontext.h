@@ -21,7 +21,7 @@ using searchcorespi::IndexCollection;
 class FakeSearchContext : public ISearchContext
 {
 public:
-    typedef search::queryeval::FakeSearchable FakeSearchable;
+    using FakeSearchable = search::queryeval::FakeSearchable;
 
 private:
     std::unique_ptr<vespalib::TestClock>   _clock;

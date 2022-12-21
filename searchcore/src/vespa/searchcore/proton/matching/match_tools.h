@@ -55,7 +55,7 @@ private:
     bool                             _search_has_changed;
     void setup(std::unique_ptr<RankProgram>, ExecutionProfiler *profiler, double termwise_limit = 1.0);
 public:
-    typedef std::unique_ptr<MatchTools> UP;
+    using UP = std::unique_ptr<MatchTools>;
     MatchTools(const MatchTools &) = delete;
     MatchTools & operator = (const MatchTools &) = delete;
     MatchTools(QueryLimiter & queryLimiter,

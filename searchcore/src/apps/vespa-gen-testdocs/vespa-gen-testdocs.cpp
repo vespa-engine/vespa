@@ -19,8 +19,8 @@
 #include <vespa/log/log.h>
 LOG_SETUP("vespa-gen-testdocs");
 
-typedef vespalib::hash_set<vespalib::string> StringSet;
-typedef std::vector<vespalib::string> StringArray;
+using StringSet = vespalib::hash_set<vespalib::string>;
+using StringArray = std::vector<vespalib::string>;
 using namespace vespalib::alloc;
 using vespalib::string;
 
@@ -162,7 +162,7 @@ StringGenerator::rand_unique_array(StringArray &res,
 class FieldGenerator
 {
 public:
-    typedef std::shared_ptr<FieldGenerator> SP;
+    using SP = std::shared_ptr<FieldGenerator>;
 
 protected:
     const string _name;
@@ -383,7 +383,7 @@ ModTextFieldGenerator::~ModTextFieldGenerator()
 void
 ModTextFieldGenerator::generateValue(vespalib::asciistream &doc, uint32_t id)
 {
-    typedef std::vector<uint32_t>::const_iterator MI;
+    using MI = std::vector<uint32_t>::const_iterator;
     bool first = true;
     for (MI mi(_mods.begin()), me(_mods.end()); mi != me; ++mi) {
         uint32_t m = *mi;
@@ -469,7 +469,7 @@ class DocumentGenerator
     string _docType;
     string _idPrefix;
     vespalib::asciistream _doc;
-    typedef std::vector<FieldGenerator::SP> FieldVec;
+    using FieldVec = std::vector<FieldGenerator::SP>;
     const FieldVec _fields;
  
     void
@@ -507,7 +507,7 @@ DocumentGenerator::~DocumentGenerator()
 void
 DocumentGenerator::setup()
 {
-    typedef FieldVec::const_iterator FI;
+    using FI = FieldVec::const_iterator;
     for (FI i(_fields.begin()), ie(_fields.end()); i != ie; ++i) {
         (*i)->setup();
     }

@@ -92,7 +92,7 @@ save(const vespalib::string &snapDir, const Config &config)
 
 class ConfigFile
 {
-    typedef std::shared_ptr<ConfigFile> SP;
+    using SP = std::shared_ptr<ConfigFile>;
 
     vespalib::string _name;
     time_t _modTime;
@@ -362,7 +362,7 @@ FileConfigManager::loadConfig(const DocumentDBConfig &currentSnapshot, search::S
 void
 FileConfigManager::removeInvalid()
 {
-    typedef std::vector<SerialNum> RemVec;
+    using RemVec = std::vector<SerialNum>;
     RemVec toRem;
 
     const SnapshotList &snaps = _info.snapshots();
@@ -394,7 +394,7 @@ FileConfigManager::removeInvalid()
 void
 FileConfigManager::prune(SerialNum serialNum)
 {
-    typedef std::vector<SerialNum> PruneVec;
+    using PruneVec = std::vector<SerialNum>;
     PruneVec toPrune;
 
     const SnapshotList &snaps = _info.snapshots();

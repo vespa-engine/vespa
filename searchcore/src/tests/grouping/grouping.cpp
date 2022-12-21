@@ -83,7 +83,7 @@ struct MyWorld {
 
 //-----------------------------------------------------------------------------
 
-typedef GroupingContext::GroupingList GroupingList;
+using GroupingList = GroupingContext::GroupingList;
 
 SessionId createSessionId(const std::string & s) {
     std::vector<char> vec;

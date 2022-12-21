@@ -21,7 +21,7 @@ struct IAttributeFactory;
 class AttributeInitializer
 {
 public:
-    typedef std::unique_ptr<AttributeInitializer> UP;
+    using UP = std::unique_ptr<AttributeInitializer>;
 
 private:
     using AttributeVectorSP = std::shared_ptr<search::AttributeVector>;

@@ -789,7 +789,7 @@ IndexMaintainer::doneSetSchema(SetSchemaArgs &args, IMemoryIndex::SP &newIndex)
 {
     assert(_ctx.getThreadingService().master().isCurrentThread()); // with idle index executor
     LockGuard state_lock(_state_lock);
-    typedef FixedSourceSelector::SaveInfo SaveInfo;
+    using SaveInfo = FixedSourceSelector::SaveInfo;
     args._oldSchema = _schema;		// Delay destruction
     args._oldIndex = _current_index;	// Delay destruction
     args._oldSourceList = _source_list; // Delay destruction

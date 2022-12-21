@@ -640,8 +640,8 @@ void
 requireThatBasicBucketInfoWorks()
 {
     DocumentMetaStore dms(createBucketDB());
-    typedef std::pair<BucketId, GlobalId> Elem;
-    typedef std::map<Elem, Timestamp> Map;
+    using Elem = std::pair<BucketId, GlobalId>;
+    using Map = std::map<Elem, Timestamp>;
     Map m;
     uint32_t numLids = 2000;
     dms.constructFreeList();
@@ -1068,7 +1068,7 @@ SplitAndJoinEmptyFixture::~SplitAndJoinEmptyFixture()
 
 
 struct SplitAndJoinFixture : public SplitAndJoinEmptyFixture {
-    typedef std::map<BucketId, GlobalIdVector> BucketMap;
+    using BucketMap = std::map<BucketId, GlobalIdVector>;
     GlobalIdVector    gids;
     BucketMap         bid1s;
     BucketMap         bid2s;

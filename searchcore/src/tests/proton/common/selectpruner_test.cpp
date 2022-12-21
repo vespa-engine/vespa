@@ -35,7 +35,7 @@ using search::attribute::CollectionType;
 using search::attribute::test::MockAttributeManager;
 using search::AttributeFactory;
 
-typedef Node::UP NodeUP;
+using NodeUP = Node::UP;
 
 namespace {
 

@@ -16,9 +16,9 @@ class LidStateVector;
 class LidHoldList
 {
 private:
-    typedef vespalib::GenerationHandler::generation_t generation_t;
-    typedef std::pair<uint32_t, generation_t> Element;
-    typedef std::deque<Element> ElementDeque;
+    using generation_t = vespalib::GenerationHandler::generation_t;
+    using Element = std::pair<uint32_t, generation_t>;
+    using ElementDeque = std::deque<Element>;
 
     ElementDeque _holdList;
 

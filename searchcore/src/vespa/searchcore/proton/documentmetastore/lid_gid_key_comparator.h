@@ -16,7 +16,7 @@ namespace proton::documentmetastore {
 class LidGidKeyComparator
 {
 private:
-    typedef search::IDocumentMetaStore::DocId DocId;
+    using DocId = search::IDocumentMetaStore::DocId;
     using UnboundMetaDataView = const RawDocumentMetaData *;
 
     const document::GlobalId &_gid;

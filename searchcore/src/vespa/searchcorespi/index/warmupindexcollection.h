@@ -29,7 +29,7 @@ class WarmupIndexCollection : public ISearchableIndexCollection,
 {
     using WarmupConfig = index::WarmupConfig;
 public:
-    typedef std::shared_ptr<WarmupIndexCollection> SP;
+    using SP = std::shared_ptr<WarmupIndexCollection>;
     WarmupIndexCollection(const WarmupConfig & warmupConfig,
                           ISearchableIndexCollection::SP prev,
                           ISearchableIndexCollection::SP next,
@@ -71,8 +71,8 @@ public:
     bool doUnpack() const { return _warmupConfig.getUnpack(); }
     void drainPending();
 private:
-    typedef search::fef::MatchData MatchData;
-    typedef vespalib::Executor::Task Task;
+    using MatchData = search::fef::MatchData;
+    using Task = vespalib::Executor::Task;
     class WarmupRequestContext : public IRequestContext {
         using IAttributeVector = search::attribute::IAttributeVector;
         using AttributeBlueprintParams = search::attribute::AttributeBlueprintParams;

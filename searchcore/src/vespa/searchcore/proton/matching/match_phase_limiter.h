@@ -42,8 +42,8 @@ private:
  **/
 struct MaybeMatchPhaseLimiter {
     using Cursor = vespalib::slime::Cursor;
-    typedef search::queryeval::SearchIterator SearchIterator;
-    typedef std::unique_ptr<MaybeMatchPhaseLimiter> UP;
+    using SearchIterator = search::queryeval::SearchIterator;
+    using UP = std::unique_ptr<MaybeMatchPhaseLimiter>;
     virtual bool is_enabled() const = 0;
     virtual bool was_limited() const = 0;
     virtual size_t sample_hits_per_thread(size_t num_threads) const = 0;

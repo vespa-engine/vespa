@@ -42,8 +42,8 @@ public:
 private:
     bool _inverted;
     bool _wantInverted;
-    typedef document::select::Node::UP NodeUP;
-    typedef document::select::ValueNode::UP ValueNodeUP;
+    using NodeUP = document::select::Node::UP;
+    using ValueNodeUP = document::select::ValueNode::UP;
     uint32_t _attrFieldNodes;
 public:
     SelectPruner(const vespalib::string &docType,

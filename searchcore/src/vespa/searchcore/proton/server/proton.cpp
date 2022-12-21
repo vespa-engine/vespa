@@ -179,7 +179,7 @@ void
 Proton::ProtonFileHeaderContext::addTags(vespalib::GenericHeader &header,
         const vespalib::string &name) const
 {
-    typedef vespalib::GenericHeader::Tag Tag;
+    using Tag = vespalib::GenericHeader::Tag;
 
     search::FileHeaderTk::addVersionTags(header);
     header.putTag(Tag("fileName", name));
@@ -952,7 +952,7 @@ struct StateExplorerProxy : vespalib::StateExplorer {
 };
 
 struct DocumentDBMapExplorer : vespalib::StateExplorer {
-    typedef std::map<DocTypeName, DocumentDB::SP> DocumentDBMap;
+    using DocumentDBMap = std::map<DocTypeName, DocumentDB::SP>;
     const DocumentDBMap &documentDBMap;
     std::shared_mutex &mutex;
     DocumentDBMapExplorer(const DocumentDBMap &documentDBMap_in, std::shared_mutex &mutex_in)

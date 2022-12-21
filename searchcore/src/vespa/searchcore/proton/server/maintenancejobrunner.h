@@ -26,7 +26,7 @@ private:
     void runJobInExecutor();
     
 public:
-    typedef std::shared_ptr<MaintenanceJobRunner> SP;
+    using SP = std::shared_ptr<MaintenanceJobRunner>;
 
     MaintenanceJobRunner(vespalib::Executor &executor, IMaintenanceJob::UP job);
     void run() override;

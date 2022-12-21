@@ -7,8 +7,8 @@
 LOG_SETUP(".proton.metrics.documentdb_job_trackers");
 
 using searchcorespi::IFlushTarget;
-typedef IFlushTarget::Type FTT;
-typedef IFlushTarget::Component FTC;
+using FTT = IFlushTarget::Type;
+using FTC = IFlushTarget::Component;
 
 using time_point = std::chrono::time_point<std::chrono::steady_clock>;
 

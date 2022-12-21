@@ -14,7 +14,7 @@ namespace proton {
 class AttributesInitializerBase : public IAttributeInitializerRegistry
 {
 public:
-    typedef std::vector<AttributeInitializerResult> AttributesVector;
+    using AttributesVector = std::vector<AttributeInitializerResult>;
 
 protected:
     AttributesVector _initializedAttributes;

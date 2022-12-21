@@ -82,8 +82,8 @@ createClusterState(const storage::lib::State& nodeState = storage::lib::State::U
     using storage::lib::NodeType;
     using storage::lib::State;
     using vespa::config::content::StorDistributionConfigBuilder;
-    typedef StorDistributionConfigBuilder::Group Group;
-    typedef Group::Nodes Nodes;
+    using Group = StorDistributionConfigBuilder::Group;
+    using Nodes = Group::Nodes;
     storage::lib::ClusterState cstate;
     StorDistributionConfigBuilder dc;
 

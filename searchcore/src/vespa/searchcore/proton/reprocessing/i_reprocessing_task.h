@@ -14,9 +14,9 @@ namespace proton {
 class IReprocessingTask
 {
 public:
-    typedef std::shared_ptr<IReprocessingTask> SP;
-    typedef std::unique_ptr<IReprocessingTask> UP;
-    typedef std::vector<SP> List;
+    using SP = std::shared_ptr<IReprocessingTask>;
+    using UP = std::unique_ptr<IReprocessingTask>;
+    using List = std::vector<SP>;
 
     struct Progress
     {

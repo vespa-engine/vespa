@@ -21,11 +21,11 @@ using search::SerialNum;
 using storage::spi::Timestamp;
 using namespace proton;
 
-typedef std::vector<IFeedView::SP> FeedViewVector;
+using FeedViewVector = std::vector<IFeedView::SP>;
 
 struct MyFeedView : public test::DummyFeedView
 {
-    typedef std::shared_ptr<MyFeedView> SP;
+    using SP = std::shared_ptr<MyFeedView>;
     DocumentMetaStore    _metaStore;
     uint32_t             _preparePut;
     uint32_t             _handlePut;

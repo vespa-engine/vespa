@@ -90,7 +90,7 @@ struct TempAttributeMetric
 
 struct TempAttributeMetrics
 {
-    typedef std::map<vespalib::string, TempAttributeMetric> AttrMap;
+    using AttrMap = std::map<vespalib::string, TempAttributeMetric>;
     TempAttributeMetric total;
     AttrMap attrs;
 };

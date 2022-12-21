@@ -32,8 +32,8 @@ public:
     /**
      * Convenience typedefs.
      */
-    typedef std::unique_ptr<MatchEngine> UP;
-    typedef std::shared_ptr<MatchEngine> SP;
+    using UP = std::unique_ptr<MatchEngine>;
+    using SP = std::shared_ptr<MatchEngine>;
     MatchEngine(const MatchEngine &) = delete;
     MatchEngine & operator = (const MatchEngine &) = delete;
 

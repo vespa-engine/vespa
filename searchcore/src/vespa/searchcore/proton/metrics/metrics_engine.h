@@ -29,7 +29,7 @@ private:
     metrics::StateApiAdapter                  _metrics_producer;
 
 public:
-    typedef std::unique_ptr<MetricsEngine> UP;
+    using UP = std::unique_ptr<MetricsEngine>;
 
     MetricsEngine();
     ~MetricsEngine() override;

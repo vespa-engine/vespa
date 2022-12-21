@@ -37,7 +37,7 @@ protected:
     using IAttributeContext = search::attribute::IAttributeContext;
     using Blueprint = search::queryeval::Blueprint;
 public:
-    typedef std::shared_ptr<IndexSearchable> SP;
+    using SP = std::shared_ptr<IndexSearchable>;
 
     /**
      * Returns the searchable stats for this index searchable.
