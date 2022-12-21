@@ -7,6 +7,7 @@
 #include <mutex>
 #include <vector>
 #include <thread>
+#include <condition_variable>
 
 namespace vespalib {
 
@@ -29,6 +30,7 @@ private:
     duration                       _naptime;
     std::atomic<steady_time>       _now;
     std::mutex                     _lock;
+    std::condition_variable        _cond;
     uint64_t                       _currId;
     bool                           _closed;
     std::vector<IdAndFunc>         _toInvoke;
