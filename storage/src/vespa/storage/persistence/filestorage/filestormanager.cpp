@@ -105,13 +105,14 @@ FileStorManager::~FileStorManager()
             thread->getThread().interrupt();
         }
     }
+    LOG(debug, "Closing all filestor queues, answering queued messages. New messages will be refused.");
+    _filestorHandler->close();
     for (const auto & thread : _threads) {
         if (thread) {
             thread->getThread().join();
         }
     }
-    LOG(debug, "Closing all filestor queues, answering queued messages. New messages will be refused.");
-    _filestorHandler->close();
+
     LOG(debug, "Deleting filestor threads. Waiting for their current operation "
                "to finish. Stop their threads and delete objects.");
     _threads.clear();
