@@ -28,8 +28,8 @@ namespace document::select {
 class Value : public document::Printable
 {
 public:
-    typedef std::shared_ptr<Value> SP;
-    typedef std::unique_ptr<Value> UP;
+    using SP = std::shared_ptr<Value>;
+    using UP = std::unique_ptr<Value>;
     enum Type { Invalid, Null, String, Integer, Float, Array, Struct, Bucket };
 
     Value(Type t) : _type(t) {}
@@ -103,7 +103,7 @@ class FloatValue;
 class NumberValue : public Value
 {
 public:
-    typedef double CommonValueType;
+    using CommonValueType = double;
 
     NumberValue(Type t) : Value(t) {}
 
@@ -120,7 +120,7 @@ public:
 class IntegerValue : public NumberValue
 {
 public:
-    typedef int64_t ValueType;
+    using ValueType = int64_t;
 
     IntegerValue(ValueType value, bool isBucketValue);
 
@@ -142,7 +142,7 @@ private:
 class FloatValue : public NumberValue
 {
 public:
-    typedef double ValueType;
+    using ValueType = double;
 
     FloatValue(ValueType val);
 

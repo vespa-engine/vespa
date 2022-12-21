@@ -14,8 +14,8 @@ namespace document {
 
 class ShortFieldValue final : public NumericFieldValue<int16_t> {
 public:
-    typedef std::unique_ptr<ShortFieldValue> UP;
-    typedef int16_t Number;
+    using UP = std::unique_ptr<ShortFieldValue>;
+    using Number = int16_t;
 
     ShortFieldValue(Number value = 0)
         : NumericFieldValue<Number>(Type::SHORT, value) {}

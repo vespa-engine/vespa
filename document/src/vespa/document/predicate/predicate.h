@@ -39,7 +39,7 @@ struct Predicate {
 };
 
 struct PredicateNode {
-    typedef std::unique_ptr<PredicateNode> UP;
+    using UP = std::unique_ptr<PredicateNode>;
 
     virtual ~PredicateNode() {}
 };

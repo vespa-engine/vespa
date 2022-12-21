@@ -19,7 +19,7 @@ namespace document {
  */
 class IdString {
 public:
-    typedef uint64_t LocationType;
+    using LocationType = uint64_t;
     static LocationType makeLocation(vespalib::stringref s);
 
     explicit IdString(vespalib::stringref ns);

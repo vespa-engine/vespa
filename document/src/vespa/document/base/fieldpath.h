@@ -91,18 +91,17 @@ private:
     mutable std::unique_ptr<FieldValue> _fillInVal;
 };
 
-//typedef std::deque<FieldPathEntry> FieldPath;
 // Facade over FieldPathEntry container that exposes cloneability
 class FieldPath {
-    typedef std::vector<std::unique_ptr<FieldPathEntry>> Container;
+    using Container = std::vector<std::unique_ptr<FieldPathEntry>>;
 public:
-    typedef Container::reference reference;
-    typedef Container::const_reference const_reference;
-    typedef Container::iterator iterator;
-    typedef Container::const_iterator const_iterator;
-    typedef Container::reverse_iterator reverse_iterator;
-    typedef Container::const_reverse_iterator const_reverse_iterator;
-    typedef std::unique_ptr<FieldPath> UP;
+    using reference = Container::reference;
+    using const_reference = Container::const_reference;
+    using iterator = Container::iterator;
+    using const_iterator = Container::const_iterator;
+    using reverse_iterator = Container::reverse_iterator;
+    using const_reverse_iterator = Container::const_reverse_iterator;
+    using UP = std::unique_ptr<FieldPath>;
 
     FieldPath();
     FieldPath(const FieldPath &);

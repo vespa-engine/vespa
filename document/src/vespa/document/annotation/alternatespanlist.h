@@ -19,8 +19,8 @@ class AlternateSpanList : public SpanNode {
     void addInternal(size_t index, std::unique_ptr<SpanNode> node);
 
 public:
-    typedef std::unique_ptr<AlternateSpanList> UP;
-    typedef std::vector<Subtree>::const_iterator const_iterator;
+    using UP = std::unique_ptr<AlternateSpanList>;
+    using const_iterator = std::vector<Subtree>::const_iterator;
 
     ~AlternateSpanList();
 

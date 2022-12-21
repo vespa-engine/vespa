@@ -29,7 +29,7 @@ protected:
     explicit NumericFieldValue(Type type, Number value=0) : NumericFieldValueBase(type), _value(value) { }
     Number _value;
 public:
-    typedef Number value_type;
+    using value_type = Number;
 
     value_type getValue() const { return _value; }
     void setValue(Number newValue) { _value = newValue; }

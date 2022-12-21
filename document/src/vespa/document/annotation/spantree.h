@@ -17,8 +17,8 @@ class SpanTree {
     std::vector<Annotation> _annotations;
 
 public:
-    typedef std::unique_ptr<SpanTree> UP;
-    typedef AnnotationVector::const_iterator const_iterator;
+    using UP = std::unique_ptr<SpanTree>;
+    using const_iterator = AnnotationVector::const_iterator;
 
     template <typename T>
     SpanTree(vespalib::stringref name, std::unique_ptr<T> root)

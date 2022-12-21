@@ -11,7 +11,7 @@ class PredicateSlimeBuilder {
     std::unique_ptr<vespalib::Slime> _slime;
     vespalib::slime::Cursor *_cursor;
 
-    typedef std::unique_ptr<vespalib::Slime> SlimeUP;
+    using SlimeUP = std::unique_ptr<vespalib::Slime>;
 
 public:
     PredicateSlimeBuilder();
@@ -37,7 +37,7 @@ public:
 
 namespace predicate_slime_builder {
 
-typedef std::unique_ptr<vespalib::Slime> SlimeUP;
+using SlimeUP = std::unique_ptr<vespalib::Slime>;
 
 SlimeUP featureSet(const std::string &key,
                    const std::initializer_list<std::string> &values);

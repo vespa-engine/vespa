@@ -19,8 +19,8 @@ class DocumentTypeRepo;
 
 class StringFieldValue final : public LiteralFieldValue<StringFieldValue, DataType::T_STRING> {
 public:
-    typedef LiteralFieldValue<StringFieldValue, DataType::T_STRING> Parent;
-    typedef std::vector<SpanTree::UP> SpanTrees;
+    using Parent = LiteralFieldValue<StringFieldValue, DataType::T_STRING>;
+    using SpanTrees = std::vector<SpanTree::UP>;
 
     StringFieldValue() : Parent(Type::STRING), _annotationData() { }
     StringFieldValue(const vespalib::stringref &value)
@@ -62,8 +62,8 @@ private:
 
     class AnnotationData {
     public:
-        typedef std::vector<char> BackingBlob;
-        typedef std::unique_ptr<AnnotationData> UP;
+        using BackingBlob = std::vector<char>;
+        using UP = std::unique_ptr<AnnotationData>;
         VESPA_DLL_LOCAL AnnotationData(const AnnotationData & rhs);
         AnnotationData & operator = (const AnnotationData &) = delete;
         VESPA_DLL_LOCAL AnnotationData(vespalib::ConstBufferRef serialized, const FixedTypeRepo &repo,

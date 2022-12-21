@@ -21,7 +21,7 @@ namespace document {
 class ByteBuffer
 {
 public:
-    typedef std::unique_ptr<ByteBuffer> UP;
+    using UP = std::unique_ptr<ByteBuffer>;
 
     ByteBuffer(const ByteBuffer &);
     ByteBuffer& operator=(const ByteBuffer &) = delete;

@@ -16,8 +16,8 @@ class AnnotationType {
     const DataType *_type;
 
 public:
-    typedef std::unique_ptr<AnnotationType> UP;
-    typedef std::shared_ptr<AnnotationType> SP;
+    using UP = std::unique_ptr<AnnotationType>;
+    using SP = std::shared_ptr<AnnotationType>;
 
     AnnotationType(int id, vespalib::stringref name)
         : _id(id), _name(name), _type(0) {}

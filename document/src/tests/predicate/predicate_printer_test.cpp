@@ -15,7 +15,7 @@ using namespace document;
 
 namespace {
 
-typedef std::unique_ptr<Slime> SlimeUP;
+using SlimeUP = std::unique_ptr<Slime>;
 using namespace document::predicate_slime_builder;
 
 TEST("require that PredicatePrinter prints FeatureSets") {
