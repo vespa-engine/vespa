@@ -2,6 +2,7 @@
 package com.yahoo.container.jdisc.utils;
 
 import com.yahoo.container.jdisc.HttpRequest;
+import com.yahoo.yolean.Exceptions;
 import org.eclipse.jetty.http.MultiPartFormInputStream;
 
 import javax.servlet.http.Part;
@@ -33,7 +34,7 @@ public class MultiPartFormParser {
             }
             return result;
         } catch (Exception e) {
-            throw new MultiPartException(e.getCause());
+            throw new MultiPartException(e);
         }
     }
 
@@ -58,7 +59,7 @@ public class MultiPartFormParser {
     }
 
     public static class MultiPartException extends IOException {
-        public MultiPartException(Throwable cause) { super(cause.getMessage(), cause); }
+        public MultiPartException(Throwable t) { super(Exceptions.toMessageString(t), t); }
     }
 
 }
