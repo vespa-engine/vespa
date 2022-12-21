@@ -18,7 +18,7 @@ struct gtematch_cand {
     bool operator()(const MatchCandidate* m1, const MatchCandidate* m2) const;
     bool gtDistance(const MatchCandidate* m1, const MatchCandidate* m2) const;
 };
-typedef std::multiset<MatchCandidate*, gtematch_cand> match_candidate_set;
+using match_candidate_set = std::multiset<MatchCandidate*, gtematch_cand>;
 
 class MatchCandidate : public MatchElement
 {

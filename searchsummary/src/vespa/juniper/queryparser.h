@@ -21,7 +21,7 @@ struct IsPunctuation {
     }
 };
 
-typedef Fast_LatinTokenizer<Fast_IsSpace, IsPunctuation> WildcardTokenizer;
+using WildcardTokenizer = Fast_LatinTokenizer<Fast_IsSpace, IsPunctuation>;
 
 class QueryParserQueryItem;
 
@@ -48,7 +48,7 @@ private:
     inline void setvisitor(IQueryVisitor* v) { _v = v; }
     bool match(const char* s, bool required = false);
 
-    typedef WildcardTokenizer Tokenizer;
+    using Tokenizer = WildcardTokenizer;
     Tokenizer _tokenizer;
     std::map<std::string, int> _op_to_type;
     const char* _query_string;

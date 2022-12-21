@@ -7,9 +7,9 @@
 // Juniper internal implementation of the IQueryVisitor interface as used by
 // query providers (this is the initial 1.0.x structure implementation)
 
-typedef juniper::QueryItem QueryItem;
-typedef juniper::IQuery IQuery;
-typedef juniper::QueryHandle QueryHandle;
+using QueryItem = juniper::QueryItem;
+using IQuery = juniper::IQuery;
+using QueryHandle = juniper::QueryHandle;
 
 class Matcher;
 

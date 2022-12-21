@@ -73,8 +73,8 @@ public:
     /**
      * Convenience typedefs.
      */
-    typedef std::unique_ptr<Juniper> UP;
-    typedef std::shared_ptr<Juniper> SP;
+    using UP = std::unique_ptr<Juniper>;
+    using SP = std::shared_ptr<Juniper>;
 
     /** Initialize the Juniper subsystem.
      * @param props A pointer to the object containing all available configuration

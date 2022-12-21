@@ -20,7 +20,7 @@ struct sequential_elem
         return m1->starttoken() < m2->starttoken();
     }
 };
-typedef std::set<key_occ*, sequential_elem<key_occ*> > keylist;
+using keylist = std::set<key_occ*, sequential_elem<key_occ*> >;
 
 class MatchElement
 {

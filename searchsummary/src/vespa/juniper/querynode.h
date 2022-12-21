@@ -33,7 +33,7 @@
 class QueryNode;
 class QueryTerm;
 
-typedef std::vector<QueryNode*> querynode_vector;
+using querynode_vector = std::vector<QueryNode*>;
 
 
 // Support slightly extended visitor pattern for QueryExpr nodes..

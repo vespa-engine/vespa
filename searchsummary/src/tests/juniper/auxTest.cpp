@@ -664,7 +664,7 @@ AuxTest::assertChar(ucs4_t act, char exp)
     return _test((char) act == exp);
 }
 
-typedef std::unique_ptr<QueryNode> QueryNodeUP;
+using QueryNodeUP = std::unique_ptr<QueryNode>;
 struct QB {
     QueryNodeUP q;
     QB(size_t numTerms) : q(new QueryNode(numTerms, 0, 0)) {}
@@ -694,7 +694,7 @@ void
 AuxTest::TestSpecialTokenRegistry()
 {
     {
-        typedef SpecialTokenRegistry::CharStream CharStream;
+        using CharStream = SpecialTokenRegistry::CharStream;
         ucs4_t buf[16];
         {
             std::string text = " c+-";
