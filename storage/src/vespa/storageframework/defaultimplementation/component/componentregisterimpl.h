@@ -55,7 +55,7 @@ class ComponentRegisterImpl : public virtual ComponentRegister,
     ShutdownListener* _shutdownListener;
 
 public:
-    typedef std::unique_ptr<ComponentRegisterImpl> UP;
+    using UP = std::unique_ptr<ComponentRegisterImpl>;
 
     ComponentRegisterImpl();
     ~ComponentRegisterImpl() override;

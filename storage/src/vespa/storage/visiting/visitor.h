@@ -233,7 +233,7 @@ private:
 
         // Maps from time sent to message to send.
         // Value refers to message id (key in _messageMeta).
-        typedef std::multimap<framework::MicroSecTime, uint64_t> MessageQueue;
+        using MessageQueue = std::multimap<framework::MicroSecTime, uint64_t>;
 
         MessageQueue _queuedMessages;
 
@@ -273,7 +273,7 @@ private:
     // The iterator iterating the buckets to visit.
     uint32_t _currentBucket;
     // The states of the buckets currently being visited.
-    typedef std::list<BucketIterationState*> BucketStateList;
+    using BucketStateList = std::list<BucketIterationState*>;
     BucketStateList _bucketStates;
     // Set to true after performing given callbacks
     bool _calledStartingVisitor;

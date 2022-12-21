@@ -10,7 +10,7 @@ namespace storage::mbusprot {
 
 class StorageCommand : public mbus::Message, public StorageMessage {
 public:
-    typedef std::unique_ptr<StorageCommand> UP;
+    using UP = std::unique_ptr<StorageCommand>;
 
     explicit StorageCommand(api::StorageCommand::SP);
 

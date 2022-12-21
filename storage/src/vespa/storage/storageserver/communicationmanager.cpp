@@ -151,7 +151,7 @@ CommunicationManager::handleReply(std::unique_ptr<mbus::Reply> reply)
             std::shared_ptr<api::StorageCommand> originalCommand;
             {
                 std::lock_guard lock(_messageBusSentLock);
-                typedef std::map<api::StorageMessage::Id, api::StorageCommand::SP> MessageMap;
+                using MessageMap = std::map<api::StorageMessage::Id, api::StorageCommand::SP>;
                 MessageMap::iterator iter(_messageBusSent.find(reply->getContext().value.UINT64));
                 if (iter != _messageBusSent.end()) {
                     originalCommand.swap(iter->second);

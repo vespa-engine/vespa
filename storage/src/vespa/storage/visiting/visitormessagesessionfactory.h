@@ -11,7 +11,7 @@ class Visitor;
 class VisitorThread;
 
 struct VisitorMessageSessionFactory {
-    typedef std::unique_ptr<VisitorMessageSessionFactory> UP;
+    using UP = std::unique_ptr<VisitorMessageSessionFactory>;
 
     virtual ~VisitorMessageSessionFactory() = default;
 

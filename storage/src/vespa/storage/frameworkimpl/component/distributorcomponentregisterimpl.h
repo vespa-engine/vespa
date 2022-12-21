@@ -32,7 +32,7 @@ class DistributorComponentRegisterImpl
     std::shared_ptr<lib::ClusterState> _clusterState;
 
 public:
-    typedef std::unique_ptr<DistributorComponentRegisterImpl> UP;
+    using UP = std::unique_ptr<DistributorComponentRegisterImpl>;
 
     DistributorComponentRegisterImpl();
     ~DistributorComponentRegisterImpl() override;

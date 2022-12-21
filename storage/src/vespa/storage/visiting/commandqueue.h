@@ -75,11 +75,11 @@ private:
     std::atomic<size_t>     _cached_size;
 
 public:
-    typedef typename CommandList::iterator iterator;
-    typedef typename CommandList::reverse_iterator reverse_iterator;
-    typedef typename CommandList::const_iterator const_iterator;
-    typedef typename CommandList::const_reverse_iterator const_reverse_iterator;
-    typedef typename timelist::const_iterator const_titerator;
+    using iterator = typename CommandList::iterator;
+    using reverse_iterator = typename CommandList::reverse_iterator;
+    using const_iterator = typename CommandList::const_iterator;
+    using const_reverse_iterator = typename CommandList::const_reverse_iterator;
+    using const_titerator = typename timelist::const_iterator;
 
     explicit CommandQueue(const framework::Clock& clock)
         : _clock(clock),

@@ -207,7 +207,7 @@ void
 VisitorManager::run(framework::ThreadHandle& thread)
 {
     LOG(debug, "Started visitor manager thread with pid %d.", getpid());
-    typedef CommandQueue<api::CreateVisitorCommand> CQ;
+    using CQ = CommandQueue<api::CreateVisitorCommand>;
     std::vector<CQ::CommandEntry> timedOut;
     // Run forever, dump messages in the visitor queue that times out.
     while (true) {

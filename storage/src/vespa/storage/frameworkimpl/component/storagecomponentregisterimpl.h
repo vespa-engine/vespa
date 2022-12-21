@@ -33,7 +33,7 @@ class StorageComponentRegisterImpl
     BucketspacesConfig _bucketSpacesConfig;
 
 public:
-    typedef std::unique_ptr<StorageComponentRegisterImpl> UP;
+    using UP = std::unique_ptr<StorageComponentRegisterImpl>;
 
     StorageComponentRegisterImpl();
     ~StorageComponentRegisterImpl() override;

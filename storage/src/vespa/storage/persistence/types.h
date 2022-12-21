@@ -15,12 +15,12 @@ namespace storage {
 class MessageTracker;
 
 struct Types {
-    typedef document::BucketId BucketId;
-    typedef document::DocumentId DocumentId;
-    typedef document::GlobalId GlobalId;
-    typedef framework::MicroSecTime Timestamp;
-    typedef vespalib::string String;
-    typedef api::BucketInfo BucketInfo;
+    using BucketId = document::BucketId;
+    using DocumentId = document::DocumentId;
+    using GlobalId = document::GlobalId;
+    using Timestamp = framework::MicroSecTime;
+    using String = vespalib::string;
+    using BucketInfo = api::BucketInfo;
     using MessageTrackerUP = std::unique_ptr<MessageTracker>;
 protected:
     ~Types() {} // Noone should refer to objects as Types objects

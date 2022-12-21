@@ -19,8 +19,8 @@ private:
 
 public:
     static constexpr uint32_t ID = 1001;
-    typedef std::unique_ptr<GetIterCommand> UP;
-    typedef std::shared_ptr<GetIterCommand> SP;
+    using UP = std::unique_ptr<GetIterCommand>;
+    using SP = std::shared_ptr<GetIterCommand>;
 
     GetIterCommand(const document::Bucket &bucket,
                    spi::IteratorId iteratorId,
@@ -51,8 +51,8 @@ private:
     bool             _completed;
 
 public:
-    typedef std::unique_ptr<GetIterReply> UP;
-    typedef std::shared_ptr<GetIterReply> SP;
+    using UP = std::unique_ptr<GetIterReply>;
+    using SP = std::shared_ptr<GetIterReply>;
     static constexpr uint32_t ID = 1002;
 
     explicit GetIterReply(GetIterCommand& cmd);
@@ -80,8 +80,8 @@ class CreateIteratorCommand : public api::InternalCommand
 
 public:
     static constexpr uint32_t ID = 1003;
-    typedef std::unique_ptr<CreateIteratorCommand> UP;
-    typedef std::shared_ptr<CreateIteratorCommand> SP;
+    using UP = std::unique_ptr<CreateIteratorCommand>;
+    using SP = std::shared_ptr<CreateIteratorCommand>;
 
     CreateIteratorCommand(const document::Bucket &bucket,
                           const spi::Selection& selection,
@@ -114,8 +114,8 @@ class CreateIteratorReply : public api::InternalReply
     spi::IteratorId _iteratorId;
 public:
     static constexpr uint32_t ID = 1004;
-    typedef std::unique_ptr<CreateIteratorReply> UP;
-    typedef std::shared_ptr<CreateIteratorReply> SP;
+    using UP = std::unique_ptr<CreateIteratorReply>;
+    using SP = std::shared_ptr<CreateIteratorReply>;
 
     CreateIteratorReply(const CreateIteratorCommand& cmd, spi::IteratorId iteratorId);
     ~CreateIteratorReply() override;
@@ -132,8 +132,8 @@ class DestroyIteratorCommand : public api::InternalCommand
     spi::IteratorId _iteratorId;
 public:
     static constexpr uint32_t ID = 1005;
-    typedef std::unique_ptr<DestroyIteratorCommand> UP;
-    typedef std::shared_ptr<DestroyIteratorCommand> SP;
+    using UP = std::unique_ptr<DestroyIteratorCommand>;
+    using SP = std::shared_ptr<DestroyIteratorCommand>;
 
     explicit DestroyIteratorCommand(spi::IteratorId iteratorId);
     ~DestroyIteratorCommand() override;
@@ -150,8 +150,8 @@ class DestroyIteratorReply : public api::InternalReply
     spi::IteratorId _iteratorId;
 public:
     static constexpr uint32_t ID = 1006;
-    typedef std::unique_ptr<DestroyIteratorReply> UP;
-    typedef std::shared_ptr<DestroyIteratorReply> SP;
+    using UP = std::unique_ptr<DestroyIteratorReply>;
+    using SP = std::shared_ptr<DestroyIteratorReply>;
 
     explicit DestroyIteratorReply(const DestroyIteratorCommand& cmd);
     ~DestroyIteratorReply() override;
@@ -164,8 +164,8 @@ class RecheckBucketInfoCommand : public api::InternalCommand
     document::Bucket _bucket;
 public:
     static constexpr uint32_t ID = 1007;
-    typedef std::shared_ptr<RecheckBucketInfoCommand> SP;
-    typedef std::unique_ptr<RecheckBucketInfoCommand> UP;
+    using SP = std::shared_ptr<RecheckBucketInfoCommand>;
+    using UP = std::unique_ptr<RecheckBucketInfoCommand>;
 
     explicit RecheckBucketInfoCommand(const document::Bucket &bucket);
     ~RecheckBucketInfoCommand() override;
@@ -182,8 +182,8 @@ class RecheckBucketInfoReply : public api::InternalReply
     document::Bucket _bucket;
 public:
     static constexpr uint32_t ID = 1008;
-    typedef std::shared_ptr<RecheckBucketInfoReply> SP;
-    typedef std::unique_ptr<RecheckBucketInfoReply> UP;
+    using SP = std::shared_ptr<RecheckBucketInfoReply>;
+    using UP = std::unique_ptr<RecheckBucketInfoReply>;
 
     explicit RecheckBucketInfoReply(const RecheckBucketInfoCommand& cmd);
     ~RecheckBucketInfoReply() override;
@@ -206,8 +206,8 @@ public:
     };
 
     static constexpr uint32_t ID = 1009;
-    typedef std::shared_ptr<AbortBucketOperationsCommand> SP;
-    typedef std::shared_ptr<const AbortBucketOperationsCommand> CSP;
+    using SP = std::shared_ptr<AbortBucketOperationsCommand>;
+    using CSP = std::shared_ptr<const AbortBucketOperationsCommand>;
 private:
     std::unique_ptr<AbortPredicate> _predicate;
 public:
@@ -227,8 +227,8 @@ class AbortBucketOperationsReply : public api::InternalReply
 {
 public:
     static constexpr uint32_t ID = 1010;
-    typedef std::shared_ptr<AbortBucketOperationsReply> SP;
-    typedef std::shared_ptr<const AbortBucketOperationsReply> CSP;
+    using SP = std::shared_ptr<AbortBucketOperationsReply>;
+    using CSP = std::shared_ptr<const AbortBucketOperationsReply>;
 
     explicit AbortBucketOperationsReply(const AbortBucketOperationsCommand& cmd);
     ~AbortBucketOperationsReply() override;

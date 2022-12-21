@@ -17,7 +17,7 @@ namespace storage::api {
 
 class ReturnCode {
 public:
-    typedef documentapi::DocumentProtocol Protocol;
+    using Protocol = documentapi::DocumentProtocol;
 
     /** Return status codes */
     enum Result {

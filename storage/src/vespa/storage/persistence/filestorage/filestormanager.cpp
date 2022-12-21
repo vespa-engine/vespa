@@ -295,7 +295,7 @@ FileStorManager::mapOperationToBucketAndDisk(api::BucketCommand& cmd, const docu
         if (docId) {
             specific = _bucketIdFactory.getBucketId(*docId);
         }
-        typedef std::map<document::BucketId, StorBucketDatabase::WrappedEntry> BucketMap;
+        using BucketMap = std::map<document::BucketId, StorBucketDatabase::WrappedEntry>;
         std::shared_ptr<api::StorageReply> reply;
         {
             BucketMap results( database.getContained( specific, "FileStorManager::mapOperationToBucketAndDisk-2"));

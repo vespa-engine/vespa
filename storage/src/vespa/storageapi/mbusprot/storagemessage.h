@@ -7,7 +7,7 @@ namespace storage::mbusprot {
 
 class StorageMessage {
 public:
-    typedef std::unique_ptr<StorageMessage> UP;
+    using UP = std::unique_ptr<StorageMessage>;
 
     virtual ~StorageMessage() {}
 

@@ -27,7 +27,7 @@ class ModifiedBucketChecker
               vespa::config::content::core::StorServerConfig>
 {
 public:
-    typedef std::unique_ptr<ModifiedBucketChecker> UP;
+    using UP = std::unique_ptr<ModifiedBucketChecker>;
 
     ModifiedBucketChecker(ServiceLayerComponentRegister& compReg,
                           spi::PersistenceProvider& provide,

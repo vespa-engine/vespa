@@ -164,7 +164,7 @@ struct ByteSizeColumn : public ValueColumn<uint64_t> {
     void printValue(std::ostream& out, uint16_t row) override;
 };
 
-typedef ValueColumn<int64_t>     LongColumn;
-typedef ValueColumn<double>      DoubleColumn;
+using LongColumn = ValueColumn<int64_t>;
+using DoubleColumn = ValueColumn<double>;
 
 } // storage

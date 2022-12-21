@@ -20,8 +20,8 @@ namespace storage {
 
 struct StorageNodeContext {
     // Typedefs to simplify the remainder of the interface
-    typedef StorageComponentRegisterImpl ComponentRegister;
-    typedef framework::defaultimplementation::RealClock RealClock;
+    using ComponentRegister = StorageComponentRegisterImpl;
+    using RealClock = framework::defaultimplementation::RealClock;
 
     /**
      * Get the actual component register. Available as the actual type as the

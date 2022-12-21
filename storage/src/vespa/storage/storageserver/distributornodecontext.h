@@ -19,7 +19,7 @@ namespace storage {
 
 struct DistributorNodeContext : public StorageNodeContext {
     // Typedefs to simplify the remainder of the interface
-    typedef DistributorComponentRegisterImpl ComponentRegister;
+    using ComponentRegister = DistributorComponentRegisterImpl;
 
     /**
      * You can provide your own clock implementation. Useful in testing where

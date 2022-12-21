@@ -16,7 +16,7 @@ class StorageReply : public mbus::Reply, public StorageMessage {
     mutable api::StorageReply::SP _reply;
 
 public:
-    typedef std::unique_ptr<StorageReply> UP;
+    using UP = std::unique_ptr<StorageReply>;
 
     StorageReply(mbus::BlobRef data, const ProtocolSerialization&);
     StorageReply(api::StorageReply::SP reply);

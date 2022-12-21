@@ -81,7 +81,7 @@ SplitJoinHandler::handleSplitBucket(api::SplitBucketCommand& cmd, MessageTracker
     api::SplitBucketReply & splitReply = *reply;
     tracker->setReply(std::move(reply));
 
-    typedef std::pair<StorBucketDatabase::WrappedEntry, FileStorHandler::RemapInfo> TargetInfo;
+    using TargetInfo = std::pair<StorBucketDatabase::WrappedEntry, FileStorHandler::RemapInfo>;
     std::vector<TargetInfo> targets;
     for (uint32_t i = 0; i < 2; i++) {
         const document::Bucket &target(i == 0 ? target1 : target2);

@@ -20,8 +20,8 @@ public:
 
     static const uint32_t MSG_WAIT_TIME = 60 * 1000;
 
-    typedef uint32_t DocumentIndex;
-    typedef uint64_t PutTimestamp;
+    using DocumentIndex = uint32_t;
+    using PutTimestamp = uint64_t;
 
     void SetUp() override;
     void TearDown() override;

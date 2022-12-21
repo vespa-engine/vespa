@@ -19,7 +19,7 @@ namespace storage {
 
 struct FileStorThreadMetrics : public metrics::MetricSet
 {
-    typedef std::shared_ptr<FileStorThreadMetrics> SP;
+    using SP = std::shared_ptr<FileStorThreadMetrics>;
 
     struct Op : metrics::MetricSet {
         std::string _name;

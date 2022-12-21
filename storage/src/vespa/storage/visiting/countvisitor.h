@@ -29,14 +29,14 @@ private:
     std::map<std::string, int> _schemeCount;
 
     bool _doNamespace;
-    typedef std::map<vespalib::string, int> NamespaceCountMap;
+    using NamespaceCountMap = std::map<vespalib::string, int>;
     NamespaceCountMap _namespaceCount;
 
     bool _doUser;
     std::map<uint64_t, int> _userCount;
 
     bool _doGroup;
-    typedef std::map<vespalib::string, int> GroupCountMap;
+    using GroupCountMap = std::map<vespalib::string, int>;
     GroupCountMap _groupCount;
 };
 
