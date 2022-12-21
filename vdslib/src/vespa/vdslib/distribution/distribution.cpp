@@ -109,7 +109,7 @@ Distribution::~Distribution() = default;
 void
 Distribution::configure(const vespa::config::content::StorDistributionConfig& config)
 {
-    typedef vespa::config::content::StorDistributionConfig::Group ConfigGroup;
+    using ConfigGroup = vespa::config::content::StorDistributionConfig::Group;
     std::unique_ptr<Group> nodeGraph;
     std::vector<const Group *> node2Group;
     for (uint32_t i=0, n=config.group.size(); i<n; ++i) {

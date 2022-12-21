@@ -30,9 +30,9 @@ class ClusterState : public document::Printable {
                               const ClusterState& other) const;
 
 public:
-    typedef std::shared_ptr<const ClusterState> CSP;
-    typedef std::shared_ptr<ClusterState> SP;
-    typedef std::unique_ptr<ClusterState> UP;
+    using CSP = std::shared_ptr<const ClusterState>;
+    using SP = std::shared_ptr<ClusterState>;
+    using UP = std::unique_ptr<ClusterState>;
 
     ClusterState();
     ClusterState(const ClusterState&);

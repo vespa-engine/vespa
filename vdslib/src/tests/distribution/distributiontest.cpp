@@ -872,7 +872,7 @@ std::string groupConfig("group[3]\n"
 
 TEST(DistributionTest, test_active_per_group)
 {
-    typedef Distribution::IndexList IndexList;
+    using IndexList = Distribution::IndexList;
         // Disabled feature
     {
         Distribution distr("redundancy 4\n" + groupConfig);

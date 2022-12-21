@@ -28,9 +28,9 @@ class NodeState : public document::Printable
     uint64_t _startTimestamp;
 
 public:
-    typedef std::shared_ptr<const NodeState> CSP;
-    typedef std::shared_ptr<NodeState> SP;
-    typedef std::unique_ptr<NodeState> UP;
+    using CSP = std::shared_ptr<const NodeState>;
+    using SP = std::shared_ptr<NodeState>;
+    using UP = std::unique_ptr<NodeState>;
 
     static double getListingBucketsInitProgressLimit() { return 0.01; }
 
