@@ -9,7 +9,6 @@
 #include "pendingclusterstate.h"
 #include <vespa/document/bucket/bucket.h>
 #include <vespa/storage/common/message_guard.h>
-#include <vespa/storage/common/storagelink.h>
 #include <vespa/storageapi/message/bucket.h>
 #include <vespa/storageapi/messageapi/messagehandler.h>
 #include <vespa/storageframework/generic/clock/timer.h>

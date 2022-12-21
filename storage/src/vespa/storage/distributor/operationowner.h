@@ -4,7 +4,6 @@
 #include "sentmessagemap.h"
 #include "distributormessagesender.h"
 #include "operationstarter.h"
-#include <vespa/storage/common/storagelink.h>
 
 namespace storage::framework { struct Clock; }
 
