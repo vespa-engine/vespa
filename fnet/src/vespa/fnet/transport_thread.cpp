@@ -127,7 +127,9 @@ FNET_TransportThread::PostEvent(FNET_ControlPacket *cpacket,
         _queue.QueuePacket_NoLock(cpacket, context);
         qLen = _queue.GetPacketCnt_NoLock();
     }
-    if (qLen == getConfig()._events_before_wakeup) {
+    if ((qLen == getConfig()._events_before_wakeup) ||
+        (cpacket->GetCommand() == FNET_ControlPacket::FNET_CMD_EXECUTE))
+    {
         _selector.wakeup();
     }
     return true;
