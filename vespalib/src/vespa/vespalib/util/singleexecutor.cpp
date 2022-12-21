@@ -43,7 +43,9 @@ SingleExecutor::SingleExecutor(init_fun_t func, uint32_t reservedQueueSize, bool
 SingleExecutor::~SingleExecutor() {
     shutdown();
     sync();
-    _thread.stop().join();
+    _thread.stop();
+    _consumerCondition.notify_one();
+    _thread.join();
 }
 
 size_t
