@@ -7,6 +7,7 @@ import com.yahoo.vespa.hosted.provision.persistence.NameResolver;
 import java.net.UnknownHostException;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -76,9 +77,7 @@ public class MockNameResolver implements NameResolver {
 
     @Override
     public Set<String> resolve(String name, RecordType first, RecordType... rest) {
-        Set<RecordType> types = new HashSet<>(1 + rest.length);
-        types.add(first);
-        Collections.addAll(types, rest);
+        var types = EnumSet.of(first, rest);
 
         return resolveAll(name)
                 .stream()
@@ -89,9 +88,6 @@ public class MockNameResolver implements NameResolver {
                 })
                 .collect(Collectors.toSet());
     }
-
-    private static boolean isIpv6(String ipAddress) { return ipAddress.contains(":"); }
-    private static boolean isIpv4(String ipAddress) { return !isIpv6(ipAddress) && ipAddress.contains("."); }
 
     @Override
     public Optional<String> resolveHostname(String ipAddress) {

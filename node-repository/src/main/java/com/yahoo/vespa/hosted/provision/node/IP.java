@@ -427,13 +427,19 @@ public class IP {
         }
 
         private static Allocation fromAddress(Address address, NameResolver resolver, IpAddresses.Protocol protocol) {
+            // Resolve both A and AAAA to verify they match the protocol and to avoid surprises later on.
+
             Optional<String> ipv4Address = resolveOptional(address.hostname(), resolver, RecordType.A);
             if (protocol != IpAddresses.Protocol.ipv6 && ipv4Address.isEmpty())
                 throw new IllegalArgumentException(protocol.description + " hostname " + address.hostname() + " did not resolve to an IPv4 address");
+            if (protocol == IpAddresses.Protocol.ipv6 && ipv4Address.isPresent())
+                throw new IllegalArgumentException(protocol.description + " hostname " + address.hostname() + " has an IPv4 address: " + ipv4Address.get());
 
             Optional<String> ipv6Address = resolveOptional(address.hostname(), resolver, RecordType.AAAA);
             if (protocol != IpAddresses.Protocol.ipv4 && ipv6Address.isEmpty())
                 throw new IllegalArgumentException(protocol.description + " hostname " + address.hostname() + " did not resolve to an IPv6 address");
+            if (protocol == IpAddresses.Protocol.ipv4 && ipv6Address.isPresent())
+                throw new IllegalArgumentException(protocol.description + " hostname " + address.hostname() + " has an IPv6 address: " + ipv6Address.get());
 
             return new Allocation(address.hostname(), ipv4Address, ipv6Address);
         }
