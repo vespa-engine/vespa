@@ -28,7 +28,6 @@ FRTConnection::FRTConnection(const vespalib::string& address, FRT_Supervisor& su
 
 FRTConnection::~FRTConnection()
 {
-    std::lock_guard guard(_lock);
     if (_target != nullptr) {
         LOG(debug, "Shutting down %s", _address.c_str());
         _target->SubRef();
@@ -46,13 +45,16 @@ FRTConnection::getTarget()
         _target->SubRef();
         _target = _supervisor.GetTarget(_address.c_str());
     }
+    _target->AddRef();
     return _target;
 }
 
 void
 FRTConnection::invoke(FRT_RPCRequest * req, duration timeout, FRT_IRequestWait * waiter)
 {
-    getTarget()->InvokeAsync(req, vespalib::to_s(timeout), waiter);
+    FRT_Target * target = getTarget();
+    target->InvokeAsync(req, vespalib::to_s(timeout), waiter);
+    target->SubRef();
 }
 
 void
