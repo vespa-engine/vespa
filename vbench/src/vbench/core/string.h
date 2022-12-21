@@ -16,9 +16,9 @@ namespace vbench {
 
 // define which string class to use
 #if USE_VESPA_STRING
-typedef vespalib::string string;
+using string = vespalib::string;
 #else
-typedef std::string string;
+using string = std::string;
 #endif
 
 extern string strfmt(const char *fmt, ...)

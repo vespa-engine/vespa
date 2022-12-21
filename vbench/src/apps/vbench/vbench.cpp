@@ -10,7 +10,7 @@ using namespace vbench;
 
 VESPA_THREAD_STACK_TAG(vbench_thread);
 
-typedef vespalib::SignalHandler SIG;
+using SIG = vespalib::SignalHandler;
 
 struct NotifyDone : public vespalib::Runnable {
     vespalib::Gate &done;

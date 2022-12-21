@@ -191,7 +191,7 @@ MetricSet::unregisterMetric(Metric& metric)
 }
 
 namespace {
-    typedef vespalib::stringref TmpString;
+    using TmpString = vespalib::stringref;
     class StringMetric {
     public:
         StringMetric(const TmpString & s, Metric * m) : first(s), second(m) { }
@@ -204,7 +204,7 @@ namespace {
     };
     bool operator < (const TmpString & a, const StringMetric & b) { return a < b.first; }
 
-    typedef std::vector<StringMetric> SortedVector;
+    using SortedVector = std::vector<StringMetric>;
     
     void createMetricMap(SortedVector& metricMap,
                          const std::vector<Metric*>& orderedList)
@@ -227,7 +227,7 @@ MetricSet::addTo(Metric& other, std::vector<Metric::UP> *ownerList) const
     createMetricMap(map2, o._metricOrder);
     SortedVector::iterator source(map1.begin());
     SortedVector::iterator target(map2.begin());
-    typedef vespalib::hash_map<TmpString, Metric*> HashMap;
+    using HashMap = vespalib::hash_map<TmpString, Metric*>;
     HashMap newMetrics;
     while (source != map1.end()) {
         if (target == map2.end() || source->first < target->first) {

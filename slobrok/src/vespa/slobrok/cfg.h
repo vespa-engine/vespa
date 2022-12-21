@@ -26,7 +26,7 @@ public:
     Configurator(Configurable &target, const config::ConfigUri & uri);
     ~Configurator();
     bool poll();
-    typedef std::unique_ptr<Configurator> UP;
+    using UP = std::unique_ptr<Configurator>;
 
     int64_t getGeneration() const;
 };

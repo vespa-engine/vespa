@@ -9,7 +9,7 @@ namespace vbench {
 
 struct Tagger : public Handler<Request>
 {
-    typedef std::unique_ptr<Tagger> UP;
+    using UP = std::unique_ptr<Tagger>;
     virtual ~Tagger() {}
 };
 

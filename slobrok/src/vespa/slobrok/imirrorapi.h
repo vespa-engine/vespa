@@ -25,7 +25,7 @@ public:
      * The first element of pair is a string containing the service name.
      * The second is the connection spec, typically "tcp/foo.bar.com:42"
      **/
-    typedef std::pair<std::string, std::string> Spec;
+    using Spec = std::pair<std::string, std::string>;
 
     /**
      * @brief vector of <name, connectionspec> pairs.
@@ -33,7 +33,7 @@ public:
      * The first element of each pair is a string containing the service name.
      * The second is the connection spec, typically "tcp/foo.bar.com:42"
      **/
-    typedef std::vector<Spec> SpecList;
+    using SpecList = std::vector<Spec>;
 
     /**
      * Obtain all the services matching a given pattern.

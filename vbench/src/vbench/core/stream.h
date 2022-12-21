@@ -21,7 +21,7 @@ struct Stream : public Input,
                 public Taintable
 {
     ~Stream() { }
-    typedef std::unique_ptr<Stream> UP;
+    using UP = std::unique_ptr<Stream>;
     virtual bool eof() const = 0;
 };
 

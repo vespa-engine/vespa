@@ -61,7 +61,7 @@ public:
         return str;
     }
 };
-typedef std::unique_ptr<Call> Call_UP;
+using Call_UP = std::unique_ptr<Call>;
 
 //-----------------------------------------------------------------------------
 
@@ -99,7 +99,7 @@ public:
 
 template <typename T>
 struct CallHelper : Call {
-    typedef CallHelper<T> Helper;
+    using Helper = CallHelper<T>;
     CallHelper(const vespalib::string &name_in, size_t num_params_in)
         : Call(name_in, num_params_in) {}
     void accept(NodeVisitor &visitor) const override;

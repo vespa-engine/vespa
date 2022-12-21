@@ -32,8 +32,8 @@ class MetricSnapshot
     mutable std::vector<Metric::UP> _metrics;
 
 public:
-    typedef std::unique_ptr<MetricSnapshot> UP;
-    typedef std::shared_ptr<MetricSnapshot> SP;
+    using UP = std::unique_ptr<MetricSnapshot>;
+    using SP = std::shared_ptr<MetricSnapshot>;
 
     /** Create a fresh empty top level snapshot. */
     MetricSnapshot(const Metric::String& name);
@@ -80,7 +80,7 @@ class MetricSnapshotSet {
     MetricSnapshot::UP _current; // The last full period
     MetricSnapshot::UP _building; // The building period
 public:
-    typedef std::shared_ptr<MetricSnapshotSet> SP;
+    using SP = std::shared_ptr<MetricSnapshotSet>;
 
     MetricSnapshotSet(const Metric::String& name, uint32_t period,
                       uint32_t count, const MetricSet& source,

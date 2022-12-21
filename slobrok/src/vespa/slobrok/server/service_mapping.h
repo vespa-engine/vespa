@@ -26,6 +26,6 @@ struct ServiceMapping {
     }
 };
 
-typedef std::vector<ServiceMapping> ServiceMappingList;
+using ServiceMappingList = std::vector<ServiceMapping>;
 
 }

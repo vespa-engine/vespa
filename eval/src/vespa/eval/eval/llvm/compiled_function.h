@@ -37,7 +37,7 @@ private:
     PassParams  _pass_params;
 
 public:
-    typedef std::unique_ptr<CompiledFunction> UP;
+    using UP = std::unique_ptr<CompiledFunction>;
     CompiledFunction(const nodes::Node &root_in, size_t num_params_in, PassParams pass_params_in,
                      const gbdt::Optimize::Chain &forest_optimizers);
     CompiledFunction(const Function &function_in, PassParams pass_params_in, const gbdt::Optimize::Chain &forest_optimizers)

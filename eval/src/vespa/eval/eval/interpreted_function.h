@@ -105,7 +105,7 @@ private:
     const ValueBuilderFactory &_factory;
 
 public:
-    typedef std::unique_ptr<InterpretedFunction> UP;
+    using UP = std::unique_ptr<InterpretedFunction>;
     // for testing; use with care; the tensor function must be kept alive
     InterpretedFunction(const ValueBuilderFactory &factory, const TensorFunction &function, CTFMetaData *meta);
     InterpretedFunction(const ValueBuilderFactory &factory, const TensorFunction &function)

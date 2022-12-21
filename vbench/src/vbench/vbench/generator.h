@@ -11,7 +11,7 @@ namespace vbench {
 struct Generator : public vespalib::Runnable,
                    public Taintable
 {
-    typedef std::unique_ptr<Generator> UP;
+    using UP = std::unique_ptr<Generator>;
     virtual void abort() = 0;
     virtual ~Generator() {}
 };
