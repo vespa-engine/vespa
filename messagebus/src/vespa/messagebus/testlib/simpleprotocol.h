@@ -17,7 +17,7 @@ public:
         /**
          * Convenience typedefs.
          */
-        typedef std::shared_ptr<IPolicyFactory> SP;
+        using SP = std::shared_ptr<IPolicyFactory>;
 
         /**
          * Required for inheritance.
@@ -34,7 +34,7 @@ public:
     };
 
 private:
-    typedef std::map<string, IPolicyFactory::SP> FactoryMap;
+    using FactoryMap = std::map<string, IPolicyFactory::SP>;
     FactoryMap _policies;
 
 public:

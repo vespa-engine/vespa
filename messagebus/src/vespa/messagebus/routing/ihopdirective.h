@@ -28,8 +28,8 @@ public:
     /**
      * Convenience typedefs.
      */
-    typedef std::unique_ptr<IHopDirective> UP;
-    typedef std::shared_ptr<IHopDirective> SP;
+    using UP = std::unique_ptr<IHopDirective>;
+    using SP = std::shared_ptr<IHopDirective>;
 
     /**
      * Implements a virtual destructor to allow virtual methods.

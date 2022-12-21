@@ -30,7 +30,7 @@ private:
         Context          ctx;
     };
 
-    typedef std::vector<Frame> Stack;
+    using Stack = std::vector<Frame>;
 
     Stack _stack;
 

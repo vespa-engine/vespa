@@ -17,7 +17,7 @@ public:
     /**
      * Convenience typedefs.
      */
-    typedef std::unique_ptr<IServiceAddress> UP;
+    using UP = std::unique_ptr<IServiceAddress>;
 
     /**
      * Virtual destructor required for inheritance.

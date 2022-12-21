@@ -63,7 +63,7 @@ public:
     /**
      * Convenience typedef for a shared pointer to a RoutingTable object.
      */
-    typedef std::shared_ptr<RoutingTable> SP;
+    using SP = std::shared_ptr<RoutingTable>;
     RoutingTable(const RoutingTable &) = delete;
     RoutingTable & operator = (const RoutingTable &) = delete;
 

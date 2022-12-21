@@ -23,7 +23,7 @@ public:
     /**
      * Convenience typedef for an auto-pointer to a route.
      */
-    typedef std::unique_ptr<Route> UP;
+    using UP = std::unique_ptr<Route>;
 
     /**
      * Parses the given string as a list of space-separated hops. The {@link this#toString()} method is compatible with

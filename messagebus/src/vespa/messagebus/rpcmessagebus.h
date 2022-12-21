@@ -28,8 +28,8 @@ public:
     /**
      * Convenience typedefs.
      */
-    typedef std::unique_ptr<RPCMessageBus> UP;
-    typedef std::shared_ptr<RPCMessageBus> SP;
+    using UP = std::unique_ptr<RPCMessageBus>;
+    using SP = std::shared_ptr<RPCMessageBus>;
     RPCMessageBus(const RPCMessageBus &) = delete;
     RPCMessageBus & operator = (const RPCMessageBus &) = delete;
 

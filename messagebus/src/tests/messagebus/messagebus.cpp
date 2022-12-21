@@ -51,7 +51,7 @@ struct Base {
 };
 
 struct Client : public Base {
-    typedef std::unique_ptr<Client> UP;
+    using UP = std::unique_ptr<Client>;
     TestServer        server;
     SourceSession::UP session;
     Client(Slobrok &slobrok)
@@ -74,7 +74,7 @@ struct Server : public Base {
 };
 
 struct DocProc : public Server {
-    typedef std::unique_ptr<DocProc> UP;
+    using UP = std::unique_ptr<DocProc>;
     IntermediateSession::UP session;
     DocProc(const string &name, Slobrok &slobrok)
         : Server(name, slobrok), session()
@@ -84,7 +84,7 @@ struct DocProc : public Server {
 };
 
 struct Search : public Server {
-    typedef std::unique_ptr<Search> UP;
+    using UP = std::unique_ptr<Search>;
     DestinationSession::UP session;
     Search(const string &name, Slobrok &slobrok)
         : Server(name, slobrok), session()

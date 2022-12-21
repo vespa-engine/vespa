@@ -15,7 +15,7 @@ class RPCNetwork;
  */
 class RPCService {
 private:
-    typedef slobrok::api::IMirrorAPI  Mirror;
+    using Mirror = slobrok::api::IMirrorAPI ;
 
     string        _serviceName;
     string        _connectionSpec;

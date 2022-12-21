@@ -40,7 +40,7 @@ public:
     /**
      * Convenience typedefs.
      */
-    typedef std::unique_ptr<IntermediateSession> UP;
+    using UP = std::unique_ptr<IntermediateSession>;
 
     /**
      * The destructor untangles from messagebus. After this method returns, messagebus will not invoke any

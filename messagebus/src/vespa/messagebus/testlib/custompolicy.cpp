@@ -126,8 +126,8 @@ void
 CustomPolicyFactory::parseRoutes(const string &str,
                                  std::vector<Route> &routes)
 {
-    typedef boost::char_separator<char> Separator;
-    typedef boost::tokenizer<Separator> Tokenizer;
+    using Separator = boost::char_separator<char>;
+    using Tokenizer = boost::tokenizer<Separator>;
     Separator separator(",");
     std::string stdstr(str);
     Tokenizer tokenizer(stdstr, separator);

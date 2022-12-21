@@ -10,8 +10,8 @@ namespace mbus {
 class SlobrokState
 {
 public:
-    typedef std::vector<std::pair<string, uint32_t> > TYPE;
-    typedef TYPE::const_iterator ITR;
+    using TYPE = std::vector<std::pair<string, uint32_t> >;
+    using ITR = TYPE::const_iterator;
 
 private:
     TYPE _data;

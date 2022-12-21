@@ -38,7 +38,7 @@ private:
     vespalib::Version _version;
 
 public:
-    typedef std::unique_ptr<ReplyContext> UP;
+    using UP = std::unique_ptr<ReplyContext>;
     ReplyContext(const ReplyContext &) = delete;
     ReplyContext & operator = (const ReplyContext &) = delete;
 

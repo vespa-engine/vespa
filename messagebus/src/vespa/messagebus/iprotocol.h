@@ -27,12 +27,12 @@ public:
     /**
      * Convenience typedef for an auto pointer to an IProtocol object.
      */
-    typedef std::unique_ptr<IProtocol> UP;
+    using UP = std::unique_ptr<IProtocol>;
 
     /**
      * Convenience typedef for a shared pointer to a IProtocol object.
      */
-    typedef std::shared_ptr<IProtocol> SP;
+    using SP = std::shared_ptr<IProtocol>;
 
     /**
      * Obtain the name of this protocol.

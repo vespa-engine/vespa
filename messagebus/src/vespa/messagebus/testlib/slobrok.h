@@ -33,7 +33,7 @@ private:
     void init();
 
 public:
-    typedef std::unique_ptr<Slobrok> UP;
+    using UP = std::unique_ptr<Slobrok>;
     Slobrok();
     Slobrok(int port);
     ~Slobrok();
