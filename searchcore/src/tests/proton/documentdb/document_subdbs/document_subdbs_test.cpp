@@ -75,12 +75,12 @@ using vespa::config::content::core::BucketspacesConfig;
 using vespalib::datastore::CompactionStrategy;
 using proton::index::IndexConfig;
 
-typedef StoreOnlyDocSubDB::Config StoreOnlyConfig;
-typedef StoreOnlyDocSubDB::Context StoreOnlyContext;
-typedef FastAccessDocSubDB::Config FastAccessConfig;
-typedef FastAccessDocSubDB::Context FastAccessContext;
-typedef SearchableDocSubDB::Context SearchableContext;
-typedef std::vector<AttributeGuard> AttributeGuardList;
+using StoreOnlyConfig = StoreOnlyDocSubDB::Config;
+using StoreOnlyContext = StoreOnlyDocSubDB::Context;
+using FastAccessConfig = FastAccessDocSubDB::Config;
+using FastAccessContext = FastAccessDocSubDB::Context;
+using SearchableContext = SearchableDocSubDB::Context;
+using AttributeGuardList = std::vector<AttributeGuard>;
 
 const std::string DOCTYPE_NAME = "searchdocument";
 const std::string SUB_NAME = "subdb";
@@ -282,7 +282,7 @@ make_all_attr_schema(bool has_attr2)
 
 struct MyConfigSnapshot
 {
-    typedef std::unique_ptr<MyConfigSnapshot> UP;
+    using UP = std::unique_ptr<MyConfigSnapshot>;
     Schema _schema;
     DocBuilder _builder;
     DocumentDBConfig::SP _cfg;
@@ -410,11 +410,11 @@ template <bool has_attr2_in, typename ConfigDirT, uint32_t ConfigSerial = CFG_SE
 struct BaseTraitsT
 {
     static constexpr bool has_attr2 = has_attr2_in;
-    typedef ConfigDirT ConfigDir;
+    using ConfigDir = ConfigDirT;
     static uint32_t configSerial() { return ConfigSerial; }
 };
 
-typedef BaseTraitsT<one_attr_schema, ConfigDir1> BaseTraits;
+using BaseTraits = BaseTraitsT<one_attr_schema, ConfigDir1>;
 
 struct StoreOnlyTraits : public BaseTraits
 {
@@ -424,7 +424,7 @@ struct StoreOnlyTraits : public BaseTraits
     using FeedView = StoreOnlyFeedView;
 };
 
-typedef FixtureBase<StoreOnlyTraits> StoreOnlyFixture;
+using StoreOnlyFixture = FixtureBase<StoreOnlyTraits>;
 
 struct FastAccessTraits : public BaseTraits
 {
@@ -434,7 +434,7 @@ struct FastAccessTraits : public BaseTraits
     using FeedView = FastAccessFeedView;
 };
 
-typedef FixtureBase<FastAccessTraits> FastAccessFixture;
+using FastAccessFixture = FixtureBase<FastAccessTraits>;
 
 template <typename ConfigDirT>
 struct FastAccessOnlyTraitsBase : public BaseTraitsT<two_attr_schema, ConfigDirT>
@@ -446,8 +446,8 @@ struct FastAccessOnlyTraitsBase : public BaseTraitsT<two_attr_schema, ConfigDirT
 };
 
 // Setup with 1 fast-access attribute
-typedef FastAccessOnlyTraitsBase<ConfigDir3> FastAccessOnlyTraits;
-typedef FixtureBase<FastAccessOnlyTraits> FastAccessOnlyFixture;
+using FastAccessOnlyTraits = FastAccessOnlyTraitsBase<ConfigDir3>;
+using FastAccessOnlyFixture = FixtureBase<FastAccessOnlyTraits>;
 
 template <bool has_attr2_in, typename ConfigDirT>
 struct SearchableTraitsBase : public BaseTraitsT<has_attr2_in, ConfigDirT>
@@ -458,8 +458,8 @@ struct SearchableTraitsBase : public BaseTraitsT<has_attr2_in, ConfigDirT>
     using FeedView = proton::SearchableFeedView;
 };
 
-typedef SearchableTraitsBase<one_attr_schema, ConfigDir1> SearchableTraits;
-typedef FixtureBase<SearchableTraits> SearchableFixture;
+using SearchableTraits = SearchableTraitsBase<one_attr_schema, ConfigDir1>;
+using SearchableFixture = FixtureBase<SearchableTraits>;
 
 void
 assertAttributes1(const AttributeGuardList &attributes)
@@ -711,8 +711,8 @@ getFlushTargets(Fixture &f)
     return targets;
 }
 
-typedef IFlushTarget::Type FType;
-typedef IFlushTarget::Component FComponent;
+using FType = IFlushTarget::Type;
+using FComponent = IFlushTarget::Component;
 
 bool
 assertTarget(const vespalib::string &name,
@@ -927,8 +927,8 @@ TEST_F("require that fast-access attributes are populated during reprocessing",
 }
 
 // Setup with 2 fields (1 attribute according to config in dir)
-typedef SearchableTraitsBase<two_attr_schema, ConfigDir1> SearchableTraitsTwoField;
-typedef FixtureBase<SearchableTraitsTwoField> SearchableFixtureTwoField;
+using SearchableTraitsTwoField = SearchableTraitsBase<two_attr_schema, ConfigDir1>;
+using SearchableFixtureTwoField = FixtureBase<SearchableTraitsTwoField>;
 
 TEST_F("require that regular attributes are populated during reprocessing",
         SearchableFixtureTwoField)
@@ -1009,10 +1009,10 @@ struct ExplorerFixture : public FixtureType
     }
 };
 
-typedef ExplorerFixture<StoreOnlyFixture> StoreOnlyExplorerFixture;
-typedef ExplorerFixture<FastAccessFixture> FastAccessExplorerFixture;
-typedef ExplorerFixture<SearchableFixture> SearchableExplorerFixture;
-typedef std::vector<vespalib::string> StringVector;
+using StoreOnlyExplorerFixture = ExplorerFixture<StoreOnlyFixture>;
+using FastAccessExplorerFixture = ExplorerFixture<FastAccessFixture>;
+using SearchableExplorerFixture = ExplorerFixture<SearchableFixture>;
+using StringVector = std::vector<vespalib::string>;
 
 void
 assertExplorer(const StringVector &extraNames, const vespalib::StateExplorer &explorer)

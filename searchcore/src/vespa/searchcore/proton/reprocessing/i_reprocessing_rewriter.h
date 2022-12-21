@@ -12,7 +12,7 @@ namespace proton {
  */
 struct IReprocessingRewriter
 {
-    typedef std::shared_ptr<IReprocessingRewriter> SP;
+    using SP = std::shared_ptr<IReprocessingRewriter>;
 
     virtual ~IReprocessingRewriter() {}
 

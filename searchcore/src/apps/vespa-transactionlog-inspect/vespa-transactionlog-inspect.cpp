@@ -30,12 +30,12 @@ using namespace search::transactionlog;
 
 using document::DocumentTypeRepo;
 
-typedef std::shared_ptr<DocumenttypesConfig> DocumenttypesConfigSP;
-typedef std::unique_ptr<IReplayPacketHandler> IReplayPacketHandlerUP;
+using DocumenttypesConfigSP = std::shared_ptr<DocumenttypesConfig>;
+using IReplayPacketHandlerUP = std::unique_ptr<IReplayPacketHandler>;
 
 struct DummyFileHeaderContext : public FileHeaderContext
 {
-    typedef std::unique_ptr<DummyFileHeaderContext> UP;
+    using UP = std::unique_ptr<DummyFileHeaderContext>;
     virtual void addTags(vespalib::GenericHeader &, const vespalib::string &) const override {}
 };
 
@@ -44,7 +44,7 @@ namespace {
 
 class ConfigFile
 {
-    typedef std::shared_ptr<ConfigFile> SP;
+    using SP = std::shared_ptr<ConfigFile>;
 
     vespalib::string _name;
     time_t _modTime;
@@ -186,7 +186,7 @@ public:
     void replay(const NewConfigOperation &op) override
     {
         print(op);
-        typedef std::map<std::string, ConfigFile>::const_iterator I;
+        using I = std::map<std::string, ConfigFile>::const_iterator;
         for (I i(_streamHandler._cfs.begin()), ie(_streamHandler._cfs.end());
              i != ie; ++i) {
             i->second.print();
@@ -332,7 +332,7 @@ public:
 struct Utility
 {
     virtual ~Utility() = default;
-    typedef std::unique_ptr<Utility> UP;
+    using UP = std::unique_ptr<Utility>;
     virtual int run() = 0;
 };
 
@@ -349,7 +349,7 @@ public:
     std::string tlsDir;
     std::string tlsName;
     int         listenPort;
-    typedef std::unique_ptr<BaseOptions> UP;
+    using UP = std::unique_ptr<BaseOptions>;
     BaseOptions(int argc, const char* const* argv);
     virtual ~BaseOptions();
     void usage() { _opts.writeSyntaxPage(std::cout); }

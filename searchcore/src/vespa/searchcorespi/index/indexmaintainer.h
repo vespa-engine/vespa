@@ -40,9 +40,9 @@ class IndexMaintainer : public IIndexManager,
      */
     class FrozenMemoryIndexRef {
     public:
-        typedef search::FixedSourceSelector::SaveInfo SaveInfo;
-        typedef search::SerialNum SerialNum;
-        typedef std::shared_ptr<SaveInfo> SaveInfoSP;
+        using SaveInfo = search::FixedSourceSelector::SaveInfo;
+        using SerialNum = search::SerialNum;
+        using SaveInfoSP = std::shared_ptr<SaveInfo>;
 
         IMemoryIndex::SP _index;
         SerialNum        _serialNum;

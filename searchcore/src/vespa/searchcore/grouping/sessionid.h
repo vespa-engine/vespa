@@ -4,15 +4,13 @@
 
 #include <vespa/vespalib/stllike/string.h>
 
-namespace search {
-namespace grouping {
+namespace search::grouping {
 
 /**
  * Representing the session identifier of a grouping to be used in the
  * session manager.
  **/
-typedef vespalib::string SessionId;
+using SessionId = vespalib::string;
 
-} // namespace grouping
-} // namespace search
+}
 

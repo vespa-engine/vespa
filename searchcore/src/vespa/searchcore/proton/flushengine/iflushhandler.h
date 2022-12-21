@@ -15,11 +15,11 @@ private:
 
 public:
     using IFlushTarget = searchcorespi::IFlushTarget;
-    typedef IFlushTarget::SerialNum SerialNum;
+    using SerialNum = IFlushTarget::SerialNum;
     /**
      * Convenience typedefs.
      */
-    typedef std::shared_ptr<IFlushHandler> SP;
+    using SP = std::shared_ptr<IFlushHandler>;
     IFlushHandler(const IFlushHandler &) = delete;
     IFlushHandler & operator = (const IFlushHandler &) = delete;
     /**

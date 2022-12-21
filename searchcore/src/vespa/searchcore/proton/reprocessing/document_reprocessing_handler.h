@@ -15,8 +15,8 @@ class DocumentReprocessingHandler : public IReprocessingHandler,
                                     public search::IDocumentStoreReadVisitor
 {
 private:
-    typedef std::vector<IReprocessingReader::SP> ReaderVector;
-    typedef std::vector<IReprocessingRewriter::SP> RewriterVector;
+    using ReaderVector = std::vector<IReprocessingReader::SP>;
+    using RewriterVector = std::vector<IReprocessingRewriter::SP>;
 
     class RewriteVisitor : public search::IDocumentStoreRewriteVisitor
     {

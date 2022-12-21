@@ -41,7 +41,7 @@ private:
     std::shared_ptr<AttributeDirectory> _dmsDir;
 
 public:
-    typedef std::shared_ptr<DocumentMetaStoreFlushTarget> SP;
+    using SP = std::shared_ptr<DocumentMetaStoreFlushTarget>;
 
     /**
      * Creates a new instance using the given attribute vector and the

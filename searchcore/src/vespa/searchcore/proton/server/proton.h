@@ -152,8 +152,8 @@ private:
     bool updateNodeUp(BucketSpace bucketSpace, bool nodeUpInBucketSpace);
     void closeDocumentDBs(vespalib::ThreadStackExecutorBase & executor);
 public:
-    typedef std::unique_ptr<Proton> UP;
-    typedef std::shared_ptr<Proton> SP;
+    using UP = std::unique_ptr<Proton>;
+    using SP = std::shared_ptr<Proton>;
 
     Proton(FastOS_ThreadPool & threadPool, FNET_Transport & transport, const config::ConfigUri & configUri,
            const vespalib::string &progName, vespalib::duration subscribeTimeout);

@@ -13,8 +13,8 @@ namespace proton {
  **/
 class IIndexWriter {
 public:
-    typedef std::unique_ptr<IIndexWriter> UP;
-    typedef std::shared_ptr<IIndexWriter> SP;
+    using UP = std::unique_ptr<IIndexWriter>;
+    using SP = std::shared_ptr<IIndexWriter>;
     using IIndexManager = searchcorespi::IIndexManager;
     using OnWriteDoneType = IIndexManager::OnWriteDoneType;
     using LidVector = std::vector<search::DocumentIdT>;

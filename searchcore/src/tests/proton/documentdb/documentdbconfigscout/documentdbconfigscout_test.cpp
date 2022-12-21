@@ -15,7 +15,7 @@ using namespace vespa::config::search;
 using std::shared_ptr;
 using std::make_shared;
 
-typedef shared_ptr<DocumentDBConfig> DDBCSP;
+using DDBCSP = shared_ptr<DocumentDBConfig>;
 
 namespace
 {

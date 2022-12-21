@@ -25,7 +25,7 @@ class IIndexschemaInspector;
 class AttributeReprocessingInitializer : public IReprocessingInitializer
 {
 public:
-    typedef std::unique_ptr<AttributeReprocessingInitializer> UP;
+    using UP = std::unique_ptr<AttributeReprocessingInitializer>;
 
     class Config
     {

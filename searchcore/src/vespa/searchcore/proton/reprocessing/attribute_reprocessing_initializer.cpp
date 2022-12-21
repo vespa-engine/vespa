@@ -22,7 +22,7 @@ using search::index::schema::DataType;
 
 namespace proton {
 
-typedef AttributeReprocessingInitializer::Config ARIConfig;
+using ARIConfig = AttributeReprocessingInitializer::Config;
 
 namespace {
 

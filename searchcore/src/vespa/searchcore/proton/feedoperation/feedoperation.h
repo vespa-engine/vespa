@@ -12,9 +12,9 @@ namespace proton {
 class FeedOperation
 {
 public:
-    typedef search::SerialNum SerialNum;
-    typedef std::shared_ptr<FeedOperation> SP;
-    typedef std::unique_ptr<FeedOperation> UP;
+    using SerialNum = search::SerialNum;
+    using SP = std::shared_ptr<FeedOperation>;
+    using UP = std::unique_ptr<FeedOperation>;
 
     /*
      * Enumeration of feed operations. UPDATE_42 is partial update

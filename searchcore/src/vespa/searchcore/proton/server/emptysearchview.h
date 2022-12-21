@@ -9,7 +9,7 @@ namespace proton {
 class EmptySearchView : public ISearchHandler
 {
 public:
-    typedef std::shared_ptr<EmptySearchView> SP;
+    using SP = std::shared_ptr<EmptySearchView>;
 
     EmptySearchView();
 

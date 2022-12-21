@@ -46,7 +46,7 @@ using namespace proton;
 namespace {
 
 struct MyStreamHandler : NewConfigOperation::IStreamHandler {
-    typedef NewConfigOperation::SerialNum SerialNum;
+    using SerialNum = NewConfigOperation::SerialNum;
     virtual void serializeConfig(SerialNum, vespalib::nbostream &) override {}
     virtual void deserializeConfig(SerialNum, vespalib::nbostream &) override {}
 };

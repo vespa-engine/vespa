@@ -8,7 +8,7 @@ namespace proton::test {
 
 struct SimpleJobTracker : public IJobTracker
 {
-    typedef std::shared_ptr<SimpleJobTracker> SP;
+    using SP = std::shared_ptr<SimpleJobTracker>;
     vespalib::CountDownLatch _started;
     vespalib::CountDownLatch _ended;
     SimpleJobTracker(uint32_t numJobTrackings) noexcept

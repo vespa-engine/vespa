@@ -28,11 +28,11 @@ public:
     /**
      * Convenience typedef for an auto pointer to this interface.
      **/
-    typedef std::unique_ptr<ISearchContext> UP;
+    using UP = std::unique_ptr<ISearchContext>;
     ISearchContext(const ISearchContext &) = delete;
     ISearchContext & operator = (const ISearchContext &) = delete;
 
-    typedef search::queryeval::Searchable      Searchable;
+    using Searchable = search::queryeval::Searchable;
     using IndexSearchable = searchcorespi::IndexSearchable;
 
     /**

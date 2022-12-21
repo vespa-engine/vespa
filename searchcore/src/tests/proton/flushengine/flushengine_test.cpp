@@ -119,7 +119,7 @@ public:
     FlushDoneHistory          _flushDoneHistory;
 
 public:
-    typedef std::shared_ptr<SimpleHandler> SP;
+    using SP = std::shared_ptr<SimpleHandler>;
 
     SimpleHandler(const Targets &targets, const std::string &name = "anon",
                   search::SerialNum currentSerial = -1)
@@ -298,7 +298,7 @@ public:
     mutable bool _serial;
 
 public:
-    typedef std::shared_ptr<AssertedTarget> SP;
+    using SP = std::shared_ptr<AssertedTarget>;
 
     AssertedTarget()
         : SimpleTarget("anon"),
@@ -348,7 +348,7 @@ public:
 
 
 public:
-    typedef std::shared_ptr<SimpleStrategy> SP;
+    using SP = std::shared_ptr<SimpleStrategy>;
 
     SimpleStrategy() noexcept : _targets() {}
 

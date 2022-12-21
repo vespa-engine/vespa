@@ -12,7 +12,7 @@ namespace proton {
  */
 struct IDocumentMetaStoreContext : public search::IDocumentMetaStoreContext {
 
-    typedef std::shared_ptr<IDocumentMetaStoreContext> SP;
+    using SP = std::shared_ptr<IDocumentMetaStoreContext>;
 
     virtual ~IDocumentMetaStoreContext() = default;
 

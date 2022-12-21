@@ -58,8 +58,8 @@ private:
         std::size_t operator() (const document::BucketSpace &bucketSpace) const { return bucketSpace.getId(); }
     };
 
-    typedef std::map<IteratorId, IteratorEntry *> Iterators;
-    typedef std::vector<std::shared_ptr<BucketIdListResult> > BucketIdListResultV;
+    using Iterators = std::map<IteratorId, IteratorEntry *>;
+    using BucketIdListResultV = std::vector<std::shared_ptr<BucketIdListResult> >;
     using ExtraModifiedBuckets = std::unordered_map<BucketSpace, BucketIdListResultV, BucketSpaceHash>;
 
 
@@ -92,7 +92,7 @@ private:
     void removeAsyncSingle(const Bucket&, Timestamp, const document::DocumentId &id, OperationComplete::UP);
     void removeAsyncMulti(const Bucket&, std::vector<storage::spi::IdAndTimestamp> ids, OperationComplete::UP);
 public:
-    typedef std::unique_ptr<PersistenceEngine> UP;
+    using UP = std::unique_ptr<PersistenceEngine>;
 
     PersistenceEngine(IPersistenceEngineOwner &owner, const IResourceWriteFilter &writeFilter, IDiskMemUsageNotifier &disk_mem_usage_notifier,
                       ssize_t defaultSerializedSize, bool ignoreMaxBytes);

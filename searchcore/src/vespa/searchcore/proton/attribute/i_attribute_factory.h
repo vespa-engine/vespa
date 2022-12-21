@@ -17,7 +17,7 @@ namespace proton {
  */
 struct IAttributeFactory
 {
-    typedef std::shared_ptr<IAttributeFactory> SP;
+    using SP = std::shared_ptr<IAttributeFactory>;
     using AttributeVectorSP = std::shared_ptr<search::AttributeVector>;
     virtual ~IAttributeFactory() {}
     virtual AttributeVectorSP create(const vespalib::string &name,

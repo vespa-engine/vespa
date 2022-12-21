@@ -12,7 +12,7 @@ namespace proton {
 class LidVectorContext
 {
 public:
-    typedef std::vector<search::DocumentIdT> LidVector;
+    using LidVector = std::vector<search::DocumentIdT>;
 private:
     LidVector _result;
     size_t    _docIdLimit;

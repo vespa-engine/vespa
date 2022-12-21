@@ -42,7 +42,7 @@ private:
     Task::UP internalInitFlush(SerialNum currentSerial);
 
 public:
-    typedef std::shared_ptr<FlushableAttribute> SP;
+    using SP = std::shared_ptr<FlushableAttribute>;
 
     /**
      * Creates a new instance using the given attribute vector and the

@@ -59,7 +59,7 @@ public:
     };
 
 private:
-    typedef FastAccessDocSubDB Parent;
+    using Parent = FastAccessDocSubDB;
     using IFlushTargetList = std::vector<std::shared_ptr<searchcorespi::IFlushTarget>>;
 
     searchcorespi::IIndexManager::SP            _indexMgr;

@@ -17,7 +17,7 @@ class TlsStatsMap;
  */
 class IFlushStrategy {
 public:
-    typedef std::shared_ptr<IFlushStrategy> SP;
+    using SP = std::shared_ptr<IFlushStrategy>;
 
     IFlushStrategy(const IFlushStrategy &) = delete;
     IFlushStrategy & operator = (const IFlushStrategy &) = delete;

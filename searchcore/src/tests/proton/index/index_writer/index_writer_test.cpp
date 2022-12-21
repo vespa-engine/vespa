@@ -32,7 +32,7 @@ toString(const std::vector<SerialNum> &vec)
 
 struct MyIndexManager : public proton::test::MockIndexManager
 {
-    typedef std::map<uint32_t, std::vector<SerialNum> > LidMap;
+    using LidMap = std::map<uint32_t, std::vector<SerialNum> >;
     LidMap puts;
     LidMap removes;
     SerialNum current;

@@ -37,12 +37,12 @@ class DocumentMetaStore final : public DocumentMetaStoreAttribute,
                                 public search::IBucketizer
 {
 public:
-    typedef std::shared_ptr<DocumentMetaStore> SP;
-    typedef documentmetastore::IStore::Result Result;
-    typedef documentmetastore::IStore::DocId DocId;
-    typedef documentmetastore::IStore::GlobalId GlobalId;
-    typedef documentmetastore::IStore::BucketId BucketId;
-    typedef documentmetastore::IStore::Timestamp Timestamp;
+    using SP = std::shared_ptr<DocumentMetaStore>;
+    using Result = documentmetastore::IStore::Result;
+    using DocId = documentmetastore::IStore::DocId;
+    using GlobalId = documentmetastore::IStore::GlobalId;
+    using BucketId = documentmetastore::IStore::BucketId;
+    using Timestamp = documentmetastore::IStore::Timestamp;
     using MetaDataView = vespalib::ConstArrayRef<RawDocumentMetaData>;
     using UnboundMetaDataView = const RawDocumentMetaData *;
 
@@ -141,8 +141,8 @@ private:
     void set_shrink_lid_space_blockers(uint32_t value) noexcept { _shrinkLidSpaceBlockers.store(value, std::memory_order_relaxed); }
 
 public:
-    typedef TreeType::Iterator Iterator;
-    typedef TreeType::ConstIterator ConstIterator;
+    using Iterator = TreeType::Iterator;
+    using ConstIterator = TreeType::ConstIterator;
     static constexpr size_t minHeaderLen = 0x1000;
     static constexpr size_t entrySize =
         sizeof(uint32_t) + GlobalId::LENGTH + sizeof(uint8_t) +

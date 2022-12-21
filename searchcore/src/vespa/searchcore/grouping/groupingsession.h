@@ -33,7 +33,7 @@ private:
     vespalib::steady_time            _timeOfDoom;
 
 public:
-    typedef std::unique_ptr<GroupingSession> UP;
+    using UP = std::unique_ptr<GroupingSession>;
 
     /**
      * Create a new grouping session

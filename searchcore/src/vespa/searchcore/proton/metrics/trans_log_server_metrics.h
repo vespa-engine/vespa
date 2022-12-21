@@ -20,7 +20,7 @@ public:
         metrics::LongValueMetric diskUsage;
         metrics::DoubleValueMetric replayTime;
 
-        typedef std::unique_ptr<DomainMetrics> UP;
+        using UP = std::unique_ptr<DomainMetrics>;
         DomainMetrics(metrics::MetricSet *parent, const vespalib::string &documentType);
         ~DomainMetrics() override;
         void update(const search::transactionlog::DomainInfo &stats);

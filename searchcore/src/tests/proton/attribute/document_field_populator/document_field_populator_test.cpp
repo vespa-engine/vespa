@@ -18,8 +18,8 @@ using namespace proton;
 using namespace search;
 using search::test::DocBuilder;
 
-typedef search::attribute::Config AVConfig;
-typedef search::attribute::BasicType AVBasicType;
+using AVConfig = search::attribute::Config;
+using AVBasicType = search::attribute::BasicType;
 
 struct DocContext
 {

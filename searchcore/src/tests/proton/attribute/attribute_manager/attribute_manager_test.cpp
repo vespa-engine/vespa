@@ -72,9 +72,9 @@ using vespa::config::search::AttributesConfig;
 using vespa::config::search::AttributesConfigBuilder;
 using vespalib::eval::ValueType;
 
-typedef search::attribute::Config AVConfig;
-typedef proton::AttributeCollectionSpec::AttributeList AttrSpecList;
-typedef proton::AttributeCollectionSpec AttrMgrSpec;
+using AVConfig = search::attribute::Config;
+using AttrSpecList = proton::AttributeCollectionSpec::AttributeList;
+using AttrMgrSpec = proton::AttributeCollectionSpec;
 
 namespace {
 

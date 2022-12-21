@@ -61,10 +61,10 @@ using search::transactionlog::TransLogServer;
 using storage::spi::ConformanceTest;
 using storage::spi::PersistenceProvider;
 
-typedef ConformanceTest::PersistenceFactory         PersistenceFactory;
-typedef DocumentDBConfig::DocumenttypesConfigSP     DocumenttypesConfigSP;
-typedef std::map<DocTypeName, DocumentDB::SP>       DocumentDBMap;
-typedef std::vector<DocTypeName>                    DocTypeVector;
+using PersistenceFactory = ConformanceTest::PersistenceFactory;
+using DocumenttypesConfigSP = DocumentDBConfig::DocumenttypesConfigSP;
+using DocumentDBMap = std::map<DocTypeName, DocumentDB::SP>;
+using DocTypeVector = std::vector<DocTypeName>;
 
 void
 storeDocType(DocTypeVector *types, const DocumentType &type)
@@ -74,8 +74,8 @@ storeDocType(DocTypeVector *types, const DocumentType &type)
 
 
 struct SchemaConfigFactory {
-    typedef DocumentDBConfig CS;
-    typedef std::shared_ptr<SchemaConfigFactory> SP;
+    using CS = DocumentDBConfig;
+    using SP = std::shared_ptr<SchemaConfigFactory>;
     virtual ~SchemaConfigFactory() = default;
     static SchemaConfigFactory::SP get() { return std::make_shared<SchemaConfigFactory>(); }
     virtual CS::IndexschemaConfigSP createIndexSchema(const DocumentType &docType) {
@@ -117,7 +117,7 @@ public:
         if (docType == nullptr) {
             return DocumentDBConfig::SP();
         }
-        typedef DocumentDBConfig CS;
+        using CS = DocumentDBConfig;
         CS::IndexschemaConfigSP indexschema = _schemaFactory->createIndexSchema(*docType);
         CS::AttributesConfigSP attributes = _schemaFactory->createAttributes(*docType);
         CS::SummaryConfigSP summary = _schemaFactory->createSummary(*docType);
@@ -223,7 +223,7 @@ class DocumentDBRepo {
 private:
     DocumentDBMap _docDbs;
 public:
-    typedef std::unique_ptr<DocumentDBRepo> UP;
+    using UP = std::unique_ptr<DocumentDBRepo>;
     DocumentDBRepo(const ConfigFactory &cfgFactory, DocumentDBFactory &docDbFactory)
         : _docDbs()
     {

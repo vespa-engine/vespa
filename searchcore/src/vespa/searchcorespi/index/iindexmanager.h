@@ -73,8 +73,8 @@ public:
         virtual bool reconfigure(std::unique_ptr<Configure> configure) = 0;
     };
 
-    typedef std::unique_ptr<IIndexManager> UP;
-    typedef std::shared_ptr<IIndexManager> SP;
+    using UP = std::unique_ptr<IIndexManager>;
+    using SP = std::shared_ptr<IIndexManager>;
 
     virtual ~IIndexManager() = default;
 

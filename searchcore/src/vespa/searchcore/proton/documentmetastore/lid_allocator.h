@@ -17,8 +17,8 @@ namespace proton::documentmetastore {
 class LidAllocator
 {
 private:
-    typedef uint32_t DocId;
-    typedef vespalib::GenerationHandler::generation_t generation_t;
+    using DocId = uint32_t;
+    using generation_t = vespalib::GenerationHandler::generation_t;
 
     LidHoldList                 _holdLids;
     LidStateVector              _freeLids;

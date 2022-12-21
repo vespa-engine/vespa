@@ -190,7 +190,7 @@ private:
     std::unique_ptr<SelectContext> _selectCxt;
 };
 
-typedef vespalib::hash_map<uint32_t, uint32_t> LidIndexMap;
+using LidIndexMap = vespalib::hash_map<uint32_t, uint32_t>;
 
 class MatchVisitor : public search::IDocumentVisitor
 {

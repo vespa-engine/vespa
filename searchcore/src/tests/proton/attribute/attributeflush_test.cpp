@@ -33,15 +33,15 @@ using namespace vespalib;
 
 using search::index::DummyFileHeaderContext;
 
-typedef search::attribute::Config AVConfig;
-typedef search::attribute::BasicType AVBasicType;
-typedef search::attribute::CollectionType AVCollectionType;
+using AVConfig = search::attribute::Config;
+using AVBasicType = search::attribute::BasicType;
+using AVCollectionType = search::attribute::CollectionType;
 using searchcorespi::IFlushTarget;
 using searchcorespi::FlushStats;
 using std::chrono::duration_cast;
 using namespace std::literals;
 
-typedef std::shared_ptr<Gate> GateSP;
+using GateSP = std::shared_ptr<Gate>;
 
 namespace proton {
 

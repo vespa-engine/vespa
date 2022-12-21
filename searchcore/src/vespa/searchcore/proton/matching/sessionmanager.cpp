@@ -26,7 +26,7 @@ protected:
 
 template <typename T>
 struct SessionCache : SessionCacheBase {
-    typedef typename T::UP EntryUP;
+    using EntryUP = typename T::UP;
     vespalib::lrucache_map<vespalib::LruParam<SessionId, EntryUP> > _cache;
 
     SessionCache(uint32_t max_size) : _cache(max_size) {}
@@ -85,7 +85,7 @@ struct SessionCache : SessionCacheBase {
 
 template <typename T>
 struct SessionMap : SessionCacheBase {
-    typedef typename T::SP EntrySP;
+    using EntrySP = typename T::SP;
     vespalib::hash_map<SessionId, EntrySP> _map;
 
     void insert(EntrySP session) {

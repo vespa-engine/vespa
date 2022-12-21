@@ -41,7 +41,7 @@ public:
     uint32_t getDocSize() const { return 1000; }
 };
 
-typedef std::vector<Document> DocumentVector;
+using DocumentVector = std::vector<Document>;
 
 struct DocumentGidOrderCmp
 {

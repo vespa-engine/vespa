@@ -12,7 +12,7 @@ namespace proton {
  */
 struct IDocumentScanIterator
 {
-    typedef std::unique_ptr<IDocumentScanIterator> UP;
+    using UP = std::unique_ptr<IDocumentScanIterator>;
 
     virtual ~IDocumentScanIterator() = default;
 

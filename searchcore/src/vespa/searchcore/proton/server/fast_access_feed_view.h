@@ -17,8 +17,8 @@ namespace proton {
 class FastAccessFeedView : public StoreOnlyFeedView
 {
 public:
-    typedef std::shared_ptr<FastAccessFeedView> SP;
-    typedef std::unique_ptr<FastAccessFeedView> UP;
+    using SP = std::shared_ptr<FastAccessFeedView>;
+    using UP = std::unique_ptr<FastAccessFeedView>;
 
     struct Context
     {
@@ -31,7 +31,7 @@ public:
     };
 
 private:
-    typedef StoreOnlyFeedView Parent;
+    using Parent = StoreOnlyFeedView;
 
     const IAttributeWriter::SP _attributeWriter;
     DocIdLimit                 &_docIdLimit;

@@ -284,7 +284,7 @@ public:
     put(const document::Document &doc, const search::DocumentIdT lid)
     {
         const document::DocumentId &docId = doc.getId();
-        typedef DocumentMetaStore::Result PutRes;
+        using PutRes = DocumentMetaStore::Result;
         IDocumentMetaStore &dms = _ddb->getReadySubDB()->getDocumentMetaStoreContext().get();
         uint32_t docSize = 1;
         PutRes putRes(dms.put(docId.getGlobalId(), BucketFactory::getBucketId(docId),

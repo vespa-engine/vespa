@@ -66,27 +66,27 @@ namespace search {
     }
 
 struct GetFloat {
-    typedef float T;
+    using T = float;
     T operator () (const FieldValue & fv) const { return fv.getAsFloat(); }
 };
 
 struct GetDouble {
-    typedef double T;
+    using T = double;
     T operator () (const FieldValue & fv) const { return fv.getAsDouble(); }
 };
 
 struct GetLong {
-    typedef int64_t T;
+    using T = int64_t;
     T operator () (const FieldValue & fv) const { return fv.getAsLong(); }
 };
 
 struct GetInt {
-    typedef int32_t T;
+    using T = int32_t;
     T operator () (const FieldValue & fv) const { return fv.getAsInt(); }
 };
 
 struct GetString {
-    typedef vespalib::stringref T;
+    using T = vespalib::stringref;
     T operator () (const FieldValue & fv) const { return static_cast<const LiteralFieldValueB &>(fv).getValueRef(); }
 };
 

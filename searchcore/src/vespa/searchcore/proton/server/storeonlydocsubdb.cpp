@@ -577,7 +577,7 @@ StoreOnlySubDBFileHeaderContext::
 addTags(vespalib::GenericHeader &header, const vespalib::string &name) const
 {
     _parentFileHeaderContext.addTags(header, name);
-    typedef GenericHeader::Tag Tag;
+    using Tag = GenericHeader::Tag;
     header.putTag(Tag("documentType", _docTypeName.toString()));
     header.putTag(Tag("subDB", _subDB));
 }
