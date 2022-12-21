@@ -111,6 +111,7 @@ public class SlobrokTest {
         assertTrue(mirror.updates() > 0);
 
         List<Entry> oneArr = mirror.lookup("*/*/*");
+        mirror.dumpState();
         assertTrue(oneArr.size() == 1);
         Mirror.Entry one = oneArr.get(0);
         assertTrue(one.equals(new Mirror.Entry(wantName, mySpec)));
