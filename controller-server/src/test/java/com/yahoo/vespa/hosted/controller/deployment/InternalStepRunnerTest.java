@@ -510,10 +510,8 @@ public class InternalStepRunnerTest {
         assertEquals(unfinished, tester.jobs().run(id).stepStatuses().get(Step.deployTester));
         assertEquals(unfinished, tester.jobs().run(id).stepStatuses().get(Step.deployReal));
 
-        List<X509Certificate> oldApplicationTruststore = new ArrayList<>(DeploymentContext.publicApplicationPackage().trustedCertificates());
         List<X509Certificate> oldTesterCert = List.of(tester.jobs().run(id).testerCertificate().get());
 
-        assertEquals(oldApplicationTruststore, tester.configServer().application(app.instanceId(), id.type().zone()).get().applicationPackage().trustedCertificates());
         assertEquals(oldTesterCert, tester.configServer().additionalCertificates(app.deploymentIdIn(id.type().zone())));
 
         tester.configServer().throwOnNextPrepare(null);
@@ -522,12 +520,9 @@ public class InternalStepRunnerTest {
         assertEquals(succeeded, tester.jobs().run(id).stepStatuses().get(Step.deployTester));
         assertEquals(succeeded, tester.jobs().run(id).stepStatuses().get(Step.deployReal));
 
-        List<X509Certificate> newApplicationTruststore = new ArrayList<>(DeploymentContext.publicApplicationPackage().trustedCertificates());
         List<X509Certificate> newTesterCert = List.of(tester.jobs().run(id).testerCertificate().get());
-        assertEquals(newApplicationTruststore, tester.configServer().application(app.instanceId(), id.type().zone()).get().applicationPackage().trustedCertificates());
         assertEquals(newTesterCert, tester.configServer().additionalCertificates(app.deploymentIdIn(id.type().zone())));
 
-        assertEquals(oldApplicationTruststore, newApplicationTruststore);
         assertNotEquals(oldTesterCert, newTesterCert);
     }
 
@@ -537,11 +532,8 @@ public class InternalStepRunnerTest {
         app = tester.newDeploymentContext();
         RunId id = app.startSystemTestTests();
 
-        List<X509Certificate> trusted = new ArrayList<>(DeploymentContext.publicApplicationPackage().trustedCertificates());
-        assertEquals(trusted, tester.configServer().application(app.instanceId(), id.type().zone()).get().applicationPackage().trustedCertificates());
 
         assertEquals(List.of(tester.jobs().run(id).testerCertificate().get()), tester.configServer().additionalCertificates(app.deploymentIdIn(id.type().zone())));
-        assertEquals(trusted, tester.configServer().application(app.instanceId(), id.type().zone()).get().applicationPackage().trustedCertificates());
 
         tester.clock().advance(InternalStepRunner.Timeouts.of(system()).testerCertificate().plus(Duration.ofSeconds(1)));
         tester.runner().run();

@@ -59,7 +59,6 @@ public class ApplicationPackageValidator {
         validateEndpointRegions(applicationPackage.deploymentSpec());
         validateEndpointChange(application, applicationPackage, instant);
         validateCompactedEndpoint(applicationPackage);
-        validateSecurityClientsPem(applicationPackage);
         validateDeprecatedElements(applicationPackage);
         validateCloudAccounts(application, applicationPackage);
     }
@@ -93,13 +92,6 @@ public class ApplicationPackageValidator {
             if (deprecatedElement.majorVersion() >= wantedMajor) continue;
             throw new IllegalArgumentException(deprecatedElement.humanReadableString());
         }
-    }
-
-    /** Verify that we have the security/clients.pem file for public systems */
-    private void validateSecurityClientsPem(ApplicationPackage applicationPackage) {
-        if (!controller.system().isPublic() || applicationPackage.deploymentSpec().steps().isEmpty()) return;
-        if (applicationPackage.trustedCertificates().isEmpty())
-            throw new IllegalArgumentException("Missing required file 'security/clients.pem'");
     }
 
     /** Verify that each of the production zones listed in the deployment spec exist in this system */
