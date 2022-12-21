@@ -15,7 +15,7 @@ namespace storage::spi {
 
 class Selection {
 public:
-    typedef std::vector<Timestamp> TimestampSubset;
+    using TimestampSubset = std::vector<Timestamp>;
 private:
     DocumentSelection _documentSelection;
     Timestamp         _fromTimestamp;

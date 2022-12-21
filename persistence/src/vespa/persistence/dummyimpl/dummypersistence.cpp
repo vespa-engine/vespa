@@ -578,7 +578,7 @@ DummyPersistence::createIterator(const Bucket &b, FieldSetSP fs, const Selection
     const BucketContent::GidMapType& gidMap((*bc)->_gidMap);
 
     if (s.getTimestampSubset().empty()) {
-        typedef std::vector<BucketEntry>::const_reverse_iterator reverse_iterator;
+        using reverse_iterator = std::vector<BucketEntry>::const_reverse_iterator;
         for (reverse_iterator entryIter((*bc)->_entries.rbegin()),
                  entryEnd((*bc)->_entries.rend());
              entryIter != entryEnd; ++entryIter)

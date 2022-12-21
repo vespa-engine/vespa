@@ -27,7 +27,7 @@ namespace document {
   class name { \
       type _value; \
   public: \
-      typedef type Type; \
+      using Type = type; \
       name() noexcept : _value() {} \
       explicit name(type v) noexcept : _value(v) {} \
       operator type() const noexcept { return _value; } \

@@ -27,7 +27,7 @@ class ConformanceTest : public ::testing::Test {
 public:
     using PersistenceProviderUP = std::unique_ptr<PersistenceProvider>;
     struct PersistenceFactory {
-        typedef std::unique_ptr<PersistenceFactory> UP;
+        using UP = std::unique_ptr<PersistenceFactory>;
 
         virtual ~PersistenceFactory() = default;
         virtual PersistenceProviderUP getPersistenceImplementation(
