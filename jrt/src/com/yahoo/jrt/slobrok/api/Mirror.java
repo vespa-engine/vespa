@@ -369,7 +369,7 @@ public class Mirror implements IMirror {
         int idx = 0;
         List<Event> firstEvents = new ArrayList<>();
         List<Event> lastEvents = new ArrayList<>();
-        void addEvent(String message) {
+        synchronized void addEvent(String message) {
             var event = new Event(message);
             if (firstEvents.size() < 10) {
                 firstEvents.add(event);
@@ -384,7 +384,7 @@ public class Mirror implements IMirror {
             long tt = (long)(now - (nanos - e.timestamp) / 1.0e9);
             log.info("event at [" + tt + "]: " + e.message);
         }
-        void dump() {
+        synchronized void dump() {
             long nanos = System.nanoTime();
             double now = System.currentTimeMillis() / 1000.0;
             log.info("initial events for location broker mirror");
