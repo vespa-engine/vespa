@@ -31,7 +31,7 @@ public class Reconfigurer extends AbstractComponent {
 
     private static final Duration TIMEOUT = Duration.ofMinutes(15);
 
-    private final ExponentialBackoff backoff = new ExponentialBackoff(Duration.ofSeconds(1), Duration.ofSeconds(10));
+    private final ExponentialBackoff backoff = new ExponentialBackoff(Duration.ofMillis(50), Duration.ofSeconds(10));
     private final VespaZooKeeperAdmin vespaZooKeeperAdmin;
     private final Sleeper sleeper;
 
