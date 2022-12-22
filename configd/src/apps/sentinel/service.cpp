@@ -331,7 +331,7 @@ Service::youExited(int status)
         // ### Implement some rate limiting here maybe?
         LOG(debug, "%s: Restarting.", name().c_str());
         setState(RESTARTING);
-        _metrics.totalRestartsCounter++;
+        _metrics.incRestartsCounter();
         _metrics.sentinel_restarts.add();
     }
 }
