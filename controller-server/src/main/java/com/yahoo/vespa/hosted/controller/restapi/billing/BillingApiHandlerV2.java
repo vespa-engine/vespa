@@ -1,6 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.restapi.billing;
 
+import com.yahoo.collections.Pair;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.container.jdisc.HttpResponse;
 import com.yahoo.container.jdisc.ThreadedHttpRequestHandler;
@@ -38,6 +39,7 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
 import java.util.logging.Logger;
+import java.util.stream.Collectors;
 
 /**
  * @author ogronnesby
@@ -200,21 +202,23 @@ public class BillingApiHandlerV2 extends RestApiRequestHandler<BillingApiHandler
     // --------- ACCOUNTANT API ----------
 
     private Slime accountant(RestApi.RequestContext requestContext) {
-        var untilAt = untilParameter(requestContext);
-        var usagePerTenant = billing.createUncommittedBills(untilAt);
-
         var response = new Slime();
         var tenantsResponse = response.setObject().setArray("tenants");
 
+        var costPerTenant = applications.asList().stream()
+                .flatMap(a -> a.instances().values().stream())
+                .flatMap(i -> i.deployments().values().stream().map(d -> new Pair<>(i.id(), d.cost().orElse(0))))
+                .collect(Collectors.groupingBy(
+                        p -> p.getFirst().tenant(),
+                        Collectors.summingDouble(p -> p.getSecond())));
+
         tenants.asList().stream().sorted(Comparator.comparing(Tenant::name)).forEach(tenant -> {
-            var usage = Optional.ofNullable(usagePerTenant.get(tenant.name()));
             var tenantResponse = tenantsResponse.addObject();
             tenantResponse.setString("tenant", tenant.name().value());
             toSlime(tenantResponse.setObject("plan"), planFor(tenant.name()));
             toSlime(tenantResponse.setObject("quota"), billing.getQuota(tenant.name()));
             tenantResponse.setString("collection", billing.getCollectionMethod(tenant.name()).name());
-            tenantResponse.setString("lastBill", usage.map(Bill::getStartDate).map(DateTimeFormatter.ISO_DATE::format).orElse(null));
-            tenantResponse.setString("unbilled", usage.map(Bill::sum).map(BigDecimal::toPlainString).orElse("0.00"));
+            tenantResponse.setDouble("cost", costPerTenant.getOrDefault(tenant.name(), 0.0));
         });
 
         return response;
