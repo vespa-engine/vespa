@@ -1,12 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.clustercontroller.core;
 
-import com.yahoo.jrt.ErrorCode;
-import com.yahoo.jrt.Request;
-import com.yahoo.jrt.Spec;
-import com.yahoo.jrt.StringValue;
 import com.yahoo.jrt.Supervisor;
-import com.yahoo.jrt.Target;
 import com.yahoo.jrt.Transport;
 import com.yahoo.vdslib.state.Node;
 import com.yahoo.vdslib.state.NodeState;
@@ -21,7 +16,6 @@ import java.util.TreeMap;
 import java.util.logging.Logger;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @ExtendWith(CleanupZookeeperLogsOnSuccess.class)
 public class DatabaseTest extends FleetControllerTest {
@@ -156,18 +150,8 @@ public class DatabaseTest extends FleetControllerTest {
         }
     }
 
-    // Note: different semantics than FleetControllerTest.setWantedState
     private void setWantedState(Node n, NodeState ns, Map<Node, NodeState> wantedStates) {
-        int rpcPort = fleetController().getRpcPort();
-        Target connection = supervisor.connect(new Spec("localhost", rpcPort));
-        assertTrue(connection.isValid());
-
-        Request req = new Request("setNodeState");
-        req.parameters().add(new StringValue("storage/cluster.mycluster/" + n.getType().toString() + "/" + n.getIndex()));
-        req.parameters().add(new StringValue(ns.serialize(true)));
-        connection.invokeSync(req, timeout());
-        assertEquals(ErrorCode.NONE, req.errorCode(), req.toString());
-        assertTrue(req.checkReturnTypes("s"), req.toString());
+        setWantedState(ns, ns.getDescription(), "storage/cluster.mycluster/" + n.getType().toString() + "/" + n.getIndex(), supervisor);
         wantedStates.put(n, ns);
     }
 

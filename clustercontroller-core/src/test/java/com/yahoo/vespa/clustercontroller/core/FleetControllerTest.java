@@ -298,12 +298,16 @@ public abstract class FleetControllerTest implements Waiter {
     }
 
     void setWantedState(DummyVdsNode node, State state, String reason, Supervisor supervisor) {
-        NodeState ns = new NodeState(node.getType(), state);
-        if (reason != null) ns.setDescription(reason);
+        setWantedState(new NodeState(node.getType(), state), reason, node.getSlobrokName(), supervisor);
+    }
+
+    void setWantedState(NodeState nodeState, String reason, String slobrokName, Supervisor supervisor) {
+        if (reason != null) nodeState.setDescription(reason);
         Target connection = supervisor.connect(new Spec("localhost", fleetController().getRpcPort()));
+
         Request req = new Request("setNodeState");
-        req.parameters().add(new StringValue(node.getSlobrokName()));
-        req.parameters().add(new StringValue(ns.serialize()));
+        req.parameters().add(new StringValue(slobrokName));
+        req.parameters().add(new StringValue(nodeState.serialize()));
         connection.invokeSync(req, timeout());
         if (req.isError()) {
             fail("Failed to invoke setNodeState(): " + req.errorCode() + ": " + req.errorMessage());
