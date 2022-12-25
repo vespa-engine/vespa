@@ -31,7 +31,6 @@ import java.util.Optional;
 import java.util.TreeMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.util.stream.Collectors;
 
 /**
  *
@@ -294,10 +293,11 @@ public class DummyVdsNode {
         m.returnDesc(0, "returnCode", "Returncode of request. Should be 0 = OK");
         supervisor.addMethod(m);
 
-        m = new Method("getnodestate3", "sii", "ss", this::rpc_getNodeState2);
+        m = new Method("getnodestate3", "sii", "ss", this::rpc_getNodeState3);
         m.methodDesc("Get nodeState of a node, answer when state changes from given state.");
         m.paramDesc(0, "nodeStateIn", "The node state of the given node");
         m.paramDesc(1, "timeout", "Time timeout in milliseconds set by the state requester.");
+        m.paramDesc(2, "index", "Node index.");
         m.returnDesc(0, "nodeStateOut", "The node state of the given node");
         m.returnDesc(1, "hostinfo", "Information on the host node is running on");
         supervisor.addMethod(m);
@@ -339,20 +339,17 @@ public class DummyVdsNode {
         return false;
     }
 
-    private void rpc_getNodeState2(Request req) {
+    private void rpc_getNodeState3(Request req) {
         log.log(Level.FINE, () -> "Dummy node " + this + ": Got " + req.methodName() + " request");
         try{
             String oldState = req.parameters().get(0).asString();
             int timeout = req.parameters().get(1).asInt32();
-            int index = -1;
-            if (req.parameters().size() > 2) {
-                index = req.parameters().get(2).asInt32();
-            }
+            int index = req.parameters().get(2).asInt32();
             synchronized(timer) {
                 boolean sentReply = sendGetNodeStateReply(index);
                 NodeState givenState = (oldState.equals("unknown") ? null : NodeState.deserialize(type, oldState));
                 if (givenState != null && (givenState.equals(nodeState) || sentReply)) {
-                    log.log(Level.FINE, () -> "Dummy node " + this + ": Has same state as reported " + givenState + ". Queing request. Timeout is " + timeout + " ms. "
+                    log.log(Level.FINE, () -> "Dummy node " + this + ": Has same state as reported " + givenState + ". Queuing request. Timeout is " + timeout + " ms. "
                             + "Will be answered at time " + (timer.getCurrentTimeInMillis() + timeout * 800L / 1000));
                     req.detach();
                     waitingRequests.add(new Req(req, timer.getCurrentTimeInMillis() + timeout * 800L / 1000));
@@ -361,9 +358,7 @@ public class DummyVdsNode {
                 } else {
                     log.log(Level.FINE, () -> "Dummy node " + this + ": Request had " + (givenState == null ? "no state" : "different state(" + givenState +")") + ". Answering with " + nodeState);
                     req.returnValues().add(new StringValue(nodeState.serialize()));
-                    if (req.methodName().equals("getnodestate3")) {
-                        req.returnValues().add(new StringValue(hostInfo));
-                    }
+                    req.returnValues().add(new StringValue(hostInfo));
                     ++immediateStateReplies;
                 }
             }
