@@ -198,10 +198,15 @@ public class RankSetupValidator extends Validator {
                 .append("' for content cluster '").append(sc.getClusterName()).append("'.").append(" Details:\n");
         if (output.isEmpty()) {
             message.append("Verifying rank setup failed and got no output from stderr and stdout from '")
-                  .append(binaryName)
-                  .append("' (exit code: ")
-                  .append(exitCode)
-                  .append("). This could be due to full disk, out of memory etc.");
+                   .append(binaryName)
+                   .append("' (exit code: ")
+                   .append(exitCode)
+                   .append(").");
+            if (exitCode == 137)
+                message.append(" Exit code 137 usually means that the program has been killed by the OOM killer")
+                       .append(", too little memory is allocated for the instance/container/machine");
+            else
+                message.append(" This could be due to full disk, out of memory etc. ");
         } else {
             for (String line : output.split("\n")) {
                 // Remove debug lines from start script
