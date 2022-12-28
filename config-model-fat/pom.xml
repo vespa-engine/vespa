@@ -140,6 +140,7 @@
                     <i>com.yahoo.vespa:fat-model-dependencies:*:*</i>
 
                     <!-- Vespa artifacts embedded -->
+                    <i>com.yahoo.vespa:airlift-zstd:*:*</i>
                     <i>com.yahoo.vespa:annotations:*:*</i>
                     <i>com.yahoo.vespa:component:*:*</i>
                     <i>com.yahoo.vespa:config:*:*</i>

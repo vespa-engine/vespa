@@ -105,6 +105,7 @@
                                         <include>xml-apis:xml-apis:${xml-apis.version}:provided</include>
 
                                         <!-- Vespa provided dependencies -->
+                                        <include>com.yahoo.vespa:airlift-zstd:*:provided</include>
                                         <include>com.yahoo.vespa:annotations:*:provided</include>
                                         <include>com.yahoo.vespa:component:*:provided</include>
                                         <include>com.yahoo.vespa:config-bundle:*:provided</include>
