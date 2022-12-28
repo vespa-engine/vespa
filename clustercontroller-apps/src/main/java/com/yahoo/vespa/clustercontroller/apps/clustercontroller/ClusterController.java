@@ -53,10 +53,9 @@ public class ClusterController extends AbstractComponent
         synchronized (controllers) {
             FleetController controller = controllers.get(options.clusterName());
             if (controller == null) {
-                StatusHandler.ContainerStatusPageServer statusPageServer = new StatusHandler.ContainerStatusPageServer();
-                controller = FleetController.create(options, statusPageServer, metricWrapper);
+                controller = FleetController.create(options, metricWrapper);
                 controllers.put(options.clusterName(), controller);
-                status.put(options.clusterName(), statusPageServer);
+                status.put(options.clusterName(), controller.statusPageServer());
             } else {
                 controller.updateOptions(options);
             }
