@@ -38,8 +38,7 @@ public class ApplicationSerializerTest {
                                  true,
                                  Autoscaling.empty(),
                                  Autoscaling.empty(),
-                                 List.of(),
-                                 AutoscalingStatus.empty()));
+                                 List.of()));
         var minResources = new NodeResources(1, 2, 3, 4);
         clusters.add(new Cluster(ClusterSpec.Id.from("c2"),
                                  true,
@@ -48,16 +47,18 @@ public class ApplicationSerializerTest {
                                  false,
                                  new Autoscaling(new ClusterResources(20, 10,
                                                                       new NodeResources(0.5, 4, 14, 16)),
+                                                 AutoscalingStatus.empty(),
                                                  Instant.ofEpochMilli(1234L)),
                                  new Autoscaling(new ClusterResources(10, 5,
                                                                       new NodeResources(2, 4, 14, 16)),
+                                                 new AutoscalingStatus(AutoscalingStatus.Status.insufficient, "Autoscaling status"),
                                                  Instant.ofEpochMilli(5678L)),
                                  List.of(new ScalingEvent(new ClusterResources(10, 5, minResources),
                                                           new ClusterResources(12, 6, minResources),
                                                           7L,
                                                           Instant.ofEpochMilli(12345L),
-                                                          Optional.of(Instant.ofEpochMilli(67890L)))),
-                                 new AutoscalingStatus(AutoscalingStatus.Status.insufficient, "Autoscaling status")));
+                                                          Optional.of(Instant.ofEpochMilli(67890L))))
+                                 ));
         Application original = new Application(ApplicationId.from("myTenant", "myApplication", "myInstance"),
                                                Status.initial().withCurrentReadShare(0.3).withMaxReadShare(0.5),
                                                clusters);
@@ -82,7 +83,6 @@ public class ApplicationSerializerTest {
             assertEquals(originalCluster.suggested(), serializedCluster.suggested());
             assertEquals(originalCluster.target(), serializedCluster.target());
             assertEquals(originalCluster.scalingEvents(), serializedCluster.scalingEvents());
-            assertEquals(originalCluster.autoscalingStatus(), serializedCluster.autoscalingStatus());
         }
     }
 

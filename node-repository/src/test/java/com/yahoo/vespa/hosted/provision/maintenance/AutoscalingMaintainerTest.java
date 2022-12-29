@@ -218,7 +218,7 @@ public class AutoscalingMaintainerTest {
         tester.deploy(app1, cluster1, capacity);
         tester.addMeasurements(1.0f, 0.3f, 0.3f, 0, 4, app1, cluster1.id());
         tester.maintainer().maintain();
-        assertEquals("Scale up: " + tester.cluster(app1, cluster1).autoscalingStatus(),
+        assertEquals("Scale up: " + tester.cluster(app1, cluster1).target().status(),
                      1,
                      tester.cluster(app1, cluster1).lastScalingEvent().get().generation());
 
@@ -322,7 +322,7 @@ public class AutoscalingMaintainerTest {
         tester.addMeasurements(load, load, load, generation, 200, application, cluster.id());
         tester.maintainer().maintain();
         assertEquals("We passed window duration so a new autoscaling is started: " +
-                     tester.cluster(application, cluster).autoscalingStatus(),
+                     tester.cluster(application, cluster).target().status(),
                      generation + 1,
                      tester.cluster(application, cluster).lastScalingEvent().get().generation());
     }

@@ -120,8 +120,8 @@ class Activator {
             }
             if (cluster.target().resources().isPresent()
                 && cluster.target().resources().get().justNumbers().equals(currentResources.justNumbers())) {
-                cluster = cluster.with(new AutoscalingStatus(AutoscalingStatus.Status.ideal,
-                                                             "Cluster is ideally scaled within configured limits"));
+                cluster = cluster.withTarget(cluster.target().with(new AutoscalingStatus(AutoscalingStatus.Status.ideal,
+                                                                                         "Cluster is ideally scaled within configured limits")));
             }
             if (cluster != modified.cluster(clusterEntry.getKey()).get())
                 modified = modified.with(cluster);

@@ -1,11 +1,11 @@
 package com.yahoo.vespa.hosted.provision.autoscale;
 
 import com.yahoo.config.provision.ClusterResources;
+import com.yahoo.vespa.hosted.provision.applications.AutoscalingStatus;
 
 import java.time.Instant;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.function.Consumer;
 
 /**
  * An autoscaling result.
@@ -15,14 +15,16 @@ import java.util.function.Consumer;
 public class Autoscaling {
 
     private final Optional<ClusterResources> resources;
+    private final AutoscalingStatus status;
     private final Instant at;
 
-    public Autoscaling(ClusterResources resources, Instant at) {
-        this(Optional.of(resources), at);
+    public Autoscaling(ClusterResources resources, AutoscalingStatus status, Instant at) {
+        this(Optional.of(resources), status, at);
     }
 
-    public Autoscaling(Optional<ClusterResources> resources, Instant at) {
+    public Autoscaling(Optional<ClusterResources> resources, AutoscalingStatus status, Instant at) {
         this.resources = resources;
+        this.status = status;
         this.at = at;
     }
 
@@ -31,20 +33,27 @@ public class Autoscaling {
         return resources;
     }
 
+    public AutoscalingStatus status() { return status; }
+
     /** Returns the time this target was decided. */
     public Instant at() { return at; }
+
+    public Autoscaling with(AutoscalingStatus status) {
+        return new Autoscaling(resources, status, at);
+    }
 
     @Override
     public boolean equals(Object o) {
         if ( ! (o instanceof Autoscaling other)) return false;
-        if ( ! this.at.equals(other.at)) return false;
         if ( ! this.resources.equals(other.resources)) return false;
+        if ( ! this.status.equals(other.status)) return false;
+        if ( ! this.at.equals(other.at)) return false;
         return true;
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(resources, at);
+        return Objects.hash(resources, status, at);
     }
 
     @Override
@@ -52,6 +61,6 @@ public class Autoscaling {
         return "autoscaling to " + resources + ", made at " + at;
     }
 
-    public static Autoscaling empty() { return new Autoscaling(Optional.empty(), Instant.EPOCH); }
+    public static Autoscaling empty() { return new Autoscaling(Optional.empty(), AutoscalingStatus.empty(), Instant.EPOCH); }
 
 }

@@ -33,7 +33,6 @@ public class Cluster {
 
     /** The maxScalingEvents last scaling events of this, sorted by increasing time (newest last) */
     private final List<ScalingEvent> scalingEvents;
-    private final AutoscalingStatus autoscalingStatus;
 
     public Cluster(ClusterSpec.Id id,
                    boolean exclusive,
@@ -42,8 +41,7 @@ public class Cluster {
                    boolean required,
                    Autoscaling suggested,
                    Autoscaling target,
-                   List<ScalingEvent> scalingEvents,
-                   AutoscalingStatus autoscalingStatus) {
+                   List<ScalingEvent> scalingEvents) {
         this.id = Objects.requireNonNull(id);
         this.exclusive = exclusive;
         this.min = Objects.requireNonNull(minResources);
@@ -56,7 +54,6 @@ public class Cluster {
         else
             this.target = target;
         this.scalingEvents = List.copyOf(scalingEvents);
-        this.autoscalingStatus = autoscalingStatus;
     }
 
     public ClusterSpec.Id id() { return id; }
@@ -105,21 +102,18 @@ public class Cluster {
         return Optional.of(scalingEvents.get(scalingEvents.size() - 1));
     }
 
-    /** The latest autoscaling status of this cluster, or unknown (never null) if none */
-    public AutoscalingStatus autoscalingStatus() { return autoscalingStatus; }
-
     public Cluster withConfiguration(boolean exclusive, Capacity capacity) {
         return new Cluster(id, exclusive,
                            capacity.minResources(), capacity.maxResources(), capacity.isRequired(),
-                           suggested, target, scalingEvents, autoscalingStatus);
+                           suggested, target, scalingEvents);
     }
 
     public Cluster withSuggested(Autoscaling suggested) {
-        return new Cluster(id, exclusive, min, max, required, suggested, target, scalingEvents, autoscalingStatus);
+        return new Cluster(id, exclusive, min, max, required, suggested, target, scalingEvents);
     }
 
     public Cluster withTarget(Autoscaling target) {
-        return new Cluster(id, exclusive, min, max, required, suggested, target, scalingEvents, autoscalingStatus);
+        return new Cluster(id, exclusive, min, max, required, suggested, target, scalingEvents);
     }
 
     /** Add or update (based on "at" time) a scaling event */
@@ -133,12 +127,7 @@ public class Cluster {
             scalingEvents.add(scalingEvent);
 
         prune(scalingEvents);
-        return new Cluster(id, exclusive, min, max, required, suggested, target, scalingEvents, autoscalingStatus);
-    }
-
-    public Cluster with(AutoscalingStatus autoscalingStatus) {
-        if (autoscalingStatus.equals(this.autoscalingStatus)) return this;
-        return new Cluster(id, exclusive, min, max, required, suggested, target, scalingEvents, autoscalingStatus);
+        return new Cluster(id, exclusive, min, max, required, suggested, target, scalingEvents);
     }
 
     @Override
@@ -169,7 +158,7 @@ public class Cluster {
 
     public static Cluster create(ClusterSpec.Id id, boolean exclusive, Capacity requested) {
         return new Cluster(id, exclusive, requested.minResources(), requested.maxResources(), requested.isRequired(),
-                           Autoscaling.empty(), Autoscaling.empty(), List.of(), AutoscalingStatus.empty());
+                           Autoscaling.empty(), Autoscaling.empty(), List.of());
     }
 
 }

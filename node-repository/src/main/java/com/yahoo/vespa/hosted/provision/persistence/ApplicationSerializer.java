@@ -56,7 +56,6 @@ public class ApplicationSerializer {
     private static final String groupsKey = "groups";
     private static final String nodeResourcesKey = "resources";
     private static final String scalingEventsKey = "scalingEvents";
-    private static final String autoscalingStatusKey = "autoscalingStatus";
     private static final String autoscalingStatusObjectKey = "autoscalingStatusObject";
     private static final String descriptionKey = "description";
     private static final String fromKey = "from";
@@ -122,7 +121,6 @@ public class ApplicationSerializer {
         toSlime(cluster.suggested(), clusterObject.setObject(suggestedKey));
         toSlime(cluster.target(), clusterObject.setObject(targetKey));
         scalingEventsToSlime(cluster.scalingEvents(), clusterObject.setArray(scalingEventsKey));
-        toSlime(cluster.autoscalingStatus(), clusterObject.setObject(autoscalingStatusObjectKey));
     }
 
     private static Cluster clusterFromSlime(String id, Inspector clusterObject) {
@@ -131,15 +129,16 @@ public class ApplicationSerializer {
                            clusterResourcesFromSlime(clusterObject.field(minResourcesKey)),
                            clusterResourcesFromSlime(clusterObject.field(maxResourcesKey)),
                            clusterObject.field(requiredKey).asBool(),
-                           autoscalingFromSlime(clusterObject.field(suggestedKey)),
-                           autoscalingFromSlime(clusterObject.field(targetKey)),
-                           scalingEventsFromSlime(clusterObject.field(scalingEventsKey)),
-                           autoscalingStatusFromSlime(clusterObject.field(autoscalingStatusObjectKey), clusterObject));
+                           autoscalingFromSlime(clusterObject.field(suggestedKey), clusterObject.field("nonExisting")),
+                           autoscalingFromSlime(clusterObject.field(targetKey), clusterObject.field(autoscalingStatusObjectKey)),
+                           scalingEventsFromSlime(clusterObject.field(scalingEventsKey)));
     }
 
     private static void toSlime(Autoscaling autoscaling, Cursor autoscalingObject) {
         autoscaling.resources().ifPresent(resources -> toSlime(resources, autoscalingObject.setObject(resourcesKey)));
         autoscalingObject.setLong(atKey, autoscaling.at().toEpochMilli());
+        autoscalingObject.setString(statusKey, toAutoscalingStatusCode(autoscaling.status().status()));
+        autoscalingObject.setString(descriptionKey, autoscaling.status().description());
     }
 
     private static void toSlime(ClusterResources resources, Cursor clusterResourcesObject) {
@@ -159,14 +158,24 @@ public class ApplicationSerializer {
                                     NodeResourcesSerializer.resourcesFromSlime(clusterResourcesObject.field(nodeResourcesKey)));
     }
 
-    private static Autoscaling autoscalingFromSlime(Inspector autoscalingObject) {
+    private static Autoscaling autoscalingFromSlime(Inspector autoscalingObject,
+                                                    Inspector legacyAutoscalingStatusObject) {
         if ( ! autoscalingObject.valid()) return Autoscaling.empty();
 
         if ( ! autoscalingObject.field(atKey).valid()) { // TODO: Remove clause after January 2023
-            return new Autoscaling(optionalClusterResourcesFromSlime(autoscalingObject), Instant.EPOCH);
+            return new Autoscaling(optionalClusterResourcesFromSlime(autoscalingObject),
+                                   autoscalingStatusFromSlime(legacyAutoscalingStatusObject),
+                                   Instant.EPOCH);
+        }
+
+        if (legacyAutoscalingStatusObject.valid()) {  // TODO: Remove clause after January 2023
+            return new Autoscaling(optionalClusterResourcesFromSlime(autoscalingObject.field(resourcesKey)),
+                                   autoscalingStatusFromSlime(legacyAutoscalingStatusObject),
+                                   Instant.ofEpochMilli(autoscalingObject.field(atKey).asLong()));
         }
 
         return new Autoscaling(optionalClusterResourcesFromSlime(autoscalingObject.field(resourcesKey)),
+                               autoscalingStatusFromSlime(autoscalingObject),
                                Instant.ofEpochMilli(autoscalingObject.field(atKey).asLong()));
     }
 
@@ -194,36 +203,31 @@ public class ApplicationSerializer {
                                 optionalInstant(inspector.field(completionKey)));
     }
 
-    private static void toSlime(AutoscalingStatus status, Cursor object) {
-        object.setString(statusKey, toAutoscalingStatusCode(status.status()));
-        object.setString(descriptionKey, status.description());
-    }
-
-    private static AutoscalingStatus autoscalingStatusFromSlime(Inspector object, Inspector parent) {
+    private static AutoscalingStatus autoscalingStatusFromSlime(Inspector object) {
+        if ( ! object.valid()) return AutoscalingStatus.empty();
         return new AutoscalingStatus(fromAutoscalingStatusCode(object.field(statusKey).asString()),
                                      object.field(descriptionKey).asString());
     }
 
     private static String toAutoscalingStatusCode(AutoscalingStatus.Status status) {
-        switch (status) {
-            case unavailable : return "unavailable";
-            case waiting : return "waiting";
-            case ideal : return "ideal";
-            case insufficient : return "insufficient";
-            case rescaling : return "rescaling";
-            default : throw new IllegalArgumentException("Unknown autoscaling status " + status);
-        }
+        return switch (status) {
+            case unavailable -> "unavailable";
+            case waiting -> "waiting";
+            case ideal -> "ideal";
+            case insufficient -> "insufficient";
+            case rescaling -> "rescaling";
+        };
     }
 
     private static AutoscalingStatus.Status fromAutoscalingStatusCode(String code) {
-        switch (code) {
-            case "unavailable" : return AutoscalingStatus.Status.unavailable;
-            case "waiting" : return AutoscalingStatus.Status.waiting;
-            case "ideal" : return AutoscalingStatus.Status.ideal;
-            case "insufficient" : return AutoscalingStatus.Status.insufficient;
-            case "rescaling" : return AutoscalingStatus.Status.rescaling;
-            default : throw new IllegalArgumentException("Unknown autoscaling status '" + code + "'");
-        }
+        return switch (code) {
+            case "unavailable" -> AutoscalingStatus.Status.unavailable;
+            case "waiting" -> AutoscalingStatus.Status.waiting;
+            case "ideal" -> AutoscalingStatus.Status.ideal;
+            case "insufficient" -> AutoscalingStatus.Status.insufficient;
+            case "rescaling" -> AutoscalingStatus.Status.rescaling;
+            default -> throw new IllegalArgumentException("Unknown autoscaling status '" + code + "'");
+        };
     }
 
     private static Optional<Instant> optionalInstant(Inspector inspector) {
