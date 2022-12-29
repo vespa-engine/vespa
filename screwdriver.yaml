@@ -149,7 +149,7 @@ jobs:
           ccache --show-stats
           time make -j ${NUM_THREADS} install DESTDIR=$WORKDIR/vespa-install
       - build-sample-apps: |
-          (cd sample-apps && time mvn -T $NUM_THREADS $VESPA_MAVEN_EXTRA_OPTS package)
+          (cd $WORKDIR/sample-apps && time mvn -T $NUM_THREADS $VESPA_MAVEN_EXTRA_OPTS package)
       - verify-rpm-build: |
           cd $WORKDIR
           ulimit -c 0
