@@ -87,7 +87,7 @@ public class AutoscalingMaintainer extends NodeRepositoryMaintainer {
             applications().put(application.get().with(updatedCluster), lock);
 
             var current = new AllocatableClusterResources(clusterNodes, nodeRepository()).advertisedResources();
-            if (advice.isPresent() && advice.target().isPresent() && !current.equals(advice.target().get())) {
+            if (advice.target().isPresent() && !current.equals(advice.target().get())) {
                 // 2. Also autoscale
                 try (MaintenanceDeployment deployment = new MaintenanceDeployment(applicationId, deployer, metric, nodeRepository())) {
                     if (deployment.isValid()) {
@@ -101,7 +101,7 @@ public class AutoscalingMaintainer extends NodeRepositoryMaintainer {
 
     private boolean anyChanges(Autoscaler.Advice advice, Cluster cluster, Cluster updatedCluster, NodeList clusterNodes) {
         if (updatedCluster != cluster) return true;
-        if (advice.isPresent() && !cluster.target().resources().equals(advice.target())) return true;
+        if (!cluster.target().resources().equals(advice.target())) return true;
         if ( ! advice.reason().equals(cluster.target().status())) return true;
         if (advice.target().isPresent() &&
             !advice.target().get().equals(new AllocatableClusterResources(clusterNodes, nodeRepository()).advertisedResources())) return true;

@@ -12,6 +12,7 @@ import static com.yahoo.config.provision.NodeResources.DiskSpeed.slow;
 import com.yahoo.config.provision.NodeResources.StorageType;
 import com.yahoo.config.provision.RegionName;
 import com.yahoo.config.provision.Zone;
+import com.yahoo.vespa.hosted.provision.applications.AutoscalingStatus;
 import com.yahoo.vespa.hosted.provision.provisioning.CapacityPolicies;
 import org.junit.Test;
 
@@ -36,7 +37,7 @@ public class AutoscalingTest {
                                                                fixture.autoscale());
 
         fixture.deploy(Capacity.from(scaledResources));
-        assertTrue("Cluster in flux -> No further change", fixture.autoscale().isEmpty());
+        assertEquals("Cluster in flux -> No further change", AutoscalingStatus.Status.waiting, fixture.autoscale().reason().status());
 
         fixture.deactivateRetired(Capacity.from(scaledResources));
 
@@ -357,10 +358,9 @@ public class AutoscalingTest {
         ClusterResources min = new ClusterResources( 2, 1, new NodeResources(1, 1, 1, 1));
         var fixture = AutoscalingTester.fixture().awsProdSetup(true).capacity(Capacity.from(min, min)).build();
 
-        // deploy
         fixture.tester().clock().advance(Duration.ofDays(1));
         fixture.loader().applyCpuLoad(0.25, 120);
-        assertTrue(fixture.autoscale().isEmpty());
+        assertEquals(AutoscalingStatus.Status.unavailable, fixture.autoscale().reason().status());
     }
 
     @Test

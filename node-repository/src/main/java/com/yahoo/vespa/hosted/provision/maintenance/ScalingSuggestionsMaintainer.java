@@ -64,11 +64,14 @@ public class ScalingSuggestionsMaintainer extends NodeRepositoryMaintainer {
         Optional<Cluster> cluster = application.cluster(clusterId);
         if (cluster.isEmpty()) return true;
         var suggestion = autoscaler.suggest(application, cluster.get(), clusterNodes);
-        if (suggestion.isEmpty()) return true;
+        if (suggestion.reason().status() == AutoscalingStatus.Status.waiting) return true;
+
+        // empty suggested resources == keep the current allocation
+        var suggestedResources = suggestion.target().orElse(clusterNodes.not().retired().toResources());
+        if ( ! shouldUpdateSuggestion(cluster.get().suggested(), suggestedResources)) return true;
+
         // Wait only a short time for the lock to avoid interfering with change deployments
         try (Mutex lock = nodeRepository().applications().lock(applicationId, Duration.ofSeconds(1))) {
-            // empty suggested resources == keep the current allocation, so we record that
-            var suggestedResources = suggestion.target().orElse(clusterNodes.not().retired().toResources());
             applications().get(applicationId).ifPresent(a -> updateSuggestion(suggestedResources, clusterId, a, lock));
             return true;
         }
@@ -77,20 +80,21 @@ public class ScalingSuggestionsMaintainer extends NodeRepositoryMaintainer {
         }
     }
 
+    private boolean shouldUpdateSuggestion(Autoscaling currentSuggestion, ClusterResources suggestedResources) {
+        return currentSuggestion.resources().isEmpty()
+               || currentSuggestion.at().isBefore(nodeRepository().clock().instant().minus(Duration.ofDays(7)))
+               || isHigher(suggestedResources, currentSuggestion.resources().get());
+    }
+
     private void updateSuggestion(ClusterResources suggestion,
                                   ClusterSpec.Id clusterId,
                                   Application application,
                                   Mutex lock) {
         Optional<Cluster> cluster = application.cluster(clusterId);
         if (cluster.isEmpty()) return;
-        var at = nodeRepository().clock().instant();
-        var currentSuggestion = cluster.get().suggested();
-        if (currentSuggestion.resources().isEmpty()
-            || currentSuggestion.at().isBefore(at.minus(Duration.ofDays(7)))
-            || isHigher(suggestion, currentSuggestion.resources().get()))
-            applications().put(application.with(cluster.get().withSuggested(new Autoscaling(suggestion,
-                                                                                            AutoscalingStatus.empty(),
-                                                                                            at))), lock);
+        applications().put(application.with(cluster.get().withSuggested(new Autoscaling(suggestion,
+                                                                                        AutoscalingStatus.empty(),
+                                                                                        nodeRepository().clock().instant()))), lock);
     }
 
     private boolean isHigher(ClusterResources r1, ClusterResources r2) {

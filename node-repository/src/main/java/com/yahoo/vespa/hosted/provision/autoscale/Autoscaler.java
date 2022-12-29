@@ -124,13 +124,11 @@ public class Autoscaler {
 
     public static class Advice {
 
-        private final boolean present;
         private final Optional<ClusterResources> target;
         private final AutoscalingStatus reason;
 
-        private Advice(Optional<ClusterResources> target, boolean present, AutoscalingStatus reason) {
+        private Advice(Optional<ClusterResources> target, AutoscalingStatus reason) {
             this.target = target;
-            this.present = present;
             this.reason = Objects.requireNonNull(reason);
         }
 
@@ -140,33 +138,26 @@ public class Autoscaler {
          */
         public Optional<ClusterResources> target() { return target; }
 
-        /** True if this does not provide any advice */
-        public boolean isEmpty() { return ! present; }
-
-        /** True if this provides advice (which may be to keep the current allocation) */
-        public boolean isPresent() { return present; }
-
         /** The reason for this advice */
         public AutoscalingStatus reason() { return reason; }
 
         private static Advice none(Status status, String description) {
-            return new Advice(Optional.empty(), false, new AutoscalingStatus(status, description));
+            return new Advice(Optional.empty(), new AutoscalingStatus(status, description));
         }
 
         private static Advice dontScale(Status status, String description) {
-            return new Advice(Optional.empty(), true, new AutoscalingStatus(status, description));
+            return new Advice(Optional.empty(), new AutoscalingStatus(status, description));
         }
 
         private static Advice scaleTo(ClusterResources target) {
-            return new Advice(Optional.of(target), true,
+            return new Advice(Optional.of(target),
                               new AutoscalingStatus(AutoscalingStatus.Status.rescaling,
                                                     "Rescaling initiated due to load changes"));
         }
 
         @Override
         public String toString() {
-            return "autoscaling advice: " +
-                   (present ? (target.isPresent() ? "Scale to " + target.get() : "Don't scale") : "None");
+            return "autoscaling advice: " + (target.isPresent() ? "Scale to " + target.get() : "Don't scale");
         }
 
     }
