@@ -63,4 +63,19 @@ public class Autoscaling {
 
     public static Autoscaling empty() { return new Autoscaling(Optional.empty(), AutoscalingStatus.empty(), Instant.EPOCH); }
 
+    public static Autoscaling none(AutoscalingStatus.Status status, String description, Instant at) {
+        return new Autoscaling(Optional.empty(), new AutoscalingStatus(status, description), at);
+    }
+
+    public static Autoscaling dontScale(AutoscalingStatus.Status status, String description, Instant at) {
+        return new Autoscaling(Optional.empty(), new AutoscalingStatus(status, description), at);
+    }
+
+    public static Autoscaling scaleTo(ClusterResources target, Instant at) {
+        return new Autoscaling(Optional.of(target),
+                               new AutoscalingStatus(AutoscalingStatus.Status.rescaling,
+                                                     "Rescaling initiated due to load changes"),
+                               at);
+    }
+
 }

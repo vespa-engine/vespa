@@ -142,7 +142,7 @@ class AutoscalingTester {
         nodeRepository().applications().put(application, nodeRepository().applications().lock(applicationId));
     }
 
-    public Autoscaler.Advice autoscale(ApplicationId applicationId, ClusterSpec cluster, Capacity capacity) {
+    public Autoscaling autoscale(ApplicationId applicationId, ClusterSpec cluster, Capacity capacity) {
         capacity = capacityPolicies.applyOn(capacity, applicationId, capacityPolicies.decideExclusivity(capacity, cluster).isExclusive());
         Application application = nodeRepository().applications().get(applicationId).orElse(Application.empty(applicationId))
                                                   .withCluster(cluster.id(), false, capacity);
@@ -153,7 +153,7 @@ class AutoscalingTester {
                                     nodeRepository().nodes().list(Node.State.active).owner(applicationId));
     }
 
-    public Autoscaler.Advice suggest(ApplicationId applicationId, ClusterSpec.Id clusterId,
+    public Autoscaling suggest(ApplicationId applicationId, ClusterSpec.Id clusterId,
                                      ClusterResources min, ClusterResources max) {
         Application application = nodeRepository().applications().get(applicationId).orElse(Application.empty(applicationId))
                                                   .withCluster(clusterId, false, Capacity.from(min, max));
@@ -176,10 +176,10 @@ class AutoscalingTester {
     public ClusterResources assertResources(String message,
                                             int nodeCount, int groupCount,
                                             double approxCpu, double approxMemory, double approxDisk,
-                                            Autoscaler.Advice advice) {
-        assertTrue("Resources are present: " + message + " (" + advice + ": " + advice.reason() + ")",
-                   advice.target().isPresent());
-        var resources = advice.target().get();
+                                            Autoscaling autoscaling) {
+        assertTrue("Resources are present: " + message + " (" + autoscaling + ": " + autoscaling.status() + ")",
+                   autoscaling.resources().isPresent());
+        var resources = autoscaling.resources().get();
         assertResources(message, nodeCount, groupCount, approxCpu, approxMemory, approxDisk, resources);
         return resources;
     }

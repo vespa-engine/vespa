@@ -64,10 +64,10 @@ public class ScalingSuggestionsMaintainer extends NodeRepositoryMaintainer {
         Optional<Cluster> cluster = application.cluster(clusterId);
         if (cluster.isEmpty()) return true;
         var suggestion = autoscaler.suggest(application, cluster.get(), clusterNodes);
-        if (suggestion.reason().status() == AutoscalingStatus.Status.waiting) return true;
+        if (suggestion.status().status() == AutoscalingStatus.Status.waiting) return true;
 
         // empty suggested resources == keep the current allocation
-        var suggestedResources = suggestion.target().orElse(clusterNodes.not().retired().toResources());
+        var suggestedResources = suggestion.resources().orElse(clusterNodes.not().retired().toResources());
         if ( ! shouldUpdateSuggestion(cluster.get().suggested(), suggestedResources)) return true;
 
         // Wait only a short time for the lock to avoid interfering with change deployments
