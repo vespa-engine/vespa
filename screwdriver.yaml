@@ -101,11 +101,15 @@ jobs:
       CCACHE_COMPRESS: "1"
     secrets:
       - DOCKER_HUB_DEPLOY_KEY
+    requires: [~pr]
     steps:
       - get-vespa-version: |
-          VESPA_VERSION=$(meta get vespa.version)
-          VESPA_REF=$(meta get vespa.ref)
-          SYSTEM_TEST_REF=$(meta get system-test.ref)
+          #VESPA_VERSION=$(meta get vespa.version)
+          #VESPA_REF=$(meta get vespa.ref)
+          #SYSTEM_TEST_REF=$(meta get system-test.ref)
+          VESPA_VERSION="8.103.38"
+          VESPA_REF="b8acefb1ba14ab159435e02760d9a90a6f1501ef"
+          SYSTEM_TEST_REF="14a6a5742375b5b13fef88733a211ae212dc9ac3"
 
           if [[ $VESPA_VERSION == null ]] || [[ $VESPA_REF == null ]] || [[ $SYSTEM_TEST_REF == null ]]; then
             echo "Must have valid Vespa version and reference to continue \
@@ -124,8 +128,10 @@ jobs:
           (cd vespa && git checkout $VESPA_REF && git tag v$VESPA_VERSION)
           git clone -q https://github.com/vespa-engine/system-test
           (cd system-test && git checkout $SYSTEM_TEST_REF)
+          git clone -q https://github.com/vespa-engine/sample-apps
           # Set correct version in pom.xml files
           (cd vespa && screwdriver/replace-vespa-version-in-poms.sh $VESPA_VERSION $(pwd) )
+          (cd sample-apps && find . -name "pom.xml" -exec sed -i -e "s,<vespa_version>.*</vespa_version>,<vespa_version>$VESPA_VERSION</vespa_version>," {} \;)
       - make-srpm: |
           make -C $WORKDIR/vespa -f .copr/Makefile srpm outdir=$WORKDIR
       - *restore-cache
@@ -142,6 +148,8 @@ jobs:
           time ctest3 --output-on-failure -j ${NUM_THREADS}
           ccache --show-stats
           time make -j ${NUM_THREADS} install DESTDIR=$WORKDIR/vespa-install
+      - build-sample-apps: |
+          (cd sample-apps && time mvn -T $NUM_THREADS $VESPA_MAVEN_EXTRA_OPTS package)
       - verify-rpm-build: |
           cd $WORKDIR
           ulimit -c 0
