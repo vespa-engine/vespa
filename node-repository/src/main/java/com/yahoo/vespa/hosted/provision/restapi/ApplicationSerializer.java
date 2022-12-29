@@ -81,8 +81,8 @@ public class ApplicationSerializer {
         cluster.target().resources().ifPresent(target -> toSlime(target, clusterObject.setObject("target")));
         clusterModel.ifPresent(model -> clusterUtilizationToSlime(model, clusterObject.setObject("utilization")));
         scalingEventsToSlime(cluster.scalingEvents(), clusterObject.setArray("scalingEvents"));
-        clusterObject.setString("autoscalingStatusCode", cluster.target().status().status().name());
-        clusterObject.setString("autoscalingStatus", cluster.target().status().description());
+        clusterObject.setString("autoscalingStatusCode", cluster.target().status().name());
+        clusterObject.setString("autoscalingStatus", cluster.target().description());
         clusterModel.ifPresent(model -> clusterObject.setLong("scalingDuration", model.scalingDuration().toMillis()));
         clusterModel.ifPresent(model -> clusterObject.setDouble("maxQueryGrowthRate", model.maxQueryGrowthRate()));
         clusterModel.ifPresent(model -> clusterObject.setDouble("currentQueryFractionOfMax", model.queryFractionOfMax()));

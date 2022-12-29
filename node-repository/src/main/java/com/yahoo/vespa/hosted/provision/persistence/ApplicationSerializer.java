@@ -10,7 +10,6 @@ import com.yahoo.slime.ObjectTraverser;
 import com.yahoo.slime.Slime;
 import com.yahoo.slime.SlimeUtils;
 import com.yahoo.vespa.hosted.provision.applications.Application;
-import com.yahoo.vespa.hosted.provision.applications.AutoscalingStatus;
 import com.yahoo.vespa.hosted.provision.applications.Cluster;
 import com.yahoo.vespa.hosted.provision.applications.ScalingEvent;
 import com.yahoo.vespa.hosted.provision.applications.Status;
@@ -137,8 +136,8 @@ public class ApplicationSerializer {
     private static void toSlime(Autoscaling autoscaling, Cursor autoscalingObject) {
         autoscaling.resources().ifPresent(resources -> toSlime(resources, autoscalingObject.setObject(resourcesKey)));
         autoscalingObject.setLong(atKey, autoscaling.at().toEpochMilli());
-        autoscalingObject.setString(statusKey, toAutoscalingStatusCode(autoscaling.status().status()));
-        autoscalingObject.setString(descriptionKey, autoscaling.status().description());
+        autoscalingObject.setString(statusKey, toAutoscalingStatusCode(autoscaling.status()));
+        autoscalingObject.setString(descriptionKey, autoscaling.description());
     }
 
     private static void toSlime(ClusterResources resources, Cursor clusterResourcesObject) {
@@ -162,20 +161,23 @@ public class ApplicationSerializer {
                                                     Inspector legacyAutoscalingStatusObject) {
         if ( ! autoscalingObject.valid()) return Autoscaling.empty();
 
-        if ( ! autoscalingObject.field(atKey).valid()) { // TODO: Remove clause after January 2023
-            return new Autoscaling(optionalClusterResourcesFromSlime(autoscalingObject),
-                                   autoscalingStatusFromSlime(legacyAutoscalingStatusObject),
+        if ( ! autoscalingObject.field(atKey).valid()) { // TODO: Remove after January 2023
+            return new Autoscaling(fromAutoscalingStatusCode(legacyAutoscalingStatusObject.field(statusKey).asString()),
+                                   legacyAutoscalingStatusObject.field(descriptionKey).asString(),
+                                   optionalClusterResourcesFromSlime(autoscalingObject),
                                    Instant.EPOCH);
         }
 
-        if (legacyAutoscalingStatusObject.valid()) {  // TODO: Remove clause after January 2023
-            return new Autoscaling(optionalClusterResourcesFromSlime(autoscalingObject.field(resourcesKey)),
-                                   autoscalingStatusFromSlime(legacyAutoscalingStatusObject),
+        if (legacyAutoscalingStatusObject.valid()) {  // TODO: Remove after January 2023
+            return new Autoscaling(fromAutoscalingStatusCode(legacyAutoscalingStatusObject.field(statusKey).asString()),
+                                   legacyAutoscalingStatusObject.field(descriptionKey).asString(),
+                                   optionalClusterResourcesFromSlime(autoscalingObject.field(resourcesKey)),
                                    Instant.ofEpochMilli(autoscalingObject.field(atKey).asLong()));
         }
 
-        return new Autoscaling(optionalClusterResourcesFromSlime(autoscalingObject.field(resourcesKey)),
-                               autoscalingStatusFromSlime(autoscalingObject),
+        return new Autoscaling(fromAutoscalingStatusCode(autoscalingObject.field(statusKey).asString()),
+                               autoscalingObject.field(descriptionKey).asString(),
+                               optionalClusterResourcesFromSlime(autoscalingObject.field(resourcesKey)),
                                Instant.ofEpochMilli(autoscalingObject.field(atKey).asLong()));
     }
 
@@ -203,13 +205,7 @@ public class ApplicationSerializer {
                                 optionalInstant(inspector.field(completionKey)));
     }
 
-    private static AutoscalingStatus autoscalingStatusFromSlime(Inspector object) {
-        if ( ! object.valid()) return AutoscalingStatus.empty();
-        return new AutoscalingStatus(fromAutoscalingStatusCode(object.field(statusKey).asString()),
-                                     object.field(descriptionKey).asString());
-    }
-
-    private static String toAutoscalingStatusCode(AutoscalingStatus.Status status) {
+    private static String toAutoscalingStatusCode(Autoscaling.Status status) {
         return switch (status) {
             case unavailable -> "unavailable";
             case waiting -> "waiting";
@@ -219,13 +215,14 @@ public class ApplicationSerializer {
         };
     }
 
-    private static AutoscalingStatus.Status fromAutoscalingStatusCode(String code) {
+    private static Autoscaling.Status fromAutoscalingStatusCode(String code) {
         return switch (code) {
-            case "unavailable" -> AutoscalingStatus.Status.unavailable;
-            case "waiting" -> AutoscalingStatus.Status.waiting;
-            case "ideal" -> AutoscalingStatus.Status.ideal;
-            case "insufficient" -> AutoscalingStatus.Status.insufficient;
-            case "rescaling" -> AutoscalingStatus.Status.rescaling;
+            case "" -> Autoscaling.Status.unavailable;
+            case "unavailable" -> Autoscaling.Status.unavailable;
+            case "waiting" -> Autoscaling.Status.waiting;
+            case "ideal" -> Autoscaling.Status.ideal;
+            case "insufficient" -> Autoscaling.Status.insufficient;
+            case "rescaling" -> Autoscaling.Status.rescaling;
             default -> throw new IllegalArgumentException("Unknown autoscaling status '" + code + "'");
         };
     }

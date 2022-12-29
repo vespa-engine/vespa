@@ -6,8 +6,8 @@ import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeList;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
 import com.yahoo.vespa.hosted.provision.applications.Application;
-import com.yahoo.vespa.hosted.provision.applications.AutoscalingStatus.Status;
 import com.yahoo.vespa.hosted.provision.applications.Cluster;
+import com.yahoo.vespa.hosted.provision.autoscale.Autoscaling.Status;
 
 import java.time.Duration;
 import java.time.Instant;
@@ -52,7 +52,7 @@ public class Autoscaler {
      */
     public Autoscaling autoscale(Application application, Cluster cluster, NodeList clusterNodes) {
         if (cluster.minResources().equals(cluster.maxResources()))
-            return Autoscaling.none(Status.unavailable, "Autoscaling is not enabled", now());
+            return Autoscaling.dontScale(Autoscaling.Status.unavailable, "Autoscaling is not enabled", now());
         return autoscale(application, cluster, clusterNodes, Limits.of(cluster));
     }
 
@@ -66,7 +66,7 @@ public class Autoscaler {
                                                      nodeRepository.clock());
 
         if ( ! clusterIsStable(clusterNodes, nodeRepository))
-            return Autoscaling.none(Status.waiting, "Cluster change in progress", now());
+            return Autoscaling.dontScale(Status.waiting, "Cluster change in progress", now());
 
         var currentAllocation = new AllocatableClusterResources(clusterNodes, nodeRepository);
         Optional<AllocatableClusterResources> bestAllocation =

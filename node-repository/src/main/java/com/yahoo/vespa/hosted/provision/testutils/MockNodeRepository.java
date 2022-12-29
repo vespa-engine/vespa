@@ -28,7 +28,6 @@ import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeMutex;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
 import com.yahoo.vespa.hosted.provision.applications.Application;
-import com.yahoo.vespa.hosted.provision.applications.AutoscalingStatus;
 import com.yahoo.vespa.hosted.provision.applications.Cluster;
 import com.yahoo.vespa.hosted.provision.autoscale.Autoscaling;
 import com.yahoo.vespa.hosted.provision.autoscale.MemoryMetricsDb;
@@ -197,13 +196,15 @@ public class MockNodeRepository extends NodeRepository {
                                 null), app1Id, provisioner);
         Application app1 = applications().get(app1Id).get();
         Cluster cluster1 = app1.cluster(cluster1Id.id()).get();
-        cluster1 = cluster1.withSuggested(new Autoscaling(new ClusterResources(6, 2,
+        cluster1 = cluster1.withSuggested(new Autoscaling(Autoscaling.Status.unavailable,
+                                                          "",
+                                                          new ClusterResources(6, 2,
                                                                                new NodeResources(3, 20, 100, 1)),
-                                                          AutoscalingStatus.empty(),
                                                           clock().instant()));
-        cluster1 = cluster1.withTarget(new Autoscaling(new ClusterResources(4, 1,
+        cluster1 = cluster1.withTarget(new Autoscaling(Autoscaling.Status.unavailable,
+                                                       "",
+                                                       new ClusterResources(4, 1,
                                                                             new NodeResources(3, 16, 100, 1)),
-                                                       AutoscalingStatus.empty(),
                                                        clock().instant()));
         try (Mutex lock = applications().lock(app1Id)) {
             applications().put(app1.with(cluster1), lock);

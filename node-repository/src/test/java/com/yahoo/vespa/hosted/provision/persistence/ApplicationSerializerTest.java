@@ -2,12 +2,10 @@
 package com.yahoo.vespa.hosted.provision.persistence;
 
 import com.yahoo.config.provision.ApplicationId;
-import com.yahoo.config.provision.Capacity;
 import com.yahoo.config.provision.ClusterResources;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.NodeResources;
 import com.yahoo.vespa.hosted.provision.applications.Application;
-import com.yahoo.vespa.hosted.provision.applications.AutoscalingStatus;
 import com.yahoo.vespa.hosted.provision.applications.Cluster;
 import com.yahoo.vespa.hosted.provision.applications.ScalingEvent;
 import com.yahoo.vespa.hosted.provision.applications.Status;
@@ -45,13 +43,15 @@ public class ApplicationSerializerTest {
                                  new ClusterResources( 8, 4, minResources),
                                  new ClusterResources(14, 7, new NodeResources(3, 6, 21, 24)),
                                  false,
-                                 new Autoscaling(new ClusterResources(20, 10,
+                                 new Autoscaling(Autoscaling.Status.unavailable,
+                                                 "",
+                                                 new ClusterResources(20, 10,
                                                                       new NodeResources(0.5, 4, 14, 16)),
-                                                 AutoscalingStatus.empty(),
                                                  Instant.ofEpochMilli(1234L)),
-                                 new Autoscaling(new ClusterResources(10, 5,
+                                 new Autoscaling(Autoscaling.Status.insufficient,
+                                                 "Autoscaling status",
+                                                 new ClusterResources(10, 5,
                                                                       new NodeResources(2, 4, 14, 16)),
-                                                 new AutoscalingStatus(AutoscalingStatus.Status.insufficient, "Autoscaling status"),
                                                  Instant.ofEpochMilli(5678L)),
                                  List.of(new ScalingEvent(new ClusterResources(10, 5, minResources),
                                                           new ClusterResources(12, 6, minResources),
