@@ -550,15 +550,14 @@ public class VespaDocumentDeserializer6 extends BufferSerializer implements Docu
         Field field = fieldUpdate.getDocumentType().getField(fieldId);
         if (field == null) {
             throw new DeserializationException(
-                    "Cannot deserialize FieldUpdate, field fieldId " + fieldId + " not found in " + fieldUpdate.getDocumentType());
+                    "Cannot deserialize FieldUpdate: Field fieldId " + fieldId + " not found in " + fieldUpdate.getDocumentType());
         }
 
         fieldUpdate.setField(field);
         int size = getInt(null);
 
         for (int i = 0; i < size; i++) {
-            if (field.getDataType() instanceof CollectionDataType) {
-                CollectionDataType collType = (CollectionDataType) field.getDataType();
+            if (field.getDataType() instanceof CollectionDataType collType) {
                 fieldUpdate.addValueUpdate(getValueUpdate(collType, collType.getNestedType()));
             } else {
                 fieldUpdate.addValueUpdate(getValueUpdate(field.getDataType(), null));

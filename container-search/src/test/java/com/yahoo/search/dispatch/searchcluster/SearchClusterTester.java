@@ -9,6 +9,8 @@ public class SearchClusterTester {
         cluster = new MockSearchCluster("1", groups, nodesPerGroup);
     }
 
+    public SearchCluster cluster() { return cluster; }
+
     public void pingIterationCompleted() {
         cluster.pingIterationCompleted();
     }
