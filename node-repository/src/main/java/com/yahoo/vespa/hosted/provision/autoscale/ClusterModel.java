@@ -73,7 +73,7 @@ public class ClusterModel {
         this.cluster = cluster;
         this.nodes = clusterNodes;
         this.clock = clock;
-        this.scalingDuration = computeScalingDuration(cluster, clusterSpec);
+        this.scalingDuration = cluster.scalingDuration(clusterSpec);
         this.clusterTimeseries = metricsDb.getClusterTimeseries(application.id(), cluster.id());
         this.nodeTimeseries = new ClusterNodesTimeseries(scalingDuration(), cluster, nodes, metricsDb);
         this.at = clock.instant();
@@ -286,43 +286,6 @@ public class ClusterModel {
         double relativeQueryCost = 9; // How much more expensive are queries than writes? TODO: Measure
         double writeFraction = 1 - queryRateFraction;
         return queryRateFraction * relativeQueryCost / (queryRateFraction * relativeQueryCost + writeFraction);
-    }
-
-    private static Duration computeScalingDuration(Cluster cluster, ClusterSpec clusterSpec) {
-        int completedEventCount = 0;
-        Duration totalDuration = Duration.ZERO;
-        for (ScalingEvent event : cluster.scalingEvents()) {
-            if (event.duration().isEmpty()) continue;
-            completedEventCount++;
-            // Assume we have missed timely recording completion if it is longer than 4 days
-            totalDuration = totalDuration.plus(maximum(Duration.ofDays(4), event.duration().get()));
-        }
-        if (completedEventCount == 0) { // Use defaults
-            if (clusterSpec.isStateful()) return Duration.ofHours(12);
-            return Duration.ofMinutes(10);
-        }
-        else {
-            Duration predictedDuration = totalDuration.dividedBy(completedEventCount);
-
-            if ( clusterSpec.isStateful() ) // TODO: Remove when we have reliable completion for content clusters
-                predictedDuration = minimum(Duration.ofHours(12), predictedDuration);
-
-            predictedDuration = minimum(Duration.ofMinutes(5), predictedDuration);
-
-            return predictedDuration;
-        }
-    }
-
-    private static Duration minimum(Duration smallestAllowed, Duration duration) {
-        if (duration.minus(smallestAllowed).isNegative())
-            return smallestAllowed;
-        return duration;
-    }
-
-    private static Duration maximum(Duration largestAllowed, Duration duration) {
-        if ( ! duration.minus(largestAllowed).isNegative())
-            return largestAllowed;
-        return duration;
     }
 
     private double idealMemoryLoad() {
