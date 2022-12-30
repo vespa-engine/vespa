@@ -101,15 +101,11 @@ jobs:
       CCACHE_COMPRESS: "1"
     secrets:
       - DOCKER_HUB_DEPLOY_KEY
-    requires: [~pr]
     steps:
       - get-vespa-version: |
-          #VESPA_VERSION=$(meta get vespa.version)
-          #VESPA_REF=$(meta get vespa.ref)
-          #SYSTEM_TEST_REF=$(meta get system-test.ref)
-          VESPA_VERSION="8.103.38"
-          VESPA_REF="b8acefb1ba14ab159435e02760d9a90a6f1501ef"
-          SYSTEM_TEST_REF="14a6a5742375b5b13fef88733a211ae212dc9ac3"
+          VESPA_VERSION=$(meta get vespa.version)
+          VESPA_REF=$(meta get vespa.ref)
+          SYSTEM_TEST_REF=$(meta get system-test.ref)
 
           if [[ $VESPA_VERSION == null ]] || [[ $VESPA_REF == null ]] || [[ $SYSTEM_TEST_REF == null ]]; then
             echo "Must have valid Vespa version and reference to continue \
