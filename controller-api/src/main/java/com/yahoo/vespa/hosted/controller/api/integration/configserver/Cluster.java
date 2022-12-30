@@ -27,8 +27,6 @@ public class Cluster {
     private final String autoscalingStatusCode;
     private final String autoscalingStatus;
     private final Duration scalingDuration;
-    private final double maxQueryGrowthRate;
-    private final double currentQueryFractionOfMax;
 
     public Cluster(ClusterSpec.Id id,
                    ClusterSpec.Type type,
@@ -41,9 +39,7 @@ public class Cluster {
                    List<ScalingEvent> scalingEvents,
                    String autoscalingStatusCode,
                    String autoscalingStatus,
-                   Duration scalingDuration,
-                   double maxQueryGrowthRate,
-                   double currentQueryFractionOfMax) {
+                   Duration scalingDuration) {
         this.id = id;
         this.type = type;
         this.min = min;
@@ -56,8 +52,6 @@ public class Cluster {
         this.autoscalingStatusCode = autoscalingStatusCode;
         this.autoscalingStatus = autoscalingStatus;
         this.scalingDuration = scalingDuration;
-        this.maxQueryGrowthRate = maxQueryGrowthRate;
-        this.currentQueryFractionOfMax = currentQueryFractionOfMax;
     }
 
     public ClusterSpec.Id id() { return id; }
@@ -72,8 +66,6 @@ public class Cluster {
     public String autoscalingStatusCode() { return autoscalingStatusCode; }
     public String autoscalingStatus() { return autoscalingStatus; }
     public Duration scalingDuration() { return scalingDuration; }
-    public double maxQueryGrowthRate() { return maxQueryGrowthRate; }
-    public double currentQueryFractionOfMax() { return currentQueryFractionOfMax; }
 
     @Override
     public String toString() {

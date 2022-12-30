@@ -56,9 +56,7 @@
           "architecture": "x86_64"
         }
       },
-      "scalingDuration": 400000,
-      "maxQueryGrowthRate": 0.7,
-      "currentQueryFractionOfMax": 0.3
+      "scalingDuration": 400000
     },
     "logserver": {
       "type": "admin",
@@ -114,9 +112,7 @@
           "architecture": "x86_64"
         }
       },
-      "scalingDuration": 90000,
-      "maxQueryGrowthRate": 0.7,
-      "currentQueryFractionOfMax": 0.3
+      "scalingDuration": 90000
     },
     "music": {
       "type": "content",
@@ -172,9 +168,7 @@
           "architecture": "x86_64"
         }
       },
-      "scalingDuration": 1000000,
-      "maxQueryGrowthRate": 0.7,
-      "currentQueryFractionOfMax": 0.3
+      "scalingDuration": 1000000
     }
   }
 }

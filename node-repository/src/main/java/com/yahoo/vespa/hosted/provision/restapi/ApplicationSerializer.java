@@ -84,8 +84,6 @@ public class ApplicationSerializer {
         clusterObject.setString("autoscalingStatusCode", cluster.target().status().name());
         clusterObject.setString("autoscalingStatus", cluster.target().description());
         clusterModel.ifPresent(model -> clusterObject.setLong("scalingDuration", cluster.scalingDuration(nodes.clusterSpec()).toMillis()));
-        clusterModel.ifPresent(model -> clusterObject.setDouble("maxQueryGrowthRate", model.maxQueryGrowthRate()));
-        clusterModel.ifPresent(model -> clusterObject.setDouble("currentQueryFractionOfMax", model.queryFractionOfMax()));
     }
 
     private static void toSlime(ClusterResources resources, Cursor clusterResourcesObject) {

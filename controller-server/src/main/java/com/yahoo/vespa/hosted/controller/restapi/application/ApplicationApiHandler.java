@@ -1357,8 +1357,6 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
             clusterObject.setString("autoscalingStatusCode", cluster.autoscalingStatusCode());
             clusterObject.setString("autoscalingStatus", cluster.autoscalingStatus());
             clusterObject.setLong("scalingDuration", cluster.scalingDuration().toMillis());
-            clusterObject.setDouble("maxQueryGrowthRate", cluster.maxQueryGrowthRate());
-            clusterObject.setDouble("currentQueryFractionOfMax", cluster.currentQueryFractionOfMax());
         }
         return new SlimeJsonResponse(slime);
     }

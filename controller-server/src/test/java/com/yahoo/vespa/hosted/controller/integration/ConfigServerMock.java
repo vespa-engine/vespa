@@ -127,9 +127,7 @@ public class ConfigServerMock extends AbstractComponent implements ConfigServer 
                                                                        Optional.of(Instant.ofEpochMilli(2234)))),
                                       "ideal",
                                       "Cluster is ideally scaled",
-                                      Duration.ofMinutes(6),
-                                      0.7,
-                                      0.3);
+                                      Duration.ofMinutes(6));
         nodeRepository.putApplication(zone,
                                       new com.yahoo.vespa.hosted.controller.api.integration.configserver.Application(application,
                                                                                                                      List.of(cluster)));

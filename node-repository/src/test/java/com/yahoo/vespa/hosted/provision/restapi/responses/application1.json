@@ -110,9 +110,7 @@
       ],
       "autoscalingStatusCode": "unavailable",
       "autoscalingStatus": "",
-      "scalingDuration": 600000,
-      "maxQueryGrowthRate": 0.1,
-      "currentQueryFractionOfMax": 0.5
+      "scalingDuration": 600000
     }
   }
 }

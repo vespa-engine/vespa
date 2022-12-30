@@ -41,10 +41,6 @@ public class ClusterData {
     public String autoscalingStatus;
     @JsonProperty("scalingDuration")
     public Long scalingDuration;
-    @JsonProperty("maxQueryGrowthRate")
-    public Double maxQueryGrowthRate;
-    @JsonProperty("currentQueryFractionOfMax")
-    public Double currentQueryFractionOfMax;
 
     public Cluster toCluster(String id) {
         return new Cluster(ClusterSpec.Id.from(id),
@@ -59,9 +55,7 @@ public class ClusterData {
                                                  : scalingEvents.stream().map(data -> data.toScalingEvent()).toList(),
                            autoscalingStatusCode,
                            autoscalingStatus,
-                           scalingDuration == null ? Duration.ofMillis(0) : Duration.ofMillis(scalingDuration),
-                           maxQueryGrowthRate == null ? -1 : maxQueryGrowthRate,
-                           currentQueryFractionOfMax == null ? -1 : currentQueryFractionOfMax);
+                           scalingDuration == null ? Duration.ofMillis(0) : Duration.ofMillis(scalingDuration));
     }
 
 }

@@ -96,9 +96,7 @@
       ],
       "autoscalingStatusCode": "ideal",
       "autoscalingStatus": "Cluster is ideally scaled",
-      "scalingDuration": 360000,
-      "maxQueryGrowthRate": 0.7,
-      "currentQueryFractionOfMax": 0.3
+      "scalingDuration": 360000
     }
   }
 }
