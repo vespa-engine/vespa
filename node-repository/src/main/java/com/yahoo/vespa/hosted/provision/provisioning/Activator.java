@@ -120,7 +120,7 @@ class Activator {
             }
             if (cluster.target().resources().isPresent()
                 && cluster.target().resources().get().justNumbers().equals(currentResources.justNumbers())) {
-                cluster = cluster.withTarget(Autoscaling.ideal(nodeRepository.clock().instant()));
+                cluster = cluster.withTarget(cluster.target().asIdeal(nodeRepository.clock().instant()));
             }
             if (cluster != modified.cluster(clusterEntry.getKey()).get())
                 modified = modified.with(cluster);

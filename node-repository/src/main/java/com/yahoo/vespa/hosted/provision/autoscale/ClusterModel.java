@@ -53,6 +53,7 @@ public class ClusterModel {
     private final Duration scalingDuration;
     private final ClusterTimeseries clusterTimeseries;
     private final ClusterNodesTimeseries nodeTimeseries;
+    private final Instant at;
 
     // Lazily initialized members
     private Double queryFractionOfMax = null;
@@ -75,6 +76,7 @@ public class ClusterModel {
         this.scalingDuration = computeScalingDuration(cluster, clusterSpec);
         this.clusterTimeseries = metricsDb.getClusterTimeseries(application.id(), cluster.id());
         this.nodeTimeseries = new ClusterNodesTimeseries(scalingDuration(), cluster, nodes, metricsDb);
+        this.at = clock.instant();
     }
 
     ClusterModel(Zone zone,
@@ -95,6 +97,7 @@ public class ClusterModel {
         this.scalingDuration = scalingDuration;
         this.clusterTimeseries = clusterTimeseries;
         this.nodeTimeseries = nodeTimeseries;
+        this.at = clock.instant();
     }
 
     public Application application() { return application; }
@@ -150,12 +153,6 @@ public class ClusterModel {
         if (averageQueryRate != null) return averageQueryRate;
         return averageQueryRate = clusterTimeseries().queryRate(scalingDuration(), clock);
     }
-
-    /** Returns the average of the last load measurement from each node. */
-    public Load currentLoad() { return nodeTimeseries().currentLoad(); }
-
-    /** Returns the average of all load measurements from all nodes*/
-    public Load averageLoad() { return nodeTimeseries().averageLoad(); }
 
     /** Returns the average of the peak load measurement in each dimension, from each node. */
     public Load peakLoad() { return nodeTimeseries().peakLoad(); }
@@ -238,6 +235,9 @@ public class ClusterModel {
         return queryCpuFraction * 1/growthRateHeadroom() * 1/trafficShiftHeadroom() * idealQueryCpuLoad +
                (1 - queryCpuFraction) * idealWriteCpuLoad;
     }
+
+    /** Returns the instant this model was created. */
+    public Instant at() { return at;}
 
     /** Returns the headroom for growth during organic traffic growth as a multiple of current resources. */
     private double growthRateHeadroom() {

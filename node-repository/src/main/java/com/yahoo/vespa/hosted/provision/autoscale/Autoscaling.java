@@ -7,7 +7,7 @@ import java.util.Objects;
 import java.util.Optional;
 
 /**
- * An autoscaling result.
+ * An autoscaling conclusion and the context that led to it.
  *
  * @author bratseth
  */
@@ -17,19 +17,20 @@ public class Autoscaling {
     private final String description;
     private final Optional<ClusterResources> resources;
     private final Instant at;
+    private final Load peak;
+    private final Load ideal;
 
-    public Autoscaling(Status status, String description, ClusterResources resources, Instant at) {
-        this(status, description, Optional.of(resources), at);
-    }
-
-    public Autoscaling(Status status, String description, Optional<ClusterResources> resources, Instant at) {
+    public Autoscaling(Status status, String description, Optional<ClusterResources> resources, Instant at,
+                       Load peak, Load ideal) {
         this.status = status;
         this.description = description;
         this.resources = resources;
         this.at = at;
+        this.peak = peak;
+        this.ideal = ideal;
     }
 
-    /** Returns the resource target of this, or empty if non target. */
+    /** Returns the resource target of this, or empty if none (meaning keep the current allocation). */
     public Optional<ClusterResources> resources() {
         return resources;
     }
@@ -38,11 +39,27 @@ public class Autoscaling {
 
     public String description() { return description; }
 
-    /** Returns the time this target was decided. */
+    /** Returns the time this was decided. */
     public Instant at() { return at; }
 
+    /** Returns the peak load seen in the period considered in this. */
+    public Load peak() { return peak; }
+
+    /** Returns the ideal load the cluster in question should have. */
+    public Load ideal() { return ideal; }
+
     public Autoscaling with(Status status, String description) {
-        return new Autoscaling(status, description, resources, at);
+        return new Autoscaling(status, description, resources, at, peak, ideal);
+    }
+
+    /** Converts this autoscaling into an ideal one at the completion of it. */
+    public Autoscaling asIdeal(Instant at) {
+        return new Autoscaling(Status.ideal,
+                               "Cluster is ideally scaled within configured limits",
+                               Optional.empty(),
+                               at,
+                               peak,
+                               ideal);
     }
 
     @Override
@@ -52,35 +69,49 @@ public class Autoscaling {
         if ( ! this.description.equals(other.description)) return false;
         if ( ! this.resources.equals(other.resources)) return false;
         if ( ! this.at.equals(other.at)) return false;
+        if ( ! this.peak.equals(other.peak)) return false;
+        if ( ! this.ideal.equals(other.ideal)) return false;
         return true;
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(status, description, at);
+        return Objects.hash(status, description, at, peak, ideal);
     }
 
     @Override
     public String toString() {
-        return "autoscaling to " + resources + ", made at " + at;
+        return (resources.isPresent() ? "Autoscaling to " + resources : "Don't autoscale") +
+               (description.isEmpty() ? "" : ": " + description);
     }
 
-    public static Autoscaling empty() { return new Autoscaling(Status.unavailable, "", Optional.empty(), Instant.EPOCH); }
-
-    public static Autoscaling dontScale(Status status, String description, Instant at) {
-        return new Autoscaling(status, description, Optional.empty(), at);
+    public static Autoscaling empty() {
+        return new Autoscaling(Status.unavailable,
+                               "",
+                               Optional.empty(),
+                               Instant.EPOCH,
+                               Load.zero(),
+                               Load.zero());
     }
 
-    public static Autoscaling ideal(Instant at) {
-        return new Autoscaling(Status.ideal, "Cluster is ideally scaled within configured limits",
-                               Optional.empty(), at);
+    /** Creates an autoscaling conclusion which does not change the current allocation for a specified reason. */
+    public static Autoscaling dontScale(Status status, String description, ClusterModel clusterModel) {
+        return new Autoscaling(status,
+                               description,
+                               Optional.empty(),
+                               clusterModel.at(),
+                               clusterModel.peakLoad(),
+                               clusterModel.idealLoad());
     }
 
-    public static Autoscaling scaleTo(ClusterResources target, Instant at) {
+    /** Creates an autoscaling conclusion to scale. */
+    public static Autoscaling scaleTo(ClusterResources target, ClusterModel clusterModel) {
         return new Autoscaling(Status.rescaling,
                                "Rescaling initiated due to load changes",
                                Optional.of(target),
-                               at);
+                               clusterModel.at(),
+                               clusterModel.peakLoad(),
+                               clusterModel.idealLoad());
     }
 
     public enum Status {

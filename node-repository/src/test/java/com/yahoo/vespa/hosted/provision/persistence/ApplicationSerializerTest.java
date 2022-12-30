@@ -10,6 +10,7 @@ import com.yahoo.vespa.hosted.provision.applications.Cluster;
 import com.yahoo.vespa.hosted.provision.applications.ScalingEvent;
 import com.yahoo.vespa.hosted.provision.applications.Status;
 import com.yahoo.vespa.hosted.provision.autoscale.Autoscaling;
+import com.yahoo.vespa.hosted.provision.autoscale.Load;
 import org.junit.Test;
 
 import java.time.Instant;
@@ -45,14 +46,18 @@ public class ApplicationSerializerTest {
                                  false,
                                  new Autoscaling(Autoscaling.Status.unavailable,
                                                  "",
-                                                 new ClusterResources(20, 10,
-                                                                      new NodeResources(0.5, 4, 14, 16)),
-                                                 Instant.ofEpochMilli(1234L)),
+                                                 Optional.of(new ClusterResources(20, 10,
+                                                                                  new NodeResources(0.5, 4, 14, 16))),
+                                                 Instant.ofEpochMilli(1234L),
+                                                 new Load(0.1, 0.2, 0.3),
+                                                 new Load(0.4, 0.5, 0.6)),
                                  new Autoscaling(Autoscaling.Status.insufficient,
                                                  "Autoscaling status",
-                                                 new ClusterResources(10, 5,
-                                                                      new NodeResources(2, 4, 14, 16)),
-                                                 Instant.ofEpochMilli(5678L)),
+                                                 Optional.of(new ClusterResources(10, 5,
+                                                                                  new NodeResources(2, 4, 14, 16))),
+                                                 Instant.ofEpochMilli(5678L),
+                                                 Load.zero(),
+                                                 Load.one()),
                                  List.of(new ScalingEvent(new ClusterResources(10, 5, minResources),
                                                           new ClusterResources(12, 6, minResources),
                                                           7L,

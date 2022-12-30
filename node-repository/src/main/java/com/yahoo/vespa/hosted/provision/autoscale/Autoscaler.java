@@ -51,8 +51,6 @@ public class Autoscaler {
      * @return scaling advice for this cluster
      */
     public Autoscaling autoscale(Application application, Cluster cluster, NodeList clusterNodes) {
-        if (cluster.minResources().equals(cluster.maxResources()))
-            return Autoscaling.dontScale(Autoscaling.Status.unavailable, "Autoscaling is not enabled", now());
         return autoscale(application, cluster, clusterNodes, Limits.of(cluster));
     }
 
@@ -64,24 +62,26 @@ public class Autoscaler {
                                                      clusterNodes,
                                                      nodeRepository.metricsDb(),
                                                      nodeRepository.clock());
+        if (! limits.isEmpty() && cluster.minResources().equals(cluster.maxResources()))
+            return Autoscaling.dontScale(Autoscaling.Status.unavailable, "Autoscaling is not enabled", clusterModel);
 
         if ( ! clusterIsStable(clusterNodes, nodeRepository))
-            return Autoscaling.dontScale(Status.waiting, "Cluster change in progress", now());
+            return Autoscaling.dontScale(Status.waiting, "Cluster change in progress", clusterModel);
 
         var currentAllocation = new AllocatableClusterResources(clusterNodes, nodeRepository);
         Optional<AllocatableClusterResources> bestAllocation =
                 allocationOptimizer.findBestAllocation(clusterModel.loadAdjustment(), currentAllocation, clusterModel, limits);
         if (bestAllocation.isEmpty())
-            return Autoscaling.dontScale(Status.insufficient, "No allocations are possible within configured limits", now());
+            return Autoscaling.dontScale(Status.insufficient, "No allocations are possible within configured limits", clusterModel);
 
         if (! worthRescaling(currentAllocation.realResources(), bestAllocation.get().realResources())) {
             if (bestAllocation.get().fulfilment() < 1)
-                return Autoscaling.dontScale(Status.insufficient, "Configured limits prevents better scaling of this cluster", now());
+                return Autoscaling.dontScale(Status.insufficient, "Configured limits prevents better scaling of this cluster", clusterModel);
             else
-                return Autoscaling.dontScale(Status.ideal, "Cluster is ideally scaled", now());
+                return Autoscaling.dontScale(Status.ideal, "Cluster is ideally scaled", clusterModel);
         }
 
-        return Autoscaling.scaleTo(bestAllocation.get().advertisedResources(), now());
+        return Autoscaling.scaleTo(bestAllocation.get().advertisedResources(), clusterModel);
     }
 
     public static boolean clusterIsStable(NodeList clusterNodes, NodeRepository nodeRepository) {
@@ -112,8 +112,6 @@ public class Autoscaler {
     public static boolean meaningfulIncrease(double from, double to) {
         return from < to && ! similar(from, to, resourceDifferenceWorthReallocation);
     }
-
-    private Instant now() { return nodeRepository.clock().instant(); }
 
     private static boolean similar(double r1, double r2, double threshold) {
         return Math.abs(r1 - r2) / (( r1 + r2) / 2) < threshold;
