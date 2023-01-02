@@ -129,8 +129,7 @@ public class ApplicationRepositoryTest {
                 .withClock(clock)
                 .withConfigserverConfig(configserverConfig)
                 .withCurator(curator)
-                .withFileDistributionFactory(
-                        new MockFileDistributionFactory(configserverConfig, fileDirectory))
+                .withFileDistributionFactory(new MockFileDistributionFactory(configserverConfig))
                 .withFlagSource(flagSource)
                 .build();
         tenantRepository.addTenant(TenantRepository.HOSTED_VESPA_TENANT);

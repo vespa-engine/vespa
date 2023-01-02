@@ -29,7 +29,6 @@ import com.yahoo.vespa.config.server.application.ClusterReindexing.Status;
 import com.yahoo.vespa.config.server.application.HttpProxy;
 import com.yahoo.vespa.config.server.application.OrchestratorMock;
 import com.yahoo.vespa.config.server.deploy.DeployTester;
-import com.yahoo.vespa.config.server.filedistribution.FileDirectory;
 import com.yahoo.vespa.config.server.filedistribution.MockFileDistributionFactory;
 import com.yahoo.vespa.config.server.http.HandlerTest;
 import com.yahoo.vespa.config.server.http.HttpErrorResponse;
@@ -125,7 +124,7 @@ public class ApplicationHandlerTest {
         tenantRepository = new TestTenantRepository.Builder()
                 .withClock(clock)
                 .withConfigserverConfig(configserverConfig)
-                .withFileDistributionFactory(new MockFileDistributionFactory(configserverConfig, new FileDirectory(configserverConfig)))
+                .withFileDistributionFactory(new MockFileDistributionFactory(configserverConfig))
                 .withHostProvisionerProvider(HostProvisionerProvider.withProvisioner(provisioner, false))
                 .withModelFactoryRegistry(new ModelFactoryRegistry(modelFactories))
                 .build();

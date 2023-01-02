@@ -11,8 +11,8 @@ import java.io.File;
 */
 public class MockFileDistributionFactory extends FileDistributionFactory {
 
-    public MockFileDistributionFactory(ConfigserverConfig configserverConfig, FileDirectory fileDirectory) {
-        super(configserverConfig, fileDirectory);
+    public MockFileDistributionFactory(ConfigserverConfig configserverConfig) {
+        super(configserverConfig, new FileDirectory(configserverConfig));
     }
 
     @Override
