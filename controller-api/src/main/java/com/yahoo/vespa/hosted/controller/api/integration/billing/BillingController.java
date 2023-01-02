@@ -62,6 +62,7 @@ public interface BillingController {
      * @return The ID of the new bill.
      */
     Bill.Id createBillForPeriod(TenantName tenant, ZonedDateTime startTime, ZonedDateTime endTime, String agent);
+    Bill.Id createBillForPeriod(TenantName tenant, LocalDate startDate, LocalDate endDate, String agent);
 
     /**
      * Create an unpersisted bill of unbilled use for the given tenant from the end of last bill until the given date.

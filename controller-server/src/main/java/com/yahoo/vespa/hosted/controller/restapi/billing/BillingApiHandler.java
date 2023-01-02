@@ -246,10 +246,8 @@ public class BillingApiHandler extends ThreadedHttpRequestHandler {
 
         LocalDate startDate = LocalDate.parse(getInspectorFieldOrThrow(inspector, "startTime"));
         LocalDate endDate = LocalDate.parse(getInspectorFieldOrThrow(inspector, "endTime"));
-        ZonedDateTime startTime = startDate.atStartOfDay(ZoneId.of("UTC"));
-        ZonedDateTime endTime = endDate.plusDays(1).atStartOfDay(ZoneId.of("UTC"));
 
-        var billId = billingController.createBillForPeriod(tenantName, startTime, endTime, userId);
+        var billId = billingController.createBillForPeriod(tenantName, startDate, endDate, userId);
 
         Slime slime = new Slime();
         Cursor root = slime.setObject();
@@ -476,7 +474,7 @@ public class BillingApiHandler extends ThreadedHttpRequestHandler {
 
     private LocalDate untilParameter(String until) {
         if (until == null || until.isEmpty() || until.isBlank())
-            return LocalDate.now().plusDays(1);
+            return LocalDate.now();
         return LocalDate.parse(until);
     }
 
