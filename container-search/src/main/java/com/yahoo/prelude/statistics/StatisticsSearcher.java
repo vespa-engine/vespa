@@ -63,6 +63,7 @@ public class StatisticsSearcher extends Searcher {
     private static final String FAILED_QUERIES_METRIC = "failed_queries";
     private static final String MEAN_QUERY_LATENCY_METRIC = "mean_query_latency";
     private static final String QUERY_LATENCY_METRIC = "query_latency";
+    private static final String QUERY_TIMEOUT_METRIC = "query_timeout";
     private static final String QUERY_HIT_OFFSET_METRIC = "query_hit_offset";
     private static final String QUERIES_METRIC = "queries";
     private static final String PEAK_QPS_METRIC = "peak_qps";
@@ -125,6 +126,7 @@ public class StatisticsSearcher extends Searcher {
         this.peakQpsReporter = new PeakQpsReporter();
         this.metric = metric;
 
+        metricReceiver.declareGauge(QUERY_TIMEOUT_METRIC, Optional.empty(), new MetricSettings.Builder().histogram(true).build());
         metricReceiver.declareGauge(QUERY_LATENCY_METRIC, Optional.empty(), new MetricSettings.Builder().histogram(true).build());
         metricReceiver.declareGauge(HITS_PER_QUERY_METRIC, Optional.empty(), new MetricSettings.Builder().histogram(true).build());
         metricReceiver.declareGauge(TOTALHITS_PER_QUERY_METRIC, Optional.empty(), new MetricSettings.Builder().histogram(true).build());
@@ -223,6 +225,7 @@ public class StatisticsSearcher extends Searcher {
         logQuery(query);
         long start_ns = getStartNanoTime(query);
         qps(metricContext);
+        metric.set(QUERY_TIMEOUT_METRIC, query.getTimeout(), metricContext);
         Result result;
         //handle exceptions thrown below in searchers
         try {
