@@ -52,7 +52,48 @@
           "diskSpeed": "slow",
           "storageType": "remote"
         },
-        "cost": 0.29
+        "cost": 0.29,
+        "status": "ideal",
+        "description": "Cluster is ideally scaled",
+        "resources": {
+          "nodes": 2,
+          "groups": 1,
+          "nodeResources": {
+            "vcpu": 3.0,
+            "memoryGb": 8.0,
+            "diskGb": 50.0,
+            "bandwidthGbps": 1.0,
+            "diskSpeed": "slow",
+            "storageType": "remote"
+          },
+          "cost": 0.29
+        },
+        "at" : 123,
+        "peak": {
+          "cpu": 0.35,
+          "memory": 0.65,
+          "disk": 1.0
+        },
+        "ideal": {
+          "cpu": 0.2,
+          "memory": 0.5,
+          "disk": 0.8
+        }
+      },
+      "suggested": {
+        "status": "unavailable",
+        "description": "",
+        "at": 0,
+        "peak": {
+          "cpu": 0.0,
+          "memory": 0.0,
+          "disk": 0.0
+        },
+        "ideal": {
+          "cpu": 0.0,
+          "memory": 0.0,
+          "disk": 0.0
+        }
       },
       "utilization": {
         "idealCpu": 0.2,

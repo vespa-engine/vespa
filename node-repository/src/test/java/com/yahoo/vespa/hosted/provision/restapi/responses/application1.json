@@ -44,38 +44,60 @@
         }
       },
       "suggested" : {
-        "nodes" : 6,
-        "groups" : 2,
+        "status" : "unavailable",
+        "description" : "",
         "resources" : {
-          "vcpu" : 3.0,
-          "memoryGb" : 20.0,
-          "diskGb" : 100.0,
-          "bandwidthGbps" : 1.0,
-          "diskSpeed" : "fast",
-          "storageType" : "any",
-          "architecture":"x86_64"
+          "nodes": 6,
+          "groups": 2,
+          "resources": {
+            "vcpu": 3.0,
+            "memoryGb": 20.0,
+            "diskGb": 100.0,
+            "bandwidthGbps": 1.0,
+            "diskSpeed": "fast",
+            "storageType": "any",
+            "architecture": "x86_64"
+          }
+        },
+        "at" : 123,
+        "peak" : {
+          "cpu" : 0.0,
+          "memory" : 0.0,
+          "disk" : 0.0
+        },
+        "ideal" : {
+          "cpu" : 0.0,
+          "memory" : 0.0,
+          "disk" : 0.0
         }
       },
       "target" : {
-        "nodes" : 4,
-        "groups" : 1,
+        "status" : "unavailable",
+        "description" : "",
         "resources" : {
-          "vcpu" : 3.0,
-          "memoryGb" : 16.0,
-          "diskGb" : 100.0,
-          "bandwidthGbps" : 1.0,
-          "diskSpeed" : "fast",
-          "storageType" : "any",
-          "architecture":"x86_64"
+          "nodes" : 4,
+          "groups" : 1,
+          "resources" : {
+            "vcpu": 3.0,
+            "memoryGb": 16.0,
+            "diskGb": 100.0,
+            "bandwidthGbps": 1.0,
+            "diskSpeed": "fast",
+            "storageType": "any",
+            "architecture": "x86_64"
+          }
+        },
+        "at" : 123,
+        "peak" : {
+          "cpu" : 0.0,
+          "memory" : 0.0,
+          "disk" : 0.0
+        },
+        "ideal" : {
+          "cpu" : 0.0,
+          "memory" : 0.0,
+          "disk" : 0.0
         }
-      },
-      "utilization" : {
-          "idealCpu": 0.0,
-          "peakCpu": 0.0,
-          "idealMemory": 0.0,
-          "peakMemory": 0.0,
-          "idealDisk": 0.0,
-          "peakDisk": 0.0
       },
       "scalingEvents" : [
         {
@@ -108,8 +130,6 @@
           "at" : 123
         }
       ],
-      "autoscalingStatusCode": "unavailable",
-      "autoscalingStatus": "",
       "scalingDuration": 600000
     }
   }

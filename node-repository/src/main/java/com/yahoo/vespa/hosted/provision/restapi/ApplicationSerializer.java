@@ -9,6 +9,7 @@ import com.yahoo.vespa.hosted.provision.NodeRepository;
 import com.yahoo.vespa.hosted.provision.applications.Application;
 import com.yahoo.vespa.hosted.provision.applications.Cluster;
 import com.yahoo.vespa.hosted.provision.applications.ScalingEvent;
+import com.yahoo.vespa.hosted.provision.autoscale.Autoscaling;
 import com.yahoo.vespa.hosted.provision.autoscale.Limits;
 import com.yahoo.vespa.hosted.provision.autoscale.Load;
 
@@ -63,13 +64,19 @@ public class ApplicationSerializer {
         toSlime(limits.max(), clusterObject.setObject("max"));
         toSlime(currentResources, clusterObject.setObject("current"));
         if (cluster.shouldSuggestResources(currentResources))
-            cluster.suggested().resources().ifPresent(suggested -> toSlime(suggested, clusterObject.setObject("suggested")));
-        cluster.target().resources().ifPresent(target -> toSlime(target, clusterObject.setObject("target")));
-        clusterUtilizationToSlime(cluster.target().ideal(), cluster.target().peak(), clusterObject.setObject("utilization"));
+            toSlime(cluster.suggested(), clusterObject.setObject("suggested"));
+        toSlime(cluster.target(), clusterObject.setObject("target"));
         scalingEventsToSlime(cluster.scalingEvents(), clusterObject.setArray("scalingEvents"));
-        clusterObject.setString("autoscalingStatusCode", cluster.target().status().name());
-        clusterObject.setString("autoscalingStatus", cluster.target().description());
         clusterObject.setLong("scalingDuration", cluster.scalingDuration(nodes.clusterSpec()).toMillis());
+    }
+
+    private static void toSlime(Autoscaling autoscaling, Cursor autoscalingObject) {
+        autoscalingObject.setString("status", autoscaling.status().name());
+        autoscalingObject.setString("description", autoscaling.description());
+        autoscaling.resources().ifPresent(resources -> toSlime(resources, autoscalingObject.setObject("resources")));
+        autoscalingObject.setLong("at", autoscaling.at().toEpochMilli());
+        toSlime(autoscaling.peak(), autoscalingObject.setObject("peak"));
+        toSlime(autoscaling.ideal(), autoscalingObject.setObject("ideal"));
     }
 
     private static void toSlime(ClusterResources resources, Cursor clusterResourcesObject) {
@@ -78,15 +85,10 @@ public class ApplicationSerializer {
         NodeResourcesSerializer.toSlime(resources.nodeResources(), clusterResourcesObject.setObject("resources"));
     }
 
-    private static void clusterUtilizationToSlime(Load idealLoad, Load peakLoad, Cursor utilizationObject) {
-        utilizationObject.setDouble("idealCpu", idealLoad.cpu());
-        utilizationObject.setDouble("peakCpu", peakLoad.cpu());
-
-        utilizationObject.setDouble("idealMemory", idealLoad.memory());
-        utilizationObject.setDouble("peakMemory", peakLoad.memory());
-
-        utilizationObject.setDouble("idealDisk", idealLoad.disk());
-        utilizationObject.setDouble("peakDisk", peakLoad.disk());
+    private static void toSlime(Load load, Cursor utilizationObject) {
+        utilizationObject.setDouble("cpu", load.cpu());
+        utilizationObject.setDouble("memory", load.memory());
+        utilizationObject.setDouble("disk", load.disk());
     }
 
     private static void scalingEventsToSlime(List<ScalingEvent> scalingEvents, Cursor scalingEventsArray) {

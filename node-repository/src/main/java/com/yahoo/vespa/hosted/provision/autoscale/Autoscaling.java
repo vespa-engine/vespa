@@ -30,14 +30,14 @@ public class Autoscaling {
         this.ideal = ideal;
     }
 
+    public Status status() { return status; }
+
+    public String description() { return description; }
+
     /** Returns the resource target of this, or empty if none (meaning keep the current allocation). */
     public Optional<ClusterResources> resources() {
         return resources;
     }
-
-    public Status status() { return status; }
-
-    public String description() { return description; }
 
     /** Returns the time this was decided. */
     public Instant at() { return at; }
