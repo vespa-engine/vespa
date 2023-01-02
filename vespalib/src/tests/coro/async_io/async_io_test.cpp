@@ -1,6 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include <vespa/vespalib/coro/lazy.h>
+#include <vespa/vespalib/coro/detached.h>
 #include <vespa/vespalib/coro/completion.h>
 #include <vespa/vespalib/coro/async_io.h>
 #include <vespa/vespalib/net/socket_spec.h>
@@ -12,6 +13,13 @@
 using namespace vespalib;
 using namespace vespalib::coro;
 
+Detached self_exiting_run_loop(AsyncIo::SP async) {
+    for (size_t i = 0; co_await async->schedule(); ++i) {
+        fprintf(stderr, "self_exiting_run_loop -> current value: %zu\n", i);
+    }
+    fprintf(stderr, "self_exiting_run_loop -> exiting\n");
+}
+
 Work run_loop(AsyncIo &async, int a, int b) {
     for (int i = a; i < b; ++i) {
         co_await async.schedule();
@@ -22,18 +30,27 @@ Work run_loop(AsyncIo &async, int a, int b) {
 
 TEST(AsyncIoTest, create_async_io) {
     auto async = AsyncIo::create();
-    ASSERT_TRUE(async);
-    fprintf(stderr, "async_io impl: %s\n", async->get_impl_spec().c_str());
+    AsyncIo &api = async;
+    fprintf(stderr, "async_io impl: %s\n", api.get_impl_spec().c_str());
 }
 
 TEST(AsyncIoTest, run_stuff_in_async_io_context) {
     auto async = AsyncIo::create();
-    auto f1 = make_future(run_loop(*async, 10, 20));
-    auto f2 = make_future(run_loop(*async, 20, 30));
-    auto f3 = make_future(run_loop(*async, 30, 40));
+    auto f1 = make_future(run_loop(async, 10, 20));
+    auto f2 = make_future(run_loop(async, 20, 30));
+    auto f3 = make_future(run_loop(async, 30, 40));
     f1.wait();
     f2.wait();
     f3.wait();
+}
+
+TEST(AsyncIoTest, shutdown_with_self_exiting_coroutine) {
+    auto async = AsyncIo::create();
+    auto f1 = make_future(run_loop(async, 10, 20));
+    auto f2 = make_future(run_loop(async, 20, 30));
+    self_exiting_run_loop(async.share());
+    f1.wait();
+    f2.wait();
 }
 
 Lazy<size_t> write_msg(AsyncIo &async, SocketHandle &socket, const vespalib::string &msg) {
@@ -103,8 +120,8 @@ TEST(AsyncIoTest, raw_socket_io) {
     ServerSocket server_socket("tcp/0");
     server_socket.set_blocking(false);
     auto async = AsyncIo::create();
-    auto f1 = make_future(async_server(*async, server_socket));
-    auto f2 = make_future(async_client(*async, server_socket));
+    auto f1 = make_future(async_server(async, server_socket));
+    auto f2 = make_future(async_client(async, server_socket));
     f1.wait();
     f2.wait();
 }

@@ -11,7 +11,7 @@
 
 namespace vespalib::coro {
 
-// Interfaces defining functions used to perform async io. The initial
+// Interface defining functions used to perform async io. The initial
 // implementation will perform epoll in a single dedicated thread. The
 // idea is to be able to switch to an implementation using io_uring
 // some time in the future without having to change existing client
@@ -24,9 +24,29 @@ struct AsyncIo : std::enable_shared_from_this<AsyncIo> {
     AsyncIo &operator=(const AsyncIo &) = delete;
     AsyncIo &operator=(AsyncIo &&) = delete;
     virtual ~AsyncIo();
-
-    // create an async_io 'runtime' with the default implementation
-    static std::shared_ptr<AsyncIo> create();
+    using SP = std::shared_ptr<AsyncIo>;
+    
+    // thin wrapper used by the owner to handle lifetime
+    class Owner {
+    private:
+        std::shared_ptr<AsyncIo> _async_io;
+        bool _init_shutdown_called;
+        bool _fini_shutdown_called;
+    public:
+        Owner(std::shared_ptr<AsyncIo> async_io);
+        Owner(const Owner &) = delete;
+        Owner &operator=(const Owner &) = delete;
+        Owner(Owner &&) = default;
+        Owner &operator=(Owner &&) = default;
+        AsyncIo::SP share() { return _async_io->shared_from_this(); }
+        operator AsyncIo &() { return *_async_io; }
+        void init_shutdown();
+        void fini_shutdown();
+        ~Owner();
+    };
+    
+    // create an async_io 'runtime'
+    static Owner create();
 
     // implementation tag
     virtual vespalib::string get_impl_spec() = 0;
@@ -36,11 +56,17 @@ struct AsyncIo : std::enable_shared_from_this<AsyncIo> {
     virtual Lazy<SocketHandle> connect(const SocketAddress &addr) = 0;
     virtual Lazy<ssize_t> read(SocketHandle &handle, char *buf, size_t len) = 0;
     virtual Lazy<ssize_t> write(SocketHandle &handle, const char *buf, size_t len) = 0;
-    virtual Work schedule() = 0;
+    virtual Lazy<bool> schedule() = 0;
 
 protected:
     // may only be created via subclass
     AsyncIo();
+
+private:
+    // called by Owner
+    virtual void start() = 0;
+    virtual void init_shutdown() = 0;
+    virtual void fini_shutdown() = 0;
 };
 
 }
