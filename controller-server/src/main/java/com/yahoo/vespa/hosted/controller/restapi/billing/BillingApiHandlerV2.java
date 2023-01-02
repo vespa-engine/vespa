@@ -345,12 +345,7 @@ public class BillingApiHandlerV2 extends RestApiRequestHandler<BillingApiHandler
     private LocalDate untilParameter(RestApi.RequestContext ctx) {
         return ctx.queryParameters().getString("until")
                 .map(LocalDate::parse)
-                .map(date -> date.plusDays(1))
-                .orElseGet(this::tomorrow);
-    }
-
-    private LocalDate tomorrow() {
-        return LocalDate.now(clock).plusDays(1);
+                .orElseGet(() -> LocalDate.now(clock));
     }
 
     private static String getInspectorFieldOrThrow(Inspector inspector, String field) {

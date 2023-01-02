@@ -77,6 +77,11 @@ public class MockBillingController implements BillingController {
     }
 
     @Override
+    public Bill.Id createBillForPeriod(TenantName tenant, LocalDate startDate, LocalDate endDate, String agent) {
+        return createBillForPeriod(tenant, startDate.atStartOfDay(ZoneOffset.UTC), endDate.plusDays(1).atStartOfDay(ZoneOffset.UTC), agent);
+    }
+
+    @Override
     public Bill createUncommittedBill(TenantName tenant, LocalDate until) {
         return uncommittedBills.getOrDefault(tenant, emptyBill());
     }
