@@ -41,8 +41,8 @@ DiskMemUsageSampler::setConfig(const Config &config, IScheduledExecutor & execut
     if (_periodicHandle && (_sampleInterval == config.sampleInterval) && !wasChanged) {
         return;
     }
-    _sampleInterval = config.sampleInterval;
     _periodicHandle.reset();
+    _sampleInterval = config.sampleInterval;
     sampleAndReportUsage();
     vespalib::duration maxInterval = std::min(vespalib::duration(1s), _sampleInterval);
     _periodicHandle = executor.scheduleAtFixedRate(makeLambdaTask([this]() {
