@@ -86,7 +86,7 @@ public class StringUtilities {
                 result.write(replacementCharacters.replacement2[val]);
             }
         }
-        return new String(result.toByteArray(), UTF8);
+        return result.toString(UTF8);
     }
 
     public static String unescape(String source) {
@@ -101,14 +101,13 @@ public class StringUtilities {
 
             if (bytes[i + 1] != (byte) 'x') {
                 switch (bytes[i + 1]) {
-                    case '\\': result.write('\\'); break;
-                    case '"': result.write('"'); break;
-                    case 't': result.write('\t'); break;
-                    case 'n': result.write('\n'); break;
-                    case 'r': result.write('\r'); break;
-                    case 'f': result.write('\f'); break;
-                    default:
-                        throw new IllegalArgumentException("Illegal escape sequence \\" + ((char) bytes[i+1]) + " found");
+                    case '\\' -> result.write('\\');
+                    case '"' -> result.write('"');
+                    case 't' -> result.write('\t');
+                    case 'n' -> result.write('\n');
+                    case 'r' -> result.write('\r');
+                    case 'f' -> result.write('\f');
+                    default -> throw new IllegalArgumentException("Illegal escape sequence \\" + ((char) bytes[i + 1]) + " found");
                 }
                 ++i;
                 continue;
@@ -120,7 +119,7 @@ public class StringUtilities {
             result.write((byte) Integer.parseInt(hexdigits, 16));
             i += 3;
         }
-        return new String(result.toByteArray(), UTF8);
+        return result.toString(UTF8);
     }
 
     /**
