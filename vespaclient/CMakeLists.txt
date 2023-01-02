@@ -14,6 +14,5 @@ vespa_define_module(
     src/vespa/vespaclient/clusterlist
 
     APPS
-    src/vespa/vespaclient/vdsstates
     src/vespa/vespaclient/vesparoute
 )
