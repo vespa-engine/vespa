@@ -54,7 +54,8 @@ public class Reconfigurer extends AbstractComponent {
         shutdown();
     }
 
-    QuorumPeer startOrReconfigure(ZookeeperServerConfig newConfig, VespaZooKeeperServer server,
+    QuorumPeer startOrReconfigure(ZookeeperServerConfig newConfig,
+                                  VespaZooKeeperServer server,
                                   Supplier<QuorumPeer> quorumPeerCreator) {
         if (zooKeeperRunner == null) {
             peer = quorumPeerCreator.get(); // Obtain the peer from the server. This will be shared with later servers.
