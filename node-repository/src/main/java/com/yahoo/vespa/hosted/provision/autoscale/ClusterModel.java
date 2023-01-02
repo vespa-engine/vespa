@@ -302,7 +302,7 @@ public class ClusterModel {
 
     /**
      * Create a cluster model if possible and logs a warning and returns empty otherwise.
-     * This is useful in cases where it's possible to continue without the cluser model,
+     * This is useful in cases where it's possible to continue without the cluster model,
      * as QuestDb is known to temporarily fail during reading of data.
      */
     public static Optional<ClusterModel> create(Zone zone,
