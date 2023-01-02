@@ -742,8 +742,6 @@ namespace {
 
 struct MetricSnapshotTestFixture
 {
-    static const size_t DEFAULT_THREAD_STACK_SIZE = 256_Ki;
-
     MetricManagerTest& test;
     FastOS_ThreadPool pool;
     FakeTimer* timer;
