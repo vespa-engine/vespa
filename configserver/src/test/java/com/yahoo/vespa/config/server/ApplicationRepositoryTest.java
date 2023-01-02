@@ -124,7 +124,7 @@ public class ApplicationRepositoryTest {
                 .fileReferencesDir(temporaryFolder.newFolder().getAbsolutePath())
                 .build();
         InMemoryFlagSource flagSource = new InMemoryFlagSource();
-        fileDirectory = new FileDirectory(configserverConfig, flagSource);
+        fileDirectory = new FileDirectory(configserverConfig);
         tenantRepository = new TestTenantRepository.Builder()
                 .withClock(clock)
                 .withConfigserverConfig(configserverConfig)

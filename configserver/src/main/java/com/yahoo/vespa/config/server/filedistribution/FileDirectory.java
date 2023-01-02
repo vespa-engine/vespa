@@ -10,9 +10,6 @@ import com.yahoo.config.FileReference;
 import com.yahoo.io.IOUtils;
 import com.yahoo.text.Utf8;
 import com.yahoo.vespa.defaults.Defaults;
-import com.yahoo.vespa.flags.BooleanFlag;
-import com.yahoo.vespa.flags.FlagSource;
-import com.yahoo.vespa.flags.Flags;
 import net.jpountz.xxhash.XXHash64;
 import net.jpountz.xxhash.XXHashFactory;
 import java.io.File;
@@ -40,16 +37,14 @@ public class FileDirectory extends AbstractComponent {
     private final Locks<FileReference> locks = new Locks<>(1, TimeUnit.MINUTES);
 
     private final File root;
-    private final BooleanFlag useLock;
 
     @Inject
-    public FileDirectory(ConfigserverConfig configserverConfig, FlagSource flagSource) {
-        this(new File(Defaults.getDefaults().underVespaHome(configserverConfig.fileReferencesDir())), flagSource);
+    public FileDirectory(ConfigserverConfig configserverConfig) {
+        this(new File(Defaults.getDefaults().underVespaHome(configserverConfig.fileReferencesDir())));
     }
 
-    public FileDirectory(File rootDir, FlagSource flagSource) {
+    public FileDirectory(File rootDir) {
         this.root = rootDir;
-        this.useLock = Flags.USE_LOCKS_IN_FILEDISTRIBUTION.bindTo(flagSource);
         try {
             ensureRootExist();
         } catch (IllegalArgumentException e) {
@@ -119,24 +114,18 @@ public class FileDirectory extends AbstractComponent {
         Long hash = computeHash(source);
         FileReference fileReference = fileReferenceFromHash(hash);
 
-        if (useLock.value())
-            try (Lock lock = locks.lock(fileReference)) {
-                return addFile(source, fileReference, hash);
-            }
-        else
+        try (Lock lock = locks.lock(fileReference)) {
             return addFile(source, fileReference, hash);
+        }
     }
 
     public void delete(FileReference fileReference, Function<FileReference, Boolean> isInUse) {
-        if (useLock.value())
-            try (Lock lock = locks.lock(fileReference)) {
-                if (isInUse.apply(fileReference))
-                    log.log(Level.FINE, "Unable to delete file reference '" + fileReference.value() + "' since it is still in use");
-                else
-                    deleteDirRecursively(destinationDir(fileReference));
-            }
-        else
-            deleteDirRecursively(destinationDir(fileReference));
+        try (Lock lock = locks.lock(fileReference)) {
+            if (isInUse.apply(fileReference))
+                log.log(Level.FINE, "Unable to delete file reference '" + fileReference.value() + "' since it is still in use");
+            else
+                deleteDirRecursively(destinationDir(fileReference));
+        }
     }
 
     private void deleteDirRecursively(File dir) {

@@ -41,7 +41,7 @@ public class FileServerTest {
     @Before
     public void setup() throws IOException {
         File rootDir = new File(temporaryFolder.newFolder("fileserver-root").getAbsolutePath());
-        fileServer = new FileServer(new MockFileDownloader(rootDir), List.of(gzip, lz4), new FileDirectory(rootDir, new InMemoryFlagSource()));
+        fileServer = new FileServer(new MockFileDownloader(rootDir), List.of(gzip, lz4), new FileDirectory(rootDir));
     }
 
     @Test
@@ -86,7 +86,7 @@ public class FileServerTest {
     @Test
     public void requireThatWeCanReplayDirWithLz4() throws IOException, InterruptedException, ExecutionException {
         File rootDir = new File(temporaryFolder.newFolder("fileserver-root-3").getAbsolutePath());
-        fileServer = new FileServer(new MockFileDownloader(rootDir), List.of(lz4, gzip), new FileDirectory(rootDir, new InMemoryFlagSource())); // prefer lz4
+        fileServer = new FileServer(new MockFileDownloader(rootDir), List.of(lz4, gzip), new FileDirectory(rootDir)); // prefer lz4
         File dir = getFileServerRootDir();
         IOUtils.writeFile(dir + "/subdir/12z/f1", "dummy-data-2", true);
         CompletableFuture<byte []> content = new CompletableFuture<>();
@@ -143,7 +143,7 @@ public class FileServerTest {
         InMemoryFlagSource flagSource = new InMemoryFlagSource();
         return new FileServer(new ConfigserverConfig(configBuilder),
                               flagSource,
-                              new FileDirectory(fileReferencesDir, flagSource));
+                              new FileDirectory(fileReferencesDir));
     }
 
     private static class FileReceiver implements FileServer.Receiver {

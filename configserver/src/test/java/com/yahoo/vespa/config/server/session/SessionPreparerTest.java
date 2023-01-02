@@ -125,7 +125,7 @@ public class SessionPreparerTest {
                                            HostProvisionerProvider hostProvisionerProvider) {
         return new SessionPreparer(
                 modelFactoryRegistry,
-                new MockFileDistributionFactory(configserverConfig, new FileDirectory(configserverConfig, flagSource)),
+                new MockFileDistributionFactory(configserverConfig, new FileDirectory(configserverConfig)),
                 new InThreadExecutorService(),
                 hostProvisionerProvider,
                 configserverConfig,

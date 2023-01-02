@@ -25,7 +25,6 @@ import com.yahoo.vespa.config.server.rpc.RpcServer;
 import com.yahoo.vespa.config.server.version.VersionState;
 import com.yahoo.vespa.curator.Curator;
 import com.yahoo.vespa.curator.mock.MockCurator;
-import com.yahoo.vespa.flags.InMemoryFlagSource;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
@@ -39,7 +38,6 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.BooleanSupplier;
-import java.util.stream.Collectors;
 
 import static com.yahoo.vespa.config.server.ConfigServerBootstrap.RedeployingApplicationsFails.CONTINUE;
 import static com.yahoo.vespa.config.server.ConfigServerBootstrap.VipStatusMode;
@@ -189,7 +187,7 @@ public class ConfigServerBootstrapTest {
                                 stateMonitor,
                                 vipStatus,
                                 vipStatusMode,
-                                new FileDirectory(tester.applicationRepository().configserverConfig(), new InMemoryFlagSource()));
+                                new FileDirectory(tester.applicationRepository().configserverConfig()));
     }
 
     private void waitUntil(BooleanSupplier booleanSupplier, String messageIfWaitingFails) throws InterruptedException {

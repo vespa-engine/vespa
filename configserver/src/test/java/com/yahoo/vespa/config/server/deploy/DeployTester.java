@@ -292,7 +292,7 @@ public class DeployTester {
                     .withConfigserverConfig(configserverConfig)
                     .withCurator(curator)
                     .withFileDistributionFactory(
-                            new MockFileDistributionFactory(configserverConfig, new FileDirectory(configserverConfig, flagSource)))
+                            new MockFileDistributionFactory(configserverConfig, new FileDirectory(configserverConfig)))
                     .withMetrics(Optional.ofNullable(metrics).orElse(Metrics.createTestMetrics()))
                     .withModelFactoryRegistry((new ModelFactoryRegistry(modelFactories)))
                     .withZone(zone);
