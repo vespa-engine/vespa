@@ -418,13 +418,6 @@ public class Flags {
             "Takes effect on redeployment",
             APPLICATION_ID);
 
-    public static final UnboundBooleanFlag USE_LOCKS_IN_FILEDISTRIBUTION = defineFeatureFlag(
-            "use-locks-in-filedistribution", true,
-            List.of("hmusum"), "2022-11-16", "2023-01-31",
-            "If true, use locks when writing and deleting file references.",
-            "Takes effect immediately",
-            ZONE_ID, APPLICATION_ID);
-
     /** WARNING: public for testing: All flags should be defined in {@link Flags}. */
     public static UnboundBooleanFlag defineFeatureFlag(String flagId, boolean defaultValue, List<String> owners,
                                                        String createdAt, String expiresAt, String description,
