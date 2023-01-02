@@ -9,14 +9,11 @@ import com.yahoo.vespa.hosted.provision.NodeRepository;
 import com.yahoo.vespa.hosted.provision.applications.Application;
 import com.yahoo.vespa.hosted.provision.applications.Cluster;
 import com.yahoo.vespa.hosted.provision.applications.ScalingEvent;
-import com.yahoo.vespa.hosted.provision.autoscale.ClusterModel;
 import com.yahoo.vespa.hosted.provision.autoscale.Limits;
 import com.yahoo.vespa.hosted.provision.autoscale.Load;
-import com.yahoo.vespa.hosted.provision.autoscale.MetricsDb;
 
 import java.net.URI;
 import java.util.List;
-import java.util.Optional;
 
 /**
  * Serializes application information for nodes/v2/application responses
@@ -27,49 +24,38 @@ public class ApplicationSerializer {
 
     public static Slime toSlime(Application application,
                                 NodeList applicationNodes,
-                                MetricsDb metricsDb,
                                 NodeRepository nodeRepository,
                                 URI applicationUri) {
         Slime slime = new Slime();
-        toSlime(application, applicationNodes, metricsDb, nodeRepository, slime.setObject(), applicationUri);
+        toSlime(application, applicationNodes, nodeRepository, slime.setObject(), applicationUri);
         return slime;
     }
 
     private static void toSlime(Application application,
                                 NodeList applicationNodes,
-                                MetricsDb metricsDb,
                                 NodeRepository nodeRepository,
                                 Cursor object,
                                 URI applicationUri) {
         object.setString("url", applicationUri.toString());
         object.setString("id", application.id().toFullString());
-        clustersToSlime(application, applicationNodes, metricsDb, nodeRepository, object.setObject("clusters"));
+        clustersToSlime(application, applicationNodes, nodeRepository, object.setObject("clusters"));
     }
 
     private static void clustersToSlime(Application application,
                                         NodeList applicationNodes,
-                                        MetricsDb metricsDb,
                                         NodeRepository nodeRepository,
                                         Cursor clustersObject) {
-        application.clusters().values().forEach(cluster -> toSlime(application, cluster, applicationNodes, metricsDb, nodeRepository, clustersObject));
+        application.clusters().values().forEach(cluster -> toSlime(application, cluster, applicationNodes, nodeRepository, clustersObject));
     }
 
     private static void toSlime(Application application,
                                 Cluster cluster,
                                 NodeList applicationNodes,
-                                MetricsDb metricsDb,
                                 NodeRepository nodeRepository,
                                 Cursor clustersObject) {
         NodeList nodes = applicationNodes.not().retired().cluster(cluster.id());
         if (nodes.isEmpty()) return;
         ClusterResources currentResources = nodes.toResources();
-        Optional<ClusterModel> clusterModel = ClusterModel.create(nodeRepository.zone(),
-                                                                  application,
-                                                                  nodes.clusterSpec(),
-                                                                  cluster,
-                                                                  nodes,
-                                                                  metricsDb,
-                                                                  nodeRepository.clock());
         Cursor clusterObject = clustersObject.setObject(cluster.id().value());
         clusterObject.setString("type", nodes.clusterSpec().type().name());
         Limits limits = Limits.of(cluster).fullySpecified(nodes.clusterSpec(), nodeRepository, application.id());
@@ -79,7 +65,7 @@ public class ApplicationSerializer {
         if (cluster.shouldSuggestResources(currentResources))
             cluster.suggested().resources().ifPresent(suggested -> toSlime(suggested, clusterObject.setObject("suggested")));
         cluster.target().resources().ifPresent(target -> toSlime(target, clusterObject.setObject("target")));
-        clusterModel.ifPresent(model -> clusterUtilizationToSlime(model, clusterObject.setObject("utilization")));
+        clusterUtilizationToSlime(cluster.target().ideal(), cluster.target().peak(), clusterObject.setObject("utilization"));
         scalingEventsToSlime(cluster.scalingEvents(), clusterObject.setArray("scalingEvents"));
         clusterObject.setString("autoscalingStatusCode", cluster.target().status().name());
         clusterObject.setString("autoscalingStatus", cluster.target().description());
@@ -92,10 +78,7 @@ public class ApplicationSerializer {
         NodeResourcesSerializer.toSlime(resources.nodeResources(), clusterResourcesObject.setObject("resources"));
     }
 
-    private static void clusterUtilizationToSlime(ClusterModel clusterModel, Cursor utilizationObject) {
-        Load idealLoad = clusterModel.idealLoad();
-        Load peakLoad = clusterModel.peakLoad();
-
+    private static void clusterUtilizationToSlime(Load idealLoad, Load peakLoad, Cursor utilizationObject) {
         utilizationObject.setDouble("idealCpu", idealLoad.cpu());
         utilizationObject.setDouble("peakCpu", peakLoad.cpu());
 

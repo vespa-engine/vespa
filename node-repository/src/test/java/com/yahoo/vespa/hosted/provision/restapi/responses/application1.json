@@ -70,11 +70,11 @@
         }
       },
       "utilization" : {
-          "idealCpu": 0.40750000000000003,
+          "idealCpu": 0.0,
           "peakCpu": 0.0,
-          "idealMemory": 0.8,
+          "idealMemory": 0.0,
           "peakMemory": 0.0,
-          "idealDisk": 0.95,
+          "idealDisk": 0.0,
           "peakDisk": 0.0
       },
       "scalingEvents" : [
