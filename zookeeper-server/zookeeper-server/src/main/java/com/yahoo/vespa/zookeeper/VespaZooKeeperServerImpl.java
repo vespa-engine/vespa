@@ -1,7 +1,6 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.zookeeper;
 
-import ai.vespa.validation.Validation;
 import com.yahoo.component.annotation.Inject;
 import com.yahoo.cloud.config.ZookeeperServerConfig;
 import com.yahoo.component.AbstractComponent;
@@ -20,9 +19,6 @@ public class VespaZooKeeperServerImpl extends AbstractComponent implements Vespa
 
     @Inject
     public VespaZooKeeperServerImpl(ZookeeperServerConfig zookeeperServerConfig) {
-        Validation.require(! zookeeperServerConfig.dynamicReconfiguration(),
-                           ! zookeeperServerConfig.dynamicReconfiguration(),
-                           "dynamicReconfiguration must be false");
         this.peer = new VespaQuorumPeer();
         this.runner = new ZooKeeperRunner(zookeeperServerConfig, this);
     }
