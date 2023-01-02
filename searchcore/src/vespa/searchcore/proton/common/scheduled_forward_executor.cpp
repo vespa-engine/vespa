@@ -3,8 +3,8 @@
 #include "scheduled_forward_executor.h"
 #include <vespa/vespalib/util/lambdatask.h>
 #include <vespa/vespalib/stllike/hash_map.hpp>
-#include <atomic>
 #include <thread>
+#include <condition_variable>
 #include <cassert>
 
 using vespalib::makeLambdaTask;
@@ -14,44 +14,56 @@ namespace proton {
 class ScheduledForwardExecutor::State {
 public:
     State() :
+        _mutex(),
+        _cond(),
         _handle(),
         _start_success(0),
         _start_failed(0),
         _running(false)
     {}
     ~State() {
+        std::lock_guard guard(_mutex);
         assert( !_handle );
-        assert(!isRunning());
+        assert( ! _running);
     }
     /// Returns false if it was already running
     bool start() {
-        bool already_running = _running.exchange(true);
+        std::lock_guard guard(_mutex);
+        bool already_running = _running;
+        _running = true;
         if (already_running) {
             _start_failed++;
         } else {
             _start_success++;
         }
+        _cond.notify_all();
         return ! already_running;
     }
     void complete() {
-        bool was_running = _running.exchange(false);
+        std::lock_guard guard(_mutex);
+        bool was_running = _running;
+        _running = false;
         assert(was_running);
+        _cond.notify_all();
     }
     void setHandle(Handle handle) {
+        std::lock_guard guard(_mutex);
         _handle = std::move(handle);
     }
     void cancel() {
+        std::unique_lock guard(_mutex);
         _handle.reset();
-        while(isRunning()) {
-            std::this_thread::sleep_for(1ms);
+        while(_running) {
+            _cond.wait(guard);
         }
     }
 private:
-    bool isRunning() const { return _running.load(std::memory_order_relaxed); }
-    Handle                _handle;
-    std::atomic<uint64_t> _start_success;
-    std::atomic<uint64_t> _start_failed;
-    std::atomic<bool>     _running;
+    std::mutex              _mutex;
+    std::condition_variable _cond;
+    Handle                  _handle;
+    uint64_t                _start_success;
+    uint64_t                _start_failed;
+    bool                    _running;
 };
 
 class ScheduledForwardExecutor::Registration : public vespalib::IDestructorCallback {
