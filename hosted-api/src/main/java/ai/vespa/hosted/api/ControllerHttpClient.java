@@ -27,6 +27,7 @@ import java.io.UncheckedIOException;
 import java.net.URI;
 import java.net.URLEncoder;
 import java.net.http.HttpClient;
+import java.net.http.HttpConnectTimeoutException;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.nio.file.Files;
@@ -359,7 +360,7 @@ public abstract class ControllerHttpClient {
             throw new IllegalStateException("Programming error, attempts must be at least 1");
 
         UncheckedIOException thrown = null;
-        for (int attempt = 1; attempt <= attempts; attempt++) {
+        for (int attempt = 1, connectionRetries = 3; attempt <= attempts; attempt++) {
             try {
                 HttpResponse<byte[]> response = client.send(request, ofByteArray());
                 if (response.statusCode() / 100 == 2)
@@ -392,6 +393,8 @@ public abstract class ControllerHttpClient {
                     catch (InterruptedException f) {
                         throw new RuntimeException(f);
                     }
+
+                if (e instanceof HttpConnectTimeoutException && --connectionRetries > 0) --attempt;
             }
             catch (InterruptedException e) {
                 throw new RuntimeException(e);
@@ -409,7 +412,7 @@ public abstract class ControllerHttpClient {
         }
     }
 
-    /** Returns a JSON representation of the deployment meta data. */
+    /** Returns a JSON representation of the deployment metadata. */
     private static String metaToJson(Deployment deployment) {
         Slime slime = new Slime();
         Cursor rootObject = slime.setObject();
