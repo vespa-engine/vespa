@@ -62,11 +62,11 @@ public class DummyVdsNode {
 
     static class Req {
         Request request;
-        long timeout;
+        long timeToReply;
 
-        Req(Request r, long timeout) {
+        Req(Request r, long timeToReply) {
             request = r;
-            this.timeout = timeout;
+            this.timeToReply = timeToReply;
         }
     }
     static class BackOff implements BackOffPolicy {
@@ -75,6 +75,8 @@ public class DummyVdsNode {
         public boolean shouldWarn(double v) { return false; }
         public boolean shouldInform(double v) { return false; }
     }
+
+    /** List of requests that should be replied to after a specified time */
     private final List<Req> waitingRequests = new LinkedList<>();
 
     /**
@@ -93,8 +95,8 @@ public class DummyVdsNode {
                     long currentTime = timer.getCurrentTimeInMillis();
                     for (Iterator<Req> it = waitingRequests.iterator(); it.hasNext(); ) {
                         Req r = it.next();
-                        if (r.timeout <= currentTime) {
-                            log.log(Level.FINE, () -> "Dummy node " + DummyVdsNode.this + ": Responding to node state request at time " + currentTime);
+                        if (currentTime >= r.timeToReply) {
+                            log.log(Level.INFO, () -> "Dummy node " + DummyVdsNode.this + ": Responding to node state request at time " + currentTime);
                             r.request.returnValues().add(new StringValue(nodeState.serialize()));
                             if (r.request.methodName().equals("getnodestate3")) {
                                 r.request.returnValues().add(new StringValue(hostInfo));
@@ -349,11 +351,12 @@ public class DummyVdsNode {
                 boolean sentReply = sendGetNodeStateReply(index);
                 NodeState givenState = (oldState.equals("unknown") ? null : NodeState.deserialize(type, oldState));
                 if (givenState != null && (givenState.equals(nodeState) || sentReply)) {
-                    log.log(Level.FINE, () -> "Dummy node " + this + ": Has same state as reported " + givenState + ". Queuing request. Timeout is " + timeout + " ms. "
-                            + "Will be answered at time " + (timer.getCurrentTimeInMillis() + timeout * 800L / 1000));
+                    long timeToReply = timer.getCurrentTimeInMillis() + timeout * 800L / 1000;
+                    log.log(Level.FINE, () -> "Dummy node " + this + " has same state as reported (" + givenState + "). Queuing request. Timeout is " + timeout + " ms. "
+                            + "Will be answered at time " + timeToReply);
                     req.detach();
-                    waitingRequests.add(new Req(req, timer.getCurrentTimeInMillis() + timeout * 800L / 1000));
-                    log.log(Level.FINE, () -> "Dummy node " + this + " has now " + waitingRequests.size() + " entries and is " + (waitingRequests.isEmpty() ? "empty" : "not empty"));
+                    waitingRequests.add(new Req(req, timeToReply));
+                    log.log(Level.FINE, () -> "Dummy node " + this + " has " + waitingRequests.size() + " requests waiting to be answered");
                     timer.notifyAll();
                 } else {
                     log.log(Level.FINE, () -> "Dummy node " + this + ": Request had " + (givenState == null ? "no state" : "different state(" + givenState +")") + ". Answering with " + nodeState);
