@@ -327,6 +327,11 @@ public class VespaMetricSet {
         metrics.add(new Metric("query_latency.count"));
         metrics.add(new Metric("query_latency.95percentile"));
         metrics.add(new Metric("query_latency.99percentile"));
+        metrics.add(new Metric("query_timeout.max"));
+        metrics.add(new Metric("query_timeout.sum"));
+        metrics.add(new Metric("query_timeout.count"));
+        metrics.add(new Metric("query_timeout.95percentile"));
+        metrics.add(new Metric("query_timeout.99percentile"));
         metrics.add(new Metric("failed_queries.rate"));
         metrics.add(new Metric("degraded_queries.rate"));
         metrics.add(new Metric("hits_per_query.max"));
