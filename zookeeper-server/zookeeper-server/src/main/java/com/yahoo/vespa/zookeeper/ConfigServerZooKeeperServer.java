@@ -8,7 +8,7 @@ import java.nio.file.Path;
 
 /**
  *
- * Server used for starting config server, needed to be able to be able to have different behavior for hosted and
+ * Server used for starting config server, needed to be able to have different behavior for hosted and
  * self-hosted Vespa (controlled by zookeeperServerConfig.dynamicReconfiguration).
  *
  * @author Harald Musum
