@@ -8,43 +8,10 @@ import java.util.Objects;
  *
  * @author hakon
  */
-public class Address {
-
-    private final String hostname;
-
-    public Address(String hostname) {
-        this.hostname = validateHostname(hostname, "hostname");
-    }
-
-    public String hostname() {
-        return hostname;
-    }
-
-    @Override
-    public String toString() {
-        return "Address{" +
-                "hostname='" + hostname + '\'' +
-                '}';
-    }
-
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-        Address address = (Address) o;
-        return hostname.equals(address.hostname);
-    }
-
-    @Override
-    public int hashCode() {
-        return Objects.hash(hostname);
-    }
-
-    private String validateHostname(String value, String name) {
-        Objects.requireNonNull(value, name + " cannot be null");
-        if (value.isEmpty()) {
-            throw new IllegalArgumentException(name + " cannot be empty");
-        }
-        return value;
+public record Address(String hostname) {
+    public Address {
+        Objects.requireNonNull(hostname, "hostname cannot be null");
+        if (hostname.isEmpty())
+            throw new IllegalArgumentException("hostname cannot be empty");
     }
 }

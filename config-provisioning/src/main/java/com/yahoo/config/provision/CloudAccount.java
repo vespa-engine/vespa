@@ -27,9 +27,16 @@ public class CloudAccount extends PatternedStringWrapper<CloudAccount> {
         return this.equals(empty);
     }
 
+    /** Returns true if this is an enclave account. */
+    public boolean isEnclave(Zone zone) {
+        return !isUnspecified() &&
+               zone.system().isPublic() &&
+               !equals(zone.cloud().account());
+    }
+
     public static CloudAccount from(String cloudAccount) {
         return switch (cloudAccount) {
-            // TODO: Remove "default" as e.g. it is a valid GCP project ID
+            // Tenants are allowed to specify "default" in services.xml.
             case "", "default" -> empty;
             default -> new CloudAccount(cloudAccount, AWS_ACCOUNT_ID + "|" + GCP_PROJECT_ID, "cloud account");
         };

@@ -45,10 +45,11 @@ public class NodePrioritizer {
     private final boolean topologyChange;
     private final int currentClusterSize;
     private final Set<Node> spareHosts;
+    private final boolean enclave;
 
     public NodePrioritizer(NodesAndHosts<LockedNodeList> allNodesAndHosts, ApplicationId application, ClusterSpec clusterSpec, NodeSpec nodeSpec,
                            int wantedGroups, boolean dynamicProvisioning, NameResolver nameResolver, Nodes nodes,
-                           HostResourcesCalculator hostResourcesCalculator, int spareCount) {
+                           HostResourcesCalculator hostResourcesCalculator, int spareCount, boolean enclave) {
         this.allNodesAndHosts = allNodesAndHosts;
         this.capacity = new HostCapacity(this.allNodesAndHosts, hostResourcesCalculator);
         this.requestedNodes = nodeSpec;
@@ -60,6 +61,7 @@ public class NodePrioritizer {
                 capacity.findSpareHosts(this.allNodesAndHosts.nodes().asList(), spareCount);
         this.nameResolver = nameResolver;
         this.nodes = nodes;
+        this.enclave = enclave;
 
         NodeList nodesInCluster = this.allNodesAndHosts.nodes().owner(application).type(clusterSpec.type()).cluster(clusterSpec.id());
         NodeList nonRetiredNodesInCluster = nodesInCluster.not().retired();
@@ -152,7 +154,8 @@ public class NodePrioritizer {
                                                         host,
                                                         spareHosts.contains(host),
                                                         allNodesAndHosts.nodes(),
-                                                        nameResolver));
+                                                        nameResolver,
+                                                        !enclave));
         }
     }
 
