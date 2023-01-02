@@ -1,7 +1,6 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.zookeeper;
 
-import com.yahoo.cloud.config.ConfigserverConfig;
 import com.yahoo.cloud.config.ZookeeperServerConfig;
 import com.yahoo.component.AbstractComponent;
 import com.yahoo.component.annotation.Inject;
@@ -9,8 +8,8 @@ import java.nio.file.Path;
 
 /**
  *
- * Server used for starting config server, needed to be able to have different behavior for hosted and
- * self-hosted Vespa.
+ * Server used for starting config server, needed to be able to be able to have different behavior for hosted and
+ * self-hosted Vespa (controlled by zookeeperServerConfig.dynamicReconfiguration).
  *
  * @author Harald Musum
  */
@@ -19,11 +18,10 @@ public class ConfigServerZooKeeperServer extends AbstractComponent implements Ve
     private final VespaZooKeeperServer zooKeeperServer;
 
     @Inject
-    public ConfigServerZooKeeperServer(ZookeeperServerConfig zookeeperServerConfig, ConfigserverConfig configserverConfig) {
-        if (configserverConfig.hostedVespa())
-            this.zooKeeperServer = new ReconfigurableVespaZooKeeperServer(new Reconfigurer(new VespaZooKeeperAdminImpl()), zookeeperServerConfig);
-        else
-            this.zooKeeperServer = new VespaZooKeeperServerImpl(zookeeperServerConfig);
+    public ConfigServerZooKeeperServer(ZookeeperServerConfig zookeeperServerConfig) {
+        this.zooKeeperServer = zookeeperServerConfig.dynamicReconfiguration()
+                ? new ReconfigurableVespaZooKeeperServer(new Reconfigurer(new VespaZooKeeperAdminImpl()), zookeeperServerConfig)
+                : new VespaZooKeeperServerImpl(zookeeperServerConfig);
     }
 
     @Override
