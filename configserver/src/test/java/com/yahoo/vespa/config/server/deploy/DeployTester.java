@@ -26,7 +26,6 @@ import com.yahoo.vespa.config.server.MockProvisioner;
 import com.yahoo.vespa.config.server.TimeoutBudget;
 import com.yahoo.vespa.config.server.application.ConfigConvergenceChecker;
 import com.yahoo.vespa.config.server.application.OrchestratorMock;
-import com.yahoo.vespa.config.server.filedistribution.FileDirectory;
 import com.yahoo.vespa.config.server.filedistribution.MockFileDistributionFactory;
 import com.yahoo.vespa.config.server.http.v2.PrepareResult;
 import com.yahoo.vespa.config.server.modelfactory.ModelFactoryRegistry;
@@ -291,8 +290,7 @@ public class DeployTester {
                     .withClock(clock)
                     .withConfigserverConfig(configserverConfig)
                     .withCurator(curator)
-                    .withFileDistributionFactory(
-                            new MockFileDistributionFactory(configserverConfig, new FileDirectory(configserverConfig, flagSource)))
+                    .withFileDistributionFactory(new MockFileDistributionFactory(configserverConfig))
                     .withMetrics(Optional.ofNullable(metrics).orElse(Metrics.createTestMetrics()))
                     .withModelFactoryRegistry((new ModelFactoryRegistry(modelFactories)))
                     .withZone(zone);

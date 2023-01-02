@@ -3,7 +3,6 @@ package com.yahoo.vespa.config.server.filedistribution;
 
 import com.yahoo.config.FileReference;
 import com.yahoo.config.application.api.FileRegistry;
-import com.yahoo.vespa.flags.InMemoryFlagSource;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 import java.io.File;
@@ -45,7 +44,7 @@ public class FileDBRegistryTestCase {
         TemporaryFolder tmpDir = new TemporaryFolder();
         tmpDir.create();
         AddFileInterface fileManager =
-                new ApplicationFileManager(new File(APP), new FileDirectory(tmpDir.newFolder(), new InMemoryFlagSource()), false);
+                new ApplicationFileManager(new File(APP), new FileDirectory(tmpDir.newFolder()), false);
         FileRegistry fileRegistry = new FileDBRegistry(fileManager);
         assertEquals(FOO_REF, fileRegistry.addFile(FOO_FILE));
         try {

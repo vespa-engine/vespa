@@ -4,12 +4,10 @@ package com.yahoo.vespa.config.server.filedistribution;
 
 import com.yahoo.config.FileReference;
 import com.yahoo.io.IOUtils;
-import com.yahoo.vespa.flags.InMemoryFlagSource;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
-
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
@@ -31,7 +29,7 @@ public class FileDirectoryTest {
 
     @Before
     public void setup() {
-        fileDirectory = new FileDirectory(temporaryFolder.getRoot(), new InMemoryFlagSource());
+        fileDirectory = new FileDirectory(temporaryFolder.getRoot());
     }
 
     @Test
