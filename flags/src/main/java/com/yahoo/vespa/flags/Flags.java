@@ -241,7 +241,7 @@ public class Flags {
 
     public static final UnboundBooleanFlag USE_V8_GEO_POSITIONS = defineFeatureFlag(
             "use-v8-geo-positions", true,
-            List.of("arnej"), "2021-11-15", "2022-12-31",
+            List.of("arnej"), "2021-11-15", "2023-12-31",
             "Use Vespa 8 types and formats for geographical positions",
             "Takes effect at redeployment",
             ZONE_ID, APPLICATION_ID);
@@ -255,7 +255,7 @@ public class Flags {
 
     public static final UnboundBooleanFlag USE_QRSERVER_SERVICE_NAME = defineFeatureFlag(
             "use-qrserver-service-name", false,
-            List.of("arnej"), "2022-01-18", "2022-12-31",
+            List.of("arnej"), "2022-01-18", "2023-12-31",
             "Use backwards-compatible 'qrserver' service name for containers with only 'search' API",
             "Takes effect at redeployment",
             ZONE_ID, APPLICATION_ID);
