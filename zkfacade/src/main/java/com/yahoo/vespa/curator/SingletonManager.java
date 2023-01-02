@@ -336,14 +336,16 @@ class SingletonManager {
                     shouldBeActive = false;
                 }
             }
-            if (active && ! shouldBeActive) {
+            if ( ! shouldBeActive) {
                 logger.log(FINE, () -> "Doom value is " + doom);
-                try  {
-                    if ( ! singletons.isEmpty()) metrics.deactivation(singletons.peek()::deactivate);
-                    active = false;
-                }
-                catch (RuntimeException e) {
-                    logger.log(WARNING, "Failed to deactivate " + singletons.peek(), e);
+                if (active) {
+                    try {
+                        if (!singletons.isEmpty()) metrics.deactivation(singletons.peek()::deactivate);
+                        active = false;
+                    }
+                    catch (RuntimeException e) {
+                        logger.log(WARNING, "Failed to deactivate " + singletons.peek(), e);
+                    }
                 }
                 unlock();
             }
