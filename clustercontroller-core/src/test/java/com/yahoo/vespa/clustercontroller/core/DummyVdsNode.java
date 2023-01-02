@@ -96,7 +96,7 @@ public class DummyVdsNode {
                     for (Iterator<Req> it = waitingRequests.iterator(); it.hasNext(); ) {
                         Req r = it.next();
                         if (currentTime >= r.timeToReply) {
-                            log.log(Level.INFO, () -> "Dummy node " + DummyVdsNode.this + ": Responding to node state request at time " + currentTime);
+                            log.log(Level.FINE, () -> "Dummy node " + DummyVdsNode.this + ": Responding to node state request at time " + currentTime);
                             r.request.returnValues().add(new StringValue(nodeState.serialize()));
                             if (r.request.methodName().equals("getnodestate3")) {
                                 r.request.returnValues().add(new StringValue(hostInfo));
