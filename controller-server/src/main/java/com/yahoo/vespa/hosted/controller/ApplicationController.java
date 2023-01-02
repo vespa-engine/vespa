@@ -324,15 +324,16 @@ public class ApplicationController {
     /** Returns the oldest Vespa version installed on any active or reserved production node for the given application. */
     public Optional<Version> oldestInstalledPlatform(Application application) {
         return controller.jobController().deploymentStatus(application).jobs()
-                         .production().asList()
-                         .stream()
+                         .production()
+                         .not().test()
+                         .asList().stream()
                          .map(this::oldestInstalledPlatform)
                          .flatMap(Optional::stream)
                          .min(naturalOrder());
     }
 
     /**
-     * Returns the preferred Vespa version to compile against, for the given application, optionally restricted to a major.
+     * Returns the preferred Vespa version to compile against, for
      * <p>
      * The returned version is not newer than the oldest deployed platform for the application, unless
      * the target major differs from the oldest deployed platform, in which case it is not newer than

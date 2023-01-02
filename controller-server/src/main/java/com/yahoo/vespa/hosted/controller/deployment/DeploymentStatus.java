@@ -181,7 +181,7 @@ public class DeploymentStatus {
 
         // If compatibility platform is present, require that jobs have previously been run on that platform's major.
         // If platform is not present, app is already on the (old) platform iff. it has production deployments.
-        boolean alreadyDeployedOnPlatform = augmented.platform().map(platform -> allJobs.production().asList().stream()
+        boolean alreadyDeployedOnPlatform = augmented.platform().map(platform -> allJobs.production().not().test().asList().stream()
                                                                                         .anyMatch(job -> job.runs().values().stream()
                                                                                                             .anyMatch(run -> run.versions().targetPlatform().getMajor() == platform.getMajor())))
                                                      .orElse( ! application.productionDeployments().values().stream().allMatch(List::isEmpty));
