@@ -15,6 +15,7 @@ import com.yahoo.container.di.config.SubscriberFactory;
 import com.yahoo.container.logging.AccessLog;
 import com.yahoo.filedistribution.fileacquirer.FileAcquirer;
 import com.yahoo.jdisc.application.OsgiFramework;
+import com.yahoo.jdisc.core.BsnVersion;
 import com.yahoo.jdisc.handler.RequestHandler;
 import com.yahoo.jdisc.service.ClientProvider;
 import com.yahoo.jdisc.service.ServerProvider;
@@ -29,6 +30,7 @@ import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.stream.Collectors;
 
 /**
  * For internal use only.
@@ -106,6 +108,14 @@ public class HandlersConfigurerDi {
         @Override
         public Set<Bundle> completeBundleGeneration(GenerationStatus status) {
             return applicationBundleLoader.completeGeneration(status);
+        }
+
+        @Override
+        protected String bundleResolutionErrorMessage() {
+            return String.format("Installed application bundles: [%s].",
+                                 applicationBundleLoader.activeBundlesBsnVersion().stream()
+                                         .map(BsnVersion::toReadableString)
+                                         .collect(Collectors.joining(", ")));
         }
     }
 
