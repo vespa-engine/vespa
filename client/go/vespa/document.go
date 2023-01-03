@@ -7,6 +7,7 @@ package vespa
 import (
 	"bytes"
 	"encoding/json"
+	"fmt"
 	"io"
 	"net/http"
 	"net/url"
@@ -70,7 +71,9 @@ func sendOperation(documentId string, jsonFile string, service *Service, operati
 	}
 
 	var doc map[string]interface{}
-	json.Unmarshal(documentData, &doc)
+	if err := json.Unmarshal(documentData, &doc); err != nil {
+		return util.Failure(fmt.Sprintf("Document is not valid JSON: %s", err))
+	}
 
 	operationInFile := operationIn(doc)
 	if operation == anyOperation { // Operation is decided by file content
