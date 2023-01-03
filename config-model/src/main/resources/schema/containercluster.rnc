@@ -274,10 +274,10 @@ HttpClientApi = element http-client-api {
 # NODES:
 
 NodesOfContainerCluster = element nodes {
-    attribute jvm-options { text }? &
-    attribute jvm-gc-options { text }? &
+    attribute jvm-options { text }? & # Remove in Vespa 9
+    attribute jvm-gc-options { text }? & # Remove in Vespa 9
     attribute preload { text }? &
-    attribute allocated-memory { text }? &
+    attribute allocated-memory { text }? &  # Remove in Vespa 9
     attribute cpu-socket-affinity { xsd:boolean }? &
     element jvm {
         attribute options { text }? &

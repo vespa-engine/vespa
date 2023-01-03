@@ -21,7 +21,9 @@ import java.util.Collections;
 import java.util.List;
 import java.util.logging.Level;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 /**
  * @author baldersheim
@@ -137,10 +139,30 @@ public class JvmOptionsTest extends ContainerModelBuilderTestBase {
         verifyLoggingOfJvmGcOptions(true, "-XX:MaxTenuringThreshold=15"); // No + or - after colon
     }
 
+    @Test
+    void requireThatDeprecatedJvmOptionsAreLogged() throws IOException, SAXException {
+        String optionName = "jvm-options";
+        verifyLoggingOfLegacyJvmOptions(true, optionName, "-XX:+ParallelGCThreads=8", optionName);
+        verifyLoggingOfLegacyJvmOptions(false, optionName, "-XX:+ParallelGCThreads=8", optionName);
+    }
+
+    @Test
+    void requireThatDeprecatedJvmOptionsAreLogged_2() throws IOException, SAXException {
+        String optionName = "allocated-memory";
+        verifyLoggingOfLegacyJvmOptions(true, optionName, "50%", optionName);
+        verifyLoggingOfLegacyJvmOptions(false, optionName, "50%", optionName);
+    }
+
+    @Test
+    void requireThatDeprecatedJvmGcOptionsAreLogged() throws IOException, SAXException {
+        String optionName = "jvm-gc-options";
+        verifyLoggingOfLegacyJvmOptions(true, optionName, "-XX:+ParallelGCThreads=8", optionName);
+        verifyLoggingOfLegacyJvmOptions(false, optionName, "-XX:+ParallelGCThreads=8", optionName);
+    }
+
     private void verifyThatInvalidJvmGcOptionsFailDeployment(String options, String expected) throws IOException, SAXException {
         try {
-            buildModelWithJvmOptions(new TestProperties().setHostedVespa(true),
-                    new TestLogger(), "gc-options", options);
+            buildModelWithJvmOptions(new TestProperties().setHostedVespa(true), "gc-options", options);
             fail();
         } catch (IllegalArgumentException e) {
             assertTrue(e.getMessage().startsWith(expected));
@@ -158,18 +180,22 @@ public class JvmOptionsTest extends ContainerModelBuilderTestBase {
     }
 
     private void verifyLoggingOfJvmGcOptions(boolean isHosted, String override, String... invalidOptions) throws IOException, SAXException  {
-        verifyLoggingOfJvmOptions(isHosted, "gc-options", override, invalidOptions);
+        verifyLogMessage(isHosted, "gc-options", override, invalidOptions);
     }
 
-    private void verifyLoggingOfJvmOptions(boolean isHosted, String optionName, String override, String... invalidOptions) throws IOException, SAXException  {
-        TestLogger logger = new TestLogger();
-        buildModelWithJvmOptions(isHosted, logger, optionName, override);
+    private void verifyLogMessage(boolean isHosted, String optionName, String override, String... invalidOptions) throws IOException, SAXException  {
+        var logger = buildModelWithJvmOptions(isHosted, optionName, override);
+        var message = verifyLogMessage(logger, invalidOptions);
+        if (message != null)
+            assertTrue(message.contains("Invalid or misplaced JVM"), message);
+    }
 
+    private String verifyLogMessage(TestLogger logger, String... invalidOptions) {
         List<String> strings = Arrays.asList(invalidOptions.clone());
         // Verify that nothing is logged if there are no invalid options
         if (strings.isEmpty()) {
             assertEquals(0, logger.msgs.size(), logger.msgs.size() > 0 ? logger.msgs.get(0).getSecond() : "");
-            return;
+            return null;
         }
 
         assertTrue(logger.msgs.size() > 0, "Expected 1 or more log messages for invalid JM options, got none");
@@ -177,17 +203,15 @@ public class JvmOptionsTest extends ContainerModelBuilderTestBase {
         assertEquals(Level.WARNING, firstOption.getFirst());
 
         Collections.sort(strings);
-        assertEquals("Invalid or misplaced JVM" + (optionName.equals("gc-options") ? " GC" : "") +
-                             " options in services.xml: " + String.join(",", strings) + "." +
-                             " See https://docs.vespa.ai/en/reference/services-container.html#jvm"
-                             , firstOption.getSecond());
+        return firstOption.getSecond();
     }
 
-    private void buildModelWithJvmOptions(boolean isHosted, TestLogger logger, String optionName, String override) throws IOException, SAXException {
-        buildModelWithJvmOptions(new TestProperties().setHostedVespa(isHosted), logger, optionName, override);
+    private TestLogger buildModelWithJvmOptions(boolean isHosted, String optionName, String override) throws IOException, SAXException {
+        return buildModelWithJvmOptions(new TestProperties().setHostedVespa(isHosted), optionName, override);
     }
 
-    private void buildModelWithJvmOptions(TestProperties properties, TestLogger logger, String optionName, String override) throws IOException, SAXException {
+    private TestLogger buildModelWithJvmOptions(TestProperties properties, String optionName, String override) throws IOException, SAXException {
+        TestLogger logger = new TestLogger();
         String servicesXml =
                 "<container version='1.0'>" +
                         "  <nodes>" +
@@ -195,6 +219,32 @@ public class JvmOptionsTest extends ContainerModelBuilderTestBase {
                         "    <node hostalias='mockhost'/>" +
                         "  </nodes>" +
                         "</container>";
+        buildModel(properties, logger, servicesXml);
+        return logger;
+    }
+
+    private void verifyLoggingOfLegacyJvmOptions(boolean isHosted, String optionName, String override, String... invalidOptions) throws IOException, SAXException  {
+        var logger = buildModelWithLegacyJvmOptions(isHosted, optionName, override);
+
+        var message = verifyLogMessage(logger, invalidOptions);
+        if (message != null)
+            assertTrue(message.contains("'" + optionName + "' is deprecated and will be removed"), message);
+    }
+
+    private TestLogger buildModelWithLegacyJvmOptions(boolean isHosted, String optionName, String override) throws IOException, SAXException {
+        TestProperties properties = new TestProperties().setHostedVespa(isHosted);
+        TestLogger logger = new TestLogger();
+        String servicesXml =
+                "<container version='1.0'>" +
+                        "  <nodes " + optionName + "='" + override + "'>" +
+                        "    <node hostalias='mockhost'/>" +
+                        "  </nodes>" +
+                        "</container>";
+        buildModel(properties, logger, servicesXml);
+        return logger;
+    }
+
+    private void buildModel(TestProperties properties, TestLogger logger, String servicesXml) throws IOException, SAXException {
         ApplicationPackage app = new MockApplicationPackage.Builder().withServices(servicesXml).build();
         new VespaModel(new NullConfigModelRegistry(), new DeployState.Builder()
                 .applicationPackage(app)
@@ -206,18 +256,17 @@ public class JvmOptionsTest extends ContainerModelBuilderTestBase {
     @Test
     void requireThatValidJvmOptionsAreNotLogged() throws IOException, SAXException {
         // Valid options, should not log anything
-        verifyLoggingOfJvmOptions(true, "options", "-Xms2G");
-        verifyLoggingOfJvmOptions(true, "options", "-Xlog:gc");
-        verifyLoggingOfJvmOptions(true, "options", "-Djava.library.path=/opt/vespa/lib64:/home/y/lib64");
-        verifyLoggingOfJvmOptions(true, "options", "-XX:-OmitStackTraceInFastThrow");
-        verifyLoggingOfJvmOptions(false, "options", "-Xms2G");
+        verifyLogMessage(true, "options", "-Xms2G");
+        verifyLogMessage(true, "options", "-Xlog:gc");
+        verifyLogMessage(true, "options", "-Djava.library.path=/opt/vespa/lib64:/home/y/lib64");
+        verifyLogMessage(true, "options", "-XX:-OmitStackTraceInFastThrow");
+        verifyLogMessage(false, "options", "-Xms2G");
     }
 
     @Test
     void requireThatInvalidJvmOptionsFailDeployment() throws IOException, SAXException {
         try {
             buildModelWithJvmOptions(new TestProperties().setHostedVespa(true),
-                    new TestLogger(),
                     "options",
                     "-Xms2G foo     bar");
             fail();

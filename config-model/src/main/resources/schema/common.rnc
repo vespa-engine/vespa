@@ -1,8 +1,8 @@
 # Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 service.attlist &= attribute hostalias { xsd:NCName }
 service.attlist &= attribute baseport { xsd:unsignedShort }?
-service.attlist &= attribute jvm-options { text }?
-service.attlist &= attribute jvm-gc-options { text }?
+service.attlist &= attribute jvm-options { text }? # Remove in Vespa 9
+service.attlist &= attribute jvm-gc-options { text }? # Remove in Vespa 9
 # preload is for internal use only
 service.attlist &= attribute preload { text }?
 
