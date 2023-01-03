@@ -96,7 +96,10 @@ BackingStore::write(DocumentIdT lid, const Value & value)
 
 void
 BackingStore::reconfigure(const CompressionConfig &compression) {
-    _compression = compression;
+    if (compression != _compression) {
+        // Need proper synchronization
+        _compression = compression;
+    }
 }
 
 using CacheParams = vespalib::CacheParam<
@@ -117,7 +120,6 @@ using docstore::Value;
 bool
 DocumentStore::Config::operator == (const Config &rhs) const {
     return  (_maxCacheBytes == rhs._maxCacheBytes) &&
-            (_allowVisitCaching == rhs._allowVisitCaching) &&
             (_initialCacheEntries == rhs._initialCacheEntries) &&
             (_updateStrategy == rhs._updateStrategy) &&
             (_compression == rhs._compression);
@@ -126,11 +128,11 @@ DocumentStore::Config::operator == (const Config &rhs) const {
 
 DocumentStore::DocumentStore(const Config & config, IDataStore & store)
     : IDocumentStore(),
-      _config(config),
       _backingStore(store),
       _store(std::make_unique<docstore::BackingStore>(_backingStore, config.getCompression())),
       _cache(std::make_unique<docstore::Cache>(*_store, config.getMaxCacheBytes())),
       _visitCache(std::make_unique<docstore::VisitCache>(store, config.getMaxCacheBytes(), config.getCompression())),
+      _updateStrategy(config.updateStrategy()),
       _uncached_lookups(0)
 {
     _cache->reserveElements(config.getInitialCacheEntries());
@@ -142,9 +144,8 @@ void
 DocumentStore::reconfigure(const Config & config) {
     _cache->setCapacityBytes(config.getMaxCacheBytes());
     _store->reconfigure(config.getCompression());
-    _visitCache->reconfigure(_config.getMaxCacheBytes(), config.getCompression());
-
-    _config = config;
+    _visitCache->reconfigure(config.getMaxCacheBytes(), config.getCompression());
+    _updateStrategy.store(config.updateStrategy(), std::memory_order_relaxed);
 }
 
 bool
@@ -152,10 +153,14 @@ DocumentStore::useCache() const {
     return (_cache->capacityBytes() != 0) && (_cache->capacity() != 0);
 }
 
+DocumentStore::Config::UpdateStrategy DocumentStore::updateStrategy() const {
+    return _updateStrategy.load(std::memory_order_relaxed);
+}
+
 void
 DocumentStore::visit(const LidVector & lids, const DocumentTypeRepo &repo, IDocumentVisitor & visitor) const
 {
-    if (useCache() && _config.allowVisitCaching() && visitor.allowVisitCaching()) {
+    if (useCache() && visitor.allowVisitCaching()) {
         docstore::BlobSet blobSet = _visitCache->read(lids).getBlobSet();
         DocumentVisitorAdapter adapter(repo, visitor);
         for (DocumentIdT lid : lids) {
@@ -204,7 +209,7 @@ DocumentStore::write(uint64_t syncToken, DocumentIdT lid, const document::Docume
 void
 DocumentStore::write(uint64_t syncToken, DocumentIdT lid, const vespalib::nbostream & stream) {
     if (useCache()) {
-        switch (_config.updateStrategy()) {
+        switch (updateStrategy()) {
             case Config::UpdateStrategy::INVALIDATE:
                 _backingStore.write(syncToken, lid, stream.peek(), stream.size());
                 _cache->invalidate(lid);

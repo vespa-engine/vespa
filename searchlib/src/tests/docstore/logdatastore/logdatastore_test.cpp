@@ -528,8 +528,7 @@ VisitCacheStore::VerifyVisitor::~VerifyVisitor() {
 VisitCacheStore::VisitCacheStore(UpdateStrategy strategy) :
     _myDir("visitcache"),
     _repo(makeDocTypeRepoConfig()),
-    _config(DocumentStore::Config(CompressionConfig::LZ4, 1000000, 0)
-                    .allowVisitCaching(true).updateStrategy(strategy),
+    _config(DocumentStore::Config(CompressionConfig::LZ4, 1000000, 0).updateStrategy(strategy),
             LogDataStore::Config().setMaxFileSize(50000).setMaxBucketSpread(3.0)
                     .setFileConfig(WriteableFileChunk::Config(CompressionConfig(), 16_Ki))),
     _fileHeaderContext(),

@@ -29,30 +29,25 @@ public:
             _compression(CompressionConfig::LZ4, 9, 70),
             _maxCacheBytes(1000000000),
             _initialCacheEntries(0),
-            _updateStrategy(INVALIDATE),
-            _allowVisitCaching(false)
+            _updateStrategy(INVALIDATE)
         { }
         Config(const CompressionConfig & compression, size_t maxCacheBytes, size_t initialCacheEntries) :
             _compression((maxCacheBytes != 0) ? compression : CompressionConfig::NONE),
             _maxCacheBytes(maxCacheBytes),
             _initialCacheEntries(initialCacheEntries),
-            _updateStrategy(INVALIDATE),
-            _allowVisitCaching(false)
+            _updateStrategy(INVALIDATE)
         { }
         const CompressionConfig & getCompression() const { return _compression; }
         size_t getMaxCacheBytes()   const { return _maxCacheBytes; }
         size_t getInitialCacheEntries() const { return _initialCacheEntries; }
-        bool allowVisitCaching() const { return _allowVisitCaching; }
-        Config & allowVisitCaching(bool allow) { _allowVisitCaching = allow; return *this; }
         Config & updateStrategy(UpdateStrategy strategy) { _updateStrategy = strategy; return *this; }
         UpdateStrategy updateStrategy() const { return _updateStrategy; }
         bool operator == (const Config &) const;
     private:
         CompressionConfig _compression;
-        size_t _maxCacheBytes;
-        size_t _initialCacheEntries;
-        UpdateStrategy _updateStrategy;
-        bool   _allowVisitCaching;
+        size_t            _maxCacheBytes;
+        size_t            _initialCacheEntries;
+        UpdateStrategy    _updateStrategy;
     };
 
     /**
@@ -105,14 +100,15 @@ public:
 
 private:
     bool useCache() const;
+    Config::UpdateStrategy updateStrategy() const;
 
     template <class> class WrapVisitor;
     class WrapVisitorProgress;
-    Config                                   _config;
     IDataStore &                             _backingStore;
     std::unique_ptr<docstore::BackingStore>  _store;
     std::unique_ptr<docstore::Cache>         _cache;
     std::unique_ptr<docstore::VisitCache>    _visitCache;
+    std::atomic<Config::UpdateStrategy>      _updateStrategy;
     mutable std::atomic<uint64_t>            _uncached_lookups;
 };
 

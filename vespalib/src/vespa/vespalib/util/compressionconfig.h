@@ -72,24 +72,6 @@ struct CompressionConfig {
     size_t minSize;
 };
 
-class CompressionInfo
-{
-public:
-    CompressionInfo(size_t uncompressedSize, size_t compressedSize)
-        : _uncompressedSize(uncompressedSize), _compressedSize(compressedSize) { }
-    size_t getUncompressedSize() const { return _uncompressedSize; }
-    size_t getCompressedSize()   const { return _compressedSize; }
-    double getCompressionRatio() const { return _uncompressedSize/_compressedSize; }
-private:
-    size_t _uncompressedSize;
-    size_t _compressedSize;
-};
-
-inline CompressionInfo operator + (const CompressionInfo & a, const CompressionInfo & b)
-{
-    return CompressionInfo(a.getUncompressedSize() + b.getUncompressedSize(), a.getCompressedSize() + b.getCompressedSize());
-}
-
 }
 
 

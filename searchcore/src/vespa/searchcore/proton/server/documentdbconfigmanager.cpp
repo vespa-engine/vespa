@@ -175,7 +175,6 @@ getStoreConfig(const ProtonConfig::Summary::Cache & cache, const HwInfo & hwInfo
                       ? (hwInfo.memory().sizeBytes()*std::min(INT64_C(50), -cache.maxbytes))/100l
                       : cache.maxbytes;
     return DocumentStore::Config(deriveCompression(cache.compression), maxBytes, cache.initialentries)
-            .allowVisitCaching(cache.allowvisitcaching)
             .updateStrategy(derive(cache.updateStrategy));
 }
 
