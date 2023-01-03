@@ -445,7 +445,7 @@
                             <p>
                               There are problems with tests for default.default:
                             </p>
-                            <p>test package has production tests, but no production tests are declared in deployment.xml</p><p>see <a href="https://docs.vespa.ai/en/testing.html">https://docs.vespa.ai/en/testing.html</a> for details on how to write system tests for Vespa</p>
+                            <p>Test package has production tests, but no production tests are declared in deployment.xml</p><p>See <a href="https://docs.vespa.ai/en/testing.html">https://docs.vespa.ai/en/testing.html</a> for details on how to write system tests for Vespa</p>
                           </div>
                         </td>
                       </tr>

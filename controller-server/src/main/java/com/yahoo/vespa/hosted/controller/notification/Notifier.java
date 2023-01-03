@@ -118,6 +118,7 @@ public class Notifier {
                 .replace("[[NOTIFICATION_HEADER]]", content.messagePrefix())
                 .replace("[[NOTIFICATION_ITEMS]]", notification.messages().stream()
                         .map(Notifier::linkify)
+                        .map(Notifier::capitalise)
                         .map(m -> "<p>" + m + "</p>")
                         .collect(Collectors.joining()))
                 .replace("[[LINK_TO_NOTIFICATION]]", notificationLink(notification.source()))
@@ -171,5 +172,9 @@ public class Notifier {
             uri = uri.append("job").append(source.jobType().get().jobName()).append("run").append(String.valueOf(source.runNumber().getAsLong()));
         }
         return uri.toString();
+    }
+
+    private static String capitalise(String m) {
+        return m.substring(0, 1).toUpperCase() + m.substring(1);
     }
 }
