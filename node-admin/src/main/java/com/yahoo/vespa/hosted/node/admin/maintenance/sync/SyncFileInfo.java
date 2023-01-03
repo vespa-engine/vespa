@@ -82,7 +82,7 @@ public class SyncFileInfo {
             compression = filename.endsWith(".zst") ? Compression.NONE : Compression.ZSTD;
             if (rotatedOnly && compression != Compression.NONE)
                 dir = null;
-            else if (filename.matches(".*\\.metrics-proxy\\..*")) // See AccessLogComponent.java for filename.
+            else if (filename.contains(".metrics-proxy.")) // See AccessLogComponent.java for filename.
                 dir = null;
             else if (filename.startsWith("JsonAccessLog.") || filename.startsWith("access"))
                 dir = "logs/access/";
