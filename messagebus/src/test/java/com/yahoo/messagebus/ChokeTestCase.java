@@ -51,7 +51,7 @@ public class ChokeTestCase {
     }
 
     @Test
-    @SuppressWarnings("deprecation")
+    @SuppressWarnings({"deprecation", "removal"})
     void testMaxCount() {
         int max = 10;
         dstServer.mb.setMaxPendingCount(max);
