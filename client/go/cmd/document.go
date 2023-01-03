@@ -200,7 +200,7 @@ func printResult(cli *CLI, result util.OperationResult, payloadOnlyOnSuccess boo
 
 	if !result.Success {
 		fmt.Fprintln(out, color.RedString("Error:"), result.Message)
-	} else if !(payloadOnlyOnSuccess && result.Payload != "") {
+	} else if !payloadOnlyOnSuccess || result.Payload == "" {
 		fmt.Fprintln(out, color.GreenString("Success:"), result.Message)
 	}
 
