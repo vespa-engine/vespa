@@ -34,16 +34,6 @@ import static com.yahoo.yolean.Exceptions.uncheck;
  * @author enygaard
  */
 public class Notifier {
-    private static final String header = """ 
-                <div style="background: #00598c; height: 55px; width: 100%">
-                  <img
-                    src="https://vespa.ai/assets/vespa-logo.png"
-                    style="width: auto; height: 34px; margin: 10px"
-                  />
-                </div>
-                <br>
-                """;
-
     private final CuratorDb curatorDb;
     private final Mailer mailer;
     private final FlagSource flagSource;
@@ -72,13 +62,11 @@ public class Notifier {
         }
         var tenant = curatorDb.readTenant(source.tenant());
         tenant.stream().forEach(t -> {
-            if (t instanceof CloudTenant) {
-                var ct = (CloudTenant) t;
+            if (t instanceof CloudTenant ct) {
                 ct.info().contacts().all().stream()
                         .filter(c -> c.audiences().contains(TenantContacts.Audience.NOTIFICATIONS))
                         .collect(Collectors.groupingBy(TenantContacts.Contact::type, Collectors.toList()))
-                        .entrySet()
-                        .forEach(e -> notifications.forEach(n -> dispatch(n, e.getKey(), e.getValue())));
+                        .forEach((type, contacts) -> notifications.forEach(n -> dispatch(n, type, contacts)));
             }
         });
     }
@@ -95,22 +83,16 @@ public class Notifier {
 
     private boolean skipSource(NotificationSource source) {
         // Do not dispatch notification for dev and perf environments
-        if (source.zoneId()
+        return source.zoneId()
                 .map(z -> z.environment())
                 .map(e -> e == Environment.dev || e == Environment.perf)
-                .orElse(false)) {
-            return true;
-        }
-        return false;
+                .orElse(false);
     }
 
     private void dispatch(Notification notification, TenantContacts.Type type, Collection<? extends TenantContacts.Contact> contacts) {
         switch (type) {
-            case EMAIL:
-                dispatch(notification, contacts.stream().map(c -> (TenantContacts.EmailContact) c).toList());
-                break;
-            default:
-                throw new IllegalArgumentException("Unknown TenantContacts type " + type.name());
+            case EMAIL -> dispatch(notification, contacts.stream().map(c -> (TenantContacts.EmailContact) c).toList());
+            default -> throw new IllegalArgumentException("Unknown TenantContacts type " + type.name());
         }
     }
 
@@ -136,6 +118,7 @@ public class Notifier {
                 .replace("[[NOTIFICATION_HEADER]]", content.messagePrefix())
                 .replace("[[NOTIFICATION_ITEMS]]", notification.messages().stream()
                         .map(Notifier::linkify)
+                        .map(Notifier::capitalise)
                         .map(m -> "<p>" + m + "</p>")
                         .collect(Collectors.joining()))
                 .replace("[[LINK_TO_NOTIFICATION]]", notificationLink(notification.source()))
@@ -189,5 +172,9 @@ public class Notifier {
             uri = uri.append("job").append(source.jobType().get().jobName()).append("run").append(String.valueOf(source.runNumber().getAsLong()));
         }
         return uri.toString();
+    }
+
+    private static String capitalise(String m) {
+        return m.substring(0, 1).toUpperCase() + m.substring(1);
     }
 }
