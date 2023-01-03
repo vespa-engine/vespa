@@ -11,8 +11,8 @@ import java.util.Arrays;
  */
 public class ZstdCompressor {
 
-    private static final io.airlift.compress.zstd.ZstdCompressor compressor = new io.airlift.compress.zstd.ZstdCompressor();
-    private static final io.airlift.compress.zstd.ZstdDecompressor decompressor = new io.airlift.compress.zstd.ZstdDecompressor();
+    private static final ai.vespa.airlift.zstd.ZstdCompressor compressor = new ai.vespa.airlift.zstd.ZstdCompressor();
+    private static final ai.vespa.airlift.zstd.ZstdDecompressor decompressor = new ai.vespa.airlift.zstd.ZstdDecompressor();
 
     public byte[] compress(byte[] input, int inputOffset, int inputLength) {
         int maxCompressedLength = getMaxCompressedLength(inputLength);
@@ -46,7 +46,7 @@ public class ZstdCompressor {
     }
 
     public static int getDecompressedLength(byte[] input, int inputOffset, int inputLength) {
-        return (int) io.airlift.compress.zstd.ZstdDecompressor.getDecompressedSize(input, inputOffset, inputLength);
+        return (int) ai.vespa.airlift.zstd.ZstdDecompressor.getDecompressedSize(input, inputOffset, inputLength);
     }
 
 }

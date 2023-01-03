@@ -767,6 +767,7 @@ fi
 %dir %{_prefix}
 %dir %{_prefix}/lib
 %dir %{_prefix}/lib/jars
+%{_prefix}/lib/jars/airlift-zstd.jar
 %{_prefix}/lib/jars/application-model-jar-with-dependencies.jar
 %{_prefix}/lib/jars/bc*-jdk18on-*.jar
 %{_prefix}/lib/jars/config-bundle-jar-with-dependencies.jar

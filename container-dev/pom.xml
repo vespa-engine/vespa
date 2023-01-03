@@ -163,10 +163,6 @@
           <artifactId>jna</artifactId>
         </exclusion>
         <exclusion>
-          <groupId>io.airlift</groupId>
-          <artifactId>aircompressor</artifactId>
-        </exclusion>
-        <exclusion>
           <groupId>net.openhft</groupId>
           <artifactId>zero-allocation-hashing</artifactId>
         </exclusion>

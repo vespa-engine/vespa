@@ -47,6 +47,11 @@
          for user projects must be added in compile scope here. These dependencies are explicitly excluded
          (or set to non-compile scope) in the container and/or container-dev modules. -->
     <dependency>
+      <groupId>com.yahoo.vespa</groupId>
+      <artifactId>airlift-zstd</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+    <dependency>
       <groupId>com.ibm.icu</groupId>
       <artifactId>icu4j</artifactId>
     </dependency>
@@ -97,11 +102,6 @@
     <dependency>
       <groupId>xerces</groupId>
       <artifactId>xercesImpl</artifactId>
-    </dependency>
-    <dependency>
-      <groupId>io.airlift</groupId>
-      <artifactId>aircompressor</artifactId>
-      <scope>compile</scope>
     </dependency>
     <dependency> <!-- TODO: Remove on Vespa 9 -->
       <!-- not used by Vespa, but was historically on test classpath -->

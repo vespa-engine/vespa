@@ -32,8 +32,9 @@
       <artifactId>jna</artifactId>
     </dependency>
     <dependency>
-      <groupId>io.airlift</groupId>
-      <artifactId>aircompressor</artifactId>
+      <groupId>com.yahoo.vespa</groupId>
+      <artifactId>airlift-zstd</artifactId>
+      <version>${project.version}</version>
     </dependency>
     <dependency>
       <groupId>net.openhft</groupId>

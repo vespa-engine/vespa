@@ -30,6 +30,10 @@
           <groupId>org.ow2.asm</groupId>
           <artifactId>asm</artifactId>
         </exclusion>
+        <exclusion>
+          <groupId>com.yahoo.vespa</groupId>
+          <artifactId>airlift-zstd</artifactId>
+        </exclusion>
       </exclusions>
     </dependency>
     <dependency>

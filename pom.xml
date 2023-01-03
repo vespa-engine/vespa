@@ -24,6 +24,7 @@
     </developers>
 
     <modules>
+        <module>airlift-zstd</module>
         <module>application</module>
         <module>application-model</module>
         <module>athenz-identity-provider-service</module>
