@@ -99,56 +99,6 @@ public class ChokeTestCase {
         assertEquals(0, dstServer.mb.getPendingCount());
     }
 
-    @Test
-    @SuppressWarnings("deprecation")
-    void testMaxSize() {
-        int size = createMessage("msg").getApproxSize();
-        int max = size * 10;
-        dstServer.mb.setMaxPendingSize(max);
-        List<Message> lst = new ArrayList<>();
-        for (int i = 0; i < max * 2; i += size) {
-            if (i < max) {
-                assertEquals(i, dstServer.mb.getPendingSize());
-            } else {
-                assertEquals(max, dstServer.mb.getPendingSize());
-            }
-            assertTrue(srcSession.send(createMessage("msg"), Route.parse("dst/session")).isAccepted());
-            if (i < max) {
-                Message msg = ((Receptor) dstSession.getMessageHandler()).getMessage(60);
-                assertNotNull(msg);
-                lst.add(msg);
-            } else {
-                Reply reply = ((Receptor) srcSession.getReplyHandler()).getReply(60);
-                assertNotNull(reply);
-                assertEquals(1, reply.getNumErrors());
-                assertEquals(ErrorCode.SESSION_BUSY, reply.getError(0).getCode());
-            }
-        }
-        for (int i = 0; i < 5; ++i) {
-            Message msg = lst.remove(0);
-            dstSession.acknowledge(msg);
-
-            Reply reply = ((Receptor) srcSession.getReplyHandler()).getReply(60);
-            assertNotNull(reply);
-            assertFalse(reply.hasErrors());
-            assertNotNull(msg = reply.getMessage());
-            assertTrue(srcSession.send(msg, Route.parse("dst/session")).isAccepted());
-
-            assertNotNull(msg = ((Receptor) dstSession.getMessageHandler()).getMessage(60));
-            lst.add(msg);
-        }
-        while (!lst.isEmpty()) {
-            assertEquals(size * lst.size(), dstServer.mb.getPendingSize());
-            Message msg = lst.remove(0);
-            dstSession.acknowledge(msg);
-
-            Reply reply = ((Receptor) srcSession.getReplyHandler()).getReply(60);
-            assertNotNull(reply);
-            assertFalse(reply.hasErrors());
-        }
-        assertEquals(0, dstServer.mb.getPendingSize());
-    }
-
     private static Message createMessage(String msg) {
         Message ret = new SimpleMessage(msg);
         ret.getTrace().setLevel(9);
