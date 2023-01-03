@@ -7,7 +7,7 @@ import com.yahoo.vespa.hosted.node.admin.nodeadmin.ConvergenceException;
 public class OrchestratorException extends ConvergenceException {
     /** Creates a transient convergence exception. */
     public OrchestratorException(String message) {
-        this(message, true);
+        this(message, false);
     }
 
     protected OrchestratorException(String message, boolean isError) {
