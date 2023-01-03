@@ -219,6 +219,24 @@
         <certificate file="security/file2.pem" />
       </client>
     </clients>
+
+    <document-processing>
+      <chain id="common">
+        <documentprocessor id="CommonDocproc" class="com.yahoo.vespatest.ExtraHitDocumentProcessor">
+          <config name="com.yahoo.vespatest.extra-hit">
+            <exampleString>A docproc for all clusters</exampleString>
+          </config>
+        </documentprocessor>
+      </chain>
+      <chain id="cluster1">
+        <documentprocessor id="Cluster1Docproc" class="com.yahoo.vespatest.ExtraHitDocumentProcessor">
+          <config name="com.yahoo.vespatest.extra-hit">
+            <exampleString>Docproc only for cluster1</exampleString>
+          </config>
+        </documentprocessor>
+      </chain>
+    </document-processing>
+
   </container>
 
   <container id='qrsCluster_2' version='1.0'>
