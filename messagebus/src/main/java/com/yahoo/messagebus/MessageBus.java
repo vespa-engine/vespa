@@ -72,7 +72,6 @@ public class MessageBus implements ConfigHandler, NetworkOwner, MessageHandler, 
     private final Messenger msn;
     private final Resender resender;
     private int maxPendingCount;
-    private int maxPendingSize;
     private int pendingCount = 0;
     private int pendingSize = 0;
     private final Thread careTaker = new Thread(this::sendBlockedMessages);
@@ -142,7 +141,6 @@ public class MessageBus implements ConfigHandler, NetworkOwner, MessageHandler, 
     public MessageBus(NetworkMultiplexer net, MessageBusParams params) {
         // Add all known protocols to the repository.
         maxPendingCount = params.getMaxPendingCount();
-        maxPendingSize  = params.getMaxPendingSize();
         for (int i = 0, len = params.getNumProtocols(); i < len; ++i) {
             protocolRepository.putProtocol(params.getProtocol(i));
         }
@@ -375,7 +373,7 @@ public class MessageBus implements ConfigHandler, NetworkOwner, MessageHandler, 
     }
 
     private boolean doAccounting() {
-        return (maxPendingCount > 0 || maxPendingSize > 0);
+        return (maxPendingCount > 0);
     }
     /**
      * <p>This method handles choking input data so that message bus does not
@@ -392,8 +390,7 @@ public class MessageBus implements ConfigHandler, NetworkOwner, MessageHandler, 
 
         if (doAccounting()) {
             synchronized (this) {
-                busy = ((maxPendingCount > 0 && pendingCount >= maxPendingCount) ||
-                        (maxPendingSize > 0 && pendingSize >= maxPendingSize));
+                busy = (maxPendingCount > 0 && pendingCount >= maxPendingCount);
                 if (!busy) {
                     pendingCount++;
                     pendingSize += size;
@@ -487,7 +484,7 @@ public class MessageBus implements ConfigHandler, NetworkOwner, MessageHandler, 
      *
      * @return The resender.
      */
-    @Deprecated // Remove on 9
+    @Deprecated (forRemoval = true)// Remove on 9
     public Resender getResender() {
         return resender;
     }
@@ -520,7 +517,7 @@ public class MessageBus implements ConfigHandler, NetworkOwner, MessageHandler, 
      *
      * @param maxCount The max count.
      */
-    @Deprecated // Remove on 9
+    @Deprecated(forRemoval = true) // Remove on 9
     public void setMaxPendingCount(int maxCount) {
         maxPendingCount = maxCount;
     }
@@ -529,7 +526,7 @@ public class MessageBus implements ConfigHandler, NetworkOwner, MessageHandler, 
      * Gets maximum number of messages that can be received without being
      * replied to yet.
      */
-    @Deprecated // Remove on 9
+    @Deprecated (forRemoval = true)// Remove on 9
     public int getMaxPendingCount() {
         return maxPendingCount;
     }
@@ -540,18 +537,18 @@ public class MessageBus implements ConfigHandler, NetworkOwner, MessageHandler, 
      *
      * @param maxSize The max size.
      */
-    @Deprecated // Remove on 9
+    @Deprecated (forRemoval = true)// Remove on 9
     public void setMaxPendingSize(int maxSize) {
-        maxPendingSize = maxSize;
+
     }
 
     /**
      * Gets maximum combined size of messages that can be received without
      * being replied to yet.
      */
-    @Deprecated // Remove on 9
+    @Deprecated (forRemoval = true)// Remove on 9
     public int getMaxPendingSize() {
-        return maxPendingSize;
+        return Integer.MAX_VALUE;
     }
 
     /**

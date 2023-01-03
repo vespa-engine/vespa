@@ -71,7 +71,6 @@ public class DummyReceiver implements MessageHandler {
         params.setRPCNetworkParams(new RPCNetworkParams().setIdentity(new Identity(name)));
         params.setDocumentManagerConfigId("client");
         params.getMessageBusParams().setMaxPendingCount(0);
-        params.getMessageBusParams().setMaxPendingSize(0);
         da = new MessageBusDocumentAccess(params);
         queue = new LinkedBlockingDeque<>();
         session = da.getMessageBus().createDestinationSession("default", true, this);
