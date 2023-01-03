@@ -58,7 +58,7 @@ public:
         uint32_t getMaxNumLids() const { return _maxNumLids; }
 
         bool crcOnReadDisabled() const { return _skipCrcOnRead; }
-        const CompressionConfig & compactCompression() const { return _compactCompression; }
+        CompressionConfig compactCompression() const { return _compactCompression; }
 
         const WriteableFileChunk::Config & getFileConfig() const { return _fileConfig; }
         Config & disableCrcOnRead(bool v) { _skipCrcOnRead = v; return *this;}

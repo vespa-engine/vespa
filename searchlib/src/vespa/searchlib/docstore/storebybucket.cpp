@@ -13,7 +13,7 @@ using document::BucketId;
 using vespalib::CpuUsage;
 using vespalib::makeLambdaTask;
 
-StoreByBucket::StoreByBucket(MemoryDataStore & backingMemory, Executor & executor, const CompressionConfig & compression) noexcept
+StoreByBucket::StoreByBucket(MemoryDataStore & backingMemory, Executor & executor, CompressionConfig compression) noexcept
     : _chunkSerial(0),
       _current(),
       _where(),

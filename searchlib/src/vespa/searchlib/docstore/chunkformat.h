@@ -31,7 +31,7 @@ public:
      * @param compressed The buffer where the serialized data shall be placed.
      * @param compression What kind of compression shall be employed.
      */
-    void pack(uint64_t lastSerial, vespalib::DataBuffer & compressed, const CompressionConfig & compression);
+    void pack(uint64_t lastSerial, vespalib::DataBuffer & compressed, CompressionConfig compression);
     /**
      * Will deserialize and create a representation of the uncompressed data.
      * param buffer Pointer to the serialized data
@@ -45,7 +45,7 @@ public:
      * @param compression Compression config to be used.
      * @return maximum number of bytes a packet can take in serialized form.
      */
-    size_t getMaxPackSize(const CompressionConfig & compression) const;
+    size_t getMaxPackSize(CompressionConfig compression) const;
 protected:
     /**
      * Constructor used when deserializing

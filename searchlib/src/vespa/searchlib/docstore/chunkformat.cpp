@@ -19,7 +19,7 @@ ChunkException::ChunkException(const vespalib::string & msg, vespalib::stringref
 }
 
 void
-ChunkFormat::pack(uint64_t lastSerial, vespalib::DataBuffer & compressed, const CompressionConfig & compression)
+ChunkFormat::pack(uint64_t lastSerial, vespalib::DataBuffer & compressed, CompressionConfig compression)
 {
     vespalib::nbostream & os = _dataBuf;
     os << lastSerial;
@@ -46,7 +46,7 @@ ChunkFormat::pack(uint64_t lastSerial, vespalib::DataBuffer & compressed, const 
 }
 
 size_t
-ChunkFormat::getMaxPackSize(const CompressionConfig & compression) const
+ChunkFormat::getMaxPackSize(CompressionConfig compression) const
 {
     const size_t OVERHEAD(0);
     const size_t MINSIZE(1 + 1 + 4 + 4 + (includeSerializedSize() ? 4 : 0));  // version + type + real length + crc + lastserial

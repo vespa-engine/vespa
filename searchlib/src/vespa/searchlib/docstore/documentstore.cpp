@@ -51,7 +51,7 @@ namespace docstore {
 
 class BackingStore {
 public:
-    BackingStore(IDataStore &store, const CompressionConfig &compression) :
+    BackingStore(IDataStore &store, CompressionConfig compression) :
         _backingStore(store),
         _compression(compression)
     { }
@@ -60,11 +60,11 @@ public:
     void visit(const IDocumentStore::LidVector &lids, const DocumentTypeRepo &repo, IDocumentVisitor &visitor) const;
     void write(DocumentIdT, const Value &);
     void erase(DocumentIdT) {}
-    const CompressionConfig &getCompression() const { return _compression; }
-    void reconfigure(const CompressionConfig &compression);
+    CompressionConfig getCompression() const { return _compression.load(std::memory_order_relaxed); }
+    void reconfigure(CompressionConfig compression);
 private:
     IDataStore &_backingStore;
-    CompressionConfig _compression;
+    std::atomic<CompressionConfig> _compression;
 };
 
 void
@@ -80,7 +80,7 @@ BackingStore::read(DocumentIdT key, Value &value) const {
     vespalib::DataBuffer buf(4_Ki);
     ssize_t len = _backingStore.read(key, buf);
     if (len > 0) {
-        value.set(std::move(buf), len, _compression);
+        value.set(std::move(buf), len, getCompression());
         found = true;
     }
     return found;
@@ -95,11 +95,8 @@ BackingStore::write(DocumentIdT lid, const Value & value)
 }
 
 void
-BackingStore::reconfigure(const CompressionConfig &compression) {
-    if (compression != _compression) {
-        // Need proper synchronization
-        _compression = compression;
-    }
+BackingStore::reconfigure(CompressionConfig compression) {
+    _compression.store(compression, std::memory_order_relaxed);
 }
 
 using CacheParams = vespalib::CacheParam<
@@ -291,14 +288,14 @@ class DocumentStore::WrapVisitor : public IDataStoreVisitor
 {
     Visitor                 &_visitor;
     const DocumentTypeRepo  &_repo;
-    const CompressionConfig &_compression;
+    const CompressionConfig  _compression;
     IDocumentStore          &_ds;
     uint64_t                 _syncToken;
     
 public:
     void visit(uint32_t lid, const void *buffer, size_t sz) override;
 
-    WrapVisitor(Visitor &visitor, const DocumentTypeRepo &repo, const CompressionConfig &compresion,
+    WrapVisitor(Visitor &visitor, const DocumentTypeRepo &repo, CompressionConfig compresion,
                 IDocumentStore &ds, uint64_t syncToken);
     
     void rewrite(uint32_t lid, const document::Document &doc);
@@ -386,7 +383,7 @@ DocumentStore::WrapVisitor<Visitor>::visit(uint32_t lid, const void *buffer, siz
 
 template <class Visitor>
 DocumentStore::WrapVisitor<Visitor>::
-WrapVisitor(Visitor &visitor, const DocumentTypeRepo &repo, const CompressionConfig &compression,
+WrapVisitor(Visitor &visitor, const DocumentTypeRepo &repo, CompressionConfig compression,
             IDocumentStore &ds, uint64_t syncToken)
     : _visitor(visitor),
       _repo(repo),

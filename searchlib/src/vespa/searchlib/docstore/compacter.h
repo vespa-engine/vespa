@@ -35,7 +35,7 @@ class BucketCompacter : public IWriteData, public StoreByBucket::IWrite
     using Executor = vespalib::Executor;
 public:
     using FileId = FileChunk::FileId;
-    BucketCompacter(size_t maxSignificantBucketBits, const CompressionConfig & compression, LogDataStore & ds,
+    BucketCompacter(size_t maxSignificantBucketBits, CompressionConfig compression, LogDataStore & ds,
                     Executor & executor, const IBucketizer & bucketizer, FileId source, FileId destination);
     void write(LockGuard guard, uint32_t chunkId, uint32_t lid, const void *buffer, size_t sz) override ;
     void write(BucketId bucketId, uint32_t chunkId, uint32_t lid, const void *buffer, size_t sz) override;

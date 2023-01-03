@@ -26,12 +26,12 @@ public:
         using CompressionConfig = vespalib::compression::CompressionConfig;
         Config() : Config({CompressionConfig::LZ4, 9, 60}, 0x10000) { }
 
-        Config(const CompressionConfig &compression, size_t maxChunkBytes)
+        Config(CompressionConfig compression, size_t maxChunkBytes)
             : _compression(compression),
               _maxChunkBytes(maxChunkBytes)
         { }
 
-        const CompressionConfig & getCompression() const { return _compression; }
+        CompressionConfig getCompression() const { return _compression; }
         size_t getMaxChunkBytes() const { return _maxChunkBytes; }
         bool operator == (const Config & rhs) const {
             return (_compression == rhs._compression) && (_maxChunkBytes == rhs._maxChunkBytes);

@@ -13,7 +13,7 @@ class ICompressor
 {
 public:
     virtual ~ICompressor() { }
-    virtual bool process(const CompressionConfig& config, const void * input, size_t inputLen, void * output, size_t & outputLen) = 0;
+    virtual bool process(CompressionConfig config, const void * input, size_t inputLen, void * output, size_t & outputLen) = 0;
     virtual bool unprocess(const void * input, size_t inputLen, void * output, size_t & outputLen) = 0;
     virtual size_t adjustProcessLen(uint16_t options, size_t len)   const = 0;
 };
@@ -28,7 +28,7 @@ public:
  * @param allowSwap will tell it the data must be appended or if it can be swapped in if it is uncompressable or config is NONE.
  */
 CompressionConfig::Type compress(CompressionConfig::Type compression, const ConstBufferRef & org, DataBuffer & dest, bool allowSwap);
-CompressionConfig::Type compress(const CompressionConfig & compression, const vespalib::ConstBufferRef & org, vespalib::DataBuffer & dest, bool allowSwap);
+CompressionConfig::Type compress(CompressionConfig compression, const vespalib::ConstBufferRef & org, vespalib::DataBuffer & dest, bool allowSwap);
 
 /**
  * Will try to decompress a buffer according to the config.
@@ -41,7 +41,7 @@ CompressionConfig::Type compress(const CompressionConfig & compression, const ve
  *             Then it will be swapped in.
  * @param allowSwap will tell it the data must be appended or if it can be swapped in if compression type is NONE.
  */
-void decompress(const CompressionConfig::Type & compression, size_t uncompressedLen, const vespalib::ConstBufferRef & org, vespalib::DataBuffer & dest, bool allowSwap);
+void decompress(CompressionConfig::Type compression, size_t uncompressedLen, const vespalib::ConstBufferRef & org, vespalib::DataBuffer & dest, bool allowSwap);
 
 size_t computeMaxCompressedsize(CompressionConfig::Type type, size_t uncompressedSize);
 
@@ -53,14 +53,13 @@ size_t computeMaxCompressedsize(CompressionConfig::Type type, size_t uncompresse
  **/
 class Compress {
 private:
-    alloc::Alloc _space;
+    alloc::Alloc            _space;
     CompressionConfig::Type _type;
-    const char *_data;
-    size_t _size;
+    const char             *_data;
+    size_t                  _size;
 public:
-    Compress(const CompressionConfig &config,
-             const char *uncompressed_data, size_t uncompressed_size);
-    const CompressionConfig::Type &type() const { return _type; }
+    Compress(CompressionConfig config, const char *uncompressed_data, size_t uncompressed_size);
+    CompressionConfig::Type type() const { return _type; }
     const char *data() const { return _data; }
     size_t size() const { return _size; }
 };
@@ -72,10 +71,10 @@ public:
 class Decompress {
 private:
     alloc::Alloc _space;
-    const char *_data;
-    size_t _size;
+    const char  *_data;
+    size_t       _size;
 public:
-    Decompress(const CompressionConfig::Type &type, size_t uncompressed_size,
+    Decompress(CompressionConfig::Type type, size_t uncompressed_size,
                const char *compressed_data, size_t compressed_size);
     const char *data() const { return _data; }
     size_t size() const { return _size; }

@@ -31,13 +31,13 @@ public:
             _initialCacheEntries(0),
             _updateStrategy(INVALIDATE)
         { }
-        Config(const CompressionConfig & compression, size_t maxCacheBytes, size_t initialCacheEntries) :
+        Config(CompressionConfig compression, size_t maxCacheBytes, size_t initialCacheEntries) :
             _compression((maxCacheBytes != 0) ? compression : CompressionConfig::NONE),
             _maxCacheBytes(maxCacheBytes),
             _initialCacheEntries(initialCacheEntries),
             _updateStrategy(INVALIDATE)
         { }
-        const CompressionConfig & getCompression() const { return _compression; }
+        CompressionConfig getCompression() const { return _compression; }
         size_t getMaxCacheBytes()   const { return _maxCacheBytes; }
         size_t getInitialCacheEntries() const { return _initialCacheEntries; }
         Config & updateStrategy(UpdateStrategy strategy) { _updateStrategy = strategy; return *this; }
