@@ -150,7 +150,10 @@ VisitCache::BackingStore::read(const KeySet &key, CompressedBlobSet &blobs) cons
 
 void
 VisitCache::BackingStore::reconfigure(const CompressionConfig &compression) {
-    _compression = compression;
+    if (compression != _compression) {
+        // Need proper synchronization
+        _compression = compression;
+    }
 }
 
 
