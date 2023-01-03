@@ -48,7 +48,6 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ExecutionException;
-import java.util.stream.Collectors;
 
 /**
  * Serializes a node to/from JSON.
@@ -69,6 +68,7 @@ public class NodeSerializer {
     private final NodeFlavors flavors;
 
     // Node fields
+    private static final String stateKey = "state";
     private static final String hostnameKey = "hostname";
     private static final String ipAddressesKey = "ipAddresses";
     private static final String ipAddressPoolKey = "additionalIpAddresses";
@@ -165,6 +165,7 @@ public class NodeSerializer {
     }
 
     private void toSlime(Node node, Cursor object) {
+        object.setString(stateKey, toString(node.state()));
         object.setString(hostnameKey, node.hostname());
         toSlime(node.ipConfig().primary(), object.setArray(ipAddressesKey));
         toSlime(node.ipConfig().pool().ipSet(), object.setArray(ipAddressPoolKey));
@@ -536,6 +537,37 @@ public class NodeSerializer {
             case confighost -> "confighost";
             case controller -> "controller";
             case controllerhost -> "controllerhost";
+        };
+    }
+
+    static Node.State nodeStateFromString(String state) {
+        return switch (state) {
+            case "active" -> Node.State.active;
+            case "dirty" -> Node.State.dirty;
+            case "failed" -> Node.State.failed;
+            case "inactive" -> Node.State.inactive;
+            case "parked" -> Node.State.parked;
+            case "provisioned" -> Node.State.provisioned;
+            case "ready" -> Node.State.ready;
+            case "reserved" -> Node.State.reserved;
+            case "deprovisioned" -> Node.State.deprovisioned;
+            case "breakfixed" -> Node.State.breakfixed;
+            default -> throw new IllegalArgumentException("Unknown node state '" + state + "'");
+        };
+    }
+
+    static String toString(Node.State state) {
+        return switch (state) {
+            case active -> "active";
+            case dirty -> "dirty";
+            case failed -> "failed";
+            case inactive -> "inactive";
+            case parked -> "parked";
+            case provisioned -> "provisioned";
+            case ready -> "ready";
+            case reserved -> "reserved";
+            case deprovisioned -> "deprovisioned";
+            case breakfixed -> "breakfixed";
         };
     }
 
