@@ -340,7 +340,7 @@ class SingletonManager {
                 logger.log(FINE, () -> "Doom value is " + doom);
                 if (active) {
                     try {
-                        if (!singletons.isEmpty()) metrics.deactivation(singletons.peek()::deactivate);
+                        if ( ! singletons.isEmpty()) metrics.deactivation(singletons.peek()::deactivate);
                         active = false;
                     }
                     catch (RuntimeException e) {

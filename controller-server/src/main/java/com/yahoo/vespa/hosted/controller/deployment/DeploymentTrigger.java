@@ -452,12 +452,11 @@ public class DeploymentTrigger {
         Predicate<RevisionId> revisionFilter = spec.revisionTarget() == DeploymentSpec.RevisionTarget.next
                                                ? failing -> status.application().require(instance).change().revision().get().compareTo(failing) == 0
                                                : failing -> revision.compareTo(failing) > 0;
-        switch (spec.revisionChange()) {
-            case whenClear:   return ! isChangingRevision;
-            case whenFailing: return ! isChangingRevision || status.hasFailures(revisionFilter);
-            case always:      return true;
-            default:          throw new IllegalStateException("Unknown revision upgrade policy");
-        }
+        return switch (spec.revisionChange()) {
+            case whenClear -> ! isChangingRevision;
+            case whenFailing -> ! isChangingRevision || status.hasFailures(revisionFilter);
+            case always -> true;
+        };
     }
 
     private Instance withRemainingChange(Instance instance, Change change, DeploymentStatus status, boolean allowOutdatedPlatform) {
