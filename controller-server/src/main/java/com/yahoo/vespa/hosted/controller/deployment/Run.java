@@ -14,6 +14,7 @@ import java.util.stream.Collectors;
 
 import static com.yahoo.vespa.hosted.controller.deployment.RunStatus.aborted;
 import static com.yahoo.vespa.hosted.controller.deployment.RunStatus.noTests;
+import static com.yahoo.vespa.hosted.controller.deployment.RunStatus.reset;
 import static com.yahoo.vespa.hosted.controller.deployment.RunStatus.running;
 import static com.yahoo.vespa.hosted.controller.deployment.RunStatus.success;
 import static com.yahoo.vespa.hosted.controller.deployment.Step.Status.succeeded;

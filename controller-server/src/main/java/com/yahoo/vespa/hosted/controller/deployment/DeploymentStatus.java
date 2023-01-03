@@ -33,14 +33,15 @@ import com.yahoo.vespa.hosted.controller.versions.VespaVersion.Confidence;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
+import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Deque;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
@@ -67,7 +68,6 @@ import static java.util.stream.Collectors.mapping;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toMap;
 import static java.util.stream.Collectors.toSet;
-import static java.util.stream.Collectors.toUnmodifiableList;
 
 /**
  * Status of the deployment jobs of an {@link Application}.
@@ -444,7 +444,7 @@ public class DeploymentStatus {
      * which does not downgrade any deployments in the instance,
      * which is not already rolling out to the instance, and
      * which causes at least one job to run if deployed to the instance.
-     * For the "exclusive" revision upgrade policy it is the oldest such revision; otherwise, it is the latest.
+     * For the "next" revision target policy it is the oldest such revision; otherwise, it is the latest.
      */
     public Change outstandingChange(InstanceName instance) {
         StepStatus status = instanceSteps().get(instance);
@@ -747,6 +747,27 @@ public class DeploymentStatus {
             first = first != null ? first : step.name();
         }
         return first;
+    }
+
+    /**
+     * Returns set of declared tests directly reachable from the given production job, or the first declared (or implicit) test.
+     * A test in instance {@code I} is directly reachable from a job in instance {@code K} if a chain of instances {@code I, J, ..., K}
+     * exists, such that only {@code I} has a declared test of the particular type.
+     * These are the declared tests that should be OK before we proceed with the corresponding production deployment.
+     * If no such tests exist, the first declared test, or a test in the first declared instance, is used instead.
+     */
+    private List<JobId> prerequisiteTests(JobId prodJob, JobType testType) {
+        List<JobId> tests = new ArrayList<>();
+        Deque<InstanceName> instances = new ArrayDeque<>();
+        instances.add(prodJob.application().instance());
+        while ( ! instances.isEmpty()) {
+            InstanceName instance = instances.poll();
+            Optional<JobId> test = declaredTest(application().id().instance(instance), testType);
+            if (test.isPresent()) tests.add(test.get());
+            else instances.addAll(instanceSteps().get(instance).dependencies().stream().map(StepStatus::instance).toList());
+        }
+        if (tests.isEmpty()) tests.add(firstDeclaredOrElseImplicitTest(testType));
+        return tests;
     }
 
     /** Adds the primitive steps contained in the given step, which depend on the given previous primitives, to the dependency graph. */
