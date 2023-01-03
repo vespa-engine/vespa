@@ -165,8 +165,8 @@ public class NodeSerializer {
     }
 
     private void toSlime(Node node, Cursor object) {
-        object.setString(stateKey, toString(node.state()));
         object.setString(hostnameKey, node.hostname());
+        object.setString(stateKey, toString(node.state()));
         toSlime(node.ipConfig().primary(), object.setArray(ipAddressesKey));
         toSlime(node.ipConfig().pool().ipSet(), object.setArray(ipAddressPoolKey));
         toSlime(node.ipConfig().pool().getAddressList(), object);
