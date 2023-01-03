@@ -1141,7 +1141,7 @@
         <maven-source-plugin.version>3.2.1</maven-source-plugin.version>
         <maven-wagon.version>2.10</maven-wagon.version>
         <mockito.version>4.0.0</mockito.version>
-        <netty.version>4.1.85.Final</netty.version>
+        <netty.version>4.1.86.Final</netty.version>
         <netty-tcnative.version>2.0.54.Final</netty-tcnative.version>
         <onnxruntime.version>1.12.1</onnxruntime.version> <!-- WARNING: sync cloud-tenant-base-dependencies-enforcer/pom.xml -->
         <org.json.version>20220320</org.json.version>
