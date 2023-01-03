@@ -98,7 +98,6 @@ import com.yahoo.vespa.model.container.xml.document.DocumentFactoryBuilder;
 import com.yahoo.vespa.model.content.StorageGroup;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
-
 import java.io.IOException;
 import java.io.Reader;
 import java.net.URI;
@@ -114,7 +113,6 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.OptionalInt;
 import java.util.Set;
-import java.util.UUID;
 import java.util.function.Consumer;
 import java.util.logging.Level;
 import java.util.regex.Pattern;
@@ -192,7 +190,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
     private ApplicationContainerCluster createContainerCluster(Element spec, ConfigModelContext modelContext) {
         return new VespaDomBuilder.DomConfigProducerBuilder<ApplicationContainerCluster>() {
             @Override
-            protected ApplicationContainerCluster doBuild(DeployState deployState, AbstractConfigProducer ancestor, Element producerSpec) {
+            protected ApplicationContainerCluster doBuild(DeployState deployState, AbstractConfigProducer<?> ancestor, Element producerSpec) {
                 return new ApplicationContainerCluster(ancestor, modelContext.getProducerId(),
                                                        modelContext.getProducerId(), deployState);
             }
@@ -455,7 +453,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
             addHostedImplicitHttpIfNotPresent(deployState, cluster);
             addHostedImplicitAccessControlIfNotPresent(deployState, cluster);
             addDefaultConnectorHostedFilterBinding(cluster);
-            addAdditionalHostedConnector(deployState, cluster, context);
+            addAdditionalHostedConnector(deployState, cluster);
             addCloudDataPlaneFilter(deployState, cluster);
         }
     }
@@ -555,7 +553,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
                 .ifPresent(accessControl -> accessControl.configureDefaultHostedConnector(cluster.getHttp()));                                 ;
     }
 
-    private void addAdditionalHostedConnector(DeployState deployState, ApplicationContainerCluster cluster, ConfigModelContext context) {
+    private void addAdditionalHostedConnector(DeployState deployState, ApplicationContainerCluster cluster) {
         JettyHttpServer server = cluster.getHttp().getHttpServer().get();
         String serverName = server.getComponentId().getName();
 
@@ -798,10 +796,22 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
 
         if (cluster.getJvmGCOptions().isEmpty()) {
             String jvmGCOptions = extractAttribute(nodesElement, VespaDomBuilder.JVM_GC_OPTIONS);
+
+            if (jvmGCOptions != null && !jvmGCOptions.isEmpty()) {
+                DeployLogger logger = context.getDeployState().getDeployLogger();
+                logger.logApplicationPackage(WARNING, "'jvm-gc-options' is deprecated and will be removed in Vespa 9." +
+                        " Please merge into 'gc-options' in 'jvm' element." +
+                        " See https://docs.vespa.ai/en/reference/services-container.html#jvm");
+            }
+
             cluster.setJvmGCOptions(buildJvmGCOptions(context, jvmGCOptions));
         }
 
-        applyMemoryPercentage(cluster, nodesElement.getAttribute(VespaDomBuilder.Allocated_MEMORY_ATTRIB_NAME));
+        if (applyMemoryPercentage(cluster, nodesElement.getAttribute(VespaDomBuilder.Allocated_MEMORY_ATTRIB_NAME)))
+            context.getDeployState().getDeployLogger()
+                   .logApplicationPackage(WARNING, "'allocated-memory' is deprecated and will be removed in Vespa 9." +
+                           " Please merge into 'allocated-memory' in 'jvm' element." +
+                           " See https://docs.vespa.ai/en/reference/services-container.html#jvm");
     }
 
     private void extractJvmTag(List<ApplicationContainer> nodes, ApplicationContainerCluster cluster,
@@ -877,8 +887,8 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
             return createNodesFromNodeList(context.getDeployState(), cluster, nodesElement);
     }
     
-    private static void applyMemoryPercentage(ApplicationContainerCluster cluster, String memoryPercentage) {
-        if (memoryPercentage == null || memoryPercentage.isEmpty()) return;
+    private static boolean applyMemoryPercentage(ApplicationContainerCluster cluster, String memoryPercentage) {
+        if (memoryPercentage == null || memoryPercentage.isEmpty()) return false;
         memoryPercentage = memoryPercentage.trim();
 
         if ( ! memoryPercentage.endsWith("%"))
@@ -893,6 +903,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
             throw new IllegalArgumentException("The memory percentage given for nodes in " + cluster +
                                                " must be an integer percentage ending by the '%' sign");
         }
+        return true;
     }
 
     /** Allocate a container cluster without a nodes tag */
@@ -1118,7 +1129,8 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
 
     private static void validateAndAddConfiguredComponents(DeployState deployState,
                                                            ContainerCluster<? extends Container> cluster,
-                                                           Element spec, String componentName,
+                                                           Element spec,
+                                                           String componentName,
                                                            Consumer<Element> elementValidator) {
         for (Element node : XML.getChildren(spec, componentName)) {
             elementValidator.accept(node); // throws exception here if something is wrong
@@ -1224,7 +1236,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
             if (nodesElement.hasAttribute(VespaDomBuilder.JVM_OPTIONS)) {
                 jvmOptions = nodesElement.getAttribute(VespaDomBuilder.JVM_OPTIONS);
                 if (! jvmOptions.isEmpty())
-                    logger.logApplicationPackage(WARNING, "'jvm-options' is deprecated and will be removed in Vespa 8." +
+                    logger.logApplicationPackage(WARNING, "'jvm-options' is deprecated and will be removed in Vespa 9." +
                             " Please merge 'jvm-options' into 'options' or 'gc-options' in 'jvm' element." +
                             " See https://docs.vespa.ai/en/reference/services-container.html#jvm");
             }
