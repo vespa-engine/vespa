@@ -67,6 +67,11 @@ TEST("requiret that zstd compression/decompression works") {
     EXPECT_EQUAL(_G_compressableText, vespalib::string(decompress.data(), decompress.size()));
 }
 
+TEST("require that CompressionConfig is Atomic") {
+    EXPECT_EQUAL(8u, sizeof(CompressionConfig));
+    EXPECT_TRUE(std::atomic<CompressionConfig>::is_always_lock_free);
+}
+
 TEST_MAIN() {
     TEST_RUN_ALL();
 }

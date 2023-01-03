@@ -58,12 +58,12 @@ Chunk::hasRoom(size_t len) const
 }
 
 size_t
-Chunk::getMaxPackSize(const CompressionConfig & compression) const {
+Chunk::getMaxPackSize(CompressionConfig compression) const {
     return _format->getMaxPackSize(compression);
 }
 
 void
-Chunk::pack(uint64_t lastSerial, vespalib::DataBuffer & compressed, const CompressionConfig & compression)
+Chunk::pack(uint64_t lastSerial, vespalib::DataBuffer & compressed, CompressionConfig compression)
 {
     _lastSerial = lastSerial;
     std::lock_guard guard(_lock);

@@ -36,7 +36,7 @@ thread_local std::unique_ptr<DecompressContext> _tlDecompressState;
 size_t ZStdCompressor::adjustProcessLen(uint16_t, size_t len)   const { return ZSTD_compressBound(len); }
 
 bool
-ZStdCompressor::process(const CompressionConfig& config, const void * inputV, size_t inputLen, void * outputV, size_t & outputLenV)
+ZStdCompressor::process(CompressionConfig config, const void * inputV, size_t inputLen, void * outputV, size_t & outputLenV)
 {
     size_t maxOutputLen = ZSTD_compressBound(inputLen);
     if ( ! _tlCompressState) {

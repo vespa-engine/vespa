@@ -9,7 +9,7 @@
 namespace vespalib::compression {
 
 struct CompressionConfig {
-    enum Type {
+    enum Type : uint8_t {
         NONE = 0,
         NONE_MULTI = 1,
         HISTORIC_2 = 2,
@@ -21,15 +21,15 @@ struct CompressionConfig {
     };
 
     CompressionConfig() noexcept
-        : type(NONE), compressionLevel(0), threshold(90), minSize(0) {}
+        : CompressionConfig(NONE, 0, 90) {}
     CompressionConfig(Type t) noexcept
-        : type(t), compressionLevel(9), threshold(90), minSize(0) {}
+        : CompressionConfig(t, 9, 90) {}
 
     CompressionConfig(Type t, uint8_t level, uint8_t minRes) noexcept
-        : type(t), compressionLevel(level), threshold(minRes), minSize(0) {}
+        : CompressionConfig(t, level, minRes, 0) {}
 
     CompressionConfig(Type t, uint8_t lvl, uint8_t minRes, size_t minSz) noexcept
-        : type(t), compressionLevel(lvl), threshold(minRes), minSize(minSz) {}
+        : minSize(minSz), type(t), compressionLevel(lvl), threshold(minRes) {}
 
     bool operator==(const CompressionConfig& o) const {
         return (type == o.type
@@ -66,10 +66,10 @@ struct CompressionConfig {
     }
     bool useCompression() const { return isCompressed(type); }
 
-    Type type;
-    uint8_t compressionLevel;
-    uint8_t threshold;
-    size_t minSize;
+    uint32_t minSize;
+    Type     type;
+    uint8_t  compressionLevel;
+    uint8_t  threshold;
 };
 
 }

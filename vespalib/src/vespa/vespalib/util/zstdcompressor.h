@@ -8,7 +8,7 @@ namespace vespalib::compression {
 class ZStdCompressor : public ICompressor
 {
 public:
-    bool process(const CompressionConfig& config, const void * input, size_t inputLen, void * output, size_t & outputLen) override;
+    bool process(CompressionConfig config, const void * input, size_t inputLen, void * output, size_t & outputLen) override;
     bool unprocess(const void * input, size_t inputLen, void * output, size_t & outputLen) override;
     size_t adjustProcessLen(uint16_t options, size_t len)   const override;
 };

@@ -97,8 +97,8 @@ public:
     size_t size() const;
     const LidList & getLids() const { return _lids; }
     LidList getUniqueLids() const;
-    size_t getMaxPackSize(const CompressionConfig & compression) const;
-    void pack(uint64_t lastSerial, vespalib::DataBuffer & buffer, const CompressionConfig & compression);
+    size_t getMaxPackSize(CompressionConfig compression) const;
+    void pack(uint64_t lastSerial, vespalib::DataBuffer & buffer, CompressionConfig compression);
     uint64_t getLastSerial() const { return _lastSerial; }
     uint32_t getId() const { return _id; }
     bool validSerial() const { return getLastSerial() != static_cast<uint64_t>(-1l); }

@@ -91,7 +91,7 @@ vespalib::stringref S1("this is a string long enough to be compressed and is jus
                        "Adding some repeatble sequences like aaaaaaaaaaaaaaaaaaaaaa bbbbbbbbbbbbbbbbbbbbbbb to ensure compression"
                        "xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz");
 
-Value createValue(vespalib::stringref s, const CompressionConfig & cfg) {
+Value createValue(vespalib::stringref s, CompressionConfig cfg) {
     Value v(7);
     vespalib::DataBuffer input;
     input.writeBytes(s.data(), s.size());
