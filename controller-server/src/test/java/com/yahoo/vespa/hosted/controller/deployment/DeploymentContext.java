@@ -453,7 +453,9 @@ public class DeploymentContext {
     /** Pulls the ready job trigger, and then runs the whole of job for the given instance, successfully. */
     private DeploymentContext runJob(JobType type, ApplicationId instance) {
         triggerJobs();
-        var job = currentRun(new JobId(instance, type)).id().job();
+        Run run = currentRun(new JobId(instance, type));
+        assertEquals(type.zone(), run.id().type().zone());
+        JobId job = run.id().job();
         doDeploy(job);
         if (job.type().isDeployment()) {
             doUpgrade(job);
