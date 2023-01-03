@@ -215,6 +215,12 @@ public class RoutingApiTest extends ControllerContainerTest {
                 "", Request.Method.GET),
                 new File("rotation/deployment-status-initial.json"));
 
+        // GET initial deployment status: unknown instance
+        tester.assertResponse(operatorRequest("http://localhost:8080/routing/v1/status/tenant/tenant/application/application/instance/foo/environment/prod/region/us-west-1",
+                                              "", Request.Method.GET),
+                              "{\"error-code\":\"BAD_REQUEST\",\"message\":\"Unknown instance 'foo' in 'tenant.application'\"}",
+                              400);
+
         // POST sets deployment out
         tester.assertResponse(operatorRequest("http://localhost:8080/routing/v1/inactive/tenant/tenant/application/application/instance/default/environment/prod/region/us-west-1",
                 "", Request.Method.POST),
