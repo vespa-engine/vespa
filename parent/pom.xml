@@ -653,11 +653,6 @@
             </dependency>
             <dependency>
                 <groupId>io.airlift</groupId>
-                <artifactId>aircompressor</artifactId>
-                <version>${aircompressor.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>io.airlift</groupId>
                 <artifactId>airline</artifactId>
                 <version>${airline.version}</version>
             </dependency>
@@ -1092,7 +1087,6 @@
     </dependencyManagement>
 
     <properties>
-        <aircompressor.version>0.21</aircompressor.version>
         <airline.version>0.9</airline.version>
         <antlr.version>3.5.2</antlr.version>
         <antlr4.version>4.9.3</antlr4.version>

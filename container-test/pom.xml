@@ -103,11 +103,6 @@
       <groupId>xerces</groupId>
       <artifactId>xercesImpl</artifactId>
     </dependency>
-    <dependency>
-      <groupId>io.airlift</groupId>
-      <artifactId>aircompressor</artifactId>
-      <scope>compile</scope>
-    </dependency>
     <dependency> <!-- TODO: Remove on Vespa 9 -->
       <!-- not used by Vespa, but was historically on test classpath -->
       <groupId>org.json</groupId>

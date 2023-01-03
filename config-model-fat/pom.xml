@@ -205,7 +205,6 @@
                     <i>com.sun.xml.bind:jaxb-core:*:*</i>
                     <i>com.sun.xml.bind:jaxb-impl:*:*</i>
                     <i>com.thaiopensource:jing:*:*</i>
-                    <i>io.airlift:aircompressor:*:*</i>
                     <i>io.prometheus:simpleclient:*:*</i>
                     <i>io.prometheus:simpleclient_common:*:*</i>
                     <i>javax.inject:javax.inject:*:*</i>

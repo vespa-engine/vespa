@@ -53,7 +53,6 @@
       <groupId>com.yahoo.vespa</groupId>
       <artifactId>vespajlib</artifactId>
       <version>${project.version}</version>
-      <scope>compile</scope>
     </dependency>
 
     <!-- All dependencies that should be visible in test classpath, but not compile classpath,
@@ -62,11 +61,6 @@
     <dependency>
       <groupId>com.ibm.icu</groupId>
       <artifactId>icu4j</artifactId>
-    </dependency>
-    <dependency>
-      <groupId>io.airlift</groupId>
-      <artifactId>aircompressor</artifactId>
-      <scope>compile</scope>
     </dependency>
     <dependency>
       <groupId>org.antlr</groupId>

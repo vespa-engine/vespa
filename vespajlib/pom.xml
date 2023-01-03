@@ -32,10 +32,6 @@
       <artifactId>jna</artifactId>
     </dependency>
     <dependency>
-      <groupId>io.airlift</groupId>
-      <artifactId>aircompressor</artifactId>
-    </dependency>
-    <dependency>
       <groupId>com.yahoo.vespa</groupId>
       <artifactId>airlift-zstd</artifactId>
       <version>${project.version}</version>

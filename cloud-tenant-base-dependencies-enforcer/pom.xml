@@ -179,7 +179,6 @@
                                         <include>com.microsoft.onnxruntime:onnxruntime:jar:${onnxruntime.version}:test</include>
                                         <include>com.thaiopensource:jing:20091111:test</include>
                                         <include>commons-codec:commons-codec:${commons-codec.version}:test</include>
-                                        <include>io.airlift:aircompressor:0.21:test</include>
                                         <include>io.airlift:airline:0.9:test</include>
                                         <include>io.prometheus:simpleclient:0.6.0:test</include>
                                         <include>io.prometheus:simpleclient_common:0.6.0:test</include>
