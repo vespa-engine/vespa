@@ -123,6 +123,9 @@ public interface FeedClientBuilder {
     /** Specify HTTP(S) proxy for all endpoints */
     FeedClientBuilder setProxy(URI uri);
 
+    /** Whether to gzip request bodies; default false */
+    FeedClientBuilder setGzipRequests(boolean gzip);
+
     /** Constructs instance of {@link FeedClient} from builder configuration */
     FeedClient build();
 

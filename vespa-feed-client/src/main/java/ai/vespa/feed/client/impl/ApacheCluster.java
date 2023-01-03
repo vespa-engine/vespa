@@ -2,23 +2,39 @@
 package ai.vespa.feed.client.impl;
 
 import ai.vespa.feed.client.HttpResponse;
+import org.apache.hc.client5.http.async.methods.SimpleBody;
 import org.apache.hc.client5.http.async.methods.SimpleHttpRequest;
 import org.apache.hc.client5.http.async.methods.SimpleHttpResponse;
 import org.apache.hc.client5.http.config.RequestConfig;
+import org.apache.hc.client5.http.entity.GzipCompressingEntity;
 import org.apache.hc.client5.http.impl.async.CloseableHttpAsyncClient;
 import org.apache.hc.client5.http.impl.async.HttpAsyncClients;
 import org.apache.hc.client5.http.ssl.ClientTlsStrategyBuilder;
 import org.apache.hc.core5.concurrent.FutureCallback;
 import org.apache.hc.core5.http.ContentType;
+import org.apache.hc.core5.http.Header;
+import org.apache.hc.core5.http.HttpHeaders;
 import org.apache.hc.core5.http.HttpHost;
+import org.apache.hc.core5.http.io.entity.BasicHttpEntity;
+import org.apache.hc.core5.http.io.entity.ByteArrayEntity;
+import org.apache.hc.core5.http.io.entity.StringEntity;
 import org.apache.hc.core5.http.message.BasicHeader;
+import org.apache.hc.core5.http.message.BasicHttpRequest;
+import org.apache.hc.core5.http.nio.AsyncEntityProducer;
+import org.apache.hc.core5.http.nio.AsyncRequestProducer;
+import org.apache.hc.core5.http.nio.entity.AsyncEntityProducers;
+import org.apache.hc.core5.http.nio.entity.BasicAsyncEntityProducer;
+import org.apache.hc.core5.http.nio.support.AsyncRequestBuilder;
+import org.apache.hc.core5.http.nio.support.BasicRequestProducer;
 import org.apache.hc.core5.http2.config.H2Config;
 import org.apache.hc.core5.net.URIAuthority;
 import org.apache.hc.core5.reactor.IOReactorConfig;
 import org.apache.hc.core5.util.Timeout;
 
 import javax.net.ssl.SSLContext;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -29,6 +45,7 @@ import java.util.concurrent.Future;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.zip.GZIPOutputStream;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.apache.hc.core5.http.ssl.TlsCiphers.excludeH2Blacklisted;
@@ -40,9 +57,11 @@ import static org.apache.hc.core5.http.ssl.TlsCiphers.excludeWeak;
 class ApacheCluster implements Cluster {
 
     private final List<Endpoint> endpoints = new ArrayList<>();
-    private final List<BasicHeader> defaultHeaders = Arrays.asList(new BasicHeader("User-Agent", String.format("vespa-feed-client/%s", Vespa.VERSION)),
+    private final List<BasicHeader> defaultHeaders = Arrays.asList(new BasicHeader(HttpHeaders.USER_AGENT, String.format("vespa-feed-client/%s", Vespa.VERSION)),
                                                                    new BasicHeader("Vespa-Client-Version", Vespa.VERSION));
+    private final Header gzipEncodingHeader = new BasicHeader(HttpHeaders.CONTENT_ENCODING, "gzip");
     private final RequestConfig requestConfig;
+    private final boolean gzip;
     private int someNumber = 0;
 
     private final ScheduledExecutorService executor = Executors.newSingleThreadScheduledExecutor(t -> new Thread(t, "request-timeout-thread"));
@@ -52,6 +71,7 @@ class ApacheCluster implements Cluster {
             for (URI endpoint : builder.endpoints)
                 endpoints.add(new Endpoint(createHttpClient(builder), endpoint));
         this.requestConfig = createRequestConfig(builder);
+        this.gzip = builder.gzipRequests;
     }
 
     @Override
@@ -77,8 +97,14 @@ class ApacheCluster implements Cluster {
             request.setConfig(requestConfig);
             defaultHeaders.forEach(request::setHeader);
             wrapped.headers().forEach((name, value) -> request.setHeader(name, value.get()));
-            if (wrapped.body() != null)
-                request.setBody(wrapped.body(), ContentType.APPLICATION_JSON);
+            if (wrapped.body() != null) {
+                byte[] body = wrapped.body();
+                if (gzip) {
+                    request.setHeader(gzipEncodingHeader);
+                    body = gzipped(body);
+                }
+                request.setBody(body, ContentType.APPLICATION_JSON);
+            }
 
             Future<?> future = endpoint.client.execute(request,
                                                        new FutureCallback<SimpleHttpResponse>() {
@@ -94,6 +120,14 @@ class ApacheCluster implements Cluster {
             vessel.completeExceptionally(thrown);
         }
         vessel.whenComplete((__, ___) -> endpoint.inflight.decrementAndGet());
+    }
+
+    private byte[] gzipped(byte[] content) throws IOException{
+        ByteArrayOutputStream buffer = new ByteArrayOutputStream(1 << 10);
+        try (GZIPOutputStream zip = new GZIPOutputStream(buffer)) {
+            zip.write(content);
+        }
+        return buffer.toByteArray();
     }
 
     @Override

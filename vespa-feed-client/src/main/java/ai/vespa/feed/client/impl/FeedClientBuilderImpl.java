@@ -50,6 +50,7 @@ public class FeedClientBuilderImpl implements FeedClientBuilder {
     boolean benchmark = true;
     boolean dryrun = false;
     boolean speedTest = false;
+    boolean gzipRequests = false;
     URI proxy;
 
 
@@ -197,6 +198,12 @@ public class FeedClientBuilderImpl implements FeedClientBuilder {
     @Override
     public FeedClientBuilderImpl setProxy(URI uri) {
         this.proxy = uri;
+        return this;
+    }
+
+    @Override
+    public FeedClientBuilderImpl setGzipRequests(boolean gzip) {
+        this.gzipRequests = gzip;
         return this;
     }
 

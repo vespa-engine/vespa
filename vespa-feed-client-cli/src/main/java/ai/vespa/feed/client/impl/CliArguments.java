@@ -58,6 +58,7 @@ class CliArguments {
     private static final String STDIN_OPTION = "stdin";
     private static final String DOOM_OPTION = "max-failure-seconds";
     private static final String PROXY_OPTION = "proxy";
+    private static final String GZIP_REQUESTS_OPTION = "gzip-requests";
 
     private final CommandLine arguments;
 
@@ -180,6 +181,8 @@ class CliArguments {
     boolean dryrunEnabled() { return has(DRYRUN_OPTION); }
 
     boolean speedTest() { return has(SPEED_TEST_OPTION); }
+
+    boolean gzipRequests() { return has(GZIP_REQUESTS_OPTION); }
 
     OptionalInt testPayloadSize() throws CliArgumentsException { return intValue(TEST_PAYLOAD_SIZE_OPTION); }
 
@@ -354,6 +357,10 @@ class CliArguments {
                         .desc("URI to proxy endpoint")
                         .hasArg()
                         .type(URL.class)
+                        .build())
+                .addOption(Option.builder()
+                        .longOpt(GZIP_REQUESTS_OPTION)
+                        .desc("Compress request bodies with gzip")
                         .build());
     }
 

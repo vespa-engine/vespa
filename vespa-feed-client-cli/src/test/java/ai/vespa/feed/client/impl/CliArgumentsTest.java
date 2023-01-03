@@ -28,7 +28,7 @@ class CliArgumentsTest {
                 "--max-streams-per-connection=128", "--certificate=cert.pem", "--private-key=key.pem",
                 "--ca-certificates=ca-certs.pem", "--disable-ssl-hostname-verification",
                 "--header=\"My-Header: my-value\"", "--header", "Another-Header: another-value", "--benchmark",
-                "--route=myroute", "--timeout=0.125", "--trace=9", "--verbose", "--silent",
+                "--route=myroute", "--timeout=0.125", "--trace=9", "--verbose", "--silent", "--gzip-requests",
                 "--show-errors", "--show-all", "--max-failure-seconds=30", "--proxy", "https://myproxy:1234"});
         assertEquals(URI.create("https://vespa.ai:4443/"), args.endpoint());
         assertEquals(Paths.get("feed.json"), args.inputFile().get());
@@ -52,6 +52,7 @@ class CliArgumentsTest {
         assertTrue(args.showErrors());
         assertTrue(args.showSuccesses());
         assertFalse(args.showProgress());
+        assertTrue(args.gzipRequests());
         assertEquals(URI.create("https://myproxy:1234"), args.proxy().orElse(null));
     }
 

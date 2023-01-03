@@ -15,6 +15,8 @@ Vespa feed client
                                           across the network
     --endpoint <arg>                      URI to feed endpoint
     --file <arg>                          Path to feed file in JSON format
+    --gzip-requests                       Compress request bodies with
+                                          gzip
     --header <arg>                        HTTP header on the form 'Name:
                                           value'
     --help

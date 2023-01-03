@@ -1,7 +1,6 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package ai.vespa.feed.client.impl;
 
-import ai.vespa.feed.client.DocumentId;
 import ai.vespa.feed.client.FeedClient;
 import ai.vespa.feed.client.FeedClientBuilder;
 import ai.vespa.feed.client.FeedException;
@@ -10,7 +9,6 @@ import ai.vespa.feed.client.JsonFeeder.ResultCallback;
 import ai.vespa.feed.client.OperationStats;
 import ai.vespa.feed.client.Result;
 import ai.vespa.feed.client.ResultException;
-import ai.vespa.feed.client.impl.CliArguments.CliArgumentsException;
 import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonGenerator;
 
@@ -29,14 +27,12 @@ import java.time.Instant;
 import java.util.Enumeration;
 import java.util.Map;
 import java.util.Random;
-import java.util.UUID;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.BooleanSupplier;
-import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 import static java.util.stream.Collectors.joining;
@@ -163,6 +159,7 @@ public class CliClient {
         cliArgs.headers().forEach(builder::addRequestHeader);
         builder.setDryrun(cliArgs.dryrunEnabled());
         builder.setSpeedTest(cliArgs.speedTest());
+        builder.setGzipRequests(cliArgs.gzipRequests());
         cliArgs.doomSeconds().ifPresent(doom -> builder.setCircuitBreaker(new GracePeriodCircuitBreaker(Duration.ofSeconds(10),
                                                                                                         Duration.ofSeconds(doom))));
         cliArgs.proxy().ifPresent(builder::setProxy);
