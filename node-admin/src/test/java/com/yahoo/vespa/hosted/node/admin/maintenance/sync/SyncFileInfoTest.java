@@ -29,8 +29,11 @@ public class SyncFileInfoTest {
     private static final Path accessLogPath2 = fileSystem.getPath("/opt/vespa/logs/access/access.log.20210212.zst");
     private static final Path accessLogPath3 = fileSystem.getPath("/opt/vespa/logs/access/access-json.log.20210213.zst");
     private static final Path accessLogPath4 = fileSystem.getPath("/opt/vespa/logs/access/JsonAccessLog.20210214.zst");
+    private static final Path accessLogPath5 = fileSystem.getPath("/opt/vespa/logs/access/JsonAccessLog.container.20210214.zst");
+    private static final Path accessLogPath6 = fileSystem.getPath("/opt/vespa/logs/access/JsonAccessLog.metrics-proxy.20210214.zst");
     private static final Path connectionLogPath1 = fileSystem.getPath("/opt/vespa/logs/access/ConnectionLog.20210210");
     private static final Path connectionLogPath2 = fileSystem.getPath("/opt/vespa/logs/access/ConnectionLog.20210212.zst");
+    private static final Path connectionLogPath3 = fileSystem.getPath("/opt/vespa/logs/access/ConnectionLog.metrics-proxy.20210210");
     private static final Path vespaLogPath1 = fileSystem.getPath("/opt/vespa/logs/vespa.log");
     private static final Path vespaLogPath2 = fileSystem.getPath("/opt/vespa/logs/vespa.log-2021-02-12");
     private static final Path zkLogPath0 = fileSystem.getPath("/opt/vespa/logs/zookeeper.configserver.0.log");
@@ -49,6 +52,12 @@ public class SyncFileInfoTest {
 
         assertForLogFile(accessLogPath4, "s3://vespa-data-bucket/vespa/music/main/h432a/logs/access/JsonAccessLog.20210214.zst", NONE, true);
         assertForLogFile(accessLogPath4, "s3://vespa-data-bucket/vespa/music/main/h432a/logs/access/JsonAccessLog.20210214.zst", NONE, false);
+
+        assertForLogFile(accessLogPath5, "s3://vespa-data-bucket/vespa/music/main/h432a/logs/access/JsonAccessLog.container.20210214.zst", NONE, true);
+        assertForLogFile(accessLogPath5, "s3://vespa-data-bucket/vespa/music/main/h432a/logs/access/JsonAccessLog.container.20210214.zst", NONE, false);
+
+        assertEquals(Optional.empty(), SyncFileInfo.forLogFile(nodeArchiveUri, accessLogPath6, true, ApplicationId.defaultId()));
+        assertEquals(Optional.empty(), SyncFileInfo.forLogFile(nodeArchiveUri, accessLogPath6, false, ApplicationId.defaultId()));
     }
 
     @Test
@@ -58,6 +67,9 @@ public class SyncFileInfoTest {
 
         assertForLogFile(connectionLogPath2, "s3://vespa-data-bucket/vespa/music/main/h432a/logs/connection/ConnectionLog.20210212.zst", NONE, true);
         assertForLogFile(connectionLogPath2, "s3://vespa-data-bucket/vespa/music/main/h432a/logs/connection/ConnectionLog.20210212.zst", NONE, false);
+
+        assertEquals(Optional.empty(), SyncFileInfo.forLogFile(nodeArchiveUri, connectionLogPath3, true, ApplicationId.defaultId()));
+        assertEquals(Optional.empty(), SyncFileInfo.forLogFile(nodeArchiveUri, connectionLogPath3, false, ApplicationId.defaultId()));
     }
 
     @Test
@@ -89,4 +101,5 @@ public class SyncFileInfoTest {
         assertEquals(compression, sfi.map(SyncFileInfo::uploadCompression).orElse(null));
         assertEquals(minDurationBetweenSync, sfi.flatMap(SyncFileInfo::minDurationBetweenSync).orElse(null));
     }
+
 }

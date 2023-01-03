@@ -47,7 +47,7 @@ public final class AccessLogComponent extends SimpleComponent implements AccessL
                 clusterName.isEmpty() ? capitalize(logType.name()) :
                                         capitalize(logType.name()) + "." + clusterName.get(),
                 -1,
-                ((cluster instanceof ApplicationContainerCluster) ? 4*1024*1024 : null));
+                ((cluster instanceof ApplicationContainerCluster) ? 4 << 20 : null));
     }
 
     private static String capitalize(String name) {
