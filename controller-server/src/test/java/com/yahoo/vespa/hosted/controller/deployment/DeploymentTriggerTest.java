@@ -2676,7 +2676,7 @@ public class DeploymentTriggerTest {
 
         JobType centauriTest = JobType.systemTest(tester.controller().zoneRegistry(), CloudName.from("centauri"));
         JobType centauriStaging = JobType.stagingTest(tester.controller().zoneRegistry(), CloudName.from("centauri"));
-        assertQueued("separate", jobs, centauriTest);
+        assertQueued("separate", jobs, systemTest, centauriTest);
         assertQueued("separate", jobs, stagingTest, centauriStaging);
         assertQueued("independent", jobs, systemTest, centauriTest);
         assertQueued("alpha", jobs, systemTest);

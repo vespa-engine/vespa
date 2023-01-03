@@ -503,25 +503,26 @@ public class DeploymentStatus {
                                                                         .filter(run -> run.versions().equals(versions))
                                                                         .findFirst())
                                                .map(Run::start);
-        Optional<Instant> systemTestedAt = testedAt(job.application(), systemTest(job.type()), versions);
-        Optional<Instant> stagingTestedAt = testedAt(job.application(), stagingTest(job.type()), versions);
+        Optional<Instant> systemTestedAt = testedAt(job, systemTest(job.type()), versions);
+        Optional<Instant> stagingTestedAt = testedAt(job, stagingTest(job.type()), versions);
         if (systemTestedAt.isEmpty() || stagingTestedAt.isEmpty()) return triggeredAt;
         Optional<Instant> testedAt = systemTestedAt.get().isAfter(stagingTestedAt.get()) ? systemTestedAt : stagingTestedAt;
         return triggeredAt.isPresent() && triggeredAt.get().isBefore(testedAt.get()) ? triggeredAt : testedAt;
     }
 
-    /** Earliest instant when versions were tested for the given instance */
-    private Optional<Instant> testedAt(ApplicationId instance, JobType type, Versions versions) {
-        return declaredTest(instance, type).map(__ -> allJobs.instance(instance.instance()))
-                                                    .orElse(allJobs)
-                                                    .type(type).asList().stream()
-                                                    .flatMap(status -> RunList.from(status)
-                                                                              .on(versions)
-                                                                              .matching(run -> run.id().type().zone().equals(type.zone()))
-                                                                              .matching(Run::hasSucceeded)
-                                                                              .asList().stream()
-                                                                              .map(Run::start))
-                                                    .min(naturalOrder());
+    /** Earliest instant when versions were tested for the given instance. */
+    private Optional<Instant> testedAt(JobId job, JobType type, Versions versions) {
+        return prerequisiteTests(job, type).stream()
+                                           .map(test -> allJobs.get(test).stream()
+                                                               .flatMap(status -> RunList.from(status)
+                                                                                         .on(versions)
+                                                                                         .matching(run -> run.id().type().zone().equals(type.zone()))
+                                                                                         .matching(Run::hasSucceeded)
+                                                                                         .asList().stream()
+                                                                                         .map(run -> run.end().get()))
+                                                               .min(naturalOrder()))
+                                           .reduce((o, n) -> o.isEmpty() || n.isEmpty() ? Optional.empty() : o.get().isBefore(n.get()) ? n : o)
+                                           .orElse(Optional.empty());
     }
 
     private Map<JobId, List<Job>> productionJobs(InstanceName instance, Change change, boolean assumeUpgradesSucceed) {
@@ -667,11 +668,10 @@ public class DeploymentStatus {
     /** The test jobs that need to run prior to the given production deployment jobs. */
     public Map<JobId, List<Job>> testJobs(Map<JobId, List<Job>> jobs) {
         Map<JobId, List<Job>> testJobs = new LinkedHashMap<>();
-        // First, look for a declared test in the instance of each production job.
         jobs.forEach((job, versionsList) -> {
-            for (JobType testType : List.of(systemTest(job.type()), stagingTest(job.type()))) {
-                if (job.type().isProduction() && job.type().isDeployment()) {
-                    declaredTest(job.application(), testType).ifPresent(testJob -> {
+            if (job.type().isProduction() && job.type().isDeployment()) {
+                for (JobType testType : List.of(systemTest(job.type()), stagingTest(job.type()))) {
+                    prerequisiteTests(job, testType).forEach(testJob -> {
                         for (Job productionJob : versionsList)
                             if (allJobs.successOn(testType, productionJob.versions())
                                        .instance(testJob.application().instance())
@@ -683,26 +683,6 @@ public class DeploymentStatus {
                                                DeploymentStatus::union);
                     });
                 }
-            }
-        });
-        // If no declared test in the right instance was triggered, pick one from a different instance.
-        jobs.forEach((job, versionsList) -> {
-            for (JobType testType : List.of(systemTest(job.type()), stagingTest(job.type()))) {
-                for (Job productionJob : versionsList)
-                    if (   job.type().isProduction() && job.type().isDeployment()
-                        && allJobs.successOn(testType, productionJob.versions()).asList().isEmpty()
-                        && testJobs.keySet().stream()
-                                   .noneMatch(test ->    test.type().equals(testType) && test.type().zone().equals(testType.zone())
-                                                      && testJobs.get(test).stream().anyMatch(testJob -> test.type().isSystemTest() ? testJob.versions().targetsMatch(productionJob.versions())
-                                                                                                                                    : testJob.versions().equals(productionJob.versions())))) {
-                        JobId testJob = firstDeclaredOrElseImplicitTest(testType);
-                        testJobs.merge(testJob,
-                                       List.of(new Job(testJob.type(),
-                                                       productionJob.versions(),
-                                                       jobSteps.get(testJob).readyAt(productionJob.change),
-                                                       productionJob.change)),
-                                       DeploymentStatus::union);
-                    }
             }
         });
         return Collections.unmodifiableMap(testJobs);
