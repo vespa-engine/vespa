@@ -62,6 +62,7 @@ public class CuratorDatabaseClient {
 
     private static final Path root = Path.fromString("/provision/v1");
     private static final Path lockPath = root.append("locks");
+    private static final Path nodesPath = root.append("nodes");
     private static final Path loadBalancersPath = root.append("loadBalancers");
     private static final Path applicationsPath = root.append("applications");
     private static final Path inactiveJobsPath = root.append("inactiveJobs");
@@ -91,6 +92,8 @@ public class CuratorDatabaseClient {
 
     private void initZK() {
         db.create(root);
+        db.create(nodesPath);
+        // TODO(mpolden): Remove state paths after migration to nodesPath
         for (Node.State state : Node.State.values())
             db.create(toPath(state));
         db.create(applicationsPath);
@@ -225,14 +228,21 @@ public class CuratorDatabaseClient {
 
     private void writeNode(Node.State toState, CuratorTransaction curatorTransaction, Node node, Node newNode) {
         byte[] nodeData = nodeSerializer.toJson(newNode);
-        String currentNodePath = toPath(node).getAbsolute();
-        String newNodePath = toPath(toState, newNode.hostname()).getAbsolute();
-        if (newNodePath.equals(currentNodePath)) {
-            curatorTransaction.add(CuratorOperations.setData(currentNodePath, nodeData));
-        } else {
-            curatorTransaction.add(CuratorOperations.delete(currentNodePath))
-                              .add(CuratorOperations.create(newNodePath, nodeData));
+        { // TODO(mpolden): Remove this after migration to nodesPath
+            String currentNodePath = toPath(node).getAbsolute();
+            String newNodePath = toPath(toState, newNode.hostname()).getAbsolute();
+            if (newNodePath.equals(currentNodePath)) {
+                curatorTransaction.add(CuratorOperations.setData(currentNodePath, nodeData));
+            } else {
+                curatorTransaction.add(CuratorOperations.delete(currentNodePath))
+                                  .add(CuratorOperations.create(newNodePath, nodeData));
+            }
         }
+        Path nodePath = nodePath(newNode);
+        if (db.exists(nodePath)) {
+            curatorTransaction.add(CuratorOperations.delete(nodePath.getAbsolute()));
+        }
+        curatorTransaction.add(CuratorOperations.create(nodePath.getAbsolute(), nodeData));
     }
 
     private Status newNodeStatus(Node node, Node.State toState) {
@@ -292,6 +302,10 @@ public class CuratorDatabaseClient {
 
     private Path toPath(Node.State nodeState, String nodeName) {
         return root.append(toDir(nodeState)).append(nodeName);
+    }
+
+    private Path nodePath(Node node) {
+        return nodesPath.append(node.hostname());
     }
 
     /** Creates and returns the path to the lock for this application */
