@@ -64,7 +64,7 @@ public class RpcServerTest extends FleetControllerTest {
         startingTest("RpcServerTest::testRebinding");
         Slobrok slobrok = new Slobrok();
         String[] slobrokConnectionSpecs = getSlobrokConnectionSpecs(slobrok);
-        RpcServer server = new RpcServer(timer, new Object(), "mycluster", 0, new BackOff());
+        RpcServer server = new RpcServer(new Object(), "mycluster", 0, new BackOff());
         server.setSlobrokConnectionSpecs(slobrokConnectionSpecs, 0);
         int portUsed = server.getPort();
         server.setSlobrokConnectionSpecs(slobrokConnectionSpecs, portUsed);

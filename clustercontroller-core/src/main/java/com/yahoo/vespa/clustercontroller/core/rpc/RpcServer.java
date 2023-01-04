@@ -4,6 +4,7 @@ package com.yahoo.vespa.clustercontroller.core.rpc;
 import com.yahoo.jrt.Acceptor;
 import com.yahoo.jrt.ErrorCode;
 import com.yahoo.jrt.Int32Value;
+import com.yahoo.jrt.ListenFailedException;
 import com.yahoo.jrt.Method;
 import com.yahoo.jrt.Request;
 import com.yahoo.jrt.Spec;
@@ -23,7 +24,6 @@ import com.yahoo.vdslib.state.State;
 import com.yahoo.vespa.clustercontroller.core.ContentCluster;
 import com.yahoo.vespa.clustercontroller.core.MasterElectionHandler;
 import com.yahoo.vespa.clustercontroller.core.NodeInfo;
-import com.yahoo.vespa.clustercontroller.core.Timer;
 import com.yahoo.vespa.clustercontroller.core.listeners.NodeListener;
 import java.io.PrintWriter;
 import java.io.StringWriter;
@@ -39,7 +39,6 @@ public class RpcServer {
 
     private static final Logger log = Logger.getLogger(RpcServer.class.getName());
 
-    private final Timer timer;
     private final Object monitor;
     private final String clusterName;
     private final int fleetControllerIndex;
@@ -51,11 +50,8 @@ public class RpcServer {
     private final List<Request> rpcRequests = new LinkedList<>();
     private MasterElectionHandler masterHandler;
     private final BackOffPolicy slobrokBackOffPolicy;
-    private long lastConnectErrorTime = 0;
-    private String lastConnectError = "";
 
-    public RpcServer(Timer timer, Object monitor, String clusterName, int fleetControllerIndex, BackOffPolicy bop) {
-        this.timer = timer;
+    public RpcServer(Object monitor, String clusterName, int fleetControllerIndex, BackOffPolicy bop) {
         this.monitor = monitor;
         this.clusterName = clusterName;
         this.fleetControllerIndex = fleetControllerIndex;
@@ -99,13 +95,8 @@ public class RpcServer {
         log.log(Level.FINE, () -> "Fleetcontroller " + fleetControllerIndex + ": RPC server attempting to bind to port " + port);
         try {
             acceptor = supervisor.listen(new Spec(port));
-        } catch (Exception e) {
-            long time = timer.getCurrentTimeInMillis();
-            if (!e.getMessage().equals(lastConnectError) || time - lastConnectErrorTime > 60 * 1000) {
-                lastConnectError = e.getMessage();
-                lastConnectErrorTime = time;
-                log.log(Level.WARNING, "Failed to bind or initialize RPC server socket: " + e.getMessage());
-            }
+        } catch (ListenFailedException e) {
+            throw new RuntimeException(e);
         }
         log.log(Level.FINE, () -> "Fleetcontroller " + fleetControllerIndex + ": RPC server listening to port " + acceptor.port());
         SlobrokList slist = new SlobrokList();
