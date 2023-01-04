@@ -1,0 +1,1019 @@
+.EQ
+delim $$
+define <- ?< "\h'-0.5m'" up 10 "\(em" down 10 ?
+define gtorder ?"\z>\d\~\u"?
+define EXIST ?"\z\-\d\z\-\r\-\d\v'0.2m'\(br\v'-0.2m'"?
+define ALL ?"\o'V-'"?
+define 0M '0~...~M-1'
+define LH 'lo~...~hi'
+define RR 'bold R'
+define HH 'bold H'
+define KK 'bold K'
+define or '"\fBor\fI"~'
+define and '"\fBand\fI"~'
+define if '"\fBif\fI"~'
+define then '"\fBthen\fI"~'
+define else '"\fBelse\fI"~'
+define repeat '"\fBrepeat\fI"~'
+define until '"\fBuntil\fI"~'
+define while '"\fBwhile\fI"~'
+define do '"\fBdo\fI"~'
+define case '"\fBcase\fI"~'
+define end '"\fBend\fI"~'
+define begin '"\fBbegin\fI"~'
+define elseif '"\fBelseif\fI"~' 
+define for '"\fBfor\fI"~'
+define From '"\fBfrom\fI"~'
+define To '"\fBto\fI"~'
+define exit '"\fBexit\fI"~'
+.EN
+.ls 1	
+.ce
+COMPACT HASH TABLES USING BIDIRECTIONAL LINEAR PROBING
+.sp 3
+.ce
+John G. Cleary
+.ce
+The University of Calgary, Alberta, Canada.
+.sp 3
+.sp 20
+\u1\dAuthors Present Address: Man-Machine Systems Group, Department of
+Computer Science, The University of Calgary, 2500 University Drive NW
+Calgary, Canada T2N 1N4.
+.sp
+\u2\dThis research was supported by
+the Natural Sciences and Engineering Research Council of Canada.
+.sp 2
+.ls 2
+.bp
+Index Terms --  Searching, hash storage, open addressing, 
+bidirectional linear probing,
+address calculation, information retrieval, scatter storage, 
+performance analysis, memory compaction.
+.bp
+.pp
+Abstract -- An algorithm is developed which reduces the memory 
+requirements of hash tables.
+This  is achieved by storing only
+a  part of each key along with a few extra bits needed to ensure that
+all keys are stored unambiguously.  The fraction of each key stored
+decreases as the size of the hash table increases.  Significant reductions
+in total memory usage can be achieved especially when the key size is not
+much larger than the size of a memory index and when only a small amount
+of data is stored with each key.
+The algorithm is  based on 
+bidirectional linear probing.
+Search and insertion times are shown by simulation 
+to be similar to those
+for ordinary bidirectional linear probing.
+.bp
+.sh "1 Introduction"
+.pp
+The retrieval of a single item from among many others is a common problem
+in computer science.  I am particularly concerned here with the case where 
+the item is retrieved on the basis of a single label
+or key attached to each entry and where the keys are not ordered in any
+particular way.
+There is a well known solution
+to this problem in the form of hash tables.
+Knuth [8], Knott [7] and Maurer and Lewis [11] provide good introductions to 
+this subject.
+.pp
+An efficient version of hashing called
+.ul
+bidirectional linear probing 
+(BLP),
+was developed by Amble and Knuth [1].
+As it forms the basis of what follows it is described in more detail in the
+following section.  Section 3 shows how it can be modified so as to 
+significantly reduce its memory requirements.  This is done by storing only
+a small part of each key -- a few extra bits are needed to ensure 
+that different keys, that look the same after truncation, are correctly
+distinguished.
+.pp
+The execution time of this compact hashing algorithm is considered in
+Section 4.  It is shown by simulation to be 
+similar to  ordinary BLP
+for both successful searches and insertion.  It is significantly
+better for unsuccessful searches.  
+.pp
+A hashing scheme similar to compact hashing in that not all of the key is
+stored has been proposed by Andreae [2] (Chapter 1).  However, his technique 
+has a small but finite probability of retrieving an incorrect key.
+Although compact hashing
+is not based on this earlier technique it provided the impetus to
+seek the current solution.
+.pp
+In hashing algorithms using an overflow area and a linked list of synonyms
+or by variations of this using buckets (see Maurer and Lewis [11]) only the
+remainder of each key need be stored.  This has been known since at least
+1965 (Feldman and Low [6] and Knuth [8] sec. 6.4, exercise 13, p543).  
+However, each entry (including the original hash location) requires a pointer
+to the next overflow record.  This pointer will about the same size as the
+reduction in the key size.  So, there is no net memory saving  over
+open addressing techniques such as BLP.
+.pp
+Amongst the possible applications of compact hashing is the storage
+of trees and TRIES without the use of pointers but still preserving
+a $log N$ retrieval time. 
+It is hoped to report on this application in more detail later.
+.pp
+Pascal versions of the algorithms described below are available
+from the author.
+.sh "2 Bidirectional linear probing."
+.pp
+I will now introduce the open addressing technique which forms the basis
+of compact hashing.
+The 
+.ul
+hash table
+in which the keys will be stored is an array $T[ 0M ]$ .  I will
+be concerned only with the the keys themselves as the 
+items associated with each key do not 
+significantly affect the algorithms.  In order to compute the location
+for each key I will use two functions: $t$ which randomises the original
+keys, and $h$ which computes a value in the range $0M$.  
+.pp
+Let $KK$ be the set of all possible keys and $HH$ be the set of all possible
+transformed keys.  Then $t: KK -> HH$ is an invertible function.
+This function is introduced
+to ensure that the keys stored are  random and so, as a consequence,
+the hashing
+procedure has a satisfactory
+average performance.  In what follows these transformed
+keys will be used rather than the original keys.  For example, it is the 
+transformed keys that are stored in $T$.  (-1 is used to indicate an unoccupied
+location in $T$.)
+.pp
+$h: HH ->"{" 0M "}"$ and has the 
+property that for
+$H sub 1 ~, H sub 2 ~ "\(mo" HH$
+$H sub 1 ~<=~ H sub 2~~ "\fBiff\fP"~~h(H sub 1 ) ~<=~ h(H sub 2 )$.  
+As a consequence the keys will be mapped 
+into the hash table in the same order as the values of their transformed
+keys.  
+This ordering is essential to the compaction attained later.
+Suitable functions $t$ and $h$ have been extensively discussed 
+(Carter and Wegman, [3]; Knott [7]; Lum, [9]; Lum, Yuen and Dodd, [10]).
+These authors show that there are functions which almost always make
+the distribution of transformed keys random.  I will not consider any
+particular functions for $t$ although some examples of $h$ will be introduced
+later.
+.pp
+To retrieve a key, $K$, from the hash table the transformed key and the 
+hash location are first computed.  If the (transformed) key stored at the
+hash location is greater than $t(K)$ then the table is searched upward 
+until one of three things happen.  Either an empty location will be found,
+$T[j]=-1$, or the sought key will be found, $T[j]=t(K)$, or a key greater
+than the sought key will be found, $T[j]>t(K)$.  If the first key examined
+is less than $t(K)$ then an analogous search is done down the hash table.
+The search is successful if the sought key is found, that is
+if the last location examined is equal to $t(K)$, and is unsuccessful
+otherwise.  (See Amble and Knuth [1] for the details of this algorithm).
+.pp
+For a given set of keys there are many ways that they can be arranged in $T$
+so that the search algorithm above will  still work correctly.
+There is thus
+freedom, when designing an algorithm to insert new keys, to choose different 
+strategies for positioning the keys.
+There are two conditions that must be satisfied when a new key is inserted.
+One is that all keys in the memory must remain in ascending order
+and the other is that there must be no empty locations between the original hash
+location of any key and its actual storage position.  These imply that all
+keys sharing the same initial hash location must form a single unbroken group.
+.pp
+Within these constraints one would like to insert a new key so as to minimise 
+later retrieval times and the time to do the insertion itself.  Intuitively
+keys which share the same initial hash location should be centered around that
+initial address.  There are two ways of inserting keys which cause little
+disturbance to the memory.  One is to find the position where the key should
+be placed according to its ordering and then to create a gap for it by
+moving 
+.ul
+up 
+all entries from this position up to the next empty location.  The second way is
+symmetric to this and creates a gap by moving entries 
+.ul
+down 
+one location.
+The insertion algorithm given by  Amble and Knuth [1] chooses which of these
+two moves to make using a strategy which is  guaranteed to minimise the number
+of locations in $T$ which are examined during later successful or unsuccessful
+searches, although it is not guaranteed to minimise the insertion time itself.
+.pp
+One  consequence of this insertion strategy is that sometimes it is necessary
+to move entries below 0 and above $M$ in the array $T$.  One solution to this
+would be to make the array circular and move entries from 0 to $M-1$ and
+vice versa.  However, following Amble and Knuth [1], I will instead extend
+the array $T$ and other arrays to be defined later at their top and bottom.
+This gives 'breathing room' for the array to expand.  An extra 20 entries
+at the top and bottom were found to be quite sufficient for all
+the simulation runs reported in Section 4.  Accordingly I will define
+$lo ~=~-20$ and $hi~=~M+19$ and define the array $T$ over the range
+$lo$ to $hi$.
+.sh "3 Compact Hashing Using Bidirectional Linear Probing"
+.pp
+I will now show that the memory required to store the keys in BLP can be
+significantly reduced.  First consider the case when
+the number of possible keys in $KK$ is less than $M$, then every possible key
+can be assigned its own location in $T$ without possibility of collision.
+In this case $T$ degenerates to an ordinary indexed array and the keys need
+never be stored.  At worst a single bit might be needed to say whether
+a particular key has been stored or not.  This raises the question of whether
+it is necessary to hold the entire key in memory if the key space $KK$ is slightly
+larger than $M$.  For example if $KK$ were, say, four times larger than $M$
+then it might be possible to hold only two bits of the key rather than the entire
+key.  The reasoning here is that the main function of the stored keys is to
+ensure that entries which collide at the same location can be correctly
+separated.
+Provided $h$ is suitably chosen at most four keys can be mapped to a 
+single location.  The two bits might then be sufficient to store four
+different values for these four keys.  It is in fact 
+possible to realise this
+reduction in stored key size although a fixed amount of extra information 
+is needed
+at each location in order to correctly handle collisions.
+.pp
+So that I can talk about the part of the key which is in excess of the
+address space I will now introduce a 
+.ul
+remainder function
+$r$.  $r$ maps from the transformed keys $HH$ to a set of remainders 
+$RR~==~"{"0,~1,~2,~...,~Rm-1"}"$.  
+It  is these remainders that will be stored in lieu
+of the transformed keys.  
+The essential property
+of $r$ is that $r(H)$ and $h(H)$ together are sufficient to uniquely 
+determine $H$.  
+.pp
+.ne 9
+Formally,
+.sp
+	$RR ~~==~~ "{"0,~1,~2,~...,~Rm-1"}"$
+.sp
+	$r: HH -> RR$
+.sp
+and	$h( H sub 1 )~=~h( H sub 2 )~and~r( H sub 1 )~=~r( H sub 2 )
+~~ "\fBiff\fP" ~~ H sub 1 ~~=~~ H sub 2$ .
+.sp
+For a given function $h$ there are usually many possible functions $r$.
+One particularly simple pair of functions, referred to by Maurer and Lewis [10]
+as the 
+.ul
+division method, 
+is $h(H)~~=~~ left floor^ H/Rm right floor$ and
+$r(H)~~=~~ H~ "\fBmod\fP"~Rm$ . 
+.sp
+When $r$ is defined as above and $Rm$ is between $2 sup d$ and $2 sup d+1$ 
+the number of bits needed to 
+specify a remainder is the number of bits in the key less $d$.
+.pp
+Consider a new array
+$R [ LH ]$ into which the remainders will be stored.   
+In what follows $R$ will be kept in place of $T$ but it will be useful to
+talk about $T$ as if it were still there.  $R$ and the additional arrays to
+be introduced shortly specify just the information in $T$, albeit
+more compactly.  Each value $R [i]$ will hold the value $r(T[i])$ with the
+exception that when $T[i]$ is $-1$ (marking an empty location) then $R[i]$
+is also set to $-1$.  If
+there have been no collisions then each $R[i]$ paired with the value $i$
+unambiguously gives the transformed key that would have been stored in $T[i]$.
+However, if there have been collisions it is not possible
+to tell if a value of $R[i]$ is at its home location or if it has been moved
+from, say, $i-1$ and corresponds to a key, $H$, where $r(H)~=~ R[i]$ and $h(H)~=~i-1$.
+If there were some way to locate for each $R[i]$ where it was originally 
+hashed then the original keys could all be unambiguously determined.
+This can be done by maintaining two extra arrays of bits, the virgin array $V$,
+and the change array $C$.
+.pp
+The virgin array
+$V[ LH ]$ marks those 
+locations which have never been hashed to.  That is, $V[i]$ has a value of $1$
+stored if any of the stored keys in the hash table has $i$ as its hash
+address, and $0$ otherwise.  $V$ is maintained by initialising it to $0$
+and thereafter setting $V[h(H)] <-~1$ whenever a key $H$ is inserted in the
+memory.  The virginity of a location is unaffected by the move operations
+during insertion.
+The $V$ array is similar to the array of pass bits recommended in [1].
+.pp
+To understand the change array $C[ LH ]$ it is necessary to look more closely
+at the distribution of values of $R[i]$.  These remainders can be grouped 
+according to whether or not they share the same original hash address.
+Also recall that the hash table, as in BLP, is ordered, so,
+all the remainders in a particular group will occur at 
+consecutive locations. 
+The change bits $C[i]$ are used to delimit the 
+boundaries of these groups.  This is done by marking the first remainder
+(the one stored at the lowest address) of each group with a $1$.  All other 
+members of a group have $C[i]=0$.  To simplify the search and insertion
+algorithms it is also convenient to set $C[i]$ to 1 for all locations
+which are empty ($R[i]=-1$).
+Thus we have the formal definitions of the
+values of $V$ and $C$ in terms of the now notional array $T$ (the array
+$A$ is described later):
+.bp
+.nf
+.ls 1
+.ta 0.5i +0.75i +0.9i
+		\(lt\|$r(T[i])$	$T[i] != -1$
+	$R[i]~~==~~$	\(lk\|
+		\(lb\|$-1$ 	$T[i]=-1$
+.sp
+		\(lt\|$1	EXIST~ j~h(T[j])=i$
+	$V[i]~~==~~$	\(lk\|
+		\(lb\|$0$	otherwise
+.sp
+		\(lt\|$1	T[i] != T[i-1]~ roman or ~T[i]=-1$
+	$C[i]~~==~~$	\(lk\|
+		\(lb\|$0$	otherwise
+.sp 2
+		\(lt\|$a(i)	-Na <= a(i) <= Na$
+	$A[i]~~==~~$	\(lk\|
+		\(lb\|$inf$	otherwise
+.sp
+	where
+.sp
+		$Na ~>=~ 0$
+.br
+		$a(i)~==~ sum from j=lo to i |C[j]=1~"and"~R[j] != -1|~-~
+sum from j=lo to i V[j]$
+.fi
+.ls 2
+.ta 0.5i +0.5i +0.5i +0.5i +0.5i +0.5i +0.5i +0.5i +0.5i +0.5i +0.5i 
+.rh "Searching.
+For every group of remainders there will somewhere be a $V$ bit equal to $1$ 
+and a $C$
+bit  at a non-empty location equal to $1$.  That is,
+for every $V$ bit which is $1$ there is a corresponding $C$ bit 
+which is also $1$.
+.FC "Fig. 1."
+This correspondence is indicated in 
+Fig. 1 by the dotted lines.  When searching for a key $H$ in the table
+the location $h(H)$ is examined.  If the $V$ bit is $0$ then the search 
+can stop
+immediately.  Otherwise a search is made for the corresponding $C$ bit 
+which is $1$.  To do this a search is made down (or up) the hash table until
+an empty location is found.  The number of $V$ bits which are $1$
+from $h(H)$ to this empty
+location are counted.  The correct $C$ bit is then found by counting back
+up (or down) the array from the empty location
+for the same number of $C$ bits which are $1$.  Details of this algorithm
+follow.
+.ls 1
+.sp 
+.nf
+.ta 1.5c +1.35c +1.35c +1.35c +1.35c +1.35c +1.35c +1.35c +1.35c
+.sp
+.ne 2
+Step 1:	{initialise variables}
+	$H <-~ t(K);~~j <-~ h(H);~~rem <-~ r(H);~i <-~ j;~~count <-~ 0;$
+	{check virgin bit}
+	$if~ V[j]=0~then$ {search unsuccessful} $exit ;$
+.sp
+.ne 3
+Step 2:	{find first empty location down the table}
+	$while ~R[i] != -1~do~~begin~~count <-~count - V[i];~i <-~ i-1 ~end ;$
+.sp
+.ne 4
+Step 3:	{search back to find uppermost member of relevant group}
+	$while count < 0 ~do~begin~ i <-~i+1;~count <-~count +C[i];~end ;$
+	{$i$ now points at the first(lowest) member of the group associated}
+	{with the original location $j$}
+.sp
+.ne 6
+Step 4:	{search group associated with $j$}
+	$while R[i+1] <= rem ~and C[i+1]=0~do i <-~i+1 ;$
+	{check last location to see if key found}
+	$if R[i]=rem~ mark then$ {search successful}
+	$lineup            else$ {search unsuccessful} ;
+.sp 2
+.ls 2
+.fi
+.pp
+An example search is illustrated in Fig. 1 for the key 75.
+For this example $h$ is computed by dividing by 10 and rounding down, 
+$r$ is computed by taking the remainder modulo 10.  
+.br
+Step 1: The initial hash location
+for 75 is 7 and its remainder is 5.  The $V$ bit at location 7 is 1 so the 
+search continues.
+.br
+Step 2:
+The first empty location found by searching down the table is at location 3.
+There are three $V$ bits with a value of 1 between 7 and 3 at locations 
+4, 6 and 7.
+.br
+Step 3:
+Counting back from location 3 three $C$ bits are 1 at locations 4, 5 and 8.
+So the $C$ bit at location 8 corresponds to the $V$ bit at the 
+original hash location 7.
+.br
+Step 4:
+The group of remainders which share the same initial location 7 can then be 
+found in locations 8 and 9.  Thus the remainder 5 at location 8 can be
+unambiguously associated with the original key 75 and so it can be
+concluded that the information associated with the key 75 is present 
+at location 8 in the memory.
+.pp
+It still remains to specify the update
+algorithm and to address some issues of efficiency.  To this end a third
+array will be added.
+.rh "Speeding up search."
+It was found during the simulations reported in Section 4 
+that the most time consuming element of this search
+is step 2 when the table is scanned for an empty location.  The essential
+role played by the empty locations here is to provide a synchronisation
+between the 1 bits in the $V$ and $C$ arrays. 
+This lengthy search could be eliminated by maintaining two additional arrays,
+$#C[ LH ]$ and $#V[ LH ]$, which count from the start of memory the number of 
+$C$ and $V$ bits which are 1.  That is:
+.br
+	$#C[i] ~==~ sum from j=lo to i |C[j]=1~and~R[j] != -1 |$
+.br
+and	$#V[i] ~==~ sum from j=lo to i V[j]$ .
+.br
+.pp
+In order to find the $C$ bit corresponding to some $V[i]=1$ then all that 
+is necessary is to compute the difference $count <-~#C[i]-#V[i]$.  
+If $count$ is zero then the remainder stored at $i$ was originally
+hashed there and has not been moved.  If $count$ is positive then it is 
+necessary to scan down the memory until $'count'$ $C$ bits equal to 1 have been 
+found.  If $count$ is negative then it is necessary to scan up the memory
+until $'-count'$ $C$ bits which are 1 have been found.  Fig. 2 shows some
+examples of the various situations which can arise.
+.FC "Fig. 2."
+.pp
+In fact, it is not necessary to store $#C$ and $#V$ explicitly, it is 
+sufficient merely to store the differences $#C[i]-#V[i]$.  To do this the
+.ul
+At home
+array, $A[ LH ]$, will be used.
+.pp
+At this point it might seem that all earlier gains have been lost because
+in the most extreme case $#C[i]-#V[i]~=~M$.  To store a value of $A$
+will require as many bits as a memory index -- precisely the gain made by
+storing remainders rather than keys!\   However, all is not lost.  The values 
+of $A$ tend to cluster closely about 0.  Simulation
+shows that a hash memory which is 95% full has 99% of the $A$ values
+in the range -15 to +15.  Therefore the following strategy can be
+adopted.  Assign a fixed number of bits for storing each value of $A$, say
+5 bits.  Use these bits to represent the 31 values -15 to +15 and a 32nd
+value for $inf$.  Then anywhere that $#C[i]-#V[i]~<~-15~"or"~>+15$ assign $inf$
+to $A[i]$ otherwise assign the true difference.
+.pp
+When searching for a key a scan can now be done down (or up) the memory
+until a location $i$ where $A[i] != inf$ is found.  (At worst this will occur
+at the first unoccupied location where $A[i]$ will be zero.)\  From there
+a count can be made up (or down) the memory for the appropriate number of
+$C$ bits which are 1.
+.pp
+In the detailed algorithm given below some differences from the simpler search
+can be noted.
+In step 3, $count$ can be both
+positive and negative.  Therefore code is included to scan both up and down
+the memory as appropriate.  At the end of step 3, $i$ can be pointing at any
+member of the group associated with the original hash location.  (Above
+$i$ was always left pointing at the lowest member of the 
+group.)\    Therefore code is included for scanning both up and down the
+members of the group.  In order to prevent redundant checking of locations
+by this code a flag $direction$ is used.  It can take on three values
+depending on the direction of the memory scan: $"up"$, $"down"$, and $here$
+(no further searching need be done).
+.ls 1
+.sp 
+.nf
+.ta 1.5c +1.45c +1.45c +1.35c +1.35c +1.35c +1.35c +1.35c +1.35c
+.sp
+.ne 2
+{Search using at-home count}
+Step 1:	{initialise variables}
+	$H <-~ t(K);~~j <-~ h(H);~~rem <-~ r(H);~~i <-~ j;~~count <-~ 0;$
+	{check virgin bit}
+	$if~ V[j]=0~then$ {search unsuccessful} $exit ;$
+.sp
+.ne 5
+Step 2:	{find first well defined $A$ value down the memory}
+	$while ~A[i] = inf~do~begin~count <-~count - V[i];~i <-~i-1 ~end ;$
+	$count <-~count +A[i];$
+.sp
+.ne 16
+Step 3:	{Search either up or down until a member of sought group is found}
+	{Also ensure $direction$ is set for Step 4.}
+	$if count < 0 ~then$
+		$direction <-~"up";$
+		$repeat i <-~i+1;~count <-~count +C[i]~ until count = 0 ;$
+		$if R[i] ~>=~ rem ~then direction <-~here;$
+	$else if count > 0 ~then$
+		$direction <-~"down";$
+		$repeat ~count <-~count -C[i];~i <-~i-1~ until count = 0 ;$
+		$if R[i] ~<=~ rem ~then direction <-~here;$
+	$else${$count = 0$}
+		$if R[i] > rem ~then direction <-~"down"$
+		$else if R[i] < rem ~then direction <-~"up"$
+		$else direction <-~here ;$
+.sp
+.ne 16
+Step 4:	{search group associated with $j$}
+	$case direction~ "\fBof\fP"$
+	$here:	;${do nothing}
+	$"down":	repeat	if C[i] = 1 ~then direction <-~here$
+			$else$
+			$begin$
+				$i <-~i-1;$
+				$if R[i] ~<=~ rem ~then direction <-~here;$
+			$end$
+		$until direction = here ;$
+	$"up":	repeat	if C[i+1] = 1 ~then direction <-~here$
+			$else$
+			$begin$
+				$i <-~i+1;$
+				$if R[i] ~>=~ rem ~then direction <-~here;$
+			$end$
+		$until direction = here ;$
+	$end ;$
+.sp
+.ne 4
+Step 5:	{check last location to see if key found}
+	$if R[i]=rem~ mark then$ {search successful}
+	$lineup            else$ {search unsuccessful} ;
+.sp 2
+.ls 2
+.fi
+.FC "Fig. 3."
+.pp
+Fig. 3, gives an example of this searching algorithm.
+The same memory and key (75) as in Fig. 1 are used.  For the
+purposes of the example each $A$ value is allocated one bit.  This allows 
+only two values 0 and $inf$.  The search proceeds as follows:
+.br
+Step 1: The initial hash location
+for 75 is 7 and its remainder is 5.  The $V$ bit at location 7 is 1 so the 
+search continues.
+.br
+Step 2: 
+The first $A$ value not equal to $inf$ found by searching down the table 
+is at location 6.
+There is one $V$ bit with a value of 1 between 7 and 6, at location 7.
+$count$ is then set to $A[6]+1~=~1$.  So on the next step one $C$
+bit will be sought.
+.br
+Step 3:
+Counting back up from 6 the first $C$ bit equal to 1 is at location 8.
+So the $C$ bit at location 8 corresponds to the $V$ bit at the 
+original hash location 7.
+.br
+Step 4:
+The group of remainders which share the same initial location 7 can then be 
+found in locations 8 and 9.  The remainder 5 at location 8 can thus be
+unambiguously associated with the original key 75 and it can be
+concluded that the information associated with the key 75 is present 
+at location 8 in the memory.
+.rh "Insertion."
+Insertion of a new key into the memory requires three distinct steps:
+first locating whereabouts in the memory the key is to be placed;
+second deciding how the memory is to be rearranged to make room for the new
+key; and third moving the remainders whilst correctly preserving the
+$A$ and $C$ values.  (The $V$ bits remain fixed during the move.)\  
+The initial search can be done as explained above with the small addition that
+the correct insertion point must still be located when the key is not present.
+The second and third steps follow the algorithm in Amble and Knuth [1]
+with the addition that the values of the $A$ array must be re-calculated
+over the shifted memory locations and the $C$ but not the $V$ bits must
+be moved with the keys.  
+Details of this can be found in an earlier draft of this paper, [4].
+.sh "4 Performance"
+.pp
+Now I consider how long these algorithms will take to run.  The measure of 
+run time that I will use is the number of 
+.ul
+probes
+that each algorithm makes, that is, the number of times locations in the 
+hash table are examined or updated.  
+CPU time measures were taken as well and correlate well with the empirical 
+counts of probes given below.
+.FC "Table I"
+.FC "Table II"
+.rh "Searching."  
+Tables I and II list the results of simulations
+for successful and unsuccessful searches respectively.  Results are tabulated
+for ordinary BLP and for compact hashing with  
+different memory loadings and different sizes for
+the $A$ field.  If the number of keys stored
+in the memory is $N$ then the memory loading is measured by 
+$alpha ~==~N/M$, the fraction of locations in the memory which are full. 
+Values of
+Na were chosen to correspond to $A$ field lengths of 1, 2, 3,
+4, and 5 bits, that is for Na equal to 0, 1, 3, 7, and 15 respectively,
+and also for the case where no $A$ field was used.
+Increasing the size of the $A$ field beyond 5 bits had no effect at
+the memory loadings investigated.  So Na equal to 15 is effectively the
+same as an unbounded size for the $A$ values.  
+.pp
+The insertion procedure is 
+guaranteed to be optimum only for BLP, not for compact hashing.  If none
+of the values in $A$ is $inf$ then the sequence of locations examined by
+compact
+hashing is the same as for BLP and so the strategy will still be optimum.
+(This is easily seen by noting that in compact hashing
+$A[h(t(K))]$ determines the direction
+of the search depending on whether it is positive or negative.  During the 
+subsequent search no
+locations past the sought key will be probed.  This is exactly the same
+probing behaviour as in BLP.)\ 
+However, if no $A$ array is being used or if some values of $A$ are $inf$
+then extra locations need to be probed to find an empty location or one which
+is not equal to $inf$.
+.pp
+As expected the figures in Table I show that for Na at 15 and using optimum
+insertion the probes for a successful search are almost the same as for BLP.
+(The small differences are accounted for by statistical fluctuations
+in the simulation results.)\   
+.pp 
+As Na is decreased the number of probes needed for searching increases.
+This
+reflects the greater distances that must be traversed to find a value of 
+$A$ not equal to $inf$.  It is notable however that even a single bit allocated
+to the $A$ fields dramatically improves the performance.  Even at a
+memory density of 0.95 some 25% of non-empty locations have $A$ values of 0.
+.pp
+The pattern for unsuccessful searches is broadly the same as sketched above
+for successful searches except that in general unsuccessful searches
+are quicker than successful ones.  This is a result of the $V$ bits
+which allow many unsuccessful searches to be stopped after a single probe. 
+For example even at the maximum possible memory density of 1 some 36% of
+$V$ bits are zero.  This results in compact hashing being faster than
+the reported values for ordinary BLP.  
+However, unsuccessful BLP searches could be
+improved to a similar degree by incorporating $V$ bits.
+.FC "Table III"
+.rh "Insertion."
+The probes to insert a new key can be broken down into three components,
+those needed to locate the position where the key is to be inserted,
+those to decide the direction of movement 
+and those to effect the movement of the memory.
+The first of these will be slightly larger than
+a successful search and so the results of Table I have not been repeated.
+The second two are independent of Na as they are dependent only on
+the lengths of blocks of adjacent non-empty locations.  The values
+for these Na independent components are listed in Table III.
+In most cases
+this Na independent component is much larger than the search component.
+The exception occurs 
+where no $A$ values are being used, when the two components
+are comparable.
+.pp
+Cleary [5] examines a random insertion strategy for ordinary BLP
+where blocks of entries in the hash table are moved in a randomly chosen
+direction
+to accomodate a
+new entry rather than in the optimum way described by 
+Amble and Knuth [1].
+It is shown that this strategy can
+improve insertion times by a factor of 4 at the expense of small degradations
+(at most 15%) in retrieval times.  These
+results are shown by simulation to extend to compact hashing.  
+Indeed for small values of
+Na the optimum and random strategies show no significant differences in
+retrieval times.
+.rh "Analytic approximation."
+While analytic results are not available for the number of probes 
+needed for retrieval or insertion an
+approximation can be developed for some of the cases.  It is shown by
+Amble and Knuth [1] and Knuth [8] (problem 6.4-47) that the average
+length of a block of consecutive non-empty locations when using
+the optimum insertion strategy is approximately
+$(1- alpha ) sup -2 ~-~1$.  
+Let this block length be $L$.  
+.pp
+Consider the case of a successful search when no $A$ field is used.
+A successful scan of a block from an arbitrary
+position to the end takes on average $L/2~+~1/2$ probes.  
+During the initial scan down the memory in the simulations the initial check of the
+$V$ bit and the final empty location examined were each counted as a single probe.
+This gives a total of $L/2~+~5/2$ probes for the initial scan down. (This is not
+exact because there will be a correlation between the position 
+of a key's home location within a block 
+and the number of keys hashing to that home location).
+The scan back up a block will take $L/2~+1/2$ probes (exact for a successful search).
+This gives $(1- alpha ) sup -2 +2$ for the expected
+number of probes during a successful search.  These values are listed in Table I
+and are consistently low by about 10%.
+.pp
+For an unsuccessful search with no $A$ field the initial scan down the 
+memory will take $L/2~+5/2$ probes as above (again this will not be exact because
+the probability of a $V$ bit being one will be correlated with the 
+size of a block and its
+position within the block).
+An unsuccessful scan of a block takes $L/2~+~1/2$ probes.  (This assumes
+the keys in the block are distributed uniformly.  
+This gives the following probabilities that the search will stop at a 
+particular location in the block: the first location, $1/2L$; locations 2 
+through $L$, $1/L$; the empty $(L+1)$st location, $1/~2L$.
+This will not be true for compact hashing because the probability of stopping at a key
+which shares its home location with a large number of other keys will be smaller than
+for one which shares it with few others.)\ \ Summing these two terms gives $L~+~7/2$
+probes.
+Given that the keys are distributed randomly there is a probability of 
+$e sup {- alpha}$ that a given $V$ bit will be zero.  So the expected number 
+of probes overall for an unsuccessful search is 
+$e sup {- alpha}~+~(1-e sup {- alpha}) cdot ((1- alpha ) sup -2 + 5/2)$.
+These values are listed in Table II and are consistently low by about 5%.
+.pp
+Considering only the insertion component which is independent of Na then
+it is possible to derive an expression for the number of probes.
+There is an initial
+scan to move the memory down and insert the new key which will scan about half 
+the block ($L/2~+~5/2$ probes) 
+and a subsequent scan back up of the entire block ($L~+~1$ probes).  
+Empirically the probability
+that the entire block will subsequently be moved back up is a half which gives
+an expected $1/2(L~+~1)$ probes.
+Summing these three contributions gives $2(1- alpha ) sup -2 ~+~2$
+as the expected number of probes for an insertion (excluding the search time).
+Values for this expression are tabulated  in Table III, they are in good 
+agreement with the empirical values.
+.sh "Acknowledgements"
+.pp
+I would like to thank Ian Witten for careful checking of a draft version.
+Also John Andreae for discussions which showed that something like compact
+hashing might be possible.
+.sh "References"
+.ls 1
+.LB "[6]    "
+.sp
+.NI "[1]  "
+[1]\ \ O.\ Amble and D.\ E.\ Knuth, "Ordered Hash Tables,"
+.ul
+Computer Journal,
+vol. 17, pp135-142, 1974.
+.sp
+.NI "[1]  "
+[2]\ \ J.\ H.\ Andreae,
+.ul
+Thinking with the teachable machine.
+London: Academic Press, 1977.
+.sp
+.NI "[1]  "
+[3]\ \ J.\ L.\ Carter and M.\ N.\ Wegman, "Universal classes of hash 
+functions,"
+.ul
+J. Computer System Sci.,
+vol. 18, pp143-154, 1979.
+.sp
+.NI "[2]  "
+[4]\ \ J.\ G.\ Cleary, "Compact hash tables,"
+Research Report, 82/100/19,
+Department of Computer Science, University of Calgary, July 1982.
+.sp
+.NI "[3]  "
+[5]\ \ J.\ G.\ Cleary, "Random insertion for bidirectional linear probing
+can be better than optimum," 
+Research Report, 82/105/24,
+Department of Computer Science, University of Calgary, September 1982.
+.sp
+.NI "[5]  "
+[6]\ \ J. A. Feldman and J. R. Low, "Comment on Brent's Scatter Storage 
+Algorithm,"
+.ul
+CACM,
+vol. 16, p703, 1973.
+.sp
+.NI "[7]  "
+[7]\ \ G. D. Knott, "Hashing functions,"
+.ul
+The Computer Journal,
+vol. 18, pp265-278, 1975.
+.sp
+.NI "[7]  "
+[8]\ \ D.\ E.\ Knuth, 
+.ul
+The art of computer programming:Sorting and searching.
+Vol III.
+Reading, Massachusetts: Addison Wesley, 1973.
+.sp
+.NI "[8]  "
+[9]\ \ V.\ Y.\ Lum, "General performance analysis of key-to-address 
+transformation methods using an abstract file concept,"
+.ul
+CACM,
+vol. 16, pp603-612, 1973.
+.sp
+.NI "[12]  "
+[10]\ \ V.\ Y.\ Lum,\ P.\ S.\ T.\ Yuen and M.\ Dodd, "Key-to-address
+transformation techniques,"
+.ul
+CACM,
+vol. 14, pp228-239, 1971.
+.sp
+.NI "[13]  "
+[11]\ \ W. D. Maurer and T. G. Lewis, "Hash table methods,"
+.ul
+Comp. Surveys,
+vol. 7, pp5-19, 1975.
+.ls 2
+.in 0
+.bp 0
+\&\ 
+.RF
+.ta 0.5i +0.75i +0.75i +0.75i +0.75i +0.75i
+.nf
+
+	$i	T[i]	R[i]	V[i]	C[i]$
+	\l'3.5i'
+.br
+
+	12	\0\ -1	\ -1	0	1
+.br
+	11	101	\01	0	1
+.br
+	10	\087	\07	1	1
+.br
+	\09	\076	\06	0	0
+.br
+	\08	\075	\05	1	1
+.br
+	\07	\067	\07	1	0   
+.br
+	\06	\066	\06	1	0
+.br
+	\05	\065	\05	0	1
+.br
+	\04	\041	\01	1	1
+.br
+	\03	\0\ -1	\ -1	0	1
+.br
+	\02	\019	\09	0	0
+.br
+	\01	\018	\08	1	0
+.br
+	\00	\016	\06	0	1
+.br
+					     Step 1 Step 2 Step 3 Step 4
+.br
+
+	$h(H)~=~ left floor^ H/10 right floor$
+.br
+
+	$r(H)~=~ H~ roman mod ~10$
+.br
+
+.FG ""
+
+.bp 0
+\&\ 
+.RF
+.nf
+.ta 0.5i +0.75i +0.75i +0.75i +0.75i
+	$count~=~A[i]~=~#C[i]-#V[i]$
+.sp
+	$count = 0$			$count = 0$
+	$C$	$V$		$C$	$V$
+	0\|\(rt	1		0\|\(rt	1
+	0\|\(rk	0		0\|\(rk	1$<-~i$
+	1\|\(rb	1$<-~i$		1\|\(rb	0
+.sp
+	$count =1>0$		$count = 2 > 0$
+	$C$	$V$		$C$	$V$
+	0	1$<-~i$		0	1$<-~i$
+	1	0		1	0
+	0\|\(rt	1		1	1
+	0\|\(rk	0		0\|\(rt	0
+	1\|\(rb	0		0\|\(rk	0
+				1\|\(rb	0
+.sp
+	$count =-1<0$
+	$C$	$V$
+	0\|\(rt	0			\|\(rt
+	0\|\(rk	0			\|\(rk\ \ Group of entries which hash to 
+	1\|\(rb	0			\|\(rb\ \ location i
+	0	0
+	1	1$<-~i$			\ \ \ Corresponding $C$ and $V$ bits
+.FG ""
+.bp 0
+\&\ 
+.RF
+.ta 0.5i +0.5i +0.5i +0.5i +0.5i +0.9i +0.6i +0.4i
+$i	R[i]	V[i]	C[i]	#V[i]	#C[i]~~#C[i]-#V[i]	A[i]$
+.br
+\l'4.5i'
+.br
+12	\ -1	0	1	6	6	\00	0
+.br
+11	\01	0	1	6	6	\00	0
+.br
+10	\07	1	1	6	5	\ -1	$inf$
+.br
+\09	\06	0	0	5	4	\ -1	$inf$
+.br
+\08	\05	1	1	5	4	\ -1	$inf$
+.br
+\07	\07	1	0	4	3	\ -1	$inf$
+.br
+\06	\06	1	0	3	3	\00	0
+.br
+\05	\05	0	1	2	3	\01	$inf$
+.br
+\04	\01	1	1	2	2	\00	0
+.br
+\03	\ -1	0	1	1	1	\00	0
+.br
+\02	\09	0	0	1	1	\00	0
+.br
+\01	\08	1	0	1	1	\00	0
+.br
+\00	\06	0	1	0	1	\01	$inf$
+.br
+								Step 1 Step 2 Step 3 Step 4
+.sp 
+Note: 	Only one bit has been allowed for the values of $A$. 
+.br
+	So the only two possible values are 0 and $inf$.
+
+.FG ""
+.bp 0
+\&\ 
+.RF
+.ta 1.5i +0.5i +0.5i +0.5i +0.5i +0.5i +0.5i +0.5i +0.5i
+.ce
+Successful Search
+	\l'4i'
+
+	$alpha$	\0.25	\0.5	\0.75	\0.8	\0.85	\0.9	\0.95
+	\l'4i'
+	
+	$BLP sup 1$	\0\01.1	\0\01.3	\0\01.7	\0\02.0	\0\02.3	\0\02.9	\0\04.2
+	
+	Na
+	15	\0\01.1	\0\01.3	\0\01.7	\0\01.9	\0\02.2	\0\02.8	\0\04.6
+	\07	\0\01.1	\0\01.3	\0\01.7	\0\01.9	\0\02.2	\0\02.8	\0\09.7
+	\03	\0\01.1	\0\01.3	\0\01.7	\0\01.9	\0\02.4	\0\04.2	\025
+	\01	\0\01.1	\0\01.3	\0\02.0	\0\02.5	\0\04.1	\0\08.8	\045
+	\00	\0\01.1	\0\01.5	\0\03.3	\0\04.9	\0\07.9	\015	\061
+	\0-	\0\04.2	\0\07.1	\020	\030	\049	110	370
+	\0*	\0\03.77	\0\06.00	\018.0	\027.0	\046.4	102	402
+
+		$\& sup 1~$Taken from Amble and Knuth [1].
+		- No $A$ field used.
+		* Analytic approximation to line above.
+.FG ""
+.bp 0
+\&
+.RF
+.ta 1.5i +0.5i +0.5i +0.5i +0.5i +0.5i +0.5i +0.5i +0.5i
+.ce
+Unsuccessful Search
+	\l'4i'
+
+	$alpha$	\0.25	\0.5	\0.75	\0.8	\0.85	\0.9	\0.95
+	\l'4i'
+
+	$BLP sup 1$	\0\01.3	\0\01.5	\0\02.1	\0\02.3	\0\02.6	\0\03.1	\0\04.4
+
+	Na
+	15	\0\01.2	\0\01.4	\0\01.8	\0\01.9	\0\02.1	\0\02.4	\0\03.5
+	\07	\0\01.2	\0\01.4	\0\01.8	\0\01.9	\0\02.1	\0\02.4	\0\09.7
+	\03	\0\01.2	\0\01.4	\0\01.8	\0\01.9	\0\02.2	\0\03.3	\015
+	\01	\0\01.2	\0\01.4	\0\01.9	\0\02.2	\0\03.2	\0\06.0	\028
+	\00	\0\01.2	\0\01.5	\0\02.6	\0\03.4	\0\05.3	\0\09.9	\036
+	\0-	\0\01.7	\0\03.4	\011	\016	\028	\064	220
+	\0*	\0\01.72	\0\03.16	\010.2	\015.6	\027.3	\061.2	247
+
+		$\& sup 1~$Taken from Amble and Knuth [1].
+		- No $A$ field used.
+		* Analytic approximation to line above.
+.FG ""
+.bp 0
+\&
+.RF
+.ta 1.5i +0.5i +0.5i +0.5i +0.5i +0.5i +0.5i +0.5i +0.5i
+	\l'4i'
+
+	$alpha$	\0.25	\0.5	\0.75	\0.8	\0.85	\0.9	\0.95
+	\l'4i'
+
+		\0\04.3	\0\08.8	\032	\049	\086	200	700
+	*	\0\04.56	\0\09.00	\033.0	\051.0	\089.9\
+	201	801
+
+	* Analytic approximation to line above
+.FG ""
+.bp 0
+\&
+.ce 
+List of Figures
+.sp 2
+Fig. 1. Example of compact hash memory and search for key.
+.sp 2
+Fig. 2. Examples showing different values of $#C[i]-#V[i]$.
+.sp 2
+Fig. 3. Example of calculation and use of array $A$.
+.sp 2
+.ce
+List of Tables
+.sp 2
+Table I. Average number of probes during a successful search.
+.sp 2
+Table II. Average number of probes during an unsuccessful search.
+.sp 2
+Table III. Average number of probes to move block of memory.
+.sp 2
