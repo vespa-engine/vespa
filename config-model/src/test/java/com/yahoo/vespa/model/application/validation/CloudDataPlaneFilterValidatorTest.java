@@ -147,8 +147,7 @@ public class CloudDataPlaneFilterValidatorTest {
                 .properties(
                         new TestProperties()
                                 .setEndpointCertificateSecrets(Optional.of(new EndpointCertificateSecrets("CERT", "KEY")))
-                                .setHostedVespa(true)
-                                .setEnableDataPlaneFilter(true))
+                                .setHostedVespa(true))
                 .zone(new Zone(SystemName.PublicCd, Environment.dev, RegionName.defaultName()))
                 .build();
     }

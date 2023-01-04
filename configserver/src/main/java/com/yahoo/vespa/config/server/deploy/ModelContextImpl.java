@@ -204,7 +204,6 @@ public class ModelContextImpl implements ModelContext {
         private final boolean useRestrictedDataPlaneBindings;
         private final int heapPercentage;
         private final boolean useOldJdiscContainerStartup;
-        private final boolean enableDataPlaneFilter;
 
         public FeatureFlags(FlagSource source, ApplicationId appId, Version version) {
             this.defaultTermwiseLimit = flagValue(source, appId, version, Flags.DEFAULT_TERM_WISE_LIMIT);
@@ -251,7 +250,6 @@ public class ModelContextImpl implements ModelContext {
             this.useRestrictedDataPlaneBindings = flagValue(source, appId, version, Flags.RESTRICT_DATA_PLANE_BINDINGS);
             this.heapPercentage = flagValue(source, appId, version, PermanentFlags.HEAP_SIZE_PERCENTAGE);
             this.useOldJdiscContainerStartup = flagValue(source, appId, version, Flags.USE_OLD_JDISC_CONTAINER_STARTUP);
-            this.enableDataPlaneFilter = flagValue(source, appId, version, Flags.ENABLE_DATAPLANE_FILTER);
         }
 
         @Override public boolean useOldJdiscContainerStartup() { return useOldJdiscContainerStartup; }
@@ -306,7 +304,6 @@ public class ModelContextImpl implements ModelContext {
         }
         @Override public boolean useTwoPhaseDocumentGc() { return useTwoPhaseDocumentGc; }
         @Override public boolean useRestrictedDataPlaneBindings() { return useRestrictedDataPlaneBindings; }
-        @Override public boolean enableDataPlaneFilter() { return enableDataPlaneFilter; }
 
         private static <V> V flagValue(FlagSource source, ApplicationId appId, Version vespaVersion, UnboundFlag<? extends V, ?, ?> flag) {
             return flag.bindTo(source)
