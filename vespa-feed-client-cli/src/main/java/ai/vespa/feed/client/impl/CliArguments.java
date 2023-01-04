@@ -1,6 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package ai.vespa.feed.client.impl;
 
+import ai.vespa.feed.client.FeedClientBuilder.Compression;
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.CommandLineParser;
 import org.apache.commons.cli.DefaultParser;
@@ -23,6 +24,8 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.OptionalDouble;
 import java.util.OptionalInt;
+
+import static ai.vespa.feed.client.FeedClientBuilder.Compression.none;
 
 /**
  * Parses command line arguments
@@ -58,7 +61,7 @@ class CliArguments {
     private static final String STDIN_OPTION = "stdin";
     private static final String DOOM_OPTION = "max-failure-seconds";
     private static final String PROXY_OPTION = "proxy";
-    private static final String GZIP_REQUESTS_OPTION = "gzip-requests";
+    private static final String COMPRESSION = "compression";
 
     private final CommandLine arguments;
 
@@ -182,7 +185,14 @@ class CliArguments {
 
     boolean speedTest() { return has(SPEED_TEST_OPTION); }
 
-    boolean gzipRequests() { return has(GZIP_REQUESTS_OPTION); }
+    Compression compression() throws CliArgumentsException {
+        try {
+            return stringValue(COMPRESSION).map(Compression::valueOf).orElse(none);
+        }
+        catch (IllegalArgumentException e) {
+            throw new CliArgumentsException("Invalid " + COMPRESSION + " argument: " + e.getMessage(), e);
+        }
+    }
 
     OptionalInt testPayloadSize() throws CliArgumentsException { return intValue(TEST_PAYLOAD_SIZE_OPTION); }
 
@@ -359,8 +369,10 @@ class CliArguments {
                         .type(URL.class)
                         .build())
                 .addOption(Option.builder()
-                        .longOpt(GZIP_REQUESTS_OPTION)
-                        .desc("Compress request bodies with gzip")
+                        .longOpt(COMPRESSION)
+                        .desc("Compression mode for feed requests: 'none' (default), 'gzip'")
+                        .hasArg()
+                        .type(Compression.class)
                         .build());
     }
 

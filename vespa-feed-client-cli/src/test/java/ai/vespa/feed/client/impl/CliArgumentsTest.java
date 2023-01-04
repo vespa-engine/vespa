@@ -1,6 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package ai.vespa.feed.client.impl;
 
+import ai.vespa.feed.client.FeedClientBuilder.Compression;
 import ai.vespa.feed.client.impl.CliArguments.CliArgumentsException;
 import org.junit.jupiter.api.Test;
 
@@ -24,12 +25,27 @@ class CliArgumentsTest {
     @Test
     void parses_parameters_correctly() throws CliArguments.CliArgumentsException {
         CliArguments args = CliArguments.fromRawArgs(new String[]{
-                "--endpoint=https://vespa.ai:4443/", "--file=feed.json", "--connections=10",
-                "--max-streams-per-connection=128", "--certificate=cert.pem", "--private-key=key.pem",
-                "--ca-certificates=ca-certs.pem", "--disable-ssl-hostname-verification",
-                "--header=\"My-Header: my-value\"", "--header", "Another-Header: another-value", "--benchmark",
-                "--route=myroute", "--timeout=0.125", "--trace=9", "--verbose", "--silent", "--gzip-requests",
-                "--show-errors", "--show-all", "--max-failure-seconds=30", "--proxy", "https://myproxy:1234"});
+                "--endpoint", "https://vespa.ai:4443/",
+                "--file", "feed.json",
+                "--connections", "10",
+                "--max-streams-per-connection", "128",
+                "--certificate", "cert.pem",
+                "--private-key", "key.pem",
+                "--ca-certificates", "ca-certs.pem",
+                "--disable-ssl-hostname-verification",
+                "--header", "\"My-Header: my-value\"",
+                "--header", "Another-Header: another-value",
+                "--benchmark",
+                "--route", "myroute",
+                "--timeout", "0.125",
+                "--trace", "9",
+                "--verbose",
+                "--silent",
+                "--compression", "gzip",
+                "--show-errors",
+                "--show-all",
+                "--max-failure-seconds", "30",
+                "--proxy", "https://myproxy:1234"});
         assertEquals(URI.create("https://vespa.ai:4443/"), args.endpoint());
         assertEquals(Paths.get("feed.json"), args.inputFile().get());
         assertEquals(10, args.connections().getAsInt());
@@ -52,15 +68,15 @@ class CliArgumentsTest {
         assertTrue(args.showErrors());
         assertTrue(args.showSuccesses());
         assertFalse(args.showProgress());
-        assertTrue(args.gzipRequests());
+        assertEquals(Compression.gzip, args.compression());
         assertEquals(URI.create("https://myproxy:1234"), args.proxy().orElse(null));
     }
 
     @Test
     void fails_on_missing_parameters() {
-        CliArguments.CliArgumentsException exception =  assertThrows(
+        CliArguments.CliArgumentsException exception = assertThrows(
                 CliArguments.CliArgumentsException.class,
-                () -> CliArguments.fromRawArgs(new String[] {"--file=/path/to/file", "--stdin"}));
+                () -> CliArguments.fromRawArgs(new String[] {"--file", "/path/to/file", "--stdin"}));
         assertEquals("Endpoint must be specified", exception.getMessage());
     }
 
@@ -68,20 +84,20 @@ class CliArgumentsTest {
     void fails_on_conflicting_parameters() throws CliArgumentsException {
         assertEquals("Exactly one of 'file' and 'stdin' must be specified",
                      assertThrows(CliArgumentsException.class,
-                                  () -> CliArguments.fromRawArgs(new String[] {"--endpoint=https://endpoint", "--file=/path/to/file", "--stdin"}))
+                                  () -> CliArguments.fromRawArgs(new String[] {"--endpoint", "https://endpoint", "--file", "/path/to/file", "--stdin"}))
                              .getMessage());
 
         assertEquals("Exactly one of 'file' and 'stdin' must be specified",
                      assertThrows(CliArgumentsException.class,
-                                  () -> CliArguments.fromRawArgs(new String[] {"--endpoint=https://endpoint"}))
+                                  () -> CliArguments.fromRawArgs(new String[] {"--endpoint", "https://endpoint"}))
                              .getMessage());
 
         assertEquals("At most one of 'file', 'stdin' and 'test-payload-size' may be specified",
                      assertThrows(CliArgumentsException.class,
-                                  () -> CliArguments.fromRawArgs(new String[] {"--endpoint=https://endpoint", "--speed-test", "--test-payload-size=123", "--file=file"}))
+                                  () -> CliArguments.fromRawArgs(new String[] {"--endpoint", "https://endpoint", "--speed-test", "--test-payload-size", "123", "--file", "file"}))
                              .getMessage());
 
-        CliArguments.fromRawArgs(new String[] {"--endpoint=foo", "--speed-test"});
+        CliArguments.fromRawArgs(new String[] {"--endpoint", "foo", "--speed-test"});
     }
 
     @Test

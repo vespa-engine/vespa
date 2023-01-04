@@ -159,7 +159,7 @@ public class CliClient {
         cliArgs.headers().forEach(builder::addRequestHeader);
         builder.setDryrun(cliArgs.dryrunEnabled());
         builder.setSpeedTest(cliArgs.speedTest());
-        builder.setGzipRequests(cliArgs.gzipRequests());
+        builder.setCompression(cliArgs.compression());
         cliArgs.doomSeconds().ifPresent(doom -> builder.setCircuitBreaker(new GracePeriodCircuitBreaker(Duration.ofSeconds(10),
                                                                                                         Duration.ofSeconds(doom))));
         cliArgs.proxy().ifPresent(builder::setProxy);
