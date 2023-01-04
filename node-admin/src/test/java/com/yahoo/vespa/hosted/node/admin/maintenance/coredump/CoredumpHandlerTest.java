@@ -294,7 +294,7 @@ public class CoredumpHandlerTest {
         // We don't parse any of these fields in the test, so just use dummy contents.
         byte[] enc = bytesOf("hello world");
         byte[] ciphertext = bytesOf("imaginary ciphertext");
-        return new SecretSharedKey(secretKey, new SealedSharedKey(keyId, enc, ciphertext));
+        return new SecretSharedKey(secretKey, new SealedSharedKey(SealedSharedKey.CURRENT_TOKEN_VERSION, keyId, enc, ciphertext));
     }
 
 }

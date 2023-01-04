@@ -87,7 +87,7 @@ public class EncryptTool implements Tool {
             var recipientPubKey = KeyUtils.fromBase58EncodedX25519PublicKey(CliUtils.optionOrThrow(arguments, RECIPIENT_PUBLIC_KEY_OPTION).strip());
             var keyId    = KeyId.ofString(CliUtils.optionOrThrow(arguments, KEY_ID_OPTION));
             var shared   = SharedKeyGenerator.generateForReceiverPublicKey(recipientPubKey, keyId);
-            var cipher   = SharedKeyGenerator.makeAesGcmEncryptionCipher(shared);
+            var cipher   = shared.makeEncryptionCipher();
             boolean zstd = arguments.hasOption(ZSTD_COMPRESS_OPTION);
 
             try (var inStream  = CliUtils.inputStreamFromFileOrStream(inputArg, invocation.stdIn());

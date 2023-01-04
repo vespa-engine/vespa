@@ -186,7 +186,7 @@ public class CoredumpHandler {
 
     static OutputStream maybeWrapWithEncryption(OutputStream wrappedStream, Optional<SecretSharedKey> sharedCoreKey) {
         return sharedCoreKey
-                .map(key -> SharedKeyGenerator.makeAesGcmEncryptionCipher(key).wrapOutputStream(wrappedStream))
+                .map(key -> key.makeEncryptionCipher().wrapOutputStream(wrappedStream))
                 .orElse(wrappedStream);
     }
 

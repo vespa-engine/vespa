@@ -14,11 +14,11 @@ import java.nio.ByteBuffer;
  * This token representation is expected to be used as a convenient serialization
  * form when communicating shared keys.
  */
-public record SealedSharedKey(KeyId keyId, byte[] enc, byte[] ciphertext) {
+public record SealedSharedKey(int version, KeyId keyId, byte[] enc, byte[] ciphertext) {
 
     /** Current encoding version of opaque sealed key tokens. Must be less than 256. */
-    public static final int CURRENT_TOKEN_VERSION = 1;
-    /** Encryption context for v1 tokens is always a 32-byte X25519 public key */
+    public static final int CURRENT_TOKEN_VERSION = 2;
+    /** Encryption context for v{1,2} tokens is always a 32-byte X25519 public key */
     public static final int MAX_ENC_CONTEXT_LENGTH = 255;
 
     public SealedSharedKey {
@@ -36,7 +36,7 @@ public record SealedSharedKey(KeyId keyId, byte[] enc, byte[] ciphertext) {
         byte[] keyIdBytes = keyId.asBytes();
         // u8 token version || u8 length(key id) || key id || u8 length(enc) || enc || ciphertext
         ByteBuffer encoded = ByteBuffer.allocate(1 + 1 + keyIdBytes.length + 1 + enc.length + ciphertext.length);
-        encoded.put((byte)CURRENT_TOKEN_VERSION);
+        encoded.put((byte)version);
         encoded.put((byte)keyIdBytes.length);
         encoded.put(keyIdBytes);
         encoded.put((byte)enc.length);
@@ -62,8 +62,8 @@ public record SealedSharedKey(KeyId keyId, byte[] enc, byte[] ciphertext) {
         ByteBuffer decoded = ByteBuffer.wrap(rawTokenBytes);
         // u8 token version || u8 length(key id) || key id || u8 length(enc) || enc || ciphertext
         int version = Byte.toUnsignedInt(decoded.get());
-        if (version != CURRENT_TOKEN_VERSION) {
-            throw new IllegalArgumentException("Token had unexpected version. Expected %d, was %d"
+        if (version < 1 || version > CURRENT_TOKEN_VERSION) {
+            throw new IllegalArgumentException("Token had unexpected version. Expected value in [1, %d], was %d"
                                                .formatted(CURRENT_TOKEN_VERSION, version));
         }
         int keyIdLen = Byte.toUnsignedInt(decoded.get());
@@ -75,10 +75,10 @@ public record SealedSharedKey(KeyId keyId, byte[] enc, byte[] ciphertext) {
         byte[] ciphertext = new byte[decoded.remaining()];
         decoded.get(ciphertext);
 
-        return new SealedSharedKey(KeyId.ofBytes(keyIdBytes), enc, ciphertext);
+        return new SealedSharedKey(version, KeyId.ofBytes(keyIdBytes), enc, ciphertext);
     }
 
-    public int tokenVersion() { return CURRENT_TOKEN_VERSION; }
+    public int tokenVersion() { return version; }
 
     private static void verifyInputTokenStringNotTooLarge(String tokenString) {
         // Expected max decoded size for v1 is 3 + 255 + 32 + 32 = 322. For simplicity, round this
