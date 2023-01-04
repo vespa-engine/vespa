@@ -79,8 +79,7 @@ public class AthenzRoleFilter extends JsonSecurityRequestFilterBase {
     @Override
     protected Optional<ErrorResponse> filter(DiscFilterRequest request) {
         try {
-            Principal principal = request.getUserPrincipal();
-            if (principal instanceof AthenzPrincipal) {
+            if (request.getUserPrincipal() instanceof AthenzPrincipal principal) {
                 Optional<DecodedJWT> oktaAt = Optional.ofNullable((String) request.getAttribute("okta.access-token")).map(JWT::decode);
                 Optional<X509Certificate> cert = request.getClientCertificateChain().stream().findFirst();
                 Instant issuedAt = cert.map(X509Certificate::getNotBefore)
@@ -89,9 +88,8 @@ public class AthenzRoleFilter extends JsonSecurityRequestFilterBase {
                 Instant expireAt = cert.map(X509Certificate::getNotAfter)
                         .or(() -> oktaAt.map(Payload::getExpiresAt))
                         .map(Date::toInstant).orElse(Instant.MAX);
-                request.setAttribute(SecurityContext.ATTRIBUTE_NAME, new SecurityContext(principal,
-                        roles((AthenzPrincipal) principal, request.getUri()),
-                        issuedAt, expireAt));
+                request.setAttribute(SecurityContext.ATTRIBUTE_NAME,
+                                     new SecurityContext(principal, roles(principal, request.getUri()), issuedAt, expireAt));
             }
         }
         catch (Exception e) {
