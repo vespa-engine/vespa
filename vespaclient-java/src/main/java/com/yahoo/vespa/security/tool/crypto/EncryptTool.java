@@ -28,6 +28,7 @@ public class EncryptTool implements Tool {
     static final String OUTPUT_FILE_OPTION          = "output-file";
     static final String KEY_ID_OPTION               = "key-id";
     static final String RECIPIENT_PUBLIC_KEY_OPTION = "recipient-public-key";
+    static final String ZSTD_COMPRESS_OPTION        = "zstd-compress";
 
     private static final List<Option> OPTIONS = List.of(
             Option.builder("o")
@@ -47,6 +48,12 @@ public class EncryptTool implements Tool {
                     .hasArg(true)
                     .required(false)
                     .desc("ID of recipient key")
+                    .build(),
+            Option.builder("z")
+                    .longOpt(ZSTD_COMPRESS_OPTION)
+                    .hasArg(false)
+                    .required(false)
+                    .desc("Input data will be transparently Zstd-compressed before being encrypted.")
                     .build());
 
     @Override
@@ -78,13 +85,14 @@ public class EncryptTool implements Tool {
             var outputPath = Paths.get(CliUtils.optionOrThrow(arguments, OUTPUT_FILE_OPTION));
 
             var recipientPubKey = KeyUtils.fromBase58EncodedX25519PublicKey(CliUtils.optionOrThrow(arguments, RECIPIENT_PUBLIC_KEY_OPTION).strip());
-            var keyId  = KeyId.ofString(CliUtils.optionOrThrow(arguments, KEY_ID_OPTION));
-            var shared = SharedKeyGenerator.generateForReceiverPublicKey(recipientPubKey, keyId);
-            var cipher = SharedKeyGenerator.makeAesGcmEncryptionCipher(shared);
+            var keyId    = KeyId.ofString(CliUtils.optionOrThrow(arguments, KEY_ID_OPTION));
+            var shared   = SharedKeyGenerator.generateForReceiverPublicKey(recipientPubKey, keyId);
+            var cipher   = SharedKeyGenerator.makeAesGcmEncryptionCipher(shared);
+            boolean zstd = arguments.hasOption(ZSTD_COMPRESS_OPTION);
 
             try (var inStream  = CliUtils.inputStreamFromFileOrStream(inputArg, invocation.stdIn());
                  var outStream = Files.newOutputStream(outputPath)) {
-                CipherUtils.streamEncipher(inStream, outStream, cipher);
+                CipherUtils.streamEncrypt(inStream, outStream, cipher, zstd);
             }
 
             invocation.stdOut().println(shared.sealedSharedKey().toTokenString());

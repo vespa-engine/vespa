@@ -21,5 +21,7 @@ the quotes).
                                plaintext to STDOUT instead of a file.
  -t,--token <arg>              Token generated when the input file was
                                encrypted
+ -z,--zstd-decompress          Decrypted data will be transparently
+                               Zstd-decompressed before being output.
 Note: this is a BETA tool version; its interface may be changed at any
 time
