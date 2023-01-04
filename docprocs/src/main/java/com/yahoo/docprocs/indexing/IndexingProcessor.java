@@ -17,6 +17,9 @@ import com.yahoo.document.DocumentRemove;
 import com.yahoo.document.DocumentType;
 import com.yahoo.document.DocumentTypeManager;
 import com.yahoo.document.DocumentUpdate;
+import com.yahoo.document.serialization.DocumentSerializer;
+import com.yahoo.document.serialization.DocumentSerializerFactory;
+import com.yahoo.io.GrowableByteBuffer;
 import com.yahoo.language.Linguistics;
 import com.yahoo.language.process.Embedder;
 import com.yahoo.language.provider.DefaultEmbedderProvider;
@@ -93,14 +96,24 @@ public class IndexingProcessor extends DocumentProcessor {
     }
 
     private void processDocument(DocumentPut prev, List<DocumentOperation> out) {
-        DocumentScript script = scriptMgr.getScript(prev.getDocument().getDataType());
+        DocumentType hadType = prev.getDocument().getDataType();
+        DocumentScript script = scriptMgr.getScript(hadType);
         if (script == null) {
             log.log(Level.FINE, "No indexing script for document '%s'.", prev.getId());
             out.add(prev);
             return;
         }
         log.log(Level.FINE, "Processing document '%s'.", prev.getId());
-        Document next = script.execute(adapterFactory, prev.getDocument());
+        DocumentType wantType = docTypeMgr.getDocumentType(hadType.getName());
+        Document prevDoc = prev.getDocument();
+        if (hadType != wantType) {
+            GrowableByteBuffer buffer = new GrowableByteBuffer(64 * 1024, 2.0f);
+            DocumentSerializer serializer = DocumentSerializerFactory.createHead(buffer);
+            serializer.write(prevDoc);
+            buffer.flip();
+            prevDoc = docTypeMgr.createDocument(buffer);
+        }
+        Document next = script.execute(adapterFactory, prevDoc);
         if (next == null) {
             log.log(Level.FINE, "Document '%s' produced no output.", prev.getId());
             return;
