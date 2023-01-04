@@ -153,11 +153,6 @@
                 <artifactId>xml-apis</artifactId>
                 <version>${xml-apis.version}</version>
             </dependency>
-            <dependency>
-                <groupId>commons-codec</groupId>
-                <artifactId>commons-codec</artifactId>
-                <version>${commons-codec.version}</version>
-            </dependency>
         </dependencies>
     </dependencyManagement>
 
@@ -239,7 +234,6 @@
 
     <properties>
         <aopalliance.version>1.0</aopalliance.version>
-        <commons-codec.version>1.15</commons-codec.version>
         <guava.version>27.1-jre</guava.version>
         <guice.version>4.2.3</guice.version>
         <jackson2.version>2.13.4</jackson2.version>
