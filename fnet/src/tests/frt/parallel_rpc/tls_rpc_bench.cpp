@@ -17,7 +17,6 @@ using namespace vespalib;
 using vespalib::test::TimeTracer;
 
 CryptoEngine::SP null_crypto = std::make_shared<NullCryptoEngine>();
-CryptoEngine::SP xor_crypto = std::make_shared<XorCryptoEngine>();
 CryptoEngine::SP tls_crypto = std::make_shared<vespalib::TlsCryptoEngine>(vespalib::test::make_tls_options_for_testing());
 
 TT_Tag req_tag("request");
@@ -139,12 +138,6 @@ void benchmark_rpc(Fixture &fixture, bool reconnect) {
 
 TEST_F("^^^-- rpc with null encryption", Fixture(null_crypto)) {
     fprintf(stderr, "vvv-- rpc with null encryption\n");
-    benchmark_rpc(f1, false);
-    benchmark_rpc(f1, true);
-}
-
-TEST_F("^^^-- rpc with xor encryption", Fixture(xor_crypto)) {
-    fprintf(stderr, "vvv-- rpc with xor encryption\n");
     benchmark_rpc(f1, false);
     benchmark_rpc(f1, true);
 }
