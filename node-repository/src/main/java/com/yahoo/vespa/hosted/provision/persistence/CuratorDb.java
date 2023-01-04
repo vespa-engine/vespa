@@ -115,7 +115,10 @@ public class CuratorDb {
                 throw new IllegalArgumentException(node + " is not in the " + expectedState + " state");
 
             node = node.with(node.history().recordStateTransition(null, expectedState, agent, clock.instant()));
-            curatorTransaction.add(CuratorOperations.create(toPath(node).getAbsolute(), nodeSerializer.toJson(node)));
+            // TODO(mpolden): Remove after migration to nodesPath
+            byte[] serialized = nodeSerializer.toJson(node);
+            curatorTransaction.add(CuratorOperations.create(toPath(node).getAbsolute(), serialized));
+            curatorTransaction.add(CuratorOperations.create(nodePath(node).getAbsolute(), serialized));
         }
 
         for (Node node : nodes)
@@ -136,7 +139,11 @@ public class CuratorDb {
         for (Node node : nodes) {
             Path path = toPath(node.state(), node.hostname());
             CuratorTransaction curatorTransaction = db.newCuratorTransactionIn(transaction);
+            // TODO(mpolden): Remove after migration to nodesPath
             curatorTransaction.add(CuratorOperations.delete(path.getAbsolute()));
+            if (db.exists(nodePath(node))) {
+                curatorTransaction.add(CuratorOperations.delete(nodePath(node).getAbsolute()));
+            }
         }
         nodes.forEach(node -> log.log(Level.INFO, "Removed node " + node.hostname() + " in state " + node.state()));
     }
