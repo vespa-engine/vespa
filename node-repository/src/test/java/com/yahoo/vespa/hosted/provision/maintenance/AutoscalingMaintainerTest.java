@@ -16,6 +16,7 @@ import com.yahoo.vespa.hosted.provision.NodeRepository;
 import com.yahoo.vespa.hosted.provision.applications.Cluster;
 import com.yahoo.vespa.hosted.provision.applications.ScalingEvent;
 import com.yahoo.vespa.hosted.provision.autoscale.ClusterModel;
+import com.yahoo.vespa.hosted.provision.autoscale.Load;
 import com.yahoo.vespa.hosted.provision.node.Agent;
 import com.yahoo.vespa.hosted.provision.node.History;
 import com.yahoo.vespa.hosted.provision.testutils.MockDeployer;
@@ -28,6 +29,7 @@ import java.util.Optional;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertTrue;
 
 /**
@@ -52,7 +54,6 @@ public class AutoscalingMaintainerTest {
         AutoscalingMaintainerTester tester = new AutoscalingMaintainerTester(
                 new MockDeployer.ApplicationContext(app1, cluster1, Capacity.from(new ClusterResources(2, 1, lowResources))),
                 new MockDeployer.ApplicationContext(app2, cluster2, Capacity.from(new ClusterResources(2, 1, highResources))));
-
 
         tester.maintainer().maintain(); // noop
         assertTrue(tester.deployer().lastDeployTime(app1).isEmpty());
@@ -297,6 +298,33 @@ public class AutoscalingMaintainerTest {
                            .owner(app1)
                            .cluster(cluster1.id())
                            .size());
+    }
+
+    @Test
+    public void empty_autoscaling_is_ignored() {
+        ApplicationId app1 = AutoscalingMaintainerTester.makeApplicationId("app1");
+        ClusterSpec cluster1 = AutoscalingMaintainerTester.containerClusterSpec();
+        NodeResources resources = new NodeResources(4, 4, 10, 1);
+        ClusterResources min = new ClusterResources(2, 1, resources);
+        ClusterResources max = new ClusterResources(20, 1, resources);
+        var capacity = Capacity.from(min, max);
+        var tester = new AutoscalingMaintainerTester(new MockDeployer.ApplicationContext(app1, cluster1, capacity));
+
+        // Add a scaling event
+        tester.deploy(app1, cluster1, capacity);
+        tester.addMeasurements(1.0f, 0.3f, 0.3f, 0, 4, app1, cluster1.id());
+        tester.maintainer().maintain();
+        assertEquals("Scale up: " + tester.cluster(app1, cluster1).target().status(),
+                     1,
+                     tester.cluster(app1, cluster1).lastScalingEvent().get().generation());
+        Load peak = tester.cluster(app1, cluster1).target().peak();
+        assertNotEquals(Load.zero(), peak);
+
+        // Old measurements go out of scope and no new ones are made
+        tester.clock().advance(Duration.ofDays(1));
+        tester.maintainer().maintain();
+        Load newPeak = tester.cluster(app1, cluster1).target().peak();
+        assertEquals("Old measurements are retained", peak, newPeak);
     }
 
     private void autoscale(boolean down, Duration completionTime, Duration expectedWindow,

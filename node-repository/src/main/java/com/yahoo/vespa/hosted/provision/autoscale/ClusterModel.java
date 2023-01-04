@@ -104,6 +104,10 @@ public class ClusterModel {
     public ClusterSpec clusterSpec() { return clusterSpec; }
     public Cluster cluster() { return cluster; }
 
+    public boolean isEmpty() {
+        return nodeTimeseries().isEmpty();
+    }
+
     /** Returns the relative load adjustment that should be made to this cluster given available measurements. */
     public Load loadAdjustment() {
         if (nodeTimeseries().isEmpty()) return Load.one();

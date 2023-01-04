@@ -62,6 +62,8 @@ public class Autoscaling {
                                ideal);
     }
 
+    public boolean isEmpty() { return this.equals(empty()); }
+
     @Override
     public boolean equals(Object o) {
         if ( ! (o instanceof Autoscaling other)) return false;

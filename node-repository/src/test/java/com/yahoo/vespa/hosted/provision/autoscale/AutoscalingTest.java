@@ -730,12 +730,14 @@ public class AutoscalingTest {
                                          fixture.currentResources().advertisedResources());
 
         fixture.tester().deploy(fixture.applicationId(), clusterSpec(false), fixture.capacity());
+        fixture.loader().applyLoad(new Load(0.1, 0.1, 0.1), 100);
         fixture.tester().assertResources("With non-exclusive nodes, a better solution is " +
                                          "50% more nodes with half the cpu",
-                                         3, 1, 1, 4, 145.6,
+                                         3, 1, 1, 4, 100.0,
                                          fixture.autoscale());
 
         fixture.tester().deploy(fixture.applicationId(), clusterSpec(true), fixture.capacity());
+        fixture.loader().applyLoad(new Load(0.1, 0.1, 0.1), 100);
         fixture.tester().assertResources("Reverts to the initial resources",
                                          2, 1, 2, 4, 100,
                                          fixture.currentResources().advertisedResources());
