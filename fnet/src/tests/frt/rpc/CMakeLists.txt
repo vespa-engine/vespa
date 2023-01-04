@@ -6,7 +6,6 @@ vespa_add_executable(fnet_invoke_test_app TEST
     fnet
 )
 vespa_add_test(NAME fnet_invoke_test_app COMMAND fnet_invoke_test_app)
-vespa_add_test(NAME fnet_invoke_test_app_xor COMMAND fnet_invoke_test_app ENVIRONMENT "CRYPTOENGINE=xor")
 vespa_add_test(NAME fnet_invoke_test_app_tls COMMAND fnet_invoke_test_app ENVIRONMENT "CRYPTOENGINE=tls")
 vespa_add_test(NAME fnet_invoke_test_app_tls_maybe_yes COMMAND fnet_invoke_test_app ENVIRONMENT "CRYPTOENGINE=tls_maybe_yes")
 vespa_add_test(NAME fnet_invoke_test_app_tls_maybe_no COMMAND fnet_invoke_test_app ENVIRONMENT "CRYPTOENGINE=tls_maybe_no")

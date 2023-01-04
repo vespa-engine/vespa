@@ -76,12 +76,10 @@ struct Encryption {
 Encryption::~Encryption() = default;
 
 auto null_crypto() { return std::make_shared<NullCryptoEngine>(); }
-auto xor_crypto() { return std::make_shared<XorCryptoEngine>(); }
 auto tls_crypto() { return std::make_shared<TlsCryptoEngine>(make_tls_options_for_testing()); }
 auto maybe_tls_crypto(bool client_tls) { return std::make_shared<MaybeTlsCryptoEngine>(tls_crypto(), client_tls); }
 
 std::vector<Encryption> crypto_list = {{"no encryption", null_crypto()},
-                                       {"ad-hoc xor", xor_crypto()},
                                        {"always TLS", tls_crypto()},
                                        {"maybe TLS; yes", maybe_tls_crypto(true)},
                                        {"maybe TLS; no", maybe_tls_crypto(false)}};
