@@ -53,6 +53,7 @@ public class ClusterModel {
     private final Duration scalingDuration;
     private final ClusterTimeseries clusterTimeseries;
     private final ClusterNodesTimeseries nodeTimeseries;
+    private final Instant at;
 
     // Lazily initialized members
     private Double queryFractionOfMax = null;
@@ -72,9 +73,10 @@ public class ClusterModel {
         this.cluster = cluster;
         this.nodes = clusterNodes;
         this.clock = clock;
-        this.scalingDuration = computeScalingDuration(cluster, clusterSpec);
+        this.scalingDuration = cluster.scalingDuration(clusterSpec);
         this.clusterTimeseries = metricsDb.getClusterTimeseries(application.id(), cluster.id());
         this.nodeTimeseries = new ClusterNodesTimeseries(scalingDuration(), cluster, nodes, metricsDb);
+        this.at = clock.instant();
     }
 
     ClusterModel(Zone zone,
@@ -95,11 +97,16 @@ public class ClusterModel {
         this.scalingDuration = scalingDuration;
         this.clusterTimeseries = clusterTimeseries;
         this.nodeTimeseries = nodeTimeseries;
+        this.at = clock.instant();
     }
 
     public Application application() { return application; }
     public ClusterSpec clusterSpec() { return clusterSpec; }
     public Cluster cluster() { return cluster; }
+
+    public boolean isEmpty() {
+        return nodeTimeseries().isEmpty();
+    }
 
     /** Returns the relative load adjustment that should be made to this cluster given available measurements. */
     public Load loadAdjustment() {
@@ -150,12 +157,6 @@ public class ClusterModel {
         if (averageQueryRate != null) return averageQueryRate;
         return averageQueryRate = clusterTimeseries().queryRate(scalingDuration(), clock);
     }
-
-    /** Returns the average of the last load measurement from each node. */
-    public Load currentLoad() { return nodeTimeseries().currentLoad(); }
-
-    /** Returns the average of all load measurements from all nodes*/
-    public Load averageLoad() { return nodeTimeseries().averageLoad(); }
 
     /** Returns the average of the peak load measurement in each dimension, from each node. */
     public Load peakLoad() { return nodeTimeseries().peakLoad(); }
@@ -239,6 +240,9 @@ public class ClusterModel {
                (1 - queryCpuFraction) * idealWriteCpuLoad;
     }
 
+    /** Returns the instant this model was created. */
+    public Instant at() { return at;}
+
     /** Returns the headroom for growth during organic traffic growth as a multiple of current resources. */
     private double growthRateHeadroom() {
         if ( ! zone.environment().isProduction()) return 1;
@@ -288,43 +292,6 @@ public class ClusterModel {
         return queryRateFraction * relativeQueryCost / (queryRateFraction * relativeQueryCost + writeFraction);
     }
 
-    private static Duration computeScalingDuration(Cluster cluster, ClusterSpec clusterSpec) {
-        int completedEventCount = 0;
-        Duration totalDuration = Duration.ZERO;
-        for (ScalingEvent event : cluster.scalingEvents()) {
-            if (event.duration().isEmpty()) continue;
-            completedEventCount++;
-            // Assume we have missed timely recording completion if it is longer than 4 days
-            totalDuration = totalDuration.plus(maximum(Duration.ofDays(4), event.duration().get()));
-        }
-        if (completedEventCount == 0) { // Use defaults
-            if (clusterSpec.isStateful()) return Duration.ofHours(12);
-            return Duration.ofMinutes(10);
-        }
-        else {
-            Duration predictedDuration = totalDuration.dividedBy(completedEventCount);
-
-            if ( clusterSpec.isStateful() ) // TODO: Remove when we have reliable completion for content clusters
-                predictedDuration = minimum(Duration.ofHours(12), predictedDuration);
-
-            predictedDuration = minimum(Duration.ofMinutes(5), predictedDuration);
-
-            return predictedDuration;
-        }
-    }
-
-    private static Duration minimum(Duration smallestAllowed, Duration duration) {
-        if (duration.minus(smallestAllowed).isNegative())
-            return smallestAllowed;
-        return duration;
-    }
-
-    private static Duration maximum(Duration largestAllowed, Duration duration) {
-        if ( ! duration.minus(largestAllowed).isNegative())
-            return largestAllowed;
-        return duration;
-    }
-
     private double idealMemoryLoad() {
         if (clusterSpec.type().isContainer()) return idealContainerMemoryLoad;
         if (clusterSpec.type() == ClusterSpec.Type.admin) return idealContainerMemoryLoad; // Not autoscaled, but ideal shown in console
@@ -339,7 +306,7 @@ public class ClusterModel {
 
     /**
      * Create a cluster model if possible and logs a warning and returns empty otherwise.
-     * This is useful in cases where it's possible to continue without the cluser model,
+     * This is useful in cases where it's possible to continue without the cluster model,
      * as QuestDb is known to temporarily fail during reading of data.
      */
     public static Optional<ClusterModel> create(Zone zone,

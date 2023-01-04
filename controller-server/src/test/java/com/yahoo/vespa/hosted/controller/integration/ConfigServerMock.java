@@ -30,6 +30,7 @@ import com.yahoo.vespa.hosted.controller.api.integration.configserver.Cluster;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.ConfigServer;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.ContainerEndpoint;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.DeploymentResult;
+import com.yahoo.vespa.hosted.controller.api.integration.configserver.Load;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.LoadBalancer;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.LoadBalancer.PrivateServiceInfo;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.Node;
@@ -43,7 +44,6 @@ import com.yahoo.vespa.hosted.controller.api.integration.noderepository.RestartF
 import com.yahoo.vespa.hosted.controller.api.integration.secrets.TenantSecretStore;
 import com.yahoo.vespa.hosted.controller.application.SystemApplication;
 import com.yahoo.vespa.hosted.controller.application.pkg.ApplicationPackage;
-import wiremock.org.checkerframework.checker.units.qual.A;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -116,20 +116,18 @@ public class ConfigServerMock extends AbstractComponent implements ConfigServer 
                                       new ClusterResources(2, 1, new NodeResources(1,  4, 20, 1, slow, remote)),
                                       new ClusterResources(2, 1, new NodeResources(4, 16, 90, 1, slow, remote)),
                                       current,
-                                      Optional.of(new ClusterResources(2, 1, new NodeResources(3, 8, 50, 1, slow, remote))),
-                                      Optional.empty(),
-                                      new Cluster.Utilization(0.2, 0.35,
-                                                              0.5, 0.65,
-                                                              0.8, 1.0),
+                                      new Cluster.Autoscaling("ideal",
+                                                              "Cluster is ideally scaled",
+                                                              Optional.of(new ClusterResources(2, 1, new NodeResources(3, 8, 50, 1, slow, remote))),
+                                                              Instant.ofEpochMilli(123),
+                                                              new Load(0.35, 0.65, 1.0),
+                                                              new Load(0.2,  0.5,  0.8)),
+                                      Cluster.Autoscaling.empty(),
                                       List.of(new Cluster.ScalingEvent(new ClusterResources(0, 0, NodeResources.unspecified()),
                                                                        current,
                                                                        Instant.ofEpochMilli(1234),
                                                                        Optional.of(Instant.ofEpochMilli(2234)))),
-                                      "ideal",
-                                      "Cluster is ideally scaled",
-                                      Duration.ofMinutes(6),
-                                      0.7,
-                                      0.3);
+                                      Duration.ofMinutes(6));
         nodeRepository.putApplication(zone,
                                       new com.yahoo.vespa.hosted.controller.api.integration.configserver.Application(application,
                                                                                                                      List.of(cluster)));

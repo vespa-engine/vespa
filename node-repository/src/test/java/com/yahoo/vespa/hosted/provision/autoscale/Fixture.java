@@ -95,17 +95,17 @@ public class Fixture {
     public Loader loader() { return loader; }
 
     /** Autoscale within the deployed capacity of this. */
-    public Autoscaler.Advice autoscale() {
+    public Autoscaling autoscale() {
         return autoscale(capacity);
     }
 
     /** Autoscale within the given capacity. */
-    public Autoscaler.Advice autoscale(Capacity capacity) {
+    public Autoscaling autoscale(Capacity capacity) {
         return tester().autoscale(applicationId, clusterSpec, capacity);
     }
 
     /** Compute an autoscaling suggestion for this. */
-    public Autoscaler.Advice suggest() {
+    public Autoscaling suggest() {
         return tester().suggest(applicationId, clusterSpec.id(), capacity.minResources(), capacity.maxResources());
     }
 

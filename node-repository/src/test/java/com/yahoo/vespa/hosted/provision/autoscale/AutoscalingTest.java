@@ -36,15 +36,15 @@ public class AutoscalingTest {
                                                                fixture.autoscale());
 
         fixture.deploy(Capacity.from(scaledResources));
-        assertTrue("Cluster in flux -> No further change", fixture.autoscale().isEmpty());
+        assertEquals("Cluster in flux -> No further change", Autoscaling.Status.waiting, fixture.autoscale().status());
 
         fixture.deactivateRetired(Capacity.from(scaledResources));
 
         fixture.loader().applyCpuLoad(0.19f, 10);
-        assertEquals("Load change is small -> No change", Optional.empty(), fixture.autoscale().target());
+        assertEquals("Load change is small -> No change", Optional.empty(), fixture.autoscale().resources());
 
         fixture.loader().applyCpuLoad(0.1f, 10);
-        assertEquals("Too little time passed for downscaling -> No change", Optional.empty(), fixture.autoscale().target());
+        assertEquals("Too little time passed for downscaling -> No change", Optional.empty(), fixture.autoscale().resources());
 
         fixture.tester().clock().advance(Duration.ofDays(2));
         fixture.loader().applyCpuLoad(0.1f, 10);
@@ -57,13 +57,13 @@ public class AutoscalingTest {
     @Test
     public void test_no_autoscaling_with_no_measurements() {
         var fixture = AutoscalingTester.fixture().awsProdSetup(true).build();
-        assertTrue(fixture.autoscale().target().isEmpty());
+        assertTrue(fixture.autoscale().resources().isEmpty());
     }
 
     @Test
     public void test_no_autoscaling_with_no_measurements_exclusive() {
         var fixture = AutoscalingTester.fixture().awsProdSetup(false).build();
-        assertTrue(fixture.autoscale().target().isEmpty());
+        assertTrue(fixture.autoscale().resources().isEmpty());
     }
 
     /** Using too many resources for a short period is proof we should scale up regardless of the time that takes. */
@@ -277,7 +277,7 @@ public class AutoscalingTest {
         fixture.deactivateRetired(capacity);
         fixture.tester().clock().advance(Duration.ofDays(1));
         fixture.loader().applyCpuLoad(0.8, 120);
-        assertEquals(DiskSpeed.any, fixture.autoscale(capacity).target().get().nodeResources().diskSpeed());
+        assertEquals(DiskSpeed.any, fixture.autoscale(capacity).resources().get().nodeResources().diskSpeed());
     }
 
     @Test
@@ -357,10 +357,9 @@ public class AutoscalingTest {
         ClusterResources min = new ClusterResources( 2, 1, new NodeResources(1, 1, 1, 1));
         var fixture = AutoscalingTester.fixture().awsProdSetup(true).capacity(Capacity.from(min, min)).build();
 
-        // deploy
         fixture.tester().clock().advance(Duration.ofDays(1));
         fixture.loader().applyCpuLoad(0.25, 120);
-        assertTrue(fixture.autoscale().isEmpty());
+        assertEquals(Autoscaling.Status.unavailable, fixture.autoscale().status());
     }
 
     @Test
@@ -379,12 +378,12 @@ public class AutoscalingTest {
 
         fixture.tester().clock().advance(Duration.ofDays(2));
         fixture.loader().applyLoad(new Load(0.01, 0.01, 0.01), 120);
-        Autoscaler.Advice suggestion = fixture.suggest();
+        Autoscaling suggestion = fixture.suggest();
         fixture.tester().assertResources("Choosing the remote disk flavor as it has less disk",
                                          2, 1, 3.0,  100.0, 10.0,
                                          suggestion);
         assertEquals("Choosing the remote disk flavor as it has less disk",
-                     StorageType.remote, suggestion.target().get().nodeResources().storageType());
+                     StorageType.remote, suggestion.resources().get().nodeResources().storageType());
     }
 
     @Test
@@ -415,7 +414,7 @@ public class AutoscalingTest {
         fixture.tester().clock().advance(Duration.ofDays(2));
         fixture.loader().applyLoad(new Load(0.9, 0.6, 0.7),  1, false, true, 120);
         assertTrue("Not scaling up since nodes were measured while cluster was out of service",
-                   fixture.autoscale().target().isEmpty());
+                   fixture.autoscale().resources().isEmpty());
     }
 
     @Test
@@ -424,7 +423,7 @@ public class AutoscalingTest {
         fixture.tester().clock().advance(Duration.ofDays(2));
         fixture.loader().applyLoad(new Load(0.9, 0.6, 0.7),  1, true, false, 120);
         assertTrue("Not scaling up since nodes were measured while cluster was unstable",
-                   fixture.autoscale().target().isEmpty());
+                   fixture.autoscale().resources().isEmpty());
     }
 
     @Test
@@ -521,7 +520,7 @@ public class AutoscalingTest {
     public void scaling_down_only_after_delay() {
         var fixture = AutoscalingTester.fixture().awsProdSetup(true).build();
         fixture.loader().applyCpuLoad(0.02, 120);
-        assertTrue("Too soon  after initial deployment", fixture.autoscale().target().isEmpty());
+        assertTrue("Too soon  after initial deployment", fixture.autoscale().resources().isEmpty());
         fixture.tester().clock().advance(Duration.ofDays(2));
         fixture.loader().applyCpuLoad(0.02, 120);
         fixture.tester().assertResources("Scaling down since enough time has passed",
@@ -670,7 +669,7 @@ public class AutoscalingTest {
         fixture.tester().clock().advance(Duration.ofDays(2));
         fixture.loader().applyLoad(new Load(1.0, 1.0, 1.0), 200);
         assertTrue("Not attempting to scale up because policies dictate we'll only get one node",
-                   fixture.autoscale().target().isEmpty());
+                   fixture.autoscale().resources().isEmpty());
     }
 
     /** Same setup as test_autoscaling_in_dev(), just with required = true */
@@ -731,12 +730,14 @@ public class AutoscalingTest {
                                          fixture.currentResources().advertisedResources());
 
         fixture.tester().deploy(fixture.applicationId(), clusterSpec(false), fixture.capacity());
+        fixture.loader().applyLoad(new Load(0.1, 0.1, 0.1), 100);
         fixture.tester().assertResources("With non-exclusive nodes, a better solution is " +
                                          "50% more nodes with half the cpu",
-                                         3, 1, 1, 4, 145.6,
+                                         3, 1, 1, 4, 100.0,
                                          fixture.autoscale());
 
         fixture.tester().deploy(fixture.applicationId(), clusterSpec(true), fixture.capacity());
+        fixture.loader().applyLoad(new Load(0.1, 0.1, 0.1), 100);
         fixture.tester().assertResources("Reverts to the initial resources",
                                          2, 1, 2, 4, 100,
                                          fixture.currentResources().advertisedResources());

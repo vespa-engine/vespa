@@ -7,6 +7,7 @@ import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.vespa.hosted.provision.autoscale.Autoscaler;
 import com.yahoo.vespa.hosted.provision.autoscale.Autoscaling;
 
+import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
@@ -33,7 +34,6 @@ public class Cluster {
 
     /** The maxScalingEvents last scaling events of this, sorted by increasing time (newest last) */
     private final List<ScalingEvent> scalingEvents;
-    private final AutoscalingStatus autoscalingStatus;
 
     public Cluster(ClusterSpec.Id id,
                    boolean exclusive,
@@ -42,8 +42,7 @@ public class Cluster {
                    boolean required,
                    Autoscaling suggested,
                    Autoscaling target,
-                   List<ScalingEvent> scalingEvents,
-                   AutoscalingStatus autoscalingStatus) {
+                   List<ScalingEvent> scalingEvents) {
         this.id = Objects.requireNonNull(id);
         this.exclusive = exclusive;
         this.min = Objects.requireNonNull(minResources);
@@ -56,7 +55,6 @@ public class Cluster {
         else
             this.target = target;
         this.scalingEvents = List.copyOf(scalingEvents);
-        this.autoscalingStatus = autoscalingStatus;
     }
 
     public ClusterSpec.Id id() { return id; }
@@ -105,21 +103,18 @@ public class Cluster {
         return Optional.of(scalingEvents.get(scalingEvents.size() - 1));
     }
 
-    /** The latest autoscaling status of this cluster, or unknown (never null) if none */
-    public AutoscalingStatus autoscalingStatus() { return autoscalingStatus; }
-
     public Cluster withConfiguration(boolean exclusive, Capacity capacity) {
         return new Cluster(id, exclusive,
                            capacity.minResources(), capacity.maxResources(), capacity.isRequired(),
-                           suggested, target, scalingEvents, autoscalingStatus);
+                           suggested, target, scalingEvents);
     }
 
     public Cluster withSuggested(Autoscaling suggested) {
-        return new Cluster(id, exclusive, min, max, required, suggested, target, scalingEvents, autoscalingStatus);
+        return new Cluster(id, exclusive, min, max, required, suggested, target, scalingEvents);
     }
 
     public Cluster withTarget(Autoscaling target) {
-        return new Cluster(id, exclusive, min, max, required, suggested, target, scalingEvents, autoscalingStatus);
+        return new Cluster(id, exclusive, min, max, required, suggested, target, scalingEvents);
     }
 
     /** Add or update (based on "at" time) a scaling event */
@@ -133,12 +128,7 @@ public class Cluster {
             scalingEvents.add(scalingEvent);
 
         prune(scalingEvents);
-        return new Cluster(id, exclusive, min, max, required, suggested, target, scalingEvents, autoscalingStatus);
-    }
-
-    public Cluster with(AutoscalingStatus autoscalingStatus) {
-        if (autoscalingStatus.equals(this.autoscalingStatus)) return this;
-        return new Cluster(id, exclusive, min, max, required, suggested, target, scalingEvents, autoscalingStatus);
+        return new Cluster(id, exclusive, min, max, required, suggested, target, scalingEvents);
     }
 
     @Override
@@ -169,7 +159,45 @@ public class Cluster {
 
     public static Cluster create(ClusterSpec.Id id, boolean exclusive, Capacity requested) {
         return new Cluster(id, exclusive, requested.minResources(), requested.maxResources(), requested.isRequired(),
-                           Autoscaling.empty(), Autoscaling.empty(), List.of(), AutoscalingStatus.empty());
+                           Autoscaling.empty(), Autoscaling.empty(), List.of());
+    }
+
+    /** The predicted time it will take to rescale this cluster. */
+    public Duration scalingDuration(ClusterSpec clusterSpec) {
+        int completedEventCount = 0;
+        Duration totalDuration = Duration.ZERO;
+        for (ScalingEvent event : scalingEvents()) {
+            if (event.duration().isEmpty()) continue;
+            completedEventCount++;
+            // Assume we have missed timely recording completion if it is longer than 4 days
+            totalDuration = totalDuration.plus(maximum(Duration.ofDays(4), event.duration().get()));
+        }
+        if (completedEventCount == 0) { // Use defaults
+            if (clusterSpec.isStateful()) return Duration.ofHours(12);
+            return Duration.ofMinutes(10);
+        }
+        else {
+            Duration predictedDuration = totalDuration.dividedBy(completedEventCount);
+
+            if ( clusterSpec.isStateful() ) // TODO: Remove when we have reliable completion for content clusters
+                predictedDuration = minimum(Duration.ofHours(12), predictedDuration);
+
+            predictedDuration = minimum(Duration.ofMinutes(5), predictedDuration);
+
+            return predictedDuration;
+        }
+    }
+
+    private static Duration minimum(Duration smallestAllowed, Duration duration) {
+        if (duration.minus(smallestAllowed).isNegative())
+            return smallestAllowed;
+        return duration;
+    }
+
+    private static Duration maximum(Duration largestAllowed, Duration duration) {
+        if ( ! duration.minus(largestAllowed).isNegative())
+            return largestAllowed;
+        return duration;
     }
 
 }

@@ -30,6 +30,7 @@ import com.yahoo.vespa.hosted.provision.NodeRepository;
 import com.yahoo.vespa.hosted.provision.applications.Application;
 import com.yahoo.vespa.hosted.provision.applications.Cluster;
 import com.yahoo.vespa.hosted.provision.autoscale.Autoscaling;
+import com.yahoo.vespa.hosted.provision.autoscale.Load;
 import com.yahoo.vespa.hosted.provision.autoscale.MemoryMetricsDb;
 import com.yahoo.vespa.hosted.provision.node.Agent;
 import com.yahoo.vespa.hosted.provision.node.IP;
@@ -196,11 +197,20 @@ public class MockNodeRepository extends NodeRepository {
                                 null), app1Id, provisioner);
         Application app1 = applications().get(app1Id).get();
         Cluster cluster1 = app1.cluster(cluster1Id.id()).get();
-        cluster1 = cluster1.withSuggested(new Autoscaling(new ClusterResources(6, 2,
-                                                                               new NodeResources(3, 20, 100, 1)),
-                                                          clock().instant()));
-        cluster1 = cluster1.withTarget(new Autoscaling(new ClusterResources(4, 1,
-                                                                            new NodeResources(3, 16, 100, 1)), clock().instant()));
+        cluster1 = cluster1.withSuggested(new Autoscaling(Autoscaling.Status.unavailable,
+                                                          "",
+                                                          Optional.of(new ClusterResources(6, 2,
+                                                                                           new NodeResources(3, 20, 100, 1))),
+                                                          clock().instant(),
+                                                          Load.zero(),
+                                                          Load.zero()));
+        cluster1 = cluster1.withTarget(new Autoscaling(Autoscaling.Status.unavailable,
+                                                       "",
+                                                       Optional.of(new ClusterResources(4, 1,
+                                                                                        new NodeResources(3, 16, 100, 1))),
+                                                       clock().instant(),
+                                                       Load.zero(),
+                                                       Load.zero()));
         try (Mutex lock = applications().lock(app1Id)) {
             applications().put(app1.with(cluster1), lock);
         }

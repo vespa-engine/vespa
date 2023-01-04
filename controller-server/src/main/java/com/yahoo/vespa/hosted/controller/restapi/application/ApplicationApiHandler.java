@@ -64,6 +64,7 @@ import com.yahoo.vespa.hosted.controller.api.integration.configserver.Cluster;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.ConfigServerException;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.DeploymentResult;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.DeploymentResult.LogEntry;
+import com.yahoo.vespa.hosted.controller.api.integration.configserver.Load;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.LoadBalancer;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.Node;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.NodeFilter;
@@ -74,7 +75,6 @@ import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.RevisionId;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.RunId;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.SourceRevision;
-import com.yahoo.vespa.hosted.controller.api.integration.dns.VpcEndpointService.VpcEndpoint;
 import com.yahoo.vespa.hosted.controller.api.integration.noderepository.RestartFilter;
 import com.yahoo.vespa.hosted.controller.api.integration.secrets.TenantSecretStore;
 import com.yahoo.vespa.hosted.controller.api.role.Role;
@@ -1348,17 +1348,13 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
             toSlime(cluster.min(), clusterObject.setObject("min"));
             toSlime(cluster.max(), clusterObject.setObject("max"));
             toSlime(cluster.current(), clusterObject.setObject("current"));
-            if (cluster.target().isPresent()
-                && ! cluster.target().get().justNumbers().equals(cluster.current().justNumbers()))
-                toSlime(cluster.target().get(), clusterObject.setObject("target"));
-            cluster.suggested().ifPresent(suggested -> toSlime(suggested, clusterObject.setObject("suggested")));
-            utilizationToSlime(cluster.utilization(), clusterObject.setObject("utilization"));
+            toSlime(cluster.target(), cluster, clusterObject.setObject("target"));
+            toSlime(cluster.suggested(), cluster, clusterObject.setObject("suggested"));
+            legacyUtilizationToSlime(cluster.target().peak(), cluster.target().ideal(), clusterObject.setObject("utilization")); // TODO: Remove after January 2023
             scalingEventsToSlime(cluster.scalingEvents(), clusterObject.setArray("scalingEvents"));
-            clusterObject.setString("autoscalingStatusCode", cluster.autoscalingStatusCode());
-            clusterObject.setString("autoscalingStatus", cluster.autoscalingStatus());
+            clusterObject.setString("autoscalingStatusCode", cluster.target().status()); // TODO: Remove after January 2023
+            clusterObject.setString("autoscalingStatus", cluster.target().description()); // TODO: Remove after January 2023
             clusterObject.setLong("scalingDuration", cluster.scalingDuration().toMillis());
-            clusterObject.setDouble("maxQueryGrowthRate", cluster.maxQueryGrowthRate());
-            clusterObject.setDouble("currentQueryFractionOfMax", cluster.currentQueryFractionOfMax());
         }
         return new SlimeJsonResponse(slime);
     }
@@ -2704,15 +2700,35 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
         object.setDouble("cost", cost);
     }
 
-    private void utilizationToSlime(Cluster.Utilization utilization, Cursor utilizationObject) {
-        utilizationObject.setDouble("idealCpu", utilization.idealCpu());
-        utilizationObject.setDouble("peakCpu", utilization.peakCpu());
+    private void toSlime(Cluster.Autoscaling autoscaling, Cluster cluster, Cursor autoscalingObject) {
+        // TODO: Remove after January 2023
+        if (autoscaling.resources().isPresent()
+            && ! autoscaling.resources().get().justNumbers().equals(cluster.current().justNumbers()))
+            toSlime(autoscaling.resources().get(), autoscalingObject);
 
-        utilizationObject.setDouble("idealMemory", utilization.idealMemory());
-        utilizationObject.setDouble("peakMemory", utilization.peakMemory());
+        autoscalingObject.setString("status", autoscaling.status());
+        autoscalingObject.setString("description", autoscaling.description());
+        autoscaling.resources().ifPresent(resources -> toSlime(resources, autoscalingObject.setObject("resources")));
+        autoscalingObject.setLong("at", autoscaling.at().toEpochMilli());
+        toSlime(autoscaling.peak(), autoscalingObject.setObject("peak"));
+        toSlime(autoscaling.ideal(), autoscalingObject.setObject("ideal"));
+    }
 
-        utilizationObject.setDouble("idealDisk", utilization.idealDisk());
-        utilizationObject.setDouble("peakDisk", utilization.peakDisk());
+    private void toSlime(Load load, Cursor loadObject) {
+        loadObject.setDouble("cpu", load.cpu());
+        loadObject.setDouble("memory", load.memory());
+        loadObject.setDouble("disk", load.disk());
+    }
+
+    private void legacyUtilizationToSlime(Load peak, Load ideal, Cursor utilizationObject) {
+        utilizationObject.setDouble("idealCpu", ideal.cpu());
+        utilizationObject.setDouble("peakCpu", peak.cpu());
+
+        utilizationObject.setDouble("idealMemory", ideal.memory());
+        utilizationObject.setDouble("peakMemory", peak.memory());
+
+        utilizationObject.setDouble("idealDisk", ideal.disk());
+        utilizationObject.setDouble("peakDisk", peak.disk());
     }
 
     private void scalingEventsToSlime(List<Cluster.ScalingEvent> scalingEvents, Cursor scalingEventsArray) {

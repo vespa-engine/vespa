@@ -70,9 +70,9 @@ public class AutoscalingMaintainer extends NodeRepositoryMaintainer {
         if (cluster.isEmpty()) return;
 
         Cluster updatedCluster = updateCompletion(cluster.get(), clusterNodes);
-        var advice = autoscaler.autoscale(application.get(), updatedCluster, clusterNodes);
+        var autoscaling = autoscaler.autoscale(application.get(), updatedCluster, clusterNodes);
 
-        if ( ! anyChanges(advice, cluster.get(), updatedCluster, clusterNodes)) return;
+        if ( ! anyChanges(autoscaling, cluster.get(), updatedCluster, clusterNodes)) return;
 
         try (var lock = nodeRepository().applications().lock(applicationId)) {
             application = nodeRepository().applications().get(applicationId);
@@ -82,30 +82,30 @@ public class AutoscalingMaintainer extends NodeRepositoryMaintainer {
             clusterNodes = nodeRepository().nodes().list(Node.State.active).owner(applicationId).cluster(clusterId);
 
             // 1. Update cluster info
-            updatedCluster = updateCompletion(cluster.get(), clusterNodes)
-                                     .with(advice.reason())
-                                     .withTarget(new Autoscaling(advice.target(), nodeRepository().clock().instant()));
+            updatedCluster = updateCompletion(cluster.get(), clusterNodes);
+            if ( ! autoscaling.isEmpty()) // Ignore empties we'll get from servers recently started
+                updatedCluster = updatedCluster.withTarget(autoscaling);
             applications().put(application.get().with(updatedCluster), lock);
 
             var current = new AllocatableClusterResources(clusterNodes, nodeRepository()).advertisedResources();
-            if (advice.isPresent() && advice.target().isPresent() && !current.equals(advice.target().get())) {
+            if (autoscaling.resources().isPresent() && !current.equals(autoscaling.resources().get())) {
                 // 2. Also autoscale
                 try (MaintenanceDeployment deployment = new MaintenanceDeployment(applicationId, deployer, metric, nodeRepository())) {
                     if (deployment.isValid()) {
                         deployment.activate();
-                        logAutoscaling(current, advice.target().get(), applicationId, clusterNodes);
+                        logAutoscaling(current, autoscaling.resources().get(), applicationId, clusterNodes);
                     }
                 }
             }
         }
     }
 
-    private boolean anyChanges(Autoscaler.Advice advice, Cluster cluster, Cluster updatedCluster, NodeList clusterNodes) {
-        if (advice.isPresent() && !cluster.target().resources().equals(advice.target())) return true;
+    private boolean anyChanges(Autoscaling autoscaling, Cluster cluster, Cluster updatedCluster, NodeList clusterNodes) {
         if (updatedCluster != cluster) return true;
-        if ( ! advice.reason().equals(cluster.autoscalingStatus())) return true;
-        if (advice.target().isPresent() &&
-            !advice.target().get().equals(new AllocatableClusterResources(clusterNodes, nodeRepository()).advertisedResources())) return true;
+        if ( ! cluster.target().resources().equals(autoscaling.resources())) return true;
+        if ( ! cluster.target().status().equals(autoscaling.status())) return true;
+        if (autoscaling.resources().isPresent() &&
+            !autoscaling.resources().get().equals(new AllocatableClusterResources(clusterNodes, nodeRepository()).advertisedResources())) return true;
         return false;
     }
 
