@@ -29,6 +29,7 @@ public class DecryptTool implements Tool {
 
     static final String OUTPUT_FILE_OPTION      = "output-file";
     static final String EXPECTED_KEY_ID_OPTION  = "expected-key-id";
+    static final String ZSTD_DECOMPRESS_OPTION  = "zstd-decompress";
     static final String TOKEN_OPTION            = "token";
 
     private static final List<Option> OPTIONS = List.of(
@@ -64,6 +65,12 @@ public class DecryptTool implements Tool {
                     .hasArg(true)
                     .required(false)
                     .desc("Expected key ID in token. If this is not provided, the key ID is not verified.")
+                    .build(),
+            Option.builder("z")
+                    .longOpt(ZSTD_DECOMPRESS_OPTION)
+                    .hasArg(false)
+                    .required(false)
+                    .desc("Decrypted data will be transparently Zstd-decompressed before being output.")
                     .build(),
             Option.builder("t")
                     .longOpt(TOKEN_OPTION)
@@ -107,10 +114,11 @@ public class DecryptTool implements Tool {
                                                                          !CliUtils.useStdIo(inputArg) && !CliUtils.useStdIo(outputArg));
             var secretShared = SharedKeyGenerator.fromSealedKey(sealedSharedKey, privateKey);
             var cipher       = SharedKeyGenerator.makeAesGcmDecryptionCipher(secretShared);
+            boolean unZstd   = arguments.hasOption(ZSTD_DECOMPRESS_OPTION);
 
             try (var inStream  = CliUtils.inputStreamFromFileOrStream(inputArg, invocation.stdIn());
                  var outStream = CliUtils.outputStreamToFileOrStream(outputArg, invocation.stdOut())) {
-                CipherUtils.streamEncipher(inStream, outStream, cipher);
+                CipherUtils.streamDecrypt(inStream, outStream, cipher, unZstd);
             }
         } catch (IOException e) {
             throw new RuntimeException(e);

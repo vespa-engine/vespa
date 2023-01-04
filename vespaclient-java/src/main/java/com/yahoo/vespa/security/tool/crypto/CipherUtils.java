@@ -1,6 +1,8 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.security.tool.crypto;
 
+import ai.vespa.airlift.zstd.ZstdInputStream;
+import com.yahoo.compress.ZstdOutputStream;
 import com.yahoo.security.AeadCipher;
 
 import java.io.IOException;
@@ -26,6 +28,28 @@ public class CipherUtils {
         try (var cipherStream = cipher.wrapOutputStream(output)) {
             input.transferTo(cipherStream);
             cipherStream.flush();
+        }
+    }
+
+    private static OutputStream maybeWrapCompress(OutputStream out, boolean compressZstd) throws IOException {
+        return compressZstd ? new ZstdOutputStream(out) : out;
+    }
+
+    public static void streamEncrypt(InputStream input, OutputStream output, AeadCipher cipher, boolean compressZstd) throws IOException {
+        try (var out = maybeWrapCompress(cipher.wrapOutputStream(output), compressZstd)) {
+            input.transferTo(out);
+            out.flush();
+        }
+    }
+
+    private static InputStream maybeWrapDecompress(InputStream in, boolean decompressZstd) throws IOException {
+        return decompressZstd ? new ZstdInputStream(in) : in;
+    }
+
+    public static void streamDecrypt(InputStream input, OutputStream output, AeadCipher cipher, boolean decompressZstd) throws IOException {
+        try (var in = maybeWrapDecompress(cipher.wrapInputStream(input), decompressZstd)) {
+            in.transferTo(output);
+            output.flush();
         }
     }
 
