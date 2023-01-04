@@ -24,9 +24,10 @@
         <bouncycastle.version>1.72</bouncycastle.version>
         <commons-codec.version>1.15</commons-codec.version>
         <felix.version>7.0.1</felix.version>
-        <httpclient5.version>5.1.3</httpclient5.version>
-        <httpclient.version>4.5.13</httpclient.version>
-        <httpcore.version>4.4.13</httpcore.version>
+        <httpclient5.version>5.1.4</httpclient5.version>
+        <httpcore5.version>5.1.5</httpcore5.version>
+        <httpclient.version>4.5.14</httpclient.version>
+        <httpcore.version>4.4.16</httpcore.version>
         <junit5.version>5.8.1</junit5.version>  <!-- TODO: in parent this is named 'junit.version' -->
         <onnxruntime.version>1.12.1</onnxruntime.version>
         <!-- END parent/pom.xml -->
@@ -192,8 +193,8 @@
                                         <include>org.apache.felix:org.apache.felix.framework:${felix.version}:test</include>
                                         <include>org.apache.felix:org.apache.felix.log:1.0.1:test</include>
                                         <include>org.apache.httpcomponents.client5:httpclient5:${httpclient5.version}:test</include>
-                                        <include>org.apache.httpcomponents.core5:httpcore5:${httpclient5.version}:test</include>
-                                        <include>org.apache.httpcomponents.core5:httpcore5-h2:${httpclient5.version}:test</include>
+                                        <include>org.apache.httpcomponents.core5:httpcore5:${httpcore5.version}:test</include>
+                                        <include>org.apache.httpcomponents.core5:httpcore5-h2:${httpcore5.version}:test</include>
                                         <include>org.apache.httpcomponents:httpclient:${httpclient.version}:test</include>
                                         <include>org.apache.httpcomponents:httpcore:${httpcore.version}:test</include>
                                         <include>org.apache.httpcomponents:httpmime:${httpclient.version}:test</include>
