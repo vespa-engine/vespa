@@ -11,7 +11,7 @@ import com.yahoo.vespa.hosted.provision.lb.LoadBalancer.State;
 import com.yahoo.vespa.hosted.provision.lb.LoadBalancerId;
 import com.yahoo.vespa.hosted.provision.lb.LoadBalancerService;
 import com.yahoo.vespa.hosted.provision.lb.LoadBalancerSpec;
-import com.yahoo.vespa.hosted.provision.persistence.CuratorDatabaseClient;
+import com.yahoo.vespa.hosted.provision.persistence.CuratorDb;
 
 import java.time.Duration;
 import java.time.Instant;
@@ -46,7 +46,7 @@ public class LoadBalancerExpirer extends NodeRepositoryMaintainer {
     private static final Duration inactiveExpiry = Duration.ofHours(1);
 
     private final LoadBalancerService service;
-    private final CuratorDatabaseClient db;
+    private final CuratorDb db;
 
     public LoadBalancerExpirer(NodeRepository nodeRepository, Duration interval, LoadBalancerService service, Metric metric) {
         super(nodeRepository, interval, metric);

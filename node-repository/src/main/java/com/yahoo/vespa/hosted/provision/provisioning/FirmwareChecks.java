@@ -2,7 +2,7 @@
 package com.yahoo.vespa.hosted.provision.provisioning;
 
 import com.yahoo.lang.CachedSupplier;
-import com.yahoo.vespa.hosted.provision.persistence.CuratorDatabaseClient;
+import com.yahoo.vespa.hosted.provision.persistence.CuratorDb;
 
 import java.time.Clock;
 import java.time.Duration;
@@ -24,11 +24,11 @@ public class FirmwareChecks {
 
     private static final Duration cacheExpiry = Duration.ofMinutes(1);
 
-    private final CuratorDatabaseClient database;
+    private final CuratorDb database;
     private final Clock clock;
     private final CachedSupplier<Optional<Instant>> checkAfter;
 
-    public FirmwareChecks(CuratorDatabaseClient database, Clock clock) {
+    public FirmwareChecks(CuratorDb database, Clock clock) {
         this.database = database;
         this.clock = clock;
         this.checkAfter = new CachedSupplier<>(database::readFirmwareCheck, cacheExpiry);

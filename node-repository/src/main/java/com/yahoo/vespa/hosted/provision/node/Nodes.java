@@ -20,7 +20,7 @@ import com.yahoo.vespa.hosted.provision.NodeMutex;
 import com.yahoo.vespa.hosted.provision.applications.Applications;
 import com.yahoo.vespa.hosted.provision.maintenance.NodeFailer;
 import com.yahoo.vespa.hosted.provision.node.filter.NodeFilter;
-import com.yahoo.vespa.hosted.provision.persistence.CuratorDatabaseClient;
+import com.yahoo.vespa.hosted.provision.persistence.CuratorDb;
 import com.yahoo.vespa.orchestrator.HostNameNotFoundException;
 import com.yahoo.vespa.orchestrator.Orchestrator;
 
@@ -58,13 +58,13 @@ public class Nodes {
 
     private static final Logger log = Logger.getLogger(Nodes.class.getName());
 
-    private final CuratorDatabaseClient db;
+    private final CuratorDb db;
     private final Zone zone;
     private final Clock clock;
     private final Orchestrator orchestrator;
     private final Applications applications;
 
-    public Nodes(CuratorDatabaseClient db, Zone zone, Clock clock, Orchestrator orchestrator, Applications applications) {
+    public Nodes(CuratorDb db, Zone zone, Clock clock, Orchestrator orchestrator, Applications applications) {
         this.zone = zone;
         this.clock = clock;
         this.db = db;

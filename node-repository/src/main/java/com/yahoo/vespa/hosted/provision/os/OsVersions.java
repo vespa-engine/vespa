@@ -9,7 +9,7 @@ import com.yahoo.vespa.curator.Lock;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
 import com.yahoo.vespa.hosted.provision.node.Status;
-import com.yahoo.vespa.hosted.provision.persistence.CuratorDatabaseClient;
+import com.yahoo.vespa.hosted.provision.persistence.CuratorDb;
 
 import java.util.List;
 import java.util.Objects;
@@ -33,7 +33,7 @@ public class OsVersions {
     private static final Logger log = Logger.getLogger(OsVersions.class.getName());
 
     private final NodeRepository nodeRepository;
-    private final CuratorDatabaseClient db;
+    private final CuratorDb db;
     private final Cloud cloud;
 
     public OsVersions(NodeRepository nodeRepository) {
