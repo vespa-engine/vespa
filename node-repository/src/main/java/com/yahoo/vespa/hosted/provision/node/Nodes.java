@@ -182,8 +182,8 @@ public class Nodes {
                 nodesToAdd.add(node);
             }
             NestedTransaction transaction = new NestedTransaction();
-            db.removeNodes(nodesToRemove, transaction);
             List<Node> resultingNodes = db.addNodesInState(IP.Config.verify(nodesToAdd, list(lock)), Node.State.provisioned, agent, transaction);
+            db.removeNodes(nodesToRemove, transaction);
             transaction.commit();
             return resultingNodes;
         }
