@@ -31,6 +31,7 @@ import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.container.jdisc.HttpResponse;
 import com.yahoo.container.jdisc.ThreadedHttpRequestHandler;
 import com.yahoo.io.IOUtils;
+import com.yahoo.jdisc.Response;
 import com.yahoo.jdisc.http.filter.security.misc.User;
 import com.yahoo.restapi.ByteArrayResponse;
 import com.yahoo.restapi.ErrorResponse;
@@ -47,6 +48,7 @@ import com.yahoo.slime.Slime;
 import com.yahoo.slime.SlimeUtils;
 import com.yahoo.text.Text;
 import com.yahoo.vespa.athenz.api.OAuthCredentials;
+import com.yahoo.vespa.athenz.client.zms.ZmsClientException;
 import com.yahoo.vespa.flags.Flags;
 import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.Controller;
@@ -228,10 +230,10 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
         }
         catch (ConfigServerException e) {
             return switch (e.code()) {
-                case NOT_FOUND: yield ErrorResponse.notFoundError(Exceptions.toMessageString(e));
-                case ACTIVATION_CONFLICT: yield new ErrorResponse(CONFLICT, e.code().name(), Exceptions.toMessageString(e));
-                case INTERNAL_SERVER_ERROR: yield ErrorResponses.logThrowing(request, log, e);
-                default: yield new ErrorResponse(BAD_REQUEST, e.code().name(), Exceptions.toMessageString(e));
+                case NOT_FOUND -> ErrorResponse.notFoundError(Exceptions.toMessageString(e));
+                case ACTIVATION_CONFLICT -> new ErrorResponse(CONFLICT, e.code().name(), Exceptions.toMessageString(e));
+                case INTERNAL_SERVER_ERROR -> ErrorResponses.logThrowing(request, log, e);
+                default -> new ErrorResponse(BAD_REQUEST, e.code().name(), Exceptions.toMessageString(e));
             };
         }
         catch (RuntimeException e) {
@@ -434,26 +436,31 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
             return ErrorResponse.badRequest("Can only see access requests for cloud tenants");
 
         var accessControlService = controller.serviceRegistry().accessControlService();
-        var accessRoleInformation = accessControlService.getAccessRoleInformation(tenant);
-        var managedAccess = accessControlService.getManagedAccess(tenant);
         var slime = new Slime();
         var cursor = slime.setObject();
-        cursor.setBool("managedAccess", managedAccess);
-        accessRoleInformation.getPendingRequest()
-                .ifPresent(membershipRequest -> {
-                    var requestCursor = cursor.setObject("pendingRequest");
-                    requestCursor.setString("requestTime", membershipRequest.getCreationTime());
-                    requestCursor.setString("reason", membershipRequest.getReason());
-                });
-        var auditLogCursor = cursor.setArray("auditLog");
-        accessRoleInformation.getAuditLog()
-                .forEach(auditLogEntry -> {
-                    var entryCursor = auditLogCursor.addObject();
-                    entryCursor.setString("created", auditLogEntry.getCreationTime());
-                    entryCursor.setString("approver", auditLogEntry.getApprover());
-                    entryCursor.setString("reason", auditLogEntry.getReason());
-                    entryCursor.setString("status", auditLogEntry.getAction());
-                });
+        try {
+            var accessRoleInformation = accessControlService.getAccessRoleInformation(tenant);
+            var managedAccess = accessControlService.getManagedAccess(tenant);
+            cursor.setBool("managedAccess", managedAccess);
+            accessRoleInformation.getPendingRequest()
+                                 .ifPresent(membershipRequest -> {
+                                     var requestCursor = cursor.setObject("pendingRequest");
+                                     requestCursor.setString("requestTime", membershipRequest.getCreationTime());
+                                     requestCursor.setString("reason", membershipRequest.getReason());
+                                 });
+            var auditLogCursor = cursor.setArray("auditLog");
+            accessRoleInformation.getAuditLog()
+                                 .forEach(auditLogEntry -> {
+                                     var entryCursor = auditLogCursor.addObject();
+                                     entryCursor.setString("created", auditLogEntry.getCreationTime());
+                                     entryCursor.setString("approver", auditLogEntry.getApprover());
+                                     entryCursor.setString("reason", auditLogEntry.getReason());
+                                     entryCursor.setString("status", auditLogEntry.getAction());
+                                 });
+        }
+        catch (ZmsClientException e) {
+            if (e.getErrorCode() == 404) cursor.setBool("managedAccess", false);
+        }
         return new SlimeJsonResponse(slime);
     }
 
@@ -500,10 +507,16 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
         if (controller.tenants().require(tenant).type() != Tenant.Type.cloud)
             return ErrorResponse.badRequest("Can only set access privel for cloud tenants");
 
-        controller.serviceRegistry().accessControlService().setManagedAccess(tenant, managedAccess);
-        var slime = new Slime();
-        slime.setObject().setBool("managedAccess", managedAccess);
-        return new SlimeJsonResponse(slime);
+        try {
+            controller.serviceRegistry().accessControlService().setManagedAccess(tenant, managedAccess);
+            var slime = new Slime();
+            slime.setObject().setBool("managedAccess", managedAccess);
+            return new SlimeJsonResponse(slime);
+        }
+        catch (ZmsClientException e) {
+            if (e.getErrorCode() == 404) return ErrorResponse.conflict("Configuration not yet ready, please try again in a few minutes");
+            throw e;
+        }
     }
 
     private HttpResponse tenantInfo(String tenantName, HttpRequest request) {
