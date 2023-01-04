@@ -24,13 +24,15 @@ enum class DataType {
     //FEATURE = 11,
     BOOLEANTREE = 12,
     TENSOR = 13,
-    REFERENCE = 14
+    REFERENCE = 14,
+    COMBINED = 15
 };
 
 /**
  * Collection type for a field.
  **/
-enum class CollectionType { SINGLE = 0,
+enum class CollectionType {
+    SINGLE = 0,
     ARRAY = 1,
     WEIGHTEDSET = 2
 };

@@ -5,8 +5,39 @@
 #include <vespa/searchlib/fef/functiontablefactory.h>
 #include <vespa/searchlib/fef/indexproperties.h>
 #include <vespa/searchcore/proton/documentmetastore/documentmetastore.h>
+#include <set>
 
 using namespace search::fef;
+
+namespace {
+
+using StringSet = std::set<vespalib::string>;
+
+void
+consider_field_for_extraction(const vespalib::string& field_name, StringSet& virtual_fields)
+{
+    size_t pos = field_name.find_last_of('.');
+    if (pos != vespalib::string::npos) {
+        vespalib::string virtual_field = field_name.substr(0, pos);
+        virtual_fields.insert(virtual_field);
+        consider_field_for_extraction(virtual_field, virtual_fields);
+    }
+}
+
+StringSet
+extract_virtual_fields(const search::index::Schema& schema)
+{
+    // Fields that are represented by a set of attributes in the backend are considered virtual fields.
+    // Currently, this is map or array of struct fields (from the SD file) with struct-field attributes.
+    StringSet result;
+    for (uint32_t i = 0; i < schema.getNumAttributeFields(); ++i) {
+        const auto& field = schema.getAttributeField(i);
+        consider_field_for_extraction(field.getName(), result);
+    }
+    return result;
+}
+
+}
 
 namespace proton::matching {
 
@@ -50,6 +81,11 @@ IndexEnvironment::extractFields(const search::index::Schema &schema)
         fieldInfo.set_data_type(FieldInfo::DataType::RAW);
         fieldInfo.setFilter(true);
         insertField(fieldInfo);
+    }
+    for (const auto& field : extract_virtual_fields(schema)) {
+        FieldInfo info(FieldType::VIRTUAL, FieldInfo::CollectionType::ARRAY, field, _fields.size());
+        info.set_data_type(FieldInfo::DataType::COMBINED);
+        insertField(info);
     }
 }
 
