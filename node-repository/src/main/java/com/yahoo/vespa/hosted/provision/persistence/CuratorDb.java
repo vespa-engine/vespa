@@ -50,7 +50,7 @@ import static java.util.stream.Collectors.collectingAndThen;
 /**.
  * A persistent database for the contents of the node repository, backed by {@link CachingCurator}.
  *
- * Nodes are stored in files named <code>/provision/v1/[nodestate]/[hostname].
+ * Nodes are stored in files named /provision/v1/[nodestate]/[hostname].
  *
  * The responsibility of this class is to turn operations on the level of node states, applications and nodes
  * into operations on the level of file paths and bytes.
