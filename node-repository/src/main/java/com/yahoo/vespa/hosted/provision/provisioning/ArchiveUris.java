@@ -6,7 +6,7 @@ import com.yahoo.lang.CachedSupplier;
 import com.yahoo.vespa.curator.Lock;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.node.Allocation;
-import com.yahoo.vespa.hosted.provision.persistence.CuratorDatabaseClient;
+import com.yahoo.vespa.hosted.provision.persistence.CuratorDb;
 import java.time.Duration;
 import java.util.Map;
 import java.util.Optional;
@@ -27,10 +27,10 @@ public class ArchiveUris {
     private static final Pattern validUriPattern = Pattern.compile("[a-z0-9]+://(?:(?:[a-z0-9]+(?:[-_][a-z0-9.]+)*)+/)+");
     private static final Duration cacheTtl = Duration.ofMinutes(1);
 
-    private final CuratorDatabaseClient db;
+    private final CuratorDb db;
     private final CachedSupplier<Map<TenantName, String>> archiveUris;
 
-    public ArchiveUris(CuratorDatabaseClient db) {
+    public ArchiveUris(CuratorDb db) {
         this.db = db;
         this.archiveUris = new CachedSupplier<>(db::readArchiveUris, cacheTtl);
     }

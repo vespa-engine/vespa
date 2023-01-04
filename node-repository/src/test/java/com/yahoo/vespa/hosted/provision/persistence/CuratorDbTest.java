@@ -20,10 +20,10 @@ import static org.junit.Assert.assertEquals;
 /**
  * @author mpolden
  */
-public class CuratorDatabaseClientTest {
+public class CuratorDbTest {
 
     private final Curator curator = new MockCurator();
-    private final CuratorDatabaseClient zkClient = new CuratorDatabaseClient(
+    private final CuratorDb zkClient = new CuratorDb(
             FlavorConfigBuilder.createDummies("default"), curator, Clock.systemUTC(), true, 1000);
 
     @Test

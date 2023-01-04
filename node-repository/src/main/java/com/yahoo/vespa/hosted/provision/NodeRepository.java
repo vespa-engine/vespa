@@ -24,7 +24,7 @@ import com.yahoo.vespa.hosted.provision.node.Agent;
 import com.yahoo.vespa.hosted.provision.node.NodeAcl;
 import com.yahoo.vespa.hosted.provision.node.Nodes;
 import com.yahoo.vespa.hosted.provision.os.OsVersions;
-import com.yahoo.vespa.hosted.provision.persistence.CuratorDatabaseClient;
+import com.yahoo.vespa.hosted.provision.persistence.CuratorDb;
 import com.yahoo.vespa.hosted.provision.persistence.DnsNameResolver;
 import com.yahoo.vespa.hosted.provision.persistence.JobControlFlags;
 import com.yahoo.vespa.hosted.provision.persistence.NameResolver;
@@ -46,7 +46,7 @@ import java.util.Optional;
  */
 public class NodeRepository extends AbstractComponent {
 
-    private final CuratorDatabaseClient db;
+    private final CuratorDb db;
     private final Clock clock;
     private final Zone zone;
     private final Nodes nodes;
@@ -122,7 +122,7 @@ public class NodeRepository extends AbstractComponent {
                     zone.cloud().dynamicProvisioning(), provisionServiceProvider.getHostProvisioner().map(__ -> "present").orElse("empty")));
 
         this.flagSource = flagSource;
-        this.db = new CuratorDatabaseClient(flavors, curator, clock, useCuratorClientCache, nodeCacheSize);
+        this.db = new CuratorDb(flavors, curator, clock, useCuratorClientCache, nodeCacheSize);
         this.zone = zone;
         this.clock = clock;
         this.applications = new Applications(db);
@@ -145,7 +145,7 @@ public class NodeRepository extends AbstractComponent {
     }
 
     /** Returns the curator database client used by this */
-    public CuratorDatabaseClient database() { return db; }
+    public CuratorDb database() { return db; }
 
     /** Returns the nodes of the node repo. */
     public Nodes nodes() { return nodes; }

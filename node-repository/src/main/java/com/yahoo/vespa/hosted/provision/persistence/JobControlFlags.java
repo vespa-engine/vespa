@@ -16,10 +16,10 @@ import java.util.Set;
  */
 public class JobControlFlags implements JobControlState {
 
-    private final CuratorDatabaseClient curator;
+    private final CuratorDb curator;
     private final ListFlag<String> inactiveJobsFlag;
 
-    public JobControlFlags(CuratorDatabaseClient curator, FlagSource flagSource) {
+    public JobControlFlags(CuratorDb curator, FlagSource flagSource) {
         this.curator = curator;
         this.inactiveJobsFlag = PermanentFlags.INACTIVE_MAINTENANCE_JOBS.bindTo(flagSource);
     }

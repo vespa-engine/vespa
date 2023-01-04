@@ -47,18 +47,19 @@ import java.util.stream.IntStream;
 import static com.yahoo.stream.CustomCollectors.toLinkedMap;
 import static java.util.stream.Collectors.collectingAndThen;
 
-/**
- * Client which reads and writes nodes to a curator database.
- * Nodes are stored in files named <code>/provision/v1/[nodestate]/[hostname]</code>.
+/**.
+ * A persistent database for the contents of the node repository, backed by {@link CachingCurator}.
+ *
+ * Nodes are stored in files named /provision/v1/[nodestate]/[hostname].
  *
  * The responsibility of this class is to turn operations on the level of node states, applications and nodes
  * into operations on the level of file paths and bytes.
  *
  * @author bratseth
  */
-public class CuratorDatabaseClient {
+public class CuratorDb {
 
-    private static final Logger log = Logger.getLogger(CuratorDatabaseClient.class.getName());
+    private static final Logger log = Logger.getLogger(CuratorDb.class.getName());
 
     private static final Path root = Path.fromString("/provision/v1");
     private static final Path lockPath = root.append("locks");
@@ -74,13 +75,13 @@ public class CuratorDatabaseClient {
     private static final Duration defaultLockTimeout = Duration.ofMinutes(1);
 
     private final NodeSerializer nodeSerializer;
-    private final CuratorDatabase db;
+    private final CachingCurator db;
     private final Clock clock;
     private final CuratorCounter provisionIndexCounter;
 
-    public CuratorDatabaseClient(NodeFlavors flavors, Curator curator, Clock clock, boolean useCache, long nodeCacheSize) {
+    public CuratorDb(NodeFlavors flavors, Curator curator, Clock clock, boolean useCache, long nodeCacheSize) {
         this.nodeSerializer = new NodeSerializer(flavors, nodeCacheSize);
-        this.db = new CuratorDatabase(curator, root, useCache);
+        this.db = new CachingCurator(curator, root, useCache);
         this.clock = clock;
         this.provisionIndexCounter = new CuratorCounter(curator, root.append("provisionIndexCounter"));
         initZK();
@@ -268,7 +269,7 @@ public class CuratorDatabaseClient {
         List<Node> nodes = new ArrayList<>();
         if (states.length == 0)
             states = Node.State.values();
-        CuratorDatabase.Session session = db.getSession();
+        CachingCurator.Session session = db.getSession();
         for (Node.State state : states) {
             for (String hostname : session.getChildren(toPath(state))) {
                 Optional<Node> node = readNode(session, hostname, state);
@@ -282,7 +283,7 @@ public class CuratorDatabaseClient {
      * Returns a particular node, or empty if this node is not in any of the given states.
      * If no states are given this returns the node if it is present in any state.
      */
-    public Optional<Node> readNode(CuratorDatabase.Session session, String hostname, Node.State ... states) {
+    public Optional<Node> readNode(CachingCurator.Session session, String hostname, Node.State ... states) {
         if (states.length == 0)
             states = Node.State.values();
         for (Node.State state : states) {
@@ -317,9 +318,9 @@ public class CuratorDatabaseClient {
 
     /** Creates and returns the path to the lock for this application */
     private Path lockPath(ApplicationId application) {
-        Path lockPath = CuratorDatabaseClient.lockPath.append(application.tenant().value())
-                                                      .append(application.application().value())
-                                                      .append(application.instance().value());
+        Path lockPath = CuratorDb.lockPath.append(application.tenant().value())
+                                          .append(application.application().value())
+                                          .append(application.instance().value());
         db.create(lockPath);
         return lockPath;
     }

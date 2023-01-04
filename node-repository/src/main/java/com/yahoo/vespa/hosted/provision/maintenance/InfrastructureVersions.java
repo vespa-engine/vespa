@@ -5,7 +5,7 @@ import com.yahoo.component.Version;
 import com.yahoo.component.Vtag;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.vespa.curator.Lock;
-import com.yahoo.vespa.hosted.provision.persistence.CuratorDatabaseClient;
+import com.yahoo.vespa.hosted.provision.persistence.CuratorDb;
 
 import java.util.Collections;
 import java.util.Map;
@@ -23,14 +23,14 @@ public class InfrastructureVersions {
 
     private static final Logger logger = Logger.getLogger(InfrastructureVersions.class.getName());
 
-    private final CuratorDatabaseClient db;
+    private final CuratorDb db;
     private final Version defaultVersion;
 
-    public InfrastructureVersions(CuratorDatabaseClient db) {
+    public InfrastructureVersions(CuratorDb db) {
         this(db, Vtag.currentVersion);
     }
 
-    InfrastructureVersions(CuratorDatabaseClient db, Version defaultVersion) {
+    InfrastructureVersions(CuratorDb db, Version defaultVersion) {
         this.db = db;
         this.defaultVersion = defaultVersion;
     }
