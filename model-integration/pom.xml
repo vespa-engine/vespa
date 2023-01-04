@@ -63,6 +63,12 @@
       <artifactId>protobuf-java</artifactId>
     </dependency>
 
+     <dependency>
+      <groupId>ai.djl.huggingface</groupId>
+      <artifactId>tokenizers</artifactId>
+      <version>0.20.0</version>
+    </dependency>
+
     <dependency>
       <groupId>junit</groupId>
       <artifactId>junit</artifactId>
