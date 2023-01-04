@@ -40,7 +40,6 @@ import com.yahoo.vespa.hosted.provision.node.Status;
 import com.yahoo.vespa.hosted.provision.node.TrustStoreItem;
 
 import java.io.IOException;
-import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -266,19 +265,16 @@ public class NodeSerializer {
 
     // ---------------- Deserialization --------------------------------------------------
 
-    public Node fromJson(Node.State state, byte[] data) {
-        long key = Hashing.sipHash24().newHasher()
-                          .putString(state.name(), StandardCharsets.UTF_8)
-                          .putBytes(data).hash()
-                          .asLong();
+    public Node fromJson(byte[] data) {
+        long key = Hashing.sipHash24().newHasher().putBytes(data).hash().asLong();
         try {
-            return cache.get(key, () -> nodeFromSlime(state, SlimeUtils.jsonToSlime(data).get()));
+            return cache.get(key, () -> nodeFromSlime(SlimeUtils.jsonToSlime(data).get()));
         } catch (ExecutionException e) {
             throw new UncheckedExecutionException(e);
         }
     }
 
-    private Node nodeFromSlime(Node.State state, Inspector object) {
+    private Node nodeFromSlime(Inspector object) {
         Flavor flavor = flavorFromSlime(object);
         return new Node(object.field(idKey).asString(),
                         new IP.Config(ipAddressesFromSlime(object, ipAddressesKey),
@@ -288,7 +284,7 @@ public class NodeSerializer {
                         SlimeUtils.optionalString(object.field(parentHostnameKey)),
                         flavor,
                         statusFromSlime(object),
-                        state,
+                        nodeStateFromString(object.field(stateKey).asString()),
                         allocationFromSlime(flavor.resources(), object.field(instanceKey)),
                         historyFromSlime(object),
                         nodeTypeFromString(object.field(nodeTypeKey).asString()),

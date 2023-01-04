@@ -105,16 +105,12 @@ class NodesResponse extends SlimeJsonResponse {
     }
 
     /** Outputs the nodes in the given states to a node array */
-    private void nodesToSlime(Set<Node.State> statesToRead, Cursor parentObject) {
+    private void nodesToSlime(Set<Node.State> states, Cursor parentObject) {
         Cursor nodeArray = parentObject.setArray("nodes");
-        boolean sortByNodeType = statesToRead.size() == 1;
-        statesToRead.stream().sorted().forEach(state -> {
-            NodeList nodes = nodeRepository.nodes().list(state);
-            if (sortByNodeType) {
-                nodes = nodes.sortedBy(Comparator.comparing(Node::type));
-            }
-            toSlime(nodes, nodeArray);
-        });
+        NodeList nodes = nodeRepository.nodes().list()
+                                       .state(states)
+                                       .sortedBy(Comparator.comparing(Node::hostname));
+        toSlime(nodes, nodeArray);
     }
 
     private void toSlime(NodeList nodes, Cursor array) {

@@ -208,7 +208,7 @@ public class CachingCurator {
         List<String> getChildren(Path path);
 
         /**
-         * Returns the a copy of the content of this child - which may be empty.
+         * Returns a copy of the content of this child - which may be empty.
          */
         Optional<byte[]> getData(Path path);
 

@@ -96,7 +96,7 @@ public class CuratorDb {
         db.create(nodesPath);
         // TODO(mpolden): Remove state paths after migration to nodesPath
         for (Node.State state : Node.State.values())
-            db.create(toPath(state));
+            db.create(toLegacyPath(state));
         db.create(applicationsPath);
         db.create(inactiveJobsPath);
         db.create(infrastructureVersionsPath);
@@ -117,7 +117,7 @@ public class CuratorDb {
             node = node.with(node.history().recordStateTransition(null, expectedState, agent, clock.instant()));
             // TODO(mpolden): Remove after migration to nodesPath
             byte[] serialized = nodeSerializer.toJson(node);
-            curatorTransaction.add(CuratorOperations.create(toPath(node).getAbsolute(), serialized));
+            curatorTransaction.add(CuratorOperations.create(toLegacyPath(node).getAbsolute(), serialized));
             curatorTransaction.add(CuratorOperations.create(nodePath(node).getAbsolute(), serialized));
         }
 
@@ -137,7 +137,7 @@ public class CuratorDb {
     /** Removes given nodes in transaction */
     public void removeNodes(List<Node> nodes, NestedTransaction transaction) {
         for (Node node : nodes) {
-            Path path = toPath(node.state(), node.hostname());
+            Path path = toLegacyPath(node.state(), node.hostname());
             CuratorTransaction curatorTransaction = db.newCuratorTransactionIn(transaction);
             // TODO(mpolden): Remove after migration to nodesPath
             curatorTransaction.add(CuratorOperations.delete(path.getAbsolute()));
@@ -237,8 +237,8 @@ public class CuratorDb {
     private void writeNode(Node.State toState, CuratorTransaction curatorTransaction, Node node, Node newNode) {
         byte[] nodeData = nodeSerializer.toJson(newNode);
         { // TODO(mpolden): Remove this after migration to nodesPath
-            String currentNodePath = toPath(node).getAbsolute();
-            String newNodePath = toPath(toState, newNode.hostname()).getAbsolute();
+            String currentNodePath = toLegacyPath(node).getAbsolute();
+            String newNodePath = toLegacyPath(toState, newNode.hostname()).getAbsolute();
             if (newNodePath.equals(currentNodePath)) {
                 curatorTransaction.add(CuratorOperations.setData(currentNodePath, nodeData));
             } else {
@@ -255,61 +255,39 @@ public class CuratorDb {
         return node.status();
     }
 
-    /**
-     * Returns all nodes which are in one of the given states.
-     * If no states are given this returns all nodes.
-     *
-     * @return the nodes in a mutable list owned by the caller
-     */
-    public List<Node> readNodes(Node.State ... states) {
-        List<Node> nodes = new ArrayList<>();
-        if (states.length == 0)
-            states = Node.State.values();
+    /** Returns all existing nodes */
+    public List<Node> readNodes() {
         CachingCurator.Session session = db.getSession();
-        for (Node.State state : states) {
-            for (String hostname : session.getChildren(toPath(state))) {
-                Optional<Node> node = readNode(session, hostname, state);
-                node.ifPresent(nodes::add); // node might disappear between getChildren and getNode
-            }
-        }
-        return nodes;
+        return session.getChildren(nodesPath).stream()
+                      .flatMap(hostname -> readNode(session, hostname).stream())
+                      .toList();
     }
 
-    /**
-     * Returns a particular node, or empty if this node is not in any of the given states.
-     * If no states are given this returns the node if it is present in any state.
-     */
-    public Optional<Node> readNode(CachingCurator.Session session, String hostname, Node.State ... states) {
-        if (states.length == 0)
-            states = Node.State.values();
-        for (Node.State state : states) {
-            Optional<byte[]> nodeData = session.getData(toPath(state, hostname));
-            if (nodeData.isPresent())
-                return nodeData.map((data) -> nodeSerializer.fromJson(state, data));
-        }
-        return Optional.empty();
+    private Optional<Node> readNode(CachingCurator.Session session, String hostname) {
+        return session.getData(nodePath(hostname)).map(nodeSerializer::fromJson);
     }
 
-    /** 
-     * Returns a particular node, or empty if this noe is not in any of the given states.
-     * If no states are given this returns the node if it is present in any state.
-     */
-    public Optional<Node> readNode(String hostname, Node.State ... states) {
-        return readNode(db.getSession(), hostname, states);
+    /** Read node with given hostname, if any such node exists */
+    public Optional<Node> readNode(String hostname) {
+        return readNode(db.getSession(), hostname);
     }
 
-    private Path toPath(Node.State nodeState) { return root.append(toDir(nodeState)); }
+    private Path toLegacyPath(Node.State nodeState) { return root.append(toDir(nodeState)); }
 
-    private Path toPath(Node node) {
+    private Path toLegacyPath(Node node) {
         return root.append(toDir(node.state())).append(node.hostname());
     }
 
-    private Path toPath(Node.State nodeState, String nodeName) {
+    private Path toLegacyPath(Node.State nodeState, String nodeName) {
         return root.append(toDir(nodeState)).append(nodeName);
     }
 
     private Path nodePath(Node node) {
-        return nodesPath.append(node.hostname());
+        return nodePath(node.hostname());
+    }
+
+    private Path nodePath(String hostname) {
+        return nodesPath.append(hostname);
     }
 
     /** Creates and returns the path to the lock for this application */

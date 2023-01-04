@@ -796,8 +796,8 @@ public class NodesV2ApiTest {
         // Filter nodes by osVersion
         assertResponse(new Request("http://localhost:8080/nodes/v2/node/?osVersion=7.5.2"),
                        "{\"nodes\":[" +
-                       "{\"url\":\"http://localhost:8080/nodes/v2/node/dockerhost2.yahoo.com\"}," +
-                       "{\"url\":\"http://localhost:8080/nodes/v2/node/dockerhost1.yahoo.com\"}" +
+                       "{\"url\":\"http://localhost:8080/nodes/v2/node/dockerhost1.yahoo.com\"}," +
+                       "{\"url\":\"http://localhost:8080/nodes/v2/node/dockerhost2.yahoo.com\"}" +
                        "]}");
     }
 

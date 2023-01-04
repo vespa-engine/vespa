@@ -1,10 +1,10 @@
 {
   "nodes":[
     {
-      "url":"http://localhost:8080/nodes/v2/node/host3.yahoo.com"
+      "url":"http://localhost:8080/nodes/v2/node/dockerhost2.yahoo.com"
     },
     {
-      "url":"http://localhost:8080/nodes/v2/node/dockerhost2.yahoo.com"
+      "url":"http://localhost:8080/nodes/v2/node/host3.yahoo.com"
     }
   ]
 }

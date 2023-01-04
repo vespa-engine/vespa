@@ -121,17 +121,16 @@ public class OsVersionsTest {
         // Activate target
         for (int i = 0; i < totalNodes; i += maxActiveUpgrades) {
             versions.resumeUpgradeOf(NodeType.host, true);
-            var nodes = hostNodes.get();
-            var nodesUpgrading = nodes.changingOsVersion();
+            NodeList nodes = hostNodes.get();
+            NodeList nodesUpgrading = nodes.changingOsVersion();
             assertEquals("Target is changed for a subset of nodes", maxActiveUpgrades, nodesUpgrading.size());
             assertEquals("Wanted version is set for nodes upgrading", version1,
                          minVersion(nodesUpgrading, OsVersion::wanted));
-            var nodesOnLowestVersion = nodes.asList().stream()
-                                            .sorted(Comparator.comparing(node -> node.status().osVersion().current().orElse(Version.emptyVersion)))
-                                            .toList()
-                                            .subList(0, maxActiveUpgrades);
+            NodeList nodesOnLowestVersion = nodes.sortedBy(Comparator.comparing(node -> node.status().osVersion().current().orElse(Version.emptyVersion)))
+                                                 .first(maxActiveUpgrades);
             assertEquals("Nodes on lowest version are told to upgrade",
-                         nodesUpgrading.asList(), nodesOnLowestVersion);
+                         nodesUpgrading.hostnames(),
+                         nodesOnLowestVersion.hostnames());
             completeReprovisionOf(nodesUpgrading.asList());
         }
 
