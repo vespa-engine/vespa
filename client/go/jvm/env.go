@@ -15,10 +15,13 @@ import (
 func (opts *Options) exportEnvSettings(ps *prog.Spec) {
 	c := opts.container
 	vespaHome := defaults.VespaHome()
-	vlt := fmt.Sprintf("file:%s/logs/vespa/vespa.log", vespaHome)
+	lvd := fmt.Sprintf("%s/logs/vespa", vespaHome)
+	vlt := fmt.Sprintf("file:%s/vespa.log", lvd)
 	lcd := fmt.Sprintf("%s/var/db/vespa/logcontrol", vespaHome)
 	lcf := fmt.Sprintf("%s/%s.logcontrol", lcd, c.ServiceName())
 	dlp := fmt.Sprintf("%s/lib64", vespaHome)
+	opts.fixSpec.FixDir(lvd)
+	opts.fixSpec.FixDir(lcd)
 	ps.Setenv(envvars.VESPA_LOG_TARGET, vlt)
 	ps.Setenv(envvars.VESPA_LOG_CONTROL_DIR, lcd)
 	ps.Setenv(envvars.VESPA_LOG_CONTROL_FILE, lcf)
