@@ -55,6 +55,7 @@ public class ClusterDeploymentMetricsRetriever {
 
     private static final ExecutorService executor = Executors.newFixedThreadPool(10, new DaemonThreadFactory("cluster-deployment-metrics-retriever-"));
 
+    @SuppressWarnings("deprecation")
     private static final CloseableHttpClient httpClient =
             VespaHttpClientBuilder
                     .create(registry -> new PoolingHttpClientConnectionManager(registry,
@@ -128,7 +129,7 @@ public class ClusterDeploymentMetricsRetriever {
         Supplier<DeploymentMetricsAggregator> aggregator = () -> clusterMetricsMap.computeIfAbsent(clusterInfo, c -> new DeploymentMetricsAggregator());
 
         switch (serviceName) {
-            case VESPA_CONTAINER:
+            case VESPA_CONTAINER -> {
                 optionalDouble(values.field("query_latency.sum")).ifPresent(qlSum ->
                         aggregator.get()
                                 .addContainerLatency(qlSum, values.field("query_latency.count").asDouble()));
@@ -160,6 +161,7 @@ public class ClusterDeploymentMetricsRetriever {
         return new ClusterInfo(dimensions.field("clusterid").asString(), dimensions.field("clustertype").asString());
     }
 
+    @SuppressWarnings("deprecation")
     private static Slime doMetricsRequest(URI hostURI) {
         HttpGet get = new HttpGet(hostURI);
         try (CloseableHttpResponse response = httpClient.execute(get)) {

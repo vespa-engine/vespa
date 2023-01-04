@@ -36,6 +36,7 @@ import static java.util.Objects.requireNonNull;
  */
 public interface HttpClient extends Closeable {
 
+    @SuppressWarnings("deprecation")
     RequestConfig defaultRequestConfig = RequestConfig.custom()
                                                       .setConnectionRequestTimeout(Timeout.ofSeconds(5))
                                                       .setConnectTimeout(Timeout.ofSeconds(5))

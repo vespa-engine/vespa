@@ -159,6 +159,7 @@ class ApacheCluster implements Cluster {
 
     }
 
+    @SuppressWarnings("deprecation")
     private static CloseableHttpAsyncClient createHttpClient(FeedClientBuilderImpl builder) throws IOException {
         SSLContext sslContext = builder.constructSslContext();
         String[] allowedCiphers = excludeH2Blacklisted(excludeWeak(sslContext.getSupportedSSLParameters().getCipherSuites()));
@@ -191,6 +192,7 @@ class ApacheCluster implements Cluster {
                                    : url.getPort();
     }
 
+    @SuppressWarnings("deprecation")
     private static RequestConfig createRequestConfig(FeedClientBuilderImpl b) {
         RequestConfig.Builder builder = RequestConfig.custom()
                 .setConnectTimeout(Timeout.ofSeconds(10))

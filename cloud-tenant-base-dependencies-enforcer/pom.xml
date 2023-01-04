@@ -24,8 +24,8 @@
         <bouncycastle.version>1.72</bouncycastle.version>
         <commons-codec.version>1.15</commons-codec.version>
         <felix.version>7.0.1</felix.version>
-        <httpclient5.version>5.1.4</httpclient5.version>
-        <httpcore5.version>5.1.5</httpcore5.version>
+        <httpclient5.version>5.2.1</httpclient5.version>
+        <httpcore5.version>5.2</httpcore5.version>
         <httpclient.version>4.5.14</httpclient.version>
         <httpcore.version>4.4.16</httpcore.version>
         <junit5.version>5.8.1</junit5.version>  <!-- TODO: in parent this is named 'junit.version' -->

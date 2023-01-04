@@ -27,6 +27,7 @@ public class ClusterProtonMetricsRetriever {
 
     private static final Logger log = Logger.getLogger(ClusterProtonMetricsRetriever.class.getName());
 
+    @SuppressWarnings("deprecation")
     private static final CloseableHttpClient httpClient = VespaHttpClientBuilder
                                                             .create(PoolingHttpClientConnectionManager::new)
                                                             .setDefaultRequestConfig(
@@ -100,6 +101,7 @@ public class ClusterProtonMetricsRetriever {
         aggregator.addAll(metrics.field("values"));
     }
 
+    @SuppressWarnings("deprecation")
     private static Slime doMetricsRequest(URI hostURI) {
         HttpGet get = new HttpGet(hostURI);
         try (CloseableHttpResponse response = httpClient.execute(get)) {

@@ -36,7 +36,6 @@ import java.util.logging.Logger;
 
 import static java.util.Objects.requireNonNull;
 import static java.util.logging.Level.FINE;
-import static java.util.logging.Level.WARNING;
 
 /**
  * @author jonmv
@@ -48,6 +47,7 @@ public abstract class AbstractHttpClient implements HttpClient {
     public static HttpClient wrapping(CloseableHttpClient client) {
         return new AbstractHttpClient() {
             @Override
+            @SuppressWarnings("deprecation")
             protected ClassicHttpResponse execute(ClassicHttpRequest request, HttpClientContext context) throws IOException {
                 return client.execute(request, context);
             }
@@ -114,6 +114,7 @@ public abstract class AbstractHttpClient implements HttpClient {
         throw new IllegalStateException("No hosts to perform the request against");
     }
 
+    @SuppressWarnings("deprecation")
     private HttpClientContext contextWithTimeout(RequestBuilder builder) {
         HttpClientContext context = HttpClientContext.create();
         RequestConfig config = builder.config;

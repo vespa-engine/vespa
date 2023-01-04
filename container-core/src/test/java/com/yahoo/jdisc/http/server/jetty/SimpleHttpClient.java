@@ -158,6 +158,7 @@ public class SimpleHttpClient implements AutoCloseable {
             return this;
         }
 
+        @SuppressWarnings("deprecation")
         public ResponseValidator execute() throws IOException {
             if (entity != null) {
                 request.setEntity(entity);

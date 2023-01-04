@@ -20,6 +20,7 @@ public class LogRetriever {
 
     private final CloseableHttpClient httpClient = VespaHttpClientBuilder.create().build();
 
+    @SuppressWarnings("deprecation")
     public HttpResponse getLogs(String logServerUri, Optional<Instant> deployTime) {
         HttpGet get = new HttpGet(logServerUri);
         try {

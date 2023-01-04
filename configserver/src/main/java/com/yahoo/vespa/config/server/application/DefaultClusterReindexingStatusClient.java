@@ -146,6 +146,7 @@ public class DefaultClusterReindexingStatusClient implements ClusterReindexingSt
 
     }
 
+    @SuppressWarnings("deprecation")
     private static CloseableHttpAsyncClient createHttpClient() {
         return VespaAsyncHttpClientBuilder
                 .create()

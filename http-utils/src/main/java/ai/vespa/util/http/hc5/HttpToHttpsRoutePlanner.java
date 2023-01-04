@@ -4,7 +4,6 @@ package ai.vespa.util.http.hc5;
 import org.apache.hc.client5.http.HttpRoute;
 import org.apache.hc.client5.http.protocol.HttpClientContext;
 import org.apache.hc.client5.http.routing.HttpRoutePlanner;
-import org.apache.hc.core5.http.HttpException;
 import org.apache.hc.core5.http.HttpHost;
 import org.apache.hc.core5.http.protocol.HttpContext;
 
@@ -16,8 +15,9 @@ import org.apache.hc.core5.http.protocol.HttpContext;
  */
 class HttpToHttpsRoutePlanner implements HttpRoutePlanner {
 
+    @SuppressWarnings("deprecation")
     @Override
-    public HttpRoute determineRoute(HttpHost target, HttpContext context) throws HttpException {
+    public HttpRoute determineRoute(HttpHost target, HttpContext context) {
         if ( ! target.getSchemeName().equals("http") && ! target.getSchemeName().equals("https"))
             throw new IllegalArgumentException("Scheme must be 'http' or 'https' when using HttpToHttpsRoutePlanner, was '" + target.getSchemeName() + "'");
 
