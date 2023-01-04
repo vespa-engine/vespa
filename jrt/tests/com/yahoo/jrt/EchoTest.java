@@ -54,10 +54,6 @@ public class EchoTest {
                         },
                         null},
                 {
-                        new XorCryptoEngine(),
-                        null,
-                        null},
-                {
                         new TlsCryptoEngine(createTestTlsContext()),
                         (MetricsAssertions) metrics -> {
                             assertEquals(1, metrics.serverTlsConnectionsEstablished());

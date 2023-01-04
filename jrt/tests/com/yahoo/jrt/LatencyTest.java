@@ -176,14 +176,6 @@ public class LatencyTest {
     }
 
     @org.junit.Test
-    public void testXorCryptoLatency() throws Throwable {
-        try (Network network = new Network(new XorCryptoEngine(), 1)) {
-            new Client(false, network, 1).measureLatency("[xor crypto, no reconnect] ");
-            new Client(true, network, 1).measureLatency("[xor crypto, reconnect] ");
-        }
-    }
-
-    @org.junit.Test
     public void testTlsCryptoLatency() throws Throwable {
         try (Network network = new Network(new TlsCryptoEngine(createTestTlsContext()), 1)) {
             new Client(false, network, 1).measureLatency("[tls crypto, no reconnect] ");
