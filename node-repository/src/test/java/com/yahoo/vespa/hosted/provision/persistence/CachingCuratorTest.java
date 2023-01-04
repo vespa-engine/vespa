@@ -26,12 +26,12 @@ import static org.junit.Assert.fail;
  *
  * @author bratseth
  */
-public class CuratorDatabaseTest {
+public class CachingCuratorTest {
 
     @Test
     public void testTransactionsIncreaseCounter() throws Exception {
         MockCurator curator = new MockCurator();
-        CuratorDatabase database = new CuratorDatabase(curator, Path.fromString("/"), true);
+        CachingCurator database = new CachingCurator(curator, Path.fromString("/"), true);
 
         assertEquals(0L, (long)curator.counter("/changeCounter").get().get().postValue());
 
@@ -56,7 +56,7 @@ public class CuratorDatabaseTest {
     @Test
     public void testCacheInvalidation() throws Exception {
         MockCurator curator = new MockCurator();
-        CuratorDatabase database = new CuratorDatabase(curator, Path.fromString("/"), true);
+        CachingCurator database = new CachingCurator(curator, Path.fromString("/"), true);
 
         assertEquals(0L, (long)curator.counter("/changeCounter").get().get().postValue());
         commitCreate("/1", database);
@@ -74,7 +74,7 @@ public class CuratorDatabaseTest {
     @Test
     public void testTransactionsWithDeactivatedCache() throws Exception {
         MockCurator curator = new MockCurator();
-        CuratorDatabase database = new CuratorDatabase(curator, Path.fromString("/"), false);
+        CachingCurator database = new CachingCurator(curator, Path.fromString("/"), false);
 
         assertEquals(0L, (long)curator.counter("/changeCounter").get().get().postValue());
 
@@ -93,7 +93,7 @@ public class CuratorDatabaseTest {
     @Test
     public void testThatCounterIncreasesExactlyOnCommitFailure() throws Exception {
         MockCurator curator = new MockCurator();
-        CuratorDatabase database = new CuratorDatabase(curator, Path.fromString("/"), true);
+        CachingCurator database = new CachingCurator(curator, Path.fromString("/"), true);
 
         assertEquals(0L, (long)curator.counter("/changeCounter").get().get().postValue());
 
@@ -116,14 +116,14 @@ public class CuratorDatabaseTest {
         assertEquals(3L, (long)curator.counter("/changeCounter").get().get().postValue());
     }
 
-    private void commitCreate(String path, CuratorDatabase database) {
+    private void commitCreate(String path, CachingCurator database) {
         NestedTransaction t = new NestedTransaction();
         CuratorTransaction c = database.newCuratorTransactionIn(t);
         c.add(CuratorOperations.create(path));
         t.commit();
     }
 
-    private void commitReadingWrite(String path, byte[] data, CuratorDatabase database) {
+    private void commitReadingWrite(String path, byte[] data, CachingCurator database) {
         NestedTransaction transaction = new NestedTransaction();
         byte[] oldData = database.getData(Path.fromString(path)).get();
         CuratorTransaction curatorTransaction = database.newCuratorTransactionIn(transaction);
@@ -134,7 +134,7 @@ public class CuratorDatabaseTest {
     }
 
     /** Commit an operation which fails during commit. */
-    private void commitFailing(CuratorDatabase database) {
+    private void commitFailing(CachingCurator database) {
         NestedTransaction t = new NestedTransaction();
         CuratorTransaction c = database.newCuratorTransactionIn(t);
         c.add(new DummyOperation(() -> { throw new RuntimeException(); }));

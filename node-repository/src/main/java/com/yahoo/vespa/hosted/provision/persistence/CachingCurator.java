@@ -18,18 +18,20 @@ import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Supplier;
-import java.util.stream.Collectors;
 
 /**
- * This encapsulated the curator database of the node repo.
+ * A caching wrapper for {@link Curator}.
+ *
  * It serves reads from an in-memory cache of the content which is invalidated when changed on another node
  * using a global, shared counter. The counter is updated on all write operations, ensured by wrapping write
- * operations in a try block, with the counter increment in a finally block. Locks must be used to ensure consistency.
+ * operations in a try block, with the counter increment in a finally block.
+ *
+ * Locks must be used to ensure consistency.
  *
  * @author bratseth
  * @author jonmv
  */
-public class CuratorDatabase {
+public class CachingCurator {
 
     private final Curator curator;
 
@@ -40,7 +42,7 @@ public class CuratorDatabase {
     private final AtomicReference<Cache> cache = new AtomicReference<>();
 
     /** Whether we should return data from the cache or always read from ZooKeeper */
-    private final boolean useCache;
+    private final boolean enabled;
 
     private final Object cacheCreationLock = new Object();
 
@@ -50,8 +52,8 @@ public class CuratorDatabase {
      * @param curator the curator instance
      * @param root the file system root of the db
      */
-    public CuratorDatabase(Curator curator, Path root, boolean useCache) {
-        this.useCache = useCache;
+    public CachingCurator(Curator curator, Path root, boolean enabled) {
+        this.enabled = enabled;
         this.curator = curator;
         changeGenerationCounter = new CuratorCounter(curator, root.append("changeCounter"));
         cache.set(newCache(changeGenerationCounter.get()));
@@ -60,10 +62,10 @@ public class CuratorDatabase {
     /** Returns all hosts configured to be part of this ZooKeeper cluster */
     public List<HostName> cluster() {
         return Arrays.stream(curator.zooKeeperEnsembleConnectionSpec().split(","))
-                .filter(hostAndPort -> !hostAndPort.isEmpty())
-                .map(hostAndPort -> hostAndPort.split(":")[0])
-                .map(HostName::of)
-                .toList();
+                     .filter(hostAndPort -> !hostAndPort.isEmpty())
+                     .map(hostAndPort -> hostAndPort.split(":")[0])
+                     .map(HostName::of)
+                     .toList();
     }
 
     /** Create a reentrant lock */
@@ -123,7 +125,7 @@ public class CuratorDatabase {
 
     /** Caches must only be instantiated using this method */
     private Cache newCache(long generation) {
-        return useCache ? new Cache(generation, curator) : new NoCache(generation, curator);
+        return enabled ? new Cache(generation, curator) : new NoCache(generation, curator);
     }
 
     /**
