@@ -222,7 +222,6 @@ com.github.luben:zstd-jni:1.5.2-1
 com.github.tomakehurst:wiremock-jre8-standalone:2.35.0
 com.google.guava:guava-testlib:27.1-jre
 com.google.jimfs:jimfs:1.2
-io.trino.hadoop:hadoop-apache:3.2.0-17
 junit:junit:4.13.2
 net.bytebuddy:byte-buddy:1.11.19
 net.bytebuddy:byte-buddy-agent:1.11.19
