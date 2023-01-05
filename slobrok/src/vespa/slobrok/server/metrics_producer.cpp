@@ -96,6 +96,9 @@ makeSnapshot(const RPCHooks::Metrics &prev, const RPCHooks::Metrics &curr,
     snapshot.addCount("slobrok.requests.admin",
              "count of administrative requests received",
              curr.adminReqs - prev.adminReqs);
+    snapshot.addCount("slobrok.missing.consensus",
+             "number of seconds without full consensus with all other brokers",
+             curr.missingConsensusTime);
     return snapshot.asString();
 }
 
