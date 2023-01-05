@@ -153,7 +153,7 @@ VSMAdapter::configure(const VSMConfigSnapshot & snapshot)
     docsum_field_writer_factory.reset();
 
     // init keyword extractor
-    auto kwExtractor = std::make_unique<KeywordExtractor>(nullptr);
+    auto kwExtractor = std::make_unique<KeywordExtractor>();
     kwExtractor->addLegalIndexSpec(_highlightindexes.c_str());
     vespalib::string spec = kwExtractor->getLegalIndexSpec();
     LOG(debug, "index highlight spec: '%s'", spec.c_str());
