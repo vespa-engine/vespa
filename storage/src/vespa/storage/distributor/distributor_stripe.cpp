@@ -56,6 +56,7 @@ DistributorStripe::DistributorStripe(DistributorComponentRegister& compReg,
                                 *_operation_sequencer, *this, _component,
                                 _idealStateManager, _operationOwner),
       _external_message_mutex(),
+      _message_queue_closed(false),
       _done_initializing_ref(done_initializing_ref),
       _bucketPriorityDb(std::make_unique<SimpleBucketPriorityDatabase>()),
       _scanner(std::make_unique<SimpleMaintenanceScanner>(*_bucketPriorityDb, _idealStateManager, *_bucketSpaceRepo)),
@@ -128,12 +129,18 @@ void DistributorStripe::send_shutdown_abort_reply(const std::shared_ptr<api::Sto
 }
 
 void DistributorStripe::flush_and_close() {
-    for (auto& msg : _messageQueue) {
+    MessageQueue pending;
+    {
+        std::lock_guard lock(_external_message_mutex);
+        pending.swap(_messageQueue);
+        _message_queue_closed = true;
+    }
+    for (auto& msg : pending) {
         if (!msg->getType().isReply()) {
             send_shutdown_abort_reply(msg);
         }
     }
-    _messageQueue.clear();
+    pending.clear();
     while (!_client_request_priority_queue.empty()) {
         send_shutdown_abort_reply(_client_request_priority_queue.top());
         _client_request_priority_queue.pop();
@@ -167,6 +174,9 @@ DistributorStripe::handle_or_enqueue_message(const std::shared_ptr<api::StorageM
     MBUS_TRACE(msg->getTrace(), 9, vespalib::make_string("DistributorStripe[%u]: Added to message queue.", _stripe_index));
     {
         std::lock_guard lock(_external_message_mutex);
+        if (_message_queue_closed) {
+            return false;
+        }
         _messageQueue.push_back(msg);
         // Caller has the responsibility to wake up correct stripe
     }

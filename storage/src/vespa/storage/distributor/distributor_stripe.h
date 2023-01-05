@@ -331,6 +331,7 @@ private:
             IndirectHigherPriority
     >;
     mutable std::mutex _external_message_mutex;
+    bool _message_queue_closed;
     MessageQueue _messageQueue;
     ClientRequestPriorityQueue _client_request_priority_queue;
     MessageQueue _fetchedMessages;
