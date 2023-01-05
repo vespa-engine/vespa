@@ -11,6 +11,7 @@
 #include <vespa/vespalib/util/lambdatask.h>
 #include <vespa/searchsummary/docsummary/docsum_field_writer_factory.h>
 #include <vespa/searchsummary/docsummary/i_keyword_extractor.h>
+#include <vespa/searchsummary/docsummary/legacy_keyword_extractor_factory.h>
 #include <vespa/vespalib/util/exceptions.h>
 #include <vespa/fastlib/text/normwordfolder.h>
 #include <vespa/config-summary.h>
@@ -93,7 +94,8 @@ SummarySetup(const vespalib::string & baseDir, const SummaryConfig & summaryCfg,
 {
     _juniperConfig = std::make_unique<juniper::Juniper>(&_juniperProps, _wordFolder.get());
     auto resultConfig = std::make_unique<ResultConfig>();
-    auto docsum_field_writer_factory = std::make_unique<DocsumFieldWriterFactory>(summaryCfg.usev8geopositions, *this);
+    std::unique_ptr<IKeywordExtractorFactory> keyword_extractor_factory = std::make_unique<LegacyKeywordExtractorFactory>(std::shared_ptr<IKeywordExtractor>());
+    auto docsum_field_writer_factory = std::make_unique<DocsumFieldWriterFactory>(summaryCfg.usev8geopositions, *this, *keyword_extractor_factory);
     if (!resultConfig->readConfig(summaryCfg, make_string("SummaryManager(%s)", baseDir.c_str()).c_str(),
                                   *docsum_field_writer_factory)) {
         std::ostringstream oss;
@@ -105,7 +107,7 @@ SummarySetup(const vespalib::string & baseDir, const SummaryConfig & summaryCfg,
     }
     docsum_field_writer_factory.reset();
 
-    _docsumWriter = std::make_unique<DynamicDocsumWriter>(std::move(resultConfig), std::unique_ptr<IKeywordExtractor>());
+    _docsumWriter = std::make_unique<DynamicDocsumWriter>(std::move(resultConfig));
 }
 
 IDocsumStore::UP

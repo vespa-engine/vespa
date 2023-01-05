@@ -14,6 +14,7 @@ using search::docsummary::CopyDFW;
 using search::docsummary::DocsumFieldWriter;
 using search::docsummary::EmptyDFW;
 using search::docsummary::IDocsumEnvironment;
+using search::docsummary::IKeywordExtractorFactory;
 using search::docsummary::MatchedElementsFilterDFW;
 using vespa::config::search::vsm::VsmfieldsConfig;
 
@@ -36,8 +37,8 @@ void populate_fields(MatchingElementsFields& fields, VsmfieldsConfig& fields_con
 
 }
 
-DocsumFieldWriterFactory::DocsumFieldWriterFactory(bool use_v8_geo_positions, const IDocsumEnvironment& env, const vespa::config::search::vsm::VsmfieldsConfig& vsm_fields_config)
-    : search::docsummary::DocsumFieldWriterFactory(use_v8_geo_positions, env),
+DocsumFieldWriterFactory::DocsumFieldWriterFactory(bool use_v8_geo_positions, const IDocsumEnvironment& env, const IKeywordExtractorFactory& keyword_extractor_factory, const vespa::config::search::vsm::VsmfieldsConfig& vsm_fields_config)
+    : search::docsummary::DocsumFieldWriterFactory(use_v8_geo_positions, env, keyword_extractor_factory),
       _vsm_fields_config(vsm_fields_config)
 {
 }

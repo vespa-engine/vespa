@@ -15,7 +15,6 @@
 #include <vespa/searchsummary/docsummary/docsum_store_document.h>
 #include <vespa/searchsummary/docsummary/docsumstate.h>
 #include <vespa/searchsummary/docsummary/docsumwriter.h>
-#include <vespa/searchsummary/docsummary/i_keyword_extractor.h>
 #include <vespa/vespalib/data/slime/slime.h>
 #include <vespa/vespalib/data/smart_buffer.h>
 #include <vespa/vespalib/gtest/gtest.h>
@@ -117,7 +116,7 @@ SlimeSummaryTest::SlimeSummaryTest()
     EXPECT_TRUE(cfg->addConfigEntry("longdata_field"));
     EXPECT_TRUE(cfg->addConfigEntry("int_pair_field"));
     config->set_default_result_class_id(0);
-    writer = std::make_unique<DynamicDocsumWriter>(std::move(config), std::unique_ptr<IKeywordExtractor>());
+    writer = std::make_unique<DynamicDocsumWriter>(std::move(config));
     int_pair_type.addField(Field("foo", *DataType::INT));
     int_pair_type.addField(Field("bar", *DataType::INT));
     doc_type.addField(Field("int_field", *DataType::INT));

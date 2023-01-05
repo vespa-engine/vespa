@@ -5,13 +5,16 @@
 #include "i_matching_elements_filler.h"
 #include <vespa/searchlib/common/matching_elements.h>
 #include <vespa/searchsummary/docsummary/keywordextractor.h>
+#include <vespa/searchsummary/docsummary/legacy_keyword_extractor_factory.h>
 #include <vespa/searchsummary/config/config-juniperrc.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".vsm.vsm-adapter");
 
+using search::docsummary::IKeywordExtractorFactory;
 using search::docsummary::ResConfigEntry;
 using search::docsummary::KeywordExtractor;
+using search::docsummary::LegacyKeywordExtractorFactory;
 using search::MatchingElements;
 using config::ConfigSnapshot;
 using vespa::config::search::SummaryConfig;
@@ -144,22 +147,24 @@ VSMAdapter::configure(const VSMConfigSnapshot & snapshot)
     auto juniper = std::make_unique<juniper::Juniper>(_juniperProps.get(), &_wordFolder);
     docsumTools->setJuniper(std::move(juniper));
 
-    // init result config
-    auto resCfg = std::make_unique<ResultConfig>();
-    auto docsum_field_writer_factory = std::make_unique<DocsumFieldWriterFactory>(summary.get()->usev8geopositions, *docsumTools, *_fieldsCfg.get());
-    if ( !resCfg->readConfig(*summary.get(), _configId.c_str(), *docsum_field_writer_factory)) {
-        throw std::runtime_error("(re-)configuration of VSM (docsum tools) failed due to bad summary config");
-    }
-    docsum_field_writer_factory.reset();
-
     // init keyword extractor
     auto kwExtractor = std::make_unique<KeywordExtractor>();
     kwExtractor->addLegalIndexSpec(_highlightindexes.c_str());
     vespalib::string spec = kwExtractor->getLegalIndexSpec();
     LOG(debug, "index highlight spec: '%s'", spec.c_str());
 
+    // init result config
+    auto resCfg = std::make_unique<ResultConfig>();
+    std::unique_ptr<IKeywordExtractorFactory> keyword_extractor_factory = std::make_unique<LegacyKeywordExtractorFactory>(std::move(kwExtractor));
+    auto docsum_field_writer_factory = std::make_unique<DocsumFieldWriterFactory>(summary.get()->usev8geopositions, *docsumTools, *keyword_extractor_factory, *_fieldsCfg.get());
+    if ( !resCfg->readConfig(*summary.get(), _configId.c_str(), *docsum_field_writer_factory)) {
+        throw std::runtime_error("(re-)configuration of VSM (docsum tools) failed due to bad summary config");
+    }
+    docsum_field_writer_factory.reset();
+    keyword_extractor_factory.reset();
+
     // create dynamic docsum writer
-    auto writer = std::make_unique<DynamicDocsumWriter>(std::move(resCfg), std::move(kwExtractor));
+    auto writer = std::make_unique<DynamicDocsumWriter>(std::move(resCfg));
     docsumTools->set_writer(std::move(writer));
 
     // configure new docsum tools

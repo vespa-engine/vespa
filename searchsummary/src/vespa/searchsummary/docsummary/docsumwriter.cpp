@@ -86,9 +86,8 @@ DynamicDocsumWriter::insertDocsum(const ResolveClassInfo & rci, uint32_t docid, 
     }
 }
 
-DynamicDocsumWriter::DynamicDocsumWriter(std::unique_ptr<ResultConfig> config, std::unique_ptr<IKeywordExtractor> extractor)
-    : _resultConfig(std::move(config)),
-      _keywordExtractor(std::move(extractor))
+DynamicDocsumWriter::DynamicDocsumWriter(std::unique_ptr<ResultConfig> config)
+    : _resultConfig(std::move(config))
 {
 }
 
@@ -98,7 +97,6 @@ DynamicDocsumWriter::~DynamicDocsumWriter() = default;
 void
 DynamicDocsumWriter::initState(const IAttributeManager & attrMan, GetDocsumsState& state, const ResolveClassInfo& rci)
 {
-    state._kwExtractor = _keywordExtractor.get();
     state._attrCtx = attrMan.createContext();
     auto result_class = rci.res_class;
     if (result_class == nullptr) {

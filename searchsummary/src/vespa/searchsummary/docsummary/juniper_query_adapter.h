@@ -19,14 +19,14 @@ class IKeywordExtractor;
 class JuniperQueryAdapter : public juniper::IQuery
 {
 private:
-    IKeywordExtractor *_kwExtractor;
+    const IKeywordExtractor *_kwExtractor;
     const vespalib::stringref _buf;
     const search::fef::Properties *_highlightTerms;
 
 public:
     JuniperQueryAdapter(const JuniperQueryAdapter&) = delete;
     JuniperQueryAdapter operator= (const JuniperQueryAdapter&) = delete;
-    JuniperQueryAdapter(IKeywordExtractor *kwExtractor, vespalib::stringref buf,
+    JuniperQueryAdapter(const IKeywordExtractor *kwExtractor, vespalib::stringref buf,
                         const search::fef::Properties *highlightTerms = nullptr);
     ~JuniperQueryAdapter() override;
     bool skipItem(search::SimpleQueryStackDumpIterator *iterator) const;

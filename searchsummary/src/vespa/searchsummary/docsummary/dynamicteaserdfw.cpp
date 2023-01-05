@@ -4,6 +4,7 @@
 #include "docsumstate.h"
 #include "i_docsum_store_document.h"
 #include "i_juniper_converter.h"
+#include "i_keyword_extractor_factory.h"
 #include "juniper_query_adapter.h"
 #include <vespa/document/fieldvalue/stringfieldvalue.h>
 #include <vespa/vespalib/objects/hexdump.h>
@@ -21,7 +22,8 @@ namespace search::docsummary {
 JuniperDFW::JuniperDFW(const juniper::Juniper * juniper)
     : _input_field_name(),
       _juniperConfig(),
-      _juniper(juniper)
+      _juniper(juniper),
+      _keyword_extractor()
 {
 }
 
@@ -31,7 +33,8 @@ JuniperDFW::~JuniperDFW() = default;
 bool
 JuniperDFW::Init(
         const char *fieldName,
-        const vespalib::string& inputField)
+        const vespalib::string& inputField,
+        const IKeywordExtractorFactory& keyword_extractor_factory)
 {
     bool rc = true;
     _juniperConfig = _juniper->CreateConfig(fieldName);
@@ -41,22 +44,24 @@ JuniperDFW::Init(
     }
 
     _input_field_name = inputField;
+    _keyword_extractor = keyword_extractor_factory.make(_input_field_name);
     return rc;
 }
 
 bool
 JuniperTeaserDFW::Init(
         const char *fieldName,
-        const vespalib::string& inputField)
+        const vespalib::string& inputField,
+        const IKeywordExtractorFactory& keyword_extractor_factory)
 {
-    return JuniperDFW::Init(fieldName, inputField);
+    return JuniperDFW::Init(fieldName, inputField, keyword_extractor_factory);
 }
 
 void
 DynamicTeaserDFW::insert_juniper_field(uint32_t docid, vespalib::stringref input, GetDocsumsState& state, vespalib::slime::Inserter& inserter) const
 {
     if (!state._dynteaser._query) {
-        JuniperQueryAdapter iq(state._kwExtractor,
+        JuniperQueryAdapter iq(_keyword_extractor.get(),
                                state._args.getStackDump(),
                                &state._args.highlightTerms());
         state._dynteaser._query = _juniper->CreateQueryHandle(iq, nullptr);

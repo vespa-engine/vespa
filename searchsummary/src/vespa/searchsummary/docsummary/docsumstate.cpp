@@ -23,7 +23,6 @@ namespace search::docsummary {
 GetDocsumsState::GetDocsumsState(GetDocsumsStateCallback &callback)
     : _args(),
       _docsumbuf(),
-      _kwExtractor(nullptr),
       _callback(callback),
       _dynteaser(),
       _attrCtx(),
