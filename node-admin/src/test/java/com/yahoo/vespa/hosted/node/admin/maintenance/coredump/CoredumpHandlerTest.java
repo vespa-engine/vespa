@@ -202,7 +202,7 @@ public class CoredumpHandlerTest {
         assertFolderContents(coredumpDirectory, "metadata2.json", "dump_bash.core.431");
         CoreDumpMetadata expectedMetadata = new CoreDumpMetadata();
         if (encrypt)
-            expectedMetadata.setDecryptionToken("XWTN195KaZecNCloqRICq9YwxwWJEKGqyMYcTgHtwaZfnXtzHzd7bPrPPR60VdxxzA");
+            expectedMetadata.setDecryptionToken("131Q0MMF3hBuMVnXg1WnSFexZGrcwa9ZhfHlegLNwPIN6hQJnBxq5srLf3aZbYdlRVE");
 
         coredumpHandler.processAndReportSingleCoreDump(context, coredumpDirectory, Optional.empty());
         verify(coreCollector, never()).collect(any(), any());
