@@ -107,6 +107,9 @@ public class IndexingProcessor extends DocumentProcessor {
         DocumentType wantType = docTypeMgr.getDocumentType(hadType.getName());
         Document prevDoc = prev.getDocument();
         if (hadType != wantType) {
+            // this happens when you have a concrete document; we need to
+            // convert back to a "normal" Document for indexing of complex structures
+            // to work properly.
             GrowableByteBuffer buffer = new GrowableByteBuffer(64 * 1024, 2.0f);
             DocumentSerializer serializer = DocumentSerializerFactory.createHead(buffer);
             serializer.write(prevDoc);
