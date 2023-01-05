@@ -129,31 +129,4 @@ public class BundleCollisionHook implements CollisionHook, EventHook, FindHook {
         }
     }
 
-
-    static class BsnVersion {
-
-        private final String symbolicName;
-        private final Version version;
-
-        BsnVersion(Bundle bundle) {
-            this.symbolicName = bundle.getSymbolicName();
-            this.version = bundle.getVersion();
-        }
-
-        @Override
-        public boolean equals(Object o) {
-            if (this == o) return true;
-            if (o == null || getClass() != o.getClass()) return false;
-            BsnVersion that = (BsnVersion) o;
-            return Objects.equals(symbolicName, that.symbolicName) &&
-                    version.equals(that.version);
-        }
-
-        @Override
-        public int hashCode() {
-            return Objects.hash(symbolicName, version);
-        }
-
-    }
-
 }
