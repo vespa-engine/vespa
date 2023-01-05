@@ -180,7 +180,7 @@ public interface ModelContext {
 
         default Optional<CloudAccount> cloudAccount() { return Optional.empty(); }
 
-        default boolean allowUserFilters() { return false; }
+        default boolean allowUserFilters() { return true; }
 
     }
 

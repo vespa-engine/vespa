@@ -59,7 +59,7 @@ class CloudUserFilterValidatorTest {
                 .build();
         DeployState deployState = new DeployState.Builder()
                 .applicationPackage(app)
-                .properties(new TestProperties().setHostedVespa(isHosted))
+                .properties(new TestProperties().setHostedVespa(isHosted).setAllowUserFilters(false))
                 .build();
         VespaModel model = new VespaModel(new NullConfigModelRegistry(), deployState);
         new CloudUserFilterValidator().validate(model, deployState);
