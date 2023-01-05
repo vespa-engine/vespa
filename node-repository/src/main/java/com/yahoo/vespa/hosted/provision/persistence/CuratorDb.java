@@ -246,11 +246,7 @@ public class CuratorDb {
                                   .add(CuratorOperations.create(newNodePath, nodeData));
             }
         }
-        Path nodePath = nodePath(newNode);
-        if (db.exists(nodePath)) {
-            curatorTransaction.add(CuratorOperations.delete(nodePath.getAbsolute()));
-        }
-        curatorTransaction.add(CuratorOperations.create(nodePath.getAbsolute(), nodeData));
+        curatorTransaction.add(createOrSet(nodePath(newNode), nodeData));
     }
 
     private Status newNodeStatus(Node node, Node.State toState) {
