@@ -10,7 +10,8 @@ namespace search::fef {
 enum class FieldType {
     INDEX = 1,
     ATTRIBUTE = 2,
-    HIDDEN_ATTRIBUTE = 3
+    HIDDEN_ATTRIBUTE = 3,
+    VIRTUAL = 4
 };
 
 }
