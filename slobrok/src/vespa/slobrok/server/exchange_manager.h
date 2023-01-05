@@ -73,6 +73,7 @@ private:
     };
 
     SBEnv             &_env;
+    unsigned long      _lastFullConsensusTime;
 
     vespalib::string diffLists(const ServiceMappingList &lhs, const ServiceMappingList &rhs);
 
