@@ -20,8 +20,6 @@ import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 
-import javax.inject.Inject;
-
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.nio.Buffer;
@@ -59,6 +57,14 @@ public abstract class AbstractTestCompression
     protected boolean isByteBufferSupported()
     {
         return true;
+    }
+
+    protected byte[] getResourceBytes(String name) {
+        try {
+            return getClass().getClassLoader().getResourceAsStream(name).readAllBytes();
+        } catch (java.io.IOException ex) {
+            throw new IllegalArgumentException("Could not load resource: " + name, ex);
+        }
     }
 
     private static List<DataSet> setup() {

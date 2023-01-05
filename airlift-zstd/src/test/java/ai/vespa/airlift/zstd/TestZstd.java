@@ -13,7 +13,6 @@
  */
 package ai.vespa.airlift.zstd;
 
-import com.google.common.io.Resources;
 import ai.vespa.airlift.compress.AbstractTestCompression;
 import ai.vespa.airlift.compress.Compressor;
 import ai.vespa.airlift.compress.Decompressor;
@@ -66,8 +65,8 @@ public class TestZstd
     {
         int padding = 1021;
 
-        byte[] compressed = Resources.toByteArray(getClass().getClassLoader().getResource("data/zstd/with-checksum.zst"));
-        byte[] uncompressed = Resources.toByteArray(getClass().getClassLoader().getResource("data/zstd/with-checksum"));
+        byte[] compressed = getResourceBytes("data/zstd/with-checksum.zst");
+        byte[] uncompressed = getResourceBytes("data/zstd/with-checksum");
 
         byte[] output = new byte[uncompressed.length + padding * 2]; // pre + post padding
         int decompressedSize = getDecompressor().decompress(compressed, 0, compressed.length, output, padding, output.length - padding);
@@ -79,8 +78,8 @@ public class TestZstd
     public void testConcatenatedFrames()
             throws IOException
     {
-        byte[] compressed = Resources.toByteArray(getClass().getClassLoader().getResource("data/zstd/multiple-frames.zst"));
-        byte[] uncompressed = Resources.toByteArray(getClass().getClassLoader().getResource("data/zstd/multiple-frames"));
+        byte[] compressed = getResourceBytes("data/zstd/multiple-frames.zst");
+        byte[] uncompressed = getResourceBytes("data/zstd/multiple-frames");
 
         byte[] output = new byte[uncompressed.length];
         getDecompressor().decompress(compressed, 0, compressed.length, output, 0, output.length);
@@ -92,7 +91,7 @@ public class TestZstd
     public void testInvalidSequenceOffset()
             throws IOException
     {
-        byte[] compressed = Resources.toByteArray(getClass().getClassLoader().getResource("data/zstd/offset-before-start.zst"));
+        byte[] compressed = getResourceBytes("data/zstd/offset-before-start.zst");
         byte[] output = new byte[compressed.length * 10];
 
         assertThatThrownBy(() -> getDecompressor().decompress(compressed, 0, compressed.length, output, 0, output.length))
@@ -108,7 +107,7 @@ public class TestZstd
         // which ended up emitting raw literals due to insufficient gain
         Compressor compressor = getCompressor();
 
-        byte[] original = Resources.toByteArray(getClass().getClassLoader().getResource("data/zstd/small-literals-after-incompressible-literals"));
+        byte[] original = getResourceBytes("data/zstd/small-literals-after-incompressible-literals");
         int maxCompressLength = compressor.maxCompressedLength(original.length);
 
         byte[] compressed = new byte[maxCompressLength];
@@ -128,7 +127,7 @@ public class TestZstd
 
         Compressor compressor = getCompressor();
 
-        byte[] original = Resources.toByteArray(getClass().getClassLoader().getResource("data/zstd/large-rle"));
+        byte[] original = getResourceBytes("data/zstd/large-rle");
         int maxCompressLength = compressor.maxCompressedLength(original.length);
 
         byte[] compressed = new byte[maxCompressLength];
@@ -148,7 +147,7 @@ public class TestZstd
 
         Compressor compressor = getCompressor();
 
-        byte[] original = Resources.toByteArray(getClass().getClassLoader().getResource("data/zstd/incompressible"));
+        byte[] original = getResourceBytes("data/zstd/incompressible");
         int maxCompressLength = compressor.maxCompressedLength(original.length);
 
         byte[] compressed = new byte[maxCompressLength];
@@ -194,8 +193,8 @@ public class TestZstd
             throws IOException
     {
         Compressor compressor = getCompressor();
-        byte[] compressed = Resources.toByteArray(getClass().getClassLoader().getResource("data/zstd/bad-second-frame.zst"));
-        byte[] uncompressed = Resources.toByteArray(getClass().getClassLoader().getResource("data/zstd/multiple-frames"));
+        byte[] compressed = getResourceBytes("data/zstd/bad-second-frame.zst");
+        byte[] uncompressed = getResourceBytes("data/zstd/multiple-frames");
         byte[] output = new byte[uncompressed.length];
         assertThatThrownBy(() -> getDecompressor().decompress(compressed, 0, compressed.length, output, 0, output.length))
                 .isInstanceOf(MalformedInputException.class)
