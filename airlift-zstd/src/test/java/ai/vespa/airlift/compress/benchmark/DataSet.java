@@ -14,18 +14,13 @@
 package ai.vespa.airlift.compress.benchmark;
 
 import com.google.common.io.Files;
-import org.openjdk.jmh.annotations.Param;
-import org.openjdk.jmh.annotations.Scope;
-import org.openjdk.jmh.annotations.Setup;
-import org.openjdk.jmh.annotations.State;
 
 import java.io.File;
 import java.io.IOException;
 
-@State(Scope.Thread)
 public class DataSet
 {
-    @Param({
+    public static final String[] knownDataSets = {
             "canterbury/alice29.txt",
             "canterbury/asyoulik.txt",
             "canterbury/cp.html",
@@ -86,7 +81,8 @@ public class DataSet
             "kppkn.gtb",
             "mapreduce-osdi-1.pdf",
             "urls.10K",
-    })
+    };
+
     private String name;
     private byte[] uncompressed;
 
@@ -105,7 +101,6 @@ public class DataSet
         this.uncompressed = uncompressed;
     }
 
-    @Setup
     public void loadFile()
             throws IOException
     {

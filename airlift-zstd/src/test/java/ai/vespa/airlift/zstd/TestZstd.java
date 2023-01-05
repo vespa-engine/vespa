@@ -21,13 +21,15 @@ import ai.vespa.airlift.compress.MalformedInputException;
 import ai.vespa.airlift.compress.benchmark.DataSet;
 import ai.vespa.airlift.compress.thirdparty.ZstdJniCompressor;
 import ai.vespa.airlift.compress.thirdparty.ZstdJniDecompressor;
-import org.testng.annotations.Test;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 
 import java.io.IOException;
 import java.util.Arrays;
 
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.testng.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class TestZstd
         extends AbstractTestCompression
@@ -168,7 +170,8 @@ public class TestZstd
     }
 
     // test over data sets, should the result depend on input size or its compressibility
-    @Test(dataProvider = "data")
+    @ParameterizedTest
+    @MethodSource("getAllDataSets")
     public void testGetDecompressedSize(DataSet dataSet)
     {
         Compressor compressor = getCompressor();

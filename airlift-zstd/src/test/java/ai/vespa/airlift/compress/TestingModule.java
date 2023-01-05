@@ -13,40 +13,26 @@
  */
 package ai.vespa.airlift.compress;
 
-import com.google.inject.Binder;
-import com.google.inject.Module;
-import com.google.inject.Provides;
 import ai.vespa.airlift.compress.benchmark.DataSet;
-import org.openjdk.jmh.annotations.Param;
-
-import javax.inject.Singleton;
 
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
 public class TestingModule
-        implements Module
 {
-    @Override
-    public void configure(Binder binder)
+    public static List<DataSet> dataSets()
     {
-    }
-
-    @Provides
-    @Singleton
-    public List<DataSet> dataSets()
-            throws NoSuchFieldException, IOException
-    {
-        String[] testNames = DataSet.class
-                .getDeclaredField("name")
-                .getAnnotation(Param.class)
-                .value();
+        String[] testNames = DataSet.knownDataSets;
 
         List<DataSet> result = new ArrayList<>();
         for (String testName : testNames) {
             DataSet entry = new DataSet(testName);
-            entry.loadFile();
+            try {
+                entry.loadFile();
+            } catch (java.io.IOException ex) {
+                throw new IllegalStateException("could not load dataset " + testName, ex);
+            }
             result.add(entry);
         }
 

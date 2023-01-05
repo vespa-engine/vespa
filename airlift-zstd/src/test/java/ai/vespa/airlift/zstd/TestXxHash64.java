@@ -15,9 +15,9 @@ package ai.vespa.airlift.zstd;
 
 import net.jpountz.xxhash.XXHash64;
 import net.jpountz.xxhash.XXHashFactory;
-import org.testng.annotations.Test;
+import org.junit.jupiter.api.Test;
 
-import static org.testng.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static sun.misc.Unsafe.ARRAY_BYTE_BASE_OFFSET;
 
 // forked from https://github.com/airlift/slice

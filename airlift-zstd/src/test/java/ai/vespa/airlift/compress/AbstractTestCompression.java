@@ -15,10 +15,10 @@ package ai.vespa.airlift.compress;
 
 import com.google.common.primitives.Bytes;
 import ai.vespa.airlift.compress.benchmark.DataSet;
-import org.testng.SkipException;
-import org.testng.annotations.DataProvider;
-import org.testng.annotations.Guice;
-import org.testng.annotations.Test;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestInstance;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 
 import javax.inject.Inject;
 
@@ -30,6 +30,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Random;
+import java.util.stream.Stream;
 import java.util.concurrent.ThreadLocalRandom;
 
 import static com.google.common.base.Preconditions.checkPositionIndexes;
@@ -38,13 +39,14 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.assertj.core.api.Assertions.catchThrowable;
-import static org.testng.Assert.assertEquals;
-import static org.testng.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.fail;
+import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
-@Guice(modules = TestingModule.class)
+@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public abstract class AbstractTestCompression
 {
-    private List<DataSet> testCases;
+    private List<DataSet> testCases = setup();
 
     protected abstract Compressor getCompressor();
 
@@ -59,10 +61,8 @@ public abstract class AbstractTestCompression
         return true;
     }
 
-    @Inject
-    public void setup(List<DataSet> dataSets)
-    {
-        testCases = new ArrayList<>();
+    private static List<DataSet> setup() {
+        List<DataSet> testCases = new ArrayList<>();
 
         testCases.add(new DataSet("nothing", new byte[0]));
         testCases.add(new DataSet("short literal", "hello world!".getBytes(UTF_8)));
@@ -75,10 +75,12 @@ public abstract class AbstractTestCompression
         }
         testCases.add(new DataSet("long literal", data));
 
-        testCases.addAll(dataSets);
+        testCases.addAll(TestingModule.dataSets());
+        return testCases;
     }
 
-    @Test(dataProvider = "data")
+    @ParameterizedTest
+    @MethodSource("getAllDataSets")
     public void testDecompress(DataSet dataSet)
             throws Exception
     {
@@ -100,7 +102,8 @@ public abstract class AbstractTestCompression
     }
 
     // Tests that decompression works correctly when the decompressed data does not span the entire output buffer
-    @Test(dataProvider = "data")
+    @ParameterizedTest
+    @MethodSource("getAllDataSets")
     public void testDecompressWithOutputPadding(DataSet dataSet)
     {
         int padding = 1021;
@@ -122,7 +125,8 @@ public abstract class AbstractTestCompression
         assertByteArraysEqual(uncompressed, padding, uncompressedSize, uncompressedOriginal, 0, uncompressedOriginal.length);
     }
 
-    @Test(dataProvider = "data")
+    @ParameterizedTest
+    @MethodSource("getAllDataSets")
     public void testDecompressionBufferOverrun(DataSet dataSet)
     {
         byte[] uncompressedOriginal = dataSet.getUncompressed();
@@ -232,13 +236,12 @@ public abstract class AbstractTestCompression
         }
     }
 
-    @Test(dataProvider = "data")
+    @ParameterizedTest
+    @MethodSource("getAllDataSets")
     public void testDecompressByteBufferHeapToHeap(DataSet dataSet)
             throws Exception
     {
-        if (!isByteBufferSupported()) {
-            throw new SkipException("ByteBuffer not supported");
-        }
+        assumeTrue(isByteBufferSupported());
 
         byte[] uncompressedOriginal = dataSet.getUncompressed();
 
@@ -251,13 +254,12 @@ public abstract class AbstractTestCompression
         assertByteBufferEqual(ByteBuffer.wrap(uncompressedOriginal), uncompressed);
     }
 
-    @Test(dataProvider = "data")
+    @ParameterizedTest
+    @MethodSource("getAllDataSets")
     public void testDecompressByteBufferHeapToDirect(DataSet dataSet)
             throws Exception
     {
-        if (!isByteBufferSupported()) {
-            throw new SkipException("ByteBuffer not supported");
-        }
+        assumeTrue(isByteBufferSupported());
 
         byte[] uncompressedOriginal = dataSet.getUncompressed();
 
@@ -270,13 +272,12 @@ public abstract class AbstractTestCompression
         assertByteBufferEqual(ByteBuffer.wrap(uncompressedOriginal), uncompressed);
     }
 
-    @Test(dataProvider = "data")
+    @ParameterizedTest
+    @MethodSource("getAllDataSets")
     public void testDecompressByteBufferDirectToHeap(DataSet dataSet)
             throws Exception
     {
-        if (!isByteBufferSupported()) {
-            throw new SkipException("ByteBuffer not supported");
-        }
+        assumeTrue(isByteBufferSupported());
 
         byte[] uncompressedOriginal = dataSet.getUncompressed();
 
@@ -289,13 +290,12 @@ public abstract class AbstractTestCompression
         assertByteBufferEqual(ByteBuffer.wrap(uncompressedOriginal), uncompressed);
     }
 
-    @Test(dataProvider = "data")
+    @ParameterizedTest
+    @MethodSource("getAllDataSets")
     public void testDecompressByteBufferDirectToDirect(DataSet dataSet)
             throws Exception
     {
-        if (!isByteBufferSupported()) {
-            throw new SkipException("ByteBuffer not supported");
-        }
+        assumeTrue(isByteBufferSupported());
 
         byte[] uncompressedOriginal = dataSet.getUncompressed();
 
@@ -308,7 +308,8 @@ public abstract class AbstractTestCompression
         assertByteBufferEqual(ByteBuffer.wrap(uncompressedOriginal), uncompressed);
     }
 
-    @Test(dataProvider = "data")
+    @ParameterizedTest
+    @MethodSource("getAllDataSets")
     public void testCompress(DataSet testCase)
             throws Exception
     {
@@ -418,13 +419,12 @@ public abstract class AbstractTestCompression
         }
     }
 
-    @Test(dataProvider = "data")
+    @ParameterizedTest
+    @MethodSource("getAllDataSets")
     public void testCompressByteBufferHeapToHeap(DataSet dataSet)
             throws Exception
     {
-        if (!isByteBufferSupported()) {
-            throw new SkipException("ByteBuffer not supported");
-        }
+        assumeTrue(isByteBufferSupported());
 
         byte[] uncompressedOriginal = dataSet.getUncompressed();
 
@@ -436,12 +436,14 @@ public abstract class AbstractTestCompression
                 ByteBuffer.allocate(compressor.maxCompressedLength(uncompressedOriginal.length)));
     }
 
-    @Test(dataProvider = "data")
+    @ParameterizedTest
+    @MethodSource("getAllDataSets")
     public void testCompressByteBufferHeapToDirect(DataSet dataSet)
             throws Exception
     {
+        assumeTrue(isByteBufferSupported());
         if (!isByteBufferSupported()) {
-            throw new SkipException("ByteBuffer not supported");
+            return; // throw new SkipException("ByteBuffer not supported");
         }
 
         byte[] uncompressedOriginal = dataSet.getUncompressed();
@@ -454,13 +456,12 @@ public abstract class AbstractTestCompression
                 ByteBuffer.allocateDirect(compressor.maxCompressedLength(uncompressedOriginal.length)));
     }
 
-    @Test(dataProvider = "data")
+    @ParameterizedTest
+    @MethodSource("getAllDataSets")
     public void testCompressByteBufferDirectToHeap(DataSet dataSet)
             throws Exception
     {
-        if (!isByteBufferSupported()) {
-            throw new SkipException("ByteBuffer not supported");
-        }
+        assumeTrue(isByteBufferSupported());
 
         byte[] uncompressedOriginal = dataSet.getUncompressed();
 
@@ -472,13 +473,12 @@ public abstract class AbstractTestCompression
                 ByteBuffer.allocate(compressor.maxCompressedLength(uncompressedOriginal.length)));
     }
 
-    @Test(dataProvider = "data")
+    @ParameterizedTest
+    @MethodSource("getAllDataSets")
     public void testCompressByteBufferDirectToDirect(DataSet dataSet)
             throws Exception
     {
-        if (!isByteBufferSupported()) {
-            throw new SkipException("ByteBuffer not supported");
-        }
+        assumeTrue(isByteBufferSupported());
 
         byte[] uncompressedOriginal = dataSet.getUncompressed();
 
@@ -554,17 +554,8 @@ public abstract class AbstractTestCompression
         }
     }
 
-    @DataProvider(name = "data")
-    public Object[][] getTestCases()
-            throws IOException
-    {
-        Object[][] result = new Object[testCases.size()][];
-
-        for (int i = 0; i < testCases.size(); i++) {
-            result[i] = new Object[] {testCases.get(i)};
-        }
-
-        return result;
+    public Stream<DataSet> getAllDataSets() {
+        return testCases.stream();
     }
 
     public static void assertByteArraysEqual(byte[] left, int leftOffset, int leftLength, byte[] right, int rightOffset, int rightLength)

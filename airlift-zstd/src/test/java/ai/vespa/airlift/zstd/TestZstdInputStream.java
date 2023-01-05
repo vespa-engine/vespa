@@ -20,7 +20,7 @@ import ai.vespa.airlift.compress.Decompressor;
 import ai.vespa.airlift.compress.MalformedInputException;
 import ai.vespa.airlift.compress.thirdparty.ZstdJniCompressor;
 import ai.vespa.airlift.compress.thirdparty.ZstdJniDecompressor;
-import org.testng.annotations.Test;
+import org.junit.jupiter.api.Test;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
