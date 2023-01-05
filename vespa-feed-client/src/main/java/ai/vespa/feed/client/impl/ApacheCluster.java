@@ -9,6 +9,7 @@ import org.apache.hc.client5.http.config.ConnectionConfig;
 import org.apache.hc.client5.http.config.RequestConfig;
 import org.apache.hc.client5.http.impl.async.CloseableHttpAsyncClient;
 import org.apache.hc.client5.http.impl.async.HttpAsyncClients;
+import org.apache.hc.client5.http.impl.async.MinimalH2AsyncClient;
 import org.apache.hc.client5.http.ssl.ClientTlsStrategyBuilder;
 import org.apache.hc.core5.concurrent.FutureCallback;
 import org.apache.hc.core5.http.ContentType;
@@ -175,17 +176,17 @@ class ApacheCluster implements Cluster {
         if (builder.hostnameVerifier != null)
             tlsStrategyBuilder.setHostnameVerifier(builder.hostnameVerifier);
 
-        var client = HttpAsyncClients.createHttp2Minimal(H2Config.custom()
+        MinimalH2AsyncClient client = HttpAsyncClients.createHttp2Minimal(H2Config.custom()
                                                            .setMaxConcurrentStreams(builder.maxStreamsPerConnection)
                                                            .setCompressionEnabled(true)
                                                            .setPushEnabled(false)
                                                            .setInitialWindowSize(Integer.MAX_VALUE)
                                                            .build(),
                                                    IOReactorConfig.custom()
-                                                                  .setIoThreadCount(2)
-                                                                  .setTcpNoDelay(true)
-                                                                  .setSoTimeout(Timeout.ofSeconds(10))
-                                                                  .build(),
+                                                           .setIoThreadCount(2)
+                                                           .setTcpNoDelay(true)
+                                                           .setSoTimeout(Timeout.ofSeconds(10))
+                                                           .build(),
                                                    tlsStrategyBuilder.build());
         client.setConnectionConfigResolver(host -> connectionConfig);
         return client;

@@ -33,7 +33,7 @@ public class SecretStoreValidator {
     private static final String PROTOCOL = "http://";
     private static final String AWS_PARAMETER_VALIDATION_HANDLER_POSTFIX = ":4080/validate-secret-store";
     private final SecretStore secretStore;
-    private final CloseableHttpClient httpClient = VespaHttpClientBuilder.create().build();
+    private final CloseableHttpClient httpClient = VespaHttpClientBuilder.custom().build().build();
 
     public SecretStoreValidator(SecretStore secretStore) {
         this.secretStore = secretStore;

@@ -62,12 +62,10 @@ public class PrometheusV1Handler extends HttpHandlerBase {
         }
     }
 
-    @SuppressWarnings("deprecation")
     private static CloseableHttpClient createHttpClient() {
-        return VespaHttpClientBuilder.create()
+        return VespaHttpClientBuilder.custom().setConnectTimeout(HTTP_CONNECT_TIMEOUT, MILLISECONDS).build()
                 .setUserAgent("application-prometheus-receiver")
                 .setDefaultRequestConfig(RequestConfig.custom()
-                                            .setConnectTimeout(HTTP_CONNECT_TIMEOUT, MILLISECONDS)
                                             .setResponseTimeout(HTTP_SOCKET_TIMEOUT, MILLISECONDS)
                                             .build())
                 .build();

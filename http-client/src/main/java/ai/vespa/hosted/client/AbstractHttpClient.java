@@ -114,7 +114,6 @@ public abstract class AbstractHttpClient implements HttpClient {
         throw new IllegalStateException("No hosts to perform the request against");
     }
 
-    @SuppressWarnings("deprecation")
     private HttpClientContext contextWithTimeout(RequestBuilder builder) {
         HttpClientContext context = HttpClientContext.create();
         RequestConfig config = builder.config;
@@ -122,7 +121,6 @@ public abstract class AbstractHttpClient implements HttpClient {
             Optional<Duration> remaining = builder.deadline.timeLeftOrThrow();
             if (remaining.isPresent()) {
                 config = RequestConfig.copy(config)
-                                      .setConnectTimeout(min(config.getConnectTimeout(), remaining.get()))
                                       .setConnectionRequestTimeout(min(config.getConnectionRequestTimeout(), remaining.get()))
                                       .setResponseTimeout(min(config.getResponseTimeout(), remaining.get()))
                                       .build();
