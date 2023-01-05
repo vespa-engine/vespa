@@ -10,7 +10,7 @@
 
 namespace search::docsummary {
 
-JuniperQueryAdapter::JuniperQueryAdapter(IKeywordExtractor *kwExtractor, vespalib::stringref buf,
+JuniperQueryAdapter::JuniperQueryAdapter(const IKeywordExtractor *kwExtractor, vespalib::stringref buf,
                                          const search::fef::Properties *highlightTerms)
     : _kwExtractor(kwExtractor),
       _buf(buf),
