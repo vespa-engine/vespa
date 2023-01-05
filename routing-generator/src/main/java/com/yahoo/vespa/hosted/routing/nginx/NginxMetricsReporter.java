@@ -48,6 +48,7 @@ public class NginxMetricsReporter extends AbstractComponent implements Runnable 
     static final String UPSTREAM_DOWN_METRIC = "nginx.upstreams.down";
     static final String UPSTREAM_UNKNOWN_METRIC = "nginx.upstreams.unknown";
     static final String CONFIG_AGE_METRIC = "upstreams_configuration_age";
+    static final String CONFIG_RELOAD_TIME = "upstreams_configuration_reload_time";
 
     private final Metric metric;
     private final HealthStatus healthStatus;
@@ -85,11 +86,14 @@ public class NginxMetricsReporter extends AbstractComponent implements Runnable 
         Optional<Instant> temporaryConfigModified = lastModified(temporaryNginxConfiguration);
         if (temporaryConfigModified.isEmpty()) {
             metric.set(CONFIG_AGE_METRIC, 0, metric.createContext(Map.of()));
+            metric.set(CONFIG_RELOAD_TIME, 0, metric.createContext(Map.of()));
             return;
         }
         Instant configModified = lastModified(nginxConfiguration).orElse(Instant.EPOCH);
         long secondsDiff = Math.abs(Duration.between(configModified, temporaryConfigModified.get()).toSeconds());
+        long reloadTime = Math.abs(Duration.between(temporaryConfigModified.get(), Instant.now()).toSeconds());
         metric.set(CONFIG_AGE_METRIC, secondsDiff, metric.createContext(Map.of()));
+        metric.set(CONFIG_RELOAD_TIME, reloadTime, metric.createContext(Map.of()));
     }
 
     private void reportHealth(RoutingTable table) {
