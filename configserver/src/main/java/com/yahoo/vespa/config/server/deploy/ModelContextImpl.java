@@ -372,6 +372,7 @@ public class ModelContextImpl implements ModelContext {
         private final List<String> zoneDnsSuffixes;
         private final List<String> environmentVariables;
         private final Optional<CloudAccount> cloudAccount;
+        private final boolean allowUserFilters;
 
         public Properties(ApplicationId applicationId,
                           Version modelVersion,
@@ -416,6 +417,8 @@ public class ModelContextImpl implements ModelContext {
             this.environmentVariables = PermanentFlags.ENVIRONMENT_VARIABLES.bindTo(flagSource)
                     .with(FetchVector.Dimension.APPLICATION_ID, applicationId.serializedForm()).value();
             this.cloudAccount = cloudAccount;
+            this.allowUserFilters = PermanentFlags.ALLOW_USER_FILTERS.bindTo(flagSource)
+                    .with(FetchVector.Dimension.APPLICATION_ID, applicationId.serializedForm()).value();
         }
 
         @Override public ModelContext.FeatureFlags featureFlags() { return featureFlags; }
@@ -504,6 +507,8 @@ public class ModelContextImpl implements ModelContext {
         public Optional<CloudAccount> cloudAccount() {
             return cloudAccount;
         }
+
+        @Override public boolean allowUserFilters() { return allowUserFilters; }
 
     }
 
