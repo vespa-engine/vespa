@@ -82,7 +82,6 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
     private Architecture adminClusterNodeResourcesArchitecture = Architecture.getDefault();
     private boolean useRestrictedDataPlaneBindings = false;
     private Optional<CloudAccount> cloudAccount = Optional.empty();
-    private boolean enableDataPlaneFilter = false;
 
     @Override public ModelContext.FeatureFlags featureFlags() { return this; }
     @Override public boolean multitenant() { return multitenant; }
@@ -138,7 +137,6 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
     @Override public boolean useTwoPhaseDocumentGc() { return useTwoPhaseDocumentGc; }
     @Override public boolean useRestrictedDataPlaneBindings() { return useRestrictedDataPlaneBindings; }
     @Override public Optional<CloudAccount> cloudAccount() { return cloudAccount; }
-    @Override public boolean enableDataPlaneFilter() { return enableDataPlaneFilter; }
 
     public TestProperties sharedStringRepoNoReclaim(boolean sharedStringRepoNoReclaim) {
         this.sharedStringRepoNoReclaim = sharedStringRepoNoReclaim;
@@ -365,11 +363,6 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
 
     public TestProperties setCloudAccount(CloudAccount cloudAccount) {
         this.cloudAccount = Optional.ofNullable(cloudAccount);
-        return this;
-    }
-
-    public TestProperties setEnableDataPlaneFilter(boolean enableDataPlaneFilter) {
-        this.enableDataPlaneFilter = enableDataPlaneFilter;
         return this;
     }
 

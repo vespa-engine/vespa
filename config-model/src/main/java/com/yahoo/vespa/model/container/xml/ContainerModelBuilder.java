@@ -459,7 +459,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
     }
 
     private static void addCloudDataPlaneFilter(DeployState deployState, ApplicationContainerCluster cluster) {
-        if (!deployState.isHosted() || !deployState.zone().system().isPublic() || !deployState.featureFlags().enableDataPlaneFilter()) return;
+        if (!deployState.isHosted() || !deployState.zone().system().isPublic()) return;
 
         // Setup secure filter chain
         var secureChain = new Chain<Filter>(FilterChains.emptyChainSpec(ComponentId.fromString("cloud-data-plane-secure")));

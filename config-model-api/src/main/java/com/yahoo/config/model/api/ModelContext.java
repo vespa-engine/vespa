@@ -111,7 +111,7 @@ public interface ModelContext {
         @ModelFeatureFlag(owners = {"vekterli"}) default boolean useTwoPhaseDocumentGc() { return false; }
         @ModelFeatureFlag(owners = {"tokle"}) default boolean useRestrictedDataPlaneBindings() { return false; }
         @ModelFeatureFlag(owners = {"arnej","baldersheim"}) default boolean useOldJdiscContainerStartup() { return true; }
-        @ModelFeatureFlag(owners = {"tokle, bjorncs"}) default boolean enableDataPlaneFilter() { return false; }
+        @ModelFeatureFlag(owners = {"tokle, bjorncs"}, removeAfter = "8.108") default boolean enableDataPlaneFilter() { return true; }
 
         //Below are all flags that must be kept until 7 is out of the door
         @ModelFeatureFlag(owners = {"vekterli"}, removeAfter="7.last") default boolean useThreePhaseUpdates() { return true; }

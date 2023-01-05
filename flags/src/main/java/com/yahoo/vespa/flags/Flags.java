@@ -345,18 +345,6 @@ public class Flags {
             "Takes effect at redeployment",
             APPLICATION_ID);
 
-    public static final UnboundStringFlag CSRF_MODE = defineStringFlag(
-            "csrf-mode", "disabled",
-            List.of("bjorncs", "tokle"), "2022-09-22", "2023-06-01",
-            "Set mode for CSRF filter ('disabled', 'log_only', 'enabled')",
-            "Takes effect on controller restart/redeployment");
-
-    public static final UnboundListFlag<String> CSRF_USERS = defineListFlag(
-            "csrf-users", List.of(), String.class,
-            List.of("bjorncs", "tokle"), "2022-09-22", "2023-06-01",
-            "List of users to enable CSRF filter for. Use empty list for everyone.",
-            "Takes effect on controller restart/redeployment");
-
     public static final UnboundBooleanFlag ENABLE_OTELCOL = defineFeatureFlag(
             "enable-otel-collector", false,
             List.of("olaa"), "2022-09-23", "2023-06-01",
@@ -384,12 +372,6 @@ public class Flags {
             "Set up a WireGuard endpoint on tenant hosts",
             "Takes effect on host admin restart",
             HOSTNAME);
-
-    public static final UnboundStringFlag AUTH0_SESSION_LOGOUT = defineStringFlag(
-            "auth0-session-logout", "disabled",
-            List.of("bjorncs", "tokle"), "2022-10-17", "2023-06-01",
-            "Set mode for Auth0 session logout ('disabled', 'log_only', 'enabled')",
-            "Takes effect on controller restart/redeployment");
 
     public static final UnboundBooleanFlag ENABLED_MAIL_VERIFICATION = defineFeatureFlag(
             "enabled-mail-verification", false,

@@ -25,7 +25,6 @@ public class CloudDataPlaneFilterValidator extends Validator {
     public void validate(VespaModel model, DeployState deployState) {
         if (!deployState.isHosted()) return;
         if (!deployState.zone().system().isPublic()) return;
-        if (!deployState.featureFlags().enableDataPlaneFilter()) return;
 
         validateUniqueCertificates(deployState);
     }
