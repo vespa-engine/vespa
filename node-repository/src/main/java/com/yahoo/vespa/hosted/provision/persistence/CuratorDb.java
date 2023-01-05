@@ -93,7 +93,6 @@ public class CuratorDb {
 
     private void initZK() {
         db.create(root);
-        db.deleteRecursively(nodesPath); // TODO(mpolden): Remove before we start reading from this path
         db.create(nodesPath);
         // TODO(mpolden): Remove state paths after migration to nodesPath
         for (Node.State state : Node.State.values())
