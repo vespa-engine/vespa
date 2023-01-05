@@ -21,7 +21,6 @@ import com.yahoo.jdisc.handler.ContentChannel;
 import com.yahoo.jdisc.handler.ResponseDispatch;
 import com.yahoo.jdisc.handler.ResponseHandler;
 import com.yahoo.jdisc.http.HttpHeaders;
-import com.yahoo.system.ProcessExecuter;
 
 import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;
@@ -51,7 +50,6 @@ public class StateHandler extends AbstractRequestHandler {
     private static final String CONFIG_GENERATION_PATH = "config";
     private static final String HEALTH_PATH = "health";
     private static final String VERSION_PATH = "version";
-    private static final String LOGCTL_PATH = "logctl";
 
     private final static MetricDimensions NULL_DIMENSIONS = StateMetricContext.newInstance(null);
     private final StateMonitor monitor;
@@ -133,7 +131,6 @@ public class StateHandler extends AbstractRequestHandler {
             case HISTOGRAMS_PATH -> ByteBuffer.wrap(buildHistogramsOutput());
             case HEALTH_PATH, METRICS_PATH -> ByteBuffer.wrap(buildMetricOutput(suffix));
             case VERSION_PATH -> ByteBuffer.wrap(buildVersionOutput());
-            case LOGCTL_PATH -> ByteBuffer.wrap(runLogctl(input));
             default -> ByteBuffer.wrap(buildMetricOutput(suffix)); // XXX should possibly do something else here
             };
         } catch (JsonProcessingException e) {
@@ -199,48 +196,6 @@ public class StateHandler extends AbstractRequestHandler {
             snapshotProvider.histogram(new PrintStream(baos));
         }
         return baos.toByteArray();
-    }
-
-    private static byte[] runLogctl(List<ByteBuffer> input) throws JsonProcessingException {
-        try {
-            var accumulated = new java.io.ByteArrayOutputStream();
-            for (var buf : input) {
-                if (buf.hasArray()) {
-                    accumulated.write(buf.array(), buf.arrayOffset() + buf.position(), buf.remaining());
-                } else {
-                    while (buf.remaining() > 0) {
-                        accumulated.write(buf.get());
-                    }
-                }
-            }
-            var dec = new com.yahoo.slime.JsonDecoder();
-            var slime = dec.decode(new com.yahoo.slime.Slime(), accumulated.toByteArray());
-            com.yahoo.slime.Inspector obj = slime.get();
-            String component = obj.field("component").asString();
-            String levels = obj.field("levels").asString();
-            if (component.equals("") || levels.equals("")) {
-                return toPrettyString(jsonMapper.createObjectNode()
-                                      .put("error", "missing component or levels parameter"));
-            }
-            String serviceName = System.getenv("VESPA_SERVICE_NAME");
-            if (serviceName == null || serviceName.equals("")) {
-                return toPrettyString(jsonMapper.createObjectNode()
-                                      .put("error", "no VESPA_SERVICE_NAME"));
-            }
-            var lSpec = new LevelsModSpec();
-            lSpec.setLevels(levels);
-            var command = new String[] { "vespa-logctl", serviceName + ":" + component, lSpec.toLogctlModSpec() };
-            var ret = new ProcessExecuter(true).exec(command);
-            return toPrettyString(jsonMapper.createObjectNode()
-                                  .put("exitcode", ret.getFirst())
-                                  .put("output", ret.getSecond()));
-        } catch (java.io.IOException e) {
-            return toPrettyString(jsonMapper.createObjectNode()
-                                  .put("error", "io exception while running vespa-logctl"));
-        } catch (IllegalArgumentException e) {
-            return toPrettyString(jsonMapper.createObjectNode()
-                                  .put("error", e.getMessage()));
-        }
     }
 
     private ObjectNode buildJsonForConsumer(String consumer) {
