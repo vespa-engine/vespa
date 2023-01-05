@@ -93,6 +93,7 @@ public class CuratorDb {
 
     private void initZK() {
         db.create(root);
+        db.deleteRecursively(nodesPath); // TODO(mpolden): Remove before we start reading from this path
         db.create(nodesPath);
         // TODO(mpolden): Remove state paths after migration to nodesPath
         for (Node.State state : Node.State.values())
@@ -115,7 +116,10 @@ public class CuratorDb {
                 throw new IllegalArgumentException(node + " is not in the " + expectedState + " state");
 
             node = node.with(node.history().recordStateTransition(null, expectedState, agent, clock.instant()));
-            curatorTransaction.add(CuratorOperations.create(toPath(node).getAbsolute(), nodeSerializer.toJson(node)));
+            // TODO(mpolden): Remove after migration to nodesPath
+            byte[] serialized = nodeSerializer.toJson(node);
+            curatorTransaction.add(CuratorOperations.create(toPath(node).getAbsolute(), serialized));
+            curatorTransaction.add(CuratorOperations.create(nodePath(node).getAbsolute(), serialized));
         }
 
         for (Node node : nodes)
@@ -136,7 +140,11 @@ public class CuratorDb {
         for (Node node : nodes) {
             Path path = toPath(node.state(), node.hostname());
             CuratorTransaction curatorTransaction = db.newCuratorTransactionIn(transaction);
+            // TODO(mpolden): Remove after migration to nodesPath
             curatorTransaction.add(CuratorOperations.delete(path.getAbsolute()));
+            if (db.exists(nodePath(node))) {
+                curatorTransaction.add(CuratorOperations.delete(nodePath(node).getAbsolute()));
+            }
         }
         nodes.forEach(node -> log.log(Level.INFO, "Removed node " + node.hostname() + " in state " + node.state()));
     }
@@ -239,11 +247,7 @@ public class CuratorDb {
                                   .add(CuratorOperations.create(newNodePath, nodeData));
             }
         }
-        Path nodePath = nodePath(newNode);
-        if (db.exists(nodePath)) {
-            curatorTransaction.add(CuratorOperations.delete(nodePath.getAbsolute()));
-        }
-        curatorTransaction.add(CuratorOperations.create(nodePath.getAbsolute(), nodeData));
+        curatorTransaction.add(createOrSet(nodePath(newNode), nodeData));
     }
 
     private Status newNodeStatus(Node node, Node.State toState) {
