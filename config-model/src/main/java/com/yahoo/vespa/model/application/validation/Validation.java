@@ -89,6 +89,7 @@ public class Validation {
         new UriBindingsValidator().validate(model, deployState);
         new CloudDataPlaneFilterValidator().validate(model, deployState);
         new AccessControlFilterExcludeValidator().validate(model, deployState);
+        new CloudUserFilterValidator().validate(model, deployState);
 
         additionalValidators.forEach(v -> v.validate(model, deployState));
 
