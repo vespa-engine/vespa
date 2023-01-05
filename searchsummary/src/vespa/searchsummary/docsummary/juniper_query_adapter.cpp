@@ -1,16 +1,16 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "juniper_query_adapter.h"
+#include "i_keyword_extractor.h"
 #include "juniper_dfw_query_item.h"
 #include "juniper_dfw_term_visitor.h"
-#include "keywordextractor.h"
 #include <vespa/searchlib/fef/properties.h>
 #include <vespa/searchlib/parsequery/stackdumpiterator.h>
 #include <vespa/searchlib/queryeval/split_float.h>
 
 namespace search::docsummary {
 
-JuniperQueryAdapter::JuniperQueryAdapter(KeywordExtractor *kwExtractor, vespalib::stringref buf,
+JuniperQueryAdapter::JuniperQueryAdapter(IKeywordExtractor *kwExtractor, vespalib::stringref buf,
                                          const search::fef::Properties *highlightTerms)
     : _kwExtractor(kwExtractor),
       _buf(buf),

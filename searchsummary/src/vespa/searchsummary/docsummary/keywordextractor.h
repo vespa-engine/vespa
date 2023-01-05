@@ -2,13 +2,12 @@
 
 #pragma once
 
+#include "i_keyword_extractor.h"
 #include <vespa/vespalib/stllike/hash_set.h>
 
 namespace search::docsummary {
 
-class IDocsumEnvironment;
-
-class KeywordExtractor
+class KeywordExtractor : public IKeywordExtractor
 {
 public:
 
@@ -79,7 +78,7 @@ public:
      *
      * @return true if the given index name is legal.
      **/
-    bool isLegalIndex(vespalib::stringref idx) const;
+    bool isLegalIndex(vespalib::stringref idx) const override;
 };
 
 }

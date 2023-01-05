@@ -17,7 +17,7 @@ namespace vespalib { class Slime; }
 
 namespace search::docsummary {
 
-class KeywordExtractor;
+class IKeywordExtractor;
 
 static constexpr uint32_t SLIME_MAGIC_ID = 0x55555555;
 
@@ -51,10 +51,10 @@ class DynamicDocsumWriter : public IDocsumWriter
 {
 private:
     std::unique_ptr<ResultConfig>                         _resultConfig;
-    std::unique_ptr<KeywordExtractor>                     _keywordExtractor;
+    std::unique_ptr<IKeywordExtractor>                    _keywordExtractor;
 
 public:
-    DynamicDocsumWriter(std::unique_ptr<ResultConfig> config, std::unique_ptr<KeywordExtractor> extractor);
+    DynamicDocsumWriter(std::unique_ptr<ResultConfig> config, std::unique_ptr<IKeywordExtractor> extractor);
     DynamicDocsumWriter(const DynamicDocsumWriter &) = delete;
     DynamicDocsumWriter& operator=(const DynamicDocsumWriter &) = delete;
     ~DynamicDocsumWriter() override;

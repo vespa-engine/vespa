@@ -86,7 +86,7 @@ DynamicDocsumWriter::insertDocsum(const ResolveClassInfo & rci, uint32_t docid, 
     }
 }
 
-DynamicDocsumWriter::DynamicDocsumWriter(std::unique_ptr<ResultConfig> config, std::unique_ptr<KeywordExtractor> extractor)
+DynamicDocsumWriter::DynamicDocsumWriter(std::unique_ptr<ResultConfig> config, std::unique_ptr<IKeywordExtractor> extractor)
     : _resultConfig(std::move(config)),
       _keywordExtractor(std::move(extractor))
 {
