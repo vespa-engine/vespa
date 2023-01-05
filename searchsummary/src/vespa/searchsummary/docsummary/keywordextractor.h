@@ -24,7 +24,6 @@ public:
 
 private:
     using Set = vespalib::hash_set<vespalib::string>;
-    const IDocsumEnvironment *_env;
     std::vector<IndexPrefix>  _legalPrefixes;
     Set                       _legalIndexes;
 
@@ -46,7 +45,7 @@ private:
     }
     bool isLegalIndexName(const char *idxName) const;
 public:
-    explicit KeywordExtractor(const IDocsumEnvironment * env);
+    KeywordExtractor();
     KeywordExtractor(const KeywordExtractor &) = delete;
     KeywordExtractor& operator=(const KeywordExtractor &) = delete;
     ~KeywordExtractor();
