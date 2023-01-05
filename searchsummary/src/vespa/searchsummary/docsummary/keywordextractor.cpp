@@ -18,7 +18,8 @@ bool useful(search::ParseItem::ItemCreator creator)
 
 
 KeywordExtractor::KeywordExtractor()
-    : _legalPrefixes(),
+    : IKeywordExtractor(),
+      _legalPrefixes(),
       _legalIndexes()
 {
 }

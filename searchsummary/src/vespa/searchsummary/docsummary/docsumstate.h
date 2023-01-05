@@ -26,7 +26,7 @@ namespace search::docsummary {
 
 class GetDocsumsState;
 class IDocsumEnvironment;
-class KeywordExtractor;
+class IKeywordExtractor;
 class DocsumFieldWriterState;
 
 class GetDocsumsStateCallback
@@ -52,7 +52,7 @@ public:
 
     GetDocsumArgs               _args;      // from getdocsums request
     std::vector<uint32_t>       _docsumbuf; // from getdocsums request
-    KeywordExtractor           *_kwExtractor;
+    IKeywordExtractor          *_kwExtractor;
 
     GetDocsumsStateCallback    &_callback;
 

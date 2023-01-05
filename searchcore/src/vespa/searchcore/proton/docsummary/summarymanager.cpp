@@ -10,7 +10,7 @@
 #include <vespa/searchcore/proton/flushengine/shrink_lid_space_flush_target.h>
 #include <vespa/vespalib/util/lambdatask.h>
 #include <vespa/searchsummary/docsummary/docsum_field_writer_factory.h>
-#include <vespa/searchsummary/docsummary/keywordextractor.h>
+#include <vespa/searchsummary/docsummary/i_keyword_extractor.h>
 #include <vespa/vespalib/util/exceptions.h>
 #include <vespa/fastlib/text/normwordfolder.h>
 #include <vespa/config-summary.h>
@@ -105,7 +105,7 @@ SummarySetup(const vespalib::string & baseDir, const SummaryConfig & summaryCfg,
     }
     docsum_field_writer_factory.reset();
 
-    _docsumWriter = std::make_unique<DynamicDocsumWriter>(std::move(resultConfig), std::unique_ptr<KeywordExtractor>());
+    _docsumWriter = std::make_unique<DynamicDocsumWriter>(std::move(resultConfig), std::unique_ptr<IKeywordExtractor>());
 }
 
 IDocsumStore::UP
