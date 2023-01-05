@@ -12,7 +12,6 @@ import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.config.application.api.DeploymentInstanceSpec;
 import com.yahoo.config.application.api.DeploymentSpec;
 import com.yahoo.config.model.ConfigModelContext;
-import com.yahoo.config.model.ConfigModelContext.ApplicationType;
 import com.yahoo.config.model.api.ApplicationClusterEndpoint;
 import com.yahoo.config.model.api.ConfigServerSpec;
 import com.yahoo.config.model.api.ContainerEndpoint;
@@ -597,9 +596,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
     }
 
     private static boolean isHostedTenantApplication(ConfigModelContext context) {
-        var deployState = context.getDeployState();
-        boolean isTesterApplication = deployState.getProperties().applicationId().instance().isTester();
-        return deployState.isHosted() && context.getApplicationType() == ApplicationType.DEFAULT && !isTesterApplication;
+        return context.getDeployState().isHostedTenantApplication(context.getApplicationType());
     }
 
     private static void addHostedImplicitHttpIfNotPresent(DeployState deployState, ApplicationContainerCluster cluster) {
