@@ -529,7 +529,7 @@ public class RoutingPoliciesTest {
         AtomicBoolean done = new AtomicBoolean();
         new Thread(() -> {
             while ( ! done.get()) {
-                app.flushDnsUpdates();
+                app.flushDnsUpdates(Integer.MAX_VALUE);
                 try { Thread.sleep(10); } catch (InterruptedException e) { break; }
             }
         }).start();
