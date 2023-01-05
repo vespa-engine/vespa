@@ -12,9 +12,8 @@ LOG_SETUP(".slobrok.server.exchange_manager");
 namespace slobrok {
 
 namespace {
-unsigned long now() {
-    using namespace std::chrono;
-    return duration_cast<seconds>(steady_clock::now().time_since_epoch()).count();
+vespalib::steady_time now() {
+    return vespalib::steady_clock::now();
 }
 }
 
@@ -126,7 +125,7 @@ ExchangeManager::healthCheck()
         }
     }
     if (someBad) {
-        _env.setConsensusTime(now() - _lastFullConsensusTime);
+        _env.setConsensusTime(vespalib::to_s(now() - _lastFullConsensusTime));
     } else {
         _lastFullConsensusTime = now();
         _env.setConsensusTime(0);
