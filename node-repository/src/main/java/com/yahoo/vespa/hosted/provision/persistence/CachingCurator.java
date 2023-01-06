@@ -68,7 +68,7 @@ public class CachingCurator {
                      .toList();
     }
 
-    // TODO(mpolden): Remove this
+    // TODO(mpolden): Remove after 2023-02-01
     public void deleteRecursively(Path path) {
         curator.delete(path);
     }
