@@ -32,6 +32,7 @@ import com.yahoo.vespa.hosted.controller.api.integration.organization.SystemMoni
 import com.yahoo.vespa.hosted.controller.api.integration.resource.CostReportConsumer;
 import com.yahoo.vespa.hosted.controller.api.integration.resource.ResourceDatabaseClient;
 import com.yahoo.vespa.hosted.controller.api.integration.secrets.GcpSecretStore;
+import com.yahoo.vespa.hosted.controller.api.integration.secrets.EndpointSecretManager;
 import com.yahoo.vespa.hosted.controller.api.integration.secrets.TenantSecretService;
 import com.yahoo.vespa.hosted.controller.api.integration.user.RoleMaintainer;
 import com.yahoo.vespa.hosted.controller.api.integration.vcmr.ChangeRequestClient;
@@ -105,6 +106,8 @@ public interface ServiceRegistry {
     Optional<? extends ArtifactRegistry> artifactRegistry(CloudName cloudName);
 
     TenantSecretService tenantSecretService();
+
+    EndpointSecretManager secretManager();
 
     ArchiveService archiveService();
 
