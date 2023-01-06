@@ -18,6 +18,7 @@ public:
 
     virtual bool isInitializing() const = 0;
     virtual uint32_t getDistributionKey() const = 0;
+    virtual uint32_t getNumThreadsPerSearch() const = 0;
     virtual SessionManager & session_manager() = 0;
     virtual std::shared_ptr<IDocumentDBReferenceRegistry> getDocumentDBReferenceRegistry() const = 0;
 };

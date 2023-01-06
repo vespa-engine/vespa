@@ -17,6 +17,7 @@ struct DummyDBOwner : IDocumentDBOwner {
     bool isInitializing() const override { return false; }
 
     uint32_t getDistributionKey() const override { return -1; }
+    uint32_t getNumThreadsPerSearch() const override { return 1; }
     std::shared_ptr<IDocumentDBReferenceRegistry> getDocumentDBReferenceRegistry() const override;
     SessionManager & session_manager() override;
 };

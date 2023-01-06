@@ -262,6 +262,7 @@ Proton::Proton(FastOS_ThreadPool & threadPool, FNET_Transport & transport, const
       _compile_cache_executor_binding(),
       _queryLimiter(),
       _distributionKey(-1),
+      _numThreadsPerSearch(1),
       _isInitializing(true),
       _abortInit(false),
       _initStarted(false),
@@ -295,6 +296,7 @@ Proton::init(const BootstrapConfig::SP & configSnapshot)
     ensureWritableDir(protonConfig.basedir);
     const HwInfo & hwInfo = configSnapshot->getHwInfo();
     _hw_info = hwInfo;
+    _numThreadsPerSearch = std::min(hwInfo.cpu().cores(), uint32_t(protonConfig.numthreadspersearch));
 
     setBucketCheckSumType(protonConfig);
     setFS4Compression(protonConfig);
@@ -304,7 +306,7 @@ Proton::init(const BootstrapConfig::SP & configSnapshot)
     _metricsEngine->addMetricsHook(*_metricsHook);
     _fileHeaderContext.setClusterName(protonConfig.clustername, protonConfig.basedir);
     _matchEngine = std::make_unique<MatchEngine>(protonConfig.numsearcherthreads,
-                                                 protonConfig.numthreadspersearch,
+                                                 getNumThreadsPerSearch(),
                                                  protonConfig.distributionkey,
                                                  protonConfig.search.async);
     _matchEngine->set_issue_forwarding(protonConfig.forwardIssues);
