@@ -14,6 +14,7 @@ import com.yahoo.vespa.hosted.controller.api.integration.certificates.EndpointCe
 import com.yahoo.vespa.hosted.controller.api.integration.certificates.EndpointCertificateProvider;
 import com.yahoo.vespa.hosted.controller.api.integration.certificates.EndpointCertificateRequestMetadata;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
+import com.yahoo.vespa.hosted.controller.api.integration.secrets.EndpointSecretManager;
 import com.yahoo.vespa.hosted.controller.application.Deployment;
 import com.yahoo.vespa.hosted.controller.application.TenantAndApplicationId;
 import com.yahoo.vespa.hosted.controller.deployment.DeploymentTrigger;
@@ -49,6 +50,7 @@ public class EndpointCertificateMaintainer extends ControllerMaintainer {
     private final Clock clock;
     private final CuratorDb curator;
     private final SecretStore secretStore;
+    private final EndpointSecretManager endpointSecretManager;
     private final EndpointCertificateProvider endpointCertificateProvider;
     final Comparator<EligibleJob> oldestFirst = Comparator.comparing(e -> e.deployment.at());
 
@@ -58,6 +60,7 @@ public class EndpointCertificateMaintainer extends ControllerMaintainer {
         this.deploymentTrigger = controller.applications().deploymentTrigger();
         this.clock = controller.clock();
         this.secretStore = controller.secretStore();
+        this.endpointSecretManager = controller.serviceRegistry().secretManager();
         this.curator = controller().curator();
         this.endpointCertificateProvider = controller.serviceRegistry().endpointCertificateProvider();
     }
@@ -144,9 +147,11 @@ public class EndpointCertificateMaintainer extends ControllerMaintainer {
                 try (Mutex lock = lock(applicationId)) {
                     if (Optional.of(storedMetaData).equals(curator.readEndpointCertificateMetadata(applicationId))) {
                         log.log(Level.INFO, "Cert for app " + applicationId.serializedForm()
-                                + " has not been requested in a month and app has no deployments, deleting from provider and ZK");
+                                + " has not been requested in a month and app has no deployments, deleting from provider, ZK and secret store");
                         endpointCertificateProvider.deleteCertificate(applicationId, storedMetaData.rootRequestId());
                         curator.deleteEndpointCertificateMetadata(applicationId);
+                        endpointSecretManager.deleteSecret(storedMetaData.certName());
+                        endpointSecretManager.deleteSecret(storedMetaData.keyName());
                     }
                 }
             }

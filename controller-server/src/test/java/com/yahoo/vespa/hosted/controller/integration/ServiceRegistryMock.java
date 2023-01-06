@@ -1,12 +1,10 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.integration;
 
-import ai.vespa.http.DomainName;
 import com.yahoo.cloud.config.ConfigserverConfig;
 import com.yahoo.component.AbstractComponent;
 import com.yahoo.component.Version;
 import com.yahoo.component.annotation.Inject;
-import com.yahoo.config.provision.CloudAccount;
 import com.yahoo.config.provision.CloudName;
 import com.yahoo.config.provision.HostName;
 import com.yahoo.config.provision.SystemName;
@@ -31,10 +29,6 @@ import com.yahoo.vespa.hosted.controller.api.integration.certificates.EndpointCe
 import com.yahoo.vespa.hosted.controller.api.integration.certificates.EndpointCertificateValidatorMock;
 import com.yahoo.vespa.hosted.controller.api.integration.dns.MemoryNameService;
 import com.yahoo.vespa.hosted.controller.api.integration.dns.MockVpcEndpointService;
-import com.yahoo.vespa.hosted.controller.api.integration.dns.RecordData;
-import com.yahoo.vespa.hosted.controller.api.integration.dns.RecordName;
-import com.yahoo.vespa.hosted.controller.api.integration.dns.VpcEndpointService;
-import com.yahoo.vespa.hosted.controller.api.integration.dns.VpcEndpointService.DnsChallenge;
 import com.yahoo.vespa.hosted.controller.api.integration.entity.MemoryEntityService;
 import com.yahoo.vespa.hosted.controller.api.integration.horizon.HorizonClient;
 import com.yahoo.vespa.hosted.controller.api.integration.horizon.MockHorizonClient;
@@ -45,7 +39,9 @@ import com.yahoo.vespa.hosted.controller.api.integration.resource.ResourceDataba
 import com.yahoo.vespa.hosted.controller.api.integration.resource.ResourceDatabaseClientMock;
 import com.yahoo.vespa.hosted.controller.api.integration.secrets.GcpSecretStore;
 import com.yahoo.vespa.hosted.controller.api.integration.secrets.NoopGcpSecretStore;
+import com.yahoo.vespa.hosted.controller.api.integration.secrets.NoopEndpointSecretManager;
 import com.yahoo.vespa.hosted.controller.api.integration.secrets.NoopTenantSecretService;
+import com.yahoo.vespa.hosted.controller.api.integration.secrets.EndpointSecretManager;
 import com.yahoo.vespa.hosted.controller.api.integration.stubs.DummyOwnershipIssues;
 import com.yahoo.vespa.hosted.controller.api.integration.stubs.DummySystemMonitor;
 import com.yahoo.vespa.hosted.controller.api.integration.stubs.LoggingDeploymentIssues;
@@ -92,6 +88,7 @@ public class ServiceRegistryMock extends AbstractComponent implements ServiceReg
     private final BillingController billingController = new MockBillingController(clock);
     private final ArtifactRegistryMock containerRegistry = new ArtifactRegistryMock();
     private final NoopTenantSecretService tenantSecretService = new NoopTenantSecretService();
+    private final NoopEndpointSecretManager secretManager = new NoopEndpointSecretManager();
     private final ArchiveService archiveService = new MockArchiveService();
     private final MockChangeRequestClient changeRequestClient = new MockChangeRequestClient();
     private final AccessControlService accessControlService = new MockAccessControlService();
@@ -251,6 +248,11 @@ public class ServiceRegistryMock extends AbstractComponent implements ServiceReg
     @Override
     public NoopTenantSecretService tenantSecretService() {
         return tenantSecretService;
+    }
+
+    @Override
+    public EndpointSecretManager secretManager() {
+        return secretManager;
     }
 
     @Override
