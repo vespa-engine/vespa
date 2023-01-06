@@ -17,6 +17,42 @@
     ZstdInputStream API (which is already implemented by two different people
     but neither PR shows any progress).
   </description>
+
+  <dependencies>
+
+    <dependency>
+      <groupId>org.junit.jupiter</groupId>
+      <artifactId>junit-jupiter</artifactId>
+      <scope>test</scope>
+    </dependency>
+
+    <dependency>
+      <groupId>com.github.luben</groupId>
+      <artifactId>zstd-jni</artifactId>
+      <version>1.5.2-1</version>
+      <scope>test</scope>
+    </dependency>
+
+    <dependency>
+      <groupId>com.google.inject</groupId>
+      <artifactId>guice</artifactId>
+      <scope>test</scope>
+    </dependency>
+
+    <dependency>
+      <groupId>org.assertj</groupId>
+      <artifactId>assertj-core</artifactId>
+      <scope>test</scope>
+    </dependency>
+
+    <dependency>
+      <groupId>org.lz4</groupId>
+      <artifactId>lz4-java</artifactId>
+      <version>1.8.0</version>
+      <scope>test</scope>
+    </dependency>
+  </dependencies>
+
   <build>
     <plugins>
       <plugin>
@@ -27,6 +63,7 @@
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-compiler-plugin</artifactId>
         <configuration>
+          <release>17</release>
           <compilerArgs>
             <arg>-Xlint:all</arg>
             <arg>-Xlint:-serial</arg>
@@ -42,6 +79,46 @@
           <updateReleaseInfo>true</updateReleaseInfo>
         </configuration>
       </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-surefire-plugin</artifactId>
+        <configuration>
+          <redirectTestOutputToFile>false</redirectTestOutputToFile>
+          <forkCount>2</forkCount>
+          <includes>
+            <include>**/TestXxHash64.java</include>
+            <include>**/TestCompressor.java</include>
+          </includes>
+          <argLine>
+            --add-opens=java.base/java.lang=ALL-UNNAMED
+          </argLine>
+          <failIfNoTests>true</failIfNoTests>
+        </configuration>
+      </plugin>
     </plugins>
   </build>
+  <profiles>
+    <profile>
+      <id>stress-tests</id>
+      <build>
+        <plugins>
+          <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-surefire-plugin</artifactId>
+            <configuration>
+              <redirectTestOutputToFile>false</redirectTestOutputToFile>
+              <includes>
+                <include>**/TestZstd.java</include>
+                <include>**/TestZstdInputStream.java</include>
+              </includes>
+              <argLine>
+                --add-opens=java.base/java.lang=ALL-UNNAMED
+              </argLine>
+             <failIfNoTests>true</failIfNoTests>
+            </configuration>
+          </plugin>
+        </plugins>
+      </build>
+    </profile>
+  </profiles>
 </project>
