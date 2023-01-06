@@ -77,8 +77,10 @@ public class Autoscaler {
             return Autoscaling.dontScale(Status.insufficient, "No allocations are possible within configured limits", clusterModel);
 
         if (! worthRescaling(currentAllocation.realResources(), bestAllocation.get().realResources())) {
-            if (bestAllocation.get().fulfilment() < 1)
+            if (bestAllocation.get().fulfilment() < 0.9999999)
                 return Autoscaling.dontScale(Status.insufficient, "Configured limits prevents better scaling of this cluster", clusterModel);
+            else if ( ! clusterModel.safeToScaleDown() && clusterModel.idealLoad().any(v -> v < 1.0))
+                return Autoscaling.dontScale(Status.ideal, "Cooling down before considering to scale down", clusterModel);
             else
                 return Autoscaling.dontScale(Status.ideal, "Cluster is ideally scaled", clusterModel);
         }

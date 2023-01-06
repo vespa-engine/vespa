@@ -8,6 +8,7 @@ package com.yahoo.schema.document;
  * @author baldersheim
  */
 public class Dictionary {
+
     public enum Type { BTREE, HASH, BTREE_AND_HASH };
     private Type type = null;
     private Case casing= null;
@@ -21,7 +22,7 @@ public class Dictionary {
             this.type = Type.BTREE_AND_HASH;
         } else {
             throw new IllegalArgumentException("Can not combine previous dictionary setting " + this.type +
-                    " with current " + type);
+                                               " with current " + type);
         }
     }
     public void updateMatch(Case casing) {
@@ -32,4 +33,5 @@ public class Dictionary {
     }
     public Type getType() { return (type != null) ? type : Type.BTREE; }
     public Case getMatch() { return (casing != null) ? casing : Case.UNCASED; }
+
 }
