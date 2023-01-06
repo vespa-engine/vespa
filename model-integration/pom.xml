@@ -67,6 +67,12 @@
       <groupId>ai.djl.huggingface</groupId>
       <artifactId>tokenizers</artifactId>
       <version>0.20.0</version>
+       <exclusions>
+         <exclusion>
+           <groupId>com.google.code.gson</groupId>
+           <artifactId>gson</artifactId>
+         </exclusion>
+         </exclusions>
     </dependency>
 
     <dependency>
