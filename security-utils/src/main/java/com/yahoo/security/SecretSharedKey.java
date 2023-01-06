@@ -21,4 +21,31 @@ public record SecretSharedKey(SecretKey secretKey, SealedSharedKey sealedSharedK
         return "SharedSecretKey(sealed: %s)".formatted(sealedSharedKey.toTokenString());
     }
 
+    /**
+     * @return an encryption cipher that matches the version of the SealedSharedKey bound to
+     *         the secret shared key
+     */
+    public AeadCipher makeEncryptionCipher() {
+        var version = sealedSharedKey.tokenVersion();
+        return switch (version) {
+            case 1  -> SharedKeyGenerator.makeAesGcmEncryptionCipher(this);
+            case 2  -> SharedKeyGenerator.makeChaCha20Poly1305EncryptionCipher(this);
+            default -> throw new IllegalStateException("Unsupported token version: " + version);
+        };
+    }
+
+    /**
+     * @return a decryption cipher that matches the version of the SealedSharedKey bound to
+     *         the secret shared key. In other words, the cipher shall match the cipher algorithm
+     *         used to perform the encryption this key was used for.
+     */
+    public AeadCipher makeDecryptionCipher() {
+        var version = sealedSharedKey.tokenVersion();
+        return switch (version) {
+            case 1  -> SharedKeyGenerator.makeAesGcmDecryptionCipher(this);
+            case 2  -> SharedKeyGenerator.makeChaCha20Poly1305DecryptionCipher(this);
+            default -> throw new IllegalStateException("Unsupported token version: " + version);
+        };
+    }
+
 }

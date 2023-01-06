@@ -113,7 +113,7 @@ public class DecryptTool implements Tool {
             var privateKey   = ToolUtils.resolvePrivateKeyFromInvocation(invocation, sealedSharedKey.keyId(),
                                                                          !CliUtils.useStdIo(inputArg) && !CliUtils.useStdIo(outputArg));
             var secretShared = SharedKeyGenerator.fromSealedKey(sealedSharedKey, privateKey);
-            var cipher       = SharedKeyGenerator.makeAesGcmDecryptionCipher(secretShared);
+            var cipher       = secretShared.makeDecryptionCipher();
             boolean unZstd   = arguments.hasOption(ZSTD_DECOMPRESS_OPTION);
 
             try (var inStream  = CliUtils.inputStreamFromFileOrStream(inputArg, invocation.stdIn());
