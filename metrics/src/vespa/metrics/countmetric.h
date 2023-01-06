@@ -31,13 +31,11 @@ protected:
     AbstractCountMetric(const String& name, Tags dimensions,
                         const String& description, MetricSet* owner = 0)
         : Metric(name, std::move(dimensions), description, owner)
-    {
-    }
+    { }
 
     AbstractCountMetric(const AbstractCountMetric& other, MetricSet* owner)
         : Metric(other, owner)
-    {
-    }
+    { }
 
     void logWarning(const char* msg, const char * op) const;
 };
@@ -52,7 +50,7 @@ public:
     CountMetric(const String& name, Tags dimensions,
                 const String& description, MetricSet* owner = 0);
 
-    CountMetric(const CountMetric<T, SumOnAdd>& other, CopyType, MetricSet* owner);
+    CountMetric(const CountMetric<T, SumOnAdd>& other, MetricSet* owner);
 
     ~CountMetric() override;
 
@@ -73,9 +71,8 @@ public:
 
 
 
-    CountMetric * clone(std::vector<Metric::UP> &, CopyType type, MetricSet* owner,
-                         bool /*includeUnused*/) const override {
-        return new CountMetric<T, SumOnAdd>(*this, type, owner);
+    CountMetric * clone(std::vector<Metric::UP> &, CopyType, MetricSet* owner, bool) const override {
+        return new CountMetric<T, SumOnAdd>(*this, owner);
     }
 
     T getValue() const { return _values.getValues()._value; }

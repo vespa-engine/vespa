@@ -15,8 +15,7 @@ CountMetric<T, SumOnAdd>::CountMetric(const String& name, Tags dimensions,
 {}
 
 template <typename T, bool SumOnAdd>
-CountMetric<T, SumOnAdd>::CountMetric(const CountMetric<T, SumOnAdd>& other,
-                                      CopyType , MetricSet* owner)
+CountMetric<T, SumOnAdd>::CountMetric(const CountMetric<T, SumOnAdd>& other, MetricSet* owner)
     : AbstractCountMetric(other, owner),
       _values(other._values)
 {
@@ -114,8 +113,7 @@ CountMetric<T, SumOnAdd>::dec(T value)
 
 template <typename T, bool SumOnAdd>
 void
-CountMetric<T, SumOnAdd>::addToSnapshot(
-        Metric& other, std::vector<Metric::UP> &) const
+CountMetric<T, SumOnAdd>::addToSnapshot(Metric& other, std::vector<Metric::UP> &) const
 {
     CountMetric<T, SumOnAdd>& o(reinterpret_cast<CountMetric<T, SumOnAdd>&>(other));
     o.inc(_values.getValues()._value);

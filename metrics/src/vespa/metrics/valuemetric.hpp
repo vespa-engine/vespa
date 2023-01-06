@@ -18,9 +18,7 @@ ValueMetric<AvgVal, TotVal, SumOnAdd>::ValueMetric(
 {}
 
 template<typename AvgVal, typename TotVal, bool SumOnAdd>
-ValueMetric<AvgVal, TotVal, SumOnAdd>::ValueMetric(
-        const ValueMetric<AvgVal, TotVal, SumOnAdd>& other,
-        CopyType, MetricSet* owner)
+ValueMetric<AvgVal, TotVal, SumOnAdd>::ValueMetric(const ValueMetric<AvgVal, TotVal, SumOnAdd>& other, MetricSet* owner)
     : AbstractValueMetric(other, owner),
       _values(other._values)
 {}
