@@ -22,7 +22,6 @@ import com.yahoo.net.HostName;
 import com.yahoo.vespa.flags.InMemoryFlagSource;
 import com.yahoo.vespa.flags.PermanentFlags;
 import com.yahoo.vespa.flags.custom.ClusterCapacity;
-import com.yahoo.vespa.flags.custom.SharedHost;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeList;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
@@ -76,7 +75,6 @@ public class HostCapacityMaintainerTest {
 
         tester.maintain();
         assertTrue(tester.nodeRepository.nodes().node("host2").isEmpty());
-        assertTrue(tester.nodeRepository.nodes().node("host3").isEmpty());
     }
 
     @Test
@@ -205,50 +203,6 @@ public class HostCapacityMaintainerTest {
         assertTrue("Node on deprovisioned host removed", tester.nodeRepository.nodes().node("host2-1").isEmpty());
         assertTrue("One 1-30-20-3 node fits on host3", tester.nodeRepository.nodes().node("host3").isPresent());
         assertTrue("New 48-128-1000-10 host added", tester.nodeRepository.nodes().node("host100").isPresent());
-    }
-
-    @Test
-    public void verify_min_count_of_shared_hosts() {
-        // What's going on here?  We are trying to verify the impact of varying the minimum number of
-        // shared hosts (SharedHost.minCount()).
-        //
-        // addInitialNodes() adds 4 tenant hosts:
-        //   host1    shared   !removable   # not removable because it got child nodes w/allocation
-        //   host2   !shared    removable   # not counted as a shared host because it is failed
-        //   host3    shared    removable
-        //   host4    shared   !removable   # not removable because it got child nodes w/allocation
-        //
-        // Hosts 1, 3, and 4 count as "shared hosts" with respect to the minCount lower boundary.
-        // Hosts 3 and 4 are removable, that is they will be deprovisioned as excess hosts unless
-        // prevented by minCount.
-
-        // minCount=0: All (2) removable hosts are deprovisioned
-        assertWithMinCount(0, 0, 2);
-        // minCount=1: The same thing happens, because there are 2 shared hosts left
-        assertWithMinCount(1, 0, 2);
-        assertWithMinCount(2, 0, 2);
-        // minCount=3: since we require 3 shared hosts, host3 is not deprovisioned.
-        assertWithMinCount(3, 0, 1);
-        // 4 shared hosts require we provision 1 shared host
-        assertWithMinCount(4, 1, 1);
-        // 5 shared hosts require we provision 2 shared hosts
-        assertWithMinCount(5, 2, 1);
-        assertWithMinCount(6, 3, 1);
-    }
-
-    private void assertWithMinCount(int minCount, int provisionCount, int deprovisionCount) {
-        var tester = new DynamicProvisioningTester().addInitialNodes();
-        tester.hostProvisioner.overrideHostFlavor("host4");
-
-        tester.flagSource.withJacksonFlag(PermanentFlags.SHARED_HOST.id(), new SharedHost(null, minCount), SharedHost.class);
-        tester.maintain();
-        assertEquals(provisionCount, tester.hostProvisioner.provisionedHosts().size());
-        assertEquals(deprovisionCount, tester.hostProvisioner.deprovisionedHosts());
-
-        // Verify next maintain is a no-op
-        tester.maintain();
-        assertEquals(provisionCount, tester.hostProvisioner.provisionedHosts().size());
-        assertEquals(deprovisionCount, tester.hostProvisioner.deprovisionedHosts());
     }
 
     @Test

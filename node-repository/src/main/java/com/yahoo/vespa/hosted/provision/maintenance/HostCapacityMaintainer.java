@@ -14,11 +14,9 @@ import com.yahoo.jdisc.Metric;
 import com.yahoo.lang.MutableInteger;
 import com.yahoo.transaction.Mutex;
 import com.yahoo.vespa.flags.FlagSource;
-import com.yahoo.vespa.flags.JacksonFlag;
 import com.yahoo.vespa.flags.ListFlag;
 import com.yahoo.vespa.flags.PermanentFlags;
 import com.yahoo.vespa.flags.custom.ClusterCapacity;
-import com.yahoo.vespa.flags.custom.SharedHost;
 import com.yahoo.vespa.hosted.provision.LockedNodeList;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeList;
@@ -33,7 +31,6 @@ import com.yahoo.vespa.hosted.provision.provisioning.NodeCandidate;
 import com.yahoo.vespa.hosted.provision.provisioning.NodePrioritizer;
 import com.yahoo.vespa.hosted.provision.provisioning.NodeSpec;
 import com.yahoo.vespa.hosted.provision.provisioning.ProvisionedHost;
-
 import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
@@ -43,7 +40,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.function.Function;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
@@ -58,7 +54,6 @@ public class HostCapacityMaintainer extends NodeRepositoryMaintainer {
 
     private final HostProvisioner hostProvisioner;
     private final ListFlag<ClusterCapacity> preprovisionCapacityFlag;
-    private final JacksonFlag<SharedHost> sharedHostFlag;
 
     HostCapacityMaintainer(NodeRepository nodeRepository,
                            Duration interval,
@@ -68,7 +63,6 @@ public class HostCapacityMaintainer extends NodeRepositoryMaintainer {
         super(nodeRepository, interval, metric);
         this.hostProvisioner = hostProvisioner;
         this.preprovisionCapacityFlag = PermanentFlags.PREPROVISION_CAPACITY.bindTo(flagSource);
-        this.sharedHostFlag = PermanentFlags.SHARED_HOST.bindTo(flagSource);
     }
 
     @Override
@@ -132,28 +126,9 @@ public class HostCapacityMaintainer extends NodeRepositoryMaintainer {
      */
     private List<Node> provision(NodeList nodeList) {
         var nodes = new ArrayList<>(provisionUntilNoDeficit(nodeList));
-        var sharedHosts = new HashMap<>(findSharedHosts(nodeList));
-        int minCount = sharedHostFlag.value().getMinCount();
-        int deficit = minCount - sharedHosts.size();
-        if (deficit > 0) {
-            provisionHosts(deficit, NodeResources.unspecified())
-                    .forEach(host -> {
-                        sharedHosts.put(host.hostname(), host);
-                        nodes.add(host);
-                    });
-        }
-
         return candidatesForRemoval(nodes).stream()
                 .sorted(Comparator.comparing(node -> node.history().events().stream()
                                                          .map(History.Event::at).min(Comparator.naturalOrder()).orElse(Instant.MIN)))
-                .filter(node -> {
-                    if (!sharedHosts.containsKey(node.hostname()) || sharedHosts.size() > minCount) {
-                        sharedHosts.remove(node.hostname());
-                        return true;
-                    } else {
-                        return false;
-                    }
-                })
                 .toList();
     }
 
@@ -184,14 +159,6 @@ public class HostCapacityMaintainer extends NodeRepositoryMaintainer {
     static boolean canDeprovision(Node node) {
         return node.status().wantToDeprovision() && (node.state() == Node.State.parked ||
                                                      node.state() == Node.State.failed);
-    }
-
-    private Map<String, Node> findSharedHosts(NodeList nodeList) {
-        return nodeList.stream()
-                .filter(node -> nodeRepository().nodes().canAllocateTenantNodeTo(node, true))
-                .filter(node -> node.reservedTo().isEmpty())
-                .filter(node -> node.exclusiveToApplicationId().isEmpty())
-                .collect(Collectors.toMap(Node::hostname, Function.identity()));
     }
 
     /**
