@@ -1,7 +1,6 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model.container.xml;
 
-import com.yahoo.component.ComponentId;
 import com.yahoo.component.ComponentSpecification;
 import com.yahoo.component.Version;
 import com.yahoo.component.chain.dependencies.Dependencies;
@@ -13,7 +12,6 @@ import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.config.application.api.DeploymentInstanceSpec;
 import com.yahoo.config.application.api.DeploymentSpec;
 import com.yahoo.config.model.ConfigModelContext;
-import com.yahoo.config.model.ConfigModelContext.ApplicationType;
 import com.yahoo.config.model.api.ApplicationClusterEndpoint;
 import com.yahoo.config.model.api.ConfigServerSpec;
 import com.yahoo.config.model.api.ContainerEndpoint;
@@ -77,7 +75,6 @@ import com.yahoo.vespa.model.container.component.Handler;
 import com.yahoo.vespa.model.container.component.SimpleComponent;
 import com.yahoo.vespa.model.container.component.SystemBindingPattern;
 import com.yahoo.vespa.model.container.component.UserBindingPattern;
-import com.yahoo.vespa.model.container.component.chain.Chain;
 import com.yahoo.vespa.model.container.docproc.ContainerDocproc;
 import com.yahoo.vespa.model.container.docproc.DocprocChains;
 import com.yahoo.vespa.model.container.http.AccessControl;
@@ -90,6 +87,7 @@ import com.yahoo.vespa.model.container.http.Http;
 import com.yahoo.vespa.model.container.http.JettyHttpServer;
 import com.yahoo.vespa.model.container.http.ssl.HostedSslConnectorFactory;
 import com.yahoo.vespa.model.container.http.xml.HttpBuilder;
+import com.yahoo.vespa.model.container.http.HttpFilterChain;
 import com.yahoo.vespa.model.container.processing.ProcessingChains;
 import com.yahoo.vespa.model.container.search.ContainerSearch;
 import com.yahoo.vespa.model.container.search.PageTemplates;
@@ -98,6 +96,7 @@ import com.yahoo.vespa.model.container.xml.document.DocumentFactoryBuilder;
 import com.yahoo.vespa.model.content.StorageGroup;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
+
 import java.io.IOException;
 import java.io.Reader;
 import java.net.URI;
@@ -462,7 +461,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
         if (!deployState.isHosted() || !deployState.zone().system().isPublic()) return;
 
         // Setup secure filter chain
-        var secureChain = new Chain<Filter>(FilterChains.emptyChainSpec(ComponentId.fromString("cloud-data-plane-secure")));
+        var secureChain = new HttpFilterChain("cloud-data-plane-secure", HttpFilterChain.Type.SYSTEM);
         secureChain.addInnerComponent(new CloudDataPlaneFilter(cluster, cluster.clientsLegacyMode()));
         cluster.getHttp().getFilterChains().add(secureChain);
         // Set cloud data plane filter as default request filter chain for data plane connector
@@ -471,7 +470,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
                 .setDefaultRequestFilterChain(secureChain.getComponentId());
 
         // Setup insecure filter chain
-        var insecureChain = new Chain<Filter>(FilterChains.emptyChainSpec(ComponentId.fromString("cloud-data-plane-insecure")));
+        var insecureChain = new HttpFilterChain("cloud-data-plane-insecure", HttpFilterChain.Type.SYSTEM);
         insecureChain.addInnerComponent(new Filter(
                 new ChainedComponentModel(
                         new BundleInstantiationSpecification(
@@ -597,9 +596,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
     }
 
     private static boolean isHostedTenantApplication(ConfigModelContext context) {
-        var deployState = context.getDeployState();
-        boolean isTesterApplication = deployState.getProperties().applicationId().instance().isTester();
-        return deployState.isHosted() && context.getApplicationType() == ApplicationType.DEFAULT && !isTesterApplication;
+        return context.getDeployState().isHostedTenantApplication(context.getApplicationType());
     }
 
     private static void addHostedImplicitHttpIfNotPresent(DeployState deployState, ApplicationContainerCluster cluster) {

@@ -12,8 +12,6 @@ import com.yahoo.vespa.model.container.http.Http;
 
 import java.util.logging.Level;
 
-import static com.yahoo.config.model.ConfigModelContext.ApplicationType.HOSTED_INFRASTRUCTURE;
-
 /**
  * Validates URI bindings for filters and handlers
  *
@@ -71,7 +69,7 @@ class UriBindingsValidator extends Validator {
     }
 
     private static boolean isHostedApplication(VespaModel model, DeployState deployState) {
-        return deployState.isHosted() && model.getAdmin().getApplicationType() != HOSTED_INFRASTRUCTURE;
+        return deployState.isHostedTenantApplication(model.getAdmin().getApplicationType());
     }
 
     private static String createErrorMessage(BindingPattern binding, String message) {

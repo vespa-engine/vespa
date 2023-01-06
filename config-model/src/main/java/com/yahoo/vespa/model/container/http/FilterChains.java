@@ -6,7 +6,6 @@ import com.yahoo.component.ComponentSpecification;
 import com.yahoo.component.chain.model.ChainSpecification;
 import com.yahoo.config.model.producer.AbstractConfigProducer;
 import com.yahoo.vespa.model.container.component.SimpleComponent;
-import com.yahoo.vespa.model.container.component.chain.Chain;
 import com.yahoo.vespa.model.container.component.chain.Chains;
 
 import java.util.Set;
@@ -14,16 +13,16 @@ import java.util.Set;
 /**
  * @author Tony Vaagenes
  */
-public class FilterChains extends Chains<Chain<Filter>>  {
+public class FilterChains extends Chains<HttpFilterChain>  {
 
-    public FilterChains(AbstractConfigProducer parent) {
+    public FilterChains(AbstractConfigProducer<?> parent) {
         super(parent, "filters");
 
         addChild(new SimpleComponent("com.yahoo.container.http.filter.FilterChainRepository"));
     }
 
     public boolean hasChain(ComponentId filterChain) {
-        for (Chain<Filter> chain : allChains().allComponents()) {
+        for (HttpFilterChain chain : allChains().allComponents()) {
             if (chain.getId().equals(filterChain))
                 return true;
         }
@@ -31,7 +30,7 @@ public class FilterChains extends Chains<Chain<Filter>>  {
     }
 
     public boolean hasChainThatInherits(ComponentId filterChain) {
-        for (Chain<Filter> chain : allChains().allComponents()) {
+        for (HttpFilterChain chain : allChains().allComponents()) {
             for (ComponentSpecification spec : chain.getChainSpecification().inheritance.chainSpecifications) {
                 if(spec.toId().equals(filterChain))
                     return true;

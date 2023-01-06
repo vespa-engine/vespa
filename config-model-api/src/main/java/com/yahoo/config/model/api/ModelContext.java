@@ -180,6 +180,8 @@ public interface ModelContext {
 
         default Optional<CloudAccount> cloudAccount() { return Optional.empty(); }
 
+        default boolean allowUserFilters() { return true; }
+
     }
 
     @Retention(RetentionPolicy.RUNTIME)

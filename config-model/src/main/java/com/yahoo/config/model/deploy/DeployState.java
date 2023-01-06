@@ -11,6 +11,7 @@ import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.config.application.api.FileRegistry;
 import com.yahoo.config.application.api.UnparsedConfigDefinition;
 import com.yahoo.config.application.api.ValidationOverrides;
+import com.yahoo.config.model.ConfigModelContext.ApplicationType;
 import com.yahoo.config.model.api.ConfigDefinitionRepo;
 import com.yahoo.config.model.api.ContainerEndpoint;
 import com.yahoo.config.model.api.EndpointCertificateSecrets;
@@ -28,11 +29,11 @@ import com.yahoo.config.model.test.MockApplicationPackage;
 import com.yahoo.config.provision.DockerImage;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.io.IOUtils;
-import com.yahoo.search.query.profile.QueryProfileRegistry;
 import com.yahoo.schema.Application;
+import com.yahoo.schema.ApplicationBuilder;
 import com.yahoo.schema.RankProfileRegistry;
 import com.yahoo.schema.Schema;
-import com.yahoo.schema.ApplicationBuilder;
+import com.yahoo.search.query.profile.QueryProfileRegistry;
 import com.yahoo.vespa.config.ConfigDefinition;
 import com.yahoo.vespa.config.ConfigDefinitionBuilder;
 import com.yahoo.vespa.config.ConfigDefinitionKey;
@@ -301,6 +302,11 @@ public class DeployState implements ConfigDefinitionStore {
     }
 
     public Optional<Reindexing> reindexing() { return Optional.ofNullable(reindexing); }
+
+    public boolean isHostedTenantApplication(ApplicationType type) {
+        boolean isTesterApplication = getProperties().applicationId().instance().isTester();
+        return isHosted() && type == ApplicationType.DEFAULT && !isTesterApplication;
+    }
 
     public static class Builder {
 

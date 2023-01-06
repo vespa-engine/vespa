@@ -315,6 +315,12 @@ public class PermanentFlags {
             APPLICATION_ID
     );
 
+    public static final UnboundBooleanFlag ALLOW_USER_FILTERS = defineFeatureFlag(
+            "allow-user-filters", true,
+            "Allow user filter (chains) in application",
+            "Takes effect on next redeployment",
+            APPLICATION_ID);
+
     private PermanentFlags() {}
 
     private static UnboundBooleanFlag defineFeatureFlag(
