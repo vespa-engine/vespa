@@ -16,9 +16,9 @@ CountMetric<T, SumOnAdd>::CountMetric(const String& name, Tags dimensions,
 
 template <typename T, bool SumOnAdd>
 CountMetric<T, SumOnAdd>::CountMetric(const CountMetric<T, SumOnAdd>& other,
-                                      CopyType copyType, MetricSet* owner)
+                                      CopyType , MetricSet* owner)
     : AbstractCountMetric(other, owner),
-      _values(other._values, copyType == CLONE ? other._values.size() : 1)
+      _values(other._values)
 {
 }
 
@@ -117,8 +117,7 @@ void
 CountMetric<T, SumOnAdd>::addToSnapshot(
         Metric& other, std::vector<Metric::UP> &) const
 {
-    CountMetric<T, SumOnAdd>& o(
-            reinterpret_cast<CountMetric<T, SumOnAdd>&>(other));
+    CountMetric<T, SumOnAdd>& o(reinterpret_cast<CountMetric<T, SumOnAdd>&>(other));
     o.inc(_values.getValues()._value);
 }
 
@@ -126,8 +125,7 @@ template <typename T, bool SumOnAdd>
 void
 CountMetric<T, SumOnAdd>::addToPart(Metric& other) const
 {
-    CountMetric<T, SumOnAdd>& o(
-            reinterpret_cast<CountMetric<T, SumOnAdd>&>(other));
+    CountMetric<T, SumOnAdd>& o(reinterpret_cast<CountMetric<T, SumOnAdd>&>(other));
     if (SumOnAdd) {
         o.inc(_values.getValues()._value);
     } else {
@@ -158,9 +156,7 @@ void
 CountMetric<T, SumOnAdd>::addMemoryUsage(MemoryConsumption& mc) const
 {
     ++mc._countMetricCount;
-    mc._countMetricValues += _values.getMemoryUsageAllocatedInternally();
-    mc._countMetricMeta += sizeof(CountMetric<T, SumOnAdd>)
-                         - sizeof(Metric);
+    mc._countMetricMeta += sizeof(CountMetric<T, SumOnAdd>) - sizeof(Metric);
     Metric::addMemoryUsage(mc);
 }
 
