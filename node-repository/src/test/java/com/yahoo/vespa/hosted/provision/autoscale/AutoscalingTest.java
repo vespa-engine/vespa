@@ -743,6 +743,28 @@ public class AutoscalingTest {
                                          fixture.currentResources().advertisedResources());
     }
 
+    /** Tests an autoscaling scenario which should cause in-place resize. */
+    @Test
+    public void test_resize() {
+        var min = new ClusterResources(7, 1, new NodeResources(  2, 10, 384, 1));
+        var now = new ClusterResources(7, 1, new NodeResources(  3.4, 16.2, 450.1, 1));
+        var max = new ClusterResources(7, 1, new NodeResources(  4, 32, 768, 1));
+        var fixture = AutoscalingTester.fixture()
+                                       .awsProdSetup(true)
+                                       .capacity(Capacity.from(min, max))
+                                       .initialResources(Optional.of(now))
+                                       .build();
+        var initialNodes = fixture.nodes().asList();
+        fixture.tester().clock().advance(Duration.ofDays(2));
+        fixture.loader().applyLoad(new Load(0.06, 0.52, 0.27), 100);
+        var autoscaling = fixture.autoscale();
+        fixture.tester().assertResources("Scaling down",
+                                         7, 1, 2, 15.9, 384.0,
+                                         autoscaling);
+        fixture.deploy(Capacity.from(autoscaling.resources().get()));
+        assertEquals("Initial nodes are kept", initialNodes, fixture.nodes().asList());
+    }
+
     private ClusterSpec clusterSpec(boolean exclusive) {
         return ClusterSpec.request(ClusterSpec.Type.container,
                                    ClusterSpec.Id.from("test")).vespaVersion("8.1.2")

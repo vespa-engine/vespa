@@ -111,7 +111,6 @@ public class ClusterModel {
     /** Returns the relative load adjustment that should be made to this cluster given available measurements. */
     public Load loadAdjustment() {
         if (nodeTimeseries().isEmpty()) return Load.one();
-
         Load adjustment = peakLoad().divide(idealLoad());
         if (! safeToScaleDown())
             adjustment = adjustment.map(v -> v < 1 ? 1 : v);
@@ -119,7 +118,7 @@ public class ClusterModel {
     }
 
     /** Are we in a position to make decisions to scale down at this point? */
-    private boolean safeToScaleDown() {
+    public boolean safeToScaleDown() {
         if (hasScaledIn(scalingDuration().multipliedBy(3))) return false;
         if (nodeTimeseries().nodesMeasured() != nodeCount()) return false;
         return true;
