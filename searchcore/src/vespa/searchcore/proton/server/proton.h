@@ -122,6 +122,7 @@ private:
     vespalib::eval::CompileCache::ExecutorBinding::UP _compile_cache_executor_binding;
     matching::QueryLimiter          _queryLimiter;
     uint32_t                        _distributionKey;
+    uint32_t                        _numThreadsPerSearch;
     bool                            _isInitializing;
     bool                            _abortInit;
     bool                            _initStarted;
@@ -222,6 +223,7 @@ public:
 
     bool hasAbortedInit() const { return _abortInit; }
     storage::spi::PersistenceProvider & getPersistence();
+    uint32_t getNumThreadsPerSearch() const override { return _numThreadsPerSearch; }
 
     void get_state(const vespalib::slime::Inserter &inserter, bool full) const override;
     std::vector<vespalib::string> get_children_names() const override;
