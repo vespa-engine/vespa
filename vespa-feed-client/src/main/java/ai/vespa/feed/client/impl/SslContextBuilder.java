@@ -85,7 +85,7 @@ class SslContextBuilder {
             } else if (hasCaCertificateInstance()) {
                 addCaCertificates(keystore, caCertificates);
             }
-            SSLContext sslContext = SSLContext.getInstance("TLSv1.2"); // Protocol version must match TlsContext.SSL_CONTEXT_VERSION
+            SSLContext sslContext = SSLContext.getInstance("TLS");
             sslContext.init(
                     createKeyManagers(keystore).orElse(null),
                     createTrustManagers(keystore).orElse(null),

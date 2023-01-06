@@ -2,17 +2,18 @@
 package com.yahoo.vespa.hosted.controller.proxy;
 
 import ai.vespa.http.HttpURL.Path;
-import ai.vespa.util.http.hc4.SslConnectionSocketFactory;
 import com.github.tomakehurst.wiremock.junit5.WireMockExtension;
 import com.github.tomakehurst.wiremock.stubbing.Scenario;
 import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.container.jdisc.HttpResponse;
 import com.yahoo.yolean.concurrent.Sleeper;
+import org.apache.http.conn.ssl.SSLConnectionSocketFactory;
 import org.apache.http.protocol.HttpContext;
 import org.apache.http.protocol.HttpCoreContext;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
+import javax.net.ssl.SSLContext;
 import java.io.ByteArrayOutputStream;
 import java.net.URI;
 import java.util.HashMap;
@@ -37,7 +38,8 @@ public class ConfigServerRestExecutorImplTest {
     @Test
     void proxy_with_retries() throws Exception {
         var connectionReuseStrategy = new CountingConnectionReuseStrategy(Set.of("127.0.0.1"));
-        var proxy = new ConfigServerRestExecutorImpl(SslConnectionSocketFactory.of(), Sleeper.NOOP, connectionReuseStrategy);
+        var proxy = new ConfigServerRestExecutorImpl(new SSLConnectionSocketFactory(SSLContext.getDefault()),
+                Sleeper.NOOP, connectionReuseStrategy);
 
         URI url = url();
         String path = url.getPath();
@@ -61,7 +63,9 @@ public class ConfigServerRestExecutorImplTest {
     @Test
     void proxy_without_connection_reuse() throws Exception {
         var connectionReuseStrategy = new CountingConnectionReuseStrategy(Set.of());
-        var proxy = new ConfigServerRestExecutorImpl(SslConnectionSocketFactory.of(), Sleeper.NOOP, connectionReuseStrategy);
+        var proxy = new ConfigServerRestExecutorImpl(new SSLConnectionSocketFactory(SSLContext.getDefault()),
+                Sleeper.NOOP, connectionReuseStrategy);
+
         URI url = url();
         String path = url.getPath();
         stubRequests(path);

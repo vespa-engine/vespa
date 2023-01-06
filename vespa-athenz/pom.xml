@@ -121,12 +121,6 @@
                 </exclusion>
             </exclusions>
         </dependency>
-        <dependency>
-            <groupId>com.yahoo.vespa</groupId>
-            <artifactId>http-utils</artifactId>
-            <version>${project.version}</version>
-            <scope>compile</scope>
-        </dependency>
         <dependency> <!-- needed by auth-core -->
             <groupId>io.jsonwebtoken</groupId>
             <artifactId>jjwt-impl</artifactId>

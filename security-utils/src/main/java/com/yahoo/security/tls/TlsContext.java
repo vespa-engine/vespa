@@ -4,8 +4,6 @@ package com.yahoo.security.tls;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLEngine;
 import javax.net.ssl.SSLParameters;
-import java.security.KeyManagementException;
-import java.security.NoSuchAlgorithmException;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
@@ -41,12 +39,7 @@ public interface TlsContext extends AutoCloseable {
 
     // TODO Enable TLSv1.3 after upgrading to JDK 17
     Set<String> ALLOWED_PROTOCOLS = Collections.singleton("TLSv1.2");
-
-    /** 
-     * {@link SSLContext} protocol name that supports at least oldest protocol listed in {@link #ALLOWED_PROTOCOLS}
-     * @see SSLContext#getInstance(String)
-     */
-    String SSL_CONTEXT_VERSION = "TLSv1.2";
+    String SSL_CONTEXT_VERSION = "TLS"; // Use SSLContext implementations that supports all TLS versions
 
     /**
      * @return the allowed cipher suites supported by the provided context instance
@@ -65,8 +58,6 @@ public interface TlsContext extends AutoCloseable {
         return enabledCiphers;
     }
 
-    static Set<String> getAllowedCipherSuites() { return getAllowedCipherSuites(defaultSslContext()); }
-
     /**
      * @return the allowed protocols supported by the provided context instance
      */
@@ -81,18 +72,6 @@ public interface TlsContext extends AutoCloseable {
                                   ALLOWED_PROTOCOLS, Arrays.toString(supportedProtocols)));
         }
         return enabledProtocols;
-    }
-
-    static Set<String> getAllowedProtocols() { return getAllowedProtocols(defaultSslContext()); }
-
-    /** @return Default {@link SSLContext} instance without certificate and using JDK's default trust store */
-    static SSLContext defaultSslContext() {
-        try {
-            var ctx = SSLContext.getInstance(SSL_CONTEXT_VERSION);
-            ctx.init(null, null, null);
-            return ctx;
-        } catch (NoSuchAlgorithmException e) { throw new IllegalArgumentException(e);
-        } catch (KeyManagementException e) { throw new IllegalStateException(e); }
     }
 
     SSLContext context();

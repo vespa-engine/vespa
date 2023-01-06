@@ -1,7 +1,6 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.athenz.client.common;
 
-import ai.vespa.util.http.hc4.SslConnectionSocketFactory;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -13,6 +12,7 @@ import org.apache.http.HttpResponse;
 import org.apache.http.client.ResponseHandler;
 import org.apache.http.client.config.RequestConfig;
 import org.apache.http.client.methods.HttpUriRequest;
+import org.apache.http.conn.ssl.SSLConnectionSocketFactory;
 import org.apache.http.entity.ContentType;
 import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.CloseableHttpClient;
@@ -103,7 +103,7 @@ public abstract class ClientBase implements AutoCloseable {
         return HttpClientBuilder.create()
                 .setRetryHandler(new DefaultHttpRequestRetryHandler(3, /*requestSentRetryEnabled*/true))
                 .setUserAgent(userAgent)
-                .setSSLSocketFactory(SslConnectionSocketFactory.of(new ServiceIdentitySslSocketFactory(sslContextSupplier), hostnameVerifier))
+                .setSSLSocketFactory(new SSLConnectionSocketFactory(new ServiceIdentitySslSocketFactory(sslContextSupplier), hostnameVerifier))
                 .setMaxConnPerRoute(8)
                 .setDefaultRequestConfig(RequestConfig.custom()
                                                  .setConnectTimeout((int) Duration.ofSeconds(10).toMillis())
