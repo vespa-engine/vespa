@@ -147,6 +147,7 @@ public class ApplicationHandler extends HttpHandler {
                 break;
             case "distributor":
             case "storagenode":
+                pathPrefix = pathPrefix.append("contentnode-status").append("v1");
                 break;
             default:
                 throw new com.yahoo.vespa.config.server.NotFoundException("No status page for service: " + service);
