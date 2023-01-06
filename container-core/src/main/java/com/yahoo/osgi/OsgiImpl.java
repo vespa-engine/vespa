@@ -88,10 +88,10 @@ public class OsgiImpl implements Osgi {
         throw new IllegalArgumentException(
                 "Could not create a component with id '" + spec.classId.getName() +
                         "'. Tried to load class directly, since no bundle was found for spec: " + spec.bundle +
-                        ". " + bundleResolutionErrorMessage());
+                        ". " + bundleResolutionErrorMessage(spec.bundle));
     }
 
-    protected String bundleResolutionErrorMessage() {
+    protected String bundleResolutionErrorMessage(ComponentSpecification bundleSpec) {
         return " If a bundle with the same name is installed, there is a either a version mismatch " +
                 "or the installed bundle's version contains a qualifier string.";
     }
