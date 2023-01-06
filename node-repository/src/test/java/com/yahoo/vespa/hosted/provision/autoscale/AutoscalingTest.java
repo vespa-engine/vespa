@@ -215,13 +215,13 @@ public class AutoscalingTest {
 
         fixture.loader().applyCpuLoad(0.25f, 120);
         ClusterResources scaledResources = fixture.tester().assertResources("Scaling cpu up",
-                                                                  3, 1, 5,  13.3, 66.1,
+                                                                  4, 1, 4,  16.0, 40.8,
                                                                   fixture.autoscale());
         fixture.deploy(Capacity.from(scaledResources));
         fixture.deactivateRetired(Capacity.from(scaledResources));
         fixture.loader().applyCpuLoad(0.1f, 120);
         fixture.tester().assertResources("Scaling down since cpu usage has gone down",
-                                         3, 1, 2.5, 9.2, 61.1,
+                                         3, 1, 4, 16, 30.6,
                                          fixture.autoscale());
     }
 
@@ -733,7 +733,7 @@ public class AutoscalingTest {
         fixture.loader().applyLoad(new Load(0.1, 0.1, 0.1), 100);
         fixture.tester().assertResources("With non-exclusive nodes, a better solution is " +
                                          "50% more nodes with half the cpu",
-                                         3, 1, 1, 4, 100.0,
+                                         3, 1, 1.1, 4, 100.0,
                                          fixture.autoscale());
 
         fixture.tester().deploy(fixture.applicationId(), clusterSpec(true), fixture.capacity());
@@ -744,7 +744,7 @@ public class AutoscalingTest {
     }
 
     private ClusterSpec clusterSpec(boolean exclusive) {
-        return ClusterSpec.request(ClusterSpec.Type.container,
+        return ClusterSpec.request(ClusterSpec.Type.content,
                                    ClusterSpec.Id.from("test")).vespaVersion("8.1.2")
                           .exclusive(exclusive)
                           .build();
