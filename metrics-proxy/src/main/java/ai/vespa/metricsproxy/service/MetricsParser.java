@@ -130,15 +130,18 @@ public class MetricsParser {
             } else if (fieldName.equals("dimensions")) {
                 dim = parseDimensions(parser, uniqueDimensions);
             } else if (fieldName.equals("values")) {
-                values = parseValues(name+".", parser);
+                values = parseValues(parser);
             } else {
                 if (token == JsonToken.START_OBJECT || token == JsonToken.START_ARRAY) {
                     parser.skipChildren();
                 }
             }
         }
+        if (name.equals("")) {
+            throw new IOException("missing name for entry in 'values' array");
+        }
         for (Map.Entry<String, Number> value : values) {
-            consumer.accept(new Metric(MetricId.toMetricId(value.getKey()), value.getValue(), timestamp, dim, description));
+            consumer.accept(new Metric(MetricId.toMetricId(name+"."+value.getKey()), value.getValue(), timestamp, dim, description));
         }
     }
 
@@ -171,12 +174,12 @@ public class MetricsParser {
         }
     }
 
-    private static List<Map.Entry<String, Number>> parseValues(String prefix, JsonParser parser) throws IOException {
+    private static List<Map.Entry<String, Number>> parseValues(JsonParser parser) throws IOException {
         List<Map.Entry<String, Number>> metrics = new ArrayList<>();
         for (parser.nextToken(); parser.getCurrentToken() != JsonToken.END_OBJECT; parser.nextToken()) {
             String fieldName = parser.getCurrentName();
             JsonToken token = parser.nextToken();
-            String metricName = prefix + fieldName;
+            String metricName = fieldName;
             if (token == JsonToken.VALUE_NUMBER_INT) {
                 metrics.add(Map.entry(metricName, parser.getLongValue()));
             } else if (token == JsonToken.VALUE_NUMBER_FLOAT) {

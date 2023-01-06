@@ -54,6 +54,8 @@ public class VespaMetricSet {
         Set<Metric> metrics = new LinkedHashSet<>();
 
         metrics.add(new Metric("slobrok.heartbeats.failed.count"));
+        metrics.add(new Metric("slobrok.missing.consensus.count"));
+
         metrics.add(new Metric("logd.processed.lines.count"));
         metrics.add(new Metric("worker.connections.max"));
         metrics.add(new Metric("endpoint.certificate.expiry.seconds"));
