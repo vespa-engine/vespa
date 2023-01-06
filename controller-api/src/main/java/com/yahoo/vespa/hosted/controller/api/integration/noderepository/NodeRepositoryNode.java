@@ -517,6 +517,7 @@ public class NodeRepositoryNode {
                ", modelName='" + modelName + '\'' +
                ", reservedTo='" + reservedTo + '\'' +
                ", exclusiveTo='" + exclusiveTo + '\'' +
+               ", exclusiveToClusterType='" + exclusiveToClusterType + '\'' +
                ", switchHostname='" + switchHostname + '\'' +
                ", cloudAccount='" + cloudAccount + '\'' +
                 ", wireguardPubKey='" + wireguardPubKey + '\'' +
