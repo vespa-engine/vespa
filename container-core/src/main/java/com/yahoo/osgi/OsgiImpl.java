@@ -86,7 +86,7 @@ public class OsgiImpl implements Osgi {
             }
         }
         throw new IllegalArgumentException(
-                "Could not create a component with id '" + spec.classId.getName() +
+                "Could not create a component with class '" + spec.classId.getName() +
                         "'. Tried to load class directly, since no bundle was found for spec: " + spec.bundle +
                         ". " + bundleResolutionErrorMessage(spec.bundle));
     }
