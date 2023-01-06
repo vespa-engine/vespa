@@ -104,7 +104,6 @@ private:
     std::list<UpdateHook*> _snapshotUpdateHooks;
     mutable std::mutex _waiter;
     mutable std::condition_variable _cond;
-    using PeriodTimePair = std::pair<uint32_t, time_t>;
     std::vector<MetricSnapshotSet::SP> _snapshots;
     MetricSnapshot::SP _totalMetrics;
     std::unique_ptr<Timer> _timer;
@@ -195,8 +194,7 @@ public:
      * of consumers. readConfig() will start a config subscription. It should
      * not be called multiple times.
      */
-    void init(const config::ConfigUri & uri, FastOS_ThreadPool&,
-              bool startThread = true);
+    void init(const config::ConfigUri & uri, FastOS_ThreadPool&, bool startThread = true);
 
     /**
      * Visit a given snapshot for a given consumer. (Empty consumer name means

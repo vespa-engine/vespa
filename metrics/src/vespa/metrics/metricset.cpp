@@ -43,8 +43,7 @@ MetricSet::MetricSet(const MetricSet& other,
 MetricSet::~MetricSet() = default;
 
 MetricSet*
-MetricSet::clone(std::vector<Metric::UP> &ownerList, CopyType type,
-                 MetricSet* owner, bool includeUnused) const
+MetricSet::clone(std::vector<Metric::UP> &ownerList, CopyType type, MetricSet* owner, bool includeUnused) const
 {
     return new MetricSet(*this, ownerList, type, owner, includeUnused);
 }

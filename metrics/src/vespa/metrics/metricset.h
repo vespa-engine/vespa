@@ -22,11 +22,15 @@ class MetricSet : public Metric
                                // it was reset
 
 public:
-    MetricSet(const String& name, Tags dimensions,
-              const String& description, MetricSet* owner = 0);
-
-    MetricSet(const MetricSet&, std::vector<Metric::UP> &ownerList,
-              CopyType, MetricSet* owner = 0, bool includeUnused = false);
+    MetricSet(const String& name, Tags dimensions, const String& description) :
+            MetricSet(name, std::move(dimensions), description, nullptr)
+    {}
+    MetricSet(const String& name, Tags dimensions, const String& description, MetricSet* owner);
+    MetricSet(const MetricSet&, std::vector<Metric::UP> &ownerList, CopyType, MetricSet* owner, bool includeUnused);
+    // Do not generate default copy constructor or assignment operator
+    // These would screw up metric registering
+    MetricSet(const MetricSet&) = delete;
+    MetricSet& operator=(const MetricSet&) = delete;
     ~MetricSet();
 
     // If no path, this metric is not registered within another
@@ -44,8 +48,7 @@ public:
     void registerMetric(Metric& m);
     void unregisterMetric(Metric& m);
 
-    MetricSet* clone(std::vector<Metric::UP> &ownerList, CopyType type,
-                     MetricSet* owner, bool includeUnused = false) const override;
+    MetricSet* clone(std::vector<Metric::UP> &ownerList, CopyType type, MetricSet* owner, bool includeUnused) const override;
 
     void reset() override;
 
@@ -59,8 +62,7 @@ public:
 
     const Metric* getMetric(stringref name) const;
     Metric* getMetric(stringref name) {
-        return const_cast<Metric*>(
-                const_cast<const MetricSet*>(this)->getMetric(name));
+        return const_cast<Metric*>(const_cast<const MetricSet*>(this)->getMetric(name));
     }
 
     void addToSnapshot(Metric& m, std::vector<Metric::UP> &o) const override { addTo(m, &o); }
@@ -75,11 +77,6 @@ public:
     void addToPart(Metric& m) const override { addTo(m, 0); }
 
 private:
-        // Do not generate default copy constructor or assignment operator
-        // These would screw up metric registering
-    MetricSet(const MetricSet&);
-    MetricSet& operator=(const MetricSet&);
-
     void tagRegistrationAltered();
     const Metric* getMetricInternal(stringref name) const;
 

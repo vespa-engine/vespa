@@ -13,14 +13,12 @@ MetricSnapshot::MetricSnapshot(const Metric::String& name)
       _period(0),
       _fromTime(0),
       _toTime(0),
-      _snapshot(new MetricSet("top", {}, "")),
+      _snapshot(new MetricSet("top", {}, "", nullptr)),
       _metrics()
 {
 }
 
-MetricSnapshot::MetricSnapshot(
-        const Metric::String& name, uint32_t period, const MetricSet& source,
-        bool copyUnset)
+MetricSnapshot::MetricSnapshot(const Metric::String& name, uint32_t period, const MetricSet& source, bool copyUnset)
     : _name(name),
       _period(period),
       _fromTime(0),
@@ -34,7 +32,7 @@ MetricSnapshot::MetricSnapshot(
     _metrics.shrink_to_fit();
 }
 
-MetricSnapshot::~MetricSnapshot() { }
+MetricSnapshot::~MetricSnapshot() = default;
 
 void
 MetricSnapshot::reset(time_t currentTime)

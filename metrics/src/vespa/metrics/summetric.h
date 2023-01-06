@@ -43,11 +43,11 @@ private:
     std::vector<const AddendMetric*> _metricsToSum;
 
 public:
-    SumMetric(const String& name, Tags tags, const String& description, MetricSet* owner = 0);
-    SumMetric(const SumMetric<AddendMetric>& other, std::vector<Metric::UP> & ownerList, MetricSet* owner = 0);
+    SumMetric(const String& name, Tags tags, const String& description, MetricSet* owner);
+    SumMetric(const SumMetric<AddendMetric>& other, std::vector<Metric::UP> & ownerList, MetricSet* owner);
     ~SumMetric();
 
-    Metric* clone( std::vector<Metric::UP> &, CopyType, MetricSet* owner, bool includeUnused = false) const override;
+    Metric* clone( std::vector<Metric::UP> &, CopyType, MetricSet* owner, bool includeUnused) const override;
 
     /**
      * If you want to support sums of collections of metrics that may

@@ -77,9 +77,10 @@ class ValueMetric : public AbstractValueMetric {
 
 public:
     ValueMetric(const ValueMetric<AvgVal, TotVal, SumOnAdd> &, MetricSet *owner);
-
-    ValueMetric(const String &name, Tags dimensions,
-                const String &description, MetricSet *owner = 0);
+    ValueMetric(const String &name, Tags dimensions, const String &description)
+        : ValueMetric(name, std::move(dimensions), description, nullptr)
+    {}
+    ValueMetric(const String &name, Tags dimensions, const String &description, MetricSet *owner);
 
     ~ValueMetric() override;
 
