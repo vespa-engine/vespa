@@ -12,6 +12,9 @@ import java.util.Map;
  */
 public interface ResourceTagger {
 
+    ApplicationId INFRASTRUCTURE_APPLICATION = ApplicationId.from("hosted-vespa", "infrastructure", "default");
+
+
     /**
      * Returns number of tagged resources
      */

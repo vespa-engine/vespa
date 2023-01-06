@@ -14,16 +14,16 @@ import org.apache.hc.client5.http.ConnectTimeoutException;
 
 import java.time.Duration;
 import java.util.Map;
+import java.util.Optional;
 import java.util.logging.Level;
 import java.util.stream.Collectors;
+
+import static com.yahoo.vespa.hosted.controller.api.integration.aws.ResourceTagger.INFRASTRUCTURE_APPLICATION;
 
 /**
  * @author olaa
  */
 public class ResourceTagMaintainer extends ControllerMaintainer {
-
-    static final ApplicationId SHARED_HOST_APPLICATION = ApplicationId.from("hosted-vespa", "shared-host", "default");
-    static final ApplicationId INFRASTRUCTURE_APPLICATION = ApplicationId.from("hosted-vespa", "infrastructure", "default");
 
     private final ResourceTagger resourceTagger;
 
@@ -54,7 +54,7 @@ public class ResourceTagMaintainer extends ControllerMaintainer {
                     .filter(node -> node.type().isHost())
                     .collect(Collectors.toMap(
                             Node::hostname,
-                            this::getApplicationId,
+                            node -> ownerApplicationId(node.type(), node.exclusiveTo(), node.exclusiveToClusterType()),
                             (node1, node2) -> node1
                     ));
         } catch (Exception e) {
@@ -67,9 +67,10 @@ public class ResourceTagMaintainer extends ControllerMaintainer {
         }
     }
 
-    private ApplicationId getApplicationId(Node node) {
-        if (node.type() == NodeType.host)
-            return node.exclusiveTo().orElse(SHARED_HOST_APPLICATION);
-        return INFRASTRUCTURE_APPLICATION;
+    // Must be the same as CloudHostProvisioner::ownerApplicationId
+    private static ApplicationId ownerApplicationId(NodeType hostType, Optional<ApplicationId> exclusiveTo, Optional<Node.ClusterType> exclusiveToClusterType) {
+        if (hostType != NodeType.host) return INFRASTRUCTURE_APPLICATION;
+        return exclusiveTo.orElseGet(() ->
+                ApplicationId.from("hosted-vespa", "shared-host", exclusiveToClusterType.map(Node.ClusterType::name).orElse("default")));
     }
 }

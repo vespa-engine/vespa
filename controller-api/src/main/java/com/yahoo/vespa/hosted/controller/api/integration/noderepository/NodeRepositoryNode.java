@@ -105,6 +105,8 @@ public class NodeRepositoryNode {
     private String reservedTo;
     @JsonProperty("exclusiveTo")
     private String exclusiveTo;
+    @JsonProperty("exclusiveToClusterType")
+    private String exclusiveToClusterType;
     @JsonProperty("switchHostname")
     private String switchHostname;
     @JsonProperty("cloudAccount")
@@ -434,6 +436,10 @@ public class NodeRepositoryNode {
 
     public void setExclusiveTo(String exclusiveTo) { this.exclusiveTo = exclusiveTo; }
 
+    public String getExclusiveToClusterType() { return exclusiveToClusterType; }
+
+    public void setExclusiveToClusterType(String exclusiveToClusterType) { this.exclusiveToClusterType = exclusiveToClusterType; }
+
     public String getSwitchHostname() {
         return switchHostname;
     }
@@ -511,6 +517,7 @@ public class NodeRepositoryNode {
                ", modelName='" + modelName + '\'' +
                ", reservedTo='" + reservedTo + '\'' +
                ", exclusiveTo='" + exclusiveTo + '\'' +
+               ", exclusiveToClusterType='" + exclusiveToClusterType + '\'' +
                ", switchHostname='" + switchHostname + '\'' +
                ", cloudAccount='" + cloudAccount + '\'' +
                 ", wireguardPubKey='" + wireguardPubKey + '\'' +

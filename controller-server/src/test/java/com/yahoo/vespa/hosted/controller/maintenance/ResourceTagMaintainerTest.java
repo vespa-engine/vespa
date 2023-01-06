@@ -16,7 +16,6 @@ import java.time.Duration;
 import java.util.List;
 import java.util.Map;
 
-import static com.yahoo.vespa.hosted.controller.maintenance.ResourceTagMaintainer.SHARED_HOST_APPLICATION;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
@@ -37,7 +36,8 @@ public class ResourceTagMaintainerTest {
         assertEquals(2, mockResourceTagger.getValues().size());
         Map<HostName, ApplicationId> applicationForHost = mockResourceTagger.getValues().get(ZoneId.from("prod.region-2"));
         assertEquals(ApplicationId.from("t1", "a1", "i1"), applicationForHost.get(HostName.of("parentHostA.prod.region-2")));
-        assertEquals(SHARED_HOST_APPLICATION, applicationForHost.get(HostName.of("parentHostB.prod.region-2")));
+        assertEquals(ApplicationId.from("hosted-vespa", "shared-host", "default"), applicationForHost.get(HostName.of("parentHostB.prod.region-2")));
+        assertEquals(ApplicationId.from("hosted-vespa", "shared-host", "admin"), applicationForHost.get(HostName.of("parentHostC.prod.region-2")));
     }
 
     private void setUpZones() {
@@ -67,7 +67,13 @@ public class ResourceTagMaintainerTest {
                         .type(NodeType.host)
                         .owner(ApplicationId.from(SystemApplication.TENANT.value(), "tenant-host", "default"))
                         .build();
-        tester.configServer().nodeRepository().putNodes(zone, List.of(hostA, nodeA, hostB));
+        var hostC = Node.builder()
+                .hostname(HostName.of("parentHostC." + zone.value()))
+                .type(NodeType.host)
+                .exclusiveToClusterType(Node.ClusterType.admin)
+                .owner(ApplicationId.from(SystemApplication.TENANT.value(), "tenant-host", "default"))
+                .build();
+        tester.configServer().nodeRepository().putNodes(zone, List.of(hostA, nodeA, hostB, hostC));
     }
 
 }
