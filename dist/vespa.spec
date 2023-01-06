@@ -586,7 +586,7 @@ fi
 %exclude %{_prefix}/conf/configserver-app/config-models.xml
 %dir %{_prefix}/conf/logd
 %dir %attr(-,%{_vespa_user},%{_vespa_group}) %{_prefix}/conf/telegraf
-%dir %attr(-,%{_vespa_user},%{_vespa_group}) %{_prefix}/conf/vespa
+%dir %{_prefix}/conf/vespa
 %dir %attr(-,%{_vespa_user},%{_vespa_group}) %{_prefix}/var/zookeeper/conf
 %dir %{_prefix}/etc
 %{_prefix}/etc/systemd
@@ -680,9 +680,9 @@ fi
 %{_prefix}/bin/vespa-logfmt
 %{_prefix}/bin/vespa-security-env
 %dir %{_prefix}/conf
-%dir %attr(-,%{_vespa_user},%{_vespa_group}) %{_prefix}/conf/vespa
-%config(noreplace) %attr(-,%{_vespa_user},%{_vespa_group}) %{_prefix}/conf/vespa/default-env.txt
-%config(noreplace) %attr(-,%{_vespa_user},%{_vespa_group}) %{_prefix}/conf/vespa/java.security.override
+%dir %{_prefix}/conf/vespa
+%config(noreplace) %{_prefix}/conf/vespa/default-env.txt
+%config(noreplace) %{_prefix}/conf/vespa/java.security.override
 %{_prefix}/jdk
 %dir %{_prefix}/lib
 %dir %{_prefix}/lib/jars
