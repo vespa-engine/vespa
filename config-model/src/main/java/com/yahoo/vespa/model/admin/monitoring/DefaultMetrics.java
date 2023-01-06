@@ -29,15 +29,10 @@ public class DefaultMetrics {
     private static Set<Metric> getAllMetrics() {
         Set<Metric> metrics = new LinkedHashSet<>();
 
-        addAdminMetrics(metrics);
         addContentMetrics(metrics);
         addContainerMetrics(metrics);
         addSearchChainMetrics(metrics);
         return Collections.unmodifiableSet(metrics);
-    }
-
-    private static void addAdminMetrics(Set<Metric> metrics) {
-        metrics.add(new Metric("slobrok.missing.consensus.count"));
     }
 
     private static void addContainerMetrics(Set<Metric> metrics) {
