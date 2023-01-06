@@ -1,7 +1,6 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.node.admin.configserver;
 
-import ai.vespa.util.http.hc4.SslConnectionSocketFactory;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.yahoo.config.provision.HostName;
@@ -86,7 +85,7 @@ public class ConfigServerApiImpl implements ConfigServerApi {
     private ConfigServerApiImpl(Collection<URI> configServers,
                                 HostnameVerifier verifier,
                                 ServiceIdentityProvider identityProvider) {
-        this(configServers, createClient(SslConnectionSocketFactory.of(new ServiceIdentitySslSocketFactory(identityProvider), verifier)));
+        this(configServers, createClient(new SSLConnectionSocketFactory(new ServiceIdentitySslSocketFactory(identityProvider), verifier)));
     }
 
     private ConfigServerApiImpl(Collection<URI> configServers, CloseableHttpClient client) {
@@ -95,7 +94,7 @@ public class ConfigServerApiImpl implements ConfigServerApi {
     }
 
     public static ConfigServerApiImpl createForTesting(List<URI> configServerHosts) {
-        return new ConfigServerApiImpl(configServerHosts, createClient(SslConnectionSocketFactory.of()));
+        return new ConfigServerApiImpl(configServerHosts, createClient(SSLConnectionSocketFactory.getSocketFactory()));
     }
 
     static ConfigServerApiImpl createForTestingWithClient(List<URI> configServerHosts,
