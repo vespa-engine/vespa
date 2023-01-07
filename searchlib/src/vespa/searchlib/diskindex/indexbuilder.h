@@ -43,13 +43,13 @@ private:
     std::vector<FieldHandle>  _fields;
     const vespalib::string    _prefix;
     vespalib::string          _curWord;
-    FieldHandle              *_currentField;
     const uint32_t            _docIdLimit;
+    int32_t                   _curFieldId;
     uint32_t                  _lowestOKFieldId;
     uint32_t                  _curDocId;
     bool                      _inWord;
 
-    static std::vector<IndexBuilder::FieldHandle> extractFields(const index::Schema &schema, IndexBuilder * builder);
+    static std::vector<IndexBuilder::FieldHandle> extractFields(const index::Schema &schema, IndexBuilder & builder);
 
     static uint32_t noDocId() {
         return std::numeric_limits<uint32_t>::max();
@@ -58,6 +58,7 @@ private:
     static uint64_t noWordNumHigh() {
         return std::numeric_limits<uint64_t>::max();
     }
+    FieldHandle & currentField();
 };
 
 }

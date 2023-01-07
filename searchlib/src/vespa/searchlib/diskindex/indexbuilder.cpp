@@ -54,13 +54,13 @@ public:
 
 class IndexBuilder::FieldHandle {
 private:
-    const Schema   *_schema; // Ptr to allow being std::vector member
-    IndexBuilder   *_builder; // Ptr to allow being std::vector member
+    const Schema   &_schema; // Ptr to allow being std::vector member
+    IndexBuilder   &_builder; // Ptr to allow being std::vector member
     FileHandle      _file;
     const uint32_t  _fieldId;
     const bool      _valid;
 public:
-    FieldHandle(const Schema &schema, uint32_t fieldId, IndexBuilder *builder, bool valid);
+    FieldHandle(const Schema &schema, uint32_t fieldId, IndexBuilder & builder, bool valid);
     ~FieldHandle();
 
     void new_word(vespalib::stringref word);
@@ -126,8 +126,8 @@ FileHandle::close()
     (void) ret;
 }
 
-IndexBuilder::FieldHandle::FieldHandle(const Schema &schema, uint32_t fieldId, IndexBuilder *builder, bool valid)
-    : _schema(&schema),
+IndexBuilder::FieldHandle::FieldHandle(const Schema &schema, uint32_t fieldId, IndexBuilder &builder, bool valid)
+    : _schema(schema),
       _builder(builder),
       _file(),
       _fieldId(fieldId),
@@ -153,7 +153,7 @@ IndexBuilder::FieldHandle::add_document(const index::DocIdAndFeatures &features)
 const Schema::IndexField &
 IndexBuilder::FieldHandle::getSchemaField()
 {
-    return _schema->getIndexField(_fieldId);
+    return _schema.getIndexField(_fieldId);
 }
 
 const vespalib::string &
@@ -165,7 +165,7 @@ IndexBuilder::FieldHandle::getName()
 vespalib::string
 IndexBuilder::FieldHandle::getDir()
 {
-    return _builder->appendToPrefix(getName());
+    return _builder.appendToPrefix(getName());
 }
 
 void
@@ -174,11 +174,8 @@ IndexBuilder::FieldHandle::open(uint32_t docIdLimit, uint64_t numWordIds,
                                 const TuneFileSeqWrite &tuneFileWrite,
                                 const FileHeaderContext &fileHeaderContext)
 {
-    _file.open(getDir(),
-               SchemaUtil::IndexIterator(*_schema, getIndexId()),
-               docIdLimit, numWordIds,
-               field_length_info,
-               tuneFileWrite, fileHeaderContext);
+    _file.open(getDir(), SchemaUtil::IndexIterator(_schema, getIndexId()),
+               docIdLimit, numWordIds, field_length_info, tuneFileWrite, fileHeaderContext);
 }
 
 void
@@ -188,7 +185,7 @@ IndexBuilder::FieldHandle::close()
 }
 
 std::vector<IndexBuilder::FieldHandle>
-IndexBuilder::extractFields(const Schema &schema, IndexBuilder * builder) {
+IndexBuilder::extractFields(const Schema &schema, IndexBuilder & builder) {
     std::vector<IndexBuilder::FieldHandle> fields;
     fields.reserve(schema.getNumIndexFields());
     // TODO: Filter for text indexes
@@ -204,11 +201,11 @@ IndexBuilder::extractFields(const Schema &schema, IndexBuilder * builder) {
 IndexBuilder::IndexBuilder(const Schema &schema, vespalib::stringref prefix, uint32_t docIdLimit)
     : index::IndexBuilder(schema),
       _schema(schema),
-      _fields(extractFields(schema, this)),
+      _fields(extractFields(schema, *this)),
       _prefix(prefix),
       _curWord(),
-      _currentField(nullptr),
       _docIdLimit(docIdLimit),
+      _curFieldId(-1),
       _lowestOKFieldId(0u),
       _curDocId(noDocId()),
       _inWord(false)
@@ -217,15 +214,20 @@ IndexBuilder::IndexBuilder(const Schema &schema, vespalib::stringref prefix, uin
 
 IndexBuilder::~IndexBuilder() = default;
 
+IndexBuilder::FieldHandle &
+IndexBuilder::currentField() {
+    assert(_curFieldId >= 0);
+    assert(_curFieldId < int32_t(_fields.size()));
+    return _fields[_curFieldId];
+}
 void
 IndexBuilder::startField(uint32_t fieldId)
 {
     assert(_curDocId == noDocId());
-    assert(_currentField == nullptr);
+    assert(_curFieldId == -1);
     assert(fieldId < _fields.size());
     assert(fieldId >= _lowestOKFieldId);
-    _currentField = &_fields[fieldId];
-    assert(_currentField != nullptr);
+    _curFieldId = fieldId;
 }
 
 void
@@ -233,27 +235,25 @@ IndexBuilder::endField()
 {
     assert(_curDocId == noDocId());
     assert(!_inWord);
-    assert(_currentField != nullptr);
-    _lowestOKFieldId = _currentField->getIndexId() + 1;
-    _currentField = nullptr;
+    _lowestOKFieldId = currentField().getIndexId() + 1;
+    _curFieldId = -1;
 }
 
 void
 IndexBuilder::startWord(vespalib::stringref word)
 {
-    assert(_currentField != nullptr);
     assert(!_inWord);
     // TODO: Check sort order
     _curWord = word;
     _inWord = true;
-    _currentField->new_word(word);
+    currentField().new_word(word);
 }
 
 void
 IndexBuilder::endWord()
 {
     assert(_inWord);
-    assert(_currentField != nullptr);
+    assert(_curFieldId != -1);
     _inWord = false;
 }
 
@@ -261,8 +261,7 @@ void
 IndexBuilder::add_document(const index::DocIdAndFeatures &features)
 {
     assert(_inWord);
-    assert(_currentField != nullptr);
-    _currentField->add_document(features);
+    currentField().add_document(features);
 }
 
 vespalib::string
