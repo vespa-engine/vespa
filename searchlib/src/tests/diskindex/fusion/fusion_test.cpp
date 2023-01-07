@@ -25,7 +25,6 @@
 #include <vespa/searchlib/util/filekit.h>
 #include <vespa/vespalib/btree/btreenode.hpp>
 #include <vespa/vespalib/btree/btreenodeallocator.hpp>
-#include <vespa/vespalib/btree/btreeroot.hpp>
 #include <vespa/vespalib/util/gate.h>
 #include <vespa/vespalib/util/destructor_callbacks.h>
 #include <vespa/vespalib/util/threadstackexecutor.h>
@@ -363,11 +362,11 @@ FusionTest::requireThatFusionIsWorking(const vespalib::string &prefix, bool dire
     inv.invertDocument(12, *doc, {});
     myPushDocument(inv);
 
-    IndexBuilder ib(schema);
-    vespalib::string dump2dir = prefix + "dump2";
-    ib.setPrefix(dump2dir);
-    uint32_t numDocs = 12 + 1;
-    uint32_t numWords = fic.getNumUniqueWords();
+
+    const vespalib::string dump2dir = prefix + "dump2";
+    constexpr uint32_t numDocs = 12 + 1;
+    IndexBuilder ib(schema, dump2dir, numDocs);
+    const uint32_t numWords = fic.getNumUniqueWords();
     MockFieldLengthInspector mock_field_length_inspector;
     TuneFileIndexing tuneFileIndexing;
     TuneFileSearch tuneFileSearch;
@@ -380,7 +379,7 @@ FusionTest::requireThatFusionIsWorking(const vespalib::string &prefix, bool dire
     if (readmmap) {
         tuneFileSearch._read.setWantMemoryMap();
     }
-    ib.open(numDocs, numWords, mock_field_length_inspector, tuneFileIndexing, fileHeaderContext);
+    ib.open(numWords, mock_field_length_inspector, tuneFileIndexing, fileHeaderContext);
     fic.dump(ib);
     ib.close();
 
@@ -475,8 +474,8 @@ void
 FusionTest::make_simple_index(const vespalib::string &dump_dir, const IFieldLengthInspector &field_length_inspector)
 {
     FieldIndexCollection fic(_schema, field_length_inspector);
-    uint32_t numDocs = 20;
-    uint32_t numWords = 1000;
+    constexpr  uint32_t numDocs = 20;
+    constexpr uint32_t numWords = 1000;
     DocBuilder b(make_add_fields());
     auto invertThreads = SequencedTaskExecutor::create(invert_executor, 2);
     auto pushThreads = SequencedTaskExecutor::create(push_executor, 2);
@@ -487,11 +486,10 @@ FusionTest::make_simple_index(const vespalib::string &dump_dir, const IFieldLeng
     inv.invertDocument(10, *doc10, {});
     myPushDocument(inv);
 
-    IndexBuilder ib(_schema);
+    IndexBuilder ib(_schema, dump_dir, numDocs);
     TuneFileIndexing tuneFileIndexing;
     DummyFileHeaderContext fileHeaderContext;
-    ib.setPrefix(dump_dir);
-    ib.open(numDocs, numWords, field_length_inspector, tuneFileIndexing, fileHeaderContext);
+    ib.open(numWords, field_length_inspector, tuneFileIndexing, fileHeaderContext);
     fic.dump(ib);
     ib.close();
 }
@@ -503,8 +501,7 @@ FusionTest::try_merge_simple_indexes(const vespalib::string &dump_dir, const std
     TuneFileIndexing tuneFileIndexing;
     DummyFileHeaderContext fileHeaderContext;
     SelectorArray selector(20, 0);
-    Fusion fusion(_schema, dump_dir, sources, selector,
-                  tuneFileIndexing, fileHeaderContext);
+    Fusion fusion(_schema, dump_dir, sources, selector, tuneFileIndexing, fileHeaderContext);
     fusion.set_force_small_merge_chunk(_force_small_merge_chunk);
     return fusion.merge(executor, flush_token);
 }

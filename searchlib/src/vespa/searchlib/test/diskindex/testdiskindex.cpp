@@ -36,16 +36,16 @@ struct Builder
 {
     search::diskindex::IndexBuilder _ib;
     MockFieldLengthInspector        _mock_field_length_inspector;
-    TuneFileIndexing    _tuneFileIndexing;
-    DummyFileHeaderContext   _fileHeaderContext;
-    DocIdAndFeatures _features;
+    TuneFileIndexing                _tuneFileIndexing;
+    DummyFileHeaderContext          _fileHeaderContext;
+    DocIdAndFeatures                _features;
 
     Builder(const std::string &dir,
             const Schema &s,
             uint32_t docIdLimit,
             uint64_t numWordIds,
             bool directio)
-        : _ib(s),
+        : _ib(s, dir, docIdLimit),
           _tuneFileIndexing(),
           _fileHeaderContext(),
           _features()
@@ -54,14 +54,10 @@ struct Builder
             _tuneFileIndexing._read.setWantDirectIO();
             _tuneFileIndexing._write.setWantDirectIO();
         }
-        _ib.setPrefix(dir);
-        _ib.open(docIdLimit, numWordIds, _mock_field_length_inspector, _tuneFileIndexing,
-                 _fileHeaderContext);
+        _ib.open(numWordIds, _mock_field_length_inspector, _tuneFileIndexing, _fileHeaderContext);
     }
 
-    void
-    addDoc(uint32_t docId)
-    {
+    void addDoc(uint32_t docId) {
         _features.clear(docId);
         _features.elements().emplace_back(0, 1, 1);
         _features.elements().back().setNumOccs(1);
@@ -69,9 +65,7 @@ struct Builder
         _ib.add_document(_features);
     }
 
-    void
-    close()
-    {
+    void close() {
         _ib.close();
     }
 };

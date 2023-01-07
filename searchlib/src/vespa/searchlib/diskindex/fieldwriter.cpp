@@ -17,17 +17,17 @@ using vespalib::getLastErrorString;
 using common::FileHeaderContext;
 
 FieldWriter::FieldWriter(uint32_t docIdLimit, uint64_t numWordIds)
-    : _wordNum(noWordNum()),
-      _prevDocId(0),
-      _dictFile(),
+    : _dictFile(),
       _posoccfile(),
       _bvc(docIdLimit),
       _bmapfile(BitVectorKeyScope::PERFIELD_WORDS),
-      _docIdLimit(docIdLimit),
-      _numWordIds(numWordIds),
       _prefix(),
+      _word(),
+      _numWordIds(numWordIds),
       _compactWordNum(0),
-      _word()
+      _wordNum(noWordNum()),
+      _prevDocId(0),
+      _docIdLimit(docIdLimit)
 {
 }
 
@@ -159,12 +159,6 @@ FieldWriter::close()
 
     _bmapfile.close();
     return ret;
-}
-
-void
-FieldWriter::setFeatureParams(const PostingListParams &params)
-{
-    _posoccfile->setFeatureParams(params);
 }
 
 void

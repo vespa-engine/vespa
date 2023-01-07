@@ -114,8 +114,7 @@ const string word2 = "bar";
 const DocumentIdT doc_id1 = 1;
 const DocumentIdT doc_id2 = 2;
 
-Document::UP buildDocument(DocBuilder & doc_builder, int id,
-                           const string &word) {
+Document::UP buildDocument(DocBuilder & doc_builder, int id, const string &word) {
     ostringstream ost;
     ost << "id:ns:searchdocument::" << id;
     auto doc = doc_builder.make_document(ost.str());
@@ -124,8 +123,7 @@ Document::UP buildDocument(DocBuilder & doc_builder, int id,
 }
 
 // Performs a search using a Searchable.
-void Test::testSearch(Searchable &source,
-                      const string &term, uint32_t doc_id)
+void Test::testSearch(Searchable &source, const string &term, uint32_t doc_id)
 {
     FakeRequestContext requestContext;
     uint32_t fieldId = 0;
@@ -137,15 +135,13 @@ void Test::testSearch(Searchable &source,
     Blueprint::UP result = source.createBlueprint(requestContext,
             FieldSpecList().add(FieldSpec(field_name, 0, handle)), node);
     result->fetchPostings(search::queryeval::ExecuteInfo::TRUE);
-    SearchIterator::UP search_iterator =
-        result->createSearch(*match_data, true);
+    SearchIterator::UP search_iterator = result->createSearch(*match_data, true);
     search_iterator->initFullRange();
     ASSERT_TRUE(search_iterator.get());
     ASSERT_TRUE(search_iterator->seek(doc_id));
     EXPECT_EQUAL(doc_id, search_iterator->getDocId());
     search_iterator->unpack(doc_id);
-    FieldPositionsIterator it =
-        match_data->resolveTermField(handle)->getIterator();
+    FieldPositionsIterator it = match_data->resolveTermField(handle)->getIterator();
     ASSERT_TRUE(it.valid());
     EXPECT_EQUAL(1u, it.size());
     EXPECT_EQUAL(1u, it.getPosition());  // All hits are at pos 1 in this index
@@ -178,13 +174,12 @@ void Test::requireThatMemoryIndexCanBeDumpedAndSearched() {
     testSearch(memory_index, word2, doc_id2);
 
     const string index_dir = "test_index";
-    IndexBuilder index_builder(schema);
-    index_builder.setPrefix(index_dir);
     const uint32_t docIdLimit = memory_index.getDocIdLimit();
     const uint64_t num_words = memory_index.getNumWords();
+    IndexBuilder index_builder(schema, index_dir, docIdLimit);
     search::TuneFileIndexing tuneFileIndexing;
     DummyFileHeaderContext fileHeaderContext;
-    index_builder.open(docIdLimit, num_words, MockFieldLengthInspector(), tuneFileIndexing, fileHeaderContext);
+    index_builder.open(num_words, MockFieldLengthInspector(), tuneFileIndexing, fileHeaderContext);
     memory_index.dump(index_builder);
     index_builder.close();
 
@@ -198,12 +193,7 @@ void Test::requireThatMemoryIndexCanBeDumpedAndSearched() {
     ASSERT_TRUE(fret1);
     SelectorArray selector(fusionDocIdLimit, 0);
     {
-        Fusion fusion(schema,
-                      index_dir2,
-                      fusionInputs,
-                      selector,
-                      tuneFileIndexing,
-                      fileHeaderContext);
+        Fusion fusion(schema, index_dir2, fusionInputs, selector, tuneFileIndexing, fileHeaderContext);
         bool fret2 = fusion.merge(sharedExecutor, std::make_shared<FlushToken>());
         ASSERT_TRUE(fret2);
     }
@@ -217,12 +207,7 @@ void Test::requireThatMemoryIndexCanBeDumpedAndSearched() {
     ASSERT_TRUE(fret3);
     SelectorArray selector2(fusionDocIdLimit, 1);
     {
-        Fusion fusion(schema,
-                      index_dir3,
-                      fusionInputs,
-                      selector2,
-                      tuneFileIndexing,
-                      fileHeaderContext);
+        Fusion fusion(schema, index_dir3, fusionInputs, selector2, tuneFileIndexing, fileHeaderContext);
         bool fret4 = fusion.merge(sharedExecutor, std::make_shared<FlushToken>());
         ASSERT_TRUE(fret4);
     }
@@ -236,14 +221,8 @@ void Test::requireThatMemoryIndexCanBeDumpedAndSearched() {
     ASSERT_TRUE(fret5);
     SelectorArray selector3(fusionDocIdLimit, 0);
     {
-        Fusion fusion(schema,
-                      index_dir4,
-                      fusionInputs,
-                      selector3,
-                      tuneFileIndexing,
-                      fileHeaderContext);
-        bool fret6 = fusion.merge(sharedExecutor,
-                                  std::make_shared<FlushToken>());
+        Fusion fusion(schema, index_dir4, fusionInputs, selector3, tuneFileIndexing, fileHeaderContext);
+        bool fret6 = fusion.merge(sharedExecutor, std::make_shared<FlushToken>());
         ASSERT_TRUE(fret6);
     }
 

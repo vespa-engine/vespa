@@ -86,7 +86,7 @@ public:
           _firstDoc(true)
     {}
 
-    virtual void startWord(vespalib::stringref word) override {
+    void startWord(vespalib::stringref word) override {
         assert(_insideField);
         assert(!_insideWord);
         if (!_firstWord)
@@ -96,14 +96,14 @@ public:
         _insideWord = true;
     }
 
-    virtual void endWord() override {
+    void endWord() override {
         assert(_insideWord);
         _ss << "]";
         _firstWord = false;
         _insideWord = false;
     }
 
-    virtual void startField(uint32_t fieldId) override {
+    void startField(uint32_t fieldId) override {
         assert(!_insideField);
         if (!_firstField) _ss << ",";
         _ss << "f=" << fieldId << "[";
@@ -111,7 +111,7 @@ public:
         _insideField = true;
     }
 
-    virtual void endField() override {
+    void endField() override {
         assert(_insideField);
         assert(!_insideWord);
         _ss << "]";
@@ -119,7 +119,7 @@ public:
         _insideField = false;
     }
 
-    virtual void add_document(const DocIdAndFeatures &features) override {
+    void add_document(const DocIdAndFeatures &features) override {
         assert(_insideWord);
         if (!_firstDoc) {
             _ss << ",";
@@ -875,11 +875,10 @@ TEST_F(FieldIndexCollectionTest, require_that_dumping_words_with_no_docs_to_inde
                   b.toStr());
     }
     {
-        search::diskindex::IndexBuilder b(schema);
-        b.setPrefix("dump");
+        search::diskindex::IndexBuilder b(schema, "dump", 5);
         TuneFileIndexing tuneFileIndexing;
         DummyFileHeaderContext fileHeaderContext;
-        b.open(5, 2, MockFieldLengthInspector(), tuneFileIndexing, fileHeaderContext);
+        b.open(2, MockFieldLengthInspector(), tuneFileIndexing, fileHeaderContext);
         fic.dump(b);
         b.close();
     }
@@ -1224,14 +1223,10 @@ TEST_F(UriInverterTest, require_that_uri_indexing_is_working)
         EXPECT_TRUE(itr->isAtEnd());
     }
     {
-        search::diskindex::IndexBuilder dib(_schema);
-        dib.setPrefix("urldump");
+        search::diskindex::IndexBuilder dib(_schema, "urldump", 11);
         TuneFileIndexing tuneFileIndexing;
         DummyFileHeaderContext fileHeaderContext;
-        dib.open(11, _fic.getNumUniqueWords(),
-                 MockFieldLengthInspector(),
-                 tuneFileIndexing,
-                 fileHeaderContext);
+        dib.open(_fic.getNumUniqueWords(), MockFieldLengthInspector(), tuneFileIndexing, fileHeaderContext);
         _fic.dump(dib);
         dib.close();
     }

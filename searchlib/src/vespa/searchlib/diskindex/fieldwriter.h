@@ -18,36 +18,11 @@ namespace search::diskindex {
  * and by the memory index dump code to write a field to disk.
  */
 class FieldWriter {
-private:
-    uint64_t _wordNum;
-    uint32_t _prevDocId;
-
-    static uint64_t noWordNum() { return 0u; }
 public:
-
-    using DictionaryFileSeqWrite = index::DictionaryFileSeqWrite;
-
-    using PostingListFileSeqWrite = index::PostingListFileSeqWrite;
     using DocIdAndFeatures = index::DocIdAndFeatures;
     using Schema = index::Schema;
-    using PostingListCounts = index::PostingListCounts;
     using PostingListParams = index::PostingListParams;
 
-    std::unique_ptr<DictionaryFileSeqWrite> _dictFile;
-    std::unique_ptr<PostingListFileSeqWrite> _posoccfile;
-
-private:
-    BitVectorCandidate _bvc;
-    BitVectorFileWrite _bmapfile;
-    uint32_t _docIdLimit;
-    uint64_t _numWordIds;
-    vespalib::string _prefix;
-    uint64_t _compactWordNum;
-    vespalib::string _word;
-
-    void flush();
-
-public:
     FieldWriter(const FieldWriter &rhs) = delete;
     FieldWriter(const FieldWriter &&rhs) = delete;
     FieldWriter &operator=(const FieldWriter &rhs) = delete;
@@ -78,9 +53,25 @@ public:
 
     bool close();
 
-    void setFeatureParams(const PostingListParams &params);
     void getFeatureParams(PostingListParams &params);
     static void remove(const vespalib::string &prefix);
+private:
+    using DictionaryFileSeqWrite = index::DictionaryFileSeqWrite;
+    using PostingListFileSeqWrite = index::PostingListFileSeqWrite;
+    using PostingListCounts = index::PostingListCounts;
+    std::unique_ptr<DictionaryFileSeqWrite>  _dictFile;
+    std::unique_ptr<PostingListFileSeqWrite> _posoccfile;
+    BitVectorCandidate _bvc;
+    BitVectorFileWrite _bmapfile;
+    vespalib::string   _prefix;
+    vespalib::string   _word;
+    const uint64_t     _numWordIds;
+    uint64_t           _compactWordNum;
+    uint64_t           _wordNum;
+    uint32_t           _prevDocId;
+    const uint32_t     _docIdLimit;
+    void flush();
+    static uint64_t noWordNum() { return 0u; }
 };
 
 }

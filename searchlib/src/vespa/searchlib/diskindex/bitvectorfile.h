@@ -17,12 +17,8 @@ class BitVectorFileWrite : public BitVectorIdxFileWrite
 {
 private:
     using Parent = BitVectorIdxFileWrite;
-
     std::unique_ptr<Fast_BufferedFile> _datFile;
-public:
-
-private:
-    uint32_t _datHeaderLen;
+    uint32_t                           _datHeaderLen;
 
 public:
     BitVectorFileWrite(const BitVectorFileWrite &) = delete;
@@ -30,7 +26,7 @@ public:
     BitVectorFileWrite& operator=(const BitVectorFileWrite &) = delete;
     BitVectorFileWrite& operator=(const BitVectorFileWrite &&) = delete;
     BitVectorFileWrite(BitVectorKeyScope scope);
-    ~BitVectorFileWrite();
+    ~BitVectorFileWrite() override;
 
     void open(const vespalib::string &name, uint32_t docIdLimit,
             const TuneFileSeqWrite &tuneFileWrite,
@@ -53,16 +49,17 @@ class BitVectorCandidate
 {
 private:
     std::vector<uint32_t, vespalib::allocator_large<uint32_t>> _array;
-    uint64_t _numDocs;
-    uint32_t _bitVectorLimit;
-    BitVector::UP _bv;
+    BitVector::UP  _bv;
+    uint64_t       _numDocs;
+    const uint32_t _bitVectorLimit;
+
 
 public:
     BitVectorCandidate(uint32_t docIdLimit, uint32_t bitVectorLimit)
         : _array(),
+          _bv(BitVector::create(docIdLimit)),
           _numDocs(0u),
-          _bitVectorLimit(bitVectorLimit),
-          _bv(BitVector::create(docIdLimit))
+          _bitVectorLimit(bitVectorLimit)
     {
         _array.reserve(_bitVectorLimit);
     }
