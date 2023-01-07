@@ -28,5 +28,4 @@ func exportSettings(vespaHome string) {
 	os.Setenv(envvars.STANDALONE_JDISC_DEPLOYMENT_PROFILE, "configserver")
 	os.Setenv(envvars.MALLOC_ARENA_MAX, "1")
 	util.OptionallyReduceTimerFrequency()
-	util.TuneLogging(SERVICE_NAME, "com.google.api.client.http.HttpTransport", "config=off")
 }
