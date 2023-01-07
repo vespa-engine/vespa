@@ -46,6 +46,7 @@ func JustStartConfigserver() int {
 	vespaHome := commonPreChecks()
 	vespa.CheckCorrectUser()
 	util.TuneResourceLimits()
+	util.TuneLogging(SERVICE_NAME, "com.google.api.client.http.HttpTransport", "config=off")
 	exportSettings(vespaHome)
 	removeStaleZkLocks(vespaHome)
 	c := jvm.NewStandaloneContainer(SERVICE_NAME)
