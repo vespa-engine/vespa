@@ -899,6 +899,57 @@
     ],
     "fields" : [ ]
   },
+  "com.yahoo.prelude.query.MultiRangeItem$Limit": {
+    "superClass": "java.lang.Enum",
+    "interfaces": [],
+    "attributes": [
+      "public",
+      "final",
+      "enum"
+    ],
+    "methods": [
+      "public static com.yahoo.prelude.query.MultiRangeItem$Limit[] values()",
+      "public static com.yahoo.prelude.query.MultiRangeItem$Limit valueOf(java.lang.String)"
+    ],
+    "fields": [
+      "public static final enum com.yahoo.prelude.query.MultiRangeItem$Limit INCLUSIVE",
+      "public static final enum com.yahoo.prelude.query.MultiRangeItem$Limit EXCLUSIVE"
+    ]
+  },
+  "com.yahoo.prelude.query.MultiRangeItem$NumberType" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [ ],
+    "attributes" : [
+      "public"
+    ],
+    "methods" : [ ],
+    "fields" : [
+      "public static final com.yahoo.prelude.query.MultiRangeItem$NumberType INTEGER",
+      "public static final com.yahoo.prelude.query.MultiRangeItem$NumberType LONG",
+      "public static final com.yahoo.prelude.query.MultiRangeItem$NumberType DOUBLE"
+    ]
+  },
+  "com.yahoo.prelude.query.MultiRangeItem" : {
+    "superClass" : "com.yahoo.prelude.query.MultiTermItem",
+    "interfaces" : [ ],
+    "attributes" : [
+      "public"
+    ],
+    "methods" : [
+      "public static com.yahoo.prelude.query.MultiRangeItem overRanges(com.yahoo.prelude.query.MultiRangeItem$NumberType, java.lang.String, com.yahoo.prelude.query.MultiRangeItem$Limit, java.lang.String, com.yahoo.prelude.query.MultiRangeItem$Limit)",
+      "public static com.yahoo.prelude.query.MultiRangeItem overPoints(com.yahoo.prelude.query.MultiRangeItem$NumberType, java.lang.String, com.yahoo.prelude.query.MultiRangeItem$Limit, com.yahoo.prelude.query.MultiRangeItem$Limit)",
+      "public com.yahoo.prelude.query.MultiRangeItem addPoint(java.lang.Number)",
+      "public com.yahoo.prelude.query.MultiRangeItem addRange(java.lang.Number, java.lang.Number)",
+      "public void setIndexName(java.lang.String)",
+      "protected void appendBodyString(java.lang.StringBuilder)",
+      "public void disclose(com.yahoo.prelude.query.textualrepresentation.Discloser)",
+      "public com.yahoo.prelude.query.Item clone()",
+      "public boolean equals(java.lang.Object)",
+      "public int hashCode()",
+      "public bridge synthetic java.lang.Object clone()"
+    ],
+    "fields" : [ ]
+  },
   "com.yahoo.prelude.query.NearItem" : {
     "superClass" : "com.yahoo.prelude.query.CompositeItem",
     "interfaces" : [ ],

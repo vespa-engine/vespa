@@ -10,10 +10,19 @@ import java.nio.ByteBuffer;
  */
 public class IntegerCompressor {
 
+    public enum Mode { NONE, COMPRESSED, COMPRESSED_POSITIVE; }
+
+    public static Mode compressionMode(int min, int max) {
+        if (min >= 0 && max < 1 << 30) return Mode.COMPRESSED_POSITIVE;
+        if (min > -1 << 29 && max < 1 << 29) return Mode.COMPRESSED;
+        return Mode.NONE;
+    }
+
     public static void putCompressedNumber(int n, ByteBuffer buf) {
         int negative = n < 0 ? 0x80 : 0x0;
         if (negative != 0) {
             n = -n;
+            if (n == -n) --n; // underflow, caught as "too big" later.
         }
         if (n < (0x1 << 5)) {
             byte b = (byte)(n | negative);
