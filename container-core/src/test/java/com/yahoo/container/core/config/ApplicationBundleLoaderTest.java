@@ -2,7 +2,7 @@
 package com.yahoo.container.core.config;
 
 import com.yahoo.container.di.Osgi.GenerationStatus;
-import com.yahoo.jdisc.core.BsnVersion;
+import com.yahoo.jdisc.application.BsnVersion;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.osgi.framework.Bundle;

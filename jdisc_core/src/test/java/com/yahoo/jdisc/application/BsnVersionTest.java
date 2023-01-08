@@ -1,4 +1,4 @@
-package com.yahoo.jdisc.core;
+package com.yahoo.jdisc.application;
 
 import org.junit.jupiter.api.Test;
 import org.osgi.framework.Version;
