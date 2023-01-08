@@ -16,7 +16,7 @@ import com.yahoo.container.di.config.SubscriberFactory;
 import com.yahoo.container.logging.AccessLog;
 import com.yahoo.filedistribution.fileacquirer.FileAcquirer;
 import com.yahoo.jdisc.application.OsgiFramework;
-import com.yahoo.jdisc.core.BsnVersion;
+import com.yahoo.jdisc.application.BsnVersion;
 import com.yahoo.jdisc.handler.RequestHandler;
 import com.yahoo.jdisc.service.ClientProvider;
 import com.yahoo.jdisc.service.ServerProvider;
