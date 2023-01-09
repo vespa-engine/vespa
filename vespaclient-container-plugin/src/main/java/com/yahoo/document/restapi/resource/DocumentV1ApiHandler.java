@@ -3,8 +3,8 @@ package com.yahoo.document.restapi.resource;
 
 import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonGenerator;
-import com.yahoo.component.annotation.Inject;
 import com.yahoo.cloud.config.ClusterListConfig;
+import com.yahoo.component.annotation.Inject;
 import com.yahoo.concurrent.DaemonThreadFactory;
 import com.yahoo.concurrent.SystemTimer;
 import com.yahoo.container.core.HandlerMetricContextUtil;
@@ -116,7 +116,6 @@ import static com.yahoo.jdisc.http.HttpRequest.Method.GET;
 import static com.yahoo.jdisc.http.HttpRequest.Method.OPTIONS;
 import static com.yahoo.jdisc.http.HttpRequest.Method.POST;
 import static com.yahoo.jdisc.http.HttpRequest.Method.PUT;
-import static com.yahoo.vespa.http.server.Headers.CLIENT_VERSION;
 import static java.util.Objects.requireNonNull;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.logging.Level.FINE;
@@ -1029,7 +1028,7 @@ public class DocumentV1ApiHandler extends AbstractRequestHandler {
         }
     }
 
-    static class DocumentOperationParser {
+    class DocumentOperationParser {
 
         private final DocumentTypeManager manager;
 
@@ -1046,7 +1045,12 @@ public class DocumentV1ApiHandler extends AbstractRequestHandler {
         }
 
         private ParsedDocumentOperation parse(InputStream inputStream, String docId, DocumentOperationType operation) {
-            return new JsonReader(manager, inputStream, jsonFactory).readSingleDocument(operation, docId);
+            try {
+                return new JsonReader(manager, inputStream, jsonFactory).readSingleDocument(operation, docId);
+            } catch (IllegalArgumentException e) {
+                incrementMetricParseError();
+                throw e;
+            }
         }
 
     }
@@ -1134,6 +1138,7 @@ public class DocumentV1ApiHandler extends AbstractRequestHandler {
     private void incrementMetricConditionNotMet() { incrementMetric(MetricNames.CONDITION_NOT_MET); }
     private void incrementMetricSucceeded() { incrementMetric(MetricNames.SUCCEEDED); }
     private void incrementMetricNotFound() { incrementMetric(MetricNames.NOT_FOUND); }
+    private void incrementMetricParseError() { incrementMetric(MetricNames.PARSE_ERROR); }
     private void incrementMetric(String n) { metric.add(n, 1, null); }
     private void setMetric(String n, Number v) { metric.set(n, v, null); }
 

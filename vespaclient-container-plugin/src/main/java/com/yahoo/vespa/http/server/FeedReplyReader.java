@@ -53,11 +53,13 @@ public class FeedReplyReader implements ReplyHandler {
             enqueue(context, reply.getError(0).getMessage(), ErrorCode.ERROR, false, reply.getTrace());
         } else {
             metricsHelper.reportSuccessful(type, latencyInSeconds);
-            metric.add(MetricNames.SUCCEEDED, 1, null);
             if ( ! conditionMet)
                 metric.add(MetricNames.CONDITION_NOT_MET, 1, testAndSetMetricCtx);
-            if ( ! updateNotFound(reply))
+            else if ( ! updateNotFound(reply))
                 metric.add(MetricNames.NOT_FOUND, 1, null);
+            else
+                metric.add(MetricNames.SUCCEEDED, 1, null);
+
             enqueue(context, "Document processed.", ErrorCode.OK, !conditionMet, reply.getTrace());
         }
     }
