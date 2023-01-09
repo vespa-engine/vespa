@@ -20,35 +20,25 @@ import java.util.Objects;
 @JsonIgnoreProperties(ignoreUnknown = true)
 @JsonInclude(value = JsonInclude.Include.NON_NULL)
 public class SharedHost {
-    private final int DEFAULT_MIN_COUNT = 0;
 
     private final List<HostResources> resources;
-    private final int minCount;
 
     public static SharedHost createDisabled() {
-        return new SharedHost(null, null);
+        return new SharedHost(null);
     }
 
     /**
      * @param resourcesOrNull the resources of the shared host (or several to support e.g. tiers or
      *                        fast/slow disks separately)
-     * @param minCountOrNull  the minimum number of shared hosts
      */
     @JsonCreator
-    public SharedHost(@JsonProperty("resources") List<HostResources> resourcesOrNull,
-                      @JsonProperty("min-count") Integer minCountOrNull) {
+    public SharedHost(@JsonProperty("resources") List<HostResources> resourcesOrNull) {
         this.resources = resourcesOrNull == null ? List.of() : List.copyOf(resourcesOrNull);
-        this.minCount = requireNonNegative(minCountOrNull, DEFAULT_MIN_COUNT, "min-count");
     }
 
     @JsonGetter("resources")
     public List<HostResources> getResourcesOrNull() {
         return resources.isEmpty() ? null : resources;
-    }
-
-    @JsonGetter("min-count")
-    public Integer getMinCountOrNull() {
-        return minCount == DEFAULT_MIN_COUNT ? null : minCount;
     }
 
     @JsonIgnore
@@ -59,11 +49,6 @@ public class SharedHost {
     @JsonIgnore
     public List<HostResources> getHostResources() {
         return resources;
-    }
-
-    @JsonIgnore
-    public int getMinCount() {
-        return minCount;
     }
 
     @Override
@@ -84,15 +69,4 @@ public class SharedHost {
         return Objects.hash(resources);
     }
 
-    private int requireNonNegative(Integer integerOrNull, int defaultValue, String fieldName) {
-        if (integerOrNull == null) {
-            return defaultValue;
-        }
-
-        if (integerOrNull < 0) {
-            throw new IllegalArgumentException(fieldName + " cannot be negative");
-        }
-
-        return integerOrNull;
-    }
 }
