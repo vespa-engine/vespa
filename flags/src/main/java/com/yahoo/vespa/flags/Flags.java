@@ -46,6 +46,12 @@ public class Flags {
 
     private static volatile TreeMap<FlagId, FlagDefinition> flags = new TreeMap<>();
 
+    public static final UnboundBooleanFlag RECURSIVE_WANT_TO_DEPROVISION = defineFeatureFlag(
+            "recursive-want-to-deprovision", true,
+            List.of("hakonhall"), "2023-01-09", "2023-02-08",
+            "Whether setting or clearing wantToDeprovision on a host should be applied to the children.",
+            "Takes effect immediately.");
+
     public static final UnboundDoubleFlag DEFAULT_TERM_WISE_LIMIT = defineDoubleFlag(
             "default-term-wise-limit", 1.0,
             List.of("baldersheim"), "2020-12-02", "2023-12-31",

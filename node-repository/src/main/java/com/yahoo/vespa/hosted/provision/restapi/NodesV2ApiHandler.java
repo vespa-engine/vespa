@@ -26,6 +26,7 @@ import com.yahoo.slime.Cursor;
 import com.yahoo.slime.Inspector;
 import com.yahoo.slime.Slime;
 import com.yahoo.slime.SlimeUtils;
+import com.yahoo.vespa.flags.FlagSource;
 import com.yahoo.vespa.hosted.provision.NoSuchNodeException;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeList;
@@ -75,14 +76,16 @@ public class NodesV2ApiHandler extends ThreadedHttpRequestHandler {
     private final Orchestrator orchestrator;
     private final NodeRepository nodeRepository;
     private final NodeFlavors nodeFlavors;
+    private final FlagSource flagSource;
 
     @Inject
     public NodesV2ApiHandler(ThreadedHttpRequestHandler.Context parentCtx, Orchestrator orchestrator,
-                             NodeRepository nodeRepository, NodeFlavors flavors) {
+                             NodeRepository nodeRepository, NodeFlavors flavors, FlagSource flagSource) {
         super(parentCtx);
         this.orchestrator = orchestrator;
         this.nodeRepository = nodeRepository;
         this.nodeFlavors = flavors;
+        this.flagSource = flagSource;
     }
 
     @Override
@@ -169,7 +172,7 @@ public class NodesV2ApiHandler extends ThreadedHttpRequestHandler {
     private HttpResponse handlePATCH(HttpRequest request) {
         Path path = new Path(request.getUri());
         if (path.matches("/nodes/v2/node/{hostname}")) {
-            NodePatcher patcher = new NodePatcher(nodeFlavors, nodeRepository);
+            NodePatcher patcher = new NodePatcher(nodeFlavors, nodeRepository, flagSource);
             String hostname = path.get("hostname");
             if (isTenantPeer(request)) {
                 patcher.patchFromUntrustedTenantHost(hostname, request.getData());

@@ -218,9 +218,8 @@ public class NodesV2ApiTest {
         assertResponse(new Request("http://localhost:8080/nodes/v2/node/dockerhost2.yahoo.com",
                                    Utf8.toBytes("{\"wantToDeprovision\": true, \"wantToRetire\": true}"), Request.Method.PATCH),
                        "{\"message\":\"Updated dockerhost2.yahoo.com\"}");
-        // Make sure that wantToRetire is applied recursively, but wantToDeprovision isn't
         tester.assertResponseContains(new Request("http://localhost:8080/nodes/v2/node/host5.yahoo.com"),
-                "\"wantToRetire\":true,\"preferToRetire\":false,\"wantToDeprovision\":false,");
+                "\"wantToRetire\":true,\"preferToRetire\":false,\"wantToDeprovision\":true,");
         assertResponse(new Request("http://localhost:8080/nodes/v2/node/dockerhost1.yahoo.com",
                                    Utf8.toBytes("{\"wantToRebuild\": true, \"wantToRetire\": true}"), Request.Method.PATCH),
                        "{\"message\":\"Updated dockerhost1.yahoo.com\"}");
