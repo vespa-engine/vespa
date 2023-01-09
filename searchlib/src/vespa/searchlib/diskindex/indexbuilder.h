@@ -21,23 +21,35 @@ class BitVectorCandidate;
  */
 class IndexBuilder : public index::IndexBuilder {
 public:
-    class FieldHandle;
+    // Schema argument must live until IndexBuilder has been deleted.
+    IndexBuilder(const index::Schema &schema, vespalib::stringref prefix, uint32_t docIdLimit);
+    ~IndexBuilder() override;
 
-    using Schema = index::Schema;
+    void startField(uint32_t fieldId) override;
+    void endField() override;
+    void startWord(vespalib::stringref word) override;
+    void endWord() override;
+    void add_document(const index::DocIdAndFeatures &features) override;
+    vespalib::string appendToPrefix(vespalib::stringref name) const;
+
+    void open(uint64_t numWordIds, const index::IFieldLengthInspector &field_length_inspector,
+              const TuneFileIndexing &tuneFileIndexing,
+              const common::FileHeaderContext &fileHandleContext);
+
+    void close();
 private:
-    // Text fields
-    FieldHandle             *_currentField;
-    uint32_t                 _curDocId;
-    uint32_t                 _lowestOKDocId;
-    vespalib::string         _curWord;
-    bool                     _inWord;
-    uint32_t                 _lowestOKFieldId;
-    std::vector<FieldHandle> _fields;   // Defined fields.
-    vespalib::string         _prefix;
-    uint32_t                 _docIdLimit;
-    uint64_t                 _numWordIds;
+    class FieldHandle;
+    const index::Schema      &_schema;
+    std::vector<FieldHandle>  _fields;
+    const vespalib::string    _prefix;
+    vespalib::string          _curWord;
+    const uint32_t            _docIdLimit;
+    int32_t                   _curFieldId;
+    uint32_t                  _lowestOKFieldId;
+    uint32_t                  _curDocId;
+    bool                      _inWord;
 
-    const Schema &_schema;
+    static std::vector<IndexBuilder::FieldHandle> extractFields(const index::Schema &schema, IndexBuilder & builder);
 
     static uint32_t noDocId() {
         return std::numeric_limits<uint32_t>::max();
@@ -46,30 +58,7 @@ private:
     static uint64_t noWordNumHigh() {
         return std::numeric_limits<uint64_t>::max();
     }
-
-public:
-    using WordDocElementWordPosFeatures = index::WordDocElementWordPosFeatures;
-
-    // Schema argument must live until IndexBuilder has been deleted.
-    IndexBuilder(const Schema &schema); 
-    ~IndexBuilder() override;
-
-    void startField(uint32_t fieldId) override;
-    void endField() override;
-    void startWord(vespalib::stringref word) override;
-    void endWord() override;
-    void add_document(const index::DocIdAndFeatures &features) override;
-
-    void setPrefix(vespalib::stringref prefix);
-
-    vespalib::string appendToPrefix(vespalib::stringref name);
-
-    void open(uint32_t docIdLimit, uint64_t numWordIds,
-              const index::IFieldLengthInspector &field_length_inspector,
-              const TuneFileIndexing &tuneFileIndexing,
-              const common::FileHeaderContext &fileHandleContext);
-
-    void close();
+    FieldHandle & currentField();
 };
 
 }

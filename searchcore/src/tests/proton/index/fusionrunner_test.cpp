@@ -199,21 +199,15 @@ void Test::createIndex(const string &dir, uint32_t id, bool fusion) {
     addDocument(doc_builder, memory_index, *_selector, id, id + 2, "baz");
     addDocument(doc_builder, memory_index, *_selector, id, id + 3, "qux");
 
-    const uint32_t docIdLimit =
-        std::min(memory_index.getDocIdLimit(), _selector->getDocIdLimit());
-    IndexBuilder index_builder(schema);
-    index_builder.setPrefix(index_dir);
+    const uint32_t docIdLimit = std::min(memory_index.getDocIdLimit(), _selector->getDocIdLimit());
+    IndexBuilder index_builder(schema, index_dir, docIdLimit);
     TuneFileIndexing tuneFileIndexing;
     TuneFileAttributes tuneFileAttributes;
-    index_builder.open(docIdLimit, memory_index.getNumWords(),
-                       MockFieldLengthInspector(),
-                       tuneFileIndexing,
-                       _fileHeaderContext);
+    index_builder.open(memory_index.getNumWords(), MockFieldLengthInspector(), tuneFileIndexing, _fileHeaderContext);
     memory_index.dump(index_builder);
     index_builder.close();
 
-    _selector->extractSaveInfo(index_dir + "/selector")->
-        save(tuneFileAttributes, _fileHeaderContext);
+    _selector->extractSaveInfo(index_dir + "/selector")->save(tuneFileAttributes, _fileHeaderContext);
 }
 
 set<uint32_t> readFusionIds(const string &dir) {
