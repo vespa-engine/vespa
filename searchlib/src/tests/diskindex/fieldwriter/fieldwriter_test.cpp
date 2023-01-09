@@ -1,6 +1,5 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/searchlib/common/bitvector.h>
 #include <vespa/searchlib/diskindex/fieldreader.h>
 #include <vespa/searchlib/diskindex/fieldwriter.h>
 #include <vespa/searchlib/diskindex/pagedict4file.h>
@@ -208,9 +207,8 @@ WrappedFieldWriter::open()
     TuneFileSeqWrite tuneFileWrite;
     DummyFileHeaderContext fileHeaderContext;
     fileHeaderContext.disableFileName();
-    _fieldWriter = std::make_unique<FieldWriter>(_docIdLimit, _numWordIds);
-    _fieldWriter->open(_namepref,
-                       minSkipDocs, minChunkDocs,
+    _fieldWriter = std::make_unique<FieldWriter>(_docIdLimit, _numWordIds, _namepref);
+    _fieldWriter->open(minSkipDocs, minChunkDocs,
                        _dynamicK, _encode_interleaved_features,
                        _schema, _indexId,
                        FieldLengthInfo(4.5, 42),

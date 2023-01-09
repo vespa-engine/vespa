@@ -97,9 +97,9 @@ FileHandle::open(vespalib::stringref dir,
 {
     assert(_fieldWriter.get() == nullptr);
 
-    _fieldWriter = std::make_shared<FieldWriter>(docIdLimit, numWordIds);
+    _fieldWriter = std::make_shared<FieldWriter>(docIdLimit, numWordIds, dir + "/");
 
-    if (!_fieldWriter->open(dir + "/", 64, 262144u, false,
+    if (!_fieldWriter->open(64, 262144u, false,
                             index.use_interleaved_features(),
                             index.getSchema(), index.getIndex(),
                             field_length_info,
