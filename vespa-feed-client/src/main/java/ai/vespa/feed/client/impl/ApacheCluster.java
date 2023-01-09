@@ -49,7 +49,7 @@ class ApacheCluster implements Cluster {
                                                                    new BasicHeader("Vespa-Client-Version", Vespa.VERSION));
     private final Header gzipEncodingHeader = new BasicHeader(HttpHeaders.CONTENT_ENCODING, "gzip");
     private final RequestConfig requestConfig;
-    private final boolean gzip;
+    private final Compression compression;
     private int someNumber = 0;
 
     private final ExecutorService dispatchExecutor = Executors.newFixedThreadPool(8, t -> new Thread(t, "request-dispatch-thread"));
@@ -60,7 +60,7 @@ class ApacheCluster implements Cluster {
             for (URI endpoint : builder.endpoints)
                 endpoints.add(new Endpoint(createHttpClient(builder), endpoint));
         this.requestConfig = createRequestConfig(builder);
-        this.gzip = builder.compression == Compression.gzip;
+        this.compression = builder.compression;
     }
 
     @Override
@@ -89,7 +89,7 @@ class ApacheCluster implements Cluster {
                 wrapped.headers().forEach((name, value) -> request.setHeader(name, value.get()));
                 if (wrapped.body() != null) {
                     byte[] body = wrapped.body();
-                    if (gzip) {
+                    if (compression == Compression.gzip || compression == null && body.length > 512) {
                         request.setHeader(gzipEncodingHeader);
                         body = gzipped(body);
                     }

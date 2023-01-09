@@ -187,7 +187,7 @@ class CliArguments {
 
     Compression compression() throws CliArgumentsException {
         try {
-            return stringValue(COMPRESSION).map(Compression::valueOf).orElse(none);
+            return stringValue(COMPRESSION).map(Compression::valueOf).orElse(null);
         }
         catch (IllegalArgumentException e) {
             throw new CliArgumentsException("Invalid " + COMPRESSION + " argument: " + e.getMessage(), e);
