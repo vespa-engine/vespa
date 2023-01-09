@@ -16,12 +16,12 @@ namespace search::diskindex {
 using vespalib::getLastErrorString;
 using common::FileHeaderContext;
 
-FieldWriter::FieldWriter(uint32_t docIdLimit, uint64_t numWordIds)
+FieldWriter::FieldWriter(uint32_t docIdLimit, uint64_t numWordIds, vespalib::stringref prefix)
     : _dictFile(),
       _posoccfile(),
       _bvc(docIdLimit),
       _bmapfile(BitVectorKeyScope::PERFIELD_WORDS),
-      _prefix(),
+      _prefix(prefix),
       _word(),
       _numWordIds(numWordIds),
       _compactWordNum(0),
@@ -34,8 +34,7 @@ FieldWriter::FieldWriter(uint32_t docIdLimit, uint64_t numWordIds)
 FieldWriter::~FieldWriter() = default;
 
 bool
-FieldWriter::open(const vespalib::string &prefix,
-                  uint32_t minSkipDocs,
+FieldWriter::open(uint32_t minSkipDocs,
                   uint32_t minChunkDocs,
                   bool dynamicKPosOccFormat,
                   bool encode_interleaved_features,
@@ -45,8 +44,7 @@ FieldWriter::open(const vespalib::string &prefix,
                   const TuneFileSeqWrite &tuneFileWrite,
                   const FileHeaderContext &fileHeaderContext)
 {
-    _prefix = prefix;
-    vespalib::string name = prefix + "posocc.dat.compressed";
+    vespalib::string name = _prefix + "posocc.dat.compressed";
 
     PostingListParams params;
     PostingListParams featureParams;
@@ -88,8 +86,7 @@ FieldWriter::open(const vespalib::string &prefix,
 
     // Open output boolocc.bdat file
     vespalib::string booloccbidxname = _prefix + "boolocc";
-    _bmapfile.open(booloccbidxname.c_str(), _docIdLimit, tuneFileWrite,
-                   fileHeaderContext);
+    _bmapfile.open(booloccbidxname.c_str(), _docIdLimit, tuneFileWrite, fileHeaderContext);
 
     return true;
 }

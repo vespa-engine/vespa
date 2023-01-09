@@ -321,7 +321,7 @@ FieldMerger::open_field_writer()
         field_length_info = _readers.back()->get_field_length_info();
     }
     SchemaUtil::IndexIterator index(_fusion_out_index.get_schema(), _id);
-    if (!_writer->open(_field_dir + "/", 64, 262144, _fusion_out_index.get_dynamic_k_pos_index_format(),
+    if (!_writer->open(64, 262144, _fusion_out_index.get_dynamic_k_pos_index_format(),
                        index.use_interleaved_features(), index.getSchema(),
                        index.getIndex(),
                        field_length_info,
@@ -414,7 +414,7 @@ void
 FieldMerger::merge_postings_start()
 {
     /* OUTPUT */
-    _writer = std::make_unique<FieldWriter>(_fusion_out_index.get_doc_id_limit(), _num_word_ids);
+    _writer = std::make_unique<FieldWriter>(_fusion_out_index.get_doc_id_limit(), _num_word_ids, _field_dir + "/");
     _readers.reserve(_fusion_out_index.get_old_indexes().size());
     allocate_field_length_scanner();
     _open_reader_idx = 0;

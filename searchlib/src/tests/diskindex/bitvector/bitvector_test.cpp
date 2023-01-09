@@ -14,44 +14,32 @@ LOG_SETUP("bitvector_test");
 using namespace search::index;
 using search::index::schema::DataType;
 
-namespace search {
-namespace diskindex {
+namespace search::diskindex {
 
 struct FieldWriterWrapper
 {
     FieldWriter _writer;
 
-    FieldWriterWrapper(uint32_t docIdLimit, uint64_t numWordIds);
+    FieldWriterWrapper(uint32_t docIdLimit, uint64_t numWordIds, vespalib::stringref path);
+    FieldWriterWrapper & newWord(vespalib::stringref word);
+    FieldWriterWrapper & add(uint32_t docId);
 
-    FieldWriterWrapper &
-    newWord(vespalib::stringref word);
-
-    FieldWriterWrapper &
-    add(uint32_t docId);
-
-    bool
-    open(const std::string &path,
-         const Schema &schema,
-         const uint32_t indexId,
-         const TuneFileSeqWrite &tuneFileWrite,
-         const common::FileHeaderContext &fileHeaderContext);
+    bool open(const Schema &schema, const uint32_t indexId,
+              const TuneFileSeqWrite &tuneFileWrite, const common::FileHeaderContext &fileHeaderContext);
 };
 
 
-FieldWriterWrapper::FieldWriterWrapper(uint32_t docIdLimit, uint64_t numWordIds)
-    : _writer(docIdLimit, numWordIds)
+FieldWriterWrapper::FieldWriterWrapper(uint32_t docIdLimit, uint64_t numWordIds, vespalib::stringref path)
+    : _writer(docIdLimit, numWordIds, path)
 {
+    std::filesystem::create_directory(std::filesystem::path(path));
 }
 
 bool
-FieldWriterWrapper::open(const std::string &path,
-                        const Schema &schema,
-                        const uint32_t indexId,
-                        const TuneFileSeqWrite &tuneFileWrite,
-                        const common::FileHeaderContext &fileHeaderContext)
+FieldWriterWrapper::open(const Schema &schema, const uint32_t indexId,
+                         const TuneFileSeqWrite &tuneFileWrite, const common::FileHeaderContext &fileHeaderContext)
 {
-    std::filesystem::create_directory(std::filesystem::path(path));
-    return _writer.open(path, 64, 10000, false, false, schema, indexId, FieldLengthInfo(), tuneFileWrite, fileHeaderContext);
+    return _writer.open(64, 10000, false, false, schema, indexId, FieldLengthInfo(), tuneFileWrite, fileHeaderContext);
 }
 
 FieldWriterWrapper &
@@ -104,10 +92,9 @@ Test::requireThatDictionaryHandlesNoEntries(bool directio, bool readmmap)
     }
     if (readmmap)
         tuneFileRead.setWantMemoryMap();
-    FieldWriterWrapper fww(5, 2);
     std::filesystem::create_directory(std::filesystem::path("dump"));
-    EXPECT_TRUE(fww.open("dump/1/", _schema, _indexId, tuneFileWrite,
-                         fileHeaderContext));
+    FieldWriterWrapper fww(5, 2, "dump/1/");
+    EXPECT_TRUE(fww.open(_schema, _indexId, tuneFileWrite, fileHeaderContext));
     fww.newWord("1").add(1);
     fww.newWord("2").add(2).add(3);
     EXPECT_TRUE(fww._writer.close());
@@ -134,9 +121,8 @@ Test::requireThatDictionaryHandlesMultipleEntries(bool directio, bool readmmap)
     }
     if (readmmap)
         tuneFileRead.setWantMemoryMap();
-    FieldWriterWrapper fww(64, 6);
-    EXPECT_TRUE(fww.open("dump/2/", _schema, _indexId, tuneFileWrite,
-                         fileHeaderContext));
+    FieldWriterWrapper fww(64, 6, "dump/2/");
+    EXPECT_TRUE(fww.open(_schema, _indexId, tuneFileWrite, fileHeaderContext));
     // must have >16 docs in order to create bitvector for a word
     // 17 docs for word 1
     BitVector::UP bv1exp(BitVector::create(64));
@@ -202,9 +188,6 @@ Test::Main()
 {
     TEST_INIT("bitvector_test");
 
-    TuneFileSeqWrite tuneFileWrite;
-    TuneFileRandRead tuneFileRead;
-
     if (_argc > 0) {
         DummyFileHeaderContext::setCreator(_argv[0]);
     }
@@ -218,7 +201,6 @@ Test::Main()
     TEST_DONE();
 }
 
-}
 }
 
 TEST_APPHOOK(search::diskindex::Test);

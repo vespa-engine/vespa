@@ -27,7 +27,7 @@ public:
     FieldWriter(const FieldWriter &&rhs) = delete;
     FieldWriter &operator=(const FieldWriter &rhs) = delete;
     FieldWriter &operator=(const FieldWriter &&rhs) = delete;
-    FieldWriter(uint32_t docIdLimit, uint64_t numWordIds);
+    FieldWriter(uint32_t docIdLimit, uint64_t numWordIds, vespalib::stringref prefix);
     ~FieldWriter();
 
     void newWord(uint64_t wordNum, vespalib::stringref word);
@@ -43,7 +43,7 @@ public:
 
     uint64_t getSparseWordNum() const { return _wordNum; }
 
-    bool open(const vespalib::string &prefix, uint32_t minSkipDocs, uint32_t minChunkDocs,
+    bool open(uint32_t minSkipDocs, uint32_t minChunkDocs,
               bool dynamicKPosOccFormat,
               bool encode_interleaved_features,
               const Schema &schema, uint32_t indexId,
@@ -61,15 +61,15 @@ private:
     using PostingListCounts = index::PostingListCounts;
     std::unique_ptr<DictionaryFileSeqWrite>  _dictFile;
     std::unique_ptr<PostingListFileSeqWrite> _posoccfile;
-    BitVectorCandidate _bvc;
-    BitVectorFileWrite _bmapfile;
-    vespalib::string   _prefix;
-    vespalib::string   _word;
-    const uint64_t     _numWordIds;
-    uint64_t           _compactWordNum;
-    uint64_t           _wordNum;
-    uint32_t           _prevDocId;
-    const uint32_t     _docIdLimit;
+    BitVectorCandidate      _bvc;
+    BitVectorFileWrite      _bmapfile;
+    const vespalib::string  _prefix;
+    vespalib::string        _word;
+    const uint64_t          _numWordIds;
+    uint64_t                _compactWordNum;
+    uint64_t                _wordNum;
+    uint32_t                _prevDocId;
+    const uint32_t          _docIdLimit;
     void flush();
     static uint64_t noWordNum() { return 0u; }
 };
