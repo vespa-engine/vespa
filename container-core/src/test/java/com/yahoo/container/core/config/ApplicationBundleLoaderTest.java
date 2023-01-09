@@ -2,6 +2,7 @@
 package com.yahoo.container.core.config;
 
 import com.yahoo.container.di.Osgi.GenerationStatus;
+import com.yahoo.jdisc.application.BsnVersion;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.osgi.framework.Bundle;
@@ -35,6 +36,7 @@ public class ApplicationBundleLoaderTest {
     @Test
     void bundles_are_installed_and_started() {
         bundleLoader.useBundles(List.of(BUNDLE_1_REF));
+        bundleLoader.completeGeneration(GenerationStatus.SUCCESS);
         assertEquals(1, osgi.getInstalledBundles().size());
 
         // The bundle is installed and started
@@ -45,6 +47,16 @@ public class ApplicationBundleLoaderTest {
         // The file reference is active
         assertEquals(1, bundleLoader.getActiveFileReferences().size());
         assertEquals(BUNDLE_1_REF, bundleLoader.getActiveFileReferences().get(0));
+    }
+
+    @Test
+    void current_bundles_metadata_can_be_retrieved() {
+        bundleLoader.useBundles(List.of(BUNDLE_1_REF, BUNDLE_2_REF));
+        bundleLoader.completeGeneration(GenerationStatus.SUCCESS);
+
+        List<BsnVersion> activeBundles = bundleLoader.activeBundlesBsnVersion();
+        assertEquals(new BsnVersion(BUNDLE_1), activeBundles.get(0));
+        assertEquals(new BsnVersion(BUNDLE_2), activeBundles.get(1));
     }
 
     @Test

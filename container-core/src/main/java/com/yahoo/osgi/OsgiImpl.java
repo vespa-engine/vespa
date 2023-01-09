@@ -67,8 +67,8 @@ public class OsgiImpl implements Osgi {
     }
 
     /**
-     * Tries to resolve the given class from this class' bundle classloader.
-     * If unsuccessful, resolves the class from .
+     * Tries to resolve the given class from this class' bundle.
+     * If unsuccessful, resolves the class from the system bundle (jdisc_core).
      */
     @SuppressWarnings("unchecked")
     private Class<Object> resolveFromThisBundleOrSystemBundle(BundleInstantiationSpecification spec) {
@@ -86,9 +86,14 @@ public class OsgiImpl implements Osgi {
             }
         }
         throw new IllegalArgumentException(
-                "Could not create a component with id '" + spec.classId.getName() + "'. Tried to load class directly, " +
-                        "since no bundle was found for spec: " + spec.bundle + ". If a bundle with the same name is installed, " +
-                        "there is a either a version mismatch or the installed bundle's version contains a qualifier string.");
+                "Could not create a component with class '" + spec.classId.getName() +
+                        "'. Tried to load class directly, since no bundle was found for spec: " + spec.bundle +
+                        ". " + bundleResolutionErrorMessage(spec.bundle));
+    }
+
+    protected String bundleResolutionErrorMessage(ComponentSpecification bundleSpec) {
+        return "If a bundle with the same name is installed, there is a either a version mismatch " +
+                "or the installed bundle's version contains a qualifier string.";
     }
 
     @SuppressWarnings("unchecked")
