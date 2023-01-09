@@ -120,14 +120,14 @@ public class HandlersConfigurerDi {
 
             String versionsMessage = "";
             if (activeVersions.size() == 1) {
-                versionsMessage = "There is an installed bundle with the same name with version: " + activeVersions.get(0);
+                versionsMessage = "There is an installed bundle with the same name with version: " + activeVersions.get(0) + " ";
             } else if (activeVersions.size() > 1) {
-                versionsMessage = "There are installed bundles with the same name with versions: " + activeVersions;
+                versionsMessage = "There are installed bundles with the same name with versions: " + activeVersions + " ";
             }
             if (qualifierIsUsed(bundleSpec, activeVersions)) {
-                versionsMessage += " Note that qualifier strings must be matched exactly";
+                versionsMessage += " Note that qualifier strings must be matched exactly. ";
             }
-            return String.format("%s. Installed application bundles: [%s]",
+            return String.format("%sInstalled application bundles: [%s]",
                                  versionsMessage,
                                  activeBundles.stream()
                                          .map(BsnVersion::toReadableString)

@@ -92,7 +92,7 @@ public class OsgiImpl implements Osgi {
     }
 
     protected String bundleResolutionErrorMessage(ComponentSpecification bundleSpec) {
-        return " If a bundle with the same name is installed, there is a either a version mismatch " +
+        return "If a bundle with the same name is installed, there is a either a version mismatch " +
                 "or the installed bundle's version contains a qualifier string.";
     }
 
