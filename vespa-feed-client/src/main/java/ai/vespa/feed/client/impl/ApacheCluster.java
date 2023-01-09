@@ -36,6 +36,8 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.zip.GZIPOutputStream;
 
+import static ai.vespa.feed.client.FeedClientBuilder.Compression.auto;
+import static ai.vespa.feed.client.FeedClientBuilder.Compression.gzip;
 import static org.apache.hc.core5.http.ssl.TlsCiphers.excludeH2Blacklisted;
 import static org.apache.hc.core5.http.ssl.TlsCiphers.excludeWeak;
 
@@ -89,7 +91,7 @@ class ApacheCluster implements Cluster {
                 wrapped.headers().forEach((name, value) -> request.setHeader(name, value.get()));
                 if (wrapped.body() != null) {
                     byte[] body = wrapped.body();
-                    if (compression == Compression.gzip || compression == null && body.length > 512) {
+                    if (compression == gzip || compression == auto && body.length > 512) {
                         request.setHeader(gzipEncodingHeader);
                         body = gzipped(body);
                     }

@@ -371,7 +371,7 @@ class CliArguments {
                 .addOption(Option.builder()
                         .longOpt(COMPRESSION)
                         .desc("Forced compression mode for feed requests; the default is to compress large requests. " +
-                              "Valid arguments are: 'none', 'gzip'")
+                              "Valid arguments are: 'auto' (default), 'none', 'gzip'")
                         .hasArg()
                         .type(Compression.class)
                         .build());

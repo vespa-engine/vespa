@@ -9,7 +9,8 @@ Vespa feed client
     --compression <arg>                   Forced compression mode for feed
                                           requests; the default is to
                                           compress large requests. Valid
-                                          arguments are: 'none', 'gzip'
+                                          arguments are: 'auto' (default),
+                                          'none', 'gzip'
     --connections <arg>                   Number of concurrent HTTP/2
                                           connections
     --disable-ssl-hostname-verification   Disable SSL hostname
