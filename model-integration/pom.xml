@@ -15,6 +15,10 @@
   <version>8-SNAPSHOT</version>
   <packaging>container-plugin</packaging>
   <dependencies>
+    <!--
+      Note: model-integration is included in config-model.
+      Exclude all dependencies here which are not needed there in fat-model-dependencies.
+    -->
     <dependency>
       <groupId>com.yahoo.vespa</groupId>
       <artifactId>annotations</artifactId>
