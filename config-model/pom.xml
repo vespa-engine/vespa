@@ -162,6 +162,12 @@
       <artifactId>model-integration</artifactId>
       <version>${project.version}</version>
       <scope>provided</scope>
+      <exclusions>
+        <exclusion>
+          <groupId>ai.djl.huggingface</groupId>
+          <artifactId>tokenizers</artifactId>
+        </exclusion>
+      </exclusions>
     </dependency>
     <dependency>
       <groupId>com.yahoo.vespa</groupId>
