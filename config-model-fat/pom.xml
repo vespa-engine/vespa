@@ -187,6 +187,8 @@
                     <i>com.yahoo.vespa:vsm:*:*</i>
 
                     <!-- 3rd party artifacts embedded -->
+                    <i>ai.djl:api:jar:*:*</i>
+                    <i>ai.djl.huggingface:tokenizers:*:*</i>
                     <i>aopalliance:aopalliance:*:*</i>
                     <i>biz.aQute.bnd:biz.aQute.bnd.util:*:*</i>
                     <i>biz.aQute.bnd:biz.aQute.bndlib:*:*</i>
@@ -208,9 +210,11 @@
                     <i>io.prometheus:simpleclient:*:*</i>
                     <i>io.prometheus:simpleclient_common:*:*</i>
                     <i>javax.inject:javax.inject:*:*</i>
+                    <i>net.java.dev.jna:jna:*:*</i>
                     <i>net.openhft:zero-allocation-hashing:*:*</i>
                     <i>org.antlr:antlr-runtime:*:*</i>
                     <i>org.antlr:antlr4-runtime:*:*</i>
+                    <i>org.apache.commons:commons-compress:*:*</i>
                     <i>org.apache.felix:org.apache.felix.framework:*:*</i>
                     <i>org.bouncycastle:bcpkix-jdk18on:*:*</i>
                     <i>org.bouncycastle:bcprov-jdk18on:*:*</i>

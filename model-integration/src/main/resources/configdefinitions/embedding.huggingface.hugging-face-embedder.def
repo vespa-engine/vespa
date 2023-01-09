@@ -1,0 +1,18 @@
+namespace=embedding.huggingface
+
+# Path to tokenizer.json
+tokenizerPath model
+
+# Path to model.onnx
+transformerModel  model
+
+# Max length of token sequence model can handle
+transformerMaxTokens int default=512
+
+# Input names
+transformerInputIds      string default=input_ids
+transformerAttentionMask string default=attention_mask
+
+# Output name
+transformerOutput string default=last_hidden_state
+
