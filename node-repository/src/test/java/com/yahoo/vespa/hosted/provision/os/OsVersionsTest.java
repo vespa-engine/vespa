@@ -26,7 +26,6 @@ import java.util.List;
 import java.util.Optional;
 import java.util.function.Function;
 import java.util.function.Supplier;
-import java.util.stream.Collectors;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -181,8 +180,15 @@ public class OsVersionsTest {
         versions.setTarget(NodeType.host, version1, false);
         versions.resumeUpgradeOf(NodeType.host, true);
 
-        // One host is deprovisioning
+        // First batch of hosts starts deprovisioning
         assertEquals(maxActiveUpgrades, hostNodes.get().deprovisioning().size());
+
+        // Deprovisioning is rescheduled if some other agent resets wantToRetire/wantToDeprovision
+        Node host0 = hostNodes.get().deprovisioning().first().get();
+        tester.patchNode(host0, (h) -> h.withWantToRetire(false, false, Agent.system,
+                                                          tester.nodeRepository().clock().instant()));
+        versions.resumeUpgradeOf(NodeType.host, true);
+        assertTrue(hostNodes.get().deprovisioning().node(host0.hostname()).isPresent());
 
         // Nothing happens on next resume as first batch has not completed upgrade
         versions.resumeUpgradeOf(NodeType.host, true);
