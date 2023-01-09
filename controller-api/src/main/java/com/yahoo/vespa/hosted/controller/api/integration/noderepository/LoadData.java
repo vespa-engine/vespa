@@ -14,11 +14,13 @@ import com.yahoo.vespa.hosted.controller.api.integration.configserver.Load;
 public class LoadData {
 
     @JsonProperty("cpu")
-    private Double cpu;
+    public Double cpu;
+
     @JsonProperty("memory")
-    private Double memory;
+    public Double memory;
+
     @JsonProperty("disk")
-    private Double disk;
+    public Double disk;
 
     public Load toLoad() {
         return new Load(cpu, memory, disk);
