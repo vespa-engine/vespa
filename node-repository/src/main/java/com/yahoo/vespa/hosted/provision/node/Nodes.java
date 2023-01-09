@@ -332,8 +332,8 @@ public class Nodes {
         return fail(hostname, false, agent, reason);
     }
 
-    public Node fail(String hostname, boolean wantToDeprovision, Agent agent, String reason) {
-        return move(hostname, Node.State.failed, agent, wantToDeprovision, Optional.of(reason));
+    public Node fail(String hostname, boolean forceDeprovision, Agent agent, String reason) {
+        return move(hostname, Node.State.failed, agent, forceDeprovision, Optional.of(reason));
     }
 
     /**
@@ -371,15 +371,15 @@ public class Nodes {
      * @return the node in its new state
      * @throws NoSuchNodeException if the node is not found
      */
-    public Node park(String hostname, boolean wantToDeprovision, Agent agent, String reason) {
+    public Node park(String hostname, boolean forceDeprovision, Agent agent, String reason) {
         NestedTransaction transaction = new NestedTransaction();
-        Node parked = park(hostname, wantToDeprovision, agent, reason, transaction);
+        Node parked = park(hostname, forceDeprovision, agent, reason, transaction);
         transaction.commit();
         return parked;
     }
 
-    private Node park(String hostname, boolean wantToDeprovision, Agent agent, String reason, NestedTransaction transaction) {
-        return move(hostname, Node.State.parked, agent, wantToDeprovision, Optional.of(reason), transaction);
+    private Node park(String hostname, boolean forceDeprovision, Agent agent, String reason, NestedTransaction transaction) {
+        return move(hostname, Node.State.parked, agent, forceDeprovision, Optional.of(reason), transaction);
     }
 
     /**
@@ -427,15 +427,15 @@ public class Nodes {
     }
 
     /** Move a node to given state */
-    private Node move(String hostname, Node.State toState, Agent agent, boolean wantToDeprovision, Optional<String> reason) {
+    private Node move(String hostname, Node.State toState, Agent agent, boolean forceDeprovision, Optional<String> reason) {
         NestedTransaction transaction = new NestedTransaction();
-        Node moved = move(hostname, toState, agent, wantToDeprovision, reason, transaction);
+        Node moved = move(hostname, toState, agent, forceDeprovision, reason, transaction);
         transaction.commit();
         return moved;
     }
 
     /** Move a node to given state as part of a transaction */
-    private Node move(String hostname, Node.State toState, Agent agent, boolean wantToDeprovision, Optional<String> reason, NestedTransaction transaction) {
+    private Node move(String hostname, Node.State toState, Agent agent, boolean forceDeprovision, Optional<String> reason, NestedTransaction transaction) {
         // TODO: Work out a safe lock acquisition strategy for moves. Lock is only held while adding operations to
         //       transaction, but lock must also be held while committing
         try (NodeMutex lock = lockAndGetRequired(hostname)) {
@@ -448,8 +448,8 @@ public class Nodes {
                         illegal("Could not set " + node + " active: Same cluster and index as " + currentActive);
                 }
             }
-            if (wantToDeprovision)
-                node = node.withWantToRetire(wantToDeprovision, wantToDeprovision, agent, clock.instant());
+            if (forceDeprovision)
+                node = node.withWantToRetire(true, true, agent, clock.instant());
             if (toState == Node.State.deprovisioned) {
                 node = node.with(IP.Config.EMPTY);
             }

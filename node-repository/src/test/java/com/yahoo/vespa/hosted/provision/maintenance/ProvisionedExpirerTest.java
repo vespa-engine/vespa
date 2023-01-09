@@ -37,12 +37,12 @@ public class ProvisionedExpirerTest {
         tester.clock().advance(Duration.ofMinutes(5));
         new ProvisionedExpirer(tester.nodeRepository(), Duration.ofMinutes(4), new TestMetric()).maintain();
 
-        assertEquals(5, tester.nodeRepository().nodes().list().deprovisioning().size());
-        assertEquals(20, tester.nodeRepository().nodes().list().not().deprovisioning().size());
+        assertEquals(10, tester.nodeRepository().nodes().list().deprovisioning().size());
+        assertEquals(5, tester.nodeRepository().nodes().list().not().deprovisioning().size());
     }
 
     private void populateNodeRepo() {
-        var nodes = IntStream.range(0, 25)
+        var nodes = IntStream.range(0, 15)
                              .mapToObj(i -> Node.create("id-" + i, "host-" + i, new Flavor(NodeResources.unspecified()), Node.State.provisioned, NodeType.host).build())
                              .toList();
         tester.nodeRepository().database().addNodesInState(nodes, Node.State.provisioned, Agent.system);

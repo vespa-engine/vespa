@@ -74,7 +74,7 @@ public class FailedExpirer extends NodeRepositoryMaintainer {
 
         recycleIf(node -> node.allocation().isEmpty(), remainingNodes, allNodes);
         recycleIf(node -> !node.allocation().get().membership().cluster().isStateful() &&
-                node.history().hasEventBefore(History.Event.Type.failed, clock().instant().minus(statelessExpiry)),
+                          node.history().hasEventBefore(History.Event.Type.failed, clock().instant().minus(statelessExpiry)),
                   remainingNodes,
                   allNodes);
         recycleIf(node -> node.allocation().get().membership().cluster().isStateful() &&

@@ -13,6 +13,9 @@ import com.yahoo.slime.Inspector;
 import com.yahoo.slime.ObjectTraverser;
 import com.yahoo.slime.SlimeUtils;
 import com.yahoo.slime.Type;
+import com.yahoo.vespa.flags.BooleanFlag;
+import com.yahoo.vespa.flags.FlagSource;
+import com.yahoo.vespa.flags.Flags;
 import com.yahoo.vespa.hosted.provision.LockedNodeList;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeList;
@@ -39,7 +42,6 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.TreeSet;
-import java.util.stream.Collectors;
 
 import static com.yahoo.config.provision.NodeResources.DiskSpeed.fast;
 import static com.yahoo.config.provision.NodeResources.DiskSpeed.slow;
@@ -65,11 +67,13 @@ public class NodePatcher {
     private final NodeRepository nodeRepository;
     private final NodeFlavors nodeFlavors;
     private final Clock clock;
+    private final BooleanFlag recursiveWantToDeprovision;
 
-    public NodePatcher(NodeFlavors nodeFlavors, NodeRepository nodeRepository) {
+    public NodePatcher(NodeFlavors nodeFlavors, NodeRepository nodeRepository, FlagSource flagSource) {
         this.nodeRepository = nodeRepository;
         this.nodeFlavors = nodeFlavors;
         this.clock = nodeRepository.clock();
+        this.recursiveWantToDeprovision = Flags.RECURSIVE_WANT_TO_DEPROVISION.bindTo(flagSource);
     }
 
     /**
@@ -192,12 +196,14 @@ public class NodePatcher {
             case WANT_TO_RETIRE:
             case WANT_TO_DEPROVISION:
             case WANT_TO_REBUILD:
-                boolean wantToRetire = asOptionalBoolean(root.field(WANT_TO_RETIRE)).orElse(node.status().wantToRetire());
-                boolean wantToDeprovision = asOptionalBoolean(root.field(WANT_TO_DEPROVISION)).orElse(node.status().wantToDeprovision());
-                boolean wantToRebuild = asOptionalBoolean(root.field(WANT_TO_REBUILD)).orElse(node.status().wantToRebuild());
-                return node.withWantToRetire(wantToRetire,
-                                             wantToDeprovision && !applyingAsChild,
-                                             wantToRebuild && !applyingAsChild,
+                // These needs to be handled as one, because certain combinations are not allowed.
+                return node.withWantToRetire(asOptionalBoolean(root.field(WANT_TO_RETIRE)).orElseGet(node.status()::wantToRetire),
+                                             asOptionalBoolean(root.field(WANT_TO_DEPROVISION))
+                                                     .filter(want -> recursiveWantToDeprovision.value() || !applyingAsChild)
+                                                     .orElseGet(node.status()::wantToDeprovision),
+                                             asOptionalBoolean(root.field(WANT_TO_REBUILD))
+                                                     .filter(want -> !applyingAsChild)
+                                                     .orElseGet(node.status()::wantToRebuild),
                                              Agent.operator,
                                              clock.instant());
             case "reports" :
