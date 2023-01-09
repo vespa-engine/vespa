@@ -17,18 +17,6 @@ import com.google.common.base.Preconditions;
  */
 public class TokenBuffer {
 
-    public static final class Token {
-        public final JsonToken token;
-        public final String name;
-        public final String text;
-
-        Token(JsonToken token, String name, String text) {
-            this.token = token;
-            this.name = name;
-            this.text = text;
-        }
-    }
-
     private final Deque<Token> buffer;
     private int nesting = 0;
 
@@ -179,6 +167,29 @@ public class TokenBuffer {
         do {
             next();
         } while ( nesting() > initialNesting + relativeNesting);
+    }
+
+    public Deque<Token> rest() {
+        return buffer;
+    }
+
+    public static final class Token {
+
+        public final JsonToken token;
+        public final String name;
+        public final String text;
+
+        Token(JsonToken token, String name, String text) {
+            this.token = token;
+            this.name = name;
+            this.text = text;
+        }
+
+        @Override
+        public String toString() {
+            return "Token(" + token + ", " + name + ", " + text + ")";
+        }
+
     }
 
 }
