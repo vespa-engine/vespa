@@ -64,7 +64,7 @@ public final class AccessLogComponent extends SimpleComponent implements AccessL
                               Integer queueSize,
                               Integer bufferSize)
     {
-        super(new ComponentModel(accessLogClass(logType), null, "container-core", null));
+        super(new ComponentModel(accessLogClass(logType), null, null, null));
         this.fileNamePattern = Objects.requireNonNull(fileNamePattern, "File name pattern required when configuring access log");
         this.rotationInterval = rotationInterval;
         this.compression = compressOnRotation;
