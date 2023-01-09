@@ -78,6 +78,10 @@ public class AutoscalingMaintainerTest {
         tester.maintainer().maintain();
         assertTrue(tester.deployer().lastDeployTime(app1).isEmpty()); // since autoscaling is off
         assertTrue(tester.deployer().lastDeployTime(app2).isPresent());
+        assertNotEquals(Load.zero(),
+                        tester.nodeRepository().applications().require(app1).cluster(cluster1.id()).get().target().peak());
+        assertNotEquals(Load.zero(),
+                        tester.nodeRepository().applications().require(app1).cluster(cluster1.id()).get().target().ideal());
     }
 
     @Test
