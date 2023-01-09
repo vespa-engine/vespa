@@ -65,6 +65,7 @@
             <artifactId>httpcore</artifactId>
         </dependency>
         <dependency>
+            <!-- TODO Use container-apache-http-client-bundle -->
             <groupId>org.apache.httpcomponents</groupId>
             <artifactId>httpclient</artifactId>
         </dependency>
@@ -78,6 +79,12 @@
                     <artifactId>slf4j-api</artifactId>
                 </exclusion>
             </exclusions>
+        </dependency>
+        <dependency>
+            <groupId>com.yahoo.vespa</groupId>
+            <artifactId>http-utils</artifactId>
+            <version>${project.version}</version>
+            <scope>compile</scope>
         </dependency>
 
         <!-- Test -->
