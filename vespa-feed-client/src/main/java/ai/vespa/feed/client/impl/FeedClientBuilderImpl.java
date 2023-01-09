@@ -51,7 +51,7 @@ public class FeedClientBuilderImpl implements FeedClientBuilder {
     boolean benchmark = true;
     boolean dryrun = false;
     boolean speedTest = false;
-    Compression compression = none;
+    Compression compression = null;
     URI proxy;
 
 
