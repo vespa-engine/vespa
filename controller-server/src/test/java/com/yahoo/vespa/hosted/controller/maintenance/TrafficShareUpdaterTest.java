@@ -83,7 +83,7 @@ public class TrafficShareUpdaterTest {
     }
 
     private void setQpsMetric(double qps, ApplicationId application, ZoneId zone, DeploymentTester tester) {
-        var clusterMetrics = new ClusterMetrics("default", "container", Map.of(ClusterMetrics.QUERIES_PER_SECOND, qps), Map.of());
+        var clusterMetrics = new ClusterMetrics("default", "container", Map.of(ClusterMetrics.QUERIES_PER_SECOND, qps));
         tester.controllerTester().serviceRegistry().configServerMock().setMetrics(new DeploymentId(application, zone), clusterMetrics);
     }
 

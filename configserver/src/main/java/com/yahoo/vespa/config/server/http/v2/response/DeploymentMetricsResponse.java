@@ -40,11 +40,6 @@ public class DeploymentMetricsResponse extends SlimeJsonResponse {
                 metrics.setDouble("diskUtil", disk.util());
                 metrics.setDouble("diskFeedBlockLimit", disk.feedBlockLimit());
             });
-
-            aggregator.reindexingProgress().ifPresent(reindexingProgress -> {
-                Cursor progressObject = cluster.setObject("reindexingProgress");
-                reindexingProgress.forEach(progressObject::setDouble);
-            });
         }
     }
 }

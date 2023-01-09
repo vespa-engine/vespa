@@ -154,23 +154,21 @@ public class NotificationsDbTest {
     @Test
     void deployment_metrics_notify_test() {
         DeploymentId deploymentId = new DeploymentId(ApplicationId.from(tenant.value(), "app1", "instance1"), ZoneId.from("prod", "us-south-3"));
-        NotificationSource sourceCluster1 = NotificationSource.from(deploymentId, ClusterSpec.Id.from("cluster1"));
-        List<Notification> expected = new ArrayList<>(notifications);
 
         // No metrics, no new notification
         notificationsDb.setDeploymentMetricsNotifications(deploymentId, List.of());
         assertEquals(0, mailer.inbox(email.getEmailAddress()).size());
 
         // Metrics that contain none of the feed block metrics does not create new notification
-        notificationsDb.setDeploymentMetricsNotifications(deploymentId, List.of(clusterMetrics("cluster1", null, null, null, null, Map.of())));
+        notificationsDb.setDeploymentMetricsNotifications(deploymentId, List.of(clusterMetrics("cluster1", null, null, null, null)));
         assertEquals(0, mailer.inbox(email.getEmailAddress()).size());
 
         // One resource is at warning
-        notificationsDb.setDeploymentMetricsNotifications(deploymentId, List.of(clusterMetrics("cluster1", 0.88, 0.9, 0.3, 0.5, Map.of())));
+        notificationsDb.setDeploymentMetricsNotifications(deploymentId, List.of(clusterMetrics("cluster1", 0.88, 0.9, 0.3, 0.5)));
         assertEquals(1, mailer.inbox(email.getEmailAddress()).size());
 
         // One resource over the limit
-        notificationsDb.setDeploymentMetricsNotifications(deploymentId, List.of(clusterMetrics("cluster1", 0.95, 0.9, 0.3, 0.5, Map.of())));
+        notificationsDb.setDeploymentMetricsNotifications(deploymentId, List.of(clusterMetrics("cluster1", 0.95, 0.9, 0.3, 0.5)));
         assertEquals(2, mailer.inbox(email.getEmailAddress()).size());
     }
 
@@ -185,25 +183,25 @@ public class NotificationsDbTest {
         assertEquals(expected, curatorDb.readNotifications(tenant));
 
         // Metrics that contain none of the feed block metrics does not create new notification
-        notificationsDb.setDeploymentMetricsNotifications(deploymentId, List.of(clusterMetrics("cluster1", null, null, null, null, Map.of())));
+        notificationsDb.setDeploymentMetricsNotifications(deploymentId, List.of(clusterMetrics("cluster1", null, null, null, null)));
         assertEquals(expected, curatorDb.readNotifications(tenant));
 
         // Metrics that only contain util or limit (should not be possible) should not cause any issues
-        notificationsDb.setDeploymentMetricsNotifications(deploymentId, List.of(clusterMetrics("cluster1", 0.95, null, null, 0.5, Map.of())));
+        notificationsDb.setDeploymentMetricsNotifications(deploymentId, List.of(clusterMetrics("cluster1", 0.95, null, null, 0.5)));
         assertEquals(expected, curatorDb.readNotifications(tenant));
 
         // One resource is at warning
-        notificationsDb.setDeploymentMetricsNotifications(deploymentId, List.of(clusterMetrics("cluster1", 0.88, 0.9, 0.3, 0.5, Map.of())));
+        notificationsDb.setDeploymentMetricsNotifications(deploymentId, List.of(clusterMetrics("cluster1", 0.88, 0.9, 0.3, 0.5)));
         expected.add(notification(12345, Type.feedBlock, Level.warning, sourceCluster1, "disk (usage: 88.0%, feed block limit: 90.0%)"));
         assertEquals(expected, curatorDb.readNotifications(tenant));
 
         // Both resources over the limit
-        notificationsDb.setDeploymentMetricsNotifications(deploymentId, List.of(clusterMetrics("cluster1", 0.95, 0.9, 0.3, 0.5, Map.of())));
+        notificationsDb.setDeploymentMetricsNotifications(deploymentId, List.of(clusterMetrics("cluster1", 0.95, 0.9, 0.3, 0.5)));
         expected.set(6, notification(12345, Type.feedBlock, Level.error, sourceCluster1, "disk (usage: 95.0%, feed block limit: 90.0%)"));
         assertEquals(expected, curatorDb.readNotifications(tenant));
 
         // One resource at warning, one at error: Only show error message
-        notificationsDb.setDeploymentMetricsNotifications(deploymentId, List.of(clusterMetrics("cluster1", 0.95, 0.9, 0.7, 0.5, Map.of())));
+        notificationsDb.setDeploymentMetricsNotifications(deploymentId, List.of(clusterMetrics("cluster1", 0.95, 0.9, 0.7, 0.5)));
         expected.set(6, notification(12345, Type.feedBlock, Level.error, sourceCluster1,
                 "memory (usage: 70.0%, feed block limit: 50.0%)", "disk (usage: 95.0%, feed block limit: 90.0%)"));
         assertEquals(expected, curatorDb.readNotifications(tenant));
@@ -219,7 +217,7 @@ public class NotificationsDbTest {
 
         // Cluster1 and cluster2 are having feed block issues, cluster 3 is reindexing
         notificationsDb.setDeploymentMetricsNotifications(deploymentId, List.of(
-                clusterMetrics("cluster1", 0.88, 0.9, 0.3, 0.5, Map.of()), clusterMetrics("cluster2", 0.6, 0.8, 0.9, 0.75, Map.of()), clusterMetrics("cluster3", 0.1, 0.8, 0.2, 0.9, Map.of("announcements", 0.75, "build", 0.5))));
+                clusterMetrics("cluster1", 0.88, 0.9, 0.3, 0.5), clusterMetrics("cluster2", 0.6, 0.8, 0.9, 0.75), clusterMetrics("cluster3", 0.1, 0.8, 0.2, 0.9)));
         expected.add(notification(12345, Type.feedBlock, Level.warning, sourceCluster1, "disk (usage: 88.0%, feed block limit: 90.0%)"));
         expected.add(notification(12345, Type.feedBlock, Level.error, sourceCluster2, "memory (usage: 90.0%, feed block limit: 75.0%)"));
         expected.add(notification(12345, Type.reindex, Level.info, sourceCluster3, "document type 'announcements' (75.0% done)", "document type 'build' (50.0% done)"));
@@ -227,7 +225,7 @@ public class NotificationsDbTest {
 
         // Cluster1 improves, while cluster3 starts having feed block issues and finishes reindexing 'build' documents
         notificationsDb.setDeploymentMetricsNotifications(deploymentId, List.of(
-                clusterMetrics("cluster1", 0.15, 0.9, 0.3, 0.5, Map.of()), clusterMetrics("cluster2", 0.6, 0.8, 0.9, 0.75, Map.of()), clusterMetrics("cluster3", 0.78, 0.8, 0.2, 0.9,  Map.of("announcements", 0.9))));
+                clusterMetrics("cluster1", 0.15, 0.9, 0.3, 0.5), clusterMetrics("cluster2", 0.6, 0.8, 0.9, 0.75), clusterMetrics("cluster3", 0.78, 0.8, 0.2, 0.9)));
         expected.set(6, notification(12345, Type.feedBlock, Level.error, sourceCluster2, "memory (usage: 90.0%, feed block limit: 75.0%)"));
         expected.set(7, notification(12345, Type.feedBlock, Level.warning, sourceCluster3, "disk (usage: 78.0%, feed block limit: 80.0%)"));
         expected.set(8, notification(12345, Type.reindex, Level.info, sourceCluster3, "document type 'announcements' (90.0% done)"));
@@ -250,13 +248,12 @@ public class NotificationsDbTest {
     }
 
     private static ClusterMetrics clusterMetrics(String clusterId,
-                                                 Double diskUtil, Double diskLimit, Double memoryUtil, Double memoryLimit,
-                                                 Map<String, Double> reindexingProgress) {
+                                                 Double diskUtil, Double diskLimit, Double memoryUtil, Double memoryLimit) {
         Map<String, Double> metrics = new HashMap<>();
         if (diskUtil != null) metrics.put(ClusterMetrics.DISK_UTIL, diskUtil);
         if (diskLimit != null) metrics.put(ClusterMetrics.DISK_FEED_BLOCK_LIMIT, diskLimit);
         if (memoryUtil != null) metrics.put(ClusterMetrics.MEMORY_UTIL, memoryUtil);
         if (memoryLimit != null) metrics.put(ClusterMetrics.MEMORY_FEED_BLOCK_LIMIT, memoryLimit);
-        return new ClusterMetrics(clusterId, "content", metrics, reindexingProgress);
+        return new ClusterMetrics(clusterId, "content", metrics);
     }
 }
