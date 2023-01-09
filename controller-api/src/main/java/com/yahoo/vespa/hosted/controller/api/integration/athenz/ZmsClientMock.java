@@ -186,7 +186,9 @@ public class ZmsClientMock implements ZmsClient {
 
     @Override
     public boolean deletePolicyRule(AthenzDomain athenzDomain, String athenzPolicy, String action, AthenzResourceName resourceName, AthenzRole athenzRole) {
-        return false;
+        var assertion = new AthenzDbMock.Assertion(athenzRole.roleName(), action, resourceName.toResourceNameString());
+        var policy = athenz.getOrCreateDomain(athenzDomain).policies.get(athenzPolicy);
+        return policy.assertions.remove(assertion);
     }
 
     @Override
