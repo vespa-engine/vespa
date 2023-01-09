@@ -54,8 +54,6 @@ public class ApplicationReindexing {
 
     public static class Cluster {
 
-        public static final ApplicationReindexing.Cluster EMPTY = new ApplicationReindexing.Cluster(Map.of(), Map.of());
-
         private final Map<String, Long> pending;
         private final Map<String, Status> ready;
 

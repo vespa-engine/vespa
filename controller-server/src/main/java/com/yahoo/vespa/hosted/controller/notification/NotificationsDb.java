@@ -53,7 +53,7 @@ public class NotificationsDb {
     public List<Notification> listNotifications(NotificationSource source, boolean productionOnly) {
         return curatorDb.readNotifications(source.tenant()).stream()
                 .filter(notification -> source.contains(notification.source()) && (!productionOnly || notification.source().isProduction()))
-                .collect(Collectors.toUnmodifiableList());
+                .toList();
     }
 
     public void setNotification(NotificationSource source, Type type, Level level, String message) {
@@ -87,7 +87,7 @@ public class NotificationsDb {
             List<Notification> initial = curatorDb.readNotifications(source.tenant());
             List<Notification> filtered = initial.stream()
                     .filter(notification -> !source.equals(notification.source()) || type != notification.type())
-                    .collect(Collectors.toUnmodifiableList());
+                    .toList();
             if (initial.size() > filtered.size())
                 curatorDb.writeNotifications(source.tenant(), filtered);
         }
@@ -104,7 +104,7 @@ public class NotificationsDb {
             List<Notification> initial = curatorDb.readNotifications(source.tenant());
             List<Notification> filtered = initial.stream()
                     .filter(notification -> !source.contains(notification.source()))
-                    .collect(Collectors.toUnmodifiableList());
+                    .toList();
             if (initial.size() > filtered.size())
                 curatorDb.writeNotifications(source.tenant(), filtered);
         }
@@ -121,13 +121,15 @@ public class NotificationsDb {
     public void setDeploymentMetricsNotifications(DeploymentId deploymentId, List<ClusterMetrics> clusterMetrics, ApplicationReindexing applicationReindexing) {
         Instant now = clock.instant();
         List<Notification> changed = List.of();
-        List<Notification> newNotifications = clusterMetrics.stream()
-                .flatMap(metric -> {
+        List<Notification> newNotifications = Stream.concat(
+                clusterMetrics.stream().map(metric -> {
                     NotificationSource source = NotificationSource.from(deploymentId, ClusterSpec.Id.from(metric.getClusterId()));
-                    Cluster cluster = applicationReindexing.clusters().getOrDefault(metric.getClusterId(), Cluster.EMPTY);
-                    return Stream.of(createFeedBlockNotification(source, now, metric),
-                                     createReindexNotification(source, now, cluster));
-                })
+                    return createFeedBlockNotification(source, now, metric);
+                }),
+                applicationReindexing.clusters().entrySet().stream().map(entry -> {
+                    NotificationSource source = NotificationSource.from(deploymentId, ClusterSpec.Id.from(entry.getKey()));
+                    return createReindexNotification(source, now, entry.getValue());
+                }))
                 .flatMap(Optional::stream)
                 .toList();
 
