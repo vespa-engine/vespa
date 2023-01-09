@@ -25,11 +25,25 @@ struct ValueMetricValues : MetricValueClass {
     TotVal _total;
 
     struct AtomicImpl {
-        std::atomic<uint32_t> _count {0};
-        std::atomic<AvgVal> _min {std::numeric_limits<AvgVal>::max()};
-        std::atomic<AvgVal> _max {std::numeric_limits<AvgVal>::min()};
-        std::atomic<AvgVal> _last {0};
-        std::atomic<TotVal> _total {0};
+        AtomicImpl() noexcept
+            : _count(0),
+              _min(std::numeric_limits<AvgVal>::max()),
+              _max(std::numeric_limits<AvgVal>::min()),
+              _last(0),
+              _total(0)
+        {}
+        AtomicImpl(const AtomicImpl & rhs) noexcept
+                : _count(rhs._count.load(std::memory_order_relaxed)),
+                  _min(rhs._min.load(std::memory_order_relaxed)),
+                  _max(rhs._max.load(std::memory_order_relaxed)),
+                  _last(rhs._last.load(std::memory_order_relaxed)),
+                  _total(rhs._total.load(std::memory_order_relaxed))
+        {}
+        std::atomic<uint32_t> _count;
+        std::atomic<AvgVal>   _min;
+        std::atomic<AvgVal>   _max;
+        std::atomic<AvgVal>   _last;
+        std::atomic<TotVal>   _total;
     };
 
     ValueMetricValues();

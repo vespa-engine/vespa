@@ -23,7 +23,9 @@ struct CountMetricValues : public MetricValueClass {
     T _value;
 
     struct AtomicImpl {
-        std::atomic<T> _value {0};
+        AtomicImpl() noexcept : _value(0) {}
+        AtomicImpl(const AtomicImpl & rhs) noexcept : _value(rhs._value.load(std::memory_order_relaxed)) {}
+        std::atomic<T> _value;
     };
 
     void relaxedStoreInto(AtomicImpl& target) const noexcept {

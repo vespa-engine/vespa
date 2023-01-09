@@ -43,8 +43,7 @@ MetricSet::MetricSet(const MetricSet& other,
 MetricSet::~MetricSet() = default;
 
 MetricSet*
-MetricSet::clone(std::vector<Metric::UP> &ownerList, CopyType type,
-                 MetricSet* owner, bool includeUnused) const
+MetricSet::clone(std::vector<Metric::UP> &ownerList, CopyType type, MetricSet* owner, bool includeUnused) const
 {
     return new MetricSet(*this, ownerList, type, owner, includeUnused);
 }
@@ -233,7 +232,7 @@ MetricSet::addTo(Metric& other, std::vector<Metric::UP> *ownerList) const
         if (target == map2.end() || source->first < target->first) {
                 // Source missing in snapshot to add to. Lets create and add.
             if (!mustAdd && source->second->used()) {
-                Metric::UP copy(source->second->clone(*ownerList, INACTIVE, &o));
+                Metric::UP copy(source->second->clone(*ownerList, INACTIVE, &o, false));
                 newMetrics[source->first] = copy.get();
                 ownerList->push_back(std::move(copy));
             }
