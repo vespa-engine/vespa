@@ -292,10 +292,12 @@ public class ContainerTest extends ContainerTestBase {
             // expect to time out
         }
 
+        dirConfigSource.clearCheckedConfigs();
         writeBootstrapConfigs("myId2", ComponentTakingConfig.class);
         container.reloadConfig(3);
 
-        assertNotNull(newGraph.get(10, TimeUnit.SECONDS));
+        dirConfigSource.awaitConfigChecked(10_000);
+        assertNotNull(newGraph.get(1, TimeUnit.SECONDS));
 
         container.shutdownConfigRetriever();
         container.shutdown(newGraph.get());
