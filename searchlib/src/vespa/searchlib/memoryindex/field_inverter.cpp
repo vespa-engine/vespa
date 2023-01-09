@@ -543,6 +543,7 @@ FieldInverter::pushDocuments()
     uint32_t lastDocId = 0;
     vespalib::stringref word;
     bool emptyFeatures = true;
+    uint32_t last_field_length = 0;
 
     _inserter.rewind();
 
@@ -574,12 +575,15 @@ FieldInverter::pushDocuments()
                 lastWordPos = NO_WORD_POS;
                 const ElemInfo &elem = _elems[i._elemRef];
                 _features.set_field_length(elem.get_field_length());
+                last_field_length = elem.get_field_length();
             } else {
                 continue; // ignore dup remove
             }
         } else {
             // removes must come before non-removes
             assert(!i.removed());
+            const ElemInfo &elem = _elems[i._elemRef];
+            assert(last_field_length == elem.get_field_length());
         }
         const ElemInfo &elem = _elems[i._elemRef];
         if (i._wordPos != lastWordPos || i._elemId != lastElemId) {
