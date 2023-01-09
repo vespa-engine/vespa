@@ -20,6 +20,7 @@ import com.yahoo.path.Path;
 import com.yahoo.slime.SlimeUtils;
 import com.yahoo.text.Utf8;
 import com.yahoo.transaction.Transaction;
+import com.yahoo.vespa.config.server.NotFoundException;
 import com.yahoo.vespa.config.server.UserConfigDefinitionRepo;
 import com.yahoo.vespa.config.server.deploy.ZooKeeperClient;
 import com.yahoo.vespa.config.server.deploy.ZooKeeperDeployer;
@@ -171,7 +172,7 @@ public class SessionZooKeeperClient {
 
     public ApplicationId readApplicationId() {
         return curator.getData(applicationIdPath()).map(d -> ApplicationId.fromSerializedForm(Utf8.toString(d)))
-                      .orElseThrow(() -> new RuntimeException("Could not find application id for session " + sessionId));
+                      .orElseThrow(() -> new NotFoundException("Could not find application id for session " + sessionId));
     }
 
     private Path tagsPath() {
