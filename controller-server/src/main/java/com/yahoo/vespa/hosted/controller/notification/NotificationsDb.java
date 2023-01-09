@@ -9,6 +9,7 @@ import com.yahoo.transaction.Mutex;
 import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.api.application.v4.model.ClusterMetrics;
 import com.yahoo.vespa.hosted.controller.api.identifiers.DeploymentId;
+import com.yahoo.vespa.hosted.controller.api.integration.configserver.ApplicationReindexing;
 import com.yahoo.vespa.hosted.controller.persistence.CuratorDb;
 
 import java.time.Clock;
@@ -20,6 +21,7 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import static com.yahoo.vespa.hosted.controller.api.integration.configserver.ApplicationReindexing.Cluster;
 import static com.yahoo.vespa.hosted.controller.notification.Notification.Level;
 import static com.yahoo.vespa.hosted.controller.notification.Notification.Type;
 
@@ -116,17 +118,18 @@ public class NotificationsDb {
      *  - that are (Level.error) or are nearly (Level.warning) feed blocked,
      *  - that are (Level.info) currently reindexing at least 1 document type.
      */
-    public void setDeploymentMetricsNotifications(DeploymentId deploymentId, List<ClusterMetrics> clusterMetrics) {
+    public void setDeploymentMetricsNotifications(DeploymentId deploymentId, List<ClusterMetrics> clusterMetrics, ApplicationReindexing applicationReindexing) {
         Instant now = clock.instant();
         List<Notification> changed = List.of();
         List<Notification> newNotifications = clusterMetrics.stream()
                 .flatMap(metric -> {
                     NotificationSource source = NotificationSource.from(deploymentId, ClusterSpec.Id.from(metric.getClusterId()));
+                    Cluster cluster = applicationReindexing.clusters().getOrDefault(metric.getClusterId(), Cluster.EMPTY);
                     return Stream.of(createFeedBlockNotification(source, now, metric),
-                                     createReindexNotification(source, now, metric));
+                                     createReindexNotification(source, now, cluster));
                 })
                 .flatMap(Optional::stream)
-                .collect(Collectors.toUnmodifiableList());
+                .toList();
 
         NotificationSource deploymentSource = NotificationSource.from(deploymentId);
         try (Mutex lock = curatorDb.lockNotifications(deploymentSource.tenant())) {
@@ -139,7 +142,7 @@ public class NotificationsDb {
                                             !deploymentSource.contains(notification.source())),
                     // ... and add the new notifications for this deployment
                     newNotifications.stream())
-                    .collect(Collectors.toUnmodifiableList());
+                    .toList();
             if (!initial.equals(updated)) {
                 curatorDb.writeNotifications(deploymentSource.tenant(), updated);
             }
@@ -170,16 +173,18 @@ public class NotificationsDb {
         List<String> messages = Stream.concat(memoryStatus.stream(), diskStatus.stream())
                 .filter(status -> status.getFirst() == level) // Do not mix message from different levels
                 .map(Pair::getSecond)
-                .collect(Collectors.toUnmodifiableList());
+                .toList();
         return Optional.of(new Notification(at, Type.feedBlock, level, source, messages));
     }
 
-    private static Optional<Notification> createReindexNotification(NotificationSource source, Instant at, ClusterMetrics metric) {
-        if (metric.reindexingProgress().isEmpty()) return Optional.empty();
-        List<String> messages = metric.reindexingProgress().entrySet().stream()
-                .map(entry -> Text.format("document type '%s' (%.1f%% done)", entry.getKey(), 100 * entry.getValue()))
+    private static Optional<Notification> createReindexNotification(NotificationSource source, Instant at, Cluster cluster) {
+        List<String> messages = cluster.ready().entrySet().stream()
+                .filter(entry -> entry.getValue().progress().isPresent())
+                .map(entry -> Text.format("document type '%s'%s (%.1f%% done)",
+                        entry.getKey(), entry.getValue().cause().map(s -> " " + s).orElse(""), 100 * entry.getValue().progress().get()))
                 .sorted()
-                .collect(Collectors.toUnmodifiableList());
+                .toList();
+        if (messages.isEmpty()) return Optional.empty();
         return Optional.of(new Notification(at, Type.reindex, Level.info, source, messages));
     }
 
