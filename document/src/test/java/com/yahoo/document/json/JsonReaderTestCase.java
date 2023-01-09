@@ -108,6 +108,7 @@ public class JsonReaderTestCase {
             x.addField(new Field("field2", DataType.STRING));
             x.addField(new Field("int1", DataType.INT));
             x.addField(new Field("flag", DataType.BOOL));
+            x.addField(new Field("tensor1", DataType.getTensor(TensorType.fromSpec("tensor(x{})"))));
             types.registerDocumentType(x);
         }
         {
@@ -990,7 +991,7 @@ public class JsonReaderTestCase {
     }
 
     @Test
-    public void nonExistingFieldCausesException()  throws IOException{
+    public void nonExistingFieldCausesException() throws IOException {
         JsonReader r = createReader(inputJson(
                 "{ 'put': 'id:unittest:smoke::whee',",
                 "  'fields': {",
@@ -1009,7 +1010,7 @@ public class JsonReaderTestCase {
     }
 
     @Test
-    public void nonExistingFieldsCanBeIgnoredInPut()  throws IOException{
+    public void nonExistingFieldsCanBeIgnoredInPut() throws IOException {
         JsonReader r = createReader(inputJson(
                 "{ ",
                 "  'put': 'id:unittest:smoke::doc1',",
@@ -1023,7 +1024,11 @@ public class JsonReaderTestCase {
                 "      }",
                 "    },",
                 "    'field2': 'value2',",
-                "    'nonexisting3': 'ignored value'",
+                "    'nonexisting3': {",
+                "      'cells': [{'address': {'x': 'x1'}, 'value': 1.0}]",
+                "    },",
+                "    'tensor1': {'cells': {'x1': 1.0}},",
+                "    'nonexisting4': 'ignored value'",
                 "  }",
                 "}"));
         DocumentParseInfo parseInfo = r.parseDocument().get();
@@ -1036,6 +1041,8 @@ public class JsonReaderTestCase {
         assertNull(put.getDocument().getField("nonexisting2"));
         assertEquals("value2", put.getDocument().getFieldValue("field2").toString());
         assertNull(put.getDocument().getField("nonexisting3"));
+        assertEquals(Tensor.from("tensor(x{}):{{x:x1}:1.0}"), put.getDocument().getFieldValue("tensor1").getWrappedValue());
+        assertNull(put.getDocument().getField("nonexisting4"));
     }
 
     @Test
@@ -1055,7 +1062,13 @@ public class JsonReaderTestCase {
                 "      }",
                 "    },",
                 "    'field2': { 'assign': 'value2' },",
-                "    'nonexisting3': { 'assign': 'ignored value' }",
+                "    'nonexisting3': {",
+                "      'assign' : {",
+                "        'cells': [{'address': {'x': 'x1'}, 'value': 1.0}]",
+                "      }",
+                "    },",
+                "    'tensor1': {'assign': { 'cells': {'x1': 1.0} } },",
+                "    'nonexisting4': { 'assign': 'ignored value' }",
                 "  }",
                 "}"));
         DocumentParseInfo parseInfo = r.parseDocument().get();
@@ -1068,6 +1081,8 @@ public class JsonReaderTestCase {
         assertNull(update.getFieldUpdate("nonexisting2"));
         assertEquals("value2", update.getFieldUpdate("field2").getValueUpdates().get(0).getValue().getWrappedValue().toString());
         assertNull(update.getFieldUpdate("nonexisting3"));
+        assertEquals(Tensor.from("tensor(x{}):{{x:x1}:1.0}"), update.getFieldUpdate("tensor1").getValueUpdates().get(0).getValue().getWrappedValue());
+        assertNull(update.getFieldUpdate("nonexisting4"));
     }
 
     @Test
