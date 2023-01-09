@@ -32,7 +32,6 @@ import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.util.stream.Collectors;
 
 
 /**
@@ -152,10 +151,6 @@ public class ClusterDeploymentMetricsRetriever {
                                         values.field("cluster-controller.resource_usage.memory_limit.last").asDouble())
                                 .addDiskUsage(values.field("cluster-controller.resource_usage.max_disk_utilization.max").asDouble(),
                                         values.field("cluster-controller.resource_usage.disk_limit.last").asDouble()));
-                optionalDouble(values.field("reindexing.progress.last")).ifPresent(progress -> {
-                    if (progress < 0 || progress >= 1) return;
-                    aggregator.get().addReindexingProgress(metric.field("dimensions").field("documenttype").asString(), progress);
-                });
                 break;
         }
     }

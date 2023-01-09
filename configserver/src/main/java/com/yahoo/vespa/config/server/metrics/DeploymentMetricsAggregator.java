@@ -1,8 +1,6 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.config.server.metrics;
 
-import java.util.HashMap;
-import java.util.Map;
 import java.util.Optional;
 
 /**
@@ -17,7 +15,6 @@ public class DeploymentMetricsAggregator {
     private Double documentCount;
     private ResourceUsage memoryUsage;
     private ResourceUsage diskUsage;
-    private Map<String, Double> reindexingProgress;
 
     public synchronized DeploymentMetricsAggregator addFeedLatency(double sum, double count) {
         this.feed = combineLatency(this.feed, sum, count);
@@ -46,12 +43,6 @@ public class DeploymentMetricsAggregator {
 
     public synchronized DeploymentMetricsAggregator addMemoryUsage(double feedBlockUtil, double feedBlockLimit) {
         this.memoryUsage = combineResourceUtil(this.memoryUsage, feedBlockUtil, feedBlockLimit);
-        return this;
-    }
-
-    public synchronized DeploymentMetricsAggregator addReindexingProgress(String documentType, double progress) {
-        if (reindexingProgress == null) this.reindexingProgress = new HashMap<>();
-        this.reindexingProgress.put(documentType, progress);
         return this;
     }
 
@@ -87,10 +78,6 @@ public class DeploymentMetricsAggregator {
 
     public Optional<ResourceUsage> diskUsage() {
         return Optional.ofNullable(diskUsage);
-    }
-
-    public Optional<Map<String, Double>> reindexingProgress() {
-        return Optional.ofNullable(reindexingProgress);
     }
 
 

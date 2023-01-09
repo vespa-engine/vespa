@@ -20,48 +20,6 @@
         },
         {
           "values": {
-            "reindexing.progress.last": 0.71
-          },
-          "dimensions": {
-            "clustertype": "content",
-            "clusterid": "content_cluster_id",
-            "documenttype": "test_artifacts"
-          }
-        },
-        {
-          "values": {
-            "reindexing.progress.last": 1
-          },
-          "dimensions": {
-            "clustertype": "content",
-            "clusterid": "content_cluster_id",
-            "documenttype": "builds"
-          }
-        },
-        {
-          "values": {
-            "reindexing.progress.last": 0
-          },
-          "dimensions": {
-            "clustertype": "content",
-            "clusterid": "content_cluster_id",
-            "documenttype": "announcements",
-            "state": "running"
-          }
-        },
-        {
-          "values": {
-            "reindexing.progress.last": -1
-          },
-          "dimensions": {
-            "clustertype": "content",
-            "clusterid": "content_cluster_id",
-            "documenttype": "announcements",
-            "state": "successful"
-          }
-        },
-        {
-          "values": {
             "some.other.metrics": 1
           },
           "dimensions": {

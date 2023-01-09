@@ -113,8 +113,8 @@ public class DeploymentMetricsMaintainerTest {
     @Test
     void cluster_metric_aggregation_test() {
         List<ClusterMetrics> clusterMetrics = List.of(
-                new ClusterMetrics("niceCluster", "container", Map.of("queriesPerSecond", 23.0, "queryLatency", 1337.0), Map.of()),
-                new ClusterMetrics("alsoNiceCluster", "container", Map.of("queriesPerSecond", 11.0, "queryLatency", 12.0), Map.of()));
+                new ClusterMetrics("niceCluster", "container", Map.of("queriesPerSecond", 23.0, "queryLatency", 1337.0)),
+                new ClusterMetrics("alsoNiceCluster", "container", Map.of("queriesPerSecond", 11.0, "queryLatency", 12.0)));
 
         DeploymentMetrics deploymentMetrics = DeploymentMetricsMaintainer.updateDeploymentMetrics(DeploymentMetrics.none, clusterMetrics);
 
@@ -126,7 +126,7 @@ public class DeploymentMetricsMaintainerTest {
     }
 
     private void setMetrics(ApplicationId application, Map<String, Double> metrics) {
-        var clusterMetrics = new ClusterMetrics("default", "container", metrics, Map.of());
+        var clusterMetrics = new ClusterMetrics("default", "container", metrics);
         tester.controllerTester().serviceRegistry().configServerMock().setMetrics(new DeploymentId(application, ZoneId.from("dev", "us-east-1")), clusterMetrics);
     }
 
