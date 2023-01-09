@@ -56,7 +56,7 @@ public class RetiringOsUpgrader extends OsUpgrader {
                           .osVersionIsBefore(target.version())
                           .matching(node -> canUpgradeAt(instant, node))
                           .byIncreasingOsVersion()
-                          .first(upgradeSlots(target, activeNodes));
+                          .first(upgradeSlots(target, activeNodes.deprovisioning()));
     }
 
     /** Upgrade given host by retiring and deprovisioning it */
