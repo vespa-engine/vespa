@@ -235,10 +235,11 @@ public class Nodes {
         if ( ! zone.environment().isProduction() || zone.system().isCd())
             return deallocate(nodes, Agent.application, "Deactivated by application", transaction.nested());
 
-        var stateless = NodeList.copyOf(nodes).stateless();
-        var stateful  = NodeList.copyOf(nodes).stateful();
-        var statefulToInactive  = stateful.not().reusable();
-        var statefulToDirty = stateful.reusable();
+        NodeList nodeList = NodeList.copyOf(nodes);
+        NodeList stateless = nodeList.stateless();
+        NodeList stateful  = nodeList.stateful();
+        NodeList statefulToInactive  = stateful.not().reusable();
+        NodeList statefulToDirty = stateful.reusable();
         List<Node> written = new ArrayList<>();
         written.addAll(deallocate(stateless.asList(), Agent.application, "Deactivated by application", transaction.nested()));
         written.addAll(deallocate(statefulToDirty.asList(), Agent.application, "Deactivated by application (recycled)", transaction.nested()));
