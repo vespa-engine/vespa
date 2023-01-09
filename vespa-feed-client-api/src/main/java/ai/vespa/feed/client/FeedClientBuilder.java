@@ -126,7 +126,7 @@ public interface FeedClientBuilder {
     /** What compression to use for request bodies; default {@code NONE}. */
     FeedClientBuilder setCompression(Compression compression);
 
-    enum Compression { none, gzip }
+    enum Compression { auto, none, gzip }
 
     /** Constructs instance of {@link FeedClient} from builder configuration */
     FeedClient build();

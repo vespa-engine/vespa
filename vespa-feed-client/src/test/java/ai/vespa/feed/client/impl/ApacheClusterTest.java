@@ -62,7 +62,7 @@ class ApacheClusterTest {
                                                                       .withHeader("Content-Type", equalTo("application/json; charset=UTF-8"))
                                                                       .withRequestBody(equalTo("content"));
                 expected = switch (compression) {
-                    case none -> expected.withoutHeader("Content-Encoding");
+                    case auto, none -> expected.withoutHeader("Content-Encoding");
                     case gzip -> expected.withHeader("Content-Encoding", equalTo("gzip"));
                 };
                 server.verify(1, expected);

@@ -6,9 +6,11 @@ Vespa feed client
                                           certificates encoded as PEM
     --certificate <arg>                   Path to PEM encoded X.509
                                           certificate file
-    --compression <arg>                   Compression mode for feed
-                                          requests: 'none' (default),
-                                          'gzip'
+    --compression <arg>                   Forced compression mode for feed
+                                          requests; the default is to
+                                          compress large requests. Valid
+                                          arguments are: 'auto' (default),
+                                          'none', 'gzip'
     --connections <arg>                   Number of concurrent HTTP/2
                                           connections
     --disable-ssl-hostname-verification   Disable SSL hostname

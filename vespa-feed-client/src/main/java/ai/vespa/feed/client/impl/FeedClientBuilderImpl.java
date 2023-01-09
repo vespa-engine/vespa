@@ -21,6 +21,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.function.Supplier;
 
+import static ai.vespa.feed.client.FeedClientBuilder.Compression.auto;
 import static ai.vespa.feed.client.FeedClientBuilder.Compression.none;
 import static java.util.Objects.requireNonNull;
 
@@ -51,7 +52,7 @@ public class FeedClientBuilderImpl implements FeedClientBuilder {
     boolean benchmark = true;
     boolean dryrun = false;
     boolean speedTest = false;
-    Compression compression = null;
+    Compression compression = auto;
     URI proxy;
 
 

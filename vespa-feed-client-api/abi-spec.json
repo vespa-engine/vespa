@@ -125,6 +125,7 @@
       "public static ai.vespa.feed.client.FeedClientBuilder$Compression valueOf(java.lang.String)"
     ],
     "fields" : [
+      "public static final enum ai.vespa.feed.client.FeedClientBuilder$Compression auto",
       "public static final enum ai.vespa.feed.client.FeedClientBuilder$Compression none",
       "public static final enum ai.vespa.feed.client.FeedClientBuilder$Compression gzip"
     ]
