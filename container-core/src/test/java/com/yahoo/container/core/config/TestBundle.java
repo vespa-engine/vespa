@@ -21,17 +21,11 @@ public class TestBundle extends MockBundle {
     private static final BundleRevision revision = new TestBundleRevision();
 
     private final String symbolicName;
-    private final Version version;
 
     boolean started = false;
 
     public TestBundle(String symbolicName) {
-        this(symbolicName, BundleVersion);
-    }
-
-    public TestBundle(String symbolicName, Version version) {
         this.symbolicName = symbolicName;
-        this.version = version;
     }
 
     @Override
@@ -44,10 +38,6 @@ public class TestBundle extends MockBundle {
         return symbolicName;
     }
 
-    @Override
-    public Version getVersion() {
-        return version;
-    }
 
     @SuppressWarnings("unchecked")
     @Override
