@@ -23,8 +23,9 @@ import java.util.List;
  */
 public class ProvisionedExpirer extends Expirer {
 
-    private final NodeRepository nodeRepository;
     private static final int MAXIMUM_ALLOWED_EXPIRED_HOSTS = 5;
+
+    private final NodeRepository nodeRepository;
 
     ProvisionedExpirer(NodeRepository nodeRepository, Duration timeout, Metric metric) {
         super(Node.State.provisioned, History.Event.Type.provisioned, nodeRepository, timeout, metric);
