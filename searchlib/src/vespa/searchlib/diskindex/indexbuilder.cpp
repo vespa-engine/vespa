@@ -54,8 +54,8 @@ public:
 
 class IndexBuilder::FieldHandle {
 private:
-    const Schema   &_schema; // Ptr to allow being std::vector member
-    IndexBuilder   &_builder; // Ptr to allow being std::vector member
+    const Schema   &_schema;
+    IndexBuilder   &_builder;
     FileHandle      _file;
     const uint32_t  _fieldId;
     const bool      _valid;
