@@ -24,12 +24,10 @@ import com.yahoo.vespa.hosted.provision.applications.Cluster;
 import com.yahoo.vespa.hosted.provision.autoscale.awsnodes.AwsHostResourcesCalculatorImpl;
 import com.yahoo.vespa.hosted.provision.autoscale.awsnodes.AwsNodeTypes;
 import com.yahoo.vespa.hosted.provision.provisioning.HostResourcesCalculator;
-
 import java.time.Duration;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
-import java.util.stream.Collectors;
 
 /**
  * Fixture for autoscaling tests.
@@ -246,7 +244,7 @@ public class Fixture {
 
         public Fixture.Builder hostSharingFlag() {
             var resources = new HostResources(8.0, 32.0, 100.0, 10.0, "fast", "local", null, 6, "x86_64");
-            flagSource.withJacksonFlag(PermanentFlags.SHARED_HOST.id(), new SharedHost(List.of(resources), null), SharedHost.class);
+            flagSource.withJacksonFlag(PermanentFlags.SHARED_HOST.id(), new SharedHost(List.of(resources)), SharedHost.class);
             return this;
         }
 
