@@ -4,7 +4,6 @@ package com.yahoo.container.core.config;
 import com.google.inject.AbstractModule;
 import com.google.inject.Injector;
 import com.yahoo.component.AbstractComponent;
-import com.yahoo.component.ComponentSpecification;
 import com.yahoo.component.annotation.Inject;
 import com.yahoo.component.provider.ComponentRegistry;
 import com.yahoo.concurrent.ThreadFactoryFactory;
@@ -16,24 +15,20 @@ import com.yahoo.container.di.config.SubscriberFactory;
 import com.yahoo.container.logging.AccessLog;
 import com.yahoo.filedistribution.fileacquirer.FileAcquirer;
 import com.yahoo.jdisc.application.OsgiFramework;
-import com.yahoo.jdisc.application.BsnVersion;
 import com.yahoo.jdisc.handler.RequestHandler;
 import com.yahoo.jdisc.service.ClientProvider;
 import com.yahoo.jdisc.service.ServerProvider;
 import com.yahoo.osgi.OsgiImpl;
 import com.yahoo.osgi.OsgiWrapper;
 import org.osgi.framework.Bundle;
-import org.osgi.framework.Version;
 
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.List;
 import java.util.Set;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.util.stream.Collectors;
 
 /**
  * For internal use only.
@@ -111,39 +106,6 @@ public class HandlersConfigurerDi {
         @Override
         public Set<Bundle> completeBundleGeneration(GenerationStatus status) {
             return applicationBundleLoader.completeGeneration(status);
-        }
-
-        @Override
-        protected String bundleResolutionErrorMessage(ComponentSpecification bundleSpec) {
-            List<BsnVersion> activeBundles = applicationBundleLoader.activeBundlesBsnVersion();
-            List<Version> activeVersions = activeVersionsOfBundle(bundleSpec, activeBundles);
-
-            String versionsMessage = "";
-            if (activeVersions.size() == 1) {
-                versionsMessage = "There is an installed bundle with the same name with version: " + activeVersions.get(0);
-            } else if (activeVersions.size() > 1) {
-                versionsMessage = "There are installed bundles with the same name with versions: " + activeVersions;
-            }
-            if (qualifierIsUsed(bundleSpec, activeVersions)) {
-                versionsMessage += " Note that qualifier strings must be matched exactly";
-            }
-            return String.format("%s. Installed application bundles: [%s]",
-                                 versionsMessage,
-                                 activeBundles.stream()
-                                         .map(BsnVersion::toReadableString)
-                                         .collect(Collectors.joining(", ")));
-        }
-
-        private static boolean qualifierIsUsed(ComponentSpecification bundleSpec, List<Version> activeVersions) {
-            return ! bundleSpec.getVersionSpecification().getQualifier().isEmpty() ||
-                    activeVersions.stream().anyMatch(version -> ! version.getQualifier().isEmpty());
-        }
-
-        private static List<Version> activeVersionsOfBundle(ComponentSpecification bundleSpec, List<BsnVersion> activeBundles) {
-            return activeBundles.stream()
-                    .filter(bundle -> bundle.symbolicName().equals(bundleSpec.getName()))
-                    .map(BsnVersion::version)
-                    .collect(Collectors.toList());
         }
     }
 
