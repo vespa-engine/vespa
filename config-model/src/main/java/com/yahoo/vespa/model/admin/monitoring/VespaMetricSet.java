@@ -156,12 +156,12 @@ public class VespaMetricSet {
             addMetric(metrics, "jdisc.thread_pool.max_allowed_size", suffixes);
             addMetric(metrics, "jdisc.thread_pool.active_threads", suffixes);
 
-            addMetric(metrics, "jdisc.http.jetty.threadpool.thread.max", suffixes);
-            addMetric(metrics, "jdisc.http.jetty.threadpool.thread.min", suffixes);
-            addMetric(metrics, "jdisc.http.jetty.threadpool.thread.reserved", suffixes);
-            addMetric(metrics, "jdisc.http.jetty.threadpool.thread.busy", suffixes);
-            addMetric(metrics, "jdisc.http.jetty.threadpool.thread.total", suffixes);
-            addMetric(metrics, "jdisc.http.jetty.threadpool.queue.size", suffixes);
+            addMetric(metrics, ContainerMetrics.JETTY_THREADPOOL_MAX_THREADS.baseName(), suffixes);
+            addMetric(metrics, ContainerMetrics.JETTY_THREADPOOL_MIN_THREADS.baseName(), suffixes);
+            addMetric(metrics, ContainerMetrics.JETTY_THREADPOOL_RESERVED_THREADS.baseName(), suffixes);
+            addMetric(metrics, ContainerMetrics.JETTY_THREADPOOL_BUSY_THREADS.baseName(), suffixes);
+            addMetric(metrics, ContainerMetrics.JETTY_THREADPOOL_TOTAL_THREADS.baseName(), suffixes);
+            addMetric(metrics, ContainerMetrics.JETTY_THREADPOOL_QUEUE_SIZE.baseName(), suffixes);
         }
 
         metrics.add(new Metric("httpapi_latency.max"));

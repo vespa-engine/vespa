@@ -66,13 +66,13 @@ class MetricDefinitions {
     static final String SSL_HANDSHAKE_FAILURE_UNKNOWN = "jdisc.http.ssl.handshake.failure.unknown";
     static final String SSL_HANDSHAKE_FAILURE_CONNECTION_CLOSED = "jdisc.http.ssl.handshake.failure.connection_closed";
 
-    static final String JETTY_THREADPOOL_MAX_THREADS = "jdisc.http.jetty.threadpool.thread.max";
-    static final String JETTY_THREADPOOL_MIN_THREADS = "jdisc.http.jetty.threadpool.thread.min";
-    static final String JETTY_THREADPOOL_RESERVED_THREADS = "jdisc.http.jetty.threadpool.thread.reserved";
-    static final String JETTY_THREADPOOL_BUSY_THREADS = "jdisc.http.jetty.threadpool.thread.busy";
-    static final String JETTY_THREADPOOL_IDLE_THREADS = "jdisc.http.jetty.threadpool.thread.idle";
-    static final String JETTY_THREADPOOL_TOTAL_THREADS = "jdisc.http.jetty.threadpool.thread.total";
-    static final String JETTY_THREADPOOL_QUEUE_SIZE = "jdisc.http.jetty.threadpool.queue.size";
+    static final String JETTY_THREADPOOL_MAX_THREADS = ContainerMetrics.JETTY_THREADPOOL_MAX_THREADS.baseName();
+    static final String JETTY_THREADPOOL_MIN_THREADS = ContainerMetrics.JETTY_THREADPOOL_MIN_THREADS.baseName();
+    static final String JETTY_THREADPOOL_RESERVED_THREADS = ContainerMetrics.JETTY_THREADPOOL_RESERVED_THREADS.baseName();
+    static final String JETTY_THREADPOOL_BUSY_THREADS = ContainerMetrics.JETTY_THREADPOOL_BUSY_THREADS.baseName();
+    static final String JETTY_THREADPOOL_IDLE_THREADS = ContainerMetrics.JETTY_THREADPOOL_IDLE_THREADS.baseName();
+    static final String JETTY_THREADPOOL_TOTAL_THREADS = ContainerMetrics.JETTY_THREADPOOL_TOTAL_THREADS.baseName();
+    static final String JETTY_THREADPOOL_QUEUE_SIZE = ContainerMetrics.JETTY_THREADPOOL_QUEUE_SIZE.baseName();
 
     static final String FILTERING_REQUEST_HANDLED = "jdisc.http.filtering.request.handled";
     static final String FILTERING_REQUEST_UNHANDLED = "jdisc.http.filtering.request.unhandled";
