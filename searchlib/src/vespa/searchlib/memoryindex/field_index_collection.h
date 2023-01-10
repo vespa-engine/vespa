@@ -28,7 +28,7 @@ private:
     using GenerationHandler = vespalib::GenerationHandler;
 
     std::vector<std::unique_ptr<IFieldIndex>> _fieldIndexes;
-    uint32_t                _numFields;
+    const uint32_t                _numFields;
 
 public:
     FieldIndexCollection(const index::Schema& schema, const index::IFieldLengthInspector& inspector);

@@ -13,7 +13,6 @@ class InterleavedFeatures {
 protected:
     uint16_t _num_occs;
     uint16_t _field_length;
-
 public:
     InterleavedFeatures()
         : _num_occs(0),
