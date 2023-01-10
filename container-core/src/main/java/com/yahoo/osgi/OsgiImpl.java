@@ -64,8 +64,8 @@ public class OsgiImpl implements Osgi {
         } else {
             if (jdiscOsgi.isFelixFramework() && ! spec.bundle.equals(spec.classId)) {
                 // Bundle was explicitly specified, but not found.
-                throw new IllegalArgumentException("Could not find bundle " + spec.bundle +
-                        ". " + bundleResolutionErrorMessage(spec.bundle));
+                throw new IllegalArgumentException("Could not find bundle " + spec.bundle + " to create a component with class '"
+                                                     + spec.classId.getName() + ". " + bundleResolutionErrorMessage(spec.bundle));
             }
             return resolveFromThisBundleOrSystemBundle(spec);
         }
