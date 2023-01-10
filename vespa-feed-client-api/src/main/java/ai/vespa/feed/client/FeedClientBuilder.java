@@ -123,7 +123,7 @@ public interface FeedClientBuilder {
     /** Specify HTTP(S) proxy for all endpoints */
     FeedClientBuilder setProxy(URI uri);
 
-    /** What compression to use for request bodies; default {@code NONE}. */
+    /** What compression to use for request bodies; default {@code auto}. */
     FeedClientBuilder setCompression(Compression compression);
 
     enum Compression { auto, none, gzip }
