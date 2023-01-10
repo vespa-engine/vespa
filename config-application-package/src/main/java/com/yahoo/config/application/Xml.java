@@ -101,7 +101,12 @@ public class Xml {
         }
         StringWriter writer = new StringWriter();
         transformer.transform(new DOMSource(document), new StreamResult(writer));
-        return writer.toString();
+        String[] lines = writer.toString().split("\n");
+        var b = new StringBuilder();
+        for (String line : lines)
+            if ( ! line.isBlank())
+                b.append(line).append("\n");
+        return b.toString();
     }
 
     static String documentAsString(Document document) throws TransformerException {
