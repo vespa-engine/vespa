@@ -205,7 +205,7 @@ public class FeedClientBuilderImpl implements FeedClientBuilder {
 
     @Override
     public FeedClientBuilderImpl setCompression(Compression compression) {
-        this.compression = compression;
+        this.compression = requireNonNull(compression);
         return this;
     }
 
