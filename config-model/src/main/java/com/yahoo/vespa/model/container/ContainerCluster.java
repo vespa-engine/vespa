@@ -25,7 +25,6 @@ import com.yahoo.container.jdisc.state.StateHandler;
 import com.yahoo.container.logging.AccessLog;
 import com.yahoo.container.usability.BindingsOverviewHandler;
 import com.yahoo.document.config.DocumentmanagerConfig;
-import com.yahoo.metrics.simple.runtime.MetricProperties;
 import com.yahoo.osgi.provider.model.ComponentModel;
 import com.yahoo.prelude.semantics.SemanticRulesConfig;
 import com.yahoo.search.config.IndexInfoConfig;
@@ -189,8 +188,8 @@ public abstract class ContainerCluster<CONTAINER extends Container>
         addSimpleComponent("com.yahoo.container.jdisc.metric.MetricProvider");
         addSimpleComponent("com.yahoo.container.jdisc.metric.MetricUpdater");
         addSimpleComponent(com.yahoo.container.jdisc.ThreadedHttpRequestHandler.Context.class);
-        addSimpleComponent(com.yahoo.metrics.simple.MetricManager.class.getName(), null, MetricProperties.BUNDLE_SYMBOLIC_NAME);
-        addSimpleComponent(com.yahoo.metrics.simple.jdisc.JdiscMetricsFactory.class.getName(), null, MetricProperties.BUNDLE_SYMBOLIC_NAME);
+        addSimpleComponent(com.yahoo.metrics.simple.MetricManager.class.getName());
+        addSimpleComponent(com.yahoo.metrics.simple.jdisc.JdiscMetricsFactory.class.getName());
         addSimpleComponent("com.yahoo.container.jdisc.state.StateMonitor");
         addSimpleComponent("com.yahoo.container.jdisc.ContainerThreadFactory");
         addSimpleComponent("com.yahoo.container.handler.VipStatus");
