@@ -51,11 +51,15 @@ public:
     size_t make_and_load_alloc_per_thread();
     size_t verify_random_allocation() const;
     const Config & cfg() const { return _cfg; }
-    size_t num_errors() const {
+    size_t verify_and_report_errors() const {
         std::lock_guard guard(_mutex);
+        for (const auto & alloc : _allocations) {
+            _total_errors += verify_allocation(alloc.get());
+        }
         return _total_errors;
     }
 private:
+    size_t verify_allocation(const char *) const;
     const Config                       & _cfg;
     mutable std::mutex                   _mutex;
     mutable size_t                       _total_errors;
@@ -90,6 +94,14 @@ Allocations::verify_random_allocation() const {
         std::lock_guard guard(_mutex);
         alloc = _allocations[std::rand() % _allocations.size()].get();
     }
+    size_t error_count = verify_allocation(alloc);
+    std::lock_guard guard(_mutex);
+    _total_errors += error_count;
+    return error_count;
+}
+
+size_t
+Allocations::verify_allocation(const char * alloc) const {
     size_t error_count = 0;
     for (size_t i = 0; i < cfg().alloc_size(); i++) {
         if (alloc[i] != 0) {
@@ -98,8 +110,6 @@ Allocations::verify_random_allocation() const {
             std::cout << "Tread " << std::this_thread::get_id() << ": Unexpected byte(" << std::hex << int(alloc[i]) << ") at " << (alloc + i) << std::endl;
         }
     }
-    std::lock_guard guard(_mutex);
-    _total_errors += error_count;
     return error_count;
 }
 
@@ -247,6 +257,7 @@ main(int argc, char *argv[]) {
         th.join();
     }
     heapValidators.clear();
-    std::cout << "Completed stresstest with " << allocations.num_errors() << " errors" << std::endl;
-    return 0;
+    size_t num_errors = allocations.verify_and_report_errors();
+    std::cout << "Completed stresstest with " << num_errors << " errors" << std::endl;
+    return num_errors == 0 ? 0 : 1;
 }
