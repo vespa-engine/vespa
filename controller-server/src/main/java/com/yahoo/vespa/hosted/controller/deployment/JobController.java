@@ -6,6 +6,7 @@ import com.yahoo.component.Version;
 import com.yahoo.component.VersionCompatibility;
 import com.yahoo.concurrent.UncheckedTimeoutException;
 import com.yahoo.config.provision.ApplicationId;
+import com.yahoo.config.provision.InstanceName;
 import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.Tags;
 import com.yahoo.config.provision.zone.ZoneId;
@@ -29,6 +30,7 @@ import com.yahoo.vespa.hosted.controller.api.integration.deployment.TestReport;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.TesterCloud;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.TesterId;
 import com.yahoo.vespa.hosted.controller.application.ApplicationList;
+import com.yahoo.vespa.hosted.controller.application.Change;
 import com.yahoo.vespa.hosted.controller.application.Deployment;
 import com.yahoo.vespa.hosted.controller.application.TenantAndApplicationId;
 import com.yahoo.vespa.hosted.controller.application.pkg.ApplicationPackage;
@@ -589,9 +591,11 @@ public class JobController {
 
             validate(id, submission);
 
-            applications.storeWithUpdatedConfig(application, submission.applicationPackage());
+            List<InstanceName> newInstances = applications.storeWithUpdatedConfig(application, submission.applicationPackage());
             if (application.get().projectId().isPresent())
                 applications.deploymentTrigger().triggerNewRevision(id);
+            for (InstanceName instance : newInstances)
+                controller.applications().deploymentTrigger().forceChange(id.instance(instance), Change.of(version.get().id()));
         });
         return version.get();
     }

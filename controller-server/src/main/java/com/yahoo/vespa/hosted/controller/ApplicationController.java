@@ -558,8 +558,8 @@ public class ApplicationController {
         }
     }
 
-    /** Stores the deployment spec and validation overrides from the application package, and runs cleanup. */
-    public void storeWithUpdatedConfig(LockedApplication application, ApplicationPackage applicationPackage) {
+    /** Stores the deployment spec and validation overrides from the application package, and runs cleanup. Returns new instances. */
+    public List<InstanceName> storeWithUpdatedConfig(LockedApplication application, ApplicationPackage applicationPackage) {
         validatePackage(applicationPackage, application.get());
 
         application = application.with(applicationPackage.deploymentSpec());
@@ -592,6 +592,10 @@ public class ApplicationController {
         }
 
         store(application);
+        return declaredInstances.stream()
+                                .map(DeploymentInstanceSpec::name)
+                                .filter(instance -> ! existingInstances.containsKey(instance))
+                                .toList();
     }
 
     /** Deploy a system application to given zone */

@@ -547,7 +547,14 @@
       ],
       "declared": true,
       "instance": "instance2",
-      "deploying": { },
+      "deploying": {
+        "application": {
+          "build": 4,
+          "compileVersion": "6.1.0",
+          "sourceUrl": "repository1/tree/commit1",
+          "commit": "commit1"
+        }
+      },
       "latestVersions": {
         "platform": {
           "platform": "6.1.0",
@@ -569,7 +576,7 @@
             "commit": "commit1"
           },
           "at": 1000,
-          "upgrade": true,
+          "upgrade": false,
           "available": [
             {
               "application": {

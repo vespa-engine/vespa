@@ -1371,52 +1371,52 @@ public class DeploymentTriggerTest {
 
         app1.runJob(productionUsWest1);
         tester.triggerJobs();
-        assertEquals(2, tester.jobs().active().size());
+        assertEquals(3, tester.jobs().active().size());
         app1.runJob(productionUsEast3);
         tester.triggerJobs();
-        assertEquals(1, tester.jobs().active().size());
+        assertEquals(2, tester.jobs().active().size());
 
         tester.clock().advance(Duration.ofHours(2));
 
         app1.runJob(productionEuWest1);
         tester.triggerJobs();
-        assertEquals(1, tester.jobs().active().size());
+        assertEquals(2, tester.jobs().active().size());
         app2.assertNotRunning(testEuWest1);
         app2.runJob(productionEuWest1);
         tester.triggerJobs();
-        assertEquals(1, tester.jobs().active().size());
+        assertEquals(2, tester.jobs().active().size());
         app2.runJob(testEuWest1);
         tester.triggerJobs();
-        assertEquals(List.of(), tester.jobs().active());
+        assertEquals(1, tester.jobs().active().size());
 
         tester.clock().advance(Duration.ofHours(1));
         app1.runJob(productionUsCentral1);
         tester.triggerJobs();
-        assertEquals(3, tester.jobs().active().size());
+        assertEquals(4, tester.jobs().active().size());
         app1.runJob(testUsCentral1);
         tester.triggerJobs();
-        assertEquals(2, tester.jobs().active().size());
+        assertEquals(3, tester.jobs().active().size());
         app1.runJob(productionApNortheast2);
         tester.triggerJobs();
-        assertEquals(1, tester.jobs().active().size());
+        assertEquals(2, tester.jobs().active().size());
         app1.runJob(productionApNortheast1);
         tester.triggerJobs();
-        assertEquals(List.of(), tester.jobs().active());
+        assertEquals(1, tester.jobs().active().size());
 
         tester.clock().advance(Duration.ofMinutes(30));
         tester.triggerJobs();
-        assertEquals(List.of(), tester.jobs().active());
+        assertEquals(1, tester.jobs().active().size());
 
         tester.clock().advance(Duration.ofMinutes(30));
         app1.runJob(testApNortheast1);
         tester.triggerJobs();
-        assertEquals(1, tester.jobs().active().size());
+        assertEquals(2, tester.jobs().active().size());
         app1.runJob(testApNortheast2);
         tester.triggerJobs();
-        assertEquals(1, tester.jobs().active().size());
+        assertEquals(2, tester.jobs().active().size());
         app1.runJob(testUsEast3);
         tester.triggerJobs();
-        assertEquals(1, tester.jobs().active().size());
+        assertEquals(2, tester.jobs().active().size());
         app1.runJob(productionApSoutheast1);
         tester.triggerJobs();
         assertEquals(1, tester.jobs().active().size());
