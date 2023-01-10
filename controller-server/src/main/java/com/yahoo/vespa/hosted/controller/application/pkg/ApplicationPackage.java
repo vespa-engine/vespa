@@ -2,8 +2,10 @@
 package com.yahoo.vespa.hosted.controller.application.pkg;
 
 import com.google.common.hash.Funnel;
+import com.google.common.hash.HashFunction;
 import com.google.common.hash.Hasher;
 import com.google.common.hash.Hashing;
+import com.google.common.hash.HashingOutputStream;
 import com.yahoo.component.Version;
 import com.yahoo.vespa.archive.ArchiveStreamReader;
 import com.yahoo.vespa.archive.ArchiveStreamReader.ArchiveFile;
@@ -40,6 +42,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Random;
 import java.util.Set;
 import java.util.SortedMap;
 import java.util.TreeMap;
@@ -219,18 +222,11 @@ public class ApplicationPackage {
         Predicate<String> entryMatcher = name -> ! name.endsWith(deploymentFile) && ! name.endsWith(buildMetaFile);
         SortedMap<String, Long> crcByEntry = new TreeMap<>();
         Options options = Options.standard().pathPredicate(entryMatcher);
-        ArchiveFile file;
+        HashingOutputStream hashOut = new HashingOutputStream(Hashing.murmur3_128(-1), OutputStream.nullOutputStream());
         try (ArchiveStreamReader reader = ArchiveStreamReader.ofZip(new ByteArrayInputStream(zippedContent), options)) {
-            OutputStream discard = OutputStream.nullOutputStream();
-            while ((file = reader.readNextTo(discard)) != null) {
-                crcByEntry.put(file.path().toString(), file.crc32().orElse(-1));
-            }
+            while (reader.readNextTo(hashOut) != null);
         }
-        Funnel<SortedMap<String, Long>> funnel = (from, into) -> from.forEach((key, value) -> {
-            into.putBytes(key.getBytes());
-            into.putLong(value);
-        });
-        return hasher().putObject(crcByEntry, funnel)
+        return hasher().putLong(hashOut.hash().asLong())
                        .putInt(deploymentSpec.deployableHashCode())
                        .hash().toString();
     }
