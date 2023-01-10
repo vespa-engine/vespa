@@ -25,6 +25,7 @@ import java.util.Optional;
 import java.util.OptionalDouble;
 import java.util.OptionalInt;
 
+import static ai.vespa.feed.client.FeedClientBuilder.Compression.auto;
 import static ai.vespa.feed.client.FeedClientBuilder.Compression.none;
 
 /**
@@ -187,7 +188,7 @@ class CliArguments {
 
     Compression compression() throws CliArgumentsException {
         try {
-            return stringValue(COMPRESSION).map(Compression::valueOf).orElse(null);
+            return stringValue(COMPRESSION).map(Compression::valueOf).orElse(auto);
         }
         catch (IllegalArgumentException e) {
             throw new CliArgumentsException("Invalid " + COMPRESSION + " argument: " + e.getMessage(), e);
