@@ -27,27 +27,21 @@ import com.yahoo.vespa.hosted.node.admin.task.util.process.Terminal;
 import java.net.URI;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.Comparator;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.util.stream.Collectors;
 
 import static com.yahoo.vespa.hosted.node.admin.maintenance.disk.DiskCleanupRule.Priority;
-import static com.yahoo.yolean.Exceptions.uncheck;
 
 /**
  * @author freva
@@ -172,33 +166,7 @@ public class StorageMaintainer {
     /** Checks if container has any new coredumps, reports and archives them if so */
     public void handleCoreDumpsForContainer(NodeAgentContext context, Optional<Container> container, boolean throwIfCoreBeingWritten) {
         if (context.isDisabled(NodeAgentTask.CoreDumps)) return;
-        coredumpHandler.converge(context, () -> getCoredumpNodeAttributes(context, container),
-                                 container.map(Container::image), throwIfCoreBeingWritten);
-    }
-
-    private Map<String, Object> getCoredumpNodeAttributes(NodeAgentContext context, Optional<Container> container) {
-        Map<String, String> attributes = new HashMap<>();
-        attributes.put("hostname", context.node().hostname());
-        attributes.put("system", context.zone().getSystemName().value());
-        attributes.put("region", context.zone().getRegionName().value());
-        attributes.put("environment", context.zone().getEnvironment().value());
-        attributes.put("flavor", context.node().flavor());
-        attributes.put("kernel_version", System.getProperty("os.version"));
-        attributes.put("cpu_microcode_version", getMicrocodeVersion());
-
-        container.map(c -> c.image().asString()).ifPresent(image -> attributes.put("docker_image", image));
-        container.flatMap(c -> c.image().tag()).ifPresent(version -> attributes.put("vespa_version", version));
-        context.node().parentHostname().ifPresent(parent -> attributes.put("parent_hostname", parent));
-        context.node().owner().ifPresent(owner -> {
-            attributes.put("tenant", owner.tenant().value());
-            attributes.put("application", owner.application().value());
-            attributes.put("instance", owner.instance().value());
-        });
-        context.node().membership().ifPresent(membership -> {
-            attributes.put("cluster_id", membership.clusterId());
-            attributes.put("cluster_type", membership.type().value());
-        });
-        return Collections.unmodifiableMap(attributes);
+        coredumpHandler.converge(context, container.map(Container::image), throwIfCoreBeingWritten);
     }
 
     /**
@@ -224,19 +192,5 @@ public class StorageMaintainer {
         // after archiving the previous
         if (context.nodeType() != NodeType.tenant)
             context.paths().of("/").getFileSystem().createRoot();
-    }
-
-    private String getMicrocodeVersion() {
-        String output = uncheck(() -> Files.readAllLines(Paths.get("/proc/cpuinfo")).stream()
-                .filter(line -> line.startsWith("microcode"))
-                .findFirst()
-                .orElse("microcode : UNKNOWN"));
-
-        String[] results = output.split(":");
-        if (results.length != 2) {
-            throw ConvergenceException.ofError("Result from detect microcode command not as expected: " + output);
-        }
-
-        return results[1].trim();
     }
 }
