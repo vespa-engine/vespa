@@ -74,7 +74,7 @@ public class ArchiveStreamReader implements AutoCloseable {
                         outputStream.write(buffer, 0, read);
                     }
                 }
-                return new ArchiveFile(path, crc32(entry), size);
+                return new ArchiveFile(path, size);
             }
         } catch (IOException e) {
             throw new UncheckedIOException(e);
@@ -91,15 +91,10 @@ public class ArchiveStreamReader implements AutoCloseable {
     public static class ArchiveFile {
 
         private final Path path;
-        private final OptionalLong crc32;
         private final long size;
 
-        public ArchiveFile(Path name, OptionalLong crc32, long size) {
+        public ArchiveFile(Path name, long size) {
             this.path = Objects.requireNonNull(name);
-            this.crc32 = Objects.requireNonNull(crc32);
-            if (crc32.isPresent()) {
-                requireNonNegative("crc32", crc32.getAsLong());
-            }
             this.size = requireNonNegative("size", size);
         }
 
@@ -108,25 +103,11 @@ public class ArchiveStreamReader implements AutoCloseable {
             return path;
         }
 
-        /** The CRC-32 checksum of this file, if any */
-        public OptionalLong crc32() {
-            return crc32;
-        }
-
         /** The decompressed size of this file */
         public long size() {
             return size;
         }
 
-    }
-
-    /** Get the CRC-32 checksum of given archive entry, if any */
-    private static OptionalLong crc32(ArchiveEntry entry) {
-        long crc32 = -1;
-        if (entry instanceof ZipArchiveEntry) {
-            crc32 = ((ZipArchiveEntry) entry).getCrc();
-        }
-        return crc32 > -1 ? OptionalLong.of(crc32) : OptionalLong.empty();
     }
 
     private static boolean isSymlink(ArchiveEntry entry) {
