@@ -160,6 +160,8 @@ public class CoredumpHandlerTest {
                                              .setCoreDumpPath(context.paths().of("/home/docker/dumps/container-123/id-123/dump_core.456"))
                                              .setDockerImage(DockerImage.fromString("example.com/vespa/ci:6.48.4"));
 
+        new UnixPath(fileSystem.getPath("/proc/cpuinfo")).createParents().writeUtf8File("microcode\t: 0xf0");
+
         ContainerPath coredumpDirectory = context.paths().of("/var/crash/id-123");
         Files.createDirectories(coredumpDirectory.pathOnHost());
         Files.createFile(coredumpDirectory.resolve("dump_core.456"));

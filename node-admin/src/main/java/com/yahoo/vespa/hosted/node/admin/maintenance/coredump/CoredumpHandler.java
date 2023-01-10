@@ -28,7 +28,6 @@ import java.io.OutputStream;
 import java.io.UncheckedIOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.time.Clock;
 import java.util.Comparator;
 import java.util.List;
@@ -325,7 +324,7 @@ public class CoredumpHandler {
     }
 
     private String getMicrocodeVersion() {
-        String output = uncheck(() -> Files.readAllLines(Paths.get("/proc/cpuinfo")).stream()
+        String output = uncheck(() -> Files.readAllLines(doneCoredumpsPath.getFileSystem().getPath("/proc/cpuinfo")).stream()
                                            .filter(line -> line.startsWith("microcode"))
                                            .findFirst()
                                            .orElse("microcode : UNKNOWN"));
