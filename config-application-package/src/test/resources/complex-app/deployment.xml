@@ -1,0 +1,140 @@
+<deployment version="1.0" major-version="8"
+            athenz-domain="gemini-native.aws-core-dev" athenz-service="csp"
+            cloud-account="337717828807">
+
+    <parallel>
+        <instance id="instance0" cloud-account="417744444827">
+            <test tester-flavor="d-8-16-10" />
+            <block-change version="true" revision="false" days="mon-fri,sun" hours="4-23" time-zone="UTC" />
+        </instance>
+
+        <instance id="instance1" cloud-account="417744444827">
+            <test tester-flavor="d-8-16-10" />
+            <block-change version="true" revision="false" days="mon-fri,sun" hours="4-23" time-zone="UTC" />
+        </instance>
+
+        <instance id="instance2" cloud-account="417744444827">
+            <test tester-flavor="d-8-16-10" />
+            <block-change version="true" revision="false" days="mon-fri,sun" hours="4-23" time-zone="UTC" />
+        </instance>
+
+        <instance id="instance3" cloud-account="417744444827">
+            <test tester-flavor="d-8-16-10" />
+            <block-change version="true" revision="false" days="mon-fri,sun" hours="4-23" time-zone="UTC" />
+        </instance>
+
+        <instance id="stress" cloud-account="417744444827">
+            <staging />
+            <block-change version="true" revision="false" days="mon-fri,sun" hours="4-23" time-zone="UTC" />
+        </instance>
+    </parallel>
+
+    <instance id="beta1" cloud-account="417744444827" tags="beta beta-prod beta-prod-cd">
+        <block-change version="true" revision="false" days="mon-fri,sun" hours="4-23" time-zone="UTC" />
+        <block-change version="true" revision="false" days="sat" hours="0-23" time-zone="UTC" />
+        <upgrade revision-change='when-clear' rollout='separate' revision-target='next' policy='conservative'/>
+        <prod>
+            <parallel>
+                <steps>
+                    <region>aws-us-west-2a</region>
+                    <test>aws-us-west-2a</test>
+                </steps>
+                <steps>
+                    <region>aws-us-east-1b</region>
+                    <test>aws-us-east-1b</test>
+                </steps>
+                <steps>
+                    <region>aws-eu-west-1a</region>
+                    <test>aws-eu-west-1a</test>
+                </steps>
+                <steps>
+                    <region>aws-ap-southeast-1a</region>
+                    <test>aws-ap-southeast-1a</test>
+                </steps>
+            </parallel>
+        </prod>
+    </instance>
+
+    <instance id="gamma5" cloud-account="417744444827" tags="gamma prod beta-prod beta-prod-cd">
+        <block-change version="true" revision="false" days="mon-fri,sun" hours="4-23" time-zone="UTC" />
+        <block-change version="true" revision="false" days="sat" hours="0-23" time-zone="UTC" />
+        <upgrade revision-change='when-clear' rollout='separate' revision-target='next' policy='conservative'/>
+        <prod>
+            <parallel>
+                <steps>
+                    <region>aws-us-west-2a</region>
+                    <test>aws-us-west-2a</test>
+                </steps>
+                <steps>
+                    <region>aws-us-east-1b</region>
+                    <test>aws-us-east-1b</test>
+                </steps>
+                <steps>
+                    <region>aws-eu-west-1a</region>
+                    <test>aws-eu-west-1a</test>
+                </steps>
+                <steps>
+                    <region>aws-ap-southeast-1a</region>
+                    <test>aws-ap-southeast-1a</test>
+                </steps>
+            </parallel>
+        </prod>
+    </instance>
+
+    <instance id="delta21" cloud-account="417744444827" tags="delta prod beta-prod beta-prod-cd">
+        <block-change version="true" revision="false" days="mon-fri,sun" hours="4-23" time-zone="UTC" />
+        <block-change version="true" revision="false" days="sat" hours="0-23" time-zone="UTC" />
+        <upgrade revision-change='when-clear' rollout='separate' revision-target='next' policy='conservative'/>
+        <prod>
+            <parallel>
+                <steps>
+                    <region>aws-us-west-2a</region>
+                    <test>aws-us-west-2a</test>
+                </steps>
+                <steps>
+                    <region>aws-us-east-1b</region>
+                    <test>aws-us-east-1b</test>
+                </steps>
+                <steps>
+                    <region>aws-eu-west-1a</region>
+                    <test>aws-eu-west-1a</test>
+                </steps>
+                <steps>
+                    <region>aws-ap-southeast-1a</region>
+                    <test>aws-ap-southeast-1a</test>
+                </steps>
+            </parallel>
+        </prod>
+    </instance>
+
+    <instance id="prod21a" cloud-account="417744444827" tags="prod-a prod beta-prod beta-prod-cd">
+        <block-change version="true" revision="false" days="mon-fri,sun" hours="4-23" time-zone="UTC" />
+        <block-change version="true" revision="false" days="sat" hours="0-23" time-zone="UTC" />
+        <upgrade revision-change='when-clear' rollout='separate' revision-target='next' policy='conservative'/>
+    </instance>
+
+    <instance id="prod21b" cloud-account="417744444827" tags="prod-b prod beta-prod beta-prod-cd">
+        <block-change version="true" revision="false" days="mon-fri,sun" hours="4-23" time-zone="UTC" />
+        <block-change version="true" revision="false" days="sat" hours="0-23" time-zone="UTC" />
+        <upgrade revision-change='when-clear' rollout='separate' revision-target='next' policy='conservative'/>
+    </instance>
+
+    <instance id="prod21c" cloud-account="417744444827" tags="prod-c prod beta-prod beta-prod-cd">
+        <block-change version="true" revision="false" days="mon-fri,sun" hours="4-23" time-zone="UTC" />
+        <block-change version="true" revision="false" days="sat" hours="0-23" time-zone="UTC" />
+        <upgrade revision-change='when-clear' rollout='separate' revision-target='next' policy='conservative'/>
+    </instance>
+
+    <instance id="cd10" cloud-account="417744444827" tags="cd beta-prod-cd">
+        <block-change version="true" revision="false" days="mon-fri,sun" hours="4-23" time-zone="UTC" />
+        <block-change version="true" revision="false" days="sat" hours="0-23" time-zone="UTC" />
+        <upgrade revision-change='when-clear' rollout='separate' revision-target='next' policy='conservative'/>
+    </instance>
+
+    <instance id="prod1" cloud-account="417744444827">
+        <block-change version="true" revision="false" days="mon-fri,sun" hours="4-23" time-zone="UTC" />
+        <block-change version="true" revision="false" days="sat" hours="0-23" time-zone="UTC" />
+        <upgrade revision-change='when-clear' rollout='separate' revision-target='next' policy='conservative'/>
+    </instance>
+
+</deployment>
