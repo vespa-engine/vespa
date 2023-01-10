@@ -13,7 +13,7 @@ namespace vespalib::alloc {
 
 /*
  * Class handling memory allocations backed by one or more files.
- * Not reentant. Should not be destructed before all allocations
+ * Not reentrant or thread safe. Should not be destructed before all allocations
  * have been freed.
  */
 class MmapFileAllocator : public MemoryAllocator {
@@ -30,8 +30,8 @@ class MmapFileAllocator : public MemoryAllocator {
         {
         }
     };
-    vespalib::string _dir_name;
-    mutable File _file;
+    const vespalib::string _dir_name;
+    mutable File     _file;
     mutable uint64_t _end_offset;
     mutable hash_map<void *, SizeAndOffset> _allocations;
     mutable FileAreaFreeList _freelist;

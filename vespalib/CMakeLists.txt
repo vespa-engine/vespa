@@ -21,6 +21,7 @@ vespa_define_module(
     src/apps/vespa-drop-file-from-cache
     src/apps/vespa-probe-io-uring
     src/apps/vespa-resource-limits
+    src/apps/vespa-stress-and-validate-memory
     src/apps/vespa-tsan-digest
     src/apps/vespa-validate-hostname
 
