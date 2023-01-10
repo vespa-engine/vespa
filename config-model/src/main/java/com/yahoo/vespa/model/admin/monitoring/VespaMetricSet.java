@@ -148,13 +148,13 @@ public class VespaMetricSet {
 
         {
             List<String> suffixes = List.of("sum", "count", "last", "min", "max");
-            addMetric(metrics, "jdisc.thread_pool.unhandled_exceptions", suffixes);
-            addMetric(metrics, "jdisc.thread_pool.work_queue.capacity", suffixes);
-            addMetric(metrics, "jdisc.thread_pool.work_queue.size", suffixes);
-            addMetric(metrics, "jdisc.thread_pool.rejected_tasks", suffixes);
-            addMetric(metrics, "jdisc.thread_pool.size", suffixes);
-            addMetric(metrics, "jdisc.thread_pool.max_allowed_size", suffixes);
-            addMetric(metrics, "jdisc.thread_pool.active_threads", suffixes);
+            addMetric(metrics, ContainerMetrics.JDISC_THREAD_POOL_UNHANDLED_EXCEPTIONS.baseName(), suffixes);
+            addMetric(metrics, ContainerMetrics.JDISC_THREAD_POOL_WORK_QUEUE_CAPACITY.baseName(), suffixes);
+            addMetric(metrics, ContainerMetrics.JDISC_THREAD_POOL_WORK_QUEUE_SIZE.baseName(), suffixes);
+            addMetric(metrics, ContainerMetrics.JDISC_THREAD_POOL_REJECTED_TASKS.baseName(), suffixes);
+            addMetric(metrics, ContainerMetrics.JDISC_THREAD_POOL_SIZE.baseName(), suffixes);
+            addMetric(metrics, ContainerMetrics.JDISC_THREAD_POOL_MAX_ALLOWED_SIZE.baseName(), suffixes);
+            addMetric(metrics, ContainerMetrics.JDISC_THREAD_POOL_ACTIVE_THREADS.baseName(), suffixes);
 
             addMetric(metrics, ContainerMetrics.JETTY_THREADPOOL_MAX_THREADS.baseName(), suffixes);
             addMetric(metrics, ContainerMetrics.JETTY_THREADPOOL_MIN_THREADS.baseName(), suffixes);
