@@ -9,10 +9,13 @@
 
 namespace vespalib {
 
+namespace net { namespace tls { class CryptoCodec; }}
+
 class AbstractTlsCryptoEngine : public CryptoEngine {
 public:
-    virtual std::unique_ptr<TlsCryptoSocket> create_tls_client_crypto_socket(SocketHandle socket, const SocketSpec &spec) = 0;
-    virtual std::unique_ptr<TlsCryptoSocket> create_tls_server_crypto_socket(SocketHandle socket) = 0;
+    using CryptoCodec = net::tls::CryptoCodec;
+    virtual std::unique_ptr<CryptoCodec> create_tls_client_crypto_codec(const SocketHandle &socket, const SocketSpec &spec) = 0;
+    virtual std::unique_ptr<CryptoCodec> create_tls_server_crypto_codec(const SocketHandle &socket) = 0;
 };
 
 /**
@@ -26,17 +29,12 @@ public:
     explicit TlsCryptoEngine(net::tls::TransportSecurityOptions tls_opts,
                              net::tls::AuthorizationMode authz_mode = net::tls::AuthorizationMode::Enforce);
     ~TlsCryptoEngine() override;
-    std::unique_ptr<TlsCryptoSocket> create_tls_client_crypto_socket(SocketHandle socket, const SocketSpec &spec) override;
-    std::unique_ptr<TlsCryptoSocket> create_tls_server_crypto_socket(SocketHandle socket) override;
+    std::unique_ptr<CryptoCodec> create_tls_client_crypto_codec(const SocketHandle &socket, const SocketSpec &spec) override;
+    std::unique_ptr<CryptoCodec> create_tls_server_crypto_codec(const SocketHandle &socket) override;
     bool use_tls_when_client() const override { return true; }
     bool always_use_tls_when_server() const override { return true; }
-    CryptoSocket::UP create_client_crypto_socket(SocketHandle socket, const SocketSpec &spec) override {
-        return create_tls_client_crypto_socket(std::move(socket), spec);
-    }
-    CryptoSocket::UP create_server_crypto_socket(SocketHandle socket) override {
-        return create_tls_server_crypto_socket(std::move(socket));
-    }
-
+    CryptoSocket::UP create_client_crypto_socket(SocketHandle socket, const SocketSpec &spec) override;
+    CryptoSocket::UP create_server_crypto_socket(SocketHandle socket) override;
     std::shared_ptr<net::tls::TlsContext> tls_context() const noexcept { return _tls_ctx; };
 };
 
