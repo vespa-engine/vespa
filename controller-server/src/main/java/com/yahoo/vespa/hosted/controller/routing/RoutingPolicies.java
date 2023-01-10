@@ -374,30 +374,34 @@ public class RoutingPolicies {
     }
 
     private void setPrivateDns(Endpoint endpoint, LoadBalancerAllocation allocation) {
-        controller.serviceRegistry().vpcEndpointService()
-                  .setPrivateDns(DomainName.of(endpoint.dnsName()),
-                                 new ClusterId(allocation.deployment, endpoint.cluster()),
-                                 controller.applications().decideCloudAccountOf(allocation.deployment, allocation.deploymentSpec))
-                  .ifPresent(challenge -> {
-                      try {
-                          nameServiceForwarderIn(allocation.deployment.zoneId()).createTxt(challenge.name(), List.of(challenge.data()), Priority.high);
-                          Instant doom = controller.clock().instant().plusSeconds(30);
-                          while (controller.clock().instant().isBefore(doom)) {
-                              try (Mutex lock = controller.curator().lockNameServiceQueue()) {
-                                  if (controller.curator().readNameServiceQueue().requests().stream()
-                                                .noneMatch(request -> request.name().equals(Optional.of(challenge.name())))) {
-                                      challenge.trigger().run();
-                                      return;
-                                  }
-                              }
-                              Thread.sleep(100);
-                          }
-                          throw new UncheckedTimeoutException("timed out waiting for DNS challenge to be processed");
-                      }
-                      catch (InterruptedException e) {
-                          throw new UncheckedInterruptedException("interrupted waiting for DNS challenge to be processed", e, true);
-                      }
-                  });
+        allocation.loadBalancers.stream()
+                                .filter(lb -> lb.service().isPresent())
+                                .findFirst()
+                                .flatMap(lbWithPrivateService ->
+                                                 controller.serviceRegistry().vpcEndpointService()
+                                                           .setPrivateDns(DomainName.of(endpoint.dnsName()),
+                                                                          new ClusterId(allocation.deployment, endpoint.cluster()),
+                                                                          lbWithPrivateService.cloudAccount()))
+                                .ifPresent(challenge -> {
+                                    try {
+                                        nameServiceForwarderIn(allocation.deployment.zoneId()).createTxt(challenge.name(), List.of(challenge.data()), Priority.high);
+                                        Instant doom = controller.clock().instant().plusSeconds(30);
+                                        while (controller.clock().instant().isBefore(doom)) {
+                                            try (Mutex lock = controller.curator().lockNameServiceQueue()) {
+                                                if (controller.curator().readNameServiceQueue().requests().stream()
+                                                              .noneMatch(request -> request.name().equals(Optional.of(challenge.name())))) {
+                                                    challenge.trigger().run();
+                                                    return;
+                                                }
+                                            }
+                                            Thread.sleep(100);
+                                        }
+                                        throw new UncheckedTimeoutException("timed out waiting for DNS challenge to be processed");
+                                    }
+                                    catch (InterruptedException e) {
+                                        throw new UncheckedInterruptedException("interrupted waiting for DNS challenge to be processed", e, true);
+                                    }
+                                });
     }
 
     /**
