@@ -1,6 +1,8 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model.admin.monitoring;
 
+import com.yahoo.metrics.ContainerMetrics;
+
 import java.util.Collections;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -197,9 +199,9 @@ public class VespaMetricSet {
         metrics.add(new Metric("jdisc.gc.count.average"));
         metrics.add(new Metric("jdisc.gc.count.max"));
         metrics.add(new Metric("jdisc.gc.count.last"));
-        metrics.add(new Metric("jdisc.gc.ms.average"));
-        metrics.add(new Metric("jdisc.gc.ms.max"));
-        metrics.add(new Metric("jdisc.gc.ms.last"));
+        metrics.add(new Metric(ContainerMetrics.JDISC_GC_MS.average()));
+        metrics.add(new Metric(ContainerMetrics.JDISC_GC_MS.max()));
+        metrics.add(new Metric(ContainerMetrics.JDISC_GC_MS.last()));
 
         metrics.add(new Metric("jdisc.deactivated_containers.total.last"));
         metrics.add(new Metric("jdisc.deactivated_containers.with_retained_refs.last"));
@@ -218,11 +220,11 @@ public class VespaMetricSet {
         metrics.add(new Metric("jdisc.http.request.prematurely_closed.rate"));
         addMetric(metrics, "jdisc.http.request.requests_per_connection", List.of("sum", "count", "min", "max", "average"));
 
-        metrics.add(new Metric("http.status.1xx.rate"));
-        metrics.add(new Metric("http.status.2xx.rate"));
-        metrics.add(new Metric("http.status.3xx.rate"));
-        metrics.add(new Metric("http.status.4xx.rate"));
-        metrics.add(new Metric("http.status.5xx.rate"));
+        metrics.add(new Metric(ContainerMetrics.HTTP_STATUS_1XX.rate()));
+        metrics.add(new Metric(ContainerMetrics.HTTP_STATUS_2XX.rate()));
+        metrics.add(new Metric(ContainerMetrics.HTTP_STATUS_3XX.rate()));
+        metrics.add(new Metric(ContainerMetrics.HTTP_STATUS_4XX.rate()));
+        metrics.add(new Metric(ContainerMetrics.HTTP_STATUS_5XX.rate()));
 
         metrics.add(new Metric("jdisc.http.request.uri_length.max"));
         metrics.add(new Metric("jdisc.http.request.uri_length.sum"));
