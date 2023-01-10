@@ -11,7 +11,10 @@ import com.yahoo.config.application.api.ApplicationMetaData;
 import com.yahoo.config.application.api.ApplicationPackage;
 import com.yahoo.config.application.api.ComponentInfo;
 import com.yahoo.config.application.api.DeployLogger;
+import com.yahoo.config.application.api.DeploymentInstanceSpec;
+import com.yahoo.config.application.api.DeploymentSpec;
 import com.yahoo.config.application.api.UnparsedConfigDefinition;
+import com.yahoo.config.application.api.xml.DeploymentSpecXmlReader;
 import com.yahoo.config.codegen.DefParser;
 import com.yahoo.config.model.application.AbstractApplicationPackage;
 import com.yahoo.config.provision.ApplicationId;
@@ -582,12 +585,16 @@ public class FilesApplicationPackage extends AbstractApplicationPackage {
     private void preprocessXML(File destination, File inputXml, Zone zone) throws IOException {
         if ( ! inputXml.exists()) return;
         try {
+            InstanceName instance = metaData.getApplicationId().instance();
             Document document = new XmlPreProcessor(appDir,
                                                     inputXml,
-                                                    metaData.getApplicationId().instance(),
+                                                    instance,
                                                     zone.environment(),
                                                     zone.region(),
-                                                    metaData.getTags())
+                                                    getDeployment().map(new DeploymentSpecXmlReader(false)::read)
+                                                                   .flatMap(spec -> spec.instance(instance))
+                                                                   .map(DeploymentInstanceSpec::tags)
+                                                                   .orElse(Tags.empty()))
                     .run();
 
             try (FileOutputStream outputStream = new FileOutputStream(destination)) {
