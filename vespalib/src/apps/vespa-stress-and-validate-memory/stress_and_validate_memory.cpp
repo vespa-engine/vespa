@@ -49,7 +49,7 @@ public:
     Allocations(const Config & config);
     ~Allocations();
     size_t make_and_load_alloc_per_thread();
-    size_t verify_random_allocation() const;
+    size_t verify_random_allocation(unsigned int *seed) const;
     const Config & cfg() const { return _cfg; }
     size_t verify_and_report_errors() const {
         std::lock_guard guard(_mutex);
@@ -88,11 +88,11 @@ Allocations::make_and_load_alloc_per_thread() {
 }
 
 size_t
-Allocations::verify_random_allocation() const {
+Allocations::verify_random_allocation(unsigned int *seed) const {
     const char * alloc;
     {
         std::lock_guard guard(_mutex);
-        alloc = _allocations[std::rand() % _allocations.size()].get();
+        alloc = _allocations[rand_r(seed) % _allocations.size()].get();
     }
     size_t error_count = verify_allocation(alloc);
     std::lock_guard guard(_mutex);
@@ -107,7 +107,7 @@ Allocations::verify_allocation(const char * alloc) const {
         if (alloc[i] != 0) {
             error_count++;
             std::lock_guard guard(log_mutex);
-            std::cout << "Tread " << std::this_thread::get_id() << ": Unexpected byte(" << std::hex << int(alloc[i]) << ") at " << (alloc + i) << std::endl;
+            std::cout << "Thread " << std::this_thread::get_id() << ": Unexpected byte(" << std::hex << int(alloc[i]) << ") at " << static_cast<const void *>(alloc + i) << std::endl;
         }
     }
     return error_count;
@@ -119,7 +119,7 @@ public:
     ~FileBackedMemory();
     const Config & cfg() const { return _cfg; }
     size_t make_and_load_alloc_per_thread();
-    void random_write();
+    void random_write(unsigned int *seed);
 private:
     using PtrAndSize = std::pair<void *, size_t>;
     const Config           & _cfg;
@@ -160,13 +160,13 @@ FileBackedMemory::make_and_load_alloc_per_thread() {
 }
 
 void
-FileBackedMemory::random_write() {
+FileBackedMemory::random_write(unsigned int *seed) {
     PtrAndSize ptrAndSize;
     {
         std::lock_guard guard(_mutex);
-        ptrAndSize = _allocations[std::rand() % _allocations.size()];
+        ptrAndSize = _allocations[rand_r(seed) % _allocations.size()];
     }
-    memset(ptrAndSize.first, std::rand()%256, ptrAndSize.second);
+    memset(ptrAndSize.first, rand_r(seed)%256, ptrAndSize.second);
 }
 
 void
@@ -177,8 +177,9 @@ stress_and_validate_heap(Allocations *allocs) {
     const size_t max_allocs = allocs->cfg().allocs_per_thread();
     const double alloc_time = to_s(allocs->cfg().alloc_time());
     steady_time start = steady_clock::now();
+    unsigned int seed = start.time_since_epoch().count()%4294967291ul;
     for (;!stopped; num_verifications++) {
-        num_errors += allocs->verify_random_allocation();
+        num_errors += allocs->verify_random_allocation(&seed);
         double ratio = to_s(steady_clock::now() - start) / alloc_time;
         if (num_allocs < std::min(size_t(ratio*max_allocs), max_allocs)) {
             num_allocs += allocs->make_and_load_alloc_per_thread();
@@ -195,8 +196,9 @@ stress_file_backed_memory(FileBackedMemory * mmapped) {
     const size_t max_allocs = mmapped->cfg().allocs_per_thread();
     const double alloc_time = to_s(mmapped->cfg().alloc_time());
     steady_time start = steady_clock::now();
+    unsigned int seed = start.time_since_epoch().count()%4294967291ul;
     for (;!stopped; num_writes++) {
-        mmapped->random_write();
+        mmapped->random_write(&seed);
         double ratio = to_s(steady_clock::now() - start) / alloc_time;
         if (num_allocs < std::min(size_t(ratio*max_allocs), max_allocs)) {
             num_allocs += mmapped->make_and_load_alloc_per_thread();
@@ -216,12 +218,9 @@ main(int argc, char *argv[]) {
         char option = argv[i][strlen(argv[i]) - 1];
         char *arg = argv[i+1];
         switch (option) {
-            case 'h': heapSize = atof(arg) * 1_Gi;
-            break;
-            case 's': swap_dir = arg;
-            break;
-            case 't': runTime = from_s(atof(arg));
-                break;
+            case 'h': heapSize = atof(arg) * 1_Gi; break;
+            case 's': swap_dir = arg; break;
+            case 't': runTime = from_s(atof(arg)); break;
             default:
                 std::cerr << "Option " << option << " not in allowed set [h,s,t]" << std::endl;
                 break;
