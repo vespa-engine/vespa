@@ -21,7 +21,6 @@ import java.io.IOException;
 import java.nio.file.FileSystem;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
@@ -63,7 +62,7 @@ public class StorageMaintainerTest {
 
     @Test
     void testNonExistingDiskUsed() {
-        DiskSize size = storageMaintainer.getDiskUsed(null, Paths.get("/fake/path"));
+        DiskSize size = storageMaintainer.getDiskUsed(null, Path.of("/fake/path"));
         assertEquals(DiskSize.ZERO, size);
     }
 

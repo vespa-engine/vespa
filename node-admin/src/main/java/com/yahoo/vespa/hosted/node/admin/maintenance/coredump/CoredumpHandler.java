@@ -4,7 +4,6 @@ package com.yahoo.vespa.hosted.node.admin.maintenance.coredump;
 import com.yahoo.config.provision.DockerImage;
 import com.yahoo.security.KeyId;
 import com.yahoo.security.SecretSharedKey;
-import com.yahoo.security.SharedKeyGenerator;
 import com.yahoo.vespa.flags.FetchVector;
 import com.yahoo.vespa.flags.FlagSource;
 import com.yahoo.vespa.flags.Flags;
@@ -29,11 +28,9 @@ import java.io.OutputStream;
 import java.io.UncheckedIOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.time.Clock;
 import java.util.Comparator;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.function.Predicate;
@@ -101,8 +98,7 @@ public class CoredumpHandler {
     }
 
 
-    public void converge(NodeAgentContext context, Supplier<Map<String, Object>> nodeAttributesSupplier,
-                         Optional<DockerImage> dockerImage, boolean throwIfCoreBeingWritten) {
+    public void converge(NodeAgentContext context, Optional<DockerImage> dockerImage, boolean throwIfCoreBeingWritten) {
         ContainerPath containerCrashPath = context.paths().of(crashPatchInContainer, context.users().vespa());
         ContainerPath containerProcessingPath = containerCrashPath.resolve(PROCESSING_DIRECTORY_NAME);
 
@@ -328,7 +324,7 @@ public class CoredumpHandler {
     }
 
     private String getMicrocodeVersion() {
-        String output = uncheck(() -> Files.readAllLines(Paths.get("/proc/cpuinfo")).stream()
+        String output = uncheck(() -> Files.readAllLines(doneCoredumpsPath.getFileSystem().getPath("/proc/cpuinfo")).stream()
                                            .filter(line -> line.startsWith("microcode"))
                                            .findFirst()
                                            .orElse("microcode : UNKNOWN"));

@@ -13,7 +13,6 @@ import java.nio.file.FileSystem;
 import java.nio.file.Files;
 import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.nio.file.attribute.FileTime;
 import java.time.Duration;
@@ -26,7 +25,10 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static java.util.Set.of;
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -78,7 +80,7 @@ public class FileFinderTest {
         @Test
         void throws_if_prune_path_not_under_base_path() {
             assertThrows(IllegalArgumentException.class, () -> {
-                FileFinder.files(Paths.get("/some/path")).prune(Paths.get("/other/path"));
+                FileFinder.files(Path.of("/some/path")).prune(Path.of("/other/path"));
             });
         }
 
@@ -193,7 +195,7 @@ public class FileFinderTest {
 
         @Test
         void age_filter_test() {
-            Path path = Paths.get("/my/fake/path");
+            Path path = Path.of("/my/fake/path");
             when(attributes.lastModifiedTime()).thenReturn(FileTime.from(Instant.now().minus(Duration.ofHours(1))));
             FileFinder.FileAttributes fileAttributes = new FileFinder.FileAttributes(path, attributes);
 
@@ -206,7 +208,7 @@ public class FileFinderTest {
 
         @Test
         void size_filters() {
-            Path path = Paths.get("/my/fake/path");
+            Path path = Path.of("/my/fake/path");
             when(attributes.size()).thenReturn(100L);
             FileFinder.FileAttributes fileAttributes = new FileFinder.FileAttributes(path, attributes);
 
@@ -219,7 +221,7 @@ public class FileFinderTest {
 
         @Test
         void filename_filters() {
-            Path path = Paths.get("/my/fake/path/some-12352-file.json");
+            Path path = Path.of("/my/fake/path/some-12352-file.json");
             FileFinder.FileAttributes fileAttributes = new FileFinder.FileAttributes(path, attributes);
 
             assertTrue(FileFinder.nameStartsWith("some-").test(fileAttributes));

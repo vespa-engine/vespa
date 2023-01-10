@@ -5,7 +5,6 @@ import com.yahoo.vespa.hosted.node.admin.component.TaskContext;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -62,7 +61,7 @@ public class DefaultEnvWriter {
             return false;
         } else {
             context.log(logger, "Updating " + defaultEnvFile.toString());
-            Path tempFile = Paths.get(defaultEnvFile + ".tmp");
+            Path tempFile = defaultEnvFile.resolveSibling(defaultEnvFile.getFileName() + ".tmp");
             uncheck(() -> Files.write(tempFile, newDefaultEnvLines));
             uncheck(() -> Files.move(tempFile, defaultEnvFile, ATOMIC_MOVE));
             return true;

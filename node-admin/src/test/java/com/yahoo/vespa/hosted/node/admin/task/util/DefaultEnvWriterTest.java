@@ -9,11 +9,12 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.logging.Logger;
 
 import static java.nio.file.StandardCopyOption.REPLACE_EXISTING;
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
@@ -27,8 +28,8 @@ public class DefaultEnvWriterTest {
     @TempDir
     public File temporaryFolder;
 
-    private static final Path EXAMPLE_FILE = Paths.get("src/test/resources/default-env-example.txt");
-    private static final Path EXPECTED_RESULT_FILE = Paths.get("src/test/resources/default-env-rewritten.txt");
+    private static final Path EXAMPLE_FILE = Path.of("src/test/resources/default-env-example.txt");
+    private static final Path EXPECTED_RESULT_FILE = Path.of("src/test/resources/default-env-rewritten.txt");
 
     private final TaskContext context = mock(TaskContext.class);
 
