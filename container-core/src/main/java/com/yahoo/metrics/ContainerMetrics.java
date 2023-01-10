@@ -5,18 +5,20 @@ package com.yahoo.metrics;
  */
 public enum ContainerMetrics {
 
-    HTTP_STATUS_1XX("http.status.1xx", "Number of responses with a 1xx status"),
-    HTTP_STATUS_2XX("http.status.2xx", "Number of responses with a 2xx status"),
-    HTTP_STATUS_3XX("http.status.3xx", "Number of responses with a 3xx status"),
-    HTTP_STATUS_4XX("http.status.4xx", "Number of responses with a 4xx status"),
-    HTTP_STATUS_5XX("http.status.5xx", "Number of responses with a 5xx status"),
-    JDISC_GC_MS("jdisc.gc.ms", "Time [ms] spent in garbage collection");
+    HTTP_STATUS_1XX("http.status.1xx", Unit.RESPONSE, "Number of responses with a 1xx status"),
+    HTTP_STATUS_2XX("http.status.2xx", Unit.RESPONSE, "Number of responses with a 2xx status"),
+    HTTP_STATUS_3XX("http.status.3xx", Unit.RESPONSE, "Number of responses with a 3xx status"),
+    HTTP_STATUS_4XX("http.status.4xx", Unit.RESPONSE, "Number of responses with a 4xx status"),
+    HTTP_STATUS_5XX("http.status.5xx", Unit.RESPONSE, "Number of responses with a 5xx status"),
+    JDISC_GC_MS("jdisc.gc.ms", Unit.MILLISECOND, "Time spent in garbage collection");
 
     private final String name;
+    private final Unit unit;
     private final String description;
 
-    ContainerMetrics(String name, String description) {
+    ContainerMetrics(String name, Unit unit, String description) {
         this.name = name;
+        this.unit = unit;
         this.description = description;
     }
 
@@ -25,7 +27,7 @@ public enum ContainerMetrics {
     }
 
     public String description() {
-        return description;
+        return description + " (unit: " + unit.shortName() + ")";
     }
 
     private String withSuffix(Suffix suffix) {
