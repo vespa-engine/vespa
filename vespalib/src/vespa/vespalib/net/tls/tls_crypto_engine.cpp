@@ -27,13 +27,13 @@ TlsCryptoEngine::create_tls_server_crypto_codec(const SocketHandle &socket)
 
 CryptoSocket::UP
 TlsCryptoEngine::create_client_crypto_socket(SocketHandle socket, const SocketSpec &peer_spec) {
-    auto codec = net::tls::CryptoCodec::create_default_client_codec(_tls_ctx, peer_spec, SocketAddress::peer_address(socket.get()));
+    auto codec = create_tls_client_crypto_codec(socket, peer_spec);
     return std::make_unique<net::tls::CryptoCodecAdapter>(std::move(socket), std::move(codec));
 }
 
 CryptoSocket::UP
 TlsCryptoEngine::create_server_crypto_socket(SocketHandle socket) {
-    auto codec = net::tls::CryptoCodec::create_default_server_codec(_tls_ctx, SocketAddress::peer_address(socket.get()));
+    auto codec = create_tls_server_crypto_codec(socket);
     return std::make_unique<net::tls::CryptoCodecAdapter>(std::move(socket), std::move(codec));
 }
 
