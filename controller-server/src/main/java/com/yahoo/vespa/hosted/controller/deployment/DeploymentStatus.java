@@ -33,13 +33,13 @@ import com.yahoo.vespa.hosted.controller.versions.VespaVersion.Confidence;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
-import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.Deque;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -738,13 +738,15 @@ public class DeploymentStatus {
      */
     private List<JobId> prerequisiteTests(JobId prodJob, JobType testType) {
         List<JobId> tests = new ArrayList<>();
-        Deque<InstanceName> instances = new ArrayDeque<>();
+        Set<InstanceName> instances = new LinkedHashSet<>();
         instances.add(prodJob.application().instance());
         while ( ! instances.isEmpty()) {
-            InstanceName instance = instances.poll();
+            Iterator<InstanceName> iterator = instances.iterator();
+            InstanceName instance = iterator.next();
+            iterator.remove();
             Optional<JobId> test = declaredTest(application().id().instance(instance), testType);
             if (test.isPresent()) tests.add(test.get());
-            else instances.addAll(instanceSteps().get(instance).dependencies().stream().map(StepStatus::instance).toList());
+            else instanceSteps().get(instance).dependencies().stream().map(StepStatus::instance).forEach(instances::add);
         }
         if (tests.isEmpty()) tests.add(firstDeclaredOrElseImplicitTest(testType));
         return tests;
