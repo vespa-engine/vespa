@@ -497,6 +497,7 @@ public class RoutingPoliciesTest {
                                             Optional.empty(),
                                             LoadBalancer.State.active,
                                             Optional.of("dns-zone-1"),
+                                            Optional.empty(),
                                             Optional.empty());
         tester.controllerTester().configServer().putLoadBalancers(zone1, List.of(loadBalancer));
 
@@ -953,6 +954,7 @@ public class RoutingPoliciesTest {
                                      ipAddress,
                                      LoadBalancer.State.active,
                                      Optional.of("dns-zone-1").filter(__ -> lbHostname.isPresent()),
+                                     Optional.empty(),
                                      Optional.empty()));
         }
         return loadBalancers;

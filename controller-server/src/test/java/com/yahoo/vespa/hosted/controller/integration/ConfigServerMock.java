@@ -416,6 +416,7 @@ public class ConfigServerMock extends AbstractComponent implements ConfigServer 
                                                                    Optional.empty(),
                                                                    LoadBalancer.State.active,
                                                                    Optional.of("dns-zone-1"),
+                                                                   Optional.empty(),
                                                                    Optional.of(new PrivateServiceInfo("service", List.of("arne"))))));
         }
 
