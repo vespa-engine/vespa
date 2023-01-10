@@ -131,8 +131,9 @@ public class IP {
          * @throws IllegalArgumentException if there are IP conflicts with existing nodes
          */
         public static List<Node> verify(List<Node> nodes, LockedNodeList allNodes) {
+            NodeList sortedNodes = allNodes.sortedBy(Comparator.comparing(Node::hostname));
             for (var node : nodes) {
-                for (var other : allNodes) {
+                for (var other : sortedNodes) {
                     if (node.equals(other)) continue;
                     if (canAssignIpOf(other, node)) continue;
 

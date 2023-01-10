@@ -214,8 +214,6 @@ public class NodeRepositoryTest {
         tester.addHost("id2", "host1", "default", NodeType.host);
         host1 = tester.nodeRepository().nodes().node("host1").get();
         assertEquals("This is the newly added node", "id2", host1.id());
-        assertFalse("The old 'host1' is removed",
-                    tester.nodeRepository().nodes().node("host1", Node.State.deprovisioned).isPresent());
         assertFalse("Not transferred from deprovisioned host", host1.status().wantToRetire());
         assertFalse("Not transferred from deprovisioned host", host1.status().wantToDeprovision());
         assertTrue("Transferred from deprovisioned host", host1.history().hasEventAfter(History.Event.Type.deprovisioned, testStart));

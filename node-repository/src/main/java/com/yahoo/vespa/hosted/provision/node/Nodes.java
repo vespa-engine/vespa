@@ -76,11 +76,11 @@ public class Nodes {
     public void rewrite() {
         Instant start = clock.instant();
         int nodesWritten = 0;
-        for (Node.State state : Node.State.values()) {
-            List<Node> nodes = db.readNodes(state);
+        Map<Node.State, NodeList> nodes = list().groupingBy(Node::state);
+        for (var kv : nodes.entrySet()) {
             // TODO(mpolden): This should take the lock before writing
-            db.writeTo(state, nodes, Agent.system, Optional.empty());
-            nodesWritten += nodes.size();
+            db.writeTo(kv.getKey(), kv.getValue().asList(), Agent.system, Optional.empty());
+            nodesWritten += kv.getValue().size();
         }
         Instant end = clock.instant();
         log.log(Level.INFO, String.format("Rewrote %d nodes in %s", nodesWritten, Duration.between(start, end)));
@@ -88,24 +88,19 @@ public class Nodes {
 
     // ---------------- Query API ----------------------------------------------------------------
 
-    /**
-     * Finds and returns the node with the hostname in any of the given states, or empty if not found
-     *
-     * @param hostname the full host name of the node
-     * @param inState the states the node may be in. If no states are given, it will be returned from any state
-     * @return the node, or empty if it was not found in any of the given states
-     */
-    public Optional<Node> node(String hostname, Node.State... inState) {
-        return db.readNode(hostname, inState);
+    /** Finds and returns the node with given hostname, or empty if not found */
+    public Optional<Node> node(String hostname) {
+        return db.readNode(hostname);
     }
 
     /**
-     * Returns a list of nodes in this repository in any of the given states
+     * Returns an unsorted list of all nodes in this repository, in any of the given states
      *
-     * @param inState the states to return nodes from. If no states are given, all nodes of the given type are returned
+     * @param inState the states to return nodes from. If no states are given, all nodes are returned
      */
     public NodeList list(Node.State... inState) {
-        return NodeList.copyOf(db.readNodes(inState));
+        NodeList nodes = NodeList.copyOf(db.readNodes());
+        return inState.length == 0 ? nodes : nodes.state(Set.of(inState));
     }
 
     /** Returns a locked list of all nodes in this repository */
@@ -768,13 +763,9 @@ public class Nodes {
         for (int i = 0; i < maxRetries; ++i) {
             Mutex lockToClose = lock(staleNode, timeout);
             try {
-                // As an optimization we first try finding the node in the same state
-                Optional<Node> freshNode = node(staleNode.hostname(), staleNode.state());
+                Optional<Node> freshNode = node(staleNode.hostname());
                 if (freshNode.isEmpty()) {
-                    freshNode = node(staleNode.hostname());
-                    if (freshNode.isEmpty()) {
-                        return Optional.empty();
-                    }
+                    return Optional.empty();
                 }
 
                 if (node.type() != NodeType.tenant ||

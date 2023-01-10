@@ -67,7 +67,7 @@ public class NodeSerializerTest {
     public void provisioned_node_serialization() {
         Node node = createNode();
 
-        Node copy = nodeSerializer.fromJson(Node.State.provisioned, nodeSerializer.toJson(node));
+        Node copy = nodeSerializer.fromJson(nodeSerializer.toJson(node));
         assertEquals(node.hostname(), copy.hostname());
         assertEquals(node.id(), copy.id());
         assertEquals(node.state(), copy.state());
@@ -99,7 +99,7 @@ public class NodeSerializerTest {
         node = node.downAt(Instant.ofEpochMilli(5), Agent.system)
                    .upAt(Instant.ofEpochMilli(6), Agent.system)
                    .downAt(Instant.ofEpochMilli(7), Agent.system);
-        Node copy = nodeSerializer.fromJson(Node.State.provisioned, nodeSerializer.toJson(node));
+        Node copy = nodeSerializer.fromJson(nodeSerializer.toJson(node));
 
         assertEquals(node.id(), copy.id());
         assertEquals(node.hostname(), copy.hostname());
@@ -129,6 +129,7 @@ public class NodeSerializerTest {
         String nodeData = 
                 "{\n" +
                 "   \"type\" : \"tenant\",\n" +
+                "   \"state\" : \"provisioned\",\n" +
                 "   \"rebootGeneration\" : 1,\n" +
                 "   \"currentRebootGeneration\" : 2,\n" +
                 "   \"flavor\" : \"large\",\n" +
@@ -159,7 +160,7 @@ public class NodeSerializerTest {
                 "   \"ipAddresses\" : [\"127.0.0.1\"]\n" +
                 "}";
 
-        Node node = nodeSerializer.fromJson(Node.State.provisioned, Utf8.toBytes(nodeData));
+        Node node = nodeSerializer.fromJson(Utf8.toBytes(nodeData));
 
         assertEquals("large", node.flavor().name());
         assertEquals(1, node.status().reboot().wanted());
@@ -187,7 +188,7 @@ public class NodeSerializerTest {
         assertEquals(1, node.history().events().size());
         clock.advance(Duration.ofMinutes(2));
         node = node.retire(Agent.application, clock.instant());
-        Node copy = nodeSerializer.fromJson(Node.State.provisioned, nodeSerializer.toJson(node));
+        Node copy = nodeSerializer.fromJson(nodeSerializer.toJson(node));
         assertEquals(2, copy.history().events().size());
         assertEquals(clock.instant().truncatedTo(MILLIS), copy.history().event(History.Event.Type.retired).get().at());
         assertEquals(Agent.application,
@@ -195,34 +196,37 @@ public class NodeSerializerTest {
         assertTrue(copy.allocation().get().membership().retired());
 
         Node removable = copy.with(node.allocation().get().removable(true, true));
-        Node removableCopy = nodeSerializer.fromJson(Node.State.provisioned, nodeSerializer.toJson(removable));
+        Node removableCopy = nodeSerializer.fromJson( nodeSerializer.toJson(removable));
         assertTrue(removableCopy.allocation().get().removable());
         assertTrue(removableCopy.allocation().get().reusable());
     }
 
     @Test
     public void assimilated_node_deserialization() {
-        Node node = nodeSerializer.fromJson(Node.State.active, ("{\n" +
-                "  \"type\": \"tenant\",\n" +
-                "  \"hostname\": \"assimilate2.vespahosted.yahoo.tld\",\n" +
-                "  \"ipAddresses\": [\"127.0.0.1\"],\n" +
-                "  \"openStackId\": \"\",\n" +
-                "  \"flavor\": \"ugccloud-container\",\n" +
-                "  \"instance\": {\n" +
-                "    \"tenantId\": \"by_mortent\",\n" +
-                "    \"applicationId\": \"ugc-assimilate\",\n" +
-                "    \"instanceId\": \"default\",\n" +
-                "    \"serviceId\": \"container/ugccloud-container/0/0\",\n" +
-                "    \"restartGeneration\": 0,\n" +
-                "    \"wantedVespaVersion\": \"6.42.2\"\n" +
-                "  }\n" +
-                "}\n").getBytes());
+        Node node = nodeSerializer.fromJson(("""
+                {
+                  "type": "tenant",
+                  "hostname": "assimilate2.vespahosted.yahoo.tld",
+                  "state": "provisioned",
+                  "ipAddresses": ["127.0.0.1"],
+                  "openStackId": "",
+                  "flavor": "ugccloud-container",
+                  "instance": {
+                    "tenantId": "by_mortent",
+                    "applicationId": "ugc-assimilate",
+                    "instanceId": "default",
+                    "serviceId": "container/ugccloud-container/0/0",
+                    "restartGeneration": 0,
+                    "wantedVespaVersion": "6.42.2"
+                  }
+                }
+                """).getBytes());
         assertEquals(0, node.history().events().size());
         assertTrue(node.allocation().isPresent());
         assertEquals("ugccloud-container", node.allocation().get().membership().cluster().id().value());
         assertEquals("container", node.allocation().get().membership().cluster().type().name());
         assertEquals(0, node.allocation().get().membership().cluster().group().get().index());
-        Node copy = nodeSerializer.fromJson(Node.State.provisioned, nodeSerializer.toJson(node));
+        Node copy = nodeSerializer.fromJson(nodeSerializer.toJson(node));
         assertEquals(0, copy.history().events().size());
     }
 
@@ -237,7 +241,7 @@ public class NodeSerializerTest {
                              clock.instant());
 
         node = node.with(node.status().withFailCount(0));
-        Node copy2 = nodeSerializer.fromJson(Node.State.provisioned, nodeSerializer.toJson(node));
+        Node copy2 = nodeSerializer.fromJson(nodeSerializer.toJson(node));
 
         assertEquals(0, copy2.status().failCount());
     }
@@ -249,7 +253,7 @@ public class NodeSerializerTest {
                 .parentHostname(parentHostname)
                 .build();
 
-        Node deserializedNode = nodeSerializer.fromJson(State.provisioned, nodeSerializer.toJson(node));
+        Node deserializedNode = nodeSerializer.fromJson(nodeSerializer.toJson(node));
         assertEquals(parentHostname, deserializedNode.parentHostname().get());
     }
 
@@ -257,7 +261,7 @@ public class NodeSerializerTest {
     @Test
     public void serializes_multiple_ip_addresses() {
         byte[] nodeWithMultipleIps = createNodeJson("node4.yahoo.tld", "127.0.0.4", "::4");
-        Node deserializedNode = nodeSerializer.fromJson(State.provisioned, nodeWithMultipleIps);
+        Node deserializedNode = nodeSerializer.fromJson(nodeWithMultipleIps);
         assertEquals(ImmutableSet.of("127.0.0.4", "::4"), deserializedNode.ipConfig().primary());
     }
 
@@ -269,13 +273,13 @@ public class NodeSerializerTest {
         node = node.with(node.ipConfig().withPool(IP.Pool.of(
                 Set.of("::1", "::2", "::3"),
                 List.of(new Address("a"), new Address("b"), new Address("c")))));
-        Node copy = nodeSerializer.fromJson(node.state(), nodeSerializer.toJson(node));
+        Node copy = nodeSerializer.fromJson(nodeSerializer.toJson(node));
         assertEquals(node.ipConfig().pool().ipSet(), copy.ipConfig().pool().ipSet());
         assertEquals(Set.copyOf(node.ipConfig().pool().getAddressList()), Set.copyOf(copy.ipConfig().pool().getAddressList()));
 
         // Test round-trip without address pool (handle empty pool)
         node = createNode();
-        copy = nodeSerializer.fromJson(node.state(), nodeSerializer.toJson(node));
+        copy = nodeSerializer.fromJson(nodeSerializer.toJson(node));
         assertEquals(node.ipConfig().pool().ipSet(), copy.ipConfig().pool().ipSet());
         assertEquals(Set.copyOf(node.ipConfig().pool().getAddressList()), Set.copyOf(copy.ipConfig().pool().getAddressList()));
     }
@@ -286,11 +290,12 @@ public class NodeSerializerTest {
                 "{\n" +
                         "   \"type\" : \"tenant\",\n" +
                         "   \"flavor\" : \"large\",\n" +
+                        "   \"state\" : \"provisioned\",\n" +
                         "   \"openStackId\" : \"myId\",\n" +
                         "   \"hostname\" : \"myHostname\",\n" +
                         "   \"ipAddresses\" : [\"127.0.0.1\"]\n" +
                         "}";
-        Node node = nodeSerializer.fromJson(State.provisioned, Utf8.toBytes(nodeData));
+        Node node = nodeSerializer.fromJson(Utf8.toBytes(nodeData));
         assertFalse(node.status().wantToRetire());
     }
 
@@ -301,7 +306,7 @@ public class NodeSerializerTest {
         node = node.with(node.flavor().with(FlavorOverrides.ofDisk(1234)), Agent.system, clock.instant());
         assertEquals(1234, node.flavor().resources().diskGb(), 0);
 
-        Node copy = nodeSerializer.fromJson(Node.State.provisioned, nodeSerializer.toJson(node));
+        Node copy = nodeSerializer.fromJson(nodeSerializer.toJson(node));
         assertEquals(1234, copy.flavor().resources().diskGb(), 0);
         assertEquals(node, copy);
         assertTrue(node.history().event(History.Event.Type.resized).isPresent());
@@ -312,21 +317,22 @@ public class NodeSerializerTest {
         String nodeData =
                 "{\n" +
                         "   \"type\" : \"tenant\",\n" +
+                        "   \"state\" : \"provisioned\",\n" +
                         "   \"flavor\" : \"large\",\n" +
                         "   \"openStackId\" : \"myId\",\n" +
                         "   \"hostname\" : \"myHostname\",\n" +
                         "   \"ipAddresses\" : [\"127.0.0.1\"]\n" +
                         "}";
-        Node node = nodeSerializer.fromJson(State.provisioned, Utf8.toBytes(nodeData));
+        Node node = nodeSerializer.fromJson(Utf8.toBytes(nodeData));
         assertFalse(node.status().wantToDeprovision());
     }
 
     @Test
     public void want_to_rebuild() {
-        Node node = nodeSerializer.fromJson(State.active, nodeSerializer.toJson(createNode()));
+        Node node = nodeSerializer.fromJson(nodeSerializer.toJson(createNode()));
         assertFalse(node.status().wantToRebuild());
         node = node.with(node.status().withWantToRetire(true, false, true));
-        node = nodeSerializer.fromJson(State.active, nodeSerializer.toJson(node));
+        node = nodeSerializer.fromJson(nodeSerializer.toJson(node));
         assertTrue(node.status().wantToRetire());
         assertFalse(node.status().wantToDeprovision());
         assertTrue(node.status().wantToRebuild());
@@ -337,6 +343,7 @@ public class NodeSerializerTest {
         String nodeWithWantedVespaVersion =
                 "{\n" +
                         "   \"type\" : \"tenant\",\n" +
+                        "   \"state\" : \"provisioned\",\n" +
                         "   \"flavor\" : \"large\",\n" +
                         "   \"openStackId\" : \"myId\",\n" +
                         "   \"hostname\" : \"myHostname\",\n" +
@@ -349,13 +356,13 @@ public class NodeSerializerTest {
                         "     \"wantedVespaVersion\": \"6.42.2\"\n" +
                         "   }\n" +
                         "}";
-        Node node = nodeSerializer.fromJson(State.active, Utf8.toBytes(nodeWithWantedVespaVersion));
+        Node node = nodeSerializer.fromJson(Utf8.toBytes(nodeWithWantedVespaVersion));
         assertEquals("6.42.2", node.allocation().get().membership().cluster().vespaVersion().toString());
     }
 
     @Test
     public void os_version_serialization() {
-        Node serialized = nodeSerializer.fromJson(State.provisioned, nodeSerializer.toJson(createNode()));
+        Node serialized = nodeSerializer.fromJson(nodeSerializer.toJson(createNode()));
         assertFalse(serialized.status().osVersion().current().isPresent());
 
         // Update OS version
@@ -364,7 +371,7 @@ public class NodeSerializerTest {
                     serialized.history().event(History.Event.Type.osUpgraded).isPresent());
         serialized = serialized.withCurrentOsVersion(Version.fromString("7.2"), Instant.ofEpochMilli(123))
                                .withCurrentOsVersion(Version.fromString("7.2"), Instant.ofEpochMilli(456));
-        serialized = nodeSerializer.fromJson(State.provisioned, nodeSerializer.toJson(serialized));
+        serialized = nodeSerializer.fromJson(nodeSerializer.toJson(serialized));
         assertEquals(Version.fromString("7.2"), serialized.status().osVersion().current().get());
         var osUpgradedEvents = serialized.history().events().stream()
                                          .filter(event -> event.type() == History.Event.Type.osUpgraded)
@@ -376,11 +383,11 @@ public class NodeSerializerTest {
 
     @Test
     public void firmware_check_serialization() {
-        Node node = nodeSerializer.fromJson(State.active, nodeSerializer.toJson(createNode()));
+        Node node = nodeSerializer.fromJson(nodeSerializer.toJson(createNode()));
         assertFalse(node.status().firmwareVerifiedAt().isPresent());
 
         node = node.withFirmwareVerifiedAt(Instant.ofEpochMilli(100));
-        node = nodeSerializer.fromJson(State.active, nodeSerializer.toJson(node));
+        node = nodeSerializer.fromJson(nodeSerializer.toJson(node));
         assertEquals(100, node.status().firmwareVerifiedAt().get().toEpochMilli());
         assertEquals(Instant.ofEpochMilli(100), node.history().event(History.Event.Type.firmwareVerified).get().at());
     }
@@ -394,7 +401,7 @@ public class NodeSerializerTest {
 
     @Test
     public void reports_serialization() {
-        Node node = nodeSerializer.fromJson(State.active, nodeSerializer.toJson(createNode()));
+        Node node = nodeSerializer.fromJson(nodeSerializer.toJson(createNode()));
         assertTrue(node.reports().isEmpty());
 
         var slime = new Slime();
@@ -407,7 +414,7 @@ public class NodeSerializerTest {
         var reports = new Reports.Builder().setReport(report).build();
 
         node = node.with(reports);
-        node = nodeSerializer.fromJson(State.active, nodeSerializer.toJson(node));
+        node = nodeSerializer.fromJson(nodeSerializer.toJson(node));
 
         reports = node.reports();
         assertFalse(reports.isEmpty());
@@ -422,11 +429,11 @@ public class NodeSerializerTest {
 
     @Test
     public void model_id_serialization() {
-        Node node = nodeSerializer.fromJson(State.active, nodeSerializer.toJson(createNode()));
+        Node node = nodeSerializer.fromJson(nodeSerializer.toJson(createNode()));
         assertFalse(node.modelName().isPresent());
 
         node = node.withModelName("some model");
-        node = nodeSerializer.fromJson(State.active, nodeSerializer.toJson(node));
+        node = nodeSerializer.fromJson(nodeSerializer.toJson(node));
         assertEquals("some model", node.modelName().get());
     }
 
@@ -447,7 +454,7 @@ public class NodeSerializerTest {
         node = node.with(node.allocation().get().withNetworkPorts(ports));
         assertTrue(node.allocation().isPresent());
         assertTrue(node.allocation().get().networkPorts().isPresent());
-        Node copy = nodeSerializer.fromJson(Node.State.provisioned, nodeSerializer.toJson(node));
+        Node copy = nodeSerializer.fromJson(nodeSerializer.toJson(node));
         assertTrue(copy.allocation().isPresent());
         assertTrue(copy.allocation().get().networkPorts().isPresent());
         NetworkPorts portsCopy = node.allocation().get().networkPorts().get();
@@ -457,11 +464,11 @@ public class NodeSerializerTest {
 
     @Test
     public void switch_hostname_serialization() {
-        Node node = nodeSerializer.fromJson(State.active, nodeSerializer.toJson(createNode()));
+        Node node = nodeSerializer.fromJson(nodeSerializer.toJson(createNode()));
         assertFalse(node.switchHostname().isPresent());
         String switchHostname = "switch0.example.com";
         node = node.withSwitchHostname(switchHostname);
-        node = nodeSerializer.fromJson(State.active, nodeSerializer.toJson(node));
+        node = nodeSerializer.fromJson(nodeSerializer.toJson(node));
         assertEquals(switchHostname, node.switchHostname().get());
     }
 
@@ -469,25 +476,25 @@ public class NodeSerializerTest {
     public void exclusive_to_serialization() {
         Node.Builder builder = Node.create("myId", IP.Config.EMPTY, "myHostname",
                 nodeFlavors.getFlavorOrThrow("default"), NodeType.host);
-        Node node = nodeSerializer.fromJson(State.provisioned, nodeSerializer.toJson(builder.build()));
+        Node node = nodeSerializer.fromJson(nodeSerializer.toJson(builder.build()));
         assertFalse(node.exclusiveToApplicationId().isPresent());
         assertFalse(node.exclusiveToClusterType().isPresent());
 
         ApplicationId exclusiveToApp = ApplicationId.from("tenant1", "app1", "instance1");
         ClusterSpec.Type exclusiveToCluster = ClusterSpec.Type.admin;
         node = builder.exclusiveToApplicationId(exclusiveToApp).exclusiveToClusterType(exclusiveToCluster).build();
-        node = nodeSerializer.fromJson(State.provisioned, nodeSerializer.toJson(node));
+        node = nodeSerializer.fromJson(nodeSerializer.toJson(node));
         assertEquals(exclusiveToApp, node.exclusiveToApplicationId().get());
         assertEquals(exclusiveToCluster, node.exclusiveToClusterType().get());
     }
 
     @Test
     public void truststore_serialization() {
-        Node node = nodeSerializer.fromJson(State.active, nodeSerializer.toJson(createNode()));
+        Node node = nodeSerializer.fromJson(nodeSerializer.toJson(createNode()));
         assertEquals(List.of(), node.trustedCertificates());
         List<TrustStoreItem> trustStoreItems = List.of(new TrustStoreItem("foo", Instant.parse("2023-09-01T23:59:59Z")), new TrustStoreItem("bar", Instant.parse("2025-05-20T23:59:59Z")));
         node = node.with(trustStoreItems);
-        node = nodeSerializer.fromJson(State.active, nodeSerializer.toJson(node));
+        node = nodeSerializer.fromJson(nodeSerializer.toJson(node));
         assertEquals(trustStoreItems, node.trustedCertificates());
     }
 
@@ -498,7 +505,7 @@ public class NodeSerializerTest {
                         .cloudAccount(account)
                         .exclusiveToApplicationId(ApplicationId.defaultId())
                         .build();
-        node = nodeSerializer.fromJson(State.provisioned, nodeSerializer.toJson(node));
+        node = nodeSerializer.fromJson(nodeSerializer.toJson(node));
         assertEquals(account, node.cloudAccount());
     }
 
@@ -514,6 +521,7 @@ public class NodeSerializerTest {
         return ("{\"hostname\":\"" + hostname + "\"," +
                 ipAddressJsonPart +
                 "\"openStackId\":\"myId\"," +
+                "\"state\":\"provisioned\"," +
                 "\"flavor\":\"default\",\"rebootGeneration\":0," +
                 "\"currentRebootGeneration\":0,\"failCount\":0,\"history\":[],\"type\":\"tenant\"}")
                 .getBytes(StandardCharsets.UTF_8);

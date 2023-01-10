@@ -196,11 +196,16 @@ public class AclProvisioningTest {
 
         // ACL for nodes with allocation trust their respective load balancer networks, if any
         for (var host : hosts) {
-            var acls = tester.nodeRepository().getChildAcls(host);
+            List<NodeAcl> acls = tester.nodeRepository().getChildAcls(host);
             assertEquals(2, acls.size());
-            assertEquals(Set.of(), acls.get(0).trustedNetworks());
-            assertEquals(application, acls.get(1).node().allocation().get().owner());
-            assertEquals(lbNetworks, acls.get(1).trustedNetworks());
+            for (var acl : acls) {
+                if (acl.node().allocation().isPresent()) {
+                    assertEquals(lbNetworks, acl.trustedNetworks());
+                    assertEquals(application, acl.node().allocation().get().owner());
+                } else {
+                    assertEquals(Set.of(), acl.trustedNetworks());
+                }
+            }
         }
     }
 

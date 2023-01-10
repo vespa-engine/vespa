@@ -85,8 +85,8 @@ public class LoadBalancerProvisionerTest {
         assertEquals(4443, get(lbApp1.get().get(0).instance().get().reals(), 1).port());
 
         // A container is failed
-        Supplier<List<Node>> containers = () -> tester.getNodes(app1).container().asList();
-        Node toFail = containers.get().get(0);
+        Supplier<NodeList> containers = () -> tester.getNodes(app1).container();
+        Node toFail = containers.get().first().get();
         tester.nodeRepository().nodes().fail(toFail.hostname(), Agent.system, this.getClass().getSimpleName());
 
         // Redeploying replaces failed node and removes it from load balancer
@@ -99,8 +99,8 @@ public class LoadBalancerProvisionerTest {
                                                          .map(Real::hostname)
                                                          .map(DomainName::value)
                                                          .noneMatch(hostname -> hostname.equals(toFail.hostname())));
-        assertEquals(containers.get().get(0).hostname(), get(loadBalancer.instance().get().reals(), 0).hostname().value());
-        assertEquals(containers.get().get(1).hostname(), get(loadBalancer.instance().get().reals(), 1).hostname().value());
+        assertEquals(containers.get().state(Node.State.active).hostnames(),
+                     loadBalancer.instance().get().reals().stream().map(r -> r.hostname().value()).collect(Collectors.toSet()));
         assertSame("State is unchanged", LoadBalancer.State.active, loadBalancer.state());
 
         // Add another container cluster to first app
