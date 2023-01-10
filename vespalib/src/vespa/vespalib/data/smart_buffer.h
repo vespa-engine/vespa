@@ -33,9 +33,10 @@ private:
 public:
     SmartBuffer(size_t initial_size);
     ~SmartBuffer();
+    bool empty() const { return (read_len() == 0); }
     size_t capacity() const { return _data.size(); }
     void drop_if_empty() {
-        if ((read_len() == 0) && (_data.size() > 0)) {
+        if (empty() && (_data.size() > 0)) {
             drop();
         }
     }
