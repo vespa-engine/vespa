@@ -2514,7 +2514,7 @@ public class DeploymentTriggerTest {
 
         Version version3 = new Version("6.4");
         tester.controllerTester().upgradeSystem(version3);
-        tests.runJob(systemTest)            // Success in default cloud.
+        tests.runJob(systemTest)              // Success in default cloud.
              .failDeployment(centuariTest);   // Failure in centauri cloud.
         tester.upgrader().run();
 
@@ -2895,6 +2895,236 @@ public class DeploymentTriggerTest {
         app.runJob(testUsEast3);
         app.runJob(productionUsWest1);
         assertEquals(Change.empty(), app.instance().change());
+    }
+
+    @Test
+    void miniBenchmark() {
+        String spec = """
+                      <deployment version="1.0">
+                          <parallel>
+                              <instance id="instance0">
+                                  <test tester-flavor="d-8-16-10" />
+                                  <block-change version="true" revision="false" days="mon-fri,sun" hours="4-23" time-zone="UTC" />
+                              </instance>
+                              <instance id="instance1">
+                                  <test tester-flavor="d-8-16-10" />
+                                  <block-change version="true" revision="false" days="mon-fri,sun" hours="4-23" time-zone="UTC" />
+                              </instance>
+                              <instance id="instance2">
+                                  <test tester-flavor="d-8-16-10" />
+                                  <block-change version="true" revision="false" days="mon-fri,sun" hours="4-23" time-zone="UTC" />
+                              </instance>
+                              <instance id="instance3">
+                                  <test tester-flavor="d-8-16-10" />
+                                  <block-change version="true" revision="false" days="mon-fri,sun" hours="4-23" time-zone="UTC" />
+                              </instance>
+                              <instance id="stress">
+                                  <staging />
+                                  <block-change version="true" revision="false" days="mon-fri,sun" hours="4-23" time-zone="UTC" />
+                              </instance>
+                          </parallel>
+                          <instance id="beta1">
+                              <block-change version="true" revision="false" days="mon-fri,sun" hours="4-23" time-zone="UTC" />
+                              <block-change version="true" revision="false" days="sat" hours="0-23" time-zone="UTC" />
+                              <upgrade revision-change='when-clear' rollout='separate' revision-target='next' policy='conservative'/>
+                              <prod>
+                                  <parallel>
+                                      <steps>
+                                          <region>us-east-3</region>
+                                          <test>us-east-3</test>
+                                      </steps>
+                                      <steps>
+                                          <region>us-west-1</region>
+                                          <test>us-west-1</test>
+                                      </steps>
+                                      <steps>
+                                          <region>eu-west-1</region>
+                                          <test>eu-west-1</test>
+                                      </steps>
+                                      <steps>
+                                          <region>us-central-1</region>
+                                          <test>us-central-1</test>
+                                      </steps>
+                                  </parallel>
+                              </prod>
+                          </instance>
+                          <instance id="gamma5">
+                              <block-change version="true" revision="false" days="mon-fri,sun" hours="4-23" time-zone="UTC" />
+                              <block-change version="true" revision="false" days="sat" hours="0-23" time-zone="UTC" />
+                              <upgrade revision-change='when-clear' rollout='separate' revision-target='next' policy='conservative'/>
+                              <prod>
+                                  <parallel>
+                                      <steps>
+                                          <region>us-east-3</region>
+                                          <test>us-east-3</test>
+                                      </steps>
+                                      <steps>
+                                          <region>us-west-1</region>
+                                          <test>us-west-1</test>
+                                      </steps>
+                                      <steps>
+                                          <region>eu-west-1</region>
+                                          <test>eu-west-1</test>
+                                      </steps>
+                                      <steps>
+                                          <region>us-central-1</region>
+                                          <test>us-central-1</test>
+                                      </steps>
+                                  </parallel>
+                              </prod>
+                          </instance>
+                          <instance id="delta21">
+                              <block-change version="true" revision="false" days="mon-fri,sun" hours="4-23" time-zone="UTC" />
+                              <block-change version="true" revision="false" days="sat" hours="0-23" time-zone="UTC" />
+                              <upgrade revision-change='when-clear' rollout='separate' revision-target='next' policy='conservative'/>
+                              <prod>
+                                  <parallel>
+                                      <steps>
+                                          <region>us-east-3</region>
+                                          <test>us-east-3</test>
+                                      </steps>
+                                      <steps>
+                                          <region>us-west-1</region>
+                                          <test>us-west-1</test>
+                                      </steps>
+                                      <steps>
+                                          <region>eu-west-1</region>
+                                          <test>eu-west-1</test>
+                                      </steps>
+                                      <steps>
+                                          <region>us-central-1</region>
+                                          <test>us-central-1</test>
+                                      </steps>
+                                  </parallel>
+                              </prod>
+                          </instance>
+                          <instance id="prod21a">
+                              <block-change version="true" revision="false" days="mon-fri,sun" hours="4-23" time-zone="UTC" />
+                              <block-change version="true" revision="false" days="sat" hours="0-23" time-zone="UTC" />
+                              <upgrade revision-change='when-clear' rollout='separate' revision-target='next' policy='conservative'/>
+                              <prod>
+                                  <parallel>
+                                      <steps>
+                                          <region>us-east-3</region>
+                                          <test>us-east-3</test>
+                                      </steps>
+                                      <steps>
+                                          <region>us-west-1</region>
+                                          <test>us-west-1</test>
+                                      </steps>
+                                      <steps>
+                                          <region>eu-west-1</region>
+                                          <test>eu-west-1</test>
+                                      </steps>
+                                      <steps>
+                                          <region>us-central-1</region>
+                                          <test>us-central-1</test>
+                                      </steps>
+                                  </parallel>
+                              </prod>
+                          </instance>
+                          <instance id="prod21b">
+                              <block-change version="true" revision="false" days="mon-fri,sun" hours="4-23" time-zone="UTC" />
+                              <block-change version="true" revision="false" days="sat" hours="0-23" time-zone="UTC" />
+                              <upgrade revision-change='when-clear' rollout='separate' revision-target='next' policy='conservative'/>
+                              <prod>
+                                  <parallel>
+                                      <steps>
+                                          <region>us-east-3</region>
+                                          <test>us-east-3</test>
+                                      </steps>
+                                      <steps>
+                                          <region>us-west-1</region>
+                                          <test>us-west-1</test>
+                                      </steps>
+                                      <steps>
+                                          <region>eu-west-1</region>
+                                          <test>eu-west-1</test>
+                                      </steps>
+                                      <steps>
+                                          <region>us-central-1</region>
+                                          <test>us-central-1</test>
+                                      </steps>
+                                  </parallel>
+                              </prod>
+                          </instance>
+                          <instance id="prod21c">
+                              <block-change version="true" revision="false" days="mon-fri,sun" hours="4-23" time-zone="UTC" />
+                              <block-change version="true" revision="false" days="sat" hours="0-23" time-zone="UTC" />
+                              <upgrade revision-change='when-clear' rollout='separate' revision-target='next' policy='conservative'/>
+                              <prod>
+                                  <parallel>
+                                      <steps>
+                                          <region>us-east-3</region>
+                                          <test>us-east-3</test>
+                                      </steps>
+                                      <steps>
+                                          <region>us-west-1</region>
+                                          <test>us-west-1</test>
+                                      </steps>
+                                      <steps>
+                                          <region>eu-west-1</region>
+                                          <test>eu-west-1</test>
+                                      </steps>
+                                      <steps>
+                                          <region>us-central-1</region>
+                                          <test>us-central-1</test>
+                                      </steps>
+                                  </parallel>
+                              </prod>
+                          </instance>
+                          <instance id="cd10">
+                              <block-change version="true" revision="false" days="mon-fri,sun" hours="4-23" time-zone="UTC" />
+                              <block-change version="true" revision="false" days="sat" hours="0-23" time-zone="UTC" />
+                              <upgrade revision-change='when-clear' rollout='separate' revision-target='next' policy='conservative'/>
+                              <prod>
+                                  <parallel>
+                                      <steps>
+                                          <region>us-east-3</region>
+                                          <test>us-east-3</test>
+                                      </steps>
+                                      <steps>
+                                          <region>us-west-1</region>
+                                          <test>us-west-1</test>
+                                      </steps>
+                                      <steps>
+                                          <region>eu-west-1</region>
+                                          <test>eu-west-1</test>
+                                      </steps>
+                                      <steps>
+                                          <region>us-central-1</region>
+                                          <test>us-central-1</test>
+                                      </steps>
+                                  </parallel>
+                              </prod>
+                          </instance>
+                          <instance id="prod1">
+                              <block-change version="true" revision="false" days="mon-fri,sun" hours="4-23" time-zone="UTC" />
+                              <block-change version="true" revision="false" days="sat" hours="0-23" time-zone="UTC" />
+                              <upgrade revision-change='when-clear' rollout='separate' revision-target='next' policy='conservative'/>
+                              <prod>
+                                  <parallel>
+                                      <steps>
+                                          <region>us-east-3</region>
+                                          <test>us-east-3</test>
+                                      </steps>
+                                      <steps>
+                                          <region>us-west-1</region>
+                                          <test>us-west-1</test>
+                                      </steps>
+                                      <steps>
+                                          <region>eu-west-1</region>
+                                          <test>eu-west-1</test>
+                                      </steps>
+                                      <steps>
+                                          <region>us-central-1</region>
+                                          <test>us-central-1</test>
+                                      </steps>
+                                  </parallel>
+                              </prod>
+                          </instance>
+                      </deployment>""";
+        tester.newDeploymentContext("t", "a", "prod1").submit(ApplicationPackageBuilder.fromDeploymentXml(spec)).deploy();
     }
 
 }
