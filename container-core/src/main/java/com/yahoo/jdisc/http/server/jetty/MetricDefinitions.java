@@ -1,6 +1,8 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.jdisc.http.server.jetty;
 
+import com.yahoo.metrics.ContainerMetrics;
+
 /**
  * Name and dimensions for jdisc/container metrics
  *
@@ -45,11 +47,11 @@ class MetricDefinitions {
     static final String TOTAL_FAILED_LATENCY = "serverTotalFailedResponseLatency";
     static final String TIME_TO_FIRST_BYTE = "serverTimeToFirstByte";
 
-    static final String RESPONSES_1XX = "http.status.1xx";
-    static final String RESPONSES_2XX = "http.status.2xx";
-    static final String RESPONSES_3XX = "http.status.3xx";
-    static final String RESPONSES_4XX = "http.status.4xx";
-    static final String RESPONSES_5XX = "http.status.5xx";
+    static final String RESPONSES_1XX = ContainerMetrics.HTTP_STATUS_1XX.baseName();
+    static final String RESPONSES_2XX = ContainerMetrics.HTTP_STATUS_2XX.baseName();
+    static final String RESPONSES_3XX = ContainerMetrics.HTTP_STATUS_3XX.baseName();
+    static final String RESPONSES_4XX = ContainerMetrics.HTTP_STATUS_4XX.baseName();
+    static final String RESPONSES_5XX = ContainerMetrics.HTTP_STATUS_5XX.baseName();
 
     static final String STARTED_MILLIS = "serverStartedMillis";
 

@@ -2,6 +2,8 @@
 
 package com.yahoo.vespa.model.admin.monitoring;
 
+import com.yahoo.metrics.ContainerMetrics;
+
 import java.util.Collections;
 import java.util.LinkedHashSet;
 import java.util.Set;
@@ -36,12 +38,12 @@ public class DefaultMetrics {
     }
 
     private static void addContainerMetrics(Set<Metric> metrics) {
-        metrics.add(new Metric("http.status.1xx.rate"));
-        metrics.add(new Metric("http.status.2xx.rate"));
-        metrics.add(new Metric("http.status.3xx.rate"));
-        metrics.add(new Metric("http.status.4xx.rate"));
-        metrics.add(new Metric("http.status.5xx.rate"));
-        metrics.add(new Metric("jdisc.gc.ms.average"));
+        metrics.add(new Metric(ContainerMetrics.HTTP_STATUS_1XX.rate()));
+        metrics.add(new Metric(ContainerMetrics.HTTP_STATUS_2XX.rate()));
+        metrics.add(new Metric(ContainerMetrics.HTTP_STATUS_3XX.rate()));
+        metrics.add(new Metric(ContainerMetrics.HTTP_STATUS_4XX.rate()));
+        metrics.add(new Metric(ContainerMetrics.HTTP_STATUS_5XX.rate()));
+        metrics.add(new Metric(ContainerMetrics.JDISC_GC_MS.average()));
         metrics.add(new Metric("mem.heap.free.average"));
     }
 
