@@ -145,6 +145,7 @@ OrderedFieldIndexInserter<interleaved_features>::add(uint32_t docId,
     assert(docId != noDocId);
     assert(_prevDocId == noDocId || _prevDocId < docId ||
            (_prevDocId == docId && !_prevAdd));
+    assert(features.num_occs() <= features.field_length());
     vespalib::datastore::EntryRef featureRef = _fieldIndex.addFeatures(features);
     _adds.push_back(PostingListKeyDataType(docId, PostingListEntryType(featureRef,
                                                                        cap_u16(features.num_occs()),
