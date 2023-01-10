@@ -11,6 +11,7 @@
     </parent>
     <artifactId>vespaclient-java</artifactId>
     <version>8-SNAPSHOT</version>
+    <packaging>jar</packaging>
     <dependencies>
         <dependency>
             <!-- Due to com.yahoo.search.query.profile.DumpTool ... -->
@@ -94,17 +95,16 @@
             </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-shade-plugin</artifactId>
-                <configuration>
-                    <finalName>${project.artifactId}-jar-with-dependencies</finalName>
-                    <createDependencyReducedPom>false</createDependencyReducedPom>
-                </configuration>
+                <artifactId>maven-install-plugin</artifactId>
+                <configuration><skip>true</skip></configuration>
+            </plugin>
+            <plugin>
+                <groupId>com.yahoo.vespa</groupId>
+                <artifactId>bundle-plugin</artifactId>
                 <executions>
                     <execution>
                         <phase>package</phase>
-                        <goals>
-                            <goal>shade</goal>
-                        </goals>
+                        <goals><goal>assemble-fat-jar</goal></goals>
                     </execution>
                 </executions>
             </plugin>

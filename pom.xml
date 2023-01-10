@@ -137,6 +137,7 @@
         <module>vespa-osgi-testrunner</module>
         <module>vespa-testrunner-components</module>
         <module>vespa-3party-bundles</module>
+        <module>vespa-3party-jars</module>
         <module>vespajlib</module>
         <module>vespalog</module>
         <module>zkfacade</module>
