@@ -14,11 +14,11 @@ template <HnswIndexType type>
 size_t
 count_valid_link_arrays(const HnswGraph<type> & graph) {
     size_t count(0);
-    size_t num_nodes = graph.node_refs.get_size(); // Called from writer only
+    size_t num_nodes = graph.nodes.get_size(); // Called from writer only
     for (size_t i = 0; i < num_nodes; ++i) {
-        auto node_ref = graph.get_node_ref(i);
-        if (node_ref.valid()) {
-            count += graph.nodes.get(node_ref).size();
+        auto levels_ref = graph.get_levels_ref(i);
+        if (levels_ref.valid()) {
+            count += graph.levels_store.get(levels_ref).size();
         }
     }
     return count;
@@ -42,23 +42,23 @@ HnswIndexSaver<type>::~HnswIndexSaver() = default;
 
 template <HnswIndexType type>
 HnswIndexSaver<type>::HnswIndexSaver(const HnswGraph<type> &graph)
-    : _graph_links(graph.links), _meta_data()
+    : _graph_links(graph.links_store), _meta_data()
 {
     auto entry = graph.get_entry_node();
     _meta_data.entry_nodeid = entry.nodeid;
     _meta_data.entry_level = entry.level;
-    size_t num_nodes = graph.node_refs.get_size(); // Called from writer only
+    size_t num_nodes = graph.nodes.get_size(); // Called from writer only
     assert (num_nodes <= (std::numeric_limits<uint32_t>::max() - 1));
     size_t link_array_count = count_valid_link_arrays(graph);
     assert (link_array_count <= std::numeric_limits<uint32_t>::max());
     _meta_data.refs.reserve(link_array_count);
     _meta_data.nodes.reserve(num_nodes+1);
     for (size_t i = 0; i < num_nodes; ++i) {
-        auto& node = graph.node_refs.get_elem_ref(i);
+        auto& node = graph.nodes.get_elem_ref(i);
         _meta_data.nodes.emplace_back(_meta_data.refs.size(), node);
-        auto node_ref = node.ref().load_relaxed();
-        if (node_ref.valid()) {
-            auto levels = graph.nodes.get(node_ref);
+        auto levels_ref = node.levels_ref().load_relaxed();
+        if (levels_ref.valid()) {
+            auto levels = graph.levels_store.get(levels_ref);
             for (const auto& links_ref : levels) {
                 _meta_data.refs.push_back(links_ref.load_relaxed());
             }

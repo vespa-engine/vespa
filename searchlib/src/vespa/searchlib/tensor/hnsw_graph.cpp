@@ -9,13 +9,13 @@ namespace search::tensor {
 
 template <HnswIndexType type>
 HnswGraph<type>::HnswGraph()
-  : node_refs(),
-    node_refs_size(1u),
-    nodes(HnswIndex<type>::make_default_node_store_config(), {}),
-    links(HnswIndex<type>::make_default_link_store_config(), {}),
+  : nodes(),
+    nodes_size(1u),
+    levels_store(HnswIndex<type>::make_default_level_array_store_config(), {}),
+    links_store(HnswIndex<type>::make_default_link_array_store_config(), {}),
     entry_nodeid_and_level()
 {
-    node_refs.ensure_size(1, NodeType());
+    nodes.ensure_size(1, NodeType());
     EntryNode entry;
     set_entry_node(entry);
 }
@@ -24,68 +24,68 @@ template <HnswIndexType type>
 HnswGraph<type>::~HnswGraph() = default;
 
 template <HnswIndexType type>
-typename HnswGraph<type>::NodeRef
+typename HnswGraph<type>::LevelsRef
 HnswGraph<type>::make_node(uint32_t nodeid, uint32_t docid, uint32_t subspace, uint32_t num_levels)
 {
-    node_refs.ensure_size(nodeid + 1, NodeType());
+    nodes.ensure_size(nodeid + 1, NodeType());
     // A document cannot be added twice.
-    assert(!get_node_ref(nodeid).valid());
+    assert(!get_levels_ref(nodeid).valid());
     // Note: The level array instance lives as long as the document is present in the index.
     std::vector<AtomicEntryRef> levels(num_levels, AtomicEntryRef());
-    auto node_ref = nodes.add(levels);
-    auto& node = node_refs[nodeid];
-    node.ref().store_release(node_ref);
+    auto levels_ref = levels_store.add(levels);
+    auto& node = nodes[nodeid];
+    node.levels_ref().store_release(levels_ref);
     node.store_docid(docid);
     node.store_subspace(subspace);
-    if (nodeid >= node_refs_size.load(std::memory_order_relaxed)) {
-        node_refs_size.store(nodeid + 1, std::memory_order_release);
+    if (nodeid >= nodes_size.load(std::memory_order_relaxed)) {
+        nodes_size.store(nodeid + 1, std::memory_order_release);
     }
-    return node_ref;
+    return levels_ref;
 }
 
 template <HnswIndexType type>
 void
 HnswGraph<type>::remove_node(uint32_t nodeid)
 {
-    auto node_ref = get_node_ref(nodeid);
-    assert(node_ref.valid());
-    auto levels = nodes.get(node_ref);
+    auto levels_ref = get_levels_ref(nodeid);
+    assert(levels_ref.valid());
+    auto levels = levels_store.get(levels_ref);
     vespalib::datastore::EntryRef invalid;
-    node_refs[nodeid].ref().store_release(invalid);
+    nodes[nodeid].levels_ref().store_release(invalid);
     // Ensure data referenced through the old ref can be recycled:
-    nodes.remove(node_ref);
+    levels_store.remove(levels_ref);
     for (size_t i = 0; i < levels.size(); ++i) {
         auto old_links_ref = levels[i].load_relaxed();
-        links.remove(old_links_ref);
+        links_store.remove(old_links_ref);
     }
-    if (nodeid + 1 == node_refs_size.load(std::memory_order_relaxed)) {
-        trim_node_refs_size();
+    if (nodeid + 1 == nodes_size.load(std::memory_order_relaxed)) {
+        trim_nodes_size();
     }
 }
 
 template <HnswIndexType type>
 void
-HnswGraph<type>::trim_node_refs_size()
+HnswGraph<type>::trim_nodes_size()
 {
-    uint32_t check_nodeid = node_refs_size.load(std::memory_order_relaxed) - 1;
-    while (check_nodeid > 0u && !get_node_ref(check_nodeid).valid()) {
+    uint32_t check_nodeid = nodes_size.load(std::memory_order_relaxed) - 1;
+    while (check_nodeid > 0u && !get_levels_ref(check_nodeid).valid()) {
         --check_nodeid;
     }
-    node_refs_size.store(check_nodeid + 1, std::memory_order_release);
+    nodes_size.store(check_nodeid + 1, std::memory_order_release);
 }
 
 template <HnswIndexType type>
 void     
 HnswGraph<type>::set_link_array(uint32_t nodeid, uint32_t level, const LinkArrayRef& new_links)
 {
-    auto new_links_ref = links.add(new_links);
-    auto node_ref = get_node_ref(nodeid);
-    assert(node_ref.valid());
-    auto levels = nodes.get_writable(node_ref);
+    auto new_links_ref = links_store.add(new_links);
+    auto levels_ref = get_levels_ref(nodeid);
+    assert(levels_ref.valid());
+    auto levels = levels_store.get_writable(levels_ref);
     assert(level < levels.size());
     auto old_links_ref = levels[level].load_relaxed();
     levels[level].store_release(new_links_ref);
-    links.remove(old_links_ref);
+    links_store.remove(old_links_ref);
 }
 
 template <HnswIndexType type>
@@ -93,17 +93,17 @@ typename HnswGraph<type>::Histograms
 HnswGraph<type>::histograms() const
 {
     Histograms result;
-    size_t num_nodes = node_refs_size.load(std::memory_order_acquire);
+    size_t num_nodes = nodes_size.load(std::memory_order_acquire);
     for (size_t i = 0; i < num_nodes; ++i) {
-        auto node_ref = acquire_node_ref(i);
-        if (node_ref.valid()) {
+        auto levels_ref = acquire_levels_ref(i);
+        if (levels_ref.valid()) {
             uint32_t levels = 0;
             uint32_t l0links = 0;
-            auto level_array = nodes.get(node_ref);
+            auto level_array = levels_store.get(levels_ref);
             levels = level_array.size();
             if (levels > 0) {
                 auto links_ref = level_array[0].load_acquire();
-                auto link_array = links.get(links_ref);
+                auto link_array = links_store.get(links_ref);
                 l0links = link_array.size();
             }
             while (result.level_histogram.size() <= levels) {
@@ -125,7 +125,7 @@ HnswGraph<type>::set_entry_node(EntryNode node) {
     uint64_t value = node.level;
     value <<= 32;
     value |= node.nodeid;
-    if (node.node_ref.valid()) {
+    if (node.levels_ref.valid()) {
         assert(node.level >= 0);
         assert(node.nodeid > 0);
     } else {

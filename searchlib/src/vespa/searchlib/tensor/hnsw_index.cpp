@@ -63,9 +63,9 @@ bool operator< (const PairDist &a, const PairDist &b) {
 
 template <HnswIndexType type>
 vespalib::datastore::ArrayStoreConfig
-HnswIndex<type>::make_default_node_store_config()
+HnswIndex<type>::make_default_level_array_store_config()
 {
-    return NodeStore::optimizedConfigForHugePage(max_level_array_size,
+    return LevelArrayStore::optimizedConfigForHugePage(max_level_array_size,
                                                  vespalib::alloc::MemoryAllocator::HUGEPAGE_SIZE,
                                                  vespalib::alloc::MemoryAllocator::PAGE_SIZE,
                                                  min_num_arrays_for_new_buffer,
@@ -74,9 +74,9 @@ HnswIndex<type>::make_default_node_store_config()
 
 template <HnswIndexType type>
 vespalib::datastore::ArrayStoreConfig
-HnswIndex<type>::make_default_link_store_config()
+HnswIndex<type>::make_default_link_array_store_config()
 {
-    return LinkStore::optimizedConfigForHugePage(max_link_array_size,
+    return LinkArrayStore::optimizedConfigForHugePage(max_link_array_size,
                                                  vespalib::alloc::MemoryAllocator::HUGEPAGE_SIZE,
                                                  vespalib::alloc::MemoryAllocator::PAGE_SIZE,
                                                  min_num_arrays_for_new_buffer,
@@ -272,9 +272,9 @@ HnswIndex<type>::find_nearest_in_layer(const TypedCells& input, const HnswCandid
     bool keep_searching = true;
     while (keep_searching) {
         keep_searching = false;
-        for (uint32_t neighbor_nodeid : _graph.get_link_array(nearest.node_ref, level)) {
-            auto& neighbor_node = _graph.acquire_node_refs_elem_ref(neighbor_nodeid);
-            auto neighbor_ref = neighbor_node.ref().load_acquire();
+        for (uint32_t neighbor_nodeid : _graph.get_link_array(nearest.levels_ref, level)) {
+            auto& neighbor_node = _graph.acquire_node(neighbor_nodeid);
+            auto neighbor_ref = neighbor_node.levels_ref().load_acquire();
             uint32_t neighbor_docid = acquire_docid(neighbor_node, neighbor_nodeid);
             uint32_t neighbor_subspace = neighbor_node.acquire_subspace();
             double dist = calc_distance(input, neighbor_docid, neighbor_subspace);
@@ -317,12 +317,12 @@ HnswIndex<type>::search_layer_helper(const TypedCells& input, uint32_t neighbors
             break;
         }
         candidates.pop();
-        for (uint32_t neighbor_nodeid : _graph.get_link_array(cand.node_ref, level)) {
+        for (uint32_t neighbor_nodeid : _graph.get_link_array(cand.levels_ref, level)) {
             if (neighbor_nodeid >= nodeid_limit) {
                 continue;
             }
-            auto& neighbor_node = _graph.acquire_node_refs_elem_ref(neighbor_nodeid);
-            auto neighbor_ref = neighbor_node.ref().load_acquire();
+            auto& neighbor_node = _graph.acquire_node(neighbor_nodeid);
+            auto neighbor_ref = neighbor_node.levels_ref().load_acquire();
             if ((! neighbor_ref.valid())
                 || ! visited.try_mark(neighbor_nodeid))
             {
@@ -351,7 +351,7 @@ void
 HnswIndex<type>::search_layer(const TypedCells& input, uint32_t neighbors_to_find,
                         BestNeighbors& best_neighbors, uint32_t level, const GlobalFilter *filter) const
 {
-    uint32_t nodeid_limit = _graph.node_refs_size.load(std::memory_order_acquire);
+    uint32_t nodeid_limit = _graph.nodes_size.load(std::memory_order_acquire);
     if (filter) {
         nodeid_limit = std::min(filter->size(), nodeid_limit);
     }
@@ -427,8 +427,8 @@ HnswIndex<type>::internal_prepare_add_node(typename HnswIndex::PreparedAddDoc& o
     int search_level = entry.level;
     double entry_dist = calc_distance(input_vector, entry.nodeid);
     uint32_t entry_docid = get_docid(entry.nodeid);
-    // TODO: check if entry nodeid/node_ref is still valid here
-    HnswCandidate entry_point(entry.nodeid, entry_docid, entry.node_ref, entry_dist);
+    // TODO: check if entry nodeid/levels_ref is still valid here
+    HnswCandidate entry_point(entry.nodeid, entry_docid, entry.levels_ref, entry_dist);
     while (search_level > node_max_level) {
         entry_point = find_nearest_in_layer(input_vector, entry_point, search_level);
         --search_level;
@@ -444,9 +444,9 @@ HnswIndex<type>::internal_prepare_add_node(typename HnswIndex::PreparedAddDoc& o
         auto& links = connections[search_level];
         links.reserve(neighbors.used.size());
         for (const auto & neighbor : neighbors.used) {
-            auto neighbor_levels = _graph.get_level_array(neighbor.node_ref);
+            auto neighbor_levels = _graph.get_level_array(neighbor.levels_ref);
             if (size_t(search_level) < neighbor_levels.size()) {
-                links.emplace_back(neighbor.nodeid, neighbor.node_ref);
+                links.emplace_back(neighbor.nodeid, neighbor.levels_ref);
             } else {
                 LOG(warning, "in prepare_add(%u), selected neighbor %u is missing level %d (has %zu levels)",
                     op.docid, neighbor.nodeid, search_level, neighbor_levels.size());
@@ -465,10 +465,10 @@ HnswIndex<type>::filter_valid_nodeids(uint32_t level, const typename PreparedAdd
     valid.reserve(neighbors.size());
     for (const auto & neighbor : neighbors) {
         uint32_t nodeid = neighbor.first;
-        vespalib::datastore::EntryRef node_ref = neighbor.second;
-        if (_graph.still_valid(nodeid, node_ref)) {
+        vespalib::datastore::EntryRef levels_ref = neighbor.second;
+        if (_graph.still_valid(nodeid, levels_ref)) {
             assert(nodeid != self_nodeid);
-            auto levels = _graph.get_level_array(node_ref);
+            auto levels = _graph.get_level_array(levels_ref);
             if (level < levels.size()) {
                 valid.push_back(nodeid);
             }
@@ -495,13 +495,13 @@ void
 HnswIndex<type>::internal_complete_add_node(uint32_t nodeid, uint32_t docid, uint32_t subspace, PreparedAddNode &prepared_node)
 {
     int32_t num_levels = prepared_node.connections.size();
-    auto node_ref = _graph.make_node(nodeid, docid, subspace, num_levels);
+    auto levels_ref = _graph.make_node(nodeid, docid, subspace, num_levels);
     for (int level = 0; level < num_levels; ++level) {
         auto neighbors = filter_valid_nodeids(level, prepared_node.connections[level], nodeid);
         connect_new_node(nodeid, neighbors, level);
     }
     if (num_levels - 1 > get_entry_level()) {
-        _graph.set_entry_node({nodeid, node_ref, num_levels - 1});
+        _graph.set_entry_node({nodeid, levels_ref, num_levels - 1});
     }
 }
 
@@ -511,7 +511,7 @@ HnswIndex<type>::prepare_add_document(uint32_t docid,
                                 VectorBundle vectors,
                                 vespalib::GenerationHandler::Guard read_guard) const
 {
-    uint32_t max_nodes = _graph.node_refs_size.load(std::memory_order_acquire);
+    uint32_t max_nodes = _graph.nodes_size.load(std::memory_order_acquire);
     if (max_nodes < _cfg.min_size_before_two_phase()) {
         // the first documents added will do all work in write thread
         // to ensure they are linked together:
@@ -530,7 +530,7 @@ HnswIndex<type>::complete_add_document(uint32_t docid, std::unique_ptr<PrepareRe
         internal_complete_add(docid, *prepared);
     } else {
         // we expect this for the first documents added, so no warning for them
-        if (_graph.node_refs.size() > 1.25 * _cfg.min_size_before_two_phase()) {
+        if (_graph.nodes.size() > 1.25 * _cfg.min_size_before_two_phase()) {
             LOG(warning, "complete_add_document(%u) called with invalid prepare_result %s/%u",
                 docid, (prepared ? "valid ptr" : "nullptr"), (prepared ? prepared->docid : 0u));
         }
@@ -576,8 +576,8 @@ HnswIndex<type>::remove_node(uint32_t nodeid)
         LinkArrayRef my_links = _graph.get_link_array(nodeid, level);
         for (uint32_t neighbor_id : my_links) {
             if (need_new_entrypoint) {
-                auto entry_node_ref = _graph.get_node_ref(neighbor_id);
-                _graph.set_entry_node({neighbor_id, entry_node_ref, level});
+                auto entry_levels_ref = _graph.get_levels_ref(neighbor_id);
+                _graph.set_entry_node({neighbor_id, entry_levels_ref, level});
                 need_new_entrypoint = false;
             }
             remove_link_to(neighbor_id, nodeid, level);
@@ -608,9 +608,9 @@ HnswIndex<type>::assign_generation(generation_t current_gen)
 {
     // Note: RcuVector transfers hold lists as part of reallocation based on current generation.
     //       We need to set the next generation here, as it is incremented on a higher level right after this call.
-    _graph.node_refs.setGeneration(current_gen + 1);
-    _graph.nodes.assign_generation(current_gen);
-    _graph.links.assign_generation(current_gen);
+    _graph.nodes.setGeneration(current_gen + 1);
+    _graph.levels_store.assign_generation(current_gen);
+    _graph.links_store.assign_generation(current_gen);
     _id_mapping.assign_generation(current_gen);
 }
 
@@ -618,9 +618,9 @@ template <HnswIndexType type>
 void
 HnswIndex<type>::reclaim_memory(generation_t oldest_used_gen)
 {
-    _graph.node_refs.reclaim_memory(oldest_used_gen);
     _graph.nodes.reclaim_memory(oldest_used_gen);
-    _graph.links.reclaim_memory(oldest_used_gen);
+    _graph.levels_store.reclaim_memory(oldest_used_gen);
+    _graph.links_store.reclaim_memory(oldest_used_gen);
     _id_mapping.reclaim_memory(oldest_used_gen);
 }
 
@@ -628,15 +628,15 @@ template <HnswIndexType type>
 void
 HnswIndex<type>::compact_level_arrays(CompactionSpec compaction_spec, const CompactionStrategy& compaction_strategy)
 {
-    auto compacting_buffers = _graph.nodes.start_compact_worst_buffers(compaction_spec, compaction_strategy);
-    uint32_t nodeid_limit = _graph.node_refs.size();
+    auto compacting_buffers = _graph.levels_store.start_compact_worst_buffers(compaction_spec, compaction_strategy);
+    uint32_t nodeid_limit = _graph.nodes.size();
     auto filter = compacting_buffers->make_entry_ref_filter();
-    vespalib::ArrayRef<NodeType> refs(&_graph.node_refs[0], nodeid_limit);
+    vespalib::ArrayRef<NodeType> refs(&_graph.nodes[0], nodeid_limit);
     for (auto& ref : refs) {
-        auto node_ref = ref.ref().load_relaxed();
-        if (node_ref.valid() && filter.has(node_ref)) {
-            EntryRef new_node_ref = _graph.nodes.move_on_compact(node_ref);
-            ref.ref().store_release(new_node_ref);
+        auto levels_ref = ref.levels_ref().load_relaxed();
+        if (levels_ref.valid() && filter.has(levels_ref)) {
+            EntryRef new_levels_ref = _graph.levels_store.move_on_compact(levels_ref);
+            ref.levels_ref().store_release(new_levels_ref);
         }
     }
     compacting_buffers->finish();
@@ -646,12 +646,12 @@ template <HnswIndexType type>
 void
 HnswIndex<type>::compact_link_arrays(CompactionSpec compaction_spec, const CompactionStrategy& compaction_strategy)
 {
-    auto context = _graph.links.compactWorst(compaction_spec, compaction_strategy);
-    uint32_t nodeid_limit = _graph.node_refs.size();
+    auto context = _graph.links_store.compactWorst(compaction_spec, compaction_strategy);
+    uint32_t nodeid_limit = _graph.nodes.size();
     for (uint32_t nodeid = 1; nodeid < nodeid_limit; ++nodeid) {
-        EntryRef level_ref = _graph.get_node_ref(nodeid);
-        if (level_ref.valid()) {
-            vespalib::ArrayRef<AtomicEntryRef> refs(_graph.nodes.get_writable(level_ref));
+        EntryRef levels_ref = _graph.get_levels_ref(nodeid);
+        if (levels_ref.valid()) {
+            vespalib::ArrayRef<AtomicEntryRef> refs(_graph.levels_store.get_writable(levels_ref));
             context->compact(refs);
         }
     }
@@ -661,7 +661,7 @@ template <HnswIndexType type>
 bool
 HnswIndex<type>::consider_compact_level_arrays(const CompactionStrategy& compaction_strategy)
 {
-    if (!_graph.nodes.has_held_buffers() && _compaction_spec.level_arrays().compact()) {
+    if (!_graph.levels_store.has_held_buffers() && _compaction_spec.level_arrays().compact()) {
         compact_level_arrays(_compaction_spec.level_arrays(), compaction_strategy);
         return true;
     }
@@ -672,7 +672,7 @@ template <HnswIndexType type>
 bool
 HnswIndex<type>::consider_compact_link_arrays(const CompactionStrategy& compaction_strategy)
 {
-    if (!_graph.links.has_held_buffers() && _compaction_spec.link_arrays().compact()) {
+    if (!_graph.links_store.has_held_buffers() && _compaction_spec.link_arrays().compact()) {
         compact_link_arrays(_compaction_spec.link_arrays(), compaction_strategy);
         return true;
     }
@@ -698,12 +698,12 @@ vespalib::MemoryUsage
 HnswIndex<type>::update_stat(const CompactionStrategy& compaction_strategy)
 {
     vespalib::MemoryUsage result;
-    result.merge(_graph.node_refs.getMemoryUsage());
-    auto level_arrays_memory_usage = _graph.nodes.getMemoryUsage();
-    auto level_arrays_address_space_usage = _graph.nodes.addressSpaceUsage();
+    result.merge(_graph.nodes.getMemoryUsage());
+    auto level_arrays_memory_usage = _graph.levels_store.getMemoryUsage();
+    auto level_arrays_address_space_usage = _graph.levels_store.addressSpaceUsage();
     result.merge(level_arrays_memory_usage);
-    auto link_arrays_memory_usage = _graph.links.getMemoryUsage();
-    auto link_arrays_address_space_usage = _graph.links.addressSpaceUsage();
+    auto link_arrays_memory_usage = _graph.links_store.getMemoryUsage();
+    auto link_arrays_address_space_usage = _graph.links_store.addressSpaceUsage();
     _compaction_spec = HnswIndexCompactionSpec(compaction_strategy.should_compact(level_arrays_memory_usage, level_arrays_address_space_usage),
                                                compaction_strategy.should_compact(link_arrays_memory_usage, link_arrays_address_space_usage));
     result.merge(link_arrays_memory_usage);
@@ -715,9 +715,9 @@ vespalib::MemoryUsage
 HnswIndex<type>::memory_usage() const
 {
     vespalib::MemoryUsage result;
-    result.merge(_graph.node_refs.getMemoryUsage());
     result.merge(_graph.nodes.getMemoryUsage());
-    result.merge(_graph.links.getMemoryUsage());
+    result.merge(_graph.levels_store.getMemoryUsage());
+    result.merge(_graph.links_store.getMemoryUsage());
     result.merge(_id_mapping.memory_usage());
     return result;
 }
@@ -726,8 +726,8 @@ template <HnswIndexType type>
 void
 HnswIndex<type>::populate_address_space_usage(search::AddressSpaceUsage& usage) const
 {
-    usage.set(AddressSpaceComponents::hnsw_node_store, _graph.nodes.addressSpaceUsage());
-    usage.set(AddressSpaceComponents::hnsw_link_store, _graph.links.addressSpaceUsage());
+    usage.set(AddressSpaceComponents::hnsw_node_store, _graph.levels_store.addressSpaceUsage());
+    usage.set(AddressSpaceComponents::hnsw_link_store, _graph.links_store.addressSpaceUsage());
 }
 
 template <HnswIndexType type>
@@ -737,9 +737,9 @@ HnswIndex<type>::get_state(const vespalib::slime::Inserter& inserter) const
     auto& object = inserter.insertObject();
     auto& memUsageObj = object.setObject("memory_usage");
     StateExplorerUtils::memory_usage_to_slime(memory_usage(), memUsageObj.setObject("all"));
-    StateExplorerUtils::memory_usage_to_slime(_graph.node_refs.getMemoryUsage(), memUsageObj.setObject("node_refs"));
     StateExplorerUtils::memory_usage_to_slime(_graph.nodes.getMemoryUsage(), memUsageObj.setObject("nodes"));
-    StateExplorerUtils::memory_usage_to_slime(_graph.links.getMemoryUsage(), memUsageObj.setObject("links"));
+    StateExplorerUtils::memory_usage_to_slime(_graph.levels_store.getMemoryUsage(), memUsageObj.setObject("levels"));
+    StateExplorerUtils::memory_usage_to_slime(_graph.links_store.getMemoryUsage(), memUsageObj.setObject("links"));
     object.setLong("nodes", _graph.size());
     auto& histogram_array = object.setArray("level_histogram");
     auto& links_hst_array = object.setArray("level_0_links_histogram");
@@ -775,12 +775,12 @@ void
 HnswIndex<type>::shrink_lid_space(uint32_t doc_id_limit)
 {
     assert(doc_id_limit >= 1u);
-    assert(doc_id_limit >= _graph.node_refs_size.load(std::memory_order_relaxed));
-    uint32_t old_doc_id_limit = _graph.node_refs.size();
+    assert(doc_id_limit >= _graph.nodes_size.load(std::memory_order_relaxed));
+    uint32_t old_doc_id_limit = _graph.nodes.size();
     if (doc_id_limit >= old_doc_id_limit) {
         return;
     }
-    _graph.node_refs.shrink(doc_id_limit);
+    _graph.nodes.shrink(doc_id_limit);
 }
 
 template <HnswIndexType type>
@@ -850,8 +850,8 @@ HnswIndex<type>::top_k_candidates(const TypedCells &vector, uint32_t k, const Gl
     int search_level = entry.level;
     double entry_dist = calc_distance(vector, entry.nodeid);
     uint32_t entry_docid = get_docid(entry.nodeid);
-    // TODO: check if entry docid/node_ref is still valid here
-    HnswCandidate entry_point(entry.nodeid, entry_docid, entry.node_ref, entry_dist);
+    // TODO: check if entry docid/levels_ref is still valid here
+    HnswCandidate entry_point(entry.nodeid, entry_docid, entry.levels_ref, entry_dist);
     while (search_level > 0) {
         entry_point = find_nearest_in_layer(vector, entry_point, search_level);
         --search_level;
@@ -865,14 +865,14 @@ template <HnswIndexType type>
 HnswTestNode
 HnswIndex<type>::get_node(uint32_t nodeid) const
 {
-    auto node_ref = _graph.acquire_node_ref(nodeid);
-    if (!node_ref.valid()) {
+    auto levels_ref = _graph.acquire_levels_ref(nodeid);
+    if (!levels_ref.valid()) {
         return HnswTestNode();
     }
-    auto levels = _graph.nodes.get(node_ref);
+    auto levels = _graph.levels_store.get(levels_ref);
     HnswTestNode::LevelArray result;
     for (const auto& links_ref : levels) {
-        auto links = _graph.links.get(links_ref.load_acquire());
+        auto links = _graph.links_store.get(links_ref.load_acquire());
         HnswTestNode::LinkArray result_links(links.begin(), links.end());
         std::sort(result_links.begin(), result_links.end());
         result.push_back(result_links);
@@ -886,13 +886,13 @@ HnswIndex<type>::set_node(uint32_t nodeid, const HnswTestNode &node)
 {
     size_t num_levels = node.size();
     assert(num_levels > 0);
-    auto node_ref = _graph.make_node(nodeid, nodeid, 0, num_levels);
+    auto levels_ref = _graph.make_node(nodeid, nodeid, 0, num_levels);
     for (size_t level = 0; level < num_levels; ++level) {
         connect_new_node(nodeid, node.level(level), level);
     }
     int max_level = num_levels - 1;
     if (get_entry_level() < max_level) {
-        _graph.set_entry_node({nodeid, node_ref, max_level});
+        _graph.set_entry_node({nodeid, levels_ref, max_level});
     }
 }
 
@@ -903,12 +903,12 @@ HnswIndex<type>::check_link_symmetry() const
     bool all_sym = true;
     size_t nodeid_limit = _graph.size();
     for (size_t nodeid = 0; nodeid < nodeid_limit; ++nodeid) {
-        auto node_ref = _graph.acquire_node_ref(nodeid);
-        if (node_ref.valid()) {
-            auto levels = _graph.nodes.get(node_ref);
+        auto levels_ref = _graph.acquire_levels_ref(nodeid);
+        if (levels_ref.valid()) {
+            auto levels = _graph.levels_store.get(levels_ref);
             uint32_t level = 0;
             for (const auto& links_ref : levels) {
-                auto links = _graph.links.get(links_ref.load_acquire());
+                auto links = _graph.links_store.get(links_ref.load_acquire());
                 for (auto neighbor_nodeid : links) {
                     auto neighbor_links = _graph.acquire_link_array(neighbor_nodeid, level);
                     if (! has_link_to(neighbor_links, nodeid)) {

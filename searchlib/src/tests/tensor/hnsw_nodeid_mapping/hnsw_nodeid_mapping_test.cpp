@@ -79,13 +79,13 @@ TEST_F(HnswNodeidMappingTest, free_ids_puts_nodeids_on_hold_list_and_then_free_l
 TEST_F(HnswNodeidMappingTest, on_load_populates_mapping)
 {
     std::vector<HnswNode> nodes(10);
-    nodes[1].ref().store_relaxed(EntryRef(1));
+    nodes[1].levels_ref().store_relaxed(EntryRef(1));
     nodes[1].store_docid(7);
     nodes[1].store_subspace(0);
-    nodes[2].ref().store_relaxed(EntryRef(2));
+    nodes[2].levels_ref().store_relaxed(EntryRef(2));
     nodes[2].store_docid(4);
     nodes[2].store_subspace(0);
-    nodes[7].ref().store_relaxed(EntryRef(3));
+    nodes[7].levels_ref().store_relaxed(EntryRef(3));
     nodes[7].store_docid(4);
     nodes[7].store_subspace(1);
     mapping.on_load(vespalib::ConstArrayRef(nodes.data(), nodes.size()));

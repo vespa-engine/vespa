@@ -34,7 +34,7 @@ private:
         MetaData();
         ~MetaData();
     };
-    const typename HnswGraph<type>::LinkStore &_graph_links;
+    const typename HnswGraph<type>::LinkArrayStore &_graph_links;
     MetaData _meta_data;
 };
 

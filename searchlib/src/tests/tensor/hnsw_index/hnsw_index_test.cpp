@@ -522,7 +522,7 @@ TYPED_TEST(HnswIndexTest, memory_is_reclaimed_when_doing_changes_to_graph)
     EXPECT_EQ(0, mem_2.allocatedBytesOnHold());
 
     this->remove_document(2);
-    size_t node_ref_growth = 0;
+    size_t nodes_growth = 0;
     if constexpr (TestFixture::is_single) {
         this->expect_level_0(1, {3});
         this->expect_empty_level_0(2);
@@ -532,11 +532,11 @@ TYPED_TEST(HnswIndexTest, memory_is_reclaimed_when_doing_changes_to_graph)
         this->expect_level_0(1, {2});
         this->expect_empty_level_0(3);
         this->expect_level_0(2, {1});
-        node_ref_growth = sizeof(HnswNode); // Entry for nodeid 3 added when adding doc 2
+        nodes_growth = sizeof(HnswNode); // Entry for nodeid 3 added when adding doc 2
     }
     auto mem_3 = this->memory_usage();
     // We end up in the same state as before document 2 was added and effectively use the same amount of memory.
-    EXPECT_EQ((mem_1.usedBytes() - mem_1.deadBytes() + node_ref_growth), (mem_3.usedBytes() - mem_3.deadBytes()));
+    EXPECT_EQ((mem_1.usedBytes() - mem_1.deadBytes() + nodes_growth), (mem_3.usedBytes() - mem_3.deadBytes()));
     EXPECT_EQ(0, mem_3.allocatedBytesOnHold());
 }
 
@@ -642,14 +642,14 @@ make_graph_helper(HnswIndex<type>& index)
     using LinkArrayRef = typename HnswGraph<type>::LinkArrayRef;
     auto& graph = index.get_graph();
     ResultGraph result(graph.size());
-    assert(!graph.get_node_ref(0).valid());
+    assert(!graph.get_levels_ref(0).valid());
     for (uint32_t doc_id = 1; doc_id < graph.size(); ++doc_id) {
         auto& node = result[doc_id];
-        auto node_ref = graph.get_node_ref(doc_id);
+        auto levels_ref = graph.get_levels_ref(doc_id);
         if constexpr (std::is_same_v<std::remove_reference_t<decltype(node)>, uint32_t>) {
-            node = node_ref.ref();
+            node = levels_ref.ref();
         } else {
-            LevelArrayRef level_array(graph.get_level_array(node_ref));
+            LevelArrayRef level_array(graph.get_level_array(levels_ref));
             for (uint32_t level = 0; level < level_array.size(); ++level) {
                 if constexpr (std::is_same_v<std::remove_reference_t<decltype(node)>, std::vector<uint32_t>>) {
                     node.emplace_back(level_array[level].load_relaxed().ref());

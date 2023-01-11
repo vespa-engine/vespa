@@ -113,7 +113,7 @@ void modify(HnswGraph<type> &graph) {
     graph.set_link_array(4, 1, V{7});
     graph.set_link_array(7, 1, V{4});
 
-    graph.set_entry_node({4, graph.get_node_ref(4), 1});
+    graph.set_entry_node({4, graph.get_levels_ref(4), 1});
 }
 
 
@@ -124,7 +124,7 @@ public:
     GraphType copy;
 
     void expect_empty_d(uint32_t nodeid) const {
-        EXPECT_FALSE(copy.acquire_node_ref(nodeid).valid());
+        EXPECT_FALSE(copy.acquire_levels_ref(nodeid).valid());
     }
 
     void expect_level_0(uint32_t nodeid, const V& exp_links) const {
@@ -160,7 +160,7 @@ public:
     }
 
     void expect_docid_and_subspace(uint32_t nodeid) const {
-        auto& node = copy.node_refs.get_elem_ref(nodeid);
+        auto& node = copy.nodes.get_elem_ref(nodeid);
         EXPECT_EQ(fake_docid<GraphType::index_type>(nodeid), fake_get_docid(node, nodeid));
         EXPECT_EQ(fake_subspace<GraphType::index_type>(nodeid), node.acquire_subspace());
     }
