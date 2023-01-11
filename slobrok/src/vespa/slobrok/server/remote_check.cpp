@@ -15,7 +15,7 @@ RemoteCheck::RemoteCheck(FNET_Scheduler *sched, ExchangeManager& exch)
     : FNET_Task(sched),
       _exchanger(exch)
 {
-    double seconds = randomIn(15.3, 27.9);
+    double seconds = randomIn(5.3, 9.7);
     Schedule(seconds);
 }
 
@@ -31,7 +31,7 @@ RemoteCheck::PerformTask()
 {
     LOG(debug, "asking exchanger to health check");
     _exchanger.healthCheck();
-    double seconds = randomIn(151.3, 179.7);
+    double seconds = randomIn(15.3, 17.7);
     Schedule(seconds);
 }
 

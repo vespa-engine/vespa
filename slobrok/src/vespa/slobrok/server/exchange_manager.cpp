@@ -118,8 +118,8 @@ ExchangeManager::healthCheck()
         if (remoteList.size() != 0) {
             vespalib::string diff = diffLists(newWorldList, remoteList);
             if (! diff.empty()) {
-                LOG(warning, "Diff from consensus map to peer slobrok mirror: %s",
-                    diff.c_str());
+                LOG(warning, "Peer slobrok at %s may have problems, differences from consensus map: %s",
+                    partner->getName().c_str(), diff.c_str());
                 someBad = true;
             }
         }
