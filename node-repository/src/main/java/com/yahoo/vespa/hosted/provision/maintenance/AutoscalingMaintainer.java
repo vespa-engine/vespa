@@ -56,30 +56,23 @@ public class AutoscalingMaintainer extends NodeRepositoryMaintainer {
 
     private void autoscale(ApplicationId application, NodeList applicationNodes) {
         try {
-            nodesByCluster(applicationNodes).forEach((clusterId, clusterNodes) -> autoscale(application, clusterId, clusterNodes));
+            nodesByCluster(applicationNodes).forEach((clusterId, clusterNodes) -> autoscale(application, clusterId));
         }
         catch (IllegalArgumentException e) {
             throw new IllegalArgumentException("Illegal arguments for " + application, e);
         }
     }
 
-    private void autoscale(ApplicationId applicationId, ClusterSpec.Id clusterId, NodeList clusterNodes) {
-        Optional<Application> application = nodeRepository().applications().get(applicationId);
-        if (application.isEmpty()) return;
-        Optional<Cluster> cluster = application.get().cluster(clusterId);
-        if (cluster.isEmpty()) return;
-
-        Cluster updatedCluster = updateCompletion(cluster.get(), clusterNodes);
-        var autoscaling = autoscaler.autoscale(application.get(), updatedCluster, clusterNodes);
-
-        if ( ! anyChanges(autoscaling, cluster.get(), updatedCluster, clusterNodes)) return;
-
+    private void autoscale(ApplicationId applicationId, ClusterSpec.Id clusterId) {
         try (var lock = nodeRepository().applications().lock(applicationId)) {
-            application = nodeRepository().applications().get(applicationId);
+            Optional<Application> application = nodeRepository().applications().get(applicationId);
             if (application.isEmpty()) return;
-            cluster = application.get().cluster(clusterId);
+            Optional<Cluster> cluster = application.get().cluster(clusterId);
             if (cluster.isEmpty()) return;
-            clusterNodes = nodeRepository().nodes().list(Node.State.active).owner(applicationId).cluster(clusterId);
+
+            NodeList clusterNodes = nodeRepository().nodes().list(Node.State.active).owner(applicationId).cluster(clusterId);
+            Cluster updatedCluster = updateCompletion(cluster.get(), clusterNodes);
+            var autoscaling = autoscaler.autoscale(application.get(), updatedCluster, clusterNodes);
 
             // 1. Update cluster info
             updatedCluster = updateCompletion(cluster.get(), clusterNodes);
@@ -98,15 +91,6 @@ public class AutoscalingMaintainer extends NodeRepositoryMaintainer {
                 }
             }
         }
-    }
-
-    private boolean anyChanges(Autoscaling autoscaling, Cluster cluster, Cluster updatedCluster, NodeList clusterNodes) {
-        if (updatedCluster != cluster) return true;
-        if ( ! cluster.target().resources().equals(autoscaling.resources())) return true;
-        if ( ! cluster.target().status().equals(autoscaling.status())) return true;
-        if (autoscaling.resources().isPresent() &&
-            !autoscaling.resources().get().equals(new AllocatableClusterResources(clusterNodes, nodeRepository()).advertisedResources())) return true;
-        return false;
     }
 
     private Applications applications() {
