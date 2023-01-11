@@ -8,7 +8,6 @@ import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.InstanceName;
 import com.yahoo.config.provision.RegionName;
 import com.yahoo.config.provision.Tags;
-
 import org.junit.Test;
 import org.w3c.dom.Document;
 
@@ -21,10 +20,6 @@ import static org.junit.Assert.assertEquals;
 public class HostedOverrideProcessorComplexTest {
 
     private static final String servicesFile = "src/test/resources/complex-app/services.xml";
-
-    static {
-        XMLUnit.setIgnoreWhitespace(true);
-    }
 
     @Test
     public void testProdBetaUsWest2a() throws TransformerException, IOException {
