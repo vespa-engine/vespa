@@ -15,7 +15,6 @@ import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.HostName;
 import com.yahoo.config.provision.RegionName;
-import com.yahoo.config.provision.Tags;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.config.provision.zone.RoutingMethod;
 import com.yahoo.config.provision.zone.ZoneId;
@@ -1406,7 +1405,7 @@ public class ControllerTest {
     void testDeactivateDeploymentUnknownByController() {
         DeploymentContext context = tester.newDeploymentContext();
         DeploymentId deployment = context.deploymentIdIn(ZoneId.from("prod", "us-west-1"));
-        DeploymentData deploymentData = new DeploymentData(deployment.applicationId(), Tags.empty(), deployment.zoneId(), InputStream::nullInputStream, Version.fromString("6.1"),
+        DeploymentData deploymentData = new DeploymentData(deployment.applicationId(), deployment.zoneId(), InputStream::nullInputStream, Version.fromString("6.1"),
                                                            Set.of(), Optional::empty, Optional.empty(), Optional.empty(),
                                                            Quota::unlimited, List.of(), List.of(), Optional::empty, false);
         tester.configServer().deploy(deploymentData);

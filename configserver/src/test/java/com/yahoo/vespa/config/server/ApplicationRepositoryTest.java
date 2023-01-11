@@ -17,7 +17,6 @@ import com.yahoo.config.provision.HostFilter;
 import com.yahoo.config.provision.HostSpec;
 import com.yahoo.config.provision.InstanceName;
 import com.yahoo.config.provision.NetworkPorts;
-import com.yahoo.config.provision.Tags;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.config.provision.exception.ActivationConflictException;
 import com.yahoo.container.jdisc.HttpResponse;
@@ -846,7 +845,7 @@ public class ApplicationRepositoryTest {
     }
 
     private long createSession(ApplicationId applicationId, TimeoutBudget timeoutBudget, File app) {
-        return applicationRepository.createSession(applicationId, Tags.empty(), timeoutBudget, app, new BaseDeployLogger());
+        return applicationRepository.createSession(applicationId, timeoutBudget, app, new BaseDeployLogger());
     }
 
     private long createSessionFromExisting(ApplicationId applicationId, TimeoutBudget timeoutBudget) {

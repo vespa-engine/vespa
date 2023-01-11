@@ -7,7 +7,6 @@ import com.yahoo.component.VersionCompatibility;
 import com.yahoo.concurrent.UncheckedTimeoutException;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.SystemName;
-import com.yahoo.config.provision.Tags;
 import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.transaction.Mutex;
 import com.yahoo.vespa.flags.FetchVector.Dimension;
@@ -708,7 +707,7 @@ public class JobController {
 
         controller.applications().lockApplicationOrThrow(TenantAndApplicationId.from(id), application -> {
             if ( ! application.get().instances().containsKey(id.instance()))
-                application = controller.applications().withNewInstance(application, id, Tags.empty());
+                application = controller.applications().withNewInstance(application, id);
             // TODO(mpolden): Enable for public CD once all tests have been updated
             if (controller.system() != SystemName.PublicCd) {
                 controller.applications().validatePackage(applicationPackage, application.get());

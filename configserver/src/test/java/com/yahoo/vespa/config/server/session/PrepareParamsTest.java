@@ -7,7 +7,6 @@ import com.yahoo.config.model.api.EndpointCertificateMetadata;
 import com.yahoo.config.model.api.TenantSecretStore;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.CloudAccount;
-import com.yahoo.config.provision.Tags;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.container.jdisc.HttpRequest;
 
@@ -63,7 +62,6 @@ public class PrepareParamsTest {
         PrepareParams prepareParams = createParams("http://foo:19071/application/v2/", TenantName.defaultName());
 
         assertEquals(ApplicationId.defaultId(), prepareParams.getApplicationId());
-        assertTrue(prepareParams.tags().isEmpty());
         assertFalse(prepareParams.isDryRun());
         assertFalse(prepareParams.isVerbose());
         assertFalse(prepareParams.ignoreValidationErrors());
@@ -71,18 +69,6 @@ public class PrepareParamsTest {
         assertTrue(prepareParams.getTimeoutBudget().hasTimeLeft());
         assertTrue(prepareParams.containerEndpoints().isEmpty());
         assertTrue(prepareParams.cloudAccount().isEmpty());
-    }
-
-    @Test
-    public void testTagsParsing() throws IOException {
-        var prepareParams = createParams(request + "&" + PrepareParams.TAGS_PARAM_NAME + "=tag1%20tag2", TenantName.from("foo"));
-        assertEquals(Tags.fromString("tag1 tag2"), prepareParams.tags());
-
-        // Verify using json object
-        var slime = SlimeUtils.jsonToSlime(json);
-        slime.get().setString(PrepareParams.TAGS_PARAM_NAME, "tag1 tag2");
-        PrepareParams prepareParamsJson = PrepareParams.fromJson(SlimeUtils.toJsonBytes(slime), TenantName.from("foo"), Duration.ofSeconds(60));
-        assertPrepareParamsEqual(prepareParams, prepareParamsJson);
     }
 
     @Test
@@ -221,7 +207,6 @@ public class PrepareParamsTest {
         assertEquals(urlParams.force(), jsonParams.force());
         assertEquals(urlParams.waitForResourcesInPrepare(), jsonParams.waitForResourcesInPrepare());
         assertEquals(urlParams.getApplicationId(), jsonParams.getApplicationId());
-        assertEquals(urlParams.tags(), jsonParams.tags());
         assertEquals(urlParams.getTimeoutBudget().timeout(), jsonParams.getTimeoutBudget().timeout());
         assertEquals(urlParams.vespaVersion(), jsonParams.vespaVersion());
         assertEquals(urlParams.containerEndpoints(), jsonParams.containerEndpoints());

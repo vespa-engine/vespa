@@ -159,7 +159,6 @@ public class SessionPreparer {
         final PrepareParams params;
 
         final ApplicationId applicationId;
-        final Tags tags;
 
         /** The repository part of docker image to be used for this deployment */
         final Optional<DockerImage> dockerImageRepository;
@@ -191,7 +190,6 @@ public class SessionPreparer {
             this.applicationPackage = applicationPackage;
             this.sessionZooKeeperClient = sessionZooKeeperClient;
             this.applicationId = params.getApplicationId();
-            this.tags = params.tags();
             this.dockerImageRepository = params.dockerImageRepository();
             this.vespaVersion = params.vespaVersion().orElse(Vtag.currentVersion);
             this.containerEndpointsCache = new ContainerEndpointsCache(tenantPath, curator);
@@ -357,7 +355,6 @@ public class SessionPreparer {
             writeStateToZooKeeper(sessionZooKeeperClient,
                                   preprocessedApplicationPackage,
                                   applicationId,
-                                  tags,
                                   filereference,
                                   dockerImageRepository,
                                   vespaVersion,
@@ -399,7 +396,6 @@ public class SessionPreparer {
     private void writeStateToZooKeeper(SessionZooKeeperClient zooKeeperClient,
                                        ApplicationPackage applicationPackage,
                                        ApplicationId applicationId,
-                                       Tags tags,
                                        FileReference fileReference,
                                        Optional<DockerImage> dockerImageRepository,
                                        Version vespaVersion,
@@ -416,7 +412,6 @@ public class SessionPreparer {
             zkDeployer.deploy(applicationPackage, fileRegistryMap, allocatedHosts);
             // Note: When changing the below you need to also change similar calls in SessionRepository.createSessionFromExisting()
             zooKeeperClient.writeApplicationId(applicationId);
-            zooKeeperClient.writeTags(tags);
             zooKeeperClient.writeApplicationPackageReference(Optional.of(fileReference));
             zooKeeperClient.writeVespaVersion(vespaVersion);
             zooKeeperClient.writeDockerImageRepository(dockerImageRepository);

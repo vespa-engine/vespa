@@ -996,7 +996,7 @@ public class DeploymentTriggerTest {
     @Test
     void testUserInstancesNotInDeploymentSpec() {
         var app = tester.newDeploymentContext();
-        tester.controller().applications().createInstance(app.application().id().instance("user"), Tags.empty());
+        tester.controller().applications().createInstance(app.application().id().instance("user"));
         app.submit().deploy();
     }
 

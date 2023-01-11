@@ -7,7 +7,6 @@ import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.HostName;
 import com.yahoo.config.provision.RegionName;
 import com.yahoo.config.provision.SystemName;
-import com.yahoo.config.provision.Tags;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.config.provision.zone.RoutingMethod;
 import com.yahoo.config.provision.zone.ZoneApi;
@@ -371,7 +370,7 @@ public final class ControllerTester {
 
     public Application createApplication(String tenant, String applicationName, String instanceName) {
         Application application = createApplication(tenant, applicationName);
-        controller().applications().createInstance(application.id().instance(instanceName), Tags.empty());
+        controller().applications().createInstance(application.id().instance(instanceName));
         return application;
     }
 

@@ -10,7 +10,6 @@ import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.AthenzDomain;
 import com.yahoo.config.provision.CloudAccount;
 import com.yahoo.config.provision.DockerImage;
-import com.yahoo.config.provision.Tags;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.security.X509CertificateUtils;
@@ -42,7 +41,6 @@ public final class PrepareParams {
 
     static final String APPLICATION_NAME_PARAM_NAME = "applicationName";
     static final String INSTANCE_PARAM_NAME = "instance";
-    static final String TAGS_PARAM_NAME = "tags";
     static final String IGNORE_VALIDATION_PARAM_NAME = "ignoreValidationErrors";
     static final String DRY_RUN_PARAM_NAME = "dryRun";
     static final String VERBOSE_PARAM_NAME = "verbose";
@@ -59,7 +57,6 @@ public final class PrepareParams {
     static final String CLOUD_ACCOUNT = "cloudAccount";
 
     private final ApplicationId applicationId;
-    private final Tags tags;
     private final TimeoutBudget timeoutBudget;
     private final boolean ignoreValidationErrors;
     private final boolean dryRun;
@@ -78,7 +75,6 @@ public final class PrepareParams {
     private final Optional<CloudAccount> cloudAccount;
 
     private PrepareParams(ApplicationId applicationId,
-                          Tags tags,
                           TimeoutBudget timeoutBudget,
                           boolean ignoreValidationErrors,
                           boolean dryRun,
@@ -97,7 +93,6 @@ public final class PrepareParams {
                           Optional<CloudAccount> cloudAccount) {
         this.timeoutBudget = timeoutBudget;
         this.applicationId = Objects.requireNonNull(applicationId);
-        this.tags = tags;
         this.ignoreValidationErrors = ignoreValidationErrors;
         this.dryRun = dryRun;
         this.verbose = verbose;
@@ -124,7 +119,6 @@ public final class PrepareParams {
         private boolean force = false;
         private boolean waitForResourcesInPrepare = false;
         private ApplicationId applicationId = null;
-        private Tags tags = Tags.empty();
         private TimeoutBudget timeoutBudget = new TimeoutBudget(Clock.systemUTC(), Duration.ofSeconds(60));
         private Optional<Version> vespaVersion = Optional.empty();
         private List<ContainerEndpoint> containerEndpoints = null;
@@ -140,11 +134,6 @@ public final class PrepareParams {
 
         public Builder applicationId(ApplicationId applicationId) {
             this.applicationId = applicationId;
-            return this;
-        }
-
-        public Builder tags(Tags tags) {
-            this.tags = tags;
             return this;
         }
 
@@ -279,7 +268,6 @@ public final class PrepareParams {
 
         public PrepareParams build() {
             return new PrepareParams(applicationId,
-                                     tags,
                                      timeoutBudget,
                                      ignoreValidationErrors,
                                      dryRun,
@@ -306,7 +294,6 @@ public final class PrepareParams {
                             .verbose(request.getBooleanProperty(VERBOSE_PARAM_NAME))
                             .timeoutBudget(SessionHandler.getTimeoutBudget(request, barrierTimeout))
                             .applicationId(createApplicationId(request, tenant))
-                            .tags(Tags.fromString(request.getProperty(TAGS_PARAM_NAME)))
                             .vespaVersion(request.getProperty(VESPA_VERSION_PARAM_NAME))
                             .containerEndpoints(request.getProperty(CONTAINER_ENDPOINTS_PARAM_NAME))
                             .endpointCertificateMetadata(request.getProperty(ENDPOINT_CERTIFICATE_METADATA_PARAM_NAME))
@@ -329,7 +316,6 @@ public final class PrepareParams {
                 .verbose(booleanValue(params, VERBOSE_PARAM_NAME))
                 .timeoutBudget(SessionHandler.getTimeoutBudget(getTimeout(params, barrierTimeout)))
                 .applicationId(createApplicationId(params, tenant))
-                .tags(Tags.fromString(params.field(TAGS_PARAM_NAME).asString()))
                 .vespaVersion(SlimeUtils.optionalString(params.field(VESPA_VERSION_PARAM_NAME)).orElse(null))
                 .containerEndpointList(deserialize(params.field(CONTAINER_ENDPOINTS_PARAM_NAME), ContainerEndpointSerializer::endpointListFromSlime, List.of()))
                 .endpointCertificateMetadata(deserialize(params.field(ENDPOINT_CERTIFICATE_METADATA_PARAM_NAME), EndpointCertificateMetadataSerializer::fromSlime))
@@ -403,8 +389,6 @@ public final class PrepareParams {
     }
 
     public ApplicationId getApplicationId() { return applicationId; }
-
-    public Tags tags() { return tags; }
 
     /** Returns the Vespa version the nodes running the prepared system should have, or empty to use the system version */
     public Optional<Version> vespaVersion() { return vespaVersion; }

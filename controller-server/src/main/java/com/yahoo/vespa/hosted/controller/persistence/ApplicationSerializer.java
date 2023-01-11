@@ -8,8 +8,6 @@ import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.InstanceName;
 import com.yahoo.config.provision.RegionName;
-import com.yahoo.config.provision.SystemName;
-import com.yahoo.config.provision.Tags;
 import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.security.KeyUtils;
 import com.yahoo.slime.ArrayTraverser;
@@ -98,7 +96,6 @@ public class ApplicationSerializer {
 
     // Instance fields
     private static final String instanceNameField = "instanceName";
-    private static final String tagsField = "tags";
     private static final String deploymentsField = "deployments";
     private static final String deploymentJobsField = "deploymentJobs"; // TODO jonmv: clean up serialisation format
     private static final String assignedRotationsField = "assignedRotations";
@@ -186,7 +183,6 @@ public class ApplicationSerializer {
         for (Instance instance : application.instances().values()) {
             Cursor instanceObject = array.addObject();
             instanceObject.setString(instanceNameField, instance.name().value());
-            instanceObject.setString(tagsField, instance.tags().asString());
             deploymentsToSlime(instance.deployments().values(), instanceObject.setArray(deploymentsField));
             toSlime(instance.jobPauses(), instanceObject.setObject(deploymentJobsField));
             assignedRotationsToSlime(instance.rotations(), instanceObject);
@@ -383,14 +379,12 @@ public class ApplicationSerializer {
         List<Instance> instances = new ArrayList<>();
         field.traverse((ArrayTraverser) (name, object) -> {
             InstanceName instanceName = InstanceName.from(object.field(instanceNameField).asString());
-            Tags tags = Tags.fromString(object.field(tagsField).asString());
             List < Deployment > deployments = deploymentsFromSlime(object.field(deploymentsField), id.instance(instanceName));
             Map<JobType, Instant> jobPauses = jobPausesFromSlime(object.field(deploymentJobsField));
             List<AssignedRotation> assignedRotations = assignedRotationsFromSlime(object);
             RotationStatus rotationStatus = rotationStatusFromSlime(object);
             Change change = changeFromSlime(object.field(deployingField));
             instances.add(new Instance(id.instance(instanceName),
-                                       tags,
                                        deployments,
                                        jobPauses,
                                        assignedRotations,
