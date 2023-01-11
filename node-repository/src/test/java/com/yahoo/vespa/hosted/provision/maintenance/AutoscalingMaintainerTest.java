@@ -78,10 +78,20 @@ public class AutoscalingMaintainerTest {
         tester.maintainer().maintain();
         assertTrue(tester.deployer().lastDeployTime(app1).isEmpty()); // since autoscaling is off
         assertTrue(tester.deployer().lastDeployTime(app2).isPresent());
-        assertNotEquals(Load.zero(),
-                        tester.nodeRepository().applications().require(app1).cluster(cluster1.id()).get().target().peak());
-        assertNotEquals(Load.zero(),
-                        tester.nodeRepository().applications().require(app1).cluster(cluster1.id()).get().target().ideal());
+        Load peakAt90 = tester.nodeRepository().applications().require(app1).cluster(cluster1.id()).get().target().peak();
+        Load idealAt90 = tester.nodeRepository().applications().require(app1).cluster(cluster1.id()).get().target().ideal();
+        assertNotEquals(Load.zero(), peakAt90);
+        assertNotEquals(Load.zero(), idealAt90);
+
+        // Verify that load is updated even when there's no other change
+        tester.clock().advance(Duration.ofMinutes(10));
+        tester.addMeasurements(0.8f, 0.8f, 0.8f, 0, 500, app1, cluster1.id());
+        tester.maintainer().maintain();
+
+        Load peakAt80 = tester.nodeRepository().applications().require(app1).cluster(cluster1.id()).get().target().peak();
+        Load idealAt80 = tester.nodeRepository().applications().require(app1).cluster(cluster1.id()).get().target().ideal();
+        assertNotEquals(peakAt90, peakAt80);
+        assertNotEquals(idealAt90, idealAt80);
     }
 
     @Test
