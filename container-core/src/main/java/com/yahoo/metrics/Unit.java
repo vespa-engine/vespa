@@ -47,7 +47,7 @@ public enum Unit {
                 unit.shortName + "/" + perUnit.shortName;
     }
 
-    public enum BaseUnit {
+    private enum BaseUnit {
 
         BYTE("byte"),
         CONNECTION("connection"),
