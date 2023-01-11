@@ -146,7 +146,7 @@ protected:
     inline TypedCells get_vector(uint32_t docid, uint32_t subspace) const {
         return _vectors.get_vector(docid, subspace);
     }
-    inline VectorBundle get_vector_by_docid(uint32_t docid) const {
+    inline VectorBundle get_vectors(uint32_t docid) const {
         return _vectors.get_vectors(docid);
     }
 

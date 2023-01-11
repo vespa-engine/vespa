@@ -386,7 +386,7 @@ HnswIndex<type>::add_document(uint32_t docid)
 {
     vespalib::GenerationHandler::Guard no_guard_needed;
     PreparedAddDoc op(docid, std::move(no_guard_needed));
-    auto input_vectors = get_vector_by_docid(docid);
+    auto input_vectors = get_vectors(docid);
     auto subspaces = input_vectors.subspaces();
     op.nodes.reserve(subspaces);
     auto nodeids = _id_mapping.allocate_ids(docid, subspaces);
