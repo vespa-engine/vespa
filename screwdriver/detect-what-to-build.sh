@@ -19,7 +19,7 @@ COMMITS=$(jq -re '.[].sha' <<< "$JSON")
 
 FILES=$(for C in $COMMITS; do JSON=$(curl -sLf https://api.github.com/repos/vespa-engine/vespa/commits/$C); jq -re '.files[].filename' <<< "$JSON"; done)
 
-if [[ $PR_TITLE =~ \[run-systemtest\] ]]; then
+if ! [[ $PR_TITLE =~ \[skip-systemtest\] ]]; then
   SHOULD_BUILD=systemtest
 elif [[ -z $FILES ]]; then
   SHOULD_BUILD=all

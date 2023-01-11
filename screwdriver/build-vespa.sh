@@ -18,7 +18,7 @@ ccache -p
 
 if ! source $SOURCE_DIR/screwdriver/detect-what-to-build.sh; then
     echo "Could not detect what to build."
-    SHOULD_BUILD=all
+    SHOULD_BUILD=systemtest
 fi
 
 echo "Building: $SHOULD_BUILD"
