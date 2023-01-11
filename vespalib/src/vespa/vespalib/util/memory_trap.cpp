@@ -8,11 +8,8 @@
 #include <cstdlib>
 #include <cstring>
 #include <malloc.h>
-#ifdef __linux__
-#  define VESPA_HAS_MPROTECT
-#  include <unistd.h>
-#  include <sys/mman.h>
-#endif
+#include <unistd.h>
+#include <sys/mman.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".vespalib.util.memory_trap");
@@ -75,7 +72,7 @@ void MemoryRangeTrapper::verify_buffer_is_all_zeros() {
     }
 }
 
-#ifdef VESPA_HAS_MPROTECT
+#ifdef __linux__
 
 namespace {
 
@@ -146,7 +143,7 @@ void MemoryRangeTrapper::unprotect_buffer_to_read_and_write() {
     }
 }
 
-#else // VESPA_HAS_MPROTECT not defined, fall back to no-ops
+#else // Not on Linux, fall back to no-ops
 
 void MemoryRangeTrapper::rw_protect_buffer_if_possible() { /* no-op */ }
 bool MemoryRangeTrapper::hw_trapping_enabled() noexcept { return false; }
