@@ -240,4 +240,3 @@ org.junit.vintage:junit-vintage-engine:5.8.1
 org.mockito:mockito-core:4.0.0
 org.mockito:mockito-junit-jupiter:4.0.0
 org.objenesis:objenesis:3.2
-xmlunit:xmlunit:1.5
