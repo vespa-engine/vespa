@@ -122,17 +122,17 @@ public class VespaMetricSet {
         metrics.add(new Metric("handled.latency.sum"));
         metrics.add(new Metric("handled.latency.count"));
 
-        metrics.add(new Metric("serverRejectedRequests.rate"));
-        metrics.add(new Metric("serverRejectedRequests.count"));
+        metrics.add(new Metric("serverRejectedRequests.rate"));     // TODO: Remove on Vespa 9. Use jdisc.thread_pool.rejected_tasks.
+        metrics.add(new Metric("serverRejectedRequests.count"));    // TODO: Remove on Vespa 9. Use jdisc.thread_pool.rejected_tasks.
 
-        metrics.add(new Metric("serverThreadPoolSize.max"));
-        metrics.add(new Metric("serverThreadPoolSize.last"));
+        metrics.add(new Metric("serverThreadPoolSize.max"));        // TODO: Remove on Vespa 9. Use jdisc.thread_pool.size.
+        metrics.add(new Metric("serverThreadPoolSize.last"));       // TODO: Remove on Vespa 9. Use jdisc.thread_pool.size.
 
-        metrics.add(new Metric("serverActiveThreads.min"));
-        metrics.add(new Metric("serverActiveThreads.max"));
-        metrics.add(new Metric("serverActiveThreads.sum"));
-        metrics.add(new Metric("serverActiveThreads.count"));
-        metrics.add(new Metric("serverActiveThreads.last"));
+        metrics.add(new Metric("serverActiveThreads.min"));         // TODO: Remove on Vespa 9. Use jdisc.thread_pool.active_threads.
+        metrics.add(new Metric("serverActiveThreads.max"));         // TODO: Remove on Vespa 9. Use jdisc.thread_pool.active_threads.
+        metrics.add(new Metric("serverActiveThreads.sum"));         // TODO: Remove on Vespa 9. Use jdisc.thread_pool.active_threads.
+        metrics.add(new Metric("serverActiveThreads.count"));       // TODO: Remove on Vespa 9. Use jdisc.thread_pool.active_threads.
+        metrics.add(new Metric("serverActiveThreads.last"));        // TODO: Remove on Vespa 9. Use jdisc.thread_pool.active_threads.
 
         metrics.add(new Metric("serverNumOpenConnections.average"));
         metrics.add(new Metric("serverNumOpenConnections.max"));
