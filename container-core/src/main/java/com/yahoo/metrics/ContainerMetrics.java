@@ -33,6 +33,18 @@ public enum ContainerMetrics {
 
     SERVER_NUM_CONNECTIONS("serverNumConnections", Unit.CONNECTION, "The total number of connections opened");
 
+    HTTPAPI_LATENCY("httpapi_latency", Unit.MILLISECOND, "Duration for requests to the HTTP document APIs");
+    HTTPAPI_PENDING("httpapi_pending", Unit.OPERATION, "Document operations pending execution");
+    HTTPAPI_NUM_OPERATIONS("httpapi_num_operations", Unit.OPERATION, "Total number of document operations performed");
+    HTTPAPI_NUM_UPDATES("httpapi_num_updates", Unit.OPERATION, "Document update operations performed");
+    HTTPAPI_NUM_REMOVES("httpapi_num_removes", Unit.OPERATION, "Document remove operations performed");
+    HTTPAPI_NUM_PUTS("httpapi_num_puts", Unit.OPERATION, "Document put operations performed");
+    HTTPAPI_SUCCEEDED("httpapi_succeeded", Unit.OPERATION, "Document operations that succeeded");
+    HTTPAPI_FAILED("httpapi_failed", Unit.OPERATION, "Document operations that failed");
+    HTTPAPI_PARSE_ERROR("httpapi_parse_error", Unit.OPERATION, "Document operations that failed due to document parse errors");
+    HTTPAPI_CONDITION_NOT_MET("httpapi_condition_not_met", Unit.OPERATION, "Document operations not applied due to condition not met");
+    HTTPAPI_NOT_FOUND("httpapi_not_found", Unit.OPERATION, "Document operations not applied due to document not found");
+    
     private final String name;
     private final Unit unit;
     private final String description;
