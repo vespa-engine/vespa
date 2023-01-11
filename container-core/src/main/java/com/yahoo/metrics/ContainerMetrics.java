@@ -10,7 +10,11 @@ public enum ContainerMetrics {
     HTTP_STATUS_3XX("http.status.3xx", Unit.RESPONSE, "Number of responses with a 3xx status"),
     HTTP_STATUS_4XX("http.status.4xx", Unit.RESPONSE, "Number of responses with a 4xx status"),
     HTTP_STATUS_5XX("http.status.5xx", Unit.RESPONSE, "Number of responses with a 5xx status"),
+
     JDISC_GC_MS("jdisc.gc.ms", Unit.MILLISECOND, "Time spent in garbage collection"),
+
+    JDISC_HTTP_REQUESTS_STATUS("jdisc.http.requests.status", Unit.RESPONSE,
+            "Number of requests to the built-in status handler"),
 
     JDISC_THREAD_POOL_UNHANDLED_EXCEPTIONS("jdisc.thread_pool.unhandled_exceptions", Unit.THREAD,
             "Number of exceptions thrown by tasks"),

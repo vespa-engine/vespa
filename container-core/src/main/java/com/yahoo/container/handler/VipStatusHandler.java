@@ -19,6 +19,8 @@ import com.yahoo.container.jdisc.HttpResponse;
 import com.yahoo.container.jdisc.ThreadedHttpRequestHandler;
 import com.yahoo.jdisc.Metric;
 import java.util.logging.Level;
+
+import com.yahoo.metrics.ContainerMetrics;
 import com.yahoo.text.Utf8;
 import com.yahoo.vespa.defaults.Defaults;
 
@@ -31,7 +33,7 @@ import com.yahoo.vespa.defaults.Defaults;
  */
 public final class VipStatusHandler extends ThreadedHttpRequestHandler {
 
-    private static final String NUM_REQUESTS_METRIC = "jdisc.http.requests.status";
+    private static final String NUM_REQUESTS_METRIC = ContainerMetrics.JDISC_HTTP_REQUESTS_STATUS.baseName();
 
     private final boolean accessDisk;
     private final File statusFile;
