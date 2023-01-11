@@ -54,6 +54,7 @@ vespa_add_library(vespalib_vespalib_util OBJECT
     lz4compressor.cpp
     malloc_mmap_guard.cpp
     md5.c
+    memory_trap.cpp
     memoryusage.cpp
     mmap_file_allocator.cpp
     mmap_file_allocator_factory.cpp
