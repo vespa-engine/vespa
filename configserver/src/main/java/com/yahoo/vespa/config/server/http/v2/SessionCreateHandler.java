@@ -6,7 +6,6 @@ import com.yahoo.cloud.config.ConfigserverConfig;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ApplicationName;
 import com.yahoo.config.provision.InstanceName;
-import com.yahoo.config.provision.Tags;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.container.jdisc.HttpResponse;
@@ -64,7 +63,6 @@ public class SessionCreateHandler extends SessionHandler {
             // TODO: Avoid using application id here at all
             ApplicationId applicationId = ApplicationId.from(tenantName, ApplicationName.defaultName(), InstanceName.defaultName());
             sessionId = applicationRepository.createSession(applicationId,
-                                                            Tags.empty(),
                                                             timeoutBudget,
                                                             request.getData(),
                                                             request.getHeader(ApplicationApiHandler.contentTypeHeader),

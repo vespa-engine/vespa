@@ -22,7 +22,6 @@ import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.HostName;
 import com.yahoo.config.provision.InstanceName;
 import com.yahoo.config.provision.NodeResources;
-import com.yahoo.config.provision.Tags;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.config.provision.zone.RoutingMethod;
 import com.yahoo.config.provision.zone.ZoneId;
@@ -31,7 +30,6 @@ import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.container.jdisc.HttpResponse;
 import com.yahoo.container.jdisc.ThreadedHttpRequestHandler;
 import com.yahoo.io.IOUtils;
-import com.yahoo.jdisc.Response;
 import com.yahoo.jdisc.http.filter.security.misc.User;
 import com.yahoo.restapi.ByteArrayResponse;
 import com.yahoo.restapi.ErrorResponse;
@@ -2129,7 +2127,7 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
         if (controller.applications().getApplication(applicationId).isEmpty())
             createApplication(tenantName, applicationName, request);
 
-        controller.applications().createInstance(applicationId.instance(instanceName), Tags.empty());
+        controller.applications().createInstance(applicationId.instance(instanceName));
 
         Slime slime = new Slime();
         toSlime(applicationId.instance(instanceName), slime.setObject(), request);

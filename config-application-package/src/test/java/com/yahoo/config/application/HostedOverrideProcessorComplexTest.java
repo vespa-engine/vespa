@@ -1,15 +1,18 @@
 package com.yahoo.config.application;
 
+import com.yahoo.config.application.api.ApplicationPackage;
+import com.yahoo.config.application.api.DeploymentInstanceSpec;
+import com.yahoo.config.application.api.xml.DeploymentSpecXmlReader;
+import com.yahoo.config.model.application.provider.FilesApplicationPackage;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.InstanceName;
 import com.yahoo.config.provision.RegionName;
 import com.yahoo.config.provision.Tags;
-import com.yahoo.io.IOUtils;
-import org.custommonkey.xmlunit.XMLUnit;
 import org.junit.Test;
 import org.w3c.dom.Document;
 
 import javax.xml.transform.TransformerException;
+import java.io.File;
 import java.io.IOException;
 
 import static org.junit.Assert.assertEquals;
@@ -17,10 +20,6 @@ import static org.junit.Assert.assertEquals;
 public class HostedOverrideProcessorComplexTest {
 
     private static final String servicesFile = "src/test/resources/complex-app/services.xml";
-
-    static {
-        XMLUnit.setIgnoreWhitespace(true);
-    }
 
     @Test
     public void testProdBetaUsWest2a() throws TransformerException, IOException {
@@ -62,7 +61,6 @@ public class HostedOverrideProcessorComplexTest {
         assertOverride(InstanceName.from("beta1"),
                        Environment.prod,
                        RegionName.from("aws-us-west-2a"),
-                       Tags.fromString("beta beta-prod beta-prod-cd"),
                        expected);
     }
 
@@ -106,12 +104,16 @@ public class HostedOverrideProcessorComplexTest {
         assertOverride(InstanceName.from("beta1"),
                        Environment.prod,
                        RegionName.from("aws-us-east-1b"),
-                       Tags.fromString("beta beta-prod beta-prod-cd"),
                        expected);
     }
 
-    private void assertOverride(InstanceName instance, Environment environment, RegionName region, Tags tags, String expected) throws TransformerException, IOException {
-        Document inputDoc = Xml.getDocument(IOUtils.createReader(servicesFile));
+    private void assertOverride(InstanceName instance, Environment environment, RegionName region, String expected) throws TransformerException {
+        ApplicationPackage app = FilesApplicationPackage.fromFile(new File(servicesFile).getParentFile());
+        Document inputDoc = Xml.getDocument(app.getServices());
+        Tags tags = app.getDeployment()
+                       .map(new DeploymentSpecXmlReader(false)::read)
+                       .flatMap(spec -> spec.instance(instance).map(DeploymentInstanceSpec::tags))
+                       .orElse(Tags.empty());
         Document newDoc = new OverrideProcessor(instance, environment, region, tags).process(inputDoc);
         assertEquals(expected, Xml.documentAsString(newDoc, true));
     }

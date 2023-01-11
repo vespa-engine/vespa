@@ -41,34 +41,40 @@ public class FilesApplicationPackageTest {
         ApplicationPackage processed = app.preprocess(new Zone(Environment.dev, RegionName.defaultName()),
                                                       new BaseDeployLogger());
         assertTrue(new File(appDir, ".preprocessed").exists());
-        String expectedServices = "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"no\"?><services xmlns:deploy=\"vespa\" xmlns:preprocess=\"properties\" version=\"1.0\">\n" +
-                "    <admin version=\"2.0\">\n" +
-                "        <adminserver hostalias=\"node0\"/>\n" +
-                "    </admin>\n" +
-                "    <content id=\"foo\" version=\"1.0\">\n" +
-                "      <redundancy>1</redundancy>\n" +
-                "      <documents>\n" +
-                "        <document mode=\"index\" type=\"music.sd\"/>\n" +
-                "      </documents>\n" +
-                "      <nodes>\n" +
-                "        <node distribution-key=\"0\" hostalias=\"node0\"/>\n" +
-                "      </nodes>\n" +
-                "    </content>\n" +
-                "    <container id=\"stateless\" version=\"1.0\">\n" +
-                "      <search/>\n" +
-                "      <component bundle=\"foobundle\" class=\"MyFoo\" id=\"foo\"/>\n" +
-                "      <component bundle=\"foobundle\" class=\"TestBar\" id=\"bar\"/>\n" +
-                "      <nodes>\n" +
-                "        <node hostalias=\"node0\" baseport=\"5000\"/>\n" +
-                "      </nodes>\n" +
-                "    </container>\n" +
-                "</services>";
+        String expectedServices = """
+                                  <?xml version="1.0" encoding="UTF-8" standalone="no"?>
+                                  <!-- Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. -->
+                                  <services xmlns:deploy="vespa" xmlns:preprocess="properties" version="1.0">
+                                      <admin version="2.0">
+                                          <adminserver hostalias="node0"/>
+                                      </admin>
+                                      <content id="foo" version="1.0">
+                                        <redundancy>1</redundancy>
+                                        <documents>
+                                          <document mode="index" type="music.sd"/>
+                                        </documents>
+                                        <nodes>
+                                          <node distribution-key="0" hostalias="node0"/>
+                                        </nodes>
+                                      </content>
+                                      <container id="stateless" version="1.0">
+                                        <search/>
+                                        <component bundle="foobundle" class="MyFoo" id="foo"/>
+                                        <component bundle="foobundle" class="TestBar" id="bar"/>
+                                        <nodes>
+                                          <node hostalias="node0" baseport="5000"/>
+                                        </nodes>
+                                      </container>
+                                  </services>""";
         TestBase.assertDocument(expectedServices, processed.getServices());
-        String expectedHosts = "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"no\"?><hosts xmlns:deploy=\"vespa\" xmlns:preprocess=\"properties\">\n" +
-                "    <host name=\"bar.yahoo.com\">\n" +
-                "        <alias>node1</alias>\n" +
-                "    </host>\n" +
-                "</hosts>";
+        String expectedHosts = """
+                               <?xml version="1.0" encoding="UTF-8" standalone="no"?>
+                               <!-- Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. -->
+                               <hosts xmlns:deploy="vespa" xmlns:preprocess="properties">
+                                   <host name="bar.yahoo.com">
+                                       <alias>node1</alias>
+                                   </host>
+                               </hosts>""";
         TestBase.assertDocument(expectedHosts, processed.getHosts());
     }
 

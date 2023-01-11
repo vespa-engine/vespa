@@ -142,7 +142,6 @@ public class FilesApplicationPackage extends AbstractApplicationPackage {
                                        deployData.getDeployTimestamp(),
                                        deployData.isInternalRedeploy(),
                                        deployData.getApplicationId(),
-                                       deployData.getTags(),
                                        computeCheckSum(appDir),
                                        deployData.getGeneration(),
                                        deployData.getCurrentlyActiveGeneration());
@@ -489,7 +488,6 @@ public class FilesApplicationPackage extends AbstractApplicationPackage {
                                                                       ApplicationId.from(TenantName.defaultName(),
                                                                                          ApplicationName.from(originalAppDir),
                                                                                          InstanceName.defaultName()),
-                                                                      Tags.empty(),
                                                                       "",
                                                                       0L,
                                                                       0L);
