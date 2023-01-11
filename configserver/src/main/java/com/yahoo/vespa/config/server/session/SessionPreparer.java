@@ -11,9 +11,7 @@ import com.yahoo.config.application.XmlPreProcessor;
 import com.yahoo.config.application.api.ApplicationMetaData;
 import com.yahoo.config.application.api.ApplicationPackage;
 import com.yahoo.config.application.api.DeployLogger;
-import com.yahoo.config.application.api.DeploymentInstanceSpec;
 import com.yahoo.config.application.api.FileRegistry;
-import com.yahoo.config.application.api.xml.DeploymentSpecXmlReader;
 import com.yahoo.config.model.api.ConfigDefinitionRepo;
 import com.yahoo.config.model.api.ContainerEndpoint;
 import com.yahoo.config.model.api.EndpointCertificateMetadata;
@@ -26,7 +24,6 @@ import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.AthenzDomain;
 import com.yahoo.config.provision.CloudAccount;
 import com.yahoo.config.provision.DockerImage;
-import com.yahoo.config.provision.InstanceName;
 import com.yahoo.config.provision.Tags;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.container.jdisc.secretstore.SecretStore;
@@ -270,17 +267,11 @@ public class SessionPreparer {
             File hostsXml = applicationPackage.getFileReference(Path.fromString("hosts.xml"));
 
             // Validate after doing our own preprocessing on these two files
-            ApplicationMetaData meta = applicationPackage.getMetaData();
-            InstanceName instance = meta.getApplicationId().instance();
-            Tags tags = applicationPackage.getDeployment().map(new DeploymentSpecXmlReader(false)::read)
-                                          .flatMap(spec -> spec.instance(instance))
-                                          .map(DeploymentInstanceSpec::tags)
-                                          .orElse(Tags.empty());
-            if (servicesXml.exists()) {
-                vespaPreprocess(applicationPackageDir.getAbsoluteFile(), servicesXml, meta, tags);
+            if(servicesXml.exists()) {
+                vespaPreprocess(applicationPackageDir.getAbsoluteFile(), servicesXml, applicationPackage.getMetaData());
             }
-            if (hostsXml.exists()) {
-                vespaPreprocess(applicationPackageDir.getAbsoluteFile(), hostsXml, meta, tags);
+            if(hostsXml.exists()) {
+                vespaPreprocess(applicationPackageDir.getAbsoluteFile(), hostsXml, applicationPackage.getMetaData());
             }
 
             if (zone.system().isPublic()) {
@@ -324,15 +315,14 @@ public class SessionPreparer {
             }
         }
 
-        void vespaPreprocess(File appDir, File inputXml, ApplicationMetaData metaData, Tags tags) {
+        void vespaPreprocess(File appDir, File inputXml, ApplicationMetaData metaData) {
             try {
-                InstanceName instance = metaData.getApplicationId().instance();
                 new XmlPreProcessor(appDir,
                                     inputXml,
-                                    instance,
+                                    metaData.getApplicationId().instance(),
                                     zone.environment(),
                                     zone.region(),
-                                    tags)
+                                    metaData.getTags())
                         .run();
             } catch (ParserConfigurationException | IOException | SAXException | TransformerException e) {
                 throw new RuntimeException(e);
