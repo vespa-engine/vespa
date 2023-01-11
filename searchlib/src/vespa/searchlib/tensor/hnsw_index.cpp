@@ -631,12 +631,12 @@ HnswIndex<type>::compact_level_arrays(CompactionSpec compaction_spec, const Comp
     auto compacting_buffers = _graph.levels_store.start_compact_worst_buffers(compaction_spec, compaction_strategy);
     uint32_t nodeid_limit = _graph.nodes.size();
     auto filter = compacting_buffers->make_entry_ref_filter();
-    vespalib::ArrayRef<NodeType> refs(&_graph.nodes[0], nodeid_limit);
-    for (auto& ref : refs) {
-        auto levels_ref = ref.levels_ref().load_relaxed();
+    vespalib::ArrayRef<NodeType> nodes(&_graph.nodes[0], nodeid_limit);
+    for (auto& node : nodes) {
+        auto levels_ref = node.levels_ref().load_relaxed();
         if (levels_ref.valid() && filter.has(levels_ref)) {
             EntryRef new_levels_ref = _graph.levels_store.move_on_compact(levels_ref);
-            ref.levels_ref().store_release(new_levels_ref);
+            node.levels_ref().store_release(new_levels_ref);
         }
     }
     compacting_buffers->finish();
