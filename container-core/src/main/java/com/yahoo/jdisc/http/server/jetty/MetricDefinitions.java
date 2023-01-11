@@ -32,7 +32,7 @@ class MetricDefinitions {
     static final String NUM_BYTES_RECEIVED = "serverBytesReceived";
     static final String NUM_BYTES_SENT     = "serverBytesSent";
 
-    static final String NUM_CONNECTIONS = "serverNumConnections";
+    static final String NUM_CONNECTIONS = ContainerMetrics.SERVER_NUM_CONNECTIONS.baseName();
 
     /* For historical reasons, these are all aliases for the same metric. 'jdisc.http' should ideally be the only one. */
     static final String JDISC_HTTP_REQUESTS = "jdisc.http.requests";

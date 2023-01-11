@@ -44,7 +44,10 @@ public enum ContainerMetrics {
     JETTY_THREADPOOL_TOTAL_THREADS("jdisc.http.jetty.threadpool.thread.total", Unit.THREAD,
             "Current number of threads"),
     JETTY_THREADPOOL_QUEUE_SIZE("jdisc.http.jetty.threadpool.queue.size", Unit.THREAD,
-            "Current size of the job queue");
+            "Current size of the job queue"),
+
+    SERVER_NUM_CONNECTIONS("serverNumConnections", Unit.RESPONSE,
+            "The total number of connections opened");
 
     private final String name;
     private final Unit unit;
