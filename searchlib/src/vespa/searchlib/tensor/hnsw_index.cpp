@@ -726,8 +726,8 @@ template <HnswIndexType type>
 void
 HnswIndex<type>::populate_address_space_usage(search::AddressSpaceUsage& usage) const
 {
-    usage.set(AddressSpaceComponents::hnsw_node_store, _graph.levels_store.addressSpaceUsage());
-    usage.set(AddressSpaceComponents::hnsw_link_store, _graph.links_store.addressSpaceUsage());
+    usage.set(AddressSpaceComponents::hnsw_levels_store, _graph.levels_store.addressSpaceUsage());
+    usage.set(AddressSpaceComponents::hnsw_links_store, _graph.links_store.addressSpaceUsage());
 }
 
 template <HnswIndexType type>
