@@ -194,6 +194,7 @@ vespa_define_module(
     src/tests/util/generationhandler_stress
     src/tests/util/hamming
     src/tests/util/md5
+    src/tests/util/memory_trap
     src/tests/util/mmap_file_allocator
     src/tests/util/mmap_file_allocator_factory
     src/tests/util/rcuvector
