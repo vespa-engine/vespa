@@ -28,8 +28,10 @@ import com.yahoo.vespa.hosted.controller.deployment.ZipBuilder;
 import com.yahoo.yolean.Exceptions;
 
 import java.io.ByteArrayInputStream;
+import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
+import java.io.UncheckedIOException;
 import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -220,11 +222,16 @@ public class ApplicationPackage {
     // Hashes all files and settings that require a deployment to be forwarded to configservers
     private String calculateBundleHash(byte[] zippedContent) {
         Predicate<String> entryMatcher = name -> ! name.endsWith(deploymentFile) && ! name.endsWith(buildMetaFile);
-        SortedMap<String, Long> crcByEntry = new TreeMap<>();
         Options options = Options.standard().pathPredicate(entryMatcher);
         HashingOutputStream hashOut = new HashingOutputStream(Hashing.murmur3_128(-1), OutputStream.nullOutputStream());
+        ArchiveFile file;
         try (ArchiveStreamReader reader = ArchiveStreamReader.ofZip(new ByteArrayInputStream(zippedContent), options)) {
-            while (reader.readNextTo(hashOut) != null);
+            while ((file = reader.readNextTo(hashOut)) != null) {
+                hashOut.write(file.path().toString().getBytes(UTF_8));
+            }
+        }
+        catch (IOException e) {
+            throw new UncheckedIOException(e);
         }
         return hasher().putLong(hashOut.hash().asLong())
                        .putInt(deploymentSpec.deployableHashCode())
