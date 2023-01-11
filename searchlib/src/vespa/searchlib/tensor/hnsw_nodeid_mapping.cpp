@@ -122,7 +122,7 @@ get_docid_limit(vespalib::ConstArrayRef<HnswNode> nodes)
 {
     uint32_t max_docid = 0;
     for (auto& node : nodes) {
-        if (node.ref().load_relaxed().valid()) {
+        if (node.levels_ref().load_relaxed().valid()) {
             max_docid = std::max(node.acquire_docid(), max_docid);
         }
     }
@@ -135,7 +135,7 @@ make_subspaces_histogram(vespalib::ConstArrayRef<HnswNode> nodes, uint32_t docid
     // Make histogram
     std::vector<uint32_t> histogram(docid_limit);
     for (auto& node : nodes) {
-        if (node.ref().load_relaxed().valid()) {
+        if (node.levels_ref().load_relaxed().valid()) {
             auto docid = node.acquire_docid();
             auto subspace = node.acquire_subspace();
             auto &num_subspaces = histogram[docid];
@@ -171,7 +171,7 @@ HnswNodeidMapping::populate_docid_to_nodeids_mapping_and_free_list(vespalib::Con
 {
     uint32_t nodeid = 0;
     for (auto& node : nodes) {
-        if (node.ref().load_relaxed().valid()) {
+        if (node.levels_ref().load_relaxed().valid()) {
             auto docid = node.acquire_docid();
             auto subspace = node.acquire_subspace();
             auto nodeids = _nodeids.get_writable(_refs[docid]);
@@ -207,7 +207,7 @@ HnswNodeidMapping::on_load(vespalib::ConstArrayRef<HnswNode> nodes)
         return;
     }
     // Check that reserved nodeid is not used
-    assert(!nodes[0].ref().load_relaxed().valid());
+    assert(!nodes[0].levels_ref().load_relaxed().valid());
     auto docid_limit = get_docid_limit(nodes);
     auto histogram = make_subspaces_histogram(nodes, docid_limit);    // Allocate mapping from docid to nodeids
     allocate_docid_to_nodeids_mapping(std::move(histogram));

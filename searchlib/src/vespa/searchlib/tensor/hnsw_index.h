@@ -65,7 +65,7 @@ public:
         if constexpr (NodeType::identity_mapping) {
             return nodeid;
         } else {
-            return _graph.node_refs.acquire_elem_ref(nodeid).acquire_docid();
+            return _graph.nodes.acquire_elem_ref(nodeid).acquire_docid();
         }
     }
 
@@ -76,9 +76,9 @@ protected:
     using GraphType = HnswGraph<type>;
     using NodeType = typename GraphType::NodeType;
     using AtomicEntryRef = vespalib::datastore::AtomicEntryRef;
-    using NodeStore = typename GraphType::NodeStore;
+    using LevelArrayStore = typename GraphType::LevelArrayStore;
 
-    using LinkStore = typename GraphType::LinkStore;
+    using LinkArrayStore = typename GraphType::LinkArrayStore;
     using LinkArrayRef = typename GraphType::LinkArrayRef;
     using LinkArray = std::vector<uint32_t, vespalib::allocator_large<uint32_t>>;
 
@@ -137,7 +137,7 @@ protected:
         if constexpr (NodeType::identity_mapping) {
             return _vectors.get_vector(nodeid, 0);
         } else {
-            auto& ref = _graph.node_refs.acquire_elem_ref(nodeid);
+            auto& ref = _graph.nodes.acquire_elem_ref(nodeid);
             uint32_t docid = ref.acquire_docid();
             uint32_t subspace = ref.acquire_subspace();
             return _vectors.get_vector(docid, subspace);
@@ -259,8 +259,8 @@ public:
     GraphType& get_graph() { return _graph; }
     IdMapping& get_id_mapping() { return _id_mapping; }
 
-    static vespalib::datastore::ArrayStoreConfig make_default_node_store_config();
-    static vespalib::datastore::ArrayStoreConfig make_default_link_store_config();
+    static vespalib::datastore::ArrayStoreConfig make_default_level_array_store_config();
+    static vespalib::datastore::ArrayStoreConfig make_default_link_array_store_config();
 };
 
 }
