@@ -22,6 +22,11 @@ public class AthenzDomain {
         this.name = name;
     }
 
+    public AthenzDomain(AthenzDomain parentDomain, String subdomain) {
+        validateName(parentDomain.getName() + "." + subdomain);
+        this.name = parentDomain.getName() + "." + subdomain;
+    }
+
     private static void validateName(String name) {
         if (!NAME_PATTERN.matcher(name).matches()) {
             throw new IllegalArgumentException("Not a valid domain name: '" + name + "'");
