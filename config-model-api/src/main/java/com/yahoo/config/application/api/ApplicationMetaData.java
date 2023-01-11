@@ -57,6 +57,9 @@ public class ApplicationMetaData {
     @Deprecated // TODO: Remove in Vespa 9
     public String getDeployedByUser() { return "unknown"; }
 
+    @Deprecated // TODO: Remove in Vespa 9
+    public Tags getTags() { return Tags.empty(); }
+
     /**
      * Gets the directory where the application was deployed from.
      * Will return null if a problem occurred while getting metadata

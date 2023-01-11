@@ -8,7 +8,7 @@ import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.InstanceName;
 import com.yahoo.config.provision.RegionName;
 import com.yahoo.config.provision.Tags;
-import org.custommonkey.xmlunit.XMLUnit;
+
 import org.junit.Test;
 import org.w3c.dom.Document;
 
