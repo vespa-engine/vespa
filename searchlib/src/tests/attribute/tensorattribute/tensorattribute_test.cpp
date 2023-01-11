@@ -976,8 +976,8 @@ TEST_F("Populates address space usage", DenseTensorAttributeHnswIndex)
     const auto& all = usage.get_all();
     EXPECT_EQUAL(3u, all.size());
     EXPECT_EQUAL(1u, all.count("tensor-store"));
-    EXPECT_EQUAL(1u, all.count("hnsw-node-store"));
-    EXPECT_EQUAL(1u, all.count("hnsw-link-store"));
+    EXPECT_EQUAL(1u, all.count("hnsw-levels-store"));
+    EXPECT_EQUAL(1u, all.count("hnsw-links-store"));
 }
 
 
