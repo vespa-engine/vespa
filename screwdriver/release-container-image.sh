@@ -49,7 +49,10 @@ docker context use vespa-context
 docker buildx create --name vespa-builder --driver docker-container --use
 docker buildx inspect --bootstrap
 
-for data in "Dockerfile vespa" "Dockerfile.minimal vespa-minimal"; do
+#The minimal image seem to have issues building on cd.screwdriver.cd. Needs investigation.
+#for data in "Dockerfile vespa" "Dockerfile.minimal vespa-minimal"; do
+
+for data in "Dockerfile vespa"; do
     set -- $data
     DOCKER_FILE=$1
     IMAGE_NAME=$2
