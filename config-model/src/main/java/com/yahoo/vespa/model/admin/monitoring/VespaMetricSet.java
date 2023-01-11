@@ -137,9 +137,9 @@ public class VespaMetricSet {
         metrics.add(new Metric("serverNumOpenConnections.average"));
         metrics.add(new Metric("serverNumOpenConnections.max"));
         metrics.add(new Metric("serverNumOpenConnections.last"));
-        metrics.add(new Metric("serverNumConnections.average"));
-        metrics.add(new Metric("serverNumConnections.max"));
-        metrics.add(new Metric("serverNumConnections.last"));
+        metrics.add(new Metric(ContainerMetrics.SERVER_NUM_CONNECTIONS.average()));
+        metrics.add(new Metric(ContainerMetrics.SERVER_NUM_CONNECTIONS.max()));
+        metrics.add(new Metric(ContainerMetrics.SERVER_NUM_CONNECTIONS.last()));
 
         metrics.add(new Metric("serverBytesReceived.sum"));
         metrics.add(new Metric("serverBytesReceived.count"));

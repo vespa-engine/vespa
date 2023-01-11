@@ -6,6 +6,7 @@ package com.yahoo.metrics;
 public enum Unit {
 
     BYTE(BaseUnit.BYTE),
+    CONNECTION(BaseUnit.CONNECTION),
     DOCUMENT(BaseUnit.DOCUMENT),
     DOCUMENT_PER_SECOND(BaseUnit.DOCUMENT, BaseUnit.SECOND),
     FRACTION(BaseUnit.FRACTION),
@@ -15,6 +16,7 @@ public enum Unit {
     OPERATION_PER_SECOND(BaseUnit.OPERATION, BaseUnit.SECOND),
     QUERY(BaseUnit.QUERY),
     QUERY_PER_SECOND(BaseUnit.QUERY, BaseUnit.SECOND),
+    REQUEST(BaseUnit.REQUEST),
     RESPONSE(BaseUnit.RESPONSE),
     RESPONSE_PER_SECOND(BaseUnit.RESPONSE, BaseUnit.SECOND),
     SECOND(BaseUnit.SECOND),
@@ -45,15 +47,17 @@ public enum Unit {
                 unit.shortName + "/" + perUnit.shortName;
     }
 
-    public enum BaseUnit {
+    private enum BaseUnit {
 
         BYTE("byte"),
+        CONNECTION("connection"),
         DOCUMENT("document"),
         FRACTION("fraction"),
         HIT("hit"),
         MILLISECOND("millisecond", "ms"),
         OPERATION("operation"),
         QUERY("query"),
+        REQUEST("request"),
         RESPONSE("response"),
         SECOND("second", "s"),
         THREAD("thread");
