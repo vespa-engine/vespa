@@ -1359,12 +1359,9 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
             toSlime(cluster.min(), clusterObject.setObject("min"));
             toSlime(cluster.max(), clusterObject.setObject("max"));
             toSlime(cluster.current(), clusterObject.setObject("current"));
-            toSlime(cluster.target(), cluster, clusterObject.setObject("target"));
-            toSlime(cluster.suggested(), cluster, clusterObject.setObject("suggested"));
-            legacyUtilizationToSlime(cluster.target().peak(), cluster.target().ideal(), clusterObject.setObject("utilization")); // TODO: Remove after January 2023
+            toSlime(cluster.target(), clusterObject.setObject("target"));
+            toSlime(cluster.suggested(), clusterObject.setObject("suggested"));
             scalingEventsToSlime(cluster.scalingEvents(), clusterObject.setArray("scalingEvents"));
-            clusterObject.setString("autoscalingStatusCode", cluster.target().status()); // TODO: Remove after January 2023
-            clusterObject.setString("autoscalingStatus", cluster.target().description()); // TODO: Remove after January 2023
             clusterObject.setLong("scalingDuration", cluster.scalingDuration().toMillis());
         }
         return new SlimeJsonResponse(slime);
@@ -2711,12 +2708,7 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
         object.setDouble("cost", cost);
     }
 
-    private void toSlime(Cluster.Autoscaling autoscaling, Cluster cluster, Cursor autoscalingObject) {
-        // TODO: Remove after January 2023
-        if (autoscaling.resources().isPresent()
-            && ! autoscaling.resources().get().justNumbers().equals(cluster.current().justNumbers()))
-            toSlime(autoscaling.resources().get(), autoscalingObject);
-
+    private void toSlime(Cluster.Autoscaling autoscaling, Cursor autoscalingObject) {
         autoscalingObject.setString("status", autoscaling.status());
         autoscalingObject.setString("description", autoscaling.description());
         autoscaling.resources().ifPresent(resources -> toSlime(resources, autoscalingObject.setObject("resources")));
@@ -2729,17 +2721,6 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
         loadObject.setDouble("cpu", load.cpu());
         loadObject.setDouble("memory", load.memory());
         loadObject.setDouble("disk", load.disk());
-    }
-
-    private void legacyUtilizationToSlime(Load peak, Load ideal, Cursor utilizationObject) {
-        utilizationObject.setDouble("idealCpu", ideal.cpu());
-        utilizationObject.setDouble("peakCpu", peak.cpu());
-
-        utilizationObject.setDouble("idealMemory", ideal.memory());
-        utilizationObject.setDouble("peakMemory", peak.memory());
-
-        utilizationObject.setDouble("idealDisk", ideal.disk());
-        utilizationObject.setDouble("peakDisk", peak.disk());
     }
 
     private void scalingEventsToSlime(List<Cluster.ScalingEvent> scalingEvents, Cursor scalingEventsArray) {

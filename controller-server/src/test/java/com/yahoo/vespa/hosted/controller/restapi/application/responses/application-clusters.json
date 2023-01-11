@@ -42,17 +42,6 @@
         "cost": 0.22
       },
       "target": {
-        "nodes": 2,
-        "groups": 1,
-        "nodeResources": {
-          "vcpu": 3.0,
-          "memoryGb": 8.0,
-          "diskGb": 50.0,
-          "bandwidthGbps": 1.0,
-          "diskSpeed": "slow",
-          "storageType": "remote"
-        },
-        "cost": 0.29,
         "status": "ideal",
         "description": "Cluster is ideally scaled",
         "resources": {
@@ -95,14 +84,6 @@
           "disk": 0.0
         }
       },
-      "utilization": {
-        "idealCpu": 0.2,
-        "peakCpu": 0.35,
-        "idealMemory": 0.5,
-        "peakMemory": 0.65,
-        "idealDisk": 0.8,
-        "peakDisk": 1.0
-      },
       "scalingEvents": [
         {
           "from": {
@@ -135,8 +116,6 @@
           "completion": 2234
         }
       ],
-      "autoscalingStatusCode": "ideal",
-      "autoscalingStatus": "Cluster is ideally scaled",
       "scalingDuration": 360000
     }
   }
