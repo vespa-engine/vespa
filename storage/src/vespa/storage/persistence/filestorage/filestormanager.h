@@ -21,11 +21,10 @@
 #include <vespa/storage/common/storagelinkqueued.h>
 #include <vespa/config-stor-filestor.h>
 #include <vespa/storage/persistence/diskthread.h>
-
 #include <vespa/storage/common/nodestateupdater.h>
 #include <vespa/storageframework/generic/status/htmlstatusreporter.h>
-
 #include <vespa/config/helper/ifetchercallback.h>
+#include <vespa/vespalib/util/memory_trap.h>
 
 namespace config {
     class ConfigUri;
@@ -73,6 +72,11 @@ class FileStorManager : public StorageLinkQueued,
     std::unique_ptr<config::ConfigFetcher> _configFetcher;
     bool                  _use_async_message_handling_on_schedule;
     std::shared_ptr<FileStorMetrics> _metrics;
+    // Spray&pray over a few different size classes
+    std::unique_ptr<vespalib::HeapMemoryTrap> _mem_trap_1;
+    std::unique_ptr<vespalib::HeapMemoryTrap> _mem_trap_2;
+    std::unique_ptr<vespalib::HeapMemoryTrap> _mem_trap_3;
+    std::unique_ptr<vespalib::HeapMemoryTrap> _mem_trap_4;
     std::unique_ptr<FileStorHandler> _filestorHandler;
     std::unique_ptr<vespalib::ISequencedTaskExecutor> _sequencedExecutor;
 
