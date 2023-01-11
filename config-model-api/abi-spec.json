@@ -723,5 +723,20 @@
     "fields" : [
       "public static final com.yahoo.config.application.api.ValidationOverrides empty"
     ]
+  },
+  "com.yahoo.config.application.api.xml.DeploymentSpecXmlReader" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [ ],
+    "attributes" : [
+      "public"
+    ],
+    "methods" : [
+      "public void <init>(boolean, java.time.Clock)",
+      "public void <init>()",
+      "public void <init>(boolean)",
+      "public com.yahoo.config.application.api.DeploymentSpec read(java.io.Reader)",
+      "public com.yahoo.config.application.api.DeploymentSpec read(java.lang.String)"
+    ],
+    "fields" : [ ]
   }
 }
