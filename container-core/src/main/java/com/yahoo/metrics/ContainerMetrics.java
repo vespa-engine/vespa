@@ -13,7 +13,7 @@ public enum ContainerMetrics {
 
     JDISC_GC_MS("jdisc.gc.ms", Unit.MILLISECOND, "Time spent in garbage collection"),
 
-    JDISC_HTTP_REQUESTS_STATUS("jdisc.http.requests.status", Unit.RESPONSE,
+    JDISC_HTTP_REQUESTS_STATUS("jdisc.http.requests.status", Unit.REQUEST,
             "Number of requests to the built-in status handler"),
 
     JDISC_THREAD_POOL_UNHANDLED_EXCEPTIONS("jdisc.thread_pool.unhandled_exceptions", Unit.THREAD,
@@ -46,7 +46,7 @@ public enum ContainerMetrics {
     JETTY_THREADPOOL_QUEUE_SIZE("jdisc.http.jetty.threadpool.queue.size", Unit.THREAD,
             "Current size of the job queue"),
 
-    SERVER_NUM_CONNECTIONS("serverNumConnections", Unit.RESPONSE,
+    SERVER_NUM_CONNECTIONS("serverNumConnections", Unit.CONNECTION,
             "The total number of connections opened");
 
     private final String name;
