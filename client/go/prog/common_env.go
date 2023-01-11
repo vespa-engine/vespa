@@ -15,7 +15,7 @@ func (spec *Spec) configureCommonEnv() {
 	os.Unsetenv(envvars.LD_PRELOAD)
 	spec.Setenv(envvars.STD_THREAD_PREVENT_TRY_CATCH, "true")
 	spec.Setenv(envvars.GLIBCXX_FORCE_NEW, "1")
-	spec.Setenv(envvars.LD_LIBRARY_PATH, vespa.FindHome()+"/lib64")
+	spec.Setenv(envvars.LD_LIBRARY_PATH, vespa.FindHome()+"/lib64:/opt/vespa-deps/lib64")
 	spec.Setenv(envvars.MALLOC_ARENA_MAX, "1")
 
 	// fallback from old env.vars:
