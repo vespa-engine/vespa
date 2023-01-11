@@ -17,11 +17,11 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 /**
  * @author hmusum
  */
-public class CachedFilesMaintainerTest {
+public class FileReferencesAndDownloadsMaintainerTest {
 
     private File cachedFileReferences;
     private File cachedDownloads;
-    private CachedFilesMaintainer cachedFilesMaintainer;
+    private FileReferencesAndDownloadsMaintainer cachedFilesMaintainer;
 
     @TempDir
     public File tempFolder;
@@ -30,7 +30,7 @@ public class CachedFilesMaintainerTest {
     public void setup() throws IOException {
         cachedFileReferences = newFolder(tempFolder, "cachedFileReferences");
         cachedDownloads = newFolder(tempFolder, "cachedDownloads");
-        cachedFilesMaintainer = new CachedFilesMaintainer(cachedFileReferences, cachedDownloads, Duration.ofMinutes(1));
+        cachedFilesMaintainer = new FileReferencesAndDownloadsMaintainer(cachedFileReferences, cachedDownloads, Duration.ofMinutes(1));
     }
 
     @Test

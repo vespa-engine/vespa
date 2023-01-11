@@ -33,7 +33,7 @@ public class FileDistributionAndUrlDownload {
     public FileDistributionAndUrlDownload(Supervisor supervisor, ConfigSourceSet source) {
         fileDistributionRpcServer = new FileDistributionRpcServer(supervisor, createDownloader(supervisor, source));
         urlDownloadRpcServer = new UrlDownloadRpcServer(supervisor);
-        cleanupExecutor.scheduleAtFixedRate(new CachedFilesMaintainer(), delay.toSeconds(), delay.toSeconds(), TimeUnit.SECONDS);
+        cleanupExecutor.scheduleAtFixedRate(new FileReferencesAndDownloadsMaintainer(), delay.toSeconds(), delay.toSeconds(), TimeUnit.SECONDS);
     }
 
     public void close() {

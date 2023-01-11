@@ -19,13 +19,13 @@ import java.util.stream.Collectors;
 import static java.nio.file.Files.readAttributes;
 
 /**
- * Deletes cached file references and url downloads that have not been used for some time
+ * Deletes file references and url downloads that have not been used for some time
  *
  * @author hmusum
  */
-class CachedFilesMaintainer implements Runnable {
+class FileReferencesAndDownloadsMaintainer implements Runnable {
 
-    private final static Logger log = Logger.getLogger(CachedFilesMaintainer.class.getName());
+    private final static Logger log = Logger.getLogger(FileReferencesAndDownloadsMaintainer.class.getName());
 
     private static final File defaultUrlDownloadDir = UrlDownloadRpcServer.downloadDir;
     private static final File defaultFileReferencesDownloadDir = FileDownloader.defaultDownloadDirectory;
@@ -35,11 +35,11 @@ class CachedFilesMaintainer implements Runnable {
     private final File fileReferencesDownloadDir;
     private final Duration durationToKeepFiles;
 
-    CachedFilesMaintainer() {
+    FileReferencesAndDownloadsMaintainer() {
         this(defaultFileReferencesDownloadDir, defaultUrlDownloadDir, defaultDurationToKeepFiles);
     }
 
-    CachedFilesMaintainer(File fileReferencesDownloadDir, File urlDownloadDir, Duration durationToKeepFiles) {
+    FileReferencesAndDownloadsMaintainer(File fileReferencesDownloadDir, File urlDownloadDir, Duration durationToKeepFiles) {
         this.fileReferencesDownloadDir = fileReferencesDownloadDir;
         this.urlDownloadDir = urlDownloadDir;
         this.durationToKeepFiles = durationToKeepFiles;
