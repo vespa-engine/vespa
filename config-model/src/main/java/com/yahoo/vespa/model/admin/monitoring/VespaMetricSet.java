@@ -192,12 +192,8 @@ public class VespaMetricSet {
         metrics.add(new Metric("mem.native.used.average"));
         metrics.add(new Metric("mem.native.used.max"));
 
-        metrics.add(new Metric("jdisc.gc.count.average"));
-        metrics.add(new Metric("jdisc.gc.count.max"));
-        metrics.add(new Metric("jdisc.gc.count.last"));
-        metrics.add(new Metric(ContainerMetrics.JDISC_GC_MS.average()));
-        metrics.add(new Metric(ContainerMetrics.JDISC_GC_MS.max()));
-        metrics.add(new Metric(ContainerMetrics.JDISC_GC_MS.last()));
+        addMetric(metrics, ContainerMetrics.JDISC_GC_COUNT.baseName(), List.of("average", "max", "last"));
+        addMetric(metrics, ContainerMetrics.JDISC_GC_MS.baseName(), List.of("average", "max", "last"));
 
         metrics.add(new Metric("jdisc.deactivated_containers.total.last"));
         metrics.add(new Metric("jdisc.deactivated_containers.with_retained_refs.last"));
