@@ -2,7 +2,7 @@
 package com.yahoo.slime;
 
 /**
- * Enumeration of all possibly Slime data types.
+ * Enumeration of all possible Slime data types.
  */
 public enum Type {
 
