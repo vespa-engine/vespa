@@ -117,11 +117,9 @@ public class VespaMetricSet {
 
         addMetric(metrics, "jdisc.http.requests", List.of("rate", "count"));
 
-        metrics.add(new Metric("handled.requests.count"));
-        metrics.add(new Metric("handled.latency.max"));
-        metrics.add(new Metric("handled.latency.sum"));
-        metrics.add(new Metric("handled.latency.count"));
-
+        addMetric(metrics, ContainerMetrics.HANDLED_REQUESTS.count());
+        addMetric(metrics, ContainerMetrics.HANDLED_LATENCY.baseName(), List.of("max", "sum", "count"));
+        
         metrics.add(new Metric("serverRejectedRequests.rate"));     // TODO: Remove on Vespa 9. Use jdisc.thread_pool.rejected_tasks.
         metrics.add(new Metric("serverRejectedRequests.count"));    // TODO: Remove on Vespa 9. Use jdisc.thread_pool.rejected_tasks.
 
