@@ -306,4 +306,4 @@ inhibit_default_merges_when_global_merges_pending bool default=true
 ## concurrent feed ops to GC'd documents from potentially creating inconsistencies.
 ## Two-phase GC is only used iff all replica content nodes support the feature AND it's enabled
 ## by this config.
-enable_two_phase_garbage_collection bool default=false
+enable_two_phase_garbage_collection bool default=true

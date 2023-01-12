@@ -37,6 +37,9 @@ public enum ContainerMetrics {
 
     SERVER_BYTES_RECEIVED("serverBytesReceived", Unit.BYTE, "The number of bytes received by the server"),
     SERVER_BYTES_SENT("serverBytesSent", Unit.BYTE, "The number of bytes sent from the server"),
+
+    HANDLED_REQUESTS("handled.requests", Unit.OPERATION, "The number of requests handled per metrics snapshot"),
+    HANDLED_LATENCY("handled.latency", Unit.MILLISECOND, "The time used for requests during this metrics snapshot"),
     
     HTTPAPI_LATENCY("httpapi_latency", Unit.MILLISECOND, "Duration for requests to the HTTP document APIs"),
     HTTPAPI_PENDING("httpapi_pending", Unit.OPERATION, "Document operations pending execution"),

@@ -1154,8 +1154,8 @@ public class ContentClusterTest extends ContentBaseTest {
 
     // TODO change once gradual rollout complete
     @Test
-    public void two_phase_garbage_collection_config_is_disabled_by_default() {
-        assertFalse(resolveTwoPhaseGcConfigWithFeatureFlag(null));
+    public void two_phase_garbage_collection_config_is_enabled_by_default() {
+        assertTrue(resolveTwoPhaseGcConfigWithFeatureFlag(null));
     }
 
     @Test

@@ -166,7 +166,7 @@ TermEditDistanceExecutor::handle_bind_match_data(const fef::MatchData &md)
 void
 TermEditDistanceExecutor::logRow(const std::vector<TedCell> &row, size_t numCols)
 {
-    if (logger.wants(ns_log::Logger::info)) {
+    if (LOG_WOULD_LOG(info)) {
         vespalib::string str = "[ ";
         for (size_t i = 0; i < numCols; ++i) {
             str.append(vespalib::make_string("%5.2f", row[i].cost));
