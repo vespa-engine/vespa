@@ -155,6 +155,7 @@ public class ZstdInputStream
         int got = inputStream.read(inputBuffer, inputEnd, inputSpace());
         if (got == -1) {
             seenEof = true;
+            inputStream.close();
         }
         else {
             inputEnd += got;
