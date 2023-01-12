@@ -50,7 +50,7 @@ import static java.util.stream.Collectors.collectingAndThen;
 /**.
  * A persistent database for the contents of the node repository, backed by {@link CachingCurator}.
  *
- * Nodes are stored in files named /provision/v1/[nodestate]/[hostname].
+ * Nodes are stored in /provision/v1/nodes/[hostname].
  *
  * The responsibility of this class is to turn operations on the level of node states, applications and nodes
  * into operations on the level of file paths and bytes.
@@ -95,8 +95,7 @@ public class CuratorDb {
         db.create(root);
         db.create(nodesPath);
         // TODO(mpolden): Remove state paths after migration to nodesPath
-        for (Node.State state : Node.State.values())
-            db.create(toLegacyPath(state));
+        // removeLegacyPaths();
         db.create(applicationsPath);
         db.create(inactiveJobsPath);
         db.create(infrastructureVersionsPath);
@@ -107,6 +106,13 @@ public class CuratorDb {
         provisionIndexCounter.initialize(100);
     }
 
+    private void removeLegacyPaths() {
+        for (Node.State state : Node.State.values()) {
+            Path path = toLegacyPath(state);
+            db.deleteRecursively(path);
+        }
+    }
+
     /** Adds a set of nodes. Rollbacks/fails transaction if any node is not in the expected state. */
     public List<Node> addNodesInState(List<Node> nodes, Node.State expectedState, Agent agent, NestedTransaction transaction) {
         CuratorTransaction curatorTransaction = db.newCuratorTransactionIn(transaction);
@@ -115,15 +121,10 @@ public class CuratorDb {
                 throw new IllegalArgumentException(node + " is not in the " + expectedState + " state");
 
             node = node.with(node.history().recordStateTransition(null, expectedState, agent, clock.instant()));
-            // TODO(mpolden): Remove after migration to nodesPath
             byte[] serialized = nodeSerializer.toJson(node);
-            curatorTransaction.add(CuratorOperations.create(toLegacyPath(node).getAbsolute(), serialized));
             curatorTransaction.add(CuratorOperations.create(nodePath(node).getAbsolute(), serialized));
         }
-
-        for (Node node : nodes)
-            log.log(Level.INFO, "Added " + node);
-
+        transaction.onCommitted(() -> nodes.forEach(node -> log.log(Level.INFO, "Added " + node)));
         return nodes;
     }
 
@@ -137,15 +138,10 @@ public class CuratorDb {
     /** Removes given nodes in transaction */
     public void removeNodes(List<Node> nodes, NestedTransaction transaction) {
         for (Node node : nodes) {
-            Path path = toLegacyPath(node.state(), node.hostname());
             CuratorTransaction curatorTransaction = db.newCuratorTransactionIn(transaction);
-            // TODO(mpolden): Remove after migration to nodesPath
-            curatorTransaction.add(CuratorOperations.delete(path.getAbsolute()));
-            if (db.exists(nodePath(node))) {
-                curatorTransaction.add(CuratorOperations.delete(nodePath(node).getAbsolute()));
-            }
+            curatorTransaction.add(CuratorOperations.delete(nodePath(node).getAbsolute()));
         }
-        nodes.forEach(node -> log.log(Level.INFO, "Removed node " + node.hostname() + " in state " + node.state()));
+        transaction.onCommitted(() -> nodes.forEach(node -> log.log(Level.INFO, "Removed node " + node.hostname() + " in state " + node.state())));
     }
 
     /**
@@ -221,7 +217,7 @@ public class CuratorDb {
                                     node.type(), node.reports(), node.modelName(), node.reservedTo(),
                                     node.exclusiveToApplicationId(), node.exclusiveToClusterType(), node.switchHostname(),
                                     node.trustedCertificates(), node.cloudAccount(), node.wireguardPubKey());
-            writeNode(toState, curatorTransaction, node, newNode);
+            curatorTransaction.add(createOrSet(nodePath(newNode), nodeSerializer.toJson(newNode)));
             writtenNodes.add(newNode);
         }
 
@@ -232,21 +228,6 @@ public class CuratorDb {
             }
         });
         return writtenNodes;
-    }
-
-    private void writeNode(Node.State toState, CuratorTransaction curatorTransaction, Node node, Node newNode) {
-        byte[] nodeData = nodeSerializer.toJson(newNode);
-        { // TODO(mpolden): Remove this after migration to nodesPath
-            String currentNodePath = toLegacyPath(node).getAbsolute();
-            String newNodePath = toLegacyPath(toState, newNode.hostname()).getAbsolute();
-            if (newNodePath.equals(currentNodePath)) {
-                curatorTransaction.add(CuratorOperations.setData(currentNodePath, nodeData));
-            } else {
-                curatorTransaction.add(CuratorOperations.delete(currentNodePath))
-                                  .add(CuratorOperations.create(newNodePath, nodeData));
-            }
-        }
-        curatorTransaction.add(createOrSet(nodePath(newNode), nodeData));
     }
 
     private Status newNodeStatus(Node node, Node.State toState) {
@@ -273,14 +254,6 @@ public class CuratorDb {
     }
 
     private Path toLegacyPath(Node.State nodeState) { return root.append(toDir(nodeState)); }
-
-    private Path toLegacyPath(Node node) {
-        return root.append(toDir(node.state())).append(node.hostname());
-    }
-
-    private Path toLegacyPath(Node.State nodeState, String nodeName) {
-        return root.append(toDir(nodeState)).append(nodeName);
-    }
 
     private Path nodePath(Node node) {
         return nodePath(node.hostname());
