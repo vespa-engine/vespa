@@ -131,6 +131,7 @@ public class FileReferenceCompressor {
             case file:
                 return out;
             default:
+                out.close();
                 throw new RuntimeException("Unknown file reference type " + type);
         }
     }
@@ -148,6 +149,7 @@ public class FileReferenceCompressor {
             case file:
                 return in;
             default:
+                in.close();
                 throw new RuntimeException("Unknown file reference type " + type);
         }
     }
