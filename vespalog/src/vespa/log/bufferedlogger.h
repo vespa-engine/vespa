@@ -93,11 +93,11 @@
     do {                                                           \
         if (LOG_WOULD_LOG(level)) {                                \
             if (LOG_WOULD_LOG(debug)) {                            \
-                logger.doLog(ns_log::Logger::level,                \
+                ns_log_logger.doLog(ns_log::Logger::level,         \
                              __FILE__, __LINE__, __VA_ARGS__);     \
                 ns_log::BufferedLogger::instance().trimCache();    \
             } else {                                               \
-                ns_log::BufferedLogger::instance().doLog(logger,   \
+                ns_log::BufferedLogger::instance().doLog(ns_log_logger, \
                         ns_log::Logger::level, __FILE__, __LINE__, \
                         "", __VA_ARGS__);                          \
             }                                                      \
@@ -112,11 +112,11 @@
     do {                                                           \
         if (LOG_WOULD_LOG(level)) {                                \
             if (LOG_WOULD_LOG(debug)) {                            \
-                logger.doLog(ns_log::Logger::level,                \
+                ns_log_logger.doLog(ns_log::Logger::level,         \
                              __FILE__, __LINE__, __VA_ARGS__);     \
                 ns_log::BufferedLogger::instance().trimCache();    \
             } else {                                               \
-                ns_log::BufferedLogger::instance().doLog(logger,   \
+                ns_log::BufferedLogger::instance().doLog(ns_log_logger, \
                         ns_log::Logger::level, __FILE__, __LINE__, \
                         "", __VA_ARGS__);                          \
             }                                                      \
@@ -129,13 +129,13 @@
     do {                                                           \
         if (LOG_WOULD_LOG(level)) {                                \
             if (LOG_WOULD_LOG(debug)) {                            \
-                logger.doLog(ns_log::Logger::level,                \
+                ns_log_logger.doLog(ns_log::Logger::level,         \
                              __FILE__, __LINE__, ##ARGS);          \
                 ns_log::BufferedLogger::instance().trimCache();    \
             } else {                                               \
                 std::ostringstream ost123;                         \
                 ost123 << __FILE__ << ":" << __LINE__;             \
-                ns_log::BufferedLogger::instance().doLog(logger,   \
+                ns_log::BufferedLogger::instance().doLog(ns_log_logger, \
                         ns_log::Logger::level,                     \
                         __FILE__, __LINE__, ost123.str(), ##ARGS); \
             }                                                      \
@@ -147,11 +147,11 @@
     do {                                                         \
         if (LOG_WOULD_LOG(level)) {                              \
             if (LOG_WOULD_LOG(debug)) {                          \
-                logger.doLog(ns_log::Logger::level,              \
+                ns_log_logger.doLog(ns_log::Logger::level,       \
                              __FILE__, __LINE__, __VA_ARGS__);   \
                 ns_log::BufferedLogger::instance().trimCache();  \
             } else {                                             \
-                ns_log::BufferedLogger::instance().doLog(logger, \
+                ns_log::BufferedLogger::instance().doLog(ns_log_logger, \
                         ns_log::Logger::level,                   \
                         __FILE__, __LINE__, token, __VA_ARGS__); \
             }                                                    \
