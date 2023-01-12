@@ -19,7 +19,7 @@ using std::unique_ptr;
 
 namespace document {
 namespace {
-void fail(const char *message) {
+[[noreturn]] void fail(const char *message) {
     throw DeserializeException(message);
 }
 }
@@ -128,7 +128,7 @@ void AnnotationDeserializer::readAnnotation(Annotation & annotation) {
         uint32_t span_node_id = getInt1_2_4Bytes(_stream);
         if (span_node_id > _nodes.size()) {
             LOG(warning, "Annotation of type %u has node_id %u > #nodes %zd", type_id, span_node_id, _nodes.size());
-	   fail("Annotation refers to out-of-bounds span node");
+            fail("Annotation refers to out-of-bounds span node");
         } else {
             span_node = _nodes[span_node_id];
         }
@@ -140,7 +140,7 @@ void AnnotationDeserializer::readAnnotation(Annotation & annotation) {
         if (!data_type) {
             LOG(warning, "Bad data type %d for annotation type %s",
                 data_type_id, type->getName().c_str());
-	   fail("Annotation with bad datatype for its value");
+            fail("Annotation with bad datatype for its value");
         } else {
             FieldValue::UP value(data_type->createFieldValue());
             VespaDocumentDeserializer deserializer(_repo, _stream, _version);
