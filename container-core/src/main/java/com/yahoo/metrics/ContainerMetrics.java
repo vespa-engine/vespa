@@ -35,6 +35,9 @@ public enum ContainerMetrics {
     SERVER_NUM_OPEN_CONNECTIONS("serverNumOpenConnections", Unit.CONNECTION, "The number of currently open connections"),
     SERVER_NUM_CONNECTIONS("serverNumConnections", Unit.CONNECTION, "The total number of connections opened"),
 
+    SERVER_BYTES_RECEIVED("", Unit.BYTE, "The number of bytes received by the server"),
+    SERVER_BYTES_SENT("", Unit.BYTE, "The number of bytes sent from the server"),
+    
     HTTPAPI_LATENCY("httpapi_latency", Unit.MILLISECOND, "Duration for requests to the HTTP document APIs"),
     HTTPAPI_PENDING("httpapi_pending", Unit.OPERATION, "Document operations pending execution"),
     HTTPAPI_NUM_OPERATIONS("httpapi_num_operations", Unit.OPERATION, "Total number of document operations performed"),
