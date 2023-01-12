@@ -68,7 +68,9 @@ public class AssembleFatJarMojo extends AbstractMojo {
     public String mainClass;
 
     @Parameter
-    public String[] excludes = new String[] {
+    public String[] excludes = new String[0];
+
+    private final Set<String> defaultExcludes = Set.of(
             "META-INF/DEPENDENCIES",
             "META-INF/LICENSE*",
             "META-INF/NOTICE*",
@@ -80,8 +82,7 @@ public class AssembleFatJarMojo extends AbstractMojo {
             "module-info.class",
             "license/*",
             "**/package-info.class",
-            "**/module-info.class",
-    };
+            "**/module-info.class");
 
     @Override
     public void execute() throws MojoExecutionException {
@@ -91,7 +92,11 @@ public class AssembleFatJarMojo extends AbstractMojo {
         var archiveFilter = new ArchiveFilter() {
             @Override public String getArtifact() { return null; }
             @Override public Set<String> getIncludes() { return Set.of(); }
-            @Override public Set<String> getExcludes() { return Set.of(excludes); }
+            @Override public Set<String> getExcludes() {
+                var values = new TreeSet<>(defaultExcludes);
+                values.addAll(List.of(excludes));
+                return values;
+            }
             @Override public boolean getExcludeDefaults() { return true; }
         };
         var jarsToShade = projectDependencies.stream()
@@ -152,7 +157,8 @@ public class AssembleFatJarMojo extends AbstractMojo {
         SortedSet<Artifact> children = new TreeSet<>();
         if (node.getChildren() != null) {
             for (DependencyNode dep : node.getChildren()) {
-                children.add(dep.getArtifact());
+                var a = dep.getArtifact();
+                if (!a.getType().equals("pom")) children.add(a);
                 children.addAll(getAllRecursive(dep));
             }
         }
