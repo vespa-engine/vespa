@@ -14,6 +14,7 @@ import com.yahoo.tensor.TensorAddress;
 import com.yahoo.tensor.TensorType;
 
 import java.util.ArrayDeque;
+import java.util.ArrayList;
 import java.util.Deque;
 
 import static com.yahoo.document.json.readers.JsonParserHelpers.*;
@@ -40,7 +41,7 @@ public class TensorReader {
         expectOneOf(buffer.currentToken(), JsonToken.START_OBJECT, JsonToken.START_ARRAY);
         int initNesting = buffer.nesting();
         for (buffer.next(); buffer.nesting() >= initNesting; buffer.next()) {
-            if (TENSOR_CELLS.equals(buffer.currentName()) && ! primitiveContent(new TokenBuffer(new ArrayDeque<>(buffer.rest())))) {
+            if (TENSOR_CELLS.equals(buffer.currentName()) && ! primitiveContent(new TokenBuffer(new ArrayList<>(buffer.rest())))) {
                 readTensorCells(buffer, builder);
             }
             else if (TENSOR_VALUES.equals(buffer.currentName()) && builder.type().dimensions().stream().allMatch(d -> d.isIndexed())) {
