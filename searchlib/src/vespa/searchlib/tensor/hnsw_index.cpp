@@ -669,6 +669,10 @@ HnswIndex<type>::consider_compact(const CompactionStrategy& compaction_strategy)
         compact_link_arrays(compaction_strategy);
         result = true;
     }
+    if (_id_mapping.consider_compact()) {
+        _id_mapping.compact_worst(compaction_strategy);
+        result = true;
+    }
     return result;
 }
 
