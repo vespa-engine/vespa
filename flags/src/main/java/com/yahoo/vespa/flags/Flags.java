@@ -338,7 +338,7 @@ public class Flags {
     );
 
     public static final UnboundBooleanFlag USE_TWO_PHASE_DOCUMENT_GC = defineFeatureFlag(
-            "use-two-phase-document-gc", false,
+            "use-two-phase-document-gc", true,
             List.of("vekterli"), "2022-08-24", "2023-02-01",
             "Use two-phase document GC in content clusters",
             "Takes effect at redeployment",

@@ -1022,8 +1022,7 @@ TEST_F(DistributorStripeTest, enable_two_phase_gc_config_is_propagated_to_intern
 {
     setup_stripe(Redundancy(1), NodeCount(1), "distributor:1 storage:1");
 
-    // Feature is currently disabled by default. TODO change once we roll it out.
-    EXPECT_FALSE(getConfig().enable_two_phase_garbage_collection());
+    EXPECT_TRUE(getConfig().enable_two_phase_garbage_collection());
 
     configure_enable_two_phase_garbage_collection(true);
     EXPECT_TRUE(getConfig().enable_two_phase_garbage_collection());

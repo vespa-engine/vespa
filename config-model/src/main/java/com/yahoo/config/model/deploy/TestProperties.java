@@ -70,7 +70,7 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
     private List<String> environmentVariables = List.of();
     private boolean loadCodeAsHugePages = false;
     private boolean sharedStringRepoNoReclaim = false;
-    private boolean useTwoPhaseDocumentGc = false;
+    private boolean useTwoPhaseDocumentGc = true;
     private int mbus_java_num_targets = 1;
     private int mbus_java_events_before_wakeup = 1;
     private int mbus_cpp_num_targets = 1;
