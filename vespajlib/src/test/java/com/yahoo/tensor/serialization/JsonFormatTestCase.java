@@ -1,7 +1,6 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.tensor.serialization;
 
-import com.yahoo.tensor.IndexedTensor;
 import com.yahoo.tensor.Tensor;
 import com.yahoo.tensor.TensorType;
 import org.junit.Test;
@@ -349,8 +348,21 @@ public class JsonFormatTestCase {
         assertEncodeDecode(Tensor.from("tensor<int8>(x[2],y[2]):[2,3,5,8]"));
     }
 
+    /** All cell types are rendered as double. */
+    @Test
+    public void testTensorCellTypeRenderingPrecision() {
+        assertEncodeShortForm(Tensor.Builder.of("tensor<double>(x[1])").cell(1.0/3, 0).build(),
+                              "{\"type\":\"tensor(x[1])\",\"values\":[0.3333333333333333]}");
+        assertEncodeShortForm(Tensor.Builder.of("tensor<float>(x[1])").cell((float)1.0/3, 0).build(),
+                              "{\"type\":\"tensor<float>(x[1])\",\"values\":[0.3333333432674408]}");
+    }
+
     private void assertEncodeShortForm(String tensor, String expected) {
-        byte[] json = JsonFormat.encodeShortForm(Tensor.from(tensor));
+        assertEncodeShortForm(Tensor.from(tensor), expected);
+    }
+
+    private void assertEncodeShortForm(Tensor tensor, String expected) {
+        byte[] json = JsonFormat.encodeShortForm(tensor);
         assertEquals(expected, new String(json, StandardCharsets.UTF_8));
     }
 
