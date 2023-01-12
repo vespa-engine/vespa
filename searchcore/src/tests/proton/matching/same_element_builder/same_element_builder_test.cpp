@@ -35,6 +35,7 @@ using search::queryeval::Blueprint;
 using search::queryeval::EmptyBlueprint;
 using search::queryeval::FakeBlueprint;
 using search::queryeval::FakeRequestContext;
+using search::queryeval::FieldSpec;
 using search::queryeval::IntermediateBlueprint;
 using search::queryeval::SameElementBlueprint;
 
@@ -89,8 +90,9 @@ struct FakeTerms {
 struct BuilderFixture {
     FakeRequestContext req_ctx;
     FakeSearchContext  ctx;
+    FieldSpec field;
     SameElementBuilder builder;
-    BuilderFixture() : req_ctx(), ctx(), builder(req_ctx, ctx, "foo", false) {
+    BuilderFixture() : req_ctx(), ctx(), field("foo", 3, 5), builder(req_ctx, ctx, field, false) {
         ctx.attr().tag("attr");
         ctx.addIdx(0).idx(0).getFake().tag("idx");
     }
@@ -104,9 +106,14 @@ const FakeBlueprint *as_fake(const Blueprint *bp) {
     return dynamic_cast<const FakeBlueprint*>(bp);    
 }
 
-void verify_children(Blueprint *bp, std::initializer_list<const char *> tags) {
+void verify_blueprint(Blueprint *bp, std::initializer_list<const char *> tags) {
     SameElementBlueprint *se = dynamic_cast<SameElementBlueprint*>(bp);
     ASSERT_TRUE(se != nullptr);
+    ASSERT_EQUAL(1u, se->getState().numFields());
+    const auto &field = se->getState().field(0);
+    EXPECT_EQUAL(3u, field.getFieldId());
+    EXPECT_EQUAL(5u, field.getHandle());
+    EXPECT_FALSE(field.isFilter());
     ASSERT_EQUAL(se->terms().size(), tags.size());
     size_t idx = 0;
     for (const char *tag: tags) {
@@ -120,7 +127,7 @@ TEST_FF("require that same element blueprint can be built", BuilderFixture(), Fa
     f1.builder.add_child(f2.idx_string_term);
     f1.builder.add_child(f2.attr_string_term);
     Blueprint::UP result = f1.builder.build();
-    TEST_DO(verify_children(result.get(), {"idx", "attr"}));
+    TEST_DO(verify_blueprint(result.get(), {"idx", "attr"}));
 }
 
 TEST_FF("require that terms searching multiple fields are ignored", BuilderFixture(), FakeTerms()) {
@@ -128,7 +135,7 @@ TEST_FF("require that terms searching multiple fields are ignored", BuilderFixtu
     f1.builder.add_child(f2.attr_string_term);
     f1.builder.add_child(f2.both_string_term); // ignored
     Blueprint::UP result = f1.builder.build();
-    TEST_DO(verify_children(result.get(), {"idx", "attr"}));
+    TEST_DO(verify_blueprint(result.get(), {"idx", "attr"}));
 }
 
 TEST_FF("require that all relevant term types can be used", BuilderFixture(), FakeTerms()) {
@@ -141,7 +148,7 @@ TEST_FF("require that all relevant term types can be used", BuilderFixture(), Fa
     f1.builder.add_child(f2.attr_suffix_term);
     f1.builder.add_child(f2.attr_regexp_term);
     Blueprint::UP result = f1.builder.build();
-    TEST_DO(verify_children(result.get(), {"idx", "idx", "idx", "idx", "attr", "attr", "attr", "attr"}));
+    TEST_DO(verify_blueprint(result.get(), {"idx", "idx", "idx", "idx", "attr", "attr", "attr", "attr"}));
 }
 
 TEST_F("require that building same element with no children gives EmptyBlueprint", BuilderFixture()) {

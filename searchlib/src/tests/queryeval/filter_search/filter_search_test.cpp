@@ -306,8 +306,9 @@ struct ParallelWeakAndAdapter {
 
 // enable Make-ing same element
 struct SameElementAdapter {
+    FieldSpec field;
     SameElementBlueprint blueprint;
-    SameElementAdapter() : blueprint("foo", false) {}
+    SameElementAdapter() : field("foo", 5, 11), blueprint(field, false) {}
     void addChild(std::unique_ptr<Blueprint> child) {
         auto child_field = blueprint.getNextChildField("foo", 3);
         auto term = std::make_unique<LeafProxy>(child_field, std::move(child));

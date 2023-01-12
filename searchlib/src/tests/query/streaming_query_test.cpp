@@ -734,7 +734,7 @@ namespace {
 }
 TEST("testSameElementEvaluate") {
     QueryBuilder<SimpleQueryNodeTypes> builder;
-    builder.addSameElement(3, "field");
+    builder.addSameElement(3, "field", 0, Weight(0));
     {
         builder.addStringTerm("a", "f1", 0, Weight(0));
         builder.addStringTerm("b", "f2", 1, Weight(0));

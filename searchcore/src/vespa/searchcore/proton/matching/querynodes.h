@@ -114,12 +114,15 @@ using ProtonONear =       search::query::SimpleONear;
 using ProtonOr =          search::query::SimpleOr;
 using ProtonRank =        search::query::SimpleRank;
 using ProtonWeakAnd =     search::query::SimpleWeakAnd;
-using ProtonSameElement = search::query::SimpleSameElement;
 using ProtonTrue =        search::query::SimpleTrue;
 using ProtonFalse =       search::query::SimpleFalse;
 
 struct ProtonEquiv final : public ProtonTermBase<search::query::Equiv> {
     search::fef::MatchDataLayout children_mdl;
+    using ProtonTermBase::ProtonTermBase;
+};
+
+struct ProtonSameElement final : public ProtonTermBase<search::query::SameElement> {
     using ProtonTermBase::ProtonTermBase;
 };
 

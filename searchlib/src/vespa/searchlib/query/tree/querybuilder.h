@@ -129,8 +129,8 @@ typename NodeTypes::Phrase *createPhrase(vespalib::stringref view, int32_t id, W
     return new typename NodeTypes::Phrase(view, id, weight);
 }
 template <class NodeTypes>
-typename NodeTypes::SameElement *createSameElement(vespalib::stringref view) {
-    return new typename NodeTypes::SameElement(view);
+typename NodeTypes::SameElement *createSameElement(vespalib::stringref view, int32_t id, Weight weight) {
+    return new typename NodeTypes::SameElement(view, id, weight);
 }
 template <class NodeTypes>
 typename NodeTypes::WeightedSetTerm *createWeightedSetTerm(uint32_t num_terms, vespalib::stringref view, int32_t id, Weight weight) {
@@ -271,8 +271,8 @@ public:
         setWeightOverride(weight);
         return node;
     }
-    typename NodeTypes::SameElement &addSameElement(int child_count, stringref view) {
-        return addIntermediate(createSameElement<NodeTypes>(view), child_count);
+    typename NodeTypes::SameElement &addSameElement(int child_count, stringref view, int32_t id, Weight weight) {
+        return addIntermediate(createSameElement<NodeTypes>(view, id, weight), child_count);
     }
     typename NodeTypes::WeightedSetTerm &addWeightedSetTerm( int child_count, stringref view, int32_t id, Weight weight) {
         adjustWeight(weight);

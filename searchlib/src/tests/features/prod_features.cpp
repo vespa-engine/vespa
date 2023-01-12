@@ -1717,6 +1717,17 @@ Test::testMatches()
         EXPECT_TRUE(ft.execute(RankResult().addScore("matches(foo,2)", 0)));
         EXPECT_TRUE(ft.execute(RankResult().addScore("matches(foo,3)", 0)));
     }
+    { // Test executor for virtual fields
+        FtFeatureTest ft(_factory, StringList().add("matches(foo)"));
+        ft.getIndexEnv().getBuilder().addField(FieldType::VIRTUAL, CollectionType::ARRAY, "foo");
+        ASSERT_TRUE(ft.getQueryEnv().getBuilder().add_virtual_node("foo") != nullptr); // query term 0 hits in foo
+        ASSERT_TRUE(ft.setup());
+
+        auto mdb = ft.createMatchDataBuilder();
+        mdb->setWeight("foo", 0, 100);
+        mdb->apply(1);
+        EXPECT_TRUE(ft.execute(RankResult().addScore("matches(foo)", 1)));
+    }
 }
 
 bool

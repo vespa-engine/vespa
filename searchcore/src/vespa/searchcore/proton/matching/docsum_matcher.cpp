@@ -59,7 +59,8 @@ template<typename T>
 const T *as(const Blueprint &bp) { return dynamic_cast<const T *>(&bp); }
 
 void find_matching_elements(const std::vector<uint32_t> &docs, const SameElementBlueprint &same_element, MatchingElements &result) {
-    auto search = same_element.create_same_element_search(false);
+    search::fef::TermFieldMatchData dummy_tfmd;
+    auto search = same_element.create_same_element_search(dummy_tfmd, false);
     search->initRange(docs.front(), docs.back()+1);
     std::vector<uint32_t> matches;
     for (uint32_t i = 0; i < docs.size(); ++i) {

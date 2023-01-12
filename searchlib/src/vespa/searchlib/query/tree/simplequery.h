@@ -54,7 +54,8 @@ struct SimplePhrase : Phrase {
 };
 
 struct SimpleSameElement : SameElement {
-    SimpleSameElement(vespalib::stringref view) : SameElement(view) {}
+    SimpleSameElement(vespalib::stringref view, int32_t id, Weight weight)
+        : SameElement(view, id, weight) {}
     ~SimpleSameElement() override;
 };
 struct SimpleWeightedSetTerm : WeightedSetTerm {

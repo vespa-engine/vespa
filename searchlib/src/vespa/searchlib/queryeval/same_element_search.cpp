@@ -39,13 +39,16 @@ SameElementSearch::check_element_match(uint32_t docid)
     return !_matchingElements.empty();
 }
 
-SameElementSearch::SameElementSearch(fef::MatchData::UP md,
+SameElementSearch::SameElementSearch(fef::TermFieldMatchData &tfmd,
+                                     fef::MatchData::UP md,
                                      std::vector<ElementIterator::UP> children,
                                      bool strict)
-    : _md(std::move(md)),
+    : _tfmd(tfmd),
+      _md(std::move(md)),
       _children(std::move(children)),
       _strict(strict)
 {
+    _tfmd.reset(0);
     assert(!_children.empty());
 }
 
@@ -73,6 +76,12 @@ SameElementSearch::doSeek(uint32_t docid) {
         }
         setAtEnd();
     }
+}
+
+void
+SameElementSearch::doUnpack(uint32_t docid)
+{
+    _tfmd.resetOnlyDocId(docid);
 }
 
 void

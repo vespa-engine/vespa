@@ -102,7 +102,7 @@ struct MyQueryBuilder : public search::query::QueryBuilder<search::query::Simple
         }
     }
     void make_same_element(vespalib::string field, BoundTerm term1, int32_t id1, BoundTerm term2, int32_t id2) {
-        addSameElement(2, field);
+        addSameElement(2, field, 0, Weight(0));
         add_term(term1, id1);
         add_term(term2, id2);
     }

@@ -13,12 +13,12 @@
 
 namespace search::queryeval {
 
-SameElementBlueprint::SameElementBlueprint(const vespalib::string &field_name_in, bool expensive)
-    : ComplexLeafBlueprint(FieldSpecBaseList()),
+SameElementBlueprint::SameElementBlueprint(const FieldSpec &field, bool expensive)
+    : ComplexLeafBlueprint(field),
       _estimate(),
       _layout(),
       _terms(),
-      _field_name(field_name_in)
+      _field_name(field.getName())
 {
     if (expensive) {
         set_cost_tier(State::COST_TIER_EXPENSIVE);
@@ -64,7 +64,7 @@ SameElementBlueprint::fetchPostings(const ExecuteInfo &execInfo)
 }
 
 std::unique_ptr<SameElementSearch>
-SameElementBlueprint::create_same_element_search(bool strict) const
+SameElementBlueprint::create_same_element_search(search::fef::TermFieldMatchData& tfmd, bool strict) const
 {
     fef::MatchDataLayout my_layout = _layout;
     fef::MatchData::UP md = my_layout.createMatchData();
@@ -79,15 +79,14 @@ SameElementBlueprint::create_same_element_search(bool strict) const
             children[i] = std::make_unique<attribute::SearchContextElementIterator>(std::move(child), *context);
         }
     }
-    return std::make_unique<SameElementSearch>(std::move(md), std::move(children), strict);
+    return std::make_unique<SameElementSearch>(tfmd, std::move(md), std::move(children), strict);
 }
 
 SearchIterator::UP
 SameElementBlueprint::createLeafSearch(const search::fef::TermFieldMatchDataArray &tfmda, bool strict) const
 {
-    (void) tfmda;
-    assert(!tfmda.valid());
-    return create_same_element_search(strict);
+    assert(tfmda.size() == 1);
+    return create_same_element_search(*tfmda[0], strict);
 }
 
 SearchIterator::UP

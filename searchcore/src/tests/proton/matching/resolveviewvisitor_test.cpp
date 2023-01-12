@@ -136,18 +136,22 @@ TEST_F("require that equiv nodes resolve view from children", Fixture) {
     EXPECT_EQUAL(field2, base.field(1).field_name);
 }
 
-TEST_F("require that view is resolved for SameElement children", Fixture) {
+TEST_F("require that view is resolved for SameElement and its children", Fixture) {
     ViewResolver resolver;
     resolver.add(view, field1);
+    resolver.add("view2", field2);
 
     QueryBuilder<ProtonNodeTypes> builder;
-    builder.addSameElement(2, "");
+    ProtonSameElement &same_elem = builder.addSameElement(2, "view2", 13, weight);
     ProtonStringTerm &my_term = builder.addStringTerm(term, view, 42, weight);
     builder.addStringTerm(term, field2, 43, weight);
     Node::UP node = builder.build();
 
     ResolveViewVisitor visitor(resolver, f.index_environment);
     node->accept(visitor);
+
+    ASSERT_EQUAL(1u, same_elem.numFields());
+    EXPECT_EQUAL(field2, same_elem.field(0).field_name);
 
     ASSERT_EQUAL(1u, my_term.numFields());
     EXPECT_EQUAL(field1, my_term.field(0).field_name);

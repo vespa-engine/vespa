@@ -99,7 +99,7 @@ void add_phrase(QueryBuilder<ProtonNodeTypes> &builder) {
 }
 
 void add_same_element(QueryBuilder<ProtonNodeTypes> &builder) {
-    builder.addSameElement(2, view);
+    builder.addSameElement(2, view, id, weight);
     {
         builder.addStringTerm("x", view, id, weight);
         builder.addStringTerm("y", view, id, weight);

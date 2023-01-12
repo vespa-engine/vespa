@@ -45,6 +45,11 @@ public:
      */
     SimpleTermData *addAttributeNode(const vespalib::string & attrName);
 
+    /**
+     * Add a term node searching in the given virtual field.
+     */
+    SimpleTermData *add_virtual_node(const vespalib::string &virtual_field);
+
     /** Returns a reference to the query environment of this. */
     QueryEnvironment &getQueryEnv() { return _queryEnv; }
 
@@ -62,6 +67,7 @@ public:
 private:
     QueryEnvironmentBuilder(const QueryEnvironmentBuilder &);             // hide
     QueryEnvironmentBuilder & operator=(const QueryEnvironmentBuilder &); // hide
+    SimpleTermData *add_node(const FieldInfo &info);
 
 private:
     QueryEnvironment &_queryEnv;

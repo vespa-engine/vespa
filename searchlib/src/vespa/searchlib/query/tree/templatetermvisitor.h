@@ -53,6 +53,11 @@ class TemplateTermVisitor : public CustomTypeTermVisitor<NodeTypes> {
     // term's children, unless this member function is overridden
     // to do so.
     void visit(typename NodeTypes::WandTerm &n) override { myVisit(n); }
+
+    // SameElement have children. This visitor will not visit the
+    // term's children, unless this member function is overridden
+    // to do so.
+    void visit(typename NodeTypes::SameElement &n) override { myVisit(n); }
 };
 
 }

@@ -28,6 +28,11 @@ public:
         visitChildren(n);
         n.resolveFromChildren(n.getChildren());
     }
+
+    void visit(ProtonNodeTypes::SameElement &n) override {
+        visitChildren(n);
+        visitTerm(n);
+    }
 };
 
 }
