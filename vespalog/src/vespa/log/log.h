@@ -59,18 +59,16 @@ do {                                                          \
 // Must use placement new in the following definition, since the variable
 // "logger" must be a valid logger object DURING the construction of the
 // logger object itself.
-#define LOG_INDIRECT_MUST                                               \
+#define LOG_INDIRECT(level, ...)                                        \
+do {                                                                    \
     if (!logInitialised) {                                              \
         logInitialised = true;                                          \
         ns_log_indirect_logger =                                        \
                 static_cast<Logger *>(                                  \
                         malloc(sizeof *ns_log_indirect_logger));        \
         new (ns_log_indirect_logger) Logger(logName, indirectRcsId);    \
-    }
-#define LOG_INDIRECT(level, ...)                                        \
-do {                                                                    \
-    LOG_INDIRECT_MUST                                                   \
-            if (LOG_INDIRECT_WOULD_LOG(level)) {                        \
+    }                                                                   \
+    if (LOG_INDIRECT_WOULD_LOG(level)) {                                \
         ns_log_indirect_logger->doLog(ns_log::Logger::level,            \
                                       __FILE__, __LINE__, __VA_ARGS__); \
     }                                                                   \
