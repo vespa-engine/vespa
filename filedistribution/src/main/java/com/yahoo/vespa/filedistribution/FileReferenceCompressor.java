@@ -1,6 +1,8 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.filedistribution;
 
+import ai.vespa.airlift.zstd.ZstdInputStream;
+import com.yahoo.compress.ZstdOutputStream;
 import net.jpountz.lz4.LZ4BlockInputStream;
 import net.jpountz.lz4.LZ4BlockOutputStream;
 import org.apache.commons.compress.archivers.ArchiveEntry;
@@ -21,7 +23,6 @@ import java.util.List;
 import java.util.Objects;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.util.stream.Collectors;
 import java.util.zip.GZIPInputStream;
 import java.util.zip.GZIPOutputStream;
 
@@ -118,32 +119,34 @@ public class FileReferenceCompressor {
     }
 
     private OutputStream compressedOutputStream(File outputFile) throws IOException {
+        FileOutputStream out = new FileOutputStream(outputFile);
         switch (type) {
             case compressed:
                 log.log(Level.FINE, () -> "Compressing with compression type " + compressionType);
                 return switch (compressionType) {
-                    case gzip -> new GZIPOutputStream(new FileOutputStream(outputFile));
-                    case lz4 -> new LZ4BlockOutputStream(new FileOutputStream(outputFile));
-                    default -> throw new RuntimeException("Unknown compression type " + compressionType);
+                    case gzip -> new GZIPOutputStream(out);
+                    case lz4 -> new LZ4BlockOutputStream(out);
+                    case zstd -> new ZstdOutputStream(out);
                 };
             case file:
-                return new FileOutputStream(outputFile);
+                return out;
             default:
                 throw new RuntimeException("Unknown file reference type " + type);
         }
     }
 
     private InputStream decompressedInputStream(File inputFile) throws IOException {
+        FileInputStream in = new FileInputStream(inputFile);
         switch (type) {
             case compressed:
                 log.log(Level.FINE, () -> "Decompressing with compression type " + compressionType);
                 return switch (compressionType) {
-                    case gzip -> new GZIPInputStream(new FileInputStream(inputFile));
-                    case lz4 -> new LZ4BlockInputStream(new FileInputStream(inputFile));
-                    default -> throw new RuntimeException("Unknown compression type " + compressionType);
+                    case gzip -> new GZIPInputStream(in);
+                    case lz4 -> new LZ4BlockInputStream(in);
+                    case zstd -> new ZstdInputStream(in);
                 };
             case file:
-                return new FileInputStream(inputFile);
+                return in;
             default:
                 throw new RuntimeException("Unknown file reference type " + type);
         }
