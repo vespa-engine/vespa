@@ -371,8 +371,7 @@ HnswIndex<type>::HnswIndex(const DocVectorAccess& vectors, DistanceFunction::UP 
       _distance_func(std::move(distance_func)),
       _level_generator(std::move(level_generator)),
       _id_mapping(),
-      _cfg(cfg),
-      _compaction_spec()
+      _cfg(cfg)
 {
     assert(_distance_func);
 }
@@ -626,9 +625,9 @@ HnswIndex<type>::reclaim_memory(generation_t oldest_used_gen)
 
 template <HnswIndexType type>
 void
-HnswIndex<type>::compact_level_arrays(CompactionSpec compaction_spec, const CompactionStrategy& compaction_strategy)
+HnswIndex<type>::compact_level_arrays(const CompactionStrategy& compaction_strategy)
 {
-    auto compacting_buffers = _graph.levels_store.start_compact_worst_buffers(compaction_spec, compaction_strategy);
+    auto compacting_buffers = _graph.levels_store.start_compact_worst_buffers(compaction_strategy);
     uint32_t nodeid_limit = _graph.nodes.size();
     auto filter = compacting_buffers->make_entry_ref_filter();
     vespalib::ArrayRef<NodeType> nodes(&_graph.nodes[0], nodeid_limit);
@@ -644,9 +643,9 @@ HnswIndex<type>::compact_level_arrays(CompactionSpec compaction_spec, const Comp
 
 template <HnswIndexType type>
 void
-HnswIndex<type>::compact_link_arrays(CompactionSpec compaction_spec, const CompactionStrategy& compaction_strategy)
+HnswIndex<type>::compact_link_arrays(const CompactionStrategy& compaction_strategy)
 {
-    auto context = _graph.links_store.compactWorst(compaction_spec, compaction_strategy);
+    auto context = _graph.links_store.compact_worst(compaction_strategy);
     uint32_t nodeid_limit = _graph.nodes.size();
     for (uint32_t nodeid = 1; nodeid < nodeid_limit; ++nodeid) {
         EntryRef levels_ref = _graph.get_levels_ref(nodeid);
@@ -659,35 +658,15 @@ HnswIndex<type>::compact_link_arrays(CompactionSpec compaction_spec, const Compa
 
 template <HnswIndexType type>
 bool
-HnswIndex<type>::consider_compact_level_arrays(const CompactionStrategy& compaction_strategy)
-{
-    if (!_graph.levels_store.has_held_buffers() && _compaction_spec.level_arrays().compact()) {
-        compact_level_arrays(_compaction_spec.level_arrays(), compaction_strategy);
-        return true;
-    }
-    return false;
-}
-
-template <HnswIndexType type>
-bool
-HnswIndex<type>::consider_compact_link_arrays(const CompactionStrategy& compaction_strategy)
-{
-    if (!_graph.links_store.has_held_buffers() && _compaction_spec.link_arrays().compact()) {
-        compact_link_arrays(_compaction_spec.link_arrays(), compaction_strategy);
-        return true;
-    }
-    return false;
-}
-
-template <HnswIndexType type>
-bool
 HnswIndex<type>::consider_compact(const CompactionStrategy& compaction_strategy)
 {
     bool result = false;
-    if (consider_compact_level_arrays(compaction_strategy)) {
+    if (_graph.levels_store.consider_compact()) {
+        compact_level_arrays(compaction_strategy);
         result = true;
     }
-    if (consider_compact_link_arrays(compaction_strategy)) {
+    if (_graph.links_store.consider_compact()) {
+        compact_link_arrays(compaction_strategy);
         result = true;
     }
     return result;
@@ -699,14 +678,9 @@ HnswIndex<type>::update_stat(const CompactionStrategy& compaction_strategy)
 {
     vespalib::MemoryUsage result;
     result.merge(_graph.nodes.getMemoryUsage());
-    auto level_arrays_memory_usage = _graph.levels_store.getMemoryUsage();
-    auto level_arrays_address_space_usage = _graph.levels_store.addressSpaceUsage();
-    result.merge(level_arrays_memory_usage);
-    auto link_arrays_memory_usage = _graph.links_store.getMemoryUsage();
-    auto link_arrays_address_space_usage = _graph.links_store.addressSpaceUsage();
-    _compaction_spec = HnswIndexCompactionSpec(compaction_strategy.should_compact(level_arrays_memory_usage, level_arrays_address_space_usage),
-                                               compaction_strategy.should_compact(link_arrays_memory_usage, link_arrays_address_space_usage));
-    result.merge(link_arrays_memory_usage);
+    result.merge(_graph.levels_store.update_stat(compaction_strategy));
+    result.merge(_graph.links_store.update_stat(compaction_strategy));
+    result.merge(_id_mapping.update_stat(compaction_strategy));
     return result;
 }
 

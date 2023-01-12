@@ -42,25 +42,6 @@ namespace search::tensor {
 template <HnswIndexType type>
 class HnswIndex : public NearestNeighborIndex {
 public:
-    class HnswIndexCompactionSpec {
-        CompactionSpec _level_arrays;
-        CompactionSpec _link_arrays;
-
-    public:
-        HnswIndexCompactionSpec()
-            : _level_arrays(),
-              _link_arrays()
-        {
-        }
-        HnswIndexCompactionSpec(CompactionSpec level_arrays_, CompactionSpec link_arrays_)
-            : _level_arrays(level_arrays_),
-              _link_arrays(link_arrays_)
-        {
-        }
-        CompactionSpec level_arrays() const noexcept { return _level_arrays; }
-        CompactionSpec link_arrays() const noexcept { return _link_arrays; }
-    };
-
     uint32_t get_docid(uint32_t nodeid) const {
         if constexpr (NodeType::identity_mapping) {
             return nodeid;
@@ -100,7 +81,6 @@ protected:
     RandomLevelGenerator::UP _level_generator;
     IdMapping _id_mapping; // mapping from docid to nodeid vector
     HnswIndexConfig _cfg;
-    HnswIndexCompactionSpec _compaction_spec;
 
     uint32_t max_links_for_level(uint32_t level) const;
     void add_link_to(uint32_t nodeid, uint32_t level, const LinkArrayRef& old_links, uint32_t new_link) {
@@ -225,10 +205,8 @@ public:
     void remove_document(uint32_t docid) override;
     void assign_generation(generation_t current_gen) override;
     void reclaim_memory(generation_t oldest_used_gen) override;
-    void compact_level_arrays(CompactionSpec compaction_spec, const CompactionStrategy& compaction_strategy);
-    void compact_link_arrays(CompactionSpec compaction_spec, const CompactionStrategy& compaction_strategy);
-    bool consider_compact_level_arrays(const CompactionStrategy& compaction_strategy);
-    bool consider_compact_link_arrays(const CompactionStrategy& compaction_strategy);
+    void compact_level_arrays(const CompactionStrategy& compaction_strategy);
+    void compact_link_arrays(const CompactionStrategy& compaction_strategy);
     bool consider_compact(const CompactionStrategy& compaction_strategy) override;
     vespalib::MemoryUsage update_stat(const CompactionStrategy& compaction_strategy) override;
     vespalib::MemoryUsage memory_usage() const override;

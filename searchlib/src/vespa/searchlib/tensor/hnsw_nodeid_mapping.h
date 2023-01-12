@@ -57,6 +57,7 @@ public:
     void on_load(vespalib::ConstArrayRef<HnswNode> nodes);
     // TODO: Add support for compaction
     vespalib::MemoryUsage memory_usage() const;
+    vespalib::MemoryUsage update_stat(const vespalib::datastore::CompactionStrategy& compaction_strategy);
 };
 
 }

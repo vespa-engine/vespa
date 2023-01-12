@@ -3,13 +3,11 @@
 #pragma once
 
 #include <vespa/vespalib/datastore/atomic_entry_ref.h>
-#include <vespa/vespalib/datastore/compaction_spec.h>
 #include <vespa/vespalib/util/address_space.h>
 #include <vespa/vespalib/util/rcuvector.h>
 #include <functional>
 
 namespace vespalib::datastore {
-class CompactionSpec;
 class CompactionStrategy;
 }
 
@@ -21,7 +19,6 @@ namespace search::attribute {
 class MultiValueMappingBase
 {
 public:
-    using CompactionSpec = vespalib::datastore::CompactionSpec;
     using CompactionStrategy = vespalib::datastore::CompactionStrategy;
     using AtomicEntryRef = vespalib::datastore::AtomicEntryRef;
     using EntryRef = vespalib::datastore::EntryRef;
@@ -31,7 +28,6 @@ protected:
     std::shared_ptr<vespalib::alloc::MemoryAllocator> _memory_allocator;
     RefVector _indices;
     size_t    _totalValues;
-    CompactionSpec _compaction_spec;
 
     MultiValueMappingBase(const vespalib::GrowStrategy &gs, vespalib::GenerationHolder &genHolder, std::shared_ptr<vespalib::alloc::MemoryAllocator> memory_allocator);
     virtual ~MultiValueMappingBase();
@@ -41,15 +37,12 @@ protected:
     }
 
     EntryRef acquire_entry_ref(uint32_t docId) const noexcept { return _indices.acquire_elem_ref(docId).load_acquire(); }
-
-    virtual bool has_held_buffers() const noexcept = 0;
 public:
     using RefCopyVector = vespalib::Array<EntryRef>;
 
     virtual vespalib::MemoryUsage getArrayStoreMemoryUsage() const = 0;
     virtual vespalib::AddressSpace getAddressSpaceUsage() const = 0;
     vespalib::MemoryUsage getMemoryUsage() const;
-    vespalib::MemoryUsage updateStat(const CompactionStrategy& compaction_strategy);
     size_t getTotalValueCnt() const { return _totalValues; }
     RefCopyVector getRefCopy(uint32_t size) const;
 
@@ -78,8 +71,6 @@ public:
      * Const type qualifier removed to prevent call from reader.
      */
     uint32_t getCapacityKeys() { return _indices.capacity(); }
-    virtual void compactWorst(CompactionSpec compaction_spec, const CompactionStrategy& compaction_strategy) = 0;
-    bool considerCompact(const CompactionStrategy &compactionStrategy);
 };
 
 }
