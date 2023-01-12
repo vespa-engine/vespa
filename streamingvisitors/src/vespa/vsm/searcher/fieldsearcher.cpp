@@ -245,7 +245,7 @@ void FieldIdTSearcherMap::prepare(const DocumentTypeIndexFieldMapT & difm, const
         }
         /// Should perhaps do a unique on onlyInIndex
         (*it)->prepare(onlyInIndex, searcherBuf);
-        if (logger.wants(ns_log::Logger::spam)) {
+        if (LOG_WOULD_LOG(spam)) {
             char tmpBuf[16];
             sprintf(tmpBuf,"%d", fid);
             tmp += tmpBuf;
