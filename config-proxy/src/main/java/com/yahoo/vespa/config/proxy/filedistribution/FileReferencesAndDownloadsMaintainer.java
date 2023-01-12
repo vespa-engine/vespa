@@ -1,6 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.config.proxy.filedistribution;
 
+import com.yahoo.concurrent.DaemonThreadFactory;
 import com.yahoo.io.IOUtils;
 import com.yahoo.vespa.filedistribution.FileDownloader;
 import java.io.File;
@@ -12,6 +13,9 @@ import java.time.Instant;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
@@ -19,30 +23,33 @@ import java.util.stream.Collectors;
 import static java.nio.file.Files.readAttributes;
 
 /**
- * Deletes cached file references and url downloads that have not been used for some time
+ * Deletes file references and url downloads that have not been used for some time
  *
  * @author hmusum
  */
-class CachedFilesMaintainer implements Runnable {
+class FileReferencesAndDownloadsMaintainer implements Runnable {
 
-    private final static Logger log = Logger.getLogger(CachedFilesMaintainer.class.getName());
-
+    private static final Logger log = Logger.getLogger(FileReferencesAndDownloadsMaintainer.class.getName());
     private static final File defaultUrlDownloadDir = UrlDownloadRpcServer.downloadDir;
     private static final File defaultFileReferencesDownloadDir = FileDownloader.defaultDownloadDirectory;
     private static final Duration defaultDurationToKeepFiles = Duration.ofDays(14);
+    private static final Duration interval = Duration.ofMinutes(1);
 
+    private final ScheduledExecutorService executor =
+            new ScheduledThreadPoolExecutor(1, new DaemonThreadFactory("file references and downloads cleanup"));
     private final File urlDownloadDir;
     private final File fileReferencesDownloadDir;
     private final Duration durationToKeepFiles;
 
-    CachedFilesMaintainer() {
-        this(defaultFileReferencesDownloadDir, defaultUrlDownloadDir, defaultDurationToKeepFiles);
+    FileReferencesAndDownloadsMaintainer() {
+        this(defaultFileReferencesDownloadDir, defaultUrlDownloadDir, keepFileReferencesDuration());
     }
 
-    CachedFilesMaintainer(File fileReferencesDownloadDir, File urlDownloadDir, Duration durationToKeepFiles) {
+    FileReferencesAndDownloadsMaintainer(File fileReferencesDownloadDir, File urlDownloadDir, Duration durationToKeepFiles) {
         this.fileReferencesDownloadDir = fileReferencesDownloadDir;
         this.urlDownloadDir = urlDownloadDir;
         this.durationToKeepFiles = durationToKeepFiles;
+        executor.scheduleAtFixedRate(this, interval.toSeconds(), interval.toSeconds(), TimeUnit.SECONDS);
     }
 
     @Override
@@ -52,6 +59,16 @@ class CachedFilesMaintainer implements Runnable {
             deleteUnusedFiles(urlDownloadDir);
         } catch (Throwable t) {
             log.log(Level.WARNING, "Deleting unused files failed. ", t);
+        }
+    }
+
+    public void close() {
+        executor.shutdownNow();
+        try {
+            if ( ! executor.awaitTermination(10, TimeUnit.SECONDS))
+                throw new RuntimeException("Unable to shutdown " + executor + " before timeout");
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
         }
     }
 
@@ -85,6 +102,14 @@ class CachedFilesMaintainer implements Runnable {
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }
+    }
+
+    private static Duration keepFileReferencesDuration() {
+        String env = System.getenv("VESPA_KEEP_FILE_REFERENCES_DAYS");
+        if (env != null && !env.isEmpty())
+            return Duration.ofDays(Integer.parseInt(env));
+        else
+            return defaultDurationToKeepFiles;
     }
 
 }
