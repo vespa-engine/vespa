@@ -1101,12 +1101,10 @@ FileStorHandlerImpl::Stripe::abort(std::vector<std::shared_ptr<api::StorageReply
 bool
 FileStorHandlerImpl::Stripe::schedule(MessageEntry messageEntry)
 {
-    {
-        std::lock_guard guard(*_lock);
-        _queue->emplace_back(std::move(messageEntry));
-        update_cached_queue_size(guard);
-    }
-    _cond->notify_all();
+    std::lock_guard guard(*_lock);
+    _queue->emplace_back(std::move(messageEntry));
+    update_cached_queue_size(guard);
+    _cond->notify_one();
     return true;
 }
 
