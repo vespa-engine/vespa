@@ -13,6 +13,7 @@ public enum Unit {
     HIT(BaseUnit.HIT),
     HIT_PER_QUERY(BaseUnit.HIT, BaseUnit.QUERY),
     MILLISECOND(BaseUnit.MILLISECOND),
+    OPERATION(BaseUnit.OPERATION),
     OPERATION_PER_SECOND(BaseUnit.OPERATION, BaseUnit.SECOND),
     QUERY(BaseUnit.QUERY),
     QUERY_PER_SECOND(BaseUnit.QUERY, BaseUnit.SECOND),

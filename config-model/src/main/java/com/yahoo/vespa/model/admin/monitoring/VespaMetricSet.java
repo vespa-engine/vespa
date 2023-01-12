@@ -164,21 +164,17 @@ public class VespaMetricSet {
             addMetric(metrics, ContainerMetrics.JETTY_THREADPOOL_QUEUE_SIZE.baseName(), suffixes);
         }
 
-        metrics.add(new Metric("httpapi_latency.max"));
-        metrics.add(new Metric("httpapi_latency.sum"));
-        metrics.add(new Metric("httpapi_latency.count"));
-        metrics.add(new Metric("httpapi_pending.max"));
-        metrics.add(new Metric("httpapi_pending.sum"));
-        metrics.add(new Metric("httpapi_pending.count"));
-        metrics.add(new Metric("httpapi_num_operations.rate"));
-        metrics.add(new Metric("httpapi_num_updates.rate"));
-        metrics.add(new Metric("httpapi_num_removes.rate"));
-        metrics.add(new Metric("httpapi_num_puts.rate"));
-        metrics.add(new Metric("httpapi_succeeded.rate"));
-        metrics.add(new Metric("httpapi_failed.rate"));
-        metrics.add(new Metric("httpapi_parse_error.rate"));
-        addMetric(metrics, "httpapi_condition_not_met", List.of("rate"));
-        addMetric(metrics, "httpapi_not_found", List.of("rate"));
+        addMetric(metrics, ContainerMetrics.HTTPAPI_LATENCY.baseName(), List.of("max", "sum", "count"));
+        addMetric(metrics, ContainerMetrics.HTTPAPI_PENDING.baseName(), List.of("max", "sum", "count"));
+        addMetric(metrics, ContainerMetrics.HTTPAPI_NUM_OPERATIONS.baseName(), List.of("rate"));
+        addMetric(metrics, ContainerMetrics.HTTPAPI_NUM_UPDATES.baseName(), List.of("rate"));
+        addMetric(metrics, ContainerMetrics.HTTPAPI_NUM_REMOVES.baseName(), List.of("rate"));
+        addMetric(metrics, ContainerMetrics.HTTPAPI_NUM_PUTS.baseName(), List.of("rate"));
+        addMetric(metrics, ContainerMetrics.HTTPAPI_SUCCEEDED.baseName(), List.of("rate"));
+        addMetric(metrics, ContainerMetrics.HTTPAPI_FAILED.baseName(), List.of("rate"));
+        addMetric(metrics, ContainerMetrics.HTTPAPI_PARSE_ERROR.baseName(), List.of("rate"));
+        addMetric(metrics, ContainerMetrics.HTTPAPI_CONDITION_NOT_MET.baseName(), List.of("rate"));
+        addMetric(metrics, ContainerMetrics.HTTPAPI_NOT_FOUND.baseName(), List.of("rate"));
 
         metrics.add(new Metric("mem.heap.total.average"));
         metrics.add(new Metric("mem.heap.free.average"));
