@@ -176,21 +176,19 @@ public class VespaMetricSet {
         addMetric(metrics, ContainerMetrics.HTTPAPI_CONDITION_NOT_MET.baseName(), List.of("rate"));
         addMetric(metrics, ContainerMetrics.HTTPAPI_NOT_FOUND.baseName(), List.of("rate"));
 
-        metrics.add(new Metric("mem.heap.total.average"));
-        metrics.add(new Metric("mem.heap.free.average"));
-        metrics.add(new Metric("mem.heap.used.average"));
-        metrics.add(new Metric("mem.heap.used.max"));
+        addMetric(metrics, ContainerMetrics.MEM_HEAP_TOTAL.baseName(), List.of("average"));
+        addMetric(metrics, ContainerMetrics.MEM_HEAP_FREE.baseName(), List.of("average"));
+        addMetric(metrics, ContainerMetrics.MEM_HEAP_USED.baseName(), List.of("average", "max"));
+        addMetric(metrics, ContainerMetrics.MEM_DIRECT_TOTAL.baseName(), List.of("average"));
+        addMetric(metrics, ContainerMetrics.MEM_DIRECT_FREE.baseName(), List.of("average"));
+        addMetric(metrics, ContainerMetrics.MEM_DIRECT_USED.baseName(), List.of("average", "max"));
+        addMetric(metrics, ContainerMetrics.MEM_DIRECT_COUNT.baseName(), List.of("max"));
+        addMetric(metrics, ContainerMetrics.MEM_NATIVE_TOTAL.baseName(), List.of("average"));
+        addMetric(metrics, ContainerMetrics.MEM_NATIVE_FREE.baseName(), List.of("average"));
+        addMetric(metrics, ContainerMetrics.MEM_NATIVE_USED.baseName(), List.of("average", "max"));
+                
         metrics.add(new Metric("jdisc.memory_mappings.max"));
         metrics.add(new Metric("jdisc.open_file_descriptors.max"));
-        metrics.add(new Metric("mem.direct.total.average"));
-        metrics.add(new Metric("mem.direct.free.average"));
-        metrics.add(new Metric("mem.direct.used.average"));
-        metrics.add(new Metric("mem.direct.used.max"));
-        metrics.add(new Metric("mem.direct.count.max"));
-        metrics.add(new Metric("mem.native.total.average"));
-        metrics.add(new Metric("mem.native.free.average"));
-        metrics.add(new Metric("mem.native.used.average"));
-        metrics.add(new Metric("mem.native.used.max"));
 
         metrics.add(new Metric("jdisc.gc.count.average"));
         metrics.add(new Metric("jdisc.gc.count.max"));
