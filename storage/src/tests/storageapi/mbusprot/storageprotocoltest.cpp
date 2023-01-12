@@ -778,7 +778,9 @@ TEST_P(StorageProtocolTest, update_command_with_condition) {
     auto update = std::make_shared<document::DocumentUpdate>(
             _docMan.getTypeRepo(), *_testDoc->getDataType(), _testDoc->getId());
     auto cmd = std::make_shared<UpdateCommand>(_bucket, update, 14);
+    EXPECT_FALSE(cmd->hasTestAndSetCondition());
     cmd->setCondition(TestAndSetCondition(CONDITION_STRING));
+    EXPECT_TRUE(cmd->hasTestAndSetCondition());
 
     auto cmd2 = copyCommand(cmd);
     EXPECT_EQ(cmd->getCondition().getSelection(), cmd2->getCondition().getSelection());

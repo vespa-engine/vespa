@@ -1013,7 +1013,7 @@ FileStorHandlerImpl::Stripe::get_next_async_message(monitor_guard& guard)
     while ((iter != end) && operationIsInhibited(guard, iter->_bucket, *iter->_command)) {
         ++iter;
     }
-    if ((iter != end) && AsyncHandler::is_async_message(iter->_command->getType().getId())) {
+    if ((iter != end) && AsyncHandler::is_async_unconditional_message(*(iter->_command))) {
         // This is executed in the context of an RPC thread, so only do a _non-blocking_
         // poll of the throttle policy.
         auto throttle_token = _owner.operation_throttler().try_acquire_one();

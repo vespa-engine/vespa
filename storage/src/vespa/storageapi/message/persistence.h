@@ -28,6 +28,7 @@ public:
 
     void setCondition(const TestAndSetCondition & condition) { _condition = condition; }
     const TestAndSetCondition & getCondition() const { return _condition; }
+    bool hasTestAndSetCondition() const noexcept override { return _condition.isPresent(); }
 
     /**
      * Uniform interface to get document id
