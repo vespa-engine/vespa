@@ -42,7 +42,7 @@ class FileReferencesAndDownloadsMaintainer implements Runnable {
     private final Duration durationToKeepFiles;
 
     FileReferencesAndDownloadsMaintainer() {
-        this(defaultFileReferencesDownloadDir, defaultUrlDownloadDir, defaultDurationToKeepFiles);
+        this(defaultFileReferencesDownloadDir, defaultUrlDownloadDir, keepFileReferencesDuration());
     }
 
     FileReferencesAndDownloadsMaintainer(File fileReferencesDownloadDir, File urlDownloadDir, Duration durationToKeepFiles) {
@@ -102,6 +102,14 @@ class FileReferencesAndDownloadsMaintainer implements Runnable {
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }
+    }
+
+    private static Duration keepFileReferencesDuration() {
+        String env = System.getenv("VESPA_KEEP_FILE_REFERENCES_DAYS");
+        if (env != null && !env.isEmpty())
+            return Duration.ofDays(Integer.parseInt(env));
+        else
+            return defaultDurationToKeepFiles;
     }
 
 }
