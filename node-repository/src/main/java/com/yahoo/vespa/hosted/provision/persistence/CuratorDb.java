@@ -124,10 +124,7 @@ public class CuratorDb {
             byte[] serialized = nodeSerializer.toJson(node);
             curatorTransaction.add(CuratorOperations.create(nodePath(node).getAbsolute(), serialized));
         }
-
-        for (Node node : nodes)
-            log.log(Level.INFO, "Added " + node);
-
+        transaction.onCommitted(() -> nodes.forEach(node -> log.log(Level.INFO, "Added " + node)));
         return nodes;
     }
 
@@ -144,7 +141,7 @@ public class CuratorDb {
             CuratorTransaction curatorTransaction = db.newCuratorTransactionIn(transaction);
             curatorTransaction.add(CuratorOperations.delete(nodePath(node).getAbsolute()));
         }
-        nodes.forEach(node -> log.log(Level.INFO, "Removed node " + node.hostname() + " in state " + node.state()));
+        transaction.onCommitted(() -> nodes.forEach(node -> log.log(Level.INFO, "Removed node " + node.hostname() + " in state " + node.state())));
     }
 
     /**
