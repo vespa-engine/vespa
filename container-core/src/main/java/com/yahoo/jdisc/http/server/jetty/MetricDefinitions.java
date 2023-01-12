@@ -29,8 +29,8 @@ class MetricDefinitions {
     static final String NUM_PREMATURELY_CLOSED_CONNECTIONS = "jdisc.http.request.prematurely_closed";
     static final String REQUESTS_PER_CONNECTION = "jdisc.http.request.requests_per_connection";
 
-    static final String NUM_BYTES_RECEIVED = "serverBytesReceived";
-    static final String NUM_BYTES_SENT     = "serverBytesSent";
+    static final String NUM_BYTES_RECEIVED = ContainerMetrics.SERVER_BYTES_RECEIVED.baseName();
+    static final String NUM_BYTES_SENT     = ContainerMetrics.SERVER_BYTES_SENT.baseName();
 
     static final String NUM_CONNECTIONS = ContainerMetrics.SERVER_NUM_CONNECTIONS.baseName();
 

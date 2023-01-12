@@ -35,6 +35,9 @@ public enum ContainerMetrics {
     SERVER_NUM_OPEN_CONNECTIONS("serverNumOpenConnections", Unit.CONNECTION, "The number of currently open connections"),
     SERVER_NUM_CONNECTIONS("serverNumConnections", Unit.CONNECTION, "The total number of connections opened"),
 
+    SERVER_BYTES_RECEIVED("serverBytesReceived", Unit.BYTE, "The number of bytes received by the server"),
+    SERVER_BYTES_SENT("serverBytesSent", Unit.BYTE, "The number of bytes sent from the server"),
+
     HANDLED_REQUESTS("handled.requests", Unit.OPERATION, "The number of requests handled per metrics snapshot"),
     HANDLED_LATENCY("handled.latency", Unit.MILLISECOND, "The time used for requests during this metrics snapshot"),
     

@@ -135,10 +135,8 @@ public class VespaMetricSet {
         addMetric(metrics, ContainerMetrics.SERVER_NUM_OPEN_CONNECTIONS.baseName(), List.of("max", "last", "average"));
         addMetric(metrics, ContainerMetrics.SERVER_NUM_CONNECTIONS.baseName(), List.of("max", "last", "average"));
 
-        metrics.add(new Metric("serverBytesReceived.sum"));
-        metrics.add(new Metric("serverBytesReceived.count"));
-        metrics.add(new Metric("serverBytesSent.sum"));
-        metrics.add(new Metric("serverBytesSent.count"));
+        addMetric(metrics, ContainerMetrics.SERVER_BYTES_RECEIVED.baseName(), List.of("sum", "count"));
+        addMetric(metrics, ContainerMetrics.SERVER_BYTES_SENT.baseName(), List.of("sum", "count"));
 
         {
             List<String> suffixes = List.of("sum", "count", "last", "min", "max");
