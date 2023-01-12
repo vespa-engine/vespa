@@ -91,8 +91,8 @@
 #ifdef VESPA_LOG_USELOGBUFFERFORREGULARLOG
 #define LOG(level, ...)                                            \
     do {                                                           \
-        if (logger.wants(ns_log::Logger::level)) {                 \
-            if (logger.wants(ns_log::Logger::debug)) {             \
+        if (LOG_WOULD_LOG(level)) {                                \
+            if (LOG_WOULD_LOG(debug)) {                            \
                 logger.doLog(ns_log::Logger::level,                \
                              __FILE__, __LINE__, __VA_ARGS__);     \
                 ns_log::BufferedLogger::instance().trimCache();    \
@@ -110,8 +110,8 @@
 // VESPA_LOG_USELOGBUFFERFORREGULARLOG is defined.
 #define LOGBM(level, ...)                                          \
     do {                                                           \
-        if (logger.wants(ns_log::Logger::level)) {                 \
-            if (logger.wants(ns_log::Logger::debug)) {             \
+        if (LOG_WOULD_LOG(level)) {                                \
+            if (LOG_WOULD_LOG(debug)) {                            \
                 logger.doLog(ns_log::Logger::level,                \
                              __FILE__, __LINE__, __VA_ARGS__);     \
                 ns_log::BufferedLogger::instance().trimCache();    \
@@ -127,8 +127,8 @@
 // (File/line of macro caller)
 #define LOGBP(level, ARGS...)                                      \
     do {                                                           \
-        if (logger.wants(ns_log::Logger::level)) {                 \
-            if (logger.wants(ns_log::Logger::debug)) {             \
+        if (LOG_WOULD_LOG(level)) {                                \
+            if (LOG_WOULD_LOG(debug)) {                            \
                 logger.doLog(ns_log::Logger::level,                \
                              __FILE__, __LINE__, ##ARGS);          \
                 ns_log::BufferedLogger::instance().trimCache();    \
@@ -145,8 +145,8 @@
 // Define LOGT calls for using the buffer specifically stating token
 #define LOGBT(level, token, ...)                                 \
     do {                                                         \
-        if (logger.wants(ns_log::Logger::level)) {               \
-            if (logger.wants(ns_log::Logger::debug)) {           \
+        if (LOG_WOULD_LOG(level)) {                              \
+            if (LOG_WOULD_LOG(debug)) {                          \
                 logger.doLog(ns_log::Logger::level,              \
                              __FILE__, __LINE__, __VA_ARGS__);   \
                 ns_log::BufferedLogger::instance().trimCache();  \

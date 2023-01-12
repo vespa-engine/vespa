@@ -29,22 +29,26 @@ static bool logInitialised = false;             \
 static const char *logName = x;                 \
 static const char *indirectRcsId = id
 
+#define LOG_WOULD_LOG(level) logger.wants(ns_log::Logger::level)
+#define LOG_WOULD_VLOG(level) logger.wants(level)
+#define LOG_INDIRECT_WOULD_LOG(levelName) \
+    logger->wants(ns_log::Logger::levelName)
 
 #define LOG_RCSID(x)                                            \
 static int log_dummmy __attribute__((unused)) = logger.setRcsId(x)
-
 
 // Define LOG if not using log buffer. Otherwise log buffer will define them
 #ifndef VESPA_LOG_USELOGBUFFERFORREGULARLOG
 #define LOG(level, ...)                                                       \
 do {                                                                          \
-    if (__builtin_expect(logger.wants(ns_log::Logger::level), false)) {       \
+    if (__builtin_expect(LOG_WOULD_LOG(level), false)) {                      \
         logger.doLog(ns_log::Logger::level, __FILE__, __LINE__, __VA_ARGS__); \
     }                                                                         \
 } while (false)
+
 #define VLOG(level, ...)                                      \
 do {                                                          \
-    if (__builtin_expect(logger.wants(level), false)) {                                \
+    if (__builtin_expect(LOG_WOULD_VLOG(level), false)) {     \
         logger.doLog(level, __FILE__, __LINE__, __VA_ARGS__); \
     }                                                         \
 } while (false)
@@ -62,74 +66,72 @@ do {                                                          \
 #define LOG_INDIRECT(level, ...)                                                \
 do {                                                                            \
     LOG_INDIRECT_MUST                                                           \
-    if (logger->wants(ns_log::Logger::level)) {                                 \
+    if (LOG_INDIRECT_WOULD_LOG(level)) {                                        \
         logger->doLog(ns_log::Logger::level, __FILE__, __LINE__, __VA_ARGS__);  \
     }                                                                           \
 } while (false)
 
-#define LOG_WOULD_LOG(level) logger.wants(ns_log::Logger::level)
-#define LOG_WOULD_VLOG(level) logger.wants(level)
 
 #define EV_STARTING(name)                       \
 do {                                            \
-    if (logger.wants(ns_log::Logger::event)) {  \
+    if (LOG_WOULD_LOG(event)) {                 \
         logger.doEventStarting(name);           \
     }                                           \
 } while (false)
 
 #define EV_STOPPING(name,why)                   \
 do {                                            \
-    if (logger.wants(ns_log::Logger::event)) {  \
+    if (LOG_WOULD_LOG(event)) {                 \
         logger.doEventStopping(name, why);      \
     }                                           \
 } while (false)
 
 #define EV_STARTED(name)                        \
 do {                                            \
-    if (logger.wants(ns_log::Logger::event)) {  \
+    if (LOG_WOULD_LOG(event)) {                 \
         logger.doEventStarted(name);            \
     }                                           \
 } while (false)
 
 #define EV_STOPPED(name,pid,exitcode)                   \
 do {                                                    \
-    if (logger.wants(ns_log::Logger::event)) {          \
+    if (LOG_WOULD_LOG(event)) {                         \
         logger.doEventStopped(name, pid, exitcode);     \
     }                                                   \
 } while (false)
 
 #define EV_CRASH(name,pid,signal)               \
 do {                                            \
-    if (logger.wants(ns_log::Logger::event)) {  \
+    if (LOG_WOULD_LOG(event)) {                 \
         logger.doEventCrash(name, pid, signal); \
     }                                           \
 } while (false)
 
 #define EV_PROGRESS(name, ...)                          \
 do {                                                    \
-    if (logger.wants(ns_log::Logger::event)) {          \
+    if (LOG_WOULD_LOG(event)) {                         \
         logger.doEventProgress(name, __VA_ARGS__);      \
     }                                                   \
 } while (false)
 
 #define EV_COUNT(name,value)                    \
 do {                                            \
-    if (logger.wants(ns_log::Logger::event)) {  \
+    if (LOG_WOULD_LOG(event)) {                 \
         logger.doEventCount(name, value);       \
     }                                           \
 } while (false)
 
 #define EV_VALUE(name,value)                    \
 do {                                            \
-    if (logger.wants(ns_log::Logger::event)) {  \
+    if (LOG_WOULD_LOG(event)) {                 \
         logger.doEventValue(name, value);       \
     }                                           \
 } while (false)
 
-#define EV_STATE(name,value)                   \
+#define EV_STATE(name,value)                    \
 do {                                            \
-    if (logger.wants(ns_log::Logger::event)) {  \
-        logger.doEventState(name, value);      \
+    if (LOG_WOULD_LOG(event)) {                 \
+        logger.doEventState(name, value);       \
     }                                           \
 } while (false)
 
