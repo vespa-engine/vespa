@@ -56,7 +56,18 @@ public enum ContainerMetrics {
     HTTPAPI_FAILED("httpapi_failed", Unit.OPERATION, "Document operations that failed"),
     HTTPAPI_PARSE_ERROR("httpapi_parse_error", Unit.OPERATION, "Document operations that failed due to document parse errors"),
     HTTPAPI_CONDITION_NOT_MET("httpapi_condition_not_met", Unit.OPERATION, "Document operations not applied due to condition not met"),
-    HTTPAPI_NOT_FOUND("httpapi_not_found", Unit.OPERATION, "Document operations not applied due to document not found");
+    HTTPAPI_NOT_FOUND("httpapi_not_found", Unit.OPERATION, "Document operations not applied due to document not found"),
+    
+    MEM_HEAP_TOTAL("mem.heap.total", Unit.BYTE, "Total available heap memory"),
+    MEM_HEAP_FREE("mem.heap.free", Unit.BYTE, "Free heap memory"),
+    MEM_HEAP_USED("mem.heap.used", Unit.BYTE, "Currently used heap memory"),
+    MEM_DIRECT_TOTAL("mem.direct.total", Unit.BYTE, "Total available direct memory"),
+    MEM_DIRECT_FREE("mem.direct.free", Unit.BYTE, "Currently free direct memory"),
+    MEM_DIRECT_USED("mem.direct.used", Unit.BYTE, "Direct memory currently used"),
+    MEM_DIRECT_COUNT("mem.direct.count", Unit.BYTE, "Number of direct memory allocations"),
+    MEM_NATIVE_TOTAL("mem.native.total", Unit.BYTE, "Total available native memory"),
+    MEM_NATIE_FREE("mem.native.free", Unit.BYTE, "Currently free native memory"),
+    MEM_NATIVE_USED("mem.native.used", Unit.BYTE, "Native memory currently used");
     
     private final String name;
     private final Unit unit;
