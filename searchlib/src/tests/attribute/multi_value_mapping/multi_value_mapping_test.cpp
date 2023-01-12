@@ -154,7 +154,8 @@ public:
     void compactWorst() {
         CompactionSpec compaction_spec(true, false);
         CompactionStrategy compaction_strategy;
-        _mvMapping->compactWorst(compaction_spec, compaction_strategy);
+        _mvMapping->set_compaction_spec(compaction_spec);
+        _mvMapping->compact_worst(compaction_strategy);
         _attr->commit();
         _attr->incGeneration();
     }

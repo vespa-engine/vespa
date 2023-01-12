@@ -723,8 +723,11 @@ TYPED_TEST(HnswIndexTest, hnsw_graph_is_compacted)
         // Forced compaction to move things around
         CompactionSpec compaction_spec(true, false);
         CompactionStrategy compaction_strategy;
-        this->index->compact_link_arrays(compaction_spec, compaction_strategy);
-        this->index->compact_level_arrays(compaction_spec, compaction_strategy);
+        auto& graph = this->index->get_graph();
+        graph.links_store.set_compaction_spec(compaction_spec);
+        graph.levels_store.set_compaction_spec(compaction_spec);
+        this->index->compact_link_arrays(compaction_strategy);
+        this->index->compact_level_arrays(compaction_strategy);
         this->commit();
         this->index->update_stat(compaction_strategy);
         mem_2 = this->commit_and_update_stat();

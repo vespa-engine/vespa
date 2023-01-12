@@ -7,6 +7,7 @@
 #include <vespa/vespalib/util/size_literals.h>
 #include <cassert>
 
+using vespalib::datastore::CompactionStrategy;
 using vespalib::datastore::EntryRef;
 
 namespace {
@@ -234,6 +235,17 @@ HnswNodeidMapping::memory_usage() const
     vespalib::MemoryUsage result;
     result.merge(get_refs_usage(_refs));
     result.merge(_nodeids.getMemoryUsage());
+    // Note that the memory usage of the hold list and free list is not explicitly tracked
+    // as their content are covered by the memory usage reported from the NodeidStore (array store).
+    return result;
+}
+
+vespalib::MemoryUsage
+HnswNodeidMapping::update_stat(const CompactionStrategy& compaction_strategy)
+{
+    vespalib::MemoryUsage result;
+    result.merge(get_refs_usage(_refs));
+    result.merge(_nodeids.update_stat(compaction_strategy));
     // Note that the memory usage of the hold list and free list is not explicitly tracked
     // as their content are covered by the memory usage reported from the NodeidStore (array store).
     return result;
