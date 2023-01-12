@@ -1101,9 +1101,11 @@ FileStorHandlerImpl::Stripe::abort(std::vector<std::shared_ptr<api::StorageReply
 bool
 FileStorHandlerImpl::Stripe::schedule(MessageEntry messageEntry)
 {
-    std::lock_guard guard(*_lock);
-    _queue->emplace_back(std::move(messageEntry));
-    update_cached_queue_size(guard);
+    {
+        std::lock_guard guard(*_lock);
+        _queue->emplace_back(std::move(messageEntry));
+        update_cached_queue_size(guard);
+    }
     _cond->notify_one();
     return true;
 }
@@ -1116,6 +1118,9 @@ FileStorHandlerImpl::Stripe::schedule_and_get_next_async_message(MessageEntry en
     update_cached_queue_size(guard);
     auto lockedMessage = get_next_async_message(guard);
     if ( ! lockedMessage.msg) {
+        if (guard.owns_lock()) {
+            guard.unlock();
+        }
         _cond->notify_one();
     }
     return lockedMessage;
