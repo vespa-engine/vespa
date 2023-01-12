@@ -21,7 +21,7 @@ class MetricDefinitions {
     static final String PROTOCOL_DIMENSION = "protocol";
     static final String STATUS_CODE_DIMENSION = "statusCode";
 
-    static final String NUM_OPEN_CONNECTIONS = "serverNumOpenConnections";
+    static final String NUM_OPEN_CONNECTIONS = ContainerMetrics.SERVER_NUM_OPEN_CONNECTIONS.baseName();
     static final String NUM_CONNECTIONS_OPEN_MAX = "serverConnectionsOpenMax";
     static final String CONNECTION_DURATION_MAX = "serverConnectionDurationMax";
     static final String CONNECTION_DURATION_MEAN = "serverConnectionDurationMean";
