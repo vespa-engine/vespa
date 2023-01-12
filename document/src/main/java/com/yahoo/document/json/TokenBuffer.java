@@ -33,7 +33,7 @@ public class TokenBuffer {
     }
 
     /** Returns whether any tokens are available in this */
-    public boolean isEmpty() { return tokens.isEmpty(); }
+    public boolean isEmpty() { return remaining() == 0; }
 
     public JsonToken next() {
         position++;
@@ -42,7 +42,6 @@ public class TokenBuffer {
         return token;
     }
 
-    /** Goes one token back. Repeated calls to this method will *not* go back further. */
     public JsonToken previous() {
         updateNestingGoingBackwards(currentToken());
         position--;
@@ -51,7 +50,7 @@ public class TokenBuffer {
 
     /** Returns the current token without changing position, or null if none */
     public JsonToken currentToken() {
-        if (position >= tokens.size()) return null;
+        if (isEmpty()) return null;
         Token token = tokens.get(position);
         if (token == null) return null;
         return token.token;
@@ -59,7 +58,7 @@ public class TokenBuffer {
 
     /** Returns the current token name without changing position, or null if none */
     public String currentName() {
-        if (position >= tokens.size()) return null;
+        if (isEmpty()) return null;
         Token token = tokens.get(position);
         if (token == null) return null;
         return token.name;
@@ -67,13 +66,13 @@ public class TokenBuffer {
 
     /** Returns the current token text without changing position, or null if none */
     public String currentText() {
-        if (position >= tokens.size()) return null;
+        if (isEmpty()) return null;
         Token token = tokens.get(position);
         if (token == null) return null;
         return token.text;
     }
 
-    public int size() {
+    public int remaining() {
         return tokens.size() - position;
     }
 
@@ -91,7 +90,7 @@ public class TokenBuffer {
 
         Preconditions.checkArgument(first == firstToken,
                 "Expected %s, got %s.", firstToken.name(), t);
-        if (size() == 0) {
+        if (remaining() == 0) {
             updateNesting(t);
         }
         localNesting = storeAndPeekNesting(t, localNesting, tokens);
@@ -121,7 +120,6 @@ public class TokenBuffer {
         try {
             add(t, tokens.getCurrentName(), tokens.getText());
         } catch (IOException e) {
-            // TODO something sane
             throw new IllegalArgumentException(e);
         }
     }
@@ -130,7 +128,6 @@ public class TokenBuffer {
         try {
             return tokens.nextValue();
         } catch (IOException e) {
-            // TODO something sane
             throw new IllegalArgumentException(e);
         }
     }
