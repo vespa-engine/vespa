@@ -44,7 +44,7 @@ public class DefaultMetrics {
         metrics.add(new Metric(ContainerMetrics.HTTP_STATUS_4XX.rate()));
         metrics.add(new Metric(ContainerMetrics.HTTP_STATUS_5XX.rate()));
         metrics.add(new Metric(ContainerMetrics.JDISC_GC_MS.average()));
-        metrics.add(new Metric("mem.heap.free.average"));
+        metrics.add(new Metric(ContainerMetrics.MEM_HEAP_FREE.average()));
     }
 
     private static void addSearchChainMetrics(Set<Metric> metrics) {

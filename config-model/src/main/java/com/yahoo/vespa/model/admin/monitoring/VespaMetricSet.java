@@ -172,21 +172,19 @@ public class VespaMetricSet {
         addMetric(metrics, ContainerMetrics.HTTPAPI_CONDITION_NOT_MET.rate());
         addMetric(metrics, ContainerMetrics.HTTPAPI_NOT_FOUND.rate());
 
-        metrics.add(new Metric("mem.heap.total.average"));
-        metrics.add(new Metric("mem.heap.free.average"));
-        metrics.add(new Metric("mem.heap.used.average"));
-        metrics.add(new Metric("mem.heap.used.max"));
+        addMetric(metrics, ContainerMetrics.MEM_HEAP_TOTAL.average());
+        addMetric(metrics, ContainerMetrics.MEM_HEAP_FREE.average());
+        addMetric(metrics, ContainerMetrics.MEM_HEAP_USED.baseName(), List.of("average", "max"));
+        addMetric(metrics, ContainerMetrics.MEM_DIRECT_TOTAL.average());
+        addMetric(metrics, ContainerMetrics.MEM_DIRECT_FREE.average());
+        addMetric(metrics, ContainerMetrics.MEM_DIRECT_USED.baseName(), List.of("average", "max"));
+        addMetric(metrics, ContainerMetrics.MEM_DIRECT_COUNT.max());
+        addMetric(metrics, ContainerMetrics.MEM_NATIVE_TOTAL.average());
+        addMetric(metrics, ContainerMetrics.MEM_NATIVE_FREE.average());
+        addMetric(metrics, ContainerMetrics.MEM_NATIVE_USED.average());
+                
         metrics.add(new Metric("jdisc.memory_mappings.max"));
         metrics.add(new Metric("jdisc.open_file_descriptors.max"));
-        metrics.add(new Metric("mem.direct.total.average"));
-        metrics.add(new Metric("mem.direct.free.average"));
-        metrics.add(new Metric("mem.direct.used.average"));
-        metrics.add(new Metric("mem.direct.used.max"));
-        metrics.add(new Metric("mem.direct.count.max"));
-        metrics.add(new Metric("mem.native.total.average"));
-        metrics.add(new Metric("mem.native.free.average"));
-        metrics.add(new Metric("mem.native.used.average"));
-        metrics.add(new Metric("mem.native.used.max"));
 
         addMetric(metrics, ContainerMetrics.JDISC_GC_COUNT.baseName(), List.of("average", "max", "last"));
         addMetric(metrics, ContainerMetrics.JDISC_GC_MS.baseName(), List.of("average", "max", "last"));
