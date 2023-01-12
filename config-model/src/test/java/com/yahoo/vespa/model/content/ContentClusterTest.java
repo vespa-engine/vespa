@@ -336,6 +336,7 @@ public class ContentClusterTest extends ContentBaseTest {
             model.getConfig(builder, "bar/distributor/0");
             StorDistributormanagerConfig config = new StorDistributormanagerConfig(builder);
             assertFalse(config.inlinebucketsplitting());
+            assertTrue(config.enable_two_phase_garbage_collection());
         }
 
         {
@@ -1130,32 +1131,6 @@ public class ContentClusterTest extends ContentBaseTest {
         assertEquals(2, resolveTunedNumDistributorStripesConfig(17));
         assertEquals(2, resolveTunedNumDistributorStripesConfig(64));
         assertEquals(4, resolveTunedNumDistributorStripesConfig(65));
-    }
-
-    private boolean resolveTwoPhaseGcConfigWithFeatureFlag(Boolean flagEnableTwoPhase) {
-        var props = new TestProperties();
-        if (flagEnableTwoPhase != null) {
-            props.setUseTwoPhaseDocumentGc(flagEnableTwoPhase);
-        }
-        VespaModel model = createEnd2EndOneNode(props);
-
-        ContentCluster cc = model.getContentClusters().get("storage");
-        var builder = new StorDistributormanagerConfig.Builder();
-        cc.getDistributorNodes().getConfig(builder);
-
-        return (new StorDistributormanagerConfig(builder)).enable_two_phase_garbage_collection();
-    }
-
-    @Test
-    public void two_phase_garbage_collection_config_is_controlled_by_properties() {
-        assertFalse(resolveTwoPhaseGcConfigWithFeatureFlag(false));
-        assertTrue(resolveTwoPhaseGcConfigWithFeatureFlag(true));
-    }
-
-    // TODO change once gradual rollout complete
-    @Test
-    public void two_phase_garbage_collection_config_is_enabled_by_default() {
-        assertTrue(resolveTwoPhaseGcConfigWithFeatureFlag(null));
     }
 
     @Test

@@ -193,7 +193,6 @@ public class ModelContextImpl implements ModelContext {
         private final boolean enableProxyProtocolMixedMode;
         private final boolean sharedStringRepoNoReclaim;
         private final String logFileCompressionAlgorithm;
-        private final boolean useTwoPhaseDocumentGc;
         private final int mbus_network_threads;
         private final int mbus_java_num_targets;
         private final int mbus_java_events_before_wakeup;
@@ -237,7 +236,6 @@ public class ModelContextImpl implements ModelContext {
             this.enableProxyProtocolMixedMode = flagValue(source, appId, version, Flags.ENABLE_PROXY_PROTOCOL_MIXED_MODE);
             this.sharedStringRepoNoReclaim = flagValue(source, appId, version, Flags.SHARED_STRING_REPO_NO_RECLAIM);
             this.logFileCompressionAlgorithm = flagValue(source, appId, version, Flags.LOG_FILE_COMPRESSION_ALGORITHM);
-            this.useTwoPhaseDocumentGc = flagValue(source, appId, version, Flags.USE_TWO_PHASE_DOCUMENT_GC);
             this.mbus_java_num_targets = flagValue(source, appId, version, Flags.MBUS_JAVA_NUM_TARGETS);
             this.mbus_java_events_before_wakeup = flagValue(source, appId, version, Flags.MBUS_JAVA_EVENTS_BEFORE_WAKEUP);
             this.mbus_cpp_num_targets = flagValue(source, appId, version, Flags.MBUS_CPP_NUM_TARGETS);
@@ -299,7 +297,6 @@ public class ModelContextImpl implements ModelContext {
             }
             return defVal;
         }
-        @Override public boolean useTwoPhaseDocumentGc() { return useTwoPhaseDocumentGc; }
         @Override public boolean useRestrictedDataPlaneBindings() { return useRestrictedDataPlaneBindings; }
 
         private static <V> V flagValue(FlagSource source, ApplicationId appId, Version vespaVersion, UnboundFlag<? extends V, ?, ?> flag) {
