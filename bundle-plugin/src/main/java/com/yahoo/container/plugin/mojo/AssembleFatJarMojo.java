@@ -123,8 +123,12 @@ public class AssembleFatJarMojo extends AbstractMojo {
     private String generateClasspath(Set<Artifact> installedDependencies, SortedSet<Artifact> projectDependencies) {
         return projectDependencies.stream()
                 .filter(installedDependencies::contains)
-                .map(d -> d.getFile().getName())
+                .map(AssembleFatJarMojo::filename)
                 .collect(Collectors.joining(" "));
+    }
+
+    private static String filename(Artifact a) {
+        return a.getGroupId().equals("com.yahoo.vespa") ? "%s-jar-with-dependencies.jar".formatted(a.getArtifactId()) : a.getFile().getName();
     }
 
     private File outputFile() {
@@ -143,7 +147,8 @@ public class AssembleFatJarMojo extends AbstractMojo {
             var installedDepsProject = projectDefiningInstalledDependencies.split(":");
             var project = session.getAllProjects().stream()
                     .filter(p -> p.getGroupId().equals(installedDepsProject[0]) && p.getArtifactId().equals(installedDepsProject[1]))
-                    .findAny().orElseThrow(() -> new IllegalStateException("Cannot find " + projectDefiningInstalledDependencies));
+                    .findAny().orElseThrow(() -> new IllegalStateException(
+                            "Cannot find %s. Build from project root with 'mvn install -pl :%s'".formatted(projectDefiningInstalledDependencies, this.project.getArtifactId())));
             var req = new DefaultProjectBuildingRequest(session.getProjectBuildingRequest());
             req.setProject(project);
             var root = dependencyGraphBuilder.buildDependencyGraph(req, null);
