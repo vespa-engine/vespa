@@ -166,15 +166,15 @@ public class VespaMetricSet {
 
         addMetric(metrics, ContainerMetrics.HTTPAPI_LATENCY.baseName(), List.of("max", "sum", "count"));
         addMetric(metrics, ContainerMetrics.HTTPAPI_PENDING.baseName(), List.of("max", "sum", "count"));
-        addMetric(metrics, ContainerMetrics.HTTPAPI_NUM_OPERATIONS.baseName(), List.of("rate"));
-        addMetric(metrics, ContainerMetrics.HTTPAPI_NUM_UPDATES.baseName(), List.of("rate"));
-        addMetric(metrics, ContainerMetrics.HTTPAPI_NUM_REMOVES.baseName(), List.of("rate"));
-        addMetric(metrics, ContainerMetrics.HTTPAPI_NUM_PUTS.baseName(), List.of("rate"));
-        addMetric(metrics, ContainerMetrics.HTTPAPI_SUCCEEDED.baseName(), List.of("rate"));
-        addMetric(metrics, ContainerMetrics.HTTPAPI_FAILED.baseName(), List.of("rate"));
-        addMetric(metrics, ContainerMetrics.HTTPAPI_PARSE_ERROR.baseName(), List.of("rate"));
-        addMetric(metrics, ContainerMetrics.HTTPAPI_CONDITION_NOT_MET.baseName(), List.of("rate"));
-        addMetric(metrics, ContainerMetrics.HTTPAPI_NOT_FOUND.baseName(), List.of("rate"));
+        addMetric(metrics, ContainerMetrics.HTTPAPI_NUM_OPERATIONS.rate());
+        addMetric(metrics, ContainerMetrics.HTTPAPI_NUM_UPDATES.rate());
+        addMetric(metrics, ContainerMetrics.HTTPAPI_NUM_REMOVES.rate());
+        addMetric(metrics, ContainerMetrics.HTTPAPI_NUM_PUTS.rate());
+        addMetric(metrics, ContainerMetrics.HTTPAPI_SUCCEEDED.rate());
+        addMetric(metrics, ContainerMetrics.HTTPAPI_FAILED.rate());
+        addMetric(metrics, ContainerMetrics.HTTPAPI_PARSE_ERROR.rate());
+        addMetric(metrics, ContainerMetrics.HTTPAPI_CONDITION_NOT_MET.rate());
+        addMetric(metrics, ContainerMetrics.HTTPAPI_NOT_FOUND.rate());
 
         metrics.add(new Metric("mem.heap.total.average"));
         metrics.add(new Metric("mem.heap.free.average"));
@@ -851,6 +851,10 @@ public class VespaMetricSet {
         metrics.add(new Metric("vds.mergethrottler.mergechains.failures.busy.rate"));
         metrics.add(new Metric("vds.mergethrottler.mergechains.failures.total.rate"));
         return metrics;
+    }
+
+    private static void addMetric(Set<Metric> metrics, String nameWithSuffix) {
+        metrics.add(new Metric(nameWithSuffix));
     }
 
     private static void addMetric(Set<Metric> metrics, String metricName, Iterable<String> aggregateSuffices) {
