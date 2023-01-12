@@ -134,12 +134,8 @@ public class VespaMetricSet {
         metrics.add(new Metric("serverActiveThreads.count"));       // TODO: Remove on Vespa 9. Use jdisc.thread_pool.active_threads.
         metrics.add(new Metric("serverActiveThreads.last"));        // TODO: Remove on Vespa 9. Use jdisc.thread_pool.active_threads.
 
-        metrics.add(new Metric("serverNumOpenConnections.average"));
-        metrics.add(new Metric("serverNumOpenConnections.max"));
-        metrics.add(new Metric("serverNumOpenConnections.last"));
-        metrics.add(new Metric(ContainerMetrics.SERVER_NUM_CONNECTIONS.average()));
-        metrics.add(new Metric(ContainerMetrics.SERVER_NUM_CONNECTIONS.max()));
-        metrics.add(new Metric(ContainerMetrics.SERVER_NUM_CONNECTIONS.last()));
+        addMetric(metrics, ContainerMetrics.SERVER_NUM_OPEN_CONNECTIONS.baseName(), List.of("max", "last", "average));
+        addMetric(metrics, ContainerMetrics.SERVER_NUM_CONNECTIONS.baseName(), List.of("max", "last", "average));
 
         metrics.add(new Metric("serverBytesReceived.sum"));
         metrics.add(new Metric("serverBytesReceived.count"));
