@@ -237,6 +237,9 @@ public:
 
     // Only for unit testing
     void setTimer(std::unique_ptr<Timer> timer) { _timer = std::move(timer); }
+
+    // Only for internal use
+    static LogTarget *getCurrentTarget();
 };
 
 

@@ -406,4 +406,13 @@ Logger::doEventState(const char *name, const char *value)
     doLog(event, "", 0, "state/1 name=\"%s\" value=\"%s\"", name, value);
 }
 
+LogTarget *
+Logger::getCurrentTarget()
+{
+    if (_target == nullptr) {
+        throwInvalid("No current log target");
+    }
+    return _target;
+}
+
 } // end namespace ns_log
