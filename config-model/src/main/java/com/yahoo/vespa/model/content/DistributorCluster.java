@@ -32,8 +32,6 @@ public class DistributorCluster extends AbstractConfigProducer<Distributor> impl
     private final GcOptions gc;
     private final boolean hasIndexedDocumentType;
     private final int maxActivationInhibitedOutOfSyncGroups;
-    private final boolean useTwoPhaseDocumentGc;
-
     public static class Builder extends VespaDomBuilder.DomConfigProducerBuilder<DistributorCluster> {
 
         ContentCluster parent;
@@ -94,19 +92,17 @@ public class DistributorCluster extends AbstractConfigProducer<Distributor> impl
             final GcOptions gc = parseGcOptions(documentsNode);
             final boolean hasIndexedDocumentType = clusterContainsIndexedDocumentType(documentsNode);
             int maxInhibitedGroups = deployState.getProperties().featureFlags().maxActivationInhibitedOutOfSyncGroups();
-            boolean useTwoPhaseDocumentGc = deployState.getProperties().featureFlags().useTwoPhaseDocumentGc();
 
             return new DistributorCluster(parent,
                     new BucketSplitting.Builder().build(new ModelElement(producerSpec)), gc,
                     hasIndexedDocumentType,
-                    maxInhibitedGroups, useTwoPhaseDocumentGc);
+                    maxInhibitedGroups);
         }
     }
 
     private DistributorCluster(ContentCluster parent, BucketSplitting bucketSplitting,
                                GcOptions gc, boolean hasIndexedDocumentType,
-                               int maxActivationInhibitedOutOfSyncGroups,
-                               boolean useTwoPhaseDocumentGc)
+                               int maxActivationInhibitedOutOfSyncGroups)
     {
         super(parent, "distributor");
         this.parent = parent;
@@ -114,7 +110,6 @@ public class DistributorCluster extends AbstractConfigProducer<Distributor> impl
         this.gc = gc;
         this.hasIndexedDocumentType = hasIndexedDocumentType;
         this.maxActivationInhibitedOutOfSyncGroups = maxActivationInhibitedOutOfSyncGroups;
-        this.useTwoPhaseDocumentGc = useTwoPhaseDocumentGc;
     }
 
     @Override
@@ -127,8 +122,6 @@ public class DistributorCluster extends AbstractConfigProducer<Distributor> impl
         builder.enable_revert(parent.getPersistence().supportRevert());
         builder.disable_bucket_activation(!hasIndexedDocumentType);
         builder.max_activation_inhibited_out_of_sync_groups(maxActivationInhibitedOutOfSyncGroups);
-        builder.enable_two_phase_garbage_collection(useTwoPhaseDocumentGc);
-
         bucketSplitting.getConfig(builder);
     }
 

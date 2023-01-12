@@ -391,13 +391,6 @@ public class Flags {
             "Specifies which public key to use for core dump encryption.",
             "Takes effect on the next tick.",
             ZONE_ID, NODE_TYPE, HOSTNAME);
-
-    public static final UnboundBooleanFlag USE_OLD_JDISC_CONTAINER_STARTUP = defineFeatureFlag(
-            "use-old-jdisc-container-startup", true,
-            List.of("arnej", "baldersheim"), "2022-11-09", "2023-01-31",
-            "If true, use the old vespa-start-container-daemon script.",
-            "Takes effect immediately?",
-            ZONE_ID, APPLICATION_ID);
     
     public static final UnboundBooleanFlag ENABLE_DATAPLANE_FILTER = defineFeatureFlag(
             "enable-dataplane-filter", false, 
