@@ -66,7 +66,7 @@ public enum ContainerMetrics {
     MEM_DIRECT_USED("mem.direct.used", Unit.BYTE, "Direct memory currently used"),
     MEM_DIRECT_COUNT("mem.direct.count", Unit.BYTE, "Number of direct memory allocations"),
     MEM_NATIVE_TOTAL("mem.native.total", Unit.BYTE, "Total available native memory"),
-    MEM_NATIE_FREE("mem.native.free", Unit.BYTE, "Currently free native memory"),
+    MEM_NATIVE_FREE("mem.native.free", Unit.BYTE, "Currently free native memory"),
     MEM_NATIVE_USED("mem.native.used", Unit.BYTE, "Native memory currently used");
     
     private final String name;
