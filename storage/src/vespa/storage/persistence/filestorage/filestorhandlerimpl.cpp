@@ -420,10 +420,7 @@ FileStorHandlerImpl::Stripe::lock(const document::Bucket &bucket, api::LockingRe
         _cond->wait_for(guard, 100ms);
     }
 
-    auto locker = std::make_shared<BucketLock>(guard, *this, bucket, 255, api::MessageType::INTERNAL_ID, 0, lockReq);
-    guard.unlock();
-    _cond->notify_all();
-    return locker;
+    return std::make_shared<BucketLock>(guard, *this, bucket, 255, api::MessageType::INTERNAL_ID, 0, lockReq);
 }
 
 namespace {
