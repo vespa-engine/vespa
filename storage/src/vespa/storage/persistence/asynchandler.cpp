@@ -337,13 +337,13 @@ AsyncHandler::handleRemove(api::RemoveCommand& cmd, MessageTracker::UP trackerUP
 }
 
 bool
-AsyncHandler::is_async_message(api::MessageType::Id type_id) noexcept
+AsyncHandler::is_async_unconditional_message(const api::StorageMessage & cmd) noexcept
 {
-    switch (type_id) {
+    switch (cmd.getType().getId()) {
         case api::MessageType::PUT_ID:
         case api::MessageType::UPDATE_ID:
         case api::MessageType::REMOVE_ID:
-            return true;
+            return ! cmd.hasTestAndSetCondition();
         default:
             return false;
     }

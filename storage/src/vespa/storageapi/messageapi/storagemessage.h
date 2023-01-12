@@ -375,9 +375,6 @@ public:
 
     Id getMsgId() const noexcept { return _msgId; }
 
-    /** Method used by storage commands to set a new id. */
-    void setNewMsgId() noexcept;
-
     /**
      * Set the id of this message. Typically used to set the id to a
      * unique value previously generated with the generateMsgId method.
@@ -429,6 +426,7 @@ public:
      * method in the MessageHandler interface.
      */
     virtual bool callHandler(MessageHandler&, const StorageMessage::SP&) const = 0;
+    virtual bool hasTestAndSetCondition() const noexcept { return false; }
 
     mbus::Trace && steal_trace() noexcept { return std::move(_trace); }
     mbus::Trace& getTrace() noexcept { return _trace; }

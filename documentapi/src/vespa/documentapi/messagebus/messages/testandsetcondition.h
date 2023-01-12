@@ -26,7 +26,7 @@ public:
     TestAndSetCondition & operator=(TestAndSetCondition &&) = default;
 
     const vespalib::string & getSelection() const { return _selection; }
-    bool isPresent() const { return !_selection.empty(); }
+    bool isPresent() const noexcept { return !_selection.empty(); }
 };
 
 }
