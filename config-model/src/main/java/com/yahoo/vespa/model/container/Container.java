@@ -73,7 +73,6 @@ public abstract class Container extends AbstractService implements
     private final boolean retired;
     /** The unique index of this node */
     private final int index;
-    private final boolean useOldStartupScript;
     private final boolean dumpHeapOnShutdownTimeout;
     private final double shutdownTimeoutS;
 
@@ -92,7 +91,6 @@ public abstract class Container extends AbstractService implements
         this.parent = parent;
         this.retired = retired;
         this.index = index;
-        useOldStartupScript = deployState.featureFlags().useOldJdiscContainerStartup();
         dumpHeapOnShutdownTimeout = deployState.featureFlags().containerDumpHeapOnShutdownTimeout();
         shutdownTimeoutS = deployState.featureFlags().containerShutdownTimeout();
         this.defaultHttpServer = new JettyHttpServer("DefaultHttpServer", containerClusterOrNull(parent), deployState);

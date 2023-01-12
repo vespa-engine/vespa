@@ -110,7 +110,7 @@ public interface ModelContext {
         @ModelFeatureFlag(owners = {"arnej"}) default String logFileCompressionAlgorithm(String defVal) { return defVal; }
         @ModelFeatureFlag(owners = {"vekterli"}) default boolean useTwoPhaseDocumentGc() { return true; }
         @ModelFeatureFlag(owners = {"tokle"}) default boolean useRestrictedDataPlaneBindings() { return false; }
-        @ModelFeatureFlag(owners = {"arnej","baldersheim"}) default boolean useOldJdiscContainerStartup() { return true; }
+        @ModelFeatureFlag(owners = {"arnej","baldersheim"}, removeAfter = "8.110") default boolean useOldJdiscContainerStartup() { return false; }
         @ModelFeatureFlag(owners = {"tokle, bjorncs"}, removeAfter = "8.108") default boolean enableDataPlaneFilter() { return true; }
 
         //Below are all flags that must be kept until 7 is out of the door
