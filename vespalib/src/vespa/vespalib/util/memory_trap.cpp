@@ -92,13 +92,13 @@ constexpr size_t align_down_4k(size_t v) noexcept {
     return v & ~4095ULL;
 }
 
-bool env_var_is_yes(const char *env_var) noexcept {
-    const char *ev = getenv(env_var);
-    return ((ev != nullptr) && ("yes"sv == ev));
+bool env_var_implies_enabled(const char* env_var) noexcept {
+    const char* ev = getenv(env_var);
+    return ((ev != nullptr) && (("true"sv == ev) || "yes"sv == ev));
 }
 
 bool mprotect_trapping_is_enabled() noexcept {
-    static const bool enabled = (has_4k_pages() && env_var_is_yes("VESPA_USE_MPROTECT_TRAP"));
+    static const bool enabled = (has_4k_pages() && env_var_implies_enabled("VESPA_USE_MPROTECT_TRAP"));
     return enabled;
 }
 

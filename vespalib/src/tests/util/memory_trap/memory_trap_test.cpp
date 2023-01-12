@@ -15,7 +15,7 @@ void do_not_optimize_away(T&& t) noexcept {
 struct MemoryTrapTest : Test {
     static void SetUpTestSuite() {
         // Don't overwrite env var if already set; we'll assume it's done for a good reason.
-        setenv("VESPA_USE_MPROTECT_TRAP", "yes", 0);
+        setenv("VESPA_USE_MPROTECT_TRAP", "true", 0);
     }
 };
 
