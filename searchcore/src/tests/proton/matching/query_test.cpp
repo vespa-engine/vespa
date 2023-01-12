@@ -119,7 +119,7 @@ class Test : public vespalib::TestApp {
     void requireThatRankBlueprintStaysOnTopAfterWhiteListing();
     void requireThatAndNotBlueprintStaysOnTopAfterWhiteListing();
     void requireThatSameElementTermsAreProperlyPrefixed();
-    void requireThatSameElementDoesNotAllocateMatchData();
+    void requireThatSameElementAllocatesMatchData();
     void requireThatSameElementIteratorsCanBeBuilt();
     void requireThatConstBoolBlueprintsAreCreatedCorrectly();
     void global_filter_is_calculated_and_handled();
@@ -225,7 +225,7 @@ Node::UP buildSameElementQueryTree(const ViewResolver &resolver,
                                    const search::fef::IIndexEnvironment &idxEnv)
 {
     QueryBuilder<ProtonNodeTypes> query_builder;
-    query_builder.addSameElement(2, field);
+    query_builder.addSameElement(2, field, 2, Weight(0));
     query_builder.addStringTerm(string_term, field, 0, Weight(0));
     query_builder.addStringTerm(prefix_term, field, 1, Weight(0));
     Node::UP node = query_builder.build();
@@ -1026,9 +1026,9 @@ search::query::Node::UP
 make_same_element_stack_dump(const vespalib::string &prefix, const vespalib::string &term_prefix)
 {
     QueryBuilder<ProtonNodeTypes> builder;
-    builder.addSameElement(2, prefix);
-    builder.addStringTerm("xyz", term_prefix + "f1", 1, search::query::Weight(1));
-    builder.addStringTerm("abc", term_prefix + "f2", 2, search::query::Weight(1));
+    builder.addSameElement(2, prefix, 0, Weight(1));
+    builder.addStringTerm("xyz", term_prefix + "f1", 1, Weight(1));
+    builder.addStringTerm("abc", term_prefix + "f2", 2, Weight(1));
     vespalib::string stack = StackDumpCreator::create(*builder.build());
     search::SimpleQueryStackDumpIterator stack_dump_iterator(stack);
     SameElementModifier sem;
@@ -1070,14 +1070,14 @@ Test::requireThatSameElementTermsAreProperlyPrefixed()
 }
 
 void
-Test::requireThatSameElementDoesNotAllocateMatchData()
+Test::requireThatSameElementAllocatesMatchData()
 {
     Node::UP node = buildSameElementQueryTree(ViewResolver(), plain_index_env);
     MatchDataLayout mdl;
     MatchDataReserveVisitor visitor(mdl);
     node->accept(visitor);
     MatchData::UP match_data = mdl.createMatchData();
-    EXPECT_EQUAL(0u, match_data->getNumTermFields());
+    EXPECT_EQUAL(1u, match_data->getNumTermFields());
 }
 
 void
@@ -1215,7 +1215,7 @@ Test::Main()
     TEST_CALL(requireThatRankBlueprintStaysOnTopAfterWhiteListing);
     TEST_CALL(requireThatAndNotBlueprintStaysOnTopAfterWhiteListing);
     TEST_CALL(requireThatSameElementTermsAreProperlyPrefixed);
-    TEST_CALL(requireThatSameElementDoesNotAllocateMatchData);
+    TEST_CALL(requireThatSameElementAllocatesMatchData);
     TEST_CALL(requireThatSameElementIteratorsCanBeBuilt);
     TEST_CALL(requireThatConstBoolBlueprintsAreCreatedCorrectly);
     TEST_CALL(global_filter_is_calculated_and_handled);

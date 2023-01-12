@@ -22,8 +22,19 @@ void verify_elements(SameElementSearch &se, uint32_t docid, const std::initializ
     EXPECT_EQUAL(actual, expect);
 }
 
+FieldSpec make_field_spec() {
+    // This field spec is aligned with the match data created below.
+    uint32_t field_id = 0;
+    TermFieldHandle handle = 0;
+    return {"foo", field_id, handle};
+}
+
+MatchData::UP make_match_data() {
+    return MatchData::makeTestInstance(1, 1);
+}
+
 std::unique_ptr<SameElementBlueprint> make_blueprint(const std::vector<FakeResult> &children, bool fake_attr = false) {
-    auto result = std::make_unique<SameElementBlueprint>("foo", false);
+    auto result = std::make_unique<SameElementBlueprint>(make_field_spec(), false);
     for (size_t i = 0; i < children.size(); ++i) {
         uint32_t field_id = i;
         vespalib::string field_name = vespalib::make_string("f%u", field_id);
@@ -43,7 +54,7 @@ Blueprint::UP finalize(Blueprint::UP bp, bool strict) {
 }
 
 SimpleResult find_matches(const std::vector<FakeResult> &children) {
-    auto md = MatchData::makeTestInstance(0, 0);
+    auto md = make_match_data();
     auto bp = finalize(make_blueprint(children), false);
     auto search = bp->createSearch(*md, false);
     return SimpleResult().search(*search, 1000);
@@ -73,7 +84,7 @@ TEST("require that matching elements can be identified") {
     auto a = make_result({{5, {1,3,7,12}}, {10, {1,2,3}}});
     auto b = make_result({{5, {3,5,7,10}}, {10, {4,5,6}}});
     auto bp = finalize(make_blueprint({a,b}), false);
-    auto md = MatchData::makeTestInstance(0, 0);
+    auto md = make_match_data();
     auto search = bp->createSearch(*md, false);
     search->initRange(1, 1000);
     SameElementSearch *se = dynamic_cast<SameElementSearch*>(search.get());
@@ -91,18 +102,24 @@ TEST("require that children must match within same element") {
     EXPECT_EQUAL(result, expect);
 }
 
-TEST("require that strict iterator seeks to next hit") {
-    auto md = MatchData::makeTestInstance(0, 0);
+TEST("require that strict iterator seeks to next hit and can unpack matching docid") {
+    auto md = make_match_data();
     auto a = make_result({{5, {1,2}}, {7, {1,2}}, {8, {1,2}}, {9, {1,2}}});
     auto b = make_result({{5, {3}}, {6, {1,2}}, {7, {2,4}}, {9, {1}}});
     auto bp = finalize(make_blueprint({a,b}), true);
     auto search = bp->createSearch(*md, true);
+    auto* tfmd = md->resolveTermField(0);
     search->initRange(1, 1000);
     EXPECT_LESS(search->getDocId(), 1u);
     EXPECT_FALSE(search->seek(1));
     EXPECT_EQUAL(search->getDocId(), 7u);
+    search->unpack(7);
+    EXPECT_EQUAL(tfmd->getDocId(), 7u);
     EXPECT_TRUE(search->seek(9));
     EXPECT_EQUAL(search->getDocId(), 9u);
+    EXPECT_EQUAL(tfmd->getDocId(), 7u);
+    search->unpack(9);
+    EXPECT_EQUAL(tfmd->getDocId(), 9u);
     EXPECT_FALSE(search->seek(10));
     EXPECT_TRUE(search->isAtEnd());
 }
@@ -129,7 +146,7 @@ TEST("require that attribute iterators are wrapped for element unpacking") {
     auto a = make_result({{5, {1,3,7}}});
     auto b = make_result({{5, {3,5,10}}});
     auto bp = finalize(make_blueprint({a,b}, true), true);
-    auto md = MatchData::makeTestInstance(0, 0);
+    auto md = make_match_data();
     auto search = bp->createSearch(*md, false);
     SameElementSearch *se = dynamic_cast<SameElementSearch*>(search.get());
     ASSERT_TRUE(se != nullptr);

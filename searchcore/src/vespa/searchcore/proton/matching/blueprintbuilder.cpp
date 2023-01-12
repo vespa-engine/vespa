@@ -10,6 +10,7 @@
 #include <vespa/searchlib/queryeval/intermediate_blueprints.h>
 #include <vespa/searchlib/queryeval/equiv_blueprint.h>
 #include <vespa/searchlib/queryeval/get_weight_from_node.h>
+#include <vespa/vespalib/util/issue.h>
 
 using namespace search::queryeval;
 
@@ -102,11 +103,16 @@ private:
     }
 
     void buildSameElement(ProtonSameElement &n) {
-        SameElementBuilder builder(_requestContext, _context, n.getView(), n.is_expensive());
-        for (search::query::Node *node : n.getChildren()) {
-            builder.add_child(*node);
+        if (n.numFields() == 1) {
+            SameElementBuilder builder(_requestContext, _context, n.field(0).fieldSpec(), n.is_expensive());
+            for (search::query::Node *node: n.getChildren()) {
+                builder.add_child(*node);
+            }
+            _result = builder.build();
+        } else {
+            vespalib::Issue::report("SameElement operator searches in unexpected number of fields. Expected 1 but was %zu", n.numFields());
+            _result = std::make_unique<EmptyBlueprint>();
         }
-        _result = builder.build();
     }
 
     template <typename NodeType>

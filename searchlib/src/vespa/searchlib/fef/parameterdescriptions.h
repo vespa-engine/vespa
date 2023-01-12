@@ -68,7 +68,8 @@ private:
         return (normalTypesMask()        |
                 asMask(DataType::BOOLEANTREE) |
                 asMask(DataType::TENSOR)      |
-                asMask(DataType::REFERENCE));
+                asMask(DataType::REFERENCE) |
+                asMask(DataType::COMBINED));
     }
     ParameterDataTypeSet(uint32_t typeMask)
         : _typeMask(typeMask)

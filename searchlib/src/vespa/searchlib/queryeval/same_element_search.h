@@ -21,6 +21,7 @@ class SameElementSearch : public SearchIterator
 private:
     using It = fef::TermFieldMatchData::PositionsIterator;
 
+    fef::TermFieldMatchData         &_tfmd;
     fef::MatchData::UP               _md;
     std::vector<ElementIterator::UP> _children;
     std::vector<uint32_t>            _matchingElements;
@@ -31,12 +32,13 @@ private:
     bool check_element_match(uint32_t docid);
 
 public:
-    SameElementSearch(fef::MatchData::UP md,
+    SameElementSearch(fef::TermFieldMatchData &tfmd,
+                      fef::MatchData::UP md,
                       std::vector<ElementIterator::UP> children,
                       bool strict);
     void initRange(uint32_t begin_id, uint32_t end_id) override;
     void doSeek(uint32_t docid) override;
-    void doUnpack(uint32_t) override {}
+    void doUnpack(uint32_t docid) override;
     void visitMembers(vespalib::ObjectVisitor &visitor) const override;
     const std::vector<ElementIterator::UP> &children() const { return _children; }
 

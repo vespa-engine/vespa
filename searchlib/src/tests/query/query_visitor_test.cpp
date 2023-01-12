@@ -68,7 +68,7 @@ TEST("requireThatAllNodesCanBeVisited") {
     checkVisit<ONear>(new SimpleONear(0));
     checkVisit<Or>(new SimpleOr);
     checkVisit<Phrase>(new SimplePhrase("field", 0, Weight(42)));
-    checkVisit<SameElement>(new SimpleSameElement("field"));
+    checkVisit<SameElement>(new SimpleSameElement("field", 0, Weight(42)));
     checkVisit<WeightedSetTerm>(new SimpleWeightedSetTerm(0, "field", 0, Weight(42)));
     checkVisit<DotProduct>(new SimpleDotProduct(0, "field", 0, Weight(42)));
     checkVisit<WandTerm>(new SimpleWandTerm(0, "field", 0, Weight(42), 57, 67, 77.7));

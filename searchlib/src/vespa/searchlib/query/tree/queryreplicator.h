@@ -74,7 +74,8 @@ private:
     }
 
     void visit(SameElement &node) override {
-        _builder.addSameElement(node.getChildren().size(), node.getView()).set_expensive(node.is_expensive());
+        _builder.addSameElement(node.getChildren().size(), node.getView(),
+                                node.getId(), node.getWeight()).set_expensive(node.is_expensive());
         visitNodes(node.getChildren());
     }
 

@@ -27,7 +27,6 @@ public:
         }
         n.allocateTerms(_mdl);
     }
-    void visit(ProtonNodeTypes::SameElement &) override { }
 
     MatchDataReserveVisitor(search::fef::MatchDataLayout &mdl) : _mdl(mdl) {}
 };
