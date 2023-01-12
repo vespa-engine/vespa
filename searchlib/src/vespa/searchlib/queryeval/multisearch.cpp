@@ -55,6 +55,14 @@ MultiSearch::initRange(uint32_t beginid, uint32_t endid)
 }
 
 void
+MultiSearch::disclose_children(std::vector<UP*> &dst)
+{
+    for (auto &child: _children) {
+        dst.push_back(&child);
+    }
+}
+
+void
 MultiSearch::visitMembers(vespalib::ObjectVisitor &visitor) const
 {
     visit(visitor, "children", _children);

@@ -41,6 +41,7 @@ public:
     void insert(size_t index, SearchIterator::UP search);
     virtual bool needUnpack(size_t index) const { (void) index; return true; }
     void initRange(uint32_t beginId, uint32_t endId) override;
+    void disclose_children(std::vector<UP*> &dst) override;
 protected:
     MultiSearch();
     void doUnpack(uint32_t docid) override;
