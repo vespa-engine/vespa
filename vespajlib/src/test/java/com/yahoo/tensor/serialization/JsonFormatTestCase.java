@@ -1,7 +1,6 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.tensor.serialization;
 
-import com.yahoo.tensor.IndexedTensor;
 import com.yahoo.tensor.Tensor;
 import com.yahoo.tensor.TensorType;
 import org.junit.Test;
@@ -16,6 +15,30 @@ import static org.junit.Assert.fail;
  */
 public class JsonFormatTestCase {
 
+    /** Tests parsing of various tensor values set at the root, i.e. no 'cells', 'blocks' or 'values' */
+    @Test
+    public void testDirectValue() {
+        assertDecoded("tensor(x{}):{a:2, b:3}", "{'a':2.0, 'b':3.0}");
+        assertDecoded("tensor(x{}):{a:2, b:3}", "{'a':2.0, 'b':3.0}");
+        assertDecoded("tensor(x[2]):[2, 3]]", "[2.0, 3.0]");
+        assertDecoded("tensor(x{},y[2]):{a:[2, 3], b:[4, 5]}", "{'a':[2, 3], 'b':[4, 5]}");
+        assertDecoded("tensor(x{},y{}):{{x:a,y:0}:2, {x:b,y:1}:3}",
+                      "[{'address':{'x':'a','y':'0'},'value':2}, {'address':{'x':'b','y':'1'},'value':3}]");
+    }
+
+    @Test
+    public void testDirectValueReservedNameKeys() {
+        // Single-valued
+        assertDecoded("tensor(x{}):{cells:2, b:3}", "{'cells':2.0, 'b':3.0}");
+        assertDecoded("tensor(x{}):{values:2, b:3}", "{'values':2.0, 'b':3.0}");
+        assertDecoded("tensor(x{}):{block:2, b:3}", "{'block':2.0, 'b':3.0}");
+
+        // Multi-valued
+        assertDecoded("tensor(x{},y[2]):{cells:[2, 3], b:[4, 5]}", "{'cells':[2, 3], 'b':[4, 5]}");
+        assertDecoded("tensor(x{},y[2]):{values:[2, 3], b:[4, 5]}", "{'values':[2, 3], 'b':[4, 5]}");
+        assertDecoded("tensor(x{},y[2]):{block:[2, 3], b:[4, 5]}", "{'block':[2, 3], 'b':[4, 5]}");
+    }
+
     @Test
     public void testSparseTensor() {
         Tensor.Builder builder = Tensor.Builder.of(TensorType.fromSpec("tensor(x{},y{})"));
@@ -29,6 +52,21 @@ public class JsonFormatTestCase {
                      "]}",
                      new String(json, StandardCharsets.UTF_8));
         Tensor decoded = JsonFormat.decode(tensor.type(), json);
+        assertEquals(tensor, decoded);
+    }
+
+    @Test
+    public void testEmptySparseTensor() {
+        Tensor.Builder builder = Tensor.Builder.of(TensorType.fromSpec("tensor(x{},y{})"));
+        Tensor tensor = builder.build();
+        byte[] json = JsonFormat.encode(tensor);
+        assertEquals("{\"cells\":[]}",
+                     new String(json, StandardCharsets.UTF_8));
+        Tensor decoded = JsonFormat.decode(tensor.type(), json);
+        assertEquals(tensor, decoded);
+
+        json = "{}".getBytes(); // short form variant of the above
+        decoded = JsonFormat.decode(tensor.type(), json);
         assertEquals(tensor, decoded);
     }
 
@@ -327,7 +365,7 @@ public class JsonFormatTestCase {
                       "]}";
         try {
             JsonFormat.decode(x2, json.getBytes(StandardCharsets.UTF_8));
-            fail("Excpected exception");
+            fail("Expected exception");
         }
         catch (IllegalArgumentException e) {
             assertEquals("cell address (2) is not within the bounds of tensor(x[2])", e.getMessage());
@@ -352,6 +390,14 @@ public class JsonFormatTestCase {
     private void assertEncodeShortForm(String tensor, String expected) {
         byte[] json = JsonFormat.encodeShortForm(Tensor.from(tensor));
         assertEquals(expected, new String(json, StandardCharsets.UTF_8));
+    }
+
+    private void assertDecoded(String expected, String jsonToDecode) {
+        assertDecoded(Tensor.from(expected), jsonToDecode);
+    }
+
+    private void assertDecoded(Tensor expected, String jsonToDecode) {
+        assertEquals(expected, JsonFormat.decode(expected.type(), jsonToDecode.getBytes(StandardCharsets.UTF_8)));
     }
 
     private void assertDecodeFails(TensorType type, String format, String msg) {

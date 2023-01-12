@@ -18,13 +18,15 @@ import com.google.common.base.Preconditions;
 public class TokenBuffer {
 
     private final Deque<Token> buffer;
+
     private int nesting = 0;
+    private Token previousToken;
 
     public TokenBuffer() {
         this(new ArrayDeque<>());
     }
 
-    private TokenBuffer(Deque<Token> buffer) {
+    public TokenBuffer(Deque<Token> buffer) {
         this.buffer = buffer;
         if (buffer.size() > 0) {
             updateNesting(buffer.peekFirst().token);
@@ -35,13 +37,23 @@ public class TokenBuffer {
     public boolean isEmpty() { return size() == 0; }
 
     public JsonToken next() {
-        buffer.removeFirst();
+        previousToken = buffer.removeFirst();
         Token t = buffer.peekFirst();
         if (t == null) {
             return null;
         }
         updateNesting(t.token);
         return t.token;
+    }
+
+    /** Goes one token back. Repeated calls to this method will *not* go back further. */
+    public JsonToken previous() {
+        if (previousToken == null) return null;
+        updateNestingGoingBackwards(currentToken());
+        Token newCurrent = previousToken;
+        previousToken = null;
+        buffer.push(newCurrent);
+        return newCurrent.token;
     }
 
     /** Returns the current token without changing position, or null if none */
@@ -128,6 +140,10 @@ public class TokenBuffer {
 
     private void updateNesting(JsonToken t) {
         nesting += nestingOffset(t);
+    }
+
+    private void updateNestingGoingBackwards(JsonToken t) {
+        nesting -= nestingOffset(t);
     }
 
     public int nesting() {
