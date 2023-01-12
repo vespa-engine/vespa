@@ -19,7 +19,7 @@ import java.util.Map;
  */
 public class GarbageCollectionMetrics {
 
-    private static final String GC_COUNT = "jdisc.gc.count";
+    private static final String GC_COUNT = ContainerMetrics.JDISC_GC_COUNT.baseName();
     private static final String GC_TIME = ContainerMetrics.JDISC_GC_MS.baseName();
     private static final String DIMENSION_KEY = "gcName";
 
