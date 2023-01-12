@@ -36,7 +36,7 @@ public class StructReader {
             }
 
             try {
-                if (buffer.currentToken() != JsonToken.VALUE_NULL) {
+                if (buffer.current() != JsonToken.VALUE_NULL) {
                     FieldValue v = readSingleValue(buffer, field.getDataType(), ignoreUndefinedFields);
                     parent.setFieldValue(field, v);
                 }

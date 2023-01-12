@@ -35,25 +35,31 @@ public class TokenBuffer {
     /** Returns whether any tokens are available in this */
     public boolean isEmpty() { return remaining() == 0; }
 
-    public JsonToken next() {
-        position++;
-        JsonToken token = currentToken();
-        updateNesting(token);
-        return token;
-    }
-
     public JsonToken previous() {
-        updateNestingGoingBackwards(currentToken());
+        updateNestingGoingBackwards(current());
         position--;
-        return currentToken();
+        return current();
     }
 
     /** Returns the current token without changing position, or null if none */
-    public JsonToken currentToken() {
+    public JsonToken current() {
         if (isEmpty()) return null;
         Token token = tokens.get(position);
         if (token == null) return null;
         return token.token;
+    }
+
+    public JsonToken next() {
+        position++;
+        JsonToken token = current();
+        updateNesting(token);
+        return token;
+    }
+
+    /** Returns a given number of tokens ahead, or null if none */
+    public JsonToken peek(int ahead) {
+        if (tokens.size() <= position + ahead) return null;
+        return tokens.get(position + ahead).token;
     }
 
     /** Returns the current token name without changing position, or null if none */
@@ -150,7 +156,7 @@ public class TokenBuffer {
         Token toReturn = null;
         Iterator<Token> i;
 
-        if (name.equals(currentName()) && currentToken().isScalarValue()) {
+        if (name.equals(currentName()) && current().isScalarValue()) {
             toReturn = tokens.get(position);
         } else {
             i = tokens.iterator();

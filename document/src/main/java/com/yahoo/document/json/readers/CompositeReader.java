@@ -19,8 +19,8 @@ import static com.yahoo.document.json.readers.WeightedSetReader.fillWeightedSet;
 public class CompositeReader {
 
     public static boolean populateComposite(TokenBuffer buffer, FieldValue fieldValue, boolean ignoreUndefinedFields) {
-        boolean fullyApplied = populateComposite(buffer.currentToken(), buffer, fieldValue, ignoreUndefinedFields);
-        expectCompositeEnd(buffer.currentToken());
+        boolean fullyApplied = populateComposite(buffer.current(), buffer, fieldValue, ignoreUndefinedFields);
+        expectCompositeEnd(buffer.current());
         return fullyApplied;
     }
 

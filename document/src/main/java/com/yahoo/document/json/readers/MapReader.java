@@ -32,7 +32,7 @@ public class MapReader {
     public static final String UPDATE_MATCH = "match";
 
     public static void fillMap(TokenBuffer buffer, MapFieldValue parent, boolean ignoreUndefinedFields) {
-        if (buffer.currentToken() == JsonToken.START_ARRAY) {
+        if (buffer.current() == JsonToken.START_ARRAY) {
             MapReader.fillMapFromArray(buffer, parent, ignoreUndefinedFields);
         } else {
             MapReader.fillMapFromObject(buffer, parent, ignoreUndefinedFields);
@@ -41,7 +41,7 @@ public class MapReader {
 
     @SuppressWarnings({ "rawtypes", "cast", "unchecked" })
     public static void fillMapFromArray(TokenBuffer buffer, MapFieldValue parent, boolean ignoreUndefinedFields) {
-        JsonToken token = buffer.currentToken();
+        JsonToken token = buffer.current();
         int initNesting = buffer.nesting();
         expectArrayStart(token);
         token = buffer.next();
@@ -70,7 +70,7 @@ public class MapReader {
 
     @SuppressWarnings({ "rawtypes", "cast", "unchecked" })
     public static void fillMapFromObject(TokenBuffer buffer, MapFieldValue parent, boolean ignoreUndefinedFields) {
-        JsonToken token = buffer.currentToken();
+        JsonToken token = buffer.current();
         int initNesting = buffer.nesting();
         expectObjectStart(token);
         token = buffer.next();
