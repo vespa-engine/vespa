@@ -1116,10 +1116,7 @@ FileStorHandlerImpl::Stripe::schedule_and_get_next_async_message(MessageEntry en
     update_cached_queue_size(guard);
     auto lockedMessage = get_next_async_message(guard);
     if ( ! lockedMessage.msg) {
-        if (guard.owns_lock()) {
-            guard.unlock();
-        }
-        _cond->notify_all();
+        _cond->notify_one();
     }
     return lockedMessage;
 }
