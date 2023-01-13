@@ -21,5 +21,6 @@ const vespalib::string AddressSpaceComponents::tensor_store = "tensor-store";
 const vespalib::string AddressSpaceComponents::shared_string_repo = "shared-string-repo";
 const vespalib::string AddressSpaceComponents::hnsw_levels_store = "hnsw-levels-store";
 const vespalib::string AddressSpaceComponents::hnsw_links_store = "hnsw-links-store";
+const vespalib::string AddressSpaceComponents::hnsw_nodeid_mapping = "hnsw-nodeid-mapping";
 
 }
