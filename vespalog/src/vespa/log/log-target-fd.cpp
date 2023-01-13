@@ -11,14 +11,14 @@ LOG_SETUP(".log");
 
 namespace ns_log {
 
-LogTargetFd::LogTargetFd(const char *target)
+LogTargetFd::LogTargetFd(int fd_spec, const char *target)
     : LogTarget(target),
       _fd(-1), _istty(false)
 {
-    if (strncmp(target, "fd:", 3) != 0) {
+    _fd = dup(fd_spec);
+    if (_fd == -1) {
         throwInvalid("Bad target for LogTargetFd: '%s'", target);
     }
-    _fd = strtol(target + 3, NULL, 0);
     if (isatty(_fd) == 1) {
         _istty = true;
     }
@@ -26,7 +26,7 @@ LogTargetFd::LogTargetFd(const char *target)
 
 LogTargetFd::~LogTargetFd()
 {
-    // Must not close _fd, we did not open it!
+    close(_fd);
 }
 
 
