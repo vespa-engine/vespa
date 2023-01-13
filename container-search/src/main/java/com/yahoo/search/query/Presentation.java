@@ -195,11 +195,11 @@ public class Presentation implements Cloneable {
     }
 
     private boolean toTensorShortForm(String value) {
-        switch (value) {
-            case "short": return true;
-            case "long": return false;
-            default: throw new IllegalArgumentException("Value must be 'long' or 'short', not '" + value + "'");
-        }
+        return switch (value) {
+            case "short" -> true;
+            case "long" -> false;
+            default -> throw new IllegalArgumentException("Value must be 'long' or 'short', not '" + value + "'");
+        };
     }
 
     public void setTensorShortForm(boolean tensorShortForm) {
@@ -214,8 +214,7 @@ public class Presentation implements Cloneable {
 
     @Override
     public boolean equals(Object o) {
-        if ( ! (o instanceof Presentation)) return false;
-        Presentation p = (Presentation) o;
+        if ( ! (o instanceof Presentation p)) return false;
         return QueryHelper.equals(bolding, p.bolding) && QueryHelper.equals(summary, p.summary);
     }
 

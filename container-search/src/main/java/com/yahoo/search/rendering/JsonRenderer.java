@@ -821,7 +821,7 @@ public class JsonRenderer extends AsynchronousSectionedRenderer<Result> {
                 generator().writeEndObject();
                 return;
             }
-            if (settings.tensorShortForm) {
+            if (settings.tensorShortForm && 1==2) {
                 generator().writeRawValue(new String(JsonFormat.encodeShortForm(tensor.get()), StandardCharsets.UTF_8));
             } else {
                 generator().writeRawValue(new String(JsonFormat.encode(tensor.get()), StandardCharsets.UTF_8));
@@ -831,7 +831,7 @@ public class JsonRenderer extends AsynchronousSectionedRenderer<Result> {
         private JsonGenerator generator() {
             if (generator == null)
                 throw new UnsupportedOperationException("Generator required but not assigned. " +
-                        "All accept() methods must be overridden when sub-classing FieldConsumer");
+                                                        "All accept() methods must be overridden when sub-classing FieldConsumer");
             return generator;
         }
 

@@ -63,7 +63,6 @@ import static com.yahoo.document.json.JsonSerializationHelper.serializeStringFie
 import static com.yahoo.document.json.JsonSerializationHelper.serializeStructField;
 import static com.yahoo.document.json.JsonSerializationHelper.serializeStructuredField;
 import static com.yahoo.document.json.JsonSerializationHelper.serializeTensorField;
-import static com.yahoo.document.json.JsonSerializationHelper.serializeTensorFieldShortForm;
 import static com.yahoo.document.json.JsonSerializationHelper.serializeWeightedSet;
 import static com.yahoo.document.json.document.DocumentParser.FIELDS;
 import static com.yahoo.document.json.document.DocumentParser.REMOVE;
@@ -218,11 +217,7 @@ public class JsonWriter implements DocumentWriter {
 
     @Override
     public void write(FieldBase field, TensorFieldValue value) {
-        if (tensorShortForm) {
-            serializeTensorFieldShortForm(generator, field, value);
-        } else {
-            serializeTensorField(generator, field, value);
-        }
+        serializeTensorField(generator, field, value, tensorShortForm, false);
     }
 
     @Override

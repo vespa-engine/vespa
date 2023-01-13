@@ -25,203 +25,70 @@ import com.yahoo.vespa.objects.FieldBase;
 import com.yahoo.vespa.objects.Serializer;
 
 /**
- * Interface for writing out com.yahoo.document.datatypes.FieldValue.
+ * Interface for writing a com.yahoo.document.datatypes.FieldValue.
  *
- * @author <a href="mailto:ravishar@yahoo-inc.com">ravishar</a>
- *
+ * @author ravishar
  */
 public interface FieldWriter extends Serializer {
 
-    /**
-     * Write out the value of field
-     *
-     * @param field
-     *            field description (name and data type)
-     * @param value
-     *            field value
-     */
+    /** Writes the value of a field. */
     void write(FieldBase field, FieldValue value);
 
-    /**
-     * Write out the value of field
-     *
-     * @param field
-     *            field description (name and data type)
-     * @param value
-     *            field value
-     */
-    public void write(FieldBase field, Document value);
+    /** Writes the value of a field. */
+    void write(FieldBase field, Document value);
 
-    /**
-     * Write out the value of array field
-     *
-     * @param field
-     *            field description (name and data type)
-     * @param value
-     *            field value
-     */
+    /** Writes the value of an array field. */
     <T extends FieldValue> void write(FieldBase field, Array<T> value);
 
-    /**
-     * Write the value of a map field
-     */
-    <K extends FieldValue, V extends FieldValue> void write(FieldBase field,
-            MapFieldValue<K, V> map);
+    /** Writes the value of a map field. */
+    <K extends FieldValue, V extends FieldValue> void write(FieldBase field, MapFieldValue<K, V> map);
 
-    /**
-     * Write out the value of byte field
-     *
-     * @param field
-     *            field description (name and data type)
-     * @param value
-     *            field value
-     */
+    /*** Writes the value of a byte field. */
     void write(FieldBase field, ByteFieldValue value);
 
-    /**
-     * Write out the value of byte field
-     *
-     * @param field
-     *            field description (name and data type)
-     * @param value
-     *            field value
-     */
+    /** Writes the value of byte field. */
     void write(FieldBase field, BoolFieldValue value);
 
-    /**
-     * Write out the value of collection field
-     *
-     * @param field
-     *            field description (name and data type)
-     * @param value
-     *            field value
-     */
-    <T extends FieldValue> void write(FieldBase field,
-            CollectionFieldValue<T> value);
+    /** Writes the value of a collection field. */
+    <T extends FieldValue> void write(FieldBase field, CollectionFieldValue<T> value);
 
-    /**
-     * Write out the value of double field
-     *
-     * @param field
-     *            field description (name and data type)
-     * @param value
-     *            field value
-     */
+    /** Writes the value of a double field. */
     void write(FieldBase field, DoubleFieldValue value);
 
-    /**
-     * Write out the value of float field
-     *
-     * @param field
-     *            field description (name and data type)
-     * @param value
-     *            field value
-     */
+    /** Writes the value of a flosat field. */
     void write(FieldBase field, FloatFieldValue value);
 
-    /**
-     * Write out the value of integer field
-     *
-     * @param field
-     *            field description (name and data type)
-     * @param value
-     *            field value
-     */
+    /** Writes the value of an integer collection field. */
     void write(FieldBase field, IntegerFieldValue value);
 
-    /**
-     * Write out the value of long field
-     *
-     * @param field
-     *            field description (name and data type)
-     * @param value
-     *            field value
-     */
+    /** Writes the value of a long field. */
     void write(FieldBase field, LongFieldValue value);
 
-    /**
-     * Write out the value of raw field
-     *
-     * @param field
-     *            field description (name and data type)
-     * @param value
-     *            field value
-     */
+    /** Writes the value of a raw field. */
     void write(FieldBase field, Raw value);
 
-    /**
-     * Write out the value of predicate field
-     *
-     * @param field
-     *            field description (name and data type)
-     * @param value
-     *            field value
-     */
+    /** Writes the value of a predicate field. */
     void write(FieldBase field, PredicateFieldValue value);
 
-    /**
-     * Write out the value of string field
-     *
-     * @param field
-     *            field description (name and data type)
-     * @param value
-     *            field value
-     */
+    /** Writes the value of a string field. */
     void write(FieldBase field, StringFieldValue value);
 
-    /**
-     * Write out the value of the given tensor field value.
-     *
-     * @param field field description (name and data type)
-     * @param value tensor field value
-     */
+    /** Writes the value of a tensor field. */
     void write(FieldBase field, TensorFieldValue value);
 
-    /**
-     * Write out the value of the given reference field value.
-     *
-     * @param field field description (name and data type)
-     * @param value reference field value
-     */
+    /** Writes the value of a reference field. */
     void write(FieldBase field, ReferenceFieldValue value);
 
-    /**
-     * Write out the value of struct field
-     *
-     * @param field
-     *            field description (name and data type)
-     * @param value
-     *            field value
-     */
+    /** Writes the value of a struct field. */
     void write(FieldBase field, Struct value);
 
-    /**
-     * Write out the value of structured field
-     *
-     * @param field
-     *            field description (name and data type)
-     * @param value
-     *            field value
-     */
+    /** Writes the value of a structured field. */
     void write(FieldBase field, StructuredFieldValue value);
 
-    /**
-     * Write out the value of weighted set field
-     *
-     * @param field
-     *            field description (name and data type)
-     * @param value
-     *            field value
-     */
+    /** Writes the value of a weighted set field. */
     <T extends FieldValue> void write(FieldBase field, WeightedSet<T> value);
 
-    /**
-     * Write out the value of annotation data.
-     *
-     * @param field
-     *            field description (name and data type)
-     * @param value
-     *            field value
-     */
+    /** Writes the value of an annotation reference. */
     void write(FieldBase field, AnnotationReference value);
+
 }
