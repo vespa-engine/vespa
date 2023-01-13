@@ -1,6 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include <sys/types.h>
 #include <unistd.h>
+#include <fcntl.h>
 #include <cstring>
 #include <cstdlib>
 
@@ -22,6 +23,7 @@ LogTargetFd::LogTargetFd(int fd_spec, const char *target)
     if (isatty(_fd) == 1) {
         _istty = true;
     }
+    fcntl(_fd, F_SETFD, FD_CLOEXEC);
 }
 
 LogTargetFd::~LogTargetFd()
