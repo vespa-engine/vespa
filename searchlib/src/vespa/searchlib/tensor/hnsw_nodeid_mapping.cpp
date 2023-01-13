@@ -43,7 +43,7 @@ HnswNodeidMapping::allocate_id()
 }
 
 HnswNodeidMapping::HnswNodeidMapping()
-    : _refs(),
+    : _refs(1),
       _grow_strategy(16, 1.0, 0, 0), // These are the same parameters as the default in rcuvector.h
       _nodeid_limit(1), // Starting with nodeid=1 matches that we also start with docid=1.
       _nodeids(NodeidStore::optimizedConfigForHugePage(max_small_array_type_id,
@@ -249,6 +249,20 @@ HnswNodeidMapping::update_stat(const CompactionStrategy& compaction_strategy)
     // Note that the memory usage of the hold list and free list is not explicitly tracked
     // as their content are covered by the memory usage reported from the NodeidStore (array store).
     return result;
+}
+
+void
+HnswNodeidMapping::compact_worst(const vespalib::datastore::CompactionStrategy& compaction_strategy)
+{
+    auto compacting_buffers = _nodeids.start_compact_worst_buffers(compaction_strategy);
+    auto filter = compacting_buffers->make_entry_ref_filter();
+   vespalib::ArrayRef<EntryRef> refs(&_refs[0], _refs.size());
+   for (auto& ref : refs) {
+       if (ref.valid() && filter.has(ref)) {
+           ref = _nodeids.move_on_compact(ref);
+       }
+   }
+   compacting_buffers->finish();
 }
 
 }

@@ -58,6 +58,8 @@ public:
     // TODO: Add support for compaction
     vespalib::MemoryUsage memory_usage() const;
     vespalib::MemoryUsage update_stat(const vespalib::datastore::CompactionStrategy& compaction_strategy);
+    bool consider_compact() const noexcept { return _nodeids.consider_compact(); }
+    void compact_worst(const vespalib::datastore::CompactionStrategy& compaction_strategy);
 };
 
 }
