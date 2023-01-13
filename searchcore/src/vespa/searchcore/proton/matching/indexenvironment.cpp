@@ -32,7 +32,9 @@ extract_virtual_fields(const std::vector<search::fef::FieldInfo>& fields)
     // These attributes have '.' in their names, example: my_map.key and my_map.value represent a map<int, string>.
     StringSet result;
     for (const auto& field : fields) {
-        consider_field_for_extraction(field.name(), result);
+        if (field.hasAttribute()) {
+            consider_field_for_extraction(field.name(), result);
+        }
     }
     return result;
 }

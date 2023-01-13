@@ -17,6 +17,7 @@ using search::index::schema::DataType;
 using vespalib::eval::ConstantValue;
 using SAF = Schema::AttributeField;
 using SIAF = Schema::ImportedAttributeField;
+using SIF = Schema::IndexField;
 
 const vespalib::string my_expr_ref(
     "this is my reference ranking expression.\n"
@@ -157,21 +158,26 @@ Schema::UP schema_with_virtual_fields() {
     result->addAttributeField(SAF("person_map.value.year", DataType::INT32, CollectionType::ARRAY));
     result->addImportedAttributeField(SAF("int_map.key", DataType::INT32, CollectionType::ARRAY));
     result->addImportedAttributeField(SAF("int_map.value", DataType::INT32, CollectionType::ARRAY));
+    // Index fields do not represent virtual fields:
+    result->addIndexField(SIF("url.hostname", DataType::STRING, CollectionType::SINGLE));
+    result->addIndexField(SIF("url.port", DataType::STRING, CollectionType::SINGLE));
     return result;
 }
 
 TEST_F("virtual fields are extracted in index environment", Fixture(schema_with_virtual_fields()))
 {
-    ASSERT_EQUAL(9u, f.env.getNumFields());
+    ASSERT_EQUAL(11u, f.env.getNumFields());
     TEST_DO(f.assertAttributeField(0, "person_map.key", DataType::INT32, CollectionType::ARRAY));
     TEST_DO(f.assertAttributeField(1, "person_map.value.name", DataType::STRING, CollectionType::ARRAY));
     TEST_DO(f.assertAttributeField(2, "person_map.value.year", DataType::INT32, CollectionType::ARRAY));
-    TEST_DO(f.assertAttributeField(3, "int_map.key", DataType::INT32, CollectionType::ARRAY));
-    TEST_DO(f.assertAttributeField(4, "int_map.value", DataType::INT32, CollectionType::ARRAY));
-    EXPECT_EQUAL("[documentmetastore]", f.env.getField(5)->name());
-    TEST_DO(f.assert_virtual_field(6, "int_map"));
-    TEST_DO(f.assert_virtual_field(7, "person_map"));
-    TEST_DO(f.assert_virtual_field(8, "person_map.value"));
+    TEST_DO(f.assertField(3, "url.hostname", DataType::STRING, CollectionType::SINGLE));
+    TEST_DO(f.assertField(4, "url.port", DataType::STRING, CollectionType::SINGLE));
+    TEST_DO(f.assertAttributeField(5, "int_map.key", DataType::INT32, CollectionType::ARRAY));
+    TEST_DO(f.assertAttributeField(6, "int_map.value", DataType::INT32, CollectionType::ARRAY));
+    EXPECT_EQUAL("[documentmetastore]", f.env.getField(7)->name());
+    TEST_DO(f.assert_virtual_field(8, "int_map"));
+    TEST_DO(f.assert_virtual_field(9, "person_map"));
+    TEST_DO(f.assert_virtual_field(10, "person_map.value"));
 }
 
 TEST_F("require that onnx model config can be obtained", Fixture(buildEmptySchema())) {
