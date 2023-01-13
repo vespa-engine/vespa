@@ -22,6 +22,7 @@ import static com.yahoo.tensor.serialization.JsonFormat.decodeHexString;
  */
 public class TensorReader {
 
+    public static final String TENSOR_TYPE = "type";
     public static final String TENSOR_ADDRESS = "address";
     public static final String TENSOR_CELLS = "cells";
     public static final String TENSOR_VALUES = "values";
@@ -42,6 +43,9 @@ public class TensorReader {
             }
             else if (TENSOR_BLOCKS.equals(buffer.currentName())) {
                 readTensorBlocks(buffer, builder);
+            }
+            else if (TENSOR_TYPE.equals(buffer.currentName()) && buffer.current() == JsonToken.VALUE_STRING) {
+                // Ignore input tensor type
             }
             else {
                 buffer.previous(); // Back up to the start of the enclosing block

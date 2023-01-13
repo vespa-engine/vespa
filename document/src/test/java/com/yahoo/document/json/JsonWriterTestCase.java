@@ -396,19 +396,21 @@ public class JsonWriterTestCase {
 
     @Test
     public void testWritingOfEmptyTensor() throws IOException {
-        assertTensorRoundTripEquality("{}","{ \"cells\": [] }");
+        assertTensorRoundTripEquality("{}","{ \"type\":\"tensor(x{},y{})\", \"cells\": [] }");
     }
 
     @Test
     public void testWritingOfTensorWithCellsOnly() throws IOException {
         assertTensorRoundTripEquality("{ "
-                + "  \"cells\": [ "
+        + "  \"type\": \"tensor(x{},y{})\","
+        + "  \"cells\": [ "
                 + "    { \"address\": { \"x\": \"a\", \"y\": \"b\" }, "
                 + "      \"value\": 2.0 }, "
                 + "    { \"address\": { \"x\": \"c\", \"y\": \"b\" }, "
                 + "      \"value\": 3.0 } "
                 + "  ]"
                 + "}", "{ "
+                + "  \"type\": \"tensor(x{},y{})\","
                 + "  \"cells\": [ "
                 + "    { \"address\": { \"x\": \"a\", \"y\": \"b\" }, "
                 + "      \"value\": 2.0 }, "
@@ -449,7 +451,7 @@ public class JsonWriterTestCase {
         Tensor tensor = Tensor.from("tensor(x[3]):[1,2,3]");
         doc.setFieldValue(tensorField, new TensorFieldValue(tensor));
 
-        assertEqualJson(asDocument(docId, "{ \"tensorfield\": {\"cells\":[{\"address\":{\"x\":\"0\"},\"value\":1.0},{\"address\":{\"x\":\"1\"},\"value\":2.0},{\"address\":{\"x\":\"2\"},\"value\":3.0}]} }"),
+        assertEqualJson(asDocument(docId, "{ \"tensorfield\": {\"type\":\"tensor(x[3])\", \"cells\":[{\"address\":{\"x\":\"0\"},\"value\":1.0},{\"address\":{\"x\":\"1\"},\"value\":2.0},{\"address\":{\"x\":\"2\"},\"value\":3.0}]} }"),
                         writeDocument(doc, false));
         assertEqualJson(asDocument(docId, "{ \"tensorfield\": {\"type\":\"tensor(x[3])\", \"values\":[1.0, 2.0, 3.0] } }"),
                         writeDocument(doc, true));

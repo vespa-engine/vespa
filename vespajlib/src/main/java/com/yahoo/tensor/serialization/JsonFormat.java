@@ -74,7 +74,7 @@ public class JsonFormat {
             encodeBlocks((MixedTensor) tensor, root);
         }
         else {
-            // No other short forms exist: default to standard cell address output
+            // default to standard cell address output
             encodeCells(tensor, root);
         }
 

@@ -80,7 +80,7 @@ public class JsonSerializationHelper {
             fieldNameIfNotNull(generator, field);
             if (value.getTensor().isPresent()) {
                 Tensor tensor = value.getTensor().get();
-                byte[] encoded = shortForm ? JsonFormat.encodeShortForm(tensor) : JsonFormat.encode(tensor);
+                byte[] encoded = shortForm ? JsonFormat.encodeShortForm(tensor) : JsonFormat.encodeWithType(tensor);
                 generator.writeRawValue(new String(encoded, StandardCharsets.UTF_8));
             }
             else {

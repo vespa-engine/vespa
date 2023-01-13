@@ -285,6 +285,7 @@ public class DocumentUpdateJsonSerializerTest {
                 "    'fields': {",
                 "        'sparse_tensor': {",
                 "            'assign': {",
+                "                'type': 'tensor(x{},y{})',",
                 "                'cells': [",
                 "                    { 'address': { 'x': 'a', 'y': 'b' }, 'value': 2.0 },",
                 "                    { 'address': { 'x': 'c', 'y': 'b' }, 'value': 3.0 }",

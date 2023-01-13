@@ -32,11 +32,13 @@ public class JsonFormatTestCase {
         assertDecoded("tensor(x{}):{cells:2, b:3}", "{'cells':2.0, 'b':3.0}");
         assertDecoded("tensor(x{}):{values:2, b:3}", "{'values':2.0, 'b':3.0}");
         assertDecoded("tensor(x{}):{block:2, b:3}", "{'block':2.0, 'b':3.0}");
+        assertDecoded("tensor(x{}):{type:2, b:3}", "{'type':2.0, 'b':3.0}");
 
         // Multi-valued
         assertDecoded("tensor(x{},y[2]):{cells:[2, 3], b:[4, 5]}", "{'cells':[2, 3], 'b':[4, 5]}");
         assertDecoded("tensor(x{},y[2]):{values:[2, 3], b:[4, 5]}", "{'values':[2, 3], 'b':[4, 5]}");
         assertDecoded("tensor(x{},y[2]):{block:[2, 3], b:[4, 5]}", "{'block':[2, 3], 'b':[4, 5]}");
+        assertDecoded("tensor(x{},y[2]):{type:[2, 3], b:[4, 5]}", "{'type':[2, 3], 'b':[4, 5]}");
     }
 
     @Test
