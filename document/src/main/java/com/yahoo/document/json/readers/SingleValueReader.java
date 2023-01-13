@@ -10,7 +10,6 @@ import com.yahoo.document.datatypes.FieldValue;
 import com.yahoo.document.json.TokenBuffer;
 import com.yahoo.document.update.ValueUpdate;
 
-import java.util.Base64;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.regex.Matcher;
@@ -42,7 +41,7 @@ public class SingleValueReader {
     }
 
     public static FieldValue readSingleValue(TokenBuffer buffer, DataType expectedType, boolean ignoreUndefinedFields) {
-        if (buffer.currentToken().isScalarValue()) {
+        if (buffer.current().isScalarValue()) {
             return readAtomic(buffer.currentText(), expectedType);
         } else {
             FieldValue fieldValue = expectedType.createFieldValue();
@@ -54,7 +53,7 @@ public class SingleValueReader {
     @SuppressWarnings("rawtypes")
     public static ValueUpdate readSingleUpdate(TokenBuffer buffer, DataType expectedType, String action, boolean ignoreUndefinedFields) {
         return switch (action) {
-            case UPDATE_ASSIGN -> (buffer.currentToken() == JsonToken.VALUE_NULL)
+            case UPDATE_ASSIGN -> (buffer.current() == JsonToken.VALUE_NULL)
                                   ? ValueUpdate.createClear()
                                   : ValueUpdate.createAssign(readSingleValue(buffer, expectedType, ignoreUndefinedFields));
             // double is silly, but it's what is used internally anyway

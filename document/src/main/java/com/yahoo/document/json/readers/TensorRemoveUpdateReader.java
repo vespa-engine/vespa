@@ -26,7 +26,7 @@ public class TensorRemoveUpdateReader {
     public static final String TENSOR_ADDRESSES = "addresses";
 
     static TensorRemoveUpdate createTensorRemoveUpdate(TokenBuffer buffer, Field field) {
-        expectObjectStart(buffer.currentToken());
+        expectObjectStart(buffer.current());
         expectTensorTypeHasSparseDimensions(field);
 
         TensorDataType tensorDataType = (TensorDataType)field.getDataType();
@@ -59,11 +59,11 @@ public class TensorRemoveUpdateReader {
      */
     private static Tensor readRemoveUpdateTensor(TokenBuffer buffer, TensorType sparseType, TensorType originalType) {
         Tensor.Builder builder = null;
-        expectObjectStart(buffer.currentToken());
+        expectObjectStart(buffer.current());
         int initNesting = buffer.nesting();
         for (buffer.next(); buffer.nesting() >= initNesting; buffer.next()) {
             if (TENSOR_ADDRESSES.equals(buffer.currentName())) {
-                expectArrayStart(buffer.currentToken());
+                expectArrayStart(buffer.current());
                 int nesting = buffer.nesting();
                 for (buffer.next(); buffer.nesting() >= nesting; buffer.next()) {
                     if (builder == null) {
@@ -74,10 +74,10 @@ public class TensorRemoveUpdateReader {
                         builder.cell(readTensorAddress(buffer, builder.type(), originalType), 1.0);
                     }
                 }
-                expectCompositeEnd(buffer.currentToken());
+                expectCompositeEnd(buffer.current());
             }
         }
-        expectObjectEnd(buffer.currentToken());
+        expectObjectEnd(buffer.current());
         return (builder != null) ? builder.build() : Tensor.Builder.of(sparseType).build();
     }
 
@@ -88,7 +88,7 @@ public class TensorRemoveUpdateReader {
     private static Pair<TensorType, TensorAddress> readFirstTensorAddress(TokenBuffer buffer, TensorType sparseType, TensorType originalType) {
         var typeBuilder = new TensorType.Builder(sparseType.valueType());
         var rawAddress = new HashMap<String, String>();
-        expectObjectStart(buffer.currentToken());
+        expectObjectStart(buffer.current());
         int initNesting = buffer.nesting();
         for (buffer.next(); buffer.nesting() >= initNesting; buffer.next()) {
             var elem = readRawElement(buffer, sparseType, originalType);
@@ -100,7 +100,7 @@ public class TensorRemoveUpdateReader {
                 throw new IllegalArgumentException(originalType + " does not contain dimension '" + elem.getFirst() + "'");
             }
         }
-        expectObjectEnd(buffer.currentToken());
+        expectObjectEnd(buffer.current());
         var type = typeBuilder.build();
         var builder = new TensorAddress.Builder(type);
         rawAddress.forEach((dimension, label) -> builder.add(dimension, label));
@@ -119,13 +119,13 @@ public class TensorRemoveUpdateReader {
 
     private static TensorAddress readTensorAddress(TokenBuffer buffer, TensorType type, TensorType originalType) {
         TensorAddress.Builder builder = new TensorAddress.Builder(type);
-        expectObjectStart(buffer.currentToken());
+        expectObjectStart(buffer.current());
         int initNesting = buffer.nesting();
         for (buffer.next(); buffer.nesting() >= initNesting; buffer.next()) {
             var elem = readRawElement(buffer, type, originalType);
             builder.add(elem.getFirst(), elem.getSecond());
         }
-        expectObjectEnd(buffer.currentToken());
+        expectObjectEnd(buffer.current());
         return builder.build();
     }
 

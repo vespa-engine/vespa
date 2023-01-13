@@ -96,13 +96,13 @@ public class VespaJsonDocumentReader {
     public boolean readUpdate(TokenBuffer buffer, DocumentUpdate update) {
         if (buffer.isEmpty())
             throw new IllegalArgumentException("Update of document " + update.getId() + " is missing a 'fields' map");
-        expectObjectStart(buffer.currentToken());
+        expectObjectStart(buffer.current());
         int localNesting = buffer.nesting();
 
         buffer.next();
         boolean fullyApplied = true;
         while (localNesting <= buffer.nesting()) {
-            expectObjectStart(buffer.currentToken());
+            expectObjectStart(buffer.current());
 
             String fieldName = buffer.currentName();
             try {
@@ -111,7 +111,7 @@ public class VespaJsonDocumentReader {
                 } else {
                     fullyApplied &= addFieldUpdates(update, buffer, fieldName);
                 }
-                expectObjectEnd(buffer.currentToken());
+                expectObjectEnd(buffer.current());
             }
             catch (IllegalArgumentException | IndexOutOfBoundsException e) {
                 throw new IllegalArgumentException("Error in '" + fieldName + "'", e);
@@ -211,7 +211,7 @@ public class VespaJsonDocumentReader {
     }
 
     private RemoveFieldPathUpdate readRemoveFieldPathUpdate(DocumentType documentType, String fieldPath, TokenBuffer buffer) {
-        expectScalarValue(buffer.currentToken());
+        expectScalarValue(buffer.current());
         return new RemoveFieldPathUpdate(documentType, fieldPath);
     }
 
@@ -219,7 +219,7 @@ public class VespaJsonDocumentReader {
                                                                 TokenBuffer buffer, String fieldPathOperation) {
         AssignFieldPathUpdate fieldPathUpdate = new AssignFieldPathUpdate(documentType, fieldPath);
         String arithmeticSign = SingleValueReader.UPDATE_OPERATION_TO_ARITHMETIC_SIGN.get(fieldPathOperation);
-        double value = Double.valueOf(buffer.currentText());
+        double value = Double.parseDouble(buffer.currentText());
         String expression = String.format("$value %s %s", arithmeticSign, value);
         fieldPathUpdate.setExpression(expression);
         return fieldPathUpdate;
@@ -231,11 +231,11 @@ public class VespaJsonDocumentReader {
     }
 
     private static void verifyEndState(TokenBuffer buffer, JsonToken expectedFinalToken) {
-        Preconditions.checkState(buffer.currentToken() == expectedFinalToken,
-                                 "Expected end of JSON struct (%s), got %s", expectedFinalToken, buffer.currentToken());
+        Preconditions.checkState(buffer.current() == expectedFinalToken,
+                                 "Expected end of JSON struct (%s), got %s", expectedFinalToken, buffer.current());
         Preconditions.checkState(buffer.nesting() == 0, "Nesting not zero at end of operation");
         Preconditions.checkState(buffer.next() == null, "Dangling data at end of operation");
-        Preconditions.checkState(buffer.size() == 0, "Dangling data at end of operation");
+        Preconditions.checkState(buffer.remaining() == 0, "Dangling data at end of operation");
     }
 
 }

@@ -1403,12 +1403,6 @@ public class JsonReaderTestCase {
     }
 
     @Test
-    public void testParsingOfTensorWithEmptyDimensions() {
-        assertSparseTensorField("tensor(x{},y{}):{}",
-                                createPutWithSparseTensor(inputJson("{ 'dimensions': [] }")));
-    }
-
-    @Test
     public void testParsingOfTensorWithEmptyCells() {
         assertSparseTensorField("tensor(x{},y{}):{}",
                                 createPutWithSparseTensor(inputJson("{ 'cells': [] }")));
@@ -1509,6 +1503,32 @@ public class JsonReaderTestCase {
                            "]}";
         var put = createPutWithTensor(inputJson(mixedJson), "mixed_bfloat16_tensor");
         Tensor tensor = assertTensorField(expected, put, "mixed_bfloat16_tensor");
+    }
+
+    /** Tests parsing of various tensor values set at the root, i.e. no 'cells', 'blocks' or 'values' */
+    @Test
+    public void testDirectValue() {
+        assertTensorField("tensor(x{}):{a:2, b:3}", "sparse_single_dimension_tensor", "{'a':2.0, 'b':3.0}");
+        assertTensorField("tensor(x[2],y[3]):[2, 3, 4, 5, 6, 7]]", "dense_tensor", "[2, 3, 4, 5, 6, 7]");
+        assertTensorField("tensor(x{},y[3]):{a:[2, 3, 4], b:[4, 5, 6]}", "mixed_tensor", "{'a':[2, 3, 4], 'b':[4, 5, 6]}");
+        assertTensorField("tensor(x{},y{}):{{x:a,y:0}:2, {x:b,y:1}:3}", "sparse_tensor",
+                          "[{'address':{'x':'a','y':'0'},'value':2}, {'address':{'x':'b','y':'1'},'value':3}]");
+    }
+
+    @Test
+    public void testDirectValueReservedNameKeys() {
+        // Single-valued
+        assertTensorField("tensor(x{}):{cells:2, b:3}", "sparse_single_dimension_tensor", "{'cells':2.0, 'b':3.0}");
+        assertTensorField("tensor(x{}):{values:2, b:3}", "sparse_single_dimension_tensor", "{'values':2.0, 'b':3.0}");
+        assertTensorField("tensor(x{}):{block:2, b:3}", "sparse_single_dimension_tensor", "{'block':2.0, 'b':3.0}");
+
+        // Multi-valued
+        assertTensorField("tensor(x{},y[3]):{cells:[2, 3, 4], b:[4, 5, 6]}", "mixed_tensor",
+                          "{'cells':[2, 3, 4], 'b':[4, 5, 6]}");
+        assertTensorField("tensor(x{},y[3]):{values:[2, 3, 4], b:[4, 5, 6]}", "mixed_tensor",
+                          "{'values':[2, 3, 4], 'b':[4, 5, 6]}");
+        assertTensorField("tensor(x{},y[3]):{block:[2, 3, 4], b:[4, 5, 6]}", "mixed_tensor",
+                          "{'block':[2, 3, 4], 'b':[4, 5, 6]}");
     }
 
     @Test
@@ -2069,6 +2089,9 @@ public class JsonReaderTestCase {
 
     private static Tensor assertSparseTensorField(String expectedTensor, DocumentPut put) {
         return assertTensorField(expectedTensor, put, "sparse_tensor");
+    }
+    private Tensor assertTensorField(String expectedTensor, String fieldName, String inputJson) {
+        return assertTensorField(expectedTensor, createPutWithTensor(inputJson, fieldName), fieldName);
     }
     private static Tensor assertTensorField(String expectedTensor, DocumentPut put, String tensorFieldName) {
         return assertTensorField(Tensor.from(expectedTensor), put, tensorFieldName);

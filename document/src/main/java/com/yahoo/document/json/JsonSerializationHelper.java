@@ -48,6 +48,7 @@ import java.util.Set;
  * @author Vegard Sjonfjell
  */
 public class JsonSerializationHelper {
+
     private final static Base64.Encoder base64Encoder = Base64.getEncoder(); // Important: _basic_ format
 
     static class JsonSerializationException extends RuntimeException {
@@ -97,14 +98,6 @@ public class JsonSerializationHelper {
             }
             generator.writeEndObject();
         });
-    }
-
-    private static void serializeTensorDimensions(JsonGenerator generator, Set<String> dimensions) throws IOException {
-        generator.writeArrayFieldStart(TensorReader.TENSOR_DIMENSIONS);
-        for (String dimension : dimensions) {
-            generator.writeString(dimension);
-        }
-        generator.writeEndArray();
     }
 
     static void serializeTensorCells(JsonGenerator generator, Tensor tensor) throws IOException {

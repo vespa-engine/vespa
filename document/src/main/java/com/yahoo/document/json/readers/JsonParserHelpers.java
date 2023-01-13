@@ -5,6 +5,8 @@ package com.yahoo.document.json.readers;
 import com.fasterxml.jackson.core.JsonToken;
 import com.google.common.base.Preconditions;
 
+import java.util.Arrays;
+
 public class JsonParserHelpers {
 
     public static void expectArrayStart(JsonToken token) {
@@ -59,6 +61,11 @@ public class JsonParserHelpers {
         catch (IllegalStateException e) {
             throw new IllegalArgumentException(e);
         }
+    }
+
+    public static void expectOneOf(JsonToken token, JsonToken ... tokens) {
+        if (Arrays.stream(tokens).noneMatch(t -> t == token))
+            throw new IllegalArgumentException("Expected one of " + tokens + " but got " + token);
     }
 
 }

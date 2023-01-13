@@ -1,7 +1,6 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.document.json.readers;
 
-import com.fasterxml.jackson.core.JsonToken;
 import com.yahoo.document.PositionDataType;
 import com.yahoo.document.datatypes.FieldValue;
 import com.yahoo.document.json.TokenBuffer;
@@ -16,7 +15,7 @@ public class GeoPositionReader {
     static void fillGeoPosition(TokenBuffer buffer, FieldValue positionFieldValue) {
         Double latitude = null;
         Double longitude = null;
-        expectObjectStart(buffer.currentToken());
+        expectObjectStart(buffer.current());
         int initNesting = buffer.nesting();
         for (buffer.next(); buffer.nesting() >= initNesting; buffer.next()) {
             String curName = buffer.currentName();
@@ -32,7 +31,7 @@ public class GeoPositionReader {
                 throw new IllegalArgumentException("Unexpected attribute "+curName+" in geo position field");
             }
         }
-        expectObjectEnd(buffer.currentToken());
+        expectObjectEnd(buffer.current());
         if (latitude == null) {
             throw new IllegalArgumentException("Missing 'lat' attribute in geo position field");
         }

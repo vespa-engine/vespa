@@ -76,18 +76,10 @@ public class DocumentParser {
             throw new IllegalArgumentException("Could not read document, no document?");
         }
         switch (currentToken) {
-            case START_OBJECT:
-                indentLevel++;
-                break;
-            case END_OBJECT:
-                indentLevel--;
-                break;
-            case START_ARRAY:
-                indentLevel += 10000L;
-                break;
-            case END_ARRAY:
-                indentLevel -= 10000L;
-                break;
+            case START_OBJECT -> indentLevel++;
+            case END_OBJECT -> indentLevel--;
+            case START_ARRAY -> indentLevel += 10000L;
+            case END_ARRAY -> indentLevel -= 10000L;
         }
     }
 
@@ -133,18 +125,12 @@ public class DocumentParser {
     }
 
     private static DocumentOperationType operationNameToOperationType(String operationName) {
-        switch (operationName) {
-            case PUT:
-            case ID:
-                return DocumentOperationType.PUT;
-            case REMOVE:
-                return DocumentOperationType.REMOVE;
-            case UPDATE:
-                return DocumentOperationType.UPDATE;
-            default:
-                throw new IllegalArgumentException(
-                        "Got " + operationName + " as document operation, only \"put\", " +
-                                "\"remove\" and \"update\" are supported.");
-        }
+        return switch (operationName) {
+            case PUT, ID -> DocumentOperationType.PUT;
+            case REMOVE -> DocumentOperationType.REMOVE;
+            case UPDATE -> DocumentOperationType.UPDATE;
+            default -> throw new IllegalArgumentException("Got " + operationName + " as document operation, only \"put\", " +
+                                                          "\"remove\" and \"update\" are supported.");
+        };
     }
 }
