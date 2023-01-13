@@ -11,7 +11,6 @@ import com.yahoo.transaction.Mutex;
 import com.yahoo.vespa.hosted.provision.LockedNodeList;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
-import com.yahoo.vespa.hosted.provision.NodesAndHosts;
 import com.yahoo.vespa.hosted.provision.node.Agent;
 import com.yahoo.vespa.hosted.provision.provisioning.HostProvisioner.HostSharing;
 
@@ -37,17 +36,8 @@ public class GroupPreparer {
     private final NodeRepository nodeRepository;
     private final Optional<HostProvisioner> hostProvisioner;
 
-    /**
-     * Contains list of prepared nodes and the NodesAndHost object to use for next prepare call.
-     */
-    public static class PrepareResult {
-        public final List<Node> prepared;
-        public final NodesAndHosts<LockedNodeList> allNodesAndHosts;
-        PrepareResult(List<Node> prepared, NodesAndHosts<LockedNodeList> allNodesAndHosts) {
-            this.prepared = prepared;
-            this.allNodesAndHosts = allNodesAndHosts;
-        }
-    }
+    /** Contains list of prepared nodes and the {@link LockedNodeList} object to use for next prepare call */
+    record PrepareResult(List<Node> prepared, LockedNodeList allNodes) {}
 
     public GroupPreparer(NodeRepository nodeRepository, Optional<HostProvisioner> hostProvisioner) {
         this.nodeRepository = nodeRepository;
@@ -64,8 +54,8 @@ public class GroupPreparer {
      *                           This method will remove from this list if it finds it needs additional nodes
      * @param indices            the next available node indices for this cluster.
      *                           This method will consume these when it allocates new nodes to the cluster.
-     * @param allNodesAndHosts   list of all nodes and hosts. Use createNodesAndHostUnlocked to create param for
-     *                           first invocation. Then use previous PrepareResult.allNodesAndHosts for the following.
+     * @param allNodes           list of all nodes and hosts. Use {@link #createUnlockedNodeList()} to create param for
+     *                           first invocation. Then use previous {@link PrepareResult#allNodes()} for the following.
      * @return the list of nodes this cluster group will have allocated if activated, and
      */
     // Note: This operation may make persisted changes to the set of reserved and inactive nodes,
@@ -73,37 +63,37 @@ public class GroupPreparer {
     // active config model which is changed on activate
     public PrepareResult prepare(ApplicationId application, ClusterSpec cluster, NodeSpec requestedNodes,
                                  List<Node> surplusActiveNodes, NodeIndices indices, int wantedGroups,
-                                 NodesAndHosts<LockedNodeList> allNodesAndHosts) {
+                                 LockedNodeList allNodes) {
         log.log(Level.FINE, () -> "Preparing " + cluster.type().name() + " " + cluster.id() + " with requested resources " +
                                   requestedNodes.resources().orElse(NodeResources.unspecified()));
         // Try preparing in memory without global unallocated lock. Most of the time there should be no changes,
         // and we can return nodes previously allocated.
         NodeAllocation probeAllocation = prepareAllocation(application, cluster, requestedNodes, surplusActiveNodes,
-                                                           indices::probeNext, wantedGroups, allNodesAndHosts);
+                                                           indices::probeNext, wantedGroups, allNodes);
         if (probeAllocation.fulfilledAndNoChanges()) {
             List<Node> acceptedNodes = probeAllocation.finalNodes();
             surplusActiveNodes.removeAll(acceptedNodes);
             indices.commitProbe();
-            return new PrepareResult(acceptedNodes, allNodesAndHosts);
+            return new PrepareResult(acceptedNodes, allNodes);
         } else {
             // There were some changes, so re-do the allocation with locks
             indices.resetProbe();
             List<Node> prepared = prepareWithLocks(application, cluster, requestedNodes, surplusActiveNodes, indices, wantedGroups);
-            return new PrepareResult(prepared, createNodesAndHostUnlocked());
+            return new PrepareResult(prepared, createUnlockedNodeList());
         }
     }
 
-    // Use this to create allNodesAndHosts param to prepare method for first invocation of prepare
-    public NodesAndHosts<LockedNodeList> createNodesAndHostUnlocked() { return NodesAndHosts.create(nodeRepository.nodes().list(PROBE_LOCK)); }
+    // Use this to create allNodes param to prepare method for first invocation of prepare
+    LockedNodeList createUnlockedNodeList() { return nodeRepository.nodes().list(PROBE_LOCK); }
 
     /// Note that this will write to the node repo.
     private List<Node> prepareWithLocks(ApplicationId application, ClusterSpec cluster, NodeSpec requestedNodes,
                                         List<Node> surplusActiveNodes, NodeIndices indices, int wantedGroups) {
         try (Mutex lock = nodeRepository.applications().lock(application);
              Mutex allocationLock = nodeRepository.nodes().lockUnallocated()) {
-            NodesAndHosts<LockedNodeList> allNodesAndHosts = NodesAndHosts.create(nodeRepository.nodes().list(allocationLock));
+            LockedNodeList allNodes = nodeRepository.nodes().list(allocationLock);
             NodeAllocation allocation = prepareAllocation(application, cluster, requestedNodes, surplusActiveNodes,
-                                                          indices::next, wantedGroups, allNodesAndHosts);
+                                                          indices::next, wantedGroups, allNodes);
             NodeType hostType = allocation.nodeType().hostType();
             if (canProvisionDynamically(hostType) && allocation.hostDeficit().isPresent()) {
                 HostSharing sharing = hostSharing(cluster, hostType);
@@ -156,10 +146,10 @@ public class GroupPreparer {
 
     private NodeAllocation prepareAllocation(ApplicationId application, ClusterSpec cluster, NodeSpec requestedNodes,
                                              List<Node> surplusActiveNodes, Supplier<Integer> nextIndex, int wantedGroups,
-                                             NodesAndHosts<LockedNodeList> allNodesAndHosts) {
+                                             LockedNodeList allNodes) {
 
-        NodeAllocation allocation = new NodeAllocation(allNodesAndHosts, application, cluster, requestedNodes, nextIndex, nodeRepository);
-        NodePrioritizer prioritizer = new NodePrioritizer(allNodesAndHosts,
+        NodeAllocation allocation = new NodeAllocation(allNodes, application, cluster, requestedNodes, nextIndex, nodeRepository);
+        NodePrioritizer prioritizer = new NodePrioritizer(allNodes,
                                                           application,
                                                           cluster,
                                                           requestedNodes,

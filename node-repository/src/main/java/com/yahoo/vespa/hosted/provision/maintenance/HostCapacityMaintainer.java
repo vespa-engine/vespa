@@ -22,7 +22,6 @@ import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeList;
 import com.yahoo.vespa.hosted.provision.NodeMutex;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
-import com.yahoo.vespa.hosted.provision.NodesAndHosts;
 import com.yahoo.vespa.hosted.provision.node.Agent;
 import com.yahoo.vespa.hosted.provision.node.History;
 import com.yahoo.vespa.hosted.provision.provisioning.HostProvisioner;
@@ -31,6 +30,7 @@ import com.yahoo.vespa.hosted.provision.provisioning.NodeCandidate;
 import com.yahoo.vespa.hosted.provision.provisioning.NodePrioritizer;
 import com.yahoo.vespa.hosted.provision.provisioning.NodeSpec;
 import com.yahoo.vespa.hosted.provision.provisioning.ProvisionedHost;
+
 import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
@@ -222,8 +222,8 @@ public class HostCapacityMaintainer extends NodeRepositoryMaintainer {
                                                                    ArrayList<Node> mutableNodes) {
         for (int clusterIndex = 0; clusterIndex < preprovisionCapacity.size(); ++clusterIndex) {
             ClusterCapacity clusterCapacity = preprovisionCapacity.get(clusterIndex);
-            NodesAndHosts<LockedNodeList> nodesAndHosts = NodesAndHosts.create(new LockedNodeList(mutableNodes, () -> {}));
-            List<Node> candidates = findCandidates(clusterCapacity, clusterIndex, nodesAndHosts);
+            LockedNodeList allNodes = new LockedNodeList(mutableNodes, () -> {});
+            List<Node> candidates = findCandidates(clusterCapacity, clusterIndex, allNodes);
             int deficit = Math.max(0, clusterCapacity.count() - candidates.size());
             if (deficit > 0) {
                 return Optional.of(clusterCapacity.withCount(deficit));
@@ -236,7 +236,7 @@ public class HostCapacityMaintainer extends NodeRepositoryMaintainer {
         return Optional.empty();
     }
 
-    private List<Node> findCandidates(ClusterCapacity clusterCapacity, int clusterIndex, NodesAndHosts<LockedNodeList> nodesAndHosts) {
+    private List<Node> findCandidates(ClusterCapacity clusterCapacity, int clusterIndex, LockedNodeList allNodes) {
         NodeResources nodeResources = toNodeResources(clusterCapacity);
 
         // We'll allocate each ClusterCapacity as a unique cluster in a dummy application
@@ -249,7 +249,7 @@ public class HostCapacityMaintainer extends NodeRepositoryMaintainer {
         NodeSpec nodeSpec = NodeSpec.from(clusterCapacity.count(), nodeResources, false, true, nodeRepository().zone().cloud().account());
         int wantedGroups = 1;
 
-        NodePrioritizer prioritizer = new NodePrioritizer(nodesAndHosts, applicationId, clusterSpec, nodeSpec, wantedGroups,
+        NodePrioritizer prioritizer = new NodePrioritizer(allNodes, applicationId, clusterSpec, nodeSpec, wantedGroups,
                 true, nodeRepository().nameResolver(), nodeRepository().nodes(), nodeRepository().resourcesCalculator(),
                 nodeRepository().spareCount(), nodeSpec.cloudAccount().isEnclave(nodeRepository().zone()));
         List<NodeCandidate> nodeCandidates = prioritizer.collect(List.of());

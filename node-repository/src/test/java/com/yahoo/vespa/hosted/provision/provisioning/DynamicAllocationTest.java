@@ -547,7 +547,7 @@ public class DynamicAllocationTest {
     }
 
     private List<Node> findSpareCapacity(ProvisioningTester tester) {
-        NodeList nodes = tester.nodeRepository().nodes().list(State.values());
+        NodeList nodes = tester.nodeRepository().nodes().list();
         return nodes.nodeType(NodeType.host)
                     .matching(host -> nodes.childrenOf(host).size() == 0) // Hosts without children
                     .asList();

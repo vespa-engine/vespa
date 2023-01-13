@@ -9,7 +9,6 @@ import com.yahoo.jdisc.Metric;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeList;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
-import com.yahoo.vespa.hosted.provision.NodesAndHosts;
 import com.yahoo.vespa.hosted.provision.provisioning.HostCapacity;
 
 import java.time.Duration;
@@ -40,7 +39,7 @@ public abstract class NodeMover<MOVE> extends NodeRepositoryMaintainer {
     }
 
     /** Returns a suggested move for given node */
-    protected abstract MOVE suggestedMove(Node node, Node fromHost, Node toHost, NodesAndHosts<? extends NodeList> allNodes);
+    protected abstract MOVE suggestedMove(Node node, Node fromHost, Node toHost, NodeList allNodes);
 
     private static class HostWithResources {
         private final Node node;
@@ -56,17 +55,17 @@ public abstract class NodeMover<MOVE> extends NodeRepositoryMaintainer {
     }
 
     /** Find the best possible move */
-    protected final MOVE findBestMove(NodesAndHosts<? extends NodeList> allNodes) {
+    protected final MOVE findBestMove(NodeList allNodes) {
         HostCapacity capacity = new HostCapacity(allNodes, nodeRepository().resourcesCalculator());
         MOVE bestMove = emptyMove;
         // Shuffle nodes to not get stuck if the chosen move is consistently discarded. Node moves happen through
         // a soft request to retire (preferToRetire), which node allocation can disregard
-        NodeList activeNodes = allNodes.nodes().nodeType(NodeType.tenant)
+        NodeList activeNodes = allNodes.nodeType(NodeType.tenant)
                                        .state(Node.State.active)
                                        .shuffle(random);
-        Set<Node> spares = capacity.findSpareHosts(allNodes.nodes().asList(), nodeRepository().spareCount());
+        Set<Node> spares = capacity.findSpareHosts(allNodes.asList(), nodeRepository().spareCount());
         List<HostWithResources> hostResources = new ArrayList<>();
-        allNodes.nodes().matching(nodeRepository().nodes()::canAllocateTenantNodeTo).forEach(host -> hostResources.add(new HostWithResources(host, capacity.availableCapacityOf(host))));
+        allNodes.matching(nodeRepository().nodes()::canAllocateTenantNodeTo).forEach(host -> hostResources.add(new HostWithResources(host, capacity.availableCapacityOf(host))));
         for (Node node : activeNodes) {
             if (node.parentHostname().isEmpty()) continue;
             ApplicationId applicationId = node.allocation().get().owner();
