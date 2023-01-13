@@ -1185,7 +1185,12 @@ FileStorHandlerImpl::Stripe::release(const document::Bucket & bucket,
     if (!entry._exclusiveLock && entry._sharedLocks.empty()) {
         _lockedBuckets.erase(iter); // No more locks held
     }
-    _cond->notify_all();
+    guard.unlock();
+    if (entry._exclusiveLock) {
+        _cond->notify_all();
+    } else if (entry._sharedLocks.empty()) {
+        _cond->notify_one();
+    }
 }
 
 void
