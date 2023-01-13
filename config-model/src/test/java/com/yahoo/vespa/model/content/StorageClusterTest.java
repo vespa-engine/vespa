@@ -149,9 +149,9 @@ public class StorageClusterTest {
     void verifyDefaultMbusConfig() {
         var confg = communicationmanagerConfigFromProperties(new TestProperties());
         assertEquals(1, confg.mbus().num_network_threads());
-        assertEquals(1, confg.mbus().num_rpc_targets());
+        assertEquals(2, confg.mbus().num_rpc_targets());
         assertEquals(1, confg.mbus().events_before_wakeup());
-        assertEquals(1, confg.rpc().num_targets_per_node());
+        assertEquals(2, confg.rpc().num_targets_per_node());
         assertEquals(1, confg.rpc().events_before_wakeup());
     }
 

@@ -70,11 +70,11 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
     private List<String> environmentVariables = List.of();
     private boolean loadCodeAsHugePages = false;
     private boolean sharedStringRepoNoReclaim = false;
-    private int mbus_java_num_targets = 1;
+    private int mbus_java_num_targets = 2;
     private int mbus_java_events_before_wakeup = 1;
-    private int mbus_cpp_num_targets = 1;
+    private int mbus_cpp_num_targets = 2;
     private int mbus_cpp_events_before_wakeup = 1;
-    private int rpc_num_targets = 1;
+    private int rpc_num_targets = 2;
     private int rpc_events_before_wakeup = 1;
     private int mbus_network_threads = 1;
     private int heapSizePercentage = ApplicationContainerCluster.defaultHeapSizePercentageOfTotalNodeMemory;

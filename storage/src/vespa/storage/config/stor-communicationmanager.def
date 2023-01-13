@@ -30,7 +30,7 @@ mbus.compress.type enum {NONE, LZ4, ZSTD} default=LZ4 restart
 mbus.rpctargetcache.ttl double default = 600 restart
 
 ## Number of rpc targets per spec
-mbus.num_rpc_targets int default=1 restart
+mbus.num_rpc_targets int default=2 restart
 
 ## Use tcpNoDelay for mbus network writes
 mbus.tcp_no_delay bool default=true restart
@@ -64,7 +64,7 @@ rpc.events_before_wakeup int default=1 restart
 ## and the RPC target itself handles sequencing of these messages.
 ## NB !! It is vital that this number is kept in sync with stor-filestor:num_network_threads.
 ## Only skilled vespa core developers should touch this.
-rpc.num_targets_per_node int default=1 restart
+rpc.num_targets_per_node int default=2 restart
 
 # Minimum size of packets to compress (0 means no compression)
 rpc.compress.limit int default=1024 restart

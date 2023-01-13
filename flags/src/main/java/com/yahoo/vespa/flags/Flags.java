@@ -139,19 +139,19 @@ public class Flags {
 
 
     public static final UnboundIntFlag MBUS_JAVA_NUM_TARGETS = defineIntFlag(
-            "mbus-java-num-targets", 1,
+            "mbus-java-num-targets", 2,
             List.of("baldersheim"), "2022-07-05", "2023-12-31",
             "Number of rpc targets per service",
             "Takes effect at redeployment",
             ZONE_ID, APPLICATION_ID);
     public static final UnboundIntFlag MBUS_CPP_NUM_TARGETS = defineIntFlag(
-            "mbus-cpp-num-targets", 1,
+            "mbus-cpp-num-targets", 2,
             List.of("baldersheim"), "2022-07-05", "2023-12-31",
             "Number of rpc targets per service",
             "Takes effect at redeployment",
             ZONE_ID, APPLICATION_ID);
     public static final UnboundIntFlag RPC_NUM_TARGETS = defineIntFlag(
-            "rpc-num-targets", 1,
+            "rpc-num-targets", 2,
             List.of("baldersheim"), "2022-07-05", "2023-12-31",
             "Number of rpc targets per content node",
             "Takes effect at redeployment",

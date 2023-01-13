@@ -27,7 +27,7 @@ num_visitor_threads int default=16 restart
 ## Number of handler objects that might be created by network threads
 ## This is a temporary setting that only skilled vespa developers should modify
 ## This must be kept in line with stor-communicationmanager:rpc.num_network_threads
-num_network_threads int default=1 restart
+num_network_threads int default=2 restart
 
 ## Type of sequenced thread executor use for persistence replies.
 response_sequencer_type enum {LATENCY, THROUGHPUT, ADAPTIVE} default=ADAPTIVE restart
