@@ -1162,8 +1162,9 @@ FileStorHandlerImpl::Stripe::release(const document::Bucket & bucket,
     assert(iter != _lockedBuckets.end());
     auto& entry = iter->second;
     Clock::time_point start_time;
+    bool wasExclusive = (reqOfReleasedLock == api::LockingRequirements::Exclusive);
 
-    if (reqOfReleasedLock == api::LockingRequirements::Exclusive) {
+    if (wasExclusive) {
         assert(entry._exclusiveLock);
         assert(entry._exclusiveLock->msgId == lockMsgId);
         if (was_active_merge) {
@@ -1185,10 +1186,11 @@ FileStorHandlerImpl::Stripe::release(const document::Bucket & bucket,
     if (!entry._exclusiveLock && entry._sharedLocks.empty()) {
         _lockedBuckets.erase(iter); // No more locks held
     }
+    bool emptySharedLocks = entry._sharedLocks.empty();
     guard.unlock();
-    if (entry._exclusiveLock) {
+    if (wasExclusive) {
         _cond->notify_all();
-    } else if (entry._sharedLocks.empty()) {
+    } else if (emptySharedLocks) {
         _cond->notify_one();
     }
 }
