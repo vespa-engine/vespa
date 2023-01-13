@@ -2,18 +2,23 @@
 package com.yahoo.filedistribution.fileacquirer;
 
 import com.yahoo.cloud.config.filedistribution.FiledistributorrpcConfig;
-import com.yahoo.config.subscription.ConfigSubscriber;
 import com.yahoo.config.FileReference;
-import com.yahoo.jrt.*;
-
+import com.yahoo.config.subscription.ConfigSubscriber;
+import com.yahoo.jrt.ErrorCode;
+import com.yahoo.jrt.Request;
+import com.yahoo.jrt.Spec;
+import com.yahoo.jrt.StringValue;
+import com.yahoo.jrt.Supervisor;
+import com.yahoo.jrt.Target;
+import com.yahoo.jrt.Transport;
+import com.yahoo.vespa.config.FileReferenceDoesNotExistException;
+import java.io.File;
 import java.time.Duration;
-import java.util.logging.Level;
-
-import java.util.logging.Logger;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
-import java.util.concurrent.TimeUnit;
-import java.io.File;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * Retrieves the path to a file or directory on the local file system

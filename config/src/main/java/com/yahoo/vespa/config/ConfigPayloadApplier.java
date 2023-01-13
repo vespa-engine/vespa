@@ -10,7 +10,6 @@ import com.yahoo.slime.ArrayTraverser;
 import com.yahoo.slime.Inspector;
 import com.yahoo.slime.ObjectTraverser;
 import com.yahoo.slime.Type;
-
 import java.io.File;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
@@ -21,7 +20,6 @@ import java.nio.file.Path;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
-import java.util.Optional;
 import java.util.Set;
 import java.util.Stack;
 import java.util.logging.Logger;
@@ -60,6 +58,8 @@ public class ConfigPayloadApplier<T extends ConfigInstance.Builder> {
         stack.push(new NamedBuilder(rootBuilder));
         try {
             handleValue(payload.getSlime().get());
+        } catch (FileReferenceDoesNotExistException e) {
+            throw e;
         } catch (Exception e) {
             throw new RuntimeException("Not able to create config builder for payload '" + payload.toString() + "'", e);
         }

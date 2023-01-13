@@ -25,17 +25,6 @@
     ],
     "fields" : [ ]
   },
-  "com.yahoo.filedistribution.fileacquirer.FileReferenceDoesNotExistException" : {
-    "superClass" : "java.lang.RuntimeException",
-    "interfaces" : [ ],
-    "attributes" : [
-      "public"
-    ],
-    "methods" : [ ],
-    "fields" : [
-      "public final java.lang.String fileReference"
-    ]
-  },
   "com.yahoo.filedistribution.fileacquirer.MockFileAcquirer" : {
     "superClass" : "java.lang.Object",
     "interfaces" : [
