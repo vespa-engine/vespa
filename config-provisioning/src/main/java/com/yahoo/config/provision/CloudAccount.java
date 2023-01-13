@@ -22,16 +22,14 @@ public class CloudAccount extends PatternedStringWrapper<CloudAccount> {
     /** Empty value. When this is used, either implicitly or explicitly, the zone will use its default account */
     public static final CloudAccount empty = new CloudAccount("", EMPTY, "cloud account");
 
-    /** Verifies accountId is a valid AWS account ID and return it unaltered, or throw an IllegalArgumentException. */
-    public static String requireAwsAccountId(String accountId) {
+    /** Verifies accountId is a valid AWS account ID, or throw an IllegalArgumentException. */
+    public static void requireAwsAccountId(String accountId) {
         Validation.requireMatch(accountId, "AWS account ID", AWS_ACCOUNT_ID_PATTERN);
-        return accountId;
     }
 
-    /** Verifies accountId is a valid GCP project ID and return it unaltered, or throw an IllegalArgumentException. */
-    public static String requireGcpProjectId(String projectId) {
+    /** Verifies accountId is a valid GCP project ID, or throw an IllegalArgumentException. */
+    public static void requireGcpProjectId(String projectId) {
         Validation.requireMatch(projectId, "GCP project ID", GCP_PROJECT_ID_PATTERN);
-        return projectId;
     }
 
     private CloudAccount(String value, String regex, String description) {
@@ -49,16 +47,14 @@ public class CloudAccount extends PatternedStringWrapper<CloudAccount> {
                !equals(zone.cloud().account());
     }
 
-    /** Verifies this account is a valid AWS account ID and return this, or throw an IllegalArgumentException. */
-    public CloudAccount requireAwsAccountId() {
+    /** Verifies this account is a valid AWS account ID, or throw an IllegalArgumentException. */
+    public void requireAwsAccountId() {
         requireAwsAccountId(value());
-        return this;
     }
 
-    /** Verifies this account is a valid GCP project ID and return this, or throw an IllegalArgumentException. */
-    public CloudAccount requireGcpProjectId() {
+    /** Verifies this account is a valid GCP project ID, or throw an IllegalArgumentException. */
+    public void requireGcpProjectId() {
         requireGcpProjectId(value());
-        return this;
     }
 
     public static CloudAccount from(String cloudAccount) {
