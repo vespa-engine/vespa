@@ -16,7 +16,6 @@ import com.yahoo.config.provision.DockerImage;
 import com.yahoo.config.provision.NodeAllocationException;
 import com.yahoo.config.provision.TransientException;
 import com.yahoo.config.provision.Zone;
-import com.yahoo.lang.SettableOptional;
 import com.yahoo.vespa.config.server.http.InternalServerException;
 import com.yahoo.vespa.config.server.http.InvalidApplicationException;
 import com.yahoo.vespa.config.server.http.UnknownVespaVersionException;
@@ -133,7 +132,7 @@ public abstract class ModelsBuilder<MODELRESULT extends ModelResult> {
                     log.log(Level.FINE, applicationId + ": Skipping major version " + majorVersion, e);
                 }
                 else {
-                    if (e instanceof IllegalArgumentException) {
+                    if (e instanceof IllegalArgumentException || e instanceof UnsupportedOperationException) {
                         var wrapped = new InvalidApplicationException("Invalid application", e);
                         deployLogger.logApplicationPackage(Level.SEVERE, Exceptions.toMessageString(wrapped));
                         throw wrapped;
