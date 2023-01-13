@@ -706,6 +706,9 @@ HnswIndex<type>::populate_address_space_usage(search::AddressSpaceUsage& usage) 
 {
     usage.set(AddressSpaceComponents::hnsw_levels_store, _graph.levels_store.addressSpaceUsage());
     usage.set(AddressSpaceComponents::hnsw_links_store, _graph.links_store.addressSpaceUsage());
+    if constexpr (type == HnswIndexType::MULTI) {
+        usage.set(AddressSpaceComponents::hnsw_nodeid_mapping, _id_mapping.address_space_usage());
+    }
 }
 
 template <HnswIndexType type>
