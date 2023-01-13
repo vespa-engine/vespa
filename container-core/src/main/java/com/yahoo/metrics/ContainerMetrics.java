@@ -77,7 +77,7 @@ public enum ContainerMetrics {
     FAILED_QUERIES("failed_queries", Unit.OPERATION, "The number of failed queries"),
     DEGRADED_QUERIES("degraded_queries", Unit.OPERATION, "The number of degraded queries, e.g. due to some conent nodes not responding in time"),
     HITS_PER_QUERY("hits_per_query", Unit.HIT, "The number of hits returned"),
-    QUERY_HIT_OFFSE("query_hit_offset", Unit.HIT, "The offset for hits returned"),
+    QUERY_HIT_OFFSET("query_hit_offset", Unit.HIT, "The offset for hits returned"),
     DOCUMENTS_COVERED("documents_covered", Unit.DOCUMENT, "The combined number of documents considered during query evaluation"),
     DOCUMENTS_TOTAL("documents_total", Unit.DOCUMENT, "The number of documents to be evaluated if all requests had been fully executed"),
     DOCUMENTS_TARGET_TOTAL("documents_target_total", Unit.DOCUMENT, "The target number of total documents to be evaluated when when all data is in sync"),
