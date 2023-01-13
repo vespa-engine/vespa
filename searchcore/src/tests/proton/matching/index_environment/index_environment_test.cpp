@@ -155,8 +155,8 @@ Schema::UP schema_with_virtual_fields() {
     result->addAttributeField(SAF("person_map.key", DataType::INT32, CollectionType::ARRAY));
     result->addAttributeField(SAF("person_map.value.name", DataType::STRING, CollectionType::ARRAY));
     result->addAttributeField(SAF("person_map.value.year", DataType::INT32, CollectionType::ARRAY));
-    result->addAttributeField(SAF("int_map.key", DataType::INT32, CollectionType::ARRAY));
-    result->addAttributeField(SAF("int_map.value", DataType::INT32, CollectionType::ARRAY));
+    result->addImportedAttributeField(SAF("int_map.key", DataType::INT32, CollectionType::ARRAY));
+    result->addImportedAttributeField(SAF("int_map.value", DataType::INT32, CollectionType::ARRAY));
     return result;
 }
 
