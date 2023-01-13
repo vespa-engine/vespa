@@ -25,14 +25,14 @@ consider_field_for_extraction(const vespalib::string& field_name, StringSet& vir
 }
 
 StringSet
-extract_virtual_fields(const search::index::Schema& schema)
+extract_virtual_fields(const std::vector<search::fef::FieldInfo>& fields)
 {
-    // Fields that are represented by a set of attributes in the backend are considered virtual fields.
+    // Fields that are represented by a set of attributes (normal and imported) in the backend are considered virtual fields.
     // Currently, this is map or array of struct fields (from the SD file) with struct-field attributes.
+    // These attributes have '.' in their names, example: my_map.key and my_map.value represent a map<int, string>.
     StringSet result;
-    for (uint32_t i = 0; i < schema.getNumAttributeFields(); ++i) {
-        const auto& field = schema.getAttributeField(i);
-        consider_field_for_extraction(field.getName(), result);
+    for (const auto& field : fields) {
+        consider_field_for_extraction(field.name(), result);
     }
     return result;
 }
@@ -82,7 +82,7 @@ IndexEnvironment::extractFields(const search::index::Schema &schema)
         fieldInfo.setFilter(true);
         insertField(fieldInfo);
     }
-    for (const auto& field : extract_virtual_fields(schema)) {
+    for (const auto& field : extract_virtual_fields(_fields)) {
         FieldInfo info(FieldType::VIRTUAL, FieldInfo::CollectionType::ARRAY, field, _fields.size());
         info.set_data_type(FieldInfo::DataType::COMBINED);
         insertField(info);
