@@ -7,7 +7,7 @@ package com.yahoo.filedistribution.fileacquirer;
 public class TimeoutException extends RuntimeException {
 
     /** Do not use this constructor */
-    public TimeoutException() {
+    private TimeoutException() {
         super();
     }
 

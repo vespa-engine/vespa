@@ -30,9 +30,7 @@ class FileAcquirerImpl implements FileAcquirer {
 
         public static final int baseErrorCode = 0x10000;
         public static final int baseFileProviderErrorCode = baseErrorCode + 0x1000;
-
         public static final int fileReferenceDoesNotExists = baseFileProviderErrorCode;
-        public static final int fileReferenceRemoved = fileReferenceDoesNotExists + 1;
 
     }
 
@@ -113,16 +111,10 @@ class FileAcquirerImpl implements FileAcquirer {
     private final Connection connection = new Connection();
 
     private boolean temporaryError(int errorCode) {
-        switch (errorCode) {
-        case ErrorCode.ABORT:
-        case ErrorCode.CONNECTION:
-        case ErrorCode.GENERAL_ERROR:
-        case ErrorCode.OVERLOAD:
-        case ErrorCode.TIMEOUT:
-            return true;
-        default:
-            return false;
-        }
+        return switch (errorCode) {
+            case ErrorCode.ABORT, ErrorCode.CONNECTION, ErrorCode.GENERAL_ERROR, ErrorCode.OVERLOAD, ErrorCode.TIMEOUT -> true;
+            default -> false;
+        };
     }
 
     public FileAcquirerImpl(String configId) {
@@ -168,12 +160,11 @@ class FileAcquirerImpl implements FileAcquirer {
             } else {
                 if (request.errorCode() == FileDistributionErrorCode.fileReferenceDoesNotExists)
                     throw new FileReferenceDoesNotExistException(fileReference.value());
-                else if (request.errorCode() == FileDistributionErrorCode.fileReferenceRemoved)
-                    throw new FileReferenceRemovedException(fileReference.value());
                 else
-                    throw new RuntimeException("Wait for " + fileReference + " failed:" + request.errorMessage() + " (" + request.errorCode() + ")");
+                    throw new RuntimeException("Wait for " + fileReference + " failed: " + request.errorMessage() + " (" + request.errorCode() + ")");
             }
         } while ( timer.isTimeLeft() );
+
         throw new TimeoutException("Timed out waiting for " + fileReference + " after " + timeout + " " + timeUnit.name().toLowerCase());
     }
 

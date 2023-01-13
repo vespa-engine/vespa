@@ -3,9 +3,6 @@ package com.yahoo.filedistribution.fileacquirer;
 
 import com.yahoo.config.FileReference;
 import java.io.File;
-import java.lang.reflect.Constructor;
-import java.lang.reflect.InvocationTargetException;
-import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
@@ -19,8 +16,7 @@ public abstract class MockFileAcquirer implements FileAcquirer {
     public static FileAcquirer returnFile(File file) {
         return new MockFileAcquirer() {
             @Override
-            public File waitFor(FileReference fileReference,
-                                long timeout, TimeUnit timeUnit) throws InterruptedException {
+            public File waitFor(FileReference fileReference, long timeout, TimeUnit timeUnit) {
                 return file;
             }
         };
@@ -30,8 +26,7 @@ public abstract class MockFileAcquirer implements FileAcquirer {
     public static FileAcquirer returnFiles(Map<String, File> files) {
         return new MockFileAcquirer() {
             @Override
-            public File waitFor(FileReference fileReference,
-                                long timeout, TimeUnit timeUnit) throws InterruptedException {
+            public File waitFor(FileReference fileReference, long timeout, TimeUnit timeUnit) {
                 return files.get(fileReference.value());
             }
         };
@@ -41,8 +36,7 @@ public abstract class MockFileAcquirer implements FileAcquirer {
     public static FileAcquirer throwTimeoutException() {
         return new MockFileAcquirer() {
             @Override
-            public File waitFor(FileReference fileReference,
-                                long timeout, TimeUnit timeUnit) throws InterruptedException {
+            public File waitFor(FileReference fileReference, long timeout, TimeUnit timeUnit) {
                 throw new TimeoutException("Timed out");
             }
         };
@@ -52,8 +46,7 @@ public abstract class MockFileAcquirer implements FileAcquirer {
     public static FileAcquirer throwFileReferenceDoesNotExistException() {
         return new MockFileAcquirer() {
             @Override
-            public File waitFor(FileReference fileReference,
-                                long timeout, TimeUnit timeUnit) throws InterruptedException {
+            public File waitFor(FileReference fileReference, long timeout, TimeUnit timeUnit) {
                 throw new FileReferenceDoesNotExistException(null);
             }
         };
