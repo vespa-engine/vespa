@@ -42,7 +42,7 @@ public class StdOutVisitorHandlerTest {
         initStdOutVisitorHandlerTest(jsonOutput);
         ByteArrayOutputStream out = new ByteArrayOutputStream();
         StdOutVisitorHandler visitorHandler =
-                new StdOutVisitorHandler(/*printIds*/true, false, false, false, false, false, 0, jsonOutput, false, new PrintStream(out, true));
+                new StdOutVisitorHandler(/*printIds*/true, false, false, false, false, false, 0, jsonOutput, false, false, new PrintStream(out, true));
         VisitorDataHandler dataHandler = visitorHandler.getDataHandler();
         dataHandler.onDone();
         String output = out.toString();
@@ -55,7 +55,7 @@ public class StdOutVisitorHandlerTest {
         initStdOutVisitorHandlerTest(jsonOutput);
         ByteArrayOutputStream out = new ByteArrayOutputStream();
         StdOutVisitorHandler visitorHandler =
-                new StdOutVisitorHandler(/*printIds*/false, false, false, false, false, false, 0, jsonOutput, false, new PrintStream(out, true));
+                new StdOutVisitorHandler(/*printIds*/false, false, false, false, false, false, 0, jsonOutput, false, false, new PrintStream(out, true));
         VisitorDataHandler dataHandler = visitorHandler.getDataHandler();
         dataHandler.onDone();
         String expectedOutput = jsonOutput ? "[]" : "";
@@ -63,7 +63,7 @@ public class StdOutVisitorHandlerTest {
         assertEquals(expectedOutput, output);
     }
 
-    void do_test_json_tensor_fields_can_be_output_in_short_or_long_form(boolean tensorShortForm, String expectedOutput) {
+    void do_test_json_tensor_fields_rendering(boolean tensorShortForm, boolean tensorDirectValues, String expectedOutput) {
         var docType = new DocumentType("foo");
         docType.addField("bar", TensorDataType.getTensor(TensorType.fromSpec("tensor(x[3])")));
         var doc = new Document(docType, "id:baz:foo::tensor-stuff");
@@ -72,7 +72,7 @@ public class StdOutVisitorHandlerTest {
 
         var out = new ByteArrayOutputStream();
         var visitorHandler = new StdOutVisitorHandler(/*printIds*/false, false, false, false, false, false,
-                                                      0, true, tensorShortForm, new PrintStream(out, true));
+                                                      0, true, tensorShortForm, tensorDirectValues, new PrintStream(out, true));
         var dataHandler = visitorHandler.getDataHandler();
         var controlSession = mock(VisitorControlSession.class);
         var ackToken = mock(AckToken.class);
@@ -88,8 +88,8 @@ public class StdOutVisitorHandlerTest {
     void json_tensor_fields_can_be_output_in_long_form() {
         var expectedOutput = """
         [
-        {"id":"id:baz:foo::tensor-stuff","fields":{"bar":{"cells":[{"address":{"x":"0"},"value":1.0},{"address":{"x":"1"},"value":2.0},{"address":{"x":"2"},"value":3.0}]}}}]""";
-        do_test_json_tensor_fields_can_be_output_in_short_or_long_form(false, expectedOutput);
+        {"id":"id:baz:foo::tensor-stuff","fields":{"bar":{"type":"tensor(x[3])","cells":[{"address":{"x":"0"},"value":1.0},{"address":{"x":"1"},"value":2.0},{"address":{"x":"2"},"value":3.0}]}}}]""";
+        do_test_json_tensor_fields_rendering(false, false, expectedOutput);
     }
 
     @Test
@@ -97,7 +97,7 @@ public class StdOutVisitorHandlerTest {
         var expectedOutput = """
         [
         {"id":"id:baz:foo::tensor-stuff","fields":{"bar":{"type":"tensor(x[3])","values":[1.0,2.0,3.0]}}}]""";
-        do_test_json_tensor_fields_can_be_output_in_short_or_long_form(true, expectedOutput);
+        do_test_json_tensor_fields_rendering(true, false, expectedOutput);
     }
 
 }

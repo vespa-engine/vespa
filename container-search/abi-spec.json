@@ -899,19 +899,19 @@
     ],
     "fields" : [ ]
   },
-  "com.yahoo.prelude.query.MultiRangeItem$Limit": {
-    "superClass": "java.lang.Enum",
-    "interfaces": [],
-    "attributes": [
+  "com.yahoo.prelude.query.MultiRangeItem$Limit" : {
+    "superClass" : "java.lang.Enum",
+    "interfaces" : [ ],
+    "attributes" : [
       "public",
       "final",
       "enum"
     ],
-    "methods": [
+    "methods" : [
       "public static com.yahoo.prelude.query.MultiRangeItem$Limit[] values()",
       "public static com.yahoo.prelude.query.MultiRangeItem$Limit valueOf(java.lang.String)"
     ],
-    "fields": [
+    "fields" : [
       "public static final enum com.yahoo.prelude.query.MultiRangeItem$Limit INCLUSIVE",
       "public static final enum com.yahoo.prelude.query.MultiRangeItem$Limit EXCLUSIVE"
     ]
@@ -5318,7 +5318,10 @@
       "public void setSummaryFields(java.lang.String)",
       "public boolean getTensorShortForm()",
       "public void setTensorShortForm(java.lang.String)",
+      "public void setTensorFormat(java.lang.String)",
       "public void setTensorShortForm(boolean)",
+      "public boolean getTensorDirectValues()",
+      "public void setTensorDirectValues(boolean)",
       "public void prepare()",
       "public boolean equals(java.lang.Object)",
       "public int hashCode()"
@@ -7678,6 +7681,7 @@
       "public com.yahoo.data.access.Inspector inspect()",
       "public java.lang.String toJson()",
       "public java.lang.String toJson(boolean)",
+      "public java.lang.String toJson(boolean, boolean)",
       "public java.lang.StringBuilder writeJson(java.lang.StringBuilder)",
       "public java.lang.Double getDouble(java.lang.String)",
       "public com.yahoo.tensor.Tensor getTensor(java.lang.String)",

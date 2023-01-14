@@ -452,16 +452,16 @@ public class JsonWriterTestCase {
         doc.setFieldValue(tensorField, new TensorFieldValue(tensor));
 
         assertEqualJson(asDocument(docId, "{ \"tensorfield\": {\"type\":\"tensor(x[3])\", \"cells\":[{\"address\":{\"x\":\"0\"},\"value\":1.0},{\"address\":{\"x\":\"1\"},\"value\":2.0},{\"address\":{\"x\":\"2\"},\"value\":3.0}]} }"),
-                        writeDocument(doc, false));
+                        writeDocument(doc, false, false));
         assertEqualJson(asDocument(docId, "{ \"tensorfield\": {\"type\":\"tensor(x[3])\", \"values\":[1.0, 2.0, 3.0] } }"),
-                        writeDocument(doc, true));
+                        writeDocument(doc, true, false));
     }
 
-    private byte[] writeDocument(Document doc, boolean tensorShortForm) throws IOException {
+    private byte[] writeDocument(Document doc, boolean tensorShortForm, boolean tensorDirectValues) throws IOException {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
         JsonFactory factory = new JsonFactory();
         JsonGenerator generator = factory.createGenerator(out);
-        JsonWriter writer = new JsonWriter(generator, tensorShortForm);
+        JsonWriter writer = new JsonWriter(generator, tensorShortForm, tensorDirectValues);
         writer.write(doc);
         return out.toByteArray();
     }

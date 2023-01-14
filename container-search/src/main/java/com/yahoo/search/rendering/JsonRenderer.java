@@ -132,6 +132,7 @@ public class JsonRenderer extends AsynchronousSectionedRenderer<Result> {
         volatile boolean jsonMapsAll = true;
         volatile boolean jsonWsetsAll = false;
         volatile boolean tensorShortForm = true;
+        volatile boolean tensorDirectValues = false;
         boolean convertDeep() { return (jsonDeepMaps || jsonWsets); }
         void init() {
             this.debugRendering = false;
@@ -140,6 +141,7 @@ public class JsonRenderer extends AsynchronousSectionedRenderer<Result> {
             this.jsonMapsAll = true;
             this.jsonWsetsAll = true;
             this.tensorShortForm = true;
+            this.tensorDirectValues = false;
         }
         void getSettings(Query q) {
             if (q == null) {
@@ -154,7 +156,8 @@ public class JsonRenderer extends AsynchronousSectionedRenderer<Result> {
             this.jsonMapsAll = props.getBoolean(WRAP_DEEP_MAPS, true);
             this.jsonWsetsAll = props.getBoolean(WRAP_WSETS, true);
             this.tensorShortForm = q.getPresentation().getTensorShortForm();
-        }
+            this.tensorDirectValues = q.getPresentation().getTensorDirectValues();
+            }
     }
 
     private volatile FieldConsumerSettings fieldConsumerSettings;
@@ -776,7 +779,7 @@ public class JsonRenderer extends AsynchronousSectionedRenderer<Result> {
             } else if (field instanceof Tensor) {
                 renderTensor(Optional.of((Tensor)field));
             } else if (field instanceof FeatureData) {
-                generator().writeRawValue(((FeatureData)field).toJson(settings.tensorShortForm));
+                generator().writeRawValue(((FeatureData)field).toJson(settings.tensorShortForm, settings.tensorDirectValues));
             } else if (field instanceof Inspectable) {
                 renderInspectorDirect(((Inspectable)field).inspect());
             } else if (field instanceof JsonProducer) {
@@ -821,11 +824,8 @@ public class JsonRenderer extends AsynchronousSectionedRenderer<Result> {
                 generator().writeEndObject();
                 return;
             }
-            if (settings.tensorShortForm && 1==2) {
-                generator().writeRawValue(new String(JsonFormat.encodeShortForm(tensor.get()), StandardCharsets.UTF_8));
-            } else {
-                generator().writeRawValue(new String(JsonFormat.encode(tensor.get()), StandardCharsets.UTF_8));
-            }
+            generator().writeRawValue(new String(JsonFormat.encode(tensor.get(), settings.tensorShortForm, settings.tensorDirectValues),
+                                                 StandardCharsets.UTF_8));
         }
 
         private JsonGenerator generator() {

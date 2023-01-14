@@ -33,30 +33,33 @@ import java.util.logging.Logger;
  * @author Thomas Gundersen
  */
 public class StdOutVisitorHandler extends VdsVisitHandler {
+
     private static final Logger log = Logger.getLogger(
                                         StdOutVisitorHandler.class.getName());
-    private boolean printIds;
-    private boolean indentXml;
-    private int processTimeMilliSecs;
-    private PrintStream out;
+    private final boolean printIds;
+    private final boolean indentXml;
+    private final int processTimeMilliSecs;
+    private final PrintStream out;
     private final boolean jsonOutput;
     private final boolean tensorShortForm;
+    private final boolean tensorDirectValues;
 
-    private VisitorDataHandler dataHandler;
+    private final VisitorDataHandler dataHandler;
 
     public StdOutVisitorHandler(boolean printIds, boolean indentXml,
                                 boolean showProgress, boolean showStatistics, boolean doStatistics,
                                 boolean abortOnClusterDown, int processtime, boolean jsonOutput,
-                                boolean tensorShortForm)
+                                boolean tensorShortForm,
+                                boolean tensorDirectValues)
     {
         this(printIds, indentXml, showProgress, showStatistics, doStatistics, abortOnClusterDown, processtime,
-             jsonOutput, tensorShortForm, createStdOutPrintStream());
+             jsonOutput, tensorShortForm, tensorDirectValues, createStdOutPrintStream());
     }
 
     StdOutVisitorHandler(boolean printIds, boolean indentXml,
                          boolean showProgress, boolean showStatistics, boolean doStatistics,
                          boolean abortOnClusterDown, int processtime, boolean jsonOutput,
-                         boolean tensorShortForm, PrintStream out)
+                         boolean tensorShortForm, boolean tensorDirectValues, PrintStream out)
     {
         super(showProgress, showStatistics, abortOnClusterDown);
         this.printIds = printIds;
@@ -64,6 +67,7 @@ public class StdOutVisitorHandler extends VdsVisitHandler {
         this.processTimeMilliSecs = processtime;
         this.jsonOutput = jsonOutput;
         this.tensorShortForm = tensorShortForm;
+        this.tensorDirectValues = tensorDirectValues;
         this.out = out;
         this.dataHandler = new DataHandler(doStatistics);
     }
@@ -174,7 +178,7 @@ public class StdOutVisitorHandler extends VdsVisitHandler {
 
         private void writeJsonDocument(Document doc) throws IOException {
             writeFeedStartOrRecordSeparator();
-            out.write(JsonWriter.toByteArray(doc, tensorShortForm));
+            out.write(JsonWriter.toByteArray(doc, tensorShortForm, tensorDirectValues));
         }
 
         @Override

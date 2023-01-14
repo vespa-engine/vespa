@@ -91,15 +91,15 @@ public class ModelsEvaluationHandler extends ThreadedHttpRequestHandler {
             }
         }
         Tensor result = evaluator.evaluate();
-
-        Optional<String> format = property(request, "format.tensors");
-        if (format.isPresent() && format.get().equalsIgnoreCase("long")) {
-            return new Response(200, JsonFormat.encode(result));
-        }
-        else if (format.isPresent() && format.get().equalsIgnoreCase("string")) {
-            return new Response(200, result.toString().getBytes(StandardCharsets.UTF_8));
-        }
-        return new Response(200, JsonFormat.encodeShortForm(result));
+        return switch (property(request, "format.tensors").orElse("short").toLowerCase()) {
+            case "short"        -> new Response(200, JsonFormat.encode(result, true,  false));
+            case "long"         -> new Response(200, JsonFormat.encode(result, false, false));
+            case "short-value"  -> new Response(200, JsonFormat.encode(result, true,  true));
+            case "long-value"   -> new Response(200, JsonFormat.encode(result, false, true));
+            case "string"       -> new Response(200, result.toString(true, true).getBytes(StandardCharsets.UTF_8));
+            case "string-long " -> new Response(200, result.toString(true, false ).getBytes(StandardCharsets.UTF_8));
+            default             -> new ErrorResponse(400, "Unknown tensor format '" + property(request, "format.tensors") + "'");
+        };
     }
 
     private HttpResponse listAllModels(HttpRequest request) {

@@ -39,6 +39,7 @@ public class CommandLineOptions {
     public static final String JSONOUTPUT_OPTION = "jsonoutput";
     public static final String XMLOUTPUT_OPTION = "xmloutput";
     public static final String SHORTTENSORS_OPTION = "shorttensors";
+    public static final String DIRECTTENSORS_OPTION = "directtensors";
 
     private final Options options = createOptions();
     private final InputStream stdIn;
@@ -167,6 +168,7 @@ public class CommandLineOptions {
             boolean jsonOutput = cl.hasOption(JSONOUTPUT_OPTION);
             boolean xmlOutput = cl.hasOption(XMLOUTPUT_OPTION);
             boolean shortTensors = cl.hasOption(SHORTTENSORS_OPTION);
+            boolean directTensors = cl.hasOption(DIRECTTENSORS_OPTION);
             int trace = getTrace(cl);
             DocumentProtocol.Priority priority = getPriority(cl);
             double timeout = getTimeout(cl);
@@ -218,6 +220,7 @@ public class CommandLineOptions {
                     .setTimeout(timeout)
                     .setJsonOutput(!xmlOutput)
                     .setTensorShortForm(shortTensors)
+                    .setTensorDirectValues(directTensors)
                     .build();
         } catch (ParseException pe) {
             throw new IllegalArgumentException(pe.getMessage());

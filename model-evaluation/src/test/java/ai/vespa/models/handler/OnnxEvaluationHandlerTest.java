@@ -83,7 +83,7 @@ public class OnnxEvaluationHandlerTest {
         properties.put("input2", "tensor<float>(d0[1]):[3]");
         properties.put("format.tensors", "long");
         String url = "http://localhost/model-evaluation/v1/add_mul/output1/eval";
-        String expected = "{\"cells\":[{\"address\":{\"d0\":\"0\"},\"value\":6.0}]}";  // output1 is a mul
+        String expected = "{\"type\":\"tensor<float>(d0[1])\",\"cells\":[{\"address\":{\"d0\":\"0\"},\"value\":6.0}]}";  // output1 is a mul
         handler.assertResponse(url, properties, 200, expected);
     }
 
@@ -94,7 +94,7 @@ public class OnnxEvaluationHandlerTest {
         properties.put("input2", "tensor<float>(d0[1]):[3]");
         properties.put("format.tensors", "long");
         String url = "http://localhost/model-evaluation/v1/add_mul/output2/eval";
-        String expected = "{\"cells\":[{\"address\":{\"d0\":\"0\"},\"value\":5.0}]}";  // output2 is an add
+        String expected = "{\"type\":\"tensor<float>(d0[1])\",\"cells\":[{\"address\":{\"d0\":\"0\"},\"value\":5.0}]}";  // output2 is an add
         handler.assertResponse(url, properties, 200, expected);
     }
 

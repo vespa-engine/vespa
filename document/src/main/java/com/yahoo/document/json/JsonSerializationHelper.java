@@ -75,12 +75,12 @@ public class JsonSerializationHelper {
     }
 
     public static void serializeTensorField(JsonGenerator generator, FieldBase field, TensorFieldValue value,
-                                            boolean shortForm, boolean valueOnly) {
+                                            boolean shortForm, boolean directValues) {
         wrapIOException(() -> {
             fieldNameIfNotNull(generator, field);
             if (value.getTensor().isPresent()) {
                 Tensor tensor = value.getTensor().get();
-                byte[] encoded = shortForm ? JsonFormat.encodeShortForm(tensor) : JsonFormat.encodeWithType(tensor);
+                byte[] encoded = JsonFormat.encode(tensor, shortForm, directValues);
                 generator.writeRawValue(new String(encoded, StandardCharsets.UTF_8));
             }
             else {

@@ -107,7 +107,7 @@ public class ModelsEvaluationHandlerTest {
         properties.put("non-existing-binding", "-1");
         properties.put("format.tensors", "long");
         String url = "http://localhost/model-evaluation/v1/xgboost_2_2/eval";
-        String expected = "{\"cells\":[{\"address\":{},\"value\":-7.936679999999999}]}";
+        String expected = "{\"type\":\"tensor()\",\"cells\":[{\"address\":{},\"value\":-7.936679999999999}]}";
         handler.assertResponse(url, properties, 200, expected);
     }
 
@@ -196,7 +196,7 @@ public class ModelsEvaluationHandlerTest {
         properties.put("Placeholder", inputTensorShortForm());
         properties.put("format.tensors", "long");
         String url = "http://localhost/model-evaluation/v1/mnist_softmax/default.add/eval";
-        String expected = "{\"cells\":[{\"address\":{\"d0\":\"0\",\"d1\":\"0\"},\"value\":-0.3546536862850189},{\"address\":{\"d0\":\"0\",\"d1\":\"1\"},\"value\":0.3759574592113495},{\"address\":{\"d0\":\"0\",\"d1\":\"2\"},\"value\":0.06054411828517914},{\"address\":{\"d0\":\"0\",\"d1\":\"3\"},\"value\":-0.251544713973999},{\"address\":{\"d0\":\"0\",\"d1\":\"4\"},\"value\":0.017951013520359993},{\"address\":{\"d0\":\"0\",\"d1\":\"5\"},\"value\":1.2899067401885986},{\"address\":{\"d0\":\"0\",\"d1\":\"6\"},\"value\":-0.10389615595340729},{\"address\":{\"d0\":\"0\",\"d1\":\"7\"},\"value\":0.6367976665496826},{\"address\":{\"d0\":\"0\",\"d1\":\"8\"},\"value\":-1.4136744737625122},{\"address\":{\"d0\":\"0\",\"d1\":\"9\"},\"value\":-0.2573896050453186}]}";
+        String expected = "{\"type\":\"tensor(d0[],d1[10])\",\"cells\":[{\"address\":{\"d0\":\"0\",\"d1\":\"0\"},\"value\":-0.3546536862850189},{\"address\":{\"d0\":\"0\",\"d1\":\"1\"},\"value\":0.3759574592113495},{\"address\":{\"d0\":\"0\",\"d1\":\"2\"},\"value\":0.06054411828517914},{\"address\":{\"d0\":\"0\",\"d1\":\"3\"},\"value\":-0.251544713973999},{\"address\":{\"d0\":\"0\",\"d1\":\"4\"},\"value\":0.017951013520359993},{\"address\":{\"d0\":\"0\",\"d1\":\"5\"},\"value\":1.2899067401885986},{\"address\":{\"d0\":\"0\",\"d1\":\"6\"},\"value\":-0.10389615595340729},{\"address\":{\"d0\":\"0\",\"d1\":\"7\"},\"value\":0.6367976665496826},{\"address\":{\"d0\":\"0\",\"d1\":\"8\"},\"value\":-1.4136744737625122},{\"address\":{\"d0\":\"0\",\"d1\":\"9\"},\"value\":-0.2573896050453186}]}";
         handler.assertResponse(url, properties, 200, expected);
     }
 

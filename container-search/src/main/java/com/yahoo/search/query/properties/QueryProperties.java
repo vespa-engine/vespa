@@ -303,7 +303,7 @@ public class QueryProperties extends Properties {
                 }
                 else if (key.size() == 3 && key.get(1).equals(Presentation.FORMAT)) {
                     if (key.last().equals(Presentation.TENSORS))
-                        query.getPresentation().setTensorShortForm(asString(value, "short"));
+                        query.getPresentation().setTensorFormat(asString(value, "short")); // TODO: Switch default to short-value on Vespa 9
                     else
                         throwIllegalParameter(key.last(), Presentation.FORMAT);
                 }

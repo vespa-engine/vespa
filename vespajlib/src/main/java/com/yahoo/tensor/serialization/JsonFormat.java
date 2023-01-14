@@ -37,52 +37,79 @@ import java.util.stream.Collectors;
  */
 public class JsonFormat {
 
-    /** Serializes the given tensor value into JSON format */
-    public static byte[] encode(Tensor tensor) {
+    /**
+     * Serializes the given tensor value into JSON format.
+     *
+     * @param tensor the tensor to serialize
+     * @param shortForm whether to encode in a short type-dependent format
+     * @param directValues whether to encode values directly, or wrapped in am object containing "type" and "cells"
+     */
+    public static byte[] encode(Tensor tensor, boolean shortForm, boolean directValues) {
         Slime slime = new Slime();
-        Cursor root = slime.setObject();
-        encodeCells(tensor, root);
-        return com.yahoo.slime.JsonFormat.toJsonBytes(slime);
-    }
+        if (shortForm) {
+            Cursor root = null;
+            if ( ! directValues) {
+                root = slime.setObject();
+                root.setString("type", tensor.type().toString());
+            }
 
-    /** Serializes the given tensor type and value into JSON format */
-    public static byte[] encodeWithType(Tensor tensor) {
-        Slime slime = new Slime();
-        Cursor root = slime.setObject();
-        root.setString("type", tensor.type().toString());
-        encodeCells(tensor, root);
-        return com.yahoo.slime.JsonFormat.toJsonBytes(slime);
-    }
+            if (tensor instanceof IndexedTensor denseTensor) {
+                // Encode as nested lists if indexed tensor
+                Cursor parent = root == null ? slime.setArray() : root.setArray("values");
+                encodeValues(denseTensor, parent, new long[denseTensor.dimensionSizes().dimensions()], 0);
+            } else if (tensor instanceof MappedTensor && tensor.type().dimensions().size() == 1) {
+                // Short form for a single mapped dimension
+                Cursor parent = root == null ? slime.setObject() : root.setObject("cells");
+                encodeSingleDimensionCells((MappedTensor) tensor, parent);
+            } else if (tensor instanceof MixedTensor &&
+                       tensor.type().dimensions().stream().anyMatch(TensorType.Dimension::isMapped)) {
+                // Short form for a mixed tensor
+                boolean singleMapped = tensor.type().dimensions().stream().filter(TensorType.Dimension::isMapped).count() == 1;
+                Cursor parent = root == null ? ( singleMapped ? slime.setObject() : slime.setArray() )
+                                             : ( singleMapped ? root.setObject("blocks") : root.setArray("blocks"));
+                encodeBlocks((MixedTensor) tensor, parent);
+            } else {
+                // default to standard cell address output
+                Cursor parent = root == null ? slime.setArray() : root.setArray("cells");
+                encodeCells(tensor, parent);
+            }
 
-    /** Serializes the given tensor type and value into a short-form JSON format */
-    public static byte[] encodeShortForm(Tensor tensor) {
-        Slime slime = new Slime();
-        Cursor root = slime.setObject();
-        root.setString("type", tensor.type().toString());
-
-        if (tensor instanceof IndexedTensor denseTensor) {
-            // Encode as nested lists if indexed tensor
-            encodeValues(denseTensor, root.setArray("values"), new long[denseTensor.dimensionSizes().dimensions()], 0);
-        }
-        else if (tensor instanceof MappedTensor && tensor.type().dimensions().size() == 1) {
-            // Short form for a single mapped dimension
-            encodeSingleDimensionCells((MappedTensor) tensor, root);
-        }
-        else if (tensor instanceof MixedTensor &&
-                tensor.type().dimensions().stream().filter(TensorType.Dimension::isMapped).count() >= 1) {
-            // Short form for a mixed tensor
-            encodeBlocks((MixedTensor) tensor, root);
+            return com.yahoo.slime.JsonFormat.toJsonBytes(slime);
         }
         else {
-            // default to standard cell address output
-            encodeCells(tensor, root);
+            Cursor root = slime.setObject();
+            root.setString("type", tensor.type().toString());
+            encodeCells(tensor, root.setArray("cells"));
         }
-
         return com.yahoo.slime.JsonFormat.toJsonBytes(slime);
     }
 
-    private static void encodeCells(Tensor tensor, Cursor rootObject) {
-        Cursor cellsArray = rootObject.setArray("cells");
+    /** Serializes the given tensor value into JSON format, in long format, wrapped in an object containing "cells" only. */
+    public static byte[] encode(Tensor tensor) {
+        return encode(tensor, false, false);
+    }
+
+    /**
+     * Serializes the given tensor type and value into JSON format.
+     *
+     * @deprecated use #encode(#Tensor, boolean, boolean)
+     */
+    @Deprecated // TODO: Remove on Vespa 9
+    public static byte[] encodeWithType(Tensor tensor) {
+        return encode(tensor, false, false);
+    }
+
+    /**
+     * Serializes the given tensor type and value into a short-form JSON format.
+     *
+     * @deprecated use #encode(#Tensor, boolean, boolean)
+     */
+    @Deprecated // TODO: Remove on Vespa 9
+    public static byte[] encodeShortForm(Tensor tensor) {
+        return encode(tensor, true, false);
+    }
+
+    private static void encodeCells(Tensor tensor, Cursor cellsArray) {
         for (Iterator<Tensor.Cell> i = tensor.cellIterator(); i.hasNext(); ) {
             Tensor.Cell cell = i.next();
             Cursor cellObject = cellsArray.addObject();
@@ -91,8 +118,7 @@ public class JsonFormat {
         }
     }
 
-    private static void encodeSingleDimensionCells(MappedTensor tensor, Cursor cursor) {
-        Cursor cells = cursor.setObject("cells");
+    private static void encodeSingleDimensionCells(MappedTensor tensor, Cursor cells) {
         if (tensor.type().dimensions().size() > 1)
             throw new IllegalStateException("JSON encode of mapped tensor can only contain a single dimension");
         tensor.cells().forEach((k,v) -> cells.setDouble(k.label(0), v));
@@ -124,7 +150,6 @@ public class JsonFormat {
         if (mappedDimensions.size() < 1) {
             throw new IllegalArgumentException("Should be ensured by caller");
         }
-        cursor = (mappedDimensions.size() == 1) ? cursor.setObject("blocks") : cursor.setArray("blocks");
 
         // Create tensor type for mapped dimensions subtype
         TensorType mappedSubType = new TensorType.Builder(mappedDimensions).build();

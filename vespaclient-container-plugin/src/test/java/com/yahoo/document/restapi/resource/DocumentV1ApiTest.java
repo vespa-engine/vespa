@@ -527,7 +527,7 @@ public class DocumentV1ApiTest {
                        "  \"id\": \"id:space:music::one\"," +
                        "  \"fields\": {" +
                        "    \"artist\": \"Tom Waits\"," +
-                       "    \"embedding\": { \"cells\": [{\"address\":{\"x\":\"0\"},\"value\":1.0},{\"address\":{\"x\":\"1\"},\"value\": 2.0},{\"address\":{\"x\":\"2\"},\"value\": 3.0}]}" +
+                       "    \"embedding\": { \"type\": \"tensor(x[3])\",\"cells\": [{\"address\":{\"x\":\"0\"},\"value\":1.0},{\"address\":{\"x\":\"1\"},\"value\": 2.0},{\"address\":{\"x\":\"2\"},\"value\": 3.0}]}" +
                        "  }" +
                        "}", response.readAll());
         assertEquals(200, response.getStatus());

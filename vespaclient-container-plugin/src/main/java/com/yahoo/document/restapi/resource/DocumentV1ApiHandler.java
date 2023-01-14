@@ -749,14 +749,25 @@ public class DocumentV1ApiHandler extends AbstractRequestHandler {
         private boolean tensorShortForm() {
             if (request != null &&
                 request.parameters().containsKey("format.tensors") &&
-                request.parameters().get("format.tensors").contains("long")) {
+                ( request.parameters().get("format.tensors").contains("long")
+                  || request.parameters().get("format.tensors").contains("long-value"))) {
                 return false;
             }
             return true;  // default
         }
 
+        private boolean tensorDirectValues() {
+            if (request != null &&
+                request.parameters().containsKey("format.tensors") &&
+                ( request.parameters().get("format.tensors").contains("short-value")
+                  || request.parameters().get("format.tensors").contains("long-value"))) {
+                return true;
+            }
+            return false;  // TODO: Flip default on Vespa 9
+        }
+
         synchronized void writeSingleDocument(Document document) throws IOException {
-            new JsonWriter(json, tensorShortForm()).writeFields(document);
+            new JsonWriter(json, tensorShortForm(), tensorDirectValues()).writeFields(document);
         }
 
         synchronized void writeDocumentsArrayStart() throws IOException {
@@ -775,7 +786,7 @@ public class DocumentV1ApiHandler extends AbstractRequestHandler {
             ByteArrayOutputStream myOut = new ByteArrayOutputStream(1);
             myOut.write(','); // Prepend rather than append, to avoid double memory copying.
             try (JsonGenerator myJson = jsonFactory.createGenerator(myOut)) {
-                new JsonWriter(myJson, tensorShortForm()).write(document);
+                new JsonWriter(myJson, tensorShortForm(), tensorDirectValues()).write(document);
             }
             docs.add(myOut);
 

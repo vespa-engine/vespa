@@ -25,7 +25,11 @@ class HandlerTester {
         return s -> true;
     }
     private static Predicate<String> matchString(String expected) {
-        return s -> expected.equals(s);
+        return s -> {
+            // System.out.println("Expected: " + expected);
+            // System.out.println("Actual:   " + s);
+            return expected.equals(s);
+        };
     }
     public static Predicate<String> matchJson(String... expectedJson) {
         var jExp = String.join("\n", expectedJson).replaceAll("'", "\"");

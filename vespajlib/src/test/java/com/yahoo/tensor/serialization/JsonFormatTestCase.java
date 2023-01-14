@@ -47,8 +47,8 @@ public class JsonFormatTestCase {
         builder.cell().label("x", "a").label("y", "b").value(2.0);
         builder.cell().label("x", "c").label("y", "d").value(3.0);
         Tensor tensor = builder.build();
-        byte[] json = JsonFormat.encode(tensor);
-        assertEquals("{\"cells\":[" +
+        byte[] json = JsonFormat.encode(tensor, false, false);
+        assertEquals("{\"type\":\"tensor(x{},y{})\",\"cells\":[" +
                      "{\"address\":{\"x\":\"a\",\"y\":\"b\"},\"value\":2.0}," +
                      "{\"address\":{\"x\":\"c\",\"y\":\"d\"},\"value\":3.0}" +
                      "]}",
@@ -61,8 +61,8 @@ public class JsonFormatTestCase {
     public void testEmptySparseTensor() {
         Tensor.Builder builder = Tensor.Builder.of(TensorType.fromSpec("tensor(x{},y{})"));
         Tensor tensor = builder.build();
-        byte[] json = JsonFormat.encode(tensor);
-        assertEquals("{\"cells\":[]}",
+        byte[] json = JsonFormat.encode(tensor, false, false);
+        assertEquals("{\"type\":\"tensor(x{},y{})\",\"cells\":[]}",
                      new String(json, StandardCharsets.UTF_8));
         Tensor decoded = JsonFormat.decode(tensor.type(), json);
         assertEquals(tensor, decoded);
@@ -95,8 +95,8 @@ public class JsonFormatTestCase {
         builder.cell().label("x", 1).label("y", 0).value(5.0);
         builder.cell().label("x", 1).label("y", 1).value(7.0);
         Tensor tensor = builder.build();
-        byte[] json = JsonFormat.encode(tensor);
-        assertEquals("{\"cells\":[" +
+        byte[] json = JsonFormat.encode(tensor, false, false);
+        assertEquals("{\"type\":\"tensor(x[2],y[2])\",\"cells\":[" +
                      "{\"address\":{\"x\":\"0\",\"y\":\"0\"},\"value\":2.0}," +
                      "{\"address\":{\"x\":\"0\",\"y\":\"1\"},\"value\":3.0}," +
                      "{\"address\":{\"x\":\"1\",\"y\":\"0\"},\"value\":5.0}," +
@@ -206,8 +206,13 @@ public class JsonFormatTestCase {
         builder.cell().label("x", 1).label("y", 1).value(0.0);
         builder.cell().label("x", 1).label("y", 2).value(42.0);
         Tensor expected = builder.build();
+
         String denseJson = "{\"values\":\"027FFF80002A\"}";
         Tensor decoded = JsonFormat.decode(expected.type(), denseJson.getBytes(StandardCharsets.UTF_8));
+        assertEquals(expected, decoded);
+
+        denseJson = "\"027FFF80002A\"";
+        decoded = JsonFormat.decode(expected.type(), denseJson.getBytes(StandardCharsets.UTF_8));
         assertEquals(expected, decoded);
     }
 
@@ -233,6 +238,7 @@ public class JsonFormatTestCase {
         builder.cell().label("x", 1).label("y", 1).value(6.0);
         builder.cell().label("x", 1).label("y", 2).value(7.0);
         Tensor expected = builder.build();
+
         String mixedJson = "{\"blocks\":[" +
                            "{\"address\":{\"x\":\"0\"},\"values\":\"020304\"}," +
                            "{\"address\":{\"x\":\"1\"},\"values\":\"050607\"}" +
@@ -375,7 +381,7 @@ public class JsonFormatTestCase {
     }
 
     private void assertEncodeDecode(Tensor tensor) {
-        Tensor decoded = JsonFormat.decode(tensor.type(), JsonFormat.encodeWithType(tensor));
+        Tensor decoded = JsonFormat.decode(tensor.type(), JsonFormat.encode(tensor, false, false));
         assertEquals(tensor, decoded);
         assertEquals(tensor.type(), decoded.type());
     }
@@ -403,7 +409,7 @@ public class JsonFormatTestCase {
     }
 
     private void assertEncodeShortForm(Tensor tensor, String expected) {
-        byte[] json = JsonFormat.encodeShortForm(tensor);
+        byte[] json = JsonFormat.encode(tensor, true, false);
         assertEquals(expected, new String(json, StandardCharsets.UTF_8));
     }
 

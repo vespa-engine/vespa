@@ -168,7 +168,7 @@ public class DocumentRetriever {
             System.out.println(document.getId());
         } else {
             if (params.jsonOutput) {
-                System.out.print(Utf8.toString(JsonWriter.toByteArray(document, params.tensorShortForm)));
+                System.out.print(Utf8.toString(JsonWriter.toByteArray(document, params.tensorShortForm, params.tensorDirectValues)));
             } else {
                 System.out.print(document.toXML("  "));
             }

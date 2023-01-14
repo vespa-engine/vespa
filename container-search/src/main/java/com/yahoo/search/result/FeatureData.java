@@ -65,16 +65,20 @@ public class FeatureData implements Inspectable, JsonProducer {
     }
 
     public String toJson(boolean tensorShortForm) {
+        return toJson(tensorShortForm, false);
+    }
+
+    public String toJson(boolean tensorShortForm, boolean tensorDirectValues) {
         if (this == empty) return "{}";
         if (jsonForm != null) return jsonForm;
 
-        jsonForm = JsonRender.render(value, new Encoder(new StringBuilder(), true, tensorShortForm)).toString();
+        jsonForm = JsonRender.render(value, new Encoder(new StringBuilder(), true, tensorShortForm, tensorDirectValues)).toString();
         return jsonForm;
     }
 
     @Override
     public StringBuilder writeJson(StringBuilder target) {
-        return JsonRender.render(value, new Encoder(target, true, false));
+        return JsonRender.render(value, new Encoder(target, true, false, false));
     }
 
     /**
@@ -173,17 +177,19 @@ public class FeatureData implements Inspectable, JsonProducer {
     private static class Encoder extends JsonRender.StringEncoder {
 
         private final boolean tensorShortForm;
+        private final boolean tensorDirectValues;
 
-        Encoder(StringBuilder out, boolean compact, boolean tensorShortForm) {
+        Encoder(StringBuilder out, boolean compact, boolean tensorShortForm, boolean tensorDirectValues) {
             super(out, compact);
             this.tensorShortForm = tensorShortForm;
+            this.tensorDirectValues = tensorDirectValues;
         }
 
         @Override
         public void encodeDATA(byte[] value) {
             // This could be done more efficiently ...
             Tensor tensor = TypedBinaryFormat.decode(Optional.empty(), GrowableByteBuffer.wrap(value));
-            byte[] encodedTensor = tensorShortForm ? JsonFormat.encodeShortForm(tensor) : JsonFormat.encodeWithType(tensor);
+            byte[] encodedTensor = JsonFormat.encode(tensor, tensorShortForm, tensorDirectValues);
             target().append(new String(encodedTensor, StandardCharsets.UTF_8));
         }
 
