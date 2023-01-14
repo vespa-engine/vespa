@@ -62,7 +62,50 @@ public enum ContainerMetrics {
     MEM_DIRECT_COUNT("mem.direct.count", Unit.BYTE, "Number of direct memory allocations"),
     MEM_NATIVE_TOTAL("mem.native.total", Unit.BYTE, "Total available native memory"),
     MEM_NATIVE_FREE("mem.native.free", Unit.BYTE, "Currently free native memory"),
-    MEM_NATIVE_USED("mem.native.used", Unit.BYTE, "Native memory currently used");
+    MEM_NATIVE_USED("mem.native.used", Unit.BYTE, "Native memory currently used"),    
+    
+    
+    // SearchChain metrics
+    PEAK_QPS("peak_qps", Unit.OPERATION_PER_SECOND, "The highest number of qps for a second for this metrics shapshot"),
+    SEARCH_CONNECTIONS("search_connections", Unit.CONNECTION, "Number of search connections"),
+    FEED_LATENCY("feed.latency", Unit.MILLISECOND, "Feed latency"),
+    FEED_HTTP_REQUESTS("feed.http-requests", Unit.OPERATION, "Feed HTTP requests"),
+    QUERIES("queries", Unit.OPERATION, "Query volume"),
+    QUERY_CONTAINER_LATENCY("query_container_latency", Unit.MILLISECOND, "The query execution time consumed in the container"),
+    QUERY_LATENCY("query_latency", Unit.MILLISECOND, "The overall query latency as seen by the container"),
+    QUERY_TIMEOUT("query_timeout", Unit.MILLISECOND, "The amount of time allowed for query execytion, from the client"),
+    FAILED_QUERIES("failed_queries", Unit.OPERATION, "The number of failed queries"),
+    DEGRADED_QUERIES("degraded_queries", Unit.OPERATION, "The number of degraded queries, e.g. due to some conent nodes not responding in time"),
+    HITS_PER_QUERY("hits_per_query", Unit.HIT, "The number of hits returned"),
+    QUERY_HIT_OFFSET("query_hit_offset", Unit.HIT, "The offset for hits returned"),
+    DOCUMENTS_COVERED("documents_covered", Unit.DOCUMENT, "The combined number of documents considered during query evaluation"),
+    DOCUMENTS_TOTAL("documents_total", Unit.DOCUMENT, "The number of documents to be evaluated if all requests had been fully executed"),
+    DOCUMENTS_TARGET_TOTAL("documents_target_total", Unit.DOCUMENT, "The target number of total documents to be evaluated when when all data is in sync"),
+    JDISC_RENDER_LATENCY("jdisc.render.latency", Unit.MILLISECOND, "The time used by the container to render responses"),
+    QUERY_ITEM_COUNT("query_item_count", Unit.QUERY_ITEM, "The number of query items (terms, phrases, etc)"),
+    
+    TOTAL_HITS_PER_QUERY("totalhits_per_query", Unit.HIT, "The total number of documents found to match queries"),
+    EMPTY_RESULTS("empty_results", Unit.OPERATION, "Number of queries matching no documents"),
+    REQUESTS_OVER_QUOTA("requestsOverQuota", Unit.OPERATION, "The number of requests rejected due to exceeding quota"),
+    
+    RELEVANCE_AT_1("relevance.at_1", Unit.RELEVANCE, "The relevance of hit number 1"),
+    RELEVANCE_AT_3("relevance.at_3", Unit.RELEVANCE, "The relevance of hit number 3"),
+    RELEVANCE_AT_10("relevance.at_10", Unit.RELEVANCE, "The relevance of hit number 10"),
+
+    // Errors from search container
+    ERROR_TIMEOUT("error.timeout", Unit.OPERATION, "Requests that timed out"),
+    ERROR_BACKENDS_OOS("error.backends_oos", Unit.OPERATION, "Requests that failed due to no available backends nodes"),
+    ERROR_PLUGIN_FAILURE("error.plugin_failure", Unit.OPERATION, "Requests that failed due to plugin failure"),
+    ERROR_BACKEND_COMMUNICATION_ERROR("error.backend_communication_error", Unit.OPERATION, "Requests that failed due to backend communication error"),
+    ERROR_EMPTY_DOCUMENT_SUMMARIES("error.empty_document_summaries", Unit.OPERATION, "Requests that failed due to missing document summaries"),
+    ERROR_INVALID_QUERY_PARAMETER("error.invalid_query_parameter", Unit.OPERATION, "Requests that failed due to invalid query parameters"),
+    ERROR_INTERNAL_SERVER_ERROR("error.internal_server_error", Unit.OPERATION, "Requests that failed due to internal server error"),
+    ERROR_MISCONFIGURED_SERVER("error.misconfigured_server", Unit.OPERATION, "Requests that failed due to misconfigured server"),
+    ERROR_INVALID_QUERY_TRANSFORMATION("error.invalid_query_transformation", Unit.OPERATION, "Requests that failed due to invalid query transformation"),
+    ERROR_RESULTS_WITH_ERRORS("error.results_with_errors", Unit.OPERATION, "The number of queries with error payload"),
+    ERROR_UNSPECIFIED("error.unspecified", Unit.OPERATION, "Requests that failed for an unspecified reason"),
+    ERROR_UNHANDLED_EXCEPTION("error.unhandled_exception", Unit.OPERATION, "Requests that failed due to an unhandled exception");
+    
     
     private final String name;
     private final Unit unit;
