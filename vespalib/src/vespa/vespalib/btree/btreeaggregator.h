@@ -34,7 +34,7 @@ public:
 
     static void recalc(InternalNodeType &node, const NodeAllocatorType &allocator, const AggrCalcT &aggrCalc);
     static AggregatedType recalc(LeafNodeType &node, LeafNodeType &splitNode, const AggrCalcT &aggrCalc);
-           
+
     static AggregatedType recalc(InternalNodeType &node, InternalNodeType &splitNode,
                                  const NodeAllocatorType &allocator, const AggrCalcT &aggrCalc);
 };

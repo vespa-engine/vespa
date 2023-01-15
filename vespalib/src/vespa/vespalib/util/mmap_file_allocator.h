@@ -42,7 +42,7 @@ public:
     PtrAndSize alloc(size_t sz) const override;
     void free(PtrAndSize alloc) const override;
     size_t resize_inplace(PtrAndSize, size_t) const override;
-    
+
     // For unit test
     size_t get_end_offset() const noexcept { return _end_offset; }
 };

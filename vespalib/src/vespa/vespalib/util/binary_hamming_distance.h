@@ -4,7 +4,7 @@
 namespace vespalib {
 /**
  * Compute Hamming distance between two binary blobs
- * 
+ *
  * @param lhs a blob (to interpret as a bitvector with sz*8 bits)
  * @param rhs a blob (to interpret as a bitvector with sz*8 bits)
  * @param sz number of bytes in each blob

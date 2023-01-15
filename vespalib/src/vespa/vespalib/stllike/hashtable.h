@@ -306,7 +306,7 @@ public:
     // This will insert unconditionally, without checking presence, and might cause duplicates.
     // Use at you own risk.
     void force_insert(Value && value);
-    
+
     /// This gives faster iteration than can be achieved by the iterators.
     template <typename Func>
     void for_each(Func func) const;

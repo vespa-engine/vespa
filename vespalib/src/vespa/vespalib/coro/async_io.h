@@ -25,7 +25,7 @@ struct AsyncIo : std::enable_shared_from_this<AsyncIo> {
     AsyncIo &operator=(AsyncIo &&) = delete;
     virtual ~AsyncIo();
     using SP = std::shared_ptr<AsyncIo>;
-    
+
     // thin wrapper used by the owner to handle lifetime
     class Owner {
     private:
@@ -44,13 +44,13 @@ struct AsyncIo : std::enable_shared_from_this<AsyncIo> {
         void fini_shutdown();
         ~Owner();
     };
-    
+
     // create an async_io 'runtime'
     static Owner create();
 
     // implementation tag
     virtual vespalib::string get_impl_spec() = 0;
-    
+
     // api for async io used by coroutines
     virtual Lazy<SocketHandle> accept(ServerSocket &server_socket) = 0;
     virtual Lazy<SocketHandle> connect(const SocketAddress &addr) = 0;

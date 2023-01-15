@@ -42,7 +42,7 @@ private:
 
     using RefVector = vespalib::Array<BTreeNode::Ref>;
     using BTreeRootBaseTypeVector = vespalib::Array<BTreeRootBaseType *>;
-    
+
     // Nodes that might not be frozen.
     RefVector _internalToFreeze;
     RefVector _leafToFreeze;

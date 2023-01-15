@@ -297,7 +297,7 @@ protected:
     BTreeIteratorBase(const BTreeIteratorBase &other);
     BTreeIteratorBase &operator=(const BTreeIteratorBase &other);
 
-    
+
     /**
      * Set new tree height and clear portions of path that are now
      * beyond new tree height.  For internal use only.
@@ -414,7 +414,7 @@ public:
     size_t
     size() const;
 
-    
+
     /**
      * Return the current position in the tree.
      */
@@ -485,7 +485,7 @@ public:
     rbegin();
 
     /*
-     * Get aggregated values for the current tree. 
+     * Get aggregated values for the current tree.
      */
     const AggrT &
     getAggregated() const;
@@ -697,7 +697,7 @@ public:
      * Step iterator forwards until it is at a position with a key
      * that is greater than or equal to the key argument.  Original
      * position must be valid with a key that is less than the key argument.
-     * 
+     *
      * Tree traits determine if binary or linear search is performed within
      * each tree node.
      *
@@ -711,7 +711,7 @@ public:
      * Step iterator forwards until it is at a position with a key
      * that is greater than or equal to the key argument.  Original
      * position must be valid with a key that is less than the key argument.
-     * 
+     *
      * Binary search is performed within each tree node.
      *
      * @param key       Key to search for
@@ -724,7 +724,7 @@ public:
      * Step iterator forwards until it is at a position with a key
      * that is greater than or equal to the key argument.  Original
      * position must be valid with a key that is less than the key argument.
-     * 
+     *
      * Linear search is performed within each tree node.
      *
      * @param key       Key to search for
@@ -737,7 +737,7 @@ public:
      * Step iterator forwards until it is at a position with a key
      * that is greater than the key argument.  Original position must
      * be valid with a key that is less than or equal to the key argument.
-     * 
+     *
      * Tree traits determine if binary or linear search is performed within
      * each tree node.
      *
@@ -751,7 +751,7 @@ public:
      * Step iterator forwards until it is at a position with a key
      * that is greater than the key argument.  Original position must
      * be valid with a key that is less than or equal to the key argument.
-     * 
+     *
      * Binary search is performed within each tree node.
      *
      * @param key       Key to search for
@@ -764,7 +764,7 @@ public:
      * Step iterator forwards until it is at a position with a key
      * that is greater than the key argument.  Original position must
      * be valid with a key that is less than or equal to the key argument.
-     * 
+     *
      * Linear search is performed within each tree node.
      *
      * @param key       Key to search for
@@ -868,7 +868,7 @@ public:
     {
         return const_cast<NodeAllocatorType &>(*_allocator);
     }
-    
+
     BTreeNode::Ref
     moveFirstLeafNode(BTreeNode::Ref rootRef);
 

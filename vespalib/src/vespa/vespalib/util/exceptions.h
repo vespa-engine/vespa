@@ -157,7 +157,7 @@ private:
 /**
  * NOTE: This function must only be called from within a catch block,
  * and the parameter must reference the caught exception.
- * 
+ *
  * Based on the run-time type of the exception, determine if it is
  * safe to handle this exception and continue normal program
  * operation. If the exception is considered safe, no additional

@@ -21,7 +21,7 @@ struct AsyncCryptoSocket {
     virtual Lazy<ssize_t> read(char *buf, size_t len) = 0;
     virtual Lazy<ssize_t> write(const char *buf, size_t len) = 0;
     virtual ~AsyncCryptoSocket();
-    
+
     static Lazy<AsyncCryptoSocket::UP> accept(AsyncIo &async, CryptoEngine &crypto,
                                               SocketHandle handle);
     static Lazy<AsyncCryptoSocket::UP> connect(AsyncIo &async, CryptoEngine &crypto,

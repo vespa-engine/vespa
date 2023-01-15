@@ -54,7 +54,7 @@ public:
         // entry for _root is owned by new copy of BTreeRootBase.
         _root = BTreeNode::Ref();
     }
-    
+
     void setRoots(BTreeNode::Ref newRoot) {
         _root = newRoot;
         _frozenRoot = newRoot.ref();
