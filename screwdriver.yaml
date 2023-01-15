@@ -128,6 +128,7 @@ jobs:
           # Set correct version in pom.xml files
           (cd vespa && screwdriver/replace-vespa-version-in-poms.sh $VESPA_VERSION $(pwd) )
           (cd sample-apps && find . -name "pom.xml" -exec sed -i -e "s,<vespa_version>.*</vespa_version>,<vespa_version>$VESPA_VERSION</vespa_version>," {} \;)
+          (cd sample-apps && find . -name "pom.xml" -exec sed -i -e "s:<version>[[]8,9[)]</version>:<version>$VESPA_VERSION</version>:" {} \;)
       - make-srpm: |
           make -C $WORKDIR/vespa -f .copr/Makefile srpm outdir=$WORKDIR
       - *restore-cache
