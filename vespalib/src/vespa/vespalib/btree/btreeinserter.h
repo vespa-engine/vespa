@@ -8,7 +8,7 @@
 #include "btreeaggregator.h"
 #include "noaggrcalc.h"
 #include "minmaxaggrcalc.h"
-#include "btreeiterator.h" 
+#include "btreeiterator.h"
 
 namespace vespalib::btree {
 

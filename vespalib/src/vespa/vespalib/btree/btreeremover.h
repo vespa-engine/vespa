@@ -8,7 +8,7 @@
 #include "btreeaggregator.h"
 #include "noaggrcalc.h"
 #include "minmaxaggrcalc.h"
-#include "btreeiterator.h" 
+#include "btreeiterator.h"
 
 namespace vespalib::btree {
 
@@ -56,7 +56,7 @@ class BTreeRemover : public BTreeRemoverBase<KeyT, DataT, AggrT,
                                              TraitsT::INTERNAL_SLOTS,
                                              TraitsT::LEAF_SLOTS,
                                              AggrCalcT>
-    
+
 {
 public:
     using ParentType = BTreeRemoverBase<KeyT, DataT, AggrT,

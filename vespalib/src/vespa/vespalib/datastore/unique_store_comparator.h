@@ -11,7 +11,7 @@
 namespace vespalib::datastore {
 
 /**
- * Helper class for comparing elements in unique store. 
+ * Helper class for comparing elements in unique store.
  */
 template <typename EntryT>
 class UniqueStoreComparatorHelper {
@@ -81,7 +81,7 @@ class UniqueStoreComparatorHelper<float> : public UniqueStoreFloatingPointCompar
 template <>
 class UniqueStoreComparatorHelper<double> : public UniqueStoreFloatingPointComparatorHelper<double> {
 };
-  
+
 /**
  * Compare two entries based on entry refs.
  *

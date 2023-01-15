@@ -81,7 +81,7 @@ private:
             for (size_t i = 0; i < 3; ++i) {
                 timer.before();
                 loop.perform(loop_cnt);
-                timer.after();            
+                timer.after();
             }
             if (timer.min_time() > 0.010) {
                 return loop_cnt;
@@ -89,12 +89,12 @@ private:
         }
     }
 
-    static double do_benchmark(const Loop &loop, size_t loop_cnt, double budget) {        
+    static double do_benchmark(const Loop &loop, size_t loop_cnt, double budget) {
         vespalib::BenchmarkTimer timer(budget);
         while (timer.has_budget()) {
             timer.before();
             loop.perform(loop_cnt);
-            timer.after();            
+            timer.after();
         }
         return (timer.min_time() / double(loop_cnt));
     }

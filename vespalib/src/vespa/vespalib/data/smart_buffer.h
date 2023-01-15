@@ -22,7 +22,7 @@ private:
     size_t       _write_pos;
 
     const char *read_ptr() const { return (const char *)(_data.get()) + _read_pos; }
-    size_t read_len() const { return (_write_pos - _read_pos); } 
+    size_t read_len() const { return (_write_pos - _read_pos); }
     char *write_ptr() { return (char *)(_data.get()) + _write_pos; }
     size_t write_len() const { return (_data.size() - _write_pos); }
     size_t unused() const { return (_data.size() - read_len()); }

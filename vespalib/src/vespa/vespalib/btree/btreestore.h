@@ -55,7 +55,7 @@ public:
     using BufferState = datastore::BufferState;
 
     static constexpr uint32_t clusterLimit = 8;
-    
+
     enum BufferTypes
     {
         BUFFERTYPE_ARRAY1 = 0,
@@ -209,13 +209,13 @@ public:
     applyNewArray(EntryRef &ref,
                   AddIter aOrg,
                   AddIter ae);
-    
+
     void
     applyNewTree(EntryRef &ref,
                  AddIter a,
                  AddIter ae,
                  CompareT comp);
-    
+
     void
     applyNew(EntryRef &ref,
              AddIter a,

@@ -17,7 +17,7 @@ private:
     using BTreeDictionaryType = BTreeDictionaryT;
     using FrozenView = typename BTreeDictionaryType::FrozenView;
     FrozenView _frozen_view;
-    
+
 public:
     UniqueStoreBTreeDictionaryReadSnapshot(FrozenView frozen_view);
     void fill() override;

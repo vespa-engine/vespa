@@ -32,9 +32,9 @@ public:
 
         ~BoundingBox() = default;
 
-        int64_t getzMinx() const { return _zMinx; } 
-        int64_t getzMaxx() const { return _zMaxx; } 
-        int64_t getzMiny() const { return _zMiny; } 
+        int64_t getzMinx() const { return _zMinx; }
+        int64_t getzMaxx() const { return _zMaxx; }
+        int64_t getzMiny() const { return _zMiny; }
         int64_t getzMaxy() const { return _zMaxy; }
 
         /**

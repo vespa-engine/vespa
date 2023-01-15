@@ -68,7 +68,7 @@ struct ThreadBundle {
 
     // a thread bundle that can only run things in the current thread.
     static ThreadBundle &trivial();
-    
+
 private:
     Runnable *resolve(Runnable *target) { return target; }
     Runnable *resolve(Runnable &target) { return &target; }

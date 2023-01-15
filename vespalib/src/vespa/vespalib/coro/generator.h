@@ -53,7 +53,7 @@ public:
             copy_awaiter(const copy_awaiter&) = delete;
             cpy_type value_cpy;
         };
-        
+
     public:
         promise_type(promise_type &&) = delete;
         promise_type(const promise_type &) = delete;
@@ -105,10 +105,10 @@ public:
             return _handle.promise().result();
         }
     };
-    
+
 private:
     Handle _handle;
-    
+
 public:
     Generator(const Generator &) = delete;
     Generator &operator=(const Generator &) = delete;

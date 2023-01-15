@@ -13,7 +13,7 @@
 namespace vespalib {
 
 /**
- * Simple class used to hold events extracted from a call to epoll_wait. 
+ * Simple class used to hold events extracted from a call to epoll_wait.
  **/
 class EpollEvents
 {
@@ -44,7 +44,7 @@ public:
     Selector()
         : _epoll(), _wakeup_pipe(), _events(4096)
     {
-        _epoll.add(_wakeup_pipe.get_read_fd(), nullptr, true, false);    
+        _epoll.add(_wakeup_pipe.get_read_fd(), nullptr, true, false);
     }
     ~Selector() {
         _epoll.remove(_wakeup_pipe.get_read_fd());

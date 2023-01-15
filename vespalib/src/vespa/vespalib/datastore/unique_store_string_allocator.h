@@ -36,7 +36,7 @@ public:
         : UniqueStoreEntryBase(),
           _value()
     { }
-    
+
     UniqueStoreSmallStringEntry(const char *value, size_t value_len, size_t array_size)
         : UniqueStoreEntryBase()
     {
