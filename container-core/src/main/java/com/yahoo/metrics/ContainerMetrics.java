@@ -82,15 +82,15 @@ public enum ContainerMetrics {
     DOCUMENTS_TOTAL("documents_total", Unit.DOCUMENT, "The number of documents to be evaluated if all requests had been fully executed"),
     DOCUMENTS_TARGET_TOTAL("documents_target_total", Unit.DOCUMENT, "The target number of total documents to be evaluated when when all data is in sync"),
     JDISC_RENDER_LATENCY("jdisc.render.latency", Unit.MILLISECOND, "The time used by the container to render responses"),
-    QUERY_ITEM_COUNT("query_item_count", Unit.QUERY_ITEM, "The number of query items (terms, phrases, etc)"),
+    QUERY_ITEM_COUNT("query_item_count", Unit.ITEM, "The number of query items (terms, phrases, etc)"),
     
     TOTAL_HITS_PER_QUERY("totalhits_per_query", Unit.HIT, "The total number of documents found to match queries"),
     EMPTY_RESULTS("empty_results", Unit.OPERATION, "Number of queries matching no documents"),
     REQUESTS_OVER_QUOTA("requestsOverQuota", Unit.OPERATION, "The number of requests rejected due to exceeding quota"),
     
-    RELEVANCE_AT_1("relevance.at_1", Unit.RELEVANCE, "The relevance of hit number 1"),
-    RELEVANCE_AT_3("relevance.at_3", Unit.RELEVANCE, "The relevance of hit number 3"),
-    RELEVANCE_AT_10("relevance.at_10", Unit.RELEVANCE, "The relevance of hit number 10"),
+    RELEVANCE_AT_1("relevance.at_1", Unit.SCORE, "The relevance of hit number 1"),
+    RELEVANCE_AT_3("relevance.at_3", Unit.SCORE, "The relevance of hit number 3"),
+    RELEVANCE_AT_10("relevance.at_10", Unit.SCORE, "The relevance of hit number 10"),
 
     // Errors from search container
     ERROR_TIMEOUT("error.timeout", Unit.OPERATION, "Requests that timed out"),
