@@ -49,7 +49,7 @@ public enum ContainerMetrics {
     JDISC_HTTP_REQUEST_REQUESTS_PER_CONNECTION("jdisc.http.request.requests_per_connection", Unit.REQUEST, "HTTP requests per connection"),
     JDISC_HTTP_REQUEST_URI_LENGTH("jdisc.http.request.uri_length", Unit.BYTE, "HTTP URI length"),
     JDISC_HTTP_REQUEST_CONTENT_SIZE("jdisc.http.request.content_size", Unit.BYTE, "HTTP request content size"),
-    JDISC_HTTP_REQUESTS("jdisc.http.requests", Unit.REQUST, "HTTP requests"),
+    JDISC_HTTP_REQUESTS("jdisc.http.requests", Unit.REQUEST, "HTTP requests"),
     JDISC_HTTP_REQUESTS_STATUS("jdisc.http.requests.status", Unit.REQUEST, "Number of requests to the built-in status handler"),
 
     JDISC_HTTP_FILTER_RULE_BLOCKED_REQUESTS("jdisc.http.filter.rule.blocked_requests", Unit.REQUEST, "Number of requests blocked by filter"),
