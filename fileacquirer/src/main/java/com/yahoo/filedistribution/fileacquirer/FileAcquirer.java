@@ -2,6 +2,7 @@
 package com.yahoo.filedistribution.fileacquirer;
 
 import com.yahoo.config.FileReference;
+import com.yahoo.vespa.config.FileReferenceDoesNotExistException;
 
 import java.io.File;
 import java.util.concurrent.TimeUnit;
