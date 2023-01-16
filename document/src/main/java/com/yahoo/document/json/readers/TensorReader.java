@@ -4,6 +4,8 @@ package com.yahoo.document.json.readers;
 import com.fasterxml.jackson.core.JsonToken;
 import com.yahoo.document.datatypes.TensorFieldValue;
 import com.yahoo.document.json.TokenBuffer;
+import com.yahoo.slime.Inspector;
+import com.yahoo.slime.Type;
 import com.yahoo.tensor.IndexedTensor;
 import com.yahoo.tensor.MixedTensor;
 import com.yahoo.tensor.Tensor;
@@ -179,15 +181,23 @@ public class TensorReader {
 
     /** Reads a tensor value directly at the root, where the format is decided by the tensor type. */
     private static void readDirectTensorValue(TokenBuffer buffer, Tensor.Builder builder) {
-        boolean hasIndexed = builder.type().dimensions().stream().anyMatch(TensorType.Dimension::isIndexed);
+        boolean hasIndexed = builder.type().dimensions().stream().anyMatch(TensorType.Dimension::isIndexed) && 1==2;
         boolean hasMapped = builder.type().dimensions().stream().anyMatch(TensorType.Dimension::isMapped);
 
-        if ( ! hasMapped)
+        if (isArrayOfObjects(buffer, 0))
+            readTensorCells(buffer, builder);
+        else if ( ! hasMapped)
             readTensorValues(buffer, builder);
         else if (hasMapped && hasIndexed)
             readTensorBlocks(buffer, builder);
         else
             readTensorCells(buffer, builder);
+    }
+
+    private static boolean isArrayOfObjects(TokenBuffer buffer, int ahead) {
+        if (buffer.peek(ahead++) != JsonToken.START_ARRAY) return false;
+        if (buffer.peek(ahead) == JsonToken.START_ARRAY) return isArrayOfObjects(buffer, ahead); // nested array
+        return buffer.peek(ahead) == JsonToken.START_OBJECT;
     }
 
     private static TensorAddress readAddress(TokenBuffer buffer, TensorType type) {

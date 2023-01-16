@@ -6,6 +6,7 @@ import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.container.jdisc.HttpResponse;
 import com.yahoo.tensor.Tensor;
 import com.yahoo.tensor.serialization.JsonFormat;
+import com.yahoo.text.JSON;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -26,9 +27,16 @@ class HandlerTester {
     }
     private static Predicate<String> matchString(String expected) {
         return s -> {
-            // System.out.println("Expected: " + expected);
-            // System.out.println("Actual:   " + s);
+            //System.out.println("Expected: " + expected);
+            //System.out.println("Actual:   " + s);
             return expected.equals(s);
+        };
+    }
+    private static Predicate<String> matchJsonString(String expected) {
+        return s -> {
+            //System.out.println("Expected: " + expected);
+            //System.out.println("Actual:   " + s);
+            return JSON.canonical(expected).equals(JSON.canonical(s));
         };
     }
     public static Predicate<String> matchJson(String... expectedJson) {
@@ -72,6 +80,10 @@ class HandlerTester {
     }
 
     void assertResponse(String url, Map<String, String> properties, int expectedCode, String expectedResult, Map<String, String> headers) {
+        checkResponse(url, properties, expectedCode, matchJsonString(expectedResult), headers);
+    }
+
+    void assertStringResponse(String url, Map<String, String> properties, int expectedCode, String expectedResult, Map<String, String> headers) {
         checkResponse(url, properties, expectedCode, matchString(expectedResult), headers);
     }
 
@@ -91,15 +103,11 @@ class HandlerTester {
         assertResponse(getRequest, expectedCode, expectedResult);
     }
 
-    void assertResponse(HttpRequest request, int expectedCode, String expectedResult) {
-        checkResponse(request, expectedCode, matchString(expectedResult));
-    }
-
     void checkResponse(HttpRequest request, int expectedCode, Predicate<String> check) {
         HttpResponse response = handler.handle(request);
         assertEquals("application/json", response.getContentType());
-        assertEquals(expectedCode, response.getStatus());
         assertEquals(true, check.test(getContents(response)));
+        assertEquals(expectedCode, response.getStatus());
     }
 
     void assertResponse(HttpRequest request, int expectedCode, Tensor expectedResult) {

@@ -1427,14 +1427,16 @@ public class JsonReaderTestCase {
     @Test
     public void testParsingOfSparseTensorWithCells() {
         Tensor tensor = assertSparseTensorField("{{x:a,y:b}:2.0,{x:c,y:b}:3.0}}",
-                                createPutWithSparseTensor(inputJson("{",
-                                                    "  'cells': [",
-                                                    "    { 'address': { 'x': 'a', 'y': 'b' },",
-                                                    "      'value': 2.0 },",
-                                                    "    { 'address': { 'x': 'c', 'y': 'b' },",
-                                                    "      'value': 3.0 }",
-                                                    "  ]",
-                                                    "}")));
+                                createPutWithSparseTensor(
+                                        """
+                                                    {
+                                                      "type": "tensor(x{},y{})",
+                                                      "cells": [
+                                                        { "address": { "x": "a", "y": "b" }, "value": 2.0 },
+                                                        { "address": { "x": "c", "y": "b" }, "value": 3.0 }
+                                                      ]
+                                                    }
+                                                    """));
         assertTrue(tensor instanceof MappedTensor); // any functional instance is fine
     }
 
@@ -1542,13 +1544,33 @@ public class JsonReaderTestCase {
         builder.cell().label("x", 1).label("y", 2).value(7.0);
         Tensor expected = builder.build();
 
-        String mixedJson = "{\"blocks\":[" +
-                           "{\"address\":{\"x\":\"0\"},\"values\":[2.0,3.0,4.0]}," +
-                           "{\"address\":{\"x\":\"1\"},\"values\":[5.0,6.0,7.0]}" +
-                           "]}";
+        String mixedJson =
+                """
+                {
+                  "blocks":[
+                    {"address":{"x":"0"},"values":[2.0,3.0,4.0]},
+                    {"address":{"x":"1"},"values":[5.0,6.0,7.0]}
+                  ]
+                }
+                """;
         Tensor tensor = assertTensorField(expected,
                                           createPutWithTensor(inputJson(mixedJson), "mixed_tensor"), "mixed_tensor");
         assertTrue(tensor instanceof MixedTensor); // this matters for performance
+
+        String mixedJsonDirect =
+                """
+                [
+                  {"address":{"x":"0","y":"0"},"value":2.0},
+                  {"address":{"x":"0","y":"1"},"value":3.0},
+                  {"address":{"x":"0","y":"2"},"value":4.0},
+                  {"address":{"x":"1","y":"0"},"value":5.0},
+                  {"address":{"x":"1","y":"1"},"value":6.0},
+                  {"address":{"x":"1","y":"2"},"value":7.0}
+                ]
+                """;
+        Tensor tensorDirect = assertTensorField(expected,
+                                                createPutWithTensor(inputJson(mixedJsonDirect), "mixed_tensor"), "mixed_tensor");
+        assertTrue(tensorDirect instanceof MixedTensor); // this matters for performance
     }
 
     @Test
@@ -1602,8 +1624,8 @@ public class JsonReaderTestCase {
     @Test
     public void testAssignUpdateOfNullTensor() {
         ClearValueUpdate clearUpdate = (ClearValueUpdate) getTensorField(createAssignUpdateWithSparseTensor(null)).getValueUpdate(0);
-        assertTrue(clearUpdate != null);
-        assertTrue(clearUpdate.getValue() == null);
+        assertNotNull(clearUpdate);
+        assertNull(clearUpdate.getValue());
     }
 
     @Test

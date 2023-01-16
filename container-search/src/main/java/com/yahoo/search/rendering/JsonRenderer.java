@@ -45,6 +45,7 @@ import com.yahoo.search.result.Hit;
 import com.yahoo.search.result.HitGroup;
 import com.yahoo.search.result.NanNumber;
 import com.yahoo.tensor.Tensor;
+import com.yahoo.tensor.TensorType;
 import com.yahoo.tensor.serialization.JsonFormat;
 
 import java.io.IOException;
@@ -817,14 +818,8 @@ public class JsonRenderer extends AsynchronousSectionedRenderer<Result> {
         }
 
         private void renderTensor(Optional<Tensor> tensor) throws IOException {
-            if (tensor.isEmpty()) {
-                generator().writeStartObject();
-                generator().writeArrayFieldStart("cells");
-                generator().writeEndArray();
-                generator().writeEndObject();
-                return;
-            }
-            generator().writeRawValue(new String(JsonFormat.encode(tensor.get(), settings.tensorShortForm, settings.tensorDirectValues),
+            generator().writeRawValue(new String(JsonFormat.encode(tensor.orElse(Tensor.Builder.of(TensorType.empty).build()),
+                                                                   settings.tensorShortForm, settings.tensorDirectValues),
                                                  StandardCharsets.UTF_8));
         }
 

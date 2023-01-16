@@ -3,7 +3,9 @@ package com.yahoo.tensor.serialization;
 
 import com.yahoo.tensor.Tensor;
 import com.yahoo.tensor.TensorType;
+import com.yahoo.text.JSON;
 import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
 
 import java.nio.charset.StandardCharsets;
 
@@ -42,22 +44,6 @@ public class JsonFormatTestCase {
     }
 
     @Test
-    public void testSparseTensor() {
-        Tensor.Builder builder = Tensor.Builder.of(TensorType.fromSpec("tensor(x{},y{})"));
-        builder.cell().label("x", "a").label("y", "b").value(2.0);
-        builder.cell().label("x", "c").label("y", "d").value(3.0);
-        Tensor tensor = builder.build();
-        byte[] json = JsonFormat.encode(tensor, false, false);
-        assertEquals("{\"type\":\"tensor(x{},y{})\",\"cells\":[" +
-                     "{\"address\":{\"x\":\"a\",\"y\":\"b\"},\"value\":2.0}," +
-                     "{\"address\":{\"x\":\"c\",\"y\":\"d\"},\"value\":3.0}" +
-                     "]}",
-                     new String(json, StandardCharsets.UTF_8));
-        Tensor decoded = JsonFormat.decode(tensor.type(), json);
-        assertEquals(tensor, decoded);
-    }
-
-    @Test
     public void testEmptySparseTensor() {
         Tensor.Builder builder = Tensor.Builder.of(TensorType.fromSpec("tensor(x{},y{})"));
         Tensor tensor = builder.build();
@@ -88,6 +74,45 @@ public class JsonFormatTestCase {
     }
 
     @Test
+    public void testEmptyTensor() {
+        Tensor tensor = Tensor.Builder.of(TensorType.empty).build();
+
+        String shortJson = """
+                {
+                  "type":"tensor()",
+                  "values":[0.0]
+                }
+                """;
+        byte[] shortEncoded = JsonFormat.encode(tensor, true, false);
+        assertEqualJson(shortJson, new String(shortEncoded, StandardCharsets.UTF_8));
+        assertEquals(tensor, JsonFormat.decode(tensor.type(), shortEncoded));
+
+        String longJson = """
+                {
+                  "type":"tensor()",
+                  "cells":[{"address":{},"value":0.0}]
+                }
+                """;
+        byte[] longEncoded = JsonFormat.encode(tensor, false, false);
+        assertEqualJson(longJson, new String(longEncoded, StandardCharsets.UTF_8));
+        assertEquals(tensor, JsonFormat.decode(tensor.type(), longEncoded));
+
+        String shortDirectJson = """
+                [0.0]
+                """;
+        byte[] shortDirectEncoded = JsonFormat.encode(tensor, true, true);
+        assertEqualJson(shortDirectJson, new String(shortDirectEncoded, StandardCharsets.UTF_8));
+        assertEquals(tensor, JsonFormat.decode(tensor.type(), shortDirectEncoded));
+
+        String longDirectJson = """
+                [{"address":{},"value":0.0}]
+                """;
+        byte[] longDirectEncoded = JsonFormat.encode(tensor, false, true);
+        assertEqualJson(longDirectJson, new String(longDirectEncoded, StandardCharsets.UTF_8));
+        assertEquals(tensor, JsonFormat.decode(tensor.type(), longDirectEncoded));
+    }
+
+    @Test
     public void testDenseTensor() {
         Tensor.Builder builder = Tensor.Builder.of(TensorType.fromSpec("tensor(x[2],y[2])"));
         builder.cell().label("x", 0).label("y", 0).value(2.0);
@@ -95,31 +120,183 @@ public class JsonFormatTestCase {
         builder.cell().label("x", 1).label("y", 0).value(5.0);
         builder.cell().label("x", 1).label("y", 1).value(7.0);
         Tensor tensor = builder.build();
-        byte[] json = JsonFormat.encode(tensor, false, false);
-        assertEquals("{\"type\":\"tensor(x[2],y[2])\",\"cells\":[" +
-                     "{\"address\":{\"x\":\"0\",\"y\":\"0\"},\"value\":2.0}," +
-                     "{\"address\":{\"x\":\"0\",\"y\":\"1\"},\"value\":3.0}," +
-                     "{\"address\":{\"x\":\"1\",\"y\":\"0\"},\"value\":5.0}," +
-                     "{\"address\":{\"x\":\"1\",\"y\":\"1\"},\"value\":7.0}" +
-                     "]}",
-                     new String(json, StandardCharsets.UTF_8));
-        Tensor decoded = JsonFormat.decode(tensor.type(), json);
-        assertEquals(tensor, decoded);
+
+        String shortJson = """
+                {
+                  "type":"tensor(x[2],y[2])",
+                  "values":[[2.0,3.0],[5.0,7.0]]
+                }
+                """;
+        byte[] shortEncoded = JsonFormat.encode(tensor, true, false);
+        assertEqualJson(shortJson, new String(shortEncoded, StandardCharsets.UTF_8));
+        assertEquals(tensor, JsonFormat.decode(tensor.type(), shortEncoded));
+
+        String longJson = """
+                {
+                  "type":"tensor(x[2],y[2])",
+                  "cells":[
+                    {"address":{"x":"0","y":"0"},"value":2.0},
+                    {"address":{"x":"0","y":"1"},"value":3.0},
+                    {"address":{"x":"1","y":"0"},"value":5.0},
+                    {"address":{"x":"1","y":"1"},"value":7.0}
+                  ]
+                }
+                """;
+        byte[] longEncoded = JsonFormat.encode(tensor, false, false);
+        assertEqualJson(longJson, new String(longEncoded, StandardCharsets.UTF_8));
+        assertEquals(tensor, JsonFormat.decode(tensor.type(), longEncoded));
+
+        String shortDirectJson = """
+                [[2.0, 3.0], [5.0, 7.0]]
+                """;
+        byte[] shortDirectEncoded = JsonFormat.encode(tensor, true, true);
+        assertEqualJson(shortDirectJson, new String(shortDirectEncoded, StandardCharsets.UTF_8));
+        assertEquals(tensor, JsonFormat.decode(tensor.type(), shortDirectEncoded));
+
+        String longDirectJson = """
+                [
+                    {"address":{"x":"0","y":"0"},"value":2.0},
+                    {"address":{"x":"0","y":"1"},"value":3.0},
+                    {"address":{"x":"1","y":"0"},"value":5.0},
+                    {"address":{"x":"1","y":"1"},"value":7.0}
+                ]
+                """;
+        byte[] longDirectEncoded = JsonFormat.encode(tensor, false, true);
+        assertEqualJson(longDirectJson, new String(longDirectEncoded, StandardCharsets.UTF_8));
+        assertEquals(tensor, JsonFormat.decode(tensor.type(), longDirectEncoded));
+    }
+
+    @Test
+    public void testMixedTensor() {
+        Tensor.Builder builder = Tensor.Builder.of(TensorType.fromSpec("tensor(x{},y[2])"));
+        builder.cell().label("x", "a").label("y", 0).value(2.0);
+        builder.cell().label("x", "a").label("y", 1).value(3.0);
+        builder.cell().label("x", "b").label("y", 0).value(5.0);
+        builder.cell().label("x", "b").label("y", 1).value(7.0);
+        Tensor tensor = builder.build();
+
+        String shortJson = """
+                {
+                  "type":"tensor(x{},y[2])",
+                  "blocks":{"a":[2.0,3.0],"b":[5.0,7.0]}
+                }
+                """;
+        byte[] shortEncoded = JsonFormat.encode(tensor, true, false);
+        assertEqualJson(shortJson, new String(shortEncoded, StandardCharsets.UTF_8));
+        assertEquals(tensor, JsonFormat.decode(tensor.type(), shortEncoded));
+
+        String longJson = """
+                {
+                  "type":"tensor(x{},y[2])",
+                  "cells":[
+                    {"address":{"x":"a","y":"0"},"value":2.0},
+                    {"address":{"x":"a","y":"1"},"value":3.0},
+                    {"address":{"x":"b","y":"0"},"value":5.0},
+                    {"address":{"x":"b","y":"1"},"value":7.0}
+                  ]
+                }
+                """;
+        byte[] longEncoded = JsonFormat.encode(tensor, false, false);
+        assertEqualJson(longJson, new String(longEncoded, StandardCharsets.UTF_8));
+        assertEquals(tensor, JsonFormat.decode(tensor.type(), longEncoded));
+
+        String shortDirectJson = """
+                {"a":[2.0,3.0],"b":[5.0,7.0]}
+                """;
+        byte[] shortDirectEncoded = JsonFormat.encode(tensor, true, true);
+        assertEqualJson(shortDirectJson, new String(shortDirectEncoded, StandardCharsets.UTF_8));
+        assertEquals(tensor, JsonFormat.decode(tensor.type(), shortDirectEncoded));
+
+        String longDirectJson = """
+                [
+                    {"address":{"x":"a","y":"0"},"value":2.0},
+                    {"address":{"x":"a","y":"1"},"value":3.0},
+                    {"address":{"x":"b","y":"0"},"value":5.0},
+                    {"address":{"x":"b","y":"1"},"value":7.0}
+                ]
+                """;
+        byte[] longDirectEncoded = JsonFormat.encode(tensor, false, true);
+        assertEqualJson(longDirectJson, new String(longDirectEncoded, StandardCharsets.UTF_8));
+        assertEquals(tensor, JsonFormat.decode(tensor.type(), longDirectEncoded));
+    }
+
+    @Test
+    public void testSparseTensor() {
+        Tensor.Builder builder = Tensor.Builder.of(TensorType.fromSpec("tensor(x{},y{})"));
+        builder.cell().label("x", "a").label("y", 0).value(2.0);
+        builder.cell().label("x", "a").label("y", 1).value(3.0);
+        builder.cell().label("x", "b").label("y", 0).value(5.0);
+        builder.cell().label("x", "b").label("y", 1).value(7.0);
+        Tensor tensor = builder.build();
+
+        String shortJson = """
+                {
+                  "type":"tensor(x{},y{})",
+                   "cells": [
+                     {"address":{"x":"a","y":"0"},"value":2.0},
+                     {"address":{"x":"a","y":"1"},"value":3.0},
+                     {"address":{"x":"b","y":"0"},"value":5.0},
+                     {"address":{"x":"b","y":"1"},"value":7.0}
+                   ]
+                }
+                """;
+        byte[] shortEncoded = JsonFormat.encode(tensor, true, false);
+        assertEqualJson(shortJson, new String(shortEncoded, StandardCharsets.UTF_8));
+        assertEquals(tensor, JsonFormat.decode(tensor.type(), shortEncoded));
+
+        String longJson = """
+                {
+                  "type":"tensor(x{},y{})",
+                  "cells":[
+                    {"address":{"x":"a","y":"0"},"value":2.0},
+                    {"address":{"x":"a","y":"1"},"value":3.0},
+                    {"address":{"x":"b","y":"0"},"value":5.0},
+                    {"address":{"x":"b","y":"1"},"value":7.0}
+                  ]
+                }
+                """;
+        byte[] longEncoded = JsonFormat.encode(tensor, false, false);
+        assertEqualJson(longJson, new String(longEncoded, StandardCharsets.UTF_8));
+        assertEquals(tensor, JsonFormat.decode(tensor.type(), longEncoded));
+
+        String shortDirectJson = """
+                [
+                  {"address":{"x":"a","y":"0"},"value":2.0},
+                  {"address":{"x":"a","y":"1"},"value":3.0},
+                  {"address":{"x":"b","y":"0"},"value":5.0},
+                  {"address":{"x":"b","y":"1"},"value":7.0}
+                ]
+                """;
+        byte[] shortDirectEncoded = JsonFormat.encode(tensor, true, true);
+        assertEqualJson(shortDirectJson, new String(shortDirectEncoded, StandardCharsets.UTF_8));
+        assertEquals(tensor, JsonFormat.decode(tensor.type(), shortDirectEncoded));
+
+        String longDirectJson = """
+                [
+                    {"address":{"x":"a","y":"0"},"value":2.0},
+                    {"address":{"x":"a","y":"1"},"value":3.0},
+                    {"address":{"x":"b","y":"0"},"value":5.0},
+                    {"address":{"x":"b","y":"1"},"value":7.0}
+                ]
+                """;
+        byte[] longDirectEncoded = JsonFormat.encode(tensor, false, true);
+        assertEqualJson(longDirectJson, new String(longDirectEncoded, StandardCharsets.UTF_8));
+        assertEquals(tensor, JsonFormat.decode(tensor.type(), longDirectEncoded));
     }
 
     @Test
     public void testDisallowedEmptyDenseTensor() {
         TensorType type = TensorType.fromSpec("tensor(x[3])");
-        assertDecodeFails(type, "{\"values\":[]}", "The 'values' array does not contain any values");
-        assertDecodeFails(type, "{\"values\":\"\"}", "The 'values' string does not contain any values");
+        assertDecodeFails(type, "{\"values\":[]}", "The values array does not contain any values");
+        assertDecodeFails(type, "{\"values\":\"\"}", "The values string does not contain any values");
     }
 
     @Test
     public void testDisallowedEmptyMixedTensor() {
         TensorType type = TensorType.fromSpec("tensor(x{},y[3])");
-        assertDecodeFails(type, "{\"blocks\":{ \"a\": [] } }", "The 'block' value array does not contain any values");
+        assertDecodeFails(type, "{\"blocks\":{ \"a\": [] } }", "The block value array does not contain any values");
         assertDecodeFails(type, "{\"blocks\":[ {\"address\":{\"x\":\"a\"}, \"values\": [] } ] }",
-                "The 'block' value array does not contain any values");
+                "The block value array does not contain any values");
     }
 
     @Test
@@ -426,8 +603,12 @@ public class JsonFormatTestCase {
             Tensor decoded = JsonFormat.decode(type, format.getBytes(StandardCharsets.UTF_8));
             fail("Did not get exception as expected, decoded as: " + decoded);
         } catch (IllegalArgumentException e) {
-            assertEquals(e.getMessage(), msg);
+            assertEquals(msg, e.getMessage());
         }
+    }
+
+    private void assertEqualJson(String expected, String generated) {
+        Assertions.assertEquals(JSON.canonical(expected), JSON.canonical(generated));
     }
 
 }

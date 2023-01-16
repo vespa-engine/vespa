@@ -166,9 +166,8 @@ public class TensorFieldValue extends FieldValue {
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
-        if ( ! (o instanceof TensorFieldValue)) return false;
+        if ( ! (o instanceof TensorFieldValue other)) return false;
 
-        TensorFieldValue other = (TensorFieldValue)o;
         if ( ! getTensorType().equals(other.getTensorType())) return false;
         if ( ! getTensor().equals(other.getTensor())) return false;
         return true;
