@@ -3,17 +3,23 @@ package com.yahoo.config.application.api;
 
 import com.yahoo.config.provision.AthenzService;
 import com.yahoo.config.provision.CloudAccount;
+import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.InstanceName;
 import com.yahoo.config.provision.RegionName;
 import com.yahoo.config.provision.Tags;
+import com.yahoo.config.provision.ZoneEndpoint;
+import com.yahoo.config.provision.zone.ZoneId;
 
 import java.time.Duration;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
@@ -26,7 +32,6 @@ import static ai.vespa.validation.Validation.requireInRange;
 import static com.yahoo.config.application.api.DeploymentSpec.RevisionChange.whenClear;
 import static com.yahoo.config.application.api.DeploymentSpec.RevisionTarget.next;
 import static com.yahoo.config.provision.Environment.prod;
-import static java.util.stream.Collectors.toList;
 
 /**
  * The deployment spec for an application instance
@@ -55,6 +60,7 @@ public class DeploymentInstanceSpec extends DeploymentSpec.Steps {
     private final Optional<CloudAccount> cloudAccount;
     private final Notifications notifications;
     private final List<Endpoint> endpoints;
+    private final Map<ClusterSpec.Id, Map<ZoneId, ZoneEndpoint>> zoneEndpoints;
 
     public DeploymentInstanceSpec(InstanceName name,
                                   Tags tags,
@@ -70,6 +76,7 @@ public class DeploymentInstanceSpec extends DeploymentSpec.Steps {
                                   Optional<CloudAccount> cloudAccount,
                                   Notifications notifications,
                                   List<Endpoint> endpoints,
+                                  Map<ClusterSpec.Id, Map<ZoneId, ZoneEndpoint>> zoneEndpoints,
                                   Instant now) {
         super(steps);
         this.name = Objects.requireNonNull(name);
@@ -91,6 +98,9 @@ public class DeploymentInstanceSpec extends DeploymentSpec.Steps {
         this.cloudAccount = Objects.requireNonNull(cloudAccount);
         this.notifications = Objects.requireNonNull(notifications);
         this.endpoints = List.copyOf(Objects.requireNonNull(endpoints));
+        Map<ClusterSpec.Id, Map<ZoneId, ZoneEndpoint>> zoneEndpointsCopy =  new HashMap<>();
+        for (var entry : zoneEndpoints.entrySet()) zoneEndpointsCopy.put(entry.getKey(), Collections.unmodifiableMap(new HashMap<>(entry.getValue())));
+        this.zoneEndpoints = Collections.unmodifiableMap(zoneEndpointsCopy);
         validateZones(new HashSet<>(), new HashSet<>(), this);
         validateEndpoints(steps(), globalServiceId, this.endpoints);
         validateChangeBlockers(changeBlockers, now);
@@ -250,6 +260,16 @@ public class DeploymentInstanceSpec extends DeploymentSpec.Steps {
     public boolean deploysTo(Environment environment, RegionName region) {
         return zones().stream().anyMatch(zone -> zone.concerns(environment, Optional.of(region)));
     }
+
+    /** Returns the zone endpoint specified for the given region, or the default, or {@code null}. */
+    Optional<ZoneEndpoint> zoneEndpoint(ZoneId zone, ClusterSpec.Id cluster) {
+        return Optional.ofNullable(zoneEndpoints.get(cluster))
+                       .filter(__ -> deploysTo(zone.environment(), zone.region()))
+                       .map(zoneEndpoints -> zoneEndpoints.get(zoneEndpoints.containsKey(zone) ? zone : null));
+    }
+
+    /** Returns the zone endpoint data for this instance. */
+    Map<ClusterSpec.Id, Map<ZoneId, ZoneEndpoint>> zoneEndpoints() { return zoneEndpoints; }
 
     @Override
     public boolean equals(Object o) {

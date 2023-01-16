@@ -6,16 +6,21 @@ import com.yahoo.config.application.api.xml.DeploymentSpecXmlReader;
 import com.yahoo.config.provision.AthenzDomain;
 import com.yahoo.config.provision.AthenzService;
 import com.yahoo.config.provision.CloudAccount;
+import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.InstanceName;
 import com.yahoo.config.provision.RegionName;
+import com.yahoo.config.provision.ZoneEndpoint;
+import com.yahoo.config.provision.zone.ZoneId;
 
 import java.io.Reader;
 import java.time.Duration;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -47,7 +52,7 @@ public class DeploymentSpec {
 
     private final List<Step> steps;
 
-    // Attributes which can be set on the root tag and which must be available outside of any particular instance
+    // Attributes which can be set on the root tag and which must be available outside any particular instance
     private final Optional<Integer> majorVersion;
     private final Optional<AthenzDomain> athenzDomain;
     private final Optional<AthenzService> athenzService;
@@ -174,6 +179,21 @@ public class DeploymentSpec {
 
     /** Cloud account set on the deployment root; see discussion for {@link #athenzService}. */
     public Optional<CloudAccount> cloudAccount() { return cloudAccount; }
+
+    /**
+     * Returns the most specific zone endpoint, where specificity is given, in decreasing order:
+     * 1. The given instance has declared a zone endpoint for the cluster, for the given region.
+     * 2. The given instance has declared a universal zone endpoint for the cluster.
+     * 3. The application has declared a zone endpoint for the cluster, for the given region.
+     * 4. The application has declared a universal zone endpoint for the cluster.
+     * 5. None of the above apply, and the default of a publicly visible endpoint is used.
+     */
+    public ZoneEndpoint zoneEndpoint(InstanceName instance, ZoneId zone, ClusterSpec.Id cluster) {
+        // TODO: look up endpoints from <dev> tag, or so, if we're to support non-prod settings.
+        if (zone.environment() != Environment.prod) return ZoneEndpoint.defaultEndpoint;
+        return instance(instance).flatMap(spec -> spec.zoneEndpoint(zone, cluster))
+                                 .orElse(ZoneEndpoint.defaultEndpoint);
+    }
 
     /** Returns the XML form of this spec, or null if it was not created by fromXml, nor is empty */
     public String xmlForm() { return xmlForm; }

@@ -4,7 +4,7 @@ package com.yahoo.vespa.hosted.provision.lb;
 import ai.vespa.http.DomainName;
 import com.google.common.collect.ImmutableSortedSet;
 import com.yahoo.config.provision.CloudAccount;
-import com.yahoo.config.provision.LoadBalancerSettings;
+import com.yahoo.config.provision.ZoneEndpoint;
 
 import java.util.Objects;
 import java.util.Optional;
@@ -24,12 +24,12 @@ public class LoadBalancerInstance {
     private final Set<Integer> ports;
     private final Set<String> networks;
     private final Set<Real> reals;
-    private final LoadBalancerSettings settings;
+    private final ZoneEndpoint settings;
     private final Optional<PrivateServiceId> serviceId;
     private final CloudAccount cloudAccount;
 
     public LoadBalancerInstance(Optional<DomainName> hostname, Optional<String> ipAddress, Optional<DnsZone> dnsZone,
-                                Set<Integer> ports, Set<String> networks, Set<Real> reals, LoadBalancerSettings settings,
+                                Set<Integer> ports, Set<String> networks, Set<Real> reals, ZoneEndpoint settings,
                                 Optional<PrivateServiceId> serviceId, CloudAccount cloudAccount) {
         this.hostname = Objects.requireNonNull(hostname, "hostname must be non-null");
         this.ipAddress = Objects.requireNonNull(ipAddress, "ip must be non-null");
@@ -78,7 +78,7 @@ public class LoadBalancerInstance {
     }
 
     /** Static user-configured settings of this load balancer */
-    public LoadBalancerSettings settings() {
+    public ZoneEndpoint settings() {
         return settings;
     }
 
