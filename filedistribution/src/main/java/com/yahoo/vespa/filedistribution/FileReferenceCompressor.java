@@ -1,6 +1,8 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.filedistribution;
 
+import ai.vespa.airlift.zstd.ZstdInputStream;
+import com.yahoo.compress.ZstdOutputStream;
 import net.jpountz.lz4.LZ4BlockInputStream;
 import net.jpountz.lz4.LZ4BlockOutputStream;
 import org.apache.commons.compress.archivers.ArchiveEntry;
@@ -21,7 +23,6 @@ import java.util.List;
 import java.util.Objects;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.util.stream.Collectors;
 import java.util.zip.GZIPInputStream;
 import java.util.zip.GZIPOutputStream;
 
@@ -124,7 +125,7 @@ public class FileReferenceCompressor {
                 return switch (compressionType) {
                     case gzip -> new GZIPOutputStream(new FileOutputStream(outputFile));
                     case lz4 -> new LZ4BlockOutputStream(new FileOutputStream(outputFile));
-                    default -> throw new RuntimeException("Unknown compression type " + compressionType);
+                    case zstd -> new ZstdOutputStream(new FileOutputStream(outputFile));
                 };
             case file:
                 return new FileOutputStream(outputFile);
@@ -140,7 +141,7 @@ public class FileReferenceCompressor {
                 return switch (compressionType) {
                     case gzip -> new GZIPInputStream(new FileInputStream(inputFile));
                     case lz4 -> new LZ4BlockInputStream(new FileInputStream(inputFile));
-                    default -> throw new RuntimeException("Unknown compression type " + compressionType);
+                    case zstd -> new ZstdInputStream(new FileInputStream(inputFile));
                 };
             case file:
                 return new FileInputStream(inputFile);
@@ -150,4 +151,3 @@ public class FileReferenceCompressor {
     }
 
 }
-
