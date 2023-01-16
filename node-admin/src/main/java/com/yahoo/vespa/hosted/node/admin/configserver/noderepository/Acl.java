@@ -70,7 +70,7 @@ public class Acl {
         }
 
         // Allow trusted UDP ports if any
-        if (!trustedPorts.isEmpty()) {
+        if (!trustedUdpPorts.isEmpty()) {
             rules.add("-A INPUT -p udp -m multiport --dports " + joinPorts(trustedUdpPorts) + " -j ACCEPT");
         }
 
