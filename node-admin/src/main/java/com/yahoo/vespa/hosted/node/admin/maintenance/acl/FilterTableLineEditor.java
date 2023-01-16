@@ -9,7 +9,7 @@ import com.yahoo.vespa.hosted.node.admin.task.util.network.IPVersion;
 import java.util.List;
 
 /**
- * An editor that assumes all rules in the filter table are exactly as the the wanted rules
+ * An editor that assumes all rules in the filter table are exactly as the wanted rules
  *
  * @author smorgrav
  */
