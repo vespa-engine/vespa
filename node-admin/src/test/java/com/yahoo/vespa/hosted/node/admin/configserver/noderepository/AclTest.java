@@ -19,12 +19,12 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 public class AclTest {
 
     private static final Acl aclCommon = new Acl(
-            Set.of(1234, 453),
+            Set.of(1234, 453), Set.of(4321),
             testNodes(Set.of(), "192.1.2.2", "fb00::1", "fe80::2", "fe80::3"),
             Set.of());
 
     private static final Acl aclWithoutPorts = new Acl(
-            Set.of(),
+            Set.of(), Set.of(),
             testNodes(Set.of(), "192.1.2.2", "fb00::1", "fe80::2"),
             Set.of());
 
@@ -32,14 +32,15 @@ public class AclTest {
     void no_trusted_ports() {
         String listRulesIpv4 = String.join("\n", aclWithoutPorts.toRules(IPVersion.IPv4));
         assertEquals(
-                "-P INPUT ACCEPT\n" +
-                        "-P FORWARD ACCEPT\n" +
-                        "-P OUTPUT ACCEPT\n" +
-                        "-A INPUT -m state --state RELATED,ESTABLISHED -j ACCEPT\n" +
-                        "-A INPUT -i lo -j ACCEPT\n" +
-                        "-A INPUT -p icmp -j ACCEPT\n" +
-                        "-A INPUT -s 192.1.2.2/32 -j ACCEPT\n" +
-                        "-A INPUT -j REJECT --reject-with icmp-port-unreachable",
+                """
+                        -P INPUT ACCEPT
+                        -P FORWARD ACCEPT
+                        -P OUTPUT ACCEPT
+                        -A INPUT -m state --state RELATED,ESTABLISHED -j ACCEPT
+                        -A INPUT -i lo -j ACCEPT
+                        -A INPUT -p icmp -j ACCEPT
+                        -A INPUT -s 192.1.2.2/32 -j ACCEPT
+                        -A INPUT -j REJECT --reject-with icmp-port-unreachable""",
                 listRulesIpv4);
     }
 
@@ -47,15 +48,17 @@ public class AclTest {
     void ipv4_rules() {
         String listRulesIpv4 = String.join("\n", aclCommon.toRules(IPVersion.IPv4));
         assertEquals(
-                "-P INPUT ACCEPT\n" +
-                        "-P FORWARD ACCEPT\n" +
-                        "-P OUTPUT ACCEPT\n" +
-                        "-A INPUT -m state --state RELATED,ESTABLISHED -j ACCEPT\n" +
-                        "-A INPUT -i lo -j ACCEPT\n" +
-                        "-A INPUT -p icmp -j ACCEPT\n" +
-                        "-A INPUT -p tcp -m multiport --dports 453,1234 -j ACCEPT\n" +
-                        "-A INPUT -s 192.1.2.2/32 -j ACCEPT\n" +
-                        "-A INPUT -j REJECT --reject-with icmp-port-unreachable",
+                """
+                        -P INPUT ACCEPT
+                        -P FORWARD ACCEPT
+                        -P OUTPUT ACCEPT
+                        -A INPUT -m state --state RELATED,ESTABLISHED -j ACCEPT
+                        -A INPUT -i lo -j ACCEPT
+                        -A INPUT -p icmp -j ACCEPT
+                        -A INPUT -p tcp -m multiport --dports 453,1234 -j ACCEPT
+                        -A INPUT -p udp -m multiport --dports 4321 -j ACCEPT
+                        -A INPUT -s 192.1.2.2/32 -j ACCEPT
+                        -A INPUT -j REJECT --reject-with icmp-port-unreachable""",
                 listRulesIpv4);
     }
 
@@ -63,23 +66,25 @@ public class AclTest {
     void ipv6_rules() {
         String listRulesIpv6 = String.join("\n", aclCommon.toRules(IPVersion.IPv6));
         assertEquals(
-                "-P INPUT ACCEPT\n" +
-                        "-P FORWARD ACCEPT\n" +
-                        "-P OUTPUT ACCEPT\n" +
-                        "-A INPUT -m state --state RELATED,ESTABLISHED -j ACCEPT\n" +
-                        "-A INPUT -i lo -j ACCEPT\n" +
-                        "-A INPUT -p ipv6-icmp -j ACCEPT\n" +
-                        "-A INPUT -p tcp -m multiport --dports 453,1234 -j ACCEPT\n" +
-                        "-A INPUT -s fb00::1/128 -j ACCEPT\n" +
-                        "-A INPUT -s fe80::2/128 -j ACCEPT\n" +
-                        "-A INPUT -s fe80::3/128 -j ACCEPT\n" +
-                        "-A INPUT -j REJECT --reject-with icmp6-port-unreachable", listRulesIpv6);
+                """
+                        -P INPUT ACCEPT
+                        -P FORWARD ACCEPT
+                        -P OUTPUT ACCEPT
+                        -A INPUT -m state --state RELATED,ESTABLISHED -j ACCEPT
+                        -A INPUT -i lo -j ACCEPT
+                        -A INPUT -p ipv6-icmp -j ACCEPT
+                        -A INPUT -p tcp -m multiport --dports 453,1234 -j ACCEPT
+                        -A INPUT -p udp -m multiport --dports 4321 -j ACCEPT
+                        -A INPUT -s fb00::1/128 -j ACCEPT
+                        -A INPUT -s fe80::2/128 -j ACCEPT
+                        -A INPUT -s fe80::3/128 -j ACCEPT
+                        -A INPUT -j REJECT --reject-with icmp6-port-unreachable""", listRulesIpv6);
     }
 
     @Test
     void ipv6_rules_stable_order() {
         Acl aclCommonDifferentOrder = new Acl(
-                Set.of(453, 1234),
+                Set.of(453, 1234), Set.of(4321),
                 testNodes(Set.of(), "fe80::2", "192.1.2.2", "fb00::1", "fe80::3"),
                 Set.of());
 
@@ -90,29 +95,31 @@ public class AclTest {
 
     @Test
     void trusted_networks() {
-        Acl acl = new Acl(Set.of(4080), testNodes(Set.of(), "127.0.0.1"), Set.of("10.0.0.0/24", "2001:db8::/32"));
+        Acl acl = new Acl(Set.of(4080), Set.of(), testNodes(Set.of(), "127.0.0.1"), Set.of("10.0.0.0/24", "2001:db8::/32"));
 
-        assertEquals("-P INPUT ACCEPT\n" +
-                "-P FORWARD ACCEPT\n" +
-                "-P OUTPUT ACCEPT\n" +
-                "-A INPUT -m state --state RELATED,ESTABLISHED -j ACCEPT\n" +
-                "-A INPUT -i lo -j ACCEPT\n" +
-                "-A INPUT -p icmp -j ACCEPT\n" +
-                "-A INPUT -p tcp -m multiport --dports 4080 -j ACCEPT\n" +
-                "-A INPUT -s 127.0.0.1/32 -j ACCEPT\n" +
-                "-A INPUT -s 10.0.0.0/24 -j ACCEPT\n" +
-                "-A INPUT -j REJECT --reject-with icmp-port-unreachable",
+        assertEquals("""
+                        -P INPUT ACCEPT
+                        -P FORWARD ACCEPT
+                        -P OUTPUT ACCEPT
+                        -A INPUT -m state --state RELATED,ESTABLISHED -j ACCEPT
+                        -A INPUT -i lo -j ACCEPT
+                        -A INPUT -p icmp -j ACCEPT
+                        -A INPUT -p tcp -m multiport --dports 4080 -j ACCEPT
+                        -A INPUT -s 127.0.0.1/32 -j ACCEPT
+                        -A INPUT -s 10.0.0.0/24 -j ACCEPT
+                        -A INPUT -j REJECT --reject-with icmp-port-unreachable""",
                 String.join("\n", acl.toRules(IPVersion.IPv4)));
 
-        assertEquals("-P INPUT ACCEPT\n" +
-                "-P FORWARD ACCEPT\n" +
-                "-P OUTPUT ACCEPT\n" +
-                "-A INPUT -m state --state RELATED,ESTABLISHED -j ACCEPT\n" +
-                "-A INPUT -i lo -j ACCEPT\n" +
-                "-A INPUT -p ipv6-icmp -j ACCEPT\n" +
-                "-A INPUT -p tcp -m multiport --dports 4080 -j ACCEPT\n" +
-                "-A INPUT -s 2001:db8::/32 -j ACCEPT\n" +
-                "-A INPUT -j REJECT --reject-with icmp6-port-unreachable",
+        assertEquals("""
+                        -P INPUT ACCEPT
+                        -P FORWARD ACCEPT
+                        -P OUTPUT ACCEPT
+                        -A INPUT -m state --state RELATED,ESTABLISHED -j ACCEPT
+                        -A INPUT -i lo -j ACCEPT
+                        -A INPUT -p ipv6-icmp -j ACCEPT
+                        -A INPUT -p tcp -m multiport --dports 4080 -j ACCEPT
+                        -A INPUT -s 2001:db8::/32 -j ACCEPT
+                        -A INPUT -j REJECT --reject-with icmp6-port-unreachable""",
                 String.join("\n", acl.toRules(IPVersion.IPv6)));
     }
 
@@ -121,7 +128,7 @@ public class AclTest {
         Set<Acl.Node> testNodes = Stream.concat(testNodes(NodeType.config, Set.of(), "172.17.0.41", "172.17.0.42", "172.17.0.43").stream(),
                                                 testNodes(NodeType.tenant, Set.of(19070), "172.17.0.81", "172.17.0.82", "172.17.0.83").stream())
                                         .collect(Collectors.toSet());
-        Acl acl = new Acl(Set.of(22, 4443), testNodes, Set.of());
+        Acl acl = new Acl(Set.of(22, 4443), Set.of(), testNodes, Set.of());
         assertEquals("""
                              -P INPUT ACCEPT
                              -P FORWARD ACCEPT
@@ -142,7 +149,7 @@ public class AclTest {
         Set<Acl.Node> testNodes2 = Stream.concat(testNodes(NodeType.config, Set.of(), "2001:db8::41", "2001:db8::42", "2001:db8::43").stream(),
                                                  testNodes(NodeType.tenant, Set.of(19070), "2001:db8::81", "2001:db8::82", "2001:db8::83").stream())
                                          .collect(Collectors.toSet());
-        Acl acl2 = new Acl(Set.of(22, 4443), testNodes2, Set.of());
+        Acl acl2 = new Acl(Set.of(22, 4443), Set.of(), testNodes2, Set.of());
 
         assertEquals("""
                              -P INPUT ACCEPT
