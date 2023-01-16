@@ -29,7 +29,7 @@ public enum ContainerMetrics {
     JDISC_DEACTIVATED_CONTAINERS_WITH_RETAINED_REFS("jdisc.deactivated_containers.with_retained_refs.last", Unit.ITEM, "JDISC Deactivated container nodes with retained refs"),
     JDISC_APPLICATION_FAILED_COMPONENT_GRAPHS("jdisc.application.failed_component_graphs", Unit.ITEM, "JDISC Application failed component graphs"),
 
-    JDISC_SINGLETON_IS_ACTIVE("jdisc.singleton.is_active", Unit.ITEM, "JDISC Singleton is active),
+    JDISC_SINGLETON_IS_ACTIVE("jdisc.singleton.is_active", Unit.ITEM, "JDISC Singleton is active"),
     JDISC_SINGLETON_ACTIVATION_COUNT("jdisc.singleton.activation.count", Unit.OPERATION, "JDISC Singleton activations"),
     JDISC_SINGLETON_ACTIVATION_FAILURE_COUNT("jdisc.singleton.activation.failure.count", Unit.OPERATION, "JDISC Singleton activation failures"),
     JDISC_SINGLETON_ACTIVATION_MILLIS("jdisc.singleton.activation.millis", Unit.MILLISECOND, "JDISC Singleton activation time"),
