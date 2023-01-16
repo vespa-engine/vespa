@@ -9,13 +9,11 @@ import com.yahoo.vespa.hosted.provision.LockedNodeList;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeList;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
-import com.yahoo.vespa.hosted.provision.NodesAndHosts;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.ListIterator;
 import java.util.Optional;
-import java.util.stream.Collectors;
 
 /**
  * Performs preparation of node activation changes for an application.
@@ -58,8 +56,8 @@ class Preparer {
      // active config model which is changed on activate
     private List<Node> prepareNodes(ApplicationId application, ClusterSpec cluster, NodeSpec requestedNodes,
                                     int wantedGroups) {
-        NodesAndHosts<LockedNodeList> allNodesAndHosts = groupPreparer.createNodesAndHostUnlocked();
-        NodeList appNodes = allNodesAndHosts.nodes().owner(application);
+        LockedNodeList allNodes = groupPreparer.createUnlockedNodeList();
+        NodeList appNodes = allNodes.owner(application);
         List<Node> surplusNodes = findNodesInRemovableGroups(appNodes, cluster, wantedGroups);
 
         List<Integer> usedIndices = appNodes.cluster(cluster.id()).mapToList(node -> node.allocation().get().membership().index());
@@ -71,11 +69,11 @@ class Preparer {
             GroupPreparer.PrepareResult result = groupPreparer.prepare(application, clusterGroup,
                                                                        requestedNodes.fraction(wantedGroups),
                                                                        surplusNodes, indices, wantedGroups,
-                                                                       allNodesAndHosts);
-            allNodesAndHosts = result.allNodesAndHosts; // Might have changed
-            List<Node> accepted = result.prepared;
+                                                                       allNodes);
+            allNodes = result.allNodes(); // Might have changed
+            List<Node> accepted = result.prepared();
             if (requestedNodes.rejectNonActiveParent()) {
-                NodeList activeHosts = allNodesAndHosts.nodes().state(Node.State.active).parents().nodeType(requestedNodes.type().hostType());
+                NodeList activeHosts = allNodes.state(Node.State.active).parents().nodeType(requestedNodes.type().hostType());
                 accepted = accepted.stream()
                                    .filter(node -> node.parentHostname().isEmpty() || activeHosts.parentOf(node).isPresent())
                                    .toList();

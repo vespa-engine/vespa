@@ -8,7 +8,6 @@ import com.yahoo.jdisc.Metric;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeList;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
-import com.yahoo.vespa.hosted.provision.NodesAndHosts;
 import com.yahoo.vespa.hosted.provision.maintenance.MaintenanceDeployment.Move;
 import com.yahoo.vespa.hosted.provision.node.Agent;
 
@@ -40,8 +39,8 @@ public class SwitchRebalancer extends NodeMover<Move> {
     protected double maintain() {
         if (!nodeRepository().nodes().isWorking()) return 0.0;
         if (!nodeRepository().zone().environment().isProduction()) return 1.0;
-        NodesAndHosts<NodeList> allNodes = NodesAndHosts.create(nodeRepository().nodes().list()); // Lockless as strong consistency is not needed
-        if (!zoneIsStable(allNodes.nodes())) return 1.0;
+        NodeList allNodes = nodeRepository().nodes().list(); // Lockless as strong consistency is not needed
+        if (!zoneIsStable(allNodes)) return 1.0;
 
         Move bestMove = findBestMove(allNodes);
         if (!bestMove.isEmpty()) {
@@ -53,9 +52,9 @@ public class SwitchRebalancer extends NodeMover<Move> {
     }
 
     @Override
-    protected Move suggestedMove(Node node, Node fromHost, Node toHost, NodesAndHosts<? extends NodeList> allNodes) {
-        NodeList clusterNodes = clusterOf(node, allNodes.nodes());
-        NodeList clusterHosts = allNodes.nodes().parentsOf(clusterNodes);
+    protected Move suggestedMove(Node node, Node fromHost, Node toHost, NodeList allNodes) {
+        NodeList clusterNodes = clusterOf(node, allNodes);
+        NodeList clusterHosts = allNodes.parentsOf(clusterNodes);
         if (onExclusiveSwitch(node, clusterHosts)) return Move.empty();
         if (!increasesExclusiveSwitches(clusterNodes, clusterHosts, toHost)) return Move.empty();
         return new Move(node, fromHost, toHost);

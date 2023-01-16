@@ -9,7 +9,6 @@ import com.yahoo.jdisc.Metric;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeList;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
-import com.yahoo.vespa.hosted.provision.NodesAndHosts;
 import com.yahoo.vespa.hosted.provision.maintenance.MaintenanceDeployment.Move;
 import com.yahoo.vespa.hosted.provision.node.Agent;
 import com.yahoo.vespa.hosted.provision.provisioning.HostCapacity;
@@ -117,13 +116,13 @@ public class SpareCapacityMaintainer extends NodeRepositoryMaintainer {
         if (nodeWhichCantMove.isEmpty()) return List.of();
 
         Node node = nodeWhichCantMove.get();
-        NodesAndHosts<NodeList> allNodes = NodesAndHosts.create(nodeRepository().nodes().list());
+        NodeList allNodes = nodeRepository().nodes().list();
         // Allocation will assign the spareCount most empty nodes as "spares", which will not be allocated on
         // unless needed for node failing. Our goal here is to make room on these spares for the given node
         HostCapacity hostCapacity = new HostCapacity(allNodes, nodeRepository().resourcesCalculator());
-        Set<Node> spareHosts = hostCapacity.findSpareHosts(allNodes.nodes().hosts().satisfies(node.resources()).asList(),
+        Set<Node> spareHosts = hostCapacity.findSpareHosts(allNodes.hosts().satisfies(node.resources()).asList(),
                                                            nodeRepository().spareCount());
-        List<Node> hosts = allNodes.nodes().hosts().except(spareHosts).asList();
+        List<Node> hosts = allNodes.hosts().except(spareHosts).asList();
 
         CapacitySolver capacitySolver = new CapacitySolver(hostCapacity, maxIterations);
         List<Move> shortestMitigation = null;
