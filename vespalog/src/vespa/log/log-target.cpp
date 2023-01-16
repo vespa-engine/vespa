@@ -25,21 +25,21 @@ LogTarget *
 LogTarget::defaultTarget()
 {
     // Note! This function cannot LOG().
-    return new LogTargetFd("fd:2");
+    return new LogTargetFd(2, "fd:2");
 }
 
 LogTarget *
 LogTarget::makeTarget(const char *const target)
 {
-    LogTarget *res = NULL;
     if (strncmp(target, "fd:", 3) == 0) {
-        res = new LogTargetFd(target);
+        int fd_spec = strtol(target + 3, NULL, 0);
+        if (fd_spec > 0) {
+            return new LogTargetFd(fd_spec, target);
+        }
     } else if (strncmp(target, "file:", 5) == 0) {
-        res = new LogTargetFile(target);
-    } else {
-        throwInvalid("Log target '%s' is invalid.", target);
+        return new LogTargetFile(target);
     }
-    return res;
+    throwInvalid("Log target '%s' is invalid.", target);
 }
 
 
