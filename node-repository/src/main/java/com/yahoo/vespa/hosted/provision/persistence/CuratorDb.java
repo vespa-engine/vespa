@@ -94,8 +94,7 @@ public class CuratorDb {
     private void initZK() {
         db.create(root);
         db.create(nodesPath);
-        // TODO(mpolden): Remove state paths after migration to nodesPath
-        // removeLegacyPaths();
+        removeLegacyPaths(); // TODO(mpolden): Remove after 2023-02-01
         db.create(applicationsPath);
         db.create(inactiveJobsPath);
         db.create(infrastructureVersionsPath);
