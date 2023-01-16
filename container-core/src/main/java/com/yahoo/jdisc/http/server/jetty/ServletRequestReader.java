@@ -3,10 +3,10 @@ package com.yahoo.jdisc.http.server.jetty;
 
 import com.yahoo.jdisc.handler.CompletionHandler;
 import com.yahoo.jdisc.handler.ContentChannel;
+import jakarta.servlet.ReadListener;
+import jakarta.servlet.ServletInputStream;
+import jakarta.servlet.http.HttpServletRequest;
 
-import javax.servlet.ReadListener;
-import javax.servlet.ServletInputStream;
-import javax.servlet.http.HttpServletRequest;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.Objects;

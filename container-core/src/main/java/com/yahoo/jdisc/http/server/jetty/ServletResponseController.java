@@ -9,10 +9,10 @@ import com.yahoo.jdisc.handler.ResponseHandler;
 import com.yahoo.jdisc.http.HttpHeaders;
 import com.yahoo.jdisc.http.HttpResponse;
 import com.yahoo.jdisc.service.BindingSetNotFoundException;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import org.eclipse.jetty.http.MimeTypes;
 
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;

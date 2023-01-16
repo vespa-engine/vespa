@@ -152,6 +152,10 @@
           <groupId>org.eclipse.jetty.http2</groupId>
           <artifactId>*</artifactId>
         </exclusion>
+        <exclusion>
+          <groupId>org.eclipse.jetty.toolchain</groupId>
+          <artifactId>*</artifactId>
+        </exclusion>
       </exclusions>
     </dependency>
     <dependency>

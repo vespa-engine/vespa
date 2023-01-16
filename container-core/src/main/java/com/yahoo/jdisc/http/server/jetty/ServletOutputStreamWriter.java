@@ -2,9 +2,9 @@
 package com.yahoo.jdisc.http.server.jetty;
 
 import com.yahoo.jdisc.handler.CompletionHandler;
+import jakarta.servlet.ServletOutputStream;
+import jakarta.servlet.WriteListener;
 
-import javax.servlet.ServletOutputStream;
-import javax.servlet.WriteListener;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.ArrayDeque;

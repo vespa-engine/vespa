@@ -9,6 +9,8 @@ import com.yahoo.jdisc.http.ssl.impl.DefaultConnectorSsl;
 import com.yahoo.security.tls.MixedMode;
 import com.yahoo.security.tls.TransportSecurityUtils;
 import org.eclipse.jetty.alpn.server.ALPNServerConnectionFactory;
+import org.eclipse.jetty.http.HttpCompliance;
+import org.eclipse.jetty.http.UriCompliance;
 import org.eclipse.jetty.http2.server.AbstractHTTP2ServerConnectionFactory;
 import org.eclipse.jetty.http2.server.HTTP2CServerConnectionFactory;
 import org.eclipse.jetty.http2.server.HTTP2ServerConnectionFactory;
@@ -137,8 +139,17 @@ public class ConnectorFactory {
         httpConfig.setOutputBufferSize(connectorConfig.outputBufferSize());
         httpConfig.setRequestHeaderSize(connectorConfig.requestHeaderSize());
         httpConfig.setResponseHeaderSize(connectorConfig.responseHeaderSize());
+
+        // Disable use of ByteBuffer.allocateDirect()
+        httpConfig.setUseInputDirectByteBuffers(false);
+        httpConfig.setUseOutputDirectByteBuffers(false);
+
+        httpConfig.setHttpCompliance(HttpCompliance.RFC7230);
+        // TODO Vespa 9 Use default URI compliance (LEGACY == old Jetty 9.4 compliance)
+        httpConfig.setUriCompliance(UriCompliance.LEGACY);
         if (isSslEffectivelyEnabled(connectorConfig)) {
-            httpConfig.addCustomizer(new SecureRequestCustomizer());
+            // Explicitly disable SNI checking as Jetty's SNI checking trust manager is not part of our SSLContext trust manager chain
+            httpConfig.addCustomizer(new SecureRequestCustomizer(false, false, -1, false));
         }
         String serverNameFallback = connectorConfig.serverName().fallback();
         if (!serverNameFallback.isBlank()) httpConfig.setServerAuthority(new HostPort(serverNameFallback));
@@ -169,12 +180,14 @@ public class ConnectorFactory {
     }
 
     private SslConnectionFactory newSslConnectionFactory(Metric metric, ConnectionFactory wrappedFactory) {
-        SslConnectionFactory connectionFactory = new SslConnectionFactory(createSslContextFactory(), wrappedFactory.getProtocol());
-        connectionFactory.addBean(new SslHandshakeFailedListener(metric, connectorConfig.name(), connectorConfig.listenPort()));
-        return connectionFactory;
+        var fac = new SslConnectionFactory(createSslContextFactory(), wrappedFactory.getProtocol());
+        fac.setDirectBuffersForDecryption(false);
+        fac.setDirectBuffersForDecryption(false);
+        fac.addBean(new SslHandshakeFailedListener(metric, connectorConfig.name(), connectorConfig.listenPort()));
+        return fac;
     }
 
-    private SslContextFactory createSslContextFactory() {
+    private SslContextFactory.Server createSslContextFactory() {
         DefaultConnectorSsl ssl = new DefaultConnectorSsl();
         sslProvider.configureSsl(ssl, connectorConfig.name(), connectorConfig.listenPort());
         return ssl.createSslContextFactory();

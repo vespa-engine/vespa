@@ -12,6 +12,8 @@ import org.apache.hc.client5.http.ssl.NoopHostnameVerifier;
 import org.assertj.core.api.Assertions;
 import org.eclipse.jetty.client.HttpClient;
 import org.eclipse.jetty.client.api.ContentResponse;
+import org.eclipse.jetty.client.http.HttpClientTransportOverHTTP;
+import org.eclipse.jetty.io.ClientConnector;
 import org.eclipse.jetty.util.ssl.SslContextFactory;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
@@ -185,14 +187,15 @@ class ProxyProtocolTest {
 
     // Using Jetty's http client as Apache httpclient does not support the proxy-protocol v1/v2.
     private static HttpClient createJettyHttpClient(Path certificateFile) throws Exception {
-        SslContextFactory.Client clientSslCtxFactory = new SslContextFactory.Client();
-        clientSslCtxFactory.setHostnameVerifier(NoopHostnameVerifier.INSTANCE);
-        clientSslCtxFactory.setSslContext(new SslContextBuilder().withTrustStore(certificateFile).build());
-
-        HttpClient client = new HttpClient(clientSslCtxFactory);
-        client.setConnectTimeout(60*1000);
-        client.setStopTimeout(60*1000);
-        client.setIdleTimeout(60*1000);
+        var ssl = new SslContextFactory.Client();
+        ssl.setHostnameVerifier(NoopHostnameVerifier.INSTANCE);
+        ssl.setSslContext(new SslContextBuilder().withTrustStore(certificateFile).build());
+        var connector = new ClientConnector();
+        connector.setSslContextFactory(ssl);
+        HttpClient client = new HttpClient(new HttpClientTransportOverHTTP(connector));
+        int timeout = 60 * 1000;
+        client.setConnectTimeout(timeout);
+        client.setIdleTimeout(timeout);
         client.start();
         return client;
     }

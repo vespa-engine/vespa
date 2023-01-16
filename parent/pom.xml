@@ -900,9 +900,9 @@
                 <version>${eclipse-collections.version}</version>
             </dependency>
             <dependency>
-                <groupId>org.eclipse.jetty.alpn</groupId>
-                <artifactId>alpn-api</artifactId>
-                <version>${jetty-alpn.version}</version>
+                <groupId>org.eclipse.jetty.http2</groupId>
+                <artifactId>http2-common</artifactId>
+                <version>${jetty.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.eclipse.jetty.http2</groupId>
@@ -916,17 +916,27 @@
             </dependency>
             <dependency>
                 <groupId>org.eclipse.jetty</groupId>
+                <artifactId>jetty-alpn-server</artifactId>
+                <version>${jetty.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.eclipse.jetty</groupId>
                 <artifactId>jetty-client</artifactId>
                 <version>${jetty.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.eclipse.jetty</groupId>
-                <artifactId>jetty-continuation</artifactId>
+                <artifactId>jetty-http</artifactId>
                 <version>${jetty.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.eclipse.jetty</groupId>
-                <artifactId>jetty-http</artifactId>
+                <artifactId>jetty-io</artifactId>
+                <version>${jetty.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.eclipse.jetty</groupId>
+                <artifactId>jetty-jmx</artifactId>
                 <version>${jetty.version}</version>
             </dependency>
             <dependency>
@@ -941,18 +951,13 @@
             </dependency>
             <dependency>
                 <groupId>org.eclipse.jetty</groupId>
-                <artifactId>jetty-servlets</artifactId>
-                <version>${jetty.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.eclipse.jetty</groupId>
-                <artifactId>jetty-jmx</artifactId>
-                <version>${jetty.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.eclipse.jetty</groupId>
                 <artifactId>jetty-util</artifactId>
                 <version>${jetty.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.eclipse.jetty.toolchain</groupId>
+                <artifactId>jetty-jakarta-servlet-api</artifactId>
+                <version>${jetty-servlet-api.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.glassfish.jaxb</groupId>
@@ -1117,8 +1122,8 @@
         <felix.log.version>1.0.1</felix.log.version>
         <findbugs.version>3.0.2</findbugs.version> <!-- Should be kept in sync with guava -->
         <hdrhistogram.version>2.1.12</hdrhistogram.version>
-        <jetty.version>9.4.49.v20220914</jetty.version>
-        <jetty-alpn.version>1.1.3.v20160715</jetty-alpn.version>
+        <jetty.version>11.0.13</jetty.version>
+        <jetty-servlet-api.version>5.0.2</jetty-servlet-api.version>
         <jjwt.version>0.11.2</jjwt.version>
         <jna.version>5.11.0</jna.version>
         <junit.version>5.8.1</junit.version>
