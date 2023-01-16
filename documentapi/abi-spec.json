@@ -542,7 +542,7 @@
     ],
     "methods" : [
       "public void <init>()",
-      "public void setDefaultTimeout(java.time.Duration)",
+      "public com.yahoo.documentapi.SyncParameters$Builder setDefaultTimeout(java.time.Duration)",
       "public com.yahoo.documentapi.SyncParameters build()"
     ],
     "fields" : [ ]

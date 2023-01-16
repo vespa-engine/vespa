@@ -33,8 +33,9 @@ public class SyncParameters extends Parameters {
         /**
          * Set default timeout for all messagebus operations.
          */
-        public void setDefaultTimeout(Duration defaultTimeout) {
+        public Builder setDefaultTimeout(Duration defaultTimeout) {
             this.defaultTimeout = defaultTimeout;
+            return this;
         }
 
         public SyncParameters build() {

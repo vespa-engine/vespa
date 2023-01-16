@@ -199,6 +199,10 @@ public final class Processing extends ProcessingAccess {
         }
     }
 
+    /**
+     * Returns the operations in this processing.
+     * This can be mutated to add or remove operations to be performed.
+     */
     public List<DocumentOperation> getDocumentOperations() {
         updateDocumentOperations();
         return documentOperations;
