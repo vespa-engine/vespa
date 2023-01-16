@@ -33,7 +33,7 @@ public class ValidateNearestNeighborTestCase {
         searcher = new ValidateNearestNeighborSearcher(
                 ConfigGetter.getConfig(AttributesConfig.class,
                                        "raw:" +
-                                                     "attribute[5]\n" +
+                                                     "attribute[9]\n" +
                                                      "attribute[0].name                simple\n" +
                                                      "attribute[0].datatype            INT32\n" +
                                                      "attribute[1].name                dvector\n" +
@@ -56,7 +56,10 @@ public class ValidateNearestNeighborTestCase {
                                                      "attribute[6].tensortype          tensor(x[3])\n" +
                                                      "attribute[7].name                threetypes\n" +
                                                      "attribute[7].datatype            TENSOR\n" +
-                                                     "attribute[7].tensortype          tensor(x{})\n"
+                                                     "attribute[7].tensortype          tensor(x{})\n" +
+                                                     "attribute[8].name                mixeddvector\n" +
+                                                     "attribute[8].datatype            TENSOR\n" +
+                                                     "attribute[8].tensortype          tensor(a{},x[3])\n"
         ));
     }
 
@@ -129,6 +132,14 @@ public class ValidateNearestNeighborTestCase {
     @Test
     void testValidQueryFloatVectorAgainstDoubleVector() {
         String q = makeQuery("fvector", "qvector");
+        Tensor t = makeTensor(tt_dense_dvector_3);
+        Result r = doSearch(searcher, q, t);
+        assertNull(r.hits().getError());
+    }
+
+    @Test
+    void testvalidQueryMixedFieldTensor() {
+        String q = makeQuery("mixeddvector", "qvector");
         Tensor t = makeTensor(tt_dense_dvector_3);
         Result r = doSearch(searcher, q, t);
         assertNull(r.hits().getError());
@@ -210,7 +221,7 @@ public class ValidateNearestNeighborTestCase {
         String q = makeQuery("sparse", "qvector");
         Tensor t = makeTensor(tt_sparse_vector_x);
         Result r = doSearch(searcher, q, t);
-        assertErrMsg(desc("sparse", "qvector", 1, "tensor type tensor(x{}) is not a dense vector"), r);
+        assertErrMsg(desc("sparse", "qvector", 1, "field type tensor(x{}) is not supported by nearest neighbor searcher"), r);
     }
 
     @Test
@@ -218,7 +229,7 @@ public class ValidateNearestNeighborTestCase {
         String q = makeQuery("matrix", "qvector");
         Tensor t = makeMatrix(tt_dense_matrix_xy);
         Result r = doSearch(searcher, q, t);
-        assertErrMsg(desc("matrix", "qvector", 1, "tensor type tensor(x[3],y[1]) is not a dense vector"), r);
+        assertErrMsg(desc("matrix", "qvector", 1, "field type tensor(x[3],y[1]) is not supported by nearest neighbor searcher"), r);
     }
 
     private static Result doSearch(ValidateNearestNeighborSearcher searcher, String yqlQuery, Tensor qTensor) {

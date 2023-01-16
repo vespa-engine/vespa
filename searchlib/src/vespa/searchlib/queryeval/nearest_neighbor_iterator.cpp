@@ -13,17 +13,6 @@ using vespalib::eval::CellType;
 
 namespace search::queryeval {
 
-namespace {
-
-bool
-is_compatible(const vespalib::eval::ValueType& lhs,
-              const vespalib::eval::ValueType& rhs)
-{
-    return (lhs.dimensions() == rhs.dimensions());
-}
-
-}
-
 /**
  * Search iterator for K nearest neighbor matching.
  * Uses unpack() as feedback mechanism to track which matches actually became hits.
@@ -39,8 +28,6 @@ public:
         : NearestNeighborIterator(params_in),
           _lastScore(0.0)
     {
-        assert(is_compatible(params().distance_calc.attribute_tensor().getTensorType(),
-                             params().distance_calc.query_tensor().type()));
     }
 
     ~NearestNeighborImpl();

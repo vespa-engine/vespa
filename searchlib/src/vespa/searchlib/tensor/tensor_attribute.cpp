@@ -30,6 +30,7 @@ using vespalib::eval::FastValueBuilderFactory;
 using vespalib::eval::TensorSpec;
 using vespalib::eval::Value;
 using vespalib::eval::ValueType;
+using vespalib::slime::ObjectInserter;
 
 namespace search::tensor {
 
@@ -224,6 +225,10 @@ TensorAttribute::populate_state(vespalib::slime::Cursor& object) const
                                               object.setObject("ref_vector").setObject("memory_usage"));
     StateExplorerUtils::memory_usage_to_slime(_tensorStore.getMemoryUsage(),
                                               object.setObject("tensor_store").setObject("memory_usage"));
+    if (_index) {
+        ObjectInserter index_inserter(object, "nearest_neighbor_index");
+        _index->get_state(index_inserter);
+    }
 }
 
 void

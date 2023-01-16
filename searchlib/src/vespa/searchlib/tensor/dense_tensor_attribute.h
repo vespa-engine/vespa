@@ -24,7 +24,6 @@ public:
     // Implements AttributeVector and ITensorAttribute
     vespalib::eval::TypedCells extract_cells_ref(DocId docId) const override;
     bool supports_extract_cells_ref() const override { return true; }
-    void get_state(const vespalib::slime::Inserter& inserter) const override;
 
     // Implements DocVectorAccess
     vespalib::eval::TypedCells get_vector(uint32_t docid, uint32_t subspace) const override;
