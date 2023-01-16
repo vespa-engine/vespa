@@ -1,15 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "dense_tensor_attribute.h"
-#include "nearest_neighbor_index.h"
-#include "tensor_attribute_loader.h"
-#include "tensor_attribute_saver.h"
-#include <vespa/eval/eval/value.h>
 #include <vespa/searchcommon/attribute/config.h>
-#include <vespa/vespalib/data/slime/inserter.h>
-
-using vespalib::eval::Value;
-using vespalib::slime::ObjectInserter;
 
 namespace search::tensor {
 
@@ -35,17 +27,6 @@ DenseTensorAttribute::extract_cells_ref(DocId docId) const
         ref = acquire_entry_ref(docId);
     }
     return _denseTensorStore.get_typed_cells(ref);
-}
-
-void
-DenseTensorAttribute::get_state(const vespalib::slime::Inserter& inserter) const
-{
-    auto& object = inserter.insertObject();
-    populate_state(object);
-    if (_index) {
-        ObjectInserter index_inserter(object, "nearest_neighbor_index");
-        _index->get_state(index_inserter);
-    }
 }
 
 vespalib::eval::TypedCells
