@@ -1285,19 +1285,41 @@ public class DeploymentSpecTest {
 
     @Test
     public void invalidEndpoints() {
-        assertInvalidEndpoints("<endpoint id='FOO' container-id='qrs'/>"); // Uppercase
-        assertInvalidEndpoints("<endpoint id='123' container-id='qrs'/>"); // Starting with non-character
-        assertInvalidEndpoints("<endpoint id='foo!' container-id='qrs'/>"); // Non-alphanumeric
-        assertInvalidEndpoints("<endpoint id='foo.bar' container-id='qrs'/>");
-        assertInvalidEndpoints("<endpoint id='foo--bar' container-id='qrs'/>"); // Multiple consecutive dashes
-        assertInvalidEndpoints("<endpoint id='foo-' container-id='qrs'/>"); // Trailing dash
-        assertInvalidEndpoints("<endpoint id='foooooooooooo' container-id='qrs'/>"); // Too long
-        assertInvalidEndpoints("<endpoint id='foo' container-id='qrs'/><endpoint id='foo' container-id='qrs'/>"); // Duplicate
-        assertInvalidEndpoints("<endpoint id='default' type='zone' container-id='foo' />"); // Zone with ID
-        assertInvalidEndpoints("<endpoint id='default' type='private' container-id='foo' />"); // Private with ID
-        assertInvalidEndpoints("<endpoint type='zone' />"); // Zone without container ID
-        assertInvalidEndpoints("<endpoint type='private' />"); // Zone without container ID
-        assertInvalidEndpoints("<endpoint type='private' container-id='foo' enabled='true' />"); // Private with enabled
+        assertInvalidEndpoints("<endpoint id='FOO' container-id='qrs'/>",
+                               "Endpoint ID must be all lowercase, alphanumeric, with no consecutive dashes, of length 1 to 12, and begin with a character; but got 'FOO'");
+        assertInvalidEndpoints("<endpoint id='123' container-id='qrs'/>",
+                               "Endpoint ID must be all lowercase, alphanumeric, with no consecutive dashes, of length 1 to 12, and begin with a character; but got '123'");
+        assertInvalidEndpoints("<endpoint id='foo!' container-id='qrs'/>",
+                               "Endpoint ID must be all lowercase, alphanumeric, with no consecutive dashes, of length 1 to 12, and begin with a character; but got 'foo!'");
+        assertInvalidEndpoints("<endpoint id='foo.bar' container-id='qrs'/>",
+                               "Endpoint ID must be all lowercase, alphanumeric, with no consecutive dashes, of length 1 to 12, and begin with a character; but got 'foo.bar'");
+        assertInvalidEndpoints("<endpoint id='foo--bar' container-id='qrs'/>",
+                               "Endpoint ID must be all lowercase, alphanumeric, with no consecutive dashes, of length 1 to 12, and begin with a character; but got 'foo--bar'");
+        assertInvalidEndpoints("<endpoint id='foo-' container-id='qrs'/>",
+                               "Endpoint ID must be all lowercase, alphanumeric, with no consecutive dashes, of length 1 to 12, and begin with a character; but got 'foo-'");
+        assertInvalidEndpoints("<endpoint id='foooooooooooo' container-id='qrs'/>",
+                               "Endpoint ID must be all lowercase, alphanumeric, with no consecutive dashes, of length 1 to 12, and begin with a character; but got 'foooooooooooo'");
+
+        assertInvalidEndpoints("<endpoint id='foo' container-id='qrs'/><endpoint id='foo' container-id='qrs'/>",
+                               "Endpoint ID 'foo' is specified multiple times");
+        assertInvalidEndpoints("<endpoint id='default' type='zone' container-id='foo' />",
+                               "Instance-level endpoint 'default': cannot declare 'id' with type 'zone' or 'private'");
+        assertInvalidEndpoints("<endpoint id='default' type='private' container-id='foo' />",
+                               "Instance-level endpoint 'default': cannot declare 'id' with type 'zone' or 'private'");
+        assertInvalidEndpoints("<endpoint type='zone' />",
+                               "Missing required attribute 'container-id' in 'endpoint'");
+        assertInvalidEndpoints("<endpoint type='private' />",
+                               "Missing required attribute 'container-id' in 'endpoint'");
+        assertInvalidEndpoints("<endpoint type='private' container-id='foo' enabled='true' />",
+                               "Private endpoint for container-id 'foo': only endpoints of type 'zone' can specify 'enabled'");
+        assertInvalidEndpoints("<endpoint type='zone' container-id='qrs'/><endpoint type='zone' container-id='qrs'/>",
+                               "Multiple zone endpoints (for all regions) declared for container id 'qrs'");
+        assertInvalidEndpoints("<endpoint type='private' container-id='qrs'><region>us</region></endpoint>" +
+                               "<endpoint type='private' container-id='qrs'><region>us</region></endpoint>",
+                               "Multiple private endpoints declared for container id 'qrs' in region 'us'");
+        assertInvalidEndpoints("<endpoint type='zone' container-id='qrs' />" +
+                               "<endpoint type='zone' container-id='qrs'><region>us</region></endpoint>",
+                               "Zone endpoint for container id 'qrs' declared both with region 'us', and for all regions.");
     }
 
     @Test
@@ -1713,11 +1735,11 @@ public class DeploymentSpecTest {
         }
     }
 
-    private static void assertInvalidEndpoints(String endpointsBody) {
-        try {
-            endpointIds(endpointsBody);
-            fail("Expected exception for input '" + endpointsBody + "'");
-        } catch (IllegalArgumentException ignored) {}
+    private static void assertInvalidEndpoints(String endpointsBody, String error) {
+        assertEquals(error,
+                     assertThrows(IllegalArgumentException.class,
+                                  () -> endpointIds(endpointsBody))
+                             .getMessage());
     }
 
     private static Set<String> endpointRegions(String endpointId, DeploymentSpec spec) {
