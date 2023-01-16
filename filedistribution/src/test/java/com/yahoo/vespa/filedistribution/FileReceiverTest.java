@@ -19,6 +19,7 @@ import java.nio.file.Files;
 import static com.yahoo.vespa.filedistribution.FileReferenceData.CompressionType;
 import static com.yahoo.vespa.filedistribution.FileReferenceData.CompressionType.gzip;
 import static com.yahoo.vespa.filedistribution.FileReferenceData.CompressionType.lz4;
+import static com.yahoo.vespa.filedistribution.FileReferenceData.CompressionType.zstd;
 import static com.yahoo.vespa.filedistribution.FileReferenceData.Type.compressed;
 import static com.yahoo.vespa.filedistribution.FileReferenceData.Type.file;
 import static org.junit.Assert.assertEquals;
@@ -61,18 +62,16 @@ public class FileReceiverTest {
         writerB.write("2");
         writerB.close();
 
-        File tempFile = temporaryFolder.newFile();
-        File file = new FileReferenceCompressor(compressed, gzip).compress(dirWithFiles, tempFile);
-        transferCompressedData(gzip, new FileReference("ref"), "a", IOUtils.readFileBytes(file));
-        File downloadDir = new File(root, "ref");
-        assertEquals("1", IOUtils.readFile(new File(downloadDir, "a")));
-        assertEquals("2", IOUtils.readFile(new File(downloadDir, "b")));
+        testWithCompression(dirWithFiles, gzip);
+        testWithCompression(dirWithFiles, lz4);
+        testWithCompression(dirWithFiles, zstd);
+    }
 
-        tempFile = temporaryFolder.newFile();
-        FileReferenceCompressor compressor = new FileReferenceCompressor(compressed, lz4);
-        file = compressor.compress(dirWithFiles, tempFile);
-        transferCompressedData(lz4, new FileReference("ref"), "a", IOUtils.readFileBytes(file));
-        downloadDir = new File(root, "ref");
+    private void testWithCompression(File dirWithFiles, CompressionType compressionType) throws IOException {
+        File tempFile = temporaryFolder.newFile();
+        File file = new FileReferenceCompressor(compressed, compressionType).compress(dirWithFiles, tempFile);
+        transferCompressedData(compressionType, new FileReference("ref"), "a", IOUtils.readFileBytes(file));
+        File downloadDir = new File(root, "ref");
         assertEquals("1", IOUtils.readFile(new File(downloadDir, "a")));
         assertEquals("2", IOUtils.readFile(new File(downloadDir, "b")));
     }
