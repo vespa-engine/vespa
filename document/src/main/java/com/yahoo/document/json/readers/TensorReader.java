@@ -125,6 +125,7 @@ public class TensorReader {
         int index = 0;
         int initNesting = buffer.nesting();
         for (buffer.next(); buffer.nesting() >= initNesting; buffer.next()) {
+            if (buffer.current() == JsonToken.START_ARRAY || buffer.current() == JsonToken.END_ARRAY) continue; // nested arrays: Skip
             indexedBuilder.cellByDirectIndex(index++, readDouble(buffer));
         }
         if (index == 0)
@@ -181,7 +182,7 @@ public class TensorReader {
 
     /** Reads a tensor value directly at the root, where the format is decided by the tensor type. */
     private static void readDirectTensorValue(TokenBuffer buffer, Tensor.Builder builder) {
-        boolean hasIndexed = builder.type().dimensions().stream().anyMatch(TensorType.Dimension::isIndexed) && 1==2;
+        boolean hasIndexed = builder.type().dimensions().stream().anyMatch(TensorType.Dimension::isIndexed);
         boolean hasMapped = builder.type().dimensions().stream().anyMatch(TensorType.Dimension::isMapped);
 
         if (isArrayOfObjects(buffer, 0))

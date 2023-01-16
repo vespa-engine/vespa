@@ -22,7 +22,9 @@ public class JsonFormatTestCase {
     public void testDirectValue() {
         assertDecoded("tensor(x{}):{a:2, b:3}", "{'a':2.0, 'b':3.0}");
         assertDecoded("tensor(x{}):{a:2, b:3}", "{'a':2.0, 'b':3.0}");
-        assertDecoded("tensor(x[2]):[2, 3]]", "[2.0, 3.0]");
+        assertDecoded("tensor(x[2]):[1.0, 2.0]]", "[1, 2]");
+        assertDecoded("tensor(x[2],y[3]):[[1.0, 2.0, 3.0], [4.0, 5.0, 6.0]]", "[1, 2, 3, 4, 5, 6]");
+        assertDecoded("tensor(x[2],y[3]):[[1.0, 2.0, 3.0], [4.0, 5.0, 6.0]]", "[[1, 2, 3], [4, 5, 6]]");
         assertDecoded("tensor(x{},y[2]):{a:[2, 3], b:[4, 5]}", "{'a':[2, 3], 'b':[4, 5]}");
         assertDecoded("tensor(x{},y{}):{{x:a,y:0}:2, {x:b,y:1}:3}",
                       "[{'address':{'x':'a','y':'0'},'value':2}, {'address':{'x':'b','y':'1'},'value':3}]");
