@@ -48,24 +48,24 @@ public class DefaultMetrics {
     }
 
     private static void addSearchChainMetrics(Set<Metric> metrics) {
-        metrics.add(new Metric("queries.rate"));
-        metrics.add(new Metric("query_latency.sum"));
-        metrics.add(new Metric("query_latency.count"));
-        metrics.add(new Metric("query_latency.max"));
+        metrics.add(new Metric(ContainerMetrics.QUERIES.rate()));
+        metrics.add(new Metric(ContainerMetrics.QUERY_LATENCY.sum()));
+        metrics.add(new Metric(ContainerMetrics.QUERY_LATENCY.count()));
+        metrics.add(new Metric(ContainerMetrics.QUERY_LATENCY.max()));
+        metrics.add(new Metric(ContainerMetrics.QUERY_LATENCY.ninety_five_percentile()));
+        metrics.add(new Metric(ContainerMetrics.QUERY_LATENCY.ninety_nine_percentile()));
+        metrics.add(new Metric(ContainerMetrics.HITS_PER_QUERY.sum()));
+        metrics.add(new Metric(ContainerMetrics.HITS_PER_QUERY.count()));
+        metrics.add(new Metric(ContainerMetrics.HITS_PER_QUERY.max()));
+        metrics.add(new Metric(ContainerMetrics.TOTAL_HITS_PER_QUERY.sum()));
+        metrics.add(new Metric(ContainerMetrics.TOTAL_HITS_PER_QUERY.count()));
+        metrics.add(new Metric(ContainerMetrics.TOTAL_HITS_PER_QUERY.max()));
+        metrics.add(new Metric(ContainerMetrics.DEGRADED_QUERIES.rate()));
+        metrics.add(new Metric(ContainerMetrics.FAILED_QUERIES.rate()));
         metrics.add(new Metric("query_latency.average")); // TODO: Remove with Vespa 9
-        metrics.add(new Metric("query_latency.95percentile"));
-        metrics.add(new Metric("query_latency.99percentile"));
-        metrics.add(new Metric("hits_per_query.sum"));
-        metrics.add(new Metric("hits_per_query.count"));
-        metrics.add(new Metric("hits_per_query.max"));
         metrics.add(new Metric("hits_per_query.average")); // TODO: Remove with Vespa 9
-        metrics.add(new Metric("totalhits_per_query.sum"));
-        metrics.add(new Metric("totalhits_per_query.count"));
-        metrics.add(new Metric("totalhits_per_query.max"));
         metrics.add(new Metric("totalhits_per_query.average")); // TODO: Remove with Vespa 9
-        metrics.add(new Metric("degraded_queries.rate"));
-        metrics.add(new Metric("failed_queries.rate"));
-        metrics.add(new Metric("serverActiveThreads.average"));
+        metrics.add(new Metric("serverActiveThreads.average")); // TODO: Remove on Vespa 9. Use jdisc.thread_pool.active_threads.
     }
 
     private static void addContentMetrics(Set<Metric> metrics) {
