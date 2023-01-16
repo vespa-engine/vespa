@@ -330,7 +330,7 @@ public class VespaMetricSet {
         addMetric(metrics, ContainerMetrics.ERROR_INTERNAL_SERVER_ERROR.rate());
         addMetric(metrics, ContainerMetrics.ERROR_MISCONFIGURED_SERVER.rate());
         addMetric(metrics, ContainerMetrics.ERROR_INVALID_QUERY_TRANSFORMATION.rate());
-        addMetric(metrics, ContainerMetrics.ERROR_RESULT_WITH_ERRORS.rate());
+        addMetric(metrics, ContainerMetrics.ERROR_RESULTS_WITH_ERRORS.rate());
         addMetric(metrics, ContainerMetrics.ERROR_UNSPECIFIED.rate());
         addMetric(metrics, ContainerMetrics.ERROR_UNHANDLED_EXCEPTION.rate());
 
