@@ -361,6 +361,12 @@ public:
     // (Undefined -> use seek to find out)
     // number of matches: (False <= Undefined <= True)
     virtual Trinary matches_any() const { return Trinary::Undefined; }
+
+    // Disclose children by giving out references to owning
+    // pointers. This allows re-wiring from the outside, which is
+    // needed for deep decoration used by match profiling. Only
+    // disclose children that are treated as generic SearchIterators.
+    virtual void disclose_children(std::vector<UP*> &dst);
 };
 
 }
@@ -369,4 +375,3 @@ void visit(vespalib::ObjectVisitor &self, const vespalib::string &name,
            const search::queryeval::SearchIterator &obj);
 void visit(vespalib::ObjectVisitor &self, const vespalib::string &name,
            const search::queryeval::SearchIterator *obj);
-

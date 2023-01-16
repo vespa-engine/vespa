@@ -117,6 +117,11 @@ SearchIterator::visitMembers(vespalib::ObjectVisitor &visitor) const
     visit(visitor, "endid", _endid);
 }
 
+void
+SearchIterator::disclose_children(std::vector<UP*> &)
+{
+}
+
 }
 
 //-----------------------------------------------------------------------------
