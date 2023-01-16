@@ -107,7 +107,7 @@ public class ModelsEvaluationHandlerTest {
         properties.put("non-existing-binding", "-1");
         properties.put("format.tensors", "long");
         String url = "http://localhost/model-evaluation/v1/xgboost_2_2/eval";
-        String expected = "{\"cells\":[{\"address\":{},\"value\":-7.936679999999999}]}";
+        String expected = "{\"type\":\"tensor()\",\"cells\":[{\"address\":{},\"value\":-7.936679999999999}]}";
         handler.assertResponse(url, properties, 200, expected);
     }
 
@@ -191,22 +191,82 @@ public class ModelsEvaluationHandlerTest {
     }
 
     @Test
-    public void testMnistSoftmaxEvaluateSpecificFunctionWithBindingsShortForm() {
-        Map<String, String> properties = new HashMap<>();
-        properties.put("Placeholder", inputTensorShortForm());
-        properties.put("format.tensors", "long");
-        String url = "http://localhost/model-evaluation/v1/mnist_softmax/default.add/eval";
-        String expected = "{\"cells\":[{\"address\":{\"d0\":\"0\",\"d1\":\"0\"},\"value\":-0.3546536862850189},{\"address\":{\"d0\":\"0\",\"d1\":\"1\"},\"value\":0.3759574592113495},{\"address\":{\"d0\":\"0\",\"d1\":\"2\"},\"value\":0.06054411828517914},{\"address\":{\"d0\":\"0\",\"d1\":\"3\"},\"value\":-0.251544713973999},{\"address\":{\"d0\":\"0\",\"d1\":\"4\"},\"value\":0.017951013520359993},{\"address\":{\"d0\":\"0\",\"d1\":\"5\"},\"value\":1.2899067401885986},{\"address\":{\"d0\":\"0\",\"d1\":\"6\"},\"value\":-0.10389615595340729},{\"address\":{\"d0\":\"0\",\"d1\":\"7\"},\"value\":0.6367976665496826},{\"address\":{\"d0\":\"0\",\"d1\":\"8\"},\"value\":-1.4136744737625122},{\"address\":{\"d0\":\"0\",\"d1\":\"9\"},\"value\":-0.2573896050453186}]}";
-        handler.assertResponse(url, properties, 200, expected);
-    }
-
-    @Test
     public void testMnistSoftmaxEvaluateSpecificFunctionWithShortOutput() {
         Map<String, String> properties = new HashMap<>();
         properties.put("Placeholder", inputTensorShortForm());
         properties.put("format.tensors", "short");
         String url = "http://localhost/model-evaluation/v1/mnist_softmax/default.add/eval";
-        String expected = "{\"type\":\"tensor(d0[],d1[10])\",\"values\":[[-0.3546536862850189,0.3759574592113495,0.06054411828517914,-0.251544713973999,0.017951013520359993,1.2899067401885986,-0.10389615595340729,0.6367976665496826,-1.4136744737625122,-0.2573896050453186]]}";
+        String expected =
+                """
+                {
+                  "type":"tensor(d0[],d1[10])",
+                  "values":[[-0.3546536862850189,0.3759574592113495,0.06054411828517914,-0.251544713973999,0.017951013520359993,1.2899067401885986,-0.10389615595340729,0.6367976665496826,-1.4136744737625122,-0.2573896050453186]]
+                }
+                """;
+        handler.assertResponse(url, properties, 200, expected);
+    }
+
+    @Test
+    public void testMnistSoftmaxEvaluateSpecificFunctionWithLongOutput() {
+        Map<String, String> properties = new HashMap<>();
+        properties.put("Placeholder", inputTensorShortForm());
+        properties.put("format.tensors", "long");
+        String url = "http://localhost/model-evaluation/v1/mnist_softmax/default.add/eval";
+        String expected =
+                """
+                  {
+                    "type":"tensor(d0[],d1[10])",
+                    "cells":[
+                      {"address":{"d0":"0","d1":"0"},"value":-0.3546536862850189},
+                      {"address":{"d0":"0","d1":"1"},"value":0.3759574592113495},
+                      {"address":{"d0":"0","d1":"2"},"value":0.06054411828517914},
+                      {"address":{"d0":"0","d1":"3"},"value":-0.251544713973999},
+                      {"address":{"d0":"0","d1":"4"},"value":0.017951013520359993},
+                      {"address":{"d0":"0","d1":"5"},"value":1.2899067401885986},
+                      {"address":{"d0":"0","d1":"6"},"value":-0.10389615595340729},
+                      {"address":{"d0":"0","d1":"7"},"value":0.6367976665496826},
+                      {"address":{"d0":"0","d1":"8"},"value":-1.4136744737625122},
+                      {"address":{"d0":"0","d1":"9"},"value":-0.2573896050453186}
+                    ]
+                  }
+                """;
+        handler.assertResponse(url, properties, 200, expected);
+    }
+
+    @Test
+    public void testMnistSoftmaxEvaluateSpecificFunctionWithShortDirectOutput() {
+        Map<String, String> properties = new HashMap<>();
+        properties.put("Placeholder", inputTensorShortForm());
+        properties.put("format.tensors", "short-value");
+        String url = "http://localhost/model-evaluation/v1/mnist_softmax/default.add/eval";
+        String expected =
+                """
+                  [[-0.3546536862850189,0.3759574592113495,0.06054411828517914,-0.251544713973999,0.017951013520359993,1.2899067401885986,-0.10389615595340729,0.6367976665496826,-1.4136744737625122,-0.2573896050453186]]
+                """;
+        handler.assertResponse(url, properties, 200, expected);
+    }
+
+    @Test
+    public void testMnistSoftmaxEvaluateSpecificFunctionWithLongDirectOutput() {
+        Map<String, String> properties = new HashMap<>();
+        properties.put("Placeholder", inputTensorShortForm());
+        properties.put("format.tensors", "long-value");
+        String url = "http://localhost/model-evaluation/v1/mnist_softmax/default.add/eval";
+        String expected =
+                """
+                  [
+                    {"address":{"d0":"0","d1":"0"},"value":-0.3546536862850189},
+                    {"address":{"d0":"0","d1":"1"},"value":0.3759574592113495},
+                    {"address":{"d0":"0","d1":"2"},"value":0.06054411828517914},
+                    {"address":{"d0":"0","d1":"3"},"value":-0.251544713973999},
+                    {"address":{"d0":"0","d1":"4"},"value":0.017951013520359993},
+                    {"address":{"d0":"0","d1":"5"},"value":1.2899067401885986},
+                    {"address":{"d0":"0","d1":"6"},"value":-0.10389615595340729},
+                    {"address":{"d0":"0","d1":"7"},"value":0.6367976665496826},
+                    {"address":{"d0":"0","d1":"8"},"value":-1.4136744737625122},
+                    {"address":{"d0":"0","d1":"9"},"value":-0.2573896050453186}
+                  ]
+                """;
         handler.assertResponse(url, properties, 200, expected);
     }
 
@@ -251,14 +311,14 @@ public class ModelsEvaluationHandlerTest {
         Map<String, String> properties = new HashMap<>();
         properties.put("format.tensors", "string");
         String url = "http://localhost/model-evaluation/v1/vespa_model/";
-        handler.assertResponse(url + "test_mapped/eval", properties, 200,
-                "tensor(d0{}):{a:1.0, b:2.0}");
-        handler.assertResponse(url + "test_indexed/eval", properties, 200,
-                "tensor(d0[2],d1[3]):[[1.0, 2.0, 3.0], [4.0, 5.0, 6.0]]");
-        handler.assertResponse(url + "test_mixed/eval", properties, 200,
-                "tensor(x{},y[3]):{a:[1.0, 2.0, 3.0], b:[4.0, 5.0, 6.0]}");
-        handler.assertResponse(url + "test_mixed_2/eval", properties, 200,
-                "tensor(a[2],b[2],c{},d[2]):{a:[[[1.0, 2.0], [3.0, 4.0]], [[5.0, 6.0], [7.0, 8.0]]], b:[[[1.0, 2.0], [3.0, 4.0]], [[5.0, 6.0], [7.0, 8.0]]]}");
+        handler.assertStringResponse(url + "test_mapped/eval", properties, 200,
+                                     "tensor(d0{}):{a:1.0, b:2.0}", Map.of());
+        handler.assertStringResponse(url + "test_indexed/eval", properties, 200,
+                                     "tensor(d0[2],d1[3]):[[1.0, 2.0, 3.0], [4.0, 5.0, 6.0]]", Map.of());
+        handler.assertStringResponse(url + "test_mixed/eval", properties, 200,
+                                     "tensor(x{},y[3]):{a:[1.0, 2.0, 3.0], b:[4.0, 5.0, 6.0]}", Map.of());
+        handler.assertStringResponse(url + "test_mixed_2/eval", properties, 200,
+                                     "tensor(a[2],b[2],c{},d[2]):{a:[[[1.0, 2.0], [3.0, 4.0]], [[5.0, 6.0], [7.0, 8.0]]], b:[[[1.0, 2.0], [3.0, 4.0]], [[5.0, 6.0], [7.0, 8.0]]]}", Map.of());
     }
 
     @Test

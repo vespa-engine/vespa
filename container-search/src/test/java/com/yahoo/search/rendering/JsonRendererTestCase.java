@@ -53,6 +53,7 @@ import com.yahoo.slime.Slime;
 import com.yahoo.tensor.Tensor;
 import com.yahoo.tensor.TensorType;
 import com.yahoo.tensor.serialization.TypedBinaryFormat;
+import com.yahoo.text.JSON;
 import com.yahoo.text.Utf8;
 import com.yahoo.yolean.Exceptions;
 import com.yahoo.yolean.trace.TraceNode;
@@ -156,37 +157,136 @@ public class JsonRendererTestCase {
         r.hits().add(h);
         r.setTotalHitCount(1L);
         String summary = render(r);
-        assertEqualJson(expected, summary);
+        assertEqualJsonContent(expected, summary);
     }
 
     @Test
     @Timeout(300)
-    void testTensorShortForm() throws ExecutionException, InterruptedException, IOException {
-        String expected = "{" +
-                "\"root\":{" +
-                "\"id\":\"toplevel\"," +
-                "\"relevance\":1.0," +
-                "\"fields\":{" +
-                "\"totalCount\":1" +
-                "}," +
-                "\"children\":[{" +
-                "\"id\":\"tensors\"," +
-                "\"relevance\":1.0," +
-                "\"fields\":{" +
-                "\"tensor_standard\":{\"type\":\"tensor(x{},y{})\",\"cells\":[{\"address\":{\"x\":\"a\",\"y\":\"0\"},\"value\":1.0},{\"address\":{\"x\":\"b\",\"y\":\"1\"},\"value\":2.0}]}," +
-                "\"tensor_indexed\":{\"type\":\"tensor(x[2],y[3])\",\"values\":[[1.0,2.0,3.0],[4.0,5.0,6.0]]}," +
-                "\"tensor_single_mapped\":{\"type\":\"tensor(x{})\",\"cells\":{\"a\":1.0,\"b\":2.0}}," +
-                "\"tensor_mixed\":{\"type\":\"tensor(x{},y[2])\",\"blocks\":{\"a\":[1.0,2.0],\"b\":[3.0,4.0]}}," +
-                "\"summaryfeatures\":{" +
-                "\"tensor_standard\":{\"type\":\"tensor(x{},y{})\",\"cells\":[{\"address\":{\"x\":\"a\",\"y\":\"0\"},\"value\":1.0},{\"address\":{\"x\":\"b\",\"y\":\"1\"},\"value\":2.0}]}," +
-                "\"tensor_indexed\":{\"type\":\"tensor(x[2],y[3])\",\"values\":[[1.0,2.0,3.0],[4.0,5.0,6.0]]}," +
-                "\"tensor_single_mapped\":{\"type\":\"tensor(x{})\",\"cells\":{\"a\":1.0,\"b\":2.0}}," +
-                "\"tensor_mixed\":{\"type\":\"tensor(x{},y[2])\",\"blocks\":{\"a\":[1.0,2.0],\"b\":[3.0,4.0]}}" +
-                "}" +
-                "}" +
-                "}]" +
-                "}}\n";
+    void testTensorRendering() throws ExecutionException, InterruptedException, IOException {
+        String shortJson = """
+                {
+                  "root": {
+                    "id":"toplevel",
+                    "relevance":1.0,
+                    "fields":{
+                      "totalCount":1
+                    },
+                    "children":[{
+                      "id":"tensors",
+                      "relevance":1.0,
+                      "fields":{
+                        "tensor_standard":{"type":"tensor(x{},y{})","cells":[{"address":{"x":"a","y":"0"},"value":1.0},{"address":{"x":"b","y":"1"},"value":2.0}]},
+                        "tensor_indexed":{"type":"tensor(x[2],y[3])","values":[[1.0,2.0,3.0],[4.0,5.0,6.0]]},
+                        "tensor_single_mapped":{"type":"tensor(x{})","cells":{"a":1.0,"b":2.0}},
+                        "tensor_mixed":{"type":"tensor(x{},y[2])","blocks":{"a":[1.0,2.0],"b":[3.0,4.0]}},
+                        "summaryfeatures":{
+                          "tensor_standard":{"type":"tensor(x{},y{})","cells":[{"address":{"x":"a","y":"0"},"value":1.0},{"address":{"x":"b","y":"1"},"value":2.0}]},
+                          "tensor_indexed":{"type":"tensor(x[2],y[3])","values":[[1.0,2.0,3.0],[4.0,5.0,6.0]]},
+                          "tensor_single_mapped":{"type":"tensor(x{})","cells":{"a":1.0,"b":2.0}},
+                          "tensor_mixed":{"type":"tensor(x{},y[2])","blocks":{"a":[1.0,2.0],"b":[3.0,4.0]}}
+                        }
+                      }
+                    }]
+                  }
+                }""";
 
+        String longJson = """
+                {
+                  "root": {
+                    "id":"toplevel",
+                    "relevance":1.0,
+                    "fields":{
+                      "totalCount":1
+                    },
+                    "children":[{
+                      "id":"tensors",
+                      "relevance":1.0,
+                      "fields":{
+                        "tensor_standard":{"type":"tensor(x{},y{})","cells":[{"address":{"x":"a","y":"0"},"value":1.0},{"address":{"x":"b","y":"1"},"value":2.0}]},
+                        "tensor_indexed":{"type":"tensor(x[2],y[3])","cells":[{"address":{"x":"0","y":"0"},"value":1.0},{"address":{"x":"0","y":"1"},"value":2.0},{"address":{"x":"0","y":"2"},"value":3.0},{"address":{"x":"1","y":"0"},"value":4.0},{"address":{"x":"1","y":"1"},"value":5.0},{"address":{"x":"1","y":"2"},"value":6.0}]},
+                        "tensor_single_mapped":{"type":"tensor(x{})","cells":[{"address":{"x":"a"},"value":1.0},{"address":{"x":"b"},"value":2.0}]},
+                        "tensor_mixed":{"type":"tensor(x{},y[2])","cells":[{"address":{"x":"a","y":"0"},"value":1.0},{"address":{"x":"a","y":"1"},"value":2.0},{"address":{"x":"b","y":"0"},"value":3.0},{"address":{"x":"b","y":"1"},"value":4.0}]},
+                        "summaryfeatures":{
+                          "tensor_standard":{"type":"tensor(x{},y{})","cells":[{"address":{"x":"a","y":"0"},"value":1.0},{"address":{"x":"b","y":"1"},"value":2.0}]},
+                          "tensor_indexed":{"type":"tensor(x[2],y[3])","cells":[{"address":{"x":"0","y":"0"},"value":1.0},{"address":{"x":"0","y":"1"},"value":2.0},{"address":{"x":"0","y":"2"},"value":3.0},{"address":{"x":"1","y":"0"},"value":4.0},{"address":{"x":"1","y":"1"},"value":5.0},{"address":{"x":"1","y":"2"},"value":6.0}]},
+                          "tensor_single_mapped":{"type":"tensor(x{})","cells":[{"address":{"x":"a"},"value":1.0},{"address":{"x":"b"},"value":2.0}]},
+                          "tensor_mixed":{"type":"tensor(x{},y[2])","cells":[{"address":{"x":"a","y":"0"},"value":1.0},{"address":{"x":"a","y":"1"},"value":2.0},{"address":{"x":"b","y":"0"},"value":3.0},{"address":{"x":"b","y":"1"},"value":4.0}]}
+                        }
+                      }
+                    }]
+                  }
+                }""";
+
+        String shortDirectJson = """
+                {
+                  "root": {
+                    "id":"toplevel",
+                    "relevance":1.0,
+                    "fields":{
+                      "totalCount":1
+                    },
+                    "children":[{
+                      "id":"tensors",
+                      "relevance":1.0,
+                      "fields":{
+                        "tensor_standard":[{"address":{"x":"a","y":"0"},"value":1.0},{"address":{"x":"b","y":"1"},"value":2.0}],
+                        "tensor_indexed":[[1.0,2.0,3.0],[4.0,5.0,6.0]],
+                        "tensor_single_mapped":{"a":1.0,"b":2.0},
+                        "tensor_mixed":{"a":[1.0,2.0],"b":[3.0,4.0]},
+                        "summaryfeatures":{
+                          "tensor_standard":[{"address":{"x":"a","y":"0"},"value":1.0},{"address":{"x":"b","y":"1"},"value":2.0}],
+                          "tensor_indexed":[[1.0,2.0,3.0],[4.0,5.0,6.0]],
+                          "tensor_single_mapped":{"a":1.0,"b":2.0},
+                          "tensor_mixed":{"a":[1.0,2.0],"b":[3.0,4.0]}
+                        }
+                      }
+                    }]
+                  }
+                }""";
+
+        String longDirectJson = """
+                {
+                  "root": {
+                    "id":"toplevel",
+                    "relevance":1.0,
+                    "fields":{
+                      "totalCount":1
+                    },
+                    "children":[{
+                      "id":"tensors",
+                      "relevance":1.0,
+                      "fields":{
+                        "tensor_standard":[{"address":{"x":"a","y":"0"},"value":1.0},{"address":{"x":"b","y":"1"},"value":2.0}],
+                        "tensor_indexed":[{"address":{"x":"0","y":"0"},"value":1.0},{"address":{"x":"0","y":"1"},"value":2.0},{"address":{"x":"0","y":"2"},"value":3.0},{"address":{"x":"1","y":"0"},"value":4.0},{"address":{"x":"1","y":"1"},"value":5.0},{"address":{"x":"1","y":"2"},"value":6.0}],
+                        "tensor_single_mapped":[{"address":{"x":"a"},"value":1.0},{"address":{"x":"b"},"value":2.0}],
+                        "tensor_mixed":[{"address":{"x":"a","y":"0"},"value":1.0},{"address":{"x":"a","y":"1"},"value":2.0},{"address":{"x":"b","y":"0"},"value":3.0},{"address":{"x":"b","y":"1"},"value":4.0}],
+                        "summaryfeatures":{
+                          "tensor_standard":[{"address":{"x":"a","y":"0"},"value":1.0},{"address":{"x":"b","y":"1"},"value":2.0}],
+                          "tensor_indexed":[{"address":{"x":"0","y":"0"},"value":1.0},{"address":{"x":"0","y":"1"},"value":2.0},{"address":{"x":"0","y":"2"},"value":3.0},{"address":{"x":"1","y":"0"},"value":4.0},{"address":{"x":"1","y":"1"},"value":5.0},{"address":{"x":"1","y":"2"},"value":6.0}],
+                          "tensor_single_mapped":[{"address":{"x":"a"},"value":1.0},{"address":{"x":"b"},"value":2.0}],
+                          "tensor_mixed":[{"address":{"x":"a","y":"0"},"value":1.0},{"address":{"x":"a","y":"1"},"value":2.0},{"address":{"x":"b","y":"0"},"value":3.0},{"address":{"x":"b","y":"1"},"value":4.0}]
+                        }
+                      }
+                    }]
+                  }
+                }""";
+
+        assertTensorRendering(shortJson, "short");
+        assertTensorRendering(longJson, "long");
+        assertTensorRendering(shortDirectJson, "short-value");
+        assertTensorRendering(longDirectJson, "long-value");
+
+        try {
+            render(new Result(new Query("/?presentation.format.tensors=unknown")));
+            fail("Expected exception");
+        }
+        catch (IllegalArgumentException e) {
+            assertEquals("Could not set 'presentation.format.tensors' to 'unknown': Value must be 'long', 'short', 'long-value', or 'short-value', not 'unknown'",
+                         Exceptions.toMessageString(e));
+        }
+    }
+
+    private void assertTensorRendering(String expected, String format) throws ExecutionException, InterruptedException, IOException {
         Slime slime = new Slime();
         Cursor features = slime.setObject();
         features.setData("tensor_standard", TypedBinaryFormat.encode(Tensor.from("tensor(x{},y{}):{ {x:a,y:0}:1.0, {x:b,y:1}:2.0 }")));
@@ -202,26 +302,16 @@ public class JsonRendererTestCase {
         h.setField("tensor_mixed", new TensorFieldValue(Tensor.from("tensor(x{},y[2]):{a:[1,2], b:[3,4]}")));
         h.setField("summaryfeatures", summaryFeatures);
 
-        Result result1 = new Result(new Query("/?presentation.format.tensors=short"));
+        Result result1 = new Result(new Query("/?presentation.format.tensors=" + format));
         result1.hits().add(h);
         result1.setTotalHitCount(1L);
-        String summary1 = render(result1);
-        assertEqualJson(expected, summary1);
+        assertEqualJson(expected, render(result1));
 
-        Result result2 = new Result(new Query("/?format.tensors=short"));
+        // Alias
+        Result result2 = new Result(new Query("/?format.tensors=" + format));
         result2.hits().add(h);
         result2.setTotalHitCount(1L);
-        String summary2 = render(result2);
-        assertEqualJson(expected, summary2);
-
-        try {
-            render(new Result(new Query("/?presentation.format.tensors=unknown")));
-            fail("Expected exception");
-        }
-        catch (IllegalArgumentException e) {
-            assertEquals("Could not set 'presentation.format.tensors' to 'unknown': Value must be 'long' or 'short', not 'unknown'",
-                    Exceptions.toMessageString(e));
-        }
+        assertEqualJson(expected, render(result2));
     }
 
     @Test
@@ -241,7 +331,7 @@ public class JsonRendererTestCase {
                 + "                    \"string\": \"stuff\","
                 + "                    \"predicate\": \"a in [b]\","
                 + "                    \"tensor1\": { \"type\": \"tensor(x{})\", \"cells\": { \"a\":2.0 } },"
-                + "                    \"tensor2\": { \"cells\": [] },"
+                + "                    \"tensor2\": { \"type\": \"tensor()\", \"values\":[0.0] },"
                 + "                    \"tensor3\": { \"type\": \"tensor(x{},y{})\", \"cells\": [ { \"address\": {\"x\": \"a\", \"y\": \"0\"}, \"value\":2.0 }, { \"address\": {\"x\": \"a\", \"y\": \"1\"}, \"value\":-1.0 } ] },"
                 + "                    \"summaryfeatures\": {"
                 + "                        \"scalar1\":1.5,"
@@ -281,7 +371,7 @@ public class JsonRendererTestCase {
         r.hits().add(h);
         r.setTotalHitCount(1L);
         String summary = render(r);
-        assertEqualJson(expected, summary);
+        assertEqualJsonContent(expected, summary);
     }
 
     private FeatureData createSummaryFeatures() {
@@ -349,7 +439,7 @@ public class JsonRendererTestCase {
         subQuery.trace("yellow", 1);
         q.trace("marker", 1);
         String summary = render(execution, r);
-        assertEqualJson(expected, summary);
+        assertEqualJsonContent(expected, summary);
     }
 
     @Test
@@ -415,7 +505,7 @@ public class JsonRendererTestCase {
         subQuery.trace(access, 1);
         q.trace("marker", 1);
         String summary = render(execution, r);
-        assertEqualJson(expected, summary);
+        assertEqualJsonContent(expected, summary);
     }
 
     @Test
@@ -441,7 +531,7 @@ public class JsonRendererTestCase {
         subQuery.trace("yellow", 1);
         q.trace("marker", 1);
         String summary = render(execution, r);
-        assertEqualJson(expected, summary);
+        assertEqualJsonContent(expected, summary);
     }
 
     @SuppressWarnings({"unchecked"})
@@ -562,7 +652,7 @@ public class JsonRendererTestCase {
         execution.trace().traceNode().add(child);
         q.trace("something", 1);
         String summary = render(execution, r);
-        assertEqualJson(expected, summary);
+        assertEqualJsonContent(expected, summary);
     }
 
     @Test
@@ -604,7 +694,7 @@ public class JsonRendererTestCase {
         execution.trace().traceNode().add(child);
         q.trace("something", 1);
         String summary = render(execution, r);
-        assertEqualJson(expected, summary);
+        assertEqualJsonContent(expected, summary);
     }
 
     @Test
@@ -653,7 +743,7 @@ public class JsonRendererTestCase {
         childOfChild.add(new TraceNode("in OO languages, nesting is for birds", 0L));
         execution.trace().traceNode().add(child);
         String summary = render(execution, r);
-        assertEqualJson(expected, summary);
+        assertEqualJsonContent(expected, summary);
     }
 
     @Test
@@ -741,7 +831,7 @@ public class JsonRendererTestCase {
         r.hits().add(gg);
         r.hits().addError(ErrorMessage.createInternalServerError("boom"));
         String summary = render(execution, r);
-        assertEqualJson(expected, summary);
+        assertEqualJsonContent(expected, summary);
     }
 
     @Test
@@ -776,7 +866,7 @@ public class JsonRendererTestCase {
         r.setCoverage(new Coverage(500, 600).setDegradedReason(5));
 
         String summary = render(execution, r);
-        assertEqualJson(expected, summary);
+        assertEqualJsonContent(expected, summary);
     }
 
     @Test
@@ -813,7 +903,7 @@ public class JsonRendererTestCase {
         r.hits().add(h);
         r.setTotalHitCount(1L);
         String summary = render(r);
-        assertEqualJson(expected, summary);
+        assertEqualJsonContent(expected, summary);
     }
 
     @Test
@@ -843,7 +933,7 @@ public class JsonRendererTestCase {
         r.hits().add(h);
         r.setTotalHitCount(1L);
         String summary = render(r);
-        assertEqualJson(expected, summary);
+        assertEqualJsonContent(expected, summary);
     }
 
     @Test
@@ -871,7 +961,7 @@ public class JsonRendererTestCase {
         r.hits().add(h);
         r.setTotalHitCount(1L);
         String summary = render(r);
-        assertEqualJson(expected, summary);
+        assertEqualJsonContent(expected, summary);
     }
 
     @Test
@@ -905,7 +995,7 @@ public class JsonRendererTestCase {
         ErrorMessage e = new ErrorMessage(1234, "hello", "top of the day", t);
         r.hits().addError(e);
         String summary = render(r);
-        assertEqualJson(expected, summary);
+        assertEqualJsonContent(expected, summary);
     }
 
     @Test
@@ -999,7 +1089,7 @@ public class JsonRendererTestCase {
         r.hits().add(rg);
         r.setTotalHitCount(1L);
         String summary = render(r);
-        assertEqualJson(expected, summary);
+        assertEqualJsonContent(expected, summary);
     }
 
     @Test
@@ -1063,7 +1153,7 @@ public class JsonRendererTestCase {
         r.hits().add(rg);
         r.setTotalHitCount(1L);
         String summary = render(r);
-        assertEqualJson(expected, summary);
+        assertEqualJsonContent(expected, summary);
     }
 
     @Test
@@ -1110,7 +1200,7 @@ public class JsonRendererTestCase {
         h.setField("json producer", struct);
         r.hits().add(h);
         String summary = render(r);
-        assertEqualJson(expected, summary);
+        assertEqualJsonContent(expected, summary);
     }
 
     @Test
@@ -1146,7 +1236,7 @@ public class JsonRendererTestCase {
         r.hits().add(h);
         r.setTotalHitCount(1L);
         String summary = render(r);
-        assertEqualJson(expected, summary);
+        assertEqualJsonContent(expected, summary);
     }
 
     @Test
@@ -1172,7 +1262,7 @@ public class JsonRendererTestCase {
         r.hits().add(h);
         r.setTotalHitCount(1L);
         String summary = render(r);
-        assertEqualJson(expected, summary);
+        assertEqualJsonContent(expected, summary);
     }
 
     @Test
@@ -1204,7 +1294,7 @@ public class JsonRendererTestCase {
         r.hits().add(h);
         r.setTotalHitCount(1L);
         String summary = render(r);
-        assertEqualJson(expected, summary);
+        assertEqualJsonContent(expected, summary);
     }
 
     @Test
@@ -1240,7 +1330,7 @@ public class JsonRendererTestCase {
         r.getElapsedTime().add(t);
         renderer.setTimeSource(() -> 8L);
         String summary = render(r);
-        assertEqualJson(expected, summary);
+        assertEqualJsonContent(expected, summary);
     }
 
     @Test
@@ -1278,7 +1368,7 @@ public class JsonRendererTestCase {
         String json = summary.substring(jsonCallback.length() + 1, summary.length() - 2);
 
         assertEquals(jsonCallback + "(", jsonCallbackBegin);
-        assertEqualJson(expected, json);
+        assertEqualJsonContent(expected, json);
         assertEquals(");", jsonCallbackEnd);
     }
 
@@ -1327,7 +1417,7 @@ public class JsonRendererTestCase {
         r.hits().add(h);
         r.setTotalHitCount(1L);
         String summary = render(r);
-        assertEqualJson(expected, summary);
+        assertEqualJsonContent(expected, summary);
     }
 
     private static SlimeAdapter dataFromSimplified(String simplified) {
@@ -1512,8 +1602,14 @@ public class JsonRendererTestCase {
         }
     }
 
+    private void assertEqualJson(String expected, String generated) {
+        assertEquals("", validateJSON(expected));
+        assertEquals("", validateJSON(generated));
+        assertEquals(JSON.canonical(expected), JSON.canonical(generated));
+    }
+
     @SuppressWarnings("unchecked")
-    private void assertEqualJson(String expected, String generated) throws IOException {
+    private void assertEqualJsonContent(String expected, String generated) throws IOException {
         assertEquals("", validateJSON(expected));
         assertEquals("", validateJSON(generated));
 

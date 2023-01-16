@@ -74,29 +74,19 @@ public class JsonSerializationHelper {
         }
     }
 
-    public static void serializeTensorFieldShortForm(JsonGenerator generator, FieldBase field, TensorFieldValue value) {
+    public static void serializeTensorField(JsonGenerator generator, FieldBase field, TensorFieldValue value,
+                                            boolean shortForm, boolean directValues) {
         wrapIOException(() -> {
             fieldNameIfNotNull(generator, field);
             if (value.getTensor().isPresent()) {
                 Tensor tensor = value.getTensor().get();
-                generator.writeRawValue(new String(JsonFormat.encodeShortForm(tensor), StandardCharsets.UTF_8));
-            } else {
+                byte[] encoded = JsonFormat.encode(tensor, shortForm, directValues);
+                generator.writeRawValue(new String(encoded, StandardCharsets.UTF_8));
+            }
+            else {
                 generator.writeStartObject();
                 generator.writeEndObject();
             }
-        });
-    }
-
-    public static void serializeTensorField(JsonGenerator generator, FieldBase field, TensorFieldValue value) {
-        wrapIOException(() -> {
-            fieldNameIfNotNull(generator, field);
-            generator.writeStartObject();
-
-            if (value.getTensor().isPresent()) {
-                Tensor tensor = value.getTensor().get();
-                serializeTensorCells(generator, tensor);
-            }
-            generator.writeEndObject();
         });
     }
 

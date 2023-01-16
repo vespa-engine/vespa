@@ -308,6 +308,7 @@ public class SimpleFeeder implements ReplyHandler {
                 return new DocumentUpdate(deserializer);
             }
         }
+
         @Override
         public FeedOperation read() throws Exception {
             int read = readExact(in, prefix);
@@ -352,8 +353,6 @@ public class SimpleFeeder implements ReplyHandler {
         return new JsonDestination(params.getDumpStream(), failure, numReplies);
     }
 
-
-    @SuppressWarnings("deprecation")
     SimpleFeeder(FeederParams params) {
         inputStreams = params.getInputStreams();
         out = params.getStdOut();

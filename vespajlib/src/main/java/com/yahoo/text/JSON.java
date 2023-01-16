@@ -75,4 +75,8 @@ public final class JSON {
         return leftSlime.equalTo(rightSlime);
     }
 
+    public static String canonical(String jsonString) {
+        return SlimeUtils.jsonToSlimeOrThrow(jsonString).toString();
+    }
+
 }

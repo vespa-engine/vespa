@@ -4,6 +4,8 @@ package com.yahoo.document.json.readers;
 import com.fasterxml.jackson.core.JsonToken;
 import com.yahoo.document.datatypes.TensorFieldValue;
 import com.yahoo.document.json.TokenBuffer;
+import com.yahoo.slime.Inspector;
+import com.yahoo.slime.Type;
 import com.yahoo.tensor.IndexedTensor;
 import com.yahoo.tensor.MixedTensor;
 import com.yahoo.tensor.Tensor;
@@ -22,6 +24,7 @@ import static com.yahoo.tensor.serialization.JsonFormat.decodeHexString;
  */
 public class TensorReader {
 
+    public static final String TENSOR_TYPE = "type";
     public static final String TENSOR_ADDRESS = "address";
     public static final String TENSOR_CELLS = "cells";
     public static final String TENSOR_VALUES = "values";
@@ -42,6 +45,9 @@ public class TensorReader {
             }
             else if (TENSOR_BLOCKS.equals(buffer.currentName())) {
                 readTensorBlocks(buffer, builder);
+            }
+            else if (TENSOR_TYPE.equals(buffer.currentName()) && buffer.current() == JsonToken.VALUE_STRING) {
+                // Ignore input tensor type
             }
             else {
                 buffer.previous(); // Back up to the start of the enclosing block
@@ -119,6 +125,7 @@ public class TensorReader {
         int index = 0;
         int initNesting = buffer.nesting();
         for (buffer.next(); buffer.nesting() >= initNesting; buffer.next()) {
+            if (buffer.current() == JsonToken.START_ARRAY || buffer.current() == JsonToken.END_ARRAY) continue; // nested arrays: Skip
             indexedBuilder.cellByDirectIndex(index++, readDouble(buffer));
         }
         if (index == 0)
@@ -178,12 +185,20 @@ public class TensorReader {
         boolean hasIndexed = builder.type().dimensions().stream().anyMatch(TensorType.Dimension::isIndexed);
         boolean hasMapped = builder.type().dimensions().stream().anyMatch(TensorType.Dimension::isMapped);
 
-        if ( ! hasMapped)
+        if (isArrayOfObjects(buffer, 0))
+            readTensorCells(buffer, builder);
+        else if ( ! hasMapped)
             readTensorValues(buffer, builder);
         else if (hasMapped && hasIndexed)
             readTensorBlocks(buffer, builder);
         else
             readTensorCells(buffer, builder);
+    }
+
+    private static boolean isArrayOfObjects(TokenBuffer buffer, int ahead) {
+        if (buffer.peek(ahead++) != JsonToken.START_ARRAY) return false;
+        if (buffer.peek(ahead) == JsonToken.START_ARRAY) return isArrayOfObjects(buffer, ahead); // nested array
+        return buffer.peek(ahead) == JsonToken.START_OBJECT;
     }
 
     private static TensorAddress readAddress(TokenBuffer buffer, TensorType type) {

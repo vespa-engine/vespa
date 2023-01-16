@@ -77,6 +77,9 @@ public class Presentation implements Cloneable {
     /** Whether to renders tensors in short form */
     private boolean tensorShortForm = true;
 
+    /** Whether to renders tensors in short form */
+    private boolean tensorDirectValues = false; // TODO: Flip default on Vespa 9
+
     /** Set of explicitly requested summary fields, instead of summary classes */
     private Set<String> summaryFields = LazySet.newHashSet();
 
@@ -178,32 +181,59 @@ public class Presentation implements Cloneable {
 
     /**
      * Returns whether tensors should use short form in JSON and textual representations, see
-     * <a href="https://docs.vespa.ai/en/reference/document-json-format.html#tensor">https://docs.vespa.ai/en/reference/document-json-format.html#tensor</a>
-     * and <a href="https://docs.vespa.ai/en/reference/tensor.html#tensor-literal-form">https://docs.vespa.ai/en/reference/tensor.html#tensor-literal-form</a>.
+     * <a href="https://docs.vespa.ai/en/reference/document-json-format.html#tensor">https://docs.vespa.ai/en/reference/document-json-format.html#tensor</a>.
      * Default is true.
      */
     public boolean getTensorShortForm() { return tensorShortForm; }
 
+    /** @deprecated use setTensorFormat(). */
+    @Deprecated // TODO: Remove on Vespa 9
+    public void setTensorShortForm(String value) {
+        setTensorFormat(value);
+    }
     /**
      * Sets whether tensors should use short form in JSON and textual representations from a string.
      *
      * @param value a string which must be either 'short' or 'long'
      * @throws IllegalArgumentException if any other value is passed
      */
-    public void setTensorShortForm(String value) {
-        tensorShortForm = toTensorShortForm(value);
-    }
-
-    private boolean toTensorShortForm(String value) {
+    public void setTensorFormat(String value) {
         switch (value) {
-            case "short": return true;
-            case "long": return false;
-            default: throw new IllegalArgumentException("Value must be 'long' or 'short', not '" + value + "'");
-        }
+            case "short" :
+                tensorShortForm = true;
+                tensorDirectValues = false;
+                break;
+            case "long" :
+                tensorShortForm = false;
+                tensorDirectValues = false;
+                break;
+            case "short-value" :
+                tensorShortForm = true;
+                tensorDirectValues = true;
+                break;
+            case "long-value" :
+                tensorShortForm = false;
+                tensorDirectValues = true;
+                break;
+            default : throw new IllegalArgumentException("Value must be 'long', 'short', 'long-value', or 'short-value', not '" + value + "'");
+        };
     }
 
     public void setTensorShortForm(boolean tensorShortForm) {
         this.tensorShortForm = tensorShortForm;
+    }
+
+    /**
+     * Returns whether tensor content should be rendered directly, or inside a JSON object containing a
+     * "type" entry having the tensor type, and a "cells"/"values"/"blocks" entry (depending on type),
+     * having the tensor content. See
+     * <a href="https://docs.vespa.ai/en/reference/document-json-format.html#tensor">https://docs.vespa.ai/en/reference/document-json-format.html#tensor</a>.
+     * Default is false: Render wrapped in a JSON object.
+     */
+    public boolean getTensorDirectValues() { return tensorDirectValues; }
+
+    public void setTensorDirectValues(boolean tensorDirectValues) {
+        this.tensorDirectValues = tensorDirectValues;
     }
 
     /** Prepares this for binary serialization. For internal use - see {@link Query#prepare} */
@@ -214,8 +244,7 @@ public class Presentation implements Cloneable {
 
     @Override
     public boolean equals(Object o) {
-        if ( ! (o instanceof Presentation)) return false;
-        Presentation p = (Presentation) o;
+        if ( ! (o instanceof Presentation p)) return false;
         return QueryHelper.equals(bolding, p.bolding) && QueryHelper.equals(summary, p.summary);
     }
 

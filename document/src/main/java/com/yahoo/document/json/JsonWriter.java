@@ -63,7 +63,6 @@ import static com.yahoo.document.json.JsonSerializationHelper.serializeStringFie
 import static com.yahoo.document.json.JsonSerializationHelper.serializeStructField;
 import static com.yahoo.document.json.JsonSerializationHelper.serializeStructuredField;
 import static com.yahoo.document.json.JsonSerializationHelper.serializeTensorField;
-import static com.yahoo.document.json.JsonSerializationHelper.serializeTensorFieldShortForm;
 import static com.yahoo.document.json.JsonSerializationHelper.serializeWeightedSet;
 import static com.yahoo.document.json.document.DocumentParser.FIELDS;
 import static com.yahoo.document.json.document.DocumentParser.REMOVE;
@@ -79,22 +78,36 @@ public class JsonWriter implements DocumentWriter {
     private final JsonGenerator generator;
 
     private final boolean tensorShortForm;
+    private final boolean tensorDirectValues;
 
-    // I really hate exception unsafe constructors, but the alternative
-    // requires generator to not be a final
     /**
+     * Creates a JsonWriter.
      *
-     * @param out
-     *            the target output stream
-     * @throws RuntimeException
-     *             if unable to create the internal JSON generator
+     * @param out the target output stream
+     * @throws RuntimeException if unable to create the internal JSON generator
      */
     public JsonWriter(OutputStream out) {
         this(createPrivateGenerator(out));
     }
 
-    public JsonWriter(OutputStream out, boolean tensorShortForm) {
-        this(createPrivateGenerator(out), tensorShortForm);
+    public JsonWriter(OutputStream out, boolean tensorShortForm, boolean tensorDirectValues) {
+        this(createPrivateGenerator(out), tensorShortForm, tensorDirectValues);
+    }
+
+    /**
+     * Create a Document writer which will write to the input JSON generator.
+     * JsonWriter will not close the generator and only flush it explicitly
+     * after having written a full Document instance. In other words, JsonWriter
+     * will <i>not</i> take ownership of the generator.
+     *
+     * @param generator the output JSON generator
+     * @param tensorShortForm whether to use the short type-dependent form for tensor values
+     * @param tensorDirectValues whether to output tensor values directly or wrapped in a map also containing the type
+     */
+    public JsonWriter(JsonGenerator generator, boolean tensorShortForm, boolean tensorDirectValues) {
+        this.generator = generator;
+        this.tensorShortForm = tensorShortForm;
+        this.tensorDirectValues = tensorDirectValues;
     }
 
     private static JsonGenerator createPrivateGenerator(OutputStream out) {
@@ -105,22 +118,8 @@ public class JsonWriter implements DocumentWriter {
         }
     }
 
-    /**
-     * Create a Document writer which will write to the input JSON generator.
-     * JsonWriter will not close the generator and only flush it explicitly
-     * after having written a full Document instance. In other words, JsonWriter
-     * will <i>not</i> take ownership of the generator.
-     *
-     * @param generator
-     *            the output JSON generator
-     */
     public JsonWriter(JsonGenerator generator) {
-        this(generator, false);
-    }
-
-    public JsonWriter(JsonGenerator generator, boolean tensorShortForm) {
-        this.generator = generator;
-        this.tensorShortForm = tensorShortForm;
+        this(generator, false, false);
     }
 
     /**
@@ -129,8 +128,7 @@ public class JsonWriter implements DocumentWriter {
      * updating this class. This implementation throws an exception if it is
      * reached.
      *
-     * @throws UnsupportedOperationException
-     *             if invoked
+     * @throws UnsupportedOperationException if invoked
      */
     @Override
     public void write(FieldBase field, FieldValue value) {
@@ -218,11 +216,7 @@ public class JsonWriter implements DocumentWriter {
 
     @Override
     public void write(FieldBase field, TensorFieldValue value) {
-        if (tensorShortForm) {
-            serializeTensorFieldShortForm(generator, field, value);
-        } else {
-            serializeTensorField(generator, field, value);
-        }
+        serializeTensorField(generator, field, value, tensorShortForm, tensorDirectValues);
     }
 
     @Override
@@ -270,12 +264,14 @@ public class JsonWriter implements DocumentWriter {
      * Utility method to easily serialize a single document.
      *
      * @param document the document to be serialized
-     * @param tensorShortForm whether tensors should be serialized in short form
+     * @param tensorShortForm whether tensors should be serialized in a type-dependent short form
+     * @param tensorDirectValues whether tensors should be serialized as direct values or wrapped in a
+     *                           map also containing the type
      * @return the input document serialised as UTF-8 encoded JSON
      */
-    public static byte[] toByteArray(Document document, boolean tensorShortForm) {
+    public static byte[] toByteArray(Document document, boolean tensorShortForm, boolean tensorDirectValues) {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
-        JsonWriter writer = new JsonWriter(out, tensorShortForm);
+        JsonWriter writer = new JsonWriter(out, tensorShortForm, tensorDirectValues);
         writer.write(document);
         return out.toByteArray();
     }
@@ -287,8 +283,8 @@ public class JsonWriter implements DocumentWriter {
      * @return the input document serialised as UTF-8 encoded JSON
      */
     public static byte[] toByteArray(Document document) {
-        // TODO Vespa 9: change tensorShortForm default to true
-        return toByteArray(document, false);
+        // TODO Vespa 9: change tensorShortForm and tensorDirectValues default to true
+        return toByteArray(document, false, false);
     }
 
     /**

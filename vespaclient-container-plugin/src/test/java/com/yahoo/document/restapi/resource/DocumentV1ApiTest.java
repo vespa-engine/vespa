@@ -521,16 +521,66 @@ public class DocumentV1ApiTest {
             parameters.responseHandler().get().handleResponse(new DocumentResponse(0, doc1));
             return new Result();
         });
-        response = driver.sendRequest("http://localhost/document/v1/space/music/docid/one?format.tensors=long");
-        assertSameJson("{" +
-                       "  \"pathId\": \"/document/v1/space/music/docid/one\"," +
-                       "  \"id\": \"id:space:music::one\"," +
-                       "  \"fields\": {" +
-                       "    \"artist\": \"Tom Waits\"," +
-                       "    \"embedding\": { \"cells\": [{\"address\":{\"x\":\"0\"},\"value\":1.0},{\"address\":{\"x\":\"1\"},\"value\": 2.0},{\"address\":{\"x\":\"2\"},\"value\": 3.0}]}" +
-                       "  }" +
-                       "}", response.readAll());
+        // -- short tensors
+        response = driver.sendRequest("http://localhost/document/v1/space/music/docid/one?format.tensors=short");
+        String shortJson =
+                """
+                {
+                  "pathId": "/document/v1/space/music/docid/one",
+                  "id": "id:space:music::one",
+                  "fields": {
+                    "artist": "Tom Waits",
+                    "embedding": { "type": "tensor(x[3])","values": [1.0, 2.0, 3.0]}
+                  }
+                }
+               """;
         assertEquals(200, response.getStatus());
+        assertSameJson(shortJson, response.readAll());
+        // -- long tensors
+        response = driver.sendRequest("http://localhost/document/v1/space/music/docid/one?format.tensors=long");
+        String longJson =
+                """
+                {
+                  "pathId": "/document/v1/space/music/docid/one",
+                  "id": "id:space:music::one",
+                  "fields": {
+                    "artist": "Tom Waits",
+                    "embedding": { "type": "tensor(x[3])","cells": [{"address":{"x":"0"},"value":1.0},{"address":{"x":"1"},"value": 2.0},{"address":{"x":"2"},"value": 3.0}]}
+                  }
+                }
+               """;
+        assertEquals(200, response.getStatus());
+        assertSameJson(longJson, response.readAll());
+        // -- short direct tensors
+        response = driver.sendRequest("http://localhost/document/v1/space/music/docid/one?format.tensors=short-value");
+        String shortDirectJson =
+                """
+                {
+                  "pathId": "/document/v1/space/music/docid/one",
+                  "id": "id:space:music::one",
+                  "fields": {
+                    "artist": "Tom Waits",
+                    "embedding": [1.0, 2.0, 3.0]}
+                  }
+                }
+               """;
+        assertEquals(200, response.getStatus());
+        assertSameJson(shortDirectJson, response.readAll());
+        // -- long direct tensors
+        response = driver.sendRequest("http://localhost/document/v1/space/music/docid/one?format.tensors=long-value");
+        String longDirectJson =
+                """
+                {
+                  "pathId": "/document/v1/space/music/docid/one",
+                  "id": "id:space:music::one",
+                  "fields": {
+                    "artist": "Tom Waits",
+                    "embedding": [{"address":{"x":"0"},"value":1.0},{"address":{"x":"1"},"value": 2.0},{"address":{"x":"2"},"value": 3.0}]
+                  }
+                }
+               """;
+        assertEquals(200, response.getStatus());
+        assertSameJson(longDirectJson, response.readAll());
 
         // GET with not encoded / in user specified part of document id is perfectly OK ... щ(ಥДಥщ)
         access.session.expect((id, parameters) -> {
