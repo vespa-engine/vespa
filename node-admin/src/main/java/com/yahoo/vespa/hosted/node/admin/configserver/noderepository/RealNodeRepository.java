@@ -91,12 +91,6 @@ public class RealNodeRepository implements NodeRepository {
                         GetAclResponse.Port::getTrustedBy,
                         Collectors.mapping(port -> port.port, Collectors.toSet())));
 
-        // Group UDP ports by container hostname that trusts them
-        Map<String, Set<Integer>> trustedUdpPorts = response.trustedUdpPorts.stream()
-                .collect(Collectors.groupingBy(
-                        GetAclResponse.Port::getTrustedBy,
-                        Collectors.mapping(port -> port.port, Collectors.toSet())));
-
         // Group node ip-addresses by container hostname that trusts them
         Map<String, Set<Acl.Node>> trustedNodes = response.trustedNodes.stream()
                 .collect(Collectors.groupingBy(
@@ -112,14 +106,12 @@ public class RealNodeRepository implements NodeRepository {
 
 
         // For each hostname create an ACL
-        return Stream.of(trustedNodes.keySet(), trustedPorts.keySet(), trustedUdpPorts.keySet(), trustedNetworks.keySet())
+        return Stream.of(trustedNodes.keySet(), trustedPorts.keySet(), trustedNetworks.keySet())
                      .flatMap(Set::stream)
                      .distinct()
                      .collect(Collectors.toMap(
                              Function.identity(),
-                             hostname -> new Acl(trustedPorts.get(hostname),
-                                                 trustedUdpPorts.get(hostname),
-                                                 trustedNodes.get(hostname),
+                             hostname -> new Acl(trustedPorts.get(hostname), trustedNodes.get(hostname),
                                                  trustedNetworks.get(hostname))));
     }
 

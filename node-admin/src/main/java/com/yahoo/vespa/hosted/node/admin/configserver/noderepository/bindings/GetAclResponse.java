@@ -24,18 +24,13 @@ public class GetAclResponse {
     @JsonProperty("trustedPorts")
     public final List<Port> trustedPorts;
 
-    @JsonProperty("trustedUdpPorts")
-    public final List<Port> trustedUdpPorts;
-
     @JsonCreator
     public GetAclResponse(@JsonProperty("trustedNodes") List<Node> trustedNodes,
                           @JsonProperty("trustedNetworks") List<Network> trustedNetworks,
-                          @JsonProperty("trustedPorts") List<Port> trustedPorts,
-                          @JsonProperty("trustedUdpPorts") List<Port> trustedUdpPorts) {
+                          @JsonProperty("trustedPorts") List<Port> trustedPorts) {
         this.trustedNodes = trustedNodes == null ? List.of() : List.copyOf(trustedNodes);
         this.trustedNetworks = trustedNetworks == null ? List.of() : List.copyOf(trustedNetworks);
         this.trustedPorts = trustedPorts == null ? List.of() : List.copyOf(trustedPorts);
-        this.trustedUdpPorts = trustedUdpPorts == null ? List.of() : List.copyOf(trustedUdpPorts);
     }
 
     @JsonIgnoreProperties(ignoreUnknown = true)

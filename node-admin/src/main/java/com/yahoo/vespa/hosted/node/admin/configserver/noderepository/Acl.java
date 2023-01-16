@@ -23,28 +23,25 @@ import java.util.stream.Collectors;
  */
 public class Acl {
 
-    public static final Acl EMPTY = new Acl(Set.of(), Set.of(), Set.of(), Set.of());
+    public static final Acl EMPTY = new Acl(Set.of(), Set.of(), Set.of());
 
     private final Set<Node> trustedNodes;
     private final Set<Integer> trustedPorts;
-    private final Set<Integer> trustedUdpPorts;
     private final Set<String> trustedNetworks;
 
     /**
-     * @param trustedPorts TCP Ports to trust
-     * @param trustedUdpPorts UDP ports to trust
+     * @param trustedPorts Ports to trust
      * @param trustedNodes Nodes to trust
      * @param trustedNetworks Networks (in CIDR notation) to trust
      */
-    public Acl(Set<Integer> trustedPorts, Set<Integer> trustedUdpPorts, Set<Node> trustedNodes, Set<String> trustedNetworks) {
+    public Acl(Set<Integer> trustedPorts, Set<Node> trustedNodes, Set<String> trustedNetworks) {
         this.trustedNodes = copyOfNullable(trustedNodes);
         this.trustedPorts = copyOfNullable(trustedPorts);
-        this.trustedUdpPorts = copyOfNullable(trustedUdpPorts);
         this.trustedNetworks = copyOfNullable(trustedNetworks);
     }
 
     public Acl(Set<Integer> trustedPorts, Set<Node> trustedNodes) {
-        this(trustedPorts, Set.of(), trustedNodes, Set.of());
+        this(trustedPorts, trustedNodes, Set.of());
     }
 
     public List<String> toRules(IPVersion ipVersion) {
@@ -67,11 +64,6 @@ public class Acl {
         // Allow trusted ports if any
         if (!trustedPorts.isEmpty()) {
             rules.add("-A INPUT -p tcp -m multiport --dports " + joinPorts(trustedPorts) + " -j ACCEPT");
-        }
-
-        // Allow trusted UDP ports if any
-        if (!trustedUdpPorts.isEmpty()) {
-            rules.add("-A INPUT -p udp -m multiport --dports " + joinPorts(trustedUdpPorts) + " -j ACCEPT");
         }
 
         // Allow traffic from trusted nodes, limited to specific ports, if any
@@ -121,8 +113,8 @@ public class Acl {
         return trustedPorts;
     }
 
-    public Set<Integer> getTrustedUdpPorts() {
-        return trustedUdpPorts;
+    public Set<Integer> getTrustedPorts(IPVersion ipVersion) {
+        return trustedPorts;
     }
 
     @Override
@@ -132,13 +124,12 @@ public class Acl {
         Acl acl = (Acl) o;
         return trustedNodes.equals(acl.trustedNodes) &&
                trustedPorts.equals(acl.trustedPorts) &&
-               trustedUdpPorts.equals(acl.trustedUdpPorts) &&
                trustedNetworks.equals(acl.trustedNetworks);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(trustedNodes, trustedPorts, trustedUdpPorts, trustedNetworks);
+        return Objects.hash(trustedNodes, trustedPorts, trustedNetworks);
     }
 
     @Override
@@ -146,7 +137,6 @@ public class Acl {
         return "Acl{" +
                "trustedNodes=" + trustedNodes +
                ", trustedPorts=" + trustedPorts +
-               ", trustedUdpPorts=" + trustedUdpPorts +
                ", trustedNetworks=" + trustedNetworks +
                '}';
     }
@@ -185,7 +175,6 @@ public class Acl {
 
         private final Set<Node> trustedNodes = new HashSet<>();
         private final Set<Integer> trustedPorts = new HashSet<>();
-        private final Set<Integer> trustedUdpPorts = new HashSet<>();
         private final Set<String> trustedNetworks = new HashSet<>();
 
         public Builder() { }
@@ -218,18 +207,13 @@ public class Acl {
             return this;
         }
 
-        public Builder withTrustedUdpPorts(Integer... ports) {
-            trustedUdpPorts.addAll(List.of(ports));
-            return this;
-        }
-
         public Builder withTrustedNetworks(Set<String> networks) {
             trustedNetworks.addAll(networks);
             return this;
         }
 
         public Acl build() {
-            return new Acl(trustedPorts, trustedUdpPorts, trustedNodes, trustedNetworks);
+            return new Acl(trustedPorts, trustedNodes, trustedNetworks);
         }
     }
 
