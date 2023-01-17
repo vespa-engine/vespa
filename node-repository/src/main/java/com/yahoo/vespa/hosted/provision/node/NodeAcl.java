@@ -32,11 +32,12 @@ public record NodeAcl(Node node,
     private static final Set<Integer> RPC_PORTS = Set.of(19070);
     private static final int WIREGUARD_PORT = 51820;
 
-    public NodeAcl {
-        Objects.requireNonNull(node, "node must be non-null");
-        ImmutableSet.copyOf(Objects.requireNonNull(trustedNodes, "trustedNodes must be non-null"));
-        ImmutableSet.copyOf(Objects.requireNonNull(trustedNetworks, "trustedNetworks must be non-null"));
-        ImmutableSet.copyOf(Objects.requireNonNull(trustedPorts, "trustedPorts must be non-null"));
+    public NodeAcl(Node node, Set<TrustedNode> trustedNodes, Set<String> trustedNetworks, Set<Integer> trustedPorts, Set<Integer> trustedUdpPorts) {
+        this.node = Objects.requireNonNull(node, "node must be non-null");
+        this.trustedNodes = ImmutableSet.copyOf(Objects.requireNonNull(trustedNodes, "trustedNodes must be non-null"));
+        this.trustedNetworks = ImmutableSet.copyOf(Objects.requireNonNull(trustedNetworks, "trustedNetworks must be non-null"));
+        this.trustedPorts = ImmutableSet.copyOf(Objects.requireNonNull(trustedPorts, "trustedPorts must be non-null"));
+        this.trustedUdpPorts = ImmutableSet.copyOf(Objects.requireNonNull(trustedUdpPorts, "trustedUdpPorts must be non-null"));
     }
 
     public static NodeAcl from(Node node, NodeList allNodes, LoadBalancers loadBalancers) {
