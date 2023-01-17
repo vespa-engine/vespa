@@ -30,9 +30,7 @@ LLParser::LLParser()
     snprintf(_defPid, 10, "%d", (int)getpid());
 }
 
-LLParser::~LLParser()
-{
-}
+LLParser::~LLParser() = default;
 
 const char LLParser::_hexdigit[17] = "0123456789abcdef";
 
