@@ -115,8 +115,6 @@ public class VespaMetricSet {
     private static Set<Metric> getContainerMetrics() {
         Set<Metric> metrics = new LinkedHashSet<>();
 
-        addMetric(metrics, "jdisc.http.requests", List.of("rate", "count"));
-
         addMetric(metrics, ContainerMetrics.HANDLED_REQUESTS.count());
         addMetric(metrics, ContainerMetrics.HANDLED_LATENCY.baseName(), List.of("max", "sum", "count"));
         
@@ -179,28 +177,25 @@ public class VespaMetricSet {
         addMetric(metrics, ContainerMetrics.MEM_NATIVE_FREE.average());
         addMetric(metrics, ContainerMetrics.MEM_NATIVE_USED.average());
                 
-        metrics.add(new Metric("jdisc.memory_mappings.max"));
-        metrics.add(new Metric("jdisc.open_file_descriptors.max"));
+        addMetric(metrics, ContainerMetrics.JDISC_MEMORY_MAPPINGS.max());
+        addMetric(metrics, ContainerMetrics.JDISC_OPEN_FILE_DESCRIPTORS.max());
 
         addMetric(metrics, ContainerMetrics.JDISC_GC_COUNT.baseName(), List.of("average", "max", "last"));
         addMetric(metrics, ContainerMetrics.JDISC_GC_MS.baseName(), List.of("average", "max", "last"));
 
-        metrics.add(new Metric("jdisc.deactivated_containers.total.last"));
-        metrics.add(new Metric("jdisc.deactivated_containers.with_retained_refs.last"));
+        addMetric(metrics, ContainerMetrics.JDISC_DEACTIVATED_CONTAINERS.last());
+        addMetric(metrics, ContainerMetrics.JDISC_DEACTIVATED_CONTAINERS_WITH_RETAINED_REFS.last());
 
-        metrics.add(new Metric("jdisc.singleton.is_active.last"));
-        metrics.add(new Metric("jdisc.singleton.activation.count.last"));
-        metrics.add(new Metric("jdisc.singleton.activation.failure.count.last"));
-        metrics.add(new Metric("jdisc.singleton.activation.millis.last"));
-        metrics.add(new Metric("jdisc.singleton.deactivation.count.last"));
-        metrics.add(new Metric("jdisc.singleton.deactivation.failure.count.last"));
-        metrics.add(new Metric("jdisc.singleton.deactivation.millis.last"));
+        addMetric(metrics, ContainerMetrics.JDISC_SINGLETON_IS_ACTIVE.last());
+        addMetric(metrics, ContainerMetrics.JDISC_SINGLETON_ACTIVATION_COUNT.last());
+        addMetric(metrics, ContainerMetrics.JDISC_SINGLETON_ACTIVATION_FAILURE_COUNT.last());
+        addMetric(metrics, ContainerMetrics.JDISC_SINGLETON_ACTIVATION_MILLIS.last());
+        addMetric(metrics, ContainerMetrics.JDISC_SINGLETON_DEACTIVATION_COUNT.last());
+        addMetric(metrics, ContainerMetrics.JDISC_SINGLETON_DEACTIVATION_FAILURE_COUNT.last());
+        addMetric(metrics, ContainerMetrics.JDISC_SINGLETON_DEACTIVATION_MILLIS.last());
 
         metrics.add(new Metric("athenz-tenant-cert.expiry.seconds.last"));
         metrics.add(new Metric("container-iam-role.expiry.seconds"));
-
-        metrics.add(new Metric("jdisc.http.request.prematurely_closed.rate"));
-        addMetric(metrics, "jdisc.http.request.requests_per_connection", List.of("sum", "count", "min", "max", "average"));
 
         metrics.add(new Metric(ContainerMetrics.HTTP_STATUS_1XX.rate()));
         metrics.add(new Metric(ContainerMetrics.HTTP_STATUS_2XX.rate()));
@@ -208,39 +203,38 @@ public class VespaMetricSet {
         metrics.add(new Metric(ContainerMetrics.HTTP_STATUS_4XX.rate()));
         metrics.add(new Metric(ContainerMetrics.HTTP_STATUS_5XX.rate()));
 
-        metrics.add(new Metric("jdisc.http.request.uri_length.max"));
-        metrics.add(new Metric("jdisc.http.request.uri_length.sum"));
-        metrics.add(new Metric("jdisc.http.request.uri_length.count"));
-        metrics.add(new Metric("jdisc.http.request.content_size.max"));
-        metrics.add(new Metric("jdisc.http.request.content_size.sum"));
-        metrics.add(new Metric("jdisc.http.request.content_size.count"));
+        addMetric(metrics, ContainerMetrics.JDISC_HTTP_REQUEST_PREMATURELY_CLOSED.rate());
+        addMetric(metrics, ContainerMetrics.JDISC_HTTP_REQUEST_REQUESTS_PER_CONNECTION.baseName(), List.of("sum", "count", "min", "max", "average"));
+        addMetric(metrics, ContainerMetrics.JDISC_HTTP_REQUEST_URI_LENGTH.baseName(), List.of("sum", "count", "max"));
+        addMetric(metrics, ContainerMetrics.JDISC_HTTP_REQUEST_CONTENT_SIZE.baseName(), List.of("sum", "count", "max"));
+        addMetric(metrics, ContainerMetrics.JDISC_HTTP_REQUESTS.baseName(), List.of("rate", "count"));
 
-        metrics.add(new Metric("jdisc.http.ssl.handshake.failure.missing_client_cert.rate"));
-        metrics.add(new Metric("jdisc.http.ssl.handshake.failure.expired_client_cert.rate"));
-        metrics.add(new Metric("jdisc.http.ssl.handshake.failure.invalid_client_cert.rate"));
-        metrics.add(new Metric("jdisc.http.ssl.handshake.failure.incompatible_protocols.rate"));
-        metrics.add(new Metric("jdisc.http.ssl.handshake.failure.incompatible_ciphers.rate"));
-        metrics.add(new Metric("jdisc.http.ssl.handshake.failure.unknown.rate"));
-        metrics.add(new Metric("jdisc.http.ssl.handshake.failure.connection_closed.rate"));
+        addMetric(metrics, ContainerMetrics.JDISC_HTTP_SSL_HANDSHAKE_FAILURE_MISSING_CLIENT_CERT.rate());
+        addMetric(metrics, ContainerMetrics.JDISC_HTTP_SSL_HANDSHAKE_FAILURE_EXPIRED_CLIENT_CERT.rate());
+        addMetric(metrics, ContainerMetrics.JDISC_HTTP_SSL_HANDSHAKE_FAILURE_INVALID_CLIENT_CERT.rate());
+        addMetric(metrics, ContainerMetrics.JDISC_HTTP_SSL_HANDSHAKE_FAILURE_INCOMPATIBLE_PROTOCOLS.rate());
+        addMetric(metrics, ContainerMetrics.JDISC_HTTP_SSL_HANDSHAKE_FAILURE_INCOMPATIBLE_CHIFERS.rate());
+        addMetric(metrics, ContainerMetrics.JDISC_HTTP_SSL_HANDSHAKE_FAILURE_CONNECTION_CLOSED.rate());
+        addMetric(metrics, ContainerMetrics.JDISC_HTTP_SSL_HANDSHAKE_FAILURE_UNKNOWN.rate());
 
-        metrics.add(new Metric("jdisc.http.handler.unhandled_exceptions.rate"));
+        addMetric(metrics, ContainerMetrics.JDISC_HTTP_FILTER_RULE_BLOCKED_REQUESTS.rate());
+        addMetric(metrics, ContainerMetrics.JDISC_HTTP_FILTER_RULE_ALLOWED_REQUESTS.rate());
+        addMetric(metrics, ContainerMetrics.JDISC_HTTP_FILTERING_REQUEST_HANDLED.rate());
+        addMetric(metrics, ContainerMetrics.JDISC_HTTP_FILTERING_REQUEST_UNHANDLED.rate());
+        addMetric(metrics, ContainerMetrics.JDISC_HTTP_FILTERING_RESPONSE_HANDLED.rate());
+        addMetric(metrics, ContainerMetrics.JDISC_HTTP_FILTERING_RESPONSE_UNHANDLED.rate());
 
-        addMetric(metrics, "jdisc.http.filtering.request.handled", List.of("rate"));
-        addMetric(metrics, "jdisc.http.filtering.request.unhandled", List.of("rate"));
-        addMetric(metrics, "jdisc.http.filtering.response.handled", List.of("rate"));
-        addMetric(metrics, "jdisc.http.filtering.response.unhandled", List.of("rate"));
+        addMetric(metrics, ContainerMetrics.JDISC_HTTP_HANDLER_UNHANDLED_EXCEPTIONS.rate());
 
-        addMetric(metrics, "jdisc.application.failed_component_graphs", List.of("rate"));
+        addMetric(metrics, ContainerMetrics.JDISC_APPLICATION_FAILED_COMPONENT_GRAPHS.rate());
 
-        addMetric(metrics, "jdisc.http.filter.rule.blocked_requests", List.of("rate"));
-        addMetric(metrics, "jdisc.http.filter.rule.allowed_requests", List.of("rate"));
-        addMetric(metrics, "jdisc.jvm", List.of("last"));
+        addMetric(metrics, ContainerMetrics.JDISC_JVM.last());
 
         return metrics;
     }
 
     private static Set<Metric> getClusterControllerMetrics() {
-        Set<Metric> metrics =new LinkedHashSet<>();
+        Set<Metric> metrics = new LinkedHashSet<>();
 
         metrics.add(new Metric("cluster-controller.down.count.last"));
         metrics.add(new Metric("cluster-controller.initializing.count.last"));
