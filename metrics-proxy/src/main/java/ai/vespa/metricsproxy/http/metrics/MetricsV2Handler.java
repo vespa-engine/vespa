@@ -30,7 +30,6 @@ import static ai.vespa.metricsproxy.metric.model.json.GenericJsonUtil.toGenericA
 import static ai.vespa.metricsproxy.metric.model.processing.MetricsProcessor.applyProcessors;
 import static com.yahoo.jdisc.Response.Status.INTERNAL_SERVER_ERROR;
 import static com.yahoo.jdisc.Response.Status.OK;
-import static java.util.Collections.singletonMap;
 
 /**
  * Http handler for the metrics/v2 rest api.
@@ -72,7 +71,7 @@ public class MetricsV2Handler  extends HttpHandlerBase {
                                                           new PublicDimensionsProcessor(MAX_DIMENSIONS));
 
             Node localNode = new Node(nodeInfoConfig.role(), nodeInfoConfig.hostname(), 0, "");
-            Map<Node, List<MetricsPacket>> metricsByNode = singletonMap(localNode, metrics);
+            Map<Node, List<MetricsPacket>> metricsByNode = Map.of(localNode, metrics);
             return new JsonResponse(OK, toGenericApplicationModel(metricsByNode).serialize());
         } catch (Exception e) {
             log.log(Level.WARNING, "Got exception when rendering metrics:", e);
