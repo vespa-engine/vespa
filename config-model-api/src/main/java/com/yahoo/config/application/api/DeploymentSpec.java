@@ -150,6 +150,10 @@ public class DeploymentSpec {
                     illegal(prefix + "targets undeclared region '" + target.region() +
                             "' in instance '" + target.instance() + "'");
                 }
+                if (instance.get().zoneEndpoint(ZoneId.from(Environment.prod, target.region()), ClusterSpec.Id.from(endpoint.containerId()))
+                            .map(zoneEndpoint -> ! zoneEndpoint.isPublicEndpoint()).orElse(false))
+                    illegal(prefix + "targets '" + target.region().value() + "' in '" + target.instance().value() +
+                            "', but its zone endpoint has 'enabled' set to 'false'");
             }
         }
     }

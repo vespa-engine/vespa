@@ -46,6 +46,7 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
@@ -56,6 +57,8 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Stream;
+
+import static java.util.Comparator.comparingInt;
 
 /**
  * @author bratseth
@@ -149,7 +152,7 @@ public class DeploymentSpecXmlReader {
                     steps.addAll(readNonInstanceSteps(child, new HashMap<>(), root)); // (No global service id here)
                 }
             }
-             readEndpoints(root, Optional.empty(), steps, applicationEndpoints, Map.of());
+            readEndpoints(root, Optional.empty(), steps, applicationEndpoints, Map.of());
         }
 
         return new DeploymentSpec(steps,
@@ -325,7 +328,9 @@ public class DeploymentSpecXmlReader {
         Endpoint.Level level = instance.isEmpty() ? Endpoint.Level.application : Endpoint.Level.instance;
         Map<String, Endpoint> endpointsById = new LinkedHashMap<>();
         Map<String, Map<RegionName, List<ZoneEndpoint>>> endpointsByZone = new LinkedHashMap<>();
-        for (var endpointElement : XML.getChildren(endpointsElement, endpointTag)) {
+        XML.getChildren(endpointsElement, endpointTag).stream() // Read zone settings first.
+                .sorted(comparingInt(endpoint -> getZoneEndpointType(endpoint, level).isPresent() ? 0 : 1))
+                .forEach(endpointElement -> {
             String containerId = requireStringAttribute("container-id", endpointElement);
             Optional<String> endpointId = stringAttribute("id", endpointElement);
             Optional<String> zoneEndpointType = getZoneEndpointType(endpointElement, level);
@@ -392,8 +397,16 @@ public class DeploymentSpecXmlReader {
                 Set<RegionName> regions = new LinkedHashSet<>();
                 for (var regionElement : XML.getChildren(endpointElement, "region")) {
                     String region = regionElement.getTextContent();
-                    if (region == null || region.isBlank()) illegal(msgPrefix + "empty 'region' element");
-                    if ( ! regions.add(RegionName.from(region))) illegal(msgPrefix + "duplicate 'region' element: '" + region + "'");
+                    if (region == null || region.isBlank())
+                        illegal(msgPrefix + "empty 'region' element");
+                    if (   zoneEndpointType.isEmpty()
+                        && Stream.of(RegionName.from(region), null)
+                                 .map(endpointsByZone.getOrDefault(containerId, new HashMap<>())::get)
+                                 .flatMap(maybeEndpoints -> maybeEndpoints == null ? Stream.empty() : maybeEndpoints.stream())
+                                 .anyMatch(endpoint -> ! endpoint.isPublicEndpoint()))
+                        illegal(msgPrefix + "targets zone endpoint in '" + region + "' with 'enabled' set to 'false'");
+                    if ( ! regions.add(RegionName.from(region)))
+                        illegal(msgPrefix + "duplicate 'region' element: '" + region + "'");
                 }
 
                 if (zoneEndpointType.isPresent()) {
@@ -409,13 +422,22 @@ public class DeploymentSpecXmlReader {
                 }
                 else {
                     if (regions.isEmpty()) {
-                        // No explicit targets given for instance level endpoint. Include all declared regions by default
-                        steps.stream()
-                             .filter(step -> step.concerns(Environment.prod))
-                             .flatMap(step -> step.zones().stream())
-                             .flatMap(zone -> zone.region().stream())
-                             .forEach(regions::add);
+                        // No explicit targets given for instance level endpoint. Include all declared, enabled regions by default
+                        List<RegionName> declared =
+                                steps.stream()
+                                     .filter(step -> step.concerns(Environment.prod))
+                                     .flatMap(step -> step.zones().stream())
+                                     .flatMap(zone -> zone.region().stream())
+                                     .toList();
+                        if (declared.isEmpty()) illegal(msgPrefix + "no declared regions to target");
+
+                        declared.stream().filter(region -> Stream.of(region, null)
+                                                                 .map(endpointsByZone.getOrDefault(containerId, new HashMap<>())::get)
+                                                                 .flatMap(maybeEndpoints -> maybeEndpoints == null ? Stream.empty() : maybeEndpoints.stream())
+                                                                 .allMatch(ZoneEndpoint::isPublicEndpoint))
+                                .forEach(regions::add);
                     }
+                    if (regions.isEmpty()) illegal(msgPrefix + "all eligible zone endpoints have 'enabled' set to 'false'");
                     InstanceName instanceName = instance.map(InstanceName::from).get();
                     for (RegionName region : regions) targets.add(new Target(region, instanceName, 1));
                 }
@@ -428,7 +450,7 @@ public class DeploymentSpecXmlReader {
                 }
                 endpointsById.put(endpoint.endpointId(), endpoint);
             }
-        }
+        });
         endpoints.addAll(endpointsById.values());
         validateAndConsolidate(endpointsByZone, zoneEndpoints);
     }

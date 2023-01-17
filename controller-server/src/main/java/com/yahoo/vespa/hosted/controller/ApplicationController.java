@@ -947,7 +947,7 @@ public class ApplicationController {
         // Either the user is member of the domain admin role, or is given the "launch" privilege on the service.
         Optional<AthenzUser> athenzUser = getUser(deployer);
         if (athenzUser.isPresent()) {
-            // We only need to validate the root and instance in deployment.xml. Not possible to add dev or perf tags to deployment.xml
+            // We only need to validate the root and instance in deployment.xml. Dev/perf entries are found at the instance level as well.
             var zone = zoneId.orElseThrow(() -> new IllegalArgumentException("Unable to evaluate access, no zone provided in deployment"));
             var serviceToLaunch = instanceName
                     .flatMap(instance -> applicationPackage.deploymentSpec().instance(instance))
@@ -955,7 +955,7 @@ public class ApplicationController {
                     .or(() -> applicationPackage.deploymentSpec().athenzService())
                     .map(service -> new AthenzService(identityDomain.get(), service.value()));
 
-            if(serviceToLaunch.isPresent()) {
+            if (serviceToLaunch.isPresent()) {
                 if (
                         ! ((AthenzFacade) accessControl).canLaunch(athenzUser.get(), serviceToLaunch.get()) && // launch privilege
                         ! ((AthenzFacade) accessControl).hasTenantAdminAccess(athenzUser.get(), identityDomain.get()) // tenant admin

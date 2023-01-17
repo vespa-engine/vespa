@@ -1348,7 +1348,7 @@ public class DeploymentSpecTest {
                                                    <endpoint id="foo" container-id="bar">
                                                       <region>us-east</region>
                                                    </endpoint>
-                                                   <endpoint container-id="bar" type='zone' enabled='false'>
+                                                   <endpoint container-id="bar" type='private'>
                                                       <region>us-east</region>
                                                    </endpoint>
                                                    <endpoint id="nalle" container-id="frosk" />
@@ -1361,7 +1361,7 @@ public class DeploymentSpecTest {
         assertEquals(Set.of("us-east"), endpointRegions("foo", spec));
         assertEquals(Set.of("us-east", "us-west"), endpointRegions("nalle", spec));
         assertEquals(Set.of("us-east", "us-west"), endpointRegions("default", spec));
-        assertEquals(new ZoneEndpoint(false, false, List.of()),
+        assertEquals(new ZoneEndpoint(true, true, List.of()),
                      spec.zoneEndpoint(InstanceName.from("default"), from("prod", "us-east"), ClusterSpec.Id.from("bar")));
         assertEquals(new ZoneEndpoint(true, false, List.of()),
                      spec.zoneEndpoint(InstanceName.from("default"), from("prod", "us-west"), ClusterSpec.Id.from("bar")));
@@ -1432,6 +1432,71 @@ public class DeploymentSpecTest {
         assertInvalid(String.format(xmlForm, "region='us-west-1'", "weight='0'", "", "main", ""), "Application-level endpoint 'foo': sum of all weights must be positive, got 0");
         assertInvalid(String.format(xmlForm, "type='zone'", "weight='1'", "", "main", ""), "Endpoints at application level cannot be of type 'zone'");
         assertInvalid(String.format(xmlForm, "type='private'", "weight='1'", "", "main", ""), "Endpoints at application level cannot be of type 'private'");
+    }
+
+    @Test
+    public void cannotTargetDisabledEndpoints() {
+        assertEquals("Instance-level endpoint 'default': all eligible zone endpoints have 'enabled' set to 'false'",
+                     assertThrows(IllegalArgumentException.class,
+                                  () -> DeploymentSpec.fromXml("""
+                                                               <deployment>
+                                                                 <instance id="default">
+                                                                   <prod>
+                                                                     <region>us</region>
+                                                                     <region>eu</region>
+                                                                   </prod>
+                                                                   <endpoints>
+                                                                     <endpoint container-id='id' />
+                                                                     <endpoint type='zone' container-id='id' enabled='false' />
+                                                                   </endpoints>
+                                                                 </instance>
+                                                               </deployment>
+                                                               """))
+                             .getMessage());
+
+        assertEquals("Instance-level endpoint 'default': targets zone endpoint in 'us' with 'enabled' set to 'false'",
+                     assertThrows(IllegalArgumentException.class,
+                                  () -> DeploymentSpec.fromXml("""
+                                                               <deployment>
+                                                                 <instance id="default">
+                                                                   <prod>
+                                                                     <region>us</region>
+                                                                     <region>eu</region>
+                                                                   </prod>
+                                                                   <endpoints>
+                                                                     <endpoint container-id='id'>
+                                                                       <region>us</region>
+                                                                     </endpoint>
+                                                                     <endpoint type='zone' container-id='id' enabled='false' />
+                                                                   </endpoints>
+                                                                 </instance>
+                                                               </deployment>
+                                                               """))
+                             .getMessage());
+
+        assertEquals("Application-level endpoint 'default': targets 'us' in 'default', but its zone endpoint has 'enabled' set to 'false'",
+                     assertThrows(IllegalArgumentException.class,
+                                  () -> DeploymentSpec.fromXml("""
+                                                               <deployment>
+                                                                 <instance id="default">
+                                                                   <prod>
+                                                                     <region>us</region>
+                                                                     <region>eu</region>
+                                                                   </prod>
+                                                                   <endpoints>
+                                                                     <endpoint type='zone' container-id='id' enabled='false'>
+                                                                       <region>us</region>
+                                                                     </endpoint>
+                                                                   </endpoints>
+                                                                 </instance>
+                                                                 <endpoints>
+                                                                   <endpoint container-id='id' region='us'>
+                                                                     <instance weight='1'>default</instance>
+                                                                   </endpoint>
+                                                                 </endpoints>
+                                                               </deployment>
+                                                               """))
+                             .getMessage());
     }
 
     @Test
