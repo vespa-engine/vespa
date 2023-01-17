@@ -66,7 +66,7 @@ HnswIndexLoader<ReaderType, type>::load_next()
         _graph.trim_nodes_size();
         auto entry_levels_ref = _graph.get_levels_ref(_entry_nodeid);
         _graph.set_entry_node({_entry_nodeid, entry_levels_ref, _entry_level});
-        _id_mapping.on_load(_graph.nodes.make_read_view(_graph.nodes.size()));
+        _id_mapping.on_load(_graph.nodes.make_read_view(_graph.size()));
         _complete = true;
         return false;
     }
