@@ -194,14 +194,14 @@ public class VespaMetricSet {
         addMetric(metrics, ContainerMetrics.JDISC_SINGLETON_DEACTIVATION_FAILURE_COUNT.last());
         addMetric(metrics, ContainerMetrics.JDISC_SINGLETON_DEACTIVATION_MILLIS.last());
 
-        metrics.add(new Metric("athenz-tenant-cert.expiry.seconds.last"));
-        metrics.add(new Metric("container-iam-role.expiry.seconds"));
+        addMetric(metrics, ContainerMetrics.ATHENZ_TENANT_CERT_EXPIRY_SECONDS.last());
+        addMetric(metrics, ContainerMetrics.CONTAINER_IAM_ROLE_EXPIRY_SECONDS.baseName());
 
-        metrics.add(new Metric(ContainerMetrics.HTTP_STATUS_1XX.rate()));
-        metrics.add(new Metric(ContainerMetrics.HTTP_STATUS_2XX.rate()));
-        metrics.add(new Metric(ContainerMetrics.HTTP_STATUS_3XX.rate()));
-        metrics.add(new Metric(ContainerMetrics.HTTP_STATUS_4XX.rate()));
-        metrics.add(new Metric(ContainerMetrics.HTTP_STATUS_5XX.rate()));
+        addMetric(metrics, ContainerMetrics.HTTP_STATUS_1XX.rate());
+        addMetric(metrics, ContainerMetrics.HTTP_STATUS_2XX.rate());
+        addMetric(metrics, ContainerMetrics.HTTP_STATUS_3XX.rate());
+        addMetric(metrics, ContainerMetrics.HTTP_STATUS_4XX.rate());
+        addMetric(metrics, ContainerMetrics.HTTP_STATUS_5XX.rate());
 
         addMetric(metrics, ContainerMetrics.JDISC_HTTP_REQUEST_PREMATURELY_CLOSED.rate());
         addMetric(metrics, ContainerMetrics.JDISC_HTTP_REQUEST_REQUESTS_PER_CONNECTION.baseName(), List.of("sum", "count", "min", "max", "average"));
