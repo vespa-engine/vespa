@@ -7,12 +7,13 @@ import com.yahoo.document.predicate.FeatureSet;
 import com.yahoo.document.predicate.Negation;
 import com.yahoo.document.predicate.Predicate;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 import static java.util.stream.Collectors.groupingBy;
 import static java.util.stream.Collectors.reducing;
-import static java.util.stream.Collectors.toList;
 
 /**
  * Simplifies Disjunction nodes where all children are of type FeatureSet. All FeatureSet that share the same key
@@ -28,19 +29,16 @@ public class OrSimplifier implements PredicateProcessor {
     }
 
     public Predicate simplifyTree(Predicate predicate) {
-        if (predicate instanceof Disjunction) {
-            Disjunction disjunction = (Disjunction) predicate;
+        if (predicate instanceof Disjunction disjunction) {
             List<Predicate> newChildren =
-                    disjunction.getOperands().stream().map(this::simplifyTree).collect(toList());
+                    disjunction.getOperands().stream().map(this::simplifyTree).toList();
             return compressFeatureSets(newChildren);
-        } else if (predicate instanceof Negation) {
-            Negation negation = (Negation) predicate;
+        } else if (predicate instanceof Negation negation) {
             negation.setOperand(simplifyTree(negation.getOperand()));
             return negation;
-        } else if (predicate instanceof Conjunction) {
-            Conjunction conjunction = (Conjunction) predicate;
+        } else if (predicate instanceof Conjunction conjunction) {
             List<Predicate> newChildren =
-                    conjunction.getOperands().stream().map(this::simplifyTree).collect(toList());
+                    conjunction.getOperands().stream().map(this::simplifyTree).toList();
             conjunction.setOperands(newChildren);
             return conjunction;
         } else {
@@ -50,7 +48,7 @@ public class OrSimplifier implements PredicateProcessor {
 
     // Groups and merges the feature sets based on key.
     private static Predicate compressFeatureSets(List<Predicate> children) {
-        List<Predicate> newChildren = children.stream().filter(p -> !(p instanceof FeatureSet)).collect(toList());
+        List<Predicate> newChildren = children.stream().filter(p -> !(p instanceof FeatureSet)).collect(Collectors.toCollection(ArrayList::new));
         children.stream()
                 .filter(FeatureSet.class::isInstance)
                 .map(FeatureSet.class::cast)

@@ -52,7 +52,6 @@ import static com.yahoo.vespa.config.server.deploy.DeployTester.CountingModelFac
 import static com.yahoo.vespa.config.server.deploy.DeployTester.createFailingModelFactory;
 import static com.yahoo.vespa.config.server.deploy.DeployTester.createHostedModelFactory;
 import static com.yahoo.yolean.Exceptions.uncheck;
-import static java.util.stream.Collectors.toList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertThrows;
@@ -529,7 +528,7 @@ public class HostedDeployTest {
     private List<Host> createHosts(int count, String ... versions) {
         return IntStream.rangeClosed(1, count)
                         .mapToObj(i -> createHost("host" + i, versions[Math.min(i, versions.length) - 1]))
-                        .collect(toList());
+                        .toList();
     }
 
     private Host createHost(String hostname, String version) {

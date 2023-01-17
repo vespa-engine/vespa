@@ -49,7 +49,6 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import static com.yahoo.vespa.orchestrator.controller.ClusterControllerNodeState.MAINTENANCE;
-import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toSet;
 
 /**
@@ -141,7 +140,7 @@ public class OrchestratorImpl implements Orchestrator {
                 .serviceClusters().stream()
                 .flatMap(cluster -> cluster.serviceInstances().stream())
                 .filter(serviceInstance -> hostName.equals(serviceInstance.hostName()))
-                .collect(toList());
+                .toList();
 
         HostInfo hostInfo = statusService.getHostInfo(applicationInstance.reference(), hostName);
 
@@ -365,7 +364,7 @@ public class OrchestratorImpl implements Orchestrator {
 
         return nodeGroupMap.values().stream()
                 .sorted(OrchestratorImpl::compareNodeGroupsForSuspend)
-                .collect(toList());
+                .toList();
     }
 
     private static int compareNodeGroupsForSuspend(NodeGroup leftNodeGroup, NodeGroup rightNodeGroup) {
@@ -418,7 +417,7 @@ public class OrchestratorImpl implements Orchestrator {
 
             List<ServiceCluster> contentClusters = application.serviceClusters().stream()
                                                               .filter(VespaModelUtil::isContent)
-                                                              .collect(toList());
+                                                              .toList();
 
             // For all content clusters, probe whether maintenance is OK.
             OrchestratorContext context = OrchestratorContext.createContextForBatchProbe(clock);

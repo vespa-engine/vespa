@@ -14,7 +14,6 @@ import com.yahoo.embedding.huggingface.HuggingFaceEmbedderConfig;
 import java.io.*;
 import java.nio.file.Paths;
 import java.util.*;
-import java.util.stream.Collectors;
 
 import org.slf4j.LoggerFactory;
 import org.slf4j.Logger;
@@ -87,7 +86,7 @@ public class HuggingFaceEmbedder implements Embedder {
     public List<Integer> longToInteger(long[] values) {
         return Arrays.stream(values)
                 .boxed().map(Long::intValue)
-                .collect(Collectors.toList());
+                .toList();
     }
 
     @Override

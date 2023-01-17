@@ -10,8 +10,6 @@ import java.time.Instant;
 import java.util.List;
 import java.util.logging.Level;
 
-import static java.util.stream.Collectors.toList;
-
 /**
  * Utility class for serialization of log requests and responses.
  *
@@ -26,7 +24,7 @@ class ProtobufSerialization {
             LogProtocol.LogRequest logRequest = LogProtocol.LogRequest.parseFrom(logRequestPayload);
             return logRequest.getLogMessagesList().stream()
                 .map(ProtobufSerialization::fromLogRequest)
-                .collect(toList());
+                .toList();
         } catch (InvalidProtocolBufferException e) {
             throw new IllegalArgumentException("Unable to parse log request: " + e.getMessage(), e);
         }
