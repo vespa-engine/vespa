@@ -23,7 +23,8 @@ public enum Unit {
     RESPONSE_PER_SECOND(BaseUnit.RESPONSE, BaseUnit.SECOND),
     SCORE(BaseUnit.SCORE),
     SECOND(BaseUnit.SECOND),
-    THREAD(BaseUnit.THREAD);
+    THREAD(BaseUnit.THREAD),
+    VERSION(BaseUnit.VERSION);
 
 
     private final BaseUnit unit;
@@ -65,7 +66,8 @@ public enum Unit {
         RESPONSE("response"),
         SCORE("score"),
         SECOND("second", "s"),
-        THREAD("thread");
+        THREAD("thread"),
+        VERSION("version");
 
         private final String fullName;
         private final String shortName;
