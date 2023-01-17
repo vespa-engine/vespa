@@ -120,10 +120,11 @@ public class ZoneEndpoint {
 
         @Override
         public String toString() {
-            return "AllowedUrn{" +
-                   "type=" + type +
-                   ", urn='" + urn + '\'' +
-                   '}';
+            return "'" + urn + "' through '" +
+                   switch (type) {
+                       case awsPrivateLink -> "aws-private-link";
+                       case gcpServiceConnect -> "gcp-service-connect";
+                   } + "'";
         }
 
     }

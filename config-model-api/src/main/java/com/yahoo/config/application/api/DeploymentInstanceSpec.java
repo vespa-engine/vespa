@@ -269,7 +269,16 @@ public class DeploymentInstanceSpec extends DeploymentSpec.Steps {
     }
 
     /** Returns the zone endpoint data for this instance. */
-    Map<ClusterSpec.Id, Map<ZoneId, ZoneEndpoint>> zoneEndpoints() { return zoneEndpoints; }
+    Map<ClusterSpec.Id, Map<ZoneId, ZoneEndpoint>> zoneEndpoints() {
+        return zoneEndpoints;
+    }
+
+    /** The zone endpoints in the given zone, possibly default values. */
+    public Map<ClusterSpec.Id, ZoneEndpoint> zoneEndpoints(ZoneId zone) {
+        return zoneEndpoints.keySet().stream()
+                            .collect(Collectors.toMap(cluster -> cluster,
+                                                      cluster -> zoneEndpoint(zone, cluster).orElse(ZoneEndpoint.defaultEndpoint)));
+    }
 
     @Override
     public boolean equals(Object o) {
