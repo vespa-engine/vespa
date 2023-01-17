@@ -13,7 +13,7 @@ public enum ContainerMetrics {
 
     JDISC_GC_COUNT("jdisc.gc.count", Unit.OPERATION, "Number of JVM garbage collections done"),
     JDISC_GC_MS("jdisc.gc.ms", Unit.MILLISECOND, "Time spent in JVM garbage collection"),
-    JDISC_JVM("jdisc.jvm", Unit.ITEM, "Unspecified: jdisc.JVM"),
+    JDISC_JVM("jdisc.jvm", Unit.VERSION, "JVM runtime version"),
     JDISC_MEMORY_MAPPINGS("jdisc.memory_mappings", Unit.OPERATION, "JDISC Memory mappings"),
     JDISC_OPEN_FILE_DESCRIPTORS("jdisc.open_file_descriptors.max", Unit.ITEM, "JDISC Open file descriptors"),
 
