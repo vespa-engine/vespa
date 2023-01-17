@@ -7,7 +7,6 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 
 import static com.yahoo.container.jdisc.JdiscBindingsConfig.Handlers;
-import static java.util.stream.Collectors.toList;
 
 /**
  * @author gjoranv
@@ -34,6 +33,6 @@ public class DiscBindingsConfigGenerator {
     }
 
     private static Collection<String> toStrings(Collection<BindingPattern> bindings) {
-        return bindings.stream().map(BindingPattern::patternString).collect(toList());
+        return bindings.stream().map(BindingPattern::patternString).toList();
     }
 }

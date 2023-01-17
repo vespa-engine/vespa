@@ -54,7 +54,7 @@ public class ConfigChangeTestUtils {
         return services.stream()
                 .map(service -> new ServiceInfo(service.getServiceName(), "null", null, null,
                         service.getConfigId(), "null"))
-                .collect(Collectors.toList());
+                .toList();
     }
 
     public static void assertEqualActions(List<ConfigChangeAction> exp, List<ConfigChangeAction> act) {

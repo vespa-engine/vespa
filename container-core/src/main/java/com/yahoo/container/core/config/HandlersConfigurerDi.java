@@ -143,7 +143,7 @@ public class HandlersConfigurerDi {
             return activeBundles.stream()
                     .filter(bundle -> bundle.symbolicName().equals(bundleSpec.getName()))
                     .map(BsnVersion::version)
-                    .collect(Collectors.toList());
+                    .toList();
         }
     }
 

@@ -19,8 +19,6 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 
-import static java.util.stream.Collectors.toList;
-
 /**
  * @author Einar M R Rosenvinge
  * @author mortent
@@ -76,7 +74,7 @@ public class JettyConnectorBuilder extends VespaDomBuilder.DomConfigProducerBuil
                              Arrays.stream(element.split(","))
                                      .filter(listEntry -> !listEntry.isBlank())
                                      .map(String::trim)
-                                     .collect(toList()))
+                                     .toList())
                 .orElse(List.of());
     }
 }

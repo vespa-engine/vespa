@@ -94,7 +94,7 @@ public class IndexedSearchClusterChangeValidator implements ChangeValidator {
     private static List<ServiceInfo> getSearchNodeServices(IndexedSearchCluster cluster) {
         return cluster.getSearchNodes().stream().
                 map(node -> node.getServiceInfo()).
-                collect(Collectors.toList());
+                toList();
     }
 
     private static List<ConfigChangeAction> modifyActions(List<VespaConfigChangeAction> result,

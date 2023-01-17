@@ -26,7 +26,6 @@ import static ai.vespa.validation.Validation.requireInRange;
 import static com.yahoo.config.application.api.DeploymentSpec.RevisionChange.whenClear;
 import static com.yahoo.config.application.api.DeploymentSpec.RevisionTarget.next;
 import static com.yahoo.config.provision.Environment.prod;
-import static java.util.stream.Collectors.toList;
 
 /**
  * The deployment spec for an application instance

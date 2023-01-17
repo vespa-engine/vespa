@@ -25,8 +25,6 @@ import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Logger;
 
-import static java.util.stream.Collectors.toList;
-
 /**
  * Monitor various resource constraints and throttles new connections once a threshold is exceeded.
  * Implementation inspired by Jetty's {@link LowResourceMonitor}, {@link AcceptRateLimit} and {@link ConnectionLimit}.
@@ -133,7 +131,7 @@ class ConnectionThrottler extends ContainerLifeCycle implements SelectorManager.
                     .map(ResourceLimit::isThresholdExceeded)
                     .filter(Optional::isPresent)
                     .map(Optional::get)
-                    .collect(toList());
+                    .toList();
         }
     }
 

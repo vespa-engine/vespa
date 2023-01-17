@@ -14,8 +14,6 @@ import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 
-import static java.util.stream.Collectors.toList;
-
 /**
  * A RFC 6265 compliant cookie.
  *
@@ -194,7 +192,7 @@ public class Cookie {
                     cookie.setHttpOnly(servletCookie.isHttpOnly());
                     return cookie;
                 })
-                .collect(toList());
+                .toList();
     }
 
     public static List<String> toSetCookieHeaders(Iterable<? extends Cookie> cookies) {
@@ -212,7 +210,7 @@ public class Cookie {
                                      0, /* version */
                                      Optional.ofNullable(cookie.getSameSite()).map(SameSite::jettySameSite).orElse(null)
                              ).getRFC6265SetCookie())
-                .collect(toList());
+                .toList();
     }
 
     public static Cookie fromSetCookieHeader(String headerVal) {

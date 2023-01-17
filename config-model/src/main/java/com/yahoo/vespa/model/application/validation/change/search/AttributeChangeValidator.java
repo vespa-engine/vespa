@@ -69,7 +69,7 @@ public class AttributeChangeValidator {
 
     private List<VespaConfigChangeAction> validateAddAttributeAspect() {
         return nextFields.attributes().stream().
-                map(attr -> attr.getName()).
+                map(Attribute::getName).
                 filter(attrName -> !currentFields.containsAttribute(attrName) &&
                                    currentDocType.containsField(attrName)).
                 map(attrName -> new VespaRestartAction(id, new ChangeMessageBuilder(attrName).addChange("add attribute aspect").build())).
@@ -78,7 +78,7 @@ public class AttributeChangeValidator {
 
     private List<VespaConfigChangeAction> validateRemoveAttributeAspect() {
         return currentFields.attributes().stream().
-                map(attr -> attr.getName()).
+                map(Attribute::getName).
                 filter(attrName -> !nextFields.containsAttribute(attrName) &&
                                    nextDocType.containsField(attrName) &&
                                    !isIndexField(attrName)).

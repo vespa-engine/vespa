@@ -8,6 +8,7 @@ import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.documentmodel.NewDocumentType;
 import com.yahoo.schema.derived.AttributeFields;
 import com.yahoo.schema.document.Attribute;
+import com.yahoo.vespa.model.AbstractService;
 import com.yahoo.vespa.model.VespaModel;
 import com.yahoo.vespa.model.application.validation.change.search.ChangeMessageBuilder;
 import com.yahoo.vespa.model.application.validation.change.search.DocumentTypeChangeValidator;
@@ -36,10 +37,8 @@ public class StreamingSearchClusterChangeValidator implements ChangeValidator {
                 List<StreamingSearchCluster> nextStreamingClusters = nextCluster.getSearch().getStreamingClusters();
                 currentCluster.getSearch().getStreamingClusters().forEach(currentStreamingCluster -> {
                     Optional<StreamingSearchCluster> nextStreamingCluster = findStreamingCluster(currentStreamingCluster.getClusterName(), nextStreamingClusters);
-                    if (nextStreamingCluster.isPresent()) {
-                        result.addAll(validateStreamingCluster(currentCluster, currentStreamingCluster,
-                                nextCluster, nextStreamingCluster.get(), overrides, now));
-                    }
+                    nextStreamingCluster.ifPresent(streamingSearchCluster -> result.addAll(validateStreamingCluster(currentCluster, currentStreamingCluster,
+                            nextCluster, streamingSearchCluster)));
                 });
             }
         });
@@ -55,14 +54,12 @@ public class StreamingSearchClusterChangeValidator implements ChangeValidator {
     private static List<ConfigChangeAction> validateStreamingCluster(ContentCluster currentCluster,
                                                                      StreamingSearchCluster currentStreamingCluster,
                                                                      ContentCluster nextCluster,
-                                                                     StreamingSearchCluster nextStreamingCluster,
-                                                                     ValidationOverrides overrides,
-                                                                     Instant now) {
+                                                                     StreamingSearchCluster nextStreamingCluster) {
         List<VespaConfigChangeAction> result = new ArrayList<>();
 
         result.addAll(validateDocumentTypeChanges(currentCluster.id(),
                                                   getDocumentType(currentCluster, currentStreamingCluster),
-                                                  getDocumentType(nextCluster, nextStreamingCluster), overrides, now));
+                                                  getDocumentType(nextCluster, nextStreamingCluster)));
         result.addAll(validateAttributeFastAccessAdded(currentCluster.id(),
                                                        currentStreamingCluster.derived().getAttributeFields(),
                                                        nextStreamingCluster.derived().getAttributeFields()));
@@ -75,9 +72,7 @@ public class StreamingSearchClusterChangeValidator implements ChangeValidator {
 
     private static List<VespaConfigChangeAction> validateDocumentTypeChanges(ClusterSpec.Id id,
                                                                              NewDocumentType currentDocType,
-                                                                             NewDocumentType nextDocType,
-                                                                             ValidationOverrides overrides,
-                                                                             Instant now) {
+                                                                             NewDocumentType nextDocType) {
         return new DocumentTypeChangeValidator(id, currentDocType, nextDocType).validate();
     }
 
@@ -115,8 +110,8 @@ public class StreamingSearchClusterChangeValidator implements ChangeValidator {
 
     private static List<ServiceInfo> getSearchNodeServices(ContentCluster cluster) {
         return cluster.getSearch().getSearchNodes().stream()
-                .map(node -> node.getServiceInfo())
-                .collect(Collectors.toList());
+                .map(AbstractService::getServiceInfo)
+                .toList();
     }
 
     private static List<ConfigChangeAction> modifyActions(List<VespaConfigChangeAction> result,

@@ -42,7 +42,6 @@ import java.util.stream.Collectors;
 import static java.util.stream.Collectors.groupingBy;
 import static java.util.stream.Collectors.mapping;
 import static java.util.stream.Collectors.toCollection;
-import static java.util.stream.Collectors.toList;
 
 /**
  * Executor of validators. This defines the right order of validator execution.
@@ -129,7 +128,7 @@ public class Validation {
         };
         List<ConfigChangeAction> actions = Arrays.stream(validators)
                                                  .flatMap(v -> v.validate(currentModel, nextModel, overrides, now).stream())
-                                                 .collect(toList());
+                                                 .toList();
 
         Map<ValidationId, Collection<String>> disallowableActions = actions.stream()
                                                                            .filter(action -> action.validationId().isPresent())

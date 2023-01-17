@@ -37,7 +37,6 @@ import static com.yahoo.vespa.model.admin.metricsproxy.MetricsProxyModelTester.g
 import static com.yahoo.vespa.model.admin.metricsproxy.MetricsProxyModelTester.getMetricsNodesConfig;
 import static com.yahoo.vespa.model.admin.metricsproxy.MetricsProxyModelTester.getModel;
 import static com.yahoo.vespa.model.admin.metricsproxy.MetricsProxyModelTester.servicesWithAdminOnly;
-import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toSet;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -82,7 +81,7 @@ public class MetricsProxyContainerClusterTest {
     void http_handlers_are_set_up() {
         VespaModel model = getModel(servicesWithAdminOnly(), self_hosted);
         Collection<Handler> handlers = model.getAdmin().getMetricsProxyCluster().getHandlers();
-        Collection<ComponentSpecification> handlerClasses = handlers.stream().map(Component::getClassId).collect(toList());
+        Collection<ComponentSpecification> handlerClasses = handlers.stream().map(Component::getClassId).toList();
 
         assertTrue(handlerClasses.contains(ComponentSpecification.fromString(MetricsV1Handler.class.getName())));
         assertTrue(handlerClasses.contains(ComponentSpecification.fromString(PrometheusHandler.class.getName())));
