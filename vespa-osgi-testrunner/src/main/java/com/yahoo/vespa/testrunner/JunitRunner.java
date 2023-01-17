@@ -32,7 +32,6 @@ import java.util.logging.Level;
 import java.util.logging.LogRecord;
 import java.util.logging.Logger;
 
-import static java.util.stream.Collectors.toList;
 
 /**
  * @author mortent
@@ -126,7 +125,7 @@ public class JunitRunner extends AbstractComponent implements TestRunner {
         LauncherDiscoveryRequest discoveryRequest = LauncherDiscoveryRequestBuilder.request()
                                                                                    .selectors(testClasses.stream()
                                                                                                          .map(DiscoverySelectors::selectClass)
-                                                                                                         .collect(toList()))
+                                                                                                         .toList())
                                                                                    .build();
         testExecutor.accept(discoveryRequest, new TestExecutionListener[] { testReportListener });
 

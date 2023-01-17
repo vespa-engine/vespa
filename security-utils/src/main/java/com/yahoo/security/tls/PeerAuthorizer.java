@@ -13,7 +13,6 @@ import java.util.logging.Logger;
 import static com.yahoo.security.SubjectAlternativeName.Type.DNS;
 import static com.yahoo.security.SubjectAlternativeName.Type.IP;
 import static com.yahoo.security.SubjectAlternativeName.Type.URI;
-import static java.util.stream.Collectors.toList;
 
 /**
  * Uses rules from {@link AuthorizedPeers} to evaluate X509 certificates
@@ -75,6 +74,6 @@ public class PeerAuthorizer {
         return X509CertificateUtils.getSubjectAlternativeNames(peerCertificate).stream()
                 .filter(san -> san.getType() == DNS || san.getType() == IP || san.getType() == URI)
                 .map(SubjectAlternativeName::getValue)
-                .collect(toList());
+                .toList();
     }
 }

@@ -23,7 +23,6 @@ import static com.yahoo.vespa.testrunner.TestRunner.Status.NOT_STARTED;
 import static com.yahoo.vespa.testrunner.TestRunner.Status.NO_TESTS;
 import static com.yahoo.vespa.testrunner.TestRunner.Status.RUNNING;
 import static com.yahoo.vespa.testrunner.TestRunner.Status.SUCCESS;
-import static java.util.stream.Collectors.toList;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -182,7 +181,7 @@ class AggregateTestRunnerTest {
 
         @Override
         public Collection<LogRecord> getLog(long after) {
-            return log.stream().filter(record -> record.getSequenceNumber() > after).collect(toList());
+            return log.stream().filter(record -> record.getSequenceNumber() > after).toList();
         }
 
         @Override
