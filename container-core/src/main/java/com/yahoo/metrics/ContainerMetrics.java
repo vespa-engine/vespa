@@ -13,8 +13,9 @@ public enum ContainerMetrics {
 
     JDISC_GC_COUNT("jdisc.gc.count", Unit.OPERATION, "Number of JVM garbage collections done"),
     JDISC_GC_MS("jdisc.gc.ms", Unit.MILLISECOND, "Time spent in JVM garbage collection"),
-
-    JDISC_HTTP_REQUESTS_STATUS("jdisc.http.requests.status", Unit.REQUEST, "Number of requests to the built-in status handler"),
+    JDISC_JVM("jdisc.jvm", Unit.ITEM, "Unspecified: jdisc.JVM"),
+    JDISC_MEMORY_MAPPINGS("jdisc.memory_mappings", Unit.OPERATION, "JDISC Memory mappings"),
+    JDISC_OPEN_FILE_DESCRIPTORS("jdisc.open_file_descriptors.max", Unit.ITEM, "JDISC Open file descriptors"),
 
     JDISC_THREAD_POOL_UNHANDLED_EXCEPTIONS("jdisc.thread_pool.unhandled_exceptions", Unit.THREAD, "Number of exceptions thrown by tasks"),
     JDISC_THREAD_POOL_WORK_QUEUE_CAPACITY("jdisc.thread_pool.work_queue.capacity", Unit.THREAD, "Capacity of the task queue"),
@@ -23,6 +24,41 @@ public enum ContainerMetrics {
     JDISC_THREAD_POOL_SIZE("jdisc.thread_pool.size", Unit.THREAD, "Size of the thread pool"),
     JDISC_THREAD_POOL_MAX_ALLOWED_SIZE("jdisc.thread_pool.max_allowed_size", Unit.THREAD, "The maximum allowed number of threads in the pool"),
     JDISC_THREAD_POOL_ACTIVE_THREADS("jdisc.thread_pool.active_threads", Unit.THREAD, "Number of threads that are active"),
+    
+    JDISC_DEACTIVATED_CONTAINERS("jdisc.deactivated_containers.total", Unit.ITEM, "JDISC Deactivated container instances"),
+    JDISC_DEACTIVATED_CONTAINERS_WITH_RETAINED_REFS("jdisc.deactivated_containers.with_retained_refs.last", Unit.ITEM, "JDISC Deactivated container nodes with retained refs"),
+    JDISC_APPLICATION_FAILED_COMPONENT_GRAPHS("jdisc.application.failed_component_graphs", Unit.ITEM, "JDISC Application failed component graphs"),
+
+    JDISC_SINGLETON_IS_ACTIVE("jdisc.singleton.is_active", Unit.ITEM, "JDISC Singleton is active"),
+    JDISC_SINGLETON_ACTIVATION_COUNT("jdisc.singleton.activation.count", Unit.OPERATION, "JDISC Singleton activations"),
+    JDISC_SINGLETON_ACTIVATION_FAILURE_COUNT("jdisc.singleton.activation.failure.count", Unit.OPERATION, "JDISC Singleton activation failures"),
+    JDISC_SINGLETON_ACTIVATION_MILLIS("jdisc.singleton.activation.millis", Unit.MILLISECOND, "JDISC Singleton activation time"),
+    JDISC_SINGLETON_ACTIVAITON_COUNT("jdisc.singleton.deactivation.count", Unit.OPERATION, "JDISC Singleton deactivations"),
+    JDISC_SINGLETON_DEACTIVATION_FAILURE_COUNT("jdisc.singleton.deactivation.failure.count", Unit.OPERATION, "JDISC Singleton deactivation failures"),
+    JDISC_SINGLETON_DEACTIVATION_MILLIS("jdisc.singleton.deactivation.millis", Unit.MILLISECOND, "JDISC Singleton deactivation time"),
+
+    JDISC_HTTP_SSL_HANDSHAKE_FAILURE_MISSING_CLIENT_CERT("jdisc.http.ssl.handshake.failure.missing_client_cert", Unit.OPERATION, "JDISC HTTP SSL Handshake failures due to missing client certificate"),
+    JDISC_HTTP_SSL_HANDSHAKE_FAILURE_EXPIRED_CLIENT_CERT("jdisc.http.ssl.handshake.failure.expired_client_cert", Unit.OPERATION, "JDISC HTTP SSL Handshake failures due to expired client certificate"),
+    JDISC_HTTP_SSL_HANDSHAKE_FAILURE_INVALID_CLIENT_CERT("jdisc.http.ssl.handshake.failure.invalid_client_cert", Unit.OPERATION, "JDISC HTTP SSL Handshake failures due to invalid client certificate"),
+    JDISC_HTTP_SSL_HANDSHAKE_FAILURE_INCOMPATIBLE_PROTOCOLS("jdisc.http.ssl.handshake.failure.incompatible_protocols", Unit.OPERATION, "JDISC HTTP SSL Handshake failures due to inincompatible protocols"),
+    JDISC_HTTP_SSL_HANDSHAKE_FAILURE_INCOMPATIBLE_CHIFERS("jdisc.http.ssl.handshake.failure.incompatible_chifers", Unit.OPERATION, "JDISC HTTP SSL Handshake failures due to incompatible chifers"),
+    JDISC_HTTP_SSL_HANDSHAKE_FAILURE_CONNECTION_CLOSED("jdisc.http.ssl.handshake.failure.connection_closed", Unit.OPERATION, "JDISC HTTP SSL Handshake failures due to connection closed"),
+    JDISC_HTTP_SSL_HANDSHAKE_FAILURE_UNKNOWN("jdisc.http.ssl.handshake.failure.unknown", Unit.OPERATION, "JDISC HTTP SSL Handshake failures for unknown reason"),
+
+    JDISC_HTTP_REQUEST_PREMATURELY_CLOSED("jdisc.http.request.prematurely_closed", Unit.REQUEST, "HTTP requests prematurely closed"),
+    JDISC_HTTP_REQUEST_REQUESTS_PER_CONNECTION("jdisc.http.request.requests_per_connection", Unit.REQUEST, "HTTP requests per connection"),
+    JDISC_HTTP_REQUEST_URI_LENGTH("jdisc.http.request.uri_length", Unit.BYTE, "HTTP URI length"),
+    JDISC_HTTP_REQUEST_CONTENT_SIZE("jdisc.http.request.content_size", Unit.BYTE, "HTTP request content size"),
+    JDISC_HTTP_REQUESTS("jdisc.http.requests", Unit.REQUEST, "HTTP requests"),
+    JDISC_HTTP_REQUESTS_STATUS("jdisc.http.requests.status", Unit.REQUEST, "Number of requests to the built-in status handler"),
+
+    JDISC_HTTP_FILTER_RULE_BLOCKED_REQUESTS("jdisc.http.filter.rule.blocked_requests", Unit.REQUEST, "Number of requests blocked by filter"),
+    JDISC_HTTP_FILTER_RULE_ALLOWED_REQUESTS("jdisc.http.filter.rule.allowed_requests", Unit.REQUEST, "Number of requests allowed by filter"),
+    JDISC_HTTP_FILTERING_REQUEST_HANDLED("jdisc.http.filtering.request.handled", Unit.REQUEST, "Number of filtering requests handled"),
+    JDISC_HTTP_FILTERING_REQUEST_UNHANDLED("jdisc.http.filtering.request.unhandled", Unit.REQUEST, "Number of filtering requests unhandled"),
+    JDISC_HTTP_FILTERING_RESPONSE_HANDLED("jdisc.http.filtering.response.handled", Unit.REQUEST, "Number of filtering responses handled"),
+    JDISC_HTTP_FILTERING_RESPONSE_UNHANDLED("jdisc.http.filtering.response.unhandled", Unit.REQUEST, "Number of filtering responses unhandled"),
+    JDISC_HTTP_HANDLER_UNHANDLED_EXCEPTIONS("jdisc.http.handler.unhandled_exceptions", Unit.REQUEST, "Number of unhandled exceptions in handler"),
 
     JETTY_THREADPOOL_MAX_THREADS("jdisc.http.jetty.threadpool.thread.max", Unit.THREAD, "Configured maximum number of threads"),
     JETTY_THREADPOOL_MIN_THREADS("jdisc.http.jetty.threadpool.thread.min", Unit.THREAD, "Configured minimum number of threads"),
