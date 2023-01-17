@@ -7,7 +7,7 @@ import com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAgentContext;
  *
  * @author gjoranv
  */
-public interface WireguardMaintainer {
+public interface ContainerWireguardTask {
 
     void converge(NodeAgentContext context);
 
