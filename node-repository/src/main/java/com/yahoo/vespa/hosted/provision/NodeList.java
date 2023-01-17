@@ -341,13 +341,10 @@ public class NodeList extends AbstractFilteringList<Node, NodeList> {
                              .filter(address -> !allHostnames.contains(address.hostname()))
                              .count();
         }
-        Set<String> allIps = ipCache.updateAndGet((old) -> {
-            if (old != null) {
-                return old;
-            }
-            return stream().flatMap(node -> node.ipConfig().primary().stream())
-                           .collect(Collectors.toUnmodifiableSet());
-        });
+        Set<String> allIps = ipCache.updateAndGet(old ->
+            old != null ? old : stream().flatMap(node -> node.ipConfig().primary().stream())
+                                        .collect(Collectors.toUnmodifiableSet())
+        );
         return (int) host.ipConfig().pool().ipSet().stream()
                          .filter(address -> !allIps.contains(address))
                          .count();
