@@ -6,6 +6,7 @@
 #include <cstdlib>
 #include <unistd.h>
 #include <sys/time.h>
+#include <cassert>
 #include <vespa/defaults.h>
 
 namespace ns_log {
@@ -18,32 +19,18 @@ LLParser::LLParser()
       _defService(defservice),
       _defComponent(defcomponent),
       _defLevel(Logger::info),
-      _target(LogTarget::defaultTarget()),
+      _target(Logger::getCurrentTarget()),
       _rejectFilter(RejectFilter::createDefaultFilter())
 {
+    assert(_target != nullptr);
     const char *envServ = getenv("VESPA_SERVICE_NAME");
     if (envServ != NULL) {
         _defService = envServ;
     }
-    char *name = getenv("VESPA_LOG_TARGET");
-    if (name) {
-	LogTarget *target;
-        try {
-	    target = LogTarget::makeTarget(name);
-	} catch (InvalidLogException& ex) {
-	    // If we catch an exception, use default target
-	    target = LogTarget::defaultTarget();
-	}
-        delete _target;
-        _target = target;
-    }
     snprintf(_defPid, 10, "%d", (int)getpid());
 }
 
-LLParser::~LLParser()
-{
-    delete _target;
-}
+LLParser::~LLParser() = default;
 
 const char LLParser::_hexdigit[17] = "0123456789abcdef";
 
