@@ -195,7 +195,7 @@ public class NodePrioritizer {
                                              false,
                                              parent.exclusiveToApplicationId().isEmpty()
                                              && requestedNodes.canResize(node.resources(),
-                                                                         capacity.availableCapacityOf(parent),
+                                                                         capacity.unusedCapacityOf(parent),
                                                                          clusterSpec.type(),
                                                                          topologyChange,
                                                                          currentClusterSize));
