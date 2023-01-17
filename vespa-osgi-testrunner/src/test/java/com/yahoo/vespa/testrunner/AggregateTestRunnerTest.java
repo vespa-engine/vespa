@@ -164,10 +164,12 @@ class AggregateTestRunnerTest {
         }
         catch (Exception e) {
             TestReport.trimStackTraces(e, "org.junit.platform.commons.util.ReflectionUtils");
-            assertEquals("java.lang.RuntimeException: java.lang.RuntimeException: inner\n" +
-                         "\tat com.yahoo.vespa.testrunner.AggregateTestRunnerTest.testStackTrimming(AggregateTestRunnerTest.java:163)\n" +
-                         "Caused by: java.lang.RuntimeException: inner\n" +
-                         "\tat com.yahoo.vespa.testrunner.AggregateTestRunnerTest.testStackTrimming(AggregateTestRunnerTest.java:160)\n",
+            assertEquals("""
+                            java.lang.RuntimeException: java.lang.RuntimeException: inner
+                            \tat com.yahoo.vespa.testrunner.AggregateTestRunnerTest.testStackTrimming(AggregateTestRunnerTest.java:162)
+                            Caused by: java.lang.RuntimeException: inner
+                            \tat com.yahoo.vespa.testrunner.AggregateTestRunnerTest.testStackTrimming(AggregateTestRunnerTest.java:159)
+                            """,
                          ExceptionUtils.getStackTraceAsString(e));
         }
     }
