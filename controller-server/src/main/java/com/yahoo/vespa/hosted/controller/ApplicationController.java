@@ -114,7 +114,6 @@ import static java.util.stream.Collectors.collectingAndThen;
 import static java.util.stream.Collectors.counting;
 import static java.util.stream.Collectors.groupingBy;
 import static java.util.stream.Collectors.joining;
-import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toMap;
 import static java.util.stream.Collectors.toSet;
 
@@ -648,7 +647,7 @@ public class ApplicationController {
                     .orElse(List.of());
             List<X509Certificate> operatorCertificates = controller.supportAccess().activeGrantsFor(deployment).stream()
                                                                    .map(SupportAccessGrant::certificate)
-                                                                   .collect(toList());
+                                                                   .toList();
             if (testerCertificate.isPresent()) {
                 operatorCertificates = Stream.concat(operatorCertificates.stream(), testerCertificate.stream()).toList();
             }

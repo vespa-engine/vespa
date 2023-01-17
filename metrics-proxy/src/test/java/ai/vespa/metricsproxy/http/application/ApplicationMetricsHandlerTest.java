@@ -37,7 +37,6 @@ import static com.github.tomakehurst.wiremock.client.WireMock.get;
 import static com.github.tomakehurst.wiremock.client.WireMock.urlPathEqualTo;
 import static com.github.tomakehurst.wiremock.core.WireMockConfiguration.options;
 import static com.yahoo.collections.CollectionUtil.first;
-import static java.util.stream.Collectors.toList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
@@ -220,7 +219,7 @@ public class ApplicationMetricsHandlerTest {
     private MetricsNodesConfig nodesConfig(String... paths) {
         var nodes = Arrays.stream(paths)
                 .map(this::nodeConfig)
-                .collect(toList());
+                .toList();
         return new MetricsNodesConfig.Builder()
                 .node(nodes)
                 .build();

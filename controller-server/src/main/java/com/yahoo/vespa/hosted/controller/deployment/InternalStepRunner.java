@@ -92,7 +92,6 @@ import static java.util.logging.Level.FINE;
 import static java.util.logging.Level.INFO;
 import static java.util.logging.Level.WARNING;
 import static java.util.stream.Collectors.joining;
-import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toSet;
 
 /**
@@ -210,7 +209,7 @@ public class InternalStepRunner implements StepRunner {
                                                                Instant.ofEpochMilli(entry.epochMillis()),
                                                                LogEntry.typeOf(entry.level()),
                                                                entry.message()))
-                                    .collect(toList()));
+                                    .toList());
 
             logger.log("Deployment successful.");
             logger.log(result.message());
@@ -330,7 +329,7 @@ public class InternalStepRunner implements StepRunner {
             logger.log("######## Details for all nodes ########");
             logger.log(nodeList.asList().stream()
                                .flatMap(node -> nodeDetails(node, true))
-                               .collect(toList()));
+                               .toList());
         }
         else if ( ! summary.converged()) {
             logger.log("Waiting for convergence of " + summary.services() + " services across " + summary.nodes() + " nodes");
@@ -396,7 +395,7 @@ public class InternalStepRunner implements StepRunner {
             logger.log("######## Details for all nodes ########");
             logger.log(nodeList.asList().stream()
                                .flatMap(node -> nodeDetails(node, true))
-                               .collect(toList()));
+                               .toList());
             logger.log("######## Details for nodes with pending changes ########");
             logger.log(nodeList.not().in(nodeList.not().needsNewConfig()
                                                  .not().needsPlatformUpgrade()
@@ -406,7 +405,7 @@ public class InternalStepRunner implements StepRunner {
                                                  .not().needsOsUpgrade())
                                .asList().stream()
                                .flatMap(node -> nodeDetails(node, true))
-                               .collect(toList()));
+                               .toList());
             logger.log(INFO, failureReason);
             return Optional.of(installationFailed);
         }
@@ -415,7 +414,7 @@ public class InternalStepRunner implements StepRunner {
             logger.log(FINE, nodeList.expectedDown().and(nodeList.needsNewConfig()).asList().stream()
                                      .distinct()
                                      .flatMap(node -> nodeDetails(node, false))
-                                     .collect(toList()));
+                                     .toList());
 
         controller.jobController().locked(id, lockedRun -> {
             Instant noNodesDownSince = nodeList.allowedDown().size() == 0 ? lockedRun.noNodesDownSince().orElse(controller.clock().instant()) : null;
@@ -461,7 +460,7 @@ public class InternalStepRunner implements StepRunner {
         NodeList nodeList = NodeList.of(nodes, parents, services.get());
         logger.log(nodeList.asList().stream()
                            .flatMap(node -> nodeDetails(node, false))
-                           .collect(toList()));
+                           .toList());
 
         if (nodeList.summary().converged() && testerContainersAreUp(testerId, zone, logger)) {
             logger.log("Tester container successfully installed!");

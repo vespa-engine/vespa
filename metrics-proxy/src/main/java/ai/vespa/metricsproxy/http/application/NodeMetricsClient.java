@@ -26,7 +26,6 @@ import java.util.logging.Logger;
 
 import static ai.vespa.metricsproxy.metric.model.processing.MetricsProcessor.applyProcessors;
 import static java.util.logging.Level.FINE;
-import static java.util.stream.Collectors.toList;
 
 /**
  * Retrieves metrics from a single Vespa node over http. To avoid unnecessary load on metrics
@@ -101,7 +100,7 @@ public class NodeMetricsClient {
         return builders.stream()
                     .map(builder -> applyProcessors(builder, processors))
                     .map(MetricsPacket.Builder::build)
-                    .collect(toList());
+                    .toList();
     }
 
     long snapshotsRetrieved() {

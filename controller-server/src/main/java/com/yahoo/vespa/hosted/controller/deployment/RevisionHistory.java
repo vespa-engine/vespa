@@ -19,7 +19,6 @@ import java.util.TreeMap;
 
 import static ai.vespa.validation.Validation.require;
 import static java.util.Collections.emptyNavigableMap;
-import static java.util.stream.Collectors.toList;
 
 /**
  * History of application revisions for an {@link com.yahoo.vespa.hosted.controller.Application}.
@@ -113,7 +112,7 @@ public class RevisionHistory {
     public List<ApplicationVersion> withPackage() {
         return production.values().stream()
                          .filter(ApplicationVersion::hasPackage)
-                         .collect(toList());
+                         .toList();
     }
 
     /** Returns the currently deployable revisions of the application. */
