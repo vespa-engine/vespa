@@ -7,7 +7,6 @@ import org.junit.jupiter.api.Test;
 import java.io.IOException;
 
 import static com.yahoo.search.predicate.serialization.SerializationTestHelper.assertSerializationDeserializationMatches;
-import static java.util.stream.Collectors.toList;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
@@ -28,9 +27,9 @@ public class PredicateIndexTest {
         PredicateQuery query = new PredicateQuery();
         query.addFeature("country", "no");
         query.addFeature("gender", "male");
-        assertEquals("[1]", searcher.search(query).collect(toList()).toString());
+        assertEquals("[1]", searcher.search(query).toList().toString());
         query.addFeature("gender", "female");
-        assertEquals("[1, 67108862]", searcher.search(query).collect(toList()).toString());
+        assertEquals("[1, 67108862]", searcher.search(query).toList().toString());
     }
 
     @Test
@@ -43,7 +42,7 @@ public class PredicateIndexTest {
             PredicateQuery query = new PredicateQuery();
             query.addFeature("country", "no");
             query.addFeature("gender", "female");
-            assertEquals("[1]", searcher.search(query).collect(toList()).toString());
+            assertEquals("[1]", searcher.search(query).toList().toString());
         }
         {
             PredicateIndexBuilder builder = new PredicateIndexBuilder(10);
@@ -53,7 +52,7 @@ public class PredicateIndexTest {
             PredicateIndex.Searcher searcher = index.searcher();
 
             PredicateQuery query = new PredicateQuery();
-            assertEquals("[43]", searcher.search(query).collect(toList()).toString());
+            assertEquals("[43]", searcher.search(query).toList().toString());
             query.addFeature("country", "no");
             assertEquals(0, searcher.search(query).count());
         }
@@ -87,7 +86,7 @@ public class PredicateIndexTest {
         query.addFeature("country", "no", 0x3);
         assertEquals(0, searcher.search(query).count());
         query.addFeature("gender", "male", 0x6);
-        assertEquals("[[42,0x2]]", searcher.search(query).collect(toList()).toString());
+        assertEquals("[[42,0x2]]", searcher.search(query).toList().toString());
     }
 
     @Test
@@ -100,9 +99,9 @@ public class PredicateIndexTest {
         PredicateQuery query = new PredicateQuery();
         query.addFeature("gender", "male");
         query.addRangeFeature("age", 36);
-        assertEquals("[1]", searcher.search(query).collect(toList()).toString());
+        assertEquals("[1]", searcher.search(query).toList().toString());
         query.addFeature("gender", "female");
-        assertEquals("[1, 2]", searcher.search(query).collect(toList()).toString());
+        assertEquals("[1, 2]", searcher.search(query).toList().toString());
     }
 
     @Test
@@ -113,7 +112,7 @@ public class PredicateIndexTest {
         PredicateIndex index = builder.build();
         PredicateIndex.Searcher searcher = index.searcher();
         PredicateQuery query = new PredicateQuery();
-        assertEquals("[1]", searcher.search(query).collect(toList()).toString());
+        assertEquals("[1]", searcher.search(query).toList().toString());
     }
 
     @Test
@@ -126,7 +125,7 @@ public class PredicateIndexTest {
         PredicateQuery query = new PredicateQuery();
         query.addFeature("a", "b");
         query.addFeature("c", "d");
-        assertEquals("[42]", searcher.search(query).collect(toList()).toString());
+        assertEquals("[42]", searcher.search(query).toList().toString());
     }
 
     @Test

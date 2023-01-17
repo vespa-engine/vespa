@@ -28,7 +28,6 @@ import java.util.Set;
 import java.util.TreeMap;
 
 import static java.util.stream.Collectors.joining;
-import static java.util.stream.Collectors.toList;
 
 /**
  * A builder for {@link PredicateIndex}.
@@ -178,7 +177,7 @@ public class PredicateIndexBuilder {
                 .forEach(entry -> boundsIndexBuilder.insert(entry.getKey(),
                         new Posting(docId,
                                 intervalStoreBuilder.insert(
-                                        entry.getValue().stream().flatMap(IntervalWithBounds::stream).collect(toList())))));
+                                        entry.getValue().stream().flatMap(IntervalWithBounds::stream).toList()))));
     }
 
     private void indexDocumentConjunctions(

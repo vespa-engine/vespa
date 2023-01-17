@@ -35,7 +35,6 @@ import java.util.stream.Stream;
 
 import static com.yahoo.search.predicate.benchmarks.HitsVerificationBenchmark.BenchmarkArguments.*;
 import static java.util.stream.Collectors.joining;
-import static java.util.stream.Collectors.toList;
 
 /**
  * A test that runs outputs the hits for each query into result file.
@@ -108,7 +107,7 @@ public class HitsVerificationBenchmark {
 
     private static int writeHits(int i, Stream<Hit> hitStream, BufferedWriter writer) {
         try {
-            List<Hit> hits = hitStream.collect(toList());
+            List<Hit> hits = hitStream.toList();
             writer.append(Integer.toString(i))
                     .append(": ")
                     .append(hits.stream()
