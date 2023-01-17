@@ -16,7 +16,7 @@ import java.util.logging.Logger;
 public class OnnxBundleActivator implements BundleActivator {
 
     private static final String ONNX_PREFIX = "onnxruntime.native.";
-    private static final String PATH_SUFFIX = ".path";
+    private static final String PATH_SUFFIX = "path";
     private static final String SKIP_SUFFIX = ".skip";
     private static final String SKIP_VALUE = "true";
     private static final String[] LIBRARY_NAMES = { "onnxruntime", "onnxruntime4j_jni" };
