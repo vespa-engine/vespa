@@ -165,7 +165,9 @@ public:
         uint32_t explore_k = 100;
         vespalib::ArrayRef qv_ref(qv);
         vespalib::eval::TypedCells qv_cells(qv_ref);
-        auto got_by_docid = index->find_top_k(k, qv_cells, explore_k, 10000.0);
+        auto got_by_docid = (global_filter->is_active()) ?
+                            index->find_top_k_with_filter(k, qv_cells, *global_filter, explore_k, 10000.0) :
+                            index->find_top_k(k, qv_cells, explore_k, 10000.0);
         std::vector<uint32_t> act;
         act.reserve(got_by_docid.size());
         for (auto& hit : got_by_docid) {
@@ -760,6 +762,29 @@ TYPED_TEST(HnswIndexTest, hnsw_graph_can_be_saved_and_loaded)
 
 using HnswMultiIndexTest = HnswIndexTest<HnswIndex<HnswIndexType::MULTI>>;
 
+namespace {
+
+class MyGlobalFilter : public GlobalFilter {
+    std::shared_ptr<GlobalFilter> _filter;
+    mutable uint32_t              _max_docid;
+public:
+    MyGlobalFilter(std::shared_ptr<GlobalFilter> filter)
+        : _filter(std::move(filter)),
+          _max_docid(0)
+    {
+    }
+    bool is_active() const override { return _filter->is_active(); }
+    uint32_t size() const override { return _filter->size(); }
+    uint32_t count() const override { return _filter->count(); }
+    bool check(uint32_t docid) const override {
+        _max_docid = std::max(_max_docid, docid);
+        return _filter->check(docid);
+    }
+    uint32_t max_docid() const noexcept { return _max_docid; }
+};
+
+}
+
 TEST_F(HnswMultiIndexTest, duplicate_docid_is_removed)
 {
     this->init(false);
@@ -786,6 +811,10 @@ TEST_F(HnswMultiIndexTest, duplicate_docid_is_removed)
     this->expect_top_3_by_docid("{2, 0}", {2, 0}, {1, 2, 4});
     this->expect_top_3_by_docid("{2, 1}", {2, 1}, {2, 3, 4});
     this->expect_top_3_by_docid("{2, 2}", {2, 2}, {1, 3, 4});
+    auto filter = std::make_shared<MyGlobalFilter>(GlobalFilter::create({1, 2}, 3));
+    global_filter = filter;
+    this->expect_top_3_by_docid("{2,2}", {2, 2}, {1, 2});
+    EXPECT_EQ(2, filter->max_docid());
 };
 
 TEST(LevelGeneratorTest, gives_various_levels)
