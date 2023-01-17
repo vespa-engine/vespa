@@ -499,7 +499,7 @@ Proton::~Proton()
                                                 CpuUsage::wrap(proton_close_executor, CpuCategory::SETUP));
         closeDocumentDBs(closePool);
     }
-    _sessionManager->close();
+    _sessionManager.reset();
     _documentDBMap.clear();
     _persistenceEngine.reset();
     _tls.reset();

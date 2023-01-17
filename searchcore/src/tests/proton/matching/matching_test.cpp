@@ -126,16 +126,16 @@ struct EmptyRankingAssetsRepo : public proton::matching::IRankingAssetsRepo {
 //-----------------------------------------------------------------------------
 
 struct MyWorld {
-    Schema                  schema;
-    Properties              config;
-    FakeSearchContext       searchContext;
-    MockAttributeContext    attributeContext;
-    SessionManager::SP      sessionManager;
-    DocumentMetaStore       metaStore;
-    MatchingStats           matchingStats;
-    vespalib::TestClock     clock;
-    QueryLimiter            queryLimiter;
-    EmptyRankingAssetsRepo  constantValueRepo;
+    Schema                           schema;
+    Properties                       config;
+    FakeSearchContext                searchContext;
+    MockAttributeContext             attributeContext;
+    std::shared_ptr<SessionManager>  sessionManager;
+    DocumentMetaStore                metaStore;
+    MatchingStats                    matchingStats;
+    vespalib::TestClock              clock;
+    QueryLimiter                     queryLimiter;
+    EmptyRankingAssetsRepo           constantValueRepo;
 
     MyWorld();
     ~MyWorld();
