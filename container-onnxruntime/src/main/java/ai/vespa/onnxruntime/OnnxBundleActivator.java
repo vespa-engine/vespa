@@ -15,7 +15,8 @@ import java.util.logging.Logger;
  **/
 public class OnnxBundleActivator implements BundleActivator {
 
-    private static final String SKIP_PREFIX = "onnxruntime.native.";
+    private static final String ONNX_PREFIX = "onnxruntime.native.";
+    private static final String PATH_SUFFIX = "path";
     private static final String SKIP_SUFFIX = ".skip";
     private static final String SKIP_VALUE = "true";
     private static final String[] LIBRARY_NAMES = { "onnxruntime", "onnxruntime4j_jni" };
@@ -28,8 +29,9 @@ public class OnnxBundleActivator implements BundleActivator {
             log.info("skip loading of native libraries");
             return;
         }
+        System.setProperty(ONNX_PREFIX + PATH_SUFFIX, "/opt/vespa-deps/lib64");
         for (String libName : LIBRARY_NAMES) {
-            String skipProp = SKIP_PREFIX + libName + SKIP_SUFFIX;
+            String skipProp = ONNX_PREFIX + libName + SKIP_SUFFIX;
             if (SKIP_VALUE.equals(System.getProperty(skipProp))) {
                 log.fine("already loaded native library "+libName+", skipping");
             } else {
@@ -51,7 +53,7 @@ public class OnnxBundleActivator implements BundleActivator {
         // not sure how to test that loading and unloading multiple times actually works,
         // but this should in theory do the necessary thing.
         for (String libName : LIBRARY_NAMES) {
-            String skipProp = SKIP_PREFIX + libName + SKIP_SUFFIX;
+            String skipProp = ONNX_PREFIX + libName + SKIP_SUFFIX;
             if (SKIP_VALUE.equals(System.getProperty(skipProp))) {
                 log.info("will unload native library: "+libName);
             }
