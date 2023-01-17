@@ -24,7 +24,6 @@ import java.util.stream.Collectors;
 
 import static ai.vespa.metricsproxy.metric.ExternalMetrics.extractConfigserverDimensions;
 import static java.util.logging.Level.FINE;
-import static java.util.stream.Collectors.toList;
 
 /**
  * Retrieves metrics and performs necessary conversions and additions of metadata.
@@ -100,7 +99,7 @@ public class MetricsManager {
 
     private MetricsPacket.Builder [] getMetricsBuildersAsArray(List<VespaService> services, Instant startTime, ConsumerId consumerId) {
         List<MetricsPacket.Builder> builders = getMetricsAsBuilders(services, startTime, consumerId);
-        return builders.toArray(new MetricsPacket.Builder[builders.size()]);
+        return builders.toArray(new MetricsPacket.Builder[0]);
     }
 
     /**
@@ -119,7 +118,7 @@ public class MetricsManager {
         purgeStaleMetrics();
         List<MetricsPacket.Builder> externalPackets = externalMetrics.getMetrics().stream()
                 .filter(MetricsPacket.Builder::hasMetrics)
-                .collect(toList());
+                .toList();
         log.log(FINE, () -> "Got " + externalPackets.size() + " external metrics packets with whitelisted metrics.");
 
         result.addAll(externalPackets);
