@@ -100,6 +100,9 @@ public enum ContainerMetrics {
     MEM_NATIVE_FREE("mem.native.free", Unit.BYTE, "Currently free native memory"),
     MEM_NATIVE_USED("mem.native.used", Unit.BYTE, "Native memory currently used"),    
     
+    ATHENZ_TENANT_CERT_EXPIRY_SECONDS("athenz-tenant-cert.expiry.seconds", Unit.SECOND, "Time remaining until Athenz tenant certificate expires"),
+    CONTAINER_IAM_ROLE_EXPIRY_SECONDS("container-iam-role.expiry.seconds", Unit.SECOND, "Time remaining until IAM role expires"),
+    
     
     // SearchChain metrics
     PEAK_QPS("peak_qps", Unit.OPERATION_PER_SECOND, "The highest number of qps for a second for this metrics shapshot"),
