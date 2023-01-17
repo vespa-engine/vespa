@@ -26,7 +26,6 @@ import static com.yahoo.container.plugin.util.TestBundleUtils.outputDirectory;
 import static com.yahoo.container.plugin.osgi.ExportPackages.exportsByPackageName;
 import static com.yahoo.container.plugin.osgi.ImportPackages.calculateImports;
 import static com.yahoo.container.plugin.util.Files.allDescendantFiles;
-import static java.util.stream.Collectors.toList;
 
 /**
  * @author bjorncs
@@ -44,7 +43,7 @@ public class GenerateTestBundleOsgiManifestMojo extends AbstractGenerateOsgiMani
 
             List<File> providedJars = artifactSet.getJarArtifactsProvided().stream()
                     .map(Artifact::getFile)
-                    .collect(toList());
+                    .toList();
 
             List<Export> exportedPackagesFromProvidedJars = exportedPackagesAggregated(providedJars);
 
@@ -79,7 +78,7 @@ public class GenerateTestBundleOsgiManifestMojo extends AbstractGenerateOsgiMani
                              allDescendantFiles(new File(project.getBuild().getTestOutputDirectory())))
                      .filter(file -> file.getName().endsWith(".class"))
                      .map(classFile -> Analyze.analyzeClass(classFile, null))
-                     .collect(toList());
+                     .toList();
     }
 
     private static List<String> referencedTestCategories(List<ClassFileMetaData> analyzedClasses) {
@@ -93,7 +92,7 @@ public class GenerateTestBundleOsgiManifestMojo extends AbstractGenerateOsgiMani
                          "ai.vespa.hosted.cd.ProductionTest")
                      .filter(referencedClasses::contains)
                      .map(name -> name.substring(19))
-                     .collect(toList());
+                     .toList();
     }
 
 }
