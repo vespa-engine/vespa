@@ -331,11 +331,38 @@ public class DeploymentSpecXmlReader {
             Optional<String> zoneEndpointType = getZoneEndpointType(endpointElement, level);
             String msgPrefix = (level == Endpoint.Level.application ? "Application-level" : "Instance-level") +
                                " endpoint '" + endpointId.orElse(Endpoint.DEFAULT_ID) + "': ";
+
             if (zoneEndpointType.isPresent() && endpointId.isPresent())
                 illegal(msgPrefix + "cannot declare 'id' with type 'zone' or 'private'");
+
             String invalidChild = level == Endpoint.Level.application ? "region" : "instance";
             if ( ! XML.getChildren(endpointElement, invalidChild).isEmpty())
                 illegal(msgPrefix + "invalid element '" + invalidChild + "'");
+
+            boolean enabled = XML.attribute("enabled", endpointElement)
+                                 .map(value -> {
+                                     if (zoneEndpointType.isEmpty() || ! zoneEndpointType.get().equals("zone"))
+                                         illegal(msgPrefix + "only endpoints of type 'zone' can specify 'enabled'");
+
+                                     return switch (value) {
+                                         case "true" -> true;
+                                         case "false" -> false;
+                                         default -> throw new IllegalArgumentException(msgPrefix + "invalid 'enabled' value; must be 'true' or 'false'");
+                                     };
+                                 }).orElse(true);
+
+            List<AllowedUrn> allowedUrns = new ArrayList<>();
+            for (var allow : XML.getChildren(endpointElement, "allow")) {
+                if (zoneEndpointType.isEmpty() || ! zoneEndpointType.get().equals("private"))
+                    illegal(msgPrefix + "only endpoints of type 'private' can specify 'allow' children");
+
+                switch (requireStringAttribute("with", allow)) {
+                    case "aws-private-link" -> allowedUrns.add(new AllowedUrn(AccessType.awsPrivateLink, requireStringAttribute("arn", allow)));
+                    case "gcp-service-connect" -> allowedUrns.add(new AllowedUrn(AccessType.gcpServiceConnect, requireStringAttribute("project", allow)));
+                    default -> illegal("Private endpoint for container-id '" + containerId + "': " +
+                                       "invalid attribute 'with': '" + requireStringAttribute("with", allow) + "'");
+                }
+            }
 
             List<Endpoint.Target> targets = new ArrayList<>();
             if (level == Endpoint.Level.application) {
@@ -371,30 +398,11 @@ public class DeploymentSpecXmlReader {
 
                 if (zoneEndpointType.isPresent()) {
                     if (regions.isEmpty()) regions.add(null);
-                    ZoneEndpoint endpoint;
-                    Optional<String> enabled = XML.attribute("enabled", endpointElement);
-                    if ("zone".equals(zoneEndpointType.get())) {
-                        switch (enabled.orElse("true")) {
-                            case "true" -> endpoint = new ZoneEndpoint(true, false, List.of());
-                            case "false" -> endpoint = new ZoneEndpoint(false, false, List.of());
-                            default -> throw new IllegalArgumentException("Zone endpoint for container-id '" + containerId + "': " +
-                                                                          "invalid 'enabled' value; must be 'true' or 'false'");
-                        }
-                    }
-                    else {
-                        if (enabled.isPresent()) illegal("Private endpoint for container-id '" + containerId + "': " +
-                                                         "only endpoints of type 'zone' can specify 'enabled'");
-                        List<AllowedUrn> allowedUrns = new ArrayList<>();
-                        for (var allow : XML.getChildren(endpointElement, "allow")) {
-                            switch (requireStringAttribute("with", allow)) {
-                                case "aws-private-link" -> allowedUrns.add(new AllowedUrn(AccessType.awsPrivateLink, requireStringAttribute("arn", allow)));
-                                case "gcp-service-connect" -> allowedUrns.add(new AllowedUrn(AccessType.gcpServiceConnect, requireStringAttribute("project", allow)));
-                                default -> illegal("Private endpoint for container-id '" + containerId + "': " +
-                                                   "invalid attribute 'with': '" + requireStringAttribute("with", allow) + "'");
-                            }
-                        }
-                        endpoint = new ZoneEndpoint(true, true, allowedUrns); // Doesn't turn off public visibility.
-                    }
+                    ZoneEndpoint endpoint = switch (zoneEndpointType.get()) {
+                        case "zone" -> new ZoneEndpoint(enabled, false, List.of());
+                        case "private" -> new ZoneEndpoint(true, true, allowedUrns); // Doesn't turn off public visibility.
+                        default -> throw new IllegalArgumentException("unsupported zone endpoint type '" + zoneEndpointType.get() + "'");
+                    };
                     for (RegionName region : regions) endpointsByZone.computeIfAbsent(containerId, __ -> new LinkedHashMap<>())
                                                                      .computeIfAbsent(region, __ -> new ArrayList<>())
                                                                      .add(endpoint);
@@ -430,16 +438,18 @@ public class DeploymentSpecXmlReader {
             List<ZoneEndpoint> wildcards = regions.remove(null);
             ZoneEndpoint wildcardZoneEndpoint = null;
             ZoneEndpoint wildcardPrivateEndpoint = null;
-            if (wildcards != null) for (ZoneEndpoint endpoint : wildcards) {
-                if (endpoint.isPrivateEndpoint()) {
-                    if (wildcardPrivateEndpoint != null) illegal("Multiple private endpoints (for all regions) declared for " +
-                                                                 "container id '" + cluster + "'");
-                    wildcardPrivateEndpoint = endpoint;
-                }
-                else {
-                    if (wildcardZoneEndpoint != null) illegal("Multiple zone endpoints (for all regions) declared " +
-                                                              "for container id '" + cluster + "'");
-                    wildcardZoneEndpoint = endpoint;
+            if (wildcards != null) {
+                for (ZoneEndpoint endpoint : wildcards) {
+                    if (endpoint.isPrivateEndpoint()) {
+                        if (wildcardPrivateEndpoint != null) illegal("Multiple private endpoints (for all regions) declared for " +
+                                                                     "container id '" + cluster + "'");
+                        wildcardPrivateEndpoint = endpoint;
+                    }
+                    else {
+                        if (wildcardZoneEndpoint != null) illegal("Multiple zone endpoints (for all regions) declared " +
+                                                                  "for container id '" + cluster + "'");
+                        wildcardZoneEndpoint = endpoint;
+                    }
                 }
             }
             for (RegionName region : regions.keySet()) {

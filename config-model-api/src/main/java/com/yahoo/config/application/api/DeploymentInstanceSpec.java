@@ -261,7 +261,7 @@ public class DeploymentInstanceSpec extends DeploymentSpec.Steps {
         return zones().stream().anyMatch(zone -> zone.concerns(environment, Optional.of(region)));
     }
 
-    /** Returns the zone endpoint specified for the given region, or the default, or {@code null}. */
+    /** Returns the zone endpoint specified for the given region, or empty. */
     Optional<ZoneEndpoint> zoneEndpoint(ZoneId zone, ClusterSpec.Id cluster) {
         return Optional.ofNullable(zoneEndpoints.get(cluster))
                        .filter(__ -> deploysTo(zone.environment(), zone.region()))

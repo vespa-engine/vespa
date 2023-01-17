@@ -1310,8 +1310,10 @@ public class DeploymentSpecTest {
                                "Missing required attribute 'container-id' in 'endpoint'");
         assertInvalidEndpoints("<endpoint type='private' />",
                                "Missing required attribute 'container-id' in 'endpoint'");
+        assertInvalidEndpoints("<endpoint container-id='foo' type='zone'><allow /></endpoint>",
+                               "Instance-level endpoint 'default': only endpoints of type 'private' can specify 'allow' children");
         assertInvalidEndpoints("<endpoint type='private' container-id='foo' enabled='true' />",
-                               "Private endpoint for container-id 'foo': only endpoints of type 'zone' can specify 'enabled'");
+                               "Instance-level endpoint 'default': only endpoints of type 'zone' can specify 'enabled'");
         assertInvalidEndpoints("<endpoint type='zone' container-id='qrs'/><endpoint type='zone' container-id='qrs'/>",
                                "Multiple zone endpoints (for all regions) declared for container id 'qrs'");
         assertInvalidEndpoints("<endpoint type='private' container-id='qrs'><region>us</region></endpoint>" +
