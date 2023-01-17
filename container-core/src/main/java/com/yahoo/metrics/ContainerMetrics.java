@@ -33,7 +33,7 @@ public enum ContainerMetrics {
     JDISC_SINGLETON_ACTIVATION_COUNT("jdisc.singleton.activation.count", Unit.OPERATION, "JDISC Singleton activations"),
     JDISC_SINGLETON_ACTIVATION_FAILURE_COUNT("jdisc.singleton.activation.failure.count", Unit.OPERATION, "JDISC Singleton activation failures"),
     JDISC_SINGLETON_ACTIVATION_MILLIS("jdisc.singleton.activation.millis", Unit.MILLISECOND, "JDISC Singleton activation time"),
-    JDISC_SINGLETON_ACTIVAITON_COUNT("jdisc.singleton.deactivation.count", Unit.OPERATION, "JDISC Singleton deactivations"),
+    JDISC_SINGLETON_DEACTIVATION_COUNT("jdisc.singleton.deactivation.count", Unit.OPERATION, "JDISC Singleton deactivations"),
     JDISC_SINGLETON_DEACTIVATION_FAILURE_COUNT("jdisc.singleton.deactivation.failure.count", Unit.OPERATION, "JDISC Singleton deactivation failures"),
     JDISC_SINGLETON_DEACTIVATION_MILLIS("jdisc.singleton.deactivation.millis", Unit.MILLISECOND, "JDISC Singleton deactivation time"),
 
