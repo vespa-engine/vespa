@@ -45,9 +45,6 @@ private:
     std::unique_ptr<SearchSessionCache> _search_map;
 
 public:
-    using UP = std::unique_ptr<SessionManager>;
-    using SP = std::shared_ptr<SessionManager>;
-
     SessionManager(uint32_t maxSizeGrouping);
     ~SessionManager();
 
@@ -62,7 +59,6 @@ public:
     std::vector<SearchSessionInfo> getSortedSearchSessionInfo() const;
 
     void pruneTimedOutSessions(vespalib::steady_time currentTime);
-    void close();
 };
 
 }

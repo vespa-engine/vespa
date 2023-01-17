@@ -173,7 +173,11 @@ SessionManager::SessionManager(uint32_t maxSize)
       _search_map(std::make_unique<SearchSessionCache>()) {
 }
 
-SessionManager::~SessionManager() = default;
+SessionManager::~SessionManager() {
+    pruneTimedOutSessions(vespalib::steady_time::max());
+    assert(_grouping_cache->empty());
+    assert(_search_map->empty());
+}
 
 void SessionManager::insert(search::grouping::GroupingSession::UP session) {
     _grouping_cache->insert(std::move(session));
@@ -213,12 +217,6 @@ SessionManager::getSortedSearchSessionInfo() const
 void SessionManager::pruneTimedOutSessions(vespalib::steady_time currentTime) {
     _grouping_cache->pruneTimedOutSessions(currentTime);
     _search_map->pruneTimedOutSessions(currentTime);
-}
-
-void SessionManager::close() {
-    pruneTimedOutSessions(vespalib::steady_time::max());
-    assert(_grouping_cache->empty());
-    assert(_search_map->empty());
 }
 
 SessionManager::Stats SessionManager::getGroupingStats() {
