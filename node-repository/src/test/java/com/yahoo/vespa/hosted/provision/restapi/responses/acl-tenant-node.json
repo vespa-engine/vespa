@@ -169,5 +169,6 @@
       "port": 22,
       "trustedBy": "host3.yahoo.com"
     }
-  ]
+  ],
+  "trustedUdpPorts": []
 }
