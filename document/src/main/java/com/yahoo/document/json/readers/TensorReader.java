@@ -244,13 +244,13 @@ public class TensorReader {
             return Double.parseDouble(buffer.currentText());
         }
         catch (NumberFormatException e) {
-            throw new IllegalArgumentException("Expected a number but got '" + buffer.currentText());
+            throw new IllegalArgumentException("Expected a number but got '" + buffer.currentText() + "'");
         }
     }
 
     private static TensorAddress asAddress(String label, TensorType type) {
         if (type.dimensions().size() != 1)
-            throw new IllegalArgumentException("Expected a tensor with a single dimension but got " + type);
+            throw new IllegalArgumentException("Expected a tensor with a single dimension but got '" + type + "'");
         return new TensorAddress.Builder(type).add(type.dimensions().get(0).name(), label).build();
     }
 
