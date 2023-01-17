@@ -28,6 +28,7 @@ namespace search::tensor {
 
 using search::AddressSpaceComponents;
 using search::StateExplorerUtils;
+using search::queryeval::GlobalFilter;
 using vespalib::datastore::CompactionStrategy;
 using vespalib::datastore::EntryRef;
 
@@ -58,6 +59,42 @@ struct PairDist {
 bool operator< (const PairDist &a, const PairDist &b) {
     return (a.distance < b.distance);
 }
+
+template <HnswIndexType type>
+class GlobalFilterWrapper;
+
+template <>
+class GlobalFilterWrapper<HnswIndexType::SINGLE> {
+    const GlobalFilter *_filter;
+public:
+    GlobalFilterWrapper(const GlobalFilter *filter)
+        : _filter(filter)
+    {
+    }
+
+    bool check(uint32_t docid) const noexcept { return !_filter || _filter->check(docid); }
+
+    void clamp_nodeid_limit(uint32_t& nodeid_limit) {
+        if (_filter) {
+            nodeid_limit = std::min(nodeid_limit, _filter->size());
+        }
+    }
+};
+
+template <>
+class GlobalFilterWrapper<HnswIndexType::MULTI> {
+    const GlobalFilter *_filter;
+    uint32_t            _docid_limit;
+public:
+    GlobalFilterWrapper(const GlobalFilter *filter)
+        : _filter(filter),
+          _docid_limit(filter ? filter->size() : 0u)
+    {
+    }
+
+    bool check(uint32_t docid) const noexcept { return !_filter || (docid < _docid_limit && _filter->check(docid)); }
+    static void clamp_nodeid_limit(uint32_t&) { }
+};
 
 }
 
@@ -297,6 +334,8 @@ HnswIndex<type>::search_layer_helper(const TypedCells& input, uint32_t neighbors
                                uint32_t nodeid_limit, uint32_t estimated_visited_nodes) const
 {
     NearestPriQ candidates;
+    GlobalFilterWrapper<type> filter_wrapper(filter);
+    filter_wrapper.clamp_nodeid_limit(nodeid_limit);
     VisitedTracker visited(nodeid_limit, estimated_visited_nodes);
     for (const auto &entry : best_neighbors.peek()) {
         if (entry.nodeid >= nodeid_limit) {
@@ -304,7 +343,7 @@ HnswIndex<type>::search_layer_helper(const TypedCells& input, uint32_t neighbors
         }
         candidates.push(entry);
         visited.mark(entry.nodeid);
-        if (filter && !filter->check(entry.nodeid)) {
+        if (!filter_wrapper.check(entry.docid)) {
             assert(best_neighbors.peek().size() == 1);
             best_neighbors.pop();
         }
@@ -333,7 +372,7 @@ HnswIndex<type>::search_layer_helper(const TypedCells& input, uint32_t neighbors
             double dist_to_input = calc_distance(input, neighbor_docid, neighbor_subspace);
             if (dist_to_input < limit_dist) {
                 candidates.emplace(neighbor_nodeid, neighbor_ref, dist_to_input);
-                if ((!filter) || filter->check(neighbor_nodeid)) {
+                if (filter_wrapper.check(neighbor_docid)) {
                     best_neighbors.emplace(neighbor_nodeid, neighbor_docid, neighbor_ref, dist_to_input);
                     while (best_neighbors.size() > neighbors_to_find) {
                         best_neighbors.pop();
@@ -352,9 +391,6 @@ HnswIndex<type>::search_layer(const TypedCells& input, uint32_t neighbors_to_fin
                         BestNeighbors& best_neighbors, uint32_t level, const GlobalFilter *filter) const
 {
     uint32_t nodeid_limit = _graph.nodes_size.load(std::memory_order_acquire);
-    if (filter) {
-        nodeid_limit = std::min(filter->size(), nodeid_limit);
-    }
     uint32_t estimated_visited_nodes = estimate_visited_nodes(level, nodeid_limit, neighbors_to_find, filter);
     if (estimated_visited_nodes >= nodeid_limit / 128) {
         search_layer_helper<BitVectorVisitedTracker>(input, neighbors_to_find, best_neighbors, level, filter, nodeid_limit, estimated_visited_nodes);
