@@ -19,7 +19,6 @@ import java.util.List;
 import java.util.Optional;
 import java.util.stream.StreamSupport;
 
-import static java.util.Collections.emptyList;
 import static java.util.stream.Collectors.toList;
 
 /**
@@ -128,7 +127,7 @@ public class SiaUtils {
         String keyFileSuffix = ".key.pem";
         Path keysDirectory = root.resolve("keys");
         if ( ! Files.exists(keysDirectory))
-            return emptyList();
+            return List.of();
 
         try (DirectoryStream<Path> directoryStream = Files.newDirectoryStream(keysDirectory)) {
             return StreamSupport.stream(directoryStream.spliterator(), false)

@@ -50,7 +50,6 @@ import java.util.Set;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
-import static java.util.stream.Collectors.toList;
 
 /**
  * @author bjorncs
@@ -200,7 +199,7 @@ public class DefaultZmsClient extends ClientBase implements ZmsClient {
                 .build();
         return execute(request, response -> {
             DomainListResponseEntity result = readEntity(response, DomainListResponseEntity.class);
-            return result.domains.stream().map(AthenzDomain::new).collect(toList());
+            return result.domains.stream().map(AthenzDomain::new).toList();
         });
     }
 
@@ -212,7 +211,7 @@ public class DefaultZmsClient extends ClientBase implements ZmsClient {
                 .build();
         return execute(request, response -> {
             DomainListResponseEntity result = readEntity(response, DomainListResponseEntity.class);
-            return result.domains.stream().map(AthenzDomain::new).collect(toList());
+            return result.domains.stream().map(AthenzDomain::new).toList();
         });
     }
 
@@ -300,7 +299,7 @@ public class DefaultZmsClient extends ClientBase implements ZmsClient {
                         .id(a.getId())
                         .effect(AthenzAssertion.Effect.valueOrNull(a.getEffect()))
                         .build())
-                .collect(toList());
+                .toList();
         return Optional.of(new AthenzPolicy(entity.getName(), assertions));
     }
 
