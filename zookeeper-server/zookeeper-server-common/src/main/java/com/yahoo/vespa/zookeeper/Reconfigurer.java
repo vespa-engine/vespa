@@ -17,7 +17,6 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import static com.yahoo.vespa.zookeeper.Configurator.serverSpec;
-import static java.util.stream.Collectors.toList;
 
 /**
  * Starts zookeeper server and supports reconfiguring zookeeper cluster. Keep this as a component
@@ -145,7 +144,7 @@ public class Reconfigurer extends AbstractComponent {
         return config.server().stream()
                      .filter(server -> ! server.retired())
                      .map(server -> serverSpec(server, false))
-                     .collect(toList());
+                     .toList();
     }
 
 }
