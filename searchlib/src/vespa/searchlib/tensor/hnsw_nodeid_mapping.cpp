@@ -185,6 +185,7 @@ HnswNodeidMapping::populate_docid_to_nodeids_mapping_and_free_list(vespalib::Con
         ++nodeid;
     }
     std::reverse(_free_list.begin(), _free_list.end());
+    _nodeid_limit = nodes.size();
 }
 
 void
