@@ -99,13 +99,16 @@ class ApacheCluster implements Cluster {
                 }
 
                 Future<?> future = endpoint.client.execute(request,
-                                                           new FutureCallback<SimpleHttpResponse>() {
+                                                           new FutureCallback<>() {
                                                                @Override public void completed(SimpleHttpResponse response) { vessel.complete(new ApacheHttpResponse(response)); }
                                                                @Override public void failed(Exception ex) { vessel.completeExceptionally(ex); }
                                                                @Override public void cancelled() { vessel.cancel(false); }
                                                            });
                 long timeoutMillis = wrapped.timeout() == null ? 200_000 : wrapped.timeout().toMillis() * 11 / 10 + 1_000;
-                Future<?> cancellation = timeoutExecutor.schedule(() -> { future.cancel(true); vessel.cancel(true); }, timeoutMillis, TimeUnit.MILLISECONDS);
+                Future<?> cancellation = timeoutExecutor.schedule(() -> {
+                    future.cancel(true);
+                    vessel.cancel(true);
+                    }, timeoutMillis, TimeUnit.MILLISECONDS);
                 vessel.whenComplete((__, ___) -> cancellation.cancel(true));
             }
             catch (Throwable thrown) {
