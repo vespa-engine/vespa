@@ -3,9 +3,7 @@ package com.yahoo.vespa.hosted.provision.persistence;
 
 import ai.vespa.http.DomainName;
 import com.yahoo.config.provision.CloudAccount;
-import com.yahoo.config.provision.ZoneEndpoint;
-import com.yahoo.config.provision.ZoneEndpoint.AllowedUrn;
-import com.yahoo.config.provision.ZoneEndpoint.AccessType;
+import com.yahoo.config.provision.LoadBalancerSettings;
 import com.yahoo.slime.ArrayTraverser;
 import com.yahoo.slime.Cursor;
 import com.yahoo.slime.Inspector;
@@ -54,11 +52,7 @@ public class LoadBalancerSerializer {
     private static final String serviceIdField = "serviceId";
     private static final String cloudAccountField = "cloudAccount";
     private static final String settingsField = "settings";
-    private static final String publicField = "public";
-    private static final String privateField = "private";
     private static final String allowedUrnsField = "allowedUrns";
-    private static final String accessTypeField = "type";
-    private static final String urnField = "urn";
 
     public static byte[] toJson(LoadBalancer loadBalancer) {
         Slime slime = new Slime();
@@ -83,13 +77,15 @@ public class LoadBalancerSerializer {
         }));
         loadBalancer.instance()
                     .map(LoadBalancerInstance::settings)
-                    .ifPresent(settings -> toSlime(root.setObject(settingsField), settings));
+                    .filter(settings -> ! settings.isEmpty())
+                    .ifPresent(settings -> settings.allowedUrns().forEach(root.setObject(settingsField)
+                                                                              .setArray(allowedUrnsField)::addString));
         loadBalancer.instance()
                     .flatMap(LoadBalancerInstance::serviceId)
                     .ifPresent(serviceId -> root.setString(serviceIdField, serviceId.value()));
         loadBalancer.instance()
                     .map(LoadBalancerInstance::cloudAccount)
-                    .filter(cloudAccount -> ! cloudAccount.isUnspecified())
+                    .filter(cloudAccount -> !cloudAccount.isUnspecified())
                     .ifPresent(cloudAccount -> root.setString(cloudAccountField, cloudAccount.value()));
         try {
             return SlimeUtils.toJsonBytes(slime);
@@ -118,7 +114,7 @@ public class LoadBalancerSerializer {
         Optional<DomainName> hostname = optionalString(object.field(hostnameField), Function.identity()).filter(s -> !s.isEmpty()).map(DomainName::of);
         Optional<String> ipAddress = optionalString(object.field(lbIpAddressField), Function.identity()).filter(s -> !s.isEmpty());
         Optional<DnsZone> dnsZone = optionalString(object.field(dnsZoneField), DnsZone::new);
-        ZoneEndpoint settings = zoneEndpoint(object.field(settingsField));
+        LoadBalancerSettings settings = loadBalancerSettings(object.field(settingsField));
         Optional<PrivateServiceId> serviceId = optionalString(object.field(serviceIdField), PrivateServiceId::of);
         CloudAccount cloudAccount = optionalString(object.field(cloudAccountField), CloudAccount::from).orElse(CloudAccount.empty);
         Optional<LoadBalancerInstance> instance = hostname.isEmpty() && ipAddress.isEmpty() ? Optional.empty() :
@@ -130,35 +126,11 @@ public class LoadBalancerSerializer {
                                 Instant.ofEpochMilli(object.field(changedAtField).asLong()));
     }
 
-    private static void toSlime(Cursor settingsObject, ZoneEndpoint settings) {
-        settingsObject.setBool(publicField, settings.isPublicEndpoint());
-        settingsObject.setBool(privateField, settings.isPrivateEndpoint());
-        if (settings.isPrivateEndpoint()) {
-            Cursor allowedUrnsArray = settingsObject.setArray(allowedUrnsField);
-            for (AllowedUrn urn : settings.allowedUrns()) {
-                Cursor urnObject = allowedUrnsArray.addObject();
-                urnObject.setString(urnField, urn.urn());
-                urnObject.setString(accessTypeField,
-                                    switch (urn.type()) {
-                                        case awsPrivateLink -> "awsPrivateLink";
-                                        case gcpServiceConnect -> "gcpServiceConnect";
-                                    });
-            }
-        }
-    }
-
-    private static ZoneEndpoint zoneEndpoint(Inspector settingsObject) {
-        if ( ! settingsObject.valid()) return ZoneEndpoint.defaultEndpoint;
-        return new ZoneEndpoint(settingsObject.field(publicField).asBool(),
-                                settingsObject.field(privateField).asBool(),
-                                SlimeUtils.entriesStream(settingsObject.field(allowedUrnsField))
-                                          .map(urnObject -> new AllowedUrn(switch (urnObject.field(accessTypeField).asString()) {
-                                                                               case "awsPrivateLink" -> AccessType.awsPrivateLink;
-                                                                               case "gcpServiceConnect" -> AccessType.gcpServiceConnect;
-                                                                               default -> throw new IllegalArgumentException("unknown service access type in '" + urnObject + "'");
-                                                                           },
-                                                                           urnObject.field(urnField).asString()))
-                                          .toList());
+    private static LoadBalancerSettings loadBalancerSettings(Inspector settingsObject) {
+        if ( ! settingsObject.valid()) return LoadBalancerSettings.empty;
+        return new LoadBalancerSettings(SlimeUtils.entriesStream(settingsObject.field(allowedUrnsField))
+                                                  .map(Inspector::asString)
+                                                  .toList());
     }
 
     private static <T> Optional<T> optionalValue(Inspector field, Function<Inspector, T> fieldMapper) {

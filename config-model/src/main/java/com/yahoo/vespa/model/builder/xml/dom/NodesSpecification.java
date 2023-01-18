@@ -4,7 +4,6 @@ package com.yahoo.vespa.model.builder.xml.dom;
 import com.yahoo.collections.Pair;
 import com.yahoo.component.Version;
 import com.yahoo.config.application.api.DeployLogger;
-import com.yahoo.config.provision.ZoneEndpoint;
 import com.yahoo.config.model.ConfigModelContext;
 import com.yahoo.config.provision.Capacity;
 import com.yahoo.config.provision.CloudAccount;
@@ -12,6 +11,7 @@ import com.yahoo.config.provision.ClusterMembership;
 import com.yahoo.config.provision.ClusterResources;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.DockerImage;
+import com.yahoo.config.provision.LoadBalancerSettings;
 import com.yahoo.config.provision.NodeResources;
 import com.yahoo.text.XML;
 import com.yahoo.vespa.model.HostResource;
@@ -256,13 +256,13 @@ public class NodesSpecification {
                                                           ClusterSpec.Id clusterId,
                                                           DeployLogger logger,
                                                           boolean stateful) {
-        return provision(hostSystem, clusterType, clusterId, ZoneEndpoint.defaultEndpoint, logger, stateful);
+        return provision(hostSystem, clusterType, clusterId, LoadBalancerSettings.empty, logger, stateful);
     }
 
     public Map<HostResource, ClusterMembership> provision(HostSystem hostSystem,
                                                           ClusterSpec.Type clusterType,
                                                           ClusterSpec.Id clusterId,
-                                                          ZoneEndpoint zoneEndpoint,
+                                                          LoadBalancerSettings loadBalancerSettings,
                                                           DeployLogger logger,
                                                           boolean stateful) {
         if (combinedId.isPresent())
@@ -272,7 +272,7 @@ public class NodesSpecification {
                                          .exclusive(exclusive)
                                          .combinedId(combinedId.map(ClusterSpec.Id::from))
                                          .dockerImageRepository(dockerImageRepo)
-                                         .loadBalancerSettings(zoneEndpoint)
+                                         .loadBalancerSettings(loadBalancerSettings)
                                          .stateful(stateful)
                                          .build();
         return hostSystem.allocateHosts(cluster, Capacity.from(min, max, required, canFail, cloudAccount), logger);

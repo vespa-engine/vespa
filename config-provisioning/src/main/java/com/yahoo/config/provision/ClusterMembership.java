@@ -20,7 +20,7 @@ public class ClusterMembership {
     private final String stringValue;
 
     private ClusterMembership(String stringValue, Version vespaVersion, Optional<DockerImage> dockerImageRepo,
-                              ZoneEndpoint zoneEndpoint) {
+                              LoadBalancerSettings loadBalancerSettings) {
         String[] components = stringValue.split("/");
         if (components.length < 4)
             throw new RuntimeException("Could not parse '" + stringValue + "' to a cluster membership. " +
@@ -49,7 +49,7 @@ public class ClusterMembership {
                                   .exclusive(exclusive)
                                   .combinedId(combinedId.map(ClusterSpec.Id::from))
                                   .dockerImageRepository(dockerImageRepo)
-                                  .loadBalancerSettings(zoneEndpoint)
+                                  .loadBalancerSettings(loadBalancerSettings)
                                   .stateful(stateful)
                                   .build();
         this.index = Integer.parseInt(components[3]);
@@ -125,12 +125,12 @@ public class ClusterMembership {
     public String toString() { return stringValue(); }
 
     public static ClusterMembership from(String stringValue, Version vespaVersion, Optional<DockerImage> dockerImageRepo) {
-        return from(stringValue, vespaVersion, dockerImageRepo, ZoneEndpoint.defaultEndpoint);
+        return from(stringValue, vespaVersion, dockerImageRepo, LoadBalancerSettings.empty);
     }
 
     public static ClusterMembership from(String stringValue, Version vespaVersion, Optional<DockerImage> dockerImageRepo,
-                                         ZoneEndpoint zoneEndpoint) {
-        return new ClusterMembership(stringValue, vespaVersion, dockerImageRepo, zoneEndpoint);
+                                         LoadBalancerSettings loadBalancerSettings) {
+        return new ClusterMembership(stringValue, vespaVersion, dockerImageRepo, loadBalancerSettings);
     }
 
     public static ClusterMembership from(ClusterSpec cluster, int index) {

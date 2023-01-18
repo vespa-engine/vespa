@@ -23,7 +23,6 @@ import com.yahoo.config.provision.HostName;
 import com.yahoo.config.provision.InstanceName;
 import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.TenantName;
-import com.yahoo.config.provision.ZoneEndpoint.AllowedUrn;
 import com.yahoo.config.provision.zone.RoutingMethod;
 import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.container.handler.metrics.JsonResponse;
@@ -1979,15 +1978,7 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
             lbObject.setString("cluster", lb.cluster().value());
             lb.service().ifPresent(service -> {
                 lbObject.setString("serviceId", service.id()); // Really the "serviceName", but this is what the user needs >_<
-                Cursor urnsArray = lbObject.setArray("allowedUrns");
-                for (AllowedUrn urn : service.allowedUrns()) {
-                    Cursor urnObject = urnsArray.addObject();
-                    urnObject.setString("type", switch (urn.type()) {
-                        case awsPrivateLink -> "aws-private-link";
-                        case gcpServiceConnect -> "gcp-service-connect";
-                    });
-                    urnObject.setString("urn", urn.urn());
-                }
+                service.allowedUrns().forEach(lbObject.setArray("allowedUrns")::addString);
                 Cursor endpointsArray = lbObject.setArray("endpoints");
                 controller.serviceRegistry().vpcEndpointService()
                           .getConnections(new ClusterId(id, lb.cluster()),
