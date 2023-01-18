@@ -15,8 +15,6 @@ import com.yahoo.config.application.api.DeploymentSpec.Steps;
 import com.yahoo.config.application.api.DeploymentSpec.UpgradePolicy;
 import com.yahoo.config.application.api.DeploymentSpec.UpgradeRollout;
 import com.yahoo.config.application.api.Endpoint;
-import com.yahoo.config.application.api.Endpoint.Level;
-import com.yahoo.config.application.api.Endpoint.Target;
 import com.yahoo.config.application.api.Notifications;
 import com.yahoo.config.application.api.Notifications.Role;
 import com.yahoo.config.application.api.Notifications.When;
@@ -24,15 +22,10 @@ import com.yahoo.config.application.api.TimeWindow;
 import com.yahoo.config.provision.AthenzDomain;
 import com.yahoo.config.provision.AthenzService;
 import com.yahoo.config.provision.CloudAccount;
-import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.InstanceName;
 import com.yahoo.config.provision.RegionName;
 import com.yahoo.config.provision.Tags;
-import com.yahoo.config.provision.ZoneEndpoint;
-import com.yahoo.config.provision.ZoneEndpoint.AllowedUrn;
-import com.yahoo.config.provision.ZoneEndpoint.AccessType;
-import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.io.IOUtils;
 import com.yahoo.text.XML;
 import org.w3c.dom.Element;
@@ -46,19 +39,15 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.Comparator;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
-import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.Set;
 import java.util.function.Function;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
-
-import static java.util.Comparator.comparingInt;
 
 /**
  * @author bratseth
@@ -134,7 +123,7 @@ public class DeploymentSpecXmlReader {
             return DeploymentSpec.empty;
 
         List<Step> steps = new ArrayList<>();
-        List<Endpoint> applicationEndpoints = new ArrayList<>();
+        List<Endpoint> applicationEndpoints = List.of();
         if ( ! containsTag(instanceTag, root)) { // deployment spec skipping explicit instance -> "default" instance
             steps.addAll(readInstanceContent("default", root, new HashMap<>(), root));
         }
@@ -152,7 +141,7 @@ public class DeploymentSpecXmlReader {
                     steps.addAll(readNonInstanceSteps(child, new HashMap<>(), root)); // (No global service id here)
                 }
             }
-            readEndpoints(root, Optional.empty(), steps, applicationEndpoints, Map.of());
+            applicationEndpoints = readEndpoints(root, Optional.empty(), steps);
         }
 
         return new DeploymentSpec(steps,
@@ -201,13 +190,11 @@ public class DeploymentSpecXmlReader {
         Notifications notifications = readNotifications(instanceElement, parentTag);
 
         // Values where there is no default
-        Tags tags = XML.attribute(tagsTag, instanceElement).map(Tags::fromString).orElse(Tags.empty());
+        Tags tags = XML.attribute(tagsTag, instanceElement).map(value -> Tags.fromString(value)).orElse(Tags.empty());
         List<Step> steps = new ArrayList<>();
         for (Element instanceChild : XML.getChildren(instanceElement))
             steps.addAll(readNonInstanceSteps(instanceChild, prodAttributes, instanceChild));
-        List<Endpoint> endpoints = new ArrayList<>();
-        Map<ClusterSpec.Id, Map<ZoneId, ZoneEndpoint>> zoneEndpoints = new LinkedHashMap<>();
-        readEndpoints(instanceElement, Optional.of(instanceNameString), steps, endpoints, zoneEndpoints);
+        List<Endpoint> endpoints = readEndpoints(instanceElement, Optional.of(instanceNameString), steps);
 
         // Build and return instances with these values
         Instant now = clock.instant();
@@ -227,7 +214,6 @@ public class DeploymentSpecXmlReader {
                                                              cloudAccount,
                                                              notifications,
                                                              endpoints,
-                                                             zoneEndpoints,
                                                              now))
                      .toList();
     }
@@ -320,54 +306,19 @@ public class DeploymentSpecXmlReader {
         return Notifications.of(emailAddresses, emailRoles);
     }
 
-    private void readEndpoints(Element parent, Optional<String> instance, List<Step> steps, List<Endpoint> endpoints,
-                               Map<ClusterSpec.Id, Map<ZoneId, ZoneEndpoint>> zoneEndpoints) {
+    private List<Endpoint> readEndpoints(Element parent, Optional<String> instance, List<Step> steps) {
         var endpointsElement = XML.getChild(parent, endpointsTag);
-        if (endpointsElement == null) return;
+        if (endpointsElement == null) return List.of();
 
         Endpoint.Level level = instance.isEmpty() ? Endpoint.Level.application : Endpoint.Level.instance;
-        Map<String, Endpoint> endpointsById = new LinkedHashMap<>();
-        Map<String, Map<RegionName, List<ZoneEndpoint>>> endpointsByZone = new LinkedHashMap<>();
-        XML.getChildren(endpointsElement, endpointTag).stream() // Read zone settings first.
-                .sorted(comparingInt(endpoint -> getZoneEndpointType(endpoint, level).isPresent() ? 0 : 1))
-                .forEach(endpointElement -> {
+        Map<String, Endpoint> endpoints = new LinkedHashMap<>();
+        for (var endpointElement : XML.getChildren(endpointsElement, endpointTag)) {
+            String endpointId = stringAttribute("id", endpointElement).orElse(Endpoint.DEFAULT_ID);
             String containerId = requireStringAttribute("container-id", endpointElement);
-            Optional<String> endpointId = stringAttribute("id", endpointElement);
-            Optional<String> zoneEndpointType = getZoneEndpointType(endpointElement, level);
             String msgPrefix = (level == Endpoint.Level.application ? "Application-level" : "Instance-level") +
-                               " endpoint '" + endpointId.orElse(Endpoint.DEFAULT_ID) + "': ";
-
-            if (zoneEndpointType.isPresent() && endpointId.isPresent())
-                illegal(msgPrefix + "cannot declare 'id' with type 'zone' or 'private'");
-
+                               " endpoint '" + endpointId + "': ";
             String invalidChild = level == Endpoint.Level.application ? "region" : "instance";
-            if ( ! XML.getChildren(endpointElement, invalidChild).isEmpty())
-                illegal(msgPrefix + "invalid element '" + invalidChild + "'");
-
-            boolean enabled = XML.attribute("enabled", endpointElement)
-                                 .map(value -> {
-                                     if (zoneEndpointType.isEmpty() || ! zoneEndpointType.get().equals("zone"))
-                                         illegal(msgPrefix + "only endpoints of type 'zone' can specify 'enabled'");
-
-                                     return switch (value) {
-                                         case "true" -> true;
-                                         case "false" -> false;
-                                         default -> throw new IllegalArgumentException(msgPrefix + "invalid 'enabled' value; must be 'true' or 'false'");
-                                     };
-                                 }).orElse(true);
-
-            List<AllowedUrn> allowedUrns = new ArrayList<>();
-            for (var allow : XML.getChildren(endpointElement, "allow")) {
-                if (zoneEndpointType.isEmpty() || ! zoneEndpointType.get().equals("private"))
-                    illegal(msgPrefix + "only endpoints of type 'private' can specify 'allow' children");
-
-                switch (requireStringAttribute("with", allow)) {
-                    case "aws-private-link" -> allowedUrns.add(new AllowedUrn(AccessType.awsPrivateLink, requireStringAttribute("arn", allow)));
-                    case "gcp-service-connect" -> allowedUrns.add(new AllowedUrn(AccessType.gcpServiceConnect, requireStringAttribute("project", allow)));
-                    default -> illegal("Private endpoint for container-id '" + containerId + "': " +
-                                       "invalid attribute 'with': '" + requireStringAttribute("with", allow) + "'");
-                }
-            }
+            if (!XML.getChildren(endpointElement, invalidChild).isEmpty()) illegal(msgPrefix + "invalid element '" + invalidChild + "'");
 
             List<Endpoint.Target> targets = new ArrayList<>();
             if (level == Endpoint.Level.application) {
@@ -394,132 +345,33 @@ public class DeploymentSpecXmlReader {
                 if (weightSum == 0) illegal(msgPrefix + "sum of all weights must be positive, got " + weightSum);
             } else {
                 if (stringAttribute("region", endpointElement).isPresent()) illegal(msgPrefix + "invalid 'region' attribute");
-                Set<RegionName> regions = new LinkedHashSet<>();
                 for (var regionElement : XML.getChildren(endpointElement, "region")) {
                     String region = regionElement.getTextContent();
-                    if (region == null || region.isBlank())
-                        illegal(msgPrefix + "empty 'region' element");
-                    if (   zoneEndpointType.isEmpty()
-                        && Stream.of(RegionName.from(region), null)
-                                 .map(endpointsByZone.getOrDefault(containerId, new HashMap<>())::get)
-                                 .flatMap(maybeEndpoints -> maybeEndpoints == null ? Stream.empty() : maybeEndpoints.stream())
-                                 .anyMatch(endpoint -> ! endpoint.isPublicEndpoint()))
-                        illegal(msgPrefix + "targets zone endpoint in '" + region + "' with 'enabled' set to 'false'");
-                    if ( ! regions.add(RegionName.from(region)))
-                        illegal(msgPrefix + "duplicate 'region' element: '" + region + "'");
-                }
-
-                if (zoneEndpointType.isPresent()) {
-                    if (regions.isEmpty()) regions.add(null);
-                    ZoneEndpoint endpoint = switch (zoneEndpointType.get()) {
-                        case "zone" -> new ZoneEndpoint(enabled, false, List.of());
-                        case "private" -> new ZoneEndpoint(true, true, allowedUrns); // Doesn't turn off public visibility.
-                        default -> throw new IllegalArgumentException("unsupported zone endpoint type '" + zoneEndpointType.get() + "'");
-                    };
-                    for (RegionName region : regions) endpointsByZone.computeIfAbsent(containerId, __ -> new LinkedHashMap<>())
-                                                                     .computeIfAbsent(region, __ -> new ArrayList<>())
-                                                                     .add(endpoint);
-                }
-                else {
-                    if (regions.isEmpty()) {
-                        // No explicit targets given for instance level endpoint. Include all declared, enabled regions by default
-                        List<RegionName> declared =
-                                steps.stream()
-                                     .filter(step -> step.concerns(Environment.prod))
-                                     .flatMap(step -> step.zones().stream())
-                                     .flatMap(zone -> zone.region().stream())
-                                     .toList();
-                        if (declared.isEmpty()) illegal(msgPrefix + "no declared regions to target");
-
-                        declared.stream().filter(region -> Stream.of(region, null)
-                                                                 .map(endpointsByZone.getOrDefault(containerId, new HashMap<>())::get)
-                                                                 .flatMap(maybeEndpoints -> maybeEndpoints == null ? Stream.empty() : maybeEndpoints.stream())
-                                                                 .allMatch(ZoneEndpoint::isPublicEndpoint))
-                                .forEach(regions::add);
-                    }
-                    if (regions.isEmpty()) illegal(msgPrefix + "all eligible zone endpoints have 'enabled' set to 'false'");
-                    InstanceName instanceName = instance.map(InstanceName::from).get();
-                    for (RegionName region : regions) targets.add(new Target(region, instanceName, 1));
+                    if (region == null || region.isBlank()) illegal(msgPrefix + "empty 'region' element");
+                    targets.add(new Endpoint.Target(RegionName.from(region),
+                                                    InstanceName.from(instance.get()),
+                                                    1));
                 }
             }
-
-            if (zoneEndpointType.isEmpty()) {
-                Endpoint endpoint = new Endpoint(endpointId.orElse(Endpoint.DEFAULT_ID), containerId, level, targets);
-                if (endpointsById.containsKey(endpoint.endpointId())) {
-                    illegal("Endpoint ID '" + endpoint.endpointId() + "' is specified multiple times");
-                }
-                endpointsById.put(endpoint.endpointId(), endpoint);
+            if (targets.isEmpty() && level == Endpoint.Level.instance) {
+                // No explicit targets given for instance level endpoint. Include all declared regions by default
+                InstanceName instanceName = instance.map(InstanceName::from).get();
+                steps.stream()
+                     .filter(step -> step.concerns(Environment.prod))
+                     .flatMap(step -> step.zones().stream())
+                     .flatMap(zone -> zone.region().stream())
+                     .distinct()
+                     .map(region -> new Endpoint.Target(region, instanceName, 1))
+                     .forEach(targets::add);
             }
-        });
-        endpoints.addAll(endpointsById.values());
-        validateAndConsolidate(endpointsByZone, zoneEndpoints);
-    }
 
-    static void validateAndConsolidate(Map<String, Map<RegionName, List<ZoneEndpoint>>> in, Map<ClusterSpec.Id, Map<ZoneId, ZoneEndpoint>> out) {
-        in.forEach((cluster, regions) -> {
-            List<ZoneEndpoint> wildcards = regions.remove(null);
-            ZoneEndpoint wildcardZoneEndpoint = null;
-            ZoneEndpoint wildcardPrivateEndpoint = null;
-            if (wildcards != null) {
-                for (ZoneEndpoint endpoint : wildcards) {
-                    if (endpoint.isPrivateEndpoint()) {
-                        if (wildcardPrivateEndpoint != null) illegal("Multiple private endpoints (for all regions) declared for " +
-                                                                     "container id '" + cluster + "'");
-                        wildcardPrivateEndpoint = endpoint;
-                    }
-                    else {
-                        if (wildcardZoneEndpoint != null) illegal("Multiple zone endpoints (for all regions) declared " +
-                                                                  "for container id '" + cluster + "'");
-                        wildcardZoneEndpoint = endpoint;
-                    }
-                }
+            Endpoint endpoint = new Endpoint(endpointId, containerId, level, targets);
+            if (endpoints.containsKey(endpoint.endpointId())) {
+                illegal("Endpoint ID '" + endpoint.endpointId() + "' is specified multiple times");
             }
-            for (RegionName region : regions.keySet()) {
-                ZoneEndpoint zoneEndpoint = null;
-                ZoneEndpoint privateEndpoint = null;
-                for (ZoneEndpoint endpoint : regions.getOrDefault(region, List.of())) {
-                    if (endpoint.isPrivateEndpoint()) {
-                        if (privateEndpoint != null) illegal("Multiple private endpoints declared for " +
-                                                             "container id '" + cluster + "' in region '" + region + "'");
-                        privateEndpoint = endpoint;
-                    }
-                    else {
-                        if (zoneEndpoint != null) illegal("Multiple zone endpoints (without regions) declared " +
-                                                          "for container id '" + cluster + "' in region '" + region + "'");
-                        zoneEndpoint = endpoint;
-                    }
-                }
-                if (wildcardZoneEndpoint != null && zoneEndpoint != null) illegal("Zone endpoint for container id '" + cluster + "' declared " +
-                                                                                  "both with region '" + region + "', and for all regions.");
-                if (wildcardPrivateEndpoint != null && privateEndpoint != null) illegal("Private endpoint for container id '" + cluster + "' declared " +
-                                                                                        "both with region '" + region + "', and for all regions.");
-
-                if (zoneEndpoint == null) zoneEndpoint = wildcardZoneEndpoint;
-                if (privateEndpoint == null) privateEndpoint = wildcardPrivateEndpoint;
-
-                // Gosh, we made it here! Now we'll combine the settings for zone and private types into one ZoneEndpoint to rule them all.
-                out.computeIfAbsent(ClusterSpec.Id.from(cluster), __ -> new LinkedHashMap<>())
-                   .put(ZoneId.from(Environment.prod, region), new ZoneEndpoint(zoneEndpoint == null || zoneEndpoint.isPublicEndpoint(),
-                                                                                privateEndpoint != null,
-                                                                                privateEndpoint != null ? privateEndpoint.allowedUrns() : List.of()));
-            }
-            out.computeIfAbsent(ClusterSpec.Id.from(cluster), __ -> new LinkedHashMap<>())
-               .put(null, new ZoneEndpoint(wildcardZoneEndpoint == null || wildcardZoneEndpoint.isPublicEndpoint(),
-                                           wildcardPrivateEndpoint != null,
-                                           wildcardPrivateEndpoint != null ? wildcardPrivateEndpoint.allowedUrns() : List.of()));
-        });
-    }
-
-    /** Returns endpoint type if a private or zone type endpoint, throws if invalid, or otherwise returns empty (global, application). */
-    static Optional<String> getZoneEndpointType(Element endpoint, Level level) {
-        Optional<String> type = XML.attribute("type", endpoint);
-        if (type.isPresent() && ! List.of("zone", "private", "global", "application").contains(type.get()))
-            illegal("Illegal endpoint type '" + type.get() + "'");
-
-        String implied = switch (level) { case instance -> "global"; case application -> "application"; };
-        if (type.isEmpty() || type.get().equals(implied)) return Optional.empty();
-        if (level == Level.instance && (type.get().equals("zone") || type.get().equals("private"))) return type;
-        throw new IllegalArgumentException("Endpoints at " + level + " level cannot be of type '" + type.get() + "'");
+            endpoints.put(endpoint.endpointId(), endpoint);
+        }
+        return List.copyOf(endpoints.values());
     }
 
     /**

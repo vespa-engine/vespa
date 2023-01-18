@@ -22,6 +22,6 @@ public abstract class VespaModelBuilder {
      * @param producerRoot the root producer.
      * @param configModelRepo a {@link com.yahoo.config.model.ConfigModelRepo instance}
      */
-    public abstract void postProc(DeployState deployState, AbstractConfigProducer producerRoot, ConfigModelRepo configModelRepo);
+    public abstract void postProc(DeployLogger deployLogger, AbstractConfigProducer producerRoot, ConfigModelRepo configModelRepo);
 
 }

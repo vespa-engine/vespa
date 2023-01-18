@@ -5,7 +5,6 @@ import ai.vespa.http.DomainName;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.CloudAccount;
 import com.yahoo.config.provision.ClusterSpec;
-import com.yahoo.config.provision.ZoneEndpoint.AllowedUrn;
 
 import java.util.List;
 import java.util.Objects;
@@ -85,6 +84,6 @@ public class LoadBalancer {
         unknown
     }
 
-    public record PrivateServiceInfo(String id, List<AllowedUrn> allowedUrns) { }
+    public record PrivateServiceInfo(String id, List<String> allowedUrns) { }
 
 }
