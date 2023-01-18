@@ -17,6 +17,7 @@ import com.yahoo.vespa.hosted.controller.api.integration.dns.AliasTarget;
 import com.yahoo.vespa.hosted.controller.api.integration.dns.DirectTarget;
 import com.yahoo.vespa.hosted.controller.api.integration.dns.LatencyAliasTarget;
 import com.yahoo.vespa.hosted.controller.api.integration.dns.Record;
+import com.yahoo.vespa.hosted.controller.api.integration.dns.Record.Type;
 import com.yahoo.vespa.hosted.controller.api.integration.dns.RecordData;
 import com.yahoo.vespa.hosted.controller.api.integration.dns.RecordName;
 import com.yahoo.vespa.hosted.controller.api.integration.dns.WeightedAliasTarget;
@@ -391,6 +392,7 @@ public class RoutingPolicies {
                                                 if (controller.curator().readNameServiceQueue().requests().stream()
                                                               .noneMatch(request -> request.name().equals(Optional.of(challenge.name())))) {
                                                     challenge.trigger().run();
+                                                    nameServiceForwarderIn(allocation.deployment.zoneId()).removeRecords(Type.TXT, challenge.name(), Priority.normal);
                                                     return;
                                                 }
                                             }
