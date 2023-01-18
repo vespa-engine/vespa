@@ -587,19 +587,19 @@ public class VespaDocumentDeserializer6 extends BufferSerializer implements Docu
         buf.position(buf.position() - 1);
 
         SpanNode retval;
-        if ((type & Span.ID) == Span.ID) {
+        if (type == Span.ID) {
             retval = new Span();
             if (spanNodes != null) {
                 spanNodes.add(retval);
             }
             read((Span) retval);
-        } else if ((type & SpanList.ID) == SpanList.ID) {
+        } else if (type == SpanList.ID) {
             retval = new SpanList();
             if (spanNodes != null) {
                 spanNodes.add(retval);
             }
             read((SpanList) retval);
-        } else if ((type & AlternateSpanList.ID) == AlternateSpanList.ID) {
+        } else if (type == AlternateSpanList.ID) {
             retval = new AlternateSpanList();
             if (spanNodes != null) {
                 spanNodes.add(retval);
@@ -706,7 +706,7 @@ public class VespaDocumentDeserializer6 extends BufferSerializer implements Docu
 
     public void read(Span span) {
         byte type = buf.get();
-        if ((type & Span.ID) != Span.ID) {
+        if (type != Span.ID) {
             throw new DeserializationException("Cannot deserialize Span with type " + type);
         }
         span.setFrom(buf.getInt1_2_4Bytes());
@@ -727,7 +727,7 @@ public class VespaDocumentDeserializer6 extends BufferSerializer implements Docu
 
     public void read(SpanList spanList) {
         byte type = buf.get();
-        if ((type & SpanList.ID) != SpanList.ID) {
+        if (type != SpanList.ID) {
             throw new DeserializationException("Cannot deserialize SpanList with type " + type);
         }
         List<SpanNode> nodes = readSpanList();
@@ -738,7 +738,7 @@ public class VespaDocumentDeserializer6 extends BufferSerializer implements Docu
 
     public void read(AlternateSpanList altSpanList) {
         byte type = buf.get();
-        if ((type & AlternateSpanList.ID) != AlternateSpanList.ID) {
+        if (type != AlternateSpanList.ID) {
             throw new DeserializationException("Cannot deserialize AlternateSpanList with type " + type);
         }
         int numSubTrees = buf.getInt1_2_4Bytes();
