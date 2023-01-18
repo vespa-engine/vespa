@@ -35,7 +35,7 @@ public class ArchiveUrisTest {
         assertFalse(archiveUris.archiveUriFor(allocated).isPresent());
 
         archiveUris.setArchiveUri(app.tenant(), Optional.of("scheme://hostname/dir"));
-        assertEquals("scheme://hostname/dir/music/main/h432a/", archiveUris.archiveUriFor(allocated).get());
+        assertEquals("scheme://hostname/dir/music/main/default/h432a/", archiveUris.archiveUriFor(allocated).get());
     }
 
     private Node createNode(ApplicationId appId) {

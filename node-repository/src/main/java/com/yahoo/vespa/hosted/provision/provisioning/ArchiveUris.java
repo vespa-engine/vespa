@@ -7,6 +7,7 @@ import com.yahoo.vespa.curator.Lock;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.node.Allocation;
 import com.yahoo.vespa.hosted.provision.persistence.CuratorDb;
+
 import java.time.Duration;
 import java.util.Map;
 import java.util.Optional;
@@ -52,7 +53,8 @@ public class ArchiveUris {
                         .map(uri -> {
                             StringBuilder sb = new StringBuilder(100).append(uri)
                                     .append(app.application().value()).append('/')
-                                    .append(app.instance().value()).append('/');
+                                    .append(app.instance().value()).append('/')
+                                    .append(node.allocation().get().membership().cluster().id().value()).append('/');
 
                             for (char c: node.hostname().toCharArray()) {
                                 if (c == '.') break;
