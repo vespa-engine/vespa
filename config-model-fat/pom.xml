@@ -101,6 +101,7 @@
               javax.xml.parsers,
               javax.xml.transform,
               javax.xml.xpath,
+              org.bouncycastle.*, <!-- expands to all BC packages by Felix plugin ->
               org.w3c.dom.bootstrap,
               org.w3c.dom.ls,
               org.w3c.dom,
@@ -213,9 +214,6 @@
                     <i>org.antlr:antlr-runtime:*:*</i>
                     <i>org.antlr:antlr4-runtime:*:*</i>
                     <i>org.apache.felix:org.apache.felix.framework:*:*</i>
-                    <i>org.bouncycastle:bcpkix-jdk18on:*:*</i>
-                    <i>org.bouncycastle:bcprov-jdk18on:*:*</i>
-                    <i>org.bouncycastle:bcutil-jdk18on:*:*</i>
                     <i>org.hdrhistogram:HdrHistogram:*:*</i>
                     <i>org.lz4:lz4-java:*:*</i>
                     <i>org.slf4j:jcl-over-slf4j:*:*</i>
