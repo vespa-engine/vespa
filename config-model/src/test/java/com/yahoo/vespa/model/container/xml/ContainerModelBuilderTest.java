@@ -23,8 +23,8 @@ import com.yahoo.config.provision.Flavor;
 import com.yahoo.config.provision.RegionName;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.config.provision.ZoneEndpoint;
-import com.yahoo.config.provision.ZoneEndpoint.AllowedUrn;
 import com.yahoo.config.provision.ZoneEndpoint.AccessType;
+import com.yahoo.config.provision.ZoneEndpoint.AllowedUrn;
 import com.yahoo.config.provisioning.FlavorsConfig;
 import com.yahoo.container.ComponentsConfig;
 import com.yahoo.container.QrConfig;
@@ -178,6 +178,63 @@ public class ContainerModelBuilderTest extends ContainerModelBuilderTestBase {
                 "  </http>",
                 "</container>");
         createModel(root, cluster1Elem, cluster2Elem);
+    }
+
+    @Test
+    void container_cluster_with_invalid_name_throws_exception_when_hosted() throws IOException, SAXException {
+        String servicesXml = """
+                             <services version='1.0'>
+                               <container id='C-1' version='1.0'>
+                                 <nodes count='1' />
+                               </container>
+                             </services>
+                             """;
+
+        assertEquals("container cluster name must match '([a-z0-9]|[a-z0-9][a-z0-9_-]{0,61}[a-z0-9])', but got: 'C-1'",
+                     assertThrows(IllegalArgumentException.class,
+                                  () ->
+                                          new VespaModel(new NullConfigModelRegistry(), new DeployState.Builder()
+                                                  .modelHostProvisioner(new InMemoryProvisioner(4, false))
+                                                  .applicationPackage(new MockApplicationPackage.Builder().withServices(servicesXml).build())
+                                                  .properties(new TestProperties().setHostedVespa(true))
+                                                  .build()))
+                             .getMessage());
+
+        new VespaModel(new NullConfigModelRegistry(), new DeployState.Builder()
+                .modelHostProvisioner(new InMemoryProvisioner(4, false))
+                .applicationPackage(new MockApplicationPackage.Builder().withServices(servicesXml).build())
+                .properties(new TestProperties().setHostedVespa(false))
+                .build());
+    }
+
+    @Test
+    void two_clusters_with_clashing_cluster_names_throws_exception_when_hosted() throws IOException, SAXException {
+        String servicesXml = """
+                             <services version='1.0'>
+                               <container id='c-1' version='1.0'>
+                                 <nodes count='1' />
+                               </container>
+                               <container id='c_1' version='1.0'>
+                                 <nodes count='1' />
+                               </container>
+                             </services>
+                             """;
+
+        assertEquals("container clusters 'c-1' and 'c_1' have clashing endpoint names, when '_' is replaced with '-' to form valid domain names",
+                     assertThrows(IllegalArgumentException.class,
+                                  () ->
+                                          new VespaModel(new NullConfigModelRegistry(), new DeployState.Builder()
+                                                  .modelHostProvisioner(new InMemoryProvisioner(4, false))
+                                                  .applicationPackage(new MockApplicationPackage.Builder().withServices(servicesXml).build())
+                                                  .properties(new TestProperties().setHostedVespa(true))
+                                                  .build()))
+                             .getMessage());
+
+        new VespaModel(new NullConfigModelRegistry(), new DeployState.Builder()
+                .modelHostProvisioner(new InMemoryProvisioner(4, false))
+                .applicationPackage(new MockApplicationPackage.Builder().withServices(servicesXml).build())
+                .properties(new TestProperties().setHostedVespa(false))
+                .build());
     }
 
     @Test

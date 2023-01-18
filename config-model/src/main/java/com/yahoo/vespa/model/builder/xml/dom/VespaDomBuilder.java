@@ -1,6 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model.builder.xml.dom;
 
+import ai.vespa.validation.Validation;
 import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.config.model.ApplicationConfigProducerRoot;
 import com.yahoo.config.model.ConfigModelRepo;
@@ -22,8 +23,15 @@ import com.yahoo.vespa.model.container.docproc.ContainerDocproc;
 import com.yahoo.vespa.model.content.Content;
 import com.yahoo.vespa.model.search.SearchCluster;
 import org.w3c.dom.Element;
+
+import java.util.HashSet;
+import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
+import java.util.Map;
+import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.regex.Pattern;
 
 /**
  * Builds Vespa model components using the w3c dom api
@@ -43,9 +51,11 @@ public class VespaDomBuilder extends VespaModelBuilder {
     public static final String VESPAMALLOC = "vespamalloc";            // Intended for vespa engineers
     public static final String VESPAMALLOC_DEBUG = "vespamalloc-debug"; // Intended for vespa engineers
     public static final String VESPAMALLOC_DEBUG_STACKTRACE = "vespamalloc-debug-stacktrace"; // Intended for vespa engineers
-    private static final String CPU_SOCKET_ATTRIB_NAME = "cpu-socket";
     public static final String CPU_SOCKET_AFFINITY_ATTRIB_NAME = "cpu-socket-affinity";
     public static final String Allocated_MEMORY_ATTRIB_NAME = "allocated-memory";
+
+    private static final String CPU_SOCKET_ATTRIB_NAME = "cpu-socket";
+    private static final Pattern clusterPattern = Pattern.compile("([a-z0-9]|[a-z0-9][a-z0-9_-]{0,61}[a-z0-9])");
 
     public static final Logger log = Logger.getLogger(VespaDomBuilder.class.getPackage().toString());
 
@@ -232,13 +242,14 @@ public class VespaDomBuilder extends VespaModelBuilder {
      * @param root root config producer
      * @param configModelRepo a {@link ConfigModelRepo}
      */
-    public void postProc(DeployLogger deployLogger, AbstractConfigProducer root, ConfigModelRepo configModelRepo) {
+    public void postProc(DeployState deployState, AbstractConfigProducer root, ConfigModelRepo configModelRepo) {
         setContentSearchClusterIndexes(configModelRepo);
         createDocprocMBusServersAndClients(configModelRepo);
+        if (deployState.isHosted()) validateContainerClusterIds(configModelRepo);
     }
 
     private void createDocprocMBusServersAndClients(ConfigModelRepo pc) {
-        for (ContainerCluster cluster: ContainerModel.containerClusters(pc)) {
+        for (ContainerCluster<?> cluster: ContainerModel.containerClusters(pc)) {
             addServerAndClientsForChains(cluster.getDocproc());
         }
     }
@@ -246,6 +257,18 @@ public class VespaDomBuilder extends VespaModelBuilder {
     private void addServerAndClientsForChains(ContainerDocproc docproc) {
         if (docproc != null)
             docproc.getChains().addServersAndClientsForChains();
+    }
+
+    private void validateContainerClusterIds(ConfigModelRepo pc) {
+        Map<String, String> normalizedClusterIds = new LinkedHashMap<>();
+        for (ContainerCluster<?> cluster: ContainerModel.containerClusters(pc)) {
+            String name = cluster.getName();
+            Validation.requireMatch(name, "container cluster name", clusterPattern);
+            String clashing = normalizedClusterIds.put(name.replaceAll("_", "-"), name);
+            if (clashing != null) throw new IllegalArgumentException("container clusters '" + clashing + "' and '" + name +
+                                                                     "' have clashing endpoint names, when '_' is replaced " +
+                                                                     "with '-' to form valid domain names");
+        }
     }
 
     /**
