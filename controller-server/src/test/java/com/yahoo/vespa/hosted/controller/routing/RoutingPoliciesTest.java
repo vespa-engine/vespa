@@ -537,18 +537,16 @@ public class RoutingPoliciesTest {
         app.deploy();
         done.set(true);
 
+        assertEquals(Map.of( RecordName.from("challenge--a.t.aws-us-east-1a.vespa.oath.cloud"),
+                             RecordData.from("system"),
+                             RecordName.from("challenge--a.t.us-east-1.test.vespa.oath.cloud"),
+                             RecordData.from("system"),
+                             RecordName.from("challenge--a.t.us-east-3.staging.vespa.oath.cloud"),
+                             RecordData.from("system")),
+                     challenges);
         assertEquals(Set.of(new Record(Type.CNAME,
                                        RecordName.from("a.t.aws-us-east-1a.vespa.oath.cloud"),
-                                       RecordData.from("lb-0--t.a.default--prod.aws-us-east-1a.")),
-                            new Record(Type.TXT,
-                                       RecordName.from("challenge--a.t.aws-us-east-1a.vespa.oath.cloud"),
-                                       RecordData.from("system")),
-                            new Record(Type.TXT,
-                                       RecordName.from("challenge--a.t.us-east-1.test.vespa.oath.cloud"),
-                                       RecordData.from("system")),
-                            new Record(Type.TXT,
-                                       RecordName.from("challenge--a.t.us-east-3.staging.vespa.oath.cloud"),
-                                       RecordData.from("system"))),
+                                       RecordData.from("lb-0--t.a.default--prod.aws-us-east-1a."))),
                      tester.controllerTester().nameService().records());
     }
 
