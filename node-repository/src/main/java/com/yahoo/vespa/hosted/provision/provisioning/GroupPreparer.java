@@ -99,10 +99,6 @@ public class GroupPreparer {
                 HostSharing sharing = hostSharing(cluster, hostType);
                 Version osVersion = nodeRepository.osVersions().targetFor(hostType).orElse(Version.emptyVersion);
                 NodeAllocation.HostDeficit deficit = allocation.hostDeficit().get();
-                // TODO: Remove
-                log.info("In " + application + ": " + deficit + ": " +
-                         allocation.lastOffered().stream().map(n -> n.toString() + "[resizable: " + n.isResizable).collect(Collectors.joining(", ")));
-
                 List<Node> hosts = new ArrayList<>();
                 Consumer<List<ProvisionedHost>> provisionedHostsConsumer = provisionedHosts -> {
                     hosts.addAll(provisionedHosts.stream().map(ProvisionedHost::generateHost).toList());

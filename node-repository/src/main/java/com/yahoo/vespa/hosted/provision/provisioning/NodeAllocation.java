@@ -83,8 +83,6 @@ class NodeAllocation {
     private final NodeResourceLimits nodeResourceLimits;
     private final Optional<String> requiredHostFlavor;
 
-    private List<NodeCandidate> lastOffered;
-
     NodeAllocation(NodeList allNodes, ApplicationId application, ClusterSpec cluster, NodeSpec requestedNodes,
                    Supplier<Integer> nextIndex, NodeRepository nodeRepository) {
         this.allNodes = allNodes;
@@ -99,7 +97,6 @@ class NodeAllocation {
                         .with(FetchVector.Dimension.CLUSTER_TYPE, cluster.type().name())
                         .value())
                 .filter(s -> !s.isBlank());
-        this.lastOffered = List.of();
     }
 
     /**
@@ -112,7 +109,6 @@ class NodeAllocation {
      * @param candidates the nodes which are potentially on offer. These may belong to a different application etc.
      */
     void offer(List<NodeCandidate> candidates) {
-        lastOffered = List.copyOf(candidates);
         for (NodeCandidate candidate : candidates) {
             if (candidate.allocation().isPresent()) {
                 Allocation allocation = candidate.allocation().get();
@@ -160,8 +156,6 @@ class NodeAllocation {
             }
         }
     }
-
-    public List<NodeCandidate> lastOffered() { return lastOffered; }
 
     /** Returns the cause of retirement for given candidate */
     private Retirement shouldRetire(NodeCandidate candidate, List<NodeCandidate> candidates) {
