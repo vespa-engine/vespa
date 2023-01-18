@@ -79,6 +79,7 @@
               com.yahoo.component.provider,
               com.yahoo.config,
               com.yahoo.config.application.api,
+              com.yahoo.config.application.api.xml,
               com.yahoo.config.model.api,
               com.yahoo.config.model.api.container,
               com.yahoo.config.provision,

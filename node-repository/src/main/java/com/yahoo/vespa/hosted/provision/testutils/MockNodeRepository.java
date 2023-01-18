@@ -14,12 +14,12 @@ import com.yahoo.config.provision.DockerImage;
 import com.yahoo.config.provision.Flavor;
 import com.yahoo.config.provision.HostSpec;
 import com.yahoo.config.provision.InstanceName;
-import com.yahoo.config.provision.LoadBalancerSettings;
 import com.yahoo.config.provision.NodeFlavors;
 import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.config.provision.Zone;
+import com.yahoo.config.provision.ZoneEndpoint;
 import com.yahoo.transaction.Mutex;
 import com.yahoo.transaction.NestedTransaction;
 import com.yahoo.vespa.curator.mock.MockCurator;
@@ -189,7 +189,7 @@ public class MockNodeRepository extends NodeRepository {
         activate(provisioner.prepare(zoneApp, zoneCluster, Capacity.fromRequiredNodeType(NodeType.host), null), zoneApp, provisioner);
 
         ApplicationId app1Id = ApplicationId.from(TenantName.from("tenant1"), ApplicationName.from("application1"), InstanceName.from("instance1"));
-        ClusterSpec cluster1Id = ClusterSpec.request(ClusterSpec.Type.container, ClusterSpec.Id.from("id1")).vespaVersion("6.42").loadBalancerSettings(new LoadBalancerSettings(List.of("arne"))).build();
+        ClusterSpec cluster1Id = ClusterSpec.request(ClusterSpec.Type.container, ClusterSpec.Id.from("id1")).vespaVersion("6.42").loadBalancerSettings(new ZoneEndpoint(List.of("arne"))).build();
         activate(provisioner.prepare(app1Id,
                                      cluster1Id,
                                      Capacity.from(new ClusterResources(2, 1, new NodeResources(2, 8, 50, 1)),

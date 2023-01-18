@@ -6,10 +6,14 @@ import com.yahoo.config.application.api.Endpoint.Level;
 import com.yahoo.config.application.api.Endpoint.Target;
 import com.yahoo.config.application.api.xml.DeploymentSpecXmlReader;
 import com.yahoo.config.provision.CloudAccount;
+import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.InstanceName;
 import com.yahoo.config.provision.RegionName;
 import com.yahoo.config.provision.Tags;
+import com.yahoo.config.provision.ZoneEndpoint;
+import com.yahoo.config.provision.ZoneEndpoint.AllowedUrn;
+import com.yahoo.config.provision.ZoneEndpoint.AccessType;
 import com.yahoo.test.ManualClock;
 import org.junit.Test;
 
@@ -19,6 +23,7 @@ import java.time.Duration;
 import java.time.Instant;
 import java.time.ZoneId;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -27,9 +32,12 @@ import java.util.stream.Collectors;
 import static com.yahoo.config.application.api.Notifications.Role.author;
 import static com.yahoo.config.application.api.Notifications.When.failing;
 import static com.yahoo.config.application.api.Notifications.When.failingCommit;
+import static com.yahoo.config.provision.zone.ZoneId.defaultId;
+import static com.yahoo.config.provision.zone.ZoneId.from;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
@@ -1183,15 +1191,16 @@ public class DeploymentSpecTest {
 
     @Test
     public void customTesterFlavor() {
-        DeploymentSpec spec = DeploymentSpec.fromXml("<deployment>" +
-                                                     "   <instance id='default'>" +
-                                                     "      <test tester-flavor=\"d-1-4-20\" />" +
-                                                     "      <staging />" +
-                                                     "      <prod tester-flavor=\"d-2-8-50\">" +
-                                                     "         <region active=\"false\">us-north-7</region>" +
-                                                     "      </prod>" +
-                                                     "   </instance>" +
-                                                     "</deployment>");
+        DeploymentSpec spec = DeploymentSpec.fromXml("""
+                                                     <deployment>
+                                                        <instance id='default'>
+                                                           <test tester-flavor="d-1-4-20" />
+                                                           <staging />
+                                                           <prod tester-flavor="d-2-8-50">
+                                                              <region active="false">us-north-7</region>
+                                                           </prod>
+                                                        </instance>
+                                                     </deployment>""");
         assertEquals(Optional.of("d-1-4-20"), spec.requireInstance("default").steps().get(0).zones().get(0).testerFlavor());
         assertEquals(Optional.empty(), spec.requireInstance("default").steps().get(1).zones().get(0).testerFlavor());
         assertEquals(Optional.of("d-2-8-50"), spec.requireInstance("default").steps().get(2).zones().get(0).testerFlavor());
@@ -1199,39 +1208,55 @@ public class DeploymentSpecTest {
 
     @Test
     public void noEndpoints() {
-        assertEquals(Collections.emptyList(),
-                     DeploymentSpec.fromXml("<deployment>" +
-                                            "   <instance id='default'/>" +
-                                            "</deployment>").requireInstance("default").endpoints());
+        DeploymentSpec spec = DeploymentSpec.fromXml("""
+                                                     <deployment>
+                                                        <instance id='default'/>
+                                                     </deployment>
+                                                     """);
+        assertEquals(Collections.emptyList(), spec.requireInstance("default").endpoints());
+        assertEquals(ZoneEndpoint.defaultEndpoint, spec.zoneEndpoint(InstanceName.defaultName(),
+                                                                     defaultId(),
+                                                                     ClusterSpec.Id.from("cluster")));
     }
 
     @Test
     public void emptyEndpoints() {
-        var spec = DeploymentSpec.fromXml("<deployment>" +
-                                          "   <instance id='default'>" +
-                                          "      <endpoints/>" +
-                                          "   </instance>" +
-                                          "</deployment>");
+        var spec = DeploymentSpec.fromXml("""
+                                          <deployment>
+                                             <instance id='default'>
+                                                <endpoints/>
+                                             </instance>
+                                          </deployment>""");
         assertEquals(List.of(), spec.requireInstance("default").endpoints());
+        assertEquals(ZoneEndpoint.defaultEndpoint, spec.zoneEndpoint(InstanceName.defaultName(),
+                                                                     defaultId(),
+                                                                     ClusterSpec.Id.from("cluster")));
     }
 
     @Test
     public void someEndpoints() {
-        var spec = DeploymentSpec.fromXml("" +
-                                          "<deployment>" +
-                                          "   <instance id='default'>" +
-                                          "      <prod>" +
-                                          "         <region active=\"true\">us-east</region>" +
-                                          "      </prod>" +
-                                          "      <endpoints>" +
-                                          "         <endpoint id=\"foo\" container-id=\"bar\">" +
-                                          "            <region>us-east</region>" +
-                                          "         </endpoint>" +
-                                          "         <endpoint id=\"nalle\" container-id=\"frosk\" />" +
-                                          "         <endpoint container-id=\"quux\" />" +
-                                          "      </endpoints>" +
-                                          "   </instance>" +
-                                          "</deployment>");
+        var spec = DeploymentSpec.fromXml("""
+                                          <deployment>
+                                             <instance id='default'>
+                                                <prod>
+                                                   <region active="true">us-east</region>
+                                                </prod>
+                                                <endpoints>
+                                                   <endpoint id="foo" container-id="bar">
+                                                      <region>us-east</region>
+                                                   </endpoint>
+                                                   <endpoint id="nalle" container-id="frosk" />
+                                                   <endpoint container-id="quux" />
+                                                   <endpoint container-id='bax' type='zone' enabled='true' />
+                                                   <endpoint container-id='froz' type='zone' enabled='false' />
+                                                   <endpoint container-id='froz' type='private'>
+                                                     <region>us-east</region>
+                                                     <allow with='aws-private-link' arn='barn' />
+                                                     <allow with='gcp-service-connect' project='nine' />
+                                                   </endpoint>
+                                                </endpoints>
+                                             </instance>
+                                          </deployment>""");
 
         assertEquals(
                 List.of("foo", "nalle", "default"),
@@ -1244,18 +1269,59 @@ public class DeploymentSpecTest {
         );
 
         assertEquals(List.of(RegionName.from("us-east")), spec.requireInstance("default").endpoints().get(0).regions());
+
+        var zone = from(Environment.prod, RegionName.from("us-east"));
+        assertEquals(ZoneEndpoint.defaultEndpoint,
+                     spec.zoneEndpoint(InstanceName.from("custom"), zone, ClusterSpec.Id.from("bax")));
+        assertEquals(ZoneEndpoint.defaultEndpoint,
+                     spec.zoneEndpoint(InstanceName.from("default"), defaultId(), ClusterSpec.Id.from("bax")));
+        assertEquals(ZoneEndpoint.defaultEndpoint,
+                     spec.zoneEndpoint(InstanceName.from("default"), zone, ClusterSpec.Id.from("bax")));
+
+        assertEquals(new ZoneEndpoint(false, true, List.of(new AllowedUrn(AccessType.awsPrivateLink, "barn"),
+                                                           new AllowedUrn(AccessType.gcpServiceConnect, "nine"))),
+                     spec.zoneEndpoint(InstanceName.from("default"), zone, ClusterSpec.Id.from("froz")));
     }
 
     @Test
     public void invalidEndpoints() {
-        assertInvalidEndpoints("<endpoint id='FOO' container-id='qrs'/>"); // Uppercase
-        assertInvalidEndpoints("<endpoint id='123' container-id='qrs'/>"); // Starting with non-character
-        assertInvalidEndpoints("<endpoint id='foo!' container-id='qrs'/>"); // Non-alphanumeric
-        assertInvalidEndpoints("<endpoint id='foo.bar' container-id='qrs'/>");
-        assertInvalidEndpoints("<endpoint id='foo--bar' container-id='qrs'/>"); // Multiple consecutive dashes
-        assertInvalidEndpoints("<endpoint id='foo-' container-id='qrs'/>"); // Trailing dash
-        assertInvalidEndpoints("<endpoint id='foooooooooooo' container-id='qrs'/>"); // Too long
-        assertInvalidEndpoints("<endpoint id='foo' container-id='qrs'/><endpoint id='foo' container-id='qrs'/>"); // Duplicate
+        assertInvalidEndpoints("<endpoint id='FOO' container-id='qrs'/>",
+                               "Endpoint ID must be all lowercase, alphanumeric, with no consecutive dashes, of length 1 to 12, and begin with a character; but got 'FOO'");
+        assertInvalidEndpoints("<endpoint id='123' container-id='qrs'/>",
+                               "Endpoint ID must be all lowercase, alphanumeric, with no consecutive dashes, of length 1 to 12, and begin with a character; but got '123'");
+        assertInvalidEndpoints("<endpoint id='foo!' container-id='qrs'/>",
+                               "Endpoint ID must be all lowercase, alphanumeric, with no consecutive dashes, of length 1 to 12, and begin with a character; but got 'foo!'");
+        assertInvalidEndpoints("<endpoint id='foo.bar' container-id='qrs'/>",
+                               "Endpoint ID must be all lowercase, alphanumeric, with no consecutive dashes, of length 1 to 12, and begin with a character; but got 'foo.bar'");
+        assertInvalidEndpoints("<endpoint id='foo--bar' container-id='qrs'/>",
+                               "Endpoint ID must be all lowercase, alphanumeric, with no consecutive dashes, of length 1 to 12, and begin with a character; but got 'foo--bar'");
+        assertInvalidEndpoints("<endpoint id='foo-' container-id='qrs'/>",
+                               "Endpoint ID must be all lowercase, alphanumeric, with no consecutive dashes, of length 1 to 12, and begin with a character; but got 'foo-'");
+        assertInvalidEndpoints("<endpoint id='foooooooooooo' container-id='qrs'/>",
+                               "Endpoint ID must be all lowercase, alphanumeric, with no consecutive dashes, of length 1 to 12, and begin with a character; but got 'foooooooooooo'");
+
+        assertInvalidEndpoints("<endpoint id='foo' container-id='qrs'/><endpoint id='foo' container-id='qrs'/>",
+                               "Endpoint ID 'foo' is specified multiple times");
+        assertInvalidEndpoints("<endpoint id='default' type='zone' container-id='foo' />",
+                               "Instance-level endpoint 'default': cannot declare 'id' with type 'zone' or 'private'");
+        assertInvalidEndpoints("<endpoint id='default' type='private' container-id='foo' />",
+                               "Instance-level endpoint 'default': cannot declare 'id' with type 'zone' or 'private'");
+        assertInvalidEndpoints("<endpoint type='zone' />",
+                               "Missing required attribute 'container-id' in 'endpoint'");
+        assertInvalidEndpoints("<endpoint type='private' />",
+                               "Missing required attribute 'container-id' in 'endpoint'");
+        assertInvalidEndpoints("<endpoint container-id='foo' type='zone'><allow /></endpoint>",
+                               "Instance-level endpoint 'default': only endpoints of type 'private' can specify 'allow' children");
+        assertInvalidEndpoints("<endpoint type='private' container-id='foo' enabled='true' />",
+                               "Instance-level endpoint 'default': only endpoints of type 'zone' can specify 'enabled'");
+        assertInvalidEndpoints("<endpoint type='zone' container-id='qrs'/><endpoint type='zone' container-id='qrs'/>",
+                               "Multiple zone endpoints (for all regions) declared for container id 'qrs'");
+        assertInvalidEndpoints("<endpoint type='private' container-id='qrs'><region>us</region></endpoint>" +
+                               "<endpoint type='private' container-id='qrs'><region>us</region></endpoint>",
+                               "Multiple private endpoints declared for container id 'qrs' in region 'us'");
+        assertInvalidEndpoints("<endpoint type='zone' container-id='qrs' />" +
+                               "<endpoint type='zone' container-id='qrs'><region>us</region></endpoint>",
+                               "Zone endpoint for container id 'qrs' declared both with region 'us', and for all regions.");
     }
 
     @Test
@@ -1271,25 +1337,44 @@ public class DeploymentSpecTest {
 
     @Test
     public void endpointDefaultRegions() {
-        var spec = DeploymentSpec.fromXml("<deployment>" +
-                                          "   <instance id='default'>" +
-                                          "      <prod>" +
-                                          "         <region>us-east</region>" +
-                                          "         <region>us-west</region>" +
-                                          "      </prod>" +
-                                          "      <endpoints>" +
-                                          "         <endpoint id=\"foo\" container-id=\"bar\">" +
-                                          "            <region>us-east</region>" +
-                                          "         </endpoint>" +
-                                          "         <endpoint id=\"nalle\" container-id=\"frosk\" />" +
-                                          "         <endpoint container-id=\"quux\" />" +
-                                          "      </endpoints>" +
-                                          "   </instance>" +
-                                          "</deployment>");
+        var spec = DeploymentSpec.fromXml("""
+                                          <deployment>
+                                             <instance id='default'>
+                                                <prod>
+                                                   <region>us-east</region>
+                                                   <region>us-west</region>
+                                                </prod>
+                                                <endpoints>
+                                                   <endpoint id="foo" container-id="bar">
+                                                      <region>us-east</region>
+                                                   </endpoint>
+                                                   <endpoint container-id="bar" type='private'>
+                                                      <region>us-east</region>
+                                                   </endpoint>
+                                                   <endpoint id="nalle" container-id="frosk" />
+                                                   <endpoint container-id="quux" />
+                                                   <endpoint container-id="quux" type='private' />
+                                                </endpoints>
+                                             </instance>
+                                          </deployment>""");
 
         assertEquals(Set.of("us-east"), endpointRegions("foo", spec));
         assertEquals(Set.of("us-east", "us-west"), endpointRegions("nalle", spec));
         assertEquals(Set.of("us-east", "us-west"), endpointRegions("default", spec));
+        assertEquals(new ZoneEndpoint(true, true, List.of()),
+                     spec.zoneEndpoint(InstanceName.from("default"), from("prod", "us-east"), ClusterSpec.Id.from("bar")));
+        assertEquals(new ZoneEndpoint(true, false, List.of()),
+                     spec.zoneEndpoint(InstanceName.from("default"), from("prod", "us-west"), ClusterSpec.Id.from("bar")));
+        assertEquals(new ZoneEndpoint(true, true, List.of()),
+                     spec.zoneEndpoint(InstanceName.from("default"), from("prod", "us-east"), ClusterSpec.Id.from("quux")));
+        assertEquals(new ZoneEndpoint(true, true, List.of()),
+                     spec.zoneEndpoint(InstanceName.from("default"), from("prod", "us-west"), ClusterSpec.Id.from("quux")));
+        assertEquals(new HashSet<>() {{ add(null); add(from("prod", "us-east")); }},
+                     spec.requireInstance("default").zoneEndpoints().get(ClusterSpec.Id.from("bar")).keySet());
+        assertEquals(new HashSet<>() {{ add(null); }},
+                     spec.requireInstance("default").zoneEndpoints().get(ClusterSpec.Id.from("quux")).keySet());
+        assertEquals(Set.of(ClusterSpec.Id.from("bar"), ClusterSpec.Id.from("quux")),
+                     spec.requireInstance("default").zoneEndpoints().keySet());
     }
 
     @Test
@@ -1302,14 +1387,16 @@ public class DeploymentSpecTest {
                                <region active="true">us-west</region>
                              </prod>
                              <endpoints>
-                               <endpoint id="foo" container-id="bar" %s>
+                               <endpoint container-id="bar" %s>
                                  %s
                                </endpoint>
                              </endpoints>
                            </instance>
                          </deployment>""";
-        assertInvalid(String.format(xmlForm, "region='us-east'", "<region>us-east</region>"), "Instance-level endpoint 'foo': invalid 'region' attribute");
-        assertInvalid(String.format(xmlForm, "", "<instance>us-east</instance>"), "Instance-level endpoint 'foo': invalid element 'instance'");
+        assertInvalid(String.format(xmlForm, "id='foo' region='us-east'", "<region>us-east</region>"), "Instance-level endpoint 'foo': invalid 'region' attribute");
+        assertInvalid(String.format(xmlForm, "id='foo'", "<instance>us-east</instance>"), "Instance-level endpoint 'foo': invalid element 'instance'");
+        assertInvalid(String.format(xmlForm, "type='zone'", "<instance>us-east</instance>"), "Instance-level endpoint 'default': invalid element 'instance'");
+        assertInvalid(String.format(xmlForm, "type='private'", "<instance>us-east</instance>"), "Instance-level endpoint 'default': invalid element 'instance'");
     }
 
     @Test
@@ -1343,6 +1430,73 @@ public class DeploymentSpecTest {
         assertInvalid(String.format(xmlForm, "region='us-west-1'", "weight='foo'", "", "main", ""), "Application-level endpoint 'foo': invalid weight value 'foo'");
         assertInvalid(String.format(xmlForm, "region='us-west-1'", "weight='1'", "", "main", "<region>us-east-3</region>"), "Application-level endpoint 'foo': invalid element 'region'");
         assertInvalid(String.format(xmlForm, "region='us-west-1'", "weight='0'", "", "main", ""), "Application-level endpoint 'foo': sum of all weights must be positive, got 0");
+        assertInvalid(String.format(xmlForm, "type='zone'", "weight='1'", "", "main", ""), "Endpoints at application level cannot be of type 'zone'");
+        assertInvalid(String.format(xmlForm, "type='private'", "weight='1'", "", "main", ""), "Endpoints at application level cannot be of type 'private'");
+    }
+
+    @Test
+    public void cannotTargetDisabledEndpoints() {
+        assertEquals("Instance-level endpoint 'default': all eligible zone endpoints have 'enabled' set to 'false'",
+                     assertThrows(IllegalArgumentException.class,
+                                  () -> DeploymentSpec.fromXml("""
+                                                               <deployment>
+                                                                 <instance id="default">
+                                                                   <prod>
+                                                                     <region>us</region>
+                                                                     <region>eu</region>
+                                                                   </prod>
+                                                                   <endpoints>
+                                                                     <endpoint container-id='id' />
+                                                                     <endpoint type='zone' container-id='id' enabled='false' />
+                                                                   </endpoints>
+                                                                 </instance>
+                                                               </deployment>
+                                                               """))
+                             .getMessage());
+
+        assertEquals("Instance-level endpoint 'default': targets zone endpoint in 'us' with 'enabled' set to 'false'",
+                     assertThrows(IllegalArgumentException.class,
+                                  () -> DeploymentSpec.fromXml("""
+                                                               <deployment>
+                                                                 <instance id="default">
+                                                                   <prod>
+                                                                     <region>us</region>
+                                                                     <region>eu</region>
+                                                                   </prod>
+                                                                   <endpoints>
+                                                                     <endpoint container-id='id'>
+                                                                       <region>us</region>
+                                                                     </endpoint>
+                                                                     <endpoint type='zone' container-id='id' enabled='false' />
+                                                                   </endpoints>
+                                                                 </instance>
+                                                               </deployment>
+                                                               """))
+                             .getMessage());
+
+        assertEquals("Application-level endpoint 'default': targets 'us' in 'default', but its zone endpoint has 'enabled' set to 'false'",
+                     assertThrows(IllegalArgumentException.class,
+                                  () -> DeploymentSpec.fromXml("""
+                                                               <deployment>
+                                                                 <instance id="default">
+                                                                   <prod>
+                                                                     <region>us</region>
+                                                                     <region>eu</region>
+                                                                   </prod>
+                                                                   <endpoints>
+                                                                     <endpoint type='zone' container-id='id' enabled='false'>
+                                                                       <region>us</region>
+                                                                     </endpoint>
+                                                                   </endpoints>
+                                                                 </instance>
+                                                                 <endpoints>
+                                                                   <endpoint container-id='id' region='us'>
+                                                                     <instance weight='1'>default</instance>
+                                                                   </endpoint>
+                                                                 </endpoints>
+                                                               </deployment>
+                                                               """))
+                             .getMessage());
     }
 
     @Test
@@ -1648,11 +1802,11 @@ public class DeploymentSpecTest {
         }
     }
 
-    private static void assertInvalidEndpoints(String endpointsBody) {
-        try {
-            endpointIds(endpointsBody);
-            fail("Expected exception for input '" + endpointsBody + "'");
-        } catch (IllegalArgumentException ignored) {}
+    private static void assertInvalidEndpoints(String endpointsBody, String error) {
+        assertEquals(error,
+                     assertThrows(IllegalArgumentException.class,
+                                  () -> endpointIds(endpointsBody))
+                             .getMessage());
     }
 
     private static Set<String> endpointRegions(String endpointId, DeploymentSpec spec) {

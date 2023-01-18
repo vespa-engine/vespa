@@ -15,11 +15,6 @@
     </http>
     <search/>
     <nodes count='1'/>
-    <load-balancer>
-      <private-access>
-        <allow-urn>burn</allow-urn>
-      </private-access>
-    </load-balancer>
   </container>
 
   <content id="music" version="1.0">
