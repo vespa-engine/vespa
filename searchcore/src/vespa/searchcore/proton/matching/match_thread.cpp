@@ -11,6 +11,7 @@
 #include <vespa/searchlib/fef/rank_program.h>
 #include <vespa/searchlib/queryeval/multibitvectoriterator.h>
 #include <vespa/searchlib/queryeval/andnotsearch.h>
+#include <vespa/searchlib/queryeval/profiled_iterator.h>
 #include <vespa/vespalib/data/slime/cursor.h>
 #include <vespa/vespalib/data/slime/inserter.h>
 
@@ -19,15 +20,16 @@ LOG_SETUP(".proton.matching.match_thread");
 
 namespace proton::matching {
 
-using search::queryeval::SearchIterator;
+using search::attribute::AttributeOperation;
 using search::fef::BlueprintResolver;
-using search::fef::MatchData;
-using search::fef::RankProgram;
 using search::fef::FeatureResolver;
 using search::fef::LazyValue;
+using search::fef::MatchData;
+using search::fef::RankProgram;
 using search::queryeval::HitCollector;
+using search::queryeval::ProfiledIterator;
+using search::queryeval::SearchIterator;
 using search::queryeval::SortedHitSequence;
-using search::attribute::AttributeOperation;
 
 namespace {
 
@@ -286,6 +288,10 @@ MatchThread::findMatches(MatchTools &tools)
             tools.search().asSlime(inserter);
         }
     }
+    if (match_profiler) {
+        tools.give_back_search(ProfiledIterator::profile(*match_profiler, tools.borrow_search()));
+        tools.tag_search_as_changed();
+    }
     HitCollector hits(matchParams.numDocs, matchParams.arraySize);
     trace->addEvent(4, "Start match and first phase rank");
     match_loop_helper(tools, hits);
@@ -417,11 +423,13 @@ MatchThread::MatchThread(size_t thread_id_in,
     wait_time_s(0.0),
     match_with_ranking(mtf.has_first_phase_rank() && mp.save_rank_scores()),
     trace(std::make_unique<Trace>(relativeTime, traceLevel, profileDepth)),
+    match_profiler(),
     first_phase_profiler(),
     second_phase_profiler(),
     my_issues()
 {
     if ((traceLevel > 0) && (profileDepth > 0)) {
+        match_profiler = std::make_unique<vespalib::ExecutionProfiler>(profileDepth);
         first_phase_profiler = std::make_unique<vespalib::ExecutionProfiler>(profileDepth);
         second_phase_profiler = std::make_unique<vespalib::ExecutionProfiler>(profileDepth);
     }
@@ -456,6 +464,9 @@ MatchThread::run()
     trace->addEvent(4, "Start thread merge");
     mergeDirector.dualMerge(thread_id, *resultContext->result, resultContext->groupingSource);
     trace->addEvent(4, "MatchThread::run Done");
+    if (match_profiler) {
+        match_profiler->report(trace->createCursor("match_profiling"));
+    }
     if (first_phase_profiler) {
         first_phase_profiler->report(trace->createCursor("first_phase_profiling"),
                                      [](const vespalib::string &name){ return BlueprintResolver::describe_feature(name); });

@@ -67,6 +67,7 @@ private:
     double                        wait_time_s;
     bool                          match_with_ranking;
     std::unique_ptr<Trace>        trace;
+    std::unique_ptr<vespalib::ExecutionProfiler> match_profiler;
     std::unique_ptr<vespalib::ExecutionProfiler> first_phase_profiler;
     std::unique_ptr<vespalib::ExecutionProfiler> second_phase_profiler;
     UniqueIssues                  my_issues;
