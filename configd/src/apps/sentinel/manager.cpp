@@ -79,11 +79,6 @@ Manager::doConfigure()
     LOG_ASSERT(_env.configOwner().hasConfig());
     const SentinelConfig& config(_env.configOwner().getConfig());
 
-    if (config.ignoreRequestedStackSizes) {
-        setenv("VESPA_IGNORE_REQUESTED_STACK_SIZES", "true", 1);
-    } else {
-        unsetenv("VESPA_IGNORE_REQUESTED_STACK_SIZES");
-    }
     _env.rpcPort(config.port.rpc);
     _env.statePort(config.port.telnet);
 

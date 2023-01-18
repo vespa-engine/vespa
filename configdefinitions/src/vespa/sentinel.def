@@ -28,9 +28,6 @@ connectivity.minOkPercent int default=50
 ## Absolute number of nodes with confirmed network connectivity problems, maximum
 connectivity.maxBadCount int default=1
 
-## Ask low-level thread creation to honor requested stack size
-ignoreRequestedStackSizes bool default=false restart
-
 ## The command to run. This will be run by sh -c, and the following
 ## environment variables are defined: $ROOT, $VESPA_SERVICE_NAME,
 ## $VESPA_CONFIG_ID
