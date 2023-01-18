@@ -152,7 +152,7 @@ public class DeploymentTrigger {
                 .collect(groupingBy(Job::applicationId))
                 .values().stream()
                 .flatMap(List::stream)
-                .collect(Collectors.toUnmodifiableList());
+                .toList();
 
         // Map of test jobs, a list for each job type. Jobs in each list are sorted by priority.
         Map<JobType, List<Job>> sortedTestJobsByType = testJobs.stream()

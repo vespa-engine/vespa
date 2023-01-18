@@ -307,7 +307,7 @@ public class Run {
                                              .allMatch(step ->    steps.get(step) == null
                                                                || steps.get(step).status() == succeeded))
                     .map(Map.Entry::getKey)
-                    .collect(Collectors.toUnmodifiableList());
+                    .toList();
     }
 
     /** Returns the list of not-yet-run run-always steps whose run-always prerequisites have all run. */
@@ -320,7 +320,7 @@ public class Run {
                                              .allMatch(step ->    steps.get(step) == null
                                                                || steps.get(step).status() != unfinished))
                     .map(Map.Entry::getKey)
-                    .collect(Collectors.toUnmodifiableList());
+                    .toList();
     }
 
     private void requireActive() {

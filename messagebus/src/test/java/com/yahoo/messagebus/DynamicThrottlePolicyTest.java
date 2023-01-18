@@ -17,7 +17,6 @@ import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
-import static java.util.stream.Collectors.toUnmodifiableList;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
@@ -307,7 +306,7 @@ public class DynamicThrottlePolicyTest {
         final int maximumTaskPerWorker;
         final int workerParallelism;
         final int[] currentTask;
-        final List<Deque<Consumer<Boolean>>> outstandingTasks;
+        final List<ArrayDeque<Consumer<Boolean>>> outstandingTasks;
         int pending = 0;
 
         MockServer(int workPerSuccess, int numberOfWorkers, int maximumTaskPerWorker, int workerParallelism) {
@@ -318,7 +317,7 @@ public class DynamicThrottlePolicyTest {
             this.currentTask = new int[numberOfWorkers];
             this.outstandingTasks = IntStream.range(0, numberOfWorkers)
                                              .mapToObj(__ -> new ArrayDeque<Consumer<Boolean>>())
-                                             .collect(toUnmodifiableList());
+                                             .toList();
         }
 
         void tick() {

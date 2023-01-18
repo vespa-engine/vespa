@@ -36,7 +36,7 @@ public class ClusterList {
     private static List<ClusterDef> parse(ClusterListConfig config) {
         return config.storage().stream()
                      .map(storage -> new ClusterDef(storage.name()))
-                     .collect(Collectors.toUnmodifiableList());
+                     .toList();
     }
 
 }

@@ -209,7 +209,7 @@ public class RotationRepositoryTest {
     }
 
     private static List<RotationId> rotationIds(List<AssignedRotation> assignedRotations) {
-        return assignedRotations.stream().map(AssignedRotation::rotationId).collect(Collectors.toUnmodifiableList());
+        return assignedRotations.stream().map(AssignedRotation::rotationId).toList();
     }
 
 }

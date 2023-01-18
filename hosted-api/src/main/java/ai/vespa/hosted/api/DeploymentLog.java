@@ -8,7 +8,6 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static java.util.Comparator.comparing;
-import static java.util.stream.Collectors.toUnmodifiableList;
 
 /**
  * A list of {@link Entry} items from a deployment job.
@@ -23,7 +22,7 @@ public class DeploymentLog {
     private final OptionalLong last;
 
     public DeploymentLog(List<Entry> entries, boolean active, Status status, OptionalLong last) {
-        this.entries = entries.stream().sorted(comparing(Entry::at)).collect(toUnmodifiableList());
+        this.entries = entries.stream().sorted(comparing(Entry::at)).toList();
         this.active = active;
         this.status = status;
         this.last = last;
@@ -31,7 +30,7 @@ public class DeploymentLog {
 
     /** Returns this log updated with the content of the other. */
     public DeploymentLog updatedWith(DeploymentLog other) {
-        return new DeploymentLog(Stream.concat(entries.stream(), other.entries.stream()).collect(toUnmodifiableList()),
+        return new DeploymentLog(Stream.concat(entries.stream(), other.entries.stream()).toList(),
                                  other.active,
                                  other.status,
                                  other.last);
@@ -101,13 +100,13 @@ public class DeploymentLog {
         debug;
 
         public static Level of(String level) {
-            switch (level) {
-                case "error"   : return error;
-                case "warning" : return warning;
-                case "info"    : return info;
-                case "debug"   : return debug;
-                default        : return debug;
-            }
+            return switch (level) {
+                case "error" -> error;
+                case "warning" -> warning;
+                case "info" -> info;
+                case "debug" -> debug;
+                default -> debug;
+            };
         }
     }
 

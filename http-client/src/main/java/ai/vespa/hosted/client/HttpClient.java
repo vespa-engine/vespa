@@ -30,7 +30,6 @@ import java.util.stream.IntStream;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.Objects.requireNonNull;
-import static java.util.stream.Collectors.toUnmodifiableList;
 
 /**
  * @author jonmv
@@ -265,7 +264,7 @@ public interface HttpClient extends Closeable {
 
         /** Attempts each request against the host the specified number of times. */
         static HostStrategy repeating(URI host, int count) {
-            return ordered(IntStream.range(0, count).mapToObj(__ -> host).collect(toUnmodifiableList()));
+            return ordered(IntStream.range(0, count).mapToObj(__ -> host).toList());
         }
 
     }

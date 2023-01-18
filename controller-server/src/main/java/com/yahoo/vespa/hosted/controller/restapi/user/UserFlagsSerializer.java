@@ -36,7 +36,7 @@ public class UserFlagsSerializer {
                 .filter(fd -> fd.getDimensions().contains(FetchVector.Dimension.CONSOLE_USER_EMAIL))
                 .map(FlagDefinition::getUnboundFlag)
                 .map(flag -> filteredFlagData(flag, Optional.ofNullable(rawFlagData.get(flag.id())), authorizedForTenantNames, isOperator, resolveVector))
-                .collect(Collectors.toUnmodifiableList());
+                .toList();
 
         byte[] bytes = FlagData.serializeListToUtf8Json(filteredFlagData);
         SlimeUtils.copyObject(SlimeUtils.jsonToSlime(bytes).get(), cursor);
@@ -55,10 +55,10 @@ public class UserFlagsSerializer {
                 .map(rule -> new Rule(rule.getValueToApply().or(() -> defaultValue),
                         rule.conditions().stream()
                                 .flatMap(condition -> filteredCondition(condition, authorizedForTenantNames, isOperator, resolveVector).stream())
-                                .collect(Collectors.toUnmodifiableList())))
+                                .toList()))
                 // We can stop as soon as we hit the first rule that has no conditions
                 .takeWhile(rule -> !encounteredEmpty.getAndSet(rule.conditions().isEmpty()))
-                .collect(Collectors.toUnmodifiableList());
+                .toList();
 
         return new FlagData(definition.id(), new FetchVector(), rules);
     }
@@ -80,7 +80,7 @@ public class UserFlagsSerializer {
     private static Optional<Condition> valueSubset(Condition condition, Predicate<String> predicate) {
         Condition.CreateParams createParams = condition.toCreateParams();
         return Optional.of(createParams
-                .withValues(createParams.values().stream().filter(predicate).collect(Collectors.toUnmodifiableList()))
+                .withValues(createParams.values().stream().filter(predicate).toList())
                 .createAs(condition.type()));
     }
 }

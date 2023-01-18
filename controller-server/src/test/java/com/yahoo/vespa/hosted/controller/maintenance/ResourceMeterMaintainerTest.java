@@ -152,6 +152,6 @@ public class ResourceMeterMaintainerTest {
                                        .clusterId("clusterA")
                                        .clusterType(state == Node.State.active ? Node.ClusterType.admin : Node.ClusterType.container)
                                        .build())
-                     .collect(Collectors.toUnmodifiableList());
+                     .toList();
     }
 }

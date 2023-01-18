@@ -88,7 +88,7 @@ public class SupportAccessControl {
         return supportAccess.grantHistory().stream()
                 .filter(grant -> now.isAfter(grant.certificate().getNotBefore().toInstant()))
                 .filter(grant -> now.isBefore(grant.certificate().getNotAfter().toInstant()))
-                .collect(Collectors.toUnmodifiableList());
+                .toList();
     }
 
     public boolean allowDataplaneMembership(AthenzUser identity, DeploymentId deploymentId) {

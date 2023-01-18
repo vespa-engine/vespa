@@ -32,7 +32,6 @@ import java.util.stream.Stream;
 import static java.util.logging.Level.FINE;
 import static java.util.logging.Level.WARNING;
 import static java.util.stream.Collectors.toMap;
-import static java.util.stream.Collectors.toUnmodifiableList;
 
 /**
  * Runs in all cluster controller containers, and progresses reindexing efforts.
@@ -70,7 +69,7 @@ public class ReindexingMaintainer extends AbstractComponent {
                                                                         access,
                                                                         metric,
                                                                         clock))
-                                          .collect(toUnmodifiableList());
+                                          .toList();
         this.executor = new ScheduledThreadPoolExecutor(reindexingConfig.clusters().size(), new DaemonThreadFactory("reindexer-"));
         if (reindexingConfig.enabled())
             scheduleStaggered((delayMillis, intervalMillis) -> executor.scheduleAtFixedRate(this::maintain, delayMillis, intervalMillis, TimeUnit.MILLISECONDS),
@@ -123,7 +122,7 @@ public class ReindexingMaintainer extends AbstractComponent {
                       .map(typeStatus -> new Trigger(manager.getDocumentType(typeStatus.getKey()),
                                                      Instant.ofEpochMilli(typeStatus.getValue().readyAtMillis()),
                                                      typeStatus.getValue().speed()))
-                      .collect(toUnmodifiableList());
+                      .toList();
     }
 
     /** Schedules a task with the given interval (across all containers in this ZK cluster). */

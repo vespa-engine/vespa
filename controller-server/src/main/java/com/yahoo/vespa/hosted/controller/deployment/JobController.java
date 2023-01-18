@@ -94,7 +94,6 @@ import static java.util.Comparator.naturalOrder;
 import static java.util.function.Predicate.not;
 import static java.util.logging.Level.INFO;
 import static java.util.logging.Level.WARNING;
-import static java.util.stream.Collectors.toUnmodifiableList;
 
 /**
  * A singleton owned by the controller, which contains the state and methods for controlling deployment jobs.
