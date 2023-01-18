@@ -9,9 +9,9 @@ import com.yahoo.config.provision.CloudAccount;
 import com.yahoo.config.provision.ClusterResources;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.HostSpec;
-import com.yahoo.config.provision.LoadBalancerSettings;
 import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.NodeType;
+import com.yahoo.config.provision.ZoneEndpoint;
 import com.yahoo.config.provision.exception.LoadBalancerServiceException;
 import com.yahoo.transaction.NestedTransaction;
 import com.yahoo.vespa.flags.InMemoryFlagSource;
@@ -215,7 +215,7 @@ public class LoadBalancerProvisionerTest {
     public void provision_load_balancer_combined_cluster() {
         Supplier<List<LoadBalancer>> lbs = () -> tester.nodeRepository().loadBalancers().list(app1).asList();
         var combinedId = ClusterSpec.Id.from("container1");
-        var nodes = prepare(app1, clusterRequest(ClusterSpec.Type.combined, ClusterSpec.Id.from("content1"), Optional.of(combinedId), LoadBalancerSettings.empty));
+        var nodes = prepare(app1, clusterRequest(ClusterSpec.Type.combined, ClusterSpec.Id.from("content1"), Optional.of(combinedId), ZoneEndpoint.defaultEndpoint));
         assertEquals(1, lbs.get().size());
         assertEquals("Prepare provisions load balancer with reserved nodes", 2, lbs.get().get(0).instance().get().reals().size());
         tester.activate(app1, nodes);
@@ -320,10 +320,10 @@ public class LoadBalancerProvisionerTest {
         tester.activate(app1, prepare(app1, capacity, clusterRequest(ClusterSpec.Type.container, ClusterSpec.Id.from("c1"))));
         LoadBalancerList loadBalancers = tester.nodeRepository().loadBalancers().list();
         assertEquals(1, loadBalancers.size());
-        assertEquals(LoadBalancerSettings.empty, loadBalancers.first().get().instance().get().settings());
+        assertEquals(ZoneEndpoint.defaultEndpoint, loadBalancers.first().get().instance().get().settings());
 
         // Next deployment contains new settings
-        LoadBalancerSettings settings = new LoadBalancerSettings(List.of("alice", "bob"));
+        ZoneEndpoint settings = new ZoneEndpoint(List.of("alice", "bob"));
         tester.activate(app1, prepare(app1, capacity, clusterRequest(ClusterSpec.Type.container, ClusterSpec.Id.from("c1"), Optional.empty(), settings)));
         loadBalancers = tester.nodeRepository().loadBalancers().list();
         assertEquals(1, loadBalancers.size());
@@ -430,10 +430,10 @@ public class LoadBalancerProvisionerTest {
     }
 
     private static ClusterSpec clusterRequest(ClusterSpec.Type type, ClusterSpec.Id id) {
-        return clusterRequest(type, id, Optional.empty(), LoadBalancerSettings.empty);
+        return clusterRequest(type, id, Optional.empty(), ZoneEndpoint.defaultEndpoint);
     }
 
-    private static ClusterSpec clusterRequest(ClusterSpec.Type type, ClusterSpec.Id id, Optional<ClusterSpec.Id> combinedId, LoadBalancerSettings settings) {
+    private static ClusterSpec clusterRequest(ClusterSpec.Type type, ClusterSpec.Id id, Optional<ClusterSpec.Id> combinedId, ZoneEndpoint settings) {
         return ClusterSpec.request(type, id).vespaVersion("6.42").combinedId(combinedId).loadBalancerSettings(settings).build();
     }
 

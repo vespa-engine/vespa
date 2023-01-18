@@ -150,12 +150,21 @@ EndpointInstance = element instance {
     text
 }
 
+AllowedUrn = element allow {
+    attribute with { xsd:string } &
+    attribute arn { xsd:string }? &
+    attribute project { xsd:string }?
+}
+
 Endpoint = element endpoint {
     attribute id { xsd:string }? &
     attribute container-id { xsd:string } &
     attribute region { xsd:string }? &
+    attribute type { xsd:string }? &
+    attribute enabled { xsd:boolean }? &
     EndpointRegion* &
-    EndpointInstance*
+    EndpointInstance* &
+    AllowedUrn*
 }
 
 Endpoints = element endpoints {

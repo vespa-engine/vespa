@@ -4,26 +4,28 @@ package com.yahoo.vespa.hosted.controller.application.pkg;
 import com.yahoo.component.Version;
 import com.yahoo.config.application.api.DeploymentInstanceSpec;
 import com.yahoo.config.application.api.DeploymentSpec;
+import com.yahoo.config.application.api.DeploymentSpec.DeclaredZone;
 import com.yahoo.config.application.api.Endpoint;
 import com.yahoo.config.application.api.Endpoint.Level;
 import com.yahoo.config.application.api.ValidationId;
 import com.yahoo.config.application.api.ValidationOverrides;
 import com.yahoo.config.provision.CloudAccount;
 import com.yahoo.config.provision.CloudName;
+import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.InstanceName;
 import com.yahoo.config.provision.RegionName;
+import com.yahoo.config.provision.ZoneEndpoint;
+import com.yahoo.config.provision.ZoneEndpoint.AllowedUrn;
 import com.yahoo.config.provision.zone.ZoneApi;
 import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.Controller;
-import com.yahoo.vespa.hosted.controller.api.identifiers.DeploymentId;
 import com.yahoo.vespa.hosted.controller.application.EndpointId;
 import com.yahoo.vespa.hosted.controller.versions.VespaVersion;
 
 import java.time.Instant;
 import java.util.ArrayList;
-import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -150,10 +152,10 @@ public class ApplicationPackageValidator {
 
     /** Verify endpoint configuration of given application package */
     private void validateEndpointChange(Application application, ApplicationPackage applicationPackage, Instant instant) {
-        applicationPackage.deploymentSpec().instances().forEach(instance -> validateEndpointChange(application,
-                                                                                                   instance.name(),
-                                                                                                   applicationPackage,
-                                                                                                   instant));
+        for (DeploymentInstanceSpec instance : applicationPackage.deploymentSpec().instances()) {
+            validateGlobalEndpointChanges(application, instance.name(), applicationPackage, instant);
+            validateZoneEndpointChanges(application, instance.name(), applicationPackage, instant);
+        }
     }
 
     /** Verify that compactable endpoint parts (instance name and endpoint ID) do not clash */
@@ -176,7 +178,7 @@ public class ApplicationPackageValidator {
     }
 
     /** Verify changes to endpoint configuration by comparing given application package to the existing one, if any */
-    private void validateEndpointChange(Application application, InstanceName instanceName, ApplicationPackage applicationPackage, Instant instant) {
+    private void validateGlobalEndpointChanges(Application application, InstanceName instanceName, ApplicationPackage applicationPackage, Instant instant) {
         var validationId = ValidationId.globalEndpointChange;
         if (applicationPackage.validationOverrides().allows(validationId, instant)) return;
 
@@ -198,6 +200,43 @@ public class ApplicationPackageValidator {
                                            "deployment.xml will remove " + removedEndpoints +
                                            (newEndpoints.isEmpty() ? "" : " and add " + newEndpoints) +
                                            ". " + ValidationOverrides.toAllowMessage(validationId));
+    }
+
+    /** Verify changes to endpoint configuration by comparing given application package to the existing one, if any */
+    private void validateZoneEndpointChanges(Application application, InstanceName instance, ApplicationPackage applicationPackage, Instant now) {
+        ValidationId validationId = ValidationId.zoneEndpointChange;
+        if (applicationPackage.validationOverrides().allows(validationId, now)) return;;
+
+        String prefix = validationId + ": application '" + application.id() +
+                        (instance.isDefault() ? "" : "." + instance.value()) + "' ";
+        DeploymentInstanceSpec spec = applicationPackage.deploymentSpec().requireInstance(instance);
+        for (DeclaredZone zone : spec.zones()) {
+            if (zone.environment() == Environment.prod) {
+                Map<ClusterSpec.Id, ZoneEndpoint> newEndpoints = spec.zoneEndpoints(ZoneId.from(zone.environment(), zone.region().get()));
+                application.deploymentSpec().instance(instance)                                     // If old spec has this instance ...
+                           .filter(oldSpec -> oldSpec.concerns(zone.environment(), zone.region()))  // ... and deploys to this zone ...
+                           .map(oldSpec -> oldSpec.zoneEndpoints(ZoneId.from(zone.environment(), zone.region().get())))
+                           .ifPresent(oldEndpoints -> {                                             // ... then we compare the endpoints present in both.
+                               oldEndpoints.forEach((cluster, oldEndpoint) -> {
+                                   ZoneEndpoint newEndpoint = newEndpoints.getOrDefault(cluster, ZoneEndpoint.defaultEndpoint);
+                                   if ( ! newEndpoint.allowedUrns().containsAll(oldEndpoint.allowedUrns()))
+                                       throw new IllegalArgumentException(prefix + "allows access to cluster '" + cluster.value() +
+                                                                          "' in '" + zone.region().get().value() + "' to " +
+                                                                          oldEndpoint.allowedUrns().stream().map(AllowedUrn::toString).collect(joining(", ", "[", "]")) +
+                                                                          ", but does not include all these in the new deployment spec. " +
+                                                                          "Deploying with the new settings will allow access to " +
+                                                                          (newEndpoint.allowedUrns().isEmpty() ? "no one" : newEndpoint.allowedUrns().stream().map(AllowedUrn::toString).collect(joining(", ", "[", "]"))));
+                               });
+                               newEndpoints.forEach((cluster, newEndpoint) -> {
+                                    ZoneEndpoint oldEndpoint = oldEndpoints.getOrDefault(cluster, ZoneEndpoint.defaultEndpoint);
+                                    if (oldEndpoint.isPublicEndpoint() && ! newEndpoint.isPublicEndpoint())
+                                        throw new IllegalArgumentException(prefix + "has a public endpoint for cluster '" + cluster.value() +
+                                                                           "' in '" + zone.region().get().value() + "', but the new deployment spec " +
+                                                                           "disables this");
+                               });
+                           });
+            }
+        }
     }
 
     /** Returns whether newEndpoints contains all destinations in endpoints */

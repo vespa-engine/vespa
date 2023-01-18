@@ -7,9 +7,9 @@ import com.yahoo.config.provision.ApplicationTransaction;
 import com.yahoo.config.provision.CloudAccount;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.HostName;
-import com.yahoo.config.provision.LoadBalancerSettings;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.config.provision.TenantName;
+import com.yahoo.config.provision.ZoneEndpoint;
 import com.yahoo.config.provision.exception.LoadBalancerServiceException;
 import com.yahoo.transaction.NestedTransaction;
 import com.yahoo.vespa.flags.BooleanFlag;
@@ -108,11 +108,13 @@ public class LoadBalancerProvisioner {
      * Calling this when no load balancer has been prepared for given cluster is a no-op.
      */
     public void activate(Set<ClusterSpec> clusters, NodeList newActive, ApplicationTransaction transaction) {
-        Map<ClusterSpec.Id, LoadBalancerSettings> activatingClusters = clusters.stream()
-                                                                      .collect(groupingBy(LoadBalancerProvisioner::effectiveId,
-                                                                                          reducing(LoadBalancerSettings.empty,
-                                                                                                   ClusterSpec::loadBalancerSettings,
-                                                                                                   (o, n) -> o.isEmpty() ? n : o)));
+        Map<ClusterSpec.Id, ZoneEndpoint> activatingClusters = clusters.stream()
+                                                                       // .collect(Collectors.toMap(ClusterSpec::id, ClusterSpec::zoneEndpoint));
+                                                                       // TODO: this dies with combined clusters Ü
+                                                                       .collect(groupingBy(LoadBalancerProvisioner::effectiveId,
+                                                                                          reducing(ZoneEndpoint.defaultEndpoint,
+                                                                                                   ClusterSpec::zoneEndpoint,
+                                                                                                   (o, n) -> o.isDefault() ? n : o)));
         for (var cluster : loadBalancedClustersOf(newActive).entrySet()) {
             if ( ! activatingClusters.containsKey(cluster.getKey()))
                 continue;
@@ -209,7 +211,7 @@ public class LoadBalancerProvisioner {
         requireInstance(id, instance, cloudAccount);
     }
 
-    private void activate(ApplicationTransaction transaction, ClusterSpec.Id cluster, LoadBalancerSettings settings, NodeList nodes) {
+    private void activate(ApplicationTransaction transaction, ClusterSpec.Id cluster, ZoneEndpoint settings, NodeList nodes) {
         Instant now = nodeRepository.clock().instant();
         LoadBalancerId id = new LoadBalancerId(transaction.application(), cluster);
         Optional<LoadBalancer> loadBalancer = db.readLoadBalancer(id);
@@ -226,7 +228,7 @@ public class LoadBalancerProvisioner {
     /** Provision or reconfigure a load balancer instance, if necessary */
     private Optional<LoadBalancerInstance> provisionInstance(LoadBalancerId id, NodeList nodes,
                                                              Optional<LoadBalancer> currentLoadBalancer,
-                                                             LoadBalancerSettings loadBalancerSettings,
+                                                             ZoneEndpoint zoneEndpoint,
                                                              CloudAccount cloudAccount) {
         boolean shouldDeactivateRouting = deactivateRouting.with(FetchVector.Dimension.APPLICATION_ID,
                                                                  id.application().serializedForm())
@@ -237,13 +239,13 @@ public class LoadBalancerProvisioner {
         } else {
             reals = realsOf(nodes);
         }
-        if (isUpToDate(currentLoadBalancer, reals, loadBalancerSettings))
+        if (isUpToDate(currentLoadBalancer, reals, zoneEndpoint))
             return currentLoadBalancer.get().instance();
         log.log(Level.INFO, () -> "Provisioning instance for " + id + ", targeting: " + reals);
         try {
             // Override settings at activation, otherwise keep existing ones.
-            LoadBalancerSettings settings = loadBalancerSettings != null ? loadBalancerSettings
-                                                                         : currentLoadBalancer.flatMap(LoadBalancer::instance)
+            ZoneEndpoint settings = zoneEndpoint != null ? zoneEndpoint
+                                                         : currentLoadBalancer.flatMap(LoadBalancer::instance)
                                                                                               .map(LoadBalancerInstance::settings)
                                                                                               .orElse(null);
             LoadBalancerInstance created = service.create(new LoadBalancerSpec(id.application(), id.cluster(), reals, settings, cloudAccount),
@@ -306,11 +308,11 @@ public class LoadBalancerProvisioner {
     }
 
     /** Returns whether load balancer has given reals, and settings if specified*/
-    private static boolean isUpToDate(Optional<LoadBalancer> loadBalancer, Set<Real> reals, LoadBalancerSettings loadBalancerSettings) {
+    private static boolean isUpToDate(Optional<LoadBalancer> loadBalancer, Set<Real> reals, ZoneEndpoint zoneEndpoint) {
         if (loadBalancer.isEmpty()) return false;
         if (loadBalancer.get().instance().isEmpty()) return false;
         return    loadBalancer.get().instance().get().reals().equals(reals)
-               && (loadBalancerSettings == null || loadBalancer.get().instance().get().settings().equals(loadBalancerSettings));
+               && (zoneEndpoint == null || loadBalancer.get().instance().get().settings().equals(zoneEndpoint));
     }
 
     /** Returns whether to allow given load balancer to have no reals */

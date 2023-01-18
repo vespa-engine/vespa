@@ -80,7 +80,7 @@ public class ConfigModelRepo implements ConfigModelRepoAdder, Serializable, Iter
                                  ConfigModelRegistry configModelRegistry) throws IOException {
         Element userServicesElement = getServicesFromApp(deployState.getApplicationPackage());
         readConfigModels(root, userServicesElement, deployState, vespaModel, configModelRegistry);
-        builder.postProc(deployState.getDeployLogger(), root, this);
+        builder.postProc(deployState, root, this);
     }
 
     private Element getServicesFromApp(ApplicationPackage applicationPackage) throws IOException {
