@@ -262,6 +262,7 @@ public class VespaDomBuilder extends VespaModelBuilder {
     private void validateContainerClusterIds(ConfigModelRepo pc) {
         Map<String, String> normalizedClusterIds = new LinkedHashMap<>();
         for (ContainerCluster<?> cluster: ContainerModel.containerClusters(pc)) {
+            if (cluster.getHttp() == null) continue;
             String name = cluster.getName();
             Validation.requireMatch(name, "container cluster name", clusterPattern);
             String clashing = normalizedClusterIds.put(name.replaceAll("_", "-"), name);
