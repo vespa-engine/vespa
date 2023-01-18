@@ -30,12 +30,7 @@
         }
       ],
       "settings": {
-        "allowedUrns": [
-          {
-            "type": "aws-private-link",
-            "urn": "arne"
-          }
-        ]
+        "allowedUrns": [ "arne" ]
       },
       "serviceId": "service"
     },

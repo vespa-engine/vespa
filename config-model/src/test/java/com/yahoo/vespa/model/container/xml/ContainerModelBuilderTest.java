@@ -22,9 +22,6 @@ import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.Flavor;
 import com.yahoo.config.provision.RegionName;
 import com.yahoo.config.provision.Zone;
-import com.yahoo.config.provision.ZoneEndpoint;
-import com.yahoo.config.provision.ZoneEndpoint.AccessType;
-import com.yahoo.config.provision.ZoneEndpoint.AllowedUrn;
 import com.yahoo.config.provisioning.FlavorsConfig;
 import com.yahoo.container.ComponentsConfig;
 import com.yahoo.container.QrConfig;
@@ -60,6 +57,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.logging.Level;
+import java.util.stream.Collectors;
 
 import static com.yahoo.config.model.test.TestUtil.joinLines;
 import static com.yahoo.test.LinePatternMatcher.containsLineWithPattern;
@@ -181,63 +179,6 @@ public class ContainerModelBuilderTest extends ContainerModelBuilderTestBase {
     }
 
     @Test
-    void container_cluster_with_invalid_name_throws_exception_when_hosted() throws IOException, SAXException {
-        String servicesXml = """
-                             <services version='1.0'>
-                               <container id='C-1' version='1.0'>
-                                 <nodes count='1' />
-                               </container>
-                             </services>
-                             """;
-
-        assertEquals("container cluster name must match '([a-z0-9]|[a-z0-9][a-z0-9_-]{0,61}[a-z0-9])', but got: 'C-1'",
-                     assertThrows(IllegalArgumentException.class,
-                                  () ->
-                                          new VespaModel(new NullConfigModelRegistry(), new DeployState.Builder()
-                                                  .modelHostProvisioner(new InMemoryProvisioner(4, false))
-                                                  .applicationPackage(new MockApplicationPackage.Builder().withServices(servicesXml).build())
-                                                  .properties(new TestProperties().setHostedVespa(true))
-                                                  .build()))
-                             .getMessage());
-
-        new VespaModel(new NullConfigModelRegistry(), new DeployState.Builder()
-                .modelHostProvisioner(new InMemoryProvisioner(4, false))
-                .applicationPackage(new MockApplicationPackage.Builder().withServices(servicesXml).build())
-                .properties(new TestProperties().setHostedVespa(false))
-                .build());
-    }
-
-    @Test
-    void two_clusters_with_clashing_cluster_names_throws_exception_when_hosted() throws IOException, SAXException {
-        String servicesXml = """
-                             <services version='1.0'>
-                               <container id='c-1' version='1.0'>
-                                 <nodes count='1' />
-                               </container>
-                               <container id='c_1' version='1.0'>
-                                 <nodes count='1' />
-                               </container>
-                             </services>
-                             """;
-
-        assertEquals("container clusters 'c-1' and 'c_1' have clashing endpoint names, when '_' is replaced with '-' to form valid domain names",
-                     assertThrows(IllegalArgumentException.class,
-                                  () ->
-                                          new VespaModel(new NullConfigModelRegistry(), new DeployState.Builder()
-                                                  .modelHostProvisioner(new InMemoryProvisioner(4, false))
-                                                  .applicationPackage(new MockApplicationPackage.Builder().withServices(servicesXml).build())
-                                                  .properties(new TestProperties().setHostedVespa(true))
-                                                  .build()))
-                             .getMessage());
-
-        new VespaModel(new NullConfigModelRegistry(), new DeployState.Builder()
-                .modelHostProvisioner(new InMemoryProvisioner(4, false))
-                .applicationPackage(new MockApplicationPackage.Builder().withServices(servicesXml).build())
-                .properties(new TestProperties().setHostedVespa(false))
-                .build());
-    }
-
-    @Test
     void two_clusters_without_explicit_port_throws_exception() {
         Element cluster1Elem = DomBuilderTest.parse(
                 "<container id='cluster1' version='1.0'>",
@@ -257,96 +198,53 @@ public class ContainerModelBuilderTest extends ContainerModelBuilderTestBase {
 
     @Test
     void load_balancers_can_be_set() throws IOException, SAXException {
-        // No endpoints
-        verifyAllowedUrns("", Environment.prod, "eu", ZoneEndpoint.defaultEndpoint);
+        // No load-balancer or nodes elements
+        verifyAllowedUrns("");
 
-        // No non-default settings
-        verifyAllowedUrns("""
-                          <endpoint type='zone' container-id='default' />
-                          """,
-                          Environment.prod,
-                          "eu",
-                          ZoneEndpoint.defaultEndpoint);
+        // No load-balancer element
+        verifyAllowedUrns("<nodes count='2' />");
 
-        // No allowed urns
+        // No nodes element
         verifyAllowedUrns("""
-                          <endpoint type='private' container-id='default' />
-                          """,
-                          Environment.prod,
-                          "eu",
-                          new ZoneEndpoint(true, true, List.of()));
+                          <load-balancer>
+                            <private-access>
+                              <allow-urn>foo</allow-urn>
+                              <allow-urn>bar</allow-urn>
+                            </private-access>
+                          </load-balancer>
+                          """);
 
-        // Various settings
+        // Both load-balancer and nodes
         verifyAllowedUrns("""
-                          <endpoint type='zone' container-id='default' enabled='false' />
-                          <endpoint type='private' container-id='default'>
-                            <region>eu</region>
-                            <allow with='aws-private-link' arn='barn' />
-                            <allow with='gcp-service-connect' project='nine' />
-                          </endpoint>
+                          <load-balancer>
+                            <private-access>
+                              <allow-urn>foo</allow-urn>
+                              <allow-urn>bar</allow-urn>
+                            </private-access>
+                          </load-balancer>
+                          <nodes count='2' />
                           """,
-                          Environment.prod,
-                          "eu",
-                          new ZoneEndpoint(false, true, List.of(new AllowedUrn(AccessType.awsPrivateLink, "barn"),
-                                                                new AllowedUrn(AccessType.gcpServiceConnect, "nine"))));
-
-        // Various settings, but wrong region
-        verifyAllowedUrns("""
-                          <endpoint type='zone' container-id='default' enabled='false' />
-                          <endpoint type='private' container-id='default'>
-                            <region>eu</region>
-                            <allow with='aws-private-link' arn='barn' />
-                            <allow with='gcp-service-connect' project='nine' />
-                          </endpoint>
-                          """,
-                          Environment.prod,
-                          "us",
-                          ZoneEndpoint.defaultEndpoint);
-
-        // Various settings, but wrong environment
-        verifyAllowedUrns("""
-                          <endpoint type='zone' container-id='default' enabled='false' />
-                          <endpoint type='private' container-id='default'>
-                            <region>eu</region>
-                            <allow with='aws-private-link' arn='barn' />
-                            <allow with='gcp-service-connect' project='nine' />
-                          </endpoint>
-                          """,
-                          Environment.dev,
-                          "eu",
-                          ZoneEndpoint.defaultEndpoint);
+                          "foo", "bar");
     }
 
-    private void verifyAllowedUrns(String endpointsTag, Environment environment, String region, ZoneEndpoint expected) throws IOException, SAXException {
+    private void verifyAllowedUrns(String containerXml, String... expectedAllowedUrns) throws IOException, SAXException {
         String servicesXml = """
                              <container id='default' version='1.0'>
-                               <nodes count='2' />
+                               %s
                              </container>
-                             """;
-        String deploymentXml = """
-                               <deployment version='1.0'>
-                                 <prod>
-                                   <region>eu</region>
-                                 </prod>
-                                 <endpoints>
-                                   %s
-                                 </endpoints>
-                               </deployment>
-                               """.formatted(endpointsTag);
-        ApplicationPackage applicationPackage = new MockApplicationPackage.Builder().withServices(servicesXml).withDeploymentSpec(deploymentXml).build();
+                             """.formatted(containerXml);
+        ApplicationPackage applicationPackage = new MockApplicationPackage.Builder().withServices(servicesXml).build();
         InMemoryProvisioner provisioner = new InMemoryProvisioner(true, false, "host1.yahoo.com", "host2.yahoo.com");
         VespaModel model = new VespaModel(new NullConfigModelRegistry(), new DeployState.Builder()
                 .modelHostProvisioner(provisioner)
                 .provisioned(provisioner.startProvisionedRecording())
                 .applicationPackage(applicationPackage)
-                .properties(new TestProperties().setMultitenant(true)
-                                                .setHostedVespa(true)
-                                                .setZone(new Zone(environment, RegionName.from(region))))
+                .properties(new TestProperties().setMultitenant(true).setHostedVespa(true))
                 .build());
         assertEquals(2, model.hostSystem().getHosts().size());
         assertEquals(1, provisioner.provisionedClusters().size());
-        assertEquals(expected,
-                     provisioner.provisionedClusters().iterator().next().zoneEndpoint());
+        assertEquals(List.of(expectedAllowedUrns),
+                     provisioner.provisionedClusters().iterator().next().loadBalancerSettings().allowedUrns());
     }
 
     @Test

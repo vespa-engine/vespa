@@ -621,7 +621,7 @@ public class JobController {
         submission.applicationPackage().deploymentSpec().majorVersion().ifPresent(explicitMajor -> {
             if ( ! controller.readVersionStatus().isOnCurrentMajor(new Version(explicitMajor)))
                 controller.notificationsDb().setNotification(NotificationSource.from(id), Type.submission, Notification.Level.warning,
-                                                             "Vespa " + explicitMajor + " will soon reach end of life, upgrade to Vespa " + (explicitMajor + 1) + " now: " +
+                                                             "Vespa " + explicitMajor + " will soon be end of life, upgrade to Vespa " + (explicitMajor + 1) + " now: " +
                                                              "https://cloud.vespa.ai/en/vespa" + (explicitMajor + 1) + "-release-notes.html"); // ∠( ᐛ 」∠)＿
         });
     }

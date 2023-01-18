@@ -16,8 +16,6 @@ import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.HostName;
 import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.NodeType;
-import com.yahoo.config.provision.ZoneEndpoint.AllowedUrn;
-import com.yahoo.config.provision.ZoneEndpoint.AccessType;
 import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.vespa.flags.json.FlagData;
 import com.yahoo.vespa.hosted.controller.api.application.v4.model.ClusterMetrics;
@@ -419,7 +417,7 @@ public class ConfigServerMock extends AbstractComponent implements ConfigServer 
                                                                    LoadBalancer.State.active,
                                                                    Optional.of("dns-zone-1"),
                                                                    Optional.empty(),
-                                                                   Optional.of(new PrivateServiceInfo("service", List.of(new AllowedUrn(AccessType.awsPrivateLink, "arne")))))));
+                                                                   Optional.of(new PrivateServiceInfo("service", List.of("arne"))))));
         }
 
         Application application = applications.get(id);
