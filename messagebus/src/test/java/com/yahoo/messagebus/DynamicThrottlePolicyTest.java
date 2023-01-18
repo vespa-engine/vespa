@@ -7,15 +7,16 @@ import com.yahoo.messagebus.test.SimpleReply;
 import org.junit.jupiter.api.Test;
 
 import java.util.ArrayDeque;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Deque;
 import java.util.List;
 import java.util.Random;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Consumer;
+import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
-import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toUnmodifiableList;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -218,7 +219,7 @@ public class DynamicThrottlePolicyTest {
         System.err.printf("\n### Running %d operations of %d ticks each against %d workers with parallelism %d and queue size %d\n",
                           operations, workPerSuccess, numberOfWorkers, workerParallelism, maximumTasksPerWorker);
 
-        List<Integer> order = IntStream.range(0, policies.length).boxed().collect(toList());
+        List<Integer> order = IntStream.range(0, policies.length).boxed().collect(Collectors.toCollection(ArrayList::new));
         MockServer resource = new MockServer(workPerSuccess, numberOfWorkers, maximumTasksPerWorker, workerParallelism);
         AtomicLong outstanding = new AtomicLong(operations);
         AtomicLong errors = new AtomicLong(0);

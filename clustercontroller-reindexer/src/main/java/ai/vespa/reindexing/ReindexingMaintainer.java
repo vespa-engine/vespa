@@ -31,7 +31,6 @@ import java.util.stream.Stream;
 
 import static java.util.logging.Level.FINE;
 import static java.util.logging.Level.WARNING;
-import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toMap;
 import static java.util.stream.Collectors.toUnmodifiableList;
 
@@ -135,7 +134,7 @@ public class ReindexingMaintainer extends AbstractComponent {
         long intervalMillis = interval.toMillis();
         List<String> hostnames = Stream.of(clusterHostnames.split(","))
                                        .map(hostPort -> hostPort.split(":")[0])
-                                       .collect(toList());
+                                       .toList();
         if (hostnames.contains(hostname)) {
             long offset = hostnames.indexOf(hostname) * intervalMillis;
             intervalMillis *= hostnames.size();
