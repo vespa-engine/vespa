@@ -1,16 +1,13 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model.admin;
 
-import com.yahoo.config.model.api.ModelContext;
 import com.yahoo.cloud.config.SlobroksConfig;
 import com.yahoo.cloud.config.ZookeepersConfig;
 import com.yahoo.cloud.config.log.LogdConfig;
 import com.yahoo.config.model.ConfigModelContext.ApplicationType;
 import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.model.producer.AbstractConfigProducer;
-import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ClusterSpec;
-import com.yahoo.config.provision.Zone;
 import com.yahoo.vespa.model.AbstractService;
 import com.yahoo.vespa.model.ConfigProxy;
 import com.yahoo.vespa.model.ConfigSentinel;
@@ -250,8 +247,7 @@ public class Admin extends AbstractConfigProducer<Admin> implements Serializable
     }
 
     private void addCommonServices(HostResource host, DeployState deployState) {
-        addConfigSentinel(deployState, host, deployState.getProperties().applicationId(), deployState.zone(),
-                          deployState.featureFlags());
+        addConfigSentinel(deployState, host);
         addLogd(deployState, host);
         addConfigProxy(deployState, host);
         addFileDistribution(host);
@@ -271,10 +267,9 @@ public class Admin extends AbstractConfigProducer<Admin> implements Serializable
         }
     }
 
-    private void addConfigSentinel(DeployState deployState, HostResource host,
-                                   ApplicationId applicationId, Zone zone, ModelContext.FeatureFlags featureFlags)
+    private void addConfigSentinel(DeployState deployState, HostResource host)
     {
-        ConfigSentinel configSentinel = new ConfigSentinel(host.getHost(), applicationId, zone, featureFlags);
+        ConfigSentinel configSentinel = new ConfigSentinel(host.getHost(), deployState.getProperties().applicationId(), deployState.zone());
         addAndInitializeService(deployState, host, configSentinel);
         host.getHost().setConfigSentinel(configSentinel);
     }
