@@ -4,6 +4,7 @@ package com.yahoo.vespa.model.application.validation.change;
 import com.yahoo.config.application.api.ValidationOverrides;
 import com.yahoo.config.model.api.ConfigChangeAction;
 import com.yahoo.config.provision.ClusterSpec;
+import com.yahoo.config.provision.HostSpec;
 import com.yahoo.config.provision.NodeResources;
 import com.yahoo.vespa.model.VespaModel;
 import com.yahoo.vespa.model.container.ApplicationContainerCluster;
@@ -46,7 +47,7 @@ public class NodeResourceChangeValidator implements ChangeValidator {
         return model.allocatedHosts().getHosts().stream().filter(host -> host.membership().isPresent())
                                                          .filter(host -> host.membership().get().cluster().id().equals(clusterId))
                                                          .findFirst()
-                                                         .map(host -> host.advertisedResources());
+                                                         .map(HostSpec::advertisedResources);
     }
 
     private List<ConfigChangeAction> createRestartActionsFor(ClusterSpec.Id clusterId, VespaModel model) {

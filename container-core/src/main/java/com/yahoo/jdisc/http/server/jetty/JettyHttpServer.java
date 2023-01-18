@@ -41,8 +41,6 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
-import static java.util.stream.Collectors.toList;
-
 /**
  * @author Simon Thoresen Hult
  * @author bjorncs
@@ -87,7 +85,7 @@ public class JettyHttpServer extends AbstractServerProvider {
         ServletHolder jdiscServlet = new ServletHolder(new JDiscHttpServlet(jDiscContext));
         List<JDiscServerConnector> connectors = Arrays.stream(server.getConnectors())
                                                       .map(JDiscServerConnector.class::cast)
-                                                      .collect(toList());
+                                                      .toList();
         server.setHandler(createRootHandler(serverConfig, connectors, jdiscServlet));
         this.metricsReporter = new ServerMetricReporter(metric, server);
     }

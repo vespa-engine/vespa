@@ -34,8 +34,8 @@ public class TimeWindow {
     private final LocalDateRange dateRange;
 
     private TimeWindow(List<DayOfWeek> days, List<Integer> hours, ZoneId zone, LocalDateRange dateRange) {
-        this.days = Objects.requireNonNull(days).stream().distinct().sorted().collect(Collectors.toUnmodifiableList());
-        this.hours = Objects.requireNonNull(hours).stream().distinct().sorted().collect(Collectors.toUnmodifiableList());
+        this.days = Objects.requireNonNull(days).stream().distinct().sorted().toList();
+        this.hours = Objects.requireNonNull(hours).stream().distinct().sorted().toList();
         this.zone = Objects.requireNonNull(zone);
         this.dateRange = Objects.requireNonNull(dateRange);
         if (days.isEmpty()) throw new IllegalArgumentException("At least one day must be specified");

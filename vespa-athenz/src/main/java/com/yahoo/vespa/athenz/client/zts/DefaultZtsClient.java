@@ -42,7 +42,6 @@ import java.util.Optional;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
-import static java.util.stream.Collectors.toList;
 
 /**
  * Default implementation of {@link ZtsClient}
@@ -149,7 +148,7 @@ public class DefaultZtsClient extends ClientBase implements ZtsClient {
     public AthenzAccessToken getAccessToken(List<AthenzRole> athenzRole) {
         List<AthenzResourceName> athenzResourceNames = athenzRole.stream()
                 .map(AthenzRole::toResourceName)
-                .collect(toList());
+                .toList();
         return this.getAccessTokenImpl(athenzResourceNames, List.of());
     }
 
@@ -201,7 +200,7 @@ public class DefaultZtsClient extends ClientBase implements ZtsClient {
                 .build();
         return execute(request, response -> {
             TenantDomainsResponseEntity entity = readEntity(response, TenantDomainsResponseEntity.class);
-            return entity.tenantDomainNames.stream().map(AthenzDomain::new).collect(toList());
+            return entity.tenantDomainNames.stream().map(AthenzDomain::new).toList();
         });
     }
 

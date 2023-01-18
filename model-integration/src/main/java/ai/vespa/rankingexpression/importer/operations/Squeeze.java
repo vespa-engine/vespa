@@ -39,14 +39,14 @@ public class Squeeze extends IntermediateOperation {
             squeezeDimensions = inputType.type().dimensions().stream().
                     filter(dim -> OrderedTensorType.dimensionSize(dim) == 1).
                     map(TensorType.Dimension::name).
-                    collect(Collectors.toList());
+                    toList();
         } else {
             squeezeDimensions = squeezeDimsAttr.get().stream().map(Value::asDouble).map(Double::intValue).
                     map(i -> i < 0 ? inputType.type().dimensions().size() - i : i).
                     map(i -> inputType.type().dimensions().get(i)).
                     filter(dim -> OrderedTensorType.dimensionSize(dim) == 1).
                     map(TensorType.Dimension::name).
-                    collect(Collectors.toList());
+                    toList();
         }
 
         return squeezeDimensions.isEmpty() ? inputType : reducedType(inputType);

@@ -32,7 +32,6 @@ import static java.util.Objects.requireNonNull;
 import static java.util.logging.Level.FINE;
 import static java.util.logging.Level.INFO;
 import static java.util.logging.Level.WARNING;
-import static java.util.stream.Collectors.toUnmodifiableList;
 
 /**
  * Progresses reindexing efforts by creating visitor sessions against its own content cluster,
@@ -82,7 +81,7 @@ public class Reindexer {
         this.cluster = cluster;
         this.ready = ready.stream() // Iterate through document types in consistent order.
                           .sorted(comparingDouble(Trigger::speed).reversed().thenComparing(Trigger::readyAt).thenComparing(Trigger::type))
-                          .collect(toUnmodifiableList());
+                          .toList();
         this.database = database;
         this.visitorSessions = visitorSessions;
         this.metrics = new ReindexingMetrics(metric, cluster.name);

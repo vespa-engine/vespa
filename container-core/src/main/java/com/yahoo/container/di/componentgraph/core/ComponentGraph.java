@@ -92,8 +92,7 @@ public class ComponentGraph {
             return Optional.ofNullable(Iterables.get(components, 0));
         } else {
 
-            List<Node> nonProviderComponents = components.stream().filter(c -> !Provider.class.isAssignableFrom(c.instanceType()))
-                    .collect(Collectors.toList());
+            var nonProviderComponents = components.stream().filter(c -> !Provider.class.isAssignableFrom(c.instanceType())).toList();
             if (nonProviderComponents.isEmpty()) {
                 throw new IllegalStateException("Multiple global component providers for class '" + clazz.getName() + "' found :" + components);
             } else if (nonProviderComponents.size() == 1) {
@@ -125,7 +124,7 @@ public class ComponentGraph {
     }
 
     private Collection<ComponentNode> osgiComponentsOfClass(Class<?> clazz) {
-        return componentNodes().stream().filter(node -> clazz.isAssignableFrom(node.componentType())).collect(Collectors.toList());
+        return componentNodes().stream().filter(node -> clazz.isAssignableFrom(node.componentType())).toList();
     }
 
     public List<Node> complete(Injector fallbackInjector) {
@@ -198,9 +197,8 @@ public class ComponentGraph {
             return node.componentId();
         } else if (parameterType instanceof Class && ConfigInstance.class.isAssignableFrom((Class<?>) parameterType)) {
             return handleConfigParameter((ComponentNode) node, (Class<?>) parameterType);
-        } else if (parameterType instanceof ParameterizedType
+        } else if (parameterType instanceof ParameterizedType registry
                 && ((ParameterizedType) parameterType).getRawType().equals(ComponentRegistry.class)) {
-            ParameterizedType registry = (ParameterizedType) parameterType;
             return getComponentRegistry(registry.getActualTypeArguments()[0]);
         } else if (parameterType instanceof Class) {
             return handleComponentParameter(node, fallbackInjector, (Class<?>) parameterType, annotations);
@@ -219,8 +217,7 @@ public class ComponentGraph {
 
     private ComponentRegistryNode getComponentRegistry(Type componentType) {
         Class<?> componentClass;
-        if (componentType instanceof WildcardType) {
-            WildcardType wildcardType = (WildcardType) componentType;
+        if (componentType instanceof WildcardType wildcardType) {
             if (wildcardType.getLowerBounds().length > 0 || wildcardType.getUpperBounds().length > 1) {
                 throw new RuntimeException("Can't create ComponentRegistry of unknown wildcard type" + wildcardType);
             }
@@ -289,7 +286,7 @@ public class ComponentGraph {
 
     private Node handleComponentParameter(Node node, Injector fallbackInjector, Class<?> clazz, Collection<Annotation> annotations) {
 
-        List<Annotation> bindingAnnotations = annotations.stream().filter(ComponentGraph::isBindingAnnotation).collect(Collectors.toList());
+        List<Annotation> bindingAnnotations = annotations.stream().filter(ComponentGraph::isBindingAnnotation).toList();
         Key<?> key = getKey(clazz, bindingAnnotations.stream().findFirst());
 
         if (bindingAnnotations.size() > 1) {
@@ -351,7 +348,7 @@ public class ComponentGraph {
         Annotation annotation = key.getAnnotation();
 
         List<T> filteredByClass = nodesOfType(nodes, nodeType).stream().filter(node -> clazz.isAssignableFrom(node.componentType()))
-                .collect(Collectors.toList());
+                .toList();
 
         if (filteredByClass.size() == 1) {
             return filteredByClass;
@@ -359,7 +356,7 @@ public class ComponentGraph {
             List<T> filteredByClassAndAnnotation = filteredByClass.stream()
                     .filter(node -> (annotation == null && node.instanceKey().getAnnotation() == null)
                             || annotation.equals(node.instanceKey().getAnnotation()))
-                    .collect(Collectors.toList());
+                    .toList();
             if (filteredByClassAndAnnotation.size() > 0) {
                 return filteredByClassAndAnnotation;
             } else {

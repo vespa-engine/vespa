@@ -17,8 +17,6 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 
-import static java.util.stream.Collectors.toList;
-
 public class Badges {
 
     // https://chrishewett.com/blog/calculating-text-width-programmatically/ thank you!
@@ -120,7 +118,7 @@ public class Badges {
                                .filter(Run::hasEnded)
                                .skip(1)
                                .limit(length)
-                               .collect(toList());
+                               .toList();
 
         text = lastTriggered.id().type().jobName();
         textWidth = widthOf(text);

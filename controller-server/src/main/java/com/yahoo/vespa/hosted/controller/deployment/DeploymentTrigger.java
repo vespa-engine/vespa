@@ -40,7 +40,6 @@ import java.util.stream.Collectors;
 
 import static java.util.Comparator.comparing;
 import static java.util.stream.Collectors.groupingBy;
-import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toMap;
 
 /**
@@ -153,7 +152,7 @@ public class DeploymentTrigger {
                 .collect(groupingBy(Job::applicationId))
                 .values().stream()
                 .flatMap(List::stream)
-                .collect(Collectors.toUnmodifiableList());
+                .toList();
 
         // Map of test jobs, a list for each job type. Jobs in each list are sorted by priority.
         Map<JobType, List<Job>> sortedTestJobsByType = testJobs.stream()
@@ -284,7 +283,7 @@ public class DeploymentTrigger {
                 }
                 newList = newList.stream()
                         .filter(entry -> !(entry.jobId().equals(requiredEntry.jobId()) && entry.requiredRun() < requiredEntry.requiredRun()))
-                        .collect(toList());
+                        .toList();
                 controller.curator().writeRetriggerEntries(newList);
             }
             controller.jobController().abort(run.id(), "force re-triggered");
@@ -367,7 +366,7 @@ public class DeploymentTrigger {
                    .filter(status -> ! hasExceededQuota(status.application().id().tenant()))
                    .map(this::computeReadyJobs)
                    .flatMap(Collection::stream)
-                   .collect(toList());
+                   .toList();
     }
 
     /** Finds the next step to trigger for the given application, if any, and returns these as a list. */

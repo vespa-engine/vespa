@@ -15,7 +15,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.logging.Logger;
-import java.util.stream.Collectors;
 
 /**
  * Manages the set of installed and active/inactive bundles.
@@ -55,7 +54,7 @@ public class ApplicationBundleLoader {
      */
     public synchronized List<BsnVersion> activeBundlesBsnVersion() {
         return activeBundles.values().stream().map(BsnVersion::new)
-                .collect(Collectors.toList());
+                .toList();
     }
 
     /**

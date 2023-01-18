@@ -58,7 +58,7 @@ public class EndpointCertificateMock implements EndpointCertificateProvider {
                         "athenzDomain",
                         p.requestedDnsSans().stream()
                                 .map(san -> new EndpointCertificateRequestMetadata.DnsNameStatus(san, "done"))
-                                .collect(Collectors.toUnmodifiableList()),
+                                .toList(),
                         3600,
                         "ok",
                         "2021-09-28T00:14:31.946562037Z",
@@ -66,7 +66,7 @@ public class EndpointCertificateMock implements EndpointCertificateProvider {
                         p.issuer(),
                         "rsa_2048"
                 ))
-                .collect(Collectors.toUnmodifiableList());
+                .toList();
     }
 
     @Override

@@ -67,7 +67,6 @@ import static java.util.function.BinaryOperator.maxBy;
 import static java.util.stream.Collectors.collectingAndThen;
 import static java.util.stream.Collectors.groupingBy;
 import static java.util.stream.Collectors.mapping;
-import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toMap;
 import static java.util.stream.Collectors.toSet;
 
@@ -104,7 +103,7 @@ public class DeploymentStatus {
         Map<JobId, JobStatus> jobs = new HashMap<>();
         this.jobSteps = jobDependencies(application.deploymentSpec(), allSteps, job -> jobs.computeIfAbsent(job, allJobs));
         this.allSteps = Collections.unmodifiableList(allSteps);
-        this.allJobs = JobList.from(jobSteps.keySet().stream().map(allJobs).collect(toList()));
+        this.allJobs = JobList.from(jobSteps.keySet().stream().map(allJobs).toList());
     }
 
     private JobType systemTest(JobType dependent) {

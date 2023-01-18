@@ -62,8 +62,6 @@ import java.util.Set;
 import java.util.TreeMap;
 import java.util.logging.Level;
 
-import static java.util.stream.Collectors.toList;
-
 /**
  * A content cluster.
  *
@@ -304,7 +302,7 @@ public class ContentCluster extends AbstractConfigProducer<AbstractConfigProduce
             }
             else { // self-hosted: Put cluster controller on config servers or use explicit cluster controllers
                 if (admin.getClusterControllers() == null) {
-                    var hosts = admin.getConfigservers().stream().map(s -> s.getHostResource()).collect(toList());
+                    var hosts = admin.getConfigservers().stream().map(s -> s.getHostResource()).toList();
                     if (hosts.size() > 1) {
                         var message = "When having content clusters and more than 1 config server " +
                                       "it is recommended to configure cluster controllers explicitly.";

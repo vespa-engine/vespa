@@ -18,7 +18,6 @@ import java.util.logging.Logger;
 import static java.util.logging.Level.FINE;
 import static java.util.logging.Level.SEVERE;
 import static java.util.logging.Level.WARNING;
-import static java.util.stream.Collectors.toList;
 
 /**
  * Used for subscribing to one or more configs. Can optionally be given a {@link ConfigSource} for the configs
@@ -495,7 +494,7 @@ public class ConfigSubscriber implements AutoCloseable {
                 log.log(WARNING, stackTraceAtConstruction,
                         () -> String.format("%s: Closing subscription from finalizer() - close() has not been called (keys=%s)",
                                             super.toString(),
-                                            subscriptionHandles.stream().map(handle -> handle.subscription().getKey().toString()).collect(toList())));
+                                            subscriptionHandles.stream().map(handle -> handle.subscription().getKey().toString()).toList()));
                 close();
             }
         } finally {

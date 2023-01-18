@@ -71,7 +71,7 @@ public class SupportAccess {
 
     private <T> List<T> prepend(T newEntry, List<T> existingEntries) {
         return Stream.concat(Stream.of(newEntry), existingEntries.stream()) // latest change first
-                .collect(Collectors.toUnmodifiableList());
+                .toList();
     }
 
     public static class CurrentStatus {

@@ -19,7 +19,6 @@ import java.util.Map;
 import java.util.Objects;
 
 import static java.util.Collections.emptyMap;
-import static java.util.stream.Collectors.toList;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
@@ -80,12 +79,12 @@ public class SchemaOrdererTestCase extends AbstractSchemaTestCase {
         List<Schema> inputSchemas = inputNames.stream()
                                               .map(schemas::get)
                                               .map(Objects::requireNonNull)
-                                              .collect(toList());
+                                              .toList();
         List<String> actualSearchOrder = new SearchOrderer()
                 .order(inputSchemas)
                 .stream()
                 .map(Schema::getName)
-                .collect(toList());
+                .toList();
         assertEquals(expectedSearchOrder, actualSearchOrder);
     }
 

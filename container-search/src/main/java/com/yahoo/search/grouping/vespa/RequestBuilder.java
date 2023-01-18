@@ -25,8 +25,6 @@ import java.util.OptionalLong;
 import java.util.Stack;
 import java.util.TimeZone;
 
-import static java.util.stream.Collectors.toList;
-
 /**
  * This class implements the necessary logic to build a list of {@link Grouping} objects from an instance of {@link
  * GroupingOperation}. It is used by the {@link GroupingExecutor}.
@@ -456,7 +454,7 @@ class RequestBuilder {
         return lvl.getGroupPrototype().getAggregationResults().stream()
                 .filter(ar -> ar instanceof HitsAggregationResult)
                 .map(ar -> (HitsAggregationResult) ar)
-                .collect(toList());
+                .toList();
     }
 
     private static class BuildFrame {

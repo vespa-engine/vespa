@@ -23,7 +23,7 @@ public class Metadata {
 
     public Metadata(ArtifactId id, List<Version> versions) {
         this.id = requireNonNull(id);
-        this.versions = versions.stream().sorted().collect(Collectors.toUnmodifiableList());
+        this.versions = versions.stream().sorted().toList();
     }
 
     /** Creates a new Metadata object from the given XML document. */

@@ -13,7 +13,6 @@ import java.util.function.Function;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
-import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toMap;
 
 /**
@@ -60,7 +59,7 @@ public class TestBundleDependencyScopeTranslator implements Artifacts.ScopeTrans
                 .map(String::strip)
                 .filter(s -> !s.isBlank())
                 .map(TestBundleDependencyScopeTranslator::toDependencyOverride)
-                .collect(toList());
+                .toList();
     }
 
     private static DependencyOverride toDependencyOverride(String overrideString) {
@@ -96,7 +95,7 @@ public class TestBundleDependencyScopeTranslator implements Artifacts.ScopeTrans
                 .skip(1) // Maven project itself is the first entry
                 .map(otherArtifacts::get)
                 .filter(Objects::nonNull)
-                .collect(toList());
+                .toList();
     }
 
     private static class DependencyOverride {

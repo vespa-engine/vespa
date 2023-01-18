@@ -173,7 +173,7 @@ public class ContainerEngineMock implements ContainerEngine {
         return images.values().stream()
                      .filter(ImageDownload::isComplete)
                      .map(ImageDownload::image)
-                     .collect(Collectors.toUnmodifiableList());
+                     .toList();
     }
 
     private Container requireContainer(ContainerName name) {

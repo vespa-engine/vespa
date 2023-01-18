@@ -99,7 +99,7 @@ public class TensorFunctionNode extends CompositeNode {
                                        List<ExpressionNode> nodes,
                                        Map<TensorAddress, ScalarFunction<Reference>> receivingMap) {
         TensorType denseSubtype = new TensorType(type.valueType(),
-                                                 type.dimensions().stream().filter(d -> d.isIndexed()).collect(Collectors.toList()));
+                                                 type.dimensions().stream().filter(TensorType.Dimension::isIndexed).collect(Collectors.toList()));
         List<String> denseDimensionOrder = new ArrayList<>(dimensionOrder);
         denseDimensionOrder.retainAll(denseSubtype.dimensionNames());
         IndexedTensor.Indexes indexes = IndexedTensor.Indexes.of(denseSubtype, denseDimensionOrder);
@@ -175,8 +175,7 @@ public class TensorFunctionNode extends CompositeNode {
             while (outermost.parent() != null)
                 outermost = outermost.parent();
 
-            if (outermost instanceof ExpressionToStringContext) {
-                ExpressionToStringContext context = (ExpressionToStringContext)outermost;
+            if (outermost instanceof ExpressionToStringContext context) {
                 ExpressionNode root = expression;
                 if (root instanceof CompositeNode && ! (root instanceof EmbracedNode) && ! isIdentifierReference(root))
                     root = new EmbracedNode(root); // Output embraced if composite
@@ -223,9 +222,9 @@ public class TensorFunctionNode extends CompositeNode {
         @Override
         public TensorFunction<Reference> withArguments(List<TensorFunction<Reference>> arguments) {
             if (arguments.size() == 0) return this;
-            List<ExpressionNode> unwrappedChildren = arguments.stream()
-                                                              .map(arg -> ((ExpressionTensorFunction)arg).expression)
-                                                              .collect(Collectors.toList());
+            var unwrappedChildren = arguments.stream()
+                    .map(arg -> ((ExpressionTensorFunction)arg).expression)
+                    .collect(Collectors.toList());
             return new ExpressionTensorFunction(((CompositeNode)expression).setChildren(unwrappedChildren));
         }
 
@@ -261,15 +260,11 @@ public class TensorFunctionNode extends CompositeNode {
             while (outermost.parent() != null)
                 outermost = outermost.parent();
 
-            if (outermost instanceof ExpressionToStringContext) {
-                ExpressionToStringContext context = (ExpressionToStringContext)outermost;
-                return expression.toString(new StringBuilder(),
-                                           new ExpressionToStringContext(context.wrappedSerializationContext, c,
-                                                                         context.path,
-                                                                         context.parent),
-                                           context.path,
-                                           context.parent)
-                                                   .toString();
+            if (outermost instanceof ExpressionToStringContext context) {
+                return expression.toString(
+                        new StringBuilder(),
+                        new ExpressionToStringContext(context.wrappedSerializationContext, c, context.path, context.parent),
+                        context.path, context.parent).toString();
             }
             else {
                 return expression.toString();

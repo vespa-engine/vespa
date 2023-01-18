@@ -172,11 +172,11 @@ public class TestPackage {
                                           if (bundleCategoriesHeader == null) continue;
                                           for (String suite : bundleCategoriesHeader.split(","))
                                               if ( ! suite.isBlank()) switch (suite.trim()) {
-                                                  case "SystemTest": suites.add(system); break;
-                                                  case "StagingSetup": suites.add(staging_setup); break;
-                                                  case "StagingTest": suites.add(staging); break;
-                                                  case "ProductionTest": suites.add(production); break;
-                                                  default: problems.add("unexpected test suite name '" + suite + "' in bundle manifest");
+                                                  case "SystemTest" -> suites.add(system);
+                                                  case "StagingSetup" -> suites.add(staging_setup);
+                                                  case "StagingTest" -> suites.add(staging);
+                                                  case "ProductionTest" -> suites.add(production);
+                                                  default -> problems.add("unexpected test suite name '" + suite + "' in bundle manifest");
                                               }
                                       }
                                       catch (Exception e) {

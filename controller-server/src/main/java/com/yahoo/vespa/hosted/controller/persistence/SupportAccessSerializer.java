@@ -124,7 +124,7 @@ public class SupportAccessSerializer {
                                 inspector.field(requestorFieldName).asString(),
                                 X509CertificateUtils.fromPem(inspector.field(certificateFieldName).asString())
                         ))
-                .collect(Collectors.toUnmodifiableList());
+                .toList();
 
         List<SupportAccessChange> changeHistory = SlimeUtils.entriesStream(slime.get().field(historyFieldName))
                 .map(inspector ->
@@ -133,7 +133,7 @@ public class SupportAccessSerializer {
                                 Instant.parse(inspector.field(atFieldName).asString()),
                                 inspector.field(byFieldName).asString())
                 )
-                .collect(Collectors.toUnmodifiableList());
+                .toList();
 
         return new SupportAccess(changeHistory, grantHistory);
     }

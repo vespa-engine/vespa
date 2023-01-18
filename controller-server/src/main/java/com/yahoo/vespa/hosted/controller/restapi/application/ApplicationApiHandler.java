@@ -168,7 +168,6 @@ import static java.util.Comparator.comparingInt;
 import static java.util.Map.Entry.comparingByKey;
 import static java.util.stream.Collectors.collectingAndThen;
 import static java.util.stream.Collectors.joining;
-import static java.util.stream.Collectors.toList;
 
 /**
  * This implements the application/v4 API which is used to deploy and manage applications
@@ -398,7 +397,7 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
         for (Tenant tenant : controller.tenants().asList(includeDeleted(request)))
             toSlime(tenantArray.addObject(),
                     tenant,
-                    applications.stream().filter(app -> app.id().tenant().equals(tenant.name())).collect(toList()),
+                    applications.stream().filter(app -> app.id().tenant().equals(tenant.name())).toList(),
                     request);
         return new SlimeJsonResponse(slime);
     }

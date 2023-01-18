@@ -23,7 +23,6 @@ import static com.yahoo.vespa.testrunner.TestRunner.Status.NOT_STARTED;
 import static com.yahoo.vespa.testrunner.TestRunner.Status.NO_TESTS;
 import static com.yahoo.vespa.testrunner.TestRunner.Status.RUNNING;
 import static com.yahoo.vespa.testrunner.TestRunner.Status.SUCCESS;
-import static java.util.stream.Collectors.toList;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -165,10 +164,12 @@ class AggregateTestRunnerTest {
         }
         catch (Exception e) {
             TestReport.trimStackTraces(e, "org.junit.platform.commons.util.ReflectionUtils");
-            assertEquals("java.lang.RuntimeException: java.lang.RuntimeException: inner\n" +
-                         "\tat com.yahoo.vespa.testrunner.AggregateTestRunnerTest.testStackTrimming(AggregateTestRunnerTest.java:163)\n" +
-                         "Caused by: java.lang.RuntimeException: inner\n" +
-                         "\tat com.yahoo.vespa.testrunner.AggregateTestRunnerTest.testStackTrimming(AggregateTestRunnerTest.java:160)\n",
+            assertEquals("""
+                            java.lang.RuntimeException: java.lang.RuntimeException: inner
+                            \tat com.yahoo.vespa.testrunner.AggregateTestRunnerTest.testStackTrimming(AggregateTestRunnerTest.java:162)
+                            Caused by: java.lang.RuntimeException: inner
+                            \tat com.yahoo.vespa.testrunner.AggregateTestRunnerTest.testStackTrimming(AggregateTestRunnerTest.java:159)
+                            """,
                          ExceptionUtils.getStackTraceAsString(e));
         }
     }
@@ -182,7 +183,7 @@ class AggregateTestRunnerTest {
 
         @Override
         public Collection<LogRecord> getLog(long after) {
-            return log.stream().filter(record -> record.getSequenceNumber() > after).collect(toList());
+            return log.stream().filter(record -> record.getSequenceNumber() > after).toList();
         }
 
         @Override

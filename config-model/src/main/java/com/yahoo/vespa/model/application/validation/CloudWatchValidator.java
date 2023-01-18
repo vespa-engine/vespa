@@ -8,8 +8,6 @@ import com.yahoo.vespa.model.admin.monitoring.MetricsConsumer;
 
 import java.util.List;
 
-import static java.util.stream.Collectors.toList;
-
 /**
  * @author gjoranv
  */
@@ -23,7 +21,7 @@ public class CloudWatchValidator extends Validator {
 
         var offendingConsumers = model.getAdmin().getUserMetrics().getConsumers().values().stream()
                 .filter(consumer -> !consumer.cloudWatches().isEmpty())
-                .collect(toList());
+                .toList();
 
         if (! offendingConsumers.isEmpty()) {
             throw new IllegalArgumentException("CloudWatch cannot be set up for non-public hosted Vespa and must " +
@@ -32,7 +30,7 @@ public class CloudWatchValidator extends Validator {
     }
 
     private List<String> consumerIds(List<MetricsConsumer> offendingConsumers) {
-        return offendingConsumers.stream().map(MetricsConsumer::id).collect(toList());
+        return offendingConsumers.stream().map(MetricsConsumer::id).toList();
     }
 
 }

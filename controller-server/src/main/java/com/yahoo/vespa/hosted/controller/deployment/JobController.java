@@ -94,8 +94,6 @@ import static java.util.Comparator.naturalOrder;
 import static java.util.function.Predicate.not;
 import static java.util.logging.Level.INFO;
 import static java.util.logging.Level.WARNING;
-import static java.util.stream.Collectors.toList;
-import static java.util.stream.Collectors.toUnmodifiableList;
 
 /**
  * A singleton owned by the controller, which contains the state and methods for controlling deployment jobs.
@@ -184,7 +182,7 @@ public class JobController {
     public void log(RunId id, Step step, Level level, List<String> messages) {
         log(id, step, messages.stream()
                               .map(message -> new LogEntry(0, controller.clock().instant(), LogEntry.typeOf(level), message))
-                              .collect(toList()));
+                              .toList());
     }
 
     /** Stores the given log message for the given run and step. */

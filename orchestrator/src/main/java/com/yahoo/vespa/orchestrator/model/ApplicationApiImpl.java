@@ -67,7 +67,7 @@ public class ApplicationApiImpl implements ApplicationApi {
         return getStorageNodesInGroupInClusterOrder().stream()
                 .filter(storageNode -> getHostStatus(storageNode.hostName()).isSuspended())
                 .sorted(Comparator.reverseOrder())
-                .collect(Collectors.toList());
+                .toList();
     }
 
     @Override
@@ -81,7 +81,7 @@ public class ApplicationApiImpl implements ApplicationApi {
                 .map(ClusterApi::storageNodeInGroup)
                 .filter(Optional::isPresent)
                 .map(Optional::get)
-                .collect(Collectors.toList());
+                .toList();
     }
 
     @Override
@@ -91,7 +91,7 @@ public class ApplicationApiImpl implements ApplicationApi {
                 .filter(Optional::isPresent)
                 .map(Optional::get)
                 .filter(x -> hostInfos.getOrNoRemarks(x.hostName()).status() == HostStatus.NO_REMARKS)
-                .collect(Collectors.toList());
+                .toList();
     }
 
     @Override
@@ -108,7 +108,7 @@ public class ApplicationApiImpl implements ApplicationApi {
     public List<HostName> getNodesInGroupWith(Predicate<HostStatus> statusPredicate) {
         return nodeGroup.getHostNames().stream()
                 .filter(hostName -> statusPredicate.test(getHostStatus(hostName)))
-                .collect(Collectors.toList());
+                .toList();
     }
 
     private List<ClusterApi> makeClustersInOrder(NodeGroup nodeGroup,

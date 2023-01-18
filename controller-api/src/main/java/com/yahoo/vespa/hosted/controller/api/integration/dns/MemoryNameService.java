@@ -81,7 +81,7 @@ public class MemoryNameService implements NameService {
     public List<Record> findRecords(Record.Type type, RecordName name) {
         return records.stream()
                       .filter(record -> record.type() == type && record.name().equals(name))
-                      .collect(Collectors.toUnmodifiableList());
+                      .toList();
     }
 
     @Override
@@ -103,7 +103,7 @@ public class MemoryNameService implements NameService {
                           }
                           return false;
                       })
-                      .collect(Collectors.toUnmodifiableList());
+                      .toList();
     }
 
     @Override

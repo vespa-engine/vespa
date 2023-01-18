@@ -103,7 +103,7 @@ public class VespaModelUtil {
 
         return controllerClusters.stream().
                 filter(cluster -> cluster.clusterId().equals(clusterControllerClusterId)).
-                collect(Collectors.toList());
+                toList();
     }
 
     public static Set<ServiceCluster> getClusterControllerServiceClusters(ApplicationInstance application) {

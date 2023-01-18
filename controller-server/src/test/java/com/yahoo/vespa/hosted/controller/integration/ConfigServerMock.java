@@ -338,7 +338,7 @@ public class ConfigServerMock extends AbstractComponent implements ConfigServer 
     public List<LoadBalancer> getLoadBalancers(ApplicationId application, ZoneId zone) {
         return getLoadBalancers(zone).stream()
                                      .filter(lb -> lb.application().equals(application))
-                                     .collect(Collectors.toUnmodifiableList());
+                                     .toList();
     }
 
     @Override

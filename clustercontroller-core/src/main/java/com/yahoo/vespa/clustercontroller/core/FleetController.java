@@ -560,7 +560,7 @@ public class FleetController implements NodeListener, SlobrokListener, SystemSta
         StringBuilder content = new StringBuilder();
         response.setContentType("text/html");
         response.setResponseCode(responseCode);
-        content.append("<!-- Answer to request " + httpRequest.getRequest() + " -->\n");
+        content.append("<!-- Answer to request ").append(httpRequest.getRequest()).append(" -->\n");
         content.append("<p>UTC time when creating this page: ").append(RealTimer.printDateNoMilliSeconds(currentTime, tz)).append("</p>");
         response.writeHtmlHeader(content, message);
         response.writeHtmlFooter(content, hiddenMessage);
@@ -781,7 +781,7 @@ public class FleetController implements NodeListener, SlobrokListener, SystemSta
         return cluster.getNodeInfos().stream().
                       filter(n -> effectiveActivatedStateVersion(n, bundle) < version).
                       map(NodeInfo::getNode).
-                      collect(Collectors.toList());
+                      toList();
     }
 
     private static <E> String stringifyListWithLimits(List<E> list, int limit) {

@@ -122,7 +122,7 @@ public class ApplicationCuratorDatabase {
                       .sorted()
                       .map(ApplicationId::fromSerializedForm)
                       .filter(id -> activeSessionOf(id).isPresent())
-                      .collect(Collectors.toUnmodifiableList());
+                      .toList();
     }
 
     public Optional<ApplicationReindexing> readReindexingStatus(ApplicationId id) {

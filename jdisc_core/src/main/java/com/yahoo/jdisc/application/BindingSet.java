@@ -6,8 +6,6 @@ import java.util.Collection;
 import java.util.Iterator;
 import java.util.Map;
 
-import static java.util.stream.Collectors.toUnmodifiableList;
-
 /**
  * <p>This is an immutable set of ordered bindings from {@link UriPattern}s to some target type T. To create an instance
  * of this class, you must 1) create a {@link BindingRepository}, 2) configure it using the {@link
@@ -69,7 +67,7 @@ public class BindingSet<T> implements Iterable<Map.Entry<UriPattern, T>>  {
     }
 
     private static <T> Collection<Map.Entry<UriPattern, T>> sorted(Collection<Map.Entry<UriPattern, T>> unsorted) {
-        return unsorted.stream().sorted(Map.Entry.comparingByKey()).collect(toUnmodifiableList());
+        return unsorted.stream().sorted(Map.Entry.comparingByKey()).toList();
     }
 
 }

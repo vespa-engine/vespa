@@ -8,7 +8,6 @@ import java.time.Instant;
 import java.util.List;
 import java.util.Objects;
 
-import static java.util.stream.Collectors.toList;
 
 /**
  * Represents an Athenz ZToken (role token)
@@ -39,7 +38,7 @@ public class ZToken {
         String domain = token.getDomain();
         return token.getRoles().stream()
                 .map(roleName -> new AthenzRole(domain, roleName))
-                .collect(toList());}
+                .toList();}
 
     public Instant getExpiryTime () {
         return Instant.ofEpochSecond(token.getExpiryTime());

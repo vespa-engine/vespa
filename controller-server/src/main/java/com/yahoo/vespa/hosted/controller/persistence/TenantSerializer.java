@@ -271,7 +271,7 @@ public class TenantSerializer {
                         inspector.field(nameField).asString(),
                         inspector.field(awsIdField).asString(),
                         inspector.field(roleField).asString()))
-                .collect(Collectors.toUnmodifiableList());
+                .toList();
     }
 
     private LastLoginInfo lastLoginInfoFromSlime(Inspector lastLoginInfoObject) {
@@ -337,7 +337,7 @@ public class TenantSerializer {
     private TenantContacts tenantContactsFrom(Inspector object) {
         List<TenantContacts.Contact> contacts = SlimeUtils.entriesStream(object)
                 .map(this::readContact)
-                .collect(Collectors.toUnmodifiableList());
+                .toList();
         return new TenantContacts(contacts);
     }
 
@@ -405,7 +405,7 @@ public class TenantSerializer {
                 .orElseThrow(() -> new RuntimeException("Unknown type: " + inspector.field("type").asString()));
         var audiences = SlimeUtils.entriesStream(inspector.field("audiences"))
                 .map(audience -> TenantSerializer.fromAudience(audience.asString()))
-                .collect(Collectors.toUnmodifiableList());
+                .toList();
         switch (type) {
             case EMAIL:
                 var isVerified = asBoolOrTrue(inspector.field("data").field("emailVerified"));

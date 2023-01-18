@@ -7,7 +7,6 @@ import org.junit.jupiter.api.Test;
 import java.util.ArrayList;
 import java.util.List;
 
-import static java.util.stream.Collectors.toList;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
@@ -36,7 +35,7 @@ public class BoundsPostingListTest {
                 boundsList.add(new IntervalWithBounds((i + 1) << 16 | 0xffff, bounds));
             }
             docIds.add(id);
-            dataRefs.add(builder.insert(boundsList.stream().flatMap(IntervalWithBounds::stream).collect(toList())));
+            dataRefs.add(builder.insert(boundsList.stream().flatMap(IntervalWithBounds::stream).toList()));
         }
 
         PredicateIntervalStore store = builder.build();

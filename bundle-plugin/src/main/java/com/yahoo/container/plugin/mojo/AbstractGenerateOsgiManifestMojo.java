@@ -33,7 +33,6 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static com.yahoo.container.plugin.util.IO.withFileOutputStream;
-import static java.util.stream.Collectors.toList;
 
 /**
  * @author bjorncs
@@ -175,7 +174,7 @@ abstract class AbstractGenerateOsgiManifestMojo extends AbstractMojo {
 
         String[] parts = projectVersion.split("-", 2);
         List<String> numericPart = Stream.of(parts[0].split("\\.")).map(s -> Strings.replaceEmptyString(s, "0")).limit(3)
-                .collect(toList());
+                .collect(Collectors.toCollection(ArrayList::new));
         while (numericPart.size() < 3) {
             numericPart.add("0");
         }

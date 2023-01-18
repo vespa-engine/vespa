@@ -11,7 +11,6 @@ import com.yahoo.vespa.athenz.client.zms.RoleAction;
 import java.util.List;
 import java.util.Set;
 
-import static java.util.stream.Collectors.toList;
 
 /**
  * @author bjorncs
@@ -51,7 +50,7 @@ public class ResourceGroupRolesEntity {
         this.domain = providerService.getDomainName();
         this.service = providerService.getName();
         this.tenant = tenantDomain.getName();
-        this.roles = rolesActions.stream().map(roleAction -> new TenantRoleAction(roleAction.getRoleName(), roleAction.getAction())).collect(toList());
+        this.roles = rolesActions.stream().map(roleAction -> new TenantRoleAction(roleAction.getRoleName(), roleAction.getAction())).toList();
         this.resourceGroup = resourceGroup;
     }
 

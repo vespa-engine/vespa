@@ -19,7 +19,6 @@ import java.util.List;
 import java.util.Optional;
 import java.util.stream.IntStream;
 
-import static java.util.stream.Collectors.toUnmodifiableList;
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
@@ -100,7 +99,7 @@ public class BufferedLogStoreTest {
         // Logging a large entry enough times to reach the maximum size causes no further entries to be stored.
         List<LogEntry> monsterLog = IntStream.range(0, 2 * maxChunks + 3)
                 .mapToObj(i -> new LogEntry(i, entry.at(), entry.type(), entry.message()))
-                .collect(toUnmodifiableList());
+                .toList();
         List<LogEntry> logged = new ArrayList<>(monsterLog);
         logged.remove(logged.size() - 1);
         logged.remove(logged.size() - 1);

@@ -98,7 +98,7 @@ public class DeploymentApiHandler extends ThreadedHttpRequestHandler {
         var versionStatus = controller.readVersionStatus();
         ApplicationList applications = ApplicationList.from(controller.applications().asList()).withJobs();
         var deploymentStatuses = controller.jobController().deploymentStatuses(applications, versionStatus);
-        Map<Version, DeploymentStatistics> deploymentStatistics = DeploymentStatistics.compute(versionStatus.versions().stream().map(VespaVersion::versionNumber).collect(toList()),
+        Map<Version, DeploymentStatistics> deploymentStatistics = DeploymentStatistics.compute(versionStatus.versions().stream().map(VespaVersion::versionNumber).toList(),
                                                                                                deploymentStatuses)
                                                                                       .stream().collect(toMap(DeploymentStatistics::version, identity()));
         for (VespaVersion version : versionStatus.versions()) {

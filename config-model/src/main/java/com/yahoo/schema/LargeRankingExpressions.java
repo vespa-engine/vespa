@@ -40,7 +40,7 @@ public class LargeRankingExpressions {
 
     /** Returns a read-only list of ranking constants ordered by name */
     public Collection<RankingExpressionBody> expressions() {
-        return expressions.values().stream().sorted().collect(Collectors.toUnmodifiableList());
+        return expressions.values().stream().sorted().toList();
     }
 
     // Note: Use by integration tests in internal repo

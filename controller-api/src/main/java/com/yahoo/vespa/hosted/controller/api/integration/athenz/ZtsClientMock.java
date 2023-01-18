@@ -20,8 +20,6 @@ import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import static java.util.stream.Collectors.toList;
-
 /**
  * @author bjorncs
  */
@@ -41,7 +39,7 @@ public class ZtsClientMock implements ZtsClient {
         return athenz.domains.values().stream()
                 .filter(domain -> domain.tenantAdmins.contains(userIdentity) || domain.admins.contains(userIdentity))
                 .map(domain -> domain.name)
-                .collect(toList());
+                .toList();
     }
 
     @Override

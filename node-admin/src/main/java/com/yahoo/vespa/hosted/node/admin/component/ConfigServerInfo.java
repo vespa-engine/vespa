@@ -26,7 +26,7 @@ public class ConfigServerInfo {
         this.configServerHostnameToUriMapper = hostname -> URI.create("https://" + hostname + ":4443");
         this.configServerURIs = configServerHostNames.stream()
                 .map(configServerHostnameToUriMapper)
-                .collect(Collectors.toUnmodifiableList());
+                .toList();
     }
 
     public List<URI> getConfigServerUris() {

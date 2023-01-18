@@ -99,7 +99,7 @@ public class RoutingStatusApiHandler extends RestApiRequestHandler<RoutingStatus
         List<String> inactiveDeployments = curator.getChildren(DEPLOYMENT_STATUS_ROOT).stream()
                                                   .filter(upstreamName -> deploymentStatus(upstreamName).status() == RoutingStatus.out)
                                                   .sorted()
-                                                  .collect(Collectors.toUnmodifiableList());
+                                                  .toList();
         Slime slime = new Slime();
         Cursor rootArray = slime.setArray();
         inactiveDeployments.forEach(rootArray::addString);

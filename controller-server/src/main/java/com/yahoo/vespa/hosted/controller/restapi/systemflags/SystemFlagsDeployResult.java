@@ -23,8 +23,6 @@ import java.util.Set;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 
-import static java.util.stream.Collectors.toList;
-
 /**
  * @author bjorncs
  */
@@ -104,7 +102,7 @@ class SystemFlagsDeployResult {
             wireChange.flagId = change.flagId().toString();
             wireChange.owners = owners(change.flagId());
             wireChange.operation = change.operation().asString();
-            wireChange.targets = change.targets().stream().map(FlagsTarget::asString).collect(toList());
+            wireChange.targets = change.targets().stream().map(FlagsTarget::asString).toList();
             wireChange.data = change.data().map(FlagData::toWire).orElse(null);
             wireChange.previousData = change.previousData().map(FlagData::toWire).orElse(null);
             wireResult.changes.add(wireChange);
@@ -114,7 +112,7 @@ class SystemFlagsDeployResult {
             var wireError = new WireOperationFailure();
             wireError.message = error.message();
             wireError.operation = error.operation().asString();
-            wireError.targets = error.targets().stream().map(FlagsTarget::asString).collect(toList());
+            wireError.targets = error.targets().stream().map(FlagsTarget::asString).toList();
             wireError.flagId = error.flagId().map(FlagId::toString).orElse(null);
             wireError.owners = error.flagId().map(id -> owners(id)).orElse(List.of());
             wireError.data = error.flagData().map(FlagData::toWire).orElse(null);
@@ -126,7 +124,7 @@ class SystemFlagsDeployResult {
             wireWarning.message = warning.message();
             wireWarning.flagId = warning.flagId().toString();
             wireWarning.owners = owners(warning.flagId());
-            wireWarning.targets = warning.targets().stream().map(FlagsTarget::asString).collect(toList());
+            wireWarning.targets = warning.targets().stream().map(FlagsTarget::asString).toList();
             wireResult.warnings.add(wireWarning);
         }
         return wireResult;

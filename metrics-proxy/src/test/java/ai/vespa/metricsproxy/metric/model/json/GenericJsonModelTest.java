@@ -15,7 +15,6 @@ import static ai.vespa.metricsproxy.metric.model.DimensionId.toDimensionId;
 import static ai.vespa.metricsproxy.metric.model.MetricId.toMetricId;
 import static ai.vespa.metricsproxy.metric.model.ServiceId.toServiceId;
 import static ai.vespa.metricsproxy.metric.model.json.JacksonUtil.createObjectMapper;
-import static java.util.stream.Collectors.toList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 
@@ -51,7 +50,7 @@ public class GenericJsonModelTest {
         GenericJsonModel modelFromFile = genericJsonModelFromTestFile(TEST_FILE);
         List<MetricsPacket> metricsPackets = GenericJsonUtil.toMetricsPackets(modelFromFile).stream()
                 .map(MetricsPacket.Builder::build)
-                .collect(toList());
+                .toList();
 
         assertEquals(4, metricsPackets.size());
 
@@ -70,7 +69,7 @@ public class GenericJsonModelTest {
         GenericJsonModel modelFromFile = genericJsonModelFromTestFile(TEST_FILE_WITHOUT_NODE);
         List<MetricsPacket> metricsPackets = GenericJsonUtil.toMetricsPackets(modelFromFile).stream()
                 .map(MetricsPacket.Builder::build)
-                .collect(toList());
+                .toList();
 
         assertEquals(2, metricsPackets.size());
 
@@ -122,7 +121,7 @@ public class GenericJsonModelTest {
         String genericJson = getFileContents(TEST_FILE);
         List<MetricsPacket> metricsPackets = GenericJsonUtil.toMetricsPackets(genericJson).stream()
                 .map(MetricsPacket.Builder::build)
-                .collect(toList());
+                .toList();
 
         assertEquals(4, metricsPackets.size());
         GenericJsonModel modelFromPackets = GenericJsonUtil.toGenericJsonModel(metricsPackets);

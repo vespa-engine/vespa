@@ -235,7 +235,7 @@ public class AthenzFacade implements AccessControl {
         return tenants.stream()
                       .filter(tenant ->    tenant.type() == Tenant.Type.athenz
                                         && userDomains.apply(identity).contains(((AthenzTenant) tenant).domain()))
-                      .collect(Collectors.toUnmodifiableList());
+                      .toList();
     }
 
     public void addTenantAdmin(AthenzDomain tenantDomain, AthenzUser user) {
