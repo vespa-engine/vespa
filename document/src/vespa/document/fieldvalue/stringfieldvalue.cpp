@@ -56,6 +56,13 @@ StringFieldValue::print(std::ostream& out, bool verbose, const std::string& inde
         Parent::print(out, verbose, indent);
         ConstBufferRef buf = getSerializedAnnotations();
         out << "\"\n" << indent << " " << vespalib::HexDump(buf.data(), buf.size());
+        if (verbose) {
+            out << "\nSpanTree(\n";
+            for (const auto & tree: getSpanTrees()) {
+                out << "Tree '" << tree->getName() << "':" << tree->toString() << std::endl;
+            }
+            out << ")\n";
+        }
         out << ")";
     }
 }
