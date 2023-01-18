@@ -3,8 +3,13 @@ package com.yahoo.config.application.api;
 
 import com.google.common.collect.ImmutableSet;
 import com.yahoo.config.provision.CloudAccount;
+import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.Environment;
+import com.yahoo.config.provision.InstanceName;
 import com.yahoo.config.provision.RegionName;
+import com.yahoo.config.provision.ZoneEndpoint;
+import com.yahoo.config.provision.ZoneEndpoint.AllowedUrn;
+import com.yahoo.config.provision.ZoneEndpoint.AccessType;
 import org.junit.Test;
 
 import java.io.StringReader;
@@ -20,6 +25,8 @@ import java.util.stream.Collectors;
 import static com.yahoo.config.application.api.Notifications.Role.author;
 import static com.yahoo.config.application.api.Notifications.When.failing;
 import static com.yahoo.config.application.api.Notifications.When.failingCommit;
+import static com.yahoo.config.provision.zone.ZoneId.defaultId;
+import static com.yahoo.config.provision.zone.ZoneId.from;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
@@ -654,19 +661,26 @@ public class DeploymentSpecWithoutInstanceTest {
 
     @Test
     public void someEndpoints() {
-        var spec = DeploymentSpec.fromXml("" +
-                "<deployment>" +
-                "  <prod>" +
-                "    <region active=\"true\">us-east</region>" +
-                "  </prod>" +
-                "  <endpoints>" +
-                "    <endpoint id=\"foo\" container-id=\"bar\">" +
-                "      <region>us-east</region>" +
-                "    </endpoint>" +
-                "    <endpoint id=\"nalle\" container-id=\"frosk\" />" +
-                "    <endpoint container-id=\"quux\" />" +
-                "  </endpoints>" +
-                "</deployment>");
+        var spec = DeploymentSpec.fromXml("""
+                                          <deployment>
+                                            <prod>
+                                               <region active="true">us-east</region>
+                                            </prod>
+                                            <endpoints>
+                                               <endpoint id="foo" container-id="bar">
+                                                  <region>us-east</region>
+                                               </endpoint>
+                                               <endpoint id="nalle" container-id="frosk" />
+                                               <endpoint container-id="quux" />
+                                               <endpoint container-id='bax' type='zone' enabled='true' />
+                                               <endpoint container-id='froz' type='zone' enabled='false' />
+                                               <endpoint container-id='froz' type='private'>
+                                                 <region>us-east</region>
+                                                 <allow with='aws-private-link' arn='barn' />
+                                                 <allow with='gcp-service-connect' project='nine' />
+                                               </endpoint>
+                                            </endpoints>
+                                          </deployment>""");
 
         assertEquals(
                 List.of("foo", "nalle", "default"),
@@ -679,6 +693,18 @@ public class DeploymentSpecWithoutInstanceTest {
         );
 
         assertEquals(List.of(RegionName.from("us-east")), spec.requireInstance("default").endpoints().get(0).regions());
+
+        var zone = from(Environment.prod, RegionName.from("us-east"));
+        assertEquals(ZoneEndpoint.defaultEndpoint,
+                     spec.zoneEndpoint(InstanceName.from("custom"), zone, ClusterSpec.Id.from("bax")));
+        assertEquals(ZoneEndpoint.defaultEndpoint,
+                     spec.zoneEndpoint(InstanceName.from("default"), defaultId(), ClusterSpec.Id.from("bax")));
+        assertEquals(ZoneEndpoint.defaultEndpoint,
+                     spec.zoneEndpoint(InstanceName.from("default"), zone, ClusterSpec.Id.from("bax")));
+
+        assertEquals(new ZoneEndpoint(false, true, List.of(new AllowedUrn(AccessType.awsPrivateLink, "barn"),
+                                                           new AllowedUrn(AccessType.gcpServiceConnect, "nine"))),
+                     spec.zoneEndpoint(InstanceName.from("default"), zone, ClusterSpec.Id.from("froz")));
     }
 
     @Test

@@ -37,7 +37,7 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
     private ApplicationId applicationId = ApplicationId.defaultId();
     private List<ConfigServerSpec> configServerSpecs = Collections.emptyList();
     private boolean hostedVespa = false;
-    private Zone zone;
+    private Zone zone = Zone.defaultZone();
     private final Set<ContainerEndpoint> endpoints = Collections.emptySet();
     private boolean useDedicatedNodeForLogserver = false;
     private double defaultTermwiseLimit = 1.0;

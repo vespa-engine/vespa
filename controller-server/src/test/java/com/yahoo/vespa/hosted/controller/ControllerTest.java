@@ -1118,6 +1118,94 @@ public class ControllerTest {
     }
 
     @Test
+    void testZoneEndpointChanges() {
+        DeploymentContext app = tester.newDeploymentContext();
+        // Set up app with default settings.
+        app.submit(ApplicationPackageBuilder.fromDeploymentXml("""
+                                                               <deployment>
+                                                                 <prod>
+                                                                   <region>us-east-3</region>
+                                                                 </prod>
+                                                               </deployment>"""));
+
+        assertEquals("zone-endpoint-change: application 'tenant.application' has a public endpoint for cluster 'foo' in 'us-east-3', but the new deployment spec disables this",
+                     assertThrows(IllegalArgumentException.class,
+                                  () -> app.submit(ApplicationPackageBuilder.fromDeploymentXml("""
+                                                                                               <deployment>
+                                                                                                 <prod>
+                                                                                                   <region>us-east-3</region>
+                                                                                                 </prod>
+                                                                                                 <endpoints>
+                                                                                                   <endpoint type='zone' container-id='foo' enabled='false' />
+                                                                                                 </endpoints>
+                                                                                               </deployment>""")))
+                             .getMessage());
+
+        // Disabling endpoints is OK with override.
+        app.submit(ApplicationPackageBuilder.fromDeploymentXml("""
+                                                               <deployment>
+                                                                 <prod>
+                                                                   <region>us-east-3</region>
+                                                                 </prod>
+                                                                 <endpoints>
+                                                                   <endpoint type='zone' container-id='foo' enabled='false' />
+                                                                 </endpoints>
+                                                               </deployment>""",
+                                                               ValidationId.zoneEndpointChange));
+
+        // Enabling endpoints again is OK, as is adding a private endpoint with some URN.
+        app.submit(ApplicationPackageBuilder.fromDeploymentXml("""
+                                                               <deployment>
+                                                                 <prod>
+                                                                   <region>us-east-3</region>
+                                                                 </prod>
+                                                                 <endpoints>
+                                                                   <endpoint type='private' container-id='foo'>
+                                                                     <allow with='aws-private-link' arn='yarn' />
+                                                                   </endpoint>
+                                                                 </endpoints>
+                                                               </deployment>""",
+                                                               ValidationId.zoneEndpointChange));
+
+        // Changing URNs is guarded.
+        assertEquals("zone-endpoint-change: application 'tenant.application' allows access to cluster 'foo' in 'us-east-3' to " +
+                     "['yarn' through 'aws-private-link'], but does not include all these in the new deployment spec. " +
+                     "Deploying with the new settings will allow access to ['yarn' through 'gcp-service-connect']",
+                     assertThrows(IllegalArgumentException.class,
+                                  () -> app.submit(ApplicationPackageBuilder.fromDeploymentXml("""
+                                                                                               <deployment>
+                                                                                                 <prod>
+                                                                                                   <region>us-east-3</region>
+                                                                                                 </prod>
+                                                                                                 <endpoints>
+                                                                                                   <endpoint type='private' container-id='foo'>
+                                                                                                     <allow with='gcp-service-connect' project='yarn' />
+                                                                                                   </endpoint>
+                                                                                                 </endpoints>
+                                                                                               </deployment>""")))
+                             .getMessage());
+
+        // Changing cluster, effectively removing old URNs, is also guarded.
+        assertEquals("zone-endpoint-change: application 'tenant.application' allows access to cluster 'foo' in 'us-east-3' to " +
+                     "['yarn' through 'aws-private-link'], but does not include all these in the new deployment spec. " +
+                     "Deploying with the new settings will allow access to no one",
+                     assertThrows(IllegalArgumentException.class,
+                                  () -> app.submit(ApplicationPackageBuilder.fromDeploymentXml("""
+                                                                                               <deployment>
+                                                                                                 <prod>
+                                                                                                   <region>us-east-3</region>
+                                                                                                 </prod>
+                                                                                                 <endpoints>
+                                                                                                   <endpoint type='private' container-id='bar'>
+                                                                                                     <allow with='aws-private-link' arn='yarn' />
+                                                                                                   </endpoint>
+                                                                                                 </endpoints>
+                                                                                               </deployment>""")))
+                             .getMessage());
+    }
+
+
+        @Test
     void testReadableApplications() {
         var db = new MockCuratorDb(tester.controller().system());
         var tester = new DeploymentTester(new ControllerTester(db));
