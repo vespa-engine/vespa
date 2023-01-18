@@ -6,10 +6,8 @@ import com.yahoo.config.provision.AllocatedHosts;
 import com.yahoo.config.provision.ClusterMembership;
 import com.yahoo.config.provision.DockerImage;
 import com.yahoo.config.provision.HostSpec;
+import com.yahoo.config.provision.LoadBalancerSettings;
 import com.yahoo.config.provision.NodeResources;
-import com.yahoo.config.provision.ZoneEndpoint;
-import com.yahoo.config.provision.ZoneEndpoint.AllowedUrn;
-import com.yahoo.config.provision.ZoneEndpoint.AccessType;
 import com.yahoo.slime.ArrayTraverser;
 import com.yahoo.slime.Cursor;
 import com.yahoo.slime.Inspector;
@@ -42,12 +40,8 @@ public class AllocatedHostsSerializer {
     private static final String hostSpecKey = "hostSpec";
     private static final String hostSpecHostNameKey = "hostName";
     private static final String hostSpecMembershipKey = "membership";
-    private static final String loadBalancerSettingsKey = "zoneEndpoint";
-    private static final String publicField = "public";
-    private static final String privateField = "private";
-    private static final String allowedUrnsField = "allowedUrns";
-    private static final String accessTypeField = "type";
-    private static final String urnField = "urn";
+    private static final String loadBalancerSettingsKey = "loadBalancerSettings";
+    private static final String allowedUrnsKey = "allowedUrns";
 
     private static final String realResourcesKey = "realResources";
     private static final String advertisedResourcesKey = "advertisedResources";
@@ -91,8 +85,9 @@ public class AllocatedHostsSerializer {
         host.membership().ifPresent(membership -> {
             object.setString(hostSpecMembershipKey, membership.stringValue());
             object.setString(hostSpecVespaVersionKey, membership.cluster().vespaVersion().toFullString());
-            if ( ! membership.cluster().zoneEndpoint().isDefault())
-                toSlime(object.setObject(loadBalancerSettingsKey), membership.cluster().zoneEndpoint());
+            if ( ! membership.cluster().loadBalancerSettings().isEmpty())
+                membership.cluster().loadBalancerSettings().allowedUrns()
+                          .forEach(object.setObject(loadBalancerSettingsKey).setArray(allowedUrnsKey)::addString);
             membership.cluster().dockerImageRepo().ifPresent(repo -> object.setString(hostSpecDockerImageRepoKey, repo.untagged()));
         });
         toSlime(host.realResources(), object.setObject(realResourcesKey));
@@ -227,40 +222,12 @@ public class AllocatedHostsSerializer {
                                       object.field(hostSpecDockerImageRepoKey).valid()
                                       ? Optional.of(DockerImage.fromString(object.field(hostSpecDockerImageRepoKey).asString()))
                                       : Optional.empty(),
-                                      zoneEndpoint(object.field(loadBalancerSettingsKey)));
+                                      object.field(loadBalancerSettingsKey).valid()
+                                      ? new LoadBalancerSettings(SlimeUtils.entriesStream(object.field(loadBalancerSettingsKey).field(allowedUrnsKey))
+                                                                           .map(Inspector::asString)
+                                                                           .toList())
+                                      : LoadBalancerSettings.empty);
     }
-
-    private static void toSlime(Cursor settingsObject, ZoneEndpoint settings) {
-        settingsObject.setBool(publicField, settings.isPublicEndpoint());
-        settingsObject.setBool(privateField, settings.isPrivateEndpoint());
-        if (settings.isPrivateEndpoint()) {
-            Cursor allowedUrnsArray = settingsObject.setArray(allowedUrnsField);
-            for (AllowedUrn urn : settings.allowedUrns()) {
-                Cursor urnObject = allowedUrnsArray.addObject();
-                urnObject.setString(urnField, urn.urn());
-                urnObject.setString(accessTypeField,
-                                    switch (urn.type()) {
-                                        case awsPrivateLink -> "awsPrivateLink";
-                                        case gcpServiceConnect -> "gcpServiceConnect";
-                                    });
-            }
-        }
-    }
-
-    private static ZoneEndpoint zoneEndpoint(Inspector settingsObject) {
-        if ( ! settingsObject.valid()) return ZoneEndpoint.defaultEndpoint;
-        return new ZoneEndpoint(settingsObject.field(publicField).asBool(),
-                                settingsObject.field(privateField).asBool(),
-                                SlimeUtils.entriesStream(settingsObject.field(allowedUrnsField))
-                                          .map(urnObject -> new AllowedUrn(switch (urnObject.field(accessTypeField).asString()) {
-                                                                               case "awsPrivateLink" ->  AccessType.awsPrivateLink;
-                                                                               case "gcpServiceConnect" -> AccessType.gcpServiceConnect;
-                                                                               default -> throw new IllegalArgumentException("unknown service access type in '" + urnObject + "'");
-                                                                           },
-                                                                           urnObject.field(urnField).asString()))
-                                          .toList());
-    }
-
 
     private static Optional<String> optionalString(Inspector inspector) {
         if ( ! inspector.valid()) return Optional.empty();
