@@ -2,6 +2,8 @@
 package com.yahoo.config.provision;
 
 import com.yahoo.component.Version;
+import com.yahoo.config.provision.ZoneEndpoint.AccessType;
+import com.yahoo.config.provision.ZoneEndpoint.AllowedUrn;
 
 import java.util.Objects;
 import java.util.Optional;
@@ -166,6 +168,15 @@ public final class ClusterSpec {
         public Builder dockerImageRepository(Optional<DockerImage> dockerImageRepo) {
             this.dockerImageRepo = dockerImageRepo;
             return this;
+        }
+
+        // TODO jonmv: remove once 8.113 is gone
+        public Builder loadBalancerSettings(LoadBalancerSettings settings) {
+            return loadBalancerSettings(new ZoneEndpoint(true,
+                                                         true,
+                                                         settings.allowedUrns().stream()
+                                                                 .map(urn -> new AllowedUrn(AccessType.awsPrivateLink, urn))
+                                                                 .toList()));
         }
 
         public Builder loadBalancerSettings(ZoneEndpoint zoneEndpoint) {
