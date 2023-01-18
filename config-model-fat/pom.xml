@@ -75,6 +75,8 @@
                   * @PublicApi - they are not allowed to change behaviour and must be binary compatible between minor releases
              -->
             <Import-Package>
+              com.google.inject, <!-- must use @Inject exported from container -->
+              com.fasterxml.*, <!-- expands to all Jackson packages by Felix plugin -->
               com.yahoo.component,
               com.yahoo.component.provider,
               com.yahoo.config,
@@ -85,7 +87,6 @@
               com.yahoo.config.provision.zone,
               com.yahoo.io.reader,
               com.yahoo.path,
-              com.google.inject, <!-- must use @Inject exported from container -->
               javax.crypto.interfaces,
               javax.crypto.spec,
               javax.crypto,
@@ -101,7 +102,7 @@
               javax.xml.parsers,
               javax.xml.transform,
               javax.xml.xpath,
-              org.bouncycastle.*, <!-- expands to all BC packages by Felix plugin ->
+              org.bouncycastle.*, <!-- expands to all BC packages by Felix plugin -->
               org.w3c.dom.bootstrap,
               org.w3c.dom.ls,
               org.w3c.dom,
@@ -192,11 +193,6 @@
                     <i>aopalliance:aopalliance:*:*</i>
                     <i>biz.aQute.bnd:biz.aQute.bnd.util:*:*</i>
                     <i>biz.aQute.bnd:biz.aQute.bndlib:*:*</i>
-                    <i>com.fasterxml.jackson.core:jackson-annotations:*:*</i>
-                    <i>com.fasterxml.jackson.core:jackson-core:*:*</i>
-                    <i>com.fasterxml.jackson.core:jackson-databind:*:*</i>
-                    <i>com.fasterxml.jackson.datatype:jackson-datatype-jdk8:*:*</i>
-                    <i>com.fasterxml.jackson.datatype:jackson-datatype-jsr310:*:*</i>
                     <i>com.google.errorprone:error_prone_annotations:*:*</i>
                     <i>com.google.guava:failureaccess:*:*</i>
                     <i>com.google.guava:guava:*:*</i>
