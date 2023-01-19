@@ -269,15 +269,7 @@ public class VespaDocumentDeserializer6 extends BufferSerializer implements Docu
             fieldIdsAndLengths.add(new Tuple2<>(getInt1_4Bytes(null), getInt2_4_8Bytes(null)));
         }
 
-        // save a reference to the big buffer we're reading from:
-        GrowableByteBuffer bigBuf = buf;
-        GrowableByteBuffer thisStructOnly = GrowableByteBuffer.wrap(getBuf().array(), position(), dataSize);
-        // set position in original buffer to after data
-        position(position() + dataSize);
-
-        // for a while: deserialize from this buffer instead:
-        buf = thisStructOnly;
-
+        int afterPos = position() + dataSize;
         s.clear();
         StructDataType type = s.getDataType();
         for (int i=0; i<numberOfFields; ++i) {
@@ -294,9 +286,8 @@ public class VespaDocumentDeserializer6 extends BufferSerializer implements Docu
                 position(posBefore + fieldIdsAndLengths.get(i).second.intValue());
             }
         }
-
-        // restore the original buffer
-        buf = bigBuf;
+        // set position to after data
+        position(afterPos);
     }
 
     private void readHeaderBody(Document target) {
@@ -315,16 +306,7 @@ public class VespaDocumentDeserializer6 extends BufferSerializer implements Docu
             fieldIdsAndLengths.add(new Tuple2<>(getInt1_4Bytes(null), getInt2_4_8Bytes(null)));
         }
 
-        // save a reference to the big buffer we're reading from:
-        GrowableByteBuffer bigBuf = buf;
-        GrowableByteBuffer thisStructOnly = GrowableByteBuffer.wrap(getBuf().array(), position(), dataSize);
-
-        // set position in original buffer to after data
-        position(position() + dataSize);
-
-        // for a while: deserialize from this buffer instead:
-        buf = thisStructOnly;
-
+        int afterPos = position() + dataSize;
         StructDataType priType = target.getDataType().contentStruct();
 
         for (int i=0; i<numberOfFields; ++i) {
@@ -339,9 +321,8 @@ public class VespaDocumentDeserializer6 extends BufferSerializer implements Docu
             //jump to beginning of next field:
             position(posBefore + fieldIdsAndLengths.get(i).second.intValue());
         }
-
-        // restore the original buffer
-        buf = bigBuf;
+        // set position to after data
+        position(afterPos);
     }
 
     public void read(FieldBase field, StructuredFieldValue value) {
