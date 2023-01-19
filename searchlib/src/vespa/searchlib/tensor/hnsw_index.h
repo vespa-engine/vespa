@@ -75,6 +75,10 @@ protected:
         }
     }
 
+    // Clamp level generator member function max_level() return value
+    // Chosen value is based on class comment for InvLogLevelGenerator.
+    static constexpr uint32_t max_max_level = 29;
+
     GraphType _graph;
     const DocVectorAccess& _vectors;
     DistanceFunction::UP _distance_func;

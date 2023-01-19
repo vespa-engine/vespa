@@ -451,8 +451,7 @@ template <HnswIndexType type>
 void
 HnswIndex<type>::internal_prepare_add_node(typename HnswIndex::PreparedAddDoc& op, TypedCells input_vector, const typename GraphType::EntryNode& entry) const
 {
-    // TODO: Add capping on num_levels
-    int node_max_level = _level_generator->max_level();
+    int node_max_level = std::min(_level_generator->max_level(), max_max_level);
     std::vector<typename PreparedAddNode::Links> connections(node_max_level + 1);
     if (entry.nodeid == 0) {
         // graph has no entry point
