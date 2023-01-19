@@ -48,17 +48,17 @@ BuildRequires: epel-release
 %if 0%{?el8}
 %global _centos_stream %(grep -qs '^NAME="CentOS Stream"' /etc/os-release && echo 1 || echo 0)
 %if 0%{?_centos_stream}
-BuildRequires: gcc-toolset-11-gcc-c++
-BuildRequires: gcc-toolset-11-binutils
-BuildRequires: gcc-toolset-11-libasan-devel
-BuildRequires: gcc-toolset-11-libatomic-devel
-%define _devtoolset_enable /opt/rh/gcc-toolset-11/enable
+BuildRequires: gcc-toolset-12-gcc-c++
+BuildRequires: gcc-toolset-12-binutils
+BuildRequires: gcc-toolset-12-libasan-devel
+BuildRequires: gcc-toolset-12-libatomic-devel
+%define _devtoolset_enable /opt/rh/gcc-toolset-12/enable
 %else
-BuildRequires: gcc-toolset-11-gcc-c++
-BuildRequires: gcc-toolset-11-binutils
-BuildRequires: gcc-toolset-11-libasan-devel
-BuildRequires: gcc-toolset-11-libatomic-devel
-%define _devtoolset_enable /opt/rh/gcc-toolset-11/enable
+BuildRequires: gcc-toolset-12-gcc-c++
+BuildRequires: gcc-toolset-12-binutils
+BuildRequires: gcc-toolset-12-libasan-devel
+BuildRequires: gcc-toolset-12-libatomic-devel
+%define _devtoolset_enable /opt/rh/gcc-toolset-12/enable
 %endif
 BuildRequires: maven
 BuildRequires: maven-openjdk17
