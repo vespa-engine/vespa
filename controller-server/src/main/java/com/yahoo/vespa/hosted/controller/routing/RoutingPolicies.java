@@ -233,7 +233,7 @@ public class RoutingPolicies {
 
             if (policy.canonicalName().isPresent()) {
                 var weightedTarget = new WeightedAliasTarget(
-                        policy.canonicalName().get(), policy.dnsZone().get(), policy.id().zone(), weight);
+                        policy.canonicalName().get(), policy.dnsZone().get(), policy.id().zone().value(), weight);
                 regionEndpoint.add(weightedTarget);
             } else {
                 var weightedTarget = new WeightedDirectTarget(
@@ -655,7 +655,7 @@ public class RoutingPolicies {
                 return new Target(Record.Type.DIRECT, wt.recordData(), wt);
             }
             var wt = new WeightedAliasTarget(policy.canonicalName().get(), policy.dnsZone().get(),
-                    endpointTarget.deployment().zoneId(), endpointTarget.weight());
+                    endpointTarget.deployment().zoneId().value(), endpointTarget.weight());
             return new Target(Record.Type.ALIAS, RecordData.fqdn(wt.name().value()), wt);
         }
     }
