@@ -26,8 +26,8 @@ class MetricDefinitions {
     static final String CONNECTION_DURATION_MAX = "serverConnectionDurationMax";
     static final String CONNECTION_DURATION_MEAN = "serverConnectionDurationMean";
     static final String CONNECTION_DURATION_STD_DEV = "serverConnectionDurationStdDev";
-    static final String NUM_PREMATURELY_CLOSED_CONNECTIONS = "jdisc.http.request.prematurely_closed";
-    static final String REQUESTS_PER_CONNECTION = "jdisc.http.request.requests_per_connection";
+    static final String NUM_PREMATURELY_CLOSED_CONNECTIONS = ContainerMetrics.JDISC_HTTP_REQUEST_PREMATURELY_CLOSED.baseName();
+    static final String REQUESTS_PER_CONNECTION = ContainerMetrics.JDISC_HTTP_REQUEST_REQUESTS_PER_CONNECTION.baseName();
 
     static final String NUM_BYTES_RECEIVED = ContainerMetrics.SERVER_BYTES_RECEIVED.baseName();
     static final String NUM_BYTES_SENT     = ContainerMetrics.SERVER_BYTES_SENT.baseName();
@@ -35,7 +35,7 @@ class MetricDefinitions {
     static final String NUM_CONNECTIONS = ContainerMetrics.SERVER_NUM_CONNECTIONS.baseName();
 
     /* For historical reasons, these are all aliases for the same metric. 'jdisc.http' should ideally be the only one. */
-    static final String JDISC_HTTP_REQUESTS = "jdisc.http.requests";
+    static final String JDISC_HTTP_REQUESTS = ContainerMetrics.JDISC_HTTP_REQUESTS.baseName();
     static final String NUM_REQUESTS = "serverNumRequests";
 
     static final String NUM_SUCCESSFUL_RESPONSES = "serverNumSuccessfulResponses";
@@ -55,16 +55,16 @@ class MetricDefinitions {
 
     static final String STARTED_MILLIS = "serverStartedMillis";
 
-    static final String URI_LENGTH = "jdisc.http.request.uri_length";
-    static final String CONTENT_SIZE = "jdisc.http.request.content_size";
+    static final String URI_LENGTH = ContainerMetrics.JDISC_HTTP_REQUEST_URI_LENGTH.baseName();
+    static final String CONTENT_SIZE = ContainerMetrics.JDISC_HTTP_REQUEST_CONTENT_SIZE.baseName();
 
-    static final String SSL_HANDSHAKE_FAILURE_MISSING_CLIENT_CERT = "jdisc.http.ssl.handshake.failure.missing_client_cert";
-    static final String SSL_HANDSHAKE_FAILURE_EXPIRED_CLIENT_CERT = "jdisc.http.ssl.handshake.failure.expired_client_cert";
-    static final String SSL_HANDSHAKE_FAILURE_INVALID_CLIENT_CERT = "jdisc.http.ssl.handshake.failure.invalid_client_cert";
-    static final String SSL_HANDSHAKE_FAILURE_INCOMPATIBLE_PROTOCOLS = "jdisc.http.ssl.handshake.failure.incompatible_protocols";
-    static final String SSL_HANDSHAKE_FAILURE_INCOMPATIBLE_CIPHERS = "jdisc.http.ssl.handshake.failure.incompatible_ciphers";
-    static final String SSL_HANDSHAKE_FAILURE_UNKNOWN = "jdisc.http.ssl.handshake.failure.unknown";
-    static final String SSL_HANDSHAKE_FAILURE_CONNECTION_CLOSED = "jdisc.http.ssl.handshake.failure.connection_closed";
+    static final String SSL_HANDSHAKE_FAILURE_MISSING_CLIENT_CERT = ContainerMetrics.JDISC_HTTP_SSL_HANDSHAKE_FAILURE_MISSING_CLIENT_CERT.baseName();
+    static final String SSL_HANDSHAKE_FAILURE_EXPIRED_CLIENT_CERT = ContainerMetrics.JDISC_HTTP_SSL_HANDSHAKE_FAILURE_EXPIRED_CLIENT_CERT.baseName();
+    static final String SSL_HANDSHAKE_FAILURE_INVALID_CLIENT_CERT = ContainerMetrics.JDISC_HTTP_SSL_HANDSHAKE_FAILURE_INVALID_CLIENT_CERT.baseName();
+    static final String SSL_HANDSHAKE_FAILURE_INCOMPATIBLE_PROTOCOLS = ContainerMetrics.JDISC_HTTP_SSL_HANDSHAKE_FAILURE_INCOMPATIBLE_PROTOCOLS.baseName();
+    static final String SSL_HANDSHAKE_FAILURE_INCOMPATIBLE_CIPHERS = ContainerMetrics.JDISC_HTTP_SSL_HANDSHAKE_FAILURE_INCOMPATIBLE_CHIFERS.baseName();
+    static final String SSL_HANDSHAKE_FAILURE_CONNECTION_CLOSED = ContainerMetrics.JDISC_HTTP_SSL_HANDSHAKE_FAILURE_CONNECTION_CLOSED.baseName();
+    static final String SSL_HANDSHAKE_FAILURE_UNKNOWN = ContainerMetrics.JDISC_HTTP_SSL_HANDSHAKE_FAILURE_UNKNOWN.baseName();
 
     static final String JETTY_THREADPOOL_MAX_THREADS = ContainerMetrics.JETTY_THREADPOOL_MAX_THREADS.baseName();
     static final String JETTY_THREADPOOL_MIN_THREADS = ContainerMetrics.JETTY_THREADPOOL_MIN_THREADS.baseName();
@@ -74,10 +74,10 @@ class MetricDefinitions {
     static final String JETTY_THREADPOOL_TOTAL_THREADS = ContainerMetrics.JETTY_THREADPOOL_TOTAL_THREADS.baseName();
     static final String JETTY_THREADPOOL_QUEUE_SIZE = ContainerMetrics.JETTY_THREADPOOL_QUEUE_SIZE.baseName();
 
-    static final String FILTERING_REQUEST_HANDLED = "jdisc.http.filtering.request.handled";
-    static final String FILTERING_REQUEST_UNHANDLED = "jdisc.http.filtering.request.unhandled";
-    static final String FILTERING_RESPONSE_HANDLED = "jdisc.http.filtering.response.handled";
-    static final String FILTERING_RESPONSE_UNHANDLED = "jdisc.http.filtering.response.unhandled";
+    static final String FILTERING_REQUEST_HANDLED = ContainerMetrics.JDISC_HTTP_FILTERING_REQUEST_HANDLED.baseName();
+    static final String FILTERING_REQUEST_UNHANDLED = ContainerMetrics.JDISC_HTTP_FILTERING_REQUEST_UNHANDLED.baseName();
+    static final String FILTERING_RESPONSE_HANDLED = ContainerMetrics.JDISC_HTTP_FILTERING_RESPONSE_HANDLED.baseName();
+    static final String FILTERING_RESPONSE_UNHANDLED = ContainerMetrics.JDISC_HTTP_FILTERING_RESPONSE_UNHANDLED.baseName();
 
     private MetricDefinitions() {}
 }
