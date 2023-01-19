@@ -29,8 +29,7 @@ public abstract class FieldPathUpdateHelper {
     public static void applyUpdate(FieldPathUpdate update, Document doc) {
         if (update instanceof AddFieldPathUpdate) {
             update.applyTo(doc);
-        } else if (update instanceof AssignFieldPathUpdate) {
-            AssignFieldPathUpdate assign = (AssignFieldPathUpdate)update;
+        } else if (update instanceof AssignFieldPathUpdate assign) {
             boolean createMissingPath = assign.getCreateMissingPath();
             boolean removeIfZero = assign.getRemoveIfZero();
             assign.setCreateMissingPath(true);

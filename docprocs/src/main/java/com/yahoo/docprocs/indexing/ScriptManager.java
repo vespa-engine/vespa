@@ -72,6 +72,10 @@ public class ScriptManager {
         return null;
     }
 
+    /**
+     * Returns an unmodifiable map from document type name to a map of the scripts which must be run given an update
+     * to each possible field in that type.
+     */
     private static Map<String, Map<String, DocumentScript>>  createScriptsMap(DocumentTypeManager docTypeMgr,
                                                                               IlscriptsConfig config,
                                                                               Linguistics linguistics,
@@ -106,11 +110,8 @@ public class ScriptManager {
                         List<StatementExpression> appendedList = new ArrayList<>(((ScriptExpression)prev.getExpression()).asList());
                         appendedList.add(statement);
                         script = new ScriptExpression(appendedList);
-                        log.log(Level.FINE, "Appending script for field '" + fieldName + "' = " + statement);
-                        log.log(Level.FINE, "Full script for field '" + fieldName + "' = " + appendedList);
                     } else {
                         script = new ScriptExpression(statement);
-                        log.log(Level.FINE, "Setting script for field '" + fieldName + "' = " + statement);
                     }
                     DocumentScript documentScript = new DocumentScript(ilscript.doctype(), inputFieldNameExtractor.getInputFieldNames(), script);
                     fieldScripts.put(fieldName, documentScript);

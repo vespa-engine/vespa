@@ -32,7 +32,8 @@ import static org.junit.Assert.assertTrue;
 public class IndexingProcessorTestCase {
 
     private static final String CONFIG_ID = "dir:src/test/cfg";
-    private IndexingProcessor indexer = newProcessor(CONFIG_ID);
+
+    private final IndexingProcessor indexer = newProcessor(CONFIG_ID);
 
     @Test
     public void requireThatIndexerProcessesDocuments() {

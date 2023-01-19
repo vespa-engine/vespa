@@ -60,21 +60,25 @@ public class SimpleAdapterFactory implements AdapterFactory {
                     ret.add(new IdentityFieldPathUpdateAdapter(fieldUpd, newDocumentAdapter(complete, true)));
                 }
             } catch (NullPointerException e) {
-                throw new IllegalArgumentException("Exception during handling of update '" + fieldUpd + "' to field '" + fieldUpd.getFieldPath() + "'", e);
+                throw new IllegalArgumentException("Exception during handling of update '" + fieldUpd +
+                                                   "' to field '" + fieldUpd.getFieldPath() + "'", e);
             }
         }
-        for (FieldUpdate fieldUpd : upd.fieldUpdates()) {
-            Field field = fieldUpd.getField();
-            for (ValueUpdate valueUpd : fieldUpd.getValueUpdates()) {
+        for (FieldUpdate fieldUpdate : upd.fieldUpdates()) {
+            Field field = fieldUpdate.getField();
+            for (ValueUpdate valueUpdate : fieldUpdate.getValueUpdates()) {
                 try {
-                    if (FieldUpdateHelper.isComplete(field, valueUpd)) {
-                        FieldUpdateHelper.applyUpdate(field, valueUpd, complete);
+                    if (FieldUpdateHelper.isComplete(field, valueUpdate)) {
+                        FieldUpdateHelper.applyUpdate(field, valueUpdate, complete);
                     } else {
-                        Document partial = FieldUpdateHelper.newPartialDocument(docType, docId, field, valueUpd);
-                        ret.add(FieldUpdateAdapter.fromPartialUpdate(expressionSelector.selectExpression(docType, field.getName()), newDocumentAdapter(partial, true), valueUpd));
+                        Document partial = FieldUpdateHelper.newPartialDocument(docType, docId, field, valueUpdate);
+                        ret.add(FieldUpdateAdapter.fromPartialUpdate(expressionSelector.selectExpression(docType, field.getName()),
+                                                                     newDocumentAdapter(partial, true),
+                                                                     valueUpdate));
                     }
                 } catch (NullPointerException e) {
-                    throw new IllegalArgumentException("Exception during handling of update '" + valueUpd + "' to field '" + field + "'", e);
+                    throw new IllegalArgumentException("Exception during handling of update '" + valueUpdate +
+                                                       "' to field '" + field + "'", e);
                 }
             }
         }

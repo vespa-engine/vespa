@@ -5,11 +5,9 @@ import com.yahoo.document.DocumentType;
 import com.yahoo.document.DocumentTypeManager;
 import com.yahoo.language.process.Embedder;
 import com.yahoo.vespa.configdefinition.IlscriptsConfig;
-import com.yahoo.vespa.indexinglanguage.parser.ParseException;
 import org.junit.Test;
 
 import java.util.Iterator;
-import java.util.Map;
 
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
@@ -20,7 +18,7 @@ import static org.junit.Assert.assertNull;
 public class ScriptManagerTestCase {
 
     @Test
-    public void requireThatScriptsAreAppliedToSubType() throws ParseException {
+    public void requireThatScriptsAreAppliedToSubType() {
         var typeMgr = DocumentTypeManager.fromFile("src/test/cfg/documentmanager_inherit.cfg");
         DocumentType docType = typeMgr.getDocumentType("newssummary");
         assertNotNull(docType);
@@ -35,7 +33,7 @@ public class ScriptManagerTestCase {
     }
 
     @Test
-    public void requireThatScriptsAreAppliedToSuperType() throws ParseException {
+    public void requireThatScriptsAreAppliedToSuperType() {
         var typeMgr = DocumentTypeManager.fromFile("src/test/cfg/documentmanager_inherit.cfg");
         DocumentType docType = typeMgr.getDocumentType("newsarticle");
         assertNotNull(docType);
