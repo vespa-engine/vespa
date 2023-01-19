@@ -424,13 +424,15 @@ public class DefaultZmsClient extends ClientBase implements ZmsClient {
     }
 
     @Override
-    public void createSubdomain(AthenzDomain parent, String name) {
+    public void createSubdomain(AthenzDomain parent, String name, Map<String, Object> attributes) {
         URI uri = zmsUrl.resolve(String.format("subdomain/%s", parent.getName()));
-        StringEntity entity = toJsonStringEntity(
-                Map.of("name", name,
+        var metaData = new HashMap<String, Object>();
+        metaData.putAll(attributes);
+        metaData.putAll(Map.of("name", name,
                         "parent", parent.getName(),
                         "adminUsers", List.of(identity.getFullName())) // TODO: createSubdomain should receive an adminUsers argument
         );
+        var entity = toJsonStringEntity(metaData);
         var request = RequestBuilder.post(uri)
                 .setEntity(entity)
                 .build();

@@ -268,7 +268,7 @@ public class ZmsClientMock implements ZmsClient {
     }
 
     @Override
-    public void createSubdomain(AthenzDomain parent, String name) {}
+    public void createSubdomain(AthenzDomain parent, String name, Map<String, Object> attributes) {}
 
     @Override
     public AthenzRoleInformation getFullRoleInformation(AthenzRole role) {

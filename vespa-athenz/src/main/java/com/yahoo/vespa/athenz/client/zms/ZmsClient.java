@@ -85,7 +85,11 @@ public interface ZmsClient extends Closeable {
 
     void deleteRole(AthenzRole athenzRole);
 
-    void createSubdomain(AthenzDomain parent, String name);
+    void createSubdomain(AthenzDomain parent, String name, Map<String, Object> attributes);
+
+    default void createSubdomain(AthenzDomain parent, String name) {
+        createSubdomain(parent, name, Map.of());
+    };
 
     AthenzRoleInformation getFullRoleInformation(AthenzRole role);
 
