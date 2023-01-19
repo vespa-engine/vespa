@@ -4,7 +4,10 @@
 package jvm
 
 import (
+	"os"
+
 	"github.com/vespa-engine/vespa/client/go/defaults"
+	"github.com/vespa-engine/vespa/client/go/envvars"
 )
 
 func (opts *Options) AddCommonJdkProperties() {
@@ -23,4 +26,7 @@ func (opts *Options) AddCommonJdkProperties() {
 	opts.AddOption("-Djdk.tls.rejectClientInitiatedRenegotiation=true")
 	opts.AddOption("-Dfile.encoding=UTF-8")
 	opts.AddOption("-Dorg.apache.commons.logging.Log=org.apache.commons.logging.impl.Jdk14Logger")
+	if env := os.Getenv(envvars.VESPA_ONLY_IP_V6_NETWORKING); env == "true" {
+		opts.AddOption("-Djava.net.preferIPv6Addresses=true")
+	}
 }

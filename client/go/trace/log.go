@@ -21,6 +21,9 @@ func logMessage(l outputLevel, msg string) {
 	hostname := os.Getenv(envvars.VESPA_HOSTNAME)
 	pid := os.Getpid()
 	service := os.Getenv(envvars.VESPA_SERVICE_NAME)
+	if service == "" {
+		service = "-"
+	}
 	component := "stderr"
 	level := "error"
 	switch l {

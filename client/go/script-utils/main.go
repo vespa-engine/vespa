@@ -13,6 +13,7 @@ import (
 	"github.com/vespa-engine/vespa/client/go/cmd/logfmt"
 	"github.com/vespa-engine/vespa/client/go/jvm"
 	"github.com/vespa-engine/vespa/client/go/script-utils/configserver"
+	"github.com/vespa-engine/vespa/client/go/script-utils/services"
 	"github.com/vespa-engine/vespa/client/go/script-utils/standalone"
 	"github.com/vespa-engine/vespa/client/go/script-utils/startcbinary"
 	"github.com/vespa-engine/vespa/client/go/util"
@@ -33,6 +34,12 @@ func main() {
 		os.Args = os.Args[1:]
 	}
 	switch action {
+	case "vespa-start-services":
+		os.Exit(services.VespaStartServices())
+	case "start-services":
+		os.Exit(services.StartServices())
+	case "just-run-configproxy":
+		os.Exit(services.JustRunConfigproxy())
 	case "vespa-start-configserver":
 		os.Exit(configserver.StartConfigserverEtc())
 	case "just-start-configserver":
