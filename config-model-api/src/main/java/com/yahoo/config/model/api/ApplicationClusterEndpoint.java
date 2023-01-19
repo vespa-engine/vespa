@@ -26,7 +26,7 @@ public class ApplicationClusterEndpoint {
                ", routingMethod=" + routingMethod +
                ", weight=" + weight +
                ", hostNames=" + hostNames +
-               ", clusterId='" + clusterId + '\'' +
+               ", clusterId='" + clusterId + "'" +
                '}';
     }
 

@@ -5,6 +5,8 @@ import java.util.List;
 /**
  * Settings for a load balancer provisioned for an application container cluster.
  *
+ * TODO: Remove once 8.113 is gone
+ *
  * @author jonmv
  */
 public record LoadBalancerSettings(List<String> allowedUrns) {

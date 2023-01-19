@@ -11,6 +11,8 @@ import com.yahoo.config.application.api.ApplicationPackage;
 import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.config.application.api.DeploymentInstanceSpec;
 import com.yahoo.config.application.api.DeploymentSpec;
+import com.yahoo.config.provision.ZoneEndpoint;
+import com.yahoo.config.application.api.xml.DeploymentSpecXmlReader;
 import com.yahoo.config.model.ConfigModelContext;
 import com.yahoo.config.model.api.ApplicationClusterEndpoint;
 import com.yahoo.config.model.api.ConfigServerSpec;
@@ -29,10 +31,11 @@ import com.yahoo.config.provision.ClusterMembership;
 import com.yahoo.config.provision.ClusterResources;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.HostName;
-import com.yahoo.config.provision.LoadBalancerSettings;
+import com.yahoo.config.provision.InstanceName;
 import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.config.provision.Zone;
+import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.container.bundle.BundleInstantiationSpecification;
 import com.yahoo.container.logging.FileConnectionLog;
 import com.yahoo.io.IOUtils;
@@ -847,11 +850,14 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
         }
     }
 
-    private LoadBalancerSettings loadBalancerSettings(Element loadBalancerElement) {
-        List<String> allowedUrnElements = XML.getChildren(XML.getChild(loadBalancerElement, "private-access"),
-                                                          "allow-urn")
-                                             .stream().map(XML::getValue).toList();
-        return new LoadBalancerSettings(allowedUrnElements);
+    private ZoneEndpoint zoneEndpoint(ConfigModelContext context, ClusterSpec.Id cluster) {
+        InstanceName instance = context.properties().applicationId().instance();
+        ZoneId zone = ZoneId.from(context.properties().zone().environment(),
+                                  context.properties().zone().region());
+        DeploymentSpec spec = context.getApplicationPackage().getDeployment()
+                                     .map(new DeploymentSpecXmlReader(false)::read)
+                                     .orElse(DeploymentSpec.empty);
+        return spec.zoneEndpoint(instance, zone, cluster);
     }
 
     private static Map<String, String> getEnvironmentVariables(Element environmentVariables) {
@@ -940,11 +946,12 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
 
     private List<ApplicationContainer> createNodesFromNodeCount(ApplicationContainerCluster cluster, Element containerElement, Element nodesElement, ConfigModelContext context) {
         NodesSpecification nodesSpecification = NodesSpecification.from(new ModelElement(nodesElement), context);
-        LoadBalancerSettings loadBalancerSettings = loadBalancerSettings(XML.getChild(containerElement, "load-balancer"));
+        ClusterSpec.Id clusterId = ClusterSpec.Id.from(cluster.name());
+        ZoneEndpoint zoneEndpoint = zoneEndpoint(context, clusterId);
         Map<HostResource, ClusterMembership> hosts = nodesSpecification.provision(cluster.getRoot().hostSystem(),
                                                                                   ClusterSpec.Type.container,
-                                                                                  ClusterSpec.Id.from(cluster.getName()),
-                                                                                  loadBalancerSettings,
+                                                                                  clusterId,
+                                                                                  zoneEndpoint,
                                                                                   log,
                                                                                   getZooKeeper(containerElement) != null);
         return createNodesFromHosts(hosts, cluster, context.getDeployState());
