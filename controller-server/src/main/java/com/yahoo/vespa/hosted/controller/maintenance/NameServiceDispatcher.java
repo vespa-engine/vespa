@@ -1,14 +1,22 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.maintenance;
 
+import com.yahoo.collections.Iterables;
 import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.api.integration.dns.NameService;
 import com.yahoo.vespa.hosted.controller.dns.NameServiceQueue;
+import com.yahoo.vespa.hosted.controller.dns.NameServiceRequest;
 import com.yahoo.vespa.hosted.controller.persistence.CuratorDb;
 
 import java.time.Clock;
 import java.time.Duration;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedList;
+import java.util.Map;
+import java.util.function.Function;
 import java.util.logging.Level;
+import java.util.stream.Collectors;
 
 /**
  * This dispatches requests from {@link NameServiceQueue} to a {@link NameService}. Successfully dispatched requests are
@@ -36,20 +44,24 @@ public class NameServiceDispatcher extends ControllerMaintainer {
         int requestCount = trueIntervalInSeconds();
         try (var lock = db.lockNameServiceQueue()) {
             var queue = db.readNameServiceQueue();
+            if (queue.requests().isEmpty() || requestCount == 0) return 1.0;
+
             var instant = clock.instant();
             var remaining = queue.dispatchTo(nameService, requestCount);
-            if (queue.equals(remaining)) return 1.0; // Queue unchanged
+            var dispatched = queue.requests().stream()
+                                  .filter(new HashSet<>(remaining.requests())::remove)
+                                  .toList();
 
-            var dispatched = queue.first(requestCount);
-            if (!dispatched.requests().isEmpty()) {
+            if (!dispatched.isEmpty()) {
                 Level logLevel = controller().system().isCd() ? Level.INFO : Level.FINE;
-                log.log(logLevel, "Dispatched name service request(s) in " +
-                                  Duration.between(instant, clock.instant()) +
-                                  ": " + dispatched.requests());
+                log.log(logLevel, () -> "Dispatched name service request(s) in " +
+                                        Duration.between(instant, clock.instant()) +
+                                        ": " + dispatched);
             }
+            // TODO: release lock while performing, verify queue is prefix of new queue when writing (locked)
             db.writeNameServiceQueue(remaining);
+            return dispatched.size() / (double) Math.min(requestCount, queue.requests().size());
         }
-        return 1.0;
     }
 
     /** The true interval at which this runs in this cluster */

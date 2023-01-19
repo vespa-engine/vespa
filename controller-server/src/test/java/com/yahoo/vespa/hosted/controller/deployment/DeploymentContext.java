@@ -249,7 +249,8 @@ public class DeploymentContext {
     /** Flush all pending DNS updates */
     public DeploymentContext flushDnsUpdates() {
         flushDnsUpdates(Integer.MAX_VALUE);
-        assertTrue(tester.controller().curator().readNameServiceQueue().requests().isEmpty(),
+        assertEquals(List.of(),
+                     tester.controller().curator().readNameServiceQueue().requests(),
                    "All name service requests dispatched");
         return this;
     }

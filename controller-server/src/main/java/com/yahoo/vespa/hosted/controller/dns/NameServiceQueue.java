@@ -2,12 +2,14 @@
 package com.yahoo.vespa.hosted.controller.dns;
 
 import com.yahoo.vespa.hosted.controller.api.integration.dns.NameService;
+import com.yahoo.vespa.hosted.controller.application.TenantAndApplicationId;
 import com.yahoo.yolean.Exceptions;
 
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.function.UnaryOperator;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -71,18 +73,32 @@ public record NameServiceQueue(List<NameServiceRequest> requests) {
         requireNonNegative(n);
         if (requests.isEmpty()) return this;
 
-        LinkedList<NameServiceRequest> copy = new LinkedList<>(requests);
-        for (int i = 0; i < n && !copy.isEmpty(); i++) {
-            var request = copy.peek();
+        LinkedList<NameServiceRequest> pending = new LinkedList<>(requests);
+        while (n-- > 0 && ! pending.isEmpty()) {
+            NameServiceRequest request = pending.poll();
             try {
                 request.dispatchTo(nameService);
-                copy.poll();
             } catch (Exception e) {
                 log.log(Level.WARNING, "Failed to execute " + request + ": " + Exceptions.toMessageString(e) +
-                                          ", request will be retried");
+                                       ", request will be moved backwards, and retried");
+
+                // Move all requests with the same owner backwards as far as we can, i.e., to the back, or to the first owner-less request.
+                Optional<TenantAndApplicationId> owner = request.owner();
+                LinkedList<NameServiceRequest> owned = new LinkedList<>();
+                LinkedList<NameServiceRequest> others = new LinkedList<>();
+                do {
+                    if (request.owner().isEmpty()) {
+                        pending.push(request);
+                        break;  // Can't modify anything past this, as operator requests must come in order with all others.
+                    }
+                    (request.owner().equals(owner) ? owned : others).offer(request);
+                }
+                while ((request = pending.poll()) != null);
+                pending.addAll(0, owned);   // Append owned requests before those we can't modify (or none), and
+                pending.addAll(0, others);  // then append requests owned by others before that again.
             }
         }
-        return new NameServiceQueue(copy);
+        return new NameServiceQueue(pending);
     }
 
     @Override

@@ -7,6 +7,7 @@ import com.yahoo.vespa.hosted.controller.api.integration.dns.NameService;
 import com.yahoo.vespa.hosted.controller.api.integration.dns.Record;
 import com.yahoo.vespa.hosted.controller.api.integration.dns.RecordData;
 import com.yahoo.vespa.hosted.controller.api.integration.dns.RecordName;
+import com.yahoo.vespa.hosted.controller.application.TenantAndApplicationId;
 
 import java.util.List;
 import java.util.Objects;
@@ -22,20 +23,22 @@ import java.util.Optional;
  */
 public class RemoveRecords implements NameServiceRequest {
 
+    private final Optional<TenantAndApplicationId> owner;
     private final Record.Type type;
     private final RecordName name;
     private final Optional<RecordData> data;
 
-    public RemoveRecords(Record.Type type, RecordName name) {
-        this(type, name, Optional.empty());
+    public RemoveRecords(Optional<TenantAndApplicationId> owner, Record.Type type, RecordName name) {
+        this(owner, type, name, Optional.empty());
     }
 
-    public RemoveRecords(Record.Type type, RecordName name, RecordData data) {
-        this(type, name, Optional.of(data));
+    public RemoveRecords(Optional<TenantAndApplicationId> owner, Record.Type type, RecordName name, RecordData data) {
+        this(owner, type, name, Optional.of(data));
     }
 
     /** DO NOT USE. Public for serialization purposes */
-    public RemoveRecords(Record.Type type, RecordName name, Optional<RecordData> data) {
+    public RemoveRecords(Optional<TenantAndApplicationId> owner, Record.Type type, RecordName name, Optional<RecordData> data) {
+        this.owner = Objects.requireNonNull(owner, "owner must be non-null");
         this.type = Objects.requireNonNull(type, "type must be non-null");
         this.name = Objects.requireNonNull(name, "name must be non-null");
         this.data = Objects.requireNonNull(data, "data must be non-null");
@@ -45,8 +48,14 @@ public class RemoveRecords implements NameServiceRequest {
         return type;
     }
 
+    @Override
     public Optional<RecordName> name() {
         return Optional.of(name);
+    }
+
+    @Override
+    public Optional<TenantAndApplicationId> owner() {
+        return owner;
     }
 
     public Optional<RecordData> data() {
@@ -74,14 +83,12 @@ public class RemoveRecords implements NameServiceRequest {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         RemoveRecords that = (RemoveRecords) o;
-        return type == that.type &&
-               name.equals(that.name) &&
-               data.equals(that.data);
+        return owner.equals(that.owner) && type == that.type && name.equals(that.name) && data.equals(that.data);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(type, name, data);
+        return Objects.hash(owner, type, name, data);
     }
 
     private static boolean matchingFqdnIn(RecordData data, Record record) {

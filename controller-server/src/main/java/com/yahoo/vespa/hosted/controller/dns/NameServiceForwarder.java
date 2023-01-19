@@ -8,11 +8,13 @@ import com.yahoo.vespa.hosted.controller.api.integration.dns.NameService;
 import com.yahoo.vespa.hosted.controller.api.integration.dns.Record;
 import com.yahoo.vespa.hosted.controller.api.integration.dns.RecordData;
 import com.yahoo.vespa.hosted.controller.api.integration.dns.RecordName;
+import com.yahoo.vespa.hosted.controller.application.TenantAndApplicationId;
 import com.yahoo.vespa.hosted.controller.maintenance.NameServiceDispatcher;
 import com.yahoo.vespa.hosted.controller.persistence.CuratorDb;
 
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -43,42 +45,42 @@ public class NameServiceForwarder {
     }
 
     /** Create or update a given record */
-    public void createRecord(Record record, NameServiceQueue.Priority priority) {
-        forward(new CreateRecord(record), priority);
+    public void createRecord(Record record, NameServiceQueue.Priority priority, Optional<TenantAndApplicationId> owner) {
+        forward(new CreateRecord(owner, record), priority);
     }
 
     /** Create or update an ALIAS record with given name and targets */
-    public void createAlias(RecordName name, Set<AliasTarget> targets, NameServiceQueue.Priority priority) {
+    public void createAlias(RecordName name, Set<AliasTarget> targets, NameServiceQueue.Priority priority, Optional<TenantAndApplicationId> owner) {
         var records = targets.stream()
                              .map(target -> new Record(Record.Type.ALIAS, name, target.pack()))
                              .toList();
-        forward(new CreateRecords(records), priority);
+        forward(new CreateRecords(owner, records), priority);
     }
 
     /** Create or update a DIRECT record with given name and targets */
-    public void createDirect(RecordName name, Set<DirectTarget> targets, NameServiceQueue.Priority priority) {
+    public void createDirect(RecordName name, Set<DirectTarget> targets, NameServiceQueue.Priority priority, Optional<TenantAndApplicationId> owner) {
         var records = targets.stream()
                              .map(target -> new Record(Record.Type.DIRECT, name, target.pack()))
                              .toList();
-        forward(new CreateRecords(records), priority);
+        forward(new CreateRecords(owner, records), priority);
     }
 
     /** Create or update a TXT record with given name and data */
-    public void createTxt(RecordName name, List<RecordData> txtData, NameServiceQueue.Priority priority) {
+    public void createTxt(RecordName name, List<RecordData> txtData, NameServiceQueue.Priority priority, Optional<TenantAndApplicationId> owner) {
         var records = txtData.stream()
                              .map(data -> new Record(Record.Type.TXT, name, data))
                              .toList();
-        forward(new CreateRecords(records), priority);
+        forward(new CreateRecords(owner, records), priority);
     }
 
     /** Remove all records of given type and name */
-    public void removeRecords(Record.Type type, RecordName name, NameServiceQueue.Priority priority) {
-        forward(new RemoveRecords(type, name), priority);
+    public void removeRecords(Record.Type type, RecordName name, NameServiceQueue.Priority priority, Optional<TenantAndApplicationId> owner) {
+        forward(new RemoveRecords(owner, type, name), priority);
     }
 
     /** Remove all records of given type, name and data */
-    public void removeRecords(Record.Type type, RecordName name, RecordData data, NameServiceQueue.Priority priority) {
-        forward(new RemoveRecords(type, name, data), priority);
+    public void removeRecords(Record.Type type, RecordName name, RecordData data, NameServiceQueue.Priority priority, Optional<TenantAndApplicationId> owner) {
+        forward(new RemoveRecords(owner, type, name, data), priority);
     }
 
     protected void forward(NameServiceRequest request, NameServiceQueue.Priority priority) {
@@ -87,8 +89,8 @@ public class NameServiceForwarder {
             var queued = queue.requests().size();
             if (queued >= QUEUE_CAPACITY) {
                 log.log(Level.WARNING, "Queue is at capacity (size: " + queued + "), dropping older " +
-                                          "requests. This likely means that the name service is not successfully " +
-                                          "executing requests");
+                                       "requests. This likely means that the name service is not successfully " +
+                                       "executing requests");
             }
             log.log(Level.FINE, () -> "Queueing name service request: " + request);
             db.writeNameServiceQueue(queue.with(request, priority).last(QUEUE_CAPACITY));
