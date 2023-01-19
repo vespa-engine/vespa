@@ -29,6 +29,7 @@
 
 #include <vector>
 #include <atomic>
+#include <array>
 #include <vespa/vespalib/stllike/string.h>
 #include <vespa/vespalib/util/jsonstream.h>
 
