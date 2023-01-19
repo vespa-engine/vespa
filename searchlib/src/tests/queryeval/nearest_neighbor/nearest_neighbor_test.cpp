@@ -192,9 +192,14 @@ struct TestParam {
         : attribute_tensor_type_spec(attribute_tensor_type_spec_in),
           query_tensor_type_spec(query_tensor_type_spec_in)
     {}
+    TestParam(const TestParam &);
+    TestParam & operator=(TestParam &) noexcept = delete;
+    TestParam(TestParam &&) noexcept = default;
+    TestParam & operator=(TestParam &&) noexcept = default;
     ~TestParam();
 };
 
+TestParam::TestParam(const TestParam &) = default;
 TestParam::~TestParam() = default;
 
 std::ostream& operator<<(std::ostream& os, const TestParam& param)
