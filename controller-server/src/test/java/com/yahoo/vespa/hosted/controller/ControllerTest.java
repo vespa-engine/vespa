@@ -1020,7 +1020,7 @@ public class ControllerTest {
                 new Record(Record.Type.ALIAS,
                         RecordName.from("application.tenant.us-east-3-w.vespa.oath.cloud"),
                         new WeightedAliasTarget(HostName.of("lb-0--tenant.application.default--prod.us-east-3"),
-                                "dns-zone-1", ZoneId.from("prod.us-east-3"), 1).pack()),
+                                "dns-zone-1", "prod.us-east-3", 1).pack()),
 
                 // The 'east' global endpoint, pointing to the weighted record for zone 2's region
                 new Record(Record.Type.ALIAS,

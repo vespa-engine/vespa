@@ -2,7 +2,6 @@
 package com.yahoo.vespa.hosted.controller.api.integration.dns;
 
 import ai.vespa.http.DomainName;
-import com.yahoo.config.provision.zone.ZoneId;
 
 import java.util.Objects;
 
@@ -20,8 +19,8 @@ public final class WeightedAliasTarget extends AliasTarget {
 
     private final long weight;
 
-    public WeightedAliasTarget(DomainName name, String dnsZone, ZoneId zone, long weight) {
-        super(name, dnsZone, zone.value());
+    public WeightedAliasTarget(DomainName name, String dnsZone, String id, long weight) {
+        super(name, dnsZone, id);
         this.weight = weight;
         if (weight < 0) throw new IllegalArgumentException("Weight cannot be negative");
     }
@@ -65,8 +64,7 @@ public final class WeightedAliasTarget extends AliasTarget {
         if (!TARGET_TYPE.equals(parts[0])) {
             throw new IllegalArgumentException("Unexpected type '" + parts[0] + "'");
         }
-        return new WeightedAliasTarget(DomainName.of(parts[1]), parts[2], ZoneId.from(parts[3]),
-                                       Long.parseLong(parts[4]));
+        return new WeightedAliasTarget(DomainName.of(parts[1]), parts[2], parts[3], Long.parseLong(parts[4]));
     }
 
 }
