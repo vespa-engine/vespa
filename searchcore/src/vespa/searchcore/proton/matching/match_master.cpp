@@ -105,11 +105,10 @@ MatchMaster::match(search::engine::Trace & trace,
     std::vector<MatchThread::UP> threadState;
     for (size_t i = 0; i < threadBundle.size(); ++i) {
         IMatchLoopCommunicator &com = (i == 0)
-                ? static_cast<IMatchLoopCommunicator&>(timedCommunicator)
-                : static_cast<IMatchLoopCommunicator&>(communicator);
+            ? static_cast<IMatchLoopCommunicator&>(timedCommunicator)
+            : static_cast<IMatchLoopCommunicator&>(communicator);
         threadState.emplace_back(std::make_unique<MatchThread>(i, threadBundle.size(), params, mtf, com, *scheduler,
-                                                               resultProcessor, mergeDirector, distributionKey,
-                                                               trace.getRelativeTime(), trace.getLevel(), trace.getProfileDepth()));
+                                                               resultProcessor, mergeDirector, distributionKey, trace));
     }
     resultProcessor.prepareThreadContextCreation(threadBundle.size());
     threadBundle.run(threadState);

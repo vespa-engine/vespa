@@ -403,10 +403,8 @@ MatchThread::MatchThread(size_t thread_id_in,
                          ResultProcessor &rp,
                          vespalib::DualMergeDirector &md,
                          uint32_t distributionKey,
-                         const RelativeTime & relativeTime,
-                         uint32_t traceLevel,
-                         uint32_t profileDepth) :
-    thread_id(thread_id_in),
+                         const Trace &parent_trace)
+  : thread_id(thread_id_in),
     num_threads(num_threads_in),
     matchParams(mp),
     matchToolsFactory(mtf),
@@ -422,16 +420,25 @@ MatchThread::MatchThread(size_t thread_id_in,
     match_time_s(0.0),
     wait_time_s(0.0),
     match_with_ranking(mtf.has_first_phase_rank() && mp.save_rank_scores()),
-    trace(std::make_unique<Trace>(relativeTime, traceLevel, profileDepth)),
+    trace(std::make_unique<Trace>(parent_trace.getRelativeTime(), parent_trace.getLevel())),
     match_profiler(),
     first_phase_profiler(),
     second_phase_profiler(),
     my_issues()
 {
-    if ((traceLevel > 0) && (profileDepth > 0)) {
-        match_profiler = std::make_unique<vespalib::ExecutionProfiler>(profileDepth);
-        first_phase_profiler = std::make_unique<vespalib::ExecutionProfiler>(profileDepth);
-        second_phase_profiler = std::make_unique<vespalib::ExecutionProfiler>(profileDepth);
+    trace->match_profile_depth(parent_trace.match_profile_depth());
+    trace->first_phase_profile_depth(parent_trace.first_phase_profile_depth());
+    trace->second_phase_profile_depth(parent_trace.second_phase_profile_depth());
+    if (trace->getLevel() > 0) {
+        if (int32_t depth = trace->match_profile_depth(); depth != 0) {
+            match_profiler = std::make_unique<vespalib::ExecutionProfiler>(depth);
+        }
+        if (int32_t depth = trace->first_phase_profile_depth(); depth != 0) {
+            first_phase_profiler = std::make_unique<vespalib::ExecutionProfiler>(depth);
+        }
+        if (int32_t depth = trace->second_phase_profile_depth(); depth != 0) {
+            second_phase_profiler = std::make_unique<vespalib::ExecutionProfiler>(depth);
+        }
     }
 }
 

@@ -318,7 +318,7 @@ TEST("require that the match phase limiter is able to pre-limit the query") {
     EXPECT_TRUE(limiter.is_enabled());
     EXPECT_EQUAL(12u, limiter.sample_hits_per_thread(10));
     RelativeTime clock(std::make_unique<CountingClock>(vespalib::count_ns(10000000s), 1700000L));
-    Trace trace(clock, 7, 0);
+    Trace trace(clock, 7);
     trace.start(4, false);
     SearchIterator::UP search = limiter.maybe_limit(prepare(new MockSearch("search")), 0.1, 100000, trace.maybeCreateCursor(7, "limit"));
     limiter.updateDocIdSpaceEstimate(1000, 9000);
