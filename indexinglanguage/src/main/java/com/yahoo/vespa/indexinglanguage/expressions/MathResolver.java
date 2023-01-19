@@ -3,6 +3,7 @@ package com.yahoo.vespa.indexinglanguage.expressions;
 
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Objects;
 import java.util.Stack;
 
 /**
@@ -13,10 +14,8 @@ public class MathResolver {
     private final List<Item> items = new LinkedList<>();
 
     public void push(ArithmeticExpression.Operator op, Expression exp) {
-        op.getClass(); // throws NullPointerException
-        if (items.isEmpty() && op != ArithmeticExpression.Operator.ADD) {
+        if (items.isEmpty() && op != ArithmeticExpression.Operator.ADD)
             throw new IllegalArgumentException("First item in an arithmetic operation must be an addition.");
-        }
         items.add(new Item(op, exp));
     }
 
@@ -48,8 +47,9 @@ public class MathResolver {
         Expression exp;
 
         Item(ArithmeticExpression.Operator op, Expression exp) {
-            this.op = op;
+            this.op = Objects.requireNonNull(op);
             this.exp = exp;
         }
     }
+
 }

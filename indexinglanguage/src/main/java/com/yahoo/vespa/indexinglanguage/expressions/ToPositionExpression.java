@@ -12,6 +12,7 @@ public final class ToPositionExpression extends Expression {
     public ToPositionExpression() {
         super(DataType.STRING);
     }
+
     @Override
     protected void doExecute(ExecutionContext context) {
         context.setValue(PositionDataType.fromString(String.valueOf(context.getValue())));
@@ -42,3 +43,4 @@ public final class ToPositionExpression extends Expression {
         return getClass().hashCode();
     }
 }
+

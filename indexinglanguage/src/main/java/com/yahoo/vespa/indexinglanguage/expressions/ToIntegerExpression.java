@@ -12,6 +12,7 @@ public final class ToIntegerExpression extends Expression {
     public ToIntegerExpression() {
         super(UnresolvedDataType.INSTANCE);
     }
+
     @Override
     protected void doExecute(ExecutionContext context) {
         context.setValue(new IntegerFieldValue(Integer.valueOf(String.valueOf(context.getValue()))));
@@ -41,4 +42,5 @@ public final class ToIntegerExpression extends Expression {
     public int hashCode() {
         return getClass().hashCode();
     }
+
 }

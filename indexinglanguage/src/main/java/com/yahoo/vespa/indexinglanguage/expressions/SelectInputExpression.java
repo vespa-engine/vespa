@@ -34,7 +34,7 @@ public final class SelectInputExpression extends CompositeExpression {
     @Override
     public void setStatementOutput(DocumentType documentType, Field field) {
         for (var casePair : cases)
-        casePair.getSecond().setStatementOutput(documentType, field);
+            casePair.getSecond().setStatementOutput(documentType, field);
     }
 
     @Override
@@ -94,13 +94,8 @@ public final class SelectInputExpression extends CompositeExpression {
 
     @Override
     public boolean equals(Object obj) {
-        if (!(obj instanceof SelectInputExpression)) {
-            return false;
-        }
-        SelectInputExpression rhs = (SelectInputExpression)obj;
-        if (!cases.equals(rhs.cases)) {
-            return false;
-        }
+        if (!(obj instanceof SelectInputExpression rhs)) return false;
+        if (!cases.equals(rhs.cases)) return false;
         return true;
     }
 
@@ -108,4 +103,5 @@ public final class SelectInputExpression extends CompositeExpression {
     public int hashCode() {
         return getClass().hashCode() + cases.hashCode();
     }
+
 }

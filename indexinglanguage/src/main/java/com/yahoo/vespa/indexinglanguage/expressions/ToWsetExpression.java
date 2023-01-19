@@ -76,7 +76,8 @@ public final class ToWsetExpression extends Expression {
     @Override
     public int hashCode() {
         return getClass().hashCode() +
-               Boolean.valueOf(createIfNonExistent).hashCode() +
-               Boolean.valueOf(removeIfZero).hashCode();
+               createIfNonExistent.hashCode() +
+               removeIfZero.hashCode();
     }
+
 }

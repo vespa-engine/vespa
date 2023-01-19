@@ -102,4 +102,5 @@ public final class ScriptExpression extends ExpressionList<StatementExpression> 
     public static ScriptExpression newInstance(ScriptParserContext config) throws ParseException {
         return ScriptParser.parseScript(config);
     }
+
 }

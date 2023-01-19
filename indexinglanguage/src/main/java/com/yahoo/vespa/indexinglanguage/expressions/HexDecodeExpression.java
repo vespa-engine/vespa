@@ -16,6 +16,7 @@ public final class HexDecodeExpression extends Expression {
     public HexDecodeExpression() {
         super(DataType.STRING);
     }
+
     @Override
     protected void doExecute(ExecutionContext context) {
         String input = String.valueOf(context.getValue());
@@ -62,4 +63,5 @@ public final class HexDecodeExpression extends Expression {
     public int hashCode() {
         return getClass().hashCode();
     }
+
 }

@@ -4,6 +4,7 @@ package com.yahoo.vespa.indexinglanguage.expressions;
 import com.yahoo.document.DataType;
 import com.yahoo.document.datatypes.IntegerFieldValue;
 
+import java.util.Objects;
 import java.util.concurrent.ThreadLocalRandom;
 
 /**
@@ -29,11 +30,7 @@ public final class RandomExpression extends Expression {
     @Override
     protected void doExecute(ExecutionContext context) {
         int max;
-        if (this.max != null) {
-            max = this.max;
-        } else {
-            max = Integer.parseInt(String.valueOf(context.getValue()));
-        }
+        max = Objects.requireNonNullElseGet(this.max, () -> Integer.parseInt(String.valueOf(context.getValue())));
         context.setValue(new IntegerFieldValue(ThreadLocalRandom.current().nextInt(max)));
     }
 
@@ -54,13 +51,8 @@ public final class RandomExpression extends Expression {
 
     @Override
     public boolean equals(Object obj) {
-        if (!(obj instanceof RandomExpression)) {
-            return false;
-        }
-        RandomExpression rhs = (RandomExpression)obj;
-        if (!equals(max, rhs.max)) {
-            return false;
-        }
+        if (!(obj instanceof RandomExpression rhs)) return false;
+        if (!equals(max, rhs.max)) return false;
         return true;
     }
 

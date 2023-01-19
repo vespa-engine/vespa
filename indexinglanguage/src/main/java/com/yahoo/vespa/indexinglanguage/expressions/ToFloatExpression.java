@@ -12,6 +12,7 @@ public final class ToFloatExpression extends Expression {
     public ToFloatExpression() {
         super(UnresolvedDataType.INSTANCE);
     }
+
     @Override
     protected void doExecute(ExecutionContext context) {
         context.setValue(new FloatFieldValue(Float.valueOf(String.valueOf(context.getValue()))));
@@ -41,4 +42,5 @@ public final class ToFloatExpression extends Expression {
     public int hashCode() {
         return getClass().hashCode();
     }
+
 }

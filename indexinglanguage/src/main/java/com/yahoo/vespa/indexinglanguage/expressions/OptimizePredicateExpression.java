@@ -96,4 +96,5 @@ public final class OptimizePredicateExpression extends Expression {
             return notNodeReorderer.process(processedPredicate, options);
         }
     }
+
 }

@@ -12,6 +12,7 @@ public final class ToDoubleExpression extends Expression {
     public ToDoubleExpression() {
         super(UnresolvedDataType.INSTANCE);
     }
+
     @Override
     protected void doExecute(ExecutionContext context) {
         context.setValue(new DoubleFieldValue(Double.valueOf(String.valueOf(context.getValue()))));
@@ -41,4 +42,5 @@ public final class ToDoubleExpression extends Expression {
     public int hashCode() {
         return getClass().hashCode();
     }
+
 }

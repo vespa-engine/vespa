@@ -14,6 +14,7 @@ public final class ToArrayExpression extends Expression {
     public ToArrayExpression() {
         super(UnresolvedDataType.INSTANCE);
     }
+
     @SuppressWarnings({ "unchecked", "rawtypes" })
     @Override
     protected void doExecute(ExecutionContext context) {
@@ -51,4 +52,5 @@ public final class ToArrayExpression extends Expression {
     public int hashCode() {
         return getClass().hashCode();
     }
+
 }

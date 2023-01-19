@@ -12,6 +12,7 @@ public final class ToLongExpression extends Expression {
     public ToLongExpression() {
         super(UnresolvedDataType.INSTANCE);
     }
+
     @Override
     protected void doExecute(ExecutionContext context) {
         context.setValue(new LongFieldValue(Long.valueOf(String.valueOf(context.getValue()))));
@@ -41,4 +42,5 @@ public final class ToLongExpression extends Expression {
     public int hashCode() {
         return getClass().hashCode();
     }
+
 }

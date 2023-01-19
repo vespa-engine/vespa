@@ -74,13 +74,8 @@ public final class TokenizeExpression extends Expression {
 
     @Override
     public boolean equals(Object obj) {
-        if (!(obj instanceof TokenizeExpression)) {
-            return false;
-        }
-        TokenizeExpression rhs = (TokenizeExpression)obj;
-        if (!config.equals(rhs.config)) {
-            return false;
-        }
+        if (!(obj instanceof TokenizeExpression rhs)) return false;
+        if (!config.equals(rhs.config)) return false;
         return true;
     }
 
@@ -88,4 +83,5 @@ public final class TokenizeExpression extends Expression {
     public int hashCode() {
         return getClass().hashCode() + config.hashCode();
     }
+
 }

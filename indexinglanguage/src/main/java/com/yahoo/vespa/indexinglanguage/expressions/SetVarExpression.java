@@ -47,13 +47,8 @@ public final class SetVarExpression extends Expression {
 
     @Override
     public boolean equals(Object obj) {
-        if (!(obj instanceof SetVarExpression)) {
-            return false;
-        }
-        SetVarExpression rhs = (SetVarExpression)obj;
-        if (!varName.equals(rhs.varName)) {
-            return false;
-        }
+        if (!(obj instanceof SetVarExpression rhs)) return false;
+        if (!varName.equals(rhs.varName)) return false;
         return true;
     }
 
@@ -61,4 +56,5 @@ public final class SetVarExpression extends Expression {
     public int hashCode() {
         return getClass().hashCode() + varName.hashCode();
     }
+
 }

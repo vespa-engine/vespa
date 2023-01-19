@@ -45,20 +45,15 @@ public final class SetValueExpression extends Expression {
             return "\"" + StringUtilities.escape(value.toString(), '"') + "\"";
         }
         if (value instanceof LongFieldValue) {
-            return value.toString() + "L";
+            return value + "L";
         }
         return value.toString();
     }
 
     @Override
     public boolean equals(Object obj) {
-        if (!(obj instanceof SetValueExpression)) {
-            return false;
-        }
-        SetValueExpression rhs = (SetValueExpression)obj;
-        if (!value.equals(rhs.value)) {
-            return false;
-        }
+        if (!(obj instanceof SetValueExpression rhs)) return false;
+        if (!value.equals(rhs.value)) return false;
         return true;
     }
 
@@ -66,4 +61,5 @@ public final class SetValueExpression extends Expression {
     public int hashCode() {
         return getClass().hashCode() + value.hashCode();
     }
+
 }
