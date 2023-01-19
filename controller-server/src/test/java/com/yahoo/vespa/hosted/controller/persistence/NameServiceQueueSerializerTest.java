@@ -15,6 +15,7 @@ import com.yahoo.vespa.hosted.controller.dns.RemoveRecords;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
+import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
@@ -50,7 +51,7 @@ public class NameServiceQueueSerializerTest {
                                         ZoneId.from("prod", "us-north-1"),
                                         100).pack()))),
                 new RemoveRecords(record1.type(), record1.name()),
-                new RemoveRecords(record2.type(), record2.data())
+                new RemoveRecords(record2.type(), record2.name(), Optional.of(record2.data()))
         );
 
         var queue = new NameServiceQueue(requests);

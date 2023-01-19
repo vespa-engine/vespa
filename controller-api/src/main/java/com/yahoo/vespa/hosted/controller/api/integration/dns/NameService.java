@@ -51,9 +51,6 @@ public interface NameService {
     /** Find all records matching given type and name */
     List<Record> findRecords(Record.Type type, RecordName name);
 
-    /** Find all records matching given type and data */
-    List<Record> findRecords(Record.Type type, RecordData data);
-
     /** Update existing record */
     void updateRecord(Record record, RecordData newData);
 

@@ -48,7 +48,7 @@ public final class LatencyAliasTarget extends AliasTarget {
 
     @Override
     public String toString() {
-        return "latency target for " + name() + "[id=" + id() + ",dnsZone=" + dnsZone() + "]";
+        return "latency target for " + name() + " [id=" + id() + ",dnsZone=" + dnsZone() + "]";
     }
 
     /** Unpack latency alias from given record data */
