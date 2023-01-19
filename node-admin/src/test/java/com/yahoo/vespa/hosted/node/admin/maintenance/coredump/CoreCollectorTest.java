@@ -95,7 +95,7 @@ public class CoreCollectorTest {
             fail("Expected not to be able to get bin path");
         } catch (RuntimeException e) {
             assertEquals("Failed to extract binary path from GDB, result: exit status 1, output 'Error 123', command: " +
-                    "[/opt/rh/gcc-toolset-11/root/bin/gdb, -n, -batch, -core, /tmp/core.1234]", e.getMessage());
+                    "[/opt/rh/gcc-toolset-12/root/bin/gdb, -n, -batch, -core, /tmp/core.1234]", e.getMessage());
         }
     }
 
