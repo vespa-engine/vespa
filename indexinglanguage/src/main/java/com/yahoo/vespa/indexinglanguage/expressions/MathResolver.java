@@ -15,7 +15,7 @@ public class MathResolver {
 
     public void push(ArithmeticExpression.Operator op, Expression exp) {
         if (items.isEmpty() && op != ArithmeticExpression.Operator.ADD)
-            throw new IllegalArgumentException("First item in an arithmetic operation must be an addition.");
+            throw new IllegalArgumentException("First item in an arithmetic operation must be an addition, not " + op);
         items.add(new Item(op, exp));
     }
 

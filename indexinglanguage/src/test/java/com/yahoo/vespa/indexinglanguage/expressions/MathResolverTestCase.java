@@ -71,7 +71,7 @@ public class MathResolverTestCase {
             try {
                 resolver.push(type, newInteger(69));
             } catch (IllegalArgumentException e) {
-                assertEquals("First item in an arithmetic operation must be an addition.", e.getMessage());
+                assertEquals("First item in an arithmetic operation must be an addition, not " + type, e.getMessage());
             }
         }
     }
@@ -81,7 +81,7 @@ public class MathResolverTestCase {
         try {
             new MathResolver().push(null, newInteger(69));
             fail();
-        } catch (NullPointerException e) {
+        } catch (IllegalArgumentException e) {
 
         }
     }
