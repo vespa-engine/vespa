@@ -188,7 +188,7 @@ void
 hashtable<Key, Value, Hash, Equal, KeyExtract, Modulator>::force_insert(Value && value)
 {
     const next_t h = hash(_keyExtractor(value));
-    if ( ! _nodes[h].valid() ) {
+    if ( ! _nodes[h].valid() ) [[likely]] {
         _nodes[h] = std::move(value);
         _count++;
     } else {
