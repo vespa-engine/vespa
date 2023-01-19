@@ -24,7 +24,6 @@ public enum ValidationId {
     skipOldConfigModels("skip-old-config-models"), // Internal use
     accessControl("access-control"), // Internal use, used in zones where there should be no access-control
     globalEndpointChange("global-endpoint-change"), // Changing global endpoints
-    zoneEndpointChange("zone-endpoint-change"), // Changing zone (possibly private) endpoint settings
     redundancyIncrease("redundancy-increase"), // Increasing redundancy - may easily cause feed blocked
     redundancyOne("redundancy-one"), // redundancy=1 requires a validation override on first deployment
     pagedSettingRemoval("paged-setting-removal"), // May cause content nodes to run out of memory
