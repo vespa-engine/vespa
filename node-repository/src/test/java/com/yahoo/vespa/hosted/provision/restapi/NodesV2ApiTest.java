@@ -983,7 +983,7 @@ public class NodesV2ApiTest {
         assertResponse(new Request("http://localhost:8080/nodes/v2/archive/tenant2", Utf8.toBytes("{\"uri\": \"s3://my-bucket/dir\"}"), Request.Method.PATCH),
                 "{\"message\":\"Updated archive URI for tenant2\"}");
 
-        tester.assertPartialResponse(new Request("http://localhost:8080/nodes/v2/node/host4.yahoo.com"), "\"archiveUri\":\"ftp://host/dir/application3/instance3/host4/\"", true);
+        tester.assertPartialResponse(new Request("http://localhost:8080/nodes/v2/node/host4.yahoo.com"), "\"archiveUri\":\"ftp://host/dir/application3/instance3/id3/host4/\"", true);
         assertFile(new Request("http://localhost:8080/nodes/v2/archive"), "archives.json");
 
         tester.assertResponse(new Request("http://localhost:8080/nodes/v2/archive/tenant3", new byte[0], Request.Method.DELETE), "{\"message\":\"Removed archive URI for tenant3\"}");
