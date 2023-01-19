@@ -112,16 +112,18 @@ public class VespaDocumentDeserializer6 extends BufferSerializer implements Docu
         doc.setId(documentId);
 
         if ((content & 0x2) != 0) {
-            readHeaderBody(doc);
+            readStruct(doc, doc.getDataType().contentStruct());
+
         }
         if ((content & 0x4) != 0) {
-            readHeaderBody(doc);
+            readStruct(doc, doc.getDataType().contentStruct());
         }
 
         if (dataLength != (position() - dataPos)) {
             throw new DeserializationException("Length mismatch");
         }
     }
+
     public void read(FieldBase field, FieldValue value) {
         throw new IllegalArgumentException("read not implemented yet.");
     }
@@ -253,73 +255,37 @@ public class VespaDocumentDeserializer6 extends BufferSerializer implements Docu
 
     public void read(FieldBase fieldDef, Struct s) {
         s.setVersion(version);
-
-        if (version < 8) {
-            throw new DeserializationException("Illegal document serialization version " + version);
-        }
-
-        int dataSize = getInt(null);
-        byte ignoredComprCode = getByte(null);
-
-        int numberOfFields = getInt1_4Bytes(null);
-
-        List<Tuple2<Integer, Long>> fieldIdsAndLengths = new ArrayList<>(numberOfFields);
-        for (int i=0; i<numberOfFields; ++i) {
-            // id, length (length only used for unknown fields
-            fieldIdsAndLengths.add(new Tuple2<>(getInt1_4Bytes(null), getInt2_4_8Bytes(null)));
-        }
-
-        int afterPos = position() + dataSize;
         s.clear();
-        StructDataType type = s.getDataType();
-        for (int i=0; i<numberOfFields; ++i) {
-            Field structField = type.getField(fieldIdsAndLengths.get(i).first);
-            if (structField == null) {
-                //ignoring unknown field:
-                position(position() + fieldIdsAndLengths.get(i).second.intValue());
-            } else {
-                int posBefore = position();
-                FieldValue value = structField.getDataType().createFieldValue();
-                value.deserialize(structField, this);
-                s.setFieldValue(structField, value);
-                //jump to beginning of next field:
-                position(posBefore + fieldIdsAndLengths.get(i).second.intValue());
-            }
-        }
-        // set position to after data
-        position(afterPos);
+        readStruct(s, s.getDataType());
     }
 
-    private void readHeaderBody(Document target) {
+    private void readStruct(StructuredFieldValue target, StructDataType priType) {
         if (version < 8) {
             throw new DeserializationException("Illegal document serialization version " + version);
         }
-
         int dataSize = getInt(null);
         byte unusedComprCode = getByte(null);
-
         int numberOfFields = getInt1_4Bytes(null);
 
-        List<Tuple2<Integer, Long>> fieldIdsAndLengths = new ArrayList<>(numberOfFields);
-        for (int i=0; i<numberOfFields; ++i) {
-            // id, length (length only used for unknown fields
-            fieldIdsAndLengths.add(new Tuple2<>(getInt1_4Bytes(null), getInt2_4_8Bytes(null)));
+        var fieldIds = new int[numberOfFields];
+        var fieldLens = new int[numberOfFields];
+        for (int i = 0; i < numberOfFields; i++) {
+            fieldIds[i] = getInt1_4Bytes(null);
+            fieldLens[i] = (int) getInt2_4_8Bytes(null);
         }
 
         int afterPos = position() + dataSize;
-        StructDataType priType = target.getDataType().contentStruct();
-
-        for (int i=0; i<numberOfFields; ++i) {
+        for (int i = 0; i < numberOfFields; i++) {
             int posBefore = position();
-            Integer f_id = fieldIdsAndLengths.get(i).first;
-            Field structField = priType.getField(f_id);
+            Field structField = priType.getField(fieldIds[i]);
+            // ignoring unknown field
             if (structField != null) {
                 FieldValue value = structField.getDataType().createFieldValue();
                 value.deserialize(structField, this);
                 target.setFieldValue(structField, value);
             }
-            //jump to beginning of next field:
-            position(posBefore + fieldIdsAndLengths.get(i).second.intValue());
+            // jump to beginning of next field:
+            position(posBefore + fieldLens[i]);
         }
         // set position to after data
         position(afterPos);
@@ -328,6 +294,7 @@ public class VespaDocumentDeserializer6 extends BufferSerializer implements Docu
     public void read(FieldBase field, StructuredFieldValue value) {
         throw new IllegalArgumentException("read not implemented yet.");
     }
+
     public <T extends FieldValue> void read(FieldBase field, WeightedSet<T> ws) {
         WeightedSetDataType type = ws.getDataType();
         getInt(null); // Have no need for type
