@@ -23,6 +23,7 @@ import org.junit.Test;
 import java.util.List;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
 
@@ -100,6 +101,49 @@ public class IndexingProcessorTestCase {
     }
 
     @Test
+    public void testFieldDependingOnTwoInputs() {
+        // 'artist' is assigned to 'title' and vice versa
+        // 'combined' gets the value of both
+        // 'combinedWithFallback' falls back to an empty string if an input is missing
+
+        {   // Both inputs are set
+            DocumentType inputType = indexer.getDocumentTypeManager().getDocumentType("music");
+            DocumentUpdate input = new DocumentUpdate(inputType, "id:ns:music::");
+            input.addFieldUpdate(FieldUpdate.createAssign(inputType.getField("artist"), new StringFieldValue("artist1")));
+            input.addFieldUpdate(FieldUpdate.createAssign(inputType.getField("title"), new StringFieldValue("title1")));
+
+            DocumentUpdate output = (DocumentUpdate)process(input);
+            assertEquals(4, output.fieldUpdates().size());
+            assertAssignment("artist", "title1", output);
+            assertAssignment("title", "artist1", output);
+            assertAssignment("combined", "artist1 title1", output);
+            assertAssignment("combinedWithFallback", "artist1 title1", output);
+        }
+
+        {   // Just artist is set
+            DocumentType inputType = indexer.getDocumentTypeManager().getDocumentType("music");
+            DocumentUpdate input = new DocumentUpdate(inputType, "id:ns:music::");
+            input.addFieldUpdate(FieldUpdate.createAssign(inputType.getField("artist"), new StringFieldValue("artist1")));
+            // no title
+
+            DocumentUpdate output = (DocumentUpdate)process(input);
+            assertEquals(1, output.fieldUpdates().size());
+            assertAssignment("title", "artist1", output);
+        }
+
+        {   // Just title is set
+            DocumentType inputType = indexer.getDocumentTypeManager().getDocumentType("music");
+            DocumentUpdate input = new DocumentUpdate(inputType, "id:ns:music::");
+            input.addFieldUpdate(FieldUpdate.createAssign(inputType.getField("title"), new StringFieldValue("title1")));
+            // no title
+
+            DocumentUpdate output = (DocumentUpdate)process(input);
+            assertEquals(1, output.fieldUpdates().size());
+            assertAssignment("artist", "title1", output);
+        }
+    }
+
+    @Test
     public void requireThatEmptyDocumentUpdateOutputDoesNotThrow() {
         DocumentType inputType = indexer.getDocumentTypeManager().getDocumentType("music");
         DocumentUpdate input = new DocumentUpdate(inputType, "id:ns:music::");
@@ -114,6 +158,16 @@ public class IndexingProcessorTestCase {
         DocumentUpdate input = new DocumentUpdate(new DocumentType("unknown"), "id:ns:music::");
         DocumentOperation output = process(input);
         assertSame(input, output);
+    }
+
+    private void assertAssignment(String fieldName, String value, DocumentUpdate output) {
+        FieldUpdate update = output.getFieldUpdate(fieldName);
+        assertNotNull("Update of '" + fieldName + "' exists", update);
+        assertEquals(fieldName, update.getField().getName());
+        assertEquals(1, update.getValueUpdates().size());
+        ValueUpdate<?> combinedAssignment = update.getValueUpdate(0);
+        assertTrue(combinedAssignment instanceof AssignValueUpdate);
+        assertEquals(new StringFieldValue(value), combinedAssignment.getValue());
     }
 
     private DocumentOperation process(DocumentOperation input) {
@@ -131,6 +185,6 @@ public class IndexingProcessorTestCase {
         return new IndexingProcessor(new DocumentTypeManager(ConfigGetter.getConfig(DocumentmanagerConfig.class, configId)),
                                      ConfigGetter.getConfig(IlscriptsConfig.class, configId),
                                      new SimpleLinguistics(),
-                                     new ComponentRegistry<Embedder>());
+                                     new ComponentRegistry<>());
     }
 }
