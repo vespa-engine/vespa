@@ -39,8 +39,8 @@ public class NameServiceQueueTest {
         var req2 = new CreateRecords(List.of(r2));
         var req3 = new CreateRecords(r3);
         var req4 = new RemoveRecords(r3.get(0).type(), r3.get(0).name());
-        var req5 = new RemoveRecords(r2.type(), r2.data());
-        var req6 = new RemoveRecords(Record.Type.CNAME, r1.data());
+        var req5 = new RemoveRecords(r2.type(), r2.name(), r2.data());
+        var req6 = new RemoveRecords(Record.Type.CNAME, r1.name(), r1.data());
 
         // Add requests with different priorities and dispatch first one
         var queue = NameServiceQueue.EMPTY.with(req2).with(req1, Priority.high);

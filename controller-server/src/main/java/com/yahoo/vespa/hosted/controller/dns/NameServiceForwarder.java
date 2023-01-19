@@ -16,7 +16,6 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.util.stream.Collectors;
 
 /**
  * This adds name service requests to the {@link NameServiceQueue}.
@@ -75,11 +74,6 @@ public class NameServiceForwarder {
     /** Remove all records of given type and name */
     public void removeRecords(Record.Type type, RecordName name, NameServiceQueue.Priority priority) {
         forward(new RemoveRecords(type, name), priority);
-    }
-
-    /** Remove all records of given type and data */
-    public void removeRecords(Record.Type type, RecordData data, NameServiceQueue.Priority priority) {
-        forward(new RemoveRecords(type, data), priority);
     }
 
     /** Remove all records of given type, name and data */

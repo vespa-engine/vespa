@@ -56,7 +56,6 @@ import java.util.Set;
 import java.util.TreeMap;
 import java.util.stream.Collectors;
 
-import static java.util.stream.Collectors.groupingBy;
 import static java.util.stream.Collectors.toMap;
 
 /**
@@ -145,7 +144,7 @@ public class RoutingController {
                                                      .map(zone -> new DeploymentId(instance, ZoneId.from(Environment.prod, zone.region().get())))
                                                      .toList();
                 RoutingId routingId = RoutingId.of(instance, EndpointId.defaultId());
-                endpoints.addAll(computeGlobalEndpoints(routingId, ClusterSpec.Id.from(clusterId), deployments, deploymentSpec));
+                endpoints.addAll(computeGlobalEndpoints(routingId, ClusterSpec.Id.from(clusterId), deployments));
             });
             // Add endpoints declared with current syntax
             spec.endpoints().forEach(declaredEndpoint -> {
@@ -154,7 +153,7 @@ public class RoutingController {
                                                                  .map(region -> new DeploymentId(instance,
                                                                                                  ZoneId.from(Environment.prod, region)))
                                                                  .toList();
-                endpoints.addAll(computeGlobalEndpoints(routingId, ClusterSpec.Id.from(declaredEndpoint.containerId()), deployments, deploymentSpec));
+                endpoints.addAll(computeGlobalEndpoints(routingId, ClusterSpec.Id.from(declaredEndpoint.containerId()), deployments));
             });
         }
         // Add application endpoints
@@ -347,7 +346,7 @@ public class RoutingController {
                                       .map(region -> new DeploymentId(instance.id(), ZoneId.from(Environment.prod, region)))
                                       .toList();
             endpointsToRemove.addAll(computeGlobalEndpoints(RoutingId.of(instance.id(), rotation.endpointId()),
-                                                            rotation.clusterId(), deployments, application.deploymentSpec()));
+                                                            rotation.clusterId(), deployments));
         }
         endpointsToRemove.forEach(endpoint -> controller.nameServiceForwarder()
                                                         .removeRecords(Record.Type.CNAME,
@@ -392,7 +391,7 @@ public class RoutingController {
     }
 
     /** Compute global endpoints for given routing ID, application and deployments */
-    private List<Endpoint> computeGlobalEndpoints(RoutingId routingId, ClusterSpec.Id cluster, List<DeploymentId> deployments, DeploymentSpec deploymentSpec) {
+    private List<Endpoint> computeGlobalEndpoints(RoutingId routingId, ClusterSpec.Id cluster, List<DeploymentId> deployments) {
         var endpoints = new ArrayList<Endpoint>();
         var directMethods = 0;
         var availableRoutingMethods = routingMethodsOfAll(deployments);

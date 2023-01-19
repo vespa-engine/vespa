@@ -108,7 +108,7 @@ public class NameServiceQueueSerializer {
 
     private RemoveRecords removeRecordsFromSlime(Inspector object) {
         var type = Record.Type.valueOf(object.field(typeField).asString());
-        var name = SlimeUtils.optionalString(object.field(nameField)).map(RecordName::from);
+        var name = RecordName.from(object.field(nameField).asString());
         var data = SlimeUtils.optionalString(object.field(dataField)).map(RecordData::from);
         return new RemoveRecords(type, name, data);
     }

@@ -7,9 +7,7 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
-import java.util.TreeSet;
 import java.util.concurrent.ConcurrentSkipListSet;
-import java.util.stream.Collectors;
 
 /**
  * An in-memory name service for testing purposes.
@@ -81,28 +79,6 @@ public class MemoryNameService implements NameService {
     public List<Record> findRecords(Record.Type type, RecordName name) {
         return records.stream()
                       .filter(record -> record.type() == type && record.name().equals(name))
-                      .toList();
-    }
-
-    @Override
-    public List<Record> findRecords(Record.Type type, RecordData data) {
-        if (type == Record.Type.ALIAS && data.asString().contains("/")) {
-            // Validate the same expectation as of a real name service
-            throw new IllegalArgumentException("Finding " + Record.Type.ALIAS + " record by data should only include " +
-                                               "the FQDN name");
-        }
-        return records.stream()
-                      .filter(record -> {
-                          if (record.type() == type) {
-                              if (type == Record.Type.ALIAS) {
-                                  // Unpack ALIAS record and compare FQDN of data part
-                                  return RecordData.fqdn(AliasTarget.unpack(record.data()).name().value())
-                                                   .equals(data);
-                              }
-                              return record.data().equals(data);
-                          }
-                          return false;
-                      })
                       .toList();
     }
 

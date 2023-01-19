@@ -58,7 +58,6 @@ import java.util.stream.Collectors;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.junit.jupiter.api.Assertions.fail;
 
 /**
  * @author mortent
@@ -1070,13 +1069,13 @@ public class RoutingPoliciesTest {
                 deploymentsByDnsName.computeIfAbsent(dnsName, (k) -> new ArrayList<>())
                                     .add(deployment);
             }
-            assertTrue(1 <= deploymentsByDnsName.size(), "Found " + endpointId + " for " + application);
+            assertTrue(deploymentsByDnsName.size() >= 1, "Found " + endpointId + " for " + application);
             deploymentsByDnsName.forEach((dnsName, deployments) -> {
                 Set<String> weightedTargets = deployments.stream()
-                                                           .map(d -> "weighted/lb-" + loadBalancerId + "--" +
-                                                                     d.applicationId().toFullString() + "--" + d.zoneId().value() +
-                                                                     "/dns-zone-1/" + d.zoneId().value() + "/" + deploymentWeights.get(d))
-                                                           .collect(Collectors.toSet());
+                                                         .map(d -> "weighted/lb-" + loadBalancerId + "--" +
+                                                                   d.applicationId().toFullString() + "--" + d.zoneId().value() +
+                                                                   "/dns-zone-1/" + d.zoneId().value() + "/" + deploymentWeights.get(d))
+                                                         .collect(Collectors.toSet());
                 assertEquals(weightedTargets, aliasDataOf(dnsName), dnsName + " has expected targets");
             });
         }

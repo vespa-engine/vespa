@@ -210,7 +210,8 @@ public class RoutingPolicies {
         controller.nameServiceForwarder().createAlias(RecordName.from(endpoint.dnsName()), latencyTargets, Priority.normal);
         inactiveLatencyTargets.forEach(t -> controller.nameServiceForwarder()
                                                       .removeRecords(Record.Type.ALIAS,
-                                                                     RecordData.fqdn(t.name().value()),
+                                                                     RecordName.from(endpoint.dnsName()),
+                                                                     RecordData.from(t.name().value()),
                                                                      Priority.normal));
     }
 

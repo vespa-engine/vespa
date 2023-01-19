@@ -8,7 +8,6 @@ import com.yahoo.vespa.hosted.controller.api.integration.dns.Record;
 import com.yahoo.vespa.hosted.controller.api.integration.dns.RecordData;
 import com.yahoo.vespa.hosted.controller.api.integration.dns.RecordName;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -18,36 +17,28 @@ import java.util.Optional;
  *
  * - name and data
  * - only name
- * - only data
  *
  * @author mpolden
  */
 public class RemoveRecords implements NameServiceRequest {
 
     private final Record.Type type;
-    private final Optional<RecordName> name;
+    private final RecordName name;
     private final Optional<RecordData> data;
 
     public RemoveRecords(Record.Type type, RecordName name) {
-        this(type, Optional.of(name), Optional.empty());
-    }
-
-    public RemoveRecords(Record.Type type, RecordData data) {
-        this(type, Optional.empty(), Optional.of(data));
+        this(type, name, Optional.empty());
     }
 
     public RemoveRecords(Record.Type type, RecordName name, RecordData data) {
-        this(type, Optional.of(name), Optional.of(data));
+        this(type, name, Optional.of(data));
     }
 
     /** DO NOT USE. Public for serialization purposes */
-    public RemoveRecords(Record.Type type, Optional<RecordName> name, Optional<RecordData> data) {
+    public RemoveRecords(Record.Type type, RecordName name, Optional<RecordData> data) {
         this.type = Objects.requireNonNull(type, "type must be non-null");
         this.name = Objects.requireNonNull(name, "name must be non-null");
         this.data = Objects.requireNonNull(data, "data must be non-null");
-        if (name.isEmpty() && data.isEmpty()) {
-            throw new IllegalArgumentException("at least one of name and data must be non-empty");
-        }
     }
 
     public Record.Type type() {
@@ -55,7 +46,7 @@ public class RemoveRecords implements NameServiceRequest {
     }
 
     public Optional<RecordName> name() {
-        return name;
+        return Optional.of(name);
     }
 
     public Optional<RecordData> data() {
@@ -64,32 +55,18 @@ public class RemoveRecords implements NameServiceRequest {
 
     @Override
     public void dispatchTo(NameService nameService) {
-        List<Record> records = new ArrayList<>();
-        if (name.isPresent() && data.isPresent()) {
-            nameService.findRecords(type, name.get())
-                       .stream()
-                       .filter(record -> {
-                           // Records to remove must match both name and data fields
-                           String dataValue = switch (record.type()) {
-                               case ALIAS -> AliasTarget.unpack(record.data()).name().value();
-                               case DIRECT -> DirectTarget.unpack(record.data()).recordData().asString();
-                               default -> record.data().asString();
-                           };
-                           return fqdn(dataValue).equals(fqdn(data.get().asString()));
-                       })
-                       .forEach(records::add);
-        } else {
-            name.ifPresent(n -> records.addAll(nameService.findRecords(type, n)));
-            data.ifPresent(d -> records.addAll(nameService.findRecords(type, d)));
-        }
-        nameService.removeRecords(records);
+        // Deletions require all records fields to match exactly, data may be incomplete even if present. To ensure
+        // completeness we search for the record(s) first
+        List<Record> completeRecords = nameService.findRecords(type, name).stream()
+                                                  .filter(record -> data.isEmpty() || matchingFqdnIn(data.get(), record))
+                                                  .toList();
+        nameService.removeRecords(completeRecords);
     }
 
     @Override
     public String toString() {
-        return "remove records of type " + type + ", by " +
-               name.map(n -> "name " + n).orElse("") +
-               data.map(d -> "data " + d).orElse("");
+        return "remove records of type " + type + ", by name " + name +
+               data.map(d -> " data " + d).orElse("");
     }
 
     @Override
@@ -105,6 +82,15 @@ public class RemoveRecords implements NameServiceRequest {
     @Override
     public int hashCode() {
         return Objects.hash(type, name, data);
+    }
+
+    private static boolean matchingFqdnIn(RecordData data, Record record) {
+        String dataValue = switch (record.type()) {
+            case ALIAS -> AliasTarget.unpack(record.data()).name().value();
+            case DIRECT -> DirectTarget.unpack(record.data()).recordData().asString();
+            default -> record.data().asString();
+        };
+        return fqdn(dataValue).equals(fqdn(data.asString()));
     }
 
     private static String fqdn(String name) {
