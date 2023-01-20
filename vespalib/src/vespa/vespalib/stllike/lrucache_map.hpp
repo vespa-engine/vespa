@@ -237,7 +237,7 @@ lrucache_map<P>::ref(const internal_iterator & it) {
 template< typename P >
 typename lrucache_map<P>::insert_result
 lrucache_map<P>::insert(value_type && value) {
-    insert_result res = HashTable::insertInternal(std::forward<value_type>(value));
+    insert_result res = HashTable::insert_internal(std::forward<value_type>(value));
     uint32_t next(_head);
     if ( ! res.second) {
         ref(res.first);
