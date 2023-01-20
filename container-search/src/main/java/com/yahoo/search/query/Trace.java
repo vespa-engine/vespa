@@ -8,7 +8,9 @@ import com.yahoo.search.Query;
 import com.yahoo.search.query.profile.QueryProfileProperties;
 import com.yahoo.search.query.profile.compiled.CompiledQueryProfile;
 import com.yahoo.search.query.profile.types.FieldDescription;
+import com.yahoo.search.query.profile.types.QueryProfileFieldType;
 import com.yahoo.search.query.profile.types.QueryProfileType;
+import com.yahoo.search.query.profiling.Profiling;
 
 import java.util.HashSet;
 import java.util.Map;
@@ -37,6 +39,7 @@ public class Trace implements Cloneable {
     public static final String PROFILE_DEPTH = "profileDepth";
     public static final String TIMESTAMPS = "timestamps";
     public static final String QUERY = "query";
+    public static final String PROFILING = "profiling";
 
     static {
         argumentType = new QueryProfileType(TRACE);
@@ -47,6 +50,7 @@ public class Trace implements Cloneable {
         argumentType.addField(new FieldDescription(PROFILE_DEPTH, "integer"));
         argumentType.addField(new FieldDescription(TIMESTAMPS, "boolean"));
         argumentType.addField(new FieldDescription(QUERY, "boolean"));
+        argumentType.addField(new FieldDescription(PROFILING, new QueryProfileFieldType(Profiling.getArgumentType())));
         argumentType.freeze();
     }
 
@@ -59,6 +63,7 @@ public class Trace implements Cloneable {
     private int profileDepth = 0;
     private boolean timestamps = false;
     private boolean query = true;
+    private Profiling profiling = new Profiling();
 
     public Trace(Query parent) {
         this.parent = Objects.requireNonNull(parent);
@@ -74,7 +79,12 @@ public class Trace implements Cloneable {
     public int getExplainLevel() { return explainLevel; }
 
     /** Sets the profiling depth. Profiling enabled if non-zero. Higher numbers means increasingly more detail. */
-    public void setProfileDepth(int profileDepth) { this.profileDepth = profileDepth; }
+    public void setProfileDepth(int profileDepth) {
+        this.profileDepth = profileDepth;
+        profiling.getMatching().setDepth(profileDepth);
+        profiling.getFirstPhaseRanking().setDepth(profileDepth);
+        profiling.getSecondPhaseRanking().setDepth(profileDepth);
+    }
     public int getProfileDepth() { return profileDepth; }
 
     /** Returns whether trace entries should have a timestamp. Default is false. */
@@ -84,6 +94,10 @@ public class Trace implements Cloneable {
     /** Returns whether any trace entries should include the query. Default is true. */
     public boolean getQuery() { return query; }
     public void setQuery(boolean query) { this.query = query; }
+
+    public Profiling getProfiling() {
+        return profiling;
+    }
 
     /**
      * Adds a context message to this query and to the info log,
@@ -218,17 +232,21 @@ public class Trace implements Cloneable {
 
     @Override
     public boolean equals(Object o) {
-        if (o == this ) return true;
-        if ( ! (o instanceof Trace other)) return false;
-        if (other.level != this.level) return false;
-        if (other.explainLevel != this.explainLevel) return false;
-        if (other.timestamps != this.timestamps) return false;
-        if (other.query != this.query) return false;
-        return true;
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        Trace trace = (Trace) o;
+        return level == trace.level &&
+                explainLevel == trace.explainLevel &&
+                profileDepth == trace.profileDepth &&
+                timestamps == trace.timestamps &&
+                query == trace.query &&
+                Objects.equals(profiling, trace.profiling);
     }
 
     @Override
-    public int hashCode() { return Objects.hash(level, explainLevel, timestamps, query); }
+    public int hashCode() {
+        return Objects.hash(level, explainLevel, profileDepth, timestamps, query, profiling);
+    }
 
     @Override
     public Trace clone() {
