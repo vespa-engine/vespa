@@ -139,4 +139,31 @@ public record NameServiceQueue(List<NameServiceRequest> requests) {
                                             .toList());
     }
 
+    /** Replaces the sublist {@code initial} contained in this with {@code remaining}, or best effort amendment when not contained. */
+    public NameServiceQueue replace(NameServiceQueue initial, NameServiceQueue remaining) {
+        int sublistIndex = indexOf(requests, initial.requests);
+        if (sublistIndex >= 0) {
+            LinkedList<NameServiceRequest> updated = new LinkedList<>();
+            updated.addAll(requests.subList(0, sublistIndex));
+            updated.addAll(remaining.requests);
+            updated.addAll(requests.subList(sublistIndex + initial.requests.size(), requests.size()));
+            return new NameServiceQueue(updated);
+        }
+        else {
+            log.log(Level.WARNING, "Name service queue has changed unexpectedly; expected requests: " +
+                                   initial.requests + " to be present, but that was not found in: " + requests);
+            // Do a best-effort amendment, where requests removed from initial to remaining, are removed, from the front, from this.
+            return minus(initial.minus(remaining));
+        }
+    }
+
+    /** Lowest index {@code i} in {@code list} s.t. {@code list.sublist(i, i + sub.size()).equals(sub)}. Naïve implementation. */
+    static <T> int indexOf(List<T> list, List<T> sub) {
+        for (int i = 0; i + sub.size() < list.size(); i++)
+            if (list.subList(i, i + sub.size()).equals(sub))
+                return i;
+
+        return -1;
+    }
+
 }

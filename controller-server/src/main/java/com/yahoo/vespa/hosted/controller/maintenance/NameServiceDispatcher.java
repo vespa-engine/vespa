@@ -39,23 +39,27 @@ public class NameServiceDispatcher extends ControllerMaintainer {
         // Dispatch 1 request per second on average. Note that this is not entirely accurate because a NameService
         // implementation may need to perform multiple API-specific requests to execute a single NameServiceRequest
         int requestCount = trueIntervalInSeconds();
+        NameServiceQueue initial;
         try (var lock = db.lockNameServiceQueue()) {
-            var initial = db.readNameServiceQueue();
-            if (initial.requests().isEmpty() || requestCount == 0) return 1.0;
-
-            var instant = clock.instant();
-            var remaining = initial.dispatchTo(nameService, requestCount);
-            var dispatched = initial.minus(remaining);
-
-            if (!dispatched.requests().isEmpty()) {
-                Level logLevel = controller().system().isCd() ? Level.INFO : Level.FINE;
-                log.log(logLevel, () -> "Dispatched name service request(s) in " +
-                                        Duration.between(instant, clock.instant()) +
-                                        ": " + dispatched);
-            }
-            db.writeNameServiceQueue(remaining);
-            return dispatched.requests().size() / (double) Math.min(requestCount, initial.requests().size());
+            initial = db.readNameServiceQueue();
         }
+        if (initial.requests().isEmpty() || requestCount == 0) return 1.0;
+
+        var instant = clock.instant();
+        var remaining = initial.dispatchTo(nameService, requestCount);
+        var dispatched = initial.minus(remaining);
+
+        if (!dispatched.requests().isEmpty()) {
+            Level logLevel = controller().system().isCd() ? Level.INFO : Level.FINE;
+            log.log(logLevel, () -> "Dispatched name service request(s) in " +
+                                    Duration.between(instant, clock.instant()) +
+                                    ": " + dispatched);
+        }
+
+        try (var lock = db.lockNameServiceQueue()) {
+            db.writeNameServiceQueue(db.readNameServiceQueue().replace(initial, remaining));
+        }
+        return dispatched.requests().size() / (double) Math.min(requestCount, initial.requests().size());
     }
 
     /** The true interval at which this runs in this cluster */
