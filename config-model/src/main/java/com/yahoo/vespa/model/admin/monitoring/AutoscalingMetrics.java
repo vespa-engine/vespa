@@ -1,6 +1,6 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model.admin.monitoring;
-
+import com.yahoo.metrics.ContainerMetrics;
 import java.util.ArrayList;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -34,7 +34,7 @@ public class AutoscalingMetrics {
         metrics.add("in_service");
 
         // Query rate
-        metrics.add("queries.rate"); // container
+        metrics.add(ContainerMetrics.QUERIES.rate()); // container
         metrics.add("content.proton.documentdb.matching.queries.rate"); // content
 
         // Write rate
