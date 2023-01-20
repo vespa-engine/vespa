@@ -318,29 +318,29 @@ public class StatisticsSearcher extends Searcher {
             int code = m.getCode();
             Metric.Context c = getDimensions(m.getSource());
             if (code == TIMEOUT.code) {
-                metric.add(ContainerMetris.ERROR_TIMEOUT.baseName(), 1, c);
+                metric.add(ContainerMetrics.ERROR_TIMEOUT.baseName(), 1, c);
             } else if (code == NO_BACKENDS_IN_SERVICE.code) {
-                metric.add(ContainerMetris.ERROR_BACKENDS_OOS.baseName(), 1, c);
+                metric.add(ContainerMetrics.ERROR_BACKENDS_OOS.baseName(), 1, c);
             } else if (code == ERROR_IN_PLUGIN.code) {
-                metric.add(ContainerMetris.ERROR_PLUGIN_FAILURE.baseName(), 1, c);
+                metric.add(ContainerMetrics.ERROR_PLUGIN_FAILURE.baseName(), 1, c);
             } else if (code == BACKEND_COMMUNICATION_ERROR.code) {
-                metric.add(ContainerMetris.ERROR_BACKEND_COMMUNICATION_ERROR.baseName(), 1, c);
+                metric.add(ContainerMetrics.ERROR_BACKEND_COMMUNICATION_ERROR.baseName(), 1, c);
             } else if (code == EMPTY_DOCUMENTS.code) {
-                metric.add(ContainerMetris.ERROR_EMPTY_DOCUMENT_SUMMARIES.baseName(), 1, c);
+                metric.add(ContainerMetrics.ERROR_EMPTY_DOCUMENT_SUMMARIES.baseName(), 1, c);
             } else if (code == ILLEGAL_QUERY.code) {
-                metric.add(ContainerMetris.ERROR_ILLEGAL_QUERY.baseName(), 1, c);
+                metric.add(ContainerMetrics.ERROR_ILLEGAL_QUERY.baseName(), 1, c);
             } else if (code == INVALID_QUERY_PARAMETER.code) {
-                metric.add(ContainerMetris.ERROR_INVALID_QUERY_PARAMETER.baseName(), 1, c);
+                metric.add(ContainerMetrics.ERROR_INVALID_QUERY_PARAMETER.baseName(), 1, c);
             } else if (code == INTERNAL_SERVER_ERROR.code) {
-                metric.add(ContainerMetris.ERROR_INTERNAL_SERVER_ERROR.baseName(), 1, c);
+                metric.add(ContainerMetrics.ERROR_INTERNAL_SERVER_ERROR.baseName(), 1, c);
             } else if (code == SERVER_IS_MISCONFIGURED.code) {
-                metric.add(ContainerMetris.ERROR_MISCONFIGURED_SERVER.baseName(), 1, c);
+                metric.add(ContainerMetrics.ERROR_MISCONFIGURED_SERVER.baseName(), 1, c);
             } else if (code == INVALID_QUERY_TRANSFORMATION.code) {
-                metric.add(ContainerMetris.ERROR_INVALID_QUERY_TRANSFORMATION.baseName(), 1, c);
+                metric.add(ContainerMetrics.ERROR_INVALID_QUERY_TRANSFORMATION.baseName(), 1, c);
             } else if (code == RESULT_HAS_ERRORS.code) {
-                metric.add(ContainerMetris.ERROR_RESULTS_WITH_ERRORS.baseName(), 1, c);
+                metric.add(ContainerMetrics.ERROR_RESULTS_WITH_ERRORS.baseName(), 1, c);
             } else if (code == UNSPECIFIED.code) {
-                metric.add(ContainerMetris.ERROR_UNSPECIFIED.baseName(), 1, c);
+                metric.add(ContainerMetrics.ERROR_UNSPECIFIED.baseName(), 1, c);
             }
         }
     }
