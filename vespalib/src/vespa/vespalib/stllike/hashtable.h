@@ -301,7 +301,7 @@ public:
     const_iterator find(const Key & key) const;
     template <typename V>
     insert_result insert(V && node) {
-        return insertInternal(std::forward<V>(node));
+        return insert_internal(std::forward<V>(node));
     }
     // This will insert unconditionally, without checking presence, and might cause duplicates.
     // Use at you own risk.
@@ -335,7 +335,7 @@ public:
 
 protected:
     template <typename V>
-    insert_result insertInternal(V && node) __attribute__((noinline));
+    insert_result insert_internal(V && node) __attribute__((noinline));
     /// These two methods are only for the ones that know what they are doing.
     /// valid input here are stuff returned from iterator.getInternalIndex.
     Value & getByInternalIndex(size_t index)             { return _nodes[index].getValue(); }
@@ -364,6 +364,8 @@ private:
     template <typename MoveHandler>
     VESPA_DLL_LOCAL void reclaim(MoveHandler & moveHandler, next_t node);
     VESPA_DLL_LOCAL void force_insert_cold(Value && value, next_t node) __attribute__((noinline));
+    template <typename V>
+    VESPA_DLL_LOCAL insert_result insert_internal_cold(V && node, next_t) __attribute__((noinline));
 };
 
 }

@@ -155,30 +155,37 @@ hashtable<Key, Value, Hash, Equal, KeyExtract, Modulator>::clear() {
 template< typename Key, typename Value, typename Hash, typename Equal, typename KeyExtract, typename Modulator >
 template< typename V >
 typename hashtable<Key, Value, Hash, Equal, KeyExtract, Modulator>::insert_result
-hashtable<Key, Value, Hash, Equal, KeyExtract, Modulator>::insertInternal(V && node)
+hashtable<Key, Value, Hash, Equal, KeyExtract, Modulator>::insert_internal(V && node)
 {
     const next_t h = hash(_keyExtractor(node));
-    if ( ! _nodes[h].valid() ) {
+    if ( ! _nodes[h].valid() ) [[likely]] {
         _nodes[h] = std::forward<V>(node);
         _count++;
         return insert_result(iterator(this, h), true);
+    }
+    return insert_internal_cold(std::move(node), h);
+}
+
+template< typename Key, typename Value, typename Hash, typename Equal, typename KeyExtract, typename Modulator >
+template< typename V >
+typename hashtable<Key, Value, Hash, Equal, KeyExtract, Modulator>::insert_result
+hashtable<Key, Value, Hash, Equal, KeyExtract, Modulator>::insert_internal_cold(V && node, next_t h)
+{
+    for (next_t c(h); c != Node::npos; c = _nodes[c].getNext()) {
+        if (_equal(_keyExtractor(_nodes[c].getValue()), _keyExtractor(node))) {
+            return insert_result(iterator(this, c), false);
+        }
+    }
+    if (_nodes.size() < _nodes.capacity()) {
+        const next_t p(_nodes[h].getNext());
+        const next_t newIdx(_nodes.size());
+        _nodes[h].setNext(newIdx);
+        _nodes.template emplace_back(std::forward<V>(node), p);
+        _count++;
+        return insert_result(iterator(this, newIdx), true);
     } else {
-        for (next_t c(h); c != Node::npos; c = _nodes[c].getNext()) {
-            if (_equal(_keyExtractor(_nodes[c].getValue()), _keyExtractor(node))) {
-                return insert_result(iterator(this, c), false);
-            }
-        }
-        if (_nodes.size() < _nodes.capacity()) {
-            const next_t p(_nodes[h].getNext());
-            const next_t newIdx(_nodes.size());
-            _nodes[h].setNext(newIdx);
-            _nodes.template emplace_back(std::forward<V>(node), p);
-            _count++;
-            return insert_result(iterator(this, newIdx), true);
-        } else {
-            resize(_nodes.capacity()*2);
-            return insertInternal(std::forward<V>(node));
-        }
+        resize(_nodes.capacity()*2);
+        return insert_internal(std::forward<V>(node));
     }
 }
 
