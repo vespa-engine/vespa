@@ -1,6 +1,8 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model.admin.monitoring;
 
+import com.yahoo.metrics.ContainerMetrics;
+
 import com.google.common.collect.ImmutableSet;
 
 import java.util.Set;
@@ -19,7 +21,7 @@ public class DefaultVespaMetrics {
     private static MetricSet createDefaultVespaMetricSet() {
 
         Set<Metric> defaultContainerMetrics =
-                ImmutableSet.of(new Metric("feed.operations.rate")
+                ImmutableSet.of(new Metric(ContainerMetrics.FEED_OPERATIONS.rate())
                 );
 
         Set<Metric> defaultContentMetrics =
