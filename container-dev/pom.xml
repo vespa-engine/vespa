@@ -54,6 +54,10 @@
       <classifier>no_aop</classifier>
     </dependency>
     <dependency>
+      <groupId>net.java.dev.jna</groupId>
+      <artifactId>jna</artifactId>
+    </dependency>
+    <dependency>
       <groupId>commons-logging</groupId>
       <artifactId>commons-logging</artifactId>
     </dependency>
@@ -169,10 +173,6 @@
         <exclusion>
           <groupId>org.apache.commons</groupId>
           <artifactId>commons-exec</artifactId>
-        </exclusion>
-        <exclusion>
-          <groupId>net.java.dev.jna</groupId>
-          <artifactId>jna</artifactId>
         </exclusion>
         <exclusion>
           <groupId>net.openhft</groupId>

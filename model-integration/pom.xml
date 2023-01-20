@@ -32,6 +32,13 @@
       <scope>provided</scope>
     </dependency>
     <dependency>
+      <!-- required for bundle-plugin to generate import-package statements for Java's standard library + misc 3party -->
+      <groupId>com.yahoo.vespa</groupId>
+      <artifactId>jdisc_core</artifactId>
+      <version>${project.version}</version>
+      <scope>provided</scope>
+    </dependency>
+    <dependency>
       <groupId>com.yahoo.vespa</groupId>
       <artifactId>searchlib</artifactId>
       <version>${project.version}</version>
@@ -61,6 +68,11 @@
       <version>${project.version}</version>
       <scope>provided</scope>
     </dependency>
+    <dependency>
+      <groupId>net.java.dev.jna</groupId>
+      <artifactId>jna</artifactId>
+      <scope>provided</scope>
+    </dependency>
 
     <dependency>
       <groupId>com.google.protobuf</groupId>
@@ -76,7 +88,15 @@
            <groupId>com.google.code.gson</groupId>
            <artifactId>gson</artifactId>
          </exclusion>
-         </exclusions>
+         <exclusion>
+           <groupId>net.java.dev.jna</groupId>
+           <artifactId>jna</artifactId>
+         </exclusion>
+         <exclusion>
+           <groupId>org.slf4j</groupId>
+           <artifactId>slf4j-api</artifactId>
+         </exclusion>
+       </exclusions>
     </dependency>
 
     <dependency>

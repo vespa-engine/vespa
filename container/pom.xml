@@ -34,6 +34,10 @@
           <groupId>com.yahoo.vespa</groupId>
           <artifactId>airlift-zstd</artifactId>
         </exclusion>
+        <exclusion>
+          <groupId>net.java.dev.jna</groupId>
+          <artifactId>jna</artifactId>
+        </exclusion>
       </exclusions>
     </dependency>
     <dependency>
