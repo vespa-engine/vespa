@@ -2,12 +2,19 @@
 package com.yahoo.vespa.model.admin.monitoring;
 
 import com.yahoo.metrics.ContainerMetrics;
+import com.yahoo.metrics.Suffix;
 
 import java.util.Collections;
+import java.util.EnumSet;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
 
+import static com.yahoo.metrics.Suffix.average;
+import static com.yahoo.metrics.Suffix.count;
+import static com.yahoo.metrics.Suffix.last;
+import static com.yahoo.metrics.Suffix.max;
+import static com.yahoo.metrics.Suffix.sum;
 import static com.yahoo.vespa.model.admin.monitoring.DefaultVespaMetrics.defaultVespaMetricSet;
 import static java.util.Collections.singleton;
 
@@ -116,7 +123,7 @@ public class VespaMetricSet {
         Set<Metric> metrics = new LinkedHashSet<>();
 
         addMetric(metrics, ContainerMetrics.HANDLED_REQUESTS.count());
-        addMetric(metrics, ContainerMetrics.HANDLED_LATENCY.baseName(), List.of("max", "sum", "count"));
+        addMetric(metrics, ContainerMetrics.HANDLED_LATENCY, EnumSet.of(sum, count, max));
         
         metrics.add(new Metric("serverRejectedRequests.rate"));     // TODO: Remove on Vespa 9. Use jdisc.thread_pool.rejected_tasks.
         metrics.add(new Metric("serverRejectedRequests.count"));    // TODO: Remove on Vespa 9. Use jdisc.thread_pool.rejected_tasks.
@@ -671,6 +678,10 @@ public class VespaMetricSet {
 
     private static void addMetric(Set<Metric> metrics, String nameWithSuffix) {
         metrics.add(new Metric(nameWithSuffix));
+    }
+
+    private static void addMetric(Set<Metric> metrics, ContainerMetrics metric, EnumSet<Suffix> suffixes) {
+        suffixes.forEach(suffix -> metrics.add(new Metric(metric.baseName() + "." + suffix.suffix())));
     }
 
     private static void addMetric(Set<Metric> metrics, String metricName, Iterable<String> aggregateSuffices) {
