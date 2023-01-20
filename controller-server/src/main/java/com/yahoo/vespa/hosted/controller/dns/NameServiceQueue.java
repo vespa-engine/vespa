@@ -159,7 +159,7 @@ public record NameServiceQueue(List<NameServiceRequest> requests) {
 
     /** Lowest index {@code i} in {@code list} s.t. {@code list.sublist(i, i + sub.size()).equals(sub)}. Naïve implementation. */
     static <T> int indexOf(List<T> list, List<T> sub) {
-        for (int i = 0; i + sub.size() < list.size(); i++)
+        for (int i = 0; i + sub.size() <= list.size(); i++)
             if (list.subList(i, i + sub.size()).equals(sub))
                 return i;
 
