@@ -305,7 +305,7 @@ public:
     }
     // This will insert unconditionally, without checking presence, and might cause duplicates.
     // Use at you own risk.
-    void force_insert(Value && value);
+    VESPA_DLL_LOCAL void force_insert(Value && value) __attribute__((noinline));
 
     /// This gives faster iteration than can be achieved by the iterators.
     template <typename Func>
@@ -318,7 +318,7 @@ public:
         }
     }
     void clear();
-    void resize(size_t newSize);
+    void resize(size_t newSize) __attribute__((noinline));
     void swap(hashtable & rhs);
 
     /**
@@ -335,7 +335,7 @@ public:
 
 protected:
     template <typename V>
-    insert_result insertInternal(V && node);
+    insert_result insertInternal(V && node) __attribute__((noinline));
     /// These two methods are only for the ones that know what they are doing.
     /// valid input here are stuff returned from iterator.getInternalIndex.
     Value & getByInternalIndex(size_t index)             { return _nodes[index].getValue(); }
@@ -362,7 +362,7 @@ private:
         moveHandler.move(from, to);
     }
     template <typename MoveHandler>
-    void reclaim(MoveHandler & moveHandler, next_t node);
+    VESPA_DLL_LOCAL void reclaim(MoveHandler & moveHandler, next_t node);
 };
 
 }
