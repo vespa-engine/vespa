@@ -55,6 +55,8 @@ void Env::boot(const std::string &configId) {
     _cfgOwner.subscribe(configId, CONFIG_TIMEOUT_MS);
     _modelOwner.start(CONFIG_TIMEOUT_MS, true);
     // subscribe() should throw if something is not OK
+    vespalib::SignalHandler::TERM.hook();
+    vespalib::SignalHandler::INT.hook();
     Connectivity checker;
     for (int retry = 0; retry < maxConnectivityRetries; ++retry) {
         bool changed = _cfgOwner.checkForConfigUpdate();

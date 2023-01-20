@@ -50,8 +50,6 @@ main(int argc, char **argv)
     EV_STARTED("config-sentinel");
 
     vespalib::SignalHandler::PIPE.ignore();
-    vespalib::SignalHandler::TERM.hook();
-    vespalib::SignalHandler::INT.hook();
     vespalib::SignalHandler::CHLD.hook();
 
     if (setenv("LC_ALL", "C", 1) != 0) {
