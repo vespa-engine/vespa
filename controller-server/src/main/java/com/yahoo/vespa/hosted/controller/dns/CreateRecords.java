@@ -6,6 +6,7 @@ import com.yahoo.vespa.hosted.controller.api.integration.dns.DirectTarget;
 import com.yahoo.vespa.hosted.controller.api.integration.dns.NameService;
 import com.yahoo.vespa.hosted.controller.api.integration.dns.Record;
 import com.yahoo.vespa.hosted.controller.api.integration.dns.RecordName;
+import com.yahoo.vespa.hosted.controller.application.TenantAndApplicationId;
 
 import java.util.List;
 import java.util.Objects;
@@ -21,12 +22,14 @@ import java.util.stream.Collectors;
  */
 public class CreateRecords implements NameServiceRequest {
 
+    private final Optional<TenantAndApplicationId> owner;
     private final RecordName name;
     private final Record.Type type;
     private final List<Record> records;
 
     /** DO NOT USE. Public for serialization purposes */
-    public CreateRecords(List<Record> records) {
+    public CreateRecords(Optional<TenantAndApplicationId> owner, List<Record> records) {
+        this.owner = Objects.requireNonNull(owner, "owner must be non-null");
         this.name = requireOneOf(Record::name, records);
         this.type = requireOneOf(Record::type, records);
         this.records = List.copyOf(Objects.requireNonNull(records, "records must be non-null"));
@@ -42,6 +45,11 @@ public class CreateRecords implements NameServiceRequest {
     @Override
     public Optional<RecordName> name() {
         return Optional.of(name);
+    }
+
+    @Override
+    public Optional<TenantAndApplicationId> owner() {
+        return owner;
     }
 
     @Override
@@ -72,12 +80,12 @@ public class CreateRecords implements NameServiceRequest {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         CreateRecords that = (CreateRecords) o;
-        return records.equals(that.records);
+        return owner.equals(that.owner) && records.equals(that.records);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(records);
+        return Objects.hash(owner, records);
     }
 
     /** Find exactly one distinct value of field in given list */

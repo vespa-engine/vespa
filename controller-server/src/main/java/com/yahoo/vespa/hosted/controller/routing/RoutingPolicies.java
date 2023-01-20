@@ -109,6 +109,7 @@ public class RoutingPolicies {
                                                      .getLoadBalancers(instance, deployment.zoneId());
         LoadBalancerAllocation allocation = new LoadBalancerAllocation(loadBalancers, deployment, deploymentSpec);
         Set<ZoneId> inactiveZones = inactiveZones(instance, deploymentSpec);
+        Optional<TenantAndApplicationId> owner = ownerOf(allocation);
         try (var lock = db.lockRoutingPolicies()) {
             RoutingPolicyList applicationPolicies = read(TenantAndApplicationId.from(instance));
             RoutingPolicyList instancePolicies = applicationPolicies.instance(instance);
@@ -121,8 +122,8 @@ public class RoutingPolicies {
             instancePolicies = removePoliciesUnreferencedBy(allocation, instancePolicies, lock);
 
             applicationPolicies = applicationPolicies.replace(instance, instancePolicies);
-            updateGlobalDnsOf(instancePolicies, inactiveZones, lock);
-            updateApplicationDnsOf(applicationPolicies, inactiveZones, lock);
+            updateGlobalDnsOf(instancePolicies, inactiveZones, owner, lock);
+            updateApplicationDnsOf(applicationPolicies, inactiveZones, owner, lock);
         }
     }
 
@@ -132,9 +133,9 @@ public class RoutingPolicies {
             db.writeZoneRoutingPolicy(new ZoneRoutingPolicy(zone, RoutingStatus.create(value, RoutingStatus.Agent.operator,
                                                                                        controller.clock().instant())));
             Map<ApplicationId, RoutingPolicyList> allPolicies = readAll().groupingBy(policy -> policy.id().owner());
-            for (var instancePolicies : allPolicies.values()) {
-                updateGlobalDnsOf(instancePolicies, Set.of(), lock);
-            }
+            allPolicies.forEach((instance, policies) -> {
+                updateGlobalDnsOf(policies, Set.of(), Optional.of(TenantAndApplicationId.from(instance)), lock);
+            });
         }
     }
 
@@ -154,38 +155,44 @@ public class RoutingPolicies {
             RoutingPolicyList effectivePolicies = RoutingPolicyList.copyOf(updatedPolicies.values());
             Map<ApplicationId, RoutingPolicyList> policiesByInstance = effectivePolicies.groupingBy(policy -> policy.id().owner());
             policiesByInstance.forEach((owner, instancePolicies) -> db.writeRoutingPolicies(owner, instancePolicies.asList()));
-            policiesByInstance.forEach((ignored, instancePolicies) -> updateGlobalDnsOf(instancePolicies, Set.of(), lock));
-            updateApplicationDnsOf(effectivePolicies, Set.of(), lock);
+            policiesByInstance.forEach((ignored, instancePolicies) -> updateGlobalDnsOf(instancePolicies,
+                                                                                        Set.of(),
+                                                                                        Optional.of(TenantAndApplicationId.from(deployment.applicationId())),
+                                                                                        lock));
+            updateApplicationDnsOf(effectivePolicies, Set.of(), Optional.of(TenantAndApplicationId.from(deployment.applicationId())), lock);
         }
     }
 
     /** Update global DNS records for given policies */
-    private void updateGlobalDnsOf(RoutingPolicyList instancePolicies, Set<ZoneId> inactiveZones, @SuppressWarnings("unused") Mutex lock) {
+    private void updateGlobalDnsOf(RoutingPolicyList instancePolicies, Set<ZoneId> inactiveZones,
+                                   Optional<TenantAndApplicationId> owner, @SuppressWarnings("unused") Mutex lock) {
         Map<RoutingId, List<RoutingPolicy>> routingTable = instancePolicies.asInstanceRoutingTable();
         for (Map.Entry<RoutingId, List<RoutingPolicy>> routeEntry : routingTable.entrySet()) {
             RoutingId routingId = routeEntry.getKey();
             controller.routing().readDeclaredEndpointsOf(routingId.instance())
                       .named(routingId.endpointId())
                       .not().requiresRotation()
-                      .forEach(endpoint -> updateGlobalDnsOf(endpoint, inactiveZones, routeEntry.getValue()));
+                      .forEach(endpoint -> updateGlobalDnsOf(endpoint, inactiveZones, routeEntry.getValue(), owner));
         }
     }
 
     /** Update global DNS records for given global endpoint */
-    private void updateGlobalDnsOf(Endpoint endpoint, Set<ZoneId> inactiveZones, List<RoutingPolicy> policies) {
+    private void updateGlobalDnsOf(Endpoint endpoint, Set<ZoneId> inactiveZones, List<RoutingPolicy> policies, Optional<TenantAndApplicationId> owner) {
         if (endpoint.scope() != Endpoint.Scope.global) throw new IllegalArgumentException("Endpoint " + endpoint + " is not global");
         // Create a weighted ALIAS per region, pointing to all zones within the same region
         Collection<RegionEndpoint> regionEndpoints = computeRegionEndpoints(policies, inactiveZones);
         regionEndpoints.forEach(regionEndpoint -> {
             if ( ! regionEndpoint.zoneAliasTargets().isEmpty()) {
                 controller.nameServiceForwarder().createAlias(RecordName.from(regionEndpoint.target().name().value()),
-                        regionEndpoint.zoneAliasTargets(),
-                        Priority.normal);
+                                                              regionEndpoint.zoneAliasTargets(),
+                                                              Priority.normal,
+                                                              owner);
             }
             if ( ! regionEndpoint.zoneDirectTargets().isEmpty()) {
                 controller.nameServiceForwarder().createDirect(RecordName.from(regionEndpoint.target().name().value()),
-                        regionEndpoint.zoneDirectTargets(),
-                        Priority.normal);
+                                                               regionEndpoint.zoneDirectTargets(),
+                                                               Priority.normal,
+                                                               owner);
             }
         });
 
@@ -207,12 +214,13 @@ public class RoutingPolicies {
             inactiveLatencyTargets.clear();
         }
 
-        controller.nameServiceForwarder().createAlias(RecordName.from(endpoint.dnsName()), latencyTargets, Priority.normal);
+        controller.nameServiceForwarder().createAlias(RecordName.from(endpoint.dnsName()), latencyTargets, Priority.normal, owner);
         inactiveLatencyTargets.forEach(t -> controller.nameServiceForwarder()
                                                       .removeRecords(Record.Type.ALIAS,
                                                                      RecordName.from(endpoint.dnsName()),
                                                                      RecordData.from(t.name().value()),
-                                                                     Priority.normal));
+                                                                     Priority.normal,
+                                                                     owner));
     }
 
     /** Compute region endpoints and their targets from given policies */
@@ -246,7 +254,8 @@ public class RoutingPolicies {
     }
 
 
-    private void updateApplicationDnsOf(RoutingPolicyList routingPolicies, Set<ZoneId> inactiveZones, @SuppressWarnings("unused") Mutex lock) {
+    private void updateApplicationDnsOf(RoutingPolicyList routingPolicies, Set<ZoneId> inactiveZones,
+                                        Optional<TenantAndApplicationId> owner, @SuppressWarnings("unused") Mutex lock) {
         // In the context of single deployment (which this is) there is only one routing policy per routing ID. I.e.
         // there is no scenario where more than one deployment within an instance can be a member the same
         // application-level endpoint. However, to allow this in the future the routing table remains
@@ -308,15 +317,15 @@ public class RoutingPolicies {
 
             if ( ! aliasTargets.isEmpty()) {
                 nameServiceForwarderIn(targetZone).createAlias(
-                        RecordName.from(applicationEndpoint.dnsName()), aliasTargets, Priority.normal);
+                        RecordName.from(applicationEndpoint.dnsName()), aliasTargets, Priority.normal, owner);
                 nameServiceForwarderIn(targetZone).createAlias(
-                        RecordName.from(applicationEndpoint.legacyRegionalDnsName()), aliasTargets, Priority.normal);
+                        RecordName.from(applicationEndpoint.legacyRegionalDnsName()), aliasTargets, Priority.normal, owner);
             }
             if ( ! directTargets.isEmpty()) {
                 nameServiceForwarderIn(targetZone).createDirect(
-                        RecordName.from(applicationEndpoint.dnsName()), directTargets, Priority.normal);
+                        RecordName.from(applicationEndpoint.dnsName()), directTargets, Priority.normal, owner);
                 nameServiceForwarderIn(targetZone).createDirect(
-                        RecordName.from(applicationEndpoint.legacyRegionalDnsName()), directTargets, Priority.normal);
+                        RecordName.from(applicationEndpoint.legacyRegionalDnsName()), directTargets, Priority.normal, owner);
             }
         });
         inactiveTargetsByEndpoint.forEach((applicationEndpoint, targets) -> {
@@ -326,11 +335,13 @@ public class RoutingPolicies {
                 nameServiceForwarderIn(targetZone).removeRecords(target.type(),
                                                                  RecordName.from(applicationEndpoint.dnsName()),
                                                                  target.data(),
-                                                                 Priority.normal);
+                                                                 Priority.normal,
+                                                                 owner);
                 nameServiceForwarderIn(targetZone).removeRecords(target.type(),
                                                                  RecordName.from(applicationEndpoint.legacyRegionalDnsName()),
                                                                  target.data(),
-                                                                 Priority.normal);
+                                                                 Priority.normal,
+                                                                 owner);
             });
         });
     }
@@ -370,7 +381,7 @@ public class RoutingPolicies {
             var record = policy.canonicalName().isPresent() ?
                     new Record(Record.Type.CNAME, name, RecordData.fqdn(policy.canonicalName().get().value())) :
                     new Record(Record.Type.A, name, RecordData.from(policy.ipAddress().orElseThrow()));
-            nameServiceForwarderIn(policy.id().zone()).createRecord(record, Priority.normal);
+            nameServiceForwarderIn(policy.id().zone()).createRecord(record, Priority.normal, ownerOf(allocation));
             setPrivateDns(endpoint, allocation);
         }
     }
@@ -386,14 +397,14 @@ public class RoutingPolicies {
                                                                           lbWithPrivateService.cloudAccount()))
                                 .ifPresent(challenge -> {
                                     try {
-                                        nameServiceForwarderIn(allocation.deployment.zoneId()).createTxt(challenge.name(), List.of(challenge.data()), Priority.high);
+                                        nameServiceForwarderIn(allocation.deployment.zoneId()).createTxt(challenge.name(), List.of(challenge.data()), Priority.high, ownerOf(allocation));
                                         Instant doom = controller.clock().instant().plusSeconds(30);
                                         while (controller.clock().instant().isBefore(doom)) {
                                             try (Mutex lock = controller.curator().lockNameServiceQueue()) {
                                                 if (controller.curator().readNameServiceQueue().requests().stream()
                                                               .noneMatch(request -> request.name().equals(Optional.of(challenge.name())))) {
                                                     challenge.trigger().run();
-                                                    nameServiceForwarderIn(allocation.deployment.zoneId()).removeRecords(Type.TXT, challenge.name(), Priority.normal);
+                                                    nameServiceForwarderIn(allocation.deployment.zoneId()).removeRecords(Type.TXT, challenge.name(), Priority.normal, ownerOf(allocation));
                                                     return;
                                                 }
                                             }
@@ -421,7 +432,8 @@ public class RoutingPolicies {
             for (var endpoint : policy.zoneEndpointsIn(controller.system(), RoutingMethod.exclusive, controller.zoneRegistry())) {
                 nameServiceForwarderIn(allocation.deployment.zoneId()).removeRecords(Record.Type.CNAME,
                                                                                      RecordName.from(endpoint.dnsName()),
-                                                                                     Priority.normal);
+                                                                                     Priority.normal,
+                                                                                     ownerOf(allocation));
             }
             newPolicies.remove(policy.id());
         }
@@ -443,7 +455,8 @@ public class RoutingPolicies {
             // This removes all ALIAS records having this DNS name. There is no attempt to delete only the entry for the
             // affected zone. Instead, the correct set of records is (re)created by updateGlobalDnsOf
             endpoints.forEach(endpoint -> forwarder.removeRecords(Record.Type.ALIAS, RecordName.from(endpoint.dnsName()),
-                                                                  Priority.normal));
+                                                                  Priority.normal,
+                                                                  ownerOf(allocation)));
         }
     }
 
@@ -467,20 +480,24 @@ public class RoutingPolicies {
                         forwarder.removeRecords(Record.Type.ALIAS,
                                                 RecordName.from(endpoint.dnsName()),
                                                 RecordData.fqdn(policy.canonicalName().get().value()),
-                                                Priority.normal);
+                                                Priority.normal,
+                                                ownerOf(allocation));
                         forwarder.removeRecords(Record.Type.ALIAS,
                                                 RecordName.from(endpoint.legacyRegionalDnsName()),
                                                 RecordData.fqdn(policy.canonicalName().get().value()),
-                                                Priority.normal);
+                                                Priority.normal,
+                                                ownerOf(allocation));
                     } else {
                         forwarder.removeRecords(Record.Type.DIRECT,
                                                 RecordName.from(endpoint.dnsName()),
                                                 RecordData.from(policy.ipAddress().get()),
-                                                Priority.normal);
+                                                Priority.normal,
+                                                ownerOf(allocation));
                         forwarder.removeRecords(Record.Type.DIRECT,
                                                 RecordName.from(endpoint.legacyRegionalDnsName()),
                                                 RecordData.from(policy.ipAddress().get()),
-                                                Priority.normal);
+                                                Priority.normal,
+                                                ownerOf(allocation));
                     }
                 }
             }
@@ -672,6 +689,10 @@ public class RoutingPolicies {
         protected void forward(NameServiceRequest request, Priority priority) {
             // Ignored
         }
+    }
+
+    private static Optional<TenantAndApplicationId> ownerOf(LoadBalancerAllocation allocation) {
+        return Optional.of(TenantAndApplicationId.from(allocation.deployment.applicationId()));
     }
 
 }

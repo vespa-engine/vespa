@@ -274,7 +274,8 @@ public class RoutingController {
             for (var endpoint : rotationEndpoints) {
                 controller.nameServiceForwarder().createRecord(
                         new Record(Record.Type.CNAME, RecordName.from(endpoint.dnsName()), RecordData.fqdn(rotation.name())),
-                        Priority.normal);
+                        Priority.normal,
+                        Optional.of(application.get().id()));
                 List<String> names = List.of(endpoint.dnsName(),
                                              // Include rotation ID as a valid name of this container endpoint
                                              // (required by global routing health checks)
@@ -311,10 +312,12 @@ public class RoutingController {
                                            .orElseThrow(() -> new IllegalArgumentException("No VIP configured for zone " + targetZone));
             controller.nameServiceForwarder().createRecord(
                     new Record(Record.Type.CNAME, RecordName.from(endpoint.dnsName()), RecordData.fqdn(vipHostname)),
-                    Priority.normal);
+                    Priority.normal,
+                    Optional.of(application.get().id()));
             controller.nameServiceForwarder().createRecord(
                     new Record(Record.Type.CNAME, RecordName.from(endpoint.legacyRegionalDnsName()), RecordData.fqdn(vipHostname)),
-                    Priority.normal);
+                    Priority.normal,
+                    Optional.of(application.get().id()));
         }
         Map<ClusterSpec.Id, EndpointList> applicationEndpointsByCluster = applicationEndpoints.groupingBy(Endpoint::cluster);
         for (var kv : applicationEndpointsByCluster.entrySet()) {
@@ -351,7 +354,8 @@ public class RoutingController {
         endpointsToRemove.forEach(endpoint -> controller.nameServiceForwarder()
                                                         .removeRecords(Record.Type.CNAME,
                                                                        RecordName.from(endpoint.dnsName()),
-                                                                       Priority.normal));
+                                                                       Priority.normal,
+                                                                       Optional.of(application.id())));
     }
 
     /**
