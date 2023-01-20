@@ -10,9 +10,12 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.function.Predicate;
 import java.util.function.UnaryOperator;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+
+import static java.util.function.Predicate.not;
 
 /**
  * A queue of outstanding {@link NameServiceRequest}s. Requests in this have not yet been dispatched to a
@@ -21,6 +24,7 @@ import java.util.logging.Logger;
  * This is immutable.
  *
  * @author mpolden
+ * @author jonmv
  */
 public record NameServiceQueue(List<NameServiceRequest> requests) {
 
@@ -78,7 +82,8 @@ public record NameServiceQueue(List<NameServiceRequest> requests) {
             NameServiceRequest request = pending.poll();
             try {
                 request.dispatchTo(nameService);
-            } catch (Exception e) {
+            }
+            catch (Exception e) {
                 log.log(Level.WARNING, "Failed to execute " + request + ": " + Exceptions.toMessageString(e) +
                                        ", request will be moved backwards, and retried");
 
@@ -89,7 +94,7 @@ public record NameServiceQueue(List<NameServiceRequest> requests) {
                 do {
                     if (request.owner().isEmpty()) {
                         pending.push(request);
-                        break;  // Can't modify anything past this, as operator requests must come in order with all others.
+                        break;  // Can't modify anything past this, as owner-less requests must come in order with all others.
                     }
                     (request.owner().equals(owner) ? owned : others).offer(request);
                 }
@@ -125,6 +130,13 @@ public record NameServiceQueue(List<NameServiceRequest> requests) {
         /** Request is queued first. Useful for code that needs to act on effects of a request */
         high
 
+    }
+
+    /** Returns the queue of records present in this, but not in {@code remaining}. */
+    public NameServiceQueue minus(NameServiceQueue remaining) {
+        return new NameServiceQueue(requests.stream()
+                                            .filter(not(new LinkedList<>(remaining.requests())::remove)) // Count duplicates.
+                                            .toList());
     }
 
 }

@@ -15,7 +15,6 @@ import com.yahoo.vespa.hosted.controller.api.integration.dns.RecordName;
 import com.yahoo.vespa.hosted.controller.application.TenantAndApplicationId;
 import com.yahoo.vespa.hosted.controller.dns.NameServiceQueue.Priority;
 import org.junit.jupiter.api.Test;
-import wiremock.org.checkerframework.checker.units.qual.A;
 
 import java.util.ArrayDeque;
 import java.util.Deque;
@@ -26,7 +25,6 @@ import java.util.function.Consumer;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertSame;
-import static org.junit.jupiter.api.Assertions.assertTimeoutPreemptively;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
