@@ -29,8 +29,6 @@ public class SharedLoadBalancerService implements LoadBalancerService {
 
     @Override
     public LoadBalancerInstance create(LoadBalancerSpec spec, boolean force) {
-        if (spec.settings().isPresent() && ! spec.settings().get().isDefault())
-            throw new IllegalArgumentException("custom zone endpoint settings are not supported with " + getClass());
         return new LoadBalancerInstance(Optional.of(DomainName.of(vipHostname)),
                                         Optional.empty(),
                                         Optional.empty(),
