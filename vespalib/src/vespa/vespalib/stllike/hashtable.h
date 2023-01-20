@@ -363,6 +363,7 @@ private:
     }
     template <typename MoveHandler>
     VESPA_DLL_LOCAL void reclaim(MoveHandler & moveHandler, next_t node);
+    VESPA_DLL_LOCAL void force_insert_cold(Value && value, next_t node) __attribute__((noinline));
 };
 
 }

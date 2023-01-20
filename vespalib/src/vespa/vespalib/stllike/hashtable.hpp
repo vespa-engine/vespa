@@ -185,23 +185,29 @@ hashtable<Key, Value, Hash, Equal, KeyExtract, Modulator>::insertInternal(V && n
 
 template <typename Key, typename Value, typename Hash, typename Equal, typename KeyExtract, typename Modulator>
 void
-hashtable<Key, Value, Hash, Equal, KeyExtract, Modulator>::force_insert(Value && value)
-{
+hashtable<Key, Value, Hash, Equal, KeyExtract, Modulator>::force_insert(Value && value) {
     const next_t h = hash(_keyExtractor(value));
-    if ( ! _nodes[h].valid() ) [[likely]] {
+    if (!_nodes[h].valid()) [[likely]] {
         _nodes[h] = std::move(value);
         _count++;
     } else {
-        if (_nodes.size() < _nodes.capacity()) [[likely]] {
-            const next_t p(_nodes[h].getNext());
-            const next_t newIdx(_nodes.size());
-            _nodes[h].setNext(newIdx);
-            _nodes.template emplace_back(std::move(value), p);
-            _count++;
-        } else {
-            resize(_nodes.capacity()*2);
-            force_insert(std::move(value));
-        }
+        force_insert_cold(std::move(value), h);
+    }
+}
+
+template <typename Key, typename Value, typename Hash, typename Equal, typename KeyExtract, typename Modulator>
+void
+hashtable<Key, Value, Hash, Equal, KeyExtract, Modulator>::force_insert_cold(Value && value, next_t h)
+{
+    if (_nodes.size() < _nodes.capacity()) [[likely]] {
+        const next_t p(_nodes[h].getNext());
+        const next_t newIdx(_nodes.size());
+        _nodes[h].setNext(newIdx);
+        _nodes.template emplace_back(std::move(value), p);
+        _count++;
+    } else {
+        resize(_nodes.capacity()*2);
+        force_insert(std::move(value));
     }
 }
 
