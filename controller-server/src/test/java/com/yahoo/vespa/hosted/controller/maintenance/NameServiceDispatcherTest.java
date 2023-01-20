@@ -66,10 +66,25 @@ class NameServiceDispatcherTest {
         var req8 = new CreateRecord(owner0, rec3);
 
         // Queue initially contains a subsequence of requests, 3–6.
-        // The dispatch of requests owned by owner1 will fail, so the remaining list is subsequence or the original.
         var base = new LinkedList<NameServiceRequest>(List.of(req3, req4, req5, req6));
-        tester.curator().writeNameServiceQueue(new NameServiceQueue(base));
 
+        // Whole queue is consumed by dispatcher the first time, and a few records prepended.
+        tester.curator().writeNameServiceQueue(new NameServiceQueue(base));
+        expectations.add(name -> assertEquals(rec1.name(), name));
+        expectations.add(name -> assertEquals(rec4.name(), name));
+        expectations.add(name -> assertEquals(rec3.name(), name));
+        expectations.add(name -> {
+            assertEquals(rec4.name(), name);
+            tester.curator().writeNameServiceQueue(tester.curator().readNameServiceQueue()
+                                                         .with(req1, Priority.high)
+                                                         .with(req2, Priority.high)
+                                                         .with(req1, Priority.high));
+        });
+        assertEquals(1.0, dispatcher.maintain());
+        assertEquals(List.of(req1, req2, req1), tester.curator().readNameServiceQueue().requests());
+
+        // Now, the dispatch of requests owned by owner1 will fail, so the remaining list is subsequence or the original.
+        tester.curator().writeNameServiceQueue(new NameServiceQueue(base));
         AtomicReference<Consumer<RecordName>> failOwner1 = new AtomicReference<>();
         failOwner1.set(name -> {
             assertEquals(rec4.name(), name);
