@@ -186,7 +186,10 @@ MatchToolsFactory(QueryLimiter               & queryLimiter,
       _diversityParams(),
       _valid(false)
 {
-    search::engine::Trace trace(root_trace.getRelativeTime(), root_trace.getLevel(), root_trace.getProfileDepth());
+    search::engine::Trace trace(root_trace.getRelativeTime(), root_trace.getLevel());
+    trace.match_profile_depth(root_trace.match_profile_depth());
+    trace.first_phase_profile_depth(root_trace.first_phase_profile_depth());
+    trace.second_phase_profile_depth(root_trace.second_phase_profile_depth());
     trace.addEvent(4, "Start query setup");
     _query.setWhiteListBlueprint(metaStore.createWhiteListBlueprint());
     trace.addEvent(5, "Deserialize and build query tree");

@@ -26,13 +26,15 @@ Trace::constructTraces() const {
     _traces = & root().setArray("traces");
 }
 
-Trace::Trace(const RelativeTime & relativeTime, uint32_t level, uint32_t profileDepth)
+Trace::Trace(const RelativeTime & relativeTime, uint32_t level)
     : _trace(),
       _root(nullptr),
       _traces(nullptr),
       _relativeTime(relativeTime),
       _level(level),
-      _profileDepth(profileDepth)
+      _match_profile_depth(0),
+      _first_phase_profile_depth(0),
+      _second_phase_profile_depth(0)
 {
 }
 

@@ -54,7 +54,7 @@ class Trace
 {
 public:
     using Cursor = vespalib::slime::Cursor;
-    Trace(const RelativeTime & relativeTime, uint32_t traceLevel, uint32_t profileDepth);
+    Trace(const RelativeTime & relativeTime, uint32_t traceLevel);
     ~Trace();
 
     /**
@@ -90,8 +90,18 @@ public:
     bool shouldTrace(uint32_t level) const { return level <= _level; }
     uint32_t getLevel() const { return _level; }
     Trace & setLevel(uint32_t level) { _level = level; return *this; }
-    Trace & setProfileDepth(uint32_t depth) { _profileDepth = depth; return *this; }
-    uint32_t getProfileDepth() const { return _profileDepth; }
+    Trace &match_profile_depth(int32_t depth) { _match_profile_depth = depth; return *this; }
+    Trace &first_phase_profile_depth(int32_t depth) { _first_phase_profile_depth = depth; return *this; }
+    Trace &second_phase_profile_depth(int32_t depth) { _second_phase_profile_depth = depth; return *this; }
+    Trace &profile_depth(int32_t depth) {
+        match_profile_depth(depth);
+        first_phase_profile_depth(depth);
+        second_phase_profile_depth(depth);
+        return *this;
+    }
+    int32_t match_profile_depth() const { return _match_profile_depth; }
+    int32_t first_phase_profile_depth() const { return _first_phase_profile_depth; }
+    int32_t second_phase_profile_depth() const { return _second_phase_profile_depth; }
     const RelativeTime & getRelativeTime() const { return _relativeTime; }
 private:
     vespalib::Slime & slime() const {
@@ -120,7 +130,9 @@ private:
     mutable Cursor      * _traces;
     const RelativeTime  & _relativeTime;
     uint32_t              _level;
-    uint32_t              _profileDepth;
+    int32_t               _match_profile_depth;
+    int32_t               _first_phase_profile_depth;
+    int32_t               _second_phase_profile_depth;
 };
 
 }
