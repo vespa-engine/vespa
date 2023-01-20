@@ -13,8 +13,6 @@
 #include "fieldvalue.h"
 #include <vespa/document/base/field.h>
 
-#define VESPA_DLL_LOCAL  __attribute__ ((visibility("hidden")))
-
 namespace document {
 
 class ArrayFieldValue;

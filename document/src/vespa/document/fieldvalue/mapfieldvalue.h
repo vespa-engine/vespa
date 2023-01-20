@@ -11,8 +11,6 @@
 #include <vespa/vespalib/util/polymorphicarray.h>
 #include <vespa/vespalib/stllike/hash_map.h>
 
-#define VESPA_DLL_LOCAL  __attribute__ ((visibility("hidden")))
-
 namespace document {
 
 namespace mapfieldvalue {

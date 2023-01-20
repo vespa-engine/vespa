@@ -20,8 +20,6 @@
 #include <vespa/document/util/bytebuffer.h>
 #include <vector>
 
-#define VESPA_DLL_LOCAL  __attribute__ ((visibility("hidden")))
-
 namespace document {
 
 namespace serializablearray {

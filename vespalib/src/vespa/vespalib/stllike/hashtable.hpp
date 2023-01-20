@@ -192,7 +192,7 @@ hashtable<Key, Value, Hash, Equal, KeyExtract, Modulator>::force_insert(Value &&
         _nodes[h] = std::move(value);
         _count++;
     } else {
-        if (_nodes.size() < _nodes.capacity()) {
+        if (_nodes.size() < _nodes.capacity()) [[likely]] {
             const next_t p(_nodes[h].getNext());
             const next_t newIdx(_nodes.size());
             _nodes[h].setNext(newIdx);
