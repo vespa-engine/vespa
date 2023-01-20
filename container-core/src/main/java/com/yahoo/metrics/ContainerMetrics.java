@@ -145,9 +145,13 @@ public enum ContainerMetrics {
     ERROR_INVALID_QUERY_TRANSFORMATION("error.invalid_query_transformation", Unit.OPERATION, "Requests that failed due to invalid query transformation"),
     ERROR_RESULTS_WITH_ERRORS("error.results_with_errors", Unit.OPERATION, "The number of queries with error payload"),
     ERROR_UNSPECIFIED("error.unspecified", Unit.OPERATION, "Requests that failed for an unspecified reason"),
-    ERROR_UNHANDLED_EXCEPTION("error.unhandled_exception", Unit.OPERATION, "Requests that failed due to an unhandled exception");
-    
-    
+    ERROR_UNHANDLED_EXCEPTION("error.unhandled_exception", Unit.OPERATION, "Requests that failed due to an unhandled exception"),
+
+    // Deprecated metrics. TODO: Remove on Vespa 9.
+    SERVER_REJECTED_REQUESTS("serverRejectedRequests", Unit.OPERATION, "Deprecated. Use jdisc.thread_pool.rejected_tasks instead."),
+    SERVER_THREAD_POOL_SIZE("serverThreadPoolSize", Unit.THREAD, "Deprecated. Use jdisc.thread_pool.size instead."),
+    SERVER_ACTIVE_THREADS("serverActiveThreads", Unit.THREAD, "Deprecated. Use jdisc.thread_pool.active_threads instead.");
+        
     private final String name;
     private final Unit unit;
     private final String description;

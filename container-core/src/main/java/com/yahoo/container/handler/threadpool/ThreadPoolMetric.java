@@ -24,12 +24,12 @@ class ThreadPoolMetric {
     }
 
     void reportRejectRequest() {
-        metric.add("serverRejectedRequests", 1L, defaultContext);
+        metric.add(ContainerMetrics.SERVER_REJECTED_REQUESTS.baseName(), 1L, defaultContext);
         metric.add(ContainerMetrics.JDISC_THREAD_POOL_REJECTED_TASKS.baseName(), 1L, defaultContext);
     }
 
     void reportThreadPoolSize(long size) {
-        metric.set("serverThreadPoolSize", size, defaultContext);
+        metric.set(ContainerMetrics.SERVER_THREAD_POOL_SIZE.baseName(), size, defaultContext);
         metric.set(ContainerMetrics.JDISC_THREAD_POOL_SIZE.baseName(), size, defaultContext);
     }
 
@@ -38,7 +38,7 @@ class ThreadPoolMetric {
     }
 
     void reportActiveThreads(long threads) {
-        metric.set("serverActiveThreads", threads, defaultContext);
+        metric.set(ContainerMetrics.SERVER_ACTIVE_THREADS.baseName(), threads, defaultContext);
         metric.set(ContainerMetrics.JDISC_THREAD_POOL_ACTIVE_THREADS.baseName(), threads, defaultContext);
     }
 

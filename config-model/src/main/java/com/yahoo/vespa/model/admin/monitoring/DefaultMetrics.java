@@ -62,10 +62,10 @@ public class DefaultMetrics {
         metrics.add(new Metric(ContainerMetrics.TOTAL_HITS_PER_QUERY.max()));
         metrics.add(new Metric(ContainerMetrics.DEGRADED_QUERIES.rate()));
         metrics.add(new Metric(ContainerMetrics.FAILED_QUERIES.rate()));
-        metrics.add(new Metric("query_latency.average")); // TODO: Remove with Vespa 9
-        metrics.add(new Metric("hits_per_query.average")); // TODO: Remove with Vespa 9
-        metrics.add(new Metric("totalhits_per_query.average")); // TODO: Remove with Vespa 9
-        metrics.add(new Metric("serverActiveThreads.average")); // TODO: Remove on Vespa 9. Use jdisc.thread_pool.active_threads.
+        metrics.add(new Metric(ContainerMetrics.QUERY_LATENCY.average())); // TODO: Remove with Vespa 9
+        metrics.add(new Metric(ContainerMetrics.HITS_PER_QUERY.average())); // TODO: Remove with Vespa 9
+        metrics.add(new Metric(ContainerMetrics.TOTAL_HITS_PER_QUERY.average())); // TODO: Remove with Vespa 9
+        metrics.add(new Metric(ContainerMetrics.SERVER_ACTIVE_THREADS.average())); // TODO: Remove on Vespa 9. Use jdisc.thread_pool.active_threads.
     }
 
     private static void addContentMetrics(Set<Metric> metrics) {

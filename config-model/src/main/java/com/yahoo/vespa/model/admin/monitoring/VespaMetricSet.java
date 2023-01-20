@@ -129,18 +129,6 @@ public class VespaMetricSet {
         addMetric(metrics, ContainerMetrics.HANDLED_REQUESTS.count());
         addMetric(metrics, ContainerMetrics.HANDLED_LATENCY, EnumSet.of(sum, count, max));
         
-        metrics.add(new Metric("serverRejectedRequests.rate"));     // TODO: Remove on Vespa 9. Use jdisc.thread_pool.rejected_tasks.
-        metrics.add(new Metric("serverRejectedRequests.count"));    // TODO: Remove on Vespa 9. Use jdisc.thread_pool.rejected_tasks.
-
-        metrics.add(new Metric("serverThreadPoolSize.max"));        // TODO: Remove on Vespa 9. Use jdisc.thread_pool.size.
-        metrics.add(new Metric("serverThreadPoolSize.last"));       // TODO: Remove on Vespa 9. Use jdisc.thread_pool.size.
-
-        metrics.add(new Metric("serverActiveThreads.min"));         // TODO: Remove on Vespa 9. Use jdisc.thread_pool.active_threads.
-        metrics.add(new Metric("serverActiveThreads.max"));         // TODO: Remove on Vespa 9. Use jdisc.thread_pool.active_threads.
-        metrics.add(new Metric("serverActiveThreads.sum"));         // TODO: Remove on Vespa 9. Use jdisc.thread_pool.active_threads.
-        metrics.add(new Metric("serverActiveThreads.count"));       // TODO: Remove on Vespa 9. Use jdisc.thread_pool.active_threads.
-        metrics.add(new Metric("serverActiveThreads.last"));        // TODO: Remove on Vespa 9. Use jdisc.thread_pool.active_threads.
-
         addMetric(metrics, ContainerMetrics.SERVER_NUM_OPEN_CONNECTIONS, EnumSet.of(max,last, average));
         addMetric(metrics, ContainerMetrics.SERVER_NUM_CONNECTIONS, EnumSet.of(max,last, average));
 
@@ -237,6 +225,11 @@ public class VespaMetricSet {
         addMetric(metrics, ContainerMetrics.JDISC_APPLICATION_FAILED_COMPONENT_GRAPHS.rate());
 
         addMetric(metrics, ContainerMetrics.JDISC_JVM.last());
+        
+        // Deprecated metrics. TODO: Remove on Vespa 9.
+        addMetric(metrics, ContainerMetrics.SERVER_REJECTED_REQUESTS, EnumSet.of(rate, count));             // TODO: Remove on Vespa 9. Use jdisc.thread_pool.rejected_tasks.
+        addMetric(metrics, ContainerMetrics.SERVER_THREAD_POOL_SIZE, EnumSet.of(max, last));                // TODO: Remove on Vespa 9. Use jdisc.thread_pool.rejected_tasks.
+        addMetric(metrics, ContainerMetrics.SERVER_ACTIVE_THREADS, EnumSet.of(min, max, sum, count, last)); // TODO: Remove on Vespa 9. Use jdisc.thread_pool.rejected_tasks.
 
         return metrics;
     }
