@@ -82,8 +82,7 @@ public class ScriptManager {
             for (String content : ilscript.content()) {
                 StatementExpression statement = parse(ilscript.doctype(), parserContext, content);
                 expressions.add(statement);
-                InputExpression.InputFieldNameExtractor inputFieldNameExtractor = new InputExpression.InputFieldNameExtractor();
-                statement.select(inputFieldNameExtractor, inputFieldNameExtractor);
+                List<String> inputFieldNames = InputExpression.InputFieldNameExtractor.runOn(statement);
                 OutputExpression.OutputFieldNameExtractor outputFieldNameExtractor = new OutputExpression.OutputFieldNameExtractor();
                 statement.select(outputFieldNameExtractor, outputFieldNameExtractor);
                 statement.select(fieldPathOptimizer, fieldPathOptimizer);
@@ -91,8 +90,8 @@ public class ScriptManager {
                     String outputFieldName = outputFieldNameExtractor.getOutputFieldNames().get(0);
                     statement.setStatementOutput(documentType, documentType.getField(outputFieldName));
                 }
-                if (inputFieldNameExtractor.getInputFieldNames().size() == 1) {
-                    String fieldName = inputFieldNameExtractor.getInputFieldNames().get(0);
+                if (inputFieldNames.size() == 1) {
+                    String fieldName = inputFieldNames.get(0);
                     ScriptExpression script;
                     if (fieldScripts.containsKey(fieldName)) {
                         DocumentScript prev = fieldScripts.get(fieldName);
@@ -102,11 +101,11 @@ public class ScriptManager {
                     } else {
                         script = new ScriptExpression(statement);
                     }
-                    DocumentScript documentScript = new DocumentScript(ilscript.doctype(), inputFieldNameExtractor.getInputFieldNames(), script);
+                    DocumentScript documentScript = new DocumentScript(ilscript.doctype(), inputFieldNames, script);
                     fieldScripts.put(fieldName, documentScript);
                 } else {
-                    log.log(Level.FINE, "Non single(" + inputFieldNameExtractor.getInputFieldNames().size() +"" +
-                                        ") inputs = " + inputFieldNameExtractor.getInputFieldNames() + ". Script = " + statement);
+                    log.log(Level.FINE, "Non single(" + inputFieldNames.size() +"" +
+                                        ") inputs = " + inputFieldNames + ". Script = " + statement);
                 }
             }
 

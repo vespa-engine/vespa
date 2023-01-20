@@ -206,18 +206,13 @@ public abstract class Expression extends Selectable {
 
     protected static boolean equals(Object lhs, Object rhs) {
         if (lhs == null) {
-            if (rhs != null) {
-                return false;
-            }
+            return rhs == null;
         } else {
             if (rhs == null) {
                 return false;
             }
-            if (!lhs.equals(rhs)) {
-                return false;
-            }
+            return lhs.equals(rhs);
         }
-        return true;
     }
 
     // Convenience For testing

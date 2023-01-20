@@ -191,7 +191,7 @@ public final class IfThenExpression extends CompositeExpression {
         }
         if (!prev.equals(next)) {
             throw new VerificationException(IfThenExpression.class, "Operands require conflicting input types, " +
-                                                  prev.getName() + " vs " + next.getName() + ".");
+                                                                    prev.getName() + " vs " + next.getName() + ".");
         }
         return prev;
     }

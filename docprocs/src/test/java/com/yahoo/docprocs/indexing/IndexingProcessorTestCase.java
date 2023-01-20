@@ -24,11 +24,13 @@ import java.util.List;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
 
 /**
  * @author Simon Thoresen Hult
+ * @author bratseth
  */
 public class IndexingProcessorTestCase {
 
@@ -57,51 +59,7 @@ public class IndexingProcessorTestCase {
     }
 
     @Test
-    public void requireThatIndexerProcessesUpdates() {
-        DocumentType inputType = indexer.getDocumentTypeManager().getDocumentType("music");
-        DocumentUpdate input = new DocumentUpdate(inputType, "id:ns:music::");
-        input.addFieldUpdate(FieldUpdate.createAssign(inputType.getField("isbn"), new StringFieldValue("isbnmarker")));
-        input.addFieldUpdate(FieldUpdate.createAssign(inputType.getField("artist"), new StringFieldValue("69")));
-        DocumentOperation output = process(input);
-
-        assertTrue(output instanceof DocumentUpdate);
-        DocumentUpdate docUpdate = (DocumentUpdate) output;
-
-        assertEquals(3, docUpdate.fieldUpdates().size());
-        {
-            FieldUpdate fieldUpdate = docUpdate.getFieldUpdate("song");
-            assertEquals("song", fieldUpdate.getField().getName());
-            assertEquals(1, fieldUpdate.getValueUpdates().size());
-            ValueUpdate<?> valueUpdate = fieldUpdate.getValueUpdate(0);
-            assertTrue(valueUpdate instanceof AssignValueUpdate);
-            assertEquals(new StringFieldValue("isbnmarker"), valueUpdate.getValue());
-            fieldUpdate = docUpdate.getFieldUpdate("title");
-            assertEquals("title", fieldUpdate.getField().getName());
-            assertEquals(1, fieldUpdate.getValueUpdates().size());
-            valueUpdate = fieldUpdate.getValueUpdate(0);
-            assertTrue(valueUpdate instanceof AssignValueUpdate);
-            assertEquals(new StringFieldValue("69"), valueUpdate.getValue());
-        }
-
-        {
-            FieldUpdate fieldUpdate = docUpdate.getFieldUpdate("title");
-            ValueUpdate<?> valueUpdate = fieldUpdate.getValueUpdate(0);
-            assertEquals("title", fieldUpdate.getField().getName());
-            assertTrue(valueUpdate instanceof AssignValueUpdate);
-            assertEquals(new StringFieldValue("69"), valueUpdate.getValue());
-        }
-        {
-            FieldUpdate fieldUpdate = docUpdate.getFieldUpdate("isbn");
-            ValueUpdate<?> valueUpdate = fieldUpdate.getValueUpdate(0);
-            assertEquals("isbn", fieldUpdate.getField().getName());
-            assertTrue(valueUpdate instanceof AssignValueUpdate);
-            assertEquals(new StringFieldValue("isbnmarker"), valueUpdate.getValue());
-        }
-
-    }
-
-    @Test
-    public void testFieldDependingOnTwoInputs() {
+    public void testFieldUpdates() {
         // 'artist' is assigned to 'title' and vice versa
         // 'combined' gets the value of both
         // 'combinedWithFallback' falls back to an empty string if an input is missing
@@ -124,33 +82,42 @@ public class IndexingProcessorTestCase {
             DocumentType inputType = indexer.getDocumentTypeManager().getDocumentType("music");
             DocumentUpdate input = new DocumentUpdate(inputType, "id:ns:music::");
             input.addFieldUpdate(FieldUpdate.createAssign(inputType.getField("artist"), new StringFieldValue("artist1")));
-            // no title
 
             DocumentUpdate output = (DocumentUpdate)process(input);
-            assertEquals(1, output.fieldUpdates().size());
+            assertEquals(2, output.fieldUpdates().size());
             assertAssignment("title", "artist1", output);
+            assertAssignment("combinedWithFallback", "artist1 ", output);
         }
 
         {   // Just title is set
             DocumentType inputType = indexer.getDocumentTypeManager().getDocumentType("music");
             DocumentUpdate input = new DocumentUpdate(inputType, "id:ns:music::");
             input.addFieldUpdate(FieldUpdate.createAssign(inputType.getField("title"), new StringFieldValue("title1")));
-            // no title
 
             DocumentUpdate output = (DocumentUpdate)process(input);
-            assertEquals(1, output.fieldUpdates().size());
+            assertEquals(2, output.fieldUpdates().size());
             assertAssignment("artist", "title1", output);
+            assertAssignment("combinedWithFallback", " title1", output);
         }
-    }
 
-    @Test
-    public void requireThatEmptyDocumentUpdateOutputDoesNotThrow() {
-        DocumentType inputType = indexer.getDocumentTypeManager().getDocumentType("music");
-        DocumentUpdate input = new DocumentUpdate(inputType, "id:ns:music::");
-        Processing proc = new Processing();
-        proc.getDocumentOperations().add(input);
-        indexer.process(proc);
-        assertEquals(0, proc.getDocumentOperations().size());
+        {   // Neither title nor artist is set: Should not update embeddings even though it has fallbacks for all
+            DocumentType inputType = indexer.getDocumentTypeManager().getDocumentType("music");
+            DocumentUpdate input = new DocumentUpdate(inputType, "id:ns:music::");
+            input.addFieldUpdate(FieldUpdate.createAssign(inputType.getField("isbn"), new StringFieldValue("isbn1")));
+
+            DocumentUpdate output = (DocumentUpdate)process(input);
+            assertEquals(2, output.fieldUpdates().size());
+            assertAssignment("isbn", "isbn1", output);
+            assertAssignment("song", "isbn1", output);
+        }
+
+        {   // None is set: Should not update anything
+            DocumentType inputType = indexer.getDocumentTypeManager().getDocumentType("music");
+            DocumentUpdate input = new DocumentUpdate(inputType, "id:ns:music::");
+
+            DocumentUpdate output = (DocumentUpdate)process(input);
+            assertNull(output);
+        }
     }
 
     @Test
@@ -175,9 +142,10 @@ public class IndexingProcessorTestCase {
         proc.getDocumentOperations().add(input);
         indexer.process(proc);
 
-        List<DocumentOperation> lst = proc.getDocumentOperations();
-        assertEquals(1, lst.size());
-        return lst.get(0);
+        List<DocumentOperation> operations = proc.getDocumentOperations();
+        if (operations.isEmpty()) return null;
+        assertEquals(1, operations.size());
+        return operations.get(0);
     }
 
     @SuppressWarnings("deprecation")

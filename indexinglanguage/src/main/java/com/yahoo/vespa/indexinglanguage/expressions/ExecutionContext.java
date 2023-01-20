@@ -31,9 +31,8 @@ public class ExecutionContext implements FieldTypeAdapter, FieldValueAdapter, Cl
     }
 
     public ExecutionContext execute(Expression exp) {
-        if (exp != null) {
+        if (exp != null)
             exp.execute(this);
-        }
         return this;
     }
 
@@ -65,9 +64,8 @@ public class ExecutionContext implements FieldTypeAdapter, FieldValueAdapter, Cl
 
     @Override
     public ExecutionContext setOutputValue(Expression exp, String fieldName, FieldValue fieldValue) {
-        if (adapter == null) {
+        if (adapter == null)
             throw new IllegalStateException("Can not set field '" + fieldName + "' because adapter is null.");
-        }
         adapter.setOutputValue(exp, fieldName, fieldValue);
         return this;
     }

@@ -24,15 +24,9 @@ public class InputTestCase {
 
     @Test
     public void requireThatHashCodeAndEqualsAreImplemented() {
-        Expression exp = new InputExpression(null);
-        assertFalse(exp.equals(new Object()));
-        assertFalse(exp.equals(new InputExpression("foo")));
-        assertEquals(exp, new InputExpression(null));
-        assertEquals(exp.hashCode(), new InputExpression(null).hashCode());
-
-        exp = new InputExpression("foo");
-        assertFalse(exp.equals(new Object()));
-        assertFalse(exp.equals(new InputExpression("bar")));
+        Expression exp = new InputExpression("foo");
+        assertNotEquals(exp, new Object());
+        assertNotEquals(exp, new InputExpression("bar"));
         assertEquals(exp, new InputExpression("foo"));
         assertEquals(exp.hashCode(), new InputExpression("foo").hashCode());
     }
