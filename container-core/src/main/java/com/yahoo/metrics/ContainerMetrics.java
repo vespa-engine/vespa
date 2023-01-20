@@ -15,7 +15,7 @@ public enum ContainerMetrics {
     JDISC_GC_MS("jdisc.gc.ms", Unit.MILLISECOND, "Time spent in JVM garbage collection"),
     JDISC_JVM("jdisc.jvm", Unit.VERSION, "JVM runtime version"),
     JDISC_MEMORY_MAPPINGS("jdisc.memory_mappings", Unit.OPERATION, "JDISC Memory mappings"),
-    JDISC_OPEN_FILE_DESCRIPTORS("jdisc.open_file_descriptors.max", Unit.ITEM, "JDISC Open file descriptors"),
+    JDISC_OPEN_FILE_DESCRIPTORS("jdisc.open_file_descriptors", Unit.ITEM, "JDISC Open file descriptors"),
 
     JDISC_THREAD_POOL_UNHANDLED_EXCEPTIONS("jdisc.thread_pool.unhandled_exceptions", Unit.THREAD, "Number of exceptions thrown by tasks"),
     JDISC_THREAD_POOL_WORK_QUEUE_CAPACITY("jdisc.thread_pool.work_queue.capacity", Unit.THREAD, "Capacity of the task queue"),
