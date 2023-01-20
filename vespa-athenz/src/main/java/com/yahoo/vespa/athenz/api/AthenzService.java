@@ -31,6 +31,10 @@ public class AthenzService implements AthenzIdentity {
         this.serviceName = service.serviceName;
     }
 
+    public AthenzResourceName toResourceName() {
+        return new AthenzResourceName(domain, "service." + serviceName);
+    }
+
     @Override
     public AthenzDomain getDomain() {
         return domain;
