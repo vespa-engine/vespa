@@ -33,6 +33,7 @@ func (c *defaultHTTPClient) Do(request *http.Request, timeout time.Duration) (re
 func (c *defaultHTTPClient) UseCertificate(certificates []tls.Certificate) {
 	c.client.Transport = &http.Transport{TLSClientConfig: &tls.Config{
 		Certificates: certificates,
+		MinVersion:   tls.VersionTLS12,
 	}}
 }
 
