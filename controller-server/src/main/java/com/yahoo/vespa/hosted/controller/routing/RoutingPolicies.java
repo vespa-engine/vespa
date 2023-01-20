@@ -133,9 +133,9 @@ public class RoutingPolicies {
             db.writeZoneRoutingPolicy(new ZoneRoutingPolicy(zone, RoutingStatus.create(value, RoutingStatus.Agent.operator,
                                                                                        controller.clock().instant())));
             Map<ApplicationId, RoutingPolicyList> allPolicies = readAll().groupingBy(policy -> policy.id().owner());
-            for (var instancePolicies : allPolicies.values()) {
-                updateGlobalDnsOf(instancePolicies, Set.of(), Optional.empty(), lock);
-            }
+            allPolicies.forEach((instance, policies) -> {
+                updateGlobalDnsOf(policies, Set.of(), Optional.of(TenantAndApplicationId.from(instance)), lock);
+            });
         }
     }
 
