@@ -11,6 +11,7 @@ import com.yahoo.jdisc.handler.ContentChannel;
 import com.yahoo.jdisc.handler.ResponseHandler;
 import com.yahoo.jdisc.handler.UnsafeContentInputStream;
 import com.yahoo.jdisc.http.server.jetty.AccessLoggingRequestHandler;
+import com.yahoo.metrics.ContainerMetrics;
 import com.yahoo.yolean.Exceptions;
 
 import java.io.IOException;
@@ -36,7 +37,7 @@ public abstract class ThreadedHttpRequestHandler extends ThreadedRequestHandler 
 
     public static final String CONTENT_TYPE = "Content-Type";
     private static final String RENDERING_ERRORS = "rendering_errors";
-    private static final String UNHANDLED_EXCEPTIONS_METRIC = "jdisc.http.handler.unhandled_exceptions";
+    private static final String UNHANDLED_EXCEPTIONS_METRIC = ContainerMetrics.JDISC_HTTP_HANDLER_UNHANDLED_EXCEPTIONS.baseName();
 
     /** Logger for subclasses */
     protected final Logger log;
