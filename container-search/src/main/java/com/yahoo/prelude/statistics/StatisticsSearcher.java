@@ -7,6 +7,7 @@ import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.jdisc.Metric;
 import com.yahoo.metrics.simple.MetricReceiver;
 import com.yahoo.metrics.simple.MetricSettings;
+import com.yahoo.metrics.ContainerMetrics;
 import com.yahoo.processing.request.CompoundName;
 import com.yahoo.search.Query;
 import com.yahoo.search.Result;
@@ -57,24 +58,24 @@ public class StatisticsSearcher extends Searcher {
 
     private static final CompoundName IGNORE_QUERY = new CompoundName("metrics.ignore");
     private static final String MAX_QUERY_LATENCY_METRIC = "max_query_latency";
-    private static final String EMPTY_RESULTS_METRIC = "empty_results";
-    private static final String HITS_PER_QUERY_METRIC = "hits_per_query";
-    private static final String TOTALHITS_PER_QUERY_METRIC = "totalhits_per_query";
-    private static final String FAILED_QUERIES_METRIC = "failed_queries";
+    private static final String EMPTY_RESULTS_METRIC = ContainerMetrics.EMPTY_RESULTS.baseName();
+    private static final String HITS_PER_QUERY_METRIC = ContainerMetrics.HITS_PER_QUERY.baseName();
+    private static final String TOTALHITS_PER_QUERY_METRIC = ContainerMetrics.TOTAL_HITS_PER_QUERY.baseName();
+    private static final String FAILED_QUERIES_METRIC = ContainerMetrics.FAILED_QUERIES.baseName();
     private static final String MEAN_QUERY_LATENCY_METRIC = "mean_query_latency";
-    private static final String QUERY_LATENCY_METRIC = "query_latency";
-    private static final String QUERY_TIMEOUT_METRIC = "query_timeout";
-    private static final String QUERY_HIT_OFFSET_METRIC = "query_hit_offset";
-    private static final String QUERIES_METRIC = "queries";
-    private static final String PEAK_QPS_METRIC = "peak_qps";
-    private static final String DOCS_COVERED_METRIC = "documents_covered";
-    private static final String DOCS_TOTAL_METRIC = "documents_total";
-    private static final String DOCS_TARGET_TOTAL_METRIC = "documents_target_total";
-    private static final String DEGRADED_QUERIES_METRIC = "degraded_queries";
-    private static final String RELEVANCE_AT_1_METRIC = "relevance.at_1";
-    private static final String RELEVANCE_AT_3_METRIC = "relevance.at_3";
-    private static final String RELEVANCE_AT_10_METRIC = "relevance.at_10";
-    private static final String QUERY_ITEM_COUNT = "query_item_count";
+    private static final String QUERY_LATENCY_METRIC = ContainerMetrics.QUERY_LATENCY.baseName();
+    private static final String QUERY_TIMEOUT_METRIC = ContainerMetrics.QUERY_TIMEOUT.baseName();
+    private static final String QUERY_HIT_OFFSET_METRIC = ContainerMetrics.QUERY_HIT_OFFSET.baseName();
+    private static final String QUERIES_METRIC = ContainerMetrics.QUERIES.baseName();
+    private static final String PEAK_QPS_METRIC = ContainerMetrics.PEAK_QPS.baseName();
+    private static final String DOCS_COVERED_METRIC = ContainerMetrics.DOCUMENTS_COVERED.baseName();
+    private static final String DOCS_TOTAL_METRIC = ContainerMetrics.DOCUMENTS_TOTAL.baseName();
+    private static final String DOCS_TARGET_TOTAL_METRIC = ContainerMetrics.DOCUMENTS_TARGET_TOTAL.baseName();
+    private static final String DEGRADED_QUERIES_METRIC = ContainerMetrics.DEGRADED_QUERIES.baseName();
+    private static final String RELEVANCE_AT_1_METRIC = ContainerMetrics.RELEVANCE_AT_1.baseName();
+    private static final String RELEVANCE_AT_3_METRIC = ContainerMetrics.RELEVANCE_AT_3.baseName();
+    private static final String RELEVANCE_AT_10_METRIC = ContainerMetrics.RELEVANCE_AT_10.baseName();
+    private static final String QUERY_ITEM_COUNT = ContainerMetrics.QUERY_ITEM_COUNT.baseName();
 
     @SuppressWarnings("unused") // all the work is done by the callback
     private final PeakQpsReporter peakQpsReporter;
@@ -298,7 +299,7 @@ public class StatisticsSearcher extends Searcher {
         metric.add(FAILED_QUERIES_METRIC, 1, metricContext);
 
         if (result == null) // the chain threw an exception
-            metric.add("error.unhandled_exception", 1, metricContext);
+            metric.add(ContainerMetrics.ERROR_UNHANDLED_EXCEPTION.baseName(), 1, metricContext);
     }
 
     /**
@@ -317,29 +318,29 @@ public class StatisticsSearcher extends Searcher {
             int code = m.getCode();
             Metric.Context c = getDimensions(m.getSource());
             if (code == TIMEOUT.code) {
-                metric.add("error.timeout", 1, c);
+                metric.add(ContainerMetrics.ERROR_TIMEOUT.baseName(), 1, c);
             } else if (code == NO_BACKENDS_IN_SERVICE.code) {
-                metric.add("error.backends_oos", 1, c);
+                metric.add(ContainerMetrics.ERROR_BACKENDS_OOS.baseName(), 1, c);
             } else if (code == ERROR_IN_PLUGIN.code) {
-                metric.add("error.plugin_failure", 1, c);
+                metric.add(ContainerMetrics.ERROR_PLUGIN_FAILURE.baseName(), 1, c);
             } else if (code == BACKEND_COMMUNICATION_ERROR.code) {
-                metric.add("error.backend_communication_error", 1, c);
+                metric.add(ContainerMetrics.ERROR_BACKEND_COMMUNICATION_ERROR.baseName(), 1, c);
             } else if (code == EMPTY_DOCUMENTS.code) {
-                metric.add("error.empty_document_summaries", 1, c);
+                metric.add(ContainerMetrics.ERROR_EMPTY_DOCUMENT_SUMMARIES.baseName(), 1, c);
             } else if (code == ILLEGAL_QUERY.code) {
-                metric.add("error.illegal_query", 1, c);
+                metric.add(ContainerMetrics.ERROR_ILLEGAL_QUERY.baseName(), 1, c);
             } else if (code == INVALID_QUERY_PARAMETER.code) {
-                metric.add("error.invalid_query_parameter", 1, c);
+                metric.add(ContainerMetrics.ERROR_INVALID_QUERY_PARAMETER.baseName(), 1, c);
             } else if (code == INTERNAL_SERVER_ERROR.code) {
-                metric.add("error.internal_server_error", 1, c);
+                metric.add(ContainerMetrics.ERROR_INTERNAL_SERVER_ERROR.baseName(), 1, c);
             } else if (code == SERVER_IS_MISCONFIGURED.code) {
-                metric.add("error.misconfigured_server", 1, c);
+                metric.add(ContainerMetrics.ERROR_MISCONFIGURED_SERVER.baseName(), 1, c);
             } else if (code == INVALID_QUERY_TRANSFORMATION.code) {
-                metric.add("error.invalid_query_transformation", 1, c);
+                metric.add(ContainerMetrics.ERROR_INVALID_QUERY_TRANSFORMATION.baseName(), 1, c);
             } else if (code == RESULT_HAS_ERRORS.code) {
-                metric.add("error.result_with_errors", 1, c);
+                metric.add(ContainerMetrics.ERROR_RESULTS_WITH_ERRORS.baseName(), 1, c);
             } else if (code == UNSPECIFIED.code) {
-                metric.add("error.unspecified", 1, c);
+                metric.add(ContainerMetrics.ERROR_UNSPECIFIED.baseName(), 1, c);
             }
         }
     }

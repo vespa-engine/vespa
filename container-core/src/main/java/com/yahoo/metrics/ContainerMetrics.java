@@ -138,6 +138,7 @@ public enum ContainerMetrics {
     ERROR_PLUGIN_FAILURE("error.plugin_failure", Unit.OPERATION, "Requests that failed due to plugin failure"),
     ERROR_BACKEND_COMMUNICATION_ERROR("error.backend_communication_error", Unit.OPERATION, "Requests that failed due to backend communication error"),
     ERROR_EMPTY_DOCUMENT_SUMMARIES("error.empty_document_summaries", Unit.OPERATION, "Requests that failed due to missing document summaries"),
+    ERROR_ILLEGAL_QUERY("error.illegal_query", Unit.OPERATION, "Requests that failed due to illegal queries"),
     ERROR_INVALID_QUERY_PARAMETER("error.invalid_query_parameter", Unit.OPERATION, "Requests that failed due to invalid query parameters"),
     ERROR_INTERNAL_SERVER_ERROR("error.internal_server_error", Unit.OPERATION, "Requests that failed due to internal server error"),
     ERROR_MISCONFIGURED_SERVER("error.misconfigured_server", Unit.OPERATION, "Requests that failed due to misconfigured server"),
