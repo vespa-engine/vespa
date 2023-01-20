@@ -41,10 +41,11 @@ public class SearchResponse {
         }
     }
 
-    static boolean isSuccess(Result r) {
-        if (r.hits().getErrorHit() == null) return true;
-        for (Hit hit : r.hits()) {
-            if (!hit.isMeta()) return true; // contains data : success
+    static boolean isSuccess(Result result) {
+        if (result.hits().getErrorHit() == null) return true;
+        for (Hit hit : result.hits()) {
+            if (hit.isMeta()) continue;
+            if ( ! hit.isFillable() || ! hit.getFilled().isEmpty()) return true;
         }
         return false;
     }
