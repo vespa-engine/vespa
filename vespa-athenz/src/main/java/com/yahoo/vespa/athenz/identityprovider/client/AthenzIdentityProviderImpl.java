@@ -10,6 +10,7 @@ import com.yahoo.container.core.identity.IdentityConfig;
 import com.yahoo.container.jdisc.athenz.AthenzIdentityProvider;
 import com.yahoo.container.jdisc.athenz.AthenzIdentityProviderException;
 import com.yahoo.jdisc.Metric;
+import com.yahoo.metrics.ContainerMetrics;
 import com.yahoo.security.KeyStoreBuilder;
 import com.yahoo.security.Pkcs10Csr;
 import com.yahoo.security.SslContextBuilder;
@@ -75,7 +76,7 @@ public final class AthenzIdentityProviderImpl extends AbstractComponent implemen
     private static final Path CLIENT_TRUST_STORE = Paths.get("/opt/yahoo/share/ssl/certs/yahoo_certificate_bundle.pem");
     private static final Path ATHENZ_TRUST_STORE = Paths.get("/opt/yahoo/share/ssl/certs/athenz_certificate_bundle.pem");
 
-    public static final String CERTIFICATE_EXPIRY_METRIC_NAME = "athenz-tenant-cert.expiry.seconds";
+    public static final String CERTIFICATE_EXPIRY_METRIC_NAME = ContainerMetrics.ATHENZ_TENANT_CERT_EXPIRY_SECONDS.baseName();
 
     private volatile AthenzCredentials credentials;
     private final Metric metric;
