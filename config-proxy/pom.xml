@@ -52,6 +52,7 @@
       <groupId>com.yahoo.vespa</groupId>
       <artifactId>container-apache-http-client-bundle</artifactId>
       <version>${project.version}</version>
+      <scope>provided</scope>
     </dependency>
     <dependency>
       <groupId>org.slf4j</groupId>

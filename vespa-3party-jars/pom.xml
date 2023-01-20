@@ -26,6 +26,17 @@
             <type>pom</type>
         </dependency>
         <dependency>
+            <groupId>com.yahoo.vespa</groupId>
+            <artifactId>container-apache-http-client-bundle</artifactId>
+            <version>${project.version}</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>*</groupId>
+                    <artifactId>*</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+        <dependency>
             <groupId>org.bouncycastle</groupId>
             <artifactId>bcpkix-jdk18on</artifactId>
         </dependency>
@@ -58,6 +69,7 @@
                     <overWriteReleases>false</overWriteReleases>
                     <overWriteSnapshots>false</overWriteSnapshots>
                     <excludeTransitive>false</excludeTransitive>
+                    <excludeGroupIds>com.yahoo.vespa</excludeGroupIds>
                 </configuration>
             </plugin>
         </plugins>
