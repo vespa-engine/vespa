@@ -21,6 +21,7 @@ import com.yahoo.jdisc.Metric;
 import com.yahoo.jdisc.Request;
 import com.yahoo.language.process.Embedder;
 import com.yahoo.language.provider.DefaultEmbedderProvider;
+import com.yahoo.metrics.ContainerMetrics;
 import com.yahoo.net.HostName;
 import com.yahoo.net.UriTools;
 import com.yahoo.prelude.query.parser.ParseException;
@@ -79,7 +80,7 @@ public class SearchHandler extends LoggingRequestHandler {
 
     /** Event name for number of connections to the search subsystem */
     private static final String SEARCH_CONNECTIONS = "search_connections";
-    static final String RENDER_LATENCY_METRIC = "jdisc.render.latency";
+    static final String RENDER_LATENCY_METRIC = ContainerMetrics.JDISC_RENDER_LATENCY.baseName();
     static final String MIME_DIMENSION = "mime";
     static final String RENDERER_DIMENSION = "renderer";
 
