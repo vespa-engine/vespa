@@ -36,23 +36,15 @@ public class ScriptManager {
 
     private Map<String, DocumentScript> getScripts(DocumentType inputType) {
         Map<String, DocumentScript> scripts = documentFieldScripts.get(inputType.getName());
-        if (scripts != null) {
-            log.log(Level.FINE, "Using script for type '%s'.", inputType.getName());
-            return scripts;
+        if (scripts != null) return scripts;
+        for (Map.Entry<String, Map<String, DocumentScript>> entry : documentFieldScripts.entrySet()) {
+            if (inputType.inherits(docTypeMgr.getDocumentType(entry.getKey())))
+                return entry.getValue();
         }
         for (Map.Entry<String, Map<String, DocumentScript>> entry : documentFieldScripts.entrySet()) {
-            if (inputType.inherits(docTypeMgr.getDocumentType(entry.getKey()))) {
-                log.log(Level.FINE, "Using script of super-type '%s'.", entry.getKey());
+            if (docTypeMgr.getDocumentType(entry.getKey()).inherits(inputType))
                 return entry.getValue();
-            }
         }
-        for (Map.Entry<String, Map<String, DocumentScript>> entry : documentFieldScripts.entrySet()) {
-            if (docTypeMgr.getDocumentType(entry.getKey()).inherits(inputType)) {
-                log.log(Level.FINE, "Using script of sub-type '%s'.", entry.getKey());
-                return entry.getValue();
-            }
-        }
-        log.log(Level.FINE, "No script for type '%s'.", inputType.getName());
         return null;
     }
 
@@ -64,17 +56,14 @@ public class ScriptManager {
         Map<String, DocumentScript> fieldScripts = getScripts(inputType);
         if (fieldScripts != null) {
             DocumentScript script = fieldScripts.get(inputFieldName);
-            if (script != null) {
-                log.log(Level.FINE, "Using script for type '%s' and field '%s'.", inputType.getName(), inputFieldName);
-                return script;
-            }
+            if (script != null) return script;
         }
         return null;
     }
 
     /**
-     * Returns an unmodifiable map from document type name to a map of the scripts which must be run given an update
-     * to each possible field in that type.
+     * Returns an unmodifiable map from document type name to a map of the subset of indexing statements
+     * to run for each input field which *only* depend on that field.
      */
     private static Map<String, Map<String, DocumentScript>>  createScriptsMap(DocumentTypeManager docTypeMgr,
                                                                               IlscriptsConfig config,
@@ -116,7 +105,8 @@ public class ScriptManager {
                     DocumentScript documentScript = new DocumentScript(ilscript.doctype(), inputFieldNameExtractor.getInputFieldNames(), script);
                     fieldScripts.put(fieldName, documentScript);
                 } else {
-                    log.log(Level.FINE, "Non single(" + inputFieldNameExtractor.getInputFieldNames().size() +") inputs = " + inputFieldNameExtractor.getInputFieldNames() + ". Script = " + statement);
+                    log.log(Level.FINE, "Non single(" + inputFieldNameExtractor.getInputFieldNames().size() +"" +
+                                        ") inputs = " + inputFieldNameExtractor.getInputFieldNames() + ". Script = " + statement);
                 }
             }
 

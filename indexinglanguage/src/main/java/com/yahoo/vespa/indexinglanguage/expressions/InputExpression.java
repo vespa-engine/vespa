@@ -57,13 +57,8 @@ public final class InputExpression extends Expression {
 
     @Override
     public boolean equals(Object obj) {
-        if (!(obj instanceof InputExpression)) {
-            return false;
-        }
-        InputExpression rhs = (InputExpression)obj;
-        if (!equals(fieldName, rhs.fieldName)) {
-            return false;
-        }
+        if ( ! (obj instanceof InputExpression rhs)) return false;
+        if ( ! equals(fieldName, rhs.fieldName)) return false;
         return true;
     }
 

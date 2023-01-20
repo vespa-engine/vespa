@@ -44,12 +44,12 @@ public class SimpleAdapterFactory implements AdapterFactory {
     }
 
     @Override
-    public List<UpdateAdapter> newUpdateAdapterList(DocumentUpdate upd) {
+    public List<UpdateAdapter> newUpdateAdapterList(DocumentUpdate update) {
         List<UpdateAdapter> ret = new ArrayList<>();
-        DocumentType docType = upd.getDocumentType();
-        DocumentId docId = upd.getId();
-        Document complete = new Document(docType, upd.getId());
-        for (FieldPathUpdate fieldUpd : upd) {
+        DocumentType docType = update.getDocumentType();
+        DocumentId docId = update.getId();
+        Document complete = new Document(docType, update.getId());
+        for (FieldPathUpdate fieldUpd : update) {
             try {
                 if (FieldPathUpdateHelper.isComplete(fieldUpd)) {
                     // A 'complete' field path update is basically a regular top-level field update
@@ -64,7 +64,7 @@ public class SimpleAdapterFactory implements AdapterFactory {
                                                    "' to field '" + fieldUpd.getFieldPath() + "'", e);
             }
         }
-        for (FieldUpdate fieldUpdate : upd.fieldUpdates()) {
+        for (FieldUpdate fieldUpdate : update.fieldUpdates()) {
             Field field = fieldUpdate.getField();
             for (ValueUpdate valueUpdate : fieldUpdate.getValueUpdates()) {
                 try {

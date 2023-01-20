@@ -16,10 +16,9 @@ import com.yahoo.document.fieldpathupdate.RemoveFieldPathUpdate;
  */
 public abstract class FieldPathUpdateHelper {
 
+    /** Returns true if this update completely replaces the value of the field, false otherwise. */
     public static boolean isComplete(FieldPathUpdate update) {
-        if (!(update instanceof AssignFieldPathUpdate)) {
-            return false;
-        }
+        if (!(update instanceof AssignFieldPathUpdate)) return false;
         // Only consider field path updates that touch a top-level field as 'complete',
         // as these may be converted to regular field value updates.
         return ((update.getFieldPath().size() == 1)
