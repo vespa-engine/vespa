@@ -15,11 +15,12 @@ import (
 )
 
 type Options struct {
-	container Container
-	classPath []string
-	jvmArgs   util.ArrayList[string]
-	mainClass string
-	fixSpec   util.FixSpec
+	container   Container
+	classPath   []string
+	jvmArgs     util.ArrayList[string]
+	mainClass   string
+	jarWithDeps string
+	fixSpec     util.FixSpec
 }
 
 func NewOptions(c Container) *Options {
@@ -31,11 +32,12 @@ func NewOptions(c Container) *Options {
 		FileMode: 0644,
 	}
 	return &Options{
-		container: c,
-		classPath: make([]string, 0, 10),
-		jvmArgs:   make([]string, 0, 100),
-		mainClass: DEFAULT_MAIN_CLASS,
-		fixSpec:   fixSpec,
+		container:   c,
+		classPath:   make([]string, 0, 10),
+		jvmArgs:     make([]string, 0, 100),
+		jarWithDeps: DEFAULT_JAR_WITH_DEPS,
+		mainClass:   DEFAULT_MAIN_CLASS,
+		fixSpec:     fixSpec,
 	}
 }
 
@@ -52,7 +54,7 @@ func (opts *Options) AppendOption(arg string) {
 }
 
 func (opts *Options) ClassPath() string {
-	cp := defaults.UnderVespaHome(DEFAULT_CP_FILE)
+	cp := defaults.UnderVespaHome(opts.jarWithDeps)
 	for _, x := range opts.classPath {
 		cp = fmt.Sprintf("%s:%s", cp, x)
 	}

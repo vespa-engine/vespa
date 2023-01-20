@@ -59,6 +59,15 @@ func VespaHostname() string {
 	return DEFAULT_VESPA_HOST
 }
 
+func VespaLogFile() string {
+	if env := os.Getenv(envvars.VESPA_LOG_TARGET); env != "" {
+		if strings.HasPrefix(env, "file:") {
+			return strings.TrimPrefix(env, "file:")
+		}
+	}
+	return UnderVespaHome("logs/vespa/vespa.log")
+}
+
 // Compute the port number where the Vespa webservice
 // container should be available.
 func VespaContainerWebServicePort() int {

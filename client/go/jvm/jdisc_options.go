@@ -8,8 +8,8 @@ import (
 )
 
 const (
-	DEFAULT_MAIN_CLASS = "com.yahoo.jdisc.core.StandaloneMain"
-	DEFAULT_CP_FILE    = "lib/jars/jdisc_core-jar-with-dependencies.jar"
+	DEFAULT_MAIN_CLASS    = "com.yahoo.jdisc.core.StandaloneMain"
+	DEFAULT_JAR_WITH_DEPS = "lib/jars/jdisc_core-jar-with-dependencies.jar"
 )
 
 func (opts *Options) AddCommonJdiscProperties() {

@@ -48,7 +48,7 @@ func statNoSymlinks(path string) (info os.FileInfo, err error) {
 		if (info.Mode() & os.ModeSymlink) != 0 {
 			return nil, fmt.Errorf("the path '%s' is a symlink, not allowed", name)
 		}
-		trace.Debug("lstat", name, "=>", info.Mode(), err)
+		trace.SpamDebug("lstat", name, "=>", info.Mode(), err)
 	}
 	return info, err
 }
@@ -71,13 +71,13 @@ func (spec *FixSpec) FixDir(dirName string) {
 		err = fmt.Errorf("Not a directory: '%s'", dirName)
 		spec.complainAndExit(err, dirName, spec.DirMode)
 	}
-	trace.Debug("chown: ", dirName, spec.UserId, spec.GroupId)
+	trace.SpamDebug("chown: ", dirName, spec.UserId, spec.GroupId)
 	err = os.Chown(dirName, spec.UserId, spec.GroupId)
 	if err != nil {
 		spec.ensureWritableDir(dirName)
 		return
 	}
-	trace.Debug("chmod: ", dirName, spec.DirMode)
+	trace.SpamDebug("chmod: ", dirName, spec.DirMode)
 	err = os.Chmod(dirName, spec.DirMode)
 	if err != nil {
 		spec.ensureWritableDir(dirName)
@@ -98,13 +98,13 @@ func (spec *FixSpec) FixFile(fileName string) {
 		err = fmt.Errorf("Should not be a directory: '%s'", fileName)
 		spec.complainAndExit(err, fileName, spec.FileMode)
 	}
-	trace.Debug("chown: ", fileName, spec.UserId, spec.GroupId)
+	trace.SpamDebug("chown: ", fileName, spec.UserId, spec.GroupId)
 	err = os.Chown(fileName, spec.UserId, spec.GroupId)
 	if err != nil {
 		spec.ensureWritableFile(fileName)
 		return
 	}
-	trace.Debug("chmod: ", fileName, spec.FileMode)
+	trace.SpamDebug("chmod: ", fileName, spec.FileMode)
 	err = os.Chmod(fileName, spec.FileMode)
 	if err != nil {
 		spec.ensureWritableFile(fileName)

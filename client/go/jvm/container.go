@@ -65,7 +65,9 @@ func (cb *containerBase) Exec() {
 	p := prog.NewSpec(argv)
 	p.ConfigureNumaCtl()
 	cb.JvmOptions().exportEnvSettings(p)
-	writeEnvAsProperties(p.EffectiveEnv(), cb.propsFile)
+	if cb.propsFile != "" {
+		writeEnvAsProperties(p.EffectiveEnv(), cb.propsFile)
+	}
 	trace.Info("starting container; env:", readableEnv(p.Env))
 	trace.Info("starting container; exec:", argv)
 	err := p.Run()

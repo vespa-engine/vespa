@@ -50,6 +50,10 @@ func Debug(v ...interface{}) {
 	outputTracing(levelDebug, v...)
 }
 
+func SpamDebug(v ...interface{}) {
+	outputTracing(levelSpam, v...)
+}
+
 func Warning(v ...interface{}) {
 	outputTracing(levelWarning, v...)
 }
