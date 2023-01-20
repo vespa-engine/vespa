@@ -14,7 +14,11 @@ import static com.yahoo.metrics.Suffix.average;
 import static com.yahoo.metrics.Suffix.count;
 import static com.yahoo.metrics.Suffix.last;
 import static com.yahoo.metrics.Suffix.max;
+import static com.yahoo.metrics.Suffix.min;
 import static com.yahoo.metrics.Suffix.sum;
+import static com.yahoo.metrics.Suffix.rate;
+import static com.yahoo.metrics.Suffix.ninety_five_percentile;
+import static com.yahoo.metrics.Suffix.ninety_nine_percentile;
 import static com.yahoo.vespa.model.admin.monitoring.DefaultVespaMetrics.defaultVespaMetricSet;
 import static java.util.Collections.singleton;
 
@@ -137,32 +141,29 @@ public class VespaMetricSet {
         metrics.add(new Metric("serverActiveThreads.count"));       // TODO: Remove on Vespa 9. Use jdisc.thread_pool.active_threads.
         metrics.add(new Metric("serverActiveThreads.last"));        // TODO: Remove on Vespa 9. Use jdisc.thread_pool.active_threads.
 
-        addMetric(metrics, ContainerMetrics.SERVER_NUM_OPEN_CONNECTIONS.baseName(), List.of("max", "last", "average"));
-        addMetric(metrics, ContainerMetrics.SERVER_NUM_CONNECTIONS.baseName(), List.of("max", "last", "average"));
+        addMetric(metrics, ContainerMetrics.SERVER_NUM_OPEN_CONNECTIONS, EnumSet.of(max,last, average));
+        addMetric(metrics, ContainerMetrics.SERVER_NUM_CONNECTIONS, EnumSet.of(max,last, average));
 
-        addMetric(metrics, ContainerMetrics.SERVER_BYTES_RECEIVED.baseName(), List.of("sum", "count"));
-        addMetric(metrics, ContainerMetrics.SERVER_BYTES_SENT.baseName(), List.of("sum", "count"));
+        addMetric(metrics, ContainerMetrics.SERVER_BYTES_RECEIVED, EnumSet.of(sum, count));
+        addMetric(metrics, ContainerMetrics.SERVER_BYTES_SENT, EnumSet.of(sum, count));
 
-        {
-            List<String> suffixes = List.of("sum", "count", "last", "min", "max");
-            addMetric(metrics, ContainerMetrics.JDISC_THREAD_POOL_UNHANDLED_EXCEPTIONS.baseName(), suffixes);
-            addMetric(metrics, ContainerMetrics.JDISC_THREAD_POOL_WORK_QUEUE_CAPACITY.baseName(), suffixes);
-            addMetric(metrics, ContainerMetrics.JDISC_THREAD_POOL_WORK_QUEUE_SIZE.baseName(), suffixes);
-            addMetric(metrics, ContainerMetrics.JDISC_THREAD_POOL_REJECTED_TASKS.baseName(), suffixes);
-            addMetric(metrics, ContainerMetrics.JDISC_THREAD_POOL_SIZE.baseName(), suffixes);
-            addMetric(metrics, ContainerMetrics.JDISC_THREAD_POOL_MAX_ALLOWED_SIZE.baseName(), suffixes);
-            addMetric(metrics, ContainerMetrics.JDISC_THREAD_POOL_ACTIVE_THREADS.baseName(), suffixes);
+        addMetric(metrics, ContainerMetrics.JDISC_THREAD_POOL_UNHANDLED_EXCEPTIONS, EnumSet.of(sum, count, last, min, max));
+        addMetric(metrics, ContainerMetrics.JDISC_THREAD_POOL_WORK_QUEUE_CAPACITY, EnumSet.of(sum, count, last, min, max));
+        addMetric(metrics, ContainerMetrics.JDISC_THREAD_POOL_WORK_QUEUE_SIZE, EnumSet.of(sum, count, last, min, max));
+        addMetric(metrics, ContainerMetrics.JDISC_THREAD_POOL_REJECTED_TASKS, EnumSet.of(sum, count, last, min, max));
+        addMetric(metrics, ContainerMetrics.JDISC_THREAD_POOL_SIZE, EnumSet.of(sum, count, last, min, max));
+        addMetric(metrics, ContainerMetrics.JDISC_THREAD_POOL_MAX_ALLOWED_SIZE, EnumSet.of(sum, count, last, min, max));
+        addMetric(metrics, ContainerMetrics.JDISC_THREAD_POOL_ACTIVE_THREADS, EnumSet.of(sum, count, last, min, max));
 
-            addMetric(metrics, ContainerMetrics.JETTY_THREADPOOL_MAX_THREADS.baseName(), suffixes);
-            addMetric(metrics, ContainerMetrics.JETTY_THREADPOOL_MIN_THREADS.baseName(), suffixes);
-            addMetric(metrics, ContainerMetrics.JETTY_THREADPOOL_RESERVED_THREADS.baseName(), suffixes);
-            addMetric(metrics, ContainerMetrics.JETTY_THREADPOOL_BUSY_THREADS.baseName(), suffixes);
-            addMetric(metrics, ContainerMetrics.JETTY_THREADPOOL_TOTAL_THREADS.baseName(), suffixes);
-            addMetric(metrics, ContainerMetrics.JETTY_THREADPOOL_QUEUE_SIZE.baseName(), suffixes);
-        }
+        addMetric(metrics, ContainerMetrics.JETTY_THREADPOOL_MAX_THREADS, EnumSet.of(sum, count, last, min, max));
+        addMetric(metrics, ContainerMetrics.JETTY_THREADPOOL_MIN_THREADS, EnumSet.of(sum, count, last, min, max));
+        addMetric(metrics, ContainerMetrics.JETTY_THREADPOOL_RESERVED_THREADS, EnumSet.of(sum, count, last, min, max));
+        addMetric(metrics, ContainerMetrics.JETTY_THREADPOOL_BUSY_THREADS, EnumSet.of(sum, count, last, min, max));
+        addMetric(metrics, ContainerMetrics.JETTY_THREADPOOL_TOTAL_THREADS, EnumSet.of(sum, count, last, min, max));
+        addMetric(metrics, ContainerMetrics.JETTY_THREADPOOL_QUEUE_SIZE, EnumSet.of(sum, count, last, min, max));
 
-        addMetric(metrics, ContainerMetrics.HTTPAPI_LATENCY.baseName(), List.of("max", "sum", "count"));
-        addMetric(metrics, ContainerMetrics.HTTPAPI_PENDING.baseName(), List.of("max", "sum", "count"));
+        addMetric(metrics, ContainerMetrics.HTTPAPI_LATENCY, EnumSet.of(max, sum, count));
+        addMetric(metrics, ContainerMetrics.HTTPAPI_PENDING, EnumSet.of(max, sum, count));
         addMetric(metrics, ContainerMetrics.HTTPAPI_NUM_OPERATIONS.rate());
         addMetric(metrics, ContainerMetrics.HTTPAPI_NUM_UPDATES.rate());
         addMetric(metrics, ContainerMetrics.HTTPAPI_NUM_REMOVES.rate());
@@ -175,10 +176,10 @@ public class VespaMetricSet {
 
         addMetric(metrics, ContainerMetrics.MEM_HEAP_TOTAL.average());
         addMetric(metrics, ContainerMetrics.MEM_HEAP_FREE.average());
-        addMetric(metrics, ContainerMetrics.MEM_HEAP_USED.baseName(), List.of("average", "max"));
+        addMetric(metrics, ContainerMetrics.MEM_HEAP_USED, EnumSet.of(average, max));
         addMetric(metrics, ContainerMetrics.MEM_DIRECT_TOTAL.average());
         addMetric(metrics, ContainerMetrics.MEM_DIRECT_FREE.average());
-        addMetric(metrics, ContainerMetrics.MEM_DIRECT_USED.baseName(), List.of("average", "max"));
+        addMetric(metrics, ContainerMetrics.MEM_DIRECT_USED, EnumSet.of(average, max));
         addMetric(metrics, ContainerMetrics.MEM_DIRECT_COUNT.max());
         addMetric(metrics, ContainerMetrics.MEM_NATIVE_TOTAL.average());
         addMetric(metrics, ContainerMetrics.MEM_NATIVE_FREE.average());
@@ -187,8 +188,8 @@ public class VespaMetricSet {
         addMetric(metrics, ContainerMetrics.JDISC_MEMORY_MAPPINGS.max());
         addMetric(metrics, ContainerMetrics.JDISC_OPEN_FILE_DESCRIPTORS.max());
 
-        addMetric(metrics, ContainerMetrics.JDISC_GC_COUNT.baseName(), List.of("average", "max", "last"));
-        addMetric(metrics, ContainerMetrics.JDISC_GC_MS.baseName(), List.of("average", "max", "last"));
+        addMetric(metrics, ContainerMetrics.JDISC_GC_COUNT, EnumSet.of(average, max, last));
+        addMetric(metrics, ContainerMetrics.JDISC_GC_MS, EnumSet.of(average, max, last));
 
         addMetric(metrics, ContainerMetrics.JDISC_DEACTIVATED_CONTAINERS.last());
         addMetric(metrics, ContainerMetrics.JDISC_DEACTIVATED_CONTAINERS_WITH_RETAINED_REFS.last());
@@ -211,10 +212,10 @@ public class VespaMetricSet {
         addMetric(metrics, ContainerMetrics.HTTP_STATUS_5XX.rate());
 
         addMetric(metrics, ContainerMetrics.JDISC_HTTP_REQUEST_PREMATURELY_CLOSED.rate());
-        addMetric(metrics, ContainerMetrics.JDISC_HTTP_REQUEST_REQUESTS_PER_CONNECTION.baseName(), List.of("sum", "count", "min", "max", "average"));
-        addMetric(metrics, ContainerMetrics.JDISC_HTTP_REQUEST_URI_LENGTH.baseName(), List.of("sum", "count", "max"));
-        addMetric(metrics, ContainerMetrics.JDISC_HTTP_REQUEST_CONTENT_SIZE.baseName(), List.of("sum", "count", "max"));
-        addMetric(metrics, ContainerMetrics.JDISC_HTTP_REQUESTS.baseName(), List.of("rate", "count"));
+        addMetric(metrics, ContainerMetrics.JDISC_HTTP_REQUEST_REQUESTS_PER_CONNECTION, EnumSet.of(sum, count, min, max, average));
+        addMetric(metrics, ContainerMetrics.JDISC_HTTP_REQUEST_URI_LENGTH, EnumSet.of(sum, count, max));
+        addMetric(metrics, ContainerMetrics.JDISC_HTTP_REQUEST_CONTENT_SIZE, EnumSet.of(sum, count, max));
+        addMetric(metrics, ContainerMetrics.JDISC_HTTP_REQUESTS, EnumSet.of(rate, count));
 
         addMetric(metrics, ContainerMetrics.JDISC_HTTP_SSL_HANDSHAKE_FAILURE_MISSING_CLIENT_CERT.rate());
         addMetric(metrics, ContainerMetrics.JDISC_HTTP_SSL_HANDSHAKE_FAILURE_EXPIRED_CLIENT_CERT.rate());
@@ -285,30 +286,30 @@ public class VespaMetricSet {
         Set<Metric> metrics = new LinkedHashSet<>();
 
         addMetric(metrics, ContainerMetrics.PEAK_QPS.max());
-        addMetric(metrics, ContainerMetrics.SEARCH_CONNECTIONS.baseName(), Set.of("sum", "count", "max"));
-        addMetric(metrics, ContainerMetrics.FEED_LATENCY.baseName(), Set.of("sum", "count", "max"));
-        addMetric(metrics, ContainerMetrics.FEED_HTTP_REQUESTS.baseName(), Set.of("count", "rate"));
+        addMetric(metrics, ContainerMetrics.SEARCH_CONNECTIONS, EnumSet.of(sum, count, max));
+        addMetric(metrics, ContainerMetrics.FEED_LATENCY, EnumSet.of(sum, count, max));
+        addMetric(metrics, ContainerMetrics.FEED_HTTP_REQUESTS, EnumSet.of(count, rate));
         addMetric(metrics, ContainerMetrics.QUERIES.rate());
-        addMetric(metrics, ContainerMetrics.QUERY_CONTAINER_LATENCY.baseName(), Set.of("sum", "count", "max"));
-        addMetric(metrics, ContainerMetrics.QUERY_LATENCY.baseName(), Set.of("sum", "count", "max", "95percentile", "99percentile"));
-        addMetric(metrics, ContainerMetrics.QUERY_TIMEOUT.baseName(), Set.of("sum", "count", "max", "min", "95percentile", "99percentile"));
+        addMetric(metrics, ContainerMetrics.QUERY_CONTAINER_LATENCY, EnumSet.of(sum, count, max));
+        addMetric(metrics, ContainerMetrics.QUERY_LATENCY, EnumSet.of(sum, count, max, ninety_five_percentile, ninety_nine_percentile));
+        addMetric(metrics, ContainerMetrics.QUERY_TIMEOUT, EnumSet.of(sum, count, max, min, ninety_five_percentile, ninety_nine_percentile));
         addMetric(metrics, ContainerMetrics.FAILED_QUERIES.rate());
         addMetric(metrics, ContainerMetrics.DEGRADED_QUERIES.rate());
-        addMetric(metrics, ContainerMetrics.HITS_PER_QUERY.baseName(), Set.of("sum", "count", "max", "95percentile", "99percentile"));
-        addMetric(metrics, ContainerMetrics.SEARCH_CONNECTIONS.baseName(), Set.of("sum", "count", "max"));
-        addMetric(metrics, ContainerMetrics.QUERY_HIT_OFFSET.baseName(), Set.of("sum", "count", "max"));
+        addMetric(metrics, ContainerMetrics.HITS_PER_QUERY, EnumSet.of(sum, count, max, ninety_five_percentile, ninety_nine_percentile));
+        addMetric(metrics, ContainerMetrics.SEARCH_CONNECTIONS, EnumSet.of(sum, count, max));
+        addMetric(metrics, ContainerMetrics.QUERY_HIT_OFFSET, EnumSet.of(sum, count, max));
         addMetric(metrics, ContainerMetrics.DOCUMENTS_COVERED.count());
         addMetric(metrics, ContainerMetrics.DOCUMENTS_TOTAL.count());
         addMetric(metrics, ContainerMetrics.DOCUMENTS_TARGET_TOTAL.count());
-        addMetric(metrics, ContainerMetrics.JDISC_RENDER_LATENCY.baseName(), Set.of("min", "max", "count", "sum", "last", "average"));
-        addMetric(metrics, ContainerMetrics.QUERY_ITEM_COUNT.baseName(), Set.of("max", "sum", "count"));
-        addMetric(metrics, ContainerMetrics.TOTAL_HITS_PER_QUERY.baseName(), Set.of("sum", "count", "max", "95percentile", "99percentile"));
+        addMetric(metrics, ContainerMetrics.JDISC_RENDER_LATENCY, EnumSet.of(min, max, count, sum, last, average));
+        addMetric(metrics, ContainerMetrics.QUERY_ITEM_COUNT, EnumSet.of(max, sum, count));
+        addMetric(metrics, ContainerMetrics.TOTAL_HITS_PER_QUERY, EnumSet.of(sum, count, max, ninety_five_percentile, ninety_nine_percentile));
         addMetric(metrics, ContainerMetrics.EMPTY_RESULTS.rate());
-        addMetric(metrics, ContainerMetrics.REQUESTS_OVER_QUOTA.baseName(), Set.of("rate", "count"));
+        addMetric(metrics, ContainerMetrics.REQUESTS_OVER_QUOTA, EnumSet.of(rate, count));
 
-        addMetric(metrics, ContainerMetrics.RELEVANCE_AT_1.baseName(), Set.of("sum", "count"));
-        addMetric(metrics, ContainerMetrics.RELEVANCE_AT_3.baseName(), Set.of("sum", "count"));
-        addMetric(metrics, ContainerMetrics.RELEVANCE_AT_10.baseName(), Set.of("sum", "count"));
+        addMetric(metrics, ContainerMetrics.RELEVANCE_AT_1, EnumSet.of(sum, count));
+        addMetric(metrics, ContainerMetrics.RELEVANCE_AT_3, EnumSet.of(sum, count));
+        addMetric(metrics, ContainerMetrics.RELEVANCE_AT_10, EnumSet.of(sum, count));
                 
         // Errors from search container
         addMetric(metrics, ContainerMetrics.ERROR_TIMEOUT.rate());
