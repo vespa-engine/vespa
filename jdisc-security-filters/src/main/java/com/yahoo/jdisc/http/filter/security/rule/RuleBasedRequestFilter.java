@@ -6,6 +6,7 @@ import com.yahoo.jdisc.Metric;
 import com.yahoo.jdisc.Response;
 import com.yahoo.jdisc.http.filter.DiscFilterRequest;
 import com.yahoo.jdisc.http.filter.security.base.JsonSecurityRequestFilterBase;
+import com.yahoo.metrics.ContainerMetrics;
 import com.yahoo.vespa.config.jdisc.http.filter.RuleBasedFilterConfig;
 import com.yahoo.vespa.config.jdisc.http.filter.RuleBasedFilterConfig.Rule.Action;
 import com.yahoo.restapi.Path;
@@ -74,12 +75,12 @@ public class RuleBasedRequestFilter extends JsonSecurityRequestFilterBase {
                 "dryrun", Boolean.toString(dryrun),
                 "statusCode", Integer.toString(statusCode)));
         if (response != null) {
-            metric.add("jdisc.http.filter.rule.blocked_requests", 1L, metricContext);
+            metric.add(ContainerMetrics.JDISC_HTTP_FILTER_RULE_BLOCKED_REQUESTS.baseName(), 1L, metricContext);
             log.log(Level.FINE, () -> String.format(
                     "Blocking request '%h' with status code '%d' using rule '%s' (dryrun=%b)", request, statusCode, ruleName, dryrun));
             return dryrun ? Optional.empty() : Optional.of(response);
         } else {
-            metric.add("jdisc.http.filter.rule.allowed_requests", 1L, metricContext);
+            metric.add(ContainerMetrics.JDISC_HTTP_FILTER_RULE_ALLOWED_REQUESTS.baseName(), 1L, metricContext);
             log.log(Level.FINE, () -> String.format("Allowing request '%h' using rule '%s' (dryrun=%b)", request, ruleName, dryrun));
             return Optional.empty();
         }
