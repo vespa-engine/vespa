@@ -5698,6 +5698,7 @@
       "public void setTimestamps(boolean)",
       "public boolean getQuery()",
       "public void setQuery(boolean)",
+      "public com.yahoo.search.query.profiling.Profiling getProfiling()",
       "public void trace(java.lang.String, int)",
       "public void trace(java.lang.Object, int)",
       "public void trace(java.lang.String, boolean, int)",
@@ -5716,7 +5717,8 @@
       "public static final java.lang.String EXPLAIN_LEVEL",
       "public static final java.lang.String PROFILE_DEPTH",
       "public static final java.lang.String TIMESTAMPS",
-      "public static final java.lang.String QUERY"
+      "public static final java.lang.String QUERY",
+      "public static final java.lang.String PROFILING"
     ]
   },
   "com.yahoo.search.query.UniqueRequestId" : {
@@ -6678,6 +6680,52 @@
       "public static com.yahoo.search.query.profile.types.TensorFieldType fromTypeString(java.lang.String)"
     ],
     "fields" : [ ]
+  },
+  "com.yahoo.search.query.profiling.Profiling" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [
+      "java.lang.Cloneable"
+    ],
+    "attributes" : [
+      "public"
+    ],
+    "methods" : [
+      "public void <init>()",
+      "public static com.yahoo.search.query.profile.types.QueryProfileType getArgumentType()",
+      "public com.yahoo.search.query.profiling.ProfilingParams getMatching()",
+      "public com.yahoo.search.query.profiling.ProfilingParams getFirstPhaseRanking()",
+      "public com.yahoo.search.query.profiling.ProfilingParams getSecondPhaseRanking()",
+      "public com.yahoo.search.query.profiling.ProfilingParams clone()",
+      "public boolean equals(java.lang.Object)",
+      "public int hashCode()",
+      "public bridge synthetic java.lang.Object clone()"
+    ],
+    "fields" : [
+      "public static final java.lang.String MATCHING",
+      "public static final java.lang.String FIRST_PHASE_RANKING",
+      "public static final java.lang.String SECOND_PHASE_RANKING"
+    ]
+  },
+  "com.yahoo.search.query.profiling.ProfilingParams" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [ ],
+    "attributes" : [
+      "public"
+    ],
+    "methods" : [
+      "public void <init>()",
+      "public static com.yahoo.search.query.profile.types.QueryProfileType getArgumentType()",
+      "public int getDepth()",
+      "public void setDepth(int)",
+      "public com.yahoo.search.query.profiling.ProfilingParams clone()",
+      "public boolean equals(java.lang.Object)",
+      "public int hashCode()",
+      "public bridge synthetic java.lang.Object clone()"
+    ],
+    "fields" : [
+      "public static final java.lang.String PROFILING_PARAMS",
+      "public static final java.lang.String DEPTH"
+    ]
   },
   "com.yahoo.search.query.properties.CloneHelper" : {
     "superClass" : "com.yahoo.processing.request.CloneHelper",

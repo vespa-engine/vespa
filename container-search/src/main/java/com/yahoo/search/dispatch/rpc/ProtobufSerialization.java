@@ -24,6 +24,7 @@ import com.yahoo.search.query.QueryTree;
 import com.yahoo.search.query.Ranking;
 import com.yahoo.search.query.Sorting;
 import com.yahoo.search.query.Sorting.Order;
+import com.yahoo.search.query.profiling.Profiling;
 import com.yahoo.search.result.Coverage;
 import com.yahoo.search.result.ErrorMessage;
 import com.yahoo.searchlib.aggregation.Grouping;
@@ -90,8 +91,12 @@ public class ProtobufSerialization {
             builder.setCacheGrouping(true);
         }
 
-        builder.setTraceLevel(getTraceLevelForBackend(query));
+        int traceLevel = getTraceLevelForBackend(query);
+        builder.setTraceLevel(traceLevel);
         builder.setProfileDepth(query.getTrace().getProfileDepth());
+        if (traceLevel > 0) {
+            mergeToSearchRequestFromProfiling(query.getTrace().getProfiling(), builder);
+        }
 
         mergeToSearchRequestFromRanking(query.getRanking(), scratchPad, builder);
 
@@ -134,6 +139,22 @@ public class ProtobufSerialization {
                     .setField(field.getSorter().toSerialForm())
                     .setAscending(field.getSortOrder() == Order.ASCENDING).build();
             builder.addSorting(sortField);
+        }
+    }
+
+    private static void mergeToSearchRequestFromProfiling(Profiling prof, SearchProtocol.SearchRequest.Builder builder) {
+        var profBuilder = SearchProtocol.Profiling.newBuilder();
+        if (prof.getMatching().getDepth() != 0) {
+            profBuilder.setMatch(SearchProtocol.ProfilingParams.newBuilder().setDepth(prof.getMatching().getDepth()));
+        }
+        if (prof.getFirstPhaseRanking().getDepth() != 0) {
+            profBuilder.setFirstPhase(SearchProtocol.ProfilingParams.newBuilder().setDepth(prof.getFirstPhaseRanking().getDepth()));
+        }
+        if (prof.getSecondPhaseRanking().getDepth() != 0) {
+            profBuilder.setSecondPhase(SearchProtocol.ProfilingParams.newBuilder().setDepth(prof.getSecondPhaseRanking().getDepth()));
+        }
+        if (profBuilder.hasMatch() || profBuilder.hasFirstPhase() || profBuilder.hasSecondPhase()) {
+            builder.setProfiling(profBuilder);
         }
     }
 
