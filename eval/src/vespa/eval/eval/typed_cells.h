@@ -11,16 +11,16 @@ namespace vespalib::eval {
 
 struct TypedCells {
     const void *data;
-    CellType type;
     size_t size:56;
+    CellType type;
 
-    explicit TypedCells(ConstArrayRef<double> cells) : data(cells.begin()), type(CellType::DOUBLE), size(cells.size()) {}
-    explicit TypedCells(ConstArrayRef<float> cells) : data(cells.begin()), type(CellType::FLOAT), size(cells.size()) {}
-    explicit TypedCells(ConstArrayRef<BFloat16> cells) : data(cells.begin()), type(CellType::BFLOAT16), size(cells.size()) {}
-    explicit TypedCells(ConstArrayRef<Int8Float> cells) : data(cells.begin()), type(CellType::INT8), size(cells.size()) {}
+    explicit TypedCells(ConstArrayRef<double> cells) : data(cells.begin()), size(cells.size()), type(CellType::DOUBLE) {}
+    explicit TypedCells(ConstArrayRef<float> cells) : data(cells.begin()), size(cells.size()), type(CellType::FLOAT) {}
+    explicit TypedCells(ConstArrayRef<BFloat16> cells) : data(cells.begin()), size(cells.size()), type(CellType::BFLOAT16) {}
+    explicit TypedCells(ConstArrayRef<Int8Float> cells) : data(cells.begin()), size(cells.size()), type(CellType::INT8) {}
 
-    TypedCells() noexcept : data(nullptr), type(CellType::DOUBLE), size(0) {}
-    TypedCells(const void *dp, CellType ct, size_t sz) noexcept : data(dp), type(ct), size(sz) {}
+    TypedCells() noexcept : data(nullptr), size(0), type(CellType::DOUBLE) {}
+    TypedCells(const void *dp, CellType ct, size_t sz) noexcept : data(dp), size(sz), type(ct) {}
 
     template <typename T> bool check_type() const { return vespalib::eval::check_cell_type<T>(type); }
 
@@ -32,10 +32,10 @@ struct TypedCells {
         return ConstArrayRef<T>((const T *)data, size);
     }
 
-    TypedCells(TypedCells &&other) = default;
-    TypedCells(const TypedCells &other) = default;
-    TypedCells & operator= (TypedCells &&other) = default;
-    TypedCells & operator= (const TypedCells &other) = default;
+    TypedCells(TypedCells &&other) noexcept = default;
+    TypedCells(const TypedCells &other) noexcept = default;
+    TypedCells & operator= (TypedCells &&other) noexcept = default;
+    TypedCells & operator= (const TypedCells &other) noexcept = default;
 };
 
 } // namespace
