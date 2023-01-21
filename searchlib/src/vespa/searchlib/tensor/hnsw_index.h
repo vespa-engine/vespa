@@ -117,7 +117,7 @@ protected:
     void mutual_reconnect(const LinkArrayRef &cluster, uint32_t level);
     void remove_link_to(uint32_t remove_from, uint32_t remove_id, uint32_t level);
 
-    inline TypedCells get_vector(uint32_t nodeid) const {
+    TypedCells get_vector(uint32_t nodeid) const {
         if constexpr (NodeType::identity_mapping) {
             return _vectors.get_vector(nodeid, 0);
         } else {
@@ -127,10 +127,10 @@ protected:
             return _vectors.get_vector(docid, subspace);
         }
     }
-    inline TypedCells get_vector(uint32_t docid, uint32_t subspace) const {
+    TypedCells get_vector(uint32_t docid, uint32_t subspace) const {
         return _vectors.get_vector(docid, subspace);
     }
-    inline VectorBundle get_vectors(uint32_t docid) const {
+    VectorBundle get_vectors(uint32_t docid) const {
         return _vectors.get_vectors(docid);
     }
 
