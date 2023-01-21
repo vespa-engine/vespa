@@ -504,7 +504,6 @@ public class ApplicationController {
                 instance = application.get().require(job.application().instance());
 
                 containerEndpoints = controller.routing().of(deployment).prepare(application);
-
             } // Release application lock while doing the deployment, which is a lengthy task.
 
             Supplier<Optional<EndpointCertificateMetadata>> endpointCertificateMetadata = () -> {
@@ -867,9 +866,11 @@ public class ApplicationController {
     /** Deactivate application in the given zone. Even if the application itself does not exist, deactivation of the deployment will still be attempted */
     public void deactivate(ApplicationId instanceId, ZoneId zone) {
         TenantAndApplicationId applicationId = TenantAndApplicationId.from(instanceId);
-        try (Mutex lock = lock(applicationId)) {
-            Optional<LockedApplication> application = getApplication(applicationId).map(app -> new LockedApplication(app, lock));
-            deactivate(instanceId, zone, application).ifPresent(this::store);
+        try (Mutex deploymentLock = lockForDeployment(instanceId, zone)) {
+            try (Mutex lock = lock(applicationId)) {
+                Optional<LockedApplication> application = getApplication(applicationId).map(app -> new LockedApplication(app, lock));
+                deactivate(instanceId, zone, application).ifPresent(this::store);
+            }
         }
     }
 
