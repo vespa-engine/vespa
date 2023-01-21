@@ -1,6 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.provision.restapi;
 
+import com.yahoo.collections.IntRange;
 import com.yahoo.config.provision.ClusterResources;
 import com.yahoo.slime.Cursor;
 import com.yahoo.slime.Slime;
@@ -62,6 +63,8 @@ public class ApplicationSerializer {
         Limits limits = Limits.of(cluster).fullySpecified(nodes.clusterSpec(), nodeRepository, application.id());
         toSlime(limits.min(), clusterObject.setObject("min"));
         toSlime(limits.max(), clusterObject.setObject("max"));
+        if ( ! cluster.groupSize().isEmpty())
+            toSlime(cluster.groupSize(), clusterObject.setObject("groupSize"));
         toSlime(currentResources, clusterObject.setObject("current"));
         if (cluster.shouldSuggestResources(currentResources))
             toSlime(cluster.suggested(), clusterObject.setObject("suggested"));
@@ -83,6 +86,11 @@ public class ApplicationSerializer {
         clusterResourcesObject.setLong("nodes", resources.nodes());
         clusterResourcesObject.setLong("groups", resources.groups());
         NodeResourcesSerializer.toSlime(resources.nodeResources(), clusterResourcesObject.setObject("resources"));
+    }
+
+    private static void toSlime(IntRange range, Cursor rangeObject) {
+        range.from().ifPresent(from -> rangeObject.setLong("from", range.from().getAsInt()));
+        range.to().ifPresent(to -> rangeObject.setLong("to", range.to().getAsInt()));
     }
 
     private static void toSlime(Load load, Cursor utilizationObject) {

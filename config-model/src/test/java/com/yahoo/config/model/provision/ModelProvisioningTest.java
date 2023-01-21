@@ -501,14 +501,14 @@ public class ModelProvisioningTest {
                 "     <documents>" +
                 "       <document type='type1' mode='index'/>" +
                 "     </documents>" +
-                "     <nodes count='27' groups='9'/>" +
+                "     <nodes count='27' groups='9' group-size='[2, 3]'/>" +
                 "  </content>" +
                 "  <content version='1.0' id='baz'>" +
                 "     <redundancy>1</redundancy>" +
                 "     <documents>" +
                 "       <document type='type1' mode='index'/>" +
                 "     </documents>" +
-                "     <nodes count='27' groups='27'/>" +
+                "     <nodes count='27' groups='27' group-size='1'/>" +
                 "   </content>" +
                 "</services>";
 

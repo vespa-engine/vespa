@@ -1,6 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.provision.persistence;
 
+import com.yahoo.collections.IntRange;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ClusterResources;
 import com.yahoo.config.provision.ClusterSpec;
@@ -34,6 +35,7 @@ public class ApplicationSerializerTest {
                                  false,
                                  new ClusterResources( 8, 4, new NodeResources(1, 2,  3,  4)),
                                  new ClusterResources(12, 6, new NodeResources(3, 6, 21, 24)),
+                                 IntRange.empty(),
                                  true,
                                  Autoscaling.empty(),
                                  Autoscaling.empty(),
@@ -43,6 +45,7 @@ public class ApplicationSerializerTest {
                                  true,
                                  new ClusterResources( 8, 4, minResources),
                                  new ClusterResources(14, 7, new NodeResources(3, 6, 21, 24)),
+                                 IntRange.of(3, 5),
                                  false,
                                  new Autoscaling(Autoscaling.Status.unavailable,
                                                  "",
@@ -79,11 +82,11 @@ public class ApplicationSerializerTest {
             Cluster serializedCluster = serialized.clusters().get(originalCluster.id());
             assertNotNull(serializedCluster);
             assertNotSame(originalCluster, serializedCluster);
-            assertEquals(originalCluster, serializedCluster);
             assertEquals(originalCluster.id(), serializedCluster.id());
             assertEquals(originalCluster.exclusive(), serializedCluster.exclusive());
             assertEquals(originalCluster.minResources(), serializedCluster.minResources());
             assertEquals(originalCluster.maxResources(), serializedCluster.maxResources());
+            assertEquals(originalCluster.groupSize(), serializedCluster.groupSize());
             assertEquals(originalCluster.required(), serializedCluster.required());
             assertEquals(originalCluster.suggested(), serializedCluster.suggested());
             assertEquals(originalCluster.target(), serializedCluster.target());

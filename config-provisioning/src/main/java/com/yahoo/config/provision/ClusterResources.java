@@ -21,7 +21,7 @@ public class ClusterResources {
 
     public ClusterResources(int nodes, int groups, NodeResources nodeResources) {
         this.nodes = nodes;
-        this.groups = groups;
+        this.groups = groups == 0 ? 1 : groups; // TODO: Throw on groups == 0 after February 2023
         this.nodeResources = Objects.requireNonNull(nodeResources);
     }
 
@@ -73,9 +73,8 @@ public class ClusterResources {
     @Override
     public boolean equals(Object o) {
         if (o == this) return true;
-        if ( ! (o instanceof ClusterResources)) return false;
+        if ( ! (o instanceof ClusterResources other)) return false;
 
-        ClusterResources other = (ClusterResources)o;
         if (other.nodes != this.nodes) return false;
         if (other.groups != this.groups) return false;
         if ( ! other.nodeResources.equals(this.nodeResources)) return false;

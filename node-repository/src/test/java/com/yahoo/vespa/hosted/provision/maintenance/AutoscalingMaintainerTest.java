@@ -1,6 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.provision.maintenance;
 
+import com.yahoo.collections.IntRange;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.Capacity;
 import com.yahoo.config.provision.ClusterResources;
@@ -61,10 +62,10 @@ public class AutoscalingMaintainerTest {
 
         tester.deploy(app1, cluster1, Capacity.from(new ClusterResources(5, 1, new NodeResources(4, 4, 10, 0.1)),
                                                     new ClusterResources(5, 1, new NodeResources(4, 4, 10, 0.1)),
-                                                    false, true));
+                                                    IntRange.empty(), false, true, Optional.empty()));
         tester.deploy(app2, cluster2, Capacity.from(new ClusterResources(5, 1, new NodeResources(4, 4, 10, 0.1)),
                                                     new ClusterResources(10, 1, new NodeResources(6.5, 9, 20, 0.1)),
-                                                    false, true));
+                                                    IntRange.empty(), false, true, Optional.empty()));
 
         tester.clock().advance(Duration.ofMinutes(10));
         tester.maintainer().maintain(); // noop
