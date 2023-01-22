@@ -77,14 +77,14 @@ public class IntRange {
         return new IntRange(OptionalInt.of(from), OptionalInt.of(to));
     }
 
-    /** Returns this with a from limit which is at most the given value */
+    /** Returns this with a 'from' limit which is at most the given value */
     public IntRange fromAtMost(int minLimit) {
         if (from.isEmpty()) return this;
         if (from.getAsInt() <= minLimit) return this;
         return new IntRange(OptionalInt.of(minLimit), to);
     }
 
-    /** Returns this with a to limit which is at least the given value */
+    /** Returns this with a 'to' limit which is at least the given value */
     public IntRange toAtLeast(int maxLimit) {
         if (to.isEmpty()) return this;
         if (to.getAsInt() >= maxLimit) return this;
