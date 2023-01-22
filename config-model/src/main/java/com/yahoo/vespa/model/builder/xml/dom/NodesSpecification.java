@@ -121,10 +121,10 @@ public class NodesSpecification {
     }
 
     private static Pair<ClusterResources, ClusterResources> toResources(ModelElement nodesElement) {
-        Pair<Integer, Integer> nodes =  toRange(nodesElement.stringAttribute("count"),  1, Integer::parseInt);
-        Pair<Integer, Integer> groups = toRange(nodesElement.stringAttribute("groups"), 1, Integer::parseInt);
-        var min = new ClusterResources(nodes.getFirst(),  groups.getFirst(),  nodeResources(nodesElement).getFirst());
-        var max = new ClusterResources(nodes.getSecond(), groups.getSecond(), nodeResources(nodesElement).getSecond());
+        IntRange nodes =  IntRange.from(nodesElement.stringAttribute("count", ""));
+        IntRange groups = IntRange.from(nodesElement.stringAttribute("groups", ""));
+        var min = new ClusterResources(nodes.from().orElse(1),  groups.from().orElse(1),  nodeResources(nodesElement).getFirst());
+        var max = new ClusterResources(nodes.to().orElse(1), groups.to().orElse(1), nodeResources(nodesElement).getSecond());
         return new Pair<>(min, max);
     }
 
