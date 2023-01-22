@@ -1,6 +1,6 @@
 package com.yahoo.vespa.model.application.validation.change;
 
-import com.yahoo.collections.IntRange;
+import com.yahoo.config.provision.IntRange;
 import com.yahoo.config.application.api.ValidationOverrides;
 import com.yahoo.config.model.api.Provisioned;
 import com.yahoo.config.model.deploy.DeployState;
