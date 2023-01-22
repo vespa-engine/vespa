@@ -947,16 +947,21 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
     }
 
     private List<ApplicationContainer> createNodesFromNodeCount(ApplicationContainerCluster cluster, Element containerElement, Element nodesElement, ConfigModelContext context) {
-        NodesSpecification nodesSpecification = NodesSpecification.from(new ModelElement(nodesElement), context);
-        ClusterSpec.Id clusterId = ClusterSpec.Id.from(cluster.name());
-        ZoneEndpoint zoneEndpoint = zoneEndpoint(context, clusterId);
-        Map<HostResource, ClusterMembership> hosts = nodesSpecification.provision(cluster.getRoot().hostSystem(),
-                                                                                  ClusterSpec.Type.container,
-                                                                                  clusterId,
-                                                                                  zoneEndpoint,
-                                                                                  log,
-                                                                                  getZooKeeper(containerElement) != null);
-        return createNodesFromHosts(hosts, cluster, context.getDeployState());
+        try {
+            NodesSpecification nodesSpecification = NodesSpecification.from(new ModelElement(nodesElement), context);
+            ClusterSpec.Id clusterId = ClusterSpec.Id.from(cluster.name());
+            ZoneEndpoint zoneEndpoint = zoneEndpoint(context, clusterId);
+            Map<HostResource, ClusterMembership> hosts = nodesSpecification.provision(cluster.getRoot().hostSystem(),
+                                                                                      ClusterSpec.Type.container,
+                                                                                      clusterId,
+                                                                                      zoneEndpoint,
+                                                                                      log,
+                                                                                      getZooKeeper(containerElement) != null);
+            return createNodesFromHosts(hosts, cluster, context.getDeployState());
+        }
+        catch (IllegalArgumentException e) {
+            throw new IllegalArgumentException("In " + cluster, e);
+        }
     }
 
     private List<ApplicationContainer> createNodesFromNodeType(ApplicationContainerCluster cluster, Element nodesElement, ConfigModelContext context) {

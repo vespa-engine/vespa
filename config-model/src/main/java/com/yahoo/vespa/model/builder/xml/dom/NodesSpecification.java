@@ -121,13 +121,22 @@ public class NodesSpecification {
     }
 
     private static ResourceConstraints toResourceConstraints(ModelElement nodesElement) {
-        var nodes =  IntRange.from(nodesElement.stringAttribute("count", ""));
-        var groups = IntRange.from(nodesElement.stringAttribute("groups", ""));
-        var groupSize = IntRange.from(nodesElement.stringAttribute("group-size", ""));
+        var nodes =  rangeFrom(nodesElement, "count");
+        var groups =  rangeFrom(nodesElement, "groups");
+        var groupSize =  rangeFrom(nodesElement, "group-size");
         int defaultMaxGroups = groupSize.isEmpty() ? 1 : nodes.to().orElse(1); // Don't constrain the number of groups if group size is set
         var min = new ClusterResources(nodes.from().orElse(1),  groups.from().orElse(1),  nodeResources(nodesElement).getFirst());
         var max = new ClusterResources(nodes.to().orElse(1), groups.to().orElse(defaultMaxGroups), nodeResources(nodesElement).getSecond());
         return new ResourceConstraints(min, max, groupSize);
+    }
+
+    private static IntRange rangeFrom(ModelElement element, String name) {
+        try {
+            return IntRange.from(element.stringAttribute(name, ""));
+        }
+        catch (IllegalArgumentException e) {
+            throw new IllegalArgumentException("Illegal " + name + " value", e);
+        }
     }
 
     private record ResourceConstraints(ClusterResources min, ClusterResources max, IntRange groupSize) {}
@@ -150,18 +159,6 @@ public class NodesSpecification {
                       nodesElement,
                       context.getDeployState().getWantedDockerImageRepo(),
                       context.getDeployState().getProperties().cloudAccount());
-    }
-
-    /**
-     * Returns a requirement for dedicated nodes taken from the <code>nodes</code> element
-     * contained in the given parent element, or empty if the parent element is null, or the nodes elements
-     * is not present.
-     */
-    public static Optional<NodesSpecification> fromParent(ModelElement parentElement, ConfigModelContext context) {
-        if (parentElement == null) return Optional.empty();
-        ModelElement nodesElement = parentElement.child("nodes");
-        if (nodesElement == null) return Optional.empty();
-        return Optional.of(from(nodesElement, context));
     }
 
     /**

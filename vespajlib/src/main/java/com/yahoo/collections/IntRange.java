@@ -119,9 +119,14 @@ public class IntRange {
     }
 
     private static OptionalInt parseOptionalInt(String s) {
-        s = s.trim();
-        if (s.isEmpty()) return OptionalInt.empty();
-        return OptionalInt.of(Integer.parseInt(s));
+        try {
+            s = s.trim();
+            if (s.isEmpty()) return OptionalInt.empty();
+            return OptionalInt.of(Integer.parseInt(s));
+        }
+        catch (IllegalArgumentException e) {
+            throw new IllegalArgumentException("'" + s + "' is not an integer");
+        }
     }
 
 }

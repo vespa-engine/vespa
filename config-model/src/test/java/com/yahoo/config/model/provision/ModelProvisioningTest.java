@@ -684,6 +684,37 @@ public class ModelProvisioningTest {
     }
 
     @Test
+    public void testIllegalGroupSize() {
+        String services =
+                "<?xml version='1.0' encoding='utf-8' ?>\n" +
+                "<services>" +
+                "  <admin version='4.0'/>" +
+                "  <container version='1.0' id='foo'>" +
+                "     <nodes count='2'/>" +
+                "  </container>" +
+                "  <content version='1.0' id='bar'>" +
+                "     <redundancy>2</redundancy>" +
+                "     <documents>" +
+                "       <document type='type1' mode='index'/>" +
+                "     </documents>" +
+                "     <nodes count='5' group-size='[2, --]'/>" +
+                "  </content>" +
+                "</services>";
+
+        int numberOfHosts = 10;
+        VespaModelTester tester = new VespaModelTester();
+        tester.addHosts(numberOfHosts);
+        try {
+            tester.createModel(services, true);
+            fail("Expected exception");
+        }
+        catch (IllegalArgumentException e) {
+            assertEquals("In content cluster 'bar': Illegal group-size value: " +
+                         "Expected a number or range on the form [min, max], but got '[2, --]': '--' is not an integer", Exceptions.toMessageString(e));
+        }
+    }
+
+    @Test
     public void testSlobroksOnContainersIfNoContentClusters() {
         String services =
                 "<?xml version='1.0' encoding='utf-8' ?>\n" +
@@ -1193,7 +1224,8 @@ public class ModelProvisioningTest {
             fail("Expected exception");
         }
         catch (IllegalArgumentException e) {
-            assertEquals("Cluster 'bar' specifies redundancy 2, but it cannot be higher than the minimum nodes per group, which is 1", Exceptions.toMessageString(e));
+            assertEquals("In content cluster 'bar': This cluster specifies redundancy 2, " +
+                         "but this cannot be higher than the minimum nodes per group, which is 1", Exceptions.toMessageString(e));
         }
     }
 
@@ -1789,7 +1821,9 @@ public class ModelProvisioningTest {
             VespaModel model = tester.createModel(new Zone(Environment.staging, RegionName.from("us-central-1")), services, true);
             fail("expected failure");
         } catch (IllegalArgumentException e) {
-            assertTrue(e.getMessage().startsWith("Clusters in hosted environments must have a <nodes count='N'> tag"));
+            assertEquals("In content cluster 'bar': Clusters in hosted environments must have a <nodes count='N'> tag\n" +
+                         "matching all zones, and having no <node> subtags,\nsee https://cloud.vespa.ai/en/reference/services",
+                         Exceptions.toMessageString(e));
         }
     }
 
