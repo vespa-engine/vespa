@@ -104,11 +104,11 @@ public class NodesSpecification {
                                              Optional<CloudAccount> cloudAccount) {
         var resolvedElement = resolveElement(nodesElement);
         var combinedId = findCombinedId(nodesElement, resolvedElement);
-        var resources = toResources(resolvedElement);
+        var resourceConstraints = toResourceConstraints(resolvedElement);
         boolean hasCountAttribute = resolvedElement.stringAttribute("count") != null;
-        return new NodesSpecification(resources.getFirst(),
-                                      resources.getSecond(),
-                                      IntRange.from(resolvedElement.stringAttribute("group-size", "")),
+        return new NodesSpecification(resourceConstraints.min,
+                                      resourceConstraints.max,
+                                      resourceConstraints.groupSize,
                                       dedicated,
                                       version,
                                       resolvedElement.booleanAttribute("required", false),
@@ -120,13 +120,16 @@ public class NodesSpecification {
                                       hasCountAttribute);
     }
 
-    private static Pair<ClusterResources, ClusterResources> toResources(ModelElement nodesElement) {
-        IntRange nodes =  IntRange.from(nodesElement.stringAttribute("count", ""));
-        IntRange groups = IntRange.from(nodesElement.stringAttribute("groups", ""));
+    private static ResourceConstraints toResourceConstraints(ModelElement nodesElement) {
+        var nodes =  IntRange.from(nodesElement.stringAttribute("count", ""));
+        var groups = IntRange.from(nodesElement.stringAttribute("groups", ""));
+        var groupSize = IntRange.from(nodesElement.stringAttribute("group-size", ""));
         var min = new ClusterResources(nodes.from().orElse(1),  groups.from().orElse(1),  nodeResources(nodesElement).getFirst());
         var max = new ClusterResources(nodes.to().orElse(1), groups.to().orElse(1), nodeResources(nodesElement).getSecond());
-        return new Pair<>(min, max);
+        return new ResourceConstraints(min, max, groupSize);
     }
+
+    private record ResourceConstraints(ClusterResources min, ClusterResources max, IntRange groupSize) {}
 
     /** Returns the ID of the cluster referencing this node specification, if any */
     private static Optional<String> findCombinedId(ModelElement nodesElement, ModelElement resolvedElement) {
