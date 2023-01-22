@@ -1,7 +1,6 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model.builder.xml.dom;
 
-import com.yahoo.collections.IntRange;
 import com.yahoo.collections.Pair;
 import com.yahoo.component.Version;
 import com.yahoo.config.application.api.DeployLogger;
@@ -35,8 +34,6 @@ public class NodesSpecification {
 
     private final ClusterResources min, max;
 
-    private final IntRange groupSize;
-
     private final boolean dedicated;
 
     /** The Vespa version we want the nodes to run */
@@ -66,7 +63,6 @@ public class NodesSpecification {
 
     private NodesSpecification(ClusterResources min,
                                ClusterResources max,
-                               IntRange groupSize,
                                boolean dedicated, Version version,
                                boolean required, boolean canFail, boolean exclusive,
                                Optional<DockerImage> dockerImageRepo,
@@ -87,7 +83,6 @@ public class NodesSpecification {
 
         this.min = min;
         this.max = max;
-        this.groupSize = groupSize;
         this.dedicated = dedicated;
         this.version = version;
         this.required = required;
@@ -104,11 +99,10 @@ public class NodesSpecification {
                                              Optional<CloudAccount> cloudAccount) {
         var resolvedElement = resolveElement(nodesElement);
         var combinedId = findCombinedId(nodesElement, resolvedElement);
-        var resourceConstraints = toResourceConstraints(resolvedElement);
+        var resources = toResources(resolvedElement);
         boolean hasCountAttribute = resolvedElement.stringAttribute("count") != null;
-        return new NodesSpecification(resourceConstraints.min,
-                                      resourceConstraints.max,
-                                      resourceConstraints.groupSize,
+        return new NodesSpecification(resources.getFirst(),
+                                      resources.getSecond(),
                                       dedicated,
                                       version,
                                       resolvedElement.booleanAttribute("required", false),
@@ -120,26 +114,13 @@ public class NodesSpecification {
                                       hasCountAttribute);
     }
 
-    private static ResourceConstraints toResourceConstraints(ModelElement nodesElement) {
-        var nodes =  rangeFrom(nodesElement, "count");
-        var groups =  rangeFrom(nodesElement, "groups");
-        var groupSize =  rangeFrom(nodesElement, "group-size");
-        int defaultMaxGroups = groupSize.isEmpty() ? 1 : nodes.to().orElse(1); // Don't constrain the number of groups if group size is set
-        var min = new ClusterResources(nodes.from().orElse(1),  groups.from().orElse(1),  nodeResources(nodesElement).getFirst());
-        var max = new ClusterResources(nodes.to().orElse(1), groups.to().orElse(defaultMaxGroups), nodeResources(nodesElement).getSecond());
-        return new ResourceConstraints(min, max, groupSize);
+    private static Pair<ClusterResources, ClusterResources> toResources(ModelElement nodesElement) {
+        Pair<Integer, Integer> nodes =  toRange(nodesElement.stringAttribute("count"),  1, Integer::parseInt);
+        Pair<Integer, Integer> groups = toRange(nodesElement.stringAttribute("groups"), 1, Integer::parseInt);
+        var min = new ClusterResources(nodes.getFirst(),  groups.getFirst(),  nodeResources(nodesElement).getFirst());
+        var max = new ClusterResources(nodes.getSecond(), groups.getSecond(), nodeResources(nodesElement).getSecond());
+        return new Pair<>(min, max);
     }
-
-    private static IntRange rangeFrom(ModelElement element, String name) {
-        try {
-            return IntRange.from(element.stringAttribute(name, ""));
-        }
-        catch (IllegalArgumentException e) {
-            throw new IllegalArgumentException("Illegal " + name + " value", e);
-        }
-    }
-
-    private record ResourceConstraints(ClusterResources min, ClusterResources max, IntRange groupSize) {}
 
     /** Returns the ID of the cluster referencing this node specification, if any */
     private static Optional<String> findCombinedId(ModelElement nodesElement, ModelElement resolvedElement) {
@@ -159,6 +140,18 @@ public class NodesSpecification {
                       nodesElement,
                       context.getDeployState().getWantedDockerImageRepo(),
                       context.getDeployState().getProperties().cloudAccount());
+    }
+
+    /**
+     * Returns a requirement for dedicated nodes taken from the <code>nodes</code> element
+     * contained in the given parent element, or empty if the parent element is null, or the nodes elements
+     * is not present.
+     */
+    public static Optional<NodesSpecification> fromParent(ModelElement parentElement, ConfigModelContext context) {
+        if (parentElement == null) return Optional.empty();
+        ModelElement nodesElement = parentElement.child("nodes");
+        if (nodesElement == null) return Optional.empty();
+        return Optional.of(from(nodesElement, context));
     }
 
     /**
@@ -185,7 +178,6 @@ public class NodesSpecification {
     public static NodesSpecification nonDedicated(int count, ConfigModelContext context) {
         return new NodesSpecification(new ClusterResources(count, 1, NodeResources.unspecified()),
                                       new ClusterResources(count, 1, NodeResources.unspecified()),
-                                      IntRange.empty(),
                                       false,
                                       context.getDeployState().getWantedNodeVespaVersion(),
                                       false,
@@ -201,7 +193,6 @@ public class NodesSpecification {
     public static NodesSpecification dedicated(int count, ConfigModelContext context) {
         return new NodesSpecification(new ClusterResources(count, 1, NodeResources.unspecified()),
                                       new ClusterResources(count, 1, NodeResources.unspecified()),
-                                      IntRange.empty(),
                                       true,
                                       context.getDeployState().getWantedNodeVespaVersion(),
                                       false,
@@ -228,7 +219,6 @@ public class NodesSpecification {
                                                                                            .toList();
         return new NodesSpecification(new ClusterResources(count, 1, resources),
                                       new ClusterResources(count, 1, resources),
-                                      IntRange.empty(),
                                       true,
                                       context.getDeployState().getWantedNodeVespaVersion(),
                                       allContent.stream().anyMatch(content -> content.required),
@@ -242,7 +232,6 @@ public class NodesSpecification {
 
     public ClusterResources minResources() { return min; }
     public ClusterResources maxResources() { return max; }
-    public IntRange groupSize() { return groupSize; }
 
     /**
      * Returns whether this requires dedicated nodes.
@@ -286,7 +275,7 @@ public class NodesSpecification {
                                          .loadBalancerSettings(zoneEndpoint)
                                          .stateful(stateful)
                                          .build();
-        return hostSystem.allocateHosts(cluster, Capacity.from(min, max, groupSize, required, canFail, cloudAccount), logger);
+        return hostSystem.allocateHosts(cluster, Capacity.from(min, max, required, canFail, cloudAccount), logger);
     }
 
     private static Pair<NodeResources, NodeResources> nodeResources(ModelElement nodesElement) {

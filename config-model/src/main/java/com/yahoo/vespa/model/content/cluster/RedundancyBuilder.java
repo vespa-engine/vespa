@@ -37,15 +37,14 @@ public class RedundancyBuilder {
             }
         }
     }
-    public Redundancy build(boolean isHosted, int subGroups, int leafGroups,  int totalNodes) {
+    public Redundancy build(String clusterName, boolean isHosted, int subGroups, int leafGroups,  int totalNodes) {
         if (isHosted) {
             return new Redundancy(initialRedundancy, finalRedundancy, readyCopies, leafGroups, totalNodes);
         } else {
             subGroups = Math.max(1, subGroups);
-            IndexedHierarchicDistributionValidator.validateThatLeafGroupsCountIsAFactorOfRedundancy(finalRedundancy, subGroups);
-            IndexedHierarchicDistributionValidator.validateThatReadyCopiesIsCompatibleWithRedundancy(finalRedundancy, readyCopies, subGroups);
-            return new Redundancy(initialRedundancy/subGroups, finalRedundancy/subGroups,
-                                  readyCopies/subGroups, subGroups, totalNodes);
+            IndexedHierarchicDistributionValidator.validateThatLeafGroupsCountIsAFactorOfRedundancy(clusterName, finalRedundancy, subGroups);
+            IndexedHierarchicDistributionValidator.validateThatReadyCopiesIsCompatibleWithRedundancy(clusterName, finalRedundancy, readyCopies, subGroups);
+            return new Redundancy(initialRedundancy/subGroups, finalRedundancy/subGroups, readyCopies/subGroups, subGroups, totalNodes);
         }
     }
 

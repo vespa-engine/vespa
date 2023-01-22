@@ -1,7 +1,6 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.provision.persistence;
 
-import com.yahoo.collections.IntRange;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ClusterResources;
 import com.yahoo.config.provision.ClusterSpec;
@@ -24,7 +23,6 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
-import java.util.OptionalInt;
 
 /**
  * Application JSON serializer
@@ -50,7 +48,6 @@ public class ApplicationSerializer {
     private static final String exclusiveKey = "exclusive";
     private static final String minResourcesKey = "min";
     private static final String maxResourcesKey = "max";
-    private static final String groupSizeKey = "groupSize";
     private static final String requiredKey = "required";
     private static final String suggestedKey = "suggested";
     private static final String resourcesKey = "resources";
@@ -125,7 +122,6 @@ public class ApplicationSerializer {
         clusterObject.setBool(exclusiveKey, cluster.exclusive());
         toSlime(cluster.minResources(), clusterObject.setObject(minResourcesKey));
         toSlime(cluster.maxResources(), clusterObject.setObject(maxResourcesKey));
-        toSlime(cluster.groupSize(), clusterObject.setObject(groupSizeKey));
         clusterObject.setBool(requiredKey, cluster.required());
         toSlime(cluster.suggested(), clusterObject.setObject(suggestedKey));
         toSlime(cluster.target(), clusterObject.setObject(targetKey));
@@ -137,7 +133,6 @@ public class ApplicationSerializer {
                            clusterObject.field(exclusiveKey).asBool(),
                            clusterResourcesFromSlime(clusterObject.field(minResourcesKey)),
                            clusterResourcesFromSlime(clusterObject.field(maxResourcesKey)),
-                           intRangeFromSlime(clusterObject.field(groupSizeKey)),
                            clusterObject.field(requiredKey).asBool(),
                            autoscalingFromSlime(clusterObject.field(suggestedKey), clusterObject.field("nonExisting")),
                            autoscalingFromSlime(clusterObject.field(targetKey), clusterObject.field(autoscalingStatusObjectKey)),
@@ -168,16 +163,6 @@ public class ApplicationSerializer {
         return new ClusterResources((int)clusterResourcesObject.field(nodesKey).asLong(),
                                     (int)clusterResourcesObject.field(groupsKey).asLong(),
                                     NodeResourcesSerializer.resourcesFromSlime(clusterResourcesObject.field(nodeResourcesKey)));
-    }
-
-    private static void toSlime(IntRange range, Cursor rangeObject) {
-        range.from().ifPresent(from -> rangeObject.setLong(fromKey, from));
-        range.to().ifPresent(from -> rangeObject.setLong(toKey, from));
-    }
-
-    private static IntRange intRangeFromSlime(Inspector rangeObject) {
-        if ( ! rangeObject.valid()) return IntRange.empty();
-        return new IntRange(optionalInt(rangeObject.field(fromKey)), optionalInt(rangeObject.field(toKey)));
     }
 
     private static void toSlime(Load load, Cursor loadObject) {
@@ -270,10 +255,6 @@ public class ApplicationSerializer {
 
     private static Optional<Instant> optionalInstant(Inspector inspector) {
         return inspector.valid() ? Optional.of(Instant.ofEpochMilli(inspector.asLong())) : Optional.empty();
-    }
-
-    private static OptionalInt optionalInt(Inspector inspector) {
-        return inspector.valid() ? OptionalInt.of((int)inspector.asLong()) : OptionalInt.empty();
     }
 
 }

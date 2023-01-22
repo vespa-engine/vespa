@@ -1,7 +1,6 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.provision.autoscale;
 
-import com.yahoo.collections.IntRange;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.Capacity;
 import com.yahoo.config.provision.ClusterResources;
@@ -20,15 +19,13 @@ import java.util.Objects;
  */
 public class Limits {
 
-    private static final Limits empty = new Limits(null, null, IntRange.empty());
+    private static final Limits empty = new Limits(null, null);
 
     private final ClusterResources min, max;
-    private final IntRange groupSize;
 
-    private Limits(ClusterResources min, ClusterResources max, IntRange groupSize) {
+    private Limits(ClusterResources min, ClusterResources max) {
         this.min = min;
         this.max = max;
-        this.groupSize = groupSize;
     }
 
     public static Limits empty() { return empty; }
@@ -45,14 +42,12 @@ public class Limits {
         return max;
     }
 
-    public IntRange groupSize() { return groupSize; }
-
     public Limits withMin(ClusterResources min) {
-        return new Limits(min, max, groupSize);
+        return new Limits(min, max);
     }
 
     public Limits withMax(ClusterResources max) {
-        return new Limits(min, max, groupSize);
+        return new Limits(min, max);
     }
 
     /** Caps the given resources at the limits of this. If it is empty the node resources are returned as-is */
@@ -71,7 +66,7 @@ public class Limits {
         var defaultResources = new CapacityPolicies(nodeRepository).defaultNodeResources(clusterSpec, applicationId);
         var specifiedMin = min.nodeResources().isUnspecified() ? min.with(defaultResources) : min;
         var specifiedMax = max.nodeResources().isUnspecified() ? max.with(defaultResources) : max;
-        return new Limits(specifiedMin, specifiedMax, groupSize);
+        return new Limits(specifiedMin, specifiedMax);
     }
 
     private double between(double min, double max, double value) {
@@ -81,23 +76,21 @@ public class Limits {
     }
 
     public static Limits of(Cluster cluster) {
-        return new Limits(cluster.minResources(), cluster.maxResources(), cluster.groupSize());
+        return new Limits(cluster.minResources(), cluster.maxResources());
     }
 
     public static Limits of(Capacity capacity) {
-        return new Limits(capacity.minResources(), capacity.maxResources(), capacity.groupSize());
+        return new Limits(capacity.minResources(), capacity.maxResources());
     }
 
-    public static Limits of(ClusterResources min, ClusterResources max, IntRange groupSize) {
-        return new Limits(Objects.requireNonNull(min, "min"),
-                          Objects.requireNonNull(max, "max"),
-                          Objects.requireNonNull(groupSize, "groupSize"));
+    public static Limits of(ClusterResources min, ClusterResources max) {
+        return new Limits(Objects.requireNonNull(min, "min"), Objects.requireNonNull(max, "max"));
     }
 
     @Override
     public String toString() {
         if (isEmpty()) return "no limits";
-        return "limits: from " + min + " to " + max + ( groupSize.isEmpty() ? "" : " with group size " + groupSize);
+        return "limits: from " + min + " to " + max;
     }
 
 }

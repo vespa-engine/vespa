@@ -1,10 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.config.provision;
 
-import com.yahoo.collections.IntRange;
 import org.junit.jupiter.api.Test;
-
-import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.fail;
@@ -18,11 +15,8 @@ public class CapacityTest {
     void testCapacityValidation() {
         // Equal min and max is allowed
         Capacity.from(new ClusterResources(4, 2, new NodeResources(1, 2, 3, 4)),
-                      new ClusterResources(4, 2, new NodeResources(1, 2, 3, 4)),
-                      IntRange.empty(),
-                      false,
-                      true,
-                      Optional.empty());
+                               new ClusterResources(4, 2, new NodeResources(1, 2, 3, 4)),
+                               false, true);
         assertValidationFailure(new ClusterResources(4, 2, new NodeResources(1, 2, 3, 4)),
                                new ClusterResources(2, 2, new NodeResources(1, 2, 3, 4)));
         assertValidationFailure(new ClusterResources(4, 4, new NodeResources(1, 2, 3, 4)),
@@ -42,7 +36,7 @@ public class CapacityTest {
 
     private void assertValidationFailure(ClusterResources min, ClusterResources max) {
         try {
-            Capacity.from(min, max, IntRange.empty(), false, true, Optional.empty());
+            Capacity.from(min, max, false, true);
             fail("Expected exception with min " + min + " and max " + max);
         }
         catch (IllegalArgumentException e) {

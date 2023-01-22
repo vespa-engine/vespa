@@ -6,7 +6,6 @@ import com.yahoo.vespa.model.content.cluster.ContentCluster;
 import com.yahoo.vespa.model.search.DispatchGroup;
 import com.yahoo.vespa.model.search.SearchInterface;
 import com.yahoo.vespa.model.search.SearchNode;
-import com.yahoo.yolean.Exceptions;
 import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
@@ -177,8 +176,7 @@ public class IndexedHierarchicDistributionTest {
             getIllegalMultipleGroupsLevelCluster();
             fail("Did not get expected Exception");
         } catch (Exception e) {
-            assertEquals("Expected all groups under root group 'null' to be leaf groups only containing nodes, but sub group 'group0' contains 2 sub groups",
-                         Exceptions.toMessageString(e));
+            assertTrue(e.getMessage().contains("sub group 'group0' contains 2 sub groups."));
         }
     }
 
@@ -222,8 +220,7 @@ public class IndexedHierarchicDistributionTest {
             getTwoGroupsCluster(3, 3, "2|*");
             fail("Did not get expected Exception");
         } catch (Exception e) {
-            assertEquals("In content cluster 'mycluster': Expected number of leaf groups (2) to be a factor of redundancy (3), but it is not",
-                         Exceptions.toMessageString(e));
+            assertTrue(e.getMessage().contains("Expected number of leaf groups (2) to be a factor of redundancy (3)"));
         }
     }
 
@@ -243,7 +240,7 @@ public class IndexedHierarchicDistributionTest {
             getTwoGroupsCluster(4, 3, "2|*");
             fail("Did not get expected Exception");
         } catch (Exception e) {
-            assertEquals("In content cluster 'mycluster': Expected equal amount of ready copies per group, but 3 ready copies is specified with 2 groups", Exceptions.toMessageString(e));
+            assertTrue(e.getMessage().contains("Expected equal amount of ready copies per group"));
         }
     }
 

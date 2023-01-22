@@ -1,7 +1,6 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.provision.maintenance;
 
-import com.yahoo.collections.IntRange;
 import com.yahoo.collections.Pair;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.Capacity;
@@ -57,10 +56,10 @@ public class ScalingSuggestionsMaintainerTest {
 
         tester.deploy(app1, cluster1, Capacity.from(new ClusterResources(5, 1, new NodeResources(4, 4, 10, 0.1)),
                                                     new ClusterResources(5, 1, new NodeResources(4, 4, 10, 0.1)),
-                                                    IntRange.empty(), false, true, Optional.empty()));
+                                                    false, true));
         tester.deploy(app2, cluster2, Capacity.from(new ClusterResources(5, 1, new NodeResources(4, 4, 10, 0.1)),
                                                     new ClusterResources(10, 1, new NodeResources(6.5, 5, 15, 0.1)),
-                                                    IntRange.empty(), false, true, Optional.empty()));
+                                                    false, true));
 
         tester.clock().advance(Duration.ofHours(13));
         Duration timeAdded = addMeasurements(0.90f, 0.90f, 0.90f, 0, 500, app1, tester.nodeRepository());
@@ -97,8 +96,7 @@ public class ScalingSuggestionsMaintainerTest {
         addMeasurements(0.7f, 0.7f, 0.7f, 0, 500, app1, tester.nodeRepository());
         maintainer.maintain();
         var suggested = tester.nodeRepository().applications().get(app1).get().cluster(cluster1.id()).get().suggested().resources().get();
-        tester.deploy(app1, cluster1, Capacity.from(suggested, suggested,
-                                                    IntRange.empty(), false, true, Optional.empty()));
+        tester.deploy(app1, cluster1, Capacity.from(suggested, suggested, false, true));
         tester.clock().advance(Duration.ofDays(2));
         addMeasurements(0.2f, 0.65f, 0.6f,
                         0, 500, app1, tester.nodeRepository());

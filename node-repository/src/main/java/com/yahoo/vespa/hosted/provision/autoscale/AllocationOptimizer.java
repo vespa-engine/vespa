@@ -1,7 +1,6 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.provision.autoscale;
 
-import com.yahoo.collections.IntRange;
 import com.yahoo.config.provision.ClusterResources;
 import com.yahoo.config.provision.NodeResources;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
@@ -39,8 +38,7 @@ public class AllocationOptimizer {
         int minimumNodes = AllocationOptimizer.minimumNodes;
         if (limits.isEmpty())
             limits = Limits.of(new ClusterResources(minimumNodes,    1, NodeResources.unspecified()),
-                               new ClusterResources(maximumNodes, maximumNodes, NodeResources.unspecified()),
-                               IntRange.empty());
+                               new ClusterResources(maximumNodes, maximumNodes, NodeResources.unspecified()));
         else
             limits = atLeast(minimumNodes, limits).fullySpecified(current.clusterSpec(), nodeRepository, clusterModel.application().id());
         Optional<AllocatableClusterResources> bestAllocation = Optional.empty();
@@ -52,7 +50,6 @@ public class AllocationOptimizer {
         for (int groups = limits.min().groups(); groups <= limits.max().groups(); groups++) {
             for (int nodes = limits.min().nodes(); nodes <= limits.max().nodes(); nodes++) {
                 if (nodes % groups != 0) continue;
-                if ( ! limits.groupSize().includes(nodes / groups)) continue;
 
                 var resources = new ClusterResources(nodes,
                                                      groups,

@@ -1,7 +1,6 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.provision.testutils;
 
-import com.yahoo.collections.IntRange;
 import com.yahoo.component.Version;
 import com.yahoo.config.provision.ActivationContext;
 import com.yahoo.config.provision.ApplicationId;
@@ -194,11 +193,7 @@ public class MockNodeRepository extends NodeRepository {
         activate(provisioner.prepare(app1Id,
                                      cluster1Id,
                                      Capacity.from(new ClusterResources(2, 1, new NodeResources(2, 8, 50, 1)),
-                                                   new ClusterResources(8, 2, new NodeResources(4, 16, 1000, 1)),
-                                                   IntRange.empty(),
-                                                   false,
-                                                   true,
-                                                   Optional.empty()),
+                                                   new ClusterResources(8, 2, new NodeResources(4, 16, 1000, 1)), false, true),
                                 null), app1Id, provisioner);
         Application app1 = applications().get(app1Id).get();
         Cluster cluster1 = app1.cluster(cluster1Id.id()).get();

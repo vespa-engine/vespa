@@ -39,11 +39,8 @@ public class CapacityPolicies {
     }
 
     public Capacity applyOn(Capacity capacity, ApplicationId application, boolean exclusive) {
-        var min = applyOn(capacity.minResources(), capacity, application, exclusive);
-        var max = applyOn(capacity.maxResources(), capacity, application, exclusive);
-        var groupSize = capacity.groupSize().fromAtMost(max.nodes() / min.groups())
-                                            .toAtLeast(min.nodes() / max.groups());
-        return capacity.withLimits(min, max, groupSize);
+        return capacity.withLimits(applyOn(capacity.minResources(), capacity, application, exclusive),
+                                   applyOn(capacity.maxResources(), capacity, application, exclusive));
     }
 
     private ClusterResources applyOn(ClusterResources resources, Capacity capacity, ApplicationId application, boolean exclusive) {

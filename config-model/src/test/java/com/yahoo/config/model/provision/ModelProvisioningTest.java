@@ -501,14 +501,14 @@ public class ModelProvisioningTest {
                 "     <documents>" +
                 "       <document type='type1' mode='index'/>" +
                 "     </documents>" +
-                "     <nodes count='27' groups='9' group-size='[2, 3]'/>" +
+                "     <nodes count='27' groups='9'/>" +
                 "  </content>" +
                 "  <content version='1.0' id='baz'>" +
                 "     <redundancy>1</redundancy>" +
                 "     <documents>" +
                 "       <document type='type1' mode='index'/>" +
                 "     </documents>" +
-                "     <nodes count='27' groups='27' group-size='1'/>" +
+                "     <nodes count='27' groups='27'/>" +
                 "   </content>" +
                 "</services>";
 
@@ -592,126 +592,6 @@ public class ModelProvisioningTest {
         assertEquals(1, subGroups.get(26).getNodes().size());
         assertEquals(26, subGroups.get(26).getNodes().get(0).getDistributionKey());
         assertEquals("baz/storage/26", subGroups.get(26).getNodes().get(0).getConfigId());
-    }
-
-    @Test
-    public void testUsingGroups() {
-        String services =
-                "<?xml version='1.0' encoding='utf-8' ?>\n" +
-                "<services>" +
-                "  <admin version='4.0'/>" +
-                "  <container version='1.0' id='foo'>" +
-                "     <nodes count='10'/>" +
-                "  </container>" +
-                "  <content version='1.0' id='bar'>" +
-                "     <redundancy>2</redundancy>" +
-                "     <documents>" +
-                "       <document type='type1' mode='index'/>" +
-                "     </documents>" +
-                "     <nodes count='30' groups='2'/>" +
-                "  </content>" +
-                "  <content version='1.0' id='baz'>" +
-                "     <redundancy>1</redundancy>" +
-                "     <documents>" +
-                "       <document type='type1' mode='index'/>" +
-                "     </documents>" +
-                "     <nodes count='30' groups='30'/>" +
-                "   </content>" +
-                "</services>";
-
-        int numberOfHosts = 73;
-        VespaModelTester tester = new VespaModelTester();
-        tester.addHosts(numberOfHosts);
-        VespaModel model = tester.createModel(services, true);
-        assertEquals(numberOfHosts, model.getRoot().hostSystem().getHosts().size());
-
-        ContentCluster cluster = model.getContentClusters().get("bar");
-        List<StorageGroup> subGroups = cluster.getRootGroup().getSubgroups();
-        assertEquals( 0, cluster.getRootGroup().getNodes().size());
-        assertEquals( 2, subGroups.size());
-        assertEquals(15, subGroups.get(0).getNodes().size());
-
-        cluster = model.getContentClusters().get("baz");
-        subGroups = cluster.getRootGroup().getSubgroups();
-        assertEquals( 0, cluster.getRootGroup().getNodes().size());
-        assertEquals(30, subGroups.size());
-        assertEquals( 1, subGroups.get(0).getNodes().size());
-    }
-
-    // Same as the test above but setting groupSize only
-    @Test
-    public void testUsingGroupSizeNotGroups() {
-        String services =
-                "<?xml version='1.0' encoding='utf-8' ?>\n" +
-                "<services>" +
-                "  <admin version='4.0'/>" +
-                "  <container version='1.0' id='foo'>" +
-                "     <nodes count='10'/>" +
-                "  </container>" +
-                "  <content version='1.0' id='bar'>" +
-                "     <redundancy>2</redundancy>" +
-                "     <documents>" +
-                "       <document type='type1' mode='index'/>" +
-                "     </documents>" +
-                "     <nodes count='30' group-size='[15, 30]'/>" +
-                "  </content>" +
-                "  <content version='1.0' id='baz'>" +
-                "     <redundancy>1</redundancy>" +
-                "     <documents>" +
-                "       <document type='type1' mode='index'/>" +
-                "     </documents>" +
-                "     <nodes count='30' group-size='1'/>" +
-                "   </content>" +
-                "</services>";
-
-        int numberOfHosts = 73;
-        VespaModelTester tester = new VespaModelTester();
-        tester.addHosts(numberOfHosts);
-        VespaModel model = tester.createModel(services, true);
-        assertEquals(numberOfHosts, model.getRoot().hostSystem().getHosts().size());
-
-        ContentCluster cluster = model.getContentClusters().get("bar");
-        List<StorageGroup> subGroups = cluster.getRootGroup().getSubgroups();
-        assertEquals( 0, cluster.getRootGroup().getNodes().size());
-        assertEquals( 2, subGroups.size());
-        assertEquals(15, subGroups.get(0).getNodes().size());
-
-        cluster = model.getContentClusters().get("baz");
-        subGroups = cluster.getRootGroup().getSubgroups();
-        assertEquals( 0, cluster.getRootGroup().getNodes().size());
-        assertEquals(30, subGroups.size());
-        assertEquals( 1, subGroups.get(0).getNodes().size());
-    }
-
-    @Test
-    public void testIllegalGroupSize() {
-        String services =
-                "<?xml version='1.0' encoding='utf-8' ?>\n" +
-                "<services>" +
-                "  <admin version='4.0'/>" +
-                "  <container version='1.0' id='foo'>" +
-                "     <nodes count='2'/>" +
-                "  </container>" +
-                "  <content version='1.0' id='bar'>" +
-                "     <redundancy>2</redundancy>" +
-                "     <documents>" +
-                "       <document type='type1' mode='index'/>" +
-                "     </documents>" +
-                "     <nodes count='5' group-size='[2, --]'/>" +
-                "  </content>" +
-                "</services>";
-
-        int numberOfHosts = 10;
-        VespaModelTester tester = new VespaModelTester();
-        tester.addHosts(numberOfHosts);
-        try {
-            tester.createModel(services, true);
-            fail("Expected exception");
-        }
-        catch (IllegalArgumentException e) {
-            assertEquals("In content cluster 'bar': Illegal group-size value: " +
-                         "Expected a number or range on the form [min, max], but got '[2, --]': '--' is not an integer", Exceptions.toMessageString(e));
-        }
     }
 
     @Test
@@ -1224,8 +1104,7 @@ public class ModelProvisioningTest {
             fail("Expected exception");
         }
         catch (IllegalArgumentException e) {
-            assertEquals("In content cluster 'bar': This cluster specifies redundancy 2, " +
-                         "but this cannot be higher than the minimum nodes per group, which is 1", Exceptions.toMessageString(e));
+            assertEquals("Cluster 'bar' specifies redundancy 2, but it cannot be higher than the minimum nodes per group, which is 1", Exceptions.toMessageString(e));
         }
     }
 
@@ -1570,7 +1449,7 @@ public class ModelProvisioningTest {
         tester.addHosts(new NodeResources(85,   200, 1000_000_000, 0.3), 20);
         tester.addHosts(new NodeResources( 0.5,   2,           10, 0.3), 3);
         VespaModel model = tester.createModel(services, true);
-        assertEquals(4 + 6 + 1, model.getRoot().hostSystem().getHosts().size());
+        assertEquals(totalHosts + 3, model.getRoot().hostSystem().getHosts().size());
     }
 
     @Test
@@ -1821,9 +1700,7 @@ public class ModelProvisioningTest {
             VespaModel model = tester.createModel(new Zone(Environment.staging, RegionName.from("us-central-1")), services, true);
             fail("expected failure");
         } catch (IllegalArgumentException e) {
-            assertEquals("In content cluster 'bar': Clusters in hosted environments must have a <nodes count='N'> tag\n" +
-                         "matching all zones, and having no <node> subtags,\nsee https://cloud.vespa.ai/en/reference/services",
-                         Exceptions.toMessageString(e));
+            assertTrue(e.getMessage().startsWith("Clusters in hosted environments must have a <nodes count='N'> tag"));
         }
     }
 

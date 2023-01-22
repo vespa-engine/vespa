@@ -3,7 +3,6 @@ package com.yahoo.vespa.hosted.provision.provisioning;
 
 import ai.vespa.http.DomainName;
 import com.google.common.collect.Iterators;
-import com.yahoo.collections.IntRange;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.Capacity;
 import com.yahoo.config.provision.CloudAccount;
@@ -317,7 +316,7 @@ public class LoadBalancerProvisionerTest {
     @Test
     public void load_balancer_with_custom_settings() {
         ClusterResources resources = new ClusterResources(3, 1, nodeResources);
-        Capacity capacity = Capacity.from(resources, resources, IntRange.empty(), false, true, Optional.of(CloudAccount.empty));
+        Capacity capacity = Capacity.from(resources, resources, false, true, Optional.of(CloudAccount.empty));
         tester.activate(app1, prepare(app1, capacity, clusterRequest(ClusterSpec.Type.container, ClusterSpec.Id.from("c1"))));
         LoadBalancerList loadBalancers = tester.nodeRepository().loadBalancers().list();
         assertEquals(1, loadBalancers.size());
@@ -337,7 +336,7 @@ public class LoadBalancerProvisionerTest {
         ClusterResources resources = new ClusterResources(3, 1, nodeResources);
         CloudAccount cloudAccount0 = CloudAccount.empty;
         {
-            Capacity capacity = Capacity.from(resources, resources, IntRange.empty(), false, true, Optional.of(cloudAccount0));
+            Capacity capacity = Capacity.from(resources, resources, false, true, Optional.of(cloudAccount0));
             tester.activate(app1, prepare(app1, capacity, clusterRequest(ClusterSpec.Type.container, ClusterSpec.Id.from("c1"))));
         }
         LoadBalancerList loadBalancers = tester.nodeRepository().loadBalancers().list();
@@ -346,7 +345,7 @@ public class LoadBalancerProvisionerTest {
 
         // Changing account fails if there is an existing LB in the previous account.
         CloudAccount cloudAccount1 = CloudAccount.from("111111111111");
-        Capacity capacity = Capacity.from(resources, resources, IntRange.empty(), false, true, Optional.of(cloudAccount1));
+        Capacity capacity = Capacity.from(resources, resources, false, true, Optional.of(cloudAccount1));
         try {
             prepare(app1, capacity, clusterRequest(ClusterSpec.Type.container, ClusterSpec.Id.from("c1")));
             fail("Expected exception");

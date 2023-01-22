@@ -131,7 +131,6 @@ class AutoscalingTester {
                               cluster.exclusive(),
                               cluster.minResources(),
                               cluster.maxResources(),
-                              cluster.groupSize(),
                               cluster.required(),
                               cluster.suggested(),
                               cluster.target(),

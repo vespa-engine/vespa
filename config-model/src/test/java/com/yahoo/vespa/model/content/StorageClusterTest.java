@@ -21,7 +21,6 @@ import static com.yahoo.config.model.test.TestUtil.joinLines;
 import com.yahoo.vespa.model.content.cluster.ContentCluster;
 import com.yahoo.vespa.model.content.storagecluster.StorageCluster;
 import com.yahoo.vespa.model.content.utils.ContentClusterUtils;
-import com.yahoo.yolean.Exceptions;
 import org.junit.jupiter.api.Test;
 
 
@@ -433,8 +432,8 @@ public class StorageClusterTest {
             ContentClusterUtils.createCluster(xml, root);
             fail("Did not fail when having both group and nodes");
         } catch (RuntimeException e) {
-            assertEquals("In content cluster 'storage': Both <group> and <nodes> is specified: Only one of these tags can be used in the same configuration",
-                         Exceptions.toMessageString(e));
+            assertEquals("Both <group> and <nodes> is specified: Only one of these tags can be used in the same configuration",
+                    e.getMessage());
         }
     }
 
@@ -508,7 +507,7 @@ public class StorageClusterTest {
             ContentClusterUtils.createCluster(xml, new MockRoot());
             fail("Did not get exception with missing distribution element");
         } catch (RuntimeException e) {
-            assertEquals("In content cluster 'storage': 'distribution' attribute is required with multiple subgroups", Exceptions.toMessageString(e));
+            assertEquals("'distribution' attribute is required with multiple subgroups", e.getMessage());
         }
     }
 }
