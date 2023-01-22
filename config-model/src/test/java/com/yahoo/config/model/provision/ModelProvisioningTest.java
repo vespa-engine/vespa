@@ -595,6 +595,95 @@ public class ModelProvisioningTest {
     }
 
     @Test
+    public void testUsingGroups() {
+        String services =
+                "<?xml version='1.0' encoding='utf-8' ?>\n" +
+                "<services>" +
+                "  <admin version='4.0'/>" +
+                "  <container version='1.0' id='foo'>" +
+                "     <nodes count='10'/>" +
+                "  </container>" +
+                "  <content version='1.0' id='bar'>" +
+                "     <redundancy>2</redundancy>" +
+                "     <documents>" +
+                "       <document type='type1' mode='index'/>" +
+                "     </documents>" +
+                "     <nodes count='30' groups='2'/>" +
+                "  </content>" +
+                "  <content version='1.0' id='baz'>" +
+                "     <redundancy>1</redundancy>" +
+                "     <documents>" +
+                "       <document type='type1' mode='index'/>" +
+                "     </documents>" +
+                "     <nodes count='30' groups='30'/>" +
+                "   </content>" +
+                "</services>";
+
+        int numberOfHosts = 73;
+        VespaModelTester tester = new VespaModelTester();
+        tester.addHosts(numberOfHosts);
+        VespaModel model = tester.createModel(services, true);
+        assertEquals(numberOfHosts, model.getRoot().hostSystem().getHosts().size());
+
+        ContentCluster cluster = model.getContentClusters().get("bar");
+        List<StorageGroup> subGroups = cluster.getRootGroup().getSubgroups();
+        assertEquals( 0, cluster.getRootGroup().getNodes().size());
+        assertEquals( 2, subGroups.size());
+        assertEquals(15, subGroups.get(0).getNodes().size());
+
+        cluster = model.getContentClusters().get("baz");
+        subGroups = cluster.getRootGroup().getSubgroups();
+        assertEquals( 0, cluster.getRootGroup().getNodes().size());
+        assertEquals(30, subGroups.size());
+        assertEquals( 1, subGroups.get(0).getNodes().size());
+    }
+
+    // Same as the test above but setting groupSize only
+    @Test
+    public void testUsingGroupSizeNotGroups() {
+        String services =
+                "<?xml version='1.0' encoding='utf-8' ?>\n" +
+                "<services>" +
+                "  <admin version='4.0'/>" +
+                "  <container version='1.0' id='foo'>" +
+                "     <nodes count='10'/>" +
+                "  </container>" +
+                "  <content version='1.0' id='bar'>" +
+                "     <redundancy>2</redundancy>" +
+                "     <documents>" +
+                "       <document type='type1' mode='index'/>" +
+                "     </documents>" +
+                "     <nodes count='30' group-size='[15, 30]'/>" +
+                "  </content>" +
+                "  <content version='1.0' id='baz'>" +
+                "     <redundancy>1</redundancy>" +
+                "     <documents>" +
+                "       <document type='type1' mode='index'/>" +
+                "     </documents>" +
+                "     <nodes count='30' group-size='1'/>" +
+                "   </content>" +
+                "</services>";
+
+        int numberOfHosts = 73;
+        VespaModelTester tester = new VespaModelTester();
+        tester.addHosts(numberOfHosts);
+        VespaModel model = tester.createModel(services, true);
+        assertEquals(numberOfHosts, model.getRoot().hostSystem().getHosts().size());
+
+        ContentCluster cluster = model.getContentClusters().get("bar");
+        List<StorageGroup> subGroups = cluster.getRootGroup().getSubgroups();
+        assertEquals( 0, cluster.getRootGroup().getNodes().size());
+        assertEquals( 2, subGroups.size());
+        assertEquals(15, subGroups.get(0).getNodes().size());
+
+        cluster = model.getContentClusters().get("baz");
+        subGroups = cluster.getRootGroup().getSubgroups();
+        assertEquals( 0, cluster.getRootGroup().getNodes().size());
+        assertEquals(30, subGroups.size());
+        assertEquals( 1, subGroups.get(0).getNodes().size());
+    }
+
+    @Test
     public void testSlobroksOnContainersIfNoContentClusters() {
         String services =
                 "<?xml version='1.0' encoding='utf-8' ?>\n" +
@@ -1449,7 +1538,7 @@ public class ModelProvisioningTest {
         tester.addHosts(new NodeResources(85,   200, 1000_000_000, 0.3), 20);
         tester.addHosts(new NodeResources( 0.5,   2,           10, 0.3), 3);
         VespaModel model = tester.createModel(services, true);
-        assertEquals(totalHosts + 3, model.getRoot().hostSystem().getHosts().size());
+        assertEquals(4 + 6 + 1, model.getRoot().hostSystem().getHosts().size());
     }
 
     @Test

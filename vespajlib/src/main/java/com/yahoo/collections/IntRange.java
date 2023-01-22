@@ -38,6 +38,13 @@ public class IntRange {
         return true;
     }
 
+    /** Returns the given value adjusted minimally to fit within this range. */
+    public int fit(int value) {
+        if (from.isPresent() && value < from.getAsInt()) return from.getAsInt();
+        if (to.isPresent() && value > to.getAsInt()) return to.getAsInt();
+        return value;
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
