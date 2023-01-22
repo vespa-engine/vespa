@@ -1,6 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.provision.applications;
 
+import com.yahoo.collections.IntRange;
 import com.yahoo.config.provision.Capacity;
 import com.yahoo.config.provision.ClusterResources;
 import com.yahoo.config.provision.ClusterSpec;
@@ -28,6 +29,7 @@ public class Cluster {
     private final ClusterSpec.Id id;
     private final boolean exclusive;
     private final ClusterResources min, max;
+    private final IntRange groupSize;
     private final boolean required;
     private final Autoscaling suggested;
     private final Autoscaling target;
@@ -39,6 +41,7 @@ public class Cluster {
                    boolean exclusive,
                    ClusterResources minResources,
                    ClusterResources maxResources,
+                   IntRange groupSize,
                    boolean required,
                    Autoscaling suggested,
                    Autoscaling target,
@@ -47,6 +50,7 @@ public class Cluster {
         this.exclusive = exclusive;
         this.min = Objects.requireNonNull(minResources);
         this.max = Objects.requireNonNull(maxResources);
+        this.groupSize = Objects.requireNonNull(groupSize);
         this.required = required;
         this.suggested = Objects.requireNonNull(suggested);
         Objects.requireNonNull(target);
@@ -67,6 +71,9 @@ public class Cluster {
 
     /** Returns the configured maximal resources in this cluster */
     public ClusterResources maxResources() { return max; }
+
+    /** Returns the configured group size range in this cluster */
+    public IntRange groupSize() { return groupSize; }
 
     /**
      * Returns whether the resources of this cluster are required to be within the specified min and max.
@@ -105,16 +112,16 @@ public class Cluster {
 
     public Cluster withConfiguration(boolean exclusive, Capacity capacity) {
         return new Cluster(id, exclusive,
-                           capacity.minResources(), capacity.maxResources(), capacity.isRequired(),
+                           capacity.minResources(), capacity.maxResources(), capacity.groupSize(), capacity.isRequired(),
                            suggested, target, scalingEvents);
     }
 
     public Cluster withSuggested(Autoscaling suggested) {
-        return new Cluster(id, exclusive, min, max, required, suggested, target, scalingEvents);
+        return new Cluster(id, exclusive, min, max, groupSize, required, suggested, target, scalingEvents);
     }
 
     public Cluster withTarget(Autoscaling target) {
-        return new Cluster(id, exclusive, min, max, required, suggested, target, scalingEvents);
+        return new Cluster(id, exclusive, min, max, groupSize, required, suggested, target, scalingEvents);
     }
 
     /** Add or update (based on "at" time) a scaling event */
@@ -128,7 +135,7 @@ public class Cluster {
             scalingEvents.add(scalingEvent);
 
         prune(scalingEvents);
-        return new Cluster(id, exclusive, min, max, required, suggested, target, scalingEvents);
+        return new Cluster(id, exclusive, min, max, groupSize, required, suggested, target, scalingEvents);
     }
 
     @Override
@@ -158,7 +165,8 @@ public class Cluster {
     }
 
     public static Cluster create(ClusterSpec.Id id, boolean exclusive, Capacity requested) {
-        return new Cluster(id, exclusive, requested.minResources(), requested.maxResources(), requested.isRequired(),
+        return new Cluster(id, exclusive,
+                           requested.minResources(), requested.maxResources(), requested.groupSize(), requested.isRequired(),
                            Autoscaling.empty(), Autoscaling.empty(), List.of());
     }
 

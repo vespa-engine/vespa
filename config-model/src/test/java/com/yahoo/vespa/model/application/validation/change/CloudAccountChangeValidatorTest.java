@@ -1,5 +1,6 @@
 package com.yahoo.vespa.model.application.validation.change;
 
+import com.yahoo.collections.IntRange;
 import com.yahoo.config.application.api.ValidationOverrides;
 import com.yahoo.config.model.api.Provisioned;
 import com.yahoo.config.model.deploy.DeployState;
@@ -55,6 +56,7 @@ class CloudAccountChangeValidatorTest {
         NodeResources nodeResources = new NodeResources(4, 8, 100, 10);
         return Capacity.from(new ClusterResources(2, 1, nodeResources),
                              new ClusterResources(2, 1, nodeResources),
+                             IntRange.empty(),
                              false,
                              false,
                              Optional.of(cloudAccount).filter(account -> !account.isUnspecified()));

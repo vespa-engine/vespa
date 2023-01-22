@@ -103,7 +103,7 @@
         {
           "from": {
             "nodes": 0,
-            "groups": 0,
+            "groups": 1,
             "resources": {
               "vcpu" : 0.0,
               "memoryGb": 0.0,

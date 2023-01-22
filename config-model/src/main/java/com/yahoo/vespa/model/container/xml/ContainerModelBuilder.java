@@ -1,6 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model.container.xml;
 
+import com.yahoo.collections.IntRange;
 import com.yahoo.component.ComponentSpecification;
 import com.yahoo.component.Version;
 import com.yahoo.component.chain.dependencies.Dependencies;
@@ -926,6 +927,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
             ClusterResources resources = new ClusterResources(nodeCount, 1, NodeResources.unspecified());
             Capacity capacity = Capacity.from(resources,
                                               resources,
+                                              IntRange.empty(),
                                               false,
                                               !deployState.getProperties().isBootstrap(),
                                               context.getDeployState().getProperties().cloudAccount());
@@ -945,16 +947,21 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
     }
 
     private List<ApplicationContainer> createNodesFromNodeCount(ApplicationContainerCluster cluster, Element containerElement, Element nodesElement, ConfigModelContext context) {
-        NodesSpecification nodesSpecification = NodesSpecification.from(new ModelElement(nodesElement), context);
-        ClusterSpec.Id clusterId = ClusterSpec.Id.from(cluster.name());
-        ZoneEndpoint zoneEndpoint = zoneEndpoint(context, clusterId);
-        Map<HostResource, ClusterMembership> hosts = nodesSpecification.provision(cluster.getRoot().hostSystem(),
-                                                                                  ClusterSpec.Type.container,
-                                                                                  clusterId,
-                                                                                  zoneEndpoint,
-                                                                                  log,
-                                                                                  getZooKeeper(containerElement) != null);
-        return createNodesFromHosts(hosts, cluster, context.getDeployState());
+        try {
+            NodesSpecification nodesSpecification = NodesSpecification.from(new ModelElement(nodesElement), context);
+            ClusterSpec.Id clusterId = ClusterSpec.Id.from(cluster.name());
+            ZoneEndpoint zoneEndpoint = zoneEndpoint(context, clusterId);
+            Map<HostResource, ClusterMembership> hosts = nodesSpecification.provision(cluster.getRoot().hostSystem(),
+                                                                                      ClusterSpec.Type.container,
+                                                                                      clusterId,
+                                                                                      zoneEndpoint,
+                                                                                      log,
+                                                                                      getZooKeeper(containerElement) != null);
+            return createNodesFromHosts(hosts, cluster, context.getDeployState());
+        }
+        catch (IllegalArgumentException e) {
+            throw new IllegalArgumentException("In " + cluster, e);
+        }
     }
 
     private List<ApplicationContainer> createNodesFromNodeType(ApplicationContainerCluster cluster, Element nodesElement, ConfigModelContext context) {

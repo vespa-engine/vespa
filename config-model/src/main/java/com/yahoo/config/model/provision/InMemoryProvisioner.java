@@ -1,6 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.config.model.provision;
 
+import com.yahoo.collections.IntRange;
 import com.yahoo.collections.ListMap;
 import com.yahoo.collections.Pair;
 import com.yahoo.config.model.api.HostProvisioner;
@@ -153,13 +154,18 @@ public class InMemoryProvisioner implements HostProvisioner {
             requested = requested.withLimits(requested.minResources().withNodes(1),
                                              requested.maxResources().withNodes(1));
         }
-        if (useMaxResources)
-            return prepare(cluster, requested.maxResources(), requested.isRequired(), requested.canFail());
-        else
-            return prepare(cluster, requested.minResources(), requested.isRequired(), requested.canFail());
+        IntRange groupRange = IntRange.of(requested.minResources().groups(), requested.maxResources().groups());
+        if (useMaxResources) {
+            int groups = groupRange.fit(requested.maxResources().nodes() / requested.groupSize().to().orElse(1));
+            return prepare(cluster, requested.maxResources(),groups, requested.isRequired(), requested.canFail());
+        }
+        else {
+            int groups = groupRange.fit(requested.minResources().nodes() / requested.groupSize().from().orElse(1));
+            return prepare(cluster, requested.minResources(), groups, requested.isRequired(), requested.canFail());
+        }
     }
 
-    public List<HostSpec> prepare(ClusterSpec cluster, ClusterResources requested, boolean required, boolean canFail) {
+    public List<HostSpec> prepare(ClusterSpec cluster, ClusterResources requested, int groups, boolean required, boolean canFail) {
         if (cluster.group().isPresent() && requested.groups() > 1)
             throw new IllegalArgumentException("Cannot both be specifying a group and ask for groups to be created");
 
@@ -169,7 +175,7 @@ public class InMemoryProvisioner implements HostProvisioner {
         if (alwaysReturnOneNode)
             nodes = 1;
 
-        int groups = Math.min(requested.groups(), nodes);
+        groups = Math.min(groups, nodes);
 
         List<HostSpec> allocation = new ArrayList<>();
         if (groups == 1) {

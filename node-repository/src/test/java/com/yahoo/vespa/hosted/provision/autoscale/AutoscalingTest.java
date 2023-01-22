@@ -1,6 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.provision.autoscale;
 
+import com.yahoo.collections.IntRange;
 import com.yahoo.config.provision.Capacity;
 import com.yahoo.config.provision.ClusterResources;
 import com.yahoo.config.provision.ClusterSpec;
@@ -353,6 +354,23 @@ public class AutoscalingTest {
     }
 
     @Test
+    public void autoscaling_respects_group_size_limit() {
+        var min = new ClusterResources( 2, 2, new NodeResources(1, 1, 1, 1));
+        var now = new ClusterResources(5, 5, new NodeResources(3.0, 10, 10, 1));
+        var max = new ClusterResources(18, 6, new NodeResources(100, 1000, 1000, 1));
+        var fixture = AutoscalingTester.fixture()
+                                       .awsProdSetup(true)
+                                       .initialResources(Optional.of(now))
+                                       .capacity(Capacity.from(min, max, IntRange.of(2, 3), false, true, Optional.empty()))
+                                       .build();
+        fixture.tester().clock().advance(Duration.ofDays(2));
+        fixture.loader().applyCpuLoad(0.4, 240);
+        fixture.tester().assertResources("Scaling cpu up",
+                                         12, 6, 2.8,  4.3, 10.0,
+                                         fixture.autoscale());
+    }
+
+    @Test
     public void test_autoscaling_limits_when_min_equals_max() {
         ClusterResources min = new ClusterResources( 2, 1, new NodeResources(1, 1, 1, 1));
         var fixture = AutoscalingTester.fixture().awsProdSetup(true).capacity(Capacity.from(min, min)).build();
@@ -427,7 +445,7 @@ public class AutoscalingTest {
     }
 
     @Test
-    public void test_autoscaling_group_size_1() {
+    public void test_autoscaling_group_size_unconstrained() {
         var min = new ClusterResources( 2, 2, new NodeResources(1, 1, 1, 1));
         var now = new ClusterResources(5, 5, new NodeResources(3, 100, 100, 1));
         var max = new ClusterResources(20, 20, new NodeResources(10, 1000, 1000, 1));
@@ -440,6 +458,23 @@ public class AutoscalingTest {
         fixture.loader().applyCpuLoad(0.9, 120);
         fixture.tester().assertResources("Scaling up to 2 nodes, scaling memory and disk down at the same time",
                                          10, 5, 7.7,  40.6, 47.8,
+                                         fixture.autoscale());
+    }
+
+    @Test
+    public void test_autoscaling_group_size_1() {
+        var min = new ClusterResources( 2, 2, new NodeResources(1, 1, 1, 1));
+        var now = new ClusterResources(5, 5, new NodeResources(3, 100, 100, 1));
+        var max = new ClusterResources(20, 20, new NodeResources(10, 1000, 1000, 1));
+        var fixture = AutoscalingTester.fixture()
+                                       .awsProdSetup(true)
+                                       .initialResources(Optional.of(now))
+                                       .capacity(Capacity.from(min, max, IntRange.of(1), false, true, Optional.empty()))
+                                       .build();
+        fixture.tester().clock().advance(Duration.ofDays(2));
+        fixture.loader().applyCpuLoad(0.9, 120);
+        fixture.tester().assertResources("Scaling up to 2 nodes, scaling memory and disk down at the same time",
+                                         7, 7, 9.4,  80.8, 85.2,
                                          fixture.autoscale());
     }
 
@@ -672,6 +707,23 @@ public class AutoscalingTest {
                    fixture.autoscale().resources().isEmpty());
     }
 
+    @Test
+    public void test_autoscaling_in_dev_with_cluster_size_constraint() {
+        var min = new ClusterResources(4, 1,
+                                       new NodeResources(1, 4, 10, 1, NodeResources.DiskSpeed.any));
+        var max = new ClusterResources(20, 20,
+                                       new NodeResources(100, 1000, 1000, 1, NodeResources.DiskSpeed.any));
+        var fixture = AutoscalingTester.fixture()
+                                       .awsSetup(true, Environment.dev)
+                                       .capacity(Capacity.from(min, max, IntRange.of(3, 5), false, true, Optional.empty()))
+                                       .build();
+        fixture.tester().clock().advance(Duration.ofDays(2));
+        fixture.loader().applyLoad(new Load(1.0, 1.0, 1.0), 200);
+        fixture.tester().assertResources("Scale only to a single node and group since this is dev",
+                                         1, 1, 0.1,  24.8, 131.1,
+                                         fixture.autoscale());
+    }
+
     /** Same setup as test_autoscaling_in_dev(), just with required = true */
     @Test
     public void test_autoscaling_in_dev_with_required_resources_preprovisioned() {
@@ -680,8 +732,10 @@ public class AutoscalingTest {
                                                    new NodeResources(1, 1, 1, 1, NodeResources.DiskSpeed.any)),
                               new ClusterResources(20, 1,
                                                    new NodeResources(100, 1000, 1000, 1, NodeResources.DiskSpeed.any)),
+                              IntRange.empty(),
                               true,
-                              true);
+                              true,
+                              Optional.empty());
 
         var fixture = AutoscalingTester.fixture()
                                        .hostCount(5)
@@ -700,8 +754,10 @@ public class AutoscalingTest {
         var requiredCapacity =
                 Capacity.from(new ClusterResources(1, 1, NodeResources.unspecified()),
                               new ClusterResources(3, 1, NodeResources.unspecified()),
+                              IntRange.empty(),
                               true,
-                              true);
+                              true,
+                              Optional.empty());
 
         var fixture = AutoscalingTester.fixture()
                                        .hostCount(5)

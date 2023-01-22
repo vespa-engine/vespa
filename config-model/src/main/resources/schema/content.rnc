@@ -226,7 +226,8 @@ ContentNodes = element nodes {
         attribute required { xsd:boolean }? &
         attribute exclusive { xsd:boolean }? &
         attribute docker-image { xsd:string }? &
-        attribute groups { xsd:positiveInteger | xsd:string }?
+        attribute groups { xsd:positiveInteger | xsd:string }? &
+        attribute group-size { xsd:positiveInteger | xsd:string }?
       )
       |
       ContentNode +
