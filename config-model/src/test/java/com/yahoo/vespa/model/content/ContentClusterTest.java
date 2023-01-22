@@ -161,6 +161,83 @@ public class ContentClusterTest extends ContentBaseTest {
     }
 
     @Test
+    void testMinRedundancy() {
+        {   // Groups ensures redundancy
+            ContentCluster cc = parse("""
+                                              <content version='1.0' id='storage'>
+                                                <documents/>
+                                                <min-redundancy>2</min-redundancy>
+                                                <group name='root' distribution-key='0'>"
+                                                  <distribution partitions='1|*'/>
+                                                  <group name='g0' distribution-key='0'>
+                                                    <node hostalias='mockhost' distribution-key='0'/>
+                                                    <node hostalias='mockhost' distribution-key='1'/>
+                                                  </group>
+                                                  <group name='g1' distribution-key='1'>
+                                                    <node hostalias='mockhost' distribution-key='2'/>
+                                                    <node hostalias='mockhost' distribution-key='3'/>
+                                                  </group>
+                                                </group>
+                                              </content>
+                                              """
+            );
+            ProtonConfig.Builder protonBuilder = new ProtonConfig.Builder();
+            cc.getSearch().getConfig(protonBuilder);
+            ProtonConfig protonConfig = new ProtonConfig(protonBuilder);
+            assertEquals(1, protonConfig.distribution().redundancy());
+            assertEquals(1, protonConfig.distribution().searchablecopies());
+        }
+
+        {  // Redundancy must be within group
+            ContentCluster cc = parse("""
+                                              <content version='1.0' id='storage'>
+                                                <documents/>
+                                                <min-redundancy>2</min-redundancy>
+                                                <nodes>
+                                                  <node hostalias='mockhost' distribution-key='0'/>
+                                                  <node hostalias='mockhost' distribution-key='1'/>
+                                                  <node hostalias='mockhost' distribution-key='2'/>
+                                                  <node hostalias='mockhost' distribution-key='3'/>
+                                                </nodes>
+                                              </content>
+                                              """
+            );
+            ProtonConfig.Builder protonBuilder = new ProtonConfig.Builder();
+            cc.getSearch().getConfig(protonBuilder);
+            ProtonConfig protonConfig = new ProtonConfig(protonBuilder);
+            assertEquals(2, protonConfig.distribution().redundancy());
+            assertEquals(2, protonConfig.distribution().searchablecopies());
+        }
+
+        {   // Multiple gropups but they do not ensure redundancy
+            ContentCluster cc = parse("""
+                                              <content version='1.0' id='storage'>
+                                                <documents/>
+                                                <min-redundancy>4</min-redundancy>
+                                                <group name='root' distribution-key='0'>"
+                                                  <distribution partitions='1|*'/>
+                                                  <group name='g0' distribution-key='0'>
+                                                    <node hostalias='mockhost' distribution-key='0'/>
+                                                    <node hostalias='mockhost' distribution-key='1'/>
+                                                  </group>
+                                                  <group name='g1' distribution-key='1'>
+                                                    <node hostalias='mockhost' distribution-key='2'/>
+                                                    <node hostalias='mockhost' distribution-key='3'/>
+                                                  </group>
+                                                </group>
+                                              </content>
+                                              """
+            );
+            ProtonConfig.Builder protonBuilder = new ProtonConfig.Builder();
+            cc.getSearch().getConfig(protonBuilder);
+            ProtonConfig protonConfig = new ProtonConfig(protonBuilder);
+            assertEquals(2, protonConfig.distribution().redundancy());
+            assertEquals(1, protonConfig.distribution().searchablecopies());
+        }
+
+    }
+
+    @Test
     void testNoId() {
         ContentCluster c = parse(
                 "<content version=\"1.0\">\n" +
@@ -174,32 +251,6 @@ public class ContentClusterTest extends ContentBaseTest {
         );
 
         assertEquals("content", c.getName());
-    }
-
-    @Test
-    void testRedundancyDefaults() {
-        ContentCluster cc = parse(
-                "<content version=\"1.0\" id=\"storage\">\n" +
-                        "  <documents/>" +
-                        "  <group>" +
-                        "    <node hostalias=\"mockhost\" distribution-key=\"0\"/>\"" +
-                        "    <node hostalias=\"mockhost\" distribution-key=\"1\"/>\"" +
-                        "    <node hostalias=\"mockhost\" distribution-key=\"2\"/>\"" +
-                        "  </group>" +
-                        "</content>"
-        );
-
-        DistributionConfig.Builder distributionBuilder = new DistributionConfig.Builder();
-        cc.getConfig(distributionBuilder);
-        DistributionConfig distributionConfig = distributionBuilder.build();
-        assertEquals(3, distributionConfig.cluster("storage").redundancy());
-
-        StorDistributionConfig.Builder builder = new StorDistributionConfig.Builder();
-        cc.getConfig(builder);
-        StorDistributionConfig config = new StorDistributionConfig(builder);
-        assertEquals(2, config.initial_redundancy());
-        assertEquals(3, config.redundancy());
-        assertEquals(2, config.ready_copies());
     }
 
     @Test
@@ -371,7 +422,7 @@ public class ContentClusterTest extends ContentBaseTest {
             new VespaModelCreatorWithMockPkg(getHosts(), xml, sds).create();
             fail("Deploying without redundancy should fail");
         } catch (IllegalArgumentException e) {
-            assertTrue(e.getMessage().contains("missing required element \"redundancy\""), e.getMessage());
+            assertTrue(e.getMessage().contains("Either <redundancy> or <min-redundancy> must be set"), e.getMessage());
         }
     }
 
@@ -427,6 +478,7 @@ public class ContentClusterTest extends ContentBaseTest {
         {
             FleetcontrollerConfig config = getFleetControllerConfig(
                     "<content version=\"1.0\" id=\"storage\">\n" +
+                           "   <redundancy>3</redundancy>" +
                             "  <documents/>" +
                             "  <group>\n" +
                             "    <node distribution-key=\"0\" hostalias=\"mockhost\"/>\n" +
@@ -443,6 +495,7 @@ public class ContentClusterTest extends ContentBaseTest {
         {
             FleetcontrollerConfig config = getFleetControllerConfig(
                     "<content version=\"1.0\" id=\"storage\">\n" +
+                            "  <redundancy>3</redundancy>" +
                             "  <documents/>" +
                             "  <group>\n" +
                             "    <node distribution-key=\"0\" hostalias=\"mockhost\"/>\n" +
@@ -464,6 +517,7 @@ public class ContentClusterTest extends ContentBaseTest {
     {
         ContentCluster cluster = parse(
                 "<content version=\"1.0\" id=\"storage\">\n" +
+                        "  <redundancy>3</redundancy>" +
                         "  <documents/>" +
                         "  <group>\n" +
                         "    <node distribution-key=\"0\" hostalias=\"mockhost\"/>\n" +
@@ -475,6 +529,7 @@ public class ContentClusterTest extends ContentBaseTest {
 
         cluster = parse(
                 "<content version=\"1.0\" id=\"storage\">\n" +
+                        "  <redundancy>3</redundancy>" +
                         "  <documents/>" +
                         "  <group>\n" +
                         "    <node distribution-key=\"0\" hostalias=\"mockhost\"/>\n" +
@@ -490,6 +545,7 @@ public class ContentClusterTest extends ContentBaseTest {
     {
         ContentCluster cluster = parse(
                 "<content version=\"1.0\" id=\"storage\">\n" +
+                        "  <redundancy>3</redundancy>" +
                         "  <documents/>" +
                         "  <group>\n" +
                         "    <node distribution-key=\"0\" hostalias=\"mockhost\"/>\n" +
@@ -504,6 +560,7 @@ public class ContentClusterTest extends ContentBaseTest {
 
         cluster = parse(
                 "<content version=\"1.0\" id=\"storage\">\n" +
+                        "  <redundancy>2</redundancy>" +
                         "  <documents/>" +
                         "  <group>\n" +
                         "    <node distribution-key=\"0\" hostalias=\"mockhost\"/>\n" +
@@ -533,6 +590,7 @@ public class ContentClusterTest extends ContentBaseTest {
     {
         ContentCluster cluster = parse(
                 "<content version=\"1.0\" id=\"storage\">\n" +
+                        "  <redundancy>3</redundancy>" +
                         "  <documents/>" +
                         "  <engine>" +
                         "    <proton/>" +
@@ -564,6 +622,7 @@ public class ContentClusterTest extends ContentBaseTest {
     {
         ContentCluster cluster = parse(
                 "<content version=\"1.0\" id=\"test\">\n" +
+                        "  <redundancy>3</redundancy>" +
                         "  <documents/>" +
                         "  <engine>" +
                         "    <proton/>" +
@@ -658,6 +717,7 @@ public class ContentClusterTest extends ContentBaseTest {
         MetricsmanagerConfig.Builder builder = new MetricsmanagerConfig.Builder();
 
         ContentCluster cluster = parse("<content version=\"1.0\" id=\"storage\">\n" +
+                "  <redundancy>3</redundancy>" +
                 "  <documents/>" +
                 "  <group>\n" +
                 "    <node distribution-key=\"0\" hostalias=\"mockhost\"/>\n" +
@@ -796,6 +856,7 @@ public class ContentClusterTest extends ContentBaseTest {
 
     private static String oneNodeClusterXml() {
         return "<content version=\"1.0\" id=\"mockcluster\">" +
+                "  <redundancy>3</redundancy>" +
                 "  <documents/>" +
                 "  <group>" +
                 "    <node distribution-key=\"0\" hostalias=\"mockhost\"/>" +
@@ -817,6 +878,7 @@ public class ContentClusterTest extends ContentBaseTest {
 
     private static ContentCluster createClusterWithFlushOnShutdownOverride(boolean flushOnShutdown, boolean isHostedVespa) throws Exception {
         return createOneNodeCluster("<content version=\"1.0\" id=\"mockcluster\">" +
+                "  <redundancy>1</redundancy>" +
                 "  <documents/>" +
                 "  <engine>" +
                 "    <proton>" +

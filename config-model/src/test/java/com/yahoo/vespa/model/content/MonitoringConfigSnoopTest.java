@@ -33,6 +33,7 @@ public class MonitoringConfigSnoopTest {
     private String getContent() {
         return (
                 "<content version='1.0' id='search'>"+
+                "    <redundancy>3</redundancy>" +
                 "    <documents/>"+
                 "    <nodes>"+
                 "      <node hostalias='mockhost' distribution-key='0' />"+

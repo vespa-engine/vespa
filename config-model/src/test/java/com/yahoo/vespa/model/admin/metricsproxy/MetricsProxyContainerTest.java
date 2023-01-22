@@ -173,6 +173,7 @@ public class MetricsProxyContainerTest {
                            "        <nodes count='2'/>",
                            "    </container>",
                            "    <content id='my-content' version='1.0'>",
+                           "        <redundancy>2</redundancy>" +
                            "        <documents />",
                            "        <nodes count='2'/>",
                            "    </content>",
@@ -183,6 +184,7 @@ public class MetricsProxyContainerTest {
         return String.join("\n",
                            "<services>",
                            "    <content version='1.0' id='my-content'>",
+                           "        <redundancy>1</redundancy>" +
                            "        <documents />",
                            "        <nodes count='1' />",
                            "    </content>",

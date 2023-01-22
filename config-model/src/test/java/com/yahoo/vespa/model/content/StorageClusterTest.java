@@ -76,6 +76,7 @@ public class StorageClusterTest {
     private static String cluster(String clusterName, String insert) {
         return joinLines(
                 "<content id=\"" + clusterName + "\">",
+                "<redundancy>3</redundancy>" +
                 "<documents/>",
                 insert,
                 group(),
@@ -338,6 +339,7 @@ public class StorageClusterTest {
     void testCapacity() {
         String xml = joinLines(
                 "<cluster id=\"storage\">",
+                "  <redundancy>2</redundancy>" +
                 "  <documents/>",
                 "  <group>",
                 "    <node distribution-key=\"0\" hostalias=\"mockhost\"/>",
@@ -385,6 +387,7 @@ public class StorageClusterTest {
     void testGenericPersistenceTuning() {
         String xml = joinLines(
                 "<cluster id=\"storage\">",
+                "  <redundancy>2</redundancy>" +
                 "  <documents/>",
                 "  <engine>",
                 "    <fail-partition-on-error>true</fail-partition-on-error>",
@@ -411,6 +414,7 @@ public class StorageClusterTest {
     void requireThatUserDoesNotSpecifyBothGroupAndNodes() {
         String xml = joinLines(
                 "<cluster id=\"storage\">",
+                "  <redundancy>2</redundancy>" +
                 "  <documents/>",
                 "  <engine>",
                 "    <fail-partition-on-error>true</fail-partition-on-error>",
@@ -493,6 +497,7 @@ public class StorageClusterTest {
     void requireThatNestedGroupsRequireDistribution() {
         String xml = joinLines(
                 "<cluster id=\"storage\">",
+                "  <redundancy>2</redundancy>" +
                 "  <documents/>",
                 "  <group>",
                 "    <group distribution-key=\"0\" name=\"bar\">",

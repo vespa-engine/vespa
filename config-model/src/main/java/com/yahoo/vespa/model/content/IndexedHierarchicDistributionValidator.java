@@ -12,16 +12,13 @@ package com.yahoo.vespa.model.content;
  */
 public class IndexedHierarchicDistributionValidator {
 
-    private final String clusterName;
     private final StorageGroup rootGroup;
     private final Redundancy redundancy;
     private final DispatchTuning.DispatchPolicy dispatchPolicy;
 
-    public IndexedHierarchicDistributionValidator(String clusterName,
-                                                  StorageGroup rootGroup,
+    public IndexedHierarchicDistributionValidator(StorageGroup rootGroup,
                                                   Redundancy redundancy,
                                                   DispatchTuning.DispatchPolicy dispatchPolicy) {
-        this.clusterName = clusterName;
         this.rootGroup = rootGroup;
         this.redundancy = redundancy;
         this.dispatchPolicy = dispatchPolicy;

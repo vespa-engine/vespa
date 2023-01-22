@@ -537,7 +537,7 @@ public class ContentCluster extends AbstractConfigProducer<AbstractConfigProduce
         super.validate();
         if (search.usesHierarchicDistribution() && !isHosted) {
             // validate manually configured groups
-            new IndexedHierarchicDistributionValidator(search.getClusterName(), rootGroup, redundancy, search.getIndexed().getTuning().dispatch.getDispatchPolicy()).validate();
+            new IndexedHierarchicDistributionValidator(rootGroup, redundancy, search.getIndexed().getTuning().dispatch.getDispatchPolicy()).validate();
         }
         new ReservedDocumentTypeNameValidator().validate(documentDefinitions);
         new GlobalDistributionValidator().validate(documentDefinitions, globallyDistributedDocuments);
