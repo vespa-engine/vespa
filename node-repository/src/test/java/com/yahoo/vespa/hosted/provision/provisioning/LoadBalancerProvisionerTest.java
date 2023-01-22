@@ -3,7 +3,7 @@ package com.yahoo.vespa.hosted.provision.provisioning;
 
 import ai.vespa.http.DomainName;
 import com.google.common.collect.Iterators;
-import com.yahoo.collections.IntRange;
+import com.yahoo.config.provision.IntRange;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.Capacity;
 import com.yahoo.config.provision.CloudAccount;

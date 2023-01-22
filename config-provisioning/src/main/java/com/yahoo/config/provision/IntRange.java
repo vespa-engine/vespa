@@ -1,4 +1,4 @@
-package com.yahoo.collections;
+package com.yahoo.config.provision;
 
 import java.util.Objects;
 import java.util.OptionalInt;
