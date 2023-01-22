@@ -18,11 +18,11 @@ public class Redundancy implements StorDistributionConfig.Producer, ProtonConfig
 
     private final int groups;
 
-    /** The total number of nodes available in this cluster (assigned when this becomes known) */
+    /** The total number of nodes available in this cluster */
     private final int totalNodes;
 
-    public Redundancy(int initialRedundancy, int finalRedundancy, int readyCopies, int groups, int totalNodes) {
-        this.initialRedundancy = initialRedundancy;
+    public Redundancy(Integer initialRedundancy, int finalRedundancy, int readyCopies, int groups, int totalNodes) {
+        this.initialRedundancy = initialRedundancy != null ? initialRedundancy : finalRedundancy;
         this.finalRedundancy = finalRedundancy;
         this.readyCopies = readyCopies;
         this.groups = groups;

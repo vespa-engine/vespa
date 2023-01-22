@@ -21,9 +21,10 @@ public class StorageGroupTest {
     }
 
     @Test
-    void testSingleGroup() throws Exception {
+    void testSingleGroup() {
         ContentCluster cluster = parse(
                 "<content id=\"storage\">\n" +
+                        "  <redundancy>3</redundancy>" +
                         "  <documents/>" +
                         "  <group>\n" +
                         "    <node hostalias=\"mockhost\" distribution-key=\"0\"/>\n" +

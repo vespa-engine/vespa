@@ -1510,6 +1510,7 @@ public class ModelProvisioningTest {
                       </nodes>
                    </container>
                    <content version='1.0' id='foo'>
+                     <redundancy>3</redundancy>
                       <documents>
                         <document type='type1' mode='index'/>
                       </documents>
@@ -1518,6 +1519,7 @@ public class ModelProvisioningTest {
                       </nodes>
                    </content>
                    <content version='1.0' id='bar'>
+                     <redundancy>3</redundancy>
                       <documents>
                         <document type='type1' mode='index'/>
                       </documents>
@@ -1555,6 +1557,7 @@ public class ModelProvisioningTest {
                 "      </nodes>" +
                 "   </container>" +
                 "   <content version='1.0' id='foo'>" +
+                "      <redundancy>2</redundancy>" +
                 "      <documents>" +
                 "        <document type='type1' mode='index'/>" +
                 "      </documents>" +
@@ -1584,6 +1587,7 @@ public class ModelProvisioningTest {
                 "      </nodes>" +
                 "   </container>" +
                 "   <content version='1.0' id='foo'>" +
+                "      <redundancy>2</redundancy>" +
                 "      <documents>" +
                 "        <document type='type1' mode='index'/>" +
                 "      </documents>" +
@@ -1615,6 +1619,7 @@ public class ModelProvisioningTest {
                         "      </nodes>" +
                         "   </container>" +
                         "   <content version='1.0' id='foo'>" +
+                        "      <redundancy>2</redundancy>" +
                         "      <documents>" +
                         "        <document type='type1' mode='index'/>" +
                         "      </documents>" +
@@ -1865,6 +1870,64 @@ public class ModelProvisioningTest {
         storage.getChildren().get("0").getConfig(builder);
     }
 
+    @Test
+    public void testMinRedundancyMetByGroups() {
+        String services =
+                "<?xml version='1.0' encoding='utf-8' ?>" +
+                "<services>" +
+                "  <container version='1.0' id='container1'>" +
+                "     <nodes count='1'/>" +
+                "  </container>" +
+                "  <content version='1.0'>" +
+                "     <min-redundancy>2</min-redundancy>" +
+                "     <documents>" +
+                "       <document type='type1' mode='index'/>" +
+                "     </documents>" +
+                "     <nodes count='2' groups='2'/>" +
+                "   </content>" +
+                "</services>";
+        VespaModelTester tester = new VespaModelTester();
+        tester.setHosted(true);
+        tester.addHosts(6);
+        VespaModel model = tester.createModel(services, true);
+
+        var contentCluster = model.getContentClusters().get("content");
+        ProtonConfig.Builder protonBuilder = new ProtonConfig.Builder();
+        contentCluster.getSearch().getConfig(protonBuilder);
+        ProtonConfig protonConfig = new ProtonConfig(protonBuilder);
+        assertEquals(1, protonConfig.distribution().searchablecopies());
+        assertEquals(1, protonConfig.distribution().redundancy());
+    }
+
+    @Test
+    public void testMinRedundancyMetWithinGroup() {
+        String services =
+                "<?xml version='1.0' encoding='utf-8' ?>" +
+                "<services>" +
+                "  <container version='1.0' id='container1'>" +
+                "     <nodes count='1'/>" +
+                "  </container>" +
+                "  <content version='1.0'>" +
+                "     <min-redundancy>2</min-redundancy>" +
+                "     <documents>" +
+                "       <document type='type1' mode='index'/>" +
+                "     </documents>" +
+                "     <nodes count='2' groups='1'/>" +
+                "   </content>" +
+                "</services>";
+        VespaModelTester tester = new VespaModelTester();
+        tester.setHosted(true);
+        tester.addHosts(6);
+        VespaModel model = tester.createModel(services, true);
+
+        var contentCluster = model.getContentClusters().get("content");
+        ProtonConfig.Builder protonBuilder = new ProtonConfig.Builder();
+        contentCluster.getSearch().getConfig(protonBuilder);
+        ProtonConfig protonConfig = new ProtonConfig(protonBuilder);
+        assertEquals(2, protonConfig.distribution().searchablecopies());
+        assertEquals(2, protonConfig.distribution().redundancy());
+    }
+
     /**
      * Deploying an application with "nodes count" standalone should give a single-node deployment,
      * also if the user has a lingering hosts file from running self-hosted.
@@ -1933,6 +1996,7 @@ public class ModelProvisioningTest {
                 "    <document-api/>" +
                 "  </container>" +
                 "  <content version='1.0' id='bar'>" +
+                "     <redundancy>3</redundancy>" +
                 "     <documents>" +
                 "       <document type='type1' mode='index'/>" +
                 "     </documents>" +
@@ -1975,6 +2039,7 @@ public class ModelProvisioningTest {
                 "    <document-api/>" +
                 "  </container>" +
                 "  <content version='1.0' id='bar'>" +
+                "     <redundancy>3</redundancy>" +
                 "     <documents>" +
                 "       <document type='type1' mode='index'/>" +
                 "     </documents>" +
@@ -2001,6 +2066,7 @@ public class ModelProvisioningTest {
                 "    <nodes><node hostalias='foo'/></nodes>"+
                 "  </container>" +
                 "  <content version='1.0' id='bar'>" +
+                "     <redundancy>3</redundancy>" +
                 "     <documents>" +
                 "       <document type='type1' mode='index'/>" +
                 "     </documents>" +
@@ -2352,6 +2418,7 @@ public class ModelProvisioningTest {
          String services = joinLines("<?xml version='1.0' encoding='utf-8' ?>",
                  "<services>",
                  "  <content version='1.0' id='test'>",
+                 "     <redundancy>2</redundancy>" +
                  "     <documents>",
                  "       <document type='type1' mode='index'/>",
                  "     </documents>",
@@ -2383,6 +2450,7 @@ public class ModelProvisioningTest {
         String services = joinLines("<?xml version='1.0' encoding='utf-8' ?>",
                 "<services>",
                 "  <content version='1.0' id='test'>",
+                "    <redundancy>1</redundancy>" +
                 "    <config name='vespa.config.search.core.proton'>",
                 "      <flush><memory><maxtlssize>2000</maxtlssize></memory></flush>",
                 "    </config>",
