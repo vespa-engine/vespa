@@ -232,7 +232,7 @@ protected:
    * @param cLen length of content in bytes
    **/
   bool Open(std::string & headerinfo, const char *url, bool usePost = false, const char *content = 0, int cLen = 0);
-  
+
   /**
    * Close the connection to the url we are currently reading
    * from. Will also close the physical connection if keepAlive is not
@@ -319,7 +319,7 @@ public:
       /**
        * Query total hit count. Returns -1 if the total hit count
        * could not be found.
-       * @return Total hit count for query. 
+       * @return Total hit count for query.
       **/
       auto TotalHitCount() const { return _totalHitCount; }
       /**
@@ -327,14 +327,14 @@ public:
        * @return Number of bytes in result buffer.
        **/
       auto ResultSize() const { return _resultSize; }
-      
+
   private:
       bool _ok;
       uint32_t _requestStatus;
       int32_t _totalHitCount;
       int32_t _resultSize;
   };
-    
+
   /**
    * High-level method that may be used to fetch a document in a
    * single method call and save the content to the given file.

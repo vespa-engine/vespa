@@ -40,7 +40,7 @@ private:
     std::vector<vespalib::string> _names;
     vespalib::hash_map<vespalib::string,size_t> _name_map;
     std::unique_ptr<Impl> _impl;
-    
+
 public:
     ExecutionProfiler(int32_t profile_depth);
     ~ExecutionProfiler();

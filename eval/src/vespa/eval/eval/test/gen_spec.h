@@ -16,7 +16,7 @@ using Sequence = std::function<double(size_t)>;
 
 // Sequence counting up from 1 (default)
 // bias (starting point) can be adjusted
-// bias = 1.5 -> 1.5, 2.5, 3.5 ... 
+// bias = 1.5 -> 1.5, 2.5, 3.5 ...
 Sequence N(double bias = 1.0);
 
 // Sequence of numbers ax + b (where x is the index)

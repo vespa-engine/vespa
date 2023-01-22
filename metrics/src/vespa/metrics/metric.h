@@ -222,7 +222,7 @@ public:
     /** Used by sum metric to alter tag of cloned metric for sum. */
     void setTags(Tags tags) {
         _tags = std::move(tags);
-        assignMangledNameWithDimensions(); 
+        assignMangledNameWithDimensions();
     }
 
     /** Set whether metrics have ever been set. */
