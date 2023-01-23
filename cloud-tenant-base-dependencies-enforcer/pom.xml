@@ -29,7 +29,7 @@
         <httpclient.version>4.5.14</httpclient.version>
         <httpcore.version>4.4.16</httpcore.version>
         <junit5.version>5.8.1</junit5.version>  <!-- TODO: in parent this is named 'junit.version' -->
-        <onnxruntime.version>1.12.1</onnxruntime.version>
+        <onnxruntime.version>1.13.1</onnxruntime.version>
         <!-- END parent/pom.xml -->
 
 
