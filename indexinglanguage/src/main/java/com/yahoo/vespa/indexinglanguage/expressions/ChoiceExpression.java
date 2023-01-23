@@ -57,14 +57,14 @@ public class ChoiceExpression extends ExpressionList<Expression> {
             if (previousInput == null)
                 previousInput = thisInput;
             else if (thisInput != null && !previousInput.isAssignableFrom(thisInput))
-                throw new VerificationException(ScriptExpression.class, "Choice expressions require conflicting input types, " +
+                throw new VerificationException(ScriptExpression.class, "Choice expression require conflicting input types, " +
                                                                         previousInput.getName() + " vs " + thisInput.getName() + ".");
 
             DataType thisOutput = choice.createdOutputType();
             if (previousOutput == null)
                 previousOutput = thisOutput;
             else if (thisOutput != null && !previousOutput.isAssignableFrom(thisOutput))
-                throw new VerificationException(ScriptExpression.class, "Choice expressions produce conflicting output types, " +
+                throw new VerificationException(ScriptExpression.class, "Choice expression produce conflicting output types, " +
                                                                         previousOutput.getName() + " vs " + thisOutput.getName() + ".");
         }
         return previousInput;
