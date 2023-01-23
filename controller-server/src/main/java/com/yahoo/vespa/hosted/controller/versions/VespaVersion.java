@@ -6,6 +6,7 @@ import com.yahoo.config.provision.SystemName;
 import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.application.ApplicationList;
 import com.yahoo.vespa.hosted.controller.application.InstanceList;
+import com.yahoo.vespa.hosted.controller.application.TenantAndApplicationId;
 
 import java.time.Instant;
 import java.time.ZoneOffset;
@@ -40,7 +41,7 @@ public record VespaVersion(Version version,
                                            .not().upgradingTo(statistics.version());
         InstanceList failingOnThis = all.matching(instance -> statistics.failingUpgrades().stream().anyMatch(run -> run.id().application().equals(instance)));
 
-        // 'broken' if any Canary fails
+        // 'broken' if any canary fails
         if  ( ! failingOnThis.with(UpgradePolicy.canary).isEmpty())
             return Confidence.broken;
 
@@ -53,8 +54,8 @@ public record VespaVersion(Version version,
             return Confidence.low;
 
         // 'high' if 90% of all default upgrade applications upgraded
-        if (productionOnThis.with(UpgradePolicy.defaultPolicy).size() >=
-            all.withProductionDeployment().with(UpgradePolicy.defaultPolicy).size() * 0.9)
+        if (productionOnThis.with(UpgradePolicy.defaultPolicy).groupingBy(TenantAndApplicationId::from).size() >=
+            all.withProductionDeployment().with(UpgradePolicy.defaultPolicy).groupingBy(TenantAndApplicationId::from).size() * 0.9)
             return Confidence.high;
 
         return Confidence.normal;
@@ -156,14 +157,16 @@ public record VespaVersion(Version version,
     private static boolean nonCanaryApplicationsBroken(Version version,
                                                        InstanceList failingOnThis,
                                                        InstanceList productionOnThis) {
-        InstanceList failingNonCanaries = failingOnThis.startedFailingOn(version).not().with(UpgradePolicy.canary);
-        InstanceList productionNonCanaries = productionOnThis.not().with(UpgradePolicy.canary);
+        int failingNonCanaries = failingOnThis.startedFailingOn(version)
+                                              .not().with(UpgradePolicy.canary)
+                                              .groupingBy(TenantAndApplicationId::from).size();
+        int productionNonCanaries = productionOnThis.not().with(UpgradePolicy.canary)
+                                                    .groupingBy(TenantAndApplicationId::from).size();
 
-        if (productionNonCanaries.size() + failingNonCanaries.size() == 0) return false;
+        if (productionNonCanaries + failingNonCanaries == 0) return false;
 
         // 'broken' if 6 non-canary was broken by this, and that is at least 5% of all
-        int brokenByThisVersion = failingNonCanaries.size();
-        return brokenByThisVersion >= 6 && brokenByThisVersion >= productionOnThis.size() * 0.05;
+        return failingNonCanaries >= 6 && failingNonCanaries >= productionOnThis.groupingBy(TenantAndApplicationId::from).size() * 0.05;
      }
 
 }

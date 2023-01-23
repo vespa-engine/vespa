@@ -1,19 +1,12 @@
 package com.yahoo.vespa.hosted.controller.application.pkg;
 
-import com.yahoo.security.X509CertificateUtils;
-
-import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.FilterInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.UncheckedIOException;
-import java.security.cert.X509Certificate;
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
@@ -22,10 +15,8 @@ import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 import java.util.zip.ZipOutputStream;
 
-import static com.yahoo.security.X509CertificateUtils.certificateListFromPem;
 import static java.io.OutputStream.nullOutputStream;
 import static java.lang.Math.min;
-import static java.nio.charset.StandardCharsets.UTF_8;
 
 /**
  * Wraps a zipped application package stream.
