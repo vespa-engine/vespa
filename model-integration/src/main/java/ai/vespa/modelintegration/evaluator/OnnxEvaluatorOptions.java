@@ -2,7 +2,6 @@
 
 package ai.vespa.modelintegration.evaluator;
 
-import ai.onnxruntime.OrtEnvironment;
 import ai.onnxruntime.OrtException;
 import ai.onnxruntime.OrtSession;
 
@@ -17,6 +16,8 @@ public class OnnxEvaluatorOptions {
     private OrtSession.SessionOptions.ExecutionMode executionMode;
     private int interOpThreads;
     private int intraOpThreads;
+    private int gpuDeviceNumber;
+    private boolean gpuDeviceRequired;
 
     public OnnxEvaluatorOptions() {
         // Defaults:
@@ -24,6 +25,8 @@ public class OnnxEvaluatorOptions {
         executionMode = OrtSession.SessionOptions.ExecutionMode.SEQUENTIAL;
         interOpThreads = 1;
         intraOpThreads = Math.max(1, (int) Math.ceil(((double) Runtime.getRuntime().availableProcessors()) / 4));
+        gpuDeviceNumber = -1;
+        gpuDeviceRequired = false;
     }
 
     public OrtSession.SessionOptions getOptions() throws OrtException {
@@ -32,7 +35,22 @@ public class OnnxEvaluatorOptions {
         options.setExecutionMode(executionMode);
         options.setInterOpNumThreads(interOpThreads);
         options.setIntraOpNumThreads(intraOpThreads);
+        addCuda(options);
         return options;
+    }
+
+    private void addCuda(OrtSession.SessionOptions options) throws OrtException {
+        if (gpuDeviceNumber < 0) return;
+        try {
+            options.addCUDA(gpuDeviceNumber);
+        } catch (OrtException e) {
+            if (e.getCode() != OrtException.OrtErrorCode.ORT_EP_FAIL) {
+                throw e;
+            }
+            if (gpuDeviceRequired) {
+                throw new IllegalArgumentException("GPU device " + gpuDeviceNumber + " is required, but CUDA backend could not be initialized", e);
+            }
+        }
     }
 
     public void setExecutionMode(String mode) {
@@ -53,6 +71,11 @@ public class OnnxEvaluatorOptions {
         if (threads >= 0) {
             intraOpThreads = threads;
         }
+    }
+
+    public void setGpuDevice(int deviceNumber, boolean required) {
+        this.gpuDeviceNumber = deviceNumber;
+        this.gpuDeviceRequired = required;
     }
 
 }

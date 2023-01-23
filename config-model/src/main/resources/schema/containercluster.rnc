@@ -103,7 +103,11 @@ ModelEvaluation = element model-evaluation {
                 attribute name { string } &
                 element intraop-threads { xsd:nonNegativeInteger }? &
                 element interop-threads { xsd:nonNegativeInteger }? &
-                element execution-mode { string "sequential" | string "parallel" }?
+                element execution-mode { string "sequential" | string "parallel" }? &
+                element gpu-device {
+                  attribute required { xsd:boolean } &
+                  xsd:nonNegativeInteger
+                }?
             }*
         }?
     }?
