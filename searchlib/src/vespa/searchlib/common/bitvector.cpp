@@ -95,7 +95,7 @@ BitVector::clearInterval(Index start, Index end)
 
 void
 BitVector::store(Word &word, Word value) {
-    assert(!_enable_range_check && (&word >= getActiveStart()));
+    assert(!_enable_range_check || ((&word >= getActiveStart()) && (&word < (getActiveStart() + numActiveWords()))));
     return store_unchecked(word, value);
 }
 
