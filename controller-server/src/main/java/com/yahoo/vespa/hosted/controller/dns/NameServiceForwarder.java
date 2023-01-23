@@ -30,12 +30,6 @@ import java.util.logging.Logger;
  */
 public class NameServiceForwarder {
 
-    /**
-     * The number of {@link NameServiceRequest}s we allow to be queued. When the queue overflows, the first requests
-     * are dropped in a FIFO order until the queue shrinks below this capacity.
-     */
-    private static final int QUEUE_CAPACITY = 400;
-
     private static final Logger log = Logger.getLogger(NameServiceForwarder.class.getName());
 
     private final CuratorDb db;
@@ -87,13 +81,12 @@ public class NameServiceForwarder {
         try (Mutex lock = db.lockNameServiceQueue()) {
             NameServiceQueue queue = db.readNameServiceQueue();
             var queued = queue.requests().size();
-            if (queued >= QUEUE_CAPACITY) {
-                log.log(Level.WARNING, "Queue is at capacity (size: " + queued + "), dropping older " +
-                                       "requests. This likely means that the name service is not successfully " +
-                                       "executing requests");
+            if (queued > NameServiceQueue.QUEUE_CAPACITY) {
+                log.log(Level.WARNING, "Queue is above capacity (size: " + queued + "), failing requests will be dropped. " +
+                                       "This likely means that the name service is not successfully executing requests");
             }
             log.log(Level.FINE, () -> "Queueing name service request: " + request);
-            db.writeNameServiceQueue(queue.with(request, priority).last(QUEUE_CAPACITY));
+            db.writeNameServiceQueue(queue.with(request, priority));
         }
     }
 

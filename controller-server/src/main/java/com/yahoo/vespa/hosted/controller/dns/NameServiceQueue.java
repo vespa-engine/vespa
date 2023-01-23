@@ -10,7 +10,6 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.function.Predicate;
 import java.util.function.UnaryOperator;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -29,6 +28,13 @@ import static java.util.function.Predicate.not;
 public record NameServiceQueue(List<NameServiceRequest> requests) {
 
     public static final NameServiceQueue EMPTY = new NameServiceQueue(List.of());
+
+    /**
+     * The number of {@link NameServiceRequest}s we allow to be queued. When the queue overflows, failing requests
+     * are dropped in a FIFO order until the queue shrinks below this capacity. If that is not enough, the oldest
+     * requests will also be dropped, as needed.
+     */
+    static final int QUEUE_CAPACITY = 400;
 
     private static final Logger log = Logger.getLogger(NameServiceQueue.class.getName());
 
@@ -84,8 +90,11 @@ public record NameServiceQueue(List<NameServiceRequest> requests) {
                 request.dispatchTo(nameService);
             }
             catch (Exception e) {
+                boolean dropFailingRequest = pending.size() > QUEUE_CAPACITY;
                 log.log(Level.WARNING, "Failed to execute " + request + ": " + Exceptions.toMessageString(e) +
-                                       ", request will be moved backwards, and retried");
+                                       ", request will " + (dropFailingRequest ? "be dropped, as queue is over capacity"
+                                                                               : "be moved backwards, and retried"));
+                if (dropFailingRequest) continue;
 
                 // Move all requests with the same owner backwards as far as we can, i.e., to the back, or to the first owner-less request.
                 Optional<TenantAndApplicationId> owner = request.owner();
@@ -103,7 +112,14 @@ public record NameServiceQueue(List<NameServiceRequest> requests) {
                 pending.addAll(0, others);  // then append requests owned by others before that again.
             }
         }
-        return new NameServiceQueue(pending);
+
+        NameServiceQueue remaining = new NameServiceQueue(pending);
+        if (pending.size() > 2 * QUEUE_CAPACITY) {
+            log.log(Level.WARNING, "Queue has " + pending.size() + " entries, and must be emptying far too slowly; " +
+                                   "dropping the oldest entries past " + 2 * QUEUE_CAPACITY);
+            remaining = remaining.last(2 * QUEUE_CAPACITY);
+        }
+        return remaining;
     }
 
     @Override
