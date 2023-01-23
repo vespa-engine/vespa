@@ -5,7 +5,6 @@
 #include <vespa/vespalib/test/datastore/buffer_stats.h>
 #include <vespa/vespalib/test/insertion_operators.h>
 #include <vespa/vespalib/test/memory_allocator_observer.h>
-#include <vespa/vespalib/util/traits.h>
 #include <vector>
 
 using namespace vespalib::datastore;
@@ -29,12 +28,12 @@ template <typename RefT = EntryRefT<22>>
 struct TestBase : public ::testing::Test {
     using EntryRefType = RefT;
 
-    AllocStats stats;
+    AllocStats allocStats;
     UniqueStoreStringAllocator<EntryRefType> allocator;
     generation_t generation;
     TestBase()
-        : stats(),
-          allocator(std::make_unique<MemoryAllocatorObserver>(stats)),
+        : allocStats(),
+          allocator(std::make_unique<MemoryAllocatorObserver>(allocStats)),
           generation(1)
     {}
     void assert_add(const char *input) {
@@ -61,11 +60,12 @@ struct TestBase : public ::testing::Test {
         return allocator.get_data_store().getBufferState(get_buffer_id(ref));
     }
     void assert_buffer_state(EntryRef ref, const TestBufferStats expStats) const {
+        const auto & stats = buffer_state(ref).stats();
         EXPECT_EQ(expStats._used, buffer_state(ref).size());
-        EXPECT_EQ(expStats._hold, buffer_state(ref).stats().hold_elems());
-        EXPECT_EQ(expStats._dead, buffer_state(ref).stats().dead_elems());
-        EXPECT_EQ(expStats._extra_used, buffer_state(ref).stats().extra_used_bytes());
-        EXPECT_EQ(expStats._extra_hold, buffer_state(ref).stats().extra_hold_bytes());
+        EXPECT_EQ(expStats._hold, stats.hold_elems());
+        EXPECT_EQ(expStats._dead, stats.dead_elems());
+        EXPECT_EQ(expStats._extra_used, stats.extra_used_bytes());
+        EXPECT_EQ(expStats._extra_hold, stats.extra_hold_bytes());
     }
     void reclaim_memory() {
         allocator.get_data_store().assign_generation(generation++);
@@ -179,7 +179,7 @@ TEST_F(StringTest, free_list_is_never_used_for_move_on_compact)
 
 TEST_F(StringTest, provided_memory_allocator_is_used)
 {
-    EXPECT_EQ(AllocStats(18, 0), stats);
+    EXPECT_EQ(AllocStats(18, 0), allocStats);
 }
 
 TEST_F(SmallOffsetStringTest, new_underlying_buffer_is_allocated_when_current_is_full)
@@ -196,7 +196,7 @@ TEST_F(SmallOffsetStringTest, new_underlying_buffer_is_allocated_when_current_is
         uint32_t buffer_id = get_buffer_id(add(small.c_str()));
         EXPECT_EQ(second_buffer_id, buffer_id);
     }
-    EXPECT_LT(18, stats.alloc_cnt);
+    EXPECT_LT(18, allocStats.alloc_cnt);
 }
 
 GTEST_MAIN_RUN_ALL_TESTS()
