@@ -39,8 +39,10 @@ public final class ScriptExpression extends ExpressionList<StatementExpression> 
     protected void doExecute(ExecutionContext context) {
         FieldValue input = context.getValue();
         for (StatementExpression statement : this) {
-            if (statement.getInputFields().isEmpty() || containsAtLeastOneInputFrom(statement.getInputFields(), context))
+            if (context.isComplete() ||
+                (statement.getInputFields().isEmpty() || containsAtLeastOneInputFrom(statement.getInputFields(), context))) {
                 context.setValue(input).execute(statement);
+            }
         }
         context.setValue(input);
     }

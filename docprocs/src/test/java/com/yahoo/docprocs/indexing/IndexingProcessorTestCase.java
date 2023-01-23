@@ -15,7 +15,6 @@ import com.yahoo.document.datatypes.StringFieldValue;
 import com.yahoo.document.update.AssignValueUpdate;
 import com.yahoo.document.update.FieldUpdate;
 import com.yahoo.document.update.ValueUpdate;
-import com.yahoo.language.process.Embedder;
 import com.yahoo.language.simple.SimpleLinguistics;
 import com.yahoo.vespa.configdefinition.IlscriptsConfig;
 import org.junit.Test;
@@ -39,18 +38,6 @@ public class IndexingProcessorTestCase {
     private final IndexingProcessor indexer = newProcessor(CONFIG_ID);
 
     @Test
-    public void requireThatIndexerProcessesDocuments() {
-        Document input = new Document(indexer.getDocumentTypeManager().getDocumentType("music"), "id:ns:music::");
-        input.setFieldValue("artist", new StringFieldValue("69"));
-        DocumentOperation op = process(new DocumentPut(input));
-        assertTrue(op instanceof DocumentPut);
-
-        Document output = ((DocumentPut)op).getDocument();
-        assertEquals(new StringFieldValue("69"), output.getFieldValue("title"));
-        assertEquals("music", output.getDataType().getName());
-    }
-
-    @Test
     public void requireThatIndexerForwardsDocumentsOfUnknownType() {
         Document input = new Document(new DocumentType("unknown"), "id:ns:unknown::");
         DocumentOperation output = process(new DocumentPut(input));
@@ -59,12 +46,82 @@ public class IndexingProcessorTestCase {
     }
 
     @Test
-    public void testFieldUpdates() {
-        // 'artist' is assigned to 'title' and vice versa
+    public void testPut() {
         // 'combined' gets the value of both
         // 'combinedWithFallback' falls back to an empty string if an input is missing
 
-        {   // Both inputs are set
+        {   // Both artist and title are set
+            DocumentType inputType = indexer.getDocumentTypeManager().getDocumentType("music");
+            DocumentPut input = new DocumentPut(inputType, "id:ns:music::");
+            input.getDocument().setFieldValue(inputType.getField("artist"), new StringFieldValue("artist1"));
+            input.getDocument().setFieldValue(inputType.getField("title"), new StringFieldValue("title1"));
+
+            Document output = ((DocumentPut)process(input)).getDocument();
+            assertEquals("artist1", output.getFieldValue("artist").getWrappedValue());
+            assertEquals("title1", output.getFieldValue("title").getWrappedValue());
+            assertNull(output.getFieldValue("song"));
+            assertEquals("artist1 title1", output.getFieldValue("combined").getWrappedValue());
+            assertEquals("artist1 title1", output.getFieldValue("combinedWithFallback").getWrappedValue());
+        }
+
+        {   // Just artist is set
+            DocumentType inputType = indexer.getDocumentTypeManager().getDocumentType("music");
+            DocumentPut input = new DocumentPut(inputType, "id:ns:music::");
+            input.getDocument().setFieldValue(inputType.getField("artist"), new StringFieldValue("artist1"));
+
+            Document output = ((DocumentPut)process(input)).getDocument();
+            assertEquals("artist1", output.getFieldValue("artist").getWrappedValue());
+            assertNull(output.getFieldValue("title"));
+            assertNull(output.getFieldValue("song"));
+            assertNull(output.getFieldValue("combined"));
+            assertEquals("artist1 ", output.getFieldValue("combinedWithFallback").getWrappedValue());
+        }
+
+        {   // Just title is set
+            DocumentType inputType = indexer.getDocumentTypeManager().getDocumentType("music");
+            DocumentPut input = new DocumentPut(inputType, "id:ns:music::");
+            input.getDocument().setFieldValue(inputType.getField("title"), new StringFieldValue("title1"));
+
+            Document output = ((DocumentPut)process(input)).getDocument();
+            assertEquals("title1", output.getFieldValue("title").getWrappedValue());
+            assertNull(output.getFieldValue("artist"));
+            assertNull(output.getFieldValue("song"));
+            assertNull(output.getFieldValue("combined"));
+            assertEquals(" title1", output.getFieldValue("combinedWithFallback").getWrappedValue());
+        }
+
+        {   // Neither title nor artist is set
+            DocumentType inputType = indexer.getDocumentTypeManager().getDocumentType("music");
+            DocumentPut input = new DocumentPut(inputType, "id:ns:music::");
+            input.getDocument().setFieldValue(inputType.getField("song"), new StringFieldValue("song1"));
+
+            Document output = ((DocumentPut)process(input)).getDocument();
+            assertNull(output.getFieldValue("artist"));
+            assertNull(output.getFieldValue("title"));
+            assertEquals("song1", output.getFieldValue("song").getWrappedValue());
+            assertNull(output.getFieldValue("combined"));
+            assertEquals(" ", output.getFieldValue("combinedWithFallback").getWrappedValue());
+        }
+
+        {   // None is set
+            DocumentType inputType = indexer.getDocumentTypeManager().getDocumentType("music");
+            DocumentPut input = new DocumentPut(inputType, "id:ns:music::");
+
+            Document output = ((DocumentPut)process(input)).getDocument();
+            assertNull(output.getFieldValue("artist"));
+            assertNull(output.getFieldValue("title"));
+            assertNull(output.getFieldValue("song"));
+            assertNull(output.getFieldValue("combined"));
+            assertEquals(" ", output.getFieldValue("combinedWithFallback").getWrappedValue());
+        }
+    }
+
+    @Test
+    public void testUpdate() {
+        // 'combined' gets the value of artist and title
+        // 'combinedWithFallback' falls back to an empty string if an input is missing
+
+        {   // Both artist and title are set
             DocumentType inputType = indexer.getDocumentTypeManager().getDocumentType("music");
             DocumentUpdate input = new DocumentUpdate(inputType, "id:ns:music::");
             input.addFieldUpdate(FieldUpdate.createAssign(inputType.getField("artist"), new StringFieldValue("artist1")));
@@ -72,8 +129,8 @@ public class IndexingProcessorTestCase {
 
             DocumentUpdate output = (DocumentUpdate)process(input);
             assertEquals(4, output.fieldUpdates().size());
-            assertAssignment("artist", "title1", output);
-            assertAssignment("title", "artist1", output);
+            assertAssignment("artist", "artist1", output);
+            assertAssignment("title", "title1", output);
             assertAssignment("combined", "artist1 title1", output);
             assertAssignment("combinedWithFallback", "artist1 title1", output);
         }
@@ -85,7 +142,7 @@ public class IndexingProcessorTestCase {
 
             DocumentUpdate output = (DocumentUpdate)process(input);
             assertEquals(2, output.fieldUpdates().size());
-            assertAssignment("title", "artist1", output);
+            assertAssignment("artist", "artist1", output);
             assertAssignment("combinedWithFallback", "artist1 ", output);
         }
 
@@ -96,19 +153,18 @@ public class IndexingProcessorTestCase {
 
             DocumentUpdate output = (DocumentUpdate)process(input);
             assertEquals(2, output.fieldUpdates().size());
-            assertAssignment("artist", "title1", output);
+            assertAssignment("title", "title1", output);
             assertAssignment("combinedWithFallback", " title1", output);
         }
 
         {   // Neither title nor artist is set: Should not update embeddings even though it has fallbacks for all
             DocumentType inputType = indexer.getDocumentTypeManager().getDocumentType("music");
             DocumentUpdate input = new DocumentUpdate(inputType, "id:ns:music::");
-            input.addFieldUpdate(FieldUpdate.createAssign(inputType.getField("isbn"), new StringFieldValue("isbn1")));
+            input.addFieldUpdate(FieldUpdate.createAssign(inputType.getField("song"), new StringFieldValue("song1")));
 
             DocumentUpdate output = (DocumentUpdate)process(input);
-            assertEquals(2, output.fieldUpdates().size());
-            assertAssignment("isbn", "isbn1", output);
-            assertAssignment("song", "isbn1", output);
+            assertEquals(1, output.fieldUpdates().size());
+            assertAssignment("song", "song1", output);
         }
 
         {   // None is set: Should not update anything

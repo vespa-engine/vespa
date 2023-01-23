@@ -41,9 +41,10 @@ public class DocumentScript {
     }
 
     public Expression getExpression() { return expression; }
+
     public Document execute(AdapterFactory adapterFactory, Document document) {
-        for (Iterator<Map.Entry<Field, FieldValue>> it = document.iterator(); it.hasNext(); ) {
-            Map.Entry<Field, FieldValue> entry = it.next();
+        for (var i = document.iterator(); i.hasNext(); ) {
+            Map.Entry<Field, FieldValue> entry = i.next();
             requireThatFieldIsDeclaredInDocument(entry.getKey());
             removeAnyLinguisticsSpanTree(entry.getValue());
         }
