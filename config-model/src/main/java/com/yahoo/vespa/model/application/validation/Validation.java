@@ -13,7 +13,7 @@ import com.yahoo.vespa.model.VespaModel;
 import com.yahoo.vespa.model.application.validation.change.CertificateRemovalChangeValidator;
 import com.yahoo.vespa.model.application.validation.change.ChangeValidator;
 import com.yahoo.vespa.model.application.validation.change.CloudAccountChangeValidator;
-import com.yahoo.vespa.model.application.validation.change.ClusterSizeReductionValidator;
+import com.yahoo.vespa.model.application.validation.change.ResourcesReductionValidator;
 import com.yahoo.vespa.model.application.validation.change.ConfigValueChangeValidator;
 import com.yahoo.vespa.model.application.validation.change.ContainerRestartValidator;
 import com.yahoo.vespa.model.application.validation.change.ContentClusterRemovalValidator;
@@ -23,7 +23,6 @@ import com.yahoo.vespa.model.application.validation.change.IndexedSearchClusterC
 import com.yahoo.vespa.model.application.validation.change.IndexingModeChangeValidator;
 import com.yahoo.vespa.model.application.validation.change.NodeResourceChangeValidator;
 import com.yahoo.vespa.model.application.validation.change.RedundancyIncreaseValidator;
-import com.yahoo.vespa.model.application.validation.change.ResourcesReductionValidator;
 import com.yahoo.vespa.model.application.validation.change.StartupCommandChangeValidator;
 import com.yahoo.vespa.model.application.validation.change.StreamingSearchClusterChangeValidator;
 import com.yahoo.vespa.model.application.validation.first.RedundancyOnFirstDeploymentValidator;
@@ -118,7 +117,7 @@ public class Validation {
                 new StartupCommandChangeValidator(),
                 new ContentTypeRemovalValidator(),
                 new ContentClusterRemovalValidator(),
-                new ClusterSizeReductionValidator(),
+                new ResourcesReductionValidator(),
                 new ResourcesReductionValidator(),
                 new ContainerRestartValidator(),
                 new NodeResourceChangeValidator(),

@@ -16,6 +16,7 @@ import static org.junit.jupiter.api.Assertions.fail;
 
 /**
  * @author freva
+ * @author bratseth
  */
 public class ResourcesReductionValidatorTest {
 
@@ -24,13 +25,16 @@ public class ResourcesReductionValidatorTest {
 
     @Test
     void fail_when_reduction_by_over_50_percent() {
-        VespaModel previous = tester.deploy(null, getServices(new NodeResources(8, 64, 800, 1)), Environment.prod, null).getFirst();
+        VespaModel previous = tester.deploy(null, getServices(6, new NodeResources(8, 64, 800, 1)), Environment.prod, null).getFirst();
         try {
-            tester.deploy(previous, getServices(new NodeResources(8, 16, 800, 1)), Environment.prod, null);
+            tester.deploy(previous, getServices(6, new NodeResources(8, 16, 800, 1)), Environment.prod, null);
             fail("Expected exception due to resources reduction");
         } catch (IllegalArgumentException expected) {
-            assertEquals("resources-reduction: Resource reduction in 'default' is too large. " +
-                    "Current memory GB: 64.00, new: 16.00. New min resources must be at least 50% of the current min resources. " +
+            assertEquals("resources-reduction: Resource reduction in 'default' is too large: " +
+                    "To guard against mistakes, the new max resources must be at least 50% " +
+                    "of the current max resources in all dimensions. " +
+                    "Current: [vcpu: 48.0, memory: 384.0 Gb, disk 4800.0 Gb, bandwidth: 1.8 Gbps, architecture: x86_64], " +
+                    "new: [vcpu: 48.0, memory: 96.0 Gb, disk 4800.0 Gb, bandwidth: 1.8 Gbps, architecture: x86_64]. " +
                     ValidationOverrides.toAllowMessage(ValidationId.resourcesReduction),
                     Exceptions.toMessageString(expected));
         }
@@ -38,14 +42,16 @@ public class ResourcesReductionValidatorTest {
 
     @Test
     void fail_when_reducing_multiple_resources_by_over_50_percent() {
-        VespaModel previous = tester.deploy(null, getServices(new NodeResources(8, 64, 800, 1)), Environment.prod, null).getFirst();
+        VespaModel previous = tester.deploy(null, getServices(6,new NodeResources(8, 64, 800, 1)), Environment.prod, null).getFirst();
         try {
-            tester.deploy(previous, getServices(new NodeResources(3, 16, 200, 1)), Environment.prod, null);
+            tester.deploy(previous, getServices(6, new NodeResources(3, 16, 200, 1)), Environment.prod, null);
             fail("Expected exception due to resources reduction");
         } catch (IllegalArgumentException expected) {
-            assertEquals("resources-reduction: Resource reduction in 'default' is too large. " +
-                    "Current vCPU: 8.00, new: 3.00. Current memory GB: 64.00, new: 16.00. Current disk GB: 800.00, new: 200.00. " +
-                    "New min resources must be at least 50% of the current min resources. " +
+            assertEquals("resources-reduction: Resource reduction in 'default' is too large: " +
+                         "To guard against mistakes, the new max resources must be at least 50% " +
+                         "of the current max resources in all dimensions. " +
+                         "Current: [vcpu: 48.0, memory: 384.0 Gb, disk 4800.0 Gb, bandwidth: 1.8 Gbps, architecture: x86_64], " +
+                         "new: [vcpu: 18.0, memory: 96.0 Gb, disk 1200.0 Gb, bandwidth: 1.8 Gbps, architecture: x86_64]. " +
                     ValidationOverrides.toAllowMessage(ValidationId.resourcesReduction),
                     Exceptions.toMessageString(expected));
         }
@@ -53,29 +59,69 @@ public class ResourcesReductionValidatorTest {
 
     @Test
     void small_resource_decrease_is_allowed() {
-        VespaModel previous = tester.deploy(null, getServices(new NodeResources(1.5, 64, 800, 1)), Environment.prod, null).getFirst();
-        tester.deploy(previous, getServices(new NodeResources(.5, 48, 600, 1)), Environment.prod, null);
+        VespaModel previous = tester.deploy(null, getServices(6, new NodeResources(1.5, 64, 800, 1)), Environment.prod, null).getFirst();
+        tester.deploy(previous, getServices(6, new NodeResources(.5, 48, 600, 1)), Environment.prod, null);
+    }
+
+    @Test
+    void reorganizing_resources_is_allowed() {
+        VespaModel previous = tester.deploy(null, getServices(12, new NodeResources(2, 10, 100, 1)), Environment.prod, null).getFirst();
+        tester.deploy(previous, getServices(4, new NodeResources(6, 30, 300, 1)), Environment.prod, null);
     }
 
     @Test
     void overriding_resource_decrease() {
-        VespaModel previous = tester.deploy(null, getServices(new NodeResources(8, 64, 800, 1)), Environment.prod, null).getFirst();
-        tester.deploy(previous, getServices(new NodeResources(8, 16, 800, 1)), Environment.prod, resourcesReductionOverride); // Allowed due to override
+        VespaModel previous = tester.deploy(null, getServices(6, new NodeResources(8, 64, 800, 1)), Environment.prod, null).getFirst();
+        tester.deploy(previous, getServices(6, new NodeResources(8, 16, 800, 1)), Environment.prod, resourcesReductionOverride); // Allowed due to override
     }
 
     @Test
     void allowed_to_go_to_not_specifying_resources() {
-        VespaModel previous = tester.deploy(null, getServices(new NodeResources(1.5, 64, 800, 1)), Environment.prod, null).getFirst();
-        tester.deploy(previous, getServices(null), Environment.prod, null);
+        VespaModel previous = tester.deploy(null, getServices(6, new NodeResources(1.5, 64, 800, 1)), Environment.prod, null).getFirst();
+        tester.deploy(previous, getServices(6, null), Environment.prod, null);
     }
 
     @Test
     void allowed_to_go_from_not_specifying_resources() {
-        VespaModel previous = tester.deploy(null, getServices(null), Environment.prod, null).getFirst();
-        tester.deploy(previous, getServices(new NodeResources(1.5, 64, 800, 1)), Environment.prod, null);
+        VespaModel previous = tester.deploy(null, getServices(6, null), Environment.prod, null).getFirst();
+        tester.deploy(previous, getServices(6, new NodeResources(1.5, 64, 800, 1)), Environment.prod, null);
     }
 
-    private static String getServices(NodeResources resources) {
+    @Test
+    void testSizeReductionValidation() {
+        ValidationTester tester = new ValidationTester(33);
+
+        VespaModel previous = tester.deploy(null, getServices(30, null), Environment.prod, null).getFirst();
+        try {
+            tester.deploy(previous, getServices(14, null), Environment.prod, null);
+            fail("Expected exception due to resources reduction");
+        }
+        catch (IllegalArgumentException expected) {
+            assertEquals("resources-reduction: Size reduction in 'default' is too large: " +
+                         "To guard against mistakes, the new max nodes must be at least 50% of the current nodes. " +
+                         "Current nodes: 30, new nodes: 14. " +
+                         ValidationOverrides.toAllowMessage(ValidationId.resourcesReduction),
+                         Exceptions.toMessageString(expected));
+        }
+    }
+
+    @Test
+    void testSizeReductionValidationMinimalDecreaseIsAllowed() {
+        ValidationTester tester = new ValidationTester(30);
+
+        VespaModel previous = tester.deploy(null, getServices(3, null), Environment.prod, null).getFirst();
+        tester.deploy(previous, getServices(2, null), Environment.prod, null);
+    }
+
+    @Test
+    void testOverridingSizeReductionValidation() {
+        ValidationTester tester = new ValidationTester(33);
+
+        VespaModel previous = tester.deploy(null, getServices(30, null), Environment.prod, null).getFirst();
+        tester.deploy(previous, getServices(14, null), Environment.prod, resourcesReductionOverride); // Allowed due to override
+    }
+
+    private static String getServices(int nodes, NodeResources resources) {
         String resourcesStr = resources == null ?
                 "" :
                 String.format("        <resources vcpu='%.0f' memory='%.0fG' disk='%.0fG'/>",
@@ -89,7 +135,7 @@ public class ResourcesReductionValidatorTest {
                 "    <documents>" +
                 "      <document type='music' mode='index'/>" +
                 "    </documents>" +
-                "    <nodes count='5'>" +
+                "    <nodes count='" + nodes + "'>" +
                 resourcesStr +
                 "    </nodes>" +
                 "   </content>" +

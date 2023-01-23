@@ -13,9 +13,8 @@ public enum ValidationId {
     indexingChange("indexing-change"), // Changing what tokens are expected and stored in field indexes
     indexModeChange("indexing-mode-change"), // Changing the index mode (streaming, indexed, store-only) of documents 
     fieldTypeChange("field-type-change"), // Field type changes
-    clusterSizeReduction("cluster-size-reduction"), // Large reductions in cluster size
     tensorTypeChange("tensor-type-change"), // Tensor type change
-    resourcesReduction("resources-reduction"), // Large reductions in node resources (> 50% of the current min resources)
+    resourcesReduction("resources-reduction"), // Large reductions in node resources (> 50% of the current max total resources)
     contentTypeRemoval("schema-removal"), // Removal of a schema (causes deletion of all documents)
     contentClusterRemoval("content-cluster-removal"), // Removal (or id change) of content clusters
     deploymentRemoval("deployment-removal"), // Removal of production zones from deployment.xml
