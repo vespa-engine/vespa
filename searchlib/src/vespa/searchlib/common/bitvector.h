@@ -28,10 +28,10 @@ public:
     using UP = std::unique_ptr<BitVector>;
     class Range {
     public:
-        Range(Index start_in, Index end_in) : _start(start_in), _end(end_in) {}
-        Index start() const { return _start; }
-        Index end() const { return _end; }
-        bool validNonZero() const { return _end > _start; }
+        Range(Index start_in, Index end_in) noexcept : _start(start_in), _end(end_in) {}
+        [[nodiscard]] Index start() const noexcept { return _start; }
+        [[nodiscard]] Index end() const noexcept { return _end; }
+        [[nodiscard]] bool validNonZero() const noexcept { return _end > _start; }
     private:
         Index _start;
         Index _end;
@@ -42,6 +42,7 @@ public:
     bool operator == (const BitVector &right) const;
     const void * getStart() const { return _words; }
     void * getStart() { return _words; }
+    Range range() const noexcept { return {getStartIndex(), size()}; }
     Index size() const { return vespalib::atomic::load_ref_relaxed(_sz); }
     Index sizeBytes() const { return numBytes(getActiveSize()); }
     bool testBit(Index idx) const {
@@ -144,15 +145,15 @@ public:
         vespalib::atomic::store_ref_release(_sz, sz);
     }
     void set_bit_no_range_check(Index idx) {
-        store(_words[wordNum(idx)], _words[wordNum(idx)] | mask(idx));
+        store_unchecked(_words[wordNum(idx)], _words[wordNum(idx)] | mask(idx));
     }
     void clear_bit_no_range_check(Index idx) {
-        store(_words[wordNum(idx)], _words[wordNum(idx)] & ~ mask(idx));
+        store_unchecked(_words[wordNum(idx)], _words[wordNum(idx)] & ~ mask(idx));
     }
     void flip_bit_no_range_check(Index idx) {
-        store(_words[wordNum(idx)], _words[wordNum(idx)] ^ mask(idx));
+        store_unchecked(_words[wordNum(idx)], _words[wordNum(idx)] ^ mask(idx));
     }
-    void range_check(Index idx) {
+    void range_check(Index idx) const {
         assert(!_enable_range_check || (idx >= _startOffset && idx < _sz));
     }
     void setBit(Index idx) {
@@ -301,8 +302,11 @@ protected:
     static Alloc allocatePaddedAndAligned(Index start, Index end, Index capacity, const Alloc* init_alloc = nullptr);
 
 private:
-    Word load(const Word &word) const { return vespalib::atomic::load_ref_relaxed(word); }
-    void store(Word &word, Word value) { return vespalib::atomic::store_ref_relaxed(word, value); }
+    static Word load(const Word &word) { return vespalib::atomic::load_ref_relaxed(word); }
+    VESPA_DLL_LOCAL void store(Word &word, Word value);
+    static void store_unchecked(Word &word, Word value) {
+        return vespalib::atomic::store_ref_relaxed(word, value);
+    }
     friend PartialBitVector;
     const Word * getWordIndex(Index index) const { return static_cast<const Word *>(getStart()) + wordNum(index); }
     Word * getWordIndex(Index index) { return static_cast<Word *>(getStart()) + wordNum(index); }
@@ -330,8 +334,8 @@ private:
     }
     VESPA_DLL_LOCAL void repairEnds();
     Range sanitize(Range range) const {
-        return Range(std::max(range.start(), getStartIndex()),
-                     std::min(range.end(), size()));
+        return {std::max(range.start(), getStartIndex()),
+                std::min(range.end(), size())};
     }
     Index count() const;
     bool hasTrueBitsInternal() const;

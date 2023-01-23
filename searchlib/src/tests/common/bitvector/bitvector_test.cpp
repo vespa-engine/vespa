@@ -10,6 +10,7 @@
 #include <vespa/searchlib/fef/termfieldmatchdataarray.h>
 #include <vespa/vespalib/test/memory_allocator_observer.h>
 #include <vespa/vespalib/util/rand48.h>
+#include <vespa/vespalib/util/exceptions.h>
 #include <algorithm>
 
 using namespace search;
@@ -135,7 +136,7 @@ assertBV(const std::string & exp, const BitVector & act)
     bool res1 = EXPECT_EQUAL(exp, toString(act));
     search::fef::TermFieldMatchData f;
     queryeval::SearchIterator::UP it(BitVectorIterator::create(&act, f, true));
-    BitVectorIterator & b(dynamic_cast<BitVectorIterator &>(*it));
+    auto & b(dynamic_cast<BitVectorIterator &>(*it));
     bool res2 = EXPECT_EQUAL(exp, toString(b));
     return res1 && res2;
 }
@@ -295,6 +296,15 @@ TEST("requireThatSequentialOperationsOnPartialWorks")
     EXPECT_EQUAL(5u, p2.countTrueBits());
     p2.orWith(full);
     EXPECT_EQUAL(202u, p2.countTrueBits());
+
+    AllocatedBitVector before(100);
+    before.setInterval(0, 100);
+    p2.orWith(before);
+    EXPECT_EQUAL(202u, p2.countTrueBits());
+
+    PartialBitVector after(1000, 1100);
+    after.setInterval(1000, 1100);
+    EXPECT_EQUAL(202u, p2.countTrueBits());
 }
 
 TEST("requireThatInitRangeStaysWithinBounds") {
@@ -342,7 +352,26 @@ verifyThatLongerWithShorterWorksAsZeroPadded(uint32_t offset, uint32_t sz1, uint
     func(*aLarger2, *bSmall);
     func(*aLarger3, *bEmpty);
     EXPECT_TRUE(*aLarger == *aLarger2);
-    //EXPECT_TRUE(*aLarger == *aLarger3);
+}
+
+template<typename Func>
+void
+verifyNonOverlappingWorksAsZeroPadded(bool clear, Func func) {
+    constexpr size_t CNT = 34;
+    BitVector::UP left = createEveryNthBitSet(3, 1000, 100);
+    BitVector::UP right = createEveryNthBitSet(3, 2000, 100);
+    EXPECT_EQUAL(CNT, left->countTrueBits());
+    EXPECT_EQUAL(CNT, right->countTrueBits());
+    func(*left, *right);
+    EXPECT_EQUAL(clear ? 0 : CNT, left->countTrueBits());
+    EXPECT_EQUAL(CNT, right->countTrueBits());
+    left = createEveryNthBitSet(3, 1000, 100);
+    right = createEveryNthBitSet(3, 2000, 100);
+    EXPECT_EQUAL(CNT, left->countTrueBits());
+    EXPECT_EQUAL(CNT, right->countTrueBits());
+    func(*right, *left);
+    EXPECT_EQUAL(CNT, left->countTrueBits());
+    EXPECT_EQUAL(clear ? 0 : CNT, right->countTrueBits());
 }
 
 TEST("requireThatAndWorks") {
@@ -351,6 +380,7 @@ TEST("requireThatAndWorks") {
         verifyThatLongerWithShorterWorksAsZeroPadded(offset, offset+256, offset+256 + offset + 3,
                                                      [](BitVector & a, const BitVector & b) { a.andWith(b); });
     }
+    verifyNonOverlappingWorksAsZeroPadded(true, [](BitVector & a, const BitVector & b) { a.andWith(b); });
 }
 
 TEST("requireThatOrWorks") {
@@ -359,6 +389,7 @@ TEST("requireThatOrWorks") {
         verifyThatLongerWithShorterWorksAsZeroPadded(offset, offset+256, offset+256 + offset + 3,
                                                      [](BitVector & a, const BitVector & b) { a.orWith(b); });
     }
+    verifyNonOverlappingWorksAsZeroPadded(false, [](BitVector & a, const BitVector & b) { a.orWith(b); });
 }
 
 
@@ -368,6 +399,7 @@ TEST("requireThatAndNotWorks") {
         verifyThatLongerWithShorterWorksAsZeroPadded(offset, offset+256, offset+256 + offset + 3,
                                                      [](BitVector & a, const BitVector & b) { a.andNotWith(b); });
     }
+    verifyNonOverlappingWorksAsZeroPadded(false, [](BitVector & a, const BitVector & b) { a.andNotWith(b); });
 }
 
 TEST("test that empty bitvectors does not crash") {
