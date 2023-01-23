@@ -237,32 +237,32 @@ public class VespaMetricSet {
     private static Set<Metric> getClusterControllerMetrics() {
         Set<Metric> metrics = new LinkedHashSet<>();
 
-        metrics.add(new Metric("cluster-controller.down.count.last"));
-        metrics.add(new Metric("cluster-controller.initializing.count.last"));
-        metrics.add(new Metric("cluster-controller.maintenance.count.last"));
-        metrics.add(new Metric("cluster-controller.retired.count.last"));
-        metrics.add(new Metric("cluster-controller.stopping.count.last"));
-        metrics.add(new Metric("cluster-controller.up.count.last"));
-        metrics.add(new Metric("cluster-controller.cluster-state-change.count"));
-        addMetric(metrics, "cluster-controller.busy-tick-time-ms", List.of("last", "max", "sum", "count"));
-        addMetric(metrics, "cluster-controller.idle-tick-time-ms", List.of("last", "max", "sum", "count"));
-
-        addMetric(metrics, "cluster-controller.work-ms", List.of("last", "sum", "count"));
-
-        metrics.add(new Metric("cluster-controller.is-master.last"));
-        metrics.add(new Metric("cluster-controller.remote-task-queue.size.last"));
+        AddMetric(metrics, ContainerMetrics.CLUSTER_CONTROLLER_DOWN_COUNT.last());
+        AddMetric(metrics, ContainerMetrics.CLUSTER_CONTROLLER_INITIALIZING_COUNT.last());
+        AddMetric(metrics, ContainerMetrics.CLUSTER_CONTROLLER_MAINTENANCE_COUNT.last());
+        AddMetric(metrics, ContainerMetrics.CLUSTER_CONTROLLER_RETIRE_COUNT.last());
+        AddMetric(metrics, ContainerMetrics.CLUSTER_CONTROLLER_STOPPING_COUNT.last());
+        AddMetric(metrics, ContainerMetrics.CLUSTER_CONTROLLER_UP_COUNT.last());
+        AddMetric(metrics, ContainerMetrics.CLUSTER_CONTROLLER_CLUSTER_STATE_CHANGE_COUNT.baseName());
+        AddMetric(metrics, ContainerMetrics.CLUSTER_CONTROLLER_BUSY_TICK_TIME_MS, EnumSet.of(last, max, sum, count));
+        AddMetric(metrics, ContainerMetrics.CLUSTER_CONTROLLER_IDLE_TICK_TIME_MS, EnumSet.of(last, max, sum, count));
+        
+        AddMetric(metrics, ContainerMetrics.CLUSTER_CONTROLLER_WORK_MS, EnumSet.of(last, sum, count));
+        
+        AddMetric(metrics, ContainerMetrics.CLUSTER_CONTROLLER_IS_MASTER.last());
+        AddMetric(metrics, ContainerMetrics.CLUSTER_CONTROLLER_REMOTE_TASK_QUEUE_SIZE.last());
         // TODO(hakonhall): Update this name once persistent "count" metrics has been implemented.
         // DO NOT RELY ON THIS METRIC YET.
-        metrics.add(new Metric("cluster-controller.node-event.count"));
+        AddMetric(metrics, ContainerMetrics.CLUSTER_CONTROLLER_NODE_EVENT_COUNT.baseName());
+        
+        AddMetric(metrics, ContainerMetrics.CLUSTER_CONTROLLER_RESOURCE_USAGE_NODES_ABOVE_LIMIT, EnumSet.of(last, max);
+        AddMetric(metrics, ContainerMetrics.CLUSTER_CONTROLLER_RESOURCE_USAGE_MAX_MEMORY_UTILIZATION, EnumSet.of(last, max);
+        AddMetric(metrics, ContainerMetrics.CLUSTER_CONTROLLER_RESOURCE_USAGE_MAX_DISK_UTILIZATION, EnumSet.of(last, max);
+        AddMetric(metrics, ContainerMetrics.CLUSTER_CONTROLLER_RESOURCE_USAGE_MEMORY_LIMIT.last());
+        AddMetric(metrics, ContainerMetrics.CLUSTER_CONTROLLER_RESOURCE_USAGE_DISK_LIMIT.last());
 
-        addMetric(metrics, "cluster-controller.resource_usage.nodes_above_limit", List.of("last", "max"));
-        addMetric(metrics, "cluster-controller.resource_usage.max_memory_utilization", List.of("last", "max"));
-        addMetric(metrics, "cluster-controller.resource_usage.max_disk_utilization", List.of("last", "max"));
-        metrics.add(new Metric("cluster-controller.resource_usage.disk_limit.last"));
-        metrics.add(new Metric("cluster-controller.resource_usage.memory_limit.last"));
-
-        metrics.add(new Metric("reindexing.progress.last"));
-
+        AddMetric(metrics, ContainerMetrics.CLUSTER_CONTROLLER_REINDEXING_PROGRESS.last());
+        
         return metrics;
     }
 
