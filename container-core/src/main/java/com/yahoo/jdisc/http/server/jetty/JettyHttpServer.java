@@ -79,6 +79,7 @@ public class JettyHttpServer extends AbstractServerProvider {
             server.addConnector(connectorFactory.createConnector(metric, server, connectionLogger, connectionMetricAggregator));
             listenedPorts.add(connectorConfig.listenPort());
         }
+        server.addBeanToAllConnectors(new ResponseMetricAggregator(serverConfig.metric()));
 
         JDiscContext jDiscContext = new JDiscContext(filterBindings, container, janitor, metric, serverConfig);
 
@@ -86,7 +87,7 @@ public class JettyHttpServer extends AbstractServerProvider {
         List<JDiscServerConnector> connectors = Arrays.stream(server.getConnectors())
                                                       .map(JDiscServerConnector.class::cast)
                                                       .toList();
-        server.setHandler(createRootHandler(serverConfig, connectors, jdiscServlet));
+        server.setHandler(createRootHandler(connectors, jdiscServlet));
         this.metricsReporter = new ServerMetricReporter(metric, server);
     }
 
@@ -117,8 +118,7 @@ public class JettyHttpServer extends AbstractServerProvider {
         }
     }
 
-    private Handler createRootHandler(
-            ServerConfig serverCfg, List<JDiscServerConnector> connectors, ServletHolder jdiscServlet) {
+    private Handler createRootHandler(List<JDiscServerConnector> connectors, ServletHolder jdiscServlet) {
         HandlerCollection perConnectorHandlers = new ContextHandlerCollection();
         for (JDiscServerConnector connector : connectors) {
             ConnectorConfig connectorCfg = connector.connectorConfig();
@@ -136,8 +136,7 @@ public class JettyHttpServer extends AbstractServerProvider {
             perConnectorHandlers.addHandler(connectorRoot);
         }
         StatisticsHandler root = newGenericStatisticsHandler();
-        addChainToRoot(root, List.of(
-                newResponseStatisticsHandler(serverCfg), newGzipHandler(), perConnectorHandlers));
+        addChainToRoot(root, List.of(newGzipHandler(), perConnectorHandlers));
         return root;
     }
 
@@ -226,10 +225,6 @@ public class JettyHttpServer extends AbstractServerProvider {
 
     private static TlsClientAuthenticationEnforcer newTlsClientAuthEnforcerHandler(ConnectorConfig cfg) {
         return new TlsClientAuthenticationEnforcer(cfg.tlsClientAuthEnforcer());
-    }
-
-    private static HttpResponseStatisticsCollector newResponseStatisticsHandler(ServerConfig cfg) {
-        return new HttpResponseStatisticsCollector(cfg.metric());
     }
 
     private static StatisticsHandler newGenericStatisticsHandler() {

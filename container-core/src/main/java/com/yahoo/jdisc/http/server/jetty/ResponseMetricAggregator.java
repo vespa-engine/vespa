@@ -4,135 +4,65 @@ package com.yahoo.jdisc.http.server.jetty;
 import com.yahoo.jdisc.Metric;
 import com.yahoo.jdisc.http.HttpRequest;
 import com.yahoo.jdisc.http.ServerConfig;
-import jakarta.servlet.AsyncEvent;
-import jakarta.servlet.AsyncListener;
-import jakarta.servlet.ServletException;
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
 import org.eclipse.jetty.http.HttpHeader;
-import org.eclipse.jetty.http.HttpStatus;
-import org.eclipse.jetty.server.AsyncContextEvent;
-import org.eclipse.jetty.server.Handler;
-import org.eclipse.jetty.server.HttpChannelState;
+import org.eclipse.jetty.server.HttpChannel;
 import org.eclipse.jetty.server.Request;
-import org.eclipse.jetty.server.handler.HandlerWrapper;
-import org.eclipse.jetty.util.component.Graceful;
+import org.eclipse.jetty.server.Server;
+import org.eclipse.jetty.util.component.AbstractLifeCycle;
 
-import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
-import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.LongAdder;
 import java.util.function.ObjLongConsumer;
 import java.util.stream.Collectors;
 
 /**
- * HttpResponseStatisticsCollector collects statistics about HTTP response types aggregated by category
- * (1xx, 2xx, etc). It is similar to {@link org.eclipse.jetty.server.handler.StatisticsHandler}
- * with the distinction that this class collects response type statistics grouped
- * by HTTP method and only collects the numbers that are reported as metrics from Vespa.
+ * Collects statistics about HTTP response types aggregated by category.
  *
  * @author ollivir
+ * @author bjorncs
  */
-class HttpResponseStatisticsCollector extends HandlerWrapper implements Graceful {
+class ResponseMetricAggregator extends AbstractLifeCycle implements HttpChannel.Listener {
 
     static final String requestTypeAttribute = "requestType";
 
-    private final Shutdown shutdown;
     private final List<String> monitoringHandlerPaths;
     private final List<String> searchHandlerPaths;
     private final Set<String> ignoredUserAgents;
 
-    private final AtomicLong inFlight = new AtomicLong();
     private final ConcurrentMap<StatusCodeMetric, LongAdder> statistics = new ConcurrentHashMap<>();
 
-    HttpResponseStatisticsCollector(ServerConfig.Metric cfg) {
+    ResponseMetricAggregator(ServerConfig.Metric cfg) {
         this(cfg.monitoringHandlerPaths(), cfg.searchHandlerPaths(), cfg.ignoredUserAgents());
     }
 
-    HttpResponseStatisticsCollector(List<String> monitoringHandlerPaths, List<String> searchHandlerPaths,
-                                    Collection<String> ignoredUserAgents) {
+    ResponseMetricAggregator(List<String> monitoringHandlerPaths, List<String> searchHandlerPaths,
+                             Collection<String> ignoredUserAgents) {
         this.monitoringHandlerPaths = monitoringHandlerPaths;
         this.searchHandlerPaths = searchHandlerPaths;
         this.ignoredUserAgents = Set.copyOf(ignoredUserAgents);
-        this.shutdown = new Shutdown(this) {
-            @Override public boolean isShutdownDone() { return inFlight.get() == 0; }
-        };
 
     }
 
-    private final AsyncListener completionWatcher = new AsyncListener() {
-
-        @Override
-        public void onTimeout(AsyncEvent event) { }
-
-        @Override
-        public void onStartAsync(AsyncEvent event) {
-            event.getAsyncContext().addListener(this);
-        }
-
-        @Override
-        public void onError(AsyncEvent event) { }
-
-        @Override
-        public void onComplete(AsyncEvent event) throws IOException {
-            HttpChannelState state = ((AsyncContextEvent) event).getHttpChannelState();
-            Request request = state.getBaseRequest();
-
-            observeEndOfRequest(request, null);
-        }
-    };
+    static ResponseMetricAggregator getBean(JettyHttpServer server) { return getBean(server.server()); }
+    static ResponseMetricAggregator getBean(Server server) {
+        return Arrays.stream(server.getConnectors())
+                .map(c -> c.getBean(ResponseMetricAggregator.class)).filter(Objects::nonNull).findAny().orElseThrow();
+    }
 
     @Override
-    public void handle(String path, Request baseRequest, HttpServletRequest request, HttpServletResponse response)
-            throws IOException, ServletException {
-        inFlight.incrementAndGet();
-
-        try {
-            Handler handler = getHandler();
-            if (handler != null && !shutdown.isShutdown() && isStarted()) {
-                handler.handle(path, baseRequest, request, response);
-            } else if ( ! baseRequest.isHandled()) {
-                baseRequest.setHandled(true);
-                response.sendError(HttpStatus.SERVICE_UNAVAILABLE_503);
-            }
-        } finally {
-            HttpChannelState state = baseRequest.getHttpChannelState();
-            if (state.isSuspended()) {
-                if (state.isInitial()) {
-                    state.addListener(completionWatcher);
-                }
-            } else if (state.isInitial()) {
-                observeEndOfRequest(baseRequest, response);
-            }
-        }
-    }
-
-    private boolean shouldLogMetricsFor(Request request) {
-        String agent = request.getHeader(HttpHeader.USER_AGENT.toString());
-        if (agent == null) return true;
-        return ! ignoredUserAgents.contains(agent);
-    }
-
-    private void observeEndOfRequest(Request request, HttpServletResponse flushableResponse) throws IOException {
+    public void onResponseCommit(Request request) {
         if (shouldLogMetricsFor(request)) {
             var metrics = StatusCodeMetric.of(request, monitoringHandlerPaths, searchHandlerPaths);
-            metrics.forEach(metric ->
-                            statistics.computeIfAbsent(metric, __ -> new LongAdder())
-                            .increment());
-        }
-        long live = inFlight.decrementAndGet();
-        if (shutdown.isShutdown()) {
-            if (flushableResponse != null) flushableResponse.flushBuffer();
-            if (live == 0) shutdown.check();
+            metrics.forEach(metric -> statistics.computeIfAbsent(metric, __ -> new LongAdder()).increment());
         }
     }
 
@@ -149,6 +79,12 @@ class HttpResponseStatisticsCollector extends HandlerWrapper implements Graceful
         });
     }
 
+    private boolean shouldLogMetricsFor(Request request) {
+        String agent = request.getHeader(HttpHeader.USER_AGENT.toString());
+        if (agent == null) return true;
+        return ! ignoredUserAgents.contains(agent);
+    }
+
     private void consume(ObjLongConsumer<StatusCodeMetric> consumer) {
         statistics.forEach((metric, adder) -> {
             long value = adder.sumThenReset();
@@ -156,21 +92,8 @@ class HttpResponseStatisticsCollector extends HandlerWrapper implements Graceful
         });
     }
 
-    @Override
-    protected void doStart() throws Exception {
-        shutdown.cancel();
-        super.doStart();
-    }
-
-    @Override
-    protected void doStop() throws Exception {
-        shutdown.cancel();
-        super.doStop();
-    }
-
-    @Override public CompletableFuture<Void> shutdown() { return shutdown.shutdown(); }
-    @Override public boolean isShutdown() { return shutdown.isShutdown(); }
-
+    // Note: Request.getResponse().getStatus() may return invalid response code
+    private static int statusCode(Request r) { return r.getResponse().getCommittedMetaData().getStatus(); }
 
     static class Dimensions {
         final String protocol;
@@ -242,8 +165,6 @@ class HttpResponseStatisticsCollector extends HandlerWrapper implements Graceful
             }
         }
 
-        private static int statusCode(Request req) { return req.getResponse().getStatus(); }
-
         private static String requestType(Request req, Collection<String> monitoringHandlerPaths,
                                           Collection<String> searchHandlerPaths) {
             HttpRequest.RequestType requestType = (HttpRequest.RequestType)req.getAttribute(requestTypeAttribute);
@@ -295,9 +216,8 @@ class HttpResponseStatisticsCollector extends HandlerWrapper implements Graceful
                     .collect(Collectors.toSet());
         }
 
-        @SuppressWarnings("removal")
         private static Collection<String> metricNames(Request req) {
-            int code = req.getResponse().getStatus();
+            int code = statusCode(req);
             if (code < 200) return Set.of(MetricDefinitions.RESPONSES_1XX);
             else if (code < 300) return Set.of(MetricDefinitions.RESPONSES_2XX);
             else if (code < 400) return Set.of(MetricDefinitions.RESPONSES_3XX);

@@ -51,11 +51,8 @@ class ServerMetricReporter {
 
         @Override
         public void run() {
-            HttpResponseStatisticsCollector statisticsCollector = ((AbstractHandlerContainer) jetty.getHandler())
-                    .getChildHandlerByClass(HttpResponseStatisticsCollector.class);
-            if (statisticsCollector != null) {
-                setServerMetrics(statisticsCollector);
-            }
+            var collector = ResponseMetricAggregator.getBean(jetty);
+            if (collector != null) setServerMetrics(collector);
 
             // reset statisticsHandler to preserve earlier behavior
             StatisticsHandler statisticsHandler = ((AbstractHandlerContainer) jetty.getHandler())
@@ -71,14 +68,14 @@ class ServerMetricReporter {
             setJettyThreadpoolMetrics();
         }
 
-        private void setServerMetrics(HttpResponseStatisticsCollector statisticsCollector) {
+        private void setServerMetrics(ResponseMetricAggregator statisticsCollector) {
             long timeSinceStarted = System.currentTimeMillis() - timeStarted.toEpochMilli();
             metric.set(MetricDefinitions.STARTED_MILLIS, timeSinceStarted, null);
 
             addResponseMetrics(statisticsCollector);
         }
 
-        private void addResponseMetrics(HttpResponseStatisticsCollector statisticsCollector) {
+        private void addResponseMetrics(ResponseMetricAggregator statisticsCollector) {
             statisticsCollector.reportSnapshot(metric);
         }
 
