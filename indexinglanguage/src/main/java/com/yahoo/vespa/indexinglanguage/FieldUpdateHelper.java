@@ -30,26 +30,22 @@ import com.yahoo.document.update.ValueUpdate;
 @SuppressWarnings("rawtypes")
 public abstract class FieldUpdateHelper {
 
+    /** Returns true if this update completely replaces the value of the field, false otherwise. */
     public static boolean isComplete(Field field, ValueUpdate update) {
-        if (update instanceof AssignValueUpdate) {
-            return true;
-        }
-        if (!(update instanceof MapValueUpdate)) {
-            return false;
-        }
+        if (update instanceof AssignValueUpdate) return true;
+        if (!(update instanceof MapValueUpdate)) return false;
+
         DataType fieldType = field.getDataType();
-        if (!(fieldType instanceof StructuredDataType)) {
-            return false;
-        }
+        if (!(fieldType instanceof StructuredDataType)) return false;
+
         field = ((StructuredDataType)fieldType).getField(String.valueOf(update.getValue()));
-        if (field == null) {
-            return false;
-        }
+        if (field == null) return false;
+
         return isComplete(field, ((MapValueUpdate)update).getUpdate());
     }
 
     public static void applyUpdate(Field field, ValueUpdate update, Document doc) {
-        doc.setFieldValue(field, createFieldValue(field.getDataType().createFieldValue(), update));
+        doc.setFieldValue(field, applyUpdate(update, field.getDataType().createFieldValue()));
     }
 
     public static Document newPartialDocument(DocumentType docType, DocumentId docId, Field field, ValueUpdate update) {
@@ -58,73 +54,74 @@ public abstract class FieldUpdateHelper {
         return doc;
     }
 
+    /** Applies the given update to the given (empty) field value. */
     @SuppressWarnings({ "unchecked" })
-    private static FieldValue createFieldValue(FieldValue val, ValueUpdate upd) {
-        if (upd instanceof ClearValueUpdate) {
-            return val;
-        } else if (upd instanceof AssignValueUpdate) {
-            val.assign(upd.getValue());
-            return val;
-        } else if (upd instanceof AddValueUpdate) {
-            if (val instanceof Array) {
-                ((Array)val).add(upd.getValue());
-            } else if (val instanceof WeightedSet) {
-                ((WeightedSet)val).put(upd.getValue(), ((AddValueUpdate)upd).getWeight());
+    private static FieldValue applyUpdate(ValueUpdate update, FieldValue value) {
+        if (update instanceof ClearValueUpdate) {
+            return value;
+        } else if (update instanceof AssignValueUpdate) {
+            value.assign(update.getValue());
+            return value;
+        } else if (update instanceof AddValueUpdate) {
+            if (value instanceof Array) {
+                ((Array)value).add(update.getValue());
+            } else if (value instanceof WeightedSet) {
+                ((WeightedSet)value).put(update.getValue(), ((AddValueUpdate)update).getWeight());
             }
-            return val;
-        } else if (upd instanceof ArithmeticValueUpdate) {
-            if (((ArithmeticValueUpdate)upd).getOperator() == ArithmeticValueUpdate.Operator.DIV &&
-                ((ArithmeticValueUpdate)upd).getOperand().doubleValue() == 0) {
-                throw new IllegalArgumentException("Division by zero.");
+            return value;
+        } else if (update instanceof ArithmeticValueUpdate) {
+            if (((ArithmeticValueUpdate)update).getOperator() == ArithmeticValueUpdate.Operator.DIV &&
+                ((ArithmeticValueUpdate)update).getOperand().doubleValue() == 0) {
+                throw new IllegalArgumentException("Division by zero");
             }
-            val.assign(upd.getValue());
-            return val;
-        } else if (upd instanceof RemoveValueUpdate) {
-            if (val instanceof Array) {
-                ((Array)val).add(upd.getValue());
-            } else if (val instanceof WeightedSet) {
-                ((WeightedSet)val).put(upd.getValue(), 1);
+            value.assign(update.getValue());
+            return value;
+        } else if (update instanceof RemoveValueUpdate) {
+            if (value instanceof Array) {
+                ((Array)value).add(update.getValue());
+            } else if (value instanceof WeightedSet) {
+                ((WeightedSet)value).put(update.getValue(), 1);
             }
-            return val;
-        } else if (upd instanceof MapValueUpdate) {
-            if (val instanceof Array) {
-                var nestedUpdate = ((MapValueUpdate)upd).getUpdate();
+            return value;
+        } else if (update instanceof MapValueUpdate) {
+            if (value instanceof Array) {
+                var nestedUpdate = ((MapValueUpdate)update).getUpdate();
                 if (nestedUpdate instanceof AssignValueUpdate) {
                     // Can't assign an array's value type directly to the array, so we have to add it as a
                     // singular element to the partial document.
-                    ((Array)val).add(nestedUpdate.getValue());
-                    return val;
+                    ((Array)value).add(nestedUpdate.getValue());
+                    return value;
                 } else {
-                    return createFieldValue(val, nestedUpdate);
+                    return applyUpdate(nestedUpdate, value);
                 }
-            } else if (val instanceof MapFieldValue) {
-                throw new UnsupportedOperationException("Can not map into a " + val.getClass().getName() + ".");
-            } else if (val instanceof StructuredFieldValue) {
-                Field field = ((StructuredFieldValue)val).getField(String.valueOf(upd.getValue()));
+            } else if (value instanceof MapFieldValue) {
+                throw new UnsupportedOperationException("Can not map into a " + value.getClass().getName() + ".");
+            } else if (value instanceof StructuredFieldValue) {
+                Field field = ((StructuredFieldValue)value).getField(String.valueOf(update.getValue()));
                 if (field == null) {
-                    throw new IllegalArgumentException("Field '" + upd.getValue() + "' not found.");
+                    throw new IllegalArgumentException("Field '" + update.getValue() + "' not found");
                 }
-                ((StructuredFieldValue)val).setFieldValue(field, createFieldValue(field.getDataType().createFieldValue(),
-                                                                                  ((MapValueUpdate)upd).getUpdate()));
-                return val;
-            } else if (val instanceof WeightedSet) {
-                FieldValue weight = createFieldValue(new IntegerFieldValue(), ((MapValueUpdate)upd).getUpdate());
+                ((StructuredFieldValue)value).setFieldValue(field, applyUpdate(((MapValueUpdate)update).getUpdate(), field.getDataType().createFieldValue()
+                ));
+                return value;
+            } else if (value instanceof WeightedSet) {
+                FieldValue weight = applyUpdate(((MapValueUpdate)update).getUpdate(), new IntegerFieldValue());
                 if (!(weight instanceof IntegerFieldValue)) {
-                    throw new IllegalArgumentException("Expected integer, got " + weight.getClass().getName() + ".");
+                    throw new IllegalArgumentException("Expected integer, got " + weight.getClass().getName());
                 }
-                ((WeightedSet)val).put(upd.getValue(), ((IntegerFieldValue)weight).getInteger());
-                return val;
+                ((WeightedSet)value).put(update.getValue(), ((IntegerFieldValue)weight).getInteger());
+                return value;
             } else {
-                throw new IllegalArgumentException("Expected multi-value data type, got " + val.getDataType().getName() + ".");
+                throw new IllegalArgumentException("Expected multi-value data type, got " + value.getDataType().getName());
             }
-        } else if (upd instanceof TensorModifyUpdate) {
-            return val;
-        } else if (upd instanceof TensorAddUpdate) {
-            return val;
-        } else if (upd instanceof TensorRemoveUpdate) {
-            return val;
+        } else if (update instanceof TensorModifyUpdate) {
+            return value;
+        } else if (update instanceof TensorAddUpdate) {
+            return value;
+        } else if (update instanceof TensorRemoveUpdate) {
+            return value;
         }
-        throw new UnsupportedOperationException("Value update type " + upd.getClass().getName() + " not supported.");
+        throw new UnsupportedOperationException("Value update type " + update.getClass().getName() + " not supported");
     }
 
 }

@@ -48,13 +48,8 @@ public abstract class OutputExpression extends Expression {
 
     @Override
     public boolean equals(Object obj) {
-        if (!(obj instanceof OutputExpression)) {
-            return false;
-        }
-        OutputExpression rhs = (OutputExpression)obj;
-        if (!equals(fieldName, rhs.fieldName)) {
-            return false;
-        }
+        if (!(obj instanceof OutputExpression rhs)) return false;
+        if (!equals(fieldName, rhs.fieldName)) return false;
         return true;
     }
 

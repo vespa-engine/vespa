@@ -63,13 +63,8 @@ public final class GuardExpression extends CompositeExpression {
 
     @Override
     public boolean equals(Object obj) {
-        if (!(obj instanceof GuardExpression)) {
-            return false;
-        }
-        GuardExpression rhs = (GuardExpression)obj;
-        if (!exp.equals(rhs.exp)) {
-            return false;
-        }
+        if (!(obj instanceof GuardExpression rhs)) return false;
+        if (!exp.equals(rhs.exp)) return false;
         return true;
     }
 
@@ -95,4 +90,5 @@ public final class GuardExpression extends CompositeExpression {
             }
         }
     }
+
 }

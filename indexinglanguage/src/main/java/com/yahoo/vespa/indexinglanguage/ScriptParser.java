@@ -16,36 +16,20 @@ import com.yahoo.vespa.indexinglanguage.parser.TokenMgrException;
 public final class ScriptParser {
 
     public static Expression parseExpression(ScriptParserContext config) throws ParseException {
-        return parse(config, new ParserMethod<Expression>() {
-
-            @Override
-            public Expression call(IndexingParser parser) throws ParseException {
-                return parser.root();
-            }
-        });
+        return parse(config, parser -> parser.root());
     }
 
     public static ScriptExpression parseScript(ScriptParserContext config) throws ParseException {
-        return parse(config, new ParserMethod<ScriptExpression>() {
-
-            @Override
-            public ScriptExpression call(IndexingParser parser) throws ParseException {
-                return parser.script();
-            }
-        });
+        return parse(config, parser -> parser.script());
     }
 
     public static StatementExpression parseStatement(ScriptParserContext config) throws ParseException {
-        return parse(config, new ParserMethod<StatementExpression>() {
-
-            @Override
-            public StatementExpression call(IndexingParser parser) throws ParseException {
-                try {
-                    return parser.statement();
-                }
-                catch (TokenMgrException e) {
-                    throw new ParseException(e.getMessage());
-                }
+        return parse(config, parser -> {
+            try {
+                return parser.statement();
+            }
+            catch (TokenMgrException e) {
+                throw new ParseException(e.getMessage());
             }
         });
     }

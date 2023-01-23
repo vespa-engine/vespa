@@ -11,4 +11,5 @@ public final class IndexingInput extends FastCharStream implements CharStream {
     public IndexingInput(String input) {
         super(input);
     }
+
 }

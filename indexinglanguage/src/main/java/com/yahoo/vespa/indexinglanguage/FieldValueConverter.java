@@ -57,9 +57,7 @@ public abstract class FieldValueConverter {
             return null;
         }
         Array ret = DataType.getArray(nextType).createFieldValue();
-        for (FieldValue nextVal : next) {
-            ret.add(nextVal);
-        }
+        ret.addAll(next);
         return ret;
     }
 
@@ -96,9 +94,7 @@ public abstract class FieldValueConverter {
             return null;
         }
         MapFieldValue ret = DataType.getMap(nextKeyType, nextValType).createFieldValue();
-        for (Map.Entry<FieldValue, FieldValue> entry : next.entrySet()) {
-            ret.put(entry.getKey(), entry.getValue());
-        }
+        ret.putAll(next);
         return ret;
     }
 
@@ -128,9 +124,7 @@ public abstract class FieldValueConverter {
         WeightedSet ret = DataType.getWeightedSet(nextType, val.getDataType().createIfNonExistent(),
                                                   val.getDataType().removeIfZero()).createFieldValue();
 
-        for (Map.Entry<FieldValue, Integer> entry : next.entrySet()) {
-            ret.put(entry.getKey(), entry.getValue());
-        }
+        ret.putAll(next);
         return ret;
     }
 

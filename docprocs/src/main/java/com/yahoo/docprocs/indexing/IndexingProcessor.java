@@ -29,9 +29,7 @@ import com.yahoo.vespa.indexinglanguage.SimpleAdapterFactory;
 import com.yahoo.vespa.indexinglanguage.expressions.Expression;
 
 import java.util.Map;
-import java.util.logging.Level;
 import java.util.stream.Collectors;
-
 
 /**
  * @author Simon Thoresen Hult
@@ -45,7 +43,6 @@ public class IndexingProcessor extends DocumentProcessor {
     public final static String INDEXING_START = "indexingStart";
     public final static String INDEXING_END = "indexingEnd";
 
-    private final static FastLogger log = FastLogger.getLogger(IndexingProcessor.class.getName());
     private final DocumentTypeManager docTypeMgr;
     private final ScriptManager scriptMgr;
     private final AdapterFactory adapterFactory;
@@ -69,9 +66,8 @@ public class IndexingProcessor extends DocumentProcessor {
 
     @Override
     public Progress process(Processing proc) {
-        if (proc.getDocumentOperations().isEmpty()) {
-            return Progress.DONE;
-        }
+        if (proc.getDocumentOperations().isEmpty()) return Progress.DONE;
+
         List<DocumentOperation> out = new ArrayList<>(proc.getDocumentOperations().size());
         for (DocumentOperation documentOperation : proc.getDocumentOperations()) {
             if (documentOperation instanceof DocumentPut) {
@@ -95,56 +91,45 @@ public class IndexingProcessor extends DocumentProcessor {
         return docTypeMgr;
     }
 
-    private void processDocument(DocumentPut prev, List<DocumentOperation> out) {
-        DocumentType hadType = prev.getDocument().getDataType();
+    private void processDocument(DocumentPut input, List<DocumentOperation> out) {
+        DocumentType hadType = input.getDocument().getDataType();
         DocumentScript script = scriptMgr.getScript(hadType);
         if (script == null) {
-            log.log(Level.FINE, "No indexing script for document '%s'.", prev.getId());
-            out.add(prev);
+            out.add(input);
             return;
         }
-        log.log(Level.FINE, "Processing document '%s'.", prev.getId());
         DocumentType wantType = docTypeMgr.getDocumentType(hadType.getName());
-        Document prevDoc = prev.getDocument();
+        Document inputDocument = input.getDocument();
         if (hadType != wantType) {
             // this happens when you have a concrete document; we need to
             // convert back to a "normal" Document for indexing of complex structures
             // to work properly.
             GrowableByteBuffer buffer = new GrowableByteBuffer(64 * 1024, 2.0f);
             DocumentSerializer serializer = DocumentSerializerFactory.createHead(buffer);
-            serializer.write(prevDoc);
+            serializer.write(inputDocument);
             buffer.flip();
-            prevDoc = docTypeMgr.createDocument(buffer);
+            inputDocument = docTypeMgr.createDocument(buffer);
         }
-        Document next = script.execute(adapterFactory, prevDoc);
-        if (next == null) {
-            log.log(Level.FINE, "Document '%s' produced no output.", prev.getId());
-            return;
-        }
+        Document output = script.execute(adapterFactory, inputDocument);
+        if (output == null) return;
 
-        out.add(new DocumentPut(prev, next));
+        out.add(new DocumentPut(input, output));
     }
 
-    private void processUpdate(DocumentUpdate prev, List<DocumentOperation> out) {
-        DocumentScript script = scriptMgr.getScript(prev.getType());
+    private void processUpdate(DocumentUpdate input, List<DocumentOperation> out) {
+        DocumentScript script = scriptMgr.getScript(input.getType());
         if (script == null) {
-            log.log(Level.FINE, "No indexing script for update '%s'.", prev.getId());
-            out.add(prev);
+            out.add(input);
             return;
         }
-        log.log(Level.FINE, "Processing update '%s'.", prev.getId());
-        DocumentUpdate next = script.execute(adapterFactory, prev);
-        if (next == null) {
-            log.log(Level.FINE, "Update '%s' produced no output.", prev.getId());
-            return;
-        }
-        next.setCondition(prev.getCondition());
-        out.add(next);
+        DocumentUpdate output = script.execute(adapterFactory, input);
+        if (output == null) return;
+        output.setCondition(input.getCondition());
+        out.add(output);
     }
 
-    private void processRemove(DocumentRemove prev, List<DocumentOperation> out) {
-        log.log(Level.FINE, "Not processing remove '%s'.", prev.getId());
-        out.add(prev);
+    private void processRemove(DocumentRemove input, List<DocumentOperation> out) {
+        out.add(input);
     }
 
     private Map<String, Embedder> toMap(ComponentRegistry<Embedder> embedders) {

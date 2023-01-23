@@ -26,10 +26,9 @@ public final class GetFieldExpression extends Expression {
     @Override
     protected void doExecute(ExecutionContext context) {
         FieldValue input = context.getValue();
-        if (!(input instanceof StructuredFieldValue)) {
+        if (!(input instanceof StructuredFieldValue struct)) {
             throw new IllegalArgumentException("Expected structured input, got " + input.getDataType().getName() + ".");
         }
-        StructuredFieldValue struct = (StructuredFieldValue)input;
         Field field = struct.getField(fieldName);
         if (field == null) {
             throw new IllegalArgumentException("Field '" + fieldName + "' not found in struct type '" +
@@ -64,13 +63,8 @@ public final class GetFieldExpression extends Expression {
 
     @Override
     public boolean equals(Object obj) {
-        if (!(obj instanceof GetFieldExpression)) {
-            return false;
-        }
-        GetFieldExpression rhs = (GetFieldExpression)obj;
-        if (!fieldName.equals(rhs.fieldName)) {
-            return false;
-        }
+        if (!(obj instanceof GetFieldExpression rhs)) return false;
+        if (!fieldName.equals(rhs.fieldName)) return false;
         return true;
     }
 
@@ -78,4 +72,5 @@ public final class GetFieldExpression extends Expression {
     public int hashCode() {
         return getClass().hashCode() + fieldName.hashCode();
     }
+
 }

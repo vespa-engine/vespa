@@ -50,13 +50,8 @@ public class ParenthesisExpression extends CompositeExpression {
 
     @Override
     public boolean equals(Object obj) {
-        if (!(obj instanceof ParenthesisExpression)) {
-            return false;
-        }
-        ParenthesisExpression rhs = (ParenthesisExpression)obj;
-        if (!innerExp.equals(rhs.innerExp)) {
-            return false;
-        }
+        if (!(obj instanceof ParenthesisExpression rhs)) return false;
+        if (!innerExp.equals(rhs.innerExp)) return false;
         return true;
     }
 

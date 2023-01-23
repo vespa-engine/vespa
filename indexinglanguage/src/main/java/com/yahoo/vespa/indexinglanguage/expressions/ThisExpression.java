@@ -11,6 +11,7 @@ public final class ThisExpression extends Expression {
     public ThisExpression() {
         super(UnresolvedDataType.INSTANCE);
     }
+
     @Override
     protected void doExecute(ExecutionContext context) {
         // empty
@@ -40,4 +41,5 @@ public final class ThisExpression extends Expression {
     public int hashCode() {
         return getClass().hashCode();
     }
+
 }

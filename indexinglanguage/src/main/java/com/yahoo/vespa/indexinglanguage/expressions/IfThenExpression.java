@@ -16,7 +16,7 @@ import java.math.BigDecimal;
  */
 public final class IfThenExpression extends CompositeExpression {
 
-    public static enum Comparator {
+    public enum Comparator {
         EQ("=="),
         NE("!="),
         LT("<"),
@@ -34,6 +34,7 @@ public final class IfThenExpression extends CompositeExpression {
         public String toString() {
             return img;
         }
+
     }
 
     private final Expression lhs;
@@ -151,10 +152,9 @@ public final class IfThenExpression extends CompositeExpression {
 
     @Override
     public boolean equals(Object obj) {
-        if (!(obj instanceof IfThenExpression)) {
+        if (!(obj instanceof IfThenExpression exp)) {
             return false;
         }
-        IfThenExpression exp = (IfThenExpression)obj;
         if (!lhs.equals(exp.lhs)) {
             return false;
         }
@@ -191,7 +191,7 @@ public final class IfThenExpression extends CompositeExpression {
         }
         if (!prev.equals(next)) {
             throw new VerificationException(IfThenExpression.class, "Operands require conflicting input types, " +
-                                                  prev.getName() + " vs " + next.getName() + ".");
+                                                                    prev.getName() + " vs " + next.getName() + ".");
         }
         return prev;
     }
@@ -205,21 +205,14 @@ public final class IfThenExpression extends CompositeExpression {
         } else {
             res = lhs.compareTo(rhs);
         }
-        switch (cmp) {
-        case EQ:
-            return res == 0;
-        case NE:
-            return res != 0;
-        case GT:
-            return res > 0;
-        case GE:
-            return res >= 0;
-        case LT:
-            return res < 0;
-        case LE:
-            return res <= 0;
-        default:
-            throw new UnsupportedOperationException(cmp.toString());
-        }
+        return switch (cmp) {
+            case EQ -> res == 0;
+            case NE -> res != 0;
+            case GT -> res > 0;
+            case GE -> res >= 0;
+            case LT -> res < 0;
+            case LE -> res <= 0;
+        };
     }
+
 }

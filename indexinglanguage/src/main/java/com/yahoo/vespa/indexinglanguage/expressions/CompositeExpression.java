@@ -11,6 +11,7 @@ public abstract class CompositeExpression extends Expression {
     protected CompositeExpression(DataType inputType) {
         super(inputType);
     }
+
     protected static String toScriptBlock(Expression exp) {
         if (exp instanceof ScriptExpression) {
             return exp.toString();

@@ -36,9 +36,7 @@ public final class SetLanguageExpression extends Expression {
 
     @Override
     public boolean equals(Object obj) {
-        if (!(obj instanceof SetLanguageExpression)) {
-            return false;
-        }
+        if (!(obj instanceof SetLanguageExpression)) return false;
         return true;
     }
 

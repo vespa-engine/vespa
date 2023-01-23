@@ -13,4 +13,7 @@ public interface UpdateAdapter extends FieldValueAdapter {
     DocumentUpdate getOutput();
     Expression getExpression(Expression expression);
 
+    @Override
+    default boolean isComplete() { return false; }
+
 }

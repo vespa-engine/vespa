@@ -14,6 +14,7 @@ public final class LowerCaseExpression extends Expression {
     public LowerCaseExpression() {
         super(DataType.STRING);
     }
+
     @Override
     protected void doExecute(ExecutionContext context) {
         context.setValue(new StringFieldValue(toLowerCase(String.valueOf(context.getValue()))));
@@ -43,4 +44,5 @@ public final class LowerCaseExpression extends Expression {
     public int hashCode() {
         return getClass().hashCode();
     }
+
 }

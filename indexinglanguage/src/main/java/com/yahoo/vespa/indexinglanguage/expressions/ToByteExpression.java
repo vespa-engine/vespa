@@ -12,6 +12,7 @@ public final class ToByteExpression extends Expression {
     public ToByteExpression() {
         super(UnresolvedDataType.INSTANCE);
     }
+
     @Override
     protected void doExecute(ExecutionContext context) {
         context.setValue(new ByteFieldValue(Byte.valueOf(String.valueOf(context.getValue()))));
@@ -41,4 +42,5 @@ public final class ToByteExpression extends Expression {
     public int hashCode() {
         return getClass().hashCode();
     }
+
 }

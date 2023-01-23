@@ -14,4 +14,5 @@ public final class IndexExpression extends OutputExpression {
     public boolean equals(Object obj) {
         return super.equals(obj) && obj instanceof IndexExpression;
     }
+
 }

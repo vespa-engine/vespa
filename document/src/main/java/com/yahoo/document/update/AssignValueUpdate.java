@@ -8,9 +8,10 @@ import com.yahoo.document.serialization.DocumentUpdateWriter;
 /**
  * <p>Value update that represents assigning a new value.</p>
  *
- * @author <a href="mailto:einarmr@yahoo-inc.com">Einar M R Rosenvinge</a>
+ * @author Einar M R Rosenvinge
  */
 public class AssignValueUpdate extends ValueUpdate {
+
     protected FieldValue value;
 
     public AssignValueUpdate(FieldValue value) {
@@ -84,4 +85,5 @@ public class AssignValueUpdate extends ValueUpdate {
     public String toString() {
         return super.toString() + " " + value;
     }
+
 }

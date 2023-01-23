@@ -11,6 +11,7 @@ public final class ClearStateExpression extends Expression {
     public ClearStateExpression() {
         super(null);
     }
+
     @Override
     protected void doExecute(ExecutionContext context) {
         context.clear();
@@ -40,4 +41,5 @@ public final class ClearStateExpression extends Expression {
     public int hashCode() {
         return getClass().hashCode();
     }
+
 }

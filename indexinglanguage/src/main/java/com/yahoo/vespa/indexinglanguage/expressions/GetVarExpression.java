@@ -45,13 +45,8 @@ public final class GetVarExpression extends Expression {
 
     @Override
     public boolean equals(Object obj) {
-        if (!(obj instanceof GetVarExpression)) {
-            return false;
-        }
-        GetVarExpression rhs = (GetVarExpression)obj;
-        if (!varName.equals(rhs.varName)) {
-            return false;
-        }
+        if (!(obj instanceof GetVarExpression rhs)) return false;
+        if (!varName.equals(rhs.varName)) return false;
         return true;
     }
 

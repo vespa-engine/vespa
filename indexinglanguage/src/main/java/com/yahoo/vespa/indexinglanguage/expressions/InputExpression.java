@@ -9,6 +9,7 @@ import com.yahoo.vespa.objects.ObjectPredicate;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 /**
  * @author Simon Thoresen Hult
@@ -20,7 +21,7 @@ public final class InputExpression extends Expression {
 
     public InputExpression(String fieldName) {
         super(null);
-        this.fieldName = fieldName;
+        this.fieldName = Objects.requireNonNull(fieldName);
     }
 
     public String getFieldName() {
@@ -29,19 +30,17 @@ public final class InputExpression extends Expression {
 
     @Override
     protected void doExecute(ExecutionContext context) {
-        if (fieldPath != null) {
+        if (fieldPath != null)
             context.setValue(context.getInputValue(fieldPath));
-        } else {
+        else
             context.setValue(context.getInputValue(fieldName));
-        }
     }
 
     @Override
     protected void doVerify(VerificationContext context) {
         DataType val = context.getInputType(this, fieldName);
-        if (val == null) {
+        if (val == null)
             throw new VerificationException(this, "Field '" + fieldName + "' not found.");
-        }
         context.setValueType(val);
     }
 
@@ -57,13 +56,8 @@ public final class InputExpression extends Expression {
 
     @Override
     public boolean equals(Object obj) {
-        if (!(obj instanceof InputExpression)) {
-            return false;
-        }
-        InputExpression rhs = (InputExpression)obj;
-        if (!equals(fieldName, rhs.fieldName)) {
-            return false;
-        }
+        if ( ! (obj instanceof InputExpression rhs)) return false;
+        if ( ! equals(fieldName, rhs.fieldName)) return false;
         return true;
     }
 
@@ -97,8 +91,6 @@ public final class InputExpression extends Expression {
 
         private final List<String> inputFieldNames = new ArrayList<>(1);
 
-        public List<String> getInputFieldNames() { return inputFieldNames; }
-
         @Override
         public void execute(Object obj) {
             inputFieldNames.add(((InputExpression) obj).getFieldName());
@@ -107,6 +99,12 @@ public final class InputExpression extends Expression {
         @Override
         public boolean check(Object obj) {
             return obj instanceof InputExpression;
+        }
+
+        public static List<String> runOn(Expression expression) {
+            InputExpression.InputFieldNameExtractor inputFieldNameExtractor = new InputExpression.InputFieldNameExtractor();
+            expression.select(inputFieldNameExtractor, inputFieldNameExtractor);
+            return inputFieldNameExtractor.inputFieldNames;
         }
 
     }
