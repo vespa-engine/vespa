@@ -304,9 +304,6 @@ TEST("requireThatSequentialOperationsOnPartialWorks")
 
     PartialBitVector after(1000, 1100);
     after.setInterval(1000, 1100);
-    EXPECT_EXCEPTION(p2.orWith(after), vespalib::IllegalArgumentException,
-                     "IllegalArgumentException: [717, 919] starts before which is not allowed currently [1000, 1100] at "
-                     "verifyInclusiveStart in /home/balder/git/vespa/searchlib/src/vespa/searchlib/common/bitvector.cpp:33");
     EXPECT_EQUAL(202u, p2.countTrueBits());
 }
 
@@ -365,9 +362,13 @@ verifyNonOverlappingWorksAsZeroPadded(bool clear, Func func) {
     BitVector::UP right = createEveryNthBitSet(3, 2000, 100);
     EXPECT_EQUAL(CNT, left->countTrueBits());
     EXPECT_EQUAL(CNT, right->countTrueBits());
-    EXPECT_EXCEPTION(func(*left, *right), vespalib::IllegalArgumentException,
-                     "IllegalArgumentException: [1000, 1100] starts before which is not allowed currently [2000, 2100] at "
-                     "verifyInclusiveStart in /home/balder/git/vespa/searchlib/src/vespa/searchlib/common/bitvector.cpp:33");
+    func(*left, *right);
+    EXPECT_EQUAL(clear ? 0 : CNT, left->countTrueBits());
+    EXPECT_EQUAL(CNT, right->countTrueBits());
+    left = createEveryNthBitSet(3, 1000, 100);
+    right = createEveryNthBitSet(3, 2000, 100);
+    EXPECT_EQUAL(CNT, left->countTrueBits());
+    EXPECT_EQUAL(CNT, right->countTrueBits());
     func(*right, *left);
     EXPECT_EQUAL(CNT, left->countTrueBits());
     EXPECT_EQUAL(clear ? 0 : CNT, right->countTrueBits());

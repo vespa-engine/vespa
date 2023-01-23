@@ -23,17 +23,6 @@ using vespalib::alloc::Alloc;
 
 namespace {
 
-void verifyInclusiveStart(const search::BitVector & a, const search::BitVector & b) __attribute__((noinline));
-
-void verifyInclusiveStart(const search::BitVector & a, const search::BitVector & b)
-{
-    if (a.getStartIndex() < b.getStartIndex()) {
-        throw IllegalArgumentException(make_string("[%d, %d] starts before which is not allowed currently [%d, %d]",
-                                                   a.getStartIndex(), a.size(), b.getStartIndex(), b.size()),
-                                       VESPA_STRLOC);
-    }
-}
-
 constexpr size_t MMAP_LIMIT = 256_Mi;
 
 }
@@ -192,7 +181,6 @@ BitVector::countInterval(Range range_in) const
 void
 BitVector::orWith(const BitVector & right)
 {
-    verifyInclusiveStart(*this, right);
     Range range = sanitize(right.range());
     if ( ! range.validNonZero()) return;
 
@@ -226,7 +214,11 @@ BitVector::repairEnds()
 void
 BitVector::andWith(const BitVector & right)
 {
-    verifyInclusiveStart(*this, right);
+    Range range = sanitize(right.range());
+    if ( ! range.validNonZero()) {
+        clear();
+        return;
+    }
 
     uint32_t commonBytes = std::min(getActiveBytes(), numActiveBytes(getStartIndex(), right.size()));
     IAccelrated::getAccelerator().andBit(getActiveStart(), right.getWordIndex(getStartIndex()), commonBytes);
@@ -242,7 +234,6 @@ BitVector::andWith(const BitVector & right)
 void
 BitVector::andNotWith(const BitVector& right)
 {
-    verifyInclusiveStart(*this, right);
     Range range = sanitize(right.range());
     if ( ! range.validNonZero()) return;
 
