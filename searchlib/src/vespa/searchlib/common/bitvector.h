@@ -42,6 +42,7 @@ public:
     bool operator == (const BitVector &right) const;
     const void * getStart() const { return _words; }
     void * getStart() { return _words; }
+    Range range() const noexcept { return {getStartIndex(), size()}; }
     Index size() const { return vespalib::atomic::load_ref_relaxed(_sz); }
     Index sizeBytes() const { return numBytes(getActiveSize()); }
     bool testBit(Index idx) const {

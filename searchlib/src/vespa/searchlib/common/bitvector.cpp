@@ -193,18 +193,18 @@ void
 BitVector::orWith(const BitVector & right)
 {
     verifyInclusiveStart(*this, right);
+    Range range = sanitize(right.range());
+    if ( ! range.validNonZero()) return;
 
     if (right.size() < size()) {
-        if (right.size() > getStartIndex()) {
-            ssize_t commonBytes = numActiveBytes(getStartIndex(), right.size()) - sizeof(Word);
-            if (commonBytes > 0) {
-                IAccelrated::getAccelerator().orBit(getActiveStart(), right.getWordIndex(getStartIndex()), commonBytes);
-            }
-            Index last(right.size() - 1);
-            store(getWordIndex(last)[0], getWordIndex(last)[0] | (load(right.getWordIndex(last)[0]) & ~endBits(last)));
+        ssize_t commonBytes = numActiveBytes(range.start(), range.end()) - sizeof(Word);
+        if (commonBytes > 0) {
+            IAccelrated::getAccelerator().orBit(getWordIndex(range.start()), right.getWordIndex(range.start()), commonBytes);
         }
+        Index last(range.end() - 1);
+        store(getWordIndex(last)[0], getWordIndex(last)[0] | (load(right.getWordIndex(last)[0]) & ~endBits(last)));
     } else {
-        IAccelrated::getAccelerator().orBit(getActiveStart(), right.getWordIndex(getStartIndex()), getActiveBytes());
+        IAccelrated::getAccelerator().orBit(getWordIndex(range.start()), right.getWordIndex(range.start()), getActiveBytes());
     }
     repairEnds();
     invalidateCachedCount();
@@ -243,18 +243,18 @@ void
 BitVector::andNotWith(const BitVector& right)
 {
     verifyInclusiveStart(*this, right);
+    Range range = sanitize(right.range());
+    if ( ! range.validNonZero()) return;
 
     if (right.size() < size()) {
-        if (right.size() > getStartIndex()) {
-            ssize_t commonBytes = numActiveBytes(getStartIndex(), right.size()) - sizeof(Word);
-            if (commonBytes > 0) {
-                IAccelrated::getAccelerator().andNotBit(getActiveStart(), right.getWordIndex(getStartIndex()), commonBytes);
-            }
-            Index last(right.size() - 1);
-            store(getWordIndex(last)[0], getWordIndex(last)[0] & ~(load(right.getWordIndex(last)[0]) & ~endBits(last)));
+        ssize_t commonBytes = numActiveBytes(range.start(), range.end()) - sizeof(Word);
+        if (commonBytes > 0) {
+            IAccelrated::getAccelerator().andNotBit(getWordIndex(range.start()), right.getWordIndex(range.start()), commonBytes);
         }
+        Index last(range.end() - 1);
+        store(getWordIndex(last)[0], getWordIndex(last)[0] & ~(load(right.getWordIndex(last)[0]) & ~endBits(last)));
     } else {
-        IAccelrated::getAccelerator().andNotBit(getActiveStart(), right.getWordIndex(getStartIndex()), getActiveBytes());
+        IAccelrated::getAccelerator().andNotBit(getWordIndex(range.start()), right.getWordIndex(range.start()), getActiveBytes());
     }
 
     repairEnds();
