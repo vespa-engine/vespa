@@ -4,6 +4,9 @@
 #include "subdbtype.h"
 #include <algorithm>
 
+#include <vespa/log/log.h>
+LOG_SETUP(".searchcore.proton.common.alloc_config");
+
 using search::GrowStrategy;
 using vespalib::datastore::CompactionStrategy;
 
@@ -13,8 +16,13 @@ AllocConfig::AllocConfig(const AllocStrategy& alloc_strategy,
                          uint32_t redundancy, uint32_t searchable_copies)
     : _alloc_strategy(alloc_strategy),
       _redundancy(redundancy),
-      _searchable_copies(searchable_copies)
+      _searchable_copies(std::min(searchable_copies, redundancy))
 {
+    if (searchable_copies > redundancy) {
+        LOG(error, "searchablecopies(%d) larger than redundancy(%d)."
+                   "Internal configuration issue that must be fixed. Capped for now",
+                   searchable_copies, redundancy);
+    }
 }
 
 AllocConfig::~AllocConfig() = default;
@@ -45,7 +53,7 @@ AllocConfig::make_alloc_strategy(SubDbType sub_db_type) const
         break;
     }
     GrowStrategy grow_strategy(initial_capacity, baseline.getGrowFactor(), baseline.getGrowDelta(), initial_capacity, baseline.getMultiValueAllocGrowFactor());
-    return AllocStrategy(grow_strategy, _alloc_strategy.get_compaction_strategy(), _alloc_strategy.get_amortize_count());
+    return {grow_strategy, _alloc_strategy.get_compaction_strategy(), _alloc_strategy.get_amortize_count()};
 }
 
 }
