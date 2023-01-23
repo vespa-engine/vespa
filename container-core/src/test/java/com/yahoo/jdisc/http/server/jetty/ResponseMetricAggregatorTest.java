@@ -1,47 +1,37 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.jdisc.http.server.jetty;
 
-import com.yahoo.jdisc.http.server.jetty.HttpResponseStatisticsCollector.StatisticsEntry;
-import jakarta.servlet.ServletException;
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
+import com.yahoo.jdisc.http.server.jetty.ResponseMetricAggregator.StatisticsEntry;
 import org.eclipse.jetty.http.HttpFields;
-import org.eclipse.jetty.http.HttpURI;
 import org.eclipse.jetty.http.HttpVersion;
 import org.eclipse.jetty.http.MetaData;
-import org.eclipse.jetty.http.MetaData.Response;
-import org.eclipse.jetty.server.AbstractConnector;
-import org.eclipse.jetty.server.Connector;
-import org.eclipse.jetty.server.HttpChannel;
-import org.eclipse.jetty.server.HttpChannelOverHttp;
-import org.eclipse.jetty.server.HttpConfiguration;
-import org.eclipse.jetty.server.HttpTransport;
 import org.eclipse.jetty.server.Request;
-import org.eclipse.jetty.server.Server;
-import org.eclipse.jetty.server.handler.AbstractHandler;
-import org.eclipse.jetty.util.Callback;
+import org.eclipse.jetty.server.Response;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import java.io.IOException;
-import java.nio.ByteBuffer;
 import java.util.List;
 import java.util.Set;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 /**
  * @author ollivir
  * @author bjorncs
  */
-public class HttpResponseStatisticsCollectorTest {
+public class ResponseMetricAggregatorTest {
 
-    private Connector connector;
-    private List<String> monitoringPaths = List.of("/status.html");
-    private List<String> searchPaths = List.of("/search");
-    private HttpResponseStatisticsCollector collector = new HttpResponseStatisticsCollector(monitoringPaths, searchPaths, Set.of());
-    private int httpResponseCode = 500;
+    private final List<String> monitoringPaths = List.of("/status.html");
+    private final List<String> searchPaths = List.of("/search");
+    private final ResponseMetricAggregator collector = new ResponseMetricAggregator(monitoringPaths, searchPaths, Set.of());
+
+    @BeforeEach
+    public void initializeCollector() {
+        collector.takeStatistics();
+    }
 
     @Test
     void statistics_are_aggregated_by_category() {
@@ -78,7 +68,6 @@ public class HttpResponseStatisticsCollectorTest {
     }
 
     @Test
-    @SuppressWarnings("removal")
     void statistics_include_grouped_and_single_statuscodes() {
         testRequest("http", 401, "GET");
         testRequest("http", 404, "GET");
@@ -132,49 +121,28 @@ public class HttpResponseStatisticsCollectorTest {
         assertStatisticsEntry(stats, "http", "GET", MetricDefinitions.RESPONSES_2XX, "write", 200, 1L);
     }
 
-    @BeforeEach
-    public void initializeCollector() throws Exception {
-        Server server = new Server();
-        connector = new AbstractConnector(server, null, null, null, 0) {
-            @Override
-            protected void accept(int acceptorID) throws IOException, InterruptedException {
-            }
 
-            @Override
-            public Object getTransport() {
-                return null;
-            }
-        };
-        collector.setHandler(new AbstractHandler() {
-            @Override
-            public void handle(String target, Request baseRequest, HttpServletRequest request, HttpServletResponse response)
-                    throws IOException, ServletException {
-                baseRequest.setHandled(true);
-                baseRequest.getResponse().setStatus(httpResponseCode);
-            }
-        });
-        server.setHandler(collector);
-        server.start();
+    private void testRequest(String scheme, int responseCode, String httpMethod) {
+        testRequest(scheme, responseCode, httpMethod, "foo/bar");
     }
-
-    private Request testRequest(String scheme, int responseCode, String httpMethod) {
-        return testRequest(scheme, responseCode, httpMethod, "foo/bar");
+    private void testRequest(String scheme, int responseCode, String httpMethod, String path) {
+        testRequest(scheme, responseCode, httpMethod, path, null);
     }
-    private Request testRequest(String scheme, int responseCode, String httpMethod, String path) {
-        return testRequest(scheme, responseCode, httpMethod, path, null);
-    }
-    private Request testRequest(String scheme, int responseCode, String httpMethod, String path,
+    private void testRequest(String scheme, int responseCode, String httpMethod, String path,
                                 com.yahoo.jdisc.Request.RequestType explicitRequestType) {
-        HttpChannel channel = new HttpChannelOverHttp(null, connector, new HttpConfiguration(), null, new DummyTransport());
-        MetaData.Request metaData = new MetaData.Request(httpMethod, HttpURI.build(scheme + "://" + path), HttpVersion.HTTP_1_1, HttpFields.build());
-        Request req = channel.getRequest();
-        if (explicitRequestType != null)
-            req.setAttribute("requestType", explicitRequestType);
-        req.setMetaData(metaData);
 
-        this.httpResponseCode = responseCode;
-        channel.handle();
-        return req;
+        Response resp = mock(Response.class);
+        when(resp.getCommittedMetaData())
+                .thenReturn(new MetaData.Response(HttpVersion.HTTP_1_1, responseCode, HttpFields.EMPTY));
+        Request req = mock(Request.class);
+        when(req.getResponse()).thenReturn(resp);
+        when(req.getMethod()).thenReturn(httpMethod);
+        when(req.getScheme()).thenReturn(scheme);
+        when(req.getRequestURI()).thenReturn(path);
+        when(req.getAttribute(ResponseMetricAggregator.requestTypeAttribute)).thenReturn(explicitRequestType);
+        when(req.getProtocol()).thenReturn(HttpVersion.HTTP_1_1.asString());
+
+        collector.onResponseCommit(req);
     }
 
     private static void assertStatisticsEntry(List<StatisticsEntry> result, String scheme, String method, String name,
@@ -191,27 +159,4 @@ public class HttpResponseStatisticsCollectorTest {
         assertThat(value, equalTo(expectedValue));
     }
 
-    private final class DummyTransport implements HttpTransport {
-        @Override
-        public void send(MetaData.Request request, Response response, ByteBuffer byteBuffer, boolean b, Callback callback) {
-            callback.succeeded();
-        }
-
-        @Override
-        public boolean isPushSupported() {
-            return false;
-        }
-
-        @Override
-        public void push(MetaData.Request request) {
-        }
-
-        @Override
-        public void onCompleted() {
-        }
-
-        @Override
-        public void abort(Throwable failure) {
-        }
-    }
 }

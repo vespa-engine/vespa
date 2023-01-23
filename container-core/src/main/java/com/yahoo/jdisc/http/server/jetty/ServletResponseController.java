@@ -175,7 +175,7 @@ class ServletResponseController {
                     handlerResponse = response;
                     state = State.ACCEPTED_RESPONSE_FROM_HANDLER;
                     servletRequest.setAttribute(
-                            HttpResponseStatisticsCollector.requestTypeAttribute, handlerResponse.getRequestType());
+                            ResponseMetricAggregator.requestTypeAttribute, handlerResponse.getRequestType());
                     return;
                 case COMMITTED_RESPONSE_FROM_HANDLER:
                 case COMPLETED_WITH_RESPONSE_FROM_HANDLER:
