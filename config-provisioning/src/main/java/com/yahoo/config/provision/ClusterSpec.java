@@ -170,15 +170,6 @@ public final class ClusterSpec {
             return this;
         }
 
-        // TODO jonmv: remove once 8.113 is gone
-        public Builder loadBalancerSettings(LoadBalancerSettings settings) {
-            return loadBalancerSettings(new ZoneEndpoint(true,
-                                                         true,
-                                                         settings.allowedUrns().stream()
-                                                                 .map(urn -> new AllowedUrn(AccessType.awsPrivateLink, urn))
-                                                                 .toList()));
-        }
-
         public Builder loadBalancerSettings(ZoneEndpoint zoneEndpoint) {
             this.zoneEndpoint = zoneEndpoint;
             return this;
