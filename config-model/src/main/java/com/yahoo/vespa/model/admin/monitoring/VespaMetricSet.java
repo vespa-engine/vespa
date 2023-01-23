@@ -240,7 +240,7 @@ public class VespaMetricSet {
         addMetric(metrics, ContainerMetrics.CLUSTER_CONTROLLER_DOWN_COUNT.last());
         addMetric(metrics, ContainerMetrics.CLUSTER_CONTROLLER_INITIALIZING_COUNT.last());
         addMetric(metrics, ContainerMetrics.CLUSTER_CONTROLLER_MAINTENANCE_COUNT.last());
-        addMetric(metrics, ContainerMetrics.CLUSTER_CONTROLLER_RETIRE_COUNT.last());
+        addMetric(metrics, ContainerMetrics.CLUSTER_CONTROLLER_RETIRED_COUNT.last());
         addMetric(metrics, ContainerMetrics.CLUSTER_CONTROLLER_STOPPING_COUNT.last());
         addMetric(metrics, ContainerMetrics.CLUSTER_CONTROLLER_UP_COUNT.last());
         addMetric(metrics, ContainerMetrics.CLUSTER_CONTROLLER_CLUSTER_STATE_CHANGE_COUNT.baseName());
