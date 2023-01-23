@@ -4,7 +4,7 @@
 #include "docsum_field_writer_factory.h"
 #include "i_matching_elements_filler.h"
 #include <vespa/searchlib/common/matching_elements.h>
-#include <vespa/searchsummary/docsummary/keywordextractor.h>
+#include <vespa/searchsummary/docsummary/legacy_keyword_extractor.h>
 #include <vespa/searchsummary/docsummary/legacy_keyword_extractor_factory.h>
 #include <vespa/searchsummary/config/config-juniperrc.h>
 
@@ -13,7 +13,7 @@ LOG_SETUP(".vsm.vsm-adapter");
 
 using search::docsummary::IKeywordExtractorFactory;
 using search::docsummary::ResConfigEntry;
-using search::docsummary::KeywordExtractor;
+using search::docsummary::LegacyKeywordExtractor;
 using search::docsummary::LegacyKeywordExtractorFactory;
 using search::MatchingElements;
 using config::ConfigSnapshot;
@@ -148,7 +148,7 @@ VSMAdapter::configure(const VSMConfigSnapshot & snapshot)
     docsumTools->setJuniper(std::move(juniper));
 
     // init keyword extractor
-    auto kwExtractor = std::make_unique<KeywordExtractor>();
+    auto kwExtractor = std::make_unique<LegacyKeywordExtractor>();
     kwExtractor->addLegalIndexSpec(_highlightindexes.c_str());
     vespalib::string spec = kwExtractor->getLegalIndexSpec();
     LOG(debug, "index highlight spec: '%s'", spec.c_str());

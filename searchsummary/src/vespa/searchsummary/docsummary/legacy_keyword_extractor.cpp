@@ -1,6 +1,6 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include "keywordextractor.h"
+#include "legacy_keyword_extractor.h"
 #include "idocsumenvironment.h"
 #include <vespa/searchlib/parsequery/stackdumpiterator.h>
 #include <vespa/vespalib/stllike/hashtable.hpp>
@@ -17,7 +17,7 @@ bool useful(search::ParseItem::ItemCreator creator)
 }
 
 
-KeywordExtractor::KeywordExtractor()
+LegacyKeywordExtractor::LegacyKeywordExtractor()
     : IKeywordExtractor(),
       _legalPrefixes(),
       _legalIndexes()
@@ -25,29 +25,29 @@ KeywordExtractor::KeywordExtractor()
 }
 
 
-KeywordExtractor::~KeywordExtractor() = default;
+LegacyKeywordExtractor::~LegacyKeywordExtractor() = default;
 
 bool
-KeywordExtractor::isLegalIndexName(const char *idxName) const
+LegacyKeywordExtractor::isLegalIndexName(const char *idxName) const
 {
     return _legalIndexes.find(idxName) != _legalIndexes.end();
 }
 
-KeywordExtractor::IndexPrefix::IndexPrefix(const char *prefix) noexcept
+LegacyKeywordExtractor::IndexPrefix::IndexPrefix(const char *prefix) noexcept
     : _prefix(prefix)
 {
 }
 
-KeywordExtractor::IndexPrefix::~IndexPrefix() = default;
+LegacyKeywordExtractor::IndexPrefix::~IndexPrefix() = default;
 
 bool
-KeywordExtractor::IndexPrefix::Match(const char *idxName) const
+LegacyKeywordExtractor::IndexPrefix::Match(const char *idxName) const
 {
     return vespalib::starts_with(idxName, _prefix);
 }
 
 void
-KeywordExtractor::addLegalIndexSpec(const char *spec)
+LegacyKeywordExtractor::addLegalIndexSpec(const char *spec)
 {
     if (spec == nullptr)
         return;
@@ -85,7 +85,7 @@ KeywordExtractor::addLegalIndexSpec(const char *spec)
 
 
 vespalib::string
-KeywordExtractor::getLegalIndexSpec()
+LegacyKeywordExtractor::getLegalIndexSpec()
 {
     vespalib::string spec;
 
@@ -110,7 +110,7 @@ KeywordExtractor::getLegalIndexSpec()
 
 
 bool
-KeywordExtractor::isLegalIndex(vespalib::stringref idx) const
+LegacyKeywordExtractor::isLegalIndex(vespalib::stringref idx) const
 {
     vespalib::string resolvedIdxName;
 

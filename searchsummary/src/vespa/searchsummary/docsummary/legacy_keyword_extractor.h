@@ -7,7 +7,7 @@
 
 namespace search::docsummary {
 
-class KeywordExtractor : public IKeywordExtractor
+class LegacyKeywordExtractor : public IKeywordExtractor
 {
 public:
 
@@ -44,10 +44,10 @@ private:
     }
     bool isLegalIndexName(const char *idxName) const;
 public:
-    KeywordExtractor();
-    KeywordExtractor(const KeywordExtractor &) = delete;
-    KeywordExtractor& operator=(const KeywordExtractor &) = delete;
-    ~KeywordExtractor();
+    LegacyKeywordExtractor();
+    LegacyKeywordExtractor(const LegacyKeywordExtractor &) = delete;
+    LegacyKeywordExtractor& operator=(const LegacyKeywordExtractor &) = delete;
+    ~LegacyKeywordExtractor();
 
 
     /**
