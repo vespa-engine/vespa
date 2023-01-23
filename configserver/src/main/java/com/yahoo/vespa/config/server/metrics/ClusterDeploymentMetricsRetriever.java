@@ -3,6 +3,7 @@ package com.yahoo.vespa.config.server.metrics;
 
 import ai.vespa.util.http.hc5.VespaHttpClientBuilder;
 import com.yahoo.concurrent.DaemonThreadFactory;
+import com.yahoo.metrics.ContainerMetrics;
 import com.yahoo.slime.ArrayTraverser;
 import com.yahoo.slime.Cursor;
 import com.yahoo.slime.Inspector;
@@ -145,12 +146,12 @@ public class ClusterDeploymentMetricsRetriever {
                         .ifPresent(docCount -> aggregator.get().addDocumentCount(docCount));
                 break;
             case VESPA_CONTAINER_CLUSTERCONTROLLER:
-                optionalDouble(values.field("cluster-controller.resource_usage.max_memory_utilization.max")).ifPresent(memoryUtil ->
+                optionalDouble(values.field(ContainerMetrics.CLUSTER_CONTROLLER_RESOURCE_USAGE_MAX_MEMORY_UTILIZATION.max())).ifPresent(memoryUtil ->
                         aggregator.get()
                                 .addMemoryUsage(memoryUtil,
-                                        values.field("cluster-controller.resource_usage.memory_limit.last").asDouble())
-                                .addDiskUsage(values.field("cluster-controller.resource_usage.max_disk_utilization.max").asDouble(),
-                                        values.field("cluster-controller.resource_usage.disk_limit.last").asDouble()));
+                                        values.field(ContainerMetrics.CLUSTER_CONTROLLER_RESOURCE_USAGE_MEMORY_LIMIT.last()).asDouble())
+                                .addDiskUsage(values.field(ContainerMetrics.CLUSTER_CONTROLLER_RESOURCE_USAGE_MAX_DISK_UTILIZATION.max()).asDouble(),
+                                        values.field(ContainerMetrics.CLUSTER_CONTROLLER_RESOURCE_USAGE_DISK_LIMIT.last()).asDouble()));
                 break;
         }
     }

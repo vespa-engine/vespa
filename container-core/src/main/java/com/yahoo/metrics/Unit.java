@@ -5,6 +5,7 @@ package com.yahoo.metrics;
  */
 public enum Unit {
 
+    BINARY(BaseUnit.BINARY),
     BYTE(BaseUnit.BYTE),
     CONNECTION(BaseUnit.CONNECTION),
     DOCUMENT(BaseUnit.DOCUMENT),
@@ -14,6 +15,7 @@ public enum Unit {
     HIT_PER_QUERY(BaseUnit.HIT, BaseUnit.QUERY),
     ITEM(BaseUnit.ITEM),
     MILLISECOND(BaseUnit.MILLISECOND),
+    NODE(BaseUnit.NODE),
     OPERATION(BaseUnit.OPERATION),
     OPERATION_PER_SECOND(BaseUnit.OPERATION, BaseUnit.SECOND),
     QUERY(BaseUnit.QUERY),
@@ -53,6 +55,7 @@ public enum Unit {
 
     private enum BaseUnit {
 
+        BINARY("binary"),
         BYTE("byte"),
         CONNECTION("connection"),
         DOCUMENT("document"),
@@ -60,6 +63,7 @@ public enum Unit {
         HIT("hit"),
         ITEM("item"),
         MILLISECOND("millisecond", "ms"),
+        NODE("node"),
         OPERATION("operation"),
         QUERY("query"),
         REQUEST("request"),

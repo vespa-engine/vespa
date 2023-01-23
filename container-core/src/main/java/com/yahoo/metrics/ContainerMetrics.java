@@ -150,8 +150,34 @@ public enum ContainerMetrics {
     // Deprecated metrics. TODO: Remove on Vespa 9.
     SERVER_REJECTED_REQUESTS("serverRejectedRequests", Unit.OPERATION, "Deprecated. Use jdisc.thread_pool.rejected_tasks instead."),
     SERVER_THREAD_POOL_SIZE("serverThreadPoolSize", Unit.THREAD, "Deprecated. Use jdisc.thread_pool.size instead."),
-    SERVER_ACTIVE_THREADS("serverActiveThreads", Unit.THREAD, "Deprecated. Use jdisc.thread_pool.active_threads instead.");
-        
+    SERVER_ACTIVE_THREADS("serverActiveThreads", Unit.THREAD, "Deprecated. Use jdisc.thread_pool.active_threads instead."),
+
+    
+    // Metrics from the cluster controller
+    CLUSTER_CONTROLLER_DOWN_COUNT("cluster-controller.down.count", Unit.NODE, "Number of content nodes down"),
+    CLUSTER_CONTROLLER_INITIALIZING_COUNT("cluster-controller.initializing.count", Unit.NODE, "Number of content nodes initializing"),
+    CLUSTER_CONTROLLER_MAINTENANCE_COUNT("cluster-controller.maintenance.count", Unit.NODE, "Number of content nodes in maintenance"),
+    CLUSTER_CONTROLLER_RETIRED_COUNT("cluster-controller.retired.count", Unit.NODE, "Number of content nodes that are retired"),
+    CLUSTER_CONTROLLER_STOPPING_COUNT("cluster-controller.stopping.count", Unit.NODE, "Number of content nodes currently stopping"),
+    CLUSTER_CONTROLLER_UP_COUNT("cluster-controller.up.count", Unit.NODE, "Number of content nodes up"),
+    CLUSTER_CONTROLLER_CLUSTER_STATE_CHANGE_COUNT("cluster-controller.cluster-state-change.count", Unit.NODE, "Number of nodes changing state"),
+    CLUSTER_CONTROLLER_BUSY_TICK_TIME_MS("cluster-controller.busy-tick-time-ms", Unit.MILLISECOND, "Time busy"),
+    CLUSTER_CONTROLLER_IDLE_TICK_TIME_MS("cluster-controller.idle-tick-time-ms", Unit.MILLISECOND, "Time idle"),
+    CLUSTER_CONTROLLER_WORK_MS("cluster-controller.work-ms", Unit.MILLISECOND, "Time used for actual work"),
+    CLUSTER_CONTROLLER_IS_MASTER("cluster-controller.is-master", Unit.BINARY, "1 if this cluster controller is currently the master, or 0 if not"),
+    CLUSTER_CONTROLLER_REMOTE_TASK_QUEUE_SIZE("cluster-controller.remote-task-queue.size", Unit.OPERATION, "Number of remote tasks queued"),
+    // TODO(hakonhall): Update this name once persistent "count" metrics has been implemented.
+    // DO NOT RELY ON THIS METRIC YET.
+    CLUSTER_CONTROLLER_NODE_EVENT_COUNT("cluster-controller.node-event.count", Unit.OPERATION, "Number of node events"),
+    CLUSTER_CONTROLLER_RESOURCE_USAGE_NODES_ABOVE_LIMIT("cluster-controller.resource_usage.nodes_above_limit", Unit.NODE, "The number of content nodes above resource limit, blocking feed"),
+    CLUSTER_CONTROLLER_RESOURCE_USAGE_MAX_MEMORY_UTILIZATION("cluster-controller.resource_usage.max_memory_utilization", Unit.FRACTION, "Current memory utilisation, per content node"),
+    CLUSTER_CONTROLLER_RESOURCE_USAGE_MAX_DISK_UTILIZATION("cluster-controller.resource_usage.max_disk_utilization", Unit.FRACTION, "Current disk space utilisation, per content node"),
+    CLUSTER_CONTROLLER_RESOURCE_USAGE_MEMORY_LIMIT("cluster-controller.resource_usage.memory_limit", Unit.FRACTION, "Disk space limit as a fraction of available disk space"),
+    CLUSTER_CONTROLLER_RESOURCE_USAGE_DISK_LIMIT("cluster-controller.resource_usage.disk_limit", Unit.FRACTION, "Memory space limit as a fraction of available memory"),
+    CLUSTER_CONTROLLER_REINDEXING_PROGRESS("reindexing.progress", Unit.FRACTION, "Re-indexing progress");
+
+    
+    
     private final String name;
     private final Unit unit;
     private final String description;
