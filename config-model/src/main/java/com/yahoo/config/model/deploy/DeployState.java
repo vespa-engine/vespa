@@ -122,7 +122,8 @@ public class DeployState implements ConfigDefinitionStore {
                         Version wantedNodeVespaVersion,
                         boolean accessLoggingEnabledByDefault,
                         Optional<DockerImage> wantedDockerImageRepo,
-                        Reindexing reindexing) {
+                        Reindexing reindexing,
+                        Optional<ValidationOverrides> validationOverrides) {
         this.logger = deployLogger;
         this.fileRegistry = fileRegistry;
         this.executor = executor;
@@ -143,8 +144,8 @@ public class DeployState implements ConfigDefinitionStore {
         this.semanticRules = semanticRules; // TODO: Remove this by seeing how pagetemplates are propagated
         this.importedModels = importMlModels(applicationPackage, modelImporters, executor);
 
-        this.validationOverrides = applicationPackage.getValidationOverrides().map(ValidationOverrides::fromXml)
-                                                     .orElse(ValidationOverrides.empty);
+        this.validationOverrides = validationOverrides.orElse(applicationPackage.getValidationOverrides().map(ValidationOverrides::fromXml)
+                                                      .orElse(ValidationOverrides.empty));
 
         this.wantedNodeVespaVersion = wantedNodeVespaVersion;
         this.now = now;
@@ -327,9 +328,10 @@ public class DeployState implements ConfigDefinitionStore {
         private Version wantedNodeVespaVersion = Vtag.currentVersion;
         private boolean accessLoggingEnabledByDefault = true;
         private Optional<DockerImage> wantedDockerImageRepo = Optional.empty();
-        private Reindexing reindexing = null;
         private RankProfileRegistry rankProfileRegistry = new RankProfileRegistry();
         private QueryProfiles queryProfiles = null;
+        private Reindexing reindexing = null;
+        private Optional<ValidationOverrides> validationOverrides = Optional.empty();
 
         public Builder() {}
 
@@ -437,7 +439,15 @@ public class DeployState implements ConfigDefinitionStore {
             return this;
         }
 
-        public Builder reindexing(Reindexing reindexing) { this.reindexing = Objects.requireNonNull(reindexing); return this; }
+        public Builder reindexing(Reindexing reindexing) {
+            this.reindexing = Objects.requireNonNull(reindexing);
+            return this;
+        }
+
+        public Builder validationOverrides(ValidationOverrides validationOverrides) {
+            this.validationOverrides = Optional.of(validationOverrides);
+            return this;
+        }
 
         public DeployState build() {
             return build(new ValidationParameters());
@@ -470,7 +480,8 @@ public class DeployState implements ConfigDefinitionStore {
                                    wantedNodeVespaVersion,
                                    accessLoggingEnabledByDefault,
                                    wantedDockerImageRepo,
-                                   reindexing);
+                                   reindexing,
+                                   validationOverrides);
         }
 
     }

@@ -1,9 +1,9 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model.application.validation.change;
 
-import com.yahoo.config.application.api.ValidationOverrides;
 import com.yahoo.config.model.api.ConfigChangeAction;
 import com.yahoo.config.model.api.ServiceInfo;
+import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.documentmodel.NewDocumentType;
 import com.yahoo.schema.derived.AttributeFields;
@@ -15,7 +15,6 @@ import com.yahoo.vespa.model.application.validation.change.search.DocumentTypeCh
 import com.yahoo.vespa.model.content.cluster.ContentCluster;
 import com.yahoo.vespa.model.search.StreamingSearchCluster;
 
-import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -29,7 +28,7 @@ import java.util.stream.Collectors;
 public class StreamingSearchClusterChangeValidator implements ChangeValidator {
 
     @Override
-    public List<ConfigChangeAction> validate(VespaModel current, VespaModel next, ValidationOverrides overrides, Instant now) {
+    public List<ConfigChangeAction> validate(VespaModel current, VespaModel next, DeployState deployState) {
         List<ConfigChangeAction> result = new ArrayList<>();
         current.getContentClusters().forEach((clusterName, currentCluster) -> {
             ContentCluster nextCluster = next.getContentClusters().get(clusterName);

@@ -1,7 +1,6 @@
 package com.yahoo.vespa.model.application.validation.change;
 
 import com.yahoo.config.provision.IntRange;
-import com.yahoo.config.application.api.ValidationOverrides;
 import com.yahoo.config.model.api.Provisioned;
 import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.model.deploy.TestProperties;
@@ -14,7 +13,6 @@ import com.yahoo.vespa.model.VespaModel;
 import com.yahoo.vespa.model.test.utils.VespaModelCreatorWithMockPkg;
 import org.junit.jupiter.api.Test;
 
-import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 
@@ -33,15 +31,15 @@ class CloudAccountChangeValidatorTest {
 
         CloudAccountChangeValidator validator = new CloudAccountChangeValidator();
         try {
-            validator.validate(model0, model1, ValidationOverrides.empty, Instant.now());
+            validator.validate(model0, model1, new DeployState.Builder().build());
             fail("Expected exception");
         } catch (IllegalArgumentException e) {
             assertEquals(e.getMessage(), "Cannot change cloud account from unspecified account to " +
                                          "account '000000000000'. The existing deployment must be removed before " +
                                          "changing accounts");
         }
-        assertEquals(List.of(), validator.validate(model0, model0, ValidationOverrides.empty, Instant.now()));
-        assertEquals(List.of(), validator.validate(model1, model1, ValidationOverrides.empty, Instant.now()));
+        assertEquals(List.of(), validator.validate(model0, model0, new DeployState.Builder().build()));
+        assertEquals(List.of(), validator.validate(model1, model1, new DeployState.Builder().build()));
     }
 
     private static Provisioned provisioned(Capacity... capacity) {

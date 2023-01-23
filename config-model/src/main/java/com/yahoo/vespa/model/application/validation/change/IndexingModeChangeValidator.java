@@ -2,16 +2,15 @@
 package com.yahoo.vespa.model.application.validation.change;
 
 import com.yahoo.config.application.api.ValidationId;
-import com.yahoo.config.application.api.ValidationOverrides;
 import com.yahoo.config.model.api.ConfigChangeAction;
 import com.yahoo.config.model.api.ServiceInfo;
+import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.documentmodel.NewDocumentType;
 import com.yahoo.vespa.model.VespaModel;
 import com.yahoo.vespa.model.content.ContentSearchCluster;
 import com.yahoo.vespa.model.content.cluster.ContentCluster;
 import com.yahoo.vespa.model.search.SearchNode;
 
-import java.time.Instant;
 import java.util.ArrayList;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -28,8 +27,7 @@ import java.util.stream.Collectors;
 public class IndexingModeChangeValidator implements ChangeValidator {
 
     @Override
-    public List<ConfigChangeAction> validate(VespaModel currentModel, VespaModel nextModel, 
-                                             ValidationOverrides overrides, Instant now) {
+    public List<ConfigChangeAction> validate(VespaModel currentModel, VespaModel nextModel, DeployState deployState) {
         List<ConfigChangeAction> actions = new ArrayList<>();
         for (Map.Entry<String, ContentCluster> currentEntry : currentModel.getContentClusters().entrySet()) {
             ContentCluster nextCluster = nextModel.getContentClusters().get(currentEntry.getKey());

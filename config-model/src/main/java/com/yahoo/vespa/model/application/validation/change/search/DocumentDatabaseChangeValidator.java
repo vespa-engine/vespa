@@ -1,13 +1,12 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model.application.validation.change.search;
 
+import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.documentmodel.NewDocumentType;
-import com.yahoo.config.application.api.ValidationOverrides;
 import com.yahoo.vespa.model.application.validation.change.VespaConfigChangeAction;
 import com.yahoo.vespa.model.search.DocumentDatabase;
 
-import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -23,23 +22,20 @@ public class DocumentDatabaseChangeValidator {
     private final NewDocumentType currentDocType;
     private final DocumentDatabase nextDatabase;
     private final NewDocumentType nextDocType;
-    private final ValidationOverrides overrides;
-    private final Instant now;
+    private final DeployState deployState;
 
     public DocumentDatabaseChangeValidator(ClusterSpec.Id id,
                                            DocumentDatabase currentDatabase,
                                            NewDocumentType currentDocType,
                                            DocumentDatabase nextDatabase,
                                            NewDocumentType nextDocType,
-                                           ValidationOverrides overrides,
-                                           Instant now) {
+                                           DeployState deployState) {
         this.id = id;
         this.currentDatabase = currentDatabase;
         this.currentDocType = currentDocType;
         this.nextDatabase = nextDatabase;
         this.nextDocType = nextDocType;
-        this.overrides = overrides;
-        this.now = now;
+        this.deployState = deployState;
     }
 
     public List<VespaConfigChangeAction> validate() {
@@ -57,7 +53,7 @@ public class DocumentDatabaseChangeValidator {
                                             currentDatabase.getDerivedConfiguration().getIndexSchema(), currentDocType,
                                             nextDatabase.getDerivedConfiguration().getAttributeFields(),
                                             nextDatabase.getDerivedConfiguration().getIndexSchema(), nextDocType,
-                                            overrides, now)
+                                            deployState)
                        .validate();
     }
 

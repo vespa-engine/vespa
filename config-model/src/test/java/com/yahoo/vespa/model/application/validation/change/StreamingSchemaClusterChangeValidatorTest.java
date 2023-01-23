@@ -4,17 +4,15 @@ package com.yahoo.vespa.model.application.validation.change;
 import com.yahoo.config.application.api.ValidationId;
 import com.yahoo.config.model.api.ConfigChangeAction;
 import com.yahoo.config.model.api.ServiceInfo;
+import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.vespa.model.VespaModel;
-import com.yahoo.config.application.api.ValidationOverrides;
 import com.yahoo.vespa.model.content.utils.ApplicationPackageBuilder;
 import com.yahoo.vespa.model.content.utils.ContentClusterBuilder;
 import com.yahoo.vespa.model.content.utils.DocType;
 import com.yahoo.vespa.model.content.utils.SchemaBuilder;
 import org.junit.jupiter.api.Test;
 
-import java.time.Instant;
-import java.util.Arrays;
 import java.util.List;
 
 import static com.yahoo.vespa.model.application.validation.change.ConfigChangeTestUtils.assertEqualActions;
@@ -40,7 +38,7 @@ public class StreamingSchemaClusterChangeValidatorTest {
 
         public static VespaModel createOneDocModel(String sdContent) {
             return new ApplicationPackageBuilder()
-                    .addCluster(new ContentClusterBuilder().name("foo").docTypes(Arrays.asList(DocType.streaming("d1"))))
+                    .addCluster(new ContentClusterBuilder().name("foo").docTypes(List.of(DocType.streaming("d1"))))
                     .addSchemas(new SchemaBuilder().name("d1").content(sdContent).build())
                     .buildCreator().create();
         }
@@ -51,7 +49,7 @@ public class StreamingSchemaClusterChangeValidatorTest {
 
         public static VespaModel createTwoDocModel(String d1Content, String d2Content) {
             return new ApplicationPackageBuilder()
-                    .addCluster(new ContentClusterBuilder().name("foo").docTypes(Arrays.asList(DocType.streaming("d1"), DocType.streaming("d2"))))
+                    .addCluster(new ContentClusterBuilder().name("foo").docTypes(List.of(DocType.streaming("d1"), DocType.streaming("d2"))))
                     .addSchemas(new SchemaBuilder().name("d1").content(d1Content).build())
                     .addSchemas(new SchemaBuilder().name("d2").content(d2Content).build())
                     .buildCreator().create();
@@ -63,8 +61,8 @@ public class StreamingSchemaClusterChangeValidatorTest {
 
         public static VespaModel createTwoClusterModel(String d1Content, String d2Content) {
             return new ApplicationPackageBuilder()
-                    .addCluster(new ContentClusterBuilder().name("foo").docTypes(Arrays.asList(DocType.streaming("d1"))))
-                    .addCluster(new ContentClusterBuilder().name("bar").docTypes(Arrays.asList(DocType.streaming("d2"))))
+                    .addCluster(new ContentClusterBuilder().name("foo").docTypes(List.of(DocType.streaming("d1"))))
+                    .addCluster(new ContentClusterBuilder().name("bar").docTypes(List.of(DocType.streaming("d2"))))
                     .addSchemas(new SchemaBuilder().name("d1").content(d1Content).build())
                     .addSchemas(new SchemaBuilder().name("d2").content(d2Content).build())
                     .buildCreator().create();
@@ -72,7 +70,7 @@ public class StreamingSchemaClusterChangeValidatorTest {
 
         public List<ConfigChangeAction> validate() {
             return normalizeServicesInActions(validator.validate(currentModel, nextModel,
-                    ValidationOverrides.empty, Instant.now()));
+                                                                 new DeployState.Builder().build()));
         }
 
         public void assertValidation() {
@@ -80,7 +78,7 @@ public class StreamingSchemaClusterChangeValidatorTest {
         }
 
         public void assertValidation(ConfigChangeAction exp) {
-            assertValidation(Arrays.asList(exp));
+            assertValidation(List.of(exp));
         }
 
         public void assertValidation(List<ConfigChangeAction> exp) {
@@ -88,14 +86,14 @@ public class StreamingSchemaClusterChangeValidatorTest {
         }
     }
 
-    private static String STRING_FIELD = "field f1 type string { indexing: summary }";
-    private static String INT_FIELD = "field f1 type int { indexing: summary }";
-    private static String ATTRIBUTE_INT_FIELD = "field f1 type int { indexing: attribute | summary }";
-    private static String ATTRIBUTE_FAST_ACCESS_INT_FIELD = "field f1 type int { indexing: attribute | summary \n attribute: fast-access }";
-    private static List<ServiceInfo> FOO_SERVICE = Arrays.asList(
-            new ServiceInfo("searchnode", "null", null, null, "foo/search/0", "null"));
-    private static List<ServiceInfo> BAR_SERVICE = Arrays.asList(
-            new ServiceInfo("searchnode2", "null", null, null, "bar/search/0", "null"));
+    private static final String STRING_FIELD = "field f1 type string { indexing: summary }";
+    private static final String INT_FIELD = "field f1 type int { indexing: summary }";
+    private static final String ATTRIBUTE_INT_FIELD = "field f1 type int { indexing: attribute | summary }";
+    private static final String ATTRIBUTE_FAST_ACCESS_INT_FIELD = "field f1 type int { indexing: attribute | summary \n attribute: fast-access }";
+    private static final List<ServiceInfo> FOO_SERVICE =
+            List.of(new ServiceInfo("searchnode", "null", null, null, "foo/search/0", "null"));
+    private static final List<ServiceInfo> BAR_SERVICE =
+            List.of(new ServiceInfo("searchnode2", "null", null, null, "bar/search/0", "null"));
 
     @Test
     void changing_field_type_requires_refeed() {
@@ -106,17 +104,15 @@ public class StreamingSchemaClusterChangeValidatorTest {
     @Test
     void changes_in_multiple_streaming_clusters_are_discovered() {
         Fixture.withTwoClusters(STRING_FIELD, INT_FIELD)
-                .assertValidation(Arrays.asList(
-                        createFieldTypeChangeRefeedAction("d1", FOO_SERVICE),
-                        createFieldTypeChangeRefeedAction("d2", BAR_SERVICE)));
+                .assertValidation(List.of(createFieldTypeChangeRefeedAction("d1", FOO_SERVICE),
+                                          createFieldTypeChangeRefeedAction("d2", BAR_SERVICE)));
     }
 
     @Test
     void changes_in_multiple_document_types_are_discovered() {
         Fixture.withTwoDocTypes(STRING_FIELD, INT_FIELD)
-                .assertValidation(Arrays.asList(
-                        createFieldTypeChangeRefeedAction("d1", FOO_SERVICE),
-                        createFieldTypeChangeRefeedAction("d2", FOO_SERVICE)));
+                .assertValidation(List.of(createFieldTypeChangeRefeedAction("d1", FOO_SERVICE),
+                                          createFieldTypeChangeRefeedAction("d2", FOO_SERVICE)));
     }
 
     @Test

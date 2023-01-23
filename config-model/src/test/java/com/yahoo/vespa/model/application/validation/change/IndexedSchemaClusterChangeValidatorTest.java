@@ -4,15 +4,14 @@ package com.yahoo.vespa.model.application.validation.change;
 import com.yahoo.config.application.api.ValidationId;
 import com.yahoo.config.model.api.ConfigChangeAction;
 import com.yahoo.config.model.api.ServiceInfo;
+import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.vespa.model.VespaModel;
-import com.yahoo.config.application.api.ValidationOverrides;
 import com.yahoo.vespa.model.content.utils.ApplicationPackageBuilder;
 import com.yahoo.vespa.model.content.utils.ContentClusterBuilder;
 import com.yahoo.vespa.model.content.utils.SchemaBuilder;
 import org.junit.jupiter.api.Test;
 
-import java.time.Instant;
 import java.util.List;
 
 import static com.yahoo.vespa.model.application.validation.change.ConfigChangeTestUtils.assertEqualActions;
@@ -72,7 +71,7 @@ public class IndexedSchemaClusterChangeValidatorTest {
 
         private List<ConfigChangeAction> validate() {
             return normalizeServicesInActions(validator.validate(currentModel, nextModel,
-                                                                 ValidationOverrides.empty, Instant.now()));
+                                                                 new DeployState.Builder().build()));
         }
 
         public void assertValidation() {

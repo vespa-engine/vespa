@@ -1,6 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model.application.validation.change;
 
+import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.test.AnotherrestartConfig;
 import com.yahoo.config.ConfigInstance;
 import com.yahoo.test.RestartConfig;
@@ -15,14 +16,11 @@ import com.yahoo.vespa.model.HostResource;
 import com.yahoo.vespa.model.PortAllocBridge;
 import com.yahoo.vespa.model.VespaModel;
 import com.yahoo.vespa.model.application.validation.RestartConfigs;
-import com.yahoo.config.application.api.ValidationOverrides;
 import com.yahoo.vespa.model.test.utils.DeployLoggerStub;
 import com.yahoo.vespa.model.test.utils.VespaModelCreatorWithMockPkg;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import java.time.Instant;
-import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -49,7 +47,7 @@ public class ConfigValueChangeValidatorTest {
      *       {@link com.yahoo.vespa.model.application.validation.RestartConfigs} attribute.
      *    3) That the config ids for the container services have a specific value.
      *
-     *    This test will to a certain degree ensure that the annotations in the VespaModel is correctly applied.
+     * This test will to a certain degree ensure that the annotations in the VespaModel is correctly applied.
      */
     @Test
     void requireThatValidatorHandlesVespaModel() {
@@ -66,8 +64,8 @@ public class ConfigValueChangeValidatorTest {
     @Test
     void requireThatDocumentTypesCanBeAddedWithoutNeedForRestart() {
         List<ConfigChangeAction> changes = getConfigChanges(
-                createVespaModel("", Arrays.asList("foo")),
-                createVespaModel("", Arrays.asList("foo", "bar")));
+                createVespaModel("", List.of("foo")),
+                createVespaModel("", List.of("foo", "bar")));
         assertEquals(0, changes.size());
     }
 
@@ -154,14 +152,14 @@ public class ConfigValueChangeValidatorTest {
     }
 
     private List<ConfigChangeAction> getConfigChanges(VespaModel currentModel, VespaModel nextModel) {
-        ConfigValueChangeValidator validator = new ConfigValueChangeValidator(logger);
-        return validator.validate(currentModel, nextModel, ValidationOverrides.empty, Instant.now());
+        ConfigValueChangeValidator validator = new ConfigValueChangeValidator();
+        return validator.validate(currentModel, nextModel, new DeployState.Builder().deployLogger(logger).build());
     }
 
     private List<ConfigChangeAction> getConfigChanges(AbstractConfigProducerRoot currentModel,
                                                       AbstractConfigProducerRoot nextModel) {
-        ConfigValueChangeValidator validator = new ConfigValueChangeValidator(logger);
-        return validator.findConfigChangesFromModels(currentModel, nextModel).toList();
+        ConfigValueChangeValidator validator = new ConfigValueChangeValidator();
+        return validator.findConfigChangesFromModels(currentModel, nextModel, logger).toList();
     }
 
     private static void assertComponentsEquals(List<ConfigChangeAction> changes, String name, int index) {
@@ -173,7 +171,7 @@ public class ConfigValueChangeValidatorTest {
     }
 
     private static VespaModel createVespaModel(String configSegment) {
-        return createVespaModel(configSegment, Arrays.asList("music"));
+        return createVespaModel(configSegment, List.of("music"));
     }
 
     private static VespaModel createVespaModel(String configSegment, List<String> docTypes) {
@@ -233,7 +231,7 @@ public class ConfigValueChangeValidatorTest {
 
     private static MockRoot createRootWithChildren(AbstractConfigProducer<?>... children) {
         MockRoot root = new MockRoot();
-        Arrays.asList(children).forEach(root::addChild);
+        List.of(children).forEach(root::addChild);
         root.freezeModelTopology();
         return root;
     }
@@ -269,7 +267,7 @@ public class ConfigValueChangeValidatorTest {
         }
 
         public SimpleConfigProducer withChildren(AbstractConfigProducer<?>... producer) {
-            Arrays.asList(producer).forEach(this::addChild);
+            List.of(producer).forEach(this::addChild);
             return this;
         }
     }
@@ -323,5 +321,6 @@ public class ConfigValueChangeValidatorTest {
             super(name);
         }
     }
+
 }
 

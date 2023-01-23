@@ -1,14 +1,13 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model.application.validation.change;
 
-import com.yahoo.config.application.api.ValidationOverrides;
 import com.yahoo.config.model.api.ConfigChangeAction;
+import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.provision.Capacity;
 import com.yahoo.config.provision.CloudAccount;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.vespa.model.VespaModel;
 
-import java.time.Instant;
 import java.util.List;
 
 /**
@@ -17,7 +16,7 @@ import java.util.List;
 public class CloudAccountChangeValidator implements ChangeValidator {
 
     @Override
-    public List<ConfigChangeAction> validate(VespaModel current, VespaModel next, ValidationOverrides overrides, Instant now) {
+    public List<ConfigChangeAction> validate(VespaModel current, VespaModel next, DeployState deployState) {
         for (var clusterId : current.allClusters()) {
             CloudAccount currentAccount = cloudAccountOf(current, clusterId);
             CloudAccount nextAccount = cloudAccountOf(next, clusterId);

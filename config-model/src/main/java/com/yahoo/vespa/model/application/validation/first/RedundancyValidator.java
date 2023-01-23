@@ -2,18 +2,25 @@
 package com.yahoo.vespa.model.application.validation.first;
 
 import com.yahoo.config.application.api.ValidationId;
+import com.yahoo.config.application.api.ValidationOverrides;
+import com.yahoo.config.model.api.ConfigChangeAction;
 import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.vespa.model.VespaModel;
 import com.yahoo.vespa.model.application.validation.Validator;
+import com.yahoo.vespa.model.application.validation.change.ChangeValidator;
 import com.yahoo.vespa.model.content.cluster.ContentCluster;
+
+import java.time.Instant;
+import java.util.List;
 
 /**
  * Validates that applications in prod zones do not have redundancy 1 (without a validation override).
  *
  * @author bratseth
  */
-public class RedundancyOnFirstDeploymentValidator extends Validator {
+public class RedundancyValidator extends Validator implements ChangeValidator {
 
+    /** Validate on first deployment. */
     @Override
     public void validate(VespaModel model, DeployState deployState) {
         if ( ! deployState.isHosted()) return;
@@ -27,6 +34,12 @@ public class RedundancyOnFirstDeploymentValidator extends Validator {
                                                           "in a production zone",
                                                           deployState.now());
         }
+    }
+
+    /** Validate on change. */
+    @Override
+    public List<ConfigChangeAction> validate(VespaModel current, VespaModel next, DeployState deployState) {
+        return List.of();
     }
 
 }
