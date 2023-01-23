@@ -90,8 +90,13 @@ void
 BitVector::clearInterval(Index start, Index end)
 {
     clearIntervalNoInvalidation(Range(start, end));
-
     invalidateCachedCount();
+}
+
+void
+BitVector::store(Word &word, Word value) {
+    assert(!_enable_range_check && (&word >= getActiveStart()));
+    return store_unchecked(word, value);
 }
 
 void
@@ -107,7 +112,7 @@ BitVector::clearIntervalNoInvalidation(Range range_in)
     if (endw > startw) {
         store(_words[startw], _words[startw] & startBits(range.start()));
         for (Index i = startw + 1; i < endw; ++i) {
-            store(_words[i], 0);
+            store_unchecked(_words[i], 0);
         }
         store(_words[endw], _words[endw] & endBits(last));
     } else {
@@ -128,7 +133,7 @@ BitVector::setInterval(Index start_in, Index end_in)
     if (endw > startw) {
         store(_words[startw], _words[startw] | checkTab(range.start()));
         for (Index i = startw + 1; i < endw; ++i) {
-            store(_words[i], allBits());
+            store_unchecked(_words[i], allBits());
         }
         store(_words[endw], _words[endw] | ~endBits(last));
     } else {
@@ -190,7 +195,7 @@ BitVector::orWith(const BitVector & right)
     verifyInclusiveStart(*this, right);
 
     if (right.size() < size()) {
-        if (right.size() > 0) {
+        if (right.size() > getStartIndex()) {
             ssize_t commonBytes = numActiveBytes(getStartIndex(), right.size()) - sizeof(Word);
             if (commonBytes > 0) {
                 IAccelrated::getAccelerator().orBit(getActiveStart(), right.getWordIndex(getStartIndex()), commonBytes);
@@ -240,7 +245,7 @@ BitVector::andNotWith(const BitVector& right)
     verifyInclusiveStart(*this, right);
 
     if (right.size() < size()) {
-        if (right.size() > 0) {
+        if (right.size() > getStartIndex()) {
             ssize_t commonBytes = numActiveBytes(getStartIndex(), right.size()) - sizeof(Word);
             if (commonBytes > 0) {
                 IAccelrated::getAccelerator().andNotBit(getActiveStart(), right.getWordIndex(getStartIndex()), commonBytes);
