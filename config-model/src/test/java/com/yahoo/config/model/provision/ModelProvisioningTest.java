@@ -1928,6 +1928,35 @@ public class ModelProvisioningTest {
         assertEquals(2, protonConfig.distribution().redundancy());
     }
 
+    @Test
+    public void testRedundancy1() {
+        String services =
+                "<?xml version='1.0' encoding='utf-8' ?>" +
+                "<services>" +
+                "  <container version='1.0' id='container1'>" +
+                "     <nodes count='1'/>" +
+                "  </container>" +
+                "  <content version='1.0'>" +
+                "     <min-redundancy>1</min-redundancy>" +
+                "     <documents>" +
+                "       <document type='type1' mode='index'/>" +
+                "     </documents>" +
+                "     <nodes count='2' groups='1'/>" +
+                "   </content>" +
+                "</services>";
+        VespaModelTester tester = new VespaModelTester();
+        tester.setHosted(true);
+        tester.addHosts(6);
+        VespaModel model = tester.createModel(services, true);
+
+        var contentCluster = model.getContentClusters().get("content");
+        ProtonConfig.Builder protonBuilder = new ProtonConfig.Builder();
+        contentCluster.getSearch().getConfig(protonBuilder);
+        ProtonConfig protonConfig = new ProtonConfig(protonBuilder);
+        assertEquals(1, protonConfig.distribution().searchablecopies());
+        assertEquals(1, protonConfig.distribution().redundancy());
+    }
+
     /**
      * Deploying an application with "nodes count" standalone should give a single-node deployment,
      * also if the user has a lingering hosts file from running self-hosted.

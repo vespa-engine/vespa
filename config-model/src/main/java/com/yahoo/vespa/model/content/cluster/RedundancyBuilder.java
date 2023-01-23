@@ -51,14 +51,18 @@ public class RedundancyBuilder {
         if (isHosted) {
             if (globalMinRedundancy != null && ( finalRedundancy == null || finalRedundancy * leafGroups < globalMinRedundancy ))
                 initialRedundancy = finalRedundancy = (int)Math.ceil((double)globalMinRedundancy / leafGroups);
-            if (readyCopies == null)
-                readyCopies = leafGroups > 1 ? 1 : 2;
+            if (readyCopies == null) {
+                if (leafGroups > 1)
+                    readyCopies = 1;
+                else
+                    readyCopies = finalRedundancy > 1 ? 2 : 1;
+            }
             return new Redundancy(initialRedundancy, finalRedundancy, readyCopies, leafGroups, totalNodes);
         } else {
             if (globalMinRedundancy != null && ( finalRedundancy == null || finalRedundancy < globalMinRedundancy))
                 initialRedundancy = finalRedundancy = globalMinRedundancy;
             if (readyCopies == null)
-                readyCopies = 2;
+                readyCopies = finalRedundancy > 1 ? 2 : 1;
             subGroups = Math.max(1, subGroups);
             IndexedHierarchicDistributionValidator.validateThatLeafGroupsCountIsAFactorOfRedundancy(finalRedundancy, subGroups);
             IndexedHierarchicDistributionValidator.validateThatReadyCopiesIsCompatibleWithRedundancy(finalRedundancy, readyCopies, subGroups);
