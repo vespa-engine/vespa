@@ -12,6 +12,7 @@ import com.yahoo.vespa.model.content.cluster.ContentCluster;
 
 import java.time.Instant;
 import java.util.List;
+import java.util.stream.Stream;
 
 /**
  * Validates that applications in prod zones do not have redundancy 1 (without a validation override).
@@ -23,23 +24,39 @@ public class RedundancyValidator extends Validator implements ChangeValidator {
     /** Validate on first deployment. */
     @Override
     public void validate(VespaModel model, DeployState deployState) {
-        if ( ! deployState.isHosted()) return;
-        if ( ! deployState.zone().environment().isProduction()) return;
-
-        for (ContentCluster cluster : model.getContentClusters().values()) {
-            if (cluster.redundancy().finalRedundancy() == 1 && cluster.redundancy().groups() == 1)
-                deployState.validationOverrides().invalid(ValidationId.redundancyOne,
-                                                          cluster + " has redundancy 1, which will cause it to lose data " +
-                                                          "if a node fails. This requires an override on first deployment " +
-                                                          "in a production zone",
-                                                          deployState.now());
-        }
+        if ( ! shouldValidate(deployState)) return;
+        clustersWithRedundancyOne(model).forEach(cluster -> invalidRedundancy(cluster, deployState));
     }
 
     /** Validate on change. */
     @Override
     public List<ConfigChangeAction> validate(VespaModel current, VespaModel next, DeployState deployState) {
+        if ( ! shouldValidate(deployState)) return List.of();
+
+        clustersWithRedundancyOne(next)
+                .filter(cluster -> ! hasRedundancyOne(current.getContentClusters().get(cluster.id().value())))
+                .forEach(cluster -> invalidRedundancy(cluster, deployState));
         return List.of();
+    }
+
+    private boolean shouldValidate(DeployState deployState) {
+        return deployState.isHosted() && deployState.zone().environment().isProduction();
+    }
+
+    private Stream<ContentCluster> clustersWithRedundancyOne(VespaModel model) {
+        return model.getContentClusters().values().stream().filter(cluster -> hasRedundancyOne(cluster));
+    }
+
+    private boolean hasRedundancyOne(ContentCluster cluster) {
+        return cluster != null && cluster.redundancy().finalRedundancy() == 1 && cluster.redundancy().groups() == 1;
+    }
+
+    private void invalidRedundancy(ContentCluster cluster, DeployState deployState) {
+        deployState.validationOverrides().invalid(ValidationId.redundancyOne,
+                                                  cluster + " has redundancy 1, which will cause it to lose data " +
+                                                  "if a node fails. This requires an override on first deployment " +
+                                                  "in a production zone",
+                                                  deployState.now());
     }
 
 }
