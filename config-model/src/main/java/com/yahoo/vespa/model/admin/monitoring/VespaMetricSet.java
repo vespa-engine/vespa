@@ -237,31 +237,31 @@ public class VespaMetricSet {
     private static Set<Metric> getClusterControllerMetrics() {
         Set<Metric> metrics = new LinkedHashSet<>();
 
-        AddMetric(metrics, ContainerMetrics.CLUSTER_CONTROLLER_DOWN_COUNT.last());
-        AddMetric(metrics, ContainerMetrics.CLUSTER_CONTROLLER_INITIALIZING_COUNT.last());
-        AddMetric(metrics, ContainerMetrics.CLUSTER_CONTROLLER_MAINTENANCE_COUNT.last());
-        AddMetric(metrics, ContainerMetrics.CLUSTER_CONTROLLER_RETIRE_COUNT.last());
-        AddMetric(metrics, ContainerMetrics.CLUSTER_CONTROLLER_STOPPING_COUNT.last());
-        AddMetric(metrics, ContainerMetrics.CLUSTER_CONTROLLER_UP_COUNT.last());
-        AddMetric(metrics, ContainerMetrics.CLUSTER_CONTROLLER_CLUSTER_STATE_CHANGE_COUNT.baseName());
-        AddMetric(metrics, ContainerMetrics.CLUSTER_CONTROLLER_BUSY_TICK_TIME_MS, EnumSet.of(last, max, sum, count));
-        AddMetric(metrics, ContainerMetrics.CLUSTER_CONTROLLER_IDLE_TICK_TIME_MS, EnumSet.of(last, max, sum, count));
+        addMetric(metrics, ContainerMetrics.CLUSTER_CONTROLLER_DOWN_COUNT.last());
+        addMetric(metrics, ContainerMetrics.CLUSTER_CONTROLLER_INITIALIZING_COUNT.last());
+        addMetric(metrics, ContainerMetrics.CLUSTER_CONTROLLER_MAINTENANCE_COUNT.last());
+        addMetric(metrics, ContainerMetrics.CLUSTER_CONTROLLER_RETIRE_COUNT.last());
+        addMetric(metrics, ContainerMetrics.CLUSTER_CONTROLLER_STOPPING_COUNT.last());
+        addMetric(metrics, ContainerMetrics.CLUSTER_CONTROLLER_UP_COUNT.last());
+        addMetric(metrics, ContainerMetrics.CLUSTER_CONTROLLER_CLUSTER_STATE_CHANGE_COUNT.baseName());
+        addMetric(metrics, ContainerMetrics.CLUSTER_CONTROLLER_BUSY_TICK_TIME_MS, EnumSet.of(last, max, sum, count));
+        addMetric(metrics, ContainerMetrics.CLUSTER_CONTROLLER_IDLE_TICK_TIME_MS, EnumSet.of(last, max, sum, count));
         
-        AddMetric(metrics, ContainerMetrics.CLUSTER_CONTROLLER_WORK_MS, EnumSet.of(last, sum, count));
+        addMetric(metrics, ContainerMetrics.CLUSTER_CONTROLLER_WORK_MS, EnumSet.of(last, sum, count));
         
-        AddMetric(metrics, ContainerMetrics.CLUSTER_CONTROLLER_IS_MASTER.last());
-        AddMetric(metrics, ContainerMetrics.CLUSTER_CONTROLLER_REMOTE_TASK_QUEUE_SIZE.last());
+        addMetric(metrics, ContainerMetrics.CLUSTER_CONTROLLER_IS_MASTER.last());
+        addMetric(metrics, ContainerMetrics.CLUSTER_CONTROLLER_REMOTE_TASK_QUEUE_SIZE.last());
         // TODO(hakonhall): Update this name once persistent "count" metrics has been implemented.
         // DO NOT RELY ON THIS METRIC YET.
-        AddMetric(metrics, ContainerMetrics.CLUSTER_CONTROLLER_NODE_EVENT_COUNT.baseName());
+        addMetric(metrics, ContainerMetrics.CLUSTER_CONTROLLER_NODE_EVENT_COUNT.baseName());
         
-        AddMetric(metrics, ContainerMetrics.CLUSTER_CONTROLLER_RESOURCE_USAGE_NODES_ABOVE_LIMIT, EnumSet.of(last, max));
-        AddMetric(metrics, ContainerMetrics.CLUSTER_CONTROLLER_RESOURCE_USAGE_MAX_MEMORY_UTILIZATION, EnumSet.of(last, max));
-        AddMetric(metrics, ContainerMetrics.CLUSTER_CONTROLLER_RESOURCE_USAGE_MAX_DISK_UTILIZATION, EnumSet.of(last, max));
-        AddMetric(metrics, ContainerMetrics.CLUSTER_CONTROLLER_RESOURCE_USAGE_MEMORY_LIMIT.last());
-        AddMetric(metrics, ContainerMetrics.CLUSTER_CONTROLLER_RESOURCE_USAGE_DISK_LIMIT.last());
+        addMetric(metrics, ContainerMetrics.CLUSTER_CONTROLLER_RESOURCE_USAGE_NODES_ABOVE_LIMIT, EnumSet.of(last, max));
+        addMetric(metrics, ContainerMetrics.CLUSTER_CONTROLLER_RESOURCE_USAGE_MAX_MEMORY_UTILIZATION, EnumSet.of(last, max));
+        addMetric(metrics, ContainerMetrics.CLUSTER_CONTROLLER_RESOURCE_USAGE_MAX_DISK_UTILIZATION, EnumSet.of(last, max));
+        addMetric(metrics, ContainerMetrics.CLUSTER_CONTROLLER_RESOURCE_USAGE_MEMORY_LIMIT.last());
+        addMetric(metrics, ContainerMetrics.CLUSTER_CONTROLLER_RESOURCE_USAGE_DISK_LIMIT.last());
 
-        AddMetric(metrics, ContainerMetrics.CLUSTER_CONTROLLER_REINDEXING_PROGRESS.last());
+        addMetric(metrics, ContainerMetrics.CLUSTER_CONTROLLER_REINDEXING_PROGRESS.last());
         
         return metrics;
     }
