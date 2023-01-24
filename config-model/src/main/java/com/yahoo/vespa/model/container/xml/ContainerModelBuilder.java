@@ -507,7 +507,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
             legacyMode = true;
         } else {
             clients = XML.getChildren(clientsElement, "client").stream()
-                    .map(this::getCLient)
+                    .map(this::getClient)
                     .toList();
         }
 
@@ -517,7 +517,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
         cluster.setClients(legacyMode, clients);
     }
 
-    private Client getCLient(Element clientElement) {
+    private Client getClient(Element clientElement) {
         String id = XML.attribute("id", clientElement).orElseThrow();
         if (id.startsWith("_")) throw new IllegalArgumentException("Invalid client id '%s', id cannot start with '_'".formatted(id));
         List<String> permissions = XML.attribute("permissions", clientElement)
@@ -685,6 +685,12 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
             onnxModel.setStatelessExecutionMode(getStringValue(modelElement, "execution-mode", null));
             onnxModel.setStatelessInterOpThreads(getIntValue(modelElement, "interop-threads", -1));
             onnxModel.setStatelessIntraOpThreads(getIntValue(modelElement, "intraop-threads", -1));
+            Element gpuDeviceElement = XML.getChild(modelsElement, "gpu-device");
+            if (gpuDeviceElement != null) {
+                int gpuDevice = Integer.parseInt(gpuDeviceElement.getTextContent());
+                boolean required = Boolean.parseBoolean(extractAttribute(gpuDeviceElement, "required"));
+                onnxModel.setGpuDevice(gpuDevice, required);
+            }
         }
 
         cluster.setModelEvaluation(new ContainerModelEvaluation(cluster, profiles));
