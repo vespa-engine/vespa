@@ -97,12 +97,32 @@
                 <configuration><skip>true</skip></configuration>
             </plugin>
             <plugin>
+                <!-- For installation in vespa-home/lib/jars/ -->
                 <groupId>com.yahoo.vespa</groupId>
                 <artifactId>bundle-plugin</artifactId>
                 <executions>
                     <execution>
                         <phase>package</phase>
                         <goals><goal>assemble-fat-jar</goal></goals>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <!-- For local dev usage -->
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-assembly-plugin</artifactId>
+                <configuration>
+                    <descriptors>
+                        <descriptor>assembly.xml</descriptor>
+                    </descriptors>
+                </configuration>
+                <executions>
+                    <execution>
+                        <id>make-assembly</id>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>single</goal>
+                        </goals>
                     </execution>
                 </executions>
             </plugin>
