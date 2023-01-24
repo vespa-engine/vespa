@@ -14,7 +14,7 @@
 
     <artifactId>filedistribution</artifactId>
     <version>8-SNAPSHOT</version>
-    <packaging>container-plugin</packaging>
+    <packaging>jar</packaging>
     <name>${project.artifactId}</name>
 
     <dependencies>
@@ -56,29 +56,8 @@
     <build>
         <plugins>
             <plugin>
-                <groupId>com.yahoo.vespa</groupId>
-                <artifactId>bundle-plugin</artifactId>
-                <extensions>true</extensions>
-            </plugin>
-            <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
-            </plugin>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-shade-plugin</artifactId>
-                <configuration>
-                    <finalName>${project.artifactId}-jar-with-dependencies</finalName>
-                    <createDependencyReducedPom>false</createDependencyReducedPom>
-                </configuration>
-                <executions>
-                    <execution>
-                        <phase>package</phase>
-                        <goals>
-                            <goal>shade</goal>
-                        </goals>
-                    </execution>
-                </executions>
             </plugin>
         </plugins>
     </build>
