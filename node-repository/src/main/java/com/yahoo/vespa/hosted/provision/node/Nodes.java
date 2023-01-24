@@ -639,18 +639,19 @@ public class Nodes {
     private List<Node> decommission(String hostname, HostOperation op, Agent agent, Instant instant) {
         Optional<NodeMutex> nodeMutex = lockAndGet(hostname);
         if (nodeMutex.isEmpty()) return List.of();
-        Node host = nodeMutex.get().node();
-        if (!host.type().isHost()) throw new IllegalArgumentException("Cannot " + op + " non-host " + host);
-
+        List<Node> result = new ArrayList<>();
         boolean wantToDeprovision = op == HostOperation.deprovision;
         boolean wantToRebuild = op == HostOperation.rebuild || op == HostOperation.softRebuild;
         boolean wantToRetire = op.needsRetirement();
-        List<Node> result = new ArrayList<>();
-        try (NodeMutex lock = nodeMutex.get(); Mutex allocationLock = lockUnallocated()) {
-            // Modify parent with wantToRetire while holding the allocationLock to prevent
-            // any further allocation of nodes on this host
-            Node newHost = lock.node().withWantToRetire(wantToRetire, wantToDeprovision, wantToRebuild, agent, instant);
-            result.add(write(newHost, lock));
+        Node host = nodeMutex.get().node();
+        try (NodeMutex lock = nodeMutex.get()) {
+            if ( ! host.type().isHost()) throw new IllegalArgumentException("Cannot " + op + " non-host " + host);
+            try (Mutex allocationLock = lockUnallocated()) {
+                // Modify parent with wantToRetire while holding the allocationLock to prevent
+                // any further allocation of nodes on this host
+                Node newHost = lock.node().withWantToRetire(wantToRetire, wantToDeprovision, wantToRebuild, agent, instant);
+                result.add(write(newHost, lock));
+            }
         }
 
         if (wantToRetire) { // Apply recursively if we're retiring
