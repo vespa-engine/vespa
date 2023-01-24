@@ -2,13 +2,12 @@
 package com.yahoo.vespa.model.application.validation.change;
 
 import com.yahoo.config.application.api.ValidationId;
-import com.yahoo.config.application.api.ValidationOverrides;
 import com.yahoo.config.model.api.ConfigChangeAction;
+import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.documentmodel.NewDocumentType;
 import com.yahoo.vespa.model.VespaModel;
 import com.yahoo.vespa.model.content.cluster.ContentCluster;
 
-import java.time.Instant;
 import java.util.List;
 import java.util.Map;
 
@@ -19,9 +18,8 @@ import java.util.Map;
 public class GlobalDocumentChangeValidator implements ChangeValidator {
 
     @Override
-    public List<ConfigChangeAction> validate(VespaModel currentModel, VespaModel nextModel,
-                                             ValidationOverrides overrides, Instant now) {
-        if (!overrides.allows(ValidationId.globalDocumentChange.value(), now)) {
+    public List<ConfigChangeAction> validate(VespaModel currentModel, VespaModel nextModel, DeployState deployState) {
+        if (!deployState.validationOverrides().allows(ValidationId.globalDocumentChange.value(), deployState.now())) {
             for (Map.Entry<String, ContentCluster> currentEntry : currentModel.getContentClusters().entrySet()) {
                 ContentCluster nextCluster = nextModel.getContentClusters().get(currentEntry.getKey());
                 if (nextCluster == null) continue;

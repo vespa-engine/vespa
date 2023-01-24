@@ -2,12 +2,11 @@
 package com.yahoo.vespa.model.application.validation.change;
 
 import com.yahoo.config.model.api.ConfigChangeAction;
+import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.vespa.model.VespaModel;
 import com.yahoo.config.application.api.ValidationId;
-import com.yahoo.config.application.api.ValidationOverrides;
 import com.yahoo.vespa.model.content.cluster.ContentCluster;
 
-import java.time.Instant;
 import java.util.List;
 
 /**
@@ -19,14 +18,14 @@ import java.util.List;
 public class ContentClusterRemovalValidator implements ChangeValidator {
 
     @Override
-    public List<ConfigChangeAction> validate(VespaModel current, VespaModel next, ValidationOverrides overrides, Instant now) {
+    public List<ConfigChangeAction> validate(VespaModel current, VespaModel next, DeployState deployState) {
         for (String currentClusterId : current.getContentClusters().keySet()) {
             ContentCluster nextCluster = next.getContentClusters().get(currentClusterId);
             if (nextCluster == null)
-                overrides.invalid(ValidationId.contentClusterRemoval,
+                deployState.validationOverrides().invalid(ValidationId.contentClusterRemoval,
                                   "Content cluster '" + currentClusterId + "' is removed. " +
                                   "This will cause loss of all data in this cluster",
-                                  now);
+                                  deployState.now());
         }
 
         return List.of();

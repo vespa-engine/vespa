@@ -17,7 +17,7 @@ import static org.junit.jupiter.api.Assertions.fail;
  */
 public class ContentClusterRemovalValidatorTest {
 
-    private final ValidationTester tester = new ValidationTester(5);
+    private final ValidationTester tester = new ValidationTester(8);
 
     @Test
     void testContentRemovalValidation() {
@@ -42,14 +42,14 @@ public class ContentClusterRemovalValidatorTest {
     private static String getServices(String contentClusterId) {
         return "<services version='1.0'>" +
                "  <content id='" + contentClusterId + "' version='1.0'>" +
-               "    <redundancy>1</redundancy>" +
+               "    <redundancy>2</redundancy>" +
                "    <engine>" +
                "    <proton/>" +
                "    </engine>" +
                "    <documents>" +
                "      <document type='music' mode='index'/>" +
                "    </documents>" +
-               "    <nodes count='1'/>" +
+               "    <nodes count='2'/>" +
                "   </content>" +
                "</services>";
     }

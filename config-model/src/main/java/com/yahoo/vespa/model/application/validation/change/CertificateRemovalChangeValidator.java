@@ -2,13 +2,12 @@
 package com.yahoo.vespa.model.application.validation.change;
 
 import com.yahoo.config.application.api.ValidationId;
-import com.yahoo.config.application.api.ValidationOverrides;
 import com.yahoo.config.model.api.ConfigChangeAction;
+import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.vespa.model.VespaModel;
 import com.yahoo.vespa.model.container.http.Client;
 
 import java.security.cert.X509Certificate;
-import java.time.Instant;
 import java.util.Collection;
 import java.util.List;
 import java.util.logging.Level;
@@ -25,19 +24,22 @@ public class CertificateRemovalChangeValidator implements ChangeValidator {
     private static final Logger logger = Logger.getLogger(CertificateRemovalChangeValidator.class.getName());
 
     @Override
-    public List<ConfigChangeAction> validate(VespaModel current, VespaModel next, ValidationOverrides overrides, Instant now) {
+    public List<ConfigChangeAction> validate(VespaModel current, VespaModel next, DeployState deployState) {
         // Skip for tester applications
         if (current.applicationPackage().getApplicationId().instance().isTester()) return List.of();
         current.getContainerClusters()
                 .forEach((clusterId, currentCluster) -> {
                     if(next.getContainerClusters().containsKey(clusterId))
-                        validateClients(clusterId, currentCluster.getClients(), next.getContainerClusters().get(clusterId).getClients(), overrides, now);
+                        validateClients(clusterId,
+                                        currentCluster.getClients(),
+                                        next.getContainerClusters().get(clusterId).getClients(),
+                                        deployState);
                 });
 
         return List.of();
     }
 
-    void validateClients(String clusterId, List<Client> current, List<Client> next, ValidationOverrides overrides, Instant now) {
+    void validateClients(String clusterId, List<Client> current, List<Client> next, DeployState deployState) {
         List<X509Certificate> currentCertificates = current.stream()
                 .filter(client -> !client.internal())
                 .map(Client::certificates)
@@ -56,11 +58,11 @@ public class CertificateRemovalChangeValidator implements ChangeValidator {
 
         List<X509Certificate> missingCerts = currentCertificates.stream().filter(cert -> !nextCertificates.contains(cert)).toList();
         if (!missingCerts.isEmpty()) {
-            overrides.invalid(ValidationId.certificateRemoval,
+            deployState.validationOverrides().invalid(ValidationId.certificateRemoval,
                               "Data plane certificate(s) from cluster '" + clusterId + "' is removed " +
                               "(removed certificates: " + missingCerts.stream().map(x509Certificate -> x509Certificate.getSubjectX500Principal().getName()).toList() + ") " +
                               "This can cause client connection issues.",
-                              now);
+                              deployState.now());
         }
 
     }

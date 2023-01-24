@@ -2,6 +2,7 @@
 package com.yahoo.vespa.model.application.validation.change;
 
 import com.yahoo.config.application.api.ValidationOverrides;
+import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.security.X509CertificateUtils;
 import com.yahoo.vespa.model.container.http.Client;
 import org.junit.jupiter.api.Test;
@@ -38,18 +39,22 @@ public class CertificateRemovalChangeValidatorTest {
         CertificateRemovalChangeValidator validator = new CertificateRemovalChangeValidator();
 
         // Adding certs -> ok
-        validator.validateClients("clusterId", List.of(c1, c2), List.of(c1, c2, c3), ValidationOverrides.empty, now);
+        validator.validateClients("clusterId", List.of(c1, c2), List.of(c1, c2, c3), new DeployState.Builder().now(now).build());
 
         // Removing certs -> fails
         assertThrows(ValidationOverrides.ValidationException.class,
-                     () ->validator.validateClients("clusterId", List.of(c1, c2, c3), List.of(c1, c3), ValidationOverrides.empty, now));
+                     () ->validator.validateClients("clusterId", List.of(c1, c2, c3), List.of(c1, c3),
+                                                    new DeployState.Builder().now(now).build()));
 
         // Removing certs with validationoverrides -> ok
-        validator.validateClients("clusterId", List.of(c1, c2, c3), List.of(c1, c3), ValidationOverrides.fromXml(validationOverrides), now);
+        validator.validateClients("clusterId", List.of(c1, c2, c3), List.of(c1, c3),
+                                  new DeployState.Builder().now(now).validationOverrides(ValidationOverrides.fromXml(validationOverrides)).build());
 
         // Adding and removing internal certs are ok:
-        validator.validateClients("clusterId", List.of(c1, c2), List.of(c1, c2, internal), ValidationOverrides.empty, now);
-        validator.validateClients("clusterId", List.of(c1, c2, internal), List.of(c1, c2), ValidationOverrides.empty, now);
+        validator.validateClients("clusterId", List.of(c1, c2), List.of(c1, c2, internal),
+                                  new DeployState.Builder().build());
+        validator.validateClients("clusterId", List.of(c1, c2, internal), List.of(c1, c2),
+                                  new DeployState.Builder().now(now).build());
     }
 
     static X509Certificate certificate(String cn) {

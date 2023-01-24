@@ -4,8 +4,8 @@ package com.yahoo.vespa.model.application.validation.change;
 import com.yahoo.config.ChangesRequiringRestart;
 import com.yahoo.config.ConfigInstance;
 import com.yahoo.config.application.api.DeployLogger;
-import com.yahoo.config.application.api.ValidationOverrides;
 import com.yahoo.config.model.api.ConfigChangeAction;
+import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.model.producer.AbstractConfigProducerRoot;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.vespa.model.Service;
@@ -13,12 +13,10 @@ import com.yahoo.vespa.model.VespaModel;
 import com.yahoo.vespa.model.application.validation.RestartConfigs;
 import com.yahoo.vespa.model.utils.internal.ReflectionUtil;
 
-import java.time.Instant;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 import java.util.logging.Level;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static java.util.stream.Collectors.joining;
@@ -32,31 +30,26 @@ import static java.util.stream.Collectors.joining;
  */
 public class ConfigValueChangeValidator implements ChangeValidator {
 
-    private final DeployLogger logger;
-
-    public ConfigValueChangeValidator(DeployLogger logger) {
-        this.logger = logger;
-    }
-
     /** Inspects the configuration in the new and old Vespa model to determine which services that require restart */
     @Override
-    public List<ConfigChangeAction> validate(VespaModel currentModel, VespaModel nextModel,
-                                             ValidationOverrides overrides, Instant now) {
-        return findConfigChangesFromModels(currentModel, nextModel).toList();
+    public List<ConfigChangeAction> validate(VespaModel currentModel, VespaModel nextModel, DeployState deployState) {
+        return findConfigChangesFromModels(currentModel, nextModel, deployState.getDeployLogger()).toList();
     }
 
     public Stream<ConfigChangeAction> findConfigChangesFromModels(AbstractConfigProducerRoot currentModel,
-                                                                  AbstractConfigProducerRoot nextModel) {
+                                                                  AbstractConfigProducerRoot nextModel,
+                                                                  DeployLogger logger) {
         return nextModel.getDescendantServices().stream()
-                .map(service -> findConfigChangeActionForService(service, currentModel, nextModel))
+                .map(service -> findConfigChangeActionForService(service, currentModel, nextModel, logger))
                 .filter(Optional::isPresent)
                 .map(Optional::get);
     }
 
     private Optional<ConfigChangeAction> findConfigChangeActionForService(Service service,
                                                                           AbstractConfigProducerRoot currentModel,
-                                                                          AbstractConfigProducerRoot nextModel) {
-        List<ChangesRequiringRestart> changes = findConfigChangesForService(service, currentModel, nextModel)
+                                                                          AbstractConfigProducerRoot nextModel,
+                                                                          DeployLogger logger) {
+        List<ChangesRequiringRestart> changes = findConfigChangesForService(service, currentModel, nextModel, logger)
             .toList();
         if (changes.isEmpty()) {
             return Optional.empty();
@@ -70,14 +63,15 @@ public class ConfigValueChangeValidator implements ChangeValidator {
 
     private Stream<ChangesRequiringRestart> findConfigChangesForService(Service service,
                                                                         AbstractConfigProducerRoot currentModel,
-                                                                        AbstractConfigProducerRoot nextModel) {
+                                                                        AbstractConfigProducerRoot nextModel,
+                                                                        DeployLogger logger) {
         Class<? extends Service> serviceClass = service.getClass();
         if (!currentModel.getService(service.getConfigId()).isPresent()) {
             // Service does not exist in the current model.
             return Stream.empty();
         }
         return getConfigInstancesFromServiceAnnotations(serviceClass)
-                .map(configClass -> compareConfigFromCurrentAndNextModel(service, configClass, currentModel, nextModel))
+                .map(configClass -> compareConfigFromCurrentAndNextModel(service, configClass, currentModel, nextModel, logger))
                 .filter(Optional::isPresent)
                 .map(Optional::get)
                 .filter(ChangesRequiringRestart::needsRestart);
@@ -114,9 +108,11 @@ public class ConfigValueChangeValidator implements ChangeValidator {
                 .distinct();
     }
 
-    private Optional<ChangesRequiringRestart> compareConfigFromCurrentAndNextModel(
-            Service service, Class<? extends ConfigInstance> configClass,
-            AbstractConfigProducerRoot currentModel, AbstractConfigProducerRoot nextModel) {
+    private Optional<ChangesRequiringRestart> compareConfigFromCurrentAndNextModel(Service service,
+                                                                                   Class<? extends ConfigInstance> configClass,
+                                                                                   AbstractConfigProducerRoot currentModel,
+                                                                                   AbstractConfigProducerRoot nextModel,
+                                                                                   DeployLogger logger) {
 
         if (!hasConfigFieldsFlaggedWithRestart(configClass, service.getClass())) {
             logger.logApplicationPackage(Level.FINE, String.format("%s is listed in the annotation for %s, " +

@@ -2,17 +2,15 @@
 package com.yahoo.vespa.model.application.validation.change;
 
 import com.yahoo.config.application.api.ValidationId;
-import com.yahoo.config.application.api.ValidationOverrides;
 import com.yahoo.config.model.api.ConfigChangeAction;
+import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.provision.Capacity;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.vespa.model.VespaModel;
 
-import java.time.Instant;
 import java.util.List;
 import java.util.Locale;
 import java.util.Optional;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 /**
@@ -23,22 +21,18 @@ import java.util.stream.Stream;
 public class ResourcesReductionValidator implements ChangeValidator {
 
     @Override
-    public List<ConfigChangeAction> validate(VespaModel current, VespaModel next, ValidationOverrides overrides, Instant now) {
+    public List<ConfigChangeAction> validate(VespaModel current, VespaModel next, DeployState deployState) {
         for (var clusterId : current.allClusters()) {
             Capacity currentCapacity = current.provisioned().all().get(clusterId);
             Capacity nextCapacity = next.provisioned().all().get(clusterId);
             if (currentCapacity == null || nextCapacity == null) continue;
-            validate(currentCapacity, nextCapacity, clusterId, overrides, now);
+            validate(currentCapacity, nextCapacity, clusterId, deployState);
         }
 
         return List.of();
     }
 
-    private void validate(Capacity current,
-                          Capacity next,
-                          ClusterSpec.Id clusterId,
-                          ValidationOverrides overrides,
-                          Instant now) {
+    private void validate(Capacity current, Capacity next, ClusterSpec.Id clusterId, DeployState deployState) {
         if (current.minResources().nodeResources().isUnspecified()) return;
         if (next.minResources().nodeResources().isUnspecified()) return;
 
@@ -56,11 +50,11 @@ public class ResourcesReductionValidator implements ChangeValidator {
                 .toList();
         if (illegalChanges.isEmpty()) return;
 
-        overrides.invalid(ValidationId.resourcesReduction,
+        deployState.validationOverrides().invalid(ValidationId.resourcesReduction,
                           "Resource reduction in '" + clusterId.value() + "' is too large. " +
                           String.join(" ", illegalChanges) +
                           " New min resources must be at least 50% of the current min resources",
-                          now);
+                          deployState.now());
     }
 
     private static Optional<String> validateResource(String resourceName, double currentValue, double nextValue) {

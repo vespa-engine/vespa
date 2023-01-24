@@ -2,18 +2,16 @@
 package com.yahoo.vespa.model.application.validation.change;
 
 import com.yahoo.config.model.api.ConfigChangeAction;
+import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.container.QrConfig;
 import com.yahoo.vespa.model.VespaModel;
-import com.yahoo.config.application.api.ValidationOverrides;
 import com.yahoo.vespa.model.container.ApplicationContainer;
 import com.yahoo.vespa.model.container.Container;
 import com.yahoo.vespa.model.container.ContainerCluster;
 
-import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.stream.Collectors;
 
 /**
  * Returns a restart action for each container that has turned on {@link QrConfig#restartOnDeploy()}.
@@ -23,8 +21,7 @@ import java.util.stream.Collectors;
 public class ContainerRestartValidator implements ChangeValidator {
 
     @Override
-    public List<ConfigChangeAction> validate(VespaModel currentModel, VespaModel nextModel, ValidationOverrides ignored, 
-                                             Instant now) {
+    public List<ConfigChangeAction> validate(VespaModel currentModel, VespaModel nextModel, DeployState deployState) {
         List<ConfigChangeAction> actions = new ArrayList<>();
         for (ContainerCluster<ApplicationContainer> cluster : nextModel.getContainerClusters().values()) {
             actions.addAll(cluster.getContainers().stream()

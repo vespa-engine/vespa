@@ -26,7 +26,7 @@ import com.yahoo.vespa.model.application.validation.change.RedundancyIncreaseVal
 import com.yahoo.vespa.model.application.validation.change.ResourcesReductionValidator;
 import com.yahoo.vespa.model.application.validation.change.StartupCommandChangeValidator;
 import com.yahoo.vespa.model.application.validation.change.StreamingSearchClusterChangeValidator;
-import com.yahoo.vespa.model.application.validation.first.RedundancyOnFirstDeploymentValidator;
+import com.yahoo.vespa.model.application.validation.first.RedundancyValidator;
 
 import java.time.Instant;
 import java.util.Arrays;
@@ -98,8 +98,7 @@ public class Validation {
         } else {
             Optional<Model> currentActiveModel = deployState.getPreviousModel();
             if (currentActiveModel.isPresent() && (currentActiveModel.get() instanceof VespaModel)) {
-                result = validateChanges((VespaModel) currentActiveModel.get(), model,
-                                         deployState.validationOverrides(), deployState.getDeployLogger(), deployState.now());
+                result = validateChanges((VespaModel) currentActiveModel.get(), model, deployState);
                 deferConfigChangesForClustersToBeRestarted(result, model);
             }
         }
@@ -107,14 +106,13 @@ public class Validation {
     }
 
     private static List<ConfigChangeAction> validateChanges(VespaModel currentModel, VespaModel nextModel,
-                                                            ValidationOverrides overrides, DeployLogger logger,
-                                                            Instant now) {
+                                                            DeployState deployState) {
         ChangeValidator[] validators = new ChangeValidator[] {
                 new IndexingModeChangeValidator(),
                 new GlobalDocumentChangeValidator(),
                 new IndexedSearchClusterChangeValidator(),
                 new StreamingSearchClusterChangeValidator(),
-                new ConfigValueChangeValidator(logger),
+                new ConfigValueChangeValidator(),
                 new StartupCommandChangeValidator(),
                 new ContentTypeRemovalValidator(),
                 new ContentClusterRemovalValidator(),
@@ -124,10 +122,11 @@ public class Validation {
                 new NodeResourceChangeValidator(),
                 new RedundancyIncreaseValidator(),
                 new CloudAccountChangeValidator(),
-                new CertificateRemovalChangeValidator()
+                new CertificateRemovalChangeValidator(),
+                new RedundancyValidator()
         };
         List<ConfigChangeAction> actions = Arrays.stream(validators)
-                                                 .flatMap(v -> v.validate(currentModel, nextModel, overrides, now).stream())
+                                                 .flatMap(v -> v.validate(currentModel, nextModel, deployState).stream())
                                                  .toList();
 
         Map<ValidationId, Collection<String>> disallowableActions = actions.stream()
@@ -135,12 +134,12 @@ public class Validation {
                                                                            .collect(groupingBy(action -> action.validationId().orElseThrow(),
                                                                                                mapping(ConfigChangeAction::getMessage,
                                                                                                        toCollection(LinkedHashSet::new))));
-        overrides.invalid(disallowableActions, now);
+        deployState.validationOverrides().invalid(disallowableActions, deployState.now());
         return actions;
     }
 
     private static void validateFirstTimeDeployment(VespaModel model, DeployState deployState) {
-        new RedundancyOnFirstDeploymentValidator().validate(model, deployState);
+        new RedundancyValidator().validate(model, deployState);
     }
 
     private static void deferConfigChangesForClustersToBeRestarted(List<ConfigChangeAction> actions, VespaModel model) {
