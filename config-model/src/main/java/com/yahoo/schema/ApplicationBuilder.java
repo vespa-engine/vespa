@@ -5,6 +5,7 @@ import com.yahoo.config.application.api.ApplicationPackage;
 import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.config.application.api.FileRegistry;
 import com.yahoo.config.model.api.ModelContext;
+import com.yahoo.config.model.application.AbstractApplicationPackage;
 import com.yahoo.config.model.application.provider.BaseDeployLogger;
 import com.yahoo.config.model.application.provider.MockFileRegistry;
 import com.yahoo.config.model.deploy.TestProperties;
@@ -354,7 +355,7 @@ public class ApplicationBuilder {
     }
 
     /**
-     * Convenience factory methdd to create a SearchBuilder from multiple SD files..
+     * Convenience factory method to create a SearchBuilder from multiple SD files.
      */
     private static ApplicationBuilder createFromFiles(Collection<String> fileNames,
                                                       FileRegistry fileRegistry,
@@ -413,7 +414,7 @@ public class ApplicationBuilder {
 
         var fnli = Files.list(new File(dir).toPath())
             .map(p -> p.toString())
-            .filter(fn -> fn.endsWith(".sd"))
+            .filter(fn -> AbstractApplicationPackage.validSchemaFilename(fn))
             .sorted();
         for (var i = fnli.iterator(); i.hasNext(); ) {
             builder.addSchemaFile(i.next());

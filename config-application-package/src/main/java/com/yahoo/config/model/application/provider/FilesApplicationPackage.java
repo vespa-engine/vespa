@@ -432,11 +432,11 @@ public class FilesApplicationPackage extends AbstractApplicationPackage {
 
         File sdDir = applicationFile(appDir, SEARCH_DEFINITIONS_DIR.getRelative());
         if (sdDir.isDirectory())
-            schemaFiles.addAll(Arrays.asList(sdDir.listFiles((dir, name) -> name.matches(".*\\" + SD_NAME_SUFFIX))));
+            schemaFiles.addAll(Arrays.asList(sdDir.listFiles((dir, name) -> validSchemaFilename(name))));
 
         sdDir = applicationFile(appDir, SCHEMAS_DIR.getRelative());
         if (sdDir.isDirectory())
-            schemaFiles.addAll(Arrays.asList(sdDir.listFiles((dir, name) -> name.matches(".*\\" + SD_NAME_SUFFIX))));
+            schemaFiles.addAll(Arrays.asList(sdDir.listFiles((dir, name) -> validSchemaFilename(name))));
 
         return schemaFiles;
     }
