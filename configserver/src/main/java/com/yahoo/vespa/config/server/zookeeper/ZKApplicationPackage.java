@@ -138,9 +138,11 @@ public class ZKApplicationPackage extends AbstractApplicationPackage {
     @Override
     public List<NamedReader> getSchemas() {
         List<NamedReader> schemas = new ArrayList<>();
-        for (String sd : zkApplication.getChildren(Path.fromString(USERAPP_ZK_SUBPATH).append(SCHEMAS_DIR))) {
-            if (sd.endsWith(SD_NAME_SUFFIX))
-                schemas.add(zkApplication.getNamedReader(sd, Path.fromString(USERAPP_ZK_SUBPATH).append(SCHEMAS_DIR).append(sd)));
+        var sdDir = Path.fromString(USERAPP_ZK_SUBPATH).append(SCHEMAS_DIR);
+        for (String sdName : zkApplication.getChildren(sdDir)) {
+            if (validSchemaFilename(sdName)) {
+                schemas.add(zkApplication.getNamedReader(sdName, sdDir.append(sdName)));
+            }
         }
         return schemas;
     }

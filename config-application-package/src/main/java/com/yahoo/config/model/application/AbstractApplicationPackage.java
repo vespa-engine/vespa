@@ -41,4 +41,18 @@ public abstract class AbstractApplicationPackage implements ApplicationPackage {
         return result;
     }
 
+    public static boolean validSchemaFilename(String fn) {
+        if (! fn.endsWith(SD_NAME_SUFFIX)) {
+            return false;
+        }
+        int lastSlash = fn.lastIndexOf('/');
+        if (lastSlash >= 0) {
+            fn = fn.substring(lastSlash+1);
+        }
+        if (fn.startsWith(".")) {
+            return false;
+        }
+        return true;
+    }
+
 }
