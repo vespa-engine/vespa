@@ -354,11 +354,7 @@ public final class VespaModel extends AbstractConfigProducerRoot implements Mode
                            .collect(Collectors.toCollection(LinkedHashSet::new));
     }
 
-    public Set<FileReference> fileReferences() {
-        return fileRegistry.export().stream()
-                           .map(e -> e.reference)
-                           .collect(Collectors.toSet());
-    }
+    public Set<FileReference> fileReferences() { return fileRegistry.asSet(); }
 
     /** Returns this models Vespa instance */
     public ApplicationConfigProducerRoot getVespa() { return root; }
