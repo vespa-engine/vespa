@@ -183,23 +183,6 @@ Requires: libcgroup-tools
 %endif
 Requires: numactl
 BuildRequires: perl
-BuildRequires: perl-Carp
-BuildRequires: perl-Data-Dumper
-BuildRequires: perl-Digest-MD5
-BuildRequires: perl-Env
-BuildRequires: perl-Exporter
-BuildRequires: perl-File-Path
-BuildRequires: perl-File-Temp
-BuildRequires: perl-Getopt-Long
-BuildRequires: perl-IO-Socket-IP
-BuildRequires: perl-JSON
-BuildRequires: perl-libwww-perl
-BuildRequires: perl-LWP-Protocol-https
-%if ! 0%{?amzn2022} && ! 0%{?el9}
-BuildRequires: perl-Net-INET6Glue
-%endif
-BuildRequires: perl-Pod-Usage
-BuildRequires: perl-URI
 BuildRequires: valgrind
 BuildRequires: perf
 %if 0%{?amzn2022}
