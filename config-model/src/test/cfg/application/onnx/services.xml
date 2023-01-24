@@ -8,6 +8,7 @@
         <models>
           <model name="mul">
             <intraop-threads>2</intraop-threads>
+            <gpu-device required="false">0</gpu-device>
           </model>
           <model name="non-existent-model">
             <interop-threads>400</interop-threads>
