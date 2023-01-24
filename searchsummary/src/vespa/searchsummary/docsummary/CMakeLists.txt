@@ -23,6 +23,8 @@ vespa_add_library(searchsummary_docsummary OBJECT
     juniper_dfw_term_visitor.cpp
     juniper_query_adapter.cpp
     juniperproperties.cpp
+    keyword_extractor.cpp
+    keyword_extractor_factory.cpp
     legacy_keyword_extractor.cpp
     legacy_keyword_extractor_factory.cpp
     linguisticsannotation.cpp
