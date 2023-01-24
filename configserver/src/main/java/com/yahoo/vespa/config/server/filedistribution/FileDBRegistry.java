@@ -8,7 +8,6 @@ import com.yahoo.net.HostName;
 import com.yahoo.path.Path;
 import com.yahoo.text.Utf8;
 import net.jpountz.xxhash.XXHashFactory;
-
 import java.io.BufferedReader;
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -105,7 +104,7 @@ public class FileDBRegistry implements FileRegistry {
     }
 
     @Override
-    public FileReference addBlob(String blobName, ByteBuffer blob) {
+    public synchronized FileReference addBlob(String blobName, ByteBuffer blob) {
         String relativePath = blobToRelativeFile(blobName);
         synchronized (this) {
             Optional<FileReference> cachedReference = Optional.ofNullable(fileReferenceCache.get(blobName));
@@ -126,6 +125,7 @@ public class FileDBRegistry implements FileRegistry {
         return entries;
     }
 
+    // Used for testing only
     synchronized Map<String, FileReference> getMap() {
         return ImmutableMap.copyOf(fileReferenceCache);
     }
