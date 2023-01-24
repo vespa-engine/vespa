@@ -111,8 +111,7 @@ public class HandlersConfigurerTestWrapper {
 
     private ComponentDeconstructor getTestDeconstructor() {
         return (generation, components, bundles) -> components.forEach(component -> {
-            if (component instanceof AbstractComponent) {
-                AbstractComponent abstractComponent = (AbstractComponent) component;
+            if (component instanceof AbstractComponent abstractComponent) {
                 if (abstractComponent.isDeconstructable()) abstractComponent.deconstruct();
             }
             if (! bundles.isEmpty()) throw new IllegalArgumentException("This test should not use bundles");
