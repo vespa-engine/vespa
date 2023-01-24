@@ -20,11 +20,19 @@ PartialBitVector::PartialBitVector(const BitVector & org, Index start, Index end
     _alloc(allocatePaddedAndAligned(start, end))
 {
     init(_alloc.get(), start, end);
-    const Word * startWord = org.getWordIndex(start);
-    size_t numBytes2Copy = numActiveBytes(start, std::min(org.size(), end));
-    memcpy(_alloc.get(), startWord, numBytes2Copy);
-    if (org.size() < end) {
-        clearInterval(org.size(), end);
+    Range range = sanitize(org.range());
+    if (range.validNonZero()) {
+        const Word *startWord = org.getWordIndex(range.start());
+        size_t numBytes2Copy = numActiveBytes(range.start(), range.end());
+        memcpy(getWordIndex(range.start()), startWord, numBytes2Copy);
+        if (range.end() < end) {
+            clearInterval(range.end(), end);
+        }
+        if (start < range.start()) {
+            clearInterval(start, range.start());
+        }
+    } else {
+        clear();
     }
     set_bit_no_range_check(size());
 }
