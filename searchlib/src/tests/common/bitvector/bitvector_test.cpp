@@ -712,4 +712,36 @@ TEST("require that growable bit vectors keeps memory allocator")
     g.reclaim(2);
 }
 
+TEST("require that creating partial nonoverlapping vector is cleared") {
+    AllocatedBitVector org(1000);
+    org.setInterval(org.getStartIndex(), org.size());
+    EXPECT_EQUAL(1000u, org.countTrueBits());
+
+    BitVector::UP after = BitVector::create(org, 2000, 3000);
+    EXPECT_EQUAL(2000u, after->getStartIndex());
+    EXPECT_EQUAL(3000u, after->size());
+    EXPECT_EQUAL(0u, after->countTrueBits());
+
+    BitVector::UP before = BitVector::create(*after, 0, 1000);
+    EXPECT_EQUAL(0u, before->getStartIndex());
+    EXPECT_EQUAL(1000u, before->size());
+    EXPECT_EQUAL(0u, before->countTrueBits());
+}
+
+TEST("require that creating partial overlapping vector is properly copied") {
+    AllocatedBitVector org(1000);
+    org.setInterval(org.getStartIndex(), org.size());
+    EXPECT_EQUAL(1000u, org.countTrueBits());
+
+    BitVector::UP after = BitVector::create(org, 900, 1100);
+    EXPECT_EQUAL(900u, after->getStartIndex());
+    EXPECT_EQUAL(1100u, after->size());
+    EXPECT_EQUAL(100u, after->countTrueBits());
+
+    BitVector::UP before = BitVector::create(*after, 0, 1000);
+    EXPECT_EQUAL(0u, before->getStartIndex());
+    EXPECT_EQUAL(1000u, before->size());
+    EXPECT_EQUAL(100u, before->countTrueBits());
+}
+
 TEST_MAIN() { TEST_RUN_ALL(); }
