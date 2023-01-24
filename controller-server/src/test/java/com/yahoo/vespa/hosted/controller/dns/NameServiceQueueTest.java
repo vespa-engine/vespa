@@ -18,12 +18,14 @@ import org.junit.jupiter.api.Test;
 
 import java.util.ArrayDeque;
 import java.util.Deque;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Consumer;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -106,7 +108,12 @@ public class NameServiceQueueTest {
     void test_failing_requests() {
         Deque<Consumer<RecordName>> expectations = new ArrayDeque<>();
         var nameService = new NameService() {
-            @Override public Record createRecord(Type type, RecordName name, RecordData data) { expectations.pop().accept(name); return null; }
+            @Override public Record createRecord(Type type, RecordName name, RecordData data) {
+                var expectation = expectations.poll();
+                assertNotNull(expectation, "unexpected dispatch; add more expectations, or fix the bug!");
+                expectation.accept(name);
+                return null;
+            }
             @Override public List<Record> createAlias(RecordName name, Set<AliasTarget> targets) { throw new UnsupportedOperationException(); }
             @Override public List<Record> createDirect(RecordName name, Set<DirectTarget> targets) { throw new UnsupportedOperationException(); }
             @Override public List<Record> createTxtRecords(RecordName name, List<RecordData> txtRecords) { throw new UnsupportedOperationException(); }
@@ -176,6 +183,25 @@ public class NameServiceQueueTest {
         assertEquals(List.of(),
                      new NameServiceQueue(base).dispatchTo(nameService, 100).requests());
         assertEquals(0, expectations.size());
+
+        // Finally, let the queue fill past its capacity, and see that failed requests are simply dropped instead.
+        expectations.add(name -> { assertEquals(rec1.name(), name); throw exception; });
+        expectations.add(name -> { assertEquals(rec2.name(), name); });
+        expectations.add(name -> { assertEquals(rec1.name(), name); throw exception; });
+        expectations.add(name -> { assertEquals(rec2.name(), name); });
+        var full = new LinkedList<NameServiceRequest>();
+        for (int i = 0; i < NameServiceQueue.QUEUE_CAPACITY; i++) {
+            full.add(req1);
+            full.add(req2);
+        }
+        assertEquals(full.subList(4, full.size()),
+                     new NameServiceQueue(full).dispatchTo(nameService, 4).requests());
+
+        // However, if the queue is even fuller, at the end of a dispatch run, the oldest requests are discarded too.
+        full.add(req3);
+        full.add(req4);
+        assertEquals(full.subList(2, full.size()),
+                     new NameServiceQueue(full).dispatchTo(nameService, 0).requests());
     }
 
 }
