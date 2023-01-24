@@ -28,8 +28,8 @@ public class RetryingClusterControllerClientFactory extends AbstractComponent im
     public RetryingClusterControllerClientFactory() {
         this(AbstractHttpClient.wrapping(VespaHttpClientBuilder
                 .custom()
-                .setConnectTimeout(Timeout.ofSeconds(5))
-                .build()
+                .connectTimeout(Timeout.ofSeconds(5))
+                .apacheBuilder()
                 .setUserAgent("orchestrator-cluster-controller-client")
                 .setDefaultHeaders(List.of(new BasicHeader("Accept", "application/json")))
                 .build()));

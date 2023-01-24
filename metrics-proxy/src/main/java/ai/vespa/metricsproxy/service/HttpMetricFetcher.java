@@ -81,9 +81,9 @@ public abstract class HttpMetricFetcher {
 
     private static CloseableHttpClient createHttpClient() {
         return VespaHttpClientBuilder.custom()
-                .setConnectTimeout(Timeout.ofMilliseconds(CONNECTION_TIMEOUT))
-                .setSocketTimeout(Timeout.ofMilliseconds(CONNECTION_TIMEOUT))
-                .build()
+                .connectTimeout(Timeout.ofMilliseconds(CONNECTION_TIMEOUT))
+                .socketTimeout(Timeout.ofMilliseconds(CONNECTION_TIMEOUT))
+                .apacheBuilder()
                 .setUserAgent("metrics-proxy-http-client")
                 .setDefaultRequestConfig(RequestConfig.custom()
                         .setConnectionRequestTimeout(Timeout.ofMilliseconds(SOCKET_TIMEOUT))

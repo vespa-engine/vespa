@@ -2,9 +2,9 @@
 package ai.vespa.util.http.hc5;
 
 import org.apache.hc.client5.http.config.ConnectionConfig;
+import org.apache.hc.client5.http.impl.classic.CloseableHttpClient;
 import org.apache.hc.client5.http.impl.classic.HttpClientBuilder;
 import org.apache.hc.client5.http.impl.io.PoolingHttpClientConnectionManager;
-import org.apache.hc.client5.http.io.HttpClientConnectionManager;
 import org.apache.hc.client5.http.socket.ConnectionSocketFactory;
 import org.apache.hc.client5.http.socket.PlainConnectionSocketFactory;
 import org.apache.hc.client5.http.ssl.NoopHostnameVerifier;
@@ -26,7 +26,7 @@ import static com.yahoo.security.tls.TransportSecurityUtils.isTransportSecurityE
 /**
  * Sync HTTP client builder <em>for internal Vespa communications over http/https.</em>
  * Configures Vespa mTLS and handles TLS mixed mode automatically.
- * Custom connection managers must be configured through {@link #set(HttpClientConnectionManagerFactory)}.
+ * Custom connection managers must be configured through {@link #connectionManagerFactory(HttpClientConnectionManagerFactory)}.
  *
  * @author jonmv
  */
@@ -47,41 +47,41 @@ public class VespaHttpClientBuilder {
         return new VespaHttpClientBuilder();
     }
 
-    public VespaHttpClientBuilder set(HttpClientConnectionManagerFactory connectionManagerFactory) {
+    public VespaHttpClientBuilder connectionManagerFactory(HttpClientConnectionManagerFactory connectionManagerFactory) {
         this.connectionManagerFactory = connectionManagerFactory;
         return this;
     }
 
-    public VespaHttpClientBuilder set(HostnameVerifier hostnameVerifier) {
+    public VespaHttpClientBuilder hostnameVerifier(HostnameVerifier hostnameVerifier) {
         this.hostnameVerifier = hostnameVerifier;
         return this;
     }
-    public VespaHttpClientBuilder setRewriteHttpToHttps(boolean enable) {
+    public VespaHttpClientBuilder rewriteHttpToHttps(boolean enable) {
         this.rewriteHttpToHttps = enable;
         return this;
     }
-    public VespaHttpClientBuilder setConnectTimeout(long connectTimeout, TimeUnit timeUnit) {
+    public VespaHttpClientBuilder connectTimeout(long connectTimeout, TimeUnit timeUnit) {
         connectionConfigBuilder.setConnectTimeout(connectTimeout, timeUnit);
         return this;
     }
-    public VespaHttpClientBuilder setConnectTimeout(Timeout connectTimeout) {
+    public VespaHttpClientBuilder connectTimeout(Timeout connectTimeout) {
         connectionConfigBuilder.setConnectTimeout(connectTimeout);
         return this;
     }
-    public VespaHttpClientBuilder setSocketTimeout(long connectTimeout, TimeUnit timeUnit) {
+    public VespaHttpClientBuilder socketTimeout(long connectTimeout, TimeUnit timeUnit) {
         connectionConfigBuilder.setConnectTimeout(connectTimeout, timeUnit);
         return this;
     }
-    public VespaHttpClientBuilder setValidateAfterInactivity(TimeValue validateAfterInactivity) {
+    public VespaHttpClientBuilder validateAfterInactivity(TimeValue validateAfterInactivity) {
         connectionConfigBuilder.setValidateAfterInactivity(validateAfterInactivity);
         return this;
     }
-    public VespaHttpClientBuilder setSocketTimeout(Timeout connectTimeout) {
+    public VespaHttpClientBuilder socketTimeout(Timeout connectTimeout) {
         connectionConfigBuilder.setConnectTimeout(connectTimeout);
         return this;
     }
 
-    public HttpClientBuilder build() {
+    public HttpClientBuilder apacheBuilder() {
         HttpClientBuilder builder = HttpClientBuilder.create();
         addSslSocketFactory(builder, new HttpClientConnectionManagerFactoryProxy(), hostnameVerifier);
         if (rewriteHttpToHttps)
@@ -93,6 +93,9 @@ public class VespaHttpClientBuilder {
         builder.disableRedirectHandling();
 
         return builder;
+    }
+    public CloseableHttpClient buildClient() {
+        return apacheBuilder().build();
     }
 
     private class HttpClientConnectionManagerFactoryProxy implements HttpClientConnectionManagerFactory {

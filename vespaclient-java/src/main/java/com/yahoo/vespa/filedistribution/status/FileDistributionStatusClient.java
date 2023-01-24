@@ -78,7 +78,7 @@ public class FileDistributionStatusClient {
                 .setConnectionRequestTimeout(timeoutInMillis)
                 .setResponseTimeout(timeoutInMillis)
                 .build();
-        try (CloseableHttpClient httpClient =  VespaHttpClientBuilder.custom().setConnectTimeout(timeoutInMillis).build().build()) {
+        try (CloseableHttpClient httpClient =  VespaHttpClientBuilder.custom().connectTimeout(timeoutInMillis).buildClient()) {
             URI statusUri = createStatusApiUri();
             if (debug)
                 System.out.println("URI:" + statusUri);

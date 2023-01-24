@@ -37,7 +37,7 @@ public class ConfigVerification {
         for (String arg : args) {
             configservers.add(prefix + arg + ":" + port + "/config/v2/tenant/" + tenant + "/application/" + appName + "/environment/" + environment + "/region/" + region + "/instance/" + instance + "/?recursive=true");
         }
-        try (CloseableHttpClient httpClient = VespaHttpClientBuilder.custom().build().build()) {
+        try (CloseableHttpClient httpClient = VespaHttpClientBuilder.custom().buildClient()) {
             System.exit(compareConfigs(listConfigs(configservers, httpClient), httpClient));
         }
     }

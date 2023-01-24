@@ -29,8 +29,8 @@ public class ClusterProtonMetricsRetriever {
     private static final CloseableHttpClient httpClient =
             VespaHttpClientBuilder
                     .custom()
-                    .setConnectTimeout(Timeout.ofSeconds(10))
-                    .build()
+                    .connectTimeout(Timeout.ofSeconds(10))
+                    .apacheBuilder()
                     .setDefaultRequestConfig(RequestConfig.custom()
                             .setResponseTimeout(Timeout.ofSeconds(10))
                             .build())

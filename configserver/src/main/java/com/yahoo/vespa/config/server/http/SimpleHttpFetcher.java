@@ -26,11 +26,11 @@ public class SimpleHttpFetcher implements HttpFetcher {
     public SimpleHttpFetcher(Duration connectTimeout) { this(connectTimeout, null); }
 
     public SimpleHttpFetcher(Duration connectTimeout, NodeHostnameVerifier verifier) {
-        VespaHttpClientBuilder builder = VespaHttpClientBuilder.custom().setConnectTimeout(Timeout.of(connectTimeout));
+        VespaHttpClientBuilder builder = VespaHttpClientBuilder.custom().connectTimeout(Timeout.of(connectTimeout));
         if (verifier != null) {
-            builder.set(verifier::verify);
+            builder.hostnameVerifier(verifier::verify);
         }
-        this.client = builder.build().build();
+        this.client = builder.buildClient();
     }
 
     @Override

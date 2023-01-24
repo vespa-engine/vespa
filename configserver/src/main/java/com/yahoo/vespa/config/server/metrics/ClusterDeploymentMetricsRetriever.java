@@ -57,9 +57,9 @@ public class ClusterDeploymentMetricsRetriever {
 
     private static final CloseableHttpClient httpClient =
             VespaHttpClientBuilder.custom()
-                    .setConnectTimeout(Timeout.ofSeconds(10))
-                    .set(registry -> new PoolingHttpClientConnectionManager(registry, null, null, TimeValue.ofMinutes(1)))
-                    .build()
+                    .connectTimeout(Timeout.ofSeconds(10))
+                    .connectionManagerFactory(registry -> new PoolingHttpClientConnectionManager(registry, null, null, TimeValue.ofMinutes(1)))
+                    .apacheBuilder()
                     .setDefaultRequestConfig(
                             RequestConfig.custom()
                                          .setConnectionRequestTimeout(Timeout.ofSeconds(60))
