@@ -8,7 +8,7 @@ import com.yahoo.vespa.hosted.controller.persistence.CuratorDb;
 
 import java.time.Clock;
 import java.time.Duration;
-import java.util.ArrayList;
+import java.time.Instant;
 import java.util.logging.Level;
 
 /**
@@ -39,15 +39,15 @@ public class NameServiceDispatcher extends ControllerMaintainer {
         // Dispatch 1 request per second on average. Note that this is not entirely accurate because a NameService
         // implementation may need to perform multiple API-specific requests to execute a single NameServiceRequest
         int requestCount = trueIntervalInSeconds();
-        NameServiceQueue initial;
+        final NameServiceQueue initial;
         try (var lock = db.lockNameServiceQueue()) {
             initial = db.readNameServiceQueue();
         }
         if (initial.requests().isEmpty() || requestCount == 0) return 1.0;
 
-        var instant = clock.instant();
-        var remaining = initial.dispatchTo(nameService, requestCount);
-        var dispatched = initial.minus(remaining);
+        Instant instant = clock.instant();
+        NameServiceQueue remaining = initial.dispatchTo(nameService, requestCount);
+        NameServiceQueue dispatched = initial.without(remaining);
 
         if (!dispatched.requests().isEmpty()) {
             Level logLevel = controller().system().isCd() ? Level.INFO : Level.FINE;

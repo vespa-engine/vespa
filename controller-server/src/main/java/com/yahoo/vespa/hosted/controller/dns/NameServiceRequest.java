@@ -16,6 +16,7 @@ public interface NameServiceRequest {
 
     Optional<RecordName> name();
 
+    /** The application owning this request */
     Optional<TenantAndApplicationId> owner();
 
     /** Send this to given name service */
