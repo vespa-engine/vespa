@@ -39,14 +39,11 @@ public class OnnxEvaluatorOptions {
         return options;
     }
 
-    private void addCuda(OrtSession.SessionOptions options) throws OrtException {
+    private void addCuda(OrtSession.SessionOptions options) {
         if (gpuDeviceNumber < 0) return;
         try {
             options.addCUDA(gpuDeviceNumber);
         } catch (OrtException e) {
-            if (e.getCode() != OrtException.OrtErrorCode.ORT_EP_FAIL) {
-                throw e;
-            }
             if (gpuDeviceRequired) {
                 throw new IllegalArgumentException("GPU device " + gpuDeviceNumber + " is required, but CUDA backend could not be initialized", e);
             }
