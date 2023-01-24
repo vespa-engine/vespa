@@ -132,3 +132,12 @@ func StartConfigproxy() int {
 	}
 	return 1
 }
+
+func stopProxyWithRunserver() {
+	_, err := util.SystemCommand.Run("vespa-runserver",
+		"-s", PROXY_SERVICE_NAME,
+		"-p", CONFIGPROXY_PIDFILE, "-S")
+	if err != nil {
+		trace.Warning("Stopping sentinel:", err)
+	}
+}

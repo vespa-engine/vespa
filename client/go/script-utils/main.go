@@ -34,6 +34,8 @@ func main() {
 		os.Args = os.Args[1:]
 	}
 	switch action {
+	case "vespa-stop-services":
+		os.Exit(services.VespaStopServices())
 	case "vespa-start-services":
 		os.Exit(services.VespaStartServices())
 	case "start-services":

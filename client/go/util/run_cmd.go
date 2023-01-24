@@ -18,6 +18,7 @@ const (
 	BackTicksWithStderr BackTicks = iota
 	BackTicksIgnoreStderr
 	BackTicksForwardStderr
+	SystemCommand
 )
 
 func (b BackTicks) Run(program string, args ...string) (string, error) {
@@ -30,6 +31,9 @@ func (b BackTicks) Run(program string, args ...string) (string, error) {
 	case BackTicksIgnoreStderr:
 		cmd.Stderr = nil
 	case BackTicksForwardStderr:
+		cmd.Stderr = os.Stderr
+	case SystemCommand:
+		cmd.Stdout = os.Stdout
 		cmd.Stderr = os.Stderr
 	}
 	trace.Debug("running command:", program, strings.Join(args, " "))

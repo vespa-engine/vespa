@@ -82,3 +82,12 @@ func StartConfigSentinel() int {
 	}
 	return 1
 }
+
+func stopSentinelWithRunserver() {
+	_, err := util.SystemCommand.Run("vespa-runserver",
+		"-s", SENTINEL_SERVICE_NAME,
+		"-p", SENTINEL_PIDFILE, "-S")
+	if err != nil {
+		trace.Warning("Stopping sentinel:", err)
+	}
+}
