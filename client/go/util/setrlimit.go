@@ -15,7 +15,7 @@ import (
 type ResourceId int
 
 const (
-	RLIMIT_CORE   ResourceId = unix.RLIMIT_AS
+	RLIMIT_CORE   ResourceId = unix.RLIMIT_CORE
 	RLIMIT_NOFILE ResourceId = unix.RLIMIT_NOFILE
 	RLIMIT_NPROC  ResourceId = unix.RLIMIT_NPROC
 	NO_RLIMIT     uint64     = ^uint64(0)
@@ -41,6 +41,7 @@ func readableLimit(val uint64) string {
 }
 
 func SetResourceLimit(resource ResourceId, newVal uint64) {
+	trace.Debug("Wanted", newVal, "as limit for", resource.String())
 	var current unix.Rlimit
 	err := unix.Getrlimit(int(resource), &current)
 	if err != nil {
@@ -59,14 +60,13 @@ func SetResourceLimit(resource ResourceId, newVal uint64) {
 			newVal = current.Max
 		}
 	}
-	if current.Cur < newVal {
-		wanted.Cur = newVal
-	}
+	wanted.Cur = newVal
 	err = unix.Setrlimit(int(resource), &wanted)
 	if err != nil {
-		trace.Trace("Failed setting resource limit:", err)
-	} else if (current.Cur != wanted.Cur) || (current.Max != wanted.Max) {
+		trace.Trace("Failed setting limit for", resource, ":", err)
+	} else {
 		trace.Debug("Resource limit", resource, "was:", readableLimit(current.Cur), "/", readableLimit(current.Max))
-		trace.Trace("Resource limit", resource, "adjusted OK:", readableLimit(wanted.Cur), "/", readableLimit(wanted.Max))
+		_ = unix.Getrlimit(int(resource), &current)
+		trace.Trace("Resource limit", resource, "adjusted to:", readableLimit(current.Cur), "/", readableLimit(current.Max))
 	}
 }
