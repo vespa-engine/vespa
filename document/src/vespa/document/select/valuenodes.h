@@ -350,7 +350,7 @@ public:
     getValue(const Context& context) const override {
         return getValue(_left->getValue(context), _right->getValue(context));
     }
-    
+
     std::unique_ptr<Value>
     traceValue(const Context &context, std::ostream& out) const override {
         return traceValue(_left->getValue(context), _right->getValue(context), out);

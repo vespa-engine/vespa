@@ -36,7 +36,7 @@ private:
     void writeDimensions(const DimensionSet&);
     void writeInheritedDimensions();
     void writeMetricSpecificDimensions(const Metric&);
-    
+
     bool isLeafMetric(const Metric& m) const { return !m.isMetricSet(); }
 };
 

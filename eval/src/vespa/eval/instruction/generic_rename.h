@@ -12,7 +12,7 @@
 namespace vespalib::eval { struct ValueBuilderFactory; }
 
 namespace vespalib::eval::instruction {
- 
+
 struct DenseRenamePlan {
     SmallVector<size_t> loop_cnt;
     SmallVector<size_t> stride;

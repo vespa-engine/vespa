@@ -17,7 +17,7 @@ class ConfigOwner {
 private:
     config::ConfigSubscriber _subscriber;
     config::ConfigHandle<SentinelConfig>::UP _sentinelHandle;
-    
+
     int64_t _currGeneration = -1;
     std::unique_ptr<SentinelConfig> _currConfig;
 

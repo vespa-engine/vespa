@@ -9,7 +9,7 @@
 #include <vespa/document/fieldvalue/doublefieldvalue.h>
 
 namespace document {
-    
+
 class CollectionHelper {
 public:
     CollectionHelper(CollectionFieldValue &value) : _cfv(value) {}

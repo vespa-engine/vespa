@@ -151,12 +151,12 @@ public:
 class Op1 : public Node
 {
 private:
-    Child _child;    
+    Child _child;
 public:
     Op1(const ValueType &result_type_in,
         const TensorFunction &child_in)
         : Node(result_type_in), _child(child_in) {}
-    const TensorFunction &child() const { return _child.get(); }    
+    const TensorFunction &child() const { return _child.get(); }
     void push_children(std::vector<Child::CREF> &children) const final override;
     void visit_children(vespalib::ObjectVisitor &visitor) const final override;
 };
@@ -291,7 +291,7 @@ class Concat : public Op2
 {
     using Super = Op2;
 private:
-    vespalib::string _dimension;    
+    vespalib::string _dimension;
 public:
     Concat(const ValueType &result_type_in,
            const TensorFunction &lhs_in,
@@ -448,7 +448,7 @@ public:
     const TensorFunction &cond() const { return _cond.get(); }
     const TensorFunction &true_child() const { return _true_child.get(); }
     const TensorFunction &false_child() const { return _false_child.get(); }
-    void push_children(std::vector<Child::CREF> &children) const final override;    
+    void push_children(std::vector<Child::CREF> &children) const final override;
     bool result_is_mutable() const override {
         return (true_child().result_is_mutable() &&
                 false_child().result_is_mutable());

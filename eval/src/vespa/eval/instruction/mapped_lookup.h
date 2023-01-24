@@ -15,7 +15,7 @@ namespace vespalib::eval {
  *
  * Both tensors must have the same cell type, which can be either
  * float or double.
- * 
+ *
  * The optimized expression looks like this: reduce(key*map,sum,x)
  *
  * If 'map' is also sparse, the lookup operation is a sparse dot

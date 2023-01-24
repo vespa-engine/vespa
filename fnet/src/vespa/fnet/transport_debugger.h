@@ -12,7 +12,7 @@ namespace fnet {
 /**
  * This class is used to control transport threads during unit
  * testing.
- * 
+ *
  * The TimeTools created by this class should be used when setting up
  * all transports used in the test. The supplied TimeTools will make
  * sure no thread ever blocks waiting for io-events and also make sure
@@ -25,7 +25,7 @@ namespace fnet {
  * default 5ms will make sure 'time passes' and 'stuff happens' at a
  * reasonable relative rate). It is important to call detach to
  * release the transports before trying to shut them down.
- * 
+ *
  * Note that both server and client should be controlled by the same
  * debugger when testing rpc. Using external services will result in
  * (synthetic) time passing too fast compared to stuff actually

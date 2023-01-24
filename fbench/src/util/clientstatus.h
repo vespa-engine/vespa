@@ -164,7 +164,7 @@ struct ClientStatus
      * @param status The status to insert
      **/
     void AddRequestStatus(uint32_t status);
-    
+
     /**
      * Merge the info held by 'status' into the info held by this
      * struct. Note that the error flag and error messages are ignored. If

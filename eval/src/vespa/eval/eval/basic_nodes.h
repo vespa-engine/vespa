@@ -71,7 +71,7 @@ using Node_UP = std::unique_ptr<Node>;
  *   auto number = as<Number>(node);
  *   if (number) {
  *      do_stuff(number->value());
- *   } 
+ *   }
  * </pre>
  **/
 template<typename T>
