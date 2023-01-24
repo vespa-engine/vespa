@@ -5,6 +5,7 @@ import com.yahoo.athenz.auth.util.Crypto;
 import com.yahoo.security.KeyUtils;
 import com.yahoo.vespa.athenz.api.AthenzAssertion;
 import com.yahoo.vespa.athenz.api.AthenzDomain;
+import com.yahoo.vespa.athenz.api.AthenzDomainMeta;
 import com.yahoo.vespa.athenz.api.AthenzGroup;
 import com.yahoo.vespa.athenz.api.AthenzIdentity;
 import com.yahoo.vespa.athenz.api.AthenzPolicy;
@@ -33,6 +34,7 @@ import com.yahoo.vespa.athenz.utils.AthenzIdentities;
 import org.apache.http.Header;
 import org.apache.http.client.methods.HttpUriRequest;
 import org.apache.http.client.methods.RequestBuilder;
+import org.apache.http.entity.ContentType;
 import org.apache.http.entity.StringEntity;
 import org.apache.http.message.BasicHeader;
 
@@ -213,6 +215,34 @@ public class DefaultZmsClient extends ClientBase implements ZmsClient {
             DomainListResponseEntity result = readEntity(response, DomainListResponseEntity.class);
             return result.domains.stream().map(AthenzDomain::new).toList();
         });
+    }
+
+    @Override
+    public AthenzDomainMeta getDomainMeta(AthenzDomain domain) {
+        HttpUriRequest request = RequestBuilder.get()
+                .setUri(zmsUrl.resolve("domain/%s".formatted(domain.getName())))
+                .build();
+        return execute(request, response -> readEntity(response, AthenzDomainMeta.class));
+    }
+
+    @Override
+    public void updateDomain(AthenzDomain domain, Map<String, Object> attributes) {
+        for (String attribute : attributes.keySet()) {
+            Object attrVal = attributes.get(attribute);
+
+            String val = attrVal instanceof String ? "\"" + attrVal.toString() + "\"" : attrVal.toString();
+            String domainMeta = """
+                    {
+                        "%s": %s
+                    }
+                    """
+                    .formatted(attribute, val);
+            HttpUriRequest request = RequestBuilder.put()
+                    .setUri(zmsUrl.resolve("domain/%s/meta/system/%s".formatted(domain.getName(), attribute)))
+                    .setEntity(new StringEntity(domainMeta, ContentType.APPLICATION_JSON))
+                    .build();
+            execute(request, response -> readEntity(response, Void.class));
+        }
     }
 
     @Override
