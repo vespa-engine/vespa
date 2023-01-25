@@ -54,6 +54,11 @@
       <artifactId>vespajlib</artifactId>
       <version>${project.version}</version>
     </dependency>
+    <dependency>
+      <groupId>com.yahoo.vespa</groupId>
+      <artifactId>container-apache-http-client-bundle</artifactId>
+      <version>${project.version}</version>
+    </dependency>
 
     <!-- All dependencies that should be visible in test classpath, but not compile classpath,
          for user projects must be added in compile scope here.
@@ -89,12 +94,6 @@
     <dependency>
       <groupId>xerces</groupId>
       <artifactId>xercesImpl</artifactId>
-    </dependency>
-    <dependency>
-        <groupId>com.yahoo.vespa</groupId>
-        <artifactId>container-apache-http-client-bundle</artifactId>
-        <version>${project.version}</version>
-        <scope>test</scope>
     </dependency>
     <dependency>
       <groupId>org.apache.commons</groupId>
