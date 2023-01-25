@@ -157,9 +157,9 @@ public class RoutingPolicies {
             policiesByInstance.forEach((owner, instancePolicies) -> db.writeRoutingPolicies(owner, instancePolicies.asList()));
             policiesByInstance.forEach((ignored, instancePolicies) -> updateGlobalDnsOf(instancePolicies,
                                                                                         Set.of(),
-                                                                                        Optional.of(TenantAndApplicationId.from(deployment.applicationId())),
+                                                                                        ownerOf(deployment),
                                                                                         lock));
-            updateApplicationDnsOf(effectivePolicies, Set.of(), Optional.of(TenantAndApplicationId.from(deployment.applicationId())), lock);
+            updateApplicationDnsOf(effectivePolicies, Set.of(), ownerOf(deployment), lock);
         }
     }
 
@@ -229,7 +229,7 @@ public class RoutingPolicies {
         for (var policy : policies) {
             if (policy.dnsZone().isEmpty() && policy.canonicalName().isPresent()) continue;
             if (controller.zoneRegistry().routingMethod(policy.id().zone()) != RoutingMethod.exclusive) continue;
-            Endpoint endpoint = policy.regionEndpointIn(controller.system(), RoutingMethod.exclusive, controller.zoneRegistry());
+            Endpoint endpoint = policy.regionEndpointIn(controller.system(), RoutingMethod.exclusive);
             var zonePolicy = db.readZoneRoutingPolicy(policy.id().zone());
             long weight = 1;
             if (isConfiguredOut(zonePolicy, policy, inactiveZones)) {
@@ -366,7 +366,7 @@ public class RoutingPolicies {
             if (existingPolicy != null) {
                 newPolicy = newPolicy.with(newPolicy.status().with(existingPolicy.status().routingStatus()));
             }
-            updateZoneDnsOf(newPolicy, allocation);
+            updateZoneDnsOf(newPolicy, loadBalancer, allocation.deployment);
             policies.put(newPolicy.id(), newPolicy);
         }
         RoutingPolicyList updated = RoutingPolicyList.copyOf(policies.values());
@@ -375,47 +375,44 @@ public class RoutingPolicies {
     }
 
     /** Update zone DNS record for given policy */
-    private void updateZoneDnsOf(RoutingPolicy policy, LoadBalancerAllocation allocation) {
-        for (var endpoint : policy.zoneEndpointsIn(controller.system(), RoutingMethod.exclusive, controller.zoneRegistry())) {
+    private void updateZoneDnsOf(RoutingPolicy policy, LoadBalancer loadBalancer, DeploymentId deploymentId) {
+        for (var endpoint : policy.zoneEndpointsIn(controller.system(), RoutingMethod.exclusive)) {
             var name = RecordName.from(endpoint.dnsName());
             var record = policy.canonicalName().isPresent() ?
                     new Record(Record.Type.CNAME, name, RecordData.fqdn(policy.canonicalName().get().value())) :
                     new Record(Record.Type.A, name, RecordData.from(policy.ipAddress().orElseThrow()));
-            nameServiceForwarderIn(policy.id().zone()).createRecord(record, Priority.normal, ownerOf(allocation));
-            setPrivateDns(endpoint, allocation);
+            nameServiceForwarderIn(policy.id().zone()).createRecord(record, Priority.normal, ownerOf(deploymentId));
+            setPrivateDns(endpoint, loadBalancer, deploymentId);
         }
     }
 
-    private void setPrivateDns(Endpoint endpoint, LoadBalancerAllocation allocation) {
-        allocation.loadBalancers.stream()
-                                .filter(lb -> lb.service().isPresent())
-                                .findFirst()
-                                .flatMap(lbWithPrivateService ->
-                                                 controller.serviceRegistry().vpcEndpointService()
-                                                           .setPrivateDns(DomainName.of(endpoint.dnsName()),
-                                                                          new ClusterId(allocation.deployment, endpoint.cluster()),
-                                                                          lbWithPrivateService.cloudAccount()))
-                                .ifPresent(challenge -> {
-                                    try {
-                                        nameServiceForwarderIn(allocation.deployment.zoneId()).createTxt(challenge.name(), List.of(challenge.data()), Priority.high, ownerOf(allocation));
-                                        Instant doom = controller.clock().instant().plusSeconds(30);
-                                        while (controller.clock().instant().isBefore(doom)) {
-                                            try (Mutex lock = controller.curator().lockNameServiceQueue()) {
-                                                if (controller.curator().readNameServiceQueue().requests().stream()
-                                                              .noneMatch(request -> request.name().equals(Optional.of(challenge.name())))) {
-                                                    challenge.trigger().run();
-                                                    nameServiceForwarderIn(allocation.deployment.zoneId()).removeRecords(Type.TXT, challenge.name(), Priority.normal, ownerOf(allocation));
-                                                    return;
-                                                }
-                                            }
-                                            Thread.sleep(100);
-                                        }
-                                        throw new UncheckedTimeoutException("timed out waiting for DNS challenge to be processed");
-                                    }
-                                    catch (InterruptedException e) {
-                                        throw new UncheckedInterruptedException("interrupted waiting for DNS challenge to be processed", e, true);
-                                    }
-                                });
+    private void setPrivateDns(Endpoint endpoint, LoadBalancer loadBalancer, DeploymentId deploymentId) {
+        if (loadBalancer.service().isEmpty()) return;
+        controller.serviceRegistry().vpcEndpointService()
+                  .setPrivateDns(DomainName.of(endpoint.dnsName()),
+                                 new ClusterId(deploymentId, endpoint.cluster()),
+                                 loadBalancer.cloudAccount())
+                  .ifPresent(challenge -> {
+                      try {
+                          nameServiceForwarderIn(deploymentId.zoneId()).createTxt(challenge.name(), List.of(challenge.data()), Priority.high, ownerOf(deploymentId));
+                          Instant doom = controller.clock().instant().plusSeconds(30);
+                          while (controller.clock().instant().isBefore(doom)) {
+                              try (Mutex lock = controller.curator().lockNameServiceQueue()) {
+                                  if (controller.curator().readNameServiceQueue().requests().stream()
+                                                .noneMatch(request -> request.name().equals(Optional.of(challenge.name())))) {
+                                      try { challenge.trigger().run(); }
+                                      finally { nameServiceForwarderIn(deploymentId.zoneId()).removeRecords(Type.TXT, challenge.name(), Priority.normal, ownerOf(deploymentId)); }
+                                      return;
+                                  }
+                              }
+                              Thread.sleep(100);
+                          }
+                          throw new UncheckedTimeoutException("timed out waiting for DNS challenge to be processed");
+                      }
+                      catch (InterruptedException e) {
+                          throw new UncheckedInterruptedException("interrupted waiting for DNS challenge to be processed", e, true);
+                      }
+                  });
     }
 
     /**
@@ -429,7 +426,7 @@ public class RoutingPolicies {
         RoutingPolicyList removable = instancePolicies.deployment(allocation.deployment)
                                                       .not().matching(policy -> activeIds.contains(policy.id()));
         for (var policy : removable) {
-            for (var endpoint : policy.zoneEndpointsIn(controller.system(), RoutingMethod.exclusive, controller.zoneRegistry())) {
+            for (var endpoint : policy.zoneEndpointsIn(controller.system(), RoutingMethod.exclusive)) {
                 nameServiceForwarderIn(allocation.deployment.zoneId()).removeRecords(Record.Type.CNAME,
                                                                                      RecordName.from(endpoint.dnsName()),
                                                                                      Priority.normal,
@@ -691,8 +688,12 @@ public class RoutingPolicies {
         }
     }
 
+    private static Optional<TenantAndApplicationId> ownerOf(DeploymentId deploymentId) {
+        return Optional.of(TenantAndApplicationId.from(deploymentId.applicationId()));
+    }
+
     private static Optional<TenantAndApplicationId> ownerOf(LoadBalancerAllocation allocation) {
-        return Optional.of(TenantAndApplicationId.from(allocation.deployment.applicationId()));
+        return ownerOf(allocation.deployment);
     }
 
 }
