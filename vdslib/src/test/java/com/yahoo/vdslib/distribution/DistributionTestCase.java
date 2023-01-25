@@ -21,11 +21,10 @@ import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.Deque;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Random;
 import java.util.Set;
+import java.util.Stack;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
@@ -295,7 +294,7 @@ public class DistributionTestCase {
                 .redundancy(redundancy);
         builder.group(new StorDistributionConfig.Group.Builder()
                 .name("invalid").index("invalid").partitions(partitions));
-        LinkedList<Integer> nodeIndexes = new LinkedList<>();
+        Stack<Integer> nodeIndexes = new Stack<>();
         for (int i=0, n=getNodeCount(depth, branchCount, nodesPerLeaf); i<n; ++i) nodeIndexes.push(i);
         Collections.shuffle(nodeIndexes, new Random(123));
         addLevel(builder, "top", "", branchCount, depth, partitions, nodesPerLeaf, nodeIndexes);
@@ -303,7 +302,7 @@ public class DistributionTestCase {
     }
     private void addLevel(StorDistributionConfig.Builder builder, String namePrefix, String indexPrefix,
                           int branchCount, int depth, String partitions, int nodesPerLeaf,
-                          Deque<Integer> nodes)
+                          Stack<Integer> nodes)
     {
         for (int i=0; i<branchCount; ++i) {
             StorDistributionConfig.Group.Builder group
