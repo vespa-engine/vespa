@@ -4,11 +4,27 @@
 #include "detached.h"
 #include <vespa/vespalib/net/selector.h>
 #include <vespa/vespalib/util/require.h>
+#include <vespa/vespalib/util/time.h>
+#include <vespa/config.h>
 
+#include <thread>
 #include <atomic>
 #include <vector>
 #include <map>
 #include <set>
+
+#ifdef VESPA_HAS_IO_URING
+#include "io_uring_thread.hpp"
+namespace {
+bool can_use_io_uring() { return vespalib::coro::UringProbe::check_support(); }
+vespalib::coro::AsyncIo::SP create_io_uring_thread() { return std::make_shared<vespalib::coro::IoUringThread>(); }
+}
+#else
+namespace {
+bool can_use_io_uring() { return false; }
+vespalib::coro::AsyncIo::SP create_io_uring_thread() { abort(); }
+}
+#endif
 
 namespace vespalib::coro {
 
@@ -195,15 +211,17 @@ struct SelectorThread : AsyncIo {
             writer.resume();
         }
     }
-    vespalib::string get_impl_spec() override {
-        return "selector-thread";
-    }
+    ImplTag get_impl_tag() override { return ImplTag::EPOLL; }
     Lazy<SocketHandle> accept(ServerSocket &server_socket) override {
         bool in_thread = co_await enter_thread();
         if (in_thread) {
             bool can_read = co_await readable(server_socket.get_fd());
             if (can_read) {
-                co_return server_socket.accept();
+                auto res = server_socket.accept();
+                if (res.valid()) {
+                    res.set_blocking(false);
+                }
+                co_return res;
             }
         }
         co_return SocketHandle(-ECANCELED);
@@ -325,7 +343,7 @@ SelectorThread::~SelectorThread()
     REQUIRE(_queue.empty());
 }
 
-}
+} // <unnamed>
 
 AsyncIo::~AsyncIo() = default;
 AsyncIo::AsyncIo() = default;
@@ -367,8 +385,11 @@ AsyncIo::Owner::~Owner()
 }
 
 AsyncIo::Owner
-AsyncIo::create() {
+AsyncIo::create(ImplTag prefer_impl) {
+    if (prefer_impl == ImplTag::URING && can_use_io_uring()) {
+        return Owner(create_io_uring_thread());
+    }
     return Owner(std::make_shared<SelectorThread>());
 }
 
-}
+} // vespalib::coro

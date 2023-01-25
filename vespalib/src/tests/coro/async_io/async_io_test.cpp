@@ -21,6 +21,14 @@ using namespace vespalib;
 using namespace vespalib::coro;
 using namespace vespalib::test;
 
+vespalib::string impl_spec(AsyncIo &async) {
+    switch (async.get_impl_tag()) {
+    case AsyncIo::ImplTag::EPOLL: return "epoll";
+    case AsyncIo::ImplTag::URING: return "uring";
+    }
+    abort();
+}
+
 Detached self_exiting_run_loop(AsyncIo::SP async) {
     for (size_t i = 0; co_await async->schedule(); ++i) {
         fprintf(stderr, "self_exiting_run_loop -> current value: %zu\n", i);
@@ -39,7 +47,7 @@ Work run_loop(AsyncIo &async, int a, int b) {
 TEST(AsyncIoTest, create_async_io) {
     auto async = AsyncIo::create();
     AsyncIo &api = async;
-    fprintf(stderr, "async_io impl: %s\n", api.get_impl_spec().c_str());
+    fprintf(stderr, "async_io impl: %s\n", impl_spec(api).c_str());
 }
 
 TEST(AsyncIoTest, run_stuff_in_async_io_context) {
@@ -132,10 +140,12 @@ Work async_client(AsyncIo &async, CryptoEngine &engine, ServerSocket &server_soc
     co_return co_await verify_socket_io(*socket, false);
 }
 
-void verify_socket_io(CryptoEngine &engine) {
+void verify_socket_io(CryptoEngine &engine, AsyncIo::ImplTag prefer_impl = AsyncIo::ImplTag::EPOLL) {
     ServerSocket server_socket("tcp/0");
     server_socket.set_blocking(false);
-    auto async = AsyncIo::create();
+    auto async = AsyncIo::create(prefer_impl);
+    fprintf(stderr, "verify_socket_io: crypto engine: %s, async impl: %s\n",
+            getClassName(engine).c_str(), impl_spec(async).c_str());
     auto f1 = make_future(async_server(async, engine, server_socket));
     auto f2 = make_future(async_client(async, engine, server_socket));
     (void) f1.get();
@@ -160,6 +170,16 @@ TEST(AsyncIoTest, maybe_tls_true_socket_io) {
 TEST(AsyncIoTest, maybe_tls_false_socket_io) {
     MaybeTlsCryptoEngine engine(std::make_shared<TlsCryptoEngine>(make_tls_options_for_testing()), false);
     verify_socket_io(engine);
+}
+
+TEST(AsyncIoTest, raw_socket_io_with_io_uring_maybe) {
+    NullCryptoEngine engine;
+    verify_socket_io(engine, AsyncIo::ImplTag::URING);
+}
+
+TEST(AsyncIoTest, tls_socket_io_with_io_uring_maybe) {
+    TlsCryptoEngine engine(make_tls_options_for_testing());
+    verify_socket_io(engine, AsyncIo::ImplTag::URING);
 }
 
 GTEST_MAIN_RUN_ALL_TESTS()

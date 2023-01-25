@@ -152,14 +152,21 @@ SocketAddress::spec() const
 }
 
 SocketHandle
-SocketAddress::connect(const std::function<bool(SocketHandle&)> &tweak) const
+SocketAddress::raw_socket() const
 {
     if (valid()) {
-        SocketHandle handle(socket(_addr.ss_family, SOCK_STREAM, 0));
-        if (handle.valid() && tweak(handle)) {
-            if ((::connect(handle.get(), addr(), _size) == 0) || (errno == EINPROGRESS)) {
-                return handle;
-            }
+        return SocketHandle(::socket(_addr.ss_family, SOCK_STREAM, 0));
+    }
+    return SocketHandle();
+}
+
+SocketHandle
+SocketAddress::connect(const std::function<bool(SocketHandle&)> &tweak) const
+{
+    SocketHandle handle = raw_socket();
+    if (handle.valid() && tweak(handle)) {
+        if ((::connect(handle.get(), addr(), _size) == 0) || (errno == EINPROGRESS)) {
+            return handle;
         }
     }
     return SocketHandle();
@@ -168,20 +175,18 @@ SocketAddress::connect(const std::function<bool(SocketHandle&)> &tweak) const
 SocketHandle
 SocketAddress::listen(int backlog) const
 {
-    if (valid()) {
-        SocketHandle handle(socket(_addr.ss_family, SOCK_STREAM, 0));
-        if (handle.valid()) {
-            if (is_ipv6()) {
-                handle.set_ipv6_only(false);
-            }
-            if (port() > 0) {
-                handle.set_reuse_addr(true);
-            }
-            if ((bind(handle.get(), addr(), _size) == 0) &&
-                (::listen(handle.get(), backlog) == 0))
-            {
-                return handle;
-            }
+    SocketHandle handle = raw_socket();
+    if (handle.valid()) {
+        if (is_ipv6()) {
+            handle.set_ipv6_only(false);
+        }
+        if (port() > 0) {
+            handle.set_reuse_addr(true);
+        }
+        if ((bind(handle.get(), addr(), _size) == 0) &&
+            (::listen(handle.get(), backlog) == 0))
+        {
+            return handle;
         }
     }
     return SocketHandle();
