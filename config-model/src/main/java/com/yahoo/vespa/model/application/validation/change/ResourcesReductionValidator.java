@@ -2,7 +2,7 @@
 package com.yahoo.vespa.model.application.validation.change;
 
 import com.yahoo.config.model.api.ConfigChangeAction;
-import com.yahoo.config.provision.Capacity;
+import com.yahoo.config.provision.ClusterResources;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.NodeResources;
 import com.yahoo.vespa.model.VespaModel;
@@ -22,27 +22,23 @@ public class ResourcesReductionValidator implements ChangeValidator {
     @Override
     public List<ConfigChangeAction> validate(VespaModel current, VespaModel next, ValidationOverrides overrides, Instant now) {
         for (var clusterId : current.allClusters()) {
-            Capacity currentCapacity = current.provisioned().all().get(clusterId);
-            Capacity nextCapacity = next.provisioned().all().get(clusterId);
-            if (currentCapacity == null || nextCapacity == null) continue;
-            validate(currentCapacity,
-                     nextCapacity,
-                     clusterId,
-                     overrides,
-                     now);
+            if (next.allClusters().contains(clusterId))
+                validate(clusterId, current, next, overrides, now);
         }
         return List.of();
     }
 
-    private void validate(Capacity current,
-                          Capacity next,
-                          ClusterSpec.Id clusterId,
+    private void validate(ClusterSpec.Id clusterId,
+                          VespaModel currentModel,
+                          VespaModel nextModel,
                           ValidationOverrides overrides,
                           Instant now) {
-        if (current.maxResources().nodeResources().isUnspecified() || next.maxResources().nodeResources().isUnspecified()) {
-            // Unspecified resources; compared node count
-            int currentNodes = current.maxResources().nodes();
-            int nextNodes = next.maxResources().nodes();
+        ClusterResources current = withNodeResources(currentModel.provisioned().all().get(clusterId).maxResources(), clusterId, currentModel);
+        ClusterResources next = withNodeResources(nextModel.provisioned().all().get(clusterId).maxResources(), clusterId, nextModel);
+        if (current.nodeResources().isUnspecified() || next.nodeResources().isUnspecified()) {
+            // Self-hosted - unspecified resources; compare node count
+            int currentNodes = current.nodes();
+            int nextNodes = next.nodes();
             if (nextNodes < 0.5 * currentNodes && nextNodes != currentNodes - 1) {
                 overrides.invalid(ValidationId.resourcesReduction,
                                   "Size reduction in '" + clusterId.value() + "' is too large: " +
@@ -52,8 +48,8 @@ public class ResourcesReductionValidator implements ChangeValidator {
             }
         }
         else {
-            NodeResources currentResources = current.maxResources().totalResources();
-            NodeResources nextResources = next.maxResources().totalResources();
+            NodeResources currentResources = current.totalResources();
+            NodeResources nextResources = next.totalResources();
             if (nextResources.vcpu() < 0.5 * currentResources.vcpu() ||
                 nextResources.memoryGb() < 0.5 * currentResources.memoryGb() ||
                 nextResources.diskGb() < 0.5 * currentResources.diskGb())
@@ -61,9 +57,34 @@ public class ResourcesReductionValidator implements ChangeValidator {
                                   "Resource reduction in '" + clusterId.value() + "' is too large: " +
                                   "To guard against mistakes, the new max resources must be at least 50% of the current " +
                                   "max resources in all dimensions. " +
-                                  "Current: " + currentResources + ", new: " + nextResources,
+                                  "Current: " + currentResources.withBandwidthGbps(0) + // (don't output bandwidth here)
+                                  ", new: " + nextResources.withBandwidthGbps(0),
                                   now);
         }
+    }
+
+    /**
+     * If the given requested cluster resources does not specify node resources, return them with
+     * the current node resources of the cluster, as that is what unspecified resources actually resolved to.
+     * This will always yield specified node resources on hosted instances and never on self-hosted instances.
+     */
+    private ClusterResources withNodeResources(ClusterResources resources, ClusterSpec.Id id, VespaModel model) {
+        if ( ! resources.nodeResources().isUnspecified()) return resources;
+
+        var containerCluster = model.getContainerClusters().get(id.value());
+        if (containerCluster != null) {
+            if ( ! containerCluster.getContainers().isEmpty())
+                return resources.with(containerCluster.getContainers().get(0).getHostResource().advertisedResources());
+        }
+
+        var contentCluster = model.getContentClusters().get(id.value());
+        if (contentCluster != null) {
+            var searchCluster = contentCluster.getSearch();
+            if ( ! searchCluster.getSearchNodes().isEmpty())
+                return resources.with(searchCluster.getSearchNodes().get(0).getHostResource().advertisedResources());
+        }
+
+        return resources; // only expected for admin clusters
     }
 
 }
