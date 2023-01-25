@@ -27,6 +27,7 @@ public class Schema {
         this.name = builder.name;
         this.rankProfiles = Collections.unmodifiableMap(builder.rankProfiles);
         this.documentSummaries = Collections.unmodifiableMap(builder.documentSummaries);
+        rankProfiles.values().forEach(rankProfile -> rankProfile.setSchema(this));
     }
 
     public String name() { return name; }
@@ -36,8 +37,7 @@ public class Schema {
     @Override
     public boolean equals(Object o) {
         if (o == this) return true;
-        if ( ! (o instanceof Schema)) return false;
-        Schema other = (Schema)o;
+        if ( ! (o instanceof Schema other)) return false;
         if ( ! other.name.equals(this.name)) return false;
         if ( ! other.rankProfiles.equals(this.rankProfiles)) return false;
         if ( ! other.documentSummaries.equals(this.documentSummaries)) return false;

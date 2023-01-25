@@ -58,14 +58,13 @@ public class SchemaInfoTester {
 
     static SchemaInfo createSchemaInfo() {
         List<Schema> schemas = new ArrayList<>();
-        RankProfile common = new RankProfile.Builder("commonProfile")
+        RankProfile.Builder common = new RankProfile.Builder("commonProfile")
                 .addInput("query(myTensor1)", TensorType.fromSpec("tensor(a{},b{})"))
                 .addInput("query(myTensor2)", TensorType.fromSpec("tensor(x[2],y[2])"))
                 .addInput("query(myTensor3)", TensorType.fromSpec("tensor(x[2],y[2])"))
-                .addInput("query(myTensor4)", TensorType.fromSpec("tensor<float>(x[5])"))
-                .build();
+                .addInput("query(myTensor4)", TensorType.fromSpec("tensor<float>(x[5])"));
         schemas.add(new Schema.Builder("a")
-                            .add(common)
+                            .add(common.build())
                             .add(new RankProfile.Builder("inconsistent")
                                          .addInput("query(myTensor1)", TensorType.fromSpec("tensor(a{},b{})"))
                                          .build())
@@ -76,7 +75,7 @@ public class SchemaInfoTester {
                                          .build())
                             .build());
         schemas.add(new Schema.Builder("b")
-                            .add(common)
+                            .add(common.build())
                             .add(new RankProfile.Builder("inconsistent")
                                          .addInput("query(myTensor1)", TensorType.fromSpec("tensor(x[10])"))
                                          .build())
@@ -92,6 +91,7 @@ public class SchemaInfoTester {
 
     /** Creates the same schema info as createSchemaInfo from config objects. */
     static SchemaInfo createSchemaInfoFromConfig() {
+
         var indexInfoConfig = new IndexInfoConfig.Builder();
 
         var rankProfileCommon = new SchemaInfoConfig.Schema.Rankprofile.Builder();
