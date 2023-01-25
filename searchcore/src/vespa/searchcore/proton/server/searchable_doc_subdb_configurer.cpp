@@ -221,7 +221,8 @@ SearchableDocSubDBConfigurer::reconfigure(const DocumentDBConfig &newConfig,
             sumMgr->createSummarySetup(newConfig.getSummaryConfig(),
                                        newConfig.getJuniperrcConfig(),
                                        newConfig.getDocumentTypeRepoSP(),
-                                       attrMgr);
+                                       attrMgr,
+                                       *newConfig.getSchemaSP());
         sumSetup = newSumSetup;
         shouldSearchViewChange = true;
     }

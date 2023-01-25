@@ -35,7 +35,8 @@ public:
                      const JuniperrcConfig & juniperCfg,
                      search::IAttributeManager::SP attributeMgr,
                      search::IDocumentStore::SP docStore,
-                     std::shared_ptr<const document::DocumentTypeRepo> repo);
+                     std::shared_ptr<const document::DocumentTypeRepo> repo,
+                     const search::index::Schema& schema);
 
         search::docsummary::IDocsumWriter & getDocsumWriter() const override { return *_docsumWriter; }
         const search::docsummary::ResultConfig & getResultConfig() override { return *_docsumWriter->GetResultConfig(); }
@@ -71,7 +72,8 @@ public:
     createSummarySetup(const SummaryConfig &summaryCfg,
                        const JuniperrcConfig &juniperCfg,
                        const std::shared_ptr<const document::DocumentTypeRepo> &repo,
-                       const search::IAttributeManager::SP &attributeMgr) override;
+                       const search::IAttributeManager::SP &attributeMgr,
+                       const search::index::Schema& schema) override;
 
     search::IDocumentStore & getBackingStore() override { return *_docStore; }
     void reconfigure(const search::LogDocumentStore::Config & config);

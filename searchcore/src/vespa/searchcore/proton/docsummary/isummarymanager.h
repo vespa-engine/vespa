@@ -9,6 +9,7 @@
 #include <vespa/searchsummary/docsummary/resultconfig.h>
 
 namespace document { class DocumentTypeRepo; }
+namespace search::index { class Schema; }
 
 namespace proton {
 
@@ -46,7 +47,8 @@ public:
     createSummarySetup(const SummaryConfig &summaryCfg,
                        const JuniperrcConfig &juniperCfg,
                        const std::shared_ptr<const document::DocumentTypeRepo> &repo,
-                       const std::shared_ptr<search::IAttributeManager> &attributeMgr) = 0;
+                       const std::shared_ptr<search::IAttributeManager> &attributeMgr,
+                       const search::index::Schema& schema) = 0;
 
     virtual search::IDocumentStore &getBackingStore() = 0;
 protected:

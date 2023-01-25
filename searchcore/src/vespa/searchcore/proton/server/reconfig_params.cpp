@@ -59,7 +59,7 @@ bool
 ReconfigParams::shouldSummaryManagerChange() const
 {
     return  _res.summaryChanged || _res.juniperrcChanged
-            || _res.documentTypeRepoChanged || _res.documenttypesChanged || _res.storeChanged;
+            || _res.documentTypeRepoChanged || _res.documenttypesChanged || _res.storeChanged || _res.schemaChanged;
 }
 
 bool
