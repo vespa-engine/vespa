@@ -20,10 +20,10 @@ using vespalib::IllegalArgumentException;
 
 namespace search::docsummary {
 
-DocsumFieldWriterFactory::DocsumFieldWriterFactory(bool use_v8_geo_positions, const IDocsumEnvironment& env, const IKeywordExtractorFactory& keyword_extractor_factory)
+DocsumFieldWriterFactory::DocsumFieldWriterFactory(bool use_v8_geo_positions, const IDocsumEnvironment& env, const IQueryTermFilterFactory& query_term_filter_factory)
     : _use_v8_geo_positions(use_v8_geo_positions),
       _env(env),
-      _keyword_extractor_factory(keyword_extractor_factory),
+      _query_term_filter_factory(query_term_filter_factory),
       _matching_elems_fields(std::make_shared<MatchingElementsFields>())
 {
 }
@@ -66,7 +66,7 @@ DocsumFieldWriterFactory::create_docsum_field_writer(const vespalib::string& fie
             auto fw = std::make_unique<DynamicTeaserDFW>(getEnvironment().getJuniper());
             auto fw_ptr = fw.get();
             fieldWriter = std::move(fw);
-            if (!fw_ptr->Init(field_name.c_str(), source, _keyword_extractor_factory)) {
+            if (!fw_ptr->Init(field_name.c_str(), source, _query_term_filter_factory)) {
                 throw IllegalArgumentException("Failed to initialize DynamicTeaserDFW.");
             }
         } else {

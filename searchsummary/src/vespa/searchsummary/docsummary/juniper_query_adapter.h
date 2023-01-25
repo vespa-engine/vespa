@@ -10,7 +10,7 @@ namespace search::fef { class Properties; }
 
 namespace search::docsummary {
 
-class IKeywordExtractor;
+class IQueryTermFilter;
 
 /*
  * Class implementing an adapter used by juniper to examine the current
@@ -19,14 +19,14 @@ class IKeywordExtractor;
 class JuniperQueryAdapter : public juniper::IQuery
 {
 private:
-    const IKeywordExtractor *_kwExtractor;
+    const IQueryTermFilter *_query_term_filter;
     const vespalib::stringref _buf;
     const search::fef::Properties *_highlightTerms;
 
 public:
     JuniperQueryAdapter(const JuniperQueryAdapter&) = delete;
     JuniperQueryAdapter operator= (const JuniperQueryAdapter&) = delete;
-    JuniperQueryAdapter(const IKeywordExtractor *kwExtractor, vespalib::stringref buf,
+    JuniperQueryAdapter(const IQueryTermFilter *query_term_filter, vespalib::stringref buf,
                         const search::fef::Properties *highlightTerms = nullptr);
     ~JuniperQueryAdapter() override;
     bool skipItem(search::SimpleQueryStackDumpIterator *iterator) const;

@@ -23,13 +23,13 @@ vespa_add_library(searchsummary_docsummary OBJECT
     juniper_dfw_term_visitor.cpp
     juniper_query_adapter.cpp
     juniperproperties.cpp
-    keyword_extractor.cpp
-    keyword_extractor_factory.cpp
-    legacy_keyword_extractor.cpp
-    legacy_keyword_extractor_factory.cpp
+    legacy_query_term_filter.cpp
+    legacy_query_term_filter_factory.cpp
     linguisticsannotation.cpp
     matched_elements_filter_dfw.cpp
     positionsdfw.cpp
+    query_term_filter.cpp
+    query_term_filter_factory.cpp
     rankfeaturesdfw.cpp
     res_config_entry.cpp
     resultclass.cpp

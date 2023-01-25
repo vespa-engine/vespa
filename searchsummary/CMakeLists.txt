@@ -20,8 +20,8 @@ vespa_define_module(
     src/tests/docsummary/attribute_combiner
     src/tests/docsummary/attributedfw
     src/tests/docsummary/document_id_dfw
-    src/tests/docsummary/keyword_extractor_factory
     src/tests/docsummary/matched_elements_filter
+    src/tests/docsummary/query_term_filter_factory
     src/tests/docsummary/result_class
     src/tests/docsummary/slime_filler
     src/tests/docsummary/slime_filler_filter

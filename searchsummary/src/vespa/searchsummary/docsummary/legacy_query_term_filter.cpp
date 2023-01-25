@@ -1,6 +1,6 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include "legacy_keyword_extractor.h"
+#include "legacy_query_term_filter.h"
 #include "idocsumenvironment.h"
 #include <vespa/searchlib/parsequery/stackdumpiterator.h>
 #include <vespa/vespalib/stllike/hashtable.hpp>
@@ -17,37 +17,37 @@ bool useful(search::ParseItem::ItemCreator creator)
 }
 
 
-LegacyKeywordExtractor::LegacyKeywordExtractor()
-    : IKeywordExtractor(),
+LegacyQueryTermFilter::LegacyQueryTermFilter()
+    : IQueryTermFilter(),
       _legalPrefixes(),
       _legalIndexes()
 {
 }
 
 
-LegacyKeywordExtractor::~LegacyKeywordExtractor() = default;
+LegacyQueryTermFilter::~LegacyQueryTermFilter() = default;
 
 bool
-LegacyKeywordExtractor::isLegalIndexName(const char *idxName) const
+LegacyQueryTermFilter::isLegalIndexName(const char *idxName) const
 {
     return _legalIndexes.find(idxName) != _legalIndexes.end();
 }
 
-LegacyKeywordExtractor::IndexPrefix::IndexPrefix(const char *prefix) noexcept
+LegacyQueryTermFilter::IndexPrefix::IndexPrefix(const char *prefix) noexcept
     : _prefix(prefix)
 {
 }
 
-LegacyKeywordExtractor::IndexPrefix::~IndexPrefix() = default;
+LegacyQueryTermFilter::IndexPrefix::~IndexPrefix() = default;
 
 bool
-LegacyKeywordExtractor::IndexPrefix::Match(const char *idxName) const
+LegacyQueryTermFilter::IndexPrefix::Match(const char *idxName) const
 {
     return vespalib::starts_with(idxName, _prefix);
 }
 
 void
-LegacyKeywordExtractor::addLegalIndexSpec(const char *spec)
+LegacyQueryTermFilter::addLegalIndexSpec(const char *spec)
 {
     if (spec == nullptr)
         return;
@@ -85,7 +85,7 @@ LegacyKeywordExtractor::addLegalIndexSpec(const char *spec)
 
 
 vespalib::string
-LegacyKeywordExtractor::getLegalIndexSpec()
+LegacyQueryTermFilter::getLegalIndexSpec()
 {
     vespalib::string spec;
 
@@ -110,12 +110,12 @@ LegacyKeywordExtractor::getLegalIndexSpec()
 
 
 bool
-LegacyKeywordExtractor::isLegalIndex(vespalib::stringref idx) const
+LegacyQueryTermFilter::use_view(vespalib::stringref view) const
 {
     vespalib::string resolvedIdxName;
 
-    if ( ! idx.empty() ) {
-        resolvedIdxName = idx;
+    if ( ! view.empty() ) {
+        resolvedIdxName = view;
     } else {
         resolvedIdxName = "__defaultindex";
     }

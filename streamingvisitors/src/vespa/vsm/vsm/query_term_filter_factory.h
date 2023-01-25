@@ -2,7 +2,7 @@
 
 #pragma once
 
-#include <vespa/searchsummary/docsummary/i_keyword_extractor_factory.h>
+#include <vespa/searchsummary/docsummary/i_query_term_filter_factory.h>
 #include <vespa/vespalib/stllike/hash_map.h>
 #include <vespa/vespalib/stllike/hash_set.h>
 #include <vespa/vsm/config/config-vsmfields.h>
@@ -11,12 +11,12 @@
 namespace vsm {
 
 /*
- * Class for creating an instance of IKeywordExtractor for streaming search.
+ * Class for creating an instance of IQueryTermFilter for streaming search.
  *
  * vsm summary fields are treated as document fields by the summary framework
  * in the searchsummary module, cf. IDocsumStoreDocument.
  */
-class KeywordExtractorFactory : public search::docsummary::IKeywordExtractorFactory
+class QueryTermFilterFactory : public search::docsummary::IQueryTermFilterFactory
 {
 public:
     using VsmfieldsConfig = vespa::config::search::vsm::VsmfieldsConfig;
@@ -24,16 +24,16 @@ public:
 private:
     using StringSet = vespalib::hash_set<vespalib::string>;
     using StringSetMap = vespalib::hash_map<vespalib::string, StringSet>;
-    StringSetMap _index_map; // document field    -> indexes
+    StringSetMap _view_map;  // document field    -> views
     StringSetMap _field_map; // vsm summary field -> document fields
-    void populate_index_map(VsmfieldsConfig& vsm_fields_config);
+    void populate_view_map(VsmfieldsConfig& vsm_fields_config);
     void populate_field_map(VsmsummaryConfig& vsm_summary_config);
-    void populate_indexes(StringSet& indexes, const vespalib::string& field) const;
+    void populate_views(StringSet& views, const vespalib::string& field) const;
 public:
-    KeywordExtractorFactory(VsmfieldsConfig& vsm_fields_config,
+    QueryTermFilterFactory(VsmfieldsConfig& vsm_fields_config,
                             VsmsummaryConfig& vsm_summary_config);
-    ~KeywordExtractorFactory() override;
-    std::shared_ptr<const search::docsummary::IKeywordExtractor> make(vespalib::stringref input_field) const override;
+    ~QueryTermFilterFactory() override;
+    std::shared_ptr<const search::docsummary::IQueryTermFilter> make(vespalib::stringref input_field) const override;
 };
 
 }

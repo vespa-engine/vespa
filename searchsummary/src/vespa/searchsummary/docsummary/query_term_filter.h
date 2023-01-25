@@ -2,23 +2,23 @@
 
 #pragma once
 
-#include "i_keyword_extractor.h"
+#include "i_query_term_filter.h"
 #include <vespa/vespalib/stllike/hash_set.h>
 
 namespace search::docsummary {
 
 /*
- * Class for checking if query term index name indicates that
+ * Class for checking if query term view indicates that
  * related query term is useful from the perspective of juniper.
  */
-class KeywordExtractor : public IKeywordExtractor
+class QueryTermFilter : public IQueryTermFilter
 {
     using StringSet = vespalib::hash_set<vespalib::string>;
-    StringSet _indexes;
+    StringSet _views;
 public:
-    KeywordExtractor(StringSet indexes);
-    ~KeywordExtractor() override;
-    bool isLegalIndex(vespalib::stringref idx) const override;
+    QueryTermFilter(StringSet views);
+    ~QueryTermFilter() override;
+    bool use_view(vespalib::stringref view) const override;
 };
 
 }
