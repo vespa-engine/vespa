@@ -7,7 +7,7 @@
 namespace search::docsummary {
 
 /*
- * Interface class for checking if query term index name indicates that
+ * Interface class for checking if query term view indicates that
  * related query term is useful from the perspective of juniper.
  */
 class IQueryTermFilter
