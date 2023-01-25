@@ -311,6 +311,13 @@ public class NodeResources {
                                  this.gpuResources.plus(other.gpuResources));
     }
 
+    public NodeResources multipliedBy(double factor) {
+        return this.withVcpu(vcpu * factor)
+                   .withMemoryGb(memoryGb * factor)
+                   .withDiskGb(diskGb * factor)
+                   .withBandwidthGbps(bandwidthGbps * factor);
+    }
+
     private boolean isInterchangeableWith(NodeResources other) {
         ensureSpecified();
         other.ensureSpecified();
