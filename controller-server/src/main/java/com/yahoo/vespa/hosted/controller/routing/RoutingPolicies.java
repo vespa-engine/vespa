@@ -229,7 +229,7 @@ public class RoutingPolicies {
         for (var policy : policies) {
             if (policy.dnsZone().isEmpty() && policy.canonicalName().isPresent()) continue;
             if (controller.zoneRegistry().routingMethod(policy.id().zone()) != RoutingMethod.exclusive) continue;
-            Endpoint endpoint = policy.regionEndpointIn(controller.system(), RoutingMethod.exclusive, controller.zoneRegistry());
+            Endpoint endpoint = policy.regionEndpointIn(controller.system(), RoutingMethod.exclusive);
             var zonePolicy = db.readZoneRoutingPolicy(policy.id().zone());
             long weight = 1;
             if (isConfiguredOut(zonePolicy, policy, inactiveZones)) {
@@ -376,7 +376,7 @@ public class RoutingPolicies {
 
     /** Update zone DNS record for given policy */
     private void updateZoneDnsOf(RoutingPolicy policy, LoadBalancerAllocation allocation) {
-        for (var endpoint : policy.zoneEndpointsIn(controller.system(), RoutingMethod.exclusive, controller.zoneRegistry())) {
+        for (var endpoint : policy.zoneEndpointsIn(controller.system(), RoutingMethod.exclusive)) {
             var name = RecordName.from(endpoint.dnsName());
             var record = policy.canonicalName().isPresent() ?
                     new Record(Record.Type.CNAME, name, RecordData.fqdn(policy.canonicalName().get().value())) :
@@ -429,7 +429,7 @@ public class RoutingPolicies {
         RoutingPolicyList removable = instancePolicies.deployment(allocation.deployment)
                                                       .not().matching(policy -> activeIds.contains(policy.id()));
         for (var policy : removable) {
-            for (var endpoint : policy.zoneEndpointsIn(controller.system(), RoutingMethod.exclusive, controller.zoneRegistry())) {
+            for (var endpoint : policy.zoneEndpointsIn(controller.system(), RoutingMethod.exclusive)) {
                 nameServiceForwarderIn(allocation.deployment.zoneId()).removeRecords(Record.Type.CNAME,
                                                                                      RecordName.from(endpoint.dnsName()),
                                                                                      Priority.normal,

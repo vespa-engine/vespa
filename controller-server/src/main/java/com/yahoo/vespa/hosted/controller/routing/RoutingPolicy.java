@@ -94,14 +94,14 @@ public record RoutingPolicy(RoutingPolicyId id,
     }
 
     /** Returns the zone endpoints of this */
-    public List<Endpoint> zoneEndpointsIn(SystemName system, RoutingMethod routingMethod, ZoneRegistry zoneRegistry) {
+    public List<Endpoint> zoneEndpointsIn(SystemName system, RoutingMethod routingMethod) {
         DeploymentId deployment = new DeploymentId(id.owner(), id.zone());
-        return List.of(endpoint(routingMethod, zoneRegistry).target(id.cluster(), deployment).in(system));
+        return List.of(endpoint(routingMethod).target(id.cluster(), deployment).in(system));
     }
 
     /** Returns the region endpoint of this */
-    public Endpoint regionEndpointIn(SystemName system, RoutingMethod routingMethod, ZoneRegistry zoneRegistry) {
-        return endpoint(routingMethod, zoneRegistry).targetRegion(id.cluster(), id.zone()).in(system);
+    public Endpoint regionEndpointIn(SystemName system, RoutingMethod routingMethod) {
+        return endpoint(routingMethod).targetRegion(id.cluster(), id.zone()).in(system);
     }
 
     @Override
@@ -125,7 +125,7 @@ public record RoutingPolicy(RoutingPolicyId id,
                            id.zone().value());
     }
 
-    private Endpoint.EndpointBuilder endpoint(RoutingMethod routingMethod, ZoneRegistry zones) {
+    private Endpoint.EndpointBuilder endpoint(RoutingMethod routingMethod) {
         return Endpoint.of(id.owner())
                        .on(Port.fromRoutingMethod(routingMethod))
                        .routingMethod(routingMethod);

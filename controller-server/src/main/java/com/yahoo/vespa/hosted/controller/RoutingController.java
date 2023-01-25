@@ -114,8 +114,8 @@ public class RoutingController {
         for (var policy : routingPolicies.read(deployment)) {
             if (!policy.status().isActive()) continue;
             RoutingMethod routingMethod = controller.zoneRegistry().routingMethod(policy.id().zone());
-            endpoints.addAll(policy.zoneEndpointsIn(controller.system(), routingMethod, controller.zoneRegistry()));
-            endpoints.add(policy.regionEndpointIn(controller.system(), routingMethod, controller.zoneRegistry()));
+            endpoints.addAll(policy.zoneEndpointsIn(controller.system(), routingMethod));
+            endpoints.add(policy.regionEndpointIn(controller.system(), routingMethod));
         }
         return EndpointList.copyOf(endpoints);
     }
