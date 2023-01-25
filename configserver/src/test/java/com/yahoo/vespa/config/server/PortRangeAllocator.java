@@ -5,9 +5,10 @@ import com.google.common.collect.ContiguousSet;
 import com.google.common.collect.DiscreteDomain;
 import com.google.common.collect.Range;
 
+import java.util.ArrayDeque;
+import java.util.Deque;
 import java.util.HashSet;
 import java.util.Set;
-import java.util.Stack;
 
 /**
  * Allocates port ranges for all configserver tests.
@@ -28,7 +29,7 @@ public class PortRangeAllocator {
 
     private static class PortRange {
         private final Set<Integer> takenPorts = new HashSet<>();
-        private final Stack<Integer> freePorts = new Stack<>();
+        private final Deque<Integer> freePorts = new ArrayDeque<>();
         private static final int first = 18651;
         private static final int last = 18899; // see: factory/doc/port-ranges
 

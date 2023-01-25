@@ -10,12 +10,13 @@ import org.apache.hc.client5.http.impl.classic.BasicHttpClientResponseHandler;
 import org.apache.hc.client5.http.impl.classic.CloseableHttpClient;
 
 import java.io.IOException;
+import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Deque;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Stack;
 
 /**
  * Tool to verify that configs across multiple config servers are the same.
@@ -42,17 +43,16 @@ public class ConfigVerification {
         }
     }
 
-    private static Map<String, Stack<String>> listConfigs(List<String> urls, CloseableHttpClient httpClient) throws IOException {
+    private static Map<String, Deque<String>> listConfigs(List<String> urls, CloseableHttpClient httpClient) throws IOException {
         Map<String, String> outputs = performRequests(urls, httpClient);
 
-        Map<String, Stack<String>> recurseMappings = new LinkedHashMap<>();
+        Map<String, Deque<String>> recurseMappings = new LinkedHashMap<>();
         for (Map.Entry<String, String> entry : outputs.entrySet()) {
             Slime slime = SlimeUtils.jsonToSlime(entry.getValue());
             final List<String> list = new ArrayList<>();
             slime.get().field("configs").traverse((ArrayTraverser) (idx, inspector) -> list.add(inspector.asString()));
-            Stack<String> stack = new Stack<>();
             Collections.sort(list);
-            stack.addAll(list);
+            Deque<String> stack = new ArrayDeque<>(list);
             recurseMappings.put(entry.getKey(), stack);
         }
         return recurseMappings;
@@ -66,10 +66,10 @@ public class ConfigVerification {
         return outputs;
     }
 
-    private static int compareConfigs(Map<String, Stack<String>> mappings, CloseableHttpClient httpClient) throws IOException {
+    private static int compareConfigs(Map<String, Deque<String>> mappings, CloseableHttpClient httpClient) throws IOException {
         for (int n = 0; n < mappings.values().iterator().next().size(); n++) {
             List<String> recurseUrls = new ArrayList<>();
-            for (Map.Entry<String, Stack<String>> entry : mappings.entrySet()) {
+            for (Map.Entry<String, Deque<String>> entry : mappings.entrySet()) {
                 recurseUrls.add(entry.getValue().pop());
             }
             if ( ! equalOutputs(performRequests(recurseUrls, httpClient)))

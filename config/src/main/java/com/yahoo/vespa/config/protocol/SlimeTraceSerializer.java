@@ -5,8 +5,9 @@ import com.yahoo.slime.Cursor;
 import com.yahoo.yolean.trace.TraceNode;
 import com.yahoo.yolean.trace.TraceVisitor;
 
+import java.util.ArrayDeque;
+import java.util.Deque;
 import java.util.Iterator;
-import java.util.Stack;
 
 /**
  * Serialize a {@link TraceNode} to {@link com.yahoo.slime.Slime}.
@@ -17,7 +18,7 @@ public class SlimeTraceSerializer extends TraceVisitor {
     static final String TIMESTAMP = "timestamp";
     static final String PAYLOAD = "payload";
     static final String CHILDREN = "children";
-    final Stack<Cursor> cursors = new Stack<>();
+    final Deque<Cursor> cursors = new ArrayDeque<>();
 
     public SlimeTraceSerializer(Cursor cursor) {
         cursors.push(cursor);
