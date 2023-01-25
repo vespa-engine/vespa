@@ -7,15 +7,13 @@ options {
 }
 
 @header {
-  import java.util.Stack;
+  import java.util.Deque;
+  import java.util.ArrayDeque;
   import com.yahoo.search.yql.*;
 }
 
 @parser::members {
-	protected static class expression_scope {
-        boolean in_select;
-    }
-    protected Stack<expression_scope> expression_stack = new Stack();    
+    protected Deque<Boolean> expression_stack = new ArrayDeque<>();
 }
 
 // tokens
@@ -319,8 +317,7 @@ argument[boolean in_select]
 
 expression [boolean select]
 @init {
-	expression_stack.push(new expression_scope());
-    expression_stack.peek().in_select = select;
+	expression_stack.push(select);
 }
 @after {
 	expression_stack.pop();	
@@ -360,7 +357,7 @@ equality_expression
 	;
 
 in_not_in_target
-    : {expression_stack.peek().in_select}? LPAREN select_statement RPAREN
+    : {expression_stack.peek()}? LPAREN select_statement RPAREN
     | literal_list
     ;
 
@@ -407,7 +404,7 @@ unary_expression
 	
 dereferenced_expression
 @init{
-	boolean	in_select = expression_stack.peek().in_select;	
+	boolean	in_select = expression_stack.peek();
 }
 	:	 primary_expression
 	     (
@@ -425,7 +422,7 @@ propertyref
 
 primary_expression
 @init {
-    boolean in_select = expression_stack.peek().in_select;
+    boolean in_select = expression_stack.peek();
 }
 	: call_expression[in_select]
 	| fieldref
