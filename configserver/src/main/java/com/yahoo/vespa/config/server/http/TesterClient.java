@@ -23,7 +23,7 @@ import java.util.logging.Logger;
  */
 public class TesterClient {
 
-    private final CloseableHttpClient httpClient = VespaHttpClientBuilder.create().build();
+    private final CloseableHttpClient httpClient = VespaHttpClientBuilder.custom().buildClient();
     private static final Logger logger = Logger.getLogger(TesterClient.class.getName());
 
     public HttpResponse getStatus(String testerHostname, int port) {
@@ -64,6 +64,7 @@ public class TesterClient {
         return execute(new HttpGet(testerUri), "Failed to get test report");
     }
 
+    @SuppressWarnings("deprecation")
     private HttpResponse execute(HttpUriRequest request, String messageIfRequestFails) {
         logger.log(Level.FINE, () -> "Sending request to tester container " + request.getRequestUri());
         try {

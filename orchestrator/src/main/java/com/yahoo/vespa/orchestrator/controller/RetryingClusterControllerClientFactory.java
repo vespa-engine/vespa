@@ -8,6 +8,7 @@ import com.yahoo.component.annotation.Inject;
 import com.yahoo.component.AbstractComponent;
 import com.yahoo.vespa.applicationmodel.HostName;
 import org.apache.hc.core5.http.message.BasicHeader;
+import org.apache.hc.core5.util.Timeout;
 
 import java.io.IOException;
 import java.util.List;
@@ -25,10 +26,13 @@ public class RetryingClusterControllerClientFactory extends AbstractComponent im
 
     @Inject
     public RetryingClusterControllerClientFactory() {
-        this(AbstractHttpClient.wrapping(VespaHttpClientBuilder.create()
-                                                               .setUserAgent("orchestrator-cluster-controller-client")
-                                                               .setDefaultHeaders(List.of(new BasicHeader("Accept", "application/json")))
-                                                               .build()));
+        this(AbstractHttpClient.wrapping(VespaHttpClientBuilder
+                .custom()
+                .connectTimeout(Timeout.ofSeconds(5))
+                .apacheBuilder()
+                .setUserAgent("orchestrator-cluster-controller-client")
+                .setDefaultHeaders(List.of(new BasicHeader("Accept", "application/json")))
+                .build()));
     }
 
     RetryingClusterControllerClientFactory(HttpClient client) {

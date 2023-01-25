@@ -214,7 +214,7 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
     public static class Builder {
         private TenantRepository tenantRepository;
         private Optional<Provisioner> hostProvisioner;
-        private HttpProxy httpProxy = new HttpProxy(new SimpleHttpFetcher());
+        private HttpProxy httpProxy = new HttpProxy(new SimpleHttpFetcher(Duration.ofSeconds(30)));
         private Clock clock = Clock.systemUTC();
         private ConfigserverConfig configserverConfig = new ConfigserverConfig.Builder().build();
         private Orchestrator orchestrator;

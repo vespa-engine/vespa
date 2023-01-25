@@ -36,7 +36,6 @@ import java.util.logging.Logger;
 
 import static java.util.Objects.requireNonNull;
 import static java.util.logging.Level.FINE;
-import static java.util.logging.Level.WARNING;
 
 /**
  * @author jonmv
@@ -48,6 +47,7 @@ public abstract class AbstractHttpClient implements HttpClient {
     public static HttpClient wrapping(CloseableHttpClient client) {
         return new AbstractHttpClient() {
             @Override
+            @SuppressWarnings("deprecation")
             protected ClassicHttpResponse execute(ClassicHttpRequest request, HttpClientContext context) throws IOException {
                 return client.execute(request, context);
             }
@@ -121,7 +121,6 @@ public abstract class AbstractHttpClient implements HttpClient {
             Optional<Duration> remaining = builder.deadline.timeLeftOrThrow();
             if (remaining.isPresent()) {
                 config = RequestConfig.copy(config)
-                                      .setConnectTimeout(min(config.getConnectTimeout(), remaining.get()))
                                       .setConnectionRequestTimeout(min(config.getConnectionRequestTimeout(), remaining.get()))
                                       .setResponseTimeout(min(config.getResponseTimeout(), remaining.get()))
                                       .build();
