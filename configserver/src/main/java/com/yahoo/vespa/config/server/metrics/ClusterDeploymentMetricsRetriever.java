@@ -126,7 +126,7 @@ public class ClusterDeploymentMetricsRetriever {
         Supplier<DeploymentMetricsAggregator> aggregator = () -> clusterMetricsMap.computeIfAbsent(clusterInfo, c -> new DeploymentMetricsAggregator());
 
         switch (serviceName) {
-            case VESPA_CONTAINER -> {
+            case VESPA_CONTAINER:
                 optionalDouble(values.field("query_latency.sum")).ifPresent(qlSum ->
                         aggregator.get()
                                 .addContainerLatency(qlSum, values.field("query_latency.count").asDouble()));
