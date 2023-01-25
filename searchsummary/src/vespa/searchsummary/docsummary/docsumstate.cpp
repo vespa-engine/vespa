@@ -12,6 +12,7 @@
 #include <vespa/searchlib/common/matching_elements.h>
 #include <vespa/searchlib/parsequery/parse.h>
 #include <vespa/searchlib/parsequery/stackdumpiterator.h>
+#include <vespa/vespalib/stllike/hash_map.hpp>
 #include <vespa/vespalib/util/issue.h>
 
 using search::common::GeoLocationParser;
@@ -19,6 +20,19 @@ using search::common::GeoLocationSpec;
 using vespalib::Issue;
 
 namespace search::docsummary {
+
+GetDocsumsState::DynTeaserState::DynTeaserState()
+    : _queries()
+{
+}
+
+GetDocsumsState::DynTeaserState::~DynTeaserState() = default;
+
+std::unique_ptr<juniper::QueryHandle>&
+GetDocsumsState::DynTeaserState::get_query(vespalib::stringref field)
+{
+    return _queries[field];
+}
 
 GetDocsumsState::GetDocsumsState(GetDocsumsStateCallback &callback)
     : _args(),
