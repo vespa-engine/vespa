@@ -7,7 +7,6 @@ vespa_install_script(src/common-env.sh common-env.sh libexec/vespa)
 vespa_install_script(src/start-vespa-base.sh start-vespa-base.sh libexec/vespa)
 vespa_install_script(src/stop-vespa-base.sh stop-vespa-base.sh libexec/vespa)
 vespa_install_script(src/vespa-stop-configserver.sh vespa-stop-configserver bin)
-vespa_install_script(src/vespa-stop-services.sh vespa-stop-services bin)
 
 configure_file(src/vespa.service.in src/vespa.service @ONLY)
 configure_file(src/vespa-configserver.service.in src/vespa-configserver.service @ONLY)
