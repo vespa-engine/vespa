@@ -100,17 +100,24 @@ TEST_F(KeywordExtractorFactoryTest, two_source_fields_for_summary_field_and_mult
     add_index("bar", {"bar"});
     add_index("baz", {"baz"});
     add_index("both", {"bar", "baz"});
+    add_index("default", {"baz"});
     add_summary_field("foo", {"bar", "baz"});
     EXPECT_FALSE(check_index("foo", "foo"));
     EXPECT_TRUE(check_index("both", "foo"));
     EXPECT_TRUE(check_index("bar", "foo"));
     EXPECT_TRUE(check_index("baz", "foo"));
+    EXPECT_TRUE(check_index("default", "foo"));
+    EXPECT_TRUE(check_index("", "foo"));
     EXPECT_TRUE(check_index("both", "bar"));
     EXPECT_TRUE(check_index("bar", "bar"));
     EXPECT_FALSE(check_index("baz", "bar"));
+    EXPECT_FALSE(check_index("default", "bar"));
+    EXPECT_FALSE(check_index("", "bar"));
     EXPECT_TRUE(check_index("both", "baz"));
     EXPECT_FALSE(check_index("bar", "baz"));
     EXPECT_TRUE(check_index("baz", "baz"));
+    EXPECT_TRUE(check_index("default", "baz"));
+    EXPECT_TRUE(check_index("", "baz"));
 }
 
 GTEST_MAIN_RUN_ALL_TESTS()
