@@ -71,7 +71,7 @@ public class VespaModelTester {
     }
 
     /** Adds some nodes with resources 1, 3, 10 */
-    public Hosts addHosts(int count) { return addHosts(InMemoryProvisioner.defaultResources, count); }
+    public Hosts addHosts(int count) { return addHosts(InMemoryProvisioner.defaultHostResources, count); }
 
     public Hosts addHosts(NodeResources resources, int count) {
         return addHosts(Optional.of(new Flavor(resources)), resources, count);
@@ -197,6 +197,7 @@ public class VespaModelTester {
                                                                       useMaxResources,
                                                                       alwaysReturnOneNode,
                                                                       false,
+                                                                      NodeResources.unspecified(),
                                                                       startIndexForClusters,
                                                                       retiredHostNames);
             provisioner.setEnvironment(zone.environment());
