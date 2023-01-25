@@ -304,6 +304,10 @@ readFieldInfo(nbostream& input, SerializableArray::EntryMap & field_info) {
     for (size_t i = 0; i < field_count; ++i) {
         const uint32_t id = getInt1_4Bytes(input);
         const uint32_t size = getInt2_4_8Bytes(input);
+        if (size_t(offset) + size > input.size()) [[unlikely]] {
+            throw DeserializeException(fmt("Field (id=%u, offset=%u, size=%u) extends beyond remaining buffer size (%zu)",
+                                           id, offset, size, input.size()), VESPA_STRLOC);
+        }
         field_info.emplace_back(id, size, offset);
         offset += size;
     }
@@ -344,25 +348,25 @@ void
 VespaDocumentDeserializer::readStructNoReset(StructFieldValue &value) {
     size_t data_size = readValue<uint32_t>(_stream);
 
-    CompressionConfig::Type compression_type = CompressionConfig::Type(readValue<uint8_t>(_stream));
+    const auto compression_type = CompressionConfig::Type(readValue<uint8_t>(_stream));
+    const bool is_compressed    = CompressionConfig::isCompressed(compression_type);
 
-    SerializableArray::EntryMap  field_info;
+    SerializableArray::EntryMap field_info;
     size_t uncompressed_size = 0;
-    if (CompressionConfig::isCompressed(compression_type)) {
+    if (is_compressed) {
         uncompressed_size = getInt2_4_8Bytes(_stream);
     }
     readFieldInfo(_stream, field_info);
 
-    if (CompressionConfig::isCompressed(compression_type)) {
-        if ((compression_type != CompressionConfig::LZ4)) {
-            throw DeserializeException("Unsupported compression type.", VESPA_STRLOC);
-        } else if (data_size > _stream.size()) {
-            throw DeserializeException("Invalid compressed struct data.", VESPA_STRLOC);
-        }
+    if (is_compressed && (compression_type != CompressionConfig::LZ4)) [[unlikely]] {
+        throw DeserializeException(fmt("Unsupported compression type: %u", static_cast<uint8_t>(compression_type)), VESPA_STRLOC);
     }
-
+    if (data_size > _stream.size()) [[unlikely]] {
+        throw DeserializeException(fmt("Struct size (%zu) is greater than remaining buffer size (%zu)",
+                                       data_size, _stream.size()), VESPA_STRLOC);
+    }
     if (data_size > 0) {
-        ByteBuffer buffer = CompressionConfig::isCompressed(compression_type)
+        ByteBuffer buffer = is_compressed
                             ? deCompress(compression_type, uncompressed_size, ConstBufferRef(_stream.peek(), data_size))
                             : (_stream.isLongLivedBuffer()
                                 ? ByteBuffer(_stream.peek(), data_size)
