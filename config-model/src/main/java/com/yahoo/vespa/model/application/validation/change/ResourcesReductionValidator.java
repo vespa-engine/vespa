@@ -31,8 +31,9 @@ public class ResourcesReductionValidator implements ChangeValidator {
                           VespaModel currentModel,
                           VespaModel nextModel,
                           DeployState deployState) {
-        ClusterResources current = withNodeResources(currentModel.provisioned().all().get(clusterId).maxResources(), clusterId, currentModel);
-        ClusterResources next = withNodeResources(nextModel.provisioned().all().get(clusterId).maxResources(), clusterId, nextModel);
+        ClusterResources current = clusterResources(clusterId, currentModel);
+        ClusterResources next = clusterResources(clusterId, nextModel);
+        if (current == null || next == null) return; // No request recording - test
         if (current.nodeResources().isUnspecified() || next.nodeResources().isUnspecified()) {
             // Self-hosted - unspecified resources; compare node count
             int currentNodes = current.nodes();
@@ -67,7 +68,10 @@ public class ResourcesReductionValidator implements ChangeValidator {
      * the current node resources of the cluster, as that is what unspecified resources actually resolved to.
      * This will always yield specified node resources on hosted instances and never on self-hosted instances.
      */
-    private ClusterResources withNodeResources(ClusterResources resources, ClusterSpec.Id id, VespaModel model) {
+    private ClusterResources clusterResources(ClusterSpec.Id id, VespaModel model) {
+        if ( ! model.provisioned().all().containsKey(id)) return null;
+
+        ClusterResources resources = model.provisioned().all().get(id).maxResources();
         if ( ! resources.nodeResources().isUnspecified()) return resources;
 
         var containerCluster = model.getContainerClusters().get(id.value());
