@@ -9,7 +9,7 @@ namespace search { class MatchingElementsFields; }
 namespace search::docsummary {
 
 class IDocsumEnvironment;
-class IKeywordExtractorFactory;
+class IQueryTermFilterFactory;
 
 /*
  * Factory class for creating docsum field writers.
@@ -18,13 +18,13 @@ class DocsumFieldWriterFactory : public IDocsumFieldWriterFactory
 {
     bool _use_v8_geo_positions;
     const IDocsumEnvironment& _env;
-    const IKeywordExtractorFactory& _keyword_extractor_factory;
+    const IQueryTermFilterFactory& _query_term_filter_factory;
 protected:
     std::shared_ptr<MatchingElementsFields> _matching_elems_fields;
     const IDocsumEnvironment& getEnvironment() const noexcept { return _env; }
     bool has_attribute_manager() const noexcept;
 public:
-    DocsumFieldWriterFactory(bool use_v8_geo_positions, const IDocsumEnvironment& env, const IKeywordExtractorFactory& keyword_extractor_factory);
+    DocsumFieldWriterFactory(bool use_v8_geo_positions, const IDocsumEnvironment& env, const IQueryTermFilterFactory& query_term_filter_factory);
     ~DocsumFieldWriterFactory() override;
     std::unique_ptr<DocsumFieldWriter> create_docsum_field_writer(const vespalib::string& field_name,
                                                                   const vespalib::string& command,

@@ -13,8 +13,8 @@ namespace vespalib::slime { struct Inserter; }
 
 namespace search::docsummary {
 
-class IKeywordExtractor;
-class IKeywordExtractorFactory;
+class IQueryTermFilter;
+class IQueryTermFilterFactory;
 
 class JuniperDFW : public DocsumFieldWriter
 {
@@ -22,7 +22,7 @@ public:
     virtual bool Init(
             const char *fieldName,
             const vespalib::string& inputField,
-            const IKeywordExtractorFactory& keyword_extractor_factory);
+            const IQueryTermFilterFactory& query_term_filter_factory);
 protected:
     explicit JuniperDFW(const juniper::Juniper * juniper);
     ~JuniperDFW() override;
@@ -30,7 +30,7 @@ protected:
     vespalib::string                 _input_field_name;
     std::unique_ptr<juniper::Config> _juniperConfig;
     const juniper::Juniper          *_juniper;
-    std::shared_ptr<const IKeywordExtractor> _keyword_extractor;
+    std::shared_ptr<const IQueryTermFilter> _query_term_filter;
 private:
     bool isGenerated() const override { return false; }
     JuniperDFW(const JuniperDFW &);
@@ -43,7 +43,7 @@ class JuniperTeaserDFW : public JuniperDFW
 public:
     bool Init(const char *fieldName,
               const vespalib::string& inputField,
-              const IKeywordExtractorFactory& keyword_extractor_factory) override;
+              const IQueryTermFilterFactory& query_term_filter_factory) override;
 protected:
     explicit JuniperTeaserDFW(const juniper::Juniper * juniper) : JuniperDFW(juniper) { }
 };

@@ -26,7 +26,7 @@ vespa_define_module(
     src/tests/charbuffer
     src/tests/docsum
     src/tests/document
-    src/tests/keyword_extractor_factory
+    src/tests/query_term_filter_factory
     src/tests/searcher
     src/tests/textutil
 )

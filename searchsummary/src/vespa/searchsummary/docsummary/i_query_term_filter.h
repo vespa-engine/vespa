@@ -10,12 +10,12 @@ namespace search::docsummary {
  * Interface class for checking if query term index name indicates that
  * related query term is useful from the perspective of juniper.
  */
-class IKeywordExtractor
+class IQueryTermFilter
 {
 public:
-    virtual ~IKeywordExtractor() = default;
+    virtual ~IQueryTermFilter() = default;
 
-    virtual bool isLegalIndex(vespalib::stringref idx) const = 0;
+    virtual bool use_view(vespalib::stringref view) const = 0;
 };
 
 }

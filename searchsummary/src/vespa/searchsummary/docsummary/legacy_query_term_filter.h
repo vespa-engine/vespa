@@ -2,12 +2,12 @@
 
 #pragma once
 
-#include "i_keyword_extractor.h"
+#include "i_query_term_filter.h"
 #include <vespa/vespalib/stllike/hash_set.h>
 
 namespace search::docsummary {
 
-class LegacyKeywordExtractor : public IKeywordExtractor
+class LegacyQueryTermFilter : public IQueryTermFilter
 {
 public:
 
@@ -44,10 +44,10 @@ private:
     }
     bool isLegalIndexName(const char *idxName) const;
 public:
-    LegacyKeywordExtractor();
-    LegacyKeywordExtractor(const LegacyKeywordExtractor &) = delete;
-    LegacyKeywordExtractor& operator=(const LegacyKeywordExtractor &) = delete;
-    ~LegacyKeywordExtractor();
+    LegacyQueryTermFilter();
+    LegacyQueryTermFilter(const LegacyQueryTermFilter &) = delete;
+    LegacyQueryTermFilter& operator=(const LegacyQueryTermFilter &) = delete;
+    ~LegacyQueryTermFilter();
 
 
     /**
@@ -78,7 +78,7 @@ public:
      *
      * @return true if the given index name is legal.
      **/
-    bool isLegalIndex(vespalib::stringref idx) const override;
+    bool use_view(vespalib::stringref idx) const override;
 };
 
 }
