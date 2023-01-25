@@ -62,12 +62,17 @@ TEST_F(KeywordExtractorFactoryTest, field_set_is_checked)
 {
     add_field_set("ab", {"cd", "de"});
     add_field_set("gh", {"cd"});
+    add_field_set("default", {"de"});
     EXPECT_TRUE(check_index("cd", "cd"));
     EXPECT_TRUE(check_index("ab", "cd"));
     EXPECT_TRUE(check_index("gh", "cd"));
+    EXPECT_FALSE(check_index("default", "cd"));
+    EXPECT_FALSE(check_index("", "cd"));
     EXPECT_TRUE(check_index("de", "de"));
     EXPECT_TRUE(check_index("ab", "de"));
     EXPECT_FALSE(check_index("gh", "de"));
+    EXPECT_TRUE(check_index("default", "de"));
+    EXPECT_TRUE(check_index("", "de"));
 }
 
 GTEST_MAIN_RUN_ALL_TESTS()

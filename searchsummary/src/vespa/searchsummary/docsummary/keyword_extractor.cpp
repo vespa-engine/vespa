@@ -9,6 +9,9 @@ KeywordExtractor::KeywordExtractor(StringSet indexes)
     : IKeywordExtractor(),
       _indexes(std::move(indexes))
 {
+    if (_indexes.contains("default")) {
+        _indexes.insert("");
+    }
 }
 
 KeywordExtractor::~KeywordExtractor() = default;
