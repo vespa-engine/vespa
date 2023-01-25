@@ -1,10 +1,11 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.indexinglanguage.expressions;
 
+import java.util.ArrayDeque;
+import java.util.Deque;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Objects;
-import java.util.Stack;
 
 /**
  * @author Simon Thoresen Hult
@@ -20,7 +21,7 @@ public class MathResolver {
     }
 
     public Expression resolve() {
-        Stack<Item> stack = new Stack<>();
+        Deque<Item> stack = new ArrayDeque<>();
         stack.push(items.remove(0));
         while (!items.isEmpty()) {
             Item item = items.remove(0);
@@ -32,10 +33,10 @@ public class MathResolver {
         while (stack.size() > 1) {
             pop(stack);
         }
-        return stack.remove(0).exp;
+        return stack.pop().exp;
     }
 
-    private void pop(Stack<Item> stack) {
+    private void pop(Deque<Item> stack) {
         Item rhs = stack.pop();
         Item lhs = stack.peek();
         lhs.exp = new ArithmeticExpression(lhs.exp, rhs.op, rhs.exp);
