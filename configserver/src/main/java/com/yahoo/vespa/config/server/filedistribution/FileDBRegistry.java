@@ -8,6 +8,7 @@ import com.yahoo.net.HostName;
 import com.yahoo.path.Path;
 import com.yahoo.text.Utf8;
 import net.jpountz.xxhash.XXHashFactory;
+
 import java.io.BufferedReader;
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -21,6 +22,8 @@ import java.util.Optional;
 import java.util.regex.Pattern;
 
 /**
+ * File registry for one application package
+ *
  * @author Tony Vaagenes
  */
 public class FileDBRegistry implements FileRegistry {

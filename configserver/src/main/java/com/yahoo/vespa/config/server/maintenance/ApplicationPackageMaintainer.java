@@ -1,7 +1,6 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.config.server.maintenance;
 
-import com.yahoo.cloud.config.ConfigserverConfig;
 import com.yahoo.config.FileReference;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.subscription.ConfigSourceSet;
@@ -28,13 +27,13 @@ import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
 import static com.yahoo.vespa.config.server.filedistribution.FileDistributionUtil.fileReferenceExistsOnDisk;
-import static com.yahoo.vespa.config.server.filedistribution.FileDistributionUtil.getOtherConfigServersInCluster;
 import static com.yahoo.vespa.filedistribution.FileReferenceData.CompressionType;
 
 /**
  * Verifies that all active sessions has an application package on local disk.
  * If not, the package is downloaded with file distribution. This can happen e.g.
- * if a config server is down when the application is deployed.
+ * if a config server is down when the application is deployed. This maintainer should only be run
+ * if there is more than 1 config server
  *
  * @author gjoranv
  */
@@ -44,19 +43,18 @@ public class ApplicationPackageMaintainer extends ConfigServerMaintainer {
 
     private final ApplicationRepository applicationRepository;
     private final File downloadDirectory;
-    private final ConfigserverConfig configserverConfig;
     private final Supervisor supervisor = new Supervisor(new Transport("filedistribution-pool")).setDropEmptyBuffers(true);
     private final FileDownloader fileDownloader;
 
     ApplicationPackageMaintainer(ApplicationRepository applicationRepository,
                                  Curator curator,
                                  Duration interval,
-                                 FlagSource flagSource) {
+                                 FlagSource flagSource,
+                                 List<String> otherConfigServersInCluster) {
         super(applicationRepository, curator, flagSource, applicationRepository.clock(), interval, false);
         this.applicationRepository = applicationRepository;
-        this.configserverConfig = applicationRepository.configserverConfig();
-        this.downloadDirectory = new File(Defaults.getDefaults().underVespaHome(configserverConfig.fileReferencesDir()));
-        this.fileDownloader = createFileDownloader(configserverConfig,
+        this.downloadDirectory = new File(Defaults.getDefaults().underVespaHome(applicationRepository.configserverConfig().fileReferencesDir()));
+        this.fileDownloader = createFileDownloader(otherConfigServersInCluster,
                                                    downloadDirectory,
                                                    supervisor,
                                                    Flags.FILE_DISTRIBUTION_ACCEPTED_COMPRESSION_TYPES.bindTo(flagSource).value());
@@ -64,8 +62,6 @@ public class ApplicationPackageMaintainer extends ConfigServerMaintainer {
 
     @Override
     protected double maintain() {
-        if (getOtherConfigServersInCluster(configserverConfig).isEmpty()) return 1.0; // Nothing to do
-
         int attempts = 0;
         int failures = 0;
 
@@ -102,16 +98,12 @@ public class ApplicationPackageMaintainer extends ConfigServerMaintainer {
         return asSuccessFactor(attempts, failures);
     }
 
-    private static FileDownloader createFileDownloader(ConfigserverConfig configserverConfig,
+    private static FileDownloader createFileDownloader(List<String> otherConfigServersInCluster,
                                                        File downloadDirectory,
                                                        Supervisor supervisor,
                                                        List<String> flagValues) {
-        List<String> otherConfigServersInCluster = getOtherConfigServersInCluster(configserverConfig);
         ConfigSourceSet configSourceSet = new ConfigSourceSet(otherConfigServersInCluster);
-
-        ConnectionPool connectionPool = (otherConfigServersInCluster.isEmpty())
-                ? FileDownloader.emptyConnectionPool()
-                : new FileDistributionConnectionPool(configSourceSet, supervisor);
+        ConnectionPool connectionPool = new FileDistributionConnectionPool(configSourceSet, supervisor);
         Set<CompressionType> acceptedCompressionTypes = flagValues.stream()
                                                                   .map(CompressionType::valueOf)
                                                                   .collect(Collectors.toSet());
