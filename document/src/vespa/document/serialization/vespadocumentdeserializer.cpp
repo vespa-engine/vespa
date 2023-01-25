@@ -294,19 +294,19 @@ namespace {
 
 using FieldInfo = SerializableArray::EntryMap;
 
-void readFieldInfo(nbostream& input, SerializableArray::EntryMap & field_info) __attribute__((noinline));
+void readFieldInfo(nbostream& input, SerializableArray::EntryMap & field_info, size_t max_buffer_extent) __attribute__((noinline));
 
 void
-readFieldInfo(nbostream& input, SerializableArray::EntryMap & field_info) {
+readFieldInfo(nbostream& input, SerializableArray::EntryMap & field_info, size_t max_buffer_extent) {
     size_t field_count = getInt1_4Bytes(input);
     field_info.reserve(field_count);
     uint32_t offset = 0;
     for (size_t i = 0; i < field_count; ++i) {
         const uint32_t id = getInt1_4Bytes(input);
         const uint32_t size = getInt2_4_8Bytes(input);
-        if (size_t(offset) + size > input.size()) [[unlikely]] {
-            throw DeserializeException(fmt("Field (id=%u, offset=%u, size=%u) extends beyond remaining buffer size (%zu)",
-                                           id, offset, size, input.size()), VESPA_STRLOC);
+        if (size_t(offset) + size > max_buffer_extent) [[unlikely]] {
+            throw DeserializeException(fmt("Field (id=%u, offset=%u, size=%u) extends beyond max buffer extent (%zu)",
+                                           id, offset, size, max_buffer_extent), VESPA_STRLOC);
         }
         field_info.emplace_back(id, size, offset);
         offset += size;
@@ -356,8 +356,6 @@ VespaDocumentDeserializer::readStructNoReset(StructFieldValue &value) {
     if (is_compressed) {
         uncompressed_size = getInt2_4_8Bytes(_stream);
     }
-    readFieldInfo(_stream, field_info);
-
     if (is_compressed && (compression_type != CompressionConfig::LZ4)) [[unlikely]] {
         throw DeserializeException(fmt("Unsupported compression type: %u", static_cast<uint8_t>(compression_type)), VESPA_STRLOC);
     }
@@ -365,6 +363,7 @@ VespaDocumentDeserializer::readStructNoReset(StructFieldValue &value) {
         throw DeserializeException(fmt("Struct size (%zu) is greater than remaining buffer size (%zu)",
                                        data_size, _stream.size()), VESPA_STRLOC);
     }
+    readFieldInfo(_stream, field_info, is_compressed ? uncompressed_size : data_size);
     if (data_size > 0) {
         ByteBuffer buffer = is_compressed
                             ? deCompress(compression_type, uncompressed_size, ConstBufferRef(_stream.peek(), data_size))
@@ -381,7 +380,9 @@ VespaDocumentDeserializer::readStructNoReset(StructFieldValue &value) {
             for (const auto & entry : tmp) {
                 try {
                     FieldValue::UP decoded = tmp.getValue(entry);
-                    value.setValue(entry, std::move(decoded));
+                    if (decoded) {
+                        value.setValue(entry, std::move(decoded));
+                    }
                 } catch (const vespalib::Exception & e) {
                     LOG(warning, "Failed decoding field '%s' in legacy bodyfield -> Skipping it: %s",
                                  entry.getName().data(), e.what());
