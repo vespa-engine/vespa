@@ -730,7 +730,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
         SearchChains searchChains = new DomSearchChainsBuilder()
                                             .build(deployState, containerCluster, producerSpec);
 
-        ContainerSearch containerSearch = new ContainerSearch(containerCluster, searchChains, new ContainerSearch.Options());
+        ContainerSearch containerSearch = new ContainerSearch(containerCluster, searchChains);
 
         applyApplicationPackageDirectoryConfigs(deployState.getApplicationPackage(), containerSearch);
         containerSearch.setQueryProfiles(deployState.getQueryProfiles());

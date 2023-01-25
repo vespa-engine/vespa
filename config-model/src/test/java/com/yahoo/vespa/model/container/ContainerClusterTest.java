@@ -41,7 +41,6 @@ import java.util.List;
 import java.util.Objects;
 import java.util.OptionalInt;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 import static com.yahoo.config.model.api.ApplicationClusterEndpoint.RoutingMethod.exclusive;
 import static com.yahoo.config.model.api.ApplicationClusterEndpoint.RoutingMethod.shared;
@@ -474,7 +473,7 @@ public class ContainerClusterTest {
         cluster.getConfig(bundleBuilder);
         List<String> installedBundles = bundleBuilder.build().bundlePaths();
 
-        expectedBundleNames.forEach(b -> assertTrue(installedBundles.stream().filter(p -> p.endsWith(b)).count() > 0));
+        expectedBundleNames.forEach(b -> assertTrue(installedBundles.stream().anyMatch(p -> p.endsWith(b))));
     }
 
     private static ApplicationContainerCluster newClusterWithSearch(MockRoot root) {
@@ -486,7 +485,7 @@ public class ContainerClusterTest {
         if (isCombinedCluster)
             cluster.setHostClusterId("test-content-cluster");
         cluster.setMemoryPercentage(memoryPercentage);
-        cluster.setSearch(new ContainerSearch(cluster, new SearchChains(cluster, "search-chain"), new ContainerSearch.Options()));
+        cluster.setSearch(new ContainerSearch(cluster, new SearchChains(cluster, "search-chain")));
         return cluster;
     }
 
