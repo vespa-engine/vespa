@@ -211,7 +211,7 @@ Fixture::initViewSet(ViewSet &views)
     auto matchView = std::make_shared<MatchView>(matchers, indexSearchable, attrMgr, _sessionMgr, metaStore, views._docIdLimit);
     views.searchView.set(SearchView::create
                                  (summaryMgr->createSummarySetup(SummaryConfig(),
-                                                                 JuniperrcConfig(), views.repo, attrMgr),
+                                                                 JuniperrcConfig(), views.repo, attrMgr, *schema),
                                   std::move(matchView)));
     views.feedView.set(
             make_shared<SearchableFeedView>(StoreOnlyFeedView::Context(summaryAdapter,
@@ -682,6 +682,33 @@ TEST("require that subdbs should change if relevant config changed")
     TEST_DO(assertSubDbsShouldChange(CCR().setOnnxModelsChanged(true)));
     TEST_DO(assertSubDbsShouldChange(CCR().setSchemaChanged(true)));
     TEST_DO(assertSubDbsShouldChange(CCR().set_alloc_config_changed(true)));
+}
+
+void
+assertSummaryManagerShouldNotChange(DocumentDBConfig::ComparisonResult result)
+{
+    ReconfigParams params(result);
+    EXPECT_FALSE(params.configHasChanged());
+    EXPECT_FALSE(params.shouldSummaryManagerChange());
+}
+
+void
+assertSummaryManagerShouldChange(DocumentDBConfig::ComparisonResult result)
+{
+    ReconfigParams params(result);
+    EXPECT_TRUE(params.configHasChanged());
+    EXPECT_TRUE(params.shouldSummaryManagerChange());
+}
+
+TEST("require that summary manager should change if relevant config changed")
+{
+    TEST_DO(assertSummaryManagerShouldNotChange(CCR()));
+    TEST_DO(assertSummaryManagerShouldChange(CCR().setSummaryChanged(true)));
+    TEST_DO(assertSummaryManagerShouldChange(CCR().setJuniperrcChanged(true)));
+    TEST_DO(assertSummaryManagerShouldChange(CCR().setDocumenttypesChanged(true)));
+    TEST_DO(assertSummaryManagerShouldChange(CCR().setDocumentTypeRepoChanged(true)));
+    TEST_DO(assertSummaryManagerShouldChange(CCR().setStoreChanged(true)));
+    TEST_DO(assertSummaryManagerShouldChange(CCR().setSchemaChanged(true)));
 }
 
 TEST_MAIN()

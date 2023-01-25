@@ -11,7 +11,8 @@ struct DummySummaryManager : public ISummaryManager
     createSummarySetup(const SummaryConfig &,
                        const JuniperrcConfig &,
                        const std::shared_ptr<const document::DocumentTypeRepo> &,
-                       const std::shared_ptr<search::IAttributeManager> &) override {
+                       const std::shared_ptr<search::IAttributeManager> &,
+                       const search::index::Schema&) override {
         return {};
     }
 };

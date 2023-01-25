@@ -203,7 +203,8 @@ SearchableDocSubDB::initViews(const DocumentDBConfig &configSnapshot)
                                               configSnapshot.getSummaryConfig(),
                                               configSnapshot.getJuniperrcConfig(),
                                               configSnapshot.getDocumentTypeRepoSP(),
-                                              attrMgr),
+                                              attrMgr,
+                                              *configSnapshot.getSchemaSP()),
                                       std::move(matchView)));
 
     auto attrWriter = std::make_shared<AttributeWriter>(attrMgr);

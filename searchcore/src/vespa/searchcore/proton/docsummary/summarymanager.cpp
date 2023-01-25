@@ -83,7 +83,8 @@ SummaryManager::SummarySetup::
 SummarySetup(const vespalib::string & baseDir, const SummaryConfig & summaryCfg,
              const JuniperrcConfig & juniperCfg,
              search::IAttributeManager::SP attributeMgr, search::IDocumentStore::SP docStore,
-             std::shared_ptr<const DocumentTypeRepo> repo)
+             std::shared_ptr<const DocumentTypeRepo> repo,
+             const search::index::Schema& schema)
     : _docsumWriter(),
       _wordFolder(std::make_unique<Fast_NormalizeWordFolder>()),
       _juniperProps(juniperCfg),
@@ -94,6 +95,7 @@ SummarySetup(const vespalib::string & baseDir, const SummaryConfig & summaryCfg,
 {
     _juniperConfig = std::make_unique<juniper::Juniper>(&_juniperProps, _wordFolder.get());
     auto resultConfig = std::make_unique<ResultConfig>();
+    (void) schema;
     std::unique_ptr<IKeywordExtractorFactory> keyword_extractor_factory = std::make_unique<LegacyKeywordExtractorFactory>(std::shared_ptr<IKeywordExtractor>());
     auto docsum_field_writer_factory = std::make_unique<DocsumFieldWriterFactory>(summaryCfg.usev8geopositions, *this, *keyword_extractor_factory);
     if (!resultConfig->readConfig(summaryCfg, make_string("SummaryManager(%s)", baseDir.c_str()).c_str(),
@@ -120,10 +122,11 @@ SummaryManager::SummarySetup::createDocsumStore()
 ISummaryManager::ISummarySetup::SP
 SummaryManager::createSummarySetup(const SummaryConfig & summaryCfg,
                                    const JuniperrcConfig & juniperCfg, const std::shared_ptr<const DocumentTypeRepo> &repo,
-                                   const search::IAttributeManager::SP &attributeMgr)
+                                   const search::IAttributeManager::SP &attributeMgr,
+                                   const search::index::Schema& schema)
 {
     return std::make_shared<SummarySetup>(_baseDir, summaryCfg,
-                                          juniperCfg, attributeMgr, _docStore, repo);
+                                          juniperCfg, attributeMgr, _docStore, repo, schema);
 }
 
 SummaryManager::SummaryManager(vespalib::Executor &shared_executor, const LogDocumentStore::Config & storeConfig,
