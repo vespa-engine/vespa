@@ -5,9 +5,7 @@ import com.yahoo.container.QrSearchersConfig;
 import com.yahoo.prelude.semantics.SemanticRulesConfig;
 import com.yahoo.search.config.IndexInfoConfig;
 import com.yahoo.search.config.SchemaInfoConfig;
-import com.yahoo.search.handler.observability.SearchStatusExtension;
 import com.yahoo.search.pagetemplates.PageTemplatesConfig;
-import com.yahoo.search.query.profile.compiled.CompiledQueryProfileRegistry;
 import com.yahoo.search.query.profile.config.QueryProfilesConfig;
 import com.yahoo.schema.derived.SchemaInfo;
 import com.yahoo.vespa.configdefinition.IlscriptsConfig;
@@ -20,7 +18,6 @@ import com.yahoo.vespa.model.search.IndexedSearchCluster;
 import com.yahoo.vespa.model.search.StreamingSearchCluster;
 
 import java.util.Collection;
-import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -41,24 +38,24 @@ public class ContainerSearch extends ContainerSubsystem<SearchChains>
     	PageTemplatesConfig.Producer,
         SchemaInfoConfig.Producer {
 
-    public static final String QUERY_PROFILE_REGISTRY_CLASS = CompiledQueryProfileRegistry.class.getName();
+    public static final String QUERY_PROFILE_REGISTRY_CLASS = "com.yahoo.search.query.profile.compiled.CompiledQueryProfileRegistry";
+    private static final String SEARCH_STATUS_EXTENSION_CLASS = "com.yahoo.search.handler.observability.SearchStatusExtension";
+    private static final String SCHEMA_INFO_CLASS = "com.yahoo.search.schema.SchemaInfo";
 
     private final ApplicationContainerCluster owningCluster;
     private final List<SearchCluster> searchClusters = new LinkedList<>();
-    private final Options options;
 
     private QueryProfiles queryProfiles;
     private SemanticRules semanticRules;
     private PageTemplates pageTemplates;
 
-    public ContainerSearch(ApplicationContainerCluster cluster, SearchChains chains, Options options) {
+    public ContainerSearch(ApplicationContainerCluster cluster, SearchChains chains) {
         super(chains);
         this.owningCluster = cluster;
-        this.options = options;
 
         owningCluster.addComponent(Component.fromClassAndBundle(QUERY_PROFILE_REGISTRY_CLASS, SEARCH_AND_DOCPROC_BUNDLE));
-        owningCluster.addComponent(Component.fromClassAndBundle(com.yahoo.search.schema.SchemaInfo.class.getName(), SEARCH_AND_DOCPROC_BUNDLE));
-        owningCluster.addComponent(Component.fromClassAndBundle(SearchStatusExtension.class.getName(), SEARCH_AND_DOCPROC_BUNDLE));
+        owningCluster.addComponent(Component.fromClassAndBundle(SCHEMA_INFO_CLASS, SEARCH_AND_DOCPROC_BUNDLE));
+        owningCluster.addComponent(Component.fromClassAndBundle(SEARCH_STATUS_EXTENSION_CLASS, SEARCH_AND_DOCPROC_BUNDLE));
         cluster.addSearchAndDocprocBundles();
     }
 
@@ -157,17 +154,6 @@ public class ContainerSearch extends ContainerSubsystem<SearchChains>
                 return sys;
         }
         throw new IllegalArgumentException("No search cluster with index " + index + " exists");
-    }
-
-    public Options getOptions() {
-        return options;
-    }
-
-    /** Encapsulates qrserver options. */
-    public static class Options {
-
-        Map<String, QrsCache> cacheSettings = new LinkedHashMap<>();
-
     }
 
 }
