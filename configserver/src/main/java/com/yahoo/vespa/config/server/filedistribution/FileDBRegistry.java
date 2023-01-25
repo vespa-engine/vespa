@@ -109,14 +109,12 @@ public class FileDBRegistry implements FileRegistry {
     @Override
     public synchronized FileReference addBlob(String blobName, ByteBuffer blob) {
         String relativePath = blobToRelativeFile(blobName);
-        synchronized (this) {
-            Optional<FileReference> cachedReference = Optional.ofNullable(fileReferenceCache.get(blobName));
-            return cachedReference.orElseGet(() -> {
-                FileReference newRef = manager.addBlob(blob, Path.fromString(relativePath));
-                fileReferenceCache.put(blobName, newRef);
-                return newRef;
-            });
-        }
+        Optional<FileReference> cachedReference = Optional.ofNullable(fileReferenceCache.get(blobName));
+        return cachedReference.orElseGet(() -> {
+            FileReference newRef = manager.addBlob(blob, Path.fromString(relativePath));
+            fileReferenceCache.put(blobName, newRef);
+            return newRef;
+        });
     }
 
     @Override
