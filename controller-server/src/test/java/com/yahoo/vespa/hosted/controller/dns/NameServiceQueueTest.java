@@ -102,6 +102,10 @@ public class NameServiceQueueTest {
         assertSame(queue, queue.first(3));
         assertSame(queue, queue.first(10));
         assertTrue(queue.first(0).requests().isEmpty());
+
+        // Remove some requests
+        queue = new NameServiceQueue(List.of(req1, req2, req2, req3)).without(new NameServiceQueue(List.of(req1, req2)));
+        assertEquals(List.of(req2, req3), queue.requests());
     }
 
     @Test

@@ -14,8 +14,6 @@ import java.util.function.UnaryOperator;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import static java.util.function.Predicate.not;
-
 /**
  * A queue of outstanding {@link NameServiceRequest}s. Requests in this have not yet been dispatched to a
  * {@link NameService} and are thus not visible in DNS.
@@ -69,13 +67,22 @@ public record NameServiceQueue(List<NameServiceRequest> requests) {
         return new NameServiceQueue(copy);
     }
 
+    /** Returns a copy of this without the requests present in other. Duplicates are not removed */
+    public NameServiceQueue without(NameServiceQueue other) {
+        List<NameServiceRequest> toRemove = new ArrayList<>(other.requests);
+        return new NameServiceQueue(requests.stream()
+                                            .filter(request -> !toRemove.remove(request))
+                                            .toList());
+    }
+
     /** Returns a copy of this with given request added */
     public NameServiceQueue with(NameServiceRequest request) {
         return with(request, Priority.normal);
     }
 
     /**
-     * Dispatch n requests from the head of this to given name service.
+     * Dispatch n requests from the head of this to given name service. Requests may be re-ordered if errors are
+     * encountered, but are always dispatched in order within an application.
      *
      * @return A copy of this, without the successfully dispatched requests.
      */
@@ -88,13 +95,12 @@ public record NameServiceQueue(List<NameServiceRequest> requests) {
             NameServiceRequest request = pending.poll();
             try {
                 request.dispatchTo(nameService);
-            }
-            catch (Exception e) {
+            } catch (Exception e) {
                 boolean dropFailingRequest = pending.size() > QUEUE_CAPACITY;
                 log.log(Level.WARNING, "Failed to execute " + request + ": " + Exceptions.toMessageString(e) +
                                        ", request will " + (dropFailingRequest ? "be dropped, as queue is over capacity"
                                                                                : "be moved backwards, and retried"));
-                if (dropFailingRequest) continue;
+                if (dropFailingRequest) continue; // Drop this request and keep dispatching others
 
                 // Move all requests with the same owner backwards as far as we can, i.e., to the back, or to the first owner-less request.
                 Optional<TenantAndApplicationId> owner = request.owner();
@@ -106,8 +112,7 @@ public record NameServiceQueue(List<NameServiceRequest> requests) {
                         break;  // Can't modify anything past this, as owner-less requests must come in order with all others.
                     }
                     (request.owner().equals(owner) ? owned : others).offer(request);
-                }
-                while ((request = pending.poll()) != null);
+                } while ((request = pending.poll()) != null);
                 pending.addAll(0, owned);   // Append owned requests before those we can't modify (or none), and
                 pending.addAll(0, others);  // then append requests owned by others before that again.
             }
@@ -137,6 +142,39 @@ public record NameServiceQueue(List<NameServiceRequest> requests) {
         if (n < 0) throw new IllegalArgumentException("n must be >= 0, got " + n);
     }
 
+    /**
+     * Replaces the requests in {@code oldQueue} contained in this with requests in {@code newQueue}, or best effort
+     * amendment when not contained.
+     */
+    public NameServiceQueue replace(NameServiceQueue oldQueue, NameServiceQueue newQueue) {
+        int sublistIndex = indexOf(oldQueue.requests, requests);
+        if (sublistIndex >= 0) {
+            List<NameServiceRequest> updated = new ArrayList<>();
+            updated.addAll(requests.subList(0, sublistIndex));
+            updated.addAll(newQueue.requests);
+            updated.addAll(requests.subList(sublistIndex + oldQueue.requests.size(), requests.size()));
+            return new NameServiceQueue(updated);
+        } else {
+            log.log(Level.WARNING, "Name service queue has changed unexpectedly; expected requests: " +
+                                   oldQueue.requests + " to be present, but that was not found in: " + requests);
+            // Do a best-effort amendment, where requests removed from initial to remaining, are removed, from the front, from this.
+            return without(oldQueue.without(newQueue));
+        }
+    }
+
+    /**
+     * Find the starting index of subList in list. I.e. the lowest index {@code i} in {@code list} so that
+     * {@code list.subList(i, i + subList.size()).equals(subList)}. Naïve implementation.
+     */
+    private static <T> int indexOf(List<T> subList, List<T> list) {
+        for (int i = 0; i + subList.size() <= list.size(); i++) {
+            if (list.subList(i, i + subList.size()).equals(subList)) {
+                return i;
+            }
+        }
+        return -1;
+    }
+
     /** Priority of a request added to this */
     public enum Priority {
 
@@ -146,40 +184,6 @@ public record NameServiceQueue(List<NameServiceRequest> requests) {
         /** Request is queued first. Useful for code that needs to act on effects of a request */
         high
 
-    }
-
-    /** Returns the queue of records present in this, but not in {@code remaining}. */
-    public NameServiceQueue minus(NameServiceQueue remaining) {
-        return new NameServiceQueue(requests.stream()
-                                            .filter(not(new LinkedList<>(remaining.requests())::remove)) // Count duplicates.
-                                            .toList());
-    }
-
-    /** Replaces the sublist {@code initial} contained in this with {@code remaining}, or best effort amendment when not contained. */
-    public NameServiceQueue replace(NameServiceQueue initial, NameServiceQueue remaining) {
-        int sublistIndex = indexOf(requests, initial.requests);
-        if (sublistIndex >= 0) {
-            LinkedList<NameServiceRequest> updated = new LinkedList<>();
-            updated.addAll(requests.subList(0, sublistIndex));
-            updated.addAll(remaining.requests);
-            updated.addAll(requests.subList(sublistIndex + initial.requests.size(), requests.size()));
-            return new NameServiceQueue(updated);
-        }
-        else {
-            log.log(Level.WARNING, "Name service queue has changed unexpectedly; expected requests: " +
-                                   initial.requests + " to be present, but that was not found in: " + requests);
-            // Do a best-effort amendment, where requests removed from initial to remaining, are removed, from the front, from this.
-            return minus(initial.minus(remaining));
-        }
-    }
-
-    /** Lowest index {@code i} in {@code list} s.t. {@code list.sublist(i, i + sub.size()).equals(sub)}. Naïve implementation. */
-    static <T> int indexOf(List<T> list, List<T> sub) {
-        for (int i = 0; i + sub.size() <= list.size(); i++)
-            if (list.subList(i, i + sub.size()).equals(sub))
-                return i;
-
-        return -1;
     }
 
 }
