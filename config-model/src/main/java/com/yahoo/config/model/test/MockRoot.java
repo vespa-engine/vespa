@@ -17,9 +17,7 @@ import com.yahoo.vespa.model.HostSystem;
 import com.yahoo.vespa.model.admin.Admin;
 import com.yahoo.vespa.model.builder.xml.dom.DomAdminV2Builder;
 import com.yahoo.vespa.model.filedistribution.FileDistributionConfigProducer;
-import com.yahoo.vespa.model.filedistribution.FileReferencesRepository;
 import org.w3c.dom.Document;
-
 import java.io.StringReader;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -35,12 +33,9 @@ import java.util.Set;
 // TODO: mockRoot instances can probably be replaced by VespaModel.createIncomplete
 public class MockRoot extends AbstractConfigProducerRoot {
 
-    private static final long serialVersionUID = 1L;
-
     private final HostSystem hostSystem;
 
     private final DeployState deployState;
-    private final FileReferencesRepository fileReferencesRepository;
     private Admin admin;
 
     public MockRoot() {
@@ -63,7 +58,6 @@ public class MockRoot extends AbstractConfigProducerRoot {
         super(rootConfigId);
         hostSystem = new HostSystem(this, "hostsystem", deployState.getProvisioner(), deployState.getDeployLogger(), deployState.isHosted());
         this.deployState = deployState;
-        fileReferencesRepository = new FileReferencesRepository(deployState.getFileRegistry());
     }
 
     public FileDistributionConfigProducer getFileDistributionConfigProducer() {
@@ -89,7 +83,6 @@ public class MockRoot extends AbstractConfigProducerRoot {
         return builder;
     }
 
-    @SuppressWarnings("unchecked")
     public <T extends ConfigInstance> T getConfig(Class<T> configClass, String configId) {
         try {
             ConfigInstance.Builder builder = getConfig(getBuilder(configClass).getDeclaredConstructor().newInstance(), configId);
@@ -115,8 +108,6 @@ public class MockRoot extends AbstractConfigProducerRoot {
     public DeployState getDeployState() {
         return deployState;
     }
-
-    public FileReferencesRepository fileReferencesRepository() { return fileReferencesRepository; }
 
     public HostSystem hostSystem() { return hostSystem; }
 

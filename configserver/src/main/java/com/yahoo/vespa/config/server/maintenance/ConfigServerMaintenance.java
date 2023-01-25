@@ -12,6 +12,8 @@ import java.time.Duration;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 
+import static com.yahoo.vespa.config.server.filedistribution.FileDistributionUtil.getOtherConfigServersInCluster;
+
 /**
  * Maintenance jobs of the config server.
  * Each maintenance job is a singleton instance of its implementing class, created and owned by this,
@@ -39,7 +41,10 @@ public class ConfigServerMaintenance {
     }
 
     public void startBeforeBootstrap() {
-        maintainers.add(new ApplicationPackageMaintainer(applicationRepository, curator, Duration.ofSeconds(30), flagSource));
+        List<String> otherConfigServersInCluster = getOtherConfigServersInCluster(applicationRepository.configserverConfig());
+        if ( ! otherConfigServersInCluster.isEmpty())
+            maintainers.add(new ApplicationPackageMaintainer(applicationRepository, curator, Duration.ofSeconds(30),
+                                                             flagSource, otherConfigServersInCluster));
         maintainers.add(new TenantsMaintainer(applicationRepository, curator, flagSource, interval, Clock.systemUTC()));
     }
 

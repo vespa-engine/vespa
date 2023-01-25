@@ -214,6 +214,9 @@ public class ConfigServerBootstrapTest {
     }
 
     private static ConfigserverConfig createConfigserverConfig(TemporaryFolder temporaryFolder, boolean hosted) throws IOException {
+        var servers = List.of(new ConfigserverConfig.Zookeeperserver.Builder().hostname("foo").port(1),
+                              new ConfigserverConfig.Zookeeperserver.Builder().hostname("bar").port(1),
+                              new ConfigserverConfig.Zookeeperserver.Builder().hostname("baz").port(1));
         return new ConfigserverConfig(new ConfigserverConfig.Builder()
                                               .configServerDBDir(temporaryFolder.newFolder("serverdb").getAbsolutePath())
                                               .configDefinitionsDir(temporaryFolder.newFolder("configdefinitions").getAbsolutePath())
@@ -221,7 +224,8 @@ public class ConfigServerBootstrapTest {
                                               .hostedVespa(hosted)
                                               .multitenant(hosted)
                                               .maxDurationOfBootstrap(0) /* seconds, 0 => it will not retry deployment if bootstrap fails */
-                                              .sleepTimeWhenRedeployingFails(0)); /* seconds */
+                                              .sleepTimeWhenRedeployingFails(0) /* seconds */
+                                              .zookeeperserver(servers));
     }
 
     private List<Host> createHosts(String vespaVersion) {

@@ -5,6 +5,8 @@ import com.yahoo.config.FileReference;
 
 import java.nio.ByteBuffer;
 import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * @author Tony Vaagenes
@@ -16,6 +18,11 @@ public interface FileRegistry {
     FileReference addBlob(String name, ByteBuffer blob);
     default FileReference addApplicationPackage() { return addFile(""); }
     List<Entry> export();
+    default Set<FileReference> asSet() {
+        return export().stream()
+                       .map(e -> e.reference)
+                       .collect(Collectors.toSet());
+    }
 
     class Entry {
 

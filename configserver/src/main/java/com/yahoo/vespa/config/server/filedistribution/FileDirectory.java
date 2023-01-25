@@ -30,6 +30,10 @@ import java.util.logging.Logger;
 
 import static com.yahoo.yolean.Exceptions.uncheck;
 
+/**
+ * Global file directory, holding files for file distribution for all deployed applications.
+ *
+ */
 public class FileDirectory extends AbstractComponent {
 
     private static final Logger log = Logger.getLogger(FileDirectory.class.getName());
