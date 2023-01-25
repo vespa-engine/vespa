@@ -16,6 +16,7 @@ import com.yahoo.config.application.api.DeploymentInstanceSpec;
 import com.yahoo.config.application.api.DeploymentSpec;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ApplicationName;
+import com.yahoo.config.provision.CloudName;
 import com.yahoo.config.provision.ClusterResources;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.Environment;
@@ -1968,6 +1969,13 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
                                                  instance.id().toShortString(), zone, inService ? "in" : "out of"));
     }
 
+    private String serviceTypeIn(DeploymentId id) {
+        CloudName cloud = controller.zoneRegistry().zones().all().get(id.zoneId()).get().getCloudName();
+        if (CloudName.AWS.equals(cloud)) return "aws-private-link";
+        if (CloudName.GCP.equals(cloud)) return "gcp-service-connect";
+        return "unknown";
+    }
+
     private HttpResponse getPrivateServiceInfo(String tenantName, String applicationName, String instanceName, String environment, String region) {
         DeploymentId id = new DeploymentId(ApplicationId.from(tenantName, applicationName, instanceName),
                                            ZoneId.from(environment, region));
@@ -1975,11 +1983,12 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
         Slime slime = new Slime();
         Cursor lbArray = slime.setObject().setArray("privateServices");
         for (LoadBalancer lb : lbs) {
-            Cursor lbObject = lbArray.addObject();
-            lbObject.setString("cluster", lb.cluster().value());
+            Cursor serviceObject = lbArray.addObject();
+            serviceObject.setString("cluster", lb.cluster().value());
             lb.service().ifPresent(service -> {
-                lbObject.setString("serviceId", service.id()); // Really the "serviceName", but this is what the user needs >_<
-                Cursor urnsArray = lbObject.setArray("allowedUrns");
+                serviceObject.setString("serviceId", service.id()); // Really the "serviceName", but this is what the user needs >_<
+                serviceObject.setString("type", serviceTypeIn(id));
+                Cursor urnsArray = serviceObject.setArray("allowedUrns");
                 for (AllowedUrn urn : service.allowedUrns()) {
                     Cursor urnObject = urnsArray.addObject();
                     urnObject.setString("type", switch (urn.type()) {
@@ -1988,7 +1997,7 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
                     });
                     urnObject.setString("urn", urn.urn());
                 }
-                Cursor endpointsArray = lbObject.setArray("endpoints");
+                Cursor endpointsArray = serviceObject.setArray("endpoints");
                 controller.serviceRegistry().vpcEndpointService()
                           .getConnections(new ClusterId(id, lb.cluster()),
                                           controller.applications().decideCloudAccountOf(id, controller.applications().requireApplication(TenantAndApplicationId.from(tenantName, applicationName)).deploymentSpec()))
