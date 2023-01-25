@@ -3,7 +3,11 @@ package com.yahoo.prelude.querytransform;
 
 import com.yahoo.component.chain.dependencies.After;
 import com.yahoo.component.chain.dependencies.Before;
-import com.yahoo.prelude.query.*;
+import com.yahoo.prelude.query.CompositeItem;
+import com.yahoo.prelude.query.Item;
+import com.yahoo.prelude.query.NullItem;
+import com.yahoo.prelude.query.RankItem;
+import com.yahoo.prelude.query.WordItem;
 import com.yahoo.prelude.query.parser.AnyParser;
 import com.yahoo.search.Query;
 import com.yahoo.search.Result;
@@ -14,10 +18,10 @@ import com.yahoo.search.query.parser.Parsable;
 import com.yahoo.search.query.parser.ParserEnvironment;
 import com.yahoo.search.result.ErrorMessage;
 import com.yahoo.search.searchchain.Execution;
-import com.yahoo.search.searchchain.PhaseNames;
 
+import java.util.ArrayDeque;
+import java.util.Deque;
 import java.util.Iterator;
-import java.util.Stack;
 
 import static com.yahoo.prelude.querytransform.NormalizingSearcher.ACCENT_REMOVAL;
 import static com.yahoo.prelude.querytransform.StemmingSearcher.STEMMING;
@@ -76,15 +80,14 @@ public class RecallSearcher extends Searcher {
      * @return True if a rank item was found.
      */
     private static boolean hasRankItem(Item root) {
-        Stack<Item> stack = new Stack<>();
+        Deque<Item> stack = new ArrayDeque<>();
         stack.push(root);
         while (!stack.isEmpty()) {
             Item item = stack.pop();
             if (item instanceof RankItem) {
                 return true;
             }
-            if (item instanceof CompositeItem) {
-                CompositeItem lst = (CompositeItem)item;
+            if (item instanceof CompositeItem lst) {
                 for (Iterator<Item> it = lst.getItemIterator(); it.hasNext();) {
                     stack.push(it.next());
                 }
@@ -102,20 +105,18 @@ public class RecallSearcher extends Searcher {
      * @return The first node found.
      */
     private static WordItem findOrigWordItem(Item root, String value) {
-        Stack<Item> stack = new Stack<>();
+        Deque<Item> stack = new ArrayDeque<>();
         stack.push(root);
         while (!stack.isEmpty()) {
             Item item = stack.pop();
             if (item.getCreator() == Item.ItemCreator.ORIG &&
-                item instanceof WordItem)
+                    item instanceof WordItem word)
             {
-                WordItem word = (WordItem)item;
                 if (word.getWord().equals(value)) {
                     return word;
                 }
             }
-            if (item instanceof CompositeItem) {
-                CompositeItem lst = (CompositeItem)item;
+            if (item instanceof CompositeItem lst) {
                 for (Iterator<Item> it = lst.getItemIterator(); it.hasNext();) {
                     stack.push(it.next());
                 }
@@ -130,15 +131,14 @@ public class RecallSearcher extends Searcher {
      * @param root The root of the tree to update.
      */
     private static void updateFilterTerms(Item root) {
-        Stack<Item> stack = new Stack<>();
+        Deque<Item> stack = new ArrayDeque<>();
         stack.push(root);
         while (!stack.isEmpty()) {
             Item item = stack.pop();
             if (item.getCreator() == Item.ItemCreator.FILTER) {
                 item.setRanked(false);
             }
-            if (item instanceof CompositeItem) {
-                CompositeItem lst = (CompositeItem)item;
+            if (item instanceof CompositeItem lst) {
                 for (Iterator<Item> it = lst.getItemIterator(); it.hasNext();) {
                     stack.push(it.next());
                 }

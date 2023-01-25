@@ -21,7 +21,6 @@ import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Deque;
 import java.util.List;
-import java.util.Stack;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
@@ -130,7 +129,7 @@ public class RoutingNode implements ReplyHandler {
      * @param msg The error message to assign.
      */
     private void notifyAbort(String msg) {
-        Stack<RoutingNode> stack = new Stack<>();
+        Deque<RoutingNode> stack = new ArrayDeque<>();
         stack.push(this);
         while (!stack.isEmpty()) {
             RoutingNode node = stack.pop();
@@ -430,8 +429,7 @@ public class RoutingNode implements ReplyHandler {
     private boolean lookupRoute() {
         RoutingTable table = mbus.getRoutingTable(msg.getProtocol());
         Hop hop = route.getHop(0);
-        if (hop.getDirective(0) instanceof RouteDirective) {
-            RouteDirective dir = (RouteDirective)hop.getDirective(0);
+        if (hop.getDirective(0) instanceof RouteDirective dir) {
             if (table == null || !table.hasRoute(dir.getName())) {
                 setError(ErrorCode.ILLEGAL_ROUTE, "Route '" + dir.getName() + "' does not exist.");
                 return false;

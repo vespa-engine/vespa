@@ -8,9 +8,10 @@ import com.yahoo.document.select.Context;
 import com.yahoo.document.select.Result;
 import com.yahoo.document.select.Visitor;
 
+import java.util.ArrayDeque;
+import java.util.Deque;
 import java.util.List;
 import java.util.ArrayList;
-import java.util.Stack;
 
 /**
  * @author Simon Thoresen Hult
@@ -47,7 +48,7 @@ public class ArithmeticNode implements ExpressionNode {
     @Override
     public Object evaluate(Context context) {
         StringBuilder ret = null;        
-        Stack<ValueItem> buf = new Stack<>();
+        Deque<ValueItem> buf = new ArrayDeque<>();
         for (int i = 0; i < items.size(); ++i) {
             NodeItem item = items.get(i);
             Object val = item.node.evaluate(context);
@@ -56,8 +57,7 @@ public class ArithmeticNode implements ExpressionNode {
                 throw new IllegalArgumentException("Can not perform arithmetic on null value (referencing missing field?)");
             }
 
-            if (val instanceof AttributeNode.VariableValueList) {
-                AttributeNode.VariableValueList value = (AttributeNode.VariableValueList)val;
+            if (val instanceof AttributeNode.VariableValueList value) {
                 if (value.size() == 0) {
                     throw new IllegalArgumentException("Can not perform arithmetic on missing field: "
                             + item.node.toString());
@@ -102,27 +102,16 @@ public class ArithmeticNode implements ExpressionNode {
         return buf.pop().value;
     }
 
-    private void popOffTheTop(Stack<ValueItem> buf) {
+    private void popOffTheTop(Deque<ValueItem> buf) {
         ValueItem rhs = buf.pop();
         ValueItem lhs = buf.pop();
         switch (rhs.operator) {
-            case ADD:
-                lhs.value = lhs.value.doubleValue() + rhs.value.doubleValue();
-                break;
-            case SUB:
-                lhs.value = lhs.value.doubleValue() - rhs.value.doubleValue();
-                break;
-            case DIV:
-                lhs.value = lhs.value.doubleValue() / rhs.value.doubleValue();
-                break;
-            case MUL:
-                lhs.value = lhs.value.doubleValue() * rhs.value.doubleValue();
-                break;
-            case MOD:
-                lhs.value = lhs.value.longValue() % rhs.value.longValue();
-                break;
-            default:
-                throw new IllegalStateException("Arithmetic operator " + rhs.operator + " not supported.");
+            case ADD -> lhs.value = lhs.value.doubleValue() + rhs.value.doubleValue();
+            case SUB -> lhs.value = lhs.value.doubleValue() - rhs.value.doubleValue();
+            case DIV -> lhs.value = lhs.value.doubleValue() / rhs.value.doubleValue();
+            case MUL -> lhs.value = lhs.value.doubleValue() * rhs.value.doubleValue();
+            case MOD -> lhs.value = lhs.value.longValue() % rhs.value.longValue();
+            default -> throw new IllegalStateException("Arithmetic operator " + rhs.operator + " not supported.");
         }
         buf.push(lhs);
     }
@@ -140,22 +129,15 @@ public class ArithmeticNode implements ExpressionNode {
     }
 
     public String operatorToString(int operator) {
-        switch (operator) {
-            case NOP:
-                return null;
-            case ADD:
-                return "+";
-            case SUB:
-                return "-";
-            case MOD:
-                return "%";
-            case DIV:
-                return "/";
-            case MUL:
-                return "*";
-            default:
-                throw new IllegalStateException("Arithmetic operator " + operator + " not supported.");
-        }
+        return switch (operator) {
+            case NOP -> null;
+            case ADD -> "+";
+            case SUB -> "-";
+            case MOD -> "%";
+            case DIV -> "/";
+            case MUL -> "*";
+            default -> throw new IllegalStateException("Arithmetic operator " + operator + " not supported.");
+        };
     }
 
     private int stringToOperator(String operator) {
@@ -192,8 +174,8 @@ public class ArithmeticNode implements ExpressionNode {
     }
 
     public static class NodeItem {
-        private int operator;
-        private ExpressionNode node;
+        private final int operator;
+        private final ExpressionNode node;
 
         NodeItem(int operator, ExpressionNode node) {
             this.operator = operator;

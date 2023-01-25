@@ -1,13 +1,12 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.prelude.querytransform.test;
 
+import java.util.ArrayDeque;
 import java.util.ArrayList;
-import java.util.Arrays;
+import java.util.Deque;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Stack;
 
-import com.yahoo.prelude.IndexFacts;
 import com.yahoo.search.Query;
 import com.yahoo.search.Result;
 import com.yahoo.prelude.query.CompositeItem;
@@ -45,13 +44,13 @@ public class RecallSearcherTestCase {
     @Test
     void testParse() {
         List<String> empty = new ArrayList<>();
-        assertQueryTree("?query=foo", Arrays.asList("foo"), empty);
-        assertQueryTree("?recall=%2bfoo", empty, Arrays.asList("foo"));
-        assertQueryTree("?query=foo&filter=bar&recall=%2bbaz", Arrays.asList("foo", "bar"), Arrays.asList("baz"));
-        assertQueryTree("?query=foo+bar&filter=baz&recall=%2bcox", Arrays.asList("foo", "bar", "baz"), Arrays.asList("cox"));
-        assertQueryTree("?query=foo&filter=bar+baz&recall=%2bcox", Arrays.asList("foo", "bar", "baz"), Arrays.asList("cox"));
-        assertQueryTree("?query=foo&filter=bar&recall=-baz+%2bcox", Arrays.asList("foo", "bar"), Arrays.asList("baz", "cox"));
-        assertQueryTree("?query=foo%20bar&recall=%2bbaz%20-cox", Arrays.asList("foo", "bar"), Arrays.asList("baz", "cox"));
+        assertQueryTree("?query=foo", List.of("foo"), empty);
+        assertQueryTree("?recall=%2bfoo", empty, List.of("foo"));
+        assertQueryTree("?query=foo&filter=bar&recall=%2bbaz", List.of("foo", "bar"), List.of("baz"));
+        assertQueryTree("?query=foo+bar&filter=baz&recall=%2bcox", List.of("foo", "bar", "baz"), List.of("cox"));
+        assertQueryTree("?query=foo&filter=bar+baz&recall=%2bcox", List.of("foo", "bar", "baz"), List.of("cox"));
+        assertQueryTree("?query=foo&filter=bar&recall=-baz+%2bcox", List.of("foo", "bar"), List.of("baz", "cox"));
+        assertQueryTree("?query=foo%20bar&recall=%2bbaz%20-cox", List.of("foo", "bar"), List.of("baz", "cox"));
     }
 
     private static void assertQueryTree(String query, List<String> ranked, List<String> unranked) {
@@ -65,7 +64,7 @@ public class RecallSearcherTestCase {
         List<String> myRanked = new ArrayList<>(ranked);
         List<String> myUnranked = new ArrayList<>(unranked);
 
-        Stack<Item> stack = new Stack<>();
+        Deque<Item> stack = new ArrayDeque<>();
         stack.push(obj.getModel().getQueryTree().getRoot());
         while (!stack.isEmpty()) {
             Item item = stack.pop();
@@ -85,8 +84,7 @@ public class RecallSearcherTestCase {
                     myUnranked.remove(idx);
                 }
             }
-            if (item instanceof CompositeItem) {
-                CompositeItem lst = (CompositeItem)item;
+            if (item instanceof CompositeItem lst) {
                 for (Iterator<?> it = lst.getItemIterator(); it.hasNext();) {
                     stack.push((Item)it.next());
                 }

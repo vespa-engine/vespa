@@ -1,9 +1,10 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.document.annotation;
 
+import java.util.ArrayDeque;
+import java.util.Deque;
 import java.util.ListIterator;
 import java.util.NoSuchElementException;
-import java.util.Stack;
 
 /**
  * ListIterator implementation which performs a depth-first traversal of SpanNodes.
@@ -11,11 +12,11 @@ import java.util.Stack;
  * @author <a href="mailto:einarmr@yahoo-inc.com">Einar M R Rosenvinge</a>
  */
 class RecursiveNodeIterator implements ListIterator<SpanNode> {
-    protected Stack<PeekableListIterator<SpanNode>> stack = new Stack<PeekableListIterator<SpanNode>>();
+    protected Deque<PeekableListIterator<SpanNode>> stack = new ArrayDeque<>();
     protected ListIterator<SpanNode> iteratorFromLastCallToNext = null;
 
     RecursiveNodeIterator(ListIterator<SpanNode> it) {
-        stack.push(new PeekableListIterator<SpanNode>(it));
+        stack.push(new PeekableListIterator<>(it));
     }
 
     protected RecursiveNodeIterator() {
@@ -38,7 +39,7 @@ class RecursiveNodeIterator implements ListIterator<SpanNode> {
         if (!iterator.traversed) {
             //we set the traversed flag on our way down
             iterator.traversed = true;
-            stack.push(new PeekableListIterator<SpanNode>(node.childIterator()));
+            stack.push(new PeekableListIterator<>(node.childIterator()));
             return hasNext();
         }
 

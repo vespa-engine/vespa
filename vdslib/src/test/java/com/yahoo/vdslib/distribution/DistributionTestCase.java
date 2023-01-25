@@ -67,7 +67,7 @@ public class DistributionTestCase {
     public void testSimple() {
         test = new DistributionTestFactory("simple");
         List<BucketId> buckets = getTestBuckets();
-        Integer nodes[] = { 6, 3, 4, 8, 8, 8, 8, 8, 8, 3 };
+        Integer [] nodes = { 6, 3, 4, 8, 8, 8, 8, 8, 8, 3 };
         for (int i=0; i<buckets.size(); ++i) {
             BucketId bucket = buckets.get(i);
             DistributionTestFactory.Test t = test.recordResult(bucket).assertNodeCount(1);
@@ -137,86 +137,89 @@ public class DistributionTestCase {
     public void testWriteDistribution() throws IOException, ParseException, Distribution.TooFewBucketBitsInUseException, Distribution.NoDistributorsAvailableException {
         String clusterState = "distributor:9";
         String distributionConfig =
-                "redundancy 3\n" +
-                "group[4]\n" +
-                "group[0].index \"invalid\"\n" +
-                "group[0].name \"invalid\"\n" +
-                "group[0].partitions 1|2|*\n" +
-                "group[0].nodes[0]\n" +
-                "group[1].index 1\n" +
-                "group[1].capacity 2.0\n" +
-                "group[1].name group1\n" +
-                "group[1].partitions *\n" +
-                "group[1].nodes[3]\n" +
-                "group[1].nodes[0].index 0\n" +
-                "group[1].nodes[1].index 1\n" +
-                "group[1].nodes[2].index 2\n" +
-                "group[2].index 2\n" +
-                "group[2].capacity 3.0\n" +
-                "group[2].name group2\n" +
-                "group[2].partitions *\n" +
-                "group[2].nodes[3]\n" +
-                "group[2].nodes[0].index 3\n" +
-                "group[2].nodes[1].index 4\n" +
-                "group[2].nodes[2].index 5\n" +
-                "group[3].index 3\n" +
-                "group[3].capacity 5.0\n" +
-                "group[3].name group3\n" +
-                "group[3].partitions *\n" +
-                "group[3].nodes[3]\n" +
-                "group[3].nodes[0].index 6\n" +
-                "group[3].nodes[1].index 7\n" +
-                "group[3].nodes[2].index 8\n";
+                """
+                        redundancy 3
+                        group[4]
+                        group[0].index "invalid"
+                        group[0].name "invalid"
+                        group[0].partitions 1|2|*
+                        group[0].nodes[0]
+                        group[1].index 1
+                        group[1].capacity 2.0
+                        group[1].name group1
+                        group[1].partitions *
+                        group[1].nodes[3]
+                        group[1].nodes[0].index 0
+                        group[1].nodes[1].index 1
+                        group[1].nodes[2].index 2
+                        group[2].index 2
+                        group[2].capacity 3.0
+                        group[2].name group2
+                        group[2].partitions *
+                        group[2].nodes[3]
+                        group[2].nodes[0].index 3
+                        group[2].nodes[1].index 4
+                        group[2].nodes[2].index 5
+                        group[3].index 3
+                        group[3].capacity 5.0
+                        group[3].name group3
+                        group[3].partitions *
+                        group[3].nodes[3]
+                        group[3].nodes[0].index 6
+                        group[3].nodes[1].index 7
+                        group[3].nodes[2].index 8
+                        """;
         writeDistributionTest("depth2", clusterState, distributionConfig);
 
         clusterState = "distributor:20 storage:20";
         String complexDistributionConfig =
-                "redundancy 5\n" +
-                "group[7]\n" +
-                "group[0].partitions \"*|*\"\n" +
-                "group[0].index \"invalid\"\n" +
-                "group[0].name \"invalid\"\n" +
-                "group[0].nodes[0]\n" +
-                "group[1].partitions \"1|*\"\n" +
-                "group[1].index \"0\"\n" +
-                "group[1].name \"switch0\"\n" +
-                "group[1].nodes[0]\n" +
-                "group[2].partitions \"\"\n" +
-                "group[2].index \"0.0\"\n" +
-                "group[2].name \"rack0\"\n" +
-                "group[2].nodes[4]\n" +
-                "group[2].nodes[0].index 0\n" +
-                "group[2].nodes[1].index 1\n" +
-                "group[2].nodes[2].index 2\n" +
-                "group[2].nodes[3].index 3\n" +
-                "group[3].partitions \"\"\n" +
-                "group[3].index \"0.1\"\n" +
-                "group[3].name \"rack1\"\n" +
-                "group[3].nodes[4]\n" +
-                "group[3].nodes[0].index 8\n" +
-                "group[3].nodes[1].index 9\n" +
-                "group[3].nodes[2].index 14\n" +
-                "group[3].nodes[3].index 15\n" +
-                "group[4].partitions \"*\"\n" +
-                "group[4].index \"1\"\n" +
-                "group[4].name \"switch1\"\n" +
-                "group[4].nodes[0]\n" +
-                "group[5].partitions \"\"\n" +
-                "group[5].index \"1.0\"\n" +
-                "group[5].name \"rack0\"\n" +
-                "group[5].nodes[4]\n" +
-                "group[5].nodes[0].index 4\n" +
-                "group[5].nodes[1].index 5\n" +
-                "group[5].nodes[2].index 6\n" +
-                "group[5].nodes[3].index 17\n" +
-                "group[6].partitions \"\"\n" +
-                "group[6].index \"1.1\"\n" +
-                "group[6].name \"rack1\"\n" +
-                "group[6].nodes[4]\n" +
-                "group[6].nodes[0].index 10\n" +
-                "group[6].nodes[1].index 12\n" +
-                "group[6].nodes[2].index 13\n" +
-                "group[6].nodes[3].index 7";
+                """
+                        redundancy 5
+                        group[7]
+                        group[0].partitions "*|*"
+                        group[0].index "invalid"
+                        group[0].name "invalid"
+                        group[0].nodes[0]
+                        group[1].partitions "1|*"
+                        group[1].index "0"
+                        group[1].name "switch0"
+                        group[1].nodes[0]
+                        group[2].partitions ""
+                        group[2].index "0.0"
+                        group[2].name "rack0"
+                        group[2].nodes[4]
+                        group[2].nodes[0].index 0
+                        group[2].nodes[1].index 1
+                        group[2].nodes[2].index 2
+                        group[2].nodes[3].index 3
+                        group[3].partitions ""
+                        group[3].index "0.1"
+                        group[3].name "rack1"
+                        group[3].nodes[4]
+                        group[3].nodes[0].index 8
+                        group[3].nodes[1].index 9
+                        group[3].nodes[2].index 14
+                        group[3].nodes[3].index 15
+                        group[4].partitions "*"
+                        group[4].index "1"
+                        group[4].name "switch1"
+                        group[4].nodes[0]
+                        group[5].partitions ""
+                        group[5].index "1.0"
+                        group[5].name "rack0"
+                        group[5].nodes[4]
+                        group[5].nodes[0].index 4
+                        group[5].nodes[1].index 5
+                        group[5].nodes[2].index 6
+                        group[5].nodes[3].index 17
+                        group[6].partitions ""
+                        group[6].index "1.1"
+                        group[6].name "rack1"
+                        group[6].nodes[4]
+                        group[6].nodes[0].index 10
+                        group[6].nodes[1].index 12
+                        group[6].nodes[2].index 13
+                        group[6].nodes[3].index 7""";
         writeDistributionTest("depth3", clusterState, complexDistributionConfig);
 
         clusterState = "distributor:20 storage:20 .3.c:3 .7.c:2.5 .12.c:1.5";
@@ -269,7 +272,7 @@ public class DistributionTestCase {
                 buckets.add(new BucketId(distbits, i));
             }
             for (BucketId bucket : buckets) {
-                DistributionTestFactory.Test t = test.recordResult(bucket).assertNodeCount(1);
+                test.recordResult(bucket).assertNodeCount(1);
             }
             test.recordTestResults();
             test = null;
@@ -347,7 +350,7 @@ public class DistributionTestCase {
                 .setDistribution(buildHierarchicalConfig(6, 3, 1, "1|2|*", 3).distributor_auto_ownership_transfer_on_whole_group_down(false))
                 .setNodeType(NodeType.DISTRIBUTOR)
                 .setClusterState(new ClusterState("distributor:2 storage:9"));
-        int counts[] = new int[10];
+        int [] counts = new int[10];
         int noneExisting = 0;
         for (BucketId bucket : getTestBuckets()) {
             DistributionTestFactory.Test t = test.recordResult(bucket);
@@ -393,7 +396,7 @@ public class DistributionTestCase {
         test = new DistributionTestFactory("group-capacity")
                 .setNodeCount(getNodeCount(1, 3, 3)).setDistribution(config);
 
-        int counts[] = new int[9];
+        int [] counts = new int[9];
         for (int i=0; i<900; ++i) {
             BucketId bucket = new BucketId(16, i);
             ++counts[ test.recordResult(bucket).assertNodeCount(1).getNodes().get(0) ];
