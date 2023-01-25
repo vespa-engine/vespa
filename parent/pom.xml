@@ -1098,8 +1098,8 @@
 
     <properties>
         <airline.version>0.9</airline.version>
-        <antlr.version>3.5.2</antlr.version>
-        <antlr4.version>4.9.3</antlr4.version>
+        <antlr.version>3.5.3</antlr.version>
+        <antlr4.version>4.11.1</antlr4.version>
         <apache.httpclient.version>4.5.14</apache.httpclient.version>
         <apache.httpcore.version>4.4.16</apache.httpcore.version>
         <apache.httpclient5.version>5.2.1</apache.httpclient5.version> <!-- WARNING: sync cloud-tenant-base-dependencies-enforcer/pom.xml -->
