@@ -29,25 +29,16 @@ public class OnnxEvaluatorOptions {
         gpuDeviceRequired = false;
     }
 
-    public OrtSession.SessionOptions getOptions() throws OrtException {
+    public OrtSession.SessionOptions getOptions(boolean loadCuda) throws OrtException {
         OrtSession.SessionOptions options = new OrtSession.SessionOptions();
         options.setOptimizationLevel(optimizationLevel);
         options.setExecutionMode(executionMode);
         options.setInterOpNumThreads(interOpThreads);
         options.setIntraOpNumThreads(intraOpThreads);
-        addCuda(options);
-        return options;
-    }
-
-    private void addCuda(OrtSession.SessionOptions options) {
-        if (gpuDeviceNumber < 0) return;
-        try {
+        if (loadCuda) {
             options.addCUDA(gpuDeviceNumber);
-        } catch (OrtException e) {
-            if (gpuDeviceRequired) {
-                throw new IllegalArgumentException("GPU device " + gpuDeviceNumber + " is required, but CUDA backend could not be initialized", e);
-            }
         }
+        return options;
     }
 
     public void setExecutionMode(String mode) {
@@ -73,6 +64,14 @@ public class OnnxEvaluatorOptions {
     public void setGpuDevice(int deviceNumber, boolean required) {
         this.gpuDeviceNumber = deviceNumber;
         this.gpuDeviceRequired = required;
+    }
+
+    public boolean hasGpuDevice() {
+        return gpuDeviceNumber > -1;
+    }
+
+    public boolean gpuDeviceRequired() {
+        return gpuDeviceRequired;
     }
 
 }
