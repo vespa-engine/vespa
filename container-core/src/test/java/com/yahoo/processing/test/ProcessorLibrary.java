@@ -10,9 +10,18 @@ import com.yahoo.processing.execution.Execution;
 import com.yahoo.processing.execution.ExecutionWithResponse;
 import com.yahoo.processing.execution.RunnableExecution;
 import com.yahoo.processing.request.ErrorMessage;
-import com.yahoo.processing.response.*;
+import com.yahoo.processing.response.AbstractData;
+import com.yahoo.processing.response.ArrayDataList;
+import com.yahoo.processing.response.Data;
+import com.yahoo.processing.response.DataList;
+import com.yahoo.processing.response.FutureResponse;
+import com.yahoo.processing.response.IncomingData;
+import com.yahoo.processing.response.Ordered;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 
@@ -50,7 +59,7 @@ public class ProcessorLibrary {
 
     public static class MapData extends AbstractData {
 
-        private Map map = new LinkedHashMap();
+        private final Map map = new LinkedHashMap();
 
         public MapData(Request request) {
             super(request);
@@ -157,7 +166,7 @@ public class ProcessorLibrary {
         @SafeVarargs
         @SuppressWarnings("varargs")
         public Federator(boolean ordered, Chain<? extends Processor>... chains) {
-            this.chains = Arrays.asList(chains);
+            this.chains = List.of(chains);
             this.ordered = ordered;
         }
 
@@ -206,7 +215,7 @@ public class ProcessorLibrary {
         @SafeVarargs
         @SuppressWarnings("varargs")
         public EagerReturnFederator(boolean ordered, Chain<? extends Processor>... chains) {
-            this.chains = Arrays.asList(chains);
+            this.chains = List.of(chains);
             this.ordered = ordered;
         }
 
@@ -312,21 +321,6 @@ public class ProcessorLibrary {
 
     }
 
-    /** Allows waiting for that request to happen. */
-    public static class RequestCounter extends Processor {
-
-        /** The incoming data this has created */
-        public final CompletableFuture<IncomingData> incomingData = new CompletableFuture<>();
-
-        @Override
-        public Response process(Request request, Execution execution) {
-            ArrayDataList dataList = ArrayDataList.createAsync(request);
-            incomingData.complete(dataList.incoming());
-            return new Response(dataList);
-        }
-
-    }
-
     /**
      * Multiples the amount of data returned by parallelism by performing parallel executions of the rest of the chain
      */
@@ -413,30 +407,11 @@ public class ProcessorLibrary {
     }
 
     /**
-     * A processor which on invocation prints the string given on construction
-     */
-    public static class Echo extends Processor {
-
-        private String s;
-
-        public Echo(String s) {
-            this.s = s;
-        }
-
-        @Override
-        public Response process(Request request, Execution execution) {
-            System.out.println(s);
-            return execution.process(request);
-        }
-
-    }
-
-    /**
      * A processor which adds a StringData item containing the string given in the constructor to every response
      */
     public static class StringDataAdder extends Processor {
 
-        private String string;
+        private final String string;
 
         public StringDataAdder(String string) {
             this.string = string;
@@ -458,7 +433,7 @@ public class ProcessorLibrary {
      */
     public static class ErrorAdder extends Processor {
 
-        private ErrorMessage errorMessage;
+        private final ErrorMessage errorMessage;
 
         public ErrorAdder(ErrorMessage errorMessage) {
             this.errorMessage = errorMessage;
@@ -478,7 +453,7 @@ public class ProcessorLibrary {
      */
     public static class StringDataListAdder extends Processor {
 
-        private String[] strings;
+        private final String[] strings;
 
         public StringDataListAdder(String... strings) {
             this.strings = strings;
@@ -502,8 +477,8 @@ public class ProcessorLibrary {
      */
     public static class Trace extends Processor {
 
-        private String traceMessage;
-        private int traceLevel;
+        private final String traceMessage;
+        private final int traceLevel;
 
         public Trace(String traceMessage, int traceLevel) {
             this.traceMessage = traceMessage;

@@ -52,7 +52,7 @@ public abstract class AbstractProcessingHandler<COMPONENT extends Processor> ext
 
     private final Executor renderingExecutor;
 
-    private ChainRegistry<COMPONENT> chainRegistry;
+    private final ChainRegistry<COMPONENT> chainRegistry;
 
     private final ComponentRegistry<Renderer> renderers;
 
@@ -109,7 +109,6 @@ public abstract class AbstractProcessingHandler<COMPONENT extends Processor> ext
     }
 
     @Override
-    @SuppressWarnings("unchecked")
     public HttpResponse handle(HttpRequest request, ContentChannel channel) {
         com.yahoo.processing.Request processingRequest = new com.yahoo.processing.Request();
         populate("", request.propertyMap(), processingRequest.properties());

@@ -61,6 +61,7 @@ public class MetricsV2Handler extends HttpHandlerBase {
         }
     }
 
+    @SuppressWarnings("deprecation")
     private static CloseableHttpClient createHttpClient() {
         return VespaHttpClientBuilder.create()
                 .setUserAgent("application-metrics-retriever")

@@ -71,6 +71,7 @@ public class FileDistributionStatusClient {
         System.out.println(parseAndGenerateOutput(json));
     }
 
+    @SuppressWarnings("deprecation")
     private String doHttpRequest() {
         Timeout timeoutInMillis = Timeout.ofMilliseconds((long) (timeout * 1000));
         RequestConfig config = custom()

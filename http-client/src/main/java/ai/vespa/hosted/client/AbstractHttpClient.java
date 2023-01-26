@@ -47,6 +47,7 @@ public abstract class AbstractHttpClient implements HttpClient {
     public static HttpClient wrapping(CloseableHttpClient client) {
         return new AbstractHttpClient() {
             @Override
+            @SuppressWarnings("deprecation")
             protected ClassicHttpResponse execute(ClassicHttpRequest request, HttpClientContext context) throws IOException {
                 return client.execute(request, context);
             }
@@ -113,6 +114,7 @@ public abstract class AbstractHttpClient implements HttpClient {
         throw new IllegalStateException("No hosts to perform the request against");
     }
 
+    @SuppressWarnings("deprecation")
     private HttpClientContext contextWithTimeout(RequestBuilder builder) {
         HttpClientContext context = HttpClientContext.create();
         RequestConfig config = builder.config;
