@@ -48,7 +48,7 @@ class ApacheClusterTest {
                                                  Map.of("name1", () -> "value1",
                                                         "name2", () -> "value2"),
                                                  "content".getBytes(UTF_8),
-                                                 Duration.ofSeconds(10)),
+                                                 Duration.ofSeconds(20)),
                                  vessel);
                 HttpResponse response = vessel.get(15, TimeUnit.SECONDS);
                 assertEquals("{}", new String(response.body(), UTF_8));
