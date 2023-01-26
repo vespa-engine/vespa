@@ -35,6 +35,7 @@ import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+// TODO: RpcServer is only used in unit tests, should be removed
 public class RpcServer {
 
     private static final Logger log = Logger.getLogger(RpcServer.class.getName());

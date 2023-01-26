@@ -10,7 +10,6 @@ import com.yahoo.jrt.Supervisor;
 import com.yahoo.jrt.Target;
 import com.yahoo.jrt.Transport;
 import com.yahoo.jrt.slobrok.api.BackOffPolicy;
-import com.yahoo.jrt.slobrok.server.Slobrok;
 import com.yahoo.vdslib.distribution.ConfiguredNode;
 import com.yahoo.vdslib.distribution.Distribution;
 import com.yahoo.vdslib.state.ClusterState;
@@ -18,7 +17,6 @@ import com.yahoo.vdslib.state.Node;
 import com.yahoo.vdslib.state.NodeState;
 import com.yahoo.vdslib.state.NodeType;
 import com.yahoo.vdslib.state.State;
-import com.yahoo.vespa.clustercontroller.core.rpc.RpcServer;
 import com.yahoo.vespa.clustercontroller.core.testutils.LogFormatter;
 import com.yahoo.vespa.clustercontroller.core.testutils.WaitCondition;
 import com.yahoo.vespa.clustercontroller.core.testutils.WaitTask;
@@ -40,6 +38,9 @@ import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
+ *
+ * Note: RpcServer is only used in unit tests
+ *
  * @author humbe
  */
 @ExtendWith(CleanupZookeeperLogsOnSuccess.class)
@@ -57,25 +58,6 @@ public class RpcServerTest extends FleetControllerTest {
     @AfterEach
     public void teardown() {
         supervisor.transport().shutdown().join();
-    }
-
-    @Test
-    void testRebinding() throws Exception {
-        startingTest("RpcServerTest::testRebinding");
-        Slobrok slobrok = new Slobrok();
-        String[] slobrokConnectionSpecs = getSlobrokConnectionSpecs(slobrok);
-        RpcServer server = new RpcServer(new Object(), "mycluster", 0, new BackOff());
-        server.setSlobrokConnectionSpecs(slobrokConnectionSpecs, 0);
-        int portUsed = server.getPort();
-        server.setSlobrokConnectionSpecs(slobrokConnectionSpecs, portUsed);
-        server.disconnect();
-        server.disconnect();
-        server.connect();
-        server.connect();
-        server.disconnect();
-        server.connect();
-        server.shutdown();
-        slobrok.stop();
     }
 
     @Test
