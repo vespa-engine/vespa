@@ -282,9 +282,9 @@ VespaDocumentDeserializer::read(StringFieldValue &value) {
     setValue(value, val, _stream.isLongLivedBuffer());
     if (coding & 0x40) {
         uint32_t serializedAnnotationsSize = readValue<uint32_t>(_stream);
-        value.setSpanTrees(vespalib::ConstBufferRef(_stream.peek(), serializedAnnotationsSize),
-                           _repo, _version, _stream.isLongLivedBuffer());
-        _stream.adjustReadPos(serializedAnnotationsSize);
+        auto span_buf = vespalib::ConstBufferRef(_stream.peek(), serializedAnnotationsSize);
+        _stream.adjustReadPos(serializedAnnotationsSize); // Trigger any out-of-bounds before using buffer range.
+        value.setSpanTrees(span_buf, _repo, _version, _stream.isLongLivedBuffer());
     } else {
         value.clearSpanTrees();
     }
@@ -359,11 +359,13 @@ VespaDocumentDeserializer::readStructNoReset(StructFieldValue &value) {
     if (is_compressed && (compression_type != CompressionConfig::LZ4)) [[unlikely]] {
         throw DeserializeException(fmt("Unsupported compression type: %u", static_cast<uint8_t>(compression_type)), VESPA_STRLOC);
     }
+    // Must read field info _prior_ to checking remaining stream size against
+    // data_size, as the field info size is not counted as part of data_size.
+    readFieldInfo(_stream, field_info, is_compressed ? uncompressed_size : data_size);
     if (data_size > _stream.size()) [[unlikely]] {
         throw DeserializeException(fmt("Struct size (%zu) is greater than remaining buffer size (%zu)",
                                        data_size, _stream.size()), VESPA_STRLOC);
     }
-    readFieldInfo(_stream, field_info, is_compressed ? uncompressed_size : data_size);
     if (data_size > 0) {
         ByteBuffer buffer = is_compressed
                             ? deCompress(compression_type, uncompressed_size, ConstBufferRef(_stream.peek(), data_size))
