@@ -12,4 +12,3 @@ model[].stateless_execution_mode    string default=""
 model[].stateless_interop_threads   int default=-1
 model[].stateless_intraop_threads   int default=-1
 model[].gpu_device                  int default=-1
-model[].gpu_device_required         bool default=false

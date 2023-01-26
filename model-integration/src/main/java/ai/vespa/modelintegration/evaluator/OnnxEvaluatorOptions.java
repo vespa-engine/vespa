@@ -16,8 +16,7 @@ public class OnnxEvaluatorOptions {
     private OrtSession.SessionOptions.ExecutionMode executionMode;
     private int interOpThreads;
     private int intraOpThreads;
-    private int gpuDeviceNumber;
-    private boolean gpuDeviceRequired;
+    private int gpuDevice;
 
     public OnnxEvaluatorOptions() {
         // Defaults:
@@ -25,18 +24,17 @@ public class OnnxEvaluatorOptions {
         executionMode = OrtSession.SessionOptions.ExecutionMode.SEQUENTIAL;
         interOpThreads = 1;
         intraOpThreads = Math.max(1, (int) Math.ceil(((double) Runtime.getRuntime().availableProcessors()) / 4));
-        gpuDeviceNumber = -1;
-        gpuDeviceRequired = false;
+        gpuDevice = -1;
     }
 
-    public OrtSession.SessionOptions getOptions(boolean loadCuda) throws OrtException {
+    public OrtSession.SessionOptions getOptions() throws OrtException {
         OrtSession.SessionOptions options = new OrtSession.SessionOptions();
         options.setOptimizationLevel(optimizationLevel);
         options.setExecutionMode(executionMode);
         options.setInterOpNumThreads(interOpThreads);
         options.setIntraOpNumThreads(intraOpThreads);
-        if (loadCuda) {
-            options.addCUDA(gpuDeviceNumber);
+        if (gpuDevice > -1) {
+            options.addCUDA(gpuDevice);
         }
         return options;
     }
@@ -61,17 +59,12 @@ public class OnnxEvaluatorOptions {
         }
     }
 
-    public void setGpuDevice(int deviceNumber, boolean required) {
-        this.gpuDeviceNumber = deviceNumber;
-        this.gpuDeviceRequired = required;
+    public void setGpuDevice(int deviceNumber) {
+        this.gpuDevice = deviceNumber;
     }
 
-    public boolean hasGpuDevice() {
-        return gpuDeviceNumber > -1;
-    }
-
-    public boolean gpuDeviceRequired() {
-        return gpuDeviceRequired;
+    public int gpuDevice() {
+        return gpuDevice;
     }
 
 }
