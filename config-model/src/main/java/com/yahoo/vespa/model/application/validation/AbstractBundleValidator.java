@@ -1,9 +1,6 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model.application.validation;
 
-import aQute.bnd.header.Parameters;
-import aQute.bnd.osgi.Domain;
-import aQute.bnd.version.VersionRange;
 import com.yahoo.config.application.api.ApplicationPackage;
 import com.yahoo.config.application.api.ComponentInfo;
 import com.yahoo.config.application.api.DeployLogger;
@@ -23,7 +20,6 @@ import java.io.IOException;
 import java.io.StringReader;
 import java.nio.file.Paths;
 import java.util.Optional;
-import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.jar.JarFile;
 import java.util.jar.Manifest;
@@ -31,7 +27,7 @@ import java.util.logging.Level;
 import java.util.regex.Pattern;
 
 /**
- * Base class for OSGi bundle validator. Uses BND library for some of the validation.
+ * Base class for OSGi bundle validator.
  *
  * @author bjorncs
  */
@@ -79,14 +75,13 @@ public abstract class AbstractBundleValidator extends Validator {
         }
     }
 
-    protected final void forEachImportPackage(Manifest mf, BiConsumer<String, VersionRange> consumer) {
-        Parameters importPackage = Domain.domain(mf).getImportPackage();
-        importPackage.forEach((packageName, attrs) -> {
-            VersionRange versionRange = attrs.getVersion() != null
-                    ? VersionRange.parseOSGiVersionRange(attrs.getVersion())
-                    : null;
-            consumer.accept(packageName, versionRange);
-        });
+    protected final void forEachImportPackage(Manifest mf, Consumer<String> consumer) {
+        String importPackage = mf.getMainAttributes().getValue("Import-Package");
+        ImportPackageInfo importPackages = new ImportPackageInfo(importPackage);
+
+        for (String packageName : importPackages.packages()) {
+            consumer.accept(packageName);
+        }
     }
 
     protected final void log(DeployState state, Level level, String fmt, Object... args) {

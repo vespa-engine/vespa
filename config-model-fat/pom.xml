@@ -192,8 +192,6 @@
 
                     <!-- 3rd party artifacts embedded -->
                     <i>aopalliance:aopalliance:*:*</i>
-                    <i>biz.aQute.bnd:biz.aQute.bnd.util:*:*</i>
-                    <i>biz.aQute.bnd:biz.aQute.bndlib:*:*</i>
                     <i>com.google.errorprone:error_prone_annotations:*:*</i>
                     <i>com.google.guava:failureaccess:*:*</i>
                     <i>com.google.guava:guava:*:*</i>
