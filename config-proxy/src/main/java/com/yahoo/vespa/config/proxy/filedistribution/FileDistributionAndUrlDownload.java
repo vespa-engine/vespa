@@ -11,6 +11,9 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 import static com.yahoo.vespa.filedistribution.FileReferenceData.CompressionType;
+import static com.yahoo.vespa.filedistribution.FileReferenceData.CompressionType.gzip;
+import static com.yahoo.vespa.filedistribution.FileReferenceData.CompressionType.lz4;
+import static com.yahoo.vespa.filedistribution.FileReferenceData.CompressionType.zstd;
 
 /**
  * Keeps track of file distribution and url download rpc servers.
@@ -43,7 +46,7 @@ public class FileDistributionAndUrlDownload {
     }
 
     private Set<CompressionType> acceptedCompressionTypes() {
-        Set<CompressionType> acceptedCompressionTypes = Set.of(CompressionType.gzip);
+        Set<CompressionType> acceptedCompressionTypes = Set.of(gzip, lz4, zstd);
         String env = System.getenv("VESPA_FILE_DISTRIBUTION_ACCEPTED_COMPRESSION_TYPES");
         if (env != null && ! env.isEmpty()) {
             String[] types = env.split(",");
