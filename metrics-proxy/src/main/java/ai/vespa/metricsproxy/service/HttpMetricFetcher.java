@@ -7,6 +7,8 @@ import org.apache.hc.client5.http.classic.methods.HttpGet;
 import org.apache.hc.client5.http.config.RequestConfig;
 import org.apache.hc.client5.http.impl.classic.CloseableHttpClient;
 import org.apache.hc.client5.http.impl.classic.CloseableHttpResponse;
+import org.apache.hc.client5.http.impl.io.PoolingHttpClientConnectionManager;
+import org.apache.hc.core5.http.io.SocketConfig;
 import org.apache.hc.core5.util.Timeout;
 
 import java.io.IOException;
@@ -44,7 +46,6 @@ public abstract class HttpMetricFetcher {
         log.log(Level.FINE, () -> "Fetching metrics from " + u + " with timeout " + CONNECTION_TIMEOUT);
     }
 
-    @SuppressWarnings("deprecation")
     CloseableHttpResponse getResponse() throws IOException {
         log.log(Level.FINE, () -> "Connecting to url " + url + " for service '" + service + "'");
         return httpClient.execute(new HttpGet(url));
@@ -80,13 +81,17 @@ public abstract class HttpMetricFetcher {
     }
 
     private static CloseableHttpClient createHttpClient() {
-        return VespaHttpClientBuilder.custom()
-                .connectTimeout(Timeout.ofMilliseconds(CONNECTION_TIMEOUT))
-                .socketTimeout(Timeout.ofMilliseconds(CONNECTION_TIMEOUT))
-                .apacheBuilder()
+        return VespaHttpClientBuilder.create(registry -> {
+                    var mgr = new PoolingHttpClientConnectionManager(registry);
+                    mgr.setDefaultSocketConfig(SocketConfig.custom()
+                            .setSoTimeout(Timeout.ofMilliseconds(SOCKET_TIMEOUT))
+                            .build());
+                    return mgr;
+                })
                 .setUserAgent("metrics-proxy-http-client")
                 .setDefaultRequestConfig(RequestConfig.custom()
                         .setConnectionRequestTimeout(Timeout.ofMilliseconds(SOCKET_TIMEOUT))
+                        .setConnectTimeout(Timeout.ofMilliseconds(CONNECTION_TIMEOUT))
                         .setResponseTimeout(Timeout.ofMilliseconds(SOCKET_TIMEOUT))
                         .build())
                 .build();

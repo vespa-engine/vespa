@@ -71,17 +71,18 @@ public class FileDistributionStatusClient {
         System.out.println(parseAndGenerateOutput(json));
     }
 
-    @SuppressWarnings("deprecation")
     private String doHttpRequest() {
         Timeout timeoutInMillis = Timeout.ofMilliseconds((long) (timeout * 1000));
         RequestConfig config = custom()
+                .setConnectTimeout(timeoutInMillis)
                 .setConnectionRequestTimeout(timeoutInMillis)
                 .setResponseTimeout(timeoutInMillis)
                 .build();
-        try (CloseableHttpClient httpClient =  VespaHttpClientBuilder.custom().connectTimeout(timeoutInMillis).buildClient()) {
-            URI statusUri = createStatusApiUri();
-            if (debug)
-                System.out.println("URI:" + statusUri);
+        CloseableHttpClient httpClient = VespaHttpClientBuilder.create().build();
+        URI statusUri = createStatusApiUri();
+        if (debug)
+            System.out.println("URI:" + statusUri);
+        try {
             HttpGet request = new HttpGet(statusUri);
             request.addHeader("Connection", "Close");
             request.setConfig(config);
@@ -94,7 +95,7 @@ public class FileDistributionStatusClient {
                 return content;
             } else {
                 throw new RuntimeException("Failed to get status for request " + statusUri + ": " +
-                        response.getCode() + ": " + content);
+                                                   response.getCode() + ": " + content);
             }
         } catch (IOException | ParseException e) {
             throw new RuntimeException(e);
@@ -110,12 +111,16 @@ public class FileDistributionStatusClient {
             throw new RuntimeException(e);
         }
         String status = jsonNode.get("status").asText();
-        return switch (status) {
-            case statusUnknown -> "File distribution status unknown: " + jsonNode.get("message").asText();
-            case statusInProgress -> "File distribution in progress:\n" + inProgressOutput(jsonNode.get("hosts"));
-            case statusFinished -> "File distribution finished";
-            default -> throw new RuntimeException("Unknown status " + status);
-        };
+        switch (status) {
+            case statusUnknown:
+                return "File distribution status unknown: " + jsonNode.get("message").asText();
+            case statusInProgress:
+                return "File distribution in progress:\n" + inProgressOutput(jsonNode.get("hosts"));
+            case statusFinished:
+                return "File distribution finished";
+            default:
+                throw new RuntimeException("Unknown status " + status);
+        }
     }
 
     private URI createStatusApiUri() {
@@ -153,7 +158,7 @@ public class FileDistributionStatusClient {
                                 finished++;
                         }
                     }
-                    sb.append(" (").append(finished).append(" of ").append(fileReferencesArray.size()).append(" finished)");
+                    sb.append(" (" + finished + " of " + fileReferencesArray.size() + " finished)");
                     break;
                 case statusFinished:
                     break; // Nothing to add

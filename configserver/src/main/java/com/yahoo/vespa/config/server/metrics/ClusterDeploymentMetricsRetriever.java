@@ -56,13 +56,15 @@ public class ClusterDeploymentMetricsRetriever {
     private static final ExecutorService executor = Executors.newFixedThreadPool(10, new DaemonThreadFactory("cluster-deployment-metrics-retriever-"));
 
     private static final CloseableHttpClient httpClient =
-            VespaHttpClientBuilder.custom()
-                    .connectTimeout(Timeout.ofSeconds(10))
-                    .connectionManagerFactory(registry -> new PoolingHttpClientConnectionManager(registry, null, null, TimeValue.ofMinutes(1)))
-                    .apacheBuilder()
+            VespaHttpClientBuilder
+                    .create(registry -> new PoolingHttpClientConnectionManager(registry,
+                                                                               null,
+                                                                               null,
+                                                                               TimeValue.ofMinutes(1)))
                     .setDefaultRequestConfig(
                             RequestConfig.custom()
                                          .setConnectionRequestTimeout(Timeout.ofSeconds(60))
+                                         .setConnectTimeout(Timeout.ofSeconds(10))
                                          .setResponseTimeout(Timeout.ofSeconds(10))
                                          .build())
                     .build();
@@ -158,7 +160,6 @@ public class ClusterDeploymentMetricsRetriever {
         return new ClusterInfo(dimensions.field("clusterid").asString(), dimensions.field("clustertype").asString());
     }
 
-    @SuppressWarnings("deprecation")
     private static Slime doMetricsRequest(URI hostURI) {
         HttpGet get = new HttpGet(hostURI);
         try (CloseableHttpResponse response = httpClient.execute(get)) {
