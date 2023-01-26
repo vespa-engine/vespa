@@ -8185,6 +8185,7 @@
     ],
     "methods" : [
       "public java.lang.String name()",
+      "public com.yahoo.search.schema.Schema schema()",
       "public boolean hasSummaryFeatures()",
       "public boolean hasRankFeatures()",
       "public java.util.Map inputs()",

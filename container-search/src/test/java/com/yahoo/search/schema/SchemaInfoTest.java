@@ -2,9 +2,11 @@
 package com.yahoo.search.schema;
 
 import com.yahoo.tensor.TensorType;
+import com.yahoo.yolean.Exceptions;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.fail;
 
 /**
  * @author bratseth
@@ -40,10 +42,17 @@ public class SchemaInfoTest {
                 "a", "", "inconsistent", "query(myTensor1)");
         tester.assertInput(TensorType.fromSpec("tensor(x[10])"),
                 "b", "", "inconsistent", "query(myTensor1)");
-        tester.assertInput(null,
-                "a", "", "bOnly", "query(myTensor1)");
         tester.assertInput(TensorType.fromSpec("tensor(a{},b{})"),
                 "ab", "", "bOnly", "query(myTensor1)");
+        try {
+            tester.assertInput(null,
+                               "a", "", "bOnly", "query(myTensor1)");
+            fail("Expected exception since bOnly is not in a");
+        }
+        catch (IllegalArgumentException e) {
+            assertEquals("No profile named 'bOnly' exists in schemas [a]",
+                         Exceptions.toMessageString(e));
+        }
     }
 
 }

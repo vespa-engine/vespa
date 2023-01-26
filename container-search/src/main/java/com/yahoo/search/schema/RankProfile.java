@@ -21,6 +21,9 @@ public class RankProfile {
     private final boolean hasRankFeatures;
     private final Map<String, TensorType> inputs;
 
+    // Assigned when this is added to a schema
+    private Schema schema = null;
+
     private RankProfile(Builder builder) {
         this.name = builder.name;
         this.hasSummaryFeatures = builder.hasSummaryFeatures;
@@ -29,6 +32,16 @@ public class RankProfile {
     }
 
     public String name() { return name; }
+
+    /** Returns the schema owning this, or null if this is not added to a schema */
+    public Schema schema() { return schema; }
+
+    void setSchema(Schema schema) {
+        if ( this.schema != null)
+            throw new IllegalStateException("Cannot add rank profile '" + name + "' to schema '" + schema.name() +
+                                            "' as it is already added to schema '" + this.schema.name() + "'");
+        this.schema = schema;
+    }
 
     /** Returns true if this rank profile has summary features. */
     public boolean hasSummaryFeatures() { return hasSummaryFeatures; }
@@ -42,8 +55,7 @@ public class RankProfile {
     @Override
     public boolean equals(Object o) {
         if (o == this) return true;
-        if ( ! (o instanceof RankProfile)) return false;
-        RankProfile other = (RankProfile)o;
+        if ( ! (o instanceof RankProfile other)) return false;
         if ( ! other.name.equals(this.name)) return false;
         if ( other.hasSummaryFeatures != this.hasSummaryFeatures) return false;
         if ( other.hasRankFeatures != this.hasRankFeatures) return false;
@@ -58,7 +70,7 @@ public class RankProfile {
 
     @Override
     public String toString() {
-        return "rank profile '" + name + "'";
+        return "rank profile '" + name + "'" + (schema == null ? "" : " in " + schema);
     }
 
     public static class Builder {
