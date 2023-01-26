@@ -187,6 +187,7 @@ public class ApplicationMetricsRetriever extends AbstractComponent implements Ru
                 .toList();
     }
 
+    @SuppressWarnings("deprecation")
     static CloseableHttpAsyncClient createHttpClient() {
         return VespaAsyncHttpClientBuilder.create()
                 .setIOReactorConfig(IOReactorConfig.custom()

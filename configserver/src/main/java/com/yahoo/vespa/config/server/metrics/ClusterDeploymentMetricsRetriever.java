@@ -55,6 +55,7 @@ public class ClusterDeploymentMetricsRetriever {
 
     private static final ExecutorService executor = Executors.newFixedThreadPool(10, new DaemonThreadFactory("cluster-deployment-metrics-retriever-"));
 
+    @SuppressWarnings("deprecation")
     private static final CloseableHttpClient httpClient =
             VespaHttpClientBuilder
                     .create(registry -> new PoolingHttpClientConnectionManager(registry,
@@ -128,31 +129,22 @@ public class ClusterDeploymentMetricsRetriever {
         Supplier<DeploymentMetricsAggregator> aggregator = () -> clusterMetricsMap.computeIfAbsent(clusterInfo, c -> new DeploymentMetricsAggregator());
 
         switch (serviceName) {
-            case VESPA_CONTAINER:
+            case VESPA_CONTAINER -> {
                 optionalDouble(values.field("query_latency.sum")).ifPresent(qlSum ->
-                        aggregator.get()
-                                .addContainerLatency(qlSum, values.field("query_latency.count").asDouble()));
+                        aggregator.get().addContainerLatency(qlSum, values.field("query_latency.count").asDouble()));
                 optionalDouble(values.field("feed.latency.sum")).ifPresent(flSum ->
-                        aggregator.get()
-                                .addFeedLatency(flSum, values.field("feed.latency.count").asDouble()));
-                break;
-            case VESPA_QRSERVER:
-                optionalDouble(values.field("query_latency.sum")).ifPresent(qlSum ->
-                        aggregator.get()
-                                .addQrLatency(qlSum, values.field("query_latency.count").asDouble()));
-                break;
-            case VESPA_DISTRIBUTOR:
-                optionalDouble(values.field("vds.distributor.docsstored.average"))
-                        .ifPresent(docCount -> aggregator.get().addDocumentCount(docCount));
-                break;
-            case VESPA_CONTAINER_CLUSTERCONTROLLER:
-                optionalDouble(values.field(ContainerMetrics.CLUSTER_CONTROLLER_RESOURCE_USAGE_MAX_MEMORY_UTILIZATION.max())).ifPresent(memoryUtil ->
-                        aggregator.get()
-                                .addMemoryUsage(memoryUtil,
-                                        values.field(ContainerMetrics.CLUSTER_CONTROLLER_RESOURCE_USAGE_MEMORY_LIMIT.last()).asDouble())
-                                .addDiskUsage(values.field(ContainerMetrics.CLUSTER_CONTROLLER_RESOURCE_USAGE_MAX_DISK_UTILIZATION.max()).asDouble(),
-                                        values.field(ContainerMetrics.CLUSTER_CONTROLLER_RESOURCE_USAGE_DISK_LIMIT.last()).asDouble()));
-                break;
+                        aggregator.get().addFeedLatency(flSum, values.field("feed.latency.count").asDouble()));
+            }
+            case VESPA_QRSERVER -> optionalDouble(values.field("query_latency.sum")).ifPresent(qlSum ->
+                    aggregator.get().addQrLatency(qlSum, values.field("query_latency.count").asDouble()));
+            case VESPA_DISTRIBUTOR -> optionalDouble(values.field("vds.distributor.docsstored.average"))
+                    .ifPresent(docCount -> aggregator.get().addDocumentCount(docCount));
+            case VESPA_CONTAINER_CLUSTERCONTROLLER ->
+                    optionalDouble(values.field(ContainerMetrics.CLUSTER_CONTROLLER_RESOURCE_USAGE_MAX_MEMORY_UTILIZATION.max())).ifPresent(memoryUtil ->
+                            aggregator.get()
+                                    .addMemoryUsage(memoryUtil, values.field(ContainerMetrics.CLUSTER_CONTROLLER_RESOURCE_USAGE_MEMORY_LIMIT.last()).asDouble())
+                                    .addDiskUsage(values.field(ContainerMetrics.CLUSTER_CONTROLLER_RESOURCE_USAGE_MAX_DISK_UTILIZATION.max()).asDouble(),
+                                            values.field(ContainerMetrics.CLUSTER_CONTROLLER_RESOURCE_USAGE_DISK_LIMIT.last()).asDouble()));
         }
     }
 
@@ -160,6 +152,7 @@ public class ClusterDeploymentMetricsRetriever {
         return new ClusterInfo(dimensions.field("clusterid").asString(), dimensions.field("clustertype").asString());
     }
 
+    @SuppressWarnings("deprecation")
     private static Slime doMetricsRequest(URI hostURI) {
         HttpGet get = new HttpGet(hostURI);
         try (CloseableHttpResponse response = httpClient.execute(get)) {

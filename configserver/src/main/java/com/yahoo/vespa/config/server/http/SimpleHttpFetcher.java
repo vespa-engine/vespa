@@ -34,6 +34,7 @@ public class SimpleHttpFetcher implements HttpFetcher {
     }
 
     @Override
+    @SuppressWarnings("deprecation")
     public HttpResponse get(Params params, URI url) {
         try {
             HttpGet request = new HttpGet(url);

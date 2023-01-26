@@ -58,6 +58,7 @@ public class SecretStoreValidator {
         return URI.create(PROTOCOL + hostname + AWS_PARAMETER_VALIDATION_HANDLER_POSTFIX);
     }
 
+    @SuppressWarnings("deprecation")
     private HttpResponse postRequest(URI uri, Slime slime) {
         var postRequest = new HttpPost(uri);
         var data = uncheck(() -> SlimeUtils.toJsonBytes(slime));

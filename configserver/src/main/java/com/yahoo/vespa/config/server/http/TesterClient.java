@@ -64,6 +64,7 @@ public class TesterClient {
         return execute(new HttpGet(testerUri), "Failed to get test report");
     }
 
+    @SuppressWarnings("deprecation")
     private HttpResponse execute(HttpUriRequest request, String messageIfRequestFails) {
         logger.log(Level.FINE, () -> "Sending request to tester container " + request.getRequestUri());
         try {

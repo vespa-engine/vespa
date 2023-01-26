@@ -17,6 +17,7 @@ import org.apache.hc.core5.http.protocol.HttpContext;
 class HttpToHttpsRoutePlanner implements HttpRoutePlanner {
 
     @Override
+    @SuppressWarnings("deprecation")
     public HttpRoute determineRoute(HttpHost target, HttpContext context) {
         if ( ! target.getSchemeName().equals("http") && ! target.getSchemeName().equals("https"))
             throw new IllegalArgumentException("Scheme must be 'http' or 'https' when using HttpToHttpsRoutePlanner, was '" + target.getSchemeName() + "'");

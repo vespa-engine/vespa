@@ -38,6 +38,7 @@ public class HttpToHttpsRoutePlannerTest {
 
 
     @Test
+    @SuppressWarnings("deprecation")
     void verifyProxyIsDisallowed() {
         HttpClientContext context = new HttpClientContext();
         context.setRequestConfig(RequestConfig.custom().setProxy(new HttpHost("proxy")).build());

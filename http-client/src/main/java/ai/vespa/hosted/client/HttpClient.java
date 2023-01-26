@@ -34,6 +34,7 @@ import static java.util.Objects.requireNonNull;
 /**
  * @author jonmv
  */
+@SuppressWarnings("deprecation")
 public interface HttpClient extends Closeable {
 
     RequestConfig defaultRequestConfig = RequestConfig.custom()

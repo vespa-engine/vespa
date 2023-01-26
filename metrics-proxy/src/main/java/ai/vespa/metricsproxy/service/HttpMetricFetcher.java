@@ -46,6 +46,7 @@ public abstract class HttpMetricFetcher {
         log.log(Level.FINE, () -> "Fetching metrics from " + u + " with timeout " + CONNECTION_TIMEOUT);
     }
 
+    @SuppressWarnings("deprecation")
     CloseableHttpResponse getResponse() throws IOException {
         log.log(Level.FINE, () -> "Connecting to url " + url + " for service '" + service + "'");
         return httpClient.execute(new HttpGet(url));
@@ -80,6 +81,7 @@ public abstract class HttpMetricFetcher {
         }
     }
 
+    @SuppressWarnings("deprecation")
     private static CloseableHttpClient createHttpClient() {
         return VespaHttpClientBuilder.create(registry -> {
                     var mgr = new PoolingHttpClientConnectionManager(registry);

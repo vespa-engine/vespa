@@ -280,6 +280,7 @@ public class ConfigConvergenceChecker extends AbstractComponent {
         }
     }
 
+    @SuppressWarnings("deprecation")
     private static RequestConfig createRequestConfig(Duration timeout) {
         return RequestConfig.custom()
                 .setConnectionRequestTimeout(Timeout.ofSeconds(1))
@@ -288,6 +289,7 @@ public class ConfigConvergenceChecker extends AbstractComponent {
                 .build();
     }
 
+    @SuppressWarnings("deprecation")
     private static CloseableHttpAsyncClient createHttpClient() {
         return VespaAsyncHttpClientBuilder
                 .create(tlsStrategy ->

@@ -62,6 +62,7 @@ public class PrometheusV1Handler extends HttpHandlerBase {
         }
     }
 
+    @SuppressWarnings("deprecation")
     private static CloseableHttpClient createHttpClient() {
         return VespaHttpClientBuilder.create()
                 .setUserAgent("application-prometheus-receiver")
