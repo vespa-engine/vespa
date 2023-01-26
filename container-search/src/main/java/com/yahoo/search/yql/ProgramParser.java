@@ -74,7 +74,7 @@ import java.util.stream.Stream;
  */
 final class ProgramParser {
 
-    public yqlplusParser prepareParser(String programName, String input) throws IOException {
+    public yqlplusParser prepareParser(String programName, String input) {
         return prepareParser(programName, new CaseInsensitiveCharStream(CharStreams.fromString(input)));
     }
 
