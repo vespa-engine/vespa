@@ -62,9 +62,10 @@ public class MetricsV2Handler extends HttpHandlerBase {
     }
 
     private static CloseableHttpClient createHttpClient() {
-        return VespaHttpClientBuilder.custom().connectTimeout(HTTP_CONNECT_TIMEOUT, MILLISECONDS).apacheBuilder()
+        return VespaHttpClientBuilder.create()
                 .setUserAgent("application-metrics-retriever")
                 .setDefaultRequestConfig(RequestConfig.custom()
+                                                      .setConnectTimeout(HTTP_CONNECT_TIMEOUT, MILLISECONDS)
                                                       .setResponseTimeout(HTTP_SOCKET_TIMEOUT, MILLISECONDS)
                                                       .build())
                 .build();

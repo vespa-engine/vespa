@@ -5,7 +5,6 @@ import org.apache.hc.client5.http.SystemDefaultDnsResolver;
 import org.apache.hc.client5.http.classic.methods.HttpGet;
 import org.apache.hc.client5.http.classic.methods.HttpPost;
 import org.apache.hc.client5.http.classic.methods.HttpUriRequest;
-import org.apache.hc.client5.http.config.ConnectionConfig;
 import org.apache.hc.client5.http.entity.GzipCompressingEntity;
 import org.apache.hc.client5.http.entity.mime.FormBodyPart;
 import org.apache.hc.client5.http.entity.mime.MultipartEntityBuilder;
@@ -72,7 +71,6 @@ public class SimpleHttpClient implements AutoCloseable {
                     new DefaultHostnameVerifier());
             PoolingHttpClientConnectionManager connManager = PoolingHttpClientConnectionManagerBuilder.create()
                     .setSSLSocketFactory(sslConnectionFactory)
-                    .setDefaultConnectionConfig(ConnectionConfig.custom().build())
                     .setDnsResolver(new SystemDefaultDnsResolver() {
                         @Override
                         public InetAddress[] resolve(String host) throws UnknownHostException {
@@ -160,7 +158,6 @@ public class SimpleHttpClient implements AutoCloseable {
             return this;
         }
 
-        @SuppressWarnings("deprecation")
         public ResponseValidator execute() throws IOException {
             if (entity != null) {
                 request.setEntity(entity);

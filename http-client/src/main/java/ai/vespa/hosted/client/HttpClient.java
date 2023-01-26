@@ -38,6 +38,7 @@ public interface HttpClient extends Closeable {
 
     RequestConfig defaultRequestConfig = RequestConfig.custom()
                                                       .setConnectionRequestTimeout(Timeout.ofSeconds(5))
+                                                      .setConnectTimeout(Timeout.ofSeconds(5))
                                                       .setRedirectsEnabled(false)
                                                       .build();
 

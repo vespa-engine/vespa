@@ -5,11 +5,9 @@ import ai.vespa.feed.client.FeedClientBuilder.Compression;
 import ai.vespa.feed.client.HttpResponse;
 import org.apache.hc.client5.http.async.methods.SimpleHttpRequest;
 import org.apache.hc.client5.http.async.methods.SimpleHttpResponse;
-import org.apache.hc.client5.http.config.ConnectionConfig;
 import org.apache.hc.client5.http.config.RequestConfig;
 import org.apache.hc.client5.http.impl.async.CloseableHttpAsyncClient;
 import org.apache.hc.client5.http.impl.async.HttpAsyncClients;
-import org.apache.hc.client5.http.impl.async.MinimalH2AsyncClient;
 import org.apache.hc.client5.http.ssl.ClientTlsStrategyBuilder;
 import org.apache.hc.core5.concurrent.FutureCallback;
 import org.apache.hc.core5.http.ContentType;
@@ -60,10 +58,9 @@ class ApacheCluster implements Cluster {
     private final ScheduledExecutorService timeoutExecutor = Executors.newSingleThreadScheduledExecutor(t -> new Thread(t, "request-timeout-thread"));
 
     ApacheCluster(FeedClientBuilderImpl builder) throws IOException {
-        ConnectionConfig connectionConfig = createConnectionConfig();
         for (int i = 0; i < builder.connectionsPerEndpoint; i++)
             for (URI endpoint : builder.endpoints)
-                endpoints.add(new Endpoint(createHttpClient(builder, connectionConfig), endpoint));
+                endpoints.add(new Endpoint(createHttpClient(builder), endpoint));
         this.requestConfig = createRequestConfig(builder);
         this.compression = builder.compression;
     }
@@ -162,8 +159,7 @@ class ApacheCluster implements Cluster {
 
     }
 
-    @SuppressWarnings("deprecation")
-    private static CloseableHttpAsyncClient createHttpClient(FeedClientBuilderImpl builder, ConnectionConfig connectionConfig) throws IOException {
+    private static CloseableHttpAsyncClient createHttpClient(FeedClientBuilderImpl builder) throws IOException {
         SSLContext sslContext = builder.constructSslContext();
         String[] allowedCiphers = excludeH2Blacklisted(excludeWeak(sslContext.getSupportedSSLParameters().getCipherSuites()));
         if (allowedCiphers.length == 0)
@@ -176,20 +172,18 @@ class ApacheCluster implements Cluster {
         if (builder.hostnameVerifier != null)
             tlsStrategyBuilder.setHostnameVerifier(builder.hostnameVerifier);
 
-        MinimalH2AsyncClient client = HttpAsyncClients.createHttp2Minimal(H2Config.custom()
+        return HttpAsyncClients.createHttp2Minimal(H2Config.custom()
                                                            .setMaxConcurrentStreams(builder.maxStreamsPerConnection)
                                                            .setCompressionEnabled(true)
                                                            .setPushEnabled(false)
                                                            .setInitialWindowSize(Integer.MAX_VALUE)
                                                            .build(),
                                                    IOReactorConfig.custom()
-                                                           .setIoThreadCount(2)
-                                                           .setTcpNoDelay(true)
-                                                           .setSoTimeout(Timeout.ofSeconds(10))
-                                                           .build(),
+                                                                  .setIoThreadCount(2)
+                                                                  .setTcpNoDelay(true)
+                                                                  .setSoTimeout(Timeout.ofSeconds(10))
+                                                                  .build(),
                                                    tlsStrategyBuilder.build());
-        client.setConnectionConfigResolver(host -> connectionConfig);
-        return client;
     }
 
     private static int portOf(URI url) {
@@ -197,19 +191,12 @@ class ApacheCluster implements Cluster {
                                    : url.getPort();
     }
 
-    private static ConnectionConfig createConnectionConfig() {
-        return ConnectionConfig.custom()
-                .setConnectTimeout(Timeout.ofSeconds(10)).build();
-    }
-
-    @SuppressWarnings("deprecation")
     private static RequestConfig createRequestConfig(FeedClientBuilderImpl b) {
         RequestConfig.Builder builder = RequestConfig.custom()
+                .setConnectTimeout(Timeout.ofSeconds(10))
                 .setConnectionRequestTimeout(Timeout.DISABLED)
                 .setResponseTimeout(Timeout.ofSeconds(190));
-        if (b.proxy != null) {
-            builder.setProxy(new HttpHost(b.proxy.getScheme(), b.proxy.getHost(), b.proxy.getPort()));
-        }
+        if (b.proxy != null) builder.setProxy(new HttpHost(b.proxy.getScheme(), b.proxy.getHost(), b.proxy.getPort()));
         return builder.build();
     }
 

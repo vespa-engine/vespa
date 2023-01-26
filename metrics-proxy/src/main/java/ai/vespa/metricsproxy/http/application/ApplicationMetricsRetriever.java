@@ -28,6 +28,7 @@ import java.util.concurrent.TimeoutException;
 import java.util.concurrent.CancellationException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.stream.Collectors;
 
 import static ai.vespa.metricsproxy.http.ValuesFetcher.defaultMetricsConsumerId;
 
@@ -187,7 +188,6 @@ public class ApplicationMetricsRetriever extends AbstractComponent implements Ru
                 .toList();
     }
 
-    @SuppressWarnings("deprecation")
     static CloseableHttpAsyncClient createHttpClient() {
         return VespaAsyncHttpClientBuilder.create()
                 .setIOReactorConfig(IOReactorConfig.custom()

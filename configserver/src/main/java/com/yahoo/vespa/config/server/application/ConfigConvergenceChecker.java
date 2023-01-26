@@ -14,7 +14,6 @@ import com.yahoo.config.model.api.ServiceInfo;
 import org.apache.hc.client5.http.async.methods.SimpleHttpRequest;
 import org.apache.hc.client5.http.async.methods.SimpleHttpResponse;
 import org.apache.hc.client5.http.async.methods.SimpleRequestBuilder;
-import org.apache.hc.client5.http.config.ConnectionConfig;
 import org.apache.hc.client5.http.config.RequestConfig;
 import org.apache.hc.client5.http.impl.async.CloseableHttpAsyncClient;
 import org.apache.hc.client5.http.impl.nio.PoolingAsyncClientConnectionManagerBuilder;
@@ -285,6 +284,7 @@ public class ConfigConvergenceChecker extends AbstractComponent {
         return RequestConfig.custom()
                 .setConnectionRequestTimeout(Timeout.ofSeconds(1))
                 .setResponseTimeout(Timeout.ofMilliseconds(timeout.toMillis()))
+                .setConnectTimeout(Timeout.ofSeconds(1))
                 .build();
     }
 
@@ -294,10 +294,7 @@ public class ConfigConvergenceChecker extends AbstractComponent {
                         PoolingAsyncClientConnectionManagerBuilder.create()
                                 .setMaxConnTotal(100)
                                 .setMaxConnPerRoute(10)
-                                .setDefaultConnectionConfig(ConnectionConfig.custom()
-                                        .setTimeToLive(TimeValue.ofMilliseconds(1))
-                                        .setConnectTimeout(Timeout.ofSeconds(1))
-                                        .build())
+                                .setConnectionTimeToLive(TimeValue.ofMilliseconds(1))
                                 .setTlsStrategy(tlsStrategy)
                                 .build())
                 .setIOReactorConfig(IOReactorConfig.custom()
