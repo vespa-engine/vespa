@@ -30,18 +30,8 @@ public class OnnxEvaluator {
     }
 
     public OnnxEvaluator(String modelPath, OnnxEvaluatorOptions options) {
-        try {
-            if (options == null) {
-                options = new OnnxEvaluatorOptions();
-            }
-            environment = OrtEnvironment.getEnvironment();
-            session = environment.createSession(modelPath, options.getOptions());
-        } catch (OrtException e) {
-            if (e.getCode() == OrtException.OrtErrorCode.ORT_NO_SUCHFILE) {
-                throw new IllegalArgumentException("No such file: "+modelPath);
-            }
-            throw new RuntimeException("ONNX Runtime exception", e);
-        }
+        environment = OrtEnvironment.getEnvironment();
+        session = createSession(modelPath, environment, options, true);
     }
 
     public Tensor evaluate(Map<String, Tensor> inputs, String output) {
@@ -94,6 +84,32 @@ public class OnnxEvaluator {
         } catch (OrtException e) {
             throw new RuntimeException("ONNX Runtime exception", e);
         }
+    }
+
+    private static OrtSession createSession(String modelPath, OrtEnvironment environment, OnnxEvaluatorOptions options, boolean tryCuda) {
+        if (options == null) {
+            options = new OnnxEvaluatorOptions();
+        }
+        try {
+            return environment.createSession(modelPath, options.getOptions(tryCuda && options.hasGpuDevice()));
+        } catch (OrtException e) {
+            if (e.getCode() == OrtException.OrtErrorCode.ORT_NO_SUCHFILE) {
+                throw new IllegalArgumentException("No such file: " + modelPath);
+            }
+            if (tryCuda && isCudaError(e) && !options.gpuDeviceRequired()) {
+                // Failed in CUDA native code, but GPU device is optional, so we can proceed without it
+                return createSession(modelPath, environment, options, false);
+            }
+            throw new RuntimeException("ONNX Runtime exception", e);
+        }
+    }
+
+    private static boolean isCudaError(OrtException e) {
+        return switch (e.getCode()) {
+            case ORT_FAIL -> e.getMessage().contains("cudaError");
+            case ORT_EP_FAIL -> e.getMessage().contains("Failed to find CUDA");
+            default -> false;
+        };
     }
 
     public static boolean isRuntimeAvailable() {
