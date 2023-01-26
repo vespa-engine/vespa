@@ -8,9 +8,6 @@ import java.util.Objects;
 /**
  * Settings for a zone endpoint of a deployment.
  *
- * TODO: Fix isEmpty
- *       Inline empty and constructor
- *
  * @author jonmv
  */
 public class ZoneEndpoint {
@@ -20,10 +17,6 @@ public class ZoneEndpoint {
     private final boolean isPublicEndpoint;
     private final boolean isPrivateEndpoint;
     private final List<AllowedUrn> allowedUrns;
-
-    public ZoneEndpoint(List<String> allowedUrns) {
-        this(true, true, allowedUrns.stream().map(arn -> new AllowedUrn(AccessType.awsPrivateLink, arn)).toList());
-    }
 
     public ZoneEndpoint(boolean isPublicEndpoint, boolean isPrivateEndpoint, List<AllowedUrn> allowedUrns) {
         if ( ! allowedUrns.isEmpty() && ! isPrivateEndpoint)
