@@ -2,6 +2,7 @@
 package ai.vespa.util.http.hc5;
 
 import org.apache.hc.client5.http.HttpRoute;
+import org.apache.hc.client5.http.impl.DefaultSchemePortResolver;
 import org.apache.hc.client5.http.protocol.HttpClientContext;
 import org.apache.hc.client5.http.routing.HttpRoutePlanner;
 import org.apache.hc.core5.http.HttpHost;
@@ -20,13 +21,11 @@ class HttpToHttpsRoutePlanner implements HttpRoutePlanner {
         if ( ! target.getSchemeName().equals("http") && ! target.getSchemeName().equals("https"))
             throw new IllegalArgumentException("Scheme must be 'http' or 'https' when using HttpToHttpsRoutePlanner, was '" + target.getSchemeName() + "'");
 
-        if (target.getPort() == -1)
-            throw new IllegalArgumentException("Port must be set when using HttpToHttpsRoutePlanner");
-
         if (HttpClientContext.adapt(context).getRequestConfig().getProxy() != null)
             throw new IllegalArgumentException("Proxies are not supported with HttpToHttpsRoutePlanner");
 
-        return new HttpRoute(new HttpHost("https", target.getAddress(), target.getHostName(), target.getPort()));
+        int port = DefaultSchemePortResolver.INSTANCE.resolve(target);
+        return new HttpRoute(new HttpHost("https", target.getAddress(), target.getHostName(), port));
     }
 
 }
