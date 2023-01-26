@@ -361,7 +361,8 @@ public class RoutingPolicies {
             var newPolicy = new RoutingPolicy(policyId, loadBalancer.hostname(), loadBalancer.ipAddress(), dnsZone,
                                               allocation.instanceEndpointsOf(loadBalancer),
                                               allocation.applicationEndpointsOf(loadBalancer),
-                                              new RoutingPolicy.Status(isActive(loadBalancer), RoutingStatus.DEFAULT));
+                                              new RoutingPolicy.Status(isActive(loadBalancer), RoutingStatus.DEFAULT),
+                                              loadBalancer.isPublic());
             // Preserve global routing status for existing policy
             if (existingPolicy != null) {
                 newPolicy = newPolicy.with(newPolicy.status().with(existingPolicy.status().routingStatus()));

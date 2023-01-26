@@ -419,7 +419,8 @@ public class ConfigServerMock extends AbstractComponent implements ConfigServer 
                                                                    LoadBalancer.State.active,
                                                                    Optional.of("dns-zone-1"),
                                                                    Optional.empty(),
-                                                                   Optional.of(new PrivateServiceInfo("service", List.of(new AllowedUrn(AccessType.awsPrivateLink, "arne")))))));
+                                                                   Optional.of(new PrivateServiceInfo("service", List.of(new AllowedUrn(AccessType.awsPrivateLink, "arne")))),
+                                                                   true)));
         }
 
         Application application = applications.get(id);

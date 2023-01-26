@@ -277,7 +277,8 @@ public class DeploymentContext {
                                            Optional.empty(),
                                            Set.of(EndpointId.of("default")),
                                            Set.of(),
-                                           new RoutingPolicy.Status(false, RoutingStatus.DEFAULT)));
+                                           new RoutingPolicy.Status(false, RoutingStatus.DEFAULT),
+                                           true));
         tester.controller().curator().writeRoutingPolicies(instanceId, List.copyOf(policies.values()));
         return this;
     }
