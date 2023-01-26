@@ -7,8 +7,6 @@ import org.apache.hc.client5.http.classic.methods.HttpGet;
 import org.apache.hc.client5.http.config.RequestConfig;
 import org.apache.hc.client5.http.impl.classic.CloseableHttpClient;
 import org.apache.hc.client5.http.impl.classic.CloseableHttpResponse;
-import org.apache.hc.client5.http.impl.io.PoolingHttpClientConnectionManager;
-import org.apache.hc.core5.http.io.SocketConfig;
 import org.apache.hc.core5.util.Timeout;
 
 import java.io.IOException;
@@ -81,19 +79,14 @@ public abstract class HttpMetricFetcher {
         }
     }
 
-    @SuppressWarnings("deprecation")
     private static CloseableHttpClient createHttpClient() {
-        return VespaHttpClientBuilder.create(registry -> {
-                    var mgr = new PoolingHttpClientConnectionManager(registry);
-                    mgr.setDefaultSocketConfig(SocketConfig.custom()
-                            .setSoTimeout(Timeout.ofMilliseconds(SOCKET_TIMEOUT))
-                            .build());
-                    return mgr;
-                })
+        return VespaHttpClientBuilder.custom()
+                .connectTimeout(Timeout.ofMilliseconds(CONNECTION_TIMEOUT))
+                .socketTimeout(Timeout.ofMilliseconds(CONNECTION_TIMEOUT))
+                .apacheBuilder()
                 .setUserAgent("metrics-proxy-http-client")
                 .setDefaultRequestConfig(RequestConfig.custom()
                         .setConnectionRequestTimeout(Timeout.ofMilliseconds(SOCKET_TIMEOUT))
-                        .setConnectTimeout(Timeout.ofMilliseconds(CONNECTION_TIMEOUT))
                         .setResponseTimeout(Timeout.ofMilliseconds(SOCKET_TIMEOUT))
                         .build())
                 .build();

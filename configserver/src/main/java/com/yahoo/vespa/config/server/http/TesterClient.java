@@ -23,7 +23,7 @@ import java.util.logging.Logger;
  */
 public class TesterClient {
 
-    private final CloseableHttpClient httpClient = VespaHttpClientBuilder.create().build();
+    private final CloseableHttpClient httpClient = VespaHttpClientBuilder.custom().buildClient();
     private static final Logger logger = Logger.getLogger(TesterClient.class.getName());
 
     public HttpResponse getStatus(String testerHostname, int port) {
