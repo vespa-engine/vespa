@@ -129,8 +129,7 @@ public class StatelessOnnxEvaluationTest {
         assertEquals(2, mulModel.stateless_intraop_threads());
         assertEquals(-1, mulModel.stateless_interop_threads());
         assertEquals("", mulModel.stateless_execution_mode());
-        assertFalse(mulModel.gpu_device_required());
-        assertEquals(0, mulModel.gpu_device());
+        assertEquals(-1, mulModel.gpu_device());
     }
 
 }
