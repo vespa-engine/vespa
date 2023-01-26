@@ -276,6 +276,9 @@ public class SummaryField extends Field implements Cloneable, TypedKey {
         if (sourceName.contains(".")) {
             return false;
         }
+        if (sources.size() > 1) {
+            return false;
+        }
         return true;
     }
 
