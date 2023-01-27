@@ -19,6 +19,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 public class SimpleHttpFetcher implements HttpFetcher {
+
     private static final Logger logger = Logger.getLogger(SimpleHttpFetcher.class.getName());
 
     private final CloseableHttpClient client;

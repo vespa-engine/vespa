@@ -5,7 +5,7 @@ import ai.vespa.http.DomainName;
 import com.google.common.net.InetAddresses;
 import com.yahoo.config.provision.EndpointsChecker;
 import com.yahoo.config.provision.EndpointsChecker.Endpoint;
-import com.yahoo.config.provision.EndpointsChecker.UnavailabilityCause;
+import com.yahoo.config.provision.EndpointsChecker.Availability;
 import com.yahoo.vespa.hosted.controller.api.identifiers.DeploymentId;
 import com.yahoo.vespa.hosted.controller.api.integration.LogEntry;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.TestReport;
@@ -19,7 +19,6 @@ import java.net.URI;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
-import java.util.stream.Collectors;
 
 import static com.yahoo.vespa.hosted.controller.api.integration.deployment.TesterCloud.Status.NOT_STARTED;
 import static com.yahoo.vespa.hosted.controller.api.integration.deployment.TesterCloud.Status.RUNNING;
@@ -52,18 +51,13 @@ public class MockTesterCloud implements TesterCloud {
     public Status getStatus(DeploymentId deploymentId) { return status; }
 
     @Override
-    public boolean ready(URI testerUrl) {
-        return true;
-    }
-
-    @Override
     public boolean testerReady(DeploymentId deploymentId) {
         return true;
     }
 
     @Override
-    public Optional<UnavailabilityCause> verifyEndpoints(List<Endpoint> endpoints) {
-        return EndpointsChecker.endpointsAvailable(endpoints, this::resolveHostName, this::resolveCname);
+    public Availability verifyEndpoints(List<Endpoint> endpoints) {
+        return EndpointsChecker.endpointsAvailable(endpoints, this::resolveHostName, this::resolveCname, __ -> true);
     }
 
     private Optional<InetAddress> resolveHostName(DomainName hostname) {

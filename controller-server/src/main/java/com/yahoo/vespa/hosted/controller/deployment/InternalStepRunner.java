@@ -2,7 +2,7 @@
 package com.yahoo.vespa.hosted.controller.deployment;
 
 import ai.vespa.http.DomainName;
-import com.google.common.net.InetAddresses;
+import ai.vespa.http.HttpURL;
 import com.yahoo.component.Version;
 import com.yahoo.config.application.api.DeploymentSpec;
 import com.yahoo.config.application.api.Notifications;
@@ -10,6 +10,8 @@ import com.yahoo.config.application.api.Notifications.When;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.EndpointsChecker;
+import com.yahoo.config.provision.EndpointsChecker.Availability;
+import com.yahoo.config.provision.EndpointsChecker.Status;
 import com.yahoo.config.provision.HostName;
 import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.zone.RoutingMethod;
@@ -353,13 +355,13 @@ public class InternalStepRunner implements StepRunner {
         }
         if (summary.converged()) {
             controller.jobController().locked(id, lockedRun -> lockedRun.withSummary(null));
-            if (endpointsAvailable(id.application(), id.type().zone(), logger)) {
-                if (containersAreUp(id.application(), id.type().zone(), logger)) {
+            Availability availability = endpointsAvailable(id.application(), id.type().zone(), logger);
+            if (availability.status() == Status.available) {
                     logger.log("Installation succeeded!");
                     return Optional.of(running);
-                }
             }
-            else if (timedOut(id, deployment.get(), timeouts.endpoint())) {
+            logger.log(availability.message());
+            if (availability.status() == Status.endpointsUnavailable && timedOut(id, deployment.get(), timeouts.endpoint())) {
                 logger.log(WARNING, "Endpoints failed to show up within " + timeouts.endpoint().toMinutes() + " minutes!");
                 return Optional.of(error);
             }
@@ -478,21 +480,6 @@ public class InternalStepRunner implements StepRunner {
         return Optional.empty();
     }
 
-    /** Returns true iff all calls to endpoint in the deployment give 100 consecutive 200 OK responses on /status.html. */
-    private boolean containersAreUp(ApplicationId id, ZoneId zoneId, DualLogger logger) {
-        var endpoints = controller.routing().readTestRunnerEndpointsOf(Set.of(new DeploymentId(id, zoneId)));
-        if ( ! endpoints.containsKey(zoneId))
-            return false;
-
-        return endpoints.get(zoneId).parallelStream().allMatch(endpoint -> {
-            boolean ready = controller.jobController().cloud().ready(endpoint.url());
-            if (!ready) {
-                logger.log("Failed to get 100 consecutive OKs from " + endpoint);
-            }
-            return ready;
-        });
-    }
-
     /** Returns true iff all containers in the tester deployment give 100 consecutive 200 OK responses on /status.html. */
     private boolean testerContainersAreUp(ApplicationId id, ZoneId zoneId, DualLogger logger) {
         DeploymentId deploymentId = new DeploymentId(id, zoneId);
@@ -504,29 +491,24 @@ public class InternalStepRunner implements StepRunner {
         }
     }
 
-    private boolean endpointsAvailable(ApplicationId id, ZoneId zone, DualLogger logger) {
+    private Availability endpointsAvailable(ApplicationId id, ZoneId zone, DualLogger logger) {
         DeploymentId deployment = new DeploymentId(id, zone);
         Map<ZoneId, List<Endpoint>> endpoints = controller.routing().readTestRunnerEndpointsOf(Set.of(deployment));
+        logEndpoints(endpoints, logger);
         DeploymentRoutingContext context = controller.routing().of(deployment);
         boolean resolveEndpoints = context.routingMethod() == RoutingMethod.exclusive;
-        var unavailableCause = controller.serviceRegistry().testerCloud().verifyEndpoints(
+        return controller.serviceRegistry().testerCloud().verifyEndpoints(
                 endpoints.getOrDefault(zone, List.of())
                          .stream()
                          .map(endpoint -> {
                              ClusterSpec.Id cluster = ClusterSpec.Id.from(endpoint.name());
                              RoutingPolicy policy = context.routingPolicy(cluster).get();
                              return new EndpointsChecker.Endpoint(cluster,
-                                                                  DomainName.of(endpoint.dnsName()),
+                                                                  HttpURL.from(endpoint.url()),
                                                                   policy.ipAddress().filter(__ -> resolveEndpoints).map(uncheck(InetAddress::getByName)),
                                                                   policy.canonicalName().filter(__ -> resolveEndpoints),
                                                                   policy.isPublic());
                          }).toList());
-        if (unavailableCause.isPresent()) {
-            logger.log(unavailableCause.get().message());
-            return false;
-        }
-        logEndpoints(endpoints, logger);
-        return true;
     }
 
     private void logEndpoints(Map<ZoneId, List<Endpoint>> zoneEndpoints, DualLogger logger) {
