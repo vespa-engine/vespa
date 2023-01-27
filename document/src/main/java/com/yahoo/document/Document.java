@@ -204,6 +204,7 @@ public class Document extends StructuredFieldValue {
         return "document '" + docId + "' of type '" + getDataType().getName() + "'";
     }
 
+    @Deprecated
     public String toXML(String indent) {
         XmlStream xml = new XmlStream();
         xml.setIndent(indent);
@@ -218,10 +219,12 @@ public class Document extends StructuredFieldValue {
      * within a &lt;document&gt;&lt;/document&gt; tag.
      * @return XML representation of document
      */
+    @Deprecated
     public String toXml() {
         return toXML("  ");
     }
 
+    @Deprecated
     public void printXml(XmlStream xml) {
         XmlSerializationHelper.printDocumentXml(this, xml);
     }

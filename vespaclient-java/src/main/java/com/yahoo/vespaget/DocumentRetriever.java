@@ -133,6 +133,7 @@ public class DocumentRetriever {
         return msg;
     }
 
+    @SuppressWarnings("deprecation")
     private void printReply(Reply reply) {
         Trace trace = reply.getTrace();
         if (!trace.getRoot().isEmpty()) {

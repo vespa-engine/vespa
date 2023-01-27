@@ -86,6 +86,7 @@ public final class Float16FieldValue extends NumericFieldValue {
     }
 
     @Override
+    @Deprecated
     public void printXml(XmlStream xml) {
         XmlSerializationHelper.printShortfloatXml(this, xml);
     }

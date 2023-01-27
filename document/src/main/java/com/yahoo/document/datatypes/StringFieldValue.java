@@ -218,6 +218,7 @@ public class StringFieldValue extends FieldValue {
      * @param xml the stream to print to
      */
     @Override
+    @Deprecated
     public void printXml(XmlStream xml) {
         XmlSerializationHelper.printStringXml(this, xml);
         //TODO: add spanTree printing

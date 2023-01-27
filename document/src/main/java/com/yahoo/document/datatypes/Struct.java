@@ -92,6 +92,7 @@ public class Struct extends StructuredFieldValue {
     }
 
     @Override
+    @Deprecated
     public void printXml(XmlStream xml) {
         if (getDataType().equals(PositionDataType.INSTANCE)) {
             try {

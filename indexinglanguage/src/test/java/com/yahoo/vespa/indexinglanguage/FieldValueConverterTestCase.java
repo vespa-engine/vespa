@@ -397,6 +397,7 @@ public class FieldValueConverterTestCase {
         }
 
         @Override
+        @Deprecated
         public void printXml(XmlStream xml) {
 
         }

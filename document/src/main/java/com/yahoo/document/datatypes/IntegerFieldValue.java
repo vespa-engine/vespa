@@ -85,6 +85,7 @@ public final class IntegerFieldValue extends NumericFieldValue {
     }
 
     @Override
+    @Deprecated
     public void printXml(XmlStream xml) {
         XmlSerializationHelper.printIntegerXml(this, xml);
     }

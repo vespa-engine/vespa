@@ -369,7 +369,7 @@ public class VdsVisit {
         private boolean abortOnClusterDown = false;
         private int processTime = 0;
         private int fullTimeout = 7 * 24 * 60 * 60 * 1000;
-        private boolean jsonOutput = false;
+        private boolean jsonOutput = true;
         private boolean tensorShortForm = false; // TODO Vespa 9: change default to true
         private boolean tensorDirectValues = false; // TODO Vespa 9: change default to true
 

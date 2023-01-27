@@ -122,6 +122,7 @@ public class AnnotationReference extends FieldValue {
     }
 
     @Override
+    @Deprecated
     public void printXml(XmlStream xml) {
         // TODO: Implement AnnotationReference.printXml()
     }

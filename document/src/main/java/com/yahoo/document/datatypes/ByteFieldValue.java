@@ -93,6 +93,7 @@ public class ByteFieldValue extends NumericFieldValue {
     }
 
     @Override
+    @Deprecated
     public void printXml(XmlStream xml) {
         XmlSerializationHelper.printByteXml(this, xml);
     }

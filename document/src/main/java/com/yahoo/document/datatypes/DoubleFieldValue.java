@@ -88,6 +88,7 @@ public final class DoubleFieldValue extends NumericFieldValue {
     }
 
     @Override
+    @Deprecated
     public void printXml(XmlStream xml) {
         XmlSerializationHelper.printDoubleXml(this, xml);
     }

@@ -76,6 +76,7 @@ public class BoolFieldValue extends FieldValue {
     }
 
     @Override
+    @Deprecated
     public void printXml(XmlStream xml) {
         XmlSerializationHelper.printBoolXml(this, xml);
     }

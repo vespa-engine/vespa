@@ -98,6 +98,7 @@ public class MapFieldValue<K extends FieldValue, V extends FieldValue> extends C
     }
 
     @Override
+    @Deprecated
     public void printXml(XmlStream xml) {
         XmlSerializationHelper.printMapXml(this, xml);
     }

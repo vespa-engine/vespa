@@ -88,6 +88,7 @@ public class TensorFieldValue extends FieldValue {
     }
 
     @Override
+    @Deprecated
     public void printXml(XmlStream xml) {
         // TODO (geirst)
     }

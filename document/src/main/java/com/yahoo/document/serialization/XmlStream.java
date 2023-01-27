@@ -27,6 +27,7 @@ import java.util.ListIterator;
  *
  * @author <a href="humbe@yahoo-inc.com">Haakon Humberset</a>
  */
+@Deprecated
 public class XmlStream {
 
     // Utility class to hold attributes internally until it's time to write them

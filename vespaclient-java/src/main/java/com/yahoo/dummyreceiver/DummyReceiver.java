@@ -78,6 +78,7 @@ public class DummyReceiver implements MessageHandler {
         System.out.println("Registered listener at " + name + "/default with 0 max pending and sleep time of " + sleepTime);
     }
 
+    @SuppressWarnings("deprecation")
     public void handleMessage(Message message) {
         long messageCount = this.messageCount.incrementAndGet();
         if ( silentNum == 0 ) {

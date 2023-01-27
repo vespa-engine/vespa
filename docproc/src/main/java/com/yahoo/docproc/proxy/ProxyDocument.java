@@ -255,16 +255,19 @@ public class ProxyDocument extends Document implements DocumentOperationWrapper 
     }
 
     @Override
+    @Deprecated
     public String toXML(String indent) {
         return doc.toXML(indent);
     }
 
     @Override
+    @Deprecated
     public String toXml() {
         return doc.toXml();
     }
 
     @Override
+    @Deprecated
     public void printXml(XmlStream xml) {
         doc.printXml(xml);
     }

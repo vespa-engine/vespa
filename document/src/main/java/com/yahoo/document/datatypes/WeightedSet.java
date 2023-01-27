@@ -91,6 +91,7 @@ public final class WeightedSet<K extends FieldValue> extends CollectionFieldValu
 
 
     @Override
+    @Deprecated
     public void printXml(XmlStream xml) {
         XmlSerializationHelper.printWeightedSetXml(this, xml);
     }
