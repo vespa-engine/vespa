@@ -976,6 +976,7 @@
       "public com.yahoo.tensor.Tensor$Builder cell(com.yahoo.tensor.TensorAddress, double)",
       "public com.yahoo.tensor.Tensor$Builder block(com.yahoo.tensor.TensorAddress, double[])",
       "public com.yahoo.tensor.MixedTensor build()",
+      "public static com.yahoo.tensor.MixedTensor$BoundBuilder of(com.yahoo.tensor.TensorType)",
       "public bridge synthetic com.yahoo.tensor.Tensor build()"
     ],
     "fields" : [ ]
@@ -1026,6 +1027,7 @@
       "public com.yahoo.tensor.MixedTensor build()",
       "public void trackBounds(com.yahoo.tensor.TensorAddress)",
       "public com.yahoo.tensor.TensorType createBoundType()",
+      "public static com.yahoo.tensor.MixedTensor$UnboundBuilder of(com.yahoo.tensor.TensorType)",
       "public bridge synthetic com.yahoo.tensor.Tensor build()"
     ],
     "fields" : [ ]
@@ -1466,6 +1468,7 @@
       "public static com.yahoo.tensor.TensorType fromSpec(java.lang.String)",
       "public com.yahoo.tensor.TensorType$Value valueType()",
       "public com.yahoo.tensor.TensorType mappedSubtype()",
+      "public com.yahoo.tensor.TensorType indexedSubtype()",
       "public int rank()",
       "public java.util.List dimensions()",
       "public java.util.Set dimensionNames()",

@@ -305,6 +305,10 @@ public class MixedTensor implements Tensor {
             return new MixedTensor(type, builder, indexBuilder.build());
         }
 
+        public static BoundBuilder of(TensorType type) {
+            return new BoundBuilder(type);
+        }
+
     }
 
     /**
@@ -369,6 +373,10 @@ public class MixedTensor implements Tensor {
                 }
             }
             return typeBuilder.build();
+        }
+
+        public static UnboundBuilder of(TensorType type) {
+            return new UnboundBuilder(type);
         }
 
     }
