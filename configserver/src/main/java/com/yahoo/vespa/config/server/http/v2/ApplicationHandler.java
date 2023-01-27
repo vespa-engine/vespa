@@ -10,6 +10,9 @@ import com.yahoo.config.application.api.ApplicationFile;
 import com.yahoo.config.model.api.Model;
 import com.yahoo.config.model.api.ServiceInfo;
 import com.yahoo.config.provision.ApplicationId;
+import com.yahoo.config.provision.ClusterSpec;
+import com.yahoo.config.provision.EndpointsChecker.Availability;
+import com.yahoo.config.provision.EndpointsChecker.Endpoint;
 import com.yahoo.config.provision.HostFilter;
 import com.yahoo.config.provision.InstanceName;
 import com.yahoo.config.provision.Zone;
@@ -20,7 +23,10 @@ import com.yahoo.jdisc.Response;
 import com.yahoo.restapi.ErrorResponse;
 import com.yahoo.restapi.MessageResponse;
 import com.yahoo.restapi.Path;
+import com.yahoo.restapi.SlimeJsonResponse;
+import com.yahoo.slime.ArrayTraverser;
 import com.yahoo.slime.Cursor;
+import com.yahoo.slime.Slime;
 import com.yahoo.slime.SlimeUtils;
 import com.yahoo.text.StringUtilities;
 import com.yahoo.vespa.config.server.ApplicationRepository;
@@ -43,9 +49,12 @@ import com.yahoo.vespa.config.server.tenant.Tenant;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
+import java.net.InetAddress;
 import java.net.URI;
 import java.time.Duration;
 import java.time.Instant;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
@@ -104,6 +113,7 @@ public class ApplicationHandler extends HttpHandler {
     public HttpResponse handlePOST(HttpRequest request) {
         Path path = new Path(request.getUri());
 
+        if (path.matches("/application/v2/tenant/{tenant}/application/{application}/environment/{ignore}/region/{ignore}/instance/{instance}/verify-endpoints")) return verifyEndpoints(request);
         if (path.matches("/application/v2/tenant/{tenant}/application/{application}/environment/{ignore}/region/{ignore}/instance/{instance}/reindex")) return triggerReindexing(applicationId(path), request);
         if (path.matches("/application/v2/tenant/{tenant}/application/{application}/environment/{ignore}/region/{ignore}/instance/{instance}/reindexing")) return enableReindexing(applicationId(path));
         if (path.matches("/application/v2/tenant/{tenant}/application/{application}/environment/{ignore}/region/{ignore}/instance/{instance}/restart")) return restart(applicationId(path), request);
@@ -320,6 +330,32 @@ public class ApplicationHandler extends HttpHandler {
                 request.getProperty("clusterId"));
         applicationRepository.restart(applicationId, filter);
         return new MessageResponse("Success");
+    }
+
+    private HttpResponse verifyEndpoints(HttpRequest request) {
+        byte[] data = uncheck(() -> request.getData().readAllBytes());
+        List<Endpoint> endpoints = new ArrayList<>();
+        SlimeUtils.jsonToSlime(data).get()
+                  .field("endpoints")
+                  .traverse((ArrayTraverser) (__, endpointObject) -> {
+                      endpoints.add(new Endpoint(ClusterSpec.Id.from(endpointObject.field("clusterName").asString()),
+                                                 HttpURL.from(URI.create(endpointObject.field("url").asString())),
+                                                 SlimeUtils.optionalString(endpointObject.field("ipAddress")).map(uncheck(InetAddress::getByName)),
+                                                 SlimeUtils.optionalString(endpointObject.field("canonicalName")).map(DomainName::of),
+                                                 endpointObject.field("public").asBool()));
+                  });
+        if (endpoints.isEmpty()) throw new IllegalArgumentException("No endpoints in request " + request);
+
+        Availability availability = applicationRepository.verifyEndpoints(endpoints);
+        Slime slime = new Slime();
+        Cursor root = slime.setObject();
+        root.setString("status", switch (availability.status()) {
+            case available -> "available";
+            case endpointsUnavailable -> "endpointsUnavailable";
+            case containersUnhealthy -> "containersUnhealthy";
+        });
+        root.setString("message", availability.message());
+        return new SlimeJsonResponse(slime);
     }
 
     private HttpResponse testerStartTests(ApplicationId applicationId, String suite, HttpRequest request) {

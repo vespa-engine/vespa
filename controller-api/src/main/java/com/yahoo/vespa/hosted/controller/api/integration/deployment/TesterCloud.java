@@ -29,7 +29,7 @@ public interface TesterCloud {
     /** Returns whether the test container is ready to serve */
     boolean testerReady(DeploymentId deploymentId);
 
-    Availability verifyEndpoints(List<Endpoint> endpoints);
+    Availability verifyEndpoints(DeploymentId deploymentId, List<Endpoint> endpoints);
 
     /** Returns the test report as JSON if available */
     Optional<TestReport> getTestReport(DeploymentId deploymentId);

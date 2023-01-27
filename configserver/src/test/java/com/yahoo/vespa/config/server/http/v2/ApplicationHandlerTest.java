@@ -1,6 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.config.server.http.v2;
 
+import ai.vespa.http.DomainName;
 import ai.vespa.http.HttpURL;
 import com.yahoo.cloud.config.ConfigserverConfig;
 import com.yahoo.component.Version;
@@ -9,6 +10,10 @@ import com.yahoo.config.model.api.PortInfo;
 import com.yahoo.config.model.api.ServiceInfo;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ApplicationName;
+import com.yahoo.config.provision.ClusterSpec;
+import com.yahoo.config.provision.EndpointsChecker;
+import com.yahoo.config.provision.EndpointsChecker.Availability;
+import com.yahoo.config.provision.EndpointsChecker.Endpoint;
 import com.yahoo.config.provision.InstanceName;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.config.provision.Zone;
@@ -53,6 +58,7 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.UncheckedIOException;
+import java.net.InetAddress;
 import java.net.URI;
 import java.net.URLEncoder;
 import java.time.Duration;
@@ -60,6 +66,7 @@ import java.time.Instant;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.TreeSet;
@@ -77,10 +84,12 @@ import static com.yahoo.vespa.config.server.http.HandlerTest.assertHttpStatusCod
 import static com.yahoo.vespa.config.server.http.SessionHandlerTest.getRenderedString;
 import static com.yahoo.vespa.config.server.http.v2.ApplicationHandler.HttpServiceListResponse;
 import static com.yahoo.vespa.config.server.http.v2.ApplicationHandler.HttpServiceResponse.createResponse;
+import static com.yahoo.yolean.Exceptions.uncheck;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.mock;
@@ -107,6 +116,8 @@ public class ApplicationHandlerTest {
     private MockProvisioner provisioner;
     private OrchestratorMock orchestrator;
     private ManualClock clock;
+    private List<Endpoint> expectedEndpoints;
+    private Availability availability;
 
     @Rule
     public TemporaryFolder temporaryFolder = new TemporaryFolder();
@@ -139,6 +150,7 @@ public class ApplicationHandlerTest {
                 .withLogRetriever(logRetriever)
                 .withConfigserverConfig(configserverConfig)
                 .withSecretStoreValidator(secretStoreValidator)
+                .withEndpointsChecker(endpoints -> { assertEquals(expectedEndpoints, endpoints); return availability; })
                 .build();
     }
 
@@ -504,6 +516,35 @@ public class ApplicationHandlerTest {
     }
 
     @Test
+    public void testVerifyEndpoints() {
+        expectedEndpoints = List.of(new Endpoint(ClusterSpec.Id.from("bluster"),
+                                                 HttpURL.from(URI.create("https://bluster.tld:1234")),
+                                                 Optional.of(uncheck(() -> InetAddress.getByName("4.3.2.1"))),
+                                                 Optional.of(DomainName.of("fluster.tld")),
+                                                 false));
+        availability = new Availability(EndpointsChecker.Status.available, "Endpoints are ready");
+        ApplicationHandler handler = createApplicationHandler();
+        HttpRequest request = createTestRequest(toUrlPath(applicationId, Zone.defaultZone(), true) + "/verify-endpoints",
+                                                POST,
+                                                new ByteArrayInputStream("""
+                                                                         {
+                                                                           "endpoints": [
+                                                                             {
+                                                                               "clusterName": "bluster",
+                                                                               "url": "https://bluster.tld:1234",
+                                                                               "ipAddress": "4.3.2.1",
+                                                                               "canonicalName": "fluster.tld",
+                                                                               "public": false
+                                                                             }
+                                                                           ]
+                                                                         }""".getBytes(UTF_8)));
+        HttpResponse response = handler.handle(request);
+        assertEquals(200, response.getStatus());
+        assertEquals("{\"status\":\"available\",\"message\":\"Endpoints are ready\"}",
+                     new ByteArrayOutputStream() {{ uncheck(() -> response.render(this)); }}.toString(UTF_8));
+    }
+
+    @Test
     public void testClusterReindexingStateSerialization() {
         Stream.of(ClusterReindexing.State.values()).forEach(ClusterReindexing.State::toString);
     }
@@ -592,12 +633,12 @@ public class ApplicationHandlerTest {
                                                    hostAndPort,
                                                    uri);
             assertResponse("{\n" +
-                                   "  \"url\": \"" + uri.toString() + "\",\n" +
-                                   "  \"host\": \"" + hostAndPort + "\",\n" +
-                                   "  \"wantedGeneration\": 3,\n" +
-                                   "  \"converged\": true,\n" +
-                                   "  \"currentGeneration\": 3\n" +
-                                   "}",
+                           "  \"url\": \"" + uri.toString() + "\",\n" +
+                           "  \"host\": \"" + hostAndPort + "\",\n" +
+                           "  \"wantedGeneration\": 3,\n" +
+                           "  \"converged\": true,\n" +
+                           "  \"currentGeneration\": 3\n" +
+                           "}",
                            200,
                            response);
         }
@@ -609,11 +650,11 @@ public class ApplicationHandlerTest {
                                                    uri);
 
             assertResponse("{\n" +
-                                   "  \"url\": \"" + uri.toString() + "\",\n" +
-                                   "  \"host\": \"" + hostAndPort + "\",\n" +
-                                   "  \"wantedGeneration\": 3,\n" +
-                                   "  \"problem\": \"Host:port (service) no longer part of application, refetch list of services.\"\n" +
-                                   "}",
+                           "  \"url\": \"" + uri.toString() + "\",\n" +
+                           "  \"host\": \"" + hostAndPort + "\",\n" +
+                           "  \"wantedGeneration\": 3,\n" +
+                           "  \"problem\": \"Host:port (service) no longer part of application, refetch list of services.\"\n" +
+                           "}",
                            410,
                            response);
         }
@@ -635,20 +676,20 @@ public class ApplicationHandlerTest {
                                                                         3L),
                                                 requestUrl);
             assertResponse("{\n" +
-                                   "  \"services\": [\n" +
-                                   "    {\n" +
-                                   "      \"host\": \"" + hostname + "\",\n" +
-                                   "      \"port\": " + port + ",\n" +
-                                   "      \"type\": \"container\",\n" +
-                                   "      \"url\": \"" + serviceUrl.toString() + "\",\n" +
-                                   "      \"currentGeneration\":" + 3 + "\n" +
-                                   "    }\n" +
-                                   "  ],\n" +
-                                   "  \"url\": \"" + requestUrl.toString() + "\",\n" +
-                                   "  \"currentGeneration\": 3,\n" +
-                                   "  \"wantedGeneration\": 3,\n" +
-                                   "  \"converged\": true\n" +
-                                   "}",
+                           "  \"services\": [\n" +
+                           "    {\n" +
+                           "      \"host\": \"" + hostname + "\",\n" +
+                           "      \"port\": " + port + ",\n" +
+                           "      \"type\": \"container\",\n" +
+                           "      \"url\": \"" + serviceUrl.toString() + "\",\n" +
+                           "      \"currentGeneration\":" + 3 + "\n" +
+                           "    }\n" +
+                           "  ],\n" +
+                           "  \"url\": \"" + requestUrl.toString() + "\",\n" +
+                           "  \"currentGeneration\": 3,\n" +
+                           "  \"wantedGeneration\": 3,\n" +
+                           "  \"converged\": true\n" +
+                           "}",
                            200,
                            response);
         }
@@ -669,27 +710,27 @@ public class ApplicationHandlerTest {
                                                                         3L),
                                                 requestUrl);
             assertResponse("{\n" +
-                                   "  \"services\": [\n" +
-                                   "    {\n" +
-                                   "      \"host\": \"" + hostname + "\",\n" +
-                                   "      \"port\": " + port + ",\n" +
-                                   "      \"type\": \"container\",\n" +
-                                   "      \"url\": \"" + serviceUrl.toString() + "\",\n" +
-                                   "      \"currentGeneration\":" + 4 + "\n" +
-                                   "    },\n" +
-                                   "    {\n" +
-                                   "      \"host\": \"" + hostname2 + "\",\n" +
-                                   "      \"port\": " + port2 + ",\n" +
-                                   "      \"type\": \"container\",\n" +
-                                   "      \"url\": \"" + serviceUrl2.toString() + "\",\n" +
-                                   "      \"currentGeneration\":" + 3 + "\n" +
-                                   "    }\n" +
-                                   "  ],\n" +
-                                   "  \"url\": \"" + requestUrl.toString() + "\",\n" +
-                                   "  \"currentGeneration\": 3,\n" +
-                                   "  \"wantedGeneration\": 4,\n" +
-                                   "  \"converged\": false\n" +
-                                   "}",
+                           "  \"services\": [\n" +
+                           "    {\n" +
+                           "      \"host\": \"" + hostname + "\",\n" +
+                           "      \"port\": " + port + ",\n" +
+                           "      \"type\": \"container\",\n" +
+                           "      \"url\": \"" + serviceUrl.toString() + "\",\n" +
+                           "      \"currentGeneration\":" + 4 + "\n" +
+                           "    },\n" +
+                           "    {\n" +
+                           "      \"host\": \"" + hostname2 + "\",\n" +
+                           "      \"port\": " + port2 + ",\n" +
+                           "      \"type\": \"container\",\n" +
+                           "      \"url\": \"" + serviceUrl2.toString() + "\",\n" +
+                           "      \"currentGeneration\":" + 3 + "\n" +
+                           "    }\n" +
+                           "  ],\n" +
+                           "  \"url\": \"" + requestUrl.toString() + "\",\n" +
+                           "  \"currentGeneration\": 3,\n" +
+                           "  \"wantedGeneration\": 4,\n" +
+                           "  \"converged\": false\n" +
+                           "}",
                            200,
                            response);
         }
@@ -707,11 +748,11 @@ public class ApplicationHandlerTest {
                                                uri);
 
         assertResponse("{\n" +
-                               "  \"url\": \"" + uri.toString() + "\",\n" +
-                               "  \"host\": \"" + hostAndPort + "\",\n" +
-                               "  \"wantedGeneration\": 3,\n" +
-                               "  \"error\": \"some error message\"" +
-                               "}",
+                       "  \"url\": \"" + uri + "\",\n" +
+                       "  \"host\": \"" + hostAndPort + "\",\n" +
+                       "  \"wantedGeneration\": 3,\n" +
+                       "  \"error\": \"some error message\"" +
+                       "}",
                        404,
                        response);
     }

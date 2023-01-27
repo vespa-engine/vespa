@@ -498,6 +498,7 @@ public class InternalStepRunner implements StepRunner {
         DeploymentRoutingContext context = controller.routing().of(deployment);
         boolean resolveEndpoints = context.routingMethod() == RoutingMethod.exclusive;
         return controller.serviceRegistry().testerCloud().verifyEndpoints(
+                deployment,
                 endpoints.getOrDefault(zone, List.of())
                          .stream()
                          .map(endpoint -> {

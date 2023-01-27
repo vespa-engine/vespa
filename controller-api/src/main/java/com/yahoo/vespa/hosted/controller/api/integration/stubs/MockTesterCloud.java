@@ -26,6 +26,7 @@ import static com.yahoo.vespa.hosted.controller.api.integration.deployment.Teste
 public class MockTesterCloud implements TesterCloud {
 
     private final NameService nameService;
+    private final EndpointsChecker endpointsChecker = EndpointsChecker.mock(this::resolveHostName, this::resolveCname, __ -> true);
 
     private List<LogEntry> log = new ArrayList<>();
     private Status status = NOT_STARTED;
@@ -56,8 +57,8 @@ public class MockTesterCloud implements TesterCloud {
     }
 
     @Override
-    public Availability verifyEndpoints(List<Endpoint> endpoints) {
-        return EndpointsChecker.endpointsAvailable(endpoints, this::resolveHostName, this::resolveCname, __ -> true);
+    public Availability verifyEndpoints(DeploymentId deploymentId, List<Endpoint> endpoints) {
+        return endpointsChecker.endpointsAvailable(endpoints);
     }
 
     private Optional<InetAddress> resolveHostName(DomainName hostname) {

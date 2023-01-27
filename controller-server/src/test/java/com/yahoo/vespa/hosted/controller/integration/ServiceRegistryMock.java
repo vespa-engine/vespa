@@ -100,8 +100,8 @@ public class ServiceRegistryMock extends AbstractComponent implements ServiceReg
 
     public ServiceRegistryMock(SystemName system) {
         this.zoneRegistryMock = new ZoneRegistryMock(system);
-        this.configServerMock = new ConfigServerMock(zoneRegistryMock);
-        this.mockTesterCloud = new MockTesterCloud(nameService());
+        this.configServerMock = new ConfigServerMock(zoneRegistryMock, memoryNameService);
+        this.mockTesterCloud = new MockTesterCloud(memoryNameService);
         this.clock.setInstant(Instant.ofEpochSecond(1600000000));
         this.controllerVersion = new ControllerVersion(Version.fromString("6.1.0"), "badb01", clock.instant());
     }
