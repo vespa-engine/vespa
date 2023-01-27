@@ -1,7 +1,6 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model.application.validation;
 
-import aQute.bnd.version.VersionRange;
 import com.yahoo.config.model.deploy.DeployState;
 import org.w3c.dom.Document;
 
@@ -19,7 +18,6 @@ import java.util.jar.JarFile;
 import java.util.jar.Manifest;
 import java.util.logging.Level;
 import java.util.regex.Pattern;
-import java.util.stream.Collectors;
 
 /**
  * A validator for bundles.
@@ -63,11 +61,10 @@ public class BundleValidator extends AbstractBundleValidator {
 
     private void validateImportedPackages(DeployState state, JarFile jar, Manifest manifest) {
         Map<DeprecatedProvidedBundle, List<String>> deprecatedPackagesInUse = new HashMap<>();
-        forEachImportPackage(manifest, (packageName, versionRange) -> {
+        forEachImportPackage(manifest, (packageName) -> {
             for (DeprecatedProvidedBundle deprecatedBundle : DeprecatedProvidedBundle.values()) {
                 for (Predicate<String> matcher : deprecatedBundle.javaPackageMatchers) {
-                    if (matcher.test(packageName)
-                            && (versionRange == null || deprecatedBundle.versionDiscriminator.test(versionRange))) {
+                    if (matcher.test(packageName)) {
                         deprecatedPackagesInUse.computeIfAbsent(deprecatedBundle, __ -> new ArrayList<>())
                                 .add(packageName);
                     }
@@ -91,22 +88,15 @@ public class BundleValidator extends AbstractBundleValidator {
 
         final String name;
         final Collection<Predicate<String>> javaPackageMatchers;
-        final Predicate<VersionRange> versionDiscriminator;
         final String description;
-
-        DeprecatedProvidedBundle(String name, String description, Collection<String> javaPackagePatterns) {
-            this(name, description, __ -> true, javaPackagePatterns);
-        }
 
         DeprecatedProvidedBundle(String name,
                                  String description,
-                                 Predicate<VersionRange> versionDiscriminator,
                                  Collection<String> javaPackagePatterns) {
             this.name = name;
             this.javaPackageMatchers = javaPackagePatterns.stream()
                 .map(s -> Pattern.compile(s).asMatchPredicate())
                 .toList();
-            this.versionDiscriminator = versionDiscriminator;
             this.description = description;
         }
     }
