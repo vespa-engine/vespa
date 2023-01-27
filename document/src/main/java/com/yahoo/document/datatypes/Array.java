@@ -140,9 +140,8 @@ public final class Array<T extends FieldValue> extends CollectionFieldValue<T> i
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
-        if (!(o instanceof Array)) return false;
+        if (!(o instanceof Array a)) return false;
         if (!super.equals(o)) return false;
-        Array a = (Array) o;
         if (values.size() != a.values.size()) return false;
         if (values instanceof ListWrapper && !(a.values instanceof ListWrapper)) {
             return equalsWithListWrapper(a.values, (ListWrapper<? extends FieldValue>) values);
