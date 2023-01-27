@@ -9,7 +9,6 @@ import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.model.producer.AbstractConfigProducer;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.container.bundle.BundleInstantiationSpecification;
-import com.yahoo.container.core.documentapi.DocumentAccessProvider;
 import com.yahoo.container.di.config.PlatformBundlesConfig;
 import com.yahoo.documentmodel.NewDocumentType;
 import com.yahoo.osgi.provider.model.ComponentModel;
@@ -148,7 +147,7 @@ public class ClusterControllerContainer extends Container implements
 
     private void configureReindexing() {
         addFileBundle(REINDEXING_CONTROLLER_BUNDLE.getName());
-        addComponent(new SimpleComponent(DocumentAccessProvider.class.getName()));
+        addComponent(new SimpleComponent("com.yahoo.container.core.documentapi.DocumentAccessProvider"));
         addComponent("reindexing-maintainer",
                      "ai.vespa.reindexing.ReindexingMaintainer",
                      REINDEXING_CONTROLLER_BUNDLE);
