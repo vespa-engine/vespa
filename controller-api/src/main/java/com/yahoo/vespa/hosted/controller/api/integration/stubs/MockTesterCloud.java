@@ -3,6 +3,9 @@ package com.yahoo.vespa.hosted.controller.api.integration.stubs;
 
 import ai.vespa.http.DomainName;
 import com.google.common.net.InetAddresses;
+import com.yahoo.config.provision.EndpointsChecker;
+import com.yahoo.config.provision.EndpointsChecker.Endpoint;
+import com.yahoo.config.provision.EndpointsChecker.UnavailabilityCause;
 import com.yahoo.vespa.hosted.controller.api.identifiers.DeploymentId;
 import com.yahoo.vespa.hosted.controller.api.integration.LogEntry;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.TestReport;
@@ -59,15 +62,18 @@ public class MockTesterCloud implements TesterCloud {
     }
 
     @Override
-    public Optional<InetAddress> resolveHostName(DomainName hostname) {
+    public Optional<UnavailabilityCause> verifyEndpoints(List<Endpoint> endpoints) {
+        return EndpointsChecker.endpointsAvailable(endpoints, this::resolveHostName, this::resolveCname);
+    }
+
+    private Optional<InetAddress> resolveHostName(DomainName hostname) {
         return nameService.findRecords(Record.Type.A, RecordName.from(hostname.value())).stream()
                 .findFirst()
                 .map(record -> InetAddresses.forString(record.data().asString()))
                 .or(() -> Optional.of(InetAddresses.forString("1.2.3.4")));
     }
 
-    @Override
-    public Optional<DomainName> resolveCname(DomainName hostName) {
+    private Optional<DomainName> resolveCname(DomainName hostName) {
         return nameService.findRecords(Record.Type.CNAME, RecordName.from(hostName.value())).stream()
                           .findFirst()
                           .map(record -> DomainName.of(record.data().asString().substring(0, record.data().asString().length() - 1)));

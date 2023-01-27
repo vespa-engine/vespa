@@ -2,6 +2,8 @@
 package com.yahoo.vespa.hosted.controller.api.integration.deployment;
 
 import ai.vespa.http.DomainName;
+import com.yahoo.config.provision.EndpointsChecker.Endpoint;
+import com.yahoo.config.provision.EndpointsChecker.UnavailabilityCause;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.vespa.hosted.controller.api.identifiers.DeploymentId;
 import com.yahoo.vespa.hosted.controller.api.integration.LogEntry;
@@ -33,11 +35,7 @@ public interface TesterCloud {
     /** Returns whether the test container is ready to serve */
     boolean testerReady(DeploymentId deploymentId);
 
-    /** Returns the IP address of the given host name, if any. */
-    Optional<InetAddress> resolveHostName(DomainName hostname);
-
-    /** Returns the host name of the given CNAME, if any. */
-    Optional<DomainName> resolveCname(DomainName hostName);
+    Optional<UnavailabilityCause> verifyEndpoints(List<Endpoint> endpoints);
 
     /** Returns the test report as JSON if available */
     Optional<TestReport> getTestReport(DeploymentId deploymentId);
