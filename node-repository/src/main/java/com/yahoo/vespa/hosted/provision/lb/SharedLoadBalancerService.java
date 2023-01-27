@@ -29,13 +29,15 @@ public class SharedLoadBalancerService implements LoadBalancerService {
 
     @Override
     public LoadBalancerInstance create(LoadBalancerSpec spec, boolean force) {
+        if ( ! spec.settings().isPublicEndpoint())
+            throw new IllegalArgumentException("non-public endpoints is not supported with " + getClass());
         return new LoadBalancerInstance(Optional.of(DomainName.of(vipHostname)),
                                         Optional.empty(),
                                         Optional.empty(),
                                         Set.of(4443),
                                         Set.of(),
                                         spec.reals(),
-                                        spec.settings().orElse(ZoneEndpoint.defaultEndpoint),
+                                        spec.settings(),
                                         Optional.empty(),
                                         spec.cloudAccount());
     }
