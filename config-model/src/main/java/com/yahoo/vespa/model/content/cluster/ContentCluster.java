@@ -11,7 +11,6 @@ import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.Zone;
-import com.yahoo.documentapi.messagebus.protocol.DocumentProtocol;
 import com.yahoo.documentmodel.NewDocumentType;
 import com.yahoo.metrics.MetricsmanagerConfig;
 import com.yahoo.vespa.config.content.AllClustersBucketSpacesConfig;
@@ -21,6 +20,7 @@ import com.yahoo.vespa.config.content.MessagetyperouteselectorpolicyConfig;
 import com.yahoo.vespa.config.content.StorDistributionConfig;
 import com.yahoo.vespa.config.content.core.BucketspacesConfig;
 import com.yahoo.vespa.config.content.core.StorDistributormanagerConfig;
+import com.yahoo.vespa.model.AbstractService;
 import com.yahoo.vespa.model.HostResource;
 import com.yahoo.vespa.model.admin.Admin;
 import com.yahoo.vespa.model.admin.clustercontroller.ClusterControllerCluster;
@@ -48,6 +48,7 @@ import com.yahoo.vespa.model.content.StorageGroup;
 import com.yahoo.vespa.model.content.engines.PersistenceEngine;
 import com.yahoo.vespa.model.content.engines.ProtonEngine;
 import com.yahoo.vespa.model.content.storagecluster.StorageCluster;
+import com.yahoo.vespa.model.routing.DocumentProtocol;
 import com.yahoo.vespa.model.search.IndexedSearchCluster;
 import com.yahoo.vespa.model.search.Tuning;
 import org.w3c.dom.Element;
@@ -155,10 +156,6 @@ public class ContentCluster extends AbstractConfigProducer<AbstractConfigProduce
             if (tuning != null)
                 setupTuning(c, tuning);
 
-            ModelElement experimental = contentElement.child("experimental");
-            if (experimental != null)
-                setupExperimental(c, experimental);
-
             if (context.getParentProducer().getRoot() == null) return c;
 
             addClusterControllers(context, contentElement, c, deployState);
@@ -249,10 +246,6 @@ public class ContentCluster extends AbstractConfigProducer<AbstractConfigProduce
             return 0.0;
         }
 
-        private void setupExperimental(ContentCluster cluster, ModelElement experimental) {
-            // Put handling of experimental flags here
-        }
-
         private void validateGroupSiblings(String cluster, StorageGroup group) {
             Set<String> siblings = new HashSet<>();
             for (StorageGroup g : group.getSubgroups()) {
@@ -302,7 +295,7 @@ public class ContentCluster extends AbstractConfigProducer<AbstractConfigProduce
             }
             else { // self-hosted: Put cluster controller on config servers or use explicit cluster controllers
                 if (admin.getClusterControllers() == null) {
-                    var hosts = admin.getConfigservers().stream().map(s -> s.getHostResource()).toList();
+                    var hosts = admin.getConfigservers().stream().map(AbstractService::getHostResource).toList();
                     if (hosts.size() > 1) {
                         var message = "When having content clusters and more than 1 config server " +
                                       "it is recommended to configure cluster controllers explicitly.";
@@ -447,16 +440,7 @@ public class ContentCluster extends AbstractConfigProducer<AbstractConfigProduce
     @Override
     public void getConfig(MessagetyperouteselectorpolicyConfig.Builder builder) {
         if ( ! getSearch().hasIndexedCluster()) return;
-        builder.defaultroute(com.yahoo.vespa.model.routing.DocumentProtocol.getDirectRouteName(getConfigId()))
-               .route(new MessagetyperouteselectorpolicyConfig.Route.Builder()
-                              .messagetype(DocumentProtocol.MESSAGE_PUTDOCUMENT)
-                              .name(com.yahoo.vespa.model.routing.DocumentProtocol.getIndexedRouteName(getConfigId())))
-               .route(new MessagetyperouteselectorpolicyConfig.Route.Builder()
-                              .messagetype(DocumentProtocol.MESSAGE_REMOVEDOCUMENT)
-                              .name(com.yahoo.vespa.model.routing.DocumentProtocol.getIndexedRouteName(getConfigId())))
-               .route(new MessagetyperouteselectorpolicyConfig.Route.Builder()
-                              .messagetype(DocumentProtocol.MESSAGE_UPDATEDOCUMENT)
-                              .name(com.yahoo.vespa.model.routing.DocumentProtocol.getIndexedRouteName(getConfigId())));
+        DocumentProtocol.getConfig(builder, getConfigId());
     }
 
     public com.yahoo.vespa.model.content.StorageGroup getRootGroup() {

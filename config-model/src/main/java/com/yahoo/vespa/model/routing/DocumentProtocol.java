@@ -9,6 +9,7 @@ import com.yahoo.messagebus.routing.ApplicationSpec;
 import com.yahoo.messagebus.routing.HopSpec;
 import com.yahoo.messagebus.routing.RouteSpec;
 import com.yahoo.messagebus.routing.RoutingTableSpec;
+import com.yahoo.vespa.config.content.MessagetyperouteselectorpolicyConfig;
 import com.yahoo.vespa.model.container.Container;
 import com.yahoo.vespa.model.container.ContainerCluster;
 import com.yahoo.vespa.model.container.ContainerModel;
@@ -116,6 +117,19 @@ public final class DocumentProtocol implements Protocol,
 
             builder.cluster(cluster.getConfigId(), clusterBuilder);
         }
+    }
+
+    public static void getConfig(MessagetyperouteselectorpolicyConfig.Builder builder, String configId) {
+        builder.defaultroute(getDirectRouteName(configId))
+                .route(new MessagetyperouteselectorpolicyConfig.Route.Builder()
+                        .messagetype(com.yahoo.documentapi.messagebus.protocol.DocumentProtocol.MESSAGE_PUTDOCUMENT)
+                        .name(getIndexedRouteName(configId)))
+                .route(new MessagetyperouteselectorpolicyConfig.Route.Builder()
+                        .messagetype(com.yahoo.documentapi.messagebus.protocol.DocumentProtocol.MESSAGE_REMOVEDOCUMENT)
+                        .name(getIndexedRouteName(configId)))
+                .route(new MessagetyperouteselectorpolicyConfig.Route.Builder()
+                        .messagetype(com.yahoo.documentapi.messagebus.protocol.DocumentProtocol.MESSAGE_UPDATEDOCUMENT)
+                        .name(getIndexedRouteName(configId)));
     }
 
     private static void addRoutes(String directRoute, String indexedRoute, DocumentProtocolPoliciesConfig.Cluster.Builder builder) {
