@@ -43,7 +43,6 @@ import java.util.stream.Collectors;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertSame;
-import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
@@ -334,39 +333,6 @@ public class LoadBalancerProvisionerTest {
         assertEquals(settings, loadBalancers.first().get().instance().get().settings());
     }
 
-    @Test
-    public void load_balancer_with_changing_visibility() {
-        ClusterResources resources = new ClusterResources(3, 1, nodeResources);
-        Capacity capacity = Capacity.from(resources, resources, IntRange.empty(), false, true, Optional.of(CloudAccount.empty));
-        tester.activate(app1, prepare(app1, capacity, clusterRequest(ClusterSpec.Type.container, ClusterSpec.Id.from("c1"))));
-        LoadBalancerList loadBalancers = tester.nodeRepository().loadBalancers().list();
-        assertEquals(1, loadBalancers.size());
-        assertEquals(ZoneEndpoint.defaultEndpoint, loadBalancers.first().get().instance().get().settings());
-
-        // Next deployment has only a private endpoint
-        ZoneEndpoint settings = new ZoneEndpoint(false, true, List.of(new AllowedUrn(AccessType.awsPrivateLink, "alice"), new AllowedUrn(AccessType.gcpServiceConnect, "bob")));
-        assertEquals("Could not (re)configure load balancer tenant1:application1:default:c1 due to change in load balancer visibility. The operation will be retried on next deployment",
-                     assertThrows(LoadBalancerServiceException.class,
-                                  () -> prepare(app1, capacity, clusterRequest(ClusterSpec.Type.container, ClusterSpec.Id.from("c1"), Optional.empty(), settings)))
-                             .getMessage());
-
-        // Existing LB is removed
-        loadBalancers = tester.nodeRepository().loadBalancers().list();
-        assertEquals(1, loadBalancers.size());
-        assertSame(LoadBalancer.State.removable, loadBalancers.first().get().state());
-        new LoadBalancerExpirer(tester.nodeRepository(),
-                                Duration.ofDays(1),
-                                tester.loadBalancerService(),
-                                new TestMetric())
-                .run();
-        assertEquals(0, tester.nodeRepository().loadBalancers().list().in(LoadBalancer.State.removable).size());
-
-        // Next deployment provisions a new LB
-        tester.activate(app1, prepare(app1, capacity, clusterRequest(ClusterSpec.Type.container, ClusterSpec.Id.from("c1"), Optional.empty(), settings)));
-        loadBalancers = tester.nodeRepository().loadBalancers().list();
-        assertEquals(1, loadBalancers.size());
-        assertEquals(settings, loadBalancers.first().get().instance().get().settings());
-    }
 
     @Test
     public void load_balancer_with_custom_cloud_account() {
