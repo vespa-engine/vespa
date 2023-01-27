@@ -27,6 +27,7 @@ import java.util.List;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
 public class HttpProxy {
+
     private final HttpFetcher fetcher;
 
     @Inject public HttpProxy(NodeHostnameVerifier verifier) { this(new SimpleHttpFetcher(Duration.ofSeconds(30), verifier)); }

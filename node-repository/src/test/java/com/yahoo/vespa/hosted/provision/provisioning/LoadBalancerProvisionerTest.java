@@ -13,6 +13,8 @@ import com.yahoo.config.provision.HostSpec;
 import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.config.provision.ZoneEndpoint;
+import com.yahoo.config.provision.ZoneEndpoint.AccessType;
+import com.yahoo.config.provision.ZoneEndpoint.AllowedUrn;
 import com.yahoo.config.provision.exception.LoadBalancerServiceException;
 import com.yahoo.transaction.NestedTransaction;
 import com.yahoo.vespa.flags.InMemoryFlagSource;
@@ -324,7 +326,7 @@ public class LoadBalancerProvisionerTest {
         assertEquals(ZoneEndpoint.defaultEndpoint, loadBalancers.first().get().instance().get().settings());
 
         // Next deployment contains new settings
-        ZoneEndpoint settings = new ZoneEndpoint(List.of("alice", "bob"));
+        ZoneEndpoint settings = new ZoneEndpoint(true, true, List.of(new AllowedUrn(AccessType.awsPrivateLink, "alice"), new AllowedUrn(AccessType.gcpServiceConnect, "bob")));
         tester.activate(app1, prepare(app1, capacity, clusterRequest(ClusterSpec.Type.container, ClusterSpec.Id.from("c1"), Optional.empty(), settings)));
         loadBalancers = tester.nodeRepository().loadBalancers().list();
         assertEquals(1, loadBalancers.size());

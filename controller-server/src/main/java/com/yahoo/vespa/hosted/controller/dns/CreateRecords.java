@@ -20,17 +20,14 @@ import java.util.stream.Collectors;
  *
  * @author mpolden
  */
-public class CreateRecords implements NameServiceRequest {
+public class CreateRecords extends AbstractNameServiceRequest {
 
-    private final Optional<TenantAndApplicationId> owner;
-    private final RecordName name;
     private final Record.Type type;
     private final List<Record> records;
 
     /** DO NOT USE. Public for serialization purposes */
     public CreateRecords(Optional<TenantAndApplicationId> owner, List<Record> records) {
-        this.owner = Objects.requireNonNull(owner, "owner must be non-null");
-        this.name = requireOneOf(Record::name, records);
+        super(owner, requireOneOf(Record::name, records));
         this.type = requireOneOf(Record::type, records);
         this.records = List.copyOf(Objects.requireNonNull(records, "records must be non-null"));
         if (type != Record.Type.ALIAS && type != Record.Type.TXT && type != Record.Type.DIRECT) {
@@ -43,29 +40,19 @@ public class CreateRecords implements NameServiceRequest {
     }
 
     @Override
-    public Optional<RecordName> name() {
-        return Optional.of(name);
-    }
-
-    @Override
-    public Optional<TenantAndApplicationId> owner() {
-        return owner;
-    }
-
-    @Override
     public void dispatchTo(NameService nameService) {
         switch (type) {
             case ALIAS -> {
                 var targets = records.stream().map(Record::data).map(AliasTarget::unpack).collect(Collectors.toSet());
-                nameService.createAlias(name, targets);
+                nameService.createAlias(name(), targets);
             }
             case DIRECT -> {
                 var targets = records.stream().map(Record::data).map(DirectTarget::unpack).collect(Collectors.toSet());
-                nameService.createDirect(name, targets);
+                nameService.createDirect(name(), targets);
             }
             case TXT -> {
                 var dataFields = records.stream().map(Record::data).toList();
-                nameService.createTxtRecords(name, dataFields);
+                nameService.createTxtRecords(name(), dataFields);
             }
         }
     }
@@ -80,12 +67,12 @@ public class CreateRecords implements NameServiceRequest {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         CreateRecords that = (CreateRecords) o;
-        return owner.equals(that.owner) && records.equals(that.records);
+        return owner().equals(that.owner()) && records.equals(that.records);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(owner, records);
+        return Objects.hash(owner(), records);
     }
 
     /** Find exactly one distinct value of field in given list */
