@@ -45,6 +45,7 @@ public class PredicateFieldValue extends FieldValue {
     }
 
     @Override
+    @Deprecated
     public void printXml(XmlStream xml) {
         if (predicate == null) {
             return;

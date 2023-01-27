@@ -17,6 +17,7 @@ public class UnresolvedFieldValueTestCase {
     }
 
     @Test
+    @SuppressWarnings("deprecation")
     public void requireThatNoMethodsAreSupported() {
         UnresolvedFieldValue val = new UnresolvedFieldValue();
         try {

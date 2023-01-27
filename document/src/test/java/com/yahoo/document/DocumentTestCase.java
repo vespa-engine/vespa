@@ -20,7 +20,6 @@ import com.yahoo.document.datatypes.WeightedSet;
 import com.yahoo.document.serialization.DocumentDeserializerFactory;
 import com.yahoo.document.serialization.DocumentReader;
 import com.yahoo.document.serialization.DocumentSerializerFactory;
-import com.yahoo.document.serialization.XmlDocumentWriter;
 import com.yahoo.io.GrowableByteBuffer;
 import com.yahoo.vespa.objects.BufferSerializer;
 import org.junit.Test;
@@ -920,6 +919,7 @@ public class DocumentTestCase extends DocumentTestCaseBase {
     }
 
     @Test
+    @SuppressWarnings("deprecation")
     public void testToXml() {
         setUpSertestDocType();
         Document doc = getSertestDocument();
@@ -935,19 +935,7 @@ public class DocumentTestCase extends DocumentTestCaseBase {
     }
 
     @Test
-    public void testXmlSerializer() {
-        setUpSertestDocType();
-        Document doc = getSertestDocument();
-        doc.setFieldValue("mailid", "emailfromalicetobob&someone");
-        doc.setFieldValue("myposfield", PositionDataType.valueOf(-122057174, 37374821));
-        String xml = doc.toXML(" ");
-        XmlDocumentWriter w = XmlDocumentWriter.createWriter(" ");
-        w.write(doc);
-        String otherXml = doc.toXML(" ");
-        assertEquals(xml, otherXml);
-    }
-
-    @Test
+    @SuppressWarnings("deprecation")
     public void testSingleFieldToXml() {
         Document doc = new Document(docMan.getDocumentType("testdoc"), new DocumentId("id:ns:testdoc::xmltest"));
         doc.setFieldValue("stringattr", new StringFieldValue("hello world"));
@@ -955,6 +943,7 @@ public class DocumentTestCase extends DocumentTestCaseBase {
     }
 
     @Test
+    @SuppressWarnings("deprecation")
     public void testDelegatedDocumentToXml() {
         Document doc = new Document(docMan.getDocumentType("testdoc"), new DocumentId("id:ns:testdoc::xmltest"));
         doc.setFieldValue("stringattr", new StringFieldValue("hello universe"));
@@ -1159,6 +1148,7 @@ public class DocumentTestCase extends DocumentTestCaseBase {
     }
 
     @Test
+    @SuppressWarnings("deprecation")
     public void testDocumentComparisonDoesNotCorruptStateBug6394548() {
         DocumentTypeManager docMan = new DocumentTypeManager();
         DocumentType docType = new DocumentType("bug2354045");

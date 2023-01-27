@@ -53,6 +53,7 @@ public class PredicateFieldValueTest {
     }
 
     @Test
+    @SuppressWarnings("deprecation")
     public void requireThatXmlOutputIsEmptyForNullPredicate() {
         XmlStream expected = new XmlStream();
         expected.beginTag("tag");
@@ -61,6 +62,7 @@ public class PredicateFieldValueTest {
     }
 
     @Test
+    @SuppressWarnings("deprecation")
     public void requireThatXmlOutputIsPredicateLanguage() {
         Predicate predicate = new FeatureSet("key", "valueA", "valueB");
         XmlStream expected = new XmlStream();
@@ -181,6 +183,7 @@ public class PredicateFieldValueTest {
         assertTrue(lhs.equals(rhs));
     }
 
+    @SuppressWarnings("deprecation")
     private static String printXml(String tag, FieldValue value) {
         XmlStream out = new XmlStream();
         out.beginTag(tag);

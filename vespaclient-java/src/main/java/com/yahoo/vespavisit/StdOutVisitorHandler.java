@@ -32,6 +32,7 @@ import java.util.logging.Logger;
  *
  * @author Thomas Gundersen
  */
+@SuppressWarnings("deprecation")
 public class StdOutVisitorHandler extends VdsVisitHandler {
 
     private static final Logger log = Logger.getLogger(

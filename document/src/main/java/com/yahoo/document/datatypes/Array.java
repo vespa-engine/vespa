@@ -112,6 +112,7 @@ public final class Array<T extends FieldValue> extends CollectionFieldValue<T> i
     }
 
     @Override
+    @Deprecated
     public void printXml(XmlStream xml) {
         XmlSerializationHelper.printArrayXml(this, xml);
     }

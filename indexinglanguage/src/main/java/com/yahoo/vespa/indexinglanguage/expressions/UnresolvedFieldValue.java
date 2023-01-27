@@ -27,6 +27,7 @@ public class UnresolvedFieldValue extends FieldValue {
     }
 
     @Override
+    @Deprecated
     public void printXml(XmlStream xml) {
         throw new UnsupportedOperationException();
     }

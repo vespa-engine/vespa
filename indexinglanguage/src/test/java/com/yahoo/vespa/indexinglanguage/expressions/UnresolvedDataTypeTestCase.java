@@ -35,6 +35,7 @@ public class UnresolvedDataTypeTestCase {
         }
 
         @Override
+        @Deprecated
         public void printXml(XmlStream xml) {
 
         }

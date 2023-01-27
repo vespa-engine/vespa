@@ -89,6 +89,7 @@ public final class LongFieldValue extends NumericFieldValue {
     }
 
     @Override
+    @Deprecated
     public void printXml(XmlStream xml) {
         XmlSerializationHelper.printLongXml(this, xml);
     }

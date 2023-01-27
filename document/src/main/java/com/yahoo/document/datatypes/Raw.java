@@ -100,6 +100,7 @@ public final class Raw extends FieldValue {
     }
 
     @Override
+    @Deprecated
     public void printXml(XmlStream xml) {
         XmlSerializationHelper.printRawXml(this, xml);
     }
