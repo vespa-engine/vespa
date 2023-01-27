@@ -53,8 +53,10 @@ public class DynamicSummaryTransformUtils {
     }
 
     public static String getSource(SummaryField summaryField, Schema schema) {
-        // Summary fields with the original supported type is always present in the document type,
-        // and we must use that field as source at run-time.
+        // Summary fields with the original supported type is always present in the document type.
+        // However, if the source of that summary field is a single explicit source that exists in the schema we
+        // use that as source instead as this is handled by the backend code.
+        // This is a move in the right direction to avoid adding some summary fields as extra document fields.
         if (isOriginalSupportedType(summaryField.getDataType())) {
             if (summaryField.hasExplicitSingleSource()) {
                 String sourceFieldName = summaryField.getSingleSource();
