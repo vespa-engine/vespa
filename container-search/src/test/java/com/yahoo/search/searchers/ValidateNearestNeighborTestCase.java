@@ -63,12 +63,12 @@ public class ValidateNearestNeighborTestCase {
         ));
     }
 
-    private static TensorType tt_dense_dvector_42 = TensorType.fromSpec("tensor(x[42])");
-    private static TensorType tt_dense_dvector_3 = TensorType.fromSpec("tensor(x[3])");
-    private static TensorType tt_dense_dvector_2 = TensorType.fromSpec("tensor(x[2])");
-    private static TensorType tt_dense_fvector_3 = TensorType.fromSpec("tensor<float>(x[3])");
-    private static TensorType tt_dense_matrix_xy = TensorType.fromSpec("tensor(x[3],y[1])");
-    private static TensorType tt_sparse_vector_x = TensorType.fromSpec("tensor(x{})");
+    private static final TensorType tt_dense_dvector_42 = TensorType.fromSpec("tensor(x[42])");
+    private static final TensorType tt_dense_dvector_3 = TensorType.fromSpec("tensor(x[3])");
+    private static final TensorType tt_dense_dvector_2 = TensorType.fromSpec("tensor(x[2])");
+    private static final TensorType tt_dense_fvector_3 = TensorType.fromSpec("tensor<float>(x[3])");
+    private static final TensorType tt_dense_matrix_xy = TensorType.fromSpec("tensor(x[3],y[1])");
+    private static final TensorType tt_sparse_vector_x = TensorType.fromSpec("tensor(x{})");
 
     private Tensor makeTensor(TensorType tensorType) {
         return makeTensor(tensorType, 3);
