@@ -75,7 +75,11 @@ public class Container {
                 newGraph = waitForNewConfigGenAndCreateGraph(oldGraph, fallbackInjector, isInitializing);
                 newGraph.reuseNodes(oldGraph);
             } catch (Throwable t) {
-                log.warning("Failed to set up component graph - uninstalling latest bundles. Bootstrap generation: " + getBootstrapGeneration());
+                if (t instanceof SubscriberClosedException)  {
+                    log.fine("Closing down waitForNextGraphGeneration()");
+                } else {
+                    log.warning("Failed to set up component graph - uninstalling latest bundles. Bootstrap generation: " + getBootstrapGeneration());
+                }
                 Collection<Bundle> newBundlesFromFailedGen = osgi.completeBundleGeneration(Osgi.GenerationStatus.FAILURE);
                 deconstructComponentsAndBundles(getBootstrapGeneration(), newBundlesFromFailedGen, List.of());
                 throw t;
