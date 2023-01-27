@@ -15,6 +15,7 @@ import com.yahoo.prelude.query.FuzzyItem;
 import com.yahoo.prelude.query.IndexedItem;
 import com.yahoo.prelude.query.Item;
 import com.yahoo.prelude.query.MarkerWordItem;
+import com.yahoo.prelude.query.NearestNeighborItem;
 import com.yahoo.prelude.query.PhraseItem;
 import com.yahoo.prelude.query.PhraseSegmentItem;
 import com.yahoo.prelude.query.PrefixItem;
@@ -990,21 +991,27 @@ public class YqlParserTestCase {
                 .name("music")
                 .command(new Command.Builder().indexname("title").command("index"))
                 .command(new Command.Builder().indexname("year").command("attribute"))
+                .command(new Command.Builder().indexname("embedding").command("attribute"))
                 .alias(new Alias.Builder().alias("song").indexname("title"))
-                .alias(new Alias.Builder().alias("from").indexname("year"))));
+                .alias(new Alias.Builder().alias("from").indexname("year"))
+                .alias(new Alias.Builder().alias("vector").indexname("embedding"))));
         IndexModel model = new IndexModel(modelConfig, (QrSearchersConfig) null);
 
         IndexFacts indexFacts = new IndexFacts(model);
         ParserEnvironment parserEnvironment = new ParserEnvironment().setIndexFacts(indexFacts);
         YqlParser configuredParser = new YqlParser(parserEnvironment);
-        QueryTree x = configuredParser.parse(new Parsable()
-                .setQuery("select * from sources * where title contains \"a\" and song contains \"b\" order by \"from\""));
-        List<IndexedItem> terms = QueryTree.getPositiveTerms(x);
+        QueryTree query = configuredParser.parse(new Parsable()
+                .setQuery("select * from sources * where title contains \"a\" and song contains \"b\"" +
+                          "and nearestNeighbor(vector, queryVector)" +
+                          "order by \"from\""));
+        List<IndexedItem> terms = QueryTree.getPositiveTerms(query);
         assertEquals(2, terms.size());
         for (IndexedItem term : terms)
             assertEquals("title", term.getIndexName());
         assertEquals(1, configuredParser.getSorting().fieldOrders().size());
         assertEquals("year", configuredParser.getSorting().fieldOrders().get(0).getFieldName());
+        var nnItem = (NearestNeighborItem)((AndItem)query.getRoot()).getItem(2);
+        assertEquals("embedding", nnItem.getIndexName());
     }
 
     @Test

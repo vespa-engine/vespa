@@ -15,6 +15,9 @@ import java.util.TreeSet;
 import static com.yahoo.text.Lowercase.toLowerCase;
 
 /**
+ * NOTE: We are in the process of moving the functionality of this over to {@link com.yahoo.search.schema.SchemaInfo} -
+ *       see if you can use that before adding usage of this.
+ *
  * A central repository for information about indices. Standard usage is
  *
  * <pre><code>
@@ -24,9 +27,7 @@ import static com.yahoo.text.Lowercase.toLowerCase;
  *
  * @author Steinar Knutsen
  */
-// TODO: We should replace this with a better representation of search definitions
-//       which is immutable, models clusters and search definitions inside clusters properly,
-//       and uses better names. -bratseth
+// TODO: Complete migration to SchemaInfo
 public class IndexFacts {
 
     private Map<String, List<String>> clusterByDocument;
