@@ -28,8 +28,7 @@
           "ipAddress": "127.0.14.1",
           "port": 4443
         }
-      ],
-      "public": true
+      ]
     }
   ]
 }

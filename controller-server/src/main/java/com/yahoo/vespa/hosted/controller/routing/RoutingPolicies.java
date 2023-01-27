@@ -361,8 +361,7 @@ public class RoutingPolicies {
             var newPolicy = new RoutingPolicy(policyId, loadBalancer.hostname(), loadBalancer.ipAddress(), dnsZone,
                                               allocation.instanceEndpointsOf(loadBalancer),
                                               allocation.applicationEndpointsOf(loadBalancer),
-                                              new RoutingPolicy.Status(isActive(loadBalancer), RoutingStatus.DEFAULT),
-                                              loadBalancer.isPublic());
+                                              new RoutingPolicy.Status(isActive(loadBalancer), RoutingStatus.DEFAULT));
             // Preserve global routing status for existing policy
             if (existingPolicy != null) {
                 newPolicy = newPolicy.with(newPolicy.status().with(existingPolicy.status().routingStatus()));
@@ -400,7 +399,7 @@ public class RoutingPolicies {
                           while (controller.clock().instant().isBefore(doom)) {
                               try (Mutex lock = controller.curator().lockNameServiceQueue()) {
                                   if (controller.curator().readNameServiceQueue().requests().stream()
-                                                .noneMatch(request -> request.name().equals(challenge.name()))) {
+                                                .noneMatch(request -> request.name().equals(Optional.of(challenge.name())))) {
                                       try { challenge.trigger().run(); }
                                       finally { nameServiceForwarderIn(deploymentId.zoneId()).removeRecords(Type.TXT, challenge.name(), Priority.normal, ownerOf(deploymentId)); }
                                       return;

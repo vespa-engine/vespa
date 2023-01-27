@@ -50,7 +50,6 @@ public class RoutingPolicySerializer {
     private static final String agentField = "agent";
     private static final String changedAtField = "changedAt";
     private static final String statusField = "status";
-    private static final String privateOnlyField = "private";
 
     public Slime toSlime(List<RoutingPolicy> routingPolicies) {
         var slime = new Slime();
@@ -69,7 +68,6 @@ public class RoutingPolicySerializer {
             policy.applicationEndpoints().forEach(endpointId -> applicationEndpointsArray.addString(endpointId.id()));
             policyObject.setBool(loadBalancerActiveField, policy.status().isActive());
             globalRoutingToSlime(policy.status().routingStatus(), policyObject.setObject(globalRoutingField));
-            if ( ! policy.isPublic()) policyObject.setBool(privateOnlyField, true);
         });
         return slime;
     }
@@ -86,7 +84,6 @@ public class RoutingPolicySerializer {
             RoutingPolicyId id = new RoutingPolicyId(owner,
                                                      ClusterSpec.Id.from(inspect.field(clusterField).asString()),
                                                      ZoneId.from(inspect.field(zoneField).asString()));
-            boolean isPublic = ! inspect.field(privateOnlyField).asBool();
             policies.add(new RoutingPolicy(id,
                                            SlimeUtils.optionalString(inspect.field(canonicalNameField)).map(DomainName::of),
                                            SlimeUtils.optionalString(inspect.field(ipAddressField)),
@@ -94,8 +91,7 @@ public class RoutingPolicySerializer {
                                            instanceEndpoints,
                                            applicationEndpoints,
                                            new RoutingPolicy.Status(inspect.field(loadBalancerActiveField).asBool(),
-                                                                    globalRoutingFromSlime(inspect.field(globalRoutingField))),
-                                           isPublic));
+                                                                    globalRoutingFromSlime(inspect.field(globalRoutingField)))));
         });
         return Collections.unmodifiableList(policies);
     }

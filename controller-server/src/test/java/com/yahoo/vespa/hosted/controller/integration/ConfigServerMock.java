@@ -12,8 +12,6 @@ import com.yahoo.config.provision.CloudAccount;
 import com.yahoo.config.provision.ClusterResources;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.DockerImage;
-import com.yahoo.config.provision.EndpointsChecker.Availability;
-import com.yahoo.config.provision.EndpointsChecker.Endpoint;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.HostName;
 import com.yahoo.config.provision.NodeResources;
@@ -44,10 +42,8 @@ import com.yahoo.vespa.hosted.controller.api.integration.configserver.QuotaUsage
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.ServiceConvergence;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.TestReport;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.TesterCloud;
-import com.yahoo.vespa.hosted.controller.api.integration.dns.NameService;
 import com.yahoo.vespa.hosted.controller.api.integration.noderepository.RestartFilter;
 import com.yahoo.vespa.hosted.controller.api.integration.secrets.TenantSecretStore;
-import com.yahoo.vespa.hosted.controller.api.integration.stubs.MockTesterCloud;
 import com.yahoo.vespa.hosted.controller.application.SystemApplication;
 import com.yahoo.vespa.hosted.controller.application.pkg.ApplicationPackage;
 
@@ -86,7 +82,6 @@ import static java.nio.charset.StandardCharsets.UTF_8;
  */
 public class ConfigServerMock extends AbstractComponent implements ConfigServer {
 
-    private final MockTesterCloud mockTesterCloud;
     private final Map<DeploymentId, Application> applications = new LinkedHashMap<>();
     private final Set<ZoneId> inactiveZones = new HashSet<>();
     private final Map<DeploymentId, EndpointStatus> endpoints = new HashMap<>();
@@ -110,9 +105,9 @@ public class ConfigServerMock extends AbstractComponent implements ConfigServer 
     private Consumer<ApplicationId> prepareException = null;
     private Supplier<String> log = () -> "INFO - All good";
 
-    public ConfigServerMock(ZoneRegistryMock zoneRegistry, NameService nameService) {
+    @Inject
+    public ConfigServerMock(ZoneRegistryMock zoneRegistry) {
         bootstrap(zoneRegistry.zones().all().ids(), SystemApplication.notController());
-        this.mockTesterCloud = new MockTesterCloud(nameService);
     }
 
     /** Assigns a reserved tenant node to the given deployment, with initial versions. */
@@ -375,10 +370,8 @@ public class ConfigServerMock extends AbstractComponent implements ConfigServer 
     public Optional<TestReport> getTestReport(DeploymentId deployment) {
         return Optional.ofNullable(testReport.get(deployment));
     }
-
-    @Override
-    public Availability verifyEndpoints(DeploymentId deploymentId, List<Endpoint> zoneEndpoints) {
-        return mockTesterCloud.verifyEndpoints(deploymentId, zoneEndpoints); // Wraps the same name service mock, which is updated by test harness.
+    public void setTestReport(DeploymentId deploymentId, TestReport report) {
+        testReport.put(deploymentId, report);
     }
 
     /** Add any of given loadBalancers that do not already exist to the load balancers in zone */
@@ -426,8 +419,7 @@ public class ConfigServerMock extends AbstractComponent implements ConfigServer 
                                                                    LoadBalancer.State.active,
                                                                    Optional.of("dns-zone-1"),
                                                                    Optional.empty(),
-                                                                   Optional.of(new PrivateServiceInfo("service", List.of(new AllowedUrn(AccessType.awsPrivateLink, "arne")))),
-                                                                   true)));
+                                                                   Optional.of(new PrivateServiceInfo("service", List.of(new AllowedUrn(AccessType.awsPrivateLink, "arne")))))));
         }
 
         Application application = applications.get(id);

@@ -14,8 +14,7 @@ import java.util.Optional;
  */
 public interface NameServiceRequest {
 
-    /** The record name this request pertains to. */
-    RecordName name();
+    Optional<RecordName> name();
 
     /** The application owning this request */
     Optional<TenantAndApplicationId> owner();
