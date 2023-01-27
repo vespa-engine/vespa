@@ -3,9 +3,8 @@
 #include "vsm-adapter.hpp"
 #include "docsum_field_writer_factory.h"
 #include "i_matching_elements_filler.h"
+#include "query_term_filter_factory.h"
 #include <vespa/searchlib/common/matching_elements.h>
-#include <vespa/searchsummary/docsummary/legacy_query_term_filter.h>
-#include <vespa/searchsummary/docsummary/legacy_query_term_filter_factory.h>
 #include <vespa/searchsummary/config/config-juniperrc.h>
 
 #include <vespa/log/log.h>
@@ -13,8 +12,6 @@ LOG_SETUP(".vsm.vsm-adapter");
 
 using search::docsummary::IQueryTermFilterFactory;
 using search::docsummary::ResConfigEntry;
-using search::docsummary::LegacyQueryTermFilter;
-using search::docsummary::LegacyQueryTermFilterFactory;
 using search::MatchingElements;
 using config::ConfigSnapshot;
 using vespa::config::search::SummaryConfig;
@@ -147,15 +144,9 @@ VSMAdapter::configure(const VSMConfigSnapshot & snapshot)
     auto juniper = std::make_unique<juniper::Juniper>(_juniperProps.get(), &_wordFolder);
     docsumTools->setJuniper(std::move(juniper));
 
-    // init keyword extractor
-    auto query_term_filter = std::make_unique<LegacyQueryTermFilter>();
-    query_term_filter->addLegalIndexSpec(_highlightindexes.c_str());
-    vespalib::string spec = query_term_filter->getLegalIndexSpec();
-    LOG(debug, "index highlight spec: '%s'", spec.c_str());
-
     // init result config
     auto resCfg = std::make_unique<ResultConfig>();
-    std::unique_ptr<IQueryTermFilterFactory> query_term_filter_factory = std::make_unique<LegacyQueryTermFilterFactory>(std::move(query_term_filter));
+    std::unique_ptr<IQueryTermFilterFactory> query_term_filter_factory = std::make_unique<QueryTermFilterFactory>(*_fieldsCfg.get(), *vsmSummary);
     auto docsum_field_writer_factory = std::make_unique<DocsumFieldWriterFactory>(summary.get()->usev8geopositions, *docsumTools, *query_term_filter_factory, *_fieldsCfg.get());
     if ( !resCfg->readConfig(*summary.get(), _configId.c_str(), *docsum_field_writer_factory)) {
         throw std::runtime_error("(re-)configuration of VSM (docsum tools) failed due to bad summary config");
