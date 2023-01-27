@@ -2,9 +2,8 @@
 
 #pragma once
 
-#include "received.h"
+#include "waiting_for.h"
 
-#include <concepts>
 #include <coroutine>
 #include <optional>
 #include <exception>
@@ -27,7 +26,8 @@ namespace vespalib::coro {
 template <std::movable T>
 class [[nodiscard]] Lazy {
 public:
-    struct promise_type {
+    struct promise_type final : PromiseState<T> {
+        using PromiseState<T>::result;
         Lazy<T> get_return_object() { return Lazy(Handle::from_promise(*this)); }
         static std::suspend_always initial_suspend() noexcept { return {}; }
         static auto final_suspend() noexcept {
@@ -47,11 +47,7 @@ public:
         void unhandled_exception() noexcept {
             result.set_error(std::current_exception());
         }
-        Received<T> result;
-        std::coroutine_handle<> waiter;
-        promise_type(promise_type &&) = delete;
-        promise_type(const promise_type &) = delete;
-        promise_type() noexcept : result(), waiter(std::noop_coroutine()) {}
+        promise_type() noexcept : PromiseState<T>() {}
         ~promise_type();
     };
     using Handle = std::coroutine_handle<promise_type>;

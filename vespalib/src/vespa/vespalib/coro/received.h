@@ -3,6 +3,7 @@
 #pragma once
 
 #include <memory>
+#include <concepts>
 #include <variant>
 #include <exception>
 #include <stdexcept>
@@ -46,8 +47,8 @@ private:
     }
 public:
     Received() : _value() {}
-    void set_value(T &&value) { _value.template emplace<1>(std::move(value)); }
-    void set_value(const T &value) { _value.template emplace<1>(value); }
+    template <typename RET>
+    void set_value(RET &&value) { _value.template emplace<1>(std::forward<RET>(value)); }
     void set_error(std::exception_ptr exception) { _value.template emplace<0>(exception); }
     void set_done() { _value.template emplace<0>(nullptr); }
     bool has_value() const { return (_value.index() == 1); }
