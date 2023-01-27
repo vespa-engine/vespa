@@ -7,6 +7,7 @@ import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.zone.RoutingMethod;
 import com.yahoo.text.Text;
 import com.yahoo.vespa.hosted.controller.api.identifiers.DeploymentId;
+import com.yahoo.vespa.hosted.controller.api.integration.zone.ZoneRegistry;
 import com.yahoo.vespa.hosted.controller.application.Endpoint;
 import com.yahoo.vespa.hosted.controller.application.Endpoint.Port;
 import com.yahoo.vespa.hosted.controller.application.EndpointId;
@@ -28,12 +29,11 @@ public record RoutingPolicy(RoutingPolicyId id,
                             Optional<String> dnsZone,
                             Set<EndpointId> instanceEndpoints,
                             Set<EndpointId> applicationEndpoints,
-                            Status status,
-                            boolean isPublic) {
+                            Status status) {
 
     /** DO NOT USE. Public for serialization purposes */
     public RoutingPolicy(RoutingPolicyId id, Optional<DomainName> canonicalName, Optional<String> ipAddress, Optional<String> dnsZone,
-                         Set<EndpointId> instanceEndpoints, Set<EndpointId> applicationEndpoints, Status status, boolean isPublic) {
+                         Set<EndpointId> instanceEndpoints, Set<EndpointId> applicationEndpoints, Status status) {
         this.id = Objects.requireNonNull(id, "id must be non-null");
         this.canonicalName = Objects.requireNonNull(canonicalName, "canonicalName must be non-null");
         this.ipAddress = Objects.requireNonNull(ipAddress, "ipAddress must be non-null");
@@ -41,15 +41,10 @@ public record RoutingPolicy(RoutingPolicyId id,
         this.instanceEndpoints = ImmutableSortedSet.copyOf(Objects.requireNonNull(instanceEndpoints, "instanceEndpoints must be non-null"));
         this.applicationEndpoints = ImmutableSortedSet.copyOf(Objects.requireNonNull(applicationEndpoints, "applicationEndpoints must be non-null"));
         this.status = Objects.requireNonNull(status, "status must be non-null");
-        this.isPublic = isPublic;
 
         if (canonicalName.isEmpty() == ipAddress.isEmpty())
             throw new IllegalArgumentException("Exactly 1 of canonicalName=%s and ipAddress=%s must be set".formatted(
                     canonicalName.map(DomainName::value).orElse("<empty>"), ipAddress.orElse("<empty>")));
-        if ( ! instanceEndpoints.isEmpty() && ! isPublic)
-            throw new IllegalArgumentException("Non-public zone endpoint cannot be part of any global endpoint, but was in: " + instanceEndpoints);
-        if ( ! applicationEndpoints.isEmpty() && ! isPublic)
-            throw new IllegalArgumentException("Non-public zone endpoint cannot be part of any application endpoint, but was in: " + applicationEndpoints);
     }
 
     /** The ID of this */
@@ -87,11 +82,6 @@ public record RoutingPolicy(RoutingPolicyId id,
         return status;
     }
 
-    /** Returns whether this has a load balancer which is available from public internet. */
-    public boolean isPublic() {
-        return isPublic;
-    }
-
     /** Returns whether this policy applies to given deployment */
     public boolean appliesTo(DeploymentId deployment) {
         return id.owner().equals(deployment.applicationId()) &&
@@ -100,7 +90,7 @@ public record RoutingPolicy(RoutingPolicyId id,
 
     /** Returns a copy of this with status set to given status */
     public RoutingPolicy with(Status status) {
-        return new RoutingPolicy(id, canonicalName, ipAddress, dnsZone, instanceEndpoints, applicationEndpoints, status, isPublic);
+        return new RoutingPolicy(id, canonicalName, ipAddress, dnsZone, instanceEndpoints, applicationEndpoints, status);
     }
 
     /** Returns the zone endpoints of this */

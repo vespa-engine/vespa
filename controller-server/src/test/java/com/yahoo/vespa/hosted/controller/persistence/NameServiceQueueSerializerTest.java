@@ -12,7 +12,6 @@ import com.yahoo.vespa.hosted.controller.application.TenantAndApplicationId;
 import com.yahoo.vespa.hosted.controller.dns.CreateRecord;
 import com.yahoo.vespa.hosted.controller.dns.CreateRecords;
 import com.yahoo.vespa.hosted.controller.dns.NameServiceQueue;
-import com.yahoo.vespa.hosted.controller.dns.NameServiceRequest;
 import com.yahoo.vespa.hosted.controller.dns.RemoveRecords;
 import org.junit.jupiter.api.Test;
 
@@ -33,7 +32,7 @@ public class NameServiceQueueSerializerTest {
         Optional<TenantAndApplicationId> owner = Optional.of(TenantAndApplicationId.from("t", "a"));
         var record1 = new Record(Record.Type.CNAME, RecordName.from("cname.example.com"), RecordData.from("example.com"));
         var record2 = new Record(Record.Type.TXT, RecordName.from("txt.example.com"), RecordData.from("text"));
-        var requests = List.<NameServiceRequest>of(
+        var requests = List.of(
                 new CreateRecord(owner, record1),
                 new CreateRecords(owner, List.of(record2)),
                 new CreateRecords(owner, List.of(new Record(Record.Type.ALIAS, RecordName.from("alias.example.com"),
