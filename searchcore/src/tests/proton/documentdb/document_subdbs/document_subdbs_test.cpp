@@ -851,9 +851,9 @@ struct DocumentHandler
         gate.await();
     }
     void putDocs() {
-        PutOperation putOp = createPut(std::move(createDoc(1, 22, 33)), Timestamp(10), 10);
+        PutOperation putOp = createPut(createDoc(1, 22, 33), Timestamp(10), 10);
         putDoc(putOp);
-        putOp = createPut(std::move(createDoc(2, 44, 55)), Timestamp(20), 20);
+        putOp = createPut(createDoc(2, 44, 55), Timestamp(20), 20);
         putDoc(putOp);
     }
 };

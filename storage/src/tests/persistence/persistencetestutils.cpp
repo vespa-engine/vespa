@@ -245,7 +245,7 @@ PersistenceTestUtils::doPut(const document::Document::SP& doc, document::BucketI
 {
     spi::Bucket b(makeSpiBucket(bid));
     getPersistenceProvider().createBucket(b);
-    getPersistenceProvider().put(b, time, std::move(doc));
+    getPersistenceProvider().put(b, time, doc);
 }
 
 spi::UpdateResult
