@@ -15,6 +15,7 @@
 #pragma once
 
 #include <vespa/document/util/printable.h>
+#include <cstdint>
 
 namespace document {
 

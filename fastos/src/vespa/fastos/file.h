@@ -11,6 +11,7 @@
 #pragma once
 
 #include "types.h"
+#include <cstdint>
 #include <string>
 
 const int FASTOS_FILE_OPEN_READ      = (1<<0);

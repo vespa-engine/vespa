@@ -19,6 +19,7 @@
 
 #include <vespa/vespalib/util/hdr_abort.h>
 #include <vespa/document/util/printable.h>
+#include <cstdint>
 
 namespace document::select {
 
