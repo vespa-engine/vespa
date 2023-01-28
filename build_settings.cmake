@@ -80,6 +80,13 @@ else()
   set(VESPA_XXHASH_DEFINE "-DXXH_INLINE_ALL")
 endif()
 
+# Disable dangling reference and overloaded virtual warnings when using gcc 13
+if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
+  if (CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL "13")
+    set(CXX_SPECIFIC_WARN_OPTS "${CXX_SPECIFIC_WARN_OPTS} -Wno-dangling-reference -Wno-overloaded-virtual")
+  endif()
+endif()
+
 if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU" AND VESPA_USE_LTO)
   # Enable lto
   set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -flto=auto -ffat-lto-objects")
