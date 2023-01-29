@@ -733,10 +733,6 @@ const std::string TERM_INDEX = "\357\277\272";
 const std::string TERM_END = "\357\277\273";
 const std::string TERM_SEP = "\037";
 const std::string TERM_EMPTY;
-namespace
-{
-const std::string empty;
-}
 
 TEST_F("requireThatAnnotationsAreUsed", Fixture)
 {
