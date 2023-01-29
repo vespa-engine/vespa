@@ -189,7 +189,7 @@ class IndexMaintainer : public IIndexManager,
         ISearchableIndexCollection::SP            old_source_list; // Delays destruction
         search::FixedSourceSelector::SaveInfo::SP save_info;
         SerialNum        flush_serial_num;
-        FlushStats     * stats;
+        searchcorespi::FlushStats  * stats;
         bool             _skippedEmptyLast; // Don't flush empty memory index
 
         // Extra indexes to flush before flushing last frozen memory index
