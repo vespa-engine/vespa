@@ -33,6 +33,11 @@ else()
     set(C_WARN_OPTS "-Winline ${C_WARN_OPTS}")
 endif()
 if (VESPA_USE_SANITIZER)
+  if (VESPA_USE_SANITIZER STREQUAL "address" AND CMAKE_CXX_COMPILER_ID STREQUAL "GNU" AND CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL 12.0)
+    # Turn off maybe uninitialized and restrict warnings when compiling with
+    # address sanitizer on gcc 12 or newer.
+    set(C_WARN_OPTS "${C_WARN_OPTS} -Wno-maybe-uninitialized -Wno-restrict")
+  endif()
   if (VESPA_USE_SANITIZER STREQUAL "thread" AND CMAKE_CXX_COMPILER_ID STREQUAL "GNU" AND CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL 12.0)
     # Turn off warning about std::atomic_thread_fence not being supported by
     # address sanitizer.
