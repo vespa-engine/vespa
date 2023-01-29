@@ -49,7 +49,7 @@ set_source_files_properties(${FLEX_DocSelLexer_OUTPUTS} PROPERTIES COMPILE_FLAGS
 if (CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
   set_source_files_properties(${BISON_DocSelParser_OUTPUTS} PROPERTIES COMPILE_FLAGS -Wno-noexcept)
 elseif(CMAKE_CXX_COMPILER_ID STREQUAL "Clang" AND CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL 15.0)
-  set_source_files_properties(${BISON_DocSelParser_OUTPUTS} PROPERTIES COMPILE_OPTIONS "-Wno-unused-but-set-variable")
+  set_source_files_properties(${BISON_DocSelParser_OUTPUTS} PROPERTIES COMPILE_OPTIONS "-Wno-unused-but-set-variable;-Wno-deprecated-copy-with-user-provided-copy")
 elseif(CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
   set_source_files_properties(${BISON_DocSelParser_OUTPUTS} PROPERTIES COMPILE_OPTIONS "-Wno-deprecated-copy-with-user-provided-copy")
 endif()
