@@ -3,7 +3,7 @@
   "private": true,
   "version": "0.0.0",
   "scripts": {
-    "dev": "vite",
+    "dev": "vite --port 3000",
     "build": "vite build",
     "preview": "vite preview",
     "prepare": "cd ../../../ && husky install client/js/app/.husky",
@@ -25,7 +25,7 @@
     "@mantine/notifications": "^5",
     "@types/react": "^18",
     "@types/react-dom": "^18",
-    "@vitejs/plugin-react": "^1",
+    "@vitejs/plugin-react": "^3",
     "esbuild-jest": "^0",
     "eslint": "^8",
     "eslint-plugin-import": "^2",
@@ -34,14 +34,14 @@
     "eslint-plugin-react-hooks": "^4",
     "eslint-plugin-react-perf": "^3",
     "eslint-plugin-unused-imports": "^2",
-    "husky": "^7",
-    "jest": "^28",
+    "husky": "^8",
+    "jest": "^29",
     "lodash": "^4",
     "prettier": "2",
     "pretty-quick": "^3",
     "react-router-dom": "^6",
     "use-context-selector": "^1",
-    "vite": "^2"
+    "vite": "^4"
   },
   "jest": {
     "testMatch": [
