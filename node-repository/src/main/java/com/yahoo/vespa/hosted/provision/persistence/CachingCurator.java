@@ -68,11 +68,6 @@ public class CachingCurator {
                      .toList();
     }
 
-    // TODO(mpolden): Remove after 2023-02-01
-    public void deleteRecursively(Path path) {
-        curator.delete(path);
-    }
-
     /** Create a reentrant lock */
     public Lock lock(Path path, Duration timeout) {
         return curator.lock(path, timeout);

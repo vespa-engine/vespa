@@ -94,7 +94,6 @@ public class CuratorDb {
     private void initZK() {
         db.create(root);
         db.create(nodesPath);
-        removeLegacyPaths(); // TODO(mpolden): Remove after 2023-02-01
         db.create(applicationsPath);
         db.create(inactiveJobsPath);
         db.create(infrastructureVersionsPath);
@@ -103,13 +102,6 @@ public class CuratorDb {
         db.create(archiveUrisPath);
         db.create(loadBalancersPath);
         provisionIndexCounter.initialize(100);
-    }
-
-    private void removeLegacyPaths() {
-        for (Node.State state : Node.State.values()) {
-            Path path = toLegacyPath(state);
-            db.deleteRecursively(path);
-        }
     }
 
     /** Adds a set of nodes. Rollbacks/fails transaction if any node is not in the expected state. */
@@ -252,8 +244,6 @@ public class CuratorDb {
         return readNode(db.getSession(), hostname);
     }
 
-    private Path toLegacyPath(Node.State nodeState) { return root.append(toDir(nodeState)); }
-
     private Path nodePath(Node node) {
         return nodePath(node.hostname());
     }
@@ -269,21 +259,6 @@ public class CuratorDb {
                                           .append(application.instance().value());
         db.create(lockPath);
         return lockPath;
-    }
-
-    private String toDir(Node.State state) {
-        return switch (state) {
-            case active -> "allocated"; // legacy name
-            case dirty -> "dirty";
-            case failed -> "failed";
-            case inactive -> "deallocated"; // legacy name
-            case parked -> "parked";
-            case provisioned -> "provisioned";
-            case ready -> "ready";
-            case reserved -> "reserved";
-            case deprovisioned -> "deprovisioned";
-            case breakfixed -> "breakfixed";
-        };
     }
 
     /** Acquires the single cluster-global, reentrant lock for all non-active nodes */
