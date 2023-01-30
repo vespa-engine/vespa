@@ -119,7 +119,7 @@ public enum ContainerMetrics {
     QUERY_TIMEOUT("query_timeout", Unit.MILLISECOND, "The amount of time allowed for query execytion, from the client"),
     FAILED_QUERIES("failed_queries", Unit.OPERATION, "The number of failed queries"),
     DEGRADED_QUERIES("degraded_queries", Unit.OPERATION, "The number of degraded queries, e.g. due to some conent nodes not responding in time"),
-    HITS_PER_QUERY("hits_per_query", Unit.HIT, "The number of hits returned"),
+    HITS_PER_QUERY("hits_per_query", Unit.HIT_PER_QUERY, "The number of hits returned"),
     QUERY_HIT_OFFSET("query_hit_offset", Unit.HIT, "The offset for hits returned"),
     DOCUMENTS_COVERED("documents_covered", Unit.DOCUMENT, "The combined number of documents considered during query evaluation"),
     DOCUMENTS_TOTAL("documents_total", Unit.DOCUMENT, "The number of documents to be evaluated if all requests had been fully executed"),
@@ -127,7 +127,7 @@ public enum ContainerMetrics {
     JDISC_RENDER_LATENCY("jdisc.render.latency", Unit.NANOSECOND, "The time used by the container to render responses"),
     QUERY_ITEM_COUNT("query_item_count", Unit.ITEM, "The number of query items (terms, phrases, etc)"),
     
-    TOTAL_HITS_PER_QUERY("totalhits_per_query", Unit.HIT, "The total number of documents found to match queries"),
+    TOTAL_HITS_PER_QUERY("totalhits_per_query", Unit.HIT_PER_QUERY, "The total number of documents found to match queries"),
     EMPTY_RESULTS("empty_results", Unit.OPERATION, "Number of queries matching no documents"),
     REQUESTS_OVER_QUOTA("requestsOverQuota", Unit.OPERATION, "The number of requests rejected due to exceeding quota"),
     
