@@ -59,7 +59,7 @@ private:
             _target(target)
         {}
 
-        ~DelayedTasks() { Kill(); }
+        ~DelayedTasks() override { Kill(); }
     };
 
     DelayedTasks _delayedTasks;
@@ -69,26 +69,24 @@ private:
         bool localOnly;
         std::unique_ptr<CompletionHandler> inflight;
         vespalib::string spec;
+        PerService(bool up_in, bool local_only, std::unique_ptr<CompletionHandler> inflight_in, vespalib::stringref spec_in)
+            : up(up_in), localOnly(local_only), inflight(std::move(inflight_in)), spec(spec_in)
+        {}
+        PerService(const PerService &) = delete;
+        PerService & operator=(const PerService &) = delete;
+        PerService(PerService &&) noexcept;
+        PerService & operator =(PerService &&) noexcept;
+        ~PerService();
     };
 
-    PerService localService(const ServiceMapping &mapping,
+    static PerService localService(const ServiceMapping &mapping,
                             std::unique_ptr<CompletionHandler> inflight)
     {
-        return PerService{
-            .up = false,
-            .localOnly = true,
-            .inflight = std::move(inflight),
-            .spec = mapping.spec
-        };
+        return {false, true, std::move(inflight), mapping.spec};
     }
 
-    PerService globalService(const ServiceMapping &mapping) {
-        return PerService{
-            .up = false,
-            .localOnly = false,
-            .inflight = {},
-            .spec = mapping.spec
-        };
+    static PerService globalService(const ServiceMapping &mapping) {
+        return {false, false, {}, mapping.spec};
     }        
 
     using Map = std::map<vespalib::string, PerService>;
@@ -111,6 +109,7 @@ private:
         bool up;
         bool localOnly;
         std::unique_ptr<CompletionHandler> inflight;
+        ~RemovedData();
     };
 
     RemovedData removeFromMap(Map::iterator iter);
@@ -118,12 +117,12 @@ private:
 public:
     LocalRpcMonitorMap(FNET_Scheduler *scheduler,
                        MappingMonitorFactory mappingMonitorFactory);
-    ~LocalRpcMonitorMap();
+    ~LocalRpcMonitorMap() override;
 
     MapSource &dispatcher() { return _dispatcher; }
     ServiceMapHistory & history();
 
-    bool wouldConflict(const ServiceMapping &mapping) const;
+    [[nodiscard]] bool wouldConflict(const ServiceMapping &mapping) const;
 
     /** for use by register API, will call doneHandler() on inflight script */
     void addLocal(const ServiceMapping &mapping,
