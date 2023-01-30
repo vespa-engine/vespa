@@ -4,6 +4,7 @@ package com.yahoo.vespa.config.server;
 import ai.vespa.http.DomainName;
 import ai.vespa.http.HttpURL;
 import ai.vespa.http.HttpURL.Query;
+import ai.vespa.util.http.hc5.VespaHttpClientBuilder;
 import ai.vespa.util.http.hc5.DefaultHttpClientBuilder;
 import com.yahoo.cloud.config.ConfigserverConfig;
 import com.yahoo.component.Version;
@@ -1238,9 +1239,11 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
     }
 
     private static EndpointsChecker createEndpointsChecker() {
-        CloseableHttpClient client = DefaultHttpClientBuilder.create(() -> null, new NoopHostnameVerifier(), "hosted-vespa-convergence-health-checker")
-                                                             .setDefaultHeaders(List.of(new BasicHeader(HttpHeaders.CONNECTION, "close")))
-                                                             .build();
+        CloseableHttpClient client = VespaHttpClientBuilder.custom()
+                                                           .apacheBuilder()
+                                                           .setUserAgent("hosted-vespa-convergence-health-checker")
+                                                           .setDefaultHeaders(List.of(new BasicHeader(HttpHeaders.CONNECTION, "close")))
+                                                           .build();
         return EndpointsChecker.of(endpoint -> {
             int remainingFailures = 3;
             int remainingSuccesses = 100;
