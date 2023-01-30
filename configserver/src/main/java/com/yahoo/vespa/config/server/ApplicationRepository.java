@@ -182,7 +182,7 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
              infraDeployerProvider.getInfraDeployer(),
              configConvergenceChecker,
              httpProxy,
-             createEndpointsChecker(),
+             createEndpointsChecker(configserverConfig),
              configserverConfig,
              orchestrator,
              new LogRetriever(),
@@ -1238,12 +1238,12 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
 
     }
 
-    private static EndpointsChecker createEndpointsChecker() {
-        CloseableHttpClient client = VespaHttpClientBuilder.custom()
-                                                           .apacheBuilder()
-                                                           .setUserAgent("hosted-vespa-convergence-health-checker")
-                                                           .setDefaultHeaders(List.of(new BasicHeader(HttpHeaders.CONNECTION, "close")))
-                                                           .build();
+    private static EndpointsChecker createEndpointsChecker(ConfigserverConfig config) {
+        CloseableHttpClient client = (SystemName.from(config.system()).isPublic()
+                                      ? DefaultHttpClientBuilder.create(() -> null, "hosted-vespa-convergence-health-checker")
+                                      : VespaHttpClientBuilder.custom().apacheBuilder().setUserAgent("hosted-vespa-convergence-health-checker"))
+                .setDefaultHeaders(List.of(new BasicHeader(HttpHeaders.CONNECTION, "close")))
+                .build();
         return EndpointsChecker.of(endpoint -> {
             int remainingFailures = 3;
             int remainingSuccesses = 100;
