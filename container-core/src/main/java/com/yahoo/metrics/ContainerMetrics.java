@@ -3,7 +3,7 @@ package com.yahoo.metrics;
 /**
  * @author gjoranv
  */
-public enum ContainerMetrics {
+public enum ContainerMetrics implements VespaMetrics {
 
     HTTP_STATUS_1XX("http.status.1xx", Unit.RESPONSE, "Number of responses with a 1xx status"),
     HTTP_STATUS_2XX("http.status.2xx", Unit.RESPONSE, "Number of responses with a 2xx status"),
@@ -108,7 +108,7 @@ public enum ContainerMetrics {
     
     
     // SearchChain metrics
-    PEAK_QPS("peak_qps", Unit.OPERATION_PER_SECOND, "The highest number of qps for a second for this metrics shapshot"),
+    PEAK_QPS("peak_qps", Unit.QUERY_PER_SECOND, "The highest number of qps for a second for this metrics shapshot"),
     SEARCH_CONNECTIONS("search_connections", Unit.CONNECTION, "Number of search connections"),
     FEED_OPERATIONS("feed.operations", Unit.OPERATION, "Number of document feed operations"),
     FEED_LATENCY("feed.latency", Unit.MILLISECOND, "Feed latency"),
@@ -119,7 +119,7 @@ public enum ContainerMetrics {
     QUERY_TIMEOUT("query_timeout", Unit.MILLISECOND, "The amount of time allowed for query execytion, from the client"),
     FAILED_QUERIES("failed_queries", Unit.OPERATION, "The number of failed queries"),
     DEGRADED_QUERIES("degraded_queries", Unit.OPERATION, "The number of degraded queries, e.g. due to some conent nodes not responding in time"),
-    HITS_PER_QUERY("hits_per_query", Unit.HIT, "The number of hits returned"),
+    HITS_PER_QUERY("hits_per_query", Unit.HIT_PER_QUERY, "The number of hits returned"),
     QUERY_HIT_OFFSET("query_hit_offset", Unit.HIT, "The offset for hits returned"),
     DOCUMENTS_COVERED("documents_covered", Unit.DOCUMENT, "The combined number of documents considered during query evaluation"),
     DOCUMENTS_TOTAL("documents_total", Unit.DOCUMENT, "The number of documents to be evaluated if all requests had been fully executed"),
@@ -127,7 +127,7 @@ public enum ContainerMetrics {
     JDISC_RENDER_LATENCY("jdisc.render.latency", Unit.NANOSECOND, "The time used by the container to render responses"),
     QUERY_ITEM_COUNT("query_item_count", Unit.ITEM, "The number of query items (terms, phrases, etc)"),
     
-    TOTAL_HITS_PER_QUERY("totalhits_per_query", Unit.HIT, "The total number of documents found to match queries"),
+    TOTAL_HITS_PER_QUERY("totalhits_per_query", Unit.HIT_PER_QUERY, "The total number of documents found to match queries"),
     EMPTY_RESULTS("empty_results", Unit.OPERATION, "Number of queries matching no documents"),
     REQUESTS_OVER_QUOTA("requestsOverQuota", Unit.OPERATION, "The number of requests rejected due to exceeding quota"),
     
@@ -179,8 +179,7 @@ public enum ContainerMetrics {
     CLUSTER_CONTROLLER_RESOURCE_USAGE_DISK_LIMIT("cluster-controller.resource_usage.disk_limit", Unit.FRACTION, "Memory space limit as a fraction of available memory"),
     CLUSTER_CONTROLLER_REINDEXING_PROGRESS("reindexing.progress", Unit.FRACTION, "Re-indexing progress");
 
-    
-    
+
     private final String name;
     private final Unit unit;
     private final String description;
@@ -195,48 +194,12 @@ public enum ContainerMetrics {
         return name;
     }
 
+    public Unit unit() {
+        return unit;
+    }
+
     public String description() {
-        return description + " (unit: " + unit.shortName() + ")";
-    }
-
-    private String withSuffix(Suffix suffix) {
-        return baseName() + "." + suffix.suffix();
-    }
-
-    public String ninety_five_percentile() {
-        return withSuffix(Suffix.ninety_five_percentile);
-    }
-
-    public String ninety_nine_percentile() {
-        return withSuffix(Suffix.ninety_nine_percentile);
-    }
-
-    public String average() {
-        return withSuffix(Suffix.average);
-    }
-
-    public String count() {
-        return withSuffix(Suffix.count);
-    }
-
-    public String last() {
-        return withSuffix(Suffix.last);
-    }
-
-    public String max() {
-        return withSuffix(Suffix.max);
-    }
-
-    public String min() {
-        return withSuffix(Suffix.min);
-    }
-
-    public String rate() {
-        return withSuffix(Suffix.rate);
-    }
-
-    public String sum() {
-        return withSuffix(Suffix.sum);
+        return description;
     }
 
 }
