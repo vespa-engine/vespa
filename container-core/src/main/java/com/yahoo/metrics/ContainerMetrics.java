@@ -3,7 +3,7 @@ package com.yahoo.metrics;
 /**
  * @author gjoranv
  */
-public enum ContainerMetrics {
+public enum ContainerMetrics implements VespaMetrics {
 
     HTTP_STATUS_1XX("http.status.1xx", Unit.RESPONSE, "Number of responses with a 1xx status"),
     HTTP_STATUS_2XX("http.status.2xx", Unit.RESPONSE, "Number of responses with a 2xx status"),
@@ -179,8 +179,7 @@ public enum ContainerMetrics {
     CLUSTER_CONTROLLER_RESOURCE_USAGE_DISK_LIMIT("cluster-controller.resource_usage.disk_limit", Unit.FRACTION, "Memory space limit as a fraction of available memory"),
     CLUSTER_CONTROLLER_REINDEXING_PROGRESS("reindexing.progress", Unit.FRACTION, "Re-indexing progress");
 
-    
-    
+
     private final String name;
     private final Unit unit;
     private final String description;
@@ -195,48 +194,12 @@ public enum ContainerMetrics {
         return name;
     }
 
+    public Unit unit() {
+        return unit;
+    }
+
     public String description() {
-        return description + " (unit: " + unit.shortName() + ")";
-    }
-
-    private String withSuffix(Suffix suffix) {
-        return baseName() + "." + suffix.suffix();
-    }
-
-    public String ninety_five_percentile() {
-        return withSuffix(Suffix.ninety_five_percentile);
-    }
-
-    public String ninety_nine_percentile() {
-        return withSuffix(Suffix.ninety_nine_percentile);
-    }
-
-    public String average() {
-        return withSuffix(Suffix.average);
-    }
-
-    public String count() {
-        return withSuffix(Suffix.count);
-    }
-
-    public String last() {
-        return withSuffix(Suffix.last);
-    }
-
-    public String max() {
-        return withSuffix(Suffix.max);
-    }
-
-    public String min() {
-        return withSuffix(Suffix.min);
-    }
-
-    public String rate() {
-        return withSuffix(Suffix.rate);
-    }
-
-    public String sum() {
-        return withSuffix(Suffix.sum);
+        return description;
     }
 
 }
