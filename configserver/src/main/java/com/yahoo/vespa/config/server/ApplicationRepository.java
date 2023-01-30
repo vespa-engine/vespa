@@ -1238,7 +1238,7 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
     }
 
     private static EndpointsChecker createEndpointsChecker() {
-        CloseableHttpClient client = DefaultHttpClientBuilder.create(() -> null, "hosted-vespa-convergence-health-checker")
+        CloseableHttpClient client = DefaultHttpClientBuilder.create(() -> null, new NoopHostnameVerifier(), "hosted-vespa-convergence-health-checker")
                                                              .setDefaultHeaders(List.of(new BasicHeader(HttpHeaders.CONNECTION, "close")))
                                                              .build();
         return EndpointsChecker.of(endpoint -> {
