@@ -76,7 +76,7 @@ private:
     bool              _firstDoc;
 
 public:
-    MyBuilder(const Schema &schema)
+    explicit MyBuilder(const Schema &schema)
         : IndexBuilder(schema),
           _ss(),
           _insideWord(false),
@@ -159,8 +159,10 @@ struct SimpleMatchData {
     SimpleMatchData() : term(), array() {
         array.add(&term);
     }
-    ~SimpleMatchData() {}
+    ~SimpleMatchData();
 };
+
+SimpleMatchData::~SimpleMatchData() = default;
 
 std::string
 toString(const SimpleMatchData& match_data,
@@ -266,6 +268,7 @@ class MockFieldIndex {
     uint32_t _fieldId;
 
 public:
+    MockFieldIndex();
     ~MockFieldIndex();
     void
     setNextWord(const vespalib::string &word) {
@@ -300,6 +303,12 @@ public:
         return _dict.end();
     }
 };
+
+MockFieldIndex::MockFieldIndex()
+    : _dict(),
+      _word(),
+      _fieldId()
+{}
 
 MockFieldIndex::~MockFieldIndex() = default;
 
@@ -337,7 +346,7 @@ class MyInserter {
     IOrderedFieldIndexInserter *_inserter;
 
 public:
-    MyInserter(const Schema &schema)
+    explicit MyInserter(const Schema &schema)
         : _wordStoreScan(),
           _mock(),
           _fieldIndexes(schema, MockFieldLengthInspector()),
@@ -427,15 +436,15 @@ myremove(uint32_t docId, DocumentInverter &inv)
 class MyDrainRemoves : IFieldIndexRemoveListener {
     FieldIndexRemover &_remover;
 public:
-    virtual void remove(const vespalib::stringref, uint32_t) override { }
+    void remove(const vespalib::stringref, uint32_t) override { }
 
     MyDrainRemoves(FieldIndexCollection &fieldIndexes, uint32_t fieldId)
         : _remover(fieldIndexes.getFieldIndex(fieldId)->getDocumentRemover())
     {
     }
 
-    MyDrainRemoves(IFieldIndex& field_index)
-            : _remover(field_index.getDocumentRemover())
+    explicit MyDrainRemoves(IFieldIndex& field_index)
+        : _remover(field_index.getDocumentRemover())
     {
     }
 
@@ -532,21 +541,19 @@ struct FieldIndexTest : public ::testing::Test {
           idx(schema, 0)
     {
     }
-    ~FieldIndexTest() {}
+    ~FieldIndexTest() override;
     SearchIterator::UP search(const vespalib::stringref word,
                               const SimpleMatchData& match_data) {
         return make_search_iterator<FieldIndexType::has_interleaved_features>(idx.find(word), idx.getFeatureStore(), 0, match_data.array);
     }
 };
 
+template <typename FieldIndexType>
+FieldIndexTest<FieldIndexType>::~FieldIndexTest() = default;
+
+
 using FieldIndexTestTypes = ::testing::Types<FieldIndex<false>, FieldIndex<true>>;
 TYPED_TEST_SUITE(FieldIndexTest, FieldIndexTestTypes);
-
-// Disable warnings emitted by gtest generated files when using typed tests
-#pragma GCC diagnostic push
-#ifndef __clang__
-#pragma GCC diagnostic ignored "-Wsuggest-override"
-#endif
 
 TYPED_TEST(FieldIndexTest, require_that_fresh_insert_works)
 {
@@ -646,8 +653,6 @@ TYPED_TEST(FieldIndexTest, require_that_posting_iterator_is_working)
     }
 }
 
-#pragma GCC diagnostic pop
-
 struct FieldIndexInterleavedFeaturesTest : public FieldIndexTest<FieldIndex<true>> {
     SimpleMatchData match_data;
     FieldIndexInterleavedFeaturesTest()
@@ -732,13 +737,15 @@ struct FieldIndexCollectionTest : public ::testing::Test {
           fic(schema, MockFieldLengthInspector())
     {
     }
-    ~FieldIndexCollectionTest() {}
+    ~FieldIndexCollectionTest();
 
-    NormalFieldIndex::PostingList::Iterator find(const vespalib::stringref word,
-                                                 uint32_t field_id) const {
+    [[nodiscard]]NormalFieldIndex::PostingList::Iterator
+    find(const vespalib::stringref word, uint32_t field_id) const {
         return find_in_field_index<false>(word, field_id, fic);
     }
 };
+
+FieldIndexCollectionTest::~FieldIndexCollectionTest() = default;
 
 TEST_F(FieldIndexCollectionTest, require_that_multiple_posting_lists_across_multiple_fields_can_exist)
 {

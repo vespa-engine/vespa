@@ -290,12 +290,6 @@ struct HashSmallOffsetNumberUniqueStore
 using UniqueStoreTestTypes = ::testing::Types<BTreeNumberUniqueStore, BTreeStringUniqueStore, BTreeCStringUniqueStore, BTreeDoubleUniqueStore, HybridNumberUniqueStore, HybridStringUniqueStore, HybridCStringUniqueStore, HybridDoubleUniqueStore, HashNumberUniqueStore, HashStringUniqueStore, HashCStringUniqueStore, HashDoubleUniqueStore>;
 TYPED_TEST_SUITE(TestBase, UniqueStoreTestTypes);
 
-// Disable warnings emitted by gtest generated files when using typed tests
-#pragma GCC diagnostic push
-#ifndef __clang__
-#pragma GCC diagnostic ignored "-Wsuggest-override"
-#endif
-
 using NumberTest = TestBase<BTreeNumberUniqueStore>;
 using StringTest = TestBase<BTreeStringUniqueStore>;
 using CStringTest = TestBase<BTreeCStringUniqueStore>;
@@ -441,8 +435,6 @@ TYPED_TEST(TestBase, provided_memory_allocator_is_used)
         EXPECT_EQ(AllocStats(1, 0), this->stats);
     }
 }
-
-#pragma GCC diagnostic pop
 
 TEST_F(DoubleTest, nan_is_handled)
 {

@@ -4,7 +4,6 @@
 #include <vespa/vespalib/datastore/unique_store.hpp>
 #include <vespa/vespalib/datastore/unique_store_dictionary.hpp>
 #include <vespa/vespalib/datastore/sharded_hash_map.h>
-#include <vespa/vespalib/util/memoryusage.h>
 #include <vespa/vespalib/gtest/gtest.h>
 
 #include <vespa/log/log.h>
@@ -25,7 +24,7 @@ private:
     }
 
 public:
-    Comparator(uint32_t to_find)
+    explicit Comparator(uint32_t to_find)
         : _to_find(to_find)
     {}
     bool less(const EntryRef lhs, const EntryRef rhs) const override {
@@ -76,12 +75,6 @@ struct UniqueStoreDictionaryTest : public ::testing::Test {
 
 using UniqueStoreDictionaryTestTypes = ::testing::Types<DefaultUniqueStoreDictionary, UniqueStoreDictionary<DefaultDictionary, IUniqueStoreDictionary, ShardedHashMap>, UniqueStoreDictionary<NoBTreeDictionary, IUniqueStoreDictionary, ShardedHashMap>>;
 TYPED_TEST_SUITE(UniqueStoreDictionaryTest, UniqueStoreDictionaryTestTypes);
-
-// Disable warnings emitted by gtest generated files when using typed tests
-#pragma GCC diagnostic push
-#ifndef __clang__
-#pragma GCC diagnostic ignored "-Wsuggest-override"
-#endif
 
 TYPED_TEST(UniqueStoreDictionaryTest, can_count_occurrences_of_a_key)
 {
@@ -164,7 +157,5 @@ TYPED_TEST(UniqueStoreDictionaryTest, compaction_works)
     this->snapshot->foreach_key([&](const AtomicEntryRef& ref){ refs.emplace_back(ref.load_relaxed()); });
     EXPECT_EQ(exp_refs, refs);
 }
-
-#pragma GCC diagnostic pop
 
 GTEST_MAIN_RUN_ALL_TESTS()
