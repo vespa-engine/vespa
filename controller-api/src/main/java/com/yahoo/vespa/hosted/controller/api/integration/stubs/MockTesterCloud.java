@@ -3,6 +3,9 @@ package com.yahoo.vespa.hosted.controller.api.integration.stubs;
 
 import ai.vespa.http.DomainName;
 import com.google.common.net.InetAddresses;
+import com.yahoo.config.provision.EndpointsChecker;
+import com.yahoo.config.provision.EndpointsChecker.Endpoint;
+import com.yahoo.config.provision.EndpointsChecker.Availability;
 import com.yahoo.vespa.hosted.controller.api.identifiers.DeploymentId;
 import com.yahoo.vespa.hosted.controller.api.integration.LogEntry;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.TestReport;
@@ -16,7 +19,6 @@ import java.net.URI;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
-import java.util.stream.Collectors;
 
 import static com.yahoo.vespa.hosted.controller.api.integration.deployment.TesterCloud.Status.NOT_STARTED;
 import static com.yahoo.vespa.hosted.controller.api.integration.deployment.TesterCloud.Status.RUNNING;
@@ -24,6 +26,7 @@ import static com.yahoo.vespa.hosted.controller.api.integration.deployment.Teste
 public class MockTesterCloud implements TesterCloud {
 
     private final NameService nameService;
+    private final EndpointsChecker endpointsChecker = EndpointsChecker.mock(this::resolveHostName, this::resolveCname, __ -> true);
 
     private List<LogEntry> log = new ArrayList<>();
     private Status status = NOT_STARTED;
@@ -49,25 +52,23 @@ public class MockTesterCloud implements TesterCloud {
     public Status getStatus(DeploymentId deploymentId) { return status; }
 
     @Override
-    public boolean ready(URI testerUrl) {
-        return true;
-    }
-
-    @Override
     public boolean testerReady(DeploymentId deploymentId) {
         return true;
     }
 
     @Override
-    public Optional<InetAddress> resolveHostName(DomainName hostname) {
+    public Availability verifyEndpoints(DeploymentId deploymentId, List<Endpoint> endpoints) {
+        return endpointsChecker.endpointsAvailable(endpoints);
+    }
+
+    private Optional<InetAddress> resolveHostName(DomainName hostname) {
         return nameService.findRecords(Record.Type.A, RecordName.from(hostname.value())).stream()
                 .findFirst()
                 .map(record -> InetAddresses.forString(record.data().asString()))
                 .or(() -> Optional.of(InetAddresses.forString("1.2.3.4")));
     }
 
-    @Override
-    public Optional<DomainName> resolveCname(DomainName hostName) {
+    private Optional<DomainName> resolveCname(DomainName hostName) {
         return nameService.findRecords(Record.Type.CNAME, RecordName.from(hostName.value())).stream()
                           .findFirst()
                           .map(record -> DomainName.of(record.data().asString().substring(0, record.data().asString().length() - 1)));

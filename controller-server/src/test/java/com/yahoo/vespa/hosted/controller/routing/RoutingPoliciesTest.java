@@ -497,7 +497,8 @@ public class RoutingPoliciesTest {
                                             LoadBalancer.State.active,
                                             Optional.of("dns-zone-1"),
                                             Optional.empty(),
-                                            Optional.empty());
+                                            Optional.empty(),
+                                            true);
         tester.controllerTester().configServer().putLoadBalancers(zone1, List.of(loadBalancer));
 
         // Application redeployment preserves DNS record
@@ -952,7 +953,8 @@ public class RoutingPoliciesTest {
                                      LoadBalancer.State.active,
                                      Optional.of("dns-zone-1").filter(__ -> lbHostname.isPresent()),
                                      Optional.empty(),
-                                     Optional.empty()));
+                                     Optional.empty(),
+                                     true));
         }
         return loadBalancers;
     }

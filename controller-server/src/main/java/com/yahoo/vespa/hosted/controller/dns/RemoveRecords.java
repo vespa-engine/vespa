@@ -21,11 +21,9 @@ import java.util.Optional;
  *
  * @author mpolden
  */
-public class RemoveRecords implements NameServiceRequest {
+public class RemoveRecords extends AbstractNameServiceRequest {
 
-    private final Optional<TenantAndApplicationId> owner;
     private final Record.Type type;
-    private final RecordName name;
     private final Optional<RecordData> data;
 
     public RemoveRecords(Optional<TenantAndApplicationId> owner, Record.Type type, RecordName name) {
@@ -38,24 +36,13 @@ public class RemoveRecords implements NameServiceRequest {
 
     /** DO NOT USE. Public for serialization purposes */
     public RemoveRecords(Optional<TenantAndApplicationId> owner, Record.Type type, RecordName name, Optional<RecordData> data) {
-        this.owner = Objects.requireNonNull(owner, "owner must be non-null");
+        super(owner, name);
         this.type = Objects.requireNonNull(type, "type must be non-null");
-        this.name = Objects.requireNonNull(name, "name must be non-null");
         this.data = Objects.requireNonNull(data, "data must be non-null");
     }
 
     public Record.Type type() {
         return type;
-    }
-
-    @Override
-    public Optional<RecordName> name() {
-        return Optional.of(name);
-    }
-
-    @Override
-    public Optional<TenantAndApplicationId> owner() {
-        return owner;
     }
 
     public Optional<RecordData> data() {
@@ -66,7 +53,7 @@ public class RemoveRecords implements NameServiceRequest {
     public void dispatchTo(NameService nameService) {
         // Deletions require all records fields to match exactly, data may be incomplete even if present. To ensure
         // completeness we search for the record(s) first
-        List<Record> completeRecords = nameService.findRecords(type, name).stream()
+        List<Record> completeRecords = nameService.findRecords(type, name()).stream()
                                                   .filter(record -> data.isEmpty() || matchingFqdnIn(data.get(), record))
                                                   .toList();
         nameService.removeRecords(completeRecords);
@@ -74,7 +61,7 @@ public class RemoveRecords implements NameServiceRequest {
 
     @Override
     public String toString() {
-        return "remove records of type " + type + ", by name " + name +
+        return "remove records of type " + type + ", by name " + name() +
                data.map(d -> " data " + d).orElse("");
     }
 
@@ -83,12 +70,12 @@ public class RemoveRecords implements NameServiceRequest {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         RemoveRecords that = (RemoveRecords) o;
-        return owner.equals(that.owner) && type == that.type && name.equals(that.name) && data.equals(that.data);
+        return owner().equals(that.owner()) && type == that.type && name().equals(that.name()) && data.equals(that.data);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(owner, type, name, data);
+        return Objects.hash(owner(), type, name(), data);
     }
 
     private static boolean matchingFqdnIn(RecordData data, Record record) {

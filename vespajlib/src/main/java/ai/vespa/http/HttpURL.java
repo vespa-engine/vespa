@@ -239,7 +239,7 @@ public class HttpURL {
             return parse(raw, HttpURL::requirePathSegment);
         }
 
-        /** Parses the given raw, normalized path string; this ignores whether the path is absolute or relative.) */
+        /** Parses the given raw, normalized path string; this ignores whether the path is absolute or relative. */
         public static Path parse(String raw, Consumer<String> validator) {
             Path path = new Path(null, 0, raw.endsWith("/"), segmentValidator(validator));
             if (raw.startsWith("/")) raw = raw.substring(1);

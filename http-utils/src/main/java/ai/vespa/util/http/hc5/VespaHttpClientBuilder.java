@@ -31,6 +31,7 @@ import static com.yahoo.security.tls.TransportSecurityUtils.isTransportSecurityE
  * @author jonmv
  */
 public class VespaHttpClientBuilder {
+
     private HttpClientConnectionManagerFactory connectionManagerFactory = PoolingHttpClientConnectionManager::new;
     private HostnameVerifier hostnameVerifier = new NoopHostnameVerifier();
     private boolean rewriteHttpToHttps = true;
