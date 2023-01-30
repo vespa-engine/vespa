@@ -23,6 +23,9 @@ public final class MetricNames {
     public static final String PARSE_ERROR = PREFIX + "parse_error";
     public static final String SUCCEEDED = PREFIX + "succeeded";
     public static final String PENDING = PREFIX + "pending";
+    public static final String FAILED_UNKNOWN = FAILED + "_unknown";
+    public static final String FAILED_TIMEOUT = FAILED + "_timeout";
+    public static final String FAILED_INSUFFICIENT_STORAGE = FAILED + "_insufficient_storage";
 
     private MetricNames() {
     }

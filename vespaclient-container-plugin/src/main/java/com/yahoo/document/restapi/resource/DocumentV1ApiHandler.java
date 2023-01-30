@@ -1115,8 +1115,11 @@ public class DocumentV1ApiHandler extends AbstractRequestHandler {
         incrementMetricNumOperations(); incrementMetricNumPuts(); sampleLatency(latency);
         switch (outcome) {
             case SUCCESS -> incrementMetricSucceeded();
+            case NOT_FOUND -> incrementMetricNotFound();
             case CONDITION_FAILED -> incrementMetricConditionNotMet();
-            default -> incrementMetricFailed();
+            case TIMEOUT -> { incrementMetricFailedTimeout(); incrementMetricFailed();}
+            case INSUFFICIENT_STORAGE -> { incrementMetricFailedInsufficientStorage(); incrementMetricFailed(); }
+            case ERROR -> { incrementMetricFailedUnknown(); incrementMetricFailed(); }
         }
     }
 
@@ -1127,7 +1130,9 @@ public class DocumentV1ApiHandler extends AbstractRequestHandler {
             case SUCCESS -> incrementMetricSucceeded();
             case NOT_FOUND -> incrementMetricNotFound();
             case CONDITION_FAILED -> incrementMetricConditionNotMet();
-            default -> incrementMetricFailed();
+            case TIMEOUT -> { incrementMetricFailedTimeout(); incrementMetricFailed();}
+            case INSUFFICIENT_STORAGE -> { incrementMetricFailedInsufficientStorage(); incrementMetricFailed(); }
+            case ERROR -> { incrementMetricFailedUnknown(); incrementMetricFailed(); }
         }
     }
 
@@ -1136,7 +1141,9 @@ public class DocumentV1ApiHandler extends AbstractRequestHandler {
         switch (outcome) {
             case SUCCESS,NOT_FOUND -> incrementMetricSucceeded();
             case CONDITION_FAILED -> incrementMetricConditionNotMet();
-            default -> incrementMetricFailed();
+            case TIMEOUT -> { incrementMetricFailedTimeout(); incrementMetricFailed();}
+            case INSUFFICIENT_STORAGE -> { incrementMetricFailedInsufficientStorage(); incrementMetricFailed(); }
+            case ERROR -> { incrementMetricFailedUnknown(); incrementMetricFailed(); }
         }
     }
 
@@ -1150,6 +1157,9 @@ public class DocumentV1ApiHandler extends AbstractRequestHandler {
     private void incrementMetricSucceeded() { incrementMetric(MetricNames.SUCCEEDED); }
     private void incrementMetricNotFound() { incrementMetric(MetricNames.NOT_FOUND); }
     private void incrementMetricParseError() { incrementMetric(MetricNames.PARSE_ERROR); }
+    private void incrementMetricFailedUnknown() { incrementMetric(MetricNames.FAILED_UNKNOWN); }
+    private void incrementMetricFailedTimeout() { incrementMetric(MetricNames.FAILED_TIMEOUT); }
+    private void incrementMetricFailedInsufficientStorage() { incrementMetric(MetricNames.FAILED_INSUFFICIENT_STORAGE); }
     private void incrementMetric(String n) { metric.add(n, 1, null); }
     private void setMetric(String n, Number v) { metric.set(n, v, null); }
 

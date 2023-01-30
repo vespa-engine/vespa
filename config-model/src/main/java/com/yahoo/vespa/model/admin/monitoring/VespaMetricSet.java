@@ -161,6 +161,9 @@ public class VespaMetricSet {
         addMetric(metrics, ContainerMetrics.HTTPAPI_PARSE_ERROR.rate());
         addMetric(metrics, ContainerMetrics.HTTPAPI_CONDITION_NOT_MET.rate());
         addMetric(metrics, ContainerMetrics.HTTPAPI_NOT_FOUND.rate());
+        addMetric(metrics, ContainerMetrics.HTTPAPI_FAILED_UNKNOWN.rate());
+        addMetric(metrics, ContainerMetrics.HTTPAPI_FAILED_INSUFFICIENT_STORAGE.rate());
+        addMetric(metrics, ContainerMetrics.HTTPAPI_FAILED_TIMEOUT.rate());
 
         addMetric(metrics, ContainerMetrics.MEM_HEAP_TOTAL.average());
         addMetric(metrics, ContainerMetrics.MEM_HEAP_FREE.average());
