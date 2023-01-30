@@ -92,7 +92,7 @@ public class NameServiceQueueSerializer {
     private void toSlime(Cursor object, RemoveRecords removeRecords) {
         object.setString(requestType, Request.removeRecords.name());
         object.setString(typeField, removeRecords.type().name());
-        removeRecords.name().ifPresent(name -> object.setString(nameField, name.asString()));
+        object.setString(nameField, removeRecords.name().asString());
         removeRecords.data().ifPresent(data -> object.setString(dataField, data.asString()));
     }
 

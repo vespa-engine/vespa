@@ -7,6 +7,8 @@ import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.CloudAccount;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.ZoneEndpoint;
+import com.yahoo.config.provision.ZoneEndpoint.AccessType;
+import com.yahoo.config.provision.ZoneEndpoint.AllowedUrn;
 import com.yahoo.vespa.hosted.provision.lb.DnsZone;
 import com.yahoo.vespa.hosted.provision.lb.LoadBalancer;
 import com.yahoo.vespa.hosted.provision.lb.LoadBalancerId;
@@ -46,7 +48,7 @@ public class LoadBalancerSerializerTest {
                                                                     new Real(DomainName.of("real-2"),
                                                                              "127.0.0.2",
                                                                              4080)),
-                                                    new ZoneEndpoint(List.of("123")),
+                                                    new ZoneEndpoint(false, true, List.of(new AllowedUrn(AccessType.awsPrivateLink, "123"))),
                                                     Optional.of(PrivateServiceId.of("foo")),
                                                     CloudAccount.from("012345678912"))),
                                             LoadBalancer.State.active,
