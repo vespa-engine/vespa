@@ -108,7 +108,7 @@ public enum ContainerMetrics {
     
     
     // SearchChain metrics
-    PEAK_QPS("peak_qps", Unit.OPERATION_PER_SECOND, "The highest number of qps for a second for this metrics shapshot"),
+    PEAK_QPS("peak_qps", Unit.QUERY_PER_SECOND, "The highest number of qps for a second for this metrics shapshot"),
     SEARCH_CONNECTIONS("search_connections", Unit.CONNECTION, "Number of search connections"),
     FEED_OPERATIONS("feed.operations", Unit.OPERATION, "Number of document feed operations"),
     FEED_LATENCY("feed.latency", Unit.MILLISECOND, "Feed latency"),
