@@ -35,7 +35,6 @@ CloningVisitor::visitAndBranch(const And &expr)
     revisit();
     expr.getRight().visit(*this);
     _constVal &= lhsConstVal;
-    _resultSet.calcAnd(lhsSet);
     setNodeParentheses(priority);
     std::unique_ptr<Node> rhs(std::move(_node));
     _priority = priority;
@@ -55,7 +54,6 @@ CloningVisitor::visitOrBranch(const Or &expr)
     revisit();
     expr.getRight().visit(*this);
     _constVal &= lhsConstVal;
-    _resultSet.calcOr(lhsSet);
     setNodeParentheses(priority);
     std::unique_ptr<Node> rhs(std::move(_node));
     _priority = priority;
@@ -69,7 +67,6 @@ CloningVisitor::visitNotBranch(const Not &expr)
     int priority = ComparePriority;
     expr.getChild().visit(*this);
     setNodeParentheses(priority);
-    _resultSet.calcNot();
     std::unique_ptr<Node> child(std::move(_node));
     _priority = priority;
     _node = std::make_unique<Not>(std::move(child), "not");
@@ -311,9 +308,7 @@ CloningVisitor::setArithmeticValueNode(const ArithmeticValueNode &expr,
         rhs->setParentheses();
     }
     _priority = priority;
-    _valueNode.reset(new ArithmeticValueNode(std::move(lhs),
-                                             expr.getOperatorName(),
-                                             std::move(rhs)));
+    _valueNode = std::make_unique<ArithmeticValueNode>(std::move(lhs), expr.getOperatorName(), std::move(rhs));
 }
 
 
