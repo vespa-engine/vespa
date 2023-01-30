@@ -1,11 +1,13 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.zookeeper;
 
+import com.yahoo.component.annotation.Inject;
 import com.yahoo.cloud.config.ZookeeperServerConfig;
 import com.yahoo.component.AbstractComponent;
-import com.yahoo.component.annotation.Inject;
+import com.yahoo.net.HostName;
 import com.yahoo.protect.Process;
 import com.yahoo.yolean.Exceptions;
+
 import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
@@ -90,7 +92,7 @@ public class Reconfigurer extends AbstractComponent {
         log.log(Level.INFO, "Will reconfigure ZooKeeper cluster." +
                             "\nServers in active config:" + servers(activeConfig) +
                             "\nServers in new config:" + servers(newConfig));
-        String connectionSpec = vespaZooKeeperAdmin.localConnectionSpec(activeConfig);
+        String connectionSpec = localConnectionSpec(activeConfig);
         Instant now = Instant.now();
         Duration reconfigTimeout = reconfigTimeout();
         Instant end = now.plus(reconfigTimeout);
@@ -132,6 +134,10 @@ public class Reconfigurer extends AbstractComponent {
         // For reconfig to succeed, the current and resulting ensembles must have a majority. When an ensemble grows and
         // the joining servers outnumber the existing ones, we have to wait for enough of them to start to have a majority.
         return TIMEOUT;
+    }
+
+    private static String localConnectionSpec(ZookeeperServerConfig config) {
+        return HostName.getLocalhost() + ":" + config.clientPort();
     }
 
     private static List<String> servers(ZookeeperServerConfig config) {

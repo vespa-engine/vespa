@@ -2,9 +2,10 @@
 package com.yahoo.vespa.zookeeper;
 
 import ai.vespa.validation.Validation;
+import com.yahoo.component.annotation.Inject;
 import com.yahoo.cloud.config.ZookeeperServerConfig;
 import com.yahoo.component.AbstractComponent;
-import com.yahoo.component.annotation.Inject;
+
 import java.nio.file.Path;
 import java.time.Duration;
 
@@ -24,7 +25,6 @@ public class VespaZooKeeperServerImpl extends AbstractComponent implements Vespa
                            "dynamicReconfiguration must be false");
         this.peer = new VespaQuorumPeer();
         this.runner = new ZooKeeperRunner(zookeeperServerConfig, this);
-        new VespaZooKeeperAdminImpl().createDummyNode(zookeeperServerConfig);
     }
 
     @Override
