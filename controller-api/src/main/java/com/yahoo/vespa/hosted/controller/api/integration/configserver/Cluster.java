@@ -3,6 +3,7 @@ package com.yahoo.vespa.hosted.controller.api.integration.configserver;
 
 import com.yahoo.config.provision.ClusterResources;
 import com.yahoo.config.provision.ClusterSpec;
+import com.yahoo.config.provision.IntRange;
 
 import java.time.Duration;
 import java.time.Instant;
@@ -19,6 +20,7 @@ public class Cluster {
     private final ClusterSpec.Type type;
     private final ClusterResources min;
     private final ClusterResources max;
+    private final IntRange groupSize;
     private final ClusterResources current;
     private final Autoscaling target;
     private final Autoscaling suggested;
@@ -29,6 +31,7 @@ public class Cluster {
                    ClusterSpec.Type type,
                    ClusterResources min,
                    ClusterResources max,
+                   IntRange groupSize,
                    ClusterResources current,
                    Autoscaling target,
                    Autoscaling suggested,
@@ -38,6 +41,7 @@ public class Cluster {
         this.type = type;
         this.min = min;
         this.max = max;
+        this.groupSize = groupSize;
         this.current = current;
         this.target = target;
         this.suggested = suggested;
@@ -52,6 +56,8 @@ public class Cluster {
     public ClusterResources min() { return min; }
 
     public ClusterResources max() { return max; }
+
+    public IntRange groupSize() { return groupSize; }
 
     public ClusterResources current() { return current; }
 

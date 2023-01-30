@@ -22,6 +22,7 @@ import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.HostName;
 import com.yahoo.config.provision.InstanceName;
+import com.yahoo.config.provision.IntRange;
 import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.config.provision.ZoneEndpoint.AllowedUrn;
@@ -1359,6 +1360,8 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
             clusterObject.setString("type", cluster.type().name());
             toSlime(cluster.min(), clusterObject.setObject("min"));
             toSlime(cluster.max(), clusterObject.setObject("max"));
+            if ( ! cluster.groupSize().isEmpty())
+                toSlime(cluster.groupSize(), clusterObject.setObject("groupSize"));
             toSlime(cluster.current(), clusterObject.setObject("current"));
             toSlime(cluster.target(), clusterObject.setObject("target"));
             toSlime(cluster.suggested(), clusterObject.setObject("suggested"));
@@ -2723,6 +2726,11 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
 
         double cost = ResourceMeterMaintainer.cost(resources, controller.serviceRegistry().zoneRegistry().system());
         object.setDouble("cost", cost);
+    }
+
+    private void toSlime(IntRange range, Cursor object) {
+        range.from().ifPresent(from -> object.setLong("from", from));
+        range.to().ifPresent(to -> object.setLong("to", to));
     }
 
     private void toSlime(Cluster.Autoscaling autoscaling, Cursor autoscalingObject) {

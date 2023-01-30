@@ -28,6 +28,9 @@
         },
         "cost": 0.43
       },
+      "groupSize": {
+        "to": 3
+      },
       "current": {
         "nodes": 2,
         "groups": 1,
