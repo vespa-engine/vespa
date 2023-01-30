@@ -4,6 +4,7 @@ package com.yahoo.vespa.config.server;
 import ai.vespa.http.DomainName;
 import ai.vespa.http.HttpURL;
 import ai.vespa.http.HttpURL.Query;
+import ai.vespa.util.http.hc5.DefaultHttpClientBuilder;
 import com.yahoo.cloud.config.ConfigserverConfig;
 import com.yahoo.component.Version;
 import com.yahoo.component.annotation.Inject;
@@ -60,8 +61,6 @@ import com.yahoo.vespa.config.server.deploy.DeployHandlerLogger;
 import com.yahoo.vespa.config.server.deploy.Deployment;
 import com.yahoo.vespa.config.server.deploy.InfraDeployerProvider;
 import com.yahoo.vespa.config.server.filedistribution.FileDirectory;
-import com.yahoo.vespa.config.server.http.HttpFetcher;
-import com.yahoo.vespa.config.server.http.HttpFetcher.Params;
 import com.yahoo.vespa.config.server.http.InternalServerException;
 import com.yahoo.vespa.config.server.http.LogRetriever;
 import com.yahoo.vespa.config.server.http.SecretStoreValidator;
@@ -92,7 +91,11 @@ import com.yahoo.vespa.defaults.Defaults;
 import com.yahoo.vespa.flags.FlagSource;
 import com.yahoo.vespa.flags.InMemoryFlagSource;
 import com.yahoo.vespa.orchestrator.Orchestrator;
-import org.apache.hc.client5.http.ssl.DefaultHostnameVerifier;
+import org.apache.hc.client5.http.classic.methods.HttpGet;
+import org.apache.hc.client5.http.impl.classic.CloseableHttpClient;
+import org.apache.hc.client5.http.ssl.NoopHostnameVerifier;
+import org.apache.hc.core5.http.HttpHeaders;
+import org.apache.hc.core5.http.message.BasicHeader;
 
 import java.io.File;
 import java.io.IOException;
@@ -1235,18 +1238,21 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
     }
 
     private static EndpointsChecker createEndpointsChecker() {
-        HttpFetcher fetcher = new SimpleHttpFetcher(Duration.ofSeconds(10), new DefaultHostnameVerifier()::verify);
+        CloseableHttpClient client = DefaultHttpClientBuilder.create(() -> null, "hosted-vespa-convergence-health-checker")
+                                                             .setDefaultHeaders(List.of(new BasicHeader(HttpHeaders.CONNECTION, "close")))
+                                                             .build();
         return EndpointsChecker.of(endpoint -> {
             int remainingFailures = 3;
             int remainingSuccesses = 100;
             while (remainingSuccesses > 0 && remainingFailures > 0) {
                 try {
-                    HttpResponse response = fetcher.get(new Params(3000),
-                                                        endpoint.url().withPath(parse("/status.html")).asURI());
-                    if (response.getStatus() == 200) remainingSuccesses--;
+                    if (client.execute(new HttpGet(endpoint.url().withPath(parse("/status.html")).asURI()),
+                                       response -> response.getCode() == 200))
+                        remainingSuccesses--;
                     else remainingFailures--;
                 }
                 catch (Exception e) {
+                    log.log(Level.FINE, e, () -> "Failed to check " + endpoint + "status.html: " + e.getMessage());
                     remainingFailures--;
                 }
             }
