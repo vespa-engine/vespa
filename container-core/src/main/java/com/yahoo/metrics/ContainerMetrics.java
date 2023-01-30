@@ -88,7 +88,10 @@ public enum ContainerMetrics {
     HTTPAPI_PARSE_ERROR("httpapi_parse_error", Unit.OPERATION, "Document operations that failed due to document parse errors"),
     HTTPAPI_CONDITION_NOT_MET("httpapi_condition_not_met", Unit.OPERATION, "Document operations not applied due to condition not met"),
     HTTPAPI_NOT_FOUND("httpapi_not_found", Unit.OPERATION, "Document operations not applied due to document not found"),
-    
+    HTTPAPI_FAILED_UNKNOWN("httpapi_failed_unknown", Unit.OPERATION, "Document operations failed by unknown cause"),
+    HTTPAPI_FAILED_TIMEOUT("httpapi_failed_timeout", Unit.OPERATION, "Document operations failed by timeout"),
+    HTTPAPI_FAILED_INSUFFICIENT_STORAGE("httpapi_failed_insufficient_storage", Unit.OPERATION, "Document operations failed by insufficient storage"),
+
     MEM_HEAP_TOTAL("mem.heap.total", Unit.BYTE, "Total available heap memory"),
     MEM_HEAP_FREE("mem.heap.free", Unit.BYTE, "Free heap memory"),
     MEM_HEAP_USED("mem.heap.used", Unit.BYTE, "Currently used heap memory"),
