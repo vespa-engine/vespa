@@ -29,6 +29,10 @@ public:
     static Result False;
     static Result True;
 
+    // Singletons are not copyable
+    Result(const Result&) = delete;
+    Result& operator=(const Result&) = delete;
+
     void print(std::ostream& out, bool verbose, const std::string& indent) const override;
 
     bool operator==(const Result& o) const { return (&o == this); }
@@ -63,9 +67,6 @@ public:
 
 private:
     Result();
-    // Singletons are not copyable
-    Result(const Result&) = delete;
-    Result& operator=(const Result&) = delete;
 };
 
 }
