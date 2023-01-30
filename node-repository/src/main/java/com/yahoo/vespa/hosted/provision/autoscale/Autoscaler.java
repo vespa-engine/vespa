@@ -67,7 +67,7 @@ public class Autoscaler {
         if (! limits.isEmpty() && cluster.minResources().equals(cluster.maxResources()))
             return Autoscaling.dontScale(Autoscaling.Status.unavailable, "Autoscaling is not enabled", clusterModel);
 
-        if ( ! clusterIsStable(clusterNodes, nodeRepository))
+        if ( ! clusterModel.isStable(nodeRepository))
             return Autoscaling.dontScale(Status.waiting, "Cluster change in progress", clusterModel);
 
         var currentAllocation = new AllocatableClusterResources(clusterNodes, nodeRepository);
@@ -78,28 +78,14 @@ public class Autoscaler {
 
         if (! worthRescaling(currentAllocation.realResources(), bestAllocation.get().realResources())) {
             if (bestAllocation.get().fulfilment() < 0.9999999)
-                return Autoscaling.dontScale(Status.insufficient, "Configured limits prevents better scaling of this cluster", clusterModel);
+                return Autoscaling.dontScale(Status.insufficient, "Configured limits prevents ideal scaling of this cluster", clusterModel);
             else if ( ! clusterModel.safeToScaleDown() && clusterModel.idealLoad().any(v -> v < 1.0))
-                return Autoscaling.dontScale(Status.ideal, "Cooling down before considering to scale down", clusterModel);
+                return Autoscaling.dontScale(Status.ideal, "Cooling off before considering to scale down", clusterModel);
             else
-                return Autoscaling.dontScale(Status.ideal, "Cluster is ideally scaled", clusterModel);
+                return Autoscaling.dontScale(Status.ideal, "Cluster is ideally scaled (within limits)", clusterModel);
         }
 
         return Autoscaling.scaleTo(bestAllocation.get().advertisedResources(), clusterModel);
-    }
-
-    public static boolean clusterIsStable(NodeList clusterNodes, NodeRepository nodeRepository) {
-        // The cluster is processing recent changes
-        if (clusterNodes.stream().anyMatch(node -> node.status().wantToRetire() ||
-                                                   node.allocation().get().membership().retired() ||
-                                                   node.allocation().get().removable()))
-            return false;
-
-        // A deployment is ongoing
-        if (nodeRepository.nodes().list(Node.State.reserved).owner(clusterNodes.first().get().allocation().get().owner()).size() > 0)
-            return false;
-
-        return true;
     }
 
     /** Returns true if it is worthwhile to make the given resource change, false if it is too insignificant */

@@ -63,7 +63,7 @@ public class MetricsV2MetricsFetcher extends AbstractComponent implements Metric
             // Collector 'autoscaling' defined in com.yahoo.vespa.model.admin.monitoring.MetricConsumer
             String url = "http://" + metricsV2Container.get().hostname() + ":" + 4080 + apiPath + "?consumer=autoscaling";
             return httpClient.get(url)
-                             .thenApply(response -> new MetricsResponse(response, applicationNodes, nodeRepository));
+                             .thenApply(response -> new MetricsResponse(response, applicationNodes));
         }
     }
 
