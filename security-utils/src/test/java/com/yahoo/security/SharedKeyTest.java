@@ -9,7 +9,7 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
-import java.util.Base64;
+import java.util.Optional;
 
 import static com.yahoo.security.ArrayUtils.hex;
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
@@ -230,6 +230,29 @@ public class SharedKeyTest {
         byte[] encrypted = streamEncryptString(terrifyingSecret, myShared);
         String decrypted = streamDecryptString(encrypted, myShared);
         assertEquals(terrifyingSecret, decrypted);
+    }
+
+    @Test
+    void shared_key_can_be_resealed_via_interactive_resealing_session() {
+        var originalReceiverKp  = KeyUtils.generateX25519KeyPair();
+        var shared = SharedKeyGenerator.generateForReceiverPublicKey(originalReceiverKp.getPublic(), KEY_ID_1);
+        var secret = hex(shared.secretKey().getEncoded());
+
+        // Resealing requester side; ask for token to be resealed for ephemeral session public key
+        var session = SharedKeyResealingSession.newEphemeralSession();
+        var wrappedResealRequest = session.resealingRequestFor(shared.sealedSharedKey());
+
+        // Resealing request handler side; reseal using private key for original token
+        var unwrappedResealRequest = SharedKeyResealingSession.ResealingRequest.fromSerializedString(wrappedResealRequest.toSerializedString());
+        var wrappedResponse = SharedKeyResealingSession.reseal(unwrappedResealRequest,
+                (keyId) -> Optional.ofNullable(keyId.equals(KEY_ID_1) ? originalReceiverKp.getPrivate() : null));
+
+        // Back to resealing requester side
+        var unwrappedResponse = SharedKeyResealingSession.ResealingResponse.fromSerializedString(wrappedResponse.toSerializedString());
+        var resealed = session.openResealingResponse(unwrappedResponse);
+
+        var resealedSecret = hex(resealed.secretKey().getEncoded());
+        assertEquals(secret, resealedSecret);
     }
 
     // javax.crypto.CipherOutputStream swallows exceptions caused by MAC failures in cipher

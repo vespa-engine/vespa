@@ -175,7 +175,7 @@ public final class Hpke {
         }
     }
 
-    private static record ContextBase(byte[] key, byte[] nonce, long seqNum, byte[] exporterSecret) { }
+    private record ContextBase(byte[] key, byte[] nonce, long seqNum, byte[] exporterSecret) { }
 
     /**
      * Section 5.1 Creating the Encryption Context:
@@ -219,8 +219,8 @@ public final class Hpke {
         return new ContextBase(key, baseNonce, 0, exporterSecret);
     }
 
-    private static record ContextS(byte[] enc, ContextBase base) {}
-    private static record ContextR(ContextBase base) {}
+    private record ContextS(byte[] enc, ContextBase base) {}
+    private record ContextR(ContextBase base) {}
 
     /**
      * Section 5.1.1 Encryption to a Public Key:
@@ -253,7 +253,7 @@ public final class Hpke {
         return new ContextR(keySchedule(MODE_BASE, sharedSecret, info, DEFAULT_PSK, DEFAULT_PSK_ID));
     }
 
-    public static record Sealed(byte[] enc, byte[] ciphertext) {}
+    public record Sealed(byte[] enc, byte[] ciphertext) {}
 
     /**
      * Section 6.1 Encryption and Decryption:
