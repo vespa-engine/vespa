@@ -1,14 +1,14 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 // Unit tests for sketch.
 
-#include <vespa/log/log.h>
-LOG_SETUP("sketch_test");
-
 #include <vespa/searchlib/grouping/sketch.h>
 #include <vespa/vespalib/objects/nboserializer.h>
 #include <vespa/vespalib/objects/nbostream.h>
 #include <vespa/vespalib/testkit/testapp.h>
 #include <vespa/vespalib/util/stringfmt.h>
+
+#include <vespa/log/log.h>
+LOG_SETUP("sketch_test");
 
 using vespalib::NBOSerializer;
 using vespalib::nbostream;
@@ -28,10 +28,10 @@ template <typename NormalSketch>
 void checkBucketValue(NormalSketch &sketch, size_t bucket, uint32_t value) {
 #pragma GCC diagnostic push
 #if !defined(__clang__) && defined(__GNUC__) && (__GNUC__ >= 11 || __GNUC__ <= 12)
+//TODO Remove when compiler bug has been fixed...
 #pragma GCC diagnostic ignored "-Warray-bounds"
 #endif
     EXPECT_EQUAL(value, static_cast<size_t>(sketch.bucket[bucket]));
-#pragma GCC diagnostic pop
 }
 
 template <int BucketBits, typename HashT>

@@ -132,12 +132,12 @@ public:
 
     DCB &_dc;
 
-    DecodeExpGolombConstK(DCB &dc)
+    explicit DecodeExpGolombConstK(DCB &dc)
         : _dc(dc)
     {
     }
 
-    virtual uint64_t decode() override
+    uint64_t decode() override
     {
         unsigned int length;
         uint64_t val64;
@@ -146,14 +146,14 @@ public:
         return val64;
     }
 
-    virtual void skip() override
+    void skip() override
     {
         unsigned int length;
         UC64_SKIPEXPGOLOMB(_dc._val, _dc._valI, _dc._preRead, 
                              _dc._cacheInt, kValue, EC);
     }
 
-    virtual uint64_t decodeSmall() override
+    uint64_t decodeSmall() override
     {
         unsigned int length;
         uint64_t val64;
@@ -162,7 +162,7 @@ public:
         return val64;
     }
 
-    virtual uint64_t decodeSmallApply() override
+    uint64_t decodeSmallApply() override
     {
         unsigned int length;
         uint64_t val64;
@@ -171,7 +171,7 @@ public:
         return val64;
     }
 
-    virtual void skipSmall() override
+    void skipSmall() override
     {
         unsigned int length;
         UC64_SKIPEXPGOLOMB_SMALL(_dc._val, _dc._valI, _dc._preRead, 
@@ -205,21 +205,16 @@ public:
     void addConstKFactory(int kValue, IDecodeFuncFactory factory) {
         (void) kValue;
         assert(static_cast<unsigned int>(kValue) == _constK.size());
-#pragma GCC diagnostic push
-#if !defined(__clang__) && defined(__GNUC__) && __GNUC__ == 12
-#pragma GCC diagnostic ignored "-Warray-bounds"
-#endif
         _constK.push_back(factory);
-#pragma GCC diagnostic pop
     }
 
-    IDecodeFuncFactory getConstKFactory(int kValue) const {
+    [[nodiscard]] IDecodeFuncFactory getConstKFactory(int kValue) const {
         assert(kValue >= 0 &&
                static_cast<unsigned int>(kValue) < _constK.size());
         return _constK[kValue];
     }
 
-    IDecodeFuncFactory getVarKFactory() const { return _varK; }
+    [[nodiscard]] IDecodeFuncFactory getVarKFactory() const { return _varK; }
 };
 
 
@@ -237,7 +232,7 @@ struct RegisterFactoryPtr
 {
     RegisterFactory<bigEndian> _ptr;
 
-    RegisterFactoryPtr(RegisterFactory<bigEndian> ptr)
+    explicit RegisterFactoryPtr(RegisterFactory<bigEndian> ptr)
         : _ptr(ptr)
     {
     }
@@ -292,9 +287,9 @@ public:
     using EC = EncodeContext64Base;
 
     void fillRandNums();
-    void calcBoundaries(int kValue, bool small, std::vector<uint64_t> &v);
+    static void calcBoundaries(int kValue, bool small, std::vector<uint64_t> &v);
 
-    void
+    static void
     testBoundaries(int kValue, bool small,
                    std::vector<uint64_t> &v,
                    DecodeContext64Base &dc,

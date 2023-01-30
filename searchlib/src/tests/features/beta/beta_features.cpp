@@ -1,34 +1,17 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/searchlib/attribute/attributeguard.h>
-#include <vespa/searchlib/attribute/attributemanager.h>
 #include <vespa/searchlib/attribute/attributevector.h>
 #include <vespa/searchlib/attribute/integerbase.h>
-#include <vespa/searchlib/attribute/floatbase.h>
 #include <vespa/searchlib/attribute/stringbase.h>
-#include <vespa/searchlib/features/agefeature.h>
-#include <vespa/searchlib/features/attributefeature.h>
-#include <vespa/searchlib/features/attributematchfeature.h>
-#include <vespa/searchlib/features/fieldlengthfeature.h>
-#include <vespa/searchlib/features/fieldmatchfeature.h>
-#include <vespa/searchlib/features/fieldtermmatchfeature.h>
-#include <vespa/searchlib/features/firstphasefeature.h>
 #include <vespa/searchlib/features/flow_completeness_feature.h>
 #include <vespa/searchlib/features/jarowinklerdistancefeature.h>
-#include <vespa/searchlib/features/matchfeature.h>
-#include <vespa/searchlib/features/nowfeature.h>
 #include <vespa/searchlib/features/proximityfeature.h>
-#include <vespa/searchlib/features/queryfeature.h>
 #include <vespa/searchlib/features/querycompletenessfeature.h>
-#include <vespa/searchlib/features/randomfeature.h>
 #include <vespa/searchlib/features/rankingexpressionfeature.h>
 #include <vespa/searchlib/features/reverseproximityfeature.h>
 #include <vespa/searchlib/features/setup.h>
 #include <vespa/searchlib/features/termeditdistancefeature.h>
-#include <vespa/searchlib/features/termfeature.h>
 #include <vespa/searchlib/features/utils.h>
-#include <vespa/searchlib/fef/featurenamebuilder.h>
-#include <vespa/searchlib/fef/indexproperties.h>
 #include <vespa/searchlib/fef/test/plugin/setup.h>
 #include <vespa/vespalib/util/rand48.h>
 #include <vespa/searchlib/fef/test/ftlib.h>
@@ -40,28 +23,12 @@ using namespace search::fef::test;
 using CollectionType = FieldInfo::CollectionType;
 
 //---------------------------------------------------------------------------------------------------------------------
-// TermPositionList
-//---------------------------------------------------------------------------------------------------------------------
-using TermPosition = std::pair<uint32_t, uint32_t>;
-class TermPositionList : public std::vector<TermPosition> {
-public:
-    TermPositionList &add(uint32_t termId, uint32_t pos) {
-        push_back(TermPosition(termId, pos));
-        return *this;
-    }
-    TermPositionList &clear() {
-        std::vector<TermPosition>::clear();
-        return *this;
-    }
-};
-
-//---------------------------------------------------------------------------------------------------------------------
 // Test
 //---------------------------------------------------------------------------------------------------------------------
 class Test : public FtTestApp {
 public:
     Test();
-    ~Test();
+    ~Test() override;
     int Main() override;
     void testJaroWinklerDistance();
     void testProximity();
@@ -82,8 +49,8 @@ private:
 
 TEST_APPHOOK(Test);
 
-Test::Test() {}
-Test::~Test() {}
+Test::Test() = default;
+Test::~Test() = default;
 
 int
 Test::Main()
@@ -722,8 +689,6 @@ Test::testTermEditDistance()
         assertTermEditDistance("a",     "..a..", 0, 4, 0);
     }
 }
-
-// #pragma GCC diagnostic ignored "-Wstrict-aliasing"
 
 void
 Test::assertTermEditDistance(const vespalib::string &query, const vespalib::string &field,

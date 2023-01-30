@@ -81,10 +81,7 @@ BTreeNodeTT<KeyT, DataT, AggrT, NumSlots>::insert(uint32_t idx,
     assert(validSlots() < NodeType::maxSlots());
     assert(!getFrozen());
     for (uint32_t i = validSlots(); i > idx; --i) {
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Warray-bounds" // This dirty one is due a suspected bug in gcc 6.2
         _keys[i] = _keys[i - 1];
-#pragma GCC diagnostic pop
         setData(i, getData(i - 1));
     }
     _keys[idx] = key;
