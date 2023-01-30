@@ -16,4 +16,6 @@ FieldSpecBaseList::~FieldSpecBaseList() = default;
 
 FieldSpecList::~FieldSpecList() = default;
 
+FieldSpec::~FieldSpec() = default;
+
 }

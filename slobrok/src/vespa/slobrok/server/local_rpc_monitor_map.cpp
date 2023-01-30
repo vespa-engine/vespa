@@ -8,8 +8,6 @@ LOG_SETUP(".slobrok.server.local_rpc_monitor_map");
 
 namespace slobrok {
 
-#pragma GCC diagnostic ignored "-Winline"
-
 namespace {
 
 struct ChainedCompletionHandler : CompletionHandler {
@@ -25,8 +23,10 @@ struct ChainedCompletionHandler : CompletionHandler {
         first->doneHandler(result);
         second->doneHandler(result);
     }
-    ~ChainedCompletionHandler() override {}
+    ~ChainedCompletionHandler() override;
 };
+
+ChainedCompletionHandler::~ChainedCompletionHandler() = default;
 
 }
 
@@ -44,6 +44,12 @@ void LocalRpcMonitorMap::DelayedTasks::PerformTask() {
         }
     }
 }
+
+LocalRpcMonitorMap::PerService::~PerService() = default;
+LocalRpcMonitorMap::PerService::PerService(PerService &&) noexcept = default;
+LocalRpcMonitorMap::PerService & LocalRpcMonitorMap::PerService::operator =(PerService &&) noexcept = default;
+
+LocalRpcMonitorMap::RemovedData::~RemovedData() = default;
 
 LocalRpcMonitorMap::LocalRpcMonitorMap(FNET_Scheduler *scheduler,
                                        MappingMonitorFactory mappingMonitorFactory)
@@ -178,7 +184,6 @@ void LocalRpcMonitorMap::removeLocal(const ServiceMapping &mapping) {
         _dispatcher.remove(mapping);            
     }
     _mappingMonitor->start(mapping, false);
-    return;
 }
 
 void LocalRpcMonitorMap::add(const ServiceMapping &mapping) {

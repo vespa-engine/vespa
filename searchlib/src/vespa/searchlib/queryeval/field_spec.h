@@ -43,6 +43,7 @@ public:
         : FieldSpecBase(fieldId, handle, isFilter_),
           _name(name)
     {}
+    ~FieldSpec();
 
     const vespalib::string & getName() const { return _name; }
 private:
