@@ -19,7 +19,12 @@ ResultSet::preCalc()
     uint32_t range = illegalMask();
     _ands.resize(range * range);
     _ors.resize(range * range);
+#pragma GCC diagnostic push
+#if !defined(__clang__) && __GNUC__ == 13
+#pragma GCC diagnostic ignored "-Wstringop-overflow="
+#endif
     _nots.resize(range);
+#pragma GCC diagnostic pop
     for (ResultSet lset; lset.pcvalid(); lset.pcnext()) {
         for (ResultSet rset; rset.pcvalid(); rset.pcnext()) {
             ResultSet myand;
