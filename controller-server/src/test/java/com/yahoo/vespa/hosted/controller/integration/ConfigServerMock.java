@@ -16,6 +16,7 @@ import com.yahoo.config.provision.EndpointsChecker.Availability;
 import com.yahoo.config.provision.EndpointsChecker.Endpoint;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.HostName;
+import com.yahoo.config.provision.IntRange;
 import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.config.provision.ZoneEndpoint.AllowedUrn;
@@ -122,6 +123,7 @@ public class ConfigServerMock extends AbstractComponent implements ConfigServer 
                                       ClusterSpec.Type.container,
                                       new ClusterResources(2, 1, new NodeResources(1,  4, 20, 1, slow, remote)),
                                       new ClusterResources(2, 1, new NodeResources(4, 16, 90, 1, slow, remote)),
+                                      IntRange.to(3),
                                       current,
                                       new Cluster.Autoscaling("ideal",
                                                               "Cluster is ideally scaled",

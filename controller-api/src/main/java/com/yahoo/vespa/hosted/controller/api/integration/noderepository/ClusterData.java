@@ -5,6 +5,7 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.yahoo.config.provision.ClusterSpec;
+import com.yahoo.config.provision.IntRange;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.Cluster;
 
 import java.time.Duration;
@@ -28,6 +29,9 @@ public class ClusterData {
     @JsonProperty("max")
     public ClusterResourcesData max;
 
+    @JsonProperty("groupSize")
+    public IntRangeData groupSize;
+
     @JsonProperty("current")
     public ClusterResourcesData current;
 
@@ -48,6 +52,7 @@ public class ClusterData {
                            ClusterSpec.Type.from(type),
                            min.toClusterResources(),
                            max.toClusterResources(),
+                           groupSize == null ? IntRange.empty() : groupSize.toRange(),
                            current.toClusterResources(),
                            target == null ? Cluster.Autoscaling.empty() : target.toAutoscaling(),
                            suggested == null ? Cluster.Autoscaling.empty() : suggested.toAutoscaling(),

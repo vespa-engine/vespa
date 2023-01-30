@@ -27,6 +27,7 @@ public class IntRange {
     /** Returns the maximum value which is in this range, or empty if it is open upwards. */
     public OptionalInt to() { return to; }
 
+    /** Returns true if both from and to is open (not present). */
     public boolean isEmpty() {
         return from.isEmpty() && to.isEmpty();
     }
