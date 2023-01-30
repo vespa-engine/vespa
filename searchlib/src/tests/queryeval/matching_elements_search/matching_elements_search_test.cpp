@@ -115,12 +115,6 @@ template <> MatchingElementsSearchTest<const char *>::LookupTests MatchingElemen
     {{"FOO"},        {{"FOO", 3}, {"foo", 5}}}
 };
 
-// Disable warnings emitted by gtest generated files when using typed tests     
-#pragma GCC diagnostic push
-#ifndef __clang__
-#pragma GCC diagnostic ignored "-Wsuggest-override"
-#endif
-
 using MatchingElementsSearchTestTypes = ::testing::Types<int64_t, const char *>;
 TYPED_TEST_SUITE(MatchingElementsSearchTest, MatchingElementsSearchTestTypes);
 
@@ -128,7 +122,5 @@ TYPED_TEST(MatchingElementsSearchTest, verify_matching_elements)
 {
     this->verify_matching_elements();
 }
-
-#pragma GCC diagnostic pop
 
 GTEST_MAIN_RUN_ALL_TESTS()

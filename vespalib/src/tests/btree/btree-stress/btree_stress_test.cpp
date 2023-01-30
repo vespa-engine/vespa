@@ -505,12 +505,6 @@ using TestTypes = testing::Types<DirectKeyValueParams, IndirectKeyValueParams>;
 
 TYPED_TEST_SUITE(BTreeStressTest, TestTypes);
 
-// Disable warnings emitted by gtest generated files when using typed tests
-#pragma GCC diagnostic push
-#ifndef __clang__
-#pragma GCC diagnostic ignored "-Wsuggest-override"
-#endif
-
 TYPED_TEST(BTreeStressTest, basic_lower_bound)
 {
     this->basic_lower_bound();
@@ -530,8 +524,6 @@ TYPED_TEST(BTreeStressTest, multiple_lower_bound_readers_during_updates)
 {
     this->multiple_lower_bound_readers_during_updates();
 }
-
-#pragma GCC diagnostic pop
 
 int main(int argc, char **argv) {
     if (argc > 1 && argv[1] == smoke_test_option) {
