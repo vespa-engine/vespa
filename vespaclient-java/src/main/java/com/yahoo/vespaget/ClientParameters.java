@@ -5,7 +5,7 @@ import com.yahoo.documentapi.messagebus.protocol.DocumentProtocol;
 
 import java.util.Iterator;
 /**
- * This class contains the the program parameters.
+ * This class contains the program parameters.
  *
  * @author bjorncs
  */
@@ -79,7 +79,7 @@ public class ClientParameters {
         private boolean noRetry;
         private int traceLevel;
         private DocumentProtocol.Priority priority;
-        private boolean jsonOutput;
+        private boolean jsonOutput = true;
         private boolean tensorShortForm;
         private boolean tensorDirectValues;
 

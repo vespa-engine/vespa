@@ -108,7 +108,7 @@ public class DocumentRetrieverTest {
 
     private void assertContainsDocument(String documentId) {
         assertTrue(outContent.toString().contains(String.format(
-                "<document documenttype=\"document\" documentid=\"%s\"/>", documentId)));
+                "{\"id\":\"%s\"", documentId)));
     }
 
     private DocumentRetriever createDocumentRetriever(ClientParameters params) {
