@@ -70,7 +70,7 @@ public class VespaZooKeeperAdminImpl implements VespaZooKeeperAdmin {
                 } catch (KeeperException e) {
                     if (e instanceof KeeperException.NodeExistsException) {
                         try {
-                            zooKeeperAdmin.setData("/dummy-node-" + HostName.getLocalhost(), new byte[0], 0);
+                            zooKeeperAdmin.setData("/dummy-node-" + HostName.getLocalhost(), new byte[0], -1);
                             return;
                         } catch (KeeperException ex) {
                             log.log(Level.INFO, e.getMessage());
