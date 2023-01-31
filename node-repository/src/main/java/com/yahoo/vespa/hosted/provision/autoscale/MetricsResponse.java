@@ -11,7 +11,6 @@ import com.yahoo.slime.Slime;
 import com.yahoo.slime.SlimeUtils;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeList;
-import com.yahoo.vespa.hosted.provision.NodeRepository;
 
 import java.time.Instant;
 import java.util.ArrayList;
@@ -38,26 +37,26 @@ public class MetricsResponse {
     private final Map<ClusterSpec.Id, ClusterMetricSnapshot> clusterMetrics = new HashMap<>();
 
     /** Creates this from a metrics/V2 response */
-    public MetricsResponse(String response, NodeList applicationNodes, NodeRepository nodeRepository) {
-        this(SlimeUtils.jsonToSlime(response), applicationNodes, nodeRepository);
+    public MetricsResponse(String response, NodeList applicationNodes) {
+        this(SlimeUtils.jsonToSlime(response), applicationNodes);
     }
 
     public MetricsResponse(Collection<Pair<String, NodeMetricSnapshot>> metrics) {
         this.nodeMetrics = metrics;
     }
 
-    private MetricsResponse(Slime response, NodeList applicationNodes, NodeRepository nodeRepository) {
+    private MetricsResponse(Slime response, NodeList applicationNodes) {
         nodeMetrics = new ArrayList<>();
         Inspector root = response.get();
         Inspector nodes = root.field("nodes");
-        nodes.traverse((ArrayTraverser)(__, node) -> consumeNode(node, applicationNodes, nodeRepository));
+        nodes.traverse((ArrayTraverser)(__, node) -> consumeNode(node, applicationNodes));
     }
 
     public Collection<Pair<String, NodeMetricSnapshot>> nodeMetrics() { return nodeMetrics; }
 
     public Map<ClusterSpec.Id, ClusterMetricSnapshot> clusterMetrics() { return clusterMetrics; }
 
-    private void consumeNode(Inspector nodeObject, NodeList applicationNodes, NodeRepository nodeRepository) {
+    private void consumeNode(Inspector nodeObject, NodeList applicationNodes) {
         String hostname = nodeObject.field("hostname").asString();
         Optional<Node> node = applicationNodes.node(hostname);
         if (node.isEmpty()) return; // Node is not part of this cluster any longer
@@ -72,7 +71,7 @@ public class MetricsResponse {
                                                                              Metric.disk.from(nodeValues)),
                                                                     (long)Metric.generation.from(nodeValues),
                                                                     Metric.inService.from(nodeValues) > 0,
-                                                                    clusterIsStable(node.get(), applicationNodes, nodeRepository),
+                                                                    clusterIsStable(node.get(), applicationNodes),
                                                                     Metric.queryRate.from(nodeValues))));
 
         var cluster = node.get().allocation().get().membership().cluster().id();
@@ -101,9 +100,9 @@ public class MetricsResponse {
         item.field("values").traverse((ObjectTraverser)(name, value) -> values.put(name, value.asDouble()));
     }
 
-    private boolean clusterIsStable(Node node, NodeList applicationNodes, NodeRepository nodeRepository) {
+    private boolean clusterIsStable(Node node, NodeList applicationNodes) {
         ClusterSpec cluster = node.allocation().get().membership().cluster();
-        return Autoscaler.clusterIsStable(applicationNodes.cluster(cluster.id()), nodeRepository);
+        return applicationNodes.cluster(cluster.id()).retired().isEmpty();
     }
 
     public static MetricsResponse empty() { return new MetricsResponse(List.of()); }

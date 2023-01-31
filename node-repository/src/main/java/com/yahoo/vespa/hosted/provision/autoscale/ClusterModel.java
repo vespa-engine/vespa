@@ -3,10 +3,11 @@ package com.yahoo.vespa.hosted.provision.autoscale;
 
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.Zone;
+import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeList;
+import com.yahoo.vespa.hosted.provision.NodeRepository;
 import com.yahoo.vespa.hosted.provision.applications.Application;
 import com.yahoo.vespa.hosted.provision.applications.Cluster;
-import com.yahoo.vespa.hosted.provision.applications.ScalingEvent;
 
 import java.time.Clock;
 import java.time.Duration;
@@ -115,6 +116,24 @@ public class ClusterModel {
         if (! safeToScaleDown())
             adjustment = adjustment.map(v -> v < 1 ? 1 : v);
         return adjustment;
+    }
+
+    public boolean isStable(NodeRepository nodeRepository) {
+        // An autoscaling decision was recently made
+        if (hasScaledIn(Duration.ofMinutes(5)))
+            return false;
+
+        // The cluster is processing recent changes
+        if (nodes.stream().anyMatch(node -> node.status().wantToRetire() ||
+                                            node.allocation().get().membership().retired() ||
+                                            node.allocation().get().removable()))
+            return false;
+
+        // A deployment is ongoing
+        if ( ! nodeRepository.nodes().list(Node.State.reserved, Node.State.provisioned).owner(application.id()).isEmpty())
+            return false;
+
+        return true;
     }
 
     /** Are we in a position to make decisions to scale down at this point? */
