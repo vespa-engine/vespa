@@ -318,7 +318,7 @@ int loop(const char *svc, char * const * run)
         if (unhandledsig && child != 0) {
             LOG(debug, "got signal %d, sending to pid %d",
                 (int)lastsig, (int)child);
-            char why[256];
+            char why[32];
             snprintf(why, sizeof(why), "got signal %d", (int)lastsig);
             EV_STOPPING(torun.c_str(), why);
             kill(child, lastsig);
