@@ -31,16 +31,22 @@ TestMaster TestMaster::master;
 
 //-----------------------------------------------------------------------------
 
-__thread TestMaster::ThreadState *TestMaster::_threadState = 0;
+__thread TestMaster::ThreadState *TestMaster::_threadState = nullptr;
 
 //-----------------------------------------------------------------------------
-
+TestMaster::TraceItem::TraceItem(const std::string &file_in, uint32_t line_in, const std::string &msg_in)
+    : file(file_in), line(line_in), msg(msg_in)
+{}
+TestMaster::TraceItem::TraceItem(TraceItem &&) noexcept = default;
+TestMaster::TraceItem & TestMaster::TraceItem::operator=(TraceItem &&) noexcept = default;
+TestMaster::TraceItem::TraceItem(const TraceItem &) = default;
+TestMaster::TraceItem & TestMaster::TraceItem::operator=(const TraceItem &) = default;
 TestMaster::TraceItem::~TraceItem() = default;
 
 TestMaster::ThreadState &
 TestMaster::threadState(const lock_guard &)
 {
-    if (_threadState == 0) {
+    if (_threadState == nullptr) {
         std::ostringstream threadName;
         threadName << "thread-" << _threadStorage.size();
         _threadStorage.push_back(std::make_unique<ThreadState>(threadName.str()));
@@ -52,7 +58,7 @@ TestMaster::threadState(const lock_guard &)
 TestMaster::ThreadState &
 TestMaster::threadState()
 {
-    if (_threadState != 0) {
+    if (_threadState != nullptr) {
         return *_threadState;
     }
     {
@@ -87,7 +93,7 @@ TestMaster::printDiff(const lock_guard &guard,
                       const std::string &lhs, const std::string &rhs)
 {
     ThreadState &thread = threadState(guard);
-    if (_state.lhsFile == NULL || _state.rhsFile == NULL) {
+    if (_state.lhsFile == nullptr || _state.rhsFile == nullptr) {
         fprintf(stderr,
                 "lhs: %s\n"
                 "rhs: %s\n",
@@ -123,13 +129,13 @@ TestMaster::handleFailure(const lock_guard &guard, bool fatal)
 void
 TestMaster::closeDebugFiles(const lock_guard &)
 {
-    if (_state.lhsFile != NULL) {
+    if (_state.lhsFile != nullptr) {
         fclose(_state.lhsFile);
-        _state.lhsFile = NULL;
+        _state.lhsFile = nullptr;
     }
-    if (_state.rhsFile != NULL) {
+    if (_state.rhsFile != nullptr) {
         fclose(_state.rhsFile);
-        _state.rhsFile = NULL;
+        _state.rhsFile = nullptr;
     }
 }
 
@@ -137,8 +143,8 @@ void
 TestMaster::importThreads(const lock_guard &)
 {
     size_t importCnt = 0;
-    for (size_t i = 0; i < _threadStorage.size(); ++i) {
-        ThreadState &thread = *_threadStorage[i];
+    for (const auto & i : _threadStorage) {
+        ThreadState &thread = *i;
         _state.passCnt += thread.passCnt;
         importCnt += thread.passCnt;
         thread.passCnt = 0;
@@ -245,7 +251,7 @@ void
 TestMaster::awaitThreadBarrier(const char *file, uint32_t line)
 {
     ThreadState &thread = threadState();
-    if (thread.barrier == 0) {
+    if (thread.barrier == nullptr) {
         return;
     }
     if (!thread.barrier->await()) {
@@ -275,7 +281,7 @@ TestMaster::Progress
 TestMaster::getProgress()
 {
     lock_guard guard(_lock);
-    return Progress(_state.passCnt, _state.failCnt);
+    return {_state.passCnt, _state.failCnt};
 }
 
 void
@@ -286,7 +292,7 @@ TestMaster::openDebugFiles(const std::string &lhsFile,
     closeDebugFiles(guard);
     _state.lhsFile = fopen(lhsFile.c_str(), "w");
     _state.rhsFile = fopen(rhsFile.c_str(), "w");
-    if (_state.lhsFile == NULL || _state.rhsFile == NULL) {
+    if (_state.lhsFile == nullptr || _state.rhsFile == nullptr) {
         closeDebugFiles(guard);
         fprintf(stderr, "%s: Warn:  could not open debug files (%s, %s)\n",
                 _name.c_str(), lhsFile.c_str(), rhsFile.c_str());
@@ -299,7 +305,7 @@ TestMaster::openDebugFiles(const std::string &lhsFile,
 void
 TestMaster::pushState(const char *file, uint32_t line, const char *msg)
 {
-    threadState().traceStack.push_back(TraceItem(skip_path(file), line, msg));
+    threadState().traceStack.emplace_back(skip_path(file), line, msg);
 }
 
 void
