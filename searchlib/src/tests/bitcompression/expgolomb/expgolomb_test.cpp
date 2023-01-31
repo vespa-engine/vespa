@@ -200,11 +200,7 @@ public:
 public:
     DecodeFuncFactories();
 
-    void addConstKFactory(int kValue, IDecodeFuncFactory factory) {
-        (void) kValue;
-        assert(static_cast<unsigned int>(kValue) == _constK.size());
-        _constK.push_back(factory);
-    }
+    void addConstKFactory(int kValue, IDecodeFuncFactory factory);
 
     [[nodiscard]] IDecodeFuncFactory getConstKFactory(int kValue) const {
         assert(kValue >= 0 &&
@@ -214,6 +210,14 @@ public:
 
     [[nodiscard]] IDecodeFuncFactory getVarKFactory() const { return _varK; }
 };
+
+template <bool bigEndian>
+void
+DecodeFuncFactories<bigEndian>::addConstKFactory(int kValue, IDecodeFuncFactory factory) {
+    (void) kValue;
+    assert(static_cast<unsigned int>(kValue) == _constK.size());
+    _constK.push_back(factory);
+}
 
 
 template <bool bigEndian>
