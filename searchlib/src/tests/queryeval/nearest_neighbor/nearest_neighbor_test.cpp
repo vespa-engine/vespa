@@ -188,18 +188,18 @@ struct TestParam {
     vespalib::string attribute_tensor_type_spec;
     vespalib::string query_tensor_type_spec;
     TestParam(const vespalib::string& attribute_tensor_type_spec_in,
-              const vespalib::string& query_tensor_type_spec_in)
+              const vespalib::string& query_tensor_type_spec_in) noexcept
         : attribute_tensor_type_spec(attribute_tensor_type_spec_in),
           query_tensor_type_spec(query_tensor_type_spec_in)
     {}
-    TestParam(const TestParam &);
+    TestParam(const TestParam &) noexcept;
     TestParam & operator=(TestParam &) noexcept = delete;
     TestParam(TestParam &&) noexcept = default;
     TestParam & operator=(TestParam &&) noexcept = default;
     ~TestParam();
 };
 
-TestParam::TestParam(const TestParam &) = default;
+TestParam::TestParam(const TestParam &) noexcept = default;
 TestParam::~TestParam() = default;
 
 std::ostream& operator<<(std::ostream& os, const TestParam& param)

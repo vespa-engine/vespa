@@ -57,7 +57,7 @@ GetDocsumsStateCallback::set_matching_elements_filler(std::unique_ptr<IMatchingE
 
 GetDocsumsStateCallback::~GetDocsumsStateCallback() = default;
 
-DocsumTools::FieldSpec::FieldSpec() :
+DocsumTools::FieldSpec::FieldSpec() noexcept :
     _outputName(),
     _inputNames(),
     _command(VsmsummaryConfig::Fieldmap::Command::NONE)

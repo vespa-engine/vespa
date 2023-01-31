@@ -22,7 +22,7 @@ class Blueprint;
 class GlobalFilter : public std::enable_shared_from_this<GlobalFilter>
 {
 public:
-    GlobalFilter();
+    GlobalFilter() noexcept;
     GlobalFilter(const GlobalFilter &) = delete;
     GlobalFilter(GlobalFilter &&) = delete;
     virtual bool is_active() const = 0;

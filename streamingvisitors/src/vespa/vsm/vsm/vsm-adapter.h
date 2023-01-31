@@ -53,7 +53,7 @@ public:
         VsmsummaryConfig::Fieldmap::Command   _command;
 
     public:
-        FieldSpec();
+        FieldSpec() noexcept;
         ~FieldSpec();
         const vespalib::string & getOutputName() const { return _outputName; }
         void setOutputName(const vespalib::string & name) { _outputName = name; }

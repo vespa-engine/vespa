@@ -768,7 +768,7 @@ class MyGlobalFilter : public GlobalFilter {
     std::shared_ptr<GlobalFilter> _filter;
     mutable uint32_t              _max_docid;
 public:
-    MyGlobalFilter(std::shared_ptr<GlobalFilter> filter)
+    MyGlobalFilter(std::shared_ptr<GlobalFilter> filter) noexcept
         : _filter(std::move(filter)),
           _max_docid(0)
     {
