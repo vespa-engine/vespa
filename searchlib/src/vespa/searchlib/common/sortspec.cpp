@@ -16,8 +16,8 @@ PassThroughConverter::onConvert(const ConstBufferRef & src) const
     return src;
 }
 
-LowercaseConverter::LowercaseConverter() :
-    _buffer()
+LowercaseConverter::LowercaseConverter() noexcept
+    : _buffer()
 {
 }
 

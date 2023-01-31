@@ -24,16 +24,19 @@ struct Inactive : GlobalFilter {
 
 struct EmptyFilter : GlobalFilter {
     uint32_t docid_limit;
-    EmptyFilter(uint32_t docid_limit_in) : docid_limit(docid_limit_in) {}
+    EmptyFilter(uint32_t docid_limit_in) noexcept : docid_limit(docid_limit_in) {}
+    ~EmptyFilter() override;
     bool is_active() const override { return true; }
     uint32_t size() const override { return docid_limit; }
     uint32_t count() const override { return 0; }
     bool check(uint32_t) const override { return false; }
 };
 
+EmptyFilter::~EmptyFilter() = default;
+
 struct BitVectorFilter : public GlobalFilter {
     std::unique_ptr<BitVector> vector;
-    BitVectorFilter(std::unique_ptr<BitVector> vector_in)
+    BitVectorFilter(std::unique_ptr<BitVector> vector_in) noexcept
       : vector(std::move(vector_in)) {}
     bool is_active() const override { return true; }
     uint32_t size() const override { return vector->size(); }
@@ -49,7 +52,7 @@ struct MultiBitVectorFilter : public GlobalFilter {
     MultiBitVectorFilter(std::vector<std::unique_ptr<BitVector>> vectors_in,
                          std::vector<uint32_t> splits_in,
                          uint32_t total_size_in,
-                         uint32_t total_count_in)
+                         uint32_t total_count_in) noexcept
       : vectors(std::move(vectors_in)),
         splits(std::move(splits_in)),
         total_size(total_size_in),
@@ -105,7 +108,7 @@ struct MakePart : Runnable {
 
 }
 
-GlobalFilter::GlobalFilter() = default;
+GlobalFilter::GlobalFilter() noexcept = default;
 GlobalFilter::~GlobalFilter() = default;
 
 std::shared_ptr<GlobalFilter>

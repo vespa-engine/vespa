@@ -60,7 +60,7 @@ private:
     const uint32_t  _fieldId;
     const bool      _valid;
 public:
-    FieldHandle(const Schema &schema, uint32_t fieldId, IndexBuilder & builder, bool valid);
+    FieldHandle(const Schema &schema, uint32_t fieldId, IndexBuilder & builder, bool valid) noexcept;
     ~FieldHandle();
 
     void new_word(vespalib::stringref word);
@@ -126,7 +126,7 @@ FileHandle::close()
     (void) ret;
 }
 
-IndexBuilder::FieldHandle::FieldHandle(const Schema &schema, uint32_t fieldId, IndexBuilder &builder, bool valid)
+IndexBuilder::FieldHandle::FieldHandle(const Schema &schema, uint32_t fieldId, IndexBuilder &builder, bool valid) noexcept
     : _schema(schema),
       _builder(builder),
       _file(),
