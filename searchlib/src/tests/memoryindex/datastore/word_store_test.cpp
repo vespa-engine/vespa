@@ -43,7 +43,7 @@ TEST(WordStoreTest, add_word_triggers_change_of_buffer)
     uint32_t lastId = 0;
     char wordStr[10];
     for (;;++word) {
-        sprintf(wordStr, "%6zu", word);
+        snprintf(wordStr, sizeof(wordStr), "%6zu", word);
         // all words uses 12 bytes (include padding)
         EntryRef r = ws.addWord(std::string(wordStr));
         EXPECT_EQ(std::string(wordStr), ws.getWord(r));

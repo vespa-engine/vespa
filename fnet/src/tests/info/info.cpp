@@ -44,7 +44,7 @@ TEST("info") {
     char spec[64];
     rpc.Init(&orb);
     ASSERT_TRUE(orb.Listen("tcp/0"));
-    sprintf(spec, "tcp/localhost:%d", orb.GetListenPort());
+    snprintf(spec, sizeof(spec), "tcp/localhost:%d", orb.GetListenPort());
 
     FRT_Target     *target      = orb.GetTarget(spec);
     FRT_RPCRequest *local_info  = orb.AllocRPCRequest();

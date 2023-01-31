@@ -80,7 +80,7 @@ testMultiValue(Attribute & attr, uint32_t numDocs)
     uniqueStrings.reserve(numDocs - 1);
     for (uint32_t i = 0; i < numDocs - 1; ++i) {
         char unique[16];
-        sprintf(unique, i < 10 ? "enum0%u" : "enum%u", i);
+        snprintf(unique, sizeof(unique), i < 10 ? "enum0%u" : "enum%u", i);
         uniqueStrings.emplace_back(unique);
     }
     ASSERT_TRUE(std::is_sorted(uniqueStrings.begin(), uniqueStrings.end()));
@@ -89,7 +89,7 @@ testMultiValue(Attribute & attr, uint32_t numDocs)
     newUniques.reserve(numDocs - 1);
     for (uint32_t i = 0; i < numDocs - 1; ++i) {
         char unique[16];
-        sprintf(unique, i < 10 ? "unique0%u" : "unique%u", i);
+        snprintf(unique, sizeof(unique), i < 10 ? "unique0%u" : "unique%u", i);
         newUniques.emplace_back(unique);
     }
 
@@ -330,14 +330,14 @@ testSingleValue(Attribute & svsa, Config &cfg)
     std::map<vespalib::string, uint32_t> enums;
     // 10 unique strings
     for (uint32_t i = 0; i < numDocs; ++i) {
-        sprintf(tmp, "enum%u", i % 10);
+        snprintf(tmp,sizeof(tmp), "enum%u", i % 10);
         EXPECT_TRUE( v.update(i, tmp) );
         EXPECT_TRUE( v.getValueCount(i) == 1 );
         EXPECT_TRUE( ! IEnumStore::Index(EntryRef(v.getEnum(i))).valid() );
         if ((i % 10) == 9) {
             v.commit();
             for (uint32_t j = i - 9; j <= i; ++j) {
-                sprintf(tmp, "enum%u", j % 10);
+                snprintf(tmp, sizeof(tmp), "enum%u", j % 10);
                 EXPECT_TRUE( strcmp(t = v.get(j), tmp) == 0 );
                 e1 = v.getEnum(j);
                 EXPECT_TRUE( v.findEnum(t, e2) );
@@ -354,15 +354,15 @@ testSingleValue(Attribute & svsa, Config &cfg)
 
     // 1000 unique strings
     for (uint32_t i = 0; i < numDocs; ++i) {
-        sprintf(tmp, "unique%u", i);
+        snprintf(tmp, sizeof(tmp), "unique%u", i);
         EXPECT_TRUE( v.update(i, tmp) );
-        sprintf(tmp, "enum%u", i % 10);
+        snprintf(tmp, sizeof(tmp), "enum%u", i % 10);
         EXPECT_TRUE( strcmp(v.get(i), tmp) == 0 );
         if ((i % 10) == 9) {
             //LOG(info, "commit: i = %u", i);
             v.commit();
             for (uint32_t j = i - 9; j <= i; ++j) {
-                sprintf(tmp, "unique%u", j);
+                snprintf(tmp, sizeof(tmp), "unique%u", j);
                 EXPECT_TRUE( strcmp(t = v.get(j), tmp) == 0 );
                 e1 = v.getEnum(j);
                 EXPECT_TRUE( v.findEnum(t, e2) );
@@ -373,7 +373,7 @@ testSingleValue(Attribute & svsa, Config &cfg)
 
     // check that enumX strings are removed (
     for (uint32_t i = 0; i < 10; ++i) {
-        sprintf(tmp, "enum%u", i);
+        snprintf(tmp, sizeof(tmp), "enum%u", i);
         EXPECT_TRUE( !v.findEnum(tmp, e1) );
     }
 

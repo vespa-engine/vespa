@@ -375,8 +375,9 @@ void Matcher::log_matches(int printcount)
     _log_text.append("<table>");
     if (m.size() > 0) {
         _log_text.append("<tr class=shade>");
-        sprintf(buf, "<td colspan=%d align=center><b>Topmost %zu matches out of %zu",
-                nterms+2, std::min(static_cast<size_t>(printcount), m.size()),m.size());
+        snprintf(buf, sizeof(buf),
+                 "<td colspan=%d align=center><b>Topmost %zu matches out of %zu",
+                 nterms+2, std::min(static_cast<size_t>(printcount), m.size()),m.size());
         _log_text.append(buf);
         _log_text.append("</b></td></tr>");
     }
@@ -399,12 +400,14 @@ void Matcher::log_matches(int printcount)
         }
     }
     _log_text.append("<tr class=shadehead>");
-    sprintf(buf, "<td colspan=%d align=center><b>Total(exact) keyword hits</b></td>",
-            nterms);
+    snprintf(buf, sizeof(buf),
+             "<td colspan=%d align=center><b>Total(exact) keyword hits</b></td>",
+             nterms);
     _log_text.append(buf);
     _log_text.append("</tr><tr class=shade>");
     for (i = 0; i < nterms; i++) {
-        sprintf(buf, "<td>%d(%d)</td>", TotalMatchCnt(i), ExactMatchCnt(i));
+        snprintf(buf, sizeof(buf),
+                 "<td>%d(%d)</td>", TotalMatchCnt(i), ExactMatchCnt(i));
         _log_text.append(buf);
     }
     _log_text.append("</tr></table>");

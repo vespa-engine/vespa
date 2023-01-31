@@ -208,7 +208,7 @@ Logger::setRcsId(const char *id)
     }
 
     assert(size_t(len + 8) < sizeof(_rcsId));
-    sprintf(_rcsId, "(%.*s): ", (int)(end - start), start);
+    snprintf(_rcsId, sizeof(_rcsId), "(%.*s): ", (int)(end - start), start);
     LOG(spam, "rcs id was set to '%s'", _rcsId);
     return 0;
 }

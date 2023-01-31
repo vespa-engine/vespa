@@ -103,7 +103,7 @@ ThreadTester::Main()
 
     for (int i = 0; i < numWriters; i++) {
         char filename[100];
-        sprintf(filename, "empty.%d", i);
+        snprintf(filename, sizeof(filename), "empty.%d", i);
         writers[i] = std::make_unique<FileThread>(filename);
         pool.NewThread(writers[i].get());
     }
