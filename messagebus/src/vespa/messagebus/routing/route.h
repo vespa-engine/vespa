@@ -49,21 +49,21 @@ public:
      *
      * @param hops The hops to instantiate with.
      */
-    Route(std::vector<Hop> hops);
+    explicit Route(std::vector<Hop> hops);
 
     /**
      * Returns whether or not there are any hops in this route.
      *
      * @return True if there is at least one hop.
      */
-    bool hasHops() const { return !_hops.empty(); }
+    [[nodiscard]] bool hasHops() const { return !_hops.empty(); }
 
     /**
      * Returns the number of hops that make up this route.
      *
      * @return The number of hops.
      */
-    uint32_t getNumHops() const { return _hops.size(); }
+    [[nodiscard]] uint32_t getNumHops() const { return _hops.size(); }
 
     /**
      * Returns the hop at the given index.
@@ -79,7 +79,7 @@ public:
      * @param i The index of the hop to return.
      * @return The hop.
      */
-    const Hop &getHop(uint32_t i) const { return _hops[i]; }
+    [[nodiscard]] const Hop &getHop(uint32_t i) const { return _hops[i]; }
 
     /**
      * Adds a hop to the list of hops that make up this route.
@@ -107,25 +107,18 @@ public:
     Hop removeHop(uint32_t i);
 
     /**
-     * Clears the list of hops that make up this route.
-     *
-     * @return This, to allow chaining.
-     */
-    Route &clearHops();
-
-    /**
      * Returns a string representation of this route.
      *
      * @return A string representation.
      */
-    string toString() const;
+    [[nodiscard]] string toString() const;
 
     /**
      * Returns a string representation of this that can be debugged but not parsed.
      *
      * @return The debug string.
      */
-    string toDebugString() const;
+    [[nodiscard]] string toDebugString() const;
 };
 
 } // namespace mbus

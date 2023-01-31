@@ -12,8 +12,6 @@
 #include <vespa/messagebus/testlib/receptor.h>
 #include <vespa/messagebus/sourcesessionparams.h>
 #include <vespa/messagebus/testlib/simplemessage.h>
-#include <vespa/messagebus/testlib/simplereply.h>
-#include <vespa/messagebus/testlib/simpleprotocol.h>
 
 using namespace mbus;
 
@@ -81,7 +79,7 @@ RoutingSpec getRouting() {
         .addTable(RoutingTableSpec("Simple")
                   .addHop(HopSpec("pxy", "test/pxy/session"))
                   .addHop(HopSpec("dst", "test/dst/session"))
-                  .addRoute(RouteSpec("test").addHop("pxy").addHop("dst")));
+                  .addRoute(std::move(RouteSpec("test").addHop("pxy").addHop("dst"))));
 }
 
 int

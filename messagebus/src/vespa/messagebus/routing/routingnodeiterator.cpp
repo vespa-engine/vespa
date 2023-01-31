@@ -8,12 +8,6 @@ RoutingNodeIterator::RoutingNodeIterator(std::vector<RoutingNode*> &children) :
     _end(children.end())
 { }
 
-bool
-RoutingNodeIterator::isValid()
-{
-    return _pos != _end;
-}
-
 RoutingNodeIterator &
 RoutingNodeIterator::next()
 {
@@ -34,12 +28,6 @@ const Route &
 RoutingNodeIterator::getRoute() const
 {
     return (*_pos)->getRoute();
-}
-
-bool
-RoutingNodeIterator::hasReply() const
-{
-    return (*_pos)->hasReply();
 }
 
 Reply::UP

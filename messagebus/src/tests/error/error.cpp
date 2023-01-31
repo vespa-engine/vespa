@@ -4,14 +4,11 @@
 #include <vespa/messagebus/emptyreply.h>
 #include <vespa/messagebus/errorcode.h>
 #include <vespa/messagebus/intermediatesession.h>
-#include <vespa/messagebus/messagebus.h>
 #include <vespa/messagebus/routing/routingspec.h>
 #include <vespa/messagebus/sourcesession.h>
 #include <vespa/messagebus/sourcesessionparams.h>
 #include <vespa/messagebus/testlib/receptor.h>
 #include <vespa/messagebus/testlib/simplemessage.h>
-#include <vespa/messagebus/testlib/simplereply.h>
-#include <vespa/messagebus/testlib/simpleprotocol.h>
 #include <vespa/messagebus/testlib/slobrok.h>
 #include <vespa/messagebus/testlib/testserver.h>
 #include <vespa/vespalib/testkit/testapp.h>
@@ -23,7 +20,7 @@ RoutingSpec getRouting() {
         .addTable(RoutingTableSpec("Simple")
                   .addHop(HopSpec("pxy", "test/pxy/session"))
                   .addHop(HopSpec("dst", "test/dst/session"))
-                  .addRoute(RouteSpec("test").addHop("pxy").addHop("dst")));
+                  .addRoute(std::move(RouteSpec("test").addHop("pxy").addHop("dst"))));
 }
 
 TEST("error_test") {

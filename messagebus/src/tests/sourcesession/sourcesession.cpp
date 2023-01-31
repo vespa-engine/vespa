@@ -13,7 +13,6 @@
 #include <vespa/messagebus/routing/routingspec.h>
 #include <vespa/messagebus/testlib/simplemessage.h>
 #include <vespa/messagebus/testlib/simpleprotocol.h>
-#include <vespa/messagebus/testlib/simplereply.h>
 #include <vespa/messagebus/testlib/slobrok.h>
 #include <vespa/messagebus/testlib/testserver.h>
 #include <vespa/vespalib/testkit/testapp.h>
@@ -29,7 +28,7 @@ struct DelayedHandler : public IMessageHandler
     DelayedHandler(MessageBus &mb, uint32_t d) : session(), delay(d) {
         session = mb.createDestinationSession("session", true, *this);
     }
-    ~DelayedHandler() {
+    ~DelayedHandler() override {
         session.reset();
     }
     void handleMessage(Message::UP msg) override {
@@ -45,14 +44,14 @@ RoutingSpec getRouting() {
     return RoutingSpec()
         .addTable(RoutingTableSpec("Simple")
                   .addHop(HopSpec("dst", "dst/session"))
-                  .addRoute(RouteSpec("dst").addHop("dst")));
+                  .addRoute(std::move(RouteSpec("dst").addHop("dst"))));
 }
 
 RoutingSpec getBadRouting() {
     return RoutingSpec()
         .addTable(RoutingTableSpec("Simple")
                   .addHop(HopSpec("dst", "dst/session"))
-                  .addRoute(RouteSpec("dst").addHop("dst")));
+                  .addRoute(std::move(RouteSpec("dst").addHop("dst"))));
 }
 
 bool waitQueueSize(RoutableQueue &queue, uint32_t size) {
@@ -183,8 +182,8 @@ Test::testResendConnDown()
                    RPCNetworkParams(slobrok.config()));
     src.mb.setupRouting(RoutingSpec().addTable(RoutingTableSpec(SimpleProtocol::NAME)
                                                .addHop(HopSpec("dst", "dst2/session"))
-                                               .addHop(HopSpec("pxy", "[All]").addRecipient("dst"))
-                                               .addRoute(RouteSpec("dst").addHop("pxy"))));
+                                               .addHop(std::move(HopSpec("pxy", "[All]").addRecipient("dst")))
+                                               .addRoute(std::move(RouteSpec("dst").addHop("pxy")))));
     RoutableQueue srcQ;
     SourceSession::UP ss = src.mb.createSourceSession(srcQ);
 
@@ -243,7 +242,7 @@ Test::testIllegalRoute()
         while (srcQ.size() > 0) {
             Routable::UP routable = srcQ.dequeue();
             ASSERT_TRUE(routable->isReply());
-            Reply::UP r(static_cast<Reply*>(routable.release()));
+            Reply::UP r(dynamic_cast<Reply*>(routable.release()));
             EXPECT_EQUAL(1u, r->getNumErrors());
             EXPECT_EQUAL((uint32_t)ErrorCode::NO_ADDRESS_FOR_SERVICE, r->getError(0).getCode());
             string trace = r->getTrace().toString();
@@ -275,7 +274,7 @@ Test::testNoServices()
         while (srcQ.size() > 0) {
             Routable::UP routable = srcQ.dequeue();
             ASSERT_TRUE(routable->isReply());
-            Reply::UP r(static_cast<Reply*>(routable.release()));
+            Reply::UP r(dynamic_cast<Reply*>(routable.release()));
             EXPECT_TRUE(r->getNumErrors() == 1);
             EXPECT_TRUE(r->getError(0).getCode() == ErrorCode::NO_ADDRESS_FOR_SERVICE);
             string trace = r->getTrace().toString();

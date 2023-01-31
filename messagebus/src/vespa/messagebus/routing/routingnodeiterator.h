@@ -22,14 +22,14 @@ public:
      *
      * @param children The list to iterate through.
      */
-    RoutingNodeIterator(std::vector<RoutingNode*> &children);
+    explicit RoutingNodeIterator(std::vector<RoutingNode*> &children);
 
     /**
      * Returns whether or not this iterator is valid.
      *
      * @return True if we are still pointing to a valid entry.
      */
-    bool isValid();
+    [[nodiscard]] bool isValid() const { return _pos != _end; }
 
     /**
      * Steps to the next child in the map.
@@ -51,14 +51,7 @@ public:
      *
      * @return The route.
      */
-    const Route &getRoute() const;
-
-    /**
-     * Returns whether or not a reply is set in the current child.
-     *
-     * @return True if a reply is available.
-     */
-    bool hasReply() const;
+    [[nodiscard]] const Route &getRoute() const;
 
     /**
      * Removes and returns the reply of the current child. This is the correct way of reusing a reply of a
@@ -73,7 +66,7 @@ public:
      *
      * @return The reply.
      */
-    const Reply &getReplyRef() const;
+    [[nodiscard]] const Reply &getReplyRef() const;
 };
 
 } // mbus

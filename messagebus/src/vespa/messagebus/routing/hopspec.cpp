@@ -14,27 +14,15 @@ HopSpec::HopSpec(const string &name, const string &selector) :
     _ignoreResult(false)
 { }
 
-HopSpec::~HopSpec() {}
+HopSpec::HopSpec(const HopSpec & rhs) = default;
+HopSpec & HopSpec::operator=(const HopSpec & rhs) = default;
+HopSpec::HopSpec(HopSpec && rhs) noexcept = default;
+HopSpec & HopSpec::operator=(HopSpec && rhs) noexcept = default;
+HopSpec::~HopSpec() = default;
 
 HopSpec &
-HopSpec::addRecipients(const std::vector<string> &recipients)
-{
-    _recipients.insert(_recipients.end(), recipients.begin(), recipients.end());
-    return *this;
-}
-
-string
-HopSpec::removeRecipient(uint32_t i)
-{
-    string ret = _recipients[i];
-    _recipients.erase(_recipients.begin() + i);
-    return ret;
-}
-
-HopSpec &
-HopSpec::setIgnoreResult(bool ignoreResult)
-{
-    _ignoreResult = ignoreResult;
+HopSpec::addRecipient(const string &recipient) {
+    _recipients.push_back(recipient);
     return *this;
 }
 

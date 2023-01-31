@@ -23,7 +23,7 @@ getRouting()
     return RoutingSpec()
         .addTable(RoutingTableSpec("Simple")
                   .addHop(HopSpec("dst", "test/dst/session"))
-                  .addRoute(RouteSpec("test").addHop("dst")));
+                  .addRoute(std::move(RouteSpec("test").addHop("dst"))));
 }
 
 class MultiReceptor : public IMessageHandler
@@ -113,7 +113,7 @@ VerifyReplyReceptor::handleReply(Reply::UP reply)
         LOG(warning, "%s", ss.str().c_str());
     } else {
         vespalib::string expected(vespalib::make_string("%d", _replyCount));
-        auto & simpleReply(static_cast<SimpleReply&>(*reply));
+        auto & simpleReply(dynamic_cast<SimpleReply&>(*reply));
         if (simpleReply.getValue() != expected) {
             std::stringstream ss;
             ss << "Received out-of-sequence reply! Expected "
