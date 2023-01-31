@@ -365,13 +365,6 @@ public class Flags {
             "Takes effect on configserver restart",
             HOSTNAME);
 
-    public static final UnboundBooleanFlag USE_WIREGUARD_ON_TENANT_HOSTS = defineFeatureFlag(
-            "use-wireguard-on-tenant-hosts", false,
-            List.of("andreer", "gjoranv"), "2022-09-28", "2023-04-01",
-            "Set up a WireGuard endpoint on tenant hosts",
-            "Takes effect on host admin restart",
-            HOSTNAME);
-
     public static final UnboundBooleanFlag ENABLED_MAIL_VERIFICATION = defineFeatureFlag(
             "enabled-mail-verification", false,
             List.of("olaa"), "2022-10-28", "2023-02-01",
