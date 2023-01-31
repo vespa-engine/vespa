@@ -280,14 +280,14 @@ TEST(EnumStoreTest, test_hold_lists_and_generation)
     uniques.reserve(100);
     for (uint32_t i = 0; i < 100; ++i) {
         char tmp[16];
-        sprintf(tmp, i < 10 ? "enum0%u" : "enum%u", i);
+        snprintf(tmp, sizeof(tmp), i < 10 ? "enum0%u" : "enum%u", i);
         uniques.emplace_back(tmp);
     }
     StringVector newUniques;
     newUniques.reserve(100);
     for (uint32_t i = 0; i < 100; ++i) {
         char tmp[16];
-        sprintf(tmp, i < 10 ? "unique0%u" : "unique%u", i);
+        snprintf(tmp, sizeof(tmp), i < 10 ? "unique0%u" : "unique%u", i);
         newUniques.emplace_back(tmp);
     }
     uint32_t generation = 0;

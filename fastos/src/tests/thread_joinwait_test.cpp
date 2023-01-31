@@ -14,7 +14,7 @@ class Thread_JoinWait_Test : public ThreadTestBase
 
       char testName[300];
 
-      sprintf(testName, "Single Thread Join Wait Multiple Test %d", variant);
+      snprintf(testName, sizeof(testName), "Single Thread Join Wait Multiple Test %d", variant);
       TestHeader(testName);
 
       FastOS_ThreadPool pool;

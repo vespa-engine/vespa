@@ -24,7 +24,7 @@ public:
         _nextDir(0)
     {
         memset(_dirname, 0, sizeof(_dirname));
-        sprintf(_dirname, "dirconfig.tmp.XXXXXX");
+        snprintf(_dirname, sizeof(_dirname), "dirconfig.tmp.XXXXXX");
         char * realName = mkdtemp(_dirname);
         assert(realName == _dirname);
         assert(strlen(realName) < sizeof(_dirname));
@@ -39,7 +39,7 @@ public:
     std::string nextDir() {
         char name[64];
         uint32_t id = _nextDir++;
-        sprintf(name, "%s/%u", _dirname, id);
+        snprintf(name, sizeof(name), "%s/%u", _dirname, id);
         return name;
     }
 private:

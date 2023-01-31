@@ -57,7 +57,7 @@ void
 Server::reg()
 {
     char spec[64];
-    sprintf(spec, "tcp/localhost:%d", _server.supervisor().GetListenPort());
+    snprintf(spec, sizeof(spec), "tcp/localhost:%d", _server.supervisor().GetListenPort());
 
     FRT_RPCRequest *req = _server.supervisor().AllocRPCRequest();
     req->SetMethodName("slobrok.registerRpcServer");

@@ -247,7 +247,7 @@ void FieldIdTSearcherMap::prepare(const DocumentTypeIndexFieldMapT & difm, const
         (*it)->prepare(onlyInIndex, searcherBuf);
         if (LOG_WOULD_LOG(spam)) {
             char tmpBuf[16];
-            sprintf(tmpBuf,"%d", fid);
+            snprintf(tmpBuf, sizeof(tmpBuf), "%d", fid);
             tmp += tmpBuf;
             tmp += ", ";
         }

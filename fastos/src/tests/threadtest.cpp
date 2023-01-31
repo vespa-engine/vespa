@@ -18,6 +18,7 @@ class ThreadTest : public ThreadTestBase
    void TooManyThreadsTest ()
    {
       TestHeader("Too Many Threads Test");
+      static constexpr size_t message_size = 100;
 
       FastOS_ThreadPool *pool = new FastOS_ThreadPool(MAX_THREADS);
 
@@ -27,11 +28,11 @@ class ThreadTest : public ThreadTestBase
 
          for (i=0; i<MAX_THREADS+1; i++) {
             jobs[i].code = WAIT_FOR_BREAK_FLAG;
-            jobs[i].message = static_cast<char *>(malloc(100));
+            jobs[i].message = static_cast<char *>(malloc(message_size));
             if (jobs[i].message == nullptr) {
                 abort(); // GCC may infer that a potentially null ptr is passed to sprintf
             }
-            sprintf(jobs[i].message, "Thread %d invocation", i+1);
+            snprintf(jobs[i].message, message_size, "Thread %d invocation", i+1);
          }
 
          for (i=0; i<MAX_THREADS+1; i++) {

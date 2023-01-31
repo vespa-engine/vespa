@@ -159,14 +159,14 @@ void MatchCandidate::log(std::string& logobj)
     {
         if (element[i])
         {
-            sprintf(buf, "<td align=left>%" PRId64 "</td>",
-                    static_cast<int64_t>(element[i]->starttoken()));
+            snprintf(buf, sizeof(buf), "<td align=left>%" PRId64 "</td>",
+                     static_cast<int64_t>(element[i]->starttoken()));
             logobj.append(buf);
         }
         else
             logobj.append("<td></td>");
     }
-    sprintf(buf, "<td align=right>%d</td><td align=right>%d</td>", word_distance(),rank());
+    snprintf(buf, sizeof(buf), "<td align=right>%d</td><td align=right>%d</td>", word_distance(),rank());
     logobj.append(buf);
 }
 

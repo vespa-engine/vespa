@@ -53,7 +53,7 @@ bool
 FRT_Supervisor::Listen(int port)
 {
     char spec[32];
-    sprintf(spec, "tcp/%d", port);
+    snprintf(spec, sizeof(spec), "tcp/%d", port);
     return Listen(spec);
 }
 
@@ -88,7 +88,7 @@ FRT_Target *
 FRT_Supervisor::GetTarget(int port)
 {
     char spec[64];
-    sprintf(spec, "tcp/localhost:%d", port);
+    snprintf(spec, sizeof(spec), "tcp/localhost:%d", port);
     return GetTarget(spec);
 }
 

@@ -124,7 +124,7 @@ TransLogServer::TransLogServer(FNET_Transport & transport, const vespalib::strin
             }
             exportRPC(*_supervisor);
             char listenSpec[32];
-            sprintf(listenSpec, "tcp/%d", listenPort);
+            snprintf(listenSpec, sizeof(listenSpec), "tcp/%d", listenPort);
             bool listenOk(false);
             for (int i(600); !listenOk && i; i--) {
                 if (_supervisor->Listen(listenSpec)) {

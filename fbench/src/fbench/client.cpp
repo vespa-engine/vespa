@@ -251,8 +251,9 @@ Client::run()
                                           strlen("\nFBENCH: URL FETCH FAILED!\n"));
                     _output->write(&FBENCH_DELIMITER[1], strlen(FBENCH_DELIMITER) - 1);
                 } else {
-                    sprintf(timestr, "\nTIME USED: %0.4f s\n",
-                            _reqTimer->GetTimespan() / 1000.0);
+                    snprintf(timestr, sizeof(timestr),
+                             "\nTIME USED: %0.4f s\n",
+                             _reqTimer->GetTimespan() / 1000.0);
                     _output->write(timestr, strlen(timestr));
                     _output->write(&FBENCH_DELIMITER[1], strlen(FBENCH_DELIMITER) - 1);
                 }

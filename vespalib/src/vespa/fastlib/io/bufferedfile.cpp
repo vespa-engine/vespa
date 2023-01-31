@@ -185,8 +185,8 @@ Fast_BufferedFile::SetPosition(const int64_t s)
             }
             diff = _filepos - s;
             if ( !(((diff > 0l) || ((diff == 0l) && (_fileleft == 0l))) && (diff <= static_cast<int64_t>(_buf.size())))) {
-                char tmp[8196];
-                sprintf(tmp, "diff %" PRId64 " _fileleft=%" PRId64 " _buflen=%zu", diff, _fileleft, _buf.size());
+                char tmp[64];
+                snprintf(tmp, sizeof(tmp), "diff %" PRId64 " _fileleft=%" PRId64 " _buflen=%zu", diff, _fileleft, _buf.size());
                 abort();
             }
         }

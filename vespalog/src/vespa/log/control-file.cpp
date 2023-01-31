@@ -201,7 +201,7 @@ ControlFile::setPrefix(const char *prefix)
 {
     if (prefix && !hasPrefix() && _prefix) {
         char buf[_maxPrefix + 1];
-        sprintf(buf, "%.*s\n", _maxPrefix - 1, prefix);
+        snprintf(buf, _maxPrefix + 1, "%.*s\n", _maxPrefix - 1, prefix);
         memcpy(_prefix, buf, strlen(buf));
         msync(_mapBase, pageAlign(1), MS_ASYNC | MS_INVALIDATE);
     }

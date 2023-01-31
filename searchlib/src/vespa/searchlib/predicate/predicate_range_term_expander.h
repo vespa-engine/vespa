@@ -48,9 +48,10 @@ void PredicateRangeTermExpander::expand(const vespalib::string &key, int64_t sig
         vespalib::Issue::report("predicate_range_term_expander: Search outside bounds should have been rejected by ValidatePredicateSearcher.");
         return;
     }
-    char buffer[21 * 2 + 3 + key.size()];  // 2 numbers + punctuation + key
+    size_t buffer_size = 21 * 2 + 3 + key.size(); // 2 numbers + punctuation + key
+    char buffer[buffer_size];
     int size;
-    int prefix_size = sprintf(buffer, "%s=", key.c_str());
+    int prefix_size = snprintf(buffer, buffer_size, "%s=", key.c_str());
     bool negative = signed_value < 0;
     uint64_t value;
     int max_levels;
@@ -64,7 +65,7 @@ void PredicateRangeTermExpander::expand(const vespalib::string &key, int64_t sig
     }
 
     int64_t edge_interval = (value / _arity) * _arity;
-    size = sprintf(buffer + prefix_size, "%" PRIu64, edge_interval);
+    size = snprintf(buffer + prefix_size, buffer_size - prefix_size, "%" PRIu64, edge_interval);
     handler.handleEdge(vespalib::stringref(buffer, prefix_size + size),
                        value - edge_interval);
 
@@ -75,13 +76,15 @@ void PredicateRangeTermExpander::expand(const vespalib::string &key, int64_t sig
             if (start + level_size - 1 > (uint64_t(0)-LLONG_MIN)) {
                 break;
             }
-            size = sprintf(buffer + prefix_size, "%" PRIu64 "-%" PRIu64,
-                           start + level_size - 1, start);
+            size = snprintf(buffer + prefix_size, buffer_size - prefix_size,
+                            "%" PRIu64 "-%" PRIu64,
+                            start + level_size - 1, start);
         } else {
             if (start + level_size - 1 > LLONG_MAX) {
                 break;
             }
-            size = sprintf(buffer + prefix_size, "%" PRIu64 "-%" PRIu64,
+            size = snprintf(buffer + prefix_size, buffer_size - prefix_size,
+                            "%" PRIu64 "-%" PRIu64,
                            start, start + level_size - 1);
         }
         handler.handleRange(vespalib::stringref(buffer, prefix_size + size));
