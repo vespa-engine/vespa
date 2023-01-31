@@ -29,7 +29,6 @@ CloningVisitor::visitAndBranch(const And &expr)
     int priority = AndPriority;
     expr.getLeft().visit(*this);
     bool lhsConstVal = _constVal;
-    ResultSet lhsSet(_resultSet);
     setNodeParentheses(priority);
     std::unique_ptr<Node> lhs(std::move(_node));
     revisit();
@@ -48,7 +47,6 @@ CloningVisitor::visitOrBranch(const Or &expr)
     int priority = OrPriority;
     expr.getLeft().visit(*this);
     bool lhsConstVal = _constVal;
-    ResultSet lhsSet(_resultSet);
     setNodeParentheses(priority);
     std::unique_ptr<Node> lhs(std::move(_node));
     revisit();
