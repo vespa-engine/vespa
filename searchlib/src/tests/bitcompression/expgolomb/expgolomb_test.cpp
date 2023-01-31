@@ -111,8 +111,7 @@ public:
     static std::unique_ptr<IDecodeFunc>
     make(DCB &dc, int kValue)
     {
-        return std::unique_ptr<IDecodeFunc>
-            (new DecodeExpGolombVarK<bigEndian>(dc, kValue));
+        return std::make_unique<DecodeExpGolombVarK<bigEndian>>(dc, kValue);
     }
 };
 
@@ -181,8 +180,7 @@ public:
     static std::unique_ptr<IDecodeFunc>
     make(DCB &dc, int)
     {
-        return std::unique_ptr<IDecodeFunc>
-            (new DecodeExpGolombConstK<bigEndian, kValue>(dc));
+        return std::make_unique<DecodeExpGolombConstK<bigEndian, kValue>>(dc);
     }
 };
 
