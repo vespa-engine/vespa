@@ -200,7 +200,7 @@ public:
 public:
     DecodeFuncFactories();
 
-    void addConstKFactory(int kValue, IDecodeFuncFactory factory);
+    void addConstKFactory(int kValue, IDecodeFuncFactory factory) __attribute__((noinline));
 
     [[nodiscard]] IDecodeFuncFactory getConstKFactory(int kValue) const {
         assert(kValue >= 0 &&
@@ -248,9 +248,7 @@ public:
     static void registerFactory(DecodeFuncFactories<bigEndian> &factories,
                                 RegisterFactoryPtr<bigEndian> &ptr)
     {
-        factories.addConstKFactory(kValue,
-                                   &DecodeExpGolombConstK<bigEndian, kValue>::
-                                   make);
+        factories.addConstKFactory(kValue, &DecodeExpGolombConstK<bigEndian, kValue>::make);
         ptr._ptr = &RegisterFactories<bigEndian, kValue+1>::registerFactory;
     }
 };
