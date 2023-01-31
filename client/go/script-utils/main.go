@@ -10,9 +10,9 @@ import (
 
 	"github.com/vespa-engine/vespa/client/go/cmd/clusterstate"
 	"github.com/vespa-engine/vespa/client/go/cmd/deploy"
-	"github.com/vespa-engine/vespa/client/go/cmd/logfmt"
 	"github.com/vespa-engine/vespa/client/go/jvm"
 	"github.com/vespa-engine/vespa/client/go/script-utils/configserver"
+	"github.com/vespa-engine/vespa/client/go/script-utils/logfmt"
 	"github.com/vespa-engine/vespa/client/go/script-utils/services"
 	"github.com/vespa-engine/vespa/client/go/script-utils/standalone"
 	"github.com/vespa-engine/vespa/client/go/script-utils/startcbinary"
