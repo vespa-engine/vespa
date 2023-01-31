@@ -24,7 +24,9 @@ struct RawSocket : AsyncCryptoSocket {
     AsyncIo::SP async;
     SocketHandle handle;
     RawSocket(AsyncIo &async_in, SocketHandle handle_in)
-      : async(async_in.shared_from_this()), handle(std::move(handle_in)) {}
+        : async(async_in.shared_from_this()), handle(std::move(handle_in)) {}
+    RawSocket(RawSocket &&) noexcept;
+    ~RawSocket() override;
     Lazy<ssize_t> read(char *buf, size_t len) override {
         return async->read(handle, buf, len);
     }
@@ -33,12 +35,16 @@ struct RawSocket : AsyncCryptoSocket {
     }
 };
 
+RawSocket::~RawSocket() = default;
+
 struct SnoopedRawSocket : AsyncCryptoSocket {
     AsyncIo::SP async;
     SocketHandle handle;
     SmartBuffer data;
     SnoopedRawSocket(AsyncIo &async_in, SocketHandle handle_in)
-      : async(async_in.shared_from_this()), handle(std::move(handle_in)), data(0) {}
+        : async(async_in.shared_from_this()), handle(std::move(handle_in)), data(0) {}
+    SnoopedRawSocket(SnoopedRawSocket &&) noexcept;
+    ~SnoopedRawSocket() override;
     void inject_data(const char *buf, size_t len) {
         if (len > 0) {
             auto dst = data.reserve(len);
@@ -68,6 +74,8 @@ struct SnoopedRawSocket : AsyncCryptoSocket {
     }
 };
 
+SnoopedRawSocket::~SnoopedRawSocket() = default;
+
 struct TlsSocket : AsyncCryptoSocket {
     AsyncIo::SP async;
     SocketHandle handle;
@@ -78,6 +86,8 @@ struct TlsSocket : AsyncCryptoSocket {
     TlsSocket(AsyncIo &async_in, SocketHandle handle_in, std::unique_ptr<CryptoCodec> codec_in)
       : async(async_in.shared_from_this()), handle(std::move(handle_in)), codec(std::move(codec_in)),
         app_input(0), enc_input(0), enc_output(0) {}
+    TlsSocket(TlsSocket &&) noexcept;
+    ~TlsSocket() override;
     void inject_enc_input(const char *buf, size_t len) {
         if (len > 0) {
             auto dst = enc_input.reserve(len);
@@ -174,6 +184,8 @@ struct TlsSocket : AsyncCryptoSocket {
         co_return res.bytes_consumed;
     }
 };
+
+TlsSocket::~TlsSocket() = default;
 
 Lazy<AsyncCryptoSocket::UP> try_handshake(std::unique_ptr<TlsSocket> tls_socket) {
     bool hs_ok = co_await tls_socket->handshake();

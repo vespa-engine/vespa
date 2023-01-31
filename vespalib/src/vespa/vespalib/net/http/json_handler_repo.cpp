@@ -46,17 +46,21 @@ JsonHandlerRepo::State::unbind(size_t my_seq) {
 
 //-----------------------------------------------------------------------------
 
+JsonHandlerRepo::JsonHandlerRepo()
+    : _state(std::make_shared<State>())
+{}
+JsonHandlerRepo::~JsonHandlerRepo() = default;
 JsonHandlerRepo::Token::UP
 JsonHandlerRepo::bind(vespalib::stringref path_prefix,
                       const JsonGetHandler &get_handler)
 {
-    return Token::UP(new Unbinder(_state, _state->bind(path_prefix, get_handler)));
+    return std::make_unique<Unbinder>(_state, _state->bind(path_prefix, get_handler));
 }
 
 JsonHandlerRepo::Token::UP
 JsonHandlerRepo::add_root_resource(vespalib::stringref path)
 {
-    return Token::UP(new Unbinder(_state, _state->add_root_resource(path)));
+    return std::make_unique<Unbinder>(_state, _state->add_root_resource(path));
 }
 
 std::vector<vespalib::string>

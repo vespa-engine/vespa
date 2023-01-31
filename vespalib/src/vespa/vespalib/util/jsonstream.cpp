@@ -8,6 +8,19 @@
 
 namespace vespalib {
 
+JsonStream::StateEntry::StateEntry() noexcept
+    : state(State::ROOT), object_key(""), array_index(size_t(0))
+{}
+JsonStream::StateEntry::StateEntry(State s) noexcept
+    : state(s), object_key(""), array_index(size_t(0))
+{}
+JsonStream::StateEntry::StateEntry(State s, stringref key) noexcept
+    : state(s), object_key(key), array_index(size_t(0))
+{}
+JsonStream::StateEntry::StateEntry(const StateEntry &) noexcept = default;
+JsonStream::StateEntry & JsonStream::StateEntry::operator =(const StateEntry &) noexcept = default;
+JsonStream::StateEntry::~StateEntry() = default;
+
 const char*
 JsonStream::getStateName(const State& s) {
     switch (s) {

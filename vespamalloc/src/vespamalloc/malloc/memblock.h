@@ -18,7 +18,7 @@ public:
         SizeClassSpan = (MaxSizeClassMultiAllocC-MinSizeClassC)
     };
     MemBlockT() : _ptr(nullptr) { }
-    MemBlockT(void * p) : _ptr(p) { }
+    explicit MemBlockT(void * p) : _ptr(p) { }
     MemBlockT(void * p, size_t /*sz*/) : _ptr(p) { }
     MemBlockT(void * p, size_t, bool) : _ptr(p) { }
     template<typename T>
@@ -34,8 +34,9 @@ public:
     void setThreadId(uint32_t ) { }
     void free()               { }
     size_t size()       const { return 0; }
-    static size_t usable_size(void *, size_t classSize) {
-        return classSize;
+    template<typename T>
+    static size_t usable_size(void * ptr, const T & segment) {
+        return segment.template getMaxSize<MemBlockT>(ptr);
     }
     bool allocated()    const { return false; }
     uint32_t threadId()      const { return 0; }

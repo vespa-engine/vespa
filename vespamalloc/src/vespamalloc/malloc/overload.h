@@ -1,8 +1,9 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
+#include "common.h"
 #include <dlfcn.h>
-#include <errno.h>
+#include <cerrno>
 #include <new>
 #include <cstdlib>
 #include <malloc.h>
@@ -174,15 +175,22 @@ void * reallocarray(void * ptr, size_t nemb, size_t elemSize) __THROW
 }
 
 void* memalign(size_t align, size_t sz) __THROW __attribute__((visibility ("default")));
-void* memalign(size_t align, size_t sz) __THROW
+void* memalign(size_t align_in, size_t sz) __THROW
 {
-    void *ptr(nullptr);
+    size_t align = (align_in == 0) ? 1 : 1ul << vespamalloc::msbIdx(align_in*2 - 1);
     size_t align_1(align - 1);
-    if ((align & (align_1)) == 0) {
-        ptr = vespamalloc::_GmemP->malloc(vespamalloc::_GmemP->getMinSizeForAlignment(align, sz));
-        ptr = (void *) ((size_t(ptr) + align_1) & ~align_1);
-    }
-    return ptr;
+    void * ptr = vespamalloc::_GmemP->malloc(vespamalloc::_GmemP->getMinSizeForAlignment(align, sz));
+    return (void *) ((size_t(ptr) + align_1) & ~align_1);
+}
+
+void *aligned_alloc (size_t align, size_t sz) __THROW __attribute__((visibility ("default")));
+void *aligned_alloc (size_t align_in, size_t sz_in) __THROW
+{
+    size_t align = (align_in == 0) ? 1 : 1ul << vespamalloc::msbIdx(align_in*2 - 1);
+    size_t align_1(align - 1);
+    size_t sz = ((sz_in - 1) + align) & ~align_1;
+    void * ptr = vespamalloc::_GmemP->malloc(vespamalloc::_GmemP->getMinSizeForAlignment(align, sz));
+    return (void *) ((size_t(ptr) + align_1) & ~align_1);
 }
 
 int posix_memalign(void** ptr, size_t align, size_t sz) __THROW __nonnull((1)) __attribute__((visibility ("default")));
