@@ -113,6 +113,7 @@ class ResponseMetricAggregator extends AbstractLifeCycle implements HttpChannel.
         static Dimensions of(Request req, Collection<String> monitoringHandlerPaths,
                              Collection<String> searchHandlerPaths) {
             String requestType = requestType(req, monitoringHandlerPaths, searchHandlerPaths);
+            // note: some request members may not be populated for invalid requests, e.g. invalid request-line.
             return new Dimensions(protocol(req), scheme(req), method(req), requestType, statusCode(req));
         }
 
@@ -127,42 +128,31 @@ class ResponseMetricAggregator extends AbstractLifeCycle implements HttpChannel.
         }
 
         private static String protocol(Request req) {
-            switch (req.getProtocol()) {
-                case "HTTP/1":
-                case "HTTP/1.0":
-                case "HTTP/1.1":
-                    return "http1";
-                case "HTTP/2":
-                case "HTTP/2.0":
-                    return "http2";
-                default:
-                    return "other";
-            }
+            var protocol = req.getProtocol();
+            if (protocol == null) return "none";
+            return switch (protocol) {
+                case "HTTP/1", "HTTP/1.0", "HTTP/1.1" -> "http1";
+                case "HTTP/2", "HTTP/2.0" -> "http2";
+                default -> "other";
+            };
         }
 
         private static String scheme(Request req) {
-            switch (req.getScheme()) {
-                case "http":
-                case "https":
-                    return req.getScheme();
-                default:
-                    return "other";
-            }
+            var scheme = req.getScheme();
+            if (scheme == null) return "none";
+            return switch (scheme) {
+                case "http", "https" -> scheme;
+                default -> "other";
+            };
         }
 
         private static String method(Request req) {
-            switch (req.getMethod()) {
-                case "GET":
-                case "PATCH":
-                case "POST":
-                case "PUT":
-                case "DELETE":
-                case "OPTIONS":
-                case "HEAD":
-                    return req.getMethod();
-                default:
-                    return "other";
-            }
+            var method = req.getMethod();
+            if (method == null) return "none";
+            return switch (method) {
+                case "GET", "PATCH", "POST", "PUT", "DELETE", "OPTIONS", "HEAD" -> method;
+                default -> "other";
+            };
         }
 
         private static String requestType(Request req, Collection<String> monitoringHandlerPaths,
@@ -171,13 +161,16 @@ class ResponseMetricAggregator extends AbstractLifeCycle implements HttpChannel.
             if (requestType != null) return requestType.name().toLowerCase();
             // Deduce from path and method:
             String path = req.getRequestURI();
+            if (path == null) return "none";
             for (String monitoringHandlerPath : monitoringHandlerPaths) {
                 if (path.startsWith(monitoringHandlerPath)) return "monitoring";
             }
             for (String searchHandlerPath : searchHandlerPaths) {
                 if (path.startsWith(searchHandlerPath)) return "read";
             }
-            if ("GET".equals(req.getMethod())) return "read";
+            var method = req.getMethod();
+            if (method == null) return "none";
+            else if ("GET".equals(method)) return "read";
             else return "write";
         }
 
