@@ -7,6 +7,7 @@
 #include <cstdint>
 #include <cstdlib>
 #include <cstring>
+#include <malloc.h>
 #include <unistd.h>
 #include <sys/mman.h>
 
@@ -152,7 +153,7 @@ void MemoryRangeTrapper::unprotect_buffer_to_read_and_write() { /* no-op */ }
 #endif
 
 HeapMemoryTrap::HeapMemoryTrap(size_t trap_4k_pages)
-    : _trap_buf(static_cast<char*>(aligned_alloc(4096, trap_4k_pages * 4096))),
+    : _trap_buf(static_cast<char*>(memalign(4096, trap_4k_pages * 4096))),
       _trapper(_trap_buf, _trap_buf ? trap_4k_pages * 4096 : 0)
 {
 }
