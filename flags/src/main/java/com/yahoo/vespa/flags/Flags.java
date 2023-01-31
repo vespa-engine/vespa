@@ -282,7 +282,7 @@ public class Flags {
 
     public static final UnboundBooleanFlag ENABLE_PROXY_PROTOCOL_MIXED_MODE = defineFeatureFlag(
             "enable-proxy-protocol-mixed-mode", true,
-            List.of("tokle"), "2022-05-09", "2023-01-31",
+            List.of("tokle"), "2022-05-09", "2023-03-31",
             "Enable or disable proxy protocol mixed mode",
             "Takes effect on redeployment",
             APPLICATION_ID);
@@ -378,13 +378,6 @@ public class Flags {
             "Takes effect on the next tick.",
             ZONE_ID, NODE_TYPE, HOSTNAME);
     
-    public static final UnboundBooleanFlag ENABLE_DATAPLANE_FILTER = defineFeatureFlag(
-            "enable-dataplane-filter", false, 
-            List.of("tokle", "bjorncs"), "2022-11-15", "2023-01-31",
-            "Setup data plane filter from clients configuration",
-            "Takes effect on redeployment",
-            APPLICATION_ID);
-
     /** WARNING: public for testing: All flags should be defined in {@link Flags}. */
     public static UnboundBooleanFlag defineFeatureFlag(String flagId, boolean defaultValue, List<String> owners,
                                                        String createdAt, String expiresAt, String description,
