@@ -31,11 +31,11 @@ struct Sketch {
     static const HashT BUCKET_COUNT = HashT(1) << BucketBits;
     static const HashT BUCKET_MASK = BUCKET_COUNT - 1;
 
-    virtual ~Sketch() {}
+    virtual ~Sketch() = default;
 
     virtual int aggregate(HashT hash) = 0;
 
-    virtual uint32_t getClassId() const = 0;
+    [[nodiscard]] virtual uint32_t getClassId() const = 0;
     virtual void serialize(vespalib::Serializer &os) const = 0;
     virtual void deserialize(vespalib::Deserializer &is) = 0;
 
@@ -74,19 +74,18 @@ struct SparseSketch : Sketch<BucketBits, HashT> {
     };
     std::unordered_set<HashT, IdentityHash> hash_set;
 
-    size_t getSize() const { return hash_set.size(); }
+    [[nodiscard]] size_t getSize() const { return hash_set.size(); }
 
     int aggregate(HashT hash) override {
         return hash_set.insert(hash).second ? 1 : 0;
     }
 
-    uint32_t getClassId() const override { return classId; }
+    [[nodiscard]] uint32_t getClassId() const override { return classId; }
     void serialize(vespalib::Serializer &os) const override;
     void deserialize(vespalib::Deserializer &is) override;
 
     bool operator==(const SketchType &other) const override {
-        const SparseSketch<BucketBits, HashT> *other_sparse =
-            dynamic_cast<const SparseSketch<BucketBits, HashT> *>(&other);
+        const auto *other_sparse = dynamic_cast<const SparseSketch<BucketBits, HashT> *>(&other);
         if (!other_sparse) {
             return false;
         }
@@ -135,7 +134,7 @@ struct NormalSketch : Sketch<BucketBits, HashT> {
 
     NormalSketch() { memset(&bucket[0], 0, BUCKET_COUNT); }
 
-    virtual int aggregate(HashT hash) override {
+    int aggregate(HashT hash) override {
         uint8_t existing_value = bucket[hash & BUCKET_MASK];
         uint8_t new_value = countPrefixZeros(hash | BUCKET_MASK);
         if (new_value > existing_value) {
@@ -147,13 +146,12 @@ struct NormalSketch : Sketch<BucketBits, HashT> {
 
     uint32_t compress_buckets_into(char *buffer, uint32_t size) const;
     void decompress_buckets_from(char *buffer, uint32_t size);
-    virtual uint32_t getClassId() const override { return classId; }
-    virtual void serialize(vespalib::Serializer &os) const override;
-    virtual void deserialize(vespalib::Deserializer &is) override;
+    [[nodiscard]] uint32_t getClassId() const override { return classId; }
+    void serialize(vespalib::Serializer &os) const override;
+    void deserialize(vespalib::Deserializer &is) override;
 
-    virtual bool operator==(const SketchType &other) const override {
-        const NormalSketch<BucketBits, HashT> *other_normal =
-            dynamic_cast<const NormalSketch<BucketBits, HashT> *>(&other);
+    bool operator==(const SketchType &other) const override {
+        const auto *other_normal = dynamic_cast<const NormalSketch<BucketBits, HashT> *>(&other);
         if (!other_normal) {
             return false;
         }
@@ -168,7 +166,7 @@ struct NormalSketch : Sketch<BucketBits, HashT> {
         return operator==(static_cast<const SketchType&>(other));
     }
 
-    virtual void print(std::ostream &out) const override {
+    void print(std::ostream &out) const override {
         for (size_t i = 0; i < BUCKET_COUNT; ++i) {
             out << " " << int(bucket[i]);
         }

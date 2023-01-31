@@ -233,12 +233,7 @@ void ShiftBasedRadixSorterBase<GR, T, SHIFT>::radix_fetch(GR R, size_t cnt[256],
         }
     }
     for(; p < n; p++) {
-#pragma GCC diagnostic push
-#ifndef __clang__
-#pragma GCC diagnostic ignored "-Waggressive-loop-optimizations"
-#endif
         cnt[(R(a[p]) >> SHIFT) & 0xFF]++;
-#pragma GCC diagnostic pop
     }
 }
 
