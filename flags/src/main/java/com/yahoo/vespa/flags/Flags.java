@@ -301,13 +301,6 @@ public class Flags {
             "Takes effect on restart of service",
             APPLICATION_ID);
 
-    public static final UnboundBooleanFlag USE_YUM_PROXY_V2 = defineFeatureFlag(
-            "use-yumproxy-v2", false,
-            List.of("tokle"), "2022-05-05", "2023-01-31",
-            "Use yumproxy-v2",
-            "Takes effect on host admin restart",
-            HOSTNAME);
-
     public static final UnboundStringFlag LOG_FILE_COMPRESSION_ALGORITHM = defineStringFlag(
             "log-file-compression-algorithm", "",
             List.of("arnej"), "2022-06-14", "2024-12-31",
