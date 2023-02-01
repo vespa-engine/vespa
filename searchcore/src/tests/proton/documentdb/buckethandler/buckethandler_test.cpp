@@ -31,33 +31,31 @@ struct MySubDb
 {
     DocumentMetaStore   _metaStore;
     test::UserDocuments _docs;
-    MySubDb(std::shared_ptr<bucketdb::BucketDBOwner> bucketDB, SubDbType subDbType)
-        : _metaStore(bucketDB,
-                     DocumentMetaStore::getFixedName(),
-                     search::GrowStrategy(),
-                     subDbType),
-          _docs()
-    {
-    }
+    MySubDb(std::shared_ptr<bucketdb::BucketDBOwner> bucketDB, SubDbType subDbType);
+    ~MySubDb();
     void insertDocs(const test::UserDocuments &docs_) {
         _docs = docs_;
-        for (test::UserDocuments::Iterator itr = _docs.begin(); itr != _docs.end(); ++itr) {
-            const test::BucketDocuments &bucketDocs = itr->second;
-            for (size_t i = 0; i < bucketDocs.getDocs().size(); ++i) {
-                const test::Document &testDoc = bucketDocs.getDocs()[i];
+        for (const auto & _doc : _docs) {
+            const test::BucketDocuments &bucketDocs = _doc.second;
+            for (const auto & testDoc : bucketDocs.getDocs()) {
                 _metaStore.put(testDoc.getGid(), testDoc.getBucket(),
                                testDoc.getTimestamp(), testDoc.getDocSize(), testDoc.getLid(), 0u);
             }
         }
     }
-    BucketId bucket(uint32_t userId) {
+    BucketId bucket(uint32_t userId) const {
         return _docs.getBucket(userId);
     }
-    test::DocumentVector docs(uint32_t userId) {
+    test::DocumentVector docs(uint32_t userId) const {
         return _docs.getGidOrderDocs(userId);
     }
 };
 
+MySubDb::MySubDb(std::shared_ptr<bucketdb::BucketDBOwner> bucketDB, SubDbType subDbType)
+    : _metaStore(std::move(bucketDB), DocumentMetaStore::getFixedName(), search::GrowStrategy(), subDbType),
+      _docs()
+{ }
+MySubDb::~MySubDb() = default;
 
 struct MyChangedHandler : public IBucketStateChangedHandler
 {
@@ -65,8 +63,8 @@ struct MyChangedHandler : public IBucketStateChangedHandler
     BucketInfo::ActiveState _state;
     MyChangedHandler() : _bucket(), _state(BucketInfo::NOT_ACTIVE) {}
 
-    virtual void notifyBucketStateChanged(const document::BucketId &bucketId,
-                                          storage::spi::BucketInfo::ActiveState newState) override {
+    void notifyBucketStateChanged(const document::BucketId &bucketId,
+                                  storage::spi::BucketInfo::ActiveState newState) override {
         _bucket = bucketId;
         _state = newState;
     }

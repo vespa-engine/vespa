@@ -114,7 +114,7 @@ private:
 public:
     VerifyRankSetup();
     ~VerifyRankSetup();
-    const std::vector<search::fef::Message> & getMessages() const { return _messages; }
+    [[nodiscard]] const std::vector<search::fef::Message> & getMessages() const { return _messages; }
     bool verify(const std::string & configId);
 };
 
@@ -122,22 +122,25 @@ struct DummyRankingAssetsRepo : IRankingAssetsRepo {
     const RankingConstantsConfig &cfg;
     RankingExpressions _expressions;
     OnnxModels _onnxModels;
-    DummyRankingAssetsRepo(const RankingConstantsConfig &cfg_in, RankingExpressions expressions, OnnxModels onnxModels)
-        : cfg(cfg_in),
-          _expressions(std::move(expressions)),
-          _onnxModels(std::move(onnxModels))
-    {}
-    vespalib::eval::ConstantValue::UP getConstant(const vespalib::string &name) const override;
+    DummyRankingAssetsRepo(const RankingConstantsConfig &cfg_in, RankingExpressions expressions, OnnxModels onnxModels);
+    ~DummyRankingAssetsRepo() override;
+    [[nodiscard]] vespalib::eval::ConstantValue::UP getConstant(const vespalib::string &name) const override;
 
-    vespalib::string getExpression(const vespalib::string & name) const override {
+    [[nodiscard]] vespalib::string getExpression(const vespalib::string & name) const override {
         return _expressions.loadExpression(name);
     }
 
-    const search::fef::OnnxModel *getOnnxModel(const vespalib::string & name) const override {
+    [[nodiscard]] const search::fef::OnnxModel *getOnnxModel(const vespalib::string & name) const override {
         return _onnxModels.getModel(name);
     }
 };
 
+DummyRankingAssetsRepo::DummyRankingAssetsRepo(const RankingConstantsConfig &cfg_in, RankingExpressions expressions, OnnxModels onnxModels)
+    : cfg(cfg_in),
+      _expressions(std::move(expressions)),
+      _onnxModels(std::move(onnxModels))
+{}
+DummyRankingAssetsRepo::~DummyRankingAssetsRepo() = default;
 vespalib::eval::ConstantValue::UP
 DummyRankingAssetsRepo::getConstant(const vespalib::string &name) const {
     for (const auto &entry: cfg.constant) {
@@ -178,14 +181,14 @@ VerifyRankSetup::verify(const search::index::Schema &schema,
     if (!rankSetup.getSecondPhaseRank().empty()) {
         ok = verifyFeature(factory, indexEnv, rankSetup.getSecondPhaseRank(), "second phase ranking", _messages) && ok;
     }
-    for (size_t i = 0; i < rankSetup.getSummaryFeatures().size(); ++i) {
-        ok = verifyFeature(factory, indexEnv, rankSetup.getSummaryFeatures()[i], "summary features", _messages) && ok;
+    for (const auto & i : rankSetup.getSummaryFeatures()) {
+        ok = verifyFeature(factory, indexEnv, i, "summary features", _messages) && ok;
     }
     for (const auto & feature : rankSetup.get_match_features()) {
         ok = verifyFeature(factory, indexEnv, feature, "match features", _messages) && ok;
     }
-    for (size_t i = 0; i < rankSetup.getDumpFeatures().size(); ++i) {
-        ok = verifyFeature(factory, indexEnv, rankSetup.getDumpFeatures()[i], "dump features", _messages) && ok;
+    for (const auto & i : rankSetup.getDumpFeatures()) {
+        ok = verifyFeature(factory, indexEnv, i, "dump features", _messages) && ok;
     }
     return ok;
 }
@@ -205,12 +208,10 @@ VerifyRankSetup::verifyConfig(const VerifyRanksetupConfig &myCfg,
     search::index::SchemaBuilder::build(attributeCfg, schema);
     DummyRankingAssetsRepo repo(constantsCfg, make_expressions(expressionsCfg, myCfg, _messages),
                                 make_models(modelsCfg, myCfg, _messages));
-    for(size_t i = 0; i < rankCfg.rankprofile.size(); i++) {
+    for(const auto & profile : rankCfg.rankprofile) {
         search::fef::Properties properties;
-        const RankProfilesConfig::Rankprofile &profile = rankCfg.rankprofile[i];
-        for(size_t j = 0; j < profile.fef.property.size(); j++) {
-            properties.add(profile.fef.property[j].name,
-                           profile.fef.property[j].value);
+        for(const auto & j : profile.fef.property) {
+            properties.add(j.name, j.value);
         }
         if (verify(schema, properties, repo)) {
             _messages.emplace_back(search::fef::Level::INFO,

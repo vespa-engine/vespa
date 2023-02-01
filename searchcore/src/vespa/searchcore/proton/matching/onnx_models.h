@@ -34,8 +34,8 @@ public:
     OnnxModels & operator =(const OnnxModels &) = delete;
     ~OnnxModels();
     bool operator==(const OnnxModels &rhs) const;
-    const Model *getModel(const vespalib::string &name) const;
-    size_t size() const { return _models.size(); }
+    [[nodiscard]] const Model *getModel(const vespalib::string &name) const;
+    [[nodiscard]] size_t size() const { return _models.size(); }
     static void configure(const ModelConfig &config, Model &model);
 };
 

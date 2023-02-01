@@ -5,5 +5,6 @@ vespa_add_executable(searchcore_gid_to_lid_change_registrator_test_app TEST
     DEPENDS
     searchcore_reference
     searchcore_server
+    searchcore_test
 )
 vespa_add_test(NAME searchcore_gid_to_lid_change_registrator_test_app COMMAND searchcore_gid_to_lid_change_registrator_test_app)
