@@ -54,12 +54,13 @@ struct ArrayStoreTest : public TestT
           generation(1),
           add_using_allocate(add_using_allocate_in)
     {}
-    ArrayStoreTest(const ArrayStoreConfig &storeCfg)
+    explicit ArrayStoreTest(const ArrayStoreConfig &storeCfg)
         : store(storeCfg, std::make_unique<MemoryAllocatorObserver>(stats)),
           refStore(),
           generation(1),
           add_using_allocate(false)
     {}
+    ~ArrayStoreTest() override;
     void assertAdd(const EntryVector &input) {
         EntryRef ref = add(input);
         assertGet(ref, input);
@@ -162,6 +163,9 @@ struct ArrayStoreTest : public TestT
     size_t entrySize() const { return sizeof(EntryT); }
     size_t largeArraySize() const { return sizeof(LargeArray); }
 };
+
+template <typename TestT, typename EntryT, typename RefT>
+ArrayStoreTest<TestT, EntryT, RefT>::~ArrayStoreTest() = default;
 
 struct TestParam {
     bool add_using_allocate;

@@ -2,6 +2,7 @@
 
 #include "multienumattribute.hpp"
 #include "enummodifier.h"
+#include <vespa/vespalib/datastore/unique_store_remapper.hpp>
 #include <stdexcept>
 
 namespace search::multienumattribute {
