@@ -248,6 +248,8 @@ public:
     VESPA_DLL_LOCAL void
     processAnnotations(const document::StringFieldValue &value);
 
+    void push_documents_internal();
+
 private:
     void processNormalDocTextField(const document::StringFieldValue &field);
     void processNormalDocArrayTextField(const document::ArrayFieldValue &field);

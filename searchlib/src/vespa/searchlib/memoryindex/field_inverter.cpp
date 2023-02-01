@@ -18,7 +18,9 @@
 #include <vespa/searchlib/util/url.h>
 #include <vespa/vespalib/datastore/aligner.h>
 #include <vespa/vespalib/text/utf8.h>
+#include <vespa/vespalib/util/exceptions.h>
 #include <vespa/vespalib/util/stringfmt.h>
+#include <vespa/vespalib/stllike/asciistream.h>
 #include <vespa/vespalib/stllike/hash_map.hpp>
 #include <stdexcept>
 
@@ -519,7 +521,7 @@ FieldInverter::applyRemoves()
 }
 
 void
-FieldInverter::pushDocuments()
+FieldInverter::push_documents_internal()
 {
     trimAbortedDocs();
 
@@ -603,6 +605,19 @@ FieldInverter::pushDocuments()
     _inserter.flush();
     _inserter.commit();
     reset();
+}
+
+void
+FieldInverter::pushDocuments()
+{
+    try {
+        push_documents_internal();
+    } catch (vespalib::OverflowException &e) {
+        const Schema::IndexField &field = _schema.getIndexField(_fieldId);
+        vespalib::asciistream s;
+        s << "FieldInverter::pushDocuments(), caught exception for field " << field.getName();
+        throw vespalib::OverflowException(s.c_str(), e);
+    }
 }
 
 }
