@@ -20,16 +20,20 @@ struct MyObj {
     UnwindMessage msg1 = UnwindMessage("this SHOULD be printed (1/4)");
     UnwindMessage msg2 = UnwindMessage("this should NOT be printed (1)");
     UnwindMessage msg3 = UnwindMessage("this SHOULD be printed (2/4)");
-    ~MyObj() {
-        EXPECT_EQ(std::uncaught_exceptions(), 1);
-        auto not_printed_1 = std::move(msg2);
-        try {
-            MyCheck my_check;
-            auto printed_1 = std::move(msg1);
-            throw E("next level");
-        } catch (const E &) {}
-    }
+    MyObj();
+    ~MyObj();
 };
+
+MyObj::MyObj() = default;
+MyObj::~MyObj() {
+    EXPECT_EQ(std::uncaught_exceptions(), 1);
+    auto not_printed_1 = std::move(msg2);
+    try {
+        MyCheck my_check;
+        auto printed_1 = std::move(msg1);
+        throw E("next level");
+    } catch (const E &) {}
+}
 
 TEST(UnwindMessageTest, unwind_messages_are_printed_when_appropriate) {
     auto not_printed_5 = unwind_msg("this should NOT be printed (%d)", 5);

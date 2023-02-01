@@ -141,6 +141,8 @@ CpuUsage::CpuUsage()
 {
 }
 
+CpuUsage::~CpuUsage() = default;
+
 CpuUsage &
 CpuUsage::self()
 {

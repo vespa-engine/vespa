@@ -115,9 +115,11 @@ private:
     bool _is_read;
     bool _is_write;
 public:
-    StackTrace(const vespalib::string &heading) noexcept
-    : _heading(heading), _frames(), _hash(), _is_read(false), _is_write(false) {}
-    ~StackTrace() {}
+    StackTrace(const vespalib::string &heading) noexcept;
+    StackTrace(const StackTrace &);
+    StackTrace(StackTrace &&) noexcept;
+    StackTrace & operator=(StackTrace &&) noexcept;
+    ~StackTrace();
     void add_frame(const vespalib::string &frame) {
         _frames.push_back(frame);
     }
@@ -149,7 +151,16 @@ public:
     }
 };
 
-std::vector<StackTrace> extract_traces(const std::vector<vespalib::string> &lines, size_t cutoff) {
+StackTrace::StackTrace(const vespalib::string &heading) noexcept
+    : _heading(heading), _frames(), _hash(), _is_read(false), _is_write(false)
+{}
+StackTrace::StackTrace(const StackTrace &) = default;
+StackTrace::StackTrace(StackTrace &&) noexcept = default;
+StackTrace & StackTrace::operator=(StackTrace &&) noexcept = default;
+StackTrace::~StackTrace() = default;
+
+std::vector<StackTrace>
+extract_traces(const std::vector<vespalib::string> &lines, size_t cutoff) {
     std::vector<StackTrace> result;
     for (size_t i = 1; (i < lines.size()) && (result.size() < cutoff); ++i) {
         auto pos = lines[i].find("#0 ");
