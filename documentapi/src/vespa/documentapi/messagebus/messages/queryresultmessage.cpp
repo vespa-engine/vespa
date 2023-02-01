@@ -6,9 +6,9 @@ namespace documentapi {
 
 QueryResultMessage::QueryResultMessage() = default;
 
-QueryResultMessage::QueryResultMessage(const vdslib::SearchResult & result, const vdslib::DocumentSummary & summary) :
+QueryResultMessage::QueryResultMessage(vdslib::SearchResult && result, const vdslib::DocumentSummary & summary) :
     VisitorMessage(),
-    _searchResult(result),
+    _searchResult(std::move(result)),
     _summary(summary)
 {}
 
@@ -17,7 +17,7 @@ QueryResultMessage::~QueryResultMessage() = default;
 DocumentReply::UP
 QueryResultMessage::doCreateReply() const
 {
-    return DocumentReply::UP(new VisitorReply(DocumentProtocol::REPLY_QUERYRESULT));
+    return std::make_unique<VisitorReply>(DocumentProtocol::REPLY_QUERYRESULT);
 }
 
 uint32_t

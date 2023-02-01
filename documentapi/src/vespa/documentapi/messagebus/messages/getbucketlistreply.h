@@ -23,10 +23,8 @@ private:
     std::vector<BucketInfo> _buckets;
 
 public:
-    /**
-     * Constructs a new reply with no content.
-     */
-    GetBucketListReply();
+    GetBucketListReply() noexcept;
+    ~GetBucketListReply() override;
 
     /**
      * Returns the bucket state contained in this.
@@ -40,9 +38,9 @@ public:
      *
      * @return The state object.
      */
-    const std::vector<BucketInfo> &getBuckets() const { return _buckets; }
+    [[nodiscard]] const std::vector<BucketInfo> &getBuckets() const { return _buckets; }
 
-    string toString() const override { return "getbucketlistreply"; }
+    [[nodiscard]] string toString() const override { return "getbucketlistreply"; }
 };
 
 std::ostream & operator<<(std::ostream &out, const GetBucketListReply::BucketInfo &info);

@@ -15,6 +15,7 @@ class IdealServiceLayerNodesBundle {
     std::vector<uint16_t> _available_nonretired_or_maintenance_nodes;
 public:
     IdealServiceLayerNodesBundle() noexcept;
+    IdealServiceLayerNodesBundle(IdealServiceLayerNodesBundle &&) noexcept;
     ~IdealServiceLayerNodesBundle();
 
     void set_available_nodes(std::vector<uint16_t> available_nodes) {

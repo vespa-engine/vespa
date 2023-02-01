@@ -5,7 +5,6 @@
 #include <vespa/storageapi/message/state.h>
 #include <vespa/vdslib/state/cluster_state_bundle.h>
 #include <vespa/vdslib/state/clusterstate.h>
-#include <vespa/storage/frameworkimpl/component/storagecomponentregisterimpl.h>
 #include <vespa/storage/storageserver/statemanager.h>
 #include <tests/common/teststorageapp.h>
 #include <tests/common/testhelper.h>
@@ -159,9 +158,8 @@ struct MyStateListener : public StateListener {
     lib::NodeState current;
     std::ostringstream ost;
 
-    MyStateListener(const NodeStateUpdater& upd)
-        : updater(upd), current(*updater.getReportedNodeState()) {}
-    ~MyStateListener() override = default;
+    MyStateListener(const NodeStateUpdater& upd);
+    ~MyStateListener() override;
 
     void handleNewState() noexcept override {
         ost << current << " -> ";
@@ -169,6 +167,11 @@ struct MyStateListener : public StateListener {
         ost << current << "\n";
     }
 };
+
+MyStateListener::MyStateListener(const NodeStateUpdater& upd)
+    : updater(upd), current(*updater.getReportedNodeState())
+{}
+MyStateListener::~MyStateListener() = default;
 }
 
 TEST_F(StateManagerTest, reported_node_state) {

@@ -12,6 +12,8 @@ IdealServiceLayerNodesBundle::IdealServiceLayerNodesBundle() noexcept
 {
 }
 
+IdealServiceLayerNodesBundle::IdealServiceLayerNodesBundle(IdealServiceLayerNodesBundle &&) noexcept = default;
+
 IdealServiceLayerNodesBundle::~IdealServiceLayerNodesBundle() = default;
 
 }

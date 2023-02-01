@@ -41,9 +41,11 @@ struct Fixture {
     TestShutdownListener shutdown_listener;
     ServiceLayerErrorListener error_listener{component, merge_throttler};
 
+    Fixture();
     ~Fixture();
 };
 
+Fixture::Fixture() = default;
 Fixture::~Fixture() = default;
 
 }

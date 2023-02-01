@@ -128,18 +128,24 @@ StatusWebServer::WebServer::handle_get(vespalib::Portal::GetRequest request)
 }
 
 namespace {
-    class IndexPageReporter : public framework::HtmlStatusReporter {
-        std::ostringstream ost;
-        void reportHtmlStatus(std::ostream& out,const framework::HttpUrlPath&) const override {
-            out << ost.str();
-        }
 
-    public:
-        IndexPageReporter() : framework::HtmlStatusReporter("", "Index page") {}
+class IndexPageReporter : public framework::HtmlStatusReporter {
+    std::ostringstream ost;
+    void reportHtmlStatus(std::ostream& out,const framework::HttpUrlPath&) const override {
+        out << ost.str();
+    }
 
-        template<typename T>
-        IndexPageReporter& operator<<(const T& t) { ost << t; return *this; }
-    };
+public:
+    IndexPageReporter();
+    ~IndexPageReporter() override;
+
+    template<typename T>
+    IndexPageReporter& operator<<(const T& t) { ost << t; return *this; }
+};
+
+IndexPageReporter::IndexPageReporter() : framework::HtmlStatusReporter("", "Index page") {}
+IndexPageReporter::~IndexPageReporter() = default;
+
 }
 
 

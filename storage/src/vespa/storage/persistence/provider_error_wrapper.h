@@ -32,11 +32,8 @@ public:
 
 class ProviderErrorWrapper : public spi::PersistenceProvider, public spi::ResultHandler {
 public:
-    explicit ProviderErrorWrapper(spi::PersistenceProvider& impl)
-        : _impl(impl),
-          _mutex()
-    {
-    }
+    explicit ProviderErrorWrapper(spi::PersistenceProvider& impl) noexcept;
+    ~ProviderErrorWrapper() override;
 
     spi::Result initialize() override;
     spi::BucketIdListResult listBuckets(BucketSpace bucketSpace) const override;

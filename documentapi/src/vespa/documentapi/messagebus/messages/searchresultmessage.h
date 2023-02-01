@@ -12,23 +12,11 @@ protected:
     DocumentReply::UP doCreateReply() const override;
 
 public:
-    /**
-     * Convenience typedefs.
-     */
     using UP = std::unique_ptr<SearchResultMessage>;
     using SP = std::shared_ptr<SearchResultMessage>;
 
-    /**
-     * Constructs a new search result message for deserialization.
-     */
     SearchResultMessage();
-
-    /**
-     * Constructs a new search result message for the given search result.
-     *
-     * @param result The result to set.
-     */
-    SearchResultMessage(const vdslib::SearchResult &result);
+    SearchResultMessage(vdslib::SearchResult &&result);
 
     uint32_t getApproxSize() const override;
     uint32_t getType() const override;
@@ -36,4 +24,3 @@ public:
 };
 
 }
-

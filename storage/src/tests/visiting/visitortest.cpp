@@ -65,7 +65,8 @@ struct VisitorTest : Test {
     DummyStorageLink* _bottom;
     VisitorManager* _manager;
 
-    VisitorTest() : _node() {}
+    VisitorTest();
+    ~VisitorTest() override;
 
     // Not using setUp since can't throw exception out of it.
     void initializeTest(const TestParams& params = TestParams());
@@ -138,6 +139,9 @@ protected:
 
 uint32_t VisitorTest::docCount = 10;
 
+VisitorTest::VisitorTest() = default;
+VisitorTest::~VisitorTest() = default;
+
 void
 VisitorTest::initializeTest(const TestParams& params)
 {
@@ -157,18 +161,16 @@ VisitorTest::initializeTest(const TestParams& params)
     std::filesystem::create_directories(std::filesystem::path(vespalib::make_string("%s/disks/d0", rootFolder.c_str())));
     std::filesystem::create_directories(std::filesystem::path(vespalib::make_string("%s/disks/d1", rootFolder.c_str())));
 
-    _messageSessionFactory.reset(
-            new TestVisitorMessageSessionFactory(config.getConfigId()));
+    _messageSessionFactory = std::make_unique<TestVisitorMessageSessionFactory>(config.getConfigId());
     if (params._autoReplyError.getCode() != mbus::ErrorCode::NONE) {
         _messageSessionFactory->_autoReplyError = params._autoReplyError;
         _messageSessionFactory->_createAutoReplyVisitorSessions = true;
     }
-    _node.reset(new TestServiceLayerApp(config.getConfigId()));
-    _top.reset(new DummyStorageLink());
+    _node = std::make_unique<TestServiceLayerApp>(config.getConfigId());
+    _top = std::make_unique<DummyStorageLink>();
     _top->push_back(std::unique_ptr<StorageLink>(_manager
-            = new VisitorManager(
-                    config::ConfigUri(config.getConfigId()),
-                _node->getComponentRegister(), *_messageSessionFactory)));
+            = new VisitorManager(config::ConfigUri(config.getConfigId()),
+                                 _node->getComponentRegister(), *_messageSessionFactory)));
     _bottom = new DummyStorageLink();
     _top->push_back(std::unique_ptr<StorageLink>(_bottom));
     _manager->setTimeBetweenTicks(10);
@@ -296,13 +298,13 @@ VisitorTest::getMessagesAndReply(
 
             switch (msg->getType()) {
             case documentapi::DocumentProtocol::MESSAGE_PUTDOCUMENT:
-                docs.push_back(static_cast<documentapi::PutDocumentMessage&>(*msg).getDocumentSP());
+                docs.push_back(dynamic_cast<documentapi::PutDocumentMessage&>(*msg).getDocumentSP());
                 break;
             case documentapi::DocumentProtocol::MESSAGE_REMOVEDOCUMENT:
-                docIds.push_back(static_cast<documentapi::RemoveDocumentMessage&>(*msg).getDocumentId());
+                docIds.push_back(dynamic_cast<documentapi::RemoveDocumentMessage&>(*msg).getDocumentId());
                 break;
             case documentapi::DocumentProtocol::MESSAGE_VISITORINFO:
-                infoMessages.push_back(static_cast<documentapi::VisitorInfoMessage&>(*msg).getErrorMessage());
+                infoMessages.push_back(dynamic_cast<documentapi::VisitorInfoMessage&>(*msg).getErrorMessage());
                 break;
             default:
                 break;
@@ -357,10 +359,10 @@ VisitorTest::verifyCreateVisitorReply(
 uint32_t
 VisitorTest::getMatchingDocuments(std::vector<Document::SP >& docs) {
     uint32_t equalCount = 0;
-    for (uint32_t i=0; i<docs.size(); ++i) {
-        for (uint32_t j=0; j<_documents.size(); ++j) {
-            if (*docs[i] == *_documents[j] &&
-                docs[i]->getId() == _documents[j]->getId())
+    for (auto & doc : docs) {
+        for (auto & _document : _documents) {
+            if (*doc == *_document &&
+                doc->getId() == _document->getId())
             {
                 equalCount++;
             }
