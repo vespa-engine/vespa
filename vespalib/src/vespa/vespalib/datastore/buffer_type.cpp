@@ -1,6 +1,8 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "buffer_type.hpp"
+#include <vespa/vespalib/stllike/asciistream.h>
+#include <vespa/vespalib/util/exceptions.h>
 #include <algorithm>
 #include <cassert>
 #include <cmath>
@@ -150,7 +152,24 @@ BufferTypeBase::calcArraysToAlloc(uint32_t bufferId, ElemCount elemsNeeded, bool
     if (result > _maxArrays) {
         result = _maxArrays;
     }
-    assert(result >= neededArrays);
+    if (result < neededArrays) {
+        vespalib::asciistream s;
+        s << "BufferTypeBase::calcArraysToAlloc(" <<
+            "bufferId=" << bufferId <<
+            ",elemsNeeeded=" << elemsNeeded <<
+            ",resizing=" << (resizing ? "true" : "false") << ")" <<
+            " wantedArrays=" << wantedArrays <<
+            ", _arraySize=" << _arraySize <<
+            ", _maxArrays=" << _maxArrays <<
+            ", reservedElems=" << reservedElems <<
+            ", liveArrays=" << liveArrays <<
+            ", growArrays=" << growArrays <<
+            ", usedArrays=" << usedArrays <<
+            ", typeid(*this).name=\"" << typeid(*this).name() << "\"" <<
+            ", newArrays=" << result <<
+            " < neededArrays=" << neededArrays;;
+        throw vespalib::OverflowException(s.c_str());
+    }
     return result;
 }
 
