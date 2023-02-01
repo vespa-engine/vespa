@@ -42,10 +42,10 @@ struct StateReporterTest : Test {
     std::shared_ptr<FileStorMetrics> _filestorMetrics;
 
     StateReporterTest();
+    ~StateReporterTest() override;
 
     void SetUp() override;
     void TearDown() override;
-    void runLoad(uint32_t count = 1);
 };
 
 namespace {
@@ -67,6 +67,8 @@ StateReporterTest::StateReporterTest()
       _stateReporter()
 {
 }
+
+StateReporterTest::~StateReporterTest() = default;
 
 void StateReporterTest::SetUp() {
     _config = std::make_unique<vdstestlib::DirConfig>(getStandardConfig(true, "statereportertest"));

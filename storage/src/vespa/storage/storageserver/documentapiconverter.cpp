@@ -42,7 +42,7 @@ DocumentApiConverter::toStorageAPI(documentapi::DocumentMessage& fromMsg)
     switch (fromMsg.getType()) {
     case DocumentProtocol::MESSAGE_PUTDOCUMENT:
     {
-        documentapi::PutDocumentMessage& from(static_cast<documentapi::PutDocumentMessage&>(fromMsg));
+        auto & from(static_cast<documentapi::PutDocumentMessage&>(fromMsg));
         document::Bucket bucket = bucketResolver()->bucketFromId(from.getDocument().getId());
         auto to = std::make_unique<api::PutCommand>(bucket, from.stealDocument(), from.getTimestamp());
         to->setCondition(from.getCondition());
@@ -51,7 +51,7 @@ DocumentApiConverter::toStorageAPI(documentapi::DocumentMessage& fromMsg)
     }
     case DocumentProtocol::MESSAGE_UPDATEDOCUMENT:
     {
-        documentapi::UpdateDocumentMessage& from(static_cast<documentapi::UpdateDocumentMessage&>(fromMsg));
+        auto & from(static_cast<documentapi::UpdateDocumentMessage&>(fromMsg));
         document::Bucket bucket = bucketResolver()->bucketFromId(from.getDocumentUpdate().getId());
         auto to = std::make_unique<api::UpdateCommand>(bucket, from.stealDocumentUpdate(), from.getNewTimestamp());
         to->setOldTimestamp(from.getOldTimestamp());
@@ -69,13 +69,13 @@ DocumentApiConverter::toStorageAPI(documentapi::DocumentMessage& fromMsg)
     }
     case DocumentProtocol::MESSAGE_GETDOCUMENT:
     {
-        documentapi::GetDocumentMessage& from(static_cast<documentapi::GetDocumentMessage&>(fromMsg));
+        auto & from(static_cast<documentapi::GetDocumentMessage&>(fromMsg));
         toMsg = std::make_unique<api::GetCommand>(bucketResolver()->bucketFromId(from.getDocumentId()), from.getDocumentId(), from.getFieldSet());
         break;
     }
     case DocumentProtocol::MESSAGE_CREATEVISITOR:
     {
-        documentapi::CreateVisitorMessage& from(static_cast<documentapi::CreateVisitorMessage&>(fromMsg));
+        auto & from(static_cast<documentapi::CreateVisitorMessage&>(fromMsg));
         auto to = std::make_unique<api::CreateVisitorCommand>(bucketResolver()->bucketSpaceFromName(from.getBucketSpace()),
                                                               from.getLibraryName(), from.getInstanceId(),
                                                               from.getDocumentSelection());
@@ -97,28 +97,28 @@ DocumentApiConverter::toStorageAPI(documentapi::DocumentMessage& fromMsg)
     }
     case DocumentProtocol::MESSAGE_DESTROYVISITOR:
     {
-        documentapi::DestroyVisitorMessage& from(static_cast<documentapi::DestroyVisitorMessage&>(fromMsg));
+        auto & from(static_cast<documentapi::DestroyVisitorMessage&>(fromMsg));
         toMsg = std::make_unique<api::DestroyVisitorCommand>(from.getInstanceId());
         break;
     }
     case DocumentProtocol::MESSAGE_STATBUCKET:
     {
-        documentapi::StatBucketMessage& from(static_cast<documentapi::StatBucketMessage&>(fromMsg));
+        auto & from(static_cast<documentapi::StatBucketMessage&>(fromMsg));
         document::Bucket bucket(bucketResolver()->bucketSpaceFromName(from.getBucketSpace()), from.getBucketId());
         toMsg = std::make_unique<api::StatBucketCommand>(bucket, from.getDocumentSelection());
         break;
     }
     case DocumentProtocol::MESSAGE_GETBUCKETLIST:
     {
-        documentapi::GetBucketListMessage& from(static_cast<documentapi::GetBucketListMessage&>(fromMsg));
+        auto & from(static_cast<documentapi::GetBucketListMessage&>(fromMsg));
         document::Bucket bucket(bucketResolver()->bucketSpaceFromName(from.getBucketSpace()), from.getBucketId());
         toMsg = std::make_unique<api::GetBucketListCommand>(bucket);
         break;
     }
     case DocumentProtocol::MESSAGE_VISITORINFO:
     {
-        documentapi::VisitorInfoMessage& from(static_cast<documentapi::VisitorInfoMessage&>(fromMsg));
-        api::VisitorInfoCommand::UP to(new api::VisitorInfoCommand);
+        auto & from(static_cast<documentapi::VisitorInfoMessage&>(fromMsg));
+        auto to = std::make_unique<api::VisitorInfoCommand>();
         for (uint32_t i = 0; i < from.getFinishedBuckets().size(); ++i) {
             to->setBucketCompleted(from.getFinishedBuckets()[i], 0);
         }
@@ -130,7 +130,7 @@ DocumentApiConverter::toStorageAPI(documentapi::DocumentMessage& fromMsg)
     }
     case DocumentProtocol::MESSAGE_REMOVELOCATION:
     {
-        documentapi::RemoveLocationMessage& from(static_cast<documentapi::RemoveLocationMessage&>(fromMsg));
+        auto & from(static_cast<documentapi::RemoveLocationMessage&>(fromMsg));
         document::Bucket bucket(bucketResolver()->bucketSpaceFromName(from.getBucketSpace()), document::BucketId(0));
         toMsg = std::make_unique<api::RemoveLocationCommand>(from.getDocumentSelection(), bucket);
         break;
@@ -166,8 +166,8 @@ DocumentApiConverter::toStorageAPI(documentapi::DocumentReply& fromReply,
     switch (fromReply.getType()) {
     case documentapi::DocumentProtocol::REPLY_CREATEVISITOR:
     {
-        documentapi::CreateVisitorReply& fromRep(static_cast<documentapi::CreateVisitorReply&>(fromReply));
-        const api::CreateVisitorCommand& fromCmd(static_cast<const api::CreateVisitorCommand&>(fromCommand));
+        auto & fromRep(static_cast<documentapi::CreateVisitorReply&>(fromReply));
+        const auto & fromCmd(static_cast<const api::CreateVisitorCommand&>(fromCommand));
 
         api::CreateVisitorReply::UP to(new api::CreateVisitorReply(fromCmd));
         to->setVisitorStatistics(fromRep.getVisitorStatistics());
@@ -176,8 +176,8 @@ DocumentApiConverter::toStorageAPI(documentapi::DocumentReply& fromReply,
     }
     case documentapi::DocumentProtocol::REPLY_STATBUCKET:
     {
-        documentapi::StatBucketReply& fromRep(static_cast<documentapi::StatBucketReply&>(fromReply));
-        const api::StatBucketCommand& fromCmd(static_cast<const api::StatBucketCommand&>(fromCommand));
+        auto & fromRep(static_cast<documentapi::StatBucketReply&>(fromReply));
+        const auto & fromCmd(static_cast<const api::StatBucketCommand&>(fromCommand));
 
         toMsg = std::make_unique<api::StatBucketReply>(fromCmd, fromRep.getResults());
         break;
@@ -204,16 +204,16 @@ DocumentApiConverter::toDocumentAPI(api::StorageCommand& fromMsg)
     switch (fromMsg.getType().getId()) {
     case api::MessageType::PUT_ID:
     {
-        api::PutCommand& from(static_cast<api::PutCommand&>(fromMsg));
-        documentapi::PutDocumentMessage::UP to(new documentapi::PutDocumentMessage(from.getDocument()));
+        auto & from(static_cast<api::PutCommand&>(fromMsg));
+        auto to = std::make_unique<documentapi::PutDocumentMessage>(from.getDocument());
         to->setTimestamp(from.getTimestamp());
         toMsg = std::move(to);
         break;
     }
     case api::MessageType::UPDATE_ID:
     {
-        api::UpdateCommand& from(static_cast<api::UpdateCommand&>(fromMsg));
-        documentapi::UpdateDocumentMessage::UP to(new documentapi::UpdateDocumentMessage(from.getUpdate()));
+        auto & from(static_cast<api::UpdateCommand&>(fromMsg));
+        auto to = std::make_unique<documentapi::UpdateDocumentMessage>(from.getUpdate());
         to->setOldTimestamp(from.getOldTimestamp());
         to->setNewTimestamp(from.getTimestamp());
         toMsg = std::move(to);
@@ -221,14 +221,14 @@ DocumentApiConverter::toDocumentAPI(api::StorageCommand& fromMsg)
     }
     case api::MessageType::REMOVE_ID:
     {
-        api::RemoveCommand& from(static_cast<api::RemoveCommand&>(fromMsg));
+        auto & from(static_cast<api::RemoveCommand&>(fromMsg));
         toMsg = std::make_unique<documentapi::RemoveDocumentMessage>(from.getDocumentId());
         break;
     }
     case api::MessageType::VISITOR_INFO_ID:
     {
-        api::VisitorInfoCommand& from(static_cast<api::VisitorInfoCommand&>(fromMsg));
-        documentapi::VisitorInfoMessage::UP to(new documentapi::VisitorInfoMessage);
+        auto & from(static_cast<api::VisitorInfoCommand&>(fromMsg));
+        auto to = std::make_unique<documentapi::VisitorInfoMessage>();
 
         for (uint32_t i = 0; i < from.getCompletedBucketsList().size(); ++i) {
             to->getFinishedBuckets().push_back(from.getCompletedBucketsList()[i].bucketId);
@@ -239,25 +239,25 @@ DocumentApiConverter::toDocumentAPI(api::StorageCommand& fromMsg)
     }
     case api::MessageType::SEARCHRESULT_ID:
     {
-        api::SearchResultCommand& from(static_cast<api::SearchResultCommand&>(fromMsg));
-        toMsg = std::make_unique<documentapi::SearchResultMessage>(from);
+        auto & from(static_cast<api::SearchResultCommand&>(fromMsg));
+        toMsg = std::make_unique<documentapi::SearchResultMessage>(std::move(from));
         break;
     }
     case api::MessageType::QUERYRESULT_ID:
     {
-        api::QueryResultCommand& from(static_cast<api::QueryResultCommand&>(fromMsg));
-        toMsg = std::make_unique<documentapi::QueryResultMessage>(from.getSearchResult(), from.getDocumentSummary());
+        auto & from(static_cast<api::QueryResultCommand&>(fromMsg));
+        toMsg = std::make_unique<documentapi::QueryResultMessage>(std::move(from.getSearchResult()), from.getDocumentSummary());
         break;
     }
     case api::MessageType::DOCUMENTSUMMARY_ID:
     {
-        api::DocumentSummaryCommand& from(static_cast<api::DocumentSummaryCommand&>(fromMsg));
+        auto & from(static_cast<api::DocumentSummaryCommand&>(fromMsg));
         toMsg = std::make_unique<documentapi::DocumentSummaryMessage>(from);
         break;
     }
     case api::MessageType::MAPVISITOR_ID:
     {
-        api::MapVisitorCommand& from(static_cast<api::MapVisitorCommand&>(fromMsg));
+        auto & from(static_cast<api::MapVisitorCommand&>(fromMsg));
         documentapi::MapVisitorMessage::UP to(new documentapi::MapVisitorMessage);
         to->getData() = from.getData();
         toMsg = std::move(to);
@@ -265,16 +265,15 @@ DocumentApiConverter::toDocumentAPI(api::StorageCommand& fromMsg)
     }
     case api::MessageType::EMPTYBUCKETS_ID:
     {
-        api::EmptyBucketsCommand& from(static_cast<api::EmptyBucketsCommand&>(fromMsg));
+        auto & from(static_cast<api::EmptyBucketsCommand&>(fromMsg));
         toMsg = std::make_unique<documentapi::EmptyBucketsMessage>(from.getBuckets());
         break;
     }
     case api::MessageType::VISITOR_CREATE_ID:
     {
-        api::CreateVisitorCommand& from(static_cast<api::CreateVisitorCommand&>(fromMsg));
-        documentapi::CreateVisitorMessage::UP to(
-                new documentapi::CreateVisitorMessage(from.getLibraryName(), from.getInstanceId(),
-                                                      from.getControlDestination(), from.getDataDestination()));
+        auto & from(static_cast<api::CreateVisitorCommand&>(fromMsg));
+        auto to = std::make_unique<documentapi::CreateVisitorMessage>(from.getLibraryName(), from.getInstanceId(),
+                                                                      from.getControlDestination(), from.getDataDestination());
         to->setBucketSpace(bucketResolver()->nameFromBucketSpace(from.getBucketSpace()));
         to->setDocumentSelection(from.getDocumentSelection());
         to->setMaximumPendingReplyCount(from.getMaximumPendingReplyCount());
@@ -291,15 +290,15 @@ DocumentApiConverter::toDocumentAPI(api::StorageCommand& fromMsg)
     }
     case api::MessageType::VISITOR_DESTROY_ID:
     {
-        api::DestroyVisitorCommand& from(static_cast<api::DestroyVisitorCommand&>(fromMsg));
-        documentapi::DestroyVisitorMessage::UP to(new documentapi::DestroyVisitorMessage);
+        auto & from(static_cast<api::DestroyVisitorCommand&>(fromMsg));
+        auto to = std::make_unique<documentapi::DestroyVisitorMessage>();
         to->setInstanceId(from.getInstanceId());
         toMsg = std::move(to);
         break;
     }
     case api::MessageType::STATBUCKET_ID:
     {
-        api::StatBucketCommand& from(static_cast<api::StatBucketCommand&>(fromMsg));
+        auto & from(static_cast<api::StatBucketCommand&>(fromMsg));
         auto statMsg = std::make_unique<documentapi::StatBucketMessage>(from.getBucket().getBucketId(), from.getDocumentSelection());
         statMsg->setBucketSpace(bucketResolver()->nameFromBucketSpace(from.getBucket().getBucketSpace()));
         toMsg = std::move(statMsg);

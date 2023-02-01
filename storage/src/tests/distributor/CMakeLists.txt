@@ -22,6 +22,7 @@ vespa_add_executable(storage_distributor_gtest_runner_app TEST
     gtest_runner.cpp
     idealstatemanagertest.cpp
     joinbuckettest.cpp
+    maintenancemocks.cpp
     maintenanceschedulertest.cpp
     mergelimitertest.cpp
     mergeoperationtest.cpp

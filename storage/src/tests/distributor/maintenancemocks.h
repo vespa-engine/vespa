@@ -23,9 +23,7 @@ class MockMaintenancePriorityGenerator
     {
         stats.incMovingOut(1, makeBucketSpace());
         stats.incCopyingIn(2, makeBucketSpace());
-        return MaintenancePriorityAndType(
-                MaintenancePriority(MaintenancePriority::VERY_HIGH),
-                MaintenanceOperation::MERGE_BUCKET);
+        return { MaintenancePriority(MaintenancePriority::VERY_HIGH), MaintenanceOperation::MERGE_BUCKET };
     }
 };
 
@@ -38,41 +36,41 @@ class MockOperation : public MaintenanceOperation
     bool _was_blocked;
     bool _was_throttled;
 public:
-    MockOperation(const document::Bucket &bucket)
+    explicit MockOperation(const document::Bucket &bucket)
         : _bucket(bucket),
           _shouldBlock(false),
           _was_blocked(false),
           _was_throttled(false)
     {}
 
-    std::string toString() const override {
+    [[nodiscard]] std::string toString() const override {
         return _bucket.toString();
     }
 
     void onClose(DistributorStripeMessageSender&) override {}
-    const char* getName() const noexcept override { return "MockOperation"; }
-    const std::string& getDetailedReason() const override {
+    [[nodiscard]] const char* getName() const noexcept override { return "MockOperation"; }
+    [[nodiscard]] const std::string& getDetailedReason() const override {
         return _reason;
     }
     void onStart(DistributorStripeMessageSender&) override {}
     void onReceive(DistributorStripeMessageSender&, const std::shared_ptr<api::StorageReply>&) override {}
     void on_blocked() override { _was_blocked = true; }
     void on_throttled() override { _was_throttled = true; }
-    bool isBlocked(const DistributorStripeOperationContext&, const OperationSequencer&) const override {
+    [[nodiscard]] bool isBlocked(const DistributorStripeOperationContext&, const OperationSequencer&) const override {
         return _shouldBlock;
     }
     void setShouldBlock(bool shouldBlock) {
         _shouldBlock = shouldBlock;
     }
-    bool get_was_blocked() const noexcept { return _was_blocked; }
-    bool get_was_throttled() const noexcept { return _was_throttled; }
+    [[nodiscard]] bool get_was_blocked() const noexcept { return _was_blocked; }
+    [[nodiscard]] bool get_was_throttled() const noexcept { return _was_throttled; }
 };
 
 class MockMaintenanceOperationGenerator
     : public MaintenanceOperationGenerator
 {
 public:
-    MaintenanceOperation::SP generate(const document::Bucket&bucket) const override {
+    [[nodiscard]] MaintenanceOperation::SP generate(const document::Bucket&bucket) const override {
         return std::make_shared<MockOperation>(bucket);
     }
 
@@ -95,9 +93,8 @@ class MockOperationStarter
     std::vector<Operation::SP> _operations;
     bool _shouldStart;
 public:
-    MockOperationStarter()
-        : _shouldStart(true)
-    {}
+    MockOperationStarter() noexcept;
+    ~MockOperationStarter() override;
 
     bool start(const std::shared_ptr<Operation>& operation, Priority priority) override
     {
@@ -130,7 +127,7 @@ public:
         _allow = allow;
     }
 
-    bool may_allow_operation_with_priority(OperationStarter::Priority) const noexcept override {
+    [[nodiscard]] bool may_allow_operation_with_priority(OperationStarter::Priority) const noexcept override {
         return _allow;
     }
 };
