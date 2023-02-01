@@ -14,24 +14,20 @@ RoutingTableSpec::RoutingTableSpec(const string &protocol) :
 
 RoutingTableSpec::RoutingTableSpec(const RoutingTableSpec&) = default;
 
-RoutingTableSpec::~RoutingTableSpec() {}
+RoutingTableSpec::~RoutingTableSpec() = default;
 
 RoutingTableSpec& RoutingTableSpec::operator=(const RoutingTableSpec&) = default;
 
-HopSpec
-RoutingTableSpec::removeHop(uint32_t i)
-{
-    HopSpec ret = _hops[i];
-    _hops.erase(_hops.begin() + i);
-    return ret;
+RoutingTableSpec &
+RoutingTableSpec::addHop(HopSpec && hop) {
+    _hops.emplace_back(std::move(hop));
+    return *this;
 }
 
-RouteSpec
-RoutingTableSpec::removeRoute(uint32_t i)
-{
-    RouteSpec ret = _routes[i];
-    _routes.erase(_routes.begin() + i);
-    return ret;
+RoutingTableSpec &
+RoutingTableSpec::setHop(uint32_t i, HopSpec &&hop) {
+    _hops[i] = std::move(hop);
+    return *this;
 }
 
 void

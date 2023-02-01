@@ -22,17 +22,12 @@ class Error;
 class RoutingContext {
 private:
     RoutingNode       &_node;
-    uint32_t           _directive;
-    std::set<uint32_t> _consumableErrors;
-    bool               _selectOnRetry;
     Context            _context;
+    uint32_t           _directive;
+    bool               _selectOnRetry;
+    std::set<uint32_t> _consumableErrors;
 
 public:
-    /**
-     * Convenience typedefs.
-     */
-    using UP = std::unique_ptr<RoutingContext>;
-
     /**
      * Constructs a new routing context for a given routing node and hop.
      *
@@ -40,20 +35,25 @@ public:
      * @param directive The index to the policy directive of the hop.
      */
     RoutingContext(RoutingNode &node, uint32_t directive);
+    RoutingContext(const RoutingContext &) = delete;
+    RoutingContext(RoutingContext &&) = delete;
+    RoutingContext & operator=(const RoutingContext &) = delete;
+    RoutingContext & operator=(RoutingContext &&) = delete;
+    ~RoutingContext();
 
     /**
      * Returns whether or not this hop has any configured recipients.
      *
      * @return True if there is at least one recipient.
      */
-    bool hasRecipients() const;
+    [[nodiscard]] bool hasRecipients() const;
 
     /**
      * Returns the number of configured recipients for this hop.
      *
      * @return The recipient count.
      */
-    uint32_t getNumRecipients() const;
+    [[nodiscard]] uint32_t getNumRecipients() const;
 
     /**
      * Returns the configured recipient at the given index.
@@ -61,14 +61,14 @@ public:
      * @param idx The index of the recipient to return.
      * @return The reipient at the given index.
      */
-    const Route &getRecipient(uint32_t idx) const;
+    [[nodiscard]] const Route &getRecipient(uint32_t idx) const;
 
     /**
      * Returns all configured recipients for this hop.
      *
      * @return An unmodifiable list of recipients.
      */
-    const std::vector<Route> &getAllRecipients() const;
+    [[nodiscard]] const std::vector<Route> &getAllRecipients() const;
 
     /**
      * Returns a list of all configured recipients whose first hop matches this.
@@ -82,7 +82,7 @@ public:
      *
      * @return True to invoke {@link RoutingPolicy#select(RoutingContext)} on resend.
      */
-    bool getSelectOnRetry() const;
+    [[nodiscard]] bool getSelectOnRetry() const { return _selectOnRetry; }
 
     /**
      * Sets whether or not the policy is required to reselect if resending occurs.
@@ -90,35 +90,38 @@ public:
      * @param selectOnRetry The value to set.
      * @return This, to allow chaining.
      */
-    RoutingContext &setSelectOnRetry(bool selectOnRetry);
+    RoutingContext &setSelectOnRetry(bool selectOnRetry) {
+        _selectOnRetry = selectOnRetry;
+        return *this;
+    }
 
     /**
      * Returns the route that contains the routing policy that spawned this.
      *
      * @return The route.
      */
-    const Route &getRoute() const;
+    [[nodiscard]] const Route &getRoute() const;
 
     /**
      * Returns the hop that contains the routing policy that spawned this.
      *
      * @return The hop.
      */
-    const Hop &getHop() const;
+    [[nodiscard]] const Hop &getHop() const;
 
     /**
      * Returns the index of the hop directive that spawned this.
      *
      * @return The directive index.
      */
-    uint32_t getDirectiveIndex() const;
+    [[nodiscard]] uint32_t getDirectiveIndex() const { return _directive; }
 
     /**
      * Returns the policy directive that spawned this.
      *
      * @return The directive object.
      */
-    const PolicyDirective &getDirective() const;
+    [[nodiscard]] const PolicyDirective &getDirective() const;
 
     /**
      * Returns the part of the route string that precedes the active policy directive. This is the same as calling
@@ -126,7 +129,7 @@ public:
      *
      * @return The hop prefix.
      */
-    string getHopPrefix() const;
+    [[nodiscard]] string getHopPrefix() const;
 
     /**
      * Returns the remainder of the route string immediately following the active policy directive. This is the same as
@@ -134,21 +137,21 @@ public:
      *
      * @return The hop suffix.
      */
-    string getHopSuffix() const;
+    [[nodiscard]] string getHopSuffix() const;
 
     /**
      * Returns the routing specific context object.
      *
      * @return The context.
      */
-    Context &getContext();
+    Context &getContext() { return _context; }
 
     /**
      * Returns a const reference to the routing specific context object.
      *
      * @return The context.
      */
-    const Context &getContext() const;
+    [[nodiscard]] const Context &getContext() const { return _context; }
 
     /**
      * Sets a routing specific context object that will be available at merge().
@@ -156,14 +159,17 @@ public:
      * @param context An arbitrary object.
      * @return This, to allow chaining.
      */
-    RoutingContext &setContext(const Context &ctx);
+    RoutingContext &setContext(const Context &ctx) {
+        _context = ctx;
+        return *this;
+    }
 
     /**
      * Returns the message being routed.
      *
      * @return The message.
      */
-    const Message &getMessage() const;
+    [[nodiscard]] const Message &getMessage() const;
 
     /**
      * Adds a string to the trace of the message being routed.
@@ -174,18 +180,11 @@ public:
     void trace(uint32_t level, const string &note);
 
     /**
-     * Returns whether or not a reply is available.
-     *
-     * @return True if a reply is set.
-     */
-    bool hasReply() const;
-
-    /**
      * Returns the reply generated by the associated routing policy.
      *
      * @return The reply.
      */
-    const Reply &getReply() const;
+    [[nodiscard]] const Reply &getReply() const;
 
     /**
      * Sets the reply generated by the associated routing policy.
@@ -226,14 +225,14 @@ public:
      *
      * @return True if there is at least one child.
      */
-    bool hasChildren() const;
+    [[nodiscard]] bool hasChildren() const;
 
     /**
      * Returns the number of children the owning routing node has.
      *
      * @return The child count.
      */
-    uint32_t getNumChildren() const;
+    [[nodiscard]] uint32_t getNumChildren() const;
 
     /**
      * Returns an iterator for the child routing nodes.
@@ -263,7 +262,7 @@ public:
      *
      * @return The mirror api.
      */
-    const slobrok::api::IMirrorAPI &getMirror() const;
+    [[nodiscard]] const slobrok::api::IMirrorAPI &getMirror() const;
 
     /**
      * Adds the given error code to the list of codes that the associated routing policy <u>may</u> consume. This is

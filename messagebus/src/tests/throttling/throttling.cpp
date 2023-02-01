@@ -4,7 +4,6 @@
 #include <vespa/messagebus/destinationsession.h>
 #include <vespa/messagebus/dynamicthrottlepolicy.h>
 #include <vespa/messagebus/routablequeue.h>
-#include <vespa/messagebus/routing/retrytransienterrorspolicy.h>
 #include <vespa/messagebus/routing/routingspec.h>
 #include <vespa/messagebus/sourcesession.h>
 #include <vespa/messagebus/sourcesessionparams.h>
@@ -41,7 +40,7 @@ RoutingSpec getRouting()
     return RoutingSpec()
         .addTable(RoutingTableSpec("Simple")
                   .addHop(HopSpec("dst", "dst/session"))
-                  .addRoute(RouteSpec("dst").addHop("dst")));
+                  .addRoute(std::move(RouteSpec("dst").addHop("dst"))));
 }
 
 bool waitQueueSize(RoutableQueue &queue, uint32_t size)

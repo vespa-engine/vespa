@@ -123,7 +123,7 @@ Test::testAdvanced(TestData &data)
     data._srcServer.mb.setupRouting(RoutingSpec().addTable(RoutingTableSpec(SimpleProtocol::NAME)
                                                            .addHop(HopSpec("bar", "dst/bar"))
                                                            .addHop(HopSpec("baz", "dst/baz"))
-                                                           .addRoute(RouteSpec("baz").addHop("baz"))));
+                                                           .addRoute(std::move(RouteSpec("baz").addHop("baz")))));
     string route = vespalib::make_string("[Custom:%s,bar,route:baz,dst/cox,?dst/unknown]",
                                               data._fooSession->getConnectionSpec().c_str());
     EXPECT_TRUE(data._srcSession->send(createMessage("msg"), Route::parse(route)).isAccepted());

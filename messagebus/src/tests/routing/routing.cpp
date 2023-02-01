@@ -804,7 +804,7 @@ void
 Test::testRecognizeRouteDirective(TestData &data)
 {
     data._srcServer.mb.setupRouting(RoutingSpec().addTable(RoutingTableSpec(SimpleProtocol::NAME)
-                                                           .addRoute(RouteSpec("dst").addHop("dst/session"))
+                                                           .addRoute(std::move(RouteSpec("dst").addHop("dst/session")))
                                                            .addHop(HopSpec("dir", "route:dst"))));
     EXPECT_TRUE(data._srcSession->send(createMessage("msg"), Route::parse("dir")).isAccepted());
     Message::UP msg = data._dstHandler.getMessage(RECEPTOR_TIMEOUT);
@@ -819,7 +819,7 @@ void
 Test::testRecognizeRouteName(TestData &data)
 {
     data._srcServer.mb.setupRouting(RoutingSpec().addTable(RoutingTableSpec(SimpleProtocol::NAME)
-                                                           .addRoute(RouteSpec("dst").addHop("dst/session"))));
+                                                           .addRoute(std::move(RouteSpec("dst").addHop("dst/session")))));
     EXPECT_TRUE(data._srcSession->send(createMessage("msg"), Route::parse("dst")).isAccepted());
     Message::UP msg = data._dstHandler.getMessage(RECEPTOR_TIMEOUT);
     ASSERT_TRUE(msg);
@@ -846,7 +846,7 @@ void
 Test::testRouteResolutionOverflow(TestData &data)
 {
     data._srcServer.mb.setupRouting(RoutingSpec().addTable(RoutingTableSpec(SimpleProtocol::NAME)
-                                                           .addRoute(RouteSpec("foo").addHop("route:foo"))));
+                                                           .addRoute(std::move(RouteSpec("foo").addHop("route:foo")))));
     EXPECT_TRUE(data._srcSession->send(createMessage("msg"), "foo").isAccepted());
     Reply::UP reply = data._srcHandler.getReply(RECEPTOR_TIMEOUT);
     ASSERT_TRUE(reply);
@@ -858,7 +858,7 @@ void
 Test::testInsertRoute(TestData &data)
 {
     data._srcServer.mb.setupRouting(RoutingSpec().addTable(RoutingTableSpec(SimpleProtocol::NAME)
-                                                           .addRoute(RouteSpec("foo").addHop("dst/session").addHop("bar"))));
+                                                           .addRoute(std::move(RouteSpec("foo").addHop("dst/session").addHop("bar")))));
     EXPECT_TRUE(data._srcSession->send(createMessage("msg"), Route::parse("route:foo baz")).isAccepted());
     Message::UP msg = data._dstHandler.getMessage(RECEPTOR_TIMEOUT);
     ASSERT_TRUE(msg);
@@ -1302,7 +1302,7 @@ void
 Test::testHopBlueprintIgnoresReply(TestData &data)
 {
     data._srcServer.mb.setupRouting(RoutingSpec().addTable(RoutingTableSpec(SimpleProtocol::NAME)
-                                                           .addHop(HopSpec("foo", "dst/session").setIgnoreResult(true))));
+                                                           .addHop(std::move(HopSpec("foo", "dst/session").setIgnoreResult(true)))));
     EXPECT_TRUE(data._srcSession->send(createMessage("msg"), Route::parse("foo")).isAccepted());
     Message::UP msg = data._dstHandler.getMessage(RECEPTOR_TIMEOUT);
     ASSERT_TRUE(msg);
@@ -1419,7 +1419,7 @@ Test::requireThatIgnoreFlagPersistsThroughHopLookup(TestData &data)
 void 
 Test::requireThatIgnoreFlagPersistsThroughRouteLookup(TestData &data)
 {
-    setupRouting(data, RoutingTableSpec(SimpleProtocol::NAME).addRoute(RouteSpec("foo").addHop("dst/unknown")));
+    setupRouting(data, RoutingTableSpec(SimpleProtocol::NAME).addRoute(std::move(RouteSpec("foo").addHop("dst/unknown"))));
     ASSERT_TRUE(testSend(data, "?foo"));
     ASSERT_TRUE(testTrace(data, StringList().add("Ignoring errors in reply.")));
 }

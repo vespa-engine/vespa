@@ -18,7 +18,7 @@ struct Handler : public IMessageHandler
 {
     DestinationSession::UP session;
 
-    Handler(MessageBus &mb) : session() {
+    explicit Handler(MessageBus &mb) : session() {
         session = mb.createDestinationSession("session", true, *this);
     }
     ~Handler() override {
@@ -33,7 +33,7 @@ RoutingSpec getRouting() {
     return RoutingSpec()
         .addTable(RoutingTableSpec("Simple")
                   .addHop(HopSpec("test", "test/session"))
-                  .addRoute(RouteSpec("test").addHop("test")));
+                  .addRoute(std::move(RouteSpec("test").addHop("test"))));
 }
 
 TEST_SETUP(Test);
