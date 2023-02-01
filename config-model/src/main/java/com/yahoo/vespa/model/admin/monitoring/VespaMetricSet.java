@@ -461,7 +461,7 @@ public class VespaMetricSet {
         addMetric(metrics, "content.proton.documentdb.removed.document_store.memory_usage.onhold_bytes.average");
 
         // document store cache
-        addMetric(metrics, "content.proton.documentdb.ready.document_store.cache.memory_usage.average", werwerew );
+        addMetric(metrics, "content.proton.documentdb.ready.document_store.cache.memory_usage.average");
         addMetric(metrics, "content.proton.documentdb.ready.document_store.cache.hit_rate.average");
         addMetric(metrics, "content.proton.documentdb.ready.document_store.cache.lookups.rate");
         addMetric(metrics, "content.proton.documentdb.ready.document_store.cache.invalidations.rate");
