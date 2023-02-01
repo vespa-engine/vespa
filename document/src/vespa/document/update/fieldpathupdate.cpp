@@ -38,7 +38,7 @@ parseDocumentSelection(vespalib::stringref query, const DocumentTypeRepo& repo)
 
 }  // namespace
 
-FieldPathUpdate::FieldPathUpdate(FieldPathUpdateType type)
+FieldPathUpdate::FieldPathUpdate(FieldPathUpdateType type) noexcept
     : _type(type),
       _originalFieldPath(),
       _originalWhereClause()

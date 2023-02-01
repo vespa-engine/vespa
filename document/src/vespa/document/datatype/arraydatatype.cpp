@@ -17,6 +17,8 @@ ArrayDataType::ArrayDataType(const DataType& nestedType)
 {
 }
 
+ArrayDataType::~ArrayDataType() = default;
+
 FieldValue::UP
 ArrayDataType::createFieldValue() const
 {

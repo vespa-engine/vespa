@@ -16,6 +16,7 @@ public:
     AnnotationReferenceDataType(const AnnotationType &type, int id);
     AnnotationReferenceDataType(const AnnotationReferenceDataType &) = delete;
     AnnotationReferenceDataType & operator=(const AnnotationReferenceDataType &) = delete;
+    ~AnnotationReferenceDataType() override;
     const AnnotationType &getAnnotationType() const;
     void print(std::ostream &out, bool verbose, const std::string &indent) const override;
     std::unique_ptr<FieldValue> createFieldValue() const override;
