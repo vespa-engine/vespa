@@ -17,6 +17,8 @@ IndexEnvironment::IndexEnvironment(const ITableManager & tableManager) :
 {
 }
 
+IndexEnvironment::IndexEnvironment(const IndexEnvironment &) = default;
+IndexEnvironment::IndexEnvironment(IndexEnvironment &&) noexcept = default;
 IndexEnvironment::~IndexEnvironment() = default;
 
 bool

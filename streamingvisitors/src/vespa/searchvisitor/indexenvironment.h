@@ -32,7 +32,9 @@ private:
 
 public:
     IndexEnvironment(const search::fef::ITableManager & tableManager);
-    ~IndexEnvironment();
+    IndexEnvironment(IndexEnvironment &&) noexcept;
+    IndexEnvironment(const IndexEnvironment &);
+    ~IndexEnvironment() override;
 
     const search::fef::Properties & getProperties() const override { return _properties; }
 
