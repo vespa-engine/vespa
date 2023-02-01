@@ -5,6 +5,7 @@ import ai.vespa.http.DomainName;
 import com.yahoo.concurrent.UncheckedTimeoutException;
 import com.yahoo.config.application.api.DeploymentSpec;
 import com.yahoo.config.provision.ApplicationId;
+import com.yahoo.config.provision.CloudAccount;
 import com.yahoo.config.provision.zone.RoutingMethod;
 import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.transaction.Mutex;
@@ -20,6 +21,8 @@ import com.yahoo.vespa.hosted.controller.api.integration.dns.Record;
 import com.yahoo.vespa.hosted.controller.api.integration.dns.Record.Type;
 import com.yahoo.vespa.hosted.controller.api.integration.dns.RecordData;
 import com.yahoo.vespa.hosted.controller.api.integration.dns.RecordName;
+import com.yahoo.vespa.hosted.controller.api.integration.dns.VpcEndpointService.DnsChallenge;
+import com.yahoo.vespa.hosted.controller.api.integration.dns.VpcEndpointService.State;
 import com.yahoo.vespa.hosted.controller.api.integration.dns.WeightedAliasTarget;
 import com.yahoo.vespa.hosted.controller.api.integration.dns.WeightedDirectTarget;
 import com.yahoo.vespa.hosted.controller.application.Endpoint;
@@ -27,12 +30,14 @@ import com.yahoo.vespa.hosted.controller.application.EndpointId;
 import com.yahoo.vespa.hosted.controller.application.EndpointList;
 import com.yahoo.vespa.hosted.controller.application.TenantAndApplicationId;
 import com.yahoo.vespa.hosted.controller.dns.NameServiceForwarder;
+import com.yahoo.vespa.hosted.controller.dns.NameServiceQueue;
 import com.yahoo.vespa.hosted.controller.dns.NameServiceQueue.Priority;
 import com.yahoo.vespa.hosted.controller.dns.NameServiceRequest;
 import com.yahoo.vespa.hosted.controller.persistence.CuratorDb;
 import com.yahoo.yolean.UncheckedInterruptedException;
 
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
@@ -394,26 +399,49 @@ public class RoutingPolicies {
                                  new ClusterId(deploymentId, endpoint.cluster()),
                                  loadBalancer.cloudAccount())
                   .ifPresent(challenge -> {
-                      try {
+                      try (Mutex lock = db.lockNameServiceQueue()) {
                           nameServiceForwarderIn(deploymentId.zoneId()).createTxt(challenge.name(), List.of(challenge.data()), Priority.high, ownerOf(deploymentId));
-                          Instant doom = controller.clock().instant().plusSeconds(30);
-                          while (controller.clock().instant().isBefore(doom)) {
-                              try (Mutex lock = controller.curator().lockNameServiceQueue()) {
-                                  if (controller.curator().readNameServiceQueue().requests().stream()
-                                                .noneMatch(request -> request.name().equals(challenge.name()))) {
-                                      try { challenge.trigger().run(); }
-                                      finally { nameServiceForwarderIn(deploymentId.zoneId()).removeRecords(Type.TXT, challenge.name(), Priority.normal, ownerOf(deploymentId)); }
-                                      return;
-                                  }
-                              }
-                              Thread.sleep(100);
-                          }
-                          throw new UncheckedTimeoutException("timed out waiting for DNS challenge to be processed");
-                      }
-                      catch (InterruptedException e) {
-                          throw new UncheckedInterruptedException("interrupted waiting for DNS challenge to be processed", e, true);
+                          db.writeDnsChallenge(challenge);
                       }
                   });
+    }
+
+    /** Returns true iff. the given deployment has no incomplete DNS challenges, or throws (and cleans up) on errors. */
+    public boolean processDnsChallenges(DeploymentId deploymentId) {
+        try (Mutex lock = db.lockNameServiceQueue()) {
+            List<DnsChallenge> challenges = new ArrayList<>(db.readDnsChallenges(deploymentId));
+            Set<RecordName> pendingRequests = controller.curator().readNameServiceQueue().requests().stream()
+                                                        .map(NameServiceRequest::name)
+                                                        .collect(Collectors.toSet());
+            try {
+                challenges.removeIf(challenge -> {
+                    if (challenge.state() == State.pending) {
+                        if (pendingRequests.contains(challenge.name())) return false;
+                        challenge = challenge.withState(State.ready);
+                    }
+                    State state = controller.serviceRegistry().vpcEndpointService().process(challenge);
+                    if (state == State.done) {
+                        removeDnsChallenge(challenge);
+                        return true;
+                    }
+                    else {
+                        db.writeDnsChallenge(challenge.withState(state));
+                        return false;
+                    }
+                });
+                return challenges.isEmpty();
+            }
+            catch (RuntimeException e) {
+                challenges.forEach(this::removeDnsChallenge);
+                throw e;
+            }
+        }
+    }
+
+    private void removeDnsChallenge(DnsChallenge challenge) {
+        nameServiceForwarderIn(challenge.clusterId().deploymentId().zoneId())
+                .removeRecords(Type.TXT, challenge.name(), Priority.normal, ownerOf(challenge.clusterId().deploymentId()));
+        db.deleteDnsChallenge(challenge.clusterId());
     }
 
     /**

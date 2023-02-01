@@ -358,8 +358,12 @@ public class InternalStepRunner implements StepRunner {
             controller.jobController().locked(id, lockedRun -> lockedRun.withSummary(null));
             Availability availability = endpointsAvailable(id.application(), id.type().zone(), logger);
             if (availability.status() == Status.available) {
+                if (controller.routing().policies().processDnsChallenges(new DeploymentId(id.application(), id.type().zone()))) {
                     logger.log("Installation succeeded!");
                     return Optional.of(running);
+                }
+                logger.log("Waiting for DNS challenges for private endpoints to be processed");
+                return Optional.empty();
             }
             logger.log(availability.message());
             if (availability.status() == Status.endpointsUnavailable && timedOut(id, deployment.get(), timeouts.endpoint())) {
