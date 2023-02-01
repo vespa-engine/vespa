@@ -52,6 +52,7 @@ public:
      * @param buf A byte buffer that contains a serialized message.
      */
     SearchResult(document::ByteBuffer & buf);
+    SearchResult(SearchResult &&) noexcept;
     ~SearchResult();
 
     AggregatorList       & getGroupingList()               { return _groupingList; }

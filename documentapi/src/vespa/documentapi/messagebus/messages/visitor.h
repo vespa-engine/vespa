@@ -265,8 +265,9 @@ protected:
     DocumentReply::UP doCreateReply() const override;
 
 public:
-    DocumentListMessage();
-    DocumentListMessage(document::BucketId bid);
+    DocumentListMessage() noexcept;
+    DocumentListMessage(document::BucketId bid) noexcept;
+    ~DocumentListMessage() override;
 
     const document::BucketId& getBucketId() const { return _bucketId; };
     void setBucketId(const document::BucketId& id) { _bucketId = id; };

@@ -15,7 +15,7 @@ class RoutingSpec;
 class IConfigHandler
 {
 public:
-    virtual ~IConfigHandler() {}
+    virtual ~IConfigHandler() = default;
 
     /**
      * This method will be invoked to initialize or change the routing

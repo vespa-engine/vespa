@@ -23,12 +23,12 @@ GetBucketListReply::BucketInfo::operator==(const GetBucketListReply::BucketInfo 
     return _bucket == rhs._bucket && _bucketInformation == rhs._bucketInformation;
 }
 
-GetBucketListReply::GetBucketListReply() :
+GetBucketListReply::GetBucketListReply() noexcept :
     DocumentReply(DocumentProtocol::REPLY_GETBUCKETLIST),
     _buckets()
-{
-    // empty
-}
+{ }
+
+GetBucketListReply::~GetBucketListReply() = default;
 
 std::ostream &
 operator<<(std::ostream &out, const GetBucketListReply::BucketInfo &info)

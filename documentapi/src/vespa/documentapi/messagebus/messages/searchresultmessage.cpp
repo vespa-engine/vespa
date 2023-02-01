@@ -13,9 +13,9 @@ SearchResultMessage::SearchResultMessage() :
     // empty
 }
 
-SearchResultMessage::SearchResultMessage(const SearchResult &result) :
+SearchResultMessage::SearchResultMessage(SearchResult &&result) :
     VisitorMessage(),
-    SearchResult(result)
+    SearchResult(std::move(result))
 {
     // empty
 }
@@ -23,7 +23,7 @@ SearchResultMessage::SearchResultMessage(const SearchResult &result) :
 DocumentReply::UP
 SearchResultMessage::doCreateReply() const
 {
-    return DocumentReply::UP(new VisitorReply(DocumentProtocol::REPLY_SEARCHRESULT));
+    return std::make_unique<VisitorReply>(DocumentProtocol::REPLY_SEARCHRESULT);
 }
 
 uint32_t

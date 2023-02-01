@@ -31,8 +31,8 @@ public:
      *
      * @param identity The identity to use for the server.
      */
-    TestFrame(const std::shared_ptr<const document::DocumentTypeRepo> &repo,
-              const string &ident = "anonymous");
+    explicit TestFrame(const std::shared_ptr<const document::DocumentTypeRepo> &repo,
+                       const string &ident = "anonymous");
 
     TestFrame &operator=(const TestFrame &) = delete;
 

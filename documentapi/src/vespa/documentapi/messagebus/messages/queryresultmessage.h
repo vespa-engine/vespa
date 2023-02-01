@@ -32,7 +32,7 @@ public:
      *
      * @param result The result to set.
      */
-    QueryResultMessage(const vdslib::SearchResult & result, const vdslib::DocumentSummary & summary);
+    QueryResultMessage(vdslib::SearchResult && result, const vdslib::DocumentSummary & summary);
 
     uint32_t getApproxSize() const override;
     uint32_t getType() const override;

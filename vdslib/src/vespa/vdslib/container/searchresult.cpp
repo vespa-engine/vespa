@@ -121,9 +121,11 @@ SearchResult::SearchResult(document::ByteBuffer & buf) :
     deserialize(buf);
 }
 
+SearchResult::SearchResult(SearchResult &&) noexcept = default;
 SearchResult::~SearchResult() = default;
 
-void SearchResult::deserialize(document::ByteBuffer & buf)
+void
+SearchResult::deserialize(document::ByteBuffer & buf)
 {
     int32_t tmp;
     buf.getIntNetwork(tmp); _totalHits = tmp;

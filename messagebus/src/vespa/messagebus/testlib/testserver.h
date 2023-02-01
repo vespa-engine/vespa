@@ -23,6 +23,7 @@ protected:
 
 public:
     VersionedRPCNetwork(const RPCNetworkParams &params);
+    ~VersionedRPCNetwork() override;
     void setVersion(const vespalib::Version &version);
 };
 
