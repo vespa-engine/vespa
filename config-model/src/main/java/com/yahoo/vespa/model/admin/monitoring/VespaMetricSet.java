@@ -53,12 +53,12 @@ public class VespaMetricSet {
     private static Set<Metric> getSentinelMetrics() {
         Set<Metric> metrics = new LinkedHashSet<>();
 
-        metrics.add(new Metric("sentinel.restarts.count"));
-        metrics.add(new Metric("sentinel.totalRestarts.last"));
-        metrics.add(new Metric("sentinel.uptime.last"));
+        addMetric(metrics, "sentinel.restarts.count");
+        addMetric(metrics, "sentinel.totalRestarts.last");
+        addMetric(metrics, "sentinel.uptime.last");
 
-        metrics.add(new Metric("sentinel.running.count"));
-        metrics.add(new Metric("sentinel.running.last"));
+        addMetric(metrics, "sentinel.running.count");
+        addMetric(metrics, "sentinel.running.last");
 
         return metrics;
     }
@@ -66,36 +66,36 @@ public class VespaMetricSet {
     private static Set<Metric> getOtherMetrics() {
         Set<Metric> metrics = new LinkedHashSet<>();
 
-        metrics.add(new Metric("slobrok.heartbeats.failed.count"));
-        metrics.add(new Metric("slobrok.missing.consensus.count"));
+        addMetric(metrics, "slobrok.heartbeats.failed.count");
+        addMetric(metrics, "slobrok.missing.consensus.count");
 
-        metrics.add(new Metric("logd.processed.lines.count"));
-        metrics.add(new Metric("worker.connections.max"));
-        metrics.add(new Metric("endpoint.certificate.expiry.seconds"));
+        addMetric(metrics, "logd.processed.lines.count");
+        addMetric(metrics, "worker.connections.max");
+        addMetric(metrics, "endpoint.certificate.expiry.seconds");
 
         // Java (JRT) TLS metrics
-        metrics.add(new Metric("jrt.transport.tls-certificate-verification-failures"));
-        metrics.add(new Metric("jrt.transport.peer-authorization-failures"));
-        metrics.add(new Metric("jrt.transport.server.tls-connections-established"));
-        metrics.add(new Metric("jrt.transport.client.tls-connections-established"));
-        metrics.add(new Metric("jrt.transport.server.unencrypted-connections-established"));
-        metrics.add(new Metric("jrt.transport.client.unencrypted-connections-established"));
+        addMetric(metrics, "jrt.transport.tls-certificate-verification-failures");
+        addMetric(metrics, "jrt.transport.peer-authorization-failures");
+        addMetric(metrics, "jrt.transport.server.tls-connections-established");
+        addMetric(metrics, "jrt.transport.client.tls-connections-established");
+        addMetric(metrics, "jrt.transport.server.unencrypted-connections-established");
+        addMetric(metrics, "jrt.transport.client.unencrypted-connections-established");
 
         // C++ TLS metrics
-        metrics.add(new Metric("vds.server.network.tls-handshakes-failed"));
-        metrics.add(new Metric("vds.server.network.peer-authorization-failures"));
-        metrics.add(new Metric("vds.server.network.client.tls-connections-established"));
-        metrics.add(new Metric("vds.server.network.server.tls-connections-established"));
-        metrics.add(new Metric("vds.server.network.client.insecure-connections-established"));
-        metrics.add(new Metric("vds.server.network.server.insecure-connections-established"));
-        metrics.add(new Metric("vds.server.network.tls-connections-broken"));
-        metrics.add(new Metric("vds.server.network.failed-tls-config-reloads"));
+        addMetric(metrics, "vds.server.network.tls-handshakes-failed");
+        addMetric(metrics, "vds.server.network.peer-authorization-failures");
+        addMetric(metrics, "vds.server.network.client.tls-connections-established");
+        addMetric(metrics, "vds.server.network.server.tls-connections-established");
+        addMetric(metrics, "vds.server.network.client.insecure-connections-established");
+        addMetric(metrics, "vds.server.network.server.insecure-connections-established");
+        addMetric(metrics, "vds.server.network.tls-connections-broken");
+        addMetric(metrics, "vds.server.network.failed-tls-config-reloads");
 
         // C++ Fnet metrics
-        metrics.add(new Metric("vds.server.fnet.num-connections"));
+        addMetric(metrics, "vds.server.fnet.num-connections");
 
         // Node certificate
-        metrics.add(new Metric("node-certificate.expiry.seconds"));
+        addMetric(metrics, "node-certificate.expiry.seconds");
 
         return metrics;
     }
@@ -103,22 +103,22 @@ public class VespaMetricSet {
     private static Set<Metric> getConfigServerMetrics() {
         Set<Metric> metrics =new LinkedHashSet<>();
 
-        metrics.add(new Metric("configserver.requests.count"));
-        metrics.add(new Metric("configserver.failedRequests.count"));
-        metrics.add(new Metric("configserver.latency.max"));
-        metrics.add(new Metric("configserver.latency.sum"));
-        metrics.add(new Metric("configserver.latency.count"));
-        metrics.add(new Metric("configserver.cacheConfigElems.last"));
-        metrics.add(new Metric("configserver.cacheChecksumElems.last"));
-        metrics.add(new Metric("configserver.hosts.last"));
-        metrics.add(new Metric("configserver.delayedResponses.count"));
-        metrics.add(new Metric("configserver.sessionChangeErrors.count"));
+        addMetric(metrics, "configserver.requests.count");
+        addMetric(metrics, "configserver.failedRequests.count");
+        addMetric(metrics, "configserver.latency.max");
+        addMetric(metrics, "configserver.latency.sum");
+        addMetric(metrics, "configserver.latency.count");
+        addMetric(metrics, "configserver.cacheConfigElems.last");
+        addMetric(metrics, "configserver.cacheChecksumElems.last");
+        addMetric(metrics, "configserver.hosts.last");
+        addMetric(metrics, "configserver.delayedResponses.count");
+        addMetric(metrics, "configserver.sessionChangeErrors.count");
 
-        metrics.add(new Metric("configserver.zkZNodes.last"));
-        metrics.add(new Metric("configserver.zkAvgLatency.last"));
-        metrics.add(new Metric("configserver.zkMaxLatency.last"));
-        metrics.add(new Metric("configserver.zkConnections.last"));
-        metrics.add(new Metric("configserver.zkOutstandingRequests.last"));
+        addMetric(metrics, "configserver.zkZNodes.last");
+        addMetric(metrics, "configserver.zkAvgLatency.last");
+        addMetric(metrics, "configserver.zkMaxLatency.last");
+        addMetric(metrics, "configserver.zkConnections.last");
+        addMetric(metrics, "configserver.zkOutstandingRequests.last");
 
         return metrics;
     }
@@ -325,30 +325,30 @@ public class VespaMetricSet {
     }
 
     private static void addSearchNodeExecutorMetrics(Set<Metric> metrics, String prefix) {
-        metrics.add(new Metric(prefix + ".queuesize.max"));
-        metrics.add(new Metric(prefix + ".queuesize.sum"));
-        metrics.add(new Metric(prefix + ".queuesize.count"));
-        metrics.add(new Metric(prefix + ".accepted.rate"));
-        metrics.add(new Metric(prefix + ".wakeups.rate"));
-        metrics.add(new Metric(prefix + ".utilization.max"));
-        metrics.add(new Metric(prefix + ".utilization.sum"));
-        metrics.add(new Metric(prefix + ".utilization.count"));
+        addMetric(metrics, prefix + ".queuesize.max");
+        addMetric(metrics, prefix + ".queuesize.sum");
+        addMetric(metrics, prefix + ".queuesize.count");
+        addMetric(metrics, prefix + ".accepted.rate");
+        addMetric(metrics, prefix + ".wakeups.rate");
+        addMetric(metrics, prefix + ".utilization.max");
+        addMetric(metrics, prefix + ".utilization.sum");
+        addMetric(metrics, prefix + ".utilization.count");
     }
 
     private static Set<Metric> getSearchNodeMetrics() {
         Set<Metric> metrics = new LinkedHashSet<>();
 
-        metrics.add(new Metric("content.proton.documentdb.documents.total.last"));
-        metrics.add(new Metric("content.proton.documentdb.documents.ready.last"));
-        metrics.add(new Metric("content.proton.documentdb.documents.active.last"));
-        metrics.add(new Metric("content.proton.documentdb.documents.removed.last"));
+        addMetric(metrics, "content.proton.documentdb.documents.total.last");
+        addMetric(metrics, "content.proton.documentdb.documents.ready.last");
+        addMetric(metrics, "content.proton.documentdb.documents.active.last");
+        addMetric(metrics,"content.proton.documentdb.documents.removed.last");
 
-        metrics.add(new Metric("content.proton.documentdb.index.docs_in_memory.last"));
-        metrics.add(new Metric("content.proton.documentdb.disk_usage.last"));
-        metrics.add(new Metric("content.proton.documentdb.memory_usage.allocated_bytes.max"));
-        metrics.add(new Metric("content.proton.documentdb.heart_beat_age.last"));
-        metrics.add(new Metric("content.proton.transport.query.count.rate"));
-        metrics.add(new Metric("content.proton.docsum.docs.rate"));
+        addMetric(metrics, "content.proton.documentdb.index.docs_in_memory.last");
+        addMetric(metrics, "content.proton.documentdb.disk_usage.last");
+        addMetric(metrics,"content.proton.documentdb.memory_usage.allocated_bytes.max");
+        addMetric(metrics, "content.proton.documentdb.heart_beat_age.last");
+        addMetric(metrics, "content.proton.transport.query.count.rate");
+        addMetric(metrics, "content.proton.docsum.docs.rate");
         addMetric(metrics, "content.proton.docsum.latency", List.of("max", "sum", "count"));
         addMetric(metrics, "content.proton.transport.query.latency", List.of("max", "sum", "count"));
 
@@ -359,7 +359,7 @@ public class VespaMetricSet {
         addMetric(metrics, "content.proton.search_protocol.docsum.latency", List.of("max", "sum", "count"));
         addMetric(metrics, "content.proton.search_protocol.docsum.request_size", List.of("max", "sum", "count"));
         addMetric(metrics, "content.proton.search_protocol.docsum.reply_size", List.of("max", "sum", "count"));
-        metrics.add(new Metric("content.proton.search_protocol.docsum.requested_documents.count"));        
+        addMetric(metrics, "content.proton.search_protocol.docsum.requested_documents.count");
         
         // Executors shared between all document dbs
         addSearchNodeExecutorMetrics(metrics, "content.proton.executor.proton");
@@ -371,15 +371,15 @@ public class VespaMetricSet {
         addSearchNodeExecutorMetrics(metrics, "content.proton.executor.field_writer");
 
         // jobs
-        metrics.add(new Metric("content.proton.documentdb.job.total.average"));
-        metrics.add(new Metric("content.proton.documentdb.job.attribute_flush.average"));
-        metrics.add(new Metric("content.proton.documentdb.job.memory_index_flush.average"));
-        metrics.add(new Metric("content.proton.documentdb.job.disk_index_fusion.average"));
-        metrics.add(new Metric("content.proton.documentdb.job.document_store_flush.average"));
-        metrics.add(new Metric("content.proton.documentdb.job.document_store_compact.average"));
-        metrics.add(new Metric("content.proton.documentdb.job.bucket_move.average"));
-        metrics.add(new Metric("content.proton.documentdb.job.lid_space_compact.average"));
-        metrics.add(new Metric("content.proton.documentdb.job.removed_documents_prune.average"));
+        addMetric(metrics, "content.proton.documentdb.job.total.average");
+        addMetric(metrics, "content.proton.documentdb.job.attribute_flush.average");
+        addMetric(metrics, "content.proton.documentdb.job.memory_index_flush.average");
+        addMetric(metrics, "content.proton.documentdb.job.disk_index_fusion.average");
+        addMetric(metrics, "content.proton.documentdb.job.document_store_flush.average");
+        addMetric(metrics, "content.proton.documentdb.job.document_store_compact.average");
+        addMetric(metrics, "content.proton.documentdb.job.bucket_move.average");
+        addMetric(metrics, "content.proton.documentdb.job.lid_space_compact.average");
+        addMetric(metrics, "content.proton.documentdb.job.removed_documents_prune.average");
 
         // Threading service (per document db)
         addSearchNodeExecutorMetrics(metrics, "content.proton.documentdb.threading_service.master");
@@ -390,40 +390,40 @@ public class VespaMetricSet {
         addSearchNodeExecutorMetrics(metrics, "content.proton.documentdb.threading_service.attribute_field_writer");
 
         // lid space
-        metrics.add(new Metric("content.proton.documentdb.ready.lid_space.lid_bloat_factor.average"));
-        metrics.add(new Metric("content.proton.documentdb.notready.lid_space.lid_bloat_factor.average"));
-        metrics.add(new Metric("content.proton.documentdb.removed.lid_space.lid_bloat_factor.average"));
-        metrics.add(new Metric("content.proton.documentdb.ready.lid_space.lid_fragmentation_factor.average"));
-        metrics.add(new Metric("content.proton.documentdb.notready.lid_space.lid_fragmentation_factor.average"));
-        metrics.add(new Metric("content.proton.documentdb.removed.lid_space.lid_fragmentation_factor.average"));
-        metrics.add(new Metric("content.proton.documentdb.ready.lid_space.lid_limit.last"));
-        metrics.add(new Metric("content.proton.documentdb.notready.lid_space.lid_limit.last"));
-        metrics.add(new Metric("content.proton.documentdb.removed.lid_space.lid_limit.last"));
-        metrics.add(new Metric("content.proton.documentdb.ready.lid_space.highest_used_lid.last"));
-        metrics.add(new Metric("content.proton.documentdb.notready.lid_space.highest_used_lid.last"));
-        metrics.add(new Metric("content.proton.documentdb.removed.lid_space.highest_used_lid.last"));
-        metrics.add(new Metric("content.proton.documentdb.ready.lid_space.used_lids.last"));
-        metrics.add(new Metric("content.proton.documentdb.notready.lid_space.used_lids.last"));
-        metrics.add(new Metric("content.proton.documentdb.removed.lid_space.used_lids.last"));
+        addMetric(metrics, "content.proton.documentdb.ready.lid_space.lid_bloat_factor.average");
+        addMetric(metrics, "content.proton.documentdb.notready.lid_space.lid_bloat_factor.average");
+        addMetric(metrics, "content.proton.documentdb.removed.lid_space.lid_bloat_factor.average");
+        addMetric(metrics, "content.proton.documentdb.ready.lid_space.lid_fragmentation_factor.average");
+        addMetric(metrics, "content.proton.documentdb.notready.lid_space.lid_fragmentation_factor.average");
+        addMetric(metrics, "content.proton.documentdb.removed.lid_space.lid_fragmentation_factor.average");
+        addMetric(metrics, "content.proton.documentdb.ready.lid_space.lid_limit.last");
+        addMetric(metrics, "content.proton.documentdb.notready.lid_space.lid_limit.last");
+        addMetric(metrics, "content.proton.documentdb.removed.lid_space.lid_limit.last");
+        addMetric(metrics, "content.proton.documentdb.ready.lid_space.highest_used_lid.last");
+        addMetric(metrics, "content.proton.documentdb.notready.lid_space.highest_used_lid.last");
+        addMetric(metrics, "content.proton.documentdb.removed.lid_space.highest_used_lid.last");
+        addMetric(metrics, "content.proton.documentdb.ready.lid_space.used_lids.last");
+        addMetric(metrics, "content.proton.documentdb.notready.lid_space.used_lids.last");
+        addMetric(metrics, "content.proton.documentdb.removed.lid_space.used_lids.last");
 
         // bucket move
-        metrics.add(new Metric("content.proton.documentdb.bucket_move.buckets_pending.last"));
+        addMetric(metrics, "content.proton.documentdb.bucket_move.buckets_pending.last");
 
         // resource usage
-        metrics.add(new Metric("content.proton.resource_usage.disk.average"));
-        metrics.add(new Metric("content.proton.resource_usage.disk_usage.total.max"));
-        metrics.add(new Metric("content.proton.resource_usage.disk_usage.total_utilization.max"));
-        metrics.add(new Metric("content.proton.resource_usage.disk_usage.transient.max"));
-        metrics.add(new Metric("content.proton.resource_usage.memory.average"));
-        metrics.add(new Metric("content.proton.resource_usage.memory_usage.total.max"));
-        metrics.add(new Metric("content.proton.resource_usage.memory_usage.total_utilization.max"));
-        metrics.add(new Metric("content.proton.resource_usage.memory_usage.transient.max"));
-        metrics.add(new Metric("content.proton.resource_usage.memory_mappings.max"));
-        metrics.add(new Metric("content.proton.resource_usage.open_file_descriptors.max"));
-        metrics.add(new Metric("content.proton.resource_usage.feeding_blocked.max"));
-        metrics.add(new Metric("content.proton.resource_usage.malloc_arena.max"));
-        metrics.add(new Metric("content.proton.documentdb.attribute.resource_usage.address_space.max"));
-        metrics.add(new Metric("content.proton.documentdb.attribute.resource_usage.feeding_blocked.max"));
+        addMetric(metrics, "content.proton.resource_usage.disk.average");
+        addMetric(metrics, "content.proton.resource_usage.disk_usage.total.max");
+        addMetric(metrics, "content.proton.resource_usage.disk_usage.total_utilization.max");
+        addMetric(metrics, "content.proton.resource_usage.disk_usage.transient.max");
+        addMetric(metrics, "content.proton.resource_usage.memory.average");
+        addMetric(metrics, "content.proton.resource_usage.memory_usage.total.max");
+        addMetric(metrics, "content.proton.resource_usage.memory_usage.total_utilization.max");
+        addMetric(metrics, "content.proton.resource_usage.memory_usage.transient.max");
+        addMetric(metrics, "content.proton.resource_usage.memory_mappings.max");
+        addMetric(metrics, "content.proton.resource_usage.open_file_descriptors.max");
+        addMetric(metrics, "content.proton.resource_usage.feeding_blocked.max");
+        addMetric(metrics, "content.proton.resource_usage.malloc_arena.max");
+        addMetric(metrics, "content.proton.documentdb.attribute.resource_usage.address_space.max");
+        addMetric(metrics, "content.proton.documentdb.attribute.resource_usage.feeding_blocked.max");
 
         // CPU util
         addMetric(metrics, "content.proton.resource_usage.cpu_util.setup", List.of("max", "sum", "count"));
@@ -433,74 +433,74 @@ public class VespaMetricSet {
         addMetric(metrics, "content.proton.resource_usage.cpu_util.other", List.of("max", "sum", "count"));
 
         // transaction log
-        metrics.add(new Metric("content.proton.transactionlog.entries.average"));
-        metrics.add(new Metric("content.proton.transactionlog.disk_usage.average"));
-        metrics.add(new Metric("content.proton.transactionlog.replay_time.last"));
+        addMetric(metrics, "content.proton.transactionlog.entries.average");
+        addMetric(metrics, "content.proton.transactionlog.disk_usage.average");
+        addMetric(metrics, "content.proton.transactionlog.replay_time.last");
 
         // document store
-        metrics.add(new Metric("content.proton.documentdb.ready.document_store.disk_usage.average"));
-        metrics.add(new Metric("content.proton.documentdb.ready.document_store.disk_bloat.average"));
-        metrics.add(new Metric("content.proton.documentdb.ready.document_store.max_bucket_spread.average"));
-        metrics.add(new Metric("content.proton.documentdb.ready.document_store.memory_usage.allocated_bytes.average"));
-        metrics.add(new Metric("content.proton.documentdb.ready.document_store.memory_usage.used_bytes.average"));
-        metrics.add(new Metric("content.proton.documentdb.ready.document_store.memory_usage.dead_bytes.average"));
-        metrics.add(new Metric("content.proton.documentdb.ready.document_store.memory_usage.onhold_bytes.average"));
-        metrics.add(new Metric("content.proton.documentdb.notready.document_store.disk_usage.average"));
-        metrics.add(new Metric("content.proton.documentdb.notready.document_store.disk_bloat.average"));
-        metrics.add(new Metric("content.proton.documentdb.notready.document_store.max_bucket_spread.average"));
-        metrics.add(new Metric("content.proton.documentdb.notready.document_store.memory_usage.allocated_bytes.average"));
-        metrics.add(new Metric("content.proton.documentdb.notready.document_store.memory_usage.used_bytes.average"));
-        metrics.add(new Metric("content.proton.documentdb.notready.document_store.memory_usage.dead_bytes.average"));
-        metrics.add(new Metric("content.proton.documentdb.notready.document_store.memory_usage.onhold_bytes.average"));
-        metrics.add(new Metric("content.proton.documentdb.removed.document_store.disk_usage.average"));
-        metrics.add(new Metric("content.proton.documentdb.removed.document_store.disk_bloat.average"));
-        metrics.add(new Metric("content.proton.documentdb.removed.document_store.max_bucket_spread.average"));
-        metrics.add(new Metric("content.proton.documentdb.removed.document_store.memory_usage.allocated_bytes.average"));
-        metrics.add(new Metric("content.proton.documentdb.removed.document_store.memory_usage.used_bytes.average"));
-        metrics.add(new Metric("content.proton.documentdb.removed.document_store.memory_usage.dead_bytes.average"));
-        metrics.add(new Metric("content.proton.documentdb.removed.document_store.memory_usage.onhold_bytes.average"));
+        addMetric(metrics, "content.proton.documentdb.ready.document_store.disk_usage.average");
+        addMetric(metrics, "content.proton.documentdb.ready.document_store.disk_bloat.average");
+        addMetric(metrics, "content.proton.documentdb.ready.document_store.max_bucket_spread.average");
+        addMetric(metrics, "content.proton.documentdb.ready.document_store.memory_usage.allocated_bytes.average");
+        addMetric(metrics, "content.proton.documentdb.ready.document_store.memory_usage.used_bytes.average");
+        addMetric(metrics, "content.proton.documentdb.ready.document_store.memory_usage.dead_bytes.average");
+        addMetric(metrics, "content.proton.documentdb.ready.document_store.memory_usage.onhold_bytes.average");
+        addMetric(metrics, "content.proton.documentdb.notready.document_store.disk_usage.average");
+        addMetric(metrics, "content.proton.documentdb.notready.document_store.disk_bloat.average");
+        addMetric(metrics, "content.proton.documentdb.notready.document_store.max_bucket_spread.average");
+        addMetric(metrics, "content.proton.documentdb.notready.document_store.memory_usage.allocated_bytes.average");
+        addMetric(metrics, "content.proton.documentdb.notready.document_store.memory_usage.used_bytes.average");
+        addMetric(metrics, "content.proton.documentdb.notready.document_store.memory_usage.dead_bytes.average");
+        addMetric(metrics, "content.proton.documentdb.notready.document_store.memory_usage.onhold_bytes.average");
+        addMetric(metrics, "content.proton.documentdb.removed.document_store.disk_usage.average");
+        addMetric(metrics, "content.proton.documentdb.removed.document_store.disk_bloat.average");
+        addMetric(metrics, "content.proton.documentdb.removed.document_store.max_bucket_spread.average");
+        addMetric(metrics, "content.proton.documentdb.removed.document_store.memory_usage.allocated_bytes.average");
+        addMetric(metrics, "content.proton.documentdb.removed.document_store.memory_usage.used_bytes.average");
+        addMetric(metrics, "content.proton.documentdb.removed.document_store.memory_usage.dead_bytes.average");
+        addMetric(metrics, "content.proton.documentdb.removed.document_store.memory_usage.onhold_bytes.average");
 
         // document store cache
-        metrics.add(new Metric("content.proton.documentdb.ready.document_store.cache.memory_usage.average"));
-        metrics.add(new Metric("content.proton.documentdb.ready.document_store.cache.hit_rate.average"));
-        metrics.add(new Metric("content.proton.documentdb.ready.document_store.cache.lookups.rate"));
-        metrics.add(new Metric("content.proton.documentdb.ready.document_store.cache.invalidations.rate"));
-        metrics.add(new Metric("content.proton.documentdb.notready.document_store.cache.memory_usage.average"));
-        metrics.add(new Metric("content.proton.documentdb.notready.document_store.cache.hit_rate.average"));
-        metrics.add(new Metric("content.proton.documentdb.notready.document_store.cache.lookups.rate"));
-        metrics.add(new Metric("content.proton.documentdb.notready.document_store.cache.invalidations.rate"));
+        addMetric(metrics, "content.proton.documentdb.ready.document_store.cache.memory_usage.average", werwerew );
+        addMetric(metrics, "content.proton.documentdb.ready.document_store.cache.hit_rate.average");
+        addMetric(metrics, "content.proton.documentdb.ready.document_store.cache.lookups.rate");
+        addMetric(metrics, "content.proton.documentdb.ready.document_store.cache.invalidations.rate");
+        addMetric(metrics, "content.proton.documentdb.notready.document_store.cache.memory_usage.average");
+        addMetric(metrics, "content.proton.documentdb.notready.document_store.cache.hit_rate.average");
+        addMetric(metrics, "content.proton.documentdb.notready.document_store.cache.lookups.rate");
+        addMetric(metrics, "content.proton.documentdb.notready.document_store.cache.invalidations.rate");
 
         // attribute
-        metrics.add(new Metric("content.proton.documentdb.ready.attribute.memory_usage.allocated_bytes.average"));
-        metrics.add(new Metric("content.proton.documentdb.ready.attribute.memory_usage.used_bytes.average"));
-        metrics.add(new Metric("content.proton.documentdb.ready.attribute.memory_usage.dead_bytes.average"));
-        metrics.add(new Metric("content.proton.documentdb.ready.attribute.memory_usage.onhold_bytes.average"));
-        metrics.add(new Metric("content.proton.documentdb.notready.attribute.memory_usage.allocated_bytes.average"));
-        metrics.add(new Metric("content.proton.documentdb.notready.attribute.memory_usage.used_bytes.average"));
-        metrics.add(new Metric("content.proton.documentdb.notready.attribute.memory_usage.dead_bytes.average"));
-        metrics.add(new Metric("content.proton.documentdb.notready.attribute.memory_usage.onhold_bytes.average"));
+        addMetric(metrics, "content.proton.documentdb.ready.attribute.memory_usage.allocated_bytes.average");
+        addMetric(metrics, "content.proton.documentdb.ready.attribute.memory_usage.used_bytes.average");
+        addMetric(metrics, "content.proton.documentdb.ready.attribute.memory_usage.dead_bytes.average");
+        addMetric(metrics, "content.proton.documentdb.ready.attribute.memory_usage.onhold_bytes.average");
+        addMetric(metrics, "content.proton.documentdb.notready.attribute.memory_usage.allocated_bytes.average");
+        addMetric(metrics, "content.proton.documentdb.notready.attribute.memory_usage.used_bytes.average");
+        addMetric(metrics, "content.proton.documentdb.notready.attribute.memory_usage.dead_bytes.average");
+        addMetric(metrics, "content.proton.documentdb.notready.attribute.memory_usage.onhold_bytes.average");
 
         // index
-        metrics.add(new Metric("content.proton.documentdb.index.memory_usage.allocated_bytes.average"));
-        metrics.add(new Metric("content.proton.documentdb.index.memory_usage.used_bytes.average"));
-        metrics.add(new Metric("content.proton.documentdb.index.memory_usage.dead_bytes.average"));
-        metrics.add(new Metric("content.proton.documentdb.index.memory_usage.onhold_bytes.average"));
+        addMetric(metrics, "content.proton.documentdb.index.memory_usage.allocated_bytes.average");
+        addMetric(metrics, "content.proton.documentdb.index.memory_usage.used_bytes.average");
+        addMetric(metrics, "content.proton.documentdb.index.memory_usage.dead_bytes.average");
+        addMetric(metrics, "content.proton.documentdb.index.memory_usage.onhold_bytes.average");
 
         // matching
-        metrics.add(new Metric("content.proton.documentdb.matching.queries.rate"));
-        metrics.add(new Metric("content.proton.documentdb.matching.soft_doomed_queries.rate"));
+        addMetric(metrics, "content.proton.documentdb.matching.queries.rate");
+        addMetric(metrics, "content.proton.documentdb.matching.soft_doomed_queries.rate");
         addMetric(metrics, "content.proton.documentdb.matching.query_latency", List.of("max", "sum", "count"));
         addMetric(metrics, "content.proton.documentdb.matching.query_setup_time", List.of("max", "sum", "count"));
         addMetric(metrics, "content.proton.documentdb.matching.docs_matched", List.of("rate", "count"));
-        metrics.add(new Metric("content.proton.documentdb.matching.rank_profile.queries.rate"));
-        metrics.add(new Metric("content.proton.documentdb.matching.rank_profile.soft_doomed_queries.rate"));
+        addMetric(metrics, "content.proton.documentdb.matching.rank_profile.queries.rate");
+        addMetric(metrics, "content.proton.documentdb.matching.rank_profile.soft_doomed_queries.rate");
         addMetric(metrics, "content.proton.documentdb.matching.rank_profile.soft_doom_factor", List.of("min", "max", "sum", "count"));
         addMetric(metrics, "content.proton.documentdb.matching.rank_profile.query_latency", List.of("max", "sum", "count"));
         addMetric(metrics, "content.proton.documentdb.matching.rank_profile.query_setup_time", List.of("max", "sum", "count"));
         addMetric(metrics, "content.proton.documentdb.matching.rank_profile.grouping_time", List.of("max", "sum", "count"));
         addMetric(metrics, "content.proton.documentdb.matching.rank_profile.rerank_time", List.of("max", "sum", "count"));
         addMetric(metrics, "content.proton.documentdb.matching.rank_profile.docs_matched", List.of("rate", "count"));
-        metrics.add(new Metric("content.proton.documentdb.matching.rank_profile.limited_queries.rate"));
+        addMetric(metrics, "content.proton.documentdb.matching.rank_profile.limited_queries.rate");
 
         // feeding
         addMetric(metrics, "content.proton.documentdb.feeding.commit.operations", List.of("max", "sum", "count", "rate"));
@@ -515,15 +515,15 @@ public class VespaMetricSet {
         // TODO: For the purpose of this file and likely elsewhere, all but the last aggregate specifier,
         // TODO: such as 'average' and 'sum' in the metric names below are just confusing and can be mentally
         // TODO: disregarded when considering metric names. Consider cleaning up for Vespa 9.
-        metrics.add(new Metric("vds.datastored.alldisks.buckets.average"));
-        metrics.add(new Metric("vds.datastored.alldisks.docs.average"));
-        metrics.add(new Metric("vds.datastored.alldisks.bytes.average"));
+        addMetric(metrics, "vds.datastored.alldisks.buckets.average");
+        addMetric(metrics, "vds.datastored.alldisks.docs.average");
+        addMetric(metrics, "vds.datastored.alldisks.bytes.average");
         addMetric(metrics, "vds.visitor.allthreads.averagevisitorlifetime", List.of("max", "sum", "count"));
         addMetric(metrics, "vds.visitor.allthreads.averagequeuewait", List.of("max", "sum", "count"));
         addMetric(metrics, "vds.visitor.allthreads.queuesize", List.of("max", "sum", "count"));
-        metrics.add(new Metric("vds.visitor.allthreads.completed.rate"));
-        metrics.add(new Metric("vds.visitor.allthreads.created.rate"));
-        metrics.add(new Metric("vds.visitor.allthreads.failed.rate"));
+        addMetric(metrics, "vds.visitor.allthreads.completed.rate");
+        addMetric(metrics, "vds.visitor.allthreads.created.rate");
+        addMetric(metrics, "vds.visitor.allthreads.failed.rate");
         addMetric(metrics, "vds.visitor.allthreads.averagemessagesendtime", List.of("max", "sum", "count"));
         addMetric(metrics, "vds.visitor.allthreads.averageprocessingtime", List.of("max", "sum", "count"));
 
@@ -539,137 +539,137 @@ public class VespaMetricSet {
         addMetric(metrics, "vds.filestor.allthreads.mergedatawritelatency", List.of("max", "sum", "count"));
         addMetric(metrics, "vds.filestor.allthreads.put_latency", List.of("max", "sum", "count"));
         addMetric(metrics, "vds.filestor.allthreads.remove_latency", List.of("max", "sum", "count"));
-        metrics.add(new Metric("vds.filestor.allstripes.throttled_rpc_direct_dispatches.rate"));
-        metrics.add(new Metric("vds.filestor.allstripes.throttled_persistence_thread_polls.rate"));
-        metrics.add(new Metric("vds.filestor.allstripes.timeouts_waiting_for_throttle_token.rate"));
+        addMetric(metrics, "vds.filestor.allstripes.throttled_rpc_direct_dispatches.rate");
+        addMetric(metrics, "vds.filestor.allstripes.throttled_persistence_thread_polls.rate");
+        addMetric(metrics, "vds.filestor.allstripes.timeouts_waiting_for_throttle_token.rate");
         
-        metrics.add(new Metric("vds.filestor.allthreads.put.count.rate"));
-        metrics.add(new Metric("vds.filestor.allthreads.put.failed.rate"));
-        metrics.add(new Metric("vds.filestor.allthreads.put.test_and_set_failed.rate"));
+        addMetric(metrics, "vds.filestor.allthreads.put.count.rate");
+        addMetric(metrics, "vds.filestor.allthreads.put.failed.rate");
+        addMetric(metrics, "vds.filestor.allthreads.put.test_and_set_failed.rate");
         addMetric(metrics, "vds.filestor.allthreads.put.latency", List.of("max", "sum", "count"));
         addMetric(metrics, "vds.filestor.allthreads.put.request_size", List.of("max", "sum", "count"));
-        metrics.add(new Metric("vds.filestor.allthreads.remove.count.rate"));
-        metrics.add(new Metric("vds.filestor.allthreads.remove.failed.rate"));
-        metrics.add(new Metric("vds.filestor.allthreads.remove.test_and_set_failed.rate"));
+        addMetric(metrics, "vds.filestor.allthreads.remove.count.rate");
+        addMetric(metrics, "vds.filestor.allthreads.remove.failed.rate");
+        addMetric(metrics, "vds.filestor.allthreads.remove.test_and_set_failed.rate");
         addMetric(metrics, "vds.filestor.allthreads.remove.latency", List.of("max", "sum", "count"));
         addMetric(metrics, "vds.filestor.allthreads.remove.request_size", List.of("max", "sum", "count"));
-        metrics.add(new Metric("vds.filestor.allthreads.get.count.rate"));
-        metrics.add(new Metric("vds.filestor.allthreads.get.failed.rate"));
+        addMetric(metrics, "vds.filestor.allthreads.get.count.rate");
+        addMetric(metrics, "vds.filestor.allthreads.get.failed.rate");
         addMetric(metrics, "vds.filestor.allthreads.get.latency", List.of("max", "sum", "count"));
         addMetric(metrics, "vds.filestor.allthreads.get.request_size", List.of("max", "sum", "count"));
-        metrics.add(new Metric("vds.filestor.allthreads.update.count.rate"));
-        metrics.add(new Metric("vds.filestor.allthreads.update.failed.rate"));
-        metrics.add(new Metric("vds.filestor.allthreads.update.test_and_set_failed.rate"));
+        addMetric(metrics, "vds.filestor.allthreads.update.count.rate");
+        addMetric(metrics, "vds.filestor.allthreads.update.failed.rate");
+        addMetric(metrics, "vds.filestor.allthreads.update.test_and_set_failed.rate");
         addMetric(metrics, "vds.filestor.allthreads.update.latency", List.of("max", "sum", "count"));
         addMetric(metrics, "vds.filestor.allthreads.update.request_size", List.of("max", "sum", "count"));
         addMetric(metrics, "vds.filestor.allthreads.createiterator.latency", List.of("max", "sum", "count"));
-        metrics.add(new Metric("vds.filestor.allthreads.createiterator.count.rate"));
-        metrics.add(new Metric("vds.filestor.allthreads.visit.count.rate"));
+        addMetric(metrics, "vds.filestor.allthreads.createiterator.count.rate");
+        addMetric(metrics, "vds.filestor.allthreads.visit.count.rate");
         addMetric(metrics, "vds.filestor.allthreads.visit.latency", List.of("max", "sum", "count"));
-        metrics.add(new Metric("vds.filestor.allthreads.remove_location.count.rate"));
+        addMetric(metrics, "vds.filestor.allthreads.remove_location.count.rate");
         addMetric(metrics, "vds.filestor.allthreads.remove_location.latency", List.of("max", "sum", "count"));
-        metrics.add(new Metric("vds.filestor.allthreads.splitbuckets.count.rate"));
-        metrics.add(new Metric("vds.filestor.allthreads.joinbuckets.count.rate"));
-        metrics.add(new Metric("vds.filestor.allthreads.deletebuckets.count.rate"));
-        metrics.add(new Metric("vds.filestor.allthreads.deletebuckets.failed.rate"));
+        addMetric(metrics, "vds.filestor.allthreads.splitbuckets.count.rate");
+        addMetric(metrics, "vds.filestor.allthreads.joinbuckets.count.rate");
+        addMetric(metrics, "vds.filestor.allthreads.deletebuckets.count.rate");
+        addMetric(metrics, "vds.filestor.allthreads.deletebuckets.failed.rate");
         addMetric(metrics, "vds.filestor.allthreads.deletebuckets.latency", List.of("max", "sum", "count"));
-        metrics.add(new Metric("vds.filestor.allthreads.setbucketstates.count.rate"));
+        addMetric(metrics, "vds.filestor.allthreads.setbucketstates.count.rate");
         return metrics;
     }
     private static Set<Metric> getDistributorMetrics() {
         Set<Metric> metrics = new LinkedHashSet<>();
-        metrics.add(new Metric("vds.idealstate.buckets_rechecking.average"));
-        metrics.add(new Metric("vds.idealstate.idealstate_diff.average"));
-        metrics.add(new Metric("vds.idealstate.buckets_toofewcopies.average"));
-        metrics.add(new Metric("vds.idealstate.buckets_toomanycopies.average"));
-        metrics.add(new Metric("vds.idealstate.buckets.average"));
-        metrics.add(new Metric("vds.idealstate.buckets_notrusted.average"));
-        metrics.add(new Metric("vds.idealstate.bucket_replicas_moving_out.average"));
-        metrics.add(new Metric("vds.idealstate.bucket_replicas_copying_out.average"));
-        metrics.add(new Metric("vds.idealstate.bucket_replicas_copying_in.average"));
-        metrics.add(new Metric("vds.idealstate.bucket_replicas_syncing.average"));
-        metrics.add(new Metric("vds.idealstate.max_observed_time_since_last_gc_sec.average"));
-        metrics.add(new Metric("vds.idealstate.delete_bucket.done_ok.rate"));
-        metrics.add(new Metric("vds.idealstate.delete_bucket.done_failed.rate"));
-        metrics.add(new Metric("vds.idealstate.delete_bucket.pending.average"));
-        metrics.add(new Metric("vds.idealstate.merge_bucket.done_ok.rate"));
-        metrics.add(new Metric("vds.idealstate.merge_bucket.done_failed.rate"));
-        metrics.add(new Metric("vds.idealstate.merge_bucket.pending.average"));
-        metrics.add(new Metric("vds.idealstate.merge_bucket.blocked.rate"));
-        metrics.add(new Metric("vds.idealstate.merge_bucket.throttled.rate"));
-        metrics.add(new Metric("vds.idealstate.merge_bucket.source_only_copy_changed.rate"));
-        metrics.add(new Metric("vds.idealstate.merge_bucket.source_only_copy_delete_blocked.rate"));
-        metrics.add(new Metric("vds.idealstate.merge_bucket.source_only_copy_delete_failed.rate"));
-        metrics.add(new Metric("vds.idealstate.split_bucket.done_ok.rate"));
-        metrics.add(new Metric("vds.idealstate.split_bucket.done_failed.rate"));
-        metrics.add(new Metric("vds.idealstate.split_bucket.pending.average"));
-        metrics.add(new Metric("vds.idealstate.join_bucket.done_ok.rate"));
-        metrics.add(new Metric("vds.idealstate.join_bucket.done_failed.rate"));
-        metrics.add(new Metric("vds.idealstate.join_bucket.pending.average"));
-        metrics.add(new Metric("vds.idealstate.garbage_collection.done_ok.rate"));
-        metrics.add(new Metric("vds.idealstate.garbage_collection.done_failed.rate"));
-        metrics.add(new Metric("vds.idealstate.garbage_collection.pending.average"));
+        addMetric(metrics, "vds.idealstate.buckets_rechecking.average");
+        addMetric(metrics, "vds.idealstate.idealstate_diff.average");
+        addMetric(metrics, "vds.idealstate.buckets_toofewcopies.average");
+        addMetric(metrics, "vds.idealstate.buckets_toomanycopies.average");
+        addMetric(metrics, "vds.idealstate.buckets.average");
+        addMetric(metrics, "vds.idealstate.buckets_notrusted.average");
+        addMetric(metrics, "vds.idealstate.bucket_replicas_moving_out.average");
+        addMetric(metrics, "vds.idealstate.bucket_replicas_copying_out.average");
+        addMetric(metrics, "vds.idealstate.bucket_replicas_copying_in.average");
+        addMetric(metrics, "vds.idealstate.bucket_replicas_syncing.average");
+        addMetric(metrics, "vds.idealstate.max_observed_time_since_last_gc_sec.average");
+        addMetric(metrics, "vds.idealstate.delete_bucket.done_ok.rate");
+        addMetric(metrics, "vds.idealstate.delete_bucket.done_failed.rate");
+        addMetric(metrics, "vds.idealstate.delete_bucket.pending.average");
+        addMetric(metrics, "vds.idealstate.merge_bucket.done_ok.rate");
+        addMetric(metrics, "vds.idealstate.merge_bucket.done_failed.rate");
+        addMetric(metrics, "vds.idealstate.merge_bucket.pending.average");
+        addMetric(metrics, "vds.idealstate.merge_bucket.blocked.rate");
+        addMetric(metrics, "vds.idealstate.merge_bucket.throttled.rate");
+        addMetric(metrics, "vds.idealstate.merge_bucket.source_only_copy_changed.rate");
+        addMetric(metrics, "vds.idealstate.merge_bucket.source_only_copy_delete_blocked.rate");
+        addMetric(metrics, "vds.idealstate.merge_bucket.source_only_copy_delete_failed.rate");
+        addMetric(metrics, "vds.idealstate.split_bucket.done_ok.rate");
+        addMetric(metrics, "vds.idealstate.split_bucket.done_failed.rate");
+        addMetric(metrics, "vds.idealstate.split_bucket.pending.average");
+        addMetric(metrics, "vds.idealstate.join_bucket.done_ok.rate");
+        addMetric(metrics, "vds.idealstate.join_bucket.done_failed.rate");
+        addMetric(metrics, "vds.idealstate.join_bucket.pending.average");
+        addMetric(metrics, "vds.idealstate.garbage_collection.done_ok.rate");
+        addMetric(metrics, "vds.idealstate.garbage_collection.done_failed.rate");
+        addMetric(metrics, "vds.idealstate.garbage_collection.pending.average");
         addMetric(metrics, "vds.idealstate.garbage_collection.documents_removed", List.of("count", "rate"));
 
         addMetric(metrics, "vds.distributor.puts.latency", List.of("max", "sum", "count"));
-        metrics.add(new Metric("vds.distributor.puts.ok.rate"));
-        metrics.add(new Metric("vds.distributor.puts.failures.total.rate"));
-        metrics.add(new Metric("vds.distributor.puts.failures.notfound.rate"));
-        metrics.add(new Metric("vds.distributor.puts.failures.test_and_set_failed.rate"));
-        metrics.add(new Metric("vds.distributor.puts.failures.concurrent_mutations.rate"));
-        metrics.add(new Metric("vds.distributor.puts.failures.notconnected.rate"));
-        metrics.add(new Metric("vds.distributor.puts.failures.notready.rate"));
-        metrics.add(new Metric("vds.distributor.puts.failures.wrongdistributor.rate"));
-        metrics.add(new Metric("vds.distributor.puts.failures.safe_time_not_reached.rate"));
-        metrics.add(new Metric("vds.distributor.puts.failures.storagefailure.rate"));
-        metrics.add(new Metric("vds.distributor.puts.failures.timeout.rate"));
-        metrics.add(new Metric("vds.distributor.puts.failures.busy.rate"));
-        metrics.add(new Metric("vds.distributor.puts.failures.inconsistent_bucket.rate"));
+        addMetric(metrics, "vds.distributor.puts.ok.rate");
+        addMetric(metrics, "vds.distributor.puts.failures.total.rate");
+        addMetric(metrics, "vds.distributor.puts.failures.notfound.rate");
+        addMetric(metrics, "vds.distributor.puts.failures.test_and_set_failed.rate");
+        addMetric(metrics, "vds.distributor.puts.failures.concurrent_mutations.rate");
+        addMetric(metrics, "vds.distributor.puts.failures.notconnected.rate");
+        addMetric(metrics, "vds.distributor.puts.failures.notready.rate");
+        addMetric(metrics, "vds.distributor.puts.failures.wrongdistributor.rate");
+        addMetric(metrics, "vds.distributor.puts.failures.safe_time_not_reached.rate");
+        addMetric(metrics, "vds.distributor.puts.failures.storagefailure.rate");
+        addMetric(metrics, "vds.distributor.puts.failures.timeout.rate");
+        addMetric(metrics, "vds.distributor.puts.failures.busy.rate");
+        addMetric(metrics, "vds.distributor.puts.failures.inconsistent_bucket.rate");
         addMetric(metrics, "vds.distributor.removes.latency", List.of("max", "sum", "count"));
-        metrics.add(new Metric("vds.distributor.removes.ok.rate"));
-        metrics.add(new Metric("vds.distributor.removes.failures.total.rate"));
-        metrics.add(new Metric("vds.distributor.removes.failures.notfound.rate"));
-        metrics.add(new Metric("vds.distributor.removes.failures.test_and_set_failed.rate"));
-        metrics.add(new Metric("vds.distributor.removes.failures.concurrent_mutations.rate"));
+        addMetric(metrics, "vds.distributor.removes.ok.rate");
+        addMetric(metrics, "vds.distributor.removes.failures.total.rate");
+        addMetric(metrics, "vds.distributor.removes.failures.notfound.rate");
+        addMetric(metrics, "vds.distributor.removes.failures.test_and_set_failed.rate");
+        addMetric(metrics, "vds.distributor.removes.failures.concurrent_mutations.rate");
         addMetric(metrics, "vds.distributor.updates.latency", List.of("max", "sum", "count"));
-        metrics.add(new Metric("vds.distributor.updates.ok.rate"));
-        metrics.add(new Metric("vds.distributor.updates.failures.total.rate"));
-        metrics.add(new Metric("vds.distributor.updates.failures.notfound.rate"));
-        metrics.add(new Metric("vds.distributor.updates.failures.test_and_set_failed.rate"));
-        metrics.add(new Metric("vds.distributor.updates.failures.concurrent_mutations.rate"));
-        metrics.add(new Metric("vds.distributor.updates.diverging_timestamp_updates.rate"));
-        metrics.add(new Metric("vds.distributor.removelocations.ok.rate"));
-        metrics.add(new Metric("vds.distributor.removelocations.failures.total.rate"));
+        addMetric(metrics, "vds.distributor.updates.ok.rate");
+        addMetric(metrics, "vds.distributor.updates.failures.total.rate");
+        addMetric(metrics, "vds.distributor.updates.failures.notfound.rate");
+        addMetric(metrics, "vds.distributor.updates.failures.test_and_set_failed.rate");
+        addMetric(metrics, "vds.distributor.updates.failures.concurrent_mutations.rate");
+        addMetric(metrics, "vds.distributor.updates.diverging_timestamp_updates.rate");
+        addMetric(metrics, "vds.distributor.removelocations.ok.rate");
+        addMetric(metrics, "vds.distributor.removelocations.failures.total.rate");
         addMetric(metrics, "vds.distributor.gets.latency", List.of("max", "sum", "count"));
-        metrics.add(new Metric("vds.distributor.gets.ok.rate"));
-        metrics.add(new Metric("vds.distributor.gets.failures.total.rate"));
-        metrics.add(new Metric("vds.distributor.gets.failures.notfound.rate"));
+        addMetric(metrics, "vds.distributor.gets.ok.rate");
+        addMetric(metrics, "vds.distributor.gets.failures.total.rate");
+        addMetric(metrics, "vds.distributor.gets.failures.notfound.rate");
         addMetric(metrics, "vds.distributor.visitor.latency", List.of("max", "sum", "count"));
-        metrics.add(new Metric("vds.distributor.visitor.ok.rate"));
-        metrics.add(new Metric("vds.distributor.visitor.failures.total.rate"));
-        metrics.add(new Metric("vds.distributor.visitor.failures.notready.rate"));
-        metrics.add(new Metric("vds.distributor.visitor.failures.notconnected.rate"));
-        metrics.add(new Metric("vds.distributor.visitor.failures.wrongdistributor.rate"));
-        metrics.add(new Metric("vds.distributor.visitor.failures.safe_time_not_reached.rate"));
-        metrics.add(new Metric("vds.distributor.visitor.failures.storagefailure.rate"));
-        metrics.add(new Metric("vds.distributor.visitor.failures.timeout.rate"));
-        metrics.add(new Metric("vds.distributor.visitor.failures.busy.rate"));
-        metrics.add(new Metric("vds.distributor.visitor.failures.inconsistent_bucket.rate"));
-        metrics.add(new Metric("vds.distributor.visitor.failures.notfound.rate"));
+        addMetric(metrics, "vds.distributor.visitor.ok.rate");
+        addMetric(metrics, "vds.distributor.visitor.failures.total.rate");
+        addMetric(metrics, "vds.distributor.visitor.failures.notready.rate");
+        addMetric(metrics, "vds.distributor.visitor.failures.notconnected.rate");
+        addMetric(metrics, "vds.distributor.visitor.failures.wrongdistributor.rate");
+        addMetric(metrics, "vds.distributor.visitor.failures.safe_time_not_reached.rate");
+        addMetric(metrics, "vds.distributor.visitor.failures.storagefailure.rate");
+        addMetric(metrics, "vds.distributor.visitor.failures.timeout.rate");
+        addMetric(metrics, "vds.distributor.visitor.failures.busy.rate");
+        addMetric(metrics, "vds.distributor.visitor.failures.inconsistent_bucket.rate");
+        addMetric(metrics, "vds.distributor.visitor.failures.notfound.rate");
 
-        metrics.add(new Metric("vds.distributor.docsstored.average"));
-        metrics.add(new Metric("vds.distributor.bytesstored.average"));
+        addMetric(metrics, "vds.distributor.docsstored.average");
+        addMetric(metrics, "vds.distributor.bytesstored.average");
 
-        metrics.add(new Metric("vds.bouncer.clock_skew_aborts.count"));
+        addMetric(metrics, "vds.bouncer.clock_skew_aborts.count");
 
         addMetric(metrics, "vds.mergethrottler.averagequeuewaitingtime", List.of("max", "sum", "count"));
         addMetric(metrics, "vds.mergethrottler.queuesize", List.of("max", "sum", "count"));
         addMetric(metrics, "vds.mergethrottler.active_window_size", List.of("max", "sum", "count"));
-        metrics.add(new Metric("vds.mergethrottler.bounced_due_to_back_pressure.rate"));
-        metrics.add(new Metric("vds.mergethrottler.locallyexecutedmerges.ok.rate"));
-        metrics.add(new Metric("vds.mergethrottler.mergechains.ok.rate"));
-        metrics.add(new Metric("vds.mergethrottler.mergechains.failures.busy.rate"));
-        metrics.add(new Metric("vds.mergethrottler.mergechains.failures.total.rate"));
+        addMetric(metrics, "vds.mergethrottler.bounced_due_to_back_pressure.rate");
+        addMetric(metrics, "vds.mergethrottler.locallyexecutedmerges.ok.rate");
+        addMetric(metrics, "vds.mergethrottler.mergechains.ok.rate");
+        addMetric(metrics, "vds.mergethrottler.mergechains.failures.busy.rate");
+        addMetric(metrics, "vds.mergethrottler.mergechains.failures.total.rate");
         return metrics;
     }
 
