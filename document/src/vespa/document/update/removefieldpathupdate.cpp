@@ -8,10 +8,12 @@ namespace document {
 
 using namespace fieldvalue;
 
-RemoveFieldPathUpdate::RemoveFieldPathUpdate()
+RemoveFieldPathUpdate::RemoveFieldPathUpdate() noexcept
     : FieldPathUpdate(Remove)
 {
 }
+
+RemoveFieldPathUpdate::~RemoveFieldPathUpdate() = default;
 
 RemoveFieldPathUpdate::RemoveFieldPathUpdate(stringref fieldPath, stringref whereClause)
     : FieldPathUpdate(Remove, fieldPath, whereClause)
@@ -36,7 +38,7 @@ namespace {
 
 class RemoveIteratorHandler : public IteratorHandler {
 public:
-    RemoveIteratorHandler() {}
+    RemoveIteratorHandler() = default;
 
     ModificationStatus doModify(FieldValue &) override {
         return ModificationStatus::REMOVED;

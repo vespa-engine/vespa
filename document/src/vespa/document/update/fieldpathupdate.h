@@ -61,7 +61,7 @@ public:
 
 protected:
     /** To be used for deserialization */
-    FieldPathUpdate(FieldPathUpdateType type);
+    FieldPathUpdate(FieldPathUpdateType type) noexcept;
     FieldPathUpdate(const FieldPathUpdate &);
     FieldPathUpdate & operator =(const FieldPathUpdate &);
 

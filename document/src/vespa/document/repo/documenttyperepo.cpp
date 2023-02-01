@@ -42,7 +42,7 @@ class DocumentTypeMap : public DocumentTypeMapT
 {
 public:
     using DocumentTypeMapT::DocumentTypeMapT;
-    DataTypeRepo * findRepo(int32_t doc_type_id) const {
+    [[nodiscard]] DataTypeRepo * findRepo(int32_t doc_type_id) const {
         auto iter = find(doc_type_id);
         if (iter == end()) {
             return nullptr;
@@ -66,27 +66,33 @@ class Repo {
     hash_map<string, const DataType *> _name_map;
 
 public:
-    ~Repo() {}
+    Repo() noexcept;
+    ~Repo();
 
-    void inherit(const Repo &parent);
-    bool addDataType(const DataType &type);
-    template <typename T> const DataType * addDataType(unique_ptr<T> type);
+    void inherit(const Repo &parent) __attribute__((noinline));
+    bool addDataType(const DataType &type) __attribute__((noinline));
+    template <typename T> const DataType * addDataType(unique_ptr<T> type) __attribute__((noinline));
 
-    const DataType &addTensorType(const string &spec);
-    const DataType *lookup(int32_t id) const;
-    const DataType *lookup(stringref name) const;
-    const DataType &findOrThrow(int32_t id) const;
-    const DataType &findOrThrowOrCreate(int32_t id, const string &detailedType);
+    const DataType &addTensorType(const string &spec) __attribute__((noinline));
+    const DataType *lookup(int32_t id) const __attribute__((noinline));
+    const DataType *lookup(stringref name) const __attribute__((noinline));
+    const DataType &findOrThrow(int32_t id) const __attribute__((noinline));
+    const DataType &findOrThrowOrCreate(int32_t id, const string &detailedType) __attribute__((noinline));
 };
 
-void Repo::inherit(const Repo &parent) {
+Repo::Repo() noexcept = default;
+Repo::~Repo() = default;
+
+void
+Repo::inherit(const Repo &parent) {
     _id_map.insert(parent._id_map.begin(), parent._id_map.end());
     _tensorTypes.insert(parent._tensorTypes.begin(), parent._tensorTypes.end());
     _name_map.insert(parent._name_map.begin(), parent._name_map.end());
 }
 
 // Returns true if a reference to type is stored.
-bool Repo::addDataType(const DataType &type) {
+bool
+Repo::addDataType(const DataType &type) {
     const DataType *& data_type = _id_map[type.getId()];
     if (data_type) {
         if (data_type->equals(type) && (data_type->getName() == type.getName())) {
@@ -109,7 +115,8 @@ bool Repo::addDataType(const DataType &type) {
 }
 
 template <typename T>
-const DataType* Repo::addDataType(unique_ptr<T> type) {
+const DataType*
+Repo::addDataType(unique_ptr<T> type) {
     int id = type->getId();
     if (addDataType(*type)) {
         _owned_types.emplace_back(std::move(type));
@@ -306,6 +313,7 @@ void addStruct(int32_t id, const Datatype::Sstruct &s, Repo &repo) {
     }
 }
 
+void addArray(int32_t id, const Datatype::Array &a, Repo &repo) __attribute__((noinline));
 void addArray(int32_t id, const Datatype::Array &a, Repo &repo) {
     const DataType &nested = repo.findOrThrow(a.element.id);
     repo.addDataType(std::make_unique<ArrayDataType>(nested, id));
@@ -330,6 +338,7 @@ void addAnnotationRef(int32_t id, const Datatype::Annotationref &a, Repo &r, con
     r.addDataType(std::make_unique<AnnotationReferenceDataType>(*type, id));
 }
 
+void addDataType(const Datatype &type, Repo &repo, const AnnotationTypeRepo &a_repo) __attribute__((noinline));
 void addDataType(const Datatype &type, Repo &repo, const AnnotationTypeRepo &a_repo) {
     switch (type.type) {
     case Datatype::Type::STRUCT:
@@ -567,38 +576,8 @@ private:
     MadeTypes _made_types;
     std::set<int> _needed_idx_set;
 
-    void apply() {
-        findNeeded();
-        for (const CDocType & docT : _input) {
-            auto [iter,succ] = _doc_types_in_progress.emplace(docT.idx,
-                                                              DocTypeInProgress(docT, _output));
-            LOG_ASSERT(succ);
-            auto & dtInP = iter->second;
-            createSimpleTypes(dtInP);
-            createEmptyStructs(dtInP);
-            initializeDocTypeAndInheritAnnotations(dtInP);
-            createEmptyAnnotationTypes(dtInP);
-        }
-        for (auto & [id, dtInP] : _doc_types_in_progress) {
-            createReferenceTypes(dtInP);
-        }
-        createComplexTypes();
-        fillStructs();
-        for (auto & [id, dtInP] : _doc_types_in_progress) {
-            fillDocument(dtInP);
-            fillAnnotationTypes(dtInP);
-        }
-        for (const auto & docT : _input) {
-            for (const auto & structT : docT.structtype) {
-                performStructInherit(structT.idx);
-            }
-        }
-    }
-
-    void madeType(const DataType *t, int idx) {
-        _made_types[idx] = t;
-        _needed_idx_set.erase(idx);
-    }
+    void apply() __attribute__((noinline));
+    void madeType(const DataType *t, int idx) __attribute__((noinline));
 
     void createSimpleTypes(DocTypeInProgress & dtInP) {
         for (const auto & primT : dtInP.cfg.primitivetype) {
@@ -734,58 +713,8 @@ private:
         }
     }
 
-    void createComplexTypes() {
-        while (_needed_idx_set.size() > 0) {
-            size_t missing_cnt = _needed_idx_set.size();
-            for (const auto & docT : _input) {
-                auto iter = _doc_types_in_progress.find(docT.idx);
-                LOG_ASSERT(iter != _doc_types_in_progress.end());
-                auto & dtInP = iter->second;
-                createComplexTypesForDocType(dtInP.cfg, dtInP.repo());
-            }
-            if (_needed_idx_set.size() == missing_cnt) {
-                for (int idx : _needed_idx_set) {
-                    LOG(error, "no progress, datatype [idx %d] still missing", idx);
-                }
-                throw IllegalArgumentException("no progress");
-            }
-            LOG(debug, "retry complex types, %zd missing", _needed_idx_set.size());
-        }
-    }
-
-    void createComplexTypesForDocType(const CDocType & docT, Repo& repo) {
-        for (const auto & arrT : docT.arraytype) {
-            if (_made_types[arrT.idx] != nullptr) {
-                continue; // OK already
-            }
-            if (const DataType * nested = _made_types[arrT.elementtype]) {
-                auto at = std::make_unique<ArrayDataType>(*nested, arrT.internalid);
-                madeType(repo.addDataType(std::move(at)), arrT.idx);
-            }
-        }
-        for (const auto & mapT : docT.maptype) {
-            if (_made_types[mapT.idx] != nullptr) {
-                continue; // OK already
-            }
-            const DataType * kt = _made_types[mapT.keytype];
-            const DataType * vt = _made_types[mapT.valuetype];
-            if (kt && vt) {
-                auto mt = std::make_unique<MapDataType>(*kt, *vt, mapT.internalid);
-                madeType(repo.addDataType(std::move(mt)), mapT.idx);
-            }
-        }
-        for (const auto & wsetT : docT.wsettype) {
-            if (_made_types[wsetT.idx] != nullptr) {
-                continue; // OK already
-            }
-            if (const DataType * nested = _made_types[wsetT.elementtype]) {
-                auto wt = std::make_unique<WeightedSetDataType>(*nested,
-                                                                wsetT.createifnonexistent, wsetT.removeifzero,
-                                                                wsetT.internalid);
-                madeType(repo.addDataType(std::move(wt)), wsetT.idx);
-            }
-        }
-    }
+    void createComplexTypes() __attribute__((noinline));
+    void createComplexTypesForDocType(const CDocType & docT, Repo& repo) __attribute__((noinline));
 
     void fillStructs() {
         for (auto & [idx, in_progress] : _structs_in_progress) {
@@ -970,16 +899,107 @@ private:
     }
 
 public:
-    ApplyNewDoctypeConfig(const DocumenttypesConfig::DoctypeVector & input,
-                          DocumentTypeMap & output)
-        : _input(input), _output(output)
-    {
-        apply();
-    }
+    ApplyNewDoctypeConfig(const DocumenttypesConfig::DoctypeVector & input, DocumentTypeMap & output);
     ~ApplyNewDoctypeConfig();
 };
 
+ApplyNewDoctypeConfig::ApplyNewDoctypeConfig(const DocumenttypesConfig::DoctypeVector & input, DocumentTypeMap & output)
+    : _input(input),
+      _output(output)
+{
+    apply();
+}
 ApplyNewDoctypeConfig::~ApplyNewDoctypeConfig() = default;
+
+void
+ApplyNewDoctypeConfig::madeType(const DataType *t, int idx) {
+    _made_types[idx] = t;
+    _needed_idx_set.erase(idx);
+}
+
+void
+ApplyNewDoctypeConfig::apply() {
+    findNeeded();
+    for (const CDocType & docT : _input) {
+        auto [iter,succ] = _doc_types_in_progress.emplace(docT.idx,
+                                                          DocTypeInProgress(docT, _output));
+        LOG_ASSERT(succ);
+        auto & dtInP = iter->second;
+        createSimpleTypes(dtInP);
+        createEmptyStructs(dtInP);
+        initializeDocTypeAndInheritAnnotations(dtInP);
+        createEmptyAnnotationTypes(dtInP);
+    }
+    for (auto & [id, dtInP] : _doc_types_in_progress) {
+        createReferenceTypes(dtInP);
+    }
+    createComplexTypes();
+    fillStructs();
+    for (auto & [id, dtInP] : _doc_types_in_progress) {
+        fillDocument(dtInP);
+        fillAnnotationTypes(dtInP);
+    }
+    for (const auto & docT : _input) {
+        for (const auto & structT : docT.structtype) {
+            performStructInherit(structT.idx);
+        }
+    }
+}
+
+void
+ApplyNewDoctypeConfig::createComplexTypes() {
+    while (_needed_idx_set.size() > 0) {
+        size_t missing_cnt = _needed_idx_set.size();
+        for (const auto & docT : _input) {
+            auto iter = _doc_types_in_progress.find(docT.idx);
+            LOG_ASSERT(iter != _doc_types_in_progress.end());
+            auto & dtInP = iter->second;
+            createComplexTypesForDocType(dtInP.cfg, dtInP.repo());
+        }
+        if (_needed_idx_set.size() == missing_cnt) {
+            for (int idx : _needed_idx_set) {
+                LOG(error, "no progress, datatype [idx %d] still missing", idx);
+            }
+            throw IllegalArgumentException("no progress");
+        }
+        LOG(debug, "retry complex types, %zd missing", _needed_idx_set.size());
+    }
+}
+
+void
+ApplyNewDoctypeConfig::createComplexTypesForDocType(const CDocType & docT, Repo& repo) {
+    for (const auto & arrT : docT.arraytype) {
+        if (_made_types[arrT.idx] != nullptr) {
+            continue; // OK already
+        }
+        if (const DataType * nested = _made_types[arrT.elementtype]) {
+            auto at = std::make_unique<ArrayDataType>(*nested, arrT.internalid);
+            madeType(repo.addDataType(std::move(at)), arrT.idx);
+        }
+    }
+    for (const auto & mapT : docT.maptype) {
+        if (_made_types[mapT.idx] != nullptr) {
+            continue; // OK already
+        }
+        const DataType * kt = _made_types[mapT.keytype];
+        const DataType * vt = _made_types[mapT.valuetype];
+        if (kt && vt) {
+            auto mt = std::make_unique<MapDataType>(*kt, *vt, mapT.internalid);
+            madeType(repo.addDataType(std::move(mt)), mapT.idx);
+        }
+    }
+    for (const auto & wsetT : docT.wsettype) {
+        if (_made_types[wsetT.idx] != nullptr) {
+            continue; // OK already
+        }
+        if (const DataType * nested = _made_types[wsetT.elementtype]) {
+            auto wt = std::make_unique<WeightedSetDataType>(*nested,
+                                                            wsetT.createifnonexistent, wsetT.removeifzero,
+                                                            wsetT.internalid);
+            madeType(repo.addDataType(std::move(wt)), wsetT.idx);
+        }
+    }
+}
 
 void configureDocTypes(const DocumenttypesConfig::DoctypeVector &t, DocumentTypeMap &type_map) {
     LOG(debug, "applying new doc type config");
@@ -1022,8 +1042,7 @@ DocumentTypeRepo::DocumentTypeRepo(const DocumenttypesConfig &config) :
     }
 }
 
-DocumentTypeRepo::~DocumentTypeRepo() {
-}
+DocumentTypeRepo::~DocumentTypeRepo() = default;
 
 DataTypeRepo *DocumentTypeRepo::findRepo(int32_t doc_type_id) const {
     return _doc_types->findRepo(doc_type_id);
