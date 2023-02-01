@@ -47,6 +47,22 @@ Sequence Seq(const std::vector<double> &seq) {
 
 //-----------------------------------------------------------------------------
 
+DimSpec::DimSpec(const vespalib::string &name, size_t size) noexcept
+    : _name(name), _size(size), _dict()
+{
+    assert(_size);
+}
+DimSpec::DimSpec(const vespalib::string &name, std::vector<vespalib::string> dict) noexcept
+    : _name(name), _size(), _dict(std::move(dict))
+{
+    assert(!_size);
+}
+
+DimSpec::DimSpec(DimSpec &&) noexcept = default;
+DimSpec::DimSpec(const DimSpec &) = default;
+DimSpec & DimSpec::operator=(DimSpec &&) noexcept = default;
+DimSpec & DimSpec::operator=(const DimSpec &) = default;
+
 DimSpec::~DimSpec() = default;
 
 std::vector<vespalib::string>
@@ -120,9 +136,9 @@ GenSpec::from_desc(const vespalib::string &desc)
     return {std::move(dim_list)};
 }
 
-GenSpec::GenSpec(GenSpec &&other) = default;
+GenSpec::GenSpec(GenSpec &&other) noexcept = default;
 GenSpec::GenSpec(const GenSpec &other) = default;
-GenSpec &GenSpec::operator=(GenSpec &&other) = default;
+GenSpec &GenSpec::operator=(GenSpec &&other) noexcept = default;
 GenSpec &GenSpec::operator=(const GenSpec &other) = default;
 
 GenSpec::~GenSpec() = default;
