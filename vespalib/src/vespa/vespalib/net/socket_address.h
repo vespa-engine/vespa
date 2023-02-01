@@ -35,6 +35,8 @@ public:
         memcpy(this, &rhs, sizeof(SocketAddress));
         return *this;
     }
+    const sockaddr *raw_addr() const { return addr(); }
+    socklen_t raw_addr_len() const { return _size; }
     bool valid() const { return (_size >= sizeof(sa_family_t)); }
     bool is_ipv4() const { return (valid() && (_addr.ss_family == AF_INET)); }
     bool is_ipv6() const { return (valid() && (_addr.ss_family == AF_INET6)); }
@@ -47,6 +49,7 @@ public:
     vespalib::string path() const;
     vespalib::string name() const;
     vespalib::string spec() const;
+    SocketHandle raw_socket() const;
     SocketHandle connect(const std::function<bool(SocketHandle&)> &tweak) const;
     SocketHandle connect() const { return connect([](SocketHandle&) noexcept { return true; }); }
     SocketHandle connect_async() const {
