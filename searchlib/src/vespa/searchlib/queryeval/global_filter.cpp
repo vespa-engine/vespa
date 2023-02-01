@@ -2,11 +2,17 @@
 
 #include "global_filter.h"
 #include "blueprint.h"
+#include "profiled_iterator.h"
 #include <vespa/vespalib/util/require.h>
 #include <vespa/vespalib/util/thread_bundle.h>
+#include <vespa/vespalib/util/execution_profiler.h>
 #include <vespa/searchlib/common/bitvector.h>
+#include <vespa/searchlib/engine/trace.h>
+#include <vespa/vespalib/data/slime/slime.h>
 #include <cassert>
 
+using search::engine::Trace;
+using vespalib::ExecutionProfiler;
 using vespalib::Runnable;
 using vespalib::ThreadBundle;
 using vespalib::Trinary;
@@ -80,12 +86,15 @@ struct PartResult {
       : matches_any(Trinary::Undefined), bits(std::move(bits_in)) {}
 };
 
-PartResult make_part(Blueprint &blueprint, uint32_t begin, uint32_t end) {
+PartResult make_part(Blueprint &blueprint, uint32_t begin, uint32_t end, ExecutionProfiler *profiler) {
     bool strict = true;
     auto constraint = Blueprint::FilterConstraint::UPPER_BOUND;
     auto filter = blueprint.createFilterSearch(strict, constraint);
     auto matches_any = filter->matches_any();
     if (matches_any == Trinary::Undefined) {
+        if (profiler) {
+            filter = ProfiledIterator::profile(*profiler, std::move(filter));
+        }
         filter->initRange(begin, end);
         auto bits = filter->get_hits(begin);
         // count bits in parallel and cache the results for later
@@ -101,10 +110,31 @@ struct MakePart : Runnable {
     uint32_t begin;
     uint32_t end;
     PartResult result;
-    MakePart(Blueprint &blueprint_in, uint32_t begin_in, uint32_t end_in) noexcept
-      : blueprint(blueprint_in), begin(begin_in), end(end_in), result() {}
-    void run() override { result = make_part(blueprint, begin, end); }
+    std::unique_ptr<ExecutionProfiler> profiler;
+    MakePart(MakePart &&) = default;
+    MakePart(Blueprint &blueprint_in, uint32_t begin_in, uint32_t end_in, int32_t profile_depth)
+      : blueprint(blueprint_in), begin(begin_in), end(end_in), result(), profiler()
+    {
+        if (profile_depth != 0) {
+            profiler = std::make_unique<ExecutionProfiler>(profile_depth);
+        }
+    }
+    void run() override { result = make_part(blueprint, begin, end, profiler.get()); }
+    ~MakePart();
 };
+MakePart::~MakePart() = default;
+
+void maybe_insert_profiler_results(Trace *trace, int32_t profile_depth, const std::vector<MakePart> &parts) {
+    if (trace && profile_depth != 0) {
+        auto &obj = trace->createCursor("global_filter_execution");
+        auto &arr = obj.setArray("threads");
+        for (auto &&part: parts) {
+            auto &dst = arr.addObject().setArray("traces").addObject();
+            dst.setString("tag", "global_filter_profiling");
+            part.profiler->report(dst);
+        }
+    }
+}
 
 }
 
@@ -159,8 +189,9 @@ GlobalFilter::create(std::vector<std::unique_ptr<BitVector>> vectors)
 }
 
 std::shared_ptr<GlobalFilter>
-GlobalFilter::create(Blueprint &blueprint, uint32_t docid_limit, ThreadBundle &thread_bundle)
+GlobalFilter::create(Blueprint &blueprint, uint32_t docid_limit, ThreadBundle &thread_bundle, Trace *trace)
 {
+    int32_t profile_depth = (trace && trace->getLevel() > 0) ? trace->match_profile_depth() : 0;
     uint32_t num_threads = thread_bundle.size();
     std::vector<MakePart> parts;
     parts.reserve(num_threads);
@@ -169,12 +200,13 @@ GlobalFilter::create(Blueprint &blueprint, uint32_t docid_limit, ThreadBundle &t
     uint32_t rest_docs = (docid_limit - docid) % num_threads;
     while (docid < docid_limit) {
         uint32_t part_size = per_thread + (parts.size() < rest_docs);
-        parts.emplace_back(blueprint, docid, docid + part_size);
+        parts.emplace_back(blueprint, docid, docid + part_size, profile_depth);
         docid += part_size;
     }
     assert(parts.size() <= num_threads);
     assert((docid == docid_limit) || parts.empty());
     thread_bundle.run(parts);
+    maybe_insert_profiler_results(trace, profile_depth, parts);
     std::vector<std::unique_ptr<BitVector>> vectors;
     vectors.reserve(parts.size());
     for (MakePart &part: parts) {
