@@ -332,7 +332,7 @@ public class Flags {
 
     public static final UnboundBooleanFlag RESTRICT_DATA_PLANE_BINDINGS = defineFeatureFlag(
             "restrict-data-plane-bindings", false,
-            List.of("mortent"), "2022-09-08", "2023-02-01",
+            List.of("mortent"), "2022-09-08", "2023-05-01",
             "Use restricted data plane bindings",
             "Takes effect at redeployment",
             APPLICATION_ID);
