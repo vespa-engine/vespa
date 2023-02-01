@@ -18,7 +18,7 @@ public class TestOptions implements CloudConfigOptions {
     private Optional<String> region = Optional.empty();
     private Optional<Boolean> useVespaVersionInRequest = Optional.empty();
     private Optional<Boolean> hostedVespa = Optional.empty();
-    private String zooKeeperSnapshotMethod = "";
+    private String zooKeeperSnapshotMethod = "gz";
 
     @Override
     public Optional<Integer> rpcPort() {
