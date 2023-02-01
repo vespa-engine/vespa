@@ -43,7 +43,11 @@ public:
 
     DECLARE_AGGREGATIONRESULT(HitsAggregationResult);
     HitsAggregationResult();
-    ~HitsAggregationResult();
+    HitsAggregationResult(HitsAggregationResult &&) noexcept;
+    HitsAggregationResult & operator=(HitsAggregationResult &&) noexcept;
+    HitsAggregationResult(const HitsAggregationResult &);
+    HitsAggregationResult & operator=(const HitsAggregationResult &);
+    ~HitsAggregationResult() override;
     void postMerge() override { _hits.postMerge(_maxHits); }
     void setSummaryGenerator(SummaryGenerator & summaryGenerator) { _summaryGenerator = &summaryGenerator; }
     const SummaryClassType & getSummaryClass() const { return _summaryClass; }

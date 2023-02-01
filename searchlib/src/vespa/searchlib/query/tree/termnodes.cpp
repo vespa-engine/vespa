@@ -30,7 +30,8 @@ namespace {
 
 class StringTermVector final : public MultiTerm::TermVector {
 public:
-    StringTermVector(uint32_t sz) : _terms() { _terms.reserve(sz); }
+    explicit StringTermVector(uint32_t sz) : _terms() { _terms.reserve(sz); }
+    ~StringTermVector() override;
     void addTerm(stringref term, Weight weight) override {
         _terms.emplace_back(term, weight);
     }
@@ -39,27 +40,27 @@ public:
         auto res = std::to_chars(buf, buf + sizeof(buf), value, 10);
         addTerm(stringref(buf, res.ptr - buf), weight);
     }
-    StringAndWeight getAsString(uint32_t index) const override {
+    [[nodiscard]] StringAndWeight getAsString(uint32_t index) const override {
         const auto & v = _terms[index];
-        return StringAndWeight(v.first, v.second);
+        return {v.first, v.second};
     }
-    IntegerAndWeight getAsInteger(uint32_t index) const override {
+    [[nodiscard]] IntegerAndWeight getAsInteger(uint32_t index) const override {
         const auto & v = _terms[index];
         int64_t value(0);
         std::from_chars(v.first.c_str(), v.first.c_str() + v.first.size(), value);
-        return IntegerAndWeight(value, v.second);
+        return {value, v.second};
     }
-    Weight getWeight(uint32_t index) const override {
+    [[nodiscard]] Weight getWeight(uint32_t index) const override {
         return _terms[index].second;
     }
-    uint32_t size() const override { return _terms.size(); }
+    [[nodiscard]] uint32_t size() const override { return _terms.size(); }
 private:
     std::vector<std::pair<vespalib::string, Weight>> _terms;
 };
 
 class IntegerTermVector final : public MultiTerm::TermVector {
 public:
-    IntegerTermVector(uint32_t sz) : _terms() { _terms.reserve(sz); }
+    explicit IntegerTermVector(uint32_t sz) : _terms() { _terms.reserve(sz); }
     void addTerm(stringref, Weight) override {
         // Will/should never happen
         assert(false);
@@ -71,7 +72,7 @@ public:
         const auto & v = _terms[index];
         auto res = std::to_chars(_scratchPad, _scratchPad + sizeof(_scratchPad)-1, v.first, 10);
         res.ptr[0] = '\0';
-        return StringAndWeight(stringref(_scratchPad, res.ptr - _scratchPad), v.second);
+        return {stringref(_scratchPad, res.ptr - _scratchPad), v.second};
     }
     IntegerAndWeight getAsInteger(uint32_t index) const override {
         return _terms[index];
@@ -84,6 +85,8 @@ private:
     std::vector<IntegerAndWeight> _terms;
     mutable char                  _scratchPad[24];
 };
+
+StringTermVector::~StringTermVector() = default;
 
 }
 

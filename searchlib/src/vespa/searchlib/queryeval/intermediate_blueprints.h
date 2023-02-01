@@ -177,6 +177,7 @@ private:
 
 public:
     SourceBlenderBlueprint(const ISourceSelector &selector);
+    ~SourceBlenderBlueprint() override;
     HitEstimate combine(const std::vector<HitEstimate> &data) const override;
     FieldSpecBaseList exposeFields() const override;
     void sort(Children &children) const override;

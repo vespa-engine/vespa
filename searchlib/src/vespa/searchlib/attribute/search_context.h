@@ -47,7 +47,7 @@ public:
     const AttributeVector& attribute() const { return _attr; }
 
 protected:
-    SearchContext(const AttributeVector& attr);
+    SearchContext(const AttributeVector& attr) noexcept;
 
     const AttributeVector&                _attr;
     attribute::IPostingListSearchContext* _plsc;

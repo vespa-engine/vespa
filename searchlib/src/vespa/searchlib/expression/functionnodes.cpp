@@ -3,9 +3,7 @@
 #include "floatresultnode.h"
 #include "stringresultnode.h"
 #include "rawresultnode.h"
-#include "enumresultnode.h"
 #include "constantnode.h"
-#include "relevancenode.h"
 #include "addfunctionnode.h"
 #include "dividefunctionnode.h"
 #include "multiplyfunctionnode.h"
@@ -29,8 +27,6 @@
 #include "xorbitfunctionnode.h"
 #include "md5bitfunctionnode.h"
 #include "binaryfunctionnode.h"
-#include "nullresultnode.h"
-#include "positiveinfinityresultnode.h"
 #include "resultvector.h"
 #include "catserializer.h"
 #include "strcatserializer.h"
@@ -319,6 +315,8 @@ ResultNode::CP DivideFunctionNode::getInitialValue() const
 {
    throw std::runtime_error("DivideFunctionNode::getInitialValue() const not implemented since it shall never be used.");
 }
+
+UnaryBitFunctionNode::~UnaryBitFunctionNode() = default;
 
 void UnaryBitFunctionNode::onPrepareResult()
 {

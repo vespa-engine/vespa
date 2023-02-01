@@ -245,8 +245,11 @@ struct MyIssues : Issue::Handler {
     std::vector<vespalib::string> list;
     Issue::Binding capture;
     MyIssues() : list(), capture(Issue::listen(*this)) {}
+    ~MyIssues() override;
     void handle(const Issue &issue) override { list.push_back(issue.message()); }
 };
+
+MyIssues::~MyIssues() = default;
 
 //-----------------------------------------------------------------------------
 

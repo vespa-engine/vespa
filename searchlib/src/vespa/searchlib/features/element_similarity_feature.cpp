@@ -236,15 +236,8 @@ private:
     const fef::MatchData   *_md;
 
 public:
-    ElementSimilarityExecutor(VectorizedQueryTerms &&terms, std::vector<OutputSpec> &&outputs_in)
-        : _terms(std::move(terms)),
-          _pos(_terms.handles.size(), nullptr),
-          _end(_terms.handles.size(), nullptr),
-          _position_queue(CmpPosition(_pos.data())),
-          _element_queue(CmpElement(_pos.data())),
-          _outputs(std::move(outputs_in)),
-          _md(nullptr)
-    { }
+    ElementSimilarityExecutor(VectorizedQueryTerms &&terms, std::vector<OutputSpec> &&outputs_in);
+    ~ElementSimilarityExecutor() override;
 
     bool isPure() override { return _terms.handles.empty(); }
 
@@ -316,6 +309,17 @@ public:
         }
     }
 };
+
+ElementSimilarityExecutor::ElementSimilarityExecutor(VectorizedQueryTerms &&terms, std::vector<OutputSpec> &&outputs_in)
+    : _terms(std::move(terms)),
+      _pos(_terms.handles.size(), nullptr),
+      _end(_terms.handles.size(), nullptr),
+      _position_queue(CmpPosition(_pos.data())),
+      _element_queue(CmpElement(_pos.data())),
+      _outputs(std::move(outputs_in)),
+      _md(nullptr)
+{ }
+ElementSimilarityExecutor::~ElementSimilarityExecutor() = default;
 
 //-----------------------------------------------------------------------------
 

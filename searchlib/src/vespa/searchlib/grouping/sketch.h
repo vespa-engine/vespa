@@ -74,6 +74,7 @@ struct SparseSketch : Sketch<BucketBits, HashT> {
     };
     std::unordered_set<HashT, IdentityHash> hash_set;
 
+    ~SparseSketch() override;
     [[nodiscard]] size_t getSize() const { return hash_set.size(); }
 
     int aggregate(HashT hash) override {
@@ -184,6 +185,8 @@ struct NormalSketch : Sketch<BucketBits, HashT> {
     }
 };
 
+template <int BucketBits, typename HashT>
+SparseSketch<BucketBits, HashT>::~SparseSketch() = default;
 
 template <int BucketBits, typename HashT>
 void SparseSketch<BucketBits, HashT>::

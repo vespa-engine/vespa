@@ -57,12 +57,15 @@ public:
         _lastBucketId = bucketId;
         EXPECT_EQUAL(0, memcmp(buffer, createPayload(bucketId).c_str(), sz));
     }
+    ~VerifyBucketOrder() override;
 private:
     uint32_t _lastLid;
     BucketId _lastBucketId;
     vespalib::hash_set<uint32_t> _uniqueUser;
     vespalib::hash_set<uint64_t> _uniqueBucket;
 };
+
+VerifyBucketOrder::~VerifyBucketOrder() = default;
 
 TEST("require that StoreByBucket gives bucket by bucket and ordered within")
 {

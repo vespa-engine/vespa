@@ -39,6 +39,29 @@ namespace search::tensor {
  * TODO: Add details on how to handle removes.
  */
 
+namespace internal {
+struct PreparedAddNode {
+    using Links = std::vector<std::pair<uint32_t, vespalib::datastore::EntryRef>>;
+    std::vector<Links> connections;
+
+    PreparedAddNode() noexcept;
+    explicit PreparedAddNode(std::vector<Links>&& connections_in) noexcept;
+    ~PreparedAddNode();
+    PreparedAddNode(PreparedAddNode&& other) noexcept;
+};
+
+struct PreparedFirstAddDoc : public PrepareResult {};
+
+struct PreparedAddDoc : public PrepareResult {
+    using ReadGuard = vespalib::GenerationHandler::Guard;
+    uint32_t docid;
+    ReadGuard read_guard;
+    std::vector<PreparedAddNode> nodes;
+    PreparedAddDoc(uint32_t docid_in, ReadGuard read_guard_in) noexcept;
+    ~PreparedAddDoc();
+    PreparedAddDoc(PreparedAddDoc&& other) noexcept;
+};
+}
 template <HnswIndexType type>
 class HnswIndex : public NearestNeighborIndex {
 public:
@@ -155,43 +178,12 @@ protected:
                                          const GlobalFilter *filter, uint32_t explore_k,
                                          double distance_threshold) const;
 
-    struct PreparedAddNode {
-        using Links = std::vector<std::pair<uint32_t, vespalib::datastore::EntryRef>>;
-        std::vector<Links> connections;
-
-        PreparedAddNode() noexcept
-            : connections()
-        {
-        }
-        PreparedAddNode(std::vector<Links>&& connections_in) noexcept
-            : connections(std::move(connections_in))
-        {
-        }
-        ~PreparedAddNode() = default;
-        PreparedAddNode(PreparedAddNode&& other) noexcept = default;
-    };
-
-    struct PreparedFirstAddDoc : public PrepareResult {};
-
-    struct PreparedAddDoc : public PrepareResult {
-        using ReadGuard = vespalib::GenerationHandler::Guard;
-        uint32_t docid;
-        ReadGuard read_guard;
-        std::vector<PreparedAddNode> nodes;
-        PreparedAddDoc(uint32_t docid_in, ReadGuard read_guard_in)
-          : docid(docid_in),
-            read_guard(std::move(read_guard_in)),
-            nodes()
-        {}
-        ~PreparedAddDoc() = default;
-        PreparedAddDoc(PreparedAddDoc&& other) = default;
-    };
-    PreparedAddDoc internal_prepare_add(uint32_t docid, VectorBundle input_vectors,
+    internal::PreparedAddDoc internal_prepare_add(uint32_t docid, VectorBundle input_vectors,
                                         vespalib::GenerationHandler::Guard read_guard) const;
-    void internal_prepare_add_node(HnswIndex::PreparedAddDoc& op, TypedCells input_vector, const typename GraphType::EntryNode& entry) const;
-    LinkArray filter_valid_nodeids(uint32_t level, const typename PreparedAddNode::Links &neighbors, uint32_t self_nodeid);
-    void internal_complete_add(uint32_t docid, PreparedAddDoc &op);
-    void internal_complete_add_node(uint32_t nodeid, uint32_t docid, uint32_t subspace, PreparedAddNode &prepared_node);
+    void internal_prepare_add_node(internal::PreparedAddDoc& op, TypedCells input_vector, const typename GraphType::EntryNode& entry) const;
+    LinkArray filter_valid_nodeids(uint32_t level, const internal::PreparedAddNode::Links &neighbors, uint32_t self_nodeid);
+    void internal_complete_add(uint32_t docid, internal::PreparedAddDoc &op);
+    void internal_complete_add_node(uint32_t nodeid, uint32_t docid, uint32_t subspace, internal::PreparedAddNode &prepared_node);
 public:
     HnswIndex(const DocVectorAccess& vectors, DistanceFunction::UP distance_func,
               RandomLevelGenerator::UP level_generator, const HnswIndexConfig& cfg);

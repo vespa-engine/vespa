@@ -161,27 +161,8 @@ struct FieldInverterTest : public ::testing::Test {
                };
     }
 
-    FieldInverterTest()
-        : _b(make_add_fields()),
-          _schema(SchemaBuilder(_b).add_all_indexes().build()),
-          _word_store(),
-          _remover(_word_store),
-          _inserter_backend(),
-          _calculators(),
-          _inserters(),
-          _inverters()
-    {
-        for (uint32_t fieldId = 0; fieldId < _schema.getNumIndexFields();
-             ++fieldId) {
-            _calculators.emplace_back(std::make_unique<FieldLengthCalculator>());
-            _inserters.emplace_back(std::make_unique<test::OrderedFieldIndexInserter>(_inserter_backend, fieldId));
-            _inverters.push_back(std::make_unique<FieldInverter>(_schema,
-                                                                 fieldId,
-                                                                 _remover,
-                                                                 *_inserters.back(),
-                                                                 *_calculators.back()));
-        }
-    }
+    FieldInverterTest();
+    ~FieldInverterTest() override;
 
     void invertDocument(uint32_t docId, const Document &doc) {
         uint32_t fieldId = 0;
@@ -212,6 +193,24 @@ struct FieldInverterTest : public ::testing::Test {
     }
 
 };
+
+FieldInverterTest::FieldInverterTest()
+    : _b(make_add_fields()),
+      _schema(SchemaBuilder(_b).add_all_indexes().build()),
+      _word_store(),
+      _remover(_word_store),
+      _inserter_backend(),
+      _calculators(),
+      _inserters(),
+      _inverters()
+{
+    for (uint32_t fieldId = 0; fieldId < _schema.getNumIndexFields(); ++fieldId) {
+        _calculators.emplace_back(std::make_unique<FieldLengthCalculator>());
+        _inserters.emplace_back(std::make_unique<test::OrderedFieldIndexInserter>(_inserter_backend, fieldId));
+        _inverters.push_back(std::make_unique<FieldInverter>(_schema, fieldId, _remover, *_inserters.back(), *_calculators.back()));
+    }
+}
+FieldInverterTest::~FieldInverterTest() = default;
 
 TEST_F(FieldInverterTest, require_that_fresh_insert_works)
 {
