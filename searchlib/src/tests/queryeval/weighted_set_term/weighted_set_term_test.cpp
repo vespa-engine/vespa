@@ -44,28 +44,20 @@ struct WS {
     bool field_is_filter;
     bool term_is_not_needed;
 
-    WS()
-        : layout(),
-          handle(layout.allocTermField(fieldId)),
-          tokens(),
-          field_is_filter(false),
-          term_is_not_needed(false)
-    {
-        MatchData::UP tmp = layout.createMatchData();
-        ASSERT_TRUE(tmp->resolveTermField(handle)->getFieldId() == fieldId);
-    }
+    WS();
+    ~WS();
 
     WS &add(const std::string &token, uint32_t weight) {
-        tokens.push_back(std::make_pair(token, weight));
+        tokens.emplace_back(token, weight);
         return *this;
     }
     WS& set_field_is_filter(bool value) { field_is_filter = value; return *this; }
     WS& set_term_is_not_needed(bool value) { term_is_not_needed = value; return *this; }
 
-    Node::UP createNode() const {
-        SimpleWeightedSetTerm *node = new SimpleWeightedSetTerm(tokens.size(), "view", 0, Weight(0));
-        for (size_t i = 0; i < tokens.size(); ++i) {
-            node->addTerm(tokens[i].first,Weight(tokens[i].second));
+    [[nodiscard]] Node::UP createNode() const {
+        auto *node = new SimpleWeightedSetTerm(tokens.size(), "view", 0, Weight(0));
+        for (const auto & token : tokens) {
+            node->addTerm(token.first,Weight(token.second));
         }
         return Node::UP(node);
     }
@@ -78,7 +70,7 @@ struct WS {
         queryeval::Blueprint::UP bp = searchable.createBlueprint(requestContext, fields, *node);
         bp->fetchPostings(ExecuteInfo::create(strict));
         SearchIterator::UP sb = bp->createSearch(*md, strict);
-        return (dynamic_cast<WeightedSetTermSearch*>(sb.get()) != 0);
+        return (dynamic_cast<WeightedSetTermSearch*>(sb.get()) != nullptr);
     }
 
     FakeResult search(Searchable &searchable, const std::string &field, bool strict) const {
@@ -111,26 +103,38 @@ struct WS {
     }
 };
 
+WS::WS()
+    : layout(),
+      handle(layout.allocTermField(fieldId)),
+      tokens(),
+      field_is_filter(false),
+      term_is_not_needed(false)
+{
+    MatchData::UP tmp = layout.createMatchData();
+    ASSERT_TRUE(tmp->resolveTermField(handle)->getFieldId() == fieldId);
+}
+WS::~WS() = default;
+
 struct MockSearch : public SearchIterator {
     int seekCnt;
     int _initial;
-    MockSearch(uint32_t initial) : SearchIterator(), seekCnt(0), _initial(initial) { }
+    explicit MockSearch(uint32_t initial) : SearchIterator(), seekCnt(0), _initial(initial) { }
     void initRange(uint32_t begin, uint32_t end) override {
         SearchIterator::initRange(begin, end);
         setDocId(_initial);
     }
-    virtual void doSeek(uint32_t) override {
+    void doSeek(uint32_t) override {
         ++seekCnt;
         setAtEnd();
     }
-    virtual void doUnpack(uint32_t) override {}
+    void doUnpack(uint32_t) override {}
 };
 
 struct MockFixture {
     MockSearch *mock;
     TermFieldMatchData tfmd;
     std::unique_ptr<SearchIterator> search;
-    MockFixture(uint32_t initial) : mock(0), tfmd(), search() {
+    explicit MockFixture(uint32_t initial) : mock(nullptr), tfmd(), search() {
         std::vector<SearchIterator*> children;
         std::vector<int32_t> weights;
         mock = new MockSearch(initial);
@@ -156,10 +160,11 @@ void run_simple(bool field_is_filter, bool term_is_not_needed)
             .doc(5).elem(0).weight(50).pos(0)
             .doc(7).elem(0).weight(70).pos(0);
     }
-    WS ws = WS().add("7", 70).add("5", 50).add("3", 30).add("100", 1000)
-            .set_field_is_filter(field_is_filter)
-            .set_term_is_not_needed(term_is_not_needed);
-;
+    WS ws;
+    ws.add("7", 70).add("5", 50).add("3", 30).add("100", 1000)
+      .set_field_is_filter(field_is_filter)
+      .set_term_is_not_needed(term_is_not_needed);
+
     EXPECT_TRUE(ws.isGenericSearch(index, "field", true));
     EXPECT_TRUE(ws.isGenericSearch(index, "field", false));
     EXPECT_TRUE(ws.isGenericSearch(index, "multi-field", true));
@@ -197,11 +202,12 @@ void run_multi(bool field_is_filter, bool term_is_not_needed)
             .doc(5).elem(0).weight(150).pos(0).elem(0).weight(50).pos(0)
             .doc(7).elem(0).weight(70).pos(0);
     }
-    WS ws = WS().add("7", 70).add("5", 50).add("3", 30)
-            .add("15", 150).add("13", 130)
-            .add("23", 230).add("100", 1000)
-            .set_field_is_filter(field_is_filter)
-            .set_term_is_not_needed(term_is_not_needed);
+    WS ws;
+    ws.add("7", 70).add("5", 50).add("3", 30)
+      .add("15", 150).add("13", 130)
+      .add("23", 230).add("100", 1000)
+      .set_field_is_filter(field_is_filter)
+      .set_term_is_not_needed(term_is_not_needed);
     EXPECT_TRUE(ws.isGenericSearch(index, "multi-field", true));
     EXPECT_TRUE(ws.isGenericSearch(index, "multi-field", false));
 
@@ -274,9 +280,9 @@ TEST("verify search iterator conformance with document weight iterator children"
 struct VerifyMatchData {
     struct MyBlueprint : search::queryeval::SimpleLeafBlueprint {
         VerifyMatchData &vmd;
-        MyBlueprint(VerifyMatchData &vmd_in, FieldSpec spec_in)
+        MyBlueprint(VerifyMatchData &vmd_in, const FieldSpec & spec_in)
             : SimpleLeafBlueprint(spec_in), vmd(vmd_in) {}
-        SearchIterator::UP createLeafSearch(const fef::TermFieldMatchDataArray &tfmda, bool) const override {
+        [[nodiscard]] SearchIterator::UP createLeafSearch(const fef::TermFieldMatchDataArray &tfmda, bool) const override {
             EXPECT_EQUAL(tfmda.size(), 1u);
             EXPECT_TRUE(tfmda[0] != nullptr);
             if (vmd.child_tfmd == nullptr) {
@@ -287,7 +293,7 @@ struct VerifyMatchData {
             ++vmd.child_cnt;
             return std::make_unique<EmptySearch>();
         }
-        SearchIteratorUP createFilterSearch(bool strict, FilterConstraint constraint) const override {
+        [[nodiscard]] SearchIteratorUP createFilterSearch(bool strict, FilterConstraint constraint) const override {
             return create_default_filter(strict, constraint);
         }
     };

@@ -23,12 +23,12 @@ private:
     using TYPE_UP = std::unique_ptr<TYPE>;
     TYPE_UP _type;
     static const FeatureType _number;
-    FeatureType(TYPE_UP type_in) : _type(std::move(type_in)) {}
+    explicit FeatureType(TYPE_UP type_in) : _type(std::move(type_in)) {}
 public:
     FeatureType(const FeatureType &rhs);
-    FeatureType(FeatureType &&rhs) = default;
-    bool is_object() const { return (_type.get() != nullptr); }
-    const TYPE &type() const;
+    FeatureType(FeatureType &&rhs) noexcept = default;
+    [[nodiscard]] bool is_object() const { return (_type.get() != nullptr); }
+    [[nodiscard]] const TYPE &type() const;
     static const FeatureType &number() { return _number; }
     static FeatureType object(const TYPE &type_in);
 };

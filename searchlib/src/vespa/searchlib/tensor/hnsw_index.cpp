@@ -67,12 +67,12 @@ template <>
 class GlobalFilterWrapper<HnswIndexType::SINGLE> {
     const GlobalFilter *_filter;
 public:
-    GlobalFilterWrapper(const GlobalFilter *filter)
+    explicit GlobalFilterWrapper(const GlobalFilter *filter)
         : _filter(filter)
     {
     }
 
-    bool check(uint32_t docid) const noexcept { return !_filter || _filter->check(docid); }
+    [[nodiscard]] bool check(uint32_t docid) const noexcept { return !_filter || _filter->check(docid); }
 
     void clamp_nodeid_limit(uint32_t& nodeid_limit) {
         if (_filter) {
@@ -86,16 +86,36 @@ class GlobalFilterWrapper<HnswIndexType::MULTI> {
     const GlobalFilter *_filter;
     uint32_t            _docid_limit;
 public:
-    GlobalFilterWrapper(const GlobalFilter *filter)
+    explicit GlobalFilterWrapper(const GlobalFilter *filter)
         : _filter(filter),
           _docid_limit(filter ? filter->size() : 0u)
     {
     }
 
-    bool check(uint32_t docid) const noexcept { return !_filter || (docid < _docid_limit && _filter->check(docid)); }
+    [[nodiscard]] bool check(uint32_t docid) const noexcept { return !_filter || (docid < _docid_limit && _filter->check(docid)); }
     static void clamp_nodeid_limit(uint32_t&) { }
 };
 
+}
+
+namespace internal {
+
+PreparedAddNode::PreparedAddNode() noexcept
+    : connections()
+{ }
+PreparedAddNode::PreparedAddNode(std::vector<Links>&& connections_in) noexcept
+    : connections(std::move(connections_in))
+{ }
+PreparedAddNode::~PreparedAddNode() = default;
+PreparedAddNode::PreparedAddNode(PreparedAddNode&& other) noexcept = default;
+
+PreparedAddDoc::PreparedAddDoc(uint32_t docid_in, ReadGuard read_guard_in) noexcept
+    : docid(docid_in),
+      read_guard(std::move(read_guard_in)),
+      nodes()
+{}
+PreparedAddDoc::~PreparedAddDoc() = default;
+PreparedAddDoc::PreparedAddDoc(PreparedAddDoc&& other) noexcept = default;
 }
 
 template <HnswIndexType type>
@@ -415,6 +435,10 @@ HnswIndex<type>::HnswIndex(const DocVectorAccess& vectors, DistanceFunction::UP 
 template <HnswIndexType type>
 HnswIndex<type>::~HnswIndex() = default;
 
+using internal::PreparedAddNode;
+using internal::PreparedAddDoc;
+using internal::PreparedFirstAddDoc;
+
 template <HnswIndexType type>
 void
 HnswIndex<type>::add_document(uint32_t docid)
@@ -434,7 +458,7 @@ HnswIndex<type>::add_document(uint32_t docid)
 }
 
 template <HnswIndexType type>
-typename HnswIndex<type>::PreparedAddDoc
+PreparedAddDoc
 HnswIndex<type>::internal_prepare_add(uint32_t docid, VectorBundle input_vectors, vespalib::GenerationHandler::Guard read_guard) const
 {
     PreparedAddDoc op(docid, std::move(read_guard));
@@ -449,10 +473,10 @@ HnswIndex<type>::internal_prepare_add(uint32_t docid, VectorBundle input_vectors
 
 template <HnswIndexType type>
 void
-HnswIndex<type>::internal_prepare_add_node(typename HnswIndex::PreparedAddDoc& op, TypedCells input_vector, const typename GraphType::EntryNode& entry) const
+HnswIndex<type>::internal_prepare_add_node(PreparedAddDoc& op, TypedCells input_vector, const typename GraphType::EntryNode& entry) const
 {
     int node_max_level = std::min(_level_generator->max_level(), max_max_level);
-    std::vector<typename PreparedAddNode::Links> connections(node_max_level + 1);
+    std::vector<PreparedAddNode::Links> connections(node_max_level + 1);
     if (entry.nodeid == 0) {
         // graph has no entry point
         op.nodes.emplace_back(std::move(connections));

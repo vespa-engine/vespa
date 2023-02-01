@@ -8,10 +8,10 @@ namespace search::test {
 
 class WeightedChildrenVerifier : public SearchIteratorVerifier {
 public:
-    WeightedChildrenVerifier() :
-        _weights(_num_children, 1)
+    WeightedChildrenVerifier()
+        : _weights(_num_children, 1)
     { }
-    ~WeightedChildrenVerifier() {}
+    ~WeightedChildrenVerifier() override {}
 
 protected:
     static constexpr size_t _num_children = 7;
@@ -21,15 +21,16 @@ protected:
 
 class IteratorChildrenVerifier : public WeightedChildrenVerifier {
 public:
-    IteratorChildrenVerifier() :
-        WeightedChildrenVerifier(),
-        _split_lists(_num_children)
+    IteratorChildrenVerifier()
+        : WeightedChildrenVerifier(),
+          _split_lists(_num_children)
     {
         auto full_list = getExpectedDocIds();
         for (size_t i = 0; i < full_list.size(); ++i) {
             _split_lists[i % _num_children].push_back(full_list[i]);
         }
     }
+    ~IteratorChildrenVerifier() override { }
     SearchIterator::UP create(bool strict) const override {
         (void) strict;
         std::vector<SearchIterator*> children;
@@ -58,7 +59,7 @@ public:
             _helper.set_doc(full_list[i], i % _num_children, 1);
         }
     }
-    ~DwaIteratorChildrenVerifier() {}
+    ~DwaIteratorChildrenVerifier() override {}
     SearchIterator::UP create(bool strict) const override {
         (void) strict;
         std::vector<DocumentWeightIterator> children;
@@ -69,9 +70,8 @@ public:
         return create(std::move(children));
     }
 protected:
-    virtual SearchIterator::UP create(std::vector<DocumentWeightIterator> && children) const  {
-        (void) children;
-        return SearchIterator::UP();
+    virtual SearchIterator::UP create(std::vector<DocumentWeightIterator> &&) const  {
+        return {};
     }
     DocumentWeightAttributeHelper _helper;
 };

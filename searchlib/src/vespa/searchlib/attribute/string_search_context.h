@@ -26,6 +26,8 @@ protected:
 public:
     StringSearchContext(const AttributeVector& to_be_searched, std::unique_ptr<QueryTermSimple> query_term, bool cased);
     StringSearchContext(const AttributeVector& to_be_searched, StringMatcher&& matcher);
+    StringSearchContext(StringSearchContext &&) noexcept;
+    ~StringSearchContext() override;
     const QueryTermUCS4* queryTerm() const override;
     bool valid() const override;
 

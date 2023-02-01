@@ -51,7 +51,7 @@ struct Compiler : public Blueprint::DependencyHandler {
     struct Frame {
         ExecutorSpec spec;
         const FeatureNameParser &parser;
-        Frame(Blueprint::SP blueprint, const FeatureNameParser &parser_in)
+        Frame(Blueprint::SP blueprint, const FeatureNameParser &parser_in) noexcept
             : spec(std::move(blueprint)), parser(parser_in) {}
     };
     using Stack = std::vector<Frame>;
@@ -91,7 +91,7 @@ struct Compiler : public Blueprint::DependencyHandler {
           failed_set(),
           min_stack(nullptr),
           max_stack(nullptr) {}
-    ~Compiler();
+    ~Compiler() override;
 
     void probe_stack() {
         const char c = 'X';
@@ -99,12 +99,12 @@ struct Compiler : public Blueprint::DependencyHandler {
         max_stack = (max_stack == nullptr) ? &c : std::max(max_stack, &c);
     }
 
-    int stack_usage() const {
+    [[nodiscard]] int stack_usage() const {
         return (max_stack - min_stack);
     }
 
     Frame &self() { return resolve_stack.back(); }
-    bool failed() const { return !failed_set.empty(); }
+    [[nodiscard]] bool failed() const { return !failed_set.empty(); }
 
     vespalib::string make_trace(bool skip_self) {
         vespalib::string trace;
@@ -142,7 +142,7 @@ struct Compiler : public Blueprint::DependencyHandler {
             errors.emplace_back(msg);
         }
         probe_stack();
-        return FeatureRef();
+        return {};
     }
 
     void fail_self(const vespalib::string &reason) {
@@ -245,12 +245,14 @@ Compiler::~Compiler() = default;
 
 } // namespace search::fef::<unnamed>
 
-BlueprintResolver::ExecutorSpec::ExecutorSpec(Blueprint::SP blueprint_in)
+BlueprintResolver::ExecutorSpec::ExecutorSpec(Blueprint::SP blueprint_in) noexcept
     : blueprint(std::move(blueprint_in)),
       inputs(),
       output_types()
 { }
-
+BlueprintResolver::ExecutorSpec::ExecutorSpec(ExecutorSpec &&) noexcept = default;
+BlueprintResolver::ExecutorSpec & BlueprintResolver::ExecutorSpec::operator =(ExecutorSpec &&) noexcept = default;
+BlueprintResolver::ExecutorSpec::ExecutorSpec(const ExecutorSpec &) = default;
 BlueprintResolver::ExecutorSpec::~ExecutorSpec() = default;
 BlueprintResolver::~BlueprintResolver() = default;
 

@@ -10,7 +10,7 @@ using search::queryeval::SearchIterator;
 
 namespace search::attribute {
 
-SearchContext::SearchContext(const AttributeVector &attr)
+SearchContext::SearchContext(const AttributeVector &attr) noexcept
     : _attr(attr),
       _plsc(nullptr)
 {

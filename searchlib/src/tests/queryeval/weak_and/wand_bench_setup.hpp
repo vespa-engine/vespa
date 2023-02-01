@@ -54,13 +54,13 @@ struct ModSearch : SearchIterator {
     uint32_t limit;
     MinMaxPostingInfo info;
     TermFieldMatchData *tfmd;
-    ModSearch(Stats &stats_in, uint32_t step_in, uint32_t limit_in, int32_t maxWeight, TermFieldMatchData *tfmd_in)
-        : stats(stats_in), step(step_in), limit(limit_in), info(0, maxWeight), tfmd(tfmd_in) { }
+    ModSearch(Stats &stats_in, uint32_t step_in, uint32_t limit_in, int32_t maxWeight, TermFieldMatchData *tfmd_in);
+    ~ModSearch() override;
     void initRange(uint32_t begin, uint32_t end) override {
         SearchIterator::initRange(begin, end);
         setDocId(step);
     }
-    virtual void doSeek(uint32_t docid) override {
+    void doSeek(uint32_t docid) override {
         assert(docid > getDocId());
         uint32_t skippedDocs = (docid - getDocId() - 1);
         uint32_t skippedHits = (skippedDocs / step);
@@ -76,7 +76,7 @@ struct ModSearch : SearchIterator {
             setAtEnd();
         }
     }
-    virtual void doUnpack(uint32_t docid) override {
+    void doUnpack(uint32_t docid) override {
         if (tfmd != NULL) {
             tfmd->reset(docid);
             search::fef::TermFieldMatchDataPosition pos;
@@ -85,8 +85,13 @@ struct ModSearch : SearchIterator {
         }
         stats.unpack();
     }
-    virtual const PostingInfo *getPostingInfo() const override { return &info; }
+    const PostingInfo *getPostingInfo() const override { return &info; }
 };
+
+ModSearch::ModSearch(Stats &stats_in, uint32_t step_in, uint32_t limit_in, int32_t maxWeight, TermFieldMatchData *tfmd_in)
+    : stats(stats_in), step(step_in), limit(limit_in), info(0, maxWeight), tfmd(tfmd_in)
+{ }
+ModSearch::~ModSearch() = default;
 
 struct WandFactory {
     virtual std::string name() const = 0;

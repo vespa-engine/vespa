@@ -2,7 +2,6 @@
 
 #include "hitsaggregationresult.h"
 #include <vespa/document/fieldvalue/document.h>
-#include <cassert>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".searchlib.aggregation.hitsaggregationresult");
@@ -21,9 +20,13 @@ HitsAggregationResult::HitsAggregationResult() :
     _hits(),
     _isOrdered(false),
     _bestHitRank(),
-    _summaryGenerator(0)
+    _summaryGenerator(nullptr)
 {}
-HitsAggregationResult::~HitsAggregationResult() {}
+HitsAggregationResult::HitsAggregationResult(HitsAggregationResult &&) noexcept = default;
+HitsAggregationResult & HitsAggregationResult::operator=(HitsAggregationResult &&) noexcept = default;
+HitsAggregationResult::HitsAggregationResult(const HitsAggregationResult &) = default;
+HitsAggregationResult & HitsAggregationResult::operator=(const HitsAggregationResult &) = default;
+HitsAggregationResult::~HitsAggregationResult() = default;
 
 void HitsAggregationResult::onPrepare(const ResultNode & result, bool useForInit)
 {
@@ -34,7 +37,7 @@ void HitsAggregationResult::onPrepare(const ResultNode & result, bool useForInit
 void
 HitsAggregationResult::onMerge(const AggregationResult &b)
 {
-    const HitsAggregationResult &rhs = (const HitsAggregationResult &)b;
+    const auto &rhs = (const HitsAggregationResult &)b;
     _hits.onMerge(rhs._hits);
 }
 

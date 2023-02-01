@@ -43,7 +43,7 @@ public:
         FeatureRef() : executor(undef), output(0) {}
         FeatureRef(uint32_t executor_in, uint32_t output_in)
             : executor(executor_in), output(output_in) {}
-        bool valid() { return (executor != undef); }
+        [[nodiscard]] bool valid() const { return (executor != undef); }
     };
     using FeatureMap = std::map<vespalib::string, FeatureRef>;
 
@@ -57,7 +57,10 @@ public:
         std::vector<FeatureRef>  inputs;
         std::vector<FeatureType> output_types;
 
-        ExecutorSpec(BlueprintSP blueprint_in);
+        explicit ExecutorSpec(BlueprintSP blueprint_in) noexcept;
+        ExecutorSpec(ExecutorSpec &&) noexcept;
+        ExecutorSpec & operator =(ExecutorSpec &&) noexcept;
+        ExecutorSpec(const ExecutorSpec &);
         ~ExecutorSpec();
     };
     using ExecutorSpecList = std::vector<ExecutorSpec>;
@@ -136,7 +139,7 @@ public:
      *
      * @return feature executor assembly directions
      **/
-    const ExecutorSpecList &getExecutorSpecs() const { return _executorSpecs; }
+    [[nodiscard]] const ExecutorSpecList &getExecutorSpecs() const { return _executorSpecs; }
 
     /**
      * Obtain the location of all named features known to this
@@ -147,7 +150,7 @@ public:
      *
      * @return feature locations
      **/
-    const FeatureMap &getFeatureMap() const { return _featureMap; }
+    [[nodiscard]] const FeatureMap &getFeatureMap() const { return _featureMap; }
 
     /**
      * Obtain the location of all seeds used by this resolver. This
@@ -158,13 +161,13 @@ public:
      *
      * @return seed locations
      **/
-    const FeatureMap &getSeedMap() const { return _seedMap; }
+    [[nodiscard]] const FeatureMap &getSeedMap() const { return _seedMap; }
 
     /**
      * Will return any accumulated warnings during compile
      * @return list of warnings
      **/
-    const Warnings & getWarnings() const { return _warnings; }
+    [[nodiscard]] const Warnings & getWarnings() const { return _warnings; }
 };
 
 }

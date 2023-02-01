@@ -63,20 +63,8 @@ struct FieldIndexRemoverTest : public ::testing::Test {
     std::vector<std::map<vespalib::string, vespalib::datastore::EntryRef>> _wordToRefMaps;
     std::vector<std::unique_ptr<FieldIndexRemover>> _removers;
 
-    FieldIndexRemoverTest()
-        : _listener(),
-          _wordStores(),
-          _wordToRefMaps(),
-          _removers()
-    {
-        uint32_t numFields = 4;
-        for (uint32_t fieldId = 0; fieldId < numFields; ++fieldId) {
-            _wordStores.push_back(std::make_unique<WordStore>());
-            _removers.push_back(std::make_unique<FieldIndexRemover>
-                                (*_wordStores.back()));
-        }
-        _wordToRefMaps.resize(numFields);
-    }
+    FieldIndexRemoverTest();
+    ~FieldIndexRemoverTest() override;
     vespalib::datastore::EntryRef getWordRef(const vespalib::string &word, uint32_t fieldId) {
         auto &wordToRefMap = _wordToRefMaps[fieldId];
         WordStore &wordStore = *_wordStores[fieldId];
@@ -109,6 +97,21 @@ struct FieldIndexRemoverTest : public ::testing::Test {
         return _listener.getWords();
     }
 };
+
+FieldIndexRemoverTest::FieldIndexRemoverTest()
+    : _listener(),
+      _wordStores(),
+      _wordToRefMaps(),
+      _removers()
+{
+    uint32_t numFields = 4;
+    for (uint32_t fieldId = 0; fieldId < numFields; ++fieldId) {
+        _wordStores.push_back(std::make_unique<WordStore>());
+        _removers.push_back(std::make_unique<FieldIndexRemover>(*_wordStores.back()));
+    }
+    _wordToRefMaps.resize(numFields);
+}
+FieldIndexRemoverTest::~FieldIndexRemoverTest() = default;
 
 TEST_F(FieldIndexRemoverTest, word_field_id_pairs_for_multiple_doc_ids_can_be_inserted)
 {

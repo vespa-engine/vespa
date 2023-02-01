@@ -76,15 +76,8 @@ private:
     bool              _firstDoc;
 
 public:
-    explicit MyBuilder(const Schema &schema)
-        : IndexBuilder(schema),
-          _ss(),
-          _insideWord(false),
-          _insideField(false),
-          _firstWord(true),
-          _firstField(true),
-          _firstDoc(true)
-    {}
+    explicit MyBuilder(const Schema &schema);
+    ~MyBuilder() override;
 
     void startWord(vespalib::stringref word) override {
         assert(_insideField);
@@ -152,6 +145,17 @@ public:
         return _ss.str();
     }
 };
+
+MyBuilder::MyBuilder(const Schema &schema)
+    : IndexBuilder(schema),
+      _ss(),
+      _insideWord(false),
+      _insideField(false),
+      _firstWord(true),
+      _firstField(true),
+      _firstDoc(true)
+{}
+MyBuilder::~MyBuilder() = default;
 
 struct SimpleMatchData {
     TermFieldMatchData term;
@@ -395,7 +399,7 @@ public:
         if (_inserter != nullptr) {
             _inserter->flush();
         }
-        for (auto wfp : _mock) {
+        for (const auto& wfp : _mock) {
             auto &wf = wfp.first;
             auto &word = wf.first;
             auto fieldId = wf.second;
@@ -522,7 +526,7 @@ myCompactFeatures(FieldIndexCollection &fieldIndexes, ISequencedTaskExecutor &pu
 Schema
 make_all_index_schema(DocBuilder::AddFieldsType add_fields)
 {
-    DocBuilder db(add_fields);
+    DocBuilder db(std::move(add_fields));
     return SchemaBuilder(db).add_all_indexes().build();
 }
 
@@ -732,12 +736,8 @@ make_multi_field_add_fields()
 struct FieldIndexCollectionTest : public ::testing::Test {
     Schema schema;
     FieldIndexCollection fic;
-    FieldIndexCollectionTest()
-        : schema(make_all_index_schema(make_multi_field_add_fields())),
-          fic(schema, MockFieldLengthInspector())
-    {
-    }
-    ~FieldIndexCollectionTest();
+    FieldIndexCollectionTest();
+    ~FieldIndexCollectionTest() override;
 
     [[nodiscard]]NormalFieldIndex::PostingList::Iterator
     find(const vespalib::stringref word, uint32_t field_id) const {
@@ -745,6 +745,11 @@ struct FieldIndexCollectionTest : public ::testing::Test {
     }
 };
 
+FieldIndexCollectionTest::FieldIndexCollectionTest()
+    : schema(make_all_index_schema(make_multi_field_add_fields())),
+      fic(schema, MockFieldLengthInspector())
+{
+}
 FieldIndexCollectionTest::~FieldIndexCollectionTest() = default;
 
 TEST_F(FieldIndexCollectionTest, require_that_multiple_posting_lists_across_multiple_fields_can_exist)
@@ -938,8 +943,8 @@ public:
     DocumentInverterContext _inv_context;
     DocumentInverter _inv;
 
-    InverterTest(DocBuilder::AddFieldsType add_fields)
-        : _b(add_fields),
+    explicit InverterTest(DocBuilder::AddFieldsType add_fields)
+        : _b(std::move(add_fields)),
           _schema(SchemaBuilder(_b).add_all_indexes().build()),
           _fic(_schema, MockFieldLengthInspector()),
           _invertThreads(SequencedTaskExecutor::create(invert_executor, 2)),
@@ -948,14 +953,14 @@ public:
           _inv(_inv_context)
     {
     }
-    NormalFieldIndex::PostingList::Iterator find(const vespalib::stringref word, uint32_t field_id) const {
+    [[nodiscard]] NormalFieldIndex::PostingList::Iterator find(const vespalib::stringref word, uint32_t field_id) const {
         return find_in_field_index<false>(word, field_id, _fic);
     }
-    NormalFieldIndex::PostingList::ConstIterator findFrozen(const vespalib::stringref word, uint32_t field_id) const {
+    [[nodiscard]] NormalFieldIndex::PostingList::ConstIterator findFrozen(const vespalib::stringref word, uint32_t field_id) const {
         return find_frozen_in_field_index<false>(word, field_id, _fic);
     }
-    SearchIterator::UP search(const vespalib::stringref word, uint32_t field_id,
-                              const SimpleMatchData& match_data) {
+    [[nodiscard]] SearchIterator::UP
+    search(const vespalib::stringref word, uint32_t field_id,const SimpleMatchData& match_data) const {
         return make_search_iterator<false>(findFrozen(word, field_id), featureStoreRef(_fic, field_id),
                                            field_id, match_data.array);
     }

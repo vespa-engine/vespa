@@ -24,8 +24,11 @@ private:
 
 public:
     Benchmark() : _timer(), _sample(0) {}
+    ~Benchmark() override;
     int Main() override;
 };
+
+Benchmark::~Benchmark() = default;
 
 void
 Benchmark::run(size_t numRuns, size_t numPositions)

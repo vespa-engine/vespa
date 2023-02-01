@@ -55,6 +55,8 @@ using namespace search::queryeval;
 struct MySetup : public IFieldLengthInspector {
     std::vector<vespalib::string> fields;
     std::map<vespalib::string, FieldLengthInfo> field_lengths;
+    MySetup();
+    ~MySetup() override;
     MySetup &field(const std::string &name) {
         fields.emplace_back(name);
         return *this;
@@ -83,6 +85,9 @@ struct MySetup : public IFieldLengthInspector {
     }
 
 };
+
+MySetup::MySetup() = default;
+MySetup::~MySetup() = default;
 
 //-----------------------------------------------------------------------------
 

@@ -69,13 +69,11 @@ private:
     Schema _schema;
     uint32_t _indexId;
 public:
-    void
-    requireThatDictionaryHandlesNoEntries(bool directio, bool readmmap);
-
-    void
-    requireThatDictionaryHandlesMultipleEntries(bool directio, bool readmmap);
+    void requireThatDictionaryHandlesNoEntries(bool directio, bool readmmap);
+    void requireThatDictionaryHandlesMultipleEntries(bool directio, bool readmmap);
 
     Test();
+    ~Test() override;
     int Main() override;
 };
 
@@ -104,8 +102,8 @@ Test::requireThatDictionaryHandlesNoEntries(bool directio, bool readmmap)
     EXPECT_TRUE(dict.open("dump/1/", tuneFileRead, bvScope));
     EXPECT_EQUAL(5u, dict.getDocIdLimit());
     EXPECT_EQUAL(0u, dict.getEntries().size());
-    EXPECT_TRUE(dict.lookup(1).get() == NULL);
-    EXPECT_TRUE(dict.lookup(2).get() == NULL);
+    EXPECT_FALSE(dict.lookup(1));
+    EXPECT_FALSE(dict.lookup(2));
 }
 
 void
@@ -162,17 +160,17 @@ Test::requireThatDictionaryHandlesMultipleEntries(bool directio, bool readmmap)
     EXPECT_EQUAL(5u, e._wordNum);
     EXPECT_EQUAL(23u, e._numDocs);
 
-    EXPECT_TRUE(dict.lookup(2).get() == NULL);
-    EXPECT_TRUE(dict.lookup(3).get() == NULL);
-    EXPECT_TRUE(dict.lookup(4).get() == NULL);
-    EXPECT_TRUE(dict.lookup(6).get() == NULL);
+    EXPECT_FALSE(dict.lookup(2));
+    EXPECT_FALSE(dict.lookup(3));
+    EXPECT_FALSE(dict.lookup(4));
+    EXPECT_FALSE(dict.lookup(6));
 
     BitVector::UP bv1act = dict.lookup(1);
-    EXPECT_TRUE(bv1act.get() != NULL);
+    EXPECT_TRUE(bv1act);
     EXPECT_TRUE(*bv1exp == *bv1act);
 
     BitVector::UP bv5act = dict.lookup(5);
-    EXPECT_TRUE(bv5act.get() != NULL);
+    EXPECT_TRUE(bv5act);
     EXPECT_TRUE(*bv5exp == *bv5act);
 }
 
@@ -182,6 +180,8 @@ Test::Test()
 {
     _schema.addIndexField(Schema::IndexField("f1", DataType::STRING));
 }
+
+Test::~Test() = default;
 
 int
 Test::Main()
