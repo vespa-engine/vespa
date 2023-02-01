@@ -370,7 +370,13 @@ public class Flags {
             "Specifies which public key to use for core dump encryption.",
             "Takes effect on the next tick.",
             ZONE_ID, NODE_TYPE, HOSTNAME);
-    
+
+    public static final UnboundStringFlag ZOOKEEPER_SNAPSHOT_METHOD = defineStringFlag(
+            "zookeeper-snapshot-method", "gz",
+            List.of("mpolden"), "2023-02-01", "2023-05-01",
+            "ZooKeeper snapshot compression method. Valid values are '', 'gz' and 'snappy'",
+            "Takes effect on node restart");
+
     /** WARNING: public for testing: All flags should be defined in {@link Flags}. */
     public static UnboundBooleanFlag defineFeatureFlag(String flagId, boolean defaultValue, List<String> owners,
                                                        String createdAt, String expiresAt, String description,
