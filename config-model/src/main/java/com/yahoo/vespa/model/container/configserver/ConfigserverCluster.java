@@ -86,6 +86,7 @@ public class ConfigserverCluster extends AbstractConfigProducer
         }
 
         builder.dynamicReconfiguration(options.hostedVespa().orElse(false));
+        builder.snapshotMethod(options.zooKeeperSnapshotMethod());
     }
 
     @Override
