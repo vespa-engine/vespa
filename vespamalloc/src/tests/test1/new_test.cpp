@@ -9,6 +9,20 @@
 
 LOG_SETUP("new_test");
 
+void *wrap_memalign_real(size_t alignment, size_t size)
+{
+    return memalign(alignment, size);
+}
+
+void* (*wrap_memalign)(size_t alignment, size_t size) = wrap_memalign_real;
+
+void *wrap_aligned_alloc_real(size_t alignment, size_t size)
+{
+    return aligned_alloc(alignment, size);
+}
+
+void* (*wrap_aligned_alloc)(size_t alignment, size_t size) = wrap_aligned_alloc_real;
+
 void cmp(const void *a, const void *b) {
     EXPECT_EQUAL(a, b);
 }
@@ -260,33 +274,33 @@ void verify_alignment(void * ptr, size_t align, size_t min_sz) {
 }
 
 TEST("test memalign") {
-    verify_alignment(memalign(0, 0), 1, 1);
-    verify_alignment(memalign(0, 1), 1, 1);
-    verify_alignment(memalign(1, 0), 1, 1);
+    verify_alignment(wrap_memalign(0, 0), 1, 1);
+    verify_alignment(wrap_memalign(0, 1), 1, 1);
+    verify_alignment(wrap_memalign(1, 0), 1, 1);
 
     for (size_t align : {3,7,19}) {
         // According to man pages these should fail, but it seems it rounds up and does best effort
-        verify_alignment(memalign(align, 73), 1ul << vespalib::Optimized::msbIdx(align), 73);
+        verify_alignment(wrap_memalign(align, 73), 1ul << vespalib::Optimized::msbIdx(align), 73);
     }
     for (size_t align : {1, 2, 4, 8, 16, 32, 64, 128, 256, 512, 1024, 2048, 4096, 8192, 16384, 32768, 65536}) {
-        verify_alignment(memalign(align, 1), align, 1);
+        verify_alignment(wrap_memalign(align, 1), align, 1);
     }
 }
 
 TEST("test aligned_alloc") {
-    verify_alignment(aligned_alloc(0, 0), 1, 1);
-    verify_alignment(aligned_alloc(0, 1), 1, 1);
-    verify_alignment(aligned_alloc(1, 0), 1, 1);
+    verify_alignment(wrap_aligned_alloc(0, 0), 1, 1);
+    verify_alignment(wrap_aligned_alloc(0, 1), 1, 1);
+    verify_alignment(wrap_aligned_alloc(1, 0), 1, 1);
     for (size_t align : {3,7,19}) {
         // According to man pages these should fail, but it seems it rounds up and does best effort
-        verify_alignment(aligned_alloc(align, align*7), 1ul << vespalib::Optimized::msbIdx(align), align*7);
+        verify_alignment(wrap_aligned_alloc(align, align*7), 1ul << vespalib::Optimized::msbIdx(align), align*7);
     }
     for (size_t align : {1, 2, 4, 8, 16, 32, 64, 128, 256, 512, 1024, 2048, 4096, 8192, 16384, 32768, 65536}) {
-        verify_alignment(aligned_alloc(align, align*7), align, align*7);
+        verify_alignment(wrap_aligned_alloc(align, align*7), align, align*7);
     }
     for (size_t sz : {31,33,63}) {
         // According to man pages these should fail, but it seems it rounds up and does best effort
-        verify_alignment(aligned_alloc(32, sz), 32, sz);
+        verify_alignment(wrap_aligned_alloc(32, sz), 32, sz);
     }
 }
 
