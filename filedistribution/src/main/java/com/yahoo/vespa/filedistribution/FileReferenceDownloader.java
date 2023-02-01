@@ -23,6 +23,9 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import static com.yahoo.vespa.filedistribution.FileReferenceData.CompressionType;
+import static com.yahoo.vespa.filedistribution.FileReferenceData.CompressionType.gzip;
+import static com.yahoo.vespa.filedistribution.FileReferenceData.CompressionType.lz4;
+import static com.yahoo.vespa.filedistribution.FileReferenceData.CompressionType.zstd;
 
 /**
  * Downloads file reference from config server and keeps track of files being downloaded
@@ -31,7 +34,8 @@ import static com.yahoo.vespa.filedistribution.FileReferenceData.CompressionType
  */
 public class FileReferenceDownloader {
 
-    private final static Logger log = Logger.getLogger(FileReferenceDownloader.class.getName());
+    private static final Logger log = Logger.getLogger(FileReferenceDownloader.class.getName());
+    private static final Set<CompressionType> defaultAcceptedCompressionTypes = Set.of(gzip, lz4, zstd);
 
     private final ExecutorService downloadExecutor =
             Executors.newFixedThreadPool(Math.max(8, Runtime.getRuntime().availableProcessors()),
@@ -42,14 +46,12 @@ public class FileReferenceDownloader {
     private final Duration sleepBetweenRetries;
     private final Duration rpcTimeout;
     private final File downloadDirectory;
-    private final Set<CompressionType> acceptedCompressionTypes;
 
     FileReferenceDownloader(ConnectionPool connectionPool,
                             Downloads downloads,
                             Duration timeout,
                             Duration sleepBetweenRetries,
-                            File downloadDirectory,
-                            Set<CompressionType> acceptedCompressionTypes) {
+                            File downloadDirectory) {
         this.connectionPool = connectionPool;
         this.downloads = downloads;
         this.downloadTimeout = timeout;
@@ -57,7 +59,6 @@ public class FileReferenceDownloader {
         this.downloadDirectory = downloadDirectory;
         String timeoutString = System.getenv("VESPA_CONFIGPROXY_FILEDOWNLOAD_RPC_TIMEOUT");
         this.rpcTimeout = Duration.ofSeconds(timeoutString == null ? 30 : Integer.parseInt(timeoutString));
-        this.acceptedCompressionTypes = requireNonEmpty(acceptedCompressionTypes);
     }
 
     private void waitUntilDownloadStarted(FileReferenceDownload fileReferenceDownload) {
@@ -139,8 +140,8 @@ public class FileReferenceDownloader {
         Request request = new Request("filedistribution.serveFile");
         request.parameters().add(new StringValue(fileReferenceDownload.fileReference().value()));
         request.parameters().add(new Int32Value(fileReferenceDownload.downloadFromOtherSourceIfNotFound() ? 0 : 1));
-        String[] temp = new String[acceptedCompressionTypes.size()];
-        acceptedCompressionTypes.stream().map(Enum::name).toList().toArray(temp);
+        String[] temp = new String[defaultAcceptedCompressionTypes.size()];
+        defaultAcceptedCompressionTypes.stream().map(Enum::name).toList().toArray(temp);
         request.parameters().add(new StringArray(temp));
         return request;
     }

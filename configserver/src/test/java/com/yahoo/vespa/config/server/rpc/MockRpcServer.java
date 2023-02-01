@@ -37,7 +37,7 @@ public class MockRpcServer extends RpcServer {
               null,
               Metrics.createTestMetrics(),
               new HostRegistry(),
-              new FileServer(new FileDirectory(tempDir)),
+              new FileServer(createConfig(port), new FileDirectory(tempDir)),
               new NoopRpcAuthorizer(),
               new RpcRequestHandlerProvider());
     }
