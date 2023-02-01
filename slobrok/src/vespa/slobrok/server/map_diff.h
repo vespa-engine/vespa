@@ -29,6 +29,7 @@ struct MapDiff {
       : MapDiff(0, {}, std::move(mappings), to)
     {}
 
+    MapDiff(MapDiff &&) noexcept;
     ~MapDiff();
     
     // is this a diff from the empty map:

@@ -60,6 +60,7 @@ public:
 };
 
 struct MapLog : CallLog<MapCall>, MapListener {
+    ~MapLog() override;
     void add(const ServiceMapping &mapping) override {
         log(MapCall::add(mapping));
     }
@@ -73,6 +74,8 @@ struct MapLog : CallLog<MapCall>, MapListener {
     }
 };
 
+MapLog::~MapLog() = default;
+
 struct MonitorLog : CallLog<MonitorCall>, MappingMonitor {
     void start(const ServiceMapping& mapping, bool hurry) override {
         log(MonitorCall::start(mapping, hurry));
@@ -84,7 +87,7 @@ struct MonitorLog : CallLog<MonitorCall>, MappingMonitor {
 
 struct MyMappingMonitor : MappingMonitor {
     MonitorLog &monitor;
-    MyMappingMonitor(MonitorLog &m) : monitor(m) {}
+    explicit MyMappingMonitor(MonitorLog &m) : monitor(m) {}
     void start(const ServiceMapping& mapping, bool hurry) override {
         monitor.start(mapping, hurry);
     }
@@ -160,7 +163,7 @@ struct LocalRpcMonitorMapTest : public ::testing::Test {
             map_log.expect({});
         }
     }
-    ~LocalRpcMonitorMapTest();
+    ~LocalRpcMonitorMapTest() override;
 };
 LocalRpcMonitorMapTest::~LocalRpcMonitorMapTest() = default;
 

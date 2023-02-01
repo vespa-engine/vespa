@@ -13,9 +13,7 @@ namespace vespalib {
     }
 }
 
-namespace config {
-
-namespace protocol {
+namespace config::protocol {
 
 int readProtocolVersion();
 int readTraceLevel();
@@ -87,6 +85,3 @@ DecompressedData decompress(const char * buf, uint32_t len, const CompressionTyp
 }
 
 }
-
-}
-

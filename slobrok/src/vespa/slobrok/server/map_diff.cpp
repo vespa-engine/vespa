@@ -4,6 +4,7 @@
 
 namespace slobrok {
 
+MapDiff::MapDiff(MapDiff &&) noexcept = default;
 MapDiff::~MapDiff() = default;
 
 } // namespace slobrok

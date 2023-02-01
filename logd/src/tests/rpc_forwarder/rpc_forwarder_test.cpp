@@ -42,19 +42,8 @@ struct RpcServer : public FRT_Invokable {
     bool reply_with_proto_response;
 
 public:
-    RpcServer()
-        : server(),
-          request_count(0),
-          messages(),
-          reply_with_error(false),
-          reply_with_proto_response(true)
-    {
-        FRT_ReflectionBuilder builder(&server.supervisor());
-        builder.DefineMethod("vespa.logserver.archiveLogMessages", "bix", "bix",
-                             FRT_METHOD(RpcServer::rpc_archive_log_messages), this);
-        server.supervisor().Listen(0);
-    }
-    ~RpcServer() = default;
+    RpcServer();
+    ~RpcServer() override;
     int get_listen_port() {
         return server.supervisor().GetListenPort();
     }
@@ -80,6 +69,20 @@ public:
         }
     }
 };
+
+RpcServer::RpcServer()
+    : server(),
+      request_count(0),
+      messages(),
+      reply_with_error(false),
+      reply_with_proto_response(true)
+{
+    FRT_ReflectionBuilder builder(&server.supervisor());
+    builder.DefineMethod("vespa.logserver.archiveLogMessages", "bix", "bix",
+                         FRT_METHOD(RpcServer::rpc_archive_log_messages), this);
+    server.supervisor().Listen(0);
+}
+RpcServer::~RpcServer() = default;
 
 std::string
 make_log_line(const std::string& level, const std::string& payload)

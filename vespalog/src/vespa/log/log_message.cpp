@@ -120,8 +120,9 @@ LogMessage::LogMessage(int64_t time_nanos_in,
 {
 }
 
+LogMessage::LogMessage(LogMessage &&) noexcept = default;
+LogMessage & LogMessage::operator=(LogMessage &&) noexcept = default;
 LogMessage::~LogMessage() = default;
-
 
 /* 
  * Parse log line to populate log message class. The parsing is based on
