@@ -289,7 +289,7 @@ public class CoredumpHandler {
                 .filter(k -> !k.isEmpty())
                 .map(KeyId::ofString)
                 .flatMap(secretSharedKeySupplier::create)
-                .orElseThrow(() -> new IllegalStateException("No core dump encryption key provided"));
+                .orElseThrow(() -> ConvergenceException.ofError("No core dump encryption key provided"));
         metadata.setDecryptionToken(sharedCoreKey.sealedSharedKey().toTokenString());
 
         String coreDumpId = coreDumpDirectory.getFileName().toString();

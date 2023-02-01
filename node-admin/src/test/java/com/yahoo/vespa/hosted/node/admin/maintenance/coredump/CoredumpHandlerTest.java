@@ -12,6 +12,7 @@ import com.yahoo.vespa.hosted.node.admin.configserver.cores.CoreDumpMetadata;
 import com.yahoo.vespa.hosted.node.admin.configserver.cores.Cores;
 import com.yahoo.vespa.hosted.node.admin.container.metrics.DimensionMetrics;
 import com.yahoo.vespa.hosted.node.admin.container.metrics.Metrics;
+import com.yahoo.vespa.hosted.node.admin.nodeadmin.ConvergenceException;
 import com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAgentContext;
 import com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAgentContextImpl;
 import com.yahoo.vespa.hosted.node.admin.task.util.file.UnixPath;
@@ -215,7 +216,7 @@ public class CoredumpHandlerTest {
 
     @Test
     void processing_single_coredump_test_without_encryption_throws() throws IOException {
-        assertThrows(IllegalStateException.class, () -> do_process_single_coredump_test("dump_bash.core.431.zst"));
+        assertThrows(ConvergenceException.class, () -> do_process_single_coredump_test("dump_bash.core.431.zst"));
     }
 
     @Test
@@ -229,14 +230,14 @@ public class CoredumpHandlerTest {
     void processing_throws_when_no_public_key_set_in_feature_flag() throws IOException {
         flagSource.withStringFlag(Flags.CORE_ENCRYPTION_PUBLIC_KEY_ID.id(), ""); // empty -> not set
         verify(secretSharedKeySupplier, never()).create(any());
-        assertThrows(IllegalStateException.class, () -> do_process_single_coredump_test("dump_bash.core.431.zst"));
+        assertThrows(ConvergenceException.class, () -> do_process_single_coredump_test("dump_bash.core.431.zst"));
     }
 
     @Test
     void processing_throws_when_no_key_returned_for_key_id_specified_by_feature_flag() throws IOException {
         flagSource.withStringFlag(Flags.CORE_ENCRYPTION_PUBLIC_KEY_ID.id(), "baz-key");
         when(secretSharedKeySupplier.create(KeyId.ofString("baz-key"))).thenReturn(Optional.empty());
-        assertThrows(IllegalStateException.class, () -> do_process_single_coredump_test("dump_bash.core.431.zst"));
+        assertThrows(ConvergenceException.class, () -> do_process_single_coredump_test("dump_bash.core.431.zst"));
     }
 
     @Test
