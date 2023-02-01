@@ -21,11 +21,13 @@ public interface CloudConfigOptions {
     Optional<Integer> rpcPort();
     Optional<Boolean> multiTenant();
     Optional<Boolean> hostedVespa();
+
     ConfigServer[] allConfigServers();
     int[] configServerZookeeperIds();
     Optional<Integer> zookeeperClientPort();
     String[] configModelPluginDirs();
     Optional<Long> sessionLifeTimeSecs();
+
     Optional<Long> zookeeperBarrierTimeout(); //in seconds
     Optional<Integer> zookeeperElectionPort();
     Optional<Integer> zookeeperQuorumPort();
@@ -37,4 +39,5 @@ public interface CloudConfigOptions {
     Optional<String> loadBalancerAddress();
     Optional<String> athenzDnsSuffix();
     Optional<String> ztsUrl();
+    String zooKeeperSnapshotMethod();
 }
