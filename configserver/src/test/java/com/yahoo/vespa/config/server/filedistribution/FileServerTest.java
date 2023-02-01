@@ -11,7 +11,6 @@ import com.yahoo.vespa.filedistribution.FileDownloader;
 import com.yahoo.vespa.filedistribution.FileReferenceCompressor;
 import com.yahoo.vespa.filedistribution.FileReferenceData;
 import com.yahoo.vespa.filedistribution.FileReferenceDownload;
-import com.yahoo.vespa.flags.InMemoryFlagSource;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -140,10 +139,7 @@ public class FileServerTest {
     private FileServer createFileServer(ConfigserverConfig.Builder configBuilder) throws IOException {
         File fileReferencesDir = temporaryFolder.newFolder();
         configBuilder.fileReferencesDir(fileReferencesDir.getAbsolutePath());
-        InMemoryFlagSource flagSource = new InMemoryFlagSource();
-        return new FileServer(new ConfigserverConfig(configBuilder),
-                              flagSource,
-                              new FileDirectory(fileReferencesDir));
+        return new FileServer(new ConfigserverConfig(configBuilder), new FileDirectory(fileReferencesDir));
     }
 
     private static class FileReceiver implements FileServer.Receiver {
@@ -168,8 +164,7 @@ public class FileServerTest {
                   new Supervisor(new Transport("mock")).setDropEmptyBuffers(true),
                   downloadDirectory,
                   Duration.ofMillis(100),
-                  Duration.ofMillis(100),
-                  Set.of(gzip));
+                  Duration.ofMillis(100));
         }
 
     }

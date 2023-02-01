@@ -25,7 +25,6 @@ import java.nio.file.Path;
 import java.time.Duration;
 import java.util.Arrays;
 import java.util.Optional;
-import java.util.Set;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -41,7 +40,6 @@ import static org.junit.Assert.fail;
 
 public class FileDownloaderTest {
     private static final Duration sleepBetweenRetries = Duration.ofMillis(10);
-    private static final Set<FileReferenceData.CompressionType> acceptedCompressionTypes = Set.of(gzip);
 
     private MockConnection connection;
     private FileDownloader fileDownloader;
@@ -265,16 +263,6 @@ public class FileDownloaderTest {
         assertEquals("content", IOUtils.readFile(downloadedFile));
     }
 
-    @Test
-    public void testCompressionTypes() {
-        try {
-            createDownloader(connection, Duration.ofSeconds(1), Set.of());
-            fail("expected to fail when set is empty");
-        } catch (IllegalArgumentException e) {
-            // ignore
-        }
-    }
-
     private void writeFileReference(File dir, String fileReferenceString, String fileName) throws IOException {
         File fileReferenceDir = new File(dir, fileReferenceString);
         fileReferenceDir.mkdir();
@@ -314,11 +302,7 @@ public class FileDownloaderTest {
     }
 
     private FileDownloader createDownloader(MockConnection connection, Duration timeout) {
-        return  createDownloader(connection, timeout, acceptedCompressionTypes);
-    }
-
-    private FileDownloader createDownloader(MockConnection connection, Duration timeout, Set<FileReferenceData.CompressionType> acceptedCompressionTypes) {
-        return new FileDownloader(connection, supervisor, downloadDir, timeout, sleepBetweenRetries, acceptedCompressionTypes);
+        return new FileDownloader(connection, supervisor, downloadDir, timeout, sleepBetweenRetries);
     }
 
     private static class MockConnection implements ConnectionPool, com.yahoo.vespa.config.Connection {

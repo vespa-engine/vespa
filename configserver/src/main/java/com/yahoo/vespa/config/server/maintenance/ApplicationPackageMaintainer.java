@@ -17,17 +17,13 @@ import com.yahoo.vespa.filedistribution.FileDistributionConnectionPool;
 import com.yahoo.vespa.filedistribution.FileDownloader;
 import com.yahoo.vespa.filedistribution.FileReferenceDownload;
 import com.yahoo.vespa.flags.FlagSource;
-import com.yahoo.vespa.flags.Flags;
 import java.io.File;
 import java.time.Duration;
 import java.util.List;
 import java.util.Optional;
-import java.util.Set;
 import java.util.logging.Logger;
-import java.util.stream.Collectors;
 
 import static com.yahoo.vespa.config.server.filedistribution.FileDistributionUtil.fileReferenceExistsOnDisk;
-import static com.yahoo.vespa.filedistribution.FileReferenceData.CompressionType;
 
 /**
  * Verifies that all active sessions has an application package on local disk.
@@ -54,10 +50,7 @@ public class ApplicationPackageMaintainer extends ConfigServerMaintainer {
         super(applicationRepository, curator, flagSource, applicationRepository.clock(), interval, false);
         this.applicationRepository = applicationRepository;
         this.downloadDirectory = new File(Defaults.getDefaults().underVespaHome(applicationRepository.configserverConfig().fileReferencesDir()));
-        this.fileDownloader = createFileDownloader(otherConfigServersInCluster,
-                                                   downloadDirectory,
-                                                   supervisor,
-                                                   Flags.FILE_DISTRIBUTION_ACCEPTED_COMPRESSION_TYPES.bindTo(flagSource).value());
+        this.fileDownloader = createFileDownloader(otherConfigServersInCluster, downloadDirectory, supervisor);
     }
 
     @Override
@@ -100,14 +93,10 @@ public class ApplicationPackageMaintainer extends ConfigServerMaintainer {
 
     private static FileDownloader createFileDownloader(List<String> otherConfigServersInCluster,
                                                        File downloadDirectory,
-                                                       Supervisor supervisor,
-                                                       List<String> flagValues) {
+                                                       Supervisor supervisor) {
         ConfigSourceSet configSourceSet = new ConfigSourceSet(otherConfigServersInCluster);
         ConnectionPool connectionPool = new FileDistributionConnectionPool(configSourceSet, supervisor);
-        Set<CompressionType> acceptedCompressionTypes = flagValues.stream()
-                                                                  .map(CompressionType::valueOf)
-                                                                  .collect(Collectors.toSet());
-        return new FileDownloader(connectionPool, supervisor, downloadDirectory, Duration.ofSeconds(300), acceptedCompressionTypes);
+        return new FileDownloader(connectionPool, supervisor, downloadDirectory, Duration.ofSeconds(300));
     }
 
     @Override

@@ -20,8 +20,6 @@ import com.yahoo.vespa.filedistribution.FileReferenceData;
 import com.yahoo.vespa.filedistribution.FileReferenceDownload;
 import com.yahoo.vespa.filedistribution.LazyFileReferenceData;
 import com.yahoo.vespa.filedistribution.LazyTemporaryStorageFileReferenceData;
-import com.yahoo.vespa.flags.FlagSource;
-import com.yahoo.vespa.flags.Flags;
 import com.yahoo.yolean.Exceptions;
 import java.io.File;
 import java.io.IOException;
@@ -29,14 +27,12 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Duration;
 import java.time.Instant;
-import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.util.stream.Collectors;
 
 import static com.yahoo.vespa.config.server.filedistribution.FileDistributionUtil.getOtherConfigServersInCluster;
 import static com.yahoo.vespa.filedistribution.FileReferenceData.CompressionType;
@@ -50,6 +46,7 @@ public class FileServer {
 
     // Set this low, to make sure we don't wait for a long time trying to download file
     private static final Duration timeout = Duration.ofSeconds(10);
+    private static final List<CompressionType> compressionTypesToServe = compressionTypesAsList(List.of("zstd", "lz4", "gzip")); // In preferred order
 
     private final FileDirectory fileDirectory;
     private final ExecutorService executor;
@@ -89,16 +86,8 @@ public class FileServer {
 
     @SuppressWarnings("WeakerAccess") // Created by dependency injection
     @Inject
-    public FileServer(ConfigserverConfig configserverConfig, FlagSource flagSource, FileDirectory fileDirectory) {
-        this(createFileDownloader(getOtherConfigServersInCluster(configserverConfig),
-                                  compressionTypes(Flags.FILE_DISTRIBUTION_ACCEPTED_COMPRESSION_TYPES.bindTo(flagSource).value())),
-             compressionTypesAsList(Flags.FILE_DISTRIBUTION_COMPRESSION_TYPES_TO_SERVE.bindTo(flagSource).value()),
-             fileDirectory);
-    }
-
-    // For testing only
-    public FileServer(FileDirectory fileDirectory) {
-        this(createFileDownloader(List.of(), Set.of(gzip)), List.of(gzip), fileDirectory);
+    public FileServer(ConfigserverConfig configserverConfig, FileDirectory fileDirectory) {
+        this(createFileDownloader(getOtherConfigServersInCluster(configserverConfig)), compressionTypesToServe, fileDirectory);
     }
 
     FileServer(FileDownloader fileDownloader, List<CompressionType> compressionTypes, FileDirectory fileDirectory) {
@@ -237,21 +226,9 @@ public class FileServer {
         executor.shutdown();
     }
 
-    private static FileDownloader createFileDownloader(List<String> configServers, Set<CompressionType> acceptedCompressionTypes) {
+    private static FileDownloader createFileDownloader(List<String> configServers) {
         Supervisor supervisor = new Supervisor(new Transport("filedistribution-pool")).setDropEmptyBuffers(true);
-
-        return new FileDownloader(configServers.isEmpty()
-                                          ? FileDownloader.emptyConnectionPool()
-                                          : createConnectionPool(configServers, supervisor),
-                                  supervisor,
-                                  timeout,
-                                  acceptedCompressionTypes);
-    }
-
-    private static LinkedHashSet<CompressionType> compressionTypes(List<String> compressionTypes) {
-        return compressionTypes.stream()
-                               .map(CompressionType::valueOf)
-                               .collect(Collectors.toCollection(LinkedHashSet::new));
+        return new FileDownloader(createConnectionPool(configServers, supervisor), supervisor, timeout);
     }
 
     private static List<CompressionType> compressionTypesAsList(List<String> compressionTypes) {
