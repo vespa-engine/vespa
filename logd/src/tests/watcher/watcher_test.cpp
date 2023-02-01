@@ -61,14 +61,8 @@ struct DummyForwarder : public Forwarder {
     std::mutex lock;
     std::condition_variable cond;
     std::vector<std::string> lines;
-    DummyForwarder()
-        : Forwarder(),
-          lock(),
-          cond(),
-          lines()
-    {
-    }
-    ~DummyForwarder() override = default;
+    DummyForwarder();
+    ~DummyForwarder() override;
     void forwardLine(std::string_view log_line) override {
         std::lock_guard guard(lock);
         lines.emplace_back(log_line);
@@ -86,6 +80,14 @@ struct DummyForwarder : public Forwarder {
         cond.wait_for(guard, 10s, [this, lineCount]() { return lineCount <= lines.size(); });
     }
 };
+
+DummyForwarder::DummyForwarder()
+    : Forwarder(),
+      lock(),
+      cond(),
+      lines()
+{ }
+DummyForwarder::~DummyForwarder() = default;
 
 struct WatcherFixture
 {
