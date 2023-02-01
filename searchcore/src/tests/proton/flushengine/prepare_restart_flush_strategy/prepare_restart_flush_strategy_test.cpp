@@ -14,7 +14,6 @@ using search::SerialNum;
 using searchcorespi::IFlushTarget;
 
 using SimpleFlushHandler = test::DummyFlushHandler;
-using FlushCandidatesList = std::vector<FlushTargetCandidates>;
 using Config = PrepareRestartFlushStrategy::Config;
 
 const Config DEFAULT_CFG(2.0, 0.0, 4.0);
@@ -34,13 +33,13 @@ struct SimpleFlushTarget : public test::DummyFlushTarget
           approxDiskBytes(approxDiskBytes_),
           replay_operation_cost(replay_operation_cost_)
     {}
-    SerialNum getFlushedSerialNum() const override {
+    [[nodiscard]] SerialNum getFlushedSerialNum() const override {
         return flushedSerial;
     }
-    uint64_t getApproxBytesToWriteToDisk() const override {
+    [[nodiscard]] uint64_t getApproxBytesToWriteToDisk() const override {
         return approxDiskBytes;
     }
-    double get_replay_operation_cost() const override {
+    [[nodiscard]] double get_replay_operation_cost() const override {
         return replay_operation_cost;
     }
 };
@@ -62,7 +61,8 @@ private:
     }
 
 public:
-    ContextsBuilder() : _result(), _handlers() {}
+    ContextsBuilder() noexcept;
+    ~ContextsBuilder();
     ContextsBuilder &add(const vespalib::string &handlerName,
                          const vespalib::string &targetName,
                          IFlushTarget::Type targetType,
@@ -97,8 +97,11 @@ public:
                            double replay_operation_cost = 0.0) {
         return add("handler1", targetName, IFlushTarget::Type::GC, flushedSerial, approxDiskBytes, replay_operation_cost);
     }
-    FlushContext::List build() const { return _result; }
+    [[nodiscard]] FlushContext::List build() const { return _result; }
 };
+
+ContextsBuilder::ContextsBuilder() noexcept = default;
+ContextsBuilder::~ContextsBuilder() = default;
 
 class CandidatesBuilder
 {
@@ -110,7 +113,7 @@ private:
     Config _cfg;
 
 public:
-    CandidatesBuilder(const FlushContext::List &sortedFlushContexts)
+    explicit CandidatesBuilder(const FlushContext::List &sortedFlushContexts)
         : _sortedFlushContexts(&sortedFlushContexts),
           _numCandidates(sortedFlushContexts.size()),
           _candidates(),
@@ -142,10 +145,7 @@ public:
     }
     FlushTargetCandidates build() const {
         setup_candidates();
-        return FlushTargetCandidates(_candidates,
-                                     _numCandidates,
-                                     _tlsStats,
-                                     _cfg);
+        return {_candidates, _numCandidates, _tlsStats, _cfg};
     }
 };
 
@@ -212,14 +212,14 @@ struct FlushStrategyFixture
 {
     flushengine::TlsStatsMap _tlsStatsMap;
     PrepareRestartFlushStrategy strategy;
-    FlushStrategyFixture(const Config &config)
+    explicit FlushStrategyFixture(const Config &config)
         : _tlsStatsMap(defaultTransactionLogStats()),
           strategy(config)
     {}
     FlushStrategyFixture()
         : FlushStrategyFixture(DEFAULT_CFG)
     {}
-    FlushContext::List getFlushTargets(const FlushContext::List &targetList,
+    [[nodiscard]] FlushContext::List getFlushTargets(const FlushContext::List &targetList,
                                        const flushengine::TlsStatsMap &tlsStatsMap) const {
         flushengine::ActiveFlushStats active_flushes;
         return strategy.getFlushTargets(targetList, tlsStatsMap, active_flushes);

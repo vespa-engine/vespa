@@ -6,6 +6,7 @@
 #include <vespa/searchcore/proton/reference/i_pending_gid_to_lid_changes.h>
 #include <vespa/vespalib/testkit/testapp.h>
 #include <vespa/vespalib/test/insertion_operators.h>
+#include <vespa/document/base/globalid.h>
 
 namespace proton::test {
 
@@ -24,15 +25,8 @@ private:
     std::vector<std::unique_ptr<IGidToLidChangeListener>> _listeners;
 
 public:
-    MockGidToLidChangeHandler() noexcept
-        : IGidToLidChangeHandler(),
-          _adds(),
-          _removes(),
-          _listeners()
-    {
-    }
-
-    ~MockGidToLidChangeHandler() override = default;
+    MockGidToLidChangeHandler() noexcept;
+    ~MockGidToLidChangeHandler() override;
 
     void addListener(std::unique_ptr<IGidToLidChangeListener> listener) override {
         _adds.emplace_back(listener->getDocTypeName(), listener->getName());

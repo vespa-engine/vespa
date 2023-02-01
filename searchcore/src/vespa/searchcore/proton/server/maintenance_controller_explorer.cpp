@@ -41,6 +41,7 @@ MaintenanceControllerExplorer(std::vector<MaintenanceJobRunner::SP> jobs)
     : _jobs(std::move(jobs))
 {
 }
+MaintenanceControllerExplorer::~MaintenanceControllerExplorer() = default;
 
 void
 MaintenanceControllerExplorer::get_state(const Inserter &inserter, bool full) const
