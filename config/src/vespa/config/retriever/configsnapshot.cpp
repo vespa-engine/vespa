@@ -237,9 +237,12 @@ public:
     }
 
     Slime & getData() { return _data; }
+    ~FixedPayload() override;
 private:
     Slime _data;
 };
+
+FixedPayload::~FixedPayload() = default;
 
 }
 

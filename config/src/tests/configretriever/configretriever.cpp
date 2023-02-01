@@ -38,7 +38,7 @@ struct ConfigTestFixture {
     std::shared_ptr<IConfigContext> context;
     int idcounter;
 
-    ConfigTestFixture(const std::string & id)
+    explicit ConfigTestFixture(const std::string & id)
         : configId(id),
           bootstrapBuilder(),
           componentConfig(),
@@ -141,9 +141,12 @@ public:
     Slime & getData() {
         return _data;
     }
+    ~FixedPayload() override;
 private:
     Slime _data;
 };
+
+FixedPayload::~FixedPayload() = default;
 
 }
 
