@@ -68,7 +68,6 @@ public class ApplicationApiCloudTest extends ControllerContainerCloudTest {
 
     @Test
     void tenant_info_profile() {
-        tester.flagSource().withBooleanFlag(Flags.ENABLED_MAIL_VERIFICATION.id(), true);
         var request = request("/application/v4/tenant/scoober/info/profile", GET)
                 .roles(Set.of(Role.reader(tenantName)));
         tester.assertResponse(request, "{}", 200);
@@ -100,7 +99,6 @@ public class ApplicationApiCloudTest extends ControllerContainerCloudTest {
 
     @Test
     void tenant_info_contacts() {
-        tester.flagSource().withBooleanFlag(Flags.ENABLED_MAIL_VERIFICATION.id(), true);
         var request = request("/application/v4/tenant/scoober/info/contacts", GET)
                 .roles(Set.of(Role.reader(tenantName)));
         tester.assertResponse(request, "{\"contacts\":[]}", 200);
@@ -136,12 +134,11 @@ public class ApplicationApiCloudTest extends ControllerContainerCloudTest {
         tester.assertResponse(postPartialContacts, "{\"message\":\"Tenant info updated\"}", 200);
 
         // Read back the updated info
-        tester.assertResponse(infoRequest, "{\"name\":\"\",\"email\":\"\",\"website\":\"\",\"contactName\":\"newName\",\"contactEmail\":\"foo@example.com\",\"contactEmailVerified\":true,\"billingContact\":{\"name\":\"billingName\",\"email\":\"\",\"phone\":\"\"},\"contacts\":[{\"audiences\":[\"tenant\"],\"email\":\"contact1@example.com\",\"emailVerified\":true}]}", 200);
-        tester.flagSource().withBooleanFlag(Flags.ENABLED_MAIL_VERIFICATION.id(), true);
+        tester.assertResponse(infoRequest, "{\"name\":\"\",\"email\":\"\",\"website\":\"\",\"contactName\":\"newName\",\"contactEmail\":\"foo@example.com\",\"contactEmailVerified\":false,\"billingContact\":{\"name\":\"billingName\",\"email\":\"\",\"phone\":\"\"},\"contacts\":[{\"audiences\":[\"tenant\"],\"email\":\"contact1@example.com\",\"emailVerified\":false}]}", 200);
 
         String fullAddress = "{\"addressLines\":\"addressLines\",\"postalCodeOrZip\":\"postalCodeOrZip\",\"city\":\"city\",\"stateRegionProvince\":\"stateRegionProvince\",\"country\":\"country\"}";
         String fullBillingContact = "{\"name\":\"name\",\"email\":\"foo@example\",\"phone\":\"phone\",\"address\":" + fullAddress + "}";
-        String fullContacts = "[{\"audiences\":[\"tenant\"],\"email\":\"contact1@example.com\",\"emailVerified\":true},{\"audiences\":[\"notifications\"],\"email\":\"contact2@example.com\",\"emailVerified\":false},{\"audiences\":[\"tenant\",\"notifications\"],\"email\":\"contact3@example.com\",\"emailVerified\":false}]";
+        String fullContacts = "[{\"audiences\":[\"tenant\"],\"email\":\"contact1@example.com\",\"emailVerified\":false},{\"audiences\":[\"notifications\"],\"email\":\"contact2@example.com\",\"emailVerified\":false},{\"audiences\":[\"tenant\",\"notifications\"],\"email\":\"contact3@example.com\",\"emailVerified\":false}]";
         String fullInfo = "{\"name\":\"name\",\"email\":\"foo@example\",\"website\":\"https://yahoo.com\",\"contactName\":\"contactName\",\"contactEmail\":\"contact@example.com\",\"contactEmailVerified\":false,\"address\":" + fullAddress + ",\"billingContact\":" + fullBillingContact + ",\"contacts\":" + fullContacts + "}";
 
         // Now set all fields
@@ -171,7 +168,6 @@ public class ApplicationApiCloudTest extends ControllerContainerCloudTest {
 
     @Test
     void tenant_info_missing_fields() {
-        tester.flagSource().withBooleanFlag(Flags.ENABLED_MAIL_VERIFICATION.id(), true);
         // tenants can be created with empty tenant info - they're not part of the POST to v4/tenant
         var infoRequest =
                 request("/application/v4/tenant/scoober/info", GET)

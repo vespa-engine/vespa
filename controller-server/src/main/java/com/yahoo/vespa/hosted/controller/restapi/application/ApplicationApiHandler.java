@@ -584,11 +584,8 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
         var mergedEmail = optional("email", inspector.field("contact"))
                 .filter(address -> !address.equals(info.contact().email().getEmailAddress()))
                 .map(address -> {
-                    if (emailVerificationEnabled()) {
-                        controller.mailVerifier().sendMailVerification(cloudTenant.name(), address, PendingMailVerification.MailType.TENANT_CONTACT);
-                        return new Email(address, false);
-                    }
-                    return new Email(address, true);
+                    controller.mailVerifier().sendMailVerification(cloudTenant.name(), address, PendingMailVerification.MailType.TENANT_CONTACT);
+                    return new Email(address, false);
                 })
                 .orElse(info.contact().email());
 
@@ -773,11 +770,8 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
         var mergedEmail = optional("contactEmail", insp)
                 .filter(address -> !address.equals(oldInfo.contact().email().getEmailAddress()))
                 .map(address -> {
-                    if (emailVerificationEnabled()) {
-                        controller.mailVerifier().sendMailVerification(tenant.name(), address, PendingMailVerification.MailType.TENANT_CONTACT);
-                        return new Email(address, false);
-                    }
-                    return new Email(address, true);
+                    controller.mailVerifier().sendMailVerification(tenant.name(), address, PendingMailVerification.MailType.TENANT_CONTACT);
+                    return new Email(address, false);
                 })
                 .orElse(oldInfo.contact().email());
 
@@ -832,7 +826,7 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
         var mergedEmail = optional("email", insp)
                 .filter(address -> !address.equals(oldContact.email().getEmailAddress()))
                 .map(address -> {
-                    if (isBillingContact || !emailVerificationEnabled())
+                    if (isBillingContact)
                         return new Email(address, true);
                     controller.mailVerifier().sendMailVerification(tenantName, address, PendingMailVerification.MailType.TENANT_CONTACT);
                     return new Email(address, false);
@@ -869,11 +863,8 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
                         .findAny()
                         .map(emailContact -> new TenantContacts.EmailContact(audiences, emailContact.email()))
                         .orElseGet(() -> {
-                            if (emailVerificationEnabled()) {
-                                controller.mailVerifier().sendMailVerification(tenantName, email, PendingMailVerification.MailType.NOTIFICATIONS);
-                                return new TenantContacts.EmailContact(audiences, new Email(email, false));
-                            }
-                            return new TenantContacts.EmailContact(audiences, new Email(email, true));
+                            controller.mailVerifier().sendMailVerification(tenantName, email, PendingMailVerification.MailType.NOTIFICATIONS);
+                            return new TenantContacts.EmailContact(audiences, new Email(email, false));
                         });
             }).toList();
 
@@ -3138,8 +3129,5 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
                           .collect(collectingAndThen(Collectors.toList(), Collections::unmodifiableList));
     }
 
-    public boolean emailVerificationEnabled() {
-        return Flags.ENABLED_MAIL_VERIFICATION.bindTo(controller.flagSource()).value();
-    }
 }
 
