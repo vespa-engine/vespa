@@ -70,6 +70,7 @@ private:
     const bool                    _fastAccessAttributesOnly;
     AttributeManager::SP          _initAttrMgr;
     Configurer::FeedViewVarHolder _fastAccessFeedView;
+    Configurer                    _configurer;
     AttributeMetrics             &_subAttributeMetrics;
 
     std::shared_ptr<initializer::InitializerTask>

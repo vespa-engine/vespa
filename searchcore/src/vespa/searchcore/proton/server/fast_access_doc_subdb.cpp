@@ -196,6 +196,9 @@ FastAccessDocSubDB::FastAccessDocSubDB(const Config &cfg, const Context &ctx)
       _fastAccessAttributesOnly(cfg._fastAccessAttributesOnly),
       _initAttrMgr(),
       _fastAccessFeedView(),
+      _configurer(_fastAccessFeedView,
+                  std::make_unique<AttributeWriterFactory>(),
+                  getSubDbName()),
       _subAttributeMetrics(ctx._subAttributeMetrics),
       _addMetrics(cfg._addMetrics),
       _metricsWireService(ctx._metricsWireService),
@@ -256,13 +259,11 @@ FastAccessDocSubDB::applyConfig(const DocumentDBConfig &newConfigSnapshot, const
     if (params.shouldAttributeManagerChange() ||
         params.shouldAttributeWriterChange() ||
         newConfigSnapshot.getDocumentTypeRepoSP().get() != oldConfigSnapshot.getDocumentTypeRepoSP().get()) {
-        FastAccessDocSubDBConfigurer configurer(_fastAccessFeedView,
-                std::make_unique<AttributeWriterFactory>(), getSubDbName());
         proton::IAttributeManager::SP oldMgr = extractAttributeManager(_fastAccessFeedView.get());
         std::unique_ptr<AttributeCollectionSpec> attrSpec =
             createAttributeSpec(newConfigSnapshot.getAttributesConfig(), alloc_strategy, serialNum);
         IReprocessingInitializer::UP initializer =
-                configurer.reconfigure(newConfigSnapshot, oldConfigSnapshot, std::move(*attrSpec));
+            _configurer.reconfigure(newConfigSnapshot, oldConfigSnapshot, std::move(*attrSpec));
         if (initializer->hasReprocessors()) {
             tasks.push_back(IReprocessingTask::SP(createReprocessingTask(*initializer,
                     newConfigSnapshot.getDocumentTypeRepoSP()).release()));
