@@ -151,7 +151,6 @@ reconfigure(const DocumentDBConfig &newConfig,
             IDocumentDBReferenceResolver &resolver,
             const DocumentSubDBReconfig& prepared_reconfig)
 {
-    (void) prepared_reconfig;
     assert(!params.shouldAttributeManagerChange());
     AttributeCollectionSpec attrSpec(AttributeCollectionSpec::AttributeList(), 0, 0);
     reconfigure(newConfig, oldConfig, std::move(attrSpec), params, resolver, prepared_reconfig);
