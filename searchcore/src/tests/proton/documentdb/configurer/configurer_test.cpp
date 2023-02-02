@@ -572,7 +572,6 @@ TEST_F("require that reconfigure returns reprocessing initializer when changing 
 TEST_F("require that we can reconfigure attribute writer", FastAccessFixture)
 {
     FastAccessFeedView::SP o = f._view._feedView.get();
-    ReconfigParams reconfig_params{CCR()};
     f.reconfigure(*createConfig(), *createConfig(),
                   AttributeCollectionSpec(AttributeCollectionSpec::AttributeList(), 1, 0));
     FastAccessFeedView::SP n = f._view._feedView.get();
