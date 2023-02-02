@@ -43,6 +43,16 @@ public class IndexedTensorTestCase {
         assertEquals(singleValue, singleValueFromString);
     }
 
+    @Test
+    public void testNegativeLabels() {
+        TensorAddress numeric = TensorAddress.of(-1, 0, 1, 1234567, -1234567);
+        assertEquals("-1", numeric.label(0));
+        assertEquals("0", numeric.label(1));
+        assertEquals("1", numeric.label(2));
+        assertEquals("1234567", numeric.label(3));
+        assertEquals("-1234567", numeric.label(4));
+    }
+
     private void verifyFloat(String spec) {
         float [] floats = {1.0f, 2.0f, 3.0f};
         Tensor tensor = IndexedTensor.Builder.of(TensorType.fromSpec(spec), floats).build();
