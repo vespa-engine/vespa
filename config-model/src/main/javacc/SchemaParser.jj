@@ -279,7 +279,7 @@ TOKEN :
 | < MAXHITS: "max-hits" >
 | < FIRSTPHASE: "first-phase" >
 | < SECONDPHASE: "second-phase" >
-| < CONTAINERPHASE: "container-phase" >
+| < GLOBALPHASE: "global-phase" >
 | < MACRO: "macro" >
 | < INLINE: "inline" >
 | < ARITY: "arity" >
@@ -1707,7 +1707,7 @@ void rankProfileItem(ParsedSchema schema, ParsedRankProfile profile) : { }
       | rankFeatures(profile)
       | rankProperties(profile)
       | secondPhase(profile)
-      | containerPhase(profile)
+      | globalPhase(profile)
       | inputs(profile)
       | constants(schema, profile)
       | matchFeatures(profile)
@@ -1926,28 +1926,28 @@ void secondPhaseItem(ParsedRankProfile profile) :
 }
 
 /**
- * Consumes the container-phase block of a rank profile.
+ * Consumes the global-phase block of a rank profile.
  *
  * @param profile The rank profile to modify.
  */
-void containerPhase(ParsedRankProfile profile) : { }
+void globalPhase(ParsedRankProfile profile) : { }
 {
-    <CONTAINERPHASE> lbrace() (containerPhaseItem(profile) (<NL>)*)* <RBRACE>
+    <GLOBALPHASE> lbrace() (globalPhaseItem(profile) (<NL>)*)* <RBRACE>
 }
 
 /**
- * Consumes a statement for a container-phase block.
+ * Consumes a statement for a global-phase block.
  *
  * @param profile The rank profile to modify.
  */
-void containerPhaseItem(ParsedRankProfile profile) :
+void globalPhaseItem(ParsedRankProfile profile) :
 {
     String expression;
     int rerankCount;
 }
 {
-    ( expression = expression()                       { profile.setContainerPhaseExpression(expression); }
-    | (<RERANKCOUNT> <COLON> rerankCount = integer()) { profile.setContainerPhaseRerankCount(rerankCount); }
+    ( expression = expression()                       { profile.setGlobalPhaseExpression(expression); }
+    | (<RERANKCOUNT> <COLON> rerankCount = integer()) { profile.setGlobalPhaseRerankCount(rerankCount); }
     )
 }
 
@@ -2585,7 +2585,7 @@ String identifier() : { }
       | <CONSTANT>
       | <CONSTANTS>
       | <CONTEXT>
-      | <CONTAINERPHASE>
+      | <GLOBALPHASE>
       | <CREATEIFNONEXISTENT>
       | <DENSEPOSTINGLISTTHRESHOLD>
       | <DESCENDING>

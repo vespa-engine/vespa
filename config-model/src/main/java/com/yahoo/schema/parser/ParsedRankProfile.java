@@ -53,8 +53,8 @@ class ParsedRankProfile extends ParsedBlock {
     private final Map<Reference, RankProfile.Constant> constants = new LinkedHashMap<>();
     private final Map<Reference, RankProfile.Input> inputs = new LinkedHashMap<>();
     private final List<OnnxModel> onnxModels = new ArrayList<>();
-    private Integer containerPhaseRerankCount = null;
-    private String containerPhaseExpression = null;
+    private Integer globalPhaseRerankCount = null;
+    private String globalPhaseExpression = null;
 
     ParsedRankProfile(String name) {
         super(name, "rank-profile");
@@ -79,8 +79,8 @@ class ParsedRankProfile extends ParsedBlock {
     List<ParsedRankFunction> getFunctions() { return List.copyOf(functions.values()); }
     List<MutateOperation> getMutateOperations() { return List.copyOf(mutateOperations); }
     List<String> getInherited() { return List.copyOf(inherited); }
-    Optional<Integer> getContainerPhaseRerankCount() { return Optional.ofNullable(this.containerPhaseRerankCount); }
-    Optional<String> getContainerPhaseExpression() { return Optional.ofNullable(this.containerPhaseExpression); }
+    Optional<Integer> getGlobalPhaseRerankCount() { return Optional.ofNullable(this.globalPhaseRerankCount); }
+    Optional<String> getGlobalPhaseExpression() { return Optional.ofNullable(this.globalPhaseExpression); }
 
     Map<String, Boolean> getFieldsWithRankFilter() { return Collections.unmodifiableMap(fieldsRankFilter); }
     Map<String, Integer> getFieldsWithRankWeight() { return Collections.unmodifiableMap(fieldsRankWeight); }
@@ -201,14 +201,14 @@ class ParsedRankProfile extends ParsedBlock {
         this.secondPhaseExpression = expression;
     }
 
-    void setContainerPhaseExpression(String expression) {
-        verifyThat(containerPhaseExpression == null, "already has container-phase expression");
-        this.containerPhaseExpression = expression;
+    void setGlobalPhaseExpression(String expression) {
+        verifyThat(globalPhaseExpression == null, "already has global-phase expression");
+        this.globalPhaseExpression = expression;
     }
 
-    void setContainerPhaseRerankCount(int count) {
-        verifyThat(containerPhaseRerankCount == null, "already has container-phase rerank-count");
-        this.containerPhaseRerankCount = count;
+    void setGlobalPhaseRerankCount(int count) {
+        verifyThat(globalPhaseRerankCount == null, "already has global-phase rerank-count");
+        this.globalPhaseRerankCount = count;
     }
 
     void setStrict(boolean strict) {
