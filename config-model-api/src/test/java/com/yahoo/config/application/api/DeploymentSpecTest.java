@@ -1217,6 +1217,9 @@ public class DeploymentSpecTest {
         assertEquals(ZoneEndpoint.defaultEndpoint, spec.zoneEndpoint(InstanceName.defaultName(),
                                                                      defaultId(),
                                                                      ClusterSpec.Id.from("cluster")));
+        assertEquals(ZoneEndpoint.defaultEndpoint, spec.zoneEndpoint(InstanceName.defaultName(),
+                                                                     com.yahoo.config.provision.zone.ZoneId.from("test", "us"),
+                                                                     ClusterSpec.Id.from("cluster")));
     }
 
     @Test
@@ -1271,12 +1274,17 @@ public class DeploymentSpecTest {
         assertEquals(List.of(RegionName.from("us-east")), spec.requireInstance("default").endpoints().get(0).regions());
 
         var zone = from(Environment.prod, RegionName.from("us-east"));
+        var testZone = from(Environment.test, RegionName.from("us-east"));
         assertEquals(ZoneEndpoint.defaultEndpoint,
                      spec.zoneEndpoint(InstanceName.from("custom"), zone, ClusterSpec.Id.from("bax")));
         assertEquals(ZoneEndpoint.defaultEndpoint,
                      spec.zoneEndpoint(InstanceName.from("default"), defaultId(), ClusterSpec.Id.from("bax")));
         assertEquals(ZoneEndpoint.defaultEndpoint,
                      spec.zoneEndpoint(InstanceName.from("default"), zone, ClusterSpec.Id.from("bax")));
+        assertEquals(ZoneEndpoint.defaultEndpoint,
+                     spec.zoneEndpoint(InstanceName.from("default"), testZone, ClusterSpec.Id.from("bax")));
+        assertEquals(ZoneEndpoint.privateEndpoint,
+                     spec.zoneEndpoint(InstanceName.from("default"), testZone, ClusterSpec.Id.from("froz")));
 
         assertEquals(new ZoneEndpoint(false, true, List.of(new AllowedUrn(AccessType.awsPrivateLink, "barn"),
                                                            new AllowedUrn(AccessType.gcpServiceConnect, "nine"))),

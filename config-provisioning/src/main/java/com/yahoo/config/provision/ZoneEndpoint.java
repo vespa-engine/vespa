@@ -13,6 +13,7 @@ import java.util.Objects;
 public class ZoneEndpoint {
 
     public static final ZoneEndpoint defaultEndpoint = new ZoneEndpoint(true, false, List.of());
+    public static final ZoneEndpoint privateEndpoint = new ZoneEndpoint(false, false, List.of());
 
     private final boolean isPublicEndpoint;
     private final boolean isPrivateEndpoint;
