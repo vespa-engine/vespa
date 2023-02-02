@@ -5,6 +5,11 @@
 #include <vespa/vespalib/data/slime/slime.h>
 #include <vespa/vespalib/data/slime/binary_format.h>
 
+#pragma GCC diagnostic push
+#if !defined(__clang__) && __GNUC__ < 12
+#pragma GCC diagnostic ignored "-Winline"
+#endif
+
 using ::search::UniqueIssues;
 using Converter = ::search::engine::ProtoConverter;
 
@@ -637,3 +642,5 @@ TEST_F(MonitorReplyTest, require_that_is_blocking_writes_is_converted) {
 //-----------------------------------------------------------------------------
 
 GTEST_MAIN_RUN_ALL_TESTS()
+
+#pragma GCC diagnostic pop
