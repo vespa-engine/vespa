@@ -102,7 +102,7 @@ func (c *cloner) Clone(applicationName, path string) error {
 			}
 			found = true
 
-			if err := copy(f, path, dirPrefix); err != nil {
+			if err := copyFromZip(f, path, dirPrefix); err != nil {
 				return fmt.Errorf("could not copy zip entry '%s': %w", color.CyanString(f.Name), err)
 			}
 		}
@@ -259,7 +259,7 @@ func trimEntityTagID(s string) string {
 	return strings.TrimSuffix(strings.TrimPrefix(s, `W/"`), `"`)
 }
 
-func copy(f *zip.File, destinationDir string, zipEntryPrefix string) error {
+func copyFromZip(f *zip.File, destinationDir string, zipEntryPrefix string) error {
 	destinationPath := filepath.Join(destinationDir, filepath.FromSlash(strings.TrimPrefix(f.Name, zipEntryPrefix)))
 	if strings.HasSuffix(f.Name, "/") {
 		if f.Name != zipEntryPrefix { // root is already created
