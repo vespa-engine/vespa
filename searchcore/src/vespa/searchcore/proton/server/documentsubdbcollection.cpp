@@ -253,9 +253,6 @@ DocumentSubDBCollection::pruneRemovedFields(SerialNum serialNum)
 std::unique_ptr<DocumentDBReconfig>
 DocumentSubDBCollection::prepare_reconfig(const DocumentDBConfig& new_config_snapshot, const DocumentDBConfig& old_config_snapshot, const ReconfigParams& reconfig_params)
 {
-    (void) new_config_snapshot;
-    (void) old_config_snapshot;
-    (void) reconfig_params;
     auto ready_reconfig = getReadySubDB()->prepare_reconfig(new_config_snapshot, old_config_snapshot, reconfig_params);
     auto not_ready_reconfig = getNotReadySubDB()->prepare_reconfig(new_config_snapshot, old_config_snapshot, reconfig_params);
     return std::make_unique<DocumentDBReconfig>(std::move(ready_reconfig), std::move(not_ready_reconfig));
