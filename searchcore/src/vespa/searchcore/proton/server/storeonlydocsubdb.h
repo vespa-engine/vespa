@@ -200,9 +200,11 @@ public:
 
     void validateDocStore(FeedHandler & feedHandler, SerialNum serialNum) const override;
 
+    std::unique_ptr<const DocumentSubDBReconfig>
+    prepare_reconfig(const DocumentDBConfig& new_config_snapshot, const DocumentDBConfig& old_config_snapshot, const ReconfigParams& reconfig_params) override;
     IReprocessingTask::List
     applyConfig(const DocumentDBConfig &newConfigSnapshot, const DocumentDBConfig &oldConfigSnapshot,
-                SerialNum serialNum, const ReconfigParams &params, IDocumentDBReferenceResolver &resolver) override;
+                SerialNum serialNum, const ReconfigParams &params, IDocumentDBReferenceResolver &resolver, const DocumentSubDBReconfig &prepared_reconfig) override;
     void setBucketStateCalculator(const std::shared_ptr<IBucketStateCalculator> &calc, OnDone onDone) override;
 
     ISearchHandler::SP getSearchView() const override { return _iSearchView.get(); }

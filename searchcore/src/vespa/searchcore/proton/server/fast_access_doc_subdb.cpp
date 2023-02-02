@@ -241,7 +241,7 @@ FastAccessDocSubDB::initViews(const DocumentDBConfig &configSnapshot)
 
 IReprocessingTask::List
 FastAccessDocSubDB::applyConfig(const DocumentDBConfig &newConfigSnapshot, const DocumentDBConfig &oldConfigSnapshot,
-                                SerialNum serialNum, const ReconfigParams &params, IDocumentDBReferenceResolver &)
+                                SerialNum serialNum, const ReconfigParams &params, IDocumentDBReferenceResolver &, const DocumentSubDBReconfig&)
 {
     AllocStrategy alloc_strategy = newConfigSnapshot.get_alloc_config().make_alloc_strategy(_subDbType);
     reconfigure(newConfigSnapshot.getStoreConfig(), alloc_strategy);

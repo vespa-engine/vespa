@@ -111,7 +111,7 @@ public:
 
     IReprocessingTask::List
     applyConfig(const DocumentDBConfig &newConfigSnapshot, const DocumentDBConfig &oldConfigSnapshot,
-                SerialNum serialNum, const ReconfigParams &params, IDocumentDBReferenceResolver &resolver) override;
+                SerialNum serialNum, const ReconfigParams &params, IDocumentDBReferenceResolver &resolver, const DocumentSubDBReconfig& prepared_reconfig) override;
 
     proton::IAttributeManager::SP getAttributeManager() const override;
     IDocumentRetriever::UP getDocumentRetriever() override;

@@ -3,6 +3,7 @@
 #include "searchabledocsubdb.h"
 #include "fast_access_document_retriever.h"
 #include "document_subdb_initializer.h"
+#include "document_subdb_reconfig.h"
 #include "reconfig_params.h"
 #include "i_document_subdb_owner.h"
 #include <vespa/searchcore/proton/attribute/attribute_writer.h>
@@ -132,10 +133,20 @@ reconfigureMatchingMetrics(const RankProfilesConfig &cfg)
     }
 }
 
+std::unique_ptr<const DocumentSubDBReconfig>
+SearchableDocSubDB::prepare_reconfig(const DocumentDBConfig& new_config_snapshot, const DocumentDBConfig& old_config_snapshot, const ReconfigParams& reconfig_params)
+{
+    (void) new_config_snapshot;
+    (void) old_config_snapshot;
+    (void) reconfig_params;
+    return std::make_unique<const DocumentSubDBReconfig>(std::shared_ptr<Matchers>());
+}
+
 IReprocessingTask::List
 SearchableDocSubDB::applyConfig(const DocumentDBConfig &newConfigSnapshot, const DocumentDBConfig &oldConfigSnapshot,
-                                SerialNum serialNum, const ReconfigParams &params, IDocumentDBReferenceResolver &resolver)
+                                SerialNum serialNum, const ReconfigParams &params, IDocumentDBReferenceResolver &resolver, const DocumentSubDBReconfig& prepared_reconfig)
 {
+    (void) prepared_reconfig;
     AllocStrategy alloc_strategy = newConfigSnapshot.get_alloc_config().make_alloc_strategy(_subDbType);
     StoreOnlyDocSubDB::reconfigure(newConfigSnapshot.getStoreConfig(), alloc_strategy);
     IReprocessingTask::List tasks;

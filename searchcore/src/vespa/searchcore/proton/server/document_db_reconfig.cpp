@@ -12,5 +12,7 @@ DocumentDBReconfig::DocumentDBReconfig(std::unique_ptr<const DocumentSubDBReconf
 {
 }
 
+DocumentDBReconfig::~DocumentDBReconfig() = default;
+
 }
 

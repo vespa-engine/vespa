@@ -26,6 +26,7 @@ private:
 public:
     DocumentDBReconfig(std::unique_ptr<const DocumentSubDBReconfig> ready_reconfig_in,
                        std::unique_ptr<const DocumentSubDBReconfig> not_ready_reconfig_in);
+    ~DocumentDBReconfig();
 
     const DocumentSubDBReconfig& ready_reconfig() const { return *_ready_reconfig; }
     const DocumentSubDBReconfig& not_ready_reconfig() const { return *_not_ready_reconfig; }
