@@ -12,6 +12,7 @@ import com.yahoo.vespa.hosted.node.admin.configserver.cores.CoreDumpMetadata;
 import com.yahoo.vespa.hosted.node.admin.configserver.cores.Cores;
 import com.yahoo.vespa.hosted.node.admin.container.metrics.DimensionMetrics;
 import com.yahoo.vespa.hosted.node.admin.container.metrics.Metrics;
+import com.yahoo.vespa.hosted.node.admin.nodeadmin.ConvergenceException;
 import com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAgentContext;
 import com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAgentContextImpl;
 import com.yahoo.vespa.hosted.node.admin.task.util.file.UnixPath;
@@ -196,15 +197,14 @@ public class CoredumpHandlerTest {
         });
     }
 
-    void do_process_single_coredump_test(String expectedCoreFileName, boolean encrypt) throws IOException {
+    void do_process_single_coredump_test(String expectedCoreFileName) throws IOException {
         ContainerPath coredumpDirectory = context.paths().of("/path/to/coredump/proccessing/id-123");
         Files.createDirectories(coredumpDirectory);
         Files.write(coredumpDirectory.resolve("metadata2.json"), "{\"test-metadata\":{}}".getBytes());
         Files.createFile(coredumpDirectory.resolve("dump_bash.core.431"));
         assertFolderContents(coredumpDirectory, "metadata2.json", "dump_bash.core.431");
         CoreDumpMetadata expectedMetadata = new CoreDumpMetadata();
-        if (encrypt)
-            expectedMetadata.setDecryptionToken("131Q0MMF3hBuMVnXg1WnSFexZGrcwa9ZhfHlegLNwPIN6hQJnBxq5srLf3aZbYdlRVE");
+        expectedMetadata.setDecryptionToken("131Q0MMF3hBuMVnXg1WnSFexZGrcwa9ZhfHlegLNwPIN6hQJnBxq5srLf3aZbYdlRVE");
 
         coredumpHandler.processAndReportSingleCoreDump(context, coredumpDirectory, Optional.empty());
         verify(coreCollector, never()).collect(any(), any());
@@ -215,31 +215,29 @@ public class CoredumpHandlerTest {
     }
 
     @Test
-    void process_single_coredump_test_without_encryption() throws IOException {
-        do_process_single_coredump_test("dump_bash.core.431.zst", false);
+    void processing_single_coredump_test_without_encryption_throws() throws IOException {
+        assertThrows(ConvergenceException.class, () -> do_process_single_coredump_test("dump_bash.core.431.zst"));
     }
 
     @Test
     void process_single_coredump_test_with_encryption() throws IOException {
         flagSource.withStringFlag(Flags.CORE_ENCRYPTION_PUBLIC_KEY_ID.id(), "bar-key");
         when(secretSharedKeySupplier.create(KeyId.ofString("bar-key"))).thenReturn(Optional.of(makeFixedSecretSharedKey()));
-        do_process_single_coredump_test("dump_bash.core.431.zst.enc", true);
+        do_process_single_coredump_test("dump_bash.core.431.zst.enc");
     }
 
-    // TODO fail closed instead of open
     @Test
-    void encryption_disabled_when_no_public_key_set_in_feature_flag() throws IOException {
+    void processing_throws_when_no_public_key_set_in_feature_flag() throws IOException {
         flagSource.withStringFlag(Flags.CORE_ENCRYPTION_PUBLIC_KEY_ID.id(), ""); // empty -> not set
         verify(secretSharedKeySupplier, never()).create(any());
-        do_process_single_coredump_test("dump_bash.core.431.zst", false); // No .enc suffix; not encrypted
+        assertThrows(ConvergenceException.class, () -> do_process_single_coredump_test("dump_bash.core.431.zst"));
     }
 
-    // TODO fail closed instead of open
     @Test
-    void encryption_disabled_when_no_key_returned_for_key_id_specified_by_feature_flag() throws IOException {
+    void processing_throws_when_no_key_returned_for_key_id_specified_by_feature_flag() throws IOException {
         flagSource.withStringFlag(Flags.CORE_ENCRYPTION_PUBLIC_KEY_ID.id(), "baz-key");
         when(secretSharedKeySupplier.create(KeyId.ofString("baz-key"))).thenReturn(Optional.empty());
-        do_process_single_coredump_test("dump_bash.core.431.zst", false); // No .enc suffix; not encrypted
+        assertThrows(ConvergenceException.class, () -> do_process_single_coredump_test("dump_bash.core.431.zst"));
     }
 
     @Test
