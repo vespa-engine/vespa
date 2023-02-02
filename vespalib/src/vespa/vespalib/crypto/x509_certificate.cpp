@@ -5,18 +5,16 @@
 
 namespace vespalib::crypto {
 
-X509Certificate::DistinguishedName::DistinguishedName() = default;
+X509Certificate::DistinguishedName::DistinguishedName() noexcept= default;
 X509Certificate::DistinguishedName::DistinguishedName(const DistinguishedName&) = default;
-X509Certificate::DistinguishedName& X509Certificate::DistinguishedName::operator=(const DistinguishedName&) = default;
 X509Certificate::DistinguishedName::DistinguishedName(DistinguishedName&&) noexcept = default;
 X509Certificate::DistinguishedName& X509Certificate::DistinguishedName::operator=(DistinguishedName&&) noexcept = default;
 X509Certificate::DistinguishedName::~DistinguishedName() = default;
 
-X509Certificate::Params::Params() = default;
+X509Certificate::Params::Params() noexcept= default;
 X509Certificate::Params::~Params() = default;
 
 X509Certificate::Params::Params(const Params&) = default;
-X509Certificate::Params& X509Certificate::Params::operator=(const Params&) = default;
 X509Certificate::Params::Params(Params&&) noexcept = default;
 X509Certificate::Params& X509Certificate::Params::operator=(Params&&) noexcept = default;
 
@@ -47,16 +45,28 @@ X509Certificate::Params::issued_by(SubjectInfo subject,
     return params;
 }
 
+X509Certificate::SubjectInfo::SubjectInfo(DistinguishedName dn_) noexcept
+    : dn(std::move(dn_)),
+      subject_alt_names()
+{}
+X509Certificate::SubjectInfo::SubjectInfo() noexcept = default;
+X509Certificate::SubjectInfo::SubjectInfo(const SubjectInfo &) = default;
+X509Certificate::SubjectInfo::SubjectInfo(SubjectInfo &&) noexcept = default;
+X509Certificate::SubjectInfo & X509Certificate::SubjectInfo::operator=(SubjectInfo &&) noexcept = default;
+X509Certificate::SubjectInfo::~SubjectInfo() = default;
+
 std::shared_ptr<X509Certificate> X509Certificate::generate_from(Params params) {
     return openssl_impl::X509CertificateImpl::generate_openssl_x509_from(std::move(params));
 }
 
 CertKeyWrapper::CertKeyWrapper(std::shared_ptr<X509Certificate> cert_,
                                std::shared_ptr<PrivateKey> key_)
-        : cert(std::move(cert_)),
-          key(std::move(key_))
+    : cert(std::move(cert_)),
+      key(std::move(key_))
 {}
 
+CertKeyWrapper::CertKeyWrapper(CertKeyWrapper &&) noexcept = default;
+CertKeyWrapper & CertKeyWrapper::operator=(CertKeyWrapper &&) noexcept = default;
 CertKeyWrapper::~CertKeyWrapper() = default;
 
 }

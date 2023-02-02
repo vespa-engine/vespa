@@ -31,6 +31,7 @@ struct CryptoEngine {
  * Crypto engine without encryption.
  **/
 struct NullCryptoEngine : public CryptoEngine {
+    ~NullCryptoEngine() override;
     bool use_tls_when_client() const override { return false; }
     bool always_use_tls_when_server() const override { return false; }
     CryptoSocket::UP create_client_crypto_socket(SocketHandle socket, const SocketSpec &spec) override;

@@ -61,7 +61,7 @@
 #define VESPA_DEFINE_EXCEPTION(MyClass, Parent)                            \
 class MyClass : public Parent {                                            \
 public:                                                                    \
-    MyClass(vespalib::stringref msg,                                       \
+    explicit MyClass(vespalib::stringref msg,                              \
             vespalib::stringref location = "", int skipStack = 0);         \
     MyClass(vespalib::stringref msg, const Exception &cause,               \
             vespalib::stringref location = "", int skipStack = 0);         \

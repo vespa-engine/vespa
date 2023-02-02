@@ -7,6 +7,17 @@
 
 namespace vespalib {
 
+SocketHandle::SocketHandle(SocketHandle &&rhs) noexcept
+    : _fd(rhs.release())
+{}
+SocketHandle &
+SocketHandle::operator=(SocketHandle &&rhs) noexcept {
+    maybe_close(_fd);
+    _fd = rhs.release();
+    return *this;
+}
+SocketHandle::~SocketHandle() { maybe_close(_fd); }
+
 ssize_t
 SocketHandle::read(char *buf, size_t len)
 {

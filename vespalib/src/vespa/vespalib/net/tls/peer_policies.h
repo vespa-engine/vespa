@@ -30,6 +30,10 @@ private:
 public:
     RequiredPeerCredential() = default;
     RequiredPeerCredential(Field field, vespalib::string must_match_pattern);
+    RequiredPeerCredential(const RequiredPeerCredential &);
+    RequiredPeerCredential & operator=(const RequiredPeerCredential &) = delete;
+    RequiredPeerCredential(RequiredPeerCredential &&) noexcept;
+    RequiredPeerCredential & operator=(RequiredPeerCredential &&) noexcept;
     ~RequiredPeerCredential();
 
     bool operator==(const RequiredPeerCredential& rhs) const {
@@ -43,8 +47,8 @@ public:
         return (_match_pattern && _match_pattern->matches(str));
     }
 
-    Field field() const noexcept { return _field; }
-    const vespalib::string& original_pattern() const noexcept { return _original_pattern; }
+    [[nodiscard]] Field field() const noexcept { return _field; }
+    [[nodiscard]] const vespalib::string& original_pattern() const noexcept { return _original_pattern; }
 };
 
 class PeerPolicy {
@@ -89,10 +93,11 @@ public:
           _allow_all_if_empty(false)
     {}
 
-    AuthorizedPeers(const AuthorizedPeers&) = default;
-    AuthorizedPeers& operator=(const AuthorizedPeers&) = default;
-    AuthorizedPeers(AuthorizedPeers&&) noexcept = default;
-    AuthorizedPeers& operator=(AuthorizedPeers&&) noexcept = default;
+    AuthorizedPeers(const AuthorizedPeers&);
+    AuthorizedPeers& operator=(const AuthorizedPeers&) = delete;
+    AuthorizedPeers(AuthorizedPeers&&) noexcept;
+    AuthorizedPeers& operator=(AuthorizedPeers&&) noexcept;
+    ~AuthorizedPeers();
 
     static AuthorizedPeers allow_all_authenticated() {
         return AuthorizedPeers(true);
@@ -104,7 +109,7 @@ public:
     [[nodiscard]] bool allows_all_authenticated() const noexcept {
         return _allow_all_if_empty;
     }
-    const std::vector<PeerPolicy>& peer_policies() const noexcept { return _peer_policies; }
+    [[nodiscard]] const std::vector<PeerPolicy>& peer_policies() const noexcept { return _peer_policies; }
 };
 
 std::ostream& operator<<(std::ostream&, const RequiredPeerCredential&);
