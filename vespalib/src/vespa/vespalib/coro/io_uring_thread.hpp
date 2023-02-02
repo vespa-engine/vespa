@@ -142,22 +142,23 @@ struct IoUringThread : AsyncIo {
     }
     auto async_run() {
         return wait_for<bool>([this](auto wf)
-                              ->std::coroutine_handle<>
                               {
-                                  bool need_wakeup = false;
+                                  AsyncIo::SP wakeup_guard;
                                   {
                                       auto guard = protect();
                                       if (stopped()) {
                                           wf.set_value(false);
                                           return wf.mu();
                                       }
-                                      need_wakeup = _queue.empty();
+                                      if (_queue.empty()) {
+                                          wakeup_guard = shared_from_this();
+                                      }
                                       _queue.push_back(std::move(wf));
                                   }
-                                  if (need_wakeup) {
+                                  if (wakeup_guard) {
                                       wakeup();
                                   }
-                                  return std::noop_coroutine();
+                                  return wf.nop();
                               });
     }
     void handle_queue(bool result) {
@@ -173,10 +174,10 @@ struct IoUringThread : AsyncIo {
     }
     ImplTag get_impl_tag() override { return ImplTag::URING; }
     Lazy<SocketHandle> accept(ServerSocket &server_socket) override {
-        BlockingGuard blocking_guard(server_socket.get_fd());
         int res = -ECANCELED;
         bool inside = in_thread() ? true : co_await async_run();
         if (inside) {
+            BlockingGuard blocking_guard(server_socket.get_fd());
             auto *sqe = _uring.get_sqe();
             io_uring_prep_accept(sqe, server_socket.get_fd(), nullptr, nullptr, 0);
             res = co_await wait_for_sqe(sqe);
@@ -184,19 +185,20 @@ struct IoUringThread : AsyncIo {
         co_return SocketHandle(res);
     }
     Lazy<SocketHandle> connect(const SocketAddress &addr) override {
-        SocketHandle handle = addr.raw_socket();
-        if (handle.valid()) {
-            bool inside = in_thread() ? true : co_await async_run();
-            if (inside) {
+        bool inside = in_thread() ? true : co_await async_run();
+        if (inside) {
+            SocketHandle handle = addr.raw_socket();
+            if (handle.valid()) {
                 auto *sqe = _uring.get_sqe();
                 io_uring_prep_connect(sqe, handle.get(), addr.raw_addr(), addr.raw_addr_len());
-                int res = co_await wait_for_sqe(sqe);
+                auto res = co_await wait_for_sqe(sqe);
                 if (res < 0) {
                     handle.reset(res);
                 }
             }
+            co_return handle;
         }
-        co_return handle;
+        co_return SocketHandle(-ECANCELED);
     }
     Lazy<ssize_t> read(SocketHandle &socket, char *buf, size_t len) override {
         ssize_t res = -ECANCELED;

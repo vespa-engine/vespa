@@ -221,7 +221,7 @@ Lazy<AsyncCryptoSocket::UP> accept_maybe_tls(AsyncIo &async, AbstractTlsCryptoEn
     } else {
         auto plain_socket = std::make_unique<SnoopedRawSocket>(async, std::move(handle));
         plain_socket->inject_data(buf, snooped);
-        co_return std::move(plain_socket);
+        co_return plain_socket;
     }
 }
 

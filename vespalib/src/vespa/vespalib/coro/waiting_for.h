@@ -34,10 +34,20 @@ private:
     PromiseState<T> *_state;
     WaitingFor(PromiseState<T> *state) noexcept : _state(state) {}
 public:
+    WaitingFor() noexcept : _state(nullptr) {}
     WaitingFor(WaitingFor &&rhs) noexcept : _state(std::exchange(rhs._state, nullptr)) {}
-    WaitingFor(WaitingFor &rhs) = delete;
-    WaitingFor &operator=(WaitingFor &rhs) = delete;
+    WaitingFor &operator=(WaitingFor &&rhs) {
+        if (_state) {
+            _state->result.set_done(); // canceled
+            _state->waiter.resume();
+        }
+        _state = std::exchange(rhs._state, nullptr);
+        return *this;
+    }
+    WaitingFor(const WaitingFor &rhs) = delete;
+    WaitingFor &operator=(const WaitingFor &rhs) = delete;
     ~WaitingFor();
+    operator bool() const noexcept { return _state; }
     template <typename RET>
     void set_value(RET &&value) {
         _state->result.set_value(std::forward<RET>(value));
@@ -70,12 +80,19 @@ public:
         _state = nullptr;
         return handle;
     }
+    // If some branch in the async start function wants to return mu,
+    // other branches can return nop. This is to help the compiler
+    // figure out the return type of lambdas, since
+    // std::noop_coroutine() is a distinct type.
+    [[nodiscard]] static std::coroutine_handle<> nop() noexcept {
+        return std::noop_coroutine();
+    }
 };
 
 template <typename T>
 WaitingFor<T>::~WaitingFor()
 {
-    if (_state != nullptr) {
+    if (_state) {
         _state->waiter.resume();
     }
 }

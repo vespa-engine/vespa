@@ -47,7 +47,7 @@ Lazy<int> wait_for_value(Service &service) {
 template <typename T>
 Lazy<T> wait_for_fun(auto &&fun) {
     T result = co_await wait_for<T>(fun);
-    co_return std::move(result);
+    co_return result;
 }
 
 TEST(WaitingForTest, wait_for_external_async_int) {
