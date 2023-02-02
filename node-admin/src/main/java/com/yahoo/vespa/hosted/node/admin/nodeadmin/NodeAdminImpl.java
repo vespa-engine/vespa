@@ -123,7 +123,7 @@ public class NodeAdminImpl implements NodeAdmin {
             Optional<ContainerStats> containerStats = nodeAgentWithScheduler.updateContainerNodeMetrics(isSuspended);
             if (containerStats.isPresent()) {
                 ++numContainers;
-                totalContainerMemoryBytes += containerStats.get().getMemoryStats().usage();
+                totalContainerMemoryBytes += containerStats.get().memoryStats().usage();
             }
         }
 

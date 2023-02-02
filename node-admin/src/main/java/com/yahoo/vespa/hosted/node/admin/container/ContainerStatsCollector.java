@@ -1,19 +1,24 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.node.admin.container;
 
+import com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAgentContext;
+import com.yahoo.vespa.hosted.node.admin.task.util.file.UnixUser;
+
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.nio.file.FileSystem;
 import java.nio.file.Files;
 import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
+import java.time.Duration;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.stream.Stream;
 
 /**
- * Collects CPU, memory and network statistics for a container.
+ * Collects CPU, GPU, memory and network statistics for a container.
  *
  * Uses same approach as runc: https://github.com/opencontainers/runc/tree/master/libcontainer/cgroups/fs
  *
@@ -21,32 +26,60 @@ import java.util.Optional;
  */
 class ContainerStatsCollector {
 
+    private final ContainerEngine containerEngine;
     private final CGroup cgroup;
     private final FileSystem fileSystem;
     private final int onlineCpus;
 
-    ContainerStatsCollector(CGroup cgroup, FileSystem fileSystem) {
-        this(cgroup, fileSystem, Runtime.getRuntime().availableProcessors());
+    ContainerStatsCollector(ContainerEngine containerEngine, CGroup cgroup, FileSystem fileSystem) {
+        this(containerEngine, cgroup, fileSystem, Runtime.getRuntime().availableProcessors());
     }
 
-    ContainerStatsCollector(CGroup cgroup, FileSystem fileSystem, int onlineCpus) {
+    ContainerStatsCollector(ContainerEngine containerEngine, CGroup cgroup, FileSystem fileSystem, int onlineCpus) {
+        this.containerEngine = Objects.requireNonNull(containerEngine);
         this.cgroup = Objects.requireNonNull(cgroup);
         this.fileSystem = Objects.requireNonNull(fileSystem);
         this.onlineCpus = onlineCpus;
     }
 
     /** Collect statistics for given container ID and PID */
-    public Optional<ContainerStats> collect(ContainerId containerId, int pid, String iface) {
+    public Optional<ContainerStats> collect(NodeAgentContext context, ContainerId containerId, int pid, String iface) {
         try {
             ContainerStats.CpuStats cpuStats = collectCpuStats(containerId);
             ContainerStats.MemoryStats memoryStats = collectMemoryStats(containerId);
             Map<String, ContainerStats.NetworkStats> networkStats = Map.of(iface, collectNetworkStats(iface, pid));
-            return Optional.of(new ContainerStats(networkStats, memoryStats, cpuStats));
+            List<ContainerStats.GpuStats> gpuStats = collectGpuStats(context);
+            return Optional.of(new ContainerStats(networkStats, memoryStats, cpuStats, gpuStats));
         } catch (NoSuchFileException ignored) {
             return Optional.empty(); // Container disappeared while we collected stats
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }
+    }
+
+    private List<ContainerStats.GpuStats> collectGpuStats(NodeAgentContext context) {
+        boolean hasGpu = Files.exists(fileSystem.getPath("/dev/nvidia0"));
+        if (!hasGpu) {
+            return List.of();
+        }
+        Stream<String> lines = containerEngine.execute(context, UnixUser.ROOT, Duration.ofSeconds(5),
+                                                       "nvidia-smi",
+                                                       "--query-gpu=index,utilization.gpu,memory.total,memory.free",
+                                                       "--format=csv,noheader,nounits")
+                                              .getOutputLinesStream();
+        return lines.map(ContainerStatsCollector::parseGpuStats).toList();
+    }
+
+    private static ContainerStats.GpuStats parseGpuStats(String s) {
+        String[] fields = fields(s, ",\\s*");
+        if (fields.length < 4) throw new IllegalArgumentException("Could not parse GPU stats from '" + s + "'");
+        int deviceNumber = Integer.parseInt(fields[0]);
+        int loadPercentage = Integer.parseInt(fields[1]);
+        long mega = 2 << 19;
+        long memoryTotalBytes = Long.parseLong(fields[2]) * mega;
+        long memoryFreeBytes = Long.parseLong(fields[3]) * mega;
+        long memoryUsedBytes = memoryTotalBytes - memoryFreeBytes;
+        return new ContainerStats.GpuStats(deviceNumber, loadPercentage, memoryTotalBytes, memoryUsedBytes);
     }
 
     private ContainerStats.CpuStats collectCpuStats(ContainerId containerId) throws IOException {
@@ -114,7 +147,11 @@ class ContainerStatsCollector {
     }
 
     private static String[] fields(String s) {
-        return s.split("\\s+");
+        return fields(s, "\\s+");
+    }
+
+    private static String[] fields(String s, String regex) {
+        return s.trim().split(regex);
     }
 
 }

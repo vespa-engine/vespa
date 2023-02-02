@@ -1,51 +1,29 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.node.admin.container;
 
+import ai.vespa.validation.Validation;
+
 import java.util.Collections;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
 /**
- * CPU, memory and network statistics collected from a container.
+ * CPU, GPU, memory and network statistics collected from a container.
  *
  * @author freva
  */
-public class ContainerStats {
+public record ContainerStats(Map<String, NetworkStats> networks,
+                             MemoryStats memoryStats,
+                             CpuStats cpuStats,
+                             List<GpuStats> gpuStats) {
 
-    private final Map<String, NetworkStats> networkStatsByInterface;
-    private final MemoryStats memoryStats;
-    private final CpuStats cpuStats;
-
-    public ContainerStats(Map<String, NetworkStats> networkStatsByInterface, MemoryStats memoryStats, CpuStats cpuStats) {
-        this.networkStatsByInterface = new LinkedHashMap<>(Objects.requireNonNull(networkStatsByInterface));
+    public ContainerStats(Map<String, NetworkStats> networks, MemoryStats memoryStats, CpuStats cpuStats, List<GpuStats> gpuStats) {
+        this.networks = Collections.unmodifiableMap(new LinkedHashMap<>(Objects.requireNonNull(networks)));
         this.memoryStats = Objects.requireNonNull(memoryStats);
         this.cpuStats = Objects.requireNonNull(cpuStats);
-    }
-
-    public Map<String, NetworkStats> getNetworks() {
-        return Collections.unmodifiableMap(networkStatsByInterface);
-    }
-
-    public MemoryStats getMemoryStats() {
-        return memoryStats;
-    }
-
-    public CpuStats getCpuStats() {
-        return cpuStats;
-    }
-
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-        ContainerStats that = (ContainerStats) o;
-        return networkStatsByInterface.equals(that.networkStatsByInterface) && memoryStats.equals(that.memoryStats) && cpuStats.equals(that.cpuStats);
-    }
-
-    @Override
-    public int hashCode() {
-        return Objects.hash(networkStatsByInterface, memoryStats, cpuStats);
+        this.gpuStats = List.copyOf(Objects.requireNonNull(gpuStats));
     }
 
     /**
@@ -87,5 +65,24 @@ public class ContainerStats {
                            long throttledTime,
                            long throttlingActivePeriods,
                            long throttledPeriods) {}
+
+    /**
+     * GPU statistics
+     *
+     * @param deviceNumber     GPU device number
+     * @param loadPercentage   Load/utilization in %
+     * @param memoryTotalBytes Total memory, in bytes
+     * @param memoryUsedBytes  Memory used, in bytes
+     */
+    public record GpuStats(int deviceNumber, int loadPercentage, long memoryTotalBytes, long memoryUsedBytes) {
+
+        public GpuStats {
+            Validation.requireAtLeast(deviceNumber, "deviceNumber", 0);
+            Validation.requireAtLeast(loadPercentage, "loadPercentage", 0);
+            Validation.requireAtLeast(memoryTotalBytes, "memoryTotalBytes", 0L);
+            Validation.requireAtLeast(memoryUsedBytes, "memoryUsedBytes", 0L);
+        }
+
+    }
 
 }

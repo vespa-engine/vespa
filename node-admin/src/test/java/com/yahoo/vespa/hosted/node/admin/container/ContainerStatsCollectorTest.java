@@ -1,12 +1,19 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.node.admin.container;
 
+import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.NodeSpec;
+import com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAgentContext;
+import com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAgentContextImpl;
 import com.yahoo.vespa.hosted.node.admin.task.util.file.UnixPath;
+import com.yahoo.vespa.hosted.node.admin.task.util.process.TestTerminal;
 import com.yahoo.vespa.test.file.TestFileSystem;
 import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
 import java.nio.file.FileSystem;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
@@ -27,30 +34,54 @@ import static org.mockito.Mockito.when;
  */
 public class ContainerStatsCollectorTest {
 
+    private final TestTerminal testTerminal = new TestTerminal();
+    private final ContainerEngineMock containerEngine = new ContainerEngineMock(testTerminal);
     private final FileSystem fileSystem = TestFileSystem.create();
     private final CGroup cgroup = mock(CGroup.class);
+    private final NodeAgentContext context = NodeAgentContextImpl.builder(NodeSpec.Builder.testSpec("c1").build())
+                                                                 .fileSystem(TestFileSystem.create())
+                                                                 .build();
 
     @Test
-    void collect() throws IOException {
-        ContainerStatsCollector collector = new ContainerStatsCollector(cgroup, fileSystem, 24);
+    void collect() throws Exception {
+        ContainerStatsCollector collector = new ContainerStatsCollector(containerEngine, cgroup, fileSystem, 24);
         ContainerId containerId = new ContainerId("id1");
         int containerPid = 42;
-        assertTrue(collector.collect(containerId, containerPid, "eth0").isEmpty(), "No stats found");
+        assertTrue(collector.collect(context, containerId, containerPid, "eth0").isEmpty(), "No stats found");
 
         mockMemoryStats(containerId);
         mockCpuStats(containerId);
         mockNetworkStats(containerPid);
 
-        Optional<ContainerStats> stats = collector.collect(containerId, containerPid, "eth0");
+        Optional<ContainerStats> stats = collector.collect(context, containerId, containerPid, "eth0");
         assertTrue(stats.isPresent());
         assertEquals(new ContainerStats.CpuStats(24, 6049374780000L, 691675615472L,
                         262190000000L, 3L, 1L, 2L),
-                stats.get().getCpuStats());
+                stats.get().cpuStats());
         assertEquals(new ContainerStats.MemoryStats(470790144L, 1228017664L, 2147483648L),
-                stats.get().getMemoryStats());
+                stats.get().memoryStats());
         assertEquals(Map.of("eth0", new ContainerStats.NetworkStats(22280813L, 4L, 3L,
                         19859383L, 6L, 5L)),
-                stats.get().getNetworks());
+                stats.get().networks());
+        assertEquals(List.of(), stats.get().gpuStats());
+
+        mockGpuStats();
+        stats = collector.collect(context, containerId, containerPid, "eth0");
+        assertTrue(stats.isPresent());
+        assertEquals(List.of(new ContainerStats.GpuStats(0, 35, 16106127360L, 6144655360L),
+                             new ContainerStats.GpuStats(1, 67, 32212254720L, 19314769920L)),
+                     stats.get().gpuStats());
+    }
+
+    private void mockGpuStats() throws IOException {
+        Path devPath = fileSystem.getPath("/dev");
+        Files.createDirectories(devPath);
+        Files.createFile(devPath.resolve("nvidia0"));
+        testTerminal.expectCommand("nvidia-smi --query-gpu=index,utilization.gpu,memory.total,memory.free --format=csv,noheader,nounits 2>&1", 0,
+                                   """
+    0, 35, 15360, 9500
+    1, 67, 30720, 12300
+    """);
     }
 
     private void mockNetworkStats(int pid) {

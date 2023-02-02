@@ -9,6 +9,7 @@ import com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAgentContext;
 import com.yahoo.vespa.hosted.node.admin.task.util.file.UnixUser;
 import com.yahoo.vespa.hosted.node.admin.task.util.fs.ContainerPath;
 import com.yahoo.vespa.hosted.node.admin.task.util.process.CommandResult;
+import com.yahoo.vespa.hosted.node.admin.task.util.process.TestTerminal;
 
 import java.nio.file.Path;
 import java.time.Duration;
@@ -19,7 +20,6 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CountDownLatch;
-import java.util.stream.Collectors;
 
 /**
  * @author mpolden
@@ -29,6 +29,16 @@ public class ContainerEngineMock implements ContainerEngine {
     private final Map<ContainerName, Container> containers = new ConcurrentHashMap<>();
     private final Map<String, ImageDownload> images = new ConcurrentHashMap<>();
     private boolean asyncImageDownload = false;
+
+    private final TestTerminal terminal;
+
+    public ContainerEngineMock() {
+        this(null);
+    }
+
+    public ContainerEngineMock(TestTerminal terminal) {
+        this.terminal = terminal;
+    }
 
     public ContainerEngineMock asyncImageDownload(boolean enabled) {
         this.asyncImageDownload = enabled;
@@ -139,12 +149,22 @@ public class ContainerEngineMock implements ContainerEngine {
 
     @Override
     public CommandResult execute(NodeAgentContext context, UnixUser user, Duration timeout, String... command) {
-        return new CommandResult(null, 0, "");
+        if (terminal == null) {
+            return new CommandResult(null, 0, "");
+        }
+        return terminal.newCommandLine(context)
+                       .add(command)
+                       .executeSilently();
     }
 
     @Override
     public CommandResult executeInNetworkNamespace(NodeAgentContext context, String... command) {
-        return new CommandResult(null, 0, "");
+        if (terminal == null) {
+            return new CommandResult(null, 0, "");
+        }
+        return terminal.newCommandLine(context)
+                       .add(command)
+                       .executeSilently();
     }
 
     @Override
