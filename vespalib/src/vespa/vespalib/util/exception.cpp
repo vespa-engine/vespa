@@ -9,7 +9,7 @@
 namespace vespalib {
 
 ExceptionPtr::ExceptionPtr()
-    : _ref(NULL)
+    : _ref(nullptr)
 {
 }
 
@@ -19,7 +19,7 @@ ExceptionPtr::ExceptionPtr(const Exception &e)
 }
 
 ExceptionPtr::ExceptionPtr(const ExceptionPtr &rhs)
-    : _ref(rhs._ref != NULL ? rhs._ref->clone() : NULL)
+    : _ref(rhs._ref != nullptr ? rhs._ref->clone() : nullptr)
 {
 }
 
@@ -79,15 +79,17 @@ Exception::Exception(stringref msg, const Exception &cause, stringref location, 
 
 Exception::Exception(const Exception &) = default;
 Exception & Exception::operator = (const Exception &) = default;
+Exception::Exception(Exception &&) noexcept = default;
+Exception & Exception::operator = (Exception &&) noexcept = default;
 Exception::~Exception() = default;
 
 const char *
-Exception::what() const throw()
+Exception::what() const noexcept
 {
     if (_what.empty()) {
         _what.append(toString());
         for (const Exception *next = getCause();
-             next != NULL; next = next->getCause())
+             next != nullptr; next = next->getCause())
         {
             _what.append("\n--> Caused by: ");
             _what.append(next->toString());

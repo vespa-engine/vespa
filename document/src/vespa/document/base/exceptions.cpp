@@ -19,19 +19,14 @@ InvalidDataTypeException::InvalidDataTypeException(
         const DataType& expected,
         const vespalib::string& location)
     : vespalib::IllegalStateException(
-            vespalib::make_string(
-                "Got %s while expecting %s. These types are not compatible.",
-                actual.toString().c_str(),
-                expected.toString().c_str()
-            ), location, 1),
+            vespalib::make_string("Got %s while expecting %s. These types are not compatible.",
+                                  actual.toString().c_str(), expected.toString().c_str()), location, 1),
       _actual(actual),
       _expected(expected)
 {
 }
 
-InvalidDataTypeException::~InvalidDataTypeException() throw()
-{
-}
+InvalidDataTypeException::~InvalidDataTypeException() = default;
 
 InvalidDataTypeConversionException::InvalidDataTypeConversionException(
         const DataType &actual,
@@ -48,9 +43,7 @@ InvalidDataTypeConversionException::InvalidDataTypeConversionException(
 {
 }
 
-InvalidDataTypeConversionException::~InvalidDataTypeConversionException() throw()
-{
-}
+InvalidDataTypeConversionException::~InvalidDataTypeConversionException() = default;
 
 DocumentTypeNotFoundException::DocumentTypeNotFoundException(const vespalib::string& name, const vespalib::string& location)
     : Exception("Document type "+name+" not found", location, 1),
@@ -71,7 +64,8 @@ DataTypeNotFoundException::DataTypeNotFoundException(const vespalib::string& nam
 AnnotationTypeNotFoundException::AnnotationTypeNotFoundException(
         int id, const vespalib::string& location)
     : Exception(vespalib::make_string("Data type with id %d not found", id),
-                location, 1) {
+                location, 1)
+{
 }
 
 FieldNotFoundException::
@@ -96,13 +90,8 @@ FieldNotFoundException(int fieldId,
 {
 }
 
-FieldNotFoundException::~FieldNotFoundException() throw()
-{
-}
-
-DocumentTypeNotFoundException::~DocumentTypeNotFoundException() throw()
-{
-}
+FieldNotFoundException::~FieldNotFoundException() = default;
+DocumentTypeNotFoundException::~DocumentTypeNotFoundException() = default;
 
 VESPA_IMPLEMENT_EXCEPTION(WrongTensorTypeException, vespalib::Exception);
 
