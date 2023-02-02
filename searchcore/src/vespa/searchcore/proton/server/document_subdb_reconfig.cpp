@@ -10,5 +10,7 @@ DocumentSubDBReconfig::DocumentSubDBReconfig(std::shared_ptr<Matchers> matchers_
 {
 }
 
+DocumentSubDBReconfig::~DocumentSubDBReconfig() = default;
+
 }
 

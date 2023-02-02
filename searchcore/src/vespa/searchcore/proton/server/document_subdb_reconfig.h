@@ -17,6 +17,7 @@ private:
 
 public:
     DocumentSubDBReconfig(std::shared_ptr<Matchers> matchers_in);
+    ~DocumentSubDBReconfig();
 
     void set_matchers(std::shared_ptr<Matchers> value) {
         _new_matchers = std::move(value);

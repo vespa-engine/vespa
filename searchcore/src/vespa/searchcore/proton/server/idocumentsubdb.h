@@ -25,6 +25,7 @@ namespace proton {
 namespace matching { class SessionManager; }
 
 class DocumentDBConfig;
+class DocumentSubDBReconfig;
 class DocumentSubDbInitializer;
 class DocumentSubDbInitializerResult;
 class FeedHandler;
@@ -78,9 +79,11 @@ public:
     virtual void setup(const DocumentSubDbInitializerResult &initResult) = 0;
     virtual void initViews(const DocumentDBConfig &configSnapshot) = 0;
 
+    virtual std::unique_ptr<const DocumentSubDBReconfig>
+    prepare_reconfig(const DocumentDBConfig& new_config_snapshot, const DocumentDBConfig& old_config_snapshot, const ReconfigParams& reconfig_params) = 0;
     virtual IReprocessingTask::List
     applyConfig(const DocumentDBConfig &newConfigSnapshot, const DocumentDBConfig &oldConfigSnapshot,
-                SerialNum serialNum, const ReconfigParams &params, IDocumentDBReferenceResolver &resolver) = 0;
+                SerialNum serialNum, const ReconfigParams &params, IDocumentDBReferenceResolver &resolver, const DocumentSubDBReconfig& prepared_reconfig) = 0;
     virtual void setBucketStateCalculator(const std::shared_ptr<IBucketStateCalculator> &calc, OnDone) = 0;
 
     virtual std::shared_ptr<ISearchHandler> getSearchView() const = 0;
