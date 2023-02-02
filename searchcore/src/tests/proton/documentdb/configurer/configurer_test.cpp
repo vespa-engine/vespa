@@ -16,6 +16,7 @@
 #include <vespa/searchcore/proton/reference/dummy_gid_to_lid_change_handler.h>
 #include <vespa/searchcore/proton/reprocessing/attribute_reprocessing_initializer.h>
 #include <vespa/searchcore/proton/server/attribute_writer_factory.h>
+#include <vespa/searchcore/proton/server/document_subdb_reconfig.h>
 #include <vespa/searchcore/proton/server/fast_access_doc_subdb_configurer.h>
 #include <vespa/searchcore/proton/server/reconfig_params.h>
 #include <vespa/searchcore/proton/server/searchable_doc_subdb_configurer.h>
@@ -162,6 +163,15 @@ struct Fixture
     Fixture();
     ~Fixture();
     void initViewSet(ViewSet &views);
+    void reconfigure(const DocumentDBConfig& new_config_snapshot,
+                     const DocumentDBConfig& old_config_snapshot,
+                     const ReconfigParams& reconfig_params,
+                     IDocumentDBReferenceResolver& resolver);
+    IReprocessingInitializer::UP reconfigure(const DocumentDBConfig& new_config_snapshot,
+                                             const DocumentDBConfig& old_config_snapshot,
+                                             AttributeCollectionSpec&& attr_spec,
+                                             const ReconfigParams& reconfig_params,
+                                             IDocumentDBReferenceResolver& resolver);
 };
 
 Fixture::Fixture()
@@ -227,6 +237,26 @@ Fixture::initViewSet(ViewSet &views)
                                             SearchableFeedView::Context(indexWriter)));
 }
 
+void
+Fixture::reconfigure(const DocumentDBConfig& new_config_snapshot,
+                     const DocumentDBConfig& old_config_snapshot,
+                     const ReconfigParams& reconfig_params,
+                     IDocumentDBReferenceResolver& resolver)
+{
+    auto prepared_reconfig = _configurer->prepare_reconfig(new_config_snapshot, old_config_snapshot, reconfig_params);
+    _configurer->reconfigure(new_config_snapshot, old_config_snapshot, reconfig_params, resolver, *prepared_reconfig);
+}
+
+IReprocessingInitializer::UP
+Fixture::reconfigure(const DocumentDBConfig& new_config_snapshot,
+                     const DocumentDBConfig& old_config_snapshot,
+                     AttributeCollectionSpec&& attr_spec,
+                     const ReconfigParams& reconfig_params,
+                     IDocumentDBReferenceResolver& resolver)
+{
+    auto prepared_reconfig = _configurer->prepare_reconfig(new_config_snapshot, old_config_snapshot, reconfig_params);
+    return _configurer->reconfigure(new_config_snapshot, old_config_snapshot, std::move(attr_spec), reconfig_params, resolver, *prepared_reconfig);
+}
 
 using MySummaryAdapter = test::MockSummaryAdapter;
 
@@ -292,7 +322,22 @@ struct FastAccessFixture
     ~FastAccessFixture() {
         _service.shutdown();
     }
+
+    IReprocessingInitializer::UP
+    reconfigure(const DocumentDBConfig& new_config_snapshot,
+                const DocumentDBConfig& old_config_snapshot,
+                AttributeCollectionSpec&& attr_spec);
 };
+
+IReprocessingInitializer::UP
+FastAccessFixture::reconfigure(const DocumentDBConfig& new_config_snapshot,
+                               const DocumentDBConfig& old_config_snapshot,
+                               AttributeCollectionSpec&& attr_spec)
+{
+    ReconfigParams reconfig_params{CCR()};
+    auto prepared_reconfig = _configurer.prepare_reconfig(new_config_snapshot, old_config_snapshot, reconfig_params);
+    return _configurer.reconfigure(new_config_snapshot, old_config_snapshot, std::move(attr_spec), *prepared_reconfig);
+}
 
 DocumentDBConfig::SP
 createConfig()
@@ -456,9 +501,9 @@ TEST_F("require that we can reconfigure attribute manager", Fixture)
     ViewPtrs o = f._views.getViewPtrs();
     ReconfigParams params(CCR().setAttributesChanged(true).setSchemaChanged(true));
     // Use new config snapshot == old config snapshot (only relevant for reprocessing)
-    f._configurer->reconfigure(*createConfig(), *createConfig(),
-                               AttributeCollectionSpec(AttributeCollectionSpec::AttributeList(), 1, 0),
-                               params, f._resolver);
+    f.reconfigure(*createConfig(), *createConfig(),
+                  AttributeCollectionSpec(AttributeCollectionSpec::AttributeList(), 1, 0),
+                  params, f._resolver);
 
     ViewPtrs n = f._views.getViewPtrs();
     { // verify search view
@@ -494,9 +539,9 @@ checkAttributeWriterChangeOnRepoChange(Fixture &f, bool docTypeRepoChanged)
     auto oldAttributeWriter = getAttributeWriter(f);
     ReconfigParams params(CCR().setDocumentTypeRepoChanged(docTypeRepoChanged));
     // Use new config snapshot == old config snapshot (only relevant for reprocessing)
-    f._configurer->reconfigure(*createConfig(), *createConfig(),
-                               AttributeCollectionSpec(AttributeCollectionSpec::AttributeList(), 1, 0),
-                               params, f._resolver);
+    f.reconfigure(*createConfig(), *createConfig(),
+                  AttributeCollectionSpec(AttributeCollectionSpec::AttributeList(), 1, 0),
+                  params, f._resolver);
     auto newAttributeWriter = getAttributeWriter(f);
     if (docTypeRepoChanged) {
         EXPECT_NOT_EQUAL(oldAttributeWriter, newAttributeWriter);
@@ -515,9 +560,9 @@ TEST_F("require that reconfigure returns reprocessing initializer when changing 
 {
     ReconfigParams params(CCR().setAttributesChanged(true).setSchemaChanged(true));
     IReprocessingInitializer::UP init =
-            f._configurer->reconfigure(*createConfig(), *createConfig(),
-                                       AttributeCollectionSpec(AttributeCollectionSpec::AttributeList(), 1, 0),
-                                       params, f._resolver);
+        f.reconfigure(*createConfig(), *createConfig(),
+                      AttributeCollectionSpec(AttributeCollectionSpec::AttributeList(), 1, 0),
+                      params, f._resolver);
 
     EXPECT_TRUE(init.get() != nullptr);
     EXPECT_TRUE((dynamic_cast<AttributeReprocessingInitializer *>(init.get())) != nullptr);
@@ -527,8 +572,8 @@ TEST_F("require that reconfigure returns reprocessing initializer when changing 
 TEST_F("require that we can reconfigure attribute writer", FastAccessFixture)
 {
     FastAccessFeedView::SP o = f._view._feedView.get();
-    f._configurer.reconfigure(*createConfig(), *createConfig(),
-                              AttributeCollectionSpec(AttributeCollectionSpec::AttributeList(), 1, 0));
+    f.reconfigure(*createConfig(), *createConfig(),
+                  AttributeCollectionSpec(AttributeCollectionSpec::AttributeList(), 1, 0));
     FastAccessFeedView::SP n = f._view._feedView.get();
 
     FastAccessFeedViewComparer cmp(o, n);
@@ -540,8 +585,8 @@ TEST_F("require that we can reconfigure attribute writer", FastAccessFixture)
 
 TEST_F("require that reconfigure returns reprocessing initializer", FastAccessFixture)
 {
-    IReprocessingInitializer::UP init = f._configurer.reconfigure(*createConfig(), *createConfig(),
-                                                                  AttributeCollectionSpec(AttributeCollectionSpec::AttributeList(), 1, 0));
+    IReprocessingInitializer::UP init = f.reconfigure(*createConfig(), *createConfig(),
+                                                      AttributeCollectionSpec(AttributeCollectionSpec::AttributeList(), 1, 0));
 
     EXPECT_TRUE(init.get() != nullptr);
     EXPECT_TRUE((dynamic_cast<AttributeReprocessingInitializer *>(init.get())) != nullptr);
@@ -553,7 +598,7 @@ TEST_F("require that we can reconfigure summary manager", Fixture)
     ViewPtrs o = f._views.getViewPtrs();
     ReconfigParams params(CCR().setSummaryChanged(true));
     // Use new config snapshot == old config snapshot (only relevant for reprocessing)
-    f._configurer->reconfigure(*createConfig(), *createConfig(), params, f._resolver);
+    f.reconfigure(*createConfig(), *createConfig(), params, f._resolver);
 
     ViewPtrs n = f._views.getViewPtrs();
     { // verify search view
@@ -572,8 +617,8 @@ TEST_F("require that we can reconfigure matchers", Fixture)
 {
     ViewPtrs o = f._views.getViewPtrs();
     // Use new config snapshot == old config snapshot (only relevant for reprocessing)
-    f._configurer->reconfigure(*createConfig(o.fv->getSchema()), *createConfig(o.fv->getSchema()),
-            ReconfigParams(CCR().setRankProfilesChanged(true)), f._resolver);
+    f.reconfigure(*createConfig(o.fv->getSchema()), *createConfig(o.fv->getSchema()),
+                  ReconfigParams(CCR().setRankProfilesChanged(true)), f._resolver);
 
     ViewPtrs n = f._views.getViewPtrs();
     { // verify search view

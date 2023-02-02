@@ -1,6 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "searchable_doc_subdb_configurer.h"
+#include "document_subdb_reconfig.h"
 #include "reconfig_params.h"
 #include <vespa/searchcore/proton/matching/matcher.h>
 #include <vespa/searchcore/proton/attribute/attribute_writer.h>
@@ -133,16 +134,26 @@ SearchableDocSubDBConfigurer::reconfigureIndexSearchable()
     reconfigureMatchView(indexManager->getSearchable());
 }
 
+std::unique_ptr<const DocumentSubDBReconfig>
+SearchableDocSubDBConfigurer::prepare_reconfig(const DocumentDBConfig& new_config_snapshot, const DocumentDBConfig& old_config_snapshot, const ReconfigParams& reconfig_params)
+{
+    (void) new_config_snapshot;
+    (void) old_config_snapshot;
+    (void) reconfig_params;
+    return std::make_unique<const DocumentSubDBReconfig>(std::shared_ptr<Matchers>());
+}
+
 void
 SearchableDocSubDBConfigurer::
 reconfigure(const DocumentDBConfig &newConfig,
             const DocumentDBConfig &oldConfig,
             const ReconfigParams &params,
-            IDocumentDBReferenceResolver &resolver)
+            IDocumentDBReferenceResolver &resolver,
+            const DocumentSubDBReconfig& prepared_reconfig)
 {
     assert(!params.shouldAttributeManagerChange());
     AttributeCollectionSpec attrSpec(AttributeCollectionSpec::AttributeList(), 0, 0);
-    reconfigure(newConfig, oldConfig, std::move(attrSpec), params, resolver);
+    reconfigure(newConfig, oldConfig, std::move(attrSpec), params, resolver, prepared_reconfig);
 }
 
 namespace {
@@ -174,8 +185,10 @@ SearchableDocSubDBConfigurer::reconfigure(const DocumentDBConfig &newConfig,
                                           const DocumentDBConfig &oldConfig,
                                           AttributeCollectionSpec && attrSpec,
                                           const ReconfigParams &params,
-                                          IDocumentDBReferenceResolver &resolver)
+                                          IDocumentDBReferenceResolver &resolver,
+                                          const DocumentSubDBReconfig& prepared_reconfig)
 {
+    (void) prepared_reconfig;
     bool shouldMatchViewChange = false;
     bool shouldSearchViewChange = false;
     bool shouldFeedViewChange = params.shouldSchemaChange();

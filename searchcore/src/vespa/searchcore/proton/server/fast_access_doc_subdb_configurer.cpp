@@ -1,6 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "fast_access_doc_subdb_configurer.h"
+#include "document_subdb_reconfig.h"
 #include "i_attribute_writer_factory.h"
 #include "documentdbconfig.h"
 #include <vespa/searchcore/proton/attribute/attribute_writer.h>
@@ -44,11 +45,22 @@ FastAccessDocSubDBConfigurer::FastAccessDocSubDBConfigurer(FeedViewVarHolder &fe
 
 FastAccessDocSubDBConfigurer::~FastAccessDocSubDBConfigurer() = default;
 
+std::unique_ptr<const DocumentSubDBReconfig>
+FastAccessDocSubDBConfigurer::prepare_reconfig(const DocumentDBConfig& new_config_snapshot, const DocumentDBConfig& old_config_snapshot, const ReconfigParams& reconfig_params)
+{
+    (void) new_config_snapshot;
+    (void) old_config_snapshot;
+    (void) reconfig_params;
+    return std::make_unique<const DocumentSubDBReconfig>(std::shared_ptr<Matchers>());
+}
+
 IReprocessingInitializer::UP
 FastAccessDocSubDBConfigurer::reconfigure(const DocumentDBConfig &newConfig,
                                           const DocumentDBConfig &oldConfig,
-                                          AttributeCollectionSpec && attrSpec)
+                                          AttributeCollectionSpec && attrSpec,
+                                          const DocumentSubDBReconfig& prepared_reconfig)
 {
+    (void) prepared_reconfig;
     FastAccessFeedView::SP oldView = _feedView.get();
     search::SerialNum currentSerialNum = attrSpec.getCurrentSerialNum();
     IAttributeWriter::SP writer = _factory->create(oldView->getAttributeWriter(), std::move(attrSpec));

@@ -70,6 +70,7 @@ private:
     const bool                    _fastAccessAttributesOnly;
     AttributeManager::SP          _initAttrMgr;
     Configurer::FeedViewVarHolder _fastAccessFeedView;
+    Configurer                    _configurer;
     AttributeMetrics             &_subAttributeMetrics;
 
     std::shared_ptr<initializer::InitializerTask>
@@ -109,6 +110,8 @@ public:
     void setup(const DocumentSubDbInitializerResult &initResult) override;
     void initViews(const DocumentDBConfig &configSnapshot) override;
 
+    std::unique_ptr<const DocumentSubDBReconfig>
+    prepare_reconfig(const DocumentDBConfig& new_config_snapshot, const DocumentDBConfig& old_config_snapshot, const ReconfigParams& reconfig_params) override;
     IReprocessingTask::List
     applyConfig(const DocumentDBConfig &newConfigSnapshot, const DocumentDBConfig &oldConfigSnapshot,
                 SerialNum serialNum, const ReconfigParams &params, IDocumentDBReferenceResolver &resolver, const DocumentSubDBReconfig& prepared_reconfig) override;

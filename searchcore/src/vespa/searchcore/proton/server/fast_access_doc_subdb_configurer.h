@@ -33,9 +33,12 @@ public:
                                  const vespalib::string &subDbName);
     ~FastAccessDocSubDBConfigurer();
 
+    std::unique_ptr<const DocumentSubDBReconfig> prepare_reconfig(const DocumentDBConfig& new_config_snapshot, const DocumentDBConfig& old_config_snapshot, const ReconfigParams& reconfig_params);
+
     IReprocessingInitializer::UP reconfigure(const DocumentDBConfig &newConfig,
                                              const DocumentDBConfig &oldConfig,
-                                             AttributeCollectionSpec && attrSpec);
+                                             AttributeCollectionSpec && attrSpec,
+                                             const DocumentSubDBReconfig& prepared_reconfig);
 };
 
 } // namespace proton
