@@ -38,16 +38,16 @@ public class EntityBindingsMapper {
 
     public static SignedIdentityDocument toSignedIdentityDocument(SignedIdentityDocumentEntity entity) {
         return new SignedIdentityDocument(
-                entity.signature,
-                entity.signingKeyVersion,
-                fromDottedString(entity.providerUniqueId),
-                new AthenzService(entity.providerService),
-                entity.documentVersion,
-                entity.configServerHostname,
-                entity.instanceHostname,
-                entity.createdAt,
-                entity.ipAddresses,
-                IdentityType.fromId(entity.identityType));
+                entity.signature(),
+                entity.signingKeyVersion(),
+                fromDottedString(entity.providerUniqueId()),
+                new AthenzService(entity.providerService()),
+                entity.documentVersion(),
+                entity.configServerHostname(),
+                entity.instanceHostname(),
+                entity.createdAt(),
+                entity.ipAddresses(),
+                IdentityType.fromId(entity.identityType()));
     }
 
     public static SignedIdentityDocumentEntity toSignedIdentityDocumentEntity(SignedIdentityDocument model) {
