@@ -587,6 +587,7 @@ public class RpcServer implements Runnable, ConfigActivationListener, TenantList
                     boolean downloadFromOtherSourceIfNotFound = request.parameters().get(1).asInt32() == 0;
                     Set<FileReferenceData.CompressionType> acceptedCompressionTypes = Set.of(CompressionType.gzip);
                     // Newer clients specify accepted compression types in request
+                    // TODO Require acceptedCompressionTypes parameter in Vespa 9
                     if (request.parameters().size() > 2)
                         acceptedCompressionTypes = Arrays.stream(request.parameters().get(2).asStringArray())
                                                          .map(CompressionType::valueOf)
