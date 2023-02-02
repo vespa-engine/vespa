@@ -27,6 +27,7 @@ namespace proton::matching {
 }
 namespace proton {
 
+class DocumentSubDBReconfig;
 struct IDocumentDBReferenceResolver;
 class ReconfigParams;
 
@@ -79,17 +80,21 @@ public:
 
     void reconfigureIndexSearchable();
 
+    std::unique_ptr<const DocumentSubDBReconfig> prepare_reconfig(const DocumentDBConfig& new_config_snapshot, const DocumentDBConfig& old_config_snapshot, const ReconfigParams& reconfig_params);
+
     void reconfigure(const DocumentDBConfig &newConfig,
                      const DocumentDBConfig &oldConfig,
                      const ReconfigParams &params,
-                     IDocumentDBReferenceResolver &resolver);
+                     IDocumentDBReferenceResolver &resolver,
+                     const DocumentSubDBReconfig& prepared_reconfig);
 
     IReprocessingInitializer::UP
     reconfigure(const DocumentDBConfig &newConfig,
                 const DocumentDBConfig &oldConfig,
                 AttributeCollectionSpec && attrSpec,
                 const ReconfigParams &params,
-                IDocumentDBReferenceResolver &resolver);
+                IDocumentDBReferenceResolver &resolver,
+                const DocumentSubDBReconfig& prepared_reconfig);
 };
 
 } // namespace proton

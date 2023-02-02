@@ -2,6 +2,7 @@
 
 #include "fast_access_doc_subdb.h"
 #include "attribute_writer_factory.h"
+#include "document_subdb_reconfig.h"
 #include "emptysearchview.h"
 #include "fast_access_document_retriever.h"
 #include "document_subdb_initializer.h"
@@ -242,9 +243,15 @@ FastAccessDocSubDB::initViews(const DocumentDBConfig &configSnapshot)
     }
 }
 
+std::unique_ptr<const DocumentSubDBReconfig>
+FastAccessDocSubDB::prepare_reconfig(const DocumentDBConfig& new_config_snapshot, const DocumentDBConfig& old_config_snapshot, const ReconfigParams& reconfig_params)
+{
+    return _configurer.prepare_reconfig(new_config_snapshot, old_config_snapshot, reconfig_params);
+}
+
 IReprocessingTask::List
 FastAccessDocSubDB::applyConfig(const DocumentDBConfig &newConfigSnapshot, const DocumentDBConfig &oldConfigSnapshot,
-                                SerialNum serialNum, const ReconfigParams &params, IDocumentDBReferenceResolver &, const DocumentSubDBReconfig&)
+                                SerialNum serialNum, const ReconfigParams &params, IDocumentDBReferenceResolver &, const DocumentSubDBReconfig& prepared_reconfig)
 {
     AllocStrategy alloc_strategy = newConfigSnapshot.get_alloc_config().make_alloc_strategy(_subDbType);
     reconfigure(newConfigSnapshot.getStoreConfig(), alloc_strategy);
@@ -263,7 +270,7 @@ FastAccessDocSubDB::applyConfig(const DocumentDBConfig &newConfigSnapshot, const
         std::unique_ptr<AttributeCollectionSpec> attrSpec =
             createAttributeSpec(newConfigSnapshot.getAttributesConfig(), alloc_strategy, serialNum);
         IReprocessingInitializer::UP initializer =
-            _configurer.reconfigure(newConfigSnapshot, oldConfigSnapshot, std::move(*attrSpec));
+            _configurer.reconfigure(newConfigSnapshot, oldConfigSnapshot, std::move(*attrSpec), prepared_reconfig);
         if (initializer->hasReprocessors()) {
             tasks.push_back(IReprocessingTask::SP(createReprocessingTask(*initializer,
                     newConfigSnapshot.getDocumentTypeRepoSP()).release()));
