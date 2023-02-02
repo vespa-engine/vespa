@@ -2,14 +2,18 @@
 package com.yahoo.vespa.security.tool.crypto;
 
 import com.yahoo.security.SealedSharedKey;
+import com.yahoo.security.SecretSharedKey;
 import com.yahoo.security.SharedKeyGenerator;
+import com.yahoo.security.SharedKeyResealingSession;
 import com.yahoo.vespa.security.tool.CliUtils;
 import com.yahoo.vespa.security.tool.Tool;
 import com.yahoo.vespa.security.tool.ToolDescription;
 import com.yahoo.vespa.security.tool.ToolInvocation;
 import org.apache.commons.cli.Option;
 
+import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.util.List;
 import java.util.Optional;
 
@@ -31,6 +35,7 @@ public class DecryptTool implements Tool {
     static final String EXPECTED_KEY_ID_OPTION  = "expected-key-id";
     static final String ZSTD_DECOMPRESS_OPTION  = "zstd-decompress";
     static final String TOKEN_OPTION            = "token";
+    static final String RESEAL_REQUEST          = "reseal-request";
 
     private static final List<Option> OPTIONS = List.of(
             Option.builder("o")
@@ -77,6 +82,12 @@ public class DecryptTool implements Tool {
                     .hasArg(true)
                     .required(false)
                     .desc("Token generated when the input file was encrypted")
+                    .build(),
+            Option.builder("r")
+                    .longOpt(RESEAL_REQUEST)
+                    .hasArg(false)
+                    .required(false)
+                    .desc("Delegate private key decryption via an interactive resealing session")
                     .build());
 
     @Override
@@ -110,11 +121,12 @@ public class DecryptTool implements Tool {
             var sealedSharedKey = SealedSharedKey.fromTokenString(tokenString.strip());
             ToolUtils.verifyExpectedKeyId(sealedSharedKey, maybeKeyId);
 
-            var privateKey   = ToolUtils.resolvePrivateKeyFromInvocation(invocation, sealedSharedKey.keyId(),
-                                                                         !CliUtils.useStdIo(inputArg) && !CliUtils.useStdIo(outputArg));
-            var secretShared = SharedKeyGenerator.fromSealedKey(sealedSharedKey, privateKey);
-            var cipher       = secretShared.makeDecryptionCipher();
-            boolean unZstd   = arguments.hasOption(ZSTD_DECOMPRESS_OPTION);
+            var secret = arguments.hasOption(RESEAL_REQUEST)
+                    ? secretFromInteractiveResealing(invocation, inputArg, outputArg, sealedSharedKey)
+                    : secretFromPrivateKey(invocation, inputArg, outputArg, sealedSharedKey);
+
+            var cipher     = secret.makeDecryptionCipher();
+            boolean unZstd = arguments.hasOption(ZSTD_DECOMPRESS_OPTION);
 
             try (var inStream  = CliUtils.inputStreamFromFileOrStream(inputArg, invocation.stdIn());
                  var outStream = CliUtils.outputStreamToFileOrStream(outputArg, invocation.stdOut())) {
@@ -124,5 +136,32 @@ public class DecryptTool implements Tool {
             throw new RuntimeException(e);
         }
         return 0;
+    }
+
+    private static SecretSharedKey secretFromPrivateKey(ToolInvocation invocation, String inputArg, String outputArg, SealedSharedKey sealedSharedKey) throws IOException {
+        var privateKey = ToolUtils.resolvePrivateKeyFromInvocation(invocation, sealedSharedKey.keyId(),
+                                                                   !CliUtils.useStdIo(inputArg) && !CliUtils.useStdIo(outputArg));
+        return SharedKeyGenerator.fromSealedKey(sealedSharedKey, privateKey);
+    }
+
+    private static SecretSharedKey secretFromInteractiveResealing(ToolInvocation invocation, String inputArg,
+                                                                  String outputArg, SealedSharedKey sealedSharedKey) throws IOException {
+        if (!CliUtils.useStdIo(outputArg) || !CliUtils.useStdIo(inputArg)) {
+            throw new IllegalArgumentException("Interactive token resealing not available with redirected I/O");
+        }
+        var session = SharedKeyResealingSession.newEphemeralSession();
+        var req     = session.resealingRequestFor(sealedSharedKey);
+
+        invocation.stdOut().format("\nInteractive token resealing request:\n\n%s\n\n", req.toSerializedString());
+        invocation.stdOut().format("Paste response and hit return: ");
+
+        try (var reader = new BufferedReader(new InputStreamReader(invocation.stdIn()))) {
+            var serializedRes = reader.readLine().strip();
+            if (serializedRes.isEmpty()) {
+                throw new IllegalArgumentException("Empty response; aborting");
+            }
+            var res = SharedKeyResealingSession.ResealingResponse.fromSerializedString(serializedRes);
+            return session.openResealingResponse(res);
+        }
     }
 }
