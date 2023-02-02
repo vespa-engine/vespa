@@ -199,16 +199,9 @@ public class InstanceValidatorTest {
 
     private InstanceConfirmation createRegisterInstanceConfirmation(ApplicationId applicationId, String domain, String service) {
         VespaUniqueInstanceId vespaUniqueInstanceId = new VespaUniqueInstanceId(0, "default", applicationId.instance().value(), applicationId.application().value(), applicationId.tenant().value(), "us-north-1", "dev", IdentityType.NODE);
-        SignedIdentityDocument signedIdentityDocument = new SignedIdentityDocument(null,
-                                                                                   0,
-                                                                                   vespaUniqueInstanceId,
-                                                                                   new AthenzService(domain, service),
-                                                                                   0,
-                                                                                   "localhost",
-                                                                                   "localhost",
-                                                                                   Instant.now(),
-                                                                                   Collections.emptySet(),
-                                                                                   IdentityType.NODE);
+        SignedIdentityDocument signedIdentityDocument = new SignedIdentityDocument(
+                null, 0, vespaUniqueInstanceId, new AthenzService(domain, service), 0, "localhost", "localhost",
+                Instant.now(), Collections.emptySet(), IdentityType.NODE, "container");
         return createInstanceConfirmation(vespaUniqueInstanceId, domain, service, signedIdentityDocument);
     }
 

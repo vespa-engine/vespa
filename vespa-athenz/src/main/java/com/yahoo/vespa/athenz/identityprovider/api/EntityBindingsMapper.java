@@ -47,7 +47,8 @@ public class EntityBindingsMapper {
                 entity.instanceHostname(),
                 entity.createdAt(),
                 entity.ipAddresses(),
-                IdentityType.fromId(entity.identityType()));
+                IdentityType.fromId(entity.identityType()),
+                entity.clusterType());
     }
 
     public static SignedIdentityDocumentEntity toSignedIdentityDocumentEntity(SignedIdentityDocument model) {
@@ -61,7 +62,8 @@ public class EntityBindingsMapper {
                 model.instanceHostname(),
                 model.createdAt(),
                 model.ipAddresses(),
-                model.identityType().id());
+                model.identityType().id(),
+                model.clusterType());
     }
 
     public static SignedIdentityDocument readSignedIdentityDocumentFromFile(Path file) {

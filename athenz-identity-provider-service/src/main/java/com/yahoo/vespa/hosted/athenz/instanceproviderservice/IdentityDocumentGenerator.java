@@ -65,21 +65,14 @@ public class IdentityDocumentGenerator {
 
             String configServerHostname = HostName.getLocalhost();
             Instant createdAt = Instant.now();
+            var clusterType = allocation.membership().cluster().type().name();
             String signature = signer.generateSignature(
                     providerUniqueId, providerService, configServerHostname,
-                    node.hostname(), createdAt, ips, identityType, privateKey);
-
+                    node.hostname(), createdAt, ips, identityType, clusterType, privateKey);
             return new SignedIdentityDocument(
-                    signature,
-                    athenzProviderServiceConfig.secretVersion(),
-                    providerUniqueId,
-                    providerService,
-                    SignedIdentityDocument.DEFAULT_DOCUMENT_VERSION,
-                    configServerHostname,
-                    node.hostname(),
-                    createdAt,
-                    ips,
-                    identityType);
+                    signature, athenzProviderServiceConfig.secretVersion(), providerUniqueId, providerService,
+                    SignedIdentityDocument.DEFAULT_DOCUMENT_VERSION, configServerHostname, node.hostname(),
+                    createdAt, ips, identityType, clusterType);
         } catch (Exception e) {
             throw new RuntimeException("Exception generating identity document: " + e.getMessage(), e);
         }

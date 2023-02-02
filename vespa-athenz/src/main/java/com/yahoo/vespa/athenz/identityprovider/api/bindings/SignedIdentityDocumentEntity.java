@@ -20,5 +20,6 @@ public record SignedIdentityDocumentEntity(@JsonProperty("signature") String sig
                                            @JsonProperty("instance-hostname") String instanceHostname,
                                            @JsonProperty("created-at") Instant createdAt,
                                            @JsonProperty("ip-addresses") Set<String> ipAddresses,
-                                           @JsonProperty("identity-type") String identityType) {
+                                           @JsonProperty("identity-type") String identityType,
+                                           @JsonProperty("cluster-type") String clusterType) {
 }

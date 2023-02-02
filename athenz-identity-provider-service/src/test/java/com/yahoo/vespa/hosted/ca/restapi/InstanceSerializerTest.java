@@ -46,7 +46,8 @@ public class InstanceSerializerTest {
                 "instancehostname",
                 Instant.now().truncatedTo(ChronoUnit.MICROS),  // Truncate to the precision given from EntityBindingsMapper.toAttestationData()
                 Collections.emptySet(),
-                IdentityType.NODE);
+                IdentityType.NODE,
+                "container");
 
         var json = String.format("{\n" +
                 "  \"provider\": \"provider_prod_us-north-1\",\n" +

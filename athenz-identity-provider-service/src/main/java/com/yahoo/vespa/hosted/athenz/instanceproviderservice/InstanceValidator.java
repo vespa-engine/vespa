@@ -17,14 +17,16 @@ import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
 
 import java.net.InetAddress;
+import java.net.URI;
 import java.security.PublicKey;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.util.stream.Stream;
+import java.util.stream.Collectors;
 
 /**
  * Verifies that the instance's identity document is valid
@@ -41,6 +43,7 @@ public class InstanceValidator {
 
     public static final String SAN_IPS_ATTRNAME = "sanIP";
     public static final String SAN_DNS_ATTRNAME = "sanDNS";
+    public static final String SAN_URI_ATTRNAME = "sanURI";
 
     private final AthenzService tenantDockerContainerIdentity;
     private final IdentityDocumentSigner signer;
@@ -161,6 +164,23 @@ public class InstanceValidator {
 
         if(! nodeIpAddresses.containsAll(ips)) {
             log.log(Level.WARNING, "Invalid InstanceConfirmation, wrong ip in : " + vespaUniqueInstanceId);
+            return false;
+        }
+
+        var urisCommaSeparated = confirmation.attributes.get(SAN_URI_ATTRNAME);
+        Set<URI> requestedUris;
+        try {
+            requestedUris = Optional.ofNullable(urisCommaSeparated).stream()
+                    .flatMap(s -> Arrays.stream(s.split(","))).map(URI::create).collect(Collectors.toSet());
+        } catch (IllegalArgumentException e) {
+            log.log(Level.WARNING, "Invalid SAN URIs: " + urisCommaSeparated);
+            return false;
+        }
+        var clusterType = node.allocation().map(a -> a.membership().cluster().type().name()).orElse(null);
+        Set<URI> allowedUris = clusterType != null
+                ? Set.of(URI.create("vespa://cluster-type/%s".formatted(clusterType))) : Set.of();
+        if (!allowedUris.containsAll(requestedUris)) {
+            log.log(Level.WARNING, "Illegal SAN URIs: expected '%s' found '%s'".formatted(allowedUris, requestedUris));
             return false;
         }
         return true;

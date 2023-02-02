@@ -36,12 +36,14 @@ public class IdentityDocumentSignerTest {
         String instanceHostname = "instancehostname";
         Instant createdAt = Instant.EPOCH;
         HashSet<String> ipAddresses = new HashSet<>(Arrays.asList("1.2.3.4", "::1"));
+        String clusterType = "container";
         String signature =
-                signer.generateSignature(id, providerService, configserverHostname, instanceHostname, createdAt, ipAddresses, identityType, keyPair.getPrivate());
+                signer.generateSignature(id, providerService, configserverHostname, instanceHostname, createdAt,
+                                         ipAddresses, identityType, clusterType, keyPair.getPrivate());
 
         SignedIdentityDocument signedIdentityDocument = new SignedIdentityDocument(
-                signature, KEY_VERSION, id, providerService,
-                DEFAULT_DOCUMENT_VERSION, configserverHostname, instanceHostname, createdAt, ipAddresses, identityType);
+                signature, KEY_VERSION, id, providerService, DEFAULT_DOCUMENT_VERSION, configserverHostname,
+                instanceHostname, createdAt, ipAddresses, identityType, clusterType);
 
         assertTrue(signer.hasValidSignature(signedIdentityDocument, keyPair.getPublic()));
     }

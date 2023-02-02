@@ -14,7 +14,7 @@ import java.util.Set;
 public record SignedIdentityDocument(String signature, int signingKeyVersion, VespaUniqueInstanceId providerUniqueId,
                                      AthenzService providerService, int documentVersion, String configServerHostname,
                                      String instanceHostname, Instant createdAt, Set<String> ipAddresses,
-                                     IdentityType identityType) {
-    public static final int DEFAULT_DOCUMENT_VERSION = 1;
+                                     IdentityType identityType, String clusterType) {
+    public static final int DEFAULT_DOCUMENT_VERSION = 2;
 
 }

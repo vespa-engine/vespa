@@ -4,18 +4,18 @@ package com.yahoo.vespa.athenz.identityprovider.client;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
-import com.yahoo.component.annotation.Inject;
 import com.yahoo.component.AbstractComponent;
+import com.yahoo.component.annotation.Inject;
 import com.yahoo.container.core.identity.IdentityConfig;
 import com.yahoo.container.jdisc.athenz.AthenzIdentityProvider;
 import com.yahoo.container.jdisc.athenz.AthenzIdentityProviderException;
 import com.yahoo.jdisc.Metric;
 import com.yahoo.metrics.ContainerMetrics;
 import com.yahoo.security.KeyStoreBuilder;
+import com.yahoo.security.MutableX509KeyManager;
 import com.yahoo.security.Pkcs10Csr;
 import com.yahoo.security.SslContextBuilder;
 import com.yahoo.security.X509CertificateWithKey;
-import com.yahoo.security.MutableX509KeyManager;
 import com.yahoo.vespa.athenz.api.AthenzAccessToken;
 import com.yahoo.vespa.athenz.api.AthenzDomain;
 import com.yahoo.vespa.athenz.api.AthenzRole;
@@ -48,7 +48,6 @@ import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.util.stream.Collectors;
 
 import static com.yahoo.security.KeyStoreType.PKCS12;
 
@@ -299,7 +298,9 @@ public final class AthenzIdentityProviderImpl extends AbstractComponent implemen
     }
 
     private X509Certificate requestRoleCertificate(AthenzRole role) {
-        Pkcs10Csr csr = csrGenerator.generateRoleCsr(identity, role, credentials.getIdentityDocument().providerUniqueId(), credentials.getKeyPair());
+        var doc = credentials.getIdentityDocument();
+        Pkcs10Csr csr = csrGenerator.generateRoleCsr(
+                identity, role, doc.providerUniqueId(), doc.clusterType(), credentials.getKeyPair());
         try (ZtsClient client = createZtsClient()) {
             X509Certificate roleCertificate = client.getRoleCertificate(role, csr);
             updateRoleKeyManager(role, roleCertificate);
