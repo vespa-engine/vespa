@@ -258,14 +258,15 @@ void
 SelectorThread::start()
 {
     _thread = std::thread(&SelectorThread::main, this);
-    _thread_id.wait(std::thread::id());
+    while (!running()) {
+        std::this_thread::yield();
+    }
 }
 
 struct SelectorThread::RunGuard {
     SelectorThread &self;
     RunGuard(SelectorThread &self_in) noexcept : self(self_in) {
         self._thread_id = std::this_thread::get_id();
-        self._thread_id.notify_all();
     }
     ~RunGuard() {
         REQUIRE(self.stopped());

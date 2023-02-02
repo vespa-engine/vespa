@@ -247,14 +247,15 @@ void
 IoUringThread::start()
 {
     _thread = std::thread(&IoUringThread::main, this);
-    _thread_id.wait(std::thread::id());
+    while (!running()) {
+        std::this_thread::yield();
+    }
 }
 
 struct IoUringThread::RunGuard {
     IoUringThread &self;
     RunGuard(IoUringThread &self_in) noexcept : self(self_in) {
         self._thread_id = std::this_thread::get_id();
-        self._thread_id.notify_all();
         self.consume_events();
     }
     ~RunGuard() {
