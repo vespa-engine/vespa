@@ -110,7 +110,7 @@ public abstract class TensorAddress implements Comparable<TensorAddress> {
     }
 
     private static String asString(long index) {
-        return (index < SMALL_INDEXES.length) ? SMALL_INDEXES[(int)index] : String.valueOf(index);
+        return ((index >= 0) && (index < SMALL_INDEXES.length)) ? SMALL_INDEXES[(int)index] : String.valueOf(index);
     }
 
     private static final class StringTensorAddress extends TensorAddress {
