@@ -22,6 +22,7 @@ import com.yahoo.config.provision.NodeType;
 import com.yahoo.config.provision.ZoneEndpoint.AllowedUrn;
 import com.yahoo.config.provision.ZoneEndpoint.AccessType;
 import com.yahoo.config.provision.zone.ZoneId;
+import com.yahoo.rdl.UUID;
 import com.yahoo.vespa.flags.json.FlagData;
 import com.yahoo.vespa.hosted.controller.api.application.v4.model.ClusterMetrics;
 import com.yahoo.vespa.hosted.controller.api.application.v4.model.DeploymentData;
@@ -69,8 +70,8 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Random;
 import java.util.Set;
-import java.util.UUID;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 import java.util.logging.Level;
@@ -385,8 +386,7 @@ public class ConfigServerMock extends AbstractComponent implements ConfigServer 
 
     /** Add any of given loadBalancers that do not already exist to the load balancers in zone */
     public void putLoadBalancers(ZoneId zone, List<LoadBalancer> loadBalancers) {
-        this.loadBalancers.putIfAbsent(zone, new LinkedHashSet<>());
-        this.loadBalancers.get(zone).addAll(loadBalancers);
+        this.loadBalancers.computeIfAbsent(zone, __ -> new LinkedHashSet<>()).addAll(loadBalancers);
     }
 
     public void removeLoadBalancers(ApplicationId application, ZoneId zone) {
@@ -420,7 +420,7 @@ public class ConfigServerMock extends AbstractComponent implements ConfigServer 
         deployment.cloudAccount().ifPresent(account -> this.cloudAccounts.put(id, account));
 
         if (!deferLoadBalancerProvisioning.contains(id.zoneId().environment())) {
-            putLoadBalancers(id.zoneId(), List.of(new LoadBalancer(UUID.randomUUID().toString(),
+            putLoadBalancers(id.zoneId(), List.of(new LoadBalancer(id.dottedString() + "." + cluster,
                                                                    id.applicationId(),
                                                                    cluster,
                                                                    Optional.of(HostName.of("lb-0--" + id.applicationId().toFullString() + "--" + id.zoneId().toString())),

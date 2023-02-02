@@ -251,7 +251,7 @@ public class DeploymentContext {
         flushDnsUpdates(Integer.MAX_VALUE);
         assertEquals(List.of(),
                      tester.controller().curator().readNameServiceQueue().requests(),
-                   "All name service requests dispatched");
+                     "All name service requests dispatched");
         return this;
     }
 
@@ -590,6 +590,9 @@ public class DeploymentContext {
             tester.cloud().set(Status.SUCCESS);
             runner.advance(currentRun(job));
             assertEquals(succeeded, jobs.run(id).stepStatuses().get(Step.endStagingSetup));
+
+            if ( ! deferDnsUpdates)
+                flushDnsUpdates();
         }
     }
 
