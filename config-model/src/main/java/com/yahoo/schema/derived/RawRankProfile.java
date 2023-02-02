@@ -164,6 +164,8 @@ public class RawRankProfile implements RankProfilesConfig.Producer {
 
         private RankingExpression firstPhaseRanking;
         private RankingExpression secondPhaseRanking;
+        private RankingExpression globalPhaseRanking;
+        private final int globalPhaseRerankCount;
 
         /**
          * Creates a raw rank profile from the given rank profile
@@ -177,10 +179,12 @@ public class RawRankProfile implements RankProfilesConfig.Producer {
             inputs = compiled.inputs();
             firstPhaseRanking = compiled.getFirstPhaseRanking();
             secondPhaseRanking = compiled.getSecondPhaseRanking();
+            globalPhaseRanking = compiled.getGlobalPhaseRanking();
             summaryFeatures = new LinkedHashSet<>(compiled.getSummaryFeatures());
             matchFeatures = new LinkedHashSet<>(compiled.getMatchFeatures());
             rankFeatures = compiled.getRankFeatures();
             rerankCount = compiled.getRerankCount();
+            globalPhaseRerankCount = compiled.getGlobalPhaseRerankCount();
             matchPhaseSettings = compiled.getMatchPhaseSettings();
             numThreadsPerSearch = compiled.getNumThreadsPerSearch();
             minHitsPerThread = compiled.getMinHitsPerThread();
@@ -206,7 +210,9 @@ public class RawRankProfile implements RankProfilesConfig.Producer {
             if (secondPhaseRanking != null) {
                 functionProperties.putAll(secondPhaseRanking.getRankProperties(functionSerializationContext));
             }
-
+            if (globalPhaseRanking != null) {
+                functionProperties.putAll(globalPhaseRanking.getRankProperties(functionSerializationContext));
+            }
             derivePropertiesAndFeaturesFromFunctions(functions, functionProperties, functionSerializationContext);
             deriveOnnxModelFunctionsAndFeatures(compiled);
 
@@ -360,12 +366,20 @@ public class RawRankProfile implements RankProfilesConfig.Producer {
                         throw new IllegalArgumentException("Could not parse second phase expression", e);
                     }
                 }
+                else if (RankingExpression.propertyName(RankProfile.GLOBAL_PHASE).equals(property.getName())) {
+                    try {
+                        globalPhaseRanking = new RankingExpression(property.getValue());
+                    } catch (ParseException e) {
+                        throw new IllegalArgumentException("Could not parse global-phase expression", e);
+                    }
+                }
                 else {
                     properties.add(new Pair<>(property.getName(), property.getValue()));
                 }
             }
             properties.addAll(deriveRankingPhaseRankProperties(firstPhaseRanking, RankProfile.FIRST_PHASE));
             properties.addAll(deriveRankingPhaseRankProperties(secondPhaseRanking, RankProfile.SECOND_PHASE));
+            properties.addAll(deriveRankingPhaseRankProperties(globalPhaseRanking, RankProfile.GLOBAL_PHASE));
             for (FieldRankSettings settings : fieldRankSettings.values()) {
                 properties.addAll(settings.deriveRankProperties());
             }
@@ -423,6 +437,9 @@ public class RawRankProfile implements RankProfilesConfig.Producer {
             }
             if (keepRankCount > -1) {
                 properties.add(new Pair<>("vespa.hitcollector.arraysize", keepRankCount + ""));
+            }
+            if (globalPhaseRerankCount > -1) {
+                properties.add(new Pair<>("vespa.globalphase.rerankcount", globalPhaseRerankCount + ""));
             }
             if (rankScoreDropLimit > -Double.MAX_VALUE) {
                 properties.add(new Pair<>("vespa.hitcollector.rankscoredroplimit", rankScoreDropLimit + ""));
