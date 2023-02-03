@@ -143,10 +143,13 @@ SearchableDocSubDBConfigurer::reconfigureIndexSearchable()
 std::unique_ptr<const DocumentSubDBReconfig>
 SearchableDocSubDBConfigurer::prepare_reconfig(const DocumentDBConfig& new_config_snapshot, const DocumentDBConfig& old_config_snapshot, const ReconfigParams& reconfig_params)
 {
-    (void) new_config_snapshot;
     (void) old_config_snapshot;
-    (void) reconfig_params;
-    return std::make_unique<const DocumentSubDBReconfig>(std::shared_ptr<Matchers>());
+    auto old_matchers = _searchView.get()->getMatchers();
+    auto reconfig = std::make_unique<DocumentSubDBReconfig>(std::move(old_matchers));
+    if (reconfig_params.shouldMatchersChange()) {
+        reconfig->set_matchers(createMatchers(new_config_snapshot));
+    }
+    return reconfig;
 }
 
 void
@@ -194,18 +197,12 @@ SearchableDocSubDBConfigurer::reconfigure(const DocumentDBConfig &newConfig,
                                           IDocumentDBReferenceResolver &resolver,
                                           const DocumentSubDBReconfig& prepared_reconfig)
 {
-    (void) prepared_reconfig;
-    bool shouldMatchViewChange = false;
+    bool shouldMatchViewChange = prepared_reconfig.has_matchers_changed();
     bool shouldSearchViewChange = false;
     bool shouldFeedViewChange = params.shouldSchemaChange();
     search::SerialNum currentSerialNum = attrSpec.getCurrentSerialNum();
     SearchView::SP searchView = _searchView.get();
-    Matchers::SP matchers = searchView->getMatchers();
-    if (params.shouldMatchersChange()) {
-        Matchers::SP newMatchers = createMatchers(newConfig);
-        matchers = newMatchers;
-        shouldMatchViewChange = true;
-    }
+    auto matchers = prepared_reconfig.matchers();
     IReprocessingInitializer::UP initializer;
     IAttributeManager::SP attrMgr = searchView->getAttributeManager();
     IAttributeWriter::SP attrWriter = _feedView.get()->getAttributeWriter();
