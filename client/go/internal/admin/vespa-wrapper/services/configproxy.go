@@ -52,7 +52,7 @@ func startProxyWithRunserver() {
 		"-s", PROXY_SERVICE_NAME,
 		"-p", CONFIGPROXY_PIDFILE,
 		"--",
-		"libexec/vespa/script-utils", "just-run-configproxy",
+		"libexec/vespa/vespa-wrapper", "just-run-configproxy",
 	}
 	cmd := exec.Command("vespa-runserver", args...)
 	cmd.Stdin = nil

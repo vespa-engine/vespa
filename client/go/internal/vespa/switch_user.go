@@ -58,7 +58,7 @@ func CheckCorrectUser() {
 	util.JustExitMsg("running as wrong user. Check your VESPA_USER setting")
 }
 
-// re-execute a script-utils action after switching to the vespa user
+// re-execute a vespa-wrapper action after switching to the vespa user
 // (used by vespa-start-configserver and vespa-start-services)
 func MaybeSwitchUser(action string) error {
 	const SU_PROG = "vespa-run-as-vespa-user"

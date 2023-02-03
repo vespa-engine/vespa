@@ -16,7 +16,7 @@ import (
 
 const (
 	defaultVespaInstallDir = "/opt/vespa"
-	scriptUtilsFilename    = "libexec/vespa/script-utils"
+	scriptUtilsFilename    = "libexec/vespa/vespa-wrapper"
 )
 
 func FindHome() string {

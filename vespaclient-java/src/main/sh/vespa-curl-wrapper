@@ -82,7 +82,7 @@ export ROOT
 
 set -e
 
-eval $(${VESPA_HOME}/libexec/vespa/script-utils security-env)
+eval $(${VESPA_HOME}/libexec/vespa/vespa-wrapper security-env)
 
 CURL_PARAMETERS=("$@")
 

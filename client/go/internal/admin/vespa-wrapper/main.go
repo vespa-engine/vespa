@@ -1,4 +1,5 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Entrypoint for internal Vespa commands: vespa-logfmt, vespa-deploy etc.
 // Author: arnej
 
 package main
@@ -11,11 +12,11 @@ import (
 	"github.com/vespa-engine/vespa/client/go/internal/admin/clusterstate"
 	"github.com/vespa-engine/vespa/client/go/internal/admin/deploy"
 	"github.com/vespa-engine/vespa/client/go/internal/admin/jvm"
-	"github.com/vespa-engine/vespa/client/go/internal/admin/script-utils/configserver"
-	"github.com/vespa-engine/vespa/client/go/internal/admin/script-utils/logfmt"
-	"github.com/vespa-engine/vespa/client/go/internal/admin/script-utils/services"
-	"github.com/vespa-engine/vespa/client/go/internal/admin/script-utils/standalone"
-	"github.com/vespa-engine/vespa/client/go/internal/admin/script-utils/startcbinary"
+	"github.com/vespa-engine/vespa/client/go/internal/admin/vespa-wrapper/configserver"
+	"github.com/vespa-engine/vespa/client/go/internal/admin/vespa-wrapper/logfmt"
+	"github.com/vespa-engine/vespa/client/go/internal/admin/vespa-wrapper/services"
+	"github.com/vespa-engine/vespa/client/go/internal/admin/vespa-wrapper/standalone"
+	"github.com/vespa-engine/vespa/client/go/internal/admin/vespa-wrapper/startcbinary"
 	"github.com/vespa-engine/vespa/client/go/internal/util"
 	"github.com/vespa-engine/vespa/client/go/internal/vespa"
 )
@@ -29,7 +30,7 @@ func main() {
 	defer handleSimplePanic()
 	_ = vespa.FindAndVerifyVespaHome()
 	action := basename(os.Args[0])
-	if action == "script-utils" && len(os.Args) > 1 {
+	if action == "vespa-wrapper" && len(os.Args) > 1 {
 		action = os.Args[1]
 		os.Args = os.Args[1:]
 	}
