@@ -18,17 +18,19 @@ private:
     bool checkTables(uint32_t numTables);
 
 public:
-    ~Test() {}
+    ~Test() override;
     int Main() override;
-    bool setupRouting(const RoutingSpec &spec) override;
+    bool setupRouting(RoutingSpec spec) override;
 };
+
+Test::~Test() = default;
 
 TEST_APPHOOK(Test);
 
 bool
-Test::setupRouting(const RoutingSpec &spec)
+Test::setupRouting(RoutingSpec spec)
 {
-    _spec = spec;
+    _spec = std::move(spec);
     return true;
 }
 

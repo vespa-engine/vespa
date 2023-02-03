@@ -35,7 +35,7 @@ ConfigAgent::configure(std::unique_ptr<MessagebusConfig> config)
             }
             tableSpec.addRoute(std::move(routeSpec));
         }
-        spec.addTable(tableSpec);
+        spec.addTable(std::move(tableSpec));
     }
     _handler.setupRouting(spec);
 }

@@ -28,7 +28,7 @@ public:
 class AllPolicyFactory : public SimpleProtocol::IPolicyFactory {
 public:
     IRoutingPolicy::UP create(const string &) override {
-        return IRoutingPolicy::UP(new AllPolicy());
+        return std::make_unique<AllPolicy>();
     }
     ~AllPolicyFactory() override;
 };
@@ -41,7 +41,7 @@ public:
         std::vector<Route> recipients;
         ctx.getMatchedRecipients(recipients);
         if (!recipients.empty()) {
-            int i = static_cast<const SimpleMessage&>(ctx.getMessage()).getHash();
+            int i = dynamic_cast<const SimpleMessage&>(ctx.getMessage()).getHash();
             ctx.addChild(recipients[std::abs(i) % recipients.size()]);
         }
     }
@@ -54,7 +54,7 @@ public:
 class HashPolicyFactory : public SimpleProtocol::IPolicyFactory {
 public:
     IRoutingPolicy::UP create(const string &) override {
-        return IRoutingPolicy::UP(new HashPolicy());
+        return std::make_unique<HashPolicy>();
     }
     ~HashPolicyFactory() override;
 };
@@ -64,20 +64,16 @@ HashPolicyFactory::~HashPolicyFactory() = default;
 SimpleProtocol::SimpleProtocol() :
     _policies()
 {
-    addPolicyFactory("All", IPolicyFactory::SP(new AllPolicyFactory));
-    addPolicyFactory("Hash", IPolicyFactory::SP(new HashPolicyFactory));
+    addPolicyFactory("All", std::make_unique<AllPolicyFactory>());
+    addPolicyFactory("Hash", std::make_unique<HashPolicyFactory>());
 }
 
-SimpleProtocol::~SimpleProtocol()
-{
-    // empty
-}
+SimpleProtocol::~SimpleProtocol() = default;
 
 void
-SimpleProtocol::addPolicyFactory(const string &name,
-                                 IPolicyFactory::SP factory)
+SimpleProtocol::addPolicyFactory(const string &name, IPolicyFactory::SP factory)
 {
-    _policies.insert(FactoryMap::value_type(name, factory));
+    _policies.emplace(name, std::move(factory));
 }
 
 const string &
@@ -87,14 +83,13 @@ SimpleProtocol::getName() const
 }
 
 IRoutingPolicy::UP
-SimpleProtocol::createPolicy(const string &name,
-                             const string &param) const
+SimpleProtocol::createPolicy(const string &name, const string &param) const
 {
-    FactoryMap::const_iterator it = _policies.find(name);
+    auto it = _policies.find(name);
     if (it != _policies.end()) {
         return it->second->create(param);
     }
-    return IRoutingPolicy::UP();
+    return {};
 }
 
 Blob
@@ -103,13 +98,13 @@ SimpleProtocol::encode(const vespalib::Version &version, const Routable &routabl
     (void)version;
     if (routable.getType() == MESSAGE) {
         string str = "M";
-        str.append(static_cast<const SimpleMessage&>(routable).getValue());
+        str.append(dynamic_cast<const SimpleMessage&>(routable).getValue());
         Blob ret(str.size());
         memcpy(ret.data(), str.data(), str.size());
         return ret;
     } else if (routable.getType() == REPLY) {
         string str = "R";
-        str.append(static_cast<const SimpleReply&>(routable).getValue());
+        str.append(dynamic_cast<const SimpleReply&>(routable).getValue());
         Blob ret(str.size());
         memcpy(ret.data(), str.data(), str.size());
         return ret;
@@ -126,22 +121,22 @@ SimpleProtocol::decode(const vespalib::Version &version, BlobRef data) const
     const char *d = data.data();
     uint32_t s = data.size();
     if (s < 1) {
-        return Routable::UP(); // too short
+        return {}; // too short
     }
     string str(d + 1, s - 1);
     if (*d == 'M') {
-        return Routable::UP(new SimpleMessage(str));
+        return std::make_unique<SimpleMessage>(str);
     } else if (*d == 'R') {
-        return Routable::UP(new SimpleReply(str));
+        return std::make_unique<SimpleReply>(str);
     } else {
-        return Routable::UP(); // unknown type
+        return {}; // unknown type
     }
 }
 
 void
 SimpleProtocol::simpleMerge(RoutingContext &ctx)
 {
-    Reply::UP ret(new EmptyReply());
+    auto ret = std::make_unique<EmptyReply>();
     for (RoutingNodeIterator it = ctx.getChildIterator();
          it.isValid(); it.next())
     {

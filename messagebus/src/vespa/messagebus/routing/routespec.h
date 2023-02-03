@@ -62,7 +62,8 @@ public:
      * @param hop The hop to add.
      * @return This, to allow chaining.
      */
-    RouteSpec & addHop(const string &hop);
+    RouteSpec & addHop(const string &hop) &;
+    RouteSpec && addHop(const string &hop) &&;
 
     /**
      * Sets the hop name for a given index.

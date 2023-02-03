@@ -28,7 +28,7 @@ private:
     mbus::Resender *_resender;
 
 public:
-    ResenderTask(mbus::Resender &resender)
+    explicit ResenderTask(mbus::Resender &resender)
         : _resender(&resender)
     {
         // empty
@@ -38,7 +38,7 @@ public:
         _resender->resendScheduled();
     }
 
-    uint8_t priority() const override {
+    [[nodiscard]] uint8_t priority() const override {
         return 255;
     }
 };
@@ -73,7 +73,7 @@ public:
         _done = _msn.isEmpty();
     }
 
-    uint8_t priority() const override {
+    [[nodiscard]] uint8_t priority() const override {
         return 255;
     }
 };
@@ -256,11 +256,10 @@ MessageBus::unregisterSession(const string &sessionName)
 RoutingTable::SP
 MessageBus::getRoutingTable(const string &protocol)
 {
-    using ITR = std::map<string, RoutingTable::SP>::iterator;
     std::lock_guard guard(_lock);
-    ITR itr = _routingTables.find(protocol);
+    auto itr = _routingTables.find(protocol);
     if (itr == _routingTables.end()) {
-        return RoutingTable::SP(); // not found
+        return {}; // not found
     }
     return itr->second;
 }
@@ -293,7 +292,7 @@ MessageBus::handleMessage(Message::UP msg)
 }
 
 bool
-MessageBus::setupRouting(const RoutingSpec &spec)
+MessageBus::setupRouting(RoutingSpec spec)
 {
     std::map<string, RoutingTable::SP> rtm;
     for (uint32_t i = 0; i < spec.getNumTables(); ++i) {
@@ -373,7 +372,7 @@ MessageBus::deliverMessage(Message::UP msg, const string &session)
     IMessageHandler *msgHandler = nullptr;
     {
         std::lock_guard guard(_lock);
-        std::map<string, IMessageHandler*>::iterator it = _sessions.find(session);
+        auto it = _sessions.find(session);
         if (it != _sessions.end()) {
             msgHandler = it->second;
         }

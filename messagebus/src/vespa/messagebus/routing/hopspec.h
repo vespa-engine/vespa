@@ -72,7 +72,8 @@ public:
      * @param recipient The recipient to add.
      * @return This, to allow chaining.
      */
-    HopSpec &addRecipient(const string &recipient);
+    HopSpec & addRecipient(const string &recipient) &;
+    HopSpec && addRecipient(const string &recipient) &&;
 
     /**
      * Returns whether or not to ignore the result when routing through this hop.

@@ -6,18 +6,22 @@ using vespalib::make_string;
 
 namespace mbus {
 
-RoutingSpec::RoutingSpec() :
-    _tables()
-{
-    // empty
+RoutingSpec::RoutingSpec() noexcept = default;
+RoutingSpec::RoutingSpec(const RoutingSpec &) = default;
+RoutingSpec::RoutingSpec(RoutingSpec &&) noexcept = default;
+RoutingSpec & RoutingSpec::operator=(RoutingSpec &&) noexcept = default;
+RoutingSpec::~RoutingSpec() = default;
+
+RoutingSpec &
+RoutingSpec::addTable(RoutingTableSpec && table) & {
+    _tables.emplace_back(std::move(table));
+    return *this;
 }
 
-RoutingTableSpec
-RoutingSpec::removeTable(uint32_t i)
-{
-    RoutingTableSpec ret = _tables[i];
-    _tables.erase(_tables.begin() + i);
-    return ret;
+RoutingSpec &&
+RoutingSpec::addTable(RoutingTableSpec && table) && {
+    _tables.emplace_back(std::move(table));
+    return std::move(*this);
 }
 
 string
@@ -25,17 +29,17 @@ RoutingSpec::toConfigString(const string &input)
 {
     string ret;
     ret.append("\"");
-    for (uint32_t i = 0, len = input.size(); i < len; ++i) {
-        if (input[i] == '\\') {
+    for (char i : input) {
+        if (i == '\\') {
             ret.append("\\\\");
-        } else if (input[i] == '"') {
+        } else if (i == '"') {
             ret.append("\\\"");
-        } else if (input[i] == '\n') {
+        } else if (i == '\n') {
             ret.append("\\n");
-        } else if (input[i] == 0) {
+        } else if (i == 0) {
             ret.append("\\x00");
         } else {
-            ret += input[i];
+            ret += i;
         }
     }
     ret.append("\"");

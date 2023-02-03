@@ -298,7 +298,7 @@ public:
     void handleMessage(Message::UP msg) override;
 
     // Implements IConfigHandler.
-    bool setupRouting(const RoutingSpec &spec) override;
+    bool setupRouting(RoutingSpec spec) override;
 
     // Implements INetworkOwner.
     IProtocol * getProtocol(const string &name) override;

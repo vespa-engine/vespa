@@ -73,7 +73,8 @@ public:
      * @param hop The hop to add.
      * @return This, to allow chaining.
      */
-    RoutingTableSpec &addHop(HopSpec && hop);
+    RoutingTableSpec & addHop(HopSpec && hop) &;
+    RoutingTableSpec && addHop(HopSpec && hop) &&;
 
     /**
      * Sets the hop spec at the given index.
@@ -113,7 +114,8 @@ public:
      * @param route The route to add.
      * @return This, to allow chaining.
      */
-    RoutingTableSpec &addRoute(RouteSpec &&route) { _routes.emplace_back(std::move(route)); return *this; }
+    RoutingTableSpec && addRoute(RouteSpec &&route) &&;
+    RoutingTableSpec & addRoute(RouteSpec &&route) &;
 
     /**
      * Sets the route spec at the given index.
