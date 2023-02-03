@@ -83,6 +83,43 @@ public class SchemaParserTestCase {
                                 "}\n")).getMessage());
     }
 
+    @Test
+    void global_phase_can_be_parsed() throws Exception {
+        String input = """
+            schema foo {
+                rank-profile normal {
+                    first-phase {
+                        expression {
+                            rankingExpression(1.0)
+                        }
+                    }
+                }
+                rank-profile bar {
+                    global-phase {
+                        expression: onnx(mymodel)
+                        rerank-count: 79
+                    }
+                }
+            }
+            """;
+        ParsedSchema schema = parseString(input);
+        assertEquals("foo", schema.name());
+        var rplist = schema.getRankProfiles();
+        assertEquals(2, rplist.size());
+        var rp0 = rplist.get(0);
+        assertEquals("normal", rp0.name());
+        assertFalse(rp0.getGlobalPhaseRerankCount().isPresent());
+        assertFalse(rp0.getGlobalPhaseExpression().isPresent());
+        assertTrue(rp0.getFirstPhaseExpression().isPresent());
+        assertEquals("rankingExpression(1.0)", rp0.getFirstPhaseExpression().get());
+        var rp1 = rplist.get(1);
+        assertEquals("bar", rp1.name());
+        assertTrue(rp1.getGlobalPhaseRerankCount().isPresent());
+        assertTrue(rp1.getGlobalPhaseExpression().isPresent());
+        assertEquals(79, rp1.getGlobalPhaseRerankCount().get());
+        assertEquals("onnx(mymodel)", rp1.getGlobalPhaseExpression().get());
+    }
+
     void checkFileParses(String fileName) throws Exception {
         var schema = parseFile(fileName);
         assertNotNull(schema);
