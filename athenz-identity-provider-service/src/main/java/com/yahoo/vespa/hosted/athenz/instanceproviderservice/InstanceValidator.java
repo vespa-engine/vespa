@@ -24,6 +24,7 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
+import java.util.function.Supplier;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
@@ -72,34 +73,42 @@ public class InstanceValidator {
     }
 
     public boolean isValidInstance(InstanceConfirmation instanceConfirmation) {
-        SignedIdentityDocument signedIdentityDocument = EntityBindingsMapper.toSignedIdentityDocument(instanceConfirmation.signedIdentityDocument);
+        try {
+            validateInstance(instanceConfirmation);
+            return true;
+        } catch (ValidationException e) {
+            log.log(e.logLevel(), e.messageSupplier());
+            return false;
+        }
+    }
+
+    public void validateInstance(InstanceConfirmation req) throws ValidationException {
+        SignedIdentityDocument signedIdentityDocument = EntityBindingsMapper.toSignedIdentityDocument(req.signedIdentityDocument);
         VespaUniqueInstanceId providerUniqueId = signedIdentityDocument.providerUniqueId();
         ApplicationId applicationId = ApplicationId.from(
                 providerUniqueId.tenant(), providerUniqueId.application(), providerUniqueId.instance());
 
-        VespaUniqueInstanceId csrProviderUniqueId = getVespaUniqueInstanceId(instanceConfirmation);
+        VespaUniqueInstanceId csrProviderUniqueId = getVespaUniqueInstanceId(req);
         if(! providerUniqueId.equals(csrProviderUniqueId)) {
-            log.log(Level.WARNING, String.format("Instance %s has invalid provider unique ID in CSR (%s)", providerUniqueId, csrProviderUniqueId));
-            return false;
+            var msg = String.format("Instance %s has invalid provider unique ID in CSR (%s)", providerUniqueId, csrProviderUniqueId);
+            throw new ValidationException(Level.WARNING, () -> msg);
         }
 
-        if (! isSameIdentityAsInServicesXml(applicationId, instanceConfirmation.domain, instanceConfirmation.service)) {
-            return false;
+        if (! isSameIdentityAsInServicesXml(applicationId, req.domain, req.service)) {
+            Supplier<String> msg = () -> "Invalid identity '%s.%s' in services.xml".formatted(req.domain, req.service);
+            throw new ValidationException(Level.FINE, msg);
         }
 
         log.log(Level.FINE, () -> String.format("Validating instance %s.", providerUniqueId));
 
         PublicKey publicKey = keyProvider.getPublicKey(signedIdentityDocument.signingKeyVersion());
         if (! signer.hasValidSignature(signedIdentityDocument, publicKey)) {
-            log.log(Level.SEVERE, () -> String.format("Instance %s has invalid signature.", providerUniqueId));
-            return false;
+            var msg = String.format("Instance %s has invalid signature.", providerUniqueId);
+            throw new ValidationException(Level.SEVERE, () -> msg);
         }
 
-        if(validateAttributes(instanceConfirmation, providerUniqueId)) {
-            log.log(Level.FINE, () -> String.format("Instance %s is valid.", providerUniqueId));
-            return true;
-        }
-        return false;
+        validateAttributes(req, providerUniqueId);
+        log.log(Level.FINE, () -> String.format("Instance %s is valid.", providerUniqueId));
     }
 
     // TODO Add actual validation. Cannot reuse isValidInstance as identity document is not part of the refresh request.
@@ -111,7 +120,11 @@ public class InstanceValidator {
                                                    confirmation.provider,
                                                    confirmation.attributes.get(SAN_DNS_ATTRNAME)));
         try {
-            return validateAttributes(confirmation, getVespaUniqueInstanceId(confirmation));
+            validateAttributes(confirmation, getVespaUniqueInstanceId(confirmation));
+            return true;
+        } catch (ValidationException e) {
+            log.log(e.logLevel(), e.messageSupplier());
+            return false;
         } catch (Exception e) {
             log.log(Level.WARNING, "Encountered exception while refreshing certificate for confirmation: " + confirmation, e);
             return false;
@@ -132,10 +145,11 @@ public class InstanceValidator {
                 .orElse(null);
     }
 
-    private boolean validateAttributes(InstanceConfirmation confirmation, VespaUniqueInstanceId vespaUniqueInstanceId) {
+    private void validateAttributes(InstanceConfirmation confirmation, VespaUniqueInstanceId vespaUniqueInstanceId)
+            throws ValidationException {
         if(vespaUniqueInstanceId == null) {
-            log.log(Level.WARNING, "Unable to find unique instance ID in refresh request: " + confirmation.toString());
-            return false;
+            var msg = "Unable to find unique instance ID in refresh request: " + confirmation.toString();
+            throw new ValidationException(Level.WARNING, () -> msg);
         }
 
         // Find node matching vespa unique id
@@ -145,8 +159,8 @@ public class InstanceValidator {
                 .findFirst() // Should be only one
                 .orElse(null);
         if(node == null) {
-            log.log(Level.WARNING, "Invalid InstanceConfirmation, No nodes matching uniqueId: " + vespaUniqueInstanceId);
-            return false;
+            var msg = "Invalid InstanceConfirmation, No nodes matching uniqueId: " + vespaUniqueInstanceId;
+            throw new ValidationException(Level.WARNING, () -> msg);
         }
 
         // Find list of ipaddresses
@@ -163,8 +177,8 @@ public class InstanceValidator {
         // Validate that ipaddresses in request are valid for node
 
         if(! nodeIpAddresses.containsAll(ips)) {
-            log.log(Level.WARNING, "Invalid InstanceConfirmation, wrong ip in : " + vespaUniqueInstanceId);
-            return false;
+            var msg = "Invalid InstanceConfirmation, wrong ip in : " + vespaUniqueInstanceId;
+            throw new ValidationException(Level.WARNING, () -> msg);
         }
 
         var urisCommaSeparated = confirmation.attributes.get(SAN_URI_ATTRNAME);
@@ -173,17 +187,15 @@ public class InstanceValidator {
             requestedUris = Optional.ofNullable(urisCommaSeparated).stream()
                     .flatMap(s -> Arrays.stream(s.split(","))).map(URI::create).collect(Collectors.toSet());
         } catch (IllegalArgumentException e) {
-            log.log(Level.WARNING, "Invalid SAN URIs: " + urisCommaSeparated);
-            return false;
+            throw new ValidationException(Level.WARNING, () -> "Invalid SAN URIs: " + urisCommaSeparated, e);
         }
         var clusterType = node.allocation().map(a -> a.membership().cluster().type()).orElse(null);
         Set<URI> allowedUris = clusterType != null
                 ? Set.of(URI.create("vespa://cluster-type/%s".formatted(clusterType.name()))) : Set.of();
         if (!allowedUris.containsAll(requestedUris)) {
-            log.log(Level.WARNING, "Illegal SAN URIs: expected '%s' found '%s'".formatted(allowedUris, requestedUris));
-            return false;
+            Supplier<String> msg = () -> "Illegal SAN URIs: expected '%s' found '%s'".formatted(allowedUris, requestedUris);
+            throw new ValidationException(Level.WARNING, msg);
         }
-        return true;
     }
 
     private boolean nodeMatchesVespaUniqueId(Node node, VespaUniqueInstanceId vespaUniqueInstanceId) {
@@ -236,5 +248,17 @@ public class InstanceValidator {
         }
 
         return true;
+    }
+
+    public static class ValidationException extends Exception {
+        private final Level logLevel;
+        private final Supplier<String> msg;
+
+        public ValidationException(Level logLevel, Supplier<String> msg) { this(logLevel, msg, null); }
+        public ValidationException(Level logLevel, Supplier<String> msg, Throwable cause) { super(cause); this.logLevel = logLevel; this.msg = msg; }
+
+        @Override public String getMessage() { return msg.get(); }
+        public Level logLevel() { return logLevel; }
+        public Supplier<String> messageSupplier() { return msg; }
     }
 }

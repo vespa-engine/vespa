@@ -19,6 +19,7 @@ import com.yahoo.vespa.athenz.identityprovider.api.IdentityType;
 import com.yahoo.vespa.athenz.identityprovider.api.SignedIdentityDocument;
 import com.yahoo.vespa.athenz.identityprovider.api.VespaUniqueInstanceId;
 import com.yahoo.vespa.athenz.identityprovider.client.IdentityDocumentSigner;
+import com.yahoo.vespa.hosted.athenz.instanceproviderservice.InstanceValidator.ValidationException;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeList;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
@@ -42,7 +43,9 @@ import java.util.stream.Stream;
 
 import static com.yahoo.vespa.hosted.athenz.instanceproviderservice.InstanceValidator.SERVICE_PROPERTIES_DOMAIN_KEY;
 import static com.yahoo.vespa.hosted.athenz.instanceproviderservice.InstanceValidator.SERVICE_PROPERTIES_SERVICE_KEY;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
@@ -142,7 +145,9 @@ public class InstanceValidatorTest {
         var instanceValidator = new InstanceValidator(keyProvider, provider, mockNodeRepo(), new IdentityDocumentSigner(), vespaTenantDomain);
         var instanceConfirmation = createRegisterInstanceConfirmation(applicationId, domain, service);
         instanceConfirmation.set("sanURI", "vespa://cluster-type/content");
-        assertFalse(instanceValidator.isValidInstance(instanceConfirmation));
+        var exception = assertThrows(ValidationException.class, () -> instanceValidator.validateInstance(instanceConfirmation));
+        var expectedMsg = "Illegal SAN URIs: expected '[vespa://cluster-type/container]' found '[vespa://cluster-type/content]'";
+        assertEquals(expectedMsg, exception.getMessage());
     }
 
     @Test
