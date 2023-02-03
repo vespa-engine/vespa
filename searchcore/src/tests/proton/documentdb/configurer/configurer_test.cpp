@@ -153,7 +153,6 @@ struct Fixture
     vespalib::TestClock _clock;
     matching::QueryLimiter _queryLimiter;
     EmptyConstantValueFactory _constantValueFactory;
-    RankingAssetsRepo _constantValueRepo;
     vespalib::ThreadStackExecutor _summaryExecutor;
     std::shared_ptr<PendingLidTrackerBase> _pendingLidsForCommit;
     SessionManager _sessionMgr;
@@ -178,7 +177,6 @@ Fixture::Fixture()
     : _clock(),
       _queryLimiter(),
       _constantValueFactory(),
-      _constantValueRepo(_constantValueFactory),
       _summaryExecutor(8),
       _pendingLidsForCommit(std::make_shared<PendingLidTracker>()),
       _sessionMgr(100),
@@ -190,7 +188,7 @@ Fixture::Fixture()
     std::filesystem::create_directory(std::filesystem::path(BASE_DIR));
     initViewSet(_views);
     _configurer = std::make_unique<Configurer>(_views._summaryMgr, _views.searchView, _views.feedView, _queryLimiter,
-                                               _constantValueRepo, _clock.clock(), "test", 0);
+                                               _constantValueFactory, _clock.clock(), "test", 0);
 }
 Fixture::~Fixture() = default;
 
@@ -199,7 +197,8 @@ Fixture::initViewSet(ViewSet &views)
 {
     using IndexManager = proton::index::IndexManager;
     using IndexConfig = proton::index::IndexConfig;
-    auto matchers = std::make_shared<Matchers>(_clock.clock(), _queryLimiter, _constantValueRepo);
+    RankingAssetsRepo ranking_assets_repo_source(_constantValueFactory, {}, {}, {});
+    auto matchers = std::make_shared<Matchers>(_clock.clock(), _queryLimiter, ranking_assets_repo_source);
     auto indexMgr = make_shared<IndexManager>(BASE_DIR, IndexConfig(searchcorespi::index::WarmupConfig(), 2, 0), Schema(), 1,
                                               views._reconfigurer, views._service.write(), _summaryExecutor,
                                               TuneFileIndexManager(), TuneFileAttributes(), views._fileHeaderContext);
