@@ -30,8 +30,10 @@ vespalib::string impl_spec(AsyncIo &async) {
 }
 
 Detached self_exiting_run_loop(AsyncIo::SP async) {
-    for (size_t i = 0; co_await async->schedule(); ++i) {
+    bool ok = co_await async->schedule();
+    for (size_t i = 0; ok; ++i) {
         fprintf(stderr, "self_exiting_run_loop -> current value: %zu\n", i);
+        ok = co_await async->schedule();
     }
     fprintf(stderr, "self_exiting_run_loop -> exiting\n");
 }
