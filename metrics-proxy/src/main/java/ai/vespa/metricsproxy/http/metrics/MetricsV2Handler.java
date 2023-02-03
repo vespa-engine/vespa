@@ -40,7 +40,6 @@ public class MetricsV2Handler  extends HttpHandlerBase {
 
     public static final String V2_PATH = "/metrics/v2";
     public static final String VALUES_PATH = V2_PATH + "/values";
-    private static final int MAX_DIMENSIONS = 10;
 
     private final ValuesFetcher valuesFetcher;
     private final NodeInfoConfig nodeInfoConfig;
@@ -68,7 +67,7 @@ public class MetricsV2Handler  extends HttpHandlerBase {
             List<MetricsPacket> metrics = processAndBuild(valuesFetcher.fetchMetricsAsBuilders(consumer),
                                                           new ServiceIdDimensionProcessor(),
                                                           new ClusterIdDimensionProcessor(),
-                                                          new PublicDimensionsProcessor(MAX_DIMENSIONS));
+                                                          new PublicDimensionsProcessor());
 
             Node localNode = new Node(nodeInfoConfig.role(), nodeInfoConfig.hostname(), 0, "");
             Map<Node, List<MetricsPacket>> metricsByNode = Map.of(localNode, metrics);

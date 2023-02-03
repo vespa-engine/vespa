@@ -41,8 +41,6 @@ public class NodeMetricsClient {
 
     private static final Logger log = Logger.getLogger(NodeMetricsClient.class.getName());
 
-    private static final int MAX_DIMENSIONS = 10;
-
     final Node node;
     private final CloseableHttpAsyncClient httpClient;
     private final Clock clock;
@@ -89,7 +87,7 @@ public class NodeMetricsClient {
         var metrics = processAndBuild(GenericJsonUtil.toMetricsPackets(respons),
                 new ServiceIdDimensionProcessor(),
                 new ClusterIdDimensionProcessor(),
-                new PublicDimensionsProcessor(MAX_DIMENSIONS));
+                new PublicDimensionsProcessor());
         snapshotsRetrieved.incrementAndGet();
         log.log(FINE, () -> "Successfully retrieved " + metrics.size() + " metrics packets from " + metricsUri);
         snapshots.put(consumer, new Snapshot(Instant.now(clock), metrics));
