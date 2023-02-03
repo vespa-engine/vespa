@@ -9,13 +9,13 @@ import (
 	"strings"
 
 	"github.com/vespa-engine/vespa/client/go/internal/admin/clusterstate"
+	"github.com/vespa-engine/vespa/client/go/internal/admin/deploy"
 	"github.com/vespa-engine/vespa/client/go/internal/admin/jvm"
 	"github.com/vespa-engine/vespa/client/go/internal/admin/script-utils/configserver"
 	"github.com/vespa-engine/vespa/client/go/internal/admin/script-utils/logfmt"
 	"github.com/vespa-engine/vespa/client/go/internal/admin/script-utils/services"
 	"github.com/vespa-engine/vespa/client/go/internal/admin/script-utils/standalone"
 	"github.com/vespa-engine/vespa/client/go/internal/admin/script-utils/startcbinary"
-	"github.com/vespa-engine/vespa/client/go/internal/cli/cmd/deploy"
 	"github.com/vespa-engine/vespa/client/go/internal/util"
 	"github.com/vespa-engine/vespa/client/go/internal/vespa"
 )
