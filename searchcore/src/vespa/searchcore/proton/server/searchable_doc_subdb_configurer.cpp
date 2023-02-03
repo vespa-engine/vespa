@@ -111,6 +111,7 @@ SearchableDocSubDBConfigurer::createMatchers(const Schema::SP &schema,
                                              const RankProfilesConfig &cfg)
 {
     auto newMatchers = std::make_shared<Matchers>(_clock, _queryLimiter, _rankingAssetsRepo);
+    auto& ranking_assets_repo = newMatchers->get_ranking_assets_repo();
     for (const auto &profile : cfg.rankprofile) {
         vespalib::string name = profile.name;
         search::fef::Properties properties;
@@ -119,7 +120,7 @@ SearchableDocSubDBConfigurer::createMatchers(const Schema::SP &schema,
         }
         // schema instance only used during call.
         auto profptr = std::make_shared<Matcher>(*schema, std::move(properties), _clock, _queryLimiter,
-                                                 _rankingAssetsRepo, _distributionKey);
+                                                 ranking_assets_repo, _distributionKey);
         newMatchers->add(name, std::move(profptr));
     }
     return newMatchers;

@@ -21,9 +21,9 @@ private:
     using ConstantValueFactory = vespalib::eval::ConstantValueFactory;
 
     const ConstantValueFactory &_factory;
-    RankingConstants::SP   _constants;
-    RankingExpressions::SP _rankingExpressions;
-    OnnxModels::SP         _onnxModels;
+    std::shared_ptr<const RankingConstants>   _constants;
+    std::shared_ptr<const RankingExpressions> _rankingExpressions;
+    std::shared_ptr<const OnnxModels>         _onnxModels;
 
 public:
     explicit RankingAssetsRepo(const ConstantValueFactory &factory);
