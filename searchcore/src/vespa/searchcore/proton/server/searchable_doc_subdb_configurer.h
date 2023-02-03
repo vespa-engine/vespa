@@ -10,7 +10,6 @@
 #include <vespa/searchcore/proton/attribute/i_attribute_writer.h>
 #include <vespa/searchcore/proton/docsummary/summarymanager.h>
 #include <vespa/searchcore/proton/index/i_index_writer.h>
-#include <vespa/searchcore/proton/matching/ranking_assets_repo.h>
 #include <vespa/searchcore/proton/reprocessing/i_reprocessing_initializer.h>
 #include <vespa/searchsummary/config/config-juniperrc.h>
 #include <vespa/searchcommon/common/schema.h>
@@ -43,7 +42,7 @@ private:
     SearchViewHolder            &_searchView;
     FeedViewHolder              &_feedView;
     matching::QueryLimiter      &_queryLimiter;
-    matching::RankingAssetsRepo &_rankingAssetsRepo;
+    const vespalib::eval::ConstantValueFactory& _constant_value_factory;
     const vespalib::Clock       &_clock;
     vespalib::string             _subDbName;
     uint32_t                     _distributionKey;
@@ -69,14 +68,13 @@ public:
                                  SearchViewHolder &searchView,
                                  FeedViewHolder &feedView,
                                  matching::QueryLimiter &queryLimiter,
-                                 matching::RankingAssetsRepo &rankingAssetsRepo,
+                                 const vespalib::eval::ConstantValueFactory& constant_value_factory,
                                  const vespalib::Clock &clock,
                                  const vespalib::string &subDbName,
                                  uint32_t distributionKey);
     ~SearchableDocSubDBConfigurer();
 
-    Matchers::SP createMatchers(const search::index::Schema::SP &schema,
-                                const vespa::config::search::RankProfilesConfig &cfg);
+    Matchers::SP createMatchers(const DocumentDBConfig& new_config_snapshot);
 
     void reconfigureIndexSearchable();
 

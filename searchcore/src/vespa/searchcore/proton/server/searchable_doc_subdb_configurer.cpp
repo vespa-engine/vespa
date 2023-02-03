@@ -90,7 +90,7 @@ SearchableDocSubDBConfigurer(const ISummaryManager::SP &summaryMgr,
                              SearchViewHolder &searchView,
                              FeedViewHolder &feedView,
                              matching::QueryLimiter &queryLimiter,
-                             matching::RankingAssetsRepo &rankingAssetsRepo,
+                             const vespalib::eval::ConstantValueFactory& constant_value_factory,
                              const vespalib::Clock &clock,
                              const vespalib::string &subDbName,
                              uint32_t distributionKey) :
@@ -98,7 +98,7 @@ SearchableDocSubDBConfigurer(const ISummaryManager::SP &summaryMgr,
     _searchView(searchView),
     _feedView(feedView),
     _queryLimiter(queryLimiter),
-    _rankingAssetsRepo(rankingAssetsRepo),
+    _constant_value_factory(constant_value_factory),
     _clock(clock),
     _subDbName(subDbName),
     _distributionKey(distributionKey)
@@ -107,10 +107,15 @@ SearchableDocSubDBConfigurer(const ISummaryManager::SP &summaryMgr,
 SearchableDocSubDBConfigurer::~SearchableDocSubDBConfigurer() = default;
 
 std::shared_ptr<Matchers>
-SearchableDocSubDBConfigurer::createMatchers(const Schema::SP &schema,
-                                             const RankProfilesConfig &cfg)
+SearchableDocSubDBConfigurer::createMatchers(const DocumentDBConfig& new_config_snapshot)
 {
-    auto newMatchers = std::make_shared<Matchers>(_clock, _queryLimiter, _rankingAssetsRepo);
+    auto& schema = new_config_snapshot.getSchemaSP();
+    auto& cfg = new_config_snapshot.getRankProfilesConfig();
+    matching::RankingAssetsRepo ranking_assets_repo_source(_constant_value_factory,
+                                                           new_config_snapshot.getRankingConstantsSP(),
+                                                           new_config_snapshot.getRankingExpressionsSP(),
+                                                           new_config_snapshot.getOnnxModelsSP());
+    auto newMatchers = std::make_shared<Matchers>(_clock, _queryLimiter, ranking_assets_repo_source);
     auto& ranking_assets_repo = newMatchers->get_ranking_assets_repo();
     for (const auto &profile : cfg.rankprofile) {
         vespalib::string name = profile.name;
@@ -197,10 +202,7 @@ SearchableDocSubDBConfigurer::reconfigure(const DocumentDBConfig &newConfig,
     SearchView::SP searchView = _searchView.get();
     Matchers::SP matchers = searchView->getMatchers();
     if (params.shouldMatchersChange()) {
-        _rankingAssetsRepo.reconfigure(newConfig.getRankingConstantsSP(),
-                                       newConfig.getRankingExpressionsSP(),
-                                       newConfig.getOnnxModelsSP());
-        Matchers::SP newMatchers = createMatchers(newConfig.getSchemaSP(), newConfig.getRankProfilesConfig());
+        Matchers::SP newMatchers = createMatchers(newConfig);
         matchers = newMatchers;
         shouldMatchViewChange = true;
     }
