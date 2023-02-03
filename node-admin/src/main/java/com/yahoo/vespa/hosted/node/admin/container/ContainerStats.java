@@ -1,229 +1,86 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.node.admin.container;
 
+import ai.vespa.validation.Validation;
+
 import java.util.Collections;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
 /**
- * CPU, memory and network statistics collected from a container.
+ * CPU, GPU, memory and network statistics collected from a container.
  *
  * @author freva
  */
-public class ContainerStats {
+public record ContainerStats(Map<String, NetworkStats> networks,
+                             MemoryStats memoryStats,
+                             CpuStats cpuStats,
+                             List<GpuStats> gpuStats) {
 
-    private final Map<String, NetworkStats> networkStatsByInterface;
-    private final MemoryStats memoryStats;
-    private final CpuStats cpuStats;
-
-    public ContainerStats(Map<String, NetworkStats> networkStatsByInterface, MemoryStats memoryStats, CpuStats cpuStats) {
-        this.networkStatsByInterface = new LinkedHashMap<>(Objects.requireNonNull(networkStatsByInterface));
+    public ContainerStats(Map<String, NetworkStats> networks, MemoryStats memoryStats, CpuStats cpuStats, List<GpuStats> gpuStats) {
+        this.networks = Collections.unmodifiableMap(new LinkedHashMap<>(Objects.requireNonNull(networks)));
         this.memoryStats = Objects.requireNonNull(memoryStats);
         this.cpuStats = Objects.requireNonNull(cpuStats);
+        this.gpuStats = List.copyOf(Objects.requireNonNull(gpuStats));
     }
 
-    public Map<String, NetworkStats> getNetworks() {
-        return Collections.unmodifiableMap(networkStatsByInterface);
-    }
+    /**
+     * Statistics for network usage
+     *
+     * @param rxBytes   received bytes
+     * @param rxDropped received bytes, which were dropped
+     * @param rxErrors  received errors
+     * @param txBytes   transmitted bytes
+     * @param txDropped transmitted bytes, which were dropped
+     * @param txErrors  transmission errors
+     */
+    public record NetworkStats(long rxBytes, long rxDropped, long rxErrors, long txBytes, long txDropped, long txErrors) {}
 
-    public MemoryStats getMemoryStats() {
-        return memoryStats;
-    }
+    /**
+     * Statistics for memory usage
+     *
+     * @param cache memory used by cache in bytes
+     * @param usage memory usage in bytes
+     * @param limit memory limit in bytes
+     */
+    public record MemoryStats(long cache, long usage, long limit) {}
 
-    public CpuStats getCpuStats() {
-        return cpuStats;
-    }
+    /**
+     * Statistics for CPU usage
+     *
+     * @param onlineCpus              CPU cores
+     * @param systemCpuUsage          Total CPU time (in µs) spent executing all the processes on this host
+     * @param totalUsage              Total CPU time (in µs) spent running all the processes in this container
+     * @param usageInKernelMode       Total CPU time (in µs) spent in kernel mode while executing processes in this container
+     * @param throttledTime           Total CPU time (in µs) processes in this container were throttled for
+     * @param throttlingActivePeriods Number of periods with throttling enabled for this container
+     * @param throttledPeriods        Number of periods this container hit the throttling limit
+     */
+    public record CpuStats(int onlineCpus,
+                           long systemCpuUsage,
+                           long totalUsage,
+                           long usageInKernelMode,
+                           long throttledTime,
+                           long throttlingActivePeriods,
+                           long throttledPeriods) {}
 
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-        ContainerStats that = (ContainerStats) o;
-        return networkStatsByInterface.equals(that.networkStatsByInterface) && memoryStats.equals(that.memoryStats) && cpuStats.equals(that.cpuStats);
-    }
+    /**
+     * GPU statistics
+     *
+     * @param deviceNumber     GPU device number
+     * @param loadPercentage   Load/utilization in %
+     * @param memoryTotalBytes Total memory, in bytes
+     * @param memoryUsedBytes  Memory used, in bytes
+     */
+    public record GpuStats(int deviceNumber, int loadPercentage, long memoryTotalBytes, long memoryUsedBytes) {
 
-    @Override
-    public int hashCode() {
-        return Objects.hash(networkStatsByInterface, memoryStats, cpuStats);
-    }
-
-    /** Statistics for network usage */
-    public static class NetworkStats {
-
-        private final long rxBytes;
-        private final long rxDropped;
-        private final long rxErrors;
-        private final long txBytes;
-        private final long txDropped;
-        private final long txErrors;
-
-        public NetworkStats(long rxBytes, long rxDropped, long rxErrors, long txBytes, long txDropped, long txErrors) {
-            this.rxBytes = rxBytes;
-            this.rxDropped = rxDropped;
-            this.rxErrors = rxErrors;
-            this.txBytes = txBytes;
-            this.txDropped = txDropped;
-            this.txErrors = txErrors;
-        }
-
-        /** Returns received bytes */
-        public long getRxBytes() { return this.rxBytes; }
-
-        /** Returns received bytes, which was dropped */
-        public long getRxDropped() { return this.rxDropped; }
-
-        /** Returns received errors */
-        public long getRxErrors() { return this.rxErrors; }
-
-        /** Returns transmitted bytes */
-        public long getTxBytes() { return this.txBytes; }
-
-        /** Returns transmitted bytes, which was dropped */
-        public long getTxDropped() { return this.txDropped; }
-
-        /** Returns transmission errors */
-        public long getTxErrors() { return this.txErrors; }
-
-        @Override
-        public boolean equals(Object o) {
-            if (this == o) return true;
-            if (o == null || getClass() != o.getClass()) return false;
-            NetworkStats that = (NetworkStats) o;
-            return rxBytes == that.rxBytes && rxDropped == that.rxDropped && rxErrors == that.rxErrors && txBytes == that.txBytes && txDropped == that.txDropped && txErrors == that.txErrors;
-        }
-
-        @Override
-        public int hashCode() {
-            return Objects.hash(rxBytes, rxDropped, rxErrors, txBytes, txDropped, txErrors);
-        }
-
-        @Override
-        public String toString() {
-            return "NetworkStats{" +
-                   "rxBytes=" + rxBytes +
-                   ", rxDropped=" + rxDropped +
-                   ", rxErrors=" + rxErrors +
-                   ", txBytes=" + txBytes +
-                   ", txDropped=" + txDropped +
-                   ", txErrors=" + txErrors +
-                   '}';
-        }
-
-    }
-
-    /** Statistics for memory usage */
-    public static class MemoryStats {
-
-        private final long cache;
-        private final long usage;
-        private final long limit;
-
-        public MemoryStats(long cache, long usage, long limit) {
-            this.cache = cache;
-            this.usage = usage;
-            this.limit = limit;
-        }
-
-        /** Returns memory used by cache in bytes */
-        public long getCache() { return this.cache; }
-
-        /** Returns memory usage in bytes */
-        public long getUsage() { return this.usage; }
-
-        /** Returns memory limit in bytes */
-        public long getLimit() { return this.limit; }
-
-        @Override
-        public boolean equals(Object o) {
-            if (this == o) return true;
-            if (o == null || getClass() != o.getClass()) return false;
-            MemoryStats that = (MemoryStats) o;
-            return cache == that.cache && usage == that.usage && limit == that.limit;
-        }
-
-        @Override
-        public int hashCode() {
-            return Objects.hash(cache, usage, limit);
-        }
-
-        @Override
-        public String toString() {
-            return "MemoryStats{" +
-                   "cache=" + cache +
-                   ", usage=" + usage +
-                   ", limit=" + limit +
-                   '}';
-        }
-
-    }
-
-    /** Statistics for CPU usage */
-    public static class CpuStats {
-
-        private final int onlineCpus;
-        private final long systemCpuUsage;
-        private final long totalUsage;
-        private final long usageInKernelMode;
-        private final long throttledTime;
-        private final long throttlingActivePeriods;
-        private final long throttledPeriods;
-
-        public CpuStats(int onlineCpus, long systemCpuUsage, long totalUsage, long usageInKernelMode,
-                        long throttledTime, long throttlingActivePeriods, long throttledPeriods) {
-            this.onlineCpus = onlineCpus;
-            this.systemCpuUsage = systemCpuUsage;
-            this.totalUsage = totalUsage;
-            this.usageInKernelMode = usageInKernelMode;
-            this.throttledTime = throttledTime;
-            this.throttlingActivePeriods = throttlingActivePeriods;
-            this.throttledPeriods = throttledPeriods;
-        }
-
-        public int getOnlineCpus() { return this.onlineCpus; }
-
-        /** Total CPU time (in µs) spent executing all the processes on this host */
-        public long getSystemCpuUsage() { return this.systemCpuUsage; }
-
-        /** Total CPU time (in µs) spent running all the processes in this container */
-        public long getTotalUsage() { return totalUsage; }
-
-        /** Total CPU time (in µs) spent in kernel mode while executing processes in this container */
-        public long getUsageInKernelMode() { return usageInKernelMode; }
-
-        /** Total CPU time (in µs) processes in this container were throttled for */
-        public long getThrottledTime() { return throttledTime; }
-
-        /** Number of periods with throttling enabled for this container */
-        public long getThrottlingActivePeriods() { return throttlingActivePeriods; }
-
-        /** Number of periods this container hit the throttling limit */
-        public long getThrottledPeriods() { return throttledPeriods; }
-
-        @Override
-        public boolean equals(Object o) {
-            if (this == o) return true;
-            if (o == null || getClass() != o.getClass()) return false;
-            CpuStats cpuStats = (CpuStats) o;
-            return onlineCpus == cpuStats.onlineCpus && systemCpuUsage == cpuStats.systemCpuUsage && totalUsage == cpuStats.totalUsage && usageInKernelMode == cpuStats.usageInKernelMode && throttledTime == cpuStats.throttledTime && throttlingActivePeriods == cpuStats.throttlingActivePeriods && throttledPeriods == cpuStats.throttledPeriods;
-        }
-
-        @Override
-        public int hashCode() {
-            return Objects.hash(onlineCpus, systemCpuUsage, totalUsage, usageInKernelMode, throttledTime, throttlingActivePeriods, throttledPeriods);
-        }
-
-        @Override
-        public String toString() {
-            return "CpuStats{" +
-                   "onlineCpus=" + onlineCpus +
-                   ", systemCpuUsage=" + systemCpuUsage +
-                   ", totalUsage=" + totalUsage +
-                   ", usageInKernelMode=" + usageInKernelMode +
-                   ", throttledTime=" + throttledTime +
-                   ", throttlingActivePeriods=" + throttlingActivePeriods +
-                   ", throttledPeriods=" + throttledPeriods +
-                   '}';
+        public GpuStats {
+            Validation.requireAtLeast(deviceNumber, "deviceNumber", 0);
+            Validation.requireAtLeast(loadPercentage, "loadPercentage", 0);
+            Validation.requireAtLeast(memoryTotalBytes, "memoryTotalBytes", 0L);
+            Validation.requireAtLeast(memoryUsedBytes, "memoryUsedBytes", 0L);
         }
 
     }
