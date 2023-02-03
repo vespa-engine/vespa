@@ -1,12 +1,12 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.athenz.identityprovider.client;
 
-import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.security.KeyAlgorithm;
 import com.yahoo.security.KeyUtils;
 import com.yahoo.security.Pkcs10Csr;
 import com.yahoo.security.SubjectAlternativeName;
 import com.yahoo.vespa.athenz.api.AthenzService;
+import com.yahoo.vespa.athenz.identityprovider.api.ClusterType;
 import com.yahoo.vespa.athenz.identityprovider.api.VespaUniqueInstanceId;
 import org.junit.jupiter.api.Test;
 
@@ -36,7 +36,7 @@ public class InstanceCsrGeneratorTest {
         VespaUniqueInstanceId vespaUniqueInstanceId = VespaUniqueInstanceId.fromDottedString("0.default.default.foo-app.vespa.us-north-1.prod.node");
         KeyPair keyPair = KeyUtils.generateKeypair(KeyAlgorithm.RSA);
 
-        Pkcs10Csr csr = csrGenerator.generateInstanceCsr(service, vespaUniqueInstanceId, Collections.emptySet(), ClusterSpec.Type.container, keyPair);
+        Pkcs10Csr csr = csrGenerator.generateInstanceCsr(service, vespaUniqueInstanceId, Collections.emptySet(), ClusterType.CONTAINER, keyPair);
         assertEquals(new X500Principal(String.format("OU=%s, CN=%s", PROVIDER_SERVICE, ATHENZ_SERVICE)), csr.getSubject());
         var actualSans = Set.copyOf(csr.getSubjectAlternativeNames());
         var expectedSans = Set.of(

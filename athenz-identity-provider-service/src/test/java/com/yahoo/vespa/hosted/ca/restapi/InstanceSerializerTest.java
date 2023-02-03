@@ -1,13 +1,13 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.ca.restapi;
 
-import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.security.Pkcs10CsrUtils;
 import com.yahoo.security.X509CertificateUtils;
 import com.yahoo.slime.Slime;
 import com.yahoo.slime.SlimeUtils;
 import com.yahoo.text.StringUtilities;
 import com.yahoo.vespa.athenz.api.AthenzService;
+import com.yahoo.vespa.athenz.identityprovider.api.ClusterType;
 import com.yahoo.vespa.athenz.identityprovider.api.EntityBindingsMapper;
 import com.yahoo.vespa.athenz.identityprovider.api.IdentityType;
 import com.yahoo.vespa.athenz.identityprovider.api.SignedIdentityDocument;
@@ -48,7 +48,7 @@ public class InstanceSerializerTest {
                 Instant.now().truncatedTo(ChronoUnit.MICROS),  // Truncate to the precision given from EntityBindingsMapper.toAttestationData()
                 Collections.emptySet(),
                 IdentityType.NODE,
-                ClusterSpec.Type.container);
+                ClusterType.CONTAINER);
 
         var json = String.format("{\n" +
                 "  \"provider\": \"provider_prod_us-north-1\",\n" +

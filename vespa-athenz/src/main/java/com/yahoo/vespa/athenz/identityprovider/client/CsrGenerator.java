@@ -1,12 +1,12 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.athenz.identityprovider.client;
 
-import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.security.Pkcs10Csr;
 import com.yahoo.security.Pkcs10CsrBuilder;
 import com.yahoo.security.SubjectAlternativeName;
 import com.yahoo.vespa.athenz.api.AthenzIdentity;
 import com.yahoo.vespa.athenz.api.AthenzRole;
+import com.yahoo.vespa.athenz.identityprovider.api.ClusterType;
 import com.yahoo.vespa.athenz.identityprovider.api.VespaUniqueInstanceId;
 
 import javax.security.auth.x500.X500Principal;
@@ -37,7 +37,7 @@ public class CsrGenerator {
     public Pkcs10Csr generateInstanceCsr(AthenzIdentity instanceIdentity,
                                          VespaUniqueInstanceId instanceId,
                                          Set<String> ipAddresses,
-                                         ClusterSpec.Type clusterType,
+                                         ClusterType clusterType,
                                          KeyPair keyPair) {
         X500Principal subject = new X500Principal(String.format("OU=%s, CN=%s", providerService, instanceIdentity.getFullName()));
         // Add SAN dnsname <service>.<domain-with-dashes>.<provider-dnsname-suffix>
@@ -51,7 +51,7 @@ public class CsrGenerator {
                                 instanceIdentity.getDomainName().replace(".", "-"),
                                 dnsSuffix))
                 .addSubjectAlternativeName(DNS, getIdentitySAN(instanceId));
-        if (clusterType != null) pkcs10CsrBuilder.addSubjectAlternativeName(URI, "vespa://cluster-type/%s".formatted(clusterType.name()));
+        if (clusterType != null) pkcs10CsrBuilder.addSubjectAlternativeName(URI, "vespa://cluster-type/%s".formatted(clusterType.toConfigValue()));
         ipAddresses.forEach(ip ->  pkcs10CsrBuilder.addSubjectAlternativeName(new SubjectAlternativeName(IP, ip)));
         return pkcs10CsrBuilder.build();
     }
@@ -59,13 +59,13 @@ public class CsrGenerator {
     public Pkcs10Csr generateRoleCsr(AthenzIdentity identity,
                                      AthenzRole role,
                                      VespaUniqueInstanceId instanceId,
-                                     ClusterSpec.Type clusterType,
+                                     ClusterType clusterType,
                                      KeyPair keyPair) {
         X500Principal principal = new X500Principal(String.format("OU=%s, cn=%s:role.%s", providerService, role.domain().getName(), role.roleName()));
         var b = Pkcs10CsrBuilder.fromKeypair(principal, keyPair, SHA256_WITH_RSA)
                 .addSubjectAlternativeName(DNS, getIdentitySAN(instanceId))
                 .addSubjectAlternativeName(EMAIL, String.format("%s.%s@%s", identity.getDomainName(), identity.getName(), dnsSuffix));
-        if (clusterType != null) b.addSubjectAlternativeName(URI, "vespa://cluster-type/%s".formatted(clusterType.name()));
+        if (clusterType != null) b.addSubjectAlternativeName(URI, "vespa://cluster-type/%s".formatted(clusterType.toConfigValue()));
         return b.build();
     }
 

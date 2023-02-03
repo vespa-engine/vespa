@@ -1,9 +1,9 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.athenz.identityprovider.client;
 
-import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.security.SignatureUtils;
 import com.yahoo.vespa.athenz.api.AthenzService;
+import com.yahoo.vespa.athenz.identityprovider.api.ClusterType;
 import com.yahoo.vespa.athenz.identityprovider.api.IdentityType;
 import com.yahoo.vespa.athenz.identityprovider.api.SignedIdentityDocument;
 import com.yahoo.vespa.athenz.identityprovider.api.VespaUniqueInstanceId;
@@ -35,7 +35,7 @@ public class IdentityDocumentSigner {
                                     Instant createdAt,
                                     Set<String> ipAddresses,
                                     IdentityType identityType,
-                                    ClusterSpec.Type clusterType,
+                                    ClusterType clusterType,
                                     PrivateKey privateKey) {
         try {
             Signature signer = SignatureUtils.createSigner(privateKey);
@@ -71,7 +71,7 @@ public class IdentityDocumentSigner {
                                       Instant createdAt,
                                       Set<String> ipAddresses,
                                       IdentityType identityType,
-                                      ClusterSpec.Type clusterType) throws SignatureException {
+                                      ClusterType clusterType) throws SignatureException {
         signer.update(providerUniqueId.asDottedString().getBytes(UTF_8));
         signer.update(providerService.getFullName().getBytes(UTF_8));
         signer.update(configServerHostname.getBytes(UTF_8));
@@ -83,6 +83,6 @@ public class IdentityDocumentSigner {
             signer.update(ipAddress.getBytes(UTF_8));
         }
         signer.update(identityType.id().getBytes(UTF_8));
-        if (clusterType != null) signer.update(clusterType.name().getBytes(UTF_8));
+        if (clusterType != null) signer.update(clusterType.toConfigValue().getBytes(UTF_8));
     }
 }

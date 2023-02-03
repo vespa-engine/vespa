@@ -10,10 +10,10 @@ import com.yahoo.config.model.api.SuperModel;
 import com.yahoo.config.model.api.SuperModelProvider;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ClusterMembership;
-import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.vespa.athenz.api.AthenzService;
+import com.yahoo.vespa.athenz.identityprovider.api.ClusterType;
 import com.yahoo.vespa.athenz.identityprovider.api.EntityBindingsMapper;
 import com.yahoo.vespa.athenz.identityprovider.api.IdentityType;
 import com.yahoo.vespa.athenz.identityprovider.api.SignedIdentityDocument;
@@ -218,7 +218,7 @@ public class InstanceValidatorTest {
         VespaUniqueInstanceId vespaUniqueInstanceId = new VespaUniqueInstanceId(0, "default", applicationId.instance().value(), applicationId.application().value(), applicationId.tenant().value(), "us-north-1", "dev", IdentityType.NODE);
         var domainService = new AthenzService(domain, service);
         var clock = Instant.now();
-        var clusterType = ClusterSpec.Type.container;
+        var clusterType = ClusterType.CONTAINER;
         var signature = new IdentityDocumentSigner()
                 .generateSignature(
                         vespaUniqueInstanceId, domainService, "localhost", "localhost", clock, Set.of(),
