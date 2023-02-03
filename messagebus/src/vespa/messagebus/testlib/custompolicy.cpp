@@ -37,8 +37,8 @@ CustomPolicy::select(RoutingContext &context)
     str.append(" }.");
     context.trace(1, str);
     context.setSelectOnRetry(_selectOnRetry);
-    for (unsigned int & _consumableError : _consumableErrors) {
-        context.addConsumableError(_consumableError);
+    for (uint32_t consumableError : _consumableErrors) {
+        context.addConsumableError(consumableError);
     }
     context.addChildren(_routes);
 }
