@@ -52,16 +52,22 @@ public class Spooler {
     private final int maxEntriesPerFile;
     private final Clock clock;
     private final AtomicReference<Instant> firstWriteTimestamp = new AtomicReference<>();
+    private final boolean keepSuccessFiles;
 
     public Spooler(Clock clock) {
-        this(defaultSpoolPath, defaultMaxEntriesPerFile, clock);
+        this(clock, false);
     }
 
-    public Spooler(Path spoolPath, int maxEntriesPerFile, Clock clock) {
+    public Spooler(Clock clock, boolean keepSuccessFiles) {
+        this(defaultSpoolPath, defaultMaxEntriesPerFile, clock, keepSuccessFiles);
+    }
+
+    public Spooler(Path spoolPath, int maxEntriesPerFile, Clock clock, boolean keepSuccessFiles) {
         this.spoolPath = spoolPath;
         this.maxEntriesPerFile = maxEntriesPerFile;
         this.clock = clock;
         this.fileNameBase.set(newFileNameBase(clock));
+        this.keepSuccessFiles = keepSuccessFiles;
         firstWriteTimestamp.set(Instant.EPOCH);
         createDirs(spoolPath);
     }
@@ -114,7 +120,7 @@ public class Spooler {
                 throw new UncheckedIOException("Unable to process file " + f.toPath(), e);
                 // TODO: Move to failures path
             } finally {
-                if (succcess) {
+                if (succcess && keepSuccessFiles) {
                     Path file = f.toPath();
                     Path target = spoolPath.resolve(successesPath).resolve(f.toPath().relativize(file)).resolve(f.getName());
                     try {

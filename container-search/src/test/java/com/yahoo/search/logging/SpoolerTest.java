@@ -28,7 +28,7 @@ public class SpoolerTest {
         Path spoolDir = tempDir.resolve("spool");
 
         int maxEntriesPerFile = 1;
-        Spooler spooler = new Spooler(spoolDir, maxEntriesPerFile, clock);
+        Spooler spooler = new Spooler(spoolDir, maxEntriesPerFile, clock, true);
 
         TestLogger logger = new TestLogger(spooler);
         assertTrue(sendEntry(logger, "Yo entry"));
@@ -60,7 +60,7 @@ public class SpoolerTest {
         Path spoolDir = tempDir.resolve("spool");
 
         int maxEntriesPerFile = 2;
-        Spooler spooler = new Spooler(spoolDir, maxEntriesPerFile, clock);
+        Spooler spooler = new Spooler(spoolDir, maxEntriesPerFile, clock, true);
 
         TestLogger logger = new TestLogger(spooler);
         assertTrue(sendEntry(logger, "Yo entry"));
@@ -111,7 +111,7 @@ public class SpoolerTest {
     @Test
     public void failingToTransportIsRetried() throws IOException {
         Path spoolDir = tempDir.resolve("spool");
-        Spooler spooler = new Spooler(spoolDir, 1, clock);
+        Spooler spooler = new Spooler(spoolDir, 1, clock, true);
         FailingToTransportSecondEntryLogger logger = new FailingToTransportSecondEntryLogger(spooler);
 
         assertTrue(sendEntry(logger, "Yo entry"));
@@ -125,6 +125,19 @@ public class SpoolerTest {
         logger.manualRun(); // Success when retrying second message, so 2 files in successes path
         assertEquals(2, spooler.listFilesInPath(spooler.successesPath()).size());
     }
+
+    @Test
+    public void noSuccessFiles() throws IOException {
+        Path spoolDir = tempDir.resolve("spool");
+        boolean keepSuccessFiles = false;
+        Spooler spooler = new Spooler(spoolDir, 1, clock, keepSuccessFiles);
+        FailingToTransportSecondEntryLogger logger = new FailingToTransportSecondEntryLogger(spooler);
+
+        assertTrue(sendEntry(logger, "Yo entry"));
+        logger.manualRun(); // Success for first message
+        assertEquals(0, spooler.listFilesInPath(spooler.successesPath()).size());
+    }
+
 
     private boolean sendEntry(Logger logger, String x) {
         return logger.newEntry()
