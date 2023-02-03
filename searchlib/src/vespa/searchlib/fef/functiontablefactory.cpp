@@ -2,8 +2,7 @@
 
 #include "functiontablefactory.h"
 #include <vespa/vespalib/locale/c.h>
-#include <boost/algorithm/string/split.hpp>
-#include <boost/algorithm/string/classification.hpp>
+#include <vespa/vespalib/text/stringtokenizer.h>
 #include <cmath>
 #include <vespa/log/log.h>
 LOG_SETUP(".fef.functiontablefactory");
@@ -53,7 +52,7 @@ FunctionTableFactory::createExpDecay(double w, double t, size_t len) const
 Table::SP
 FunctionTableFactory::createLogGrowth(double w, double t, double s, size_t len) const
 {
-    Table::SP table(new Table());
+    auto table = std::make_shared<Table>();
     for (size_t x = 0; x < len; ++x) {
         table->add(w * (std::log(1 + (x / s))) + t);
     }
@@ -105,7 +104,7 @@ FunctionTableFactory::createTable(const vespalib::string & name) const
     } else {
         LOG(warning, "Cannot create table for function '%s'. Could not be parsed.", name.c_str());
     }
-    return Table::SP(NULL);
+    return {};
 }
 
 bool
@@ -124,7 +123,10 @@ FunctionTableFactory::parseFunctionName(const vespalib::string & name, ParsedNam
     parsed.type = name.substr(0, ps);
     vespalib::string args = name.substr(ps + 1, pe - ps - 1);
     if (!args.empty()) {
-        boost::split(parsed.args, args, boost::is_any_of(","));
+        vespalib::StringTokenizer tokenizer(args);
+        for (const auto & token : tokenizer) {
+            parsed.args.emplace_back(token);
+        }
     }
     return true;
 }

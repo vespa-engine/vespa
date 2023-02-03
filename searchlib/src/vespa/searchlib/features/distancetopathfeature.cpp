@@ -8,8 +8,7 @@
 #include <vespa/vespalib/geo/zcurve.h>
 #include <vespa/vespalib/util/issue.h>
 #include <vespa/vespalib/util/stash.h>
-#include <boost/algorithm/string/split.hpp>
-#include <boost/algorithm/string/classification.hpp>
+#include <vespa/vespalib/text/stringtokenizer.h>
 #include <cmath>
 
 #include <vespa/log/log.h>
@@ -50,9 +49,9 @@ DistanceToPathExecutor::execute(uint32_t docId)
             double len = std::sqrt(len2);
 
             // For each document location, do
-            for (uint32_t loc = 0; loc < _intBuf.size(); ++loc) {
+            for (long loc : _intBuf) {
                 int32_t x = 0, y = 0;
-                vespalib::geo::ZCurve::decode(_intBuf[loc], &x, &y);
+                vespalib::geo::ZCurve::decode(loc, &x, &y);
 
                 double u = 0, dx, dy;
                 if (len < 1e-6) {
@@ -132,17 +131,16 @@ DistanceToPathBlueprint::createExecutor(const search::fef::IQueryEnvironment &en
     std::vector<Vector2> path;
     search::fef::Property pro = env.getProperties().lookup(getName(), "path");
     if (pro.found()) {
-        vespalib::string str = pro.getAt(0);
+        vespalib::stringref str = pro.getAt(0);
         uint32_t len = str.size();
         if (str[0] == '(' && len > 1 && str[len - 1] == ')') {
             str = str.substr(1, len - 1); // remove braces
-            std::vector<vespalib::string> arr;
-            boost::split(arr, str, boost::is_any_of(","));
-            len = arr.size() - 1;
+            vespalib::StringTokenizer tokenizer(str);
+            len = tokenizer.size() - 1;
             for (uint32_t i = 0; i < len; i += 2) {
-                double x = util::strToNum<double>(arr[i]);
-                double y = util::strToNum<double>(arr[i + 1]);
-                path.push_back(Vector2(x, y));
+                auto x = util::strToNum<double>(tokenizer[i]);
+                auto y = util::strToNum<double>(tokenizer[i + 1]);
+                path.emplace_back(x, y);
             }
         }
     }

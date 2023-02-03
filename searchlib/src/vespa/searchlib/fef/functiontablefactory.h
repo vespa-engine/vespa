@@ -21,9 +21,23 @@ public:
     struct ParsedName {
         vespalib::string type;
         std::vector<vespalib::string> args;
-        ParsedName() : type(), args() {}
+        ParsedName() noexcept : type(), args() {}
     };
 
+    /**
+     * Creates a new factory able to create tables with the given default size.
+     **/
+    explicit FunctionTableFactory(size_t defaultTableSize);
+
+    /**
+     * Creates a table where the given name specifies the function and arguments to use.
+     **/
+    [[nodiscard]] Table::SP createTable(const vespalib::string & name) const override;
+
+    /**
+     * Parses the given function name and returns true if success.
+     **/
+    static bool parseFunctionName(const vespalib::string & name, ParsedName & parsed);
 private:
     size_t _defaultTableSize;
 
@@ -35,22 +49,6 @@ private:
     Table::SP createExpDecay(double w, double t, size_t len) const;
     Table::SP createLogGrowth(double w, double t, double s, size_t len) const;
     Table::SP createLinear(double w, double t, size_t len) const;
-
-public:
-    /**
-     * Creates a new factory able to create tables with the given default size.
-     **/
-    FunctionTableFactory(size_t defaultTableSize);
-
-    /**
-     * Creates a table where the given name specifies the function and arguments to use.
-     **/
-    Table::SP createTable(const vespalib::string & name) const override;
-
-    /**
-     * Parses the given function name and returns true if success.
-     **/
-    static bool parseFunctionName(const vespalib::string & name, ParsedName & parsed);
 };
 
 }
