@@ -44,14 +44,14 @@ RoutingSpec getRouting() {
     return RoutingSpec()
         .addTable(RoutingTableSpec("Simple")
                   .addHop(HopSpec("dst", "dst/session"))
-                  .addRoute(std::move(RouteSpec("dst").addHop("dst"))));
+                  .addRoute(RouteSpec("dst").addHop("dst")));
 }
 
 RoutingSpec getBadRouting() {
     return RoutingSpec()
         .addTable(RoutingTableSpec("Simple")
                   .addHop(HopSpec("dst", "dst/session"))
-                  .addRoute(std::move(RouteSpec("dst").addHop("dst"))));
+                  .addRoute(RouteSpec("dst").addHop("dst")));
 }
 
 bool waitQueueSize(RoutableQueue &queue, uint32_t size) {
@@ -182,8 +182,8 @@ Test::testResendConnDown()
                    RPCNetworkParams(slobrok.config()));
     src.mb.setupRouting(RoutingSpec().addTable(RoutingTableSpec(SimpleProtocol::NAME)
                                                .addHop(HopSpec("dst", "dst2/session"))
-                                               .addHop(std::move(HopSpec("pxy", "[All]").addRecipient("dst")))
-                                               .addRoute(std::move(RouteSpec("dst").addHop("pxy")))));
+                                               .addHop(HopSpec("pxy", "[All]").addRecipient("dst"))
+                                               .addRoute(RouteSpec("dst").addHop("pxy"))));
     RoutableQueue srcQ;
     SourceSession::UP ss = src.mb.createSourceSession(srcQ);
 

@@ -111,8 +111,8 @@ TestFrame::testSelect(const std::vector<string> &expected)
     std::vector<mbus::RoutingNode*> selected;
     if (!select(selected, expected.size())) {
         LOG(error, "Failed to select recipients.");
-        for (auto & i : selected) {
-            LOG(error, "Selected: %s", i->getRoute().toString().c_str());
+        for (auto & node : selected) {
+            LOG(error, "Selected: %s", node->getRoute().toString().c_str());
         }
         return false;
     }

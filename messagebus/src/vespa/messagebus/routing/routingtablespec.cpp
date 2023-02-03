@@ -19,15 +19,32 @@ RoutingTableSpec::~RoutingTableSpec() = default;
 RoutingTableSpec& RoutingTableSpec::operator=(const RoutingTableSpec&) = default;
 
 RoutingTableSpec &
-RoutingTableSpec::addHop(HopSpec && hop) {
+RoutingTableSpec::addHop(HopSpec && hop) & {
     _hops.emplace_back(std::move(hop));
     return *this;
+}
+RoutingTableSpec &&
+RoutingTableSpec::addHop(HopSpec && hop) && {
+    _hops.emplace_back(std::move(hop));
+    return std::move(*this);
 }
 
 RoutingTableSpec &
 RoutingTableSpec::setHop(uint32_t i, HopSpec &&hop) {
     _hops[i] = std::move(hop);
     return *this;
+}
+
+RoutingTableSpec &
+RoutingTableSpec::addRoute(RouteSpec &&route) & {
+    _routes.emplace_back(std::move(route));
+    return *this;
+}
+
+RoutingTableSpec &&
+RoutingTableSpec::addRoute(RouteSpec &&route) && {
+    _routes.emplace_back(std::move(route));
+    return std::move(*this);
 }
 
 void

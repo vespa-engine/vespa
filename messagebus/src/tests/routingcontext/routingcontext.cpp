@@ -15,12 +15,6 @@
 
 using namespace mbus;
 
-////////////////////////////////////////////////////////////////////////////////
-//
-// Utilities
-//
-////////////////////////////////////////////////////////////////////////////////
-
 using vespalib::make_string;
 
 static const duration TIMEOUT = 120s;
@@ -40,7 +34,7 @@ class CustomPolicyFactory : public SimpleProtocol::IPolicyFactory {
 private:
     friend class CustomPolicy;
 
-    bool                     _forward;
+    bool                _forward;
     std::vector<string> _expectedAll;
     std::vector<string> _expectedMatched;
 
@@ -64,11 +58,9 @@ public:
     void merge(RoutingContext &ctx) override;
 };
 
-CustomPolicy::CustomPolicy(CustomPolicyFactory &factory) :
-    _factory(factory)
-{
-    // empty
-}
+CustomPolicy::CustomPolicy(CustomPolicyFactory &factory)
+    : _factory(factory)
+{ }
 
 void
 CustomPolicy::select(RoutingContext &ctx)
@@ -79,13 +71,13 @@ CustomPolicy::select(RoutingContext &ctx)
     const std::vector<Route> &all = ctx.getAllRecipients();
     if (_factory._expectedAll.size() == all.size()) {
         ctx.trace(1, make_string("Got %d expected recipients.", (uint32_t)all.size()));
-        for (const auto & it : all) {
-            if (find(_factory._expectedAll.begin(), _factory._expectedAll.end(), it.toString()) != _factory._expectedAll.end()) {
-                ctx.trace(1, make_string("Got expected recipient '%s'.", it.toString().c_str()));
+        for (const auto & route : all) {
+            if (find(_factory._expectedAll.begin(), _factory._expectedAll.end(), route.toString()) != _factory._expectedAll.end()) {
+                ctx.trace(1, make_string("Got expected recipient '%s'.", route.toString().c_str()));
             } else {
                 reply->addError(Error(ErrorCode::APP_FATAL_ERROR,
                                       make_string("Matched recipient '%s' not expected.",
-                                                  it.toString().c_str())));
+                                                  route.toString().c_str())));
             }
         }
     } else {
@@ -113,12 +105,12 @@ CustomPolicy::select(RoutingContext &ctx)
     ctx.getMatchedRecipients(matched);
     if (_factory._expectedMatched.size() == matched.size()) {
         ctx.trace(1, make_string("Got %d expected recipients.", (uint32_t)matched.size()));
-        for (auto & it : matched) {
-            if (find(_factory._expectedMatched.begin(), _factory._expectedMatched.end(), it.toString()) != _factory._expectedMatched.end()) {
-                ctx.trace(1, make_string("Got matched recipient '%s'.", it.toString().c_str()));
+        for (auto & route : matched) {
+            if (find(_factory._expectedMatched.begin(), _factory._expectedMatched.end(), route.toString()) != _factory._expectedMatched.end()) {
+                ctx.trace(1, make_string("Got matched recipient '%s'.", route.toString().c_str()));
             } else {
                 reply->addError(Error(ErrorCode::APP_FATAL_ERROR,
-                                      make_string("Matched recipient '%s' not expected.", it.toString().c_str())));
+                                      make_string("Matched recipient '%s' not expected.", route.toString().c_str())));
             }
         }
     } else {
@@ -129,8 +121,8 @@ CustomPolicy::select(RoutingContext &ctx)
     }
 
     if (!reply->hasErrors() && _factory._forward) {
-        for (auto & it : matched) {
-            ctx.addChild(it);
+        for (auto & route : matched) {
+            ctx.addChild(route);
         }
     } else {
         ctx.setReply(std::move(reply));
@@ -140,7 +132,7 @@ CustomPolicy::select(RoutingContext &ctx)
 void
 CustomPolicy::merge(RoutingContext &ctx)
 {
-    Reply::UP ret(new EmptyReply());
+    auto ret = std::make_unique<EmptyReply>();
     for (RoutingNodeIterator it = ctx.getChildIterator();
          it.isValid(); it.next())
     {
@@ -202,7 +194,7 @@ public:
 
 class Test : public vespalib::TestApp {
 private:
-    Message::UP createMessage(const string &msg);
+    static Message::UP createMessage(const string &msg);
 
 public:
     int Main() override;
@@ -289,11 +281,11 @@ Test::testSingleDirective(TestData &data)
                                                                                  StringList().add("foo").add("bar"))));
     data._srcServer.mb.putProtocol(protocol);
     data._srcServer.mb.setupRouting(RoutingSpec().addTable(RoutingTableSpec(SimpleProtocol::NAME)
-                                                           .addRoute(std::move(RouteSpec("myroute").addHop("myhop")))
-                                                           .addHop(std::move(HopSpec("myhop", "[Custom]")
+                                                           .addRoute(RouteSpec("myroute").addHop("myhop"))
+                                                           .addHop(HopSpec("myhop", "[Custom]")
                                                                    .addRecipient("foo")
                                                                    .addRecipient("bar")
-                                                                   .addRecipient("baz/cox")))));
+                                                                   .addRecipient("baz/cox"))));
     for (uint32_t i = 0; i < 2; ++i) {
         EXPECT_TRUE(data._srcSession->send(createMessage("msg"), "myroute").isAccepted());
         Reply::UP reply = data._srcHandler.getReply();
@@ -314,13 +306,13 @@ Test::testMoreDirectives(TestData &data)
                                                                                  StringList().add("foo/bar0/baz").add("foo/bar1/baz"))));
     data._srcServer.mb.putProtocol(protocol);
     data._srcServer.mb.setupRouting(RoutingSpec().addTable(RoutingTableSpec(SimpleProtocol::NAME)
-                                                           .addRoute(std::move(RouteSpec("myroute").addHop("myhop")))
-                                                           .addHop(std::move(HopSpec("myhop", "foo/[Custom]/baz")
+                                                           .addRoute(RouteSpec("myroute").addHop("myhop"))
+                                                           .addHop(HopSpec("myhop", "foo/[Custom]/baz")
                                                                    .addRecipient("foo")
                                                                    .addRecipient("foo/bar")
                                                                    .addRecipient("foo/bar0/baz")
                                                                    .addRecipient("foo/bar1/baz")
-                                                                   .addRecipient("foo/bar/baz/cox")))));
+                                                                   .addRecipient("foo/bar/baz/cox"))));
     for (uint32_t i = 0; i < 2; ++i) {
         EXPECT_TRUE(data._srcSession->send(createMessage("msg"), "myroute").isAccepted());
         Reply::UP reply = data._srcHandler.getReply();
@@ -333,21 +325,19 @@ Test::testMoreDirectives(TestData &data)
 void
 Test::testRecipientsRemain(TestData &data)
 {
-    IProtocol::SP protocol(new SimpleProtocol());
+    auto protocol = std::make_shared<SimpleProtocol>();
     auto &simple = dynamic_cast<SimpleProtocol&>(*protocol);
-    simple.addPolicyFactory("First", SimpleProtocol::IPolicyFactory::SP(new CustomPolicyFactory(
-                                                                                true,
-                                                                                StringList().add("foo/bar"),
-                                                                                StringList().add("foo/[Second]"))));
-    simple.addPolicyFactory("Second", SimpleProtocol::IPolicyFactory::SP(new CustomPolicyFactory(
-                                                                                 false,
-                                                                                 StringList().add("foo/bar"),
-                                                                                 StringList().add("foo/bar"))));
+    simple.addPolicyFactory("First", std::make_shared<CustomPolicyFactory>(true,
+                                                                           StringList().add("foo/bar"),
+                                                                           StringList().add("foo/[Second]")));
+    simple.addPolicyFactory("Second", std::make_shared<CustomPolicyFactory>(false,
+                                                                            StringList().add("foo/bar"),
+                                                                            StringList().add("foo/bar")));
     data._srcServer.mb.putProtocol(protocol);
     data._srcServer.mb.setupRouting(RoutingSpec().addTable(RoutingTableSpec(SimpleProtocol::NAME)
-                                                           .addRoute(std::move(RouteSpec("myroute").addHop("myhop")))
-                                                           .addHop(std::move(HopSpec("myhop", "[First]/[Second]")
-                                                                   .addRecipient("foo/bar")))));
+                                                           .addRoute(RouteSpec("myroute").addHop("myhop"))
+                                                           .addHop(HopSpec("myhop", "[First]/[Second]")
+                                                                   .addRecipient("foo/bar"))));
     for (uint32_t i = 0; i < 2; ++i) {
         EXPECT_TRUE(data._srcSession->send(createMessage("msg"), "myroute").isAccepted());
         Reply::UP reply = data._srcHandler.getReply();
@@ -363,11 +353,11 @@ Test::testConstRoute(TestData &data)
     auto protocol = std::make_shared<SimpleProtocol>();
     auto &simple = dynamic_cast<SimpleProtocol&>(*protocol);
     simple.addPolicyFactory("DocumentRouteSelector",
-                            std::make_unique<CustomPolicyFactory>(true, StringList().add("dst"), StringList().add("dst")));
+                            std::make_shared<CustomPolicyFactory>(true, StringList().add("dst"), StringList().add("dst")));
     data._srcServer.mb.putProtocol(protocol);
     data._srcServer.mb.setupRouting(RoutingSpec().addTable(RoutingTableSpec(SimpleProtocol::NAME)
-                                                           .addRoute(std::move(RouteSpec("default").addHop("indexing")))
-                                                           .addHop(std::move(HopSpec("indexing", "[DocumentRouteSelector]").addRecipient("dst")))
+                                                           .addRoute(RouteSpec("default").addHop("indexing"))
+                                                           .addHop(HopSpec("indexing", "[DocumentRouteSelector]").addRecipient("dst"))
                                                            .addHop(HopSpec("dst", "dst/session"))));
     for (uint32_t i = 0; i < 2; ++i) {
         EXPECT_TRUE(data._srcSession->send(createMessage("msg"), Route::parse("route:default")).isAccepted());

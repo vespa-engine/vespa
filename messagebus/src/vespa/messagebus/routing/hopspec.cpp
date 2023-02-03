@@ -21,9 +21,15 @@ HopSpec & HopSpec::operator=(HopSpec && rhs) noexcept = default;
 HopSpec::~HopSpec() = default;
 
 HopSpec &
-HopSpec::addRecipient(const string &recipient) {
+HopSpec::addRecipient(const string &recipient) & {
     _recipients.push_back(recipient);
     return *this;
+}
+
+HopSpec &&
+HopSpec::addRecipient(const string &recipient) && {
+    _recipients.push_back(recipient);
+    return std::move(*this);
 }
 
 void

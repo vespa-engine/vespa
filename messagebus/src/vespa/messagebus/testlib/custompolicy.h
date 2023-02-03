@@ -15,9 +15,9 @@ private:
 
 public:
     CustomPolicy(bool selectOnRetry,
-                 const std::vector<uint32_t> consumableErrors,
-                 const std::vector<Route> &routes);
-    ~CustomPolicy();
+                 std::vector<uint32_t> consumableErrors,
+                 std::vector<Route> routes);
+    ~CustomPolicy() override;
 
     void select(RoutingContext &context) override;
     void merge(RoutingContext &context) override;
@@ -27,15 +27,15 @@ class CustomPolicyFactory : public SimpleProtocol::IPolicyFactory {
 private:
     bool                  _selectOnRetry;
     std::vector<uint32_t> _consumableErrors;
-
 public:
-    CustomPolicyFactory();
-    CustomPolicyFactory(bool selectOnRetry);
+    CustomPolicyFactory() noexcept : CustomPolicyFactory(true) { }
+    explicit CustomPolicyFactory(bool selectOnRetry) noexcept;
     CustomPolicyFactory(bool selectOnRetry, uint32_t consumableError);
-    CustomPolicyFactory(bool selectOnRetry, const std::vector<uint32_t> consumableErrors);
+    CustomPolicyFactory(bool selectOnRetry, std::vector<uint32_t> consumableErrors);
+    ~CustomPolicyFactory() override;
 
     IRoutingPolicy::UP create(const string &param) override;
-    static void parseRoutes(const string &str, std::vector<Route> &routes);
+    [[nodiscard]] static std::vector<Route> parseRoutes(const string &str);
 };
 
 } // namespace mbus

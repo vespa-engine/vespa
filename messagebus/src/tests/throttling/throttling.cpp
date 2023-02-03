@@ -40,7 +40,7 @@ RoutingSpec getRouting()
     return RoutingSpec()
         .addTable(RoutingTableSpec("Simple")
                   .addHop(HopSpec("dst", "dst/session"))
-                  .addRoute(std::move(RouteSpec("dst").addHop("dst"))));
+                  .addRoute(RouteSpec("dst").addHop("dst")));
 }
 
 bool waitQueueSize(RoutableQueue &queue, uint32_t size)

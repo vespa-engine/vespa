@@ -20,11 +20,16 @@ RouteSpec & RouteSpec::operator = (RouteSpec &&) noexcept = default;
 RouteSpec::~RouteSpec() = default;
 
 RouteSpec &
-RouteSpec::addHop(const string &hop) {
+RouteSpec::addHop(const string &hop) & {
     _hops.push_back(hop);
     return *this;
 }
 
+RouteSpec &&
+RouteSpec::addHop(const string &hop) && {
+    _hops.push_back(hop);
+    return std::move(*this);
+}
 
 RouteSpec &
 RouteSpec::setHop(uint32_t i, const string &hop) {

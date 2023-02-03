@@ -12,16 +12,15 @@ LOG_SETUP(".custompolicy");
 namespace mbus {
 
 CustomPolicy::CustomPolicy(bool selectOnRetry,
-                           const std::vector<uint32_t> consumableErrors,
-                           const std::vector<Route> &routes) :
+                           std::vector<uint32_t> consumableErrors,
+                           std::vector<Route> routes) :
     _selectOnRetry(selectOnRetry),
-    _consumableErrors(consumableErrors),
-    _routes(routes)
+    _consumableErrors(std::move(consumableErrors)),
+    _routes(std::move(routes))
 {
 }
 
-CustomPolicy::~CustomPolicy() {
-}
+CustomPolicy::~CustomPolicy() = default;
 
 void
 CustomPolicy::select(RoutingContext &context)
@@ -38,10 +37,8 @@ CustomPolicy::select(RoutingContext &context)
     str.append(" }.");
     context.trace(1, str);
     context.setSelectOnRetry(_selectOnRetry);
-    for (std::vector<uint32_t>::iterator it = _consumableErrors.begin();
-         it != _consumableErrors.end(); ++it)
-    {
-        context.addConsumableError(*it);
+    for (unsigned int & _consumableError : _consumableErrors) {
+        context.addConsumableError(_consumableError);
     }
     context.addChildren(_routes);
 }
@@ -74,14 +71,7 @@ CustomPolicy::merge(RoutingContext &context)
     context.trace(1, str);
 }
 
-
-CustomPolicyFactory::CustomPolicyFactory() :
-    _selectOnRetry(true),
-    _consumableErrors()
-{
-}
-
-CustomPolicyFactory::CustomPolicyFactory(bool selectOnRetry) :
+CustomPolicyFactory::CustomPolicyFactory(bool selectOnRetry) noexcept :
     _selectOnRetry(selectOnRetry),
     _consumableErrors()
 {
@@ -94,11 +84,13 @@ CustomPolicyFactory::CustomPolicyFactory(bool selectOnRetry, uint32_t consumable
     _consumableErrors.push_back(consumableError);
 }
 
-CustomPolicyFactory::CustomPolicyFactory(bool selectOnRetry, const std::vector<uint32_t> consumableErrors) :
+CustomPolicyFactory::CustomPolicyFactory(bool selectOnRetry, std::vector<uint32_t> consumableErrors) :
     _selectOnRetry(selectOnRetry),
-    _consumableErrors(consumableErrors)
+    _consumableErrors(std::move(consumableErrors))
 {
 }
+
+CustomPolicyFactory::~CustomPolicyFactory() = default;
 
 IRoutingPolicy::UP
 CustomPolicyFactory::create(const string &param)
@@ -112,20 +104,16 @@ CustomPolicyFactory::create(const string &param)
     }
     str.append(" }");
 
-    std::vector<Route> routes;
-    parseRoutes(param, routes);
-
     LOG(info, "Creating custom policy; selectOnRetry = %d, consumableErrors = %s, param = '%s'.",
         _selectOnRetry, str.c_str(), param.c_str());
-    IRoutingPolicy::UP ret(new CustomPolicy(_selectOnRetry, _consumableErrors, routes));
-    return ret;
+    return std::make_unique<CustomPolicy>(_selectOnRetry, _consumableErrors, parseRoutes(param));
 }
 
 
-void
-CustomPolicyFactory::parseRoutes(const string &str,
-                                 std::vector<Route> &routes)
+std::vector<Route>
+CustomPolicyFactory::parseRoutes(const string &str)
 {
+    std::vector<Route> routes;
     using Separator = boost::char_separator<char>;
     using Tokenizer = boost::tokenizer<Separator>;
     Separator separator(",");
@@ -136,6 +124,7 @@ CustomPolicyFactory::parseRoutes(const string &str,
     {
         routes.push_back(Route::parse(*it));
     }
+    return routes;
 }
 
 } // namespace mbus

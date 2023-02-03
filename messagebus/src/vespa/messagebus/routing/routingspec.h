@@ -21,24 +21,19 @@ private:
     std::vector<RoutingTableSpec> _tables;
 
 public:
-    /**
-     * Creates an empty specification.
-     */
-    RoutingSpec();
-
-    /**
-     * Returns whether or not there are routing table specs contained in this.
-     *
-     * @return True if there is at least one table.
-     */
-    bool hasTables() const { return !_tables.empty(); }
+    RoutingSpec() noexcept;
+    RoutingSpec(const RoutingSpec &);
+    RoutingSpec & operator=(const RoutingSpec &) = delete;
+    RoutingSpec(RoutingSpec &&) noexcept;
+    RoutingSpec & operator=(RoutingSpec &&) noexcept;
+    ~RoutingSpec();
 
     /**
      * Returns the number of routing table specs that are contained in this.
      *
      * @return The number of routing tables.
      */
-    uint32_t getNumTables() const { return _tables.size(); }
+    [[nodiscard]] uint32_t getNumTables() const { return _tables.size(); }
 
     /**
      * Returns the routing table spec at the given index.
@@ -54,16 +49,7 @@ public:
      * @param i The index of the routing table to return.
      * @return The routing table at the given index.
      */
-    const RoutingTableSpec &getTable(uint32_t i) const { return _tables[i]; }
-
-    /**
-     * Sets the routing table spec at the given index.
-     *
-     * @param i The index at which to set the routing table.
-     * @param table The routing table to set.
-     * @return This, to allow chaining.
-     */
-    RoutingSpec &setTable(uint32_t i, const RoutingTableSpec &table) { _tables[i] = table; return *this; }
+    [[nodiscard]] const RoutingTableSpec &getTable(uint32_t i) const { return _tables[i]; }
 
     /**
      * Adds a routing table spec to the list of tables.
@@ -71,23 +57,8 @@ public:
      * @param table The routing table to add.
      * @return This, to allow chaining.
      */
-    RoutingSpec &addTable(const RoutingTableSpec &table) { _tables.push_back(table); return *this; }
-
-    /**
-     * Returns the routing table spec at the given index.
-     *
-     * @param i The index of the routing table to remove.
-     * @return The removed routing table.
-     */
-    RoutingTableSpec removeTable(uint32_t i);
-
-    /**
-     * Clears the list of routing table specs contained in this.
-     *
-     * @return This, to allow chaining.
-     */
-    RoutingSpec &clearTables() { _tables.clear(); return *this; }
-
+    RoutingSpec & addTable(RoutingTableSpec && table) &;
+    RoutingSpec && addTable(RoutingTableSpec && table) &&;
     /**
      * Appends the content of this to the given config string.
      *
@@ -113,7 +84,7 @@ public:
      *
      * @return The string.
      */
-    string toString() const;
+    [[nodiscard]] string toString() const;
 
     /**
      * Implements the equality operator.

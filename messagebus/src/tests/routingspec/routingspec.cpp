@@ -21,8 +21,8 @@ public:
         // empty
     }
 
-    bool setupRouting(const RoutingSpec &spec) override {
-        _routing = spec;
+    bool setupRouting(RoutingSpec spec) override {
+        _routing = std::move(spec);
         return true;
     }
 
@@ -94,31 +94,31 @@ Test::testConstructors()
     {
         RoutingSpec spec = RoutingSpec()
             .addTable(RoutingTableSpec("foo")
-                      .addHop(std::move(HopSpec("foo-h1", "foo-h1-sel")
+                      .addHop(HopSpec("foo-h1", "foo-h1-sel")
                               .addRecipient("foo-h1-r1")
-                              .addRecipient("foo-h1-r2")))
-                      .addHop(std::move(HopSpec("foo-h2", "foo-h2-sel")
+                              .addRecipient("foo-h1-r2"))
+                      .addHop(HopSpec("foo-h2", "foo-h2-sel")
                               .addRecipient("foo-h2-r1")
-                              .addRecipient("foo-h2-r2")))
-                      .addRoute(std::move(RouteSpec("foo-r1")
+                              .addRecipient("foo-h2-r2"))
+                      .addRoute(RouteSpec("foo-r1")
                                 .addHop("foo-h1")
-                                .addHop("foo-h2")))
-                      .addRoute(std::move(RouteSpec("foo-r2")
+                                .addHop("foo-h2"))
+                      .addRoute(RouteSpec("foo-r2")
                                 .addHop("foo-h2")
-                                .addHop("foo-h1"))))
+                                .addHop("foo-h1")))
             .addTable(RoutingTableSpec("bar")
-                      .addHop(std::move(HopSpec("bar-h1", "bar-h1-sel")
+                      .addHop(HopSpec("bar-h1", "bar-h1-sel")
                               .addRecipient("bar-h1-r1")
-                              .addRecipient("bar-h1-r2")))
-                      .addHop(std::move(HopSpec("bar-h2", "bar-h2-sel")
+                              .addRecipient("bar-h1-r2"))
+                      .addHop(HopSpec("bar-h2", "bar-h2-sel")
                               .addRecipient("bar-h2-r1")
-                              .addRecipient("bar-h2-r2")))
-                      .addRoute(std::move(RouteSpec("bar-r1")
+                              .addRecipient("bar-h2-r2"))
+                      .addRoute(RouteSpec("bar-r1")
                                 .addHop("bar-h1")
-                                .addHop("bar-h2")))
-                      .addRoute(std::move(RouteSpec("bar-r2")
+                                .addHop("bar-h2"))
+                      .addRoute(RouteSpec("bar-r2")
                                 .addHop("bar-h2")
-                                .addHop("bar-h1"))));
+                                .addHop("bar-h1")));
         EXPECT_TRUE(testRouting(spec));
 
         RoutingSpec specCopy = spec;
@@ -184,20 +184,20 @@ Test::testConfigGeneration()
                                                  .addHop(HopSpec("myhop1", "myselector1")))));
     EXPECT_TRUE(testConfig(RoutingSpec().addTable(RoutingTableSpec("mytable1")
                                                  .addHop(HopSpec("myhop1", "myselector1"))
-                                                 .addRoute(std::move(RouteSpec("myroute1").addHop("myhop1"))))));
+                                                 .addRoute(RouteSpec("myroute1").addHop("myhop1")))));
     EXPECT_TRUE(testConfig(RoutingSpec().addTable(RoutingTableSpec("mytable1")
                                                  .addHop(HopSpec("myhop1", "myselector1"))
                                                  .addHop(HopSpec("myhop2", "myselector2"))
-                                                 .addRoute(std::move(RouteSpec("myroute1").addHop("myhop1")))
-                                                 .addRoute(std::move(RouteSpec("myroute2").addHop("myhop2")))
-                                                 .addRoute(std::move(RouteSpec("myroute12").addHop("myhop1").addHop("myhop2"))))));
+                                                 .addRoute(RouteSpec("myroute1").addHop("myhop1"))
+                                                 .addRoute(RouteSpec("myroute2").addHop("myhop2"))
+                                                 .addRoute(RouteSpec("myroute12").addHop("myhop1").addHop("myhop2")))));
     EXPECT_TRUE(testConfig(RoutingSpec()
                           .addTable(RoutingTableSpec("mytable1")
                                     .addHop(HopSpec("myhop1", "myselector1"))
                                     .addHop(HopSpec("myhop2", "myselector2"))
-                                    .addRoute(std::move(RouteSpec("myroute1").addHop("myhop1")))
-                                    .addRoute(std::move(RouteSpec("myroute2").addHop("myhop2")))
-                                    .addRoute(std::move(RouteSpec("myroute12").addHop("myhop1").addHop("myhop2"))))
+                                    .addRoute(RouteSpec("myroute1").addHop("myhop1"))
+                                    .addRoute(RouteSpec("myroute2").addHop("myhop2"))
+                                    .addRoute(RouteSpec("myroute12").addHop("myhop1").addHop("myhop2")))
                           .addTable(RoutingTableSpec("mytable2"))));
 
     EXPECT_EQUAL("routingtable[2]\n"
@@ -223,10 +223,10 @@ Test::testConfigGeneration()
                .addTable(RoutingTableSpec("mytable2")
                          .addHop(HopSpec("myhop1", "myselector1"))
                          .addHop(std::move(HopSpec("myhop2", "myselector2").setIgnoreResult(true)))
-                         .addHop(std::move(HopSpec("myhop1", "myselector3")
+                         .addHop(HopSpec("myhop1", "myselector3")
                                  .addRecipient("myrecipient1")
-                                 .addRecipient("myrecipient2")))
-                         .addRoute(std::move(RouteSpec("myroute1").addHop("myhop1")))).toString());
+                                 .addRecipient("myrecipient2"))
+                         .addRoute(RouteSpec("myroute1").addHop("myhop1"))).toString());
 }
 
 bool

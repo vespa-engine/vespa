@@ -33,7 +33,7 @@ RoutingSpec getRouting() {
     return RoutingSpec()
         .addTable(RoutingTableSpec("Simple")
                   .addHop(HopSpec("test", "test/session"))
-                  .addRoute(std::move(RouteSpec("test").addHop("test"))));
+                  .addRoute(RouteSpec("test").addHop("test")));
 }
 
 TEST_SETUP(Test);

@@ -3,9 +3,6 @@
 #include "routingtable.h"
 #include "hop.h"
 #include "routingtablespec.h"
-#include <vespa/messagebus/iprotocol.h>
-#include <vespa/messagebus/message.h>
-#include <vector>
 
 namespace mbus {
 
@@ -47,7 +44,7 @@ RoutingTable::hasHop(const string &name) const
 const HopBlueprint *
 RoutingTable::getHop(const string &name) const
 {
-    std::map<string, HopBlueprint>::const_iterator it = _hops.find(name);
+    auto it = _hops.find(name);
     return it != _hops.end() ? &(it->second) : nullptr;
 }
 

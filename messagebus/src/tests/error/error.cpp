@@ -20,7 +20,7 @@ RoutingSpec getRouting() {
         .addTable(RoutingTableSpec("Simple")
                   .addHop(HopSpec("pxy", "test/pxy/session"))
                   .addHop(HopSpec("dst", "test/dst/session"))
-                  .addRoute(std::move(RouteSpec("test").addHop("pxy").addHop("dst"))));
+                  .addRoute(RouteSpec("test").addHop("pxy").addHop("dst")));
 }
 
 TEST("error_test") {

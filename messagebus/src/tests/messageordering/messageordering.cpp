@@ -23,7 +23,7 @@ getRouting()
     return RoutingSpec()
         .addTable(RoutingTableSpec("Simple")
                   .addHop(HopSpec("dst", "test/dst/session"))
-                  .addRoute(std::move(RouteSpec("test").addHop("dst"))));
+                  .addRoute(RouteSpec("test").addHop("dst")));
 }
 
 class MultiReceptor : public IMessageHandler
