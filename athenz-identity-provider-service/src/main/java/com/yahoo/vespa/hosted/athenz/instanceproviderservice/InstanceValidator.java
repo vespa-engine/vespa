@@ -176,9 +176,9 @@ public class InstanceValidator {
             log.log(Level.WARNING, "Invalid SAN URIs: " + urisCommaSeparated);
             return false;
         }
-        var clusterType = node.allocation().map(a -> a.membership().cluster().type().name()).orElse(null);
+        var clusterType = node.allocation().map(a -> a.membership().cluster().type()).orElse(null);
         Set<URI> allowedUris = clusterType != null
-                ? Set.of(URI.create("vespa://cluster-type/%s".formatted(clusterType))) : Set.of();
+                ? Set.of(URI.create("vespa://cluster-type/%s".formatted(clusterType.name()))) : Set.of();
         if (!allowedUris.containsAll(requestedUris)) {
             log.log(Level.WARNING, "Illegal SAN URIs: expected '%s' found '%s'".formatted(allowedUris, requestedUris));
             return false;

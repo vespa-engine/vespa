@@ -65,7 +65,7 @@ public class IdentityDocumentGenerator {
 
             String configServerHostname = HostName.getLocalhost();
             Instant createdAt = Instant.now();
-            var clusterType = allocation.membership().cluster().type().name();
+            var clusterType = allocation.membership().cluster().type();
             String signature = signer.generateSignature(
                     providerUniqueId, providerService, configServerHostname,
                     node.hostname(), createdAt, ips, identityType, clusterType, privateKey);

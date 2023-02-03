@@ -4,6 +4,7 @@ package com.yahoo.vespa.athenz.identityprovider.api;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.vespa.athenz.api.AthenzService;
 import com.yahoo.vespa.athenz.identityprovider.api.bindings.SignedIdentityDocumentEntity;
 
@@ -14,6 +15,7 @@ import java.io.UncheckedIOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
+import java.util.Optional;
 
 import static com.yahoo.vespa.athenz.identityprovider.api.VespaUniqueInstanceId.fromDottedString;
 
@@ -48,7 +50,7 @@ public class EntityBindingsMapper {
                 entity.createdAt(),
                 entity.ipAddresses(),
                 IdentityType.fromId(entity.identityType()),
-                entity.clusterType());
+                ClusterSpec.Type.from(entity.clusterType()));
     }
 
     public static SignedIdentityDocumentEntity toSignedIdentityDocumentEntity(SignedIdentityDocument model) {
@@ -63,7 +65,7 @@ public class EntityBindingsMapper {
                 model.createdAt(),
                 model.ipAddresses(),
                 model.identityType().id(),
-                model.clusterType());
+                Optional.ofNullable(model.clusterType()).map(ClusterSpec.Type::name).orElse(null));
     }
 
     public static SignedIdentityDocument readSignedIdentityDocumentFromFile(Path file) {

@@ -3,6 +3,7 @@ package com.yahoo.vespa.hosted.ca.restapi;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.security.Pkcs10CsrUtils;
 import com.yahoo.security.X509CertificateUtils;
 import com.yahoo.slime.ArrayTraverser;
@@ -98,7 +99,7 @@ public class InstanceSerializer {
         requireField(IDD_IPADDRESSES_FIELD, root).traverse((ArrayTraverser)  (__, entry) -> ips.add(entry.asString()));
         IdentityType identityType = IdentityType.fromId(requireField(IDD_IDENTITY_TYPE_FIELD, root).asString());
         var clusterTypeField = root.field(IDD_CLUSTER_TYPE_FIELD);
-        var clusterType = root.valid() ? clusterTypeField.asString() : null;
+        var clusterType = clusterTypeField.valid() ? ClusterSpec.Type.from(clusterTypeField.asString()) : null;
 
 
         return new SignedIdentityDocument(signature, (int)signingKeyVersion, providerUniqueId, athenzService, (int)documentVersion,

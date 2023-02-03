@@ -1,6 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.athenz.identityprovider.client;
 
+import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.security.KeyAlgorithm;
 import com.yahoo.security.KeyUtils;
 import com.yahoo.vespa.athenz.api.AthenzService;
@@ -36,7 +37,7 @@ public class IdentityDocumentSignerTest {
         String instanceHostname = "instancehostname";
         Instant createdAt = Instant.EPOCH;
         HashSet<String> ipAddresses = new HashSet<>(Arrays.asList("1.2.3.4", "::1"));
-        String clusterType = "container";
+        var clusterType = ClusterSpec.Type.container;
         String signature =
                 signer.generateSignature(id, providerService, configserverHostname, instanceHostname, createdAt,
                                          ipAddresses, identityType, clusterType, keyPair.getPrivate());
