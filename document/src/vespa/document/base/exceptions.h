@@ -4,7 +4,7 @@
 
 #include <memory>
 #include <vespa/vespalib/util/exceptions.h>
-#include <stdint.h>
+#include <cstdint>
 
 namespace document {
 
@@ -22,7 +22,7 @@ public:
     InvalidDataTypeException(const DataType &actual,
                              const DataType &wanted,
                              const vespalib::string & location);
-    virtual ~InvalidDataTypeException() throw();
+    virtual ~InvalidDataTypeException();
 
     const DataType& getActualDataType() const { return _actual; }
     const DataType& getExpectedDataType() const { return _expected; }
@@ -75,7 +75,7 @@ private:
 public:
     DocumentTypeNotFoundException(const vespalib::string & name,
                                   const vespalib::string& location);
-    virtual ~DocumentTypeNotFoundException() throw();
+    ~DocumentTypeNotFoundException() override;
 
     const vespalib::string& getDocumentTypeName() const { return _type; }
 
@@ -130,7 +130,7 @@ public:
     FieldNotFoundException(int32_t fieldId,
                            int16_t serializationVersion,
                            const vespalib::string& location);
-    ~FieldNotFoundException() throw();
+    ~FieldNotFoundException() override;
 
     const vespalib::string& getFieldName() const { return _fieldName; }
     int32_t getFieldId()              const { return _fieldId; };

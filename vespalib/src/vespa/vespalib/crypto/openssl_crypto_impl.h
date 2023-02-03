@@ -30,7 +30,7 @@ class X509CertificateImpl : public X509Certificate {
     X509Ptr _cert;
 public:
     explicit X509CertificateImpl(X509Ptr cert) noexcept : _cert(std::move(cert)) {}
-    ~X509CertificateImpl() = default;
+    ~X509CertificateImpl() override;
 
     ::X509* native_cert() noexcept { return _cert.get(); }
     const ::X509* native_cert() const noexcept { return _cert.get(); }

@@ -6,9 +6,6 @@
 #include <vespa/vespalib/net/tls/auto_reloading_tls_crypto_engine.h>
 #include <vespa/vespalib/net/tls/maybe_tls_crypto_engine.h>
 #include <vespa/vespalib/net/tls/statistics.h>
-#include <vespa/vespalib/net/tls/tls_crypto_engine.h>
-#include <vespa/vespalib/net/tls/transport_security_options.h>
-#include <vespa/vespalib/net/tls/transport_security_options_reading.h>
 #include <vespa/vespalib/stllike/string.h>
 #include <vespa/vespalib/util/size_literals.h>
 
@@ -24,11 +21,12 @@ class NullCryptoSocket : public CryptoSocket
 private:
     SocketHandle _socket;
 public:
-    NullCryptoSocket(SocketHandle socket) : _socket(std::move(socket)) {}
-    int get_fd() const override { return _socket.get(); }
+    explicit NullCryptoSocket(SocketHandle socket) : _socket(std::move(socket)) {}
+    ~NullCryptoSocket() override;
+    [[nodiscard]] int get_fd() const override { return _socket.get(); }
     HandshakeResult handshake() override { return HandshakeResult::DONE; }
     void do_handshake_work() override {}
-    size_t min_read_buffer_size() const override { return 1; }
+    [[nodiscard]] size_t min_read_buffer_size() const override { return 1; }
     ssize_t read(char *buf, size_t len) override { return _socket.read(buf, len); }
     ssize_t drain(char *, size_t) override { return 0; }
     ssize_t write(const char *buf, size_t len) override { return _socket.write(buf, len); }
@@ -37,9 +35,11 @@ public:
     void drop_empty_buffers() override {}
 };
 
+    NullCryptoSocket::~NullCryptoSocket() = default;
 using net::tls::AuthorizationMode;
 
-AuthorizationMode authorization_mode_from_env() {
+AuthorizationMode
+authorization_mode_from_env() {
     const char* env = getenv("VESPA_TLS_INSECURE_AUTHORIZATION_MODE");
     vespalib::string mode = env ? env : "";
     if (mode == "enforce") {
@@ -55,7 +55,8 @@ AuthorizationMode authorization_mode_from_env() {
     return AuthorizationMode::Enforce;
 }
 
-CryptoEngine::SP create_default_crypto_engine() {
+CryptoEngine::SP
+create_default_crypto_engine() {
     const char *env = getenv("VESPA_TLS_CONFIG_FILE");
     vespalib::string cfg_file = env ? env : "";
     if (cfg_file.empty()) {
@@ -79,7 +80,8 @@ CryptoEngine::SP create_default_crypto_engine() {
     return tls;
 }
 
-CryptoEngine::SP try_create_default_crypto_engine() {
+CryptoEngine::SP
+try_create_default_crypto_engine() {
     try {
         return create_default_crypto_engine();
     } catch (crypto::CryptoException &e) {
@@ -98,6 +100,8 @@ CryptoEngine::get_default()
     static const CryptoEngine::SP shared_default = try_create_default_crypto_engine();
     return shared_default;
 }
+
+NullCryptoEngine::~NullCryptoEngine() = default;
 
 CryptoSocket::UP
 NullCryptoEngine::create_client_crypto_socket(SocketHandle socket, const SocketSpec &)

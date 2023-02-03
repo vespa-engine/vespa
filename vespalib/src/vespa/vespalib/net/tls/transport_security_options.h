@@ -27,7 +27,7 @@ public:
         Params();
         ~Params();
         Params(const Params&);
-        Params& operator=(const Params&);
+        Params& operator=(const Params&) = delete;
         Params(Params&&) noexcept;
         Params& operator=(Params&&) noexcept;
 
@@ -47,7 +47,7 @@ public:
 
     explicit TransportSecurityOptions(Params params);
     TransportSecurityOptions(const TransportSecurityOptions&);
-    TransportSecurityOptions& operator=(const TransportSecurityOptions&);
+    TransportSecurityOptions& operator=(const TransportSecurityOptions&) = delete;
     TransportSecurityOptions(TransportSecurityOptions&&) noexcept;
     TransportSecurityOptions& operator=(TransportSecurityOptions&&) noexcept;
 
