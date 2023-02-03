@@ -2,6 +2,7 @@
 package com.yahoo.vespa.model.admin.monitoring;
 
 import com.yahoo.metrics.ContainerMetrics;
+import com.yahoo.metrics.SearchNodeMetrics;
 import com.yahoo.metrics.Suffix;
 
 import java.util.Collections;
@@ -338,29 +339,27 @@ public class VespaMetricSet {
     private static Set<Metric> getSearchNodeMetrics() {
         Set<Metric> metrics = new LinkedHashSet<>();
 
-        addMetric(metrics, "content.proton.documentdb.documents.total.last");
-        addMetric(metrics, "content.proton.documentdb.documents.ready.last");
-        addMetric(metrics, "content.proton.documentdb.documents.active.last");
-        addMetric(metrics,"content.proton.documentdb.documents.removed.last");
+        addMetric(metrics, SearchNodeMetrics.CONTENT_PROTON_DOCUMENTDB_DOCUMENTS_TOTAL.last());
+        addMetric(metrics, SearchNodeMetrics.CONTENT_PROTON_DOCUMENTDB_DOCUMENTS_READY.last());
+        addMetric(metrics, SearchNodeMetrics.CONTENT_PROTON_DOCUMENTDB_DOCUMENTS_ACTIVE.last());
+        addMetric(metrics, SearchNodeMetrics.CONTENT_PROTON_DOCUMENTDB_DOCUMENTS_REMOVED.last());
 
-        addMetric(metrics, "content.proton.documentdb.index.docs_in_memory.last");
-        addMetric(metrics, "content.proton.documentdb.disk_usage.last");
-        addMetric(metrics,"content.proton.documentdb.memory_usage.allocated_bytes.max");
-        addMetric(metrics, "content.proton.documentdb.heart_beat_age.last");
-        addMetric(metrics, "content.proton.transport.query.count.rate");
-        addMetric(metrics, "content.proton.docsum.docs.rate");
-        addMetric(metrics, "content.proton.docsum.latency", List.of("max", "sum", "count"));
-        addMetric(metrics, "content.proton.transport.query.latency", List.of("max", "sum", "count"));
+        addMetric(metrics, SearchNodeMetrics.CONTENT_PROTON_DOCUMENTDB_INDEX_DOCS_IN_MEMORY.last());
+        addMetric(metrics, SearchNodeMetrics.CONTENT_PROTON_DOCUMENTDB_DISK_USAGE.last());
+        addMetric(metrics, SearchNodeMetrics.CONTENT_PROTON_DOCUMENTDB_MEMORY_USAGE_ALLOCATED_BYTES.max());
+        addMetric(metrics, SearchNodeMetrics.CONTENT_PROTON_DOCUMENTDB_HEART_BEAT_AGE.last());
+        addMetric(metrics, SearchNodeMetrics.CONTENT_PROTON_DOCSUM_DOCS.rate());
+        addMetric(metrics, SearchNodeMetrics.CONTENT_PROTON_DOCSUM_LATENCY, EnumSet.of(max, sum, count));
 
         // Search protocol
-        addMetric(metrics, "content.proton.search_protocol.query.latency", List.of("max", "sum", "count"));
-        addMetric(metrics, "content.proton.search_protocol.query.request_size", List.of("max", "sum", "count"));
-        addMetric(metrics, "content.proton.search_protocol.query.reply_size", List.of("max", "sum", "count"));
-        addMetric(metrics, "content.proton.search_protocol.docsum.latency", List.of("max", "sum", "count"));
-        addMetric(metrics, "content.proton.search_protocol.docsum.request_size", List.of("max", "sum", "count"));
-        addMetric(metrics, "content.proton.search_protocol.docsum.reply_size", List.of("max", "sum", "count"));
-        addMetric(metrics, "content.proton.search_protocol.docsum.requested_documents.count");
-        
+        addMetric(metrics, SearchNodeMetrics.CONTENT_PROTON_SEARCH_PROTOCOL_QUERY_LATENCY, EnumSet.of(max, sum, count));
+        addMetric(metrics, SearchNodeMetrics.CONTENT_PROTON_SEARCH_PROTOCOL_QUERY_REQUEST_SIZE, EnumSet.of(max, sum, average));
+        addMetric(metrics, SearchNodeMetrics.CONTENT_PROTON_SEARCH_PROTOCOL_QUERY_REQUEST_SIZE, EnumSet.of(max, sum, average));
+        addMetric(metrics, SearchNodeMetrics.CONTENT_PROTON_SEARCH_PROTOCOL_DOCSUM_LATENCY, EnumSet.of(max, sum, average));
+        addMetric(metrics, SearchNodeMetrics.CONTENT_PROTON_SEARCH_PROTOCOL_DOCSUM_REQUEST_SIZE, EnumSet.of(max, sum, average));
+        addMetric(metrics, SearchNodeMetrics.CONTENT_PROTON_SEARCH_PROTOCOL_DOCSUM_REPLY_SIZE, EnumSet.of(max, sum, average));
+        addMetric(metrics, SearchNodeMetrics.CONTENT_PROTON_SEARCH_PROTOCOL_DOCSUM_REQUESTED_DOCUMENTS.count());
+
         // Executors shared between all document dbs
         addSearchNodeExecutorMetrics(metrics, "content.proton.executor.proton");
         addSearchNodeExecutorMetrics(metrics, "content.proton.executor.flush");
@@ -371,15 +370,15 @@ public class VespaMetricSet {
         addSearchNodeExecutorMetrics(metrics, "content.proton.executor.field_writer");
 
         // jobs
-        addMetric(metrics, "content.proton.documentdb.job.total.average");
-        addMetric(metrics, "content.proton.documentdb.job.attribute_flush.average");
-        addMetric(metrics, "content.proton.documentdb.job.memory_index_flush.average");
-        addMetric(metrics, "content.proton.documentdb.job.disk_index_fusion.average");
-        addMetric(metrics, "content.proton.documentdb.job.document_store_flush.average");
-        addMetric(metrics, "content.proton.documentdb.job.document_store_compact.average");
-        addMetric(metrics, "content.proton.documentdb.job.bucket_move.average");
-        addMetric(metrics, "content.proton.documentdb.job.lid_space_compact.average");
-        addMetric(metrics, "content.proton.documentdb.job.removed_documents_prune.average");
+        addMetric(metrics, SearchNodeMetrics.CONTENT_PROTON_DOCUMENTDB_JOB_TOTAL.average());
+        addMetric(metrics, SearchNodeMetrics.CONTENT_PROTON_DOCUMENTDB_JOB_ATTRIBUTE_FLUSH.average());
+        addMetric(metrics, SearchNodeMetrics.CONTENT_PROTON_DOCUMENTDB_JOB_MEMORY_INDEX_FLUSH.average());
+        addMetric(metrics, SearchNodeMetrics.CONTENT_PROTON_DOCUMENTDB_JOB_DISK_INDEX_FUSION.average());
+        addMetric(metrics, SearchNodeMetrics.CONTENT_PROTON_DOCUMENTDB_JOB_DOCUMENT_STORE_FLUSH.average());
+        addMetric(metrics, SearchNodeMetrics.CONTENT_PROTON_DOCUMENTDB_JOB_DOCUMENT_STORE_COMPACT.average());
+        addMetric(metrics, SearchNodeMetrics.CONTENT_PROTON_DOCUMENTDB_JOB_BUCKET_MOVE.average());
+        addMetric(metrics, SearchNodeMetrics.CONTENT_PROTON_DOCUMENTDB_JOB_LID_SPACE_COMPACT.average());
+        addMetric(metrics, SearchNodeMetrics.CONTENT_PROTON_DOCUMENTDB_JOB_REMOVED_DOCUMENTS_PRUNE.average());
 
         // Threading service (per document db)
         addSearchNodeExecutorMetrics(metrics, "content.proton.documentdb.threading_service.master");
@@ -678,6 +677,10 @@ public class VespaMetricSet {
     }
 
     private static void addMetric(Set<Metric> metrics, ContainerMetrics metric, EnumSet<Suffix> suffixes) {
+        suffixes.forEach(suffix -> metrics.add(new Metric(metric.baseName() + "." + suffix.suffix())));
+    }
+
+    private static void addMetric(Set<Metric> metrics, SearchNodeMetrics metric, EnumSet<Suffix> suffixes) {
         suffixes.forEach(suffix -> metrics.add(new Metric(metric.baseName() + "." + suffix.suffix())));
     }
 
