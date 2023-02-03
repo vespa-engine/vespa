@@ -7,13 +7,13 @@ namespace {
 class AsciiSet
 {
 public:
-    AsciiSet(vespalib::stringref s) {
+    explicit AsciiSet(vespalib::stringref s) {
         memset(_set, 0, sizeof(_set));
-        for (size_t i(0), m(s.size()); i < m; i++) {
-            add(s[i]);
+        for (char c : s) {
+            add(c);
         }
     }
-    bool contains(uint8_t c) const {
+    [[nodiscard]] bool contains(uint8_t c) const {
         return _set[c];
     }
     void add(uint8_t c) {
@@ -48,8 +48,8 @@ stripString(vespalib::stringref source, const AsciiSet & strip)
 size_t
 countSeparators(vespalib::stringref source, const AsciiSet & sep) {
     size_t count(0);
-    for (Token::size_type i = 0; i < source.size(); ++i) {
-        if (sep.contains(source[i])) {
+    for (char c : source) {
+        if (sep.contains(c)) {
             count++;
         }
     }
@@ -68,7 +68,7 @@ parse(TokenList& output, vespalib::stringref source, const AsciiSet & separators
     }
     output.push_back(stripString(source.substr(start), strip));
     // Don't keep a single empty element
-    if (output.size() == 1 && output[0].size() == 0) output.pop_back();
+    if (output.size() == 1 && output[0].empty()) output.pop_back();
 }
 
 } // private namespace
@@ -85,6 +85,8 @@ StringTokenizer::StringTokenizer(vespalib::stringref source,
     _tokens.reserve(countSeparators(source, sep) + 1);
     parse(_tokens, source, sep, str);
 }
+
+StringTokenizer::~StringTokenizer() = default;
 
 void
 StringTokenizer::removeEmptyTokens()

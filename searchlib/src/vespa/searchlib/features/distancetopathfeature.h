@@ -10,7 +10,7 @@ namespace search::features {
  * Define the point type that makes up the end-points in our path.
  */
 struct Vector2 {
-    Vector2(double _x, double _y) : x(_x), y(_y) { }
+    Vector2(double _x, double _y) noexcept : x(_x), y(_y) { }
     double x, y;
 };
 
@@ -51,8 +51,8 @@ public:
     DistanceToPathBlueprint();
     ~DistanceToPathBlueprint() override;
     void visitDumpFeatures(const fef::IIndexEnvironment &env, fef::IDumpFeatureVisitor &visitor) const override;
-    fef::Blueprint::UP createInstance() const override;
-    fef::ParameterDescriptions getDescriptions() const override {
+    [[nodiscard]] fef::Blueprint::UP createInstance() const override;
+    [[nodiscard]] fef::ParameterDescriptions getDescriptions() const override {
         return fef::ParameterDescriptions().desc().string();
     }
 
