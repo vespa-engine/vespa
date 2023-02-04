@@ -207,7 +207,7 @@ struct FtTestApp : public vespalib::TestApp {
                         const StringList &expected);
 
     static void FT_EQUAL(const std::vector<string> &expected, const std::vector<string> &actual,
-                         const vespalib::string prefix = "");
+                         const vespalib::string & prefix = "");
 
     static void FT_LOG(const search::fef::Blueprint &prototype, const search::fef::test::IndexEnvironment &env, const StringList &params);
     static void FT_LOG(const vespalib::string &prefix, const std::vector<vespalib::string> &arr);

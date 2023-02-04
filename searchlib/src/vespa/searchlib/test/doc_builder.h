@@ -42,9 +42,7 @@ public:
     const document::DataType &get_data_type(const vespalib::string &name) const;
     const DocumenttypesConfig& get_documenttypes_config() const noexcept { return *_document_types_config; }
     document::ArrayFieldValue make_array(vespalib::stringref field_name);
-    document::MapFieldValue make_map(vespalib::stringref field_name);
     document::WeightedSetFieldValue make_wset(vespalib::stringref field_name);
-    document::StructFieldValue make_struct(vespalib::stringref field_name);
 };
 
 }

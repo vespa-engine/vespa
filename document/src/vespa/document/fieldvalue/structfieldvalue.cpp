@@ -7,7 +7,6 @@
 #include <vespa/document/repo/documenttyperepo.h>
 #include <vespa/document/serialization/vespadocumentdeserializer.h>
 #include <vespa/vespalib/objects/nbostream.h>
-#include <vespa/vespalib/util/crc.h>
 #include <vespa/document/datatype/positiondatatype.h>
 #include <vespa/document/util/serializableexceptions.h>
 #include <vespa/document/base/exceptions.h>
@@ -148,7 +147,7 @@ StructFieldValue::getFieldValue(const Field& field) const
         }
         return value;
     }
-    return FieldValue::UP();
+    return {};
 }
 
 vespalib::ConstBufferRef
@@ -159,7 +158,7 @@ StructFieldValue::getRawField(uint32_t id) const
         return buf;
     }
 
-    return vespalib::ConstBufferRef();
+    return {};
 }
 
 bool
@@ -263,15 +262,6 @@ StructFieldValue::compare(const FieldValue& otherOrg) const
         return a.size() < b.size() ? -1 : 1;
     }
     return 0;
-}
-
-uint32_t
-StructFieldValue::calculateChecksum() const
-{
-    nbostream buffer(serialize());
-    vespalib::crc_32_type calculator;
-    calculator.process_bytes(buffer.peek(), buffer.size());
-    return calculator.checksum();
 }
 
 void

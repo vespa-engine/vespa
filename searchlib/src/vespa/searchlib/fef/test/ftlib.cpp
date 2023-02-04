@@ -4,7 +4,7 @@
 #include "dummy_dependency_handler.h"
 #include <vespa/searchlib/features/utils.h>
 #include <vespa/vespalib/util/stringfmt.h>
-#include <boost/tokenizer.hpp>
+#include <vespa/vespalib/text/stringtokenizer.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".ftlib");
@@ -26,12 +26,9 @@ FtQueryEnvironment::FtQueryEnvironment(search::fef::test::IndexEnvironment &env)
 {
 }
 
-FtQueryEnvironment::~FtQueryEnvironment() { }
+FtQueryEnvironment::~FtQueryEnvironment() = default;
 
-FtDumpFeatureVisitor::FtDumpFeatureVisitor() :
-    _features()
-{
-}
+FtDumpFeatureVisitor::FtDumpFeatureVisitor() = default;
 
 FtFeatureTest::FtFeatureTest(search::fef::BlueprintFactory &factory, const vespalib::string &feature) :
     _indexEnv(),
@@ -49,7 +46,7 @@ FtFeatureTest::FtFeatureTest(search::fef::BlueprintFactory &factory, const std::
 {
 }
 
-FtFeatureTest::~FtFeatureTest() {}
+FtFeatureTest::~FtFeatureTest() = default;
 
 //---------------------------------------------------------------------------------------------------------------------
 // FtUtil
@@ -57,19 +54,16 @@ FtFeatureTest::~FtFeatureTest() {}
 std::vector<vespalib::string>
 FtUtil::tokenize(const vespalib::string & str, const vespalib::string & separator)
 {
-    using Tokenizer = boost::tokenizer<boost::char_separator<char> >;
-    using Separator = boost::char_separator<char>;
-
     std::vector<vespalib::string> retval;
     if (separator != vespalib::string("")) {
-        std::string stdstr(str);
-        Tokenizer tnz(stdstr, Separator(separator.c_str()));
-        for (Tokenizer::const_iterator itr = tnz.begin(); itr != tnz.end(); ++itr) {
-            retval.push_back(*itr);
+        vespalib::StringTokenizer tnz(str, separator);
+        tnz.removeEmptyTokens();
+        for (auto token : tnz) {
+            retval.emplace_back(token);
         }
     } else {
         for (uint32_t i = 0; i < str.size(); ++i) {
-            retval.push_back(str.substr(i, 1));
+            retval.emplace_back(str.substr(i, 1));
         }
     }
     return retval;
@@ -87,15 +81,15 @@ FtUtil::toQuery(const vespalib::string & query, const vespalib::string & separat
         std::vector<vespalib::string> connexitySplit = FtUtil::tokenize(weightSplit[0], vespalib::string(":"));
         if (connexitySplit.size() > 1) {
             retval[i].term = connexitySplit[1];
-            retval[i].connexity = search::features::util::strToNum<feature_t>(connexitySplit[0]);
+            retval[i].connexity = util::strToNum<feature_t>(connexitySplit[0]);
         } else {
             retval[i].term = connexitySplit[0];
         }
         if (significanceSplit.size() > 1) {
-            retval[i].significance = search::features::util::strToNum<feature_t>(significanceSplit[1]);
+            retval[i].significance = util::strToNum<feature_t>(significanceSplit[1]);
         }
         if (weightSplit.size() > 1) {
-            retval[i].termWeight.setPercent(search::features::util::strToNum<uint32_t>(weightSplit[1]));
+            retval[i].termWeight.setPercent(util::strToNum<uint32_t>(weightSplit[1]));
         }
     }
     return retval;
@@ -106,8 +100,8 @@ FtUtil::toRankResult(const vespalib::string & baseName, const vespalib::string &
 {
     RankResult retval;
     std::vector<vespalib::string> prepResult = FtUtil::tokenize(result, separator);
-    for (uint32_t i = 0; i < prepResult.size(); ++i) {
-        std::vector<vespalib::string> rs = FtUtil::tokenize(prepResult[i], ":");
+    for (const auto & str : prepResult) {
+        std::vector<vespalib::string> rs = FtUtil::tokenize(str, ":");
         vespalib::string name = rs[0];
         vespalib::string value = rs[1];
         retval.addScore(baseName + "." + name, search::features::util::strToNum<feature_t>(value));
@@ -115,7 +109,7 @@ FtUtil::toRankResult(const vespalib::string & baseName, const vespalib::string &
     return retval;
 }
 
-FtIndex::~FtIndex() {}
+FtIndex::~FtIndex() = default;
 
 //---------------------------------------------------------------------------------------------------------------------
 // FtTestApp
@@ -187,9 +181,9 @@ FtTestApp::FT_DUMP(search::fef::BlueprintFactory &factory, const vespalib::strin
 {
     FtDumpFeatureVisitor dfv;
     search::fef::Blueprint::SP bp = factory.createBlueprint(baseName);
-    if (bp.get() == NULL) {
+    if ( ! bp) {
         LOG(error, "Blueprint '%s' does not exist in factory, did you forget to add it?", baseName.c_str());
-        ASSERT_TRUE(bp.get() != NULL);
+        ASSERT_TRUE(bp);
     }
     bp->visitDumpFeatures(env, dfv);
     FT_EQUAL(expected, dfv.features(), "Dump");
@@ -197,7 +191,7 @@ FtTestApp::FT_DUMP(search::fef::BlueprintFactory &factory, const vespalib::strin
 
 void
 FtTestApp::FT_EQUAL(const std::vector<string> &expected, const std::vector<string> &actual,
-                    const vespalib::string prefix)
+                    const vespalib::string &prefix)
 {
     FT_LOG(prefix + " expected", expected);
     FT_LOG(prefix + " actual  ", actual);
@@ -215,9 +209,8 @@ FtTestApp::FT_LOG(const search::fef::Blueprint &prototype, const search::fef::te
 {
     LOG(info, "Testing blueprint '%s'.", prototype.getBaseName().c_str());
     std::vector<vespalib::string> arr;
-    for (std::vector<search::fef::FieldInfo>::const_iterator it = env.getFields().begin();
-         it != env.getFields().end(); ++it) {
-        arr.push_back(it->name());
+    for (const auto & it : env.getFields()) {
+        arr.push_back(it.name());
     }
     FT_LOG("Environment  ", arr);
     FT_LOG("Parameters   ", params);
@@ -252,8 +245,7 @@ FtTestApp::FT_SETUP(FtFeatureTest &test, const vespalib::string &query, const St
 
     // Add all occurences.
     search::fef::test::MatchDataBuilder::UP mdb = test.createMatchDataBuilder();
-    for (StringMap::const_iterator it = index.begin();
-         it != index.end(); ++it) {
+    for (auto it = index.begin();it != index.end(); ++it) {
         ASSERT_TRUE(mdb->setFieldLength(it->first, it->second.size()));
         for (uint32_t i = 0; i < it->second.size(); ++i) {
             size_t pos = query.find_first_of(it->second[i]);
@@ -276,10 +268,10 @@ FtTestApp::FT_SETUP(FtFeatureTest & test, const std::vector<FtQueryTerm> & query
     search::fef::test::MatchDataBuilder::UP mdb = test.createMatchDataBuilder();
 
     // Add all occurences.
-    for (StringVectorMap::const_iterator itr = index.begin(); itr != index.end(); ++itr) {
+    for (auto itr = index.begin(); itr != index.end(); ++itr) {
         ASSERT_TRUE(mdb->setFieldLength(itr->first, itr->second.size()));
         for (uint32_t i = 0; i < itr->second.size(); ++i) {
-            FtQuery::const_iterator fitr = query.begin();
+            auto fitr = query.begin();
             for (;;) {
                 fitr = std::find(fitr, query.end(), FtQueryTerm(itr->second[i]));
                 if (fitr != query.end()) {
@@ -304,7 +296,7 @@ FtTestApp::FT_SETUP(FtFeatureTest &test, const FtQuery &query, const FtIndex &in
     search::fef::test::MatchDataBuilder::UP mdb = test.createMatchDataBuilder();
 
     // Add all occurences.
-    for (FtIndex::FieldMap::const_iterator itr = index.index.begin(); itr != index.index.end(); ++itr) {
+    for (auto itr = index.index.begin(); itr != index.index.end(); ++itr) {
         const FtIndex::Field &field = itr->second;
         for (size_t e = 0; e < field.size(); ++e) {
             const FtIndex::Element &element = field[e];
@@ -353,7 +345,7 @@ FtTestApp::setupFieldMatch(FtFeatureTest & ft, const vespalib::string & indexNam
 {
     ft.getIndexEnv().getBuilder().addField(FieldType::INDEX, FieldInfo::CollectionType::SINGLE, indexName);
 
-    if (params != NULL) {
+    if (params != nullptr) {
         Properties & p = ft.getIndexEnv().getProperties();
         p.add("fieldMatch(" + indexName + ").proximityLimit", vespalib::make_string("%u", params->getProximityLimit()));
         p.add("fieldMatch(" + indexName + ").maxAlternativeSegmentations", vespalib::make_string("%u", params->getMaxAlternativeSegmentations()));
@@ -364,10 +356,8 @@ FtTestApp::setupFieldMatch(FtFeatureTest & ft, const vespalib::string & indexNam
         p.add("fieldMatch(" + indexName + ").segmentProximityImportance", vespalib::make_string("%f", params->getSegmentProximityImportance()));
         p.add("fieldMatch(" + indexName + ").occurrenceImportance", vespalib::make_string("%f", params->getOccurrenceImportance()));
         p.add("fieldMatch(" + indexName + ").fieldCompletenessImportance", vespalib::make_string("%f", params->getFieldCompletenessImportance()));
-        for (std::vector<feature_t>::const_iterator it = params->getProximityTable().begin();
-             it != params->getProximityTable().end(); ++it)
-        {
-            p.add("fieldMatch(" + indexName + ").proximityTable", vespalib::make_string("%f", *it));
+        for (double it : params->getProximityTable()) {
+            p.add("fieldMatch(" + indexName + ").proximityTable", vespalib::make_string("%f", it));
         }
     }
 
