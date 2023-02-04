@@ -136,7 +136,6 @@ private:
     virtual void configure(std::unique_ptr<document::config::DocumenttypesConfig> config,
                            bool hasChanged, int64_t generation);
     void configure(std::unique_ptr<BucketspacesConfig>) override;
-    void updateUpgradeFlag(const UpgradingConfig&);
 
 protected:
         // Lock taken while doing configuration of the server.

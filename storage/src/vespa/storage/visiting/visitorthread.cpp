@@ -11,7 +11,6 @@
 #include <vespa/storage/config/config-stor-server.h>
 #include <vespa/vespalib/stllike/asciistream.h>
 #include <vespa/vespalib/util/exceptions.h>
-#include <locale>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".visitor.thread");
@@ -95,7 +94,7 @@ VisitorThread::VisitorThread(uint32_t threadIndex,
       _visitorFactories(visitorFactories)
 {
     _thread = _component.startThread(*this, 30s, 1s, 1, vespalib::CpuUsage::Category::READ);
-    _component.registerMetricUpdateHook(*this, framework::SecondTime(5));
+    _component.registerMetricUpdateHook(*this, 5s);
 }
 
 VisitorThread::~VisitorThread()

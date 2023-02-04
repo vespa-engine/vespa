@@ -230,7 +230,7 @@ CommunicationManager::CommunicationManager(StorageComponentRegister& compReg, co
       _docApiConverter(configUri, std::make_shared<PlaceHolderBucketResolver>()),
       _thread()
 {
-    _component.registerMetricUpdateHook(*this, framework::SecondTime(5));
+    _component.registerMetricUpdateHook(*this, 5s);
     _component.registerMetric(_metrics);
 }
 
