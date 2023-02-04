@@ -1,7 +1,6 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
-#include <boost/operators.hpp>
 #include <vespa/vespalib/stllike/string.h>
 #include <vespa/vespalib/util/time.h>
 
@@ -45,37 +44,34 @@ uint64_t getRawMicroTime(const Clock&);
  * automatic conversion between time types.
  */
 template<typename Type, int MicrosPerUnit>
-class Time : public boost::operators<Type>
+class Time
 {
     uint64_t _time; // time_t may be signed. Negative timestamps is just a
                     // source for bugs. Enforce unsigned.
 
 protected:
-    Time(uint64_t t) : _time(t) {}
+    explicit Time(uint64_t t) : _time(t) {}
 
 public:
-    uint64_t getTime() const { return _time; }
+    [[nodiscard]] uint64_t getTime() const { return _time; }
     void setTime(uint64_t t) { _time = t; }
-    bool isSet() const { return (_time != 0); }
+    [[nodiscard]] bool isSet() const { return (_time != 0); }
 
-    Type& operator-=(const Type& o)
-        { _time -= o._time; return static_cast<Type&>(*this); }
-    Type& operator+=(const Type& o)
-        { _time += o._time; return static_cast<Type&>(*this); }
+    Type& operator-=(const Type& o) { _time -= o._time; return static_cast<Type&>(*this); }
+    Type& operator+=(const Type& o) { _time += o._time; return static_cast<Type&>(*this); }
     bool operator<(const Type& o) const { return (_time < o._time); }
+    bool operator<=(const Type& o) const { return (_time <= o._time); }
+    bool operator>=(const Type& o) const { return (_time >= o._time); }
+    bool operator>(const Type& o) const { return (_time > o._time); }
     bool operator==(const Type& o) const { return (_time == o._time); }
     Type& operator++() { ++_time; return static_cast<Type&>(*this); }
     Type& operator--() { --_time; return *this; }
 
-    Type getDiff(const Type& o) const {
-        return Type(_time > o._time ? _time - o._time : o._time - _time);
-    }
-
-    vespalib::string toString(TimeFormat timeFormat = DATETIME) const {
+    [[nodiscard]] vespalib::string toString(TimeFormat timeFormat = DATETIME) const {
         return getTimeString(_time * MicrosPerUnit, timeFormat);
     }
 
-    static Type max() { return Type(std::numeric_limits<uint64_t>().max()); }
+    static Type max() { return Type(std::numeric_limits<uint64_t>::max()); }
     static Type min() { return Type(0); }
 
 };
@@ -116,8 +112,8 @@ struct SecondTime : public Time<SecondTime, 1000000> {
     explicit SecondTime(const Clock& clock)
         : Time<SecondTime, 1000000>(getRawMicroTime(clock) / 1000000) {}
 
-    MilliSecTime getMillis() const;
-    MicroSecTime getMicros() const;
+    [[nodiscard]] MilliSecTime getMillis() const;
+    [[nodiscard]] MicroSecTime getMicros() const;
 };
 
 /**
@@ -135,8 +131,8 @@ struct MilliSecTime : public Time<MilliSecTime, 1000> {
     explicit MilliSecTime(const Clock& clock)
         : Time<MilliSecTime, 1000>(getRawMicroTime(clock) / 1000) {}
 
-    SecondTime getSeconds() const { return SecondTime(getTime() / 1000); }
-    MicroSecTime getMicros() const;
+    [[nodiscard]] SecondTime getSeconds() const { return SecondTime(getTime() / 1000); }
+    [[nodiscard]] MicroSecTime getMicros() const;
 };
 
 /**
@@ -154,8 +150,8 @@ struct MicroSecTime : public Time<MicroSecTime, 1> {
     explicit MicroSecTime(const Clock& clock)
         : Time<MicroSecTime, 1>(getRawMicroTime(clock)) {}
 
-    MilliSecTime getMillis() const { return MilliSecTime(getTime() / 1000); }
-    SecondTime getSeconds() const { return SecondTime(getTime() / 1000000); }
+    [[nodiscard]] MilliSecTime getMillis() const { return MilliSecTime(getTime() / 1000); }
+    [[nodiscard]] SecondTime getSeconds() const { return SecondTime(getTime() / 1000000); }
 };
 
 inline MilliSecTime SecondTime::getMillis() const {
@@ -168,6 +164,41 @@ inline MicroSecTime SecondTime::getMicros() const {
 
 inline MicroSecTime MilliSecTime::getMicros() const {
     return MicroSecTime(getTime() * 1000);
+}
+
+inline MicroSecTime
+operator + (MicroSecTime a, MicroSecTime b) {
+    MicroSecTime result(a);
+    result += b;
+    return result;
+}
+
+inline MilliSecTime
+operator + (MilliSecTime a, MilliSecTime b) {
+    MilliSecTime result(a);
+    result += b;
+    return result;
+}
+
+inline SecondTime
+operator + (SecondTime a, SecondTime b) {
+    SecondTime result(a);
+    result += b;
+    return result;
+}
+
+inline MicroSecTime
+operator - (MicroSecTime a, MicroSecTime b) {
+    MicroSecTime result(a);
+    result -= b;
+    return result;
+}
+
+inline SecondTime
+operator - (SecondTime a, SecondTime b) {
+    SecondTime result(a);
+    result -= b;
+    return result;
 }
 
 }
