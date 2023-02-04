@@ -1655,6 +1655,7 @@ TEST_F(DocumentSelectParserTest, test_parse_utilities_handle_malformed_input)
     // TODO double outside representable range returns Inf, but we probably would
     // like this to trigger a parse failure?
     check_parse_double("1.79769e+309", true, std::numeric_limits<double>::infinity());
+    check_parse_double("-1.79769e+309", true, -std::numeric_limits<double>::infinity());
 }
 
 TEST_F(DocumentSelectParserTest, imported_field_references_are_treated_as_valid_field_with_missing_value) {
