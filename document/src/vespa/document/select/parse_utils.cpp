@@ -23,7 +23,9 @@ bool
 parse_double(const char* str, size_t len, double& out) {
     auto res = std::from_chars(str, str+len, out);
     if (res.ec == std::errc::result_out_of_range) {
-        out = std::numeric_limits<double>::infinity();
+        out = (str[0] == '-')
+            ? -std::numeric_limits<double>::infinity()
+            : std::numeric_limits<double>::infinity();
         return true;
     }
     return (res.ec == std::errc()) && (res.ptr == str+len);
