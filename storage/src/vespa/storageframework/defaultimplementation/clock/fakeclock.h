@@ -60,11 +60,7 @@ public:
         _absoluteTime += framework::MicroSecTime(nr * uint64_t(1000000));
     }
 
-    framework::MicroSecTime getTimeInMicros() const override {
-        std::lock_guard guard(_lock);
-        if (_mode == FAKE_ABSOLUTE) return _absoluteTime;
-        return _absoluteTime + framework::MicroSecTime(1000000 * _cycleCount++);
-    }
+    framework::MicroSecTime getTimeInMicros() const override ;
     framework::MilliSecTime getTimeInMillis() const override {
         return getTimeInMicros().getMillis();
     }
@@ -73,8 +69,7 @@ public:
     }
     framework::MonotonicTimePoint getMonotonicTime() const override {
         // For simplicity, assume fake monotonic time follows fake wall clock.
-        return MonotonicTimePoint(std::chrono::microseconds(
-                getTimeInMicros().getTime()));
+        return MonotonicTimePoint(std::chrono::microseconds(getTimeInMicros().getTime()));
     }
 };
 
