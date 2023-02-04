@@ -3,7 +3,6 @@
 #include "document.h"
 #include "structuredcache.h"
 #include <vespa/document/datatype/documenttype.h>
-#include <vespa/vespalib/util/crc.h>
 #include <vespa/document/repo/documenttyperepo.h>
 #include <vespa/document/serialization/vespadocumentdeserializer.h>
 #include <vespa/document/serialization/vespadocumentserializer.h>
@@ -236,20 +235,6 @@ Document::toXml(const std::string& indent) const
     XmlOutputStream xos(ost, indent);
     printXml(xos);
     return ost.str();
-}
-
-uint32_t
-Document::calculateChecksum() const
-{
-    vespalib::string docId(_id.toString());
-    const vespalib::string & typeName(getType().getName());
-    uint16_t typeVersion(0);  // Hardcode version 0 (version not supported)
-
-    vespalib::crc_32_type calculator;
-    calculator.process_bytes(docId.c_str(), docId.size());
-    calculator.process_bytes(typeName.c_str(), typeName.size());
-    calculator.process_bytes(&typeVersion, sizeof(typeVersion));
-    return calculator.checksum() ^ _fields.calculateChecksum();
 }
 
 void Document::serializeHeader(nbostream& stream) const {

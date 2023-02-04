@@ -30,7 +30,7 @@ public:
 
     StringFieldValue &operator=(const StringFieldValue &rhs);
     StringFieldValue &operator=(vespalib::stringref value) override;
-    ~StringFieldValue();
+    ~StringFieldValue() override;
 
     FieldValue &assign(const FieldValue &) override;
 
@@ -69,9 +69,9 @@ private:
         VESPA_DLL_LOCAL AnnotationData(vespalib::ConstBufferRef serialized, const FixedTypeRepo &repo,
                                        uint8_t version, bool isSerializedDataLongLived);
 
-        bool hasSpanTrees() const { return _serialized.size() > 0u; }
-        vespalib::ConstBufferRef getSerializedAnnotations() const { return _serialized; }
-        VESPA_DLL_LOCAL SpanTrees getSpanTrees() const;
+        [[nodiscard]] bool hasSpanTrees() const { return _serialized.size() > 0u; }
+        [[nodiscard]] vespalib::ConstBufferRef getSerializedAnnotations() const { return _serialized; }
+        [[nodiscard]] VESPA_DLL_LOCAL SpanTrees getSpanTrees() const;
     private:
         vespalib::ConstBufferRef _serialized;
         BackingBlob              _backingBlob;

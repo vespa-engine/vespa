@@ -14,7 +14,6 @@ class crc_32_type
 {
 public:
     crc_32_type() : _c(uint32_t(-1)) { }
-    void process_block(const void *start, const void *end) { process_bytes(start, (const uint8_t *)end-(const uint8_t *)start); }
     void process_bytes(const void *start, size_t sz);
     uint32_t checksum() const { return _c ^ uint32_t(-1); }
     static uint32_t crc(const void * v, size_t sz);

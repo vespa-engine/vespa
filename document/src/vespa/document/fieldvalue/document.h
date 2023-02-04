@@ -106,7 +106,6 @@ public:
 
     bool empty() const override { return _fields.empty(); }
 
-    uint32_t calculateChecksum() const;
     void setFieldValue(const Field& field, FieldValue::UP data) override;
 private:
     friend TransactionGuard;
@@ -125,7 +124,7 @@ private:
 
 class TransactionGuard {
 public:
-    TransactionGuard(Document & value)
+    explicit TransactionGuard(Document & value)
         : _value(value)
     {
         _value.beginTransaction();

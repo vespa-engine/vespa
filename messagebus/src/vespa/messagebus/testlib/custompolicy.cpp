@@ -4,7 +4,7 @@
 #include <vespa/messagebus/emptyreply.h>
 #include <vespa/messagebus/errorcode.h>
 #include <vespa/messagebus/routing/routingcontext.h>
-#include <boost/tokenizer.hpp>
+#include <vespa/vespalib/text/stringtokenizer.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".custompolicy");
@@ -114,15 +114,9 @@ std::vector<Route>
 CustomPolicyFactory::parseRoutes(const string &str)
 {
     std::vector<Route> routes;
-    using Separator = boost::char_separator<char>;
-    using Tokenizer = boost::tokenizer<Separator>;
-    Separator separator(",");
-    std::string stdstr(str);
-    Tokenizer tokenizer(stdstr, separator);
-    for (Tokenizer::iterator it = tokenizer.begin();
-         it != tokenizer.end(); ++it)
-    {
-        routes.push_back(Route::parse(*it));
+    vespalib::StringTokenizer tokenizer(str, ",", "");
+    for (const auto & token : tokenizer) {
+        routes.emplace_back(Route::parse(token));
     }
     return routes;
 }

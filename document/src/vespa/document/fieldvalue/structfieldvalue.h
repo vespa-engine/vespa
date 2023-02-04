@@ -35,7 +35,7 @@ private:
 public:
     using UP = std::unique_ptr<StructFieldValue>;
 
-    StructFieldValue(const DataType &type);
+    explicit StructFieldValue(const DataType &type);
     StructFieldValue(const StructFieldValue & rhs);
     StructFieldValue & operator = (const StructFieldValue & rhs);
     StructFieldValue(StructFieldValue && rhs) noexcept = default;
@@ -82,8 +82,6 @@ public:
      * information from last serialization effort is still valid.
      */
     bool hasChanged() const { return _hasChanged; }
-
-    uint32_t calculateChecksum() const;
 
     /**
      * Called by document to reset struct when deserializing where this struct
