@@ -84,7 +84,7 @@ TopLevelDistributor::TopLevelDistributor(DistributorComponentRegister& compReg,
 {
     _component.registerMetric(*_total_metrics);
     _ideal_state_component.registerMetric(*_ideal_state_total_metrics);
-    _component.registerMetricUpdateHook(_metricUpdateHook, framework::SecondTime(0));
+    _component.registerMetricUpdateHook(_metricUpdateHook, 0s);
 
     assert(num_distributor_stripes == adjusted_num_stripes(num_distributor_stripes));
     _n_stripe_bits = calc_num_stripe_bits(num_distributor_stripes);

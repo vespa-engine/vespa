@@ -28,7 +28,7 @@ StatusMetricConsumer::StatusMetricConsumer(
 {
     LOG(debug, "Started metrics consumer");
     setlocale(LC_NUMERIC, "");
-    _component.registerMetricUpdateHook(*this, framework::SecondTime(3600));
+    _component.registerMetricUpdateHook(*this, 3600s);
     _component.registerStatusPage(*this);
 }
 

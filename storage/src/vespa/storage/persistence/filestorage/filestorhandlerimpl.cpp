@@ -76,7 +76,7 @@ FileStorHandlerImpl::FileStorHandlerImpl(uint32_t numThreads, uint32_t numStripe
     }
 
     // Add update hook, so we will get callbacks each 5 seconds to update metrics.
-    _component.registerMetricUpdateHook(*this, framework::SecondTime(5));
+    _component.registerMetricUpdateHook(*this, 5s);
 }
 
 FileStorHandlerImpl::~FileStorHandlerImpl()

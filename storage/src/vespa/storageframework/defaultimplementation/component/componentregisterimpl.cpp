@@ -16,7 +16,6 @@ ComponentRegisterImpl::ComponentRegisterImpl()
       _metricManager(nullptr),
       _clock(nullptr),
       _threadPool(nullptr),
-      _upgradeFlag(NO_UPGRADE_SPECIAL_HANDLING_ACTIVE),
       _shutdownListener(nullptr)
 { }
 
@@ -36,7 +35,6 @@ ComponentRegisterImpl::registerComponent(ManagedComponent& mc)
     if (_metricManager) {
         mc.setMetricRegistrator(*this);
     }
-    mc.setUpgradeFlag(_upgradeFlag);
 }
 
 void
@@ -62,7 +60,7 @@ ComponentRegisterImpl::setMetricManager(metrics::MetricManager& mm)
         metrics::MetricLockGuard lock(mm.getMetricLock());
         mm.registerMetric(lock, _topMetricSet);
     }
-    for (auto* component : _components) {
+    for (auto* component : components) {
         component->setMetricRegistrator(*this);
     }
 }
@@ -86,16 +84,6 @@ ComponentRegisterImpl::setThreadPool(ThreadPool& tp)
     _threadPool = &tp;
     for (auto* component : _components) {
         component->setThreadPool(tp);
-    }
-}
-
-void
-ComponentRegisterImpl::setUpgradeFlag(UpgradeFlags flag)
-{
-    std::lock_guard lock(_componentLock);
-    _upgradeFlag = flag;
-    for (auto* component : _components) {
-        component->setUpgradeFlag(_upgradeFlag);
     }
 }
 
@@ -150,11 +138,11 @@ namespace {
 void
 ComponentRegisterImpl::registerUpdateHook(vespalib::stringref name,
                                           MetricUpdateHook& hook,
-                                          SecondTime period)
+                                          vespalib::duration period)
 {
     std::lock_guard lock(_componentLock);
     auto hookPtr = std::make_unique<MetricHookWrapper>(name, hook);
-    _metricManager->addMetricUpdateHook(*hookPtr, period.getTime());
+    _metricManager->addMetricUpdateHook(*hookPtr, vespalib::to_s(period));
     _hooks.emplace_back(std::move(hookPtr));
 }
 

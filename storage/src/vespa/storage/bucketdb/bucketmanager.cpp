@@ -50,13 +50,11 @@ BucketManager::BucketManager(const config::ConfigUri & configUri,
 {
     _component.registerStatusPage(*this);
     _component.registerMetric(*_metrics);
-    _component.registerMetricUpdateHook(*this, framework::SecondTime(300));
+    _component.registerMetricUpdateHook(*this, 300s);
 
         // Initialize min used bits to default value used here.
-    NodeStateUpdater::Lock::SP lock(
-            _component.getStateUpdater().grabStateChangeLock());
-    lib::NodeState ns(
-            *_component.getStateUpdater().getReportedNodeState());
+    NodeStateUpdater::Lock::SP lock(_component.getStateUpdater().grabStateChangeLock());
+    lib::NodeState ns(*_component.getStateUpdater().getReportedNodeState());
     ns.setMinUsedBits(58);
     _component.getStateUpdater().setReportedNodeState(ns);
 
@@ -94,117 +92,117 @@ BucketManager::print(std::ostream& out, bool verbose,
 
 namespace {
 
-    template<bool log>
-    class DistributorInfoGatherer
+template<bool log>
+class DistributorInfoGatherer
+{
+    using ResultArray = api::RequestBucketInfoReply::EntryVector;
+
+    DistributorStateCache                      _state;
+    std::unordered_map<uint16_t, ResultArray>& _result;
+    const document::BucketIdFactory&           _factory;
+    std::shared_ptr<const lib::Distribution>  _storageDistribution;
+
+public:
+    DistributorInfoGatherer(
+            const lib::ClusterState& systemState,
+            std::unordered_map<uint16_t, ResultArray>& result,
+            const document::BucketIdFactory& factory,
+            std::shared_ptr<const lib::Distribution> distribution)
+        : _state(*distribution, systemState),
+          _result(result),
+          _factory(factory),
+          _storageDistribution(std::move(distribution))
     {
-        using ResultArray = api::RequestBucketInfoReply::EntryVector;
+    }
 
-        DistributorStateCache                      _state;
-        std::unordered_map<uint16_t, ResultArray>& _result;
-        const document::BucketIdFactory&           _factory;
-        std::shared_ptr<const lib::Distribution>  _storageDistribution;
-
-    public:
-        DistributorInfoGatherer(
-                const lib::ClusterState& systemState,
-                std::unordered_map<uint16_t, ResultArray>& result,
-                const document::BucketIdFactory& factory,
-                std::shared_ptr<const lib::Distribution> distribution)
-            : _state(*distribution, systemState),
-              _result(result),
-              _factory(factory),
-              _storageDistribution(std::move(distribution))
-        {
-        }
-
-        StorBucketDatabase::Decision operator()(uint64_t bucketId,
-                                                const StorBucketDatabase::Entry& data)
-        {
-            document::BucketId b(document::BucketId::keyToBucketId(bucketId));
-            try{
-                uint16_t i = _state.getOwner(b);
-                auto it = _result.find(i);
-                if constexpr (log) {
-                    LOG(spam, "Bucket %s (reverse %" PRIu64 "), should be handled"
-                              " by distributor %u which we are %sgenerating "
-                              "state for.",
-                        b.toString().c_str(), bucketId, i,
-                        it == _result.end() ? "not " : "");
-                }
-                if (it != _result.end()) {
-                    api::RequestBucketInfoReply::Entry entry;
-                    entry._bucketId = b;
-                    entry._info = data.getBucketInfo();
-                    it->second.push_back(entry);
-                }
-            } catch (lib::TooFewBucketBitsInUseException& e) {
-                LOGBP(warning, "Cannot assign bucket %s to a distributor "
-                               " as bucket only specifies %u bits.",
-                      b.toString().c_str(),
-                      b.getUsedBits());
-            } catch (lib::NoDistributorsAvailableException& e) {
-                LOGBP(warning, "No distributors available while processing "
-                               "request bucket info. Distribution hash: %s, "
-                               "cluster state: %s",
-                      _state.getDistribution().getNodeGraph()
-                      .getDistributionConfigHash().c_str(),
-                      _state.getClusterState().toString().c_str());
+    StorBucketDatabase::Decision operator()(uint64_t bucketId,
+                                            const StorBucketDatabase::Entry& data)
+    {
+        document::BucketId b(document::BucketId::keyToBucketId(bucketId));
+        try{
+            uint16_t i = _state.getOwner(b);
+            auto it = _result.find(i);
+            if constexpr (log) {
+                LOG(spam, "Bucket %s (reverse %" PRIu64 "), should be handled"
+                          " by distributor %u which we are %sgenerating "
+                          "state for.",
+                    b.toString().c_str(), bucketId, i,
+                    it == _result.end() ? "not " : "");
             }
-            return StorBucketDatabase::Decision::CONTINUE;
+            if (it != _result.end()) {
+                api::RequestBucketInfoReply::Entry entry;
+                entry._bucketId = b;
+                entry._info = data.getBucketInfo();
+                it->second.push_back(entry);
+            }
+        } catch (lib::TooFewBucketBitsInUseException& e) {
+            LOGBP(warning, "Cannot assign bucket %s to a distributor "
+                           " as bucket only specifies %u bits.",
+                  b.toString().c_str(),
+                  b.getUsedBits());
+        } catch (lib::NoDistributorsAvailableException& e) {
+            LOGBP(warning, "No distributors available while processing "
+                           "request bucket info. Distribution hash: %s, "
+                           "cluster state: %s",
+                  _state.getDistribution().getNodeGraph()
+                  .getDistributionConfigHash().c_str(),
+                  _state.getClusterState().toString().c_str());
         }
+        return StorBucketDatabase::Decision::CONTINUE;
+    }
 
+};
+
+struct MetricsUpdater {
+    struct Count {
+        uint64_t docs;
+        uint64_t bytes;
+        uint64_t buckets;
+        uint64_t active;
+        uint64_t ready;
+
+        constexpr Count() noexcept : docs(0), bytes(0), buckets(0), active(0), ready(0) {}
     };
 
-    struct MetricsUpdater {
-        struct Count {
-            uint64_t docs;
-            uint64_t bytes;
-            uint64_t buckets;
-            uint64_t active;
-            uint64_t ready;
+    Count    count;
+    uint32_t lowestUsedBit;
 
-            constexpr Count() noexcept : docs(0), bytes(0), buckets(0), active(0), ready(0) {}
-        };
+    constexpr MetricsUpdater() noexcept
+        : count(), lowestUsedBit(58) {}
 
-        Count    count;
-        uint32_t lowestUsedBit;
+    void operator()(document::BucketId::Type bucketId,
+                    const StorBucketDatabase::Entry& data) noexcept
+    {
+        document::BucketId bucket(
+                document::BucketId::keyToBucketId(bucketId));
 
-        constexpr MetricsUpdater() noexcept
-            : count(), lowestUsedBit(58) {}
-
-        void operator()(document::BucketId::Type bucketId,
-                        const StorBucketDatabase::Entry& data) noexcept
-        {
-            document::BucketId bucket(
-                    document::BucketId::keyToBucketId(bucketId));
-
-            if (data.valid()) {
-                ++count.buckets;
-                if (data.getBucketInfo().isActive()) {
-                    ++count.active;
-                }
-                if (data.getBucketInfo().isReady()) {
-                    ++count.ready;
-                }
-                count.docs += data.getBucketInfo().getDocumentCount();
-                count.bytes += data.getBucketInfo().getTotalDocumentSize();
-
-                if (bucket.getUsedBits() < lowestUsedBit) {
-                    lowestUsedBit = bucket.getUsedBits();
-                }
+        if (data.valid()) {
+            ++count.buckets;
+            if (data.getBucketInfo().isActive()) {
+                ++count.active;
             }
-        };
+            if (data.getBucketInfo().isReady()) {
+                ++count.ready;
+            }
+            count.docs += data.getBucketInfo().getDocumentCount();
+            count.bytes += data.getBucketInfo().getTotalDocumentSize();
 
-        void add(const MetricsUpdater& rhs) noexcept {
-            auto& d = count;
-            auto& s = rhs.count;
-            d.buckets += s.buckets;
-            d.docs    += s.docs;
-            d.bytes   += s.bytes;
-            d.ready   += s.ready;
-            d.active  += s.active;
+            if (bucket.getUsedBits() < lowestUsedBit) {
+                lowestUsedBit = bucket.getUsedBits();
+            }
         }
     };
+
+    void add(const MetricsUpdater& rhs) noexcept {
+        auto& d = count;
+        auto& s = rhs.count;
+        d.buckets += s.buckets;
+        d.docs    += s.docs;
+        d.bytes   += s.bytes;
+        d.ready   += s.ready;
+        d.active  += s.active;
+    }
+};
 
 }   // End of anonymous namespace
 

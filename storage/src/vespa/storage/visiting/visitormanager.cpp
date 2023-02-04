@@ -56,7 +56,7 @@ VisitorManager::VisitorManager(const config::ConfigUri & configUri,
     if (!defer_manager_thread_start) {
         create_and_start_manager_thread();
     }
-    _component.registerMetricUpdateHook(*this, framework::SecondTime(5));
+    _component.registerMetricUpdateHook(*this, 5s);
     _visitorFactories["dumpvisitor"]       = std::make_shared<DumpVisitorSingleFactory>();
     _visitorFactories["dumpvisitorsingle"] = std::make_shared<DumpVisitorSingleFactory>();
     _visitorFactories["testvisitor"]       = std::make_shared<TestVisitorFactory>();
