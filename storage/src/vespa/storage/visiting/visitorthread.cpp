@@ -126,10 +126,10 @@ VisitorThread::shutdown()
             if (event._message.get()) {
                 if (!event._message->getType().isReply()
                     && (event._message->getType() != api::MessageType::INTERNAL
-                        || static_cast<const api::InternalCommand&>(*event._message).getType() != PropagateVisitorConfig::ID))
+                        || dynamic_cast<const api::InternalCommand&>(*event._message).getType() != PropagateVisitorConfig::ID))
                 {
                     std::shared_ptr<api::StorageReply> reply(
-                            static_cast<api::StorageCommand&>(*event._message).makeReply());
+                            dynamic_cast<api::StorageCommand&>(*event._message).makeReply());
                     reply->setResult(api::ReturnCode(api::ReturnCode::ABORTED, "Shutting down storage node."));
                     _messageSender.send(reply);
                 }
@@ -197,7 +197,7 @@ VisitorThread::run(framework::ThreadHandle& thread)
             // disappear when no visiting is done)
             if (entry._message.get() &&
                 (entry._message->getType() != api::MessageType::INTERNAL
-                 || static_cast<api::InternalCommand&>(*entry._message).getType() != PropagateVisitorConfig::ID))
+                 || dynamic_cast<api::InternalCommand&>(*entry._message).getType() != PropagateVisitorConfig::ID))
             {
                 entry._timer.stop(_metrics.averageQueueWaitingTime);
             }

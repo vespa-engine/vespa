@@ -136,28 +136,24 @@ private:
         {}
 
         /** Sends DestroyIterator over _messageHandler if _iteratorId != 0 */
-        ~BucketIterationState();
+        ~BucketIterationState() override;
 
         void setCompleted(bool completed = true) { _completed = completed; }
-        bool isCompleted() const { return _completed; }
+        [[nodiscard]] bool isCompleted() const { return _completed; }
 
-        document::Bucket   getBucket() const { return _bucket; }
-        document::BucketId getBucketId() const { return _bucket.getBucketId(); }
+        [[nodiscard]] document::Bucket   getBucket() const { return _bucket; }
+        [[nodiscard]] document::BucketId getBucketId() const { return _bucket.getBucketId(); }
 
         void setIteratorId(spi::IteratorId iteratorId) {
             _iteratorId = iteratorId;
         }
-        spi::IteratorId getIteratorId() const { return _iteratorId; }
+        [[nodiscard]] spi::IteratorId getIteratorId() const { return _iteratorId; }
 
-        void setPendingControlCommand() {
-            _iteratorId = spi::IteratorId(0);
-        }
-
-        bool hasPendingControlCommand() const {
+        [[nodiscard]] bool hasPendingControlCommand() const {
             return _iteratorId == spi::IteratorId(0);
         }
 
-        bool hasPendingIterators() const { return _pendingIterators > 0; }
+        [[nodiscard]] bool hasPendingIterators() const { return _pendingIterators > 0; }
 
         void print(std::ostream& out, bool, const std::string& ) const override {
             out << "BucketIterationState("
@@ -247,12 +243,10 @@ private:
         MessageMeta releaseMetaForMessageId(uint64_t msgId);
         void reinsertMeta(MessageMeta);
 
-        bool hasQueuedMessages() const { return !_queuedMessages.empty(); }
+        [[nodiscard]] bool hasQueuedMessages() const { return !_queuedMessages.empty(); }
         void discardQueuedMessages();
 
-        uint32_t getMemoryUsage() const noexcept {
-            return _memoryUsage;
-        }
+        [[nodiscard]] uint32_t getMemoryUsage() const noexcept { return _memoryUsage; }
 
         VisitorTarget();
         ~VisitorTarget();
@@ -326,9 +320,9 @@ protected:
     std::string _documentSelectionString;
     vdslib::VisitorStatistics _visitorStatistics;
 
-    bool isCompletedCalled() const { return _calledCompletedVisitor; }
+    [[nodiscard]] bool isCompletedCalled() const { return _calledCompletedVisitor; }
 
-    uint32_t traceLevel() const noexcept { return _traceLevel; }
+    [[nodiscard]] uint32_t traceLevel() const noexcept { return _traceLevel; }
 
     /**
      * Attempts to add the given trace message to the internal, memory bounded
@@ -339,7 +333,7 @@ protected:
      */
     bool addBoundedTrace(uint32_t level, const vespalib::string& message);
 
-    const vdslib::Parameters& visitor_parameters() const noexcept;
+    [[nodiscard]] const vdslib::Parameters& visitor_parameters() const noexcept;
 
     // Possibly modifies the ReturnCode parameter in-place if its return code should
     // be changed based on visitor subclass-specific behavior.
@@ -417,7 +411,7 @@ public:
      * The consistency level provided here is propagated through the SPI
      * Context object for createIterator calls.
      */
-    virtual spi::ReadConsistency getRequiredReadConsistency() const {
+    [[nodiscard]] virtual spi::ReadConsistency getRequiredReadConsistency() const {
         return spi::ReadConsistency::STRONG;
     }
 
@@ -428,8 +422,7 @@ public:
     /**
      * Used to silence transient errors that can happen during normal operation.
      */
-    bool shouldReportProblemToClient(const api::ReturnCode&,
-                                     size_t retryCount) const;
+    [[nodiscard]] static bool shouldReportProblemToClient(const api::ReturnCode&, size_t retryCount) ;
 
     /** Called to send report to client of potential non-critical problems. */
     void reportProblem(const std::string& problem);
@@ -492,18 +485,16 @@ public:
 
     void getStatus(std::ostream& out, bool verbose) const;
 
-    void setMaxParallel(uint32_t maxParallel)
-        { _visitorOptions._maxParallel = maxParallel; }
-    void setMaxParallelPerBucket(uint32_t max)
-        { _visitorOptions._maxParallelOneBucket = max; }
+    void setMaxParallel(uint32_t maxParallel) { _visitorOptions._maxParallel = maxParallel; }
+    void setMaxParallelPerBucket(uint32_t max) { _visitorOptions._maxParallelOneBucket = max; }
 
     /**
      * Sends a message to the data handler for this visitor.
      */
     void sendMessage(std::unique_ptr<documentapi::DocumentMessage> documentMessage);
 
-    bool isRunning() const { return _state == STATE_RUNNING; }
-    bool isCompleted() const { return _state == STATE_COMPLETED; }
+    [[nodiscard]] bool isRunning() const { return _state == STATE_RUNNING; }
+    [[nodiscard]] bool isCompleted() const { return _state == STATE_COMPLETED; }
 
 private:
     /**
@@ -542,11 +533,9 @@ private:
 
     void sendReplyOnce();
 
-    bool hasFailedVisiting() const { return _result.failed(); }
-
-    bool hasPendingIterators() const { return !_bucketStates.empty(); }
-
-    bool mayTransitionToCompleted() const;
+    [[nodiscard]] bool hasFailedVisiting() const { return _result.failed(); }
+    [[nodiscard]] bool hasPendingIterators() const { return !_bucketStates.empty(); }
+    [[nodiscard]] bool mayTransitionToCompleted() const;
 
     void discardAllNoPendingBucketStates();
 
@@ -565,9 +554,7 @@ private:
      *
      * Precondition: attach() must have been called on `this`.
      */
-    bool shouldAddMbusTrace() const noexcept {
-        return _traceLevel != 0;
-    }
+    [[nodiscard]] bool shouldAddMbusTrace() const noexcept { return _traceLevel != 0; }
 
     /**
      * Set internal state to the given state value.
