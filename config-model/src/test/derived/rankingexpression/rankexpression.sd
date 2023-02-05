@@ -369,4 +369,20 @@ schema rankexpression {
       }
   }
 
+  rank-profile withglobalphase {
+      function myplus() {
+        expression: attribute(foo1)+attribute(foo2)
+      }
+      function mymul() {
+        expression: attribute(t1)*query(fromq)
+      }
+      first-phase {
+        expression: attribute(foo1)
+      }
+      global-phase {
+        expression: myplus()+sum(mymul())+firstPhase
+        rerank-count: 42
+      }
+  }
+
 }

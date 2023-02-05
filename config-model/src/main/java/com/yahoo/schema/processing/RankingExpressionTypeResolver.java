@@ -86,6 +86,7 @@ public class RankingExpressionTypeResolver extends Processor {
             profile.getSummaryFeatures().forEach(f -> resolveType(f, "summary feature " + f, context));
             ensureValidDouble(profile.getFirstPhaseRanking(), "first-phase expression", context);
             ensureValidDouble(profile.getSecondPhaseRanking(), "second-phase expression", context);
+            ensureValidDouble(profile.getGlobalPhaseRanking(), "global-phase expression", context);
             if ( ( context.tensorsAreUsed() || profile.isStrict())
                  && ! context.queryFeaturesNotDeclared().isEmpty()
                  && ! warnedAbout.containsAll(context.queryFeaturesNotDeclared())) {

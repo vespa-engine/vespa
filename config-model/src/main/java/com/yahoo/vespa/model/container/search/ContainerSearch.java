@@ -30,12 +30,12 @@ import static com.yahoo.vespa.model.container.PlatformBundles.SEARCH_AND_DOCPROC
  */
 public class ContainerSearch extends ContainerSubsystem<SearchChains>
     implements
-    	IndexInfoConfig.Producer,
-    	IlscriptsConfig.Producer,
-    	QrSearchersConfig.Producer,
-    	QueryProfilesConfig.Producer,
+        IndexInfoConfig.Producer,
+        IlscriptsConfig.Producer,
+        QrSearchersConfig.Producer,
+        QueryProfilesConfig.Producer,
         SemanticRulesConfig.Producer,
-    	PageTemplatesConfig.Producer,
+        PageTemplatesConfig.Producer,
         SchemaInfoConfig.Producer {
 
     public static final String QUERY_PROFILE_REGISTRY_CLASS = "com.yahoo.search.query.profile.compiled.CompiledQueryProfileRegistry";
@@ -132,20 +132,20 @@ public class ContainerSearch extends ContainerSubsystem<SearchChains>
     @Override
     public void getConfig(QrSearchersConfig.Builder builder) {
         for (int i = 0; i < searchClusters.size(); i++) {
-    	    SearchCluster sys = findClusterWithId(searchClusters, i);
-    		QrSearchersConfig.Searchcluster.Builder scB = new QrSearchersConfig.Searchcluster.Builder().
-    				name(sys.getClusterName());
-    		for (SchemaInfo spec : sys.schemas().values()) {
-    			scB.searchdef(spec.fullSchema().getName());
-    		}
-    		scB.rankprofiles(new QrSearchersConfig.Searchcluster.Rankprofiles.Builder().configid(sys.getConfigId()));
-    		scB.indexingmode(QrSearchersConfig.Searchcluster.Indexingmode.Enum.valueOf(sys.getIndexingModeName()));
-    		if ( ! (sys instanceof IndexedSearchCluster)) {
-            	scB.storagecluster(new QrSearchersConfig.Searchcluster.Storagecluster.Builder().
-            			routespec(((StreamingSearchCluster)sys).getStorageRouteSpec()));
+            SearchCluster sys = findClusterWithId(searchClusters, i);
+                QrSearchersConfig.Searchcluster.Builder scB = new QrSearchersConfig.Searchcluster.Builder().
+                                name(sys.getClusterName());
+                for (SchemaInfo spec : sys.schemas().values()) {
+                        scB.searchdef(spec.fullSchema().getName());
+                }
+                scB.rankprofiles(new QrSearchersConfig.Searchcluster.Rankprofiles.Builder().configid(sys.getConfigId()));
+                scB.indexingmode(QrSearchersConfig.Searchcluster.Indexingmode.Enum.valueOf(sys.getIndexingModeName()));
+                if ( ! (sys instanceof IndexedSearchCluster)) {
+                scB.storagecluster(new QrSearchersConfig.Searchcluster.Storagecluster.Builder().
+                                routespec(((StreamingSearchCluster)sys).getStorageRouteSpec()));
             }
             builder.searchcluster(scB);
-    	}
+        }
     }
 
     private static SearchCluster findClusterWithId(List<SearchCluster> clusters, int index) {
