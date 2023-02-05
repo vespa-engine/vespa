@@ -97,7 +97,7 @@ public:
     bool isInitialized() const { return _initialized; }
     void waitUntilInitialized(
             StorageBucketDBInitializer* initializer = 0,
-            framework::SecondTime timeout = framework::SecondTime(30));
+            vespalib::duration timeout = 30s) const;
 
 private:
     // Storage server interface implementation (until we can remove it)

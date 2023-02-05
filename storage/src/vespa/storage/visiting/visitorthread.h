@@ -38,7 +38,7 @@ class VisitorThread : public framework::Runnable,
 
     using VisitorMap = std::map<api::VisitorId, std::shared_ptr<Visitor>>;
     VisitorMap _visitors;
-    std::deque<std::pair<api::VisitorId, framework::SecondTime>> _recentlyCompleted;
+    std::deque<std::pair<api::VisitorId, vespalib::steady_time>> _recentlyCompleted;
 
     struct Event {
         enum class Type {
@@ -118,7 +118,7 @@ private:
      */
     Event popNextQueuedEventIfAvailable();
     void tick();
-    void trimRecentlyCompletedList(framework::SecondTime currentTime);
+    void trimRecentlyCompletedList(vespalib::steady_time currentTime);
     void handleNonExistingVisitorCall(const Event& entry, api::ReturnCode& code);
 
     std::shared_ptr<Visitor> createVisitor(vespalib::stringref libName,

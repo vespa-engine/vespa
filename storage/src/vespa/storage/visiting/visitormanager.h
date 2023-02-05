@@ -57,7 +57,7 @@ private:
 
     struct MessageInfo {
         api::VisitorId id;
-        time_t timestamp;
+        vespalib::system_time timestamp;
         vespalib::duration timeout;
         std::string destination;
     };

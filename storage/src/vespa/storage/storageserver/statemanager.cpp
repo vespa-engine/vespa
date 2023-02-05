@@ -9,16 +9,14 @@
 #include <vespa/metrics/metricset.h>
 #include <vespa/metrics/metrictimer.h>
 #include <vespa/metrics/valuemetric.h>
-#include <vespa/storageapi/messageapi/storagemessage.h>
 #include <vespa/vdslib/state/cluster_state_bundle.h>
 #include <vespa/vdslib/state/clusterstate.h>
 #include <vespa/vespalib/stllike/asciistream.h>
 #include <vespa/vespalib/util/exceptions.h>
 #include <vespa/vespalib/util/string_escape.h>
 #include <vespa/vespalib/util/stringfmt.h>
-
 #include <fstream>
-#include <unistd.h>
+#include <ranges>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".state.manager");
@@ -71,7 +69,7 @@ StateManager::StateManager(StorageComponentRegister& compReg,
       _requested_almost_immediate_node_state_replies(false)
 {
     _nodeState->setMinUsedBits(58);
-    _nodeState->setStartTimestamp(_component.getClock().getTimeInSeconds().getTime());
+    _nodeState->setStartTimestamp(_component.getClock().getSystemTime());
     _component.registerStatusPage(*this);
     _component.registerMetric(*_metrics);
 }
@@ -135,9 +133,9 @@ StateManager::reportHtmlStatus(std::ostream& out,
             << "<h1>System state history</h1>\n"
             << "<table border=\"1\"><tr>"
             << "<th>Received at time</th><th>State</th></tr>\n";
-        for (auto it = _systemStateHistory.rbegin(); it != _systemStateHistory.rend(); ++it) {
-            out << "<tr><td>" << it->first << "</td><td>"
-                << xml_content_escaped(it->second->getBaselineClusterState()->toString()) << "</td></tr>\n";
+        for (const auto & it : std::ranges::reverse_view(_systemStateHistory)) {
+            out << "<tr><td>" << it.first << "</td><td>"
+                << xml_content_escaped(it.second->getBaselineClusterState()->toString()) << "</td></tr>\n";
         }
         out << "</table>\n";
     }
@@ -146,7 +144,7 @@ StateManager::reportHtmlStatus(std::ostream& out,
 lib::Node
 StateManager::thisNode() const
 {
-    return lib::Node(_component.getNodeType(), _component.getIndex());
+    return { _component.getNodeType(), _component.getIndex() };
 }
 
 lib::NodeState::CSP

@@ -74,7 +74,7 @@ public:
      * semantically correct to use std::chrono::time_point, but it is bound
      * to specific chrono clock types, their epochs and duration resolution.
      */
-    using TimePoint = std::chrono::milliseconds;
+    using TimePoint = vespalib::duration;
 
     PendingMessageTracker(framework::ComponentRegister&, uint32_t stripe_index);
     ~PendingMessageTracker() override;

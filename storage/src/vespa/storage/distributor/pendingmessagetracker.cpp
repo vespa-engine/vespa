@@ -3,7 +3,6 @@
 #include <vespa/vespalib/stllike/asciistream.h>
 #include <vespa/vespalib/util/stringfmt.h>
 #include <map>
-#include <algorithm>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".pendingmessages");

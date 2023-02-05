@@ -203,7 +203,7 @@ TwoPhaseUpdateOperation::startFastPathUpdate(DistributorStripeMessageSender& sen
             (_node_ctx, _op_ctx, _bucketSpace, _updateCmd, std::move(entries), _updateMetric);
     UpdateOperation & op = *updateOperation;
     IntermediateMessageSender intermediate(_sentMessageMap, std::move(updateOperation), sender);
-    op.start(intermediate, _node_ctx.clock().getTimeInMillis());
+    op.start(intermediate, _node_ctx.clock().getSystemTime());
     transitionTo(SendState::UPDATES_SENT);
 
     if (intermediate._reply.get()) {
@@ -223,7 +223,7 @@ TwoPhaseUpdateOperation::startSafePathUpdate(DistributorStripeMessageSender& sen
     GetOperation& op = *get_operation;
     IntermediateMessageSender intermediate(_sentMessageMap, std::move(get_operation), sender);
     _replicas_at_get_send_time = op.replicas_in_db(); // Populated at construction time, not at start()-time
-    op.start(intermediate, _node_ctx.clock().getTimeInMillis());
+    op.start(intermediate, _node_ctx.clock().getSystemTime());
 
     transitionTo(_use_initial_cheap_metadata_fetch_phase
                  ? SendState::METADATA_GETS_SENT
@@ -322,7 +322,7 @@ TwoPhaseUpdateOperation::schedulePutsWithUpdatedDocument(std::shared_ptr<documen
     auto putOperation = std::make_shared<PutOperation>(_node_ctx, _op_ctx, _bucketSpace, std::move(put), _putMetric);
     PutOperation & op = *putOperation;
     IntermediateMessageSender intermediate(_sentMessageMap, std::move(putOperation), sender);
-    op.start(intermediate, _node_ctx.clock().getTimeInMillis());
+    op.start(intermediate, _node_ctx.clock().getSystemTime());
     transitionTo(SendState::PUTS_SENT);
 
     LOG(debug, "Update(%s): sending Puts at timestamp %" PRIu64, update_doc_id().c_str(), putTimestamp);
@@ -601,8 +601,7 @@ bool TwoPhaseUpdateOperation::replica_set_unchanged_after_get_operation() const 
     _bucketSpace.getBucketDatabase().getParents(_updateDocBucketId, entries);
 
     std::vector<std::pair<document::BucketId, uint16_t>> replicas_in_db_now;
-    for (uint32_t j = 0; j < entries.size(); ++j) {
-        const auto& e = entries[j];
+    for (const auto & e : entries) {
         for (uint32_t i = 0; i < e->getNodeCount(); i++) {
             const auto& copy = e->getNodeRef(i);
             replicas_in_db_now.emplace_back(e.getBucketId(), copy.getNode());

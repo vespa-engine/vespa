@@ -154,7 +154,7 @@ struct TwoPhaseUpdateOperationTest : Test, DistributorStripeTestUtil {
         cfg->set_enable_metadata_only_fetch_phase_for_inconsistent_updates(enable_3phase);
         configure_stripe(cfg);
         auto cb = sendUpdate("0=1/2/3,1=2/3/4"); // Inconsistent replicas.
-        cb->start(_sender, framework::MilliSecTime(0));
+        cb->start(_sender);
         return cb;
     }
 
@@ -342,7 +342,7 @@ TwoPhaseUpdateOperationTest::sendUpdate(const std::string& bucketState,
 TEST_F(TwoPhaseUpdateOperationTest, simple) {
     setup_stripe(1, 1, "storage:1 distributor:1");
     auto cb = sendUpdate("0=1/2/3");
-    cb->start(_sender, framework::MilliSecTime(0));
+    cb->start(_sender);
 
     ASSERT_EQ("Update => 0", _sender.getCommands(true));
 
@@ -359,7 +359,7 @@ TEST_F(TwoPhaseUpdateOperationTest, simple) {
 TEST_F(TwoPhaseUpdateOperationTest, non_existing) {
     setup_stripe(1, 1, "storage:1 distributor:1");
     auto cb = sendUpdate("");
-    cb->start(_sender, framework::MilliSecTime(0));
+    cb->start(_sender);
 
     EXPECT_EQ("UpdateReply(id:ns:testdoctype1::1, BucketId(0x0000000000000000), "
               "timestamp 0, timestamp of updated doc: 0) ReturnCode(NONE)",
@@ -371,7 +371,7 @@ TEST_F(TwoPhaseUpdateOperationTest, non_existing) {
 TEST_F(TwoPhaseUpdateOperationTest, update_failed) {
     setup_stripe(1, 1, "storage:1 distributor:1");
     auto cb = sendUpdate("0=1/2/3");
-    cb->start(_sender, framework::MilliSecTime(0));
+    cb->start(_sender);
 
     ASSERT_EQ("Update => 0", _sender.getCommands(true));
 
@@ -386,7 +386,7 @@ TEST_F(TwoPhaseUpdateOperationTest, update_failed) {
 TEST_F(TwoPhaseUpdateOperationTest, fast_path_inconsistent_timestamps) {
     setup_stripe(2, 2, "storage:2 distributor:1");
     auto cb = sendUpdate("0=1/2/3,1=1/2/3");
-    cb->start(_sender, framework::MilliSecTime(0));
+    cb->start(_sender);
 
     ASSERT_EQ("Update => 0,Update => 1", _sender.getCommands(true));
 
@@ -413,7 +413,7 @@ TEST_F(TwoPhaseUpdateOperationTest, fast_path_inconsistent_timestamps) {
 TEST_F(TwoPhaseUpdateOperationTest, fast_path_inconsistent_timestamps_not_found) {
     setup_stripe(2, 2, "storage:2 distributor:1");
     auto cb = sendUpdate("0=1/2/3,1=1/2/3");
-    cb->start(_sender, framework::MilliSecTime(0));
+    cb->start(_sender);
 
     ASSERT_EQ("Update => 0,Update => 1", _sender.getCommands(true));
 
@@ -434,7 +434,7 @@ TEST_F(TwoPhaseUpdateOperationTest, fast_path_inconsistent_timestamps_not_found)
 TEST_F(TwoPhaseUpdateOperationTest, fast_path_inconsistent_timestamps_update_error) {
     setup_stripe(2, 2, "storage:2 distributor:1");
     auto cb = sendUpdate("0=1/2/3,1=1/2/3");
-    cb->start(_sender, framework::MilliSecTime(0));
+    cb->start(_sender);
 
     ASSERT_EQ("Update => 0,Update => 1", _sender.getCommands(true));
 
@@ -451,7 +451,7 @@ TEST_F(TwoPhaseUpdateOperationTest, fast_path_inconsistent_timestamps_update_err
 TEST_F(TwoPhaseUpdateOperationTest, fast_path_inconsistent_timestamps_get_error) {
     setup_stripe(2, 2, "storage:2 distributor:1");
     auto cb = sendUpdate("0=1/2/3,1=1/2/3");
-    cb->start(_sender, framework::MilliSecTime(0));
+    cb->start(_sender);
 
     ASSERT_EQ("Update => 0,Update => 1", _sender.getCommands(true));
 
@@ -473,7 +473,7 @@ TEST_F(TwoPhaseUpdateOperationTest, fast_path_inconsistent_timestamps_get_error)
 TEST_F(TwoPhaseUpdateOperationTest, fast_path_inconsistent_timestamps_put_error) {
     setup_stripe(2, 2, "storage:2 distributor:1");
     auto cb = sendUpdate("0=1/2/3,1=1/2/3");
-    cb->start(_sender, framework::MilliSecTime(0));
+    cb->start(_sender);
 
     ASSERT_EQ("Update => 0,Update => 1", _sender.getCommands(true));
 
@@ -501,7 +501,7 @@ TEST_F(TwoPhaseUpdateOperationTest, fast_path_inconsistent_timestamps_put_error)
 TEST_F(TwoPhaseUpdateOperationTest, fast_path_inconsistent_timestamps_put_not_started) {
     setup_stripe(2, 2, "storage:2 distributor:1");
     auto cb = sendUpdate("0=1/2/3,1=1/2/3");
-    cb->start(_sender, framework::MilliSecTime(0));
+    cb->start(_sender);
 
     ASSERT_EQ("Update => 0,Update => 1", _sender.getCommands(true));
 
@@ -526,7 +526,7 @@ TEST_F(TwoPhaseUpdateOperationTest, fast_path_inconsistent_timestamps_put_not_st
 TEST_F(TwoPhaseUpdateOperationTest, fast_path_inconsistent_timestamps_inconsistent_split) {
     setup_stripe(2, 2, "storage:2 distributor:1");
     auto cb = sendUpdate("0=1/2/3,1=1/2/3", UpdateOptions().makeInconsistentSplit(true));
-    cb->start(_sender, framework::MilliSecTime(0));
+    cb->start(_sender);
 
     std::string wanted("Get(BucketId(0x400000000000cac4), id:ns:testdoctype1::1) => 0,"
                        "Get(BucketId(0x440000000000cac4), id:ns:testdoctype1::1) => 0");
@@ -567,7 +567,7 @@ TwoPhaseUpdateOperationTest::checkMessageSettingsPropagatedTo(
 TEST_F(TwoPhaseUpdateOperationTest, fast_path_propagates_message_settings_to_update) {
     setup_stripe(1, 1, "storage:1 distributor:1");
     auto cb = sendUpdate("0=1/2/3");
-    cb->start(_sender, framework::MilliSecTime(0));
+    cb->start(_sender);
 
     ASSERT_EQ("Update => 0", _sender.getCommands(true));
 
@@ -578,7 +578,7 @@ TEST_F(TwoPhaseUpdateOperationTest, fast_path_propagates_message_settings_to_upd
 TEST_F(TwoPhaseUpdateOperationTest, n_of_m) {
     setup_stripe(2, 2, "storage:2 distributor:1", 1);
     auto cb = sendUpdate("0=1/2/3,1=1/2/3");
-    cb->start(_sender, framework::MilliSecTime(0));
+    cb->start(_sender);
 
     ASSERT_EQ("Update => 0,Update => 1", _sender.getCommands(true));
 
@@ -606,7 +606,7 @@ TEST_F(TwoPhaseUpdateOperationTest, safe_path_updates_newest_received_document) 
     setup_stripe(3, 3, "storage:3 distributor:1");
     // 0,1 in sync. 2 out of sync.
     auto cb = sendUpdate("0=1/2/3,1=1/2/3,2=2/3/4");
-    cb->start(_sender, framework::MilliSecTime(0));
+    cb->start(_sender);
 
     ASSERT_EQ("Get(BucketId(0x400000000000cac4), id:ns:testdoctype1::1) => 0,"
               "Get(BucketId(0x400000000000cac4), id:ns:testdoctype1::1) => 2",
@@ -639,7 +639,7 @@ TEST_F(TwoPhaseUpdateOperationTest, safe_path_updates_newest_received_document) 
 TEST_F(TwoPhaseUpdateOperationTest, create_if_non_existent_creates_document_if_all_empty_gets) {
     setup_stripe(3, 3, "storage:3 distributor:1");
     auto cb = sendUpdate("0=1/2/3,1=1/2/3,2=2/3/4", UpdateOptions().createIfNonExistent(true));
-    cb->start(_sender, framework::MilliSecTime(0));
+    cb->start(_sender);
 
     ASSERT_EQ("Get => 0,Get => 2", _sender.getCommands(true));
     replyToGet(*cb, _sender, 0, 0, false);
@@ -670,7 +670,7 @@ TEST_F(TwoPhaseUpdateOperationTest, create_if_non_existent_creates_document_if_a
 TEST_F(TwoPhaseUpdateOperationTest, update_fails_if_safe_path_has_failed_put) {
     setup_stripe(3, 3, "storage:3 distributor:1");
     auto cb = sendUpdate("0=1/2/3,1=1/2/3,2=2/3/4", UpdateOptions().createIfNonExistent(true));
-    cb->start(_sender, framework::MilliSecTime(0));
+    cb->start(_sender);
 
     ASSERT_EQ("Get => 0,Get => 2", _sender.getCommands(true));
     replyToGet(*cb, _sender, 0, 0, false);
@@ -697,7 +697,7 @@ TEST_F(TwoPhaseUpdateOperationTest, update_fails_if_safe_path_has_failed_put) {
 TEST_F(TwoPhaseUpdateOperationTest, update_fails_if_safe_path_gets_fail) {
     setup_stripe(2, 2, "storage:2 distributor:1");
     auto cb = sendUpdate("0=1/2/3,1=2/3/4", UpdateOptions().createIfNonExistent(true));
-    cb->start(_sender, framework::MilliSecTime(0));
+    cb->start(_sender);
 
     ASSERT_EQ("Get => 0,Get => 1", _sender.getCommands(true));
     replyToGet(*cb, _sender, 0, 0, false, api::ReturnCode::IO_FAILURE);
@@ -717,7 +717,7 @@ TEST_F(TwoPhaseUpdateOperationTest, update_fails_if_apply_throws_exception) {
     setup_stripe(2, 2, "storage:2 distributor:1");
     // Create update for wrong doctype which will fail the update.
     auto cb = sendUpdate("0=1/2/3,1=2/3/4", UpdateOptions().withError());
-    cb->start(_sender, framework::MilliSecTime(0));
+    cb->start(_sender);
 
     ASSERT_EQ("Get => 0,Get => 1", _sender.getCommands(true));
     replyToGet(*cb, _sender, 0, 50);
@@ -737,7 +737,7 @@ TEST_F(TwoPhaseUpdateOperationTest, non_existing_with_auto_create) {
     setup_stripe(1, 1, "storage:1 distributor:1");
 
     auto cb = sendUpdate("", UpdateOptions().createIfNonExistent(true));
-    cb->start(_sender, framework::MilliSecTime(0));
+    cb->start(_sender);
 
     ASSERT_EQ("CreateBucketCommand(BucketId(0x400000000000cac4), active) "
               "Reasons to start:  => 0,"
@@ -766,7 +766,7 @@ TEST_F(TwoPhaseUpdateOperationTest, safe_path_fails_update_when_mismatching_time
     setup_stripe(2, 2, "storage:2 distributor:1");
     auto cb = sendUpdate("0=1/2/3,1=2/3/4", UpdateOptions().timestampToUpdate(1234));
 
-    cb->start(_sender, framework::MilliSecTime(0));
+    cb->start(_sender);
 
     ASSERT_EQ("Get => 0,Get => 1", _sender.getCommands(true));
     replyToGet(*cb, _sender, 0, 100);
@@ -786,7 +786,7 @@ TEST_F(TwoPhaseUpdateOperationTest, safe_path_fails_update_when_mismatching_time
 TEST_F(TwoPhaseUpdateOperationTest, safe_path_update_propagates_message_settings_to_gets_and_puts) {
     setup_stripe(3, 3, "storage:3 distributor:1");
     auto cb = sendUpdate("0=1/2/3,1=1/2/3,2=2/3/4");
-    cb->start(_sender, framework::MilliSecTime(0));
+    cb->start(_sender);
 
     ASSERT_EQ("Get => 0,Get => 2", _sender.getCommands(true));
     checkMessageSettingsPropagatedTo(_sender.command(0));
@@ -805,7 +805,7 @@ TEST_F(TwoPhaseUpdateOperationTest, safe_path_update_propagates_message_settings
 TEST_F(TwoPhaseUpdateOperationTest, safe_path_propagates_mbus_traces_from_replies) {
     setup_stripe(3, 3, "storage:3 distributor:1");
     auto cb = sendUpdate("0=1/2/3,1=1/2/3,2=2/3/4");
-    cb->start(_sender, framework::MilliSecTime(0));
+    cb->start(_sender);
 
     ASSERT_EQ("Get => 0,Get => 2", _sender.getCommands(true));
     replyToGet(*cb, _sender, 0, 50, true, api::ReturnCode::OK, "hello earthlings");
@@ -832,7 +832,7 @@ void TwoPhaseUpdateOperationTest::do_test_ownership_changed_between_gets_and_sec
     setup_stripe(2, 2, "storage:2 distributor:1");
     // Update towards inconsistent bucket invokes safe path.
     auto cb = sendUpdate("0=1/2/3,1=2/3/4");
-    cb->start(_sender, framework::MilliSecTime(0));
+    cb->start(_sender);
 
     ASSERT_EQ("Get => 0,Get => 1", _sender.getCommands(true));
 
@@ -875,7 +875,7 @@ TEST_F(TwoPhaseUpdateOperationTest, safe_path_condition_mismatch_fails_with_tas_
     setup_stripe(2, 2, "storage:2 distributor:1");
     auto cb = sendUpdate("0=1/2/3,1=2/3/4", UpdateOptions().condition("testdoctype1.headerval==120"));
 
-    cb->start(_sender, framework::MilliSecTime(0));
+    cb->start(_sender);
     // Newest doc has headerval==110, not 120.
     replyToGet(*cb, _sender, 0, 100);
     replyToGet(*cb, _sender, 1, 110);
@@ -894,7 +894,7 @@ TEST_F(TwoPhaseUpdateOperationTest, safe_path_condition_match_sends_puts_with_up
     setup_stripe(2, 2, "storage:2 distributor:1");
     auto cb = sendUpdate("0=1/2/3,1=2/3/4", UpdateOptions().condition("testdoctype1.headerval==110"));
 
-    cb->start(_sender, framework::MilliSecTime(0));
+    cb->start(_sender);
     replyToGet(*cb, _sender, 0, 100);
     replyToGet(*cb, _sender, 1, 110);
     ASSERT_EQ("Put => 1,Put => 0", _sender.getCommands(true, false, 2));
@@ -904,7 +904,7 @@ TEST_F(TwoPhaseUpdateOperationTest, safe_path_condition_parse_failure_fails_with
     setup_stripe(2, 2, "storage:2 distributor:1");
     auto cb = sendUpdate("0=1/2/3,1=2/3/4", UpdateOptions().condition("testdoctype1.san==fran...cisco"));
 
-    cb->start(_sender, framework::MilliSecTime(0));
+    cb->start(_sender);
     replyToGet(*cb, _sender, 0, 100);
     replyToGet(*cb, _sender, 1, 110);
     // NOTE: condition is currently not attempted parsed until Gets have been
@@ -924,7 +924,7 @@ TEST_F(TwoPhaseUpdateOperationTest, safe_path_condition_unknown_doc_type_fails_w
     setup_stripe(2, 2, "storage:2 distributor:1");
     auto cb = sendUpdate("0=1/2/3,1=2/3/4", UpdateOptions().condition("langbein.headerval=1234"));
 
-    cb->start(_sender, framework::MilliSecTime(0));
+    cb->start(_sender);
     replyToGet(*cb, _sender, 0, 100);
     replyToGet(*cb, _sender, 1, 110);
     // NOTE: condition is currently not attempted parsed until Gets have been
@@ -943,7 +943,7 @@ TEST_F(TwoPhaseUpdateOperationTest, safe_path_condition_with_missing_doc_and_no_
     setup_stripe(2, 2, "storage:2 distributor:1");
     auto cb = sendUpdate("0=1/2/3,1=2/3/4", UpdateOptions().condition("testdoctype1.headerval==120"));
 
-    cb->start(_sender, framework::MilliSecTime(0));
+    cb->start(_sender);
     // Both Gets return nothing at all, nothing at all.
     replyToGet(*cb, _sender, 0, 100, false);
     replyToGet(*cb, _sender, 1, 110, false);
@@ -964,7 +964,7 @@ TEST_F(TwoPhaseUpdateOperationTest, safe_path_condition_with_missing_doc_and_aut
                     .condition("testdoctype1.headerval==120")
                     .createIfNonExistent(true));
 
-    cb->start(_sender, framework::MilliSecTime(0));
+    cb->start(_sender);
     replyToGet(*cb, _sender, 0, 0, false);
     replyToGet(*cb, _sender, 1, 0, false);
     ASSERT_EQ("Put => 1,Put => 0", _sender.getCommands(true, false, 2));
@@ -999,7 +999,7 @@ TEST_F(TwoPhaseUpdateOperationTest, fast_path_close_edge_sends_correct_reply) {
     setup_stripe(1, 1, "storage:1 distributor:1");
     // Only 1 replica; consistent with itself by definition.
     auto cb = sendUpdate("0=1/2/3");
-    cb->start(_sender, framework::MilliSecTime(0));
+    cb->start(_sender);
 
     ASSERT_EQ("Update => 0", _sender.getCommands(true));
     // Close the operation. This should generate a single reply that is
@@ -1017,7 +1017,7 @@ TEST_F(TwoPhaseUpdateOperationTest, safe_path_close_edge_sends_correct_reply) {
     setup_stripe(2, 2, "storage:2 distributor:1");
 
     auto cb = sendUpdate("0=1/2/3,1=2/3/4"); // Inconsistent replicas.
-    cb->start(_sender, framework::MilliSecTime(0));
+    cb->start(_sender);
 
     ASSERT_EQ("Get => 0,Get => 1", _sender.getCommands(true));
     // Closing the operation should now only return an ABORTED reply for
@@ -1037,7 +1037,7 @@ TEST_F(TwoPhaseUpdateOperationTest, safe_path_consistent_get_reply_timestamps_re
     configure_stripe(cfg);
 
     auto cb = sendUpdate("0=1/2/3,1=2/3/4"); // Inconsistent replicas.
-    cb->start(_sender, framework::MilliSecTime(0));
+    cb->start(_sender);
 
     Timestamp old_timestamp = 500;
     ASSERT_EQ("Get => 0,Get => 1", _sender.getCommands(true));
@@ -1065,7 +1065,7 @@ TEST_F(TwoPhaseUpdateOperationTest, safe_path_consistent_get_reply_timestamps_do
     configure_stripe(cfg);
 
     auto cb = sendUpdate("0=1/2/3,1=2/3/4"); // Inconsistent replicas.
-    cb->start(_sender, framework::MilliSecTime(0));
+    cb->start(_sender);
 
     Timestamp old_timestamp = 500;
     ASSERT_EQ("Get => 0,Get => 1", _sender.getCommands(true));
@@ -1086,7 +1086,7 @@ TEST_F(TwoPhaseUpdateOperationTest, fast_path_not_restarted_if_replica_set_alter
     configure_stripe(cfg);
 
     auto cb = sendUpdate("0=1/2/3,1=2/3/4"); // Inconsistent replicas.
-    cb->start(_sender, framework::MilliSecTime(0));
+    cb->start(_sender);
 
     // Replica set changes between time of Get requests sent and
     // responses received. This may happen e.g. if concurrent mutations
@@ -1112,7 +1112,7 @@ TEST_F(TwoPhaseUpdateOperationTest, fast_path_not_restarted_if_document_not_foun
     configure_stripe(cfg);
 
     auto cb = sendUpdate("0=1/2/3,1=2/3/4"); // Inconsistent replicas.
-    cb->start(_sender, framework::MilliSecTime(0));
+    cb->start(_sender);
 
     ASSERT_EQ("Get => 0,Get => 1", _sender.getCommands(true));
     replyToGet(*cb, _sender, 0, Timestamp(0), false);
@@ -1131,7 +1131,7 @@ TEST_F(TwoPhaseUpdateOperationTest, fast_path_not_restarted_if_no_initial_replic
 
     // No replicas, technically consistent but cannot use fast path.
     auto cb = sendUpdate("", UpdateOptions().createIfNonExistent(true));
-    cb->start(_sender, framework::MilliSecTime(0));
+    cb->start(_sender);
     ASSERT_EQ("Create bucket => 1,Create bucket => 0,Put => 1,Put => 0",
               _sender.getCommands(true));
 }
@@ -1146,7 +1146,7 @@ TEST_F(TwoPhaseUpdateOperationTest, update_gets_are_sent_with_strong_consistency
     configure_stripe(cfg);
 
     auto cb = sendUpdate("0=1/2/3,1=2/3/4"); // Inconsistent replicas.
-    cb->start(_sender, framework::MilliSecTime(0));
+    cb->start(_sender);
 
     ASSERT_EQ("Get => 0,Get => 1", _sender.getCommands(true));
     auto& get_cmd = dynamic_cast<const api::GetCommand&>(*_sender.command(0));
@@ -1156,7 +1156,7 @@ TEST_F(TwoPhaseUpdateOperationTest, update_gets_are_sent_with_strong_consistency
 TEST_F(TwoPhaseUpdateOperationTest, operation_is_rejected_in_safe_path_if_feed_is_blocked) {
     set_up_distributor_with_feed_blocked_state();
     auto cb = sendUpdate("0=1/2/3,1=2/3/4"); // Inconsistent replicas to trigger safe path
-    cb->start(_sender, framework::MilliSecTime(0));
+    cb->start(_sender);
 
     EXPECT_EQ("UpdateReply(id:ns:testdoctype1::1, BucketId(0x0000000000000000), "
               "timestamp 0, timestamp of updated doc: 0) "
@@ -1275,7 +1275,7 @@ TEST_F(ThreePhaseUpdateTest, update_failed_with_transient_error_code_if_replica_
     cfg->set_enable_metadata_only_fetch_phase_for_inconsistent_updates(true);
     configure_stripe(cfg);
     auto cb = sendUpdate("0=1/2/3,1=2/3/4"); // 2 replicas, room for 1 more.
-    cb->start(_sender, framework::MilliSecTime(0));
+    cb->start(_sender);
     // Add new replica to deterministic test bucket after gets have been sent
     BucketId bucket(0x400000000000cac4); // Always the same in the test.
     addNodesToBucketDB(bucket, "0=1/2/3,1=2/3/4,2=3/3/3");
@@ -1299,7 +1299,7 @@ TEST_F(ThreePhaseUpdateTest, single_full_get_cannot_restart_in_fast_path) {
     cfg->set_update_fast_path_restart_enabled(true);
     configure_stripe(cfg);
     auto cb = sendUpdate("0=1/2/3,1=2/3/4"); // Inconsistent replicas.
-    cb->start(_sender, framework::MilliSecTime(0));
+    cb->start(_sender);
 
     ASSERT_EQ("Get => 0,Get => 1", _sender.getCommands(true));
     reply_to_metadata_get(*cb, _sender, 0, 1000U);
@@ -1360,7 +1360,7 @@ TEST_F(ThreePhaseUpdateTest, safe_mode_is_implicitly_triggered_if_no_replicas_ex
     cfg->set_enable_metadata_only_fetch_phase_for_inconsistent_updates(true);
     configure_stripe(cfg);
     auto cb = sendUpdate("", UpdateOptions().createIfNonExistent(true));
-    cb->start(_sender, framework::MilliSecTime(0));
+    cb->start(_sender);
 
     ASSERT_EQ("CreateBucketCommand(BucketId(0x400000000000cac4), active) "
               "Reasons to start:  => 0,"
@@ -1419,7 +1419,7 @@ TEST_F(ThreePhaseUpdateTest, single_full_get_tombstone_is_no_op_without_auto_cre
     cfg->set_update_fast_path_restart_enabled(true);
     configure_stripe(cfg);
     auto cb = sendUpdate("0=1/2/3,1=2/3/4");
-    cb->start(_sender, framework::MilliSecTime(0));
+    cb->start(_sender);
 
     ASSERT_EQ("Get => 0,Get => 1", _sender.getCommands(true));
     reply_to_metadata_get(*cb, _sender, 0, 1000U);
@@ -1443,7 +1443,7 @@ TEST_F(ThreePhaseUpdateTest, single_full_get_tombstone_sends_puts_with_auto_crea
     cfg->set_update_fast_path_restart_enabled(true);
     configure_stripe(cfg);
     auto cb = sendUpdate("0=1/2/3,1=2/3/4", UpdateOptions().createIfNonExistent(true));
-    cb->start(_sender, framework::MilliSecTime(0));
+    cb->start(_sender);
 
     ASSERT_EQ("Get => 0,Get => 1", _sender.getCommands(true));
     reply_to_metadata_get(*cb, _sender, 0, 1000U);

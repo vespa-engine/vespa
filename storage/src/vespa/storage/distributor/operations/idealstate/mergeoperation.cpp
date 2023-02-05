@@ -13,6 +13,8 @@
 #include <vespa/log/bufferedlogger.h>
 LOG_SETUP(".distributor.operation.idealstate.merge");
 
+using vespalib::to_utc;
+using vespalib::to_string;
 namespace storage::distributor {
 
 MergeOperation::~MergeOperation() = default;
@@ -23,7 +25,7 @@ MergeOperation::getStatus() const
     return
         Operation::getStatus() +
         vespalib::make_string(" . Sent MergeBucketCommand at %s",
-                              _sentMessageTime.toString().c_str());
+                              to_string(to_utc(_sentMessageTime)).c_str());
 }
 
 void
@@ -33,11 +35,11 @@ MergeOperation::addIdealNodes(
         std::vector<MergeMetaData>& result)
 {
     // Add all ideal nodes first. These are never marked source-only.
-    for (uint32_t i = 0; i < idealNodes.size(); i++) {
+    for (unsigned short idealNode : idealNodes) {
         const MergeMetaData* entry = nullptr;
-        for (uint32_t j = 0; j < nodes.size(); j++) {
-            if (idealNodes[i] == nodes[j]._nodeIndex) {
-                entry = &nodes[j];
+        for (const auto & node : nodes) {
+            if (idealNode == node._nodeIndex) {
+                entry = &node;
                 break;
             }
         }
@@ -50,21 +52,20 @@ MergeOperation::addIdealNodes(
 }
 
 void
-MergeOperation::addCopiesNotAlreadyAdded(
-        uint16_t redundancy,
-        const std::vector<MergeMetaData>& nodes,
-        std::vector<MergeMetaData>& result)
+MergeOperation::addCopiesNotAlreadyAdded(uint16_t redundancy,
+                                         const std::vector<MergeMetaData>& nodes,
+                                         std::vector<MergeMetaData>& result)
 {
-    for (uint32_t i = 0; i < nodes.size(); i++) {
+    for (auto node : nodes) {
         bool found = false;
-        for (uint32_t j = 0; j < result.size(); j++) {
-            if (result[j]._nodeIndex == nodes[i]._nodeIndex) {
+        for (const auto & mergeData : result) {
+            if (mergeData._nodeIndex == node._nodeIndex) {
                 found = true;
             }
         }
 
         if (!found) {
-            result.push_back(nodes[i]);
+            result.push_back(node);
             result.back()._sourceOnly = (result.size() > redundancy);
         }
     }
@@ -78,8 +79,7 @@ MergeOperation::generateSortedNodeList(
         MergeLimiter& limiter,
         std::vector<MergeMetaData>& nodes)
 {
-    std::vector<uint16_t> idealNodes(
-            distribution.getIdealStorageNodes(state, bucketId, "ui"));
+    std::vector<uint16_t> idealNodes(distribution.getIdealStorageNodes(state, bucketId, "ui"));
 
     std::vector<MergeMetaData> result;
     const uint16_t redundancy = distribution.getRedundancy();
@@ -123,13 +123,13 @@ MergeOperation::onStart(DistributorStripeMessageSender& sender)
     std::vector<std::unique_ptr<BucketCopy> > newCopies;
     std::vector<MergeMetaData> nodes;
 
-    for (uint32_t i = 0; i < getNodes().size(); ++i) {
-        const BucketCopy* copy = entry->getNode(getNodes()[i]);
+    for (unsigned short node : getNodes()) {
+        const BucketCopy* copy = entry->getNode(node);
         if (copy == nullptr) { // New copies?
-            newCopies.emplace_back(std::make_unique<BucketCopy>(BucketCopy::recentlyCreatedCopy(0, getNodes()[i])));
+            newCopies.emplace_back(std::make_unique<BucketCopy>(BucketCopy::recentlyCreatedCopy(0, node)));
             copy = newCopies.back().get();
         }
-        nodes.emplace_back(getNodes()[i], *copy);
+        nodes.emplace_back(node, *copy);
     }
     _infoBefore = entry.getBucketInfo();
 
@@ -169,7 +169,7 @@ MergeOperation::onStart(DistributorStripeMessageSender& sender)
 
         sender.sendToNode(lib::NodeType::STORAGE, _mnodes[0].index, msg);
 
-        _sentMessageTime = _manager->node_context().clock().getTimeInSeconds();
+        _sentMessageTime = _manager->node_context().clock().getMonotonicTime();
     } else {
         LOGBP(debug,
               "Unable to merge bucket %s, since only one copy is available. System state %s",
@@ -184,26 +184,26 @@ MergeOperation::sourceOnlyCopyChangedDuringMerge(
         const BucketDatabase::Entry& currentState) const
 {
     assert(currentState.valid());
-    for (size_t i = 0; i < _mnodes.size(); ++i) {
-        const BucketCopy* copyBefore(_infoBefore.getNode(_mnodes[i].index));
+    for (auto _mnode : _mnodes) {
+        const BucketCopy* copyBefore(_infoBefore.getNode(_mnode.index));
         if (!copyBefore) {
             continue;
         }
-        const BucketCopy* copyAfter(currentState->getNode(_mnodes[i].index));
+        const BucketCopy* copyAfter(currentState->getNode(_mnode.index));
         if (!copyAfter) {
             LOG(debug, "Copy of %s on node %u removed during merge. Was %s",
                 getBucketId().toString().c_str(),
-                _mnodes[i].index,
+                _mnode.index,
                 copyBefore->toString().c_str());
             continue;
         }
-        if (_mnodes[i].sourceOnly
+        if (_mnode.sourceOnly
             && !copyBefore->consistentWith(*copyAfter))
         {
             LOG(debug, "Source-only copy of %s on node %u changed from "
                 "%s to %s during the course of the merge. Failing it.",
                 getBucketId().toString().c_str(),
-                _mnodes[i].index,
+                _mnode.index,
                 copyBefore->toString().c_str(),
                 copyAfter->toString().c_str());
             return true;
@@ -220,13 +220,13 @@ MergeOperation::deleteSourceOnlyNodes(
 {
     assert(currentState.valid());
     std::vector<uint16_t> sourceOnlyNodes;
-    for (uint32_t i = 0; i < _mnodes.size(); ++i) {
-        const uint16_t nodeIndex = _mnodes[i].index;
+    for (auto & _mnode : _mnodes) {
+        const uint16_t nodeIndex = _mnode.index;
         const BucketCopy* copy = currentState->getNode(nodeIndex);
         if (!copy) {
             continue; // No point in deleting what's not even there now.
         }
-        if (_mnodes[i].sourceOnly) {
+        if (_mnode.sourceOnly) {
             sourceOnlyNodes.push_back(nodeIndex);
         }
     }

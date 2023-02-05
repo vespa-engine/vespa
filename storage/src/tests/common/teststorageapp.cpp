@@ -22,18 +22,6 @@ using storage::framework::defaultimplementation::ComponentRegisterImpl;
 
 namespace storage {
 
-namespace {
-    template<typename T>
-    struct ConfigReader : public T::Subscriber,
-                          public T
-    {
-        ConfigReader(const std::string& configId) {
-            T::subscribe(configId, *this);
-        }
-        void configure(const T& c) { dynamic_cast<T&>(*this) = c; }
-    };
-}
-
 TestStorageApp::TestStorageApp(StorageComponentRegisterImpl::UP compReg,
                                const lib::NodeType& type, NodeIndex index,
                                vespalib::stringref configId)
@@ -84,7 +72,7 @@ TestStorageApp::setDistribution(Redundancy redundancy, NodeCount nodeCount)
 void
 TestStorageApp::setTypeRepo(std::shared_ptr<const document::DocumentTypeRepo> repo)
 {
-    _compReg.setDocumentTypeRepo(repo);
+    _compReg.setDocumentTypeRepo(std::move(repo));
 }
 
 void
@@ -94,21 +82,19 @@ TestStorageApp::setClusterState(const lib::ClusterState& c)
 }
 
 void
-TestStorageApp::waitUntilInitialized(
-        StorageBucketDBInitializer* initializer, framework::SecondTime timeout)
+TestStorageApp::waitUntilInitialized(StorageBucketDBInitializer* initializer, vespalib::duration timeout) const
 {
         // Always use real clock for wait timeouts. Component clock may be faked
         // in tests
     framework::defaultimplementation::RealClock clock;
-    framework::MilliSecTime endTime(clock.getTimeInMillis() + timeout.getMillis());
+    vespalib::steady_time endTime(clock.getMonotonicTime() + timeout);
     while (!isInitialized()) {
         std::this_thread::sleep_for(1ms);
-        framework::MilliSecTime currentTime(clock.getTimeInMillis());
+        vespalib::steady_time currentTime(clock.getMonotonicTime());
         if (currentTime > endTime) {
             std::ostringstream error;
-            error << "Failed to initialize service layer within timeout of "
-                  << timeout << " seconds.";
-            if (initializer != 0) {
+            error << "Failed to initialize service layer within timeout of " << timeout << " seconds.";
+            if (initializer != nullptr) {
                 error << " ";
                 LOG(error, "%s", error.str().c_str());
                 throw std::runtime_error(error.str());
@@ -174,7 +160,7 @@ TestServiceLayerApp::setPersistenceProvider(PersistenceProviderUP provider)
 spi::PersistenceProvider&
 TestServiceLayerApp::getPersistenceProvider()
 {
-    if (_persistenceProvider.get() == 0) {
+    if ( ! _persistenceProvider) {
         throw vespalib::IllegalStateException("Persistence provider requested but not initialized.", VESPA_STRLOC);
     }
     return *_persistenceProvider;
@@ -182,7 +168,7 @@ TestServiceLayerApp::getPersistenceProvider()
 
 namespace {
     template<typename T>
-    const T getConfig(vespalib::stringref configId) {
+    T getConfig(vespalib::stringref configId) {
         config::ConfigUri uri(configId);
         return *config::ConfigGetter<T>::getConfig(uri.getConfigId(), uri.getContext());
     }
@@ -192,9 +178,9 @@ void
 TestDistributorApp::configure(vespalib::stringref id)
 {
     if (id.empty()) return;
-    DistributorConfig dc(getConfig<vespa::config::content::core::StorDistributormanagerConfig>(id));
+    auto dc(getConfig<vespa::config::content::core::StorDistributormanagerConfig>(id));
     _compReg.setDistributorConfig(dc);
-    VisitorConfig vc(getConfig<vespa::config::content::core::StorVisitordispatcherConfig>(id));
+    auto vc(getConfig<vespa::config::content::core::StorVisitordispatcherConfig>(id));
     _compReg.setVisitorConfig(vc);
 }
 
