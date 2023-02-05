@@ -24,7 +24,6 @@ struct Clock {
     virtual ~Clock() = default;
 
     virtual MicroSecTime getTimeInMicros() const = 0;
-    virtual MilliSecTime getTimeInMillis() const = 0;
     virtual SecondTime getTimeInSeconds() const = 0;
 
     // Time point resolution is intentionally not defined here.

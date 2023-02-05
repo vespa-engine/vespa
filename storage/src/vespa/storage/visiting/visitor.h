@@ -229,12 +229,11 @@ private:
 
         // Maps from time sent to message to send.
         // Value refers to message id (key in _messageMeta).
-        using MessageQueue = std::multimap<framework::MicroSecTime, uint64_t>;
+        using MessageQueue = std::multimap<vespalib::steady_time, uint64_t>;
 
         MessageQueue _queuedMessages;
 
-        MessageMeta& insertMessage(
-                std::unique_ptr<documentapi::DocumentMessage>);
+        MessageMeta& insertMessage(std::unique_ptr<documentapi::DocumentMessage>);
         /**
          * Preconditions:
          *   msgId exists as a key in _messageMeta
@@ -273,15 +272,14 @@ private:
     bool _calledStartingVisitor;
     bool _calledCompletedVisitor;
 
-    framework::MicroSecTime _startTime;
+    vespalib::steady_time _startTime;
 
     bool _hasSentReply;
 
     uint32_t _docBlockSize;
     uint32_t _memoryUsageLimit;
-    framework::MilliSecTime _docBlockTimeout;
-    framework::MilliSecTime _visitorInfoTimeout;
-    uint32_t _serialNumber;
+    vespalib::duration _docBlockTimeout;
+    vespalib::duration _visitorInfoTimeout;
     // Keep trace level independent of _initiatingCmd, since we might want to
     // print out the trace level even after the command's ownership has been
     // released away from us.
@@ -295,16 +293,13 @@ private:
     api::StorageMessage::Priority _priority;
 
     api::ReturnCode _result;
-    std::map<std::string, framework::MicroSecTime> _recentlySentErrorMessages;
-    framework::MicroSecTime _timeToDie; // Visitor will time out to distributor at this time
+    std::map<std::string, vespalib::steady_time> _recentlySentErrorMessages;
+    vespalib::steady_time _timeToDie; // Visitor will time out to distributor at this time
 
     std::unique_ptr<HitCounter> _hitCounter;
 
     static constexpr size_t DEFAULT_TRACE_MEMORY_LIMIT = 65536;
     MemoryBoundedTrace _trace;
-
-    Visitor(const Visitor &);
-    Visitor& operator=(const Visitor &);
 
 protected:
     // These variables should not be altered after visitor starts. This not
@@ -342,36 +337,35 @@ protected:
     [[nodiscard]] virtual bool remap_docapi_message_error_code(api::ReturnCode& in_out_code);
 public:
     using DocEntryList = std::vector<std::unique_ptr<spi::DocEntry>>;
-    Visitor(StorageComponent& component);
+    Visitor(const Visitor &) = delete;
+    Visitor& operator=(const Visitor &) = delete;
+    explicit Visitor(StorageComponent& component);
     virtual ~Visitor();
 
-    framework::MicroSecTime getStartTime() const { return _startTime; }
-    api::VisitorId getVisitorId() const { return _visitorId; }
-    const std::string& getVisitorName() const { return _id; }
-    const mbus::Route* getControlDestination() const {
+    [[nodiscard]] vespalib::steady_time getStartTime() const { return _startTime; }
+    [[nodiscard]] api::VisitorId getVisitorId() const { return _visitorId; }
+    [[nodiscard]] const std::string& getVisitorName() const { return _id; }
+    [[nodiscard]] const mbus::Route* getControlDestination() const {
         return _controlDestination.get(); // Can't be null if attached
     }
-    const mbus::Route* getDataDestination() const {
+    [[nodiscard]] const mbus::Route* getDataDestination() const {
         return _dataDestination.get(); // Can't be null if attached
     }
 
-    void setMaxPending(unsigned int maxPending)
-        { _visitorOptions._maxPending = maxPending; }
+    void setMaxPending(unsigned int maxPending) { _visitorOptions._maxPending = maxPending; }
 
     void setFieldSet(const std::string& fieldSet) { _visitorOptions._fieldSet = fieldSet; }
     void visitRemoves() { _visitorOptions._visitRemoves = true; }
     void setDocBlockSize(uint32_t size) { _docBlockSize = size; }
-    uint32_t getDocBlockSize() const { return _docBlockSize; }
+    [[nodiscard]] uint32_t getDocBlockSize() const { return _docBlockSize; }
     void setMemoryUsageLimit(uint32_t limit) noexcept {
         _memoryUsageLimit = limit;
     }
-    uint32_t getMemoryUsageLimit() const noexcept {
+    [[nodiscard]] uint32_t getMemoryUsageLimit() const noexcept {
         return _memoryUsageLimit;
     }
-    void setDocBlockTimeout(framework::MilliSecTime timeout)
-        { _docBlockTimeout = timeout; }
-    void setVisitorInfoTimeout(framework::MilliSecTime timeout)
-        { _visitorInfoTimeout = timeout; }
+    void setDocBlockTimeout(vespalib::duration timeout) { _docBlockTimeout = timeout; }
+    void setVisitorInfoTimeout(vespalib::duration timeout) { _visitorInfoTimeout = timeout; }
     void setOwnNodeIndex(uint16_t nodeIndex) { _ownNodeIndex = nodeIndex; }
     void setBucketSpace(document::BucketSpace bucketSpace) { _bucketSpace = bucketSpace; }
 
@@ -463,19 +457,15 @@ public:
     void attach(std::shared_ptr<api::CreateVisitorCommand> initiatingCmd,
                 const mbus::Route& controlAddress,
                 const mbus::Route& dataAddress,
-                framework::MilliSecTime timeout);
+                vespalib::duration timeout);
 
-    void handleDocumentApiReply(mbus::Reply::UP reply,
-                                VisitorThreadMetrics& metrics);
+    void handleDocumentApiReply(mbus::Reply::UP reply, VisitorThreadMetrics& metrics);
 
-    void onGetIterReply(const std::shared_ptr<GetIterReply>& reply,
-                        VisitorThreadMetrics& metrics);
+    void onGetIterReply(const std::shared_ptr<GetIterReply>& reply, VisitorThreadMetrics& metrics);
 
-    void onCreateIteratorReply(
-            const std::shared_ptr<CreateIteratorReply>& reply,
-            VisitorThreadMetrics& metrics);
+    void onCreateIteratorReply(const std::shared_ptr<CreateIteratorReply>& reply, VisitorThreadMetrics& metrics);
 
-    bool failed() const { return _result.failed(); }
+    [[nodiscard]] bool failed() const { return _result.failed(); }
 
     /**
      * This function will check current state and make the visitor move on, if
@@ -546,7 +536,7 @@ private:
      * Ensures number of resulting pending messages from visitor does not
      * violate maximum pending options.
      */
-    void sendDueQueuedMessages(framework::MicroSecTime timeNow);
+    void sendDueQueuedMessages(vespalib::steady_time timeNow);
 
     /**
      * Whether visitor should enable and forward message bus traces for messages

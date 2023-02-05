@@ -82,8 +82,8 @@ class VisitorThread : public framework::Runnable,
     uint32_t _defaultPendingMessages;
     uint32_t _defaultDocBlockSize;
     uint32_t _visitorMemoryUsageLimit;
-    framework::MilliSecTime _defaultDocBlockTimeout;
-    framework::MilliSecTime _defaultVisitorInfoTimeout;
+    vespalib::duration _defaultDocBlockTimeout;
+    vespalib::duration _defaultVisitorInfoTimeout;
     std::atomic<uint32_t> _timeBetweenTicks;
     StorageComponent _component;
     framework::Thread::UP _thread;
