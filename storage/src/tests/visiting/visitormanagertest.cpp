@@ -217,7 +217,7 @@ VisitorManagerTest::getSession(uint32_t n)
     // Wait until we have started the visitor
     const std::vector<TestVisitorMessageSession*>& sessions(_messageSessionFactory->_visitorSessions);
     framework::defaultimplementation::RealClock clock;
-    framework::MilliSecTime endTime(clock.getTimeInMillis() + framework::MilliSecTime(30 * 1000));
+    vespalib::steady_time endTime = clock.getMonotonicTime() + 30s;
     while (true) {
         {
             std::lock_guard lock(_messageSessionFactory->_accessLock);
@@ -225,7 +225,7 @@ VisitorManagerTest::getSession(uint32_t n)
                 return *sessions[n];
             }
         }
-        if (clock.getTimeInMillis() > endTime) {
+        if (clock.getMonotonicTime() > endTime) {
             throw vespalib::IllegalStateException(
                     "Timed out waiting for visitor session", VESPA_STRLOC);
         }
