@@ -231,7 +231,7 @@ private:
     using DbGuards = std::unordered_map<document::BucketSpace,
                                         std::shared_ptr<BucketDatabase::ReadGuard>,
                                         document::BucketSpace::hash>;
-    using DelayedRequestsQueue = std::deque<std::pair<framework::MilliSecTime, BucketRequest>>;
+    using DelayedRequestsQueue = std::deque<std::pair<vespalib::steady_time, BucketRequest>>;
 
     const DistributorNodeContext&      _node_ctx;
     DistributorStripeOperationContext& _op_ctx;

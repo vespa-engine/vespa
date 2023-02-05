@@ -193,8 +193,7 @@ private:
     struct BucketSpaceAndNode {
         document::BucketSpace bucketSpace;
         uint16_t              node;
-        BucketSpaceAndNode(document::BucketSpace bucketSpace_,
-                           uint16_t node_)
+        BucketSpaceAndNode(document::BucketSpace bucketSpace_, uint16_t node_)
             : bucketSpace(bucketSpace_),
               node(node_)
         {
@@ -218,7 +217,7 @@ private:
     void update_node_supported_features_from_reply(uint16_t node, const api::RequestBucketInfoReply& reply);
 
     using SentMessages       = std::map<uint64_t, BucketSpaceAndNode>;
-    using DelayedRequests    = std::deque<std::pair<framework::MilliSecTime, BucketSpaceAndNode>>;
+    using DelayedRequests    = std::deque<std::pair<vespalib::steady_time , BucketSpaceAndNode>>;
     using PendingTransitions = std::unordered_map<document::BucketSpace, std::unique_ptr<PendingBucketSpaceDbTransition>, document::BucketSpace::hash>;
     using NodeFeatures       = vespalib::hash_map<uint16_t, NodeSupportedFeatures>;
 

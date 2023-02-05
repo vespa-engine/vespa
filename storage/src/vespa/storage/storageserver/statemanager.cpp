@@ -134,7 +134,7 @@ StateManager::reportHtmlStatus(std::ostream& out,
             << "<table border=\"1\"><tr>"
             << "<th>Received at time</th><th>State</th></tr>\n";
         for (const auto & it : std::ranges::reverse_view(_systemStateHistory)) {
-            out << "<tr><td>" << it.first << "</td><td>"
+            out << "<tr><td>" << vespalib::to_string(vespalib::to_utc(it.first)) << "</td><td>"
                 << xml_content_escaped(it.second->getBaselineClusterState()->toString()) << "</td></tr>\n";
         }
         out << "</table>\n";
@@ -296,7 +296,7 @@ StateManager::enableNextClusterState()
         _reported_host_info_cluster_state_version = _systemState->getVersion();
     } // else: reported version updated upon explicit activation edge
     _nextSystemState.reset();
-    _systemStateHistory.emplace_back(_component.getClock().getTimeInMillis(), _systemState);
+    _systemStateHistory.emplace_back(_component.getClock().getMonotonicTime(), _systemState);
 }
 
 namespace {
@@ -390,8 +390,7 @@ StateManager::onGetNodeState(const api::GetNodeStateCommand::SP& cmd)
 {
     bool sentReply = false;
     if (cmd->getSourceIndex() != 0xffff) {
-        sentReply = sendGetNodeStateReplies(framework::MilliSecTime(0),
-                                            cmd->getSourceIndex());
+        sentReply = sendGetNodeStateReplies(vespalib::steady_time::max(), cmd->getSourceIndex());
     }
     std::shared_ptr<api::GetNodeStateReply> reply;
     {
@@ -402,16 +401,13 @@ StateManager::onGetNodeState(const api::GetNodeStateCommand::SP& cmd)
             && (*cmd->getExpectedState() == *_nodeState || sentReply)
             && is_up_to_date)
         {
-            int64_t msTimeout = vespalib::count_ms(cmd->getTimeout());
+            vespalib::duration timeout = cmd->getTimeout();
             LOG(debug, "Received get node state request with timeout of "
-                       "%" PRId64 " milliseconds. Scheduling to be answered in "
-                       "%" PRId64 " milliseconds unless a node state change "
+                       "%f seconds. Scheduling to be answered in "
+                       "%f seconds unless a node state change "
                        "happens before that time.",
-                msTimeout, msTimeout * 800 / 1000);
-            TimeStateCmdPair pair(
-                    _component.getClock().getTimeInMillis()
-                    + framework::MilliSecTime(msTimeout * 800 / 1000),
-                    cmd);
+                vespalib::to_s(timeout), vespalib::to_s(timeout)*0.8);
+            TimeStateCmdPair pair(_component.getClock().getMonotonicTime() + timeout, cmd);
             _queuedStateRequests.emplace_back(std::move(pair));
         } else {
             LOG(debug, "Answered get node state request right away since it "
@@ -495,13 +491,14 @@ StateManager::tick() {
     bool almost_immediate_replies = _requested_almost_immediate_node_state_replies.load(std::memory_order_relaxed);
     if (almost_immediate_replies) {
         _requested_almost_immediate_node_state_replies.store(false, std::memory_order_relaxed);
+        sendGetNodeStateReplies();
+    } else {
+        sendGetNodeStateReplies(_component.getClock().getMonotonicTime());
     }
-    framework::MilliSecTime time(almost_immediate_replies ? framework::MilliSecTime(0) : _component.getClock().getTimeInMillis());
-    sendGetNodeStateReplies(time);
 }
 
 bool
-StateManager::sendGetNodeStateReplies(framework::MilliSecTime olderThanTime, uint16_t node)
+StateManager::sendGetNodeStateReplies(vespalib::steady_time olderThanTime, uint16_t node)
 {
     std::vector<std::shared_ptr<api::GetNodeStateReply>> replies;
     {
@@ -509,9 +506,8 @@ StateManager::sendGetNodeStateReplies(framework::MilliSecTime olderThanTime, uin
         for (auto it = _queuedStateRequests.begin(); it != _queuedStateRequests.end();) {
             if (node != 0xffff && node != it->second->getSourceIndex()) {
                 ++it;
-            } else if (!olderThanTime.isSet() || it->first < olderThanTime) {
-                LOG(debug, "Sending reply to msg with id %" PRIu64,
-                    it->second->getMsgId());
+            } else if (it->first < olderThanTime) {
+                LOG(debug, "Sending reply to msg with id %" PRIu64, it->second->getMsgId());
 
                 replies.emplace_back(std::make_shared<api::GetNodeStateReply>(*it->second, *_nodeState));
                 auto eraseIt = it++;
