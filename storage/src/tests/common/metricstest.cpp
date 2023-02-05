@@ -37,10 +37,10 @@ struct MetricsTest : public Test {
     std::shared_ptr<BucketManagerMetrics> _bucketManagerMetrics;
     std::shared_ptr<VisitorMetrics> _visitorMetrics;
 
-    void createSnapshotForPeriod(std::chrono::seconds secs);
+    void createSnapshotForPeriod(std::chrono::seconds secs) const;
     void assertMetricLastValue(const std::string& name,
                                int interval,
-                               uint64_t expected);
+                               uint64_t expected) const;
 
     MetricsTest();
     ~MetricsTest() override;
@@ -55,8 +55,8 @@ namespace {
     {
         framework::Clock& _clock;
         explicit MetricClock(framework::Clock& c) : _clock(c) {}
-        time_t getTime() const override { return _clock.getTimeInSeconds().getTime(); }
-        time_t getTimeInMilliSecs() const override { return _clock.getTimeInMillis().getTime(); }
+        [[nodiscard]] time_t getTime() const override { return _clock.getTimeInSeconds().getTime(); }
+        time_t getTimeInMilliSecs() const override { return vespalib::count_ms(_clock.getMonotonicTime().time_since_epoch()); }
     };
 }
 
@@ -137,8 +137,8 @@ void MetricsTest::createFakeLoad()
         disk.queueSize.addValue(4 * n);
         disk.averageQueueWaitingTime.addValue(10 * n);
         disk.pendingMerges.addValue(4 * n);
-        for (uint32_t j=0; j<disk.threads.size(); ++j) {
-            FileStorThreadMetrics& thread(*disk.threads[j]);
+        for (auto & j : disk.threads) {
+            FileStorThreadMetrics& thread(*j);
             thread.operations.inc(120 * n);
             thread.failedOperations.inc(2 * n);
 
@@ -180,8 +180,8 @@ void MetricsTest::createFakeLoad()
             thread.merge_handler_metrics.mergeAverageDataReceivedNeeded.addValue(0.8);
         }
     }
-    for (uint32_t i=0; i<_visitorMetrics->threads.size(); ++i) {
-        VisitorThreadMetrics& thread(*_visitorMetrics->threads[i]);
+    for (auto & i : _visitorMetrics->threads) {
+        VisitorThreadMetrics& thread(*i);
         thread.queueSize.addValue(2);
         thread.averageQueueWaitingTime.addValue(10);
         thread.averageVisitorLifeTime.addValue(1000);
@@ -284,9 +284,7 @@ TEST_F(MetricsTest, html_metrics_report) {
 }
 
 void
-MetricsTest::assertMetricLastValue(const std::string& name,
-                                   int interval,
-                                   uint64_t expected)
+MetricsTest::assertMetricLastValue(const std::string& name, int interval, uint64_t expected) const
 {
     std::ostringstream path;
     path << "metrics?interval=" << interval
@@ -305,7 +303,7 @@ MetricsTest::assertMetricLastValue(const std::string& name,
 using namespace std::chrono_literals;
 
 void
-MetricsTest::createSnapshotForPeriod(std::chrono::seconds secs)
+MetricsTest::createSnapshotForPeriod(std::chrono::seconds secs) const
 {
     _clock->addSecondsToTime(secs.count());
     _metricManager->timeChangedNotification();
