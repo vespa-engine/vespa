@@ -137,8 +137,8 @@ void MetricsTest::createFakeLoad()
         disk.queueSize.addValue(4 * n);
         disk.averageQueueWaitingTime.addValue(10 * n);
         disk.pendingMerges.addValue(4 * n);
-        for (auto & j : disk.threads) {
-            FileStorThreadMetrics& thread(*j);
+        for (const auto & metric : disk.threads) {
+            FileStorThreadMetrics& thread(*metric);
             thread.operations.inc(120 * n);
             thread.failedOperations.inc(2 * n);
 
@@ -180,8 +180,8 @@ void MetricsTest::createFakeLoad()
             thread.merge_handler_metrics.mergeAverageDataReceivedNeeded.addValue(0.8);
         }
     }
-    for (auto & i : _visitorMetrics->threads) {
-        VisitorThreadMetrics& thread(*i);
+    for (const auto & metric : _visitorMetrics->threads) {
+        VisitorThreadMetrics& thread(*metric);
         thread.queueSize.addValue(2);
         thread.averageQueueWaitingTime.addValue(10);
         thread.averageVisitorLifeTime.addValue(1000);
@@ -192,9 +192,7 @@ void MetricsTest::createFakeLoad()
     }
     _clock->addSecondsToTime(60);
     _metricManager->timeChangedNotification();
-    while (uint64_t(_metricManager->getLastProcessedTime())
-                < _clock->getTimeInSeconds().getTime())
-    {
+    while (uint64_t(_metricManager->getLastProcessedTime()) < _clock->getTimeInSeconds().getTime()) {
         std::this_thread::sleep_for(5ms);
         _metricManager->timeChangedNotification();
     }

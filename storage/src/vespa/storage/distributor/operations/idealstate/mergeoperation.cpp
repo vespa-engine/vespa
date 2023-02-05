@@ -133,21 +133,15 @@ MergeOperation::onStart(DistributorStripeMessageSender& sender)
     }
     _infoBefore = entry.getBucketInfo();
 
-    generateSortedNodeList(_bucketSpace->getDistribution(),
-                           clusterState,
-                           getBucketId(),
-                           _limiter,
-                           nodes);
+    generateSortedNodeList(_bucketSpace->getDistribution(), clusterState, getBucketId(), _limiter, nodes);
     for (const auto& node : nodes) {
         _mnodes.emplace_back(node._nodeIndex, node._sourceOnly);
     }
 
     if (_mnodes.size() > 1) {
-        auto msg = std::make_shared<api::MergeBucketCommand>(
-                getBucket(),
-                _mnodes,
-                _manager->operation_context().generate_unique_timestamp(),
-                clusterState.getVersion());
+        auto msg = std::make_shared<api::MergeBucketCommand>(getBucket(), _mnodes,
+                                                             _manager->operation_context().generate_unique_timestamp(),
+                                                             clusterState.getVersion());
         const bool may_send_unordered = (_manager->operation_context().distributor_config().use_unordered_merge_chaining()
                                          && all_involved_nodes_support_unordered_merge_chaining());
         if (!may_send_unordered) {
@@ -184,28 +178,20 @@ MergeOperation::sourceOnlyCopyChangedDuringMerge(
         const BucketDatabase::Entry& currentState) const
 {
     assert(currentState.valid());
-    for (auto _mnode : _mnodes) {
-        const BucketCopy* copyBefore(_infoBefore.getNode(_mnode.index));
+    for (auto mnode : _mnodes) {
+        const BucketCopy* copyBefore(_infoBefore.getNode(mnode.index));
         if (!copyBefore) {
             continue;
         }
-        const BucketCopy* copyAfter(currentState->getNode(_mnode.index));
+        const BucketCopy* copyAfter(currentState->getNode(mnode.index));
         if (!copyAfter) {
             LOG(debug, "Copy of %s on node %u removed during merge. Was %s",
-                getBucketId().toString().c_str(),
-                _mnode.index,
-                copyBefore->toString().c_str());
+                getBucketId().toString().c_str(), mnode.index, copyBefore->toString().c_str());
             continue;
         }
-        if (_mnode.sourceOnly
-            && !copyBefore->consistentWith(*copyAfter))
-        {
-            LOG(debug, "Source-only copy of %s on node %u changed from "
-                "%s to %s during the course of the merge. Failing it.",
-                getBucketId().toString().c_str(),
-                _mnode.index,
-                copyBefore->toString().c_str(),
-                copyAfter->toString().c_str());
+        if (mnode.sourceOnly && !copyBefore->consistentWith(*copyAfter)){
+            LOG(debug, "Source-only copy of %s on node %u changed from %s to %s during the course of the merge. Failing it.",
+                getBucketId().toString().c_str(), mnode.index, copyBefore->toString().c_str(), copyAfter->toString().c_str());
             return true;
         }
     }
@@ -220,25 +206,22 @@ MergeOperation::deleteSourceOnlyNodes(
 {
     assert(currentState.valid());
     std::vector<uint16_t> sourceOnlyNodes;
-    for (auto & _mnode : _mnodes) {
-        const uint16_t nodeIndex = _mnode.index;
+    for (auto & mnode : _mnodes) {
+        const uint16_t nodeIndex = mnode.index;
         const BucketCopy* copy = currentState->getNode(nodeIndex);
         if (!copy) {
             continue; // No point in deleting what's not even there now.
         }
-        if (_mnode.sourceOnly) {
+        if (mnode.sourceOnly) {
             sourceOnlyNodes.push_back(nodeIndex);
         }
     }
 
     LOG(debug, "Attempting to delete %zu source only copies for %s",
-        sourceOnlyNodes.size(),
-        getBucketId().toString().c_str());
+        sourceOnlyNodes.size(), getBucketId().toString().c_str());
 
     if (!sourceOnlyNodes.empty()) {
-        _removeOperation = std::make_unique<RemoveBucketOperation>(
-                        _manager->node_context(),
-                        BucketAndNodes(getBucket(), sourceOnlyNodes));
+        _removeOperation = std::make_unique<RemoveBucketOperation>(_manager->node_context(), BucketAndNodes(getBucket(), sourceOnlyNodes));
         // Must not send removes to source only copies if something has caused
         // pending load to the copy after the merge was sent!
         if (_removeOperation->isBlocked(_manager->operation_context(), sender.operation_sequencer())) {
@@ -268,8 +251,7 @@ MergeOperation::deleteSourceOnlyNodes(
 }
 
 void
-MergeOperation::onReceive(DistributorStripeMessageSender& sender,
-                          const std::shared_ptr<api::StorageReply> & msg)
+MergeOperation::onReceive(DistributorStripeMessageSender& sender, const std::shared_ptr<api::StorageReply> & msg)
 {
     if (_removeOperation) {
         if (_removeOperation->onReceiveInternal(msg)) {
@@ -287,18 +269,14 @@ MergeOperation::onReceive(DistributorStripeMessageSender& sender,
     }
 
     auto& reply = dynamic_cast<api::MergeBucketReply&>(*msg);
-    LOG(debug,
-        "Merge operation for bucket %s finished",
-        getBucketId().toString().c_str());
+    LOG(debug, "Merge operation for bucket %s finished", getBucketId().toString().c_str());
 
     api::ReturnCode result = reply.getResult();
     _ok = result.success();
     if (_ok) {
-        BucketDatabase::Entry entry(
-                _bucketSpace->getBucketDatabase().get(getBucketId()));
+        BucketDatabase::Entry entry(_bucketSpace->getBucketDatabase().get(getBucketId()));
         if (!entry.valid()) {
-            LOG(debug, "Bucket %s no longer exists after merge",
-                getBucketId().toString().c_str());
+            LOG(debug, "Bucket %s no longer exists after merge", getBucketId().toString().c_str());
             done(); // Nothing more we can do.
             return;
         }
@@ -315,11 +293,8 @@ MergeOperation::onReceive(DistributorStripeMessageSender& sender,
         return;
     } else if (result.isBusy()) {
     } else if (result.isCriticalForMaintenance()) {
-        LOGBP(warning,
-              "Merging failed for %s: %s with error '%s'",
-              getBucketId().toString().c_str(),
-              msg->toString().c_str(),
-              msg->getResult().toString().c_str());
+        LOGBP(warning, "Merging failed for %s: %s with error '%s'",
+              getBucketId().toString().c_str(), msg->toString().c_str(), msg->getResult().toString().c_str());
     } else {
         LOG(debug, "Merge failed for %s with non-critical failure: %s",
             getBucketId().toString().c_str(), result.toString().c_str());
