@@ -93,7 +93,7 @@ TestStorageApp::waitUntilInitialized(StorageBucketDBInitializer* initializer, ve
         vespalib::steady_time currentTime(clock.getMonotonicTime());
         if (currentTime > endTime) {
             std::ostringstream error;
-            error << "Failed to initialize service layer within timeout of " << timeout << " seconds.";
+            error << "Failed to initialize service layer within timeout of " << vespalib::to_s(timeout) << " seconds.";
             if (initializer != nullptr) {
                 error << " ";
                 LOG(error, "%s", error.str().c_str());
