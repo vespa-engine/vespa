@@ -6,7 +6,7 @@ import java.util.Arrays;
 /**
  * @author bjorncs
  */
-public enum Capability {
+public enum Capability implements ToCapabilitySet {
     NONE("vespa.none"), // placeholder for no capabilities
     CONTENT__CLUSTER_CONTROLLER__INTERNAL_STATE_API("vespa.content.cluster_controller.internal_state_api"),
     CONTENT__DOCUMENT_API("vespa.content.document_api"),
@@ -22,6 +22,8 @@ public enum Capability {
     Capability(String name) { this.name = name; }
 
     public String asString() { return name; }
+
+    @Override public CapabilitySet toCapabilitySet() { return CapabilitySet.from(this); }
 
     public static Capability fromName(String name) {
         return Arrays.stream(values())
