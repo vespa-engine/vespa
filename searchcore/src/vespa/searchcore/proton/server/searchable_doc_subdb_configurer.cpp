@@ -202,14 +202,14 @@ SearchableDocSubDBConfigurer::reconfigure(const DocumentDBConfig &newConfig,
     bool shouldMatchViewChange = prepared_reconfig.has_matchers_changed();
     bool shouldSearchViewChange = false;
     bool shouldFeedViewChange = params.shouldSchemaChange();
-    auto& attr_spec_serial_num = attrSpec.getCurrentSerialNum();
-    assert(!attr_spec_serial_num.has_value() || attr_spec_serial_num.value() == serial_num);
     SearchView::SP searchView = _searchView.get();
     auto matchers = prepared_reconfig.matchers();
     IReprocessingInitializer::UP initializer;
     IAttributeManager::SP attrMgr = searchView->getAttributeManager();
     IAttributeWriter::SP attrWriter = _feedView.get()->getAttributeWriter();
     if (params.shouldAttributeManagerChange()) {
+        auto attr_spec_serial_num = attrSpec.getCurrentSerialNum();
+        assert(!attr_spec_serial_num.has_value() || attr_spec_serial_num.value() == serial_num);
         IAttributeManager::SP newAttrMgr = attrMgr->create(std::move(attrSpec));
         newAttrMgr->setImportedAttributes(resolver.resolve(*newAttrMgr, *attrMgr,
                                                            searchView->getDocumentMetaStore(),
